@@ -58,10 +58,13 @@
 /**
  * Utils for processing various request components
  *
- * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
+ * Author:      Gal Shachor <shachor@il.ibm.com>                           
+ * Author:      Henri Gomez <hgomez@slib.fr>                               
+ * Author:      Costin Manolache
  */
 
+/* XXX make them virtual methods, allow servers to override
+ */
 
 #include "jk_global.h"
 #include "jk_channel.h"
@@ -83,6 +86,39 @@ static const char *response_trans_headers[] = {
     "Status", 
     "WWW-Authenticate"
 };
+
+/*
+ * Conditional request attributes
+ * 
+ */
+#define SC_A_CONTEXT            (unsigned char)1
+#define SC_A_SERVLET_PATH       (unsigned char)2
+#define SC_A_REMOTE_USER        (unsigned char)3
+#define SC_A_AUTH_TYPE          (unsigned char)4
+#define SC_A_QUERY_STRING       (unsigned char)5
+#define SC_A_JVM_ROUTE          (unsigned char)6
+#define SC_A_SSL_CERT           (unsigned char)7
+#define SC_A_SSL_CIPHER         (unsigned char)8
+#define SC_A_SSL_SESSION        (unsigned char)9
+#define SC_A_REQ_ATTRIBUTE      (unsigned char)10
+/* only in if JkOptions +ForwardKeySize */
+#define SC_A_SSL_KEY_SIZE       (unsigned char)11		
+#define SC_A_SECRET             (unsigned char)12
+#define SC_A_ARE_DONE           (unsigned char)0xFF
+
+/*
+ * Forward a request from the web server to the servlet container.
+ */
+#define JK_AJP13_FORWARD_REQUEST    (unsigned char)2
+
+/* Important: ajp13 protocol has the strange habit of sending
+   a second ( untyped ) message imediately following the request,
+   with a first chunk of POST body. This is nice for small post
+   requests, since it avoids a roundtrip, but it's horrible
+   because it brakes the model. So we'll have to remember this
+   as an exception to the rule as long as ajp13 is alive
+*/
+
 
 /** Get header value using a lookup table. 
  *
@@ -264,7 +300,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
 /** Retrieve the cookie with the given name
  */
 char *jk2_requtil_getCookieByName(jk_env_t *env, jk_ws_service_t *s,
-                                 const char *name)
+                                  const char *name)
 {
     int i;
     jk_map_t *headers=s->headers_in;
@@ -372,7 +408,6 @@ char *jk2_requtil_getSessionRoute(jk_env_t *env, jk_ws_service_t *s)
     return ch;
 }
 
-
 /*
  * Read data from the web server.
  *
@@ -417,6 +452,285 @@ int jk2_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
     return (int)rdlen;
 }
 
+
+/* -------------------- Printf writing -------------------- */
+
+#define JK_BUF_SIZE 4096
+
+static int jk2_requtil_createBuffer(jk_env_t *env, 
+                             jk_ws_service_t *s)
+{
+    int bsize=JK_BUF_SIZE;
+    
+    s->outSize=bsize;
+    s->outBuf=(char *)s->pool->alloc( env, s->pool, bsize );
+
+    return JK_TRUE;
+}
+
+static void jk2_requtil_printf(jk_env_t *env, jk_ws_service_t *s, char *fmt, ...)
+{
+    va_list vargs;
+    int ret=0;
+
+    if( s->outBuf==NULL ) {
+        jk2_requtil_createBuffer( env, s );
+    }
+    
+    va_start(vargs,fmt);
+    s->outPos=0; /* Temp - we don't buffer */
+    ret=vsnprintf(s->outBuf + s->outPos, s->outSize - s->outPos, fmt, vargs);
+    va_end(vargs);
+
+    s->write( env, s, s->outBuf, strlen(s->outBuf) );
+}
+
+/* -------------------- Request serialization -------------------- */
+/* XXX optimization - this can be overriden by server to avoid
+   multiple copies
+*/
+/**
+  Message structure
+ 
+ 
+AJPV13_REQUEST/AJPV14_REQUEST=
+    request_prefix (1) (byte)
+    method         (byte)
+    protocol       (string)
+    req_uri        (string)
+    remote_addr    (string)
+    remote_host    (string)
+    server_name    (string)
+    server_port    (short)
+    is_ssl         (boolean)
+    num_headers    (short)
+    num_headers*(req_header_name header_value)
+
+    ?context       (byte)(string)
+    ?servlet_path  (byte)(string)
+    ?remote_user   (byte)(string)
+    ?auth_type     (byte)(string)
+    ?query_string  (byte)(string)
+    ?jvm_route     (byte)(string)
+    ?ssl_cert      (byte)(string)
+    ?ssl_cipher    (byte)(string)
+    ?ssl_session   (byte)(string)
+    ?ssl_key_size  (byte)(int)		via JkOptions +ForwardKeySize
+    request_terminator (byte)
+    ?body          content_length*(var binary)
+
+    Was: ajp_marshal_into_msgb
+ */
+int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
+                            jk_ws_service_t *s,
+                            jk_endpoint_t *ae)
+{
+    unsigned char method;
+    int i;
+    int headerCount;
+
+    if (!jk2_requtil_getMethodId(env, s->method, &method)) { 
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Error ajp_marshal_into_msgb - No such method %s\n",
+                      s->method);
+        return JK_FALSE;
+    }
+
+    headerCount=s->headers_in->size(env, s->headers_in);
+    
+    if (msg->appendByte(env, msg, JK_AJP13_FORWARD_REQUEST)  ||
+        msg->appendByte(env, msg, method)               ||
+        msg->appendString(env, msg, s->protocol)        ||
+        msg->appendString(env, msg, s->req_uri)         ||
+        msg->appendString(env, msg, s->remote_addr)     ||
+        msg->appendString(env, msg, s->remote_host)     ||
+        msg->appendString(env, msg, s->server_name)     ||
+        msg->appendInt(env, msg, (unsigned short)s->server_port) ||
+        msg->appendByte(env, msg, (unsigned char)(s->is_ssl)) ||
+        msg->appendInt(env, msg, (unsigned short)(headerCount))) {
+
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "handle.request()  Error serializing the message head\n");
+        return JK_FALSE;
+    }
+
+    for (i = 0 ; i < headerCount ; i++) {
+        unsigned short sc;
+
+        char *name=s->headers_in->nameAt(env, s->headers_in, i);
+
+        if (jk2_requtil_getHeaderId(env, name, &sc)) {
+            /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
+            /*                "serialize.request() Add headerId %s %d\n", name, sc); */
+            if (msg->appendInt(env, msg, sc)) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "serialize.request() Error serializing header id\n");
+                return JK_FALSE;
+            }
+        } else {
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "serialize.request() Add headerName %s\n", name);
+            if (msg->appendString(env, msg, name)) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "serialize.request() Error serializing header name\n");
+                return JK_FALSE;
+            }
+        }
+        
+        /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
+        /*                "serialize.request() Add headerValue %s\n", */
+        /*                 s->headers_in->valueAt( env, s->headers_in, i)); */
+        if (msg->appendString(env, msg,
+                              s->headers_in->valueAt( env, s->headers_in, i))) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "serialize.request() Error serializing header value\n");
+            return JK_FALSE;
+        }
+    }
+
+    if (s->remote_user) {
+        if (msg->appendByte(env, msg, SC_A_REMOTE_USER) ||
+            msg->appendString(env, msg, s->remote_user)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "serialize.request() Error serializing user name\n");
+            return JK_FALSE;
+        }
+    }
+    if (s->auth_type) {
+        if (msg->appendByte(env, msg, SC_A_AUTH_TYPE) ||
+            msg->appendString(env, msg, s->auth_type)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing auth type\n");
+            return JK_FALSE;
+        }
+    }
+    if (s->query_string) {
+        if (msg->appendByte(env, msg, SC_A_QUERY_STRING) ||
+            msg->appendString(env, msg, s->query_string)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing query string\n");
+            return JK_FALSE;
+        }
+    }
+    /* XXX This can be sent only on startup ( ajp14 ) */
+     
+    if (s->jvm_route) {
+        if (msg->appendByte(env, msg, SC_A_JVM_ROUTE) ||
+            msg->appendString(env, msg, s->jvm_route)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing worker id\n");
+            return JK_FALSE;
+        }
+    }
+    
+    if (s->ssl_cert_len) {
+        if (msg->appendByte(env, msg, SC_A_SSL_CERT) ||
+            msg->appendString(env, msg, s->ssl_cert)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing SSL cert\n");
+            return JK_FALSE;
+        }
+    }
+
+    if (s->ssl_cipher) {
+        if (msg->appendByte(env, msg, SC_A_SSL_CIPHER) ||
+            msg->appendString(env, msg, s->ssl_cipher)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing SSL cipher\n");
+            return JK_FALSE;
+        }
+    }
+    if (s->ssl_session) {
+        if (msg->appendByte(env, msg, SC_A_SSL_SESSION) ||
+            msg->appendString(env, msg, s->ssl_session)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing SSL session\n");
+            return JK_FALSE;
+        }
+    }
+
+    /*
+     * ssl_key_size is required by Servlet 2.3 API
+     * added support only in ajp14 mode
+     * JFC removed: ae->proto == AJP14_PROTO
+     */
+    if (s->ssl_key_size != -1) {
+        if (msg->appendByte(env, msg, SC_A_SSL_KEY_SIZE) ||
+            msg->appendInt(env, msg, (unsigned short) s->ssl_key_size)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing SSL key size\n");
+            return JK_FALSE;
+        }
+    }
+
+    if (ae->worker->secret ) {
+        if (msg->appendByte(env, msg, SC_A_SECRET) ||
+            msg->appendString(env, msg, ae->worker->secret )) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing secret\n");
+            return JK_FALSE;
+        }
+    }
+
+
+    if (s->attributes->size( env,  s->attributes) > 0) {
+        for (i = 0 ; i < s->attributes->size( env,  s->attributes) ; i++) {
+            char *name=s->attributes->nameAt( env,  s->attributes, i);
+            char *val=s->attributes->nameAt( env, s->attributes, i);
+            if (msg->appendByte(env, msg, SC_A_REQ_ATTRIBUTE) ||
+                msg->appendString(env, msg, name ) ||
+                msg->appendString(env, msg, val)) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                         "handle.request() Error serializing attribute %s=%s\n",
+                         name, val);
+                return JK_FALSE;
+            }
+        }
+    }
+
+    if (msg->appendByte(env, msg, SC_A_ARE_DONE)) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                 "handle.request() Error serializing end marker\n");
+        return JK_FALSE;
+    }
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "serialize.request() serialized %s\n", s->req_uri);
+
+    /*  msg->dump( env, msg, "Dump: " ); */
+    return JK_TRUE;
+}
+
+
+/** The inital BODY chunk 
+ */
+int jk2_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
+                           jk_ws_service_t  *r,
+                           jk_endpoint_t *ae)
+{
+    int len = r->left_bytes_to_send;
+
+    if(len > AJP13_MAX_SEND_BODY_SZ) {
+        len = AJP13_MAX_SEND_BODY_SZ;
+    }
+    if(len <= 0) {
+        len = 0;
+        return JK_TRUE;
+    }
+
+    len=msg->appendFromServer( env, msg, r, ae, len );
+    /* the right place to add file storage for upload */
+    if (len >= 0) {
+        r->content_read += len;
+        return JK_TRUE;
+    }                  
+            
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+             "handler.marshapPostHead() - error len=%d\n", len);
+    return JK_FALSE;	    
+}
+
+
 /** Initialize the request 
  * 
  * jk_init_ws_service
@@ -445,4 +759,7 @@ void jk2_requtil_initRequest(jk_env_t *env, jk_ws_service_t *s)
     s->ssl_cipher           = NULL;
     s->ssl_session          = NULL;
     s->jvm_route            = NULL;
+    s->outBuf=NULL;
+    
+    s->jkprintf=jk2_requtil_printf;
 }
