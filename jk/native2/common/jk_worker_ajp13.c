@@ -105,7 +105,7 @@ static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *
         return buf;
     } else if (strcmp( name, "lb_value" )==0 ) {
         char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
-        sprintf( buf, "%f", worker->lb_value );
+        sprintf( buf, "%d", worker->lb_value );
         return buf;
     } else if (strcmp( name, "reqCnt" )==0 ) {
         char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
@@ -117,7 +117,7 @@ static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *
         return buf;
     } else if (strcmp( name, "lb_factor" )==0 ) {
         char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
-        sprintf( buf, "%f", worker->lb_factor );
+        sprintf( buf, "%d", worker->lb_factor );
         return buf;
     } else if (strcmp( name, "errorState" )==0 ) {
         if( worker->in_error_state ) 
@@ -139,6 +139,11 @@ static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *
         return NULL;
     }
 }
+
+static char *jk2_worker_ajp_multiValueInfo[]={"group", NULL };
+
+static char *jk2_worker_ajp_setAttributeInfo[]={"debug", "channel", "tomcatId", "lb_factor", NULL };
+
 
 /*
  * Initialize the worker.
@@ -164,12 +169,10 @@ jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean,
     } else if( strcmp( name, "cachesize" )==0 ) {
         ajp14->cache_sz=atoi( value );
     } else if( strcmp( name, "lb_factor" )==0 ) {
-        ajp14->lb_factor=atof( value );
+        ajp14->lb_factor=atoi( value );
     } else if( strcmp( name, "channel" )==0 ) {
         ajp14->channelName=value;
     } else {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "ajp14.setProperty() Unknown property %s %s %s\n", mbean->name, name, value );
         return JK_ERR;
     }
 
@@ -606,6 +609,10 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
     int size;
     int i;
 
+    if(ajp14->channel != NULL &&
+       ajp14->channel->mbean->debug > 0 )
+        ajp14->mbean->debug = 1;
+    
     if( ajp14->cache_sz == -1 )
         ajp14->cache_sz=JK_OBJCACHE_DEFAULT_SZ;
 
@@ -637,7 +644,7 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
         /* No explicit groups, it'll go to default lb */
         jk_worker_t *lb=ajp14->workerEnv->defaultWorker;
         
-        lb->mbean->setAttribute(env, lb->mbean, "balanced_workers",
+        lb->mbean->setAttribute(env, lb->mbean, "worker",
                                 ajp14->mbean->name);
         if( ajp14->mbean->debug > 0 ) 
             env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -666,7 +673,7 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
                     return JK_ERR;
                 }
             }
-            lb->mbean->setAttribute(env, lb->mbean, "balanced_workers",
+            lb->mbean->setAttribute(env, lb->mbean, "worker",
                                     ajp14->mbean->name);
         }
 
