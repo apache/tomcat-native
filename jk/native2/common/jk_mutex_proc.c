@@ -66,37 +66,130 @@
 #include "jk_pool.h"
 #include "jk_mutex.h"
 
-/* ==================== Dispatch messages from java ==================== */
-    
-/** Called by java. Will call the right mutex method.
- */
-int JK_METHOD jk2_mutex_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep, int code,
-                               jk_msg_t *msg, int raw)
-{
-    jk_mutex_t *mutex=(jk_mutex_t *)bean->object;
-    int rc=JK_OK;
+#ifdef HAS_APR
 
-    if( mutex->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mutex.%d() \n", code);
+#include "apr_proc_mutex.h"
+
+
+static int JK_METHOD jk2_mutex_proc_init(jk_env_t *env, jk_bean_t  *mutexB)
+{
+    jk_mutex_t *jkMutex=mutexB->object;
     
-    switch( code ) {
-    case MUTEX_LOCK: {
-        if( mutex->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "mutex.open()\n");
-        return mutex->lock(env, mutex);
-    }
-    case MUTEX_TRYLOCK: {
-        if( mutex->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "mutex.close()\n");
-        return mutex->tryLock(env, mutex);
-    }
-    case MUTEX_UNLOCK: {
-        if( mutex->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "mutex.recv()\n");
-        return mutex->unLock(env, mutex);
-    }
-    }/* switch */
-    return JK_ERR;
+    apr_proc_mutex_t *mutex;
+    apr_lockmech_e mech=(apr_lockmech_e)jkMutex->mechanism;
+
+    apr_pool_t *pool=(apr_pool_t *)env->getAprPool(env);
+    
+    apr_status_t  st;
+    char *fname=jkMutex->fname;
+
+    st=apr_proc_mutex_create( &mutex, fname, mech, pool );
+
+    jkMutex->privateData=mutex;
+    
+    return st;
 }
 
+static int JK_METHOD 
+jk2_mutex_proc_destroy(jk_env_t *env, jk_bean_t  *mutexB)
+{
+    jk_mutex_t *jkMutex=mutexB->object;
+    
+    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)jkMutex->privateData;
+    apr_status_t  st;
+
+    if( mutex!= NULL )
+        st=apr_proc_mutex_destroy( mutex );
+    
+    return st;
+}
+
+static int JK_METHOD 
+jk2_mutex_proc_lock(jk_env_t *env, jk_mutex_t  *jkMutex)
+{
+    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)jkMutex->privateData;
+    apr_status_t  st;
+    
+    st=apr_proc_mutex_lock( mutex );
+    
+    return st;
+}
+
+static int JK_METHOD 
+jk2_mutex_proc_tryLock(jk_env_t *env, jk_mutex_t  *jkMutex)
+{
+    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)jkMutex->privateData;
+    apr_status_t  st;
+    
+    st=apr_proc_mutex_trylock( mutex );
+    
+    return st;
+}
+
+static int JK_METHOD 
+jk2_mutex_proc_unLock(jk_env_t *env, jk_mutex_t  *jkMutex)
+{
+    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)jkMutex->privateData;
+    apr_status_t  st;
+    
+    st=apr_proc_mutex_unlock( mutex );
+    
+    return st;
+}
+
+static int JK_METHOD jk2_mutex_proc_setAttribute( jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP ) {
+    jk_mutex_t *mutex=(jk_mutex_t *)mbean->object;
+    char *value=(char *)valueP;
+    
+    if( strcmp( "file", name ) == 0 ) {
+	mutex->fname=value;
+    } else if( strcmp( "mechanism", name ) == 0 ) {
+	mutex->mechanism=atoi(value);
+    } else {
+	return JK_ERR;
+    }
+    return JK_OK;   
+
+}
+
+int JK_METHOD jk2_mutex_proc_factory( jk_env_t *env ,jk_pool_t *pool,
+                               jk_bean_t *result,
+                               const char *type, const char *name)
+{
+    jk_mutex_t *mutex;
+    jk_workerEnv_t *wEnv;
+
+    mutex=(jk_mutex_t *)pool->calloc(env, pool, sizeof(jk_mutex_t));
+
+    if( mutex == NULL )
+        return JK_ERR;
+
+    mutex->pool=pool;
+    mutex->privateData=NULL;
+
+    result->setAttribute=jk2_mutex_proc_setAttribute;
+    /* result->getAttribute=jk2_mutex_getAttribute; */
+    mutex->mbean=result; 
+    result->object=mutex;
+    
+    result->init=jk2_mutex_proc_init;
+    result->destroy=jk2_mutex_proc_destroy;
+    result->invoke=jk2_mutex_invoke;
+    
+    mutex->lock=jk2_mutex_proc_lock;
+    mutex->tryLock=jk2_mutex_proc_tryLock;
+    mutex->unLock=jk2_mutex_proc_unLock;
+    
+    return JK_OK;
+}
+
+#else
+
+int JK_METHOD jk2_mutex_proc_factory( jk_env_t *env ,jk_pool_t *pool,
+                                      jk_bean_t *result,
+                                      const char *type, const char *name)
+{
+    result->disabled=1;
+    return JK_OK;
+}
+#endif

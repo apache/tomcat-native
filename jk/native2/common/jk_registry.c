@@ -116,7 +116,7 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
   env->registerFactory( env, "uriEnv", jk2_uriEnv_factory );
   env->registerFactory( env, "endpoint", jk2_endpoint_factory );
   env->registerFactory( env, "uri", jk2_uriEnv_factory );
-  env->registerFactory( env, "config", jk2_config_factory );
+  env->registerFactory( env, "config", jk2_config_file_factory );
   
   env->registerFactory( env, "ajp13", jk2_worker_ajp13_factory );
   env->registerFactory( env, "lb",    jk2_worker_lb_factory );
@@ -134,9 +134,13 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
   env->registerFactory( env, "handler.response", jk2_handler_response_factory );
   env->registerFactory( env, "handler.logon",   jk2_handler_logon_factory );
   
+  env->registerFactory( env, "threadMutex", jk2_mutex_thread_factory );
+  env->registerFactory( env, "procMutex", jk2_mutex_proc_factory );
+
   env->registerFactory( env, "channel.jni",   jk2_channel_jni_factory );
   env->registerFactory( env, "worker.jni",   jk2_worker_jni_factory );
   env->registerFactory( env, "vm",   jk2_vm_factory );
+
 
 }
 
