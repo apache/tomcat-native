@@ -52,7 +52,7 @@
 
 /* changed with apr 1.0 */
 #include "apr_version.h"
-#if (APR_MAJOR_VERSION < 1) 
+#if (APR_MAJOR_VERSION < 1)
 #define apr_filepath_name_get apr_filename_of_pathname
 #define apr_pool_parent_get apr_pool_get_parent
 #endif
@@ -62,10 +62,12 @@ extern module AP_MODULE_DECLARE_DATA jk2_module;
 int JK_METHOD jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s);
 
 int JK_METHOD jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
-                                         jk_bean_t *result, const char *type, const char *name);
+                                         jk_bean_t *result, const char *type,
+                                         const char *name);
 
 int JK_METHOD jk2_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,
-                                   jk_bean_t *result, const char *type, const char *name);
+                                   jk_bean_t *result, const char *type,
+                                   const char *name);
 
 int JK_METHOD jk2_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
                                        jk_bean_t *result,

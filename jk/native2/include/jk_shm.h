@@ -25,15 +25,16 @@
 #include "jk_service.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_env;
-struct jk_shm;
-    
-typedef struct jk_shm jk_shm_t;
-typedef struct jk_shm_slot jk_shm_slot_t;
-typedef struct jk_shm_head jk_shm_head_t;
+    struct jk_env;
+    struct jk_shm;
+
+    typedef struct jk_shm jk_shm_t;
+    typedef struct jk_shm_slot jk_shm_slot_t;
+    typedef struct jk_shm_head jk_shm_head_t;
 
 
 /* That's the default - should be enough for most cases.
@@ -45,49 +46,51 @@ typedef struct jk_shm_head jk_shm_head_t;
 #define DEFAULT_SLOT_COUNT 256
 
 
-    
+
 /** Each shared memory slot has at least the following components.
  */
-struct jk_shm_slot {
+    struct jk_shm_slot
+    {
     /** Version of the segment. Whoever writes it must change the
         version after writing. Various components will check the version
         and refresh if needed
     */
-    int ver;
+        int ver;
 
     /** Size of the segment */
-    int size;
+        int size;
 
-    int structSize;
-    int structCnt;
-    
+        int structSize;
+        int structCnt;
+
     /** Full name of the segment. type:localName convention.
      */
-    char name[64];
+        char name[64];
 
-    char data[1];
-};
+        char data[1];
+    };
 
-    
-struct jk_shm_head {
-    
-    int structSize;
 
-    int slotSize;
-    
-    int slotMaxCount;
-    
-    /* Last used position. Increase ( at least atomically, eventually with mutexes )
-       each time a slot is created */
-    int lastSlot;
+    struct jk_shm_head
+    {
 
-    /* XXX Need a more generic mechanism */
-    int lbVer;
+        int structSize;
 
-    /* Array of used slots set to nonzero if used */
-    char slots[1];
+        int slotSize;
 
-};
+        int slotMaxCount;
+
+        /* Last used position. Increase ( at least atomically, eventually with mutexes )
+           each time a slot is created */
+        int lastSlot;
+
+        /* XXX Need a more generic mechanism */
+        int lbVer;
+
+        /* Array of used slots set to nonzero if used */
+        char slots[1];
+
+    };
 
 
 /**
@@ -102,57 +105,62 @@ struct jk_shm_head {
   *
  * @author Costin Manolache
  */
-struct jk_shm {
-    struct jk_bean *mbean;
+    struct jk_shm
+    {
+        struct jk_bean *mbean;
 
-    struct jk_pool *pool;
+        struct jk_pool *pool;
 
-    char *fname;
+        char *fname;
 
     /** Initialize the shared memory area. It'll map the shared memory 
      *  segment if it exists, or create and init it if not.
      */
-    int (JK_METHOD *init)(struct jk_env *env, struct jk_shm *shm);
+        int (JK_METHOD * init) (struct jk_env * env, struct jk_shm * shm);
 
     /** Reset the shm area
      */
-    int (JK_METHOD *reset)(struct jk_env *env, struct jk_shm *shm);
+        int (JK_METHOD * reset) (struct jk_env * env, struct jk_shm * shm);
 
-    
+
     /** Detach from the shared memory segment
      */
-    int (JK_METHOD *destroy)(struct jk_env *env, struct jk_shm *shm);
+        int (JK_METHOD * destroy) (struct jk_env * env, struct jk_shm * shm);
 
     /** Get a shm slot. Each slot has different rules for synchronization, based on type. 
      */
-    struct jk_shm_slot *(JK_METHOD *getSlot)(struct jk_env *env, struct jk_shm *shm, int pos);
+        struct jk_shm_slot *(JK_METHOD * getSlot) (struct jk_env * env,
+                                                   struct jk_shm * shm,
+                                                   int pos);
 
     /** Create a slot. This typically involves inter-process synchronization.
      */
-    struct jk_shm_slot *(JK_METHOD *createSlot)(struct jk_env *env, struct jk_shm *shm, char *name, int size);
+        struct jk_shm_slot *(JK_METHOD * createSlot) (struct jk_env * env,
+                                                      struct jk_shm * shm,
+                                                      char *name, int size);
 
-    int size;
+        int size;
 
-    int slotSize;
-    
-    int slotMaxCount;
-    
-    struct jk_shm_head *head;
+        int slotSize;
 
-    /* Memory image (the data after head)*/
-    void *image;
-    
-    /* Is the shmem attached or created */
-    int attached;
+        int slotMaxCount;
 
-    /* Use the main memory instead */
-    int inmem;
-    /* Private data (apr_shm_t) */
-    void *privateData;
-};
-    
+        struct jk_shm_head *head;
+
+        /* Memory image (the data after head) */
+        void *image;
+
+        /* Is the shmem attached or created */
+        int attached;
+
+        /* Use the main memory instead */
+        int inmem;
+        /* Private data (apr_shm_t) */
+        void *privateData;
+    };
+
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif 
+#endif

@@ -36,20 +36,21 @@
 #include "jk_vm.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_worker;
-struct jk_channel;
-struct jk_endpoint;
-struct jk_env;
-struct jk_config;
-struct jk_uriMap;
-struct jk_uriEnv;
-struct jk_map;
-struct jk_logger;
-struct jk_handler;
-struct jk_ws_service;
+    struct jk_worker;
+    struct jk_channel;
+    struct jk_endpoint;
+    struct jk_env;
+    struct jk_config;
+    struct jk_uriMap;
+    struct jk_uriEnv;
+    struct jk_map;
+    struct jk_logger;
+    struct jk_handler;
+    struct jk_ws_service;
 
 /* Temporary hardcoded handler IDs. Will be replaced with a name based dynamic mechanism */
 
@@ -89,7 +90,7 @@ struct jk_ws_service;
 /* Dispatcher for mutex object  ( java->C ) */
 #define JK_HANDLE_MUTEX_DISPATCH 0x18
 
-    
+
 /*
  * Jk configuration and global methods. 
  * 
@@ -97,165 +98,167 @@ struct jk_ws_service;
  * With AJP14 support we need to have access to many informations
  * about web-server, uri to worker map....
  */
-struct jk_workerEnv {
-    struct jk_bean *mbean;
+    struct jk_workerEnv
+    {
+        struct jk_bean *mbean;
 
-    /* Use this pool for all global settings
-     */
-    struct jk_pool *pool;
-    
-    /* Active workers hashtable. 
-     */
-    struct jk_map *worker_map;
+        /* Use this pool for all global settings
+         */
+        struct jk_pool *pool;
 
-    /* Channels
-     */
-    struct jk_map *channel_map;
+        /* Active workers hashtable. 
+         */
+        struct jk_map *worker_map;
 
-    struct jk_map *endpointMap;
+        /* Channels
+         */
+        struct jk_map *channel_map;
 
-    /* In a multi-process server, like Apache, stores the child
-       id in the scoreboard ( if the scoreboard is used ).
-       This in turn is used in the jk scoreboard to store informations
-       about each instance.
-       If -1 - shm is disabled.
-    */
-    int childId;
-    int childProcessId;
-    /* maximum configured number of child processes */
-    int maxDaemons;
+        struct jk_map *endpointMap;
 
-    struct jk_env *globalEnv;
+        /* In a multi-process server, like Apache, stores the child
+           id in the scoreboard ( if the scoreboard is used ).
+           This in turn is used in the jk scoreboard to store informations
+           about each instance.
+           If -1 - shm is disabled.
+         */
+        int childId;
+        int childProcessId;
+        /* maximum configured number of child processes */
+        int maxDaemons;
+
+        struct jk_env *globalEnv;
 
     /** Worker that will be used by default, if no other
         worker is specified. Usefull for SetHandler or
         to avoid the lookup
         XXX no need - lb is the default, easy to get it.
     */
-    struct jk_worker *defaultWorker;
-    
-    /* Web-Server we're running on (Apache/IIS/NES).
-     */
-    char *server_name;
-    
-    /* XXX Virtual server handled - "*" is all virtual
-     */
-    char *virtual;
+        struct jk_worker *defaultWorker;
+
+        /* Web-Server we're running on (Apache/IIS/NES).
+         */
+        char *server_name;
+
+        /* XXX Virtual server handled - "*" is all virtual
+         */
+        char *virtual;
 
     /** Initialization properties, set via native options or workers.properties.
      */
-    /* XXX renamed from init_data to force all code to use setProperty
-       This is private property !
-    */
-    struct jk_map *initData;
+        /* XXX renamed from init_data to force all code to use setProperty
+           This is private property !
+         */
+        struct jk_map *initData;
 
-    /*
-     * Log options. XXX move it to uriEnv, make it configurable per webapp.
-     * XXX What about apache native logger ?
-     */
-    char *logger_name;
+        /*
+         * Log options. XXX move it to uriEnv, make it configurable per webapp.
+         * XXX What about apache native logger ?
+         */
+        char *logger_name;
 
-    struct jk_uriMap *uriMap;
+        struct jk_uriMap *uriMap;
 
-    int was_initialized;
+        int was_initialized;
 
-    /*
-     * SSL Support
-     */
-    int  ssl_enable;
-    char *https_indicator;
-    char *certs_indicator;
-    char *cipher_indicator;
-    char *session_indicator;  /* Servlet API 2.3 requirement */
-    char *key_size_indicator; /* Servlet API 2.3 requirement */
+        /*
+         * SSL Support
+         */
+        int ssl_enable;
+        char *https_indicator;
+        char *certs_indicator;
+        char *cipher_indicator;
+        char *session_indicator;        /* Servlet API 2.3 requirement */
+        char *key_size_indicator;       /* Servlet API 2.3 requirement */
 
-    /*
-     * Jk Options
-     */
-    int options;
+        /*
+         * Jk Options
+         */
+        int options;
 
     /** Old REUSE_WORKER define. Instead of using an object pool, use
         thread data to recycle the connection. */
-    int perThreadWorker;
-    
-    /*
-     * Environment variables support
-     */
-    int envvars_in_use;
-    struct jk_map * envvars;
+        int perThreadWorker;
 
-    struct jk_config *config;
-    
-    struct jk_shm *shm;
+        /*
+         * Environment variables support
+         */
+        int envvars_in_use;
+        struct jk_map *envvars;
 
-    /* Slot for endpoint stats
-     */
-    struct jk_shm_slot *epStat;
-    
-    /* Handlers. This is a dispatch table for messages, for
-     * each message id we have an entry containing the jk_handler_t.
-     * lastMessageId is the size of the table.
-     */
-    struct jk_handler **handlerTable;
-    int lastMessageId;
+        struct jk_config *config;
 
-    /* The vm - we support a single instance per process
-     * ( i.e can't have both jdk1.1 and jdk1.2 at the same time,
-     *  or 2 instances of the same vm. )
-     */
-    struct jk_vm *vm;
-    
+        struct jk_shm *shm;
+
+        /* Slot for endpoint stats
+         */
+        struct jk_shm_slot *epStat;
+
+        /* Handlers. This is a dispatch table for messages, for
+         * each message id we have an entry containing the jk_handler_t.
+         * lastMessageId is the size of the table.
+         */
+        struct jk_handler **handlerTable;
+        int lastMessageId;
+
+        /* The vm - we support a single instance per process
+         * ( i.e can't have both jdk1.1 and jdk1.2 at the same time,
+         *  or 2 instances of the same vm. )
+         */
+        struct jk_vm *vm;
+
     /** Private data, associated with the 'real' server
      *  server_rec * in apache
      */
-    void *_private;
+        void *_private;
 
-    struct jk_mutex *cs;
+        struct jk_mutex *cs;
 
-    /* Global setting to enable counters on all requests.
-     *  That adds about 2-3 ms per request ( at least on linux ),
-     *  and will store average and max processing time per endpoint
-     *  ( that can be agregated per worker or per server ).
-     * Note that we can't collect per request times - it's not
-     * thread safe and sync is expensive. As workaround you
-     * can enable timers only on a specific request and/or
-     * use a dedicated worker/channel for that request.
-     */
-    int timing;
-    
-    /* -------------------- Methods -------------------- */
+        /* Global setting to enable counters on all requests.
+         *  That adds about 2-3 ms per request ( at least on linux ),
+         *  and will store average and max processing time per endpoint
+         *  ( that can be agregated per worker or per server ).
+         * Note that we can't collect per request times - it's not
+         * thread safe and sync is expensive. As workaround you
+         * can enable timers only on a specific request and/or
+         * use a dedicated worker/channel for that request.
+         */
+        int timing;
 
-    /* Register a callback handler, for methods from java to C
-     */
-    int (*registerHandler)(struct jk_env *env,
-                           struct jk_workerEnv *_this,
-                           const char *type, const char *name, int id,
-                           jk_handler_callback callback,
-                           char *signature);
+        /* -------------------- Methods -------------------- */
 
-    
-    int (*addWorker)(struct jk_env *env,
-                     struct jk_workerEnv *_this,
-                     struct jk_worker *w);
+        /* Register a callback handler, for methods from java to C
+         */
+        int (*registerHandler) (struct jk_env * env,
+                                struct jk_workerEnv * _this,
+                                const char *type, const char *name, int id,
+                                jk_handler_callback callback,
+                                char *signature);
 
-    int (*addChannel)(struct jk_env *env,
-                      struct jk_workerEnv *_this,
-                      struct jk_channel *w);
-    
+
+        int (*addWorker) (struct jk_env * env,
+                          struct jk_workerEnv * _this, struct jk_worker * w);
+
+        int (*addChannel) (struct jk_env * env,
+                           struct jk_workerEnv * _this,
+                           struct jk_channel * w);
+
     /** Add an endpoint. Endpoints are long lived and used to store
         statistics. The endpoint can be in used in only one thread
         at a time, it's a good way to avoid synchronization.
      */
-    int (*addEndpoint)(struct jk_env *env, struct jk_workerEnv *wEnv,
-                       struct jk_endpoint *ep);
+        int (*addEndpoint) (struct jk_env * env, struct jk_workerEnv * wEnv,
+                            struct jk_endpoint * ep);
 
-    int (*initChannel)(struct jk_env *env,
-                       struct jk_workerEnv *wEnv, struct jk_channel *ch);
-    
+        int (*initChannel) (struct jk_env * env,
+                            struct jk_workerEnv * wEnv,
+                            struct jk_channel * ch);
+
     /** Call the handler associated with the message type.
      */
-    int (*dispatch)(struct jk_env *env, struct jk_workerEnv *_this,
-                    void *target, struct jk_endpoint *ep, int code, struct jk_msg *msg);
+        int (*dispatch) (struct jk_env * env, struct jk_workerEnv * _this,
+                         void *target, struct jk_endpoint * ep, int code,
+                         struct jk_msg * msg);
 
     /** Utility method for stream-based workers. It'll read
      *  messages, dispatch, send the response if any until
@@ -264,10 +267,10 @@ struct jk_workerEnv {
      *  It does not work for jni or doors or other transports
      *  where a single thread is used for the whole processing.
      */
-    int (*processCallbacks)(struct jk_env *env,
-                            struct jk_workerEnv *_this,
-                            struct jk_endpoint *e,
-                            struct jk_ws_service *r );
+        int (*processCallbacks) (struct jk_env * env,
+                                 struct jk_workerEnv * _this,
+                                 struct jk_endpoint * e,
+                                 struct jk_ws_service * r);
 
     /**
      * Special init function to be called from the parent process
@@ -276,7 +279,7 @@ struct jk_workerEnv {
      *
      * init() will be called for each child, parentInit() only once.
      */
-    int (*parentInit)(struct jk_env *env, struct jk_workerEnv *_this);
+        int (*parentInit) (struct jk_env * env, struct jk_workerEnv * _this);
 
     /**
      *  Init the workers, prepare the worker environment. Will read
@@ -284,20 +287,20 @@ struct jk_workerEnv {
      * 
      *  Replaces wc_open
      */
-    int (*init)(struct jk_env *env, struct jk_workerEnv *_this);
+        int (*init) (struct jk_env * env, struct jk_workerEnv * _this);
 
     /** Close all workers, clean up
      *
      */
-    void (*close)(struct jk_env *env, struct jk_workerEnv *_this);
-};
+        void (*close) (struct jk_env * env, struct jk_workerEnv * _this);
+    };
 
 
-typedef struct jk_workerEnv jk_workerEnv_t;
+    typedef struct jk_workerEnv jk_workerEnv_t;
 
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_WORKERENV_H */
+#endif                          /* JK_WORKERENV_H */

@@ -45,52 +45,54 @@
 #include "jk_pool.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_uriMap;
-struct jk_map;
-struct jk_env;
-struct jk_pool;
-    
-typedef struct jk_uriMap jk_uriMap_t;
+    struct jk_uriMap;
+    struct jk_map;
+    struct jk_env;
+    struct jk_pool;
 
-struct jk_uriMap {
-    struct jk_bean *mbean;
+    typedef struct jk_uriMap jk_uriMap_t;
 
-    /* All mappings */
-    struct jk_map *maps;
+    struct jk_uriMap
+    {
+        struct jk_bean *mbean;
 
-    struct jk_workerEnv *workerEnv;
+        /* All mappings */
+        struct jk_map *maps;
 
-    /* Virtual host map. For each host and alias there is one
-     * entry, the value is a uriEnv that corresponds to the vhost top
-     * level.
-     */
-    struct jk_map *vhosts;
+        struct jk_workerEnv *workerEnv;
 
-    /* Virtual host map cache. Once processed the mapped host
-     * will be cached for performance reasons.
-     */
-    struct jk_map *vhcache;
+        /* Virtual host map. For each host and alias there is one
+         * entry, the value is a uriEnv that corresponds to the vhost top
+         * level.
+         */
+        struct jk_map *vhosts;
 
-    /* ---------- Methods ---------- */
+        /* Virtual host map cache. Once processed the mapped host
+         * will be cached for performance reasons.
+         */
+        struct jk_map *vhcache;
+
+        /* ---------- Methods ---------- */
 
     /** Initialize the map. This should be called after all workers
         were added. It'll check if mappings have valid workers.
     */
-    int (*init)( struct jk_env *env, jk_uriMap_t *_this);
+        int (*init) (struct jk_env * env, jk_uriMap_t *_this);
 
-    void (*destroy)( struct jk_env *env, jk_uriMap_t *_this );
-    
-    int (*addUriEnv)(struct jk_env *env,
-                     struct jk_uriMap *uriMap,
-                     struct jk_uriEnv *uriEnv);
+        void (*destroy) (struct jk_env * env, jk_uriMap_t *_this);
+
+        int (*addUriEnv) (struct jk_env * env,
+                          struct jk_uriMap * uriMap,
+                          struct jk_uriEnv * uriEnv);
 
     /** Check the uri for potential security problems
      */
-    int (*checkUri)( struct jk_env *env, jk_uriMap_t *_this,
-                     const char *uri );
+        int (*checkUri) (struct jk_env * env, jk_uriMap_t *_this,
+                         const char *uri);
 
     /** Mapping the uri. To be thread safe, we need to pass a pool.
         Or even better, create the jk_service structure already.
@@ -103,22 +105,21 @@ struct jk_uriMap {
         for other servers. 
     */
 
-    struct jk_uriEnv *(*mapUri)(struct jk_env *env, jk_uriMap_t *_this,
-                                const char *vhost,
-                                int port,
-                                const char *uri);
-    
-    /* -------------------- @deprecated -------------------- */
-    /* used by the mapper, temp storage ( ??? )*/
+        struct jk_uriEnv *(*mapUri) (struct jk_env * env, jk_uriMap_t *_this,
+                                     const char *vhost,
+                                     int port, const char *uri);
 
-    /* pool for mappings. Mappings will change at runtime, we can't
-     * recycle the main pool.
-    */
-    struct jk_pool  *pool;
-};
-    
+        /* -------------------- @deprecated -------------------- */
+        /* used by the mapper, temp storage ( ??? ) */
+
+        /* pool for mappings. Mappings will change at runtime, we can't
+         * recycle the main pool.
+         */
+        struct jk_pool *pool;
+    };
+
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_URI_MAP_H */
+#endif                          /* JK_URI_MAP_H */

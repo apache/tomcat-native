@@ -40,7 +40,6 @@
 #include <netdb.h>
 
 NETDB_DEFINE_CONTEXT
-
 /*
  * main ()
  *
@@ -51,10 +50,9 @@ NETDB_DEFINE_CONTEXT
  * Exit:
  *    Nothing
  */
-
-void main ()
+void main()
 {
-   ExitThread (TSR_THREAD, 0);
+    ExitThread(TSR_THREAD, 0);
 }
 #else /* __NOVELL_LIBC__ */
 
@@ -64,20 +62,16 @@ void main ()
 #include "novsock2.h"
 
 int _NonAppStart
-(
-    void        *NLMHandle,
-    void        *errorScreen,
-    const char  *cmdLine,
-    const char  *loadDirPath,
-    size_t      uninitializedDataLength,
-    void        *NLMFileHandle,
-    int         (*readRoutineP)( int conn, void *fileHandle, size_t offset,
-                    size_t nbytes, size_t *bytesRead, void *buffer ),
-    size_t      customDataOffset,
-    size_t      customDataSize,
-    int         messageCount,
-    const char  **messages
-)
+    (void *NLMHandle,
+     void *errorScreen,
+     const char *cmdLine,
+     const char *loadDirPath,
+     size_t uninitializedDataLength,
+     void *NLMFileHandle,
+     int (*readRoutineP) (int conn, void *fileHandle, size_t offset,
+                          size_t nbytes, size_t * bytesRead, void *buffer),
+     size_t customDataOffset,
+     size_t customDataSize, int messageCount, const char **messages)
 {
 #pragma unused(cmdLine)
 #pragma unused(loadDirPath)
@@ -90,18 +84,18 @@ int _NonAppStart
 #pragma unused(messages)
 
     WSADATA wsaData;
-    
+
     return WSAStartup((WORD) MAKEWORD(2, 0), &wsaData);
 }
 
-void _NonAppStop( void )
+void _NonAppStop(void)
 {
     WSACleanup();
 }
 
-int  _NonAppCheckUnload( void )
+int _NonAppCheckUnload(void)
 {
-	return 0;
+    return 0;
 }
 #endif /* __NOVELL_LIBC__ */
 

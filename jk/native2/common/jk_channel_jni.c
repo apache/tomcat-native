@@ -45,9 +45,10 @@ extern int jk_jni_status_code;
 
 /** Information specific for the socket channel
  */
-typedef struct {
+typedef struct
+{
     jk_vm_t *vm;
-    
+
     char *className;
     jclass jniBridge;
 
@@ -55,14 +56,15 @@ typedef struct {
     int status;
 } jk_channel_jni_private_t;
 
-typedef struct {
+typedef struct
+{
     JNIEnv *jniEnv;
 
     int len;
     jbyteArray jarray;
     char *carray;
     int arrayLen;
-    
+
     jobject jniJavaContext;
 /*     jobject msgJ; */
 } jk_ch_jni_ep_private_t;
@@ -76,27 +78,26 @@ typedef struct {
 */
 
 #if defined(AS400) || defined(_OSD_POSIX)
-#define SSTRDUP_ASCII(e, s) ((e)->tmpPool->pstrdup2ascii(e, (e)->tmpPool, s)) 
+#define SSTRDUP_ASCII(e, s) ((e)->tmpPool->pstrdup2ascii(e, (e)->tmpPool, s))
 #else
-#define SSTRDUP_ASCII(e, s) (s) 
+#define SSTRDUP_ASCII(e, s) (s)
 #endif
 
-static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
-                                          jk_bean_t *jniWB)
+static int JK_METHOD jk2_channel_jni_init(jk_env_t *env, jk_bean_t *jniWB)
 {
-    jk_channel_t *jniW=jniWB->object;
-    jk_workerEnv_t *wEnv=jniW->workerEnv;
+    jk_channel_t *jniW = jniWB->object;
+    jk_workerEnv_t *wEnv = jniW->workerEnv;
 
     if (wEnv->childId != 0) {
-        if( jniW->worker != NULL )
-            jniW->worker->mbean->disabled=JK_TRUE;
+        if (jniW->worker != NULL)
+            jniW->worker->mbean->disabled = JK_TRUE;
         return JK_ERR;
     }
-    if( wEnv->vm == NULL ) {
+    if (wEnv->vm == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel_jni.init() no VM found\n" );
-        if( jniW->worker != NULL ) {
-            jniW->worker->mbean->disabled=JK_TRUE;
+                      "channel_jni.init() no VM found\n");
+        if (jniW->worker != NULL) {
+            jniW->worker->mbean->disabled = JK_TRUE;
         }
         return JK_ERR;
     }
@@ -109,13 +110,12 @@ static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
 static int JK_METHOD jk2_channel_jni_hasinput(jk_env_t *env,
                                               jk_channel_t *ch,
                                               jk_endpoint_t *endpoint,
-											  int timeout)
-
+                                              int timeout)
 {
-	/*
-	 * No delay in such case
-	 */
-	return (JK_TRUE) ;
+    /*
+     * No delay in such case
+     */
+    return (JK_TRUE);
 }
 
 
@@ -126,45 +126,45 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
                                           jk_channel_t *_this,
                                           jk_endpoint_t *endpoint)
 {
-    jk_workerEnv_t *we=endpoint->worker->workerEnv;
+    jk_workerEnv_t *we = endpoint->worker->workerEnv;
     JNIEnv *jniEnv;
     jk_ch_jni_ep_private_t *epData;
     jmethodID jmethod;
     jobject jobj;
     jstring jstr;
 
-    jk_channel_jni_private_t *jniCh=_this->_privatePtr;
+    jk_channel_jni_private_t *jniCh = _this->_privatePtr;
 
-    if( endpoint->channelData != NULL ) {
+    if (endpoint->channelData != NULL) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel_jni.open() already open, nothing else to do\n"); 
+                      "channel_jni.open() already open, nothing else to do\n");
         return JK_OK;
     }
-    
-    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.open():  \n" );
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "channel_jni.open():  \n");
 
     /* It is useless to continue if the channel worker 
        does not exist.
      */
-    if( _this->worker == NULL ) {
+    if (_this->worker == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channel_jni.open()  NullPointerException, no channel worker found\n"); 
-        return JK_ERR;
-    }
-    
-    jniCh->vm=(jk_vm_t *)we->vm;
-    if( jniCh->vm == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channel_jni.open() no VM found\n" ); 
-        _this->worker->mbean->disabled=JK_TRUE;
+                      "channel_jni.open()  NullPointerException, no channel worker found\n");
         return JK_ERR;
     }
 
-    jniEnv = (JNIEnv *)jniCh->vm->attach( env, jniCh->vm );
-    if( jniEnv == NULL ) {
+    jniCh->vm = (jk_vm_t *) we->vm;
+    if (jniCh->vm == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channel_jni.open() can't attach\n" ); 
-        _this->worker->mbean->disabled=JK_TRUE;
+                      "channel_jni.open() no VM found\n");
+        _this->worker->mbean->disabled = JK_TRUE;
+        return JK_ERR;
+    }
+
+    jniEnv = (JNIEnv *) jniCh->vm->attach(env, jniCh->vm);
+    if (jniEnv == NULL) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "channel_jni.open() can't attach\n");
+        _this->worker->mbean->disabled = JK_TRUE;
         return JK_ERR;
     }
     /* Create the buffers used by the write method. We allocate a
@@ -173,29 +173,31 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
 
        This will be tuned if needed, for now it seems the easiest
        solution
-    */
-    epData=(jk_ch_jni_ep_private_t *)
-        endpoint->mbean->pool->calloc( env,endpoint->mbean->pool,
-                                       sizeof( jk_ch_jni_ep_private_t ));
-    
-    endpoint->channelData=epData;
+     */
+    epData = (jk_ch_jni_ep_private_t *)
+        endpoint->mbean->pool->calloc(env, endpoint->mbean->pool,
+                                      sizeof(jk_ch_jni_ep_private_t));
+
+    endpoint->channelData = epData;
 
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
-    jniCh->jniBridge = (*jniEnv)->FindClass(jniEnv, SSTRDUP_ASCII(env, jniCh->className) );
-    
-    if( jniCh->jniBridge == NULL ) {
+    jniCh->jniBridge =
+        (*jniEnv)->FindClass(jniEnv, SSTRDUP_ASCII(env, jniCh->className));
+
+    if (jniCh->jniBridge == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channel_jni.open() can't find %s\n",jniCh->className ); 
-        _this->worker->mbean->disabled=JK_TRUE;
+                      "channel_jni.open() can't find %s\n", jniCh->className);
+        _this->worker->mbean->disabled = JK_TRUE;
         return JK_ERR;
     }
 
-    jniCh->jniBridge=(*jniEnv)->NewGlobalRef( jniEnv, jniCh->jniBridge);
+    jniCh->jniBridge = (*jniEnv)->NewGlobalRef(jniEnv, jniCh->jniBridge);
 
-    if( jniCh->jniBridge == NULL ) {
+    if (jniCh->jniBridge == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channel_jni.open() Unable to allocate globalref for %s\n",jniCh->className ); 
-        _this->worker->mbean->disabled=JK_TRUE;
+                      "channel_jni.open() Unable to allocate globalref for %s\n",
+                      jniCh->className);
+        _this->worker->mbean->disabled = JK_TRUE;
         return JK_ERR;
     }
 
@@ -205,92 +207,99 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
 
        The pattern used for callback works for our message forwarding but also for
        other things - like singnals, etc
-    */
+     */
 
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
-    jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
-                 SSTRDUP_ASCII(env, "createJavaContext"), 
-                 SSTRDUP_ASCII(env, "(Ljava/lang/String;J)Ljava/lang/Object;"));
+    jmethod = (*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
+                                           SSTRDUP_ASCII(env,
+                                                         "createJavaContext"),
+                                           SSTRDUP_ASCII(env,
+                                                         "(Ljava/lang/String;J)Ljava/lang/Object;"));
 
-    if( jmethod == NULL ) {
+    if (jmethod == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channel_jni.open() can't find createJavaContext\n"); 
-        _this->worker->mbean->disabled=JK_TRUE;
+                      "channel_jni.open() can't find createJavaContext\n");
+        _this->worker->mbean->disabled = JK_TRUE;
 
-        if( (*jniEnv)->ExceptionCheck( jniEnv ) ) {
-            (*jniEnv)->ExceptionClear( jniEnv );
+        if ((*jniEnv)->ExceptionCheck(jniEnv)) {
+            (*jniEnv)->ExceptionClear(jniEnv);
         }
         return JK_ERR;
     }
-    
-    /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
-    jstr=(*jniEnv)->NewStringUTF(jniEnv, SSTRDUP_ASCII(env, "channelJni" ));
-    
-    jobj=(*jniEnv)->CallStaticObjectMethod( jniEnv, jniCh->jniBridge,
-                                            jmethod,
-                                            jstr, 
-                                            (jlong)(long)(void *)endpoint->mbean );
 
-    if( jobj  == NULL ) {
+    /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
+    jstr = (*jniEnv)->NewStringUTF(jniEnv, SSTRDUP_ASCII(env, "channelJni"));
+
+    jobj = (*jniEnv)->CallStaticObjectMethod(jniEnv, jniCh->jniBridge,
+                                             jmethod,
+                                             jstr,
+                                             (jlong) (long)(void *)endpoint->
+                                             mbean);
+
+    if (jobj == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channel_jni.open() Can't create java context\n" ); 
-        epData->jniJavaContext=NULL;
-        _this->worker->mbean->disabled=JK_TRUE;
-        if( (*jniEnv)->ExceptionCheck( jniEnv ) ) {
-            (*jniEnv)->ExceptionClear( jniEnv );
+                      "channel_jni.open() Can't create java context\n");
+        epData->jniJavaContext = NULL;
+        _this->worker->mbean->disabled = JK_TRUE;
+        if ((*jniEnv)->ExceptionCheck(jniEnv)) {
+            (*jniEnv)->ExceptionClear(jniEnv);
         }
         return JK_ERR;
     }
-    epData->jniJavaContext=(*jniEnv)->NewGlobalRef( jniEnv, jobj );
+    epData->jniJavaContext = (*jniEnv)->NewGlobalRef(jniEnv, jobj);
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_jni.open() Got ep %#lx %#lx\n", jobj, epData->jniJavaContext ); 
+                  "channel_jni.open() Got ep %#lx %#lx\n", jobj,
+                  epData->jniJavaContext);
 
     /* XXX Destroy them in close */
-    
+
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
-    jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
-                                         SSTRDUP_ASCII(env, "getBuffer"),
-                                         SSTRDUP_ASCII(env, "(Ljava/lang/Object;I)[B"));
-    if( jmethod == NULL ) {
+    jmethod = (*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
+                                           SSTRDUP_ASCII(env, "getBuffer"),
+                                           SSTRDUP_ASCII(env,
+                                                         "(Ljava/lang/Object;I)[B"));
+    if (jmethod == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channel_jni.open() can't find getBuffer\n"); 
-        _this->worker->mbean->disabled=JK_TRUE;
+                      "channel_jni.open() can't find getBuffer\n");
+        _this->worker->mbean->disabled = JK_TRUE;
         return JK_ERR;
     }
 
-    epData->jarray=(*jniEnv)->CallStaticObjectMethod( jniEnv, jniCh->jniBridge,
-                                                      jmethod,
-                                                      epData->jniJavaContext, 0);
+    epData->jarray =
+        (*jniEnv)->CallStaticObjectMethod(jniEnv, jniCh->jniBridge, jmethod,
+                                          epData->jniJavaContext, 0);
 
-    epData->jarray=(*jniEnv)->NewGlobalRef( jniEnv, epData->jarray );
+    epData->jarray = (*jniEnv)->NewGlobalRef(jniEnv, epData->jarray);
 
-    epData->arrayLen = (*jniEnv)->GetArrayLength( jniEnv, epData->jarray );
-    
+    epData->arrayLen = (*jniEnv)->GetArrayLength(jniEnv, epData->jarray);
+
     /* XXX > ajp buffer size. Don't know how to fragment or reallocate
        yet */
-    epData->carray=(char *)endpoint->mbean->pool->calloc( env, endpoint->mbean->pool,
-                                                          epData->arrayLen);
+    epData->carray =
+        (char *)endpoint->mbean->pool->calloc(env, endpoint->mbean->pool,
+                                              epData->arrayLen);
 
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
     jniCh->writeMethod =
         (*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
                                      SSTRDUP_ASCII(env, "jniInvoke"),
-                                     SSTRDUP_ASCII(env, "(JLjava/lang/Object;)I"));
-    
-    if( jniCh->writeMethod == NULL ) {
+                                     SSTRDUP_ASCII(env,
+                                                   "(JLjava/lang/Object;)I"));
+
+    if (jniCh->writeMethod == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "channel_jni.open() can't find jniInvoke\n"); 
-        
-        _this->worker->mbean->disabled=JK_TRUE;
+                      "channel_jni.open() can't find jniInvoke\n");
+
+        _this->worker->mbean->disabled = JK_TRUE;
         return JK_ERR;
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_jni.open() found write method, open ok\n" ); 
+                  "channel_jni.open() found write method, open ok\n");
 
-    _this->worker->mbean->disabled=JK_FALSE;
-    
+    _this->worker->mbean->disabled = JK_FALSE;
+
     /* Don't detach ( XXX Need to find out when the thread is
      *  closing in order for this to work )
      */
@@ -301,38 +310,37 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
 
 /** 
  */
-static int JK_METHOD jk2_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
+static int JK_METHOD jk2_channel_jni_close(jk_env_t *env, jk_channel_t *_this,
                                            jk_endpoint_t *endpoint)
 {
     jk_ch_jni_ep_private_t *epData;
     JNIEnv *jniEnv;
-    jk_channel_jni_private_t *jniCh=_this->_privatePtr;
-    epData=(jk_ch_jni_ep_private_t *)endpoint->channelData;
+    jk_channel_jni_private_t *jniCh = _this->_privatePtr;
+    epData = (jk_ch_jni_ep_private_t *) endpoint->channelData;
 
     if (epData == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel_jni.close() no channel data\n" ); 
+                      "channel_jni.close() no channel data\n");
         return JK_ERR;
     }
-    jniEnv = (JNIEnv *)jniCh->vm->attach( env, jniCh->vm );
+    jniEnv = (JNIEnv *) jniCh->vm->attach(env, jniCh->vm);
 
-    if( jniEnv == NULL ) {
+    if (jniEnv == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel_jni.close() can't attach\n" ); 
+                      "channel_jni.close() can't attach\n");
         return JK_ERR;
     }
-    if( epData->jarray != NULL ){
-        (*jniEnv)->DeleteGlobalRef( jniEnv, epData->jarray );
+    if (epData->jarray != NULL) {
+        (*jniEnv)->DeleteGlobalRef(jniEnv, epData->jarray);
     }
-    if( epData->jniJavaContext != NULL){
-        (*jniEnv)->DeleteGlobalRef( jniEnv, epData->jniJavaContext );
+    if (epData->jniJavaContext != NULL) {
+        (*jniEnv)->DeleteGlobalRef(jniEnv, epData->jniJavaContext);
     }
-    
-    jniCh->vm->detach( env, jniCh->vm );
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_jni.close() ok\n" ); 
 
-    endpoint->channelData=NULL;
+    jniCh->vm->detach(env, jniCh->vm);
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "channel_jni.close() ok\n");
+
+    endpoint->channelData = NULL;
     return JK_OK;
 
 }
@@ -350,67 +358,71 @@ static int JK_METHOD jk2_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
  */
 static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
                                           jk_endpoint_t *endpoint,
-                                          jk_msg_t *msg) 
+                                          jk_msg_t *msg)
 {
 /*    int sd; */
-    int  sent=0;
+    int sent = 0;
     char *b;
     int len;
     jbyte *nbuf;
     jbyteArray jbuf;
-    int jlen=0;
-    jboolean iscopy=0;
+    int jlen = 0;
+    jboolean iscopy = 0;
     JNIEnv *jniEnv;
-    jk_channel_jni_private_t *jniCh=_this->_privatePtr;
-    jk_ch_jni_ep_private_t *epData=
-        (jk_ch_jni_ep_private_t *)endpoint->channelData;
+    jk_channel_jni_private_t *jniCh = _this->_privatePtr;
+    jk_ch_jni_ep_private_t *epData =
+        (jk_ch_jni_ep_private_t *) endpoint->channelData;
 
-    if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,"channel_jni.send() %#lx\n", epData ); 
+    if (_this->mbean->debug > 0)
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "channel_jni.send() %#lx\n",
+                      epData);
 
-    if( epData == NULL ) {
-        jk2_channel_jni_open( env, _this, endpoint );
-        epData=(jk_ch_jni_ep_private_t *)endpoint->channelData;
+    if (epData == NULL) {
+        jk2_channel_jni_open(env, _this, endpoint);
+        epData = (jk_ch_jni_ep_private_t *) endpoint->channelData;
     }
-    if( epData == NULL ){
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,"channel_jni.send() error opening channel\n" ); 
+    if (epData == NULL) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "channel_jni.send() error opening channel\n");
         return JK_ERR;
     }
-    if( epData->jniJavaContext == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,"channel_jni.send() no java context\n" ); 
-        jk2_channel_jni_close( env, _this, endpoint );
+    if (epData->jniJavaContext == NULL) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "channel_jni.send() no java context\n");
+        jk2_channel_jni_close(env, _this, endpoint);
         return JK_ERR;
     }
 
-    msg->end( env, msg );
-    len=msg->len;
-    b=msg->buf;
+    msg->end(env, msg);
+    len = msg->len;
+    b = msg->buf;
 
-    if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,"channel_jni.send() (1) %#lx\n", epData ); 
+    if (_this->mbean->debug > 0)
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "channel_jni.send() (1) %#lx\n", epData);
 
-    jniEnv=NULL; /* epData->jniEnv; */
-    jbuf=epData->jarray;
+    jniEnv = NULL;              /* epData->jniEnv; */
+    jbuf = epData->jarray;
 
-    if( jniCh->writeMethod == NULL ) {
+    if (jniCh->writeMethod == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "channel_jni.send() no write method\n" ); 
+                      "channel_jni.send() no write method\n");
         return JK_ERR;
     }
-    if( jniEnv==NULL ) {
+    if (jniEnv == NULL) {
         /* Try first getEnv, then attach */
-        jniEnv = (JNIEnv *)jniCh->vm->attach( env, jniCh->vm );
-        if( jniEnv == NULL ) {
+        jniEnv = (JNIEnv *) jniCh->vm->attach(env, jniCh->vm);
+        if (jniEnv == NULL) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "channel_jni.send() can't attach\n" ); 
+                          "channel_jni.send() can't attach\n");
             return JK_ERR;
         }
     }
 
-    if( _this->mbean->debug > 0 )
+    if (_this->mbean->debug > 0)
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                      "channel_jni.send() getting byte array \n" );
-    
+                      "channel_jni.send() getting byte array \n");
+
     /* Copy the data in the ( recycled ) jbuf, then call the
      *  write method. XXX We could try 'pining' if the vm supports
      *  it, this is a looong lived object.
@@ -419,37 +431,37 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     nbuf = (*jniEnv)->GetPrimitiveArrayCritical(jniEnv, jbuf, &iscopy);
 #else
     nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscopy);
- #endif
-    if( iscopy )
+#endif
+    if (iscopy)
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channelJni.send() get java bytes iscopy %d\n", iscopy);
-    
-    if(nbuf==NULL ) {
+
+    if (nbuf == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channelJni.send() Can't get java bytes");
         return JK_ERR;
     }
 
-    memcpy( nbuf, b, len );
+    memcpy(nbuf, b, len);
 
 #ifdef JK_JNI_CRITICAL
     (*jniEnv)->ReleasePrimitiveArrayCritical(jniEnv, jbuf, nbuf, 0);
 #else
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
-#endif    
-    if( _this->mbean->debug > 0 )
+#endif
+    if (_this->mbean->debug > 0)
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channel_jni.send() before send %#lx\n",
-                      (void *)(long)epData->jniJavaContext); 
-    
-    sent=(*jniEnv)->CallStaticIntMethod( jniEnv,
-                                         jniCh->jniBridge, 
-                                         jniCh->writeMethod,
-                                         (jlong)(long)(void *)env,
-                                         epData->jniJavaContext );
-    if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,"channel_jni.send() result %d\n",
-                      sent); 
+                      (void *)(long)epData->jniJavaContext);
+
+    sent = (*jniEnv)->CallStaticIntMethod(jniEnv,
+                                          jniCh->jniBridge,
+                                          jniCh->writeMethod,
+                                          (jlong) (long)(void *)env,
+                                          epData->jniJavaContext);
+    if (_this->mbean->debug > 0)
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "channel_jni.send() result %d\n", sent);
     return JK_OK;
 }
 
@@ -460,37 +472,37 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
  * receive and dispatch.
  */
 static int JK_METHOD jk2_channel_jni_recv(jk_env_t *env, jk_channel_t *_this,
-                                         jk_endpoint_t *endpoint,
-                                         jk_msg_t *msg) 
+                                          jk_endpoint_t *endpoint,
+                                          jk_msg_t *msg)
 {
 /*    jbyte *nbuf; */
 /*    jbyteArray jbuf; */
 /*    int jlen; */
 /*    jboolean iscommit;     */
-    jk_channel_jni_private_t *jniCh=_this->_privatePtr;
+    jk_channel_jni_private_t *jniCh = _this->_privatePtr;
 
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
                   "channelJni.recv() method not supported for JNI channel\n");
     return -1;
 
     /* Old workaround:
-       
-    nbuf=(jbyte *)endpoint->currentData;
-    
-    if(nbuf==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelJni.recv() no jbyte[] was received\n");
-        return -1;
-    }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelJni.recv() receiving %d\n", len);
+       nbuf=(jbyte *)endpoint->currentData;
 
-    memcpy( b, nbuf + endpoint->currentOffset, len );
-    endpoint->currentOffset += len;
-    
-    return len;
-    */
+       if(nbuf==NULL ) {
+       env->l->jkLog(env, env->l, JK_LOG_INFO,
+       "channelJni.recv() no jbyte[] was received\n");
+       return -1;
+       }
+
+       env->l->jkLog(env, env->l, JK_LOG_INFO,
+       "channelJni.recv() receiving %d\n", len);
+
+       memcpy( b, nbuf + endpoint->currentOffset, len );
+       endpoint->currentOffset += len;
+
+       return len;
+     */
 }
 
 
@@ -501,12 +513,13 @@ int JK_METHOD jk2_channel_jni_beforeRequest(struct jk_env *env,
                                             jk_channel_t *_this,
                                             struct jk_worker *worker,
                                             struct jk_endpoint *endpoint,
-                                            struct jk_ws_service *r )
+                                            struct jk_ws_service *r)
 {
-    jk_workerEnv_t *we=worker->workerEnv;
+    jk_workerEnv_t *we = worker->workerEnv;
 
-    if( worker->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "service() attaching to vm\n");
+    if (worker->mbean->debug > 0)
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "service() attaching to vm\n");
 
     return JK_OK;
 }
@@ -514,14 +527,14 @@ int JK_METHOD jk2_channel_jni_beforeRequest(struct jk_env *env,
 /** Called after request processing. Used to be worker.done()
  */
 int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
-                                          jk_channel_t *_this,
-                                          struct jk_worker *worker,
-                                          struct jk_endpoint *endpoint,
-                                          struct jk_ws_service *r )
+                                           jk_channel_t *_this,
+                                           struct jk_worker *worker,
+                                           struct jk_endpoint *endpoint,
+                                           struct jk_ws_service *r)
 {
-    jk_workerEnv_t *we=worker->workerEnv;
+    jk_workerEnv_t *we = worker->workerEnv;
 
-    if( we==NULL || we->vm==NULL) {
+    if (we == NULL || we->vm == NULL) {
         return JK_OK;
     }
     /* 
@@ -529,32 +542,32 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
      * XXX Remove calling this function from ajp13 worker?
      */
     if (endpoint == NULL)
-        we->vm->detach( env, we->vm );
-    if( worker->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+        we->vm->detach(env, we->vm);
+    if (worker->mbean->debug > 0)
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelJni.afterRequest() ok\n");
     return JK_OK;
 }
 
 static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
-                                                    jk_bean_t *mbean, 
-                                                    char *name, void *valueP)
+                                                 jk_bean_t *mbean,
+                                                 char *name, void *valueP)
 {
-    jk_channel_t *ch=(jk_channel_t *)mbean->object;
-    char *value=valueP;
-    jk_channel_jni_private_t *jniInfo=
-        (jk_channel_jni_private_t *)(ch->_privatePtr);
+    jk_channel_t *ch = (jk_channel_t *)mbean->object;
+    char *value = valueP;
+    jk_channel_jni_private_t *jniInfo =
+        (jk_channel_jni_private_t *) (ch->_privatePtr);
 
-    if( strcmp( "class", name ) == 0 ) {
-        jniInfo->className=value;
+    if (strcmp("class", name) == 0) {
+        jniInfo->className = value;
     }
     /* TODO: apache protocol hooks
-    else if( strcmp( "xxxx", name ) == 0 ) {
-        jniInfo->xxxx=value;
-    } 
-    */
+       else if( strcmp( "xxxx", name ) == 0 ) {
+       jniInfo->xxxx=value;
+       } 
+     */
     else {
-        return jk2_channel_setAttribute( env, mbean, name, valueP );
+        return jk2_channel_setAttribute(env, mbean, name, valueP);
     }
     return JK_OK;
 }
@@ -562,23 +575,25 @@ static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
 /** Called by java. Will take the msg and dispatch it to workerEnv, as if it would
  *  be if received via socket
  */
-int JK_METHOD jk2_channel_jni_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep, int code,
+int JK_METHOD jk2_channel_jni_invoke(jk_env_t *env, jk_bean_t *bean,
+                                     jk_endpoint_t *ep, int code,
                                      jk_msg_t *msg, int raw)
 {
-    jk_channel_t *ch=(jk_channel_t *)bean->object;
-    int rc=JK_OK;
+    jk_channel_t *ch = (jk_channel_t *)bean->object;
+    int rc = JK_OK;
 
-    if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                      "ch.%d() \n", code);
-    
+    if (ch->mbean->debug > 0)
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.%d() \n", code);
+
     code = (int)msg->getByte(env, msg);
 
-    if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,"channelJni.java2cInvoke() %d\n", code);
+    if (ch->mbean->debug > 0)
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "channelJni.java2cInvoke() %d\n", code);
 
-    return ep->worker->workerEnv->dispatch( env, ep->worker->workerEnv,
-                                            ep->currentRequest, ep, code, ep->reply );
+    return ep->worker->workerEnv->dispatch(env, ep->worker->workerEnv,
+                                           ep->currentRequest, ep, code,
+                                           ep->reply);
 }
 
 static int JK_METHOD jk2_channel_jni_status(jk_env_t *env,
@@ -586,8 +601,8 @@ static int JK_METHOD jk2_channel_jni_status(jk_env_t *env,
                                             jk_channel_t *_this)
 {
 
-    jk_channel_jni_private_t *jniCh=_this->_privatePtr;
-    if ( jniCh->status != JNI_TOMCAT_STARTED) {
+    jk_channel_jni_private_t *jniCh = _this->_privatePtr;
+    if (jniCh->status != JNI_TOMCAT_STARTED) {
         jniCh->status = jk_jni_status_code;
         if (jniCh->status != JNI_TOMCAT_STARTED)
             return JK_ERR;
@@ -596,55 +611,57 @@ static int JK_METHOD jk2_channel_jni_status(jk_env_t *env,
 }
 
 
-int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool, 
+int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
                                       jk_bean_t *result,
                                       const char *type, const char *name)
 {
-    jk_channel_t *ch=result->object;
+    jk_channel_t *ch = result->object;
     jk_workerEnv_t *wEnv;
     jk_channel_jni_private_t *jniPrivate;
 
 
-    wEnv = env->getByName( env, "workerEnv" );
-    ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
-    
-    ch->recv= jk2_channel_jni_recv;
-    ch->send= jk2_channel_jni_send; 
-    ch->open= jk2_channel_jni_open; 
-    ch->close= jk2_channel_jni_close; 
-    ch->hasinput= jk2_channel_jni_hasinput; 
+    wEnv = env->getByName(env, "workerEnv");
+    ch = (jk_channel_t *)pool->calloc(env, pool, sizeof(jk_channel_t));
 
-    ch->beforeRequest= jk2_channel_jni_beforeRequest;
-    ch->afterRequest= jk2_channel_jni_afterRequest;
+    ch->recv = jk2_channel_jni_recv;
+    ch->send = jk2_channel_jni_send;
+    ch->open = jk2_channel_jni_open;
+    ch->close = jk2_channel_jni_close;
+    ch->hasinput = jk2_channel_jni_hasinput;
+
+    ch->beforeRequest = jk2_channel_jni_beforeRequest;
+    ch->afterRequest = jk2_channel_jni_afterRequest;
     ch->status = jk2_channel_jni_status;
 
-    ch->_privatePtr=jniPrivate=(jk_channel_jni_private_t *)pool->calloc(env, pool,
-                                sizeof(jk_channel_jni_private_t));
+    ch->_privatePtr = jniPrivate =
+        (jk_channel_jni_private_t *) pool->calloc(env, pool,
+                                                  sizeof
+                                                  (jk_channel_jni_private_t));
 
     jniPrivate->className = JAVA_BRIDGE_CLASS_NAME;
-    ch->is_stream=JK_FALSE;
+    ch->is_stream = JK_FALSE;
 
     /* No special attribute */
-    result->setAttribute= jk2_channel_jni_setProperty;
-    ch->mbean=result;
-    result->object= ch;
-    result->init= jk2_channel_jni_init; 
+    result->setAttribute = jk2_channel_jni_setProperty;
+    ch->mbean = result;
+    result->object = ch;
+    result->init = jk2_channel_jni_init;
 
-    ch->workerEnv=wEnv;
-    wEnv->addChannel( env, wEnv, ch );
+    ch->workerEnv = wEnv;
+    wEnv->addChannel(env, wEnv, ch);
 
-    result->invoke=jk2_channel_jni_invoke;
+    result->invoke = jk2_channel_jni_invoke;
 
     return JK_OK;
 }
 
 #else
 
-int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool, 
+int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
                                       jk_bean_t *result,
                                       const char *type, const char *name)
 {
-    result->disabled=1;
+    result->disabled = 1;
     return JK_OK;
 }
 

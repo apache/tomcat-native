@@ -30,19 +30,20 @@
 #include "jk_map.h"
 
 #define JK2_MAXOPTIONS  64
-struct jk_vm {
+struct jk_vm
+{
     struct jk_bean *mbean;
-    
+
     /* General name/value properties
      */
     struct jk_map *properties;
-    
+
     struct jk_pool *pool;
     /** Should be JavaVM *, but we want this to be compilable
         without jni.h ( it'll be used to start out-of-process as
         well, same options and config
     */
-    void *jvm;   
+    void *jvm;
 
     /* Full path to the jni javai/jvm dll
      */
@@ -59,17 +60,17 @@ struct jk_vm {
     char *classpath[JK2_MAXOPTIONS];
 
     int nOptions;
-    
+
     int nClasspath;
     /** Create the VM, attach - don't execute anything
      */
-    int (*init)(struct jk_env *env, struct jk_vm *p );
+    int (*init) (struct jk_env * env, struct jk_vm * p);
 
-    void *(*attach)(struct jk_env *env, struct jk_vm *p);
+    void *(*attach) (struct jk_env * env, struct jk_vm * p);
 
-    void (*detach)(struct jk_env *env, struct jk_vm *p);
+    void (*detach) (struct jk_env * env, struct jk_vm * p);
 
-    void (*destroy)(struct jk_env *env, struct jk_vm *p);
+    void (*destroy) (struct jk_env * env, struct jk_vm * p);
 };
 
 typedef struct jk_vm jk_vm_t;

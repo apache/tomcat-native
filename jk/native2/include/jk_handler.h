@@ -39,8 +39,9 @@
 #include "jk_msg.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
 /* Return codes from the handler method
  */
@@ -75,35 +76,37 @@ extern "C" {
  */
 #define JK_HANDLER_FATAL     4
 
-struct jk_msg;
-struct jk_ws_service;
-struct jk_endpoint;
-struct jk_logger;
-struct jk_workerEnv;
-struct jk_env;
-    
-typedef int (JK_METHOD *jk_handler_callback)(struct jk_env *env,
-                                             void *target,
-                                             struct jk_endpoint *ae,
-                                             struct jk_msg *msg);
+    struct jk_msg;
+    struct jk_ws_service;
+    struct jk_endpoint;
+    struct jk_logger;
+    struct jk_workerEnv;
+    struct jk_env;
 
-struct jk_handler;
-typedef struct jk_handler jk_handler_t;
+    typedef int (JK_METHOD * jk_handler_callback) (struct jk_env * env,
+                                                   void *target,
+                                                   struct jk_endpoint * ae,
+                                                   struct jk_msg * msg);
 
-struct jk_handler {
-    struct jk_workerEnv *workerEnv;
+    struct jk_handler;
+    typedef struct jk_handler jk_handler_t;
 
-    char *name;
-    int messageId;
+    struct jk_handler
+    {
+        struct jk_workerEnv *workerEnv;
 
-    jk_handler_callback callback;
+        char *name;
+        int messageId;
 
-    int (JK_METHOD *init)( struct jk_env *env, struct jk_handler *handler,
-                 struct jk_workerEnv *workerEnv);
-};
-                                        
+        jk_handler_callback callback;
+
+        int (JK_METHOD * init) (struct jk_env * env,
+                                struct jk_handler * handler,
+                                struct jk_workerEnv * workerEnv);
+    };
+
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif 
+#endif

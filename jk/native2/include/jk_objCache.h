@@ -24,20 +24,22 @@
 #include "jk_msg.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_env;
-struct jk_objCache;
-struct jk_logger;
-struct jk_pool;
-typedef struct jk_objCache jk_objCache_t;
+    struct jk_env;
+    struct jk_objCache;
+    struct jk_logger;
+    struct jk_pool;
+    typedef struct jk_objCache jk_objCache_t;
 
 #define JK_OBJCACHE_DEFAULT_SZ          (128)
 
-    
-jk_objCache_t *jk2_objCache_create(struct jk_env *env, struct jk_pool *pool );
-    
+
+    jk_objCache_t *jk2_objCache_create(struct jk_env *env,
+                                       struct jk_pool *pool);
+
 /**
  * Simple object cache ( or pool for java people - don't confuse with the
  *  mem pool ).
@@ -51,40 +53,42 @@ jk_objCache_t *jk2_objCache_create(struct jk_env *env, struct jk_pool *pool );
  * Author:      Henri Gomez <hgomez@apache.org>
  * Author:      Costin Manolache
 */
-struct jk_objCache {
+    struct jk_objCache
+    {
     /** Return an object to the pool.
      *  @return JK_FALSE the object can't be taken back, caller must free it.
      */
-    int (*put)(struct jk_env *env, jk_objCache_t *_this, void *obj);
+        int (*put) (struct jk_env * env, jk_objCache_t *_this, void *obj);
 
-    void *(*get)(struct jk_env *env, jk_objCache_t *_this);
+        void *(*get) (struct jk_env * env, jk_objCache_t *_this);
 
-    int (*init)(struct jk_env *env, jk_objCache_t *_this, int cacheSize);
+        int (*init) (struct jk_env * env, jk_objCache_t *_this,
+                     int cacheSize);
 
-    int (*destroy)(struct jk_env *env, jk_objCache_t *_this);
+        int (*destroy) (struct jk_env * env, jk_objCache_t *_this);
 
     /** Cache max size. -1 for unbound ( i.e. growing ). */
-    int maxSize;
+        int maxSize;
 
-    /* Current size of the table */
-    int size;
+        /* Current size of the table */
+        int size;
 
     /** Number of elements in the cache.
      *  Postition where next element will be inserted.
      */
-    int count;
+        int count;
 
-    /* Sync.
-     */
-    struct jk_mutex *cs;
+        /* Sync.
+         */
+        struct jk_mutex *cs;
 
     /** Objects in the cache */
-    void **data;
-    struct jk_pool *pool;
-};
-    
+        void **data;
+        struct jk_pool *pool;
+    };
+
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif 
+#endif

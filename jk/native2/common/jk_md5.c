@@ -34,32 +34,33 @@
  * corresponding call or have a ebcdic2ascii() functions somewhere.
  * For example current AS/400 have MD5 encoding support APIs but olders not....
  */
- 
+
 #include "jk_global.h"
 #include "jk_env.h"
 #include "jk_md5.h"
 #include "apr_md5.h"
 
-char * JK_METHOD jk2_hextocstr(unsigned char *org, char * dst, int n)
+char *JK_METHOD jk2_hextocstr(unsigned char *org, char *dst, int n)
 {
-    char * os = dst;
+    char *os = dst;
     unsigned char v;
     static unsigned char zitohex[] = "0123456789ABCDEF";
 
     while (--n >= 0) {
-    v = *org++;
-    *dst++ = zitohex[v >> 4];
-    *dst++ = zitohex[v&0x0f];
+        v = *org++;
+        *dst++ = zitohex[v >> 4];
+        *dst++ = zitohex[v & 0x0f];
     }
     *dst = 0;
 
     return (os);
 }
 
-char * JK_METHOD jk2_md5(const unsigned char *org, const unsigned char *org2, char *dst)
+char *JK_METHOD jk2_md5(const unsigned char *org, const unsigned char *org2,
+                        char *dst)
 {
     apr_md5_ctx_t ctx;
-    char          buf[JK_MD5_DIGESTSIZE + 1];
+    char buf[JK_MD5_DIGESTSIZE + 1];
 
     apr_md5_init(&ctx);
     apr_md5_update(&ctx, org, strlen(org));
@@ -83,7 +84,7 @@ char * JK_METHOD jk2_md5(const unsigned char *org, const unsigned char *org2, ch
 
 #ifdef TEST_JKMD5
 
-main(int argc, char ** argv)
+main(int argc, char **argv)
 {
     char xxx[(2 * JK_MD5_DIGESTSIZE) + 1];
 
@@ -91,4 +92,4 @@ main(int argc, char ** argv)
         printf("%s => %s\n", argv[1], jk2_md5(argv[1], NULL, xxx));
 }
 
-#endif 
+#endif

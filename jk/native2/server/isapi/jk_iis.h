@@ -28,8 +28,9 @@
 #include "jk_pool.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
 
 #define VERSION_STRING "Jakarta/ISAPI/2.0Dev"
@@ -107,36 +108,38 @@ extern "C" {
 }
 
 
-static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s );
+    static int JK_METHOD jk2_service_iis_head(jk_env_t *env,
+                                              jk_ws_service_t *s);
 
-static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
-                          void *b, unsigned len,
-                          unsigned *actually_read);
+    static int JK_METHOD jk2_service_iis_read(jk_env_t *env,
+                                              jk_ws_service_t *s, void *b,
+                                              unsigned len,
+                                              unsigned *actually_read);
 
-static int JK_METHOD jk2_service_iis_write(jk_env_t *env,jk_ws_service_t *s,
-                           const void *b,
-                           unsigned l);
+    static int JK_METHOD jk2_service_iis_write(jk_env_t *env,
+                                               jk_ws_service_t *s,
+                                               const void *b, unsigned l);
 
-static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_service_t *_this,
-                 struct jk_worker *w, void *serverObj );
+    static int JK_METHOD jk2_service_iis_init_ws_service(struct jk_env *env,
+                                                         jk_ws_service_t
+                                                         *_this,
+                                                         struct jk_worker *w,
+                                                         void *serverObj);
 
-int jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s);
+    int jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s);
 
-int get_server_value( LPEXTENSION_CONTROL_BLOCK lpEcb,
-                            char *name,
-                            char  *buf,
-                            DWORD bufsz,
-                            char  *def_val);
+    int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
+                         char *name, char *buf, DWORD bufsz, char *def_val);
 
-DWORD WINAPI HttpExtensionProcWorker(LPEXTENSION_CONTROL_BLOCK  lpEcb, 
-                                     jk_ws_service_t *service);
+    DWORD WINAPI HttpExtensionProcWorker(LPEXTENSION_CONTROL_BLOCK lpEcb,
+                                         jk_ws_service_t *service);
 
-int jk2_iis_init_pool(jk_env_t *env);
-int jk2_iis_thread_pool(LPEXTENSION_CONTROL_BLOCK lpEcb);
-int jk2_iis_close_pool(jk_env_t *env);
+    int jk2_iis_init_pool(jk_env_t *env);
+    int jk2_iis_thread_pool(LPEXTENSION_CONTROL_BLOCK lpEcb);
+    int jk2_iis_close_pool(jk_env_t *env);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
 #endif

@@ -38,17 +38,18 @@
 #include "jk_endpoint.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-    
-struct jk_ws_service;
-struct jk_endpoint;
-struct jk_worker;
-struct jk_workerEnv;
-struct jk_channel;
-struct jk_pool;
-struct jk_env;
-typedef struct jk_ws_service jk_ws_service_t;
+extern "C"
+{
+#endif                          /* __cplusplus */
+
+    struct jk_ws_service;
+    struct jk_endpoint;
+    struct jk_worker;
+    struct jk_workerEnv;
+    struct jk_channel;
+    struct jk_pool;
+    struct jk_env;
+    typedef struct jk_ws_service jk_ws_service_t;
 
 /*
  * Request methods, coded as numbers instead of strings.
@@ -126,214 +127,217 @@ typedef struct jk_ws_service jk_ws_service_t;
  *
  * See apache1.3/mod_jk2.c and iis/jk_isapi_plugin.c for examples.  
  */
-struct jk_ws_service {
-    struct jk_workerEnv *workerEnv;
+    struct jk_ws_service
+    {
+        struct jk_workerEnv *workerEnv;
 
-    /* JK_TRUE if a 'recoverable' error happened. That means a
-     * lb worker can retry on a different worker, without
-     * loosing any information. If JK_FALSE, an error will be reported
-     * to the client
-     */
-    int is_recoverable_error;
+        /* JK_TRUE if a 'recoverable' error happened. That means a
+         * lb worker can retry on a different worker, without
+         * loosing any information. If JK_FALSE, an error will be reported
+         * to the client
+         */
+        int is_recoverable_error;
 
-    struct jk_worker *realWorker;
-    
-    /* 
-     * A 'this' pointer which is used by the subclasses of this class to
-     * point to data which is specific to a given web server platform
-     * (e.g. Apache or IIS).  
-     */
-    void *ws_private;
+        struct jk_worker *realWorker;
 
-    int response_started;
-    int read_body_started;
-    
-    /*
-     * Provides memory management.  All data specific to this request is
-     * allocated within this pool, which can then be reclaimed at the end
-     * of the request handling cycle. 
-     *
-     * Alive as long as the request is alive.
-     * You can use endpoint pool for communication - it is recycled.
-     */
-    struct jk_pool *pool;
+        /* 
+         * A 'this' pointer which is used by the subclasses of this class to
+         * point to data which is specific to a given web server platform
+         * (e.g. Apache or IIS).  
+         */
+        void *ws_private;
 
-    /* Result of the mapping
-     */
-    
-    struct jk_uriEnv *uriEnv;
-    /* 
-     * CGI Environment needed by servlets
-     */
-    char    *method;        
-    char    *protocol;      
-    char    *req_uri;       
-    char    *remote_addr;   
-    char    *remote_host;   
-    char    *remote_user;   
-    char    *auth_type;     
-    char    *query_string;  
-    char    *server_name;   
-    unsigned server_port;   
-    char    *server_software;
-    long    content_length;     /* long that represents the content  */
-                                /* length should be 0 if unknown.        */
-    unsigned is_chunked;        /* 1 if content length is unknown (chunked rq) */
-    unsigned no_more_chunks;    /* 1 if last chunk has been read */
-    long     content_read;      /* number of bytes read */
-    int      end_of_stream;     /* For IIS avoids blocking calls to lpEcb->ReadClient */
+        int response_started;
+        int read_body_started;
 
-    /*
-     * SSL information
-     *
-     * is_ssl       - True if request is in ssl connection
-     * ssl_cert     - If available, base64 ASN.1 encoded client certificates.
-     * ssl_cert_len - Length of ssl_cert, 0 if certificates are not available.
-     * ssl_cipher   - The ssl cipher suite in use.
-     * ssl_session  - The ssl session string
-     *
-     * In some servers it is impossible to extract all this information, in this 
-     * case, we are passing NULL.
-     */
-    int      is_ssl;
-    char     *ssl_cert;
-    unsigned ssl_cert_len;
-    char     *ssl_cipher;
-    char     *ssl_session;
+        /*
+         * Provides memory management.  All data specific to this request is
+         * allocated within this pool, which can then be reclaimed at the end
+         * of the request handling cycle. 
+         *
+         * Alive as long as the request is alive.
+         * You can use endpoint pool for communication - it is recycled.
+         */
+        struct jk_pool *pool;
 
-    /*
-     * SSL extra information for Servlet 2.3 API
-     * 
-     * ssl_key_size - ssl key size in use
-     */
-    int     ssl_key_size;
-    
+        /* Result of the mapping
+         */
+
+        struct jk_uriEnv *uriEnv;
+        /* 
+         * CGI Environment needed by servlets
+         */
+        char *method;
+        char *protocol;
+        char *req_uri;
+        char *remote_addr;
+        char *remote_host;
+        char *remote_user;
+        char *auth_type;
+        char *query_string;
+        char *server_name;
+        unsigned server_port;
+        char *server_software;
+        long content_length;    /* long that represents the content  */
+        /* length should be 0 if unknown.        */
+        unsigned is_chunked;    /* 1 if content length is unknown (chunked rq) */
+        unsigned no_more_chunks;        /* 1 if last chunk has been read */
+        long content_read;      /* number of bytes read */
+        int end_of_stream;      /* For IIS avoids blocking calls to lpEcb->ReadClient */
+
+        /*
+         * SSL information
+         *
+         * is_ssl       - True if request is in ssl connection
+         * ssl_cert     - If available, base64 ASN.1 encoded client certificates.
+         * ssl_cert_len - Length of ssl_cert, 0 if certificates are not available.
+         * ssl_cipher   - The ssl cipher suite in use.
+         * ssl_session  - The ssl session string
+         *
+         * In some servers it is impossible to extract all this information, in this 
+         * case, we are passing NULL.
+         */
+        int is_ssl;
+        char *ssl_cert;
+        unsigned ssl_cert_len;
+        char *ssl_cipher;
+        char *ssl_session;
+
+        /*
+         * SSL extra information for Servlet 2.3 API
+         * 
+         * ssl_key_size - ssl key size in use
+         */
+        int ssl_key_size;
+
     /** Incoming headers */
-    struct jk_map *headers_in;
+        struct jk_map *headers_in;
 
-    /*
-     * Request attributes. 
-     *
-     * These attributes that were extracted from the web server and are 
-     * sent to Tomcat.
-     *
-     * The developer should be able to read them from the ServletRequest
-     * attributes. Tomcat is required to append org.apache.tomcat. to 
-     * these attrinbute names.
-     */
-    struct jk_map *attributes;
+        /*
+         * Request attributes. 
+         *
+         * These attributes that were extracted from the web server and are 
+         * sent to Tomcat.
+         *
+         * The developer should be able to read them from the ServletRequest
+         * attributes. Tomcat is required to append org.apache.tomcat. to 
+         * these attrinbute names.
+         */
+        struct jk_map *attributes;
 
-    /*
-     * The jvm route is in use when the adapter load balance among
-     * several JVMs. It is the ID of a specific JVM in the load balance
-     * group. We are using this variable to implement JVM session 
-     * affinity
-     */
-    char    *jvm_route;
+        /*
+         * The jvm route is in use when the adapter load balance among
+         * several JVMs. It is the ID of a specific JVM in the load balance
+         * group. We are using this variable to implement JVM session 
+         * affinity
+         */
+        char *jvm_route;
 
-    /* Response informations. As in apache, we don't use a separate
-       structure for response.
-     */
-    int         status;
-    const char *msg;
-    struct jk_map *headers_out;
+        /* Response informations. As in apache, we don't use a separate
+           structure for response.
+         */
+        int status;
+        const char *msg;
+        struct jk_map *headers_out;
 
-    /* Count remaining bytes ( original content length minus what was sent */
-    int left_bytes_to_send;    
+        /* Count remaining bytes ( original content length minus what was sent */
+        int left_bytes_to_send;
 
-    /* Experimental - support for helper workers and buffering
-     */
-    int outPos;
-    int outSize;
-    char *outBuf;
-    apr_time_t startTime;
+        /* Experimental - support for helper workers and buffering
+         */
+        int outPos;
+        int outSize;
+        char *outBuf;
+        apr_time_t startTime;
 
-    /*
-     * Area to get POST data for fail-over recovery in POST (used in LB mode)
-     */
-    struct jk_msg *reco_buf; 
-    int		       reco_status;
-    
+        /*
+         * Area to get POST data for fail-over recovery in POST (used in LB mode)
+         */
+        struct jk_msg *reco_buf;
+        int reco_status;
+
     /** printf style output. Formats in the tmp buf, then calls write
      */
-    void (JK_METHOD *jkprintf)( struct jk_env *env, struct jk_ws_service *s, char *frm,... );
-    
-    /*
-     * Callbacks into the web server.  For each, the first argument is
-     * essentially a 'this' pointer.  All return JK_TRUE on success
-     * and JK_FALSE on failure.
-     */
+        void (JK_METHOD * jkprintf) (struct jk_env * env,
+                                     struct jk_ws_service * s, char *frm,
+                                     ...);
 
-    /* Initialize the service structure
-     */
-    int (JK_METHOD *init)( struct jk_env *env, jk_ws_service_t *_this,
-                 struct jk_worker *w, void *serverObj);
+        /*
+         * Callbacks into the web server.  For each, the first argument is
+         * essentially a 'this' pointer.  All return JK_TRUE on success
+         * and JK_FALSE on failure.
+         */
 
-    /* Post request cleanup.
-     */
-    void (JK_METHOD *afterRequest)( struct jk_env *env, jk_ws_service_t *_this );
-    
-    /*
-     * Set the response head in the server structures. This will be called
-     * before the first write.
-     */
-    int (JK_METHOD *head)(struct jk_env *env, jk_ws_service_t *s);
+        /* Initialize the service structure
+         */
+        int (JK_METHOD * init) (struct jk_env * env, jk_ws_service_t *_this,
+                                struct jk_worker * w, void *serverObj);
 
-    /*
-     * Read a chunk of the request body into a buffer.  Attempt to read len
-     * bytes into the buffer.  Write the number of bytes actually read into
-     * actually_read.  
-     */
-    int (JK_METHOD *read)(struct jk_env *env, jk_ws_service_t *s,
-                          void *buffer,
-                          unsigned len,
-                          unsigned *actually_read);
+        /* Post request cleanup.
+         */
+        void (JK_METHOD * afterRequest) (struct jk_env * env,
+                                         jk_ws_service_t *_this);
 
-    /*
-     * Write a chunk of response data back to the browser.
-     */
-    int (JK_METHOD *write)(struct jk_env *env, jk_ws_service_t *s,
-                           const void *buffer, unsigned len);
+        /*
+         * Set the response head in the server structures. This will be called
+         * before the first write.
+         */
+        int (JK_METHOD * head) (struct jk_env * env, jk_ws_service_t *s);
 
-    /*
-     * Flush the output buffers.
-     */
-    int (JK_METHOD *flush)(struct jk_env *env, jk_ws_service_t *s );
+        /*
+         * Read a chunk of the request body into a buffer.  Attempt to read len
+         * bytes into the buffer.  Write the number of bytes actually read into
+         * actually_read.  
+         */
+        int (JK_METHOD * read) (struct jk_env * env, jk_ws_service_t *s,
+                                void *buffer,
+                                unsigned len, unsigned *actually_read);
+
+        /*
+         * Write a chunk of response data back to the browser.
+         */
+        int (JK_METHOD * write) (struct jk_env * env, jk_ws_service_t *s,
+                                 const void *buffer, unsigned len);
+
+        /*
+         * Flush the output buffers.
+         */
+        int (JK_METHOD * flush) (struct jk_env * env, jk_ws_service_t *s);
 
     /** Get the method id. SC_M_* fields are the known types.
      */
-    /* int (JK_METHOD *getMethodId)(struct jk_env *env, jk_ws_service_t *s); */
+        /* int (JK_METHOD *getMethodId)(struct jk_env *env, jk_ws_service_t *s); */
 
     /** Get a cookie value by name. 
      */
-    /*     char *(JK_METHOD *getCookie)(struct jk_env *env, jk_ws_service_t *s, */
-    /*                                  const char *name ); */
+        /*     char *(JK_METHOD *getCookie)(struct jk_env *env, jk_ws_service_t *s, */
+        /*                                  const char *name ); */
 
     /** Get a path param ( ;foo=bar )
      */
-    /*     char *(JK_METHOD *getPathParam)(struct jk_env *env, jk_ws_service_t *s, */
-    /*                                      const char *name ); */
+        /*     char *(JK_METHOD *getPathParam)(struct jk_env *env, jk_ws_service_t *s, */
+        /*                                      const char *name ); */
 
     /** Extract the session id. It should use the servlet spec mechanism
      *  by default and as first choice, but if a separate module is doing
      *  user tracking we can reuse that.
      */
-    /*     char *(JK_METHOD *getSessionId)(struct jk_env *env, jk_ws_service_t *s); */
+        /*     char *(JK_METHOD *getSessionId)(struct jk_env *env, jk_ws_service_t *s); */
 
     /** Extract the 'route' id, for sticky lb.
      */
-    /*     char *(JK_METHOD *getRoute)(struct jk_env *env, struct jk_ws_service *s); */
+        /*     char *(JK_METHOD *getRoute)(struct jk_env *env, struct jk_ws_service *s); */
 
     /** Serialize the request in a buffer.
      */
-    /* int (JK_METHOD *serialize)(struct jk_env *env, struct jk_ws_service *s,
-       int protocol, struct jk_msg *msg ); */
+        /* int (JK_METHOD *serialize)(struct jk_env *env, struct jk_ws_service *s,
+           int protocol, struct jk_msg *msg ); */
 
-    
-};
+
+    };
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_SERVICE_H */
+#endif                          /* JK_SERVICE_H */

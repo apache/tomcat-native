@@ -37,16 +37,16 @@
 #define CHUNK_BUFFER_PAD          (12)
 
 static const char *response_trans_headers[] = {
-    "Content-Type", 
-    "Content-Language", 
-    "Content-Length", 
-    "Date", 
-    "Last-Modified", 
-    "Location", 
-    "Set-Cookie", 
-    "Set-Cookie2", 
-    "Servlet-Engine", 
-    "Status", 
+    "Content-Type",
+    "Content-Language",
+    "Content-Length",
+    "Date",
+    "Last-Modified",
+    "Location",
+    "Set-Cookie",
+    "Set-Cookie2",
+    "Servlet-Engine",
+    "Status",
     "WWW-Authenticate"
 };
 
@@ -65,7 +65,7 @@ static const char *response_trans_headers[] = {
 #define SC_A_SSL_SESSION        (unsigned char)9
 #define SC_A_REQ_ATTRIBUTE      (unsigned char)10
 /* only in if JkOptions +ForwardKeySize */
-#define SC_A_SSL_KEY_SIZE       (unsigned char)11		
+#define SC_A_SSL_KEY_SIZE       (unsigned char)11
 #define SC_A_SECRET             (unsigned char)12
 #define SC_A_ARE_DONE           (unsigned char)0xFF
 
@@ -88,10 +88,10 @@ static const char *response_trans_headers[] = {
  *
  * long_res_header_for_sc
  */
-const char *jk2_requtil_getHeaderById(jk_env_t *env, int sc) 
+const char *jk2_requtil_getHeaderById(jk_env_t *env, int sc)
 {
     const char *rc = NULL;
-    if(sc <= SC_RES_HEADERS_NUM && sc > 0) {
+    if (sc <= SC_RES_HEADERS_NUM && sc > 0) {
         rc = response_trans_headers[sc - 1];
     }
 
@@ -104,64 +104,91 @@ const char *jk2_requtil_getHeaderById(jk_env_t *env, int sc)
  * sc_for_req_method
  */
 int jk2_requtil_getMethodId(jk_env_t *env, const char *method,
-                           unsigned char *sc) 
+                            unsigned char *sc)
 {
     int rc = JK_OK;
-    if(0 == strcmp(method, "GET")) {
+    if (0 == strcmp(method, "GET")) {
         *sc = SC_M_GET;
-    } else if(0 == strcmp(method, "POST")) {
+    }
+    else if (0 == strcmp(method, "POST")) {
         *sc = SC_M_POST;
-    } else if(0 == strcmp(method, "HEAD")) {
+    }
+    else if (0 == strcmp(method, "HEAD")) {
         *sc = SC_M_HEAD;
-    } else if(0 == strcmp(method, "PUT")) {
+    }
+    else if (0 == strcmp(method, "PUT")) {
         *sc = SC_M_PUT;
-    } else if(0 == strcmp(method, "DELETE")) {
+    }
+    else if (0 == strcmp(method, "DELETE")) {
         *sc = SC_M_DELETE;
-    } else if(0 == strcmp(method, "OPTIONS")) {
+    }
+    else if (0 == strcmp(method, "OPTIONS")) {
         *sc = SC_M_OPTIONS;
-    } else if(0 == strcmp(method, "TRACE")) {
+    }
+    else if (0 == strcmp(method, "TRACE")) {
         *sc = SC_M_TRACE;
-    } else if(0 == strcmp(method, "PROPFIND")) {
-	*sc = SC_M_PROPFIND;
-    } else if(0 == strcmp(method, "PROPPATCH")) {
-	*sc = SC_M_PROPPATCH;
-    } else if(0 == strcmp(method, "MKCOL")) {
-	*sc = SC_M_MKCOL;
-    } else if(0 == strcmp(method, "COPY")) {
-	*sc = SC_M_COPY;
-    } else if(0 == strcmp(method, "MOVE")) {
-	*sc = SC_M_MOVE;
-    } else if(0 == strcmp(method, "LOCK")) {
-	*sc = SC_M_LOCK;
-    } else if(0 == strcmp(method, "UNLOCK")) {
-	*sc = SC_M_UNLOCK;
-    } else if(0 == strcmp(method, "ACL")) {
-	*sc = SC_M_ACL;
-    } else if(0 == strcmp(method, "REPORT")) {
-	*sc = SC_M_REPORT;
-    } else if(0 == strcmp(method, "VERSION-CONTROL")) {
+    }
+    else if (0 == strcmp(method, "PROPFIND")) {
+        *sc = SC_M_PROPFIND;
+    }
+    else if (0 == strcmp(method, "PROPPATCH")) {
+        *sc = SC_M_PROPPATCH;
+    }
+    else if (0 == strcmp(method, "MKCOL")) {
+        *sc = SC_M_MKCOL;
+    }
+    else if (0 == strcmp(method, "COPY")) {
+        *sc = SC_M_COPY;
+    }
+    else if (0 == strcmp(method, "MOVE")) {
+        *sc = SC_M_MOVE;
+    }
+    else if (0 == strcmp(method, "LOCK")) {
+        *sc = SC_M_LOCK;
+    }
+    else if (0 == strcmp(method, "UNLOCK")) {
+        *sc = SC_M_UNLOCK;
+    }
+    else if (0 == strcmp(method, "ACL")) {
+        *sc = SC_M_ACL;
+    }
+    else if (0 == strcmp(method, "REPORT")) {
+        *sc = SC_M_REPORT;
+    }
+    else if (0 == strcmp(method, "VERSION-CONTROL")) {
         *sc = SC_M_VERSION_CONTROL;
-    } else if(0 == strcmp(method, "CHECKIN")) {
+    }
+    else if (0 == strcmp(method, "CHECKIN")) {
         *sc = SC_M_CHECKIN;
-    } else if(0 == strcmp(method, "CHECKOUT")) {
+    }
+    else if (0 == strcmp(method, "CHECKOUT")) {
         *sc = SC_M_CHECKOUT;
-    } else if(0 == strcmp(method, "UNCHECKOUT")) {
+    }
+    else if (0 == strcmp(method, "UNCHECKOUT")) {
         *sc = SC_M_UNCHECKOUT;
-    } else if(0 == strcmp(method, "SEARCH")) {
+    }
+    else if (0 == strcmp(method, "SEARCH")) {
         *sc = SC_M_SEARCH;
-    } else if(0 == strcmp(method, "MKWORKSPACE")) {
+    }
+    else if (0 == strcmp(method, "MKWORKSPACE")) {
         *sc = SC_M_MKWORKSPACE;
-    } else if(0 == strcmp(method, "UPDATE")) {
+    }
+    else if (0 == strcmp(method, "UPDATE")) {
         *sc = SC_M_UPDATE;
-    } else if(0 == strcmp(method, "LABEL")) {
+    }
+    else if (0 == strcmp(method, "LABEL")) {
         *sc = SC_M_LABEL;
-    } else if(0 == strcmp(method, "MERGE")) {
+    }
+    else if (0 == strcmp(method, "MERGE")) {
         *sc = SC_M_MERGE;
-    } else if(0 == strcmp(method, "BASELINE-CONTROL")) {
+    }
+    else if (0 == strcmp(method, "BASELINE-CONTROL")) {
         *sc = SC_M_BASELINE_CONTROL;
-    } else if(0 == strcmp(method, "MKACTIVITY")) {
+    }
+    else if (0 == strcmp(method, "MKACTIVITY")) {
         *sc = SC_M_MKACTIVITY;
-    } else {
+    }
+    else {
         rc = JK_ERR;
     }
 
@@ -173,95 +200,111 @@ int jk2_requtil_getMethodId(jk_env_t *env, const char *method,
  *
  * sc_for_req_header
  */
-int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
-                            unsigned short *sc) 
+int jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
+                            unsigned short *sc)
 {
 /*     char lowerCased[30]; */
-    
+
 /*     if( strlen( header_name ) > 30 ) */
 /*         return JK_FALSE; */
 /*     strncpy( lowerCased, header_name,  30 ); */
-    
-    
-    switch(header_name[0]) {
+
+
+    switch (header_name[0]) {
     case 'a':
     case 'A':
-        if(strncasecmp( header_name, "accept", 6 ) == 0 ) {
+        if (strncasecmp(header_name, "accept", 6) == 0) {
             if ('-' == header_name[6]) {
-                if(!strcasecmp(header_name + 7, "charset")) {
+                if (!strcasecmp(header_name + 7, "charset")) {
                     *sc = SC_ACCEPT_CHARSET;
-                } else if(!strcasecmp(header_name + 7, "encoding")) {
+                }
+                else if (!strcasecmp(header_name + 7, "encoding")) {
                     *sc = SC_ACCEPT_ENCODING;
-                } else if(!strcasecmp(header_name + 7, "language")) {
+                }
+                else if (!strcasecmp(header_name + 7, "language")) {
                     *sc = SC_ACCEPT_LANGUAGE;
-                } else {
+                }
+                else {
                     return JK_ERR;
                 }
-            } else if ('\0' == header_name[6]) {
+            }
+            else if ('\0' == header_name[6]) {
                 *sc = SC_ACCEPT;
-            } else {
+            }
+            else {
                 return JK_ERR;
             }
-        } else if (!strcasecmp(header_name, "authorization")) {
+        }
+        else if (!strcasecmp(header_name, "authorization")) {
             *sc = SC_AUTHORIZATION;
-        } else {
+        }
+        else {
             return JK_ERR;
         }
         break;
-        
+
     case 'c':
     case 'C':
-        if(!strcasecmp(header_name, "cookie")) {
+        if (!strcasecmp(header_name, "cookie")) {
             *sc = SC_COOKIE;
-        } else if(!strcasecmp(header_name, "connection")) {
+        }
+        else if (!strcasecmp(header_name, "connection")) {
             *sc = SC_CONNECTION;
-        } else if(!strcasecmp(header_name, "content-type")) {
+        }
+        else if (!strcasecmp(header_name, "content-type")) {
             *sc = SC_CONTENT_TYPE;
-        } else if(!strcasecmp(header_name, "content-length")) {
+        }
+        else if (!strcasecmp(header_name, "content-length")) {
             *sc = SC_CONTENT_LENGTH;
-        } else if(!strcasecmp(header_name, "cookie2")) {
+        }
+        else if (!strcasecmp(header_name, "cookie2")) {
             *sc = SC_COOKIE2;
-        } else {
+        }
+        else {
             return JK_ERR;
         }
         break;
-        
+
     case 'h':
     case 'H':
-        if(!strcasecmp(header_name, "host")) {
+        if (!strcasecmp(header_name, "host")) {
             *sc = SC_HOST;
-        } else {
+        }
+        else {
             return JK_ERR;
         }
         break;
-        
+
     case 'p':
     case 'P':
-        if(!strcasecmp(header_name, "pragma")) {
+        if (!strcasecmp(header_name, "pragma")) {
             *sc = SC_PRAGMA;
-        } else {
+        }
+        else {
             return JK_ERR;
         }
         break;
-        
+
     case 'r':
     case 'R':
-        if(!strcasecmp(header_name, "referer")) {
+        if (!strcasecmp(header_name, "referer")) {
             *sc = SC_REFERER;
-        } else {
+        }
+        else {
             return JK_ERR;
         }
         break;
-        
+
     case 'u':
     case 'U':
-        if(!strcasecmp(header_name, "user-agent")) {
+        if (!strcasecmp(header_name, "user-agent")) {
             *sc = SC_USER_AGENT;
-        } else {
+        }
+        else {
             return JK_ERR;
         }
         break;
-        
+
     default:
 /*         env->l->jkLog(env, env->l, JK_LOG_INFO,  */
 /*                       "requtil.getHeaderId() long header %s\n", header_name); */
@@ -277,26 +320,25 @@ char *jk2_requtil_getCookieByName(jk_env_t *env, jk_ws_service_t *s,
                                   const char *name)
 {
     int i;
-    jk_map_t *headers=s->headers_in;
+    jk_map_t *headers = s->headers_in;
 
     /* XXX use 'get' - and make sure jk_map has support for
        case insensitive search */
-    for(i = 0 ; i < headers->size( NULL, headers ) ; i++) {
-        if(0 == strcasecmp(headers->nameAt( NULL, headers, i), "cookie")) {
+    for (i = 0; i < headers->size(NULL, headers); i++) {
+        if (0 == strcasecmp(headers->nameAt(NULL, headers, i), "cookie")) {
 
             char *id_start;
-            for(id_start = strstr( headers->valueAt( NULL, headers, i ), name) ; 
-                id_start ; 
-                id_start = strstr(id_start + 1, name)) {
-                if('=' == id_start[strlen(name)]) {
+            for (id_start = strstr(headers->valueAt(NULL, headers, i), name);
+                 id_start; id_start = strstr(id_start + 1, name)) {
+                if ('=' == id_start[strlen(name)]) {
                     /*
                      * Session cookie was found, get it's value
                      */
                     id_start += (1 + strlen(name));
-                    if(strlen(id_start)) {
+                    if (strlen(id_start)) {
                         char *id_end;
                         id_start = s->pool->pstrdup(env, s->pool, id_start);
-                        if(id_end = strchr(id_start, ';')) {
+                        if (id_end = strchr(id_start, ';')) {
                             *id_end = '\0';
                         }
                         return id_start;
@@ -312,18 +354,17 @@ char *jk2_requtil_getCookieByName(jk_env_t *env, jk_ws_service_t *s,
 /* Retrieve the parameter with the given name
  */
 char *jk2_requtil_getPathParam(jk_env_t *env, jk_ws_service_t *s,
-                              const char *name)
+                               const char *name)
 {
     char *id_start = NULL;
-    for(id_start = strstr(s->req_uri, name) ; 
-        id_start ; 
-        id_start = strstr(id_start + 1, name)) {
-        if('=' == id_start[strlen(name)]) {
+    for (id_start = strstr(s->req_uri, name);
+         id_start; id_start = strstr(id_start + 1, name)) {
+        if ('=' == id_start[strlen(name)]) {
             /*
              * Session path-cookie was found, get it's value
              */
             id_start += (1 + strlen(name));
-            if(strlen(id_start)) {
+            if (strlen(id_start)) {
                 char *id_end;
                 id_start = s->pool->pstrdup(env, s->pool, id_start);
                 /* 
@@ -331,14 +372,14 @@ char *jk2_requtil_getPathParam(jk_env_t *env, jk_ws_service_t *s,
                  * to be on the safe side lets remove the trailing query 
                  * string if appended...
                  */
-                if(id_end = strchr(id_start, '?')) { 
+                if (id_end = strchr(id_start, '?')) {
                     *id_end = '\0';
                 }
                 return id_start;
             }
         }
     }
-  
+
     return NULL;
 }
 
@@ -349,7 +390,7 @@ char *jk2_requtil_getSessionId(jk_env_t *env, jk_ws_service_t *s)
 {
     char *val;
     val = jk2_requtil_getPathParam(env, s, JK_PATH_SESSION_IDENTIFIER);
-    if(!val) {
+    if (!val) {
         val = jk2_requtil_getCookieByName(env, s, JK_SESSION_IDENTIFIER);
     }
     return val;
@@ -364,19 +405,19 @@ char *jk2_requtil_getSessionRoute(jk_env_t *env, jk_ws_service_t *s)
     char *sessionid = jk2_requtil_getSessionId(env, s);
     char *ch;
 
-    if(!sessionid) {
+    if (!sessionid) {
         return NULL;
     }
 
     /*
      * Balance parameter is appended to the end
-     */  
+     */
     ch = strrchr(sessionid, '.');
-    if(!ch) {
+    if (!ch) {
         return 0;
     }
     ch++;
-    if(*ch == '\0') {
+    if (*ch == '\0') {
         return NULL;
     }
     return ch;
@@ -389,14 +430,13 @@ char *jk2_requtil_getSessionRoute(jk_env_t *env, jk_ws_service_t *s)
  * read, so we must loop up to all awaited data are received 
  */
 int jk2_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
-                         unsigned char *buf,
-                         unsigned  len)
+                          unsigned char *buf, unsigned len)
 {
     unsigned rdlen = 0;
     unsigned padded_len = len;
 
     if (s->is_chunked && s->no_more_chunks) {
-	return 0;
+        return 0;
     }
     if (s->is_chunked) {
         /* Corner case: buf must be large enough to hold next
@@ -404,20 +444,19 @@ int jk2_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
          * Pad the length to a reasonable value, otherwise the
          * read fails and the remaining chunks are tossed.
          */
-        padded_len = (len < CHUNK_BUFFER_PAD) ?
-            len : len - CHUNK_BUFFER_PAD;
+        padded_len = (len < CHUNK_BUFFER_PAD) ? len : len - CHUNK_BUFFER_PAD;
     }
 
-    while(rdlen < padded_len) {
+    while (rdlen < padded_len) {
         unsigned this_time = 0;
-        if(s->read(env, s, buf + rdlen, len - rdlen, &this_time)) {
+        if (s->read(env, s, buf + rdlen, len - rdlen, &this_time)) {
             return -1;
         }
 
-        if(0 == this_time) {
-	    if (s->is_chunked) {
-		s->no_more_chunks = 1; /* read no more */
-	    }
+        if (0 == this_time) {
+            if (s->is_chunked) {
+                s->no_more_chunks = 1;  /* read no more */
+            }
             break;
         }
         rdlen += this_time;
@@ -431,32 +470,33 @@ int jk2_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
 
 #define JK_BUF_SIZE 4096
 
-static int jk2_requtil_createBuffer(jk_env_t *env, 
-                             jk_ws_service_t *s)
+static int jk2_requtil_createBuffer(jk_env_t *env, jk_ws_service_t *s)
 {
-    int bsize=JK_BUF_SIZE;
-    
-    s->outSize=bsize;
-    s->outBuf=(char *)s->pool->alloc( env, s->pool, bsize );
+    int bsize = JK_BUF_SIZE;
+
+    s->outSize = bsize;
+    s->outBuf = (char *)s->pool->alloc(env, s->pool, bsize);
 
     return JK_OK;
 }
 
-static void jk2_requtil_printf(jk_env_t *env, jk_ws_service_t *s, char *fmt, ...)
+static void jk2_requtil_printf(jk_env_t *env, jk_ws_service_t *s, char *fmt,
+                               ...)
 {
     va_list vargs;
-    int ret=0;
+    int ret = 0;
 
-    if( s->outBuf==NULL ) {
-        jk2_requtil_createBuffer( env, s );
+    if (s->outBuf == NULL) {
+        jk2_requtil_createBuffer(env, s);
     }
-    
-    va_start(vargs,fmt);
-    s->outPos=0; /* Temp - we don't buffer */
-    ret=vsnprintf(s->outBuf + s->outPos, s->outSize - s->outPos, fmt, vargs);
+
+    va_start(vargs, fmt);
+    s->outPos = 0;              /* Temp - we don't buffer */
+    ret =
+        vsnprintf(s->outBuf + s->outPos, s->outSize - s->outPos, fmt, vargs);
     va_end(vargs);
 
-    s->write( env, s, s->outBuf, strlen(s->outBuf) );
+    s->write(env, s, s->outBuf, strlen(s->outBuf));
 }
 
 /* -------------------- Request serialization -------------------- */
@@ -496,36 +536,35 @@ AJPV13_REQUEST/AJPV14_REQUEST=
     Was: ajp_marshal_into_msgb
  */
 int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
-                            jk_ws_service_t *s,
-                            jk_endpoint_t *ae)
+                            jk_ws_service_t *s, jk_endpoint_t *ae)
 {
     unsigned char method;
     int i;
     int headerCount;
     int rc;
-    int debug=0;
+    int debug = 0;
 
-    if( s->uriEnv != NULL ) {
-        debug=s->uriEnv->mbean->debug;
+    if (s->uriEnv != NULL) {
+        debug = s->uriEnv->mbean->debug;
     }
-    
-    rc=jk2_requtil_getMethodId(env, s->method, &method);
-    if (rc!=JK_OK) { 
+
+    rc = jk2_requtil_getMethodId(env, s->method, &method);
+    if (rc != JK_OK) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Error ajp_marshal_into_msgb - No such method %s\n",
                       s->method);
         return JK_ERR;
     }
 
-    headerCount=s->headers_in->size(env, s->headers_in);
-    
-    if (msg->appendByte(env, msg, JK_AJP13_FORWARD_REQUEST)  ||
-        msg->appendByte(env, msg, method)               ||
-        msg->appendString(env, msg, s->protocol)        ||
-        msg->appendString(env, msg, s->req_uri)         ||
-        msg->appendString(env, msg, s->remote_addr)     ||
-        msg->appendString(env, msg, s->remote_host)     ||
-        msg->appendString(env, msg, s->server_name)     ||
+    headerCount = s->headers_in->size(env, s->headers_in);
+
+    if (msg->appendByte(env, msg, JK_AJP13_FORWARD_REQUEST) ||
+        msg->appendByte(env, msg, method) ||
+        msg->appendString(env, msg, s->protocol) ||
+        msg->appendString(env, msg, s->req_uri) ||
+        msg->appendString(env, msg, s->remote_addr) ||
+        msg->appendString(env, msg, s->remote_host) ||
+        msg->appendString(env, msg, s->server_name) ||
         msg->appendInt(env, msg, (unsigned short)s->server_port) ||
         msg->appendByte(env, msg, (unsigned char)(s->is_ssl)) ||
         msg->appendInt(env, msg, (unsigned short)(headerCount))) {
@@ -535,10 +574,10 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
         return JK_ERR;
     }
 
-    for (i = 0 ; i < headerCount ; i++) {
+    for (i = 0; i < headerCount; i++) {
         unsigned short sc;
 
-        char *name=s->headers_in->nameAt(env, s->headers_in, i);
+        char *name = s->headers_in->nameAt(env, s->headers_in, i);
 
         if (jk2_requtil_getHeaderId(env, name, &sc) == JK_OK) {
             /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
@@ -548,19 +587,22 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
                               "serialize.request() Error serializing header id\n");
                 return JK_ERR;
             }
-        } else {
-            if( debug > 0 )
+        }
+        else {
+            if (debug > 0)
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "serialize.request() Add headerName %s\n", name);
+                              "serialize.request() Add headerName %s\n",
+                              name);
             if (msg->appendString(env, msg, name)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "serialize.request() Error serializing header name\n");
                 return JK_ERR;
             }
         }
-        
+
         if (msg->appendString(env, msg,
-                               s->headers_in->valueAt( env, s->headers_in, i))) {
+                              s->headers_in->valueAt(env, s->headers_in,
+                                                     i))) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "serialize.request() Error serializing header value\n");
             return JK_ERR;
@@ -596,19 +638,19 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
         }
     }
     /* XXX This can be sent only on startup ( ajp14 ) */
-     
+
     if (s->jvm_route) {
-        if ( msg->appendByte(env, msg, SC_A_JVM_ROUTE) ||
-             msg->appendString(env, msg, s->jvm_route)) {
+        if (msg->appendByte(env, msg, SC_A_JVM_ROUTE) ||
+            msg->appendString(env, msg, s->jvm_route)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing worker id\n");
             return JK_ERR;
         }
     }
-    
+
     if (s->ssl_cert_len) {
-        if ( msg->appendByte(env, msg, SC_A_SSL_CERT) ||
-             msg->appendString(env, msg, s->ssl_cert)) {
+        if (msg->appendByte(env, msg, SC_A_SSL_CERT) ||
+            msg->appendString(env, msg, s->ssl_cert)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing SSL cert\n");
             return JK_ERR;
@@ -616,16 +658,16 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     }
 
     if (s->ssl_cipher) {
-        if ( msg->appendByte(env, msg, SC_A_SSL_CIPHER) ||
-             msg->appendString(env, msg, s->ssl_cipher)) {
+        if (msg->appendByte(env, msg, SC_A_SSL_CIPHER) ||
+            msg->appendString(env, msg, s->ssl_cipher)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing SSL cipher\n");
             return JK_ERR;
         }
     }
     if (s->ssl_session) {
-        if ( msg->appendByte(env, msg, SC_A_SSL_SESSION) ||
-             msg->appendString(env, msg, s->ssl_session)) {
+        if (msg->appendByte(env, msg, SC_A_SSL_SESSION) ||
+            msg->appendString(env, msg, s->ssl_session)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing SSL session\n");
             return JK_ERR;
@@ -638,17 +680,17 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
      * JFC removed: ae->proto == AJP14_PROTO
      */
     if (s->ssl_key_size != -1) {
-        if ( msg->appendByte(env, msg, SC_A_SSL_KEY_SIZE) ||
-             msg->appendInt(env, msg, (unsigned short) s->ssl_key_size)) {
+        if (msg->appendByte(env, msg, SC_A_SSL_KEY_SIZE) ||
+            msg->appendInt(env, msg, (unsigned short)s->ssl_key_size)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing SSL key size\n");
             return JK_ERR;
         }
     }
 
-    if (ae->worker->secret ) {
-        if ( msg->appendByte(env, msg, SC_A_SECRET) ||
-             msg->appendString(env, msg, ae->worker->secret )) {
+    if (ae->worker->secret) {
+        if (msg->appendByte(env, msg, SC_A_SECRET) ||
+            msg->appendString(env, msg, ae->worker->secret)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing secret\n");
             return JK_ERR;
@@ -656,29 +698,29 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     }
 
 
-    if (s->attributes->size( env,  s->attributes) > 0) {
-        for (i = 0 ; i < s->attributes->size( env,  s->attributes) ; i++) {
-            char *name=s->attributes->nameAt( env,  s->attributes, i);
-            char *val=s->attributes->valueAt( env, s->attributes, i);
-            if ( msg->appendByte(env, msg, SC_A_REQ_ATTRIBUTE) ||
-                 msg->appendString(env, msg, name ) ||
-                 msg->appendString(env, msg, val)) {
+    if (s->attributes->size(env, s->attributes) > 0) {
+        for (i = 0; i < s->attributes->size(env, s->attributes); i++) {
+            char *name = s->attributes->nameAt(env, s->attributes, i);
+            char *val = s->attributes->valueAt(env, s->attributes, i);
+            if (msg->appendByte(env, msg, SC_A_REQ_ATTRIBUTE) ||
+                msg->appendString(env, msg, name) ||
+                msg->appendString(env, msg, val)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                         "handle.request() Error serializing attribute %s=%s\n",
-                         name, val);
+                              "handle.request() Error serializing attribute %s=%s\n",
+                              name, val);
                 return JK_ERR;
             }
         }
     }
 
-    if ( msg->appendByte(env, msg, SC_A_ARE_DONE)) {
+    if (msg->appendByte(env, msg, SC_A_ARE_DONE)) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                 "handle.request() Error serializing end marker\n");
+                      "handle.request() Error serializing end marker\n");
         return JK_ERR;
     }
 
-    
-    if( debug > 0  )
+
+    if (debug > 0)
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "serialize.request() serialized %s\n", s->req_uri);
 
@@ -689,31 +731,31 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
 
 /** The inital BODY chunk 
  */
-int jk2_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
-                           jk_ws_service_t  *r,
-                           jk_endpoint_t *ae)
+int jk2_serialize_postHead(jk_env_t *env, jk_msg_t *msg,
+                           jk_ws_service_t *r, jk_endpoint_t *ae)
 {
     int len = r->left_bytes_to_send;
 
-    if(len > AJP13_MAX_SEND_BODY_SZ) {
+    if (len > AJP13_MAX_SEND_BODY_SZ) {
         len = AJP13_MAX_SEND_BODY_SZ;
     }
-    if(len <= 0) {
+    if (len <= 0) {
         len = 0;
         return JK_OK;
     }
 
-    len=msg->appendFromServer( env, msg, r, ae, len );
+    len = msg->appendFromServer(env, msg, r, ae, len);
     /* the right place to add file storage for upload */
     if (len >= 0) {
         r->content_read += len;
         return JK_OK;
-    }                  
-            
+    }
+
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
-             "handler.marshalPostHead() - error len=%d\n", len);
-    return JK_ERR;	    
+                  "handler.marshalPostHead() - error len=%d\n", len);
+    return JK_ERR;
 }
+
 /* -------------------- Query decoding -------------------- */
 
 /** Read a query string into the map
@@ -722,25 +764,26 @@ int jk2_requtil_queryRead(jk_env_t *env, jk_map_t *m, const char *query)
 {
     char *sep;
     char *value;
-    char *qry=m->pool->pstrdup( env, m->pool, query );
+    char *qry = m->pool->pstrdup(env, m->pool, query);
 
-    while( qry != NULL ) {
-        sep=strchr( qry, '&');
-        if( sep !=NULL ) { 
-            *sep='\0';
+    while (qry != NULL) {
+        sep = strchr(qry, '&');
+        if (sep != NULL) {
+            *sep = '\0';
             sep++;
         }
 
         value = strchr(qry, '=');
-        if(value==NULL) {
-            value="";
-        } else {
+        if (value == NULL) {
+            value = "";
+        }
+        else {
             *value = '\0';
             value++;
         }
-        m->add( env, m, m->pool->pstrdup( env, m->pool, qry ),
-                m->pool->pstrdup( env, m->pool, value ));
-        qry=sep;
+        m->add(env, m, m->pool->pstrdup(env, m->pool, qry),
+               m->pool->pstrdup(env, m->pool, value));
+        qry = sep;
     }
     return JK_OK;
 }
@@ -752,19 +795,20 @@ int jk2_requtil_queryRead(jk_env_t *env, jk_map_t *m, const char *query)
 #define T_OS_ESCAPE_PATH	(4)
 
 static const unsigned char test_char_table[256] = {
-    0,14,14,14,14,14,14,14,14,14,15,14,14,14,14,14,14,14,14,14,
-    14,14,14,14,14,14,14,14,14,14,14,14,14,0,7,6,1,6,1,1,
-    9,9,1,0,8,0,0,10,0,0,0,0,0,0,0,0,0,0,8,15,
-    15,8,15,15,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,15,15,15,7,0,7,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,15,7,15,1,14,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6 
+    0, 14, 14, 14, 14, 14, 14, 14, 14, 14, 15, 14, 14, 14, 14, 14, 14, 14, 14,
+        14,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 7, 6, 1, 6, 1, 1,
+    9, 9, 1, 0, 8, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 15,
+    15, 8, 15, 15, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 15, 15, 7, 0, 7, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 15, 7, 15, 1, 14, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
 };
 
 #define TEST_CHAR(c, f)	(test_char_table[(unsigned)(c)] & (f))
@@ -788,17 +832,17 @@ int jk_requtil_escapeUrl(const char *path, char *dest, int destsize)
     unsigned c;
 
     while ((c = *s)) {
-	if (TEST_CHAR(c, T_OS_ESCAPE_PATH)) {
-            if (d >= ee )
+        if (TEST_CHAR(c, T_OS_ESCAPE_PATH)) {
+            if (d >= ee)
                 return JK_ERR;
-	    d = c2x(c, d);
-	}
-	else {
-            if (d >= e )
+            d = c2x(c, d);
+        }
+        else {
+            if (d >= e)
                 return JK_ERR;
-	    *d++ = c;
-	}
-	++s;
+            *d++ = c;
+        }
+        ++s;
     }
     *d = '\0';
     return JK_OK;
@@ -809,14 +853,14 @@ int jk_requtil_escapeUrl(const char *path, char *dest, int destsize)
 int jk_requtil_uriIsWebInf(char *uri)
 {
     char *c = uri;
-    while(*c) {
+    while (*c) {
         *c = tolower(*c);
         c++;
-    }                    
-    if(strstr(uri, "web-inf")) {
+    }
+    if (strstr(uri, "web-inf")) {
         return JK_TRUE;
     }
-    if(strstr(uri, "meta-inf")) {
+    if (strstr(uri, "meta-inf")) {
         return JK_TRUE;
     }
 
@@ -827,9 +871,11 @@ static char x2c(const char *what)
 {
     register char digit;
 
-    digit = ((what[0] >= 'A') ? ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
+    digit =
+        ((what[0] >= 'A') ? ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
     digit *= 16;
-    digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
+    digit +=
+        (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
     return (digit);
 }
 
@@ -872,7 +918,8 @@ void jk_requtil_getParents(char *name)
     /* a) remove ./ path segments */
 
     for (l = 0, w = 0; name[l] != '\0';) {
-        if (name[l] == '.' && name[l + 1] == '/' && (l == 0 || name[l - 1] == '/'))
+        if (name[l] == '.' && name[l + 1] == '/'
+            && (l == 0 || name[l - 1] == '/'))
             l += 2;
         else
             name[w++] = name[l++];
@@ -912,7 +959,8 @@ void jk_requtil_getParents(char *name)
     /* d) remove trailing xx/.. segment. */
     if (l == 2 && name[0] == '.' && name[1] == '.')
         name[0] = '\0';
-    else if (l > 2 && name[l - 1] == '.' && name[l - 2] == '.' && name[l - 3] == '/') {
+    else if (l > 2 && name[l - 1] == '.' && name[l - 2] == '.'
+             && name[l - 3] == '/') {
         l = l - 4;
         if (l >= 0) {
             while (l >= 0 && name[l] != '/')
@@ -928,50 +976,48 @@ void jk_requtil_getParents(char *name)
 
 
 
-static const char begin_cert [] = 
-	"-----BEGIN CERTIFICATE-----\r\n";
+static const char begin_cert[] = "-----BEGIN CERTIFICATE-----\r\n";
 
-static const char end_cert [] = 
-	"-----END CERTIFICATE-----\r\n";
+static const char end_cert[] = "-----END CERTIFICATE-----\r\n";
 
 static const char basis_64[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 int jk_requtil_base64CertLen(int len)
 {
-    int n = ((len + 2) / 3 * 4) + 1; /* base64 encoded size */
-    n += (n + 63 / 64) * 2; /* add CRLF's */
-    n += sizeof(begin_cert) + sizeof(end_cert) - 2; /* add enclosing strings. */
+    int n = ((len + 2) / 3 * 4) + 1;    /* base64 encoded size */
+    n += (n + 63 / 64) * 2;     /* add CRLF's */
+    n += sizeof(begin_cert) + sizeof(end_cert) - 2;     /* add enclosing strings. */
     return n;
 }
 
 int jk_requtil_base64EncodeCert(char *encoded,
                                 const unsigned char *string, int len)
 {
-    int i,c;
+    int i, c;
     char *p;
     const char *t;
-    
+
     p = encoded;
 
     t = begin_cert;
     while (*t != '\0')
         *p++ = *t++;
-    
+
     c = 0;
     for (i = 0; i < len - 2; i += 3) {
         *p++ = basis_64[(string[i] >> 2) & 0x3F];
         *p++ = basis_64[((string[i] & 0x3) << 4) |
-                        ((int) (string[i + 1] & 0xF0) >> 4)];
+                        ((int)(string[i + 1] & 0xF0) >> 4)];
         *p++ = basis_64[((string[i + 1] & 0xF) << 2) |
-                        ((int) (string[i + 2] & 0xC0) >> 6)];
+                        ((int)(string[i + 2] & 0xC0) >> 6)];
         *p++ = basis_64[string[i + 2] & 0x3F];
         c += 4;
-        if ( c >= 64 ) {
+        if (c >= 64) {
             *p++ = '\r';
             *p++ = '\n';
             c = 0;
-		}
+        }
     }
     if (i < len) {
         *p++ = basis_64[(string[i] >> 2) & 0x3F];
@@ -981,20 +1027,20 @@ int jk_requtil_base64EncodeCert(char *encoded,
         }
         else {
             *p++ = basis_64[((string[i] & 0x3) << 4) |
-                            ((int) (string[i + 1] & 0xF0) >> 4)];
+                            ((int)(string[i + 1] & 0xF0) >> 4)];
             *p++ = basis_64[((string[i + 1] & 0xF) << 2)];
         }
         *p++ = '=';
         c++;
     }
-    if ( c != 0 ) {
+    if (c != 0) {
         *p++ = '\r';
         *p++ = '\n';
     }
 
-	t = end_cert;
-	while (*t != '\0')
-		*p++ = *t++;
+    t = end_cert;
+    while (*t != '\0')
+        *p++ = *t++;
 
     *p++ = '\0';
     return p - encoded;
@@ -1006,34 +1052,34 @@ int jk_requtil_base64EncodeCert(char *encoded,
 /** Initialize the request 
  * 
  * jk_init_ws_service
- */ 
+ */
 void jk2_requtil_initRequest(jk_env_t *env, jk_ws_service_t *s)
 {
-    s->ws_private           = NULL;
-    s->method               = NULL;
-    s->protocol             = NULL;
-    s->req_uri              = NULL;
-    s->remote_addr          = NULL;
-    s->remote_host          = NULL;
-    s->remote_user          = NULL;
-    s->auth_type            = NULL;
-    s->query_string         = NULL;
-    s->server_name          = NULL;
-    s->server_port          = 80;
-    s->server_software      = NULL;
-    s->content_length       = 0;
-    s->is_chunked           = 0;
-    s->no_more_chunks       = 0;
-    s->content_read         = 0;
-    s->is_ssl               = JK_FALSE;
-    s->ssl_cert             = NULL;
-    s->ssl_cert_len         = 0;
-    s->ssl_cipher           = NULL;
-    s->ssl_session          = NULL;
-    s->jvm_route            = NULL;
-    s->uriEnv               = NULL;
-    s->outBuf               = NULL;
-    s->msg                  = NULL;
-    
-    s->jkprintf=jk2_requtil_printf;
+    s->ws_private = NULL;
+    s->method = NULL;
+    s->protocol = NULL;
+    s->req_uri = NULL;
+    s->remote_addr = NULL;
+    s->remote_host = NULL;
+    s->remote_user = NULL;
+    s->auth_type = NULL;
+    s->query_string = NULL;
+    s->server_name = NULL;
+    s->server_port = 80;
+    s->server_software = NULL;
+    s->content_length = 0;
+    s->is_chunked = 0;
+    s->no_more_chunks = 0;
+    s->content_read = 0;
+    s->is_ssl = JK_FALSE;
+    s->ssl_cert = NULL;
+    s->ssl_cert_len = 0;
+    s->ssl_cipher = NULL;
+    s->ssl_session = NULL;
+    s->jvm_route = NULL;
+    s->uriEnv = NULL;
+    s->outBuf = NULL;
+    s->msg = NULL;
+
+    s->jkprintf = jk2_requtil_printf;
 }

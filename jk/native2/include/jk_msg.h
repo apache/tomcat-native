@@ -25,20 +25,21 @@
 #include "jk_service.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_env;
-struct jk_msg;
-typedef struct jk_msg jk_msg_t;
+    struct jk_env;
+    struct jk_msg;
+    typedef struct jk_msg jk_msg_t;
 
-struct jk_endpoint;
-struct jk_ws_service;
-struct jk_logger;
-    
+    struct jk_endpoint;
+    struct jk_ws_service;
+    struct jk_logger;
+
 #define DEF_BUFFER_SZ (8*1024)
 #define AJP13_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
-    
+
 /**
  * Abstract interface to marshalling. Different encodings and
  * communication mechanisms can be supported.
@@ -55,81 +56,82 @@ struct jk_logger;
  *
  * @author Costin Manolache
  */
-struct jk_msg {
+    struct jk_msg
+    {
     /** Human-readable method name */
-    char *name;
+        char *name;
 
     /** Method id - to be sent in the packet
      */
-    int id;
+        int id;
 
     /** Header length for this message
      */
-    int headerLength;
-    
-    /*
-     * Prepare the buffer for a new invocation 
-     */
-    void (*reset)(struct jk_env *env, struct jk_msg *_this);
+        int headerLength;
 
-    /*
-     * Finalize the buffer before sending - set length fields, etc
-     */
-    void (*end)(struct jk_env *env, struct jk_msg *_this);
+        /*
+         * Prepare the buffer for a new invocation 
+         */
+        void (*reset) (struct jk_env * env, struct jk_msg * _this);
 
-    int (*checkHeader)(struct jk_env *env, struct jk_msg *_this,
-                        struct jk_endpoint *e);
+        /*
+         * Finalize the buffer before sending - set length fields, etc
+         */
+        void (*end) (struct jk_env * env, struct jk_msg * _this);
 
-    /*
-     * Dump the buffer header
-     *   @param err Message text
-     */
-    void (*dump)(struct jk_env *env, struct jk_msg *_this, char *err);
+        int (*checkHeader) (struct jk_env * env, struct jk_msg * _this,
+                            struct jk_endpoint * e);
 
-    int (*appendByte)(struct jk_env *env, struct jk_msg *_this, unsigned char val);
-    
-    int (*appendBytes)(struct jk_env *env, struct jk_msg *_this, 
-                       const unsigned char * param,
-                       const int len);
+        /*
+         * Dump the buffer header
+         *   @param err Message text
+         */
+        void (*dump) (struct jk_env * env, struct jk_msg * _this, char *err);
 
-    int (*appendInt)(struct jk_env *env, struct jk_msg *_this, 
-                     const unsigned short val);
+        int (*appendByte) (struct jk_env * env, struct jk_msg * _this,
+                           unsigned char val);
 
-    int (*appendLong)(struct jk_env *env, struct jk_msg *_this, 
-                       const unsigned long val);
+        int (*appendBytes) (struct jk_env * env, struct jk_msg * _this,
+                            const unsigned char *param, const int len);
 
-    int (*appendString)(struct jk_env *env, struct jk_msg *_this, 
-                         const char *param);
+        int (*appendInt) (struct jk_env * env, struct jk_msg * _this,
+                          const unsigned short val);
 
-    int (*appendAsciiString)(struct jk_env *env, struct jk_msg *_this, 
+        int (*appendLong) (struct jk_env * env, struct jk_msg * _this,
+                           const unsigned long val);
+
+        int (*appendString) (struct jk_env * env, struct jk_msg * _this,
                              const char *param);
 
-    int (*appendMap)(struct jk_env *env, struct jk_msg *_this, 
-                     struct jk_map *map);
+        int (*appendAsciiString) (struct jk_env * env, struct jk_msg * _this,
+                                  const char *param);
 
-    unsigned char (*getByte)(struct jk_env *env, struct jk_msg *_this);
+        int (*appendMap) (struct jk_env * env, struct jk_msg * _this,
+                          struct jk_map * map);
 
-    unsigned short (*getInt)(struct jk_env *env, struct jk_msg *_this);
+        unsigned char (*getByte) (struct jk_env * env, struct jk_msg * _this);
+
+        unsigned short (*getInt) (struct jk_env * env, struct jk_msg * _this);
 
     /** Look at the next int, without reading it
      */
-    unsigned short (*peekInt)(struct jk_env *env, struct jk_msg *_this);
+        unsigned short (*peekInt) (struct jk_env * env,
+                                   struct jk_msg * _this);
 
-    unsigned long (*getLong)(struct jk_env *env, struct jk_msg *_this);
+        unsigned long (*getLong) (struct jk_env * env, struct jk_msg * _this);
 
     /** Return a string. 
         The buffer is internal to the message, you must save
         or make sure the message lives long enough.
-     */ 
-    char *(*getString)(struct jk_env *env, struct jk_msg *_this);
+     */
+        char *(*getString) (struct jk_env * env, struct jk_msg * _this);
 
     /** Return a byte[] and it's length.
      *  The buffer is internal to the message, you must save
      * or make sure the message lives long enough.
-     */ 
-    unsigned char *(*getBytes)(struct jk_env *env,
-                               struct jk_msg *_this,
-                               int *len);
+     */
+        unsigned char *(*getBytes) (struct jk_env * env,
+                                    struct jk_msg * _this, int *len);
 
     /** Read a map structure from the message. The map is encoded
      *  as an int count and then the NV pairs.
@@ -138,8 +140,8 @@ struct jk_msg {
      *  If you want to use the map after the msg becomes invalid, you need
      *  to copy it.
      */
-    int (*getMap)(struct jk_env *env, struct jk_msg *_this, 
-                  struct jk_map *map);
+        int (*getMap) (struct jk_env * env, struct jk_msg * _this,
+                       struct jk_map * map);
 
     /** 
      * Special method. Will read data from the server and add them as
@@ -149,45 +151,43 @@ struct jk_msg {
      *
      * Returns -1 on error, else number of bytes read
      */
-    int (*appendFromServer)(struct jk_env *env,
-                            struct jk_msg *_this,
-                            struct jk_ws_service *r,
-                            struct jk_endpoint  *ae,
-                            int            len );
+        int (*appendFromServer) (struct jk_env * env,
+                                 struct jk_msg * _this,
+                                 struct jk_ws_service * r,
+                                 struct jk_endpoint * ae, int len);
 
     /** 
      * Clone the msg buf into another one, sort of clone.
      *
      * Returns -1 on error, else number of bytes copied
      */
-    int (*copy)(struct jk_env *env,
-                 struct jk_msg *_this,
-                 struct jk_msg *dst);
+        int (*copy) (struct jk_env * env,
+                     struct jk_msg * _this, struct jk_msg * dst);
 
-    void *_privatePtr;
-    
-    /* Temporary, don't use */
-    struct jk_pool *pool;
-    
-    unsigned char *buf;
-    int pos; 
-    int len;
-    int maxlen;
+        void *_privatePtr;
 
-    /* JK_TRUE if the message is sent/received by the server ( tomcat ).
-     */
-    int serverSide;
-};
+        /* Temporary, don't use */
+        struct jk_pool *pool;
+
+        unsigned char *buf;
+        int pos;
+        int len;
+        int maxlen;
+
+        /* JK_TRUE if the message is sent/received by the server ( tomcat ).
+         */
+        int serverSide;
+    };
 
 /* Temp */
-jk_msg_t *jk2_msg_ajp_create(struct jk_env *env, struct jk_pool *p,
-                            int buffSize);
-    
-jk_msg_t *jk2_msg_ajp_create2(struct jk_env *env, struct jk_pool *pool,
-                              char *buf, int buffSize);
-    
+    jk_msg_t *jk2_msg_ajp_create(struct jk_env *env, struct jk_pool *p,
+                                 int buffSize);
+
+    jk_msg_t *jk2_msg_ajp_create2(struct jk_env *env, struct jk_pool *pool,
+                                  char *buf, int buffSize);
+
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif 
+#endif

@@ -39,14 +39,14 @@ static int JK_METHOD jk2_worker_run_service(jk_env_t *env, jk_worker_t *_this,
     env->l->jkLog(env, env->l, JK_LOG_INFO, "run.service()\n");
 
     /* Generate the header */
-    s->status=500;
-    s->msg="Not supported";
+    s->status = 500;
+    s->msg = "Not supported";
     s->headers_out->put(env, s->headers_out,
                         "Content-Type", "text/html", NULL);
 
-    s->head(env, s );
+    s->head(env, s);
 
-    s->afterRequest( env, s);
+    s->afterRequest(env, s);
     return JK_OK;
 }
 
@@ -56,29 +56,28 @@ int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
                                      const char *type, const char *name)
 {
     jk_worker_t *_this;
-    
-    if(NULL == name ) {
+
+    if (NULL == name) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "run_worker.factory() NullPointerException\n");
         return JK_ERR;
     }
-    
+
     _this = (jk_worker_t *)pool->calloc(env, pool, sizeof(jk_worker_t));
 
-    if(_this==NULL) {
+    if (_this == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "run_worker.factory() OutOfMemoryException\n");
         return JK_ERR;
     }
 
-    _this->service        = jk2_worker_run_service;
-    
-    result->object=_this;
-    _this->mbean=result;
+    _this->service = jk2_worker_run_service;
 
-    _this->workerEnv=env->getByName( env, "workerEnv" );
-    _this->workerEnv->addWorker( env, _this->workerEnv, _this );
+    result->object = _this;
+    _this->mbean = result;
+
+    _this->workerEnv = env->getByName(env, "workerEnv");
+    _this->workerEnv->addWorker(env, _this->workerEnv, _this);
 
     return JK_OK;
 }
-

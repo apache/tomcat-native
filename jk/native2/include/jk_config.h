@@ -27,88 +27,94 @@
 #include "jk_logger.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_pool;
-struct jk_map;
-struct jk_env;
-struct jk_config;
-typedef struct jk_config jk_config_t;
+    struct jk_pool;
+    struct jk_map;
+    struct jk_env;
+    struct jk_config;
+    typedef struct jk_config jk_config_t;
 
 /**
  *
  */
-struct jk_config {
-    struct jk_bean *mbean;
-    int ver;
-    
-    /* Parse and process a property. It'll locate the object and call the
-     * setAttribute on it.
-     */
-    int (*setPropertyString)(struct jk_env *env, struct jk_config *cfg,
-                             char *name, char *value); 
+    struct jk_config
+    {
+        struct jk_bean *mbean;
+        int ver;
 
-    /* Set an attribute for a jk object. This should be the
-     * only method called to configure objects. The implementation
-     * will update the underlying repository in addition to setting
-     * the runtime value. Calling setAttribute on the object directly
-     * will only set the runtime value.
-     */
-    int (*setProperty)(struct jk_env *env, struct jk_config *cfg,
-                       struct jk_bean *target, char *name, char *value); 
+        /* Parse and process a property. It'll locate the object and call the
+         * setAttribute on it.
+         */
+        int (*setPropertyString) (struct jk_env * env, struct jk_config * cfg,
+                                  char *name, char *value);
+
+        /* Set an attribute for a jk object. This should be the
+         * only method called to configure objects. The implementation
+         * will update the underlying repository in addition to setting
+         * the runtime value. Calling setAttribute on the object directly
+         * will only set the runtime value.
+         */
+        int (*setProperty) (struct jk_env * env, struct jk_config * cfg,
+                            struct jk_bean * target, char *name, char *value);
 
     /** Write the config file. If targetFile is NULL, it'll override the
      *  file that was used for reading
     */
-    int (*save)( struct jk_env *env, struct jk_config *cfg,
-                 char *targetFile);
+        int (*save) (struct jk_env * env, struct jk_config * cfg,
+                     char *targetFile);
 
     /** Check if the config changed, and update the workers.
      */
-    int (*update)( struct jk_env *env, struct jk_config *cfg, int *didReload);
+        int (*update) (struct jk_env * env, struct jk_config * cfg,
+                       int *didReload);
 
     /** Process a node in config data
      */
-    int (*processNode)( struct jk_env *env, struct jk_config *cfg, char *node, int didReload);
+        int (*processNode) (struct jk_env * env, struct jk_config * cfg,
+                            char *node, int didReload);
 
-    /* Private data */
-    struct jk_pool *pool;
-    void *_private;
-    struct jk_workerEnv *workerEnv;
-    struct jk_map *map;
+        /* Private data */
+        struct jk_pool *pool;
+        void *_private;
+        struct jk_workerEnv *workerEnv;
+        struct jk_map *map;
 
-    char *file;
-    
-    char *section;
-    struct jk_map *cfgData;
-    /* Only one thread can update the config
-     */
-    struct jk_mutex *cs;
-    time_t mtime;
-};
+        char *file;
 
-int jk2_config_setProperty(struct jk_env  *env, struct jk_config *cfg,
-                           struct jk_bean *mbean, char *name, char *val);
+        char *section;
+        struct jk_map *cfgData;
+        /* Only one thread can update the config
+         */
+        struct jk_mutex *cs;
+        time_t mtime;
+    };
 
-int jk2_config_setPropertyString(struct jk_env *env, struct jk_config *cfg,
-                                 char *name, char *value);
+    int jk2_config_setProperty(struct jk_env *env, struct jk_config *cfg,
+                               struct jk_bean *mbean, char *name, char *val);
 
-int jk2_config_processConfigData(struct jk_env *env, struct jk_config *cfg,
-                                 int firstTime );
+    int jk2_config_setPropertyString(struct jk_env *env,
+                                     struct jk_config *cfg, char *name,
+                                     char *value);
+
+    int jk2_config_processConfigData(struct jk_env *env,
+                                     struct jk_config *cfg, int firstTime);
 
 
-char *jk2_config_replaceProperties(struct jk_env *env, struct jk_map *m,
-                                   struct jk_pool *resultPool, 
-                                   char *value);
+    char *jk2_config_replaceProperties(struct jk_env *env, struct jk_map *m,
+                                       struct jk_pool *resultPool,
+                                       char *value);
 
-int jk2_config_file_read(struct jk_env *env, struct jk_map *m,const char *file);
+    int jk2_config_file_read(struct jk_env *env, struct jk_map *m,
+                             const char *file);
 
-int jk2_config_processNode(struct jk_env *env, struct jk_config *cfg,
-                           char *name, int firstTime );
+    int jk2_config_processNode(struct jk_env *env, struct jk_config *cfg,
+                               char *name, int firstTime);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_CONFIG_H */
+#endif                          /* JK_CONFIG_H */

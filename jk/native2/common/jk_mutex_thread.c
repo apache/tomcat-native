@@ -35,108 +35,109 @@
 
 #include "apr_thread_mutex.h"
 
-static int JK_METHOD jk2_mutex_thread_init(jk_env_t *env, jk_bean_t  *mutexB)
+static int JK_METHOD jk2_mutex_thread_init(jk_env_t *env, jk_bean_t *mutexB)
 {
-    jk_mutex_t *jkMutex=mutexB->object;
-    mutexB->state=JK_STATE_INIT;
+    jk_mutex_t *jkMutex = mutexB->object;
+    mutexB->state = JK_STATE_INIT;
 
-    return apr_thread_mutex_create( &jkMutex->threadMutex,
-                                    0,
-                                    (apr_pool_t *)env->getAprPool(env) );
+    return apr_thread_mutex_create(&jkMutex->threadMutex,
+                                   0, (apr_pool_t *) env->getAprPool(env));
 }
 
-static int JK_METHOD 
-jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t  *mutexB)
+static int JK_METHOD
+jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t *mutexB)
 {
-    jk_mutex_t *jkMutex=mutexB->object;
+    jk_mutex_t *jkMutex = mutexB->object;
 
-    mutexB->state=JK_STATE_NEW;
-    if( jkMutex==NULL || jkMutex->threadMutex==NULL ) return JK_ERR;
+    mutexB->state = JK_STATE_NEW;
+    if (jkMutex == NULL || jkMutex->threadMutex == NULL)
+        return JK_ERR;
 
-    return apr_thread_mutex_destroy( jkMutex->threadMutex);
+    return apr_thread_mutex_destroy(jkMutex->threadMutex);
 }
 
-static int JK_METHOD 
-jk2_mutex_thread_lock(jk_env_t *env, jk_mutex_t  *jkMutex)
+static int JK_METHOD jk2_mutex_thread_lock(jk_env_t *env, jk_mutex_t *jkMutex)
 {
-    if( jkMutex==NULL || jkMutex->threadMutex==NULL ) return JK_ERR;
-    return apr_thread_mutex_lock( jkMutex->threadMutex );
+    if (jkMutex == NULL || jkMutex->threadMutex == NULL)
+        return JK_ERR;
+    return apr_thread_mutex_lock(jkMutex->threadMutex);
 }
 
-static int JK_METHOD 
-jk2_mutex_thread_tryLock(jk_env_t *env, jk_mutex_t  *jkMutex)
+static int JK_METHOD
+jk2_mutex_thread_tryLock(jk_env_t *env, jk_mutex_t *jkMutex)
 {
-    if( jkMutex==NULL || jkMutex->threadMutex==NULL ) return JK_ERR;
-    return apr_thread_mutex_trylock( jkMutex->threadMutex );
+    if (jkMutex == NULL || jkMutex->threadMutex == NULL)
+        return JK_ERR;
+    return apr_thread_mutex_trylock(jkMutex->threadMutex);
 }
 
-static int JK_METHOD 
-jk2_mutex_thread_unLock(jk_env_t *env, jk_mutex_t  *jkMutex)
+static int JK_METHOD
+jk2_mutex_thread_unLock(jk_env_t *env, jk_mutex_t *jkMutex)
 {
-    if( jkMutex==NULL || jkMutex->threadMutex==NULL ) return JK_ERR;
-    return apr_thread_mutex_unlock( jkMutex->threadMutex );
+    if (jkMutex == NULL || jkMutex->threadMutex == NULL)
+        return JK_ERR;
+    return apr_thread_mutex_unlock(jkMutex->threadMutex);
 }
 
 #else /* All 3 cases we cover - apr and the 2 fallbacks */
 
 /*-------------------- No locking -------------------- */
 
-static int JK_METHOD jk2_mutex_thread_init(jk_env_t *env, jk_bean_t  *mutexB)
+static int JK_METHOD jk2_mutex_thread_init(jk_env_t *env, jk_bean_t *mutexB)
 {
-    mutexB->state=JK_STATE_INIT;
+    mutexB->state = JK_STATE_INIT;
     return JK_OK;
 }
 
-static int JK_METHOD 
-jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t  *mutexB)
+static int JK_METHOD
+jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t *mutexB)
 {
-    mutexB->state=JK_STATE_NEW;
+    mutexB->state = JK_STATE_NEW;
     return JK_OK;
 }
 
-static int JK_METHOD 
-jk2_mutex_thread_lock(jk_env_t *env, jk_mutex_t  *jkMutex)
-{
-    return JK_OK;
-}
-
-static int JK_METHOD 
-jk2_mutex_thread_tryLock(jk_env_t *env, jk_mutex_t  *jkMutex)
+static int JK_METHOD jk2_mutex_thread_lock(jk_env_t *env, jk_mutex_t *jkMutex)
 {
     return JK_OK;
 }
 
-static int JK_METHOD 
-jk2_mutex_thread_unLock(jk_env_t *env, jk_mutex_t  *jkMutex)
+static int JK_METHOD
+jk2_mutex_thread_tryLock(jk_env_t *env, jk_mutex_t *jkMutex)
+{
+    return JK_OK;
+}
+
+static int JK_METHOD
+jk2_mutex_thread_unLock(jk_env_t *env, jk_mutex_t *jkMutex)
 {
     return JK_OK;
 }
 
 #endif
 
-int JK_METHOD jk2_mutex_thread_factory( jk_env_t *env ,jk_pool_t *pool,
-                                        jk_bean_t *result,
-                                        const char *type, const char *name)
+int JK_METHOD jk2_mutex_thread_factory(jk_env_t *env, jk_pool_t *pool,
+                                       jk_bean_t *result,
+                                       const char *type, const char *name)
 {
     jk_mutex_t *mutex;
 
-    mutex=(jk_mutex_t *)pool->calloc(env, pool, sizeof(jk_mutex_t));
+    mutex = (jk_mutex_t *)pool->calloc(env, pool, sizeof(jk_mutex_t));
 
-    if( mutex == NULL )
+    if (mutex == NULL)
         return JK_ERR;
 
-    mutex->pool=pool;
+    mutex->pool = pool;
 
-    mutex->mbean=result; 
-    result->object=mutex;
-    
-    result->init=jk2_mutex_thread_init;
-    result->destroy=jk2_mutex_thread_destroy;
-    result->invoke=jk2_mutex_invoke;
-    
-    mutex->lock=jk2_mutex_thread_lock;
-    mutex->tryLock=jk2_mutex_thread_tryLock;
-    mutex->unLock=jk2_mutex_thread_unLock;
+    mutex->mbean = result;
+    result->object = mutex;
+
+    result->init = jk2_mutex_thread_init;
+    result->destroy = jk2_mutex_thread_destroy;
+    result->invoke = jk2_mutex_invoke;
+
+    mutex->lock = jk2_mutex_thread_lock;
+    mutex->tryLock = jk2_mutex_thread_tryLock;
+    mutex->unLock = jk2_mutex_thread_unLock;
 
     return JK_OK;
 }

@@ -31,21 +31,24 @@
 /** Common attributes for all channels
  */
 int JK_METHOD jk2_channel_setAttribute(jk_env_t *env,
-                                       jk_bean_t *mbean, 
+                                       jk_bean_t *mbean,
                                        char *name, void *valueP)
 {
-    jk_channel_t *ch=(jk_channel_t *)mbean->object;
-    char *value=valueP;
+    jk_channel_t *ch = (jk_channel_t *)mbean->object;
+    char *value = valueP;
 
-    if( strcmp( "debug", name ) == 0 ) {
-        ch->mbean->debug=atoi( value );
-    } else if( strcmp( "disabled", name ) == 0 ) {
-        ch->mbean->disabled=atoi( value );
-        if( ch->worker!=NULL)
-        ch->worker->mbean->disabled=ch->mbean->disabled;
-    } else {
-	if( ch->worker!=NULL ) {
-            return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );
+    if (strcmp("debug", name) == 0) {
+        ch->mbean->debug = atoi(value);
+    }
+    else if (strcmp("disabled", name) == 0) {
+        ch->mbean->disabled = atoi(value);
+        if (ch->worker != NULL)
+            ch->worker->mbean->disabled = ch->mbean->disabled;
+    }
+    else {
+        if (ch->worker != NULL) {
+            return ch->worker->mbean->setAttribute(env, ch->worker->mbean,
+                                                   name, valueP);
         }
         return JK_ERR;
     }
@@ -56,59 +59,58 @@ int JK_METHOD jk2_channel_setAttribute(jk_env_t *env,
 
 /** Called by java ( local or remote ). 
  */
-int JK_METHOD jk2_channel_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep, int code,
-                                 jk_msg_t *msg, int raw)
+int JK_METHOD jk2_channel_invoke(jk_env_t *env, jk_bean_t *bean,
+                                 jk_endpoint_t *ep, int code, jk_msg_t *msg,
+                                 int raw)
 {
-    jk_channel_t *ch=(jk_channel_t *)bean->object;
-    int rc=JK_OK;
+    jk_channel_t *ch = (jk_channel_t *)bean->object;
+    int rc = JK_OK;
 
-    if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                      "ch.%d() \n", code);
-    
-    switch( code ) {
-    case CH_OPEN: {
-        if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.open()\n");
-        if( ch->open != NULL )
-            rc=ch->open(env, ch, ep);
-        return rc;
-    }
-    case CH_CLOSE: {
-        if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.close()\n");
-        if( ch->close != NULL )
-            rc=ch->close(env, ch, ep);
-        return rc;
-    }
-    case CH_READ: {
-        if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.recv()\n");
-        if( ch->recv != NULL )
-            rc=ch->recv(env, ch, ep, msg);
-        if( rc==JK_OK )
-            return JK_INVOKE_WITH_RESPONSE;
-        return rc;
-    }
-    case CH_WRITE: {
-        if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.send()\n");
-        if( ch->serverSide )
-            msg->serverSide=JK_TRUE;
-        if( ch->send != NULL )
-            rc=ch->send(env, ch, ep, msg);
-        return rc;
-    }
-    case CH_HASINPUT: {
-        if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.hasinput()\n");
-        if( ch->serverSide )
-            msg->serverSide=JK_TRUE;
-        if( ch->hasinput != NULL )
-            rc=ch->hasinput(env, ch, ep, 1000);	/* Well we should handle timeout better isn't it ? */
-        return rc;
-    }
-    }/* switch */
+    if (ch->mbean->debug > 0)
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.%d() \n", code);
+
+    switch (code) {
+    case CH_OPEN:{
+            if (ch->mbean->debug > 0)
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.open()\n");
+            if (ch->open != NULL)
+                rc = ch->open(env, ch, ep);
+            return rc;
+        }
+    case CH_CLOSE:{
+            if (ch->mbean->debug > 0)
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.close()\n");
+            if (ch->close != NULL)
+                rc = ch->close(env, ch, ep);
+            return rc;
+        }
+    case CH_READ:{
+            if (ch->mbean->debug > 0)
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.recv()\n");
+            if (ch->recv != NULL)
+                rc = ch->recv(env, ch, ep, msg);
+            if (rc == JK_OK)
+                return JK_INVOKE_WITH_RESPONSE;
+            return rc;
+        }
+    case CH_WRITE:{
+            if (ch->mbean->debug > 0)
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.send()\n");
+            if (ch->serverSide)
+                msg->serverSide = JK_TRUE;
+            if (ch->send != NULL)
+                rc = ch->send(env, ch, ep, msg);
+            return rc;
+        }
+    case CH_HASINPUT:{
+            if (ch->mbean->debug > 0)
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.hasinput()\n");
+            if (ch->serverSide)
+                msg->serverSide = JK_TRUE;
+            if (ch->hasinput != NULL)
+                rc = ch->hasinput(env, ch, ep, 1000);   /* Well we should handle timeout better isn't it ? */
+            return rc;
+        }
+    }                           /* switch */
     return JK_ERR;
 }
-

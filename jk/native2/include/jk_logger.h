@@ -28,50 +28,47 @@
 #include "jk_map.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_map;
-struct jk_env;
-struct jk_logger;
-typedef struct jk_logger jk_logger_t;
+    struct jk_map;
+    struct jk_env;
+    struct jk_logger;
+    typedef struct jk_logger jk_logger_t;
 
 /* Logger object.
  *  XXX level should be moved per component ( to control the generation of messages ),
  *  the level param in the param should be used only as information ( to be displayed
  *  in the log ).
  */
-struct jk_logger {
-    struct jk_bean *mbean;
-    char *name;
-    void *logger_private;
-    int  level;
+    struct jk_logger
+    {
+        struct jk_bean *mbean;
+        char *name;
+        void *logger_private;
+        int level;
 
-    int (JK_METHOD *init)( struct jk_env *env, jk_logger_t *_this );
+        int (JK_METHOD * init) (struct jk_env * env, jk_logger_t *_this);
 
-    void (JK_METHOD *close)( struct jk_env *env, jk_logger_t *_this );
+        void (JK_METHOD * close) (struct jk_env * env, jk_logger_t *_this);
 
-    int (JK_METHOD *log)(struct jk_env *env,
-                         jk_logger_t *_this,
-                         int level,
-                         const char *what);
+        int (JK_METHOD * log) (struct jk_env * env,
+                               jk_logger_t *_this,
+                               int level, const char *what);
 
-    int (JK_METHOD *jkLog)(struct jk_env *env,
-                           jk_logger_t *_this,
-                           const char *file,
-                           int line,
-                           int level,
-                           const char *fmt, ...);
+        int (JK_METHOD * jkLog) (struct jk_env * env,
+                                 jk_logger_t *_this,
+                                 const char *file,
+                                 int line, int level, const char *fmt, ...);
 
-    int (JK_METHOD *jkVLog)(struct jk_env *env,
-                            jk_logger_t *_this,
-                            const char *file,
-                            int line,
-                            int level,
-                            const char *fmt,
-                            va_list msg);
+        int (JK_METHOD * jkVLog) (struct jk_env * env,
+                                  jk_logger_t *_this,
+                                  const char *file,
+                                  int line,
+                                  int level, const char *fmt, va_list msg);
 
-};
+    };
 
 #define JK_LOG_DEBUG_LEVEL 0
 #define JK_LOG_INFO_LEVEL  1
@@ -88,10 +85,10 @@ struct jk_logger {
 #define JK_LOG_ERROR __FILE__,__LINE__,JK_LOG_ERROR_LEVEL
 #define JK_LOG_EMERG __FILE__,__LINE__,JK_LOG_EMERG_LEVEL
 
-int jk2_logger_file_parseLogLevel(struct jk_env *env, const char *level);
+    int jk2_logger_file_parseLogLevel(struct jk_env *env, const char *level);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_LOGGER_H */
+#endif                          /* JK_LOGGER_H */

@@ -48,7 +48,8 @@
 #define JK_APACHE_MD5_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* MD5.H - header file for MD5.C */
@@ -56,14 +57,15 @@ extern "C" {
 #define JK_MD5_DIGESTSIZE 16
 
 /* JK_UINT4 defines a four byte word */
-typedef unsigned int JK_UINT4;
+    typedef unsigned int JK_UINT4;
 
 /* MD5 context. */
-typedef struct {
-    JK_UINT4 state[4];		/* state (ABCD) */
-    JK_UINT4 count[2];		/* number of bits, modulo 2^64 (lsb first) */
-    unsigned char buffer[64];	/* input buffer */
-} JK_MD5_CTX;
+    typedef struct
+    {
+        JK_UINT4 state[4];      /* state (ABCD) */
+        JK_UINT4 count[2];      /* number of bits, modulo 2^64 (lsb first) */
+        unsigned char buffer[64];       /* input buffer */
+    } JK_MD5_CTX;
 
 /*
  * Define the Magic String prefix that identifies a password as being
@@ -72,12 +74,13 @@ typedef struct {
 #define JK_MD5PW_ID "$apr1$"
 #define JK_MD5PW_IDLEN 6
 
-char * JK_METHOD jk2_hextocstr(unsigned char *org, char * dst, int n);
-char * JK_METHOD jk2_md5(const unsigned char *org, const unsigned char *org2, char *dst);
+    char *JK_METHOD jk2_hextocstr(unsigned char *org, char *dst, int n);
+    char *JK_METHOD jk2_md5(const unsigned char *org,
+                            const unsigned char *org2, char *dst);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* !JK_APACHE_MD5_H */
+#endif                          /* !JK_APACHE_MD5_H */

@@ -22,7 +22,7 @@
  */
 
 #ifdef AS400
-#include "apr_xlate.h"    
+#include "apr_xlate.h"
 #endif
 
 #include "jk_global.h"
@@ -34,60 +34,60 @@
 
 /* 
  */
-static int jk2_config_file_saveConfig( jk_env_t *env,
-                                       jk_config_t *cfg, char *workerFile )
+static int jk2_config_file_saveConfig(jk_env_t *env,
+                                      jk_config_t *cfg, char *workerFile)
 {
     FILE *fp;
-    int i,j;
-    
-    if( workerFile==NULL )
-        workerFile=cfg->file;
+    int i, j;
 
-    if( workerFile== NULL )
+    if (workerFile == NULL)
+        workerFile = cfg->file;
+
+    if (workerFile == NULL)
         return JK_ERR;
-    
+
 #ifdef AS400
-     fp = fopen(workerFile, "w, o_ccsid=0");
+    fp = fopen(workerFile, "w, o_ccsid=0");
 #else
-     fp = fopen(workerFile, "w");
-#endif        
-        
-    if(fp==NULL)
+    fp = fopen(workerFile, "w");
+#endif
+
+    if (fp == NULL)
         return JK_ERR;
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "config.save(): Saving %s\n", workerFile );
-    
+                  "config.save(): Saving %s\n", workerFile);
+
     /* We'll save only the objects/properties that were set
        via config, and to the original 'string'. That keeps the config
        small ( withou redundant ) and close to the original. Comments
        will be saved/loaded later.
-    */
-    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-        char *name=env->_objects->nameAt( env, env->_objects, i );
-        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+     */
+    for (i = 0; i < env->_objects->size(env, env->_objects); i++) {
+        char *name = env->_objects->nameAt(env, env->_objects, i);
+        jk_bean_t *mbean = env->_objects->valueAt(env, env->_objects, i);
 
-        if( mbean==NULL || mbean->settings==NULL ) 
+        if (mbean == NULL || mbean->settings == NULL)
             continue;
 
-        if( strcmp( name, mbean->name ) != 0 ) {
+        if (strcmp(name, mbean->name) != 0) {
             /* It's an alias. */
             continue;
         }
-        fprintf( fp, "[%s]\n", mbean->name );
+        fprintf(fp, "[%s]\n", mbean->name);
 
-        for( j=0; j < mbean->settings->size( env, mbean->settings ); j++ ) {
-            char *pname=mbean->settings->nameAt( env, mbean->settings, j);
+        for (j = 0; j < mbean->settings->size(env, mbean->settings); j++) {
+            char *pname = mbean->settings->nameAt(env, mbean->settings, j);
             /* Don't save redundant information */
-            if( strcmp( pname, "name" ) != 0 ) {
-                fprintf( fp, "%s=%s\n",
-                         pname,
-                         mbean->settings->valueAt( env, mbean->settings, j));
+            if (strcmp(pname, "name") != 0) {
+                fprintf(fp, "%s=%s\n",
+                        pname,
+                        mbean->settings->valueAt(env, mbean->settings, j));
             }
         }
-        fprintf( fp, "\n" );
+        fprintf(fp, "\n");
     }
-    
+
     fclose(fp);
 
     return JK_OK;
@@ -101,12 +101,12 @@ static void jk2_trim_prp_comment(char *prp)
 {
 #ifdef AS400
     char *comment;
-  /* lots of lines that translate a '#' realtime deleted   */
-    comment = strchr(prp, *APR_NUMBERSIGN); 
+    /* lots of lines that translate a '#' realtime deleted   */
+    comment = strchr(prp, *APR_NUMBERSIGN);
 #else
     char *comment = strchr(prp, '#');
 #endif
-    if(comment) {
+    if (comment) {
         *comment = '\0';
     }
 }
@@ -115,15 +115,13 @@ static int jk2_trim(char *s)
 {
     int i;
 
-    for(i = strlen(s) - 1 ; (i >= 0) && isspace(s[i]) ;  i--)
-        ;
-    
+    for (i = strlen(s) - 1; (i >= 0) && isspace(s[i]); i--);
+
     s[i + 1] = '\0';
-    
-    for(i = 0 ; ('\0' !=  s[i]) && isspace(s[i]) ; i++)
-        ;
-    
-    if(i > 0) {
+
+    for (i = 0; ('\0' != s[i]) && isspace(s[i]); i++);
+
+    if (i > 0) {
         strcpy(s, &s[i]);
     }
 
@@ -132,56 +130,58 @@ static int jk2_trim(char *s)
 
 
 
-int jk2_config_file_parseProperty(jk_env_t *env, jk_map_t *m, char **section, char *prp )
+int jk2_config_file_parseProperty(jk_env_t *env, jk_map_t *m, char **section,
+                                  char *prp)
 {
     int rc = JK_ERR;
     char *v;
-    jk_map_t *prefNode=NULL;
+    jk_map_t *prefNode = NULL;
 
     jk2_trim_prp_comment(prp);
-    
-    if( jk2_trim(prp)==0 )
+
+    if (jk2_trim(prp) == 0)
         return JK_OK;
 
     /* Support windows-style 'sections' - for cleaner config
      */
-    if( (prp[0] == '[') ) {
-        v=strchr(prp, ']' );
-        *v='\0';
-        jk2_trim( v );
+    if ((prp[0] == '[')) {
+        v = strchr(prp, ']');
+        *v = '\0';
+        jk2_trim(v);
         prp++;
-        
-        *section=m->pool->pstrdup(env, m->pool, prp);
 
-        jk2_map_default_create( env, &prefNode, m->pool );
+        *section = m->pool->pstrdup(env, m->pool, prp);
 
-        m->add( env, m, *section, prefNode);
+        jk2_map_default_create(env, &prefNode, m->pool);
+
+        m->add(env, m, *section, prefNode);
 
         return JK_OK;
     }
-    
+
     v = strchr(prp, '=');
-    if(v==NULL)
+    if (v == NULL)
         return JK_OK;
-        
+
     *v = '\0';
-    v++;                        
+    v++;
 
-    if(strlen(v)==0 || strlen(prp)==0)
+    if (strlen(v) == 0 || strlen(prp) == 0)
         return JK_OK;
 
-    if (*section!=NULL){
-        prefNode=m->get( env, m, *section);
-    }else{
-        prefNode=m;
+    if (*section != NULL) {
+        prefNode = m->get(env, m, *section);
     }
-    
-    if( prefNode==NULL )
+    else {
+        prefNode = m;
+    }
+
+    if (prefNode == NULL)
         return JK_ERR;
 
     /* fprintf(stderr, "Adding [%s] %s=%s\n", cfg->section, prp, v ); */
-    prefNode->add( env, prefNode, m->pool->pstrdup(env, m->pool, prp),
-                   m->pool->pstrdup(env, m->pool, v));
+    prefNode->add(env, prefNode, m->pool->pstrdup(env, m->pool, prp),
+                  m->pool->pstrdup(env, m->pool, v));
 
     return JK_OK;
 }
@@ -190,26 +190,26 @@ int jk2_config_file_parseProperty(jk_env_t *env, jk_map_t *m, char **section, ch
 
 /** Read the config file
  */
-int jk2_config_file_read(jk_env_t *env, jk_map_t *m,const char *file)
+int jk2_config_file_read(jk_env_t *env, jk_map_t *m, const char *file)
 {
     FILE *fp;
-    char buf[LENGTH_OF_LINE + 1];            
+    char buf[LENGTH_OF_LINE + 1];
     char *prp;
-    char *section=NULL;
-    if(m==NULL || file==NULL )
+    char *section = NULL;
+    if (m == NULL || file == NULL)
         return JK_ERR;
 
 #ifdef AS400
     fp = fopen(file, "r, o_ccsid=0");
 #else
     fp = fopen(file, "r");
-#endif        
+#endif
 
-    if(fp==NULL)
+    if (fp == NULL)
         return JK_ERR;
 
-    while(NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
-        jk2_config_file_parseProperty( env, m, &section, prp );
+    while (NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
+        jk2_config_file_parseProperty(env, m, &section, prp);
     }
 
     fclose(fp);
@@ -224,56 +224,59 @@ static int jk2_config_file_readFile(jk_env_t *env,
     int rc;
     struct stat statbuf;
 
-    if( didReload!=NULL )
-        *didReload=JK_FALSE;
+    if (didReload != NULL)
+        *didReload = JK_FALSE;
 
-    if( cfg->file==NULL ) {
+    if (cfg->file == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.update(): No config file\n" );
+                      "config.update(): No config file\n");
         return JK_ERR;
     }
 
-    rc=stat(cfg->file, &statbuf);
+    rc = stat(cfg->file, &statbuf);
     if (rc == -1) {
-        /* Don't report it as an error - it's a common case*/
+        /* Don't report it as an error - it's a common case */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "config.update(): Can't find config file %s\n", cfg->file );
-        return JK_OK;
-    }
-    
-    if( !firstTime && statbuf.st_mtime < cfg->mtime ) {
-        if( cfg->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "config.update(): No reload needed %s %ld %ld\n", cfg->file,
-                          cfg->mtime, statbuf.st_mtime );
+                      "config.update(): Can't find config file %s\n",
+                      cfg->file);
         return JK_OK;
     }
 
-    if( cfg->cs == NULL ) {
-        jk_bean_t *jkb=env->createBean2(env, cfg->mbean->pool,"threadMutex", NULL);
-        if( jkb != NULL && jkb->object != NULL ) {
-            cfg->cs=jkb->object;
-            jkb->init(env, jkb );
+    if (!firstTime && statbuf.st_mtime < cfg->mtime) {
+        if (cfg->mbean->debug > 0)
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "config.update(): No reload needed %s %ld %ld\n",
+                          cfg->file, cfg->mtime, statbuf.st_mtime);
+        return JK_OK;
+    }
+
+    if (cfg->cs == NULL) {
+        jk_bean_t *jkb =
+            env->createBean2(env, cfg->mbean->pool, "threadMutex", NULL);
+        if (jkb != NULL && jkb->object != NULL) {
+            cfg->cs = jkb->object;
+            jkb->init(env, jkb);
         }
     }
 
-    if( cfg->cs != NULL ) 
-        cfg->cs->lock( env, cfg->cs );
+    if (cfg->cs != NULL)
+        cfg->cs->lock(env, cfg->cs);
 
     /* Check if another thread has updated the config */
 
-    rc=stat(cfg->file, &statbuf);
+    rc = stat(cfg->file, &statbuf);
     if (rc == -1) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.update(): Can't find config file %s", cfg->file );
-        if( cfg->cs != NULL ) 
-            cfg->cs->unLock( env, cfg->cs );
+                      "config.update(): Can't find config file %s",
+                      cfg->file);
+        if (cfg->cs != NULL)
+            cfg->cs->unLock(env, cfg->cs);
         return JK_ERR;
     }
-    
-    if( ! firstTime && statbuf.st_mtime <= cfg->mtime ) {
-        if( cfg->cs != NULL ) 
-            cfg->cs->unLock( env, cfg->cs );
+
+    if (!firstTime && statbuf.st_mtime <= cfg->mtime) {
+        if (cfg->cs != NULL)
+            cfg->cs->unLock(env, cfg->cs);
         return JK_OK;
     }
 
@@ -285,57 +288,62 @@ static int jk2_config_file_readFile(jk_env_t *env,
      */
     jk2_map_default_create(env, &cfg->cfgData, env->tmpPool);
 
-    rc=jk2_config_file_read(env, cfg->cfgData , cfg->file );
-    
-    if( rc==JK_OK ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+    rc = jk2_config_file_read(env, cfg->cfgData, cfg->file);
+
+    if (rc == JK_OK) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "config.setConfig():  Reading properties %s %d\n",
-                      cfg->file, cfg->cfgData->size( env, cfg->cfgData ) );
-    } else {
+                      cfg->file, cfg->cfgData->size(env, cfg->cfgData));
+    }
+    else {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "config.setConfig(): Error reading properties %s\n",
-                      cfg->file );
-        if( cfg->cs != NULL ) 
-            cfg->cs->unLock( env, cfg->cs );
+                      cfg->file);
+        if (cfg->cs != NULL)
+            cfg->cs->unLock(env, cfg->cs);
         return JK_ERR;
     }
-    
-    rc=jk2_config_processConfigData( env, cfg, firstTime );
 
-    if( didReload!=NULL )
-        *didReload=JK_TRUE;
-    
-    cfg->mtime= statbuf.st_mtime;
+    rc = jk2_config_processConfigData(env, cfg, firstTime);
 
-    if( cfg->cs != NULL ) 
-        cfg->cs->unLock( env, cfg->cs );
+    if (didReload != NULL)
+        *didReload = JK_TRUE;
+
+    cfg->mtime = statbuf.st_mtime;
+
+    if (cfg->cs != NULL)
+        cfg->cs->unLock(env, cfg->cs);
 
     return rc;
 }
 
 
 static int jk2_config_file_update(jk_env_t *env,
-                             jk_config_t *cfg, int *didReload)
+                                  jk_config_t *cfg, int *didReload)
 {
-    return jk2_config_file_readFile( env, cfg, didReload, JK_FALSE );
+    return jk2_config_file_readFile(env, cfg, didReload, JK_FALSE);
 }
 
 /** Set a property for this config object
  */
-static int JK_METHOD jk2_config_file_setAttribute( struct jk_env *env, struct jk_bean *mbean,
-                                              char *name, void *valueP)
+static int JK_METHOD jk2_config_file_setAttribute(struct jk_env *env,
+                                                  struct jk_bean *mbean,
+                                                  char *name, void *valueP)
 {
-    jk_config_t *cfg=mbean->object;
-    char *value=valueP;
-    
-    if( strcmp( name, "file" )==0 ) {
-        cfg->file=value;
-        return jk2_config_file_readFile( env, cfg, NULL, JK_TRUE );
-    } else if( strcmp( name, "debugEnv" )==0 ) {
-        env->debug=atoi( value );
-    } else if( strcmp( name, "save" )==0 ) {
+    jk_config_t *cfg = mbean->object;
+    char *value = valueP;
+
+    if (strcmp(name, "file") == 0) {
+        cfg->file = value;
+        return jk2_config_file_readFile(env, cfg, NULL, JK_TRUE);
+    }
+    else if (strcmp(name, "debugEnv") == 0) {
+        env->debug = atoi(value);
+    }
+    else if (strcmp(name, "save") == 0) {
         return jk2_config_file_saveConfig(env, cfg, cfg->file);
-    } else {
+    }
+    else {
         return JK_ERR;
     }
     return JK_OK;
@@ -343,51 +351,54 @@ static int JK_METHOD jk2_config_file_setAttribute( struct jk_env *env, struct jk
 
 /** Get a property for this config object
  */
-static void * JK_METHOD jk2_config_file_getAttribute( struct jk_env *env, struct jk_bean *mbean,
-                                                      char *name)
+static void *JK_METHOD jk2_config_file_getAttribute(struct jk_env *env,
+                                                    struct jk_bean *mbean,
+                                                    char *name)
 {
-    jk_config_t *cfg=mbean->object;
-    
-    if( strcmp( name, "file" )==0 ) {
+    jk_config_t *cfg = mbean->object;
+
+    if (strcmp(name, "file") == 0) {
         return cfg->file;
-    } else if( strcmp( name, "ver" )==0 ) {
+    }
+    else if (strcmp(name, "ver") == 0) {
         return 0;
-    } else {
+    }
+    else {
         return "";
     }
 }
 
-static char *myGetAttInfo[]={ "ver", "file", NULL };
-static char *mySetAttInfo[]={ "ver", "file", "save", NULL };
+static char *myGetAttInfo[] = { "ver", "file", NULL };
+static char *mySetAttInfo[] = { "ver", "file", "save", NULL };
 
-int JK_METHOD jk2_config_file_factory( jk_env_t *env, jk_pool_t *pool,
-                        jk_bean_t *result,
-                        const char *type, const char *name)
+int JK_METHOD jk2_config_file_factory(jk_env_t *env, jk_pool_t *pool,
+                                      jk_bean_t *result,
+                                      const char *type, const char *name)
 {
     jk_config_t *_this;
 
-    _this=(jk_config_t *)pool->alloc(env, pool, sizeof(jk_config_t));
-    if( _this == NULL )
+    _this = (jk_config_t *)pool->alloc(env, pool, sizeof(jk_config_t));
+    if (_this == NULL)
         return JK_ERR;
 
     _this->pool = pool;
     result->getAttributeInfo = myGetAttInfo;
     result->setAttributeInfo = mySetAttInfo;
-    _this->ver=0;
+    _this->ver = 0;
 
-    _this->setPropertyString=jk2_config_setPropertyString;
-    _this->setProperty=jk2_config_setProperty;
-    _this->processNode=jk2_config_processNode;
+    _this->setPropertyString = jk2_config_setPropertyString;
+    _this->setProperty = jk2_config_setProperty;
+    _this->processNode = jk2_config_processNode;
 
-    _this->cs=NULL;
-    
-    _this->update=jk2_config_file_update;
-    _this->save=jk2_config_file_saveConfig;
+    _this->cs = NULL;
 
-    result->object=_this;
-    result->setAttribute=jk2_config_file_setAttribute;
-    result->getAttribute=jk2_config_file_getAttribute;
-    _this->mbean=result;
+    _this->update = jk2_config_file_update;
+    _this->save = jk2_config_file_saveConfig;
+
+    result->object = _this;
+    result->setAttribute = jk2_config_file_setAttribute;
+    result->getAttribute = jk2_config_file_getAttribute;
+    _this->mbean = result;
 
     return JK_OK;
 }

@@ -44,7 +44,7 @@
 #ifdef AS400
 /*XXX: why is this include here in common? */
 #include "ap_config.h"
-extern char *strdup (const char *str);
+extern char *strdup(const char *str);
 #endif
 
 #include <sys/types.h>
@@ -69,17 +69,17 @@ extern char *strdup (const char *str);
 
 
 #if ( JK_VERISRELEASE == 1 )
-  #define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT
+#define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT
 #else
-  #define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT "-dev"
+#define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT "-dev"
 #endif
 
 #if ( JK_VERBETA == 0 )
-    #define JK_EXPOSED_VERSION JK_RELEASE_STR
-    #undef JK_VERBETA
-    #define JK_VERBETA 255
+#define JK_EXPOSED_VERSION JK_RELEASE_STR
+#undef JK_VERBETA
+#define JK_VERBETA 255
 #else
-    #define JK_EXPOSED_VERSION JK_RELEASE_STR "-beta-" JK_BETASTRING
+#define JK_EXPOSED_VERSION JK_RELEASE_STR "-beta-" JK_BETASTRING
 #endif
 
 #define JK_MAKEVERSION(major, minor, fix, beta) (((major) << 24) + ((minor) << 16) + ((fix) << 8) + (beta))
@@ -92,38 +92,38 @@ extern char *strdup (const char *str);
 
 #define AJP13_DEF_HOST "127.0.0.1"
 #ifdef NETWARE
-    #define AJP13_DEF_PORT 9009    /* default to 9009 since 8009 is used by OS */
+#define AJP13_DEF_PORT 9009     /* default to 9009 since 8009 is used by OS */
 #else
-    #define AJP13_DEF_PORT 8009
+#define AJP13_DEF_PORT 8009
 #endif
 
 #ifdef WIN32
-    #include <windows.h>
-    #include <winsock.h>
+#include <windows.h>
+#include <winsock.h>
 #else
-    #include <unistd.h>
-    #ifdef __NOVELL_LIBC__
-        #include <novsock2.h>
-    #else
-        #include <netdb.h>
-    
-        #include <netinet/in.h>
-        #include <sys/socket.h>
-        #ifndef NETWARE
-            #include <netinet/tcp.h>
-            #include <arpa/inet.h>
-            #include <sys/un.h>
-            #if !defined(_OSD_POSIX) && !defined(AS400) && !defined(CYGWIN)
-                #include <sys/socketvar.h>
-            #endif
-            #if !defined(HPUX11) && !defined(AS400)
-                #include <sys/select.h>
-            #endif
-        #endif
-            
-        #include <sys/time.h>
-        #include <sys/ioctl.h>
-    #endif
+#include <unistd.h>
+#ifdef __NOVELL_LIBC__
+#include <novsock2.h>
+#else
+#include <netdb.h>
+
+#include <netinet/in.h>
+#include <sys/socket.h>
+#ifndef NETWARE
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <sys/un.h>
+#if !defined(_OSD_POSIX) && !defined(AS400) && !defined(CYGWIN)
+#include <sys/socketvar.h>
+#endif
+#if !defined(HPUX11) && !defined(AS400)
+#include <sys/select.h>
+#endif
+#endif
+
+#include <sys/time.h>
+#include <sys/ioctl.h>
+#endif
 #endif
 
 #ifdef WIN32
@@ -134,23 +134,24 @@ extern char *strdup (const char *str);
 
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
 /* We'll use APR whenever it's possible. However for a transition period and
    for essential components we can build a minimal mod_jk without APR.
 */
-    
+
 #define JK_OK APR_SUCCESS
 #define JK_ERR APR_OS_START_USEERR
 /* Individual jk errors */
 
 #define JK_
-    
+
 /* Some compileers support 'inline'. How to guess ?
    #define INLINE inline
  */
- 
+
 /* For VC the __inline keyword is available in both C and C++.*/
 #if defined(_WIN32) && defined(_MSC_VER)
 #define INLINE __inline
@@ -178,64 +179,64 @@ extern "C" {
 #define JK_PATH_SESSION_IDENTIFIER ";jsessionid"
 
 #if defined(WIN32)
-    #define SO_EXTENSION "dll"
+#define SO_EXTENSION "dll"
 #else
-  #if defined(NETWARE)
-      #define SO_EXTENSION "nlm"
-  #else
-      #define SO_EXTENSION "so"
-  #endif
+#if defined(NETWARE)
+#define SO_EXTENSION "nlm"
+#else
+#define SO_EXTENSION "so"
+#endif
 #endif
 
 #ifndef ARCH
 #define ARCH "i386"
 #endif
-    
-#if defined(WIN32) || defined(NETWARE)
-    #ifdef __GNUC__
-        #define JK_METHOD
-        #define C_LEVEL_TRY_START
-        #define C_LEVEL_TRY_END
-        #define C_LEVEL_FINALLY_START
-        #define C_LEVEL_FINALLY_END
-    #else
-        #define JK_METHOD __stdcall
-        #define C_LEVEL_TRY_START       __try {
-        #define C_LEVEL_TRY_END         }
-        #define C_LEVEL_FINALLY_START   __finally {
-        #define C_LEVEL_FINALLY_END     }
-    #endif
-    #define PATH_SEPERATOR          (';')
-    #define PATH_SEPARATOR_STR      (";")
-    #define FILE_SEPERATOR          ('\\')
-    #define FILE_SEPARATOR_STR      ("\\")
-    #define PATH_ENV_VARIABLE       ("PATH")
-    
-    /* incompatible names... */
-    #ifndef strcasecmp 
-        #define strcasecmp stricmp
-    #endif
-    #ifndef strncasecmp 
-        #define strncasecmp strnicmp
-    #endif
 
-    #ifndef __NOVELL_LIBC__
-        #ifndef vsnprintf
-            #define vsnprintf _vsnprintf
-        #endif
-    #endif
+#if defined(WIN32) || defined(NETWARE)
+#ifdef __GNUC__
+#define JK_METHOD
+#define C_LEVEL_TRY_START
+#define C_LEVEL_TRY_END
+#define C_LEVEL_FINALLY_START
+#define C_LEVEL_FINALLY_END
 #else
-    #define JK_METHOD
-    #define C_LEVEL_TRY_START       
-    #define C_LEVEL_TRY_END         
-    #define C_LEVEL_FINALLY_START   
-    #define C_LEVEL_FINALLY_END     
-    #define PATH_SEPERATOR          (':')
-    #define FILE_SEPERATOR          ('/')
-    #define PATH_SEPARATOR_STR      (":")
-    #define FILE_SEPARATOR_STR      ("/")
-    #define PATH_ENV_VARIABLE       ("LD_LIBRARY_PATH")
-    #define HAVE_UNIXSOCKETS
+#define JK_METHOD __stdcall
+#define C_LEVEL_TRY_START       __try {
+#define C_LEVEL_TRY_END         }
+#define C_LEVEL_FINALLY_START   __finally {
+#define C_LEVEL_FINALLY_END     }
+#endif
+#define PATH_SEPERATOR          (';')
+#define PATH_SEPARATOR_STR      (";")
+#define FILE_SEPERATOR          ('\\')
+#define FILE_SEPARATOR_STR      ("\\")
+#define PATH_ENV_VARIABLE       ("PATH")
+
+    /* incompatible names... */
+#ifndef strcasecmp
+#define strcasecmp stricmp
+#endif
+#ifndef strncasecmp
+#define strncasecmp strnicmp
+#endif
+
+#ifndef __NOVELL_LIBC__
+#ifndef vsnprintf
+#define vsnprintf _vsnprintf
+#endif
+#endif
+#else
+#define JK_METHOD
+#define C_LEVEL_TRY_START
+#define C_LEVEL_TRY_END
+#define C_LEVEL_FINALLY_START
+#define C_LEVEL_FINALLY_END
+#define PATH_SEPERATOR          (':')
+#define FILE_SEPERATOR          ('/')
+#define PATH_SEPARATOR_STR      (":")
+#define FILE_SEPARATOR_STR      ("/")
+#define PATH_ENV_VARIABLE       ("LD_LIBRARY_PATH")
+#define HAVE_UNIXSOCKETS
 #endif
 
 /*
@@ -265,7 +266,7 @@ extern "C" {
 #define JK_OPT_RECOSTRATEGYMASK			0x0030
 
 #define JK_OPT_RECO_ABORTIFTCGETREQUEST	0x0010  /* DONT RECOVER IF TOMCAT FAIL AFTER RECEIVING REQUEST */
-#define JK_OPT_RECO_ABORTIFTCSENDHEADER	0x0020 	/* DONT RECOVER IF TOMCAT FAIL AFTER SENDING HEADERS */
+#define JK_OPT_RECO_ABORTIFTCSENDHEADER	0x0020  /* DONT RECOVER IF TOMCAT FAIL AFTER SENDING HEADERS */
 
 #define JK_OPT_RECOSTRATEGYDEFAULT		0x0000
 
@@ -273,13 +274,13 @@ extern "C" {
 /* Check for EBCDIC systems */
 
 /* Check for Apache 2.0 running on an EBCDIC system */
-#if APR_CHARSET_EBCDIC 
+#if APR_CHARSET_EBCDIC
 
 #define USE_CHARSET_EBCDIC
 #define jk_xlate_to_ascii(b, l) ap_xlate_proto_to_ascii(b, l)
 #define jk_xlate_from_ascii(b, l) ap_xlate_proto_from_ascii(b, l)
 
-#else   /* APR_CHARSET_EBCDIC */
+#else                           /* APR_CHARSET_EBCDIC */
 
 /* Check for Apache 1.3 running on an EBCDIC system */
 #ifdef CHARSET_EBCDIC
@@ -288,19 +289,19 @@ extern "C" {
 #define jk_xlate_to_ascii(b, l) ebcdic2ascii(b, b, l)
 #define jk_xlate_from_ascii(b, l) ascii2ebcdic(b, b, l)
 
-#else /* CHARSET_EBCDIC */
+#else                           /* CHARSET_EBCDIC */
 
 /* We're in on an ASCII system */
 
-#define jk_xlate_to_ascii(b, l)             /* NOOP */
-#define jk_xlate_from_ascii(b, l)           /* NOOP */
+#define jk_xlate_to_ascii(b, l) /* NOOP */
+#define jk_xlate_from_ascii(b, l)       /* NOOP */
 
-#endif /* CHARSET_EBCDIC */
+#endif                          /* CHARSET_EBCDIC */
 
-#endif /* APR_CHARSET_EBCDIC */
+#endif                          /* APR_CHARSET_EBCDIC */
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_GLOBAL_H */
+#endif                          /* JK_GLOBAL_H */

@@ -25,21 +25,22 @@
 #include "jk_service.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_env;
-struct jk_worker;
-struct jk_endpoint;
-struct jk_channel;
+    struct jk_env;
+    struct jk_worker;
+    struct jk_endpoint;
+    struct jk_channel;
 
 #define CH_OPEN 4
 #define CH_CLOSE 5
 #define CH_READ 6
 #define CH_WRITE 7
 #define CH_HASINPUT 8
-    
-typedef struct jk_channel jk_channel_t;
+
+    typedef struct jk_channel jk_channel_t;
 
 /**
  * Abstraction (interface) for sending/receiving blocks of data ( packets ).
@@ -64,86 +65,93 @@ typedef struct jk_channel jk_channel_t;
  * 
  * @author Costin Manolache
  */
-struct jk_channel {
-    struct jk_bean *mbean;
+    struct jk_channel
+    {
+        struct jk_bean *mbean;
 
-    /* JK_TRUE if the channel is 'stream' based, i.e. it works using
-       send() followed by blocking reads().
-       XXX make it type and define an enum of supported types ?
+        /* JK_TRUE if the channel is 'stream' based, i.e. it works using
+           send() followed by blocking reads().
+           XXX make it type and define an enum of supported types ?
 
-       The only alternative right now is JNI ( and doors ), where
-       a single thread is used. After the first packet is sent the
-       java side takes control and directly dispatch messages using the
-       jni  ( XXX review - it would be simple with continuations, but
-       send/receive flow is hard to replicate on jni ) 
-    */
-    int is_stream;
-    
-    struct jk_workerEnv *workerEnv;
-    struct jk_worker *worker; 
-    char *workerName;
-    
-    int serverSide;    
+           The only alternative right now is JNI ( and doors ), where
+           a single thread is used. After the first packet is sent the
+           java side takes control and directly dispatch messages using the
+           jni  ( XXX review - it would be simple with continuations, but
+           send/receive flow is hard to replicate on jni ) 
+         */
+        int is_stream;
+
+        struct jk_workerEnv *workerEnv;
+        struct jk_worker *worker;
+        char *workerName;
+
+        int serverSide;
 
     /** Open the communication channel
      */
-    int (JK_METHOD *open)(struct jk_env *env, jk_channel_t *_this, 
-			  struct jk_endpoint *endpoint );
-    
+        int (JK_METHOD * open) (struct jk_env * env, jk_channel_t *_this,
+                                struct jk_endpoint * endpoint);
+
     /** Close the communication channel
      */
-    int (JK_METHOD *close)(struct jk_env *env, jk_channel_t *_this, 
-			   struct jk_endpoint *endpoint );
-    
+        int (JK_METHOD * close) (struct jk_env * env, jk_channel_t *_this,
+                                 struct jk_endpoint * endpoint);
+
   /** Send a packet
    */
-    int (JK_METHOD *send)(struct jk_env *env, jk_channel_t *_this,
-			  struct jk_endpoint *endpoint,
-                          struct jk_msg *msg );
-    
+        int (JK_METHOD * send) (struct jk_env * env, jk_channel_t *_this,
+                                struct jk_endpoint * endpoint,
+                                struct jk_msg * msg);
+
     /** Receive a packet
      */
-    int (JK_METHOD *recv)(struct jk_env *env, jk_channel_t *_this,
-			  struct jk_endpoint *endpoint,
-                          struct jk_msg *msg );
+        int (JK_METHOD * recv) (struct jk_env * env, jk_channel_t *_this,
+                                struct jk_endpoint * endpoint,
+                                struct jk_msg * msg);
 
     /** Check if something is available in input on the communication channel
      */
-    int (JK_METHOD *hasinput)(struct jk_env *env, jk_channel_t *_this,
-			  struct jk_endpoint *endpoint, int timeout);
+        int (JK_METHOD * hasinput) (struct jk_env * env, jk_channel_t *_this,
+                                    struct jk_endpoint * endpoint,
+                                    int timeout);
 
     /** Called before request processing, to initialize resources.
         All following calls will be in the same thread.
      */
-    int (JK_METHOD *beforeRequest)(struct jk_env *env, jk_channel_t *_this,
-                                   struct jk_worker *worker,
-                                   struct jk_endpoint *endpoint,
-                                   struct jk_ws_service *r );
-			  
+        int (JK_METHOD * beforeRequest) (struct jk_env * env,
+                                         jk_channel_t *_this,
+                                         struct jk_worker * worker,
+                                         struct jk_endpoint * endpoint,
+                                         struct jk_ws_service * r);
+
     /** Called after request processing. Used to be worker.done()
      */
-    int (JK_METHOD *afterRequest)(struct jk_env *env, jk_channel_t *_this,
-                                  struct jk_worker *worker,
-                                  struct jk_endpoint *endpoint,
-                                  struct jk_ws_service *r );
-   
+        int (JK_METHOD * afterRequest) (struct jk_env * env,
+                                        jk_channel_t *_this,
+                                        struct jk_worker * worker,
+                                        struct jk_endpoint * endpoint,
+                                        struct jk_ws_service * r);
+
     /** Obtain the channel status code
      */
-    int (JK_METHOD *status)(struct jk_env *env, 
-                            struct jk_worker *worker,
-                            jk_channel_t *_this);
+        int (JK_METHOD * status) (struct jk_env * env,
+                                  struct jk_worker * worker,
+                                  jk_channel_t *_this);
 
-    void *_privatePtr;
-};
+        void *_privatePtr;
+    };
 
-int JK_METHOD jk2_channel_invoke(struct jk_env *env, struct jk_bean *bean, struct jk_endpoint *ep, int code,
-                                 struct jk_msg *msg, int raw);
+    int JK_METHOD jk2_channel_invoke(struct jk_env *env, struct jk_bean *bean,
+                                     struct jk_endpoint *ep, int code,
+                                     struct jk_msg *msg, int raw);
 
 
-int JK_METHOD jk2_channel_setAttribute(struct jk_env *env, struct jk_bean *mbean, char *name, void *valueP);
+    int JK_METHOD jk2_channel_setAttribute(struct jk_env *env,
+                                           struct jk_bean *mbean, char *name,
+                                           void *valueP);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif 
+#endif

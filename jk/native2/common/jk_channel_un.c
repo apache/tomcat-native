@@ -41,11 +41,12 @@
 #include <fcntl.h>
 #include "jk_registry.h"
 
-#ifdef HAVE_UNIXSOCKETS    
+#ifdef HAVE_UNIXSOCKETS
 
 /** Information specific for the socket channel
  */
-typedef struct jk_channel_un_private {
+typedef struct jk_channel_un_private
+{
     int ndelay;
     struct sockaddr_un unix_addr;
     char *file;
@@ -67,135 +68,147 @@ typedef struct jk_channel_un_private {
 static int JK_METHOD jk2_channel_un_close(jk_env_t *env, jk_channel_t *ch,
                                           jk_endpoint_t *endpoint);
 
-static char *jk2_channel_un_multiValueInfo[]={"group",  NULL };
-static char *jk2_channel_un_setAttributeInfo[]={"file", "soLinger", "listen", 
-                                                "level", NULL };
-static char *jk2_channel_un_getAttributeInfo[]={"file", "soLinger", 
-                                                "listen", NULL };
+static char *jk2_channel_un_multiValueInfo[] = { "group", NULL };
+static char *jk2_channel_un_setAttributeInfo[] =
+    { "file", "soLinger", "listen",
+    "level", NULL
+};
+static char *jk2_channel_un_getAttributeInfo[] = { "file", "soLinger",
+    "listen", NULL
+};
 
 static int JK_METHOD jk2_channel_un_setAttribute(jk_env_t *env,
-                                                jk_bean_t *mbean, 
-                                                char *name, void *valueP)
+                                                 jk_bean_t *mbean,
+                                                 char *name, void *valueP)
 {
-    jk_channel_t *ch=(jk_channel_t *)mbean->object;
-    char *value=valueP;
-    jk_channel_un_private_t *socketInfo=
-        (jk_channel_un_private_t *)(ch->_privatePtr);
+    jk_channel_t *ch = (jk_channel_t *)mbean->object;
+    char *value = valueP;
+    jk_channel_un_private_t *socketInfo =
+        (jk_channel_un_private_t *) (ch->_privatePtr);
 
-    if( strcmp( "file", name ) == 0 ) {
-        socketInfo->file=value;
-    } else if( strcmp( "soLinger", name ) == 0 ) {
-        socketInfo->l_linger=atoi( value );
-    } else if( strcmp( "listen", name ) == 0 ) {
-        socketInfo->backlog=atoi( value );
-        ch->serverSide=JK_TRUE;
-    } else {
-        return jk2_channel_setAttribute( env, mbean, name, valueP );
+    if (strcmp("file", name) == 0) {
+        socketInfo->file = value;
+    }
+    else if (strcmp("soLinger", name) == 0) {
+        socketInfo->l_linger = atoi(value);
+    }
+    else if (strcmp("listen", name) == 0) {
+        socketInfo->backlog = atoi(value);
+        ch->serverSide = JK_TRUE;
+    }
+    else {
+        return jk2_channel_setAttribute(env, mbean, name, valueP);
     }
     return JK_OK;
 }
 
-static void * JK_METHOD jk2_channel_un_getAttribute(jk_env_t *env,
-                                                 jk_bean_t *mbean, 
-                                                 char *name)
+static void *JK_METHOD jk2_channel_un_getAttribute(jk_env_t *env,
+                                                   jk_bean_t *mbean,
+                                                   char *name)
 {
-    jk_channel_t *ch=(jk_channel_t *)mbean->object;
-    jk_channel_un_private_t *socketInfo=
-        (jk_channel_un_private_t *)(ch->_privatePtr);
+    jk_channel_t *ch = (jk_channel_t *)mbean->object;
+    jk_channel_un_private_t *socketInfo =
+        (jk_channel_un_private_t *) (ch->_privatePtr);
 
-    if( strcmp( "file", name ) == 0 ) {
+    if (strcmp("file", name) == 0) {
         return socketInfo->file;
-    } else if( strcmp( "soLinger", name ) == 0 ) {
-        return jk2_env_itoa( env, socketInfo->l_linger );
-    } else if( strcmp( "listen", name ) == 0 ) {
-        return jk2_env_itoa( env, socketInfo->backlog );
-    } 
+    }
+    else if (strcmp("soLinger", name) == 0) {
+        return jk2_env_itoa(env, socketInfo->l_linger);
+    }
+    else if (strcmp("listen", name) == 0) {
+        return jk2_env_itoa(env, socketInfo->backlog);
+    }
     return NULL;
 }
 
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
-static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
-                                         jk_bean_t *chB)
+static int JK_METHOD jk2_channel_un_init(jk_env_t *env, jk_bean_t *chB)
 {
-    jk_channel_t *ch=chB->object;
-    jk_channel_un_private_t *socketInfo=
-        (jk_channel_un_private_t *)(ch->_privatePtr);
-    int rc=JK_OK;
+    jk_channel_t *ch = chB->object;
+    jk_channel_un_private_t *socketInfo =
+        (jk_channel_un_private_t *) (ch->_privatePtr);
+    int rc = JK_OK;
     int omask;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelUn.init(): init \n" );
-    if( socketInfo->file==NULL ) {
-        char *localName=ch->mbean->localName;
-        jk_config_t *cfg=ch->workerEnv->config;
-        
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "channelUn.init(): init \n");
+    if (socketInfo->file == NULL) {
+        char *localName = ch->mbean->localName;
+        jk_config_t *cfg = ch->workerEnv->config;
+
         /* Set the 'name' property
          */
-        localName = jk2_config_replaceProperties(env, cfg->map, cfg->map->pool, localName);
+        localName =
+            jk2_config_replaceProperties(env, cfg->map, cfg->map->pool,
+                                         localName);
 
         /*   env->l->jkLog(env, env->l, JK_LOG_INFO, */
         /*                 "channelUn.init(): use name %s\n", localName ); */
-        
-        if (localName[0]=='/') {
-            ch->mbean->setAttribute( env, ch->mbean, "file", localName );
-        } 
+
+        if (localName[0] == '/') {
+            ch->mbean->setAttribute(env, ch->mbean, "file", localName);
+        }
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelUn.init(): extracted file from name %s\n", socketInfo->file  );
+                      "channelUn.init(): extracted file from name %s\n",
+                      socketInfo->file);
     }
-    
-    if (socketInfo->file!=NULL && socketInfo->file[0]=='/') {
+
+    if (socketInfo->file != NULL && socketInfo->file[0] == '/') {
         memset(&socketInfo->unix_addr, 0, sizeof(struct sockaddr_un));
         socketInfo->unix_addr.sun_family = AF_UNIX;
-        strcpy(socketInfo->unix_addr.sun_path,  socketInfo->file );
+        strcpy(socketInfo->unix_addr.sun_path, socketInfo->file);
 
-        if( ch->mbean->debug > 0 )
+        if (ch->mbean->debug > 0)
             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "channelUn.init(): create AF_UNIX  %s\n", socketInfo->file );
-    } else {
+                          "channelUn.init(): create AF_UNIX  %s\n",
+                          socketInfo->file);
+    }
+    else {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "channelUn.init(): "
-                      "can't init %s errno=%d\n", socketInfo->file, errno );
+                      "can't init %s errno=%d\n", socketInfo->file, errno);
     }
 
-    if( ch->serverSide == JK_TRUE ) {
-        
+    if (ch->serverSide == JK_TRUE) {
+
         socketInfo->listenSocket = socket(AF_UNIX, SOCK_STREAM, 0);
         if (socketInfo->listenSocket < 0) {
             return JK_ERR;
         }
-        
-        omask = umask(0117); /* so that only Apache can use socket */
-        
-        rc=bind(socketInfo->listenSocket,
-                (struct sockaddr *)& socketInfo->unix_addr,
-                SUN_LEN(&(socketInfo->unix_addr)) );
-        
-        umask(omask); /* can't fail, so can't clobber errno */
-        
-        if (rc<0)
+
+        omask = umask(0117);    /* so that only Apache can use socket */
+
+        rc = bind(socketInfo->listenSocket,
+                  (struct sockaddr *)&socketInfo->unix_addr,
+                  SUN_LEN(&(socketInfo->unix_addr)));
+
+        umask(omask);           /* can't fail, so can't clobber errno */
+
+        if (rc < 0)
             return -errno;
 
-        listen( socketInfo->listenSocket, socketInfo->backlog );
-    
-        if( ch->mbean->debug > 0 )
+        listen(socketInfo->listenSocket, socketInfo->backlog);
+
+        if (ch->mbean->debug > 0)
             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "Unix socket listening on %d \n", socketInfo->listenSocket);
+                          "Unix socket listening on %d \n",
+                          socketInfo->listenSocket);
         /*
-        {
-        struct linger {
-            int   l_onoff;    
-            int   l_linger;   
-        } lin;
-        int rc;
-        
-        lin.l_onoff = l_onoff;
-        lin.l_linger = l_linger;
-        rc=setsockopt(sd, SOL_SOCKET, SO_LINGER, &lin, sizeof(lin));
-        if( rc < 0) {
-            return -errno;
-        }
-        }
-        */
+           {
+           struct linger {
+           int   l_onoff;    
+           int   l_linger;   
+           } lin;
+           int rc;
+
+           lin.l_onoff = l_onoff;
+           lin.l_linger = l_linger;
+           rc=setsockopt(sd, SOL_SOCKET, SO_LINGER, &lin, sizeof(lin));
+           if( rc < 0) {
+           return -errno;
+           }
+           }
+         */
 
     }
 
@@ -209,73 +222,79 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
 static int JK_METHOD jk2_channel_un_hasinput(jk_env_t *env,
                                              jk_channel_t *ch,
                                              jk_endpoint_t *endpoint,
-										     int timeout)
-
+                                             int timeout)
 {
-	/*
-	 * Should implements the select/poll for UN here
-	 */
-	return (JK_TRUE) ;
+    /*
+     * Should implements the select/poll for UN here
+     */
+    return (JK_TRUE);
 }
 
 /** connect to Tomcat (jk_open_socket)
  */
 static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
-                                            jk_channel_t *ch,
-                                            jk_endpoint_t *endpoint)
+                                         jk_channel_t *ch,
+                                         jk_endpoint_t *endpoint)
 {
-    jk_channel_un_private_t *socketInfo=
-        (jk_channel_un_private_t *)(ch->_privatePtr);
+    jk_channel_un_private_t *socketInfo =
+        (jk_channel_un_private_t *) (ch->_privatePtr);
     int unixsock;
     struct sockaddr_un client;
     int clientlen;
 
-    if( ch->serverSide ) {
-        while( 1 ) {
-            clientlen=sizeof( client );
-        
-            unixsock=accept( socketInfo->listenSocket, (struct sockaddr *)&client, &clientlen );
+    if (ch->serverSide) {
+        while (1) {
+            clientlen = sizeof(client);
 
-            if( ch->mbean->debug > 0 )
+            unixsock =
+                accept(socketInfo->listenSocket, (struct sockaddr *)&client,
+                       &clientlen);
+
+            if (ch->mbean->debug > 0)
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "channelUn.open(): accept  %d %d\n", unixsock, errno );
+                              "channelUn.open(): accept  %d %d\n", unixsock,
+                              errno);
 
             /* XXX Should we return EINTR ? This would allow us to stop
              */
-            if( unixsock < 0 ) {
-                if( errno==EINTR ) {
-                    if( ch->mbean->debug > 0 )
+            if (unixsock < 0) {
+                if (errno == EINTR) {
+                    if (ch->mbean->debug > 0)
                         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                                      "channelUn.open(): accept EINTR  %d %d\n", unixsock, errno );
+                                      "channelUn.open(): accept EINTR  %d %d\n",
+                                      unixsock, errno);
                     continue;
-                } else {
+                }
+                else {
                     env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                                  "channelUn.open(): accept error  %d %d %s\n", unixsock, errno,
-                                  strerror(errno));
+                                  "channelUn.open(): accept error  %d %d %s\n",
+                                  unixsock, errno, strerror(errno));
                     return -errno;
                 }
             }
             break;
         }
-    } else {
+    }
+    else {
         unixsock = socket(AF_UNIX, SOCK_STREAM, 0);
-        if (unixsock<0) {
+        if (unixsock < 0) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "channelUn.open(): can't create socket %d %s\n",
-                          errno, strerror( errno ) );
+                          errno, strerror(errno));
             return JK_ERR;
         }
-        
-        if( ch->mbean->debug > 0 ) 
+
+        if (ch->mbean->debug > 0)
             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "channelUn.open(): create unix socket %s %d\n", socketInfo->file, unixsock );
-        
-        if (connect(unixsock,(struct sockaddr *)&(socketInfo->unix_addr),
-                    sizeof(struct sockaddr_un))<0) {
+                          "channelUn.open(): create unix socket %s %d\n",
+                          socketInfo->file, unixsock);
+
+        if (connect(unixsock, (struct sockaddr *)&(socketInfo->unix_addr),
+                    sizeof(struct sockaddr_un)) < 0) {
             close(unixsock);
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "channelUn.connect() connect failed %d %s\n",
-                          errno, strerror( errno ) );
+                          errno, strerror(errno));
             return JK_ERR;
         }
     }
@@ -285,23 +304,24 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
     fcntl(unixsock, F_SETFD, FD_CLOEXEC);
 #endif
 
-    if( ch->mbean->debug > 0 ) 
+    if (ch->mbean->debug > 0)
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                      "channelUn.open(): connect unix socket %d %s\n", unixsock, socketInfo->file );
+                      "channelUn.open(): connect unix socket %d %s\n",
+                      unixsock, socketInfo->file);
     /* store the channel information */
-    endpoint->sd=unixsock;
+    endpoint->sd = unixsock;
     return JK_OK;
 }
 
 /** close the socket  ( was: jk2_close_socket )
 */
-static int JK_METHOD jk2_channel_un_close(jk_env_t *env,jk_channel_t *ch,
+static int JK_METHOD jk2_channel_un_close(jk_env_t *env, jk_channel_t *ch,
                                           jk_endpoint_t *endpoint)
 {
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelUn.close(): close unix socket %d \n",  endpoint->sd );
-    close( endpoint->sd );
-    endpoint->sd=-1;
+                  "channelUn.close(): close unix socket %d \n", endpoint->sd);
+    close(endpoint->sd);
+    endpoint->sd = -1;
     return JK_OK;
 }
 
@@ -319,37 +339,37 @@ static int JK_METHOD jk2_channel_un_close(jk_env_t *env,jk_channel_t *ch,
  */
 static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *ch,
                                          jk_endpoint_t *endpoint,
-                                         jk_msg_t *msg) 
+                                         jk_msg_t *msg)
 {
     unsigned char *b;
     int len;
-    int  sent=0;
+    int sent = 0;
     int this_time;
     int unixsock;
 
-    msg->end( env, msg );
-    len=msg->len;
-    b=msg->buf;
+    msg->end(env, msg);
+    len = msg->len;
+    b = msg->buf;
 
-    unixsock=endpoint->sd;
-    if( unixsock < 0 ) {
+    unixsock = endpoint->sd;
+    if (unixsock < 0) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel.apr:send() not connected %d\n", unixsock );
+                      "channel.apr:send() not connected %d\n", unixsock);
         return JK_ERR;
     }
 
-    while(sent < len) {
-        errno=0;
-        this_time = write(unixsock, (char *)b + sent , len - sent);
+    while (sent < len) {
+        errno = 0;
+        this_time = write(unixsock, (char *)b + sent, len - sent);
 
-        if( ch->mbean->debug > 0 ) 
+        if (ch->mbean->debug > 0)
             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "channel.apr:send() write() %d %d %s\n", this_time, errno,
-                          strerror( errno));
-        if(0 == this_time) {
+                          "channel.apr:send() write() %d %d %s\n", this_time,
+                          errno, strerror(errno));
+        if (0 == this_time) {
             return -2;
         }
-        if(this_time < 0) {
+        if (this_time < 0) {
             return -3;
         }
         sent += this_time;
@@ -367,39 +387,39 @@ static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *ch,
  *            >0: length of the received data.
  * Was: tcp_socket_recvfull
  */
-static int JK_METHOD jk2_channel_un_readN( jk_env_t *env,
-                                           jk_channel_t *ch,
-                                           jk_endpoint_t *endpoint,
-                                           unsigned char *b, int len ) 
+static int JK_METHOD jk2_channel_un_readN(jk_env_t *env,
+                                          jk_channel_t *ch,
+                                          jk_endpoint_t *endpoint,
+                                          unsigned char *b, int len)
 {
     int sd;
     int rdlen;
 
-    sd=endpoint->sd;
-    
-    if( sd < 0 ) {
+    sd = endpoint->sd;
+
+    if (sd < 0) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel.apr:readN() not connected %d\n", sd );
+                      "channel.apr:readN() not connected %d\n", sd);
         return -3;
     }
 
     rdlen = 0;
 
-    while(rdlen < len) {
-        int this_time = recv(sd, (char *)b + rdlen, 
-                             len - rdlen, 0);        
-        if( this_time < 0 ) {
-            if(EAGAIN == errno) {
+    while (rdlen < len) {
+        int this_time = recv(sd, (char *)b + rdlen,
+                             len - rdlen, 0);
+        if (this_time < 0) {
+            if (EAGAIN == errno) {
                 continue;
-            } 
+            }
             return -2;
         }
-        if(0 == this_time) {
-            return -1; 
+        if (0 == this_time) {
+            return -1;
         }
         rdlen += this_time;
     }
-    return rdlen; 
+    return rdlen;
 }
 
 
@@ -411,40 +431,40 @@ static int JK_METHOD jk2_channel_un_readN( jk_env_t *env,
  *            >0: length of the received data.
  * Was: tcp_socket_recvfull
  */
-static int JK_METHOD jk2_channel_un_recv( jk_env_t *env, jk_channel_t *ch,
-                                             jk_endpoint_t *endpoint,
-                                             jk_msg_t *msg )
+static int JK_METHOD jk2_channel_un_recv(jk_env_t *env, jk_channel_t *ch,
+                                         jk_endpoint_t *endpoint,
+                                         jk_msg_t *msg)
 {
-    int hlen=msg->headerLength;
+    int hlen = msg->headerLength;
     int blen;
-    int rc=JK_OK;
-    
+    int rc = JK_OK;
 
-    blen=jk2_channel_un_readN( env, ch, endpoint, msg->buf, hlen );
-    if( blen <= 0 ) {
+
+    blen = jk2_channel_un_readN(env, ch, endpoint, msg->buf, hlen);
+    if (blen <= 0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channelUn.receive(): error receiving %d %d %s %#lx %d\n",
-                      blen, errno, strerror( errno ), endpoint, endpoint->sd);
+                      blen, errno, strerror(errno), endpoint, endpoint->sd);
         return JK_ERR;
     }
 
-    blen=msg->checkHeader( env, msg, endpoint );
-    if( blen < 0 ) {
+    blen = msg->checkHeader(env, msg, endpoint);
+    if (blen < 0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelUn.receive(): Bad header\n" );
+                      "channelUn.receive(): Bad header\n");
         return JK_ERR;
     }
-    
-    rc= jk2_channel_un_readN( env, ch, endpoint, msg->buf + hlen, blen);
 
-    if(rc < 0) {
+    rc = jk2_channel_un_readN(env, ch, endpoint, msg->buf + hlen, blen);
+
+    if (rc < 0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-               "channelUn.receive(): Error receiving message body %d %d\n",
+                      "channelUn.receive(): Error receiving message body %d %d\n",
                       rc, errno);
         return JK_ERR;
     }
 
-    if( ch->mbean->debug > 0 ) 
+    if (ch->mbean->debug > 0)
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelUn.receive(): Received len=%d type=%d\n",
                       blen, (int)msg->buf[hlen]);
@@ -454,38 +474,38 @@ static int JK_METHOD jk2_channel_un_recv( jk_env_t *env, jk_channel_t *ch,
 
 
 int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
-                                     jk_pool_t *pool, 
+                                     jk_pool_t *pool,
                                      jk_bean_t *result,
                                      const char *type, const char *name)
 {
     jk_channel_t *ch;
-    
-    ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
-    
-    ch->_privatePtr= (jk_channel_un_private_t *)
-        pool->calloc( env, pool, sizeof( jk_channel_un_private_t));
 
-    ch->recv= jk2_channel_un_recv; 
-    ch->send= jk2_channel_un_send; 
-    ch->open= jk2_channel_un_open; 
-    ch->close= jk2_channel_un_close; 
-    ch->hasinput= jk2_channel_un_hasinput; 
-    ch->is_stream=JK_TRUE;
-    ch->serverSide=JK_FALSE;
-    
-    result->setAttribute= jk2_channel_un_setAttribute; 
-    result->getAttribute= jk2_channel_un_getAttribute; 
-    result->multiValueInfo=jk2_channel_un_multiValueInfo;
-    result->setAttributeInfo=jk2_channel_un_setAttributeInfo;
-    result->getAttributeInfo=jk2_channel_un_getAttributeInfo;
-    result->invoke=jk2_channel_invoke;
+    ch = (jk_channel_t *)pool->calloc(env, pool, sizeof(jk_channel_t));
 
-    ch->mbean=result;
-    result->object= ch;
-    result->init= jk2_channel_un_init; 
+    ch->_privatePtr = (jk_channel_un_private_t *)
+        pool->calloc(env, pool, sizeof(jk_channel_un_private_t));
 
-    ch->workerEnv=env->getByName( env, "workerEnv" );
-    ch->workerEnv->addChannel( env, ch->workerEnv, ch );
+    ch->recv = jk2_channel_un_recv;
+    ch->send = jk2_channel_un_send;
+    ch->open = jk2_channel_un_open;
+    ch->close = jk2_channel_un_close;
+    ch->hasinput = jk2_channel_un_hasinput;
+    ch->is_stream = JK_TRUE;
+    ch->serverSide = JK_FALSE;
+
+    result->setAttribute = jk2_channel_un_setAttribute;
+    result->getAttribute = jk2_channel_un_getAttribute;
+    result->multiValueInfo = jk2_channel_un_multiValueInfo;
+    result->setAttributeInfo = jk2_channel_un_setAttributeInfo;
+    result->getAttributeInfo = jk2_channel_un_getAttributeInfo;
+    result->invoke = jk2_channel_invoke;
+
+    ch->mbean = result;
+    result->object = ch;
+    result->init = jk2_channel_un_init;
+
+    ch->workerEnv = env->getByName(env, "workerEnv");
+    ch->workerEnv->addChannel(env, ch->workerEnv, ch);
 
     return JK_OK;
 }
@@ -493,14 +513,14 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
 #else
 
 int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
-                                     jk_pool_t *pool, 
+                                     jk_pool_t *pool,
                                      jk_bean_t *result,
                                      const char *type, const char *name)
 {
-    env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                   "channelUn.factory(): Support for unix sockets is disabled, "
-                   "you need to set HAVE_UNIXSOCKETS at compile time\n");
-    result->disabled=1;
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                  "channelUn.factory(): Support for unix sockets is disabled, "
+                  "you need to set HAVE_UNIXSOCKETS at compile time\n");
+    result->disabled = 1;
     return JK_FALSE;
 }
 #endif

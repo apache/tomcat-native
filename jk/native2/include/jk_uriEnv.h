@@ -33,18 +33,19 @@
 #include "jk_uriMap.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_worker;
-struct jk_endpoint;
-struct jk_env;
-struct jk_uri_worker_map;
-struct jk_map;
-struct jk_webapp;
+    struct jk_worker;
+    struct jk_endpoint;
+    struct jk_env;
+    struct jk_uri_worker_map;
+    struct jk_map;
+    struct jk_webapp;
 
-struct jk_uriEnv;
-typedef struct jk_uriEnv jk_uriEnv_t;
+    struct jk_uriEnv;
+    typedef struct jk_uriEnv jk_uriEnv_t;
 
 /* Standard exact mapping */
 #define MATCH_TYPE_EXACT    (0)
@@ -56,7 +57,7 @@ typedef struct jk_uriEnv jk_uriEnv_t;
 #define MATCH_TYPE_SUFFIX   (2)
 
 /* Special: match all URIs of the form *ext */
-#define MATCH_TYPE_GENERAL_SUFFIX (3) 
+#define MATCH_TYPE_GENERAL_SUFFIX (3)
 
 /* Special: match all context path URIs with a path component suffix */
 #define MATCH_TYPE_CONTEXT_PATH (4)
@@ -69,91 +70,92 @@ typedef struct jk_uriEnv jk_uriEnv_t;
 */
 #define MATCH_TYPE_CONTEXT  (6)
 
-/* Regular Expression match */ 
+/* Regular Expression match */
 #define MATCH_TYPE_REGEXP  (7)
 
-struct jk_uriEnv {
-    struct jk_bean *mbean;
-    
-    struct jk_pool *pool;
-    
-    struct jk_workerEnv *workerEnv;
+    struct jk_uriEnv
+    {
+        struct jk_bean *mbean;
 
-    struct jk_uriMap *uriMap;
+        struct jk_pool *pool;
 
-    /* Generic name/value properties. 
-     */
-    struct jk_map *properties;
+        struct jk_workerEnv *workerEnv;
 
-    /* -------------------- Properties extracted from the URI name ---------- */
+        struct jk_uriMap *uriMap;
+
+        /* Generic name/value properties. 
+         */
+        struct jk_map *properties;
+
+        /* -------------------- Properties extracted from the URI name ---------- */
     /** Full name */
-    char *name;
-    
-    /* Virtual server handled - '*' means 'global' ( visible in all
-     * virtual servers ). Part of the uri name.
-     */
-    char *virtual;
+        char *name;
 
-    /* Virtual server port - '0' means 'all' ( visible in all
-     * ports on the virtual servers ). Part of the uri name.
-     */
-    int port;
+        /* Virtual server handled - '*' means 'global' ( visible in all
+         * virtual servers ). Part of the uri name.
+         */
+        char *virtual;
 
-    /* Original uri ( unparsed ). Part of the uri name.
-     */
-    char *uri;
+        /* Virtual server port - '0' means 'all' ( visible in all
+         * ports on the virtual servers ). Part of the uri name.
+         */
+        int port;
 
-    /* -------------------- Properties set using setAttribute ---------- */
+        /* Original uri ( unparsed ). Part of the uri name.
+         */
+        char *uri;
+
+        /* -------------------- Properties set using setAttribute ---------- */
     /** ContextPath. Set with 'context' attribute.
      */
-    char *contextPath;
-    int ctxt_len;
-    
+        char *contextPath;
+        int ctxt_len;
+
     /** ServletName. Set with 'servlet' attribute.
      */
-    char *servlet;
-    int servletId;
+        char *servlet;
+        int servletId;
 
     /** Group, set with 'group' attribute. Defaults to 'lb'.
      */
-    char *workerName; 
-    struct jk_worker *worker;
+        char *workerName;
+        struct jk_worker *worker;
 
     /** For MATCH_TYPE_HOST, the list of aliases for the virtual host.
      *  Set using (multi-value ) 'alias' attribute on vhost uris.
     */
-    struct jk_map *aliases;
+        struct jk_map *aliases;
 
-    /* If set we'll use apr_time to get the request time in microseconds and update
-       the scoreboard to reflect that. 
-    */
-    int timing;
-    
-    /* -------------------- Properties extracted from the uri, at init() -------------------- */
-    /* Extracted suffix, for extension-based mathces */
-    char *suffix;
-    int suffix_len;
+        /* If set we'll use apr_time to get the request time in microseconds and update
+           the scoreboard to reflect that. 
+         */
+        int timing;
 
-    /* Prefix based mapping. Same a contextPath for MATCH_TYPE_CONTEXT
-     */
-    char *prefix;
-    int prefix_len;
+        /* -------------------- Properties extracted from the uri, at init() -------------------- */
+        /* Extracted suffix, for extension-based mathces */
+        char *suffix;
+        int suffix_len;
 
-    int match_type;
-    
-    /* Regular Expression structure
-     */ 
-    void *regexp;
+        /* Prefix based mapping. Same a contextPath for MATCH_TYPE_CONTEXT
+         */
+        char *prefix;
+        int prefix_len;
+
+        int match_type;
+
+        /* Regular Expression structure
+         */
+        void *regexp;
     /** For MATCH_TYPE_HOST, the list of webapps in that host
      */
-    struct jk_map *webapps;
+        struct jk_map *webapps;
 
     /** For MATCH_TYPE_CONTEXT, the list of local mappings
      */
-    struct jk_map *exactMatch;
-    struct jk_map *prefixMatch;
-    struct jk_map *suffixMatch;
-    struct jk_map *regexpMatch;
+        struct jk_map *exactMatch;
+        struct jk_map *prefixMatch;
+        struct jk_map *suffixMatch;
+        struct jk_map *regexpMatch;
 
     /** For MATCH_TYPE_CONTEXT, the config used to read properties
         for that context.
@@ -164,39 +166,39 @@ struct jk_uriEnv {
         ( this will be used in future for run-time deployment )
      */
 
-    struct jk_config *config;
+        struct jk_config *config;
 
-    /* -------------------- Other properties -------------------- */
+        /* -------------------- Other properties -------------------- */
 
 
     /** Different apps can have different loggers.
      */
-    struct jk_logger *l;
+        struct jk_logger *l;
 
-    /* Environment variables support
-     */
-    int envvars_in_use;
-    struct jk_map *envvars;
+        /* Environment variables support
+         */
+        int envvars_in_use;
+        struct jk_map *envvars;
 
-    int merged;
+        int merged;
 
-    int inherit_globals;
-    
+        int inherit_globals;
+
     /** XXX .
      */
 /*     int status; */
 /*     int virtualPort; */
 
-    /* -------------------- Methods -------------------- */
+        /* -------------------- Methods -------------------- */
 
-    int (*init)( struct jk_env *env, struct jk_uriEnv *_this);
+        int (*init) (struct jk_env * env, struct jk_uriEnv * _this);
 
-};
+    };
 
 
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_URIENV_H */
+#endif                          /* JK_URIENV_H */

@@ -25,11 +25,12 @@
 #include "jk_service.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-struct jk_env;
-struct jk_mutex;
+    struct jk_env;
+    struct jk_mutex;
 
 #if APR_HAS_THREADS
 #include "apr_thread_mutex.h"
@@ -39,8 +40,8 @@ struct jk_mutex;
 #include <pthread.h>
 #endif
 
-    
-typedef struct jk_mutex jk_mutex_t;
+
+    typedef struct jk_mutex jk_mutex_t;
 
 #define MUTEX_LOCK 4
 #define MUTEX_TRYLOCK 5
@@ -51,49 +52,53 @@ typedef struct jk_mutex jk_mutex_t;
  *
  * @author Costin Manolache
  */
-struct jk_mutex {
-    struct jk_bean *mbean;
+    struct jk_mutex
+    {
+        struct jk_bean *mbean;
 
-    struct jk_pool *pool;
+        struct jk_pool *pool;
 
     /** Name of the mutex */
-    char *fname;
+        char *fname;
 
     /** APR mechanism */
-    int mechanism;
+        int mechanism;
 
     /** 
      */
-    int (JK_METHOD *lock)(struct jk_env *env, struct jk_mutex *mutex);
+        int (JK_METHOD * lock) (struct jk_env * env, struct jk_mutex * mutex);
 
     /** 
      */
-    int (JK_METHOD *tryLock)(struct jk_env *env, struct jk_mutex *mutex);
+        int (JK_METHOD * tryLock) (struct jk_env * env,
+                                   struct jk_mutex * mutex);
 
     /** 
      */
-    int (JK_METHOD *unLock)(struct jk_env *env, struct jk_mutex *mutex);
+        int (JK_METHOD * unLock) (struct jk_env * env,
+                                  struct jk_mutex * mutex);
 
-    /* Private data */
-    void *privateData;
+        /* Private data */
+        void *privateData;
 
 #if APR_HAS_THREADS
-    apr_thread_mutex_t *threadMutex;
+        apr_thread_mutex_t *threadMutex;
 #elif defined( WIN32 )
-    CRITICAL_SECTION threadMutex;
+        CRITICAL_SECTION threadMutex;
 #elif defined( _REENTRANT )
-    pthread_mutex_t threadMutex;
+        pthread_mutex_t threadMutex;
 #else
-    void *threadMutex;
+        void *threadMutex;
 #endif
-};
+    };
 
-int JK_METHOD jk2_mutex_invoke(struct jk_env *env, struct jk_bean *bean, struct jk_endpoint *ep, int code,
-                               struct jk_msg *msg, int raw);
+    int JK_METHOD jk2_mutex_invoke(struct jk_env *env, struct jk_bean *bean,
+                                   struct jk_endpoint *ep, int code,
+                                   struct jk_msg *msg, int raw);
 
-    
+
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif 
+#endif

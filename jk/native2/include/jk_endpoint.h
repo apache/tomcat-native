@@ -36,19 +36,20 @@
 #include "jk_msg.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-    
-struct jk_endpoint;
-struct jk_stat;
-struct jk_ws_service;
-struct jk_logger;
-struct jk_map;
-typedef struct jk_endpoint   jk_endpoint_t;
-typedef struct jk_stat   jk_stat_t;
+extern "C"
+{
+#endif                          /* __cplusplus */
+
+    struct jk_endpoint;
+    struct jk_stat;
+    struct jk_ws_service;
+    struct jk_logger;
+    struct jk_map;
+    typedef struct jk_endpoint jk_endpoint_t;
+    typedef struct jk_stat jk_stat_t;
 
 /* XXX replace worker with channel, endpoints are specific to channels not workers */
-    
+
 /*
  * The endpoint 'class', which represents one end of a connection to the
  * servlet engine.  Basically, supports nothing other than forwarding the
@@ -79,105 +80,107 @@ typedef struct jk_stat   jk_stat_t;
  *
  * See jk_ajp13_worker.c/jk_ajp14_worker.c and jk_ajp12_worker.c for examples.  
  */
-struct jk_endpoint {
-    struct jk_bean *mbean;
+    struct jk_endpoint
+    {
+        struct jk_bean *mbean;
 
-    /* Parent
-     */
-    struct jk_worker *worker;
+        /* Parent
+         */
+        struct jk_worker *worker;
 
-    struct jk_workerEnv *workerEnv;
+        struct jk_workerEnv *workerEnv;
 
     /** Data specific to a channel connection. Usually a struct
      * containing info about the active connection ( sd, jniEnv, etc ).
      */
-    void *channelData;
+        void *channelData;
 
-    /* Channel-specific data. Usually a file descriptor. ( avoids
-       using a struct for typical socket channels )
-     */
-    int sd;
+        /* Channel-specific data. Usually a file descriptor. ( avoids
+           using a struct for typical socket channels )
+         */
+        int sd;
 
     /** Current request beeing processed.
      *  Used by JNI worker mostly ( XXX remove it, pass it explicitely )
      */
-    struct jk_ws_service *currentRequest;
+        struct jk_ws_service *currentRequest;
 
     /** Connection pool. Used to store temporary data. It'll be
      *  recycled after each transaction.
      *  XXX Do we need it ? env->tmpPool can be used as well.
      */
-    struct jk_pool *cPool;
+        struct jk_pool *cPool;
 
-    /* Buffers */
+        /* Buffers */
 
-    /* Incoming messages ( from tomcat ). Will be overriten after each
-       message, you must save any data you want to keep.
-     */
-    struct jk_msg *reply;
+        /* Incoming messages ( from tomcat ). Will be overriten after each
+           message, you must save any data you want to keep.
+         */
+        struct jk_msg *reply;
 
-    /* Outgoing messages ( from server ). If the handler will return
-       JK_HANDLER_RESPONSE this message will be sent to tomcat
-    */
-    struct jk_msg *post;
-    
-    /* original request storage ( XXX do we need it ? )
-     */
-    struct jk_msg *request; 
+        /* Outgoing messages ( from server ). If the handler will return
+           JK_HANDLER_RESPONSE this message will be sent to tomcat
+         */
+        struct jk_msg *post;
 
-    char *readBuf;
-    int bufPos;
-    
-    /* JK_TRUE if we can recover by sending the request to a different
-     * worker. This happens if only the request header and initial body
-     * chunk has been set. 
-     * 
-     * JK_FALSE if we already received data from a tomcat instance. In
-     * this case there is no point in retrying the current request and
-     * we must fail.
-     *
-     * The connection with the current tomcat is closed in any case.
-     */
-    int     recoverable;        
+        /* original request storage ( XXX do we need it ? )
+         */
+        struct jk_msg *request;
 
-    /* The struct will be created in shm if available
-     */
-    struct jk_stat *stats;
-};
+        char *readBuf;
+        int bufPos;
+
+        /* JK_TRUE if we can recover by sending the request to a different
+         * worker. This happens if only the request header and initial body
+         * chunk has been set. 
+         * 
+         * JK_FALSE if we already received data from a tomcat instance. In
+         * this case there is no point in retrying the current request and
+         * we must fail.
+         *
+         * The connection with the current tomcat is closed in any case.
+         */
+        int recoverable;
+
+        /* The struct will be created in shm if available
+         */
+        struct jk_stat *stats;
+    };
 
 /** Statistics collected per endpoint
  */
-struct jk_stat {
-    /* Number of requests served by this worker and the number of errors */
-    int reqCnt;
-    int errCnt;
+    struct jk_stat
+    {
+        /* Number of requests served by this worker and the number of errors */
+        int reqCnt;
+        int errCnt;
 
-    int connected;
+        int connected;
 
-    int workerId;
-    /* Active request
-     */
-    char active[64];
+        int workerId;
+        /* Active request
+         */
+        char active[64];
 
-    /* Time when this endpoint has opened a connection to
-       tomcat
-    */
-    apr_time_t connectedTime;
-    /* Total time ( for average - divide by reqCnt )
-       and maxTime for requests.
-    */
-    apr_time_t totalTime;
-    apr_time_t maxTime;
-    /* Last request - time of start, time when we start the ajp protocol, end time
-     */
-    apr_time_t startTime;
-    apr_time_t jkStartTime;
-    apr_time_t endTime;
-};
+        /* Time when this endpoint has opened a connection to
+           tomcat
+         */
+        apr_time_t connectedTime;
+        /* Total time ( for average - divide by reqCnt )
+           and maxTime for requests.
+         */
+        apr_time_t totalTime;
+        apr_time_t maxTime;
+        /* Last request - time of start, time when we start the ajp protocol, end time
+         */
+        apr_time_t startTime;
+        apr_time_t jkStartTime;
+        apr_time_t endTime;
+    };
 
-    
+
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_ENDPOINT_H */
+#endif                          /* JK_ENDPOINT_H */
