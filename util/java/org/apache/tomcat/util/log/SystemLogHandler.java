@@ -124,18 +124,15 @@ public class SystemLogHandler extends PrintStream {
     public static void startCapture() {
         CaptureLog log = null;
         if (!reuse.isEmpty()) {
-            try {
-                log = (CaptureLog)reuse.pop();
-            } catch(Exception e) {
-            }
-        }
-        if (log == null) {
+            log = (CaptureLog)reuse.pop();
+        } else {
             log = new CaptureLog();
         }
-        Stack stack = (Stack)logs.get(Thread.currentThread());
+        Thread thread = Thread.currentThread();
+        Stack stack = (Stack)logs.get(thread);
         if (stack == null) {
             stack = new Stack();
-            logs.put(Thread.currentThread(), stack);
+            logs.put(thread, stack);
         }
         stack.push(log);
     }
@@ -146,7 +143,7 @@ public class SystemLogHandler extends PrintStream {
      */
     public static String stopCapture() {
         Stack stack = (Stack)logs.get(Thread.currentThread());
-        if (stack == null) {
+        if (stack == null || stack.isEmpty()) {
             return null;
         }
         CaptureLog log = (CaptureLog)stack.pop();
@@ -168,7 +165,7 @@ public class SystemLogHandler extends PrintStream {
      */
     protected PrintStream findStream() {
         Stack stack = (Stack)logs.get(Thread.currentThread());
-        if (stack != null) {
+        if (stack != null && !stack.isEmpty()) {
             CaptureLog log = (CaptureLog)stack.peek();
             if (log != null) {
                 PrintStream ps = log.getStream();
