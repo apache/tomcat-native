@@ -88,85 +88,69 @@
 #if APR_HAS_SHARED_MEMORY
 
 #include "apr_shm.h"
+#include "apr_atomic.h"
 
 /* Inter-process synchronization - to create the slots */
 #include "apr_proc_mutex.h"
 
-struct jk_shm_buffer {
-    /** Incremented after each modification */
-    int generation;
-    /** 1 if the buffer is in an unstable state.
-     *  XXX Shouldn't happen
-     */
-    int busy;
-
-    /** Pid of the owning process */
-    int owner;
-    
-    int id;
-    char name[64];
-    
-    char *data;
-};
-
-struct jk_shm_head {
-    int size;
-    int bufferCount;
-    
-    int objCount;
-    int lastId;
-
-    struct jk_shm_buffer buffers[1];
-};
-
-
-typedef struct jk_shm_private {
-    apr_size_t size;
-    apr_shm_t *aprShm;
-
-    struct jk_shm_head *image;
-} jk_shm_private_t;
-
 static apr_pool_t *globalShmPool;
+
+#define SHM_SET_ATTRIBUTE 0
+#define SHM_REGISTER_TOMCAT 2
+#define SHM_ATTACH 3
+#define SHM_DETACH 4
+
 
 static int jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
 {
-    jk_shm_private_t *shmP=shm->privateData;
-    
-    return apr_shm_destroy(shmP->aprShm);
+    apr_shm_t *aprShm=(apr_shm_t *)shm->privateData;
+
+    return apr_shm_destroy(aprShm);
 }
 
 static int jk2_shm_detach(jk_env_t *env, jk_shm_t *shm)
 {
-    jk_shm_private_t *shmP=shm->privateData;
+    apr_shm_t *aprShm=(apr_shm_t *)shm->privateData;
 
-    return apr_shm_detach(shmP->aprShm);
+    return apr_shm_detach(aprShm);
 }
 
 static int jk2_shm_attach(jk_env_t *env, jk_shm_t *shm)
 {
-    jk_shm_private_t *shmP=shm->privateData;
-
-    return apr_shm_attach(&shmP->aprShm, shm->fname, globalShmPool );
+    return apr_shm_attach((apr_shm_t **)&shm->privateData, shm->fname, globalShmPool );
 }
 
 
 /* Create or reinit an existing scoreboard. The MPM can control whether
  * the scoreboard is shared across multiple processes or not
  */
-int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
-{
-    apr_status_t rv;
-    jk_shm_private_t *shmP=shm->privateData;
-
-    /* The config says to create a name-based shmem */
-    if ( shm->fname == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "No name for jk_shm\n");
+static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
+    apr_status_t rv=APR_SUCCESS;
+    jk_shm_head_t *head;
+    
+    if( shm->fname==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "shm.init(): No file\n");
         return JK_ERR;
     }
+
+    if( shm->size == 0  ) {
+        shm->size = shm->slotSize * shm->slotMaxCount;
+    }
     
-    rv=apr_shm_attach(&shmP->aprShm, shm->fname, globalShmPool );
+    /* We don't want to have to recreate the scoreboard after
+     * restarts, so we'll create a global pool and never clean it.
+     */
+    rv = apr_pool_create(&globalShmPool, NULL);
+
+    if (rv != APR_SUCCESS) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "Unable to create global pool for jk_shm\n");
+        return rv;
+    }
+    
+    shm->privateData=NULL;
+
+    rv=apr_shm_attach((apr_shm_t **)&shm->privateData, shm->fname, globalShmPool );
     if( rv ) {
         char error[256];
         apr_strerror( rv, error, 256 );
@@ -174,8 +158,20 @@ int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "shm.create(): error attaching shm, will create %s %d %p %s\n",
                       shm->fname, rv, globalShmPool, error );
-        shmP->aprShm=NULL;
+        shm->privateData=NULL;
     } else {
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "shm.create(): attaching to existing shm %s\n",
+                      shm->fname );
+        /* Get the base address, initialize it */
+        shm->image = apr_shm_baseaddr_get( (apr_shm_t *)shm->privateData);
+        shm->head = (jk_shm_head_t *)shm->image;
+        
+        if( shm->image==NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                          "shm.create(): No base memory %s\n", shm->fname);
+            return JK_ERR;
+        }
         return JK_OK;
     }
 
@@ -192,7 +188,7 @@ int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "shm.create(): error removing shm %s %d %s\n",
                       shm->fname, rv, error );
-        shmP->aprShm=NULL;
+        shm->privateData=NULL;
         return rv;
     } else {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
@@ -200,128 +196,182 @@ int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     }
 
 
-    rv = apr_shm_create(&shmP->aprShm, shmP->size, shm->fname, globalShmPool);
+    rv = apr_shm_create((apr_shm_t **)&shm->privateData,(apr_size_t)shm->size,
+                        shm->fname, globalShmPool);
     
-    if (rv) {
+    if (rv!=JK_OK) {
         char error[256];
         apr_strerror( rv, error, 256 );
         
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "shm.create(): error creating shm %d %s %d %s\n",
-                      shmP->size, 
+                      shm->size, 
                       shm->fname, rv, error );
-        shmP->aprShm=NULL;
+        shm->privateData=NULL;
         return rv;
     }
+
+    if(  shm->privateData==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "Unable to create %s %d\n", shm->fname, rv);
+        return JK_ERR;
+    }
+
+    /* Get the base address, initialize it */
+    shm->image = apr_shm_baseaddr_get( (apr_shm_t *)shm->privateData);
+    shm->head = (jk_shm_head_t *)shm->image;
+
+    if( shm->image==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.create(): No memory allocated %s\n",
+                      shm->fname);
+        return JK_ERR;
+    }
+    
+    memset(shm->image, 0, shm->size);
+
+    shm->head->slotSize = shm->slotSize;
+    shm->head->slotMaxCount = shm->slotMaxCount;
+    shm->head->lastSlot = 0;
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                  "shm.init() Initalized %s %p\n",
+                  shm->fname, shm->image);
 
     return JK_OK;
 }
 
-#define DEFAULT_SHM_SIZE 1024 * 1024 * 8
-
-static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
-    apr_status_t rv;
-    jk_shm_private_t *shmP=shm->privateData;
-
-    if( shm->fname==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.init(): No file\n");
-        return JK_FALSE;
-    }
-
-    if( shmP->size == 0  ) {
-        shmP->size = DEFAULT_SHM_SIZE;
-    }
-    
-    /* We don't want to have to recreate the scoreboard after
-     * restarts, so we'll create a global pool and never clean it.
-     */
-    rv = apr_pool_create(&globalShmPool, NULL);
-
-    if (rv != APR_SUCCESS) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "Unable to create global pool for jk_shm\n");
-        return rv;
-    }
-    
-    shmP->aprShm=NULL;
-
-    /* Try to attach */
-    rv=jk2_shm_attach( env, shm );
-
-    if( rv || shmP->aprShm==NULL ) {
-        char error[256];
-        apr_strerror( rv, error, 256 );
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "Unable to attach  %s %d %s\n", shm->fname, rv, error);
-    }
-
-    rv=jk2_shm_create( env, shm );
-    
-    if( rv || shmP->aprShm==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "Unable to create %s %d\n", shm->fname, rv);
-        return JK_FALSE;
-    }
-
-    /* Get the base address, initialize it */
-    shmP->image = apr_shm_baseaddr_get( shmP->aprShm);
-    if( shmP->image==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.create(): No memory allocated %s\n",
-                      shm->fname);
-        return JK_FALSE;
-    }
-    
-    memset(shmP->image, 0, shmP->size);
-    strcpy(shmP->image, "Hello From Apache");
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "shm.init() Initalized %s %p\n",
-                      shm->fname, shmP->image);
-
-    return JK_TRUE;
+/* pos starts with 1 ( 0 is the head )
+ */
+jk_shm_slot_t *jk2_shm_getSlot(struct jk_env *env, struct jk_shm *shm, int pos)
+{
+    if( pos==0 ) return NULL;
+    if( shm->image==NULL ) return NULL;
+    if( pos > shm->slotMaxCount ) return NULL;
+    /* Pointer aritmethic, I hope it's right */
+    return shm->image + pos * shm->slotSize;
 }
+
+jk_shm_slot_t *jk2_shm_createSlot(struct jk_env *env, struct jk_shm *shm, 
+                                  char *name, int size)
+{
+    /* For now all slots are equal size
+     */
+    /* XXX interprocess sync */
+    int slotId=shm->head->lastSlot++;
+    
+    jk_shm_slot_t *slot= (void *)shm->image + slotId * shm->slotSize;
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                  "shm.createSlot() Create %d %p %p\n", slotId, shm->image, slot );
+    strncpy(slot->name, name, 64 );
+    
+    return slot;
+}
+
+/** Get an ID that is unique across processes.
+ */
+int jk2_shm_getId(struct jk_env *env, struct jk_shm *shm)
+{
+
+    return 0;
+}
+
+
 
 static int jk2_shm_setAttribute( jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP ) {
     jk_shm_t *shm=(jk_shm_t *)mbean->object;
     char *value=(char *)valueP;
-    jk_shm_private_t *shmP=shm->privateData;
     
     if( strcmp( "file", name ) == 0 ) {
 	shm->fname=value;
     } else if( strcmp( "size", name ) == 0 ) {
-	shmP->size=atoi(value);
+	shm->size=atoi(value);
     } else {
-	return JK_FALSE;
+	return JK_ERR;
     }
-    return JK_TRUE;   
+    return JK_OK;   
+
 }
 
-int JK_METHOD jk2_shm_factory( jk_env_t *env, jk_pool_t *pool,
-                     jk_bean_t *result,
-                     const char *type, const char *name)
+/* ==================== Dispatch messages from java ==================== */
+
+/** Called by java. Will call the right shm method.
+ */
+static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
 {
-    jk_shm_t *_this;
+    jk_bean_t *bean=(jk_bean_t *)target;
+    jk_shm_t *shm=(jk_shm_t *)bean->object;
 
-    _this=(jk_shm_t *)pool->calloc(env, pool, sizeof(jk_shm_t));
+    int code=msg->getByte(env, msg );
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                  "shm.%d() \n", code);
+    switch( code ) {
+    case SHM_SET_ATTRIBUTE: {
+        char *name=msg->getString( env, msg );
+        char *value=msg->getString( env, msg );
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "shm.setAttribute() %s %s %p\n", name, value, bean->setAttribute);
+        if( bean->setAttribute != NULL)
+            bean->setAttribute(env, bean, name, value );
+        return JK_OK;
+    }
+    case SHM_ATTACH: {
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "shm.init()\n");
+        shm->init(env, shm);
+        return JK_OK;
+    }
+    case SHM_DETACH: {
 
-    if( _this == NULL )
-        return JK_FALSE;
+        return JK_OK;
+    }
+    case SHM_REGISTER_TOMCAT: {
 
-    _this->privateData=(jk_shm_private_t *)pool->calloc(env, pool, sizeof(jk_shm_private_t));
-        
+        return JK_OK;
+    }
+    }
+    return JK_ERR;
+}
+
+static int jk2_shm_setWorkerEnv( jk_env_t *env, jk_shm_t *shm, jk_workerEnv_t *wEnv ) {
+    wEnv->registerHandler( env, wEnv, "shm",
+                           "shmDispatch", JK_HANDLE_SHM_DISPATCH,
+                           jk2_shm_dispatch, NULL );
+    fprintf(stderr, "shm:setWorkerEnv \n");
+}
+
+int JK_METHOD jk2_shm_factory( jk_env_t *env ,jk_pool_t *pool,
+                               jk_bean_t *result,
+                               const char *type, const char *name)
+{
+    jk_shm_t *shm;
+    jk_workerEnv_t *wEnv;
+
+    shm=(jk_shm_t *)pool->calloc(env, pool, sizeof(jk_shm_t));
+
+    if( shm == NULL )
+        return JK_ERR;
+
+    shm->privateData=NULL;
+
+    shm->slotSize=DEFAULT_SLOT_SIZE;
+    shm->slotMaxCount=DEFAULT_SLOT_COUNT;
+    
     result->setAttribute=jk2_shm_setAttribute;
     /* result->getAttribute=jk2_shm_getAttribute; */
-    /*     _this->mbean=result; */
-    result->object=_this;
-
-    _this->init=jk2_shm_init;
-/*     _this->destroy=jk2_shm_detach; */
+    shm->mbean=result; 
+    result->object=shm;
     
-    /* result->aprPool=(apr_pool_t *)p->_private; */
-        
-    return JK_TRUE;
+    shm->getSlot=jk2_shm_getSlot;
+    shm->createSlot=jk2_shm_createSlot;
+    shm->getId=jk2_shm_getId;
+    shm->init=jk2_shm_init;
+    shm->destroy=jk2_shm_detach;
+    shm->setWorkerEnv=jk2_shm_setWorkerEnv;
+    
+    return JK_OK;
 }
 
 #endif /* APR_HAS_SHARED_MEMORY */
