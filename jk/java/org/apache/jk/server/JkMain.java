@@ -69,6 +69,7 @@ import org.apache.commons.modeler.Registry;
 import javax.management.ObjectName;
 import javax.management.MBeanServer;
 import javax.management.MBeanRegistration;
+import javax.management.MalformedObjectNameException;
 
 /** Main class used to startup and configure jk. It manages the conf/jk2.properties file
  *  and is the target of JMX proxy.
@@ -106,7 +107,7 @@ import javax.management.MBeanRegistration;
  */
 public class JkMain implements MBeanRegistration
 {
-    WorkerEnv wEnv=new WorkerEnv();
+    WorkerEnv wEnv;
     String propFile;
     Properties props=new Properties();
 
@@ -220,11 +221,11 @@ public class JkMain implements MBeanRegistration
      *  set it expliciltey.
      */
     public void setJkHome( String s ) {
-        wEnv.setJkHome(s);
+        getWorkerEnv().setJkHome(s);
     }
 
     public String getJkHome() {
-        return wEnv.getJkHome();
+        return getWorkerEnv().getJkHome();
     }
 
     String out;
@@ -261,12 +262,15 @@ public class JkMain implements MBeanRegistration
             System.setErr(errS);
         }
 
-        String home=wEnv.getJkHome();
+        String home=getWorkerEnv().getJkHome();
         if( home==null ) {
             // XXX use IntrospectionUtil to find myself
             this.guessHome();
         }
-        home=wEnv.getJkHome();
+        home=getWorkerEnv().getJkHome();
+        if( home==null ) {
+            log.info( "Can't find home, jk2.properties not loaded");
+        }
         if( home != null ) {
             File hF=new File(home);
             File conf=new File( home, "conf" );
@@ -338,7 +342,7 @@ public class JkMain implements MBeanRegistration
         
         for( int i=0; i<handlers.length; i++ ) {
             String name= handlers[i];
-            JkHandler w=wEnv.getHandler( name );
+            JkHandler w=getWorkerEnv().getHandler( name );
             if( w==null ) {
                 newHandler( name, "", name );
             }
@@ -373,9 +377,16 @@ public class JkMain implements MBeanRegistration
     // -------------------- Usefull methods --------------------
     
     public WorkerEnv getWorkerEnv() {
+        if( wEnv==null ) { 
+            wEnv=new WorkerEnv();
+        }
         return wEnv;
     }
-    
+
+    public void setWorkerEnv(WorkerEnv wEnv) {
+        this.wEnv = wEnv;
+    }
+
     /* A bit of magic to support workers.properties without giving
        up the clean get/set
     */
@@ -394,7 +405,7 @@ public class JkMain implements MBeanRegistration
     public void setPropertyString( String handlerN, String name, String val ) {
         if( log.isDebugEnabled() )
             log.debug( "setProperty " + handlerN + " " + name + "=" + val );
-        Object target=wEnv.getHandler( handlerN );
+        Object target=getWorkerEnv().getHandler( handlerN );
 
         setBeanProperty( target, name, val );
         if( started ) {
@@ -537,7 +548,7 @@ public class JkMain implements MBeanRegistration
             return;
         }
         
-        JkHandler comp=wEnv.getHandler( fullName );
+        JkHandler comp=getWorkerEnv().getHandler( fullName );
         if( comp==null ) {
             comp=newHandler( type, localName, fullName );
         }
