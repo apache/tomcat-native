@@ -1,0 +1,32 @@
+# Defines for example NSAPI programs running under SOLARIS
+
+CC_CMD=gcc -DNET_SSL -DSOLARIS -D_REENTRANT
+LD_SHAREDCMD=ld -G
+
+all:
+prepare:
+
+OS_TYPE=solaris
+INCLUDEDIR=$(SUITSPOT_HOME)/include
+JAVA_INCLUDE=$(JAVA_HOME)/include
+
+JK_OBJS = jk_ajp12_worker.o jk_lb_worker.o jk_sockbuf.o jk_connect.o jk_map.o \
+jk_uri_worker_map.o jk_nsapi_plugin.o jk_util.o jk_jni_worker.o \
+jk_pool.o jk_worker.o
+
+INCLUDE_FLAGS=-I$(INCLUDEDIR) -I$(INCLUDEDIR)/base -I$(INCLUDEDIR)/frame -I$(JAVA_INCLUDE) -I$(JAVA_INCLUDE)/$(OS_TYPE)
+COMMON_DEFS=-DMCC_HTTPD -DXP_UNIX -DSPAPI20 -DSOLARIS -Wall
+
+
+all: nsapi_redirector.so 
+
+
+nsapi_redirector.so: $(JK_OBJS)
+	$(MAKE) prepare
+	$(LD_SHAREDCMD) $(JK_OBJS) -o nsapi_redirector.so $(EXTRA_LDDEFINES)
+
+.c.o:
+	$(CC_CMD) $(COMMON_DEFS) $(INCLUDE_FLAGS) -c $< 
+
+clean:
+	rm $(JK_OBJS)

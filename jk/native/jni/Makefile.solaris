@@ -1,0 +1,30 @@
+# Defines for example NSAPI programs running under SOLARIS
+
+CC_CMD=gcc -DSOLARIS -D_REENTRANT
+LD_SHAREDCMD=ld -G
+
+all:
+prepare:
+
+OS_TYPE=solaris
+INCLUDEDIR=../common
+JAVA_INCLUDE=$(JAVA_HOME)/include
+
+JK_OBJS =  ../common/jk_map.o ../common/jk_util.o ../common/jk_pool.o jk_jnicb.o
+
+INCLUDE_FLAGS=-I$(INCLUDEDIR) -I$(JAVA_INCLUDE) -I$(JAVA_INCLUDE)/$(OS_TYPE)
+COMMON_DEFS=-Wall
+
+
+all: jni_connect.so 
+
+
+jni_connect.so: $(JK_OBJS)
+	$(MAKE) prepare
+	$(LD_SHAREDCMD) $(JK_OBJS) -o jni_connect.so $(EXTRA_LDDEFINES)
+
+.c.o:
+	$(CC_CMD) $(COMMON_DEFS) $(INCLUDE_FLAGS) -c $< 
+
+clean:
+	rm $(JK_OBJS)
