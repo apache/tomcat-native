@@ -52,17 +52,17 @@ Apache 1.3. The available options for the configure script are:
     --with-java[=JAVA_HOME]
         Compile also the Java portion of WebApp. If the JAVA_HOME variable
         is not set in your environment, you'll have to specify the root
-        path of your JDK installation on this command line. To compile
-        the Java classes, you will need to set your CLASSPATH variable to
-        include the "catalina.jar" and "servlet.jar" distributed with
-        Tomcat 4.0. For example:
-          # CLASSPATH=$CATALINA_HOME/server/lib/catalina.jar
-          # CLASSPATH=$CLASSPATH:$CATALINA_HOME/common/lib/servlet.jar
-          # export CLASSPATH
+        path of your JDK installation on this command line.
         This will generate a new "warp.jar" file in the "java" directory
         that you must use instead of the one provided with the default
         Tomcat distribution. For example:
           # mv ./java/warp.jar $CATALINA_HOME/server/lib/warp.jar
+
+    --with-tomcat[=TOMCAT_HOME]
+        When compiling the Java portion of WebApp, you will also need to
+        specify where a Tomcat 4.0 distribution can be found. This will
+        automatically set up your CLASSPATH environment with the required
+        JAR files included with Tomcat 4.0.
 
     --enable-debug
         Enable compiled-in debugging output. Using this option the WebApp
