@@ -20,6 +20,8 @@ tomcat33.home= ../../jakarta-tomcat/build/tomcat
 # Location of Apache2, Apache1.3, Netscape, IIS
 apache2.home=/opt/apache2
 apache13.home=/opt/apache13
+iplanet.home=/opt/iplanet6
+
 
 # APR location - by default the version included in Apache2 is used.
 # Don't edit unless you install 'standalone' apr.

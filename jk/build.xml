@@ -53,7 +53,7 @@
         <echo message="Tomcat4:  ${tomcat4.detect} ${catalina.home}" />
         <echo message="Tomcat41: ${tomcat41.detect} ${tomcat41.home}" />
         <echo message="Apache13: ${apache13.detect} ${apache13.home}" />
-        <echo message="Apache20: ${apache20.detect} ${apache20.home}" />
+        <echo message="Apache2: ${apache2.detect} ${apache2.home}" />
         <echo message="iPlanet:  ${iplanet.detect} ${iplanet.home}" />
         <echo message="IIS:      ${iis.detect} ${iis.home}" />
     </target>
@@ -71,9 +71,22 @@
 	    <fileset dir="conf" includes="*" />
 	</copy>
 
-        <available property="tomcat33.detect" file="${tomcat33.home}/lib/common/tomcat_core.jar" />
-        <available property="tomcat4.detect" file="${catalina.home}/server/lib/catalina.jar" />
-        <available property="tomcat41.detect" file="${tomcat41.home}/server/webapps" />
+        <available property="tomcat33.detect" 
+                   file="${tomcat33.home}/lib/common/tomcat_core.jar" />
+        <available property="tomcat4.detect" 
+                   file="${catalina.home}/server/lib/catalina.jar" />
+        <available property="tomcat41.detect" 
+                   file="${tomcat41.home}/server/webapps" />
+        <available property="tomcat41.detect" 
+                   file="${tomcat41.home}/server/webapps" />
+        <available property="apache13.detect" 
+                   file="${apache13.home}" />
+        <available property="apache2.detect" 
+                   file="${apache2.home}" />
+        <available property="iis.detect" 
+                   file="${iis.home}" />
+        <available property="iplanet.detect" 
+                   file="${iplanet.home}" />
     </target>
 
     <target name="build-main" 
@@ -147,19 +160,19 @@
     <target name="install" 
             depends="install-t33,install-t40,install-t41,install-a20,install-a13" />
 
-    <target name="install-t33" if="tomcat33.detected" > 
+    <target name="install-t33" if="tomcat33.detect" > 
     </target>
 
-    <target name="install-t40" if="tomcat40.detected" > 
+    <target name="install-t40" if="tomcat40.detect" > 
     </target>
 
-    <target name="install-t41" if="tomcat41.detected" > 
+    <target name="install-t41" if="tomcat41.detect" > 
     </target>
 
-    <target name="install-a20" if="apache20.detected" > 
+    <target name="install-a20" if="apache20.detect" > 
     </target>
 
-    <target name="install-a13" if="apache13.detected" > 
+    <target name="install-a13" if="apache13.detect" > 
     </target>
 
     <!-- ================ javadocs =================== -->
