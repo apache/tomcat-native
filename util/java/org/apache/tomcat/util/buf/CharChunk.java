@@ -290,6 +290,14 @@ public final class CharChunk implements Cloneable, Serializable {
 	    end+=len;
 	    return;
 	}
+
+        // Optimize on a common case.
+        // If the source is going to fill up all the space in buffer, may
+        // as well write it directly to the output, and avoid an extra copy
+        if ( len == limit && end == 0) {
+            out.realWriteChars( src, off, len );
+            return;
+        }
 	
 	// if we have limit and we're below
 	if( len <= limit - end ) {
@@ -487,7 +495,7 @@ public final class CharChunk implements Cloneable, Serializable {
 
 	// limit < buf.length ( the buffer is already big )
 	// or we already have space XXX
-	if( desiredSize < buff.length ) {
+	if( desiredSize <= buff.length ) {
 	    return;
 	}
 	// grow in larger chunks
