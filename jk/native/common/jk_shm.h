@@ -71,25 +71,30 @@ struct jk_shm_worker
     /* Current lb factor */
     int     lb_factor;
     /* Current lb value  */
-    int     lb_value;
+    int     lb_value;    
+
+    /* Those are going to be deprecated */
     int     is_local_worker;
     int     is_local_domain;
-    int     in_error_state;
-    int     in_recovering;
     int     in_local_worker_mode;
     int     local_worker_only;
+
+    int     in_error_state;
+    int     in_recovering;
     int     sticky_session;
+    int     sticky_session_force;
     int     recover_wait_time;
     int     retries;
+    /* Statistical data */
     time_t  error_time;
     /* Number of bytes read from remote */
-    size_t   readed;
+    size_t  readed;
     /* Number of bytes transferred to remote */
-    size_t   transferred;
+    size_t  transferred;
     /* Number of times the worker was elected */
-    size_t   elected;
+    size_t  elected;
     /* Number of non 200 responses */
-    size_t   errors;
+    size_t  errors;
 };
 typedef struct jk_shm_worker jk_shm_worker_t;
 
