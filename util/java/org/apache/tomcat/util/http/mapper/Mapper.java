@@ -210,12 +210,17 @@ public final class Mapper {
             hosts = this.hosts;
             pos = find(hosts, hostName);
         }
-        if( pos <0 ) {
-            System.out.println("No host found " + hostName); // XXX log
+        if (pos < 0) {
+            logger.error("No host found: " + hostName);
         }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
             Context[] contexts = host.contextList.contexts;
+            // Update nesting
+            int slashCount = slashCount(path);
+            if (slashCount > host.contextList.nesting) {
+                host.contextList.nesting = slashCount;
+            }
             synchronized (host) {
                 Context[] newContexts = new Context[contexts.length + 1];
                 Context newContext = new Context();
@@ -254,6 +259,14 @@ public final class Mapper {
                 Context[] newContexts = new Context[contexts.length - 1];
                 if (removeMap(contexts, newContexts, path)) {
                     host.contextList.contexts = newContexts;
+                    // Recalculate nesting
+                    host.contextList.nesting = 0;
+                    for (int i = 0; i < newContexts.length; i++) {
+                        int slashCount = slashCount(newContexts[i].name);
+                        if (slashCount > host.contextList.nesting) {
+                            host.contextList.nesting = slashCount;
+                        }
+                    }
                 }
             }
         }
@@ -299,7 +312,7 @@ public final class Mapper {
             Context[] contexts = host.contextList.contexts;
             int pos2 = find(contexts, contextPath);
             if( pos2<0 ) {
-                logger.error("Can't find context " + contextPath );
+                logger.error("No context found: " + contextPath );
                 return;
             }
             Context context = contexts[pos2];
@@ -332,6 +345,10 @@ public final class Mapper {
                     new Wrapper[oldWrappers.length + 1];
                 if (insertMap(oldWrappers, newWrappers, newWrapper)) {
                     context.wildcardWrappers = newWrappers;
+                    int slashCount = slashCount(newWrapper.name);
+                    if (slashCount > context.nesting) {
+                        context.nesting = slashCount;
+                    }
                 }
             } else if (path.startsWith("*.")) {
                 // Extension wrapper
@@ -407,6 +424,14 @@ public final class Mapper {
                 Wrapper[] newWrappers =
                     new Wrapper[oldWrappers.length - 1];
                 if (removeMap(oldWrappers, newWrappers, name)) {
+                    // Recalculate nesting
+                    context.nesting = 0;
+                    for (int i = 0; i < newWrappers.length; i++) {
+                        int slashCount = slashCount(newWrappers[i].name);
+                        if (slashCount > context.nesting) {
+                            context.nesting = slashCount;
+                        }
+                    }
                     context.wildcardWrappers = newWrappers;
                 }
             } else if (path.startsWith("*.")) {
@@ -527,6 +552,7 @@ public final class Mapper {
 
         Context[] contexts = null;
         Context context = null;
+        int nesting = 0;
 
         // Virtual host mapping
         if (mappingData.host == null) {
@@ -535,6 +561,7 @@ public final class Mapper {
             if ((pos != -1) && (host.equals(hosts[pos].name))) {
                 mappingData.host = hosts[pos].object;
                 contexts = hosts[pos].contextList.contexts;
+                nesting = hosts[pos].contextList.nesting;
             } else {
                 if (defaultHostName == null) {
                     return;
@@ -543,6 +570,7 @@ public final class Mapper {
                 if ((pos != -1) && (defaultHostName.equals(hosts[pos].name))) {
                     mappingData.host = hosts[pos].object;
                     contexts = hosts[pos].contextList.contexts;
+                    nesting = hosts[pos].contextList.nesting;
                 } else {
                     return;
                 }
@@ -555,21 +583,32 @@ public final class Mapper {
             if (pos == -1) {
                 return;
             }
+
+            int lastSlash = -1;
+            int uriEnd = uri.getEnd();
+            int length = -1;
             boolean found = false;
-            while (uri.startsWith(contexts[pos].name)) {
-                int length = contexts[pos].name.length();
-                if (uri.getLength() == length) {
-                    found = true;
-                    break;
-                } else if (uri.startsWithIgnoreCase("/", length)) {
-                    found = true;
-                    break;
+            while (pos >= 0) {
+                if (uri.startsWith(contexts[pos].name)) {
+                    length = contexts[pos].name.length();
+                    if (uri.getLength() == length) {
+                        found = true;
+                        break;
+                    } else if (uri.startsWithIgnoreCase("/", length)) {
+                        found = true;
+                        break;
+                    }
                 }
-                pos--;
-                if (pos < 0) {
-                    break;
+                if (lastSlash == -1) {
+                    lastSlash = nthSlash(uri, nesting + 1);
+                } else {
+                    lastSlash = lastSlash(uri);
                 }
+                uri.setEnd(lastSlash);
+                pos = find(contexts, uri);
             }
+            uri.setEnd(uriEnd);
+
             if (!found) {
                 if (contexts[0].name.equals("")) {
                     context = contexts[0];
@@ -623,7 +662,8 @@ public final class Mapper {
         // Rule 2 -- Prefix Match
         Wrapper[] wildcardWrappers = context.wildcardWrappers;
         if (mappingData.wrapper == null) {
-            internalMapWildcardWrapper(wildcardWrappers, path, mappingData);
+            internalMapWildcardWrapper(wildcardWrappers, context.nesting, 
+                                       path, mappingData);
         }
 
         // Rule 3 -- Extension Match
@@ -650,7 +690,8 @@ public final class Mapper {
                     // Rule 4b -- Welcome resources processing for prefix match
                     if (mappingData.wrapper == null) {
                         internalMapWildcardWrapper
-                            (wildcardWrappers, path, mappingData);
+                            (wildcardWrappers, context.nesting, 
+                             path, mappingData);
                     }
 
                     // Rule 4c -- Welcome resources processing
@@ -664,8 +705,6 @@ public final class Mapper {
                             // Swallow not found, since this is normal
                         }
                         if (file != null && !(file instanceof DirContext) ) {
-                            if(logger.isTraceEnabled())
-                                logger.trace("Found welcome-file: " + path);
                             internalMapExtensionWrapper(extensionWrappers,
                                                         path, mappingData);
                             if(mappingData.wrapper == null) {
@@ -738,15 +777,16 @@ public final class Mapper {
      * Wildcard mapping.
      */
     private final void internalMapWildcardWrapper
-        (Wrapper[] wrappers, CharChunk path, MappingData mappingData) {
+        (Wrapper[] wrappers, int nesting, CharChunk path, 
+         MappingData mappingData) {
 
         int pathEnd = path.getEnd();
         int pathOffset = path.getOffset();
 
+        int lastSlash = -1;
         int length = -1;
         int pos = find(wrappers, path);
         if (pos != -1) {
-            int lastSlash = pathEnd;
             boolean found = false;
             while (pos >= 0) {
                 if (path.startsWith(wrappers[pos].name)) {
@@ -759,7 +799,11 @@ public final class Mapper {
                         break;
                     }
                 }
-                lastSlash = lastSlash(path);
+                if (lastSlash == -1) {
+                    lastSlash = nthSlash(path, nesting + 1);
+                } else {
+                    lastSlash = lastSlash(path);
+                }
                 path.setEnd(lastSlash);
                 pos = find(wrappers, path);
             }
@@ -975,6 +1019,42 @@ public final class Mapper {
 
 
     /**
+     * Find the position of the nth slash, in the given char chunk.
+     */
+    private static final int nthSlash(CharChunk name, int n) {
+
+        char[] c = name.getBuffer();
+        int end = name.getEnd();
+        int start = name.getStart();
+        int pos = start;
+        int count = 0;
+
+        while (pos < end) {
+            if ((c[pos++] == '/') && ((++count) == n)) {
+                pos--;
+                break;
+            }
+        }
+
+        return (pos);
+
+    }
+
+
+    /**
+     * Return the slash count in a given string.
+     */
+    private static final int slashCount(String name) {
+        int pos = -1;
+        int count = 0;
+        while ((pos = name.indexOf('/', pos + 1)) != -1) {
+            count++;
+        }
+        return count;
+    }
+
+
+    /**
      * Insert into the right place in a sorted MapElement array, and prevent
      * duplicates.
      */
@@ -1036,6 +1116,7 @@ public final class Mapper {
     protected final class ContextList {
 
         public Context[] contexts = new Context[0];
+        public int nesting = 0;
 
     }
 
@@ -1053,6 +1134,7 @@ public final class Mapper {
         public Wrapper[] exactWrappers = new Wrapper[0];
         public Wrapper[] wildcardWrappers = new Wrapper[0];
         public Wrapper[] extensionWrappers = new Wrapper[0];
+        public int nesting = 0;
 
     }
 
