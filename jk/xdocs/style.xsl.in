@@ -152,7 +152,7 @@
                 <xsl:variable name="root" select="/"/>
                 <xsl:for-each select="document('menu.idx')/index/section">
                   <tr height="6">
-                  <td bgcolor="#cccccc" width="150" colspan="2">
+                  <td bgcolor="#d0d0d0" width="150" colspan="2">
                   <xsl:value-of select="@name"/>
                   </td>
                   </tr>
@@ -200,7 +200,7 @@
                   both for C and for Java
                 -->
                 <tr height="6">
-                <td bgcolor="#cccccc" width="150" colspan="2">
+                <td bgcolor="#d0d0d0" width="150" colspan="2">
                 Developpers
                 </td>
                 </tr>
