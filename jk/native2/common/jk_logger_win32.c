@@ -137,7 +137,6 @@ static int JK_METHOD jk2_logger_win32_jkVLog(jk_env_t *env, jk_logger_t *l,
                                      const char *fmt,
                                      va_list args)
 {
-    /* XXX map jk level to apache level */
     int rc;
     if(l->level <= level) {
         char buf[HUGE_BUFFER_SIZE];
@@ -159,12 +158,9 @@ static int JK_METHOD jk2_logger_win32_jkVLog(jk_env_t *env, jk_logger_t *l,
         }
     
 
-        rc = vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
-        rc = strlen( buf );
-        /* Remove trailing \n. XXX need to change the log() to not include \n */
-        if( buf[rc-1] == '\n' )
-            buf[rc-1]='\0';
-        jk2_logger_win32_log(env, l, level, buf);
+        rc = _vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
+
+        l->log(env, l, level, buf);
     }
     return rc ;
 }
