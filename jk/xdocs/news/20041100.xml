@@ -21,6 +21,30 @@
 </a>
 <hr size="1" noshade="noshade" />
 -->
+<a name="20050318.1"> 
+<h3>18 March - JK-1.2.9-beta released</h3>
+<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
+of Jakarta Tomcat Connectors 1.2.9-beta. The release contains a significant number
+of bug fixes and new features. 
+</p>
+<p>
+We expect it to be ratified as a Stable release when the vote takes place
+in the next two weeks.
+</p>
+<p>
+ Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<warn>
+Since release 1.2.9 the <b>JkShmFile</b> property has been added for
+Apache 1.3.x and Apache 2.x web servers on UNIX and LINUX platforms.
+Load balancer will not work properly if this directive is not present.
+</warn>
+<p>If you find any bugs during testing this release, please fill in the
+<a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
+Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
+</a> 
+
 <a name="20041224.1"> 
 <h3>17 December - JK-1.2.8 released</h3>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
