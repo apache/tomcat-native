@@ -96,9 +96,6 @@
             <include name="org/apache/tomcat/util/**"/>
         </jar>
 
-	<!-- Include a copy of the commons-logging.jar that we built with -->
-	<copy todir="${tomcat-util.build}/lib"
-	      file="${commons-logging.jar}"/>
     </target>
 
     <!-- ================ BUILD: Create Tomcat-Util Javadocs =================== -->
