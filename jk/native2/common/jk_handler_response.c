@@ -197,7 +197,7 @@ static int JK_METHOD jk2_handler_sendChunk(jk_env_t *env, void *target,
 
     err=r->write(env, r, buf, len);
     if( err!= JK_OK ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error ajp_process_callback - write failed\n");
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Write failed - user closed connection or other network problems\n");
         return JK_HANDLER_ERROR;
     }
 
