@@ -274,21 +274,6 @@ public class ApacheConfig  extends BaseJkConfig {
 	return new PrintWriter(new FileWriter(abJkConfig, append));
     }
 			       
-    /**
-        executes the ApacheConfig interceptor. This method generates apache
-        configuration files for use with  mod_jk.
-        <p>
-        @param <b>context</b> a Context object.
-    */
-    public void executeContext(Context context, PrintWriter mod_jk){
-
-	if(context.getPath().length() > 0 || ! noRoot ) {
-	    if( forwardAll )
-		generateStupidMappings( context, mod_jk );
-	    else
-		generateContextMappings( context, mod_jk);
-	}
-    }
 
     // -------------------- Config sections  --------------------
 
@@ -397,7 +382,7 @@ public class ApacheConfig  extends BaseJkConfig {
     /** Forward all requests for a context to tomcat.
 	The default.
      */
-    private void generateStupidMappings(Context context,
+    protected void generateStupidMappings(Context context,
 					   PrintWriter mod_jk )
     {
 	String ctxPath  = context.getPath();
@@ -436,7 +421,7 @@ public class ApacheConfig  extends BaseJkConfig {
     // -------------------- Apache serves static mode --------------------
     // This is not going to work for all apps. We fall back to stupid mode.
     
-    private void generateContextMappings(Context context, PrintWriter mod_jk )
+    protected void generateContextMappings(Context context, PrintWriter mod_jk )
     {
 	String ctxPath  = context.getPath();
 	Host vhost = getHost(context);
@@ -463,7 +448,7 @@ public class ApacheConfig  extends BaseJkConfig {
 
 	String [] servletMaps = context.findServletMappings();
 	for(int ii=0; ii < servletMaps.length; ii++) {
-	      addMapping( ctxPath+ servletMaps[ii] , mod_jk );
+	      addMapping( ctxPath, servletMaps[ii] , mod_jk );
 	}
     }
 
@@ -486,6 +471,17 @@ public class ApacheConfig  extends BaseJkConfig {
         if( debug > 0 )
             log( "Adding map for " + fullPath );
 	mod_jk.println(indent + "JkMount " + fullPath + "  " + jkWorker );
+	return true;
+    }
+    /** Add a partially specified Appache mapping.
+     */
+    protected boolean addMapping( String ctxP, String ext, PrintWriter mod_jk ) {
+        if( debug > 0 )
+            log( "Adding map for " + ext );
+	if(! ext.startsWith("/") )
+	    ext = "/" + ext;
+	if(ext.length() > 1)
+	    mod_jk.println(indent + "JkMount " + ctxP + ext+ "  " + jkWorker );
 	return true;
     }
 

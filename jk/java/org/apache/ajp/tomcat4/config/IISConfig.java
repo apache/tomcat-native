@@ -201,23 +201,6 @@ public class IISConfig extends BaseJkConfig  {
 	return true;
     }
 
-    /**
-        executes the IISConfig interceptor. This method generates IIS
-        configuration files for use with isapi_redirect.  If not
-        already set, this method will setConfigHome() to the value returned
-        from <i>cm.getHome()</i>.
-        <p>
-        @param <b>cm</b> a ContextManager object.
-    */
-    public void executeContext(Context context, PrintWriter uri_worker)
-    {
-	if( forwardAll ) 
-	    generateStupidMappings( context, uri_worker );
-	else
-	    generateContextMappings( context, uri_worker );
-	
-    }
-
     // -------------------- Config sections  --------------------
 
     /** Writes the registry settings required by the IIS connector
@@ -253,7 +236,7 @@ public class IISConfig extends BaseJkConfig  {
     /** Forward all requests for a context to tomcat.
 	The default.
      */
-    private void generateStupidMappings(Context context, PrintWriter uri_worker )
+    protected void generateStupidMappings(Context context, PrintWriter uri_worker )
     {
         String ctxPath  = context.getPath();
 	String nPath=("".equals(ctxPath)) ? "/" : ctxPath;
@@ -276,7 +259,7 @@ public class IISConfig extends BaseJkConfig  {
             uri_worker.println(nPath +"/*=$(default.worker)");
     }
 
-    private void generateContextMappings(Context context, PrintWriter uri_worker )
+    protected void generateContextMappings(Context context, PrintWriter uri_worker )
     {
         String ctxPath  = context.getPath();
 	String nPath=("".equals(ctxPath)) ? "/" : ctxPath;
@@ -302,18 +285,21 @@ public class IISConfig extends BaseJkConfig  {
 
 	String [] servletMaps=context.findServletMappings();
 	for( int ii=0; ii < servletMaps.length ; ii++) {
-	    addMapping( ctxPath + servletMaps[ii] , uri_worker );
+	    addMapping( ctxPath , servletMaps[ii] , uri_worker );
 	}
     }
 
     /** Add an IIS extension mapping.
      */
-    protected boolean addExtensionMapping( String ctxPath, String ext,
+    protected boolean addMapping( String ctxPath, String ext,
 					 PrintWriter uri_worker )
     {
         if( debug > 0 )
             log( "Adding extension map for " + ctxPath + "/*." + ext );
-	uri_worker.println(ctxPath + "/*." + ext + "=$(default.worker)");
+	if(! ext.startsWith("/") )
+	    ext = "/" + ext;
+	if(ext.length() > 1)
+	    uri_worker.println(ctxPath + "/*." + ext + "=$(default.worker)");
         return true;
     }
 

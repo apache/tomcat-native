@@ -223,21 +223,6 @@ public class NSConfig  extends BaseJkConfig {
 	mod_jk.println("<Object name=default>");
 	return true;
     }
-    /**
-        executes the NSConfig interceptor. This method generates Netscape
-        configuration files for use with nsapi_redirect.  If not
-        already set, this method will setConfigHome() to the value returned
-        from <i>cm.getHome()</i>.
-        <p>
-        @param <b>cm</b> a ContextManager object.
-    */
-    public void executeContext(Context context, PrintWriter mod_jk)
-    {
-	if( forwardAll ) 
-	    generateStupidMappings( context, mod_jk );
-	else
-	    generateContextMappings( context, mod_jk );
-    }
 
     private void generateNsapiHead(PrintWriter objfile)
     {
@@ -293,7 +278,7 @@ public class NSConfig  extends BaseJkConfig {
     /** Forward all requests for a context to tomcat.
 	The default.
      */
-    private void generateStupidMappings(Context context, PrintWriter objfile )
+    protected void generateStupidMappings(Context context, PrintWriter objfile )
     {
         String ctxPath  = context.getPath();
 	String nPath=("".equals(ctxPath)) ? "/" : ctxPath;
@@ -311,7 +296,7 @@ public class NSConfig  extends BaseJkConfig {
     // -------------------- Netscape serves static mode --------------------
     // This is not going to work for all apps. We fall back to stupid mode.
     
-    private void generateContextMappings(Context context, PrintWriter objfile )
+    protected void generateContextMappings(Context context, PrintWriter objfile )
     {
         String ctxPath  = context.getPath();
 	String nPath=("".equals(ctxPath)) ? "/" : ctxPath;
@@ -336,19 +321,22 @@ public class NSConfig  extends BaseJkConfig {
 
 	String [] servletMaps=context.findServletMappings();
 	for(int ii=0; ii < servletMaps.length; ii++) {
-	    addMapping( ctxPath + servletMaps[ii] , objfile );
+	    addMapping( ctxPath , servletMaps[ii] , objfile );
 	}
     }
 
     /** Add a Netscape extension mapping.
      */
-    protected boolean addExtensionMapping( String ctxPath, String ext,
+    protected boolean addMapping( String ctxPath, String ext,
 					 PrintWriter objfile )
     {
         if( debug > 0 )
             log( "Adding extension map for " + ctxPath + "/*." + ext );
-        objfile.println("NameTrans fn=\"assign-name\" from=\"" +
-                    ctxPath + "/*." + ext + "\" name=\"" + objectName + "\""); 
+	if(! ext.startsWith("/") )
+	    ext = "/" + ext;
+	if(ext.length() > 1)
+	    objfile.println("NameTrans fn=\"assign-name\" from=\"" +
+                    ctxPath  + ext + "\" name=\"" + objectName + "\""); 
 	return true;
     }
 

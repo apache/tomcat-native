@@ -247,10 +247,26 @@ public class BaseJkConfig  implements LifecycleListener {
 	}
 	generateVhostTail(hst, mod_jk);
     }
-    /** Generate configuration files.  Override with method to generate
-        web server specific configuration.
-     */
-    protected void executeContext(Context ctx, PrintWriter mod_jk) {
+    /**
+        executes the ApacheConfig interceptor. This method generates apache
+        configuration files for use with  mod_jk.
+        <p>
+        @param <b>context</b> a Context object.
+	@param <b>mod_jk</b> Writer for output.
+    */
+    public void executeContext(Context context, PrintWriter mod_jk){
+
+	if(context.getPath().length() > 0 || ! noRoot ) {
+	    String docRoot = context.getServletContext().getRealPath("/");
+	    if( forwardAll || docRoot == null)
+		generateStupidMappings( context, mod_jk );
+	    else
+		generateContextMappings( context, mod_jk);
+	}
+    }
+    protected void generateStupidMappings(Context context, PrintWriter mod_jk){
+    }
+    protected void generateContextMappings(Context context, PrintWriter mod_jk){
     }
     /** Get the output Writer.  Override with method to generate
         web server specific configuration.
@@ -394,7 +410,8 @@ public class BaseJkConfig  implements LifecycleListener {
     protected String getAbsoluteDocBase(Context context)
     {
 	// Calculate the absolute path of the document base
-	String docBase = context.getDocBase();
+	String docBase = context.getServletContext().getRealPath("/");
+	docBase = docBase.substring(0,docBase.length()-1);
 	if (!isAbsolute(docBase)){
 	    docBase = tomcatHome + "/" + docBase;
 	}
