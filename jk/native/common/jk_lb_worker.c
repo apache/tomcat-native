@@ -343,8 +343,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
 {
     worker_record_t *rc = NULL;
     char *sessionid = NULL;
-    int total_factor = 0;
-    int domain_id =-1;
+    int domain_id = -1;
 
     JK_TRACE_ENTER(l);
     if (p->sticky_session) {

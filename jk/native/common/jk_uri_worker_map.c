@@ -295,7 +295,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     if (uri[0] == '/') {
         char *asterisk = strchr(uri, '*');
         
-        if (asterisk && strchr(asterisk + 1, '*') ||
+        if ((asterisk && strchr(asterisk + 1, '*')) ||
             strchr(uri, '?')) {
             uwr->uri = jk_pool_strdup(&uw_map->p, uri);
 
@@ -548,7 +548,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                         char *uri, jk_logger_t *l)
 {
     unsigned int i;
-    unsigned int best_match = -1;
+    int best_match = -1;
     unsigned int longest_match = 0;
     char *url_rewrite;
 
