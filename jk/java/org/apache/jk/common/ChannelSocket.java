@@ -567,7 +567,7 @@ public class ChannelSocket extends JkHandler {
             }
         } catch( Exception ex ) {
             if( ex.getMessage().indexOf( "Connection reset" ) >= 0)
-                log.info( "Server has been restarted or reset this connection");
+                log.debug( "Server has been restarted or reset this connection");
             else if (ex.getMessage().indexOf( "Read timed out" ) >=0 )
                 log.info( "connection timeout reached");            
             else
