@@ -10,7 +10,7 @@ MKDIR=@MKDIR@
 LIBTOOL=libtool
 
 JK=../common
-JK_INCL=-DUSE_APACHE_MD5 -I ${JK}
+JK_INCL=-DUSE_APACHE_MD5 -I ${JK} -DHAVE_JNI
 CFLAGS=@apache_include@ @CFLAGS@ ${JK_INCL}
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
