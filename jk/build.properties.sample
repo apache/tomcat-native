@@ -26,14 +26,14 @@ iplanet.home=/opt/iplanet6
 
 # APR location - by default the version included in Apache2 is used.
 # Don't edit unless you install 'standalone' apr.
-apr.home=$(apache2.home)
+apr.home=${apache2.home}
 
 apr.include=${apr.home}/include
 apr-util.include=${apr.home}/include
 
 apr.lib=${apr.home}/lib
 apr-util.lib=${apr.home}/lib
-apache2.lib=$(apache2.home)/lib
+apache2.lib=${apache2.home}/lib
 
 
 # Compile-time options for native code
