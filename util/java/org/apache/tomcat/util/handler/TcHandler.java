@@ -72,7 +72,9 @@ import java.security.*;
  * axis Handler, tomcat3.3 Handler, apache2 Hooks etc.
  *
  * Both iterative (Interceptor, Hook ) and recursive ( Valve ) behavior are supported.
- * Named TcHandler because Handler is way overloaded.
+ * Named TcHandler because Handler name is too overloaded.
+ *
+ * The interface allows both stateless and statefull implementations ( like Servlet ).
  *
  * @author Costin Manolache
  */
@@ -144,6 +146,12 @@ public abstract class TcHandler {
     /** Clean up and stop the handler. Override if needed.
      */
     public void destroy() throws IOException {
+    }
+
+    public void start() throws IOException {
+    }
+
+    public void stop() throws IOException {
     }
 
     // -------------------- Action --------------------
