@@ -24,11 +24,13 @@
 #ifndef JK_GLOBAL_H
 #define JK_GLOBAL_H
 
+#ifndef NETWARE
 #if !defined(WIN32) && !defined(AS400)
 #include "portable.h"
 #else
 #define HAVE_VSNPRINTF
 #define HAVE_SNPRINTF
+#endif
 #endif
 
 #include "jk_version.h"
@@ -66,6 +68,8 @@ extern char *strdup (const char *str);
         #define __sys_socket_h__
         #define __netdb_h__
         #define __netinet_in_h__
+        #define HAVE_VSNPRINTF
+        #define HAVE_SNPRINTF
     #endif
     #include <netdb.h>
     #include <netinet/in.h>
