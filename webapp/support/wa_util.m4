@@ -74,6 +74,18 @@ AC_DEFUN(
   ])
 
 dnl --------------------------------------------------------------------------
+dnl WA_HEADER
+dnl   Dump an extra header to the standard output
+dnl   $1 => Message of the header to dump.
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [WA_HEADER],
+  [
+    AC_MSG_RESULT([])
+    AC_MSG_RESULT([$1])
+  ])
+
+dnl --------------------------------------------------------------------------
 dnl WA_VARIABLE
 dnl   Initialize a substituted (global) variable with a zero-length string.
 dnl   $1 => The environment variable name.
@@ -87,7 +99,8 @@ AC_DEFUN(
 
 dnl --------------------------------------------------------------------------
 dnl WA_APPEND
-dnl   Append the extra value to the variable specified
+dnl   Append the extra value to the variable specified if and only if the
+dnl   value is not already in there.
 dnl   $1 => The environment variable name.
 dnl   $2 => The extra value
 dnl --------------------------------------------------------------------------
@@ -99,9 +112,20 @@ AC_DEFUN(
       if test -z "${$1}" ; then
         $1="${wa_append_tempval}"
       else 
-        $1="${$1} ${wa_append_tempval}"
+        wa_append_found=""
+        for wa_append_current in ${$1} ; do
+          if test "${wa_append_current}" = "${wa_append_tempval}" ; then
+            wa_append_found="yes"
+          fi
+        done
+        if test -z "${wa_append_found}" ; then
+          $1="${$1} ${wa_append_tempval}"
+        fi
+        unset wa_append_found
+        unset wa_append_current
       fi
     fi 
+    unset wa_append_tempval
   ])
 
 dnl --------------------------------------------------------------------------
@@ -166,6 +190,7 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_HELP],
   [
+    ECHO_N="${ECHO_N} + "
     m4_divert_once(
       [PARSE_ARGS],
       [
