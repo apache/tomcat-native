@@ -146,23 +146,23 @@ SOURCE=..\common\jk_worker.c
 
 SOURCE=.\mod_jk.c
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_ajp14.c
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_ajp14_worker.c
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_md5.c
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_context.c
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_ajp_common.c
 # End Source File
@@ -243,23 +243,23 @@ SOURCE=..\common\jk_worker.h
 
 SOURCE=..\common\jk_worker_list.h
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_ajp14.h
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_ajp14_worker.h
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_md5.h
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_context.h
 # End Source File
-# End Group
+# Begin Source File
 
 SOURCE=..\common\jk_ajp_common.h
 # End Source File
