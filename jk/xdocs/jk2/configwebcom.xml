@@ -499,6 +499,12 @@ not less then 1 second.
                             of the error state.
                             </td>
                         </tr>                        
+                        <tr>
+                            <td>stickySession</td>
+                            <td>1 (true)</td>
+                            <td>Sessions stick to the same worker, 1=true 0=false
+                            </td>
+                        </tr>
                     </table>
                 </p>
             </subsection>

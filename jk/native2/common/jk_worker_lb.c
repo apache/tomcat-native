@@ -83,11 +83,14 @@
 
 #define NO_WORKER_MSG "The servlet container is temporary unavailable or being upgraded\n";
 
+#define STICKY_SESSION 1
+
 typedef struct {
     struct  jk_mutex *cs;
     int     attempts;
     int     recovery;
     int     timeout;
+    int     sticky_session;	
     time_t  error_time;
 
 } jk_worker_lb_private_t;
@@ -110,11 +113,13 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
     int j;
     int level;
     int currentLevel=JK_LB_LEVELS - 1;
-    char *session_route;
+    char *session_route = NULL;
     time_t now = 0;
     jk_worker_lb_private_t *lb_priv = lb->worker_private;
 
-    session_route = jk2_requtil_getSessionRoute(env, s);
+    if(lb_priv->sticky_session) {
+        session_route = jk2_requtil_getSessionRoute(env, s);
+    }
        
     if(session_route) {
         for( level=0; level<JK_LB_LEVELS; level++ ) {
@@ -504,6 +509,8 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         lb_priv->timeout=atoi( value );
     } else if( strcmp( name, "recovery") == 0 ) {
         lb_priv->recovery=atoi( value );
+    } else if( strcmp( name, "stickySession") == 0 ) {
+        lb_priv->sticky_session=atoi( value );
     } else if( strcmp( name, "attempts") == 0 ) {
         lb_priv->attempts=atoi( value );
     }
@@ -580,6 +587,7 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
     }
     worker_private->attempts = MAX_ATTEMPTS;
     worker_private->recovery = WAIT_BEFORE_RECOVER;
+    worker_private->sticky_session = STICKY_SESSION;
     w->worker_private = worker_private;
     w->service        = jk2_lb_service;
     
