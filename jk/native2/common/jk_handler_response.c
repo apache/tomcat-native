@@ -241,6 +241,7 @@ static int JK_METHOD jk2_handler_getChunk(jk_env_t *env, void *target,
 
 /*     env->l->jkLog(env, env->l, JK_LOG_INFO, */
 /*                   "handler_request.getChunk() - read len=%d\n",len); */
+    msg->reset(env, msg);
 
     len=msg->appendFromServer( env, msg, r, ae, len );
     /* the right place to add file storage for upload */
