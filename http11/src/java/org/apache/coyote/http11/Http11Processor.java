@@ -663,7 +663,11 @@ public class Http11Processor implements Processor, ActionHook {
             }
 
             thrA.setCurrentStage(threadPool, "ended");
-            rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
+            if (keepAlive) {
+                rp.setStage(org.apache.coyote.Constants.STAGE_KEEPALIVE);
+            } else {
+                rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
+            }
             // Don't reset the param - we'll see it as ended. Next request
             // will reset it
             // thrA.setParam(null);
