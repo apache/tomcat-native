@@ -105,7 +105,7 @@ public class ChannelSocket extends JkHandler {
     int port=startPort;
     InetAddress inet;
     int serverTimeout;
-    boolean tcpNoDelay=false;
+    boolean tcpNoDelay=true; // nodelay to true by default
     int linger=100;
     int socketTimeout;
 
@@ -259,8 +259,8 @@ public class ChannelSocket extends JkHandler {
             s.setSoLinger( true, linger);
         if( socketTimeout > 0 ) 
             s.setSoTimeout( socketTimeout );
-        if( tcpNoDelay )
-            s.setTcpNoDelay( true );
+        
+        s.setTcpNoDelay( tcpNoDelay ); // set socket tcpnodelay state
         
         requestCount++;
 
