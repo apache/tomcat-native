@@ -79,7 +79,7 @@ import org.apache.tomcat.util.http.HttpMessages;
  * at a time.<P>
  *
  * This class contains knowledge about how an individual packet is laid out
- * (via the internal <CODE>Ajp13Packet</CODE> class), and also about the
+ * (via the <CODE>Ajp13Packet</CODE> class), and also about the
  * stages of communicaton between the server and the servlet container.  It
  * translates from Tomcat's internal servlet support methods
  * (e.g. doWrite) to the correct packets to send to the web server.
