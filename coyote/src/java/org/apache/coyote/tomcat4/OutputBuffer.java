@@ -371,7 +371,7 @@ public class OutputBuffer extends Writer
         if (coyoteResponse == null)
             return;
 
-        if (knownResponseSize)
+        if ((knownResponseSize) && (coyoteResponse.getContentLength() == -1))
             coyoteResponse.setContentLength(cnt);
 
         // If we really have something to write
