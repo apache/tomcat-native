@@ -186,7 +186,7 @@ public class JniHandler extends JkHandler {
     protected int nativeDispatch( Msg msg, MsgContext ep, int code )
         throws IOException
     {
-        if( log.isInfoEnabled() ) log.info( "Sending packet ");
+        if( log.isDebugEnabled() ) log.debug( "Sending packet ");
         msg.end();
         if( log.isTraceEnabled() ) msg.dump("OUT:" );
         long xEnv=ep.getJniEnv();
@@ -209,7 +209,7 @@ public class JniHandler extends JkHandler {
                                  nativeContext,
                                  code, msg.getBuffer(), msg.getLen()); 
         
-        if( log.isInfoEnabled() ) log.info( "Sending packet - done " + status);
+        if( log.isDebugEnabled() ) log.debug( "Sending packet - done " + status);
         return status;
     }
 

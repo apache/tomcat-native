@@ -177,7 +177,6 @@ public class Shm extends JniHandler {
         to identify tomcat.
     */
     public void setUnregister( boolean unregister  ) {
-        System.out.println("XXX set unregister ");
         this.unregister=true;
     }
     
@@ -333,7 +332,7 @@ public class Shm extends JniHandler {
         throws IOException
     {
         if( apr==null ) return 0;
-        System.err.println("ChannelShm.invoke: "  + ep );
+        log.debug("ChannelShm.invoke: "  + ep );
         super.nativeDispatch( msg, ep, JK_HANDLE_SHM_DISPATCH );
         return 0;
     }    

@@ -172,7 +172,7 @@ public class JkCoyoteHandler extends JkHandler implements
             // set the filters accordingly.
             res.sendHeaders();
         }
-        if( log.isInfoEnabled() ) log.info("doWrite " );
+        if( log.isDebugEnabled() ) log.debug("doWrite " );
         MsgContext ep=(MsgContext)res.getNote( epNote );
         
         MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
@@ -189,8 +189,8 @@ public class JkCoyoteHandler extends JkHandler implements
         throws IOException
     {
         Response res=req.getResponse();
-        if( log.isInfoEnabled() )
-            log.info("doRead " + chunk.getBytes() + " " +  chunk.getOffset() + " " + chunk.getLength());
+        if( log.isDebugEnabled() )
+            log.debug("doRead " + chunk.getBytes() + " " +  chunk.getOffset() + " " + chunk.getLength());
         MsgContext ep=(MsgContext)res.getNote( epNote );
         
         JkInputStream jkIS=(JkInputStream)ep.getNote( inputStreamNote );
@@ -207,7 +207,8 @@ public class JkCoyoteHandler extends JkHandler implements
         org.apache.coyote.Response res=req.getResponse();
         res.setHook( this );
 
-        log.info( "Invoke " + req + " " + res + " " + req.requestURI().toString());
+        if( log.isDebugEnabled() )
+            log.debug( "Invoke " + req + " " + res + " " + req.requestURI().toString());
         
         res.setOutputBuffer( this );
         req.setInputBuffer( this );
@@ -233,8 +234,8 @@ public class JkCoyoteHandler extends JkHandler implements
     private void appendHead(org.apache.coyote.Response res)
         throws IOException
     {
-        if( log.isInfoEnabled() )
-            log.info("COMMIT sending headers " + res + " " + res.getMimeHeaders() );
+        if( log.isDebugEnabled() )
+            log.debug("COMMIT sending headers " + res + " " + res.getMimeHeaders() );
         
         C2BConverter c2b=(C2BConverter)res.getNote( utfC2bNote );
         if( c2b==null ) {
@@ -288,8 +289,8 @@ public class JkCoyoteHandler extends JkHandler implements
                 if( log.isInfoEnabled() )
                     log.info("RESET " );
             } else if( actionCode==ActionCode.ACTION_CLOSE ) {
-                if( log.isInfoEnabled() )
-                    log.info("CLOSE " );
+                if( log.isDebugEnabled() )
+                    log.debug("CLOSE " );
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
                 MsgContext ep=(MsgContext)res.getNote( epNote );
                 
@@ -307,8 +308,8 @@ public class JkCoyoteHandler extends JkHandler implements
 
                 
             } else if( actionCode==ActionCode.ACTION_ACK ) {
-                if( log.isInfoEnabled() )
-                    log.info("ACK " );
+                if( log.isDebugEnabled() )
+                    log.debug("ACK " );
                 // What should we do here ? Who calls it ? 
             }
         } catch( Exception ex ) {
