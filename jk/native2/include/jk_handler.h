@@ -77,30 +77,64 @@
 #include "jk_uriMap.h"
 #include "jk_worker.h"
 #include "jk_endpoint.h"
+#include "jk_msg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
+/* Return codes from the handler method
+ */
 
-typedef int (JK_METHOD *jk_handle_in_t)(jk_msg_buf_t   *msg,
-                                        jk_ws_service_t  *r,
-                                        jk_endpoint_t *ae,
-                                        jk_logger_t    *l);
+/**
+ * Message does not have a response, jk will continue
+ * to wait.
+ */
+#define JK_HANDLER_OK        0
 
-typedef int (JK_METHOD *jk_handle_out_t)(jk_msg_buf_t   *msg,
-                                         jk_ws_service_t  *r,
-                                         jk_endpoint_t *ae,
-                                         jk_logger_t    *l);
+/** Message requires a response. The handler will prepare
+ *  the response in e->post message.
+ */
+#define JK_HANDLER_RESPONSE  1
+
+/** This is the last message ( in a sequence ). The original
+ *  transaction is now completed.
+ */
+#define JK_HANDLER_LAST      2
+
+/** An error ocurred during handler execution. The processing
+ *  will be interrupted, but the connection remains open.
+ *  After an error handler we should continue receiving messages,
+ *  but ignore them and send an error message on the first ocassion.
+ */
+#define JK_HANDLER_ERROR     3
+
+/** A fatal error ocurred, we should close the channel
+ *  and report the error. This should be used if something unexpected,
+ *  from which we can't recover happens. ( for example an unexpected packet,
+ *  an invalid code, etc ).
+ */
+#define JK_HANDLER_FATAL     4
+
+struct jk_msg;
+struct jk_ws_service;
+struct jk_endpoint;
+struct jk_logger;
+    
+typedef int (JK_METHOD *jk_handler_callback)(struct jk_msg *msg,
+                                             struct jk_ws_service *r,
+                                             struct jk_endpoint *ae,
+                                             struct jk_logger *l);
 
 struct jk_handler;
 typedef struct jk_handler jk_handler_t;
 
 struct jk_handler {
     struct jk_workerEnv *workerEnv;
-    
-    int (*init)( jk_worker_t *w );
 
+    char *name;
+    int messageId;
+    jk_handler_callback callback;
 };
                                         
 #ifdef __cplusplus
