@@ -109,7 +109,8 @@ int jk_b_set_buffer_size(jk_msg_buf_t *msg,
 /*
  * Finalize the buffer before sending - set length fields, etc
  */
-void jk_b_end(jk_msg_buf_t *msg);
+void jk_b_end(jk_msg_buf_t *msg,
+			  int protoh);
 
 /*
  * Recycle the buffer - z for a new invocation 
