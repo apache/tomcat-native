@@ -640,6 +640,7 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             worker_record_t *wr = &(lb->lb_workers[j]);
             ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
             jk_puts(s, "    <jk:member>\n");
+            jk_printf(s, "      <jk:id>%d</jk:id>\n", j);
             jk_putv(s, "      <jk:name>", wr->s->name, "</jk:name>\n", NULL);
             jk_putv(s, "      <jk:type>", status_worker_type(wr->w->type),
                        "</jk:type>\n", NULL);
