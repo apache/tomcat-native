@@ -483,6 +483,12 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                             <td/>
                         </tr>
                         <tr>
+                            <td>noErrorHeader</td>
+                            <td>1 (true)</td>
+                            <td>If set, jk2 won't touch the headers in case of error and will let for example Apache present the ErrorDocument via mod_alias. 
+                            </td>
+                        </tr>
+                        <tr>
                             <td>noWorkerMsg</td>
                             <td/>
                             <td/>
