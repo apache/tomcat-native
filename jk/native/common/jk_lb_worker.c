@@ -211,6 +211,9 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
 {
     unsigned int i;
     int total_factor = 0;
+    size_t mytraffic = 0;
+    size_t curmin = 0;
+
     worker_record_t *candidate = NULL;
     
     /* First try to see if we have available candidate */
@@ -224,15 +227,26 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
          */
         if (!p->lb_workers[i].s->in_error_state &&
             !p->lb_workers[i].s->is_disabled) {
-            p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
-            total_factor += p->lb_workers[i].s->lb_factor;
-            if (!candidate || p->lb_workers[i].s->lb_value > candidate->s->lb_value)
-                candidate = &p->lb_workers[i];
+            if (p->lbmethod == JK_LB_BYREQUESTS) {
+                p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
+                total_factor += p->lb_workers[i].s->lb_factor;
+                if (!candidate || p->lb_workers[i].s->lb_value > candidate->s->lb_value)
+                    candidate = &p->lb_workers[i];
+            }
+            else {
+                mytraffic = (p->lb_workers[i].s->transferred/p->lb_workers[i].s->lb_factor) +
+                            (p->lb_workers[i].s->readed/p->lb_workers[i].s->lb_factor);
+                if (!candidate || mytraffic < curmin) {
+                    candidate = &p->lb_workers[i];
+                    curmin = mytraffic;
+                }
+            }
         }
     }
 
     if (candidate) {
-        candidate->s->lb_value -= total_factor;
+        if (p->lbmethod == JK_LB_BYREQUESTS)
+            candidate->s->lb_value -= total_factor;
     }
 
     return candidate;
