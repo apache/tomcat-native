@@ -172,29 +172,53 @@ public class WebXml2Jk {
 
         /** Start section( vhost declarations, etc )
          */
-        void generateStart(PrintWriter out );
+        void generateStart() throws IOException ;
 
-        void generateEnd(PrintWriter out );
+        void generateEnd() throws IOException ;
         
-        void generateServletMapping( PrintWriter out,
-                                     String servlet, String url );
-        void generateFilterMapping( PrintWriter out, String servlet, String url );
+        void generateServletMapping( String servlet, String url )throws IOException ;
+        void generateFilterMapping( String servlet, String url ) throws IOException ;
 
-        void generateLoginConfig( PrintWriter out, String loginPage,
-                                  String errPage, String authM );
+        void generateLoginConfig( String loginPage,
+                                  String errPage, String authM ) throws IOException ;
 
-        void generateErrorPage( PrintWriter out, int err, String location );
-        
-        void generateMimeMapping( PrintWriter out, String ext, String type );
-    
-        void generateWelcomeFiles( PrintWriter out, Vector wf );
-
-        void generateConstraints( PrintWriter out, Vector urls, Vector methods, Vector roles, boolean isSSL );
+        void generateErrorPage( int err, String location ) throws IOException ;
+            
+        void generateConstraints( Vector urls, Vector methods, Vector roles, boolean isSSL ) throws IOException ;
     }    
     
     // -------------------- Implementation --------------------
-    void generate(PrintWriter out, MappingGenerator gen, Node webN ) {
+    Node webN;
+    File jkDir;
+    
+    /** Return the top level node
+     */
+    public Node getWebXmlNode() {
+        return webN;
+    }
 
+    public File getJkDir() {
+        return jkDir;
+    }
+    
+    /** Extract the wellcome files from the web.xml
+     */
+    public Vector getWellcomeFiles() {
+        Node n0=getChild( webN, "welcome-file-list" );
+        Vector wF=new Vector();
+        if( n0!=null ) {
+            for( Node mapN=getChild( webN, "welcome-file" );
+                 mapN != null; mapN = getNext( mapN ) ) {
+                wF.addElement( getContent(mapN));
+            }
+        }
+        // XXX Add index.html, index.jsp
+        return wF;
+    }
+
+
+    void generate(MappingGenerator gen ) throws IOException {
+        gen.generateStart();
         log.info("Generating mappings for servlets " );
         for( Node mapN=getChild( webN, "servlet-mapping" );
              mapN != null; mapN = getNext( mapN ) ) {
@@ -202,7 +226,7 @@ public class WebXml2Jk {
             String serv=getChildContent( mapN, "servlet-name");
             String url=getChildContent( mapN, "url-pattern");
             
-            gen.generateServletMapping(  out, serv, url );
+            gen.generateServletMapping( serv, url );
         }
 
         log.info("Generating mappings for filters " );
@@ -212,7 +236,7 @@ public class WebXml2Jk {
             String filter=getChildContent( mapN, "filter-name");
             String url=getChildContent( mapN, "url-pattern");
 
-            gen.generateFilterMapping(  out, filter, url );
+            gen.generateFilterMapping(  filter, url );
         }
 
 
@@ -224,32 +248,13 @@ public class WebXml2Jk {
             if( errorCode!=null && ! "".equals( errorCode ) ) {
                 try {
                     int err=new Integer( errorCode ).intValue();
-                    gen.generateErrorPage( out, err, location );
+                    gen.generateErrorPage(  err, location );
                 } catch( Exception ex ) {
                     log.error( "Format error " + location, ex);
                 }
             }
         }
 
-        
-        Node n0=getChild( webN, "welcome-file-list" );
-        if( n0!=null ) {
-            Vector wF=new Vector();
-            for( Node mapN=getChild( webN, "welcome-file" );
-                 mapN != null; mapN = getNext( mapN ) ) {
-                wF.addElement( getContent(mapN));
-            }
-            gen.generateWelcomeFiles( out, wF );
-        }
-
-        for( Node mapN=getChild( webN, "mime-mapping" );
-             mapN != null; mapN = getNext( mapN ) ) {
-            String ext=getChildContent( mapN, "extension" );
-            String type=getChildContent( mapN, "mime-type" );
-
-            gen.generateMimeMapping( out, ext, type );
-        }
-        
         Node lcN=getChild( webN, "login-config" );
         if( lcN!=null ) {
             log.info("Generating mapping for login-config " );
@@ -262,7 +267,11 @@ public class WebXml2Jk {
             String loginPage= getChildContent( n1, "form-login-page");
             String errPage= getChildContent( n1, "form-error-page");
 
-            gen.generateLoginConfig( out, loginPage, errPage, authMeth );
+	    if(loginPage != null) {
+		int lpos = loginPage.lastIndexOf("/");
+		String jscurl = loginPage.substring(0,lpos+1) + "j_security_check";
+                gen.generateLoginConfig( jscurl, errPage, authMeth );
+	    }
         }
 
         log.info("Generating mappings for security constraints " );
@@ -299,15 +308,88 @@ public class WebXml2Jk {
                     isSSL=true;
                 }
             }
-            for( Node rN=getChild(acN, "role-name");
-                 rN!=null; rN=getNext( rN )) {
-                roles.addElement(getContent( rN ));
+
+            gen.generateConstraints( urls, methods, roles, isSSL );
+        }
+        gen.generateEnd();
+    }
+    
+    // -------------------- Main and ant wrapper --------------------
+    
+    public void execute() {
+        try {
+            if( docBase== null) {
+                log.error("No docbase - please specify the base directory of you web application ( -docBase PATH )");
+                return;
+            }
+            if( cpath== null) {
+                log.error("No context - please specify the mount ( -context PATH )");
+                return;
+            }
+            File docbF=new File(docBase);
+            File wXmlF=new File( docBase, "WEB-INF/web.xml");
+
+            Document wXmlN=readXml(wXmlF);
+            if( wXmlN == null ) return;
+
+            webN = wXmlN.getDocumentElement();
+            if( webN==null ) {
+                log.error("Can't find web-app");
+                return;
             }
 
-            gen.generateConstraints( out, urls, methods, roles, isSSL );
+            jkDir=new File( docbF, "WEB-INF/jk2" );
+            jkDir.mkdirs();
+            
+            MappingGenerator generator=new GeneratorJk2();
+            generator.setWebXmlReader( this );
+            generate( generator );
+
+            generator=new GeneratorJk1();
+            generator.setWebXmlReader( this );
+            generate( generator );
+
+            generator=new GeneratorApache2();
+            generator.setWebXmlReader( this );
+            generate( generator );
+
+        } catch( Exception ex ) {
+            ex.printStackTrace();
         }
     }
 
+
+    public static void main(String args[] ) {
+        try {
+            if( args.length == 1 &&
+                ( "-?".equals(args[0]) || "-h".equals( args[0])) ) {
+                System.out.println("Usage: ");
+                System.out.println("  WebXml2Jk [OPTIONS]");
+                System.out.println();
+                System.out.println("  -docBase DIR        The location of the webapp. Required");
+                System.out.println("  -group GROUP        Group, if you have multiple tomcats with diffrent content. " );
+                System.out.println("                      The default is 'lb', and should be used in most cases");
+                System.out.println("  -host HOSTNAME      Canonical hostname - for virtual hosts");
+                System.out.println("  -context /CPATH     Context path where the app will be mounted");
+                return;
+            }
+
+            WebXml2Jk w2jk=new WebXml2Jk();
+
+            /* do ant-style property setting */
+            IntrospectionUtils.processArgs( w2jk, args, new String[] {},
+                                            null, new Hashtable());
+            w2jk.execute();
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
+
+    }
+
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( WebXml2Jk.class );
+
+    
     // -------------------- DOM utils --------------------
 
     /** Get the content of a node
@@ -324,6 +406,7 @@ public class WebXml2Jk {
     /** Get the first child
      */
     public static Node getChild( Node parent, String name ) {
+        if( parent==null ) return null;
         Node first=parent.getFirstChild();
         if( first==null ) return null;
         for (Node node = first; node != null;
@@ -402,70 +485,5 @@ public class WebXml2Jk {
         Document doc = db.parse(xmlF);
         return doc;
     }
-    
-    // -------------------- Main and ant wrapper --------------------
-    
-    public void execute() {
-        try {
-            if( docBase== null ) {
-                System.out.println("No docbase ");
-            }
-            File docbF=new File(docBase);
-            File wXmlF=new File( docBase, "WEB-INF/web.xml");
 
-            Document wXmlN=readXml(wXmlF);
-            if( wXmlN == null ) return;
-
-            if( file==null ) {
-                file=docBase + "WEB-INF/jk2.properties";
-            }
-            PrintWriter out=new PrintWriter( new FileWriter( file ));
-
-            Node webN = wXmlN.getDocumentElement();
-            if( webN==null ) {
-                System.out.println("Can't find web-app");
-                return;
-            }
-
-            MappingGenerator generator=new GeneratorJk2();
-            
-            generator.setWebXmlReader( this );
-            generate( out, generator, webN );
-            
-
-        } catch( Exception ex ) {
-            ex.printStackTrace();
-        }
-    }
-
-
-    public static void main(String args[] ) {
-        try {
-            if( args.length == 1 &&
-                ( "-?".equals(args[0]) || "-h".equals( args[0])) ) {
-                System.out.println("Usage: ");
-                System.out.println("  WebXml2Jk [OPTIONS]");
-                System.out.println();
-                System.out.println("  -docBase DIR        The location of the webapp. Required");
-                System.out.println("  -group GROUP        Group, if you have multiple tomcats with diffrent content. " );
-                System.out.println("                      The default is 'lb', and should be used in most cases");
-                System.out.println("  -host HOSTNAME      Canonical hostname - for virtual hosts");
-                System.out.println("  -context /CPATH     Context path where the app will be mounted");
-                return;
-            }
-
-            WebXml2Jk w2jk=new WebXml2Jk();
-
-            /* do ant-style property setting */
-            IntrospectionUtils.processArgs( w2jk, args, new String[] {},
-                                            null, new Hashtable());
-            w2jk.execute();
-        } catch( Exception ex ) {
-            ex.printStackTrace();
-        }
-
-    }
-
-    private static org.apache.commons.logging.Log log=
-        org.apache.commons.logging.LogFactory.getLog( WebXml2Jk.class );
 }
