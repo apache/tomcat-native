@@ -123,12 +123,12 @@ public class JniMain {
 
             wEnv=new WorkerEnv();
             ChannelJni cjni=new ChannelJni();
-            wEnv.addChannel( "jni", cjni );
-            Worker defaultWorker=new WorkerDummy();
+            wEnv.addHandler( "jni", cjni );
+            JkHandler defaultWorker=new WorkerDummy();
             
             HandlerRequest hReq=new HandlerRequest();
-            wEnv.addHandler( hReq );
-            hReq.setWorker( defaultWorker );
+            wEnv.addHandler( "req", hReq );
+            hReq.setNext( defaultWorker );
             
             wEnv.start();
 

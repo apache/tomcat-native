@@ -90,21 +90,6 @@ public class JkServlet extends HttpServlet
     public JkServlet()
     {
     }
-
-    protected void servletConfig2properties(JkMain jk, ServletConfig conf )
-    {
-        if( conf==null ) {
-            d("No servlet config ");
-            return;
-        }
-        Enumeration paramNE=conf.getInitParameterNames();
-        while( paramNE.hasMoreElements() ){
-            String s=(String)paramNE.nextElement();
-            String v=conf.getInitParameter(s);
-
-            jk.setProperty( s, v );
-        }
-    }
     
     public void init(ServletConfig conf) throws ServletException {
         try {
@@ -121,7 +106,8 @@ public class JkServlet extends HttpServlet
        way to access tomcat40 internals without implementing the interface,
        and that will brake 3.3 ( and probably other things ).
 
-       It does seem to work for 4.0, and in future we can add a tomcat40 valve/whatever
+       It does seem to work for 4.0, and in future we can add a tomcat40
+       valve/whatever
        that will provide an Attribute for 'trusted' apps with pointer to
        the internals.
     */
@@ -133,7 +119,13 @@ public class JkServlet extends HttpServlet
     private void try33() {
         // 33 ?
         try {
-            JkServlet t33=(JkServlet)newInstance( "org.apache.jk.server.tomcat33.JkServlet33" );
+            Object o=newInstance( "org.apache.tomcat.core.Context" );
+            if( o==null ) {
+                d("3.3 not detected or untrusted app");
+                return;
+            }
+            JkServlet t33=
+     (JkServlet)newInstance( "org.apache.jk.server.tomcat33.JkServlet33" );
             if( t33 == null ) {
                 d("3.3 not detected or untrusted app");
                 return;
@@ -171,18 +163,19 @@ public class JkServlet extends HttpServlet
         }
     }
 
-    protected JkMain jkMain;
+    protected JkMain jkMain=new JkMain();
     
-    protected void initJkMain(ServletConfig cfg, Worker defaultWorker) {
-        jkMain=new JkMain();
+    protected void initJkMain(ServletConfig cfg, JkHandler defaultWorker) {
         servletConfig2properties( jkMain, cfg );
-        jkMain.setDefaultWorker( defaultWorker );
+
+        jkMain.getWorkerEnv().addHandler("container", defaultWorker );
 
         String jkHome=cfg.getServletContext().getRealPath("/");
         d("Setting jkHome " + jkHome );
-        jkMain.setJkHome( jkHome );
+        jkMain.setJkHome( jkHome + "/WEB-INF" );
                         
         try {
+            jkMain.init();
             jkMain.start();
         } catch( Exception ex ) {
             ex.printStackTrace();
@@ -203,7 +196,24 @@ public class JkServlet extends HttpServlet
     }
 
 
-    private static final int dL=0;
+    /** Set jk main properties using the servlet config file
+     */
+    private void servletConfig2properties(JkMain jk, ServletConfig conf )
+    {
+        if( conf==null ) {
+            d("No servlet config ");
+            return;
+        }
+        Enumeration paramNE=conf.getInitParameterNames();
+        while( paramNE.hasMoreElements() ){
+            String s=(String)paramNE.nextElement();
+            String v=conf.getInitParameter(s);
+
+            jk.setProperty( s, v );
+        }
+    }
+
+    private static final int dL=10;
     private static void d(String s ) {
         System.err.println( "JkServlet: " + s );
     }
