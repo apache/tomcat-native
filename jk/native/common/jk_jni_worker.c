@@ -749,7 +749,7 @@ static int load_jvm_dll(jni_worker_t *p,
 #elif defined(AS400)
     jk_log(l, JK_LOG_DEBUG,
            "Direct reference to JNI entry points (no SRVPGM)\n");
-    jni_create_java_vm = &JNI_CreateJavaVM
+    jni_create_java_vm = &JNI_CreateJavaVM;
     jni_get_default_java_vm_init_args = &JNI_GetDefaultJavaVMInitArgs;
     jni_get_created_java_vms = &JNI_GetCreatedJavaVMs;
 #else
