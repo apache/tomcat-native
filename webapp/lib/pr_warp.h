@@ -104,37 +104,7 @@ typedef struct warp_header {
 /* WARP definitions */
 #define VERS_MAJOR 0
 #define VERS_MINOR 9
-
-#define TYPE_INVALID -1
-#define TYPE_ERROR        0x00
-#define TYPE_DISCONNECT   0xfe
-#define TYPE_FATAL        0xff
-
-#define TYPE_CONF_WELCOME 0x01
-#define TYPE_CONF_DEPLOY  0x02
-#define TYPE_CONF_APPLIC  0x03
-#define TYPE_CONF_DONE    0x04
-#define TYPE_CONF_PROCEED 0x05
-
-#define TYPE_REQ_INIT     0x10
-#define TYPE_REQ_CONTENT  0x11
-#define TYPE_REQ_SCHEME   0x12
-#define TYPE_REQ_AUTH     0x13
-#define TYPE_REQ_HEADER   0x14
-#define TYPE_REQ_SERVER   0x15
-#define TYPE_REQ_CLIENT   0x16
-#define TYPE_REQ_PROCEED  0x1f
-
-#define TYPE_RES_STATUS   0x20
-#define TYPE_RES_HEADER   0x21
-#define TYPE_RES_COMMIT   0x2f
-#define TYPE_RES_BODY     0x30
-#define TYPE_RES_DONE     0x3f
-
-#define TYPE_CBK_READ     0x40
-#define TYPE_CBK_DATA     0x41
-#define TYPE_CBK_DONE     0x42
-
+#include "pr_warp_defs.h"
 
 /* ************************************************************************* */
 /* PACKET FUNCTIONS FROM PR_WARP_PACKET.C                                    */

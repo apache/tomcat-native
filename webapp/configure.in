@@ -68,6 +68,9 @@ AC_DEFUN(LOCAL_INIT,[
   AC_PATH_PROG(test,test,${PATH})
   AC_PATH_PROG(true,true,${PATH})
   AC_PATH_PROG(echo,echo,${PATH})
+  AC_PATH_PROG(grep,grep,${PATH})
+  AC_PATH_PROG(cat,cat,${PATH})
+  AC_PATH_PROG(sed,sed,${PATH})
   AC_PATH_PROG(rm,rm,${PATH})
 ])
 
@@ -307,9 +310,19 @@ AC_SUBST(CPPFLAGS)
 TGTDIRS="${TGTDIRS} ${SRCDIR}/lib"
 AC_SUBST(TGTDIRS)
 
+dnl --------------------------------------------------------------------------
+dnl Output files
+dnl --------------------------------------------------------------------------
 CONFIGFILES="./Makedefs ./Makefile ./lib/Makefile ./java/Makefile"
 CONFIGFILES="$CONFIGFILES ./java/Constants.java ${makefile}"
 AC_SUBST(CONFIGFILES)
+
+AC_MSG_RESULT([creating ./lib/pr_warp_defs.h])
+${cat} ./java/Constants.java.in | \
+  ${grep} "TYPE_" | \
+  ${sed} s/public\ static\ final\ int/\#define/g | \
+  ${sed} s/\=/\ /g | \
+  ${sed} s/\;/\ /g > ./lib/pr_warp_defs.h
 
 AC_OUTPUT(${CONFIGFILES})
 

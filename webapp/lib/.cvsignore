@@ -9,6 +9,7 @@ pr_warp.lo
 pr_warp.o
 pr_warp_config.lo
 pr_warp_config.o
+pr_warp_defs.h
 pr_warp_network.lo
 pr_warp_network.o
 pr_warp_packet.lo

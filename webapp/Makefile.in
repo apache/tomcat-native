@@ -64,6 +64,7 @@ LOCALDIRS = @TGTDIRS@ @TARGET@
 APRDIR = @APRDIR@
 
 CFGS = @CONFIGFILES@ \
+	./lib/pr_warp_defs.h \
 	config.cache \
 	config.log \
 	config.status
