@@ -266,6 +266,8 @@ static int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
      */
     val = jk2_config_replaceProperties(env, cfg->map, cfg->map->pool, val);
 
+    /* fprintf( stderr, "config.setProperty2 %s %s %s \n", mbean->name, name, val ); */
+    
     /** Used for future replacements
      */
     cfg->map->add( env, cfg->map, pname, val );
@@ -291,8 +293,8 @@ static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
     int status;
     char *objName=NULL;
     char *propName=NULL;
-
-    /*     fprintf( stderr, "setPropertyString %s %s \n", name, value ); */
+    
+    /* fprintf( stderr, "setPropertyString %s %s \n", name, value ); */
 
     status=jk2_config_processBeanPropertyString(env, cfg, name, &objName, &propName );
     if( status!=JK_TRUE ) {
@@ -720,8 +722,8 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
     rc = value;
     env_start = value;
 
-    while(env_start = strstr(env_start, "$(")) {
-        char *env_end = strstr(env_start, ")");
+    while(env_start = strstr(env_start, "${")) {
+        char *env_end = strstr(env_start, "}");
         if( rec++ > 20 ) return rc;
         if(env_end) {
             char env_name[LENGTH_OF_LINE + 1] = ""; 
@@ -742,7 +744,11 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
                 if(!new_value) {
                     break;
                 }
-                strncpy(new_value, rc, env_start-rc);
+                if( env_start == rc ) {
+                    new_value[0]='\0';
+                } else {
+                    strncpy(new_value, rc, env_start-rc);
+                }
                 strcat(new_value, env_value);
                 strcat(new_value, env_end + 1);
 		offset= env_start - rc + strlen( env_value );
