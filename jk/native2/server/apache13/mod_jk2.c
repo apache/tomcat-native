@@ -87,6 +87,11 @@
 #include "jk_uriMap.h"
 #include "jk_requtil.h"
 
+#ifdef WIN32
+static char  file_name[_MAX_PATH];
+#endif
+
+
 #define JK_HANDLER          ("jakarta-servlet2")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet2")
 
@@ -144,6 +149,7 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
     jk_bean_t *jkb;
 
 #ifdef HAS_APR
+	apr_initialize();
     apr_pool_create( &jk_globalPool, NULL );
 
     jk2_pool_apr_create( NULL, &globalPool, NULL, jk_globalPool );
@@ -426,6 +432,7 @@ static int jk2_translate(request_rec *r)
 {
     jk_uriEnv_t *uriEnv;
     jk_env_t *env;
+    int port;
             
     if(r->proxyreq) {
         return DECLINED;
@@ -438,7 +445,13 @@ static int jk2_translate(request_rec *r)
     /* get_env() */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
         
-    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL, 0,r->uri );
+    port = ap_get_server_port(r);
+    if (ap_is_default_port(port, r))
+        port = 0;
+    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,
+                r->server->is_virtual ? ap_get_server_name(r) : NULL,
+                port,
+                r->uri);
     
     if(uriEnv==NULL || uriEnv->workerName==NULL) {
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
@@ -498,3 +511,14 @@ module MODULE_VAR_EXPORT jk2_module = {
 
 };
 
+#ifdef WIN32
+
+BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
+                    ULONG ulReason,         // Reason why NT called this DLL
+                    LPVOID lpReserved)      // Reserved parameter for future use
+{
+    GetModuleFileName( hInst, file_name, sizeof(file_name));
+    return TRUE;
+}
+
+#endif
