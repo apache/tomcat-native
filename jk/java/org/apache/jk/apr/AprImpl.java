@@ -350,7 +350,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
         } catch( Throwable ex ) {
             ok=false;
             if( log.isDebugEnabled() ) 
-                log.debug( "Error loading native library ", ex.printStackTrace());
+                log.debug( "Error loading native library ", ex);
         }
     }
     private static org.apache.commons.logging.Log log=
