@@ -62,13 +62,12 @@ package org.apache.jk.common;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.security.*;
-import java.security.cert.*;
 
 import org.apache.jk.core.*;
 
 import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.buf.*;
+import org.apache.tomcat.util.net.SSLSupport;
 
 import org.apache.coyote.Request;
 import org.apache.coyote.*;
@@ -482,7 +481,7 @@ public class HandlerRequest extends JkHandler
              */
             if( attributeCode == SC_A_SSL_KEY_SIZE ) {
                 // Bug 1326: it's an Integer.
-		req.setAttribute("javax.servlet.request.key_size",
+		req.setAttribute(SSLSupport.KEY_SIZE_KEY,
                                  new Integer( msg.getInt()));
 	       //Integer.toString(msg.getInt()));
             }
@@ -535,38 +534,21 @@ public class HandlerRequest extends JkHandler
                 // Transform the string into certificate.
                 msg.getBytes(tmpMB);
                 String certString = tmpMB.toString();
-                byte[] certData = certString.getBytes();
-                ByteArrayInputStream bais = new ByteArrayInputStream(certData);
- 
-                // Fill the first element.
-                X509Certificate jsseCerts[] = null;
-                try {
-                    CertificateFactory cf =
-                        CertificateFactory.getInstance("X.509");
-                    X509Certificate cert = (X509Certificate)
-                        cf.generateCertificate(bais);
-                    jsseCerts =  new X509Certificate[1];
-                    jsseCerts[0] = cert;
-                } catch(java.security.cert.CertificateException e) {
-                    log.error("Certificate convertion failed" + e );
-                    e.printStackTrace();
-                }
- 
-                req.setAttribute("javax.servlet.request.X509Certificate",
-                                 jsseCerts);
+				// SSL certificate extraction is costy, moved to JkCoyoteHandler
+                req.setAttribute(SSLSupport.CERTIFICATE_KEY, certString);
                 break;
 		
  	    case SC_A_SSL_CIPHER   :
 		req.scheme().setString( "https" );
                 msg.getBytes(tmpMB);
-		req.setAttribute("javax.servlet.request.cipher_suite",
+		req.setAttribute(SSLSupport.CIPHER_SUITE_KEY,
 				 tmpMB.toString());
                 break;
 		
 	    case SC_A_SSL_SESSION  :
 		req.scheme().setString( "https" );
                 msg.getBytes(tmpMB);
-		req.setAttribute("javax.servlet.request.ssl_session",
+		req.setAttribute(SSLSupport.SESSION_ID_KEY, 
 				  tmpMB.toString());
                 break;
                 

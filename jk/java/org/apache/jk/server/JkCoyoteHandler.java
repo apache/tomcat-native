@@ -62,6 +62,8 @@ package org.apache.jk.server;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.security.*;
+import java.security.cert.*;
 
 import org.apache.jk.core.*;
 import org.apache.jk.common.*;
@@ -69,6 +71,7 @@ import org.apache.jk.common.*;
 import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.log.*;
 import org.apache.tomcat.util.http.*;
+import org.apache.tomcat.util.net.SSLSupport;
 
 import org.apache.coyote.*;
 
@@ -376,9 +379,36 @@ public class JkCoyoteHandler extends JkHandler implements
                 if( logTime.isDebugEnabled() ) 
                     logTime(res.getRequest(), res);
             } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
-                
+                org.apache.coyote.Request req=(org.apache.coyote.Request)param;
+
+				// Extract SSL certificate information (if requested)
+                String certString = (String)req.getAttribute(SSLSupport.CERTIFICATE_KEY);
+                byte[] certData = certString.getBytes();
+                ByteArrayInputStream bais = new ByteArrayInputStream(certData);
+ 
+                // Fill the first element.
+                X509Certificate jsseCerts[] = null;
+                try {
+                    CertificateFactory cf =
+                        CertificateFactory.getInstance("X.509");
+                    X509Certificate cert = (X509Certificate)
+                        cf.generateCertificate(bais);
+                    jsseCerts =  new X509Certificate[1];
+                    jsseCerts[0] = cert;
+                } catch(java.security.cert.CertificateException e) {
+                    log.error("Certificate convertion failed" + e );
+                    e.printStackTrace();
+                }
+ 
+                req.setAttribute(SSLSupport.CERTIFICATE_KEY, 
+                                 jsseCerts);
                 
             } else if( actionCode==ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
+                org.apache.coyote.Request req=(org.apache.coyote.Request)param;
+
+				// If remoteHost not set by JK, get it's name from it's remoteAddr
+            	if( req.remoteHost().isNull())
+                	req.remoteHost().setString(InetAddress.getByName(req.remoteAddr().toString()).getHostName());
 
             // } else if( actionCode==ActionCode.ACTION_POST_REQUEST ) {
 
