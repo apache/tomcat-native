@@ -147,7 +147,7 @@ public class Http11Protocol implements ProtocolHandler
     
     // -------------------- Properties--------------------
     protected PoolTcpEndpoint ep=new PoolTcpEndpoint();
-    boolean secure;
+    protected boolean secure;
     
     protected ServerSocketFactory socketFactory;
     protected SSLImplementation sslImplementation;
@@ -299,9 +299,9 @@ public class Http11Protocol implements ProtocolHandler
 
         public void processConnection(TcpConnection connection, Object thData[]) {
             Socket socket=null;
-            Processor  processor=null;
+            Http11Processor  processor=null;
             try {
-                processor=(Processor)thData[1];
+                processor=(Http11Processor)thData[1];
                 
                 if (processor instanceof ActionHook) {
                     ((ActionHook) processor).action(ActionCode.ACTION_START, null);
@@ -312,35 +312,17 @@ public class Http11Protocol implements ProtocolHandler
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
 
-                // XXX Should be a request note
-                //reqA.setSocket(socket);
-                //if( secure ) {
-                // Load up the SSLSupport class
-                //   if(sslImplementation != null)
-		//sslSupport = sslImplementation.getSSLSupport(socket);
-                // }
-
-                //                 boolean secure=false;
-                //                 SSLImplementation sslImplementation=null;
-                //                 SSLSupport sslSupport=null;
-                
-                //                 if( secure ) {
-                //                     reqA.scheme().setString( "https" );
-                
-                //                     // Load up the SSLSupport class
-                //                     if(sslImplementation != null)
-                //                         reqA.setSSLSupport(sslSupport);
-                //                 }
-
+                if( proto.secure ) {
+                    SSLSupport sslSupport=null;
+                    if(proto.sslImplementation != null)
+                        sslSupport = proto.sslImplementation.getSSLSupport(socket);
+                    processor.setSSLSupport(sslSupport);
+                } else {
+                    processor.setSSLSupport( null );
+                }
+                processor.setSocket( socket );
                 
                 processor.process(in, out);
-                
-                // Recycle reqA notes
-                //                 secure = false;
-                //                 sslImplementation=null;
-                //                 sslSupport=null;
-
-
                 
                 // If unread input arrives after the shutdownInput() call
                 // below and before or during the socket.close(), an error
