@@ -151,8 +151,9 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
     return JK_OK;
 }
 
-static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
+static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
 {
+    jk_worker_t *_this=bean->object;
     jni_worker_data_t *jniWorker;
     JNIEnv *jniEnv;
     jstring cmd_line = NULL;
@@ -262,8 +263,9 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
     return JK_OK;
 }
 
-static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
+static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
 {
+    jk_worker_t *_this=bean->object;
     jni_worker_data_t *jniWorker;
     JNIEnv *jniEnv;
     jk_vm_t *vm=_this->workerEnv->vm;
@@ -297,8 +299,6 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
 /*                                   jniWorker->jk_shutdown_method); */
 /*         vm->detach(env, vm); */
 /*     } */
-
-    _this->pool->close(env, _this->pool);
 
     env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.destroy() done\n");
 
@@ -334,16 +334,14 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
 
     _this->worker_private=jniData;
 
-    _this->pool=pool;
-
     jniData->jk_java_bridge_class  = NULL;
     jniData->classNameOptions=(char **)pool->calloc(env, pool, 4 * sizeof(char *));
 
     jniData->args = pool->calloc( env, pool, 64 * sizeof( char *));
     jniData->nArgs =0;
 
-    _this->init           = jk2_jni_worker_init;
-    _this->destroy        = jk2_jni_worker_destroy;
+    result->init           = jk2_jni_worker_init;
+    result->destroy        = jk2_jni_worker_destroy;
     _this->service = jk2_jni_worker_service;
 
     result->object = _this;

@@ -111,7 +111,8 @@ static int JK_METHOD jk2_handler_login(jk_env_t *env, void *target,
     char *entropy;
     char computedKey[AJP14_COMPUTED_KEY_LEN];
     char *secret=ae->worker->secret;
-
+    long negociation;
+    
     entropy= msg->getString( env, msg );
     if( entropy==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -145,9 +146,9 @@ static int JK_METHOD jk2_handler_login(jk_env_t *env, void *target,
                  "handler.loginSecret() error serializing computed secret\n");
         return JK_HANDLER_FATAL;
     }
-    ae->negociation=
+    negociation=
         (AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
-    msg->appendLong(env, msg, ae->negociation);
+    msg->appendLong(env, msg, negociation);
     
     rc=msg->appendString(env, msg, ae->worker->workerEnv->server_name);
 

@@ -91,21 +91,6 @@ static int JK_METHOD jk2_worker_run_service(jk_env_t *env, jk_worker_t *_this,
     return JK_OK;
 }
 
-static int JK_METHOD jk2_worker_run_destroy(jk_env_t *env, jk_worker_t *w)
-{
-    int i = 0;
-
-    if(w==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "run_worker.destroy() NullPointerException\n");
-        return JK_ERR;
-    }
-
-    w->pool->close(env, w->pool);    
-
-    return JK_OK;
-}
-
 
 int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
                                      jk_bean_t *result,
@@ -126,8 +111,6 @@ int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
                       "run_worker.factory() OutOfMemoryException\n");
         return JK_ERR;
     }
-
-    _this->pool=pool;
 
     _this->service        = jk2_worker_run_service;
     

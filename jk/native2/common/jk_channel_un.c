@@ -95,8 +95,11 @@ typedef struct jk_channel_un_private {
 static int JK_METHOD jk2_channel_un_close(jk_env_t *env, jk_channel_t *_this,
                                           jk_endpoint_t *endpoint);
 
+static char *jk2_channel_un_multiValueInfo[]={"group",  NULL };
+static char *jk2_channel_un_setAttributeInfo[]={"file", "route", "lb_factor",
+                                                "level", NULL };
 
-static int JK_METHOD jk2_channel_un_setProperty(jk_env_t *env,
+static int JK_METHOD jk2_channel_un_setAttribute(jk_env_t *env,
                                                 jk_bean_t *mbean, 
                                                 char *name, void *valueP)
 {
@@ -239,7 +242,6 @@ static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *_this,
     }
 
     while(sent < len) {
-/*         this_time = send(unixsock, (char *)b + sent , len - sent,  0); */
         errno=0;
         this_time = write(unixsock, (char *)b + sent , len - sent);
 
@@ -247,12 +249,6 @@ static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *_this,
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "channel.apr:send() write() %d %d %s\n", this_time, errno,
                           strerror( errno));
-/*         if( errno != 0 ) { */
-/*             env->l->jkLog(env, env->l, JK_LOG_ERROR, */
-/*                           "channel.apr:send() send() %d %d %s\n", this_time, errno, */
-/*                           strerror( errno)); */
-/*             return -2; */
-/*         } */
         if(0 == this_time) {
             return -2;
         }
@@ -378,7 +374,9 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
     ch->close= jk2_channel_un_close; 
     ch->is_stream=JK_TRUE;
 
-    result->setAttribute= jk2_channel_un_setProperty; 
+    result->setAttribute= jk2_channel_un_setAttribute; 
+    result->multiValueInfo=jk2_channel_un_multiValueInfo;
+    result->setAttributeInfo=jk2_channel_un_setAttributeInfo;
     ch->mbean=result;
     result->object= ch;
 
@@ -398,6 +396,7 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
     env->l->jkLog( env, env->l, JK_LOG_ERROR,
                    "channelUn.factory(): Support for unix sockets is disabled, "
                    "you need to set HAVE_UNIXSOCKETS at compile time\n");
+    result->disabled=1;
     return JK_FALSE;
 }
 #endif

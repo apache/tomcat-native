@@ -117,6 +117,10 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host,
 static int JK_METHOD jk2_channel_socket_close(jk_env_t *env, jk_channel_t *ch,
                                              jk_endpoint_t *endpoint);
 
+static char *jk2_channel_socket_multiValueInfo[]={"group", NULL };
+static char *jk2_channel_socket_setAttributeInfo[]={"host", "port", "route", "lb_factor",
+                                                    "level", NULL };
+
 static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
                                            jk_bean_t *mbean,
                                            char *name, void *valueP)
@@ -361,8 +365,9 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
     int  sent=0;
     jk_channel_socket_data_t *chD=endpoint->channelData;
 
-    if( chD==NULL ) 
-	return JK_ERR;
+    if( chD==NULL ) {
+        return JK_ERR;
+    }
 
     msg->end( env, msg );
     len=msg->len;
@@ -376,12 +381,12 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
 	    return -2;
 	}
 	if(this_time < 0) {
-	    return -3;
+	    return this_time;
 	}
 	sent += this_time;
     }
     /*     return sent; */
-    return JK_OK;
+    return JK_OK; /* 0 */
 }
 
 
@@ -499,6 +504,11 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
     ch->is_stream=JK_TRUE;
 
     result->setAttribute= jk2_channel_socket_setAttribute; 
+
+    //result->getAttributeInfo=jk2_channel_socket_getAttributeInfo;
+    result->multiValueInfo=jk2_channel_socket_multiValueInfo;
+    result->setAttributeInfo=jk2_channel_socket_setAttributeInfo;
+    
     result->object= ch;
     ch->mbean=result;
 
