@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -129,12 +129,12 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
 
         if( shm->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                          "shm.create(): GLOBAL_SHM  %p\n", shm->image );
+                          "shm.create(): GLOBAL_SHM  %#lx\n", shm->image );
         return JK_OK;
     } else {
         if( shm->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                          "shm.create(): NO GLOBAL_SHM  %p\n", shm->image );
+                          "shm.create(): NO GLOBAL_SHM  %#lx\n", shm->image );
     }
     
 
@@ -197,7 +197,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
         apr_strerror( rc, error, 256 );
         
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.create(): error creating %s %d %d %p %s\n",
+                      "shm.create(): error creating %s %d %d %#lx %s\n",
                       shm->fname, finfo.size, rc, globalShmPool, error );
         shm->privateData=NULL;
         return rc;
@@ -363,7 +363,7 @@ static int JK_METHOD jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
 
     if( shm->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "shm.create(): shm created %p\n", shm->head );
+                      "shm.create(): shm created %#lx\n", shm->head );
 
     return JK_OK;
 }
@@ -383,7 +383,7 @@ static int JK_METHOD jk2_shm_reset(jk_env_t *env, jk_shm_t *shm)
     shm->head->lastSlot = 1;
 
     if( shm->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.init() Reset %s %p\n",
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.init() Reset %s %#lx\n",
                       shm->fname, shm->image);
 
     return JK_OK;
@@ -394,7 +394,7 @@ static int jk2_shm_dump(jk_env_t *env, jk_shm_t *shm, char *name)
     FILE *f;
     int i;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.dump(): Struct Size=%d slotSize=%d slotCnt=%d head=%p\n",
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.dump(): Struct Size=%d slotSize=%d slotCnt=%d head=%#lx\n",
                   shm->size, shm->slotSize, shm->slotMaxCount, shm->head );
 
     if( shm->head==NULL ) return JK_ERR;
@@ -462,7 +462,7 @@ jk_shm_slot_t * JK_METHOD jk2_shm_createSlot(struct jk_env *env, struct jk_shm *
     if( slot==NULL ) return NULL;
     
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "shm.createSlot() Create %d %p %p\n", slotId, shm->image, slot );
+                  "shm.createSlot() Create %d %#lx %#lx\n", slotId, shm->image, slot );
     strncpy(slot->name, name, 64 );
     
     return slot;

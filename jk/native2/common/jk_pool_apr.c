@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -85,7 +85,7 @@
 static void jk2_pool_apr_close(jk_env_t *env, jk_pool_t *p)
 {
 #ifdef JK_APR_POOL_DEBUG
-    fprintf(stderr, "apr_close %p\n", p);
+    fprintf(stderr, "apr_close %#lx\n", p);
 #endif
 }
 
@@ -96,7 +96,7 @@ static void jk2_pool_apr_close(jk_env_t *env, jk_pool_t *p)
 static void jk2_pool_apr_reset(jk_env_t *env, jk_pool_t *p)
 {
 #ifdef JK_APR_POOL_DEBUG
-    fprintf(stderr, "apr_reset %p\n", p);
+    fprintf(stderr, "apr_reset %#lx\n", p);
 #endif
     apr_pool_clear(p->_private);
 }
@@ -105,7 +105,7 @@ static void *jk2_pool_apr_calloc(jk_env_t *env, jk_pool_t *p,
                                  size_t size)
 {
 #ifdef JK_APR_POOL_DEBUG
-    fprintf(stderr, "apr_calloc %p %d\n", p, size);
+    fprintf(stderr, "apr_calloc %#lx %d\n", p, size);
 #endif
     /* assert( p->_private != NULL ) */
     return apr_pcalloc( (apr_pool_t *)p->_private, (apr_size_t)size);
@@ -115,7 +115,7 @@ static void *jk2_pool_apr_alloc(jk_env_t *env, jk_pool_t *p,
                                 size_t size)
 {
 #ifdef JK_APR_POOL_DEBUG
-    fprintf(stderr, "apr_alloc %p %d\n", p, size);
+    fprintf(stderr, "apr_alloc %#lx %d\n", p, size);
 #endif
 
     return apr_palloc( (apr_pool_t *)p->_private, (apr_size_t)size);
@@ -129,7 +129,7 @@ static void *jk2_pool_apr_realloc(jk_env_t *env, jk_pool_t *p,
     void *rc;
 
 #ifdef JK_APR_POOL_DEBUG
-    fprintf(stderr, "apr_realloc %p %d\n", p, sz);
+    fprintf(stderr, "apr_realloc %#lx %d\n", p, sz);
 #endif
     if(!p || (!old && old_sz)) {
         return NULL;
@@ -147,7 +147,7 @@ static void *jk2_pool_apr_strdup(jk_env_t *env, jk_pool_t *p,
                                  const char *s)
 {
 #ifdef JK_APR_POOL_DEBUG
-    fprintf(stderr, "apr_strdup %p %d\n", p, ((s==NULL)?-1: (int)strlen(s)));
+    fprintf(stderr, "apr_strdup %#lx %d\n", p, ((s==NULL)?-1: (int)strlen(s)));
 #endif
     return apr_pstrdup( (apr_pool_t *)p->_private, s);
 }

@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -109,7 +109,7 @@ jk_env_t* JK_METHOD jk2_env_getEnv( char *id, jk_pool_t *pool ) {
       jk_env_globalEnv->globalPool = pool;
       jk2_env_initEnv( (jk_env_t *)jk_env_globalEnv, id );
 
-      /* fprintf( stderr, "env: top level env %p\n", jk_env_globalEnv); */
+      /* fprintf( stderr, "env: top level env %#lx\n", jk_env_globalEnv); */
   }
   return jk_env_globalEnv;
 }
@@ -152,10 +152,10 @@ static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *parentEnv )
 
         if( env->debug > 0 ) {
             if( env->l == NULL ) 
-                fprintf( stderr, "env:Create child env %p %p\n", parentEnv, env);
+                fprintf( stderr, "env:Create child env %#lx %#lx\n", parentEnv, env);
             else 
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "env:Create child env %p %p\n", parentEnv, env);
+                              "env:Create child env %#lx %#lx\n", parentEnv, env);
         }
     }
     return env;
@@ -307,10 +307,10 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
 
     if( env->debug > 0 ) {
         if( env->l == NULL ) 
-            fprintf(stderr,"env.createBean2(): register %s %p\n", result->name, result->object);
+            fprintf(stderr,"env.createBean2(): register %s %#lx\n", result->name, result->object);
         else 
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "env.createBean2(): register %s %p\n", result->name, result->object);
+                          "env.createBean2(): register %s %#lx\n", result->name, result->object);
     }
 
     jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, result->name, result, NULL );
@@ -368,20 +368,20 @@ static void * JK_METHOD jk2_env_getByName(jk_env_t *env, const char *name)
     if( result==NULL ) {
         if( env->debug > 0 ) {
             if( env->l == NULL ) 
-                fprintf(stderr,"env.getByName(): Can't find %p %s\n", env, name);
+                fprintf(stderr,"env.getByName(): Can't find %#lx %s\n", env, name);
             else 
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "env.getByName(): Can't find %p %s\n", env, name);
+                              "env.getByName(): Can't find %#lx %s\n", env, name);
         }
         return NULL;
     }
     
     if( env->debug > 0 ) {
         if( env->l == NULL ) 
-            fprintf(stderr,"env.getByName(): Get by name %s %p\n", name, result->object);
+            fprintf(stderr,"env.getByName(): Get by name %s %#lx\n", name, result->object);
         else 
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "env.getByName(): Get by name %s %p\n", name, result->object);
+                          "env.getByName(): Get by name %s %#lx\n", name, result->object);
     }
     return result->object;
 }    

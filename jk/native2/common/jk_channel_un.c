@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -414,7 +414,7 @@ static int JK_METHOD jk2_channel_un_recv( jk_env_t *env, jk_channel_t *ch,
     blen=jk2_channel_un_readN( env, ch, endpoint, msg->buf, hlen );
     if( blen <= 0 ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelUn.receive(): error receiving %d %d %s %p %d\n",
+                      "channelUn.receive(): error receiving %d %d %s %#lx %d\n",
                       blen, errno, strerror( errno ), endpoint, endpoint->sd);
         return JK_ERR;
     }

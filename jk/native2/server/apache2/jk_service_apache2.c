@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -127,7 +127,7 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
     /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
     if( debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "service.head() %d %d %p\n", s->status,
+                      "service.head() %d %d %#lx\n", s->status,
                       numheaders, s->uriEnv);
     
     for(h = 0 ; h < numheaders; h++) {

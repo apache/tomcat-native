@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -199,7 +199,7 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     }
     
     if( cfg->mbean->debug > 0 )
-        env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s / %s / %p / %s = %s\n",
+        env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s / %s / %#lx / %s = %s\n",
                        mbean->name, name, mbean, pname, val);
     
     if( strcmp( name, "name" ) == 0 ) {

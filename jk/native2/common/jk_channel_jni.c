@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -227,7 +227,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     epData->jniJavaContext=(*jniEnv)->NewGlobalRef( jniEnv, jobj );
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_jni.open() Got ep %p %p\n", jobj, epData->jniJavaContext ); 
+                  "channel_jni.open() Got ep %#lx %#lx\n", jobj, epData->jniJavaContext ); 
 
     /* XXX Destroy them in close */
     
@@ -336,7 +336,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
         (jk_ch_jni_ep_private_t *)endpoint->channelData;
 
     if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() %p\n", epData ); 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() %#lx\n", epData ); 
 
     if( epData == NULL ) {
         jk2_channel_jni_open( env, _this, endpoint );
@@ -357,7 +357,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     b=msg->buf;
 
     if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() (1) %p\n", epData ); 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() (1) %#lx\n", epData ); 
 
     jniEnv=NULL; /* epData->jniEnv; */
     jbuf=epData->jarray;
@@ -409,7 +409,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
 #endif    
     if( _this->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel_jni.send() before send %p\n",
+                      "channel_jni.send() before send %#lx\n",
                       (void *)(long)epData->jniJavaContext); 
     
     sent=(*jniEnv)->CallStaticIntMethod( jniEnv,

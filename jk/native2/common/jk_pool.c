@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -274,13 +274,13 @@ static void *jk2_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s)
   static void jk2_dump_pool(jk_pool_t *p, 
                             FILE *f)
 {
-    fprintf(f, "Dumping for pool [%p]\n", p);
+    fprintf(f, "Dumping for pool [%#lx]\n", p);
     fprintf(f, "size             [%d]\n", p->size);
     fprintf(f, "pos              [%d]\n", p->pos);
-    fprintf(f, "buf              [%p]\n", p->buf);  
+    fprintf(f, "buf              [%#lx]\n", p->buf);  
     fprintf(f, "dyn_size         [%d]\n", p->dyn_size);
     fprintf(f, "dyn_pos          [%d]\n", p->dyn_pos);
-    fprintf(f, "dynamic          [%p]\n", p->dynamic);
+    fprintf(f, "dynamic          [%#lx]\n", p->dynamic);
 
     fflush(f);
 }

@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -655,7 +655,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
 
     wEnv=(jk_workerEnv_t *)pool->calloc( env, pool, sizeof( jk_workerEnv_t ));
 
-    /* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Creating workerEnv %p\n", wEnv); */
+    /* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Creating workerEnv %#lx\n", wEnv); */
 
     result->object=wEnv;
     wEnv->mbean=result;
@@ -722,9 +722,9 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     wEnv->envvars_in_use = JK_FALSE;
     jk2_map_default_create(env, &wEnv->envvars, pool);
 
-    jk2_map_default_create(env,&wEnv->worker_map, wEnv->pool);
-    jk2_map_default_create(env,&wEnv->channel_map, wEnv->pool);
-    jk2_map_default_create(env, & wEnv->endpointMap, wEnv->pool);
+    jk2_map_default_create(env, &wEnv->worker_map, wEnv->pool);
+    jk2_map_default_create(env, &wEnv->channel_map, wEnv->pool);
+    jk2_map_default_create(env, &wEnv->endpointMap, wEnv->pool);
 
     wEnv->perThreadWorker=0;
     

@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -243,7 +243,7 @@ static void *jk2_merge_dir_config(apr_pool_t *p, void *childv, void *parentv)
     
         
         if( child->mbean->debug > -1 ) {
-            fprintf(stderr, "mod_jk2:mergeDirConfig() Merged dir config %p %s %s %s %s\n",
+            fprintf(stderr, "mod_jk2:mergeDirConfig() Merged dir config %#lx %s %s %s %s\n",
                     child, child->uri, parent->uri, child->workerName, parent->workerName);
         }
     }
@@ -400,7 +400,7 @@ static int jk2_apache2_isValidating(apr_pool_t *gPool, apr_pool_t **mainPool) {
     for( i=0; i<10; i++ ) {
         tmpPool=apr_pool_get_parent( gPool );
         if( tmpPool == NULL ) {
-            /* fprintf(stderr, "XXX Found Root pool %p\n", gPool ); */
+            /* fprintf(stderr, "XXX Found Root pool %#lx\n", gPool ); */
             break;
         }
         gPool=tmpPool;
@@ -551,7 +551,7 @@ static int jk2_handler(request_rec *r)
         if( worker==NULL && uriEnv->workerName != NULL ) {
             worker=env->getByName( env, uriEnv->workerName);
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                          "mod_jk.handler() finding worker for %p %p %s\n",
+                          "mod_jk.handler() finding worker for %#lx %#lx %s\n",
                           worker, uriEnv, uriEnv->workerName);
             uriEnv->worker=worker;
         }
@@ -566,7 +566,7 @@ static int jk2_handler(request_rec *r)
 
     if( uriEnv->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.handler() serving %s with %p %p %s\n",
+                      "mod_jk.handler() serving %s with %#lx %#lx %s\n",
                       uriEnv->mbean->localName, worker, worker->mbean, worker->mbean->localName );
 
     /* Get a pool for the request XXX move it in workerEnv to
@@ -576,7 +576,7 @@ static int jk2_handler(request_rec *r)
         rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
         if( uriEnv->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "mod_jk.handler(): new rpool %p\n", rPool );
+                          "mod_jk.handler(): new rpool %#lx\n", rPool );
     }
     
     s=(jk_ws_service_t *)rPool->calloc( env, rPool, sizeof( jk_ws_service_t ));
@@ -678,7 +678,7 @@ static int jk2_translate(request_rec *r)
 
     if( uriEnv->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.translate(): uriMap %s %s %p\n",
+                      "mod_jk.translate(): uriMap %s %s %#lx\n",
                       r->uri, uriEnv->workerName, uriEnv->worker);
 
     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );

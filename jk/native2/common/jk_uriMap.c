@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -425,7 +425,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
 
             if( uriMap->mbean->debug > 5 ) 
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "uriMap.init() loaded context %s %s %p %p %p\n",
+                              "uriMap.init() loaded context %s %s %#lx %#lx %#lx\n",
                               uriEnv->virtual, context, hostEnv, hostEnv->webapps,
                               uriMap->pool); 
             uriEnv->match_type=MATCH_TYPE_CONTEXT;

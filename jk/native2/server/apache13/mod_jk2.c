@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -349,13 +349,13 @@ static int jk2_handler(request_rec *r)
     } else {
         worker=uriEnv->worker;
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.handler() per dir worker for %p %p\n",
+                      "mod_jk.handler() per dir worker for %#lx %#lx\n",
                       worker, uriEnv );
         
         if( worker==NULL && uriEnv->workerName != NULL ) {
             worker=env->getByName( env,uriEnv->workerName);
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                          "mod_jk.handler() finding worker for %s %p %p\n",
+                          "mod_jk.handler() finding worker for %s %#lx %#lx\n",
                           uriEnv->workerName, worker, uriEnv );
             uriEnv->worker=worker;
         }
@@ -392,7 +392,7 @@ static int jk2_handler(request_rec *r)
         s->uriEnv = uriEnv;
 
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "modjk.handler() Calling %s %p\n", worker->mbean->name, uriEnv); 
+                      "modjk.handler() Calling %s %#lx\n", worker->mbean->name, uriEnv); 
 
         rc = worker->service(env, worker, s);
         
