@@ -72,21 +72,22 @@ import org.apache.tomcat.util.threads.*;
 import org.apache.jk.core.*;
 import org.apache.jk.apr.*;
 
+import org.apache.tomcat.util.IntrospectionUtils;
+
 
 /** Handle the shared memory objects.
  *
  * @author Costin Manolache
  */
-public class Shm extends JkHandler {
+public class Shm extends JniHandler {
+    String file="/tmp/shm.file";
+    int size;
 
-    String jkHome;
-    String file;
-
-    // Apr data. 
-    private long memP;
-    private long aprShmPoolP;
-    private long aprShmP;
-    private AprImpl apr;
+    // Will be dynamic ( getMethodId() ) after things are stable 
+    static final int SHM_SET_ATTRIBUTE=0;
+    static final int SHM_REGISTER_TOMCAT=2;
+    static final int SHM_ATTACH=3;
+    static final int SHM_DETACH=4;
     
     public Shm() {
     }
@@ -95,73 +96,119 @@ public class Shm extends JkHandler {
         file=f;
     }
 
-    /** 
-     */
-    public void setJkHome( String s ) {
-        jkHome=s;
+    public void setSize( int size ) {
+        this.size=size;
     }
 
     public void init() throws IOException {
+        super.initNative( "shm" );
         if( file==null ) {
             log.error("No shm file, disabling shared memory");
+            apr=null;
             return;
         }
-        try {
-            apr=(AprImpl)wEnv.getHandler("apr");
-            if( apr==null || ! apr.isLoaded() ) {
-                log.error( "Apr unavailable, disabling shared memory " );
-                apr=null;
-                return;
-            }
 
-            aprShmPoolP=apr.poolCreate( 0 );
+        // Set properties and call init.
+        setNativeAttribute( "file", file );
+        if( size > 0 )
+            setNativeAttribute( "size", Integer.toString( size ) );
+        attach();
+    }
 
-            aprShmP= apr.shmAttach( aprShmPoolP, file );
+    public void attach() throws IOException {
+        MsgContext mCtx=createMsgContext();
+        Msg msg=(Msg)mCtx.getMsg(0);
+        msg.reset();
 
-            if( aprShmP== 0 ) {
-                // no shared mem. This is normal result, but create should throw
-                log.info("Can't attach, try to create " + file );
-                aprShmP= apr.shmCreate( aprShmPoolP, 8196, file );
-                
-            }
-            if( aprShmP== 0 ) {
-                // no shared mem. This is normal result, but create should throw
-                log.info("Can't create " + file );
-                return;
-            }
+        msg.appendByte( SHM_ATTACH );
+        
+        this.invoke( msg, mCtx );
+    }
 
-            long base=apr.shmBaseaddrGet( aprShmPoolP, aprShmP );
-            long size=apr.shmSizeGet( aprShmPoolP, aprShmP );
+    public void setNativeAttribute(String name, String val) throws IOException {
+        MsgContext mCtx=createMsgContext();
+        Msg msg=(Msg)mCtx.getMsg(0);
+        C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
+        msg.reset();
 
-            log.info("Got shared memory at " + base + " " + size );
+        msg.appendByte( SHM_SET_ATTRIBUTE );
 
-            byte b1[]=new byte[16];
-            
-            apr.shmRead( aprShmPoolP, base, b1, 0, b1.length );
+        appendString( msg, name, c2b);
+        
+        appendString(msg, val, c2b );
+        
+        this.invoke( msg, mCtx );
+    }
+    
+    public void registerTomcat(String host, int port)
+        throws IOException
+    {
+        MsgContext mCtx=createMsgContext();
+        Msg msg=(Msg)mCtx.getMsg(0);
+        msg.reset();
+        C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
 
-            System.out.println("Read: " + new String( b1 ));
-            
-            byte helloW[]="hello World".getBytes();
+        String slotName="TOMCAT:" + host + ":" + port;
+        
+        msg.appendByte( SHM_REGISTER_TOMCAT );
+        appendString( msg, slotName, c2b );
 
-            apr.shmWrite( aprShmPoolP, base, helloW, 0, helloW.length );
-            
-        } catch( Throwable ex ) {
-            log.error( "Can't initialize shared memory " + ex.toString() );
-            apr=null;
-        }
+        this.invoke( msg, mCtx );
     }
 
     public void destroy() throws IOException {
         if( apr==null ) return;
         
-        apr.shmDetach( aprShmPoolP, aprShmP );
+        MsgContext mCtx=createMsgContext();
+        Msg msg=(Msg)mCtx.getMsg(0);
+        msg.reset();
+
+        msg.appendByte( SHM_DETACH );
+
+        this.invoke( msg, mCtx );
     }
 
-    public int invoke( Msg msg, MsgContext msgCtx ) {
-        return OK;
-    }
     
+    public  int invoke(Msg msg, MsgContext ep )
+        throws IOException
+    {
+        System.err.println("ChannelShm.invoke: "  + ep );
+        super.nativeDispatch( msg, ep, JK_HANDLE_SHM_DISPATCH );
+        return 0;
+    }    
+
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( Shm.class );
 
+    
+    //-------------------- Main - use the shm functions from ant or CLI ------
+
+    public void execute() {
+        try {
+            init();
+        } catch (Exception ex ) {
+            ex.printStackTrace();
+        }
+    }
+    
+    public static void main( String args[] ) {
+        try {
+            if( args.length == 1 &&
+                ( "-?".equals(args[0]) || "-h".equals( args[0])) ) {
+                System.out.println("Usage: ");
+                System.out.println("  Shm [OPTIONS]");
+                System.out.println();
+                System.out.println("  -file SHM_FILE");
+                return;
+            }
+
+            Shm shm=new Shm();
+
+            IntrospectionUtils.processArgs( shm, args, new String[] {},
+                                            null, new Hashtable());
+            shm.execute();
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
+    }
 }
