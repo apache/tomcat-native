@@ -255,7 +255,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
      * Compression value.
      */
     private String compression = "off";
-
+	private String noCompressionUserAgents = null;
+	private String compressableMimeTypes = "text/html,text/xml,text/plain";
+	private int	compressionMinSize    = 2048;
+	
     // -------------------- Pool setup --------------------
 
     public void setPools( boolean t ) {
@@ -324,10 +327,27 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         socketBuffer = valueI;
     }
 
-    public void setCompression(String valueS) {
-        compression = valueS;
-    }
+	public void setCompression(String valueS) {
+		compression = valueS;
+		setAttribute("compression", valueS);
+	}
 
+	public void setNoCompressionUserAgents(String valueS) {
+		noCompressionUserAgents = valueS;
+		setAttribute("noCompressionUserAgents", valueS);
+	}
+
+	public void setCompressableMimeType(String valueS) {
+		compressableMimeTypes = valueS;
+		setAttribute("compressableMimeTypes", valueS);
+	}
+
+	public void setCompressionMinSize(int valueI) {
+		compressionMinSize = valueI;
+		setAttribute("compressionMinSize", "" + valueI);
+	}
+
+	
     public void setSoLinger( int i ) {
 	ep.setSoLinger( i );
         setAttribute("soLinger", "" + i);
@@ -468,7 +488,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             processor.setMaxKeepAliveRequests( proto.maxKeepAliveRequests );
             processor.setTimeout( proto.timeout );
             processor.setDisableUploadTimeout( proto.disableUploadTimeout );
-            processor.setCompression( proto.compression );
+			processor.setCompression( proto.compression );
+			processor.setCompressionMinSize( proto.compressionMinSize);			
+			processor.setNoCompressionUserAgents( proto.noCompressionUserAgents);
+			processor.setCompressableMimeTypes( proto.compressableMimeTypes);
             processor.setSocketBuffer( proto.socketBuffer );
 
             thData[Http11Protocol.THREAD_DATA_PROCESSOR]=processor;
