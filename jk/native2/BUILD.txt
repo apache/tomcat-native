@@ -44,5 +44,17 @@ MSVC7 doesnt have this issue, and could be used with APR 1.0.
 
 * Netware
 
---> Guenter / Mike ?
+Buid the JK2 connector for NetWare platform.
+
+The current NWNGUmakefile uses the same build system as Apache2 self for NetWare target.
+Simply extract the downloaded archive, and follow the guideline which describes compilation of Apache2 self. 
+
+After you have compiled Apache2 (this is mandatory for now since the prebuild process must have finished) 
+you can simply call the makefile with 'make -f NWGNUmakefile', this builds the connector for Apache2 in a 
+release or debug subdirectory, dependent if you specify to build a debug version or not.
+
+It is recommended to use Metrowerks CodeWarrior compiler for now; although the connector builds with GCC 
+for NetWare, it is not tested yet if it works - there are known issues with a bitfied and alignment which 
+have to be solved.
+
 
