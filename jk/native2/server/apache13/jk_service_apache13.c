@@ -68,6 +68,7 @@
 #include "http_log.h"
 
 #include "util_script.h"
+#include "util_date.h"
 /*
  * Jakarta (jk_) include files
  */
@@ -278,7 +279,7 @@ static int jk2_get_content_length(jk_env_t *env, request_rec *r)
     return 0;
 }
 
-static int jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
+static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
                                jk_worker_t *worker, void *serverObj)
 {
     /*     ap_port_t port; */
@@ -462,7 +463,7 @@ static int jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
  *  jk shouldn't do it instead, and the user should get the
  *  error message !
  */
-static void jk2_service_apache13_afterRequest(jk_env_t *env, jk_ws_service_t *s )
+static void JK_METHOD jk2_service_apache13_afterRequest(jk_env_t *env, jk_ws_service_t *s )
 {
     
     if (s->content_read < s->content_length ||
