@@ -88,6 +88,8 @@ struct jk_channel_apr_private {
     apr_sockaddr_t *addr;
     char *host;
     short port;
+    int keepalive;
+    int timeout;
 };
 
 typedef struct jk_channel_apr_private jk_channel_apr_private_t;
@@ -121,6 +123,12 @@ static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
         socketInfo->host=value;
     } else if( strcmp( "port", name ) == 0 ) {
         socketInfo->port=atoi( value );
+    } else if( strcmp( "keepalive", name ) == 0 ) {
+        socketInfo->keepalive=atoi( value );
+    } else if( strcmp( "timeout", name ) == 0 ) {
+        socketInfo->timeout=atoi( value );
+    } else if( strcmp( "nodelay", name ) == 0 ) {
+        socketInfo->timeout=atoi( value );
     } else {
         return jk2_channel_setAttribute( env, mbean, name, valueP );
     }
@@ -206,10 +214,11 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
 
     apr_sockaddr_t *remote_sa=socketInfo->addr;
     int ndelay=socketInfo->ndelay;
+    int keepalive=socketInfo->keepalive;
 
     apr_socket_t *sock=endpoint->channelData;
     apr_status_t ret;
-    apr_interval_time_t timeout = 2 * APR_USEC_PER_SEC;
+    apr_int32_t timeout = socketInfo->timeout * APR_USEC_PER_SEC;
     char msg[128];
 
     if (apr_socket_create(&sock, remote_sa->family, SOCK_STREAM,
@@ -223,6 +232,11 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "channelApr.open(): create tcp socket %d\n", sock );
 
+    /* the default timeout (0) will set the socket to blocking with
+       infinite timeouts.
+     */
+    if (timeout <= 0)
+        timeout = -1;
     if (apr_setsocketopt(sock, APR_SO_TIMEOUT, timeout)!= APR_SUCCESS) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                  "channelApr.open(): can't set timeout %d %s\n",
@@ -235,7 +249,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channelApr.open() connect on %d\n",sock);
         ret = apr_connect(sock, remote_sa);
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "jk2_channel_apr_open: %d %s %s\n",ret, strerror( errno ),
                       socketInfo->host);
 
@@ -245,20 +259,38 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     if(ret != APR_SUCCESS ) {
         apr_socket_close(sock);
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelApr.connect() connect failed %d %s\n",
+                      "channelApr.open() connect failed %d %s\n",
                       ret, apr_strerror( ret, msg, sizeof(msg) ) );
         return JK_ERR;
     }
+    
+    /* enable the use of keep-alive packets on TCP connection */
+    if(keepalive) {
+        int set = 1;
+        if((ret = apr_setsocketopt(sock, APR_SO_KEEPALIVE, set)) != APR_SUCCESS ) {
+            apr_socket_close(sock);
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "channelApr.open() keepalive failed %d %s\n",
+                          ret, apr_strerror( ret, msg, sizeof(msg) ) );
+            return JK_ERR;                        
+        }
+    }
 
-    /* XXX needed?
+    /* Disable the Nagle algorithm if ndelay is set */
     if(ndelay) {
         int set = 1;
-        setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,(char *)&set,sizeof(set));
+        if((ret = apr_setsocketopt(sock, APR_TCP_NODELAY, set)) != APR_SUCCESS ) {
+            apr_socket_close(sock);
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "channelApr.open() nodelay failed %d %s\n",
+                          ret, apr_strerror( ret, msg, sizeof(msg) ) );
+            return JK_ERR;                        
+        }
     }
         
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelApr.connect(), sock = %d\n", sock);
-    */
+    if( ch->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelApr.open(), sock = %d\n", sock);
 
     /* store the channel information */
     endpoint->channelData=sock;
@@ -421,11 +453,11 @@ int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
                                              const char *type, const char *name)
 {
     jk_channel_t *ch;
-    
+
     ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
     ch->_privatePtr= (jk_channel_apr_private_t *)
-        pool->calloc( env, pool, sizeof( jk_channel_apr_private_t));
+                     pool->calloc( env, pool, sizeof( jk_channel_apr_private_t));
 
     ch->recv= jk2_channel_apr_recv; 
     ch->send= jk2_channel_apr_send; 
@@ -456,6 +488,5 @@ int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
 
     return JK_OK;
 }
-
 
 #endif
