@@ -63,9 +63,10 @@ AR = @AR@
 APXS = @APXS@
 APXSFLAGS = -I@SRCDIR@/include -I@APRDIR@/include \
 	-L@SRCDIR@/lib -lwebapp \
-	-L@APRDIR@/lib -lapr
+	-L@APRDIR@/lib -lapr \
+	-Wc,-Wall
 RANLIB = @RANLIB@
-CFLAGS = -Wall @CFLAGS@
+CFLAGS = -Wall -Wstrict-prototypes @CFLAGS@
 CPPFLAGS = -I@SRCDIR@/include -I@APRDIR@/include @CPPFLAGS@
 SRCDIR = @SRCDIR@
 TGTDIR = @TGTDIR@
