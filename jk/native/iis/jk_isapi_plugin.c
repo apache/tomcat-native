@@ -639,7 +639,8 @@ static int initialize_extension(void)
             rc = JK_FALSE;
             if(map_alloc(&map)) {
                 if(map_read_properties(map, worker_file)) {
-                    if(wc_open(map, logger)) {
+					/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+                    if(wc_open(map, uw_map, logger)) {
                         rc = JK_TRUE;
                     }
                 }
