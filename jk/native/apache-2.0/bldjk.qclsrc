@@ -1,7 +1,8 @@
 PGM
 CRTCMOD MODULE(MOD_JK/MOD_JK) +
 	SRCSTMF('/home/apache/jk/native/apache-2.0/mod_jk.c') +
-	DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+	DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' + 
+	       'USE_APACHE_MD5' '_REENTRANT') +
 	TEXT('mod_jk.c') +
 	OPTIMIZE(40) +
 	SYSIFCOPT(*IFSIO) +
@@ -13,7 +14,8 @@ CRTCMOD MODULE(MOD_JK/MOD_JK) +
 
 CRTCMOD MODULE(MOD_JK/JK_AJP_COM) +
     SRCSTMF('/home/apache/jk/native/common/jk_ajp_common.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp_common.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -26,7 +28,8 @@ CRTCMOD MODULE(MOD_JK/JK_AJP_COM) +
 
 CRTCMOD MODULE(MOD_JK/JK_AJP12_W) +
     SRCSTMF('/home/apache/jk/native/common/jk_ajp12_worker.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp12_worker.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -39,7 +42,8 @@ CRTCMOD MODULE(MOD_JK/JK_AJP12_W) +
 
 CRTCMOD MODULE(MOD_JK/JK_AJP13) +
     SRCSTMF('/home/apache/jk/native/common/jk_ajp13.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +   
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp13.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -52,7 +56,8 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13) +
 
 CRTCMOD MODULE(MOD_JK/JK_AJP13_W) +
     SRCSTMF('/home/apache/jk/native/common/jk_ajp13_worker.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp13_worker.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -65,7 +70,8 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13_W) +
 
 CRTCMOD MODULE(MOD_JK/JK_AJP14) +
     SRCSTMF('/home/apache/jk/native/common/jk_ajp14.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp14.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -78,7 +84,8 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14) +
 
 CRTCMOD MODULE(MOD_JK/JK_AJP14_W) +
     SRCSTMF('/home/apache/jk/native/common/jk_ajp14_worker.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp14_worker.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -91,7 +98,8 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14_W) +
 
 CRTCMOD MODULE(MOD_JK/JK_CONNECT) +
     SRCSTMF('/home/apache/jk/native/common/jk_connect.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_connect.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -104,7 +112,8 @@ CRTCMOD MODULE(MOD_JK/JK_CONNECT) +
 
 CRTCMOD MODULE(MOD_JK/JK_CONTEXT) +
     SRCSTMF('/home/apache/jk/native/common/jk_context.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_context.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -117,7 +126,8 @@ CRTCMOD MODULE(MOD_JK/JK_CONTEXT) +
 
 CRTCMOD MODULE(MOD_JK/JK_JNI_WOR) +
     SRCSTMF('/home/apache/jk/native/common/jk_jni_worker.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'OS400_JVM_12' 'USE_APACHE_MD5' +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'OS400_JVM_12' + 
+           '_XOPEN_SOURCE=520' +  'USE_APACHE_MD5' +
     '_REENTRANT') +
     TEXT('jk_jni_worker.c') +
     OPTIMIZE(40) +
@@ -131,7 +141,8 @@ CRTCMOD MODULE(MOD_JK/JK_JNI_WOR) +
 
 CRTCMOD MODULE(MOD_JK/JK_LB_WORK) +
     SRCSTMF('/home/apache/jk/native/common/jk_lb_worker.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_lb_worker.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -144,7 +155,8 @@ CRTCMOD MODULE(MOD_JK/JK_LB_WORK) +
 
 CRTCMOD MODULE(MOD_JK/JK_MAP) +
     SRCSTMF('/home/apache/jk/native/common/jk_map.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_map.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -157,7 +169,8 @@ CRTCMOD MODULE(MOD_JK/JK_MAP) +
 
 CRTCMOD MODULE(MOD_JK/JK_MD5) +
     SRCSTMF('/home/apache/jk/native/common/jk_md5.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_md5.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -170,7 +183,8 @@ CRTCMOD MODULE(MOD_JK/JK_MD5) +
 
 CRTCMOD MODULE(MOD_JK/JK_MSG_BUF) +
     SRCSTMF('/home/apache/jk/native/common/jk_msg_buff.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_msg_buff.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -183,7 +197,8 @@ CRTCMOD MODULE(MOD_JK/JK_MSG_BUF) +
 
 CRTCMOD MODULE(MOD_JK/JK_POOL) +
     SRCSTMF('/home/apache/jk/native/common/jk_pool.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_pool.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -196,7 +211,8 @@ CRTCMOD MODULE(MOD_JK/JK_POOL) +
 
 CRTCMOD MODULE(MOD_JK/JK_SOCKBUF) +
     SRCSTMF('/home/apache/jk/native/common/jk_sockbuf.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_sockbuf.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -209,7 +225,8 @@ CRTCMOD MODULE(MOD_JK/JK_SOCKBUF) +
 
 CRTCMOD MODULE(MOD_JK/JK_URI_W_M) +
     SRCSTMF('/home/apache/jk/native/common/jk_uri_worker_map.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_uri_worker_map.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -222,7 +239,8 @@ CRTCMOD MODULE(MOD_JK/JK_URI_W_M) +
 
 CRTCMOD MODULE(MOD_JK/JK_UTIL) +
     SRCSTMF('/home/apache/jk/native/common/jk_util.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_util.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -235,7 +253,8 @@ CRTCMOD MODULE(MOD_JK/JK_UTIL) +
 
 CRTCMOD MODULE(MOD_JK/JK_WORKER) +
     SRCSTMF('/home/apache/jk/native/common/jk_worker.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_worker.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
@@ -263,7 +282,7 @@ CRTSRVPGM SRVPGM(MOD_JK/MOD_JK) +
       SRCMBR(MOD_JK) +
       DETAIL(*BASIC) +
       STGMDL(*INHERIT) +
-      BNDSRVPGM(QHTTPSVR/QZSRAPR QHTTPSVR/QZSRCORE       +
+      BNDSRVPGM(QHTTPSVR/QZSRAPR QHTTPSVR/QZSRCORE +
                 QHTTPSVR/QZSRXMLP QHTTPSVR/QZSRSDBM) +
       TEXT('Apache mod_jk tomcat connector module')
 
