@@ -287,6 +287,14 @@ public final class IntrospectionUtils {
                         } catch (NumberFormatException ex) {
                             ok = false;
                         }
+                    // Try a setFoo ( long )
+                    }else if ("java.lang.Long".equals(paramType.getName())
+                                || "long".equals(paramType.getName())) {
+                            try {
+                                params[0] = new Long(value);
+                            } catch (NumberFormatException ex) {
+                                ok = false;
+                            }
 
                         // Try a setFoo ( boolean )
                     } else if ("java.lang.Boolean".equals(paramType.getName())
