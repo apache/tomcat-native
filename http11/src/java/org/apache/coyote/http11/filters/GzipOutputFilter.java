@@ -119,6 +119,7 @@ public class GzipOutputFilter implements OutputFilter {
             compressionStream = new GZIPOutputStream(fakeOutputStream);
         }
         compressionStream.finish();
+        compressionStream.close();
         return ((OutputFilter) buffer).end();
     }
 
