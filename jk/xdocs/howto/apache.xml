@@ -6,7 +6,7 @@
 
   &project;
 <copyright>
-   Copyright 1999-2004 The Apache Software Foundation
+   Copyright 1999-2005 The Apache Software Foundation
  
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -244,7 +244,19 @@ in Tomcat and put the following include directive at the end of your Apache http
 
 <p>
 This will tell Apache to use directives in the <b>mod_jk.conf-auto</b> file in the Apache configuration.  
-This file is created by enabling the Apache auto-configuration as described in the Tomcat documentation.
+This file is created by enabling the Apache auto-configuration as follows, in your server.xml file:
+</p>
+<source>
+  <Server ...>
+    <Listener className="org.apache.jk.config.ApacheConfig" modJk="/path/to/mod_jk.so" />
+  </Server>
+</source>
+
+<p>
+Then restart Tomcat and mod_jk.conf should be generated. For more information on 
+this topic, please refer to the API documentation at the 
+<a href="http://jakarta.apache.org/tomcat/tomcat-5.5-doc/catalina/docs/api/org/apache/jk/config/ApacheConfig.html">
+Tomcat docs website</a>.
 </p>
 
 </subsection>
