@@ -94,22 +94,38 @@ public class WarpConnectionHandler extends WarpHandler {
         try {
             switch (type) {
                 case WarpConstants.TYP_HOST:
-                    if (DEBUG) this.debug("HOST "+reader.readString()+":"+
-                                          reader.readShort()+"="+123);
-                    this.packet.writeShort(123);
+                    // Retrieve this host id
+                    int hid=123;
+                    if (DEBUG) this.debug("HST "+reader.readString()+":"+
+                                          reader.readShort()+"="+hid);
+                    // Send the HOST ID back to the WARP client
+                    this.packet.reset();
+                    this.packet.writeShort(hid);
                     this.send(WarpConstants.TYP_HOST_ID,this.packet);
                     break;
                 case WarpConstants.TYP_APPLICATION:
-                    if (DEBUG) 
-                        this.debug("APPL "+reader.readString()+":"+reader.readString()+"="+321);
+                    // Retrieve this application id
+                    int aid=321;
+                    if (DEBUG) this.debug("APP "+reader.readString()+":"+
+                               reader.readString()+"="+aid);
+                    // Send the APPLICATION ID back to the WARP client
                     this.packet.reset();
-                    this.packet.writeShort(321);
+                    this.packet.writeShort(aid);
                     this.send(WarpConstants.TYP_APPLICATION_ID,this.packet);
                     break;
-                default:
-                    if (DEBUG)
-                        this.debug("[Type="+type+"] ["+new String(buffer)+"]");
+                case WarpConstants.TYP_REQUEST:
+                    // Retrieve this request id
+                    int rid=999;
+                    if (DEBUG) this.debug("REQ "+reader.readShort()+":"+
+                               reader.readShort()+"="+rid);
+                    // Send the RID back to the WARP client
+                    this.packet.reset();
+                    this.packet.writeShort(rid);
+                    this.send(WarpConstants.TYP_REQUEST_ID,this.packet);
                     break;
+                default:
+                    this.log("Wrong packet type "+type+". Closing connection");
+                    return(false);
             }
             return(true);
         } catch (IOException e) {
