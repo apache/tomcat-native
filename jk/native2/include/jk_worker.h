@@ -68,6 +68,7 @@
 #include "jk_service.h"
 #include "jk_endpoint.h"
 #include "jk_map.h"
+#include "jk_mt.h"
 #include "jk_uriMap.h"
 
 #ifdef __cplusplus
@@ -78,6 +79,52 @@ struct jk_worker;
 struct jk_endpoint;
 struct jk_env;
 typedef struct jk_worker jk_worker_t;
+
+    
+/*
+ * The login structure
+ */
+typedef struct jk_login_service jk_login_service_t;
+#define AJP14_ENTROPY_SEED_LEN		32	/* we're using MD5 => 32 chars */
+#define AJP14_COMPUTED_KEY_LEN		32  /* we're using MD5 also */
+
+struct jk_login_service {
+
+    /*
+     *  Pointer to web-server name
+     */
+    char * web_server_name;
+    
+    /*
+     * Pointer to servlet-engine name
+     */
+    char * servlet_engine_name;
+    
+    /*
+     * Pointer to secret key
+     */
+    char * secret_key;
+    
+    /*
+     * Received entropy seed
+     */
+    char entropy[AJP14_ENTROPY_SEED_LEN + 1];
+    
+    /*
+     * Computed key
+     */
+    char computed_key[AJP14_COMPUTED_KEY_LEN + 1];
+    
+    /*
+     *  What we want to negociate
+     */
+    unsigned long negociation;
+    
+    /*
+     * What we received from servlet engine 
+     */
+    unsigned long negociated;
+};                                
 
 /*
  * The worker 'class', which represents something to which the web server
@@ -136,6 +183,29 @@ struct jk_worker {
     /** Communication channle used by the worker 
      */
     struct jk_channel *channel;
+
+    /* XXX Stuff from ajp, some is generic, some not - need to
+       sort out after */
+    struct sockaddr_in worker_inet_addr; /* Contains host and port */
+    unsigned connect_retry_attempts;
+ 
+    /* 
+     * Open connections cache...
+     *
+     * 1. Critical section object to protect the cache.
+     * 2. Cache size. 
+     * 3. An array of "open" endpoints.
+     */
+    JK_CRIT_SEC cs;
+    unsigned ep_cache_sz;
+    struct jk_endpoint **ep_cache;
+
+    int proto;
+    struct jk_login_service *login;
+ 
+    int (* logon)(struct jk_endpoint *ae,
+                  jk_logger_t    *l);
+
 
     /*
      * For all of the below (except destroy), the first argument is

@@ -214,6 +214,17 @@ struct jk_ws_service {
      */
     char    *jvm_route;
 
+    /* Response informations. As in apache, we don't use a separate
+       structure for response.
+     */
+    int         status;
+    const char *msg;
+    unsigned    out_headers;
+    char      **out_header_names;
+    char      **out_header_values;
+
+    
+    
     /*
      * Callbacks into the web server.  For each, the first argument is
      * essentially a 'this' pointer.  All return JK_TRUE on success

@@ -120,6 +120,9 @@ struct jk_uriEnv {
     char *context;
     int contextId;
 
+    char *docbase;
+    int status;
+    
     /** Servlet. No need to compute it again in tomcat
      */
     char *servlet;
