@@ -795,12 +795,13 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
             if (header == AJP14_SW_HEADER) {
                 jk_log(l, JK_LOG_ERROR,
                        "ajp_connection_tcp_get_message: "
-                       "Error - received AJP14 reply on an AJP13 connection\n");
+                       "Error - received AJP14 reply on an AJP13 connection from %s\n",
+                       jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
             } else {
                 jk_log(l, JK_LOG_ERROR,
                        "ajp_connection_tcp_get_message: "
-                       "Error - Wrong message format 0x%04x\n",
-                       header);
+                       "Error - Wrong message format 0x%04x from %s\n",
+                       jk_dump_hinfo(&ae->worker->worker_inet_addr, buf, header);
             }
             return JK_FALSE;
         }
@@ -811,12 +812,13 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
             if (header == AJP13_SW_HEADER) {
                 jk_log(l, JK_LOG_ERROR,
                        "ajp_connection_tcp_get_message: "
-                       "Error - received AJP13 reply on an AJP14 connection\n");
+                       "Error - received AJP13 reply on an AJP14 connection from %s\n",
+                       jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
             } else {
                 jk_log(l, JK_LOG_ERROR,
                        "ajp_connection_tcp_get_message: "
-                       "Error - Wrong message format 0x%04x\n",
-                       header);
+                       "Error - Wrong message format 0x%04x from %s\n",
+                       jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), header);
             }
             return JK_FALSE;
         }
@@ -828,8 +830,8 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     if(msglen > jk_b_get_size(msg)) {
         jk_log(l, JK_LOG_ERROR,
                "ajp_connection_tcp_get_message: "
-               "Error - Wrong message size %d %d\n",
-               msglen, jk_b_get_size(msg));
+               "Error - Wrong message size %d %d from %s\n",
+               msglen, jk_b_get_size(msg), jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
         return JK_FALSE;
     }
 
@@ -840,8 +842,8 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     if(rc < 0) {
         jk_log(l, JK_LOG_ERROR,
                "ERROR: can't receive the response message from tomcat, "
-               "network problems or tomcat is down %d\n",
-               rc);
+               "network problems or tomcat (%s) is down %d\n",
+               jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), rc);
         return JK_FALSE;
     }
 
