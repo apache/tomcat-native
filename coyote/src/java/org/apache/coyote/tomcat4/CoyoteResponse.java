@@ -736,10 +736,10 @@ public class CoyoteResponse
      */
     public String[] getHeaderValues(String name) {
 
-        Enumeration enum = coyoteResponse.getMimeHeaders().values(name);
+        Enumeration headerValues = coyoteResponse.getMimeHeaders().values(name);
         Vector result = new Vector();
-        while (enum.hasMoreElements()) {
-            result.addElement(enum.nextElement());
+        while (headerValues.hasMoreElements()) {
+            result.addElement(headerValues.nextElement());
         }
         String[] resultArray = new String[result.size()];
         result.copyInto(resultArray);

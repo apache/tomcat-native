@@ -899,9 +899,9 @@ public class CoyoteRequest
         if (parameterMap.isLocked())
             return parameterMap;
 
-        Enumeration enum = getParameterNames();
-        while (enum.hasMoreElements()) {
-            String name = enum.nextElement().toString();
+        Enumeration paramNames = getParameterNames();
+        while (paramNames.hasMoreElements()) {
+            String name = paramNames.nextElement().toString();
             String[] values = getParameterValues(name);
             parameterMap.put(name, values);
         }
