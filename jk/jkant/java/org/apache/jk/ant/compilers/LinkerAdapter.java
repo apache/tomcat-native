@@ -57,6 +57,8 @@ package org.apache.jk.ant.compilers;
 import org.apache.tools.ant.BuildException;
 import org.apache.jk.ant.*;
 
+import java.util.*;
+
 /* Modeled after javac
  */
 
@@ -86,5 +88,5 @@ public interface LinkerAdapter {
      *
      * @return has the compilation been successful
      */
-    boolean link(String files[]) throws BuildException;
+    boolean link(Vector files) throws BuildException;
 }
