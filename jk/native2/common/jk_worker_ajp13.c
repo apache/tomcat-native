@@ -571,6 +571,7 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
     jk_endpoint_t *e = NULL;
     jk_pool_t *endpointPool;
     jk_bean_t *jkb;
+    int csOk;
     
     if( ajp14->secret ==NULL ) {
     }
@@ -587,19 +588,35 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
         return JK_OK;
     }
 
-    jkb=env->createBean2( env, ajp14->mbean->pool,  "endpoint", NULL );
-    if( jkb==NULL )
-        return JK_ERR;
+    JK_ENTER_CS(&ajp14->cs, csOk);
+    if( !csOk ) return JK_ERR;
+
+    {
+        char *epName=ajp14->mbean->pool->calloc( env, ajp14->mbean->pool, 20);
+
+        sprintf( epName, "%d", ajp14->endpointMap->size( env, ajp14->endpointMap ));
+        
+        jkb=env->createBean2( env, ajp14->mbean->pool,  "endpoint", epName );
+        if( jkb==NULL ) {
+            JK_LEAVE_CS( &ajp14->cs, csOk );
+            return JK_ERR;
+        }
+    
+        e = (jk_endpoint_t *)jkb->object;
+        e->worker = ajp14;
+        e->sd=-1;
+
+        ajp14->endpointMap->add( env, ajp14->endpointMap, epName, jkb );
+                                 
+        *eP = e;
+    }
+    JK_LEAVE_CS( &ajp14->cs, csOk );
+        
     if( ajp14->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "ajp14.getEndpoint(): Creating endpoint %s %s \n",
+                      "ajp14.getEndpoint(): Created endpoint %s %s \n",
                       ajp14->mbean->name, jkb->name);
     
-    e = (jk_endpoint_t *)jkb->object;
-    e->worker = ajp14;
-    e->sd=-1;
-
-    *eP = e;
     return JK_OK;
 }
 
@@ -762,16 +779,23 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
                                         const char *type, const char *name)
 {
     jk_worker_t *w=(jk_worker_t *)pool->calloc(env, pool, sizeof(jk_worker_t));
+    int i;
 
     if (name == NULL || w == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp14.factory() NullPointerException\n");
         return JK_ERR;
     }
-    w->cache_sz=-1;
 
     jk2_map_default_create(env, &w->groups, pool);
+    jk2_map_default_create(env, &w->endpointMap, pool);
 
+    JK_INIT_CS(&(w->cs), i);
+    if (i!=JK_TRUE) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "objCache.create(): Can't init CS\n");
+    }
+    
     w->endpointCache= NULL;
 
     w->channel= NULL;
