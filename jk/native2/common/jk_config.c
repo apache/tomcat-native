@@ -394,23 +394,76 @@ int jk2_config_processConfigData(jk_env_t *env, jk_config_t *cfg,int firstTime )
 {
     int i;
     int rc;
-    
+
+    /* Set the config
+     */
     for( i=0; i<cfg->cfgData->size( env, cfg->cfgData ); i++ ) {
         char *name=cfg->cfgData->nameAt(env, cfg->cfgData, i);
         rc=cfg->processNode(env, cfg , name, firstTime);
     }
+
+    /* Init/stop components that need that. FirstTime will be handled by workerEnv, since
+       some components don't support dynamic config and need a specific order.
+     */
+    if( !firstTime ) {
+        for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+            char *name=env->_objects->nameAt( env, env->_objects, i );
+            jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        
+            if( mbean==NULL ) continue;
+
+            /* New state ( == not initialized ) and disabled==0,
+               try to reinit */
+            if( mbean->state == JK_STATE_NEW &&
+                mbean->disabled== 0 ) {
+                int initOk=JK_OK;
+
+                if( mbean->init != NULL ) {
+                    initOk=mbean->init(env, mbean);
+                    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                                  "config.update(): Starting %s %d\n", name, initOk );
+                }
+                if( initOk==JK_OK ) {
+                    mbean->state=JK_STATE_INIT;
+                }
+            }
+
+            /* Initialized state - and the config changed to disabled */
+            if( mbean->state == JK_STATE_INIT &&
+                mbean->disabled != 0 ) {
+                    int initOk=JK_OK;
+
+                    /* Stop */
+                    if( mbean->destroy ) {
+                        initOk=mbean->destroy(env, mbean);
+                        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                                      "config.update(): Stopping %s %d\n", name, initOk );
+                    }
+                    if( initOk ) {
+                        mbean->state=JK_STATE_NEW;
+                    }
+            }
+        }
+    }
     return rc;
 }
 
+/** This method will process one mbean configuration or reconfiguration.
+    The special case for firstTime will be eventually removed - it is needed because some
+    components may still depend on a specific startup order.
+
+    The goal is for each component to follow JMX patterns - you should be able to add / remove
+    jk components at runtime in any order.
+*/
 int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firstTime )
 {
     int j;   
     
     jk_map_t *prefNode=cfg->cfgData->get(env, cfg->cfgData, name);
     jk_bean_t *bean;
-    long ver;
+    long ver=0;
     char *verString;
-    int oldDisabled=0;
+    int newBean=0;
 
     if( cfg->mbean->debug > 5 ) 
     env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
@@ -423,6 +476,7 @@ int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firs
                           "config.setConfig():  Creating %s\n", name );
         }
         bean=env->createBean( env, cfg->pool, name );
+        newBean=1;
     }
     
     if( bean == NULL ) {
@@ -432,28 +486,29 @@ int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firs
         return JK_ERR;
     }
 
-    oldDisabled=bean->disabled;
-    
+    /* Don't call setters on objects that have the same ver.
+       This is just a workaround for components that are not reconfigurable.
+     */
     verString= prefNode->get( env, prefNode, "ver" );
     if( !firstTime ) {
         /* No ver option - assume it didn't change */
-        if( verString == NULL ) {
+        if( verString == NULL && ! newBean ) {
             return JK_OK;
         }
-        ver=atol( verString );
+        if( verString != NULL ) {    
+            ver=atol( verString );
         
-        if( ver == bean->ver) {
-            /* Object didn't change
-             */
-            return JK_OK;
+            if( ver == bean->ver && ! newBean ) {
+                /* Object didn't change and is not new
+                 */
+                return JK_OK;
+            }
         }
     }
     
     if( !firstTime )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "config.update(): Updating %s %ld %ld %d\n", name, ver, bean->ver, getpid() );
-    
-    /* XXX Maybe we shoud destroy/init ? */
+                      "config.update(): Updating %s in %d\n", name, getpid() );
     
     for( j=0; j<prefNode->size( env, prefNode ); j++ ) {
         char *pname=prefNode->nameAt(env, prefNode, j);
@@ -464,29 +519,6 @@ int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firs
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "config.update(): done %s\n", name );
-    
-    if( !firstTime ) {
-        /* Deal with lifecycle - if a mbean has been enabled or disabled */
-        if( oldDisabled != bean->disabled ) {
-            /* State change ... */
-            if( bean->disabled==0 ) {
-                /* Start */
-                if( bean->init != NULL ) {
-                    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                                  "config.update(): Starting %s\n", name );
-                    bean->init(env, bean);
-                }
-            } else {
-                /* Stop */
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "config.update(): Stopping %s\n", name );
-                bean->destroy(env, bean);
-            }
-
-        }
         
-    }
-    
-    
     return JK_OK;
 }
