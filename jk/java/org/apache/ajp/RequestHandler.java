@@ -677,6 +677,17 @@ public class RequestHandler extends AjpHandler
 	    throw new IOException();
 	}
 	
+        // check for empty packet, which means end of stream
+        if (ch.inBuf.getLen() == 0) {
+            if (debug > 0) {
+                log("refillReadBuffer():  "
+                    + "received empty packet -> end of stream");
+            }
+            ch.blen = 0;
+            ch.pos = 0;
+            return false;
+        }
+
     	ch.blen = ch.inBuf.peekInt();
     	ch.pos = 0;
     	ch.inBuf.getBytes(ch.bodyBuff);
