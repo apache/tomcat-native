@@ -80,6 +80,8 @@
 /* default only, is configurable now */
 #define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/apr/AprImpl")
 
+#define JNI_TOMCAT_STARTED 2
+extern int jk_jni_status_code;
 
 /** Information specific for the socket channel
  */
@@ -90,6 +92,8 @@ typedef struct {
     jclass jniBridge;
 
     jmethodID writeMethod;
+    int status;
+    int wait_initialized;
 } jk_channel_jni_private_t;
 
 typedef struct {
@@ -154,7 +158,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
                       "channel_jni.open()  NullPointerException, no channel worker found\n"); 
         return JK_ERR;
     }
-
+    
     jniCh->vm=(jk_vm_t *)we->vm;
     if( jniCh->vm == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -215,6 +219,10 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() can't find createJavaContext\n"); 
         _this->worker->mbean->disabled=JK_TRUE;
+
+        if( (*jniEnv)->ExceptionCheck( jniEnv ) ) {
+            (*jniEnv)->ExceptionClear( jniEnv );
+        }
         return JK_ERR;
     }
     
@@ -230,6 +238,9 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
                       "channel_jni.open() Can't create java context\n" ); 
         epData->jniJavaContext=NULL;
         _this->worker->mbean->disabled=JK_TRUE;
+        if( (*jniEnv)->ExceptionCheck( jniEnv ) ) {
+            (*jniEnv)->ExceptionClear( jniEnv );
+        }
         return JK_ERR;
     }
     epData->jniJavaContext=(*jniEnv)->NewGlobalRef( jniEnv, jobj );
@@ -297,6 +308,12 @@ static int JK_METHOD jk2_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
     JNIEnv *jniEnv;
     jk_channel_jni_private_t *jniCh=_this->_privatePtr;
     epData=(jk_ch_jni_ep_private_t *)endpoint->channelData;
+
+    if (epData == NULL) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel_jni.close() no channel data\n" ); 
+        return JK_ERR;
+    }
     jniEnv = (JNIEnv *)jniCh->vm->attach( env, jniCh->vm );
 
     if( jniEnv == NULL ) {
@@ -524,6 +541,10 @@ static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
     if( strcmp( "class", name ) == 0 ) {
         jniInfo->className=value;
     }
+    else if( strcmp( "init", name ) == 0 ) {
+        jniInfo->wait_initialized=atoi(value);
+    }
+
     /* TODO: apache protocol hooks
     else if( strcmp( "xxxx", name ) == 0 ) {
         jniInfo->xxxx=value;
@@ -557,6 +578,19 @@ int JK_METHOD jk2_channel_jni_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint
                                             ep->currentRequest, ep, code, ep->reply );
 }
 
+static int JK_METHOD jk2_channel_jni_status(jk_env_t *env,
+                                            jk_channel_t *_this)
+{
+
+    jk_channel_jni_private_t *jniCh=_this->_privatePtr;
+    if ( jniCh->status != JNI_TOMCAT_STARTED && jniCh->wait_initialized) {
+        jniCh->status = jk_jni_status_code;
+        if (jniCh->status != JNI_TOMCAT_STARTED)
+            return JK_ERR;
+    }
+    return JK_OK;
+}
+
 
 int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool, 
                                       jk_bean_t *result,
@@ -565,7 +599,7 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     jk_channel_t *ch=result->object;
     jk_workerEnv_t *wEnv;
     jk_channel_jni_private_t *jniPrivate;
-    
+
     ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
     ch->recv= jk2_channel_jni_recv;
@@ -575,7 +609,8 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
 
     ch->beforeRequest= jk2_channel_jni_beforeRequest;
     ch->afterRequest= jk2_channel_jni_afterRequest;
-    
+    ch->status = jk2_channel_jni_status;
+
     ch->_privatePtr=jniPrivate=(jk_channel_jni_private_t *)pool->calloc(env, pool,
                                 sizeof(jk_channel_jni_private_t));
 
