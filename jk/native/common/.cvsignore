@@ -1,0 +1,8 @@
+*.o
+*.lo
+*.slo
+.libs
+Makefile
+stamp-h.in
+list.mk
+stamp-h
