@@ -559,9 +559,10 @@ static int jk2_uriMap_createMappings(jk_env_t *env, jk_uriMap_t *uriMap)
                                           strlen(uri));
 
         if (ctxEnv == NULL) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                           "uriMap.init() no context for %s\n", uri); 
-            return JK_ERR;
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                           "uriMap.init() no context for %s\n", uri);
+            /* Normal case if Location is used */
+            continue;
         }
 
         /* Correct the context path if needed */
