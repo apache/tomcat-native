@@ -232,7 +232,7 @@ public class JkMain
                                        "container",
                                        "channelSocket",
                                        "channelJni",
-                                       "channelUn"};
+                                       "channelUnix"};
     
     public void stop() 
     {
