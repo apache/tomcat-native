@@ -189,6 +189,16 @@ int jk_requtil_base64CertLen(int len);
 int jk_requtil_base64EncodeCert(char *encoded,
                                 const unsigned char *string, int len);
 
+int jk2_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
+                           jk_ws_service_t  *r,
+                           jk_endpoint_t *ae);
+
+int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
+                            jk_ws_service_t *s,
+                            jk_endpoint_t *ae);
+
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

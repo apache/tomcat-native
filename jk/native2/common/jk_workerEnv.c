@@ -591,7 +591,6 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
 {
     int err=JK_OK;
     jk_worker_t *oldW = NULL;
-    int csOk;
     
     w->workerEnv=wEnv;
 
@@ -653,7 +652,6 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
 {
     jk_workerEnv_t *wEnv;
     jk_bean_t *jkb;
-    int csOk;
 
     wEnv=(jk_workerEnv_t *)pool->calloc( env, pool, sizeof( jk_workerEnv_t ));
 

@@ -536,7 +536,6 @@ static int JK_METHOD jk2_shm_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_
                                     jk_msg_t *msg, int raw)
 {
     jk_shm_t *shm=(jk_shm_t *)bean->object;
-    int rc;
 
     if( shm->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 

@@ -72,6 +72,7 @@
 #include "jk_service.h"
 #include "jk_env.h"
 #include "jk_objCache.h"
+#include "jk_reqUtil.h"
 #include "jk_registry.h"
 
 #define AJP_DEF_RETRY_ATTEMPTS    (2)
@@ -560,7 +561,6 @@ jk2_worker_ajp13_getEndpoint(jk_env_t *env,
 {
     jk_endpoint_t *e = NULL;
     jk_bean_t *jkb;
-    int csOk;
     
     if( ajp13->secret ==NULL ) {
     }
@@ -789,7 +789,6 @@ int JK_METHOD jk2_worker_ajp13_factory( jk_env_t *env, jk_pool_t *pool,
 {
     jk_worker_t *w=(jk_worker_t *)pool->calloc(env, pool, sizeof(jk_worker_t));
     jk_bean_t *jkb;
-    int i;
 
     if (name == NULL || w == NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
