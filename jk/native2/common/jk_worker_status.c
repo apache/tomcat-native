@@ -70,7 +70,8 @@ static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
     else
         s->jkprintf(env, s, "<td>-</td>\n");
 
-    s->jkprintf(env, s, "<td>%lu</td>\n", (long)apr_time_as_msec(stat->startTime));
+    apr_ctime( ctimeBuf, stat->startTime);
+    s->jkprintf(env, s, "<td>%s</td>\n", ctimeBuf);
     s->jkprintf(env, s, "<td>%ld</td>\n",
                 (long)apr_time_as_msec(stat->jkStartTime - stat->startTime));
     s->jkprintf(env, s, "<td>%ld</td>\n",
