@@ -64,6 +64,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.PrivilegedExceptionAction;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedAction;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -105,6 +109,17 @@ public class JkCoyoteHandler extends JkHandler implements
     // Set debug on this logger to see the container request time
     private static org.apache.commons.logging.Log logTime=
         org.apache.commons.logging.LogFactory.getLog( "org.apache.jk.REQ_TIME" );
+
+    // ----------------------------------------------------------- DoPrivileged
+    private final class StatusLinePrivilegedAction implements PrivilegedAction {
+	int status;
+	StatusLinePrivilegedAction(int status) {
+	    this.status = status;
+	}
+	public Object run() {
+	    return HttpMessages.getMessage(status);
+	}
+    }
 
     int headersMsgNote;
     int c2bConvertersNote;
@@ -330,7 +345,24 @@ public class JkCoyoteHandler extends JkHandler implements
         
         C2BConverter c2b=(C2BConverter)res.getNote( utfC2bNote );
         if( c2b==null ) {
-            c2b=new C2BConverter(  "UTF8" );
+            if(System.getSecurityManager() != null) {
+                try {
+                    c2b = (C2BConverter)
+                        AccessController.doPrivileged(
+                              new PrivilegedExceptionAction () {
+                                      public Object run() 
+                                          throws IOException{
+                                          return new C2BConverter(  "UTF8" );
+                                      }
+                                  });
+                } catch(PrivilegedActionException pae) {
+                    Exception ex = pae.getException();
+                    if(ex instanceof IOException)
+                        throw (IOException)ex;
+                }
+            } else {
+                c2b=new C2BConverter(  "UTF8" );
+	    }
             res.setNote( utfC2bNote, c2b );
         }
         
@@ -347,7 +379,12 @@ public class JkCoyoteHandler extends JkHandler implements
         }
         String message=res.getMessage();
         if( message==null ){
-            message= HttpMessages.getMessage(res.getStatus());
+	    if( System.getSecurityManager() != null ) {
+		message = (String)AccessController.doPrivileged(
+               				new StatusLinePrivilegedAction(res.getStatus()));
+	    } else {
+		message= HttpMessages.getMessage(res.getStatus());
+	    }
         } else {
             message = message.replace('\n', ' ').replace('\r', ' ');
         }
