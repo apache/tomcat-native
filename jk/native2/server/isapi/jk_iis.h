@@ -104,7 +104,19 @@ extern "C" {
 
 #define BAD_REQUEST             -1
 #define BAD_PATH                -2
-#define MAX_SERVERNAME                  128
+#define MAX_SERVERNAME          128
+
+#define HTML_ERROR_400          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">" \
+                                "<HTML><HEAD><TITLE>Bad request!</TITLE></HEAD>" \
+                                "<BODY><H1>Bad request!</H1><DL><DD>\n" \
+                                "Your browser (or proxy) sent a request that " \
+                                "this server could not understand.</DL></DD></BODY></HTML>"
+
+#define HTML_ERROR_403          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">" \
+                                "<HTML><HEAD><TITLE>Access forbidden!!</TITLE></HEAD>" \
+                                "<BODY><H1>Access forbidden!</H1><DL><DD>\n" \
+                                "You don't have permission to access the requested object." \
+                                "It is either read-protected or not readable by the server.</DL></DD></BODY></HTML>"
 
 
 #define GET_SERVER_VARIABLE_VALUE(pool, name, place) {    \
@@ -117,7 +129,7 @@ extern "C" {
                         "")) {                      \
         (place) = (pool)->pstrdup(env,(pool),huge_buf);   \
     }   \
-}\
+}
 
 #define GET_SERVER_VARIABLE_VALUE_INT(name, place, def) {   \
     huge_buf_sz = sizeof(huge_buf);                 \
@@ -133,7 +145,7 @@ extern "C" {
     } else {    \
         (place) = def;  \
     }           \
-}\
+}
 
 
 static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s );
