@@ -101,7 +101,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
              attempt++) {
             p->sd =
                 jk_open_socket(&p->worker->worker_inet_addr,
-                               JK_FALSE, -1, l);
+                               JK_FALSE, -1, 0, l);
 
             jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::service, sd = %d",
                    p->sd);
