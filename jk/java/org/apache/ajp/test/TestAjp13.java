@@ -1,6 +1,8 @@
 package org.apache.ajp.test;
 
 import org.apache.ajp.*;
+import org.apache.tomcat.util.http.*;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -12,6 +14,7 @@ public class TestAjp13 {
         System.out.println("TestAjp13 running...");
         Socket socket = server.accept();
         Ajp13 ajp13 = new Ajp13();
+        MimeHeaders headers = new MimeHeaders();
         AjpRequest request = new AjpRequest();
         ajp13.setSocket(socket);
 
@@ -47,12 +50,11 @@ public class TestAjp13 {
                 System.getProperty("line.separator") +
                 request.toString() +
                 "</pre></body></html>";
-                
-            ajp13.beginSendHeaders(200, "OK", 3);
-            ajp13.sendHeader("content-type", "text/html");
-            ajp13.sendHeader("content-length", String.valueOf(message.length()));
-            ajp13.sendHeader("my-header", "my value");
-            ajp13.endSendHeaders();
+
+            headers.addValue("content-type").setString( "text/html");
+            headers.addValue("content-length").setInt(message.length());
+            headers.addValue("my-header").setString( "my value");
+            ajp13.sendHeaders(200, headers);
 
             byte[] b = message.getBytes();
             ajp13.doWrite(b, 0, b.length);
@@ -60,6 +62,7 @@ public class TestAjp13 {
             ajp13.finish();
 
             request.recycle();
+            headers.recycle();
         }
 
         try {

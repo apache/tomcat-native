@@ -71,12 +71,14 @@ import org.apache.catalina.Globals;
 import org.apache.catalina.util.CookieTools;
 
 import org.apache.ajp.Ajp13;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 public class Ajp13Response extends HttpResponseBase {
 
     private Ajp13 ajp13;
     private boolean finished = false;
     private boolean headersSent = false;
+    private MimeHeaders headers = new MimeHeaders();
     private StringBuffer cookieValue = new StringBuffer();
 
     String getStatusMessage() {
@@ -87,6 +89,7 @@ public class Ajp13Response extends HttpResponseBase {
         super.recycle();
         this.finished = false;
         this.headersSent = false;
+        this.headers.recycle();
     }
 
     protected void sendHeaders()  throws IOException {

@@ -69,6 +69,7 @@ import java.util.Enumeration;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.http.HttpMessages;
 
 /**
  * Represents a single, persistent connection between the web server and
@@ -609,6 +610,52 @@ public class Ajp13 {
         outBuf.end();
         send(outBuf);
     }
+
+    /**
+     * Send the HTTP headers back to the web server and on to the browser.
+     *
+     * @param status The HTTP status code to send.
+     * @param headers The set of all headers.
+     */
+    public void sendHeaders(int status, MimeHeaders headers)
+        throws IOException {
+        sendHeaders(status, HttpMessages.getMessage(status), headers);
+    }
+
+    /**
+     * Send the HTTP headers back to the web server and on to the browser.
+     *
+     * @param status The HTTP status code to send.
+     * @param statusMessage the HTTP status message to send.
+     * @param headers The set of all headers.
+     */
+    public void sendHeaders(int status, String statusMessage, MimeHeaders headers)
+        throws IOException {
+	// XXX if more headers that MAX_SIZE, send 2 packets!
+
+	outBuf.reset();
+        outBuf.appendByte(JK_AJP13_SEND_HEADERS);
+        outBuf.appendInt(status);
+	
+	outBuf.appendString(statusMessage);
+        
+	int numHeaders = headers.size();
+        outBuf.appendInt(numHeaders);
+        
+	for( int i=0 ; i < numHeaders ; i++ ) {
+	    String headerName = headers.getName(i).toString();
+	    int sc = headerNameToSc(headerName);
+            if(-1 != sc) {
+                outBuf.appendInt(sc);
+            } else {
+                outBuf.appendString(headerName);
+            }
+            outBuf.appendString(headers.getValue(i).toString() );
+        }
+
+        outBuf.end();
+        send(outBuf);
+    } 
 
     /**
      * Translate an HTTP response header name to an integer code if
