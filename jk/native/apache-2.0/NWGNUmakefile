@@ -57,6 +57,7 @@ XCFLAGS		+= \
 #
 XDEFINES	+= \
 			-D__NOVELL_LIBC__ \
+			-D_POSIX_SOURCE \
 			$(EOLIST)
 
 #
