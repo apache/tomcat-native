@@ -86,14 +86,14 @@ extern char *strdup (const char *str);
 /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
 #define JK_VERMAJOR     2
 #define JK_VERMINOR     0
-#define JK_VERFIX       2
-#define JK_VERSTRING    "2.0.2"
+#define JK_VERFIX       3
+#define JK_VERSTRING    "2.0.3"
 
 /* Beta number */
 #define JK_VERBETA      1
 #define JK_BETASTRING   "1"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
-#define JK_VERISRELEASE 1
+#define JK_VERISRELEASE 0
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
 
 #define PACKAGE "mod_jk2/"
