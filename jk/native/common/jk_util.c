@@ -302,7 +302,6 @@ char *jk_get_worker_secret(jk_map_t *m,
 {
     char buf[1024];
     char *secret;
-    char *secret_file;
 
     if(!m || !wname) {
         return NULL;
@@ -626,7 +625,6 @@ int jk_get_worker_bridge_type(jk_map_t *m,
 	char *type;
 	    
     if(m && bt && wname) {
-        int i;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, BRIDGE_OF_WORKER);
 
         type = map_get_string(m, buf, NULL);
