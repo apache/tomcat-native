@@ -188,6 +188,7 @@ struct jk_worker {
         name of another worker. 
      */
     char *route;
+    char *routeRedirect;
 
     /** lb groups in which this worker belongs */
     struct jk_map *groups;
