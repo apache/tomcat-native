@@ -61,28 +61,21 @@ import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.Mapper;
 import org.apache.catalina.Request;
+import org.apache.catalina.core.StandardHostMapper;
 
 /**
- *
  *
  * @author <a href="mailto:pier.fumagalli@eng.sun.com">Pier Fumagalli</a>
  * @author Copyright &copy; 1999, 2000 <a href="http://www.apache.org">The
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpEngineMapper implements Mapper {
+public class WarpEngineMapper extends StandardHostMapper {
 
     // -------------------------------------------------------------- CONSTANTS
 
     /** Our debug flag status (Used to compile out debugging information). */
     private static final boolean DEBUG=WarpDebug.DEBUG;
-
-    // -------------------------------------------------------- BEAN PROPERTIES
-
-    /** The Container with which this Mapper is associated. */
-    private WarpEngine engine = null;
-    /** The protocol with which this Mapper is associated. */
-    private String protocol = null;
 
     // ------------------------------------------------------------ CONSTRUCTOR
 
@@ -107,48 +100,22 @@ public class WarpEngineMapper implements Mapper {
     public Container map(Request request, boolean update) {
         if (DEBUG) this.debug("Trying to map request to host");
 
-        return(null);
-    }
+        if (request instanceof WarpRequest) {
+            WarpRequest r=(WarpRequest)request;
 
-    // ----------------------------------------------------------- BEAN METHODS
+            Container engine=super.getContainer();
+    	    Container children[]=engine.findChildren();
 
-    /**
-     * Return the Container with which this Mapper is associated.
-     */
-    public Container getContainer() {
-        return (this.engine);
-    }
-
-    /**
-     * Set the Container with which this Mapper is associated.
-     */
-    public void setContainer(Container container) {
-        if (DEBUG) {
-            if (container==null) {
-                this.debug("Setting null container");
-            } else {
-                String info=container.getInfo();
-                this.debug("Setting container "+info);
+    	    for (int x=0; x<children.length; x++) {
+    	        if (children[x] instanceof WarpHost) {
+    	            WarpHost host=(WarpHost)children[x];
+    	            if (r.getRequestedHostID()==host.getHostID()) {
+    	                return(children[x]);
+    	            }
+                }
             }
         }
-        this.engine=(WarpEngine)container;
-    }
-
-    /**
-     * Return the protocol for which this Mapper is responsible.
-     */
-    public String getProtocol() {
-        return (this.protocol);
-    }
-
-    /**
-     * Set the protocol for which this Mapper is responsible.
-     *
-     * @param protocol The newly associated protocol
-     */
-    public void setProtocol(String protocol) {
-        if (DEBUG) this.debug("Setting protocol "+protocol);
-        this.protocol = protocol;
+        return(super.map(request,update));
     }
 
     // ------------------------------------------------------ DEBUGGING METHODS

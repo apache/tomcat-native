@@ -67,7 +67,7 @@ import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Request;
 import org.apache.catalina.Response;
-import org.apache.catalina.core.ContainerBase;
+import org.apache.catalina.core.StandardEngine;
 
 /**
  *
@@ -77,7 +77,7 @@ import org.apache.catalina.core.ContainerBase;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpEngine extends ContainerBase implements Engine {
+public class WarpEngine extends StandardEngine implements Engine {
 
     // -------------------------------------------------------------- CONSTANTS
 
@@ -98,56 +98,16 @@ public class WarpEngine extends ContainerBase implements Engine {
      */
     public WarpEngine() {
         super();
-        super.setBasic(new WarpEngineValve());
         if (DEBUG) this.debug("New instance created");
     }
 
     // --------------------------------------------------------- PUBLIC METHODS
 
     /**
-     * Add a child Container, only if the proposed child is an implementation
-     * of Host.
-     */
-    public void addChild(Container child) {
-        if (DEBUG) this.debug("Adding child "+child.getInfo());
-
-        if (!(child instanceof Host))
-            throw new IllegalArgumentException("Child of Engine is not Host");
-
-        super.addChild(child);
-    }
-
-    /**
      * Return descriptive information about this implementation.
      */
     public String getInfo() {
         return(this.info);
-    }
-
-    /**
-     * Disallow any attempt to set a parent for this Container, since an
-     * Engine is supposed to be at the top of the Container hierarchy.
-     */
-    public void setParent(Container container) {
-        throw new IllegalArgumentException("Engine cannot have a parent");
-    }
-
-    /**
-     * Start this Engine component.
-     */
-    public void start() throws LifecycleException {
-        if (DEBUG) this.debug("Starting");
-        // Standard container startup
-        super.start();
-    }
-
-    /**
-     * Start this Engine component.
-     */
-    public void stop() throws LifecycleException {
-        if (DEBUG) this.debug("Stopping");
-        // Standard container startup
-        super.stop();
     }
 
     /**

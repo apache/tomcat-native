@@ -57,14 +57,7 @@
 package org.apache.catalina.connector.warp;
 
 import java.io.IOException;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.catalina.Container;
-import org.apache.catalina.Host;
-import org.apache.catalina.Request;
-import org.apache.catalina.Response;
-import org.apache.catalina.valves.ValveBase;
+import org.apache.catalina.core.StandardHost;
 
 /**
  *
@@ -74,68 +67,33 @@ import org.apache.catalina.valves.ValveBase;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpEngineValve extends ValveBase {
+public class WarpHost extends StandardHost {
 
     // -------------------------------------------------------------- CONSTANTS
 
     /** Our debug flag status (Used to compile out debugging information). */
     private static final boolean DEBUG=WarpDebug.DEBUG;
-    /** The descriptive information related to this implementation. */
-    private static final String info="WarpEngineValve/"+WarpConstants.VERSION;
 
-    // ------------------------------------------------------------ CONSTRUCTOR
+    // -------------------------------------------------------- LOCAL VARIABLES
 
-    /**
-     * Create a new WarpEngineValve.
-     */
-    public WarpEngineValve() {
-        super();
-        if (DEBUG) this.debug("New instance created");
-    }
+    /** The Warp Host ID of this Host. */
+    private int id=-1;
 
-    // --------------------------------------------------------- PUBLIC METHODS
+    // ----------------------------------------------------------- BEAN METHODS
 
     /**
-     * Return descriptive information about this Valve implementation.
+     * Return the Host ID associated with this WarpHost instance.
      */
-    public String getInfo() {
-        return (info);
+    protected int getHostID() {
+        return(this.id);
     }
 
     /**
-     * Select the appropriate child Host to process this request,
-     * based on the requested server name.  If no matching Host can
-     * be found, return an appropriate HTTP error.
-     *
-     * @param request Request to be processed
-     * @param update Update request to reflect this mapping?
-     *
-     * @exception IOException if an input/output error occurred
-     * @exception ServletException if a servlet error occurred
+     * Set the Host ID associated with this WarpHost instance.
      */
-    public void invoke(Request request, Response response)
-    throws IOException, ServletException {
-        if (DEBUG) this.debug("Trying to invoke request");
-
-        // Validate the request and response object types
-        if (!(request.getRequest() instanceof HttpServletRequest) ||
-            !(response.getResponse() instanceof HttpServletResponse)) {
-            return;
-        }
-
-        // Select the Host to be used for this Request
-        WarpEngine engine=(WarpEngine)getContainer();
-        Host host=(Host)engine.map(request, true);
-        if (host==null) {
-            HttpServletResponse res=(HttpServletResponse)response.getResponse();
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                          "Host not configured");
-            if (DEBUG) this.debug("Host not configured");
-            return;
-        }
-
-        // Ask this Host to process this request
-        host.invoke(request, response);
+    protected void setHostID(int id) {
+        if (DEBUG) this.debug("Setting HostID for "+super.getName()+" to "+id);
+        this.id=id;
     }
 
     // ------------------------------------------------------ DEBUGGING METHODS

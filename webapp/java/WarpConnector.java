@@ -158,7 +158,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      * of a Request from the responsible Container.
      */
     public Request createRequest() {
-        HttpRequestBase request = new HttpRequestBase();
+        WarpRequest request = new WarpRequest();
         request.setConnector(this);
         return (request);
     }

@@ -56,6 +56,8 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
+import org.apache.catalina.connector.HttpRequestBase;
+
 /**
  *
  *
@@ -64,72 +66,48 @@ package org.apache.catalina.connector.warp;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpHandlerTable {
+public class WarpRequest extends HttpRequestBase {
 
-    /** The table used by this implementation. */
-    private WarpTable table=null;
+    // -------------------------------------------------------------- CONSTANTS
+
+    /** Our debug flag status (Used to compile out debugging information). */
+    private static final boolean DEBUG=WarpDebug.DEBUG;
+
+    // -------------------------------------------------------- LOCAL VARIABLES
+
+    /** The Warp Host ID of this Host. */
+    private int hostid=-1;
+
+    // ----------------------------------------------------------- BEAN METHODS
 
     /**
-     * Construct a new WarpHandlerTable instance with the default size.
+     * Return the Host ID associated with this WarpRequest instance.
      */
-    public WarpHandlerTable() {
-        super();
-        this.table=new WarpTable();
+    protected int getRequestedHostID() {
+        return(this.hostid);
     }
 
     /**
-     * Construct a new WarpHandlerTable instance with a specified size.
-     *
-     * @param size The initial size of the table.
+     * Set the Host ID associated with this WarpRequest instance.
      */
-    public WarpHandlerTable(int size) {
-        super();
-        this.table=new WarpTable(size);
+    protected void setRequestedHostID(int id) {
+        if (DEBUG) this.debug("Setting request HostID to "+id);
+        this.hostid=id;
+    }
+
+    // ------------------------------------------------------ DEBUGGING METHODS
+
+    /**
+     * Dump a debug message.
+     */
+    private void debug(String msg) {
+        if (DEBUG) WarpDebug.debug(this,msg);
     }
 
     /**
-     * Get the WarpHandler associated with a specific RID.
-     *
-     * @param rid The RID number.
-     * @return The WarpHandler or null if the RID was not associated with the
-     *         specified RID.
+     * Dump information for an Exception.
      */
-    public WarpHandler get(int rid) {
-        return((WarpHandler)this.table.get(rid));
-    }
-
-    /**
-     * Associate a WarpHandler with a specified RID.
-     *
-     * @param handler The WarpHandler to put in the table.
-     * @param rid The RID number associated with the WarpHandler.
-     * @return If another WarpHandler is associated with this RID return
-     *         false, otherwise return true.
-     */
-    public boolean add(WarpHandler handler, int rid)
-    throws NullPointerException {
-        return(this.table.add(handler,rid));
-    }
-
-    /**
-     * Remove the WarpHandler associated with a specified RID.
-     *
-     * @param rid The RID number of the WarpHandler to remove.
-     * @return The old WarpHandler associated with the specified RID or null.
-     */
-    public WarpHandler remove(int rid) {
-        return((WarpHandler)this.table.remove(rid));
-    }
-
-    /**
-     * Return the array of WarpHandler objects present in this table.
-     *
-     * @return An array (maybe empty) of WarpHandler objects.
-     */
-    public WarpHandler[] handlers() {
-        int num=this.table.count();
-        WarpHandler buff[]=new WarpHandler[num];
-        if (num>0) System.arraycopy(this.table.objects,0,buff,0,num);
-        return(buff);
+    private void debug(Exception exc) {
+        if (DEBUG) WarpDebug.debug(this,exc);
     }
 }

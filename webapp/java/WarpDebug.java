@@ -101,6 +101,7 @@ public class WarpDebug {
             System.err.println("["+c+"]");
             if (msg==null) return;
             System.err.println("    "+msg);
+            System.err.flush();
         }
     }
 
@@ -122,6 +123,7 @@ public class WarpDebug {
                 System.err.print("    ");
                 exc.printStackTrace(System.err);
             }
+            System.err.flush();
         }
     }
 }

@@ -88,6 +88,8 @@ public class WarpConnection implements Lifecycle, Runnable {
     private String name=null;
     /** Wether we started or not. */
     private boolean started=false;
+    /** The number of active connections. */
+    private static int num=0;
 
     // -------------------------------------------------------- BEAN PROPERTIES
 
@@ -126,7 +128,8 @@ public class WarpConnection implements Lifecycle, Runnable {
         byte buf[]=null;
 
         // Log the connection opening
-        if (DEBUG) this.debug("Connection started");
+        num++;
+        if (DEBUG) this.debug("Connection started (num="+num+") "+this.name);
 
         try {
             // Open the socket InputStream
@@ -191,7 +194,8 @@ public class WarpConnection implements Lifecycle, Runnable {
         } catch (LifecycleException e) {
             this.log(e);
         }
-        if (DEBUG) this.debug("Thread exited");
+        num--;
+        if (DEBUG) this.debug("Connection ended (num="+num+") "+this.name);
     }
 
     /**
@@ -208,6 +212,7 @@ public class WarpConnection implements Lifecycle, Runnable {
             throw new LifecycleException("Null connector");
 
         // Register the WarpConnectionHandler for RID=0 (connection)
+        this.started=true;
         WarpHandler h=new WarpConnectionHandler();
         h.setConnection(this);
         h.setRequestID(0);
