@@ -61,7 +61,6 @@
 	       destdir="${tomcat-util.build}/classes"
 	       deprecation="off"
 	       debug="on"
-	       target="1.1"
 	       optimize="off"
 	       verbose="off"
 	       excludes="**/CVS/**">
