@@ -87,7 +87,7 @@ public class ThreadPool  {
     /*
      * Where the threads are held.
      */
-    protected Vector pool;
+    protected ControlRunnable[] pool = null;
 
     /*
      * A monitor thread that monitors the pool for idel threads.
@@ -150,6 +150,8 @@ public class ThreadPool  {
         currentThreadsBusy  = 0;
 
         adjustLimits();
+
+        pool = new ControlRunnable[maxThreads];
 
         openThreads(minSpareThreads);
         monitor = new MonitorRunnable(this);
@@ -247,8 +249,7 @@ public class ThreadPool  {
             }
 
             // If we are here it means that there is a free thred. Take it.
-            c = (ControlRunnable)pool.lastElement();
-            pool.removeElement(c);
+            c = pool[currentThreadCount - currentThreadsBusy - 1];
             currentThreadsBusy++;
         }
         c.runIt(r);
@@ -273,9 +274,9 @@ public class ThreadPool  {
             stopThePool = true;
             monitor.terminate();
             monitor = null;
-            for(int i = 0 ; i < (currentThreadCount - currentThreadsBusy) ; i++) {
+            for(int i = 0 ; i < (currentThreadCount - currentThreadsBusy - 1) ; i++) {
                 try {
-                    ((ControlRunnable)(pool.elementAt(i))).terminate();
+                    pool[i].terminate();
                 } catch(Throwable t) {
                     /*
 		     * Do nothing... The show must go on, we are shutting
@@ -304,9 +305,9 @@ public class ThreadPool  {
                          maxSpareThreads;
 
             for(int i = 0 ; i < toFree ; i++) {
-                ControlRunnable c = (ControlRunnable)pool.firstElement();
-                pool.removeElement(c);
+                ControlRunnable c = pool[currentThreadCount - currentThreadsBusy - 1];
                 c.terminate();
+                pool[currentThreadCount - currentThreadsBusy - 1] = null;
                 currentThreadCount --;
             }
         }
@@ -324,7 +325,7 @@ public class ThreadPool  {
         }
 
         currentThreadsBusy--;
-        pool.addElement(c);
+        pool[currentThreadCount - currentThreadsBusy - 1] = c;
         notify();
     }
 
@@ -382,12 +383,8 @@ public class ThreadPool  {
             toOpen = maxThreads;
         }
 
-        if(0 == currentThreadCount) {
-            pool = new Vector(toOpen);
-        }
-
         for(int i = currentThreadCount ; i < toOpen ; i++) {
-            pool.addElement(new ControlRunnable(this));
+            pool[i - currentThreadsBusy] = new ControlRunnable(this);
         }
 
         currentThreadCount = toOpen;
