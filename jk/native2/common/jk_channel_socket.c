@@ -82,6 +82,9 @@
 #ifndef WIN32
     #define closesocket         close
 #endif
+#ifdef WIN32
+	typedef u_long in_addr_t;
+#endif
 
 #ifdef HAS_APR
 #include "apr_network_io.h"
@@ -280,7 +283,7 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, short
 
     /* TODO: Should be updated for IPV6 support. */
     /* for now use the correct type, in_addr_t   */    
-    in_addr_t laddr;
+	in_addr_t laddr;
     
     rc->sin_port   = htons((short)port);
     rc->sin_family = AF_INET;
