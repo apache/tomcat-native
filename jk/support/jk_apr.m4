@@ -138,7 +138,7 @@ AC_DEFUN(
               AC_MSG_ERROR(apr configure failed with ${tempret})
             fi
             JK_APR_LIBNAME(apr_libname,${APR_DIR})
-            APR_LDFLAGS="${APR_DIR}/.libs/${apr_libname}"
+            APR_LDFLAGS="${APR_DIR}/${apr_libname}"
             APR_LIBDIR=""
 			use_apr=true
             COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
@@ -204,7 +204,7 @@ AC_DEFUN(
               AC_MSG_ERROR(apr-util configure failed with ${tempret})
             fi
             JK_APR_UTIL_LIBNAME(apr_util_libname,${APR_UTIL_DIR})
-            APR_LDFLAGS="${APR_LDFLAGS} ${APR_UTIL_DIR}/.libs/${apr_util_libname}"
+            APR_LDFLAGS="${APR_LDFLAGS} ${APR_UTIL_DIR}/${apr_util_libname}"
             APR_UTIL_LIBDIR=""
 			use_apr=true
             COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
@@ -326,7 +326,7 @@ AC_DEFUN(
     if ${TEST} -z "${jk_apr_get_tempval}" ; then
       AC_MSG_ERROR([$2/apr-config --link-libtool failed])
     fi
-    jk_apr_get_tempval=`basename ${jk_apr_get_tempval} | sed 's/\.la/\.a/g'`
+    jk_apr_get_tempval=`basename ${jk_apr_get_tempval}`
     $1="${jk_apr_get_tempval}"
     AC_MSG_RESULT([${jk_apr_get_tempval}])
     unset jk_apr_get_tempval
@@ -350,7 +350,7 @@ AC_DEFUN(
     if ${TEST} -z "${jk_apu_get_tempval}" ; then
       AC_MSG_ERROR([$2/apu-config --link-libtool failed])
     fi
-    jk_apu_get_tempval=`basename ${jk_apu_get_tempval} | sed 's/\.la/\.a/g'`
+    jk_apu_get_tempval=`basename ${jk_apu_get_tempval}`
     $1="${jk_apu_get_tempval}"
     AC_MSG_RESULT([${jk_apu_get_tempval}])
     unset jk_apu_get_tempval
