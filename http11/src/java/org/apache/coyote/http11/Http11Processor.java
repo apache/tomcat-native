@@ -232,6 +232,11 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected String remoteHost = null;
 
+    /**
+     * Maximum timeout on uploads.
+     */
+    protected int timeout = 300000;   // 5 minutes as in Apache HTTPD server
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -327,6 +332,18 @@ public class Http11Processor implements Processor, ActionHook {
         this.socket = socket;
     }
 
+    /**
+     * Set the upload timeout.
+     */
+    public void setTimeout( int timeouts ) {
+        timeout = timeouts * 1000;
+    }
+    /**
+     * Get the upload timeout.
+     */
+    public int getTimeout() {
+        return timeout;
+    }
 
     /**
      * Process pipelined HTTP requests using the specified input and output
@@ -354,10 +371,18 @@ public class Http11Processor implements Processor, ActionHook {
         keepAlive = true;
 
         int keepAliveLeft = maxKeepAliveRequests;
+        int soTimeout = socket.getSoTimeout();
+        boolean keptAlive = false;
+        socket.setSoTimeout(timeout);
 
         while (started && !error && keepAlive) {
             try {
+                if( keptAlive && soTimeout > 0 ) {
+                    socket.setSoTimeout(soTimeout);
+                }
                 inputBuffer.parseRequestLine();
+                keptAlive = false;
+                socket.setSoTimeout(timeout);
                 inputBuffer.parseHeaders();
             } catch (IOException e) {
                 error = true;
