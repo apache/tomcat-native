@@ -74,7 +74,7 @@ cvs tag -b JK_{MAJOR_REVISION}_{MINOR_REVISION}_{RELEASE}
 
 Here is an example for mod_jk 1.2.5
 
-cvs tag -b JK_1.2.5
+cvs tag -b JK_1_2_5
 
 Build the mod_jk 1.2 documentation
 ----------------------------------
