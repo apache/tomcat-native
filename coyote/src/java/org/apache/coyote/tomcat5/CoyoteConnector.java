@@ -266,6 +266,13 @@ public final class CoyoteConnector
     private StringManager sm =
         StringManager.getManager(Constants.Package);
 
+    /**
+     * Flag to disable setting a seperate time-out for uploads.
+     * If <code>true</code>, then the <code>timeout</code> parameter is
+     * ignored.  If <code>false</code>, then the <code>timeout</code>
+     * parameter is used to control uploads.
+     */
+    private boolean disableUploadTimeout = false;
 
     /**
      * Has this component been initialized yet?
@@ -715,6 +722,23 @@ public final class CoyoteConnector
 
     }
 
+    /**
+     * Return the flag that specifies upload time-out behavior.
+     */
+    public boolean getDisableUploadTimeout() {
+        return disableUploadTimeout;
+    }
+
+    /**
+     * Set the flag to specify upload time-out behavior.
+     *
+     * @param isDisabled If <code>true</code>, then the <code>timeout</code> 
+     * parameter is ignored.  If <code>false</code>, then the 
+     * <code>timeout</code> parameter is used to control uploads.
+     */
+    public void setDisableUploadTimeout( boolean isDisabled ) {
+        disableUploadTimeout = isDisabled;
+    }
 
     /**
      * Return the scheme that will be assigned to requests received
@@ -936,6 +960,8 @@ public final class CoyoteConnector
                                        "" + connectionTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "timeout", 
                                        "" + connectionTimeout);
+        IntrospectionUtils.setProperty(protocolHandler, "disableUploadTimeout", 
+                                       "" + disableUploadTimeout);
         if (address != null) {
             IntrospectionUtils.setProperty(protocolHandler, "address", 
                                            address);
