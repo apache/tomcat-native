@@ -83,17 +83,23 @@ class CoyoteRequest extends Request {
     int  pos=-1;
     int  end=-1;
     byte [] readBuffer = null;
-    
+    Socket socket = null;
+
     public CoyoteRequest() {
         super();
+        remoteAddrMB.recycle();
+        remoteHostMB.recycle();
     }
 
     public void recycle() {
 	super.recycle();
 	if( coyoteRequest != null) coyoteRequest.recycle();
+        remoteAddrMB.recycle();
+        remoteHostMB.recycle();
 
 	readChunk.recycle();
 	sslSupport=null;
+	readBuffer=null;
 	pos=-1;
 	end=-1;
     }
@@ -120,6 +126,9 @@ class CoyoteRequest extends Request {
 	params.setHeaders(headers);
     }
 
+    public void setSocket(Socket socket) {
+	this.socket = socket;
+    }
 
     public int doRead() throws IOException {
 	if( available == 0 ) 
@@ -201,16 +210,26 @@ class CoyoteRequest extends Request {
     // -------------------- override special methods
 
     public MessageBytes remoteAddr() {
-	return coyoteRequest.remoteAddr();
+	if( remoteAddrMB.isNull() ) {
+	    remoteAddrMB.setString(socket.getInetAddress().getHostAddress());
+	}
+	return remoteAddrMB;
     }
 
     public MessageBytes remoteHost() {
-	return coyoteRequest.remoteHost();
+	if( remoteHostMB.isNull() ) {
+	    remoteHostMB.setString( socket.getInetAddress().getHostName() );
+	}
+	return remoteHostMB;
     }
 
     public String getLocalHost() {
-	return coyoteRequest.getLocalHost();
+	InetAddress localAddress = socket.getLocalAddress();
+	localHost = localAddress.getHostName();
+	return localHost;
+
     }
+
     public MessageBytes serverName(){
         if(! serverNameMB.isNull()) return serverNameMB;
         parseHostHeader();
