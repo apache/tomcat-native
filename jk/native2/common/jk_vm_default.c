@@ -185,23 +185,25 @@ static void jk2_print_signals( sigset_t *sset) {
 #endif
 
 /* JVM hooks */
-static int jk2_jni_error_signaled = JK_FALSE;
-static int jk2_jni_error_code = 0;
+static int jk2_jni_exit_signaled = JK_FALSE;
+static int jk2_jni_exit_code = 0;
 static int jk2_jni_abort_signaled = JK_FALSE;
 
-static void jk2_jni_error_hook(int code)
+static void jk2_jni_exit_hook(int code)
 {
-    jk2_jni_error_signaled = JK_TRUE;
-    jk2_jni_error_code = code;
+    jk2_jni_exit_signaled = JK_TRUE;
+    jk2_jni_abort_signaled = JK_TRUE;    
+    jk2_jni_exit_code = code;
 
 #ifdef DEBUG    
-    fprintf(stderr, "JVM error hook called %d\n", code);
+    fprintf(stderr, "JVM exit hook called %d\n", code);
 #endif
 }
 
 static void jk2_jni_abort_hook()
 {
     jk2_jni_abort_signaled = JK_TRUE;    
+
 #ifdef DEBUG
     fprintf(stderr, "JVM abort hook\n");
 #endif
@@ -567,7 +569,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
     
     /* Set the abort and exit hooks */
     options[optn].optionString = "exit";
-    options[optn++].extraInfo = jk2_jni_error_hook;
+    options[optn++].extraInfo = jk2_jni_exit_hook;
     options[optn].optionString = "abort";
     options[optn++].extraInfo = jk2_jni_abort_hook;
     
