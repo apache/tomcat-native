@@ -60,15 +60,18 @@ package org.apache.jk.core;
 
 import java.io.*;
 import java.util.*;
-import java.security.*;
 
-import org.apache.tomcat.util.handler.*;
+import javax.management.Notification;
+import javax.management.MBeanRegistration;
+import javax.management.ObjectName;
+import javax.management.MBeanServer;
+import javax.management.NotificationListener;
 
 /**
  *
  * @author Costin Manolache
  */
-public class JkHandler {
+public class JkHandler implements MBeanRegistration, NotificationListener {
     public static final int OK=0;
     public static final int LAST=1;
     public static final int ERROR=2;
@@ -166,6 +169,45 @@ public class JkHandler {
      */
     public void addHandlerCallback( JkHandler w ) {
 
+    }
+
+    public void handleNotification(Notification notification, Object handback)
+    {
+//        BaseNotification bNot=(BaseNotification)notification;
+//        int code=bNot.getCode();
+//
+//        MsgContext ctx=(MsgContext)bNot.getSource();
+
+
+    }
+
+    protected String domain;
+    protected ObjectName oname;
+    protected MBeanServer mserver;
+
+    public ObjectName getObjectName() {
+        return oname;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public ObjectName preRegister(MBeanServer server,
+                                  ObjectName name) throws Exception {
+        oname=name;
+        mserver=server;
+        domain=name.getDomain();
+        return name;
+    }
+
+    public void postRegister(Boolean registrationDone) {
+    }
+
+    public void preDeregister() throws Exception {
+    }
+
+    public void postDeregister() {
     }
 
 }
