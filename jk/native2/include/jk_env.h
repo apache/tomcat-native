@@ -114,17 +114,59 @@ typedef int (JK_METHOD *jk_env_objectFactory_t)(jk_env_t *env,
  */
 jk_env_t* JK_METHOD jk_env_getEnv( char *id, struct jk_pool *pool );
 
+#define JK_LINE __FILE__,__LINE__
 
+struct jk_exception {
+    char *file;
+    int line;
+
+    char *type;
+    char *msg;
+    
+    struct jk_exception *next;
+};
+
+typedef struct jk_exception jk_exception_t;
+
+    
 /**
  *  The env will be used in a similar way with the JniEnv, to provide 
  *  access to various low level services ( pool, logging, system properties )
  *  in a consistent way. In time we should have all methods follow 
- *  the same pattern, with env as a first parameter, then the object ( this ) and 
- *  the other methods parameters.  
+ *  the same pattern, with env as a first parameter, then the object ( this )
+ *  and the other methods parameters.  
  */
 struct jk_env {
     struct jk_logger *l;
-    struct jk_pool   *globalPool; 
+    struct jk_pool   *globalPool;
+
+    /** Pool used for local allocations. It'll be reset when the
+        env is released ( the equivalent of 'detach' ). Can be
+        used for temp. allocation of small objects.
+    */
+    struct jk_pool *localPool;
+
+    /* Exceptions
+     */
+    void (JK_METHOD *jkThrow)( jk_env_t *env,
+                               const char *file, int line,
+                               const char *type,
+                               const char *fmt, ... );
+
+    /** re-throw the exception and record the current pos.
+     *  in the stack trace
+     */
+    void (JK_METHOD *jkReThrow)( jk_env_t *env,
+                                 const char *file, int line );
+
+    /* Last exception that occured
+     */
+    struct jk_exception *(JK_METHOD *jkException)( jk_env_t *env );
+
+    /** Clear the exception state
+     */
+    void (JK_METHOD *jkClearException)( jk_env_t *env );
+    
     
     /** Global properties ( similar with System properties in java)
      */
@@ -171,7 +213,7 @@ struct jk_env {
     
     /* private */
     struct jk_map *_registry;
-    
+    struct jk_exception *lastException;
 };
 
 void JK_METHOD jk_registry_init(jk_env_t *env);
