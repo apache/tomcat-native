@@ -234,12 +234,14 @@ public class JniHandler extends JkHandler {
         apr.jkRecycle(ep.getJniEnv(), ep.getJniContext());
     }
     
-    /** send and get the response in the same buffer.
+    /** send and get the response in the same buffer. This calls the 
+    * method on the wrapped jk_bean object. 
      */
     protected int nativeDispatch( Msg msg, MsgContext ep, int code, int raw )
         throws IOException
     {
-        if( log.isDebugEnabled() ) log.debug( "Sending packet " + code + " " + raw);
+        if( log.isDebugEnabled() ) 
+            log.debug( "Sending packet " + code + " " + raw);
 
         if( raw == 0 ) {
             msg.end();
@@ -267,7 +269,8 @@ public class JniHandler extends JkHandler {
         int status=apr.jkInvoke( xEnv,
                                  nativeJkHandlerP,
                                  nativeContext,
-                                 code, msg.getBuffer(), 0, msg.getLen(), raw ); 
+                                 code, msg.getBuffer(), 0, msg.getLen(), raw );
+                                 
         if( status != 0 && status != 2 ) {
             log.error( "nativeDispatch: error " + status );
         }
@@ -276,30 +279,22 @@ public class JniHandler extends JkHandler {
         return status;
     }
 
+    /** Base implementation for invoke. Dispatch the action to the native
+    * code, where invoke() is called on the wrapped jk_bean.
+    */
     public  int invoke(Msg msg, MsgContext ep )
         throws IOException
     {
         long xEnv=ep.getJniEnv();
         int type=ep.getType();
 
-        switch( type ) {
-        case JkHandler.HANDLE_RECEIVE_PACKET:
-            //            return receive( msg, ep );
-        case JkHandler.HANDLE_SEND_PACKET:
-            //            return send( msg, ep );
-        }
-
         int status=nativeDispatch(msg, ep, type, 0 );
         
         apr.jkRecycle(xEnv, ep.getJniContext());
-
-        if(log.isInfoEnabled() ) log.info("Jni invoke status " + status);
- 
         apr.releaseJkEnv( xEnv );
-        return 0;
+        return status;
     }    
 
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( JniHandler.class );
-
 }
