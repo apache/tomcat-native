@@ -1,6 +1,16 @@
 JAKARTA TOMCAT CONNECTORS 2 (JK2) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
+Changes with JK2 2.0.2:
+    * Add the hostMap cache
+      [Mladen Turk] 
+    * Allow the lb:name scheme inside the [channel.xxx]
+      [Mladen Turk]
+    * Duplicate all global directives on each vhost that has inheritGlobals set.
+      Directives   are   created   using   createBean   only   if   not   found.
+      Beside directives, the webapps are duplicated to.
+      [Mladen Turk]
+      
 Changes with JK2 2.0.1:
 
     * Tentative fix for 12346.
