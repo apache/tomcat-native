@@ -462,8 +462,8 @@ static int wam_invoke(request_rec *r) {
     req->clen=0;
     req->ctyp="\0";
     req->rlen=0;
-    req->ssld=(wa_ssldata *) apr_palloc(r->pool,sizeof(wa_ssldata));
-    req->ssld->ssl = (char *)ap_table_get(
+    req->ssld=(wa_ssldata *) apr_palloc(req->pool,sizeof(wa_ssldata));
+    req->ssld->cert = (char *)ap_table_get(
         r->subprocess_env,"SSL_CLIENT_CERT");
 
     /* Copy headers into webapp request structure */
