@@ -61,9 +61,9 @@
 
 /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
 #define WA_VERMAJOR     1
-#define WA_VERMINOR     0
-#define WA_VERFIX       2
-#define WA_VERSTRING    "1.0.2"
+#define WA_VERMINOR     2
+#define WA_VERFIX       0
+#define WA_VERSTRING    "1.2.0-dev"
 
 /* Beta number */
 #define WA_VERBETA      1
