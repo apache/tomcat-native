@@ -189,6 +189,9 @@
     </target>
     
     <target name="jkant" >
+    <mkdir dir="${jk.build}/classes"/>
+    <mkdir dir="${jk.build}/classes/META-INF" />
+    <mkdir dir="${jk.build}/lib"/>
 	<javac srcdir="jkant/java" 
 	       destdir="${jk.build}/classes" 
 	       debug="${debug}"
