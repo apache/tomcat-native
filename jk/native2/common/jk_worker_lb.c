@@ -128,6 +128,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *p,
         }
     }
 
+    /** Get one worker that is ready */
     for(i = 0 ; i < p->num_of_workers ; i++) {
         if(p->lb_workers[i]->in_error_state) {
             if(!p->lb_workers[i]->in_recovering) {
@@ -137,6 +138,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *p,
                     
                     p->lb_workers[i]->in_recovering  = JK_TRUE;
                     p->lb_workers[i]->error_time     = now;
+                    p->lb_workers[i]->retry_count++;
                     rc = p->lb_workers[i];
 
                     break;
@@ -150,6 +152,45 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *p,
         }            
     }
 
+    if ( !rc ) {
+        /* no workers found (rc is null), now try as hard as possible to get a
+           worker anyway, pick one with largest error time.. */
+        for(i = 0 ; i < p->num_of_workers ; i++) {
+            if(p->lb_workers[i]->in_error_state) {
+                if(!p->lb_workers[i]->in_recovering) {
+                    /* if the retry count is zero, that means the worker only
+                       failed once, this is to e that the failed worker will
+                       not continue to be retried over and over again.
+                    */
+                    if ( p->lb_workers[i]->retry_count == 0 ) {
+                        if ( rc ) {
+                            /* pick the oldest failed worker */
+                            if ( p->lb_workers[i]->error_time < rc->error_time ) {
+                                rc = p->lb_workers[i];
+                            }
+                        } else {
+                            rc = p->lb_workers[i];
+                        }
+                    }
+                }
+            } else {
+                /* This is a good worker - it may have come to life */
+                if(p->lb_workers[i]->lb_value < lb_min || rc != NULL) {
+                    lb_min = p->lb_workers[i]->lb_value;
+                    rc = p->lb_workers[i];
+                    break;
+                }
+            }
+        }
+        
+        if ( rc  && rc->in_error_state ) {
+            time_t now = time(0);
+            rc->in_recovering  = JK_TRUE;
+            rc->error_time     = now;
+            rc->retry_count++;
+        }
+    }
+    
     if(rc) {
         rc->lb_value += rc->lb_factor;                
     }
@@ -167,6 +208,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
                                     jk_ws_service_t *s)
 {
     int attempt=0;
+    int i;
 
     if( s==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -177,6 +219,13 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
     /* you can not recover on another load balancer */
     s->realWorker=NULL;
 
+       /* reset all the retry counts to 0 */
+       for(i = 0 ; i < w->num_of_workers ; i++) {
+           w->lb_workers[i]->retry_count = 0;
+       }
+
+
+    
     while(1) {
         jk_worker_t *rec;
         int rc;
@@ -210,6 +259,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
             }
             rec->in_error_state = JK_FALSE;
             rec->in_recovering  = JK_FALSE;
+            rec->retry_count    = 0;
             rec->error_time     = 0;
             /* the endpoint that succeeded is saved for done() */
             s->realWorker = rec;
@@ -295,6 +345,7 @@ static int JK_METHOD jk2_lb_initLbArray(jk_env_t *env, jk_worker_t *_this)
             _this->lb_workers[currentWorker]->lb_factor;
         _this->lb_workers[currentWorker]->in_error_state = JK_FALSE;
         _this->lb_workers[currentWorker]->in_recovering  = JK_FALSE;
+        _this->lb_workers[currentWorker]->retry_count  = 0;
 
         currentWorker++;
     }
