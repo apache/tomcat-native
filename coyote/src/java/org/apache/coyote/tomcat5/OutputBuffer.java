@@ -639,6 +639,11 @@ public class OutputBuffer extends Writer
     }
 
 
+    public int getContentWritten() {
+        return bytesWritten + charsWritten;
+    }
+
+
     /** 
      * True if this buffer hasn't been used ( since recycle() ) -
      * i.e. no chars or bytes have been added to the buffer.  

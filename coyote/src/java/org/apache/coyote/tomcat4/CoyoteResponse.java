@@ -330,7 +330,7 @@ public class CoyoteResponse
      * Return the number of bytes actually written to the output stream.
      */
     public int getContentCount() {
-        return outputBuffer.getBytesWritten();
+        return outputBuffer.getContentWritten();
     }
 
 
