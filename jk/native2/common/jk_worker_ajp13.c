@@ -381,6 +381,12 @@ jk2_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
 	return JK_FALSE;
     }
 
+    if( w->channel==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "ajp14.service() no channel defined, error in init\n", w->mbean->name);
+        return JK_FALSE;
+    }
+    
     e->currentRequest=s;
     
     /* Prepare the messages we'll use.*/ 
@@ -409,7 +415,7 @@ jk2_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.service() %s\n", w->channel->mbean->name);
+                  "ajp14.service() %s\n", w->channelName);
 
     if( w->channel->beforeRequest != NULL ) {
         w->channel->beforeRequest( env, w->channel, w, e, s );
@@ -542,15 +548,55 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
     }
 
     if( ajp14->channelName == NULL ) {
-        ajp14->channelName="channel.default";
+        /* No "channel" was specified. Default to a channel, using
+           the local part of the worker name to construct it. The type
+           of the channel will be unix socket if a / is found, jni if
+           the name is jni, and socket otherwise.
+           
+           If the channle is not found, create one.
+        */
+        char *localName=strchr( ajp14->mbean->name, ':' );
+        if( localName==NULL || localName[1]=='\0' ) {
+            /* No local part, use the defaults */
+            ajp14->channelName="channel.socket";
+        } else {
+            char *prefix;
+            localName++;
+            if( strcmp( localName, "jni" ) == 0 ) {
+                /* Easy one */
+                ajp14->channelName="channel.jni";
+            }  else {
+                if( strchr( localName, '/' )) {
+                    prefix="channel.apr:";
+                } else {
+                    /* We could do more - if other channels are defined and
+                       we can guess it */
+                    prefix="channel.socket:";
+                }
+                ajp14->channelName=ajp14->pool->calloc( env, ajp14->pool, strlen( localName )+
+                                                        strlen( prefix ) + 2 );
+                strcpy( ajp14->channelName, prefix );
+                strcat( ajp14->channelName, localName );
+            }
+        }
     }
 
     ajp14->channel= env->getByName( env, ajp14->channelName );
     
     if( ajp14->channel == NULL ) {
-        /* XXX  Create a default channel using socket/localhost/8009 ! */
+        jk_bean_t * chB=env->createBean( env, ajp14->workerEnv->pool, ajp14->channelName);
+        if( chB==NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "ajp14.init(): can't create channel %s\n",
+                          ajp14->channelName);
+            return JK_FALSE;
+        }
+        ajp14->channel = chB->object;
+    }
+
+    if( ajp14->channel == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp14.validate(): no channel found %s\n",
+                      "ajp14.init(): no channel found %s\n",
                       ajp14->channelName);
         return JK_FALSE;
     }
