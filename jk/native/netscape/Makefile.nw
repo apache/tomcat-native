@@ -31,7 +31,7 @@ CC=$(METROWERKSPATH)\bin\mwccnlm
 LINK=$(METROWERKSPATH)\bin\mwldnlm
 
 JK_OBJS=\
-	jk_ajp12_worker.obj \
+	jk_channel_socket.obj \
 	jk_ajp13_worker.obj \
 	jk_ajp14_worker.obj \
 	jk_ajp13.obj \
@@ -46,7 +46,6 @@ JK_OBJS=\
 	jk_msg_buff.obj \
 	jk_nsapi_plugin.obj \
 	jk_pool.obj \
-	jk_sockbuf.obj \
 	jk_uri_worker_map.obj \
 	jk_util.obj \
 	jk_worker.obj \

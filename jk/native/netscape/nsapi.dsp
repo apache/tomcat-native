@@ -92,7 +92,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\common\jk_ajp12_worker.c
+SOURCE=..\common\jk_channel_socket.c
 # End Source File
 # Begin Source File
 
@@ -152,10 +152,6 @@ SOURCE=..\common\jk_pool.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\jk_sockbuf.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\common\jk_uri_worker_map.c
 # End Source File
 # Begin Source File
@@ -180,7 +176,7 @@ SOURCE=..\common\jk_worker.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\common\jk_ajp12_worker.h
+SOURCE=..\common\jk_channel.h
 # End Source File
 # Begin Source File
 
@@ -249,10 +245,6 @@ SOURCE=..\common\jk_pool.h
 # Begin Source File
 
 SOURCE=..\common\jk_service.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_sockbuf.h
 # End Source File
 # Begin Source File
 

@@ -140,10 +140,6 @@ SOURCE=..\common\jk_ajp_common.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\common\jk_ajp12_worker.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\common\jk_connect.h
 # End Source File
 # Begin Source File
