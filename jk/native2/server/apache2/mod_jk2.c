@@ -193,7 +193,7 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
      * Here we must now 'fix' the content of the object passed in.
      * Apache doesn't care what we do here as it has the reference to the unique object that has been
      * created. What we need to do is ensure that the data given to mod_jk2 is correct. Hopefully in the long run
-     * we can ignore some of the mod_jk details...
+     * we can ignore some of the mod_jk2 details...
      */
 
     /* if applicable we will set the hostname etc variables. */
@@ -405,11 +405,11 @@ static void *jk2_create_config(apr_pool_t *p, server_rec *s)
     if( s->is_virtual ) {
         /* Virtual host */
         ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
-                      "mod_jk Create config for virtual host %s",
+                      "mod_jk2 Create config for virtual host %s",
                       s->server_hostname );
     } else {
         ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
-                      "mod_jk Create config for default server %s",
+                      "mod_jk2 Create config for default server %s",
                       s->server_hostname );
     }
 
@@ -436,7 +436,7 @@ static void *jk2_merge_config(apr_pool_t *p,
     jk_uriEnv_t *overrides = (jk_uriEnv_t *)overridesv;
     
     ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
-                  "mod_jk Merging workerEnv");
+                  "mod_jk2 Merging workerEnv");
 
     
     /* The 'mountcopy' option should be implemented in common.
@@ -508,7 +508,7 @@ static int jk2_apache2_isValidating(apr_pool_t *gPool, apr_pool_t **mainPool) {
         *mainPool=gPool;
     
     /* We have a global pool ! */
-    apr_pool_userdata_get( &data, "mod_jk_init", gPool );
+    apr_pool_userdata_get( &data, "mod_jk2_init", gPool );
     if( data==NULL ) {
         return JK_OK;
     } else {
@@ -540,14 +540,14 @@ static int jk2_post_config(apr_pool_t *pconf,
     if( rc == JK_OK && gPool != NULL ) {
         /* This is the first step */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "mod_jk.post_config() first invocation\n");
+                      "mod_jk2.post_config() first invocation\n");
         
-        apr_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool );
+        apr_pool_userdata_set( "INITOK", "mod_jk2_init", NULL, gPool );
         return OK;
     }
         
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "mod_jk.post_config() second invocation\n" ); 
+                  "mod_jk2.post_config() second invocation\n" ); 
     workerEnv->parentInit( env, workerEnv);
 
     return OK;
@@ -621,11 +621,11 @@ static void jk2_child_init(apr_pool_t *pconf,
         jk2_init( env, pconf, workerEnv, s );
 
         if (workerEnv->childId <= 0) 
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child %d initialized\n",
+            env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk2 child %d initialized\n",
                           workerEnv->childId);
     }
     if (workerEnv->childGeneration)
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "mod_jk child workerEnv in error state %d\n",
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "mod_jk2 child workerEnv in error state %d\n",
                       workerEnv->childGeneration);
 
     /* Restore the process generation */
@@ -674,7 +674,7 @@ static int jk2_handler(request_rec *r)
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "mod_jk.handler() Can't setup client block %d\n", rc);
+                      "mod_jk2.handler() Can't setup client block %d\n", rc);
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return rc;
     }
@@ -684,21 +684,21 @@ static int jk2_handler(request_rec *r)
     if( worker==NULL && uriEnv->workerName != NULL ) {
         worker=env->getByName( env, uriEnv->workerName);
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.handler() finding worker for %#lx %#lx %s\n",
+                      "mod_jk2.handler() finding worker for %#lx %#lx %s\n",
                       worker, uriEnv, uriEnv->workerName);
         uriEnv->worker=worker;
     }
 
     if(worker==NULL || worker->mbean == NULL || worker->mbean->localName==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "mod_jk.handle() No worker for %s\n", r->uri); 
+                      "mod_jk2.handle() No worker for %s\n", r->uri); 
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     if( uriEnv->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                      "mod_jk.handler() serving %s with %#lx %#lx %s\n",
+                      "mod_jk2.handler() serving %s with %#lx %#lx %s\n",
                       uriEnv->mbean->localName, worker, worker->mbean, worker->mbean->localName );
 
     /* Get a pool for the request XXX move it in workerEnv to
@@ -708,7 +708,7 @@ static int jk2_handler(request_rec *r)
         rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
         if( uriEnv->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "mod_jk.handler(): new rpool %#lx\n", rPool );
+                          "mod_jk2.handler(): new rpool %#lx\n", rPool );
     }
     
     s=(jk_ws_service_t *)rPool->calloc( env, rPool, sizeof( jk_ws_service_t ));
@@ -726,7 +726,7 @@ static int jk2_handler(request_rec *r)
     s->uriEnv = uriEnv; 
 
     /* env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-    /*              "mod_jk.handler() Calling %s\n", worker->mbean->name); */
+    /*              "mod_jk2.handler() Calling %s\n", worker->mbean->name); */
     
     rc = worker->service(env, worker, s);
     
@@ -748,7 +748,7 @@ static int jk2_handler(request_rec *r)
     }
 
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                  "mod_jk.handler() Error connecting to tomcat %d, status %d\n", rc, s->status);
+                  "mod_jk2.handler() Error connecting to tomcat %d, status %d\n", rc, s->status);
                   
     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
 
@@ -760,7 +760,7 @@ static int jk2_handler(request_rec *r)
         return HTTP_INTERNAL_SERVER_ERROR;  
 }
 
-/** Use the internal mod_jk mappings to find if this is a request for
+/** Use the internal mod_jk2 mappings to find if this is a request for
  *    tomcat and what worker to use. 
  */
 static int jk2_translate(request_rec *r)
