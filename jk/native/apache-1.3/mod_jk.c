@@ -1611,7 +1611,7 @@ static int jk_handler(request_rec *r)
             if(rc) {
                 /* If tomcat returned no body and the status is not OK,
                    let apache handle the error code */
-                if( !r->sent_bodyct && r->status != HTTP_OK ) {
+                if( !r->sent_bodyct && r->status >= HTTP_BAD_REQUEST ) {
                     return r->status;
                 }
                 return OK;  /* NOT r->status, even if it has changed. */
