@@ -148,5 +148,7 @@ public class Jdk14Compat extends JdkCompat {
         return trace.toString();
     }
 
-
+    public  String [] split(String path, String pat) {
+        return path.split(pat);
+    }
  }
