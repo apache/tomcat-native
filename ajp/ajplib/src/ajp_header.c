@@ -814,6 +814,6 @@ apr_status_t  ajp_parse_data(request_rec  *r, void *data, apr_uint16_t *len, cha
     if (rc != APR_SUCCESS) {
         return APR_EGENERAL;
     }
-    *ptr = msg->buf[msg->pos];
+    *ptr = &(msg->buf[msg->pos]);
     return APR_SUCCESS;
 }
