@@ -121,10 +121,13 @@ public final class Request {
     // ----------------------------------------------------- Instance Variables
 
 
-    protected int serverPort;
+    protected int serverPort = -1;
+    protected MessageBytes serverNameMB = new MessageBytes();
+
     protected String localHost;
 
     protected MessageBytes schemeMB = new MessageBytes();
+    protected boolean secure = false;
 
     protected MessageBytes methodMB = new MessageBytes();
     protected MessageBytes unparsedURIMB = new MessageBytes();
@@ -166,7 +169,6 @@ public final class Request {
     protected int available = -1; 
     protected MessageBytes contentTypeMB = null;
     protected String charEncoding = null;
-    protected MessageBytes serverNameMB = new MessageBytes();
     protected Cookies cookies = new Cookies(headers);
 
 
@@ -233,14 +235,15 @@ public final class Request {
     public MessageBytes serverName() {
 	return serverNameMB;
     }
-    
+
     public int getServerPort() {
         return serverPort;
     }
-
+    
     public void setServerPort(int serverPort ) {
 	this.serverPort=serverPort;
     }
+
     public MessageBytes remoteAddr() {
 	return remoteAddrMB;
     }
@@ -257,6 +260,13 @@ public final class Request {
 	this.localHost = host;
     }
 
+    public boolean isSecure() {
+        return secure;
+    }
+
+    public void setSecure(boolean secure) {
+        this.secure = secure;
+    }
 
     // -------------------- encoding/type --------------------
 
@@ -398,6 +408,7 @@ public final class Request {
 
 	// XXX Do we need such defaults ?
         schemeMB.setString("http");
+        secure = false;
 	methodMB.setString("GET");
         uriMB.setString("/");
         queryMB.setString("");
