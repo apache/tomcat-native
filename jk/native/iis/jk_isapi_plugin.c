@@ -72,6 +72,19 @@
 #define BAD_PATH        -2
 #define MAX_SERVERNAME  128
 
+#define HTML_ERROR_400          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">"  \
+                                "<HTML><HEAD><TITLE>Bad request!</TITLE></HEAD>"                    \
+                                "<BODY><H1>Bad request!</H1><DL><DD>\n"                             \
+                                "Your browser (or proxy) sent a request that "                      \
+                                "this server could not understand.</DL></DD></BODY></HTML>"
+
+#define HTML_ERROR_403          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">"  \
+                                "<HTML><HEAD><TITLE>Access forbidden!!</TITLE></HEAD>"              \
+                                "<BODY><H1>Access forbidden!</H1><DL><DD>\n"                        \
+                                "You don't have permission to access the requested object."         \
+                                "It is either read-protected or not readable by the server.</DL></DD></BODY></HTML>"
+
+ 
 #define JK_TOLOWER(x)   ((char)tolower((BYTE)(x)))
 
 #define GET_SERVER_VARIABLE_VALUE(name, place)          \
@@ -379,13 +392,14 @@ static int uri_is_web_inf(const char *uri)
 static void write_error_response(PHTTP_FILTER_CONTEXT pfc, char *status,
                                  char *msg)
 {
-    size_t len = strlen(msg);
+    DWORD len = (DWORD)strlen(msg);
 
     /* reject !!! */
+    pfc->AddResponseHeaders(pfc, CONTENT_TYPE, 0);
     pfc->ServerSupportFunction(pfc,
                                SF_REQ_SEND_RESPONSE_HEADER,
-                               status, (DWORD) &CONTENT_TYPE, 0);
-    pfc->WriteClient(pfc, msg, (LPDWORD)&len, 0);
+                               status, 0, 0);
+    pfc->WriteClient(pfc, msg, &len, 0);
 }
 
 
@@ -701,7 +715,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                        "[%s] contains one or more invalid escape sequences.\n",
                        uri);
                 write_error_response(pfc, "400 Bad Request",
-                                     "<HTML><BODY><H1>Request contains invalid encoding</H1></BODY></HTML>");
+                                     HTML_ERROR_400);
                 return SF_STATUS_REQ_FINISHED;
             }
             else if (rc == BAD_PATH) {
@@ -709,7 +723,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                        "[%s] contains forbidden escape sequences.\n",
                        uri);
                 write_error_response(pfc, "403 Forbidden",
-                                     "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                                     HTML_ERROR_403);
                 return SF_STATUS_REQ_FINISHED;
             }
             getparents(uri);
@@ -761,7 +775,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                        uri);
 
                 write_error_response(pfc, "403 Forbidden",
-                                     "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                                     HTML_ERROR_403);
                 return SF_STATUS_REQ_FINISHED;
             }
 
@@ -791,7 +805,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                                "[%s] re-encoding request exceeds maximum buffer size.\n",
                                uri);
                         write_error_response(pfc, "400 Bad Request",
-                                             "<HTML><BODY><H1>Request contains too many characters that need to be encoded.</H1></BODY></HTML>");
+                                             HTML_ERROR_400);
                         return SF_STATUS_REQ_FINISHED;
                     }
                     jk_log(logger, JK_LOG_DEBUG,
