@@ -138,7 +138,8 @@ struct jk_worker {
     struct jk_bean *mbean;
     
     struct jk_workerEnv *workerEnv;
-    
+
+    int id;
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol 
@@ -163,10 +164,6 @@ struct jk_worker {
      */
     struct jk_map *endpointMap;
 
-    /* Critical section used for creation of the endpoints
-     */
-    JK_CRIT_SEC cs;
-    
     /** Request pool cache. XXX We may use a pool of requests.
      */
     struct jk_objCache *rPoolCache;
@@ -174,6 +171,7 @@ struct jk_worker {
     /* Private key used to connect to the remote side2.*/
     char * secret;
 
+    JK_CRIT_SEC cs;
     /* -------------------- Information used for load balancing ajp workers -------------------- */
 
     /** The id of the tomcat instance we connect to. We may have multiple

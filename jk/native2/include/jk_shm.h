@@ -150,6 +150,11 @@ struct jk_shm {
      */
     int (JK_METHOD *init)(struct jk_env *env, struct jk_shm *shm);
 
+    /** Reset the shm area
+     */
+    int (JK_METHOD *reset)(struct jk_env *env, struct jk_shm *shm);
+
+    
     /** Detach from the shared memory segment
      */
     int (JK_METHOD *destroy)(struct jk_env *env, struct jk_shm *shm);

@@ -150,6 +150,7 @@ extern "C" {
 
 #include "apr.h"
 #include "apr_errno.h"
+#include "apr_time.h"
 
 #else
 

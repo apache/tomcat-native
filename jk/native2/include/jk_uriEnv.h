@@ -120,7 +120,7 @@ struct jk_uriEnv {
 
     struct jk_uriMap *uriMap;
 
-    /* Generic name/value properties. Some workers may use it.
+    /* Generic name/value properties. 
      */
     struct jk_map *properties;
 
@@ -158,6 +158,11 @@ struct jk_uriEnv {
     */
     struct jk_map *aliases;
 
+    /* If set we'll use apr_time to get the request time in microseconds and update
+       the scoreboard to reflect that. 
+    */
+    int timing;
+    
     /* -------------------- Properties extracted from the uri, at init() -------------------- */
     /* Extracted suffix, for extension-based mathces */
     char *suffix;

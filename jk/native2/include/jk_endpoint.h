@@ -67,6 +67,7 @@
 #ifndef JK_ENDPOINT_H
 #define JK_ENDPOINT_H
 
+#include "jk_global.h"
 #include "jk_env.h"
 #include "jk_map.h"
 #include "jk_service.h"
@@ -121,46 +122,40 @@ typedef struct jk_stat   jk_stat_t;
  */
 struct jk_endpoint {
     struct jk_bean *mbean;
-    /* 
-     * A 'this' pointer which is used by the subclasses of this class to
-     * point to data/functions which are specific to a given protocol 
-     * (e.g. ajp12 or ajp13 or ajp14).  
-     */
-    void *endpoint_private;
 
-    /** Data specific to a channel connection
+    int id;
+
+    /* Parent
+     */
+    struct jk_worker *worker;
+
+    struct jk_workerEnv *workerEnv;
+
+    /** Data specific to a channel connection. Usually a struct
+     * containing info about the active connection ( sd, jniEnv, etc ).
      */
     void *channelData;
 
-    /* Ok, this is going to be a Notes - similar with what we have on the
-     * java side. Various channels need to be able to store private data.
+    /* Channel-specific data. Usually a file descriptor. ( avoids
+       using a struct for typical socket channels )
      */
-    void *currentData;
-    int currentOffset;
-    int currentLen;
+    int sd;
 
+    /** Current request beeing processed.
+     *  Used by JNI worker mostly ( XXX remove it, pass it explicitely )
+     */
     struct jk_ws_service *currentRequest;
-    
-    struct jk_worker *worker;
-
-    /** 'main' pool for this endpoint. Used to store properties of the
-        endpoint. Will be alive until the endpoint is destroyed.
-    */
-    struct jk_pool *pool;
 
     /** Connection pool. Used to store temporary data. It'll be
-        recycled after each transaction.
-    */
+     *  recycled after each transaction.
+     *  XXX Do we need it ? env->tmpPool can be used as well.
+     */
     struct jk_pool *cPool;
-    
-    int sd;
-    int reuse;
 
-    /* Buffers for req/res */
-    /* Used to be ajp_operation */
+    /* Buffers */
 
     /* Incoming messages ( from tomcat ). Will be overriten after each
-       message, you must safe any data you want to keep.
+       message, you must save any data you want to keep.
      */
     struct jk_msg *reply;
 
@@ -169,19 +164,25 @@ struct jk_endpoint {
     */
     struct jk_msg *post;
     
-    struct jk_msg *request;   /* original request storage */
-    int     recoverable;        /* if exchange could be conducted on
-                                   another TC ??? */
+    /* original request storage ( XXX do we need it ? )
+     */
+    struct jk_msg *request; 
 
-    /* For redirecting endpoints like lb */
-    jk_endpoint_t *realEndpoint;
-
-    char *servletContainerName;
+    char *readBuf;
+    int bufPos;
+    
+    /* JK_TRUE if the endpoint can be reused ( after an error ).
+     * JK_FALSE if we must close the connection - for example we have
+     * packet/marshalling error.
+     * This is different from req->is_recoverable_error, which just
+     * specifies that the request can be sent to another tomcat.
+     * Set by workerEnv if a handler returns JK_HANDLER_ERROR.
+     */
+    int     recoverable;        
 
     /* The struct will be created in shm if available
      */
     struct jk_stat *stats;
-    
 };
 
 /** Statistics collected per endpoint
@@ -191,13 +192,29 @@ struct jk_stat {
     int reqCnt;
     int errCnt;
 
-    /* Total time ( for average - divide by reqCnt ) and maxTime */
-    long totalTime;
-    long maxTime;
+    int connected;
 
+    int workerId;
     /* Active request
      */
-    char active[128];
+    char active[64];
+
+#ifdef HAS_APR
+    /* Time when this endpoint has opened a connection to
+       tomcat
+    */
+    apr_time_t connectedTime;
+    /* Total time ( for average - divide by reqCnt )
+       and maxTime for requests.
+    */
+    apr_time_t totalTime;
+    apr_time_t maxTime;
+    /* Last request - time of start, time when we start the ajp protocol, end time
+     */
+    apr_time_t startTime;
+    apr_time_t jkStartTime;
+    apr_time_t endTime;
+#endif
 };
 
     

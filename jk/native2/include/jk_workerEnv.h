@@ -147,10 +147,7 @@ struct jk_workerEnv {
      */
     struct jk_map *channel_map;
 
-    /* worker.list - workers to load at startup
-     */
-    char **worker_list;
-    int declared_workers;
+    struct jk_map *endpointMap;
 
     /* In a multi-process server, like Apache, stores the child
        id in the scoreboard ( if the scoreboard is used ).
@@ -165,6 +162,7 @@ struct jk_workerEnv {
     /** Worker that will be used by default, if no other
         worker is specified. Usefull for SetHandler or
         to avoid the lookup
+        XXX no need - lb is the default, easy to get it.
     */
     struct jk_worker *defaultWorker;
     
@@ -183,28 +181,15 @@ struct jk_workerEnv {
     */
     struct jk_map *initData;
 
-    /** Root env, used to register object types, etc
-     */
-    struct jk_env *rootEnv;
-
     /*
-     * Log options. Extracted from init_data.
+     * Log options. XXX move it to uriEnv, make it configurable per webapp.
+     * XXX What about apache native logger ?
      */
     char *log_file;
     int  log_level;
 
-    char     *secret_key;
-    /*     jk_map_t *automount; */
-
     struct jk_uriMap *uriMap;
 
-    struct jk_uriEnv *rootWebapp;
-
-    /** If 'global' server mappings will be visible in virtual hosts
-        as well. XXX Not sure this is needed
-    */
-    int      mountcopy;
-    
     int was_initialized;
 
     /*
@@ -233,7 +218,9 @@ struct jk_workerEnv {
     struct jk_map * envvars;
 
     struct jk_config *config;
+    
     struct jk_shm *shm;
+
     /* Slot for endpoint stats
      */
     struct jk_shm_slot *epStat;
@@ -256,7 +243,18 @@ struct jk_workerEnv {
      */
     void *_private;
 
-    int debug;
+    JK_CRIT_SEC cs;
+
+    /* Global setting to enable counters on all requests.
+     *  That adds about 2-3 ms per request ( at least on linux ),
+     *  and will store average and max processing time per endpoint
+     *  ( that can be agregated per worker or per server ).
+     * Note that we can't collect per request times - it's not
+     * thread safe and sync is expensive. As workaround you
+     * can enable timers only on a specific request and/or
+     * use a dedicated worker/channel for that request.
+     */
+    int timing;
     
     /* -------------------- Methods -------------------- */
 
@@ -277,6 +275,13 @@ struct jk_workerEnv {
                       struct jk_workerEnv *_this,
                       struct jk_channel *w);
     
+    /** Add an endpoint. Endpoints are long lived and used to store
+        statistics. The endpoint can be in used in only one thread
+        at a time, it's a good way to avoid synchronization.
+     */
+    int (*addEndpoint)(struct jk_env *env, struct jk_workerEnv *wEnv,
+                       struct jk_endpoint *ep);
+
     int (*initChannel)(struct jk_env *env,
                        struct jk_workerEnv *wEnv, struct jk_channel *ch);
     
@@ -296,6 +301,15 @@ struct jk_workerEnv {
                             struct jk_workerEnv *_this,
                             struct jk_endpoint *e,
                             struct jk_ws_service *r );
+
+    /**
+     * Special init function to be called from the parent process
+     * ( with root privs ? ).
+     * Used to create the scoreboard ( workaround required at least for HPUX )
+     *
+     * init() will be called for each child, parentInit() only once.
+     */
+    int (*parentInit)(struct jk_env *env, struct jk_workerEnv *_this);
 
     /**
      *  Init the workers, prepare the worker environment. Will read

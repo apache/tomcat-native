@@ -268,7 +268,10 @@ struct jk_ws_service {
     int outPos;
     int outSize;
     char *outBuf;
-
+#ifdef HAS_APR
+    apr_time_t startTime;
+#endif
+    
     /** printf style output. Formats in the tmp buf, then calls write
      */
     void (JK_METHOD *jkprintf)( struct jk_env *env, struct jk_ws_service *s, char *frm,... );
