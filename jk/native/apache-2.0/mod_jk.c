@@ -66,6 +66,7 @@
  * mod_jk: keeps all servlet/jakarta related ramblings together.
  */
 
+#include "apu_compat.h"
 #include "ap_config.h"
 #include "httpd.h"
 #include "http_config.h"
