@@ -449,6 +449,9 @@ static char *update_env_variables(char *value, jk_map_t *m)
             *env_end = ')';
 
             env_value = map_get_string(m, env_name, NULL);
+	    if(!env_value) {
+	      env_value=getenv( env_name );
+	    }
             if(env_value) {
                 char *new_value = jk_pool_alloc(&m->p, 
                                                 (sizeof(char) * (strlen(rc) + strlen(env_value))));
