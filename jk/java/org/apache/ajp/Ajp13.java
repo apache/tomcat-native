@@ -142,6 +142,7 @@ public class Ajp13 {
     // If no password is set, use only Ajp13 messaging
     boolean backwardCompat=true;
     boolean logged=false;
+    String secret=null;
     
     public Ajp13() {
 	super();
@@ -207,6 +208,14 @@ public class Ajp13 {
         logged=b;
     }
 
+    public void setSecret( String s ) {
+        secret=s;
+    }
+
+    public String getSecret() {
+        return secret;
+    }
+    
     // -------------------- Handlers registry --------------------
 
     static final int MAX_HANDLERS=32;

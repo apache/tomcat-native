@@ -124,6 +124,7 @@ public class RequestHandler extends AjpHandler
     public static final byte SC_A_SSL_CIPHER    = 8;
     public static final byte SC_A_SSL_SESSION   = 9;
     public static final byte SC_A_SSL_KEYSIZE   = 11;
+    public static final byte SC_A_SECRET        = 12;
 
     // Used for attributes which are not in the list above
     public static final byte SC_A_REQ_ATTRIBUTE = 10; 
@@ -375,6 +376,17 @@ public class RequestHandler extends AjpHandler
 				 msg.getString());
                 break;
 		
+	    case SC_A_SECRET   :
+                // If a request has a secret attribute, set it on
+                // channel - it'll be visible to the caller ( Interceptor,
+                // Connector ) and it can check it against its settings before
+                // trusting us.
+                String secret=msg.getString();
+                if(secret!=null) {
+                    ch.setSecret( secret );
+                }
+                break;
+		
 	    case SC_A_SSL_SESSION  :
 		isSSL = true;
 		req.setAttribute("javax.servlet.request.ssl_session",
@@ -391,7 +403,10 @@ public class RequestHandler extends AjpHandler
 				 Integer.toString(msg.getInt()));
 		return 200;
 	    default:
-		return 500; // Error
+                // Ignore. Assume a single-string value - we shouldn't
+                // allow anything else.
+                msg.getString();
+                break;
 	    }
         }
 
