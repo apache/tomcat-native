@@ -62,6 +62,10 @@
  * @author: Costin Manolache
  */
 
+#ifdef AS400
+#include "apr_xlate.h"    
+#endif
+
 #include "jk_global.h"
 #include "jk_map.h"
 #include "jk_pool.h"
@@ -136,7 +140,13 @@ static int jk2_config_file_saveConfig( jk_env_t *env,
 
 static void jk2_trim_prp_comment(char *prp)
 {
+#ifdef AS400
+    char *comment;
+  /* lots of lines that translate a '#' realtime deleted   */
+    comment = strchr(prp, *APR_NUMBERSIGN); 
+#else
     char *comment = strchr(prp, '#');
+#endif
     if(comment) {
         *comment = '\0';
     }

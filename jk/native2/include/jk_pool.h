@@ -105,6 +105,8 @@ extern "C" {
     typedef long long   jk_pool_atom_t;
 #elif defined(IRIX)
     typedef long long   jk_pool_atom_t;
+#elif defined(AS400)
+    typedef void *		jk_pool_atom_t;
 #else
     typedef long long   jk_pool_atom_t;
 #endif
@@ -148,6 +150,10 @@ struct jk_pool {
     void *(*calloc)(struct jk_env *env, jk_pool_t *_this, size_t size);
 
     void *(*pstrdup)(struct jk_env *env, jk_pool_t *_this, const char *s);
+
+    void *(*pstrdup2ascii)(struct jk_env *env, jk_pool_t *_this, const char *s);
+
+    void *(*pstrdup2ebcdic)(struct jk_env *env, jk_pool_t *_this, const char *s);
 
     /** Points to the private data. In the case of APR,
         it's a apr_pool you can use directly */

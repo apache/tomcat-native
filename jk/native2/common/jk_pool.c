@@ -103,6 +103,10 @@ static void *jk2_pool_calloc(jk_env_t *env, jk_pool_t *p, size_t size);
 
 static void *jk2_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s);
 
+static void *jk2_pool_strdup2ascii(jk_env_t *env, jk_pool_t *p, const char *s);
+
+static void *jk2_pool_strdup2ebcdic(jk_env_t *env, jk_pool_t *p, const char *s);
+
 static void *jk2_pool_realloc(jk_env_t *env, jk_pool_t *p, size_t sz,const void *old,
                               size_t old_sz);
 
@@ -139,6 +143,8 @@ int jk2_pool_create(jk_env_t *env, jk_pool_t **newPool,
     _this->alloc=jk2_pool_alloc;
     _this->calloc=jk2_pool_calloc;
     _this->pstrdup=jk2_pool_strdup;
+    _this->pstrdup2ascii=jk2_pool_strdup2ascii;
+    _this->pstrdup2ebcdic=jk2_pool_strdup2ebcdic;
     _this->realloc=jk2_pool_realloc;
     
     *newPool = _this;
@@ -255,7 +261,7 @@ static void *jk2_pool_realloc(jk_env_t *env, jk_pool_t *p, size_t sz,
     return rc;
 }
 
-static void *jk2_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s)
+static void *jk2_pool_a_strdup(jk_env_t *env, jk_pool_t *p, const char *s, int convmode)
 {
     char *rc = NULL;
     if(s && p) {
@@ -270,9 +276,29 @@ static void *jk2_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s)
             memcpy(rc, s, size);
         }
         rc[size]='\0';
+        
+        if (convmode == 1)
+        	jk_xlate_to_ascii(rc, size);
+        else if (convmode == 2)
+        	jk_xlate_from_ascii(rc, size);        
     }
 
     return rc;
+}
+
+static void *jk2_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s)
+{
+	return (jk2_pool_a_strdup(env, p, s, 0);
+}
+
+static void *jk2_pool_strdup2ascii(jk_env_t *env, jk_pool_t *p, const char *s)
+{
+	return (jk2_pool_a_strdup(env, p, s, 1);
+}
+
+static void *jk2_pool_strdup2ebcdic(jk_env_t *env, jk_pool_t *p, const char *s)
+{
+	return (jk2_pool_a_strdup(env, p, s, 2);
 }
 
 /*
