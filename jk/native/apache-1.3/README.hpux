@@ -1,0 +1,91 @@
+mod_jk README for HP-UX 11
+
+Mike Braden
+March 05, 2001
+
+This README explains how to build mod_jk on HP-UX 11 systems.
+
+There are two build scripts for HP-UX:
+
+build-hpux.sh         Use if you have the GNU gcc compiler
+build-hpux-cc.sh      Use if you have the HP ANSI C compiler
+
+The first package is for use with the gcc compiler.  It produces 32-bit
+code that should run on both PA1.1 and PA2.0 based architectures.
+
+The second script is for use with the HP add-on ANSI C Complier package.
+This will not work with the stripped down cc version that ships with
+HP-UX.  That compiler is just for kernel rebuilds.  If you do not have
+the HP ANSI C compiler package, then obtain gcc and use the first script.
+
+PREREQUISITES
+
+This script requires that GCC 2.95.2 be installed and in your path.
+You should also have the GNU binutils installed.  You can obtain
+the binary depot files for these at:
+
+http://gatekeep.cs.utah.edu/
+
+Before running the build script, verify that APACHE_HOME and
+JAVA_HOME are set correct in the script.
+
+BUILDING MOD_JK
+
+The build script should be run as root as follows:
+
+# sh build-hpux.sh
+
+After the script completes you will need to modify the Tomcat
+server.xml file to tell it to generate the auto configuration
+for mod_jk.
+
+To do this, edit $TOMCAT_HOME/conf/server.xml and add the following
+after <AutoWebApp dir="webapps" host="DEFAULT" />
+
+       	<ApacheConfig />
+
+The next time you startup Tomcat, it will generate
+TOMCAT_HOME/conf/jk/mod_jk.conf-auto with the necessary
+commands to use Tomcat through Apache.  Tomcat will automatically
+add any webapps that it finds in its webapps directory.
+
+See the Tomcat Users Guide and Release Notes for more information.
+
+
+TROUBLESHOOTING
+
+If you experience problems using the build script, make sure that your
+apache installation matches your system.  Apache's apxs is a perl
+script that is configured when you compile apache for your system.
+If you are using a binary install of apache, it will most likely not
+be configured correctly for your system.
+
+NOTE: Most apxs errors are due to the use of an Apache binary
+      installation.
+      BUILD AND INSTALL APACHE FROM SOURCE.  IT'S NOT THAT HARD!
+
+The best solution is to build apache from source as follows:
+
+Download apache from http://httpd.apache.org
+Put the source file in /usr/local/src
+
+# cd /usr/local/src
+# gzip -dc apache_1.3.17.tar.gz|tar xvf -
+# cd apache_1.3.17
+# ./configure --prefix=/usr/local/apache --enable-module=most /
+  --enable-shared=max
+# make
+# make install
+
+This will build apache and install it into the /usr/local/apache directory.
+
+
+Note:
+
+In order to build mod_jk for HPUX11 using GCC, support for JNI was removed.
+This should not affect Apache 1.3 installations since it is not recommended
+to run mod_jk in In-Process mode under Apache 1.3.
+
+If you wish to include support for JNI, you must build mod_jk with the
+HP ANSI Compiler using 64-bit mode.  The second build script listed at the
+top of this document will work.
