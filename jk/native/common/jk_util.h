@@ -70,6 +70,8 @@ int jk_get_worker_prepost_timeout(jk_map_t *m, const char *wname, int def);
 
 int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def);
 
+char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def);
+
 char *jk_get_worker_secret_key(jk_map_t *m, const char *wname);
 
 int jk_get_worker_retries(jk_map_t *m, const char *wname, int def);

@@ -59,6 +59,7 @@
 #define STICKY_SESSION              ("sticky_session")
 #define LOCAL_WORKER_ONLY_FLAG      ("local_worker_only")
 #define LOCAL_WORKER_FLAG           ("local_worker")
+#define DOMAIN_OF_WORKER            ("domain")
 
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
@@ -337,6 +338,16 @@ char *jk_get_worker_type(jk_map_t *m, const char *wname)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, TYPE_OF_WORKER);
 
     return jk_map_get_string(m, buf, DEFAULT_WORKER_TYPE);
+}
+
+char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def)
+{
+    char buf[1024];
+    if (!m || !wname) {
+        return NULL;
+    }
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, DOMAIN_OF_WORKER);
+    return jk_map_get_string(m, buf, def);
 }
 
 char *jk_get_worker_secret(jk_map_t *m, const char *wname)
@@ -1016,19 +1027,18 @@ void jk_init_ws_service(jk_ws_service_t *s)
 }
 
 #ifdef _MT_CODE_PTHREAD
-
 int jk_gettid()
 {
     pthread_t t = pthread_self();
-
 #ifdef AS400
 	/* OS400 use 64 bits ThreadId, get only low 32 bits for now */
     pthread_id_np_t       tid;
     pthread_getunique_np(&t, &tid);      
 	return ((int)(tid.intId.lo & 0xFFFFFFFF));
 #else
-    return (int)(t & 0xFFFF);
+    int tid = 0;
+    pthread_getunique_np(&t, &tid);      
+    return tid;
 #endif /* AS400 */
 }
-
 #endif
