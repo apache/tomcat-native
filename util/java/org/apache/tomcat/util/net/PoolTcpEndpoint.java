@@ -86,7 +86,7 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
     protected boolean tcpNoDelay=false;
     protected int linger=100;
     protected int socketTimeout=-1;
-    private boolean lf = false;
+    private boolean lf = true;
 
     
     // ------ Leader follower fields
