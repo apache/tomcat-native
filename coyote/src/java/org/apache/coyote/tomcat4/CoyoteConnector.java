@@ -327,9 +327,9 @@ public final class CoyoteConnector
 
 
     /**
-     * Use URI normalization.
+     * Use URI validation for Tomcat 4.0.x.
      */
-    private boolean useURINormalizationHack = true;
+    private boolean useURIValidationHack = true;
 
 
     // ------------------------------------------------------------- Properties
@@ -831,23 +831,23 @@ public final class CoyoteConnector
 
 
     /**
-     * Return the value of the Uri normalization flag.
+     * Return the value of the Uri validation flag.
      */
-    public boolean getUseURINormalizationHack() {
+    public boolean getUseURIValidationHack() {
 
-        return (this.useURINormalizationHack);
+        return (this.useURIValidationHack);
 
     }
 
 
     /**
-     * Set the value of the Uri normalization flag.
+     * Set the value of the Uri validation flag.
      * 
-     * @param useURINormalizationHack The new flag value
+     * @param useURIValidationHack The new flag value
      */
-    public void setUseURINormalizationHack(boolean useURINormalizationHack) {
+    public void setUseURIValidationHack(boolean useURIValidationHack) {
 
-        this.useURINormalizationHack = useURINormalizationHack;
+        this.useURIValidationHack = useURIValidationHack;
 
     }
 
