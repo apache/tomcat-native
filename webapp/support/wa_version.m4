@@ -74,7 +74,7 @@ AC_DEFUN(
 #include "stdio.h"
 
 int main(void) [ {
-  printf(WA_REVISION "\n");
+  printf(WA_VERSION "\n");
   exit(0);
 } ]
 EOF

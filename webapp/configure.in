@@ -474,6 +474,5 @@ AC_OUTPUT(
     Makefile
     lib/Makefile
     ${MODULE}/Makefile
-    DETAILS.txt
     build.properties
   ])

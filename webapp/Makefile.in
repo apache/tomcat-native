@@ -73,7 +73,11 @@ distclean: extra-clean
 	rm -f DETAILS.txt
 	rm -fr $(DST_DIR)
 
-build: $(OBJ_DIR) @EXTRA_BUILD@ lib-build $(MODULE)-build
+build: $(OBJ_DIR) @EXTRA_BUILD@ lib-build $(MODULE)-build $(BLD_DIR)/DETAILS.txt
+	@echo ""
+	@cat $(BLD_DIR)/DETAILS.txt
+	@echo ""
+	@echo All done...
 
 extra-clean: @EXTRA_CLEAN@ clean
 
@@ -163,3 +167,16 @@ $(BLD_DIR):
 
 $(DST_DIR):
 	@if test ! -d "$(DST_DIR)" ; then mkdir $(DST_DIR) ; fi
+
+# ========================================================================= #
+# Our compilation details file                                              #
+# ========================================================================= #
+$(BLD_DIR)/DETAILS.txt: $(BLD_DIR)
+	@echo "Storing build details" ; { \
+	    echo "Coonfiguration details:" ; \
+	    echo "" ; \
+	    echo "module version:  $(WEBAPP_VERSION)" ; \
+	    echo "httpd version:   $(APACHE_VERSION)" ; \
+	    echo "host machine/os: $(HOST)" ; \
+	    echo "cration date:    $(DATE)" ; \
+	} > $@
