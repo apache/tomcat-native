@@ -168,6 +168,9 @@ int jk_b_append_long(jk_msg_buf_t *msg,
 int jk_b_append_string(jk_msg_buf_t *msg, 
                        const char *param);
 
+int jk_b_append_bytes(jk_msg_buf_t         *msg,
+                      const unsigned char  *param,
+                      int                   len);
 
 /* -------------------- Decoding -------------------- */
 
@@ -186,6 +189,12 @@ unsigned long jk_b_get_long(jk_msg_buf_t *msg);
 /** Get a String from the current position
  */
 unsigned char *jk_b_get_string(jk_msg_buf_t *msg);
+
+/** Get Bytes from the current position
+ */
+int jk_b_get_bytes(jk_msg_buf_t *msg, 
+				   unsigned char * buf, 
+				   int len);
 
 /** Get a byte from an arbitrary position
  */

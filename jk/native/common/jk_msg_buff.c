@@ -398,6 +398,22 @@ unsigned char *jk_b_get_string(jk_msg_buf_t *msg)
     return (unsigned char *)(msg->buf + start); 
 }
 
+int jk_b_get_bytes(jk_msg_buf_t *msg, unsigned char * buf, int len)
+{
+    int start = msg->pos;
+
+    if((len < 0 ) || (len + start > msg->maxlen)) {
+        jk_b_dump(msg, "After get bytes");
+        printf("ERROR\n" ); 
+        return (-1);
+    }
+    
+	memcpy(buf, msg->buf + start, len);
+    msg->pos += len;
+	return (len);
+}
+
+
 /** Shame-less copy from somewhere.
     assert (src != dst)
  */
