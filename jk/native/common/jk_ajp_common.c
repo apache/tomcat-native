@@ -1666,7 +1666,7 @@ int ajp_init(jk_worker_t *pThis,
              jk_map_t *props, jk_worker_env_t *we, jk_logger_t *l, int proto)
 {
     int cache;
-
+    int rc = JK_FALSE;
     /*
      * start the connection cache
      */
@@ -1682,7 +1682,7 @@ int ajp_init(jk_worker_t *pThis,
         jk_log(l, JK_LOG_ERROR,
                "unknown protocol %d\n", proto);
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return rc;
     }
 
     if (pThis && pThis->worker_private) {
@@ -1782,19 +1782,20 @@ int ajp_init(jk_worker_t *pThis,
                     p->ep_cache[i] = NULL;
                 }
                 JK_INIT_CS(&(p->cs), i);
-                if (i) {
+                if (i == JK_FALSE) {
                     JK_TRACE_EXIT(l);
-                    return JK_TRUE;
+                    return JK_FALSE;
                 }
             }
         }
+        rc = JK_TRUE;
     }
     else {
         JK_LOG_NULL_PARAMS(l);
     }
 
     JK_TRACE_EXIT(l);
-    return JK_FALSE;
+    return rc;
 }
 
 int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto)
