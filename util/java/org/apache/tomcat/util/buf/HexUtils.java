@@ -66,14 +66,20 @@ import org.apache.tomcat.util.res.StringManager;
 /**
  * Library of utility methods useful in dealing with converting byte arrays
  * to and from strings of hexadecimal digits.
+ * Code from Ajp11, from Apache's JServ.
  *
  * @author Craig R. McClanahan
  */
 
 public final class HexUtils {
-    // Code from Ajp11, from Apache's JServ
-    
-    // Table for HEX to DEC byte translation
+
+
+    // -------------------------------------------------------------- Constants
+
+
+    /**
+     *  Table for HEX to DEC byte translation.
+     */
     public static final int[] DEC = {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -92,7 +98,14 @@ public final class HexUtils {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     };
-    
+
+
+    /**
+     * Table for DEC to HEX byte translation.
+     */
+    public static final byte[] HEX = 
+    { '0', '1', '2', '3', '4', '5', '6', 
+      '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
 
     /**
@@ -100,6 +113,9 @@ public final class HexUtils {
      */
     private static StringManager sm =
 	StringManager.getManager("org.apache.tomcat.util.buf.res");
+
+
+    // --------------------------------------------------------- Static Methods
 
 
     /**
