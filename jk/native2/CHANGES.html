@@ -34,6 +34,16 @@ replaced.
 server mechanism. For Apache2 ( and as a default for servers not having a pool )
 we can use APR ( or the original jk_pool if APR is not available for a server ).
 
+<li>Native maps and apr based impl. jk2 maps now use virtual methods that allow
+server-specific implementation. That avoids copying the headers and attributes
+( and lazy access ). The apr based impl will be the default to be used for servers
+not providing a native map. ( we still use jk_map for object storage, as apr_table
+can be used only for string values )
+
+<li>Native loggers. Jk2 logger uses virtual methods and may use the 'native' 
+server-specific logging mechanism. The original file logger can be used
+for servers not providing a logger ( or until a specific logger is implemented ).
+
 <li>Reorganised and simplified data structures. Now most usefull information about
 workers is exposed in the core interfaces.
 
