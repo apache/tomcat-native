@@ -163,9 +163,12 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
             ap_update_mtime(r, ap_parseHTTPdate(val));
             ap_set_last_modified(r);
             apr_table_set(r->headers_out, name, val);
-        } else {                
-            /* apr_table_add(r->headers_out, name, val); */
-               apr_table_set(r->headers_out, name, val);
+        } else {     
+            /* All other headers may have multiple values like
+             * Set-Cookie, so use the table_add to allow that.
+             */
+             apr_table_add(r->headers_out, name, val);
+            /* apr_table_set(r->headers_out, name, val); */
         }
     }
 #endif
