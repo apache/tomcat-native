@@ -345,6 +345,7 @@
 		<row><td>AllOtherFiles1</td><td>{918FECBF-6B1D-4648-A0C9-BAE694AB1DF3}</td><td>CONF</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>AllOtherFiles10</td><td>{E461BDCC-5045-469B-96DF-CDB381D7413E}</td><td>BIN</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>AllOtherFiles11</td><td>{BE301E37-3373-4655-B6E0-B39ACCEC85DB}</td><td>BIN</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>AllOtherFiles12</td><td>{CEBD938A-39BA-4ACD-94F4-E87FF5D65383}</td><td>LOG</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>AllOtherFiles2</td><td>{BC4C5E05-7E81-40D6-A477-29D1658190F8}</td><td>LOG</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>AllOtherFiles3</td><td>{66FFA73A-17D7-46D7-911F-3E515C813FFC}</td><td>INSTALLDIR</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>AllOtherFiles4</td><td>{F7546761-05DF-4ED7-9F6D-854F42CE2333}</td><td>INSTALLDIR</td><td>8</td><td/><td/><td>145</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
@@ -1023,6 +1024,7 @@
 		<row><td>INSTALLDIR</td><td>ISRegistryComponent</td></row>
 		<row><td>INSTALLDIR</td><td>ISRegistryComponent1</td></row>
 		<row><td>INSTALLDIR</td><td>VirtualDirComponent</td></row>
+		<row><td>LOG</td><td>AllOtherFiles12</td></row>
 	</table>
 
 	<table name="CustomAction">
@@ -1038,7 +1040,7 @@
 		<row><td>ISSelfRegisterFiles</td><td>1025</td><td>ISSELFREG.DLL</td><td>ISSelfRegisterFiles</td><td/></row>
 		<row><td>ISSelfRegisterFinalize</td><td>1</td><td>ISSELFREG.DLL</td><td>ISSelfRegisterFinalize</td><td/></row>
 		<row><td>ISUnSelfRegisterFiles</td><td>1025</td><td>ISSELFREG.DLL</td><td>ISUnSelfRegisterFiles</td><td/></row>
-		<row><td>InstallFilter</td><td>70</td><td>NewBinary19</td><td/><td/></row>
+		<row><td>InstallFilter</td><td>326</td><td>NewBinary19</td><td/><td/></row>
 		<row><td>SetARPINSTALLLOCATION</td><td>51</td><td>ARPINSTALLLOCATION</td><td>[INSTALLDIR]</td><td/></row>
 		<row><td>SetAllUsersProfileNT</td><td>51</td><td>ALLUSERSPROFILE</td><td>[%SystemRoot]\Profiles\All Users</td><td/></row>
 		<row><td>caCreateVRoots</td><td>1025</td><td>binIISHelper</td><td>CreateIISVRoots</td><td/></row>
@@ -1610,6 +1612,7 @@
 		<row><td>AllOtherFiles1</td><td/><td/><td>_7B0061CE_6436_4507_9459_93572D569FC1_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>AllOtherFiles10</td><td/><td/><td>_E157B509_E34A_4875_AB50_BA85BE3F5DD2_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>AllOtherFiles11</td><td/><td/><td>_3B6FD6F4_F250_47A8_834C_D7EFD14C3BEF_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>AllOtherFiles12</td><td/><td/><td>_D98A783F_15B1_4E2D_B444_2AFE9178F6F0_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>AllOtherFiles2</td><td/><td/><td>_7322BDD9_A833_41E8_B75C_D99037B19E78_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>AllOtherFiles3</td><td/><td/><td>_C7E1E3F1_ABC8_4A0D_929F_A385EDF1E1F7_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>AllOtherFiles4</td><td/><td/><td>_D740564E_80EF_41ED_958F_95C1F4062224_FILTER</td><td/><td/><td/><td/></row>
@@ -2971,8 +2974,8 @@
 		<row><td>caCreateVRoots</td><td/><td>4002</td><td/><td/></row>
 		<row><td>caExtractIISSuppFiles</td><td/><td>1500</td><td/><td/></row>
 		<row><td>caIISCleanup</td><td/><td>6602</td><td/><td/></row>
-		<row><td>caRemoveVRoots</td><td/><td>3502</td><td/><td/></row>
-		<row><td>caRlbackVRoots</td><td/><td>3501</td><td/><td/></row>
+		<row><td>caRemoveVRoots</td><td/><td>3503</td><td/><td/></row>
+		<row><td>caRlbackVRoots</td><td/><td>3502</td><td/><td/></row>
 	</table>
 
 	<table name="InstallShield">
@@ -3255,8 +3258,6 @@ QgBpAG4AAQBSAGUAbABlAGEAcwBlAA==
 		<row><td>INSTALLLEVEL</td><td>100</td><td/></row>
 		<row><td>ISCHECKFORPRODUCTUPDATES</td><td>1</td><td/></row>
 		<row><td>ISENABLEDWUSFINISHDIALOG</td><td/><td/></row>
-		<row><td>ISSCRIPT_VERSION_MISSING</td><td>##IDS_ISSCRIPT_VERSION_MISSING##</td><td/></row>
-		<row><td>ISSCRIPT_VERSION_OLD</td><td>##IDS_ISSCRIPT_VERSION_OLD##</td><td/></row>
 		<row><td>ISVROOT_PORT_NO</td><td>0</td><td/></row>
 		<row><td>IS_COMPLUS_PROGRESSTEXT_COST</td><td>##IDS_COMPLUS_PROGRESSTEXT_COST##</td><td/></row>
 		<row><td>IS_COMPLUS_PROGRESSTEXT_INSTALL</td><td>##IDS_COMPLUS_PROGRESSTEXT_INSTALL##</td><td/></row>
@@ -3287,7 +3288,7 @@ QgBpAG4AAQBSAGUAbABlAGEAcwBlAA==
 		<row><td>ProductID</td><td>none</td><td/></row>
 		<row><td>ProductLanguage</td><td>1033</td><td/></row>
 		<row><td>ProductName</td><td>Jakarta Isapi Redirector</td><td/></row>
-		<row><td>ProductVersion</td><td>1.2.8</td><td/></row>
+		<row><td>ProductVersion</td><td>1.2.9</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
