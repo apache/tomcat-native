@@ -312,6 +312,10 @@ SOURCE=..\..\common\jk_workerEnv.c
 
 SOURCE=.\jk_dsapi_plugin.c
 # End Source File
+# Begin Source File
+
+SOURCE=.\jk_logger_domino.c
+# End Source File
 # End Group
 # End Group
 # Begin Group "Header Files"
