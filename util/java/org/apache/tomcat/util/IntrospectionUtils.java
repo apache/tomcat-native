@@ -385,16 +385,13 @@ public final class IntrospectionUtils {
                 if ("getProperty".equals(methods[i].getName())) {
                     getPropertyMethod = methods[i];
                 }
-                if ("getAttribute".equals(methods[i].getName())) {
-                    getPropertyMethod = methods[i];
-                }
             }
 
             // Ok, no setXXX found, try a getProperty("name")
             if (getPropertyMethod != null) {
                 Object params[] = new Object[1];
                 params[0] = name;
-                getPropertyMethod.invoke(o, params);
+                return getPropertyMethod.invoke(o, params);
             }
 
         } catch (IllegalArgumentException ex2) {
