@@ -222,8 +222,8 @@ class JSSESupport implements SSLSupport {
         for (int i = 0; i < maxTries; i++) {
             try {
                 int x = in.read(b);
-            } catch (SocketTimeoutException e) {
-                // ignore
+            } catch (IOException e) {
+                // ignore - presumably the timeout
             }
             if (listener.completed) {
                 break;
@@ -232,7 +232,7 @@ class JSSESupport implements SSLSupport {
         socket.removeHandshakeCompletedListener(listener);
         socket.setSoTimeout(oldTimeout);
         if (listener.completed == false) {
-            throw new SocketTimeoutException("SSL Cert handshake timeout");
+            throw new SocketException("SSL Cert handshake timeout");
         }
     }
 
