@@ -208,6 +208,7 @@ public class JkMain
             // XXX use IntrospectionUtil to find myself
             this.guessHome();
         }
+        home=wEnv.getJkHome();
         if( home != null ) {
             File hF=new File(home);
             File conf=new File( home, "conf" );

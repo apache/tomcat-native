@@ -201,6 +201,17 @@ public class ChannelSocket extends JkHandler {
     public int getInstanceId() {
         return port-startPort;
     }
+
+    /** If set to false, the thread pool will be created in
+     *  non-daemon mode, and will prevent main from exiting
+     */
+    public void setDaemon( boolean b ) {
+        tp.setDaemon( b );
+    }
+
+    public void getDaemon() {
+        return tp.getDaemon();
+    }
     
     /* ==================== ==================== */
     ServerSocket sSocket;
