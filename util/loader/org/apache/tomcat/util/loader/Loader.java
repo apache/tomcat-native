@@ -489,6 +489,13 @@ public final class Loader  {
         return result;
     }
 
+    void notifyModuleStart(Module module) {
+        if(listener!=null) listener.moduleStart(module);
+    }
+
+    void notifyModuleStop(Module module) {
+        listener.moduleStop(module);
+    }
     
     /** Add a module listener. 
      * 

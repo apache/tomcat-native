@@ -182,7 +182,7 @@ public class Module implements Serializable {
 
             classLoader.start();
 
-            getRepository().getLoader().listener.moduleStart(this);
+            getRepository().getLoader().notifyModuleStart(this);
 
         } catch (Throwable t) {
             log( "LifecycleException ", t );
@@ -204,7 +204,7 @@ public class Module implements Serializable {
         //if (DEBUG) 
         log("stop()", null);
         
-        getRepository().getLoader().listener.moduleStop(this);
+        getRepository().getLoader().notifyModuleStop(this);
         
         started = false;
 

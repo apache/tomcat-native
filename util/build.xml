@@ -18,8 +18,8 @@
     <property name="puretls.lib" location="${puretls.home}"/>
     <property name="puretls.jar" location="${puretls.lib}/puretls.jar"/>
     
-    <property name="commons-logging.jar" location="../lib/commons-logging.jar" />
-    <property name="jmx.jar" location="../lib/mx4j.jar" />
+    <property name="commons-logging.jar" location="${base.path}/commons-logging-1.0.4/commons-logging.jar" />
+    <property name="jmx.jar" location="${base.path}/mx4j-2.0.1/lib/mx4j.jar" />
     <property name="tomcat-util.lib" value="${tomcat-util.build}/lib" />
     <property name="tomcat-util.jar" value="${tomcat-util.lib}/tomcat-util.jar" />
     <property name="tomcat-loader.jar" value="${tomcat-util.lib}/tomcat-loader.jar" />
@@ -48,7 +48,6 @@
     <target name="build-prepare" depends="detect">
         <mkdir dir="${tomcat-util.build}"/>
         <mkdir dir="${tomcat-util.build}/classes"/>
-        <mkdir dir="${tomcat-util.build}/loader"/>
 	<mkdir dir="${tomcat-util.lib}"/>
     </target>
 
@@ -105,6 +104,7 @@
     </target>
 
     <target name="tomcat-loader.jar" depends="build-prepare">
+        <mkdir dir="${tomcat-util.build}/loader"/>
         <javac srcdir="loader"
            destdir="${tomcat-util.build}/loader"
            deprecation="${compile.deprecation}"
