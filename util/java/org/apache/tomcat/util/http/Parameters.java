@@ -360,7 +360,7 @@ public final class Parameters extends MultiMap {
 	    
 	    int valStart=nameEnd+1;
 	    int valEnd=ByteChunk.indexOf(bytes, valStart, end, '&');
-	    if( valEnd== -1 ) valEnd=end;
+	    if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
 	    
 	    pos=valEnd+1;
 	    
@@ -411,7 +411,7 @@ public final class Parameters extends MultiMap {
 
 	    int valStart=nameEnd+1;
 	    int valEnd=CharChunk.indexOf(chars, valStart, end, '&');
-	    if( valEnd== -1 ) valEnd=end;
+	    if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
 	    pos=valEnd+1;
 	    
 	    if( nameEnd<=nameStart ) {
@@ -502,7 +502,7 @@ public final class Parameters extends MultiMap {
 
 	    int valStart=nameEnd+1;
 	    int valEnd=str.indexOf('&', valStart);
-	    if( valEnd== -1 ) valEnd=end;
+	    if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
 	    pos=valEnd+1;
 	    
 	    if( nameEnd<=nameStart ) {
