@@ -353,6 +353,12 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
         configFile=wEnv->config->file;
     }
 
+    jkb=env->createBean2(env, wEnv->mbean->pool,"threadMutex", NULL);
+    if( jkb != NULL ) {
+        wEnv->cs=jkb->object;
+        jkb->init(env, jkb );
+    }
+
     if( wEnv->logger_name!=NULL){
         jkb=env->getBean(env,wEnv->logger_name);
         if (jkb == NULL){
@@ -550,8 +556,8 @@ static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
     jk_bean_t *jkb;
     int csOk;
     
-    JK_ENTER_CS(&wEnv->cs, csOk);
-    if( !csOk ) return JK_ERR;
+    if( wEnv->cs != NULL ) 
+        wEnv->cs->lock( env, wEnv->cs );
 
     ch->mbean->id=wEnv->channel_map->size( env, wEnv->channel_map );
     wEnv->channel_map->add(env, wEnv->channel_map, ch->mbean->name, ch);
@@ -562,7 +568,8 @@ static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
     if( jkb == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerEnv.addChannel(): Can't find ajp13 worker\n" );
-        JK_LEAVE_CS( &wEnv->cs, csOk );
+        if( wEnv->cs != NULL ) 
+            wEnv->cs->unLock( env, wEnv->cs );
         return JK_ERR;
     }
     ch->worker=jkb->object;
@@ -570,7 +577,8 @@ static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
     ch->worker->channel=ch;
             
     /* XXX Set additional parameters - use defaults otherwise */
-    JK_LEAVE_CS( &wEnv->cs, csOk );
+    if( wEnv->cs != NULL ) 
+        wEnv->cs->unLock( env, wEnv->cs );
 
     return JK_OK;
 }
@@ -579,9 +587,8 @@ static int jk2_workerEnv_addEndpoint(jk_env_t *env, jk_workerEnv_t *wEnv, jk_end
 {
     int csOk;
     
-    JK_ENTER_CS(&wEnv->cs, csOk);
-    if( !csOk ) return JK_ERR;
-
+    if( wEnv->cs != NULL ) 
+        wEnv->cs->lock( env, wEnv->cs );
     {
         int pos=wEnv->endpointMap->size( env, wEnv->endpointMap );
         
@@ -590,7 +597,8 @@ static int jk2_workerEnv_addEndpoint(jk_env_t *env, jk_workerEnv_t *wEnv, jk_end
 
         ep->mbean->init( env, ep->mbean );
     }
-    JK_LEAVE_CS( &wEnv->cs, csOk );
+    if( wEnv->cs != NULL ) 
+        wEnv->cs->unLock( env, wEnv->cs );
     return JK_OK;
 }
 
@@ -602,8 +610,8 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
     jk_worker_t *oldW = NULL;
     int csOk;
     
-    JK_ENTER_CS(&wEnv->cs, csOk);
-    if( !csOk ) return JK_ERR;
+    if( wEnv->cs != NULL ) 
+        wEnv->cs->lock( env, wEnv->cs ); 
 
     w->workerEnv=wEnv;
 
@@ -613,6 +621,8 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
 
     err=w->rPoolCache->init( env, w->rPoolCache,
                              1024 ); /* XXX make it unbound */
+
+    fprintf( stderr, "XXXWE.addWorker 2 %p %p\n", w, w->rPoolCache );
 
     wEnv->worker_map->put(env, wEnv->worker_map, w->mbean->name, w, (void *)&oldW);
             
@@ -624,7 +634,8 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
             oldW->mbean->destroy(env, oldW->mbean);
     }
     
-    JK_LEAVE_CS( &wEnv->cs, csOk );
+    if( wEnv->cs != NULL ) 
+        wEnv->cs->unLock( env, wEnv->cs );
     return JK_OK;
 }
 
@@ -787,7 +798,6 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
         env->alias(env, "shm:", "shm");
         wEnv->shm=(jk_shm_t *)jkb->object;
     }
-    JK_INIT_CS(&(wEnv->cs), csOk);
-    
+
     return JK_OK;
 }

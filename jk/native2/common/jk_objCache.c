@@ -72,44 +72,39 @@ jk2_objCache_put(jk_env_t *env, jk_objCache_t *_this, void *obj)
     if(_this->size <= 0 )
         return JK_ERR;
 
+    if( _this->cs != NULL )
+        _this->cs->lock(env, _this->cs );
+
+    rc=JK_FALSE;
     
-    JK_ENTER_CS(&_this->cs, rc);
-    if(rc==JK_TRUE) {
-
-        rc=JK_FALSE;
-
-        if( _this->count >= _this->size && _this->maxSize== -1 ) {
-            /* Realloc */
-            void **oldData=_this->data;
-            _this->data =
-                (void **)_this->pool->calloc(env, _this->pool,
-                                             2 * sizeof(void *) * _this->size);
-            memcpy( _this->data, oldData, _this->size );
-            _this->size *= 2;
-            /* XXX Can we destroy the old data ? Probably not.
-               It may be better to have a list - but it's unlikely
-               we'll have too many reallocations */
-        }
-
-        if( _this->count < _this->size ) {
-            _this->data[_this->count++]=obj;
-        }
-
-        JK_LEAVE_CS(&_this->cs, rc);
-        if(rc==JK_TRUE) {
-            /*   l->jkLog(l, JK_LOG_DEBUG, "Return endpoint to pool\n"); */
-            return JK_OK;
-        }
+    if( _this->count >= _this->size && _this->maxSize== -1 ) {
+        /* Realloc */
+        void **oldData=_this->data;
+        _this->data =
+            (void **)_this->pool->calloc(env, _this->pool,
+                                         2 * sizeof(void *) * _this->size);
+        memcpy( _this->data, oldData, _this->size );
+        _this->size *= 2;
+        /* XXX Can we destroy the old data ? Probably not.
+           It may be better to have a list - but it's unlikely
+           we'll have too many reallocations */
     }
+    
+    if( _this->count < _this->size ) {
+        _this->data[_this->count++]=obj;
+    }
+    
+    if( _this->cs != NULL )
+        _this->cs->unLock(env, _this->cs );
 
-    /* Can't enter CS */ 
-    return JK_ERR; 
+    return JK_OK;
 }
 
 static int
 jk2_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
     int i;
-
+    jk_bean_t *jkb;
+    
     if( cacheSize <= 0 ) {
         _this->size= 64;
     } else {
@@ -125,11 +120,10 @@ jk2_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
     if( _this->data==NULL )
         return JK_ERR;
     
-    JK_INIT_CS(&(_this->cs), i);
-    if (!i) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "objCache.create(): Can't init CS\n");
-        return JK_ERR;
+    jkb=env->createBean2(env, _this->pool,"threadMutex", NULL);
+    if( jkb != NULL ) {
+        _this->cs=jkb->object;
+        jkb->init(env, jkb );
     }
 
     return JK_OK;
@@ -139,7 +133,8 @@ static int
 jk2_objCache_destroy(jk_env_t *env, jk_objCache_t *_this ) {
     int i;
 
-    JK_DELETE_CS(&(_this->cs), i);
+    if( _this->cs != NULL ) 
+        _this->cs->mbean->destroy( env, _this->cs->mbean );
 
     _this->count=0;
     /* Nothing to free, we use pools */
@@ -154,18 +149,18 @@ jk2_objCache_get(jk_env_t *env, jk_objCache_t *_this )
     int rc;
     void *ae=NULL;
 
-    JK_ENTER_CS(&_this->cs, rc);
-    if (rc==JK_TRUE) {
-        if( _this->count > 0 ) {
-            _this->count--;
-            ae=_this->data[ _this->count ];
-        }
+    if( _this->cs != NULL )
+        _this->cs->lock(env, _this->cs );
 
-        JK_LEAVE_CS(&_this->cs, rc);
-
-        return ae;
+    if( _this->count > 0 ) {
+        _this->count--;
+        ae=_this->data[ _this->count ];
     }
-    return NULL;
+
+    if( _this->cs != NULL )
+        _this->cs->unLock(env, _this->cs );
+
+    return ae;
 }
 
 jk_objCache_t *jk2_objCache_create(jk_env_t *env, jk_pool_t *pool ) {

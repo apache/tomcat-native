@@ -69,7 +69,6 @@
 #include "jk_config.h"
 #include "jk_env.h"
 #include "jk_requtil.h"
-#include "jk_mt.h"
 
 #define DEFAULT_LB_FACTOR           (1.0)
 

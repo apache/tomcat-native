@@ -507,13 +507,14 @@ static void jk2_env_initEnv( jk_env_t *env, char *id ) {
     
     jk2_map_default_create( env, & env->_registry, env->globalPool );
     jk2_map_default_create( env, & env->_objects, env->globalPool );
+
+    env->tmpPool=env->globalPool->create(env, env->globalPool, HUGE_POOL_SIZE);;
+
+    jk2_registry_init(env);
     
     env->envCache= jk2_objCache_create( env, env->globalPool  );
     env->envCache->init( env, env->envCache, 64 );
     env->envCache->maxSize=-1;
-    env->tmpPool=env->globalPool->create(env, env->globalPool, HUGE_POOL_SIZE);;
-
-    jk2_registry_init(env);
 }
 
 
