@@ -102,11 +102,6 @@
 /* communication could use AJP14 */
 #define AJP14_PROTO_SUPPORT_AJP14_NEG   0x00010000 
 
-int JK_METHOD jk_handler_logon_factory( jk_env_t *env,
-                                        jk_pool_t *pool,
-                                        void **result,
-                                        char *type, char *name);
-
 #define AJP14_ENTROPY_SEED_LEN		32  /* we're using MD5 => 32 chars */
 #define AJP14_COMPUTED_KEY_LEN		32  /* we're using MD5 also */
 
@@ -259,7 +254,7 @@ static int jk_handler_lognok(jk_msg_t       *msg,
  */
 int JK_METHOD jk_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
                                         void **result,
-                                        char *type, char *name)
+                                        const char *type, const char *name)
 {
     jk_map_t *map;
     jk_handler_t *h;
