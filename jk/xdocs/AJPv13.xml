@@ -308,10 +308,11 @@ AJP13_FORWARD_REQUEST :=
     is_ssl           (boolean)
     num_headers      (integer)
     request_headers *(req_header_name req_header_value)
-    attributes      *(attribut_type attribute_value)
+    attributes      *(attribut_name attribute_value)
+    request_terminator (byte) OxFF
 </source>
 </p><p>
-The <code>request_headers</code> are:
+The <code>request_headers</code> have the following structure:
 </p><p>
 <source>
 req_header_name := 
@@ -323,59 +324,13 @@ req_header_value := (string)
 </source>
 </p><p>
 
-The <code>request_headers</code> are <code>req_header_name</code>
-(string) or integer (0xAOxx) and <code>req_header_value</code>.
-Where xx are the followings:
-</p><p>
-<table>
-  <tr>
-    <td>Value</td>
-    <td>Name</td>
-    <td>Meaning</td>
-  </tr>
-  <tr>
-    <td>0x08</td>
-    <td>SC_REQ_CONTENT_LENGTH</td>
-    <td>content length</td>
-  </tr>
-  <tr>
-    <td>0x07</td>
-    <td>SC_REQ_CONTENT_TYPE</td>
-    <td>content type</td>
-  </tr>
-  <tr>
-    <td>0x05</td>
-    <td>SC_REQ_AUTHORIZATION</td>
-    <td>Authorization</td>
-  </tr>
-</table>
-</p><p>
-When <code>req_header_name</code> is a string <code>req_header_value</code>
-is a string.
-</p><p>
-The <code>attributs</code> are optional and have the following
- structure:
+The <code>attributes</code> are optional and have the following structure:
 </p><p>
 <source>
-
-    ?context       (byte string)
-    ?servlet_path  (byte string)
-    ?remote_user   (byte string)
-    ?auth_type     (byte string)
-    ?query_string  (byte string)
-    ?jvm_route     (byte string)
-    ?ssl_cert      (byte string)
-    ?ssl_cipher    (byte string)
-    ?ssl_session   (byte string)
-
-    ?attributes   *(attribute_name attribute_value)
-    request_terminator (byte)
-
 attribute_name := (string)
 
 attribute_value := (string)
 
-request_terminator := 0xFF
 </source>
 </p><p>
 Not that the all-important header is "content-length', because it
@@ -422,31 +377,52 @@ SEARCH      21
 </p><p>
 
 <b>Headers</b><br/>
-  First, the number of headers is encoded.  Then, a series of header
-  name / value pairs follows.  Common header names are encoded as integers,
+  The structure of <code>request_headers</code> is the following:
+  First, the number of headers <code>num_headers</code> is encoded.
+  Then, a series of header name <code>req_header_name</code> / value
+  <code>req_header_value</code> pairs follows.
+  Common header names are encoded as integers,
   to save space.  If the header name is not in the list of basic headers,
   it is encoded normally (as a string, with prefixed length).  The list of
-  common headers and their codes is as follows (all are case-sensitive):
+  common headers <code>sc_req_header_name</code>and their codes
+  is as follows (all are case-sensitive):
 </p><p>
-<source>
-accept               0xA001
-accept-charset       0xA002
-accept-encoding      0xA003
-accept-language      0xA004
-authorization        0xA005
-connection           0xA006
-content-type         0xA007
-content-length       0xA008
-cookie               0xA009    
-cookie2              0xA00A
-host                 0xA00B
-pragma               0xA00C
-referer              0xA00D
-user-agent           0xA00E
-</source>
+<table>
+  <tr><td>
+    Name</td><td>Code value</td><td>Code name</td>
+  </tr><tr><td>
+    accept</td><td>0xA001</td><td>SC_REQ_ACCEPT</td>
+  </tr><tr><td>
+    accept-charset</td><td>0xA002</td><td>SC_REQ_ACCEPT_CHARSET</td>
+  </tr><tr><td>
+    accept-encoding</td><td>0xA003</td><td>SC_REQ_ACCEPT_ENCODING</td>
+  </tr><tr><td>
+    accept-language</td><td>0xA004</td><td>SC_REQ_ACCEPT_LANGUAGE</td>
+  </tr><tr><td>
+    authorization</td><td>0xA005</td><td>SC_REQ_AUTHORIZATION</td>
+  </tr><tr><td>
+    connection</td><td>0xA006</td><td>SC_REQ_CONNECTION</td>
+  </tr><tr><td>
+    content-type</td><td>0xA007</td><td>SC_REQ_CONTENT_TYPE</td>
+  </tr><tr><td>
+    content-length</td><td>0xA008</td><td>SC_REQ_CONTENT_LENGTH</td>
+  </tr><tr><td>
+    cookie</td><td>0xA009</td><td>SC_REQ_COOKIE</td>
+  </tr><tr><td>
+    cookie2</td><td>0xA00A</td><td>SC_REQ_COOKIE2</td>
+  </tr><tr><td>
+    host</td><td>0xA00B</td><td>SC_REQ_HOST</td>
+  </tr><tr><td>
+    pragma</td><td>0xA00C</td><td>SC_REQ_PRAGMA</td>
+  </tr><tr><td>
+    referer</td><td>0xA00D</td><td>SC_REQ_REFERER</td>
+  </tr><tr><td>
+    user-agent</td><td>0xA00E</td><td>SC_REQ_USER_AGENT</td>
+  </tr>
+</table>
 </p><p>
-  The Java code that reads this grabs the first two-byte integer, and, if
-  <A NAME="header_encoding">it sees an '0xA0'</A> in the most significant
+  The Java code that reads this grabs the first two-byte integer and if
+  it sees an <code>'0xA0'</code> in the most significant
   byte, it uses the integer in the second byte as an index into an array of
   header names.  If the first byte is not '0xA0', it assumes that the
   two-byte integer is the length of a string, which is then read in.
