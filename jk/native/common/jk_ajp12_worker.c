@@ -318,7 +318,7 @@ static int ajpv12_sendstring(ajp12_endpoint_t * p, const char *buffer)
     if (buffer && (bufferlen = strlen(buffer))) {
 #if defined(AS400) || defined(_OSD_POSIX)
         char buf[2048];
-        if (buflen < 2048) {
+        if (bufferlen < 2048) {
             memcpy(buf, buffer, bufferlen)
             jk_xlate_to_ascii(buf, bufferlen);
             return ajpv12_sendnbytes(p, buf, bufferlen);

@@ -303,7 +303,7 @@ CRTSRVPGM SRVPGM(MOD_JK/MOD_JK) +
              MOD_JK/JK_MAP MOD_JK/JK_MD5 +
              MOD_JK/JK_MSG_BUF MOD_JK/JK_POOL +
              MOD_JK/JK_SOCKBUF MOD_JK/JK_URI_W_M +
-             MOD_JK/JK_UTIL MOD_JK/JK_WORKER) +
+             MOD_JK/JK_UTIL MOD_JK/JK_WORKER +
              MOD_JK/JK_STATUS MOD_JK/JK_SHM) +
       EXPORT(*SRCFILE) +
       BNDDIR() +
