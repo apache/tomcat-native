@@ -1124,9 +1124,10 @@ static int jk_handler(request_rec *r)
       return DECLINED;
 
     workerEnv = (jk_workerEnv_t *)ap_get_module_config(r->server->module_config, 
-                                                     &jk_module);
-    worker_name = apr_table_get(r->notes, JK_WORKER_ID);
+                                                       &jk_module);
     l = workerEnv->l;
+
+    worker_name = apr_table_get(r->notes, JK_WORKER_ID);
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
@@ -1134,36 +1135,11 @@ static int jk_handler(request_rec *r)
     }
 
     if( worker_name == NULL ) {
-      /* we may be here because of a manual directive ( that overrides 
-         translate and
-         sets the handler directly ). We still need to know the worker.
-      */
-      if( workerEnv->num_of_workers == 1 ) {
-          /** We have a single worker ( the common case ). 
-              ( lb is a bit special, it should count as a single worker but 
-              I'm not sure how ). We also have a manual config directive that
-              explicitely give control to us. */
-          worker =  workerEnv->defaultWorker;
-          worker_name=worker->name;
-          l->jkLog(l, JK_LOG_DEBUG, 
+        /* SetHandler case - per_dir config should have the worker*/
+        worker =  workerEnv->defaultWorker;
+        worker_name=worker->name;
+        l->jkLog(l, JK_LOG_DEBUG, 
                  "Default worker for %s %s\n", r->uri, worker->name); 
-      } else {
-          jk_uriMap_t *uriMap=workerEnv->uriMap;
-          jk_uriEnv_t *uriEnv;
-          
-          uriEnv=uriMap->mapUri( uriMap, NULL, r->uri );
-          
-          if( uriEnv == NULL ) { 
-              worker =  workerEnv->defaultWorker;
-              worker_name=worker->name;
-          } else {
-              worker = uriEnv->worker;
-              worker_name= worker->name;
-          }
-          l->jkLog(l, JK_LOG_DEBUG, 
-                 "Manual configuration for %s %s\n",
-                 r->uri, workerEnv->defaultWorker->name); 
-      }
     }
 
     if (1) {

@@ -64,6 +64,15 @@
 #include "jk_pool.h"
 #include "jk_env.h"
 #include "apr_pools.h"
+#include "apr_strings.h"
+
+int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent );
+
+int JK_METHOD jk_pool_apr_factory(jk_env_t *env, void **result,
+                                  char *type, char *name);
+
+void jk_pool_apr_open(jk_pool_t *_this, apr_pool_t *realPool );
+
 
 /** Nothing - apache will take care
  */
@@ -112,10 +121,11 @@ static void *jk_pool_apr_realloc(jk_pool_t *p,
 }
 
 static void *jk_pool_apr_strdup(jk_pool_t *p, 
-                            const char *s)
+                                const char *s)
 {
     return apr_pstrdup( (apr_pool_t *)p->_private, s);
 }
+
 
 
 /* Not implemented yet */
