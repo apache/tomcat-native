@@ -633,7 +633,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                     }
                 } catch (Throwable t) {
                     if (step == 2) {
-                        PoolTcpEndpoint.log.debug("Handshake failed", t);
+                        PoolTcpEndpoint.log.error("Handshake failed", t);
                     } else {
                         PoolTcpEndpoint.log.error("Unexpected error", t);
                     }
