@@ -1,0 +1,2 @@
+Main-Class: org.apache.jk.server.JkMain
+Class-Path: tomcat-util.jar workers.jar

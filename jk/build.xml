@@ -18,7 +18,7 @@
 
     <!-- default locations -->
     <property name="tomcat33.home" 
-	      location="../../jakarta-tomcat/build/tomcat" />
+     location="../../jakarta-tomcat/build/tomcat/lib/common/tomcat_core.jar" />
     <property name="tomcat40.home" 
 	      location="../../jakarta-tomcat-4.0/build" />
     <property name="tomcat41.home" 
@@ -90,8 +90,8 @@
             <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
             <pathelement 
                          location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
-            <pathelement 
-                         location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+            <!-- pathelement 
+                         location="${tomcat33.home}/lib/container/tomcat_util.jar"/ -->
         </path>
 
     </target>
@@ -130,7 +130,8 @@
         </jar>
 	
 	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-jk2.jar"
-	     basedir="${jk.build}/WEB-INF/classes">
+	     basedir="${jk.build}/WEB-INF/classes"
+             manifest="conf/jk2.manifest" >
             <include name="org/apache/jk/**" />
             <exclude name="org/apache/jk/ant/**" />
         </jar>
