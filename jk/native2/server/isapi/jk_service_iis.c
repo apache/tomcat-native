@@ -43,7 +43,7 @@
 extern int send_groups;
 
 static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
-    static char crlf[3] = { (char)13, (char)10, '\0' };
+    static char crlf[3] = { '\r', '\n', '\0' };
     const char *reason;
     LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
     DWORD len_of_status;
@@ -124,66 +124,100 @@ static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
 }
 
 static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
-                                          void *b, unsigned len, unsigned *actually_read)
+                                          void *b, unsigned int len,
+                                          unsigned int *actually_read)
 {
+
     env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                  "Into jk_ws_service_t::read\n");
+                  "Into jk_ws_service_t::read\n");    
     
-    if (s && s->ws_private && b && actually_read) {
-        LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
+    *actually_read = 0;
+    if (!len) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "jk_ws_service_t::read, requested read length is zero\n");
+        return JK_OK;
+    }
+    if (s && s->ws_private && b) {
+        LPEXTENSION_CONTROL_BLOCK lpEcb = (LPEXTENSION_CONTROL_BLOCK)s->ws_private;
         
-        *actually_read = 0;
-        if ((s->content_read < (long)lpEcb->cbTotalBytes)&& !s->end_of_stream ){
-            if (len) {
-                char *buf = b;
-                long already_read = (long)lpEcb->cbAvailable - s->content_read;
-      
-                if (already_read >= (long)len) {
-                    memcpy(buf, lpEcb->lpbData + s->content_read, len);
-                    *actually_read = len;
-                } else {
-                    /*
-                     * Try to copy what we already have 
-                     */
-                    if (already_read > 0) {
-                        memcpy(buf, lpEcb->lpbData + s->content_read, already_read);
-                        buf   += already_read;
-                        len   -= already_read;
-//                        s->content_read = lpEcb->cbAvailable;
-            
-                        *actually_read = already_read;
-                    }
-                    if ((s->content_read+*actually_read)==lpEcb->cbTotalBytes) {
-                        s->end_of_stream=JK_TRUE;
-                    }
-                    /*
-                     * Now try to read from the client ...
-                     */
-                    if (!s->end_of_stream ) {
-                        if ( lpEcb->ReadClient(lpEcb->ConnID, buf, &len)) {
-                            *actually_read +=  len;            
-                        } else {
-                            env->l->jkLog(env,env->l, JK_LOG_ERROR, 
-                                   "jk_ws_service_t::read, ReadClient failed\n");
-                            return JK_OK;
-                        }
-                    }
+        if (s->end_of_stream) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "jk_ws_service_t::read, end of stram allready reached\n");
+            return JK_OK;
+        }
+
+        if ((DWORD)s->content_read < lpEcb->cbTotalBytes) {
+            DWORD  rdlen, toread = len;
+            LPBYTE buff  = (LPBYTE)b;
+
+            /* 
+             * Fix the read length in case the requested
+             * is larger then what's available
+             */
+            if (s->content_read + toread > lpEcb->cbTotalBytes)
+                toread = lpEcb->cbTotalBytes - s->content_read;
+            rdlen = toread;
+
+            /* 
+             * First read the already sent data from the client
+             * No need to call the ReadClient fuction for the
+             * data held in the control buffer
+             */
+            if ((DWORD)s->content_read < lpEcb->cbAvailable) {
+                /* Read the avail buffer */
+                if (s->content_read + toread > lpEcb->cbAvailable)
+                    toread = lpEcb->cbAvailable - s->content_read;
+                memcpy(buff, lpEcb->lpbData + s->content_read, toread);
+                *actually_read = toread;
+                
+                /* if that's all what that server wants to read, return... */
+                if (toread == rdlen) {
+                    env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                                  "jk_ws_service_t::read buffer readed %d from already %d of total %d bytes\n",
+                                  toread, s->content_read, lpEcb->cbAvailable);    
+                    return JK_OK;
+                }
+                else {
+                    /* Adjust the read buffer and length */
+                    rdlen -= toread;
+                    buff  += toread;
                 }
             }
+
+            /*
+            * Now try to read from the client ...
+            */
+            if (lpEcb->ReadClient(lpEcb->ConnID, b, &rdlen)) {
+                *actually_read += rdlen;        
+                 env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                               "jk_ws_service_t::read ReadClient readed %d (actually %d) bytes\n",
+                               rdlen, *actually_read);    
+
+            }
+            else {
+                env->l->jkLog(env,env->l, JK_LOG_ERROR, 
+                    "jk_ws_service_t::read, ReadClient failed\n");
+                /* XXX: We should return here HSE_STATUS_ERROR */
+                return JK_OK;
+            }
         }
-        if ((s->content_read+*actually_read)==lpEcb->cbTotalBytes) {
-            s->end_of_stream=JK_TRUE;
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                      "jk_ws_service_t::read actually readed %d from already %d of total %d bytes\n",
+                      *actually_read, s->content_read, lpEcb->cbTotalBytes);    
+        if ((s->content_read + *actually_read) == lpEcb->cbTotalBytes) {
+            s->end_of_stream = JK_TRUE;
         }
         return JK_OK;
     }
-    
-    env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                  "jk_ws_service_t::read, NULL parameters\n");
-    return JK_ERR;
+    else {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+              "jk_ws_service_t::read, NULL parameters\n");
+        return JK_ERR;
+    }
 }
 
 static int JK_METHOD jk2_service_iis_write(jk_env_t *env, jk_ws_service_t *s,
-                                           const void *b, unsigned len)
+                                           const void *b, unsigned int len)
 {
     env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                   "Into jk_ws_service_t::write\n");
@@ -192,7 +226,7 @@ static int JK_METHOD jk2_service_iis_write(jk_env_t *env, jk_ws_service_t *s,
         LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
         
         if (len) {
-            unsigned written = 0;           
+            unsigned int written = 0;           
             char *buf = (char *)b;
             
             if (!s->response_started) {
