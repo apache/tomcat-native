@@ -70,9 +70,38 @@ import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.IntrospectionUtils;
 
-/** Main class used to startup jk. 
+/** Main class used to startup and configure jk. It manages the conf/jk2.properties file
+ *  and is the target of JMX proxy.
  *
- * It is also useable standalone for testing or as a minimal socket server.
+ *  It implements a policy of save-on-change - whenever a property is changed at
+ *  runtime the jk2.properties file will be overriden. 
+ *
+ *  You can edit the config file when tomcat is stoped ( or if you don't use JMX or
+ *  other admin tools ).
+ *
+ *  The format of jk2.properties:
+ *  <dl>
+ *   <dt>TYPE[.LOCALNAME].PROPERTY_NAME=VALUE
+ *   <dd>Set a property on the associated component. TYPE will be used to
+ *   find the class name and instantiate the component. LOCALNAME allows
+ *   multiple instances. In JMX mode, TYPE and LOCALNAME will form the
+ *   JMX name ( eventually combined with a 'jk2' component )
+ *
+ *   <dt>NAME=VALUE
+ *   <dd>Define global properties to be used in ${} substitutions
+ *
+ *   <dt>class.COMPONENT_TYPE=JAVA_CLASS_NAME
+ *   <dd>Adds a new 'type' of component. We predefine all known types.
+ * </dl>
+ *
+ * Instances are created the first time a component name is found. In addition,
+ * 'handler.list' property will override the list of 'default' components that are
+ * loaded automatically.
+ *
+ *  Note that the properties file is just one (simplistic) way to configure jk. We hope
+ *  to see configs based on registry, LDAP, db, etc. ( XML is not necesarily better )
+ * 
+ * @author Costin Manolache
  */
 public class JkMain
 {
@@ -80,8 +109,19 @@ public class JkMain
     String propFile;
     Properties props=new Properties();
 
+    Properties modules=new Properties();
+    boolean modified=false;
+    boolean started=false;
+    
     public JkMain()
     {
+        modules.put("channelSocket", "org.apache.jk.common.ChannelSocket");
+        modules.put("channelUnix", "org.apache.jk.common.ChannelUn");
+        modules.put("channelJni", "org.apache.jk.common.ChannelJni");
+        modules.put("apr", "org.apache.jk.apr.AprImpl");
+        modules.put("shm", "org.apache.jk.common.Shm");
+        modules.put("request","org.apache.jk.common.HandlerRequest");
+        modules.put("container","org.apache.jk.common.HandlerRequest");
     }
     // -------------------- Setting --------------------
     
@@ -104,6 +144,10 @@ public class JkMain
             setJkHome( v );
         } 
         props.put( n, v );
+        if( started ) {
+            processProperty( n, v );
+            saveProperties();
+        }
     }
 
     /**
@@ -182,49 +226,45 @@ public class JkMain
         }
     }
     
+    static String defaultHandlers[]= { "apr",
+                                       "shm",
+                                       "request",
+                                       "container" };
     
     public void start() throws IOException
     {
-        if( props.get( "handler.request.className" )==null )
-            props.put( "handler.request.className",
-                       "org.apache.jk.common.HandlerRequest" );
-        
-        if( props.get( "handler.channel.className" )==null )
-            props.put( "handler.channel.className",
-                       "org.apache.jk.common.ChannelSocket" );
-
         // We must have at least 3 handlers:
         // channel is the 'transport'
         // request is the request processor or 'global' chain
         // container is the 'provider'
         // Additional handlers may exist and be used internally
         // or be chained to create one of the standard handlers 
-        
-        String workers=props.getProperty( "handler.list",
-                                          "channel,request,container" );
-        Vector workerNamesV= split( workers, ",");
-        if( log.isDebugEnabled() )
-            log.debug("workers: " + workers + " " + workerNamesV.size() );
-        
-        for( int i=0; i<workerNamesV.size(); i++ ) {
-            String name= (String)workerNamesV.elementAt( i );
-            if( log.isDebugEnabled() )
-                log.debug("Configuring " + name );
-            JkHandler w=wEnv.getHandler( name );
-            if( w==null )
-                w=(JkHandler)newInstance( "handler", name, null );
-            if( w==null ) {
-                log.warn("Can't create handler for name " + name );
-                continue;
-            }
 
-            wEnv.addHandler( name, w );
-            
-            processProperties( w, "handler."+ name + "." );
+        String handlers[]=defaultHandlers;
+        String workers=props.getProperty( "handler.list", null );
+        if( workers!=null ) {
+            handlers= split( workers, ",");
         }
+
+        // Load additional component declarations
+        processModules();
+        
+        for( int i=0; i<handlers.length; i++ ) {
+            String name= handlers[i];
+            JkHandler w=wEnv.getHandler( name );
+            if( w==null ) {
+                newHandler( name, "", name );
+            }
+        }
+
+        // Process properties - and add aditional handlers.
+        processProperties();
         
         wEnv.start();
+        started=true;
         long initTime=System.currentTimeMillis() - start_time;
+
+        this.saveProperties();
         log.info("Jk running... init time=" + initTime + " ms");
     }
 
@@ -255,6 +295,10 @@ public class JkMain
         Object target=wEnv.getHandler( handlerN );
 
         setBeanProperty( target, name, val );
+        if( started ) {
+            saveProperties();
+        }
+
     }
 
     public long getStartTime() {
@@ -292,47 +336,116 @@ public class JkMain
 
     // -------------------- Private methods --------------------
 
+    public  void saveProperties() {
+        // Temp - to check if it works
+        String outFile=propFile + ".save";
+        log.info("Saving properties " + outFile );
+        try {
+            props.save( new FileOutputStream(outFile), "AUTOMATICALLY GENERATED" );
+        } catch(IOException ex ){
+            ex.printStackTrace();
+        }
+    }
     
-    private void processProperties(Object o, String prefix) {
+    private void processProperties() {
         Enumeration keys=props.keys();
-        int plen=prefix.length();
+
+        while( keys.hasMoreElements() ) {
+            String name=(String)keys.nextElement();
+            String propValue=props.getProperty( name );
+
+            processProperty( name, propValue );
+        }
+    }
+
+    private void processProperty(String name, String propValue) {
+        String type=name;
+        String fullName=name;
+        String localName="";
+        String propName="";
+        int dot=name.indexOf(".");
+        int lastDot=name.lastIndexOf(".");
+        if( dot > 0 ) {
+            type=name.substring(0, dot );
+            if( dot != lastDot ) {
+                localName=name.substring( dot + 1, lastDot );
+                fullName=type + "." + localName;
+            } else {
+                fullName=type;
+            }
+            propName=name.substring( lastDot+1);
+        } else {
+            // No . -> global property, will be used in substitutions
+            return;
+        }
+        
+        if( log.isDebugEnabled() )
+            log.debug( "Processing " + type + ":" + localName + ":" + fullName + " " + propName );
+        if( "class".equals( type ) || "handler".equals( type ) ) {
+            return;
+        }
+        
+        JkHandler comp=wEnv.getHandler( fullName );
+        if( comp==null ) {
+            comp=newHandler( type, localName, fullName );
+        }
+        if( comp==null )
+            return;
+        
+        if( log.isDebugEnabled() ) 
+            log.debug("Setting " + propName + " on " + fullName + " " + comp);
+        this.setBeanProperty( comp, propName, propValue );
+    }
+
+    private JkHandler newHandler( String type, String localName, String fullName )
+    {
+        JkHandler handler;
+        String classN=modules.getProperty(type);
+        if( classN == null ) {
+            System.err.println("No class name for " + fullName + " " + type );
+            return null;
+        }
+        try {
+            Class channelclass = Class.forName(classN);
+            handler=(JkHandler)channelclass.newInstance();
+        } catch (Throwable ex) {
+            handler=null;
+            log.error( "Can't create " + fullName, ex );
+            return null;
+        }
+
+        wEnv.addHandler( fullName, handler );
+        return handler;
+    }
+
+    private void processModules() {
+        Enumeration keys=props.keys();
+        int plen=6;
         
         while( keys.hasMoreElements() ) {
             String k=(String)keys.nextElement();
-            if( ! k.startsWith( prefix ) )
+            if( ! k.startsWith( "class." ) )
                 continue;
 
             String name= k.substring( plen );
             String propValue=props.getProperty( k );
-            if( "className".equals( name ) )
-                continue;
-            this.setBeanProperty( o, name, propValue );
+
+            System.out.println("Register " + name + " " + propValue );
+            modules.put( name, propValue );
         }
     }
 
-    private Object newInstance( String type, String name, String def )
-        throws IOException
-    {
-        String classN=null;
-        try {
-            classN=props.getProperty( type + "." + name + ".className",
-                                             def );
-            if( classN== null ) return null;
-            Class channelclass = Class.forName(classN);
-            return channelclass.newInstance();
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-            throw new IOException("Cannot create channel class " + classN);
-        }
-    }
-
-    private Vector split(String s, String delim ) {
+    private String[] split(String s, String delim ) {
          Vector v=new Vector();
         StringTokenizer st=new StringTokenizer(s, delim );
         while( st.hasMoreTokens() ) {
             v.addElement( st.nextToken());
         }
-        return v;
+        String res[]=new String[ v.size() ];
+        for( int i=0; i<res.length; i++ ) {
+            res[i]=(String)v.elementAt(i);
+        }
+        return res;
     }
 
     // guessing home
