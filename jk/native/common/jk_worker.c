@@ -40,7 +40,7 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
     char **worker_list = NULL;
     unsigned num_of_workers = 0;
 
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (!jk_map_alloc(&worker_map)) {
         return JK_FALSE;
@@ -57,23 +57,23 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
 
     we->num_of_workers = num_of_workers;
     we->first_worker = worker_list[0];
-	JK_TRACE_EXIT(l);
+    JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
 
 
 void wc_close(jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
     close_workers(l);
-	JK_TRACE_EXIT(l);
+    JK_TRACE_EXIT(l);
 }
 
 jk_worker_t *wc_get_worker_for_name(const char *name, jk_logger_t *l)
 {
     jk_worker_t *rc;
 
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
     if (!name) {
         jk_log(l, JK_LOG_ERROR, "wc_get_worker_for_name NULL name\n");
     }
@@ -84,7 +84,7 @@ jk_worker_t *wc_get_worker_for_name(const char *name, jk_logger_t *l)
 
     jk_log(l, JK_LOG_DEBUG, "wc_get_worker_for_name, done %s a worker\n",
            rc ? "found" : "did not find");
-	JK_TRACE_EXIT(l);
+    JK_TRACE_EXIT(l);
     return rc;
 }
 
@@ -93,7 +93,7 @@ int wc_create_worker(const char *name,
                      jk_map_t *init_data,
                      jk_worker_t **rc, jk_worker_env_t *we, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (rc) {
         char *type = jk_get_worker_type(init_data, name);
@@ -136,7 +136,7 @@ int wc_create_worker(const char *name,
         }
 
         *rc = w;
-		JK_TRACE_EXIT(l);
+        JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
 
@@ -148,7 +148,7 @@ static void close_workers(jk_logger_t *l)
 {
     int sz = jk_map_size(worker_map);
 
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (sz > 0) {
         int i;
@@ -162,7 +162,7 @@ static void close_workers(jk_logger_t *l)
             }
         }
     }
-	JK_TRACE_EXIT(l);
+    JK_TRACE_EXIT(l);
     jk_map_free(&worker_map);
 }
 
@@ -173,7 +173,7 @@ static int build_worker_map(jk_map_t *init_data,
 {
     unsigned i;
 
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     for (i = 0; i < num_of_workers; i++) {
         jk_worker_t *w = NULL;
@@ -203,7 +203,7 @@ static int build_worker_map(jk_map_t *init_data,
         }
     }
 
-	JK_TRACE_EXIT(l);
+    JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
 

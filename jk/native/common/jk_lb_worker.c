@@ -274,7 +274,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_recoverable_error)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (e && e->endpoint_private && s && is_recoverable_error) {
         lb_endpoint_t *p = e->endpoint_private;
@@ -316,7 +316,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         rec->in_error_state = JK_FALSE;
                         rec->in_recovering = JK_FALSE;
                         rec->error_time = 0;
-						JK_TRACE_EXIT(l);
+                        JK_TRACE_EXIT(l);
                         return JK_TRUE;
                     }
                 }
@@ -345,7 +345,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * another worker... Lets try to do that.
                  */
                 jk_log(l, JK_LOG_DEBUG,
-					   __FUNCTION__ "::recoverable error... will try to recover on other host\n");
+                       __FUNCTION__ "::recoverable error... will try to recover on other host\n");
             }
             else {
                 /* NULL record, no more workers left ... */
@@ -363,7 +363,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
 static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (e && *e && (*e)->endpoint_private) {
         lb_endpoint_t *p = (*e)->endpoint_private;
@@ -374,11 +374,11 @@ static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
 
         free(p);
         *e = NULL;
-		JK_TRACE_EXIT(l);
+        JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
 
-	JK_LOG_NULL_PARAMS(l);
+    JK_LOG_NULL_PARAMS(l);
 
     return JK_FALSE;
 }
@@ -387,7 +387,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                               jk_map_t *props,
                               jk_worker_env_t *we, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (pThis && pThis->worker_private) {
         lb_worker_t *p = pThis->worker_private;
@@ -477,13 +477,13 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                        "local_worker_only: %s\n",
                        (p->local_worker_only ? "true" : "false"));
                 p->num_of_workers = num_of_workers;
-				JK_TRACE_EXIT(l);
+                JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
         }
     }
 
-	JK_LOG_NULL_PARAMS(l);
+    JK_LOG_NULL_PARAMS(l);
     return JK_FALSE;
 }
 
@@ -498,7 +498,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
 static int JK_METHOD get_endpoint(jk_worker_t *pThis,
                                   jk_endpoint_t **pend, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (pThis && pThis->worker_private && pend) {
         lb_endpoint_t *p = (lb_endpoint_t *) malloc(sizeof(lb_endpoint_t));
@@ -509,11 +509,11 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
         p->endpoint.done = done;
         *pend = &p->endpoint;
 
-		JK_TRACE_EXIT(l);
+        JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
     else {
-		JK_LOG_NULL_PARAMS(l);
+        JK_LOG_NULL_PARAMS(l);
     }
 
     return JK_FALSE;
@@ -521,7 +521,7 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
 
 static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (pThis && *pThis && (*pThis)->worker_private) {
         lb_worker_t *private_data = (*pThis)->worker_private;
@@ -531,7 +531,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
         jk_close_pool(&private_data->p);
         free(private_data);
 
-		JK_TRACE_EXIT(l);
+        JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
 
@@ -542,7 +542,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
 int JK_METHOD lb_worker_factory(jk_worker_t **w,
                                 const char *name, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (NULL != name && NULL != w) {
         lb_worker_t *private_data =
@@ -563,11 +563,11 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->worker.destroy = destroy;
 
         *w = &private_data->worker;
-		JK_TRACE_EXIT(l);
+        JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
     else {
-	    JK_LOG_NULL_PARAMS(l);
+        JK_LOG_NULL_PARAMS(l);
     }
 
     return JK_FALSE;

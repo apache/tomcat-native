@@ -127,11 +127,11 @@ void jk_append_libpath(jk_pool_t *p, const char *libpath);
 void jk_init_ws_service(jk_ws_service_t *s);
 
 
-#define	TC32_BRIDGE_TYPE	32
-#define	TC33_BRIDGE_TYPE	33
-#define	TC40_BRIDGE_TYPE	40
-#define	TC41_BRIDGE_TYPE	41
-#define	TC50_BRIDGE_TYPE	50
+#define TC32_BRIDGE_TYPE    32
+#define TC33_BRIDGE_TYPE    33
+#define TC40_BRIDGE_TYPE    40
+#define TC41_BRIDGE_TYPE    41
+#define TC50_BRIDGE_TYPE    50
 
 #ifdef __cplusplus
 extern "C"

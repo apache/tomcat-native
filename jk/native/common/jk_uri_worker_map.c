@@ -133,7 +133,7 @@ static int check_security_fraud(jk_uri_worker_map_t *uw_map, const char *uri)
 int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
                          jk_map_t *init_data, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (init_data && uw_map) {
         return uri_worker_map_open(*uw_map =
@@ -150,13 +150,13 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
 
 int uri_worker_map_free(jk_uri_worker_map_t **uw_map, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (uw_map && *uw_map) {
         uri_worker_map_close(*uw_map, l);
         free(*uw_map);
         *uw_map = NULL;
-		JK_TRACE_EXIT(l);
+        JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
     else
@@ -205,7 +205,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     char *uri;
     char *worker;
 
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
     if (uri_worker_map_realloc(uw_map) == JK_FALSE)
         return JK_FALSE;
 
@@ -338,7 +338,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     uw_map->maps[uw_map->size] = uwr;
     uw_map->size++;
 
-	JK_TRACE_EXIT(l);
+    JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
 
@@ -347,7 +347,7 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
 {
     int rc = JK_TRUE;
 
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     uw_map->size = 0;
     uw_map->capacity = 0;
@@ -401,7 +401,7 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
         }
     }
 
-	JK_TRACE_EXIT(l);
+    JK_TRACE_EXIT(l);
     return rc;
 }
 
@@ -419,12 +419,12 @@ int last_index_of(const char *str, char ch)
 
 int uri_worker_map_close(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (uw_map) {
         jk_close_pool(&uw_map->p);
         jk_close_pool(&uw_map->tp);
-		JK_TRACE_EXIT(l);
+        JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
 
@@ -463,7 +463,7 @@ void jk_no2slash(char *name)
 char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                         char *uri, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
 
     if (uw_map && uri && '/' == uri[0]) {
         unsigned i;
@@ -597,6 +597,6 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                __FUNCTION__ "::map_uri_to_worker, wrong parameters\n");
     }
 
-	JK_TRACE_EXIT(l);
+    JK_TRACE_EXIT(l);
     return NULL;
 }

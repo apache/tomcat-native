@@ -59,7 +59,7 @@ struct file_logger_t
 #define JK_LOG_EMERG_LEVEL   5
 #define JK_LOG_REQUEST_LEVEL 6
 
-#define JK_LOG_TRACE_WERB	"trace"
+#define JK_LOG_TRACE_WERB   "trace"
 #define JK_LOG_DEBUG_VERB   "debug"
 #define JK_LOG_INFO_VERB    "info"
 #define JK_LOG_WARNING_VERB "warn"
@@ -77,11 +77,11 @@ struct file_logger_t
 /* Debug level is compile time only 
  */
 #if defined (DEBUG) || (_DEBUG)
-#define JK_TRACE	1
+#define JK_TRACE    1
 #define JK_TRACE_ENTER(l) jk_log((l), JK_LOG_TRACE, "enter " __FUNCTION__ "\n")
 #define JK_TRACE_EXIT(l)  jk_log((l), JK_LOG_TRACE, "exit " __FUNCTION__ "\n")
 #else
-#define JK_TRACE	0
+#define JK_TRACE    0
 #define JK_TRACE_ENTER(l)
 #define JK_TRACE_EXIT(l)
 #endif
@@ -92,5 +92,5 @@ struct file_logger_t
 
 #ifdef __cplusplus
 }
-#endif		/* __cplusplus */
-#endif		/* JK_LOGGER_H */
+#endif      /* __cplusplus */
+#endif      /* JK_LOGGER_H */

@@ -30,94 +30,94 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-#define AJP14_PROTO					14
+#define AJP14_PROTO                 14
 
 #define AJP14_WS_HEADER             0x1235
 #define AJP14_SW_HEADER             0x1235      /* AJP14 use now the same header in both directions */
 
-#define AJP14_DEF_HOST            	("localhost")
-#define AJP14_DEF_PORT            	(8011)
+#define AJP14_DEF_HOST              ("localhost")
+#define AJP14_DEF_PORT              (8011)
 #define AJP14_READ_BUF_SIZE         (8*1024)
 #define AJP14_DEF_RETRY_ATTEMPTS    (1)
-#define AJP14_DEF_CACHE_SZ      	(1)
-#define AJP14_MAX_SEND_BODY_SZ  	(DEF_BUFFER_SZ - 6)
-#define AJP14_HEADER_LEN    		(4)
-#define AJP14_HEADER_SZ_LEN 		(2)
+#define AJP14_DEF_CACHE_SZ          (1)
+#define AJP14_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
+#define AJP14_HEADER_LEN            (4)
+#define AJP14_HEADER_SZ_LEN         (2)
 
 /*
  * Initial Login Phase (web server -> servlet engine)
  */
-#define AJP14_LOGINIT_CMD			(unsigned char)0x10
+#define AJP14_LOGINIT_CMD           (unsigned char)0x10
 
 /*
  * Second Login Phase (servlet engine -> web server), md5 seed is received
  */
-#define AJP14_LOGSEED_CMD			(unsigned char)0x11
+#define AJP14_LOGSEED_CMD           (unsigned char)0x11
 
 /*
  * Third Login Phase (web server -> servlet engine), md5 of seed + secret is sent
  */
-#define AJP14_LOGCOMP_CMD			(unsigned char)0x12
+#define AJP14_LOGCOMP_CMD           (unsigned char)0x12
 
 /*
  * Login Accepted (servlet engine -> web server)
  */
-#define AJP14_LOGOK_CMD				(unsigned char)0x13
+#define AJP14_LOGOK_CMD             (unsigned char)0x13
 
 /*
  * Login Rejected (servlet engine -> web server), will be logged
  */
-#define AJP14_LOGNOK_CMD			(unsigned char)0x14
+#define AJP14_LOGNOK_CMD            (unsigned char)0x14
 
 /*
  * Context Query (web server -> servlet engine), which URI are handled by servlet engine ?
  */
-#define AJP14_CONTEXT_QRY_CMD		(unsigned char)0x15
+#define AJP14_CONTEXT_QRY_CMD       (unsigned char)0x15
 
 /*
  * Context Info (servlet engine -> web server), URI handled response
  */
-#define AJP14_CONTEXT_INFO_CMD		(unsigned char)0x16
+#define AJP14_CONTEXT_INFO_CMD      (unsigned char)0x16
 
 /* 
  * Context Update (servlet engine -> web server), status of context changed
  */
-#define AJP14_CONTEXT_UPDATE_CMD	(unsigned char)0x17
+#define AJP14_CONTEXT_UPDATE_CMD    (unsigned char)0x17
 
 /*
  * Servlet Engine Status (web server -> servlet engine), what's the status of the servlet engine ?
  */
-#define AJP14_STATUS_CMD			(unsigned char)0x18
+#define AJP14_STATUS_CMD            (unsigned char)0x18
 
 /*
  * Secure Shutdown command (web server -> servlet engine), please servlet stop yourself.
  */
-#define AJP14_SHUTDOWN_CMD			(unsigned char)0x19
+#define AJP14_SHUTDOWN_CMD          (unsigned char)0x19
 
 /*
  * Secure Shutdown command Accepted (servlet engine -> web server)
  */
-#define AJP14_SHUTOK_CMD			(unsigned char)0x1A
+#define AJP14_SHUTOK_CMD            (unsigned char)0x1A
 
 /*
  * Secure Shutdown Rejected (servlet engine -> web server)
  */
-#define AJP14_SHUTNOK_CMD			(unsigned char)0x1B
+#define AJP14_SHUTNOK_CMD           (unsigned char)0x1B
 
 /*
  * Context Status (web server -> servlet engine), what's the status of the context ?
  */
-#define AJP14_CONTEXT_STATE_CMD		(unsigned char)0x1C
+#define AJP14_CONTEXT_STATE_CMD     (unsigned char)0x1C
 
 /*
  * Context Status Reply (servlet engine -> web server), status of context
  */
-#define AJP14_CONTEXT_STATE_REP_CMD	(unsigned char)0x1D
+#define AJP14_CONTEXT_STATE_REP_CMD (unsigned char)0x1D
 
 /*
  * Unknown Packet Reply (web server <-> servlet engine), when a packet couldn't be decoded
  */
-#define AJP14_UNKNOW_PACKET_CMD		(unsigned char)0x1E
+#define AJP14_UNKNOW_PACKET_CMD     (unsigned char)0x1E
 
 
 /*
@@ -187,9 +187,9 @@ extern "C"
 /*
  * Some failure codes
  */
-#define AJP14_BAD_KEY_ERR				0xFFFFFFFF
-#define AJP14_ENGINE_DOWN_ERR			0xFFFFFFFE
-#define AJP14_RETRY_LATER_ERR			0xFFFFFFFD
+#define AJP14_BAD_KEY_ERR               0xFFFFFFFF
+#define AJP14_ENGINE_DOWN_ERR           0xFFFFFFFE
+#define AJP14_RETRY_LATER_ERR           0xFFFFFFFD
 #define AJP14_SHUT_AUTHOR_FAILED_ERR    0xFFFFFFFC
 
 /*
@@ -202,8 +202,8 @@ extern "C"
 /* 
  * Misc defines
  */
-#define AJP14_ENTROPY_SEED_LEN		32      /* we're using MD5 => 32 chars */
-#define AJP14_COMPUTED_KEY_LEN		32      /* we're using MD5 also */
+#define AJP14_ENTROPY_SEED_LEN      32      /* we're using MD5 => 32 chars */
+#define AJP14_COMPUTED_KEY_LEN      32      /* we're using MD5 also */
 
 /*
  * The login structure

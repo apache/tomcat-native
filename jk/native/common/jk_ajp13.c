@@ -43,13 +43,13 @@ int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
         jk_log(l, JK_LOG_ERROR,
                "Error ajp13_marshal_shutdown_into_msgb - Error appending shutdown message\n");
 #ifdef JK_TRACE
-	    jk_log(l, JK_LOG_TRACE, "leave 1 ajp13_marshal_shutdown_into_msgb\n");
+        jk_log(l, JK_LOG_TRACE, "leave 1 ajp13_marshal_shutdown_into_msgb\n");
 #endif
         return JK_FALSE;
     }
 
 #ifdef JK_TRACE
-	    jk_log(l, JK_LOG_TRACE, "leave 2 ajp13_marshal_shutdown_into_msgb\n");
+        jk_log(l, JK_LOG_TRACE, "leave 2 ajp13_marshal_shutdown_into_msgb\n");
 #endif
     return JK_TRUE;
 }

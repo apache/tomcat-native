@@ -30,7 +30,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                               jk_map_t *props,
                               jk_worker_env_t *we, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
     return (ajp_validate(pThis, props, we, l, AJP13_PROTO));
 }
 
@@ -39,14 +39,14 @@ static int JK_METHOD init(jk_worker_t *pThis,
                           jk_map_t *props,
                           jk_worker_env_t *we, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
     return (ajp_init(pThis, props, we, l, AJP13_PROTO));
 }
 
 
 static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
     return (ajp_destroy(pThis, l, AJP13_PROTO));
 }
 
@@ -54,7 +54,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
 static int JK_METHOD get_endpoint(jk_worker_t *pThis,
                                   jk_endpoint_t **pend, jk_logger_t *l)
 {
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
     return (ajp_get_endpoint(pThis, pend, l, AJP13_PROTO));
 }
 
@@ -63,7 +63,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
 {
     ajp_worker_t *aw = (ajp_worker_t *) malloc(sizeof(ajp_worker_t));
 
-	JK_TRACE_ENTER(l);
+    JK_TRACE_ENTER(l);
     if (name == NULL || w == NULL) {
         jk_log(l, JK_LOG_ERROR, "In ajp13_worker_factory, NULL parameters\n");
         return JK_FALSE;
@@ -77,10 +77,10 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
 
     aw->name = strdup(name);
 
-	/* Lets core dump for every malloc.
-	   If we can not allocate few bytes what's the purpose
-	   to keep anyhow and waste cpr cycles
-	 */
+    /* Lets core dump for every malloc.
+       If we can not allocate few bytes what's the purpose
+       to keep anyhow and waste cpr cycles
+     */
 #if 0
     if (!aw->name) {
         free(aw);
@@ -105,6 +105,6 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
     aw->logon = NULL;           /* No Logon on AJP13 */
 
     *w = &aw->worker;
-	JK_TRACE_EXIT(l);
+    JK_TRACE_EXIT(l);
     return JK_TRUE;
 }

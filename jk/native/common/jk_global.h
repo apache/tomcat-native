@@ -143,9 +143,9 @@ extern "C"
  * RECO STATUS
  */
 
-#define RECO_NONE	0x00
-#define RECO_INITED	0x01
-#define RECO_FILLED	0x02
+#define RECO_NONE   0x00
+#define RECO_INITED 0x01
+#define RECO_FILLED 0x02
 
 /*
  * JK options
