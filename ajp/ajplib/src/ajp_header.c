@@ -209,7 +209,9 @@ static int sc_for_req_method(const char *method)
     /* NOTREACHED */
 } 
 
-
+/* XXX: since we already have a method_number in request_rec
+ * we don't need this function
+ */
 static int sc_for_req_header(const char *header_name)
 {
     char header[16];
@@ -297,6 +299,45 @@ static int sc_for_req_header(const char *header_name)
     /* NOTREACHED */
 }
 
+/* Apache method number to SC methods transform table */
+static const unsigned char sc_for_req_header_table[] = {
+    SC_M_GET,
+    SC_M_PUT,
+    SC_M_POST,
+    SC_M_DELETE,
+    0,                      /* M_DELETE */
+    SC_M_OPTIONS,
+    SC_M_TRACE,
+    0,                      /* M_PATCH  */
+    SC_M_PROPFIND,
+    SC_M_PROPPATCH,
+    SC_M_MKCOL,
+    SC_M_COPY,
+    SC_M_MOVE,
+    SC_M_LOCK,
+    SC_M_UNLOCK,
+    SC_M_VERSION_CONTROL,
+    SC_M_CHECKOUT,
+    SC_M_UNCHECKOUT,
+    SC_M_CHECKIN,
+    SC_M_UPDATE,
+    SC_M_LABEL,
+    SC_M_REPORT,
+    SC_M_MKWORKSPACE,
+    SC_M_MKACTIVITY,
+    SC_M_BASELINE_CONTROL,
+    SC_M_MERGE,           
+    0                       /* M_INVALID */
+};
+
+static int sc_for_req_header_by_id(int method_id)
+{
+    if (method_id < 0 || method_id > M_INVALID)
+        return UNKNOWN_METHOD;
+    else
+        return sc_for_req_header_table[method_id] ?
+               sc_for_req_header_table[method_id] : UNKNOWN_METHOD;
+}
 
 /*
  * Message structure
@@ -342,7 +383,7 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
                          "Into ajp_marshal_into_msgb");
 
-    if ((method = sc_for_req_method(r->method)) == UNKNOWN_METHOD) { 
+    if ((method = sc_for_req_header_by_id(r->method_number)) == UNKNOWN_METHOD) { 
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "Error ajp_marshal_into_msgb - No such method %s",
                r->method);
