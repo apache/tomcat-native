@@ -691,6 +691,7 @@ int ajp_handle_cping_cpong(ajp_endpoint_t *ae,
 int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
                             jk_logger_t    *l)
 {
+	char buf[32];
     unsigned attempt;
 
     for(attempt = 0; attempt < ae->worker->connect_retry_attempts; attempt++) {
@@ -699,8 +700,8 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
         if(ae->sd >= 0) {
             jk_log(l, JK_LOG_DEBUG,
                    "In jk_endpoint_t::ajp_connect_to_endpoint, "
-                   "connected sd = %d, port = %d\n",
-                   ae->sd, (int)ae->worker->worker_inet_addr.sin_port);
+                   "connected sd = %d to %s\n",
+                   ae->sd, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
 
              /* set last_access */
              ae->last_access = time(NULL);
@@ -718,8 +719,8 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
 
     jk_log(l, JK_LOG_INFO,
            "Error connecting to tomcat. Tomcat is probably not started or is "
-           "listening on the wrong port (%d). Failed errno = %d\n",
-           (int)ae->worker->worker_inet_addr.sin_port, errno);
+           "listening on the wrong host/port (%s). Failed errno = %d\n",
+           jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), errno);
     return JK_FALSE;
 }
 
@@ -766,6 +767,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     int           rc;
     int           msglen;
     unsigned int  header;
+    char buf[32];
 
     if ((ae->proto != AJP13_PROTO) && (ae->proto != AJP14_PROTO)) {
         jk_log(l, JK_LOG_ERROR,
@@ -780,8 +782,8 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     if(rc < 0) {
         jk_log(l, JK_LOG_ERROR,
                "ERROR: can't receive the response message from tomcat, "
-               "network problems or tomcat is down. err=%d\n",
-               rc);
+               "network problems or tomcat is down (%s), err=%d\n",
+               jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), rc);
         return JK_FALSE;
     }
 

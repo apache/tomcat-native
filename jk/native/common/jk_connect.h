@@ -53,6 +53,9 @@ int jk_tcp_socket_recvfull(int sd,
                            unsigned char *b, 
                            int len);
 
+char * jk_dump_hinfo(struct sockaddr_in *saddr, 
+                     char * buf);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

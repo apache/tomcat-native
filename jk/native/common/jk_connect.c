@@ -128,6 +128,7 @@ int jk_open_socket(struct sockaddr_in *addr,
                    int keepalive,
                    jk_logger_t *l)
 {
+    char buf[32];   
     int sock;
 
     jk_log(l, JK_LOG_DEBUG, "Into jk_open_socket\n");
@@ -135,9 +136,11 @@ int jk_open_socket(struct sockaddr_in *addr,
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if(sock > -1) {
         int ret;
-        /* Tries to connect to JServ (continues trying while error is EINTR) */
+        /* Tries to connect to Tomcat (continues trying while error is EINTR) */
         do {
-            jk_log(l, JK_LOG_DEBUG, "jk_open_socket, try to connect socket = %d\n", sock);
+            jk_log(l, JK_LOG_DEBUG, "jk_open_socket, try to connect socket = %d to %s\n", 
+                   sock, jk_dump_hinfo(addr, buf));
+                   
             ret = connect(sock,
                           (struct sockaddr *)addr,
                           sizeof(struct sockaddr_in));
@@ -277,4 +280,19 @@ int jk_tcp_socket_recvfull(int sd,
     }
 
     return rdlen;
+}
+
+/**
+ * dump a sockaddr_in in A.B.C.D:P in ASCII buffer
+ *
+ */
+char * jk_dump_hinfo(struct sockaddr_in *saddr, char * buf)
+{
+	in_addr_t laddr = htonl(saddr->sin_addr.s_addr);
+	in_port_t lport = htons(saddr->sin_port);
+
+	sprintf(buf, "%d.%d.%d.%d:%d", 
+	        (int)(laddr >> 24), (int)((laddr >> 16) & 0xff), (int)((laddr >> 8) & 0xff), (int)(laddr & 0xff), (int)lport);
+	        
+	return buf;
 }
