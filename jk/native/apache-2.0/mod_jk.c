@@ -1181,7 +1181,7 @@ static int jk_handler(request_rec *r)
 
     if(strcmp(r->handler,JK_HANDLER))    /* not for me, try next handler */
       return DECLINED;
-    
+
     conf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
                                                      &jk_module);
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
@@ -1189,7 +1189,7 @@ static int jk_handler(request_rec *r)
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
-    return rc;
+        return rc;
     }
 
     if( worker_name == NULL ) {
@@ -1204,7 +1204,7 @@ static int jk_handler(request_rec *r)
               explicitely give control to us. */
           worker_name=  worker_env.first_worker;
           jk_log(xl, JK_LOG_DEBUG, 
-                 "Manual configuration for %s %s %d\n",
+                 "Manual configuration for %s (%s) %d\n",
                  r->uri, worker_env.first_worker, worker_env.num_of_workers); 
       } else {
           worker_name = map_uri_to_worker(conf->uw_map, r->uri, xl);
@@ -1273,6 +1273,7 @@ static int jk_handler(request_rec *r)
         apr_pool_t *tpool= apr_pool_get_parent( parent_pool );
         
         apr_pool_userdata_get( &end, "jk_thread_endpoint", tpool );
+        jk_log(xl, JK_LOG_DEBUG, "Using per-thread worker %lx\n ", end );
         if(end==NULL ) {
             worker->get_endpoint(worker, &end, xl);
             apr_pool_userdata_set( end , "jk_thread_endpoint", 
@@ -1478,7 +1479,6 @@ static void jk_child_init(apr_pool_t *pconf,
     stuff )
 */
 static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) {
-    /*     jk_map_t *init_map = NULL; */
     jk_map_t *init_map = conf->worker_properties;
 
    if(conf->log_file && conf->log_level >= 0) {
@@ -1496,7 +1496,11 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
     }
 
     /*     if(map_alloc(&init_map)) { */
-    if( ! map_read_properties(init_map, conf->worker_file)) {
+    jk_log(conf->log, JK_LOG_DEBUG, 
+           "Reading map %s %d\n", conf->worker_file, map_size( init_map ) );
+    
+    if( (conf->worker_file != NULL ) &&
+        ! map_read_properties(init_map, conf->worker_file)) {
         if( map_size( init_map ) == 0 ) {
             jk_error_exit(APLOG_MARK, APLOG_EMERG, s, 
                           pconf, "No worker file and no worker options in httpd.conf \n"
@@ -1504,6 +1508,8 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
             return;
         }
     }
+    jk_log(conf->log, JK_LOG_DEBUG, 
+           "Read map %s %d\n", conf->worker_file, map_size( init_map ) );
     
     /* we add the URI->WORKER MAP since workers using AJP14
        will feed it */
