@@ -504,6 +504,10 @@ final class CoyoteAdapter
         int start = uriBC.getStart();
         int end = uriBC.getEnd();
 
+        // URL * is acceptable
+        if ((end - start == 1) && b[start] == (byte) '*')
+          return true;
+
         int pos = 0;
         int index = 0;
 
