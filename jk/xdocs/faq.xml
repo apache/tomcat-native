@@ -276,6 +276,19 @@ before your httpd server starts.
 </p>
 </subsection>
 
+<subsection name="Mixed errors when building via configure">
+<p>
+configure assume you have some GNU tools allready installed and configured for your system, and ad minima <b>libtool</b>.
+</p>
+<p>
+Also some systems may have mixed cc and gcc setup which may make you puzzled when trying to link an Apache built with native
+c compiler with a jk/jk2 build with gcc.
+</p>
+<p>
+In fine some native make didn't works as expect so you should use a GNU make <b>gmake</b>.
+</p>
+</subsection>
+
 </section>
 
 <section name="IIS">
