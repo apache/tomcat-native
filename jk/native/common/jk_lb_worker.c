@@ -427,7 +427,13 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].lb_factor = jk_get_lb_factor(props, 
                                                                worker_names[i]);
                 p->lb_workers[i].lb_factor = 1/p->lb_workers[i].lb_factor;
-                p->lb_workers[i].lb_value = 0.0;
+                /* 
+                 * Allow using lb in fault-tolerant mode.
+                 * Just set lbfactor in worker.properties to 0 to have 
+                 * a worker used only when principal is down or session route
+                 * point to it. Provided by Paul Frieden <pfrieden@dchain.com>
+                 */
+                p->lb_workers[i].lb_value = p->lb_workers[i].lb_factor;
                 p->lb_workers[i].in_error_state = JK_FALSE;
                 p->lb_workers[i].in_recovering  = JK_FALSE;
                 if(!wc_create_worker(p->lb_workers[i].name, 
