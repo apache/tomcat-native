@@ -475,17 +475,13 @@ public class PoolTcpEndpoint { // implements Endpoint {
     }
 
     void setSocketOptions(Socket socket)
-    {
-	try {
-	    if(linger >= 0 ) 
-		socket.setSoLinger( true, linger);
-	    if( tcpNoDelay )
-		socket.setTcpNoDelay(tcpNoDelay);
-	    if( socketTimeout > 0 )
-		socket.setSoTimeout( socketTimeout );
-	} catch(  SocketException se ) {
-	    se.printStackTrace();
-	}
+        throws SocketException {
+        if(linger >= 0 ) 
+            socket.setSoLinger( true, linger);
+        if( tcpNoDelay )
+            socket.setTcpNoDelay(tcpNoDelay);
+        if( socketTimeout > 0 )
+            socket.setSoTimeout( socketTimeout );
     }
 
 }
