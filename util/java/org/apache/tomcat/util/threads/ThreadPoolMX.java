@@ -81,23 +81,11 @@ public class ThreadPoolMX extends ThreadPool {
         super();
     }
 
-    public void setDomain(String domain) {
-        this.domain=domain;
-    }
-    public String getDomain() {
-        return domain;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
+    public void register(String name) {
         this.name=name;
         reg=Registry.getRegistry();
         try {
-            reg.registerComponent(this, domain, "ThreadPool",
-                    "name=" + name);
+            reg.registerComponent(this, domain, "ThreadPool",  name);
         } catch( Exception ex ) {
             log.error( "Error registering thread pool", ex );
         }

@@ -123,8 +123,6 @@ public class ThreadPool  {
 
     /* Flag to control if the main thread is 'daemon' */
     protected boolean isDaemon=true;
-    
-    static int debug=0;
 
     /** The threads that are part of the pool.
      * Key is Thread, value is the ControlRunnable
@@ -132,6 +130,10 @@ public class ThreadPool  {
     protected Hashtable threads=new Hashtable();
 
     protected Vector listeners=new Vector();
+
+    /** Name of the threadpool
+     */
+    protected String name=null;
 
     /**
      * Helper object for logging
@@ -148,15 +150,30 @@ public class ThreadPool  {
     }
 
 
-    public static ThreadPool createThreadPool() {
-        try {
-            Class.forName( "org.apache.commons.modeler.Registry");
-            Class tpc=Class.forName( "org.apache.tomcat.util.threads.ThreadPoolMX");
-            ThreadPool res=(ThreadPool)tpc.newInstance();
-            return res;
-        } catch( Exception ex ) {
+    /** Create a ThreadPool instance.
+     *
+     * @param jmx True if you want a pool with JMX support. A regular pool
+     *  will be returned if JMX or the modeler are not available.
+     *
+     * @return ThreadPool instance. If JMX support is requested, you need to
+     *   call register() in order to set a name.
+     */
+    public static ThreadPool createThreadPool(boolean jmx) {
+        if( jmx ) {
+            try {
+                Class.forName( "org.apache.commons.modeler.Registry");
+                Class tpc=Class.forName( "org.apache.tomcat.util.threads.ThreadPoolMX");
+                ThreadPool res=(ThreadPool)tpc.newInstance();
+                return res;
+            } catch( Exception ex ) {
+            }
         }
         return new ThreadPool();
+    }
+
+    public void register( String name ) {
+        // nothing in the base class - it'll register in jmx mode
+        // We could use the name to create a ThreadGroup and name threads
     }
 
     public synchronized void start() {
@@ -213,7 +230,7 @@ public class ThreadPool  {
     }
 
     public static int getDebug() {
-        return debug;
+        return 0;
     }
 
     /** The default is true - the created threads will be
