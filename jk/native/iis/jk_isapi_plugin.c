@@ -91,11 +91,13 @@
  *
  */
 #define URI_HEADER_NAME         ("TOMCATURI:")
+#define QUERY_HEADER_NAME       ("TOMCATQUERY:")
 #define WORKER_HEADER_NAME      ("TOMCATWORKER:")
 #define TOMCAT_TRANSLATE_HEADER_NAME ("TOMCATTRANSLATE:")
 #define CONTENT_LENGTH          ("CONTENT_LENGTH:")
 
 #define HTTP_URI_HEADER_NAME     ("HTTP_TOMCATURI")
+#define HTTP_QUERY_HEADER_NAME   ("HTTP_TOMCATQUERY")
 #define HTTP_WORKER_HEADER_NAME  ("HTTP_TOMCATWORKER")
 
 #define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\1.0")
@@ -574,9 +576,9 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
        (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType)) { 
         PHTTP_FILTER_PREPROC_HEADERS p = (PHTTP_FILTER_PREPROC_HEADERS)pvNotification;
         char uri[INTERNET_MAX_URL_LENGTH]; 
-		char snuri[INTERNET_MAX_URL_LENGTH]="/";
-		char Host[INTERNET_MAX_URL_LENGTH];
-		char Translate[INTERNET_MAX_URL_LENGTH];
+        char snuri[INTERNET_MAX_URL_LENGTH]="/";
+        char Host[INTERNET_MAX_URL_LENGTH];
+        char Translate[INTERNET_MAX_URL_LENGTH];
 
         char *query;
         DWORD sz = sizeof(uri);
@@ -591,6 +593,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
          * Just in case somebody set these headers in the request!
          */
         p->SetHeader(pfc, URI_HEADER_NAME, NULL);
+        p->SetHeader(pfc, QUERY_HEADER_NAME, NULL);
         p->SetHeader(pfc, WORKER_HEADER_NAME, NULL);
         p->SetHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, NULL);
         
@@ -605,13 +608,13 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             char *worker=0;
             query = strchr(uri, '?');
             if (query) {
-                *query = '\0';
+                *query++ = '\0';
             }
 
             rc = unescape_url(uri);
             if (rc == BAD_REQUEST) {
                 jk_log(logger, JK_LOG_ERROR, 
-                       "HttpFilterProc [%s] contains on or more invalid escape sequences.\n", 
+                       "HttpFilterProc [%s] contains one or more invalid escape sequences.\n", 
                        uri);
                 write_error_response(pfc,"400 Bad Request",
                         "<HTML><BODY><H1>Request contains invalid encoding</H1></BODY></HTML>");
@@ -641,17 +644,6 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                        uri);
                 worker = map_uri_to_worker(uw_map, uri, logger);
             }
-            if(query) {
-                char *querytmp = uri + strlen(uri);
-                *querytmp++ = '?';
-                query++;
-                /* if uri was shortened, move the query characters */
-                if (querytmp != query) {
-                    while (*query != '\0')
-                        *querytmp++ = *query++;
-                    *querytmp = '\0';
-                }
-            }
 
             if (worker) {
                 /* This is a servlet, should redirect ... */
@@ -660,7 +652,9 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                        uri, worker);
 
                 
-				if (!p->AddHeader(pfc, URI_HEADER_NAME, uri) || 
+                if(!p->AddHeader(pfc, URI_HEADER_NAME, uri) || 
+                   ( (query != NULL && strlen(query) > 0)
+                           ? !p->AddHeader(pfc, QUERY_HEADER_NAME, query) : FALSE ) || 
                    !p->AddHeader(pfc, WORKER_HEADER_NAME, worker) ||
                    !p->SetHeader(pfc, "url", extension_uri)) {
                     jk_log(logger, JK_LOG_ERROR, 
@@ -906,6 +900,10 @@ static int init_jk(char *serverName)
 
                 map_free(&map2);
             }
+        } else {
+            jk_log(logger, JK_LOG_EMERG, 
+                    "Unable to read worker mount file %s.\n", 
+                    worker_mount_file);
         }
         map_free(&map);
     }
@@ -922,6 +920,10 @@ static int init_jk(char *serverName)
                 if (wc_open(map, &worker_env, logger)) {
                     rc = JK_TRUE;
                 }
+            } else {
+                jk_log(logger, JK_LOG_EMERG, 
+                        "Unable to read worker file %s.\n", 
+                        worker_file);
             }
             map_free(&map);
         }
@@ -1084,18 +1086,9 @@ static int init_ws_service(isapi_private_data_t *private_data,
 
     GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, (*worker_name));           
     GET_SERVER_VARIABLE_VALUE(HTTP_URI_HEADER_NAME, s->req_uri);     
+    GET_SERVER_VARIABLE_VALUE(HTTP_QUERY_HEADER_NAME, s->query_string);     
 
-    if (s->req_uri) {
-        char *t = strchr(s->req_uri, '?');
-        if (t) {
-            *t = '\0';
-            t++;
-            if (!strlen(t)) {
-                t = NULL;
-            }
-        }
-        s->query_string = t;
-    } else {
+    if (s->req_uri == NULL) {
         s->query_string = private_data->lpEcb->lpszQueryString;
         *worker_name    = DEFAULT_WORKER_NAME;
         GET_SERVER_VARIABLE_VALUE("URL", s->req_uri);       
