@@ -141,7 +141,7 @@ static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this,
                                             jk_worker_t *worker, 
                                             jk_logger_t *l )
 {
-    int err=jk_log(l, JK_LOG_DEBUG, "Into jk_channel_socket_init\n");
+    int err=l->jkLog(l, JK_LOG_DEBUG, "Into jk_channel_socket_init\n");
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(_this->_privatePtr);
 
@@ -158,10 +158,10 @@ static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this,
     
     err=jk_channel_socket_resolve( host, port, rc );
     if( err!= JK_TRUE ) {
-	jk_log(l, JK_LOG_ERROR, "jk_channel_socket_init: "
+	l->jkLog(l, JK_LOG_ERROR, "jk_channel_socket_init: "
 	       "can't resolve %s:%d errno=%d\n", host, port, errno );
     }
-    jk_log(l, JK_LOG_DEBUG, "jk_channel_socket_init: ok "
+    l->jkLog(l, JK_LOG_DEBUG, "jk_channel_socket_init: ok "
 	   " %s:%d\n", host, port );
 
     return err;
@@ -202,13 +202,29 @@ static int JK_METHOD jk_channel_socket_resolve(char *host, short port,
     return JK_TRUE;
 }
 
+static int jk_close_socket(int s)
+{
+#ifdef WIN32
+    if(INVALID_SOCKET  != s) {
+        return closesocket(s) ? -1 : 0; 
+    }
+#else 
+    if(-1 != s) {
+        return close(s); 
+    }
+#endif
+
+    return -1;
+}
+
+
 /** connect to Tomcat (jk_open_socket)
  */
 static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
                                             jk_endpoint_t *endpoint)
 {
     jk_logger_t *l=_this->logger;
-    int err=jk_log(l, JK_LOG_DEBUG, "Into jk_channel_socket_open\n");
+    int err=l->jkLog(l, JK_LOG_DEBUG, "Into jk_channel_socket_open\n");
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(_this->_privatePtr);
 
@@ -222,7 +238,7 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
         int ret;
         /* Tries to connect to JServ (continues trying while error is EINTR) */
         do {
-            jk_log(l, JK_LOG_DEBUG, "jk_open_socket, try to connect socket = %d\n", sock);
+            l->jkLog(l, JK_LOG_DEBUG, "jk_open_socket, try to connect socket = %d\n", sock);
             ret = connect(sock,
                           (struct sockaddr *)addr,
                           sizeof(struct sockaddr_in));
@@ -231,7 +247,7 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
                 errno = WSAGetLastError() - WSABASEERR;
             }
 #endif /* WIN32 */
-            jk_log(l, JK_LOG_DEBUG, "jk_open_socket, after connect ret = %d\n", ret);
+            l->jkLog(l, JK_LOG_DEBUG, "jk_open_socket, after connect ret = %d\n", ret);
         } while (-1 == ret && EINTR == errno);
 
         /* Check if we connected */
@@ -239,7 +255,7 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
             if(ndelay) {
                 int set = 1;
 
-                jk_log(l, JK_LOG_DEBUG, "jk_open_socket, set TCP_NODELAY to on\n");
+                l->jkLog(l, JK_LOG_DEBUG, "jk_open_socket, set TCP_NODELAY to on\n");
                 setsockopt(sock, 
                            IPPROTO_TCP, 
                            TCP_NODELAY, 
@@ -247,7 +263,7 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
                            sizeof(set));
             }   
 
-            jk_log(l, JK_LOG_DEBUG, "jk_open_socket, return, sd = %d\n", sock);
+            l->jkLog(l, JK_LOG_DEBUG, "jk_open_socket, return, sd = %d\n", sock);
 	    {
 		jk_channel_socket_data_t *sd=endpoint->channelData;
 		if( sd==NULL ) {
@@ -266,7 +282,7 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
 #endif /* WIN32 */
     }    
 
-    jk_log(l, JK_LOG_ERROR, "jk_open_socket, connect() failed errno = %d %s\n",
+    l->jkLog(l, JK_LOG_ERROR, "jk_open_socket, connect() failed errno = %d %s\n",
 	   errno, strerror( errno ) ); 
 
     return -1;
@@ -284,16 +300,7 @@ int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
 	return JK_FALSE;
     sd=chD->sock;
 
-#ifdef WIN32
-    if(INVALID_SOCKET  != sd) {
-        return closesocket(sd) ? JK_FALSE : JK_TRUE;; 
-    }
-#else 
-    if(-1 != sd) {
-        return close(sd);
-    }
-#endif
-    return JK_FALSE;
+    return jk_close_socket(sd);
 }
 
 /** send a long message

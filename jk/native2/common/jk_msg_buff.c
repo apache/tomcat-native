@@ -434,13 +434,13 @@ void jk_dump_buff(jk_logger_t *l,
                       jk_msg_buf_t * msg)
 {
 #ifdef USE_ALSO_BODY
-        jk_log(l, file, line, level, "%s #%d %.*s\n",
+        l->jkLog(l, file, line, level, "%s #%d %.*s\n",
                   what,
                   jk_b_get_len(msg),
                   jk_b_get_len(msg),
                   jk_b_get_buff(msg));
 #else
-jk_log(l, file, line, level, "%s #%d\n", what, jk_b_get_len(msg));
+l->jkLog(l, file, line, level, "%s #%d\n", what, jk_b_get_len(msg));
 #endif
 }
 

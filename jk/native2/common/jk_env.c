@@ -108,13 +108,17 @@ static void *jk_env_getInstance( jk_env_t *_this, const char *type, const char *
 
     fac=_this->getFactory( _this, type, name);
     if( fac==NULL ) {
-        jk_log(_this->logger, JK_LOG_ERROR,"Error getting factory for %s:%s\n", type, name);
+        if( _this->logger )
+            _this->logger->jkLog(_this->logger, JK_LOG_ERROR,
+                                "Error getting factory for %s:%s\n", type, name);
         return NULL;
     }
 
     fac( _this, &result, type, name );
     if( result==NULL ) {
-        jk_log(_this->logger, JK_LOG_ERROR,"Error getting instance for %s:%s\n", type, name);
+        if( _this->logger )
+            _this->logger->jkLog(_this->logger, JK_LOG_ERROR,
+                                "Error getting instance for %s:%s\n", type, name);
         return NULL;
     }
     

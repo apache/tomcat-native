@@ -110,6 +110,9 @@ int JK_METHOD jk_workerEnv_factory(jk_env_t *env, void **result,
 int JK_METHOD jk_uriMap_factory(jk_env_t *env, void **result,
                                    char *type, char *name);
 
+int JK_METHOD jk_logger_file_factory(jk_env_t *env, void **result,
+                                     char *type, char *name);
+
 
 /**
  *   Init the components that we compile in by default. 
@@ -131,6 +134,7 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
    * and because the MetroWerks compiler (used for NetWare) treats this as an
    * error, I'm casting the function pointers to (void *) - mmanders
    */
+  env->registerFactory( env, "logger", "file",   &jk_logger_file_factory );
   env->registerFactory( env, "workerEnv", "default", &jk_workerEnv_factory );
   env->registerFactory( env, "uriMap", "default",    &jk_uriMap_factory );
   env->registerFactory( env, "worker", "ajp13", &jk_worker_ajp14_factory );

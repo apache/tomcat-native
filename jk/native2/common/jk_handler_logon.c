@@ -140,12 +140,12 @@ static int handle_logon(ajp_endpoint_t *ae,
     
     ajp14_marshal_login_init_into_msgb(msg, jl, l);
     
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon - send init\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:logon - send init\n");
     
     if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)	
         return JK_FALSE;
     
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon - wait init reply\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:logon - wait init reply\n");
     
     jk_b_reset(msg);
     
@@ -153,7 +153,7 @@ static int handle_logon(ajp_endpoint_t *ae,
         return JK_FALSE;
     
     if ((cmd = jk_b_get_byte(msg)) != AJP14_LOGSEED_CMD) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14:logon: awaited command %d, received %d\n",
                AJP14_LOGSEED_CMD, cmd);
         return JK_FALSE;
@@ -162,7 +162,7 @@ static int handle_logon(ajp_endpoint_t *ae,
     if (ajp14_unmarshal_login_seed(msg, jl, l) != JK_TRUE)
         return JK_FALSE;
     
-    jk_log(l, JK_LOG_DEBUG,
+    l->jkLog(l, JK_LOG_DEBUG,
            "Into ajp14:logon - received entropy %s\n", jl->entropy);
     
     ajp14_compute_md5(jl, l);
@@ -182,7 +182,7 @@ static int handle_logon(ajp_endpoint_t *ae,
         
     case AJP14_LOGOK_CMD  :	
         if (ajp14_unmarshal_log_ok(msg, jl, l) == JK_TRUE) {
-            jk_log(l, JK_LOG_DEBUG,
+            l->jkLog(l, JK_LOG_DEBUG,
                    "Successfully connected to servlet-engine %s\n",
                    jl->servlet_engine_name);
             return JK_TRUE;
@@ -204,7 +204,7 @@ int logon(ajp_endpoint_t *ae,
     jk_msg_buf_t  *msg;
     int 	  rc;
     
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:logon\n");
 
     msg = jk_b_new(p);
     jk_b_set_buffer_size(msg, DEF_BUFFER_SZ);
@@ -226,7 +226,7 @@ static void ajp14_compute_md5(jk_login_service_t *s,
     jk_md5((const unsigned char *)s->entropy,
            (const unsigned char *)s->secret_key, s->computed_key);
 
-    jk_log(l, JK_LOG_DEBUG,
+    l->jkLog(l, JK_LOG_DEBUG,
            "Into ajp14_compute_md5 (%s/%s) -> (%s)\n",
            s->entropy, s->secret_key, s->computed_key);
 }
@@ -244,7 +244,7 @@ static int ajp14_marshal_login_init_into_msgb(jk_msg_buf_t       *msg,
                                               jk_login_service_t *s,
                                               jk_logger_t        *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14_marshal_login_init_into_msgb\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_login_init_into_msgb\n");
     
     /* To be on the safe side */
     jk_b_reset(msg);
@@ -265,7 +265,7 @@ static int ajp14_marshal_login_init_into_msgb(jk_msg_buf_t       *msg,
      * WEB-SERVER NAME
      */
     if (jk_b_append_string(msg, s->web_server_name)) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_marshal_login_init_into_msgb "
                "- Error appending the web_server_name string\n");
         return JK_FALSE;
@@ -289,7 +289,7 @@ static int ajp14_unmarshal_login_seed(jk_msg_buf_t       *msg,
 {
     if (jk_b_get_bytes(msg, (unsigned char *)s->entropy,
                        AJP14_ENTROPY_SEED_LEN) < 0) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_unmarshal_login_seed - can't get seed\n");
         return JK_FALSE;
     }
@@ -310,7 +310,7 @@ static int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t       *msg,
                                               jk_login_service_t *s,
                                               jk_logger_t        *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14_marshal_login_comp_into_msgb\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_login_comp_into_msgb\n");
     
     /* To be on the safe side */
     jk_b_reset(msg);
@@ -326,7 +326,7 @@ static int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t       *msg,
      */
      if (jk_b_append_bytes(msg, (const unsigned char *)s->computed_key,
                            AJP14_COMPUTED_KEY_LEN)) {
-         jk_log(l, JK_LOG_ERROR,
+         l->jkLog(l, JK_LOG_ERROR,
                 "Error ajp14_marshal_login_comp_into_msgb "
                 " - Error appending the COMPUTED MD5 bytes\n");
         return JK_FALSE;
@@ -354,7 +354,7 @@ static int ajp14_unmarshal_log_ok(jk_msg_buf_t       *msg,
     nego = jk_b_get_long(msg);
     
     if (nego == 0xFFFFFFFF) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_unmarshal_log_ok - can't get negociated data\n");
         return JK_FALSE;
     }
@@ -362,7 +362,7 @@ static int ajp14_unmarshal_log_ok(jk_msg_buf_t       *msg,
     sname = (char *)jk_b_get_string(msg);
     
     if (! sname) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_unmarshal_log_ok - "
                "can't get servlet engine name\n");
         return JK_FALSE;
@@ -375,7 +375,7 @@ static int ajp14_unmarshal_log_ok(jk_msg_buf_t       *msg,
     s->servlet_engine_name = strdup(sname);
     
     if (! s->servlet_engine_name) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_unmarshal_log_ok - "
                " can't malloc servlet engine name\n");
         return JK_FALSE;
@@ -399,17 +399,17 @@ static int ajp14_unmarshal_log_nok(jk_msg_buf_t *msg,
 {
     unsigned long   status;
     
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14_unmarshal_log_nok\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_unmarshal_log_nok\n");
     
     status = jk_b_get_long(msg);
     
     if (status == 0xFFFFFFFF) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_unmarshal_log_nok - can't get failure code\n");
         return JK_FALSE;
     }
     
-    jk_log(l, JK_LOG_INFO,
+    l->jkLog(l, JK_LOG_INFO,
            "Can't Log with servlet engine - code %08lx", status);
     return JK_TRUE;
 }

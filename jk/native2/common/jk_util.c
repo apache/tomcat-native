@@ -556,3 +556,15 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->num_attributes       = 0;
     s->jvm_route            = NULL;
 }
+
+int jk_file_exists(const char *f)
+{
+    if(f) {
+        struct stat st;
+        if((0 == stat(f, &st)) && (st.st_mode & S_IFREG)) {
+            return JK_TRUE;
+        }
+    }
+    return JK_FALSE;
+}
+

@@ -96,7 +96,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
     secret_key = jk_get_worker_secret_key(props, aw->name);
     
     if ((!secret_key) || (!strlen(secret_key))) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "No secretkey, defaulting to unauthenticated AJP13\n");
         proto=AJP13_PROTO;
         aw->proto= AJP13_PROTO;
@@ -106,7 +106,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
     if (ajp_validate(pThis, props, we, l, proto) == JK_FALSE)
         return JK_FALSE;
     
-    /* jk_log(l, JK_LOG_DEBUG,
+    /* l->jkLog(l, JK_LOG_DEBUG,
        "Into ajp14:validate - secret_key=%s\n", secret_key); */
     return JK_TRUE;
 }
@@ -161,7 +161,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
     aw->login->web_server_name = strdup(we->server_name);
     
     if (aw->login->web_server_name == NULL) {
-        jk_log(l, JK_LOG_ERROR, "can't malloc web_server_name\n");
+        l->jkLog(l, JK_LOG_ERROR, "can't malloc web_server_name\n");
         return JK_FALSE;
     }
     
@@ -214,18 +214,18 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
                                        char *type, char *name)
 {
     jk_logger_t *l=env->logger;
-    jk_worker_t **w=result;
+    jk_worker_t *w=(jk_worker_t *)malloc(sizeof(jk_worker_t));
     ajp_worker_t *aw = (ajp_worker_t *)malloc(sizeof(ajp_worker_t));
    
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14_worker_factory\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_worker_factory\n");
 
     if (name == NULL || w == NULL) {
-        jk_log(l, JK_LOG_ERROR, "In ajp14_worker_factory, NULL parameters\n");
+        l->jkLog(l, JK_LOG_ERROR, "In ajp14_worker_factory, NULL parameters\n");
         return JK_FALSE;
     }
 
     if (! aw) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "In ajp14_worker_factory, malloc of private data failed\n");
         return JK_FALSE;
     }
@@ -234,7 +234,7 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
     
     if (! aw->name) {
         free(aw);
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "In ajp14_worker_factory, malloc failed for name\n");
         return JK_FALSE;
     }
@@ -244,7 +244,7 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
     aw->login= (jk_login_service_t *)malloc(sizeof(jk_login_service_t));
 
     if (aw->login == NULL) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "In ajp14_worker_factory, malloc failed for login area\n");
         return JK_FALSE;
     }
@@ -258,14 +258,20 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
     aw->ep_cache_sz= 0;
     aw->ep_cache= NULL;
     aw->connect_retry_attempts= AJP_DEF_RETRY_ATTEMPTS;
-    aw->worker.worker_private= aw;
+
+    aw->worker=w;
+    
+    w->worker_private= aw;
+    w->channel= NULL;
    
-    aw->worker.validate= validate;
-    aw->worker.init= init;
-    aw->worker.get_endpoint= get_endpoint;
-    aw->worker.destroy=destroy;
+    w->validate= validate;
+    w->init= init;
+    w->get_endpoint= get_endpoint;
+    w->destroy=destroy;
+
     aw->logon= logon; 
 
-    *w = &aw->worker;
+    *result = w;
+
     return JK_TRUE;
 }

@@ -98,12 +98,12 @@ static int handle_discovery(ajp_endpoint_t  *ae,
 
     ajp14_marshal_context_query_into_msgb(msg, we->virtual, l);
     
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery - send query\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:discovery - send query\n");
 
     if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
         return JK_FALSE;
     
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery - wait context reply\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:discovery - wait context reply\n");
     
     jk_b_reset(msg);
     
@@ -111,30 +111,30 @@ static int handle_discovery(ajp_endpoint_t  *ae,
         return JK_FALSE;
     
     if ((cmd = jk_b_get_byte(msg)) != AJP14_CONTEXT_INFO_CMD) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14:discovery - awaited command %d, received %d\n",
                AJP14_CONTEXT_INFO_CMD, cmd);
         return JK_FALSE;
     }
     
     if (context_alloc(&c, we->virtual) != JK_TRUE) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14:discovery - can't allocate context room\n");
         return JK_FALSE;
     }
  
     if (ajp14_unmarshal_context_info(msg, c, l) != JK_TRUE) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14:discovery - can't get context reply\n");
         return JK_FALSE;
     }
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery - received context\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:discovery - received context\n");
 
     buf = malloc(MAX_URI_SIZE);      /* Really a very long URI */
     
     if (! buf) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14:discovery - can't alloc buf\n");
+        l->jkLog(l, JK_LOG_ERROR, "Error ajp14:discovery - can't alloc buf\n");
         return JK_FALSE;
     }
     
@@ -148,7 +148,7 @@ static int handle_discovery(ajp_endpoint_t  *ae,
             sprintf(buf, "/%s/%s", ci->cbase, ci->uris[j]);
 #endif
             
-            jk_log(l, JK_LOG_INFO,
+            l->jkLog(l, JK_LOG_INFO,
                    "Into ajp14:discovery "
                    "- worker %s will handle uri %s in context %s [%s]\n",
                    ae->worker->name, ci->uris[j], ci->cbase, buf);
@@ -184,7 +184,7 @@ int discovery(ajp_endpoint_t *ae,
     jk_msg_buf_t  *msg;
     int           rc;
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:discovery\n");
     
     msg = jk_b_new(p);
     jk_b_set_buffer_size(msg, DEF_BUFFER_SZ);
@@ -209,7 +209,7 @@ int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
                                           char         *virtual,
                                           jk_logger_t  *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14_marshal_context_query_into_msgb\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_context_query_into_msgb\n");
     
     /* To be on the safe side */
     jk_b_reset(msg);
@@ -224,7 +224,7 @@ int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
      * VIRTUAL HOST CSTRING
      */
     if (jk_b_append_string(msg, virtual)) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_marshal_context_query_into_msgb "
                "- Error appending the virtual host string\n");
         return JK_FALSE;
@@ -259,12 +259,12 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
     
     vname  = (char *)jk_b_get_string(msg);
 
-    jk_log(l, JK_LOG_DEBUG,
+    l->jkLog(l, JK_LOG_DEBUG,
            "ajp14_unmarshal_context_info - get virtual %s for virtual %s\n",
            vname, c->virtual);
 
     if (! vname) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_unmarshal_context_info "
                "- can't get virtual hostname\n");
         return JK_FALSE;
@@ -277,7 +277,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
         /* set the virtual name, better to add to a virtual list ? */
         
         if (context_set_virtual(c, vname) == JK_FALSE) {
-            jk_log(l, JK_LOG_ERROR,
+            l->jkLog(l, JK_LOG_ERROR,
                    "Error ajp14_unmarshal_context_info "
                    "- can't malloc virtual hostname\n");
             return JK_FALSE;
@@ -289,12 +289,12 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
         cname  = (char *)jk_b_get_string(msg); 
 
         if (! cname) {
-            jk_log(l, JK_LOG_ERROR,
+            l->jkLog(l, JK_LOG_ERROR,
                    "Error ajp14_unmarshal_context_info - can't get context\n");
             return JK_FALSE;
         }   
         
-        jk_log(l, JK_LOG_DEBUG, "ajp14_unmarshal_context_info "
+        l->jkLog(l, JK_LOG_DEBUG, "ajp14_unmarshal_context_info "
                "- get context %s for virtual %s\n", cname, vname);
         
         /* grab all contexts up to empty one which indicate end of contexts */
@@ -304,7 +304,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
         /* create new context base (if needed) */
         
         if (context_add_base(c, cname) == JK_FALSE) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info"
+            l->jkLog(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info"
                    "- can't add/set context %s\n", cname);
             return JK_FALSE;
         }
@@ -314,22 +314,22 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
             uri  = (char *)jk_b_get_string(msg);
             
             if (!uri) {
-                jk_log(l, JK_LOG_ERROR,
+                l->jkLog(l, JK_LOG_ERROR,
                        "Error ajp14_unmarshal_context_info - can't get URI\n");
                 return JK_FALSE;
             }
             
             if (! strlen(uri)) {
-                jk_log(l, JK_LOG_DEBUG, "No more URI for context %s", cname);
+                l->jkLog(l, JK_LOG_DEBUG, "No more URI for context %s", cname);
                 break;
             }
             
-            jk_log(l, JK_LOG_INFO,
+            l->jkLog(l, JK_LOG_INFO,
                    "Got URI (%s) for virtualhost %s and context %s\n",
                    uri, vname, cname);
             
             if (context_add_uri(c, cname, uri) == JK_FALSE) {
-                jk_log(l, JK_LOG_ERROR,
+                l->jkLog(l, JK_LOG_ERROR,
                        "Error ajp14_unmarshal_context_info - "
                        "can't add/set uri (%s) for context %s\n", uri, cname);
                 return JK_FALSE;
@@ -361,7 +361,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
     jk_context_item_t *ci;
     int                i;
     
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14_marshal_context_state_into_msgb\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_context_state_into_msgb\n");
     
     /* To be on the safe side */
     jk_b_reset(msg);
@@ -376,7 +376,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
      * VIRTUAL HOST CSTRING
      */
      if (jk_b_append_string(msg, c->virtual)) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb"
+        l->jkLog(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb"
                "- Error appending the virtual host string\n");
         return JK_FALSE;
      }
@@ -386,7 +386,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
          ci = context_find_base(c, cname);
          
          if (! ci) {
-             jk_log(l, JK_LOG_ERROR,
+             l->jkLog(l, JK_LOG_ERROR,
                     "Warning ajp14_marshal_context_state_into_msgb"
                     "- unknown context %s\n", cname);
             return JK_FALSE;
@@ -397,7 +397,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
           */
          
          if (jk_b_append_string(msg, cname )) {
-            jk_log(l, JK_LOG_ERROR,
+            l->jkLog(l, JK_LOG_ERROR,
                    "Error ajp14_marshal_context_state_into_msgb"
                    "- Error appending the context string %s\n", cname);
             return JK_FALSE;
@@ -408,7 +408,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
              * CONTEXT CSTRING
              */
              if (jk_b_append_string(msg, c->contexts[i]->cbase )) {
-                 jk_log(l, JK_LOG_ERROR,
+                 l->jkLog(l, JK_LOG_ERROR,
                         "Error ajp14_marshal_context_state_into_msgb "
                         "- Error appending the context string\n");
                  return JK_FALSE;
@@ -419,7 +419,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
      /* End of context list, an empty string */ 
      
      if (jk_b_append_string(msg, "")) {
-         jk_log(l, JK_LOG_ERROR,
+         l->jkLog(l, JK_LOG_ERROR,
                 "Error ajp14_marshal_context_state_into_msgb "
                 "- Error appending end of contexts\n");
          return JK_FALSE;
@@ -454,7 +454,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
     vname  = (char *)jk_b_get_string(msg);
     
     if (! vname) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_unmarshal_context_state_reply "
                "- can't get virtual hostname\n");
         return JK_FALSE;
@@ -462,7 +462,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
     
     /* Check if we speak about the correct virtual */
     if (strcmp(c->virtual, vname)) {
-        jk_log(l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14_unmarshal_context_state_reply"
                "- incorrect virtual %s instead of %s\n",
                vname, c->virtual);
@@ -474,7 +474,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
         cname  = (char *)jk_b_get_string(msg);
         
         if (! cname) {
-            jk_log(l, JK_LOG_ERROR,
+            l->jkLog(l, JK_LOG_ERROR,
                    "Error ajp14_unmarshal_context_state_reply"
                    "- can't get context\n");
             return JK_FALSE;
@@ -486,7 +486,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
         ci = context_find_base(c, cname);
         
         if (! ci) {
-            jk_log(l, JK_LOG_ERROR,
+            l->jkLog(l, JK_LOG_ERROR,
                    "Error ajp14_unmarshal_context_state_reply "
                    "- unknow context %s for virtual %s\n", 
                    cname, vname);
@@ -495,7 +495,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
         
         ci->status = jk_b_get_int(msg);
         
-        jk_log(l, JK_LOG_DEBUG, "ajp14_unmarshal_context_state_reply "
+        l->jkLog(l, JK_LOG_DEBUG, "ajp14_unmarshal_context_state_reply "
                "- updated context %s to state %d\n", cname, ci->status);
     }
     
