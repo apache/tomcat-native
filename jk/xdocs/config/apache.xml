@@ -394,7 +394,7 @@ that directive is raw line from workers.properties file.
   # with JkWorkerProperty
 
   # Minimal jk configuration
-  JkWorkerProperty worker.list=ajp13worker
+  JkWorkerProperty worker.list=ajp13w
   JkWorkerProperty worker.ajp13w.type=ajp13
   JkWorkerProperty worker.ajp13w.host=localhost
   JkWorkerProperty worker.ajp13w.port=8009   
