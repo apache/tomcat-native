@@ -95,13 +95,21 @@ AC_DEFUN(
               APACHE2_CONFIG_VARS=${apache_dir}/build/config_vars.mk
               JK_CHANNEL_APR_SOCKET="\${JK}jk_channel_apr_socket\${OEXT}"
               JK_POOL_APR="\${JK}jk_pool_apr\${OEXT}"
-              HAS_APR="-DHAS_APR"
               APXS$1_CFLAGS="`${APXS$1} -q CFLAGS` `${APXS$1} -q EXTRA_CFLAGS`"
               APXS$1_CPPFLAGS="`${APXS$1} -q EXTRA_CPPFLAGS`"
               APR_INCDIR="-I`${APXS$1} -q APR_INCLUDEDIR`"
 			  APR_UTIL_INCDIR="-I`${APXS$1} -q APU_INCLUDEDIR`"
               APACHE2_LIBDIR="`${APXS$1} -q LIBDIR`"
               LIBTOOL=`${APXS$1} -q LIBTOOL`
+              if ${TEST} -f ${APACHE2_LIBDIR}/libapr-1.so; then
+                APR_LIBS="-L${APACHE2_LIBDIR} -lapr-1"
+              elif ${TEST} -f ${APACHE2_LIBDIR}/libapr-0.so; then
+                APR_LIBS="-L${APACHE2_LIBDIR} -lapr-0"
+              elif ${TEST} -f ${APACHE2_LIBDIR}/libapr.so; then
+                APR_LIBS="-L${APACHE2_LIBDIR} -lapr"
+              else
+                AC_MSG_ERROR(can't locate libapr)
+              fi
             fi
             
             AC_MSG_RESULT([building connector for \"$RWEBSERVER\"])
@@ -127,6 +135,7 @@ AC_DEFUN(
   AC_SUBST(APACHE$1_LIBDIR)
   AC_SUBST(APACHE$1_CC)
   AC_SUBST(APXS$1_LDFLAGS)
+  AC_SUBST(APR_LIBS)
 
 ])
 
