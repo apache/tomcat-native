@@ -172,7 +172,8 @@ static const char *jk_set_worker(cmd_parms *cmd, void *per_dir,
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
 
     /* Do we know the url ? */
-    webapp=workerEnv->createWebapp( workerEnv, NULL, NULL, NULL );
+    webapp=workerEnv->createWebapp( workerEnv->globalEnv, workerEnv,
+                                    NULL, NULL, NULL );
     uriEnv->webapp=webapp;
     webapp->workerName=ap_pstrdup(cmd->pool, workerName);
     
@@ -194,15 +195,16 @@ static const char *jk_set_worker_file(cmd_parms *cmd, void *dummy,
 {
     server_rec *s = cmd->server;
     struct stat statbuf;
-    jk_logger_t *l;
+    jk_env_t *env;
 
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-    l=workerEnv->l;
     
     /* we need an absolut path (ap_server_root_relative does the ap_pstrdup) */
     workerEnv->worker_file = ap_server_root_relative(cmd->pool,worker_file);
 
+    env=workerEnv->globalEnv;
+    
     if (workerEnv->worker_file == NULL)
         return "JkWorkersFile file_name invalid";
 
@@ -211,21 +213,21 @@ static const char *jk_set_worker_file(cmd_parms *cmd, void *dummy,
 
     /** Read worker files
      */
-    l->jkLog(l, JK_LOG_DEBUG, "Reading map %s %d\n",
-             workerEnv->worker_file,
-             workerEnv->init_data->size(NULL, workerEnv->init_data) );
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Reading map %s %d\n",
+                  workerEnv->worker_file,
+                  workerEnv->init_data->size(env, workerEnv->init_data) );
     
     if( workerEnv->worker_file != NULL ) {
-        int err=jk_map_readFileProperties(NULL, workerEnv->init_data,
+        int err=jk_map_readFileProperties(env, workerEnv->init_data,
                                           workerEnv->worker_file);
         if( err==JK_TRUE ) {
-            l->jkLog(l, JK_LOG_DEBUG, 
-                   "Read map %s %d\n", workerEnv->worker_file,
-                     workerEnv->init_data->size( NULL, workerEnv->init_data ) );
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                          "Read map %s %d\n", workerEnv->worker_file,
+                          workerEnv->init_data->size( env, workerEnv->init_data ) );
         } else {
-            l->jkLog(l, JK_LOG_ERROR, "Error reading map %s %d\n",
-                   workerEnv->worker_file,
-                     workerEnv->init_data->size( NULL, workerEnv->init_data ) );
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error reading map %s %d\n",
+                          workerEnv->worker_file,
+                          workerEnv->init_data->size( env, workerEnv->init_data ) );
         }
     }
 
@@ -244,24 +246,27 @@ static const char *jk_worker_property(cmd_parms *cmd,
     struct stat statbuf;
     char *oldv;
     int rc;
+    jk_env_t *env;
 
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
     
     jk_map_t *m=workerEnv->init_data;
     
-    value = jk_map_replaceProperties(NULL, m, m->pool, value);
+    env=workerEnv->globalEnv;
+    
+    value = jk_map_replaceProperties(env, m, m->pool, value);
 
-    oldv = jk_map_getString(NULL, m, name, NULL);
+    oldv = jk_map_getString(env, m, name, NULL);
 
     if(oldv) {
-        char *tmpv = apr_palloc(cmd->pool,
+        char *tmpv = apr_palloc( cmd->pool,
                                 strlen(value) + strlen(oldv) + 3);
         if(tmpv) {
             char sep = '*';
-            if(jk_is_some_property(name, "path")) {
+            if(jk_is_some_property(env, name, "path")) {
                 sep = PATH_SEPERATOR;
-            } else if(jk_is_some_property(name, "cmd_line")) {
+            } else if(jk_is_some_property(env, name, "cmd_line")) {
                 sep = ' ';
             }
             
@@ -270,13 +275,13 @@ static const char *jk_worker_property(cmd_parms *cmd,
         }                                
         value = tmpv;
     } else {
-        value = ap_pstrdup(cmd->pool, value);
+        value = ap_pstrdup( cmd->pool, value);
     }
     
     if(value) {
-        m->put(NULL, m,
-               ap_pstrdup(cmd->pool, name),
-               ap_pstrdup(cmd->pool, value),
+        m->put(env, m,
+               ap_pstrdup( cmd->pool, name),
+               ap_pstrdup( cmd->pool, value),
                NULL);
         /*printf("Setting %s %s\n", name, value);*/
     } 
@@ -714,9 +719,9 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
     /** First create a pool
      */
 #ifdef NO_APACHE_POOL
-    jk_pool_create( &globalPool, NULL, 2048 );
+    jk_pool_create( NULL, &globalPool, NULL, 2048 );
 #else
-    jk_pool_apr_create( &globalPool, NULL, p );
+    jk_pool_apr_create( NULL, &globalPool, NULL, p );
 #endif
 
     /** Create the global environment. This will register the default
@@ -737,25 +742,26 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
     l->logger_private=s;
 #endif
     
-    env->logger=l;
+    env->l=l;
     l->level=JK_LOG_ERROR_LEVEL;
     
     /* Create the workerEnv */
     workerEnvPool=
-        env->globalPool->create( env->globalPool, HUGE_POOL_SIZE );    
+        env->globalPool->create( env, env->globalPool, HUGE_POOL_SIZE );    
     workerEnv= env->getInstance( env,
                                  workerEnvPool,
                                  "workerEnv", "default");
 
+    workerEnv->globalEnv=env;
     if( workerEnv==NULL ) {
-        l->jkLog(l, JK_LOG_ERROR, "Error creating workerEnv\n");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating workerEnv\n");
         return NULL;
     }
 
     /* Local initialization */
     workerEnv->_private = s;
 
-    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO, "mod_jk.create_jk_config()\n" ); 
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk.create_jk_config()\n" ); 
     return workerEnv;
 }
 
@@ -819,8 +825,9 @@ static void jk_child_init(apr_pool_t *pconf,
 {
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
+    jk_env_t *env=workerEnv->globalEnv;
 
-    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO, "mod_jk child init\n" );
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init\n" );
     
     /* init_jk( pconf, conf, s );
        do we need jk_child_init? For ajp14? */
@@ -835,22 +842,23 @@ static void jk_child_init(apr_pool_t *pconf,
     SetHandler and normal apache directives ( but minimal jk-specific
     stuff )
 */
-static void init_jk( apr_pool_t *pconf, jk_workerEnv_t *workerEnv, server_rec *s ) {
+static void init_jk( jk_env_t *env, apr_pool_t *pconf,
+                     jk_workerEnv_t *workerEnv, server_rec *s )
+{
     int err;
-    jk_logger_t *l=workerEnv->l;
 
-    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO, "mod_jk.init_jk()\n" ); 
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk.init_jk()\n" ); 
 
-    l->open( l, workerEnv->init_data );
+    env->l->open( env, env->l, workerEnv->init_data );
 
     /* local initialization */
     workerEnv->virtual       = "*";     /* for now */
     workerEnv->server_name   = (char *)ap_get_server_version();
 
     /* Init() - post-config initialization ( now all options are set ) */
-    workerEnv->init( workerEnv ); 
+    workerEnv->init( env, workerEnv ); 
 
-    err=workerEnv->uriMap->init(workerEnv->uriMap,
+    err=workerEnv->uriMap->init(env, workerEnv->uriMap,
                                 workerEnv,
                                 workerEnv->init_data );
     
@@ -901,6 +909,7 @@ static int jk_post_config(apr_pool_t *pconf,
     apr_pool_t *gPool=NULL;
     void *data=NULL;
     int rc;
+    jk_env_t *env;
 
     if(s->is_virtual) 
         return OK;
@@ -908,21 +917,23 @@ static int jk_post_config(apr_pool_t *pconf,
     workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
 
+    env=workerEnv->globalEnv;
+    
     rc=jk_apache2_isValidating( plog, &gPool );
     if( rc == JK_TRUE ) {
         /* This is the first step */
-        workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO,
-                            "mod_jk.post_config() first invocation\n");
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "mod_jk.post_config() first invocation\n");
         apr_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool );
         return OK;
     }
         
-    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO,
-                        "mod_jk.post_config() second invocation\n" ); 
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "mod_jk.post_config() second invocation\n" ); 
     
     if(!workerEnv->was_initialized) {
         workerEnv->was_initialized = JK_TRUE;        
-        init_jk( pconf, workerEnv, s );
+        init_jk( env, pconf, workerEnv, s );
     }
     return OK;
 }
@@ -935,8 +946,9 @@ static int jk_post_config(apr_pool_t *pconf,
  */
 static apr_status_t jk_cleanup_endpoint( void *data ) {
     jk_endpoint_t *end = (jk_endpoint_t *)data;    
-    printf("XXX jk_cleanup1 %p\n", data); 
-    end->done(&end, NULL);  
+    printf("XXX jk_cleanup1 %p\n", data);
+    /* XXX get env */
+    end->done(NULL, end);  
     return 0;
 }
 
@@ -946,13 +958,15 @@ static int jk_ctl_handler(request_rec *r)
 {
     jk_workerEnv_t *workerEnv;
     jk_logger_t      *l;
+    jk_env_t *env;
 
     if( strcmp( r->handler, JK_CTL_HANDLER ) != 0 )
         return DECLINED;
     
     workerEnv=(jk_workerEnv_t *)ap_get_module_config(r->server->module_config,
                                                      &jk_module);
-    l = workerEnv->l;
+    /* XXX Get a 'local' env instance */
+    env = workerEnv->globalEnv;
 
     /* Find what 'ctl' request we have */
 
@@ -975,6 +989,7 @@ static int jk_handler(request_rec *r)
     jk_endpoint_t *end = NULL;
     jk_uriEnv_t *uriEnv;
     jk_uriEnv_t *dirEnv;
+    jk_env_t *env;
     jk_workerEnv_t *workerEnv;
 
     uriEnv=ap_get_module_config( r->request_config, &jk_module );
@@ -990,36 +1005,38 @@ static int jk_handler(request_rec *r)
 
     workerEnv=(jk_workerEnv_t *)ap_get_module_config(r->server->module_config, 
                                                      &jk_module);
-    l = workerEnv->l;
+    /* XXX Get an env instance */
+    env = workerEnv->globalEnv;
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
-        l->jkLog(l, JK_LOG_INFO,
-                 "mod_jk.handler() Can't setup client block %d\n", rc);
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "mod_jk.handler() Can't setup client block %d\n", rc);
         return rc;
     }
 
     if( uriEnv == NULL ) {
         /* SetHandler case - per_dir config should have the worker*/
         worker =  workerEnv->defaultWorker;
-        l->jkLog(l, JK_LOG_INFO, 
-                 "mod_jk.handler() Default worker for %s %s\n",
-                 r->uri, worker->name); 
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "mod_jk.handler() Default worker for %s %s\n",
+                      r->uri, worker->name); 
     } else {
         worker=uriEnv->webapp->worker;
         if( worker==NULL && uriEnv->webapp->workerName != NULL ) {
-            worker=workerEnv->getWorkerForName( workerEnv, uriEnv->webapp->workerName);
+            worker=workerEnv->getWorkerForName( env, workerEnv,
+                                                uriEnv->webapp->workerName);
             uriEnv->webapp->worker=worker;
         }
     }
 
     if(worker==NULL ) {
-        l->jkLog(l, JK_LOG_ERROR, 
-                 "No worker for %s\n", r->uri); 
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "No worker for %s\n", r->uri); 
         return 500;
     }
 
-    worker->get_endpoint(worker, &end, l);
+    worker->get_endpoint(env, worker, &end);
 
     {
         int rc = JK_FALSE;
@@ -1027,23 +1044,23 @@ static int jk_handler(request_rec *r)
         jk_ws_service_t *s=&sOnStack;
         int is_recoverable_error = JK_FALSE;
 
-        jk_service_apache2_factory( workerEnv->env, end->cPool, &s,
+        jk_service_apache2_factory( env, end->cPool, &s,
                                     "service", "apache2");
         
-        s->init( s, end, r );
+        s->init( env, s, end, r );
         
-        rc = end->service(end, s, l, &is_recoverable_error);
+        rc = end->service(env, end, s,  &is_recoverable_error);
 
-        s->afterRequest(s);
+        s->afterRequest(env, s);
     }
 
-    end->done(&end, l); 
+    end->done(env, end); 
 
     if(rc==JK_TRUE) {
         return OK;    /* NOT r->status, even if it has changed. */
     }
 
-    l->jkLog(l, JK_LOG_ERROR,
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
              "mod_jk.handler() Error connecting to tomcat %d\n", rc);
     return 500;
 }
@@ -1053,65 +1070,78 @@ static int jk_handler(request_rec *r)
  */
 static int jk_translate(request_rec *r)
 {
-    jk_logger_t *l;
     jk_workerEnv_t *workerEnv;
     jk_uriEnv_t *uriEnv;
+    jk_env_t *env;
             
     if(r->proxyreq) {
         return DECLINED;
     }
     
     uriEnv=ap_get_module_config( r->per_dir_config, &jk_module );
+    workerEnv=(jk_workerEnv_t *)ap_get_module_config(r->server->module_config,
+                                                     &jk_module);
+    /* XXX get_env() */
+    env=workerEnv->globalEnv;
+        
+    /* This has been mapped to a location that has a 'webapp' property,
+       i.e. belongs to a tomcat webapp.
+       We'll use the webapp uriMap to find if it's a static page and
+       to parse the request.
+       XXX for now just forward to tomcat
+    */
     if( uriEnv!= NULL && uriEnv->webapp!=NULL ) {
-        fprintf( stderr, "XXX urienv %p %p \n", uriEnv, uriEnv->webapp);
-        fprintf( stderr, "XXX urienv %s \n", uriEnv->webapp->workerName);
+        jk_uriMap_t *uriMap=uriEnv->webapp->uriMap;
+
+        if( uriMap!=NULL ) {
+            /* Again, we have 2 choices. Either use our map, or again
+               let apache. The second is probably faster, but requires
+               using some APIs I'm not familiar with ( to modify apache's
+               config on the fly ). After we learn the new APIs we can
+               switch to the second method.
+            */
+            /* XXX Cut the context path ? */
+            jk_uriEnv_t *target=uriMap->mapUri( env, uriMap, NULL, r->uri );
+            if( target == NULL ) 
+                return DECLINED;
+            uriEnv=target;
+        }
+
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "PerDir mapping %p %p  %s\n",
+                      uriEnv->webapp->workerName);
+        
         ap_set_module_config( r->request_config, &jk_module, uriEnv );        
         r->handler=JK_HANDLER;
         return OK;
     }
 
-    workerEnv=(jk_workerEnv_t *)ap_get_module_config(r->server->module_config,
-                                                     &jk_module);
-    l=workerEnv->l;
-        
-    if(!workerEnv) {
-        /* Shouldn't happen, init problems ! */
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, 
-                     NULL, "Assertion failed, workerEnv==NULL"  );
-        return DECLINED;
-    }
+    /* One idea was to use "SetHandler jakarta-servlet". This doesn't
+       allow the setting of the worker. Having a specific SetWorker directive
+       at location level is more powerfull. If anyone can figure any reson
+       to support SetHandler, we can add it back easily */
 
-    if( (r->handler != NULL ) && 
-        ( strcmp( r->handler, JK_HANDLER ) == 0 )) {
-        /* Somebody already set the handler, probably manual config
-         * or "native" configuration, no need for extra overhead
-         */
-        l->jkLog(l, JK_LOG_DEBUG, 
-                 "Manually mapped, no need to call uri_to_worker\n");
+    /* Check JkMount directives, if any */
+    if( workerEnv->uriMap->size == 0 )
         return DECLINED;
-    }
-
-    {
-        /* XXX Split mapping, similar with tomcat. First step will
-           be a quick test ( the context mapper ), with no allocations.
-           If positive, we'll fill a ws_service_t and do the rewrite and
-           the real mapping.
-        */
-        uriEnv = workerEnv->uriMap->mapUri(workerEnv->uriMap,NULL,r->uri );
-    }
+    
+    /* XXX TODO: Split mapping, similar with tomcat. First step will
+       be a quick test ( the context mapper ), with no allocations.
+       If positive, we'll fill a ws_service_t and do the rewrite and
+       the real mapping. 
+    */
+    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri );
     
     if(uriEnv==NULL ) {
         return DECLINED;
     }
 
-    /* Why do we need to duplicate a constant ??? */
-    r->handler=apr_pstrdup(r->pool,JK_HANDLER);
-
     ap_set_module_config( r->request_config, &jk_module, uriEnv );
-    
-    l->jkLog(l, JK_LOG_INFO, 
-             "mod_jk.translate(): map %s %s\n",
-             r->uri, uriEnv->webapp->worker->name);
+    r->handler=JK_HANDLER;
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                  "mod_jk.translate(): uriMap %s %s\n",
+                  r->uri, uriEnv->webapp->worker->name);
 
     return OK;
 }
@@ -1121,13 +1151,15 @@ static int jk_translate(request_rec *r)
 /* bypass the directory_walk and file_walk for non-file requests */
 static int jk_map_to_storage(request_rec *r)
 {
-    jk_uriEnv_t *env=ap_get_module_config( r->request_config, &jk_module );
-
-    if( env != NULL ) {
+    jk_uriEnv_t *uriEnv=ap_get_module_config( r->request_config, &jk_module );
+    
+    if( uriEnv != NULL ) {
         r->filename = (char *)apr_filename_of_pathname(r->uri);
-        env->workerEnv->l->jkLog(env->workerEnv->l, JK_LOG_INFO, 
-                                 "mod_jk.map_to_storage(): map %s %s\n",
-                                 r->uri, r->filename);
+        if( uriEnv->debug > 0 ) {
+            /*   env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+            /*     "mod_jk.map_to_storage(): map %s %s\n", */
+            /*                  r->uri, r->filename); */
+        }
         return OK;
     }
     return DECLINED;
@@ -1146,7 +1178,7 @@ module AP_MODULE_DECLARE_DATA jk_module =
 {
     STANDARD20_MODULE_STUFF,
     create_jk_dir_config,/*  dir config creater */
-    merge_jk_dir_config,  /* dir merger --- default is to override */
+    NULL,  /* merge_jk_dir_config dir merger --- default is to override */
     create_jk_config,    /* server config */
     merge_jk_config,     /* merge server config */
     jk_cmds,             /* command ap_table_t */
