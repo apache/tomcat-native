@@ -354,6 +354,11 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
                 }
             }
 
+            if (p->r->header_only) {
+                ap_bflush(bf);
+                return JK_TRUE;
+            }
+
             while(len && !p->r->connection->aborted) {
                 w = ap_bwrite(p->r->connection->client, &buf[r], len);
                 if (w > 0) {
@@ -470,12 +475,12 @@ static int init_ws_service(apache_private_data_t *private_data,
     /* get server name */
     /* s->server_name  = (char *)(r->hostname ? r->hostname : r->server->server_hostname); */
     /* XXX : à la jk2 */
-	s->server_name  = ap_get_server_name(r);
+    s->server_name  = (char *) ap_get_server_name(r);
     
     /* get the real port (otherwise redirect failed) */
     /* s->server_port     = htons( r->connection->local_addr.sin_port ); */
     /* XXX : à la jk2 */
-	s->server_port  = ap_get_server_port(r);
+    s->server_port  = ap_get_server_port(r);
 
     s->server_software = (char *)ap_get_server_version();
 

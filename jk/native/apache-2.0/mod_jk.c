@@ -364,6 +364,12 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
                     return JK_FALSE;
                 }
             }
+            if (p->r->header_only) {
+#ifndef AS400
+                ap_rflush(p->r);
+#endif
+                return JK_TRUE;
+            }
 #ifdef AS400
             rc = ap_change_response_body_xlate(p->r, 65535, 65535); /* turn off response body translation*/
 	    if(rc){
