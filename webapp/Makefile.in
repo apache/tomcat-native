@@ -60,7 +60,8 @@
 
 include @SRCDIR@/Makedefs
 
-DIRS = $(TGTDIRS) $(TARGET)
+LOCALDIRS = @TGTDIRS@ @TARGET@
+APRDIR = @APRDIR@
 
 CFGS = config.cache \
 	config.log \
@@ -70,8 +71,8 @@ CFGS = config.cache \
 	lib/Makefile \
 	apache-1.3/Makefile
 
-all:
-	@for DIR in $(DIRS) ; do \
+all: local
+	@for DIR in $(APRDIR) ; do \
 		echo "" ; \
 		echo "Compiling sources in $$DIR..." ; \
 		$(MAKE) -C $$DIR all ; \
@@ -81,8 +82,30 @@ all:
 		fi ; \
 	done
 
-clean:
-	@for DIR in $(DIRS) ; do \
+clean: localclean
+	@for DIR in $(APRDIR) ; do \
+		echo "" ; \
+		echo "Cleaning up $$DIR..." ; \
+		$(MAKE) -C $$DIR clean ; \
+		RET=$$? ; \
+		if test "$$RET" != "0" ; then \
+			exit $$RET ; \
+		fi ; \
+	done
+
+local:
+	@for DIR in $(LOCALDIRS) ; do \
+		echo "" ; \
+		echo "Compiling sources in $$DIR..." ; \
+		$(MAKE) -C $$DIR all ; \
+		RET=$$? ; \
+		if test "$$RET" != "0" ; then \
+			exit $$RET ; \
+		fi ; \
+	done
+
+localclean:
+	@for DIR in $(LOCALDIRS) ; do \
 		echo "" ; \
 		echo "Cleaning up $$DIR..." ; \
 		$(MAKE) -C $$DIR clean ; \
@@ -95,4 +118,8 @@ clean:
 distclean: clean
 	@echo Removing configure generated files...
 	@rm -f $(CFGS)
+
+cvsclean: distclean
+	@echo Removing configure script...
+	@rm -f configure
 

@@ -111,6 +111,7 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
 dnl --------------------------------------------------------------------------
 dnl Initialize
 dnl --------------------------------------------------------------------------
+sinclude(./support/apjava.m4)
 AC_INIT(Makefile.in)
 LOCAL_INIT()
 
@@ -127,6 +128,26 @@ SRCDIR=`pwd`
 cd ${curdir}
 AC_MSG_RESULT(${SRCDIR})
 AC_SUBST(SRCDIR)
+
+dnl --------------------------------------------------------------------------
+dnl Process the --enable-debug[=FILE] command line argument
+dnl --------------------------------------------------------------------------
+AC_ARG_ENABLE(debug,
+  [  --enable-debug          Build with full debugging output.],
+  [
+    AC_MSG_RESULT([enabling debug output])
+    CFLAGS="$CFLAGS -DDEBUG"
+  ],[
+    AC_MSG_RESULT([disabling debug output])
+  ]
+)
+
+dnl -------------------------------------------------------------------------
+dnl Check JAVA environment
+dnl -------------------------------------------------------------------------
+AP_JAVA()
+AP_PROG_JAVAC()
+AP_PROG_JAR()
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apxs[=FILE] command line argument
@@ -271,9 +292,9 @@ dnl Defining variables used by Make
 dnl --------------------------------------------------------------------------
 CFLAGS="-Wall ${CFLAGS}"
 CPPFLAGS="-I${SRCDIR}/include -I${APRDIR}/include ${CPPFLAGS}"
-TGTDIRS="${APRDIR} ${SRCDIR}/lib"
+TGTDIRS="${SRCDIR}/java ${SRCDIR}/lib"
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(TGTDIRS)
 
-AC_OUTPUT(Makedefs Makefile lib/Makefile ${makefile})
+AC_OUTPUT(./Makedefs ./Makefile ./lib/Makefile ./java/Makefile ${makefile})

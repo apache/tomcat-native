@@ -60,6 +60,8 @@
 
 CC =      @CC@
 CPP =     @CPP@
+JAVAC =   @JAVAC@
+JAR =     @JAR@
 SHELL =   @SHELL@
 LIBTOOL = @LIBTOOL@
 
@@ -75,8 +77,6 @@ LIBTOOL_LIBS =   @LIBTOOL_LIBS@ @APRDIR@/libapr.la
 
 LTFLAGS =        --silent
 
-TGTDIRS = @TGTDIRS@
-TARGET =  @TARGET@
 SRCDIR =  @SRCDIR@
 
 .SUFFIXES: .c .lo .o
