@@ -231,6 +231,7 @@ public final class Cookies { // extends MultiMap {
 	int version=0; //sticky
 	ServerCookie sc=null;
 	
+
 	while( pos<end ) {
 	    byte cc;
 	    // [ skip_spaces name skip_spaces "=" skip_spaces value EXTRA ; ] *
@@ -286,7 +287,7 @@ public final class Cookies { // extends MultiMap {
 	    
 	    // quote is valid only in version=1 cookies
 	    cc=bytes[pos];
-	    if( version==1 && ( cc== '\'' || cc=='"' ) ) {
+	    if( ( version == 1 || isSpecial ) && ( cc== '\'' || cc=='"' ) ) {
 		startValue++;
 		endValue=indexOf( bytes, startValue, end, cc );
 		pos=endValue+1; // to skip to next cookie
@@ -470,7 +471,6 @@ public final class Cookies { // extends MultiMap {
     }
 
     /*
-
     public static void main( String args[] ) {
 	test("foo=bar; a=b");
 	test("foo=bar;a=b");
@@ -480,7 +480,8 @@ public final class Cookies { // extends MultiMap {
 	test("foo=;a=b; ;");
 	test("foo;a=b; ;");
 	// v1 
-	test("$Version=1; foo=bar;a=b");
+	test("$Version=1; foo=bar;a=b"); 
+        test("$Version=\"1\"; foo='bar'; $Path=/path; $Domain=\"localhost\"");
 	test("$Version=1;foo=bar;a=b; ; ");
 	test("$Version=1;foo=;a=b; ; ");
 	test("$Version=1;foo= ;a=b; ; ");
@@ -505,6 +506,6 @@ public final class Cookies { // extends MultiMap {
 	}
 	    
     }
-
     */
+
 }
