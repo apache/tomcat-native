@@ -232,6 +232,7 @@ AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
 
     c->sbh = sbh;
 
+    c->conn_config = ap_create_conn_config(ptrans);
     /* Got a connection structure, so initialize what fields we can
      * (the rest are zeroed out by pcalloc).
      */
@@ -501,6 +502,41 @@ static int lookup_builtin_method(const char *method, apr_size_t len)
     /* NOTREACHED */
 }
 
+/* Get the method number associated with the given string, assumed to
+ * contain an HTTP method.  Returns M_INVALID if not recognized.
+ *
+ * This is the first step toward placing method names in a configurable
+ * list.  Hopefully it (and other routines) can eventually be moved to
+ * something like a mod_http_methods.c, complete with config stuff.
+ */
+AP_DECLARE(int) ap_method_number_of(const char *method)
+{
+    apr_size_t len = strlen(method);
+    int which = lookup_builtin_method(method, len);
+
+    if (which != UNKNOWN_METHOD)
+        return which;
+
+    return M_INVALID;
+}
+
+static ap_conf_vector_t *create_empty_config(apr_pool_t *p)
+{
+    void *conf_vector = apr_pcalloc(p, sizeof(void *) *
+                                    (DYNAMIC_MODULE_LIMIT));
+    return conf_vector;
+}
+
+AP_CORE_DECLARE(ap_conf_vector_t *) ap_create_request_config(apr_pool_t *p)
+{
+    return create_empty_config(p);
+}
+
+AP_CORE_DECLARE(ap_conf_vector_t *) ap_create_conn_config(apr_pool_t *p)
+{
+    return create_empty_config(p);
+}
+
 AP_DECLARE(apr_status_t) ap_wrap_make_request(request_rec *r, const char *url,
                                               const char *method,
                                               const char *content_type,
@@ -524,6 +560,7 @@ AP_DECLARE(apr_status_t) ap_wrap_make_request(request_rec *r, const char *url,
     r->method = method;
     r->protocol = AP_SERVER_PROTOCOL;
     r->proto_num = HTTP_VERSION(1, 1);
+    r->request_config  = ap_create_request_config(r->pool);
 
     if ((rc = apr_uri_parse(r->pool, url, &r->parsed_uri)) != APR_SUCCESS) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, rc, r, "error parsing uri");
@@ -589,8 +626,8 @@ AP_DECLARE(int) ap_setup_client_block(request_rec *r, int read_policy)
 AP_DECLARE(int) ap_should_client_block(request_rec *r)
 {
     /* First check if we have already read the request body */
-
-    if (r->read_length || r->remaining <= 0)
+    /* Since we are not using chunked skip the readed checking */
+    if (r->read_length)
         return 0;
     else
         return 1;

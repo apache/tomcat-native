@@ -31,6 +31,13 @@ extern "C" {
 #define AP_DECLARE(type)            type
 #define AP_DECLARE_NONSTD(type)     type
 #define AP_DECLARE_DATA
+/**
+ * @internal
+ * modules should not used functions marked AP_CORE_DECLARE
+ */
+#ifndef AP_CORE_DECLARE
+# define AP_CORE_DECLARE	AP_DECLARE
+#endif 
 
 /** The default string lengths */
 #define MAX_STRING_LEN HUGE_STRING_LEN
@@ -131,6 +138,10 @@ extern "C" {
                                     ((x) == HTTP_SERVICE_UNAVAILABLE) || \
                     ((x) == HTTP_NOT_IMPLEMENTED))
                     
+/* Maximum number of dynamically loaded modules */
+#ifndef DYNAMIC_MODULE_LIMIT
+#define DYNAMIC_MODULE_LIMIT 64
+#endif
 /* Default administrator's address */
 #define DEFAULT_ADMIN "[no address given]"
 /* The timeout for waiting for messages */
@@ -238,6 +249,14 @@ extern "C" {
  * The method mask bit to shift for anding with a bitmask.
  */
 #define AP_METHOD_BIT ((apr_int64_t)1)
+
+/*
+ * This is a convenience macro to ease with checking a mask
+ * against a method name.
+ */
+#define AP_METHOD_CHECK_ALLOWED(mask, methname) \
+    ((mask) & (AP_METHOD_BIT << ap_method_number_of((methname))))
+
 /** @} */
 
 /** default HTTP Server protocol */
@@ -270,7 +289,8 @@ typedef struct process_rec  process_rec;
 typedef struct request_rec  request_rec;
 typedef struct conn_rec     conn_rec;
 typedef struct server_rec   server_rec;
-
+typedef struct ap_conf_vector_t ap_conf_vector_t;
+ 
 
 /* fake structure definitions */
 /** A structure that represents one process */
@@ -382,10 +402,9 @@ struct request_rec {
     /** A struct containing the components of URI */
     apr_uri_t parsed_uri;
     /** Options set in config files, etc. */
-    void *per_dir_config;
+    struct ap_conf_vector_t *per_dir_config;
     /** Notes on *this* request */
-    void *request_config;
-         
+    struct ap_conf_vector_t *request_config;         
 };
 
 /** Structure to store things which are per connection */
@@ -414,6 +433,8 @@ struct conn_rec {
     char *local_host;
      /** ID of this connection; unique at any point in time */
     long id;
+    /** Notes on *this* connection */
+    struct ap_conf_vector_t *conn_config;
     /** send note from one module to another, must remain valid for all
      *  requests on this conn */
     apr_table_t *notes; 
@@ -703,6 +724,29 @@ AP_DECLARE(int) ap_discard_request_body(request_rec *r);
  * for the AddOutputFilterByType directive to work correctly.
  */
 AP_DECLARE(void) ap_set_content_type(request_rec *r, const char *ct);
+
+/**
+ * Setup the config vector for a request_rec
+ * @param p The pool to allocate the config vector from
+ * @return The config vector
+ */
+AP_CORE_DECLARE(ap_conf_vector_t*) ap_create_request_config(apr_pool_t *p);
+
+/* For http_connection.c... */
+/**
+ * Setup the config vector for a connection_rec
+ * @param p The pool to allocate the config vector from
+ * @return The config vector
+ */
+AP_CORE_DECLARE(ap_conf_vector_t*) ap_create_conn_config(apr_pool_t *p);
+
+/**
+ * Get the method number associated with the given string, assumed to
+ * contain an HTTP method.  Returns M_INVALID if not recognized.
+ * @param method A string containing a valid HTTP method
+ * @return The method number
+ */
+AP_DECLARE(int) ap_method_number_of(const char *method);
 
 /**
  * create the request_rec structure from fake client connection 
