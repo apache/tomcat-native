@@ -89,6 +89,9 @@
 
 #include "apr_shm.h"
 
+/* Inter-process synchronization - to create the slots */
+#include "apr_proc_mutex.h"
+
 struct jk_shm_buffer {
     /** Incremented after each modification */
     int generation;
@@ -120,51 +123,41 @@ struct jk_shm_head {
 typedef struct jk_shm_private {
     apr_size_t size;
     apr_shm_t *aprShm;
-    apr_pool_t *aprPool;
 
     struct jk_shm_head *image;
 } jk_shm_private_t;
 
 static apr_pool_t *globalShmPool;
 
-static int jk_shm_destroy(jk_env_t *env, jk_shm_t *shm)
+static int jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
 {
     jk_shm_private_t *shmP=shm->privateData;
     
     return apr_shm_destroy(shmP->aprShm);
 }
 
-static int jk_shm_detach(jk_env_t *env, jk_shm_t *shm)
+static int jk2_shm_detach(jk_env_t *env, jk_shm_t *shm)
 {
     jk_shm_private_t *shmP=shm->privateData;
 
     return apr_shm_detach(shmP->aprShm);
 }
 
-static int jk_shm_attach(jk_env_t *env, jk_shm_t *shm)
+static int jk2_shm_attach(jk_env_t *env, jk_shm_t *shm)
 {
+    jk_shm_private_t *shmP=shm->privateData;
 
+    return apr_shm_attach(&shmP->aprShm, shm->fname, globalShmPool );
 }
 
 
 /* Create or reinit an existing scoreboard. The MPM can control whether
  * the scoreboard is shared across multiple processes or not
  */
-static int jk_shm_createScoreboard(jk_env_t *env, jk_shm_t *shm)
+static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
 {
     apr_status_t rv;
     jk_shm_private_t *shmP=shm->privateData;
-
-    /* We don't want to have to recreate the scoreboard after
-     * restarts, so we'll create a global pool and never clean it.
-     */
-    rv = apr_pool_create(&globalShmPool, NULL);
-
-    if (rv != APR_SUCCESS) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "Unable to create global pool for jk_shm\n");
-        return rv;
-    }
 
     /* The config says to create a name-based shmem */
     if ( shm->fname == NULL ) {
@@ -183,12 +176,67 @@ static int jk_shm_createScoreboard(jk_env_t *env, jk_shm_t *shm)
     rv = apr_shm_create(&shmP->aprShm, shmP->size, shm->fname, globalShmPool);
     
     if (rv) {
+        char error[256];
+        apr_strerror( rv, error, 256 );
+        
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.create(): error creating named scoreboard %s %d\n",
-                      shm->fname, rv);
+                      "shm.create(): error creating named scoreboard %s %d %s\n",
+                      shm->fname, rv, error );
+        shmP->aprShm=NULL;
         return rv;
     }
 
+    return JK_OK;
+}
+
+#define DEFAULT_SHM_SIZE 1024 * 1024 * 8
+
+static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
+    apr_status_t rv;
+    jk_shm_private_t *shmP=shm->privateData;
+
+    if( shm->fname==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.init(): No file\n");
+        return JK_FALSE;
+    }
+
+    if( shmP->size == 0  ) {
+        shmP->size = DEFAULT_SHM_SIZE;
+    }
+    
+    /* We don't want to have to recreate the scoreboard after
+     * restarts, so we'll create a global pool and never clean it.
+     */
+    rv = apr_pool_create(&globalShmPool, NULL);
+
+    if (rv != APR_SUCCESS) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "Unable to create global pool for jk_shm\n");
+        return rv;
+    }
+    
+    shmP->aprShm=NULL;
+
+    /* Try to attach */
+    rv=jk2_shm_attach( env, shm );
+
+    if( rv || shmP->aprShm==NULL ) {
+        char error[256];
+        apr_strerror( rv, error, 256 );
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "Unable to attach to %s %d %s\n", shm->fname, rv, error);
+    }
+
+    rv=jk2_shm_create( env, shm );
+    
+    if( rv || shmP->aprShm==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "Unable to create to %s %d\n", shm->fname, rv);
+        return JK_FALSE;
+    }
+
+    /* Get the base address, initialize it */
     shmP->image = apr_shm_baseaddr_get( shmP->aprShm);
     if( shmP->image==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
@@ -202,12 +250,20 @@ static int jk_shm_createScoreboard(jk_env_t *env, jk_shm_t *shm)
     return JK_TRUE;
 }
 
-static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
-
-
-    return JK_TRUE;
+static int jk2_shm_setAttribute( jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP ) {
+    jk_shm_t *shm=(jk_shm_t *)mbean->object;
+    char *value=(char *)valueP;
+    jk_shm_private_t *shmP=shm->privateData;
+    
+    if( strcmp( "file", name ) == 0 ) {
+	shm->fname=value;
+    } else if( strcmp( "size", name ) == 0 ) {
+	shmP->size=atoi(value);
+    } else {
+	return JK_FALSE;
+    }
+    return JK_TRUE;   
 }
-
 
 int JK_METHOD jk2_shm_factory( jk_env_t *env, jk_pool_t *pool,
                      jk_bean_t *result,
@@ -215,17 +271,20 @@ int JK_METHOD jk2_shm_factory( jk_env_t *env, jk_pool_t *pool,
 {
     jk_shm_t *_this;
 
-    _this=(jk_shm_t *)pool->alloc(env, pool, sizeof(jk_shm_t));
+    _this=(jk_shm_t *)pool->calloc(env, pool, sizeof(jk_shm_t));
 
     if( _this == NULL )
         return JK_FALSE;
 
-    /* result->setAttribute=jk2_scoreboard_setAttribute; */
-    /* result->getAttribute=jk2_scoreboard_getAttribute; */
+    _this->privateData=(jk_shm_private_t *)pool->calloc(env, pool, sizeof(jk_shm_private_t));
+        
+    result->setAttribute=jk2_shm_setAttribute;
+    /* result->getAttribute=jk2_shm_getAttribute; */
     /*     _this->mbean=result; */
     result->object=_this;
 
     _this->init=jk2_shm_init;
+/*     _this->destroy=jk2_shm_detach; */
     
     /* result->aprPool=(apr_pool_t *)p->_private; */
         
