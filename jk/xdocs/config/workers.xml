@@ -174,7 +174,7 @@ finish having many unused ajp13 threads on the Tomcat side.
 </p>. 
 </directive>
 
-<directive name="lb_factor" default="1" required="false">
+<directive name="lbfactor" default="1" required="false">
 Integer number used when the worker will be used inside load balancer worker,
 this is the load-balancing factor for the worker.
 The load-balancing factor is <i>how much we expect this worker to work</i>, or
