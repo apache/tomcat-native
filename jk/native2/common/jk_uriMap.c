@@ -174,52 +174,73 @@ static int jk2_uriMap_realloc(jk_env_t *env,jk_uriMap_t *_this)
     return JK_TRUE;
 }
 
-static jk_uriEnv_t *jk2_uriMap_createUriEnv(jk_env_t *env, jk_uriMap_t *_this,
-                                            const char *vhost, const char *uri)
+/* -------------------- XXX Move to uriEnv.c -------------------- */
+static jk_uriEnv_t *jk2_uriEnv_setProperty(jk_env_t *env,
+                                           jk_uriEnv_t *uriEnv,
+                                           const char *nameParam,
+                                           const char *valueParam)
 {
-    jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)_this->pool->calloc(env, _this->pool,
-                                                           sizeof(jk_uriEnv_t));
-    uriEnv->workerEnv=_this->workerEnv;
-    /* XXX search the real webapp
-     */
-    uriEnv->webapp=_this->workerEnv->rootWebapp;
+    char *name=uriEnv->pool->pstrdup(env,uriEnv->pool, nameParam);
+    char *val=uriEnv->pool->pstrdup(env,uriEnv->pool, valueParam);
+
+    uriEnv->properties->add( env ,uriEnv->properties,
+                             name, val );
+    if( strcmp("worker", name) == 0 ) {
+        uriEnv->workerName=val;
+    }
     
-    return uriEnv;
 }
 
-static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
-                                          const char *vhost,
-                                          const char *puri, 
-                                          const char *pworker)
-{
-    jk_uriEnv_t *uwr;
-    char *uri;
-    char *worker;
-    int err;
-    char *asterisk;
 
+static jk_uriEnv_t *jk2_uriEnv_createUriEnv(jk_env_t *env,
+                                            jk_uriMap_t *uriMap,
+                                            const char *vhost,
+                                            const char *path) 
+{
+    jk_pool_t *uriPool;
+    int err;
+    jk_uriEnv_t *uriEnv;
+    jk_workerEnv_t *wEnv=uriMap->workerEnv;
+
+    /** Will be discarded/flushed on reload */
+    /** XXX Group by webapp */
+    uriPool=(jk_pool_t *)uriMap->pool->create( env, uriMap->pool,
+                                                 HUGE_POOL_SIZE);
+
+    uriEnv=(jk_uriEnv_t *)uriMap->pool->calloc(env, uriPool,
+                                              sizeof(jk_uriEnv_t));
+    
+    uriEnv->setProperty=&jk2_uriEnv_setProperty;
+    uriEnv->pool=uriPool;
+    
+    uriEnv->workerEnv=uriMap->workerEnv;
+    jk2_map_default_create( env, &uriEnv->properties, uriPool );
+
+    uriEnv->uri=uriPool->pstrdup(env, uriPool, path);
+    uriEnv->virtual=uriPool->pstrdup(env, uriPool, vhost);
+
+    /* Register it */
     /* make sure we have space */
-    err=jk2_uriMap_realloc(env, _this);
+    err=jk2_uriMap_realloc(env, uriMap);
     if (err != JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "uriMap.addMappint() OutOfMemoryException\n");
         return NULL;
     }
+    uriMap->maps[uriMap->size] = uriEnv;
+    uriMap->size++;
 
-    uwr = jk2_uriMap_createUriEnv(env, _this,vhost,puri);
+    return uriEnv;
+}
+
+
+static jk_uriEnv_t *jk2_uriMap_prepareUriEnv(jk_env_t *env, jk_uriMap_t *_this,
+                                             jk_uriEnv_t *uwr,
+                                             char *vhost, char *uri, char *worker)
+{
+    int err;
+    char *asterisk;
     
-    uri = _this->pool->pstrdup(env, _this->pool, puri);
-    uwr->uri = _this->pool->pstrdup(env, _this->pool, uri);
-    
-    worker = _this->pool->pstrdup(env, _this->pool, pworker);
-    uwr->webapp->workerName = worker;
-
-    if (uri==NULL || worker==NULL || uwr==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                 "uriMap.addMapping() NullPointerException\n");
-        return NULL;
-    }
-
     if ('/' != uri[0]) {
         /*
          * JFC: please check...
@@ -232,9 +253,6 @@ static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
                       uri);
         return NULL;
     }
-
-    _this->maps[_this->size] = uwr;
-    _this->size++;
 
     asterisk = strchr(uri, '*');
 
@@ -316,6 +334,26 @@ static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
     return uwr;
 }
 
+static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
+                                          const char *vhost,
+                                          const char *puri, 
+                                          const char *pworker)
+{
+    jk_uriEnv_t *uwr;
+    char *worker;
+
+    uwr = _this->createUriEnv(env, _this, vhost,puri );
+    if ( uwr==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "uriMap.addMapping() Create uriEnv failed\n");
+        return NULL;
+    }
+
+    uwr->setProperty( env, uwr, "worker", pworker );
+
+    return jk2_uriMap_prepareUriEnv(env, _this, uwr, vhost, uwr->uri, worker);
+}
+
 static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this,
                            jk_workerEnv_t *workerEnv,
                            jk_map_t *init_data)
@@ -354,14 +392,15 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this,
     /* Set uriEnv->worker ( can't be done earlier since we might not have
        the workers set up */
     for(i = 0 ; i < _this->size ; i++) {
-        char *wname=_this->maps[i]->webapp->workerName;
-        /* assert( wname != NULL ); */
-        _this->maps[i]->webapp->worker=
-            workerEnv->getWorkerForName( env, workerEnv, wname );
-        if( _this->maps[i]->webapp->worker==NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                     "uriMap.init() map to invalid worker %s %s\n",
-                          _this->maps[i]->uri, wname);
+        char *wname=_this->maps[i]->workerName;
+        if( wname!=NULL ) {
+            _this->maps[i]->worker=
+                workerEnv->getWorkerForName( env, workerEnv, wname );
+            if( _this->maps[i]->worker==NULL ) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "uriMap.init() map to invalid worker %s %s\n",
+                              _this->maps[i]->uri, wname);
+            }
         }
     }
     
@@ -493,7 +532,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
             if( _this->debug > 0 )
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                               "uriMap.mapUri() exact match %s:%s \n",
-                              uwr->webapp->worker->name, uwr->prefix );
+                              uwr->worker->name, uwr->prefix );
             /* restore */
             if( url_rewrite ) *url_rewrite=origChar;
             return uwr;
@@ -553,7 +592,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
         if( _this->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "uriMap.mapUri() matched %s %s\n",
-                          uri, _this->maps[best_match]->webapp->worker->name ); 
+                          uri, _this->maps[best_match]->worker->name ); 
         return _this->maps[best_match];
     }
     
@@ -586,6 +625,7 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
 
     _this->init=jk2_uriMap_init;
     _this->destroy=jk2_uriMap_destroy;
+    _this->createUriEnv=jk2_uriEnv_createUriEnv;
     _this->addMapping=jk2_uriMap_addMapping;
     _this->checkUri=jk2_uriMap_checkUri;
     _this->mapUri=jk2_uriMap_mapUri;
