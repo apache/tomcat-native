@@ -160,6 +160,25 @@ static boolean wa_warp_packet_set_string(wa_warp_packet *p, char *s) {
 }
 
 /**
+ * Retrieve a string from a WARP packet.
+ *
+ * @param p The ponter to a packet structure.
+ * @param buf The buffer where data needs to be stored.
+ * @param len The buffer length.
+ * @return The number of bytes copied, or a number greater than len indicating
+ *         the number of bytes required to read this string.
+ */
+static int wa_warp_packet_get_string(wa_warp_packet *p, char *buf, int len) {
+    int k=wa_warp_packet_get_short(p);
+    int x=0;
+
+    if (k>len) return(k);
+    for (x=0; x<k; x++) buf[x]=p->buf[p->len++];
+    return(k);
+}
+
+
+/**
  * Send a short integer (2 bytes) over a warp connection.
  *
  * @param c The connection configuration structure.
@@ -225,7 +244,6 @@ static wa_warp_packet *wa_warp_recv(wa_warp_conn_config *c, int r) {
     int rid=-1;
     int typ=-1;
     int siz=-1;
-    int ret=-1;
 
     // Get the packet RID
     if ((rid=wa_warp_recv_short(c))<0) {
@@ -255,14 +273,19 @@ static wa_warp_packet *wa_warp_recv(wa_warp_conn_config *c, int r) {
     p=wa_warp_packet_create(siz);
     p->typ=typ;
     p->siz=siz;
+    p->len=0;
     if (siz==0) return(p);
+
     // Read from the socket and fill the packet buffer
-    if ((ret=recv(c->sock,p->buf,siz,0))!=siz) {
-        fprintf(stderr,"SHORT rid=%d typ=%d siz=%d ret=%d\n",rid,typ,siz,ret);
-        wa_warp_packet_free(p);
-        return(NULL);
+    while(TRUE) {
+        p->len+=recv(c->sock,p->buf+p->len,(siz-p->len),0);
+        if (p->len<siz) fprintf(stderr,"SHORT len=%d siz=%d\n",p->len,siz);
+        if (p->len>siz) fprintf(stderr,"INCONSIST len=%d siz=%d\n",p->len,siz);
+        else {
+            p->len=0;
+            return(p);
+        }
     }
-    return(p);
 }
 
 /**
@@ -508,7 +531,21 @@ static void wa_warp_init(wa_connection *conn) {
     // Configure our list of hosts
     while(host!=NULL) {
         wa_application *appl=host->apps;
+        boolean found=FALSE;
         int hid=0;
+        
+
+        // Check if this host has applications configured with this provider
+        while(appl!=NULL) {
+            if (appl->conn->prov==&wa_provider_warp) {
+                found=TRUE;
+                break;
+            } else appl=appl->next;
+        }
+        if (found==FALSE) {
+            host=host->next;
+            continue;
+        } else appl=host->apps;
 
         wa_callback_debug(WA_LOG,NULL,"Attempting to configure host %s:%d",
                          host->name,host->port);
@@ -552,12 +589,19 @@ static void wa_warp_init(wa_connection *conn) {
 
         // Iterate thru the list of configured applications
         while(appl!=NULL) {
-            int aid=0;
             wa_warp_appl_config *cnf=NULL;
-
+            int aid=0;
+            
+            // Check if the current application is a warp application
+            if (appl->conn->prov!=&wa_provider_warp) {
+                appl=appl->next;
+                continue;
+            }
+            
             wa_callback_debug(WA_LOG,NULL,"Attempting to configure app %s %s",
                              appl->name,appl->path);
             p->typ=TYP_CONINIT_APP;
+            wa_warp_packet_set_short(p,hid);
             wa_warp_packet_set_string(p,appl->name);
             wa_warp_packet_set_string(p,appl->path);
 
@@ -679,6 +723,9 @@ static void wa_warp_handle(wa_request *req) {
     wa_warp_packet *out=NULL;
     int rid=0;
     int x=0;
+    char buf1[8192];
+    char buf2[8192];
+    boolean committed=FALSE;
 
     cc=(wa_warp_conn_config *)req->appl->conn->conf;
     ac=(wa_warp_appl_config *)req->appl->conf;
@@ -820,8 +867,66 @@ static void wa_warp_handle(wa_request *req) {
         wa_warp_handle_error(req,"Unknown packet received (%d)",in->typ);
         return;
     }
-    wa_warp_packet_free(in);
 
+    wa_warp_packet_free(out);
+    while (TRUE) {
+        in=wa_warp_recv(cc,rid);
+        if (in==NULL) {
+            wa_warp_close(cc, "No packets received waiting response");
+            wa_warp_handle_error(req,"No packets received waiting response");
+            return;
+        }
+        // Check if we got an ERR packet
+        if (in->typ==TYP_REQUEST_ERR) {
+            wa_warp_packet_free(in);
+            wa_warp_handle_error(req,"Error in response");
+            return;
+        }
+        // Check if we got an ACK packet (close)
+        if (in->typ==TYP_REQUEST_ACK) {
+            wa_warp_packet_free(in);
+            wa_callback_flush(req);
+            return;
+        }
+        // Check if we got an STA packet (close)
+        if (in->typ==TYP_REQUEST_STA) {
+            wa_warp_packet_get_string(in,buf1,8192);
+            x=wa_warp_packet_get_short(in);
+            wa_warp_packet_get_string(in,buf1,8192);
+            wa_callback_setstatus(req,x);
+        }
+        // Check if we got an HDR packet (header)
+        if (in->typ==TYP_REQUEST_HDR) {
+            x=wa_warp_packet_get_string(in,buf1,8192);
+            buf1[x]='\0';
+            x=wa_warp_packet_get_string(in,buf2,8192);
+            buf2[x]='\0';
+            if (strcasecmp("Connection",buf1)!=0) {
+                wa_callback_setheader(req,buf1,buf2);
+            }
+            if (strcasecmp("Content-Type",buf1)==0) {
+                wa_callback_settype(req,buf2);
+            }
+        }
+        // Check if we got an CMT packet (commit)
+        if (in->typ==TYP_REQUEST_CMT) {
+            if (committed==FALSE) {
+                wa_callback_commit(req);
+                committed=TRUE;
+            }
+        }
+        // Check if we got an DAT packet (data)
+        if (in->typ==TYP_REQUEST_DAT) {
+            if (committed==FALSE) {
+                wa_callback_commit(req);
+                committed=TRUE;
+            }
+            wa_callback_write(req,in->buf,in->siz);
+            wa_callback_flush(req);            
+        }
+        wa_warp_packet_free(in);
+    }
+/*
     wa_callback_setstatus(req,200);
     wa_callback_settype(req,"text/html");
     wa_callback_commit(req);
@@ -840,6 +945,7 @@ static void wa_warp_handle(wa_request *req) {
     wa_callback_printf(req," </body>\n");
     wa_callback_printf(req,"</html>\n");
     wa_callback_flush(req);
+*/
 }
 
 /** WebAppLib plugin description. */
