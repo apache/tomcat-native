@@ -83,7 +83,7 @@ public final class Constants {
     public static final Locale DEFAULT_LOCALE = new Locale(LOCALE_DEFAULT, "");
 
 
-    public static final int MAX_NOTES = 10;
+    public static final int MAX_NOTES = 32;
 
 
 }
