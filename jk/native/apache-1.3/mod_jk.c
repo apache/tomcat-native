@@ -592,12 +592,8 @@ static int init_ws_service(apache_private_data_t * private_data,
                 char *hname = ap_pstrdup(r->pool, elts[i].key);
                 s->headers_values[i] = ap_pstrdup(r->pool, elts[i].val);
                 s->headers_names[i] = hname;
-                while (*hname) {
-                    *hname = tolower(*hname);
-                    hname++;
-                }
                 if (need_content_length_header &&
-                    !strncmp(s->headers_values[i], "content-length", 14)) {
+                    !strcasecmp(s->headers_values[i], "content-length")) {
                     need_content_length_header = JK_FALSE;
                 }
             }
