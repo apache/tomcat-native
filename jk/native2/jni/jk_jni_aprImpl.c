@@ -77,6 +77,23 @@
 
 #include "org_apache_jk_apr_AprImpl.h"
 
+#include "jk_global.h"
+#include "jk_map.h"
+#include "jk_pool.h"
+/* #include "jk_scoreboard.h" */
+
+#include "apr_strings.h"
+#include "apr_portable.h"
+#include "apr_lib.h"
+
+#if APR_HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#if APR_HAS_SHARED_MEMORY
+#include "apr_shm.h"
+#endif
+
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 {
@@ -150,22 +167,113 @@ Java_org_apache_jk_apr_AprImpl_userId(JNIEnv *jniEnv, jobject _jthis, jlong pool
     return 0;
 }
 
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmInit(JNIEnv *jniEnv, jobject _jthis, jlong pool,
-                                       jlong size, jstring file)
-{
+/* -------------------- Shared memory -------------------- */
+/* Use it to access the scoreboard or for shmem channel */
 
-    return 0;
+#if APR_HAS_SHARED_MEMORY
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmAttach(JNIEnv *jniEnv, jobject _jthis, jlong poolJ,
+                                       jlong size, jstring fileJ)
+{
+    char *fname=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, fileJ, 0);
+    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
+    apr_status_t rv;
+    apr_shm_t *aprShm;
+    
+    apr_file_remove(fname, pool); /* ignore errors */
+    
+    rv = apr_shm_attach(&aprShm, fname, pool);
+
+    (*jniEnv)->ReleaseStringUTFChars(jniEnv, fileJ, fname);
+    
+    if (rv != APR_SUCCESS) {
+        return (jlong)NULL;
+    }
+    return (jlong)(long)(void *)aprShm;
+}
+
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmBaseaddrGet(JNIEnv *jniEnv, jobject _jthis, jlong pool,
+                                          jlong shmP)
+{
+    apr_shm_t *shm=(apr_shm_t *)(void *)(long)shmP;
+    void *sb_shared;
+    
+    sb_shared = apr_shm_baseaddr_get(shm);
+    return (jlong)(long)(void *)sb_shared;
+}
+     
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmSizeGet(JNIEnv *jniEnv, jobject _jthis, jlong pool,
+                                          jlong shmP)
+{
+    apr_shm_t *shm=(apr_shm_t *)(void *)(long)shmP;
+    
+    return (jlong)(long)(void *)apr_shm_size_get(shm);
+}
+        
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmDetach(JNIEnv *jniEnv, jobject _jthis, jlong pool,
+                                          jlong shmP)
+{
+    apr_shm_t *shm=(apr_shm_t *)(void *)(long)shmP;
+
+    return apr_shm_detach(shm);
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *jniEnv, jobject _jthis, jlong pool,
+                                          jlong shmP)
+{
+    apr_shm_t *shm=(apr_shm_t *)(void *)(long)shmP;
+
+    return apr_shm_destroy(shm);
+}
+
+#else
+
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmAttach(JNIEnv *jniEnv, jobject _jthis, jlong poolJ,
+                                       jlong size, jstring fileJ)
+{
+    return (jlong)0;
+}
+
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmBaseaddrGet(JNIEnv *jniEnv, jobject _jthis, jlong pool,
+                                          jlong shmP)
+{
+    return (jlong)0;
+}
+     
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmSizeGet(JNIEnv *jniEnv, jobject _jthis, jlong pool,
+                                          jlong shmP)
+{
+    return (jlong)0;
+}
+        
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmDetach(JNIEnv *jniEnv, jobject _jthis, jlong pool,
+                                          jlong shmP)
+{
+    return (jlong)0;
 }
 
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *jniEnv, jobject _jthis, jlong pool,
                                           jlong size, jstring file)
 {
-
-    return 0;
+    return (jlong)0;
 }
 
+#endif 
 
 /* ==================== Unix sockets ==================== */
 /* It seems apr doesn't support them yet, so this code will use the
