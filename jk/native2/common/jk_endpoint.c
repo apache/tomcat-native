@@ -77,21 +77,35 @@
 static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
     jk_endpoint_t *ep=(jk_endpoint_t *)bean->object;
     jk_stat_t *stats;
+    jk_workerEnv_t *wEnv=ep->workerEnv;
 
     /* alloc it inside the shm if possible */
-    if( ep->workerEnv->epStat != NULL && ep->workerEnv->childId >= 0 ) {
-        jk_stat_t *statArray=(jk_stat_t *)ep->workerEnv->epStat->data;
-        stats= & statArray[ ep->id ];
+    if( wEnv->epStat==NULL ) {
+        if( wEnv->shm != NULL && wEnv->childId >= 0 ) {
+            char shmName[128];
+            snprintf( shmName, 128, "epStat.%d", wEnv->childId );
+            
+            wEnv->epStat=wEnv->shm->createSlot( env, wEnv->shm, shmName, 8096 );
+            wEnv->epStat->structCnt=0;
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create slot %s\n",  shmName );
+        }
+    }
+
+    if( wEnv->epStat != NULL && wEnv->childId >= 0 ) {
+        jk_stat_t *statArray=(jk_stat_t *)wEnv->epStat->data;
+        stats= & statArray[ ep->mbean->id ];
         ep->workerEnv->epStat->structSize=sizeof( jk_stat_t );
-        ep->workerEnv->epStat->structCnt=ep->id + 1;
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "SHM stats %d %p %p %s %s childId=%d\n", ep->id,
-                      ep->workerEnv->epStat->data, stats,
-                      ep->mbean->localName, ep->mbean->name, ep->workerEnv->childId);
+        ep->workerEnv->epStat->structCnt=ep->mbean->id + 1;
+        if( ep->worker->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "SHM stats %d %p %p %s %s childId=%d\n", ep->mbean->id,
+                          ep->workerEnv->epStat->data, stats,
+                          ep->mbean->localName, ep->mbean->name, ep->workerEnv->childId);
     } else {
         stats = (jk_stat_t *)ep->mbean->pool->calloc( env, ep->mbean->pool, sizeof( jk_stat_t ) );
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "Local stats %d %p %d\n", ep->id, ep->workerEnv->epStat, ep->workerEnv->childId );
+        if( ep->worker->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "Local stats %d %p %d\n", ep->mbean->id, ep->workerEnv->epStat, ep->workerEnv->childId );
     }
     
     ep->stats=stats;
@@ -103,6 +117,7 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
     ep->stats->totalTime=0;
 #endif
 
+	return JK_OK;
 }
 
 int JK_METHOD
@@ -112,7 +127,6 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
 {
     jk_endpoint_t *e = (jk_endpoint_t *)pool->alloc(env, pool,
                                                     sizeof(jk_endpoint_t));
-    jk_workerEnv_t *workerEnv;
     int epId;
 
     if (e==NULL) {
