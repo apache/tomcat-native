@@ -182,7 +182,7 @@ extern "C" {
 
 #else /* CHARSET_EBCDIC */
 
-/* We're in on an ASCII system
+/* We're in on an ASCII system */
 
 #define jk_xlate_to_ascii(b, l)             /* NOOP */
 #define jk_xlate_from_ascii(b, l)           /* NOOP */
