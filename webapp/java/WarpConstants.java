@@ -67,7 +67,7 @@ package org.apache.catalina.connector.warp;
 public class WarpConstants {
     /* The DEBUG flag. (If false debug information will not be compiled in). */
     public static final boolean DEBUG = true;
-    
+
     /* The RID associated with the connection controller handler (0x00000). */
     public static final int RID_CONNECTION = 0x00000;
 
@@ -80,11 +80,22 @@ public class WarpConstants {
     /* The RID maximum value (0x0fffe). */
     public static final int RID_MAX = 0x0fffe;
 
-    public static final int TYP_HOST           = 0x00000;
-    public static final int TYP_HOST_ID        = 0x00001; 
-    public static final int TYP_APPLICATION    = 0x00002; 
-    public static final int TYP_APPLICATION_ID = 0x00003; 
-    public static final int TYP_REQUEST        = 0x00004; 
-    public static final int TYP_REQUEST_ID     = 0x00005; 
+    public static final int TYP_CONINIT_HST = 0x00000;
+    public static final int TYP_CONINIT_HID = 0x00001;
+    public static final int TYP_CONINIT_APP = 0x00002;
+    public static final int TYP_CONINIT_AID = 0x00003;
+    public static final int TYP_CONINIT_REQ = 0x00004;
+    public static final int TYP_CONINIT_RID = 0x00005;
+    public static final int TYP_CONINIT_ERR = 0x0000F;
+
+    public static final int TYP_REQINIT_MET = 0x00010;
+    public static final int TYP_REQINIT_URI = 0x00011;
+    public static final int TYP_REQINIT_ARG = 0x00012;
+    public static final int TYP_REQINIT_PRO = 0x00013;
+    public static final int TYP_REQINIT_HDR = 0x00014;
+    public static final int TYP_REQINIT_VAR = 0x00015;
+    public static final int TYP_REQINIT_RUN = 0x0001D;
+    public static final int TYP_REQINIT_ERR = 0x0001E;
+    public static final int TYP_REQINIT_ACK = 0x0001F;
 }
                                                 

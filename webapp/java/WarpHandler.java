@@ -123,7 +123,8 @@ public abstract class WarpHandler implements Runnable {
         this.rid=rid;
         this.processed=true;
         this.stopped=false;
-        this.name=this.getClass().getName()+"[RID="+rid+"]";
+        String n=this.getClass().getName();
+        this.name=n.substring(n.lastIndexOf('.')+1)+"[RID="+rid+"]";
         new Thread(this,this.name).start();
     }
 

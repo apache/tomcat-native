@@ -66,13 +66,13 @@ import java.io.IOException;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpConnectionHandler extends WarpHandler {
+public class WarpRequestHandler extends WarpHandler {
     /** The WarpReader associated with this WarpConnectionHandler. */
     private WarpReader reader=new WarpReader();
     /** The WarpPacket used to write data. */
     private WarpPacket packet=new WarpPacket();
-    /** The current request id. */
-    private int request=WarpConstants.RID_MIN;
+    /** Wether we had an error in the request header. */
+    private boolean headererr=false;
 
     /**
      * Process a WARP packet.
@@ -95,49 +95,46 @@ public class WarpConnectionHandler extends WarpHandler {
         this.packet.reset();
         try {
             switch (type) {
-                case WarpConstants.TYP_CONINIT_HST:
-                    // Retrieve this host id
-                    int hid=123;
-                    if (DEBUG) this.debug("CONINIT_HST "+reader.readString()+
-                                          ":"+reader.readShort()+"="+hid);
+                // The Request method
+                case WarpConstants.TYP_REQINIT_MET:
+                    if (DEBUG) this.debug("REQINIT_MET "+reader.readString());
+                    break;
+                // The Request URI
+                case WarpConstants.TYP_REQINIT_URI:
+                    if (DEBUG) this.debug("REQINIT_URI "+reader.readString());
+                    break;
+                // The Request query arguments
+                case WarpConstants.TYP_REQINIT_ARG:
+                    if (DEBUG) this.debug("REQINIT_ARG "+reader.readString());
+                    break;
+                // The Request protocol
+                case WarpConstants.TYP_REQINIT_PRO:
+                    if (DEBUG) this.debug("REQINIT_PRO "+reader.readString());
+                    break;
+                // A request header
+                case WarpConstants.TYP_REQINIT_HDR:
+                    if (DEBUG) this.debug("REQINIT_HDR "+reader.readString()+
+                                          ": "+reader.readString());
+                    break;
+                // A request variable
+                case WarpConstants.TYP_REQINIT_VAR:
+                    if (DEBUG) this.debug("REQINIT_VAR "+reader.readShort()+
+                                          "="+reader.readString());
+                    break;
+                // The request header is finished, run the servlet (whohoo!)
+                case WarpConstants.TYP_REQINIT_RUN:
+                    if (DEBUG) this.debug("REQINIT_RUN");
                     // Send the HOST ID back to the WARP client
                     this.packet.reset();
-                    this.packet.writeShort(hid);
-                    this.send(WarpConstants.TYP_CONINIT_HID,this.packet);
-                    break;
-                case WarpConstants.TYP_CONINIT_APP:
-                    // Retrieve this application id
-                    int aid=321;
-                    if (DEBUG) this.debug("CONINIT_APP "+reader.readString()+
-                                          ":"+reader.readString()+"="+aid);
-                    // Send the APPLICATION ID back to the WARP client
-                    this.packet.reset();
-                    this.packet.writeShort(aid);
-                    this.send(WarpConstants.TYP_CONINIT_AID,this.packet);
-                    break;
-                case WarpConstants.TYP_CONINIT_REQ:
-                    // Create a new WarpRequestHandler and register it with
-                    // an unique RID.
-                    int r=this.request;
-                    WarpConnection c=this.getConnection();
-                    WarpRequestHandler h=new WarpRequestHandler();
-                    // Iterate until a valid RID is found
-                    c.registerHandler(h,r);
-                    this.request=r+1;
-                    h.init(c,r);
-                    if (DEBUG) this.debug("CONINIT_REQ "+reader.readShort()+
-                                          ":"+reader.readShort()+"="+r);
-                    // Send the RID back to the WARP client
-                    this.packet.reset();
-                    this.packet.writeShort(r);
-                    this.send(WarpConstants.TYP_CONINIT_RID,this.packet);
+                    if (this.headererr) {
+                        this.send(WarpConstants.TYP_REQINIT_ERR,this.packet);
+                        return(false);
+                    }
+                    this.send(WarpConstants.TYP_REQINIT_ACK,this.packet);
                     break;
                 default:
-                    this.log("Wrong packet type "+type+". Closing connection");
-                    // Post an error message back to the WARP client
-                    this.packet.reset();
-                    this.send(WarpConstants.TYP_CONINIT_ERR,this.packet);
-                    return(false);
+                    this.log("Wrong packet type "+type);
+                    return(true);
             }
             return(true);
         } catch (IOException e) {

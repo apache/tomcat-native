@@ -136,6 +136,9 @@ public class WarpConnection implements Runnable {
                     this.log("Premature PAYLOAD end ("+ret+" of "+len+")");
                     break;
                 }
+
+                if (DEBUG) this.debug("Received packet RID="+rid+" TYP="+typ);
+
                 // Check if we have the special RID 0x0ffff (disconnect)
                 if (rid==0x0ffff) {
                     this.log("Connection closing ("+new String(buf)+")");
@@ -207,6 +210,7 @@ public class WarpConnection implements Runnable {
             out.write(buffer,offset,len);
             out.flush();
         }
+        if (DEBUG) this.debug("Sending packet RID="+rid+" TYP="+type);
     }
 
     /**
@@ -240,6 +244,7 @@ public class WarpConnection implements Runnable {
      *         false, otherwise return true.
      */
     protected synchronized boolean registerHandler(WarpHandler han, int rid) {
+        if (DEBUG) this.debug("Registering handler for RID "+rid);
         return(this.table.add(han, rid));
     }
 
