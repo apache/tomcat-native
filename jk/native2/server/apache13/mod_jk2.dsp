@@ -55,7 +55,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib ws2_32.lib /nologo /dll /machine:I386 /libpath:"$(APACHE_HOME)\lib" /libpath:"$(APACHE2_HOME)\lib"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib ws2_32.lib /nologo /dll /machine:I386 /out:"Release/mod_jk2.so" /libpath:"$(APACHE_HOME)\lib" /libpath:"$(APACHE2_HOME)\lib"
 
 !ELSEIF  "$(CFG)" == "mod_jk2 - Win32 Debug"
 
@@ -81,7 +81,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib wsock32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept /libpath:"$(APACHE_HOME)\lib" /libpath:"$(APACHE2_HOME)\lib"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib wsock32.lib /nologo /dll /debug /machine:I386 /out:"Debug/mod_jk2.so" /pdbtype:sept /libpath:"$(APACHE_HOME)\lib" /libpath:"$(APACHE2_HOME)\lib"
 
 !ELSEIF  "$(CFG)" == "mod_jk2 - Win32 Debug APR"
 
@@ -108,7 +108,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib wsock32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept /libpath:"$(APACHE_HOME)\lib" /libpath:"$(APACHE2_HOME)\lib"
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib wsock32.lib libapr.lib libaprutil.lib /nologo /dll /debug /machine:I386 /pdbtype:sept /libpath:"$(APACHE_HOME)\lib" /libpath:"$(APACHE2_HOME)\lib"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib wsock32.lib libapr.lib libaprutil.lib /nologo /dll /debug /machine:I386 /out:"DebugA/mod_jk2.so" /pdbtype:sept /libpath:"$(APACHE_HOME)\lib" /libpath:"$(APACHE2_HOME)\lib"
 
 !ELSEIF  "$(CFG)" == "mod_jk2 - Win32 Release APR"
 
@@ -125,7 +125,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /I "..\..\include" /I "$(APACHE_HOME)\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SHARED_MODULE" /D "WIN32_LEAN_AND_MEAN" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE_HOME)\include" /I "$(APACHE2_HOME)\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SHARED_MODULE" /D "WIN32_LEAN_AND_MEAN" /D "HAVE_JNI" /D "HAS_APR" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "C:\WRKPLACE\PROJECTS\jtc\apache13\include" /I "$(APACHE2_HOME)\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SHARED_MODULE" /D "WIN32_LEAN_AND_MEAN" /D "HAVE_JNI" /D "HAS_APR" /D "EAPI" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41a /d "NDEBUG"
@@ -135,7 +135,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib ws2_32.lib /nologo /dll /machine:I386 /libpath:"$(APACHE_HOME)\lib" /libpath:"$(APACHE2_HOME)\lib"
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib ws2_32.lib libapr.lib libaprutil.lib /nologo /dll /machine:I386 /libpath:"$(APACHE_HOME)\lib" /libpath:"$(APACHE_HOME)\libexec" /libpath:"$(APACHE2_HOME)\lib"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ApacheCore.lib ws2_32.lib libapr.lib libaprutil.lib /nologo /dll /machine:I386 /out:"ReleaseA/mod_jk2.so" /libpath:"C:\WRKPLACE\PROJECTS\jtc\apache13\lib" /libpath:"C:\WRKPLACE\PROJECTS\jtc\apache13\libexec" /libpath:"$(APACHE2_HOME)\lib"
 
 !ENDIF 
 
@@ -415,7 +415,7 @@ SOURCE=..\..\common\jk_logger_win32_message.mc
 !IF  "$(CFG)" == "mod_jk2 - Win32 Release"
 
 # Begin Custom Build
-InputDir=\WORK\PROJECTS\apache\jakarta-tomcat-connectors\jk\native2\common
+InputDir=\WRKPLACE\PROJECTS\jtc\jk\native2\common
 InputPath=..\..\common\jk_logger_win32_message.mc
 
 "..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -426,7 +426,7 @@ InputPath=..\..\common\jk_logger_win32_message.mc
 !ELSEIF  "$(CFG)" == "mod_jk2 - Win32 Debug"
 
 # Begin Custom Build
-InputDir=\WORK\PROJECTS\apache\jakarta-tomcat-connectors\jk\native2\common
+InputDir=\WRKPLACE\PROJECTS\jtc\jk\native2\common
 InputPath=..\..\common\jk_logger_win32_message.mc
 
 "..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -437,7 +437,7 @@ InputPath=..\..\common\jk_logger_win32_message.mc
 !ELSEIF  "$(CFG)" == "mod_jk2 - Win32 Debug APR"
 
 # Begin Custom Build
-InputDir=\WORK\PROJECTS\apache\jakarta-tomcat-connectors\jk\native2\common
+InputDir=\WRKPLACE\PROJECTS\jtc\jk\native2\common
 InputPath=..\..\common\jk_logger_win32_message.mc
 
 "..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -448,7 +448,7 @@ InputPath=..\..\common\jk_logger_win32_message.mc
 !ELSEIF  "$(CFG)" == "mod_jk2 - Win32 Release APR"
 
 # Begin Custom Build
-InputDir=\WORK\PROJECTS\apache\jakarta-tomcat-connectors\jk\native2\common
+InputDir=\WRKPLACE\PROJECTS\jtc\jk\native2\common
 InputPath=..\..\common\jk_logger_win32_message.mc
 
 "..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
