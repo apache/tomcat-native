@@ -297,6 +297,7 @@ static int info_handle(wa_request *r, wa_application *a) {
     wa_rprintf(r,"  </table>\n");
     wa_rprintf(r,"  <br>\n");
 
+#ifdef DEBUG
     /* See the request */
     wa_rprintf(r,"  <table width=\"80%%\" border=\"1\" cellspacing=\"0\">\n");
     wa_rprintf(r,"   <tr>\n");
@@ -425,6 +426,7 @@ static int info_handle(wa_request *r, wa_application *a) {
     }
 
     wa_rprintf(r,"  </table>\n");
+#endif /* ifdef DEBUG */
     wa_rprintf(r,"  <br>\n");
 
     wa_rprintf(r,"  </div>\n");

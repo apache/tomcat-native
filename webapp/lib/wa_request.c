@@ -162,6 +162,7 @@ int wa_rerror(const char *file, const int line, wa_request *r, int s,
     wa_rprintf(r,"  <hr>\n");
     wa_rprintf(r,"  %s\n",buf);
     wa_rprintf(r,"  <hr>\n");
+#ifdef DEBUG
     wa_rprintf(r,"  <dl>\n");
     wa_rprintf(r,"   <dt>Your Request:</dt>\n");
     wa_rprintf(r,"   <dd>Server Host: \"%s\"</dd>\n",r->serv->host);
@@ -182,6 +183,7 @@ int wa_rerror(const char *file, const int line, wa_request *r, int s,
     apr_table_do(headers,r,r->hdrs,NULL);
     wa_rprintf(r,"  </dl>\n");
     wa_rprintf(r,"  <hr>\n");
+#endif /* ifdef DEBUG */
     wa_rprintf(r," </body>\n");
     wa_rprintf(r,"</html>\n");
     wa_rflush(r);
