@@ -5,3 +5,7 @@ side of the connector is available with the normal Tomcat distribution.
 Documentation for how to build mod_jk 1.2 from source and configure
 it for your webserver is located in the jk/docs directory in this
 source distribution.
+
+The source is located in the jk/native directory and there are
+additional text files their on how to build mod_jk for different
+platforms.
