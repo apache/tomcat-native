@@ -218,25 +218,146 @@ public class Constants {
      * No payload:<br>
      */
     public static final int TYPE_CONF_PROCEED=0x0f;
-    
+
+    /**
+     * REQ_INIT: The client requests to the WARP server that a request is
+     * about to be processed.
+     * <br>
+     * Payload description:<br>
+     * [integer] The web-application unique ID for this server.<br>
+     * [string] The HTTP method used for this request.<br>
+     * [string] The request URI.<br>
+     * [string] The request query arguments.<br>
+     * [string] The request protocol (HTTP/1.0, HTTP/1.1...).<br>
+     */
     public static final int TYPE_REQ_INIT=0x10;
+
+    /**
+     * REQ_CONTENT: The mime content type and length of this request.
+     * <br>
+     * Payload description:<br>
+     * [string] The MIME content type of this reques.<br>
+     * [integer] The content length of this request.<br>
+     */
     public static final int TYPE_REQ_CONTENT=0x11;
+
+    /**
+     * REQ_SCHEME: The scheme description of this request.
+     * <br>
+     * Payload description:<br>
+     * [string] The scheme (part before :// in the URL) of this request.<br>
+     */
     public static final int TYPE_REQ_SCHEME=0x12;
+
+    /**
+     * REQ_AUTH: Authentication information of the HTTP remote peer.
+     * <br>
+     * Payload description:<br>
+     * [string] The remote-user name.<br>
+     * [string] The authentication information.<br>
+     */
     public static final int TYPE_REQ_AUTH=0x13;
+
+    /**
+     * REQ_HEADER: An HTTP request header.
+     * <br>
+     * Payload description:<br>
+     * [string] The header name.<br>
+     * [string] The header value.<br>
+     */
     public static final int TYPE_REQ_HEADER=0x14;
+
+    /**
+     * REQ_SERVER: The HTTP server information.
+     * <br>
+     * Payload description:<br>
+     * [string] The HTTP server host name.
+     * [string] The HTTP server IP address.
+     * [ushort] The port receiving the HTTP request.
+     */
     public static final int TYPE_REQ_SERVER=0x15;
+
+    /**
+     * REQ_CLIENT: The HTTP client (remote peer) information.
+     * <br>
+     * Payload description:<br>
+     * [string] The HTTP client host name.
+     * [string] The HTTP client IP address.
+     * [ushort] The remote port originating the HTTP request.
+     */
     public static final int TYPE_REQ_CLIENT=0x16;
+
+    /**
+     * REQ_PROCEED: The client finished transmitting the request. The server
+     * can now proceed and process the request.
+     * <br>
+     * No payload.<br>
+     */
     public static final int TYPE_REQ_PROCEED=0x1f;
-    
+
+    /**
+     * RES_STATUS: The server replies with the HTTP response status for the
+     * request.
+     * <br>
+     */
     public static final int TYPE_RES_STATUS=0x20;
+
+    /**
+     * RES_HEADER: An HTTP MIME response header to send to the client.
+     * <br>
+     * Payload description:<br>
+     * [string] The MIME header name.<br>
+     * [string] The MIME header value.<br>
+     */
     public static final int TYPE_RES_HEADER=0x21;
+
+    /**
+     * RES_COMMIT: The server indicates that the first part of the response
+     * (HTTP status line and MIME headers) are to be committed to the client
+     * (remote peer).
+     * <br>
+     * No payload.<br>
+     */
     public static final int TYPE_RES_COMMIT=0x2f;
 
+    /**
+     * RES_BODY: The HTTP response body.
+     * <br>
+     * Payload description:<br>
+     * [raw] A chunk of the response body.<br>
+     */
     public static final int TYPE_RES_BODY=0x30;
+
+    /**
+     * RES_DONE: The server finished transmitting the response.
+     * <br>
+     * No payload.<br>
+     */
     public static final int TYPE_RES_DONE=0x3f;
 
+    /**
+     * CBK_READ: A request callback. The WARP server queries the WARP client
+     * (HTTP server) to transmit a chunk of the request body.
+     * <br>
+     * Payload description:<br>
+     * [ushort] The number of bytes the server needs to transmit.<br>
+     */
     public static final int TYPE_CBK_READ=0x40;
-    public static final int TYPE_CBK_DATA=0x41;
-    public static final int TYPE_CBK_DONE=0x42;
 
+    /**
+     * CBK_DATA: As requested by the WARP server, the WARP client (HTTP
+     * server) transmits a chunk of the request body.
+     * <br>
+     * Payload description:<br>
+     * [raw] A chunk of the request body.<br>
+     */
+    public static final int TYPE_CBK_DATA=0x41;
+
+    /**
+     * CBK_DATA: The WARP client (HTTP server) informs the WARP server that
+     * the request body has been fully transmitted.
+     * <br>
+     * No payload.<br>
+     */
+    public static final int TYPE_CBK_DONE=0x42;
 }
