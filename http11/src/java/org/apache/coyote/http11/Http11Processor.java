@@ -1282,7 +1282,7 @@ public class Http11Processor implements Processor, ActionHook {
 	int srcEnd = b.length;
         
 	for (int i = start; i <= (end - srcEnd); i++) {
-	    if (buff[i] != first) continue;
+	    if (Ascii.toLower(buff[i]) != first) continue;
 	    // found first char, now look for a match
             int myPos = i+1;
 	    for (int srcPos = 1; srcPos < srcEnd; ) {
