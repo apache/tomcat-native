@@ -84,6 +84,8 @@ public class JkMain
     Worker defaultWorker;
     String jkHome;
 
+    Class channelclass;
+
     public JkMain()
     {
     }
@@ -109,20 +111,30 @@ public class JkMain
     public void setJkHome( String s ) {
         jkHome=s;
     }
+
+    public void setChannelClass( Class c ) {
+        channelclass = c;
+    }
     
     public void start() throws IOException {
-        ChannelUn csocket=new ChannelUn();
-//         if( jkHome==null )
+        Channel csocket=null;
+        try {
+            csocket=(Channel)channelclass.newInstance();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new IOException("Cannot create channel class");
+        }
+
+        // Set file.
+        if( jkHome==null )
             csocket.setFile(  "/tmp/tomcatUnixSocket" );
-//         else
-//             csocket.setFile( jkHome + "/WEB-INF/tomcatUnixSocket" );
+        else
+            csocket.setFile( jkHome + "/WEB-INF/tomcatUnixSocket" );
         csocket.setJkHome( jkHome );
-        /* ChannelSocket csocket=new ChannelSocket();
+
+        // Set port number.
         csocket.setPort( 8009 );
-        */
-        /*
-        ChannelUnixSocket csocket=new ChannelUnixSocket(); // JFC tests
-         */
+
         wEnv.addChannel( csocket );
 
         if( defaultWorker == null ) 

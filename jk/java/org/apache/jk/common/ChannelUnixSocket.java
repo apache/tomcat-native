@@ -96,7 +96,7 @@ import org.apache.jk.core.*;
  * @author Costin Manolache
  * @author Jean-Frederic Clere (Well, I have copied Costin's code and ideas).
  */
-public class ChannelUnixSocket extends Channel {
+public class ChannelUnixSocket extends JkChannel implements Channel {
 
     /* XXX do not have port/Address */
     // int port;

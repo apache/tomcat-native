@@ -56,84 +56,54 @@
  * [Additional notices, if required by prior licensing conditions]
  *
  */
+package org.apache.jk.core;
 
-package org.apache.jk.common;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.Enumeration;
+import java.security.*;
 
-import java.io.*;
-
-import java.net.*;
-import java.util.*;
-
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
-
-import org.apache.tomcat.util.threads.*;
-
-import org.apache.jk.core.*;
-import org.apache.jk.apr.*;
+import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.HttpMessages;
+import org.apache.tomcat.util.buf.HexUtils;
 
 
-/** Pass messages using unix domain sockets.
+/**
+ * A communication channel - socket, pipes, doors, jni, etc.
  *
+ * @author Henri Gomez [hgomez@slib.fr]
+ * @author Dan Milstein [danmil@shore.net]
+ * @author Keith Wannamaker [Keith@Wannamaker.org]
+ * @author Kevin Seguin
  * @author Costin Manolache
  */
-public class ChannelJni extends JkChannel implements Channel {
+public abstract class JkChannel {
+    protected WorkerEnv we;
 
-
-    /* ==================== ==================== */
+    public void setWorkerEnv( WorkerEnv we ) {
+        this.we=we;
+    }
     
-    static WorkerEnv wenv=null;
+    public void init() throws IOException {
+    }
+            
     
-    public static int startup(String cmdLine,
-                              String stdout,
-                              String stderr)
-    {
-        System.out.println("In startup");
-        System.err.println("In startup err");
-        if( wenv!=null ) {
-            d("Second call, ignored ");
-            return 1;
-        }
-
-        try {
-            if(null != stdout) {
-                PrintStream out=new PrintStream(new FileOutputStream(stdout));
-                System.setOut(out);
-                if( stderr==null ) 
-                    System.setErr(out);
-            }
-            if(null != stderr) {
-                PrintStream err=new PrintStream(new FileOutputStream(stderr));
-                System.setErr(err);
-                if( stdout==null )
-                    System.setOut(err);
-            }
-            if( stdout==null && stderr==null ) {
-                // no problem, use stderr - it'll go to error.log of the server.
-                System.setOut( System.err );
-            }
-        } catch(Throwable t) {
-        }
-        System.out.println("New stream");
-        System.err.println("New err stream");
-
-        return 1;
+    public void write( Endpoint ep, byte[] b, int offset, int len) throws IOException {
     }
 
-    public static int service(long s, long l)
-    {
-        System.out.println("In service");
-        return 0;
+    public int read( Endpoint ep, byte[] b, int offset, int len) throws IOException {
+        return -1;
     }
-
-    public static void shutdown() {
-        System.out.println("In shutdown");
+    public void setJkHome(String path) {
     }
-
-    private static final int dL=0;
-    private static void d(String s ) {
-        System.err.println( "ChannelJni: " + s );
+    public void setFile(String path) {
     }
-
-
+    public void setWorker(Worker wo) {
+    }
+    public void setPort(int port) {
+    }
 }

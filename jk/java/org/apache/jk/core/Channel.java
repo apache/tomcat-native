@@ -81,21 +81,23 @@ import org.apache.tomcat.util.buf.HexUtils;
  * @author Kevin Seguin
  * @author Costin Manolache
  */
-public abstract class Channel {
-    protected WorkerEnv we;
+public interface Channel {
 
-    public void setWorkerEnv( WorkerEnv we ) {
-        this.we=we;
-    }
+    public void setWorkerEnv( WorkerEnv we );
     
-    public void init() throws IOException {
-    }
-            
+    public void init() throws IOException;
     
-    public void write( Endpoint ep, byte[] b, int offset, int len) throws IOException {
-    }
+    public void write( Endpoint ep, byte[] b, int offset, int len)
+                throws IOException;
 
-    public int read( Endpoint ep, byte[] b, int offset, int len) throws IOException {
-        return -1;
-    }
+    public int read( Endpoint ep, byte[] b, int offset, int len)
+               throws IOException;
+
+    public void setJkHome(String home);
+
+    public void setWorker(Worker wo);
+
+    public void setFile(String file);
+
+    public void setPort(int port);
 }

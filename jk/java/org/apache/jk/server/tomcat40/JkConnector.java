@@ -135,6 +135,14 @@ public final class JkConnector
 	this.service = service;
     }
 
+    String channelclassname = "org.apache.jk.common.ChannelSocket";
+    /**
+     * Set the <code>channelClassName</code> that will used to connect to httpd.
+     */
+    public void setChannelClassName(String name) {
+        channelclassname = name; // Could have stored it in properties?
+    }
+
     // --------------------------------------------------------- Public Methods
 
     /**
@@ -199,6 +207,16 @@ public final class JkConnector
         JkMain jkMain=new JkMain();
         jkMain.setProperties( props );
         jkMain.setDefaultWorker( worker );
+
+        // Get the Class that will be used to make the connection.
+        try {
+            Class channelclass = Class.forName(channelclassname);
+                  // ct.getParentClassLoader().loadClass(channelclassname);
+            jkMain.setChannelClass( channelclass );
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+            throw new LifecycleException("Cannot find " + channelclassname);
+        }
 
         String catalinaHome=System.getProperty("catalina.home");
         File f=new File( catalinaHome );

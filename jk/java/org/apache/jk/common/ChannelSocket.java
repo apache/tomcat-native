@@ -94,7 +94,7 @@ import org.apache.jk.core.*;
  *
  * @author Costin Manolache
  */
-public class ChannelSocket extends Channel {
+public class ChannelSocket extends JkChannel implements Channel {
 
     int port;
     InetAddress inet;
@@ -152,7 +152,6 @@ public class ChannelSocket extends Channel {
     public void setSoTimeout( int i ) {
 	socketTimeout=i;
     }
-    
 
     /* ==================== ==================== */
     ServerSocket sSocket;

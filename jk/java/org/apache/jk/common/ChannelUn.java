@@ -77,7 +77,7 @@ import org.apache.jk.apr.*;
  *
  * @author Costin Manolache
  */
-public class ChannelUn extends Channel {
+public class ChannelUn extends JkChannel implements Channel {
 
     String file;
     Worker worker;
@@ -233,7 +233,7 @@ public class ChannelUn extends Channel {
      */
     void acceptConnections() {
         if( dL>0 )
-            d("Accepting ajp connections");
+            d("Accepting ajp connections on " + file);
         while( running ) {
             try {
                 Endpoint ep=this.createEndpoint();
