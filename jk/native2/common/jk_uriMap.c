@@ -453,7 +453,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
         if( _this->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "uriMap.mapUri() matched %s %s\n",
-                          uri, _this->maps[best_match]->worker->mbean->name ); 
+                          uri, _this->maps[best_match]->workerName ); 
         return _this->maps[best_match];
     }
     

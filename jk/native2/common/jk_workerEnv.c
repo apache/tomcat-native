@@ -229,11 +229,18 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     int err;
     char *opt;
     int options;
+    char *configFile;
 
     env->l->init( env, env->l );
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk.init_jk()\n" );
-
+    configFile=wEnv->initData->get( env, wEnv->initData, "config.file" );
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() %s\n", configFile );
+    if(  configFile == NULL ) {
+        wEnv->config->setPropertyString( env, wEnv->config,
+                                         "config.file",
+                                         "conf/jk2.properties" );
+    }
+    
     jk2_workerEnv_initWorkers( env, wEnv );
     jk2_workerEnv_initHandlers( env, wEnv );
     
