@@ -233,7 +233,6 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
                 }
             }
 
-            
             {
                 const apr_array_header_t *t = apr_table_elts(rr->headers_out);
                 if(t && t->nelts) {
