@@ -193,16 +193,17 @@ static int JK_METHOD jk2_handler_logok(jk_env_t *env, void *target,
     
     /* take care of removing previously allocated data */
     /* XXXXXXXXX NEED A SUB POOL !!!! */
-    if (ae->servletContainerName == NULL || 
-        strcmp( sname, ae->servletContainerName) != 0 )  {
-        ae->servletContainerName=
-            (char *)ae->pool->pstrdup( env, ae->pool,sname );
-    }
+    /*
+      if (ae->servletContainerName == NULL || 
+      strcmp( sname, ae->servletContainerName) != 0 )  {
+      ae->servletContainerName=
+      (char *)ae->pool->pstrdup( env, ae->pool,sname );
+      }
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "handler.logok() Successfully connected to %s\n",
                   ae->servletContainerName);
-
+    */
     return JK_HANDLER_LAST;
 }
 

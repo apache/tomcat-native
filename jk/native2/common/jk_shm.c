@@ -330,6 +330,8 @@ jk_shm_slot_t * JK_METHOD jk2_shm_createSlot(struct jk_env *env, struct jk_shm *
     /* XXX interprocess sync */
     slotId=shm->head->lastSlot++;
     slot=shm->getSlot( env, shm, slotId );
+
+    if( slot==NULL ) return NULL;
     
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "shm.createSlot() Create %d %p %p\n", slotId, shm->image, slot );
@@ -489,6 +491,7 @@ int JK_METHOD jk2_shm_factory( jk_env_t *env ,jk_pool_t *pool,
     shm->createSlot=jk2_shm_createSlot;
     shm->getId=jk2_shm_getId;
     shm->init=jk2_shm_init;
+    shm->reset=jk2_shm_reset;
     shm->destroy=jk2_shm_detach;
     shm->setWorkerEnv=jk2_shm_setWorkerEnv;
     

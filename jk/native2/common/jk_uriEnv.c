@@ -159,6 +159,8 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
         return JK_OK;
     } else if( strcmp("servlet", name) == 0 ) {
         uriEnv->servlet=val;
+    } else if( strcmp("timing", name) == 0 ) {
+        uriEnv->timing=atoi( val );
     } else if( strcmp("alias", name) == 0 ) {
         if( uriEnv->match_type == MATCH_TYPE_HOST ) {
             if( uriEnv->aliases==NULL ) {
@@ -202,6 +204,9 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     /* Set the worker */
     char *wname=uriEnv->workerName;
 
+    if( uriEnv->workerEnv->timing == JK_TRUE ) {
+        uriEnv->timing=JK_TRUE;
+    }
     if( uriEnv->workerName == NULL ) {
         /* The default worker */
         uriEnv->workerName=uriEnv->uriMap->workerEnv->defaultWorker->mbean->name;;

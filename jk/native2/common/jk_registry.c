@@ -62,10 +62,6 @@
 #include "jk_service.h"
 #include "jk_env.h" 
 
-#ifdef HAS_APR
-#include "apr.h"
-#endif
-
 #include "jk_registry.h"
 
 

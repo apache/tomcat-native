@@ -456,11 +456,11 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
             /* Already added */
             return JK_OK;
         }
-        name = lb->mbean->pool->pstrdup(env, lb->mbean->pool, name);
-        lb->lbWorkerMap->add(env, lb->lbWorkerMap, name, "");
+        value = lb->mbean->pool->pstrdup(env, lb->mbean->pool, value);
+        lb->lbWorkerMap->add(env, lb->lbWorkerMap, value, "");
         
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "lb_worker.setAttribute(): Adding to %s: %s\n", lb->mbean->localName, name);
+                      "lb_worker.setAttribute(): Adding to %s: %s\n", lb->mbean->localName, value);
 
         jk2_lb_refresh( env, lb );
         return JK_OK;

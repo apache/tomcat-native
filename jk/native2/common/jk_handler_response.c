@@ -207,14 +207,17 @@ static int JK_METHOD jk2_handler_sendChunk(jk_env_t *env, void *target,
 static int JK_METHOD jk2_handler_endResponse(jk_env_t *env, void *target, 
                                            jk_endpoint_t *ae, jk_msg_t   *msg )
 {
-    ae->reuse = (int)msg->getByte(env, msg);
+    int reuse = (int)msg->getByte(env, msg);
             
-    if((ae->reuse & 0X01) != ae->reuse) {
+    if((reuse & 0X01) != reuse) {
         /*
          * Strange protocol error.
          */
-        ae->reuse = JK_FALSE;
+        reuse = JK_FALSE;
     }
+    if( reuse==JK_FALSE )
+        ae->recoverable=JK_FALSE;
+    
     return JK_HANDLER_LAST;
 }
 
