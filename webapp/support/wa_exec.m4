@@ -87,6 +87,7 @@ AC_DEFUN(
     set $2
     wa_exec_file=[$]1
     if test ! -x "${wa_exec_file}" ; then
+      cd "${wa_exec_curdir}"
       AC_MSG_ERROR([cannot find or execute \"${wa_exec_file}\" in \"$4\"])
       exit 1
     fi
