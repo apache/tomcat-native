@@ -69,25 +69,34 @@ jk_objCache_put(jk_env_t *env, jk_objCache_t *_this, void *obj)
 {
     int rc;
     
-/*     if( _this->debug > 0 )  */
-/*         _this->l->jkLog(_this->l, JK_LOG_DEBUG, "Cache put\n"); */
-
-    if(_this->ep_cache_sz <= 0 )
+    if(_this->size <= 0 )
         return JK_FALSE;
 
     
     JK_ENTER_CS(&_this->cs, rc);
-    if(rc) {
-        int i;
-        
-        for(i = 0 ; i < _this->ep_cache_sz ; i++) {
-            if(!_this->ep_cache[i]) {
-                _this->ep_cache[i] = obj;
-                break;
-            }
+    if(rc==JK_TRUE) {
+
+        rc=JK_FALSE;
+
+        if( _this->count >= _this->size && _this->maxSize== -1 ) {
+            /* Realloc */
+            void **oldData=_this->data;
+            _this->data =
+                (void **)_this->pool->calloc(env, _this->pool,
+                                             2 * sizeof(void *) * _this->size);
+            memcpy( _this->data, oldData, _this->size );
+            _this->size *= 2;
+            /* XXX Can we destroy the old data ? Probably not.
+               It may be better to have a list - but it's unlikely
+               we'll have too many reallocations */
         }
+
+        if( _this->count < _this->size ) {
+            _this->data[_this->count++]=obj;
+        }
+
         JK_LEAVE_CS(&_this->cs, rc);
-        if(i < _this->ep_cache_sz) {
+        if(rc) {
             /*   l->jkLog(l, JK_LOG_DEBUG, "Return endpoint to pool\n"); */
             return JK_TRUE;
         }
@@ -101,11 +110,19 @@ static int
 jk_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
     int i;
 
-    _this->ep_cache =
+    if( cacheSize <= 0 ) {
+        _this->size= 64;
+    } else {
+        _this->size= cacheSize ;
+    }
+    _this->count=0;
+    _this->maxSize=cacheSize;
+    
+    _this->data =
         (void **)_this->pool->calloc(env, _this->pool,
-                                     sizeof(void *) * cacheSize);
+                                     sizeof(void *) * _this->size);
 
-    if( _this->ep_cache==NULL )
+    if( _this->data==NULL )
         return JK_FALSE;
     
     JK_INIT_CS(&(_this->cs), i);
@@ -115,11 +132,6 @@ jk_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
         return JK_FALSE;
     }
 
-    for(i = 0 ; i < cacheSize ; i++) {
-        _this->ep_cache[i] = NULL;
-    }
-    
-    _this->ep_cache_sz=cacheSize;
     return JK_TRUE;
 }
 
@@ -129,7 +141,7 @@ jk_objCache_destroy(jk_env_t *env, jk_objCache_t *_this ) {
 
     JK_DELETE_CS(&(_this->cs), i);
 
-    _this->ep_cache_sz=0;
+    _this->count=0;
     /* Nothing to free, we use pools */
 
     return JK_TRUE;
@@ -142,21 +154,13 @@ jk_objCache_get(jk_env_t *env, jk_objCache_t *_this )
     int rc;
     void *ae=NULL;
 
-    if (_this->ep_cache_sz <= 0 )
-        return NULL;
-
-    
     JK_ENTER_CS(&_this->cs, rc);
     if (rc) {
-        int i;
-        
-        for (i = 0 ; i < _this->ep_cache_sz ; i++) {
-            if (_this->ep_cache[i]) {
-                ae = _this->ep_cache[i];
-                _this->ep_cache[i] = NULL;
-                break;
-            }
+        if( _this->count > 0 ) {
+            _this->count--;
+            ae=_this->data[ _this->count ];
         }
+
         JK_LEAVE_CS(&_this->cs, rc);
 
         return ae;
@@ -168,6 +172,10 @@ jk_objCache_t *jk_objCache_create(jk_env_t *env, jk_pool_t *pool ) {
     jk_objCache_t *_this=pool->calloc( env, pool, sizeof( jk_objCache_t ));
 
     _this->pool=pool;
+
+    _this->count=0;
+    _this->size=0;
+    _this->maxSize=-1;
     
     _this->get=jk_objCache_get;
     _this->put=jk_objCache_put;
