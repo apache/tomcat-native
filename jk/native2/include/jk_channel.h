@@ -63,6 +63,7 @@
 #include "jk_logger.h"
 #include "jk_pool.h"
 #include "jk_msg.h"
+#include "jk_service.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -106,6 +107,18 @@ struct jk_channel {
      *  and the setting code can better report errors.
      */
     char **supportedProperties;
+
+    /* JK_TRUE if the channel is 'stream' based, i.e. it works using
+       send() followed by blocking reads().
+       XXX make it type and define an enum of supported types ?
+
+       The only alternative right now is JNI ( and doors ), where
+       a single thread is used. After the first packet is sent the
+       java side takes control and directly dispatch messages using the
+       jni  ( XXX review - it would be simple with continuations, but
+       send/receive flow is hard to replicate on jni ) 
+    */
+    int is_stream;
     
     struct jk_worker *worker; 
     jk_map_t *properties;
@@ -137,14 +150,33 @@ struct jk_channel {
    */
     int (JK_METHOD *send)(struct jk_env *env, jk_channel_t *_this,
 			  struct jk_endpoint *endpoint,
-			  char *b, int len );
+                          struct jk_msg *msg );
     
     /** Receive a packet
      */
     int (JK_METHOD *recv)(struct jk_env *env, jk_channel_t *_this,
 			  struct jk_endpoint *endpoint,
-			  char *b, int len );
+                          struct jk_msg *msg );
+
+    /** Called before request processing, to initialize resources.
+        All following calls will be in the same thread.
+     */
+    int (JK_METHOD *beforeRequest)(struct jk_env *env, jk_channel_t *_this,
+                                   struct jk_worker *worker,
+                                   struct jk_endpoint *endpoint,
+                                   struct jk_ws_service *r );
+			  
+    /** Called after request processing. Used to be worker.done()
+     */
+    int (JK_METHOD *afterRequest)(struct jk_env *env, jk_channel_t *_this,
+                                  struct jk_worker *worker,
+                                  struct jk_endpoint *endpoint,
+                                  struct jk_ws_service *r );
+   
     
+
+    
+    /* XXX remove for now, add later in all objects */
     /** Set a channel property. Properties are used to configure the 
      * communication channel ( example: port, host, file, shmem_name, etc).
      */
