@@ -87,6 +87,11 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
                         jk_map_t *init_data,
                         jk_logger_t *l);
 
+int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
+                       char *puri,
+                       char *pworker,
+                       jk_logger_t *l);
+
 int uri_worker_map_close(jk_uri_worker_map_t *uw_map,
                          jk_logger_t *l);
 

@@ -99,11 +99,18 @@ struct uri_worker_record {
 typedef struct uri_worker_record uri_worker_record_t;
 
 struct jk_uri_worker_map {
-    jk_pool_t p;
-    jk_pool_atom_t buf[SMALL_POOL_SIZE];
+    /* Memory Pool */
+    jk_pool_t           p;
+    jk_pool_atom_t      buf[SMALL_POOL_SIZE];
 
-    uri_worker_record_t *maps;
-    unsigned size;
+    /* map URI->WORKER */
+    uri_worker_record_t **maps;
+
+    /* Map Number */
+    unsigned            size;
+
+    /* Map Capacity */
+    unsigned            capacity;
 };
 
 
@@ -123,19 +130,19 @@ static int check_security_fraud(jk_uri_worker_map_t *uw_map,
     unsigned i;    
 
     for(i = 0 ; i < uw_map->size ; i++) {
-        if(MATCH_TYPE_SUFFIX == uw_map->maps[i].match_type) {
+        if(MATCH_TYPE_SUFFIX == uw_map->maps[i]->match_type) {
             char *suffix_start;
-            for(suffix_start = strstr(uri, uw_map->maps[i].suffix) ;
+            for(suffix_start = strstr(uri, uw_map->maps[i]->suffix) ;
                 suffix_start ;
-                suffix_start = strstr(suffix_start + 1, uw_map->maps[i].suffix)) {
+                suffix_start = strstr(suffix_start + 1, uw_map->maps[i]->suffix)) {
                 
                 if('.' != *(suffix_start - 1)) {
                     continue;
                 } else {
-                    char *after_suffix = suffix_start + strlen(uw_map->maps[i].suffix);
+                    char *after_suffix = suffix_start + strlen(uw_map->maps[i]->suffix);
                 
                     if((('.' == *after_suffix) || ('/' == *after_suffix) || (' ' == *after_suffix)) &&
-                       (0 == strncmp(uw_map->maps[i].context, uri, uw_map->maps[i].ctxt_len))) {
+                       (0 == strncmp(uw_map->maps[i]->context, uri, uw_map->maps[i]->ctxt_len))) {
                         /* 
                          * Security violation !!!
                          * this is a fraud.
@@ -189,135 +196,170 @@ int uri_worker_map_free(jk_uri_worker_map_t **uw_map,
     return JK_FALSE;
 }
 
+/*
+ * Ensure there will be memory in context info to store Context Bases
+ */
+
+#define UW_INC_SIZE 4   /* 4 URI->WORKER STEP */
+
+static int uri_worker_map_realloc(jk_uri_worker_map_t *uw_map)
+{
+    if (uw_map->size == uw_map->capacity) {
+        uri_worker_record_t **uwr;
+        int  capacity = uw_map->capacity + UW_INC_SIZE;
+
+        uwr = (uri_worker_record_t **)jk_pool_alloc(&uw_map->p, sizeof(uri_worker_record_t *) * capacity);
+
+        if (! uwr)
+            return JK_FALSE;
+
+        if (uw_map->capacity && uw_map->maps)
+            memcpy(uwr, uw_map->maps, sizeof(uri_worker_record_t *) * uw_map->capacity);
+
+        uw_map->maps = uwr;
+        uw_map->capacity = capacity;
+    }
+
+    return JK_TRUE;
+}
+
+
+int uri_worker_map_add(jk_uri_worker_map_t *uw_map, 
+                       char *puri, 
+                       char *pworker,
+                       jk_logger_t *l)
+{
+    uri_worker_record_t *uwr;
+    char                *uri;
+    char                *worker;
+
+    if (uri_worker_map_realloc(uw_map) == JK_FALSE)
+        return JK_FALSE;
+
+    uwr = (uri_worker_record_t *)jk_pool_alloc(&uw_map->p, sizeof(uri_worker_record_t));
+
+    if (! uwr) {
+        jk_log(l, JK_LOG_ERROR, "jk_uri_worker_map_t::uri_worker_map_add, can't alloc map entry\n");
+        return JK_FALSE;
+    }
+
+    uri = jk_pool_strdup(&uw_map->p, puri);
+    worker = jk_pool_strdup(&uw_map->p, pworker);
+
+    if (!uri || ! worker) {
+        jk_log(l, JK_LOG_ERROR, "jk_uri_worker_map_t::uri_worker_map_add, can't alloc uri/worker strings\n");
+        return JK_FALSE;
+    }
+
+    if ('/' == uri[0]) {
+        char *asterisk = strchr(uri, '*');
+
+        if (asterisk) {
+            uwr->uri = jk_pool_strdup(&uw_map->p, uri);
+
+            if (!uwr->uri) {
+                jk_log(l, JK_LOG_ERROR, "jk_uri_worker_map_t::uri_worker_map_add, can't alloc uri string\n");
+                return JK_FALSE;
+            }
+            
+            /*
+             * Now, lets check that the pattern is /context/*.suffix
+             * or /context/*
+             * we need to have a '/' then a '*' and the a '.' or a
+             * '/' then a '*'
+             */
+             asterisk--;
+             if ('/' == asterisk[0]) {
+                if ('.' == asterisk[2]) {
+                    /* suffix rule */
+                    asterisk[1]      = 
+                    asterisk[2]      = '\0';
+                    uwr->worker_name = worker;
+                    uwr->context     = uri;
+                    uwr->suffix      = asterisk + 3;
+                    uwr->match_type  = MATCH_TYPE_SUFFIX;
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Into jk_uri_worker_map_t::uri_worker_map_open, suffix rule %s.%s=%s was added\n",
+                            uri, asterisk + 3, worker);
+                } else {
+                        /* context based */
+                        asterisk[1]      = '\0';
+                        uwr->worker_name = worker;
+                        uwr->context     = uri;
+                        uwr->suffix      = NULL;
+                        uwr->match_type  = MATCH_TYPE_CONTEXT;
+                        jk_log(l, JK_LOG_DEBUG,
+                              "Into jk_uri_worker_map_t::uri_worker_map_open, match rule %s=%s was added\n",
+                               uri, worker);
+                }
+            } else {
+                uwr->uri         = uri;
+                uwr->worker_name = worker;
+                uwr->context     = uri;
+                uwr->suffix      = NULL;
+                uwr->match_type  = MATCH_TYPE_EXACT;
+                jk_log(l, JK_LOG_DEBUG,
+                       "Into jk_uri_worker_map_t::uri_worker_map_open, exact rule %s=%s was added\n",
+                        uri, worker);
+            }
+
+            uwr->ctxt_len = strlen(uwr->context);
+        }
+    }
+
+    uw_map->maps[uw_map->size] = uwr;
+    uw_map->size++;
+
+    return JK_TRUE;
+}
+
 int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
                         jk_map_t *init_data,
                         jk_logger_t *l)
 {
-    int rc = JK_FALSE;
+    int rc = JK_TRUE;
 
-    jk_log(l, JK_LOG_DEBUG, 
-           "Into jk_uri_worker_map_t::uri_worker_map_open\n");    
+    jk_log(l, JK_LOG_DEBUG, "Into jk_uri_worker_map_t::uri_worker_map_open\n");
 
-    if(uw_map) {
+    uw_map->size     = 0;
+    uw_map->capacity = 0;
+
+    if (uw_map) {
         int sz;
 
         rc = JK_TRUE;
-        jk_open_pool(&uw_map->p, 
-                     uw_map->buf, 
-                     sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
+        jk_open_pool(&uw_map->p, uw_map->buf, sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
         uw_map->size = 0;
         uw_map->maps = NULL;
         
         sz = map_size(init_data);
 
-        jk_log(l, JK_LOG_DEBUG, 
-               "jk_uri_worker_map_t::uri_worker_map_open, rule map size is %d\n",
-               sz);    
+        jk_log(l, JK_LOG_DEBUG, "jk_uri_worker_map_t::uri_worker_map_open, rule map size is %d\n", sz);
 
-        if(sz > 0) {
-            uw_map->maps = jk_pool_alloc(&uw_map->p, sz * sizeof(uri_worker_record_t));
-            if(uw_map->maps) {
-                int i, j;
-                for(i = 0, j = 0 ; i < sz ; i++) {
-                    char *uri = jk_pool_strdup(&uw_map->p, map_name_at(init_data, i));
-                    char *worker = jk_pool_strdup(&uw_map->p, map_value_at(init_data, i));
-
-                    if(!uri || ! worker) {
-                        jk_log(l, JK_LOG_ERROR, 
-                               "jk_uri_worker_map_t::uri_worker_map_open, malloc failed\n");    
-                        break;
-                    }
-
-                    if('/' == uri[0]) {
-                        char *asterisk = strchr(uri, '*');
-                    
-                        if(asterisk) {
-                            uw_map->maps[j].uri = jk_pool_strdup(&uw_map->p, uri);
-
-                            if(!uw_map->maps[j].uri) {
-                                jk_log(l, JK_LOG_ERROR, 
-                                       "jk_uri_worker_map_t::uri_worker_map_open, malloc failed\n");    
-                                break;
-                            }
-
-                            /*
-                             * Now, lets check that the pattern is /context/*.suffix
-                             * or /context/*
-                             * we need to have a '/' then a '*' and the a '.' or a 
-                             * '/' then a '*' 
-                             */
-                            asterisk--;
-                            if('/' == asterisk[0]) {
-                                if('.' == asterisk[2]) {
-                                    /* suffix rule */
-                                    asterisk[1] = asterisk[2] = '\0';
-                                    uw_map->maps[j].worker_name = worker;
-                                    uw_map->maps[j].context = uri;
-                                    uw_map->maps[j].suffix  = asterisk + 3;
-                                    uw_map->maps[j].match_type = MATCH_TYPE_SUFFIX;
-                                    jk_log(l, JK_LOG_DEBUG, 
-                                           "Into jk_uri_worker_map_t::uri_worker_map_open, suffix rule %s.%s=%s was added\n", 
-                                           uri, asterisk + 3, worker);    
-                                    j++;
-                                } else {
-                                    /* context based */
-                                    asterisk[1] = '\0';
-                                    uw_map->maps[j].worker_name = worker;
-                                    uw_map->maps[j].context = uri;
-                                    uw_map->maps[j].suffix  = NULL;
-                                    uw_map->maps[j].match_type = MATCH_TYPE_CONTEXT;
-                                    jk_log(l, JK_LOG_DEBUG, 
-                                           "Into jk_uri_worker_map_t::uri_worker_map_open, match rule %s=%s was added\n", 
-                                           uri, worker);    
-                                    j++;
-                                }
-                            } else { 
-                                /* not leagal !!! */
-                                jk_log(l, JK_LOG_ERROR, 
-                                       "jk_uri_worker_map_t::uri_worker_map_open, [%s=%s] not a leagal rule\n",
-                                       uri, worker);    
-                                continue;
-                            }
-                        } else {
-                            uw_map->maps[j].uri = uri;
-                            uw_map->maps[j].worker_name = worker;
-                            uw_map->maps[j].context = uri;
-                            uw_map->maps[j].suffix  = NULL;
-                            uw_map->maps[j].match_type = MATCH_TYPE_EXACT;
-                            jk_log(l, JK_LOG_DEBUG, 
-                                   "Into jk_uri_worker_map_t::uri_worker_map_open, exact rule %s=%s was added\n", 
-                                   uri, worker);    
-                            j++;
-                        }
-
-                        uw_map->maps[j - 1].ctxt_len = strlen(uw_map->maps[j - 1].context);
-                    }
-                }
-
-                if(i == sz) {
-                    jk_log(l, JK_LOG_DEBUG, "Into jk_uri_worker_map_t::uri_worker_map_open, there are %d rules\n", j);    
-                    uw_map->size = j;
-                } else {
-                    jk_log(l, JK_LOG_ERROR, 
-                           "jk_uri_worker_map_t::uri_worker_map_open, There was a parsing error\n");    
-
+        if (sz > 0) {
+            int i;
+            for(i = 0; i < sz ; i++) {
+                if (uri_worker_map_add(uw_map, map_name_at(init_data, i), map_value_at(init_data, i), l) == JK_FALSE) {
                     rc = JK_FALSE;
+                    break;
                 }
+            }
 
+            if (i == sz) {
+                jk_log(l, JK_LOG_DEBUG, "Into jk_uri_worker_map_t::uri_worker_map_open, there are %d rules\n", uw_map->size);    
             } else {
-                jk_log(l, JK_LOG_ERROR, 
-                       "jk_uri_worker_map_t::uri_worker_map_open, malloc failed\n");    
+                jk_log(l, JK_LOG_ERROR, "jk_uri_worker_map_t::uri_worker_map_open, There was a parsing error\n");
                 rc = JK_FALSE;
             }
         }       
 
-        if(!rc) {
+        if (rc == JK_FALSE) {
+            jk_log(l, JK_LOG_ERROR, "jk_uri_worker_map_t::uri_worker_map_open, there was an error, freing buf\n");
             jk_close_pool(&uw_map->p);
         }
     }
     
-    jk_log(l, JK_LOG_DEBUG, 
-           "jk_uri_worker_map_t::uri_worker_map_open, done\n"); 
+    jk_log(l, JK_LOG_DEBUG, "jk_uri_worker_map_t::uri_worker_map_open, done\n");
     return rc;
 }
 
@@ -361,31 +403,32 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 
 		jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s'\n", uri);
         for(i = 0 ; i < uw_map->size ; i++) {
+            uri_worker_record_t *uwr = uw_map->maps[i];
 
-            if(uw_map->maps[i].ctxt_len < longest_match) {
+            if(uwr->ctxt_len < longest_match) {
                 continue; /* can not be a best match anyway */
             }
 
-            if(0 == strncmp(uw_map->maps[i].context, 
+            if(0 == strncmp(uwr->context, 
                             uri, 
-                            uw_map->maps[i].ctxt_len)) {
-                if(MATCH_TYPE_EXACT == uw_map->maps[i].match_type) {
-                    if(strlen(uri) == uw_map->maps[i].ctxt_len) {
+                            uwr->ctxt_len)) {
+                if(MATCH_TYPE_EXACT == uwr->match_type) {
+                    if(strlen(uri) == uwr->ctxt_len) {
 			jk_log(l,
 			       JK_LOG_DEBUG,
 			       "jk_uri_worker_map_t::map_uri_to_worker, Found an exact match %s -> %s\n",
-			       uw_map->maps[i].worker_name,
-			       uw_map->maps[i].context );
-                        return uw_map->maps[i].worker_name;
+			       uwr->worker_name,
+			       uwr->context );
+                        return uwr->worker_name;
                     }
-                } else if(MATCH_TYPE_CONTEXT == uw_map->maps[i].match_type) {
-                    if(uw_map->maps[i].ctxt_len > longest_match) {
+                } else if(MATCH_TYPE_CONTEXT == uwr->match_type) {
+                    if(uwr->ctxt_len > longest_match) {
 			jk_log(l,
 			       JK_LOG_DEBUG,
 			       "jk_uri_worker_map_t::map_uri_to_worker, Found a context match %s -> %s\n",
-			       uw_map->maps[i].worker_name,
-			       uw_map->maps[i].context );
-                        longest_match = uw_map->maps[i].ctxt_len;
+			       uwr->worker_name,
+			       uwr->context );
+                        longest_match = uwr->ctxt_len;
                         best_match = i;
                     }
                 } else /* suffix match */ {
@@ -400,17 +443,17 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 
                         /* for WinXX, fix the JsP != jsp problems */
 #ifdef WIN32                        
-                        if(0 == strcasecmp(suffix, uw_map->maps[i].suffix))  {
+                        if(0 == strcasecmp(suffix, uwr->suffix))  {
 #else
-                        if(0 == strcmp(suffix, uw_map->maps[i].suffix)) {
+                        if(0 == strcmp(suffix, uwr->suffix)) {
 #endif
-                            if(uw_map->maps[i].ctxt_len >= longest_match) {
+                            if(uwr->ctxt_len >= longest_match) {
 				jk_log(l,
 				       JK_LOG_DEBUG,
 				       "jk_uri_worker_map_t::map_uri_to_worker, Found a suffix match %s -> *.%s\n",
-				       uw_map->maps[i].worker_name,
-				       uw_map->maps[i].suffix );
-                                longest_match = uw_map->maps[i].ctxt_len;
+				       uwr->worker_name,
+				       uwr->suffix );
+                                longest_match = uwr->ctxt_len;
                                 best_match = i;
                             }
                         }
@@ -420,7 +463,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         }
 
         if(-1 != best_match) {
-            return uw_map->maps[best_match].worker_name;
+            return uw_map->maps[best_match]->worker_name;
         } else {
             /*
              * We are now in a security nightmare, it maybe that somebody sent 
@@ -436,7 +479,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                 jk_log(l, JK_LOG_EMERG, 
                        "In jk_uri_worker_map_t::map_uri_to_worker, found a security fraud in '%s'\n",
                        uri);    
-                return uw_map->maps[fraud].worker_name;
+                return uw_map->maps[fraud]->worker_name;
             }
        }        
     } else {
