@@ -1,6 +1,7 @@
 package org.apache.jk.apr;
 
 import java.io.*;
+import java.util.*;
 
 /** Implements the interface with the APR library. This is for internal-use
  *  only. The goal is to use 'natural' mappings for user code - for example
@@ -8,9 +9,15 @@ import java.io.*;
  * 
  */
 public class AprImpl {
+    static AprImpl aprSingleton=new AprImpl();
+
     String baseDir;
     String aprHome;
     String soExt="so";
+
+    public static AprImpl getAprImpl() {
+        return aprSingleton;
+    }
     
     /** Initialize APR
      */
@@ -109,6 +116,73 @@ public class AprImpl {
             ex.printStackTrace();
         }
     }
+
+    // Mostly experimental, the interfaces need to be cleaned up - after everything works
     
+    Hashtable jniContextFactories=new Hashtable();
     
+    public void addJniContextFactory(String type, JniContextFactory cb) {
+        jniContextFactories.put( type, cb );
+    }
+
+    public static interface JniContext {
+
+        /** Each context contains a number of byte[] buffers used for communication.
+         *  The C side will contain a char * equivalent - both buffers are long-lived
+         *  and recycled.
+         *
+         *  This will be called at init time. A long-lived global reference to the byte[]
+         *  will be stored in the C context.
+         */
+        public byte[] getBuffer(  int id );
+
+
+        /** Invoke a java hook. The xEnv is the representation of the current execution
+         *  environment ( the jni_env_t * )
+         */
+        public int jniInvoke(  long xEnv );
+    }
+    
+    public static interface JniContextFactory {
+
+        /** Create a Jni context - it is the corespondent of a C context, represented
+         *    by a pointer
+         *
+         *  The 'context' is a long-lived object ( recycled ) that manages state for
+         *  each jk operation.
+         */
+        public JniContext createJniContext( String type, long cContext );
+    }
+
+    
+    // -------------------- Called from C --------------------
+
+    public static Object createJavaContext(String type, long cContext) {
+        JniContextFactory cb=(JniContextFactory)AprImpl.getAprImpl().jniContextFactories.get( type );
+        if( cb==null ) return null;
+
+        return cb.createJniContext( type, cContext );
+    }
+
+    /** Return a buffer associated with the ctx.
+     */
+    public static byte[] getBuffer( Object ctx, int id ) {
+        return ((JniContext)ctx).getBuffer(  id );
+    }
+
+    public static int jniInvoke( long jContext, Object ctx ) {
+        return ((JniContext)ctx).jniInvoke(  jContext );
+   }
+
+    // --------------------  java to C --------------------
+
+    // Temp - interface will evolve
+    
+    /** Send the packet to the C side. On return it contains the response
+     *  or indication there is no response. Asymetrical because we can't
+     *  do things like continuations.
+     */
+    public static native int sendPacket(long xEnv, long endpointP,
+                                        byte data[], int len);
+
 }
