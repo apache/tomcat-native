@@ -152,10 +152,12 @@ struct jk_worker {
     /** Communication channel used by the worker 
      */
     struct jk_channel *channel;
+    char *channelName;
 
     /** Reuse the endpoint and it's connection
      */
     struct jk_objCache *endpointCache;
+    int cache_sz;
 
     /** Request pool cache. XXX We may use a pool of requests.
      */
@@ -181,33 +183,22 @@ struct jk_worker {
     /** If num_of_workers > 0 this is an load balancing worker
      */
     jk_worker_t **lb_workers;
+    struct jk_map *lbWorkerMap;
     int num_of_workers;
 
-    /*
-     * Given a worker which is in the process of being created, and a list
-     * of configuration options (or 'properties'), check to see if it the
-     * options are.  This will always be called before the init() method.
-     *
-     * This is different from init - see the apache config process.
-     * Validate should only do static checks on data ( if it has all
-     * the info it needs and if it's valid ). Init() can do any
-     * 'active' opertions.
-     *
-     * You can skip this by setting it to NULL.
-     */
-    int (JK_METHOD *validate)(struct jk_env *env, jk_worker_t *_this,
-                              struct jk_map *props,
-                              struct jk_workerEnv *we);
+    int (JK_METHOD *setProperty)(struct jk_env *env, jk_worker_t *_this,
+                                 char *name, char *value );
 
+    char *(JK_METHOD *getProperty)(struct jk_env *env, jk_worker_t *_this,
+                                   char *name );
+    
     /*
      * Do whatever initialization needs to be done to start this worker up.
      * Configuration options are passed in via the props parameter.  
      *
      * You can skip this by setting it to NULL.
      */
-    int (JK_METHOD *init)(struct jk_env *env, jk_worker_t *_this,
-                          struct jk_map *props,
-                          struct jk_workerEnv *we );
+    int (JK_METHOD *init)(struct jk_env *env, jk_worker_t *_this);
 
     /*
      * Shutdown this worker. XXX Some cleanup must be made by default
