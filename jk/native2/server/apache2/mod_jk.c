@@ -283,7 +283,7 @@ static const char *jk_set2(cmd_parms *cmd,void *per_dir,
     jk_map_t *m=workerEnv->init_data;
     
     env=workerEnv->globalEnv;
-    
+
     value = jk_map_replaceProperties(env, m, m->pool, value);
 
     if(value==NULL)
@@ -705,37 +705,66 @@ static int jk_handler(request_rec *r)
                       r->uri, worker->name); 
     } else {
         worker=uriEnv->webapp->worker;
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "mod_jk.handler() per dir worker for %p %p\n",
+                      worker, uriEnv->webapp );
+        
         if( worker==NULL && uriEnv->webapp->workerName != NULL ) {
             worker=workerEnv->getWorkerForName( env, workerEnv,
                                                 uriEnv->webapp->workerName);
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "mod_jk.handler() finding worker for %p %p\n",
+                          worker, uriEnv->webapp );
             uriEnv->webapp->worker=worker;
         }
     }
 
     if(worker==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "No worker for %s\n", r->uri); 
+                      "mod_jk.handle() No worker for %s\n", r->uri); 
         return 500;
     }
-
-    worker->get_endpoint(env, worker, &end);
 
     {
         jk_ws_service_t sOnStack;
         jk_ws_service_t *s=&sOnStack;
-        int is_recoverable_error = JK_FALSE;
+        jk_pool_t *rPool=NULL;
+        int rc1;
 
-        jk_service_apache2_factory( env, end->cPool, (void *)&s,
+        /* Get a pool for the request XXX move it in workerEnv to
+           be shared with other server adapters */
+        rPool= worker->rPoolCache->get( env, worker->rPoolCache );
+        if( rPool == NULL ) {
+            rPool=worker->pool->create( env, worker->pool, HUGE_POOL_SIZE );
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "mod_jk.handler(): new rpool\n");
+        }
+
+        /* XXX we should reuse the request itself !!! */
+        jk_service_apache2_factory( env, rPool, (void *)&s,
                                     "service", "apache2");
+
+        s->pool = rPool;
         
-        s->init( env, s, end, r );
+        s->is_recoverable_error = JK_FALSE;
+        s->init( env, s, worker, r );
         
-        rc = end->service(env, end, s,  &is_recoverable_error);
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "modjk.handler() Calling %s\n", worker->name); 
+        rc = worker->service(env, worker, s);
 
         s->afterRequest(env, s);
-    }
 
-    end->done(env, end); 
+        rPool->reset(env, rPool);
+        
+        rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
+        if( rc1 == JK_TRUE ) {
+            rPool=NULL;
+        }
+        if( rPool!=NULL ) {
+            rPool->close(env, rPool);
+        }
+    }
 
     if(rc==JK_TRUE) {
         return OK;    /* NOT r->status, even if it has changed. */

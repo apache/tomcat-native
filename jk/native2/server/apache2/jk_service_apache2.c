@@ -92,7 +92,7 @@
 
 #include "jk_apache2.h"
 
-/* #define USE_APRTABLES */
+#define USE_APRTABLES 
 
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
 
@@ -116,7 +116,8 @@ static int JK_METHOD jk_service_apache2_head(jk_env_t *env, jk_ws_service_t *s )
     headers=s->headers_out;
     /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "service.head() %d %d\n", s->status, headers->size(env, headers ));
+                  "service.head() %d %d\n", s->status,
+                  headers->size(env, headers ));
     
     for(h = 0 ; h < headers->size( env, headers ) ; h++) {
         char *name=headers->nameAt( env, headers, h );
@@ -295,11 +296,11 @@ static int get_content_length(jk_env_t *env, request_rec *r)
 }
 
 static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
-                           jk_endpoint_t *e, void *serverObj)
+                           jk_worker_t *worker, void *serverObj)
 {
     apr_port_t port;
     char *ssl_temp      = NULL;
-    jk_workerEnv_t *workerEnv=e->worker->workerEnv;
+    jk_workerEnv_t *workerEnv=worker->workerEnv;
     request_rec *r=serverObj;
     int need_content_length_header=JK_FALSE;
 
@@ -308,7 +309,6 @@ static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     jk_requtil_initRequest(env, s);
     
     s->ws_private = r;
-    s->pool=e->cPool;
     s->response_started = JK_FALSE;
     s->read_body_started = JK_FALSE;
     s->workerEnv=workerEnv;

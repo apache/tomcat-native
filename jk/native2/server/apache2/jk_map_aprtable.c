@@ -56,11 +56,11 @@
  * ========================================================================= */
 
 /**
- * Implementation of map using apr_table. This avoids copying the headers, env, etc
- * in jk_service - we can just wrap them.
+ * Implementation of map using apr_table. This avoids copying the headers,
+ * env, etc in jk_service - we can just wrap them.
  *
- * Note that this _require_ that apr pools are used ( can't be used with jk_pools ),
- * i.e. you must use apr for both pools and maps.
+ * Note that this _require_ that apr pools are used ( can't be used
+ * with jk_pools ), i.e. you must use apr for both pools and maps.
  *
  * @author Costin Manolache
  */
