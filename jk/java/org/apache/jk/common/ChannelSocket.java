@@ -526,7 +526,7 @@ public class ChannelSocket extends JkHandler {
                 int status= this.receive( recv, ep );
                 if( status <= 0 ) {
                     if( status==-3)
-                        log.warn( "server has closed the current connection (-1)" );
+                        log.info( "server has been restarted or reset this connection" );
                     else 
                         log.warn("Closing ajp connection " + status );
                     break;
@@ -543,7 +543,7 @@ public class ChannelSocket extends JkHandler {
             this.close( ep );
         } catch( Exception ex ) {
             if( ex.getMessage().indexOf( "Connection reset" ) >=0 ) {
-                log.warn( "Server has closed connection");
+                log.info( "Server has been restarted or reset this connection");
             } else {
                 log.error( "Error, closing connection", ex);
             }
