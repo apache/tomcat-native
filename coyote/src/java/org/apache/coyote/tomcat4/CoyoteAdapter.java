@@ -278,6 +278,12 @@ final class CoyoteAdapter
             request.setUserPrincipal(new CoyotePrincipal(principal));
         }
 
+        // Set the authorization type
+        String authtype = req.getAuthType().toString();
+        if (authtype != null) {
+            request.setAuthType(authtype);
+        }
+
     }
 
     /**

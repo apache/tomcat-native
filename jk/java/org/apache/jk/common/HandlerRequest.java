@@ -584,7 +584,12 @@ public class HandlerRequest extends JkHandler
                 break;
                 
             case SC_A_AUTH_TYPE    :
-                msg.getBytes(req.getAuthType());
+                if( tomcatAuthentication ) {
+                    // ignore server
+                    msg.getBytes( tmpMB );
+                } else {
+                    msg.getBytes(req.getAuthType());
+                }
                 break;
                 
             case SC_A_QUERY_STRING :
