@@ -191,7 +191,7 @@ public class JkMain
         
         wEnv.start();
         long initTime=System.currentTimeMillis() - start_time;
-        d("Jk running... init time=" + initTime + ms);
+        d("Jk running... init time=" + initTime + " ms");
     }
 
     // -------------------- Usefull methods --------------------
