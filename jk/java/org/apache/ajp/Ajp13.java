@@ -86,7 +86,7 @@ import org.apache.tomcat.util.http.MimeHeaders;
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Kevin Seguin [seguin@apache.org]
- * @author Henri Gomez [hgomez@slib.fr]
+ * @author Henri Gomez [hgomez@apache.org]
  * @author Costin Manolache
  */
 public class Ajp13 {
@@ -97,9 +97,6 @@ public class Ajp13 {
     public static final int  MAX_READ_SIZE = MAX_PACKET_SIZE - H_SIZE - 2;
     public static final int  MAX_SEND_SIZE = MAX_PACKET_SIZE - H_SIZE - 4;
 
-    // Prefix codes for message types from server to container
-    public static final byte JK_AJP13_SHUTDOWN          = 7;
-	
     // Error code for Ajp13
     public static final int  JK_AJP13_BAD_HEADER        = -100;
     public static final int  JK_AJP13_NO_HEADER         = -101;
@@ -310,7 +307,10 @@ public class Ajp13 {
 	case RequestHandler.JK_AJP13_FORWARD_REQUEST:
 	    return reqHandler.decodeRequest(this, hBuf, req);
 	    
-	case JK_AJP13_SHUTDOWN:
+	case RequestHandler.JK_AJP13_PING_REQUEST:
+		return reqHandler.sendPong(this, outBuf);
+		
+	case RequestHandler.JK_AJP13_SHUTDOWN:
 	    return -2;
 	}
 
@@ -359,9 +359,10 @@ public class Ajp13 {
                                          numHeaders);
     }        
 
-    public void sendHeader(String name, String value) throws IOException {
-        reqHandler.sendHeader(  outBuf, name, value );
-    }
+	public void sendHeader(String name, String value) throws IOException {
+		reqHandler.sendHeader(  outBuf, name, value );
+	}
+
 
     public void endSendHeaders() throws IOException {
         reqHandler.endSendHeaders(this, outBuf);

@@ -73,7 +73,7 @@ import org.apache.tomcat.util.http.MimeHeaders;
  *
  * @see Ajp14/Ajp13Packet 
  *
- * @author Henri Gomez [hgomez@slib.fr]
+ * @author Henri Gomez [hgomez@apache.org]
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Kevin Seguin

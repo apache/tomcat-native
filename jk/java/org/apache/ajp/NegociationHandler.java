@@ -71,15 +71,13 @@ import org.apache.tomcat.util.http.BaseRequest;
  * exchange information about supported messages on each end.
  * 
  * 
- * @author Henri Gomez [hgomez@slib.fr]
+ * @author Henri Gomez [hgomez@apache.org]
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Costin Manolache
  */
 public class NegociationHandler extends AjpHandler
 {
-    public static final byte JK_AJP13_SHUTDOWN=7;
-	
     // Initial Login Phase (web server -> servlet engine)
     public static final byte JK_AJP14_LOGINIT_CMD=0x10;
     
@@ -254,7 +252,7 @@ public class NegociationHandler extends AjpHandler
 				   this, null); //
 	ajp14.registerMessageType( JK_AJP14_LOGCOMP_CMD,"JK_AJP14_LOGCOMP_CMD",
 				   this, null); //
-	ajp14.registerMessageType( JK_AJP13_SHUTDOWN,"JK_AJP13_SHUTDOWN",
+	ajp14.registerMessageType( RequestHandler.JK_AJP13_SHUTDOWN,"JK_AJP13_SHUTDOWN",
 				   this, null); //
 	ajp14.registerMessageType( JK_AJP14_CONTEXT_QRY_CMD,
 				   "JK_AJP14_CONTEXT_QRY_CMD",
@@ -293,7 +291,7 @@ public class NegociationHandler extends AjpHandler
 	    return handleLogInit(ch, hBuf, outBuf);
 	case JK_AJP14_LOGCOMP_CMD :
 	    return handleLogComp(ch, hBuf, outBuf);
-	case JK_AJP13_SHUTDOWN:
+	case RequestHandler.JK_AJP13_SHUTDOWN:
 	    return -2;
 	case JK_AJP14_CONTEXT_QRY_CMD :
 	    return handleContextQuery(ch, hBuf, outBuf);

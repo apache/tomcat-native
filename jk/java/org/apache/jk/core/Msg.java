@@ -71,7 +71,7 @@ import org.apache.tomcat.util.buf.MessageBytes;
  * In a more generic sense, it's the event that drives the processing chain.
  * XXX Use Event, make Msg a particular case.
  *
- * @author Henri Gomez [hgomez@slib.fr]
+ * @author Henri Gomez [hgomez@apache.org]
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Kevin Seguin

@@ -76,6 +76,8 @@ import org.apache.tomcat.util.http.MimeHeaders;
  *
  * This object can handle the following incoming messages:
  * - "FORWARD_REQUEST" input message ( sent when a request is passed from the web server )
+ * - "PING REQUEST" input message (sent by the web server to determine if tomcat is not frozen,
+ *                                 a PONG REPLY will be sent back)
  * - "RECEIVE_BODY_CHUNK" input ( sent by container to pass more body, in response to GET_BODY_CHUNK )
  *
  * It can handle the following outgoing messages:
@@ -84,7 +86,7 @@ import org.apache.tomcat.util.http.MimeHeaders;
  * - GET_BODY_CHUNK. Request a chunk of body data
  * - END_RESPONSE. Notify the end of a request processing.
  *
- * @author Henri Gomez [hgomez@slib.fr]
+ * @author Henri Gomez [hgomez@apache.org]
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Costin Manolache
@@ -94,14 +96,17 @@ public class RequestHandler extends AjpHandler
     // XXX Will move to a registry system.
     
     // Prefix codes for message types from server to container
-    public static final byte JK_AJP13_FORWARD_REQUEST   = 2;
+	public static final byte JK_AJP13_FORWARD_REQUEST   = 2;
+	public static final byte JK_AJP13_SHUTDOWN          = 7;
+	public static final byte JK_AJP13_PING_REQUEST      = 8;    
 
     // Prefix codes for message types from container to server
     public static final byte JK_AJP13_SEND_BODY_CHUNK   = 3;
     public static final byte JK_AJP13_SEND_HEADERS      = 4;
     public static final byte JK_AJP13_END_RESPONSE      = 5;
-    public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
-    
+	public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
+	public static final byte JK_AJP13_PONG_REPLY        = 9;
+	
     // Integer codes for common response header strings
     public static final int SC_RESP_CONTENT_TYPE        = 0xA001;
     public static final int SC_RESP_CONTENT_LANGUAGE    = 0xA002;
@@ -221,6 +226,35 @@ public class RequestHandler extends AjpHandler
 	ajp14.registerMessageType( JK_AJP13_GET_BODY_CHUNK, // 6
 				   "JK_AJP13_GET_BODY_CHUNK",
 				   this, null );
+	ajp14.registerMessageType( JK_AJP13_PING_REQUEST,
+				   "JK_AJP13_PING_REQUEST",
+				   this, null); // 8
+	ajp14.registerMessageType( JK_AJP13_PONG_REPLY,
+				   "JK_AJP13_PONG_REPLY",
+				   this, null); // 9
+    }
+    
+    /**
+     * Send a PONG REPLY to web server to its PING request
+     * 
+     * @param ch the Ajp13 channel
+     * @param outBuf the Ajp13Packet output packet to use
+     */
+    public int sendPong(Ajp13 ch, Ajp13Packet outBuf)
+    {
+		outBuf.reset();
+		outBuf.appendByte(JK_AJP13_PONG_REPLY);
+    	
+    	try
+    	{
+			ch.send(outBuf);
+    	}
+    	catch (IOException ioe)
+    	{
+    		log("can't send pong reply");
+    	}
+    	
+    	return (999);	// success but no need to process farther
     }
     
     // -------------------- Incoming message --------------------
@@ -231,6 +265,7 @@ public class RequestHandler extends AjpHandler
 	switch( type ) {
 	case RequestHandler.JK_AJP13_FORWARD_REQUEST:
 	    return decodeRequest(channel, channel.hBuf, req );
+		
 	default:
 	    return UNKNOWN;
 	}

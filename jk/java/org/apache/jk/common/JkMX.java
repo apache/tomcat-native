@@ -76,8 +76,10 @@ import java.io.IOException;
 public class JkMX extends JkHandler
 {
     MBeanServer mserver;
-    private int port=-1;
-    private String host;
+	private int port=-1;
+	private String host;
+	private int jrmpport=1099;
+	private String jrmphost="localhost";
 
     public JkMX()
     {
@@ -85,23 +87,41 @@ public class JkMX extends JkHandler
 
     /* -------------------- Public methods -------------------- */
 
-    /** Enable the MX4J internal adapter
-     */
-    public void setPort( int i ) {
-        port=i;
-    }
+	/** Enable the MX4J internal adapter
+	 */
+	public void setPort( int i ) {
+		port=i;
+	}
 
-    public int getPort() {
-        return port;
-    }
+	public int getPort() {
+		return port;
+	}
 
-    public void setHost(String host ) {
-        this.host=host;
-    }
+	public void setHost(String host ) {
+		this.host=host;
+	}
 
-    public String getHost() {
-        return host;
-    }
+	public String getHost() {
+		return host;
+	}
+
+	/** Enable the MX4J JRMP internal adapter
+	 */
+	public void setJRMPPort( int i ) {
+		jrmpport=i;
+	}
+
+	public int getJRMPPort() {
+		return jrmpport;
+	}
+
+	public void setJRMPHost(String host ) {
+		this.jrmphost=host;
+	}
+
+	public String getJRMPHost() {
+		return jrmphost;
+	}
 
     /* ==================== Start/stop ==================== */
     ObjectName serverName=null;
@@ -181,10 +201,12 @@ public class JkMX extends JkHandler
                             "com.sun.jndi.rmi.registry.RegistryContextFactory"},
                         new String[] { "java.lang.Object", "java.lang.Object" });
 
+				String jrpmurl = "rmi://" + jrmphost + ":" + Integer.toString(jrmpport) ;
+					
                 mserver.invoke( adaptor, "putNamingProperty",
                         new Object[] {
                             javax.naming.Context.PROVIDER_URL,
-                            "rmi://localhost:1099"},
+                            jrpmurl},
                         new String[] { "java.lang.Object", "java.lang.Object" });
 
                 //mbean.putNamingProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.rmi.registry.RegistryContextFactory");

@@ -66,7 +66,7 @@ import javax.management.ObjectName;
  * the jk object model.
  *
  * @author Gal Shachor
- * @author Henri Gomez [hgomez@slib.fr]
+ * @author Henri Gomez [hgomez@apache.org]
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Kevin Seguin

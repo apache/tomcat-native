@@ -414,8 +414,20 @@ final class Ajp13Processor
                 break;
             }
             
-            if( status != 200 )
-                break;
+			// Allready handled by low level proto, don't go farther
+			if( status == 999 )
+			{
+				ajpRequest.recycle();
+				request.recycle();
+
+				// recycle ajp13 object
+				ajp13.recycle();
+
+				continue;
+			}
+
+			if( status != 200 )
+				break;
 
             try {
                 // set flag

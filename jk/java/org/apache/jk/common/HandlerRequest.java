@@ -89,7 +89,7 @@ import org.apache.commons.modeler.Registry;
  * - GET_BODY_CHUNK. Request a chunk of body data
  * - END_RESPONSE. Notify the end of a request processing.
  *
- * @author Henri Gomez [hgomez@slib.fr]
+ * @author Henri Gomez [hgomez@apache.org]
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Costin Manolache
@@ -103,14 +103,15 @@ public class HandlerRequest extends JkHandler
     
     // Prefix codes for message types from server to container
     public static final byte JK_AJP13_FORWARD_REQUEST   = 2;
-
-    public static final byte JK_AJP13_SHUTDOWN   = 7;
+	public static final byte JK_AJP13_SHUTDOWN          = 7;
+	public static final byte JK_AJP13_PING_REQUEST      = 8;
 
     // Prefix codes for message types from container to server
     public static final byte JK_AJP13_SEND_BODY_CHUNK   = 3;
     public static final byte JK_AJP13_SEND_HEADERS      = 4;
     public static final byte JK_AJP13_END_RESPONSE      = 5;
-    public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
+	public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
+	public static final byte JK_AJP13_PONG_REPLY        = 9;
     
     // Integer codes for common response header strings
     public static final int SC_RESP_CONTENT_TYPE        = 0xA001;
@@ -227,9 +228,13 @@ public class HandlerRequest extends JkHandler
                                           "JK_AJP13_FORWARD_REQUEST",
                                           this, null); // 2
             
-            dispatch.registerMessageType( JK_AJP13_FORWARD_REQUEST,
+            dispatch.registerMessageType( JK_AJP13_SHUTDOWN,
                                           "JK_AJP13_SHUTDOWN",
                                           this, null); // 7
+            
+			dispatch.registerMessageType( JK_AJP13_PING_REQUEST,
+										  "JK_AJP13_PING_REQUEST",
+										  this, null); // 8
             
             // register outgoing messages handler
             dispatch.registerMessageType( JK_AJP13_SEND_BODY_CHUNK, // 3
@@ -411,6 +416,16 @@ public class HandlerRequest extends JkHandler
             System.exit(0);
             
 	    return OK;
+
+		// We got a PING REQUEST, quickly respond with a PONG
+		case JK_AJP13_PING_REQUEST:
+			msg.reset();
+			msg.appendByte(JK_AJP13_PONG_REPLY);
+			ep.setType( JkHandler.HANDLE_SEND_PACKET );
+			ep.getSource().invoke( msg, ep );
+			
+			return OK;
+
         default:
             System.err.println("Unknown message " + type );
             msg.dump("Unknown message" );

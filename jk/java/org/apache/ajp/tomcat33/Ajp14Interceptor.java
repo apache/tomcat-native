@@ -248,6 +248,7 @@ public class Ajp14Interceptor extends PoolTcpConnector
 		    }                        
 		}
 		
+		// 999 low level requests are just ignored (ie ping/pong)
 		if( status  == 200)
 		    cm.service(req, res);
 		else if (status == 500) {
