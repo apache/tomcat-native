@@ -716,7 +716,7 @@ static const char *jk_mount_context(cmd_parms * cmd,
     /*
      * Add the new worker to the alias map.
      */
-    map_put(conf->uri_to_context, context, worker, (void **)&old);
+    jk_map_put(conf->uri_to_context, context, worker, (void **)&old);
     return NULL;
 }
 
@@ -741,7 +741,7 @@ static const char *jk_automount_context(cmd_parms * cmd,
      * Add the new automount to the auto map.
      */
     char *old;
-    map_put(conf->automount, worker, virtualhost, (void **)&old);
+    jk_map_put(conf->automount, worker, virtualhost, (void **)&old);
     return NULL;
 }
 
@@ -790,9 +790,9 @@ static const char *jk_worker_property(cmd_parms * cmd,
 
     jk_map_t *m = conf->worker_properties;
 
-    value = map_replace_properties(value, m);
+    value = jk_map_replace_properties(value, m);
 
-    oldv = map_get_string(m, name, NULL);
+    oldv = jk_map_get_string(m, name, NULL);
 
     if (oldv) {
         char *tmpv = apr_palloc(cmd->pool,
@@ -816,7 +816,7 @@ static const char *jk_worker_property(cmd_parms * cmd,
 
     if (value) {
         void *old = NULL;
-        map_put(m, name, value, &old);
+        jk_map_put(m, name, value, &old);
         /*printf("Setting %s %s\n", name, value); */
     }
     return NULL;
@@ -1866,7 +1866,7 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
         (jk_server_conf_t *) apr_pcalloc(p, sizeof(jk_server_conf_t));
 
     c->worker_properties = NULL;
-    map_alloc(&c->worker_properties);
+    jk_map_alloc(&c->worker_properties);
     c->worker_file = NULL;
     c->log_file = NULL;
     c->log_level = -1;
@@ -1907,10 +1907,10 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->session_indicator = "SSL_SESSION_ID";
     c->key_size_indicator = "SSL_CIPHER_USEKEYSIZE";
 
-    if (!map_alloc(&(c->uri_to_context))) {
+    if (!jk_map_alloc(&(c->uri_to_context))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
-    if (!map_alloc(&(c->automount))) {
+    if (!jk_map_alloc(&(c->automount))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
 
@@ -1932,15 +1932,15 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
 static void copy_jk_map(apr_pool_t * p, server_rec * s, jk_map_t *src,
                         jk_map_t *dst)
 {
-    int sz = map_size(src);
+    int sz = jk_map_size(src);
     int i;
     for (i = 0; i < sz; i++) {
         void *old;
-        char *name = map_name_at(src, i);
-        if (map_get(src, name, NULL) == NULL) {
-            if (!map_put(dst, name,
-                         apr_pstrdup(p, map_get_string(src, name, NULL)),
-                         &old)) {
+        char *name = jk_map_name_at(src, i);
+        if (jk_map_get(src, name, NULL) == NULL) {
+            if (!jk_map_put(dst, name,
+                            apr_pstrdup(p, jk_map_get_string(src, name, NULL)),
+                            &old)) {
                 jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
             }
         }
@@ -2142,8 +2142,8 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     }
 
     /*     if(map_alloc(&init_map)) { */
-    if (!map_read_properties(init_map, conf->worker_file)) {
-        if (map_size(init_map) == 0) {
+    if (!jk_map_read_properties(init_map, conf->worker_file)) {
+        if (jk_map_size(init_map) == 0) {
             ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO,
                          APLOG_EMERG, NULL,
                          "No worker file and no worker options in httpd.conf \n"

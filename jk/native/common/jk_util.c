@@ -292,7 +292,7 @@ char *jk_get_worker_type(jk_map_t *m, const char *wname)
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, TYPE_OF_WORKER);
 
-    return map_get_string(m, buf, DEFAULT_WORKER_TYPE);
+    return jk_map_get_string(m, buf, DEFAULT_WORKER_TYPE);
 }
 
 char *jk_get_worker_secret(jk_map_t *m, const char *wname)
@@ -306,7 +306,7 @@ char *jk_get_worker_secret(jk_map_t *m, const char *wname)
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, SECRET_OF_WORKER);
 
-    secret = map_get_string(m, buf, NULL);
+    secret = jk_map_get_string(m, buf, NULL);
 
     return secret;
 }
@@ -322,7 +322,7 @@ int jk_get_worker_str_prop(jk_map_t *m,
 
     if (m && prop && wname && pname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, pname);
-        *prop = map_get_string(m, buf, NULL);
+        *prop = jk_map_get_string(m, buf, NULL);
         if (*prop) {
             return JK_TRUE;
         }
@@ -338,7 +338,7 @@ int jk_get_worker_int_prop(jk_map_t *m,
     if (m && prop && wname && pname) {
         int i;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, pname);
-        i = map_get_int(m, buf, -1);
+        i = jk_map_get_int(m, buf, -1);
         if (-1 != i) {
             *prop = i;
             return JK_TRUE;
@@ -357,7 +357,7 @@ char *jk_get_worker_host(jk_map_t *m, const char *wname, const char *def)
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, HOST_OF_WORKER);
 
-    return map_get_string(m, buf, def);
+    return jk_map_get_string(m, buf, def);
 }
 
 int jk_get_worker_port(jk_map_t *m, const char *wname, int def)
@@ -370,7 +370,7 @@ int jk_get_worker_port(jk_map_t *m, const char *wname, int def)
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, PORT_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_cache_size(jk_map_t *m, const char *wname, int def)
@@ -383,7 +383,7 @@ int jk_get_worker_cache_size(jk_map_t *m, const char *wname, int def)
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, CACHE_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_socket_timeout(jk_map_t *m, const char *wname, int def)
@@ -397,7 +397,7 @@ int jk_get_worker_socket_timeout(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             SOCKET_TIMEOUT_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_socket_keepalive(jk_map_t *m, const char *wname, int def)
@@ -411,7 +411,7 @@ int jk_get_worker_socket_keepalive(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             SOCKET_KEEPALIVE_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_cache_timeout(jk_map_t *m, const char *wname, int def)
@@ -425,7 +425,7 @@ int jk_get_worker_cache_timeout(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             CACHE_TIMEOUT_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_connect_timeout(jk_map_t *m, const char *wname, int def)
@@ -439,7 +439,7 @@ int jk_get_worker_connect_timeout(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             CONNECT_TIMEOUT_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_prepost_timeout(jk_map_t *m, const char *wname, int def)
@@ -453,7 +453,7 @@ int jk_get_worker_prepost_timeout(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             PREPOST_TIMEOUT_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_reply_timeout(jk_map_t *m, const char *wname, int def)
@@ -467,7 +467,7 @@ int jk_get_worker_reply_timeout(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             REPLY_TIMEOUT_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def)
@@ -481,7 +481,7 @@ int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             RECYCLE_TIMEOUT_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_recovery_opts(jk_map_t *m, const char *wname, int def)
@@ -495,7 +495,7 @@ int jk_get_worker_recovery_opts(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             RECOVERY_OPTS_OF_WORKER);
 
-    return map_get_int(m, buf, def);
+    return jk_map_get_int(m, buf, def);
 }
 
 char *jk_get_worker_secret_key(jk_map_t *m, const char *wname)
@@ -507,13 +507,13 @@ char *jk_get_worker_secret_key(jk_map_t *m, const char *wname)
     }
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, SECRET_KEY_OF_WORKER);
-    return map_get_string(m, buf, NULL);
+    return jk_map_get_string(m, buf, NULL);
 }
 
 int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_wokers)
 {
     if (m && list && num_of_wokers) {
-        char **ar = map_get_string_list(m,
+        char **ar = jk_map_get_string_list(m,
                                         WORKER_LIST_PROPERTY_NAME,
                                         num_of_wokers,
                                         DEFAULT_WORKER);
@@ -543,7 +543,7 @@ int jk_get_lb_factor(jk_map_t *m, const char *wname)
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, LOAD_FACTOR_OF_WORKER);
 
-    return map_get_int(m, buf, DEFAULT_LB_FACTOR);
+    return jk_map_get_int(m, buf, DEFAULT_LB_FACTOR);
 }
 
 int jk_get_is_sticky_session(jk_map_t *m, const char *wname)
@@ -553,7 +553,7 @@ int jk_get_is_sticky_session(jk_map_t *m, const char *wname)
     if (m && wname) {
         int value;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, STICKY_SESSION);
-        value = map_get_int(m, buf, 1);
+        value = jk_map_get_int(m, buf, 1);
         if (!value)
             rc = JK_FALSE;
     }
@@ -567,7 +567,7 @@ int jk_get_is_local_worker(jk_map_t *m, const char *wname)
     if (m && wname) {
         int value;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, LOCAL_WORKER_FLAG);
-        value = map_get_int(m, buf, 0);
+        value = jk_map_get_int(m, buf, 0);
         if (value)
             rc = JK_TRUE;
     }
@@ -582,7 +582,7 @@ int jk_get_local_worker_only_flag(jk_map_t *m, const char *lb_wname)
         int value;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, lb_wname,
                 LOCAL_WORKER_ONLY_FLAG);
-        value = map_get_int(m, buf, 0);
+        value = jk_map_get_int(m, buf, 0);
         if (value)
             rc = JK_TRUE;
     }
@@ -600,7 +600,7 @@ int jk_get_lb_worker_list(jk_map_t *m,
 
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, lb_wname,
                 BALANCED_WORKERS);
-        ar = map_get_string_list(m, buf, num_of_wokers, NULL);
+        ar = jk_map_get_string_list(m, buf, num_of_wokers, NULL);
         if (ar) {
             *list = ar;
             return JK_TRUE;
@@ -620,7 +620,7 @@ int jk_get_worker_mx(jk_map_t *m, const char *wname, unsigned *mx)
         int i;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, MX_OF_WORKER);
 
-        i = map_get_int(m, buf, -1);
+        i = jk_map_get_int(m, buf, -1);
         if (-1 != i) {
             *mx = (unsigned)i;
             return JK_TRUE;
@@ -638,7 +638,7 @@ int jk_get_worker_ms(jk_map_t *m, const char *wname, unsigned *ms)
         int i;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, MS_OF_WORKER);
 
-        i = map_get_int(m, buf, -1);
+        i = jk_map_get_int(m, buf, -1);
         if (-1 != i) {
             *ms = (unsigned)i;
             return JK_TRUE;
@@ -655,7 +655,7 @@ int jk_get_worker_classpath(jk_map_t *m, const char *wname, char **cp)
     if (m && cp && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, CP_OF_WORKER);
 
-        *cp = map_get_string(m, buf, NULL);
+        *cp = jk_map_get_string(m, buf, NULL);
         if (*cp) {
             return JK_TRUE;
         }
@@ -672,7 +672,7 @@ int jk_get_worker_bridge_type(jk_map_t *m, const char *wname, unsigned *bt)
     if (m && bt && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, BRIDGE_OF_WORKER);
 
-        type = map_get_string(m, buf, NULL);
+        type = jk_map_get_string(m, buf, NULL);
 
         if (type) {
             if (!strcasecmp(type, TOMCAT32_BRIDGE_NAME))
@@ -700,7 +700,7 @@ int jk_get_worker_jvm_path(jk_map_t *m, const char *wname, char **vm_path)
     if (m && vm_path && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, JVM_OF_WORKER);
 
-        *vm_path = map_get_string(m, buf, NULL);
+        *vm_path = jk_map_get_string(m, buf, NULL);
         if (*vm_path) {
             return JK_TRUE;
         }
@@ -718,7 +718,7 @@ int jk_get_worker_callback_dll(jk_map_t *m, const char *wname, char **cb_path)
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
                 NATIVE_LIB_OF_WORKER);
 
-        *cb_path = map_get_string(m, buf, NULL);
+        *cb_path = jk_map_get_string(m, buf, NULL);
         if (*cb_path) {
             return JK_TRUE;
         }
@@ -734,7 +734,7 @@ int jk_get_worker_cmd_line(jk_map_t *m, const char *wname, char **cmd_line)
     if (m && cmd_line && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, CMD_LINE_OF_WORKER);
 
-        *cmd_line = map_get_string(m, buf, NULL);
+        *cmd_line = jk_map_get_string(m, buf, NULL);
         if (*cmd_line) {
             return JK_TRUE;
         }
@@ -792,7 +792,7 @@ int jk_get_worker_stdout(jk_map_t *m, const char *wname, char **stdout_name)
     if (m && stdout_name && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, STDOUT_OF_WORKER);
 
-        *stdout_name = map_get_string(m, buf, NULL);
+        *stdout_name = jk_map_get_string(m, buf, NULL);
         if (*stdout_name) {
             return JK_TRUE;
         }
@@ -808,7 +808,7 @@ int jk_get_worker_stderr(jk_map_t *m, const char *wname, char **stderr_name)
     if (m && stderr_name && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, STDERR_OF_WORKER);
 
-        *stderr_name = map_get_string(m, buf, NULL);
+        *stderr_name = jk_map_get_string(m, buf, NULL);
         if (*stderr_name) {
             return JK_TRUE;
         }
@@ -824,7 +824,7 @@ int jk_get_worker_sysprops(jk_map_t *m, const char *wname, char **sysprops)
     if (m && sysprops && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, SYSPROPS_OF_WORKER);
 
-        *sysprops = map_get_string(m, buf, NULL);
+        *sysprops = jk_map_get_string(m, buf, NULL);
         if (*sysprops) {
             return JK_TRUE;
         }
@@ -840,7 +840,7 @@ int jk_get_worker_libpath(jk_map_t *m, const char *wname, char **libpath)
     if (m && libpath && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, LIBPATH_OF_WORKER);
 
-        *libpath = map_get_string(m, buf, NULL);
+        *libpath = jk_map_get_string(m, buf, NULL);
         if (*libpath) {
             return JK_TRUE;
         }

@@ -678,7 +678,7 @@ static const char *jk_mount_context(cmd_parms * cmd,
     /*
      * Add the new worker to the alias map.
      */
-    map_put(conf->uri_to_context, context, worker, (void **)&old);
+    jk_map_put(conf->uri_to_context, context, worker, (void **)&old);
     return NULL;
 }
 
@@ -701,7 +701,7 @@ static const char *jk_automount_context(cmd_parms * cmd,
      * Add the new automount to the auto map.
      */
     char *old;
-    map_put(conf->automount, worker, virtualhost, (void **)&old);
+    jk_map_put(conf->automount, worker, virtualhost, (void **)&old);
     return NULL;
 }
 
@@ -1605,7 +1605,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
         (jk_server_conf_t *) ap_pcalloc(p, sizeof(jk_server_conf_t));
 
     c->worker_properties = NULL;
-    map_alloc(&c->worker_properties);
+    jk_map_alloc(&c->worker_properties);
     c->worker_file = NULL;
     c->log_file = NULL;
     c->log_level = -1;
@@ -1646,10 +1646,10 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->session_indicator = "SSL_SESSION_ID";
     c->key_size_indicator = "SSL_CIPHER_USEKEYSIZE";
 
-    if (!map_alloc(&(c->uri_to_context))) {
+    if (!jk_map_alloc(&(c->uri_to_context))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
-    if (!map_alloc(&(c->automount))) {
+    if (!jk_map_alloc(&(c->automount))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
     c->uw_map = NULL;
@@ -1667,15 +1667,15 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
 static void copy_jk_map(ap_pool * p, server_rec * s, jk_map_t *src,
                         jk_map_t *dst)
 {
-    int sz = map_size(src);
+    int sz = jk_map_size(src);
     int i;
     for (i = 0; i < sz; i++) {
         void *old;
-        char *name = map_name_at(src, i);
-        if (map_get(src, name, NULL) == NULL) {
-            if (!map_put
-                (dst, name, ap_pstrdup(p, map_get_string(src, name, NULL)),
-                 &old)) {
+        char *name = jk_map_name_at(src, i);
+        if (jk_map_get(src, name, NULL) == NULL) {
+            if (!jk_map_put (dst, name,
+                 ap_pstrdup(p, jk_map_get_string(src, name, NULL)),
+                            &old)) {
                 jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
             }
         }
@@ -1757,9 +1757,9 @@ static void jk_init(server_rec * s, ap_pool * p)
 /*
 { int i;
 jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s\n", conf->secret_key);
-for (i = 0; i < map_size(conf->automount); i++)
+for (i = 0; i < jk_map_size(conf->automount); i++)
 {
-            char *name = map_name_at(conf->automount, i);
+            char *name = jk_map_name_at(conf->automount, i);
 			jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s\n", name, map_get_string(conf->automount, name, NULL));
 }
 }
@@ -1773,7 +1773,7 @@ for (i = 0; i < map_size(conf->automount); i++)
 
     /*if(map_alloc(&init_map)) { */
 
-    if (map_read_properties(init_map, conf->worker_file)) {
+    if (jk_map_read_properties(init_map, conf->worker_file)) {
 
 #if MODULE_MAGIC_NUMBER >= 19980527
         /* Tell apache we're here */

@@ -42,7 +42,7 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
 
     jk_log(l, JK_LOG_DEBUG, "Into wc_open\n");
 
-    if (!map_alloc(&worker_map)) {
+    if (!jk_map_alloc(&worker_map)) {
         return JK_FALSE;
     }
 
@@ -79,7 +79,7 @@ jk_worker_t *wc_get_worker_for_name(const char *name, jk_logger_t *l)
 
     jk_log(l, JK_LOG_DEBUG, "Into wc_get_worker_for_name %s\n", name);
 
-    rc = map_get(worker_map, name, NULL);
+    rc = jk_map_get(worker_map, name, NULL);
 
     jk_log(l, JK_LOG_DEBUG, "wc_get_worker_for_name, done %s a worker\n",
            rc ? "found" : "did not find");
@@ -144,23 +144,23 @@ int wc_create_worker(const char *name,
 
 static void close_workers(jk_logger_t *l)
 {
-    int sz = map_size(worker_map);
+    int sz = jk_map_size(worker_map);
 
     jk_log(l, JK_LOG_DEBUG, "close_workers got %d workers to destroy\n", sz);
 
     if (sz > 0) {
         int i;
         for (i = 0; i < sz; i++) {
-            jk_worker_t *w = map_value_at(worker_map, i);
+            jk_worker_t *w = jk_map_value_at(worker_map, i);
             if (w) {
                 jk_log(l, JK_LOG_DEBUG,
                        "close_workers will destroy worker %s\n",
-                       map_name_at(worker_map, i));
+                       jk_map_name_at(worker_map, i));
                 w->destroy(&w, l);
             }
         }
     }
-    map_free(&worker_map);
+    jk_map_free(&worker_map);
 }
 
 static int build_worker_map(jk_map_t *init_data,
@@ -181,7 +181,7 @@ static int build_worker_map(jk_map_t *init_data,
 
         if (wc_create_worker(worker_list[i], init_data, &w, we, l)) {
             jk_worker_t *oldw = NULL;
-            if (!map_put(worker_map, worker_list[i], w, (void *)&oldw)) {
+            if (!jk_map_put(worker_map, worker_list[i], w, (void *)&oldw)) {
                 w->destroy(&w, l);
                 return JK_FALSE;
             }

@@ -1006,24 +1006,24 @@ static int init_jk(char *serverName)
            worker_mount_file);
     jk_log(logger, JK_LOG_DEBUG, "Using uri select %d.\n", uri_select_option);
 
-    if (map_alloc(&map)) {
-        if (map_read_properties(map, worker_mount_file)) {
+    if (jk_map_alloc(&map)) {
+        if (jk_map_read_properties(map, worker_mount_file)) {
             /* remove non-mapping entries (assume they were string substitutions) */
             jk_map_t *map2;
-            if (map_alloc(&map2)) {
+            if (jk_map_alloc(&map2)) {
                 int sz, i;
                 void *old;
 
-                sz = map_size(map);
+                sz = jk_map_size(map);
                 for (i = 0; i < sz; i++) {
-                    char *name = map_name_at(map, i);
+                    char *name = jk_map_name_at(map, i);
                     if ('/' == *name) {
-                        map_put(map2, name, map_value_at(map, i), &old);
+                        jk_map_put(map2, name, jk_map_value_at(map, i), &old);
                     }
                     else {
                         jk_log(logger, JK_LOG_DEBUG,
                                "Ignoring worker mount file entry %s=%s.\n",
-                               name, map_value_at(map, i));
+                               name, jk_map_value_at(map, i));
                     }
                 }
 
@@ -1044,8 +1044,8 @@ static int init_jk(char *serverName)
 
     if (rc) {
         rc = JK_FALSE;
-        if (map_alloc(&map)) {
-            if (map_read_properties(map, worker_file)) {
+        if (jk_map_alloc(&map)) {
+            if (jk_map_read_properties(map, worker_file)) {
                 /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 
                 worker_env.uri_to_worker = uw_map;
@@ -1101,48 +1101,48 @@ static int read_registry_init_data(void)
     char *tmp;
     jk_map_t *map;
 
-    if (map_alloc(&map)) {
-        if (map_read_properties(map, ini_file_name)) {
+    if (jk_map_alloc(&map)) {
+        if (jk_map_read_properties(map, ini_file_name)) {
             using_ini_file = JK_TRUE;
         }
     }
     if (using_ini_file) {
-        tmp = map_get_string(map, JK_LOG_FILE_TAG, NULL);
+        tmp = jk_map_get_string(map, JK_LOG_FILE_TAG, NULL);
         if (tmp) {
             strcpy(log_file, tmp);
         }
         else {
             ok = JK_FALSE;
         }
-        tmp = map_get_string(map, JK_LOG_LEVEL_TAG, NULL);
+        tmp = jk_map_get_string(map, JK_LOG_LEVEL_TAG, NULL);
         if (tmp) {
             log_level = jk_parse_log_level(tmp);
         }
         else {
             ok = JK_FALSE;
         }
-        tmp = map_get_string(map, EXTENSION_URI_TAG, NULL);
+        tmp = jk_map_get_string(map, EXTENSION_URI_TAG, NULL);
         if (tmp) {
             strcpy(extension_uri, tmp);
         }
         else {
             ok = JK_FALSE;
         }
-        tmp = map_get_string(map, JK_WORKER_FILE_TAG, NULL);
+        tmp = jk_map_get_string(map, JK_WORKER_FILE_TAG, NULL);
         if (tmp) {
             strcpy(worker_file, tmp);
         }
         else {
             ok = JK_FALSE;
         }
-        tmp = map_get_string(map, JK_MOUNT_FILE_TAG, NULL);
+        tmp = jk_map_get_string(map, JK_MOUNT_FILE_TAG, NULL);
         if (tmp) {
             strcpy(worker_mount_file, tmp);
         }
         else {
             ok = JK_FALSE;
         }
-        tmp = map_get_string(map, URI_SELECT_TAG, NULL);
+        tmp = jk_map_get_string(map, URI_SELECT_TAG, NULL);
         if (tmp) {
             int opt = parse_uri_select(tmp);
             if (opt >= 0) {

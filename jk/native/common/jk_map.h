@@ -33,43 +33,43 @@ extern "C"
 struct jk_map;
 typedef struct jk_map jk_map_t;
 
-int map_alloc(jk_map_t **m);
+int jk_map_alloc(jk_map_t **m);
 
-int map_free(jk_map_t **m);
+int jk_map_free(jk_map_t **m);
 
-int map_open(jk_map_t *m);
+int jk_map_open(jk_map_t *m);
 
-int map_close(jk_map_t *m);
+int jk_map_close(jk_map_t *m);
 
-void *map_get(jk_map_t *m, const char *name, const void *def);
+void *jk_map_get(jk_map_t *m, const char *name, const void *def);
 
-int map_get_int(jk_map_t *m, const char *name, int def);
+int jk_map_get_int(jk_map_t *m, const char *name, int def);
 
-double map_get_double(jk_map_t *m, const char *name, double def);
+double jk_map_get_double(jk_map_t *m, const char *name, double def);
 
-char *map_get_string(jk_map_t *m, const char *name, const char *def);
+char *jk_map_get_string(jk_map_t *m, const char *name, const char *def);
 
-char **map_get_string_list(jk_map_t *m,
+char **jk_map_get_string_list(jk_map_t *m,
                            const char *name,
                            unsigned *list_len, const char *def);
 
-int map_put(jk_map_t *m, const char *name, const void *value, void **old);
+int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old);
 
-int map_read_property(jk_map_t *m, const char *str);
+int jk_map_read_property(jk_map_t *m, const char *str);
 
-int map_read_properties(jk_map_t *m, const char *f);
+int jk_map_read_properties(jk_map_t *m, const char *f);
 
-int map_size(jk_map_t *m);
+int jk_map_size(jk_map_t *m);
 
-char *map_name_at(jk_map_t *m, int idex);
+char *jk_map_name_at(jk_map_t *m, int idex);
 
-void *map_value_at(jk_map_t *m, int idex);
+void *jk_map_value_at(jk_map_t *m, int idex);
 
 /**
  *  Replace $(property) in value.
  * 
  */
-char *map_replace_properties(const char *value, jk_map_t *m);
+char *jk_map_replace_properties(const char *value, jk_map_t *m);
 
 
 #ifdef __cplusplus

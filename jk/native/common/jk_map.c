@@ -49,21 +49,21 @@ static void trim_prp_comment(char *prp);
 static size_t trim(char *s);
 static int map_realloc(jk_map_t *m);
 
-int map_alloc(jk_map_t **m)
+int jk_map_alloc(jk_map_t **m)
 {
     if (m) {
-        return map_open(*m = (jk_map_t *)malloc(sizeof(jk_map_t)));
+        return jk_map_open(*m = (jk_map_t *)malloc(sizeof(jk_map_t)));
     }
 
     return JK_FALSE;
 }
 
-int map_free(jk_map_t **m)
+int jk_map_free(jk_map_t **m)
 {
     int rc = JK_FALSE;
 
     if (m && *m) {
-        map_close(*m);
+        jk_map_close(*m);
         free(*m);
         *m = NULL;
     }
@@ -71,7 +71,7 @@ int map_free(jk_map_t **m)
     return rc;
 }
 
-int map_open(jk_map_t *m)
+int jk_map_open(jk_map_t *m)
 {
     int rc = JK_FALSE;
 
@@ -87,7 +87,7 @@ int map_open(jk_map_t *m)
     return rc;
 }
 
-int map_close(jk_map_t *m)
+int jk_map_close(jk_map_t *m)
 {
     int rc = JK_FALSE;
 
@@ -99,7 +99,7 @@ int map_close(jk_map_t *m)
     return rc;
 }
 
-void *map_get(jk_map_t *m, const char *name, const void *def)
+void *jk_map_get(jk_map_t *m, const char *name, const void *def)
 {
     const void *rc = (void *)def;
 
@@ -116,7 +116,7 @@ void *map_get(jk_map_t *m, const char *name, const void *def)
     return (void *)rc;          /* DIRTY */
 }
 
-int map_get_int(jk_map_t *m, const char *name, int def)
+int jk_map_get_int(jk_map_t *m, const char *name, int def)
 {
     char buf[100];
     char *rc;
@@ -125,7 +125,7 @@ int map_get_int(jk_map_t *m, const char *name, int def)
     int multit = 1;
 
     sprintf(buf, "%d", def);
-    rc = map_get_string(m, name, buf);
+    rc = jk_map_get_string(m, name, buf);
 
     len = strlen(rc);
     if (len) {
@@ -145,27 +145,27 @@ int map_get_int(jk_map_t *m, const char *name, int def)
     return int_res * multit;
 }
 
-double map_get_double(jk_map_t *m, const char *name, double def)
+double jk_map_get_double(jk_map_t *m, const char *name, double def)
 {
     char buf[100];
     char *rc;
 
     sprintf(buf, "%f", def);
-    rc = map_get_string(m, name, buf);
+    rc = jk_map_get_string(m, name, buf);
 
     return atof(rc);
 }
 
-char *map_get_string(jk_map_t *m, const char *name, const char *def)
+char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
 {
-    return map_get(m, name, def);
+    return jk_map_get(m, name, def);
 }
 
-char **map_get_string_list(jk_map_t *m,
-                           const char *name,
-                           unsigned *list_len, const char *def)
+char **jk_map_get_string_list(jk_map_t *m,
+                              const char *name,
+                              unsigned *list_len, const char *def)
 {
-    char *l = map_get_string(m, name, def);
+    char *l = jk_map_get_string(m, name, def);
     char **ar = NULL;
 #if defined(AS400) || defined(_REENTRANT)
     char *lasts;
@@ -214,7 +214,7 @@ char **map_get_string_list(jk_map_t *m,
     return ar;
 }
 
-int map_put(jk_map_t *m, const char *name, const void *value, void **old)
+int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
 {
     int rc = JK_FALSE;
 
@@ -246,7 +246,7 @@ int map_put(jk_map_t *m, const char *name, const void *value, void **old)
     return rc;
 }
 
-int map_read_property(jk_map_t *m, const char *str)
+int jk_map_read_property(jk_map_t *m, const char *str)
 {
     int rc = JK_TRUE;
     char buf[LENGTH_OF_LINE + 1];
@@ -262,8 +262,8 @@ int map_read_property(jk_map_t *m, const char *str)
             *v = '\0';
             v++;
             if (strlen(v) && strlen(prp)) {
-                char *oldv = map_get_string(m, prp, NULL);
-                v = map_replace_properties(v, m);
+                char *oldv = jk_map_get_string(m, prp, NULL);
+                v = jk_map_replace_properties(v, m);
                 if (oldv) {
                     char *tmpv = jk_pool_alloc(&m->p,
                         strlen(v) +
@@ -286,7 +286,7 @@ int map_read_property(jk_map_t *m, const char *str)
                 }
                 if (v) {
                     void *old = NULL;
-                    map_put(m, prp, v, &old);
+                    jk_map_put(m, prp, v, &old);
                 }
                 else {
                     rc = JK_FALSE;
@@ -298,7 +298,7 @@ int map_read_property(jk_map_t *m, const char *str)
 }
 
 
-int map_read_properties(jk_map_t *m, const char *f)
+int jk_map_read_properties(jk_map_t *m, const char *f)
 {
     int rc = JK_FALSE;
 
@@ -317,7 +317,7 @@ int map_read_properties(jk_map_t *m, const char *f)
 
             while (NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
                 trim_prp_comment(prp);
-                if ((rc = map_read_property(m, prp)) == JK_FALSE)
+                if ((rc =jk_map_read_property(m, prp)) == JK_FALSE)
                     break;
             }
             fclose(fp);
@@ -328,7 +328,7 @@ int map_read_properties(jk_map_t *m, const char *f)
 }
 
 
-int map_size(jk_map_t *m)
+int jk_map_size(jk_map_t *m)
 {
     if (m) {
         return m->size;
@@ -337,7 +337,7 @@ int map_size(jk_map_t *m)
     return -1;
 }
 
-char *map_name_at(jk_map_t *m, int idex)
+char *jk_map_name_at(jk_map_t *m, int idex)
 {
     if (m && idex >= 0) {
         return (char *)m->names[idex];  /* DIRTY */
@@ -346,7 +346,7 @@ char *map_name_at(jk_map_t *m, int idex)
     return NULL;
 }
 
-void *map_value_at(jk_map_t *m, int idex)
+void *jk_map_value_at(jk_map_t *m, int idex)
 {
     if (m && idex >= 0) {
         return (void *)m->values[idex]; /* DIRTY */
@@ -418,7 +418,7 @@ static int map_realloc(jk_map_t *m)
  *  Replace $(property) in value.
  * 
  */
-char *map_replace_properties(const char *value, jk_map_t *m)
+char *jk_map_replace_properties(const char *value, jk_map_t *m)
 {
     char *rc = (char *)value;
     char *env_start = rc;
@@ -438,7 +438,7 @@ char *map_replace_properties(const char *value, jk_map_t *m)
             strcpy(env_name, env_start + 2);
             *env_end = ')';
 
-            env_value = map_get_string(m, env_name, NULL);
+            env_value = jk_map_get_string(m, env_name, NULL);
             if (!env_value) {
                 env_value = getenv(env_name);
             }

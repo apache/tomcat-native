@@ -232,8 +232,8 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
         logger = NULL;
     }
 
-    if (map_alloc(&init_map)) {
-        if (map_read_properties(init_map, worker_prp_file)) {
+    if (jk_map_alloc(&init_map)) {
+        if (jk_map_read_properties(init_map, worker_prp_file)) {
             int sleep_cnt;
             SYS_THREAD s;
 

@@ -364,7 +364,7 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
         uw_map->size = 0;
         uw_map->maps = NULL;
 
-        sz = map_size(init_data);
+        sz = jk_map_size(init_data);
 
         jk_log(l, JK_LOG_DEBUG,
                "jk_uri_worker_map_t::uri_worker_map_open, rule map size is %d\n",
@@ -374,8 +374,8 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
             int i;
             for (i = 0; i < sz; i++) {
                 if (uri_worker_map_add
-                    (uw_map, map_name_at(init_data, i),
-                     map_value_at(init_data, i), l) == JK_FALSE) {
+                    (uw_map, jk_map_name_at(init_data, i),
+                     jk_map_value_at(init_data, i), l) == JK_FALSE) {
                     rc = JK_FALSE;
                     break;
                 }
