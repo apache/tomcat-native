@@ -114,17 +114,17 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host,
                                                short port,
                                                struct sockaddr_in *rc);
 
-static int JK_METHOD jk2_channel_socket_close(jk_env_t *env, jk_channel_t *_this,
+static int JK_METHOD jk2_channel_socket_close(jk_env_t *env, jk_channel_t *ch,
                                              jk_endpoint_t *endpoint);
 
 static int jk2_channel_socket_setAttribute(jk_env_t *env,
                                            jk_bean_t *mbean,
                                            char *name, void *valueP)
 {
-    jk_channel_t *_this=(jk_channel_t *)mbean->object;
+    jk_channel_t *ch=(jk_channel_t *)mbean->object;
     char *value=(char *)valueP;
     jk_channel_socket_private_t *socketInfo=
-	(jk_channel_socket_private_t *)(_this->_privatePtr);
+	(jk_channel_socket_private_t *)(ch->_privatePtr);
 
     if( strcmp( "host", name ) == 0 ) {
 	socketInfo->host=value;
@@ -139,28 +139,72 @@ static int jk2_channel_socket_setAttribute(jk_env_t *env,
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
 static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
-                                             jk_channel_t *_this )
+                                             jk_channel_t *ch )
 {
     jk_channel_socket_private_t *socketInfo=
-	(jk_channel_socket_private_t *)(_this->_privatePtr);
+	(jk_channel_socket_private_t *)(ch->_privatePtr);
     int rc;
     char *host=socketInfo->host;
-    short port=socketInfo->port;
-    
-    if( port<=0 )
-        port=8009;
 
-    if( host==NULL )
-        host=DEFAULT_HOST;
+    /* Use information from name */
+    if( socketInfo->port<=0 ) {
+        char *localName=ch->mbean->localName;
+        if( *localName=='\0' ) {
+            /* Empty local part */
+            socketInfo->port=8009;
+            if( socketInfo->host==NULL) socketInfo->host=DEFAULT_HOST;
+        } else {
+            char *portIdx=strchr( localName, ':' );
+            if( portIdx==NULL || portIdx[1]=='\0' ) {
+                socketInfo->port=8009;
+            } else {
+                portIdx++;
+                socketInfo->port=atoi( portIdx );
+            }
+            if( socketInfo->host==NULL ) {
+                socketInfo->host=ch->pool->calloc( env, ch->pool, strlen( localName ) + 1 );
+                if( portIdx==NULL ) {
+                    strcpy( socketInfo->host, localName );
+                } else {
+                    strncpy( socketInfo->host, localName, portIdx-localName-1 );
+                }
+            }
+        }
+        
+    }
     
-    rc=jk2_channel_socket_resolve( env, host, port, &socketInfo->addr );
+    if( socketInfo->port<=0 )
+        socketInfo->port=8009;
+
+    if( socketInfo->host==NULL )
+        socketInfo->host=DEFAULT_HOST;
+    
+    rc=jk2_channel_socket_resolve( env, socketInfo->host, socketInfo->port, &socketInfo->addr );
     if( rc!= JK_TRUE ) {
 	env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk2_channel_socket_init: "
-                      "can't resolve %s:%d errno=%d\n", host, port, errno );
+                      "can't resolve %s:%d errno=%d\n", socketInfo->host, socketInfo->port, errno );
     }
+
+    if( ch->worker == NULL ) {
+        jk_bean_t *jkb;
+        
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel_socket.init(): create default worker for %s\n", ch->mbean->name );
+        
+        jkb=env->createBean2(env, ch->pool, "worker.ajp13", ch->mbean->localName );
+        ch->worker=jkb->object;
+        ch->worker->channelName=ch->mbean->name;
+        ch->worker->channel=ch;
+
+        /* XXX Set additional parameters - use defaults otherwise */
+
+        ch->worker->init( env, ch->worker);
+    }
+    
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_socket.init(): %s:%d for %s\n", host,
-                  port, _this->worker->mbean->name );
+                  "channel_socket.init(): %s:%d for %s\n", socketInfo->host,
+                  socketInfo->port, ch->worker->mbean->name );
+
     
     return rc;
 }
@@ -219,12 +263,12 @@ static int jk2_close_socket(jk_env_t *env, int s)
 /** connect to Tomcat (jk_open_socket)
  */
 static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
-                                            jk_channel_t *_this,
+                                            jk_channel_t *ch,
                                             jk_endpoint_t *endpoint)
 {
     int err;
     jk_channel_socket_private_t *socketInfo=
-	(jk_channel_socket_private_t *)(_this->_privatePtr);
+	(jk_channel_socket_private_t *)(ch->_privatePtr);
 
     struct sockaddr_in *addr=&socketInfo->addr;
     int ndelay=socketInfo->ndelay;
@@ -293,7 +337,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
 
 /** close the socket  ( was: jk2_close_socket )
 */
-static int JK_METHOD jk2_channel_socket_close(jk_env_t *env,jk_channel_t *_this,
+static int JK_METHOD jk2_channel_socket_close(jk_env_t *env,jk_channel_t *ch,
                                              jk_endpoint_t *endpoint)
 {
     int sd;
@@ -320,7 +364,7 @@ static int JK_METHOD jk2_channel_socket_close(jk_env_t *env,jk_channel_t *_this,
  *             protocol.
  * @was: jk_tcp_socket_sendfull
  */
-static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *_this,
+static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
                                             jk_endpoint_t *endpoint,
                                             jk_msg_t *msg) 
 {
@@ -363,7 +407,7 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *_this,
  * Was: tcp_socket_recvfull
  */
 static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
-                                              jk_channel_t *_this,
+                                              jk_channel_t *ch,
                                               jk_endpoint_t *endpoint,
                                               char *b, int len )
 {
@@ -410,7 +454,7 @@ static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
  *            >0: length of the received data.
  * Was: tcp_socket_recvfull
  */
-static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *_this,
+static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *ch,
                                              jk_endpoint_t *endpoint,
                                              jk_msg_t *msg )
 {
@@ -419,7 +463,7 @@ static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *_this
     int rc;
     
 
-    jk2_channel_socket_readN( env, _this, endpoint, msg->buf, hlen );
+    jk2_channel_socket_readN( env, ch, endpoint, msg->buf, hlen );
 
     blen=msg->checkHeader( env, msg, endpoint );
     if( blen < 0 ) {
@@ -428,7 +472,7 @@ static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *_this
         return JK_FALSE;
     }
     
-    rc= jk2_channel_socket_readN( env, _this, endpoint, msg->buf + hlen, blen);
+    rc= jk2_channel_socket_readN( env, ch, endpoint, msg->buf + hlen, blen);
 
     if(rc < 0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -451,25 +495,26 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
                                          jk_bean_t *result,
                                          const char *type, const char *name)
 {
-    jk_channel_t *_this;
+    jk_channel_t *ch;
     
-    _this=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
+    ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
-    _this->_privatePtr= (jk_channel_socket_private_t *)
+    ch->_privatePtr= (jk_channel_socket_private_t *)
 	pool->calloc( env, pool, sizeof( jk_channel_socket_private_t));
 
-    _this->recv= jk2_channel_socket_recv; 
-    _this->send= jk2_channel_socket_send; 
-    _this->init= jk2_channel_socket_init; 
-    _this->open= jk2_channel_socket_open; 
-    _this->close= jk2_channel_socket_close; 
+    ch->pool=pool;
+    ch->recv= jk2_channel_socket_recv; 
+    ch->send= jk2_channel_socket_send; 
+    ch->init= jk2_channel_socket_init; 
+    ch->open= jk2_channel_socket_open; 
+    ch->close= jk2_channel_socket_close; 
 
-    _this->is_stream=JK_TRUE;
+    ch->is_stream=JK_TRUE;
 
 
     result->setAttribute= jk2_channel_socket_setAttribute; 
-    result->object= _this;
-    _this->mbean=result;
+    result->object= ch;
+    ch->mbean=result;
     
     return JK_TRUE;
 }
