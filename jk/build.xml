@@ -108,6 +108,13 @@
         <copy  tofile="${jk.build}/lib/tomcat-coyote.jar"
               file="../coyote/build/lib/tomcat-coyote.jar" />
 
+		<!-- Fix build via ECLIPSE which didn't export ant's jars -->
+        <path id="xml-apis.classpath">
+          <pathelement path="${jaxp.home}/jaxp.jar"/>
+          <pathelement path="${xerces2.home}/xmlParserAPIs.jar"/>
+          <pathelement path="${xml-parser-apis.jar}"/>
+        </path>
+
         <path id="build-main.classpath">
             <fileset dir="../lib" includes="*.jar" />
             <pathelement location="../util/build/classes"/>
@@ -126,9 +133,9 @@
                  to nowhere, and tomcat_util will no longer be visible, nor
                  3.3 classes. -->
             <pathelement 
-                 location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
-	    <pathelement
-	         location="${tomcat33.home}/lib/common/servlet.jar"/>
+               location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+	        <pathelement
+	           location="${tomcat33.home}/lib/common/servlet.jar"/>
             <pathelement location="${coyote.home}/lib/tomcat-coyote.jar"/>
         </path>
 
@@ -161,7 +168,11 @@
                      unless="tomcat33.detect"/>
 	    <exclude name="org/apache/jk/common/JkMX.java" unless="jmx.detect"/>
 	    <exclude name="org/apache/jk/common/Shm14.java" unless="jdk14.detect"/>
-	    <classpath refid="build-main.classpath"/>
+	    <classpath>
+	       <path refid="xml-apis.classpath"/>
+	       <path refid="build-main.classpath"/>
+	    </classpath>
+
 	</javac>
 
 	<!-- Copy static resource files -->
