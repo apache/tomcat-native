@@ -1,0 +1,9 @@
+CC       = gcc
+AR       = ar
+APXS     = apxs
+CFLAGS   = -O6 -Wall -Wstrict-prototypes
+INCLUDES = -I../webapplib
+LIBS     = -L../webapplib -lwebapp
+
+.c.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@

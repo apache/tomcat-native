@@ -183,13 +183,14 @@ static int webapp_handler(request_rec *r) {
     req->protocol=r->protocol;
 
     // Copy headers into webapp request structure
-    if (!r->headers_in) {
+    if (r->headers_in!=NULL) {
         array_header *arr=ap_table_elts(r->headers_in);
         table_entry *ele=(table_entry *)arr->elts;
         int count=arr->nelts;
         int x=0;
 
         // Allocate memory for pointers
+        req->header_count=count;
         req->header_names=(char **)ap_palloc(r->pool,count*sizeof(char *));
         req->header_values=(char **)ap_palloc(r->pool,count*sizeof(char *));
 
@@ -199,6 +200,11 @@ static int webapp_handler(request_rec *r) {
             req->header_names[x]=ele[x].key;
             req->header_values[x]=ele[x].val;
         }
+    } else {
+        fprintf(stderr,"NO HEADERS\n");
+        req->header_count=0;
+        req->header_names=NULL;
+        req->header_values=NULL;
     }
 
     // Try to handle the request
