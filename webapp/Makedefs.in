@@ -58,7 +58,7 @@
 # @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 # @version $Id$
 
-.SUFFIXES: .c .o
+.SUFFIXES: .c .o .lo
 
 # -------------------------------------------------------------------------
 # Programs discovered by "configure" during initialization
@@ -118,6 +118,8 @@ APR_INCLUDES = @APR_INCLUDES@
 APR_LDFLAGS = @APR_LDFLAGS@
 # Extra APR libraries required for linking
 APR_LIBS = @APR_LIBS@
+# Libtool location
+LIBTOOL = @LIBTOOL@
 
 # -------------------------------------------------------------------------
 # C Compiler settings
@@ -175,3 +177,5 @@ ALL_CFLAGS = $(CFLAGS) $(CPPFLAGS) \
 .c.o:
 	$(CC) $(ALL_CFLAGS) -c "$<" -o "$@"
 
+.c.lo:
+	$(LIBTOOL) $(CC) -static $(ALL_CFLAGS) -c "$<"

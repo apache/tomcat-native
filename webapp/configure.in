@@ -426,6 +426,7 @@ AC_ARG_WITH(apxs,
       dnl -----------------------------------------------------
       MODULE="apache-2.0"
       local_prefix="`${APXS} -q PREFIX`"
+      LIBTOOL="$local_prefix/build/libtool"
       APR_CFGFLG=""
       APR_VARFIL="${local_prefix}/lib/APRVARS"
       APR_LIBDIR="${local_prefix}/lib"
@@ -521,6 +522,7 @@ then
   APR_VARFIL="${APR_SRCDIR}/APRVARS"
   APR_LIBDIR="${TGTDIR}/lib"
   TARGET="${TARGET} apr"
+  LIBTOOL="${APR_SRCDIR}/libtool"
 fi
 
 dnl --------------------------------------------------------------------------
@@ -543,6 +545,7 @@ AC_SUBST(APR_CPPFLAGS)
 AC_SUBST(APR_INCLUDES)
 AC_SUBST(APR_LDFLAGS)
 AC_SUBST(APR_LIBS)
+AC_SUBST(LIBTOOL)
 
 dnl --------------------------------------------------------------------------
 dnl Set up targets for building and cleaning

@@ -70,17 +70,17 @@ SRCS =  pr_info.c \
 	wa_main.c \
 	wa_request.c
 
-OBJS =  wa_main.o \
-	wa_config.o \
-	wa_request.o
+OBJS =  wa_main.lo \
+	wa_config.lo \
+	wa_request.lo
 
-PROVS = pr_info.o \
-	pr_warp.o \
-	pr_warp_packet.o \
-	pr_warp_network.o \
-	pr_warp_config.o
+PROVS = pr_info.lo \
+	pr_warp.lo \
+	pr_warp_packet.lo \
+	pr_warp_network.lo \
+	pr_warp_config.lo
 
-LIB =	libwebapp.a
+LIB =	libwebapp.la
 
 WARPH = pr_warp_defs.h
 
@@ -91,8 +91,7 @@ clean:
 
 $(LIB): $(SRCS) $(WARPH) $(OBJS) $(PROVS)
 	@$(MECHO) "Creating library \"$@\""
-	$(AR) cr $@ $(OBJS) $(PROVS)
-	$(RANLIB) $@
+	$(LIBTOOL) $(CC) -rpath $(TGTDIR)/lib -static -o $@ $(OBJS) $(PROVS)
 
 pr_warp_defs.h: $(TGTDIR)/java/Constants.java
 	@$(MECHO) "Generating \"$@\" from \"$?\""
