@@ -77,4 +77,9 @@ public final class Constants {
     public static final int PROCESSOR_IDLE = 0;
     public static final int PROCESSOR_ACTIVE = 1;
 
+    /**
+     * Default header names.
+     */
+    public static final String AUTHORIZATION_HEADER = "authorization";
+
 }

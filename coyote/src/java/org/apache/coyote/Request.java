@@ -114,9 +114,7 @@ public final class Request {
 
 
     public Request() {
- 	headers = new MimeHeaders();
-	scookies = new Cookies(headers);
-	initRequest();
+	recycle();
     }
 
 
@@ -138,18 +136,9 @@ public final class Request {
     protected MessageBytes remoteAddrMB = new MessageBytes();
     protected MessageBytes remoteHostMB = new MessageBytes();
     
-    protected MimeHeaders headers;
+    protected MimeHeaders headers = new MimeHeaders();
 
-    protected int contentLength = -1;
-    // how much body we still have to read.
-    protected int available = -1; 
-
-    protected MessageBytes contentTypeMB = null;
-    protected String charEncoding = null;
-    protected MessageBytes serverNameMB = new MessageBytes();
-
-    protected Cookies scookies;
-
+    protected MessageBytes instanceId = new MessageBytes();
 
     /**
      * Notes.
@@ -169,7 +158,28 @@ public final class Request {
     UDecoder urlDecoder = new UDecoder();
 
 
+    /**
+     * HTTP specific fields. (remove them ?)
+     */
+    protected int contentLength = -1;
+    // how much body we still have to read.
+    protected int available = -1; 
+    protected MessageBytes contentTypeMB = null;
+    protected String charEncoding = null;
+    protected MessageBytes serverNameMB = new MessageBytes();
+    protected Cookies cookies = new Cookies(headers);
+
+
     // ------------------------------------------------------------- Properties
+
+
+    /**
+     * Get the host id ( or jvmRoute )
+     * @return the jvm route
+     */
+    public MessageBytes getInstanceId() {
+        return instanceId;
+    }
 
 
     public MimeHeaders getMimeHeaders() {
@@ -259,7 +269,7 @@ public final class Request {
     }
 
 
-    public void setCharEncoding(String enc) {
+    public void setCharacterEncoding(String enc) {
 	this.charEncoding = enc;
     }
 
@@ -306,11 +316,16 @@ public final class Request {
     }
 
 
+    public String getHeader(String name) {
+        return headers.getHeader(name);
+    }
+
+
     // -------------------- Cookies --------------------
 
 
     public Cookies getCookies() {
-	return scookies;
+	return cookies;
     }
 
 
@@ -330,7 +345,7 @@ public final class Request {
     /**
      * Read data from the input buffer and put it into a byte chunk.
      */
-    public int doRead(ByteChunk chunk/*byte b[], int off, int len*/) 
+    public int doRead(ByteChunk chunk) 
         throws IOException {
         int n = inputBuffer.doRead(chunk);
         if (n > 0)
@@ -364,21 +379,14 @@ public final class Request {
 
 
     public void recycle() {
-	initRequest();
-    }
-
-
-    public void initRequest() {
-	//params.recycle();
 	contentLength = -1;
         contentTypeMB = null;
         charEncoding = null;
-        //didReadFormData = false;
-        headers.clear(); // XXX use recycle pattern
+        headers.recycle();
         serverNameMB.recycle();
         serverPort=-1;
 	
-	scookies.recycle();
+	cookies.recycle();
 
         unparsedURIMB.recycle();
         uriMB.recycle();

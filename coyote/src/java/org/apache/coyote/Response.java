@@ -71,7 +71,8 @@ import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.http.ContentType;
 
 /**
- *
+ * Response object.
+ * 
  * @author James Duncan Davidson [duncan@eng.sun.com]
  * @author Jason Hunter [jch@eng.sun.com]
  * @author James Todd [gonzo@eng.sun.com]
@@ -122,25 +123,29 @@ public final class Response {
     protected boolean commited = false;
 
 
-    // holds request error exception
-    // set this just once during request processing
-    Exception errorException = null;
-    // holds request error URI
-    String errorURI = null;
+    /**
+     * Action hook.
+     */
+    public ActionHook hook;
 
 
-    // Http specific fileds (remove them ?)
+    /**
+     * HTTP specific fields (remove them ?)
+     */
     protected String contentType = Constants.DEFAULT_CONTENT_TYPE;
     protected String contentLanguage = null;
     protected String characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
     protected int contentLength = -1;
     private Locale locale = Constants.DEFAULT_LOCALE;
 
-
     /**
-     * Action hook.
+     * FIXME: Remove.
      */
-    public ActionHook hook;
+    // holds request error exception
+    // set this just once during request processing
+    Exception errorException = null;
+    // holds request error URI
+    String errorURI = null;
 
 
     // ------------------------------------------------------------- Properties

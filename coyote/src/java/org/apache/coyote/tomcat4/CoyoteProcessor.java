@@ -434,7 +434,7 @@ final class CoyoteProcessor
         throws Exception {
 
         // Wrapping the Coyote requests
-        request.setRequest(req);
+        request.setCoyoteRequest(req);
         response.setResponse(res);
 
         try {
