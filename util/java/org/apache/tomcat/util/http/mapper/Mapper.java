@@ -525,7 +525,7 @@ public final class Mapper {
                     } catch(NamingException nex) {
                         // Swallow not found, since this is normal
                     }
-                    if(file != null && !(file instanceof DirContext) ) {
+                    if (file != null && !(file instanceof DirContext) ) {
                         if(logger.isTraceEnabled())
                             logger.trace("Found welcome-file: " + path);
                         internalMapExtensionWrapper(extensionWrappers,
@@ -538,7 +538,12 @@ public final class Mapper {
                                 (path.getBuffer(), path.getStart(), path.getLength());
                         }
                     }
-                }       
+                }
+                if (mappingData.wrapper == null) {
+                    // Restore the path if no welcome files was found
+                    path.setOffset(pathOffset);
+                    path.setEnd(pathEnd);
+                }
             }
         }
 
