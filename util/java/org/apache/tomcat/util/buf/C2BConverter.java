@@ -75,13 +75,15 @@ public final class C2BConverter {
     private IntermediateOutputStream ios;
     private WriteConvertor conv;
     private ByteChunk bb;
-
+    private String enc;
+    
     /** Create a converter, with bytes going to a byte buffer
      */
     public C2BConverter(ByteChunk output, String encoding) throws IOException {
 	this.bb=output;
 	ios=new IntermediateOutputStream( output );
 	conv=new WriteConvertor( ios, encoding );
+        this.enc=encoding;
     }
 
     /** Create a converter
@@ -92,6 +94,10 @@ public final class C2BConverter {
 
     public ByteChunk getByteChunk() {
 	return bb;
+    }
+
+    public String getEncoding() {
+        return enc;
     }
 
     public void setByteChunk(ByteChunk bb) {
@@ -115,8 +121,41 @@ public final class C2BConverter {
 
     /** Generate the bytes using the specified encoding
      */
+    public  final void convert(String s ) throws IOException {
+	conv.write( s );
+    }
+
+    /** Generate the bytes using the specified encoding
+     */
     public  final void convert(char c ) throws IOException {
 	conv.write( c );
+    }
+
+    /** Convert a message bytes chars to bytes
+     */
+    public final void convert(MessageBytes mb ) throws IOException {
+        int type=mb.getType();
+        if( type==MessageBytes.T_BYTES )
+            return;
+        ByteChunk orig=bb;
+        setByteChunk( mb.getByteChunk());
+        bb.recycle();
+        bb.allocate( 32, -1 );
+        
+        if( type==MessageBytes.T_STR ) {
+            convert( mb.getString() );
+            // System.out.println("XXX Converting " + mb.getString() );
+        } else if( type==MessageBytes.T_CHARS ) {
+            CharChunk charC=mb.getCharChunk();
+            convert( charC.getBuffer(),
+                                charC.getOffset(), charC.getLength());
+            //System.out.println("XXX Converting " + mb.getCharChunk() );
+        } else {
+            System.out.println("XXX unknowon type " + type );
+        }
+        flushBuffer();
+        //System.out.println("C2B: XXX " + bb.getBuffer() + bb.getLength()); 
+        setByteChunk(orig);
     }
 
     /** Flush any internal buffers into the ByteOutput or the internal
