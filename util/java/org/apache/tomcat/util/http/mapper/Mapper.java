@@ -262,6 +262,9 @@ public final class Mapper {
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
             Context[] contexts = host.contexts;
+            if( contexts.length == 0 ){
+                return;
+            }
             synchronized (host) {
                 Context[] newContexts = new Context[contexts.length - 1];
                 if (removeMap(contexts, newContexts, path)) {
