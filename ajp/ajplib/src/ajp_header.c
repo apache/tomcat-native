@@ -538,10 +538,9 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
         apr_table_add(r->headers_out, stringname, value);
 
         /* Content-type needs an additional handling */
-        if (memcmp(stringname, "Content-Type",12) == 0) {
-            char *ptr;
-            ptr = apr_pstrdup(r->pool, value);
-            ap_set_content_type(r, ptr); /* add corresponding filter */
+        if (memcmp(stringname, "Content-Type", 12) == 0) {
+             /* add corresponding filter */
+            ap_set_content_type(r, apr_pstrdup(r->pool, value));
             ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
                "ajp_unmarshal_response: ap_set_content_type done");
         }
@@ -606,7 +605,7 @@ apr_status_t ajp_read_header(apr_socket_t *sock,
                "ajp_read_header: ajp_ilink_receive failed");
         return rc;
     }
-    rc = ajp_msg_peek_byte(*msg, &result);
+    rc = ajp_msg_peek_uint8(*msg, &result);
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
                "ajp_read_header: ajp_ilink_received %02x", result);
     return APR_SUCCESS;
@@ -616,19 +615,19 @@ apr_status_t ajp_read_header(apr_socket_t *sock,
 int ajp_parse_type(request_rec  *r, ajp_msg_t *msg)
 {
     apr_byte_t result;
-    ajp_msg_peek_byte(msg, &result);
+    ajp_msg_peek_uint8(msg, &result);
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
                "ajp_parse_type: got %02x", result);
     return (int) result;
 }
 
-/* parse the headers */
-apr_status_t ajp_parse_headers(request_rec  *r, ajp_msg_t *msg)
+/* parse the header */
+apr_status_t ajp_parse_header(request_rec  *r, ajp_msg_t *msg)
 {
     apr_byte_t result;
     apr_status_t rc;
 
-    rc = ajp_msg_get_byte(msg, &result);
+    rc = ajp_msg_get_uint8(msg, &result);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_parse_headers: ajp_msg_get_byte failed");
@@ -636,28 +635,28 @@ apr_status_t ajp_parse_headers(request_rec  *r, ajp_msg_t *msg)
     }
     if (result != CMD_AJP13_SEND_HEADERS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-               "ajp_parse_headers: wrong type %02x", result);
+               "ajp_parse_headers: wrong type %02x expecting 0x04", result);
         return APR_EGENERAL;
     }
     return ajp_unmarshal_response(msg, r);
 }
 
-/* parse the header and return data address and length */
-apr_status_t  ajp_parse_data(request_rec  *r, ajp_msg_t *msg, apr_uint16_t *len,
-                             char **ptr)
+/* parse the body and return data address and length */
+apr_status_t  ajp_parse_data(request_rec  *r, ajp_msg_t *msg,
+                             apr_uint16_t *len, char **ptr)
 {
     apr_byte_t result;
     apr_status_t rc;
 
-    rc = ajp_msg_get_byte(msg, &result);
+    rc = ajp_msg_get_uint8(msg, &result);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_parse_data: ajp_msg_get_byte failed");
         return rc;
     }
-    if (result != 3) {
+    if (result != CMD_AJP13_SEND_BODY_CHUNK) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-               "ajp_parse_data: wrong type %02x", result);
+               "ajp_parse_data: wrong type %02x expecting 0x03", result);
         return APR_EGENERAL;
     }
     rc = ajp_msg_get_uint16(msg, len);

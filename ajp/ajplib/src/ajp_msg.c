@@ -391,11 +391,11 @@ apr_status_t ajp_msg_peek_uint16(ajp_msg_t *msg, apr_uint16_t *rvalue)
  * @param rvalue    Pointer where value will be returned
  * @return          APR_SUCCESS or error
  */
-apr_status_t ajp_msg_peek_byte(ajp_msg_t *msg, apr_byte_t *rvalue)
+apr_status_t ajp_msg_peek_uint8(ajp_msg_t *msg, apr_byte_t *rvalue)
 {
     if (msg->pos > msg->len) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
-                      "ajp_msg_peek_byte(): BufferOverflowException %d %d",
+                      "ajp_msg_peek_uint8(): BufferOverflowException %d %d",
                       msg->pos, msg->len);
 
         return AJP_EOVERFLOW;
@@ -412,12 +412,12 @@ apr_status_t ajp_msg_peek_byte(ajp_msg_t *msg, apr_byte_t *rvalue)
  * @param rvalue    Pointer where value will be returned
  * @return          APR_SUCCESS or error
  */
-apr_status_t ajp_msg_get_byte(ajp_msg_t *msg, apr_byte_t *rvalue)
+apr_status_t ajp_msg_get_uint8(ajp_msg_t *msg, apr_byte_t *rvalue)
 {
 
     if (msg->pos > msg->len) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
-                      "ajp_msg_get_byte(): BufferOverflowException %d %d",
+                      "ajp_msg_get_uint8(): BufferOverflowException %d %d",
                       msg->pos, msg->len);
 
         return AJP_EOVERFLOW;

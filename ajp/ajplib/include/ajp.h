@@ -271,7 +271,7 @@ apr_status_t ajp_msg_peek_uint16(ajp_msg_t *msg, apr_uint16_t *rvalue);
  * @param rvalue    Pointer where value will be returned
  * @return          APR_SUCCESS or error
  */
-apr_status_t ajp_msg_get_byte(ajp_msg_t *msg, apr_byte_t *rvalue);
+apr_status_t ajp_msg_get_uint8(ajp_msg_t *msg, apr_byte_t *rvalue);
 
 /**
  * Peek a 8bits unsigned value from AJP Message, position in message
@@ -281,7 +281,7 @@ apr_status_t ajp_msg_get_byte(ajp_msg_t *msg, apr_byte_t *rvalue);
  * @param rvalue    Pointer where value will be returned
  * @return          APR_SUCCESS or error
  */
-apr_status_t ajp_msg_peek_byte(ajp_msg_t *msg, apr_byte_t *rvalue);
+apr_status_t ajp_msg_peek_uint8(ajp_msg_t *msg, apr_byte_t *rvalue);
 
 /**
  * Get a String value from AJP Message
@@ -423,14 +423,15 @@ apr_status_t  ajp_send_data_msg(apr_socket_t *sock, request_rec  *r,
 int ajp_parse_type(request_rec  *r, ajp_msg_t *msg);
 
 /**
- * Parse the headers 
+ * Parse the header message from container 
  * @param r         current request
  * @param msg       AJP message
  * @return          APR_SUCCESS or error
  */
-apr_status_t ajp_parse_headers(request_rec  *r, ajp_msg_t *msg);
+apr_status_t ajp_parse_header(request_rec  *r, ajp_msg_t *msg);
 
-/** parse the header and return data address and length 
+/** 
+ * Parse the message body and return data address and length 
  * @param r         current request
  * @param msg       AJP message
  * @param len       returned AJP message length 
