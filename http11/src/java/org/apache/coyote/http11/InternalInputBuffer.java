@@ -575,7 +575,7 @@ public class InternalInputBuffer implements InputBuffer {
 
             if (buf[pos] == Constants.COLON) {
                 colon = true;
-                headerValue = headers.addValue(buf, start, pos);
+                headerValue = headers.addValue(buf, start, pos - start);
             }
             chr = buf[pos];
             if ((chr >= Constants.A) && (chr <= Constants.Z)) {
