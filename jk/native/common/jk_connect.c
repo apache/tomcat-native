@@ -362,11 +362,11 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
 
     if (timeout > 0) {
 #if defined(WIN32)
-        timeout = timeout * 1000;
+        int tmout = timeout * 1000;
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
-                   (const char *) &timeout, sizeof(int));
+                   (const char *) &tmout, sizeof(int));
         setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
-                   (const char *) &timeout, sizeof(int));
+                   (const char *) &tmout, sizeof(int));
 #elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO) && defined(SO_SNDTIMEO) && defined(USE_SO_SNDTIMEO)
         struct timeval tv;
         tv.tv_sec  = timeout;
