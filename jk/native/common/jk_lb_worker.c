@@ -633,7 +633,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     * Clent error !!!
                     * Since this is bad request do not fail over.
                     */
-                    is_service_error = JK_HTTP_BAD_REQUEST;
                     rec->s->errors++;
                     rec->s->in_error_state = JK_FALSE;
                     rec->s->in_recovering = JK_FALSE;

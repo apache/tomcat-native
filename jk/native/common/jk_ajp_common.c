@@ -1634,7 +1634,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
          * We get here initial request (in reqmsg)
          */
         if (!ajp_marshal_into_msgb(op->request, s, l, p)) {
-            *is_error = JK_HTTP_BAD_REQUEST;
+            *is_error = JK_REQUEST_TOO_LARGE;
             jk_log(l, JK_LOG_INFO,
                     "Creating AJP message failed, "
                     "without recovery");
