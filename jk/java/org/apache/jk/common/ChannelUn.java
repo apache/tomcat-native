@@ -95,11 +95,17 @@ public class ChannelUn extends JniHandler {
     public void setFile( String f ) {
         file=f;
     }
-
+    
+    public String getFile() {
+        return file;
+    }
+    
     /* ==================== ==================== */
     int socketNote=1;
     int isNote=2;
     int osNote=3;
+    
+    int localId=0;
     
     public void init() throws IOException {
         if( file==null ) {
@@ -107,8 +113,12 @@ public class ChannelUn extends JniHandler {
             return;
             //throw new IOException( "No file for the unix socket channel");
         }
-        if( wEnv.getLocalId() != 0 ) {
-            file=file+ wEnv.getLocalId();
+        if( wEnv!=null && wEnv.getLocalId() != 0 ) {
+            localId=wEnv.getLocalId();
+        }
+
+        if( localId != 0 ) {
+            file=file+ localId;
         }
 
         super.initNative( "channel.un:" + file );
@@ -127,7 +137,7 @@ public class ChannelUn extends JniHandler {
         // setNativeAttribute( "debug", "10" );
 
         // Initialize the thread pool and execution chain
-        if( next==null ) {
+        if( next==null && wEnv!=null ) {
             if( nextName!=null ) 
                 setNext( wEnv.getHandler( nextName ) );
             if( next==null )
