@@ -1884,7 +1884,7 @@ int ajp_init(jk_worker_t *pThis,
                 p->ep_cache[i] = ajp_create_endpoint(pThis, proto, now);
                 if (!p->ep_cache[i]) {
                     jk_log(l, JK_LOG_ERROR,
-                            "Failed creating enpont cache slot %d errno=%d",
+                            "creating endpont cache slot %d errno=%d",
                             i, errno);
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
@@ -1892,13 +1892,16 @@ int ajp_init(jk_worker_t *pThis,
             }
             JK_INIT_CS(&(p->cs), i);
             if (i == JK_FALSE) {
+                jk_log(l, JK_LOG_ERROR,
+                       "creating thread lock errno=%d",
+                       errno);
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
         }
         else {
             jk_log(l, JK_LOG_ERROR,
-                   "Could not malloc ep_cache of size %d",
+                   "allocating ep_cache of size %d",
                    p->ep_cache_sz);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
