@@ -58,47 +58,31 @@
 // CVS $Id$
 // Author: Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 
-#ifndef _WA_H_
-#define _WA_H_
+#ifndef _WA_MEMORYPOOL_H_
+#define _WA_MEMORYPOOL_H_
 
-/* Generic includes */
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <string.h>
-#include <netdb.h>
-#include <errno.h>
-#include <time.h>
-#include <sys/errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+/** The size in number of pointers of a memory pool. */
+#define WA_MEMORYPOOL_SIZE 4096
 
-/* Define TRUE and FALSE */
-#ifndef TRUE
-#define TRUE 1
-#endif
+/**
+ * Structure definition for a memory pool.
+ */
+struct wa_memorypool {
+    void          *ptrs[WA_MEMORYPOOL_SIZE]; // The allocated pointers array
+    int            curr; // The position to the last non allocated pointer
+    wa_memorypool *next; // The next memorypool child of this one
+};
 
-#ifndef FALSE
-#define FALSE 0
-#endif
+/** Create a new memory pool. */
+wa_memorypool *wa_memorypool_create();
+/** Allocate memory into a memory pool. */
+void *wa_memorypool_alloc(wa_memorypool *pool, size_t size);
+/** Clear a memory pool and free all allocated space. */
+void wa_memorypool_free(wa_memorypool *pool);
 
-/* Types definitions */
-typedef int boolean;
-typedef struct wa_application wa_application;
-typedef struct wa_config      wa_config;
-typedef struct wa_connection  wa_connection;
-typedef struct wa_memorypool  wa_memorypool;
-typedef struct wa_virtualhost wa_virtualhost;
-typedef struct wa_webserver   wa_webserver;
+/** Format a string allocating memory from a pool. */
+char *wa_memorypool_sprintf(wa_memorypool *pool, const char *fmt, ...);
+/** Duplicate a string allocating memory in a pool. */
+char *wa_memorypool_strdup(wa_memorypool *pool, char *string);
 
-/* Other includes from the webapp library. */
-#include <wa_application.h>
-#include <wa_config.h>
-#include <wa_connection.h>
-#include <wa_memorypool.h>
-#include <wa_virtualhost.h>
-#include <wa_webserver.h>
-
-#endif // ifdef _WA_H_
+#endif // ifdef _WA_MEMORYPOOL_H_

@@ -58,47 +58,13 @@
 // CVS $Id$
 // Author: Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 
-#ifndef _WA_H_
-#define _WA_H_
+#ifndef _WA_WEBSERVER_H_
+#define _WA_WEBSERVER_H_
 
-/* Generic includes */
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <string.h>
-#include <netdb.h>
-#include <errno.h>
-#include <time.h>
-#include <sys/errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+/**
+ * Callbacks to the webserver using the webapp library.
+ */
+struct wa_webserver {
+};
 
-/* Define TRUE and FALSE */
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-/* Types definitions */
-typedef int boolean;
-typedef struct wa_application wa_application;
-typedef struct wa_config      wa_config;
-typedef struct wa_connection  wa_connection;
-typedef struct wa_memorypool  wa_memorypool;
-typedef struct wa_virtualhost wa_virtualhost;
-typedef struct wa_webserver   wa_webserver;
-
-/* Other includes from the webapp library. */
-#include <wa_application.h>
-#include <wa_config.h>
-#include <wa_connection.h>
-#include <wa_memorypool.h>
-#include <wa_virtualhost.h>
-#include <wa_webserver.h>
-
-#endif // ifdef _WA_H_
+#endif // ifdef _WA_WEBSERVER_H_
