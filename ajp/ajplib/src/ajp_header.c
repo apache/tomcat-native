@@ -44,175 +44,6 @@ static const char *long_res_header_for_sc(int sc)
 
 #define UNKNOWN_METHOD (-1)
 
-static int sc_for_req_method(const char *method)
-{
-    apr_ssize_t len = strlen(method);
-
-    switch (len)
-    {
-    case 3:
-        switch (method[0])
-        {
-        case 'P':
-            return (method[1] == 'U'
-                    && method[2] == 'T'
-                    ? SC_M_PUT : UNKNOWN_METHOD);
-        case 'G':
-            return (method[1] == 'E'
-                    && method[2] == 'T'
-                    ? SC_M_GET : UNKNOWN_METHOD);
-        case 'A':
-            return (method[1] == 'C'
-                    && method[2] == 'L'
-                    ? SC_M_ACL : UNKNOWN_METHOD);
-        default:
-            return UNKNOWN_METHOD;
-        }
-
-    case 4:
-        switch (method[0])
-        {
-        case 'H':
-            return (method[1] == 'E'
-                    && method[2] == 'A'
-                    && method[3] == 'D'
-                    ? SC_M_HEAD : UNKNOWN_METHOD);
-        case 'P':
-            return (method[1] == 'O'
-                    && method[2] == 'S'
-                    && method[3] == 'T'
-                    ? SC_M_POST : UNKNOWN_METHOD);
-        case 'M':
-            return (method[1] == 'O'
-                    && method[2] == 'V'
-                    && method[3] == 'E'
-                    ? SC_M_MOVE : UNKNOWN_METHOD);
-        case 'L':
-            return (method[1] == 'O'
-                    && method[2] == 'C'
-                    && method[3] == 'K'
-                    ? SC_M_LOCK : UNKNOWN_METHOD);
-        case 'C':
-            return (method[1] == 'O'
-                    && method[2] == 'P'
-                    && method[3] == 'Y'
-                    ? SC_M_COPY : UNKNOWN_METHOD);
-        default:
-            return UNKNOWN_METHOD;
-        }
-
-    case 5:
-        switch (method[2])
-        {
-        case 'R':
-            return (memcmp(method, "MERGE", 5) == 0
-                    ? SC_M_MERGE : UNKNOWN_METHOD);
-        case 'C':
-            return (memcmp(method, "MKCOL", 5) == 0
-                    ? SC_M_MKCOL : UNKNOWN_METHOD);
-        case 'B':
-            return (memcmp(method, "LABEL", 5) == 0
-                    ? SC_M_LABEL : UNKNOWN_METHOD);
-        case 'A':
-            return (memcmp(method, "TRACE", 5) == 0
-                    ? SC_M_TRACE : UNKNOWN_METHOD);
-        default:
-            return UNKNOWN_METHOD;
-        }
-
-    case 6:
-        switch (method[0])
-        {
-        case 'U':
-            switch (method[5])
-            {
-            case 'K':
-                return (memcmp(method, "UNLOCK", 6) == 0
-                        ? SC_M_UNLOCK : UNKNOWN_METHOD);
-            case 'E':
-                return (memcmp(method, "UPDATE", 6) == 0
-                        ? SC_M_UPDATE : UNKNOWN_METHOD);
-            default:
-                return UNKNOWN_METHOD;
-            }
-        case 'R':
-            return (memcmp(method, "REPORT", 6) == 0
-                    ? SC_M_REPORT : UNKNOWN_METHOD);
-        case 'D':
-            return (memcmp(method, "DELETE", 6) == 0
-                    ? SC_M_DELETE : UNKNOWN_METHOD);
-        case 'S':
-            return (memcmp(method, "SEARCH", 6) == 0
-                    ? SC_M_SEARCH : UNKNOWN_METHOD);
-        default:
-            return UNKNOWN_METHOD;
-        }
-
-    case 7:
-        switch (method[1])
-        {
-        case 'P':
-            return (memcmp(method, "OPTIONS", 7) == 0
-                    ? SC_M_OPTIONS : UNKNOWN_METHOD);
-        case 'H':
-            return (memcmp(method, "CHECKIN", 7) == 0
-                    ? SC_M_CHECKIN : UNKNOWN_METHOD);
-        default:
-            return UNKNOWN_METHOD;
-        }
-
-    case 8:
-        switch (method[0])
-        {
-        case 'P':
-            return (memcmp(method, "PROPFIND", 8) == 0
-                    ? SC_M_PROPFIND : UNKNOWN_METHOD);
-        case 'C':
-            return (memcmp(method, "CHECKOUT", 8) == 0
-                    ? SC_M_CHECKOUT : UNKNOWN_METHOD);
-        default:
-            return UNKNOWN_METHOD;
-        }
-
-    case 9:
-        return (memcmp(method, "PROPPATCH", 9) == 0
-                ? SC_M_PROPPATCH : UNKNOWN_METHOD);
-
-    case 10:
-        switch (method[0])
-        {
-        case 'U':
-            return (memcmp(method, "UNCHECKOUT", 10) == 0
-                    ? SC_M_UNCHECKOUT : UNKNOWN_METHOD);
-        case 'M':
-            return (memcmp(method, "MKACTIVITY", 10) == 0
-                    ? SC_M_MKACTIVITY : UNKNOWN_METHOD);
-        default:
-            return UNKNOWN_METHOD;
-        }
-
-    case 11:
-        return (memcmp(method, "MKWORKSPACE", 11) == 0
-                ? SC_M_MKWORKSPACE : UNKNOWN_METHOD);
-
-    case 15:
-        return (memcmp(method, "VERSION-CONTROL", 15) == 0
-                ? SC_M_VERSION_CONTROL : UNKNOWN_METHOD);
-
-    case 16:
-        return (memcmp(method, "BASELINE-CONTROL", 16) == 0
-                ? SC_M_BASELINE_CONTROL : UNKNOWN_METHOD);
-
-    default:
-        return UNKNOWN_METHOD;
-    }
-
-    /* NOTREACHED */
-} 
-
-/* XXX: since we already have a method_number in request_rec
- * we don't need this function
- */
 static int sc_for_req_header(const char *header_name)
 {
     char header[16];
@@ -746,13 +577,11 @@ apr_status_t ajp_send_header(apr_socket_t *sock,
  */
 apr_status_t ajp_read_header(apr_socket_t *sock,
                              request_rec  *r,
-                             void **data)
+                             ajp_msg_t **msg)
 {
     apr_byte_t result;
     apr_status_t rc;
-    ajp_msg_t **msg;
-
-    msg = data;
+    
     rc = ajp_msg_create(r->pool, msg);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
@@ -832,12 +661,10 @@ apr_status_t  ajp_parse_data(request_rec  *r, ajp_msg_t *msg, apr_uint16_t *len,
  * Allocate a msg to send data
  */
 apr_status_t  ajp_alloc_data_msg(request_rec *r, char **ptr, apr_size_t *len,
-                             void **data)
+                                 ajp_msg_t **msg)
 {
     apr_status_t rc;
-    ajp_msg_t **msg;
 
-    msg = data;
     rc = ajp_msg_create(r->pool, msg);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
@@ -855,12 +682,10 @@ apr_status_t  ajp_alloc_data_msg(request_rec *r, char **ptr, apr_size_t *len,
  * Send the data message
  */
 apr_status_t  ajp_send_data_msg(apr_socket_t *sock, request_rec  *r,
-                             void *data, apr_size_t len)
+                                ajp_msg_t *msg, apr_size_t len)
 {
     apr_status_t rc;
-    ajp_msg_t *msg;
 
-    msg = data;
     msg->buf[4] = (apr_byte_t)((len >> 8) & 0xFF);
     msg->buf[5] = (apr_byte_t)(len & 0xFF);
 
