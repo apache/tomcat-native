@@ -123,7 +123,7 @@ const char *wa_rfree(wa_request *r) {
 
 
 /* Dump headers for wa_rerror */
-static int wa_rerror_headers(void *d, const char *key, const char *val) {
+static int headers(void *d, const char *key, const char *val) {
     wa_request *r=(wa_request *)d;
 
     wa_rprintf(r,"   <dd>%s: %s</dd>\n",key,val);
@@ -178,7 +178,7 @@ int wa_rerror(const char *file, const int line, wa_request *r, int s,
     wa_rprintf(r,"   <dd>Request Authentication Mech.: \"%s\"</dd>\n",r->auth);
     wa_rprintf(r,"   <dd>Request Content-Length: \"%d\"</dd>\n",r->clen);
     wa_rprintf(r,"   <dt>Your Headers:</dt>\n");
-    apr_table_do(wa_rerror_headers,r,r->hdrs,NULL);
+    apr_table_do(headers,r,r->hdrs,NULL);
     wa_rprintf(r,"  </dl>\n");
     wa_rprintf(r,"  <hr>\n");
     wa_rprintf(r," </body>\n");

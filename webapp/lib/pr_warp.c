@@ -37,8 +37,7 @@
  *                                                                           *
  * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES *
  * INCLUDING, BUT NOT LIMITED TO,  THE IMPLIED WARRANTIES OF MERCHANTABILITY *
- * AND FITNESS FOR  A PARTICULAR PURPOSE  ARE DISCLAIMED.  IN NO EVENT SHALL *
- * THE APACHE  SOFTWARE  FOUNDATION OR  ITS CONTRIBUTORS  BE LIABLE  FOR ANY *
+2 * THE APACHE  SOFTWARE  FOUNDATION OR  ITS CONTRIBUTORS  BE LIABLE  FOR ANY *
  * DIRECT,  INDIRECT,   INCIDENTAL,  SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL *
  * DAMAGES (INCLUDING,  BUT NOT LIMITED TO,  PROCUREMENT OF SUBSTITUTE GOODS *
  * OR SERVICES;  LOSS OF USE,  DATA,  OR PROFITS;  OR BUSINESS INTERRUPTION) *
@@ -63,83 +62,350 @@
 /* ************************************************************************* */
 
 /* The WARP connection configuration structure */
-typedef struct warp_cconfig {
+typedef struct warp_config {
     apr_sockaddr_t *addr;
     apr_socket_t *sock;
-    wa_boolean disc;
-} warp_cconfig;
+    int serv;
+} warp_config;
 
-/* The WARP application configuration structure */
-typedef struct warp_aconfig {
-    int host;
-    int appl;
-    wa_boolean depl;
-} warp_aconfig;
+/* The WARP packet structure */
+typedef struct warp_packet {
+    apr_pool_t *pool;
+    int type;
+    int size;
+    int curr;
+    char buff[65536];
+} warp_packet;
+
+/* WARP definitions */
+#define VERS_MAJOR 0
+#define VERS_MINOR 9
+
+#define TYPE_INVALID -1
+#define TYPE_ERROR   0x00
+#define TYPE_FATAL   0xff
+
+#define TYPE_CONF_WELCOME 0x01
+#define TYPE_CONF_DEPLOY  0x02
+#define TYPE_CONF_APPLIC  0x03
+#define TYPE_CONF_DONE    0x04
+
 
 /* The list of all configured connections */
 static wa_chain *warp_connections=NULL;
+/* The list of all deployed connections */
+static wa_chain *warp_applications=NULL;
 /* This provider */
 wa_provider wa_provider_warp;
+
+/* ************************************************************************* */
+/* PACKET FUNCTIONS                                                          */
+/* ************************************************************************* */
+static void p_reset(warp_packet *pack) {
+    pack->type=TYPE_INVALID;
+    pack->type=TYPE_INVALID;
+    pack->size=0;
+    pack->curr=0;
+    pack->buff[0]='\0';
+}
+
+static warp_packet *p_create(apr_pool_t *pool) {
+    warp_packet *pack=NULL;
+
+    if (pool==NULL) return(NULL);
+    pack=(warp_packet *)apr_palloc(pool,sizeof(warp_packet));
+    pack->pool=pool;
+    p_reset(pack);
+    return(pack);
+}
+
+static wa_boolean p_read_ushort(warp_packet *pack, int *x) {
+    int k=0;
+
+    if ((pack->curr+2)>=pack->size) return(wa_false);
+    k=(pack->buff[pack->curr++]&0x0ff)<<8;
+    k=k|(pack->buff[pack->curr++]&0x0ff);
+    *x=k;
+    return(wa_true);
+}
+
+static wa_boolean p_read_int(warp_packet *pack, int *x) {
+    int k=0;
+
+    if ((pack->curr+2)>=pack->size) return(wa_false);
+    k=(pack->buff[pack->curr++]&0x0ff)<<24;
+    k=k|((pack->buff[pack->curr++]&0x0ff)<<16);
+    k=k|((pack->buff[pack->curr++]&0x0ff)<<8);
+    k=k|(pack->buff[pack->curr++]&0x0ff);
+    *x=k;
+    return(wa_true);
+}
+
+static wa_boolean p_read_string(warp_packet *pack, char **x) {
+    int len=0;
+
+    if (p_read_ushort(pack,&len)==wa_false) {
+        *x=NULL;
+        return(wa_false);
+    }
+    if ((pack->curr+len)>=pack->size) {
+        *x=NULL;
+        return(wa_false);
+    }
+
+    *x=(char *)apr_palloc(pack->pool,(len+1)*sizeof(char));
+    if (*x==NULL) return(wa_false);
+
+    apr_cpystrn(*x,&pack->buff[pack->curr],len);
+    pack->curr+=len;
+    return(wa_true);
+}
+
+static wa_boolean p_write_ushort(warp_packet *pack, int x) {
+    if (pack->size>65533) return(wa_false);
+    pack->buff[pack->size++]=(x>>8)&0x0ff;
+    pack->buff[pack->size++]=x&0x0ff;
+    return(wa_true);
+}
+
+static wa_boolean p_write_int(warp_packet *pack, int x) {
+    if (pack->size>65531) return(wa_false);
+    pack->buff[pack->size++]=(x>>24)&0x0ff;
+    pack->buff[pack->size++]=(x>>16)&0x0ff;
+    pack->buff[pack->size++]=(x>>8)&0x0ff;
+    pack->buff[pack->size++]=x&0x0ff;
+    return(wa_true);
+}
+
+static wa_boolean p_write_string(warp_packet *pack, char *x) {
+    int len=0;
+    char *k=NULL;
+    int q=0;
+
+    if (x==NULL) return(p_write_ushort(pack,0));
+    for (k=x; k[0]!='\0'; k++);
+    len=k-x;
+    if (p_write_ushort(pack,len)==wa_false) {
+        pack->size-=2;
+        return(wa_false);
+    }
+    if ((pack->size+len)>65535) {
+        pack->size-=2;
+        return(wa_false);
+    }
+    for (q=0;q<len;q++) pack->buff[pack->size++]=x[q];
+    return(wa_true);
+}
 
 /* ************************************************************************* */
 /* NETWORK FUNCTIONS                                                         */
 /* ************************************************************************* */
 
+static wa_boolean n_recv(apr_socket_t *sock, warp_packet *pack) {
+    apr_size_t len=0;
+    char hdr[3];
+    int ptr=0;
+
+    if (sock==NULL) return(wa_false);
+    if (pack==NULL) return(wa_false);
+
+    p_reset(pack);
+    len=3;
+    while(1) {
+        if (apr_recv(sock,&hdr[ptr],&len)!=APR_SUCCESS) return(wa_false);
+        ptr+=len;
+        len=3-ptr;
+        if (len==0) break;
+    }
+    pack->type=((int)hdr[0])&0x0ff;
+    pack->size=(hdr[1]&0x0ff)<<8;
+    pack->size=pack->size|(hdr[2]&0x0ff);
+
+    len=pack->size;
+    ptr=0;
+    while(1) {
+        if (apr_recv(sock,&pack->buff[ptr],&len)!=APR_SUCCESS)
+            return(wa_false);
+        ptr+=len;
+        len=pack->size-ptr;
+        if (len==0) break;
+    }
+
+    wa_debug(WA_MARK,"WARP <<< TYP=%d LEN=%d",pack->type,pack->size);
+
+    return(wa_true);
+}
+
+static wa_boolean n_send(apr_socket_t *sock, warp_packet *pack) {
+    apr_size_t len=0;
+    char hdr[3];
+    int ptr=0;
+
+    if (sock==NULL) return(wa_false);
+    if (pack==NULL) return(wa_false);
+
+    hdr[0]=(char)(pack->type&0x0ff);
+    hdr[1]=(char)((pack->size>>8)&0x0ff);
+    hdr[2]=(char)(pack->size&0x0ff);
+
+    len=3;
+    while(1) {
+        if (apr_send(sock,&hdr[ptr],&len)!=APR_SUCCESS) return(wa_false);
+        ptr+=len;
+        len=3-ptr;
+        if (len==0) break;
+    }
+
+    len=pack->size;
+    ptr=0;
+    while(1) {
+        if (apr_send(sock,&pack->buff[ptr],&len)!=APR_SUCCESS)
+            return(wa_false);
+        ptr+=len;
+        len=pack->size-ptr;
+        if (len==0) break;
+    }
+
+    wa_debug(WA_MARK,"WARP >>> TYP=%d LEN=%d",pack->type,pack->size);
+
+    p_reset(pack);
+    return(wa_true);
+}
+
 /* Attempt to connect to the remote endpoint of the WARP connection (if not
    done already). */
 static wa_boolean n_connect(wa_connection *conn) {
-    warp_cconfig *conf=(warp_cconfig *)conn->conf;
+    warp_config *conf=(warp_config *)conn->conf;
     apr_status_t ret=APR_SUCCESS;
 
     /* Create the APR socket if that has not been yet created */
-    if (conf->sock==NULL) {
-        ret=apr_socket_create(&conf->sock,AF_INET,SOCK_STREAM,wa_pool);
-        if (ret!=APR_SUCCESS) {
-            conf->sock=NULL;
-            wa_debug(WA_MARK,"Cannot create socket for \"%s\"",conn->name);
-            return(FALSE);
-        }
+    if (conf->sock!=NULL) {
+        wa_debug(WA_MARK,"Connection \"%s\" already opened",conn->conf);
+        return(wa_true);
+    }
+
+    ret=apr_socket_create(&conf->sock,AF_INET,SOCK_STREAM,wa_pool);
+    if (ret!=APR_SUCCESS) {
+        conf->sock=NULL;
+        wa_log(WA_MARK,"Cannot create socket for conn. \"%s\"",conn->name);
+        return(wa_false);
     }
 
     /* Attempt to connect to the remote endpoint */
-    if (conf->disc) {
-        ret=apr_connect(conf->sock, conf->addr);
-        if (ret!=APR_SUCCESS) {
-            conf->disc=TRUE;
-            wa_debug(WA_MARK,"Connection \"%s\" cannot connect",conn->name);
-            return(FALSE);
-        } else {
-            conf->disc=FALSE;
-            return(TRUE);
-        }
+    ret=apr_connect(conf->sock, conf->addr);
+    if (ret!=APR_SUCCESS) {
+        apr_shutdown(conf->sock,APR_SHUTDOWN_READWRITE);
+        conf->sock=NULL;
+        wa_log(WA_MARK,"Connection \"%s\" cannot connect",conn->name);
+        return(wa_false);
     }
 
-    /* We were already connected */
-    return(TRUE);
+    return(wa_true);
 }
 
 /* Attempt to disconnect a connection if connected. */
 static void n_disconnect(wa_connection *conn) {
-    warp_cconfig *conf=(warp_cconfig *)conn->conf;
+    warp_config *conf=(warp_config *)conn->conf;
     apr_status_t ret=APR_SUCCESS;
 
     wa_debug(WA_MARK,"Disconnecting \"%s\"",conn->name);
 
     /* Create the APR socket if that has not been yet created */
     if (conf->sock==NULL) return;
-    if (conf->disc) return;
 
     /* Shutdown and close the socket (ignoring errors) */
     ret=apr_shutdown(conf->sock,APR_SHUTDOWN_READWRITE);
     if (ret!=APR_SUCCESS)
-        wa_debug(WA_MARK,"Cannot shutdown \"%s\"",conn->name);
+        wa_log(WA_MARK,"Cannot shutdown \"%s\"",conn->name);
     ret=apr_socket_close(conf->sock);
     if (ret!=APR_SUCCESS)
-        wa_debug(WA_MARK,"Cannot close \"%s\"",conn->name);
+        wa_log(WA_MARK,"Cannot close \"%s\"",conn->name);
 
     /* Reset the state */
     conf->sock=NULL;
-    conf->disc=TRUE;
+}
+
+static wa_boolean n_check(wa_connection *conn, warp_packet *pack) {
+    warp_config *conf=(warp_config *)conn->conf;
+    int maj=-1;
+    int min=-1;
+    int sid=-1;
+
+    if (n_recv(conf->sock,pack)!=wa_true) {
+        wa_log(WA_MARK,"Cannot receive handshake WARP packet");
+        return(wa_false);
+    }
+
+    if (pack->type!=TYPE_CONF_WELCOME) {
+        wa_log(WA_MARK,"Invalid WARP packet %d (WELCOME)",pack->type);
+        return(wa_false);
+    }
+        
+    if (p_read_ushort(pack,&maj)!=wa_true) {
+        wa_log(WA_MARK,"Cannot read major version");
+        return(wa_false);
+    }
+
+    if (p_read_ushort(pack,&min)!=wa_true) {
+        wa_log(WA_MARK,"Cannot read minor version");
+        return(wa_false);
+    }
+
+    if ((maj!=VERS_MAJOR)||(min!=VERS_MINOR)) {
+        wa_log(WA_MARK,"Invalid WARP protocol version %d.%d",maj,min);
+        return(wa_false);
+    }
+
+    if (p_read_int(pack,&sid)!=wa_true) {
+        wa_log(WA_MARK,"Cannot read server id");
+        return(wa_false);
+    }
+
+    conf->serv=sid;
+    wa_debug(WA_MARK,"Connection \"%s\" checked WARP/%d.%d (SERVER ID=%d)",
+        conn->name,maj,min,conf->serv);
+    return(wa_true);
+}
+
+static wa_boolean n_configure(wa_connection *conn) {
+    warp_config *conf=(warp_config *)conn->conf;
+    wa_chain *elem=warp_applications;
+    apr_pool_t *pool=NULL;
+    wa_boolean ret=wa_false;
+    warp_packet *pack=NULL;
+
+    if (apr_pool_create(&pool,wa_pool)!=APR_SUCCESS) {
+        wa_log(WA_MARK,"Cannot create WARP temporary configuration pool");
+        n_disconnect(conn);
+        return(wa_false);
+    }
+
+    if ((pack=p_create(wa_pool))==NULL) {
+        wa_log(WA_MARK,"Cannot create WARP configuration packet");
+        apr_pool_destroy(pool);
+        return(wa_false);
+    }
+
+    if ((ret=n_check(conn,pack))==wa_false) n_disconnect(conn);
+
+    while (elem!=NULL) {
+        wa_application *appl=(wa_application *)elem->curr;
+        wa_debug(WA_MARK,"Deploying \"%s\" via \"%s\" in \"http://%s:%d%s\"",
+                appl->name,conn->name,appl->host->name,appl->host->port,
+                appl->rpth);
+        p_reset(pack);
+        pack->type=TYPE_CONF_DEPLOY;
+        p_write_string(pack,appl->name);
+        p_write_string(pack,appl->host->name);
+        p_write_ushort(pack,appl->host->port);
+        p_write_string(pack,appl->rpth);
+        n_send(conf->sock,pack);
+
+        elem=elem->next;
+    }
+
+    apr_pool_destroy(pool);
+    return(ret);
 }
 
 /* ************************************************************************* */
@@ -155,14 +421,15 @@ static const char *warp_init(void) {
 /* Notify this provider of its imminent startup. */
 static void warp_startup(void) {
     wa_chain *elem=warp_connections;
-    wa_boolean ret=FALSE;
 
     /* Open all connections having deployed applications */
     while (elem!=NULL) {
         wa_connection *curr=(wa_connection *)elem->curr;
         wa_debug(WA_MARK,"Opening connection \"%s\"",curr->name);
-        if (n_connect(curr)==TRUE) {
+        if (n_connect(curr)==wa_true) {
             wa_debug(WA_MARK,"Connection \"%s\" opened",curr->name);
+            if (n_configure(curr)==wa_true)
+                wa_debug(WA_MARK,"Connection \"%s\" configured",curr->name);
         } else wa_log(WA_MARK,"Cannot open connection \"%s\"",curr->name);
         elem=elem->next;
     }
@@ -179,13 +446,13 @@ static void warp_shutdown(void) {
    configuration file. */
 static const char *warp_connect(wa_connection *conn, const char *param) {
     apr_status_t r=APR_SUCCESS;
-    warp_cconfig *conf=NULL;
+    warp_config *conf=NULL;
     apr_port_t port=0;
     char *addr=NULL;
     char *scop=NULL;
 
     /* Allocation and checking */
-    conf=(warp_cconfig *)apr_palloc(wa_pool,sizeof(warp_cconfig));
+    conf=(warp_config *)apr_palloc(wa_pool,sizeof(warp_config));
     if (conf==NULL) return("Cannot allocate connection configuration");
 
     /* Check and parse parameter */
@@ -202,7 +469,7 @@ static const char *warp_connect(wa_connection *conn, const char *param) {
 
     /* Done */
     conf->sock=NULL;
-    conf->disc=TRUE;
+    conf->serv=0;
     conn->conf=conf;
     return(NULL);
 }
@@ -211,21 +478,14 @@ static const char *warp_connect(wa_connection *conn, const char *param) {
 static const char *warp_deploy(wa_application *appl) {
     wa_chain *elem=warp_connections;
     wa_connection *conn=appl->conn;
-    warp_aconfig *conf=NULL;
 
-    conf=(warp_aconfig *)apr_palloc(wa_pool,sizeof(warp_aconfig));
-    if (conf==NULL) return("Cannot allocate application configuration");
-    conf->host=-1;
-    conf->appl=-1;
-    conf->depl=FALSE;
-
-    appl->conf=conf;
+    /* Integer configuration -1 equals application not deployed */
+    appl->conf=(void *)-1;
 
     /* Check if the connection specified in this application has already
        been stored in our local array of connections */
     while (elem!=NULL) {
-        wa_connection *curr=(wa_connection *)elem->curr;
-        if (strcasecmp(conn->name,curr->name)==0) break;
+        if (conn==elem->curr) break;
         elem=elem->next;
     }
     if (elem==NULL) {
@@ -235,12 +495,26 @@ static const char *warp_deploy(wa_application *appl) {
         warp_connections=elem;
     }
 
+    /* Check if this application has already been stored in our local array of
+       applications */
+    elem=warp_applications;
+    while (elem!=NULL) {
+        if (appl==elem->curr) break;
+        elem=elem->next;
+    }
+    if (elem==NULL) {
+        elem=(wa_chain *)apr_palloc(wa_pool,sizeof(wa_chain));
+        elem->curr=appl;
+        elem->next=warp_applications;
+        warp_applications=elem;
+    }
+
     return(NULL);
 }
 
 /* Describe the configuration member found in a connection. */
 static char *warp_conninfo(wa_connection *conn, apr_pool_t *pool) {
-    warp_cconfig *conf=(warp_cconfig *)conn->conf;
+    warp_config *conf=(warp_config *)conn->conf;
     apr_port_t port=0;
     char *addr=NULL;
     char *name=NULL;
@@ -253,32 +527,17 @@ static char *warp_conninfo(wa_connection *conn, apr_pool_t *pool) {
     apr_sockaddr_ip_get(&addr,conf->addr);
     apr_getnameinfo(&name,conf->addr,0);
 
-    if (conf->sock==NULL) mesg="Socket not initialized";
-    else {
-        if (conf->disc) mesg="Socket disconnected";
-        else mesg="Socket connected";
-    }
+    if (conf->sock==NULL) mesg="Not Connected";
+    else mesg="Connected";
 
-    buff=apr_psprintf(pool,"Host: %s Port:%d Address:%s (%s)",
-                      name,port,addr,mesg);
+    buff=apr_psprintf(pool,"Host: %s Port:%d Address:%s (%s) Server ID: %d",
+                      name,port,addr,mesg,conf->serv);
     return(buff);
 }
 
 /* Describe the configuration member found in a web application. */
 static char *warp_applinfo(wa_application *appl, apr_pool_t *pool) {
-    warp_aconfig *conf=(warp_aconfig *)appl->conf;
-    char *h=NULL;
-    char *a=NULL;
-
-    if (conf==NULL) return("Invalid configuration member");
-
-    if (conf->host<0) h="(Not initialized)";
-    else h=apr_psprintf(pool,"%d",conf->host);
-
-    if (conf->appl<0) a="(Not initialized)";
-    else a=apr_psprintf(pool,"%d",conf->appl);
-
-    return(apr_psprintf(pool,"Application ID: %s Host ID: %s",a,h));
+    return(apr_psprintf(pool,"Application ID: %d",(int)(appl->conf)));
 }
 
 /* Handle a connection from the web server. */
