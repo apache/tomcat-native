@@ -46,6 +46,9 @@ public class JkMX extends JkHandler
     private boolean enabled=false;
     private int httpport=-1;
     private String httphost="localhost";
+    private String authmode="none";
+    private String authuser=null;
+    private String authpassword=null;
     private int jrmpport=-1;
     private String jrmphost="localhost";
     private boolean useXSLTProcessor = true;
@@ -91,6 +94,30 @@ public class JkMX extends JkHandler
 
     public String getHttpHost() {
         return httphost;
+    }
+
+    public void setAuthMode(String mode) {
+        authmode=mode;
+    }
+
+    public String getAuthMode() {
+        return authmode;
+    }
+
+    public void setAuthUser(String user) {
+        authuser=user;
+    }
+
+    public String getAuthUser() {
+        return authuser;
+    }
+
+    public void setAuthPassword(String password) {
+        authpassword=password;
+    }
+
+    public String getAuthPassword() {
+        return authpassword;
     }
 
     /** Enable the MX4J JRMP internal adapter
@@ -140,6 +167,16 @@ public class JkMX extends JkHandler
                     mserver.setAttribute(httpServerName, new Attribute("Host", httphost));
                 mserver.setAttribute(httpServerName, new Attribute("Port", new Integer(httpport)));
 
+                if( "none".equals(authmode) || "basic".equals(authmode) || "digest".equals(authmode) )
+                    mserver.setAttribute(httpServerName, new Attribute("AuthenticationMethod", authmode));
+
+                if( authuser!=null && authpassword!=null )
+                    mserver.invoke(httpServerName, "addAuthorization",
+                        new Object[] {
+                            authuser,
+                            authpassword},
+                        new String[] { "java.lang.String", "java.lang.String" });
+
                 if(useXSLTProcessor) {
                     ObjectName processorName = registerObject("mx4j.adaptor.http.XSLTProcessor",
                                                           "Http:name=XSLTProcessor");
@@ -169,7 +206,17 @@ public class JkMX extends JkHandler
                     mserver.setAttribute(httpServerName, new Attribute("Host", httphost));
                 mserver.setAttribute(httpServerName, new Attribute("Port", new Integer(httpport)));
 
-                if(useXSLTProcessor) {
+                if( "none".equals(authmode) || "basic".equals(authmode) || "digest".equals(authmode) )
+                    mserver.setAttribute(httpServerName, new Attribute("AuthenticationMethod", authmode));
+
+                if( authuser!=null && authpassword!=null )
+                    mserver.invoke(httpServerName, "addAuthorization",
+                        new Object[] {
+                            authuser,
+                            authpassword},
+                        new String[] { "java.lang.String", "java.lang.String" });
+
+               if(useXSLTProcessor) {
                     ObjectName processorName = registerObject("mx4j.tools.adaptor.http.XSLTProcessor",
                                                           "Http:name=XSLTProcessor");
                     mserver.setAttribute(httpServerName, new Attribute("ProcessorName", processorName));
