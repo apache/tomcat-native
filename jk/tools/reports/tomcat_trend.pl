@@ -72,6 +72,14 @@ if( -e "$archivedir/global.data" ) {
    @tail = `tail -1 $archivedir/global.data`;
    $startdate = (split /\s+/,$tail[0])[0];
    ($day, $mon, $year) = (localtime($startdate))[3..5];
+   if ($day == 31) {
+      $day=1;
+      $month++;
+      if ($month > 11) {
+         $month=0;
+         $year++;
+      }
+   }
    $startdate = timelocal(0,0,0,$day+1,$mon,$year);
 
 }
