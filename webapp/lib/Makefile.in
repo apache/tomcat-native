@@ -58,42 +58,52 @@
 # @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 # @version $Id$
 
-include @SRCDIR@/Makedefs
+include @TGTDIR@/Makedefs
 
-OBJS = wa_main.lo wa_config.lo wa_request.lo
-PROVS = pr_info.lo \
-	pr_warp.lo \
-	pr_warp_packet.lo \
-	pr_warp_network.lo \
-	pr_warp_config.lo
+SRCS =  pr_info.c \
+	pr_warp.c \
+	pr_warp.h \
+	pr_warp_config.c \
+	pr_warp_network.c \
+	pr_warp_packet.c \
+	wa_config.c \
+	wa_main.c \
+	wa_request.c \
 
-LIB = libwebapp.la
+OBJS =  wa_main.o \
+	wa_config.o \
+	wa_request.o
 
-all: pr_warp_defs.h $(LIB)
+PROVS = pr_info.o \
+	pr_warp.o \
+	pr_warp_packet.o \
+	pr_warp_network.o \
+	pr_warp_config.o
 
-$(LIB): $(OBJS) $(PROVS)
-	@$(ECHO) Creating library $(LIB)
-	@$(LIBTOOL) $(LTFLAGS) --mode=link $(CC) -static -o $(LIB) \
-		$(OBJS) $(PROVS) 1> /dev/null
+LIB =	libwebapp.a
 
-pr_warp_defs.h: @SRCDIR@/java/Constants.java
-	@$(ECHO) Generating pr_warp_defs.h
-	@$(CAT) @SRCDIR@/java/Constants.java | \
-		grep TYPE_ | \
-		sed "s/public static final int/#define/g" | \
-		sed "y/=;/  /" > pr_warp_defs.h
+WARPH = pr_warp_defs.h
+
+build: $(LIB)
 
 clean:
-	@for ENTRY in *.o *.lo $(LIB) pr_warp_defs.h .libs ; \
-	do \
-		if $(TEST) -f $${ENTRY} ; \
-		then \
-			$(ECHO) Removing file $${ENTRY} ; \
-			$(RM) -f $${ENTRY} ; \
-		fi ; \
-		if $(TEST) -d $${ENTRY} ; \
-		then \
-			$(ECHO) Removing directory $${ENTRY} ; \
-			$(RM) -rf $${ENTRY} ; \
-		fi ; \
-	done
+	@$(MECHO) "Cleaning up"
+	@$(DEXEC) $(RM) -f $(OBJS) $(PROVS) $(LIB) $(WARPH)
+
+$(LIB): $(SRCS) $(WARPH) $(OBJS) $(PROVS)
+	@$(MECHO) "Creating library \"$@\""
+	@$(DEXEC) $(AR) cr $@ $(OBJS) $(PROVS)
+	@$(DEXEC) $(RANLIB) $@
+
+pr_warp_defs.h: $(SRCDIR)/java/Constants.java
+	@$(MECHO) "Generating \"$@\""
+	@$(CAT) "$<" | \
+	    $(GREP) "TYPE_" | \
+	    $(SED) "s/public static final int/#define/g" | \
+	    $(SED) "y/=;/  /" > $@
+
+$(SRCS):
+	@$(MECHO) "Linking \"$@\""
+	@$(DEXEC) $(LN) -s $(SRCDIR)/lib/$@ ./$@
+
+
