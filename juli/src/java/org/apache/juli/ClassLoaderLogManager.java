@@ -16,13 +16,23 @@
 
 package org.apache.juli;
 
-import java.util.logging.*;
-import java.util.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.WeakHashMap;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 
 /**
@@ -294,12 +304,29 @@ public final class ClassLoaderLogManager extends LogManager {
                             this.prefix.set(prefix);
                             Handler handler = 
                                 (Handler) classLoader.loadClass(handlerClassName).newInstance();
-                            this.prefix.set(null);
+                            // FIXME: The specification strongly implies this should be done in the
+                            // handler configuration
+                            /*
+                            // Initialize handler's level
                             String handlerLevel = 
                                 info.props.getProperty(handlerName + ".level");
                             if (handlerLevel != null) {
                                 handler.setLevel(Level.parse(handlerLevel.trim()));
                             }
+                            // Initialize filter
+                            String filterName =
+                                info.props.getProperty(handlerName + ".filter");
+                            if (filterName != null) {
+                                try {
+                                    handler.setFilter
+                                        ((Filter) classLoader.loadClass(filterName).newInstance());
+                                } catch (Exception e) {
+                                    // FIXME: Report this using the main logger ?
+                                    // Ignore
+                                }
+                            }
+                            */
+                            this.prefix.set(null);
                             info.handlers.put(handlerName, handler);
                             if (rootHandlers == null) {
                                 localRootLogger.addHandler(handler);

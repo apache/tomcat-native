@@ -23,7 +23,10 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 import java.util.logging.ErrorManager;
+import java.util.logging.Filter;
+import java.util.logging.Formatter;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
@@ -238,27 +241,53 @@ public class FileHandler
         LogManager manager = LogManager.getLogManager();
         String className = FileHandler.class.getName();
         
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        
         // Retrieve configuration of logging file name
         directory = getProperty(className + ".directory", "logs");
         prefix = getProperty(className + ".prefix", "juli.");
         suffix = getProperty(className + ".suffix", ".log");
 
-        // FIXME: Add filter configuration in LogManager ?
-        //setFilter(manager.getFilterProperty(className + ".filter", null));
-        // FIXME: Add formatter configuration in LogManager ?
-        //setFormatter(manager.getFormatterProperty(className + ".formatter", new SimpleFormatter()));
-        // Hardcode for now a SimpleFormatter
-        setFormatter(new SimpleFormatter());
-        // FIXME: Add encoding configuration in LogManager ?
+        // FIXME: This should IMO be shared at the LogManager level, but the javadocs
+        // seem to imply that this should not be the case for some reason
+        
+        // Get logging level for the handler
+        setLevel(Level.parse(getProperty(className + ".level", "" + Level.ALL)));
+
+        // Get filter configuration
+        String filterName = getProperty(className + ".filter", null);
+        if (filterName != null) {
+            try {
+                setFilter((Filter) cl.loadClass(filterName).newInstance());
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+
+        // Set formatter
+        String formatterName = getProperty(className + ".formatter", null);
+        if (formatterName != null) {
+            try {
+                setFormatter((Formatter) cl.loadClass(formatterName).newInstance());
+            } catch (Exception e) {
+                // Ignore
+            }
+        } else {
+            setFormatter(new SimpleFormatter());
+        }
+        
+        // Set encoding
         try {
             setEncoding(manager.getProperty(className + ".encoding"));
         } catch (UnsupportedEncodingException e) {
             try {
                 setEncoding(null);
             } catch (Exception ex) {
+                // Ignore
             }
         }
         
+        // Set error manager
         setErrorManager(new ErrorManager());
         
     }
