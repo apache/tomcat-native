@@ -469,7 +469,10 @@ DWORD WINAPI HttpExtensionProcWorker(LPEXTENSION_CONTROL_BLOCK  lpEcb,
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                   "HttpExtensionProc started\n");
 
-    GET_SERVER_VARIABLE_VALUE(workerEnv->pool,HTTP_WORKER_HEADER_NAME, ( worker_name ));
+    huge_buf_sz = sizeof(huge_buf);
+    get_server_value(lpEcb, HTTP_WORKER_HEADER_NAME, huge_buf, huge_buf_sz, "");
+    worker_name = huge_buf;
+
     worker=env->getByName( env, worker_name);
 
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
@@ -514,10 +517,6 @@ DWORD WINAPI HttpExtensionProcWorker(LPEXTENSION_CONTROL_BLOCK  lpEcb,
 
     s->afterRequest(env, s);
 
-    rPool->reset(env, rPool);
-
-    rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );       
-
     if (service != NULL) {
         lpEcb->ServerSupportFunction(lpEcb->ConnID, 
                                      HSE_REQ_DONE_WITH_SESSION, 
@@ -525,6 +524,11 @@ DWORD WINAPI HttpExtensionProcWorker(LPEXTENSION_CONTROL_BLOCK  lpEcb,
                                      NULL, 
                                      NULL);
     }
+    rPool->reset(env, rPool);
+    rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
+
+    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+
     return rc;
 }
 
