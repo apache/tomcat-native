@@ -75,7 +75,7 @@ static void jk_env_registerFactory(jk_env_t *env,
    The env will provide access to pools, etc 
 */
 
-jk_env_t JK_METHOD *jk_env_getEnv( char *id ) {
+jk_env_t* JK_METHOD jk_env_getEnv( char *id ) {
   if( jk_env_singleton == NULL ) {
     jk_env_singleton=(jk_env_t *)malloc( sizeof( jk_env_t ));
     jk_env_initEnv( (jk_env_t *)jk_env_singleton, id );

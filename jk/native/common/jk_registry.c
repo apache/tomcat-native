@@ -110,7 +110,7 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
  * 
  *   For now the static registrartion should work.
  */
-int JK_METHOD jk_registry_init(jk_env_t *env) {
+void JK_METHOD jk_registry_init(jk_env_t *env) {
   if( env==NULL ) {
     /* XXX do something ! */
     printf("jk_registry_init: Assertion failed, env==NULL\n" );

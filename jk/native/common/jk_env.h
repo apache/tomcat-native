@@ -108,7 +108,7 @@ typedef int (JK_METHOD *jk_env_objectFactory_t)(jk_env_t *env,
 /** Get a pointer to the jk_env. We could support multiple 
  *  env 'instances' in future - for now it's a singleton.
  */
-jk_env_t JK_METHOD *jk_env_getEnv( char *id );
+jk_env_t* JK_METHOD jk_env_getEnv( char *id );
 
 
 /**
@@ -151,7 +151,7 @@ struct jk_env {
 
 };
 
-int JK_METHOD jk_registry_init(jk_env_t *env);
+void JK_METHOD jk_registry_init(jk_env_t *env);
 
 
 #ifdef __cplusplus
