@@ -1250,10 +1250,6 @@ public class CoyoteResponse
         if (location == null)
             return (location);
 
-		if (location.toLowerCase().startsWith("mailto")) {
-			return (location);
-		}
-		
         // Construct a new absolute URL if possible (cribbed from
         // the DefaultErrorPage servlet)
         URL url = null;
