@@ -434,7 +434,7 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
         }
         return JK_TRUE;
     }
-
+#ifdef HAVE_UNIXSOCKETS
     while(sent < len) {
         this_time = send(unixsock, (char *)b + sent , len - sent,  0);
             
@@ -448,6 +448,7 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
     }
     /*     return sent; */
     return JK_TRUE;
+#endif
 }
 
 
