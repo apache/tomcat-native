@@ -124,7 +124,14 @@ public class WarpConnectionHandler extends WarpHandler {
                     // Iterate until a valid RID is found
                     c.registerHandler(h,r);
                     this.request=r+1;
-                    h.init(c,r);
+                    h.setConnection(c);
+                    h.setRequestID(r);
+                    try {
+                        h.start();
+                    } catch (Exception e) {
+                        this.log(e);
+                        h.stop();
+                    }
                     if (DEBUG) this.debug("CONINIT_REQ "+reader.readShort()+
                                           ":"+reader.readShort()+"="+r);
                     // Send the RID back to the WARP client

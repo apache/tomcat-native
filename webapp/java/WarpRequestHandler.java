@@ -124,7 +124,7 @@ public class WarpRequestHandler extends WarpHandler {
                 // The request header is finished, run the servlet (whohoo!)
                 case WarpConstants.TYP_REQINIT_RUN:
                     if (DEBUG) this.debug("REQINIT_RUN");
-                    // Send the HOST ID back to the WARP client
+                    // Check if we can accept (or not) this request
                     this.packet.reset();
                     if (this.headererr) {
                         this.send(WarpConstants.TYP_REQINIT_ERR,this.packet);

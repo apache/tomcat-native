@@ -56,6 +56,19 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.catalina.Container;
+import org.apache.catalina.Engine;
+import org.apache.catalina.Globals;
+import org.apache.catalina.Host;
+import org.apache.catalina.LifecycleException;
+import org.apache.catalina.Request;
+import org.apache.catalina.Response;
+import org.apache.catalina.core.ContainerBase;
+
 /**
  *
  *
@@ -64,39 +77,103 @@ package org.apache.catalina.connector.warp;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpConstants {
+public class WarpEngine extends ContainerBase implements Engine {
 
-    /* The VERSION of this implementation. */
-    public static final String VERSION = "0.5";
+    // -------------------------------------------------------------- CONSTANTS
 
-    /* The RID associated with the connection controller handler (0x00000). */
-    public static final int RID_CONNECTION = 0x00000;
+    /** Our debug flag status (Used to compile out debugging information). */
+    private static final boolean DEBUG=WarpDebug.DEBUG;
+    /** The descriptive information related to this implementation. */
+    private static final String info="WarpEngine/"+WarpConstants.VERSION;
 
-    /* The RID indicating that the connection must be closed (0x0ffff). */
-    public static final int RID_DISCONNECT = 0x0ffff;
+    // -------------------------------------------------------- LOCAL VARIABLES
 
-    /* The RID minimum value (0x00001). */
-    public static final int RID_MIN = 0x00001;
+    /** The Java class name of the default Mapper class for this Container. */
+    private String mapper="org.apache.catalina.connector.warp.WarpEngineMapper";
 
-    /* The RID maximum value (0x0fffe). */
-    public static final int RID_MAX = 0x0fffe;
+    // ------------------------------------------------------------ CONSTRUCTOR
+    
+    /**
+     * Create a new WarpEngine component with the default basic Valve.
+     */
+    public WarpEngine() {
+        super();
+        super.setBasic(new WarpEngineValve());
+        if (DEBUG) this.debug("New instance created");
+    }
 
-    public static final int TYP_CONINIT_HST = 0x00000;
-    public static final int TYP_CONINIT_HID = 0x00001;
-    public static final int TYP_CONINIT_APP = 0x00002;
-    public static final int TYP_CONINIT_AID = 0x00003;
-    public static final int TYP_CONINIT_REQ = 0x00004;
-    public static final int TYP_CONINIT_RID = 0x00005;
-    public static final int TYP_CONINIT_ERR = 0x0000F;
+    // --------------------------------------------------------- PUBLIC METHODS
 
-    public static final int TYP_REQINIT_MET = 0x00010;
-    public static final int TYP_REQINIT_URI = 0x00011;
-    public static final int TYP_REQINIT_ARG = 0x00012;
-    public static final int TYP_REQINIT_PRO = 0x00013;
-    public static final int TYP_REQINIT_HDR = 0x00014;
-    public static final int TYP_REQINIT_VAR = 0x00015;
-    public static final int TYP_REQINIT_RUN = 0x0001D;
-    public static final int TYP_REQINIT_ERR = 0x0001E;
-    public static final int TYP_REQINIT_ACK = 0x0001F;
+    /**
+     * Add a child Container, only if the proposed child is an implementation
+     * of Host.
+     */
+    public void addChild(Container child) {
+        if (DEBUG) this.debug("Adding child "+child.getInfo());
+
+        if (!(child instanceof Host))
+            throw new IllegalArgumentException("Child of Engine is not Host");
+
+        super.addChild(child);
+    }
+
+    /**
+     * Return descriptive information about this implementation.
+     */
+    public String getInfo() {
+        return(this.info);
+    }
+
+    /**
+     * Disallow any attempt to set a parent for this Container, since an
+     * Engine is supposed to be at the top of the Container hierarchy.
+     */
+    public void setParent(Container container) {
+        throw new IllegalArgumentException("Engine cannot have a parent");
+    }
+
+    /**
+     * Start this Engine component.
+     */
+    public void start() throws LifecycleException {
+        if (DEBUG) this.debug("Starting");
+        // Standard container startup
+        super.start();
+    }
+
+    /**
+     * Start this Engine component.
+     */
+    public void stop() throws LifecycleException {
+        if (DEBUG) this.debug("Stopping");
+        // Standard container startup
+        super.stop();
+    }
+
+    /**
+     * Add a default Mapper implementation if none have been configured
+     * explicitly.
+     *
+     * @param mapperClass Java class name of the default Mapper
+     */
+    public void addDefaultMapper(String mapper) {
+        if (DEBUG) this.debug("Adding default mapper "+mapper);
+        super.addDefaultMapper(this.mapper);
+    }
+
+    // ------------------------------------------------------ DEBUGGING METHODS
+
+    /**
+     * Dump a debug message.
+     */
+    private void debug(String msg) {
+        if (DEBUG) WarpDebug.debug(this,msg);
+    }
+
+    /**
+     * Dump information for an Exception.
+     */
+    private void debug(Exception exc) {
+        if (DEBUG) WarpDebug.debug(this,exc);
+    }
 }
-                                                

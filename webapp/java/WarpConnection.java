@@ -58,33 +58,61 @@ package org.apache.catalina.connector.warp;
 
 import java.io.*;
 import java.net.*;
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.LifecycleEvent;
+import org.apache.catalina.LifecycleException;
+import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.util.LifecycleSupport;
 
 /**
- *
  *
  * @author <a href="mailto:pier.fumagalli@eng.sun.com">Pier Fumagalli</a>
  * @author Copyright &copy; 1999, 2000 <a href="http://www.apache.org">The
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpConnection implements Runnable {
+public class WarpConnection implements Lifecycle, Runnable {
 
-    /** The DEBUG flag, to compile out debugging informations. */
-    private static final boolean DEBUG = WarpConstants.DEBUG;
+    // -------------------------------------------------------------- CONSTANTS
 
-    private WarpHandlerTable table;
-    private Socket socket;
-    private String name;
+    /** Our debug flag status (Used to compile out debugging information). */
+    private static final boolean DEBUG=WarpDebug.DEBUG;
+
+    // -------------------------------------------------------- LOCAL VARIABLES
+
+    /** The lifecycle event support for this component. */
+    private LifecycleSupport lifecycle=null;
+    /** The WarpHandlerTable contains the list of all current handlers. */
+    private WarpHandlerTable table=null;
+    /** The name of this connection. */
+    private String name=null;
+    /** Wether we started or not. */
+    private boolean started=false;
     
+    // -------------------------------------------------------- BEAN PROPERTIES
+
+    /** The socket used in this connection. */
+    private Socket socket=null;
+    /** The connector wich created this connection. */
+    private WarpConnector connector=null;
+    
+    // ------------------------------------------------------------ CONSTRUCTOR
+    
+    /**
+     * Create a new WarpConnection instance.
+     */
     public WarpConnection() {
         super();
+        this.lifecycle=new LifecycleSupport(this);
         this.table=new WarpHandlerTable();
-        this.socket=null;
-        this.name=null;
+        if (DEBUG) this.debug("New instance created");
     }
 
+    // --------------------------------------------------------- PUBLIC METHODS
+
     /**
-     *
+     * Run the thread waiting on the socket, reading packets from the client
+     * and dispatching them to the appropriate handler.
      */
     public void run() {
         WarpHandler han=null;
@@ -98,14 +126,14 @@ public class WarpConnection implements Runnable {
         byte buf[]=null;
 
         // Log the connection opening
-        this.log("Connection opened");
+        if (DEBUG) this.debug("Connection started");
 
         try {
             // Open the socket InputStream
             in=this.socket.getInputStream();
             
             // Read packets
-            while(true) {
+            while(this.started) {
                 // RID number
                 b1=in.read();
                 b2=in.read();
@@ -126,14 +154,14 @@ public class WarpConnection implements Runnable {
                 b1=in.read();
                 b2=in.read();
                 if ((b1 | b2)==-1) {
-                    this.log("Premature LENGTH end");
+                    this.log("Premature LEN end");
                     break;
                 }
                 len=(((b1 & 0x0ff) << 8) | (b2 & 0x0ff));
                 // Packet payload
                 buf=new byte[len];
                 if ((ret=in.read(buf,0,len))!=len) {
-                    this.log("Premature PAYLOAD end ("+ret+" of "+len+")");
+                    this.log("Premature packet end"+" ("+ret+" of "+len+")");
                     break;
                 }
 
@@ -154,11 +182,15 @@ public class WarpConnection implements Runnable {
                 han.processData(typ,buf);
             }
         } catch (IOException e) {
-            this.log(e);
+            if (this.started) e.printStackTrace(System.err);
         }
 
         // Close this connection before terminating the thread
-        this.close();
+        try {
+            this.stop();
+        } catch (LifecycleException e) {
+            this.log(e);
+        }
         if (DEBUG) this.debug("Thread exited");
     }
 
@@ -167,25 +199,29 @@ public class WarpConnection implements Runnable {
      *
      * @param sock The socket used by this connection to transfer data.
      */
-    public void init(Socket sock) {
+    public void start()
+    throws LifecycleException {
         // Paranoia checks.
-        if (sock==null) throw new NullPointerException("Null Socket");
-        this.socket=sock;
+        if (this.socket==null)
+            throw new LifecycleException("Null socket");
+        if (this.connector==null)
+            throw new LifecycleException("Null connector");
         
         // Register the WarpConnectionHandler for RID=0 (connection)
         WarpHandler h=new WarpConnectionHandler();
-        h.init(this,0);
+        h.setConnection(this);
+        h.setRequestID(0);
+        h.start();
         // Paranoia check
         if(this.registerHandler(h,0)!=true) {
-            System.err.println("Something happened creating the connection");
-            this.close();
-            return;
+            this.stop();
+            throw new LifecycleException("Cannot register connection handler");
         }
         // Set the thread and connection name and start the thread
-        this.name=sock.getInetAddress().getHostAddress()+":"+sock.getPort();
+        this.name=this.socket.getInetAddress().getHostAddress();
+        this.name=this.name+":"+this.socket.getPort();
         new Thread(this,name).start();
     }
-
 
     /**
      * Send a WARP packet.
@@ -215,11 +251,10 @@ public class WarpConnection implements Runnable {
 
     /**
      * Close this connection.
-     * <br>
-     * The socket associated with this connection is closed, all handlers are
-     * stopped and the thread reading from the socket is interrupted.
      */
-    public void close() {
+    public void stop()
+    throws LifecycleException {
+        this.started=false;
         // Stop all handlers
         WarpHandler handlers[]=this.table.handlers();
         for (int x=0; x<handlers.length; x++) handlers[x].stop();
@@ -228,6 +263,7 @@ public class WarpConnection implements Runnable {
             this.socket.close();
         } catch (IOException e) {
             this.log(e);
+            throw new LifecycleException("Closing connection "+this.name,e);
         }
         
         this.socket=null;
@@ -258,34 +294,84 @@ public class WarpConnection implements Runnable {
         return(this.table.remove(rid));
     }
 
+    // ----------------------------------------------------------- BEAN METHODS
+
     /**
-     * Log a message.
-     *
-     * @param msg The error message to log.
+     * Return the socket associated with this connection.
+     */
+    protected WarpConnector getConnector() {
+        return(this.connector);
+    }
+
+    /**
+     * Set the socket used by this connection.
+     */
+    protected void setConnector(WarpConnector connector) {
+        if (DEBUG) this.debug("Setting connector");
+        this.connector=connector;
+    }
+
+    /**
+     * Return the socket associated with this connection.
+     */
+    protected Socket getSocket() {
+        return(this.socket);
+    }
+
+    /**
+     * Set the socket used by this connection.
+     */
+    protected void setSocket(Socket socket) {
+        if (DEBUG) this.debug("Setting socket");
+        this.socket=socket;
+    }
+
+    // ------------------------------------------------------ LIFECYCLE METHODS
+
+    /**
+     * Add a lifecycle event listener to this component.
+     */
+    public void addLifecycleListener(LifecycleListener listener) {
+        this.lifecycle.addLifecycleListener(listener);
+    }
+
+    /**
+     * Remove a lifecycle event listener from this component.
+     */
+    public void removeLifecycleListener(LifecycleListener listener) {
+        lifecycle.removeLifecycleListener(listener);
+    }
+
+    // ------------------------------------------ LOGGING AND DEBUGGING METHODS
+
+    /**
+     * Dump a log message.
      */
     public void log(String msg) {
-        System.out.println("[WarpConnection("+this.name+")] "+msg);
-        System.out.flush();
+        if (this.connector!=null) this.connector.log(msg);
+        else WarpDebug.debug(this,msg);
     }
 
     /**
-     * Log an exception.
-     *
-     * @param e The exception to log.
+     * Dump information for an Exception.
      */
-    public void log(Exception e) {
-        System.out.print("[WarpConnection("+this.name+")] ");
-        e.printStackTrace(System.out);
-        System.out.flush();
+    public void log(Exception exc) {
+        if (this.connector!=null) this.connector.log(exc);
+        else WarpDebug.debug(this,exc);
     }
 
     /**
-     * Dump some debugging information.
-     *
-     * @param msg The error message to log.
+     * Dump a debug message.
      */
-    public void debug(String msg) {
-        if(DEBUG) this.log(msg);
+    private void debug(String msg) {
+        if (DEBUG) WarpDebug.debug(this,msg);
+    }
+
+    /**
+     * Dump information for an Exception.
+     */
+    private void debug(Exception exc) {
+        if (DEBUG) WarpDebug.debug(this,exc);
     }
 }
     

@@ -57,6 +57,11 @@
 package org.apache.catalina.connector.warp;
 
 import java.io.IOException;
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.LifecycleEvent;
+import org.apache.catalina.LifecycleException;
+import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.util.LifecycleSupport;
 
 /**
  *
@@ -66,67 +71,50 @@ import java.io.IOException;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public abstract class WarpHandler implements Runnable {
+public abstract class WarpHandler implements Lifecycle, Runnable {
 
-    /**
-     * The DEBUG flag, used to compile out debugging informations.
-     * <br>
-     * Sub classes of WarpHandler can write statements like
-     * &quot;if (DEBUG) this.debug(...);&quot; to compile in or out all
-     * debugging information calls.
-     */
-    protected static final boolean DEBUG = WarpConstants.DEBUG;
+    // -------------------------------------------------------------- CONSTANTS
+
+    /** Our debug flag status (Used to compile out debugging information). */
+    protected static final boolean DEBUG=WarpDebug.DEBUG;
+
+
+    // -------------------------------------------------------- LOCAL VARIABLES
+
+    /** The lifecycle event support for this component. */
+    private LifecycleSupport lifecycle=null;
+    /** The WARP packet type. */
+    private int type=-1;
+    /** The WARP packet payload. */
+    private byte buffer[]=null;
+    /** Wether type and buffer have already been processed by notifyData(). */
+    private boolean processed=false;
+    /** Wether the stop() method was called. */
+    private boolean stopped=false;
+    /** The name of this handler. */
+    private String name=null;
+
+    // -------------------------------------------------------- BEAN PROPERTIES
 
     /** The WarpConnection under which this handler is registered. */
-    private WarpConnection connection;
-
+    private WarpConnection connection=null;
     /** The WARP RID associated with this WarpHandler. */
-    private int rid;
+    private int rid=-1;
 
-    /** The WARP packet type. */
-    private int type;
+
+    // ------------------------------------------------------------ CONSTRUCTOR
     
-    /** The WARP packet payload. */
-    private byte buffer[];
-
-    /** Wether type and buffer have already been processed by notifyData(). */
-    private boolean processed;
-
-    /** Wether the stop() method was called. */
-    private boolean stopped;
-    
-    /** The name of this handler. */
-    private String name;
 
     /**
      * Construct a new instance of a WarpHandler.
      */
     public WarpHandler() {
         super();
+        this.lifecycle=new LifecycleSupport(this);
+        if (DEBUG) this.debug("New instance created");
     }
 
-    /**
-     * Initialize this handler instance.
-     * <br>
-     * This method will initialize this handler and starts the despooling
-     * thread that will handle the data to the processData() method.
-     * <br>
-     * NOTE: To receive data notification this WarpConnection must be
-     * registered in the WarpConnection. Only un-registration (when the thread
-     * exits) is performed.
-     *
-     * @param connection The WarpConnection associated with this handler.
-     * @param rid The WARP request ID associated with this handler.
-     */
-    protected final void init(WarpConnection connection, int rid) {
-        this.connection=connection;
-        this.rid=rid;
-        this.processed=true;
-        this.stopped=false;
-        String n=this.getClass().getName();
-        this.name=n.substring(n.lastIndexOf('.')+1)+"[RID="+rid+"]";
-        new Thread(this,this.name).start();
-    }
+    // --------------------------------------------------------- PUBLIC METHODS
 
     /**
      * Process WARP packets.
@@ -193,16 +181,41 @@ public abstract class WarpHandler implements Runnable {
     }
 
     /**
+     * Initialize this handler instance.
+     * <br>
+     * This method will initialize this handler and starts the despooling
+     * thread that will handle the data to the processData() method.
+     * <br>
+     * NOTE: To receive data notification this WarpConnection must be
+     * registered in the WarpConnection. Only un-registration (when the thread
+     * exits) is performed.
+     */
+    public final void start()
+    throws LifecycleException {
+        if (this.connection==null) 
+            throw new LifecycleException("Null connection");
+        if (this.rid<0)
+            throw new LifecycleException("Invalid handler request ID");
+
+        this.processed=true;
+        this.stopped=false;
+        String n=this.getClass().getName();
+        this.name=n.substring(n.lastIndexOf('.')+1)+"[RID="+rid+"]";
+        new Thread(this,this.name).start();
+    }
+
+    /**
      * Stop this handler.
      * <br>
      * The thread associated with this handler is stopped and this instance is
      * unregistered from the WarpConnection.
      */
-    protected final synchronized void stop() {
+    public final synchronized void stop() {
         // Set the stopped flag and notify all threads
         if (DEBUG) this.debug("Stopping");
         this.stopped=true;
         this.notifyAll();
+        this.connection.removeHandler(this.rid);
         if (DEBUG) this.debug("Stopped");
     }
 
@@ -231,6 +244,8 @@ public abstract class WarpHandler implements Runnable {
         this.processed=false;
         this.notifyAll();
     }
+
+    // -------------------------------------------- PACKET TRANSMISSION METHODS
 
     /**
      * Send a WARP packet.
@@ -280,6 +295,8 @@ public abstract class WarpHandler implements Runnable {
         this.send(type, buffer, 0, buffer.length);
     }
 
+    // ------------------------------------------------------- ABSTRACT METHODS
+
     /**
      * Process a WARP packet.
      * <br>
@@ -298,23 +315,65 @@ public abstract class WarpHandler implements Runnable {
      */
     public abstract boolean process(int type, byte buffer[]);
 
+    // ------------------------------------------------------ LIFECYCLE METHODS
+
+    /**
+     * Add a lifecycle event listener to this component.
+     */
+    public void addLifecycleListener(LifecycleListener listener) {
+        this.lifecycle.addLifecycleListener(listener);
+    }
+
+    /**
+     * Remove a lifecycle event listener from this component.
+     */
+    public void removeLifecycleListener(LifecycleListener listener) {
+        lifecycle.removeLifecycleListener(listener);
+    }
+
+    // ----------------------------------------------------------- BEAN METHODS
+
     /**
      * Return the WarpConnection associated with this handler.
-     *
-     * @return The WarpConnection associated with this handler or null if the
-     *         init() method was never called.
      */
     protected WarpConnection getConnection() {
         return(this.connection);
     }
 
     /**
+     * Set the WarpConnection associated with this handler.
+     */
+    protected void setConnection(WarpConnection connection) {
+        if (DEBUG) this.debug("Setting connection");
+        this.connection=connection;
+    }
+
+    /**
+     * Return the Request ID associated with this handler.
+     */
+    protected int getRequestID() {
+        return(this.rid);
+    }
+
+    /**
+     * Set the Request ID associated with this handler.
+     */
+    protected void setRequestID(int rid) {
+        if (DEBUG) this.debug("Setting Request ID "+rid);
+        this.rid=rid;
+    }
+
+    // ------------------------------------------ LOGGING AND DEBUGGING METHODS
+
+    /**
      * Log a message.
      *
      * @param msg The error message to log.
      */
-    public void log(String msg) {
-        this.getConnection().log("{"+this.name+"} "+msg);
+    protected void log(String msg) {
+        WarpConnection connection=this.getConnection();
+        if (connection!=null) connection.log("{"+this.name+"} "+msg);
+        else WarpDebug.debug(this,msg);
     }
 
     /**
@@ -322,18 +381,24 @@ public abstract class WarpHandler implements Runnable {
      *
      * @param e The exception to log.
      */
-    public void log(Exception e) {
-        this.log("Caught exception");
-        this.getConnection().log(e);
+    protected void log(Exception exc) {
+        WarpConnection connection=this.getConnection();
+        if (connection!=null) connection.log(exc);
+        else WarpDebug.debug(this,exc);
     }
 
     /**
-     * Dump some debugging information.
-     *
-     * @param msg The error message to log.
+     * Dump a debug message.
      */
-    public void debug(String msg) {
-        this.getConnection().debug("{"+this.name+"} "+msg);
+    protected void debug(String msg) {
+        if (DEBUG) WarpDebug.debug(this,msg);
+    }
+
+    /**
+     * Dump information for an Exception.
+     */
+    protected void debug(Exception exc) {
+        if (DEBUG) WarpDebug.debug(this,exc);
     }
 }
 

@@ -58,28 +58,70 @@ package org.apache.catalina.connector.warp;
 
 /**
  *
- *
  * @author <a href="mailto:pier.fumagalli@eng.sun.com">Pier Fumagalli</a>
  * @author Copyright &copy; 1999, 2000 <a href="http://www.apache.org">The
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-import java.io.*;
-import java.net.*;
-
 public class WarpDebug {
 
-    public static void main(String argv[]) {
-        try {
-            ServerSocket k=new ServerSocket(8008);
-            while (true) {
-                Socket s=k.accept();
-                new WarpConnection().init(s);
-            }                
-        } catch (Exception e) {
-            e.printStackTrace();
+    // -------------------------------------------------------------- CONSTANTS
+
+    /** Our debug flag status (Used to compile out debugging information). */
+    public static final boolean DEBUG=true;
+
+    // -------------------------------------------------------- LOCAL VARIABLES
+
+    /** The lifecycle event support for this component. */
+    private static Object synchronizer=new Object();
+
+    // ------------------------------------------------------------ CONSTRUCTOR
+    
+    /**
+     * Deny construction.
+     */
+    private WarpDebug() {
+        super();
+    }
+    
+    // --------------------------------------------------------- PUBLIC METHODS
+
+    /**
+     * Dump a debug message to standard error.
+     * <br>
+     * The body of this method will be conditionally compiled depending on the
+     * value of the WarpConstants.DEBUG boolean flag.
+     *
+     * @param src The object source of this debug message.
+     * @param msg The debug message to dump.
+     */
+    protected static void debug(Object src, String msg) {
+        synchronized(synchronizer) {
+            String c=((src==null)?("null source"):(src.getClass().getName()));
+            System.err.println("["+c+"]");
+            if (msg==null) return;
+            System.err.println("    "+msg);
         }
-        System.out.println("Terminated");
-        System.exit(0);
+    }
+
+    /**
+     * Dump debugging information for an Exception to standard error.
+     * <br>
+     * The body of this method will be conditionally compiled depending on the
+     * value of the WarpConstants.DEBUG boolean flag.
+     *
+     * @param src The object source of this debug message.
+     * @param exc The Exception to dump.
+     */
+    protected static void debug(Object src, Exception exc) {
+        synchronized(synchronizer) {
+            String c=((src==null)?("null source"):(src.getClass().getName()));
+            System.err.println("["+c+"] Exception:");
+            if (exc==null) System.err.println("    Null Exception");
+            else {
+                System.err.print("    ");
+                exc.printStackTrace(System.err);
+            }
+        }
     }
 }

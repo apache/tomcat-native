@@ -56,6 +56,16 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.catalina.Container;
+import org.apache.catalina.Host;
+import org.apache.catalina.Request;
+import org.apache.catalina.Response;
+import org.apache.catalina.valves.ValveBase;
+
 /**
  *
  *
@@ -64,39 +74,83 @@ package org.apache.catalina.connector.warp;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpConstants {
+public class WarpEngineValve extends ValveBase {
 
-    /* The VERSION of this implementation. */
-    public static final String VERSION = "0.5";
+    // -------------------------------------------------------------- CONSTANTS
 
-    /* The RID associated with the connection controller handler (0x00000). */
-    public static final int RID_CONNECTION = 0x00000;
+    /** Our debug flag status (Used to compile out debugging information). */
+    private static final boolean DEBUG=WarpDebug.DEBUG;
+    /** The descriptive information related to this implementation. */
+    private static final String info="WarpEngineValve/"+WarpConstants.VERSION;
 
-    /* The RID indicating that the connection must be closed (0x0ffff). */
-    public static final int RID_DISCONNECT = 0x0ffff;
+    // ------------------------------------------------------------ CONSTRUCTOR
 
-    /* The RID minimum value (0x00001). */
-    public static final int RID_MIN = 0x00001;
+    /**
+     * Create a new WarpEngineValve.
+     */
+    public WarpEngineValve() {
+        super();
+        if (DEBUG) this.debug("New instance created");
+    }
 
-    /* The RID maximum value (0x0fffe). */
-    public static final int RID_MAX = 0x0fffe;
+    // --------------------------------------------------------- PUBLIC METHODS
 
-    public static final int TYP_CONINIT_HST = 0x00000;
-    public static final int TYP_CONINIT_HID = 0x00001;
-    public static final int TYP_CONINIT_APP = 0x00002;
-    public static final int TYP_CONINIT_AID = 0x00003;
-    public static final int TYP_CONINIT_REQ = 0x00004;
-    public static final int TYP_CONINIT_RID = 0x00005;
-    public static final int TYP_CONINIT_ERR = 0x0000F;
+    /**
+     * Return descriptive information about this Valve implementation.
+     */
+    public String getInfo() {
+        return (info);
+    }
 
-    public static final int TYP_REQINIT_MET = 0x00010;
-    public static final int TYP_REQINIT_URI = 0x00011;
-    public static final int TYP_REQINIT_ARG = 0x00012;
-    public static final int TYP_REQINIT_PRO = 0x00013;
-    public static final int TYP_REQINIT_HDR = 0x00014;
-    public static final int TYP_REQINIT_VAR = 0x00015;
-    public static final int TYP_REQINIT_RUN = 0x0001D;
-    public static final int TYP_REQINIT_ERR = 0x0001E;
-    public static final int TYP_REQINIT_ACK = 0x0001F;
+    /**
+     * Select the appropriate child Host to process this request,
+     * based on the requested server name.  If no matching Host can
+     * be found, return an appropriate HTTP error.
+     *
+     * @param request Request to be processed
+     * @param update Update request to reflect this mapping?
+     *
+     * @exception IOException if an input/output error occurred
+     * @exception ServletException if a servlet error occurred
+     */
+    public void invoke(Request request, Response response)
+    throws IOException, ServletException {
+        if (DEBUG) this.debug("Trying to invoke request");
+
+        // Validate the request and response object types
+        if (!(request.getRequest() instanceof HttpServletRequest) ||
+            !(response.getResponse() instanceof HttpServletResponse)) {
+            return;
+        }
+
+        // Select the Host to be used for this Request
+        WarpEngine engine=(WarpEngine)getContainer();
+        Host host=(Host)engine.map(request, true);
+        if (host==null) {
+            HttpServletResponse res=(HttpServletResponse)response.getResponse();
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                          "Host not configured");
+            if (DEBUG) this.debug("Host not configured");
+            return;
+        }
+
+        // Ask this Host to process this request
+        host.invoke(request, response);
+    }
+
+    // ------------------------------------------------------ DEBUGGING METHODS
+
+    /**
+     * Dump a debug message.
+     */
+    private void debug(String msg) {
+        if (DEBUG) WarpDebug.debug(this,msg);
+    }
+
+    /**
+     * Dump information for an Exception.
+     */
+    private void debug(Exception exc) {
+        if (DEBUG) WarpDebug.debug(this,exc);
+    }
 }
-                                                

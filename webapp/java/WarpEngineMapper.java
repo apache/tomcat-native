@@ -56,6 +56,13 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
+import org.apache.catalina.Container;
+import org.apache.catalina.Engine;
+import org.apache.catalina.Host;
+import org.apache.catalina.Mapper;
+import org.apache.catalina.Request;
+
+
 /**
  *
  *
@@ -64,39 +71,100 @@ package org.apache.catalina.connector.warp;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpConstants {
+public class WarpEngineMapper implements Mapper {
 
-    /* The VERSION of this implementation. */
-    public static final String VERSION = "0.5";
+    // -------------------------------------------------------------- CONSTANTS
 
-    /* The RID associated with the connection controller handler (0x00000). */
-    public static final int RID_CONNECTION = 0x00000;
+    /** Our debug flag status (Used to compile out debugging information). */
+    private static final boolean DEBUG=WarpDebug.DEBUG;
 
-    /* The RID indicating that the connection must be closed (0x0ffff). */
-    public static final int RID_DISCONNECT = 0x0ffff;
+    // -------------------------------------------------------- BEAN PROPERTIES
 
-    /* The RID minimum value (0x00001). */
-    public static final int RID_MIN = 0x00001;
+    /** The Container with which this Mapper is associated. */
+    private WarpEngine engine = null;
+    /** The protocol with which this Mapper is associated. */
+    private String protocol = null;
 
-    /* The RID maximum value (0x0fffe). */
-    public static final int RID_MAX = 0x0fffe;
+    // ------------------------------------------------------------ CONSTRUCTOR
 
-    public static final int TYP_CONINIT_HST = 0x00000;
-    public static final int TYP_CONINIT_HID = 0x00001;
-    public static final int TYP_CONINIT_APP = 0x00002;
-    public static final int TYP_CONINIT_AID = 0x00003;
-    public static final int TYP_CONINIT_REQ = 0x00004;
-    public static final int TYP_CONINIT_RID = 0x00005;
-    public static final int TYP_CONINIT_ERR = 0x0000F;
+    /**
+     * Create a new WarpEngineMapper.
+     */
+    public WarpEngineMapper() {
+        super();
+        if (DEBUG) this.debug("New instance created");
+    }
 
-    public static final int TYP_REQINIT_MET = 0x00010;
-    public static final int TYP_REQINIT_URI = 0x00011;
-    public static final int TYP_REQINIT_ARG = 0x00012;
-    public static final int TYP_REQINIT_PRO = 0x00013;
-    public static final int TYP_REQINIT_HDR = 0x00014;
-    public static final int TYP_REQINIT_VAR = 0x00015;
-    public static final int TYP_REQINIT_RUN = 0x0001D;
-    public static final int TYP_REQINIT_ERR = 0x0001E;
-    public static final int TYP_REQINIT_ACK = 0x0001F;
+    // --------------------------------------------------------- PUBLIC METHODS
+
+    /**
+     * Return the child Container that should be used to process this Request,
+     * based upon its characteristics.  If no such child Container can be
+     * identified, return <code>null</code> instead.
+     *
+     * @param request Request being processed
+     * @param update Update the Request to reflect the mapping selection?
+     */
+    public Container map(Request request, boolean update) {
+        if (DEBUG) this.debug("Trying to map request to host");
+
+        return(null);
+    }
+
+    // ----------------------------------------------------------- BEAN METHODS
+
+    /**
+     * Return the Container with which this Mapper is associated.
+     */
+    public Container getContainer() {
+        return (this.engine);
+    }
+
+    /**
+     * Set the Container with which this Mapper is associated.
+     */
+    public void setContainer(Container container) {
+        if (DEBUG) {
+            if (container==null) {
+                this.debug("Setting null container");
+            } else {
+                String info=container.getInfo();
+                this.debug("Setting container "+info);
+            }
+        }
+        this.engine=(WarpEngine)container;
+    }
+
+    /**
+     * Return the protocol for which this Mapper is responsible.
+     */
+    public String getProtocol() {
+        return (this.protocol);
+    }
+
+    /**
+     * Set the protocol for which this Mapper is responsible.
+     *
+     * @param protocol The newly associated protocol
+     */
+    public void setProtocol(String protocol) {
+        if (DEBUG) this.debug("Setting protocol "+protocol);
+        this.protocol = protocol;
+    }
+
+    // ------------------------------------------------------ DEBUGGING METHODS
+
+    /**
+     * Dump a debug message.
+     */
+    private void debug(String msg) {
+        if (DEBUG) WarpDebug.debug(this,msg);
+    }
+
+    /**
+     * Dump information for an Exception.
+     */
+    private void debug(Exception exc) {
+        if (DEBUG) WarpDebug.debug(this,exc);
+    }
 }
-                                                
