@@ -827,7 +827,7 @@ public class CoyoteRequest
 
         if (usingReader)
             throw new IllegalStateException
-                (sm.getString("requestBase.getInputStream.ise"));
+                (sm.getString("coyoteRequest.getInputStream.ise"));
 
         usingInputStream = true;
         return inputStream;
@@ -971,7 +971,7 @@ public class CoyoteRequest
 
         if (usingInputStream)
             throw new IllegalStateException
-                (sm.getString("requestBase.getReader.ise"));
+                (sm.getString("coyoteRequest.getReader.ise"));
 
         usingReader = true;
         if (reader == null) {
@@ -1139,7 +1139,7 @@ public class CoyoteRequest
         // Name cannot be null
         if (name == null)
             throw new IllegalArgumentException
-                (sm.getString("requestBase.setAttribute.namenull"));
+                (sm.getString("coyoteRequest.setAttribute.namenull"));
 
         // Null value is the same as removeAttribute()
         if (value == null) {
@@ -1857,7 +1857,7 @@ public class CoyoteRequest
             context.getCookies() &&
             response.getResponse().isCommitted()) {
             throw new IllegalStateException
-              (sm.getString("httpRequestBase.createCommitted"));
+              (sm.getString("coyoteRequest.sessionCreateCommitted"));
         }
 
         session = manager.createSession();

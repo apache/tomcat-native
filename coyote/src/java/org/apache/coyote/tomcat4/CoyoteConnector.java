@@ -941,7 +941,7 @@ public final class CoyoteConnector
             e.printStackTrace();
             throw new LifecycleException
                 (sm.getString
-                 ("coyoteProcessor.processorInstantiationFailed", e));
+                 ("coyoteConnector.protocolHandlerInstantiationFailed", e));
         }
         protocolHandler.setAdapter(adapter);
 
@@ -994,7 +994,7 @@ public final class CoyoteConnector
         } catch (Exception e) {
             throw new LifecycleException
                 (sm.getString
-                 ("coyoteProcessor.processorInstantiationFailed", e));
+                 ("coyoteConnector.protocolHandlerInitializationFailed", e));
         }
 
     }
@@ -1036,7 +1036,7 @@ public final class CoyoteConnector
         } catch (Exception e) {
             throw new LifecycleException
                 (sm.getString
-                 ("coyoteProcessor.processorDestroyFailed", e));
+                 ("coyoteConnector.protocolHandlerDestroyFailed", e));
         }
 
     }

@@ -225,7 +225,7 @@ final class CoyoteAdapter
         } catch (IOException e) {
             ;
         } catch (Throwable t) {
-            log(sm.getString("coyoteProcessor.service"), t);
+            log(sm.getString("coyoteAdapter.service"), t);
         } finally {
             // Recycle the wrapper request and response
             request.recycle();
@@ -251,25 +251,22 @@ final class CoyoteAdapter
         request.setAuthorization
             (req.getHeader(Constants.AUTHORIZATION_HEADER));
 
-        // At this point the Host header has been processed.
-        // Override if the proxyPort/proxyHost are set 
-
         // Replace the default port if we are in secure mode
         if (req.getServerPort() == 80 
             && connector.getScheme().equals("https")) {
             req.setServerPort(443);
         }
 
+        // At this point the Host header has been processed.
+        // Override if the proxyPort/proxyHost are set 
         String proxyName = connector.getProxyName();
         int proxyPort = connector.getProxyPort();
-        
         if (proxyPort != 0) {
             request.setServerPort(proxyPort);
-            req.setServerPort( proxyPort );
+            req.setServerPort(proxyPort);
         } else {
             request.setServerPort(req.getServerPort());
         }
-
         if (proxyName != null) {
             request.setServerName(proxyName);
             req.serverName().setString(proxyName);
@@ -308,6 +305,7 @@ final class CoyoteAdapter
             }
         }
 
+        // Parse cookies
         parseCookies(req, request);
 
     }
@@ -404,6 +402,7 @@ final class CoyoteAdapter
      * are resolved out.  If the specified path attempts to go outside the
      * boundaries of the current context (i.e. too many ".." path elements
      * are present), return <code>null</code> instead.
+     * This code is not optimized, and is only needed for Tomcat 4.0.x.
      *
      * @param path Path to be validated
      */
@@ -485,9 +484,11 @@ final class CoyoteAdapter
     /**
      * Normalize URI.
      * <p>
-     * This method normalizes '/./' and '/../'.
+     * This method normalizes "\", "//", "/./" and "/../". This method will
+     * return false when trying to go above the root, or if the URI contains
+     * a null byte.
      * 
-     * @param uri URI to be normalized
+     * @param uriMB URI to be normalized
      */
     public static boolean normalize(MessageBytes uriMB) {
 
@@ -518,7 +519,7 @@ final class CoyoteAdapter
 
         // If the URI ends with "/." or "/..", then we append an extra "/"
         // Note: It is possible to extend the URI by 1 without any side effect
-        // as the next character in a non-significant WS.
+        // as the next character is a non-significant WS.
         if (((end - start) > 2) && (b[end - 1] == (byte) '.')) {
             if ((b[end - 2] == (byte) '/') 
                 || ((b[end - 2] == (byte) '.') 
