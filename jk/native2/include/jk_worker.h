@@ -188,6 +188,10 @@ struct jk_worker {
      */
     int  lb_factor;
     int  lb_value;
+    /* If set then the worker doesn't participate in the
+     * load-balancer scheme. This is used for non-Tomcat workers.
+     */
+    int  lb_disabled;
 
     /* Time when the last error occured on this worker */
     time_t  error_time;
