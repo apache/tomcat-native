@@ -79,7 +79,7 @@ static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri);
 
 static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                                       const char *vhost,
-                                      const char *uri);
+                                      const char *uri, int reverse);
 
 static int jk2_uriMap_checkUri(jk_env_t *env, jk_uriMap_t *uriMap, 
                                const char *uri);
@@ -159,7 +159,8 @@ static int JK_METHOD jk2_uriMap_setProperty(jk_env_t *env, jk_bean_t *mbean,
 }
 
 static jk_uriEnv_t *jk2_uriMap_prefixMap(jk_env_t *env, jk_uriMap_t *uriMap,
-                                         jk_map_t *mapTable, const char *uri, int uriLen)
+                                         jk_map_t *mapTable, const char *uri, 
+                                         int uriLen, int reverse)
 {
     int best_match=0;
     jk_uriEnv_t *match=NULL;
@@ -173,7 +174,12 @@ static jk_uriEnv_t *jk2_uriMap_prefixMap(jk_env_t *env, jk_uriMap_t *uriMap,
         if( strncmp( uri, uwr->prefix, uwr->prefix_len ) == 0 ) {
             if( uwr->prefix_len > best_match ) {
                 best_match=uwr->prefix_len;
-                match=uwr;
+                if (reverse > 0) {
+                    if (uwr->reverse)
+                        match=uwr;                
+                }
+                else if (!uwr->reverse)
+                    match=uwr;
             }
         }
     }
@@ -181,7 +187,8 @@ static jk_uriEnv_t *jk2_uriMap_prefixMap(jk_env_t *env, jk_uriMap_t *uriMap,
 }
 
 static jk_uriEnv_t *jk2_uriMap_exactMap(jk_env_t *env, jk_uriMap_t *uriMap,
-                                        jk_map_t *mapTable, const char *uri, int uriLen)
+                                        jk_map_t *mapTable, const char *uri, 
+                                        int uriLen, int reverse)
 {
     int i;
     int sz=mapTable->size( env, mapTable);
@@ -190,14 +197,20 @@ static jk_uriEnv_t *jk2_uriMap_exactMap(jk_env_t *env, jk_uriMap_t *uriMap,
         
         if( uriLen != uwr->prefix_len ) continue;
         if( strncmp( uri, uwr->prefix, uriLen ) == 0 ) {
-            return uwr;
+            if (reverse > 0) {
+                if (uwr->reverse)
+                    return uwr;                
+            }
+            else if (!uwr->reverse)
+                return uwr;
         }
     }
     return NULL;
 }
 
 static jk_uriEnv_t *jk2_uriMap_suffixMap(jk_env_t *env, jk_uriMap_t *uriMap,
-                                         jk_map_t *mapTable, const char *suffix, int suffixLen)
+                                         jk_map_t *mapTable, const char *suffix, 
+                                         int suffixLen, int reverse)
 {
     int i;
     int sz=mapTable->size( env, mapTable);
@@ -215,7 +228,12 @@ static jk_uriEnv_t *jk2_uriMap_suffixMap(jk_env_t *env, jk_uriMap_t *uriMap,
                                   "uriMap.mapUri() suffix match %s\n",
                                   uwr->suffix );
                 }
-                return uwr;
+                if (reverse > 0) {
+                    if (uwr->reverse)
+                        return uwr;                
+                }
+                else if (!uwr->reverse)
+                    return uwr;
             /* indentation trick */
 #ifdef WIN32                        
             }
@@ -297,7 +315,7 @@ static void jk2_uriMap_correctWebapps(jk_env_t *env, jk_uriMap_t *uriMap) {
             continue;
         }
         
-        ctxEnv=jk2_uriMap_prefixMap( env, uriMap, hostEnv->webapps, context, strlen( context) );
+        ctxEnv=jk2_uriMap_prefixMap( env, uriMap, hostEnv->webapps, context, strlen( context), -1);
         /* if not alredy created, create it */
         if( ctxEnv == NULL ) {
             env->l->jkLog( env, env->l, JK_LOG_INFO,
@@ -465,7 +483,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
 
         if( uri==NULL ) continue;
         
-        ctxEnv=jk2_uriMap_prefixMap( env, uriMap, hostEnv->webapps, uri, strlen( uri ) );
+        ctxEnv=jk2_uriMap_prefixMap( env, uriMap, hostEnv->webapps, uri, strlen( uri ), -1 );
 
         if( ctxEnv==NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_INFO, "uriMap.init() no context for %s\n", uri); 
@@ -535,7 +553,7 @@ static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri) {
 
 static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                                       const char *vhost,
-                                      const char *uri)
+                                      const char *uri, int reverse)
 {
     int best_match = -1;
     int longest_match = 0;
@@ -590,7 +608,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     uriLen=strlen( uri );
 
     /* Map the context */
-    ctxEnv=jk2_uriMap_prefixMap( env, uriMap, hostEnv->webapps, uri, uriLen );
+    ctxEnv=jk2_uriMap_prefixMap( env, uriMap, hostEnv->webapps, uri, uriLen, 0 );
 
     if( ctxEnv==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -603,7 +621,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                       "uriMap.mapUri() found ctx %s\n", ctxEnv->uri);    
 
     /* As per Servlet spec, do exact match first */
-    match=jk2_uriMap_exactMap( env, uriMap, ctxEnv->exactMatch, uri, uriLen );
+    match=jk2_uriMap_exactMap( env, uriMap, ctxEnv->exactMatch, uri, uriLen, reverse );
     if( match != NULL ) {
         /* restore */
         if( url_rewrite ) *url_rewrite=origChar;
@@ -615,7 +633,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     }
     
     /* Then prefix match */
-    match=jk2_uriMap_prefixMap( env, uriMap, ctxEnv->prefixMatch, uri, uriLen );
+    match=jk2_uriMap_prefixMap( env, uriMap, ctxEnv->prefixMatch, uri, uriLen, reverse );
     if( match != NULL ) {
         /* restore */
         if( url_rewrite ) *url_rewrite=origChar;
@@ -631,7 +649,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     suffix=jk2_findExtension( env, uri );
     if( suffix!=NULL ) {
         match=jk2_uriMap_suffixMap( env, uriMap, ctxEnv->suffixMatch,
-                                    suffix, strlen( suffix ));
+                                    suffix, strlen( suffix ), reverse);
         if( match != NULL ) {
             /* restore */
             if( url_rewrite ) *url_rewrite=origChar;
