@@ -537,6 +537,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
             /* Normal error ( for example writing to the client failed ).
              * The ajp connection is still in a stable state.
              */
+            ep->recoverable = JK_TRUE;
             return rc;
         case JK_HANDLER_FATAL:
             /*

@@ -424,7 +424,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
             }
             return JK_OK;
         }
-        
+
         if (rec->mbean->initialize && lb->cs != NULL) {
             time_t now = time(NULL);
             /* In the case of initialization timeout disable the worker */
@@ -444,8 +444,16 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
                 continue;
             }
         }
+        /* If this is a browser connection error dont't check other
+         * workers.             
+         */
+        if (rc == JK_HANDLER_ERROR) {
+
+            return JK_HANDLER_ERROR;
+        }
+
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "lb.service() worker failed %s\n", rec->mbean->name );
+                      "lb.service() worker failed %d for %s\n", rc, rec->mbean->name );
         
         /*
          * Service failed !!!
