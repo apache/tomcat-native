@@ -372,7 +372,6 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         }
 
         public void threadStart(ThreadPool tp, Thread t) {
-            System.out.println("Thread start ");
         }
 
         public void threadEnd(ThreadPool tp, Thread t) {
@@ -388,7 +387,6 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                 tpData=(Object [])tpData[1];
             }
             ObjectName oname=(ObjectName)tpData[Http11Protocol.THREAD_DATA_OBJECT_NAME];
-            System.out.println("XXXXX thread end " + oname);
             if( oname==null ) return;
             Registry.getRegistry().unregisterComponent(oname);
         }
