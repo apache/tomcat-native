@@ -196,7 +196,7 @@ static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this)
     tmp = jk_map_getString(env, init_data, "worker.list",
                            DEFAULT_WORKER );
     worker_list=jk_map_split( env, init_data, init_data->pool,
-                              tmp, &_this->num_of_workers );
+                              tmp, NULL, &_this->num_of_workers );
 
     if(worker_list==NULL || _this->num_of_workers<= 0 ) {
         /* assert() - we pass default worker, we should get something back */
@@ -570,6 +570,19 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
     _this->init_data = NULL;
     jk_map_default_create(env, & _this->init_data, pool);
     
+    /* Add 'compile time' settings. Those are defined in jk_global,
+       with the other platform-specific settings. No need to ask
+       the user what we can find ourself
+    */
+    _this->init_data->put( env, _this->init_data, "fs",
+                           FILE_SEPARATOR_STR, NULL );
+    _this->init_data->put( env, _this->init_data, "ps",
+                           PATH_SEPARATOR_STR, NULL );
+    _this->init_data->put( env, _this->init_data, "so",
+                           SO_EXTENSION, NULL );
+    _this->init_data->put( env, _this->init_data, "arch",
+                           ARCH, NULL );
+
 
     _this->worker_file     = NULL;
     _this->log_file        = NULL;
