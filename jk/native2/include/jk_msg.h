@@ -159,7 +159,7 @@ struct jk_msg {
         The buffer is internal to the message, you must save
         or make sure the message lives long enough.
      */ 
-    unsigned char *(*getString)(struct jk_env *env, struct jk_msg *_this);
+    char *(*getString)(struct jk_env *env, struct jk_msg *_this);
 
     /** Return a byte[] and it's length.
      *  The buffer is internal to the message, you must save

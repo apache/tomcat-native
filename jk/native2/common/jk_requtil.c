@@ -773,8 +773,8 @@ int jk_requtil_escapeUrl(const char *path, char *dest, int destsize)
 {
     const unsigned char *s = (const unsigned char *)path;
     unsigned char *d = (unsigned char *)dest;
-    unsigned char *e = dest + destsize - 1;
-    unsigned char *ee = dest + destsize - 3;
+    unsigned char *e = (unsigned char *)(dest + destsize - 1);
+    unsigned char *ee = (unsigned char *)(dest + destsize - 3);
     unsigned c;
 
     while ((c = *s)) {

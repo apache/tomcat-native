@@ -356,7 +356,7 @@ static unsigned char jk2_msg_ajp_getByte(jk_env_t *env, jk_msg_t *msg)
     return rc;
 }
 
-static unsigned char *jk2_msg_ajp_getString(jk_env_t *env, jk_msg_t *msg) 
+static char *jk2_msg_ajp_getString(jk_env_t *env, jk_msg_t *msg) 
 {
     int size = jk2_msg_ajp_getInt(env, msg);
     int start = msg->pos;
