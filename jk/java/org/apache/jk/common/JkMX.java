@@ -145,8 +145,25 @@ public class JkMX extends JkHandler
             // starts the server
             mserver.invoke(serverName, "start", null, null);
 
+            return;
         } catch( Throwable t ) {
-            log.error( "Init error", t );
+            log.error( "Can't load the MX4J http adapter " + t.toString()  );
+        }
+
+        try {
+            Class c=Class.forName( "com.sun.jdmk.comm.HtmlAdaptorServer" );
+            Object o=c.newInstance();
+            ObjectName serverName=new ObjectName("Adaptor:name=html,port=" + port);
+            log.info("Registering the JMX_RI html adapter " + serverName);
+            mserver.registerMBean(o,  serverName);
+
+            mserver.setAttribute(serverName,
+                                 new Attribute("Port", new Integer(port)));
+
+            mserver.invoke(serverName, "start", null, null);
+
+        } catch( Throwable t ) {
+            log.error( "Can't load the JMX_RI http adapter " + t.toString()  );
         }
     }
     public void init() throws IOException {
@@ -160,6 +177,7 @@ public class JkMX extends JkHandler
             try {
                 Class c=Class.forName( "org.apache.log4j.jmx.HierarchyDynamicMBean" );
                 Object o=c.newInstance();
+                log.info("Registering the root hierarchy for JMX ");
                 mserver.registerMBean(o, new ObjectName("log4j:hierarchy=default"));
             } catch( Throwable t ) {
                 log.info("Can't enable log4j mx");
