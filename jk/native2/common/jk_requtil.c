@@ -1022,7 +1022,8 @@ void jk2_requtil_initRequest(jk_env_t *env, jk_ws_service_t *s)
     s->ssl_session          = NULL;
     s->jvm_route            = NULL;
     s->uriEnv               = NULL;
-    s->outBuf=NULL;
+    s->outBuf               = NULL;
+    s->msg                  = NULL;
     
     s->jkprintf=jk2_requtil_printf;
 }
