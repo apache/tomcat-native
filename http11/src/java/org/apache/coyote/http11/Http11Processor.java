@@ -322,35 +322,35 @@ public class Http11Processor implements Processor, ActionHook {
     }
 
 
-	/**
-	 * Set compression level.
-	 */
-	public void setCompression(String compression) {
-		if (compression.equals("on")) {
-			this.compressionLevel = 1;
-		} else if (compression.equals("force")) {
-			this.compressionLevel = 2;
-		} else if (compression.equals("off")) {
-			this.compressionLevel = 0;
-		} else {
-			try {
-				// Try to parse compression as an int, which would give the
-				// minimum compression size
-				compressionMinSize = Integer.parseInt(compression);
-				this.compressionLevel = 1;
-			} catch (Exception e) {
-				this.compressionLevel = 0;
-			}
-		}
-	}
+    /**
+     * Set compression level.
+     */
+    public void setCompression(String compression) {
+        if (compression.equals("on")) {
+            this.compressionLevel = 1;
+        } else if (compression.equals("force")) {
+            this.compressionLevel = 2;
+        } else if (compression.equals("off")) {
+            this.compressionLevel = 0;
+        } else {
+            try {
+                // Try to parse compression as an int, which would give the
+                // minimum compression size
+                compressionMinSize = Integer.parseInt(compression);
+                this.compressionLevel = 1;
+            } catch (Exception e) {
+                this.compressionLevel = 0;
+            }
+        }
+    }
 
-	/**
-	 * Set Minimum size to trigger compression.
-	 */
-	public void setCompressionMinSize(int compressionMinSize) {
-		this.compressionMinSize = compressionMinSize;
-	}
-	
+    /**
+     * Set Minimum size to trigger compression.
+     */
+    public void setCompressionMinSize(int compressionMinSize) {
+        this.compressionMinSize = compressionMinSize;
+    }
+    
 
     public void setThreadPool(ThreadPool threadPool) {
         this.threadPool = threadPool;
@@ -364,35 +364,35 @@ public class Http11Processor implements Processor, ActionHook {
      * @param userAgent user-agent string
      */
     public void addNoCompressionUserAgent(String userAgent) {
-    	addStringArray(noCompressionUserAgents, userAgent);
+        addStringArray(noCompressionUserAgents, userAgent);
     }
 
 
-	/**
-	 * Set no compression user agent list (this method is best when used with 
-	 * a large number of connectors, where it would be better to have all of 
-	 * them referenced a single array).
-	 */
-	public void setNoCompressionUserAgents(String[] noCompressionUserAgents) {
-		this.noCompressionUserAgents = noCompressionUserAgents;
-	}
+    /**
+     * Set no compression user agent list (this method is best when used with 
+     * a large number of connectors, where it would be better to have all of 
+     * them referenced a single array).
+     */
+    public void setNoCompressionUserAgents(String[] noCompressionUserAgents) {
+        this.noCompressionUserAgents = noCompressionUserAgents;
+    }
 
 
-	/**
-	 * Set no compression user agent list.
-	 * List contains users agents separated by ',' :
-	 * 
-	 * ie: "gorilla,desesplorer,tigrus"
-	 */
-	public void setNoCompressionUserAgents(String noCompressionUserAgents) {
-		if (noCompressionUserAgents != null) {
-			StringTokenizer st = new StringTokenizer(noCompressionUserAgents, ",");
-		
-			while (st.hasMoreTokens()) {
-				addNoCompressionUserAgent(st.nextToken().trim());
-			}
-		}
-	}
+    /**
+     * Set no compression user agent list.
+     * List contains users agents separated by ',' :
+     * 
+     * ie: "gorilla,desesplorer,tigrus"
+     */
+    public void setNoCompressionUserAgents(String noCompressionUserAgents) {
+        if (noCompressionUserAgents != null) {
+            StringTokenizer st = new StringTokenizer(noCompressionUserAgents, ",");
+        
+            while (st.hasMoreTokens()) {
+                addNoCompressionUserAgent(st.nextToken().trim());
+            }
+        }
+    }
 
 
     /**
@@ -411,35 +411,35 @@ public class Http11Processor implements Processor, ActionHook {
      * @param userAgent user-agent string
      */
     public void addCompressableMimeType(String mimeType) {
-    	addStringArray(compressableMimeTypes, mimeType);
+        addStringArray(compressableMimeTypes, mimeType);
     }
 
 
-	/**
-	 * Set compressable mime-type list (this method is best when used with 
-	 * a large number of connectors, where it would be better to have all of 
-	 * them referenced a single array).
-	 */
-	public void setCompressableMimeTypes(String[] compressableMimeTypes) {
-		this.compressableMimeTypes = compressableMimeTypes;
-	}
+    /**
+     * Set compressable mime-type list (this method is best when used with 
+     * a large number of connectors, where it would be better to have all of 
+     * them referenced a single array).
+     */
+    public void setCompressableMimeTypes(String[] compressableMimeTypes) {
+        this.compressableMimeTypes = compressableMimeTypes;
+    }
 
 
-	/**
-	 * Set compressable mime-type list
-	 * List contains users agents separated by ',' :
-	 * 
-	 * ie: "text/html,text/xml,text/plain"
-	 */
-	public void setCompressableMimeTypes(String compressableMimeTypes) {
-		if (compressableMimeTypes != null) {
-			StringTokenizer st = new StringTokenizer(compressableMimeTypes, ",");
+    /**
+     * Set compressable mime-type list
+     * List contains users agents separated by ',' :
+     * 
+     * ie: "text/html,text/xml,text/plain"
+     */
+    public void setCompressableMimeTypes(String compressableMimeTypes) {
+        if (compressableMimeTypes != null) {
+            StringTokenizer st = new StringTokenizer(compressableMimeTypes, ",");
 
-			while (st.hasMoreTokens()) {
-				addCompressableMimeType(st.nextToken().trim());
-			}
-		}
-	}
+            while (st.hasMoreTokens()) {
+                addCompressableMimeType(st.nextToken().trim());
+            }
+        }
+    }
 
 
     /**
@@ -535,7 +535,7 @@ public class Http11Processor implements Processor, ActionHook {
      * @param userAgent user-agent string
      */
     public void addRestrictedUserAgent(String userAgent) {
-    	addStringArray(restrictedUserAgents, userAgent);
+        addStringArray(restrictedUserAgents, userAgent);
     }
 
 
@@ -935,12 +935,12 @@ public class Http11Processor implements Processor, ActionHook {
             if (remoteAddr == null)
                 remoteAddr = socket.getInetAddress().getHostAddress();
             
-			request.remoteAddr().setString(remoteAddr);
+            request.remoteAddr().setString(remoteAddr);
             
             if (remoteHost == null)
                 remoteHost = socket.getInetAddress().getHostName();
 
-			request.remoteHost().setString(remoteHost);
+            request.remoteHost().setString(remoteHost);
                        
             if (remotePort == -1)
                 remotePort = socket.getPort();
@@ -950,7 +950,7 @@ public class Http11Processor implements Processor, ActionHook {
             if (localAddr == null)
                localAddr = socket.getLocalAddress().getHostAddress();
 
-			request.localAddr().setString(localAddr);
+            request.localAddr().setString(localAddr);
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
             if( sslSupport != null) { 
@@ -1273,9 +1273,9 @@ public class Http11Processor implements Processor, ActionHook {
                 request.getMimeHeaders().getValue("user-agent");
             String userAgentValue = userAgentValueMB.toString();
 
-			// TODO: Use regexp instead of simple string compare (cf: Apache 2.x)
-        	if (inStringArray(noCompressionUserAgents, userAgentValue))
-        		return false;
+            // TODO: Use regexp instead of simple string compare (cf: Apache 2.x)
+            if (inStringArray(noCompressionUserAgents, userAgentValue))
+                return false;
         }
 
         // Check if suffisant len to trig the compression        
@@ -1479,20 +1479,20 @@ public class Http11Processor implements Processor, ActionHook {
         int start = bc.getStart();
         int end = bc.getEnd();
 
-	// Look for first char 
-	int srcEnd = b.length;
+    // Look for first char 
+    int srcEnd = b.length;
         
-	for (int i = start; i <= (end - srcEnd); i++) {
-	    if (Ascii.toLower(buff[i]) != first) continue;
-	    // found first char, now look for a match
+    for (int i = start; i <= (end - srcEnd); i++) {
+        if (Ascii.toLower(buff[i]) != first) continue;
+        // found first char, now look for a match
             int myPos = i+1;
-	    for (int srcPos = 1; srcPos < srcEnd; ) {
+        for (int srcPos = 1; srcPos < srcEnd; ) {
                 if (Ascii.toLower(buff[myPos++]) != b[srcPos++])
-		    break;
+            break;
                 if (srcPos == srcEnd) return i - start; // found it
-	    }
-	}
-	return -1;
+        }
+    }
+    return -1;
 
     }
 
