@@ -717,6 +717,24 @@ public class CoyoteResponse
     }
 
 
+    /*
+     * Overrides the name of the character encoding used in the body
+     * of the request. This method must be called prior to reading
+     * request parameters or reading input using getReader().
+     *
+     * @param charset String containing the name of the chararacter encoding.
+     */
+    public void setCharacterEncoding(String charset) {
+
+        if (isCommitted())
+            return;
+
+        if (included)
+            return;     // Ignore any call from an included servlet
+
+	coyoteResponse.setCharacterEncoding(charset);
+    }
+
     /**
      * Set the Locale that is appropriate for this response, including
      * setting the appropriate character encoding.

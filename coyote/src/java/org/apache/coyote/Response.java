@@ -443,6 +443,35 @@ public final class Response {
 
     }
 
+    /*
+     * Overrides the name of the character encoding used in the body
+     * of the request. This method must be called prior to reading
+     * request parameters or reading input using getReader().
+     *
+     * @param charset String containing the name of the chararacter encoding.
+     */
+    public void setCharacterEncoding(String charset) {
+
+        if (isCommitted())
+            return;
+
+        characterEncoding = charset;
+
+        String type = this.contentType;
+        int start = type.indexOf("charset=");
+        if ( start != -1 ) {
+            int end = type.indexOf(';', start+8);
+            if (end >= 0) 
+                type = type.substring(0,start+8)
+                    +charset+type.substring(end-1);
+            else 
+                type = type.substring(0,start+8)
+                    +charset;
+            this.contentType = type;
+
+        }
+    }
+
     public String getCharacterEncoding() {
 	return characterEncoding;
     }
