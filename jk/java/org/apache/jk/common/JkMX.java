@@ -78,7 +78,7 @@ public class JkMX extends JkHandler
     MBeanServer mserver;
     private int port=-1;
     private String host;
-    
+
     public JkMX()
     {
     }
@@ -105,105 +105,124 @@ public class JkMX extends JkHandler
 
     /* ==================== Start/stop ==================== */
     ObjectName serverName=null;
-    
+
     /** Initialize the worker. After this call the worker will be
      *  ready to accept new requests.
      */
     public void loadAdapter() throws IOException {
-        try {
-            serverName = new ObjectName("Http:name=HttpAdaptor");
-            mserver.createMBean("mx4j.adaptor.http.HttpAdaptor", serverName, null);
-            if( host!=null ) 
-                mserver.setAttribute(serverName, new Attribute("Host", host));
-            mserver.setAttribute(serverName, new Attribute("Port", new Integer(port)));
+        boolean adapterLoaded = false;
 
-            ObjectName processorName = new ObjectName("Http:name=XSLTProcessor");
-            mserver.createMBean("mx4j.adaptor.http.XSLTProcessor", processorName, null);
+        if (classExists("mx4j.adaptor.http")) {
+            try {
+                serverName = new ObjectName("Http:name=HttpAdaptor");
+                mserver.createMBean("mx4j.adaptor.http.HttpAdaptor", serverName, null);
+                if( host!=null )
+                    mserver.setAttribute(serverName, new Attribute("Host", host));
+                mserver.setAttribute(serverName, new Attribute("Port", new Integer(port)));
 
-            //mserver.setAttribute(processorName, new Attribute("File", "/opt/41/server/lib/openjmx-tools.jar"));
-            //mserver.setAttribute(processorName, new Attribute("UseCache", new Boolean(false)));
-            //mserver.setAttribute(processorName, new Attribute("PathInJar", "/openjmx/adaptor/http/xsl"));
-            mserver.setAttribute(serverName, new Attribute("ProcessorName", processorName));
-            
-            //server.invoke(serverName, "addAuthorization",
-            //             new Object[] {"openjmx", "openjmx"},
-            //             new String[] {"java.lang.String", "java.lang.String"});
-            
-            // use basic authentication
-            //server.setAttribute(serverName, new Attribute("AuthenticationMethod", "basic"));
-             
-            //  ObjectName sslFactory = new ObjectName("Adaptor:service=SSLServerSocketFactory");
-            //         server.createMBean("openjmx.adaptor.ssl.SSLAdaptorServerSocketFactory", sslFactory, null);
-            //        SSLAdaptorServerSocketFactoryMBean factory =
-            // (SSLAdaptorServerSocketFactoryMBean)StandardMBeanProxy.create(SSLAdaptorServerSocketFactoryMBean.class, server, sslFactory);
-            //             // Customize the values below
-            //             factory.setKeyStoreName("certs");
-            //             factory.setKeyStorePassword("openjmx");
-            
-            //             server.setAttribute(serverName, new Attribute("SocketFactoryName", sslFactory.toString()));
+                ObjectName processorName = new ObjectName("Http:name=XSLTProcessor");
+                mserver.createMBean("mx4j.adaptor.http.XSLTProcessor", processorName, null);
 
-            // starts the server
-            mserver.invoke(serverName, "start", null, null);
+                //mserver.setAttribute(processorName, new Attribute("File", "/opt/41/server/lib/openjmx-tools.jar"));
+                //mserver.setAttribute(processorName, new Attribute("UseCache", new Boolean(false)));
+                //mserver.setAttribute(processorName, new Attribute("PathInJar", "/openjmx/adaptor/http/xsl"));
+                mserver.setAttribute(serverName, new Attribute("ProcessorName", processorName));
 
-            log.info( "Started MX4J console on " + port);
-            //return;
-        } catch( Throwable t ) {
-            serverName=null;
-            log.error( "Can't load the MX4J http adapter " + t.toString()  );
-        }
-        try {
-            ObjectName serverName2 = new ObjectName("Naming:name=rmiregistry");
-            mserver.createMBean("mx4j.tools.naming.NamingService", serverName2, null);
-            mserver.invoke(serverName2, "start", null, null);
-            log.info( "Creating " + serverName2 );
+                //server.invoke(serverName, "addAuthorization",
+                //             new Object[] {"openjmx", "openjmx"},
+                //             new String[] {"java.lang.String", "java.lang.String"});
 
-            // Create the JRMP adaptor
-            ObjectName adaptor = new ObjectName("Adaptor:protocol=jrmp");
-            mserver.createMBean("mx4j.adaptor.rmi.jrmp.JRMPAdaptor", adaptor, null);
+                // use basic authentication
+                //server.setAttribute(serverName, new Attribute("AuthenticationMethod", "basic"));
 
-            //    mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean mbean = (mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean)mx4j.util.StandardMBeanProxy.
-            //        create(mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean.class, mserver, adaptor);
+                //  ObjectName sslFactory = new ObjectName("Adaptor:service=SSLServerSocketFactory");
+                //         server.createMBean("openjmx.adaptor.ssl.SSLAdaptorServerSocketFactory", sslFactory, null);
+                //        SSLAdaptorServerSocketFactoryMBean factory =
+                // (SSLAdaptorServerSocketFactoryMBean)StandardMBeanProxy.create(SSLAdaptorServerSocketFactoryMBean.class, server, sslFactory);
+                //             // Customize the values below
+                //             factory.setKeyStoreName("certs");
+                //             factory.setKeyStorePassword("openjmx");
 
-            mserver.setAttribute(adaptor, new Attribute("JNDIName", "jrmp"));
+                //             server.setAttribute(serverName, new Attribute("SocketFactoryName", sslFactory.toString()));
 
-            mserver.invoke( adaptor, "putNamingProperty",
-                    new Object[] {
-                        javax.naming.Context.INITIAL_CONTEXT_FACTORY,
-                        "com.sun.jndi.rmi.registry.RegistryContextFactory"},
-                    new String[] { "java.lang.Object", "java.lang.Object" });
+                // starts the server
+                mserver.invoke(serverName, "start", null, null);
 
-            mserver.invoke( adaptor, "putNamingProperty",
-                    new Object[] {
-                        javax.naming.Context.PROVIDER_URL,
-                        "rmi://localhost:1099"},
-                    new String[] { "java.lang.Object", "java.lang.Object" });
+                log.info( "Started MX4J console on " + port);
+                //return;
 
-            //mbean.putNamingProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.rmi.registry.RegistryContextFactory");
-            //mbean.putNamingProperty(javax.naming.Context.PROVIDER_URL, "rmi://localhost:1099");
-            // Registers the JRMP adaptor in JNDI and starts it
-            mserver.invoke(adaptor, "start", null, null);
-            //   mbean.start();
-            log.info( "Creating " + adaptor );
-        } catch( Exception ex ) {
-            log.info( "MX4j RMI adapter not loaded: " + ex.toString());
+                adapterLoaded = true;
+
+            } catch( Throwable t ) {
+                serverName=null;
+                log.error( "Can't load the MX4J http adapter " + t.toString()  );
+            }
         }
 
+        if (classExists("mx4j.tools.naming.NamingService")) {
+            try {
+                ObjectName serverName2 = new ObjectName("Naming:name=rmiregistry");
+                mserver.createMBean("mx4j.tools.naming.NamingService", serverName2, null);
+                mserver.invoke(serverName2, "start", null, null);
+                log.info( "Creating " + serverName2 );
 
-        try {
-            Class c=Class.forName( "com.sun.jdmk.comm.HtmlAdaptorServer" );
-            Object o=c.newInstance();
-            serverName=new ObjectName("Adaptor:name=html,port=" + port);
-            log.info("Registering the JMX_RI html adapter " + serverName);
-            mserver.registerMBean(o,  serverName);
+                // Create the JRMP adaptor
+                ObjectName adaptor = new ObjectName("Adaptor:protocol=jrmp");
+                mserver.createMBean("mx4j.adaptor.rmi.jrmp.JRMPAdaptor", adaptor, null);
 
-            mserver.setAttribute(serverName,
-                                 new Attribute("Port", new Integer(port)));
+                //    mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean mbean = (mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean)mx4j.util.StandardMBeanProxy.
+                //        create(mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean.class, mserver, adaptor);
 
-            mserver.invoke(serverName, "start", null, null);
+                mserver.setAttribute(adaptor, new Attribute("JNDIName", "jrmp"));
 
-        } catch( Throwable t ) {
-            log.error( "Can't load the JMX_RI http adapter " + t.toString()  );
+                mserver.invoke( adaptor, "putNamingProperty",
+                        new Object[] {
+                            javax.naming.Context.INITIAL_CONTEXT_FACTORY,
+                            "com.sun.jndi.rmi.registry.RegistryContextFactory"},
+                        new String[] { "java.lang.Object", "java.lang.Object" });
+
+                mserver.invoke( adaptor, "putNamingProperty",
+                        new Object[] {
+                            javax.naming.Context.PROVIDER_URL,
+                            "rmi://localhost:1099"},
+                        new String[] { "java.lang.Object", "java.lang.Object" });
+
+                //mbean.putNamingProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.rmi.registry.RegistryContextFactory");
+                //mbean.putNamingProperty(javax.naming.Context.PROVIDER_URL, "rmi://localhost:1099");
+                // Registers the JRMP adaptor in JNDI and starts it
+                mserver.invoke(adaptor, "start", null, null);
+                //   mbean.start();
+                log.info( "Creating " + adaptor );
+
+                adapterLoaded = true;
+
+            } catch( Exception ex ) {
+                log.info( "MX4j RMI adapter not loaded: " + ex.toString());
+            }
         }
+
+        if (classExists("com.sun.jdmk.comm.HtmlAdaptorServer")) {
+            try {
+                Class c=Class.forName( "com.sun.jdmk.comm.HtmlAdaptorServer" );
+                Object o=c.newInstance();
+                serverName=new ObjectName("Adaptor:name=html,port=" + port);
+                log.info("Registering the JMX_RI html adapter " + serverName);
+                mserver.registerMBean(o,  serverName);
+
+                mserver.setAttribute(serverName,
+                                     new Attribute("Port", new Integer(port)));
+
+                mserver.invoke(serverName, "start", null, null);
+
+                adapterLoaded = true;
+            } catch( Throwable t ) {
+                log.error( "Can't load the JMX_RI http adapter " + t.toString()  );
+            }
+        }
+
+        if (!adapterLoaded)
+            log.warn( "No adaptors were loaded but mx.port was defined.");
+
     }
 
     public void destroy() {
@@ -237,7 +256,7 @@ public class JkMX extends JkHandler
 
             /*
             DynamicMBeanProxy.createMBean( JkMain.getJkMain(), "jk2", "name=JkMain" );
-            
+
             for( int i=0; i< wEnv.getHandlerCount(); i++ ) {
                 JkHandler h=wEnv.getHandler( i );
                 DynamicMBeanProxy.createMBean( h, "jk2", "name=" + h.getName() );
@@ -263,6 +282,18 @@ public class JkMX extends JkHandler
             server=MBeanServerFactory.createMBeanServer();
         }
         return (server);
+    }
+
+
+    private static boolean classExists(String className) {
+        try {
+            Thread.currentThread().getContextClassLoader().loadClass(className);
+            return true;
+        } catch(Throwable e) {
+            if (log.isInfoEnabled())
+                log.info( "className [" + className + "] does not exist");
+            return false;
+        }
     }
 
 
