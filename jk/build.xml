@@ -167,6 +167,12 @@
             <include name="org/apache/ajp/config/**" />
         </jar>
 	
+	<jar jarfile="${jk.build}/lib/jkshm.jar"
+	     basedir="${jk.build}/classes" 
+             manifest="conf/shm.manifest">
+            <include name="org/apache/ajp/common/Shm.class" />
+        </jar>
+	
 	<jar jarfile="${jk.build}/lib/tomcat-jk2.jar"
 	     basedir="${jk.build}/classes" >
             <include name="org/apache/jk/**" />
