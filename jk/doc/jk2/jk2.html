@@ -3,156 +3,224 @@
 <head>
   <title></title>
 </head>
-<body>
-<h2>Jk2 architecture</h2>
-<br>
+  <body>
+ 
+<h2>Jk2 architecture<br>
+</h2>
+ 
 <h3>Definitions</h3>
+ 
 <ol>
-  <li>Engine. This is a tomcat instance, running in a java process. Each
-engine must  have a unique ID, and can be reached by multiple protocols over
+   <li>Engine. This is a tomcat instance, running in a java process. Each 
+engine must  have a unique ID, and can be reached by multiple protocols over 
 multiple transports</li>
-  <li>Worker. A worker is the object serving ( processing ) the request.
-It can either forward it to a servlet Engine, to another worker or generate
-content itself ( status ). The important worker is "ajp13" implementing a
+   <li>Worker. A worker is the object serving ( processing ) the request. 
+It can either forward it to a servlet Engine, to another worker or generate 
+content itself ( status ). The important worker is "ajp13" implementing a 
 simple/fast RPC mechanism. </li>
-  <li>Channel. A channel represents a transport protocol, connecting 2 sides
-for RPC communication. The most common and standard is the tcp socket. Other
+   <li>Channel. A channel represents a transport protocol, connecting 2 sides 
+for RPC communication. The most common and standard is the tcp socket. Other 
 important  channels are unix socket and jni, which are not yet fully supported. </li>
-  <li>Endpoint. An endpoint represents an established connection between
-the web server and the java engine. The connection is reused, and multiple
-endpoints can exist and be active at the same time for one server/engine
-pair. </li>
-  <li>Logger. The logger reports jk errors and debug statements. The goal
-is to use the native server logging whenever possible. At this moment there
-is a single logger, in future we may be able to associate loggers with individual
+   <li>Endpoint. An endpoint represents an established connection between 
+the web server and the java engine. The connection is reused, and multiple 
+endpoints can exist and be active at the same time for one server/engine pair. </li>
+   <li>Logger. The logger reports jk errors and debug statements. The goal 
+is to use the native server logging whenever possible. At this moment there 
+is a single logger, in future we may be able to associate loggers with individual 
 webapps. </li>
-  <li>Config. The config stores and manipulates parameters for each jk object. </li>
-  <li>Uri ( XXX is it a good name ? ). A uri stores a pattern that is used
+   <li>Config. The config stores and manipulates parameters for each jk object. </li>
+   <li>Uri ( XXX is it a good name ? ). A uri stores a pattern that is used 
 to match requests, and asociated properties. </li>
-  <li>UriMapper. This implements the matching of requests against uri patterns. </li>
-  <li>WorkerEnv. The central controller, it controls global properties and 
-provides access to all other objects. </li>
+   <li>UriMapper. This implements the matching of requests against uri patterns. </li>
+   <li>WorkerEnv. The central controller, it controls global properties and
+ provides access to all other objects. </li>
+ 
 </ol>
+Each component instance has a name, that is used for configuration and at
+runtime. Each component has a number of configurable properties. The following
+rules are used:<br>
+<ol>
+  <li>The name is composed from the type and a local part, separated with
+a ':' ( example:  channel.unixsocket:/tmp/jk.socket )</li>
+  <li>The 'type' consist of '.' and ascii characters.  It is mapped to a
+JMX 'domain'. </li>
+  <li>The local part consists of ascii characters  and .:/;  <br>
+Note that '=,' are not currently allowed - a future version may support the
+jmx syntax by using quotes to separate the local part from the property and
+value ( in .properties mode we must use '=' to separate the value from type,
+local name and property name ).</li>
+  <li>The property is a simple name, with no dots. </li>
+  <li>A simple form of substitution is used in values, where $(property)
+will be replaced with a  previously defined setting. If the property has
+':' in it, it'll take the value from the object, if not it'll take the value
+from a global map.<br>
+  </li>
+</ol>
+ 
 <h3>Configuration architecture </h3>
-<p>Jk2 is using a mechanism similar with JMX to manage all its configurable
-objects. Each component is controled by a "jk_bean" structure, containing
+ 
+<p>Jk2 is using a mechanism similar with JMX to manage all its configurable 
+objects. Each component is controled by a "jk_bean" structure, containing 
 pointers  to the setAttribute/getAttribute functions.</p>
-<p>The config object abstracts the persistent repository for config informations.
-Most  components/properties can be configured at runtime. A runtime change
-can be made either directly on the object, affecting the running instance
-only, or to the config object, making it persistent.   <br>
-</p>
-<p>The status worker provids a basic interface for setting/getting runtime
- config information, similar with the manager app in tomcat or the jmx web
-interface. Other workers could provide enhanced functionality ( like the ajp14
-extensions ).  <br>
+ 
+<p>The jk_config object abstracts the persistent repository of config informations. 
+Most  components/properties can be configured at runtime. A runtime change 
+can be made either directly on the object, affecting the running instance 
+only ( by directly calling the object method or setting the field ), or via
+jk_config, making it persistent.   <br>
+ </p>
+ 
+<p>The config API can be accessed using AJP14 messages, using a simple worker
+( like the status worker ) or by any other mean.<br>
 </p>
 <h3>Communication protocol</h3>
-<p> Jk2 supports multiple communication protocols ( RPC-style ) and multiple
-transports. In addition, each communication protocol supports multiple "APIs",
+ 
+<p> Jk2 supports multiple communication protocols ( RPC-style ) and multiple 
+transports. In addition, each communication protocol supports multiple "APIs", 
 or sets of  functions that are supported.  <br>
-</p>
-<p>The current protocol is called AJP13. It supports marshalling/unmarshalling
+ </p>
+ 
+<p>The current protocol is called AJP13. It supports marshalling/unmarshalling 
 of  strings and ints, with minimal overhead.   <br>
-</p>
+ </p>
+ 
 <p>The current API is also called ajp13. It consist of 5 methods:<br>
-</p>
+ </p>
+ 
 <ul>
-  <li> (oneway) forwardRequest (2): the marshaled request is encoded as parameter. </li>
-  <li> (oneway) sendBodyChunk (3): sends the output of a request </li>
-  <li> (oneway) sendHeaders  (4): sends the marshaled headers </li>
-  <li>(oneway) endResponse (5): marks the end of the response </li>
-  <li> (req/resp) getBodyChunk (6): get the POST body.</li>
+   <li> (oneway) forwardRequest (2): the marshaled request is encoded as
+parameter. </li>
+   <li> (oneway) sendBodyChunk (3): sends the output of a request </li>
+   <li> (oneway) sendHeaders  (4): sends the marshaled headers </li>
+   <li>(oneway) endResponse (5): marks the end of the response </li>
+   <li> (req/resp) getBodyChunk (6): get the POST body.</li>
+ 
 </ul>
-<p> It is desirable to migrate to a standard protocol for encoding and RPC
-( CDR, XDR, etc ), and to support additional protcols ( like WARP ). However
+ 
+<p> It is desirable to migrate to a standard protocol for encoding and RPC 
+( CDR, XDR, etc ), and to support additional protcols ( like WARP ). However 
 the AJP13 protocol is stable and shouldn't change in future.  <br>
-</p>
-<p>The ajp13 API is also stable and frozen. In future, what will be called
-'ajp14'  may provide additional functions.  ( using the same name for API
-and protocol is very confusing, but that's what we have. We should at least
+ </p>
+ 
+<p>The ajp13 API is also stable and frozen. In future, what will be called 
+'ajp14'  may provide additional functions.  ( using the same name for API 
+and protocol is very confusing, but that's what we have. We should at least 
 call them consistently "ajp13 protocol" and "ajp13 api"  )  <br>
-</p>
+ </p>
+ 
 <h3>Low level components </h3>
-<p>Jk2 uses a object oriented style, allowing multiple implementations for
-each  object. The model is based on the style used in JNI ( and a bit Corba
-C bindings). Each function takes as parameter a pointer to an execution context
-( jk_env ), a pointer to its own object structure, and the normal parameters. 
- <br>
-</p>
-<p>Jk_env is not completed, but it'll support basic exception handling (
-JNI style ), a local pool, etc.  <br>
-</p>
-<p>In addition, each configurable component has as the first member a jk_bean
-pointer, pointing to the JMX-like dynamic configurator.  The jk_env stores
+ 
+<p>Jk2 uses a object oriented style, allowing multiple implementations for 
+each  object. The model is based on the style used in JNI ( and a bit Corba 
+C bindings). Each function takes as parameter a pointer to an execution context 
+( jk_env ), a pointer to its own object structure, and the normal parameters.
+  <br>
+ </p>
+ 
+<p>Jk_env is not completed, but it'll support basic exception handling ( JNI
+style ), a local pool, etc.  <br>
+ </p>
+ 
+<p>In addition, each configurable component has as the first member a jk_bean 
+pointer, pointing to the JMX-like dynamic configurator.  The jk_env stores 
 a table with all the known 'types', and a constructor for each.<br>
-</p>
-<p> Each object has a name, either specified explicitely or generated from
-it's type. The object name has the type as prefix.  Jk_env also stores a
-table with all existing 'instances', by name. <br>
-</p>
-<p>It is assumed that all 'top level' objects will be long-lived ( including
+ </p>
+ 
+<p> Each object has a name, either specified explicitely or generated from 
+it's type. The object name has the type as prefix.  Jk_env also stores a table
+with all existing 'instances', by name. <br>
+ </p>
+ 
+<p>It is assumed that all 'top level' objects will be long-lived ( including 
 endpoints ).  <br>
-</p>
+ </p>
+ 
 <h3>Default configuration</h3>
-<p>Jk2 uses a config file ( jk2.conf ) in the style of a .properties or ini
-file. It can be configured to use any other backed that provides similar
+ 
+<p>Jk2 uses a config file ( jk2.conf ) in the style of a .properties or ini 
+file. It can be configured to use any other backend that provides similar 
 capabilities.<br>
-</p>
-<p>  The config file is user editable, but mod_jk will persist the changes
-requested by protocol. If you manually change the file while jk is working,
-your changes will be lost.   The config file supports no comments at this
-moment. We'll allow a limited  form of comments that can be persisted.   <br>
-</p>
-<p>The configuration defines properties for each configurable component.
-A simple form of substitution is used, where $(property) will be replaced
-with a  previously defined setting.  Each setting consists of an object name
-and a property, with the associated value. The property name is a simple
-string, with no '.' in it. The name can be anything, but it must have a known
+ </p>
+ 
+<p>  The default config file is user editable, but mod_jk will persist the
+changes requested by protocol. If you manually change the file while jk is
+working, your changes will be lost.   The config file supports no comments
+at this moment. We'll allow a limited  form of comments that can be persisted.
+  <br>
+ </p>
+ 
+<p>The default configuration format . .  Each setting consists of an object
+name and a property, with the associated value. The property name is a simple 
+string, with no '.' in it. The name can be anything, but it must have a known 
 'type' as prefix.  <br>
-</p>
+ </p>
+ 
 <p>2 formats are supported:   <br>
-</p>
-<pre>NAME.PROPERTY=VALUE <br>and<br>[NAME]
-PROPERTY=VALUE
-<br></pre>
-<p>In addition to the configuration file, properties can be set from the
-main server config file - but those will not be modifiable.   <br>
-</p>
-<p>Properties with no type prefix will be stored as 'global' properties.
+ </p>
+ 
+<pre>TYPE:NAME.PROPERTY=VALUE <br>and<br>[TYPE:NAME]<br>PROPERTY=VALUE<br><br></pre>
+ 
+<p>In addition to the configuration file, properties can be set from the main
+server config file - but those will not be modifiable.   <br>
+ </p>
+ 
+<p>Properties with no type prefix will be stored as 'global' properties. <br>
+ </p>
+ 
+<p>The first time a name is found, the object will be created using the type 
+ prefix ( by looking for the longest match on all known types ).  <br>
+ </p>
+ 
+<h3>Default values / guessing</h3>
+ 
+<p>Each component will do the best effort to detect it's environment and set
+ default values, to minimze the user effort.  <br>
+ </p>
+ 
+<p>On startup, jk2 will set few global settings:     <br>
+ </p>
+ 
+<ul>
+   <li>fs = file separator, / on unix, \ on windows</li>
+   <li>ps = path separator, : on unix, ; on windows</li>
+   <li>so = plaftorm extension for libraries ( .so, .dll, .nlm )</li>
+   <li>(TODO) arch = system architecture</li>
+   <li>(TODO) server.root = base directory for the server ( same as ServerRoot 
+for apache )</li>
+ 
+</ul>
+ 
+<p>All those are either compile time or extracted from the running server, 
+and  can be used to construct other settings.  A separate document defines 
+all the supported properties and 'magic' that is used to automatically configure 
+the object and simplify the config.<br>
+ </p>
+ 
+<h3>  Source code structure </h3>
+ 
+<p>Each interface "foo" is defined in a file include/jk_foo.h. If the interface 
+has a single ( or base ) implementation, it'll be called common/jk_foo.c. 
+If it has multiple implementations, the files  will be named jk_foo_bar.c. 
+  All server-specific files are in server/[SERVER] ( server/apache2, etc ).
+The apache13 objects should be used as a basis for new servers, apache2  has
+a number of extra fancy features to be used as model for 'deeper'  integration.
+  The default set of types is defined in common/jk_registry.c, common/jk_registry.h.
+ Additional types can be defined at runtime in the server adapter or various
+ other components.<br>
 <br>
 </p>
-<p>The first time a name is found, the object will be created using the type
- prefix ( by looking for the longest match on all known types ).  <br>
-</p>
-<h3>Default values / guessing</h3>
-<p>Each component will do the best effort to detect it's environment and
-set  default values, to minimze the user effort.  <br>
-</p>
-<p>On startup, jk2 will set few global settings:     <br>
-</p>
+<h3>Limitations</h3>
+The current implementations has a number of limitations that will be removed
+in a future version:<br>
 <ul>
-  <li>fs = file separator, / on unix, \ on windows</li>
-  <li>ps = path separator, : on unix, ; on windows</li>
-  <li>so = plaftorm extension for libraries ( .so, .dll, .nlm )</li>
-  <li>(TODO) arch = system architecture</li>
-  <li>(TODO) server.root = base directory for the server ( same as ServerRoot
-for apache )</li>
+  <li>You must specify the full object name. Future versions will allow 'shortcuts',
+i.e. use only the local part when it's not ambiguous.</li>
+  <li>No '=' is allowed in the local part. A future version will use quotes
+to separate the local part, that will enable the =</li>
+  <li>Since no = is allowed, the jk component name maps to a JMX name as
+'type: name=local_part'</li>
 </ul>
-<p>All those are either compile time or extracted from the running server,
-and  can be used to construct other settings.  A separate document defines
-all the supported properties and 'magic' that is used to automatically configure
-the object and simplify the config.<br>
-</p>
-<h3>  Source code structure </h3>
-<p>Each interface "foo" is defined in a file include/jk_foo.h. If the interface
-has a single ( or base ) implementation, it'll be called common/jk_foo.c.
-If it has multiple implementations, the files  will be named jk_foo_bar.c.
-  All server-specific files are in server/[SERVER] ( server/apache2, etc
-). The apache13 objects should be used as a basis for new servers, apache2 
-has a number of extra fancy features to be used as model for 'deeper'  integration. 
- The default set of types is defined in common/jk_registry.c, common/jk_registry.h. 
-Additional types can be defined at runtime in the server adapter or various 
-other components.   </p>
+<br>
+ 
 </body>
 </html>
