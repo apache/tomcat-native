@@ -116,17 +116,13 @@ final class CoyoteOutputStream
      */
     public void flush()
         throws IOException {
-        if (ob.flushCharsNeeded())
-            ob.flushChars();
-        ob.flushBytes();
+        ob.flush();
     }
 
 
     public void close()
         throws IOException {
-        if (ob.flushCharsNeeded())
-            ob.flushChars();
-        ob.flushBytes();
+        ob.close();
     }
 
 
