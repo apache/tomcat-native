@@ -273,7 +273,7 @@ static int uri_worker_map_realloc(jk_uri_worker_map_t *uw_map)
 
 
 int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
-                       char *puri, char *pworker, jk_logger_t *l)
+                       const char *puri, const char *pworker, jk_logger_t *l)
 {
     uri_worker_record_t *uwr;
     char *uri;
@@ -526,6 +526,8 @@ static int last_index_of(const char *str, char ch)
     return (s - str);
 }
 
+#if 0
+/* deprecated */
 static void jk_no2slash(char *name)
 {
     char *d, *s;
@@ -550,6 +552,7 @@ static void jk_no2slash(char *name)
     }
     *d = '\0';
 }
+#endif
 
 static int is_nomap_match(jk_uri_worker_map_t *uw_map,
                           const char *uri, jk_logger_t *l)
@@ -664,8 +667,8 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     unsigned int i;
     int best_match = -1;
     unsigned int longest_match = 0;
-    char *url_rewrite = NULL;
-    char rewrite_char;
+    char *url_rewrite;
+    char rewrite_char = ';';
     char *rv = NULL;
 
     JK_TRACE_ENTER(l);

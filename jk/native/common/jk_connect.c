@@ -46,7 +46,7 @@
 
 /** resolve the host IP */
 
-int jk_resolve(char *host, int port, struct sockaddr_in *rc)
+int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 {
     int x;
     struct in_addr laddr;
@@ -191,7 +191,7 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "jk_open_socket, set TCP_NODELAY to on");
-            setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&set,
+            setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&set,
                        sizeof(set));
         }
         if (keepalive) {
@@ -199,13 +199,13 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "jk_open_socket, set SO_KEEPALIVE to on");
-            setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&keep,
+            setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (const char *)&keep,
                         sizeof(keep));
         }
         len = 8*1024; /* Default AJP packet size */
 
         /* Set socket send buffer size */
-        if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *)&len,
+        if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char *)&len,
                        sizeof(len))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
@@ -215,7 +215,7 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             return -1;
         }
         /* Set socket receive buffer size */
-        if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&len,
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (const char *)&len,
                               sizeof(len))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
@@ -274,12 +274,12 @@ int jk_tcp_socket_sendfull(int sd, const unsigned char *b, int len)
     while (sent < len) {
         do {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-            wr = send(sd, (char *)b + sent,
+            wr = send(sd, (const char*)(b + sent),
                       len - sent, 0);
             if (wr == SOCKET_ERROR)
                 errno = WSAGetLastError() - WSABASEERR;
 #else
-            wr = write(sd, (char *)b + sent , len - sent);
+            wr = write(sd, b + sent, len - sent);
 #endif
         } while (wr == -1 && errno == EINTR);
 

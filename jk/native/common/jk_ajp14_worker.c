@@ -257,7 +257,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                               jk_worker_env_t *we, jk_logger_t *l)
 {
     ajp_worker_t *aw;
-    char *secret_key;
+    const char *secret_key;
 
     JK_TRACE_ENTER(l);
     if (ajp_validate(pThis, props, we, l, AJP14_PROTO) == JK_FALSE) {

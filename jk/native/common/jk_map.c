@@ -155,9 +155,9 @@ void *jk_map_get(jk_map_t *m, const char *name, const void *def)
     return (void *)rc;          /* DIRTY */
 }
 
-char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
+const char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
 {
-    char *rc = (char *)def;
+    const char *rc = def;
 
     if (m && name) {
         unsigned int i;
@@ -165,7 +165,7 @@ char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
         COMPUTE_KEY_CHECKSUM(name, key)
         for (i = 0; i < m->size; i++) {
             if (m->keys[i] == key && strcasecmp(m->names[i], name) == 0) {
-                rc = (char *)m->values[i];
+                rc = m->values[i];
                 break;
             }
         }
@@ -178,7 +178,7 @@ char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
 int jk_map_get_int(jk_map_t *m, const char *name, int def)
 {
     char buf[100];
-    char *rc;
+    const char *rc;
     size_t len;
     int int_res;
     int multit = 1;
@@ -188,7 +188,8 @@ int jk_map_get_int(jk_map_t *m, const char *name, int def)
 
     len = strlen(rc);
     if (len) {
-        char *lastchar = rc + len - 1;
+        char *lastchar = &buf[0] + len - 1;
+        strcpy(buf, rc);
         if ('m' == *lastchar || 'M' == *lastchar) {
             *lastchar = '\0';
             multit = 1024 * 1024;
@@ -197,9 +198,10 @@ int jk_map_get_int(jk_map_t *m, const char *name, int def)
             *lastchar = '\0';
             multit = 1024;
         }
+        int_res = atoi(buf);
     }
-
-    int_res = atoi(rc);
+    else
+        int_res = def;
 
     return int_res * multit;
 }
@@ -207,7 +209,7 @@ int jk_map_get_int(jk_map_t *m, const char *name, int def)
 double jk_map_get_double(jk_map_t *m, const char *name, double def)
 {
     char buf[100];
-    char *rc;
+    const char *rc;
 
     sprintf(buf, "%f", def);
     rc = jk_map_get_string(m, name, buf);
@@ -219,7 +221,7 @@ int jk_map_get_bool(jk_map_t *m, const char *name, int def)
 {
     char buf[100];
     size_t len;
-    char *rc;
+    const char *rc;
     int rv = 0;
     
     sprintf(buf, "%d", def);
@@ -239,7 +241,7 @@ char **jk_map_get_string_list(jk_map_t *m,
                               const char *name,
                               unsigned *list_len, const char *def)
 {
-    char *l = jk_map_get_string(m, name, def);
+    const char *l = jk_map_get_string(m, name, def);
     char **ar = NULL;
 #if defined(AS400) || defined(_REENTRANT)
     char *lasts;
@@ -340,7 +342,7 @@ int jk_map_read_property(jk_map_t *m, const char *str)
             *v = '\0';
             v++;
             if (strlen(v) && strlen(prp)) {
-                char *oldv = jk_map_get_string(m, prp, NULL);
+                const char *oldv = jk_map_get_string(m, prp, NULL);
                 v = jk_map_replace_properties(v, m);
                 if (oldv) {
                     char *tmpv = jk_pool_alloc(&m->p,
@@ -414,10 +416,10 @@ int jk_map_size(jk_map_t *m)
     return -1;
 }
 
-char *jk_map_name_at(jk_map_t *m, int idex)
+const char *jk_map_name_at(jk_map_t *m, int idex)
 {
     if (m && idex >= 0) {
-        return (char *)m->names[idex];  /* DIRTY */
+        return m->names[idex];  /* DIRTY */
     }
 
     return NULL;
@@ -513,7 +515,7 @@ char *jk_map_replace_properties(const char *value, jk_map_t *m)
             return rc;
         if (env_end) {
             char env_name[LENGTH_OF_LINE + 1] = "";
-            char *env_value;
+            const char *env_value;
 #if defined(WIN32)
             char env_buf[LENGTH_OF_LINE + 1];
 #endif

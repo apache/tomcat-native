@@ -1693,7 +1693,7 @@ int ajp_validate(jk_worker_t *pThis,
                  jk_worker_env_t *we, jk_logger_t *l, int proto)
 {
     int port;
-    char *host;
+    const char *host;
 
     JK_TRACE_ENTER(l);
 
@@ -1881,8 +1881,6 @@ int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto)
 
     if (pThis && *pThis && (*pThis)->worker_private) {
         ajp_worker_t *aw = (*pThis)->worker_private;
-
-        free(aw->name);
 
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,

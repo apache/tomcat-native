@@ -339,7 +339,7 @@ int jk_log(jk_logger_t *l,
     return rc;
 }
 
-char *jk_get_worker_type(jk_map_t *m, const char *wname)
+const char *jk_get_worker_type(jk_map_t *m, const char *wname)
 {
     char buf[1024];
 
@@ -352,7 +352,7 @@ char *jk_get_worker_type(jk_map_t *m, const char *wname)
     return jk_map_get_string(m, buf, DEFAULT_WORKER_TYPE);
 }
 
-char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def)
+const char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def)
 {
     char buf[1024];
     if (!m || !wname) {
@@ -362,10 +362,9 @@ char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def)
     return jk_map_get_string(m, buf, def);
 }
 
-char *jk_get_worker_secret(jk_map_t *m, const char *wname)
+const char *jk_get_worker_secret(jk_map_t *m, const char *wname)
 {
     char buf[1024];
-    char *secret;
 
     if (!m || !wname) {
         return NULL;
@@ -373,9 +372,7 @@ char *jk_get_worker_secret(jk_map_t *m, const char *wname)
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, SECRET_OF_WORKER);
 
-    secret = jk_map_get_string(m, buf, NULL);
-
-    return secret;
+    return jk_map_get_string(m, buf, NULL);
 }
 
 /* [V] I suggest that the following general purpose functions be used.       */
@@ -383,7 +380,7 @@ char *jk_get_worker_secret(jk_map_t *m, const char *wname)
 /*     Functions that can be simulated with these should be "deprecated".    */
 
 int jk_get_worker_str_prop(jk_map_t *m,
-                           const char *wname, const char *pname, char **prop)
+                           const char *wname, const char *pname, const char **prop)
 {
     char buf[1024];
 
@@ -414,7 +411,7 @@ int jk_get_worker_int_prop(jk_map_t *m,
     return JK_FALSE;
 }
 
-char *jk_get_worker_host(jk_map_t *m, const char *wname, const char *def)
+const char *jk_get_worker_host(jk_map_t *m, const char *wname, const char *def)
 {
     char buf[1024];
 
@@ -600,7 +597,7 @@ int jk_get_worker_recovery_opts(jk_map_t *m, const char *wname, int def)
     return jk_map_get_int(m, buf, def);
 }
 
-char *jk_get_worker_secret_key(jk_map_t *m, const char *wname)
+const char *jk_get_worker_secret_key(jk_map_t *m, const char *wname)
 {
     char buf[1024];
 
@@ -758,7 +755,7 @@ int jk_get_worker_ms(jk_map_t *m, const char *wname, unsigned *ms)
     return JK_FALSE;
 }
 
-int jk_get_worker_classpath(jk_map_t *m, const char *wname, char **cp)
+int jk_get_worker_classpath(jk_map_t *m, const char *wname, const char **cp)
 {
     char buf[1024];
 
@@ -777,7 +774,7 @@ int jk_get_worker_classpath(jk_map_t *m, const char *wname, char **cp)
 int jk_get_worker_bridge_type(jk_map_t *m, const char *wname, unsigned *bt)
 {
     char buf[1024];
-    char *type;
+    const char *type;
 
     if (m && bt && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, BRIDGE_OF_WORKER);
@@ -803,7 +800,7 @@ int jk_get_worker_bridge_type(jk_map_t *m, const char *wname, unsigned *bt)
     return JK_FALSE;
 }
 
-int jk_get_worker_jvm_path(jk_map_t *m, const char *wname, char **vm_path)
+int jk_get_worker_jvm_path(jk_map_t *m, const char *wname, const char **vm_path)
 {
     char buf[1024];
 
@@ -820,7 +817,7 @@ int jk_get_worker_jvm_path(jk_map_t *m, const char *wname, char **vm_path)
 }
 
 /* [V] This is unused. currently. */
-int jk_get_worker_callback_dll(jk_map_t *m, const char *wname, char **cb_path)
+int jk_get_worker_callback_dll(jk_map_t *m, const char *wname, const char **cb_path)
 {
     char buf[1024];
 
@@ -837,7 +834,7 @@ int jk_get_worker_callback_dll(jk_map_t *m, const char *wname, char **cb_path)
     return JK_FALSE;
 }
 
-int jk_get_worker_cmd_line(jk_map_t *m, const char *wname, char **cmd_line)
+int jk_get_worker_cmd_line(jk_map_t *m, const char *wname, const char **cmd_line)
 {
     char buf[1024];
 
@@ -895,7 +892,7 @@ int jk_is_cmd_line_poperty(const char *prp_name)
     return jk_is_some_property(prp_name, CMD_LINE_OF_WORKER);
 }
 
-int jk_get_worker_stdout(jk_map_t *m, const char *wname, char **stdout_name)
+int jk_get_worker_stdout(jk_map_t *m, const char *wname, const char **stdout_name)
 {
     char buf[1024];
 
@@ -911,7 +908,7 @@ int jk_get_worker_stdout(jk_map_t *m, const char *wname, char **stdout_name)
     return JK_FALSE;
 }
 
-int jk_get_worker_stderr(jk_map_t *m, const char *wname, char **stderr_name)
+int jk_get_worker_stderr(jk_map_t *m, const char *wname, const char **stderr_name)
 {
     char buf[1024];
 
@@ -927,7 +924,7 @@ int jk_get_worker_stderr(jk_map_t *m, const char *wname, char **stderr_name)
     return JK_FALSE;
 }
 
-int jk_get_worker_sysprops(jk_map_t *m, const char *wname, char **sysprops)
+int jk_get_worker_sysprops(jk_map_t *m, const char *wname, const char **sysprops)
 {
     char buf[1024];
 
@@ -943,7 +940,7 @@ int jk_get_worker_sysprops(jk_map_t *m, const char *wname, char **sysprops)
     return JK_FALSE;
 }
 
-int jk_get_worker_libpath(jk_map_t *m, const char *wname, char **libpath)
+int jk_get_worker_libpath(jk_map_t *m, const char *wname, const char **libpath)
 {
     char buf[1024];
 

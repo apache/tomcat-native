@@ -59,8 +59,8 @@ static const char *search_types[] = {
  */
 struct worker_record
 {
-    char *name;
-    char *domain;
+    const char *name;
+    const char *domain;
     int lb_factor;
     int lb_value;
     int is_local_worker;
@@ -81,7 +81,7 @@ struct lb_worker
     jk_pool_t p;
     jk_pool_atom_t buf[TINY_POOL_SIZE];
 
-    char *name;
+    const char *name;
     jk_worker_t worker;
     int in_local_worker_mode;
     int local_worker_only;
@@ -375,7 +375,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     while (sessionid) {
         char *next = strchr(sessionid, ';');
         char *session_route;
-        char *session_domain;
+        const char *session_domain;
         if (next) {
             *next++ = '\0';
         }

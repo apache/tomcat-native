@@ -1058,7 +1058,7 @@ static int init_jk(char *serverName)
 
                 sz = jk_map_size(map);
                 for (i = 0; i < sz; i++) {
-                    char *name = jk_map_name_at(map, i);
+                    const char *name = jk_map_name_at(map, i);
                     if (*name == '/' || *name == '!') {
                         jk_map_put(map2, name, jk_map_value_at(map, i), &old);
                     }
@@ -1141,7 +1141,7 @@ static int read_registry_init_data(void)
     HKEY hkey;
     long rc;
     int ok = JK_TRUE;
-    char *tmp;
+    const char *tmp;
     jk_map_t *map;
 
     if (jk_map_alloc(&map)) {

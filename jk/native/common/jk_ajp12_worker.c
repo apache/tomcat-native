@@ -161,7 +161,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                       p->name,
                                       AJP_DEF_PORT);
 
-        char *host = jk_get_worker_host(props,
+        const char *host = jk_get_worker_host(props,
                                         p->name,
                                         AJP_DEF_HOST);
 

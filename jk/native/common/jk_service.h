@@ -191,7 +191,7 @@ struct jk_ws_service
      * group. We are using this variable to implement JVM session 
      * affinity
      */
-    char *jvm_route;
+    const char *jvm_route;
 
     /* Temp solution for auth. For native1 it'll be sent on each request,
        if an option is present. For native2 it'll be sent with the first
@@ -199,7 +199,7 @@ struct jk_ws_service
        a version that doesn't support secret - don't set the secret,
        and it'll work.
      */
-    char *secret;
+    const char *secret;
     /*
      * Callbacks into the web server.  For each, the first argument is
      * essentially a 'this' pointer.  All return JK_TRUE on success

@@ -49,7 +49,7 @@ double jk_map_get_double(jk_map_t *m, const char *name, double def);
 
 int jk_map_get_bool(jk_map_t *m, const char *name, int def);
 
-char *jk_map_get_string(jk_map_t *m, const char *name, const char *def);
+const char *jk_map_get_string(jk_map_t *m, const char *name, const char *def);
 
 char **jk_map_get_string_list(jk_map_t *m,
                            const char *name,
@@ -63,7 +63,7 @@ int jk_map_read_properties(jk_map_t *m, const char *f);
 
 int jk_map_size(jk_map_t *m);
 
-char *jk_map_name_at(jk_map_t *m, int idex);
+const char *jk_map_name_at(jk_map_t *m, int idex);
 
 void *jk_map_value_at(jk_map_t *m, int idex);
 

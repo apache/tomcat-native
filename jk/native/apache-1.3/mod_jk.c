@@ -1781,7 +1781,7 @@ static void copy_jk_map(ap_pool * p, server_rec * s, jk_map_t *src,
     int sz = jk_map_size(src);
     int i;
     for (i = 0; i < sz; i++) {
-        char *name = jk_map_name_at(src, i);
+        const char *name = jk_map_name_at(src, i);
         if (jk_map_get(src, name, NULL) == NULL) {
             if (!jk_map_put (dst, name,
                  ap_pstrdup(p, jk_map_get_string(src, name, NULL)),

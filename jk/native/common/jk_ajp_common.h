@@ -229,7 +229,7 @@ struct ajp_worker
 {
     struct sockaddr_in worker_inet_addr;    /* Contains host and port */
     unsigned connect_retry_attempts;
-    char *name;
+    const char *name;
 
     /* 
      * Open connections cache...
@@ -249,7 +249,7 @@ struct ajp_worker
     jk_login_service_t *login;
 
     /* Weak secret similar with ajp12, used in ajp13 */
-    char *secret;
+    const char *secret;
 
     jk_worker_t worker;
 

@@ -28,7 +28,7 @@
 
 static void close_workers(jk_logger_t *l);
 
-static worker_factory get_factory_for(char *type);
+static worker_factory get_factory_for(const char *type);
 
 static int build_worker_map(jk_map_t *init_data,
                             char **worker_list,
@@ -103,7 +103,7 @@ int wc_create_worker(const char *name,
     JK_TRACE_ENTER(l);
 
     if (rc) {
-        char *type = jk_get_worker_type(init_data, name);
+        const char *type = jk_get_worker_type(init_data, name);
         worker_factory fac = get_factory_for(type);
         jk_worker_t *w = NULL;
 
@@ -225,7 +225,7 @@ static int build_worker_map(jk_map_t *init_data,
     return JK_TRUE;
 }
 
-static worker_factory get_factory_for(char *type)
+static worker_factory get_factory_for(const char *type)
 {
     worker_factory_record_t *factory = &worker_factories[0];
     while (factory->name) {

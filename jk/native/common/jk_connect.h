@@ -35,7 +35,7 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-int jk_resolve(char *host, int port, struct sockaddr_in *rc);
+int jk_resolve(const char *host, int port, struct sockaddr_in *rc);
 
 int jk_open_socket(struct sockaddr_in *addr, int ndelay,
                    int keepalive, int timeout, jk_logger_t *l);
