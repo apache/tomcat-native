@@ -185,6 +185,7 @@
        deprecation="${compile.deprecation}"
           optimize="${compile.optimize}">
       <classpath refid="compile.classpath"/>
+      <exclude name="org/apache/coyote/tomcat5/**" />
       <exclude name="org/apache/coyote/tomcat4/**" />
       <exclude name="org/apache/coyote/tomcat3/**" />
     </javac>
