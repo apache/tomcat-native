@@ -490,14 +490,12 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         unsigned i;
         unsigned best_match = -1;
         unsigned longest_match = 0;
-        char *clean_uri = jk_pool_strdup(&uw_map->tp,uri);
-        char *url_rewrite = strstr(clean_uri, JK_PATH_SESSION_IDENTIFIER);
+        char *url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
         
         if(url_rewrite) {
             *url_rewrite = '\0';
         }
-        jk_no2slash(clean_uri);
-        uri = clean_uri;
+        jk_no2slash(uri);
 
         jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s'\n", uri);
         for(i = 0 ; i < uw_map->size ; i++) {
@@ -518,7 +516,6 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 			       "Found an exact match %s -> %s\n",
 			       uwr->worker_name,
 			       uwr->context );
-                        jk_reset_pool(&uw_map->tp);
                         return uwr->worker_name;
                     }
                 } else if(MATCH_TYPE_CONTEXT == uwr->match_type) {
@@ -594,7 +591,6 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         }
 
         if(-1 != best_match) {
-            jk_reset_pool(&uw_map->tp);
             return uw_map->maps[best_match]->worker_name;
         } else {
             /*
@@ -611,10 +607,8 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                 jk_log(l, JK_LOG_EMERG, 
                        "In jk_uri_worker_map_t::map_uri_to_worker, found a security fraud in '%s'\n",
                        uri);    
-                jk_reset_pool(&uw_map->tp);
                 return uw_map->maps[fraud]->worker_name;
             }
-            jk_reset_pool(&uw_map->tp);
        }        
     } else {
         jk_log(l, JK_LOG_ERROR, 
