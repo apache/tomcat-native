@@ -203,10 +203,12 @@
         ("Nihon") written in Kanji (in Unicode characters this would look like
         U65E5 + U672C) and encoded in Shift_JIS would be represented
         as <b>"I love =?Shift_JIS?q?=93=fa=96=7b?="</b> or if encoded in UTF-8
-        would look like <b><b>"I love =?UTF-8?q?=e6=97=a5=e6=9c=ac?="</b>.
+        would look like <b>"I love =?UTF-8?q?=e6=97=a5=e6=9c=ac?="</b>.
         (field identifier <b>MIME</b>).
       </li>
     </ul>
+
+    <img src="images/japan.gif"/>
 
     <p>
       For semplicity's sake, this is how one of the three above mentioned
