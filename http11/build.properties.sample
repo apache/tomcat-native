@@ -32,3 +32,6 @@ junit.jar=/java/junit/junit.jar
 
 # commons-logging.jar -- Commons Logging 1.0 package
 commons-logging.jar=../lib/commons-logging.jar
+
+# ----- Jakarta Regular Expressions Library, version 1.2 -----
+regexp.jar=../lib/jakarta-regexp-1.2.jar

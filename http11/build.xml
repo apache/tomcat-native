@@ -38,6 +38,7 @@
   <property name="jmx.jar" location="../lib/mx4j.jar" />
   <property name="commons-modeler.jar" location="../../jakarta-commons/modeler/dist/commons-modeler.jar" />
   <property name="commons-logging.jar" value="../lib/commons-logging.jar" />
+  <property name="regexp.jar" value="../lib/jakarta-regexp-1.2.jar" />
 
 <!-- ========== Component Declarations ==================================== -->
 
@@ -82,6 +83,7 @@
     <pathelement location="${tomcat-coyote.jar}"/>
     <pathelement location="${commons-logging.jar}"/>
     <pathelement location="${commons-modeler.jar}"/>
+    <pathelement location="${regexp.jar}"/>
     <pathelement location="${jmx.jar}"/>
   </path>
 

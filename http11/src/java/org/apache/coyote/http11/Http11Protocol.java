@@ -257,6 +257,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
      */
     private String compression = "off";
     private String noCompressionUserAgents = null;
+    private String restrictedUserAgents = null;
     private String compressableMimeTypes = "text/html,text/xml,text/plain";
     private int compressionMinSize    = 2048;
     
@@ -331,6 +332,11 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public void setCompression(String valueS) {
         compression = valueS;
         setAttribute("compression", valueS);
+    }
+
+    public void setRestrictedUserAgents(String valueS) {
+        restrictedUserAgents = valueS;
+        setAttribute("restrictedUserAgents", valueS);
     }
 
     public void setNoCompressionUserAgents(String valueS) {
@@ -493,6 +499,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             processor.setCompressionMinSize( proto.compressionMinSize);         
             processor.setNoCompressionUserAgents( proto.noCompressionUserAgents);
             processor.setCompressableMimeTypes( proto.compressableMimeTypes);
+            processor.setRestrictedUserAgents( proto.restrictedUserAgents);
             processor.setSocketBuffer( proto.socketBuffer );
 
             thData[Http11Protocol.THREAD_DATA_PROCESSOR]=processor;

@@ -81,6 +81,8 @@ import org.apache.coyote.http11.filters.IdentityInputFilter;
 import org.apache.coyote.http11.filters.IdentityOutputFilter;
 import org.apache.coyote.http11.filters.VoidInputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
+import org.apache.regexp.RE;
+import org.apache.regexp.RESyntaxException;
 import org.apache.tomcat.util.buf.Ascii;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.HexUtils;
@@ -203,7 +205,7 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * List of restricted user agents.
      */
-    protected String[] restrictedUserAgents = null;
+    protected RE[] restrictedUserAgents = null;
 
 
     /**
@@ -281,9 +283,8 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * List of user agents to not use gzip with
      */
-    protected String[] noCompressionUserAgents = null;
-
-
+    protected RE       noCompressionUserAgents[]     = null;
+    
     /**
      * List of MIMES which could be gzipped
      */
@@ -364,7 +365,10 @@ public class Http11Processor implements Processor, ActionHook {
      * @param userAgent user-agent string
      */
     public void addNoCompressionUserAgent(String userAgent) {
-        addStringArray(noCompressionUserAgents, userAgent);
+        try {
+            RE nRule = new RE(userAgent);
+            addREArray(noCompressionUserAgents, new RE(userAgent));
+        } catch (RESyntaxException ree) {}
     }
 
 
@@ -373,7 +377,7 @@ public class Http11Processor implements Processor, ActionHook {
      * a large number of connectors, where it would be better to have all of 
      * them referenced a single array).
      */
-    public void setNoCompressionUserAgents(String[] noCompressionUserAgents) {
+    public void setNoCompressionUserAgents(RE[] noCompressionUserAgents) {
         this.noCompressionUserAgents = noCompressionUserAgents;
     }
 
@@ -393,15 +397,6 @@ public class Http11Processor implements Processor, ActionHook {
             }
         }
     }
-
-
-    /**
-     * Return the list of no compression user agents.
-     */
-    public String[] findNoCompressionUserAgents() {
-        return (noCompressionUserAgents);
-    }
-
 
     /**
      * Add a mime-type which will be compressable
@@ -483,13 +478,38 @@ public class Http11Processor implements Processor, ActionHook {
      * @param value string
      */
     private void addStringArray(String sArray[], String value) {
-        if (sArray == null)
-            sArray = new String[0];
-        String[] results = new String[sArray.length + 1];
-        for (int i = 0; i < sArray.length; i++)
-            results[i] = sArray[i];
-        results[sArray.length] = value;
-        sArray = results;
+        if (sArray == null) {
+            sArray = new String[1];
+            sArray[0] = value;
+        }
+        else {
+            String[] results = new String[sArray.length + 1];
+            for (int i = 0; i < sArray.length; i++)
+                results[i] = sArray[i];
+            results[sArray.length] = value;
+            sArray = results;
+        }
+    }
+
+
+    /**
+     * General use method
+     * 
+     * @param rArray the REArray 
+     * @param value Obj
+     */
+    private void addREArray(RE rArray[], RE value) {
+        if (rArray == null) {
+            rArray = new RE[1];
+            rArray[0] = value;
+        }    
+        else {    
+            RE[] results = new RE[rArray.length + 1];
+            for (int i = 0; i < rArray.length; i++)
+                results[i] = rArray[i];
+            results[rArray.length] = value;
+            rArray = results;
+        }
     }
 
 
@@ -529,13 +549,16 @@ public class Http11Processor implements Processor, ActionHook {
 
     /**
      * Add restricted user-agent (which will downgrade the connector 
-     * to HTTP/1.0 mode). The user agent String given will be exactly matched
-     * to the user-agent header submitted by the client.
+     * to HTTP/1.0 mode). The user agent String given will be matched
+     * via regexp to the user-agent header submitted by the client.
      * 
      * @param userAgent user-agent string
      */
     public void addRestrictedUserAgent(String userAgent) {
-        addStringArray(restrictedUserAgents, userAgent);
+        try {
+            RE nRule = new RE(userAgent);
+            addREArray(restrictedUserAgents, new RE(userAgent));
+        } catch (RESyntaxException ree) {}
     }
 
 
@@ -544,8 +567,24 @@ public class Http11Processor implements Processor, ActionHook {
      * a large number of connectors, where it would be better to have all of 
      * them referenced a single array).
      */
-    public void setRestrictedUserAgents(String[] restrictedUserAgents) {
+    public void setRestrictedUserAgents(RE[] restrictedUserAgents) {
         this.restrictedUserAgents = restrictedUserAgents;
+    }
+
+    /**
+     * Set restricted user agent list (which will downgrade the connector
+     * to HTTP/1.0 mode). List contains users agents separated by ',' :
+     * 
+     * ie: "gorilla,desesplorer,tigrus"
+     */
+    public void setRestrictedUserAgents(String restrictedUserAgents) {
+        if (restrictedUserAgents != null) {
+            StringTokenizer st = new StringTokenizer(restrictedUserAgents, ",");
+        
+            while (st.hasMoreTokens()) {
+                addRestrictedUserAgent(st.nextToken().trim());
+            }
+        }
     }
 
 
@@ -553,7 +592,12 @@ public class Http11Processor implements Processor, ActionHook {
      * Return the list of restricted user agents.
      */
     public String[] findRestrictedUserAgents() {
-        return (restrictedUserAgents);
+        String[] sarr = new String [restrictedUserAgents.length];
+        
+        for (int i = 0; i < restrictedUserAgents.length; i++)
+            sarr[i] = restrictedUserAgents[i].toString();
+            
+        return (sarr);
     }
 
 
@@ -1055,9 +1099,10 @@ public class Http11Processor implements Processor, ActionHook {
             // and keepAlive flags accordingly
             String userAgentValue = userAgentValueMB.toString();
             for (int i = 0; i < restrictedUserAgents.length; i++) {
-                if (restrictedUserAgents[i].equals(userAgentValue)) {
+                if (restrictedUserAgents[i].match(userAgentValue)) {
                     http11 = false;
                     keepAlive = false;
+                    break;
                 }
             }
         }
@@ -1273,9 +1318,10 @@ public class Http11Processor implements Processor, ActionHook {
                 request.getMimeHeaders().getValue("user-agent");
             String userAgentValue = userAgentValueMB.toString();
 
-            // TODO: Use regexp instead of simple string compare (cf: Apache 2.x)
-            if (inStringArray(noCompressionUserAgents, userAgentValue))
-                return false;
+            // If one Regexp rule match, disable compression
+            for (int i = 0; i < noCompressionUserAgents.length; i++)
+                if (noCompressionUserAgents[i].match(userAgentValue))
+                    return false;
         }
 
         // Check if suffisant len to trig the compression        
