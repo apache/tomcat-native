@@ -121,6 +121,8 @@ public class JniMain {
                 System.setOut( System.err );
             }
 
+            // Start container
+
             wEnv=new WorkerEnv();
             ChannelJni cjni=new ChannelJni();
             wEnv.addHandler( "jni", cjni );
@@ -132,7 +134,6 @@ public class JniMain {
             
             wEnv.start();
 
-            System.load("/ws/jtc/jk/build/WEB-INF/jk2/jni/jni_connect.so");
         } catch(Throwable t) {
             t.printStackTrace();
         }
