@@ -26,7 +26,8 @@
 #include "jk_map.h"
 #include "jk_logger.h"
 
-#include "dsapifilter.h"
+#include <global.h>
+#include <addin.h>
 
 static int JK_METHOD jk2_logger_domino_log(jk_env_t *env, jk_logger_t *l,
                                          int level, const char *what) {

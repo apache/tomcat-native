@@ -50,7 +50,11 @@
 #include "apr_general.h"
 
 /* Domino DSAPI filter definitions */
-#include "dsapifilter.h"
+#include <global.h>
+#include <addin.h>
+#include <dsapi.h>
+#include <osmem.h>
+#include <lookup.h>
 
 int JK_METHOD jk2_logger_domino_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result, const char *type, const char *name);
 
@@ -78,6 +82,7 @@ static const char *serverRoot   = NULL;
 static int tomcatTimeout        = TOMCAT_STARTSTOP_TO;
 
 static const char *crlf         = "\r\n";
+static const char *filterdesc   = FILTERDESC;
 
 #define WORKPOOL globalPool
 
@@ -641,6 +646,108 @@ static unsigned int rejectWithError(FilterContext *context, const char *diagnost
     return kFilterHandledRequest;
 }
 
+/* Get the info from the lookup buffer
+ */
+static int getLookupInfo(FilterContext *context, char *pMatch, int itemNumber, char **pInfo, int *pInfoLen) {
+    unsigned int reserved = 0;
+    unsigned int errID;
+    char *pValue = NULL;
+    WORD lValue, type;
+    STATUS error;
+
+    if (NULL == pMatch || NULL == pInfo || NULL == pInfoLen || (itemNumber < 0)) {
+        return -1;
+    }
+
+    /* Initialize output */
+    *pInfo = NULL;
+    *pInfoLen = 0;
+
+    /* Check the type and length of the info */
+    pValue = (char *) NAMELocateItem(pMatch, itemNumber, &type, &lValue);
+
+    if (NULL == pValue || lValue == 0) {
+        return -1;
+    }
+
+    lValue -= sizeof(WORD); /* remove datatype word included in the list length */
+
+    /* check the value type */
+    if (type != TYPE_TEXT_LIST && type != TYPE_TEXT) {
+        return -1;
+    }
+
+    /* Allocate space for the info. This memory will be freed automatically when the thread terminates */
+    if (*pInfo = context->AllocMem(context, lValue+1, reserved, &errID), NULL == *pInfo) {
+        return -1;
+    }
+
+    /* Get the info */
+    if (error = NAMEGetTextItem(pMatch, itemNumber, 0, *pInfo, lValue + 1), !error) {
+        *pInfoLen = lValue + 1;
+        return 0;
+    }
+
+    return -1;
+}
+
+/* Lookup the user and return the user's full name
+ */
+static int getUserName(FilterContext *context, char *userName, char **pUserName, int *pUserNameLen) {
+    STATUS error = NOERROR;
+    HANDLE hLookup = NULLHANDLE;
+    unsigned short nMatches = 0;
+    char *pLookup = NULL;
+    char *pName = NULL;
+    char *pMatch = NULL;
+    int rc = -1;
+
+    if (NULL == userName || NULL == pUserName || NULL == pUserNameLen) {
+        return rc;
+    }
+
+    /* Initializae output */
+    *pUserName = NULL;
+    *pUserNameLen = 0;
+
+    /* do the name lookup */
+    error = NAMELookup(NULL, 0, 1, "$Users", 1, userName, 2, "FullName", &hLookup);
+
+    if (error || (NULLHANDLE == hLookup)) {
+        goto done;
+    }
+
+    pLookup = (char *) OSLockObject(hLookup);
+
+    /* Get pointer to our entry. */
+    pName = (char *) NAMELocateNextName(pLookup, NULL, &nMatches);
+
+    /* If we didn't find the entry, the quit */
+    if (NULL == pName || nMatches <= 0) {
+        goto done;
+    }
+
+    if (pMatch = (char *) NAMELocateNextMatch(pLookup, pName, NULL), NULL == pMatch) {
+        goto done;
+    }
+
+    /* Get the full name from the info we got back */
+    if (getLookupInfo(context, pMatch, 0, pUserName, pUserNameLen)) {
+        goto done;
+    }
+
+    rc = 0;
+
+done:
+    if(NULLHANDLE != hLookup) {
+        if (NULL != pLookup) {
+            OSUnlock(hLookup);
+        }
+        OSMemFree(hLookup);
+    }
+    return rc;
+}
+
 /* Given all the HTTP headers as a single string parse them into individual
  * name, value pairs.
  */
@@ -740,6 +847,13 @@ static int processRequest(struct jk_env *env, jk_ws_service_t *s,
 
     GETVARIABLE("AUTH_TYPE", &s->auth_type, "");
     GETVARIABLE("REMOTE_USER", &s->remote_user, "");
+
+    /* If the REMOTE_USER CGI variable doesn't work try asking Domino */
+    if (s->remote_user[0] == '\0' && fr->userName[0] != '\0') {
+        int len;
+        getUserName(ws->context, fr->userName, &s->remote_user, &len);
+    }
+
     GETVARIABLE("SERVER_PROTOCOL", &s->protocol, "");
     GETVARIABLE("REMOTE_HOST", &s->remote_host, "");
     GETVARIABLE("REMOTE_ADDR", &s->remote_addr, "");
@@ -939,7 +1053,9 @@ static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *r
             s.afterRequest          = cbAfterRequest;
 
             if (workerEnv->options == JK_OPT_FWDURICOMPATUNPARSED) {
-                s.req_uri = env->globalPool->pstrdup(env, rPool, uri);
+                size_t sz = strlen(uri) + 1;
+                s.req_uri = context->AllocMem(context, sz, 0, &errID);
+                memcpy(s.req_uri, uri, sz);
                 /* Find the query string again in the original URI */
                 if (qp = strchr(s.req_uri, '?'), NULL != qp) {
                     *qp++ = '\0';
@@ -968,6 +1084,7 @@ static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *r
             ws.reqSize          = context->GetRequestContents(context, &ws.reqBuffer, &errID);
 
             rc = processRequest(env, &s, worker, &fr);
+
             if (JK_OK == rc) {
                 rc = worker->service(env, uriEnv->worker, &s);
             }
@@ -1058,7 +1175,7 @@ DLLEXPORT unsigned int TerminateFilter(unsigned int reserved) {
     }
 #endif
 
-    AddInLogMessageText(FILTERDESC " unloaded", NOERROR);
+    AddInLogMessageText("%s unloaded", NOERROR, filterdesc);
 
     apr_pool_destroy(jk_globalPool);
 
@@ -1148,7 +1265,7 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
     filterInitData->appFilterVersion    = kInterfaceVersion;
     filterInitData->eventFlags          = kFilterParsedRequest;
 
-    strncpy(filterInitData->filterDesc, FILTERDESC, sizeof(filterInitData->filterDesc));
+    strncpy(filterInitData->filterDesc, filterdesc, sizeof(filterInitData->filterDesc));
     isInited = JK_TRUE;
 
     /* Display banner
@@ -1158,7 +1275,7 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
     return kFilterHandledEvent;
 
 initFailed:
-    AddInLogMessageText("Error loading %s", NOERROR, FILTERDESC);
+    AddInLogMessageText("Error loading %s", NOERROR, filterdesc);
     return kFilterError;
 }
 

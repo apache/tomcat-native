@@ -62,7 +62,7 @@
 #define TOMCAT_START_TAG    "tomcatStart"
 #define TOMCAT_STOP_TAG     "tomcatStop"
 #define TOMCAT_TIMEOUT_TAG  "tomcatTimeout"
-#define VERSION             "2.0.4"
+#define VERSION             "2.0.5"
 #define VERSION_STRING      "Jakarta/DSAPI/" VERSION
 #define FILTERDESC          "Apache Tomcat Interceptor (" VERSION_STRING ")"
 #define SERVERDFLT          "Lotus Domino"

@@ -7,6 +7,7 @@ exec_prefix=@exec_prefix@
 
 APR_INCDIR=@APR_INCDIR@
 DOMINO_HOME=@DOMINO_HOME@
+NOTESAPI=@NOTESAPI@
 OS=@OS@
 DOMINO_INCL=@DOMINO_INCL@
 EXTRA_CFLAGS=@APXS_CFLAGS@
@@ -20,6 +21,10 @@ JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 endif
 
+NOTES_INCL=-I ${NOTESAPI}/include
+NOTES_OBJS=${NOTESAPI}/lib/linux/notes0.o
+NOTES_CFLAGS=-DUNIX -DLINUX
+
 JK_DIR := ../..
 BUILD_DIR = ${JK_DIR}/../build/jk2/dsapi
 
@@ -30,13 +35,14 @@ LIBTOOL=@LIBTOOL@
 INCLUDES= -I${JK_DIR}/include \
           ${APR_INCL} \
           ${DOMINO_INCL} \
-	  ${JAVA_INCL}
+	  ${JAVA_INCL} \
+	  ${NOTES_INCL}
 
 JK_CFLAGS=-DCHUNK_SIZE=4096 @APR_CFLAGS@ -DHAVE_MMAP @HAVE_JNI@ @HAS_PCRE@
 JK_LDFLAGS=-lcrypt ${APR_LDFLAGS} @PCRE_LIBS@
 
 ###### Based on rules.mk ##########################################
-ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)
+ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(NOTES_CFLAGS) $(CFLAGS)
 ALL_CPPFLAGS = $(DEFS) $(EXTRA_CPPFLAGS) $(NOTEST_CPPFLAGS) $(CPPFLAGS)
 ALL_LDFLAGS  = $(EXTRA_LDFLAGS) $(NOTEST_LDFLAGS) $(LDFLAGS)
 ALL_LIBS     = $(EXTRA_LIBS) $(NOTEST_LIBS) $(LIBS)
@@ -93,13 +99,13 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/dsapi/%.c
 #all: prepare ${BUILD_DIR}/libtomcat2.so ${BUILD_DIR}/libjkjni.so
 all: prepare ${BUILD_DIR}/libtomcat2.so
 
-${BUILD_DIR}/libtomcat2.la: ${COMMON_LO_FILES} ${DSAPI_LO_FILES}
+${BUILD_DIR}/libtomcat2.la: ${COMMON_LO_FILES} ${DSAPI_LO_FILES} ${NOTES_OBJS}
 	${MOD_LINK} -o $@ $^ ${JK_LDFLAGS}
 
 ${BUILD_DIR}/libtomcat2.so: ${BUILD_DIR}/libtomcat2.la
 	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}
 
-#${BUILD_DIR}/libjkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
+#${BUILD_DIR}/libjkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES} ${NOTES_OBJS}
 #	$(MOD_LINK) -o $@ $(JK_LDFLAGS) $^
 
 #${BUILD_DIR}/libjkjni.so: ${BUILD_DIR}/libjkjni.la
