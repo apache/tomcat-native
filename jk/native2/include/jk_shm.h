@@ -159,11 +159,6 @@ struct jk_shm {
      */
     int (JK_METHOD *destroy)(struct jk_env *env, struct jk_shm *shm);
 
-    /** 
-     */
-    int (JK_METHOD *setWorkerEnv)( struct jk_env *env, struct jk_shm *shm,
-                         struct jk_workerEnv *wEnv );
-
     /** Get a shm slot. Each slot has different rules for synchronization, based on type. 
      */
     struct jk_shm_slot *(JK_METHOD *getSlot)(struct jk_env *env, struct jk_shm *shm, int pos);
@@ -171,10 +166,6 @@ struct jk_shm {
     /** Create a slot. This typically involves inter-process synchronization.
      */
     struct jk_shm_slot *(JK_METHOD *createSlot)(struct jk_env *env, struct jk_shm *shm, char *name, int size);
-
-    /** Get an ID that is unique across processes.
-     */
-    int (JK_METHOD *getId)(struct jk_env *env, struct jk_shm *shm);
 
     int size;
 

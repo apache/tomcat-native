@@ -80,6 +80,8 @@ typedef struct jk_bean jk_bean_t;
 #define JK_STATE_DISABLED 0
 #define JK_STATE_NEW 1
 #define JK_STATE_INIT 2
+
+#define JK_INVOKE_WITH_RESPONSE 1
     
 /**
  * Factory used to create all jk objects. Factories are registered with 
