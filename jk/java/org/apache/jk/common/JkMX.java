@@ -267,7 +267,7 @@ public class JkMX extends JkHandler
             }
         }
 
-        if ((!httpAdapterLoaded) || (!jrmpAdapterLoaded))
+        if ((!httpAdapterLoaded) && (!jrmpAdapterLoaded))
             log.warn( "No adaptors were loaded but mx.enabled was defined.");
 
     }
