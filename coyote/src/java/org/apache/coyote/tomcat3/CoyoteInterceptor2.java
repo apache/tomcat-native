@@ -241,6 +241,14 @@ public class CoyoteInterceptor2 extends BaseInterceptor
             if(isSSLAttribute(key)) {
                 cReq.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,
                             httpReq.getCoyoteRequest() );
+		if( SSLSupport.CERTIFICATE_KEY.equals(key) ) {
+		    // Only allowed a single cert under the 2.2 Spec.
+		    Object [] value = (Object []) cReq.getAttribute(key);
+		    if( value != null ) {
+			cReq.setAttribute(key, value[0]);
+		    }
+		}
+
                 return cReq.getAttribute(key);
             }
 
