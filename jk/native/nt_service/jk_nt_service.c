@@ -86,6 +86,7 @@ static char                    szErr[1024] = "";
 static HANDLE                  hServerStopEvent = NULL;
 static int                     shutdown_port;
 static char                    *shutdown_protocol = AJP12_TAG;
+static char                    *shutdown_secret = NULL;
 
 struct jk_tomcat_startup_data {
     char *classpath;
@@ -98,6 +99,7 @@ struct jk_tomcat_startup_data {
     char *cmd_line;
     int  shutdown_port;
     char *shutdown_protocol;
+    char *shutdown_secret;
 
     char *extra_path;
 };
@@ -131,6 +133,7 @@ static int start_tomcat(const char *name,
                         HANDLE *hTomcat);
 static void stop_tomcat(short port, 
                         const char *protocol,
+						char *secret,
                         HANDLE hTomcat);
 static int read_startup_data(jk_map_t *init_map, 
                              jk_tomcat_startup_data_t *data, 
@@ -531,7 +534,8 @@ static void start_jk_service(char *name)
                          * Stop order arrived 
                          */ 
                         ResetEvent(hServerStopEvent);
-                        stop_tomcat((short)shutdown_port, shutdown_protocol, hTomcat);
+                        stop_tomcat((short)shutdown_port, shutdown_protocol,
+                                    shutdown_secret, hTomcat);
                         break;
                     case (WAIT_OBJECT_0 + 1):
                         /* 
@@ -543,7 +547,8 @@ static void start_jk_service(char *name)
                          * some error... 
                          * close the servlet container and exit 
                          */ 
-                        stop_tomcat((short)shutdown_port, shutdown_protocol, hTomcat);
+                        stop_tomcat((short)shutdown_port, shutdown_protocol,
+                                    shutdown_secret, hTomcat);
                     }
                     CloseHandle(hServerStopEvent);
                     CloseHandle(hTomcat);
@@ -641,6 +646,7 @@ char *GetLastErrorText( char *lpszBuf, DWORD dwSize )
 
 static void stop_tomcat(short port, 
                         const char *protocol,
+                        char *secret,
                         HANDLE hTomcat)
 {
     struct sockaddr_in in;
@@ -649,7 +655,18 @@ static void stop_tomcat(short port,
         int sd = jk_open_socket(&in, JK_TRUE, NULL);
         if(sd >0) {
             int rc = JK_FALSE;
-            if(!strcasecmp(protocol, "ajp13")) {
+            if(strcasecmp(protocol, "catalina") == 0 ) {
+                char len;
+                
+                if( secret==NULL )
+                    secret="SHUTDOWN";
+                len=strlen( secret );
+                
+                rc = send(sd, secret, len , 0);
+                if(len == rc) {
+                    rc = JK_TRUE;
+                }
+            } else if(!strcasecmp(protocol, "ajp13")) {
                 jk_pool_t pool;
                 jk_msg_buf_t *msg = NULL;
                 jk_pool_atom_t buf[TINY_POOL_SIZE];
@@ -663,7 +680,7 @@ static void stop_tomcat(short port,
                                                       &pool,
                                                       NULL);
                 if(rc) {
-                    jk_b_end(msg);
+                    jk_b_end(msg, AJP13_PROTO);
     
                     if(0 > jk_tcp_socket_sendfull(sd, 
                                                   jk_b_get_buff(msg),
@@ -775,6 +792,7 @@ static int start_tomcat(const char *name, HANDLE *hTomcat)
                             CloseHandle(startupInfo.hStdOutput);
                             CloseHandle(startupInfo.hStdError);
                             shutdown_port = data.shutdown_port;
+                            shutdown_secret = data.shutdown_secret;
                             shutdown_protocol = strdup(data.shutdown_protocol);
 
                             return JK_TRUE;
@@ -941,6 +959,9 @@ static int read_startup_data(jk_map_t *init_map,
                                       "wrapper.shutdown_port",
                                       8007);
 
+    data->shutdown_secret = map_get_string(init_map,
+                                           "wrapper.shutdown_secret", NULL );
+    
     data->shutdown_protocol = map_get_string(init_map,
                                              "wrapper.shutdown_protocol",
                                              AJP12_TAG);
