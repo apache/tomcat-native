@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<document>
+<properties>
+<title>FAQ</title>
+<author email="hgomez@apache.org">Henri Gomez</author>
+</properties>
+
+<section name="General">
+<p>
+General Informations and FAQ about mod_jk
+</p>
+<subsection name="Where can I get help/support for mod_jk?">
+<p>
+The primary mechanism for support is through the mod_jk 
+documentation included in the doc directory.
+Documentation is also available on the Apache Jakarta web site devoted to the
+<a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/doc/index.html">
+Jakarta Tomcat Connectors Project</a>
+For additional help, the best resource is the Tomcat Users Discussion list.  
+You should start by searching
+<a href="http://mikal.org/interests/java/tomcat/index.html">
+the mail list archive</a>
+before you post questions to the list.  
+If you are unable to locate the answer to your question in the archive, 
+you can post questions about mod_jk to the user list for assistance.  
+Make sure that you include the version of your Webserver, 
+that you are using as well as the platform you are running on
+and go 
+<a href="http://jakarta.apache.org/site/mail.html">
+here</a>
+to determine how to subscribe to tomcat mailing list.
+</p>
+</subsection>
+
+<subsection name="I can't find mod_jk anywhere. Where is it?">
+<p>
+Now that mod_jk moved to the jakarta-tomcat-connectors repository, 
+the source and binaries for mod_jk are present 
+in the <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/">
+jakarta-tomcat-connectors directory</a>
+</p>
+</subsection>
+
+<subsection name="Where can I get more information ?">
+<p>
+For mod_jk 1.2.x the <a href="jk/config-howto.html">
+mod_jk-config howto document</a> has considerably more in-depth information.
+For mod_jk 2.0.x the <a href="jk2/configtc.html">
+config tomcat</a> and <a href="jk2/configweb.html">config webserver</a>
+documents have considerably more in-depth information.
+It's worth a look. 
+You could also try searching the mailing list archives for "mod_jk" or look at the source.
+</p>
+</subsection>
+
+<subsection name="Which protocol should I use? Ajp12 or Ajp13?">
+<p>
+<a href="common/AJPv13.html">Ajp13</a> is a newer protocol, it's faster, and it works better with SSL. You almost certainly want to use it. 
+There is more information in the workers.properties howto document, ajp12 is now deprecated. 
+Also ajp13 is supported by all Apache Tomcat  including 3.2.x , 3.3.x, 4.0.x, 4.1.x and the new tomcat 5. 
+Others Servlet engine like jetty have support for Ajp13.
+</p>
+</subsection>
+
+<subsection name="I've got a firewall between my WebServer and Tomcat who drop ajp13 connections after some times">
+<p>
+Ajp13 use persistant connections where the traffic could be null if there is no request to be sent to Tomcat. 
+Firewall used to drop inactive connections and will make your WebServer and Tomcat think the connection is valid. 
+Since mod_jk 1.2.0 a socket_keepalive property as been added to ajp13 settings, and you should take a look at 
+it in workers.properties howto
+</p>
+</subsection>
+
+<subsection name="Under heavy load, I've got many threads in Tomcat even if my Apache Web Server handle much of the load">
+<p>
+Under heavy load, Apache WebServer create many childs to handle the load, which will in turn create many connections 
+to Tomcat to forward the requests they should handle. 
+Apache WebServer will normally kill the childs/threads when the load decrease. But if the load is still there and 
+even if only Apache handle the requests, ie static contents, the childs are kept and with them the ajp13 connections, 
+even if they are no more used. 
+Since mod_jk 1.2.0 cache_timeout and socket_timeout properties as been added to close connections after some time, 
+for more informations refer to workers.properties howto
+</p>
+</subsection>
+
+</section>
+
+<section name="Apache">
+<p>
+Informations and FAQ about mod_jk and Apache Web Servers. 
+</p>
+<subsection name="Whenever I restart Tomcat, Apache locks up!">
+<p>
+The Ajp13 protocol keeps an open socket between Tomcat and Apache. Release of mod_jk present in J-T-C handle the network failure. 
+But with previous release of mod_jk, you may have to restart Apache as well.
+</p>
+</subsection>
+
+<subsection name="Why did exist two files mod_jk.so (-eapi ad -noeapi) in download dir for Linux ?">
+<p>
+Many versions of Apache use of modified API, known at Extended API. For example, Apache using mod_ssl or 
+Apache present in certains recent Linux distributions. So if you got such 'Extended Apache', 
+you need to use mod_jk.so-eapi, or use mod_jk.so-noeapi for standard Apache. 
+It's wise to avoid using EAPI modules on STD API Apache or to use standard API modules on EAPI Apache. 
+Allways be sure to have the mod_jk.so for your version of Apache
+</p>
+</subsection>
+
+<subsection name="What's that message about 'garbled DSO ?'">
+<p>
+It's related to Apache EAPI, the message 'mod_jk.so is garbled - perhaps this is not an Apache module DSO ?' 
+just told you are trying to install a mod_jk.so DSO module that was compiled on an Apache using EAPI, 
+like apache-mod_ssl or apache from Redhat distro 6.2/7.0 but your system use the standard apache with normal API.
+</p>
+</subsection>
+
+<subsection name="And the message about 'module might crash under EAPI!">
+<p>
+Also related to EAPI, the message '[warn] Loaded DSO /usr/lib/apache/mod_jk.so uses plain Apache 1.3 API, 
+this module might crash under EAPI! (please recompile it with -DEAPI)', the mod_jk.so was compiled under normal 
+Apache with standard API and you try to install the module on an Apache using EAPI.
+</p>
+</subsection>
+
+<subsection name="APXS is getting an error during the build of mod_jk, like rc=0 or rc=255.  I tried all of the steps in the build section, what do I do now ?">
+<p>
+APXS is a Perl script that is created when you build the Apache web server from source.  
+Chances are that if you are getting these errors and you obtained Apache as a binary distribution, 
+that APXS is not configured correctly for your system.  
+Your best bet is to get the Apache source from http://httpd.apache.org and build it yourself.  
+Use the following for a basic build (read the Apache docs for other options):
+<screen>
+<type>cd /usr/local/src</type><br/>
+<type>gzip -dc apache_1.3.19.tar.gz|tar xvf -</type><br/>
+<type>cd apache_1.3.19</type><br/>
+<type>./configure --prefix=/usr/local/apache \</type><br/>
+<type>            --enable-module=most \</type><br/>
+<type>            --enable-shared=max</type><br/>
+<type>make</type><br/>
+<type>make install</type><br/>
+</screen>
+</p>
+<p>
+Note: The above steps assume that you downloaded the Apache source and placed it in your /usr/local/src directory.
+</p>
+</subsection>
+
+<subsection name="Apache 2.0 complains about incorrect module version">
+<p>
+Since Apache 2.0 API still change often, the Apache 2.0 teams decide to put in headers of compiled modules the 
+Apache 2.0 version used to compile the module. 
+At start time Apache 2.0 check that version in modules headers and stop if it detect that a module was compiled 
+for another Apache 2.0 version. As such you should allways use modules compiled for the same Apache 2.0 version. 
+This check may be removed if the future.
+</p>
+</subsection>
+
+<subsection name="JNI didn't works with Apache 1.3">
+<p>
+JNI support require a multi-threaded environment which is not the general case for Apache 1.3. 
+You should verify if Apache 1.3 has been build with thread support and if not you could add the 
+LoadModule "/usr/lib/libpthreads.so" in your httpd.conf. 
+Also keep in mind that JNI is suited for multi-threaded servers and you should consider upgrading 
+to Apache 2.0 to support JNI.
+</p>
+</subsection>
+
+<subsection name="JNI report that JVM couldn't be started under Linux">
+<p>
+Under Linux, you should set some environment variables BEFORE launching your Apache server :
+<source>
+export LD_LIBRARY_PATH=$jre/bin:$jre/bin/classic:$LD_LIBRARY_PATH
+</source>
+Also some Linux distributions have enabled a GLIBC feature called 'floating stacks' which may not works with kernel 
+less than 2.4.10 on SMP machines. You should disable floating stacks by exporting an environment variable :
+<source>
+export LD_ASSUME_KERNEL=2.2.5
+</source>
+You could have to update your service scripts, ie /etc/rc.d/init.d/httpd, to set these env vars before your httpd server starts.
+</p>
+</subsection>
+
+</section>
+
+<section name="IIS">
+<p>
+Informations and FAQ about mod_jk and IIS Web Servers. 
+</p>
+<todo>
+More informations to be added, Nacho ?
+</todo>
+</section>
+
+<section name="NES/iPlanet">
+<p>
+Informations and FAQ about mod_jk and NES/iPlanet Web Servers. 
+</p>
+<todo>
+More informations to be added, Mike ?
+</todo>
+</section>
+
+
+</document>
