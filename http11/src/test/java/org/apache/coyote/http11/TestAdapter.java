@@ -59,8 +59,10 @@
 package org.apache.coyote.http11;
 
 import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.http.MimeHeaders;
 
+import org.apache.coyote.ActionCode;
 import org.apache.coyote.Adapter;
 import org.apache.coyote.Request;
 import org.apache.coyote.Response;
@@ -84,6 +86,8 @@ public class TestAdapter
 	throws Exception {
         
         StringBuffer buf = new StringBuffer();
+        buf.append("Request dump:");
+        buf.append(CRLF);
         buf.append(req.method());
         buf.append(" ");
         buf.append(req.unparsedURI());
@@ -91,8 +95,32 @@ public class TestAdapter
         buf.append(req.protocol());
         buf.append(CRLF);
         
-        
-        
+        MimeHeaders headers = req.getMimeHeaders();
+        int size = headers.size();
+        for (int i = 0; i < size; i++) {
+            buf.append(headers.getName(i) + ": ");
+            buf.append(headers.getValue(i).toString());
+            buf.append(CRLF);
+        }
+
+        buf.append("Request body:");
+        buf.append(CRLF);
+
+        res.action(ActionCode.ACTION_ACK, null);
+
+        ByteChunk bc = new ByteChunk();
+        byte[] b = buf.toString().getBytes();
+        bc.setBytes(b, 0, b.length);
+        res.doWrite(bc);
+
+        int nRead = 0;
+
+        while (nRead >= 0) {
+            nRead = req.doRead(bc);
+            if (nRead > 0)
+                res.doWrite(bc);
+        }
+
     }
 
 

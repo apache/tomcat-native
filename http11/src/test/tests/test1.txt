@@ -1,7 +1,41 @@
 GET /foo HTTP/1.1
-Host: localhost
+Header1: simple header
+Host:     random_host     
+Header2:     this is a sample multiline header formatted 
+     using lots of extra spaces   
+Header3:    another     
+         multiline
+   header
+      which   
+    spans
+        six lines  
+Content-Length: 204
 
+01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 
 GET /bar HTTP/1.1
+Host:foobar
+
+
+GET /foo2 HTTP/1.1
+Host: localhost
+Header4:     this is a sample multiline header formatted 
+     using lots of extra spaces   
+Header5:    another     
+         multiline
+   header
+      which   
+    spans
+        six lines  
+Content-Length: 12
+
+0123456789
+GET /bar2 HTTP/1.1
+Header6:    another     
+         multiline
+   header
+      which   
+    spans
+        six lines  
 Host:foobar
 
