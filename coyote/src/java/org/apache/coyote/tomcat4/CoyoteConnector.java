@@ -945,7 +945,9 @@ public final class CoyoteConnector
         }
         protocolHandler.setAdapter(adapter);
 
-        IntrospectionUtils.setProperty(protocolHandler, "jkHome", System.getProperty("catalina.base"));
+        IntrospectionUtils.setProperty(protocolHandler, "jkHome", 
+                                       System.getProperty("catalina.base"));
+
         // Set attributes
         IntrospectionUtils.setProperty(protocolHandler, "port", "" + port);
         IntrospectionUtils.setProperty(protocolHandler, "maxThreads", 
@@ -957,16 +959,18 @@ public final class CoyoteConnector
         IntrospectionUtils.setProperty(protocolHandler, "soTimeout", 
                                        "" + connectionTimeout);
 
-        IntrospectionUtils.setProperty(protocolHandler, "secure", 
-                                       "" + secure);
-
         // Configure secure socket factory
         if (factory instanceof CoyoteServerSocketFactory) {
-            CoyoteServerSocketFactory ssf = (CoyoteServerSocketFactory) factory;
+            IntrospectionUtils.setProperty(protocolHandler, "secure", 
+                                           "" + true);
+            CoyoteServerSocketFactory ssf = 
+                (CoyoteServerSocketFactory) factory;
             IntrospectionUtils.setProperty(protocolHandler, "algorithm", 
                                            ssf.getAlgorithm());
-            IntrospectionUtils.setProperty(protocolHandler, "clientauth", 
-                                           "" + ssf.getClientAuth());
+            if (ssf.getClientAuth()) {
+                IntrospectionUtils.setProperty(protocolHandler, "clientauth", 
+                                               "" + ssf.getClientAuth());
+            }
             IntrospectionUtils.setProperty(protocolHandler, "keystore", 
                                            ssf.getKeystoreFile());
             IntrospectionUtils.setProperty(protocolHandler, "keypass", 
@@ -980,6 +984,9 @@ public final class CoyoteConnector
                                            ssf.getSSLImplementation());
             IntrospectionUtils.setProperty(protocolHandler, "socketFactory", 
                                            ssf.getSocketFactoryName());
+        } else {
+            IntrospectionUtils.setProperty(protocolHandler, "secure", 
+                                           "" + false);
         }
 
         try {
