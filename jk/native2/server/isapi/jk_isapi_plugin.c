@@ -105,7 +105,6 @@ static char extension_uri[INTERNET_MAX_URL_LENGTH] = "/jakarta/isapi_redirector2
 static char worker_file[MAX_PATH * 2];
 static char server_root[MAX_PATH * 2];
 
-FILE *fLog;
 
 
 #define URI_SELECT_OPT_PARSED       0
@@ -117,9 +116,9 @@ static int uri_select_option = URI_SELECT_OPT_PARSED;
 
 static int init_jk(char *serverName);
 
-static int initialize_extension(void);
+static int initialize_extension();
 
-static int read_registry_init_data(void);
+static int read_registry_init_data();
 
 static int get_registry_config_parameter(HKEY hkey,
                                          const char *tag, 
@@ -172,11 +171,9 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     strcpy(pVer->lpszFilterDesc, VERSION_STRING);
 
     if (!is_inited) {
-        fprintf(fLog,"GetFilterVersion::!is_inited\n");
         return initialize_extension();
     }
 
-    fprintf(fLog,"GetFilterVersion::Return TRUE\n");
     return TRUE;
 }
 
@@ -412,7 +409,6 @@ BOOL WINAPI GetExtensionVersion(HSE_VERSION_INFO  *pVer)
     if (!is_inited) {
         return initialize_extension();
     }
-
     return TRUE;
 }
 
@@ -523,9 +519,6 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     char dir[_MAX_DIR];
     char fname[_MAX_FNAME];
     char file_name[_MAX_PATH];
-    
-    fLog=fopen("c:\\isapi.log","a");
-    fprintf(fLog,"DllMain::ulReason=%d\n",ulReason);
 
     switch (ulReason) {
         case DLL_PROCESS_DETACH:
@@ -544,8 +537,6 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     } else {
         fReturn = JK_FALSE;
     }
-    fprintf(fLog,"DllMain::fReturn=%d\n",fReturn);
-    fclose(fLog);
     return fReturn;
 }
 
@@ -553,8 +544,10 @@ static int init_jk(char *serverName)
 {
     int rc = JK_FALSE;  
        
-    jk_env_t *env=jk2_create_config();
-    
+    jk_env_t *env=jk2_create_config();   
+
+    rc=workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file );
+
     /* Logging the initialization type: registry or properties file in virtual dir
     */
     if (using_ini_file) {
@@ -571,13 +564,11 @@ static int init_jk(char *serverName)
     return rc;
 }
 
-static int initialize_extension(void)
+static int initialize_extension()
 {
-    fprintf(fLog,"initialize_extension::is_inited=%d\n",is_inited);
     if (read_registry_init_data()) {
         is_inited = JK_TRUE;
     }
-    fprintf(fLog,"initialize_extension::is_inited=%d\n",is_inited);
     return is_inited;
 }
 
@@ -598,7 +589,7 @@ int parse_uri_select(const char *uri_select)
     return -1;
 }
 
-static int read_registry_init_data(void)
+static int read_registry_init_data()
 {
     char tmpbuf[INTERNET_MAX_URL_LENGTH];
     HKEY hkey;
@@ -658,7 +649,7 @@ static int read_registry_init_data(void)
             return JK_FALSE;
         } 
 
-        if(get_registry_config_parameter(hkey,
+        if(rc=get_registry_config_parameter(hkey,
                                          EXTENSION_URI_TAG,
                                          tmpbuf,
                                          sizeof(extension_uri))) {
@@ -667,7 +658,7 @@ static int read_registry_init_data(void)
             ok = JK_FALSE;
         }
 
-        if(get_registry_config_parameter(hkey,
+        if(rc=get_registry_config_parameter(hkey,
                                          SERVER_ROOT_TAG,
                                          tmpbuf,
                                          sizeof(server_root))) {
@@ -675,7 +666,7 @@ static int read_registry_init_data(void)
         } else {
             ok = JK_FALSE;
         }
-        if(get_registry_config_parameter(hkey,
+        if(rc=get_registry_config_parameter(hkey,
                                          JK_WORKER_FILE_TAG,
                                          tmpbuf,
                                          sizeof(worker_file))) {
@@ -684,7 +675,7 @@ static int read_registry_init_data(void)
             ok = JK_FALSE;
         }
 
-        if(get_registry_config_parameter(hkey,
+        if(rc=get_registry_config_parameter(hkey,
                                          URI_SELECT_TAG, 
                                          tmpbuf,
                                          sizeof(tmpbuf))) {
@@ -785,7 +776,7 @@ static jk_env_t * jk2_create_config()
     jk_uriEnv_t *newUri;
     jk_bean_t *jkb;
     jk_env_t *env;
-    if(  workerEnv==NULL ) {
+   if(  workerEnv==NULL ) {
         env=jk2_create_workerEnv();
     }
 

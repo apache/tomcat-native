@@ -85,21 +85,21 @@ extern "C" {
  * 3. The contents of the Translate header, if any
  *
  */
-#define URI_HEADER_NAME         ("TOMCATURI:")
-#define QUERY_HEADER_NAME       ("TOMCATQUERY:")
-#define WORKER_HEADER_NAME      ("TOMCATWORKER:")
+#define URI_HEADER_NAME          ("TOMCATURI:")
+#define QUERY_HEADER_NAME        ("TOMCATQUERY:")
+#define WORKER_HEADER_NAME       ("TOMCATWORKER:")
 #define TOMCAT_TRANSLATE_HEADER_NAME ("TOMCATTRANSLATE:")
-#define CONTENT_LENGTH          ("CONTENT_LENGTH:")
+#define CONTENT_LENGTH           ("CONTENT_LENGTH:")
 
 #define HTTP_URI_HEADER_NAME     ("HTTP_TOMCATURI")
 #define HTTP_QUERY_HEADER_NAME   ("HTTP_TOMCATQUERY")
 #define HTTP_WORKER_HEADER_NAME  ("HTTP_TOMCATWORKER")
 
-#define SERVER_NAME                              ("SERVER_NAME" )
+#define SERVER_NAME              ("SERVER_NAME" )
 
-#define SERVER_SOFTWARE                  ("SERVER_SOFTWARE")
+#define SERVER_SOFTWARE          ("SERVER_SOFTWARE")
 
-#define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\2.0")
+#define REGISTRY_LOCATION        ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\2.0")
 
 #define BAD_REQUEST             -1
 #define BAD_PATH                -2
