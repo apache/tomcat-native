@@ -1118,7 +1118,7 @@ public class CoyoteRequest
             return (context.getServletContext().getRequestDispatcher(path));
 
         // Convert a request-relative path to a context-relative one
-        String servletPath = (String) getAttribute(Globals.SERVLET_PATH_ATTR);
+        String servletPath = (String) getAttribute(Globals.INCLUDE_SERVLET_PATH_ATTR);
         if (servletPath == null)
             servletPath = getServletPath();
 
