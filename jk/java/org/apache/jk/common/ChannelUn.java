@@ -140,9 +140,13 @@ public class ChannelUn extends Channel {
 
         File socketFile=new File( file );
         if( socketFile.exists() ) {
-            socketFile.delete();
+            // The socket file cannot be removed ...
+            if (!socketFile.delete())
+                  throw(new IOException("Cannot remove " + file));
         }
         unixListenSocket=apr.unSocketListen( gPool, file, 10 );
+        if (unixListenSocket<0)
+            throw(new IOException("Cannot create listening socket"));
 
         // Run a thread that will accept connections.
         tp.start();

@@ -202,10 +202,11 @@ Java_org_apache_jk_apr_AprImpl_unSocketListen(JNIEnv *jniEnv, jobject _jthis,
     strcpy(unixAddr.sun_path, host);
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, hostJ, host);
 
-    // remove the exist socket.
+    /* remove the exist socket. (it had been moved in ChannelUn.java).
     if (unlink(unixAddr.sun_path) < 0 && errno != ENOENT) {
         // The socket cannot be remove... Well I hope that no problems ;-)
     }
+     */
 
     unixSocket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (unixSocket<0) {

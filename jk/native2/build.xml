@@ -6,8 +6,8 @@
   
   <property file="${user.home}/.ant.properties" />
   <property file="${user.home}/build.properties" />
-  <property file="../build.properties" />
   <property file="build.properties" />
+  <property file="../build.properties" />
 
   <!-- ========== Local paths, overriden in build.properties ========== -->
 
