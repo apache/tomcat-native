@@ -158,6 +158,10 @@
     <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
             basedir="${build.home}/classes"
            manifest="${build.home}/conf/MANIFEST.MF"/>
+    <jar jarfile="${build.home}/lib/tomcat33-resource.jar"
+            basedir="${build.home}/classes" 
+	    includes="**/*.properties" />
+            
     <copy      file="${tomcat-util.jar}" 
              tofile="${build.home}/lib/tomcat-util.jar" />
     <copy      file="${tomcat-coyote.jar}" 
