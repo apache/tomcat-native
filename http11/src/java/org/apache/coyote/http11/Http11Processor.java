@@ -879,7 +879,8 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         // Add date header
-        response.addHeader("Date", FastHttpDateFormat.getCurrentDate());
+        if (! response.containsHeader("Date"))
+          response.addHeader("Date", FastHttpDateFormat.getCurrentDate());
 
         // Add server header
         response.addHeader("Server", Constants.SERVER);
