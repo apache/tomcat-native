@@ -21,6 +21,20 @@
 </a>
 <hr size="1" noshade="noshade" />
 -->
+<a name="20041224.1"> 
+<h3>17 December - JK-1.2.8 released</h3>
+<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
+of Jakarta Tomcat Connectors 1.2.8.
+</p>
+<p>
+ Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<p>If you find any bugs during testing this release, please fill in the
+<a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
+Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
+</a> 
+<hr size="1" noshade="noshade" />
 <a name="20041218.1"> 
 <h3>17 December - JK-1.2.8-rc-1 released</h3>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
