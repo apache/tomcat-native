@@ -494,7 +494,7 @@ DLLEXPORT unsigned int FilterInit(FilterInitData * filterInitData)
 	if (map_alloc(&map))
 	{
 		if (map_read_properties(map, workerFile))
-			if (wc_open(map, logger))
+			if (wc_open(map, uw_map, logger))
 				rc = JK_TRUE;
 
 		map_free(&map);

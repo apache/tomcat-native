@@ -161,6 +161,25 @@ SOURCE=..\jk\jk_util.c
 SOURCE=..\jk\jk_worker.c
 # End Source File
 # End Group
+
+SOURCE=..\jk\jk_worker_ajp14.c
+# End Source File
+# End Group
+
+SOURCE=..\jk\jk_ajp14.c
+# End Source File
+# End Group
+
+SOURCE=..\jk\jk_ajp_common.c
+# End Source File
+# End Group
+
+SOURCE=..\jk\jk_md5.c
+# End Source File
+# End Group
+
+# End Source File
+# End Group
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
@@ -249,6 +268,24 @@ SOURCE=..\jk\jk_worker.h
 SOURCE=..\jk\jk_worker_list.h
 # End Source File
 # End Group
+
+SOURCE=..\jk\jk_worker_ajp14.h
+# End Source File
+# End Group
+
+SOURCE=..\jk\jk_ajp14.h
+# End Source File
+# End Group
+
+SOURCE=..\jk\jk_ajp_common.h
+# End Source File
+# End Group
+
+SOURCE=..\jk\jk_md5.h
+# End Source File
+# End Group
+
+
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
