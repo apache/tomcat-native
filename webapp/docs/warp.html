@@ -200,8 +200,7 @@ Table</font></font></b></td>
 
 <td>Client Server</td>
 
-<td>One end of the peer notifies
-the other of a fatal connection error</td>
+<td>One end of the peer notifies the other of a fatal connection error</td>
 
 <td>N/A</td>
 </tr>
@@ -213,8 +212,8 @@ the other of a fatal connection error</td>
 
 <td>Client Server</td>
 
-<td>One end of the peer notifies
-the other that the connections is going to be closed</td>
+<td>One end of the peer notifies the other that the connections is going
+to be closed</td>
 
 <td>N/A</td>
 </tr>
@@ -224,7 +223,8 @@ the other that the connections is going to be closed</td>
 
 <td>0xff</td>
 
-<td> Client <br>Serve </td>
+<td>Client&nbsp;
+<br>Serve&nbsp;</td>
 
 <td>A protocol error occourred, the connection must be closed.</td>
 
@@ -687,8 +687,7 @@ awaits for configuration information.
 <li>
 [integer] The server unique-id.</li>
 </ul>
-
-<p><br><b>CONF_DEPLOY </b>0x05
+<b>CONF_DEPLOY </b>0x05
 <br>The client attempts to deploy a web application.
 <ul>
 <li>
@@ -713,8 +712,7 @@ identifier of the configured application.
 <li>
 &nbsp;[string] The web application real path (where it's expanded).</li>
 </ul>
-
-<p><br><b>CONF_MAP</b> 0x07
+<b>CONF_MAP</b> 0x07
 <br>The client requests to the server to enumerate all mappings for a specified
 web-application. The server replies to this message with a serie of MAP_ALLOW
 and MAP_DENY packets, terminated by a MAP_DONE packet.
@@ -730,8 +728,7 @@ by the remote end (the web server).
 <li>
 &nbsp;[string] An url-pattern as defined by the Servlet specification.</li>
 </ul>
-
-<p><br><b>CONF_MAP_DENY</b> 0x09
+<b>CONF_MAP_DENY</b> 0x09
 <br>The server replies to a CONF_MAP message with those packets to indicate
 a mapping to a resource that must be served by the server (servlet container).
 <ul>
@@ -747,8 +744,160 @@ end.
 <p><b>CONF_PROCEED</b> 0x0f
 <br>Server issues this message in response to a CONF_DONE message, to acknowledge
 its readiness to accept requests.
-<br>&nbsp;
-<br>&nbsp;
+<p><b>REQ_INIT</b> 0x10
+<br>The client requests to the WARP server that a request is about to be
+processed.
+<ul>
+<li>
+&nbsp;[integer] The web-application unique ID for this server. (From the
+CONF_MAP).</li>
+
+<li>
+[string] The HTTP method used for this request.</li>
+
+<li>
+[string] The request URI.</li>
+
+<li>
+[string] The request query arguments.</li>
+
+<li>
+[string] The request protocol (HTTP/1.0, HTTP/1.1...).</li>
+</ul>
+<b>REQ_CONTENT</b> 0x11
+<br>The mime content type and length of this request.
+<ul>
+<li>
+[string] The MIME content type of this reques.</li>
+
+<li>
+[integer] The content length of this request.</li>
+</ul>
+<b>REQ_SCHEME</b> 0x12
+<br>The scheme description of this request.
+<ul>
+<li>
+[string] The scheme (part before :// in the URL) of this request.</li>
+</ul>
+<b>REQ_AUTH</b> 0x13
+<br>Authentication information of the HTTP remote peer.
+<ul>
+<li>
+[string] The remote-user name.</li>
+
+<li>
+[string] The authentication information.</li>
+</ul>
+<b>REQ_HEADER</b> 0x14
+<br>An HTTP request header. There are severals.
+<ul>
+<li>
+[string] The header name.</li>
+
+<li>
+[string] The header value.</li>
+</ul>
+<b>REQ_SERVER </b>0x15
+<br>The HTTP server information.
+<ul>
+<li>
+[string] The HTTP server host name.</li>
+
+<li>
+[string] The HTTP server IP address.</li>
+
+<li>
+[ushort] The port receiving the HTTP request.</li>
+</ul>
+<b>REQ_CLIENT</b> 0x16
+<br>The HTTP client (remote peer) information.
+<ul>
+<li>
+[string] The HTTP client host name.</li>
+
+<li>
+[string] The HTTP client IP address.</li>
+
+<li>
+[ushort] The remote port originating the HTTP request.</li>
+</ul>
+<b>REQ_PROCEED</b> 0x1f
+<br>The client finished transmitting the request. The server can now proceed
+and process the request.
+<p><b>ASK_SSL</b> 0x43
+<br>The WARP server (Tomcat) asks the WARP client to transfer the basic
+SSL information (cypher, keysize and session).
+<p><b>ASK_SSL_CLIENT</b> 0x44
+<br>The WARP server (Tomcat) asks the WARP server to transfer the client
+certificate.&nbsp; (just the first element of the chain and the webserver
+should request for it to the browser if possible).
+<p><b>REP_SSL_CERT</b> 0x52
+<br>The client certificate (remote peer).
+<ul>
+<li>
+[string] The client certificate. (PEM format).</li>
+</ul>
+<b>REP_SSL</b> 0x53
+<br>SSL information.
+<ul>
+<li>
+[string] The cipher_suite.</li>
+
+<li>
+[string] The ssl session. (That is not in the spec's).</li>
+
+<li>
+[ushort] size of the algorithm (56-128).</li>
+</ul>
+<b>REP_SSL_NO</b> 0x5F
+<br>The requested SSL information is not available.
+<p><b>CBK_READ</b> 0x40
+<br>A request callback. The WARP server queries the WARP client&nbsp; (HTTP
+server) to transmit a chunk of the request body.
+<ul>
+<li>
+[ushort] The max number of bytes the server is able to receive.</li>
+</ul>
+<b>CBK_DATA</b> 0x41
+<br>As requested by the WARP server, the WARP client (HTTP server) transmits
+a chunk of the request body.
+<ul>
+<li>
+[raw] A chunk of the request body.</li>
+</ul>
+<b>CBK_DONE</b> 0x42
+<br>The WARP client (HTTP server) informs the WARP server that the request
+body has been fully transmitted.
+<p><b>RES_STATUS</b> 0x20
+<br>The server replies with the HTTP response status for the request.
+<ul>
+<li>
+[ushort] The HTTP status of the response.</li>
+
+<li>
+[string] The HTTP response message.</li>
+</ul>
+<b>RES_HEADER</b> 0x21
+<br>An HTTP MIME response header to send to the client. There are severals
+of these.
+<ul>
+<li>
+[string] The MIME header name.</li>
+
+<li>
+[string] The MIME header value.</li>
+</ul>
+<b>RES_COMMIT</b> 0x2f
+<br>The server indicates that the first part of the response (HTTP status
+line and MIME headers) are to be committed to the client (remote peer).
+<p><b>RES_BODY</b> 0x30
+<br>The HTTP response body.
+<ul>
+<li>
+[raw] A chunk of the response body. Up to 65535 bytes.</li>
+</ul>
+<b>RES_DONE</b> 0x3f
+<br>The server finished transmitting the response.
 <br>&nbsp;
 <br>&nbsp;
 </body>
