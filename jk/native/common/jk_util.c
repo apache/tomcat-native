@@ -91,7 +91,7 @@
 
 
 static const char *jk_level_werbs[] = {
-    "[" JK_LOG_TRACE_WERB "] ",
+    "[" JK_LOG_TRACE_VERB "] ",
     "[" JK_LOG_DEBUG_VERB "] ",
     "[" JK_LOG_INFO_VERB  "]  ",
     "[" JK_LOG_WARNING_VERB  "]  ",
@@ -172,8 +172,20 @@ static int JK_METHOD log_to_file(jk_logger_t *l, int level, const char *what)
 
 int jk_parse_log_level(const char *level)
 {
+    if (0 == strcasecmp(level, JK_LOG_TRACE_VERB)) {
+        return JK_LOG_TRACE_LEVEL;
+    }
+
+    if (0 == strcasecmp(level, JK_LOG_DEBUG_VERB)) {
+        return JK_LOG_DEBUG_LEVEL;
+    }
+
     if (0 == strcasecmp(level, JK_LOG_INFO_VERB)) {
         return JK_LOG_INFO_LEVEL;
+    }
+
+    if (0 == strcasecmp(level, JK_LOG_WARNING_VERB)) {
+        return JK_LOG_WARNING_LEVEL;
     }
 
     if (0 == strcasecmp(level, JK_LOG_ERROR_VERB)) {
@@ -181,14 +193,10 @@ int jk_parse_log_level(const char *level)
     }
 
     if (0 == strcasecmp(level, JK_LOG_EMERG_VERB)) {
-        return JK_LOG_EMERG_LEVEL;
+        return JK_LOG_ERROR_LEVEL;
     }
 
-    if (0 == strcasecmp(level, JK_LOG_DEBUG_VERB)) {
-        return JK_LOG_DEBUG_LEVEL;
-    }
-
-    return JK_LOG_TRACE_LEVEL;
+    return JK_LOG_INFO_LEVEL;
 }
 
 int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
