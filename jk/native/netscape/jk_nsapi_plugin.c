@@ -234,7 +234,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
         logger = NULL;
     }
     
-    jk_shm_open(shm_file);
+    jk_shm_open(shm_file, logger);
     if (jk_map_alloc(&init_map)) {
         if (jk_map_read_properties(init_map, worker_prp_file)) {
             int sleep_cnt;
