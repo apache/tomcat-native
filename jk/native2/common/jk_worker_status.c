@@ -95,7 +95,7 @@ static void jk2_printf(jk_env_t *env, jk_buff_t *buf, char *fmt, ...)
 
     va_start(vargs,fmt);
     buf->pos=0; /* Temp - we don't buffer */
-    ret=apr_vsnprintf(buf->buf + buf->pos, buf->size - buf->pos, fmt, vargs);
+    ret=vsnprintf(buf->buf + buf->pos, buf->size - buf->pos, fmt, vargs);
     va_end(vargs);
 
     buf->s->write( env, buf->s, buf->buf, strlen(buf->buf) );
@@ -153,7 +153,7 @@ static void jk2_worker_status_displayWorkers(jk_env_t *env, jk_buff_t *buf,
 static void jk2_worker_status_displayWorkerEnv(jk_env_t *env, jk_buff_t *buf,
                                                jk_workerEnv_t *wenv)
 {
-    jk_map_t *map=wenv->init_data;
+    jk_map_t *map=wenv->initData;
     int i;
 
     jk2_printf(env, buf, "<H2>Worker Env Info</H2>\n");
@@ -180,30 +180,35 @@ static void jk2_worker_status_displayWorkerEnv(jk_env_t *env, jk_buff_t *buf,
 
 }
 
-static void jk2_worker_status_displayWebapps(jk_env_t *env, jk_buff_t *buf,
+static void jk2_worker_status_displayMappings(jk_env_t *env, jk_buff_t *buf,
                                              jk_workerEnv_t *wenv)
 {
-    jk_map_t *map=wenv->webapps;
+    jk_uriEnv_t **maps=wenv->uriMap->maps;
+    int size=wenv->uriMap->size;
     int i;
 
-    jk2_printf(env, buf, "<H2>Webapps</H2>\n");
+    jk2_printf(env, buf, "<H2>Mappings</H2>\n");
 
-    if( map==NULL ) {
+    if( maps==NULL ) {
         jk2_printf(env, buf, "None\n");
         return;
     }
     
-    jk2_printf(env, buf, "<table border>\n");
+    jk2_printf(env, buf, "<table class='mappings' border>\n");
     
-    jk2_printf(env, buf, "<tr><th>Name</th><th>DocBase</th>"
-              "<th>Mappings</th></tr>");
+    jk2_printf(env, buf, "<tr><th>Host</th><th>Uri</th>"
+              "<th>Worker</th></tr>");
     
-    for( i=0; i< map->size( env, map ) ; i++ ) {
-        char *name=map->nameAt( env, map, i );
-        jk_webapp_t *webapp=(jk_webapp_t *)map->valueAt( env, map,i );
+    for( i=0; i< size ; i++ ) {
+        jk_uriEnv_t *uriEnv=maps[i];
 
-        jk2_printf(env, buf, "<tr id='webapp.%s'>", name );
-        jk2_printf(env, buf, "<td class='name'>%s</td>", name );
+        jk2_printf(env, buf, "<tr>" );
+        jk2_printf(env, buf, "<td class='host'>%s</td>",
+                   (uriEnv->virtual==NULL) ? "*" : uriEnv->virtual );
+        jk2_printf(env, buf, "<td class='uri'>%s</td>",
+                   uriEnv->uri);
+        jk2_printf(env, buf, "<td class='worker'>%s</td>",
+                   (uriEnv->workerName==NULL) ? "DEFAULT" : uriEnv->workerName );
         jk2_printf(env, buf, "</tr>" );
     }
 
@@ -260,7 +265,7 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     /* Body */
     jk2_worker_status_displayWorkerEnv(env, buff, s->workerEnv );
     jk2_worker_status_displayWorkers(env, buff, s->workerEnv );
-    jk2_worker_status_displayWebapps(env, buff, s->workerEnv );
+    jk2_worker_status_displayMappings(env, buff, s->workerEnv );
     jk2_worker_status_displayConnections(env, buff, s->workerEnv );
     
     s->afterRequest( env, s);
