@@ -533,8 +533,7 @@ static int jk2_handler(request_rec *r)
     uriEnv=ap_get_module_config( r->request_config, &jk2_module );
 
     /* not for me, try next handler */
-    if(uriEnv==NULL ||
-       (strcmp(r->handler,JK_HANDLER) && strcmp(r->handler,DIR_MAGIC_TYPE)))
+    if(uriEnv==NULL || strcmp(r->handler,JK_HANDLER)!= 0 )
       return DECLINED;
     
     /* If this is a proxy request, we'll notify an error */
