@@ -265,7 +265,7 @@ public class OutputBuffer extends Writer
             return;
 
         if ((!coyoteResponse.isCommitted()) 
-            && (coyoteResponse.getContentLength() == -1)) {
+            && (coyoteResponse.getContentLengthLong() == -1)) {
             // Flushing the char buffer
             if (state == CHAR_STATE) {
                 cb.flushBuffer();

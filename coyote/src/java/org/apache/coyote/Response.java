@@ -350,7 +350,7 @@ public final class Response {
         }
         if( name.equalsIgnoreCase( "Content-Length" ) ) {
             try {
-                int cL=Integer.parseInt( value );
+                long cL=Long.parseLong( value );
                 setContentLength( cL );
                 return true;
             } catch( NumberFormatException ex ) {
@@ -525,6 +525,10 @@ public final class Response {
     }
     
     public void setContentLength(int contentLength) {
+        this.contentLength = contentLength;
+    }
+
+    public void setContentLength(long contentLength) {
         this.contentLength = contentLength;
     }
 

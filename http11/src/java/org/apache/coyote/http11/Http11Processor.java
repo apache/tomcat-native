@@ -1413,7 +1413,7 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         // Check if suffisant len to trig the compression
-        int contentLength = response.getContentLength();
+        long contentLength = response.getContentLengthLong();
         if ((contentLength == -1)
             || (contentLength > compressionMinSize)) {
             // Check for compatible MIME-TYPE
