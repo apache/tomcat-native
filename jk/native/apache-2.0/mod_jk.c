@@ -1869,7 +1869,11 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
 
         if (conf)
         {
-            wc_close(main_log);
+            /* On pool cleanup pass NULL for the jk_logger to
+               prevent segmentation faults on Windows because
+               we can't guarantee what order pools get cleaned
+               up between APR implementations. */
+            wc_close(NULL);
             if (conf->worker_properties)
                 map_free(&conf->worker_properties);
             if (conf->uri_to_context)
@@ -1877,12 +1881,7 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
             if (conf->automount)
                 map_free(&conf->automount);
             if (conf->uw_map)
-                uri_worker_map_free(&conf->uw_map, main_log);
-            /* Since we are now using apache to do logging, this 
-             * cleanup will just cause problems so don't do it
-             *
-             * jk_close_file_logger(main_log);
-             */
+                uri_worker_map_free(&conf->uw_map, NULL);
         }
         s = s->next;
     }
@@ -2392,12 +2391,20 @@ static int jk_map_to_storage(request_rec *r)
 
 static void jk_register_hooks(apr_pool_t *p)
 {
-    ap_hook_handler(jk_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    /* Make sure mod_alias runs before mod_jk to make sure that
+       Alias's are mapped before mod_jk tries to process the request */
+    static const char * const aszPre[] = { "mod_alias.c", NULL };
+
+    /* Make sure mod_dir runs after mod_jk so that a
+       DirectoryIndex index.jsp works */
+    static const char * const aszPost[] = { "mod_dir.c", NULL };
+
+    ap_hook_handler(jk_handler,aszPre,aszPost,APR_HOOK_MIDDLE);
     ap_hook_post_config(jk_post_config,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_child_init(jk_child_init,NULL,NULL,APR_HOOK_MIDDLE);
-    ap_hook_translate_name(jk_translate,NULL,NULL,APR_HOOK_FIRST);
+    ap_hook_translate_name(jk_translate,aszPre,aszPost,APR_HOOK_MIDDLE);
 #if (MODULE_MAGIC_NUMBER_MAJOR > 20010808)
-    ap_hook_map_to_storage(jk_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_map_to_storage(jk_map_to_storage,aszPre,aszPost,APR_HOOK_MIDDLE);
 #endif
 }
 
