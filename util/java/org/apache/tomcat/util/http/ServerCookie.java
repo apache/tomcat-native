@@ -16,11 +16,12 @@
 
 package org.apache.tomcat.util.http;
 
-import org.apache.tomcat.util.buf.MessageBytes;
+import java.io.Serializable;
+import java.text.FieldPosition;
+import java.util.Date;
+
 import org.apache.tomcat.util.buf.DateTool;
-import java.text.*;
-import java.io.*;
-import java.util.*;
+import org.apache.tomcat.util.buf.MessageBytes;
 
 
 /**

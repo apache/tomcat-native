@@ -331,12 +331,6 @@ public class Digester extends DefaultHandler {
     protected static final String W3C_XML_SCHEMA =
         "http://www.w3.org/2001/XMLSchema";
     
-    /**
-     * An optional class that substitutes values in attributes and body text.
-     * This may be null and so a null check is always required before use.
-     */
-    protected Substitutor substitutor;
-    
     /** Stacks used for interrule communication, indexed by name String */
     private HashMap stacksByName = new HashMap();
     
@@ -918,23 +912,6 @@ public class Digester extends DefaultHandler {
         return reader;
     }
 
-    /**
-     * Gets the <code>Substitutor</code> used to convert attributes and body text.
-     * @return Substitutor, null if not substitutions are to be performed.
-     */
-    public Substitutor getSubstitutor() {
-        return substitutor;
-    }
-    
-    /** 
-     * Sets the <code>Substitutor</code> to be used to convert attributes and body text.
-     * @param substitutor the Substitutor to be used to convert attributes and body text
-     * or null if not substitution of these values is to be performed.
-     */
-    public void setSubstitutor(Substitutor substitutor) {
-        this.substitutor = substitutor;
-    }
-
     // ------------------------------------------------- ContentHandler Methods
 
 
@@ -1041,10 +1018,6 @@ public class Digester extends DefaultHandler {
         List rules = (List) matches.pop();
         if ((rules != null) && (rules.size() > 0)) {
             String bodyText = this.bodyText.toString();
-            Substitutor substitutor = getSubstitutor();
-            if (substitutor!= null) {
-                bodyText = substitutor.substitute(bodyText);
-            }
             for (int i = 0; i < rules.size(); i++) {
                 try {
                     Rule rule = (Rule) rules.get(i);
@@ -1293,10 +1266,6 @@ public class Digester extends DefaultHandler {
         List rules = getRules().match(namespaceURI, match);
         matches.push(rules);
         if ((rules != null) && (rules.size() > 0)) {
-            Substitutor substitutor = getSubstitutor();
-            if (substitutor!= null) {
-                list = substitutor.substitute(list);
-            }
             for (int i = 0; i < rules.size(); i++) {
                 try {
                     Rule rule = (Rule) rules.get(i);

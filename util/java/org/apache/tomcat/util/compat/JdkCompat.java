@@ -21,10 +21,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.Vector;
-import java.util.Locale;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.MessageFormat;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
