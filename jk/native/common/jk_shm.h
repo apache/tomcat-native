@@ -110,6 +110,20 @@ int jk_shm_attach(const char *fname);
  */
 void *jk_shm_alloc(jk_pool_t *p, size_t size);
 
+/* Return workers.properties last modified time
+ */
+time_t jk_shm_get_workers_time();
+
+/* Set workers.properties last modified time
+ */
+void jk_shm_set_workers_time(time_t t);
+
+/* Lock shared memory for thread safe access */
+int jk_shm_lock();
+
+/* Unlock shared memory for thread safe access */
+int jk_shm_unlock();
+
 
 #ifdef __cplusplus
 }

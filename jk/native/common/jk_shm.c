@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include "jk_pool.h"
+#include "jk_mt.h"
 #include "jk_shm.h"
 
 /** jk shm header record structure */
@@ -31,6 +32,7 @@ struct jk_shm_header
     size_t size;
     size_t pos;
     int    childs;
+    time_t modified;
     char   buf[1];
 };
 
@@ -44,18 +46,21 @@ struct jk_shm
     int        fd;
     int        attached;
     jk_shm_header_t  *hdr;
+    CRITICAL_SECTION cs;
 };
 
 typedef struct jk_shm jk_shm_t;
 
 static const char shm_signature[] = { JK_SHM_MAGIC };
 static jk_shm_t jk_shmem = { 0, NULL, -1, 0, NULL};
+static time_t jk_workers_modified_time = 0;
 
 #if defined (WIN32) || defined(NETWARE)
 
 /* Use plain memory */
 int jk_shm_open(const char *fname)
 {
+    int rc;
     if (jk_shmem.hdr) {
         return 0;
     }
@@ -70,6 +75,7 @@ int jk_shm_open(const char *fname)
     jk_shmem.attached = 0;
     memcpy(jk_shmem.hdr->magic, shm_signature, 8);
     jk_shmem.hdr->size = JK_SHM_SIZE;
+    JK_INIT_CS(&(jk_shmem.cs), rc);
     return 0;
 }
 
@@ -87,7 +93,9 @@ int jk_shm_attach(const char *fname)
 void jk_shm_close()
 {
     if (jk_shmem.hdr) {
+        int rc;
         free(jk_shmem.hdr);
+        JK_DELETE_CS(&(jk_shmem.cs), rc);
     }
     jk_shmem.hdr = NULL;
 }
@@ -121,13 +129,13 @@ static int do_shm_open(const char *fname, int attached)
     jk_shmem.filename = fname;
     jk_shmem.attached = attached;
 
+    jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_header_t) + JK_SHM_SIZE);
+
     /* Use plain memory in case there is no file name */
     if (!fname) {
         jk_shmem.filename  = "memory";
         return 0;
-    }
-    
-    jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_header_t) + JK_SHM_SIZE);
+    }    
     
     if (!attached)
         flags |= (O_CREAT|O_TRUNC);
@@ -179,6 +187,7 @@ static int do_shm_open(const char *fname, int attached)
         jk_shmem.hdr->childs++;
         /* TODO: check header magic */
     }
+    JK_INIT_CS(&(jk_shmem.cs), rc);
     return 0;
 }
 
@@ -194,14 +203,18 @@ int jk_shm_attach(const char *fname)
 
 void jk_shm_close()
 {
+    int rc;
     if (jk_shmem.hdr) {
         if (jk_shmem.fd >= 0) {
             munmap((void *)jk_shmem.hdr, jk_shmem.size);
             close(jk_shmem.fd);
         }
     }
-    jk_shmem.hdr = NULL;
-    jk_shmem.fd  = -1;
+    if (jk_shmem.size)
+        JK_DELETE_CS(&(jk_shmem.cs), rc);
+    jk_shmem.size = 0;
+    jk_shmem.hdr  = NULL;
+    jk_shmem.fd   = -1;
 }
 
 
@@ -227,4 +240,35 @@ void *jk_shm_alloc(jk_pool_t *p, size_t size)
 const char *jk_shm_name()
 {
     return jk_shmem.filename;
+}
+
+
+time_t jk_shm_get_workers_time()
+{
+    if (jk_shmem.hdr)
+        return jk_shmem.hdr->modified;
+    else
+        return jk_workers_modified_time;
+}
+
+void jk_shm_set_workers_time(time_t t)
+{
+    if (jk_shmem.hdr)
+        jk_shmem.hdr->modified = t;
+    else
+        jk_workers_modified_time = t;
+}
+
+int jk_shm_lock()
+{
+    int rc;
+    JK_ENTER_CS(&(jk_shmem.cs), rc);
+    return rc;
+}
+
+int jk_shm_unlock()
+{
+    int rc;
+    JK_LEAVE_CS(&(jk_shmem.cs), rc);
+    return rc;
 }
