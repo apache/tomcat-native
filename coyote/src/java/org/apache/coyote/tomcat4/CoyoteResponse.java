@@ -111,6 +111,7 @@ import org.apache.catalina.util.StringManager;
  * Wrapper object for the Coyote response.
  *
  * @author Remy Maucherat
+ * @author Craig R. McClanahan
  * @version $Revision$ $Date$
  */
 
@@ -258,6 +259,18 @@ public class CoyoteResponse
     protected ArrayList cookies = new ArrayList();
 
 
+    /**
+     * Using output stream flag.
+     */
+    protected boolean usingOutputStream = false;
+
+
+    /**
+     * Using writer flag.
+     */
+    protected boolean usingWriter = false;
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -267,6 +280,8 @@ public class CoyoteResponse
      */
     public void recycle() {
         outputBuffer.recycle();
+        usingOutputStream = false;
+        usingWriter = false;
         appCommitted = false;
         included = false;
         error = false;
@@ -443,8 +458,6 @@ public class CoyoteResponse
         throws IOException {
         // Writing leftover bytes
         outputBuffer.close();
-        // Finishing response
-        coyoteResponse.finish();
     }
 
 
@@ -524,10 +537,11 @@ public class CoyoteResponse
     public ServletOutputStream getOutputStream() 
         throws IOException {
 
-        if (writer != null)
+        if (usingWriter)
             throw new IllegalStateException
                 (sm.getString("coyoteResponse.getOutputStream.ise"));
 
+        usingOutputStream = true;
         return outputStream;
 
     }
@@ -551,10 +565,11 @@ public class CoyoteResponse
     public PrintWriter getWriter() 
         throws IOException {
 
-        if (outputStream != null)
+        if (usingOutputStream)
             throw new IllegalStateException
                 (sm.getString("coyoteResponse.getWriter.ise"));
 
+        usingWriter = true;
         return writer;
 
     }
