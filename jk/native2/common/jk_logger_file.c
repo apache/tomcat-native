@@ -168,7 +168,7 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
         }
         _this->logger_private = f;
     } 
-    _this->jkLog(env, _this,JK_LOG_ERROR,
+    _this->jkLog(env, _this,JK_LOG_INFO,
                  "Initializing log file %s\n", _this->name );
     if( oldF!=NULL ) {
         fclose( oldF );
