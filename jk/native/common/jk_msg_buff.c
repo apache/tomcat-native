@@ -45,36 +45,6 @@ static char *jk_HEX = "0123456789ABCDEFX";
  * Simple marshaling code.
  */
 
-/* Deprecated: We need smarter way for that.
-   Do not use stderr for logging
- */
-#if defined(DEBUG) || defined(_DEBUG)
-static void jk_b_dump(jk_msg_buf_t *msg, char *err)
-{
-    int i = 0;
-    fprintf(stderr,
-            "%s %d/%d/%d %x %x %x %x - %x %x %x %x - %x %x %x %x - %x %x %x %x\n",
-            err, msg->pos, msg->len, msg->maxlen,
-            msg->buf[i++], msg->buf[i++], msg->buf[i++], msg->buf[i++],
-            msg->buf[i++], msg->buf[i++], msg->buf[i++], msg->buf[i++],
-            msg->buf[i++], msg->buf[i++], msg->buf[i++], msg->buf[i++],
-            msg->buf[i++], msg->buf[i++], msg->buf[i++], msg->buf[i++]);
-
-    i = msg->pos - 4;
-    if (i < 0) {
-        i = 0;
-    }
-
-    fprintf(stderr,
-            "        %x %x %x %x - %x %x %x %x --- %x %x %x %x - %x %x %x %x\n",
-            msg->buf[i++], msg->buf[i++], msg->buf[i++], msg->buf[i++],
-            msg->buf[i++], msg->buf[i++], msg->buf[i++], msg->buf[i++],
-            msg->buf[i++], msg->buf[i++], msg->buf[i++], msg->buf[i++],
-            msg->buf[i++], msg->buf[i++], msg->buf[i++], msg->buf[i++]);
-
-}
-#endif
-
 void jk_b_reset(jk_msg_buf_t *msg)
 {
     msg->len = 4;
@@ -282,9 +252,6 @@ unsigned long jk_b_get_long(jk_msg_buf_t *msg)
 {
     unsigned long i;
     if (msg->pos + 3 > msg->len) {
-#if defined(DEBUG) || defined(_DEBUG)
-        fprintf(stderr, "jk_b_get_long::Read after end \n");
-#endif
         return 0xFFFFFFFF;
     }
     i = ((msg->buf[(msg->pos++)] & 0xFF) << 24);
@@ -309,9 +276,6 @@ unsigned short jk_b_get_int(jk_msg_buf_t *msg)
 {
     unsigned short i;
     if (msg->pos + 1 > msg->len) {
-#if defined(DEBUG) || defined(_DEBUG)
-        fprintf(stderr, "jk_b_get_int::Read after end \n");
-#endif
         return 0xFFFF;
     }
     i = ((msg->buf[(msg->pos++)] & 0xFF) << 8);
@@ -331,9 +295,6 @@ unsigned char jk_b_get_byte(jk_msg_buf_t *msg)
 {
     unsigned char rc;
     if (msg->pos > msg->len) {
-#if defined(DEBUG) || defined(_DEBUG)
-        fprintf(stderr, "jk_b_get_byte::Read after end \n");
-#endif
         return 0xFF;
     }
     rc = msg->buf[msg->pos++];
@@ -353,11 +314,8 @@ unsigned char *jk_b_get_string(jk_msg_buf_t *msg)
     int start = msg->pos;
 
     if ((size == 0xFFFF) || (size + start > msg->maxlen)) {
-#if defined (DEBUG) || (_DEBUG)
-        jk_b_dump(msg, "After get int");
-        fprintf(stderr, "ERROR\n");
-#endif
-        return (unsigned char *)"ERROR";        /* XXX */
+        /* TODO: return NULL and deal with that in the code */
+        return (unsigned char *)"ERROR";
     }
 
     msg->pos += size;
@@ -371,10 +329,6 @@ int jk_b_get_bytes(jk_msg_buf_t *msg, unsigned char *buf, int len)
     int start = msg->pos;
 
     if ((len < 0) || (len + start > msg->maxlen)) {
-#if defined (DEBUG) || (_DEBUG)
-        jk_b_dump(msg, "After get bytes");
-        fprintf(stderr, "ERROR\n");
-#endif
         return (-1);
     }
 
