@@ -389,8 +389,11 @@ public class Http11Processor implements Processor, ActionHook {
     public void addNoCompressionUserAgent(String userAgent) {
         try {
             RE nRule = new RE(userAgent);
-            addREArray(noCompressionUserAgents, new RE(userAgent));
-        } catch (RESyntaxException ree) {}
+            noCompressionUserAgents = 
+                addREArray(noCompressionUserAgents, nRule);
+        } catch (RESyntaxException ree) {
+            log.error("Error parsing regular expression: " + userAgent, ree);
+        }
     }
 
 
@@ -428,7 +431,8 @@ public class Http11Processor implements Processor, ActionHook {
      * @param userAgent user-agent string
      */
     public void addCompressableMimeType(String mimeType) {
-        addStringArray(compressableMimeTypes, mimeType);
+        compressableMimeTypes = 
+            addStringArray(compressableMimeTypes, mimeType);
     }
 
 
@@ -485,10 +489,10 @@ public class Http11Processor implements Processor, ActionHook {
             } else if (obj instanceof OutputFilter) {
                 outputBuffer.addFilter((OutputFilter) obj);
             } else {
-                // Not a valid filter: log and ignore
+                log.warn("Unknown filter: " + className);
             }
         } catch (Exception e) {
-            // Log and ignore
+            log.error("Error intializing filter: " + className, e);
         }
     }
 
@@ -499,18 +503,19 @@ public class Http11Processor implements Processor, ActionHook {
      * @param sArray the StringArray 
      * @param value string
      */
-    private void addStringArray(String sArray[], String value) {
+    private String[] addStringArray(String sArray[], String value) {
+        String[] result = null;
         if (sArray == null) {
-            sArray = new String[1];
-            sArray[0] = value;
+            result = new String[1];
+            result[0] = value;
         }
         else {
-            String[] results = new String[sArray.length + 1];
+            result = new String[sArray.length + 1];
             for (int i = 0; i < sArray.length; i++)
-                results[i] = sArray[i];
-            results[sArray.length] = value;
-            sArray = results;
+                result[i] = sArray[i];
+            result[sArray.length] = value;
         }
+        return result;
     }
 
 
@@ -520,18 +525,19 @@ public class Http11Processor implements Processor, ActionHook {
      * @param rArray the REArray 
      * @param value Obj
      */
-    private void addREArray(RE rArray[], RE value) {
+    private RE[] addREArray(RE rArray[], RE value) {
+        RE[] result = null;
         if (rArray == null) {
-            rArray = new RE[1];
-            rArray[0] = value;
-        }    
-        else {    
-            RE[] results = new RE[rArray.length + 1];
-            for (int i = 0; i < rArray.length; i++)
-                results[i] = rArray[i];
-            results[rArray.length] = value;
-            rArray = results;
+            result = new RE[1];
+            result[0] = value;
         }
+        else {    
+            result = new RE[rArray.length + 1];
+            for (int i = 0; i < rArray.length; i++)
+                result[i] = rArray[i];
+            result[rArray.length] = value;
+        }
+        return result;
     }
 
 
@@ -579,8 +585,10 @@ public class Http11Processor implements Processor, ActionHook {
     public void addRestrictedUserAgent(String userAgent) {
         try {
             RE nRule = new RE(userAgent);
-            addREArray(restrictedUserAgents, new RE(userAgent));
-        } catch (RESyntaxException ree) {}
+            restrictedUserAgents = addREArray(restrictedUserAgents, nRule);
+        } catch (RESyntaxException ree) {
+            log.error("Error parsing regular expression: " + userAgent, ree);
+        }
     }
 
 
@@ -593,6 +601,7 @@ public class Http11Processor implements Processor, ActionHook {
         this.restrictedUserAgents = restrictedUserAgents;
     }
 
+
     /**
      * Set restricted user agent list (which will downgrade the connector
      * to HTTP/1.0 mode). List contains users agents separated by ',' :
@@ -601,8 +610,8 @@ public class Http11Processor implements Processor, ActionHook {
      */
     public void setRestrictedUserAgents(String restrictedUserAgents) {
         if (restrictedUserAgents != null) {
-            StringTokenizer st = new StringTokenizer(restrictedUserAgents, ",");
-        
+            StringTokenizer st = 
+                new StringTokenizer(restrictedUserAgents, ",");
             while (st.hasMoreTokens()) {
                 addRestrictedUserAgent(st.nextToken().trim());
             }
