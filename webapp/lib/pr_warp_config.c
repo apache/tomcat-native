@@ -124,6 +124,13 @@ wa_boolean c_configure(wa_connection *conn) {
 
     while (elem!=NULL) {
         wa_application *appl=(wa_application *)elem->curr;
+
+        /* Check that the application really belongs to that connection */
+        if (strcmp(appl->conn->name,conn->name)!=0) {
+            elem=elem->next;
+            continue;
+        }
+
         wa_debug(WA_MARK,"Deploying \"%s\" via \"%s\" in \"http://%s:%d%s\"",
                 appl->name,conn->name,appl->host->name,appl->host->port,
                 appl->rpth);
