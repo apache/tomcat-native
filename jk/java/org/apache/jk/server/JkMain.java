@@ -259,8 +259,21 @@ public class JkMain
 
         // Process properties - and add aditional handlers.
         processProperties();
-        
-        wEnv.start();
+
+        for( int i=0; i<wEnv.getHandlerCount(); i++ ) {
+            if( wEnv.getHandler(i) != null ) {
+                try {
+                    wEnv.getHandler(i).init();
+                } catch( IOException ex) {
+                    if( "apr".equals(wEnv.getHandler(i).getName() )) {
+                        log.error( "WorkerEnv: APR not initialized " + ex.toString());
+                    } else {
+                        log.error( "WorkerEnv: error initializing " + wEnv.getHandler(i).getName(), ex );
+                    }
+                }
+            }
+        }
+
         started=true;
         long initTime=System.currentTimeMillis() - start_time;
 

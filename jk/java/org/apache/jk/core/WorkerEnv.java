@@ -63,6 +63,7 @@ import java.util.*;
 import java.security.*;
 
 import org.apache.jk.common.*;
+import org.apache.jk.apr.*;
 
 /**
  * The controller object. It manages all other jk objects, acting as the root of
@@ -78,9 +79,6 @@ import org.apache.jk.common.*;
 public class WorkerEnv {
 
     Hashtable properties;
-
-    Object webapps[]=new Object[20];
-    int webappCnt=0;
 
     public static final int ENDPOINT_NOTE=0;
     public static final int REQUEST_NOTE=1;
@@ -102,30 +100,12 @@ public class WorkerEnv {
         }
     }
     
-    public int addWebapp( Object wa ) {
-        if( webappCnt >= webapps.length ) {
-            Object newWebapps[]=new Object[ webapps.length + 20 ];
-            System.arraycopy( webapps, 0, newWebapps, 0, webapps.length);
-            webapps=newWebapps;
-        }
-        webapps[webappCnt]=wa;
-        return webappCnt++;
-    }
-
     public void setJkHome( String s ) {
         home=s;
     }
 
     public String getJkHome() {
         return home;
-    }
-    
-    public Object getWebapp( int i ) {
-        return webapps[i];
-    }
-
-    public int getWebappCount() {
-        return webappCnt;
     }
     
     public final Object getNote(int i ) {
@@ -168,21 +148,8 @@ public class WorkerEnv {
         return handlersTable[id];
     }
 
-    public void start() throws IOException {
-        for( int i=0; i<handlerCount; i++ ) {
-            //Enumeration en=handlersMap.keys();
-            // while( en.hasMoreElements() ) {
-            //      String n=(String)en.nextElement();
-            // JkHandler w=(JkHandler)handlersMap.get(n);
-            if( handlersTable[i] != null ) 
-                handlersTable[i].init();
-        }
-    }
-    
-    private static final int dL=0;
-    private static void d(String s ) {
-        System.err.println( "WorkerEnv: " + s );
+    public final int getHandlerCount() {
+        return handlerCount;
     }
 
-    
 }
