@@ -79,7 +79,7 @@ static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri);
 
 static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                                       const char *vhost,
-                                      const char *uri, int reverse);
+                                      const char *uri);
 
 static int jk2_uriMap_checkUri(jk_env_t *env, jk_uriMap_t *uriMap, 
                                const char *uri);
@@ -551,9 +551,9 @@ static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri) {
 
 #define SAFE_URI_SIZE 8192
 
-static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
-                                      const char *vhost,
-                                      const char *uri, int reverse)
+static jk_uriEnv_t *jk2_uriMap_map(jk_env_t *env, jk_uriMap_t *uriMap,
+                                   const char *vhost,
+                                   const char *uri, int reverse)
 {
     int best_match = -1;
     int longest_match = 0;
@@ -702,6 +702,20 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                       "uriMap.mapUri() no match found\n"); 
 
     return NULL;
+}
+
+static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
+                                      const char *vhost, const char *uri)
+{
+    jk_uriEnv_t *match;
+    
+    match = jk2_uriMap_map(env, uriMap, vhost, uri, 0);
+    if (match) {
+        jk_uriEnv_t *rmatch = jk2_uriMap_map(env, uriMap, vhost, uri, 1);
+        if (rmatch)
+            return NULL;
+    }
+    return match;
 }
 
 int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
