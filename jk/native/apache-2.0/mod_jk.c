@@ -1359,6 +1359,7 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
         }
         s = s->next;
     }
+	return APR_SUCCESS;
 }
 
 /** Create default jk_config. XXX This is mostly server-independent,
