@@ -1,0 +1,883 @@
+<html>
+  <head>
+    <!-- $Id$ -->
+    <!-- Copyright 1999-2001, Apache Software Foundation -->
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link rel="stylesheet" href="style.css">
+    <title>Tomcat-Apache HOWTO</title>
+  </head>
+  <body link="#0000ff" vlink="#800080">
+    <!-- Banner element, all hail the Project! -->
+    <table border="0" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td width="50%">
+          <p align="left">
+            <a href="http://jakarta.apache.org/index.html">
+              <img src="images/banner.gif"
+                   width="350" 
+                   height="100" 
+                   alt="The Jakarta Project" 
+                   border="0"></a>
+        </td>
+        <td width="50%">
+          <p align="right"><img border="0" src="images/tomcat.gif" width="100" height="71" alt="The mighty Tomcat - Meow!"></p>
+        </td>
+      </tr>
+    </table>
+    
+    <H1>Tomcat-Apache HOWTO</H1>
+
+    <p>This document explains how to connect Tomcat to the popular
+      open source web server, Apache.  It was originally part of
+      <i>Tomcat: A Minimalistic User's Guide</i> by Gal Shachor, but
+      has been split off for organizational reasons.  It should be
+      considered a <b>work in progress</b>.  Since the Tomcat source
+      tree is constantly changing, the information herein may be out
+      of date.  The only definitive reference at this point is the <a
+      href="http://jakarta.apache.org/site/sourceindex.html">source
+      code</a>.</p>
+
+	<p>
+	Other important documents: <ul>
+<li><a href="tomcat-ug.html">Tomcat User's Guide</a></li>
+<li><a href="mod_jk-howto.html">mod_jk HOWTO</a> [??? should be rolled into tomcat-apache howto]</li>
+<li><a href="http://jakarta.apache.org/site/faqs.html">Jakarta FAQ Page</a></li>
+</ul>
+
+<p>
+Other Tomcat-Apache HOWTOs: [should be integrated into this one?] <ul>
+<li><a href="http://satori.com/~avm/tomcat.html">Howto Configure Tomcat 3.1 with Apache</a> by Freddie Mendoza
+</li>
+<li><a href="http://www.ccl.net/cca/software/UNIX/apache/index.shtml">Apache Web Server / JServ / Tomcat / SSL Installation on UNIX</a> by Jan K. Labanowski
+</li>
+<li><a href="http://www.oop-reserch.com/tomcat_3_1/">Tomcat and JServ</a> by Jun Inamori
+</li>
+<li><a href="http://www.dmz.hitachi-sk.co.jp/Java/Tech/servlet/tomcat.html">http://www.dmz.hitachi-sk.co.jp/Java/Tech/servlet/tomcat.html</a> in Japanese
+</li>
+</ul>
+</p>
+
+    <h3>Table of Contents</h3>
+    <ul>
+    [write me]
+    </ul>
+
+    <hr size="5">
+    <h3><a name="apache_tomcat_coop">Apache - Tomcat Cooperation - Sample Server
+    Integration</a></h3>
+
+    <p> Up until now we have not discussed Tomcat as a server add on,
+        instead we have considered it as a <a href="tomcat-ug.html#type_1"> stand-alone</a> container and discussed
+        how it can be used.&nbsp; There are however a few problems with this
+        picture:
+    <ol>
+      <li> Tomcat is not as fast as Apache when it comes to static pages. </li>
+      <li> Tomcat is not as configurable as Apache. </li>
+      <li> Tomcat is not as robust as Apache. </li>
+      <li> There are many sites with long time investment in certain web servers,
+    for example, sites that are using CGI scripts/Server API modules/perl/php.&nbsp;
+        We cannot assume that all of them will want to ditch this legacy. </li>
+    </ol>
+
+    <p> For all these reasons it is recommended that real world sites
+        use an industrial strength web server, such as Apache, for serving the static content of 
+        the site, and use Tomcat as a Servlet/JSP add-on.</p>
+
+    <p> Our agenda:
+    <ol>
+      <li> Cover the fundamental behavior of the web server. </li>
+      <li> Explain what configuration is needed. </li>
+      <li> Demonstrate this on Apache. </li>
+    </ol>
+
+    <hr size="5">
+    <h3><a name="common_errors">Common Installation and Configuration Problems</a></h3>
+    <blockquote>
+      <p>This section isn't meant to be your one-stop shop for all troubles
+      Tomcat, but a resource for stumbling blocks common to many first-time
+      Tomcat'ers.&nbsp; See the <a href="tomcat-ug.html#where_help">help section</a> for
+      additional links.</p>
+    </blockquote>
+    <h4>&nbsp;&nbsp;&nbsp; <a name="error_8007">http://webserver:8007/ gives a
+    500</a></h4>
+    <blockquote>
+      <p>This is what you should see in your tomcat.log file:</p>
+      <blockquote>
+        <p class="code">HANDLER THREAD PROBLEM: java.io.IOException: Stream
+        broken</p>
+      </blockquote>
+      <p>By default, Tomcat listens for AJP connections on port 8007.&nbsp; AJP
+      is the protocol used to communicate between the web server and Tomcat, <b>not</b>
+      Tomcat and your browser.&nbsp; To test your Tomcat installation, FIX ME ?</p>
+    </blockquote>
+    <h4>&nbsp;&nbsp;&nbsp; <a name="error_ignore_directives">&lt;Directory&gt;
+    and &lt;Location&gt; directives ignored</a></h4>
+    <blockquote>
+      <p>FIX ME Apache never applies because forwarded to Tomcat.</p>
+    </blockquote>
+      <h4>&nbsp;&nbsp;&nbsp; <a name="error_web_server">Web server won't start
+      when Tomcat is running</a></h4>
+    <blockquote>
+      <p>FIX ME Port conflict.</p>
+    </blockquote>
+      <h4>&nbsp;&nbsp;&nbsp; <a name="error_bad_command">&quot;Bad command or
+      filename&quot; when executing Tomcat scripts</a></h4>
+    <blockquote>
+      <p>[FIX ME] UNIX file format on DOS.&nbsp; Because Tomcat is developed on
+      *nix (rather, the jars are built and distributed there), you may have to
+      convert the files to PC (versus UNIX) format.</p>
+    </blockquote>
+
+    <hr size="5">
+    <h3> Starting Tomcat From Another Directory </h3>
+    
+    <h2>Setting Tomcat to Cooperate with the Apache Web Server </h2>
+
+    <h3> Web Server Operation </h3>
+    <p> In a nutshell a web server is waiting for client HTTP requests.
+        When these requests arrive the server does whatever is needed to 
+        serve the requests by providing the necessary content. Adding a 
+        servlet container may somewhat change this behavior. Now the web 
+        server needs also to perform the following:
+    <ul>
+      <li> Load the servlet container adapter library and initialize it (prior
+           to serving requests). </li>
+      <li> When a request arrives, it needs to check and see if a certain 
+           request belongs to a servlet, if so it needs to let the adapter
+           take the request and handle it.</li>
+    </ul>
+
+    The adapter on the other hand needs to know what requests it is
+    going to serve, usually based on some pattern in the request URL, and to
+    where to direct these requests.
+
+    <p>
+      Things are even more complex when the user wants to set a configuration
+      that uses virtual hosts, or when they want multiple developers to work
+      on the same web server but on different servlet container JVMs. We 
+      will cover these two cases in the advanced sections.
+    </p>
+
+    <h3> What is the Needed Configuration </h3>
+    <p> The most obvious configuration that one can think of is the identity of the servlet URLs
+      that are under the responsibility of the servlet container. This is clear; someone must
+      know what requests to transmit to the servlet container...
+      Yet there are additional configuration items that we should provide to
+      the web-server/servlet-container combination:
+    <ul>
+      <li>We also need to provide configuration regarding the available Tomcat processes
+    and on which TCP/IP host/port they are listening. </li>
+      <li> We need to tell the web server the location of the adapter library (so it
+    will be able to load it on startup). </li>
+      <li> We need to set adapter internal information such as where and how much to log, etc. </li>
+    </ul>
+    All this information must appear either in the web server configuration, or in a private
+    configuration files used by the adapter. The next section will demonstrate how configuration
+    can be implemented on Apache.
+
+
+    <h3> Making it on Apache </h3>
+    <p> This section shows you how to configure Apache to work with Tomcat;
+        it tries to provide explanations as well as insight for the
+ 	    configuration directives that you should use. You can find
+	    additional information in the
+	    <a href="http://java.apache.org/jserv/install/index.html">
+        jserv install page </a>.
+    </p>
+
+    <p> When Tomcat starts up it will automatically generate a configuration
+      file for Apache in <tt>TOMCAT_HOME/conf/jserv/tomcat-apache.conf</tt>. Most
+      of the time you don't need to do anything but include this file
+      (appending "Include TOMCAT_HOME/conf/jserv/tomcat-apache.conf") in your
+      httpd.conf.  If you have special needs, for example an AJP port other
+      the 8007, you can use this file as a base for  your customized
+      configuration and save the results in another file.  If you manage
+      the Apache configuration yourself you'll need to update it whenever
+      you add a new context.
+    </p>
+    <p>
+      <b>Tomcat:</b> you must restart tomcat and apache after adding
+      a new context; Apache doesn't support configuration changes without a
+      restart. Also the file <tt>TOMCAT_HOME/conf/jserv/tomcat-apache.conf</tt> is 
+	  generated when tomcat starts, so you'll need to start Tomcat before 
+	  Apache. Tomcat will overwrite <tt>TOMCAT_HOME/conf/tomcat-apache.conf</tt> 
+	  each startup so customized configuration should be kept elsewhere.
+    </p>
+
+    <p> The Apache-Tomcat configuration uses Apache core configuration directives
+      as well as Jserv unique directives so it may confuse you at first, there are
+      however two things simplifying it:
+    <ul>
+      <li> In general you can distinguish between the two directive
+           "families" by noting that all the Jserv unique directives start
+           with an "ApJServ" prefix. </li>
+      <li> The entire Tomcat related configuration is concentrated in a
+           single configuration file named tomcat.conf, or the automatically
+           generated tomcat-apache.conf, so you can look at a single file.
+      </li>
+    </ul>
+    Lets look now at a sample tomcat.conf file.
+    <table border="1" 
+           cellspacing="0" 
+           cellpadding="0" 
+           valign="middle">
+      <caption valign="bottom"> 
+        <em>A Minimalistic Apache-Tomcat Configuration </em>
+      </caption>
+      <tr> 
+        <td bgcolor="#c0c0c0"> 
+            <pre>    
+###########################################################
+#      A minimalistic Apache-Tomcat Configuration File    #
+###########################################################
+
+# Note: this file should be appended or included into your httpd.conf
+
+# (1) Loading the jserv module that serves as Tomcat's apache adapter.
+LoadModule jserv_module libexec/mod_jserv.so
+
+# (1a) Module dependent configuration.
+&lt;IfModule mod_jserv.c&gt;
+
+# (2) Meaning, Apache will not try to start Tomcat.
+ApJServManual on
+# (2a) Meaning, secure communication is off
+ApJServSecretKey DISABLED
+# (2b) Meaning, when virtual hosts are used, copy the mount
+# points from the base server
+ApJServMountCopy on
+# (2c) Log level for the jserv module.
+ApJServLogLevel notice
+
+# (3) Meaning, the default communication protocol is ajpv12
+ApJServDefaultProtocol ajpv12
+# (3a) Default location for the Tomcat connectors.
+# Located on the same host and on port 8007
+ApJServDefaultHost localhost
+ApJServDefaultPort 8007
+
+# (4)
+ApJServMount /examples /root
+# Full URL mount
+# ApJServMount /examples ajpv12://hostname:port/root
+&lt;/IfModule&gt;
+            </pre> 
+        </td> 
+      </tr> 
+    </table>
+    <p>As you can see the configuration process was split into 4 steps
+       that will now be explained:
+      <ol>
+      <li> In this step we instruct Apache to load the jserv
+           shared-object (or the NT world dll). This is a well known Apache
+           directive. If the loading went well and the module came from a 
+           file named mod_jserv.c (1a) we can start with the rest of the 
+           Jserv-Tomcat configuration. </li>
+      <li> This step sets various Jserv internal parameters, these
+           parameters:
+        <ul>
+          <li> Instruct jserv not to start the Tomcat process. Automatically
+               starting Tomcat is not implemented yet.</li>
+          <li> Disable the secret key challenge/response between Apache and Tomcat.
+            Again, the secret key work is not implemented yet.</li>
+          <li> Instruct jserv to copy the base server mount points (see next
+               section) in case of virtual hosting. </li>
+          <li> Instruct jserv to use the notice log level. Other log levels
+               include emerg, alert, crit, error, warn, info and debug.</li>
+        </ul>
+      </li>
+      <li> This step sets the default communication parameters.
+        Basically it says that the default protocol used for the communication
+        is ajpv12 (do not mess with this one) and that the Tomcat process runs on
+        the same machine and listens on port 8007. If you run Tomcat on a
+        machine other than the one used
+        for Apache you should either update your ApJServDefaultHost or use a full
+        URL when mounting contexts (see next). Also, if you configured the Tomcat
+        connectors to use a port other then 8007, you should update your
+        ApJServDefaultPort or use a full URL when mounting contexts.
+      </li>
+      <li> This step mounts a context to Tomcat. Basically it says that
+           all the web server paths that start with /examples go to Tomcat. This
+           ApJServMount example is a rather simple one, in fact ApJServMount can
+           also provide information regarding the communication protocol to be used
+           and the location where the Tomcat process listens, for example:
+           <div><tt>ApJServMount /examples ajpv12://hostname:port/root</tt></div>
+           mounts the context /examples to a Tomcat process that runs on host
+           "hostname" and listens on port number "port".
+      </li>
+    </ol>
+    Now that you understand the different configuration instructions in the sample
+    file, how can you add it to the Apache configuration? One "simple" method is to
+    write it's content in the httpd.conf (the Apache configuration file), this however
+    can be very messy. Instead you should use the Apache include directive. At the end
+    of the Apache configuration file (httpd.conf) add the following directive:
+    <div> <tt>include &lt;full path to the Tomcat configuration file&gt; </tt></div>
+    for example:
+    <div> <tt>include /tome/tomcat/conf/tomcat.conf </tt></div> This
+    will add your Tomcat configuration to Apache, after that you should copy
+    the jserv module to the Apache libexec (or modules in the Win32 case)
+    directory and restart (stop+start) Apache. It should now be able to
+    connect to Tomcat.
+
+    <h3> Obtaining the Jserv Module (mod_jserv) </h3>
+    <p> As previously stated, we need a web server adapter to sit in Apache and redirect
+      requests to Tomcat. For Apache, this adapter is a slightly modified version of
+      mod_jserv.
+    </p>
+    <p> You may try to look <a href="http://jakarta.apache.org/site/binindex.html">
+      here </a> and see if there is an already pre-built version of mod_jserv that
+      suites your OS (Usually there is one for NT), however, being a native library you
+      should not expect that yet (too many OS's, not enough developers, life
+      too short...).
+      Moreover, small variations in the way you built Apache/Your specific UNIX variant may
+      result in dynamic linking errors. You should really try to build mod_jserv for your
+      system (don't panic, it is not that hard!).
+    </p>
+    <p>
+      Building mod_jserv on <b>UNIX</b> involves the following:
+    <ol>
+      <li> Download the source distribution of Tomcat from
+    <a href="http://jakarta.apache.org/site/sourceindex.html"> here</a>. </li>
+      <li> Uncompress it into some directory. </li>
+      <li> Building the module:
+    <ul>
+      <li> Change directory into jakarta-tomcat/src/native/apache/jserv/</li>
+      <li> Execute the build command <div><tt> apxs -c -o mod_jserv.so *.c  </tt></div> 
+        apxs is part of the Apache distribution and should be located in your
+        APACHE_HOME/bin.</li>
+    </ul>
+      </li>
+    </ol>  
+    Building mod_jserv for <b>Win32</b> is less likely (you already have a downloadable dll
+    for Win32). Yet if you <em>want</em> to build it you should install Visual C++ and 
+    perform the following:
+    <ol>
+      <li> Download the source distribution of Tomcat from
+    <a href="http://jakarta.apache.org/site/sourceindex.html"> here</a>. </li>
+      <li> Unzip it into some directory. </li>
+      <li> Building the module:
+    <ul>
+      <li> Change directory into jakarta-tomcat\src\native\apache\jserv</li>
+      <li> Add  Visual C++ into your environment by executing the script
+        VCVARS32.BAT. </li>
+      <li> Execute the build command <div><tt> nmake -f Makefile.win32 </tt></div>
+        nmake is the Visual C++ make program.</li>
+    </ul>
+      </li>
+    </ol>
+    That's it; you have built mod_jserv...
+    <h3> Making Apache Serve your Context's Static Files </h3>
+    <p> The previous Apache-Tomcat configuration file was somewhat
+	    inefficient, it instructed Apache to send any request for a resource
+        that starts with the <tt>/examples</tt> prefix to be served by
+        Tomcat. Do we really want that? There are many static files that may
+        be a part of our servlet context (for example images and static
+        HTML), why should Tomcat serve these files?
+    </p>
+    <p>You may actually have reasons for doing that, for example:
+        <ol>
+            <li>You may want to configure Tomcat based security for these
+                resources. </li>
+            <li>You may want to follow users requests for static resources
+                using interceptors. </li>
+        </ol>
+       In general however, this is not that case; and making Tomcat save
+       static files is just a CPU waste. We should instead have Apache serve
+       these static files and not Tomcat. Lets look now at a sample
+       tomcat.conf file that does exactly that:
+    <p> Having Apache serve the static files requires the following:
+        <ol>
+            <li>Instructing Apache to send all servlet requests to Tomcat. </li>
+            <li>Instructing Apache to send all JSP requests to Tomcat. </li>
+        </ol>
+        and leaving Apache to handle the rest. Lets look now at a sample 
+        tomcat.conf file that does exactly that:
+    <table border="1" 
+           cellspacing="0" 
+           cellpadding="0" 
+           valign="middle">
+      <caption valign="bottom"> 
+        <em>Apache-Tomcat Configuration where Apache Serves the Static Content</em>
+      </caption>
+      <tr> 
+        <td bgcolor="#c0c0c0"> 
+          <pre>    
+######################################################################
+#              Apache-Tomcat Smart Context Redirection               #
+######################################################################
+LoadModule jserv_module modules/ApacheModuleJServ.dll
+&lt;IfModule mod_jserv.c&gt;
+ApJServManual on
+ApJServDefaultProtocol ajpv12
+ApJServSecretKey DISABLED
+ApJServMountCopy on
+ApJServLogLevel notice
+
+ApJServDefaultHost localhost
+ApJServDefaultPort 8007
+
+#
+# Mounting a single smart context:
+#
+# (1) Make Apache know about the context location.
+Alias /examples D:\tomcat\webapps\examples
+# (2) Optional, customize Apache context service.
+&lt;Directory &quot;D:\tomcat\webapps\examples&quot;&gt;
+    Options Indexes FollowSymLinks
+# (2a) No directory indexing for the context root.
+#    Options -Indexes
+# (2b) Set index.jsp to be the directory index file.
+#    DirectoryIndex index.jsp
+&lt;/Directory&gt;
+# (3) Protect the WEB-INF directory from tampering.
+&lt;Location /examples/WEB-INF/&gt;
+    AllowOverride None
+    deny from all
+&lt;/Location&gt;
+# (4) Instructing Apache to send all the .jsp files under the context to the 
+# jserv servlet handler. 
+&lt;LocationMatch /examples/*.jsp&gt;
+    SetHandler jserv-servlet
+&lt;/LocationMatch&gt;
+# (5) Direct known servlet URLs to Tomcat.
+ApJServMount /examples/servlet /examples
+
+# (6) Optional, direct servlet only contexts to Tomcat.
+ApJServMount /servlet /ROOT
+&lt;/IfModule&gt;
+      </pre> 
+        </td> 
+      </tr> 
+    </table>
+    
+    <p>
+      As you can see, the beginning of this configuration file is the same
+      as seen in the previous example. The last step (mounting a context),
+      however,  was replaced in a long series of Apache and ApJServ
+      configuration directives that will now be explained:
+      <ol>
+        <li> This step informs Apache of the context location and aliases it
+             to an Apache virtual directory. This way Apache can serve files
+             from this directory.</li>
+        <li> This optional step instructs Apache more about how to serve the
+             context; for example you can decide if Apache will allow
+             directory indexing (listing) or set a special index file.</li>
+        <li> This step instructs Apache to protect the WEB-INF directory
+             from client access. For security reasons it is important to
+             prevent visitors from viewing the content of the WEB-INF
+             directory, for example web.xml can provide valuable information
+             for intruders. This step blocks the WEB-INF content from
+             visitors. </li>
+        <li> This step instructs Apache to serve all the jsp locations
+             within the context using the jserv servlet handler. The servlet
+             handler redirects these requests based on the default host and
+             port.</li>
+        <li> This step mounts specific servlet URLs to Tomcat. You should
+             note that you should have as many such mount directives as the
+             number of specific servlet URLs. </li>
+        <li> This last step is an example for the addition of servlet only 
+             context to Tomcat. </li>                                       
+      </ol>
+      
+      It is easy to see that this configuration is much more complex and
+      error prone then the first example, this however is the price that you 
+      should (for now) pay for improved performance.
+
+    <h3> Configuring for Multiple Tomcat JVMs </h3>
+    <p>
+        Sometimes it is useful to have different contexts handled by 
+        different JVMs, for example: 
+        <ul>
+            <li> When each context serves a different, specific task and runs
+                 on a different machine. </li>
+            <li> When we want to have multiple developers work on a private
+                 Tomcat process but use the same web server. </li>
+        </ul>
+        Implementing such schemes where different contexts are served by
+        different JVMs is very easy and the following configuration file
+        demonstrates this:
+    <p>
+    <table border="1" 
+        cellspacing="0" 
+        cellpadding="0"     
+        valign="middle">
+      <caption valign="bottom" width="100%"> 
+        <em>Apache-Tomcat Configuration with per Context JVM </em>
+      </caption>
+      <tr> 
+        <td bgcolor="#c0c0c0"> 
+          <pre>    
+######################################################################
+#             Apache-Tomcat with JVM per Context                     #
+######################################################################
+LoadModule jserv_module modules/ApacheModuleJServ.dll
+&lt;IfModule mod_jserv.c&gt;
+ApJServManual on
+ApJServDefaultProtocol ajpv12
+ApJServSecretKey DISABLED
+ApJServMountCopy on
+ApJServLogLevel notice
+
+ApJServDefaultHost localhost
+ApJServDefaultPort 8007
+
+# Mounting the first context.
+ApJServMount /joe ajpv12://joe.corp.com:8007/joe
+
+# Mounting the second context.
+ApJServMount /bill ajpv12://bill.corp.com:8007/bill
+&lt;/IfModule&gt;
+            </pre> 
+        </td> 
+      </tr> 
+    </table>
+    <p>
+    As you can see in the previous example, using several JVMs (even even 
+	those that run on different machines) can be accomplished easily by 
+	using a full ajp URL mount. In this full URL we actually specify the 
+	host where the Tomcat process is located and it's port.
+    </p>
+    <p>
+    Had the two Tomcat processes run on the same machine, we would have to
+    configure each of them with different connector ports. For example,
+    assuming that the two JVMs runs on localhost, the Apache-Tomcat
+    configuration should have something that looks like:
+    </p>
+    <table border="1"
+        cellspacing="0" 
+        cellpadding="0"     
+        valign="middle">
+      <caption valign="bottom" width="100%"> 
+        <em> Same Machine Multiple JVM Apache-Tomcat Configuration </em>
+      </caption>
+      <tr> 
+        <td bgcolor="#c0c0c0"> 
+          <pre>    
+######################################################################
+#      Apache-Tomcat with Same Machine JVM per Context               #
+######################################################################
+LoadModule jserv_module modules/ApacheModuleJServ.dll
+&lt;IfModule mod_jserv.c&gt;
+ApJServManual on
+ApJServDefaultProtocol ajpv12
+ApJServSecretKey DISABLED
+ApJServMountCopy on
+ApJServLogLevel notice
+
+ApJServDefaultHost localhost
+ApJServDefaultPort 8007
+
+# Mounting the first context.
+ApJServMount /joe ajpv12://localhost:8007/joe
+
+# Mounting the second context.
+ApJServMount /bill ajpv12://localhost:8009/bill
+&lt;/IfModule&gt;
+            </pre> 
+        </td> 
+      </tr> 
+    </table>
+    <p>
+    Looking at the above file you can see that we have two explicit ApJServ
+    mount points each pointing to a different port on the same machine. It
+    is clear that this configuration requires support from the configuration
+    found in the server.xml files. We will need in these files different
+    &lt;Connector&gt; configurations, for the different Tomcat processes. We
+    will actually need two different server.xml files (lets call them
+    server_joe.xml and server_bill.xml) with different &lt;Connector&gt;
+    entries as shown in the next two samples:
+    </p>
+    <table border="1" 
+        cellspacing="0" 
+        cellpadding="0"     
+        valign="middle">
+      <caption valign="bottom" width="100%"> 
+        <em> Joe's server.xml file </em>
+      </caption>
+      <tr> 
+        <td bgcolor="#c0c0c0"> 
+          <pre>    
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;ISO-8859-1&quot;?&gt;
+
+&lt;Server&gt;
+    &lt;!-- Debug low-level events in XmlMapper startup --&gt;
+    &lt;xmlmapper:debug level=&quot;0&quot; /&gt;
+
+    &lt;!--  @@@
+        Note, the log files are suffixed with _joe to distinguish
+        them from the bill files. 
+    --&gt;
+
+    &lt;Logger name=&quot;tc_log&quot; 
+            path=&quot;logs/tomcat_joe.log&quot;
+            customOutput=&quot;yes&quot; /&gt;
+
+    &lt;Logger name=&quot;servlet_log&quot; 
+            path=&quot;logs/servlet_joe.log&quot;
+            customOutput=&quot;yes&quot; /&gt;
+
+    &lt;Logger name=&quot;JASPER_LOG&quot; 
+        path=&quot;logs/jasper_joe.log&quot;
+            verbosityLevel = &quot;INFORMATION&quot; /&gt;
+
+    &lt;!--  @@@
+        Note, the work directory is suffixed with _joe to distinguish
+        it from the bill work directory.
+    --&gt;
+    &lt;ContextManager debug=&quot;0&quot; workDir=&quot;work_joe&quot; &gt;
+        &lt;!-- Context level Setup --&gt;	
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.AutoSetup&quot; /&gt;
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.DefaultCMSetter&quot; /&gt;
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.WorkDirInterceptor&quot; /&gt;
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.WebXmlReader&quot; /&gt;
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.LoadOnStartupInterceptor&quot; /&gt;
+        &lt;!-- Request processing --&gt;
+        &lt;RequestInterceptor 
+		    className=&quot;org.apache.tomcat.request.SimpleMapper&quot; debug=&quot;0&quot; /&gt;
+        &lt;RequestInterceptor 
+		    className=&quot;org.apache.tomcat.request.SessionInterceptor&quot; /&gt;
+        &lt;RequestInterceptor 
+		    className=&quot;org.apache.tomcat.request.SecurityCheck&quot; /&gt;
+        &lt;RequestInterceptor 
+		    className=&quot;org.apache.tomcat.request.FixHeaders&quot; /&gt;
+
+        &lt;!-- @@@ This connector uses port number 8007 for it's ajp communication --&gt;
+        &lt;Connector 
+		    className=&quot;org.apache.tomcat.service.SimpleTcpConnector&quot;&gt;
+            &lt;Parameter 
+                name=&quot;handler&quot; 
+                value=&quot;org.apache.tomcat.service.connector.Ajp12ConnectionHandler&quot;/&gt;
+            &lt;Parameter name=&quot;port&quot; value=&quot;8007&quot;/&gt;
+        &lt;/Connector&gt;
+
+        &lt;!-- @@@ the /jow context --&gt;
+        &lt;Context path=&quot;/joe&quot; docBase=&quot;webapps/joe&quot; debug=&quot;0&quot; reloadable=&quot;true&quot; &gt; 
+        &lt;/Context&gt;
+    &lt;/ContextManager&gt;
+&lt;/Server&gt;       
+            </pre> 
+        </td> 
+      </tr> 
+    </table>
+    <p>
+        When looking at server_joe.xml you can see that the 
+        &lt;Connector&gt; is configured for port 8007. In server_bill.xml 
+        (see next) on the other hand the &lt;Connector&gt; is configured for 
+        port 8009.
+    </p>
+    <table border="1" 
+        cellspacing="0" 
+        cellpadding="0"     
+        valign="middle">
+      <caption valign="bottom" width="100%"> 
+        <em> Bill's server.xml file </em>
+      </caption>
+      <tr> 
+        <td bgcolor="#c0c0c0"> 
+          <pre>    
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;ISO-8859-1&quot;?&gt;
+
+&lt;Server&gt;
+    &lt;!-- Debug low-level events in XmlMapper startup --&gt;
+    &lt;xmlmapper:debug level=&quot;0&quot; /&gt;
+
+    &lt;!--  @@@
+        Note, the log files are suffixed with _bill to distinguish
+        them from the joe files. 
+    --&gt;
+
+    &lt;Logger name=&quot;tc_log&quot; 
+            path=&quot;logs/tomcat_bill.log&quot;
+            customOutput=&quot;yes&quot; /&gt;
+
+    &lt;Logger name=&quot;servlet_log&quot; 
+            path=&quot;logs/servlet_bill.log&quot;
+            customOutput=&quot;yes&quot; /&gt;
+
+    &lt;Logger name=&quot;JASPER_LOG&quot; 
+        path=&quot;logs/jasper_bill.log&quot;
+            verbosityLevel = &quot;INFORMATION&quot; /&gt;
+
+    &lt;!--  @@@
+        Note, the work directory is suffixed with _bill to distinguish
+        it from the joe work directory.
+    --&gt;
+    &lt;ContextManager debug=&quot;0&quot; workDir=&quot;work_bill&quot; &gt;
+        &lt;!-- Context level Setup --&gt;
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.AutoSetup&quot; /&gt;
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.DefaultCMSetter&quot; /&gt;
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.WorkDirInterceptor&quot; /&gt;
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.WebXmlReader&quot; /&gt;
+        &lt;ContextInterceptor 
+		    className=&quot;org.apache.tomcat.context.LoadOnStartupInterceptor&quot; /&gt;
+        &lt;!-- Request processing --&gt;
+        &lt;RequestInterceptor 
+		    className=&quot;org.apache.tomcat.request.SimpleMapper&quot; debug=&quot;0&quot; /&gt;
+        &lt;RequestInterceptor 
+		    className=&quot;org.apache.tomcat.request.SessionInterceptor&quot; /&gt;
+        &lt;RequestInterceptor 
+		    className=&quot;org.apache.tomcat.request.SecurityCheck&quot; /&gt;
+        &lt;RequestInterceptor 
+		    className=&quot;org.apache.tomcat.request.FixHeaders&quot; /&gt;
+
+        &lt;!-- @@@ This connector uses port number 8009 for it's ajp communication --&gt;
+        &lt;Connector className=&quot;org.apache.tomcat.service.SimpleTcpConnector&quot;&gt;
+            &lt;Parameter 
+                name=&quot;handler&quot; 
+                value=&quot;org.apache.tomcat.service.connector.Ajp12ConnectionHandler&quot;/&gt;
+            &lt;Parameter name=&quot;port&quot; value=&quot;8009&quot;/&gt;
+        &lt;/Connector&gt;
+
+        &lt;!-- @@@ the /bill context --&gt;
+        &lt;Context path=&quot;/bill&quot; docBase=&quot;webapps/bill&quot; debug=&quot;0&quot; reloadable=&quot;true&quot; &gt; 
+        &lt;/Context&gt;
+    &lt;/ContextManager&gt;
+&lt;/Server&gt;       
+          </pre> 
+        </td> 
+      </tr> 
+    </table>
+    <p>
+        The port configuration is not the only place where the joe and bill
+        configuration differs. We have @@@ marks in the xml files marking
+        the four places where changes had to be made. As you can see, this
+        difference is necessary to avoid the two Tomcat processes from
+		overwriting each other's logs and workspace.
+    </p>
+    <p>
+        Then we should start the two tomcat processes using the -f command
+        line option:
+        <div> bin\starup -f conf\server_joe.xml</div>
+        <div> bin\starup -f conf\server_bill.xml</div>
+        and then access them from Apache based on the different URL path
+        prefixes.
+
+    <h3> Configuring Virtual Hosting </h3>
+    <p>
+        It is possible to support virtual hosts under Tomcat Ver3.1, in fact
+        the virtual host configuration is very similar to configuring for
+        multiple JVM (as explained in the previous section) and the reason
+        is simple; in Tomcat 3.1 each virtual host is implemented by a 
+		different Tomcat process.
+    </p>
+
+    <p>
+        With the current (Ver3.1) Tomcat, virtual hosting awareness is
+        provided by the web server (Apache/Netscape…). The web server
+        virtual hosting support is used by the Tomcat adapter to
+        redirect requests belonging to a certain virtual host to the JVM(s)
+        containing the contexts of this virtual host. This means that if (for
+        example) we have two virtual hosts (vhost1 and vhost2), we will have
+        two JVMs: one running the contexts of vhost1 and the other running
+        the contexts of vhost2. These JVMs are not aware of each others 
+		existence, in fact, they are not aware of the concept of virtual 
+		hosting. All the virtual hosting logic is inside the web-server 
+		adapter. To make things clearer, lets look at the following sample 
+		Apache-Tomcat configuration file:
+    </p>
+
+    <p>
+    <table border="1"
+        cellspacing="0"
+        cellpadding="0"     
+        valign="middle">
+      <caption valign="bottom" width="100%"> 
+        <em> Apache-Tomcat Configuration with Virtual Hosts Support </em>
+      </caption>
+      <tr> 
+        <td bgcolor="#c0c0c0"> 
+            <pre>    
+######################################################################
+#        Apache Tomcat Virtual Hosts Sample Configuration            #
+######################################################################
+LoadModule jserv_module modules/ApacheModuleJServ.dll
+&lt;IfModule mod_jserv.c&gt;
+ApJServManual on
+ApJServDefaultProtocol ajpv12
+ApJServSecretKey DISABLED
+ApJServMountCopy on
+ApJServLogLevel notice
+
+ApJServDefaultHost localhost
+ApJServDefaultPort 8007
+
+# 1 Creating an Apache virtual host configuration
+NameVirtualHost 9.148.16.139
+
+# 2 Mounting the first virtual host
+&lt;VirtualHost 9.148.16.139&gt;
+ServerName www.vhost1.com
+ApJServMount /examples ajpv12://localhost:8007/examples
+&lt;/VirtualHost&gt;
+
+# 3 Mounting the second virtual host
+&lt;VirtualHost 9.148.16.139&gt;
+ServerName www.vhost2.com
+ApJServMount /examples ajpv12://localhost:8009/examples
+&lt;/VirtualHost&gt;
+&lt;/IfModule&gt;
+            </pre> 
+        </td> 
+      </tr> 
+    </table>
+    
+    <p>
+        As can be seen, steps 1,2 and 3 define two Apache virtual hosts and 
+        for each of them, mount the /examples context to a certain ajpv12 URL. 
+        Each such ajpv12 URL points to a JVM that contains the virtual host. 
+        The configuration of the two JVMs is very similar to the one
+        demonstrated in the previous section, we will need again to use two 
+        different server.xml files (one for each virtual host process) and
+        we will need to start the Tomcat processes with the -f command line 
+        option. After doing that we will be able to approach Apache, each
+        time with a different host name, and the adapter will redirect us to 
+        the appropriate JVM.
+    </p>
+    <p>
+        <strong><u>The need for improved virtual host support</u></strong><br>
+        Having each virtual host implemented by a different JVM is a huge 
+        scalability problem. The next versions of Tomcat will make it 
+        possible to support several virtual hosts within the same Tomcat 
+        JVM.
+    </p>
+
+    <a name="credits">
+    <h2>Credits</h2>
+
+    <p> This document was created by 
+    <a href="mailto:shachor@il.ibm.com"> Gal Shachor</a>. It was split
+      off into a separate document and revised by Alex Chaffee and Rob
+      Slifka.
+    </ul>
+    With help from (in alphabetical order):
+    <ul>
+     Jonathan Bnayahu<br>
+     Alex Chaffee<br>
+     Fiona Czuczman<br>
+     Costin Manolache<br>
+     Rob Slifka<br>
+    </ul>
+    </p>
+
+    <table width="100%" border="0" cellpadding="10" cellspacing="0">
+      <tr>
+        <td>
+          <p class="fineprint">
+            Copyright &copy;1999-2001 The Apache Software Foundation<br>
+            <a href="http://jakarta.apache.org/legal.html">Legal Stuff They Make Us Say</a><br>
+            <a href="http://jakarta.apache.org/contact.html">Contact Information</a> </p>
+        </td>
+      </tr>
+    </table>
+
+  </body>
+</html>

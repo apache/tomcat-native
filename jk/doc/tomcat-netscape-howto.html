@@ -1,0 +1,265 @@
+<html>
+
+<head>
+<title>Jakarta IIS Howto</title>
+</head>
+
+<body>
+
+<h1>Tomcat Netscape HowTo</h1>
+
+<p>By Gal Shachor &lt;shachor@il.ibm.com&gt;</p>
+
+<p>This document explains how to set up Netscape web servers to cooperate with
+Tomcat. Normally the Netscape web servers come with their own Servlet engine,
+but you can also configure them to send servlet and JSP requests to Tomcat
+using the Tomcat redirector plugin.</p>
+
+<h2>Document Conventions and Assumptions</h2>
+
+<p>&lt;tomcat_home&gt; is the root directory of tomcat. Your Tomcat
+installation should have the following subdirectories:
+
+<ol>
+  <li>&lt;tomcat_home&gt;\conf - Where you can place various configuration files</li>
+  <li>&lt;tomcat_home&gt;\webapps - Containing example applications </li>
+  <li>&lt;tomcat_home&gt;\bin - Where you place web server plugins </li>
+</ol>
+
+<p>In all the examples in this document &lt;tomcat_home&gt; will be d:\tomcat.</p>
+
+<p>A <tt>worker</tt> is defined to be a tomcat process that accepts work from
+the Netscape server.</p>
+
+<h2>Supported Configuration</h2>
+
+<p>The Netscape-Tomcat redirector was developed and tested on:
+
+<ol>
+  <li>WinNT4.0-i386 SP4/SP5/SP6a (it should be able to work on other versions
+  of the NT service pack and also UNIX) </li>
+  <li>Netscape Enterprise 3.0 and 3.61</li>
+  <li>Tomcat3.0 - Tomcat3.1beta1 </li>
+</ol>
+
+<p>The redirector uses <b>ajp12</b> to send requests to the Tomcat
+containers. There is also an option to use Tomcat in process, more about the
+in-process mode can be found in the in process howto.</p>
+
+<h2>Installation</h2>
+
+<p>The Netscape redirector is not part of the "official" build of Jakarta, You
+can obtain the code and binaries needed for it by accessing
+http://jakarta.apache.org/builds/tomcat/release/v3.1_beta_1/bin/win32/i386/.
+The redirector related file is <tt>nsapi_redirect.dll</tt>.</p>
+
+<p>The Tomcat redirector requires two entities:
+
+<ol>
+  <li>nsapi_redirect.dll - The Netscape server plugin, either obtain a
+   pre-built DLL or build it yourself (see the build section).</li>
+  <li>workers.properties - A file that describes the host(s) and port(s)
+   used by the workers (Tomcat processes). This file is located 
+   in (<tt>tomcat/conf/workers.properties</tt>).</li>
+</ol>
+
+<p>The installation includes the following parts:
+
+<ol>
+  <li>Configuring the NSAPI redirector with a default /examples context and 
+    checking that you can serve servlets with Netscape.</li>
+  <li>Adding more contexts to the configuration.</li>
+</ol>
+
+<h3>Configuring the NSAPI Redirector</h3>
+
+<p>In this document I will assume that nsapi_redirect.dll is placed in
+d:\tomcat\bin\netscape\nt4\i386\nsapi_redirect.dll and that you created the
+properties files are in d:\tomcat\conf.</p>
+
+<ol>
+  <li>If the Netscape built in servlet support is working disable it.</li>
+  <li>Add the redirector plugin into the Netscape server configuration. Edit your server
+    obj.conf and add the following lines:</li>
+  <ul>
+    <li>In the Init section:<br>
+      <tt>Init fn=&quot;load-modules&quot; funcs=&quot;jk_init,jk_service&quot;
+      shlib=&quot;d:/tomcat/bin/netscape/nt4/i386/nsapi_redirect.dll&quot;<br>
+      Init fn=&quot;jk_init&quot; worker_file=&quot;d:/tomcat/conf/workers.properties&quot;
+      log_level=&quot;debug&quot; log_file=&quot;d:/tomcat/nsapi.log&quot;</tt> </li>
+    <li>In the default object NameTrans section<br>
+      <tt>NameTrans fn=&quot;assign-name&quot; from=&quot;/servlet/*&quot;
+      name=&quot;servlet&quot;<br>
+      NameTrans fn=&quot;assign-name&quot; from=&quot;/examples/*&quot; name=&quot;servlet&quot;</tt></li>
+    <li>Create a new configuration object by adding the following lines to the end of the
+      obj.conf file:<br>
+      <tt>&lt;Object name=servlet&gt; <br>
+      ObjectType fn=force-type type=text/plain <br>
+      Service fn=&quot;jk_service&quot; worker=&quot;ajp12&quot; <br>
+      &lt;/Object&gt;</tt></li>
+  </ul>
+  <li>Restart Netscape (stop and start the server)</li>
+</ol>
+
+<p>That's all, now you should start tomcat and ask Netscape for
+http://server:port/examples/</p>
+
+<h3>Adding additional Contexts</h3>
+
+<p>The examples context is useful for verifying your installation, but you will also need
+to add your own contexts. Adding a new context requires two operations:
+
+<ol>
+  <li>Adding the context to Tomcat (I am not going to talk about this).</li>
+  <li>Assigning the NSAPI redirector to handle this context.</li>
+</ol>
+
+<p>Assigning the NSAPI redirector to handle this context is simple, all you need to do is
+to edit obj.conf and add a NameTrans line that looks like:</p>
+
+<p><tt>NameTrans fn=&quot;assign-name&quot; from=&quot;/&lt;context name&gt;/*&quot;
+name=&quot;servlet&quot; </tt></p>
+
+<p>After saving obj.conf restart Netscape and it will serve the new context.</p>
+
+<h2>Building the redirector</h2>
+
+<p>The redirector was developed using Visual C++ Ver.6.0, so having this environment is a
+prereq if you want to perform a custom build.</p>
+
+<p>The steps that you need to take are: 
+
+<ol>
+  <li>Change directory to the nsapi plugins source directory.</li>
+  <li>Edit <tt>nsapi.dsp</tt> and update the include and library path to reflect your own
+    Netscape server installation (search for a <tt>/I</tt> compiler option and <tt>/libpath</tt>
+    linker option)</li>
+  <li>Execute the following command:<br>
+    <tt>MSDEV nsapi.dsp /MAKE ALL</tt><br>
+    If msdev is not in your path, enter the full path to msdev.exe</li>
+</ol>
+
+<p>This will build both release and debug versions of the redirector plugin. </p>
+
+<p>An alternative will be to open the nsapi workspace file (nsapi.dsw) in msdev and build
+it using the build menu.</p>
+
+<h2>How does it work? </h2>
+
+<ol>
+  <li>The Netscape-Tomcat redirector is an Netscape service step plugin, Netscape load the
+    redirector plugin and calls its service handler function for request that are assigned to
+    the &quot;servlet&quot; configuration object. </li>
+  <li>For each in-coming request Netscape will execute the set of NameTrans directives that we
+    added to obj.conf, the assign-name function will check if it's from parameter matches the
+    request URL.</li>
+  <li>If a match is found, assign-name will assign the servlet object name to the request.
+    This will cause Netscape to send the request to the servlet configuration object.</li>
+  <li>Netscape will execute our jk_service extension. The extension collects the request
+    parameters and forwards them to the appropriate worker using the ajp12 protocol (the
+    worker=&quot;ajp12&quot; parameter in jk_service inform it that the worker for this
+    request is named ajp12).</li>
+  <li>The extension collects the response from the worker and returns it to the browser.</li>
+</ol>
+
+<h2>Advanced Context Configuration</h2>
+
+<p>Sometimes it is better to have Netscape serve the static pages (html, gif, jpeg etc.)
+even if these files are part of a context served by Tomcat. For example, consider the html
+and gif files in the examples context, there is no need to serve them from the Tomcat
+process, Netscape will suffice.</p>
+
+<p>Making Netscape serve static files that are part of the Tomcat contexts requires the
+following:
+
+<ol>
+  <li>Configuring Netscape to know about the Tomcat contexts</li>
+  <li>Make sure that the WEB-INF directory is protected from access.</li>
+  <li>Configuring Netscape to assign the NSAPI redirector only specific requests that requires
+    JSP/Servlet handling.</li>
+</ol>
+
+<p>Adding a Tomcat context to Netscape requires the addition of a new Netscape 
+virtual directory that covers the Tomcat context. For example, adding a 
+/example Netscape virtual directory that covers the d:\tomkat\webapps\examples 
+directory.
+
+To add a new virtual directory add the following line to your obj.conf:</p>
+
+<p><tt>NameTrans fn=pfx2dir from=/examples dir=&quot;d:/tomcat/webapps/examples&quot;</tt></p>
+
+<p>WEB-INF protection requires some explanation; Each servlet application (context) has a
+special directory named WEB-INF, this directory contains sensitive configurations data and
+Java classes and must be kept hidden from web users. WEB-INF can be protected by adding
+the following line to the PathCheck section in the default configuration object:</p>
+
+<p><tt>PathCheck fn=&quot;deny-existence&quot; path=&quot;*/WEB-INF/*&quot;</tt></p>
+
+<p>This line instructs the Netscape server to reject any request with a URL that contain
+the path /WEB-INF/.</p>
+
+<p>Configuring Netscape to assign the NSAPI redirector only specific requests is somewhat
+harder, you will need to specify the exact URL-Path pattern(s) that you want Tomcat to
+handle (usually only JSP files and servlets). This requires a change to NemaTrans portion
+of obj.conf. For the examples context it requires to replace the following line:</p>
+
+<p><tt>NameTrans fn=&quot;assign-name&quot; from=&quot;/examples/*&quot;
+name=&quot;servlet&quot;</tt> </p>
+
+<p>with the following two lines:</p>
+
+<p><tt>NameTrans fn=&quot;assign-name&quot; from=&quot;/examples/jsp/*.jsp&quot;
+name=&quot;servlet&quot;<br>
+NameTrans fn=&quot;assign-name&quot; from=&quot;/examples/servlet/*&quot;
+name=&quot;servlet&quot; </tt></p>
+
+<p>As you can see the second configuration is more explicit, it actually instructs
+Netscape to assign the redirector with only requests to resources under <tt>/examples/servlet/</tt>
+and resources under <tt>/examples/ </tt>whose name ends with <tt>.jsp</tt>. You can be
+even more explicit and provide lines such as:</p>
+
+<p><tt>NameTrans fn=&quot;assign-name&quot; from=&quot;/examples/servletname&quot;
+name=&quot;servlet&quot;</tt></p>
+
+<p>that instructs Netscape to assign the redirector request whose URL-Path equals <tt>/example/servletname</tt>.</p>
+
+<h2>Advanced Worker Configuration</h2>
+
+<p>Sometimes you want to serve different contexts with different Tomcat processes (for
+example to spread the load among different machines). To achieve such goal you will need
+to define several workers and assign each context with its own worker.</p>
+
+<p>Defining workers is done in workers.properties, this file includes two types of entries:
+
+<ol>
+  <li>An entry that lists all the workers defined. For example:<br>
+    <tt>worker.list=ajp12, ajp12second</tt></li>
+  <li>Entries that define the host and port associated with these workers. For example:<br>
+    <tt>worker.ajp12.host=localhost<br>
+    worker.ajp12.port=8007<br>
+    worker.ajp12second.host=otherhost<br>
+    worker.ajp12second.port=8007</tt></li>
+</ol>
+
+<p>The above examples defined two workers, now we can use these workers to serve two
+different contexts each with it&#146;s own worker. Submitting requests to different
+workers is accomplished by using multiple Service directives in the servlet configuration
+Object, each with a different path pattern parameter. For example, if we want to submit
+the /servlet context to a worker named ajp12 and the /examples context to a worker named
+ajp12second we should use the following configuration:</p>
+
+<p><tt>&lt;Object name=servlet&gt;<br>
+ObjectType fn=force-type type=text/plain<br>
+Service fn=&quot;jk_service&quot; worker=&quot;ajp12&quot; path=&quot;/servlet/*&quot;<br>
+Service fn=&quot;jk_service&quot; worker=&quot;ajp12second&quot;
+path=&quot;/examples/*&quot;<br>
+Service fn=&quot;jk_service&quot; worker=&quot;ajp12&quot;<br>
+&lt;/Object&gt;</tt></p>
+
+<h2>Feedback</h2>
+
+<p>Please send feedback, bug report or any additional information to 
+<tt>tomcat-user@jakarta.apache.org</tt>.
+</p>
+</body>
+</html>
