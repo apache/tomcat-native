@@ -213,7 +213,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                p->name, host, port);
 
         if(port > 1024 && host) {
-            if(jk_resolve(host, (short)port, &p->worker_inet_addr)) {
+            if(jk_resolve(host, port, &p->worker_inet_addr)) {
                 return JK_TRUE;
             }
             jk_log(l, JK_LOG_ERROR, "In jk_worker_t::validate, resolve failed\n");

@@ -76,7 +76,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 int jk_resolve(char *host,
-               short port,
+               int port,
                struct sockaddr_in *rc);
 
 int jk_open_socket(struct sockaddr_in *addr, 
