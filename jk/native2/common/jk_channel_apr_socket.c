@@ -90,7 +90,7 @@ static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
         socketInfo->timeout = atoi(value);
     }
     else if (strcmp("nodelay", name) == 0) {
-        socketInfo->timeout = atoi(value);
+        socketInfo->ndelay = atoi(value);
     }
     else {
         return jk2_channel_setAttribute(env, mbean, name, valueP);
