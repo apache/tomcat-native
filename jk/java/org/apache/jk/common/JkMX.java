@@ -36,96 +36,96 @@ import java.io.IOException;
 public class JkMX extends JkHandler
 {
     MBeanServer mserver;
-	private boolean enabled=false;
-	private int httpport=-1;
-	private String httphost="localhost";
-	private int jrmpport=-1;
-	private String jrmphost="localhost";
+    private boolean enabled=false;
+    private int httpport=-1;
+    private String httphost="localhost";
+    private int jrmpport=-1;
+    private String jrmphost="localhost";
 
-    public JkMX()
-    {
+    public JkMX() {
     }
 
     /* -------------------- Public methods -------------------- */
 
-	/** Enable the MX4J adapters (new way)
-	 */
-	public void setEnabled(boolean b) {
-		enabled=b;
-	}
-	
-	public boolean getEnabled() {
-		return enabled;
-	}
-	
-	/** Enable the MX4J adapters (old way, compatible)
-	 */
-	public void setPort(int i) {
-		enabled=(i != -1);
-	}
-	
-	public int getPort() {
-		return ((httpport != -1) ? httpport : jrmpport);
-	}
+    /** Enable the MX4J adapters (new way)
+     */
+    public void setEnabled(boolean b) {
+        enabled=b;
+    }
+        
+    public boolean getEnabled() {
+        return enabled;
+    }
+        
+    /** Enable the MX4J adapters (old way, compatible)
+     */
+    public void setPort(int i) {
+        enabled=(i != -1);
+    }
+        
+    public int getPort() {
+        return ((httpport != -1) ? httpport : jrmpport);
+    }
 
-	/** Enable the MX4J HTTP internal adapter
-	 */	
-	public void setHttpPort( int i ) {
-		httpport=i;
-	}
+    /** Enable the MX4J HTTP internal adapter
+     */ 
+    public void setHttpPort( int i ) {
+        httpport=i;
+    }
 
-	public int getHttpPort() {
-		return httpport;
-	}
+    public int getHttpPort() {
+        return httpport;
+    }
 
-	public void setHttpHost(String host ) {
-		this.httphost=host;
-	}
+    public void setHttpHost(String host ) {
+        this.httphost=host;
+    }
 
-	public String getHttpHost() {
-		return httphost;
-	}
+    public String getHttpHost() {
+        return httphost;
+    }
 
-	/** Enable the MX4J JRMP internal adapter
-	 */
-	public void setJrmpPort( int i ) {
-		jrmpport=i;
-	}
+    /** Enable the MX4J JRMP internal adapter
+     */
+    public void setJrmpPort( int i ) {
+        jrmpport=i;
+    }
 
-	public int getJrmpPort() {
-		return jrmpport;
-	}
+    public int getJrmpPort() {
+        return jrmpport;
+    }
 
-	public void setJrmpHost(String host ) {
-		this.jrmphost=host;
-	}
+    public void setJrmpHost(String host ) {
+        this.jrmphost=host;
+    }
 
-	public String getJrmpHost() {
-		return jrmphost;
-	}
+    public String getJrmpHost() {
+        return jrmphost;
+    }
 
     /* ==================== Start/stop ==================== */
-	ObjectName httpServerName=null;
-	ObjectName jrmpServerName=null;
+    ObjectName httpServerName=null;
+    ObjectName jrmpServerName=null;
 
     /** Initialize the worker. After this call the worker will be
      *  ready to accept new requests.
      */
     public void loadAdapter() throws IOException {
-		boolean httpAdapterLoaded = false;
-		boolean jrmpAdapterLoaded = false;
-
+        boolean httpAdapterLoaded = false;
+        boolean jrmpAdapterLoaded = false;
+        
         if ((httpport != -1) && classExists("mx4j.adaptor.http.HttpAdaptor")) {
             try {
-				httpServerName = new ObjectName("Http:name=HttpAdaptor");
-                mserver.createMBean("mx4j.adaptor.http.HttpAdaptor", httpServerName, null);
+                httpServerName = registerObject("mx4j.adaptor.http.HttpAdaptor",
+                                                "Http:name=HttpAdaptor");
+
+                        
                 if( httphost!=null )
                     mserver.setAttribute(httpServerName, new Attribute("Host", httphost));
                 mserver.setAttribute(httpServerName, new Attribute("Port", new Integer(httpport)));
 
-                ObjectName processorName = new ObjectName("Http:name=XSLTProcessor");
-                mserver.createMBean("mx4j.adaptor.http.XSLTProcessor", processorName, null);
-
+                ObjectName processorName = registerObject("mx4j.adaptor.http.XSLTProcessor",
+                                                          "Http:name=XSLTProcessor");
                 //mserver.setAttribute(processorName, new Attribute("File", "/opt/41/server/lib/openjmx-tools.jar"));
                 //mserver.setAttribute(processorName, new Attribute("UseCache", new Boolean(false)));
                 //mserver.setAttribute(processorName, new Attribute("PathInJar", "/openjmx/adaptor/http/xsl"));
@@ -152,26 +152,25 @@ public class JkMX extends JkHandler
                 mserver.invoke(httpServerName, "start", null, null);
 
                 log.info( "Started MX4J console on host " + httphost + " at port " + httpport);
-                //return;
-
-				httpAdapterLoaded = true;
+                
+                httpAdapterLoaded = true;
 
             } catch( Throwable t ) {
-				httpServerName=null;
-                log.error( "Can't load the MX4J http adapter " + t.toString()  );
+                httpServerName=null;
+                log.error( "Can't load the MX4J http adapter ", t );
             }
         }
 
         if ((jrmpport != -1) && classExists("mx4j.tools.naming.NamingService")) {
             try {
-                jrmpServerName = new ObjectName("Naming:name=rmiregistry");
-                mserver.createMBean("mx4j.tools.naming.NamingService", jrmpServerName, null);
+                jrmpServerName = registerObject("mx4j.tools.naming.NamingService",
+                                                "Naming:name=rmiregistry");
                 mserver.invoke(jrmpServerName, "start", null, null);
                 log.info( "Creating " + jrmpServerName );
 
                 // Create the JRMP adaptor
-                ObjectName adaptor = new ObjectName("Adaptor:protocol=jrmp");
-                mserver.createMBean("mx4j.adaptor.rmi.jrmp.JRMPAdaptor", adaptor, null);
+                ObjectName adaptor = registerObject("mx4j.adaptor.rmi.jrmp.JRMPAdaptor",
+                                                    "Adaptor:protocol=jrmp");
 
                 //    mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean mbean = (mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean)mx4j.util.StandardMBeanProxy.
                 //        create(mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean.class, mserver, adaptor);
@@ -184,8 +183,8 @@ public class JkMX extends JkHandler
                             "com.sun.jndi.rmi.registry.RegistryContextFactory"},
                         new String[] { "java.lang.Object", "java.lang.Object" });
 
-				String jrpmurl = "rmi://" + jrmphost + ":" + Integer.toString(jrmpport) ;
-					
+                String jrpmurl = "rmi://" + jrmphost + ":" + Integer.toString(jrmpport) ;
+                                        
                 mserver.invoke( adaptor, "putNamingProperty",
                         new Object[] {
                             javax.naming.Context.PROVIDER_URL,
@@ -202,27 +201,25 @@ public class JkMX extends JkHandler
                 jrmpAdapterLoaded = true;
 
             } catch( Exception ex ) {
-				jrmpServerName = null;
+                jrmpServerName = null;
                 log.error( "MX4j RMI adapter not loaded: " + ex.toString());
             }
         }
 
         if ((httpport != -1) && (! httpAdapterLoaded) && classExists("com.sun.jdmk.comm.HtmlAdaptorServer")) {
             try {
-                Class c=Class.forName( "com.sun.jdmk.comm.HtmlAdaptorServer" );
-                Object o=c.newInstance();
-                httpServerName=new ObjectName("Adaptor:name=html,port=" + httpport);
+                httpServerName=registerObject("com.sun.jdmk.comm.HtmlAdaptorServer",
+                                              "Adaptor:name=html,port=" + httpport);
                 log.info("Registering the JMX_RI html adapter " + httpServerName + " at port " + httpport);
-                mserver.registerMBean(o,  httpServerName);
 
                 mserver.setAttribute(httpServerName,
                                      new Attribute("Port", new Integer(httpport)));
 
                 mserver.invoke(httpServerName, "start", null, null);
 
-				httpAdapterLoaded = true;
+                httpAdapterLoaded = true;
             } catch( Throwable t ) {
-				httpServerName = null;
+                httpServerName = null;
                 log.error( "Can't load the JMX_RI http adapter " + t.toString()  );
             }
         }
@@ -236,12 +233,12 @@ public class JkMX extends JkHandler
         try {
             log.info("Stoping JMX ");
 
-			if( httpServerName!=null ) {
-				mserver.invoke(httpServerName, "stop", null, null);
-			}
-			if( jrmpServerName!=null ) {
-				mserver.invoke(jrmpServerName, "stop", null, null);
-			}
+            if( httpServerName!=null ) {
+                mserver.invoke(httpServerName, "stop", null, null);
+            }
+            if( jrmpServerName!=null ) {
+                mserver.invoke(jrmpServerName, "stop", null, null);
+            }
         } catch( Throwable t ) {
             log.error( "Destroy error" + t );
         }
@@ -256,32 +253,19 @@ public class JkMX extends JkHandler
             }
 
             try {
-                Class c=Class.forName( "org.apache.log4j.jmx.HierarchyDynamicMBean" );
-                Object o=c.newInstance();
+                registerObject("org.apache.log4j.jmx.HierarchyDynamicMBean" ,
+                               "log4j:hierarchy=default");
                 log.info("Registering the JMX hierarchy for Log4J ");
-                mserver.registerMBean(o, new ObjectName("log4j:hierarchy=default"));
             } catch( Throwable t ) {
                 log.info("Can't enable log4j mx: " +  t.toString());
             }
 
-            /*
-            DynamicMBeanProxy.createMBean( JkMain.getJkMain(), "jk2", "name=JkMain" );
-
-            for( int i=0; i< wEnv.getHandlerCount(); i++ ) {
-                JkHandler h=wEnv.getHandler( i );
-                DynamicMBeanProxy.createMBean( h, "jk2", "name=" + h.getName() );
-            }
-            */
         } catch( Throwable t ) {
             log.error( "Init error", t );
         }
     }
 
     public void addHandlerCallback( JkHandler w ) {
-        /*if( w!=this ) {
-            DynamicMBeanProxy.createMBean( w, "jk2", "name=" + w.getName() );
-        }
-        */
     }
 
     MBeanServer getMBeanServer() {
@@ -306,6 +290,14 @@ public class JkMX extends JkHandler
         }
     }
 
+    private ObjectName registerObject(String className, String oName) 
+        throws Exception {
+        Class c = Class.forName(className);
+        Object o = c.newInstance();
+        ObjectName objN = new ObjectName(oName);
+        mserver.registerMBean(o, objN);
+        return objN;
+    }
 
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( JkMX.class );
