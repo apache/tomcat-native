@@ -81,7 +81,10 @@ extern jint jk_jni_aprImpl_registerNatives(JNIEnv *, jclass);
 
 struct jni_worker_data {
     jclass      jk_java_bridge_class;
+    jclass      jk_java_bridge_apri_class;
     jmethodID   jk_main_method;
+    jmethodID   jk_setout_method;
+    jmethodID   jk_seterr_method;
     char *className;
     char *stdout_name;
     char *stderr_name;
@@ -102,13 +105,31 @@ static int jk2_get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEn
     p->jk_main_method =
         (*jniEnv)->GetStaticMethodID(jniEnv, p->jk_java_bridge_class,
                                      "main", 
-                                     "([Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+                                     "([Ljava/lang/String;)V");
+    if(!p->jk_main_method) {
+	    env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find main(String [])\n"); 
+	    return JK_ERR;
+    }
+
+    p->jk_setout_method =
+        (*jniEnv)->GetStaticMethodID(jniEnv, p->jk_java_bridge_apri_class,
+                                     "setOut", 
+                                     "(Ljava/lang/String;)V");
+    if(!p->jk_main_method) {
+	    env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find AprImpl.setOut(String)"); 
+	    return JK_ERR;
+    }
+
+    p->jk_seterr_method =
+        (*jniEnv)->GetStaticMethodID(jniEnv, p->jk_java_bridge_apri_class,
+                                     "setErr", 
+                                     "(Ljava/lang/String;)V");
+    if(!p->jk_main_method) {
+	    env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find AprImpl.setErr(String)\n"); 
+	    return JK_ERR;
+    }
 
     
-    if(!p->jk_main_method) {
-	env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find main()\n"); 
-	return JK_ERR;
-    }
 
     return JK_OK;
 }
@@ -178,7 +199,6 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
     char *str_config = NULL;
     jk_map_t *props=_this->workerEnv->initData;
     jk_vm_t *vm=_this->workerEnv->vm;
-    jclass aprImplClass;
     jclass jstringClass;
     jarray jargs;
     int i=0;
@@ -251,19 +271,18 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
    XXX Need the way to customize JAVA_BRIDGE_CLASS_APRI, but since
    it's hardcoded in JniHandler.java doesn't matter for now.
 */
-    aprImplClass =
+    jniWorker->jk_java_bridge_apri_class =
         (*jniEnv)->FindClass(jniEnv, JAVA_BRIDGE_CLASS_APRI );
 
-    if( aprImplClass == NULL ) {
+    if( jniWorker->jk_java_bridge_apri_class == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Can't find class %s\n", JAVA_BRIDGE_CLASS_APRI );
         /* [V] the detach here may segfault on 1.1 JVM... */
         vm->detach(env, vm);
         return JK_ERR;
     }
-    rc = jk_jni_aprImpl_registerNatives( jniEnv, aprImplClass);
-    
-   if( rc != 0) {
+    rc = jk_jni_aprImpl_registerNatives( jniEnv, jniWorker->jk_java_bridge_apri_class);
+    if( rc != 0) {
      env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Can't register native functions for %s \n", JAVA_BRIDGE_CLASS_APRI ); 
         vm->detach(env, vm);
@@ -293,13 +312,28 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
         (*jniEnv)->SetObjectArrayElement(jniEnv, jargs, i, arg );        
     }
     
+    /* Set out and err stadard files */ 
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "jni.init() setting stdout=%s...\n",jniWorker->stdout_name);
+    (*jniEnv)->CallStaticVoidMethod(jniEnv,
+                                    jniWorker->jk_java_bridge_apri_class,
+                                    jniWorker->jk_setout_method,
+                                    stdout_name);
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "jni.init() setting stderr=%s...\n",jniWorker->stderr_name);
+    (*jniEnv)->CallStaticVoidMethod(jniEnv,
+                                    jniWorker->jk_java_bridge_apri_class,
+                                    jniWorker->jk_seterr_method,
+                                    stderr_name);
+
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "jni.init() calling main()...\n");
-    
     (*jniEnv)->CallStaticVoidMethod(jniEnv,
                                     jniWorker->jk_java_bridge_class,
                                     jniWorker->jk_main_method,
-                                    jargs,stdout_name,stderr_name);
+                                    jargs);
     
     vm->detach(env, vm);
 

@@ -68,6 +68,27 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
         this.nativeSo=nativeSo;
     }
 
+    /** Sets the System.out stream */
+    
+    public static void setOut( String filename ) {
+        try{ 
+            if( filename !=null ){
+                System.setOut( new PrintStream(new FileOutputStream(filename )));
+            }
+        }catch (Throwable th){
+        }
+    }
+    /** Sets the System.err stream */
+    
+    public static void setErr( String filename ) {
+        try{ 
+            if( filename !=null ){
+                System.setErr( new PrintStream(new FileOutputStream(filename )));
+            }                                                 
+        }catch (Throwable th){
+        }
+    }
+
     // -------------------- Apr generic utils --------------------
     /** Initialize APR
      */
