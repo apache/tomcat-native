@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -282,7 +282,6 @@ static int jk2_get_content_length(jk_env_t *env, request_rec *r)
 static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
                                jk_worker_t *worker, void *serverObj)
 {
-    /*     ap_port_t port; */
     char *ssl_temp      = NULL;
     jk_workerEnv_t *workerEnv=worker->workerEnv;
     request_rec *r=serverObj;
@@ -313,11 +312,7 @@ static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     /* get server name */
     s->server_name= (char *)(r->hostname ? r->hostname :
                  r->server->server_hostname);
-
-    /* get the real port (otherwise redirect failed) */
-    /*     apr_sockaddr_port_get(&port,r->connection->local_addr); */
-    /*     s->server_port = port; */
-
+    s->server_port = htons(r->connection->local_addr.sin_port);
     s->server_software = (char *)ap_get_server_version();
 
     s->method         = (char *)r->method;
