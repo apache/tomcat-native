@@ -36,6 +36,16 @@
 
 <!-- === PREPARATION AND GLOBAL TASKS ==================================== -->
 
+  <target
+      name="init"
+      description="Dump some messages for Make">
+    
+    <!-- Dump some messages about what we're going to do -->
+    <echo message="Building ${ant.project.name} (version ${version})"/>
+    <echo message="- source path: ${basedir}"/>
+    <echo message="- target path: ${targdir}"/>
+  </target>
+
   <!--
     Prepare the build directory creating all its subdirectories
     and check for Tomcat 4 and Xalan in the classpath
@@ -43,11 +53,6 @@
   <target
       name="prepare"
       description="Prepare the build tree and check classes">
-    
-    <!-- Dump some messages about what we're going to do -->
-    <echo message="Building ${ant.project.name} (version ${version})"/>
-    <echo message="- source path: ${basedir}"/>
-    <echo message="- target path: ${targdir}"/>
 
     <!-- Create some directories -->
     <mkdir dir="${build.home}"/>
