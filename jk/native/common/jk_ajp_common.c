@@ -132,6 +132,14 @@ static int sc_for_req_method(const char    *method,
 	*sc = SC_M_ACL;
     } else if(0 == strcmp(method, "REPORT")) {
 	*sc = SC_M_REPORT;
+    } else if(0 == strcmp(method, "VERSION-CONTROL")) {
+        *sc = SC_M_VERSION_CONTROL;
+    } else if(0 == strcmp(method, "CHECKIN")) {
+        *sc = SC_M_CHECKIN;
+    } else if(0 == strcmp(method, "CHECKOUT")) {
+        *sc = SC_M_CHECKOUT;
+    } else if(0 == strcmp(method, "UNCHECKOUT")) {
+        *sc = SC_M_UNCHECKOUT;
     } else {
         rc = JK_FALSE;
     }

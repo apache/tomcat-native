@@ -93,7 +93,7 @@ extern "C" {
 /*
  * Request methods, coded as numbers instead of strings.
  * The list of methods was taken from Section 5.1.1 of RFC 2616,
- * RFC 2518, and the ACL IETF draft.
+ * RFC 2518, the ACL IETF draft, and the DeltaV IESG Proposed Standard.
  *          Method        = "OPTIONS"
  *                        | "GET"    
  *                        | "HEAD"   
@@ -110,6 +110,10 @@ extern "C" {
  *                        | "UNLOCK"
  *                        | "ACL"
  *                        | "REPORT"
+ *                        | "VERSION-CONTROL"
+ *                        | "CHECKIN"
+ *                        | "CHECKOUT"
+ *                        | "UNCHECKOUT"
  * 
  */
 #define SC_M_OPTIONS            (unsigned char)1
@@ -126,8 +130,12 @@ extern "C" {
 #define SC_M_MOVE               (unsigned char)12
 #define SC_M_LOCK               (unsigned char)13
 #define SC_M_UNLOCK             (unsigned char)14
-#define SC_M_ACL				(unsigned char)15
+#define SC_M_ACL		(unsigned char)15
 #define SC_M_REPORT             (unsigned char)16
+#define SC_M_VERSION_CONTROL    (unsigned char)17
+#define SC_M_CHECKIN            (unsigned char)18
+#define SC_M_CHECKOUT           (unsigned char)19
+#define SC_M_UNCHECKOUT         (unsigned char)20
 
 
 /*

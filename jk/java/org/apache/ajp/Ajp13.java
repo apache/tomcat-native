@@ -168,7 +168,11 @@ public class Ajp13 {
         "LOCK",
         "UNLOCK",
         "ACL",
-        "REPORT"
+        "REPORT",
+        "VERSION-CONTROL",
+        "CHECKIN",
+        "CHECKOUT",
+        "UNCHECKOUT"
     };
 
     // id's for common request headers
