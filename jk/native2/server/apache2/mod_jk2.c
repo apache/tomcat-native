@@ -371,6 +371,11 @@ static void *jk2_merge_config(apr_pool_t *p,
 static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
                        jk_workerEnv_t *workerEnv, server_rec *s )
 {
+    apr_proc_t proc;
+    
+    proc.pid=getpid();
+    workerEnv->childId=find_child_by_pid( & proc );
+
     workerEnv->init(env, workerEnv );
     workerEnv->server_name   = (char *)ap_get_server_version();
     ap_add_version_component(pconf, JK_EXPOSED_VERSION);
@@ -384,7 +389,7 @@ static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
 */
 static int jk2_apache2_isValidating(apr_pool_t *gPool, apr_pool_t **mainPool) {
     apr_pool_t *tmpPool=NULL;
-    char *data=NULL;
+    void *data=NULL;
     int i;
     
     for( i=0; i<10; i++ ) {
@@ -460,8 +465,6 @@ static void jk2_child_init(apr_pool_t *pconf,
     jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
         ap_get_module_config(s->module_config, &jk2_module);
     jk_env_t *env;
-    apr_proc_t proc;
-
         
     if( workerEnv==NULL )
         workerEnv = serverEnv->workerEnv;
@@ -473,11 +476,8 @@ static void jk2_child_init(apr_pool_t *pconf,
         
         jk2_init( env, pconf, workerEnv, s );
     
-        proc.pid=getpid();
-        workerEnv->chId=find_child_by_pid( & proc );
-        
         env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init %d %d\n",
-                      workerEnv->was_initialized, workerEnv->chId );
+                      workerEnv->was_initialized, workerEnv->childId );
     }
     
 }
@@ -565,8 +565,9 @@ static int jk2_handler(request_rec *r)
         rPool= worker->rPoolCache->get( env, worker->rPoolCache );
         if( rPool == NULL ) {
             rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "mod_jk.handler(): new rpool %p\n", rPool );
+            if( uriEnv->mbean->debug > 0 )
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "mod_jk.handler(): new rpool %p\n", rPool );
         }
 
         /* XXX we should reuse the request itself !!! */

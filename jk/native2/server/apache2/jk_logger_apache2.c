@@ -200,7 +200,7 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
 
 int JK_METHOD 
 jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
-                              char *type, char *name)
+                           const char *type, const char *name)
 {
     jk_logger_t *l = (jk_logger_t *)pool->calloc(env, pool,
                                                  sizeof(jk_logger_t));
