@@ -126,7 +126,10 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
     char buf[32];
     int sock;
     int set = 1;
-    int ret;
+    int ret = 0;
+#ifdef SO_LINGER
+    struct linger li;
+#endif
 
     JK_TRACE_ENTER(l);
 
@@ -215,11 +218,24 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
      * systems?
     */
     set = 1;
-    if (setsockopt(sd, SOL_SOCKET, SO_NOSIGPIPE, (const char *)&set,
+    if (setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, (const char *)&set,
                    sizeof(int))) {
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
                 "failed setting SO_NOSIGPIPE with errno=%d", errno);
+        jk_close_socket(sock);
+        JK_TRACE_EXIT(l);
+        return -1;
+    }
+#endif
+#ifdef SO_LINGER
+    /* Make hard closesocket by disabling lingering */
+    li.l_linger = li.l_onoff = 0;
+    if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (const char *)&li,
+                   sizeof(li))) {
+        JK_GET_SOCKET_ERRNO();
+        jk_log(l, JK_LOG_ERROR,
+                "failed setting SO_LINGER with errno=%d", errno);
         jk_close_socket(sock);
         JK_TRACE_EXIT(l);
         return -1;
