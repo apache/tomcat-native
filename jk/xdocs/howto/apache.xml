@@ -244,12 +244,16 @@ in Tomcat and put the following include directive at the end of your Apache http
 
 <p>
 This will tell Apache to use directives in the <b>mod_jk.conf-auto</b> file in the Apache configuration.  
-This file is created by enabling the Apache auto-configuration as follows, in your server.xml file:
+This file is created by enabling the Apache auto-configuration as follows, in your server.xml file.
+<b>Please note that this example is specific to Tomcat 5.x, unlike other sections of this document
+   which also apply to previous Tomcat branches.</b>
 </p>
 <source>
-  <Server ...>
+  ...
+  <Engine ...>
     <Listener className="org.apache.jk.config.ApacheConfig" modJk="/path/to/mod_jk.so" />
-  </Server>
+  </Engine>
+  ...
 </source>
 
 <p>
