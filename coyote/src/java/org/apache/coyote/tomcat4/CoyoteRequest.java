@@ -1925,7 +1925,16 @@ public class CoyoteRequest
         if (!getMethod().equalsIgnoreCase("POST"))
             return;
 
-        if (!("application/x-www-form-urlencoded".equals(getContentType())))
+        String contentType = getContentType();
+        if (contentType == null)
+            contentType = "";
+        int semicolon = contentType.indexOf(';');
+        if (semicolon >= 0) {
+            contentType = contentType.substring(0, semicolon).trim();
+        } else {
+            contentType = contentType.trim();
+        }
+        if (!("application/x-www-form-urlencoded".equals(contentType)))
             return;
 
         int len = getContentLength();
@@ -1943,7 +1952,6 @@ public class CoyoteRequest
                 readPostBody(formData, len);
                 parameters.processParameters(formData, 0, len);
             } catch (Throwable t) {
-                t.printStackTrace(); // TEMP
                 ; // Ignore
             }
         }
