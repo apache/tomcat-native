@@ -286,7 +286,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
 {
     LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)serverObj;
     char *worker_name;
-        char huge_buf[16 * 1024]; /* should be enough for all */
+    char huge_buf[16 * 1024]; /* should be enough for all */
 
     DWORD huge_buf_sz;
 
@@ -300,9 +300,9 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
         s->query_string = lpEcb->lpszQueryString;
         /* *worker_name    = DEFAULT_WORKER_NAME; */
         GET_SERVER_VARIABLE_VALUE("URL", s->req_uri);       
-        if (unescape_url(s->req_uri) < 0)
+        if (jk_requtil_unescapeUrl(s->req_uri) < 0)
             return JK_FALSE;
-        getparents(s->req_uri);
+        jk_requtil_getParents(s->req_uri);
     }
     
     GET_SERVER_VARIABLE_VALUE("AUTH_TYPE", s->auth_type);
