@@ -163,6 +163,8 @@ public final class MessageBytes implements Cloneable, Serializable {
 
     public void setString( String s ) {
 	recycle();
+        if (s == null)
+            return;
 	strValue=s;
 	hasStrValue=true;
 	type=T_STR;
