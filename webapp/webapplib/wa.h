@@ -64,8 +64,14 @@
 /* Generic includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <string.h>
+#include <netdb.h>
+#include <errno.h>
+#include <sys/errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 /* Define TRUE and FALSE */
 #ifndef TRUE

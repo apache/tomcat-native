@@ -60,6 +60,14 @@
 
 #include <wa.h>
 
+/**
+ * Configure a connection with the parameter from the web server configuration
+ * file.
+ *
+ * @param conn The connection to configure.
+ * @param param The extra parameter from web server configuration.
+ * @return An error message or NULL.
+ */
 static const char *wa_info_configure(wa_connection *conn, char *param) {
     if(conn==NULL) return("Connection not specified");
     if (param==NULL) conn->conf=strdup("[No data supplied]");
@@ -67,36 +75,43 @@ static const char *wa_info_configure(wa_connection *conn, char *param) {
     return(NULL);
 }
 
-static char *wa_info_describe(wa_connection *conn) {
-    char buf[1024];
+/**
+ * Describe the configuration member found in a connection.
+ *
+ * @param conn The connection for wich a description must be produced.
+ * @param buf The buffer where the description must be stored.
+ * @param len The buffer length.
+ * @return The number of bytes written to the buffer.
+ */
+static int wa_info_describe(wa_connection *conn, char *buf, int len) {
+    if ((buf==NULL)||(len==0)) return(0);
 
-    if(conn==NULL) return("Null connection specified");
-    sprintf(buf, "%s", (char *)conn->conf);
-    return(strdup(buf));
+    if(conn==NULL) return(strlcpy(buf,"Null connection specified",len));
+    return(strlcpy(buf,conn->conf,len));
 }
 
+/**
+ * Initialize a connection.
+ *
+ * @param conn The connection to initialize.
+ */
 void wa_info_init(wa_connection *conn) {
 }
 
+/**
+ * Destroys a connection.
+ *
+ * @param conn The connection to destroy.
+ */
 void wa_info_destroy(wa_connection *conn) {
 }
 
-void wa_info_printf(wa_request *req, wa_callbacks *cb, const char *fmt, ...) {
-    va_list ap;
-    char buf[1024];
-    int ret;
-    int tmp;
-
-    va_start(ap,fmt);
-    ret=vsnprintf(buf, 1024, fmt, ap);
-    va_end(ap);
-    if (ret<0) return;
-
-    if ((tmp=(*cb->write)(req->data,buf,ret))!=ret) {
-        (*cb->log)(req->data,WA_LOG,"Returned %d transmitted %d",tmp,ret);
-    }
-}
-
+/**
+ * Handle a connection from the web server.
+ *
+ * @param req The request data.
+ * @param cb The web-server callback information.
+ */
 void wa_info_handle(wa_request *req, wa_callbacks *cb) {
     int x=0;
     wa_connection *conn=wa_connections;
@@ -113,7 +128,7 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
     
     // Dump configured hosts and applications
     while (conn!=NULL) {
-        char *desc=NULL;
+        char desc[1024];
 
         wa_callback_printf(cb,req,"  <dl>\n");
         wa_callback_printf(cb,req,"   <dt><b>Connection: %s</b></dt>\n",
@@ -121,9 +136,10 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
         wa_callback_printf(cb,req,"   <dd>\n");
         wa_callback_printf(cb,req,"    Provider &quot;%s&quot;\n",
                            conn->prov->name);
-        desc=(*conn->prov->describe)(conn);
-        if (desc!=NULL)
+        if ((*conn->prov->describe)(conn,desc,1024)>0)
             wa_callback_printf(cb,req,"    (Descr.: &quot;%s&quot;)\n",desc);
+        else
+            wa_callback_printf(cb,req,"    (No description available)\n");
         wa_callback_printf(cb,req,"   </dd>\n");
         conn=conn->next;
         wa_callback_printf(cb,req,"  </dl>\n");
@@ -157,15 +173,15 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
     wa_callback_printf(cb,req,"   <dt><b>This request:</b></dt>\n");
     wa_callback_printf(cb,req,"   <dd>\n");
     wa_callback_printf(cb,req,"    <code>\n");
-    wa_callback_printf(cb,req,"     %s",req->method);
-    wa_callback_printf(cb,req," %s",req->uri);
-    if (req->arguments!=NULL) wa_callback_printf(cb,req,"?%s",req->arguments);
-    wa_callback_printf(cb,req," %s<br>\n",req->protocol);
+    wa_callback_printf(cb,req,"     %s",req->meth);
+    wa_callback_printf(cb,req," %s",req->ruri);
+    if (req->args!=NULL) wa_callback_printf(cb,req,"?%s",req->args);
+    wa_callback_printf(cb,req," %s<br>\n",req->prot);
 
     // Dump the first line of the request
-    for (x=0; x<req->header_count; x++)
-        wa_callback_printf(cb,req,"     %s: %s<br>",req->header_names[x],
-                                                    req->header_values[x]);
+    for (x=0; x<req->hnum; x++)
+        wa_callback_printf(cb,req,"     %s: %s<br>",req->hnam[x],
+                                                    req->hval[x]);
 
     // Finish the request dump
     wa_callback_printf(cb,req,"    </code>\n");
@@ -178,11 +194,12 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
     wa_callback_flush(cb,req);
 }
 
+/** WebAppLib plugin description. */
 wa_provider wa_provider_info = {
     "info",
     wa_info_configure,
     wa_info_init,
     wa_info_destroy,
-    wa_info_describe,
     wa_info_handle,
+    wa_info_describe,
 };

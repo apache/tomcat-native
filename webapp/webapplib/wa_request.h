@@ -65,16 +65,16 @@
  * The wa_request structure embodies an HTTP request.
  */
 struct wa_request {
-    wa_host *host;                  // The host handling the request
-    wa_application *application;    // The application that needs to be called
-    void *data;                     // The web-server specific callback data
-    char *method;                   // The HTTP method (GET, POST)
-    char *uri;                      // The HTTP URI requested
-    char *arguments;                // The HTTP query arguments
-    char *protocol;                 // The HTTP protocol (HTTP/1.0, HTTP/1.1)
-    int header_count;               // The number of headers in this request
-    char **header_names;            // The array of header names
-    char **header_values;           // The array of header values
+    wa_host *host;          // The host handling the request
+    wa_application *appl;   // The application that needs to be called
+    void *data;             // The web-server specific callback data
+    char *meth;             // The HTTP method (GET, POST)
+    char *ruri;             // The HTTP URI requested
+    char *args;             // The HTTP query arguments
+    char *prot;             // The HTTP protocol (HTTP/1.0, HTTP/1.1)
+    int hnum;               // The number of headers in this request
+    char **hnam;            // The array of header names
+    char **hval;            // The array of header values
 };
 
 /* Function prototype declaration */

@@ -73,10 +73,10 @@ struct wa_provider {
     void (*init) (wa_connection *);
     // Clean up a connection
     void (*destroy) (wa_connection *);
-    // Get a descriptive string on a connection (based on wa_connection->conf)
-    char *(*describe) (wa_connection *);
     // Handle an HTTP request
     void (*handle) (wa_request *, wa_callbacks *);
+    // Get a descriptive string on a connection (based on wa_connection->conf)
+    int (*describe) (wa_connection *, char *, int);
 };
 
 /* The list of all compiled in providers */

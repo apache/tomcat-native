@@ -155,7 +155,7 @@ static int webapp_translate(request_rec *r) {
     // Create a new request structure
     req=(wa_request *)ap_palloc(r->pool,sizeof(wa_request));
     req->host=host;
-    req->application=appl;
+    req->appl=appl;
 
     // Set the webapp request structure into Apache's request structure
     ap_set_module_config(r->request_config, &webapp_module, req);
@@ -177,10 +177,10 @@ static int webapp_handler(request_rec *r) {
 
     // Set up basic parameters in the request structure
     req->data=r;
-    req->method=(char *)r->method;
-    req->uri=r->uri;
-    req->arguments=r->args;
-    req->protocol=r->protocol;
+    req->meth=(char *)r->method;
+    req->ruri=r->uri;
+    req->args=r->args;
+    req->prot=r->protocol;
 
     // Copy headers into webapp request structure
     if (r->headers_in!=NULL) {
@@ -190,21 +190,21 @@ static int webapp_handler(request_rec *r) {
         int x=0;
 
         // Allocate memory for pointers
-        req->header_count=count;
-        req->header_names=(char **)ap_palloc(r->pool,count*sizeof(char *));
-        req->header_values=(char **)ap_palloc(r->pool,count*sizeof(char *));
+        req->hnum=count;
+        req->hnam=(char **)ap_palloc(r->pool,count*sizeof(char *));
+        req->hval=(char **)ap_palloc(r->pool,count*sizeof(char *));
 
         // Copy header pointers one by one
         for (x=0; x<count;x++) {
             if (ele[x].key==NULL) continue;
-            req->header_names[x]=ele[x].key;
-            req->header_values[x]=ele[x].val;
+            req->hnam[x]=ele[x].key;
+            req->hval[x]=ele[x].val;
         }
     } else {
         fprintf(stderr,"NO HEADERS\n");
-        req->header_count=0;
-        req->header_names=NULL;
-        req->header_values=NULL;
+        req->hnum=0;
+        req->hnam=NULL;
+        req->hval=NULL;
     }
 
     // Try to handle the request
@@ -220,28 +220,23 @@ static int webapp_handler(request_rec *r) {
 }
 
 /**
- * Destroy webapp connections.
+ * Initialize webapp connections.
+ *
+ * @param s The server_rec structure associated with the main server.
+ * @param p The pool for memory allocation (it never gets cleaned).
  */
-static void webapp_destroy(void *k) {
+static void webapp_exit(server_rec *s, pool *p) {
+    // Destroy connections
     wa_connection_destroy();
 }
 
 /**
  * Initialize webapp connections.
+ *
+ * @param s The server_rec structure associated with the main server.
+ * @param p The pool for memory allocation (it never gets cleaned).
  */
 static void webapp_init(server_rec *s, pool *p) {
-    // Register our cleanup function
-#ifdef WIN32
-    // Under Win32 we clean up when the process exits, since web server
-    // children are threads (sockets, connections and all the rest resides
-    // in the same memory space.
-    ap_register_cleanup(p, NULL, webapp_destroy, ap_null_cleanup);
-#else
-    // Under UNIX we clean up when a child exists, since web server children
-    // are processes, and not threads.
-    ap_register_cleanup(p, NULL, ap_null_cleanup, webapp_destroy);
-#endif
-
     // Initialize connections
     wa_connection_init();
 }
@@ -469,11 +464,7 @@ static const handler_rec webapp_handlers[] = {
 /* Apache module declaration */
 module webapp_module = {
     STANDARD_MODULE_STUFF,
-#ifdef WIN32
-    webapp_init,                        /* module initializer */
-#else
     NULL,                               /* module initializer */
-#endif
     NULL,                               /* per-directory config creator */
     NULL,                               /* dir config merger */
     NULL,                               /* server config creator */
@@ -488,11 +479,7 @@ module webapp_module = {
     NULL,                               /* [8] fixups */
     NULL,                               /* [10] logger */
     NULL,                               /* [3] header parser */
-#ifdef WIN32
-    NULL,                               /* child initializer */
-#else
     webapp_init,                        /* child initializer */
-#endif
-    NULL,                               /* child exit/cleanup */
+    webapp_exit,                        /* child exit/cleanup */
     NULL                                /* [1] post read_request handling */
 };
