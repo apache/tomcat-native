@@ -71,8 +71,7 @@ APXS =  @APXS@
 build: $(MOD)
 
 clean:
-	@$(MECHO) "Cleaning up"
-	@$(DEXEC) $(RM) -f $(OBJS) $(MOD)
+	$(RM) -f $(OBJS) $(MOD)
 
 $(MOD): $(SRCS)
 	@$(APXS) -c \
@@ -84,5 +83,4 @@ $(MOD): $(SRCS)
 
 $(SRCS):
 	@$(MECHO) "Linking \"$@\""
-	@$(DEXEC) $(LN) -s $(SRCDIR)/apache-1.3/$@ ./$@
-
+	$(LN) -s $(SRCDIR)/apache-1.3/$@ ./$@

@@ -87,13 +87,12 @@ WARPH = pr_warp_defs.h
 build: $(LIB)
 
 clean:
-	@$(MECHO) "Cleaning up"
-	@$(DEXEC) $(RM) -f $(OBJS) $(PROVS) $(LIB) $(WARPH)
+	$(RM) -f $(OBJS) $(PROVS) $(LIB) $(WARPH)
 
 $(LIB): $(SRCS) $(WARPH) $(OBJS) $(PROVS)
 	@$(MECHO) "Creating library \"$@\""
-	@$(DEXEC) $(AR) cr $@ $(OBJS) $(PROVS)
-	@$(DEXEC) $(RANLIB) $@
+	$(AR) cr $@ $(OBJS) $(PROVS)
+	$(RANLIB) $@
 
 pr_warp_defs.h: $(SRCDIR)/java/Constants.java
 	@$(MECHO) "Generating \"$@\""
@@ -103,7 +102,6 @@ pr_warp_defs.h: $(SRCDIR)/java/Constants.java
 	    $(SED) "y/=;/  /" > $@
 
 $(SRCS):
-	@$(MECHO) "Linking \"$@\""
-	@$(DEXEC) $(LN) -s $(SRCDIR)/lib/$@ ./$@
+	$(LN) -s $(SRCDIR)/lib/$@ ./$@
 
 
