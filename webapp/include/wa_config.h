@@ -73,7 +73,7 @@ struct wa_connection {
     /** The connection name. */
     char *name;
     /** The connection provider. */
-    void *prov;
+    wa_provider *prov;
     /** The connection parameter (as in the configuration file). */
     char *parm;
     /** The provider-specific configuration member for this connection. */
