@@ -73,7 +73,7 @@ Password: anoncvs
 [...]
 # mv apr jakarta-tomcat-connectors/webapp
 # mv jakarta-tomcat-connectors/webapp webapp
-# rmdir jakarta-tomcat-connectors
+# rmdir -rf jakarta-tomcat-connectors
 # cd webapp
 # cvs update -Pd
 [...]
@@ -83,7 +83,6 @@ Password: anoncvs
       the WebApp module and APR:
     </P>
     <PRE>
-# cd webapp
 # sh ./support/buildconf.sh
 [...]
 # sh ./apr/buildconf
