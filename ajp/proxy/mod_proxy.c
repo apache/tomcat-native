@@ -457,12 +457,6 @@ static int proxy_needsdomain(request_rec *r, const char *url, const char *domain
     return HTTP_MOVED_PERMANENTLY;
 }
 
-static apr_status_t worker_cleanup(void *theworker)
-{
-    
-    return APR_SUCCESS;
-}
-
 /* -------------------------------------------------------------- */
 /* Invoke handler */
 
@@ -578,12 +572,6 @@ static int proxy_handler(request_rec *r)
             ap_set_module_config(r->connection->conn_config,
                                  &proxy_module, mconf);
         }
-#if 0
-        /* register the connection->pool cleanup */
-        apr_pool_cleanup_register(r->connection->pool,
-                                  (void *)mconf, worker_cleanup,
-                                   apr_pool_cleanup_null);      
-#endif
     }
     /* use the current balancer and worker. 
      * the proxy_conn will be set in particular scheme handler
@@ -857,8 +845,8 @@ static const char *
         return "ProxyPass needs a path when not defined in a location";
 
     new = apr_array_push(conf->aliases);
-    new->fake = apr_pstrdup(cmd->pool, f);
-    new->real = apr_pstrdup(cmd->pool, r);
+    new->fake = f;
+    new->real = r;
     
     arr = apr_table_elts(params);
     elts = (const apr_table_entry_t *)arr->elts;
