@@ -21,7 +21,7 @@
         <item name="Apache"                     href="apache.html"/>
         <item name="IIS"                        href="iis.html"/>
         <item name="Domino"                     href="domino.html"/>
-        <item name="Netscape"                   href="nes.html"/>
+        <item name="SunOne (Netscape)"          href="nes.html"/>
     </menu>
     <menu name="Get Involved">
         <item name="Contibute documentation"    href="doccontrib.html"/>

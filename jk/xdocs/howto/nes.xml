@@ -21,21 +21,23 @@
    limitations under the License.
 </copyright>
 <properties>
-<title>Netscape/iPlanet HowTo</title>
+<title>SunOne -- Netscape/iPlanet HowTo</title>
 <author email="hgomez@apache.org">Henri Gomez</author>
 <author email="shachor@il.ibm.com">Gal Shachor</author>
+<author email="mturk@apache.org">Mladen Turk</author>
 <date>$Date$</date>
 </properties>
 <body>
 <section name="Introduction">
 <p>
-This document explains how to set up Netscape web servers to cooperate with Tomcat. 
+This document explains how to set up Sun ONE Web Server previously known as
+Netscape web servers to cooperate with Tomcat. 
 </p>
 
 <p>
-Normally the Netscape web servers come with their own Servlet engine, 
+Normally the Sun ONE Web Servers come with their own Servlet engine, 
 but you can also configure them to send servlet and JSP requests to Tomcat 
-using the Tomcat redirector plugin.
+using the NSAPI redirector plugin.
 </p>
 
 <p>
@@ -63,23 +65,23 @@ ${tomcat_home}\bin - Where you place web server plugins
 </p>
 <p>
 In all the examples in this document ${tomcat_home} will be <b>c:\jakarta-tomcat</b>.
-A worker is defined to be a tomcat process that accepts work from the Netscape/iPlanet server.
+A worker is defined to be a tomcat process that accepts work from the Sun ONE Web Server.
 </p>
 </subsection>
 
 
 <subsection name="Supported Configuration">
 <p>
-The Netscape-Tomcat redirector was developed and tested on:
+The NSAPI-Tomcat redirector was developed and tested on:
 <ul>
 <li>
-WinNT4.0-i386 SP4/SP5/SP6a (should be able to work with other service packs) and some Unixes
+WINNT 2000/XP/2003 (should be able to work with other service packs) and some Unixes
 </li>
 <li>
-Netscape Enterprise 3.0 and 3.61
+Sun ONE Web Server 6.1
 </li>
 <li>
-Tomcat 3.2.x, 3.3.x, Tomcat 4.0.x, Tomcat 4.1.x and Tomcat 5
+Tomcat 4.1.x , Tomcat 5.0.x and Tomcat 5.5.x
 </li>
 </ul>
 </p>
@@ -116,7 +118,7 @@ Others servlet engines such as <b>jetty</b> have support for ajp13 protocol
 <p>
 <ol>
 <li>
-The Netscape-Tomcat redirector is an Netscape service step plugin, 
+The NSAPI-Tomcat redirector is an Netscape service step plugin, 
 Netscape load the redirector plugin and calls its service handler 
 function for request that are assigned to the "servlet" configuration object.
 </li>
@@ -146,10 +148,9 @@ The extension collects the response from the worker and returns it to the browse
 
 <section name="Installation">
 <p>
-A pre-built version of the Netscape redirector, nsapi_redirect.dll, may be available under 
+A pre-built version of the NSAPI redirector, nsapi_redirect.dll, may be available under 
 the win32/i386 directory of jakarta-tomcat-connectors distribution. 
 For those using Netscape as your browser, try downloading a zip version of the file, if available. 
-There can be problems using Netscape to download DLL files.
 
 You can also build a copy locally from the source present in jakarta-tomcat-connectors distribution.
 
@@ -157,7 +158,7 @@ You can also build a copy locally from the source present in jakarta-tomcat-conn
 The Tomcat redirector requires two entities:
 <ul>
 <li>
-nsapi_redirect.dll - The Netscape server plugin, either obtain a pre-built DLL or build it yourself 
+nsapi_redirect.dll - The NSAPI server plugin, either obtain a pre-built DLL or build it yourself 
 (see the build section).
 </li>
 <li>
@@ -190,41 +191,51 @@ and you created a log directory <b>c:\jk\logs</b>
 
 <ul>
 <li>
-If the Netscape built in servlet support is working disable it.
+If the built in servlet support is working disable it.
 </li>
 <li>
 Add the redirector plugin into the Netscape server configuration. 
-Edit your server <b>obj.conf</b> and add the following lines:
+Edit your server <b>magnus.conf</b> and add the following lines:
 </li>
 </ul>
 
 <source>
-  In the Init section:
   
-  Init fn="load-modules" funcs="jk_init,jk_service" shlib="c:/jk/lib/nsapi_redirect.dll"
+  Init fn="load-modules" funcs="jk_init,jk_service" shlib="c:/jk/lib/nsapi_redirect.dll" shlib_flags="(global|now)"
   Init fn="jk_init" worker_file="c:/jk/conf/workers.properties" log_level="debug" log_file="c:/jk/logs/nsapi.log"
+</source>
+<ul>
+<li>
+Edit your server <b>obj.conf</b> and add the following lines:
+</li>
+</ul>
+<source>
+
   
   In the default object NameTrans section
-  
-  NameTrans fn="assign-name" from="/servlet/*" name="servlet"
-  NameTrans fn="assign-name" from="/examples/*" name="servlet"
+  &lt;Object name="default"&gt;
+      
+  NameTrans fn="assign-name" from="/servlets-examples(|/*)" name="jknsapi" 
+  NameTrans fn="assign-name" from="/jsp-examples(|/*)" name="jknsapi"
+  ....
+  &lt;/Object&gt;
   
   Create a new configuration object by adding the following lines to the end of the obj.conf file
   
-  &lt;Object name=servlet&gt;
+  &lt;Object name="jknsapi"&gt;
     ObjectType fn=force-type type=text/plain
-    Service fn="jk_service" worker="worker1"
+    Service fn="jk_service" method="*" worker="worker1"
   &lt;/Object&gt;
 </source>
 
 <ul>
 <li>
-Restart Netscape (stop and start the server)
+Restart Web Server (stop and start the server)
 </li>
 </ul>
 
 <p>
-That's all, now you should start tomcat and ask Netscape for http://server:port/examples/
+That's all, now you should start tomcat and ask for http://server:port/servlets-examples/
 </p>
 
 <subsection name="Adding additional Contexts">
@@ -247,7 +258,7 @@ all you need to do is to edit <b>obj.conf</b> and add a NameTrans line that look
 </p>
 
 <source>
-  NameTrans fn="assign-name" from="/&lt;context name&gt;/*" name="servlet"
+  NameTrans fn="assign-name" from="/&lt;context name&gt;/*" name="jknsapi"
 </source>
 
 <p>
@@ -318,12 +329,12 @@ This requires a change to NemaTrans portion of <b>obj.conf</b>.
 <source>
   For the examples context it requires to replace the following line:
   
-  NameTrans fn="assign-name" from="/examples/*" name="servlet"
+  NameTrans fn="assign-name" from="/examples/*" name="jknsapi"
   
   with the following two lines:
   
-  NameTrans fn="assign-name" from="/examples/jsp/*.jsp" name="servlet"
-  NameTrans fn="assign-name" from="/examples/servlet/*" name="servlet"
+  NameTrans fn="assign-name" from="/examples/jsp/*.jsp" name="jknsapi"
+  NameTrans fn="assign-name" from="/examples/servlet/*" name="jknsapi"
 </source>
 
 <p>
@@ -337,7 +348,7 @@ You can be even more explicit and provide lines such as:
 </p>
 
 <source>
-  NameTrans fn="assign-name" from="/examples/servletname" name="servlet"
+  NameTrans fn="assign-name" from="/examples/servletname" name="jknsapi"
   
   Instructs Netscape to assign the redirector request whose URL-Path equals /example/servletname
 </source>
@@ -357,12 +368,13 @@ Defining workers is done in <b>workers.properties</b>, this file includes two ty
 
 <source>
   #An entry that lists all the workers defined. For example:
-  worker.list=worker1, worker2
+  worker.list=worker1,worker2
   
   # Entries that define the host and port associated with these workers.
   worker.worker1.host=localhost
   worker.worker1.port=8009
   worker.worker1.type=ajp13
+
   worker.worker2.host=otherhost
   worker.worker2.port=8009
   worker.worker2.type=ajp13
@@ -381,7 +393,7 @@ For example, if we want to submit the <b>/examples</b> context to the worker nam
 </p>
 
 <source>
-  &lt;Object name=servlet&gt;
+  &lt;Object name="jknsapi"&gt;
     ObjectType fn=force-type type=text/plain
     Service fn="jk_service" worker="worker1" path="/examples/*"
     Service fn="jk_service" worker="worker2" path="/webpages/*"
