@@ -623,7 +623,7 @@ apr_status_t ajp_parse_headers(request_rec  *r, ajp_msg_t *msg)
                "ajp_parse_headers: ajp_msg_get_byte failed");
         return rc;
     }
-    if (result != 4) {
+    if (result != CMD_AJP13_SEND_HEADERS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_parse_headers: wrong type %02x", result);
         return APR_EGENERAL;
