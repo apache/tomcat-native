@@ -221,6 +221,9 @@ void wa_rlog(wa_request *r, const char *f, const int l, const char *fmt, ...) {
 void wa_rsetstatus(wa_request *r, int status) {
     r->hand->setstatus(r,status);
 }
+void wa_rsetstatusline(wa_request *r, char *status) {
+    r->hand->setstatusline(r,status);
+}
 
 void wa_rsetctype(wa_request *r, char *type) {
     r->hand->setctype(r,type);

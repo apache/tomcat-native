@@ -95,6 +95,7 @@ struct wa_ssldata {
 struct wa_handler {
     void (*log)(wa_request *r, const char *file, const int line, char *msg);
     void (*setstatus)(wa_request *r, int status);
+    void (*setstatusline)(wa_request *r, char *status);
     void (*setctype)(wa_request *r, char *type);
     void (*setheader)(wa_request *r, char *name, char *value);
     void (*commit)(wa_request *r);
@@ -188,6 +189,7 @@ int wa_rinvoke(wa_request *r, wa_application *a);
 
 void wa_rlog(wa_request *r, const char *f, const int l, const char *fmt, ...);
 void wa_rsetstatus(wa_request *r, int status);
+void wa_rsetstatusline(wa_request *r, char *status);
 void wa_rsetctype(wa_request *r, char *type);
 void wa_rsetheader(wa_request *r, char *name, char *value);
 void wa_rcommit(wa_request *r);

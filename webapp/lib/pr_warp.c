@@ -404,6 +404,7 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                 p_read_string(pack,&mesg);
                 wa_debug(WA_MARK,"=== %d %s",status,mesg);
                 wa_rsetstatus(r,status);
+                wa_rsetstatusline(r,mesg);
                 break;
             }
             case TYPE_RES_HEADER: {
