@@ -667,7 +667,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 	{ 
         char uri[INTERNET_MAX_URL_LENGTH]; 
         char snuri[INTERNET_MAX_URL_LENGTH]="/";
-        char Host[INTERNET_MAX_URL_LENGTH];
+        char Host[INTERNET_MAX_URL_LENGTH]="";
+        char Port[INTERNET_MAX_URL_LENGTH]="";
         char Translate[INTERNET_MAX_URL_LENGTH];
 		BOOL (WINAPI * GetHeader) 
 			(struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPVOID lpvBuffer, LPDWORD lpdwSize );
@@ -678,6 +679,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         char *query;
         DWORD sz = sizeof(uri);
         DWORD szHost = sizeof(Host);
+        DWORD szPort = sizeof(Port);
         DWORD szTranslate = sizeof(Translate);
 
 		if (iis5) {
@@ -735,8 +737,23 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 return SF_STATUS_REQ_FINISHED;
             }
             getparents(uri);
-
-            if(GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
+            if (pfc->GetServerVariable(pfc, SERVER_NAME, (LPVOID)Host, (LPDWORD)&szHost)){
+                if (szHost > 0) {
+                    Host[szHost-1] = '\0';
+                }
+            }
+            Port[0] = '\0';
+            if (pfc->GetServerVariable(pfc, "SERVER_PORT", (LPVOID)Port, (LPDWORD)&szPort)){
+                if (szPort > 0) {
+                    Port[szPort-1] = '\0';
+                }
+            }
+            szPort = atoi(Port);
+            if (szPort != 80 && szPort != 443 && szHost > 0){
+                strcat(Host,":");
+                strcat(Host,Port);
+            }
+            if (szHost > 0) {
                 strcat(snuri,Host);
                 strcat(snuri,uri);
                 jk_log(logger, JK_LOG_DEBUG, 
