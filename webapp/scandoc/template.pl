@@ -66,8 +66,6 @@ file "packages.html";
       </tr>
 <<
 
-## For each package, generate an index entry.
-
 foreach $p (packages()) {
     $_ = $p->url;
     s/\s/_/g;
@@ -100,6 +98,7 @@ foreach $p (packages()) {
 ###############################################################################
 # Generate the packages table of content for each package                     #
 ###############################################################################
+
 foreach $p (packages()) {
     $_ = $p->url;
     s/\s/_/g;
@@ -130,6 +129,8 @@ foreach $p (packages()) {
             </td>
           </tr>
     <<
+
+	# Generate a list of classes included in this package
     foreach $e ($p->classes()) {
         $_ = $e->url;
         s/\s/_/g;
@@ -146,6 +147,7 @@ foreach $p (packages()) {
         <<
     }
 
+	# Generate a list of all global functions included in this package
     if ($p->globalfuncs()) {
         >>
               <tr>
@@ -183,6 +185,7 @@ foreach $p (packages()) {
         <<
     }
 
+	# Generate a list of all global variables included in this package
     if ($p->globalvars()) {
         >>
               <tr>
@@ -220,6 +223,7 @@ foreach $p (packages()) {
         <<
     }
 
+	# Copyright statement at the bottom
     >>
         </table>
         <hr>
@@ -280,6 +284,8 @@ foreach $p (packages()) {
             </td>
           </tr>
     <<
+
+	# Generate a TOC of all classes at the top of the page
     foreach $e ($p->classes()) {
         $_ = $e->url;
         s/\s/_/g;
@@ -290,7 +296,7 @@ foreach $p (packages()) {
                   <dl>
                     <dt>
                       <font face="arial,helvetica,sans serif">
-                        <nobr><a href="$_">$(e.fullname)</a></nobr>
+                        <nobr><a href="doc.$_">$(e.fullname)</a></nobr>
                       </font>
                     </dt>
         <<
@@ -302,7 +308,7 @@ foreach $p (packages()) {
                 >>
                             <dd>
                               <font size="-1" face="arial,helvetica,sans serif">
-                                <nobr><a href="$_">$(m.fullname)</a></nobr>
+                                <nobr><a href="doc.$_">$(m.fullname)</a></nobr>
                               </font>
                             </dd>
                 <<
@@ -315,6 +321,7 @@ foreach $p (packages()) {
         <<
     }
 
+	# Continue with the global functions TOC
     if ($p->globalfuncs()) {
         >>
             </table>
@@ -336,7 +343,7 @@ foreach $p (packages()) {
                   <tr>
                     <td>
                       <font face="arial,helvetica,sans serif">
-                        <nobr><a href="$_">$(e.fullname)</a></nobr>
+                        <nobr><a href="doc.$_">$(e.fullname)</a></nobr>
                       </font>
                     </td>
                   </tr>
@@ -344,6 +351,7 @@ foreach $p (packages()) {
         }
     }
 
+	# And then finish with the global variables TOC
     if ($p->globalvars()) {
         >>
             </table>
@@ -365,7 +373,7 @@ foreach $p (packages()) {
                   <tr>
                     <td>
                       <font face="arial,helvetica,sans serif">
-                        <nobr><a href="$_">$(e.fullname)</a></nobr>
+                        <nobr><a href="doc.$_">$(e.fullname)</a></nobr>
                       </font>
                     </td>
                   </tr>
@@ -378,9 +386,98 @@ foreach $p (packages()) {
         <br>
     <<
 
+	# Then generate the detail for each class in this package
+    foreach $e ($p->classes()) {
+        $_ = $e->url;
+        s/\s/_/g;
+        y/[A-Z]/[a-z]/;
+        >>
+            <table width="100%" cellspacing="0" cellpadding="2" border="1">
+              <tr>
+                <td bgcolor="ccccff" align="left">
+                  <font size="+1" face="arial,helvetica,sans serif">
+                    <a name="$(e.name)">
+                      <b>Class &quot;$(e.name)&quot; Detail:</b>
+                    </a>
+                  </font>
+                </td>
+              </tr>
+            </table>
+              <font size="+1" face="arial,helvetica,sans serif">
+                <b>$(e.name)</b>
+              </font>
+            <dl>
+              <dt><code>$(e.fullname) {</code></dt>
+        <<
 
+        # Generate a code-like representation of the class
+        if ($e->members()) {
+            foreach $m ($e->members()) {
+                >>
+                      <dd><code>$(m.fullname);</code></dd>
+                <<
+            }
+        }
+        >>
+              <dt><code>};</code></dt>
+            </dl>
+            <p>
+              <font face="arial,helvetica,sans serif">
+                $(e.description)
+              </font>
+            </p>
+        <<
 
+        # If we have functions, output them
+        if ($e->memberfuncs()) {
+            >>
+                <table width="100%" cellspacing="0" cellpadding="2" border="1">
+                  <tr>
+                    <td bgcolor="eeeeff" align="left">
+                      <font face="arial,helvetica,sans serif">
+                        <b>Class &quot;$(e.name)&quot; Functions:</b>
+                      </font>
+                    </td>
+                  </tr>
+                </table>
+            <<
+            foreach $m ($e->memberfuncs()) {
+	            $_ = join("-",$e->name,$m->name);
+	            s/\s/_/g;
+	            y/[A-Z]/[a-z]/;
+			    >>
+			        <a name="$_">
+			    <<
+            	&function($m);
+            }
+        }
 
+        # If we have variables, output them
+        if ($e->membervars()) {
+            >>
+                <table width="100%" cellspacing="0" cellpadding="2" border="1">
+                  <tr>
+                    <td bgcolor="eeeeff" align="left">
+                      <font face="arial,helvetica,sans serif">
+                        <b>Class &quot;$(e.name)&quot; Variables:</b>
+                      </font>
+                    </td>
+                  </tr>
+                </table>
+            <<
+            foreach $m ($e->membervars()) {
+	            $_ = join("-",$e->name,$m->name);
+	            s/\s/_/g;
+	            y/[A-Z]/[a-z]/;
+			    >>
+			        <a name="$_">
+			    <<
+	            &variable($m);
+            }
+        }
+    }
+
+	# Output detailed information for each global function
     if ($p->globalfuncs()) {
         >>
             <table width="100%" cellspacing="0" cellpadding="2" border="1">
@@ -394,66 +491,162 @@ foreach $p (packages()) {
             </table>
         <<
         foreach $e ($p->globalfuncs()) {
-            $_ = $e->url;
+            $_ = $e->name;
             s/\s/_/g;
             y/[A-Z]/[a-z]/;
-            >>
-                <font size="+1" face="arial,helvetica,sans serif">
-                  <b><a name="$(e.name)">$(e.name)</a></b>
-                </font>
-                <dl>
-                  <dt><code>$(e.fullname)</code></dt>
-                  <dd>
-                    <dl>
-                      <dt>$(e.description)</dt>
-            <<
-            if ($e->params()) {
-                >>
-                          <dt><b>Parameters</b></dt>
-                <<
-                foreach $a ($e->params()) {
-                >>
-                          <dd>
-                            <code>$(a.name)</code>
-                            $(a.description)
-                          </dd>
-                <<
-                }
-            }
-            if ($e->returnValue()) {
-                >>
-                          <dt><b>Return Value</b></dt>
-                          <dd>$(e.returnValue)</dd>
-                <<
-            }
-            if ($e->exceptions()) {
-                >>
-                          <dt><b>Exceptions</b></dt>
-                <<
-                foreach $a ($e->exceptions()) {
-                >>
-                          <dd>
-                            <code>$(a.name)</code>
-                            $(a.description)
-                          </dd>
-                <<
-                }
-            }
-            >>
-                    </dl>
-                  </dd>
-                </dl>
-                <hr>
-            <<
+		    >>
+		        <a name="$_">
+		    <<
+        	&function($e);
         }
     }
+
+	# Then write detailed information for each global variable
+    if ($p->globalvars()) {
+        >>
+            <table width="100%" cellspacing="0" cellpadding="2" border="1">
+              <tr>
+                <td bgcolor="ccccff" align="left">
+                  <font size="+1" face="arial,helvetica,sans serif">
+                    <b>Global Variables Detail:</b>
+                  </font>
+                </td>
+              </tr>
+            </table>
+        <<
+        foreach $e ($p->globalvars()) {
+            $_ = $e->name;
+            s/\s/_/g;
+            y/[A-Z]/[a-z]/;
+		    >>
+		        <a name="$_">
+		    <<
+            &variable($e);
+        }
+    }
+
     >>
-        <font size="-2">
-          Copyright &copy; $copyright. All Rights Reserved.<br>
-          Generated by <a href="$scandocURL"><b>ScanDoc
-          $majorVersion.$minorVersion</b></a> on $date
+        <font size="-2" face="arial,helvetica,sans serif">
+          <div align="center">
+            Copyright &copy; $copyright.<br>
+            All Rights Reserved.<br>
+            Generated with <a href="$scandocURL">ScanDoc
+            $majorVersion.$minorVersion</a> on $date
+          </div>
         </font>
       </body>
     </html>
+    <<
+}
+
+# Write out the detailed description of a function
+sub function {
+	local ($m) = @_;
+
+	# Output the function name and description
+    >>
+        <font size="+1" face="arial,helvetica,sans serif">
+          <b>$(m.name)</b>
+        </font>
+        <dl>
+          <dt><code>$(m.fullname);</code></dt>
+          <dd>
+            <dl>
+              <dt>
+                <font face="arial,helvetica,sans serif">
+                  $(m.description)
+                </font>
+              </dt>
+    <<
+    
+    # Process all parameters (one by one)
+	if ($m->params()) {
+	    >>
+	              <dt>
+	                <font face="arial,helvetica,sans serif">
+	                  <b>Parameters</b>
+	                </font>
+	              </dt>
+	    <<
+	    foreach $a ($m->params()) {
+		    >>
+		              <dd>
+		                <code>$(a.name)</code> -
+		                <font face="arial,helvetica,sans serif">
+		                  $(a.description)
+		                </font>
+		              </dd>
+		    <<
+	    }
+	}
+	
+	# Check for a return value
+	if ($m->returnValue()) {
+	    >>
+	              <dt>
+	                <font face="arial,helvetica,sans serif">
+	                  <b>Return Value</b>
+	                </font>
+	              </dt>
+	              <dd>
+	                <font face="arial,helvetica,sans serif">
+	                  $(m.returnValue)
+	                </font>
+	              </dd>
+	    <<
+	}
+	
+	# Dig in for exceptions
+	if ($m->exceptions()) {
+	    >>
+	              <dt>
+	                <font face="arial,helvetica,sans serif">
+	                  <b>Exceptions</b>
+	                </font>
+	              </dt>
+	    <<
+	    foreach $a ($m->exceptions()) {
+		    >>
+		              <dd>
+		                <code>$(a.name)</code>
+		                <font face="arial,helvetica,sans serif">
+		                  $(a.description)
+		                </font>
+		              </dd>
+		    <<
+	    }
+	}
+	
+	# Close the list 
+    >>
+            </dl>
+          </dd>
+        </dl>
+        <hr>
+    <<
+}
+
+# Write out the detailed description of a variable
+sub variable {
+	local ($m) = @_;
+
+	# Output the variable name and description
+    >>
+        <font size="+1" face="arial,helvetica,sans serif">
+          <b>$(m.name)</b>
+        </font>
+        <dl>
+          <dt><code>$(m.fullname);</code></dt>
+          <dd>
+            <dl>
+              <dt>
+                <font face="arial,helvetica,sans serif">
+                  $(m.description)
+                </font>
+              </dt>
+            </dl>
+          </dd>
+        </dl>
+        <hr>
     <<
 }
