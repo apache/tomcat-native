@@ -69,6 +69,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.Cookies;
 import org.apache.tomcat.util.http.ServerCookie;
@@ -299,14 +300,14 @@ final class CoyoteAdapter
         parseCookies(req, request);
 
         // Set the SSL properties
-	if( request.isSecure() ) {
-	    res.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,
+        if( request.isSecure() ) {
+            res.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,
                        request.getCoyoteRequest());
-	    //Set up for getAttributeNames
-	    request.getAttribute(Globals.CERTIFICATES_ATTR);
-	    request.getAttribute(Globals.CIPHER_SUITE_ATTR);
-	    request.getAttribute(Globals.KEY_SIZE_ATTR);
-	}
+            //Set up for getAttributeNames
+            request.getAttribute(Globals.CERTIFICATES_ATTR);
+            request.getAttribute(Globals.CIPHER_SUITE_ATTR);
+            request.getAttribute(Globals.KEY_SIZE_ATTR);
+        }
 
         // Set the remote principal
         String principal = req.getRemoteUser().toString();
@@ -322,31 +323,42 @@ final class CoyoteAdapter
      */
     protected void parseSessionId(Request req, CoyoteRequest request) {
 
-        ByteChunk uriBC = req.decodedURI().getByteChunk();
-        int semicolon = uriBC.indexOf(match, 0, match.length(), 0);
+        req.decodedURI().toChars();
+        CharChunk uriCC = req.decodedURI().getCharChunk();
+        int semicolon = uriCC.indexOf(match, 0, match.length(), 0);
 
         if (semicolon > 0) {
 
             // Parse session ID, and extract it from the decoded request URI
-            String uri = uriBC.toString();
-            String rest = uri.substring(semicolon + match.length());
-            int semicolon2 = rest.indexOf(';');
+            int start = uriCC.getStart();
+            int end = uriCC.getEnd();
+
+            int sessionIdStart = start + semicolon + match.length();
+            int semicolon2 = uriCC.indexOf(';', sessionIdStart);
             if (semicolon2 >= 0) {
-                request.setRequestedSessionId(rest.substring(0, semicolon2));
-                rest = rest.substring(semicolon2);
+                request.setRequestedSessionId
+                    (new String(uriCC.getBuffer(), sessionIdStart, 
+                                semicolon2 - semicolon - match.length()));
+                req.decodedURI().setString
+                    (new String(uriCC.getBuffer(), start, semicolon) + 
+                            new String(uriCC.getBuffer(),
+                                        semicolon2,
+                                        end-semicolon2));
             } else {
-                request.setRequestedSessionId(rest);
-                rest = "";
+                request.setRequestedSessionId
+                    (new String(uriCC.getBuffer(), sessionIdStart, 
+                                end - sessionIdStart));
+                req.decodedURI().setString
+                    (new String(uriCC.getBuffer(), start, semicolon));
             }
             request.setRequestedSessionURL(true);
-            req.decodedURI().setString(uri.substring(0, semicolon) + rest);
 
             // Extract session ID from request URI
-            uri = req.requestURI().toString();
+            String uri = req.requestURI().toString();
             semicolon = uri.indexOf(match);
 
             if (semicolon > 0) {
-                rest = uri.substring(semicolon + match.length());
+                String rest = uri.substring(semicolon + match.length());
                 semicolon2 = rest.indexOf(';');
                 if (semicolon2 >= 0) {
                     rest = rest.substring(semicolon2);
@@ -376,7 +388,7 @@ final class CoyoteAdapter
 
         Cookie[] cookies = new Cookie[count];
 
-	int idx=0;
+        int idx=0;
         for (int i = 0; i < count; i++) {
             ServerCookie scookie = serverCookies.getCookie(i);
             if (scookie.getName().equals(Globals.SESSION_COOKIE_NAME)) {
