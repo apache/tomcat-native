@@ -168,6 +168,20 @@ Java_org_apache_jk_apr_AprImpl_userId(JNIEnv *jniEnv, jobject _jthis, jlong pool
     return 0;
 }
 
+
+/*
+  SendPacket 
+*/
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_sendPacket
+  (JNIEnv *jniEnv, jobject o, jlong xEnv, jlong eP, jbyteArray data,
+   jint len)
+{
+    return (jint)jk2_channel_jni_javaSendPacket( jniEnv, o, xEnv, eP,
+                                                data, len);
+}
+
+
 /* -------------------- Shared memory -------------------- */
 /* Use it to access the scoreboard or for shmem channel */
 
@@ -391,6 +405,8 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
     while( 1 ) {
         int connfd;
 
+        fprintf(stderr, "unAccept\n");
+
         clientlen=sizeof( client );
         connfd=accept( listenUnSocket, (struct sockaddr *)&client, &clientlen );
         /* XXX Should we return EINTR ? This would allow us to stop
@@ -405,6 +421,7 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
                 return -errno;
             }
         }
+        fprintf(stderr, "unAccept: accepted %d\n", connfd);
         return (jlong)connfd;
     }
     return 0L;
@@ -494,6 +511,5 @@ Java_org_apache_jk_apr_AprImpl_unSetSoLingerNative (
     }
     return 0;
 }
-
 
 
