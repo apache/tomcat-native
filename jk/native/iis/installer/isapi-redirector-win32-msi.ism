@@ -1702,7 +1702,7 @@
 		<col def="S0">CustomErrors</col>
 		<col def="L255">AppName</col>
 		<col def="S72">SSLCert</col>
-		<row><td>ISIISCommonVRoot</td><td>ISIISCommonWebsite1</td><td>##ID_STRING3##</td><td>INSTALLDIR</td><td>28069</td><td>Default.asp</td><td>20</td><td>90</td><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISCommonVRoot</td><td>ISIISCommonWebsite1</td><td>##ID_STRING3##</td><td>BIN</td><td>28069</td><td>Default.asp</td><td>20</td><td>90</td><td/><td/><td/><td/><td/></row>
 		<row><td>ISIISCommonWebsite1</td><td/><td>Default Web Site</td><td>IISROOTFOLDER</td><td>28113</td><td/><td>20</td><td>90</td><td/><td/><td/><td/><td/></row>
 	</table>
 
