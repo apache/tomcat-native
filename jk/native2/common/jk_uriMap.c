@@ -390,10 +390,8 @@ static void jk2_uriMap_createHosts(jk_env_t *env, jk_uriMap_t *uriMap)
         char *uriPath;
         
         if (hostEnv->virtual != NULL) {
-            uriPath=env->tmpPool->calloc(env, env->tmpPool,
-                                         strlen(hostEnv->virtual) + 3);
-            strcpy(uriPath, hostEnv->virtual);
-            strcat(uriPath, "/");
+            uriPath=env->tmpPool->pstrcat(env, env->tmpPool,
+                                          hostEnv->virtual, "/", NULL);
         } else {
             uriPath = "/";
         }
@@ -481,11 +479,8 @@ static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
             jk_bean_t *mbean;
             char *ctxname;
 
-            ctxname = uriEnv->pool->calloc(env, uriEnv->pool, strlen(vhost) + 
-                                           strlen(context) + 1 );
-
-            strcpy(ctxname, vhost);
-            strcat(ctxname, context);
+            ctxname = uriEnv->pool->pstrcat(env, uriEnv->pool, vhost,
+                                            context, NULL);
 
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "uriMap: creating context %s\n", ctxname);
@@ -599,11 +594,8 @@ static jk_uriEnv_t* jk2_uriMap_duplicateUri(jk_env_t *env, jk_uriMap_t *uriMap,
     jk_uriEnv_t *newEnv;
     jk_bean_t *mbean;
 
-    uriname = uriEnv->pool->calloc(env, uriEnv->pool, strlen(uriEnv->name) + 
-                                   strlen(mapEnv->uri) + 1 );
-
-    strcpy(uriname, uriEnv->name);
-    strcat(uriname, mapEnv->uri);
+    uriname = uriEnv->pool->pstrcat(env, uriEnv->pool, uriEnv->name, 
+                                    mapEnv->uri, NULL);
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
         "uriMap: creating duplicate of  uri %s\n", uriname);
@@ -636,11 +628,8 @@ static jk_uriEnv_t* jk2_uriMap_duplicateContext(jk_env_t *env, jk_uriMap_t *uriM
     jk_uriEnv_t *newEnv;
     jk_bean_t *mbean;
 
-    uriname = uriEnv->pool->calloc(env, uriEnv->pool, strlen(uriEnv->name) + 
-                                   strlen(mapEnv->contextPath) + 1 );
-
-    strcpy(uriname, uriEnv->name);
-    strcat(uriname, mapEnv->contextPath);
+    uriname = uriEnv->pool->pstrcat(env, uriEnv->pool, uriEnv->name, 
+                                    mapEnv->contextPath, NULL);
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
         "uriMap: creating duplicate of context %s\n", uriname);
