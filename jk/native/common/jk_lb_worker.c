@@ -84,6 +84,7 @@ struct worker_record {
     char    *name;
     double  lb_factor;
     double  lb_value;
+    int     is_local_worker;
     int     in_error_state;
     int     in_recovering;
     time_t  error_time;
@@ -100,6 +101,8 @@ struct lb_worker {
 
     char *name; 
     jk_worker_t worker;
+    int  in_local_worker_mode;
+    int  local_worker_only;
 };
 typedef struct lb_worker lb_worker_t;
 
@@ -270,28 +273,29 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t *p,
     }
 
     for(i = 0 ; i < p->num_of_workers ; i++) {
-        if(p->lb_workers[i].in_error_state) {
-            if(!p->lb_workers[i].in_recovering) {
-                time_t now = time(0);
-                
-                if((now - p->lb_workers[i].error_time) > WAIT_BEFORE_RECOVER) {
-                    
-                    p->lb_workers[i].in_recovering  = JK_TRUE;
-                    p->lb_workers[i].error_time     = now;
+        if (!p->in_local_worker_mode || p->lb_workers[i].is_local_worker || !p->local_worker_only) {
+            if(p->lb_workers[i].in_error_state) {
+                if(!p->lb_workers[i].in_recovering) {
+                    time_t now = time(0);
+                    if((now - p->lb_workers[i].error_time) > WAIT_BEFORE_RECOVER) {
+                        p->lb_workers[i].in_recovering  = JK_TRUE;
+                        p->lb_workers[i].error_time     = now;
+                        rc = &(p->lb_workers[i]);
+    
+                        break;
+                    }
+                }
+            } else {
+                if(p->lb_workers[i].lb_value < lb_min || !rc) {
+                    lb_min = p->lb_workers[i].lb_value;
                     rc = &(p->lb_workers[i]);
-
-                    break;
+                    if (rc->is_local_worker) break;
                 }
             }
-        } else {
-            if(p->lb_workers[i].lb_value < lb_min || !rc) {
-                lb_min = p->lb_workers[i].lb_value;
-                rc = &(p->lb_workers[i]);
-            }
-        }            
+        }
     }
 
-    if(rc && rc->lb_value != 0 ) {
+    if(rc && !rc->is_local_worker) {
         rc->lb_value += rc->lb_factor;                
     }
 
@@ -415,12 +419,15 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         lb_worker_t *p = pThis->worker_private;
         char **worker_names;
         unsigned num_of_workers;
+        p->in_local_worker_mode = JK_FALSE;
+        p->local_worker_only = jk_get_local_worker_only_flag(props, p->name);
         
         if(jk_get_lb_worker_list(props,
                                  p->name,
                                  &worker_names, 
                                  &num_of_workers) && num_of_workers) {
             unsigned i = 0;
+            unsigned j = 0;
 
             p->lb_workers = jk_pool_alloc(&p->p, 
                                           num_of_workers * sizeof(worker_record_t));
@@ -440,6 +447,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                     p->lb_workers[i].lb_factor = 1/p->lb_workers[i].lb_factor;
                 }
 
+                p->lb_workers[i].is_local_worker = jk_get_is_local_worker(props, worker_names[i]);
+                if (p->lb_workers[i].is_local_worker) p->in_local_worker_mode = JK_TRUE;
                 /* 
                  * Allow using lb in fault-tolerant mode.
                  * A value of 0 means the worker will be used for all requests without
@@ -454,16 +463,42 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                      we,
                                      l) || !p->lb_workers[i].w) {
                     break;
+                } else if (p->lb_workers[i].is_local_worker) {
+                    /*
+                     * If lb_value is 0 than move it at the beginning of the list
+                     */
+                    if (i != j) {
+                        worker_record_t tmp_worker;
+                        tmp_worker = p->lb_workers[j];
+                        p->lb_workers[j] = p->lb_workers[i];
+                        p->lb_workers[i] = tmp_worker;
+                    }
+                    j++;
                 }
             }
-
+            
+            if (!p->in_local_worker_mode) {
+                p->local_worker_only = JK_FALSE;
+            }
+            
             if(i != num_of_workers) {
                 close_workers(p, i, l);
-                jk_log(l, JK_LOG_ERROR, 
+                jk_log(l, JK_LOG_DEBUG, 
                        "In jk_worker_t::validate: Failed to create worker %s\n",
                        p->lb_workers[i].name);
 
             } else {
+                for (i = 0; i < num_of_workers; i++) {
+                    jk_log(l, JK_LOG_DEBUG,
+                        "Balanced worker %i has name %s\n",
+                        i, p->lb_workers[i].name);
+                }
+                jk_log(l, JK_LOG_DEBUG,
+                        "in_local_worker_mode: %s\n",
+                        (p->in_local_worker_mode ? "true" : "false"));
+                jk_log(l, JK_LOG_DEBUG,
+                        "local_worker_only: %s\n",
+                        (p->local_worker_only ? "true" : "false"));
                 p->num_of_workers = num_of_workers;
                 return JK_TRUE;
             }

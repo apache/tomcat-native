@@ -85,6 +85,8 @@
 #define CACHE_OF_WORKER             ("cachesize")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
 #define BALANCED_WORKERS            ("balanced_workers")
+#define LOCAL_WORKER_ONLY_FLAG      ("local_worker_only")
+#define LOCAL_WORKER_FLAG           ("local_worker")
 #define WORKER_AJP12                ("ajp12")
 #define DEFAULT_WORKER_TYPE         JK_AJP12_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
@@ -444,6 +446,32 @@ double jk_get_lb_factor(jk_map_t *m,
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, LOAD_FACTOR_OF_WORKER);
 
     return map_get_double(m, buf, DEFAULT_LB_FACTOR);
+}
+
+int jk_get_is_local_worker(jk_map_t *m,
+                            const char *wname) {
+    int rc = JK_FALSE;
+    char buf[1024];
+    if (m && wname) {
+        int value;
+        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, LOCAL_WORKER_FLAG);
+        value = map_get_int(m, buf, 0);
+        if (value) rc = JK_TRUE;
+    }
+    return rc;
+}
+
+int jk_get_local_worker_only_flag(jk_map_t *m,
+                        const char *lb_wname) {
+    int rc = JK_FALSE;
+    char buf[1024];
+    if (m && lb_wname) {
+        int value;
+        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, lb_wname, LOCAL_WORKER_ONLY_FLAG);
+        value = map_get_int(m, buf, 0);
+        if (value) rc = JK_TRUE;
+    }
+    return rc;
 }
 
 int jk_get_lb_worker_list(jk_map_t *m, 

@@ -122,6 +122,12 @@ int jk_get_worker_list(jk_map_t *m,
 double jk_get_lb_factor(jk_map_t *m, 
                         const char *wname);
 
+int jk_get_is_local_worker(jk_map_t *m,
+                        const char *wname);
+
+int jk_get_is_local_worker_only_flag(jk_map_t *m,
+                       const char *lb_wname);
+
 int jk_get_lb_worker_list(jk_map_t *m, 
                           const char *lb_wname,
                           char ***list, 
