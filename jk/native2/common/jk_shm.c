@@ -68,7 +68,7 @@ static int JK_METHOD jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
 
 static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
 {
-    int rc;
+    apr_status_t rc;
     apr_file_t *file;
     apr_finfo_t finfo;
     apr_mmap_t *aprMmap;
@@ -77,7 +77,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     globalShmPool= (apr_pool_t *)env->getAprPool( env );
 
     if( globalShmPool==NULL )
-        return JK_FALSE;
+        return JK_ERR;
 
     /* Check if the scoreboard is in a note. That's the only way we
        can get HP-UX to work
@@ -102,7 +102,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     rc=apr_file_open( &file, shm->fname,
                       APR_READ | APR_WRITE | APR_CREATE | APR_BINARY,
                       APR_OS_DEFAULT, globalShmPool);
-    if (rc!=JK_OK) {
+    if (rc) {
         char error[256];
         apr_strerror( rc, error, 256 );
         
@@ -110,16 +110,16 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
                       "shm.create(): error opening file %s %d %s\n",
                       shm->fname, rc, error );
         shm->privateData=NULL;
-        return rc;
+        return JK_ERR;
     } 
 
     rc=apr_file_info_get(&finfo, APR_FINFO_SIZE, file);
 
     if( shm->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                      "shm.create(): file open %s %d %d\n", shm->fname, shm->size, finfo.size );
+                      "shm.create(): file open %s %d %d\n", shm->fname, shm->size, (int) finfo.size );
 
-    if( finfo.size < shm->size ) {
+    if( (int) finfo.size < shm->size ) {
         char bytes[1024];
         apr_size_t toWrite = (apr_size_t)(shm->size-finfo.size);
         apr_off_t off=0;
@@ -151,15 +151,15 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     rc=apr_mmap_create( &aprMmap,  file, (apr_off_t)0,
                         (apr_size_t)finfo.size, APR_MMAP_READ | APR_MMAP_WRITE,
                         globalShmPool );
-    if( rc!=JK_OK ) {
+    if( rc ) {
         char error[256];
         apr_strerror( rc, error, 256 );
         
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "shm.create(): error creating %s %d %d %#lx %s\n",
-                      shm->fname, finfo.size, rc, globalShmPool, error );
+                      shm->fname, (int) finfo.size, (int) rc, globalShmPool, error );
         shm->privateData=NULL;
-        return rc;
+        return JK_ERR;
     }
 
     shm->privateData=aprMmap;
@@ -404,11 +404,16 @@ static int jk2_shm_dump(jk_env_t *env, jk_shm_t *shm, char *name)
  */
 jk_shm_slot_t * JK_METHOD jk2_shm_getSlot(struct jk_env *env, struct jk_shm *shm, int pos)
 {
+    char *ptr;
     if( pos==0 ) return NULL;
     if( shm->image==NULL ) return NULL;
     if( pos > shm->slotMaxCount ) return NULL;
+    if( pos * shm->slotSize > shm->size ) return NULL;
+
     /* Pointer aritmethic, I hope it's right */
-    return (jk_shm_slot_t *)((long)shm->image + (pos * shm->slotSize));
+    ptr = (void *) shm->image;
+    ptr = ptr + (pos * shm->slotSize);
+    return ((jk_shm_slot_t *) ptr);
 }
 
 jk_shm_slot_t * JK_METHOD jk2_shm_createSlot(struct jk_env *env, struct jk_shm *shm, 
@@ -559,7 +564,7 @@ static int JK_METHOD jk2_shm_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_
     switch( code ) {
     case SHM_WRITE_SLOT: {
         char *instanceName=msg->getString( env, msg );
-        char *buf=msg->buf;
+        char *buf=(char *)msg->buf;
         int len=msg->len;
 
         return jk2_shm_writeSlot( env, shm, instanceName, buf, len );
