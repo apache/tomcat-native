@@ -96,6 +96,8 @@ import org.apache.catalina.Context;
     @author Bill Barker
  */
 public class NSConfig  extends BaseJkConfig { 
+    private static org.apache.commons.logging.Log log =
+        org.apache.commons.logging.LogFactory.getLog(NSConfig.class);
 
     public static final String WORKERS_CONFIG = "/conf/jk/workers.properties";
     public static final String NS_CONFIG = "/conf/auto/obj.conf";
@@ -178,7 +180,7 @@ public class NSConfig  extends BaseJkConfig {
 	return new PrintWriter(new FileWriter(abObjConfig,append));
     }
     protected boolean generateJkHead(PrintWriter mod_jk) {
-	log("Generating netscape web server config = "+objConfig );
+	log.info("Generating netscape web server config = "+objConfig );
 	
 	generateNsapiHead( mod_jk );
 	
@@ -246,7 +248,7 @@ public class NSConfig  extends BaseJkConfig {
 	String nPath=("".equals(ctxPath)) ? "/" : ctxPath;
 
         if( noRoot &&  "".equals(ctxPath) ) {
-            log("Ignoring root context in forward-all mode  ");
+            log.debug("Ignoring root context in forward-all mode  ");
             return;
         } 
 	objfile.println("<Object name=" + context.getName() + ">");
@@ -266,7 +268,7 @@ public class NSConfig  extends BaseJkConfig {
 	String nPath=("".equals(ctxPath)) ? "/" : ctxPath;
 
         if( noRoot &&  "".equals(ctxPath) ) {
-            log("Ignoring root context in non-forward-all mode  ");
+            log.debug("Ignoring root context in non-forward-all mode  ");
             return;
         } 
 	objfile.println("<Object name=" + context.getName() + ">");
@@ -303,8 +305,8 @@ public class NSConfig  extends BaseJkConfig {
     protected boolean addMapping( String ctxPath, String ext,
 					 PrintWriter objfile )
     {
-        if( debug > 0 )
-            log( "Adding extension map for " + ctxPath + "/*." + ext );
+        if( log.isDebugEnabled() )
+            log.debug( "Adding extension map for " + ctxPath + "/*." + ext );
 	if(! ext.startsWith("/") )
 	    ext = "/" + ext;
 	if(ext.length() > 1)
@@ -316,8 +318,8 @@ public class NSConfig  extends BaseJkConfig {
     /** Add a fulling specified Netscape mapping.
      */
     protected boolean addMapping( String fullPath, PrintWriter objfile ) {
-        if( debug > 0 )
-            log( "Adding map for " + fullPath );
+        if( log.isDebugEnabled() )
+            log.debug( "Adding map for " + fullPath );
         objfile.println("NameTrans fn=\"assign-name\" from=\"" +
                         fullPath + "\" name=\"" + objectName + "\""); 
 	return true;

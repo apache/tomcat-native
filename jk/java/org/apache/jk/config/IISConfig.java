@@ -93,6 +93,8 @@ import org.apache.catalina.Context;
     @author Bill Barker
  */
 public class IISConfig extends BaseJkConfig  { 
+    private static org.apache.commons.logging.Log log =
+        org.apache.commons.logging.LogFactory.getLog(IISConfig.class);
 
     public static final String WORKERS_CONFIG = "/conf/jk/workers.properties";
     public static final String URI_WORKERS_MAP_CONFIG = "/conf/auto/uriworkermap.properties";
@@ -151,14 +153,14 @@ public class IISConfig extends BaseJkConfig  {
     protected boolean generateJkHead(PrintWriter mod_jk) {
 	try {
 	    PrintWriter regfile = new PrintWriter(new FileWriter(regConfig));
-	    log("Generating IIS registry file = "+regConfig );
+	    log.info("Generating IIS registry file = "+regConfig );
 	    generateRegistrySettings(regfile);
 	    regfile.close();
 	} catch(IOException iex) {
-	    log("Unable to generate registry file " +regConfig);
+	    log.warn("Unable to generate registry file " +regConfig);
 	    return false;
 	}
-	log("Generating IIS URI worker map file = "+uriConfig );
+	log.info("Generating IIS URI worker map file = "+uriConfig );
 	generateUriWorkerHeader(mod_jk);            
 	return true;
     }
@@ -204,7 +206,7 @@ public class IISConfig extends BaseJkConfig  {
 	String nPath=("".equals(ctxPath)) ? "/" : ctxPath;
 
         if( noRoot &&  "".equals(ctxPath) ) {
-            log("Ignoring root context in forward-all mode  ");
+            log.debug("Ignoring root context in forward-all mode  ");
             return;
         } 
 
@@ -227,7 +229,7 @@ public class IISConfig extends BaseJkConfig  {
 	String nPath=("".equals(ctxPath)) ? "/" : ctxPath;
 
         if( noRoot &&  "".equals(ctxPath) ) {
-            log("Ignoring root context in forward-all mode  ");
+            log.debug("Ignoring root context in forward-all mode  ");
             return;
         } 
 
@@ -264,8 +266,8 @@ public class IISConfig extends BaseJkConfig  {
     protected boolean addMapping( String ctxPath, String ext,
 					 PrintWriter uri_worker )
     {
-        if( debug > 0 )
-            log( "Adding extension map for " + ctxPath + "/*." + ext );
+        if( log.isDebugEnabled() )
+            log.debug( "Adding extension map for " + ctxPath + "/*." + ext );
 	if(! ext.startsWith("/") )
 	    ext = "/" + ext;
 	if(ext.length() > 1)
@@ -276,8 +278,8 @@ public class IISConfig extends BaseJkConfig  {
     /** Add a fulling specified IIS mapping.
      */
     protected boolean addMapping( String fullPath, PrintWriter uri_worker ) {
-        if( debug > 0 )
-            log( "Adding map for " + fullPath );
+        if( log.isDebugEnabled() )
+            log.debug( "Adding map for " + fullPath );
         uri_worker.println(fullPath + "=$(default.worker)" );
         return true;
     }

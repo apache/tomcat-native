@@ -115,7 +115,10 @@ import org.apache.catalina.Host;
     @author Bill Barker
  */
 public class ApacheConfig  extends BaseJkConfig { 
-    
+
+    private static org.apache.commons.logging.Log log =
+        org.apache.commons.logging.LogFactory.getLog(ApacheConfig.class);
+
     /** default path to mod_jk .conf location */
     public static final String MOD_JK_CONFIG = "conf/auto/mod_jk.conf";
     /** default path to workers.properties file
@@ -254,10 +257,10 @@ public class ApacheConfig  extends BaseJkConfig {
 	// Fail if mod_jk not found, let the user know the problem
 	// instead of running into problems later.
 	if( ! modJk.exists() ) {
-	    log( "mod_jk location: " + modJk );
-	    log( "Make sure it is installed corectly or " +
+	    log.info( "mod_jk location: " + modJk );
+	    log.info( "Make sure it is installed corectly or " +
 		 " set the config location" );
-	    log( "Using <Listener className=\""+getClass().getName()+"\"  modJk=\"PATH_TO_MOD_JK.SO_OR_DLL\" />" );
+	    log.info( "Using <Listener className=\""+getClass().getName()+"\"  modJk=\"PATH_TO_MOD_JK.SO_OR_DLL\" />" );
 	}
             
 	// Verify the file exists !!
@@ -272,10 +275,10 @@ public class ApacheConfig  extends BaseJkConfig {
 	// Fail if workers file not found, let the user know the problem
 	// instead of running into problems later.
 	if( ! workersConfig.exists() ) {
-	    log( "Can't find workers.properties at " + workersConfig );
-	    log( "Please install it in the default location or " +
+	    log.warn( "Can't find workers.properties at " + workersConfig );
+	    log.warn( "Please install it in the default location or " +
 		 " set the config location" );
-	    log( "Using <Listener className=\"" + getClass().getName() + "\"  workersConfig=\"FULL_PATH\" />" );
+	    log.warn( "Using <Listener className=\"" + getClass().getName() + "\"  workersConfig=\"FULL_PATH\" />" );
 	    return false;
 	}
             
@@ -393,7 +396,7 @@ public class ApacheConfig  extends BaseJkConfig {
 	Host vhost = getHost(context);
 
         if( noRoot &&  "".equals(ctxPath) ) {
-            log("Ignoring root context in non-forward-all mode  ");
+            log.debug("Ignoring root context in non-forward-all mode  ");
             return;
         }
 
@@ -431,8 +434,8 @@ public class ApacheConfig  extends BaseJkConfig {
     protected boolean addExtensionMapping( String ctxPath, String ext,
 					 PrintWriter mod_jk )
     {
-        if( debug > 0 )
-            log( "Adding extension map for " + ctxPath + "/*." + ext );
+        if( log.isDebugEnabled() )
+            log.debug( "Adding extension map for " + ctxPath + "/*." + ext );
 	mod_jk.println(indent + "JkMount " + ctxPath + "/*." + ext
 		       + " " + jkWorker);
 	return true;
@@ -442,16 +445,16 @@ public class ApacheConfig  extends BaseJkConfig {
     /** Add a fulling specified Appache mapping.
      */
     protected boolean addMapping( String fullPath, PrintWriter mod_jk ) {
-        if( debug > 0 )
-            log( "Adding map for " + fullPath );
+        if( log.isDebugEnabled() )
+            log.debug( "Adding map for " + fullPath );
 	mod_jk.println(indent + "JkMount " + fullPath + "  " + jkWorker );
 	return true;
     }
     /** Add a partially specified Appache mapping.
      */
     protected boolean addMapping( String ctxP, String ext, PrintWriter mod_jk ) {
-        if( debug > 0 )
-            log( "Adding map for " + ext );
+        if( log.isDebugEnabled() )
+            log.debug( "Adding map for " + ext );
 	if(! ext.startsWith("/") )
 	    ext = "/" + ext;
 	if(ext.length() > 1)

@@ -88,10 +88,12 @@ import org.apache.catalina.Server;
     @author Costin Manolache
     @author Larry Isaacs
     @author Bill Barker
-	@version $Revision$
+        @version $Revision$
  */
 public class BaseJkConfig  implements LifecycleListener {
-    protected int debug=0;
+    private static org.apache.commons.logging.Log log =
+        org.apache.commons.logging.LogFactory.getLog(BaseJkConfig.class);
+
     protected File configHome = null;
     protected File workersConfig = null;
 
@@ -105,7 +107,7 @@ public class BaseJkConfig  implements LifecycleListener {
     protected String tomcatHome;
     protected boolean regenerate=false;
     protected boolean append=false;
-    protected boolean legacy=false;
+    protected boolean legacy=true;
 
     // -------------------- Tomcat callbacks --------------------
 
@@ -113,147 +115,170 @@ public class BaseJkConfig  implements LifecycleListener {
     // Auto-config should be able to react to dynamic config changes,
     // and regenerate the config.
 
-    /** Generate the configuration - only when the server is
+    /** 
+     *  Generate the configuration - only when the server is
      *  completely initialized ( before starting )
      */
-    public void lifecycleEvent(LifecycleEvent evt)
-    {
-	if(Lifecycle.START_EVENT.equals(evt.getType())) {
-	   execute( evt );
-	}
+    public void lifecycleEvent(LifecycleEvent evt) {
+        if(Lifecycle.START_EVENT.equals(evt.getType())) {
+           execute( evt );
+        } 
     }
 
-    /** Generate configuration files.  Override with method to generate
-        web server specific configuration.
+    /** 
+     *  Generate configuration files.  Override with method to generate
+     *  web server specific configuration.
      */
-    public void execute(LifecycleEvent evt)
-    {
-	initProperties();
-	PrintWriter mod_jk = null;
-	try {
-	    mod_jk = getWriter();
-	} catch(IOException iex) {
-	    log("Unable to open config file");
-	    return;
-	}
-	Lifecycle who = evt.getLifecycle();
-	if( who instanceof Server ) {
-	    executeServer((Server)who, mod_jk);
-	} else if ( who instanceof Host ) {
-	    executeHost((Host)who, mod_jk);
-	} else if( who instanceof Context ) {
-	    executeContext((Context)who, mod_jk);
-	}
-	mod_jk.close();
+    public void execute(LifecycleEvent evt) {
+        initProperties();
+        PrintWriter mod_jk = null;
+        try {
+            mod_jk = getWriter();
+        } catch(IOException iex) {
+            log.warn("Unable to open config file");
+            return;
+        }
+        Lifecycle who = evt.getLifecycle();
+        if( who instanceof Server ) {
+            executeServer((Server)who, mod_jk);
+        } else if(who instanceof Engine) {
+            executeEngine((Engine)who, mod_jk);
+        } else if ( who instanceof Host ) {
+            executeHost((Host)who, mod_jk);
+        } else if( who instanceof Context ) {
+            executeContext((Context)who, mod_jk);
+        }
+        mod_jk.close();
     }
-    /** Generate configuration files.  Override with method to generate
-        web server specific configuration.
+    /** 
+     *  Generate configuration files.  Override with method to generate
+     *  web server specific configuration.
      */
     public void executeServer(Server svr, PrintWriter mod_jk) {
-	if(! append ) {
-	    if( ! generateJkHead(mod_jk) )
-		return;
-	    generateSSLConfig(mod_jk);
-	    generateJkTail(mod_jk);
-	}
+        if(! append ) {
+            if( ! generateJkHead(mod_jk) )
+                return;
+            generateSSLConfig(mod_jk);
+            generateJkTail(mod_jk);
+        }
     }
 
-    /** Generate SSL options
+    /** 
+     * Generate SSL options
      */
-    protected void generateSSLConfig(PrintWriter mod_jk)
-    {
+    protected void generateSSLConfig(PrintWriter mod_jk) {
     }
-    /** Generate general options
+
+    /** 
+     * Generate general options
      */
-    protected boolean generateJkHead(PrintWriter mod_jk)
-    {
-	return true;
+    protected boolean generateJkHead(PrintWriter mod_jk)  {
+        return true;
     }
-    /** Generate general options
+
+    /** 
+     * Generate general options
      */
-    protected void generateJkTail(PrintWriter mod_jk)
-    {
+    protected void generateJkTail(PrintWriter mod_jk) {
     }
-    /** Generate Virtual Host start
+
+    /** 
+     * Generate Virtual Host start
      */
     protected void generateVhostHead(Host host, PrintWriter mod_jk) {
     }
-    /** Generate Virtual Host end
+
+    /** 
+     * Generate Virtual Host end
      */
     protected void generateVhostTail(Host host, PrintWriter mod_jk) {
     }
-    /** Generate configuration files.  Override with method to generate
-        web server specific configuration.
+
+    /** 
+     *  Generate configuration files.  Override with method to generate
+     *  web server specific configuration.
      */
     protected void executeEngine(Engine egn, PrintWriter mod_jk) {
-	Container [] children = egn.findChildren();
-	for(int ii=0; ii < children.length; ii++) {
-	    if( children[ii] instanceof Host ) {
-		executeHost((Host)children[ii], mod_jk);
-	    } else if( children[ii] instanceof Context ) {
-		executeContext((Context)children[ii], mod_jk);
-	    }
-	}
-    }
-    /** Generate configuration files.  Override with method to generate
-        web server specific configuration.
-     */
-    protected void executeHost(Host hst, PrintWriter mod_jk) {
-	generateVhostHead(hst, mod_jk);
-	Container [] children = hst.findChildren();
-	for(int ii=0; ii < children.length; ii++) {
-	    if(children[ii] instanceof Context) {
-		executeContext((Context)children[ii],mod_jk);
-	    }
-	}
-	generateVhostTail(hst, mod_jk);
+        if(egn.getJvmRoute() != null) {
+            jkWorker = egn.getJvmRoute();
+        }
+        executeServer(egn.getService().getServer(), mod_jk);
+        Container [] children = egn.findChildren();
+        for(int ii=0; ii < children.length; ii++) {
+            if( children[ii] instanceof Host ) {
+                executeHost((Host)children[ii], mod_jk);
+            } else if( children[ii] instanceof Context ) {
+                executeContext((Context)children[ii], mod_jk);
+            }
+        }
     }
     /**
-        executes the ApacheConfig interceptor. This method generates apache
-        configuration files for use with  mod_jk.
-        <p>
-        @param context a Context object.
-	  @param mod_jk Writer for output.
+     *  Generate configuration files.  Override with method to generate
+     *  web server specific configuration.
+     */
+    protected void executeHost(Host hst, PrintWriter mod_jk) {
+        generateVhostHead(hst, mod_jk);
+        Container [] children = hst.findChildren();
+        for(int ii=0; ii < children.length; ii++) {
+            if(children[ii] instanceof Context) {
+                executeContext((Context)children[ii],mod_jk);
+            }
+        }
+        generateVhostTail(hst, mod_jk);
+    }
+    /**
+     *   executes the ApacheConfig interceptor. This method generates apache
+     *   configuration files for use with  mod_jk.
+     *   @param context a Context object.
+     *   @param mod_jk Writer for output.
     */
     public void executeContext(Context context, PrintWriter mod_jk){
 
-	if(context.getPath().length() > 0 || ! noRoot ) {
-	    String docRoot = context.getServletContext().getRealPath("/");
-	    if( forwardAll || docRoot == null)
-		generateStupidMappings( context, mod_jk );
-	    else
-		generateContextMappings( context, mod_jk);
-	}
+        if(context.getPath().length() > 0 || ! noRoot ) {
+            String docRoot = context.getServletContext().getRealPath("/");
+            if( forwardAll || docRoot == null)
+                generateStupidMappings( context, mod_jk );
+            else
+                generateContextMappings( context, mod_jk);
+        }
     }
+
     protected void generateStupidMappings(Context context, PrintWriter mod_jk){
     }
     protected void generateContextMappings(Context context, PrintWriter mod_jk){
     }
-    /** Get the output Writer.  Override with method to generate
-        web server specific configuration.
+
+    /** 
+     *  Get the output Writer.  Override with method to generate
+     *  web server specific configuration.
      */
     protected PrintWriter getWriter() throws IOException {
-	return null;
+        return null;
     }
-    /** Get the host associated with this Container (if any).
+
+    /** 
+     * Get the host associated with this Container (if any).
      */
     protected Host getHost(Container child) {
-	while(child != null && ! (child instanceof Host) ) {
-	    child = child.getParent();
-	}
-	return (Host)child;
+        while(child != null && ! (child instanceof Host) ) {
+            child = child.getParent();
+        }
+        return (Host)child;
     }
 
     //-------------------- Properties --------------------
 
-    /** Append to config file.
+    /** 
+     *  Append to config file.
      *  Set to <code>true</code> if the config information should be 
      *  appended.
      */
     public void setAppend(boolean apnd) {
-	append = apnd;
+        append = apnd;
     }
-    /** If false, we'll try to generate a config that will
+
+    /** 
+     *  If false, we'll try to generate a config that will
      *  let apache serve static files.
      *  The default is true, forward all requests in a context
      *  to tomcat.
@@ -262,35 +287,35 @@ public class BaseJkConfig  implements LifecycleListener {
         forwardAll=b;
     }
 
-    /** Special option - do not generate mappings for the ROOT
-        context. The default is true, and will not generate the mappings,
-        not redirecting all pages to tomcat (since /* matches everything).
-        This means that the web server's root remains intact but isn't
-        completely servlet/JSP enabled. If the ROOT webapp can be configured
-        with the web server serving static files, there's no problem setting
-        this option to false. If not, then setting it true means the web
-        server will be out of picture for all requests.
-    */
+    /** 
+     *  Special option - do not generate mappings for the ROOT
+     *  context. The default is true, and will not generate the mappings,
+     *  not redirecting all pages to tomcat (since /* matches everything).
+     *  This means that the web server's root remains intact but isn't
+     *  completely servlet/JSP enabled. If the ROOT webapp can be configured
+     *  with the web server serving static files, there's no problem setting
+     *   this option to false. If not, then setting it true means the web
+     *   server will be out of picture for all requests.
+     */
     public void setNoRoot( boolean b ) {
         noRoot=b;
     }
     
     /**
-        set a path to the parent directory of the
-        conf folder.  That is, the parent directory
-        within which path setters would be resolved against,
-        if relative.  For example if ConfigHome is set to "/home/tomcat"
-        and regConfig is set to "conf/mod_jk.conf" then the resulting 
-        path used would be: 
-        "/home/tomcat/conf/mod_jk.conf".</p>
-        <p>
-        However, if the path is set to an absolute path,
-        this attribute is ignored.
-        <p>
-        If not set, execute() will set this to TOMCAT_HOME.
-        <p>
-        @param dir - path to a directory
-    */
+     *  set a path to the parent directory of the
+     *  conf folder.  That is, the parent directory
+     *  within which path setters would be resolved against,
+     *  if relative.  For example if ConfigHome is set to "/home/tomcat"
+     *  and regConfig is set to "conf/mod_jk.conf" then the resulting 
+     *  path used would be: 
+     *  "/home/tomcat/conf/mod_jk.conf".</p>
+     *  <p>
+     *  However, if the path is set to an absolute path,
+     *  this attribute is ignored.
+     *  <p>
+     *  If not set, execute() will set this to TOMCAT_HOME.
+     *  @param dir - path to a directory
+     */
     public void setConfigHome(String dir){
         if( dir==null ) return;
         File f=new File(dir);
@@ -303,31 +328,32 @@ public class BaseJkConfig  implements LifecycleListener {
     }
 
     /**
-        set a path to the workers.properties file.
-        @param path String path to workers.properties file
-    */
+     *  set a path to the workers.properties file.
+     *  @param path String path to workers.properties file
+     */
     public void setWorkersConfig(String path){
         workersConfig= (path==null?null:new File(path));
     }
 
     /**
-        set the path to the log file
-        @param path String path to a file
-    */
+     *  set the path to the log file
+     *   @param path String path to a file
+     */
     public void setJkLog(String path){
         jkLog = ( path==null ? null : new File(path));
     }
 
-    /** Set the verbosity level
-        ( use debug, error, etc. ) If not set, no log is written.
+    /** 
+     *  Set the verbosity level
+     *  ( use debug, error, etc. ) If not set, no log is written.
      */
     public void setJkDebug( String level ) {
         jkDebug=level;
     }
 
     /**
-        Sets the JK worker.
-        @param worker The worker
+     *   Sets the JK worker.
+     *   @param worker The worker
      */
     public void setJkWorker(String worker){
         jkWorker = worker;
@@ -339,9 +365,10 @@ public class BaseJkConfig  implements LifecycleListener {
 
     // -------------------- Initialize/guess defaults --------------------
 
-    /** Initialize defaults for properties that are not set
-        explicitely
-    */
+    /** 
+     *  Initialize defaults for properties that are not set
+     *   explicitely
+     */
     protected void initProperties() {
         tomcatHome = System.getProperty("catalina.home");
         File tomcatDir = new File(tomcatHome);
@@ -353,34 +380,34 @@ public class BaseJkConfig  implements LifecycleListener {
     // -------------------- Config Utils  --------------------
 
 
-    /** Add an extension mapping. Override with method to generate
-        web server specific configuration
+    /** 
+     * Add an extension mapping. Override with method to generate
+     *   web server specific configuration
      */
     protected boolean addExtensionMapping( String ctxPath, String ext,
-					 PrintWriter pw )
-    {
-	return true;
+                                         PrintWriter pw ) {
+        return true;
     }
     
     
-    /** Add a fulling specified mapping.  Override with method to generate
-        web server specific configuration
+    /** 
+     * Add a fulling specified mapping.  Override with method to generate
+     * web server specific configuration
      */
     protected boolean addMapping( String fullPath, PrintWriter pw ) {
-	return true;
+        return true;
     }
 
     // -------------------- General Utils --------------------
 
-    protected String getAbsoluteDocBase(Context context)
-    {
-	// Calculate the absolute path of the document base
-	String docBase = context.getServletContext().getRealPath("/");
-	docBase = docBase.substring(0,docBase.length()-1);
-	if (!isAbsolute(docBase)){
-	    docBase = tomcatHome + "/" + docBase;
-	}
-	docBase = patch(docBase);
+    protected String getAbsoluteDocBase(Context context) {
+        // Calculate the absolute path of the document base
+        String docBase = context.getServletContext().getRealPath("/");
+        docBase = docBase.substring(0,docBase.length()-1);
+        if (!isAbsolute(docBase)){
+            docBase = tomcatHome + "/" + docBase;
+        }
+        docBase = patch(docBase);
         return docBase;
     }
 
@@ -405,6 +432,7 @@ public class BaseJkConfig  implements LifecycleListener {
         }
         return base;
     }
+
     public static String patch(String path) {
         String patchPath = path;
 
@@ -417,7 +445,7 @@ public class BaseJkConfig  implements LifecycleListener {
         }
 
         // Eliminate consecutive slashes after the drive spec
-	if (patchPath.length() >= 2 &&
+        if (patchPath.length() >= 2 &&
             Character.isLetter(patchPath.charAt(0)) &&
             patchPath.charAt(1) == ':') {
             char[] ca = patchPath.replace('/', '\\').toCharArray();
@@ -445,46 +473,43 @@ public class BaseJkConfig  implements LifecycleListener {
             patchPath = sb.toString();
         }
 
-	// fix path on NetWare - all '/' become '\\' and remove duplicate '\\'
-	if (System.getProperty("os.name").startsWith("NetWare") &&
-	    path.length() >=3 &&
-	    path.indexOf(':') > 0) {
-	    char[] ca = patchPath.replace('/', '\\').toCharArray();
-	    StringBuffer sb = new StringBuffer();
+        // fix path on NetWare - all '/' become '\\' and remove duplicate '\\'
+        if (System.getProperty("os.name").startsWith("NetWare") &&
+            path.length() >=3 &&
+            path.indexOf(':') > 0) {
+            char[] ca = patchPath.replace('/', '\\').toCharArray();
+            StringBuffer sb = new StringBuffer();
 
-	    for (int i = 0; i < ca.length; i++) {
-		if ((ca[i] != '\\') ||
-		    (ca[i] == '\\' && i > 0 && ca[i - 1] != '\\')) {
-		    sb.append(ca[i]);
-		}
-	    }
-	    patchPath = sb.toString();
-	}
+            for (int i = 0; i < ca.length; i++) {
+                if ((ca[i] != '\\') ||
+                    (ca[i] == '\\' && i > 0 && ca[i - 1] != '\\')) {
+                    sb.append(ca[i]);
+                }
+            }
+            patchPath = sb.toString();
+        }
 
         return patchPath;
     }
 
     public static boolean isAbsolute( String path ) {
-	// normal file
-	if( path.startsWith("/" ) ) return true;
+        // normal file
+        if( path.startsWith("/" ) ) return true;
 
-	if( path.startsWith(File.separator ) ) return true;
+        if( path.startsWith(File.separator ) ) return true;
 
-	// win c:
-	if (path.length() >= 3 &&
+        // win c:
+        if (path.length() >= 3 &&
             Character.isLetter(path.charAt(0)) &&
             path.charAt(1) == ':')
-	    return true;
+            return true;
 
-	// NetWare volume:
-	if (System.getProperty("os.name").startsWith("NetWare") &&
-	    path.length() >=3 &&
-	    path.indexOf(':') > 0)
-	    return true;
+        // NetWare volume:
+        if (System.getProperty("os.name").startsWith("NetWare") &&
+            path.length() >=3 &&
+            path.indexOf(':') > 0)
+            return true;
 
-	return false;
-    }
-    protected void log(String msg) {
-	System.err.println(msg);
+        return false;
     }
 }
