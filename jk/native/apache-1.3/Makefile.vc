@@ -33,7 +33,7 @@ INTDIR=.\Release
 OutDir=.\Release
 # End Custom Macros
 
-ALL : "$(OUTDIR)\mod_jk.dll"
+ALL : "$(OUTDIR)\mod_jk.so"
 
 
 CLEAN :
@@ -56,10 +56,12 @@ CLEAN :
 	-@erase "$(INTDIR)\jk_util.obj"
 	-@erase "$(INTDIR)\jk_worker.obj"
 	-@erase "$(INTDIR)\mod_jk.obj"
-	-@erase "$(INTDIR)\vc60.idb"
-	-@erase "$(OUTDIR)\mod_jk.dll"
+	-@erase "$(INTDIR)\mod_jk_src.idb"
+	-@erase "$(INTDIR)\mod_jk_src.pdb"
 	-@erase "$(OUTDIR)\mod_jk.exp"
 	-@erase "$(OUTDIR)\mod_jk.lib"
+	-@erase "$(OUTDIR)\mod_jk.pdb"
+	-@erase "$(OUTDIR)\mod_jk.so"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -69,34 +71,34 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mod_jk.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=ApacheCore.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\mod_jk.pdb" /machine:I386 /out:"$(OUTDIR)\mod_jk.dll" /implib:"$(OUTDIR)\mod_jk.lib" /libpath:"$(APACHE1_HOME)\lib" /libpath:"$(APACHE1_HOME)\libexec" 
+LINK32_FLAGS=ApacheCore.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_jk.pdb" /debug /machine:I386 /out:"$(OUTDIR)\mod_jk.so" /implib:"$(OUTDIR)\mod_jk.lib" /libpath:"$(APACHE1_HOME)\lib" /libpath:"$(APACHE1_HOME)\libexec" /opt:ref 
 LINK32_OBJS= \
 	"$(INTDIR)\jk_ajp12_worker.obj" \
 	"$(INTDIR)\jk_ajp13.obj" \
 	"$(INTDIR)\jk_ajp13_worker.obj" \
+	"$(INTDIR)\jk_ajp14.obj" \
+	"$(INTDIR)\jk_ajp14_worker.obj" \
+	"$(INTDIR)\jk_ajp_common.obj" \
 	"$(INTDIR)\jk_connect.obj" \
+	"$(INTDIR)\jk_context.obj" \
 	"$(INTDIR)\jk_jni_worker.obj" \
 	"$(INTDIR)\jk_lb_worker.obj" \
 	"$(INTDIR)\jk_map.obj" \
+	"$(INTDIR)\jk_md5.obj" \
 	"$(INTDIR)\jk_msg_buff.obj" \
 	"$(INTDIR)\jk_pool.obj" \
 	"$(INTDIR)\jk_sockbuf.obj" \
 	"$(INTDIR)\jk_uri_worker_map.obj" \
 	"$(INTDIR)\jk_util.obj" \
 	"$(INTDIR)\jk_worker.obj" \
-	"$(INTDIR)\mod_jk.obj" \
-	"$(INTDIR)\jk_ajp14.obj" \
-	"$(INTDIR)\jk_ajp14_worker.obj" \
-	"$(INTDIR)\jk_md5.obj" \
-	"$(INTDIR)\jk_context.obj" \
-	"$(INTDIR)\jk_ajp_common.obj"
+	"$(INTDIR)\mod_jk.obj"
 
-"$(OUTDIR)\mod_jk.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\mod_jk.so" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "..\common" /I "$(APACHE1_HOME)\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MOD_JK_EXPORTS" /Fp"$(INTDIR)\mod_jk.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "$(APACHE1_HOME)\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MOD_JK_EXPORTS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_jk_src" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<

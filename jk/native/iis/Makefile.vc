@@ -27,61 +27,42 @@ NULL=nul
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
-OUTDIR=.\isapi_release
-INTDIR=.\isapi_release
+OUTDIR=.\Release
+INTDIR=.\Release
 # Begin Custom Macros
-OutDir=.\isapi_release
+OutDir=.\Release
 # End Custom Macros
 
-ALL : "$(OUTDIR)\isapi_redirect.dll" "$(OUTDIR)\isapi.bsc"
+ALL : "$(OUTDIR)\isapi_redirect.dll"
 
 
 CLEAN :
+	-@erase "$(INTDIR)\isapi_redirector_src.idb"
+	-@erase "$(INTDIR)\isapi_redirector_src.pdb"
 	-@erase "$(INTDIR)\jk_ajp12_worker.obj"
-	-@erase "$(INTDIR)\jk_ajp12_worker.sbr"
 	-@erase "$(INTDIR)\jk_ajp13.obj"
-	-@erase "$(INTDIR)\jk_ajp13.sbr"
 	-@erase "$(INTDIR)\jk_ajp13_worker.obj"
-	-@erase "$(INTDIR)\jk_ajp13_worker.sbr"
 	-@erase "$(INTDIR)\jk_ajp14.obj"
-	-@erase "$(INTDIR)\jk_ajp14.sbr"
 	-@erase "$(INTDIR)\jk_ajp14_worker.obj"
-	-@erase "$(INTDIR)\jk_ajp14_worker.sbr"
 	-@erase "$(INTDIR)\jk_ajp_common.obj"
-	-@erase "$(INTDIR)\jk_ajp_common.sbr"
 	-@erase "$(INTDIR)\jk_connect.obj"
-	-@erase "$(INTDIR)\jk_connect.sbr"
 	-@erase "$(INTDIR)\jk_context.obj"
-	-@erase "$(INTDIR)\jk_context.sbr"
 	-@erase "$(INTDIR)\jk_isapi_plugin.obj"
-	-@erase "$(INTDIR)\jk_isapi_plugin.sbr"
 	-@erase "$(INTDIR)\jk_jni_worker.obj"
-	-@erase "$(INTDIR)\jk_jni_worker.sbr"
 	-@erase "$(INTDIR)\jk_lb_worker.obj"
-	-@erase "$(INTDIR)\jk_lb_worker.sbr"
 	-@erase "$(INTDIR)\jk_map.obj"
-	-@erase "$(INTDIR)\jk_map.sbr"
 	-@erase "$(INTDIR)\jk_md5.obj"
-	-@erase "$(INTDIR)\jk_md5.sbr"
 	-@erase "$(INTDIR)\jk_msg_buff.obj"
-	-@erase "$(INTDIR)\jk_msg_buff.sbr"
 	-@erase "$(INTDIR)\jk_nwmain.obj"
-	-@erase "$(INTDIR)\jk_nwmain.sbr"
 	-@erase "$(INTDIR)\jk_pool.obj"
-	-@erase "$(INTDIR)\jk_pool.sbr"
 	-@erase "$(INTDIR)\jk_sockbuf.obj"
-	-@erase "$(INTDIR)\jk_sockbuf.sbr"
 	-@erase "$(INTDIR)\jk_uri_worker_map.obj"
-	-@erase "$(INTDIR)\jk_uri_worker_map.sbr"
 	-@erase "$(INTDIR)\jk_util.obj"
-	-@erase "$(INTDIR)\jk_util.sbr"
 	-@erase "$(INTDIR)\jk_worker.obj"
-	-@erase "$(INTDIR)\jk_worker.sbr"
-	-@erase "$(INTDIR)\vc60.idb"
-	-@erase "$(OUTDIR)\isapi.bsc"
 	-@erase "$(OUTDIR)\isapi_redirect.dll"
 	-@erase "$(OUTDIR)\isapi_redirect.exp"
 	-@erase "$(OUTDIR)\isapi_redirect.lib"
+	-@erase "$(OUTDIR)\isapi_redirect.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -89,34 +70,9 @@ CLEAN :
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\isapi.bsc" 
 BSC32_SBRS= \
-	"$(INTDIR)\jk_ajp12_worker.sbr" \
-	"$(INTDIR)\jk_ajp13.sbr" \
-	"$(INTDIR)\jk_ajp13_worker.sbr" \
-	"$(INTDIR)\jk_ajp14.sbr" \
-	"$(INTDIR)\jk_ajp14_worker.sbr" \
-	"$(INTDIR)\jk_ajp_common.sbr" \
-	"$(INTDIR)\jk_connect.sbr" \
-	"$(INTDIR)\jk_context.sbr" \
-	"$(INTDIR)\jk_isapi_plugin.sbr" \
-	"$(INTDIR)\jk_jni_worker.sbr" \
-	"$(INTDIR)\jk_lb_worker.sbr" \
-	"$(INTDIR)\jk_map.sbr" \
-	"$(INTDIR)\jk_md5.sbr" \
-	"$(INTDIR)\jk_msg_buff.sbr" \
-	"$(INTDIR)\jk_nwmain.sbr" \
-	"$(INTDIR)\jk_pool.sbr" \
-	"$(INTDIR)\jk_sockbuf.sbr" \
-	"$(INTDIR)\jk_uri_worker_map.sbr" \
-	"$(INTDIR)\jk_util.sbr" \
-	"$(INTDIR)\jk_worker.sbr"
-
-"$(OUTDIR)\isapi.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
-    $(BSC32) @<<
-  $(BSC32_FLAGS) $(BSC32_SBRS)
-<<
-
+	
 LINK32=link.exe
-LINK32_FLAGS=wsock32.lib advapi32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\isapi_redirect.pdb" /machine:I386 /def:".\isapi.def" /out:"$(OUTDIR)\isapi_redirect.dll" /implib:"$(OUTDIR)\isapi_redirect.lib" 
+LINK32_FLAGS=wsock32.lib advapi32.lib /nologo /base:"0x6A6B0000" /dll /incremental:no /pdb:"$(OUTDIR)\isapi_redirect.pdb" /debug /machine:I386 /def:".\isapi.def" /out:"$(OUTDIR)\isapi_redirect.dll" /implib:"$(OUTDIR)\isapi_redirect.lib" 
 DEF_FILE= \
 	".\isapi.def"
 LINK32_OBJS= \
@@ -146,7 +102,7 @@ LINK32_OBJS= \
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\isapi.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "ISAPI_EXPORTS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\isapi_redirector_src" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -192,120 +148,120 @@ MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32
 !IF "$(CFG)" == "isapi - Win32 Release"
 SOURCE=..\common\jk_ajp12_worker.c
 
-"$(INTDIR)\jk_ajp12_worker.obj"	"$(INTDIR)\jk_ajp12_worker.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_ajp12_worker.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_ajp13.c
 
-"$(INTDIR)\jk_ajp13.obj"	"$(INTDIR)\jk_ajp13.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_ajp13.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_ajp13_worker.c
 
-"$(INTDIR)\jk_ajp13_worker.obj"	"$(INTDIR)\jk_ajp13_worker.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_ajp13_worker.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_ajp14.c
 
-"$(INTDIR)\jk_ajp14.obj"	"$(INTDIR)\jk_ajp14.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_ajp14.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_ajp14_worker.c
 
-"$(INTDIR)\jk_ajp14_worker.obj"	"$(INTDIR)\jk_ajp14_worker.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_ajp14_worker.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_ajp_common.c
 
-"$(INTDIR)\jk_ajp_common.obj"	"$(INTDIR)\jk_ajp_common.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_ajp_common.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_connect.c
 
-"$(INTDIR)\jk_connect.obj"	"$(INTDIR)\jk_connect.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_connect.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_context.c
 
-"$(INTDIR)\jk_context.obj"	"$(INTDIR)\jk_context.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_context.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=.\jk_isapi_plugin.c
 
-"$(INTDIR)\jk_isapi_plugin.obj"	"$(INTDIR)\jk_isapi_plugin.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_isapi_plugin.obj" : $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=..\common\jk_jni_worker.c
 
-"$(INTDIR)\jk_jni_worker.obj"	"$(INTDIR)\jk_jni_worker.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_jni_worker.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_lb_worker.c
 
-"$(INTDIR)\jk_lb_worker.obj"	"$(INTDIR)\jk_lb_worker.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_lb_worker.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_map.c
 
-"$(INTDIR)\jk_map.obj"	"$(INTDIR)\jk_map.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_map.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_md5.c
 
-"$(INTDIR)\jk_md5.obj"	"$(INTDIR)\jk_md5.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_md5.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_msg_buff.c
 
-"$(INTDIR)\jk_msg_buff.obj"	"$(INTDIR)\jk_msg_buff.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_msg_buff.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_nwmain.c
 
-"$(INTDIR)\jk_nwmain.obj"	"$(INTDIR)\jk_nwmain.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_nwmain.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_pool.c
 
-"$(INTDIR)\jk_pool.obj"	"$(INTDIR)\jk_pool.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_pool.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_sockbuf.c
 
-"$(INTDIR)\jk_sockbuf.obj"	"$(INTDIR)\jk_sockbuf.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_sockbuf.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_uri_worker_map.c
 
-"$(INTDIR)\jk_uri_worker_map.obj"	"$(INTDIR)\jk_uri_worker_map.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_uri_worker_map.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_util.c
 
-"$(INTDIR)\jk_util.obj"	"$(INTDIR)\jk_util.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_util.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\common\jk_worker.c
 
-"$(INTDIR)\jk_worker.obj"	"$(INTDIR)\jk_worker.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_worker.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

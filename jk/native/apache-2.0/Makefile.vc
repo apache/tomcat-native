@@ -33,7 +33,7 @@ INTDIR=.\Release
 OutDir=.\Release
 # End Custom Macros
 
-ALL : "$(OUTDIR)\mod_jk.dll"
+ALL : "$(OUTDIR)\mod_jk.so"
 
 
 CLEAN :
@@ -55,11 +55,13 @@ CLEAN :
 	-@erase "$(INTDIR)\jk_uri_worker_map.obj"
 	-@erase "$(INTDIR)\jk_util.obj"
 	-@erase "$(INTDIR)\jk_worker.obj"
-	-@erase "$(INTDIR)\mod_jk.idb"
 	-@erase "$(INTDIR)\mod_jk.obj"
-	-@erase "$(OUTDIR)\mod_jk.dll"
+	-@erase "$(INTDIR)\mod_jk_src.idb"
+	-@erase "$(INTDIR)\mod_jk_src.pdb"
 	-@erase "$(OUTDIR)\mod_jk.exp"
 	-@erase "$(OUTDIR)\mod_jk.lib"
+	-@erase "$(OUTDIR)\mod_jk.pdb"
+	-@erase "$(OUTDIR)\mod_jk.so"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -69,7 +71,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mod_jk.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib advapi32.lib wsock32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\mod_jk.pdb" /machine:I386 /out:"$(OUTDIR)\mod_jk.dll" /implib:"$(OUTDIR)\mod_jk.lib" /libpath:"$(APACHE2_HOME)\lib" 
+LINK32_FLAGS=libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib advapi32.lib wsock32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_jk.pdb" /debug /machine:I386 /out:"$(OUTDIR)\mod_jk.so" /implib:"$(OUTDIR)\mod_jk.lib" /libpath:"$(APACHE2_HOME)\lib" /opt:ref 
 LINK32_OBJS= \
 	"$(INTDIR)\jk_ajp12_worker.obj" \
 	"$(INTDIR)\jk_ajp13.obj" \
@@ -91,12 +93,12 @@ LINK32_OBJS= \
 	"$(INTDIR)\jk_worker.obj" \
 	"$(INTDIR)\mod_jk.obj"
 
-"$(OUTDIR)\mod_jk.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\mod_jk.so" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
-CPP_PROJ=/nologo /MD /W3 /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_jk" /FD /c 
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_jk_src" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
