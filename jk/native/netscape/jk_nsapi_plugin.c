@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 
+#include "nsapi.h"
 #include "jk_global.h"
 #include "jk_util.h"
 #include "jk_map.h"
@@ -28,8 +29,6 @@
 #include "jk_service.h"
 #include "jk_worker.h"
 #include "jk_shm.h"
-
-#include "nsapi.h"
 
 #define URI_PATTERN "path"
 #define DEFAULT_WORKER_NAME ("ajp13")
