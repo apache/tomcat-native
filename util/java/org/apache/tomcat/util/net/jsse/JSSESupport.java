@@ -66,6 +66,8 @@ import java.util.Vector;
 import java.security.cert.CertificateFactory;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.HandshakeCompletedEvent;
 import java.security.cert.CertificateFactory;
 import javax.security.cert.X509Certificate;
 
@@ -127,6 +129,9 @@ class JSSESupport implements SSLSupport {
 		session.invalidate();
 		ssl.setNeedClientAuth(true);
 		ssl.startHandshake();
+		if ("1.4".equals(System.getProperty("java.specification.version"))) {
+		    synchronousHandshake(ssl);
+		}
 		session = ssl.getSession();
 		jsseCerts = session.getPeerCertificateChain();
 		if(jsseCerts == null)
@@ -198,5 +203,45 @@ class JSSESupport implements SSLSupport {
         }
         return buf.toString();
     }
+
+    /**
+     * JSSE in JDK 1.4 has an issue/feature that requires us to do a
+     * read() to get the client-cert.  As suggested by Andreas
+     * Sterbenz
+     */
+    private static void synchronousHandshake(SSLSocket socket) 
+        throws IOException {
+        InputStream in = socket.getInputStream();
+        int oldTimeout = socket.getSoTimeout();
+        socket.setSoTimeout(100);
+        Listener listener = new Listener();
+        socket.addHandshakeCompletedListener(listener);
+        byte[] b = new byte[0];
+        socket.startHandshake();
+        int maxTries = 50; // 50 * 100 = example 5 second rehandshake timeout
+        for (int i = 0; i < maxTries; i++) {
+            try {
+                int x = in.read(b);
+            } catch (SocketTimeoutException e) {
+                // ignore
+            }
+            if (listener.completed) {
+                break;
+            }
+        }
+        socket.removeHandshakeCompletedListener(listener);
+        socket.setSoTimeout(oldTimeout);
+        if (listener.completed == false) {
+            throw new SocketTimeoutException("SSL Cert handshake timeout");
+        }
+    }
+
+    private static class Listener implements HandshakeCompletedListener {
+        volatile boolean completed = false;
+        public void handshakeCompleted(HandshakeCompletedEvent event) {
+            completed = true;
+        }
+    }
+
 }
 
