@@ -35,7 +35,7 @@
 <p>
 jk2.properties:
 <source>
-# The default port is 8009 but you can use onother one
+# The default port is 8009 but you can use another one
 # channelSocket.port=8019
 </source>
 That is all needed on the Tomcat side to configure the JK2.
@@ -43,7 +43,7 @@ That is all needed on the Tomcat side to configure the JK2.
 <p>
 workers2.properties:
 <source>
-# Define the comunication channel 
+# Define the communication channel 
 [channel.socket:localhost:8009]
 info=Ajp13 forwarding over socket
 tomcatId=localhost:8009
