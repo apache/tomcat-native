@@ -64,42 +64,15 @@
 #define _WA_MAIN_H_
 
 /**
- * The WebApp Library connection structure.
- * <br>
- * This structure holds all required data required by a connection provider
- * to connect to a web-application container and to handle HTTP requests.
+ * A simple chain structure holding lists of pointers.
  */
-struct wa_connection {
-	/** The APR memory pool where this connections is allocated. */
-	apr_pool_t *pool;
-	/** The connection provider. */
-	void *prov;
-	/** The provider-specific configuration member for this connection. */
-	void *conf;
-};
-
-/**
- * The WebApp Library application structure.
- * <br>
- * This structure holds all informations associated with an application.
- * Applications are not grouped in virtual hosts inside the library as in
- * specific cases (like when load balancing is in use), multiple applications
- * can share the same root URL path, or (like when applications are shared),
- * a single web application can be shared across multiple virtual host.
- */
-struct wa_application {
-	/** The APR memory pool where this application is allocated. */
-	apr_pool_t *pool;
-	/** The application connection. */
-	wa_connection *conn;
-	/** The provider-specific configuration member for this application. */
-	void *conf;
-	/** The application name. */
-	char *name;
-	/** The application root URL path. */
-	char *rpth;
-	/** The local expanded application path (if any). */
-	char *lpth;
+struct wa_chain {
+    /** The pointer to the current element in the chain. */
+    void *curr;
+    /**
+     * The pointer to the next chain structure containing the next element
+     * or <b>NULL</b> if this is the last element in the chain. */
+    wa_chain *next;
 };
 
 /**
@@ -109,10 +82,9 @@ struct wa_application {
  * function is called before this function has been invoked will result in
  * impredictable results.
  *
- * @param w The Web Server structure used for callbacks.
  * @return <b>NULL</b> on success or an error message on faliure.
  */
-const char *WA_Init(wa_webserver *w);
+const char *wa_init(void);
 
 /**
  * Clean up the WebApp Library.
@@ -123,55 +95,50 @@ const char *WA_Init(wa_webserver *w);
  *
  * @return <b>NULL</b> on success or an error message on faliure.
  */
-const char *WA_Destroy(void);
+const char *wa_destroy(void);
 
 /**
- * Allocate and set up a <code>wa_connection</code> member.
+ * Deploy a web-application.
  *
- * @param c Where the pointer to where the <code>wa_connection</code> member
- *          must be stored.
- * @param p The connection provider name.
- * @param a The connection argument from a configuration file.
+ * @param a The <code>wa_application</code> member of the web-application to
+ *          deploy.
+ * @param h The <code>wa_virtualhost</code> member of the host under which the
+ *          web-application has to be deployed.
+ * @param c The <code>wa_connection</code> member of the connection used to
+ *          reach the application.
  * @return <b>NULL</b> on success or an error message on faliure.
  */
-const char *WA_Connect(wa_connection **c, const char *p, const char *a);
+const char *wa_deploy(wa_application *a,
+                      wa_virtualhost *h,
+                      wa_connection *c);
 
 /**
- * Allocate, set up and deploy a <code>wa_application</code> member.
+ * Dump some debugging information.
  *
- * @param a Where the pointer to where the <code>wa_application</code> member
- *          must be stored.
- * @param c The <code>wa_connection</code> where the application is deployed.
- * @param n The application name. This parameter will be passed to the
- *          application container as its unique selection key within its
- *          array of deployable applications (for example the .war file name).
- * @param p The root URL path of the web application to deploy.
- * @return <b>NULL</b> on success or an error message on faliure.
+ * @param f The file where this function was called.
+ * @param l The line number where this function was called.
+ * @param fmt The format string of the debug message (printf style).
+ * @param others The parameters to the format string.
  */
-const char *WA_Deploy(wa_application **a, wa_connection *c, const char *n,
-                      const char *p);
+void wa_debug(const char *f, const int l, const char *fmt, ...);
 
 /**
- * Attempt to match an URL against a web application.
- * This function will return <b>TRUE</b> only if the root URL path of the
- * application matches the beginning of the specified URL.
- *
- * @param u The request URL to be matched against the web application.
- * @param a The application against which the URL must be matched.
- * @return <b>TRUE</b> if the URL can be handled by the web application without
- *         raising a &quot;404 Not Found&quot; error, <b>FALSE</b> otherwise.
+ * The WebApp library memory pool.
  */
-boolean WA_Match(const char *u, wa_application *a);
+extern apr_pool_t *wa_pool;
 
 /**
- * The <code>wa_webserver</code> structure used for all callbacks while
- * processing an HTTP request.
+ * The configuration member of the library.
+ * <br>
+ * This list of <code>wa_chain</code> structure contain the configuration of
+ * the WebApp Library in the form of all deployed <code>wa_application</code>,
+ * <code>wa_virtualhost</code> and <code>wa_connection</code> structures.
+ * <br>
+ * The <code>curr</code> member in the <code>wa_chain</code> structure contains
+ * always a <code>wa_virtualhost</code> structure, from which all configured
+ * <code>wa_application</code> members and relative <code>wa_connection</code>
+ * members can be retrieved.
  */
-extern wa_webserver *WA_WebServer;
-
-/**
- * The APR memory pool used by the WebApp Library.
- */
-extern apr_pool_t *WA_Pool;
+extern wa_chain *wa_configuration;
 
 #endif /* ifndef _WA_MAIN_H_ */
