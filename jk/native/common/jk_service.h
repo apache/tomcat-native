@@ -91,6 +91,9 @@ struct jk_worker_env {
 
     /* Web-Server we're running on (Apache/IIS/NES) */
     char          		*server_name;
+    
+    /* Virtual server handled - "*" is all virtual */
+    char                *virtual;   
 };
 typedef struct jk_worker_env jk_worker_env_t;
 
