@@ -1,0 +1,114 @@
+# Gnu makefile and libtool are required
+# use -D options to overrides defaults
+CC=@CC@
+CP=@CP@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+APR_INCDIR=@APR_INCDIR@
+DOMINO_HOME=@DOMINO_HOME@
+OS=@OS@
+DOMINO_INCL=@DOMINO_INCL@
+EXTRA_CFLAGS=@APXS_CFLAGS@
+EXTRA_CPPFLAGS=@APXS_CPPFLAGS@
+JAVA_HOME=@JAVA_HOME@
+APR_INCL=@APR_CFLAGS@
+APR_LDFLAGS=@APR_LDFLAGS@ `@APR_DIR@/apr-config --ldflags --libs` `@APR_UTIL_DIR@/apu-config --ldflags --libs`
+
+ifneq ($(strip $(JAVA_HOME)),)
+JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
+JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
+endif
+
+JK_DIR := ../..
+BUILD_DIR = ${JK_DIR}/../build/jk2/dsapi
+
+top_builddir=../..
+LIBTOOL=@LIBTOOL@
+
+# It doesn't hurt if we include all
+INCLUDES= -I${JK_DIR}/include \
+          ${APR_INCL} \
+          ${DOMINO_INCL} \
+	  ${JAVA_INCL}
+
+JK_CFLAGS=-DCHUNK_SIZE=4096 @APR_CFLAGS@ -DHAVE_MMAP @HAVE_JNI@ @HAS_PCRE@
+JK_LDFLAGS=-lcrypt ${APR_LDFLAGS} @PCRE_LIBS@
+
+###### Based on rules.mk ##########################################
+ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)
+ALL_CPPFLAGS = $(DEFS) $(EXTRA_CPPFLAGS) $(NOTEST_CPPFLAGS) $(CPPFLAGS)
+ALL_LDFLAGS  = $(EXTRA_LDFLAGS) $(NOTEST_LDFLAGS) $(LDFLAGS)
+ALL_LIBS     = $(EXTRA_LIBS) $(NOTEST_LIBS) $(LIBS)
+ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
+
+# Compile commands
+COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
+
+SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
+MOD_LINK = $(LIBTOOL) --mode=link $(CC) -avoid-version -module -rpath ${DOMINO_HOME} $(LT_LDFLAGS) $(ALL_LDFLAGS)
+MOD_INSTALL = $(LIBTOOL) --mode=install $(CP)
+
+#############################################################################
+
+COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
+
+# ---------- File list creation -------------------- 
+# Same behavior as ant - 'all files from a dir'. 
+# Excludes are not yet implemented.
+#JNI_C_FILES := $(wildcard ${JK_DIR}/jni/*.c )
+DSAPI_C_FILES := $(wildcard ${JK_DIR}/server/dsapi/*.c )
+H_FILES := $(wildcard ${JK_DIR}/include/*.h )
+
+COMMON_LO_FILES := $(patsubst ${JK_DIR}/common/%, ${BUILD_DIR}/%, \
+			 $(patsubst %c, %lo, ${COMMON_C_FILES} ))
+#JNI_LO_FILES := $(patsubst ${JK_DIR}/jni/%, ${BUILD_DIR}/%, \
+#			 $(patsubst %c, %lo, ${JNI_C_FILES} ))
+DSAPI_LO_FILES := $(patsubst ${JK_DIR}/server/dsapi/%, ${BUILD_DIR}/%, \
+			 $(patsubst %c, %lo, ${DSAPI_C_FILES} ))
+
+
+# ---------- Compile rules --------------------
+
+.PHONY: all
+
+
+VPATH=.:../../common
+
+.c.lo:
+	 ${SH_COMPILE} -c $< -o $>
+
+${BUILD_DIR}/%.lo: ${JK_DIR}/common/%.c
+	 ${SH_COMPILE} -c $< -o $@
+
+#${BUILD_DIR}/%.lo: ${JK_DIR}/jni/%.c
+#	 ${SH_COMPILE} -c $< -o $@
+
+${BUILD_DIR}/%.lo: ${JK_DIR}/server/dsapi/%.c
+	 ${SH_COMPILE} -c $< -o $@
+
+
+# ---------- Targets -------------------- 
+
+#all: prepare ${BUILD_DIR}/libtomcat2.so ${BUILD_DIR}/libjkjni.so
+all: prepare ${BUILD_DIR}/libtomcat2.so
+
+${BUILD_DIR}/libtomcat2.la: ${COMMON_LO_FILES} ${DSAPI_LO_FILES}
+	${MOD_LINK} -o $@ $^ ${JK_LDFLAGS}
+
+${BUILD_DIR}/libtomcat2.so: ${BUILD_DIR}/libtomcat2.la
+	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}
+
+#${BUILD_DIR}/libjkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
+#	$(MOD_LINK) -o $@ $(JK_LDFLAGS) $^
+
+#${BUILD_DIR}/libjkjni.so: ${BUILD_DIR}/libjkjni.la
+#	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}
+
+${COMMON_C_FILES} ${DSAPI_C_FILES}: ${H_FILES}
+
+prepare: 
+	mkdir -p ${BUILD_DIR}
+
+clean: 
+	rm -rf ${BUILD_DIR}/*.lo ${BUILD_DIR}/*.la ${BUILD_DIR}/*.o ${BUILD_DIR}/.libs ${BUILD_DIR}/*.so
