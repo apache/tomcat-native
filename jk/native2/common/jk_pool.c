@@ -264,6 +264,7 @@ static void *jk2_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s)
         if(rc) {
             memcpy(rc, s, size);
         }
+        rc[size]='\0';
     }
 
     return rc;

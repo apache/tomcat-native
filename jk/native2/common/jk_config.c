@@ -247,7 +247,7 @@ static int jk2_config_setWorkerProperty( jk_env_t *env,
     if( w != NULL ) {
         /* If we have an object with that name, set the prop */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "Setting %s %s %s\n", objName, propName, val);
+                      "Setting %s %s=%s\n", objName, propName, val);
 
         if( w->setAttribute != NULL )
             return w->setAttribute( env, w, propName, val );

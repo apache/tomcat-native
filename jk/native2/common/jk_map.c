@@ -137,7 +137,6 @@ static int jk2_map_default_put(jk_env_t *env, jk_map_t *m,
         mPriv->names[mPriv->size] =  (char *)name; 
         */
         mPriv->names[mPriv->size] = m->pool->pstrdup(env,m->pool, name);
-        /* fprintf(stderr, "jk_map.set %s %s \n", name, value  ); */
         mPriv->size ++;
         rc = JK_TRUE;
     }

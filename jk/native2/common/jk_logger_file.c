@@ -150,6 +150,11 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
     char *value=valueP;
     if( strcmp( name, "name" )==0 ) {
         _this->name=(char *)value;
+    } else if( strcmp( name, "file" )==0 ) {
+        _this->name=(char *)value;
+        /* Set the file imediately */
+        jk2_logger_file_init(env, (jk_logger_t *)mbean->object );
+
     } else if( strcmp( name, "timeFormat" )==0 ) {
         jk2_logger_file_logFmt = value;
     } else if( strcmp( name, "level" )==0 ) {
@@ -164,25 +169,24 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
 
 static int jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
 {
-    FILE *f;
+    FILE *oldF=(FILE *)_this->logger_private;
+    FILE *f=NULL;
 
     if( _this->name==NULL )
         _this->name="mod_jk.log";
     
-    if( _this->level == 0 )
-        _this->level=JK_LOG_ERROR_LEVEL;
-    
-    if( jk2_logger_file_logFmt==NULL ) {
-        jk2_logger_file_logFmt = JK_TIME_FORMAT;
-    }
-
     f = fopen(_this->name, "a+");
     if(f==NULL) {
         _this->jkLog(env, _this,JK_LOG_ERROR,
                      "Can't open log file %s\n", _this->name );
         return JK_FALSE;
     }
+    _this->jkLog(env, _this,JK_LOG_ERROR,
+                 "Initilizing log file %s\n", _this->name );
     _this->logger_private = f;
+    if( oldF!=NULL ) {
+        fclose( oldF );
+    }
     return JK_TRUE;
 }
 
@@ -290,6 +294,8 @@ int jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool,
     l->init =jk2_logger_file_init;
     l->jkLog = jk2_logger_file_jkLog;
     l->level=JK_LOG_ERROR_LEVEL;
+    jk2_logger_file_logFmt = JK_TIME_FORMAT;
+    
 
     result->object=l;
     l->mbean=result;
