@@ -1542,6 +1542,7 @@ static int jk_handler(request_rec *r)
         jk_worker_t *worker = wc_get_worker_for_name(worker_name, l);
 
         if(worker) {
+            struct timeval tv_begin,tv_end;
             int rc = JK_FALSE;
             apache_private_data_t private_data;
             jk_ws_service_t s;
