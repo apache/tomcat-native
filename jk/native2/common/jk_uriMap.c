@@ -487,7 +487,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
         jk_uriEnv_t *hostEnv = jk2_uriMap_hostMap(env, uriMap, vhost, port);
         
         char *uri = uriEnv->uri;
-        jk_uriEnv_t *ctxEnv;
+        jk_uriEnv_t *ctxEnv = NULL;
 
         if (hostEnv == NULL)
             continue;
@@ -499,18 +499,29 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
         if (uri == NULL)
             continue;
         
-        ctxEnv = jk2_uriMap_prefixMap(env, uriMap, hostEnv->webapps, uri,
-                                      strlen(uri));
+        /* If the context was specified try to find the exact one */
+        if (uriEnv->contextPath != NULL)
+            ctxEnv = jk2_uriMap_exactMap(env, uriMap, hostEnv->webapps,
+                                         uriEnv->contextPath,
+                                         uriEnv->ctxt_len);
+        /* Next find by uri prefix */
+        if (ctxEnv == NULL)
+            ctxEnv = jk2_uriMap_prefixMap(env, uriMap, hostEnv->webapps, uri,
+                                          strlen(uri));
 
         if (ctxEnv == NULL) {
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
                            "uriMap.init() no context for %s\n", uri); 
             return JK_ERR;
         }
+
+        /* Correct the context path if needed */
         uriEnv->contextPath = ctxEnv->prefix;
         uriEnv->ctxt_len = ctxEnv->prefix_len;
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                           "uriMap.init() adding context %s for %s\n", ctxEnv->prefix, uri); 
+
+        if (uriMap->mbean->debug > 5) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "uriMap.init() adding context %s for %s\n", ctxEnv->prefix, uri); 
 
         switch (uriEnv->match_type) {
             case MATCH_TYPE_EXACT:
