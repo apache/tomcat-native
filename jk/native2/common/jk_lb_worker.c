@@ -67,6 +67,7 @@
 #include "jk_service.h"
 #include "jk_worker.h"
 #include "jk_logger.h"
+#include "jk_config.h"
 #include "jk_env.h"
 #include "jk_requtil.h"
 
@@ -76,10 +77,6 @@
 #define WAIT_BEFORE_RECOVER (60*1) 
 
 #define ADDITINAL_WAIT_LOAD (20)
-
-int JK_METHOD jk2_worker_lb_factory(jk_env_t *env, jk_pool_t *pool,
-                                   void **result,char *type, char *name);
-
 
 
 /* Find the biggest lb_value for all my workers.
@@ -119,7 +116,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *p,
        
     if(session_route) {
         for(i = 0 ; i < p->num_of_workers ; i++) {
-            if(0 == strcmp(session_route, p->lb_workers[i]->name)) {
+            if(0 == strcmp(session_route, p->lb_workers[i]->mbean->name)) {
                 if(attempt > 0 && p->lb_workers[i]->in_error_state) {
                    break;
                 } else {
@@ -192,9 +189,9 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         }
                 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "lb.service() try %s\n", rec->name );
+                      "lb.service() try %s\n", rec->mbean->name );
         
-        s->jvm_route = s->pool->pstrdup(env, s->pool,  rec->name);
+        s->jvm_route = s->pool->pstrdup(env, s->pool,  rec->mbean->name);
 
         rc = rec->service(env, rec, s);
 
@@ -236,9 +233,11 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
     return JK_FALSE;
 }
 
-static int JK_METHOD jk2_lb_setProperty(jk_env_t *env, jk_worker_t *_this,
-                                        char *name, char *value)
+static int JK_METHOD jk2_lb_setProperty(jk_env_t *env, jk_bean_t *mbean, 
+                                        char *name, void *valueP)
 {
+    jk_worker_t *_this=mbean->object;
+    char *value=valueP;
     int err;
     char **worker_names;
     unsigned num_of_workers;
@@ -248,8 +247,8 @@ static int JK_METHOD jk2_lb_setProperty(jk_env_t *env, jk_worker_t *_this,
     /* XXX Add one-by-one */
     
     if( strcmp( name, "balanced_workers") == 0 ) {
-        worker_names=jk2_map_split( env, NULL, _this->pool,
-                                    value, NULL, &num_of_workers );
+        worker_names=jk2_config_split( env,  _this->pool,
+                                       value, NULL, &num_of_workers );
         if( worker_names==NULL || num_of_workers==0 ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "lb_worker.validate(): no defined workers\n");
@@ -285,18 +284,14 @@ static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_worker_t *_this)
 
     for(i = 0 ; i < num_of_workers ; i++) {
         char *name = _this->lbWorkerMap->nameAt( env, _this->lbWorkerMap, i);
-        jk_worker_t *w= _this->workerEnv->getWorkerForName( env, _this->workerEnv, name );
+        jk_worker_t *w= env->getByName( env, name );
         if( w== NULL )
             continue;
         
         _this->lb_workers[currentWorker]=w;
-        
-        tmp=jk2_map_getStrProp( env, _this->workerEnv->initData, "worker", name, "lbfactor", NULL );
 
-        if( tmp==NULL ) 
+        if( _this->lb_workers[currentWorker]->lb_factor == 0 )
             _this->lb_workers[currentWorker]->lb_factor = DEFAULT_LB_FACTOR;
-        else 
-            _this->lb_workers[currentWorker]->lb_factor = atof( tmp );
         
         _this->lb_workers[currentWorker]->lb_factor =
             1/ _this->lb_workers[currentWorker]->lb_factor;
@@ -318,7 +313,7 @@ static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_worker_t *_this)
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "lb.validate() %s %d workers\n",
-                  _this->name, _this->num_of_workers );
+                  _this->mbean->name, _this->num_of_workers );
 
     return JK_TRUE;
 }
@@ -349,7 +344,7 @@ static int JK_METHOD jk2_lb_destroy(jk_env_t *env, jk_worker_t *w)
 
 
 int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
-                                   void **result, char *type, char *name)
+                                    jk_bean_t *result, char *type, char *name)
 {
     jk_worker_t *_this;
     
@@ -367,25 +362,20 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
         return JK_FALSE;
     }
 
-    _this->name=name;
     _this->pool=pool;
 
     _this->lb_workers = NULL;
     _this->num_of_workers = 0;
     _this->worker_private = NULL;
-    _this->setProperty    = jk2_lb_setProperty;
     _this->init           = jk2_lb_init;
     _this->destroy        = jk2_lb_destroy;
     _this->service        = jk2_lb_service;
    
     jk2_map_default_create(env,&_this->lbWorkerMap, _this->pool);
 
-    *result=_this;
-
-    /*     env->l->jkLog(env, env->l, JK_LOG_INFO, */
-    /*                   "lb_worker.factory() New lb worker\n"); */
-    
-    /* name, pool will be set by workerEnv ( our factory ) */
+    result->setAttribute    = jk2_lb_setProperty;
+    result->object=_this;
+    _this->mbean=result;
     
     return JK_TRUE;
 }
