@@ -74,7 +74,8 @@
 #define DEFAULT_LB_FACTOR           (1.0)
 
 /* Time to wait before retry... */
-#define WAIT_BEFORE_RECOVER (60*1) 
+/* XXX make it longer - debugging only */
+#define WAIT_BEFORE_RECOVER (5) 
 
 #define ADDITINAL_WAIT_LOAD (20)
 
@@ -132,21 +133,28 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
     /** Get one worker that is ready */
     for(i = 0 ; i < lb->num_of_workers ; i++) {
         if(lb->lb_workers[i]->in_error_state) {
-            if(!lb->lb_workers[i]->in_recovering) {
-                if( now==0 )
-                    now = time(NULL);
+            /* Check if it's ready for recovery */
+            /* if(!lb->lb_workers[i]->in_recovering) { */
+            if( now==0 )
+                now = time(NULL);
                 
-                if((now - lb->lb_workers[i]->error_time) > WAIT_BEFORE_RECOVER) {
-                    
-                    lb->lb_workers[i]->in_recovering  = JK_TRUE;
-                    lb->lb_workers[i]->error_time     = now;
-                    lb->lb_workers[i]->retry_count++;
-                    rc = lb->lb_workers[i];
+            if((now - lb->lb_workers[i]->error_time) > WAIT_BEFORE_RECOVER) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "lb.getWorker() timeout expired, reenable again %s\n", lb->
+                              lb_workers[i]->mbean->name);
+                
+                lb->lb_workers[i]->in_recovering  = JK_TRUE;
+                lb->lb_workers[i]->in_error_state=JK_FALSE;
+                /* lb->lb_workers[i]->error_time     = now; */
+                /* lb->lb_workers[i]->retry_count++; */
+                /* rc = lb->lb_workers[i]; */
 
-                    break;
-                }
+                /* Don't give bigger priority to recovered workers
+                   break;
+                */
             }
-        } else {
+        }
+        if( ! lb->lb_workers[i]->in_error_state ) {
             if(lb->lb_workers[i]->lb_value == 0 ) {
                 /* That's the 'default' worker, it'll take all requests.
                  * All other workers are not used unless this is in error state.
@@ -160,22 +168,25 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
             if(lb->lb_workers[i]->lb_value < lb_min ||
                ( rc==NULL ) ) {
                 lb_min = lb->lb_workers[i]->lb_value;
-                rc = lb->lb_workers[i];
+            rc = lb->lb_workers[i];
             }
-        }            
+        }
     }
-
+        
     if ( rc==NULL ) {
         /* no workers found (rc is null), now try as hard as possible to get a
            worker anyway, pick one with largest error time.. */
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "lb.getWorker() All workers in error state, use the one with oldest error\n");
+        
         for(i = 0 ; i < lb->num_of_workers ; i++) {
-            if(lb->lb_workers[i]->in_error_state) {
-                if(!lb->lb_workers[i]->in_recovering) {
+/*             if(lb->lb_workers[i]->in_error_state) { */
+/*                 if(!lb->lb_workers[i]->in_recovering) { */
                     /* if the retry count is zero, that means the worker only
                        failed once, this is to e that the failed worker will
                        not continue to be retried over and over again.
                     */
-                    if ( lb->lb_workers[i]->retry_count == 0 ) {
+/*                     if ( lb->lb_workers[i]->retry_count == 0 ) { */
                         if ( rc != NULL ) {
                             /* pick the oldest failed worker */
                             if ( lb->lb_workers[i]->error_time < rc->error_time ) {
@@ -184,24 +195,25 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                         } else {
                             rc = lb->lb_workers[i];
                         }
-                    }
-                }
-            } else {
-                /* This is a good worker - it may have come to life */
-                if(lb->lb_workers[i]->lb_value < lb_min || rc != NULL) {
-                    lb_min = lb->lb_workers[i]->lb_value;
-                    rc = lb->lb_workers[i];
-                    break;
-                }
-            }
+/*                     } */
+/*                 } */
+/*             } else { */
+                 /* This is a good worker - it may have come to life */ 
+/*                 if(lb->lb_workers[i]->lb_value < lb_min || rc != NULL) { */
+/*                     lb_min = lb->lb_workers[i]->lb_value; */
+/*                     rc = lb->lb_workers[i]; */
+/*                     break; */
+/*                 } */
+/*             } */
         }
-        
+    
         if ( rc  && rc->in_error_state ) {
-            if(now==0)
-                now = time(0);
+/*             if(now==0) */
+/*                 now = time(0); */
             rc->in_recovering  = JK_TRUE;
-            rc->error_time     = now;
-            rc->retry_count++;
+            rc->in_error_state  = JK_FALSE;
+/*             rc->error_time     = now; */
+/*             rc->retry_count++; */
         }
     }
     
@@ -299,9 +311,9 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
     s->realWorker=NULL;
 
     /* reset all the retry counts to 0. XXX may be a problem if we have many workers ? */
-    for(i = 0 ; i < lb->num_of_workers ; i++) {
-        lb->lb_workers[i]->retry_count = 0;
-    }
+/*     for(i = 0 ; i < lb->num_of_workers ; i++) { */
+/*         lb->lb_workers[i]->retry_count = 0; */
+/*     } */
 
     if( wEnv->shm != NULL && wEnv->shm->head != NULL ) {
         /* We have shm, let's check for updates. This is just checking one
@@ -344,8 +356,8 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "lb.service() try %s\n", rec->mbean->name );
         
-        s->jvm_route = s->pool->pstrdup(env, s->pool,  rec->mbean->name);
-
+        s->jvm_route =  rec->route;
+ 
         rec->reqCnt++;
         
         rc = rec->service(env, rec, s);
@@ -366,6 +378,8 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
             return JK_OK;
         }
         
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "lb.service() worker failed\n");
         /*
          * Service failed !!!
          *

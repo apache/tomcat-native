@@ -87,7 +87,7 @@
 /* -------------------- Impl -------------------- */
 static char *myAttInfo[]={ "lb_factor", "lb_value", "reqCnt", "errCnt",
                            "route", "errorState", "recovering",
-                           "epCount", NULL };
+                           "epCount", "errorTime", NULL };
 
 static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
     jk_worker_t *worker=(jk_worker_t *)bean->object;
@@ -99,6 +99,10 @@ static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *
             return worker->channelName;
     } else if (strcmp( name, "route" )==0 ) {
         return worker->route;
+    } else if (strcmp( name, "errorTime" )==0 ) {
+        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
+        sprintf( buf, "%d", worker->error_time );
+        return buf;
     } else if (strcmp( name, "lb_value" )==0 ) {
         char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
         sprintf( buf, "%f", worker->lb_value );
@@ -381,7 +385,7 @@ jk2_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.service() processing callbacks\n");
+                  "ajp14.service() processing callbacks %s\n", e->worker->channel->mbean->name);
 
     err = e->worker->workerEnv->processCallbacks(env, e->worker->workerEnv,
                                                  e, s);
@@ -506,10 +510,10 @@ jk2_worker_ajp14_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
     jk_worker_t *w;
     
     w= e->worker;
-
+    
     if( e->cPool != NULL ) 
         e->cPool->reset(env, e->cPool);
-    if (w->endpointCache != NULL ) {
+    if (! w->in_error_state && w->endpointCache != NULL ) {
         int err=0;
         err=w->endpointCache->put( env, w->endpointCache, e );
         if( err==JK_OK ) {
@@ -548,7 +552,8 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
 
         if (e!=NULL) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "ajp14.getEndpoint(): Reusing endpoint\n");
+                          "ajp14.getEndpoint(): Reusing endpoint %s %s\n",
+                          e->mbean->name, e->worker->mbean->name);
             *eP = e;
             return JK_OK;
         }
@@ -579,6 +584,9 @@ jk2_worker_ajp14_service(jk_env_t *env, jk_worker_t *w,
 
     err=jk2_worker_ajp14_service1( env, w, s, e );
 
+    if( err!=JK_OK ) {
+        w->in_error_state=JK_TRUE;
+    }
     jk2_worker_ajp14_done( env, w, e);
     return err;
 }
@@ -725,6 +733,7 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     w->service = jk2_worker_ajp14_service;
 
     result->setAttribute= jk2_worker_ajp14_setAttribute;
+    result->getAttributeInfo=myAttInfo;
     result->getAttribute= jk2_worker_ajp14_getAttribute;
     result->object = w;
     w->mbean=result;
@@ -732,7 +741,6 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     w->workerEnv=env->getByName( env, "workerEnv" );
     w->workerEnv->addWorker( env, w->workerEnv, w );
 
-    result->getAttributeInfo=myAttInfo;
     
     return JK_OK;
 }

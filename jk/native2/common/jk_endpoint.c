@@ -73,6 +73,8 @@
 #include "jk_objCache.h"
 #include "jk_registry.h"
 
+static char *myAttInfo[]={ "channel", "active", NULL };
+
 /** Will return endpoint specific runtime properties
  *
  *    uri          The uri that is beeing processed, NULL if the endpoing is inactive
@@ -83,6 +85,16 @@
  *    
  */
 static void * JK_METHOD jk2_endpoint_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
+    jk_endpoint_t *ep=(jk_endpoint_t *)bean->object;
+    
+    if( strcmp( name, "channel" )==0 ) {
+        return ep->worker->channel->mbean->name;
+    } else if (strcmp( name, "active" )==0 ) {
+        if( ep->currentRequest != NULL )
+            return ep->currentRequest->req_uri;
+    } else {
+        return NULL;
+    }
     return NULL;
 }
 
@@ -107,7 +119,8 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     e->request = jk2_msg_ajp_create( env, e->pool, 0);
     e->reply = jk2_msg_ajp_create( env, e->pool, 0);
     e->post = jk2_msg_ajp_create( env, e->pool, 0);
-    
+    result->getAttributeInfo=myAttInfo;
+    result->getAttribute= jk2_endpoint_getAttribute;
     e->reuse = JK_FALSE;
 
     e->cPool=endpointPool->create(env, endpointPool, HUGE_POOL_SIZE );

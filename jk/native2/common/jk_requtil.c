@@ -288,8 +288,8 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     default:
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "requtil.getHeaderId() long header %s\n", header_name);
+/*         env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+/*                       "requtil.getHeaderId() long header %s\n", header_name); */
 
         return JK_ERR;
     }

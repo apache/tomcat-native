@@ -379,6 +379,7 @@ static int jk2_msg_ajp_checkHeader(jk_env_t *env, jk_msg_t *msg,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "msgAjp.receive(): Bad signature %x%x\n",
                       head[0], head[1]);
+        msg->dump( env, msg, "BAD MESSAGE: " );
         return -1;
     }
 

@@ -426,8 +426,6 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
 #ifdef HAVE_UNIXSOCKETS
     unixsock=chD->unixsock;
 #endif
-    env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                  "jk2_channel_apr_send %d\n",chD->type);
 
     if (chD->type==TYPE_NET) {
         length = (apr_size_t) len;
@@ -443,10 +441,11 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
 #ifdef HAVE_UNIXSOCKETS
     while(sent < len) {
 /*         this_time = send(unixsock, (char *)b + sent , len - sent,  0); */
+        errno=0;
         this_time = write(unixsock, (char *)b + sent , len - sent);
             
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel.apr:send() send() %d %d %s\n", this_time, errno,
+                      "channel.apr:send() write() %d %d %s\n", this_time, errno,
                       strerror( errno));
 /*         if( errno != 0 ) { */
 /*             env->l->jkLog(env, env->l, JK_LOG_ERROR, */
@@ -551,7 +550,7 @@ static int JK_METHOD jk2_channel_apr_recv( jk_env_t *env, jk_channel_t *_this,
     blen=msg->checkHeader( env, msg, endpoint );
     if( blen < 0 ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelAprArp.receive(): Bad header\n" );
+                      "channelApr.receive(): Bad header\n" );
         return JK_ERR;
     }
     
@@ -559,7 +558,7 @@ static int JK_METHOD jk2_channel_apr_recv( jk_env_t *env, jk_channel_t *_this,
 
     if(rc < 0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-               "channelAprApr.receive(): Error receiving message body %d %d\n",
+               "channelApr.receive(): Error receiving message body %d %d\n",
                       rc, errno);
         return JK_ERR;
     }

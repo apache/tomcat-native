@@ -387,7 +387,8 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
         handler=NULL;
 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                        "ajp14.processCallbacks() Waiting reply\n");
+                        "ajp14.processCallbacks() Waiting reply %s\n",
+                      ep->worker->channel->mbean->name);
         msg->reset(env, msg);
         
         rc= ep->worker->channel->recv( env, ep->worker->channel,  ep,
@@ -399,7 +400,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
             return JK_ERR;
         }
 
-        ep->reply->dump(env, ep->reply, "Received ");  
+        /*  ep->reply->dump(env, ep->reply, "Received ");   */
         code = (int)msg->getByte(env, msg);
         rc=jk2_workerEnv_dispatch( env, wEnv, req, ep, code, msg );
 
