@@ -165,6 +165,8 @@ public class JkMX extends JkHandler
             try {
                 jrmpServerName = registerObject("mx4j.tools.naming.NamingService",
                                                 "Naming:name=rmiregistry");
+				mserver.setAttribute(jrmpServerName, new Attribute("Port", 
+				                                     new Integer(jrmpport)));
                 mserver.invoke(jrmpServerName, "start", null, null);
                 log.info( "Creating " + jrmpServerName );
 
