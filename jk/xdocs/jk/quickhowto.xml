@@ -99,9 +99,9 @@
 <read>JkOptions     +ForwardKeySize +ForwardURICompat -ForwardDirectories</read>
 <note># JkRequestLogFormat set the request format </note>
 <read>JkRequestLogFormat     "%w %V %T"</read>
-<note># Send servlet for context /examples to worker named worker1</note>
+<note># Send servlet for context /examples to worker named worker2 (ajp13)</note>
 <read>JkMount  /examples/servlet/* worker2</read>
-<note># Send JSPs  for context /examples to worker named worker1</note>
+<note># Send JSPs  for context /examples to worker named worker2 (ajp13)</note>
 <read>JkMount  /examples/*.jsp worker2</read>
 </screen>
 </p>
