@@ -97,6 +97,7 @@ import java.util.*;
  *  embeding application can then set up or change the logging details,
  *  without any action from the log user.
  *
+ * @deprecated Commons-logging should be used instead.
  * @author Alex Chaffee [alex@jguru.com]
  * @author Costin Manolache
  **/
