@@ -21,12 +21,12 @@ APXS=/usr/sbin/apxs2
 SRCS=${JK}/jk_ajp12_worker.c ${JK}/jk_connect.c ${JK}/jk_msg_buff.c ${JK}/jk_util.c ${JK}/jk_ajp13.c \
      ${JK}/jk_jni_worker.c ${JK}/jk_pool.c ${JK}/jk_worker.c ${JK}/jk_ajp13_worker.c ${JK}/jk_lb_worker.c \
      ${JK}/jk_sockbuf.c  ${JK}/jk_map.c ${JK}/jk_uri_worker_map.c ${JK}/jk_ajp14.c ${JK}/jk_ajp14_worker.c \
-     ${JK}/jk_md5.c
+     ${JK}/jk_md5.c ${JK}/jk_context.c
 
 LSRCS=jk_ajp12_worker.c jk_connect.c jk_msg_buff.c jk_util.c jk_ajp13.c \
       jk_jni_worker.c jk_pool.c jk_worker.c jk_ajp13_worker.c jk_lb_worker.c \
       jk_sockbuf.c  jk_map.c jk_uri_worker_map.c jk_ajp14.c jk_ajp14_worker.c \
-      jk_md5.c
+      jk_md5.c jk_context.c
 
 all: mod_jk.so
 
