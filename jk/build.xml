@@ -25,6 +25,7 @@
 	       optimize="off"
 	       verbose="off"
 	       excludes="**/CVS/**">
+	    <exclude name="org/apache/ajp/tomcat4/**" if="tomcat4.skip"/>
 	</javac>
 
 	<!-- Copy static resource files -->
