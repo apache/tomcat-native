@@ -13,7 +13,7 @@ JK=../common/
 JK_INCL=-I ${JK} -DUSE_APACHE_MD5
 JAVA_INCL=-I${JAVA_HOME}/include -I${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L${JAVA_HOME}/jre/lib/${ARCH} -L${JAVA_HOME}/lib/${ARCH}/native_threads
-CFLAGS=-DHAVE_CONFIG_H -g -fpic  -DSHARED_MODULE -O2 -D_REENTRANT -pthread -DLINUX -Wall
+CFLAGS=-DHAVE_CONFIG_H -g -fpic  -DSHARED_MODULE -O2 -D_REENTRANT -pthread -DLINUX
 
 SRCS=jk_ajp12_worker.c jk_connect.c jk_msg_buff.c jk_util.c jk_ajp13.c \
      jk_jni_worker.c jk_pool.c jk_worker.c jk_ajp13_worker.c jk_lb_worker.c \

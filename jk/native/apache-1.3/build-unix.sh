@@ -23,7 +23,7 @@ fi
 # name of subdir under JAVA_HOME/jre/lib
 ARCH=i386
 
-CFLAGS="-DHAVE_CONFIG_H -g -fpic  -DSHARED_MODULE -O2 -D_REENTRANT -pthread -DLINUX -Wall"
+CFLAGS="-DHAVE_CONFIG_H -g -fpic  -DSHARED_MODULE -O2 -D_REENTRANT -pthread -DLINUX"
 
 APXS=$APACHE_HOME/bin/apxs
 

@@ -1,7 +1,7 @@
 # Defines for example NSAPI programs running under SOLARIS
 
 CC_CMD=gcc -DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX \
-	-DMCC_HTTPD -DSPAPI20 -Wall \
+	-DMCC_HTTPD -DSPAPI20 \
 	-fPIC
 LD_SHAREDCMD=ld -G -fPIC
 

@@ -7,7 +7,7 @@ JNI_OBJECTS=jk_jnicb${OEXT} ${COMMON_OBJECTS}
 
 
 JAVA_INCL=-I @JAVA_HOME@/include -I @JAVA_HOME@/include/@OS@ -I../common
-CFLAGS=@apache_include@ @CFLAGS@ ${JAVA_INCL} -D_REENTRANT -Wall
+CFLAGS=@apache_include@ @CFLAGS@ ${JAVA_INCL} -D_REENTRANT 
 
 include ../scripts/build/rules.mk
 
