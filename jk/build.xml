@@ -453,6 +453,7 @@
         <exclude name="**/*.samples"/>
         <exclude name="**/*.xsl"/>
         <exclude name="**/*.idx"/>
+        <exclude name="**/*.idx.in"/>
         <exclude name="**/images/originals/**"/>
       </fileset>
     </copy>
