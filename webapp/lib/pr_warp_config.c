@@ -37,7 +37,7 @@
  *                                                                           *
  * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES *
  * INCLUDING, BUT NOT LIMITED TO,  THE IMPLIED WARRANTIES OF MERCHANTABILITY *
-2 * THE APACHE  SOFTWARE  FOUNDATION OR  ITS CONTRIBUTORS  BE LIABLE  FOR ANY *
+ * THE APACHE  SOFTWARE  FOUNDATION OR  ITS CONTRIBUTORS  BE LIABLE  FOR ANY *
  * DIRECT,  INDIRECT,   INCIDENTAL,  SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL *
  * DAMAGES (INCLUDING,  BUT NOT LIMITED TO,  PROCUREMENT OF SUBSTITUTE GOODS *
  * OR SERVICES;  LOSS OF USE,  DATA,  OR PROFITS;  OR BUSINESS INTERRUPTION) *
@@ -72,7 +72,7 @@ wa_boolean n_check(wa_connection *conn, warp_packet *pack) {
         wa_log(WA_MARK,"Invalid WARP packet %d (WELCOME)",pack->type);
         return(wa_false);
     }
-        
+
     if (p_read_ushort(pack,&maj)!=wa_true) {
         wa_log(WA_MARK,"Cannot read major version");
         return(wa_false);
