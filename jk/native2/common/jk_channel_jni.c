@@ -101,30 +101,25 @@ typedef struct {
 
 int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
                                       void **result,
-					                  const char *type, const char *name);
+                                      const char *type, const char *name);
 
+
+static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
+                                                   jk_channel_t *_this, 
+                                                   char *name, char *value)
+{
+    return JK_TRUE;
+}
 
 static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
-                                          jk_channel_t *_this, 
-                                          jk_map_t *props,
-                                          char *worker_name, 
-                                          jk_worker_t *worker )
+                                          jk_channel_t *_this)
 {
-    int err;
-    char *tmp;
-
     /* the channel is init-ed during a worker validation. If a jni worker
        is not already defined... well, not good. But on open we should
        have it.
     */
-    
-    
-    _this->worker=worker;
-    _this->properties=props;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_jni.init():  %s\n", 
-                  worker->name );
+    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.init():  %s\n", 
+                  _this->worker->name );
 
     return JK_TRUE;
 }
@@ -611,7 +606,8 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env,
     }
     _this=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
-    _this->recv= jk2_channel_jni_recv; 
+    _this->recv= jk2_channel_jni_recv;
+    _this->setProperty= jk2_channel_jni_setProperty; 
     _this->send= jk2_channel_jni_send; 
     _this->init= jk2_channel_jni_init; 
     _this->open= jk2_channel_jni_open; 

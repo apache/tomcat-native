@@ -144,10 +144,10 @@ static int JK_METHOD jk2_channel_socket_setProperty(jk_env_t *env,
     jk_channel_socket_private_t *socketInfo=
         (jk_channel_socket_private_t *)(_this->_privatePtr);
 
-    if( strcmp( "host", name ) != 0 ) {
+    if( strcmp( "host", name ) == 0 ) {
         socketInfo->host=value;
-    } else if( strcmp( "defaultPort", name ) != 0 ) {
-    } else if( strcmp( "port", name ) != 0 ) {
+    } else if( strcmp( "port", name ) == 0 ) {
+        socketInfo->port=atoi( value );
     } else {
         return JK_FALSE;
     }
@@ -157,42 +157,30 @@ static int JK_METHOD jk2_channel_socket_setProperty(jk_env_t *env,
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
 static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
-                                            jk_channel_t *_this, 
-                                            jk_map_t *props,
-                                            char *worker_name, 
-                                            jk_worker_t *worker )
+                                             jk_channel_t *_this)
 {
-    int err;
     jk_channel_socket_private_t *socketInfo=
         (jk_channel_socket_private_t *)(_this->_privatePtr);
+    int rc;
     char *host=socketInfo->host;
     short port=socketInfo->port;
-    jk_workerEnv_t *workerEnv=worker->workerEnv;
-    char *tmp;
     
-    host = jk2_map_getStrProp( env, props,
-                              "worker", worker_name, "host", host);
-    tmp = jk2_map_getStrProp( env, props,
-                             "worker", worker_name, "port", NULL );
-    if( tmp != NULL )
-        port=jk2_map_str2int( env, tmp);
-
-    _this->worker=worker;
-    _this->properties=props;
+    if( port<=0 )
+        port=8007;
 
     if( host==NULL )
         host=DEFAULT_HOST;
-    
-    err=jk2_channel_socket_resolve( env, host, port, socketInfo );
-    if( err!= JK_TRUE ) {
+
+    rc=jk2_channel_socket_resolve( env, host, port, socketInfo );
+    if( rc!= JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk2_channel_socket_init: "
                       "can't resolve %s:%d errno=%d\n", host, port, errno );
     }
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "channel_socket.init(): %s:%d for %s\n", host,
-                  port, worker->name );
+                  port, _this->worker->name );
 
-    return err;
+    return rc;
 }
 
 /** private: resolve the address on init
@@ -557,17 +545,10 @@ int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
     _this->init= jk2_channel_socket_init; 
     _this->open= jk2_channel_socket_open; 
     _this->close= jk2_channel_socket_close; 
-    _this->getProperty= jk2_channel_socket_getProperty; 
+    /*     _this->getProperty= jk2_channel_socket_getProperty;  */
     _this->setProperty= jk2_channel_socket_setProperty; 
 
-    _this->supportedProperties=( char ** )pool->alloc( env, pool,
-                                                       4 * sizeof( char * ));
-    _this->supportedProperties[0]="host";
-    _this->supportedProperties[1]="port";
-    _this->supportedProperties[2]="defaultPort";
-    _this->supportedProperties[3]="\0";
-
-    _this->name="file";
+    _this->name="aprSocket";
 
     *result= _this;
     _this->is_stream=JK_TRUE;
