@@ -83,12 +83,12 @@
 
 /* -------------------- Impl -------------------- */
 static char *jk2_worker_ajp13_getAttributeInfo[]={ "lb_factor", "lb_value", "debug", "channel", "level",
-                                                   "route", "errorState", "graceful", "groups",
+                                                   "route", "errorState", "graceful", "groups", "disabled", 
                                                    "epCount", "errorTime", NULL };
 
 static char *jk2_worker_ajp13_multiValueInfo[]={"group", NULL };
 
-static char *jk2_worker_ajp13_setAttributeInfo[]={"debug", "channel", "route", "secretkey", "group", "graceful",
+static char *jk2_worker_ajp13_setAttributeInfo[]={"debug", "channel", "route", "secretkey", "group", "graceful", "disabled", 
                                                   "lb_factor", "level", NULL };
 
 
@@ -118,7 +118,9 @@ static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *
     } else if (strcmp( name, "errorState" )==0 ) {
         return jk2_env_itoa( env, worker->in_error_state );
     } else if (strcmp( name, "graceful" )==0 ) {
-        return jk2_env_itoa( env, worker->mbean->disabled );
+        return jk2_env_itoa( env, worker->graceful );
+    } else if (strcmp( name, "disabled" )==0 ) {
+        return jk2_env_itoa( env, bean->disabled );
     } else if (strcmp( name, "epCount" )==0 ) {
         if( worker->endpointCache==NULL ) return "0";
         return jk2_env_itoa( env, worker->endpointCache->count );
@@ -145,10 +147,9 @@ jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
     } else if( strcmp( name, "route" )==0 ) {
         ajp13->route=value;
     } else if( strcmp( name, "graceful" )==0 ) {
-        if( strcmp( value, "0") )
-            ajp13->mbean->disabled=0;
-        else 
-            ajp13->mbean->disabled=1;
+        ajp13->graceful=atoi( value );
+    } else if( strcmp( name, "disabled" )==0 ) {
+        mbean->disabled=atoi( value );
     } else if( strcmp( name, "group" )==0 ) {
         ajp13->groups->add( env, ajp13->groups, value, ajp13 );
     } else if( strcmp( name, "lb_factor" )==0 ) {
@@ -871,6 +872,7 @@ int JK_METHOD jk2_worker_ajp13_factory( jk_env_t *env, jk_pool_t *pool,
     w->secret= NULL;
 
     w->lb_factor=1;
+    w->graceful=0;
     w->service = jk2_worker_ajp13_service;
 
     result->setAttribute= jk2_worker_ajp13_setAttribute;
