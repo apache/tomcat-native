@@ -93,6 +93,8 @@ import org.apache.jk.core.*;
 /** Accept ( and send ) TCP messages.
  *
  * @author Costin Manolache
+ * @jmx:mbean name="jk2:service=ChannelSocket"
+ *            description="Accept socket connections"
  */
 public class ChannelSocket extends JkHandler {
     private static org.apache.commons.logging.Log log=
@@ -118,6 +120,12 @@ public class ChannelSocket extends JkHandler {
 
     /* ==================== Tcp socket options ==================== */
 
+    /**
+     * @jmx:managed-constructor description="default constructor"
+     */
+    public ChannelSocket() {
+    }
+    
     public ThreadPool getThreadPool() {
         return tp;
     }
@@ -128,6 +136,8 @@ public class ChannelSocket extends JkHandler {
      *  used. We'll also provide the 'difference' to the main coyote
      *  handler - that will be our 'sessionID' and the position in
      *  the scoreboard and the suffix for the unix domain socket.
+     *
+     * @jmx:managed-attribute description="Port to listen" access="READ_WRITE"
      */
     public void setPort( int port ) {
         this.startPort=port;
@@ -135,16 +145,29 @@ public class ChannelSocket extends JkHandler {
         this.maxPort=port+10;
     }
 
+    public int getPort() {
+        return port;
+    }
+
     public void setAddress(InetAddress inet) {
         this.inet=inet;
     }
 
+    /**
+     * @jmx:managed-attribute description="Bind on a specified address" access="READ_WRITE"
+     */
     public void setAddress(String inet) {
         try {
             this.inet= InetAddress.getByName( inet );
         } catch( Exception ex ) {
             ex.printStackTrace();
         }
+    }
+
+    public String getAddress() {
+        if( inet!=null)
+            return inet.toString();
+        return null;
     }
 
     /**
@@ -206,6 +229,9 @@ public class ChannelSocket extends JkHandler {
         ep.setNote( osNote, os );
     }
 
+    /**
+     * @jmx:managed-operation
+     */
     public void init() throws IOException {
         // Find a port.
         if( maxPort<startPort) maxPort=startPort;
@@ -462,7 +488,6 @@ public class ChannelSocket extends JkHandler {
             }
         }
     }
-
 
     public int invoke( Msg msg, MsgContext ep ) throws IOException {
         int type=ep.getType();
