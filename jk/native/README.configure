@@ -49,6 +49,7 @@
   (2.0 and 1.3)
 * --with-apache=DIR
   DIR is the path where apache sources are located.
+  The apache sources should have been configured before configuring mod_jk.
   DIR is something like: /home/apache/apache_1.3.19
   It builds a static Apache module.
   --enable-EAPI
