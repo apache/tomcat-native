@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 /**
  * Per classloader LogManager implementation.
  */
-public final class ClassLoaderLogManager extends LogManager {
+public class ClassLoaderLogManager extends LogManager {
 
 
     // -------------------------------------------------------------- Variables
@@ -49,14 +49,14 @@ public final class ClassLoaderLogManager extends LogManager {
      * weak hashmap is used to ensure no classloader reference is leaked from 
      * application redeployment.
      */
-    private final Map classLoaderLoggers = new WeakHashMap();
+    protected final Map classLoaderLoggers = new WeakHashMap();
 
     
     /**
      * This prefix is used to allow using prefixes for the properties names
      * of handlers and their subcomponents.
      */
-    private ThreadLocal prefix = new ThreadLocal();
+    protected ThreadLocal prefix = new ThreadLocal();
 
     
     // --------------------------------------------------------- Public Methods
@@ -251,7 +251,7 @@ public final class ClassLoaderLogManager extends LogManager {
     }
     
 
-    // -------------------------------------------------------- Private Methods
+    // ------------------------------------------------------ Protected Methods
 
 
     /**
@@ -261,7 +261,7 @@ public final class ClassLoaderLogManager extends LogManager {
      * @param classLoader The classloader for which we will retrieve or build the 
      *                    configuration
      */
-    private ClassLoaderLogInfo getClassLoaderInfo(final ClassLoader classLoader) {
+    protected ClassLoaderLogInfo getClassLoaderInfo(final ClassLoader classLoader) {
         
         ClassLoaderLogInfo info = (ClassLoaderLogInfo) classLoaderLoggers
                 .get(classLoader);
@@ -368,7 +368,7 @@ public final class ClassLoaderLogManager extends LogManager {
      * @param logger
      * @param parent
      */
-    private static void doSetParentLogger(final Logger logger,
+    protected static void doSetParentLogger(final Logger logger,
             final Logger parent) {
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
@@ -382,12 +382,12 @@ public final class ClassLoaderLogManager extends LogManager {
     // ---------------------------------------------------- LogNode Inner Class
 
 
-    private static final class LogNode {
+    protected static final class LogNode {
         Logger logger;
 
-        private final Map children = new HashMap();
+        protected final Map children = new HashMap();
 
-        private final LogNode parent;
+        protected final LogNode parent;
 
         LogNode(final LogNode parent, final Logger logger) {
             this.parent = parent;
@@ -450,7 +450,7 @@ public final class ClassLoaderLogManager extends LogManager {
     // -------------------------------------------- ClassLoaderInfo Inner Class
 
 
-    private static final class ClassLoaderLogInfo {
+    protected static final class ClassLoaderLogInfo {
         final LogNode rootNode;
         final Map loggers = new HashMap();
         final Map handlers = new HashMap();
@@ -470,7 +470,7 @@ public final class ClassLoaderLogManager extends LogManager {
      * This class is needed to instantiate the root of each per classloader 
      * hierarchy.
      */
-    private class RootLogger extends Logger {
+    protected class RootLogger extends Logger {
         public RootLogger() {
             super("", null);
         }
