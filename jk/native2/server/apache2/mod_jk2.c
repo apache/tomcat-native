@@ -69,6 +69,7 @@
 
 #include "jk_apache2.h"
 #include "scoreboard.h"
+#include "ap_mpm.h"
 
 #include "util_script.h"
 
@@ -248,6 +249,8 @@ static void *jk2_merge_dir_config(apr_pool_t *p, void *childv, void *parentv)
         if( child->mbean->debug > -1 ) {
             fprintf(stderr, "mod_jk2:mergeDirConfig() Merged dir config %#lx %s %s %s %s\n",
                     child, child->uri, parent->uri, child->workerName, parent->workerName);
+            fprintf(stderr, "mod_jk2:mergeDirConfig() Merged dir config %#lx %s %s %s %s\n",
+                    child, child->uri, parent->uri, child->workerName, parent->workerName);
         }
     }
 
@@ -311,7 +314,6 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating workerEnv\n");
         return;
     }
-
     workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
                               workerEnv->pool->pstrdup( env, workerEnv->pool, ap_server_root));
     env->l->jkLog(env, env->l, JK_LOG_INFO, "Set serverRoot %s\n", ap_server_root);
@@ -329,16 +331,19 @@ static void *jk2_create_config(apr_pool_t *p, server_rec *s)
 {
     jk_uriEnv_t *newUri;
     jk_bean_t *jkb;
-
+    
     if(  workerEnv==NULL ) {
         jk2_create_workerEnv(p, s );
     }
-    if( s->is_virtual == 1 ) {
+    if( s->is_virtual ) {
         /* Virtual host */
-        fprintf( stderr, "Create config for virtual host\n");
+        ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
+                      "mod_jk Create config for virtual host %s\n",
+                      s->server_hostname );
     } else {
-        /* Default host */
-        /*  fprintf( stderr, "Create config for main host\n");         */
+        ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
+                      "mod_jk Create config for default server %s\n",
+                      s->server_hostname );
     }
 
     jkb = workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
@@ -363,7 +368,9 @@ static void *jk2_merge_config(apr_pool_t *p,
     jk_uriEnv_t *base = (jk_uriEnv_t *) basev;
     jk_uriEnv_t *overrides = (jk_uriEnv_t *)overridesv;
     
-    fprintf(stderr,  "Merging workerEnv \n" );
+    ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
+                  "mod_jk Merging workerEnv\n");
+
     
     /* The 'mountcopy' option should be implemented in common.
      */
@@ -375,6 +382,9 @@ static apr_status_t jk2_shutdown(void *data)
     jk_env_t *env;
     if (workerEnv) {
         env=workerEnv->globalEnv;
+
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "mod_jk2 Shutting down\n");
         workerEnv->close(env, workerEnv);
         workerEnv = NULL;
     }
@@ -394,6 +404,10 @@ static apr_status_t jk2_shutdown(void *data)
 static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
                        jk_workerEnv_t *workerEnv, server_rec *s )
 {
+    /* Ugly hack to get the childId - the index used in the scoreboard,
+       which we'll use in the jk scoreboard
+    */
+
     workerEnv->init(env, workerEnv );
     workerEnv->server_name   = (char *)ap_get_server_version();
     /* Should be done in post config instead (cf DAV2) */
@@ -459,7 +473,12 @@ static int jk2_post_config(apr_pool_t *pconf,
     rc=jk2_apache2_isValidating( plog, &gPool );
 
     env->setAprPool(env, gPool);
-    
+
+    if (!ap_exists_scoreboard_image()) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+            "jk2_postconfig() No scoreboard image %d\n", getpid());
+    }
+
     if( rc == JK_OK && gPool != NULL ) {
         /* This is the first step */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -471,6 +490,7 @@ static int jk2_post_config(apr_pool_t *pconf,
         
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "mod_jk.post_config() second invocation\n" ); 
+
 
     workerEnv->parentInit( env, workerEnv);
 
@@ -488,6 +508,7 @@ static int jk2_post_config(apr_pool_t *pconf,
 static void jk2_child_init(apr_pool_t *pconf, 
                            server_rec *s)
 {
+    apr_proc_t proc;    
     jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
         ap_get_module_config(s->module_config, &jk2_module);
     jk_env_t *env;
@@ -496,15 +517,70 @@ static void jk2_child_init(apr_pool_t *pconf,
         workerEnv = serverEnv->workerEnv;
 
     env=workerEnv->globalEnv;
+    
+    if (!workerEnv->childProcessId)
+        workerEnv->childProcessId = getpid();
 
-    if(!workerEnv->was_initialized) {
+    proc.pid = workerEnv->childProcessId;
+
+    /* detect if scoreboard exists
+    */
+    if (!ap_exists_scoreboard_image()) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+            "jk2_init() Scoreboard image does not exists %d\n", proc.pid);
+        workerEnv->childId=-2;
+    }
+    else
+        workerEnv->childId = find_child_by_pid(&proc);
+    /* Avoid looking again
+    *  and fix the mpm_winnt reporting 0 daemons.
+    */
+    if (workerEnv->childId == -1) {
+        int max_daemons_limit;
+        ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &max_daemons_limit);
+
+        if (max_daemons_limit == 0) {
+            workerEnv->childId = 0;    
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                "jk2_init() Found child %d in scoreboard slot %d\n",
+                proc.pid, workerEnv->childId);
+        }
+        else {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                "jk2_init() Can't find child %d in scoreboard\n",
+                proc.pid);
+            workerEnv->childId = -2;
+        }
+    } else {
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+            "jk2_init() Found child %d in scoreboard slot %d\n",
+            proc.pid, workerEnv->childId);
+    }
+    /* If the child slot was found in the scoreboard, increment the
+     * generation status. This will prevent initializing jk2 if something
+     * goes wrong.
+     */
+    if (workerEnv->childId >= 0) {
+        workerEnv->childGeneration = ap_scoreboard_image->parent[workerEnv->childId].generation;
+        ++ap_scoreboard_image->parent[workerEnv->childId].generation;
+    }
+
+    if(!workerEnv->was_initialized && !workerEnv->childGeneration) {
         workerEnv->was_initialized = JK_TRUE;        
         
         jk2_init( env, pconf, workerEnv, s );
 
         if( workerEnv->childId <= 0 ) 
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init %d %d\n",
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, "mod_jk child init %d %d\n",
                           workerEnv->was_initialized, workerEnv->childId );
+    }
+    if (workerEnv->childGeneration)
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "mod_jk child workerEnv in error state %d\n",
+                      workerEnv->childGeneration);
+
+    /* Restore the process generation */
+    if (workerEnv->childId >= 0) {
+        ap_scoreboard_image->parent[workerEnv->childId].generation = workerEnv->childGeneration;
     }
     
 }
@@ -633,12 +709,13 @@ static int jk2_translate(request_rec *r)
     if(r->proxyreq || workerEnv==NULL) {
         return DECLINED;
     }
-    
+
+
     uriEnv=ap_get_module_config( r->per_dir_config, &jk2_module );
     
     /* get_env() */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
-        
+
     /* This has been mapped to a location by apache
      * In a previous ( experimental ) version we had a sub-map,
      * but that's too complex for now.
@@ -750,7 +827,8 @@ static void jk2_register_hooks(apr_pool_t *p)
 {
     ap_hook_handler(jk2_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(jk2_post_config,NULL,NULL,APR_HOOK_MIDDLE);
-    ap_hook_child_init(jk2_child_init,NULL,NULL,APR_HOOK_MIDDLE);
+    /* Force the mpm to run before us and set the scoreboard image */
+    ap_hook_child_init(jk2_child_init,NULL,NULL,APR_HOOK_LAST);
     ap_hook_translate_name(jk2_translate,NULL,NULL,APR_HOOK_FIRST);
     ap_hook_map_to_storage(jk2_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
 }
