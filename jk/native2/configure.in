@@ -118,6 +118,8 @@ AC_PATH_PROG(MKDIR,mkdir,$PATH)dnl
 AC_SUBST(MKDIR)
 
 dnl APXS settings
+APR_LIBDIR_LA=""
+AC_SUBST(APR_LIBDIR_LA)
 
 JK_APXS([], [location of apxs for Apache 1.3])
 JK_APXS([2], [location of apxs for Apache 2.0])

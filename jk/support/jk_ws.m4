@@ -114,6 +114,25 @@ AC_DEFUN(
 	      $2_INCL="-I${tempval}/src/include -I${withval}/src/${osdir}"
               $2_INCDIR="${tempval}/src/include"
 	    fi
+	    if ${TEST} -d ${tempval}/srclib/apr ; then
+	      # Apache 2 contains apr.
+	      if ${TEST} ! -f ${tempval}/srclib/apr/config.status ; then
+                AC_MSG_ERROR(configure Apache2 before mod_jk2)
+	      fi
+	      osdir=`${GREP} @OSDIR@ ${tempval}/srclib/apr/config.status | sed 's:s,@OSDIR@,::' | sed 's:,;t t::'`
+	      $2_INCL="-I${tempval}/include -I${withval}/os/${osdir}"
+	      $2_LIBEXEC=`${GREP} "^exp_libexecdir =" ${tempval}/build/config_vars.mk | sed 's:exp_libexecdir = ::'`
+	      LIBTOOL=${tempval}/srclib/apr/libtool
+	      APR_INCDIR=-I${tempval}/srclib/apr/include
+	      APR_CFLAGS=`${tempval}/srclib/apr/apr-config --cflags`
+	      APR_UTIL_INCDIR=-I${tempval}/srclib/apr-util/include
+	      APR_LIBDIR_LA=`${tempval}/srclib/apr/apr-config --apr-la-file`
+
+	      AC_SUBST(APR_INCDIR)
+	      AC_SUBST(APR_CFLAGS)
+	      AC_SUBST(APR_INCDIR)
+	      AC_SUBST(APR_UTIL_INCDIR)
+	    fi
             $2_LDFLAGS=""
             $2_LIBDIR=""
 	    WEBSERVERS="${WEBSERVERS} $4"
