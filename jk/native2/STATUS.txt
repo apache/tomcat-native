@@ -3,7 +3,8 @@ Last modified at [$Date$]
 
 Release:
 
-    2.0.1   : in progress
+    2.0.2   : in progress
+    2.0.1   : released October 6, 2002 
     2.0.0   : released September 30, 2002 
     
 RELEASE SHOWSTOPPERS:
@@ -17,6 +18,6 @@ RELEASE NON-SHOWSTOPPERS BUT WOULD BE REAL NICE TO WRAP THESE UP:
       will allow asynchronous communication, and will be used for various
       management messages.
 
-STUFF FOR 2.0.1:
+STUFF FOR 2.1:
 
     * Use the APR for as a System abstraction layer through the code.
