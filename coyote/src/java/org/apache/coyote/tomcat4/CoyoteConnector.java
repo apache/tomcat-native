@@ -1259,10 +1259,8 @@ public final class CoyoteConnector
                 (CoyoteServerSocketFactory) factory;
             IntrospectionUtils.setProperty(protocolHandler, "algorithm",
                                            ssf.getAlgorithm());
-            if (ssf.getClientAuth()) {
-                IntrospectionUtils.setProperty(protocolHandler, "clientauth",
-                                               "" + ssf.getClientAuth());
-            }
+	    IntrospectionUtils.setProperty(protocolHandler, "clientauth",
+                                           ssf.getClientAuth());
             IntrospectionUtils.setProperty(protocolHandler, "keystore",
                                            ssf.getKeystoreFile());
             IntrospectionUtils.setProperty(protocolHandler, "randomfile",
