@@ -335,6 +335,7 @@ int 	ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 
 int 	ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg, 
 											  jk_context_t *context, 
+                                              char         *cname,
 											  jk_logger_t *l);
 
 int 	ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg, 

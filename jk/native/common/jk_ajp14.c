@@ -399,72 +399,80 @@ int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
  * The Autoconf feature of AJP14, let us know which URL/URI could
  * be handled by the servlet-engine
  *
- * +---------------------------+---------------------------------+----------------------------+-------------------------------+
- * | CONTEXT INFO CMD (1 byte) | VIRTUAL HOST NAME (CString (*)) | CONTEXT NAME (CString (*)) | URL1 [\n] URL2 [\n] URL3 [\n] |
- * +---------------------------+---------------------------------+----------------------------+-------------------------------+
- *
+ * +---------------------------+---------------------------------+----------------------------+-------------------------------+-----------+
+ * | CONTEXT INFO CMD (1 byte) | VIRTUAL HOST NAME (CString (*)) | CONTEXT NAME (CString (*)) | URL1 [\n] URL2 [\n] URL3 [\n] | NEXT CTX. |
+ * +---------------------------+---------------------------------+----------------------------+-------------------------------+-----------+
  */
 
 int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
-								 jk_context_t *context,
+								 jk_context_t *c,
                                  jk_logger_t  *l)
 {
-    char *sname;
-	/* char *old; unused */
+    char *vname;
+    char *cname;
+    char *uri;
 	int	 i;
 
-    sname  = (char *)jk_b_get_string(msg);
+    vname  = (char *)jk_b_get_string(msg);
 
-    if (! sname) {
+    if (! vname) {
         jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get virtual hostname\n");
         return JK_FALSE;
     }
 
-    if (context->virtual)         /* take care of removing previously allocated data */
-        free(context->virtual);
-
-    context->virtual = strdup(sname);
-
-    if (! context->virtual) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't malloc virtual hostname\n");
-        return JK_FALSE;
+    /* Check if we get the correct virtual host */
+    if (strcmp(c->virtual, vname)) {
+        /* set the virtual name, better to add to a virtual list ? */
+        
+        if (context_set_virtual(c, vname) == JK_FALSE) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't malloc virtual hostname\n");
+            return JK_FALSE;
+        }
     }
 
-    sname  = (char *)jk_b_get_string(msg); 
+    for (;;) {
+    
+        cname  = (char *)jk_b_get_string(msg); 
 
-    if (! sname) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get context\n");
-        return JK_FALSE;
-    }   
+        if (! cname) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get context\n");
+            return JK_FALSE;
+        }   
 
-    if (context->cbase)       /* take care of removing previously allocated data */
-        free(context->cbase);
+        /* grab all contexts up to empty one which indicate end of contexts */
+        if (! strlen(cname)) 
+            break;
 
-    context->cbase = strdup(sname);
- 
-    if (! context->cbase) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't malloc context\n");
-        return JK_FALSE;
-    }
+        /* create new context base (if needed) */
 
-	for (i = 1;; i++) {
+        if (context_add_base(c, cname) == JK_FALSE) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't add/set context %s\n", cname);
+            return JK_FALSE;
+        }
 
-		sname  = (char *)jk_b_get_string(msg);
+	    for (;;) {
 
-		if (!sname) {
-			jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get URL\n");
-			return JK_FALSE;
-		}
+            uri  = (char *)jk_b_get_string(msg);
 
-		if (! strlen(sname)) {
-			jk_log(l, JK_LOG_INFO, "No more URI/URL (%d)", i);
-			break;
-		}
+		    if (!uri) {
+                jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get URI\n");
+                return JK_FALSE;
+		    }
 
-		jk_log(l, JK_LOG_INFO, "Got URL (%s) for virtualhost %s and base context %s", sname, context->virtual, context->cbase);
-		context_add_uri(context, sname);
+		    if (! strlen(uri)) {
+			    jk_log(l, JK_LOG_DEBUG, "No more URI/URL for context %s", cname);
+			    break;
+		    }
+
+		    jk_log(l, JK_LOG_INFO, "Got URL/URI (%s) for virtualhost %s and context %s", uri, vname, cname);
+
+		    if (context_add_uri(c, cname, uri) == JK_FALSE) {
+                jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't add/set uri (%s) for context %s\n", uri, cname);
+                return JK_FALSE;
+            } 
+	    }
 	}
-	
+
     return JK_TRUE;
 }
 
@@ -472,16 +480,23 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 /*
  * Build the Context State Query Cmd
  *
- * +----------------------------+----------------------------------+----------------------------+
- * | CONTEXT STATE CMD (1 byte) |  VIRTUAL HOST NAME (CString (*)) | CONTEXT NAME (CString (*)) |
- * +----------------------------+----------------------------------+----------------------------+
+ * We send the list of contexts where we want to know state, empty string end context list*
+ * If cname is set, only ask about THIS context
+ *
+ * +----------------------------+----------------------------------+----------------------------+----+
+ * | CONTEXT STATE CMD (1 byte) |  VIRTUAL HOST NAME (CString (*)) | CONTEXT NAME (CString (*)) | .. |
+ * +----------------------------+----------------------------------+----------------------------+----+
  *
  */
 
 int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
-                                          jk_context_t *context,
+                                          jk_context_t *c,
+                                          char         *cname,
                                           jk_logger_t  *l)
 {
+    jk_context_item_t *ci;
+    int                i;
+
     jk_log(l, JK_LOG_DEBUG, "Into ajp14_marshal_context_state_into_msgb\n");
 
     /* To be on the safe side */
@@ -496,19 +511,50 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
     /*
      * VIRTUAL HOST CSTRING
      */
-     if (jk_b_append_string(msg, context->virtual)) {
+     if (jk_b_append_string(msg, c->virtual)) {
         jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb - Error appending the virtual host string\n");
         return JK_FALSE;
     }
     
-    /*
-     * CONTEXT CSTRING
-     */
-     if (jk_b_append_string(msg, context->cbase)) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb - Error appending the context string\n");
+    if (cname) {
+
+        ci = context_find_base(c, cname);
+
+        if (! ci) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb - unknow context %s\n", cname);
+            return JK_FALSE;
+        }
+
+        /*
+         * CONTEXT CSTRING
+         */
+
+        if (jk_b_append_string(msg, c->contexts[i]->cbase )) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb - Error appending the context string\n");
+            return JK_FALSE;
+        }
+    }
+    else { /* Grab all contexts name */
+
+        for (i = 0; i < c->size; i++) {
+        
+            /*
+             * CONTEXT CSTRING
+             */
+            if (jk_b_append_string(msg, c->contexts[i]->cbase )) {
+                jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb - Error appending the context string\n");
+                return JK_FALSE;
+            }
+        }
+    }
+
+    /* End of context list, an empty string */ 
+
+    if (jk_b_append_string(msg, "")) {
+        jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb - Error appending end of contexts\n");
         return JK_FALSE;
     }
-    
+
     return JK_TRUE;
 }
 
@@ -516,53 +562,62 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
 /*
  * Decode the Context State Reply Cmd
  *
- * +----------------------------------+---------------------------------+----------------------------+------------------+
- * | CONTEXT STATE REPLY CMD (1 byte) | VIRTUAL HOST NAME (CString (*)) | CONTEXT NAME (CString (*)) | UP/DOWN (1 byte) |
- * +----------------------------------+---------------------------------+----------------------------+------------------+
+ * We get update of contexts list, empty string end context list*
+ *
+ * +----------------------------------+---------------------------------+----------------------------+------------------+----+
+ * | CONTEXT STATE REPLY CMD (1 byte) | VIRTUAL HOST NAME (CString (*)) | CONTEXT NAME (CString (*)) | UP/DOWN (1 byte) | .. |
+ * +----------------------------------+---------------------------------+----------------------------+------------------+----+
  *
  */
 
 int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
-										jk_context_t *context,
+										jk_context_t *c,
                            				jk_logger_t  *l)
 {
-    char *sname;
+    char                *vname;
+    char                *cname;
+    jk_context_item_t   *ci;
 
-	sname  = (char *)jk_b_get_string(msg);
+    /* get virtual name */
+	vname  = (char *)jk_b_get_string(msg);
 
-    if (! sname) {
+    if (! vname) {
         jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - can't get virtual hostname\n");
         return JK_FALSE;
     }
 
-    if (context->virtual)         /* take care of removing previously allocated data */
-        free(context->virtual);
-
-    context->virtual = strdup(sname);
-
-    if (! context->virtual) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - can't malloc virtual hostname\n");
+    /* Check if we speak about the correct virtual */
+    if (strcmp(c->virtual, vname)) {
+        jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - incorrect virtual %s instead of %s\n",
+               vname, c->virtual);
         return JK_FALSE;
     }
+ 
+    for (;;) {
 
-	sname  = (char *)jk_b_get_string(msg);
+        /* get context name */
+	    cname  = (char *)jk_b_get_string(msg);
 
-	if (! sname) {
-		jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - can't get context\n");
-		return JK_FALSE;
-	}	
+	    if (! cname) {
+		    jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - can't get context\n");
+		    return JK_FALSE;
+	    }	
 
-	if (context->cbase)		/* take care of removing previously allocated data */
-		free(context->cbase);
+        if (! strlen(cname))
+            break;
 
-	context->cbase = strdup(sname);
+        ci = context_find_base(c, cname);
 
-	if (! context->cbase) {
-		jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - can't malloc context\n");
-		return JK_FALSE;
-	}
+        if (! ci) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - unknow context %s for virtual %s\n", 
+                   cname, vname);
+            return JK_FALSE;
+        }
 
-	context->status = jk_b_get_int(msg);
+	    ci->status = jk_b_get_int(msg);
+
+        jk_log(l, JK_LOG_DEBUG, "ajp14_unmarshal_context_state_reply - updated context %s to state %d\n", cname, ci->status);
+    }
 
     return JK_TRUE;
 }
@@ -577,9 +632,9 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
  */
 
 int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg,
-                                       jk_context_t *context,
+                                       jk_context_t *c,
                                        jk_logger_t  *l)
 {
-	return (ajp14_unmarshal_context_state_reply(msg, context, l));
+	return (ajp14_unmarshal_context_state_reply(msg, c, l));
 }
 
