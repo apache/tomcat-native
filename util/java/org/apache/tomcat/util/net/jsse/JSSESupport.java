@@ -66,8 +66,6 @@ import java.util.Vector;
 import java.security.cert.CertificateFactory;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.HandshakeCompletedListener;
-import javax.net.ssl.HandshakeCompletedEvent;
 import java.security.cert.CertificateFactory;
 import javax.security.cert.X509Certificate;
 
@@ -87,7 +85,7 @@ import javax.security.cert.X509Certificate;
 
 class JSSESupport implements SSLSupport {
 
-    private SSLSocket ssl;
+    protected SSLSocket ssl;
 
 
     JSSESupport(SSLSocket sock){
@@ -103,12 +101,12 @@ class JSSESupport implements SSLSupport {
     }
 
     public Object[] getPeerCertificateChain() 
-	throws IOException {
-	return getPeerCertificateChain(false);
+        throws IOException {
+        return getPeerCertificateChain(false);
     }
 
     public Object[] getPeerCertificateChain(boolean force)
-	throws IOException {
+        throws IOException {
         // Look up the current SSLSession
         SSLSession session = ssl.getSession();
         if (session == null)
@@ -118,25 +116,21 @@ class JSSESupport implements SSLSupport {
         X509Certificate jsseCerts[] = null;
         java.security.cert.X509Certificate x509Certs[] = null;
         try {
-	    try {
-		jsseCerts = session.getPeerCertificateChain();
-	    } catch(Exception bex) {
-		// ignore.
-	    }
+            try {
+                jsseCerts = session.getPeerCertificateChain();
+            } catch(Exception bex) {
+                // ignore.
+            }
             if (jsseCerts == null)
                 jsseCerts = new X509Certificate[0];
-	    if(jsseCerts.length <= 0 && force) {
-		session.invalidate();
-		ssl.setNeedClientAuth(true);
-		ssl.startHandshake();
-		if ("1.4".equals(System.getProperty("java.specification.version"))) {
-		    synchronousHandshake(ssl);
-		}
-		session = ssl.getSession();
-		jsseCerts = session.getPeerCertificateChain();
-		if(jsseCerts == null)
-		    jsseCerts = new X509Certificate[0];
-	    }
+            if(jsseCerts.length <= 0 && force) {
+                session.invalidate();
+                handShake();
+                session = ssl.getSession();
+                jsseCerts = session.getPeerCertificateChain();
+                if(jsseCerts == null)
+                    jsseCerts = new X509Certificate[0];
+            }
             x509Certs =
               new java.security.cert.X509Certificate[jsseCerts.length];
             for (int i = 0; i < x509Certs.length; i++) {
@@ -148,8 +142,8 @@ class JSSESupport implements SSLSupport {
                 x509Certs[i] = (java.security.cert.X509Certificate)
                   cf.generateCertificate(stream);
             }
-	} catch (Throwable t) {
-	    return null;
+        } catch (Throwable t) {
+            return null;
         }
 
         if ((x509Certs == null) || (x509Certs.length < 1))
@@ -158,6 +152,10 @@ class JSSESupport implements SSLSupport {
         return x509Certs;
     }
 
+    protected void handShake() throws IOException {
+        ssl.setNeedClientAuth(true);
+        ssl.startHandshake();
+    }
     /**
      * Copied from <code>org.apache.catalina.valves.CertificateValve</code>
      */
@@ -204,44 +202,6 @@ class JSSESupport implements SSLSupport {
         return buf.toString();
     }
 
-    /**
-     * JSSE in JDK 1.4 has an issue/feature that requires us to do a
-     * read() to get the client-cert.  As suggested by Andreas
-     * Sterbenz
-     */
-    private static void synchronousHandshake(SSLSocket socket) 
-        throws IOException {
-        InputStream in = socket.getInputStream();
-        int oldTimeout = socket.getSoTimeout();
-        socket.setSoTimeout(100);
-        Listener listener = new Listener();
-        socket.addHandshakeCompletedListener(listener);
-        byte[] b = new byte[0];
-        socket.startHandshake();
-        int maxTries = 50; // 50 * 100 = example 5 second rehandshake timeout
-        for (int i = 0; i < maxTries; i++) {
-            try {
-                int x = in.read(b);
-            } catch (IOException e) {
-                // ignore - presumably the timeout
-            }
-            if (listener.completed) {
-                break;
-            }
-        }
-        socket.removeHandshakeCompletedListener(listener);
-        socket.setSoTimeout(oldTimeout);
-        if (listener.completed == false) {
-            throw new SocketException("SSL Cert handshake timeout");
-        }
-    }
-
-    private static class Listener implements HandshakeCompletedListener {
-        volatile boolean completed = false;
-        public void handshakeCompleted(HandshakeCompletedEvent event) {
-            completed = true;
-        }
-    }
 
 }
 

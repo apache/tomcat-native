@@ -59,83 +59,96 @@
 
 package org.apache.tomcat.util.net.jsse;
 
-import org.apache.tomcat.util.compat.JdkCompat;
-import org.apache.tomcat.util.net.SSLImplementation;
 import org.apache.tomcat.util.net.SSLSupport;
-import org.apache.tomcat.util.net.ServerSocketFactory;
 import java.io.*;
 import java.net.*;
-import java.lang.reflect.Constructor;
+import java.util.Vector;
+import java.security.cert.CertificateFactory;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.HandshakeCompletedEvent;
+import java.security.cert.CertificateFactory;
+import javax.security.cert.X509Certificate;
 
-/* JSSEImplementation:
+/* JSSESupport
 
    Concrete implementation class for JSSE
+   Support classes.
+
+   This will only work with JDK 1.2 and up since it
+   depends on JDK 1.2's certificate support
 
    @author EKR
+   @author Craig R. McClanahan
+   Parts cribbed from JSSECertCompat       
+   Parts cribbed from CertificatesValve
 */
-        
-public class JSSEImplementation extends SSLImplementation
-{
-    static final String JSSE14SocketFactory = 
-        "org.apache.tomcat.util.net.jsse.JSSE14SocketFactory";
-    static final String JSSE14Support = 
-        "org.apache.tomcat.util.net.jsse.JSSE14Support";
 
-    static org.apache.commons.logging.Log logger = 
-        org.apache.commons.logging.LogFactory.getLog(JSSEImplementation.class);
+class JSSE14Support extends JSSESupport {
 
-    public JSSEImplementation() throws ClassNotFoundException {
-        // Check to see if JSSE is floating around somewhere
-        Class.forName("javax.net.ssl.SSLServerSocketFactory");
+    private static org.apache.commons.logging.Log logger =
+        org.apache.commons.logging.LogFactory.getLog(JSSE14Support.class);
+
+    Listener listener = new Listener();
+
+    public JSSE14Support(SSLSocket sock){
+        super(sock);
+        sock.addHandshakeCompletedListener(listener);
     }
 
-
-    public String getImplementationName(){
-      return "JSSE";
+    protected void handShake() throws IOException {
+        ssl.setNeedClientAuth(true);
+        synchronousHandshake(ssl);
     }
-      
-    public ServerSocketFactory getServerSocketFactory()
-    {
-        ServerSocketFactory ssf = null;
-        if( JdkCompat.isJava14() ) {
+
+    /**
+     * JSSE in JDK 1.4 has an issue/feature that requires us to do a
+     * read() to get the client-cert.  As suggested by Andreas
+     * Sterbenz
+     */
+    private  void synchronousHandshake(SSLSocket socket) 
+        throws IOException {
+        InputStream in = socket.getInputStream();
+        int oldTimeout = socket.getSoTimeout();
+        socket.setSoTimeout(100);
+        byte[] b = new byte[0];
+        listener.reset();
+        socket.startHandshake();
+        int maxTries = 50; // 50 * 100 = example 5 second rehandshake timeout
+        for (int i = 0; i < maxTries; i++) {
             try {
-                Class ssfCl = Class.forName(JSSE14SocketFactory);
-                ssf =(ServerSocketFactory)ssfCl.newInstance();
-            } catch(Exception ex) {
-                if(logger.isDebugEnabled())
-                    logger.debug("Error finding " + JSSE14SocketFactory, ex);
-                ssf = new JSSESocketFactory();
+                int x = in.read(b);
+            } catch(SSLException sslex) {
+                logger.info("SSL Error getting client Certs",sslex);
+                throw sslex;
+            } catch (IOException e) {
+                // ignore - presumably the timeout
             }
-        } else {
-            ssf = new JSSESocketFactory();
-        }
-        return ssf;
-    } 
-
-    public SSLSupport getSSLSupport(Socket s)
-    {
-        SSLSupport ssls = null;
-        if( JdkCompat.isJava14() ) {
-            try {
-                Class sslsCl = Class.forName(JSSE14Support);
-                Class [] cparams = new Class[1];
-                cparams[0] = SSLSocket.class;
-                Constructor sslc = sslsCl.getConstructor(cparams);
-                Object [] params = new Object[1];
-                params[0] = s;
-                ssls = (SSLSupport)sslc.newInstance(params);
-            } catch(Exception ex) {
-                if(logger.isDebugEnabled())
-                    logger.debug("Unable to get " + JSSE14Support, ex);
-                ssls = new JSSESupport((SSLSocket)s);
+            if (listener.completed) {
+                break;
             }
-        } else {
-            ssls = new JSSESupport((SSLSocket)s);
         }
-        return ssls;
+        socket.setSoTimeout(oldTimeout);
+        if (listener.completed == false) {
+            throw new SocketException("SSL Cert handshake timeout");
+        }
     }
 
+    private static class Listener implements HandshakeCompletedListener {
+        volatile boolean completed = false;
+        public void handshakeCompleted(HandshakeCompletedEvent event) {
+            completed = true;
+            if(logger.isTraceEnabled()) 
+                logger.trace("SSL handshake done : Socket = " +
+                             event.getSocket() );
 
+        }
+        void reset() {
+            completed = false;
+        }
+    }
 
 }
+
