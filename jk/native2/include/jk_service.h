@@ -83,6 +83,7 @@ extern "C"
 #define SC_M_MERGE              (unsigned char)25
 #define SC_M_BASELINE_CONTROL   (unsigned char)26
 #define SC_M_MKACTIVITY         (unsigned char)27
+#define SC_M_JK_STORED          (unsigned char)0xFF
 
 
 /*

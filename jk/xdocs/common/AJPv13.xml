@@ -418,6 +418,10 @@ The HTTP method, encoded as a single byte:
 </table>
 </p>
 
+<p>Later version of ajp13, when used with mod_jk2, will transport 
+additional methods, even if they are not in this list.
+</p>
+
 </subsection>
 
 <subsection  name="protocol, req_uri, remote_addr, remote_host, server_name, server_port, is_ssl">

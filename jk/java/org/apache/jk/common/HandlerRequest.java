@@ -108,6 +108,7 @@ public class HandlerRequest extends JkHandler
     public static final byte SC_A_SSL_SESSION   = 9;
     public static final byte SC_A_SSL_KEYSIZE   = 11;
     public static final byte SC_A_SECRET        = 12;
+    public static final byte SC_A_STORED_METHOD = 13;
 
     // Used for attributes which are not in the list above
     public static final byte SC_A_REQ_ATTRIBUTE = 10; 
@@ -145,6 +146,7 @@ public class HandlerRequest extends JkHandler
         "BASELINE-CONTROL",
         "MKACTIVITY"
     };
+    public static final int SC_M_JK_STORED = (byte) 0xFF;
     
     // id's for common request headers
     public static final int SC_REQ_ACCEPT          = 1;
@@ -461,9 +463,10 @@ public class HandlerRequest extends JkHandler
         
         // Translate the HTTP method code to a String.
         byte methodCode = msg.getByte();
-        String mName=methodTransArray[(int)methodCode - 1];
-
-        req.method().setString(mName);
+        if (methodCode != SC_M_JK_STORED) {
+            String mName=methodTransArray[(int)methodCode - 1];
+            req.method().setString(mName);
+        }
 
         msg.getBytes(req.protocol()); 
         msg.getBytes(req.requestURI());
@@ -603,6 +606,11 @@ public class HandlerRequest extends JkHandler
                 // endpoint note
                 ep.setNote( secretNote, secret );
                 break;
+                
+            case SC_A_STORED_METHOD:
+                msg.getBytes(req.method()); 
+                break;
+                
             default:
                 break; // ignore, we don't know about it - backward compat
             }

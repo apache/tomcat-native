@@ -90,6 +90,7 @@ public class RequestHandler extends AjpHandler
     public static final byte SC_A_SSL_SESSION   = 9;
     public static final byte SC_A_SSL_KEY_SIZE  = 11; // ajp14 originally, now in ajp13 with jk 1.2/2.0
     public static final byte SC_A_SECRET        = 12;
+    public static final byte SC_A_STORED_METHOD = 13;
 
     // Used for attributes which are not in the list above
     public static final byte SC_A_REQ_ATTRIBUTE = 10; 
@@ -127,6 +128,8 @@ public class RequestHandler extends AjpHandler
         "BASELINE-CONTROL",
         "MKACTIVITY"
     };
+    public static final int SC_M_JK_STORED = (byte) 0xFF;
+
     
     // id's for common request headers
     public static final int SC_REQ_ACCEPT          = 1;
@@ -254,7 +257,8 @@ public class RequestHandler extends AjpHandler
 
         // Translate the HTTP method code to a String.
         byte methodCode = msg.getByte();
-        req.method().setString(methodTransArray[(int)methodCode - 1]);
+        if (methodCode != SC_M_JK_STORED)
+          req.method().setString(methodTransArray[(int)methodCode - 1]);
 
         msg.getMessageBytes(req.protocol()); 
         msg.getMessageBytes(req.requestURI());
@@ -402,6 +406,11 @@ public class RequestHandler extends AjpHandler
 		req.setAttribute("javax.servlet.request.key_size",
 				 Integer.toString(msg.getInt()));
 		break;
+    
+        case SC_A_STORED_METHOD:
+                req.method().setString(msg.getString());
+                break;
+    
 	    default:
                 // Ignore. Assume a single-string value - we shouldn't
                 // allow anything else.

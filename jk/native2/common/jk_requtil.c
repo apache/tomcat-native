@@ -67,6 +67,7 @@ static const char *response_trans_headers[] = {
 /* only in if JkOptions +ForwardKeySize */
 #define SC_A_SSL_KEY_SIZE       (unsigned char)11
 #define SC_A_SECRET             (unsigned char)12
+#define SC_A_STORED_METHOD      (unsigned char)13
 #define SC_A_ARE_DONE           (unsigned char)0xFF
 
 /*
@@ -189,7 +190,7 @@ int jk2_requtil_getMethodId(jk_env_t *env, const char *method,
         *sc = SC_M_MKACTIVITY;
     }
     else {
-        rc = JK_ERR;
+		*sc = SC_M_JK_STORED;
     }
 
     return rc;
@@ -551,7 +552,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     rc = jk2_requtil_getMethodId(env, s->method, &method);
     if (rc != JK_OK) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "Error ajp_marshal_into_msgb - No such method %s\n",
+                      "Error ajp_marshal_into_msgb - method %s\n",
                       s->method);
         return JK_ERR;
     }
@@ -697,6 +698,15 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
         }
     }
 
+    /* If the method was unrecognized, encode it as an attribute */
+	if (method == SC_M_JK_STORED) {
+		if (msg->appendByte(env, msg, SC_A_STORED_METHOD) ||
+            msg->appendString(env, msg, s->method)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                         "handle.request() Error encoding method %s\n",
+                         s->method);
+		}
+	}
 
     if (s->attributes->size(env, s->attributes) > 0) {
         for (i = 0; i < s->attributes->size(env, s->attributes); i++) {
