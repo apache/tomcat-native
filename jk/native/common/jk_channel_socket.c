@@ -73,6 +73,7 @@
 #include "jk_env.h"
 #include "jk_channel.h"
 #include "jk_global.h"
+#include "jk_util.h"
 
 #include <string.h>
 
@@ -107,17 +108,17 @@ typedef struct jk_channel_socket_private jk_channel_socket_private_t;
 
 int JK_METHOD jk_channel_socket_factory(jk_env_t *env, void **result,
 					char *type, char *name);
-static int jk_channel_socket_resolve(char *host, short port,
+static int JK_METHOD jk_channel_socket_resolve(char *host, short port,
 				     struct sockaddr_in *rc);
 
-static int jk_channel_socket_getProperty(jk_channel_t *_this, 
+static int JK_METHOD jk_channel_socket_getProperty(jk_channel_t *_this, 
 					 char *name, char **value)
 {
     return JK_FALSE;
 }
 
-static int jk_channel_socket_setProperty(jk_channel_t *_this, 
-					 char *name, char *value)
+static int JK_METHOD jk_channel_socket_setProperty(jk_channel_t *_this, 
+                                                   char *name, char *value)
 {
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(_this->_privatePtr);
@@ -134,11 +135,11 @@ static int jk_channel_socket_setProperty(jk_channel_t *_this,
 
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
-static int jk_channel_socket_init(jk_channel_t *_this, 
-				  jk_map_t *props,
-				  char *worker_name, 
-				  jk_worker_t *worker, 
-				  jk_logger_t *l )
+static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this, 
+                                            jk_map_t *props,
+                                            char *worker_name, 
+                                            jk_worker_t *worker, 
+                                            jk_logger_t *l )
 {
     int err=jk_log(l, JK_LOG_DEBUG, "Into jk_channel_socket_init\n");
     jk_channel_socket_private_t *socketInfo=
@@ -168,8 +169,8 @@ static int jk_channel_socket_init(jk_channel_t *_this,
 
 /** private: resolve the address on init
  */
-static int jk_channel_socket_resolve(char *host, short port,
-				     struct sockaddr_in *rc)
+static int JK_METHOD jk_channel_socket_resolve(char *host, short port,
+                                               struct sockaddr_in *rc)
 {
     int x;
     u_long laddr;
@@ -203,7 +204,8 @@ static int jk_channel_socket_resolve(char *host, short port,
 
 /** connect to Tomcat (jk_open_socket)
  */
-static int jk_channel_socket_open(jk_channel_t *_this, jk_endpoint_t *endpoint)
+static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
+                                            jk_endpoint_t *endpoint)
 {
     jk_logger_t *l=_this->logger;
     int err=jk_log(l, JK_LOG_DEBUG, "Into jk_channel_socket_open\n");
@@ -273,7 +275,8 @@ static int jk_channel_socket_open(jk_channel_t *_this, jk_endpoint_t *endpoint)
 
 /** close the socket  ( was: jk_close_socket )
 */
-int jk_channel_socket_close(jk_channel_t *_this, jk_endpoint_t *endpoint)
+int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
+                                      jk_endpoint_t *endpoint)
 {
     int sd;
     jk_channel_socket_data_t *chD=endpoint->channelData;
@@ -304,9 +307,10 @@ int jk_channel_socket_close(jk_channel_t *_this, jk_endpoint_t *endpoint)
  *             protocol.
  * @was: jk_tcp_socket_sendfull
  */
-static int jk_channel_socket_send(jk_channel_t *_this,
+static int JK_METHOD jk_channel_socket_send(jk_channel_t *_this,
 				  jk_endpoint_t *endpoint,
-				  char *b, int len) 
+				  char *b,
+                                  int len) 
 {
     int sd;
     int  sent=0;
@@ -340,9 +344,9 @@ static int jk_channel_socket_send(jk_channel_t *_this,
  *            >0: length of the received data.
  * Was: tcp_socket_recvfull
  */
-static int jk_channel_socket_recv( jk_channel_t *_this,
-				   jk_endpoint_t *endpoint,
-				   char *b, int len ) 
+static int JK_METHOD jk_channel_socket_recv( jk_channel_t *_this,
+                                             jk_endpoint_t *endpoint,
+                                             char *b, int len ) 
 {
     jk_channel_socket_data_t *chD=endpoint->channelData;
     int sd;
@@ -380,8 +384,10 @@ static int jk_channel_socket_recv( jk_channel_t *_this,
 
 
 
-int JK_METHOD jk_channel_socket_factory(jk_env_t *env, void **result,
-					char *type, char *name)
+int JK_METHOD jk_channel_socket_factory(jk_env_t *env,
+                                        void **result,
+					char *type,
+                                        char *name)
 {
     jk_channel_t *channel;
     

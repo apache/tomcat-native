@@ -63,13 +63,13 @@ jk_env_t *jk_env_singleton;
 /* Private methods 
 */
 static jk_env_initEnv( jk_env_t *env, char *id );
-static jk_env_objectFactory_t *jk_env_getFactory(jk_env_t *env, 
-						 char *type,
-						 char *name );
-static void jk_env_registerFactory(jk_env_t *env, 
-				   char *type,
-				   char *name, 
-				   jk_env_objectFactory_t fact);
+static jk_env_objectFactory_t * JK_METHOD jk_env_getFactory(jk_env_t *env, 
+                                                            char *type,
+                                                            char *name );
+static void JK_METHOD jk_env_registerFactory(jk_env_t *env, 
+                                             char *type,
+                                             char *name, 
+                                             jk_env_objectFactory_t fact);
 
 /* XXX We should have one env per thread to avoid sync problems. 
    The env will provide access to pools, etc 
@@ -88,16 +88,16 @@ jk_env_t* JK_METHOD jk_env_getEnv( char *id ) {
 static jk_env_initEnv( jk_env_t *env, char *id ) {
   /*   env->logger=NULL; */
   /*   map_alloc( & env->properties ); */
-  env->getFactory= (void *)jk_env_getFactory; 
-  env->registerFactory= (void *)jk_env_registerFactory; 
+  env->getFactory= jk_env_getFactory; 
+  env->registerFactory= jk_env_registerFactory; 
   map_alloc( & env->_registry);
   jk_registry_init(env);
 
 }
 
-static jk_env_objectFactory_t *jk_env_getFactory(jk_env_t *env, 
-						 char *type,
-						 char *name )
+static jk_env_objectFactory_t * JK_METHOD jk_env_getFactory(jk_env_t *env, 
+                                                            char *type,
+                                                            char *name )
 {
   jk_env_objectFactory_t *result;
 
@@ -111,10 +111,10 @@ static jk_env_objectFactory_t *jk_env_getFactory(jk_env_t *env,
   return result;
 }
 
-static void jk_env_registerFactory(jk_env_t *env, 
- 				  char *type,
-				  char *name, 
-				  jk_env_objectFactory_t fact)
+static void JK_METHOD jk_env_registerFactory(jk_env_t *env, 
+                                             char *type,
+                                             char *name, 
+                                             jk_env_objectFactory_t fact)
 {
   void *old;
   
