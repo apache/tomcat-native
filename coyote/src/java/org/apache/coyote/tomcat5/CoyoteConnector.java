@@ -61,10 +61,12 @@
 package org.apache.coyote.tomcat5;
 
 import java.util.Vector;
+import java.lang.reflect.Method;
 
 import javax.management.ObjectName;
 import javax.management.MBeanServer;
 import javax.management.MBeanRegistration;
+import javax.management.MalformedObjectNameException;
 
 import org.apache.commons.modeler.Registry;
 import org.apache.commons.logging.Log;
@@ -85,6 +87,9 @@ import org.apache.catalina.Logger;
 import org.apache.catalina.Request;
 import org.apache.catalina.Response;
 import org.apache.catalina.Service;
+import org.apache.catalina.Engine;
+import org.apache.catalina.core.ContainerBase;
+import org.apache.catalina.core.StandardEngine;
 import org.apache.catalina.net.DefaultServerSocketFactory;
 import org.apache.catalina.net.ServerSocketFactory;
 import org.apache.catalina.util.LifecycleSupport;
@@ -867,7 +872,7 @@ public final class CoyoteConnector
     }
 
     /**
-     * Return the flag to see if we do a redirect to directories that don't 
+     * Return the flag to see if we do a redirect to directories that don't
      * end in a '/'.
      */
     public boolean getRedirectDirectories() {
@@ -1087,6 +1092,21 @@ public final class CoyoteConnector
 
         this.initialized = true;
 
+        if( oname == null && (container instanceof StandardEngine)) {
+            try {
+                // we are loaded directly, via API - and no name was given to us
+                StandardEngine cb=(StandardEngine)container;
+                String addSuffix=(getAddress()==null) ?"": ",address=" + getAddress();
+                oname=new ObjectName(cb.getName() + ":type=Connector,port="+
+                        getPort() + addSuffix);
+                Registry.getRegistry().registerComponent(this, oname, null);
+                controller=oname;
+            } catch (Exception e) {
+                log.error( "Error registering connector ", e);
+            }
+            log.info("Creating name for connector " + oname);
+        }
+
         // Initializa adapter
         adapter = new CoyoteAdapter(this);
 
@@ -1291,10 +1311,48 @@ public final class CoyoteConnector
         coyoteFactory.setKeystoreFile(keystoreFile);
     }
 
+    /**
+     * Return keystorePass
+     *
+     * @exception Exception if an MBean cannot be created or registered
+     */
+    public String getKeystorePass()
+        throws Exception
+    {
+        ServerSocketFactory factory = getFactory();
+        if( factory instanceof CoyoteServerSocketFactory ) {
+            return ((CoyoteServerSocketFactory)factory).getKeystorePass();
+        }
+        return null;
+    }
+
+
+    /**
+     * Set keystorePass
+     *
+     * @exception Exception if an MBean cannot be created or registered
+     */
+    public void setKeystorePass(String keystorePass)
+        throws Exception
+    {
+        ServerSocketFactory factory = getFactory();
+        if( factory instanceof CoyoteServerSocketFactory ) {
+            ((CoyoteServerSocketFactory)factory).setKeystorePass(keystorePass);
+        }
+    }
     // -------------------- JMX registration  --------------------
     protected String domain;
     protected ObjectName oname;
     protected MBeanServer mserver;
+    ObjectName controller;
+
+    public ObjectName getController() {
+        return controller;
+    }
+
+    public void setController(ObjectName controller) {
+        this.controller = controller;
+    }
 
     public ObjectName getObjectName() {
         return oname;
@@ -1337,7 +1395,7 @@ public final class CoyoteConnector
         if( container==null ) {
             // Register to the service
             ObjectName parentName=new ObjectName( domain + ":" +
-                    "type=Service,name=Tomcat-Standalone");
+                    "type=Service");
 
             log.info("Adding to " + parentName );
             if( mserver.isRegistered(parentName )) {
@@ -1345,15 +1403,17 @@ public final class CoyoteConnector
                         new String[] {"org.apache.catalina.Connector"});
                 // As a side effect we'll get the container field set
                 // Also initialize will be called
-                return;
+                //return;
             }
             // XXX Go directly to the Engine
             // initialize(); - is called by addConnector
-            ObjectName engName=new ObjectName( domain + ":" +
-                    "type=Engine,name=Tomcat-Standalone");
-            if( mserver.isRegistered(parentName )) {
-                container=(Container)mserver.getAttribute(parentName, "managedResource");
-                log.info("Found engine " + container);
+            ObjectName engName=new ObjectName( domain + ":" + "type=Engine");
+            if( mserver.isRegistered(engName )) {
+                Object obj=mserver.getAttribute(engName, "managedResource");
+                log.info("Found engine " + obj + " " + obj.getClass());
+                container=(Container)obj;
+
+                // Internal initialize - we now have the Engine
                 initialize();
 
                 log.info("Initialized");
@@ -1366,8 +1426,13 @@ public final class CoyoteConnector
     }
 
     public void destroy() throws Exception {
+        if( oname!=null && controller==oname ) {
+            log.info("Unregister itself " + oname );
+            Registry.getRegistry().unregisterComponent(oname);
+        }
         if( getService() == null)
             return;
         getService().removeConnector(this);
     }
+
 }
