@@ -312,11 +312,12 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
         
 #ifdef WIN32
         if(SOCKET_ERROR == ret) { 
-            errno = WSAGetLastError() - WSABASEERR;
+            errno = WSAGetLastError();
         }
-#endif /* WIN32 */
-
+    } while (ret == -1 && errno == WSAECONNREFUSED);
+#else
     } while (-1 == ret && EINTR == errno);
+#endif /* WIN32 */
 
     /* Check if we connected */
     if(ret != 0 ) {
