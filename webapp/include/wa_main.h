@@ -214,6 +214,19 @@ const char *wa_deploy(wa_application *a,
 void wa_debug(const char *f, const int l, const char *fmt, ...);
 
 /**
+ * Report an error to the web-server log file.
+ * <br>
+ * NOTE: This function is _NOT_ defined in the WebApp library. It _MUST_ be
+ * defined and implemented within the web-server module.
+ *
+ * @param f The file where this function was called.
+ * @param l The line number where this function was called.
+ * @param fmt The format string of the debug message (printf style).
+ * @param others The parameters to the format string.
+ */
+void wa_log(const char *f, const int l, const char *fmt, ...);
+
+/**
  * The WebApp library memory pool.
  */
 extern apr_pool_t *wa_pool;
