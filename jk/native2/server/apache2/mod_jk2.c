@@ -532,13 +532,29 @@ static int jk2_handler(request_rec *r)
 
     uriEnv=ap_get_module_config( r->request_config, &jk2_module );
 
+    /* We do DIR_MAGIC_TYPE here to make sure TC gets all requests, even
+     * if they are directory requests, in case there are no static files
+     *  visible to Apache and/or DirectoryIndex was not used */
+
     /* not for me, try next handler */
-    if(uriEnv==NULL || strcmp(r->handler,JK_HANDLER)!= 0 )
+    if((uriEnv==NULL || strcmp(r->handler,JK_HANDLER)) &&
+       strcmp(r->handler,DIR_MAGIC_TYPE))
       return DECLINED;
     
     /* If this is a proxy request, we'll notify an error */
     if(r->proxyreq) {
         return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    /* This is needed for DIR_MAGIC_TYPE. Not sure if this is good, bad or just
+     * plain ugly, but we really NEED to have uriEnv, otherwise everything else
+     * will blow up */
+
+    if(uriEnv == NULL){
+        uriEnv = ap_get_module_config(r->server->module_config, &jk2_module);
+
+        if(uriEnv == NULL) /* We still have nothing, go out */
+          return DECLINED;
     }
 
     workerEnv = uriEnv->workerEnv;
@@ -708,30 +724,32 @@ static int jk2_map_to_storage(request_rec *r)
     jk_uriEnv_t *uriEnv=ap_get_module_config( r->request_config, &jk2_module );
     
     if( uriEnv != NULL ) {
-        char *uri_p=r->uri;
+    
+        /* First find just the name of the file, no directory */
+        r->filename = (char *)apr_filename_of_pathname(r->uri);
 
-        /* This is old code which doesn't seem to work well with mod_dir
-            r->filename = (char *)apr_filename_of_pathname(r->uri); */
+        /* Only if sub-request for a directory, most likely from mod_dir */
+        if (r->main && r->main->filename &&
+            !*apr_filename_of_pathname(r->main->filename)){
 
-        /*         if( uriEnv->mbean->debug > 0 ) { */
-            /*   env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-            /*     "mod_jk.map_to_storage(): map %s %s\n", */
-            /*                  r->uri, r->filename); */
-        /* } */
+            /* The filename from the main request will be set to what should
+             * be picked up, aliases included. Tomcat will need to know about
+             * those aliases or things won't work for them. Normal files
+             * should be fine. */
 
-        /* Absolute paths cannot be merged */
-        while (*uri_p == '/') ++uri_p;
+            /* Need absolute path to stat */
+            if (apr_filepath_merge(&r->filename,
+                                   r->main->filename, r->filename,
+                                   APR_FILEPATH_SECUREROOT |
+                                   APR_FILEPATH_TRUENAME,
+                                   r->pool)
+                != APR_SUCCESS){
+              return DECLINED; /* We should never get here, very bad */
+            }
 
-        /* Need absolute path to stat */
-        if (apr_filepath_merge(&r->filename, ap_document_root(r), uri_p,
-                               APR_FILEPATH_SECUREROOT | APR_FILEPATH_TRUENAME,
-                               r->pool)
-            != APR_SUCCESS){
-          return DECLINED;
+            /* Stat the file so that mod_dir knows it's there */
+            apr_stat(&r->finfo, r->filename, APR_FINFO_TYPE, r->pool);
         }
-
-        /* Stat the file so that mod_dir knows it's there */
-        apr_stat(&r->finfo, r->filename, APR_FINFO_TYPE, r->pool);
 
         return OK;
     }
