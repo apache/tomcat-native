@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="iis.html">
+
+    &project; 
+
+    <properties>
+        <author email="mturk@apache.org">Mladen Turk</author>
+        <title>Installation for IIS</title>
+    </properties>
+
+<body>
+
+<section name="Building ISAPI redirector">
+<p>
+The redirector was developed using Visual C++ Ver.6.0, so having this environment is a prereq if you want 
+to perform a custom build. You should also have IIS developer SDK
+
+The steps that you need to take are:
+<ul>
+<li>
+Change directory to the isapi plugins source directory.
+</li>
+<li>
+Make the source with MSDEV
+</li>
+</ul>
+<screen>
+<note>Change directory to the isapi plugins source directory</note>
+<typedos>cd c:\home\apache\jk\isapi</typedos>
+<note>Build the sources using MSDEV</note>
+<typedos>MSDEV isapi.dsp /MAKE ALL</typedos>
+</screen>
+</p>
+<p>
+If msdev is not in your path, enter the full path to msdev.exe. 
+This will build both release and debug versions of the redirector plugin.
+An alternative will be to open the isapi workspace file (isapi.dsw) in msdev and 
+build it using the build menu.
+</p>
+</section>
+
+</body>
+</document>

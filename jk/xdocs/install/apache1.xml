@@ -1,0 +1,238 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="apache1.html">
+
+    &project; 
+
+    <properties>
+        <author email="mturk@apache.org">Mladen Turk</author>
+        <title>Installation for Apache 1.3.x</title>
+    </properties>
+
+<body>
+
+<section name="Building jk on Unix">
+<p>
+The mod_jk build use the widely used configure system.
+</p>
+<subsection name="Prepare your mod_jk configure from CVS">
+<p>
+In case you get source from CVS, ie without an existing configure script,
+you should have autoconf for configuration and installation.
+To create jakarta-tomcat-connectors's autoconf script, you will need libtool 1.3.3 or higher, 
+and autoconf 2.13 or newer.
+Those tools will not be required if you are just using a package downloaded from apache.org, 
+they are only required for developers.
+</p>
+<p>
+To create the configure script just type :
+<screen>
+<read />
+<type>./buildconf.sh</type>
+</screen>
+</p>
+</subsection>
+
+<subsection name="Using configure to build mod_jk">
+<p>The configure file produced using buildconf script will create all necesary make files.
+Here's how to use configure to prepare mod_jk for building, just type: 
+<screen>
+<read />
+<type>./configure [autoconf arguments] [jakarta-tomcat-connectors arguments]</type>
+</screen>
+</p>
+
+
+<p>
+You could set <b>CFLAGS</b> and <b>LDFLAGS</b> to add some platform specifics:
+<screen>
+<read />
+<type>LDFLAGS=-lc ./configure -with-apxs=/home2/local/apache/bin/apxs</type>
+</screen>
+</p>
+
+<p>
+If you want to build mod_jk for Apache 1.3, you should 
+<ul>
+<li>
+use configure and indicate Apache 1.3 apxs location (--with-apxs)
+</li>
+<li>
+use make
+</li>
+<li>
+copy the mod_jk binary to the apache modules location
+</li>
+<li>
+make clean (to remove all previously compiled modules)
+</li>
+<li>
+then make.
+</li>
+</ul>
+
+</p>
+</subsection>
+
+<subsection name="configure arguments">
+<p>Apache related parameters :</p>
+<attributes name="Parameter">
+  <attribute name="--with-apxs[=FILE]" required="true">
+  <p>FILE is the location of the apxs tool. Default is finding apxs in PATH.
+It builds a shared Apache module. It detects automaticly the Apache version.
+    </p>
+  </attribute>
+  <attribute name="--with-apache=DIR" required="false">
+  <p>DIR is the path where apache sources are located.
+The apache sources should have been configured before configuring mod_jk.
+DIR is something like: /home/apache/apache_1.3.33
+It builds a static Apache module.</p>
+  </attribute>
+  <attribute name="--enable-EAPI" required="false">
+  <p>This parameter is needed when using Apache-1.3 and mod_ssl, otherwise you will get the error message:
+"this module might crash under EAPI!" when loading mod_jk.so in httpd.
+Not needed when --with-apxs has been used.</p>
+  </attribute>
+</attributes>
+
+<p>JNI related parameters :</p>
+<attributes name="Parameter">
+  <attribute name="--enable-jni" required="false">
+  <p>Build the JNI worker and so the build process will require 
+some informations about your Java Environment. Most of the options are
+autodetected.</p>
+  </attribute>
+  <attribute name="--with-java-home=DIR" required="false">
+  <p>DIR is the  patch to the JDK root directory. Something like: /opt/java/jdk12</p>
+  </attribute>
+  <attribute name="--with-os-type=SUBDIR" required="false">
+  <p>SUBDIR is the os-type subdirectory, 
+  configure should guess it correctly.</p>
+  </attribute>
+  <attribute name="--with-arch-type=SUBDIR" required="false">
+  <p>SUBDIR is the arch subdirectory, 
+  configure should guess it correctly.</p>
+  </attribute>
+  <attribute name="--with-java-platform=VAL" required="false">
+  <p>VAL is the Java platform 1 is 1.1.x and 2 is for 1.2 anf higher, 
+  configure should guess it correctly.</p>
+  </attribute>
+  
+</attributes>
+
+<p>Examples of configure use :</p>
+
+<screen>
+<note>Apache 1.3 build without JNI support</note>
+<type>./configure --with-apxs=/usr/sbin/apxs</type><br/>
+</screen>
+
+
+</subsection>
+
+</section>
+
+<section name="Building mod_jk for Apache on Windows NT/2K/XP">
+<p>
+The module was developed using Visual C++ version 6.0, so having this environment is a prerequisite 
+if you want to perform a custom build.
+</p>
+<p>
+The steps that you need to take are:
+</p>
+<ul>
+<li>
+Change directory to the apache 1.3 source directory.
+</li>
+<li>
+If you want to build mod_jk for Apache 1.3, set an <b>APACHE1_HOME</b> environment variable which points 
+to where your Apache 1.3 is installed.
+</li>
+<li>
+Copy mod_jk.dll to Apache's modules directory.
+</li>
+</ul>
+<p>
+An example on how to build mod_jk for Apache 1.3:
+</p>
+<screen>
+<note>Set location for Apache 1.3 sources</note>
+<typedos>set APACHE1_HOME=c:\apache13</typedos>
+<note>Change directory to the mod_jk module for Apache 1.3</note>
+<typedos>cd c:\home\apache\jk\native\apache-1.3</typedos>
+<note>Build the sources using MSDEV</note>
+<typedos>MSDEV mod_jk.dsp /MAKE ALL</typedos>
+<note>Copy the dll to your apache modules directory</note>
+<typedos>cp release\mod_jk.dll c:\apache13\modules\</typedos>
+</screen>
+
+<p>
+If msdev is not in your path, enter the full path to msdev.exe. 
+Also, ApacheCore.lib is expected to exist in the <b>${APACHEX_HOME}\src\CoreD</b> and 
+<b>${APACHEX_HOME}\src\CoreR</b> directories before linking will succeed.
+You will need to build enough of the Apache source to create these libraries.
+This will build both release and debug versions of the redirector plug-in (mod_jk).
+An alternative will be to open mod_jk.dsp in msdev and build it using the build menu.
+</p>
+</section>
+
+
+<section name="Building mod_jk for Apache on MacOS/X">
+<p>
+The configure file produced using buildconf script will create all necesary make files.
+The build process is the same as for Unix platforms. Here are the <b>Mac OS X (10.2.x)</b> build notes :
+</p>
+<p>
+Assuming that you are root :
+</p>
+<screen>
+<note>For Apache 1.3:</note>
+<type>./configure --with-apxs=/usr/sbin/apxs</type>
+<type>cd apache-1.3</type>
+<type>make -f Makefile.apxs</type>
+<type>cp mod_jk.so /etc/libexec/httpd</type>
+</screen>
+</section>
+
+<section name="Getting mod_jk linked statically with Apache">
+<p>
+mod_jk allows to install mod_jk in the Apache source tree to get a statically
+linked mod_jk. Having mod_jk in the httpd executable brings some performance
+improvements. The configure option --with-apache prepare mod_jk to install it
+in the Apache source tree.
+The examples below show how to get mod_jk in the httpd process.
+</p>
+
+<p>Installation in Apache-1.3 :</p>
+<screen>
+<note> /home/apache/apache_1.3.33 is the directory where the apache-1.3 sources
+are located. </note>
+<type>./configure --with-apache=/home/apache/apache_1.3.33</type><br/>
+<type>make</type><br/>
+<note>Install the libjk library, mod_jk.c, includes and other files in
+/home/apache/apache_1.3.33/src/modules/jk: </note>
+<type>make install</type><br/>
+<note> Configure in the Apache sources: </note>
+<type>cd /home/apache/apache_1.3.33</type>
+<type>configure ... --enable-module=dir --disable-shared=dir \</type>
+<typenext>              --activate-module=src/modules/jk/libjk.a \</typenext>
+<typenext>              --disable-shared=jk</typenext>
+<type>make</type>
+<type>make install</type><br/>
+</screen>
+<p>
+The <code>--enable-shared=jk</code> is also working and builds a dso file.
+</p>
+<screen>
+<note> Just change the configure in the Apache sources: </note>
+<type>configure ... --enable-module=dir --enable-shared=dir \</type>
+<typenext>              --activate-module=src/modules/jk/libjk.a \</typenext>
+<typenext>              --enable-shared=jk</typenext>
+</screen>
+
+</section> 
+ 
+</body>
+</document>
