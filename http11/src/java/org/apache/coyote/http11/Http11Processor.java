@@ -222,6 +222,15 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected Socket socket;
 
+    /**
+     * Remote Address associated with the current connection.
+     */
+    protected String remoteAddr = null;
+
+    /**
+     * Remote Host associated with the current connection.
+     */
+    protected String remoteHost = null;
 
     // --------------------------------------------------------- Public Methods
 
@@ -332,8 +341,9 @@ public class Http11Processor implements Processor, ActionHook {
         throws IOException {
 
         // Set the remote address
-        String remoteAddr = socket.getInetAddress().getHostAddress();
+        remoteAddr = socket.getInetAddress().getHostAddress();
         request.remoteAddr().setString(remoteAddr);
+        remoteHost = null;
 
         // Setting up the I/O
         inputBuffer.setInputStream(input);
@@ -519,8 +529,9 @@ public class Http11Processor implements Processor, ActionHook {
             }
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
-
-            String remoteHost = socket.getInetAddress().getHostName();
+            request.remoteAddr().setString(remoteAddr);
+            if( remoteHost == null )
+                remoteHost = socket.getInetAddress().getHostName();
             request.remoteHost().setString(remoteHost);
 
         }
@@ -729,7 +740,7 @@ public class Http11Processor implements Processor, ActionHook {
         MessageBytes valueMB = req.getMimeHeaders().getValue("host");
 
         ByteChunk valueBC = null;
-        if (valueMB == null) {
+        if (valueMB == null || valueMB.isNull()) {
             // HTTP/1.0
             // Default is what the socket tells us. Overriden if a host is 
             // found/parsed
@@ -756,7 +767,15 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         if (colonPos < 0) {
-            req.setServerPort(80);
+            if( http11 ) {
+                if(sslSupport == null) // not configured Secure
+                    req.setServerPort(80);
+                else
+                    req.setServerPort(443); // if Secure, assume https
+            } else {
+                // Assume that non-HTTP/1.1 clients are broken
+                req.setServerPort(socket.getLocalPort());
+            }
             req.serverName().setBytes( valueB, valueS, valueL);
         } else {
             req.serverName().setBytes( valueB, valueS, colonPos);
