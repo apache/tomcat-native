@@ -888,7 +888,12 @@ public final class Ajp13Connector
                 else	
                 	socket.setSoLinger(true, connectionLinger);
                 	
-                socket.setKeepAlive(true);
+                /* We don't need it since it's the native side which 
+                 * will set the connection with keep alive
+                 * if specified in workers.properties.
+                 * 
+                 * socket.setKeepAlive(true); 
+                 */
                 
                 /* Warning :
                  * 
