@@ -679,7 +679,7 @@ static int jk2_translate(request_rec *r)
     */
     
     uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,
-                apr_psprintf(r->pool,"%s:%d",r->hostname,r->server->port),
+                r->server->is_virtual ? r->hostname : NULL,
                 r->uri );
 
     if( uriEnv== NULL || uriEnv->workerName == NULL) {
