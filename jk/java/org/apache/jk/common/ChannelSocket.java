@@ -314,7 +314,7 @@ public class ChannelSocket extends JkHandler {
         if (maxPort < startPort) 
             maxPort = startPort;
         if (getAddress() == null)
-            setAddress("localhost");
+            setAddress("0.0.0.0");
         for( int i=startPort; i<=maxPort; i++ ) {
             try {
                 sSocket=new ServerSocket( i, 0, inet );
