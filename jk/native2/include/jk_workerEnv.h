@@ -160,6 +160,7 @@ struct jk_workerEnv {
     */
     int childId;
     int childProcessId;
+    int childGeneration;
 
     struct jk_env *globalEnv;
 
