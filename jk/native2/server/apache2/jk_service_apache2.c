@@ -388,6 +388,7 @@ static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     s->no_more_chunks = 0;
     s->query_string   = r->args;
 
+    s->startTime = r->request_time;
     /*
      * The 2.2 servlet spec errata says the uri from
      * HttpServletRequest.getRequestURI() should remain encoded.

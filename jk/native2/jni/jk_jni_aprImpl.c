@@ -743,13 +743,6 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
                       "jkInvoke() NullPointerException 2\n");
 	return -1;
     }
-
-    /* Simulate a receive on the incoming packet. e->reply is what's
-       used when receiving data from java. 
-    */
-    ep->currentData = nbuf;
-    ep->currentOffset=0;
-    /* This was an workaround, no longer used ! */
     
     ep->reply->reset(env, ep->reply);
 

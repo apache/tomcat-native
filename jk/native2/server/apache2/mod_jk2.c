@@ -106,8 +106,6 @@ module AP_MODULE_DECLARE_DATA jk2_module;
  */
 static jk_workerEnv_t *workerEnv;
 
-#define NO_APACHE_POOL 1
-
 /* ==================== Options setters ==================== */
 
 /*
@@ -441,6 +439,8 @@ static int jk2_post_config(apr_pool_t *pconf,
         /* This is the first step */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "mod_jk.post_config() first invocation\n");
+        
+        
         apr_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool );
         return OK;
     }
@@ -448,6 +448,7 @@ static int jk2_post_config(apr_pool_t *pconf,
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "mod_jk.post_config() second invocation\n" ); 
 
+    workerEnv->parentInit( env, workerEnv);
 
 /*     if(!workerEnv->was_initialized) { */
 /*         workerEnv->was_initialized = JK_OK;         */
