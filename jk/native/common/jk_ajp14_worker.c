@@ -111,10 +111,20 @@ static int JK_METHOD init(jk_worker_t *pThis,
    	aw = pThis->worker_private;
 
 	/* Set Secret Key (used at logon time) */	
-	aw->login->secret_key = jk_get_worker_secret_key(props, aw->name);
+	aw->login->secret_key = strdup(jk_get_worker_secret_key(props, aw->name));
 
+	if (aw->login->secret_key == NULL) {
+		jk_log(l, JK_LOG_ERROR, "can't malloc secret_key\n");
+		return JK_FALSE;
+	}
+	
 	/* Set WebServerName (used at logon time) */
-	aw->login->web_server_name = we->server_name;
+	aw->login->web_server_name = strdup(we->server_name);
+
+	if (aw->login->web_server_name == NULL) {
+		jk_log(l, JK_LOG_ERROR, "can't malloc web_server\n");
+		return JK_FALSE;
+	}
 
 	if (get_endpoint(pThis, &je, l) == JK_FALSE)
 		return JK_FALSE;
@@ -140,6 +150,17 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
 	ajp_worker_t *aw = (*pThis)->worker_private;
 
 	if (aw->login) {
+
+		if (aw->login->web_server_name) {
+			free(aw->login->web_server_name);
+			aw->login->web_server_name = NULL;
+		}
+
+		if (aw->login->secret_key) {
+			free(aw->login->secret_key);
+			aw->login->secret_key = NULL;
+		}
+
 		free(aw->login);
 		aw->login = NULL;
 	}
@@ -157,6 +178,8 @@ static int handle_logon(ajp_endpoint_t *ae,
 					   jk_msg_buf_t	   *msg,
 					   jk_logger_t     *l)
 {
+	int	cmd;
+
 	jk_login_service_t *jl = ae->worker->login;
 
 	ajp14_marshal_login_init_into_msgb(msg, jl, l);
@@ -169,6 +192,11 @@ static int handle_logon(ajp_endpoint_t *ae,
 	jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon - wait init reply\n");
 
 	jk_b_reset(msg);
+
+	if ((cmd = jk_b_get_byte(msg)) != AJP14_LOGSEED_CMD) {
+		jk_log(l, JK_LOG_ERROR, "Into ajp14:logon - awaited command %d, received command %d\n", AJP14_LOGSEED_CMD, cmd);
+		return JK_FALSE;
+	}
 
 	if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
 		return JK_FALSE;
