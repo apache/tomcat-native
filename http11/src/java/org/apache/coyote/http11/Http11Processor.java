@@ -271,7 +271,7 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * List of MIMES which could be gzipped
      */
-    protected String[] compressableMimeTypes = null;
+    protected String[] compressableMimeTypes = { "text/html", "text/xml", "text/plain" };
 
 
     /**
