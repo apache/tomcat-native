@@ -262,8 +262,9 @@ public class ApacheConfig  extends BaseJkConfig {
             
 	// Verify the file exists !!
 	mod_jk.println("<IfModule !mod_jk.c>");
-	mod_jk.println("  LoadModule jk_module "+
-		       modJk.toString().replace('\\','/'));
+	mod_jk.println("  LoadModule jk_module \""+
+		       modJk.toString().replace('\\','/') +
+                       "\"");
 	mod_jk.println("</IfModule>");
 	mod_jk.println();                
 
