@@ -151,6 +151,10 @@
                 -->
                 <xsl:variable name="root" select="/"/>
                 <xsl:for-each select="document('menu.idx')/index/document">
+                  <xsl:variable name="href" select="@href"/>
+                  <xsl:if test="string-length($href) = 0">
+                    <tr height="6"/>
+                  </xsl:if>
                   <tr>
                     <td bgcolor="#cccccc" width="150" colspan="2">
                       <nobr>
