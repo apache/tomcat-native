@@ -737,9 +737,14 @@ jk2_worker_ajp13_init(jk_env_t *env, jk_bean_t *bean )
     if( ajp13->channel == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp13.init(): No channel %s\n", ajp13->mbean->localName);
-        return JK_ERR;
+        /* That's ok - it may be added later */
+        /*         return JK_ERR; */
     }
 
+    if( ajp13->route==NULL ) {
+        /* Default - eventually the naming convention should become mandatory */
+        ajp13->route=bean->localName;
+    }
     
     /* Find the groups we are member on and add ourself in
      */
