@@ -93,9 +93,12 @@ public class Shm extends JniHandler {
     int port=8009;
     String unixSocket;
 
+    boolean help=false;
     boolean unregister=false;
     boolean reset=false;
     String dumpFile=null;
+
+    Vector groups=new Vector();
     
     // Will be dynamic ( getMethodId() ) after things are stable 
     static final int SHM_SET_ATTRIBUTE=0;
@@ -144,6 +147,12 @@ public class Shm extends JniHandler {
         this.host=host;
     }
 
+    /** Mark this instance as belonging to a group
+     */
+    public void setGroup( String grp ) {
+        groups.addElement( grp );
+    }
+
     /** Ajp13 port
      */
     public void setPort( int port ) {
@@ -168,7 +177,8 @@ public class Shm extends JniHandler {
         to identify tomcat.
     */
     public void setUnregister( boolean unregister  ) {
-        this.unregister=unregister;
+        System.out.println("XXX set unregister ");
+        this.unregister=true;
     }
     
     public void init() throws IOException {
@@ -245,9 +255,9 @@ public class Shm extends JniHandler {
     public void registerTomcat(String host, int port, String unixDomain)
         throws IOException
     {
-        if( apr==null ) return;
+        String instanceId=host+":" + port;
 
-        String slotName="TOMCAT:" + host + ":" + port;
+        String slotName="TOMCAT:" + instanceId;
         MsgContext mCtx=createMsgContext();
         Msg msg=(Msg)mCtx.getMsg(0);
         msg.reset();
@@ -259,30 +269,36 @@ public class Shm extends JniHandler {
         int channelCnt=1;
         if( unixDomain != null ) channelCnt++;
 
+        // number of groups. 0 means the default lb.
+        msg.appendInt( groups.size() );
+        for( int i=0; i<groups.size(); i++ ) {
+            appendString( msg, (String)groups.elementAt( i ), c2b);
+            appendString( msg, instanceId, c2b);
+        }
+        
         // number of channels for this instance
         msg.appendInt( channelCnt );
         
         // The body:
         appendString(msg, "channel.socket:" + host + ":" + port, c2b );
         msg.appendInt( 1 );
-        appendString(msg, "instance", c2b);
-        appendString(msg, host+":" + port, c2b);
+        appendString(msg, "tomcatId", c2b);
+        appendString(msg, instanceId, c2b);
 
         if( unixDomain != null ) {
             appendString(msg, "channel.apr:" + unixDomain, c2b );
             msg.appendInt(1);
-            appendString(msg, "instance", c2b);
-            appendString(msg, host+":" + port, c2b);
+            appendString(msg, "tomcatId", c2b);
+            appendString(msg, instanceId, c2b);
         }
 
+        System.out.println("Register " + instanceId );
         this.invoke( msg, mCtx );
     }
 
     public void unRegisterTomcat(String host, int port)
         throws IOException
     {
-        if( apr==null ) return;
-
         String slotName="TOMCAT:" + host + ":" + port;
         MsgContext mCtx=createMsgContext();
         Msg msg=(Msg)mCtx.getMsg(0);
@@ -294,7 +310,9 @@ public class Shm extends JniHandler {
 
         // number of channels for this instance
         msg.appendInt( 0 );
+        msg.appendInt( 0 );
         
+        System.out.println("UnRegister " + slotName );
         this.invoke( msg, mCtx );
     }
 
@@ -326,18 +344,25 @@ public class Shm extends JniHandler {
     
     //-------------------- Main - use the shm functions from ant or CLI ------
 
+    /** Local initialization - for standalone use
+     */
+    public void initCli() throws IOException {
+        WorkerEnv wEnv=new WorkerEnv();
+        AprImpl apr=new AprImpl();
+        wEnv.addHandler( "apr", apr );
+        wEnv.addHandler( "shm", this );
+        apr.init();
+        if( ! apr.isLoaded() ) {
+            log.error( "No native support. " +
+                       "Make sure libapr.so and libjkjni.so are available in LD_LIBRARY_PATH");
+            return;
+        }
+    }
+    
     public void execute() {
         try {
-            WorkerEnv wEnv=new WorkerEnv();
-            AprImpl apr=new AprImpl();
-            wEnv.addHandler( "apr", apr );
-            wEnv.addHandler( "shm", this );
-            apr.init();
-            if( ! apr.isLoaded() ) {
-                log.error( "No native support. " +
-                           "Make sure libapr.so and libjkjni.so are available in LD_LIBRARY_PATH");
-                return;
-            }
+            if( help ) return;
+            initCli();
             init();
 
             if( reset ) {
@@ -353,22 +378,33 @@ public class Shm extends JniHandler {
             log.error( "Error executing Shm", ex);
         }
     }
+
+    public void setHelp( boolean b ) {
+        System.out.println("Usage: ");
+        System.out.println("  Shm [OPTIONS]");
+        System.out.println();
+        System.out.println("  -file SHM_FILE");
+        System.out.println("  -group GROUP ( can be specified multiple times )");
+        System.out.println("  -host HOST");
+        System.out.println("  -port PORT");
+        System.out.println("  -unixSocket UNIX_FILE");
+        //        System.out.println("  -priority XXX");
+        //        System.out.println("  -lbFactor XXX");
+        help=true;
+        return;
+    }
     
     public static void main( String args[] ) {
         try {
-            if( args.length == 1 &&
-                ( "-?".equals(args[0]) || "-h".equals( args[0])) ) {
-                System.out.println("Usage: ");
-                System.out.println("  Shm [OPTIONS]");
-                System.out.println();
-                System.out.println("  -file SHM_FILE");
+            Shm shm=new Shm();
+
+            if( args.length == 0 ||
+                ( "-?".equals(args[0]) ) ) {
+                shm.setHelp( true );
                 return;
             }
 
-            Shm shm=new Shm();
-
-            IntrospectionUtils.processArgs( shm, args, new String[] {},
-                                            null, new Hashtable());
+            IntrospectionUtils.processArgs( shm, args);
             shm.execute();
         } catch( Exception ex ) {
             ex.printStackTrace();
