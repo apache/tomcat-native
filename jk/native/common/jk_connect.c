@@ -373,7 +373,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
         tv.tv_usec = 0;
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
                    (const void *) &tv, sizeof(tv));
-        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
+        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
                    (const void *) &tv, sizeof(tv));
 #endif
         if (JK_IS_DEBUG_LEVEL(l))
