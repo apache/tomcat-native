@@ -303,8 +303,11 @@ static int jk2_worker_ajp13_connect(jk_env_t *env, jk_endpoint_t *ae) {
     /** XXX use a 'connected' field */
     if( ae->sd == -1 ) ae->sd=0;
     
-    if (ae->worker->connect_timeout != 0 ) {
+    if (ae->worker->connect_timeout != 0) {
         if (jk2_check_alive(env, ae, ae->worker->connect_timeout) != JK_OK)
+            return JK_ERR;
+    } else if (ae->worker->prepost_timeout != 0) {
+        if (jk2_check_alive(env, ae, ae->worker->prepost_timeout) != JK_OK)
             return JK_ERR;
     }
 
@@ -569,7 +572,7 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
     s->left_bytes_to_send = s->content_length;
     s->content_read=0;
 
-    if (w->prepost_timeout != 0) {
+    if (w->prepost_timeout != 0 && e->sd != -1) {
         if (jk2_check_alive(env, e, e->worker->prepost_timeout) != JK_OK)
             return JK_ERR;
     }
