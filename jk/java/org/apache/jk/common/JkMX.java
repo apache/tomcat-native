@@ -119,6 +119,39 @@ public class JkMX extends JkHandler
                 mserver.setAttribute(serverName, new Attribute("Host", host));
             mserver.setAttribute(serverName, new Attribute("Port", new Integer(port)));
             
+            ObjectName serverName2 = new ObjectName("Naming:name=rmiregistry");
+            mserver.createMBean("mx4j.tools.naming.NamingService", serverName2, null);
+            mserver.invoke(serverName2, "start", null, null);
+            log.info( "Creating " + serverName2 );
+            
+            // Create the JRMP adaptor
+            ObjectName adaptor = new ObjectName("Adaptor:protocol=jrmp");
+            mserver.createMBean("mx4j.adaptor.rmi.jrmp.JRMPAdaptor", adaptor, null);
+            
+            //    mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean mbean = (mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean)mx4j.util.StandardMBeanProxy.
+            //        create(mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean.class, mserver, adaptor);
+
+            mserver.setAttribute(adaptor, new Attribute("JNDIName", "jrmp"));
+
+            mserver.invoke( adaptor, "putNamingProperty",
+                            new Object[] {
+                javax.naming.Context.INITIAL_CONTEXT_FACTORY,
+                    "com.sun.jndi.rmi.registry.RegistryContextFactory"},
+                            new String[] { "java.lang.Object", "java.lang.Object" });
+
+            mserver.invoke( adaptor, "putNamingProperty",
+                            new Object[] {
+                javax.naming.Context.PROVIDER_URL,
+                    "rmi://localhost:1099"},
+                            new String[] { "java.lang.Object", "java.lang.Object" });
+            
+            //mbean.putNamingProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.rmi.registry.RegistryContextFactory");
+            //mbean.putNamingProperty(javax.naming.Context.PROVIDER_URL, "rmi://localhost:1099");
+            // Registers the JRMP adaptor in JNDI and starts it
+            mserver.invoke(adaptor, "start", null, null);
+            //   mbean.start();
+            log.info( "Creating " + adaptor );
+      
             ObjectName processorName = new ObjectName("Http:name=XSLTProcessor");
             mserver.createMBean("mx4j.adaptor.http.XSLTProcessor", processorName, null);
 
