@@ -134,7 +134,7 @@ static char extension_uri[INTERNET_MAX_URL_LENGTH] =
 static char log_file[MAX_PATH * 2];
 static int log_level = JK_LOG_EMERG_LEVEL;
 static char worker_file[MAX_PATH * 2];
-static char worker_mount_file[MAX_PATH * 2];
+static char worker_mount_file[MAX_PATH * 2] = {0};
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -1055,47 +1055,16 @@ static int init_jk(char *serverName)
                worker_mount_file);
         jk_log(logger, JK_LOG_DEBUG, "Using uri select %d.", uri_select_option);
     }
-    if (jk_map_alloc(&map)) {
-        if (jk_map_read_properties(map, worker_mount_file)) {
-            /* remove non-mapping entries (assume they were string substitutions) */
-            jk_map_t *map2;
-            if (jk_map_alloc(&map2)) {
-                int sz, i;
-                void *old;
-
-                sz = jk_map_size(map);
-                for (i = 0; i < sz; i++) {
-                    const char *name = jk_map_name_at(map, i);
-                    if (*name == '/' || *name == '!') {
-                        jk_map_put(map2, name, jk_map_value_at(map, i), &old);
-                    }
-                    else {
-                        if (JK_IS_DEBUG_LEVEL(logger))
-                            jk_log(logger, JK_LOG_DEBUG,
-                                   "Ignoring worker mount file entry %s=%s.",
-                                   name, jk_map_value_at(map, i));
-                    }
-                }
-
-                if (uri_worker_map_alloc(&uw_map, map2, logger)) {
-                    rc = JK_TRUE;
-                }
-
-                jk_map_free(&map2);
-            }
-        }
-        else {
-            jk_log(logger, JK_LOG_EMERG,
-                   "Unable to read worker mount file %s.",
-                   worker_mount_file);
-        }
-        jk_map_free(&map);
+    if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
+        rc = JK_FALSE;
+        uw_map->fname = worker_mount_file;
+        if (worker_mount_file[0])
+            rc = uri_worker_map_load(uw_map, logger);
     }
-
     if (rc) {
         rc = JK_FALSE;
         if (jk_map_alloc(&map)) {
-            if (jk_map_read_properties(map, worker_file)) {
+            if (jk_map_read_properties(map, worker_file, NULL)) {
                 /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 
                 worker_env.uri_to_worker = uw_map;
@@ -1152,7 +1121,7 @@ static int read_registry_init_data(void)
     jk_map_t *map;
 
     if (jk_map_alloc(&map)) {
-        if (jk_map_read_properties(map, ini_file_name)) {
+        if (jk_map_read_properties(map, ini_file_name, NULL)) {
             using_ini_file = JK_TRUE;
         }
     }
