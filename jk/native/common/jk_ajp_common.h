@@ -281,6 +281,7 @@ struct ajp_endpoint {
 struct ajp_operation {
     jk_msg_buf_t    *request;   /* original request storage */
     jk_msg_buf_t    *reply;     /* reply storage (chuncked by ajp13 */
+    jk_msg_buf_t    *post;      /* small post data storage area */
     int     uploadfd;           /* future persistant storage id */
     int     recoverable;        /* if exchange could be conducted on another TC */
 };
