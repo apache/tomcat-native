@@ -137,7 +137,8 @@ int jk_map_getBool(struct jk_env *env, struct jk_map *m,
                    const char *prop, const char *def);
 
 /** Get a string property, using the worker's style
-    for properties.
+    for properties. If objType is null, then objName.pname
+    will be used.
     Example worker.ajp13.host=localhost.
 */
 char *jk_map_getStrProp(struct jk_env *env, jk_map_t *m,
@@ -157,7 +158,7 @@ int jk_map_append(struct jk_env *env, jk_map_t * dst,
 /* ========== Manipulating values   ========== */
 
 
-/** Extract a String[] property. It'll split the value on
+/** Extract a String[] property. If sep==NULL, it'll split the value on
  *  ' ', tab, ',', '*'.
  * 
  *  @param pool Pool on which the result will be allocated. Defaults
@@ -165,7 +166,7 @@ int jk_map_append(struct jk_env *env, jk_map_t * dst,
  */ 
 char **jk_map_split(struct jk_env *env,  jk_map_t *m,
                     struct jk_pool *pool, /* XXX will be removed */
-                    const char *listStr, unsigned *list_len );
+                    const char *listStr, const char *sep,unsigned *list_len );
 
 int jk_map_str2int(struct jk_env *env, char *value);
 
@@ -188,7 +189,7 @@ int jk_map_readFileProperties(struct jk_env *env, jk_map_t *m,
  */
 char *jk_map_replaceProperties(struct jk_env *env, jk_map_t *m,
                                struct jk_pool *resultPool, 
-                               const char *value);
+                               char *value);
 
 
 /** For multi-value properties, return the concatenation
