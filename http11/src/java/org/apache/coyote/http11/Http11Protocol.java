@@ -126,6 +126,7 @@ public class Http11Protocol implements ProtocolHandler
             checkSocketFactory();
         } catch( Exception ex ) {
             log.error( "Error initializing socket factory", ex );
+            throw ex;
         }
 
         if( socketFactory!=null ) {
@@ -136,7 +137,12 @@ public class Http11Protocol implements ProtocolHandler
                 socketFactory.setAttribute( key, v );
             }
         }
-        ep.startEndpoint();
+        try {
+            ep.startEndpoint();
+        } catch (Exception ex) {
+            log.error("Error initializing endpoint", ex);
+            throw ex;
+        }
         log.info( "Starting on " + ep.getPort() );
 
         
