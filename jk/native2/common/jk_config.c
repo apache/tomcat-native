@@ -136,18 +136,26 @@ static int jk2_config_setConfigFile( jk_env_t *env,
  */
 static int jk2_config_saveConfig( jk_env_t *env,
                                   jk_config_t *cfg,
-                                  jk_workerEnv_t *wEnv,
                                   char *workerFile)
 {
     FILE *fp;
 //    char buf[LENGTH_OF_LINE + 1];            
     int i,j;
-        
+
+    if( workerFile==NULL )
+        workerFile=cfg->file;
+
+    if( workerFile== NULL )
+        return JK_ERR;
+    
     fp= fopen(workerFile, "w");
         
     if(fp==NULL)
         return JK_ERR;
 
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "config.save(): Saving %s\n", workerFile );
+    
     /* We'll save only the objects/properties that were set
        via config, and to the original 'string'. That keeps the config
        small ( withou redundant ) and close to the original. Comments
@@ -159,7 +167,11 @@ static int jk2_config_saveConfig( jk_env_t *env,
 
         if( mbean==NULL || mbean->settings==NULL ) 
             continue;
-        
+
+        if( strcmp( name, mbean->name ) != 0 ) {
+            /* It's an alias. */
+            continue;
+        }
         fprintf( fp, "[%s]\n", mbean->name );
 
         for( j=0; j < mbean->settings->size( env, mbean->settings ); j++ ) {
@@ -277,6 +289,23 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     if( strcmp( name, "name" ) == 0 ) {
         return JK_OK;
     }
+    if( strcmp( name, "debug" ) == 0 ) {
+        mbean->debug=atoi( val );
+    }
+    if( strcmp( name, "disabled" ) == 0 ) {
+        mbean->disabled=atoi( val );
+    }
+
+    if( (mbean == cfg->mbean) &&
+        (strcmp( name, "file" ) == 0 ) &&
+        cfg->file != NULL ) {
+        /* 'file' property on ourself, avoid rec.
+         */
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "config.setAttribute() ignore %s %s %s\n", mbean->name, name, val );
+        
+        return JK_OK;
+    }
     
     if(mbean->setAttribute) {
         int rc= mbean->setAttribute( env, mbean, name, val );
@@ -284,13 +313,16 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "config.setAttribute() Error setting %s %s %s\n", mbean->name, name, val );
         }
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "config.setAttribute() %d setting %s %s %s\n",
+                      cfg->mbean->debug, mbean->name, name, val );
         return rc;
     }
     return JK_ERR;
 }
 
 int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
-                                        char *name, char *value)
+                                 char *name, char *value)
 {
     jk_bean_t *mbean;
 
@@ -798,7 +830,7 @@ static int JK_METHOD jk2_config_setAttribute( struct jk_env *env, struct jk_bean
         /* Experimental. Setting save='foo' will save the current config in
            foo
         */
-        return jk2_config_saveConfig(env, cfg, cfg->workerEnv, value);
+        return jk2_config_saveConfig(env, cfg, value);
     } else {
         return JK_ERR;
     }
@@ -846,6 +878,7 @@ int JK_METHOD jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
 
     _this->setPropertyString=jk2_config_setPropertyString;
     _this->setProperty=jk2_config_setProperty;
+    _this->save=jk2_config_saveConfig;
     _this->mbean=result;
     
     result->object=_this;
