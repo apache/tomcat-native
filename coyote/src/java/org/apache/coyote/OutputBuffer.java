@@ -72,7 +72,7 @@ import org.apache.tomcat.util.buf.ByteChunk;
 public interface OutputBuffer {
 
 
-    public int doWrite(ByteChunk chunk) 
+    public int doWrite(ByteChunk chunk, Response response) 
         throws IOException;
 
 

@@ -77,7 +77,7 @@ public interface InputBuffer {
         buffer and return a pointer to it in ByteChunk ( i.e. the param will
         have chunk.getBytes()==null before call, and the result after the call ).
     */
-    public int doRead(ByteChunk chunk) 
+    public int doRead(ByteChunk chunk, Request request) 
         throws IOException;
 
 
