@@ -1,0 +1,28 @@
+<project name="Jtc" default="coyote" basedir=".">
+
+<!-- ========== Initialize Properties ===================================== -->
+
+
+  <property file="build.properties"/>                <!-- Component local   -->
+  <property file="${user.home}/build.properties"/>   <!-- User local        -->
+
+  <target name="coyote" 
+          description="Compile Coyote and all related protocols">
+        <ant dir="util" />
+        <ant dir="coyote" target="compile" />
+        <ant dir="http11" />
+        <ant dir="jk" />
+
+        <jar jarfile="jtc.jar" 
+             manifest="coyote/src/conf/MANIFEST.MF" >
+            <fileset dir="util/build/classes" includes="org/apache/**" />
+            <fileset dir="coyote/build/classes" includes="org/apache/coyote/**" />
+            <fileset dir="http11/build/classes" includes="org/apache/coyote/**" />
+            <fileset dir="jk/build/WEB-INF/classes" >
+                <include name="org/apache/**" />
+                <exclude name="org/apache/jk/ant/**" />
+            </fileset>
+        </jar>
+  </target>
+
+</project>
