@@ -569,7 +569,7 @@ final class CoyoteProcessor
      */
     private void threadStart() {
 
-        log(sm.getString("httpProcessor.starting"));
+        log(sm.getString("coyoteProcessor.starting"));
 
         thread = new Thread(this, threadName);
         thread.setDaemon(true);
@@ -586,7 +586,7 @@ final class CoyoteProcessor
      */
     private void threadStop() {
 
-        log(sm.getString("httpProcessor.stopping"));
+        log(sm.getString("coyoteProcessor.stopping"));
 
         stopped = true;
         assign(null);
@@ -653,7 +653,7 @@ final class CoyoteProcessor
 
         if (started)
             throw new LifecycleException
-                (sm.getString("httpProcessor.alreadyStarted"));
+                (sm.getString("coyoteProcessor.alreadyStarted"));
 
         // Instantiate the Coyote processor
         String className = connector.getProcessorClassName();
@@ -684,7 +684,7 @@ final class CoyoteProcessor
 
         if (!started)
             throw new LifecycleException
-                (sm.getString("httpProcessor.notStarted"));
+                (sm.getString("coyoteProcessor.notStarted"));
         lifecycle.fireLifecycleEvent(STOP_EVENT, null);
         started = false;
 
