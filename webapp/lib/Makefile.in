@@ -60,9 +60,9 @@
 
 include ../Makedefs
 
-OBJS = wa_main.o wa_request.o
+OBJS = wa_main.o wa_config.o wa_request.o
 
-LIB = libwebapp.la
+LIB = libwebapp.a
 
 all: $(LIB)
 
