@@ -230,12 +230,12 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
                                     != APR_SUCCESS) {
             if (remote_sa->next) {
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "channelApr.open(): error %d creating socket %d %s\n",
+                              "channelApr.open(): error %d creating socket to %s\n",
                               ret, socketInfo->host);
             }
             else {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "channelApr.open(): error %d creating socket %d %s\n",
+                              "channelApr.open(): error %d creating socket to %s\n",
                               ret, socketInfo->host);
             }
             remote_sa = remote_sa->next;
