@@ -29,6 +29,7 @@
 #include "jk_worker.h"
 #include "jk_lb_worker.h"
 #include "jk_mt.h"
+#include "jk_shm.h"
 
 /*
  * The load balancing code in this 
@@ -51,25 +52,13 @@ static const char *search_types[] = {
     NULL
 };
 
-/** 
- * Worker record should be inside shared
- * memory for correct behavior.
- * Right now it operates on 'equal-load'
- * presumption.
- */
 struct worker_record
 {
-    const char *name;
-    const char *domain;
-    int lb_factor;
-    int lb_value;
-    int is_local_worker;
-    int is_local_domain;
-    int in_error_state;
-    int in_recovering;
-    time_t error_time;
-    jk_worker_t *w;
+    jk_worker_t     *w;
+    /* Shared memory worker data */
+    jk_shm_w_rec_t  *s;
 };
+
 typedef struct worker_record worker_record_t;
 
 struct lb_worker
@@ -221,22 +210,22 @@ static int is_worker_candidate(worker_record_t *wr,
 {
     switch (search_id) {
         case 1:
-            if (strcmp(search_string, wr->name) == 0) {
+            if (strcmp(search_string, wr->s->name) == 0) {
                 return JK_TRUE;
             }
         break;
         case 2:
-            if (strcmp(search_string, wr->domain) == 0) {
+            if (strcmp(search_string, wr->s->domain) == 0) {
                 return JK_TRUE;
             }
         break;
         case 3:
-            if (wr->is_local_worker) {
+            if (wr->s->is_local_worker) {
                 return JK_TRUE;
             }
         break;
         case 4:
-            if (wr->is_local_domain) {
+            if (wr->s->is_local_domain) {
                 return JK_TRUE;
             }
         break;
@@ -281,39 +270,40 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
             if (JK_IS_DEBUG_LEVEL(l))
                jk_log(l, JK_LOG_DEBUG,
                       "found candidate worker %s (%d) for match with %s (%s)",
-                      p->lb_workers[i].name, i, search_type, search_string);
+                      p->lb_workers[i].s->name, i, search_type, search_string);
             if (search_id == 1) {
                 *domain_id = i;
             }
-            if (!p->lb_workers[i].in_error_state || !p->lb_workers[i].in_recovering) {
+            if (!p->lb_workers[i].s->in_error_state || !p->lb_workers[i].s->in_recovering) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "found candidate worker %s (%d) with previous load %d in search with %s (%s)",
-                           p->lb_workers[i].name, i, p->lb_workers[i].lb_value, search_type, search_string);
+                           p->lb_workers[i].s->name, i, p->lb_workers[i].s->lb_value,
+                           search_type, search_string);
 
-                if (p->lb_workers[i].in_error_state) {
+                if (p->lb_workers[i].s->in_error_state) {
 
                     time_t now = time(0);
-                    int elapsed = now - p->lb_workers[i].error_time;
+                    int elapsed = now - p->lb_workers[i].s->error_time;
                     if (elapsed <= p->recover_wait_time) {
                         if (JK_IS_DEBUG_LEVEL(l))
                             jk_log(l, JK_LOG_DEBUG,
                                    "worker candidate %s (%d) is in error state - will not yet recover (%d < %d)",
-                                   p->lb_workers[i].name, i, elapsed, p->recover_wait_time);
+                                   p->lb_workers[i].s->name, i, elapsed, p->recover_wait_time);
                         continue;
                     }
                 }
 
                 if (use_lb_factor) {
-                    p->lb_workers[i].lb_value += p->lb_workers[i].lb_factor;
-                    total_factor += p->lb_workers[i].lb_factor;
-                    if (p->lb_workers[i].lb_value > lb_max || !rc) {
-                        lb_max = p->lb_workers[i].lb_value;
+                    p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
+                    total_factor += p->lb_workers[i].s->lb_factor;
+                    if (p->lb_workers[i].s->lb_value > lb_max || !rc) {
+                        lb_max = p->lb_workers[i].s->lb_value;
                         rc = &(p->lb_workers[i]);
                         if (JK_IS_DEBUG_LEVEL(l))
                             jk_log(l, JK_LOG_DEBUG,
                                    "new maximal worker %s (%d) with previous load %d in search with %s (%s)",
-                                   rc->name, i, rc->lb_value, search_type, search_string);
+                                   rc->s->name, i, rc->s->lb_value, search_type, search_string);
                     }
                 } else {
                     rc = &(p->lb_workers[i]);
@@ -323,26 +313,26 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
             else if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_TRACE,
                     "worker candidate %s (%d) is in error state - already recovers",
-                    p->lb_workers[i].name, i);
+                    p->lb_workers[i].s->name, i);
             }
         }
     }
 
     if (rc) {
-        if (rc->in_error_state) {
+        if (rc->s->in_error_state) {
             time_t now = time(0);
-            rc->in_recovering  = JK_TRUE;
-            rc->error_time     = now;
+            rc->s->in_recovering  = JK_TRUE;
+            rc->s->error_time     = now;
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "found worker %s is in error state - will recover",
-                       rc->name);
+                       rc->s->name);
         }
-        rc->lb_value -= total_factor;
+        rc->s->lb_value -= total_factor;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "found worker %s with new load %d in search with %s (%s)",
-                   rc->name, rc->lb_value, search_type, search_string);
+                   rc->s->name, rc->s->lb_value, search_type, search_string);
         JK_LEAVE_CS(&(p->cs), i);
         return rc;
     }
@@ -394,7 +384,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             }
 
             if (domain_id >= 0 && domain_id < (int)p->num_of_workers) {
-                session_domain = p->lb_workers[domain_id].domain;
+                session_domain = p->lb_workers[domain_id].s->domain;
             }
             else {
                 session_domain = JK_LB_DEF_DOMAIN_NAME;
@@ -474,22 +464,22 @@ static int JK_METHOD service(jk_endpoint_t *e,
             if (rec) {
                 int is_recoverable = JK_FALSE;
 
-                s->jvm_route = jk_pool_strdup(s->pool, rec->name);
+                s->jvm_route = jk_pool_strdup(s->pool, rec->s->name);
 
                 rc = rec->w->get_endpoint(rec->w, &end, l);
 
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "service worker=%s jvm_route=%s rc=%d",
-                           rec->name, s->jvm_route, rc);
+                           rec->s->name, s->jvm_route, rc);
 
                 if (rc && end) {
                     int src = end->service(end, s, l, &is_recoverable);
                     end->done(&end, l);
                     if (src) {
-                        rec->in_error_state = JK_FALSE;
-                        rec->in_recovering = JK_FALSE;
-                        rec->error_time = 0;
+                        rec->s->in_error_state = JK_FALSE;
+                        rec->s->in_recovering = JK_FALSE;
+                        rec->s->error_time = 0;
                         JK_TRACE_EXIT(l);
                         return JK_TRUE;
                     }
@@ -501,9 +491,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * Time for fault tolerance (if possible)...
                  */
 
-                rec->in_error_state = JK_TRUE;
-                rec->in_recovering = JK_FALSE;
-                rec->error_time = time(0);
+                rec->s->in_error_state = JK_TRUE;
+                rec->s->in_recovering = JK_FALSE;
+                rec->s->error_time = time(0);
 
                 if (!is_recoverable) {
                     /*
@@ -586,45 +576,49 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             p->lb_workers = jk_pool_alloc(&p->p,
                                           num_of_workers *
                                           sizeof(worker_record_t));
-
+            for (i = 0; i < num_of_workers; i++) {
+                p->lb_workers[i].s = jk_shm_worker_alloc();
+                if (p->lb_workers[i].s == NULL) {
+                    JK_TRACE_EXIT(l);
+                    return JK_FALSE;
+                }
+            }
             if (!p->lb_workers) {
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
 
             for (i = 0; i < num_of_workers; i++) {
-                p->lb_workers[i].name =
-                    jk_pool_strdup(&p->p, worker_names[i]);
-                p->lb_workers[i].lb_factor =
+                strncpy(p->lb_workers[i].s->name, worker_names[i],
+                        JK_SHM_STR_SIZ);
+                p->lb_workers[i].s->lb_factor =
                     jk_get_lb_factor(props, worker_names[i]);
-                if (p->lb_workers[i].lb_factor < 1) {
-                    p->lb_workers[i].lb_factor = 1;
+                if (p->lb_workers[i].s->lb_factor < 1) {
+                    p->lb_workers[i].s->lb_factor = 1;
                 }
-                p->lb_workers[i].domain = jk_get_worker_domain(props,
-                                                               worker_names[i],
-                                                               JK_LB_DEF_DOMAIN_NAME);
-                if (!p->lb_workers[i].domain) {
-                    p->lb_workers[i].domain = JK_LB_DEF_DOMAIN_NAME;
-                }
-                p->lb_workers[i].is_local_worker =
+                strncpy(p->lb_workers[i].s->domain,
+                        jk_get_worker_domain(props, worker_names[i],
+                                             JK_LB_DEF_DOMAIN_NAME),
+                        JK_SHM_STR_SIZ);
+                p->lb_workers[i].s->is_local_worker =
                     jk_get_is_local_worker(props, worker_names[i]);
-                if (p->lb_workers[i].is_local_worker)
+                if (p->lb_workers[i].s->is_local_worker)
                     p->in_local_worker_mode = JK_TRUE;
                 /* 
                  * Allow using lb in fault-tolerant mode.
                  * A value of 0 means the worker will be used for all requests without
                  * sessions
                  */
-                p->lb_workers[i].lb_value = p->lb_workers[i].lb_factor;
-                p->lb_workers[i].in_error_state = JK_FALSE;
-                p->lb_workers[i].in_recovering = JK_FALSE;
-                if (!wc_create_worker(p->lb_workers[i].name,
+                p->lb_workers[i].s->lb_value = p->lb_workers[i].s->lb_factor;
+                p->lb_workers[i].s->in_error_state = JK_FALSE;
+                p->lb_workers[i].s->in_recovering = JK_FALSE;
+                if (!wc_create_worker(p->lb_workers[i].s->name,
                                       props,
                                       &(p->lb_workers[i].w),
                                       we, l) || !p->lb_workers[i].w) {
                     break;
                 }
-                else if (p->lb_workers[i].is_local_worker) {
+                else if (p->lb_workers[i].s->is_local_worker) {
                     /*
                      * If lb_value is 0 than move it at the beginning of the list
                      */
@@ -648,18 +642,18 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "Failed to create worker %s",
-                           p->lb_workers[i].name);
+                           p->lb_workers[i].s->name);
 
             }
             else {
                 for (i = 0; i < num_of_local_workers; i++) {
-                    p->lb_workers[i].is_local_domain=1;
+                    p->lb_workers[i].s->is_local_domain=1;
                 }
                 for (i = num_of_local_workers; i < num_of_workers; i++) {
-                    p->lb_workers[i].is_local_domain=0;
+                    p->lb_workers[i].s->is_local_domain=0;
                     for (j = 0; j < num_of_local_workers; j++) {
-                        if(0 == strcmp(p->lb_workers[i].domain, p->lb_workers[j].domain)) {
-                            p->lb_workers[i].is_local_domain=1;
+                        if(!strcmp(p->lb_workers[i].s->domain, p->lb_workers[j].s->domain)) {
+                            p->lb_workers[i].s->is_local_domain = 1;
                             break;
                         }
                     }
@@ -669,8 +663,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                     for (i = 0; i < num_of_workers; i++) {
                         jk_log(l, JK_LOG_DEBUG,
                                "Balanced worker %i has name %s in domain %s and has local=%d and local_domain=%d",
-                               i, p->lb_workers[i].name, p->lb_workers[i].domain,
-                               p->lb_workers[i].is_local_worker, p->lb_workers[i].is_local_domain);
+                               i, p->lb_workers[i].s->name, p->lb_workers[i].s->domain,
+                               p->lb_workers[i].s->is_local_worker, p->lb_workers[i].s->is_local_domain);
                     }
                 }
                 if (JK_IS_DEBUG_LEVEL(l)) {
