@@ -65,13 +65,23 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Iterator;
 
+/**
+ * Encapsulates an ajp request.
+ *
+ * When an ajp request is handled, it is decoded into an
+ * <code>AjpRequest</code> that can then be used by an adaptor
+ * and/or connector to process the request.
+ */
 public class AjpRequest {
 
+    // scheme constants
     public static final String SCHEME_HTTP = "http";
     public static final String SCHEME_HTTPS = "https";
-    
+
+    // an empty iterator
     private final static Iterator emptyItr = new LinkedList().iterator();
 
+    // request attributes
     MessageBytes method = new MessageBytes();
     MessageBytes protocol = new MessageBytes();
     MessageBytes requestURI = new MessageBytes();
@@ -92,7 +102,7 @@ public class AjpRequest {
     LinkedList cookies = new LinkedList();
     
     /**
-     * recylce this Request
+     * Recycles this object and readies it further use.
      */
     public void recycle() {
         method.recycle();
@@ -115,62 +125,122 @@ public class AjpRequest {
         cookies.clear();
     }
 
+    /**
+     * Get the method.
+     * @return the method
+     */
     public MessageBytes getMethod() {
         return method;
     }
 
+    /**
+     * Get the protocol
+     * @return the protocol
+     */
     public MessageBytes getProtocol() {
         return protocol;
     }
 
+    /**
+     * Get the request uri
+     * @return the request uri
+     */
     public MessageBytes getRequestURI() {
         return requestURI;
     }
 
+    /**
+     * Get the remote address
+     * @return the remote address
+     */
     public MessageBytes getRemoteAddr() {
         return remoteAddr;
     }
 
+    /**
+     * Get the remote host
+     * @return the remote host
+     */
     public MessageBytes getRemoteHost() {
         return remoteHost;
     }
 
+    /**
+     * Get the server name
+     * @return the server name
+     */
     public MessageBytes getServerName() {
         return serverName;
     }
 
+    /**
+     * Get the server port
+     * @return the server port
+     */
     public int getServerPort() {
         return serverPort;
     }
 
+    /**
+     * Get the remote user
+     * @return the remote user
+     */
     public MessageBytes getRemoteUser() {
         return remoteUser;
     }
 
+    /**
+     * Get the auth type
+     * @return the auth type
+     */
     public MessageBytes getAuthType() {
         return authType;
     }
 
+    /**
+     * Get the query string
+     * @return the query string
+     */
     public MessageBytes getQueryString() {
         return queryString;
     }
 
+    /**
+     * Get the jvm route
+     * @return the jvm route
+     */
     public MessageBytes getJvmRoute() {
         return jvmRoute;
     }
 
+    /**
+     * Get the scheme
+     * @return the scheme
+     */
     public String getScheme() {
         return scheme;
     }
 
+    /**
+     * Get whether the request is secure or not.
+     * @return <code>true</code> if the request is secure.
+     */
     public boolean getSecure() {
         return secure;
     }
 
+    /**
+     * Get the content length
+     * @return the content length
+     */
     public int getContentLength() {
         return contentLength;
     }
 
+    /**
+     * Get the content type
+     * @return the content type
+     */
     public MessageBytes getContentType() {
         return contentType;
     }
