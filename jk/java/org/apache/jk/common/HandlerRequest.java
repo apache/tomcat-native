@@ -329,7 +329,8 @@ public class HandlerRequest extends JkHandler
             tmpMB=new MessageBytes();
             ep.setNote( tmpBufNote, tmpMB);
         }
-        log.debug( "Handling " + type );
+        if( log.isDebugEnabled() )
+            log.debug( "Handling " + type );
         
         switch( type ) {
         case JK_AJP13_FORWARD_REQUEST:
@@ -352,7 +353,8 @@ public class HandlerRequest extends JkHandler
                   next.getClass().getName());
             
             int err= next.invoke( msg, ep );
-            log.debug( "Invoke returned " + err );
+            if( log.isDebugEnabled() )
+                log.debug( "Invoke returned " + err );
             return err;
         case JK_AJP13_SHUTDOWN:
             String epSecret=null;
@@ -364,7 +366,8 @@ public class HandlerRequest extends JkHandler
             
             if( requiredSecret != null &&
                 requiredSecret.equals( epSecret ) ) {
-                log.debug("Received wrong secret, no shutdown ");
+                if( log.isDebugEnabled() )
+                    log.debug("Received wrong secret, no shutdown ");
                 return ERROR;
             }
 
@@ -591,6 +594,7 @@ public class HandlerRequest extends JkHandler
             if(0xA000 == isc) {
                 msg.getInt(); // To advance the read position
                 hName = headerTransArray[hId - 1];
+                vMB=headers.addValue( hName );
             } else {
                 // reset hId -- if the header currently being read
                 // happens to be 7 or 8 bytes long, the code below
@@ -600,19 +604,22 @@ public class HandlerRequest extends JkHandler
                 // behaviour.  see bug 5861 for more information.
                 hId = -1;
                 msg.getBytes( tmpMB );
-                hName=tmpMB.toString();
+                ByteChunk bc=tmpMB.getByteChunk();
+                //hName=tmpMB.toString();
+                //                vMB=headers.addValue( hName );
+                vMB=headers.addValue( bc.getBuffer(),
+                                      bc.getStart(), bc.getLength() );
             }
 
-            vMB=headers.addValue( hName );
             msg.getBytes(vMB);
 
             if (hId == SC_REQ_CONTENT_LENGTH ||
-                hName.equalsIgnoreCase("Content-Length")) {
+                tmpMB.equalsIgnoreCase("Content-Length")) {
                 // just read the content-length header, so set it
                 int contentLength = (vMB == null) ? -1 : vMB.getInt();
                 req.setContentLength(contentLength);
             } else if (hId == SC_REQ_CONTENT_TYPE ||
-                       hName.equalsIgnoreCase("Content-Type")) {
+                       tmpMB.equalsIgnoreCase("Content-Type")) {
                 // just read the content-type header, so set it
                 ByteChunk bchunk = vMB.getByteChunk();
                 req.contentType().setBytes(bchunk.getBytes(),
