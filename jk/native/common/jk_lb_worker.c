@@ -643,6 +643,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].s->lb_value = p->lb_workers[i].s->lb_factor;
                 p->lb_workers[i].s->in_error_state = JK_FALSE;
                 p->lb_workers[i].s->in_recovering = JK_FALSE;
+                /* Worker can be initaly disabled as hot standby */
+                p->lb_workers[i].s->is_disabled = jk_get_is_worker_disabled(props, worker_names[i]);
                 if (!wc_create_worker(p->lb_workers[i].s->name,
                                       props,
                                       &(p->lb_workers[i].w),

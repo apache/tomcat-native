@@ -65,6 +65,7 @@
 #define REDIRECT_OF_WORKER          ("redirect")
 #define MOUNT_OF_WORKER             ("mount")
 #define METHOD_OF_WORKER            ("method")
+#define IS_WORKER_DISABLED          ("disabled")
 
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
@@ -638,6 +639,20 @@ int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_wokers)
     }
 
     return JK_FALSE;
+}
+
+int jk_get_is_worker_disabled(jk_map_t *m, const char *wname)
+{
+    int rc = JK_TRUE;
+    char buf[1024];
+    if (m && wname) {
+        int value;
+        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, IS_WORKER_DISABLED);
+        value = jk_map_get_bool(m, buf, 0);
+        if (!value)
+            rc = JK_FALSE;
+    }
+    return rc;
 }
 
 void jk_set_log_format(const char *logformat)
