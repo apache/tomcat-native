@@ -1022,7 +1022,7 @@ static int init_jk(char *serverName)
                 sz = jk_map_size(map);
                 for (i = 0; i < sz; i++) {
                     char *name = jk_map_name_at(map, i);
-                    if ('/' == *name) {
+                    if (*name == '/' || *name == '!') {
                         jk_map_put(map2, name, jk_map_value_at(map, i), &old);
                     }
                     else {
