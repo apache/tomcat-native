@@ -1,36 +1,68 @@
-Quick informations on building mod_jk2 :
+Information on building mod_jk2:
 
-Starting with 2.0.4, APR is mandatory for jk2 so you should be
-sure to have it installed on your system, probably because you
-already have an Apache 2.0 installed or have apr and apr-utils
-sources tarball ready, since jk2 will first build APR/APR-UTILS
-for its own purpose (Apache 1.3 case).
+  Starting with 2.0.4, APR is mandatory for jk2. For Apache 2.0
+  or greater jk2 will use APR that was used to build Apache 2.0.
+  For Apache 1.3, jk2 must build APR and APR_UTIL from source. 
 
+DSO build instructions for Unix-like systems:
 
-If you want to have JNI support, add --with-jni and be sure to
-have JAVA_HOME env var point to your Java Environment.
+  The compiler used to build jk2 must match the one used to build
+  Apache. You may need to set an environment variable before 
+  configuring such as CC=cc. `apxs -q CC` will tell you what 
+  compiler was used for Apache.
 
-* Linux distributions using Apache 2.0
+  The most straightforward way to configure jk2 is to use apxs 
+  that comes with Apache. Linux distributions may need to have 
+  additional rpm's installed such as Apache2 devel rpm, 
+  httpd-devel or apache2-devel or for Apache 13, Apache devel 
+  rpm, httpd-devel or apache-devel depending on your 
+  distribution.
 
-  You should have apxs, so be sure to have the Apache2 devel rpm, 
-  httpd-devel or apache2-devel depending distributions.
+  Example Apache2 build and install:
 
-./configure --with-apxs2=/your/path/to/apxs --with-jni
-make
-cp ../build/jk2/apache2/mod_jk2.so /your/path/to/apache2modules 
+    cd jakarta-tomcat-connectors/jk/native2
+    ./configure --with-apxs2=/your/path/to/apxs
+    make
+    cd ../build/jk2/apache2
+    apxs -n jk2 -i mod_jk2.so
 
+  Example Apache13 build and install:
 
-* Linux distributions using Apache 1.3
+    apr and apr-util will be configured and built for you while
+    configuring and building jk2. There is no need to separately
+    configure and build them. 
 
-  You should have apxs, so be sure to have the Apache devel rpm, 
-  httpd-devel or apache-devel depending distributions.
+      cd jakarta-tomcat-connectors/jk/native2
+      ./configure --with-apxs=/your/path/to/apxs \
+                  --with-apr=/your/path/to/apr-source \
+                  --with-apr-util=/your/path/to/apr-util-source
+      make
+      cd ../build/jk2/apache13
+      apxs -n jk2 -i mod_jk2.so
 
-./configure --with-apxs=/your/path/to/apxs 	--with-apr=/your/path/to/aprsources \
-            --with-apr-util=/your/patch/to/apr-util --with-jni
-make
-cp ../build/jk2/apache13/mod_jk2.so /your/path/to/apache13modules 
+    NOTE: pthread support may be automatically detected and built
+    into apr. If apache13 was not built with pthread support, you
+    can either disable it by adding --disable-apr-threads while
+    configuring, or load the pthread library in httpd.conf using
+    the LoadFile directive.
 
+  Optional configure arguments (for 1.3 and 2.0):
 
+    If you want to have JNI support, add --with-jni and be sure
+    to have the JAVA_HOME environment variable point to your Java
+    Environment. This will build inprocess jni support into
+    mod_jk2.so and additionally build libjkjni.so. libjkjni.so
+    can be used by tomcat to provide support for channel unix and
+    should be installed in the apache libexec dir. Use 
+    `apxs -q LIBEXECDIR` if you are unsure of its location. 
+    Libjkjni.so will be located in the same directory as 
+    mod_jk2.so after building with this option.
+
+    If you want to have PCRE (Perl Compatible Regular
+    Expressions) support for jk2 uri directives, add --with-pcre
+    while configuring.
+    
+    Quick informations on building mod_jk2 :
 
 
 * IIS 
