@@ -107,7 +107,6 @@ public class MemoryNamingContext extends BaseDirContext {
      */
     protected Hashtable bindings;
 
-
     public void setBindings( Hashtable bindings ) {
         this.bindings = bindings;
     }
@@ -273,7 +272,7 @@ public class MemoryNamingContext extends BaseDirContext {
     }
 
     // XXX Make it iterative, less objects
-    private NamingEntry findNamingEntry(Name name, boolean resolveLinks, Object o)
+    private NamingEntry findNamingEntry(Name name, boolean resolveLinks)
         throws NamingException
     {
          if (name.isEmpty()) {
@@ -304,14 +303,14 @@ public class MemoryNamingContext extends BaseDirContext {
         }
     }
 
-    public Object lookup(Name name, boolean resolveLinks, Object o)
+    public Object lookup(Name name, boolean resolveLinks)
         throws NamingException
     {
         // Removing empty parts
         while ((!name.isEmpty()) && (name.get(0).length() == 0))
             name = name.getSuffix(1);
         
-        NamingEntry entry=findNamingEntry( name, resolveLinks, o );
+        NamingEntry entry=findNamingEntry( name, resolveLinks );
 
         if( entry.type == NamingEntry.CONTEXT ) {
             return ((BaseDirContext) entry.value).lookup(name.getSuffix(1), resolveLinks, o);
