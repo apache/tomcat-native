@@ -22,6 +22,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.http.MimeHeaders;
@@ -607,11 +608,12 @@ public class InternalOutputBuffer
      */
     protected void write(MessageBytes mb) {
 
-        mb.toBytes();
-
         if (mb.getType() == MessageBytes.T_BYTES) {
             ByteChunk bc = mb.getByteChunk();
             write(bc);
+        } else if (mb.getType() == MessageBytes.T_CHARS) {
+            CharChunk cc = mb.getCharChunk();
+            write(cc);
         } else {
             write(mb.toString());
         }
@@ -632,6 +634,43 @@ public class InternalOutputBuffer
         System.arraycopy(bc.getBytes(), bc.getStart(), buf, pos,
                          bc.getLength());
         pos = pos + bc.getLength();
+
+    }
+
+
+    /**
+     * This method will write the contents of the specyfied char 
+     * buffer to the output stream, without filtering. This method is meant to
+     * be used to write the response header.
+     * 
+     * @param bc data to be written
+     */
+    protected void write(CharChunk cc) {
+
+        int start = cc.getStart();
+        int end = cc.getEnd();
+        char[] cbuf = cc.getBuffer();
+        for (int i = start; i < end; i++) {
+            char c = cbuf[i];
+            // Note:  This is clearly incorrect for many strings,
+            // but is the only consistent approach within the current
+            // servlet framework.  It must suffice until servlet output
+            // streams properly encode their output.
+            if ((c & 0xff00) != 0) {
+                // High order byte must be zero
+                //log("Header character is not iso8859_1, " +
+                //"not supported yet: " + c, Log.ERROR ) ;
+            }
+            if (c != 9) {
+                if ((c >= 0) && (c <= 31)) {
+                    c = ' ';
+                }
+                if (c == 127) {
+                    c = ' ';
+                }
+            }
+            buf[pos++] = (byte) c;
+        }
 
     }
 
