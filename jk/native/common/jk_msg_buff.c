@@ -291,7 +291,8 @@ int jk_b_append_string(jk_msg_buf_t *msg,
     jk_b_append_int(msg, (unsigned short )len);
 
     /* We checked for space !!  */
-    strncpy((char *)msg->buf + msg->len , param, len+1); /* including \0 */
+    strncpy((char *)msg->buf + msg->len , param, len+1);    /* including \0 */
+    jk_xlate_to_ascii((char *)msg->buf + msg->len, len+1);  /* convert from EBCDIC if needed */
     msg->len += len + 1;
 
     return 0;
