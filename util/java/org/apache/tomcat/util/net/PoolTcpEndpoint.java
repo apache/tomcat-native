@@ -544,7 +544,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 	}
     }
     
-    public void runIt(Object perThrData[]) {
+    public void runIt(Object[] perThrData) {
 
 	// Create per-thread cache
 	if (endpoint.isRunning()) {
@@ -552,11 +552,16 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 	    try {
                 s = endpoint.acceptSocket();
 	    } finally {
-		// Continue accepting on another thread...
-                if (endpoint.isRunning()) {
+                /*
+                 * Continue accepting on another thread, unless maxThreads has
+                 * been set to 1, in which case we have to finish processing
+                 * this request before we can accept a new request.
+                 */
+                if (endpoint.isRunning() && endpoint.getMaxThreads() > 1) {
                     endpoint.tp.runIt(this);
                 }
             }
+
 	    if (null != s) {
 		
 		try {
@@ -574,19 +579,24 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 
                 TcpConnection con = null;
                 try {
+                    Object[] localPerThrData = null;
 		    if( usePool ) {
 			con=(TcpConnection)connectionCache.get();
-			if( con == null ) 
+			if( con == null ) {
 			    con = new TcpConnection();
+			}
+                        localPerThrData = perThrData;
 		    } else {
                         con = (TcpConnection) perThrData[0];
-                        perThrData = (Object []) perThrData[1];
+                        localPerThrData = (Object[]) perThrData[1];
 		    }
 		    
 		    con.setEndpoint(endpoint);
 		    con.setSocket(s);
 		    endpoint.setSocketOptions( s );
-		    endpoint.getConnectionHandler().processConnection(con, perThrData);
+		    endpoint.getConnectionHandler().processConnection(
+                                                            con,
+                                                            localPerThrData);
                 } catch (SocketException se) {
                     endpoint.log.error(
                        "Remote Host " + s.getInetAddress() +
@@ -610,6 +620,11 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                     }
                 }
 	    }
+
+            if (endpoint.getMaxThreads() == 1) {
+                // Ready to accept new request
+                runIt(perThrData);
+            }
 	}
     }
 
