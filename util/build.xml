@@ -14,7 +14,7 @@
 
     <target name="build-main" depends="build-prepare">
     
-        <javac srcdir="src/java"
+        <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
 	       deprecation="on"
 	       debug="on"
@@ -25,14 +25,14 @@
 
 	<!-- Copy static resource files -->
 	<copy todir="${tomcat-util.build}/classes">
-	    <fileset dir="src/java">
+	    <fileset dir="java">
 	    	<include name="**/*.properties"/>
 	    </fileset>
         </copy>
 
 	<!-- Copy static resource files -->
 	<copy todir="${tomcat-util.build}/classes">
-	    <fileset dir="src/java">
+	    <fileset dir="java">
 	    	<include name="**/*.properties"/>
 	    </fileset>
         </copy>
@@ -47,7 +47,7 @@
         <delete dir="${tomcat-util.build}/javadoc"/>
 	<mkdir dir="${tomcat-util.build}/javadoc"/>
 	<javadoc packagenames="org.apache.tomcat.util.*"
-               sourcepath="src/java"
+               sourcepath="java"
                   destdir="${tomcat-util.build}/javadoc"
                    author="true"
                   version="true"
