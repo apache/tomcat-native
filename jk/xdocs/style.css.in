@@ -1,6 +1,7 @@
 body {
   margin: 0;
   font-family: "verdana", "tahoma", "arial", "helvetica", sans-serif;
+  font-size: 9pt;
 }
 
 td.logo {
@@ -11,7 +12,6 @@ td.logo {
 td.nil {
   font-size: 1px;
 }
-
 
 td.head {
   background-color: #999999;
@@ -114,6 +114,10 @@ p.section {
   text-align: justify;
 }
 
+pre.section {
+   margin-left: 20px;
+}
+
 td.section {
   background-color: @sub-banner-bg@;
   border-style: none;
@@ -143,10 +147,40 @@ p.screen {
   text-align: left;
 }
 
+p.screendos {
+  background-color: #000000;
+  border-style: none;
+  color: #ffffff;
+  margin-left: 10px;
+  margin-right: 0px;
+  text-align: left;
+}
+
+p.screen5250 {
+  background-color: #000000;
+  border-style: none;
+  color: #00ff00;
+  margin-left: 10px;
+  margin-right: 0px;
+  text-align: left;
+}
+
 div.screen {
   margin: 10px 0px 10px 20px;
   font-size: smaller;
   color: #666666;
+}
+
+div.screendos {
+  margin: 10px 0px 10px 20px;
+  font-size: smaller;
+  color: #ff66ff;
+}
+
+div.screen5250 {
+  margin: 10px 0px 10px 20px;
+  font-size: smaller;
+  color: #66ff66;
 }
 
 em.screen {
@@ -155,10 +189,34 @@ em.screen {
   color: #666666;
 }
 
+em.screendos {
+  font-weight: normal;
+  font-style: normal;
+  color: #ffffff;
+}
+
+em.screen5250 {
+  font-weight: normal;
+  font-style: normal;
+  color: #00ff00;
+}
+
 b.screen {
   font-weight: normal;
   font-style: normal;
   color: #0000ff;
+}
+
+b.screendos {
+  font-weight: normal;
+  font-style: normal;
+  color: #ffffff;
+}
+
+b.screen5250 {
+  font-weight: normal;
+  font-style: normal;
+  color: #00ff00;
 }
 
 b.code {
@@ -166,3 +224,4 @@ b.code {
   font-style: normal;
   color: @source-color@;
 }
+
