@@ -67,6 +67,7 @@ import java.io.OutputStream;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.http.MimeHeaders;
 
 import org.apache.coyote.ActionHook;
@@ -265,7 +266,6 @@ public class Http11Connector implements Connector, ActionHook {
                 
                 inputBuffer.parseHeaders();
             } catch (EOFException e) {
-                e.printStackTrace();
                 error = true;
                 break;
             } catch (InterruptedIOException e) {
@@ -350,6 +350,8 @@ public class Http11Connector implements Connector, ActionHook {
             // Send a 100 status back if it makes sense (response not committed
             // yet, and client specified an expectation for 100-continue)
 
+            // FIXME
+
         } else if (actionCode == ActionCode.ACTION_CLOSE) {
 
             // Close
@@ -414,10 +416,10 @@ public class Http11Connector implements Connector, ActionHook {
         boolean http11 = true;
         contentDelimitation = false;
 
-        MessageBytes protocol = request.protocol();
-        if (protocol.equals(Constants.HTTP_11)) {
+        MessageBytes protocolMB = request.protocol();
+        if (protocolMB.equals(Constants.HTTP_11)) {
             http11 = true;
-        } else if (protocol.equals(Constants.HTTP_10)) {
+        } else if (protocolMB.equals(Constants.HTTP_10)) {
             http11 = false;
             keepAlive = false;
         } else {
@@ -426,6 +428,8 @@ public class Http11Connector implements Connector, ActionHook {
             // Send 505; Unsupported HTTP version
             response.setStatus(505);
         }
+
+        MessageBytes methodMB = request.method();
 
         // Check connection header
         MessageBytes connectionValueMB = 
@@ -464,6 +468,15 @@ public class Http11Connector implements Connector, ActionHook {
             inputBuffer.addActiveFilter
                 (inputFilters[Constants.IDENTITY_FILTER]);
             contentDelimitation = true;
+        } else {
+            // If method is GET or HEAD, prevent from reading any content
+            if ((methodMB.equals("GET"))
+                || (methodMB.equals("HEAD"))
+                || (methodMB.equals("TRACE"))) {
+                inputBuffer.addActiveFilter
+                    (inputFilters[Constants.VOID_FILTER]);
+                contentDelimitation = true;
+            }
         }
 
         // Parse transfer-encoding header
@@ -484,7 +497,7 @@ public class Http11Connector implements Connector, ActionHook {
                     // Unsupported transfer encoding
                     error = true;
                     // Send 501; Unimplemented
-                    response.setStatus(502);
+                    response.setStatus(501);
                 }
                 startPos = commaPos + 1;
                 commaPos = transferEncodingValue.indexOf(',', startPos);
@@ -495,7 +508,7 @@ public class Http11Connector implements Connector, ActionHook {
                 // Unsupported transfer encoding
                 error = true;
                 // Send 501; Unimplemented
-                response.setStatus(502);
+                response.setStatus(501);
             }
         }
 
@@ -518,16 +531,49 @@ public class Http11Connector implements Connector, ActionHook {
      */
     protected void prepareResponse() {
 
+        boolean http11 = true;
+        boolean http09 = false;
         contentDelimitation = false;
+
+        MessageBytes protocolMB = request.protocol();
+        if (protocolMB.equals(Constants.HTTP_11)) {
+            http11 = true;
+        } else if (protocolMB.equals(Constants.HTTP_10)) {
+            http11 = false;
+        } else {
+            // FIXME: Check for HTTP/0.9
+        }
 
         OutputFilter[] outputFilters = outputBuffer.getFilters();
 
-        outputBuffer.addActiveFilter
-            (outputFilters[Constants.IDENTITY_FILTER]);
-
         int contentLength = request.getContentLength();
         if (contentLength != -1) {
+            outputBuffer.addActiveFilter
+                (outputFilters[Constants.IDENTITY_FILTER]);
             contentDelimitation = true;
+        } else {
+            if (http11) {
+                outputBuffer.addActiveFilter
+                    (outputFilters[Constants.CHUNKED_FILTER]);
+                contentDelimitation = true;
+                response.addHeader("Transfer-Encoding", "chunked");
+            }
+        }
+
+        // Add date header
+        response.addHeader("Date", FastHttpDateFormat.getCurrentDate());
+
+        // Add server header
+        response.addHeader("Server", Constants.SERVER);
+
+        // Add transfer encoding header
+        // FIXME
+
+        if (!contentDelimitation) {
+            // Mark as close the connection after the request, and add the 
+            // connection: close header
+            keepAlive = false;
+            response.addHeader("Connection", "close");
         }
 
         // Build the response header
@@ -539,12 +585,6 @@ public class Http11Connector implements Connector, ActionHook {
             outputBuffer.sendHeader(headers.getName(i), headers.getValue(i));
         }
         outputBuffer.endHeaders();
-
-        if (!contentDelimitation) {
-            // Mark as close the connection after the request, and add the 
-            // connection: close header
-            keepAlive = false;
-        }
 
     }
 

@@ -62,6 +62,7 @@ package org.apache.coyote.http11.filters;
 import java.io.IOException;
 
 import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.HexUtils;
 
 import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Response;
@@ -82,11 +83,33 @@ public class ChunkedOutputFilter implements OutputFilter {
     protected static final ByteChunk ENCODING = new ByteChunk();
 
 
+    /**
+     * End chunk.
+     */
+    protected static final ByteChunk END_CHUNK = new ByteChunk();
+
+
     // ----------------------------------------------------- Static Initializer
 
 
     static {
         ENCODING.setBytes(ENCODING_NAME.getBytes(), 0, ENCODING_NAME.length());
+        String endChunkValue = "0\r\n\r\n";
+        END_CHUNK.setBytes(endChunkValue.getBytes(), 
+                           0, endChunkValue.length());
+    }
+
+
+    // ------------------------------------------------------------ Constructor
+
+
+    /**
+     * Default constructor.
+     */
+    public ChunkedOutputFilter() {
+        chunkLength = new byte[10];
+        chunkLength[8] = (byte) '\r';
+        chunkLength[9] = (byte) '\n';
     }
 
 
@@ -97,6 +120,18 @@ public class ChunkedOutputFilter implements OutputFilter {
      * Next buffer in the pipeline.
      */
     protected OutputBuffer buffer;
+
+
+    /**
+     * Buffer used for chunk length conversion.
+     */
+    protected byte[] chunkLength = new byte[10];
+
+
+    /**
+     * Chunk header.
+     */
+    protected ByteChunk chunkHeader = new ByteChunk();
 
 
     // ------------------------------------------------------------- Properties
@@ -116,11 +151,19 @@ public class ChunkedOutputFilter implements OutputFilter {
         int result = chunk.getLength();
 
         if (result <= 0) {
-            return -1;
+            return 0;
         }
 
-        // Write chunk header
-        // FIXME
+        // Calculate chunk header
+        int pos = 7;
+        int current = result;
+        while (current > 0) {
+            int digit = current % 16;
+            current = current / 16;
+            chunkLength[pos--] = HexUtils.HEX[digit];
+        }
+        chunkHeader.setBytes(chunkLength, pos + 1, 9 - pos);
+        buffer.doWrite(chunkHeader);
 
         buffer.doWrite(chunk);
 
@@ -157,7 +200,8 @@ public class ChunkedOutputFilter implements OutputFilter {
         throws IOException {
 
         // Write end chunk
-        // FIXME
+        buffer.doWrite(END_CHUNK);
+        
         return 0;
 
     }
