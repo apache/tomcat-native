@@ -155,25 +155,28 @@ public abstract class JSSESocketFactory
     public void handshake(Socket sock) throws IOException {
         ((SSLSocket)sock).startHandshake();
     }
-     
+
     /*
      * Determines the SSL cipher suites to be enabled.
      *
-     * @return Array of SSL cipher suites to be enabled, or null if the
-     * cipherSuites property was not specified (meaning that all supported
-     * cipher suites are to be enabled)
+     * @param requestedCiphers Comma-separated list of requested ciphers
+     * @param supportedCiphers Array of supported ciphers
+     *
+     * @return Array of SSL cipher suites to be enabled, or null if none of the
+     * requested ciphers are supported
      */
-    protected String[] getEnabledCiphers(String[] supportedCiphers) {
+    protected String[] getEnabledCiphers(String requestedCiphers,
+                                         String[] supportedCiphers) {
 
         String[] enabledCiphers = null;
 
-        String attrValue = (String)attributes.get("ciphers");
-        if (attrValue != null) {
+        if (requestedCiphers != null) {
             Vector vec = null;
             int fromIndex = 0;
-            int index = attrValue.indexOf(',', fromIndex);
+            int index = requestedCiphers.indexOf(',', fromIndex);
             while (index != -1) {
-                String cipher = attrValue.substring(fromIndex, index).trim();
+                String cipher
+                    = requestedCiphers.substring(fromIndex, index).trim();
                 /*
                  * Check to see if the requested cipher is among the supported
                  * ciphers, i.e., may be enabled
@@ -189,7 +192,7 @@ public abstract class JSSESocketFactory
                     }
                 }
                 fromIndex = index+1;
-                index = attrValue.indexOf(',', fromIndex);
+                index = requestedCiphers.indexOf(',', fromIndex);
             }
 
             if (vec != null) {
@@ -200,7 +203,7 @@ public abstract class JSSESocketFactory
 
         return enabledCiphers;
     }
-
+     
     /*
      * Gets the SSL server's keystore password.
      */
@@ -288,15 +291,72 @@ public abstract class JSSESocketFactory
      */
     abstract void init() throws IOException ;
 
+    /*
+     * Determines the SSL protocol variants to be enabled.
+     *
+     * @param requestedProtocols Comma-separated list of requested SSL
+     * protocol variants
+     * @param supportedProtocols Array of supported SSL protocol variants
+     *
+     * @return Array of SSL protocol variants to be enabled, or null if none of
+     * the requested protocol variants are supported
+     */
+    private String[] getEnabledProtocols(String requestedProtocols,
+                                         String[] supportedProtocols) {
+
+        String[] enabledProtocols = null;
+
+        if (requestedProtocols != null) {
+            Vector vec = null;
+            int fromIndex = 0;
+            int index = requestedProtocols.indexOf(',', fromIndex);
+            while (index != -1) {
+                String protocol
+                    = requestedProtocols.substring(fromIndex, index).trim();
+                /*
+                 * Check to see if the requested protocol is among the
+                 * supported protocols, i.e., may be enabled
+                 */
+                for (int i=0; supportedProtocols != null
+                             && i<supportedProtocols.length; i++) {
+                    if (supportedProtocols[i].equals(protocol)) {
+                        if (vec == null) {
+                            vec = new Vector();
+                        }
+                        vec.addElement(protocol);
+                        break;
+                    }
+                }
+                fromIndex = index+1;
+                index = requestedProtocols.indexOf(',', fromIndex);
+            }
+
+            if (vec != null) {
+                enabledProtocols = new String[vec.size()];
+                vec.copyInto(enabledProtocols);
+            }
+        }
+
+        return enabledProtocols;
+    }
+
     /**
-     * Sets the SSL server socket properties (such as enabled cipher suites,
-     * etc.)
+     * Configures the given SSL server socket with the requested cipher suites,
+     * protocol versions, and need for client authentication
      */
     private void initServerSocket(ServerSocket ssocket) {
-        SSLServerSocket socket=(SSLServerSocket)ssocket;
 
-        if (enabledCiphers != null) {
+        SSLServerSocket socket = (SSLServerSocket) ssocket;
+
+        if (attributes.get("ciphers") != null) {
             socket.setEnabledCipherSuites(enabledCiphers);
+        }
+
+        String requestedProtocols = (String) attributes.get("protocols");
+        if (requestedProtocols != null) {
+            socket.setEnabledProtocols(getEnabledProtocols(
+                                        requestedProtocols,
+                                        socket.getSupportedProtocols()));
         }
 
         // we don't know if client auth is needed -
