@@ -15,7 +15,7 @@ CFLAGS=@apache_include@ @CFLAGS@ ${JK_INCL}
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 
-include ../common/list.mk.in
+include ../common/list.mk
 include ../scripts/build/rules.mk
 
 OEXT=@APACHE20_OEXT@
