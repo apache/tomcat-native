@@ -374,7 +374,7 @@ static int JK_METHOD jk2_config_file_setAttribute( struct jk_env *env, struct jk
     } else if( strcmp( name, "debugEnv" )==0 ) {
         env->debug=atoi( value );
     } else if( strcmp( name, "save" )==0 ) {
-        return jk2_config_file_saveConfig(env, cfg, value);
+        return jk2_config_file_saveConfig(env, cfg, cfg->file);
     } else {
         return JK_ERR;
     }
