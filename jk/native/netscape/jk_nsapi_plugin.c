@@ -300,7 +300,7 @@ NSAPI_PUBLIC int jk_init(pblock *pb,
                 rc = REQ_PROCEED;
             }
 
-/*            if(wc_open(init_map, logger)) {
+/*            if(wc_open(init_map, NULL, logger)) {
                 magnus_atrestart(jk_term, NULL);
                 rc = REQ_PROCEED;
             }
