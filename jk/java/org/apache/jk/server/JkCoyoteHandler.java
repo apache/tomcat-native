@@ -182,14 +182,6 @@ public class JkCoyoteHandler extends JkHandler implements
             jkMain=new JkMain();
             jkMain.setWorkerEnv(wEnv);
             
-            if( oname != null ) {
-                try {
-                    Registry.getRegistry().registerComponent(jkMain, oname.getDomain(),
-                            "JkMain", "type=JkMain");
-                } catch (Exception e) {
-                    log.error( "Error registering jkmain " + e );
-                }
-            }
         }
         return jkMain;
     }
@@ -229,6 +221,14 @@ public class JkCoyoteHandler extends JkHandler implements
 
     public void start() {
         try {
+            if( oname != null && getJkMain().getDomain() == null) {
+                try {
+                    Registry.getRegistry().registerComponent(getJkMain(), oname.getDomain(),
+                            "JkMain", "type=JkMain");
+                } catch (Exception e) {
+                    log.error( "Error registering jkmain " + e );
+                }
+            }
             getJkMain().start();
         } catch( Exception ex ) {
             ex.printStackTrace();
