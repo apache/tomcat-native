@@ -83,7 +83,10 @@
 #include <apr_network_io.h>
 
 /* WebApp Library type definitions. */
-typedef int wa_boolean;
+typedef enum {
+    wa_false,
+    wa_true,
+} wa_boolean;
 
 typedef struct wa_chain wa_chain;
 
