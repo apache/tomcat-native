@@ -223,8 +223,6 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
 {
     jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)per_dir;
 
-    char *tmp;
-    char *tmp2;
     char *tmp_virtual=NULL;
     char *tmp_full_url=NULL;
     server_rec *s = cmd->server;
@@ -241,17 +239,28 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
      */
 
     /* if applicable we will set the hostname etc variables. */
-    if ( s->server_hostname != NULL && (uriEnv->virtual==NULL  || !strchr( uriEnv->virtual, ':') || uriEnv->port != s->port ))
-    {
-          tmp_virtual  = (char *) ap_pcalloc(cmd->pool, sizeof(char *) * (strlen(s->server_hostname) + 8 )) ;
-          tmp_full_url = (char *) ap_pcalloc(cmd->pool, sizeof(char *) * (strlen(s->server_hostname) + strlen(uriEnv->uri)+8 )) ;
-          sprintf(tmp_virtual,  "%s:%d", s->server_hostname, s->port);
-          sprintf(tmp_full_url, "%s:%d%s", s->server_hostname, s->port, uriEnv->uri );
-
-          uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, "uri", tmp_full_url);
-          uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, "path", cmd->path);
-          uriEnv->name=tmp_virtual;
-          uriEnv->virtual=tmp_virtual;
+    if (s->is_virtual && s->server_hostname != NULL &&
+        (uriEnv->virtual==NULL  || !strchr(uriEnv->virtual, ':') ||
+        uriEnv->port != s->port)) {
+        tmp_virtual  = (char *) ap_pcalloc(cmd->pool,
+                        sizeof(char *) * (strlen(s->server_hostname) + 8 )) ;
+        tmp_full_url = (char *) ap_pcalloc(cmd->pool,
+                        sizeof(char *) * (strlen(s->server_hostname) +
+                        strlen(uriEnv->uri)+8 )) ; 
+        /* do not pass the hostname:0/ scheme */
+        if (s->port) {
+            sprintf(tmp_virtual,  "%s:%d", s->server_hostname, s->port);
+            sprintf(tmp_full_url, "%s:%d%s", s->server_hostname, s->port, uriEnv->uri );
+        }
+        else {
+            strcpy(tmp_virtual, s->server_hostname);
+            strcpy(tmp_full_url, s->server_hostname);
+            strcat(tmp_full_url, uriEnv->uri);
+        }
+        uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, "uri", tmp_full_url);
+        uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, "path", cmd->path);
+        uriEnv->name=tmp_virtual;
+        uriEnv->virtual=tmp_virtual;
 
     }
     /* now lets actually add the parameter set in the <Location> block */
@@ -294,15 +303,15 @@ static void *jk2_create_dir_config(apr_pool_t *p, char *path)
     jk_bean_t *jkb;
     jk_uriEnv_t *newUri;
 
-    if( path!=NULL ) {
-        a=strlen(path)+10;
-    }
-    
+    if (!path)
+        return NULL;
+
+    a = strlen(path)+10;
     /* Original patch: a * sizeof( char * ) - that's weird, we only use a chars, not char*
        Maybe I wrote too much java...
     */
     tmp = (char *) ap_pcalloc(p, a); 
-    sprintf(tmp, "%s-%d", ((path==NULL)? "/" : path), dirCounter++);
+    sprintf(tmp, "%s-%d", path, dirCounter++);
     /* I changed the default to /, otherwise it complains */
 
     jkb=workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
