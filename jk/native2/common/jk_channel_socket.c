@@ -147,10 +147,9 @@ static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this,
                                             jk_worker_t *worker, 
                                             jk_logger_t *l )
 {
-    int err=l->jkLog(l, JK_LOG_DEBUG, "Into jk_channel_socket_init\n");
+    int err;
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(_this->_privatePtr);
-
     char *host=socketInfo->host;
     short port=socketInfo->port;
     struct sockaddr_in *rc=&socketInfo->addr;
@@ -169,8 +168,8 @@ static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this,
 	l->jkLog(l, JK_LOG_ERROR, "jk_channel_socket_init: "
 	       "can't resolve %s:%d errno=%d\n", host, port, errno );
     }
-    l->jkLog(l, JK_LOG_DEBUG, "jk_channel_socket_init: ok "
-	   " %s:%d\n", host, port );
+    l->jkLog(l, JK_LOG_INFO, "channel_socket.init(): %s:%d for %s\n", host,
+             port, worker->name );
 
     return err;
 }
@@ -232,7 +231,7 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
                                             jk_endpoint_t *endpoint)
 {
     jk_logger_t *l=_this->worker->workerEnv->l;
-    int err=l->jkLog(l, JK_LOG_DEBUG, "Into jk_channel_socket_open\n");
+    int err;
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(_this->_privatePtr);
 
@@ -240,60 +239,61 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
     int ndelay=socketInfo->ndelay;
 
     int sock;
+    int ret;
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
-    if(sock > -1) {
-        int ret;
-        /* Tries to connect to JServ (continues trying while error is EINTR) */
-        do {
-            l->jkLog(l, JK_LOG_DEBUG, "jk_open_socket, try to connect socket = %d\n", sock);
-            ret = connect(sock,
-                          (struct sockaddr *)addr,
-                          sizeof(struct sockaddr_in));
+    if(sock < 0) {
 #ifdef WIN32
-            if(SOCKET_ERROR == ret) { 
-                errno = WSAGetLastError() - WSABASEERR;
-            }
+        if(SOCKET_ERROR == ret) { 
+            errno = WSAGetLastError() - WSABASEERR;
+        }
 #endif /* WIN32 */
-            l->jkLog(l, JK_LOG_DEBUG, "jk_open_socket, after connect ret = %d\n", ret);
-        } while (-1 == ret && EINTR == errno);
+        l->jkLog(l, JK_LOG_ERROR,
+                 "channelSocket.open(): can't create socket %d %s\n",
+                 errno, strerror( errno ) );
+        return JK_FALSE;
+    }
 
-        /* Check if we connected */
-        if(0 == ret) {
-            if(ndelay) {
-                int set = 1;
+    /* Tries to connect to JServ (continues trying while error is EINTR) */
+    do {
+        l->jkLog(l, JK_LOG_INFO, "channelSocket.open() connect on %d\n",sock);
+        ret = connect(sock,(struct sockaddr *)addr,
+                      sizeof(struct sockaddr_in));
+        
+#ifdef WIN32
+        if(SOCKET_ERROR == ret) { 
+            errno = WSAGetLastError() - WSABASEERR;
+        }
+#endif /* WIN32 */
 
-                l->jkLog(l, JK_LOG_DEBUG, "jk_open_socket, set TCP_NODELAY to on\n");
-                setsockopt(sock, 
-                           IPPROTO_TCP, 
-                           TCP_NODELAY, 
-                           (char *)&set, 
-                           sizeof(set));
-            }   
+    } while (-1 == ret && EINTR == errno);
 
-            l->jkLog(l, JK_LOG_DEBUG, "jk_open_socket, return, sd = %d\n", sock);
-	    {
-		jk_channel_socket_data_t *sd=endpoint->channelData;
-		if( sd==NULL ) {
-		    sd=(jk_channel_socket_data_t *)
-			malloc( sizeof( jk_channel_socket_data_t ));
-		    endpoint->channelData=sd;
-		}
-		sd->sock=sock;
-	    }
-            return JK_TRUE;
-        }   
+    /* Check if we connected */
+    if(ret != 0 ) {
         jk_close_socket(sock);
-    } else {
-#ifdef WIN32
-        errno = WSAGetLastError() - WSABASEERR;
-#endif /* WIN32 */
-    }    
+        l->jkLog(l, JK_LOG_ERROR,
+                 "channelSocket.connect() connect failed %d %s\n",
+                 errno, strerror( errno ) );
+        return JK_FALSE;
+    }
 
-    l->jkLog(l, JK_LOG_ERROR, "jk_open_socket, connect() failed errno = %d %s\n",
-	   errno, strerror( errno ) ); 
+    if(ndelay) {
+        int set = 1;
+        setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,(char *)&set,sizeof(set));
+    }   
+        
+    l->jkLog(l, JK_LOG_INFO, "channelSocket.connect(), sock = %d\n", sock);
 
-    return -1;
+    {
+        jk_channel_socket_data_t *sd=endpoint->channelData;
+        if( sd==NULL ) {
+            sd=(jk_channel_socket_data_t *)
+                malloc( sizeof( jk_channel_socket_data_t ));
+            endpoint->channelData=sd;
+        }
+        sd->sock=sock;
+    }
+    return JK_TRUE;
 }
 
 
