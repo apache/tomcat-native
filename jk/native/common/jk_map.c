@@ -159,6 +159,8 @@ double jk_map_get_double(jk_map_t *m, const char *name, double def)
 int jk_map_get_bool(jk_map_t *m, const char *name, int def)
 {
     char buf[100];
+    size_t len;
+    char *rc;
     int rv = 0;
     
     sprintf(buf, "%d", def);
@@ -170,7 +172,8 @@ int jk_map_get_bool(jk_map_t *m, const char *name, int def)
             *rc == 'Y' || *rc == 'y' || *rc == '1') {
             rv = 1;
         }
-    }    
+    }
+    return rc;
 }
 
 char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
