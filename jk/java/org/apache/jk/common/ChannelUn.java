@@ -77,12 +77,14 @@ import org.apache.jk.apr.*;
  *
  * @author Costin Manolache
  */
-public class ChannelUn extends JkHandler {
+public class ChannelUn extends JniHandler {
+    static final int CH_OPEN=4;
+    static final int CH_CLOSE=5;
+    static final int CH_READ=6;
+    static final int CH_WRITE=7;
 
     String file;
     ThreadPool tp;
-    String jkHome;
-    String aprHome;
 
     /* ==================== Tcp socket options ==================== */
 
@@ -94,51 +96,36 @@ public class ChannelUn extends JkHandler {
         file=f;
     }
 
-    /** Set the base dir of the jk webapp. This is used to locate
-     *  the (fixed) path to the native lib.
-     */
-    public void setJkHome( String s ) {
-        jkHome=s;
-    }
-
-    /** Directory where APR and jni_connect are installed.
-     */
-    public void setAprHome( String s ) {
-        aprHome=s;
-    }
-
     /* ==================== ==================== */
-    long unixListenSocket;
     int socketNote=1;
     int isNote=2;
     int osNote=3;
-    AprImpl apr;
     
-    public void accept( MsgContext ep ) throws IOException {
-        long l= apr.unAccept(unixListenSocket);
-        /* We could create a real java.net.Socket, or a UnixSocket, etc
-         */
-        ep.setNote( socketNote, new Long( l ) );
-
-        if( log.isDebugEnabled() )
-            log.debug("Accepted socket " + l );
-    }
-
     public void init() throws IOException {
-        apr=(AprImpl)wEnv.getHandler("apr");
+        if( file==null ) {
+            log.error("No file, disabling unix channel");
+            throw new IOException( "No file for the unix socket channel");
+        }
+        if( wEnv.getLocalId() != 0 ) {
+            file=file+ wEnv.getLocalId();
+        }
+
+        super.initNative( "channel.un:" + file );
+
         if( apr==null || ! apr.isLoaded() ) {
             log.debug("Apr is not available, disabling unix channel ");
             apr=null;
             return;
         }
-        if( file==null ) {
-            log.error("No file, disabling unix channel");
-            return;
-        }
-        if( wEnv.getLocalId() != 0 ) {
-            file=file+ wEnv.getLocalId();
-        }
         
+        // Set properties and call init.
+        setNativeAttribute( "file", file );
+        // unixListenSocket=apr.unSocketListen( file, 10 );
+
+        setNativeAttribute( "listen", "10" );
+        setNativeAttribute( "debug", "10" );
+
+        // Initialize the thread pool and execution chain
         if( next==null ) {
             if( nextName!=null ) 
                 setNext( wEnv.getHandler( nextName ) );
@@ -156,9 +143,8 @@ public class ChannelUn extends JkHandler {
             if (!socketFile.delete())
                   throw(new IOException("Cannot remove " + file));
         }
-        unixListenSocket=apr.unSocketListen( file, 10 );
-        if (unixListenSocket<0)
-            throw(new IOException("Cannot create listening socket " + file));
+
+        super.initJkComponent();
 
         log.info("JK: listening on unix socket: " + file );
         
@@ -168,161 +154,79 @@ public class ChannelUn extends JkHandler {
         tp.runIt( acceptAjp);
     }
 
-    public void open(MsgContext ep) throws IOException {
-    }
-
-    
-    public void close(MsgContext ep) throws IOException {
-        if( apr==null ) return;
-        Long s=(Long)ep.getNote( socketNote );
-        apr.unSocketClose(s.longValue(),3);
-    }
-
     public void destroy() throws IOException {
         if( apr==null ) return;
         try {
             if( tp != null )
                 tp.shutdown();
             
-            if(apr !=null ) 
-                apr.unSocketClose( unixListenSocket,3);
+            //apr.unSocketClose( unixListenSocket,3);
+            super.destroyJkComponent();
+            
         } catch(Exception e) {
             e.printStackTrace();
         }
     }
+
+    /** Open a connection - since we're listening that will block in
+        accept
+    */
+    public void open(MsgContext ep) throws IOException {
+        // Will associate a jk_endpoint with ep and call open() on it.
+        // jk_channel_un will accept a connection and set the socket info
+        // in the endpoint. MsgContext will represent an active connection.
+        super.nativeDispatch( ep.getMsg(0), ep, CH_OPEN, 1 );
+    }
+    
+    public void close(MsgContext ep) throws IOException {
+        super.nativeDispatch( ep.getMsg(0), ep, CH_CLOSE, 1 );
+    }
+
     public int send( Msg msg, MsgContext ep)
         throws IOException
     {
-        msg.end(); // Write the packet header
-        byte buf[]=msg.getBuffer();
-        int len=msg.getLen();
-        
-        if(log.isDebugEnabled() )
-            log.debug("send() " + len + " " + buf[4] );
-
-        Long s=(Long)ep.getNote( socketNote );
-
-        apr.unWrite(  s.longValue(), buf, 0, len );
-        return len;
+        return super.nativeDispatch( msg, ep, CH_WRITE, 0 );
     }
 
     public int receive( Msg msg, MsgContext ep )
         throws IOException
     {
-        if (log.isDebugEnabled()) {
-            log.debug("receive()");
+        int rc=super.nativeDispatch( msg, ep, CH_READ, 1 );
+
+        if( rc!=0 ) {
+            log.error("receive error:   " + rc);
+            return -1;
         }
-
-        byte buf[]=msg.getBuffer();
-        int hlen=msg.getHeaderLength();
         
-	// XXX If the length in the packet header doesn't agree with the
-	// actual number of bytes read, it should probably return an error
-	// value.  Also, callers of this method never use the length
-	// returned -- should probably return true/false instead.
-
-        int rd = this.read(ep, buf, 0, hlen );
-        
-        if(rd < 0) {
-            // Most likely normal apache restart.
-            return rd;
-        }
-
         msg.processHeader();
-
-        /* After processing the header we know the body
-           length
-        */
-        int blen=msg.getLen();
-        
-	// XXX check if enough space - it's assert()-ed !!!
-        
- 	int total_read = 0;
-        
-        total_read = this.read(ep, buf, hlen, blen);
-        
-        if (total_read <= 0) {
-            log.warn("can't read body, waited #" + blen);
-            return  -1;
-        }
-        
-        if (total_read != blen) {
-             log.warn( "incomplete read, waited #" + blen +
-                        " got only " + total_read);
-            return -2;
-        }
         
         if (log.isDebugEnabled())
-             log.debug("receive:  total read = " + total_read);
-	return total_read;
+             log.debug("receive:  total read = " + msg.getLen());
+
+	return msg.getLen();
     }
     
-    /**
-     * Read N bytes from the InputStream, and ensure we got them all
-     * Under heavy load we could experience many fragmented packets
-     * just read Unix Network Programming to recall that a call to
-     * read didn't ensure you got all the data you want
-     *
-     * from read() Linux manual
-     *
-     * On success, the number of bytes read is returned (zero indicates end of file),
-     * and the file position is advanced by this number.
-     * It is not an error if this number is smaller than the number of bytes requested;
-     * this may happen for example because fewer bytes
-     * are actually available right now (maybe because we were close to end-of-file,
-     * or because we are reading from a pipe, or  from  a
-     * terminal),  or  because  read()  was interrupted by a signal.
-     * On error, -1 is returned, and errno is set appropriately. In this
-     * case it is left unspecified whether the file position (if any) changes.
-     *
-     **/
-    public int read( MsgContext ep, byte[] b, int offset, int len) throws IOException {
-        Long s=(Long)ep.getNote( socketNote );
-        int pos = 0;
-        int got;
-
-        while(pos < len) {
-            got=apr.unRead( s.longValue(),
-                            b, pos + offset, len - pos);
-
-            if (log.isDebugEnabled()) {
-                log.debug("reading  # " + b + " " + (b==null ? 0: b.length) + " " +
-                  offset + " " + len + " got # " + got);
-            }
-            // connection just closed by remote. 
-            if (got <= 0) {
-                return got;
-            }
-
-            pos += got;
-        }
-        return pos;
-    }
-
-    
-//     public MsgContext createEndpoint() {
-//         MsgContext mc=new MsgContext();
-//         mc.setChannel( this );
-//         mc.setWorkerEnv( wEnv );
-//         return mc;
-//     }
-
     boolean running=true;
     
     /** Accept incoming connections, dispatch to the thread pool
      */
     void acceptConnections() {
+        if( apr==null ) return;
+
         if( log.isDebugEnabled() )
             log.debug("Accepting ajp connections on " + file);
-        if( apr==null ) return;
+        
         while( running ) {
             try {
-                MsgContext ep=new MsgContext();
-                ep.setSource( this );
-                ep.setWorkerEnv( wEnv );
-                this.accept(ep);
-                AprConnection ajpConn=
-                    new AprConnection(this, ep);
+                MsgContext ep=this.createMsgContext();
+
+                // blocking - opening a server connection.
+                this.open(ep);
+
+                //    if( log.isDebugEnabled() )
+                //     log.debug("Accepted ajp connections ");
+        
+                AprConnection ajpConn= new AprConnection(this, ep);
                 tp.runIt( ajpConn );
             } catch( Exception ex ) {
                 ex.printStackTrace();
@@ -344,8 +248,11 @@ public class ChannelUn extends JkHandler {
                     break;
                 }
                 ep.setType(0);
-                int status=this.invoke( recv, ep );
+                log.debug( "Process msg ");
+                int status=next.invoke( recv, ep );
             }
+            if( log.isDebugEnabled() )
+                log.debug( "Closing un channel");
             this.close( ep );
         } catch( Exception ex ) {
             ex.printStackTrace();
@@ -360,9 +267,12 @@ public class ChannelUn extends JkHandler {
             return receive( msg, ep );
         case JkHandler.HANDLE_SEND_PACKET:
             return send( msg, ep );
+        case JkHandler.HANDLE_FLUSH:
+            return OK;
         }
 
-        return next.invoke( msg, ep );
+        // return next.invoke( msg, ep );
+        return OK;
     }
 
     private static org.apache.commons.logging.Log log=

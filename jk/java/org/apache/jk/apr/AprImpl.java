@@ -145,7 +145,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
      *  do things like continuations.
      */
     public static native int jkInvoke(long xEnv, long componentP, long endpointP,
-                                      int code, byte data[], int len);
+                                      int code, byte data[], int off, int len, int raw);
 
     /** Recycle an endpoint after use.
      */
