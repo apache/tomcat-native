@@ -143,6 +143,7 @@ public final class UDecoder {
 	}
 	
 	if( idx2 >= 0 && idx2 < idx ) idx=idx2; 
+	if( idx < 0 ) idx=idx2;
 
 	for( int j=idx; j<cend; j++, idx++ ) {
 	    if( buff[ j ] == '+' ) {

@@ -158,8 +158,24 @@ public final class UEncoder {
 	    buf.write(ch);
 	}
     }
-
-
+    
+    /**
+     * Utility funtion to re-encode the URL.
+     * Still has problems with charset, since UEncoder mostly
+     * ignores it.
+     */
+    public String encodeURL(String uri) {
+	String outUri=null;
+	try {
+	    // XXX optimize - recycle, etc
+	    CharArrayWriter out = new CharArrayWriter();
+	    urlEncode(out, uri);
+	    outUri=out.toString();
+	} catch (IOException iex) {
+	}
+	return outUri;
+    }
+    
 
     // -------------------- Internal implementation --------------------
     

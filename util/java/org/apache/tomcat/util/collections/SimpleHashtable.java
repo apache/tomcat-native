@@ -97,7 +97,6 @@ import java.util.*;
  * it makes a significant difference when normalizing attributes,
  * which is done for each start-element construct.
  *
- * @version $Revision$
  */
 public final class SimpleHashtable implements Enumeration
 {
@@ -108,6 +107,7 @@ public final class SimpleHashtable implements Enumeration
     private Entry		current = null;
     private int			currentBucket = 0;
 
+    // number of elements in hashtable
     private int			count;
     private int			threshold;
 
@@ -166,6 +166,7 @@ public final class SimpleHashtable implements Enumeration
     public Enumeration keys() {
 	currentBucket = 0;
 	current = null;
+	hasMoreElements();
 	return this;
     }
 
@@ -197,6 +198,9 @@ public final class SimpleHashtable implements Enumeration
 	    throw new IllegalStateException ();
 	retval = current.key;
 	current = current.next;
+	// Advance to the next position ( we may call next after next,
+	// without hasMore )
+	hasMoreElements();
 	return retval;
     }
 
@@ -313,18 +317,22 @@ public final class SimpleHashtable implements Enumeration
 	Entry prev=null;
 	int hash = key.hashCode();
 	int index = (hash & 0x7FFFFFFF) % tab.length;
+	if( dL > 0 ) d("Idx " + index +  " " + tab[index] );
 	for (Entry e = tab[index] ; e != null ; prev=e, e = e.next) {
+	    if( dL > 0 ) d("> " + prev + " " + e.next + " " + e + " " + e.key);
 	    if ((e.hash == hash) && e.key.equals(key)) {
 		if( prev!=null ) {
 		    prev.next=e.next;
 		} else {
 		    tab[index]=e.next;
 		}
+		if( dL > 0 ) d("Removing from list " + tab[index] + " " + prev +
+			       " " + e.value);
+		count--;
+		Object res=e.value;
+		e.value=null;
+		return res;
 	    }
-	    count--;
-	    Object res=e.value;
-	    e.value=null;
-	    return res;
 	}
 	return null;
     }
@@ -344,5 +352,10 @@ public final class SimpleHashtable implements Enumeration
 	    this.value = value;
 	    this.next = next;
 	}
+    }
+
+    private static final int dL=0;
+    private void d(String s ) {
+	System.err.println( "SimpleHashtable: " + s );
     }
 }

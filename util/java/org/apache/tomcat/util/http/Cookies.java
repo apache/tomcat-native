@@ -357,7 +357,7 @@ public final class Cookies { // extends MultiMap {
     {
 	while( off < end ) {
 	    byte b=bytes[off];
-	    if( b==' ' || b==';' || b==',' )
+	    if( b==';' || b==',' )
 		return off;
 	    off++;
 	}

@@ -586,7 +586,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	}
 	return -1;
     }
-    
+
     // -------------------- Hash code  --------------------
 
     // normal hash. 

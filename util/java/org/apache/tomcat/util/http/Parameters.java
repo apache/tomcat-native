@@ -82,7 +82,7 @@ public final class Parameters extends MultiMap {
     MimeHeaders  headers;
 
     UDecoder urlDec;
-    MessageBytes decodedQuery=new MessageBytes();
+    MessageBytes decodedQuery=MessageBytes.newInstance();
     
     public static final int INITIAL_SIZE=4;
 
@@ -317,6 +317,7 @@ public final class Parameters extends MultiMap {
     // incredibly inefficient data representation for parameters,
     // until we test the new one
     private void addParam( String key, String value ) {
+	if( key==null ) return;
 	String values[];
 	if (paramHashStringArray.containsKey(key)) {
 	    String oldValues[] = (String[])paramHashStringArray.
@@ -359,13 +360,30 @@ public final class Parameters extends MultiMap {
 	    log( "Bytes: " + new String( bytes, start, len ));
 
         do {
+	    boolean noEq=false;
+	    int valStart=-1;
+	    int valEnd=-1;
+	    
 	    int nameStart=pos;
 	    int nameEnd=ByteChunk.indexOf(bytes, nameStart, end, '=' );
-	    if( nameEnd== -1 ) nameEnd=end;
-	    
-	    int valStart=nameEnd+1;
-	    int valEnd=ByteChunk.indexOf(bytes, valStart, end, '&');
-	    if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
+	    // Workaround for a&b&c encoding
+	    int nameEnd2=ByteChunk.indexOf(bytes, nameStart, end, '&' );
+	    if( (nameEnd2!=-1 ) &&
+		( nameEnd==-1 || nameEnd > nameEnd2) ) {
+		nameEnd=nameEnd2;
+		noEq=true;
+		valStart=nameEnd;
+		valEnd=nameEnd;
+		if( debug>0) log("no equal " + nameStart + " " + nameEnd + " " + new String(bytes, nameStart, nameEnd-nameStart) );
+	    }
+	    if( nameEnd== -1 ) 
+		nameEnd=end;
+
+	    if( ! noEq ) {
+		valStart=nameEnd+1;
+		valEnd=ByteChunk.indexOf(bytes, valStart, end, '&');
+		if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
+	    }
 	    
 	    pos=valEnd+1;
 	    
@@ -381,7 +399,7 @@ public final class Parameters extends MultiMap {
 	    
 	    try {
 		if( debug > 0 )
-		    log( tmpName + "= " + tmpValue);
+		    log( "Found " + tmpName + "= " + tmpValue);
 
 		if( urlDec==null ) {
 		    urlDec=new UDecoder();   
@@ -390,7 +408,7 @@ public final class Parameters extends MultiMap {
 		urlDec.convert( tmpValue );
 
 		if( debug > 0 )
-		    log( tmpName + "= " + tmpValue);
+		    log( "After url decoding " + tmpName + "= " + tmpValue);
 		
 		addParam( tmpName.toString(), tmpValue.toString() );
 	    } catch( IOException ex ) {
@@ -410,13 +428,29 @@ public final class Parameters extends MultiMap {
 	if( debug>0 ) 
 	    log( "Chars: " + new String( chars, start, len ));
         do {
+	    boolean noEq=false;
 	    int nameStart=pos;
+	    int valStart=-1;
+	    int valEnd=-1;
+	    
 	    int nameEnd=CharChunk.indexOf(chars, nameStart, end, '=' );
+	    int nameEnd2=CharChunk.indexOf(chars, nameStart, end, '&' );
+	    if( (nameEnd2!=-1 ) &&
+		( nameEnd==-1 || nameEnd > nameEnd2) ) {
+		nameEnd=nameEnd2;
+		noEq=true;
+		valStart=nameEnd;
+		valEnd=nameEnd;
+		if( debug>0) log("no equal " + nameStart + " " + nameEnd + " " + new String(chars, nameStart, nameEnd-nameStart) );
+	    }
 	    if( nameEnd== -1 ) nameEnd=end;
-
-	    int valStart=nameEnd+1;
-	    int valEnd=CharChunk.indexOf(chars, valStart, end, '&');
-	    if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
+	    
+	    if( ! noEq ) {
+		valStart=nameEnd+1;
+		valEnd=CharChunk.indexOf(chars, valStart, end, '&');
+		if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
+	    }
+	    
 	    pos=valEnd+1;
 	    
 	    if( nameEnd<=nameStart ) {
@@ -501,13 +535,31 @@ public final class Parameters extends MultiMap {
 	    log("String: " + str );
 	
         do {
+	    boolean noEq=false;
+	    int valStart=-1;
+	    int valEnd=-1;
+	    
 	    int nameStart=pos;
 	    int nameEnd=str.indexOf('=', nameStart );
+	    int nameEnd2=str.indexOf('&', nameStart );
+	    if( nameEnd2== -1 ) nameEnd2=end;
+	    if( (nameEnd2!=-1 ) &&
+		( nameEnd==-1 || nameEnd > nameEnd2) ) {
+		nameEnd=nameEnd2;
+		noEq=true;
+		valStart=nameEnd;
+		valEnd=nameEnd;
+		if( debug>0) log("no equal " + nameStart + " " + nameEnd + " " + str.substring(nameStart, nameEnd) );
+	    }
+
 	    if( nameEnd== -1 ) nameEnd=end;
 
-	    int valStart=nameEnd+1;
-	    int valEnd=str.indexOf('&', valStart);
-	    if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
+	    if( ! noEq ) {
+		valStart=nameEnd+1;
+		valEnd=str.indexOf('&', valStart);
+		if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
+	    }
+	    
 	    pos=valEnd+1;
 	    
 	    if( nameEnd<=nameStart ) {

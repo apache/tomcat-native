@@ -72,16 +72,16 @@ import java.util.*;
  *  and the facade will convert it to the external representation.
  */
 public class ServerCookie implements Serializable {
-    private MessageBytes name=new MessageBytes();
-    private MessageBytes value=new MessageBytes();
+    private MessageBytes name=MessageBytes.newInstance();
+    private MessageBytes value=MessageBytes.newInstance();
 
-    private MessageBytes comment=new MessageBytes();    // ;Comment=VALUE
-    private MessageBytes domain=new MessageBytes();    // ;Domain=VALUE ...
+    private MessageBytes comment=MessageBytes.newInstance();    // ;Comment=VALUE
+    private MessageBytes domain=MessageBytes.newInstance();    // ;Domain=VALUE ...
 
     private int maxAge = -1;	// ;Max-Age=VALUE
 				// ;Discard ... implied by maxAge < 0
     // RFC2109: maxAge=0 will end a session
-    private MessageBytes path=new MessageBytes();	// ;Path=VALUE .
+    private MessageBytes path=MessageBytes.newInstance();	// ;Path=VALUE .
     private boolean secure;	// ;Secure
     private int version = 0;	// ;Version=1
 

@@ -115,7 +115,7 @@ public final class TimeStamp implements  Serializable {
      *  The name is a MessageBytes - i.e. a modifiable byte[] or char[]. 
      */
     public MessageBytes getName() {
-	if( name==null ) name=new MessageBytes();//lazy
+	if( name==null ) name=MessageBytes.newInstance();//lazy
 	return name;
     }
 

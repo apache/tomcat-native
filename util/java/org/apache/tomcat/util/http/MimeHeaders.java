@@ -451,8 +451,8 @@ class MimeHeaderField {
     MimeHeaderField next;
     MimeHeaderField prev; 
     
-    protected final MessageBytes nameB = new MessageBytes();
-    protected final MessageBytes valueB = new MessageBytes();
+    protected final MessageBytes nameB = MessageBytes.newInstance();
+    protected final MessageBytes valueB = MessageBytes.newInstance();
 
     /**
      * Creates a new, uninitialized header field.
