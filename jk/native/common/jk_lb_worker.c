@@ -296,6 +296,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
         jk_b_set_buffer_size(s->reco_buf, DEF_BUFFER_SZ);
         jk_b_reset(s->reco_buf);
         s->reco_status = RECO_INITED;                                                                                                                                
+        jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::service sticky_session=%d\n", 
+               p->worker->sticky_session);
+
         while(1) {
             worker_record_t *rec = get_most_suitable_worker(p->worker, s, attempt++);
             int rc;
@@ -306,6 +309,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 s->jvm_route = jk_pool_strdup(s->pool,  rec->name);
 
                 rc = rec->w->get_endpoint(rec->w, &end, l);
+
+                jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::service worker=%s jvm_route=%s rc=%d\n", 
+                       rec->name, s->jvm_route, rc);
+
                 if(rc && end) {
                     int src = end->service(end, s, l, &is_recoverable);
                     end->done(&end, l);
