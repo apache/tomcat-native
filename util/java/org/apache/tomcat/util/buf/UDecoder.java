@@ -78,9 +78,18 @@ public final class UDecoder {
     {
     }
 
+    /** URLDecode, will modify the source.  Includes converting
+     *  '+' to ' '.
+     */
+    public void convert( ByteChunk mb )
+        throws IOException
+    {
+        convert(mb, true);
+    }
+
     /** URLDecode, will modify the source.
      */
-    public void convert(ByteChunk mb)
+    public void convert( ByteChunk mb, boolean query )
 	throws IOException
     {
 	int start=mb.getOffset();
@@ -88,7 +97,9 @@ public final class UDecoder {
 	int end=mb.getEnd();
 
 	int idx= mb.indexOf( buff, start, end, '%' );
-	int idx2= mb.indexOf( buff, start, end, '+' );
+        int idx2=-1;
+        if( query )
+            idx2= mb.indexOf( buff, start, end, '+' );
 	if( idx<0 && idx2<0 ) {
 	    return;
 	}
@@ -98,7 +109,7 @@ public final class UDecoder {
 	if( idx < 0 ) idx=idx2;
 
 	for( int j=idx; j<end; j++, idx++ ) {
-	    if( buff[ j ] == '+' ) {
+	    if( buff[ j ] == '+' && query) {
 		buff[idx]= (byte)' ' ;
 	    } else if( buff[ j ] != '%' ) {
 		buff[idx]= buff[j];
@@ -127,8 +138,17 @@ public final class UDecoder {
     // XXX What do we do about charset ????
 
     /** In-buffer processing - the buffer will be modified
+     *  Includes converting  '+' to ' '.
      */
     public void convert( CharChunk mb )
+	throws IOException
+    {
+        convert(mb, true);
+    }
+
+    /** In-buffer processing - the buffer will be modified
+     */
+    public void convert( CharChunk mb, boolean query )
 	throws IOException
     {
 	//	log( "Converting a char chunk ");
@@ -137,7 +157,9 @@ public final class UDecoder {
 	int cend=mb.getEnd();
 
 	int idx= mb.indexOf( buff, start, cend, '%' );
-	int idx2= mb.indexOf( buff, start, cend, '+' );
+        int idx2=-1;
+        if( query )
+            idx2= mb.indexOf( buff, start, cend, '+' );
 	if( idx<0 && idx2<0 ) {
 	    return;
 	}
@@ -146,7 +168,7 @@ public final class UDecoder {
 	if( idx < 0 ) idx=idx2;
 
 	for( int j=idx; j<cend; j++, idx++ ) {
-	    if( buff[ j ] == '+' ) {
+	    if( buff[ j ] == '+' && query ) {
 		buff[idx]=( ' ' );
 	    } else if( buff[ j ] != '%' ) {
 		buff[idx]=buff[j];
@@ -170,8 +192,17 @@ public final class UDecoder {
     }
 
     /** URLDecode, will modify the source
+     *  Includes converting  '+' to ' '.
      */
     public void convert(MessageBytes mb)
+	throws IOException
+    {
+        convert(mb, true);
+    }
+
+    /** URLDecode, will modify the source
+     */
+    public void convert(MessageBytes mb, boolean query)
 	throws IOException
     {
 	
@@ -179,15 +210,15 @@ public final class UDecoder {
 	case MessageBytes.T_STR:
 	    String strValue=mb.toString();
 	    if( strValue==null ) return;
-	    mb.setString( convert( strValue ));
+	    mb.setString( convert( strValue, query ));
 	    break;
 	case MessageBytes.T_CHARS:
 	    CharChunk charC=mb.getCharChunk();
-	    convert( charC );
+	    convert( charC, query );
 	    break;
 	case MessageBytes.T_BYTES:
 	    ByteChunk bytesC=mb.getByteChunk();
-	    convert( bytesC );
+	    convert( bytesC, query );
 	    break;
 	}
     }
@@ -196,9 +227,14 @@ public final class UDecoder {
     // 
     public final String convert(String str)
     {
+        return convert(str, true);
+    }
+
+    public final String convert(String str, boolean query)
+    {
         if (str == null)  return  null;
 	
-	if( str.indexOf( '+' ) <0 && str.indexOf( '%' ) < 0 )
+	if( (!query || str.indexOf( '+' ) < 0) && str.indexOf( '%' ) < 0 )
 	    return str;
 	
         StringBuffer dec = new StringBuffer();    // decoded string output
@@ -212,7 +248,7 @@ public final class UDecoder {
             // look ahead to next URLencoded metacharacter, if any
             for (laPos = strPos; laPos < strLen; laPos++) {
                 char laChar = str.charAt(laPos);
-                if ((laChar == '+') || (laChar == '%')) {
+                if ((laChar == '+' && query) || (laChar == '%')) {
                     break;
                 }
             }
