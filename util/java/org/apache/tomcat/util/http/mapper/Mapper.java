@@ -695,19 +695,21 @@ public final class Mapper {
                     (path.getBuffer(), path.getStart(), path.getLength());
             }
             char[] buf = path.getBuffer();
-            if( context.resources != null && buf[pathEnd -1 ] != '/') {
+            if (context.resources != null && buf[pathEnd -1 ] != '/') {
                 Object file = null;
                 try {
                     file = context.resources.lookup(path.toString());
                 } catch(NamingException nex) {
                     // Swallow, since someone else handles the 404
                 }
-                if(file != null && file instanceof DirContext ) {
-                    CharChunk dirPath = path.getClone();
-                    dirPath.append('/');
+                if (file != null && file instanceof DirContext ) {
+                    // Note: this mutates the path: do not do any processing 
+                    // after this (since we set the redirectPath, there 
+                    // shouldn't be any)
+                    path.setOffset(pathOffset);
+                    path.append('/');
                     mappingData.redirectPath.setChars
-                        (dirPath.getBuffer(), dirPath.getStart(),
-                         dirPath.getLength());
+                        (path.getBuffer(), path.getStart(), path.getLength());
                 }
             }
         }
