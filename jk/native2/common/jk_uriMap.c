@@ -260,7 +260,8 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
                 return uriMap->vhosts->valueAt( env, uriMap->vhosts, i);
             }
         }
-        /* Can't find vhost, return default */
+        /* Can't find vhost */
+        return NULL;
     }
     return uriMap->defaultVhost;
 }
@@ -357,6 +358,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
         env->l->jkLog(env, env->l, JK_LOG_DEBUG, "uriMap.init() set default host\n"); 
     /* XXX Initializes vhosts from uris */
     jk2_uriMap_correctHosts(env,uriMap);
+
     /* Initialize the vhosts table */
     for(i = 0 ; i < uriMap->maps->size( env, uriMap->maps ) ; i++) {
         uriEnv=uriMap->maps->valueAt( env, uriMap->maps, i );
@@ -441,7 +443,8 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
         if( uri!=NULL && context!=NULL && strcmp( uri, context ) == 0 ) {
             char *vhost= uriEnv->virtual;
             jk_uriEnv_t *hostEnv=jk2_uriMap_hostMap( env, uriMap, vhost );
-
+            if (!hostEnv)
+                continue;
             if( uriMap->mbean->debug > 5 ) 
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                               "uriMap.init() loaded context %s %s %#lx %#lx %#lx\n",
@@ -478,6 +481,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
         char *uri= uriEnv->uri;
         jk_uriEnv_t *ctxEnv;
 
+        if( hostEnv==NULL ) continue;
         if( uri==NULL ) continue;
         uriEnv->uriMap=uriMap;
         uriEnv->init( env, uriEnv );
@@ -591,7 +595,11 @@ static jk_uriEnv_t *jk2_uriMap_map(jk_env_t *env, jk_uriMap_t *uriMap,
     }
 
     hostEnv=jk2_uriMap_hostMap( env, uriMap, vhost );
-
+    if (!hostEnv) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "uriMap.mapUri() cannot find host %s/\n", vhost);
+        return NULL;
+    }
     if( uriMap->mbean->debug > 1 )
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "uriMap.mapUri() found host %s\n", hostEnv->virtual);    
@@ -623,10 +631,7 @@ static jk_uriEnv_t *jk2_uriMap_map(jk_env_t *env, jk_uriMap_t *uriMap,
 
     /* As per Servlet spec, do exact match first */
     match=jk2_uriMap_exactMap( env, uriMap, ctxEnv->exactMatch, uri, uriLen, reverse );
-    if( match != NULL && 
-            (( match->virtual==NULL && hostEnv->virtual==NULL ) || 
-             ( hostEnv->virtual!=NULL && strcasecmp(match->virtual,hostEnv->virtual)==0 ))
-       ) {
+    if( match != NULL ) {
         /* restore */
         if( url_rewrite ) *url_rewrite=origChar;
         if( uriMap->mbean->debug > 0 )
@@ -638,10 +643,7 @@ static jk_uriEnv_t *jk2_uriMap_map(jk_env_t *env, jk_uriMap_t *uriMap,
     
     /* Then prefix match */
     match=jk2_uriMap_prefixMap( env, uriMap, ctxEnv->prefixMatch, uri, uriLen, reverse );
-    if( match != NULL && 
-            (( match->virtual==NULL && hostEnv->virtual==NULL ) || 
-             ( hostEnv->virtual!=NULL && strcasecmp(match->virtual,hostEnv->virtual)==0 ))
-       ) {
+    if( match != NULL ) {
         char c=uri[match->prefix_len];
         /* XXX Filter prefix matches to allow only exact 
                matches with an optional path_info or query string at end.
@@ -665,10 +667,7 @@ static jk_uriEnv_t *jk2_uriMap_map(jk_env_t *env, jk_uriMap_t *uriMap,
     if( suffix!=NULL ) {
         match=jk2_uriMap_suffixMap( env, uriMap, ctxEnv->suffixMatch,
                                     suffix, strlen( suffix ), reverse);
-        if( match != NULL && 
-                (( match->virtual==NULL && hostEnv->virtual==NULL ) || 
-                 ( hostEnv->virtual!=NULL && strcasecmp(match->virtual,hostEnv->virtual)==0 ))
-           ) {
+        if( match != NULL ) {
             /* restore */
             if( url_rewrite ) *url_rewrite=origChar;
             if( uriMap->mbean->debug > 0 )
