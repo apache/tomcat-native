@@ -298,7 +298,7 @@ static int ajpv12_sendnbytes(ajp12_endpoint_t * p,
 }
 
 #ifdef AS400
-static int ajpv12_sendasciistring(ajp12_endpoint_t * p, char *buffer)
+static int ajpv12_sendasciistring(ajp12_endpoint_t * p, const char *buffer)
 {
     int bufferlen;
 
@@ -311,19 +311,23 @@ static int ajpv12_sendasciistring(ajp12_endpoint_t * p, char *buffer)
 }
 #endif
 
-#ifdef AS400
-static int ajpv12_sendstring(ajp12_endpoint_t * p, char *buffer)
-#else
 static int ajpv12_sendstring(ajp12_endpoint_t * p, const char *buffer)
-#endif
 {
     int bufferlen;
 
     if (buffer && (bufferlen = strlen(buffer))) {
 #if defined(AS400) || defined(_OSD_POSIX)
-        jk_xlate_to_ascii(buffer, bufferlen);
-#endif
+        char buf[2048];
+        if (buflen < 2048) {
+            memcpy(buf, buffer, bufferlen)
+            jk_xlate_to_ascii(buf, bufferlen);
+            return ajpv12_sendnbytes(p, buffer, bufferlen);
+        }
+        else
+            return -1;
+#else
         return ajpv12_sendnbytes(p, buffer, bufferlen);
+#endif
     }
     else {
         return ajpv12_sendnbytes(p, NULL, 0);

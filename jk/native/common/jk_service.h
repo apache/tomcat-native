@@ -121,15 +121,15 @@ struct jk_ws_service
     /* 
      * CGI Environment needed by servlets
      */
-    char *method;
-    char *protocol;
-    char *req_uri;
-    char *remote_addr;
-    char *remote_host;
-    char *remote_user;
-    char *auth_type;
-    char *query_string;
-    char *server_name;
+    const char *method;
+    const char *protocol;
+    const char *req_uri;
+    const char *remote_addr;
+    const char *remote_host;
+    const char *remote_user;
+    const char *auth_type;
+    const char *query_string;
+    const char *server_name;
     unsigned server_port;
     char *server_software;
     unsigned content_length;        /* integer that represents the content  */
