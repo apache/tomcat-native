@@ -15,51 +15,71 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 </copyright>
+
 <properties>
-<title>Components</title>
-<author email="cmanolache@yahoo.com">Costin Manolache</author>
-<author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
-<date>$Date$</date>
+  <title>Components</title>
+
+  <author email="cmanolache@yahoo.com">Costin Manolache</author>
+  <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+  <author email="yoavs@apache.org">Yoav Shapira</author>
+
+  <date>$Date$</date>
 </properties>
-    <section name="Intro"><p>Each component instance has a name, that is used for configuration and at runtime. Each component has a number of configurable properties. The following rules are used:
-<ul><li>The name is composed from the type and a local part, separated with a ':' ( example: channel.unixsocket:/tmp/jk.socket ) </li>
-<li>The 'type' consist of '.' and ascii characters.  It is mapped to a JMX 'domain'.  </li>
-<li>The local part consists of ascii characters and .:/; 
-<p>Note that '=,' are not currently allowed - a future version may support the jmx syntax by using quotes to separate the local part from the property and value ( in .properties mode we must use '=' to separate the value from type, local name and property name ). </p></li>
-<li>The property is a simple name, with no dots. </li>
-<li>A simple form of substitution is used in values, where $(property) will be replaced with a previously defined setting. If the property has ':' in it, it'll take the value from the object, if not it'll take the value from a global map.</li></ul></p>
+
+<section name="Intro">
+  <p>
+    Each component instance has a name, that is used for configuration and at runtime.
+    Each component has a number of configurable properties. The following rules are used:
+    <ul>
+      <li>The name is composed from the type and a local part, separated with a ':' ( example: channel.unixsocket:/tmp/jk.socket ) </li>
+      <li>The 'type' consist of '.' and ascii characters.  It is mapped to a JMX 'domain'.  </li>
+      <li>The local part consists of ascii characters and .:/; 
+
+        <p>
+          Note that '=,' are not currently allowed - a future version may support the jmx syntax by using quotes to separate the local part from the property and value ( in .properties mode we must use '=' to separate the value from type, local name and property name ).
+        </p>
+      </li>
+      <li>The property is a simple name, with no dots. </li>
+      <li>A simple form of substitution is used in values, where $(property) will be replaced with a previously defined setting. If the property has ':' in it, it'll take the value from the object, if not it'll take the value from a global map.
+      </li>
+    </ul>
+  </p>
 </section>
-        <section name="Common properties">
-            <p>Common properties for all components</p>
-            <p>
-                <table>
-                    <tr>
-                        <th>Property name</th>
-                        <th>Default</th>
-                        <th>Description</th>
-                    </tr>
-                    <tr>
-                        <td>disabled</td>
-                        <td>0 (false)</td>
-                        <td>"disabled" state for the component, 1=true 0=false</td>
-                    </tr>
-                    <tr>
-                        <td>debug</td>
-                        <td>0 (false)</td>
-                        <td>Debug level for the component, 0=disabled, 1..10 enabled. Higher levels
-                            generate more debug.</td>
-                    </tr>
-                    <tr>
-                        <td>version</td>
-                        <td>0</td>
-                        <td>'Generation' of the component config. Important for runtime reconfiguration.
-                            If you edit the config file or set the shmem properties, you need to also
-                            upgrade the version of the modified component. The config layer will detect
-                            the change and call the setter method.</td>
-                     </tr>
-                </table>
-            </p>
-        </section>
+
+<section name="Common properties">
+  <p>
+    Common properties for all components
+  </p>
+  <p>
+    <table>
+      <tr>
+        <th>Property name</th>
+        <th>Default</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td>disabled</td>
+        <td>0 (false)</td>
+        <td>"disabled" state for the component, 1=true 0=false</td>
+      </tr>
+      <tr>
+        <td>debug</td>
+        <td>0 (false)</td>
+        <td>Debug level for the component, 0=disabled, 1..10 enabled. Higher levels
+            generate more debug information.</td>
+      </tr>
+      <tr>
+        <td>ver (short for, and formerly known as, version)</td>
+        <td>0</td>
+        <td>'Generation' of the component config. Important for runtime reconfiguration.
+            If you edit the config file or set the shmem properties, you need to also
+            upgrade the version of the modified component. The config layer will detect
+            the change and call the setter method.</td>
+      </tr>
+    </table>
+  </p>
+</section>
+
         <section name="workerEnv">
             <p>This component represent the core jk2, it has the default logger for all other components. Is the central controller, it controls global properties
 and  provides access to all other objects</p>

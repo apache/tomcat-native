@@ -15,12 +15,17 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 </copyright>
+
 <properties>
-<title>Installation of jk2 in the Web Server</title>
-<author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
-<author email="andy@tagish.com">Andy Armstrng</author>
-<date>$Date$</date>
+  <title>Installation of jk2 in the Web Server</title>
+
+  <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+  <author email="andy@tagish.com">Andy Armstrng</author>
+  <author email="yoavs@apache.org">Yoav Shapira</author>
+
+  <date>$Date$</date>
 </properties>
+
   <section name="Installation">
     <p>
       The actual build mechanism creates the dso files in the
@@ -104,7 +109,9 @@
             <b>"HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Jakarta Isapi Redirector\2.0"</b>
             </li><li>
             Add a string value with the name <b>serverRoot</b> and a value which is a full path
-            to your Tomcat installation (for example <b>c:\jakarta-tomcat</b>)
+            to your Tomcat installation (for example <b>c:\jakarta-tomcat</b>).  If Tomcat is installed
+            on a different server, this entry must point to the location (directory) where the
+            workers2.properties file resides.
             </li><li>
             Add a string value with the name <b>extensionUri</b> and a value of <b>/jakarta/isapi_redirector2.dll</b>
             </li><li>
