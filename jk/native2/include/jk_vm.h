@@ -84,48 +84,20 @@ struct jk_vm {
     */
     void *jvm;   
 
-    char *tomcat_classpath;
-
     /* Full path to the jni javai/jvm dll
      */
     char *jvm_dll_path;
 
     /*
-     * Initial Java heap size
+     * All initialization options
      */
-    unsigned tomcat_ms;
+    char **options;
 
-    /*
-     * Max Java heap size
-     */
-    unsigned tomcat_mx;
-
-    /*
-     * Java system properties
-     */
-    char **sysprops;
-
-    /*
-     * Java 2 initialization options (-X... , -verbose etc.)
-     */
-    char **java2opts;
-
-    /*
-     * Java 2 lax/strict option checking (bool)
-     */    
-    int java2lax;
-
-    /** Process the properties and set internal structures
+    int nOptions;
+    
+    /** Create the VM, attach - don't execute anything
      */
     int (*init)(struct jk_env *env, struct jk_vm *p );
-
-    /** Load the java libs, prepare for openning.
-     */
-    int (*load)(struct jk_env *env, struct jk_vm *p );
-
-    /** Create the VM. 
-     */
-    int (*open)(struct jk_env *env, struct jk_vm *p );
 
     void *(*attach)(struct jk_env *env, struct jk_vm *p);
 
