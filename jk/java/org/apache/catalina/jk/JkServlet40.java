@@ -145,9 +145,9 @@ public class JkServlet40 extends JkServlet
         deployer=(Deployer)ctx.getParent();
         d("Deployer = " + deployer );
         
-        d("Parent = " + deployer.getParent() );
+        d("Parent = " + ((Container) deployer).getParent() );
         
-        d("Parent2 = " + deployer.getParent().getParent() );
+        d("Parent2 = " + ((Container) deployer).getParent().getParent() );
         
 
         // Now we're in control, find JkServlet and get it's
@@ -158,7 +158,7 @@ public class JkServlet40 extends JkServlet
         JkMain jkMain=new JkMain();
         jkMain.setProperties( servletConfig2properties( cfg ));
         Worker40 worker=new Worker40();
-        worker.setContainer( deployer.getParent().getParent());
+        worker.setContainer( ((Container) deployer).getParent().getParent());
         jkMain.setDefaultWorker( worker );
         
         try {
