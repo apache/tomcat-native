@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="index.html">
+
+  &project;
+
+  <properties>
+    <author email="mturk@apache.org">Mladen Turk</author>
+    <title>HowTo Documentation index</title>
+  </properties>
+
+<body>
+
+<section name="Introduction">
+
+<p>This is the top-level entry point of the HowTo documentation bundle for the
+<strong>Apache Jakarta Tomcat Connectors</strong> 
+
+</p>
+<p>Select one of the links from the navigation menu (to the left) to drill
+down to the more detailed documenation that is available.  Each available
+manual is described in more detail below.</p>
+
+</section>
+
+</body>
+</document>
