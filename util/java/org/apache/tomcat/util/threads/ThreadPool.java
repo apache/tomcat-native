@@ -83,6 +83,7 @@ public class ThreadPool  {
      * Default values ...
      */
     public static final int MAX_THREADS = 200;
+    public static final int MAX_THREADS_MIN = 10;
     public static final int MAX_SPARE_THREADS = 50;
     public static final int MIN_SPARE_THREADS = 4;
     public static final int WORK_WAIT_TIMEOUT = 60*1000;
@@ -200,7 +201,14 @@ public class ThreadPool  {
     }
 
     public void setMaxThreads(int maxThreads) {
-        this.maxThreads = maxThreads;
+        if (maxThreads < MAX_THREADS_MIN) {
+            log.warn(sm.getString("threadpool.max_threads_too_low",
+                                  new Integer(maxThreads),
+                                  new Integer(MAX_THREADS_MIN)));
+            this.maxThreads = MAX_THREADS_MIN;
+        } else {
+            this.maxThreads = maxThreads;
+        }
     }
 
     public int getMaxThreads() {
@@ -370,7 +378,7 @@ public class ThreadPool  {
     private static void logFull(Log loghelper, int currentThreadCount,
                                 int maxThreads) {
 	if( logfull ) {
-            log.error(sm.getString("threads.busy",
+            log.error(sm.getString("threadpool.busy",
                                    new Integer(currentThreadCount),
                                    new Integer(maxThreads)));
             logfull=false;
