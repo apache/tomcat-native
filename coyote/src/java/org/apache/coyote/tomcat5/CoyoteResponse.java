@@ -332,6 +332,9 @@ public class CoyoteResponse
             facade.clear();
             facade = null;
         }
+
+        writer.recycle();
+
     }
 
 
