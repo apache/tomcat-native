@@ -63,9 +63,6 @@ import java.io.IOException;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 
-// XXX For consistency, this should be replaced with an action/hook - like all other
-// callbacks from coyote to the protocol layer
-
 
 /**
  * Input buffer.
