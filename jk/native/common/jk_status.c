@@ -33,9 +33,7 @@
                        "DTD HTML 3.2 Final//EN\">\n"      \
                        "<html><head><title>JK Status Manager</title></head>\n"  \
                        "<body>\n"
-
 #define JK_STATUS_HEND "</body>\n</html>\n"
-
 
 typedef struct status_worker status_worker_t;
 
