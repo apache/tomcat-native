@@ -83,13 +83,13 @@
 
 /* -------------------- Impl -------------------- */
 static char *jk2_worker_ajp13_getAttributeInfo[]={ "lb_factor", "lb_value", "debug", "channel", "level",
-                                                   "route", "errorState", "graceful", "groups", "disabled", 
+                                                   "route", "routeRedirect", "errorState", "graceful", "groups", "disabled", 
                                                    "epCount", "errorTime", NULL };
 
 static char *jk2_worker_ajp13_multiValueInfo[]={"group", NULL };
 
-static char *jk2_worker_ajp13_setAttributeInfo[]={"debug", "channel", "route", "secretkey", "group", "graceful", "disabled", 
-                                                  "lb_factor", "level", NULL };
+static char *jk2_worker_ajp13_setAttributeInfo[]={"debug", "channel", "route", "routeRedirect","secretkey", "group", "graceful",
+                                                  "disabled", "lb_factor", "level", NULL };
 
 
 static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
@@ -103,6 +103,8 @@ static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *
             return worker->channelName;
     } else if (strcmp( name, "route" )==0 ) {
         return worker->route;
+    } else if (strcmp( name, "routeRedirect" )==0 ) {
+        return worker->routeRedirect;
     } else if (strcmp( name, "debug" )==0 ) {
         return jk2_env_itoa( env,  bean->debug );
     } else if (strcmp( name, "groups" )==0 ) {
@@ -146,6 +148,8 @@ jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         ajp13->route=value;
     } else if( strcmp( name, "route" )==0 ) {
         ajp13->route=value;
+    } else if( strcmp( name, "routeRedirect" )==0 ) {
+        ajp13->routeRedirect=value;
     } else if( strcmp( name, "graceful" )==0 ) {
         ajp13->graceful=atoi( value );
     } else if( strcmp( name, "disabled" )==0 ) {

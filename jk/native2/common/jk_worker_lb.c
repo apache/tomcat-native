@@ -114,13 +114,18 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
     int level;
     int currentLevel=JK_LB_LEVELS - 1;
     char *session_route = NULL;
+    char *routeRedirect=NULL;
     time_t now = 0;
     jk_worker_lb_private_t *lb_priv = lb->worker_private;
 
     if(lb_priv->sticky_session) {
         session_route = jk2_requtil_getSessionRoute(env, s);
     }
-       
+
+    if( lb->mbean->debug > 0 ) {
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "lb.get_worker %d Session=%s\n", lb_priv->sticky_session, (session_route? session_route: "NULL"));
+    }
     if(session_route) {
         for( level=0; level<JK_LB_LEVELS; level++ ) {
             for(i = 0 ; i < lb->workerCnt[level]; i++) {
@@ -128,6 +133,33 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                 
                 if(w->route != NULL &&
                    0 == strcmp(session_route, w->route)) {
+                    if( w->routeRedirect != NULL ) {
+                        /* Session was migrated to another worker */
+                        routeRedirect=w->routeRedirect;
+                        break;
+                    }
+                    
+                    if(attempt > 0 && w->in_error_state) {
+                        /* We already tried to revive this worker. */
+                        break;
+                    } else {
+                        return w;
+                    }
+                }
+            }
+        }
+    }
+    /* We have a session - but the worker is in error state
+       or has a "redirect".
+       Try the new worker.
+    */
+    if(routeRedirect != NULL) {
+        for( level=0; level<JK_LB_LEVELS; level++ ) {
+            for(i = 0 ; i < lb->workerCnt[level]; i++) {
+                jk_worker_t *w=lb->workerTables[level][i];
+                
+                if(w->route != NULL &&
+                   0 == strcmp(routeRedirect, w->route)) {
                     if(attempt > 0 && w->in_error_state) {
                         /* We already tried to revive this worker. */
                         break;
