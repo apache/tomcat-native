@@ -95,6 +95,16 @@ static int jk_map_aprtable_put( struct jk_env *env, struct jk_map *_this,
     return JK_TRUE;
 }
 
+static int jk_map_aprtable_add( struct jk_env *env, struct jk_map *_this,
+                                const char *name, void *value )
+{
+    apr_table_t *aprMap=_this->_private;
+    
+    apr_table_addn( aprMap, name, (char *)value );
+    
+    return JK_TRUE;
+}
+
 static int jk_map_aprtable_size( struct jk_env *env, struct jk_map *_this )
 {
     apr_table_t *aprMap=_this->_private;
@@ -125,6 +135,17 @@ static void * jk_map_aprtable_valueAt( struct jk_env *env, struct jk_map *_this,
     return elts[pos].val;
 }
 
+static void jk_map_aprtable_init(jk_env_t *env, jk_map_t *m, int initialSize,
+                                void *wrappedObj)
+{
+    m->_private=wrappedObj;
+}
+
+static void jk_map_aprtable_clear(jk_env_t *env, jk_map_t *m)
+{
+
+}
+
 
 /* Not used yet */
 int  jk_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
@@ -134,6 +155,15 @@ int  jk_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
     jk_map_t *_this=(jk_map_t *)pool->calloc( pool, sizeof(jk_map_t));
 
     *result=_this;
+    
+    _this->get=jk_map_aprtable_get;
+    _this->put=jk_map_aprtable_put;
+    _this->add=jk_map_aprtable_add;
+    _this->size=jk_map_aprtable_size;
+    _this->nameAt=jk_map_aprtable_nameAt;
+    _this->valueAt=jk_map_aprtable_valueAt;
+    _this->init=jk_map_aprtable_init;
+    _this->clear=jk_map_aprtable_clear;
     
     return JK_TRUE;
 }
