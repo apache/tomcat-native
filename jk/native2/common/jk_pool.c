@@ -65,49 +65,137 @@
 #include "jk_env.h"
 
 #define DEFAULT_DYNAMIC 10
+#define JK_DEBUG_POOL 1
+
+/* Private data for jk pools
+ */
+struct jk_pool_private {
+    jk_pool_t *parent;    
+    int size;      
+    int pos;       
+    int dyn_size;  
+    int dyn_pos;   
+    void     **dynamic;
+    char  *buf;
+};
+
+typedef struct jk_pool_private jk_pool_private_t;
+
+int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent, int size );
 
 int JK_METHOD jk_pool_factory( jk_env_t *env, void **result,
                                char *type, char *name);
 
+static jk_pool_t *jk_pool_createChild( jk_pool_t *parent, int size );
+
 static void *jk_pool_dyn_alloc(jk_pool_t *p, 
                                size_t size);
 
-static void jk_reset_pool(jk_pool_t *p);
+static void jk_pool_reset(jk_pool_t *p);
 
-static void jk_close_pool(jk_pool_t *p);
+static void jk_pool_close(jk_pool_t *p);
 
-static void *jk_pool_alloc(jk_pool_t *p, 
-                           size_t size);
+static void *jk_pool_alloc(jk_pool_t *p, size_t size);
 
-static void jk_close_pool(jk_pool_t *p)
-{
-    if(p) {
-        jk_reset_pool(p);
-        if(p->dynamic) {
-            free(p->dynamic);
-        }
-    }
+static void *jk_pool_calloc(jk_pool_t *p, size_t size);
+
+static void *jk_pool_strdup(jk_pool_t *p, const char *s);
+
+static void *jk_pool_realloc(jk_pool_t *p, size_t sz,const void *old,
+                             size_t old_sz);
+
+
+int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent, int size ) {
+    jk_pool_private_t *pp;
+    
+    jk_pool_t *_this=(jk_pool_t *)malloc( sizeof( jk_pool_t ));
+    /*     jk_pool_t *_this=(jk_pool_t *)malloc( sizeof( jk_pool_t ) + */
+    /*                                           sizeof( jk_pool_private_t ) +*/
+    /*                                           size ); */
+    pp=(jk_pool_private_t *)malloc( sizeof( jk_pool_private_t ));
+    
+    _this->_private=pp;
+
+    /* XXX strange, but I assume the size is in bytes, not atom_t */
+    pp->buf=(char *)malloc( size );
+
+    pp->pos  = 0;
+    pp->size = size;
+
+    pp->dyn_pos = 0;
+    pp->dynamic = NULL;
+    pp->dyn_size = 0;
+    pp->parent=parent;
+
+    /* methods */
+    _this->create=jk_pool_createChild;
+    _this->close=jk_pool_close;
+    _this->reset=jk_pool_reset;
+    
+    _this->alloc=jk_pool_alloc;
+    _this->calloc=jk_pool_calloc;
+    _this->pstrdup=jk_pool_strdup;
+    _this->realloc=jk_pool_realloc;
+    
+    *newPool = _this;
+    
+    return JK_TRUE;
 }
 
-static void jk_reset_pool(jk_pool_t *p)
+static jk_pool_t *jk_pool_createChild( jk_pool_t *parent, int size ) {
+    jk_pool_t *newPool;
+    
+    jk_pool_create( &newPool, parent, size );
+    return newPool;
+}
+
+static void jk_pool_close(jk_pool_t *p)
 {
-    if(p && p->dyn_pos && p->dynamic) {
-        unsigned i;
-        for(i = 0 ; i < p->dyn_pos ; i++) {
-            if(p->dynamic[i]) {
-                free(p->dynamic[i]);
+    jk_pool_private_t *pp;
+    
+    if(p==NULL || p->_private==NULL)
+        return;
+
+    pp=(jk_pool_private_t *)p->_private;
+    
+    jk_pool_reset(p);
+    if(pp->dynamic) {
+        free(pp->dynamic);
+    }
+    if( pp->buf )
+        free( pp->buf );
+    free( pp );
+    free( p );
+}
+
+static void jk_pool_reset(jk_pool_t *p)
+{
+    jk_pool_private_t *pp;
+    
+    if(p==NULL || p->_private ==NULL )
+        return;
+
+    pp=(jk_pool_private_t *)p->_private;
+
+    if( pp->dyn_pos && pp->dynamic) {
+        int i;
+        for(i = 0 ; i < pp->dyn_pos ; i++) {
+            if(pp->dynamic[i]) {
+                free(pp->dynamic[i]);
             }
         }
     }
 
-    p->dyn_pos  = 0;
-    p->pos      = 0;
+    pp->dyn_pos  = 0;
+    pp->pos      = 0;
 }
 
 static void *jk_pool_calloc(jk_pool_t *p, 
-                           size_t size)
+                            size_t size)
 {
     void *rc=jk_pool_alloc( p, size );
+    if( rc==NULL )
+        return NULL;
     memset( rc, 0, size );
     return rc;
 }
@@ -116,26 +204,33 @@ static void *jk_pool_alloc(jk_pool_t *p,
                            size_t size)
 {
     void *rc = NULL;
+    jk_pool_private_t *pp;
 
-    if(p && size > 0) {
-        /* Round size to the upper mult of 8. */
-        size -= 1;
-        size /= 8;
-        size = (size + 1) * 8;
-        if((p->size - p->pos) >= size) {
-            rc = &(p->buf[p->pos]);
-            p->pos += size;
-        } else {
-            rc = jk_pool_dyn_alloc(p, size);
-        }
+    if(p==NULL || size <= 0)
+        return NULL;
+
+    pp=(jk_pool_private_t *)p->_private;
+
+    /* Round size to the upper mult of 8. */
+    size -= 1;
+    size /= 8;
+    size = (size + 1) * 8;
+
+    if((pp->size - pp->pos) >= (int)size) {
+        /* We have space */
+        rc = &(pp->buf[pp->pos]);
+        pp->pos += size;
+    } else {
+#ifdef JK_DEBUG_POOL
+        printf("Dynamic alloc %d\n", pp->size );
+#endif
+        rc = jk_pool_dyn_alloc(p, size);
     }
 
     return rc;
 }
 
-static void *jk_pool_realloc(jk_pool_t *p, 
-                             size_t sz,
-                             const void *old,
+static void *jk_pool_realloc(jk_pool_t *p, size_t sz,const void *old,
                              size_t old_sz)
 {
     void *rc;
@@ -143,17 +238,15 @@ static void *jk_pool_realloc(jk_pool_t *p,
     if(!p || (!old && old_sz)) {
         return NULL;
     }
-
     rc = jk_pool_alloc(p, sz);
-    if(rc) {
-        memcpy(rc, old, old_sz);
-    }
+    if(rc==NULL)
+        return NULL;
 
+    memcpy(rc, old, old_sz);
     return rc;
 }
 
-static void *jk_pool_strdup(jk_pool_t *p, 
-                            const char *s)
+static void *jk_pool_strdup(jk_pool_t *p, const char *s)
 {
     char *rc = NULL;
     if(s && p) {
@@ -163,8 +256,7 @@ static void *jk_pool_strdup(jk_pool_t *p,
             return "";
         }
 
-        size++;
-        rc = jk_pool_alloc(p, size);
+        rc = jk_pool_alloc(p, size+1);
         if(rc) {
             memcpy(rc, s, size);
         }
@@ -173,8 +265,9 @@ static void *jk_pool_strdup(jk_pool_t *p,
     return rc;
 }
 
-static void jk_dump_pool(jk_pool_t *p, 
-                  FILE *f)
+/*
+  static void jk_dump_pool(jk_pool_t *p, 
+                         FILE *f)
 {
     fprintf(f, "Dumping for pool [%p]\n", p);
     fprintf(f, "size             [%d]\n", p->size);
@@ -186,61 +279,41 @@ static void jk_dump_pool(jk_pool_t *p,
 
     fflush(f);
 }
+*/
 
-static void *jk_pool_dyn_alloc(jk_pool_t *p, 
-                               size_t size)
+static void *jk_pool_dyn_alloc(jk_pool_t *p, size_t size)
+
 {
     void *rc = NULL;
+    jk_pool_private_t *pp;
+    pp=(jk_pool_private_t *)p->_private;
 
-    if(p->dyn_size == p->dyn_pos) {
-        unsigned new_dyn_size = p->dyn_size + DEFAULT_DYNAMIC;
+    if(pp->dyn_size == pp->dyn_pos) {
+        int new_dyn_size = pp->dyn_size + DEFAULT_DYNAMIC;
         void **new_dynamic = (void **)malloc(new_dyn_size * sizeof(void *));
-        if(new_dynamic) {
-            if(p->dynamic) {
-                memcpy(new_dynamic, 
-                       p->dynamic, 
-                       p->dyn_size * sizeof(void *));
-
-                free(p->dynamic);
-            }
-
-            p->dynamic = new_dynamic;
-            p->dyn_size = new_dyn_size;
-        } else {
+        if(new_dynamic==NULL) {
             return NULL;
         }
+
+        if(pp->dynamic) {
+            memcpy(new_dynamic, 
+                   pp->dynamic, 
+                   pp->dyn_size * sizeof(void *));
+            
+            free(pp->dynamic);
+        }
+
+        pp->dynamic = new_dynamic;
+        pp->dyn_size = new_dyn_size;
     } 
 
-    rc = p->dynamic[p->dyn_pos] = malloc(size);
-    if(p->dynamic[p->dyn_pos]) {
-        p->dyn_pos ++;
+    rc = pp->dynamic[pp->dyn_pos] = malloc(size);
+    if(pp->dynamic[pp->dyn_pos]) {
+        pp->dyn_pos ++;
     }
-
     return rc;
 }
 
-/* Not implemented yet */
-int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent, int size ) {
-    jk_pool_t *_this=(jk_pool_t *)malloc( sizeof( jk_pool_t ));
-
-    /* XXX strange, but I assume the size is in bytes, not atom_t */
-    _this->buf=(jk_pool_atom_t *)malloc( size );
-    jk_open_pool( _this, _this->buf, size );
-    _this->own_buffer = JK_TRUE;
-    *newPool = _this;
-    
-    return JK_TRUE;
-}
-
-static void init_methods(jk_pool_t *_this ) {
-    _this->open=jk_open_pool;
-    _this->close=jk_close_pool;
-    _this->reset=jk_reset_pool;
-    _this->alloc=jk_pool_alloc;
-    _this->calloc=jk_pool_calloc;
-    _this->pstrdup=jk_pool_strdup;
-    _this->realloc=jk_pool_realloc;
-}
 
 /* Not used yet */
 int JK_METHOD jk_pool_factory( jk_env_t *env, void **result,
@@ -248,27 +321,10 @@ int JK_METHOD jk_pool_factory( jk_env_t *env, void **result,
 {
     jk_pool_t *_this=(jk_pool_t *)calloc( 1, sizeof(jk_pool_t));
 
-    init_methods(_this );
-
     *result=_this;
     
     return JK_TRUE;
 }
 
-/* that's what jk use to create pools. Deprecated! */
-void jk_open_pool(jk_pool_t *_this,
-                  jk_pool_atom_t *buf,
-                  unsigned size)
-{
-    _this->pos  = 0;
-    _this->size = size;
-    _this->buf  = buf;
-
-    _this->dyn_pos = 0;
-    _this->dynamic = NULL;
-    _this->dyn_size = 0;
-    _this->own_buffer = JK_FALSE;
-    init_methods( _this );
-}
 
 
