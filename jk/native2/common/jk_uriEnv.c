@@ -335,6 +335,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             uriEnv->prefix      = uri;
             uriEnv->prefix_len  =strlen( uriEnv->prefix );
             uriEnv->suffix      = asterisk + 3;
+            uriEnv->suffix_len  = strlen(asterisk + 3);
             uriEnv->match_type  = MATCH_TYPE_SUFFIX;
             if( uriEnv->mbean->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
@@ -345,6 +346,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             /* general suffix rule /context/prefix/ASTERISKextraData */
             asterisk[1] = '\0';
             uriEnv->suffix  = asterisk + 2;
+            uriEnv->suffix_len  = strlen(asterisk + 2);
             uriEnv->prefix  = uri;
             uriEnv->prefix_len  =strlen( uriEnv->prefix );
             uriEnv->match_type = MATCH_TYPE_GENERAL_SUFFIX;
