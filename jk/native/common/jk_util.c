@@ -94,6 +94,46 @@ static void set_time_str(char * str, int len)
     strftime(str, len, jk_log_fmt, tms);
 }
 
+/* Write at most n characters to the buffer in str, return the
+ * number of chars written or -1 if the buffer would have been
+ * overflowed.
+ *
+ * This is portable to any POSIX-compliant system that has /dev/null
+ */
+#if !defined(HAVE_VSNPRINTF) && !defined(HAVE_APR)
+static FILE *f=NULL;
+int vsnprintf( char *str, size_t n, const char *fmt, va_list ap )
+{
+       int res;
+
+       if (f == NULL)
+               f = fopen("/dev/null","w");
+       if (f == NULL)
+               return -1;
+
+       setvbuf( f, str, _IOFBF, n );
+
+       res = vfprintf( f, fmt, ap );
+
+       if ( res > 0 && res < n ) {
+               res = vsprintf( str, fmt, ap );
+       }
+       return res;
+}
+#endif
+#if !defined(HAVE_SNPRINTF) && !defined(HAVE_APR)
+int snprintf( char *str, size_t n, const char *fmt, ... )
+{
+        va_list ap;
+        int res;
+ 
+        va_start( ap, fmt );
+        res = vsnprintf( str, n, fmt, ap );
+        va_end( ap );
+        return res;
+}
+#endif
+
 static int JK_METHOD log_to_file(jk_logger_t *l,                                 
                                  int level,
                                  const char *what)

@@ -24,6 +24,8 @@
 #ifndef JK_GLOBAL_H
 #define JK_GLOBAL_H
 
+#include "portable.h"
+
 #include "jk_version.h"
 
 #include <stdio.h>
@@ -179,12 +181,28 @@ extern "C" {
 #ifdef WIN32
 /* For WIN32, emulate gettimeofday() using _ftime() */
 #define gettimeofday(tv,tz) { struct _timeb tb; _ftime(&tb); (tv)->tv_sec = tb.time; (tv)->tv_usec = tb.millitm * 1000; }
+#ifdef HAVE_APR
+#define snprintf apr_snprintf
+#define vsnprintf apr_vsnprintf
+#else
 /* define snprint to match windows version */
 #define snprintf _snprintf
-/* define vsnprint to match windows version */
 #define vsnprintf _vsnprintf
 #endif
+#endif
 
+/* Use apr snprintf() and vsnprintf() when needed */
+#if defined(HAVE_APR)
+#if !defined(HAVE_SNPRINTF)
+#define snprintf apr_snprintf
+#endif
+#if !defined(HAVE_VSNPRINTF)
+#define vsnprintf apr_vsnprintf
+#endif
+#endif
+
+/* XXXX There is a snprintf() and vsnprintf() in jk_util.c */
+/* if those work remove the #define. */
 #if defined(NETWARE) || defined(AS400)
 #define USE_SPRINTF
 #define USE_VSPRINTF

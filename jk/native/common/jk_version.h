@@ -16,7 +16,6 @@
 
 /***************************************************************************
  * Description: JK version header file                                     *
- * Author:      Jean-Frederic Clere <jfrederic.clere@fujitsu-siemens.com>  *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
@@ -36,9 +35,12 @@
 #define JK_VERISRELEASE 0
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
 
-#define PACKAGE "mod_jk/"
+#if !defined(PACKAGE)
+#define PACKAGE "mod_jk"
+#endif
+
 /* Build JK_EXPOSED_VERSION and JK_VERSION */
-#define JK_EXPOSED_VERSION_INT PACKAGE JK_VERSTRING
+#define JK_EXPOSED_VERSION_INT PACKAGE "/" JK_VERSTRING
 
 #if ( JK_VERISRELEASE == 1 )
   #define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT
