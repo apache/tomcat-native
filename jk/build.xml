@@ -30,8 +30,8 @@
     <property name="coyote.home" 
 	      location="../coyote/build" />
     <property name="commons-logging.jar" location="../lib/commons-logging.jar" />
-    <property name="mx4j.home" location="${base.path}/mx4j-1.0" />
-    <property name="jmx.jar" location="${mx4j.home}/lib/mx4j.jar" />
+
+    <property name="jmx.jar" location="../lib/mx4j.jar" />
 
     <!-- ==================== Detection and reports ==================== -->
 
@@ -157,9 +157,9 @@
                debug="${debug}"
                optimize="${optimize}"
                verbose="off" >
-      <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat40.detect"/>
-      <exclude name="org/apache/ajp/tomcat33/**" 
-               unless="tomcat33.detect"/>
+            <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat40.detect"/>
+            <exclude name="org/apache/ajp/tomcat33/**" 
+                     unless="tomcat33.detect"/>
 	    <exclude name="org/apache/jk/common/JkMX.java" unless="jmx.detect"/>
 	    <exclude name="org/apache/jk/common/Shm14.java" unless="jdk14.detect"/>
 	    <classpath refid="build-main.classpath"/>
@@ -205,9 +205,9 @@
     </target>
     
     <target name="jkant" >
-    <mkdir dir="${jk.build}/classes"/>
-    <mkdir dir="${jk.build}/classes/META-INF" />
-    <mkdir dir="${jk.build}/lib"/>
+        <mkdir dir="${jk.build}/classes"/>
+        <mkdir dir="${jk.build}/classes/META-INF" />
+        <mkdir dir="${jk.build}/lib"/>
 	<javac srcdir="jkant/java" 
 	       destdir="${jk.build}/classes" 
 	       debug="${debug}"
@@ -230,19 +230,62 @@
     </target>
 
 
-    <!-- ================ Install =================== -->
+    <!-- ================ Experimental: Xdoclet =================== -->
 
-    <target name="install" 
-            depends="prepare,build-main,install-a20,install-a13" />
+    <!-- Use Javadoc tags to generate auxiliary files.
+    -->
+    <target name="xdoclet" depends="prepare">
+        <path id="xdoclet.classpath">
+            <pathelement location="../lib/xdoclet.jar"/>
+            <pathelement location="../lib/log4j-core.jar"/>
+            <pathelement location="${ant.home}/lib/ant.jar"/>
+            <path refid="build-main.classpath" />
+        </path>
+        
+        
+        <taskdef name="webdoclet"
+                 classname="xdoclet.web.WebDocletTask" 
+                 classpathref="xdoclet.classpath" />
+        <taskdef name="document"
+                 classname="xdoclet.doc.DocumentDocletTask"
+                 classpathref="xdoclet.classpath" />
+        <taskdef name="jmxdoclet"
+                 classname="xdoclet.jmx.JMXDocletTask"
+                 classpathref="xdoclet.classpath" />
+            
+        <jmxdoclet sourcepath="java"
+                   destdir="${jk.build}/jmx-java"
+                   classpathref="xdoclet.classpath"
+                   force="${xdoclet.force}">
+            <fileset dir="java">
+               <include name="**/*.java" />
+            </fileset>
 
-    <target name="install-a20" if="apache2.detect" > 
-        <!--
-    <copy file="${jk.build}/jk/mod_jk.so" 
-              tofile="${apache2.home}/modules/mod_jk.so" />
-        -->
-    </target>
+            <!-- Create the {0}MBean interface for the MBean -->
+            <mbeaninterface mergedir="java"/>
 
-    <target name="install-a13" if="apache13.detect" > 
+            <!-- Create the OpenJMX specific description adaptor class for the MBean -->
+            <openjmxDescription />
+
+            <!--create the jbossmx xml descriptor for the mbean-->
+            <jbossxmbean/>
+
+            <!--create the jboss xml service template for the mbean-->
+           <jbossXmlServiceTemplate/>
+        </jmxdoclet>
+
+            
+        <document sourcepath="java"
+                  destdir="${jk.build}/todo" 
+                  classpathref="xdoclet.classpath" >
+            <fileset dir="java">
+                <include name="**/*.java" />
+            </fileset>
+            <info header="Todo list"
+                  projectname="JK2"
+                  tag="todo" />
+         </document>
+
     </target>
 
     <!-- ================ javadocs =================== -->
@@ -279,8 +322,7 @@
     <target name="clean-native">
     </target>
 
-  <!--
-    Check if we found Xalan in our classpath. We require Xalan because it has
+    <!-- Check if we found Xalan in our classpath. We require Xalan because it has
     some nifty functions that we use throughout the XSLT (and also because
     we want people to eat our own food, right?)
   -->
