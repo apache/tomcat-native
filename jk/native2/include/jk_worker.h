@@ -127,13 +127,21 @@ struct jk_worker {
 
     struct jk_workerEnv *workerEnv;
     char *name;
+    char *type;
+
+    /** The id of the tomcat instance we connect to. We may have multiple
+        workers connecting to a single tomcat. If no route is defined,
+        the worker name will be the route name. The route can be the
+        name of another worker. 
+     */
+    char *route;
 
     /** Pool for worker specific informations.
         In future we may start/stop/reload workers at runtime, but that's
         far away
     */
     struct jk_pool *pool;
-    
+
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol 
@@ -141,39 +149,19 @@ struct jk_worker {
      */
     void *worker_private;
     
-    /* XXX Add name and all other common properties !!! 
-     */
-
-    /** Communication channle used by the worker 
+    /** Communication channel used by the worker 
      */
     struct jk_channel *channel;
-
-    /* XXX Stuff from ajp, some is generic, some not - need to
-       sort out after */
-    struct sockaddr_in worker_inet_addr; /* Contains host and port */
-    int connect_retry_attempts;
 
     /** Reuse the endpoint and it's connection
      */
     struct jk_objCache *endpointCache;
 
-    /** Request pool cache. XXX We may use reqCache.
+    /** Request pool cache. XXX We may use a pool of requests.
      */
     struct jk_objCache *rPoolCache;
     
-    /* 
-     * Open connections cache...
-     *
-     * 1. Critical section object to protect the cache.
-     * 2. Cache size. 
-     * 3. An array of "open" endpoints.
-     */
-    /*     JK_CRIT_SEC cs; */
-    /*     int ep_cache_sz; */
-    /*     struct jk_endpoint **ep_cache; */
-
-    int proto;
-    /* Password for ajp14+ connections. If null we default to ajp13.*/
+    /* Private key used to connect to the remote side2.*/
     char * secret;
 
     /* Each worker can be part of a load-balancer scheme.
@@ -185,16 +173,15 @@ struct jk_worker {
     int     in_error_state;
     int     in_recovering;
     time_t  error_time;
+    /** Last exception recorded on this worker, the reason for
+     *  which this worker is in error state and can't perform.
+     */
+    struct jk_exception *lastError;
 
     /** If num_of_workers > 0 this is an load balancing worker
      */
     jk_worker_t **lb_workers;
     int num_of_workers;
-    
-    /*
-     * For all of the below (except destroy), the first argument is
-     * essentially a 'this' pointer.  
-     */
 
     /*
      * Given a worker which is in the process of being created, and a list

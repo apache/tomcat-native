@@ -107,16 +107,11 @@ struct jk_workerEnv {
      */
     struct jk_pool *pool;
     
-    /* Workers hashtable. You can also access workers by id
+    /* Active workers hashtable. 
      */
     struct jk_map *worker_map;
 
     struct jk_env *globalEnv;
-
-    /** Number of workers that are configured. XXX same as
-        size( worker_map )
-    */
-    int num_of_workers;
 
     /** Worker that will be used by default, if no other
         worker is specified. Usefull for SetHandler or

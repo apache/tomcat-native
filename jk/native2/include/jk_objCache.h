@@ -105,10 +105,23 @@ struct jk_objCache {
 
     int (*destroy)(struct jk_env *env, jk_objCache_t *_this);
 
-    /* private, move to impl ( if any other impl is available) */
-    int ep_cache_sz;
+    /** Cache max size. -1 for unbound ( i.e. growing ). */
+    int maxSize;
+
+    /* Current size of the table */
+    int size;
+
+    /** Number of elements in the cache.
+     *  Postition where next element will be inserted.
+     */
+    int count;
+
+    /* Sync.
+     */
     JK_CRIT_SEC cs;
-    void **ep_cache;
+
+    /** Objects in the cache */
+    void **data;
     struct jk_pool *pool;
 };
     
