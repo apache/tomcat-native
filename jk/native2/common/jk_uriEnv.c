@@ -445,6 +445,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
 
     if (uri[strlen(uri) - 1] == '*') {
         /* context based /context/prefix/ASTERISK  */
+        uri[strlen(uri) - 1] = '\0';
         uriEnv->suffix      = NULL;
         uriEnv->prefix      = uri;
         uriEnv->prefix_len  =strlen( uriEnv->prefix );
@@ -522,7 +523,7 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
      * so that global mappings are always present
      * on each vhost, instead of explicitly defined.
      */
-#if 0
+#if 1
     uriEnv->inherit_globals = 1;
 #endif
 
