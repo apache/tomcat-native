@@ -68,6 +68,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Cookie;
 
 import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.http.Cookies;
 import org.apache.tomcat.util.http.ServerCookie;
 import org.apache.tomcat.util.http.MimeHeaders;
@@ -270,6 +271,15 @@ public class JkInputStream extends InputStream {
         contentLength=-1;
     }
 
+    public int doRead(ByteChunk responseChunk ) throws IOException {
+        log.info( "JkInputStream: " + pos + " " + blen + " " + available );
+        if( blen == pos ) {
+            receive();
+        }
+        responseChunk.setBytes( bodyBuff, pos, blen-pos );
+        return blen - pos;
+    }
+    
     /** Receive a chunk of data. Called to implement the
      *  'special' packet in ajp13 and to receive the data
      *  after we send a GET_BODY packet

@@ -229,9 +229,9 @@ public class JkCoyoteHandler extends JkHandler implements
                     log.info("COMMIT sending headers " + res + " " + res.getMimeHeaders() );
                 
                 
-                C2B c2b=(C2B)res.getNote( utfC2bNote );
+                C2BConverter c2b=(C2BConverter)res.getNote( utfC2bNote );
                 if( c2b==null ) {
-                    c2b=new C2B(  "UTF8" );
+                    c2b=new C2BConverter(  "UTF8" );
                     res.setNote( utfC2bNote, c2b );
                 }
                 

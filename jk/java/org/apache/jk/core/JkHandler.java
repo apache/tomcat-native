@@ -62,6 +62,8 @@ import java.io.*;
 import java.util.*;
 import java.security.*;
 
+import org.apache.tomcat.util.handler.*;
+
 /**
  *
  * @author Costin Manolache
