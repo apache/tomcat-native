@@ -20,7 +20,7 @@ INSTDIR = /mnt/sys/novonyx/modules
 # Edit the vars below to change NLM target settings.
 TARGET  = nsapi_rd
 VERSION	= $(JK_VERSION)
-COPYR	= Copyright (c) 2000-2004 The Apache Software Foundation. All rights reserved.
+COPYR	= Copyright (c) 2000-2005 The Apache Software Foundation. All rights reserved.
 DESCR	= Netscape plugin for Jakarta/Tomcat $(JK_VERSION_STR)
 MTSAFE	= NO
 STACK	= 64000
@@ -139,7 +139,9 @@ OBJS	= \
 	$(OBJDIR)/jk_md5.o \
 	$(OBJDIR)/jk_msg_buff.o \
 	$(OBJDIR)/jk_pool.o \
+	$(OBJDIR)/jk_shm.o \
 	$(OBJDIR)/jk_sockbuf.o \
+	$(OBJDIR)/jk_status.o \
 	$(OBJDIR)/jk_uri_worker_map.o \
 	$(OBJDIR)/jk_util.o \
 	$(OBJDIR)/jk_worker.o \
