@@ -322,12 +322,19 @@ apr_status_t ajp_ilink_send(apr_socket_t *sock, ajp_msg_t *msg);
 /** 
  * Receive an AJP message from backend
  *
- * @param soct      backend socket
+ * @param sock      backend socket
  * @param smsg      AJP message to put serialized message
  * @return          APR_SUCCESS or error
  */
 apr_status_t ajp_ilink_receive(apr_socket_t *sock, ajp_msg_t *msg);
 
+/*&
+ * Build the ajp header message and send it
+ * @param sock      backend socket
+ * @param r         current request
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_send_header(apr_socket_t *sock, request_rec  *r);
 
 
 #endif /* AJP_H */
