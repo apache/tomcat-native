@@ -351,6 +351,12 @@ public final class CoyoteConnector
     private Adapter adapter = null;
 
 
+     /**
+      * URI encoding.
+      */
+     private String URIEncoding = null;
+
+
     // ------------------------------------------------------------- Properties
 
 
@@ -946,6 +952,28 @@ public final class CoyoteConnector
         this.tcpNoDelay = tcpNoDelay;
 
     }
+
+
+     /**
+      * Return the character encoding to be used for the URI.
+      */
+     public String getURIEncoding() {
+
+         return (this.URIEncoding);
+
+     }
+
+
+     /**
+      * Set the URI encoding to be used for the URI.
+      *
+      * @param URIEncoding The new URI character encoding.
+      */
+     public void setURIEncoding(String URIEncoding) {
+
+         this.URIEncoding = URIEncoding;
+
+     }
 
 
     /**
