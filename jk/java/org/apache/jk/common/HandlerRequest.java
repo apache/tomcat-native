@@ -330,7 +330,10 @@ public class HandlerRequest extends JkHandler
         throws IOException
     {
         int type=msg.getByte();
-        ThreadWithAttributes twa=(ThreadWithAttributes)Thread.currentThread();
+        ThreadWithAttributes twa = null;
+        if (Thread.currentThread() instanceof ThreadWithAttributes) {
+            twa = (ThreadWithAttributes) Thread.currentThread();
+        }
         Object control=ep.getControl();
 
         MessageBytes tmpMB=(MessageBytes)ep.getNote( tmpBufNote );
@@ -344,11 +347,15 @@ public class HandlerRequest extends JkHandler
         switch( type ) {
         case JK_AJP13_FORWARD_REQUEST:
             try {
-                twa.setCurrentStage(control, "JkDecode");
+                if (twa != null) {
+                    twa.setCurrentStage(control, "JkDecode");
+                }
                 decodeRequest( msg, ep, tmpMB );
-                twa.setCurrentStage(control, "JkService");
-                twa.setParam(control,
-                        ((Request)ep.getRequest()).unparsedURI().toString());
+                if (twa != null) {
+                    twa.setCurrentStage(control, "JkService");
+                    twa.setParam(control,
+                                 ((Request)ep.getRequest()).unparsedURI());
+                }
             } catch( Exception ex ) {
                 log.error( "Error decoding request ", ex );
                 msg.dump( "Incomming message");
@@ -366,7 +373,9 @@ public class HandlerRequest extends JkHandler
                   next.getClass().getName());
 
             int err= next.invoke( msg, ep );
-            twa.setCurrentStage(control, "JkDone");
+            if (twa != null) {
+                twa.setCurrentStage(control, "JkDone");
+            }
 
             if( log.isDebugEnabled() )
                 log.debug( "Invoke returned " + err );
