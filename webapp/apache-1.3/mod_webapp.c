@@ -84,17 +84,17 @@ static wa_chain *wam_connections=NULL;
 /* MODULE AND LIBRARY INITIALIZATION AND DESTRUCTION                         */
 /* ************************************************************************* */
 
-/* Destroy the module and the WebApp Library */
-static void wam_destroy(void *nil) {
-    if (!wam_initialized) return;
-    wa_destroy();
-    wam_initialized=FALSE;
-}
-
 /* Startup the module and the WebApp Library */
 static void wam_startup(server_rec *s, pool *p) {
     if (!wam_initialized) return;
     wa_startup();
+}
+
+/* Destroy the module and the WebApp Library */
+static void wam_shutdown(void *nil) {
+    if (!wam_initialized) return;
+    wa_shutdown();
+    wam_initialized=FALSE;
 }
 
 /* Initialize the module and the WebApp Library */
@@ -103,7 +103,7 @@ static const char *wam_init(pool *p) {
 
     if(wam_initialized) return(NULL);
     if ((ret=wa_init())!=NULL) return(ret);
-    ap_register_cleanup(p,NULL,wam_destroy,NULL);
+    ap_register_cleanup(p,NULL,wam_shutdown,NULL);
     wam_initialized=TRUE;
     return(NULL);
 }
