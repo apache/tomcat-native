@@ -76,37 +76,6 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
 
     public native int terminate();
 
-    // -------------------- Unix sockets --------------------
-
-    // @deprecated. We'll use the same invocation path as for the jni channel
-
-    public native long unSocketClose( long socket, int type );
-
-    /** Create a unix socket and start listening. 
-     *  @param file the name of the socket
-     *  @param bl backlog
-     */
-    public native long unSocketListen( String file, int bl );
-    
-    /** Create a unix socket and connect. 
-     *  @param file the name of the socket
-     *  @param bl backlog
-     */
-    public native long unSocketConnect( String file );
-
-    /** Accept a connection.
-     */
-    public native long unAccept(  long unListeningSocket );
-
-    public native int unRead(  long unSocket,
-                               byte buf[], int off, int len );
-
-    public native int unWrite(  long unSocket,
-                                byte buf[], int off, int len );
-
-    // --------------------  Interface to jk components --------------------
-    // 
-
     /* -------------------- Access to the jk_env_t -------------------- */
 
     /* The jk_env_t provide temporary storage ( pool ), logging, common services
