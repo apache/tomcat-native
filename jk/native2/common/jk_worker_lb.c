@@ -77,27 +77,6 @@
 /* XXX make it longer - debugging only */
 #define WAIT_BEFORE_RECOVER (5) 
 
-#define ADDITINAL_WAIT_LOAD (20)
-
-
-/* Find the biggest lb_value for all my workers.
- * This + ADDITIONAL_WAIT_LOAD will be set on all the workers
- * that recover after an error.
- */
-static double jk2_get_max_lb(jk_worker_t *lb) 
-{
-    int i;
-    double rc = 0.0;    
-
-    for(i = 0 ; i < lb->num_of_workers ; i++) {
-        if(!lb->lb_workers[i]->in_error_state) {
-            if(lb->lb_workers[i]->lb_value > rc) {
-                rc = lb->lb_workers[i]->lb_value;
-            }
-        }            
-    }
-    return rc;
-}
 
 /** Find the best worker. In process, check if timeout expired
     for workers that failed in the past and give them another chance.
@@ -120,11 +99,14 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
        
     if(session_route) {
         for(i = 0 ; i < lb->num_of_workers ; i++) {
-            if(0 == strcmp(session_route, lb->lb_workers[i]->route)) {
-                if(attempt > 0 && lb->lb_workers[i]->in_error_state) {
+            jk_worker_t *w=lb->lb_workers[i];
+            
+            if(w->route != NULL &&
+               0 == strcmp(session_route, w->route)) {
+                if(attempt > 0 && w->in_error_state) {
                    break;
                 } else {
-                    return lb->lb_workers[i];
+                    return w;
                  }
             }
         }
@@ -132,24 +114,35 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
 
     /** Get one worker that is ready */
     for(i = 0 ; i < lb->num_of_workers ; i++) {
-        if(lb->lb_workers[i]->in_error_state) {
+        jk_worker_t *w=lb->lb_workers[i];
+        
+        if(w->in_error_state) {
+            if( w->mbean->disabled ) continue;
+            
             /* Check if it's ready for recovery */
             /* if(!lb->lb_workers[i]->in_recovering) { */
             if( now==0 )
                 now = time(NULL);
                 
-            if((now - lb->lb_workers[i]->error_time) > WAIT_BEFORE_RECOVER) {
+            if((now - w->error_time) > WAIT_BEFORE_RECOVER) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "lb.getWorker() timeout expired, reenable again %s\n", lb->
-                              lb_workers[i]->mbean->name);
+                              "lb.getWorker() timeout expired, reenable again %s\n",
+                              w->mbean->name);
                 
-                lb->lb_workers[i]->in_recovering  = JK_TRUE;
-                lb->lb_workers[i]->in_error_state=JK_FALSE;
-                /* lb->lb_workers[i]->error_time     = now; */
-                /* lb->lb_workers[i]->retry_count++; */
-                /* rc = lb->lb_workers[i]; */
+                w->in_recovering  = JK_TRUE;
+                w->in_error_state = JK_FALSE;
 
-                /* Don't give bigger priority to recovered workers
+                /* No need to do that - if it'll be used again, then error time
+                   will be set automatically on error */
+                /*  w->error_time     = now;   */
+                /* Not sure we need that either */
+                /*  w->retry_count++; */
+
+                /* The worker's error state is reset, but that doesn't
+                   mean it'll be used - normal priority selection happens
+                   Don't give bigger priority to recovered workers
+                */
+                /* rc = lb->lb_workers[i]; 
                    break;
                 */
             }
@@ -168,7 +161,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
             if(lb->lb_workers[i]->lb_value < lb_min ||
                ( rc==NULL ) ) {
                 lb_min = lb->lb_workers[i]->lb_value;
-            rc = lb->lb_workers[i];
+                rc = lb->lb_workers[i];
             }
         }
     }
@@ -180,40 +173,23 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                       "lb.getWorker() All workers in error state, use the one with oldest error\n");
         
         for(i = 0 ; i < lb->num_of_workers ; i++) {
-/*             if(lb->lb_workers[i]->in_error_state) { */
-/*                 if(!lb->lb_workers[i]->in_recovering) { */
-                    /* if the retry count is zero, that means the worker only
-                       failed once, this is to e that the failed worker will
-                       not continue to be retried over and over again.
-                    */
-/*                     if ( lb->lb_workers[i]->retry_count == 0 ) { */
-                        if ( rc != NULL ) {
-                            /* pick the oldest failed worker */
-                            if ( lb->lb_workers[i]->error_time < rc->error_time ) {
-                                rc = lb->lb_workers[i];
-                            }
-                        } else {
-                            rc = lb->lb_workers[i];
-                        }
-/*                     } */
-/*                 } */
-/*             } else { */
-                 /* This is a good worker - it may have come to life */ 
-/*                 if(lb->lb_workers[i]->lb_value < lb_min || rc != NULL) { */
-/*                     lb_min = lb->lb_workers[i]->lb_value; */
-/*                     rc = lb->lb_workers[i]; */
-/*                     break; */
-/*                 } */
-/*             } */
+            jk_worker_t *w=lb->lb_workers[i];
+            
+            if( w->mbean->disabled == JK_TRUE ) continue;
+            
+            if ( rc != NULL ) {
+                /* pick the oldest failed worker */
+                if ( w->error_time < rc->error_time ) {
+                    rc = w;
+                }
+            } else {
+                rc = w;
+            }
         }
     
         if ( rc  && rc->in_error_state ) {
-/*             if(now==0) */
-/*                 now = time(0); */
             rc->in_recovering  = JK_TRUE;
             rc->in_error_state  = JK_FALSE;
-/*             rc->error_time     = now; */
-/*             rc->retry_count++; */
         }
     }
     
@@ -229,6 +205,120 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
     return rc;
 }
 
+/* Remove all channels used by this tomcat instance */
+static int jk2_worker_lb_disableInstance( jk_env_t *env,
+                                          jk_worker_t *lb,
+                                          char *instanceId )
+{
+    int j;
+    
+    for( j=0; j< lb->num_of_workers; j++ ) {
+        jk_worker_t *w=lb->lb_workers[j];
+        if( w->route != NULL &&
+            strcmp( w->route, instanceId ) == 0 ) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "lb.updateWorkers() Gracefull shutdown %s %s\n",
+                          w->channel->mbean->name, instanceId );
+            w->in_error_state= JK_TRUE;
+            w->mbean->disabled = JK_TRUE;
+        }
+    }
+    return JK_OK;
+}
+
+static int jk2_worker_lb_registerChannel( jk_env_t *env,
+                                          jk_worker_t *lb,
+                                          char *instanceId,
+                                          jk_msg_t *msg, jk_map_t *groups)
+{
+    char *chName;
+    jk_map_t *chProp;
+    int i;
+    int found=JK_FALSE;
+    jk_config_t *config;
+    char *tmpBuf;
+    jk_bean_t *chBean;
+    int rc=JK_OK;
+
+    jk2_map_default_create(env, &chProp, env->tmpPool);
+
+    chName=msg->getString( env, msg );
+    if( chName==NULL ) 
+        rc=JK_ERR;
+    
+    if( rc==JK_OK )
+        rc=msg->getMap( env, msg, chProp );
+    
+    if( rc!=JK_OK ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "lb.updateWorkers() can't read channel data %s %s\n",
+                      chName, instanceId);
+        return JK_ERR;
+    }
+
+    for( i=0; i< lb->num_of_workers; i++ ) {
+        jk_worker_t *w=lb->lb_workers[i];
+        if( w->route &&
+            strcmp( w->route, instanceId ) == 0 &&
+            strcmp( w->channel->mbean->name, chName ) == 0 ) {
+            /* XXX Create a new channel with the update properties,
+               Then replace it.
+
+               At this moment we just re-enable the worker.
+            */
+            if( w->mbean->disabled || w->in_error_state ) {
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "lb.updateWorkers() re-enabling %s %s\n",
+                              w->channel->mbean->name, instanceId );
+                w->mbean->disabled=JK_FALSE;
+                w->in_error_state=JK_FALSE;
+            }
+            
+            found=JK_TRUE;
+            break;
+        }
+    }
+
+    if( found==JK_TRUE ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "lb.updateWorkers() already found %s %s\n",
+                      chName, instanceId);
+        return JK_OK;
+    }
+
+    config=lb->workerEnv->config;
+
+    tmpBuf=(char *)env->tmpPool->calloc( env, env->tmpPool, strlen( chName ) + 10 );
+    strcpy( tmpBuf, chName );
+    strcat( tmpBuf, ".name" );
+
+    config->setPropertyString( env, config, tmpBuf, chName );
+    chBean=env->getBean( env, chName );
+    if( chBean==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "lb.updateWorkers() can't create  %s\n",
+                      chName );
+        return JK_ERR;
+    }
+        
+    for( i=0; i< chProp->size(env, chProp ); i++ ) {
+        char *name=chProp->nameAt( env, chProp, i );
+        char *value=chProp->valueAt( env, chProp, i );
+
+        config->setProperty( env, config, chBean, name, value );
+    }
+
+    config->save( env, config, NULL );
+
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                  "lb.updateWorkers() create  %s %s\n",
+                  chName, instanceId );
+    
+    /* XXX Add it to the right groups */
+    
+    return JK_OK;
+}
+
 /** Check the scoreboard, make updates in the 'live'
     config
 */
@@ -238,6 +328,8 @@ static int JK_METHOD jk2_lb_updateWorkers(jk_env_t *env,
 {
     int rc;
     int i;
+    int j;
+    jk_map_t *groups;
 
     if( shm== NULL || shm->head==NULL) return JK_ERR;
     
@@ -265,20 +357,32 @@ static int JK_METHOD jk2_lb_updateWorkers(jk_env_t *env,
             jk_msg_t *msg;
             int chCnt;
 
+            jk2_map_default_create(env, &groups, env->tmpPool);
+
             msg=jk2_msg_ajp_create2( env, env->tmpPool, slot->data, slot->size);
-            
+            msg->checkHeader( env, msg , NULL);
+
+            msg->getByte(env, msg );
+            msg->getString(env, msg );
+
+            msg->getMap( env, msg, groups );
+
+            /* The actual data */
             chCnt=msg->getInt(env, msg );
 
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "lb.updateWorkers() Reading %s %d channels \n",
-                          slot->name, chCnt );
-
+                          "lb.updateWorkers() Reading %s %d channels %d groups %p %p %p\n",
+                          slot->name, chCnt, groups->size( env, groups ), slot->data, slot, shm->head);
+            
             if( chCnt == 0 ) {
-                /* Remove all channels used by this tomcat instance */
-                
+                jk2_worker_lb_disableInstance( env, lb, instanceId );
+            } else {
+                /* Create all channels we don't have */
+                /* XXX Not sure what's the best solution, we can do it in many ways */
+                for( j=0; j< chCnt; j++ ) {
+                    jk2_worker_lb_registerChannel( env, lb, instanceId, msg, groups );
+                }
             }
-            /* Create all channels we don't have */
-            /* XXX Not sure what's the best solution, we can do it in many ways */
             
         }
     }
@@ -311,11 +415,9 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
     /* you can not recover on another load balancer */
     s->realWorker=NULL;
 
-    /* reset all the retry counts to 0. XXX may be a problem if we have many workers ? */
-/*     for(i = 0 ; i < lb->num_of_workers ; i++) { */
-/*         lb->lb_workers[i]->retry_count = 0; */
-/*     } */
 
+    /* Check for configuration updates
+     */
     if( wEnv->shm != NULL && wEnv->shm->head != NULL ) {
         /* We have shm, let's check for updates. This is just checking one
            memory location, no lock involved. It is possible we'll read it
@@ -350,37 +452,36 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         if(rec == NULL) {
             /* NULL record, no more workers left ... */
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                          "lb_worker.service() No suitable workers left \n");
+                          "lb_worker.service() all workers in error or disabled state\n");
             return JK_ERR;
         }
-                
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "lb.service() try %s\n", rec->mbean->name );
-        
-        s->jvm_route =  rec->route;
- 
+
+        if( lb->mbean->debug > 0 ) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "lb.service() try %s\n", rec->mbean->name );
+        if( rec->route==NULL ) {
+            rec->route=rec->mbean->localName;
+        }
+        s->jvm_route = rec->route;
+
+        /* It may be better to do this on the endpoint */
         rec->reqCnt++;
-        
+
+        s->realWorker = rec;
         rc = rec->service(env, rec, s);
 
         if(rc==JK_OK) {                        
-            if(rec->in_recovering) {
-                /* Don't change '0' XXX A special flag may avoid those strange tests */
-                if( rec->lb_value != 0 ) 
-                    rec->lb_value = jk2_get_max_lb(rec) + ADDITINAL_WAIT_LOAD;
-            }
             rec->in_error_state = JK_FALSE;
             rec->in_recovering  = JK_FALSE;
             rec->retry_count    = 0;
             rec->error_time     = 0;
-            rec->errCnt++;
             /* the endpoint that succeeded is saved for done() */
-            s->realWorker = rec;
             return JK_OK;
         }
         
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "lb.service() worker failed\n");
+                      "lb.service() worker failed %s\n", rec->mbean->name );
+        
         /*
          * Service failed !!!
          *
@@ -389,6 +490,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         rec->in_error_state = JK_TRUE;
         rec->in_recovering  = JK_FALSE;
         rec->error_time     = time(0);
+        rec->errCnt++;
         
         if(!s->is_recoverable_error) {
             /* Error is not recoverable - break with an error. */
@@ -401,8 +503,10 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
          * Error is recoverable by submitting the request to
          * another worker... Lets try to do that.
          */
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "lb_worker.service() try other host\n");
+        if( lb->mbean->debug > 0 ) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "lb_worker.service() try other host\n");
+        }
     }
     return JK_ERR;
 }
@@ -414,9 +518,9 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
 {
     int currentWorker=0;
     int i;
-    lb->num_of_workers=lb->lbWorkerMap->size( env, lb->lbWorkerMap);
+    int num_of_workers=lb->lbWorkerMap->size( env, lb->lbWorkerMap);
 
-    if( lb->lb_workers_size < lb->num_of_workers ) {
+    if( lb->lb_workers_size < num_of_workers ) {
         if( lb->lb_workers_size==0 ) {
             lb->lb_workers_size=10;
         } else {
@@ -432,13 +536,13 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
         }
     }    
 
-    for(i = 0 ; i < lb->num_of_workers ; i++) {
+    for(i = 0 ; i < num_of_workers ; i++) {
         char *name = lb->lbWorkerMap->nameAt( env, lb->lbWorkerMap, i);
         jk_worker_t *w= env->getByName( env, name );
         if( w== NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "lb_worker.init(): no worker found %s\n", name);
-           lb->num_of_workers--;
+            num_of_workers--;
             continue;
         }
         
@@ -471,6 +575,8 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
 
         currentWorker++;
     }
+    
+    lb->num_of_workers=num_of_workers;
     return JK_OK;
 }
 
@@ -525,8 +631,6 @@ static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_worker_t *lb)
     int i = 0;
     char *tmp;
 
-    int num_of_workers=lb->lbWorkerMap->size( env, lb->lbWorkerMap);
-
     err=jk2_lb_refresh(env, lb );
     if( err != JK_OK )
         return err;
@@ -544,23 +648,10 @@ static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_worker_t *lb)
 
 static int JK_METHOD jk2_lb_destroy(jk_env_t *env, jk_worker_t *w)
 {
-    int i = 0;
-
-    if(w==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "lb_worker.destroy() NullPointerException\n");
-        return JK_ERR;
-    }
-
     /* Workers are destroyed by the workerEnv. It is possible
        that a worker is part of more than a lb.
+       Nothing to clean up so far.
     */
-    /*
-    for(i = 0 ; i < w->num_of_workers ; i++) {
-        w->lb_workers[i]->destroy( env, w->lb_workers[i]);
-    }
-    */
-
     return JK_OK;
 }
 
