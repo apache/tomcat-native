@@ -75,6 +75,8 @@ import org.apache.catalina.core.StandardHost;
 import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringParser;
 
+import java.security.Principal;
+
 public class WarpRequestHandler {
 
     private StringParser parser = new StringParser();
@@ -167,6 +169,11 @@ public class WarpRequestHandler {
                         logger.debug("Request user="+user+" auth="+auth);
                     request.setAuthType(auth);
                     // What to do for user name?
+                    if(user != null && auth != null && auth.equals("Basic")) {
+                        Principal prin = new BasicPrincipal(user);
+                        request.setUserPrincipal(prin);
+                    }
+
                     break;
                 }
 
@@ -397,5 +404,24 @@ public class WarpRequestHandler {
         }
     }
 
+    class BasicPrincipal implements Principal {
+        private String user;
 
+        BasicPrincipal(String user) {
+            this.user = user;
+        }
+
+        public boolean equals(Object another) {
+            return (another instanceof Principal &&
+                ((Principal)another).getName().equals(user));
+        }
+
+        public String getName() {
+            return user;
+        }
+
+        public String toString() {
+            return getName();
+        }
+    }
 }
