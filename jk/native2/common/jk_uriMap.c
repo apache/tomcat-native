@@ -180,6 +180,24 @@ static jk_uriEnv_t *jk2_uriMap_prefixMap(jk_env_t *env, jk_uriMap_t *uriMap,
     return match;
 }
 
+static jk_uriEnv_t *jk2_uriMap_contextMap(jk_env_t *env, jk_uriMap_t *uriMap,
+                                          jk_map_t *mapTable, const char *uri, 
+                                          int uriLen)
+{
+    int i;    
+    int sz = mapTable->size(env, mapTable);
+
+    for (i = 0; i < sz; i++) {
+        jk_uriEnv_t *uwr = mapTable->valueAt(env, mapTable, i);
+        if (uriLen != uwr->prefix_len - 1)
+            continue;
+        if (strncmp(uri, uwr->prefix, uriLen) == 0) {
+            return uwr;
+        }
+    }
+    return NULL;
+}
+
 static jk_uriEnv_t *jk2_uriMap_exactMap(jk_env_t *env, jk_uriMap_t *uriMap,
                                         jk_map_t *mapTable, const char *uri, 
                                         int uriLen)
@@ -277,24 +295,10 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
     return uriMap->vhosts->get(env, uriMap->vhosts, "*");
 }
 
-static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
+static void jk2_uriMap_createHosts(jk_env_t *env, jk_uriMap_t *uriMap)
 {
-    int rc = JK_OK;
     int i;
-    jk_workerEnv_t *workerEnv = uriMap->workerEnv;
-    jk_bean_t *mbean = env->getBean2(env, "uri", "*");
 
-    /* create the default server */
-    if (mbean == NULL) {
-        mbean = env->createBean2(env, workerEnv->pool,"uri", "*");
-        if (mbean == NULL || mbean->object == NULL) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "uriMap.factory() Fail to create default host\n");
-            return JK_ERR;
-        }
-    }
-
-    /* Initialize the context table */
     for (i = 0; i < uriMap->maps->size(env, uriMap->maps); i++) {
         jk_uriEnv_t *uriEnv = uriMap->maps->valueAt(env, uriMap->maps, i);
         if (uriEnv == NULL) 
@@ -346,6 +350,12 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
             rootCtx->mbean->setAttribute(env, rootCtx->mbean, "context", "/");
         }
     }
+}
+
+static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
+{
+    int i;
+
     /* Init all contexts */
     /* For each context, init the local uri maps */
     for (i = 0; i < uriMap->maps->size(env, uriMap->maps); i++) {
@@ -380,6 +390,78 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
             jk2_map_default_create(env, &uriEnv->suffixMatch, uriMap->pool);
         }
     }
+    
+    /* Now, fix the webapps finding context from each uri 
+     * and create one if not found.
+     */
+    for (i = 0; i < uriMap->maps->size(env, uriMap->maps ); i++) {
+        jk_uriEnv_t *uriEnv = uriMap->maps->valueAt(env, uriMap->maps, i);        
+        char *vhost= uriEnv->virtual;
+        int  port = uriEnv->port;
+        char *context= uriEnv->contextPath;
+        jk_uriEnv_t *hostEnv = jk2_uriMap_hostMap(env, uriMap, vhost, port);
+        jk_uriEnv_t *ctxEnv;
+        
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "uriMap: fix uri %s context %s\n", uriEnv->uri, uriEnv->contextPath );
+        if (context == NULL) {
+            if (  uriMap->mbean->debug > 5) 
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "uriMap: no context %s\n", uriEnv->uri );
+            continue;
+        }
+        
+        ctxEnv = jk2_uriMap_exactMap(env, uriMap, hostEnv->webapps, context,
+                                      strlen(context));
+        /* if not alredy created, create it */
+        if (ctxEnv == NULL) {
+           jk_bean_t *mbean;
+ 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "uriMap: creating context %s\n", context);
+            mbean = env->getBean2(env, "uri", context);
+            if (mbean == NULL)
+                mbean = env->createBean2(env, uriMap->pool,"uri", context);
+            if (mbean == NULL || mbean->object == NULL) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "uriMap: can't create context object %s\n",context);
+                continue;
+            }
+            ctxEnv = mbean->object;
+            ctxEnv->match_type = MATCH_TYPE_CONTEXT;
+            ctxEnv->prefix = context;
+            ctxEnv->prefix_len = strlen(context);
+            hostEnv->webapps->put(env, hostEnv->webapps, context, ctxEnv, NULL);
+            jk2_map_default_create(env, &ctxEnv->exactMatch, uriMap->pool);
+            jk2_map_default_create(env, &ctxEnv->prefixMatch, uriMap->pool);
+            jk2_map_default_create(env, &ctxEnv->suffixMatch, uriMap->pool);
+        }
+    } 
+
+}
+
+static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
+{
+    int rc = JK_OK;
+    int i;
+    jk_workerEnv_t *workerEnv = uriMap->workerEnv;
+    jk_bean_t *mbean = env->getBean2(env, "uri", "*");
+
+    /* create the default server */
+    if (mbean == NULL) {
+        mbean = env->createBean2(env, workerEnv->pool,"uri", "*");
+        if (mbean == NULL || mbean->object == NULL) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "uriMap.factory() Fail to create default host\n");
+            return JK_ERR;
+        }
+    }
+
+    /* Create virtual hosts and initialize them */
+    jk2_uriMap_createHosts(env, uriMap);
+
+    /* Create webapps and initialize them */
+    jk2_uriMap_createWebapps(env, uriMap);
 
     if (uriMap->mbean->debug > 5) 
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
@@ -418,7 +500,11 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
                            "uriMap.init() no context for %s\n", uri); 
             return JK_ERR;
         }
-        
+        uriEnv->contextPath = ctxEnv->prefix;
+        uriEnv->ctxt_len = ctxEnv->prefix_len;
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                           "uriMap.init() adding context %s for %s\n", ctxEnv->prefix, uri); 
+
         switch (uriEnv->match_type) {
             case MATCH_TYPE_EXACT:
                 ctxEnv->exactMatch->add(env, ctxEnv->exactMatch, uri, uriEnv);
@@ -588,6 +674,19 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
             return match;
         }
     }
+    
+    /* Try to find exact match of /uri and prefix /uri/* */
+    match = jk2_uriMap_contextMap(env, uriMap, ctxEnv->prefixMatch, uri, uriLen);
+    if (match != NULL) {
+        /* restore */
+        if (url_rewrite)
+            *url_rewrite = origChar;
+        if (uriMap->mbean->debug > 0)
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "uriMap.mapUri() context match %s %s\n",
+                          uri, match->workerName); 
+        return match;
+    }
 
     /* And extension match at the end */
     /* Only once, no need to compute it for each extension match */
@@ -606,7 +705,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
             return match;
         }
     }
-        
+
     /* restore */
     if (url_rewrite)
         *url_rewrite = origChar;
