@@ -140,7 +140,7 @@ public class Constants {
      * <br>
      * No payload:<br>
      */
-    public static final int TYPE_CONF_ENUM_APPL=0x04;
+    public static final int TYPE_CONF_ENUM_DONE=0x04;
 
     /**
      * CONF_DEPLOY: The client attempts deploy a web application.

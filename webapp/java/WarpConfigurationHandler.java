@@ -64,10 +64,17 @@ import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Deployer;
 import org.apache.catalina.Host;
+import org.apache.catalina.Wrapper;
 import org.apache.catalina.core.StandardHost;
 import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.deploy.FilterMap;
+import org.apache.catalina.deploy.SecurityConstraint;
+import org.apache.catalina.deploy.SecurityCollection;
 
 public class WarpConfigurationHandler {
+
+    private static final String DEFAULT_SERVLET = 
+        "org.apache.catalina.servlets.DefaultServlet";
 
     /* ==================================================================== */
     /* Constructor                                                          */
@@ -118,19 +125,107 @@ public class WarpConfigurationHandler {
                         packet.setType(Constants.TYPE_ERROR);
                         packet.writeString(msg);
                         connection.send(packet);
-                    } else {
-                        int k=connection.getConnector().applicationId(context);
-                        packet.setType(Constants.TYPE_CONF_APPLIC);
-                        packet.writeInteger(k);
-                        packet.writeString(context.getDocBase());
-                        connection.send(packet);
-                        if (Constants.DEBUG)
-                            logger.debug("Application \""+appl+"\" deployed "+
-                                         "under <http://"+host+":"+port+path+
-                                         "> with root="+context.getDocBase()+
-                                         " ID="+k);
+                        break;
                     }
+                    int k=connection.getConnector().applicationId(context);
+                    packet.setType(Constants.TYPE_CONF_APPLIC);
+                    packet.writeInteger(k);
+                    packet.writeString(context.getDocBase());
+                    connection.send(packet);
+                    if (Constants.DEBUG)
+                        logger.debug("Application \""+appl+"\" deployed "+
+                                     "under <http://"+host+":"+port+path+
+                                     "> with root="+context.getDocBase()+
+                                     " ID="+k);
                     break;
+                }
+
+                case Constants.TYPE_CONF_MAP: {
+                    int id=packet.readInteger();
+                    Context context=connection.getConnector()
+                                    .applicationContext(id);
+
+                    if (context==null) {
+                        String msg="Invalid application ID for mappings "+id;
+                        logger.log(msg);
+                        packet.reset();
+                        packet.setType(Constants.TYPE_ERROR);
+                        packet.writeString(msg);
+                        connection.send(packet);
+                        break;
+                    }
+
+                    String smap[]=context.findServletMappings();
+                    if (smap!=null) {
+                        for (int x=0; x<smap.length; x++) {
+                            Container c=context.findChild(
+                                context.findServletMapping(smap[x]));
+                            packet.reset();
+                            packet.setType(Constants.TYPE_CONF_MAP_DENY);
+                            packet.writeString(smap[x]);
+
+                            if (c instanceof Wrapper) {
+                                String servlet=((Wrapper)c).getServletClass();
+                                if (DEFAULT_SERVLET.equals(servlet)) {
+                                    packet.setType(
+                                        Constants.TYPE_CONF_MAP_ALLOW);
+                                    if (Constants.DEBUG)
+                                        logger.debug("Servlet mapping \""+
+                                                     smap[x]+"\" allowed");
+                                } else if (Constants.DEBUG) {
+                                    logger.debug("Servlet mapping \""+smap[x]+
+                                                 "\" denied");
+                                }
+                            }
+                            connection.send(packet);
+                        }
+                    }
+
+                    FilterMap fmap[]=context.findFilterMaps();
+                    if (fmap!=null) {
+                        logger.log("Filter mappings ("+fmap.length+")");
+                        for (int x=0; x<fmap.length; x++) {
+                            String map=fmap[x].getURLPattern();
+                            if (map!=null) {
+                                if (Constants.DEBUG)
+                                    logger.debug("Filter mapping \""+map+
+                                                 "\" denied");
+                                packet.reset();
+                                packet.setType(Constants.TYPE_CONF_MAP_DENY);
+                                packet.writeString(map);
+                                connection.send(packet);
+                            }
+                        }
+                    }
+
+                    SecurityConstraint scon[]=context.findConstraints();
+                    if (scon!=null) {
+                        for (int x=0; x<scon.length; x++) {
+                            SecurityCollection col[]=scon[x].findCollections();
+                            if (col!=null) {
+                                for (int y=0; y<col.length; y++) {
+                                    String patt[]=col[y].findPatterns();
+                                    if (patt!=null) {
+                                        for (int q=0; q<patt.length; q++) {
+                                            packet.reset();
+                                            packet.setType(
+                                                Constants.TYPE_CONF_MAP_DENY);
+                                            packet.writeString(patt[x]);
+                                            connection.send(packet);
+                                            if (Constants.DEBUG) {
+                                                logger.debug("Seurity "+
+                                                    " mapping \""+patt[x]+
+                                                    "\"");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    packet.reset();
+                    packet.setType(Constants.TYPE_CONF_MAP_DONE);
+                    connection.send(packet);
                 }
 
                 case Constants.TYPE_CONF_DONE: {
