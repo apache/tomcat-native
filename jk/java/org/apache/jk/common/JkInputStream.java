@@ -184,7 +184,7 @@ public class JkInputStream extends InputStream {
     int blen;  // Length of current chunk of body data in buffer
     int pos;   // Current read position within that buffer
 
-    boolean end_of_stream; // true if we've received an empty packet
+    boolean end_of_stream=false; // true if we've received an empty packet
     
     private int doRead1() throws IOException {
         if(pos >= blen) {
@@ -271,7 +271,7 @@ public class JkInputStream extends InputStream {
     }
 
     public int doRead(ByteChunk responseChunk ) throws IOException {
-        log.info( "JkInputStream: " + pos + " " + blen + " " + available );
+        log.info( "doRead " + pos + " " + blen + " " + available + " " + end_of_stream);
         if( blen == pos ) {
             refillReadBuffer();
         }
@@ -287,23 +287,36 @@ public class JkInputStream extends InputStream {
     {
         mc.setType( JkHandler.HANDLE_RECEIVE_PACKET );
         int err = mc.getSource().invoke(bodyMsg, mc);
+        if( log.isDebugEnabled() )
+            log.info( "Receiving: getting request body chunk " + err + " " + bodyMsg.getLen() );
         if(err < 0) {
 	    throw new IOException();
 	}
 
-	// No data received.
-	if( bodyMsg.getLen() == 0 ) {
-	    pos=0;
-	    blen=0;
-            end_of_stream = true;
+        pos=0;
+        blen=0;
+
+        // No data received.
+	if( bodyMsg.getLen() <= 4 ) { // just the header
+            // Don't mark 'end of stream' for the first chunk.
+            // end_of_stream = true;
 	    return false;
 	}
     	blen = bodyMsg.peekInt();
-    	pos = 0;
+
+        if( blen == 0 ) {
+            return false;
+        }
+        
+        if( log.isTraceEnabled() ) {
+            bodyMsg.dump("Body buffer");
+        }
+        
     	int cpl=bodyMsg.getBytes(bodyBuff);
-	if( log.isDebugEnabled() )
-            log.debug( "Copy into body buffer2 " + bodyBuff + " " +
-               cpl + " " + blen );
+
+        if( log.isDebugEnabled() )
+            log.debug( "Copy into body buffer2 " + bodyBuff + " " + cpl + " " + blen );
+
         if( log.isTraceEnabled() )
             log.trace( "Data:\n" + new String( bodyBuff, 0, cpl ));
 
@@ -322,7 +335,7 @@ public class JkInputStream extends InputStream {
 	// the stream has been reached (yuck -- fix protocol??).
         if (end_of_stream) {
             if( log.isDebugEnabled() ) log.debug("refillReadBuffer: end of stream " );
-          return false;
+            return false;
         }
 
 	// Why not use outBuf??
@@ -335,8 +348,17 @@ public class JkInputStream extends InputStream {
 
         mc.setType( JkHandler.HANDLE_SEND_PACKET );
 	mc.getSource().invoke(bodyMsg, mc);
-	
-        return receive();
+
+        // In JNI mode, response will be in bodyMsg. In TCP mode, response need to be
+        // read
+
+        //bodyMsg.dump("refillReadBuffer ");
+        
+        boolean moreData=receive();
+        if( !moreData ) {
+            end_of_stream=true;
+        }
+        return moreData;
     }
 
 }
