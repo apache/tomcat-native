@@ -661,7 +661,11 @@ public final class CoyoteConnector
      */
     public void setProxyName(String proxyName) {
 
-        this.proxyName = proxyName;
+        if(proxyName != null && proxyName.length() > 0) {
+            this.proxyName = proxyName;
+        } else {
+            this.proxyName = null;
+        }
 
     }
 
