@@ -73,6 +73,7 @@
             <exclude name="**/util/threads/ThreadPoolMX*" unless="modeler.present"/>
             <exclude name="**/util/compat/Jdk14Compat.java" unless="jdk1.4.present" />
             <exclude name="**/util/net/jsse/JSSE14*" unless="jdk1.4.present" />
+            <exclude name="**/util/net/jsse/JSSEKeyManager.java" unless="jdk1.4.present" />
         </javac>
 
 	<!-- Copy static resource files -->
