@@ -173,13 +173,20 @@ public class ModJkMX extends JkHandler
             // We should keep track of loaded beans and call stop.
             // Modeler should do it...
             Iterator mbeansIt=mbeans.values().iterator();
+            MBeanServer mbserver = Registry.getRegistry().getMBeanServer();
             while( mbeansIt.hasNext()) {
                 MBeanProxy proxy=(MBeanProxy)mbeansIt.next();
                 Object ooname = proxy.getObjectName();
                 if( ooname != null ) {
-                    String soname = ooname.toString();
-                    ObjectName oname = new ObjectName(soname);
-                    Registry.getRegistry().getMBeanServer().unregisterMBean(oname);
+                    ObjectName oname = null;
+                    if(ooname instanceof ObjectName) {
+                        oname = (ObjectName)ooname;
+                    } else if(ooname instanceof String) {
+                        oname = new ObjectName((String)ooname);
+                    }
+                    if( oname != null ) {
+                        mbserver.unregisterMBean(oname);
+                    }
                 }
             }
         } catch( Throwable t ) {
