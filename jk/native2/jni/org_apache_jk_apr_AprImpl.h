@@ -139,7 +139,9 @@ JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_jkGetId
  * Signature: (JJJI[BI)I
  */
 JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_jkInvoke
-  (JNIEnv *, jclass, jlong, jlong, jlong, jint, jbyteArray, jint);
+  (JNIEnv *jniEnv, jobject o, jlong envJ, jlong componentP, jlong endpointP, jint code,
+   jbyteArray data, jint off, jint len,
+   jint raw);
 
 #ifdef __cplusplus
 }

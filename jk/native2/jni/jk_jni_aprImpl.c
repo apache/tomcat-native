@@ -77,6 +77,7 @@
 #include "jk_global.h"
 #include "jk_map.h"
 #include "jk_pool.h"
+#include "jk_logger.h"
 
 #ifndef WIN32
 #include <unistd.h>
@@ -131,7 +132,9 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
             return JK_ERR;
         }
 
-        env->l=jkb->object;;
+        env->l=jkb->object;
+        env->l->name="stderr";
+        env->l->level=JK_LOG_DEBUG_LEVEL;
         env->alias( env, "logger.file:", "logger");
 
         jkb=env->createBean2( env, env->globalPool,"workerEnv", "");
@@ -142,6 +145,8 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
         }
 
         workerEnv=jkb->object;
+        
+        workerEnv->init( env, workerEnv );
     }
     /* fprintf( stderr, "XXX aprImpl: %p %p\n", env, workerEnv); */
     return 0;
@@ -155,6 +160,7 @@ Java_org_apache_jk_apr_AprImpl_terminate(JNIEnv *jniEnv, jobject _jthis)
 }
 
 /* -------------------- Signals -------------------- */
+/* XXX Move it to jk_signal.c */
 
 #ifdef HAVE_SIGNALS
 static struct sigaction jkAction;
@@ -248,6 +254,7 @@ Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint s
 
 
 /* -------------------- User related functions -------------------- */
+/* XXX move it to jk_user.c */
 
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_getPid(JNIEnv *jniEnv, jobject _jthis)
@@ -288,251 +295,6 @@ Java_org_apache_jk_apr_AprImpl_setUser(JNIEnv *jniEnv, jobject _jthis,
 #endif
 
     return (jint)rc;
-}
-
-/* -------------------- interprocess mutexes -------------------- */
-
-/* ==================== Unix sockets ==================== */
-/* It seems apr doesn't support them yet, so this code will use the
-   'native' calls. For 'tcp' sockets we just use what java provides.
-*/
-
-/* XXX @deprecated !!! All this will move to jk_channel_un, and we'll
-   use the same dispatch that we use for the jni channel !!!
-*/
-   
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_unSocketClose(JNIEnv *jniEnv, jobject _jthis, 
-                                             jlong socketJ, jint typeJ )
-{
-    int socket=(int)socketJ;
-    int type=(int)typeJ;
-    /*     shutdown( socket, type ); */
-    close(socket);
-    return 0L;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_unSocketListen(JNIEnv *jniEnv, jobject _jthis, 
-                                              jstring hostJ, jint backlog )
-{
-    const char *host;
-    int status;
-    int unixSocket=-1L;
-#ifdef HAVE_UNIXSOCKETS
-    struct sockaddr_un unixAddr;
-    mode_t omask;
-
-    memset(& unixAddr, 0, sizeof(struct sockaddr_un));
-    unixAddr.sun_family=AF_UNIX;
-
-    host=(*jniEnv)->GetStringUTFChars(jniEnv, hostJ, 0);
-    strcpy(unixAddr.sun_path, host);
-    (*jniEnv)->ReleaseStringUTFChars(jniEnv, hostJ, host);
-
-    /* remove the exist socket. (it had been moved in ChannelUn.java).
-    if (unlink(unixAddr.sun_path) < 0 && errno != ENOENT) {
-        // The socket cannot be remove... Well I hope that no problems ;-)
-    }
-     */
-
-    unixSocket = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (unixSocket<0) {
-        return 0L;
-    }
-
-    omask = umask(0117); /* so that only Apache can use socket */
-        
-    status=bind(unixSocket,
-                (struct sockaddr *)& unixAddr,
-                strlen( unixAddr.sun_path ) +
-                sizeof( unixAddr.sun_family) );
-
-    umask(omask); /* can't fail, so can't clobber errno */
-    if (status<0)
-        return -errno;
-
-    listen( unixSocket, (int)backlog );
-    
-    fprintf(stderr, "Listening on %d \n",
-            unixSocket);
-#endif
-    return (jlong)unixSocket;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis, 
-                                               jstring hostJ )
-{
-    const char *host;
-    int status;
-    int unixSocket=-1L;
-#ifdef HAVE_UNIXSOCKETS
-    struct sockaddr_un unixAddr;
-
-    memset(& unixAddr, 0, sizeof(struct sockaddr_un));
-    unixAddr.sun_family=AF_UNIX;
-
-    host=(*jniEnv)->GetStringUTFChars(jniEnv, hostJ, 0);
-    if( host==NULL )
-        return -1;
-    
-    strcpy(unixAddr.sun_path, host);
-    (*jniEnv)->ReleaseStringUTFChars(jniEnv, hostJ, host);
-    
-    unixSocket = socket(AF_UNIX, SOCK_STREAM, 0);
-
-    if (unixSocket<0) {
-        return 0L;
-    }
-
-    status=connect(unixSocket,
-                   (struct sockaddr *)& unixAddr,
-                   strlen( unixAddr.sun_path ) +
-                   sizeof( unixAddr.sun_family) );
-    
-    if( status < 0 ) {
-        /* Return error */
-        return -1;
-    }
-
-#endif
-    return (jlong)unixSocket;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis, 
-                                      jlong unSocketJ)
-{
-#ifdef HAVE_UNIXSOCKETS
-    int listenUnSocket=(int)unSocketJ;
-    struct sockaddr_un client;
-    int clientlen;
-    
-    /* What to do with the address ? We could return an object, or do more.
-       For now we'll ignore it */
-    
-    while( 1 ) {
-        int connfd;
-
-        fprintf(stderr, "unAccept %d\n", listenUnSocket );
-
-        clientlen=sizeof( client );
-        
-        connfd=accept( listenUnSocket, (struct sockaddr *)&client, &clientlen );
-        /* XXX Should we return EINTR ? This would allow us to stop
-         */
-        if( connfd < 0 ) {
-            fprintf(stderr, "unAccept: error %d\n", connfd);
-            if( errno==EINTR ) {
-                fprintf(stderr, "EINTR\n");
-                continue;
-            } else {
-                fprintf(stderr, "Error accepting %d %d %s\n",
-                        listenUnSocket, errno, strerror(errno));
-                return (jlong)-errno;
-            }
-        }
-        fprintf(stderr, "unAccept: accepted %d\n", connfd);
-        return (jlong)connfd;
-    }
-#endif
-    return 0L;
-}
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_unRead(JNIEnv *jniEnv, jobject _jthis, 
-                                      jlong unSocketJ,
-                                      jbyteArray jbuf, jint from, jint cnt)
-{
-#ifdef HAVE_UNIXSOCKETS
-    jbyte *nbuf;
-    int rd;
-    jboolean iscopy;
-
-    /* We can't use Critical with blocking ops. 
-     */
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscopy);
-    if( ! nbuf ) {
-        return -1;
-    }
-
-    if( iscopy==JNI_TRUE )
-        fprintf( stderr, "aprImpl.unRead() get java bytes iscopy %d\n", iscopy);
-
-    while( 1 ) {
-        /* Read */
-        rd=read( (int)unSocketJ, nbuf + from, cnt );
-        if( rd < 0 ) {
-            if( errno==EINTR ) {
-                fprintf(stderr, "EINTR\n");
-                continue;
-            } else {
-                fprintf(stderr, "Error reading %d %d %s\n",
-                        (int)unSocketJ, errno, strerror(errno));
-                (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
-                return -1;
-            }
-        }
-/*         fprintf(stderr, "Read %d from %d\n", */
-/*                 rd, unSocketJ); */
-    
-        (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
-        return (jint)rd;
-    }
-#endif
-    return (jint)0;
-}
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_unWrite(JNIEnv *jniEnv, jobject _jthis, 
-                                     jlong unSocketJ, jbyteArray jbuf, jint from, jint cnt)
-{
-    apr_status_t status;
-    jbyte *nbuf;
-    int rd=0;
-#ifdef HAVE_UNIXSOCKETS
-    jboolean iscopy;
-
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscopy);
-    if( ! nbuf ) {
-        return -1;
-    }
-
-    /* write */
-    write( (int) unSocketJ, nbuf + from, cnt );
-    
-    (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
-#endif
-    return (jint)rd;
-}
-
-/**
- * setSoLinger
- */
-JNIEXPORT jint JNICALL
-Java_org_apache_jk_apr_AprImpl_unSetSoLingerNative (
-    JNIEnv      *env,
-    jobject     ignored,
-    jint        sd,
-    jint        l_onoff,
-    jint        l_linger)
-{
-#ifdef HAVE_UNIXSOCKETS
-    struct linger {
-        int   l_onoff;    /* linger active */
-        int   l_linger;   /* how many seconds to linger for */
-    } lin;
-    int rc;
-
-    lin.l_onoff = l_onoff;
-    lin.l_linger = l_linger;
-    rc=setsockopt(sd, SOL_SOCKET, SO_LINGER, &lin, sizeof(lin));
-    if( rc < 0) {
-        return -errno;
-    }
-#endif
-    return 0;
 }
 
 /* -------------------- Access jk components -------------------- */
@@ -653,12 +415,15 @@ Java_org_apache_jk_apr_AprImpl_jkSetAttribute
     jk_bean_t *component=(jk_bean_t *)(void *)(long)componentP;
     char *name=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, nameJ, 0);
     char *value=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, valueJ, 0);
-    int rc;
+    int rc=JK_OK;
     
     if( component->setAttribute ==NULL )
         return JK_OK;
-    
-    rc=component->setAttribute( env, component, name, value );
+
+    if( component->setAttribute!=NULL ) {
+        rc=component->setAttribute( env, component, name,
+                                    component->pool->pstrdup( env, component->pool, value ) );
+    }
 
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, nameJ, name);
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, valueJ, value);
@@ -675,12 +440,11 @@ Java_org_apache_jk_apr_AprImpl_jkInit
     jk_env_t *env=(jk_env_t *)(void *)(long)xEnv;
     jk_bean_t *component=(jk_bean_t *)(void *)(long)componentP;
     int rc;
-    
+
     if( component->init ==NULL )
         return JK_OK;
     
     rc=component->init( env, component );
-
     return rc;
 }
 
@@ -734,21 +498,25 @@ Java_org_apache_jk_apr_AprImpl_jkGetAttribute
 */
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_jkInvoke
-  (JNIEnv *jniEnv, jobject o, jlong envJ, jlong componentP, jlong endpointP, jint code, jbyteArray data, jint len)
+  (JNIEnv *jniEnv, jobject o, jlong envJ, jlong componentP, jlong endpointP, jint code,
+   jbyteArray data, jint off, jint len,
+   jint raw)
 {
     jk_env_t *env = (jk_env_t *)(void *)(long)envJ;
     jk_bean_t *compCtx=(jk_bean_t *)(void *)(long)endpointP;
     void *target=(void *)(long)componentP;
+    jk_bean_t *bean=(jk_bean_t *)target;
     jk_endpoint_t *ep;
 
     jbyte *nbuf;
     jboolean iscopy;
 
     int cnt=0;
-    jint rc = -1;
+    jint rc = 0;
     unsigned acc = 0;
+    char *oldBuf;
 
-    if( compCtx==NULL || data==NULL || endpointP==NULL ) {
+    if( compCtx==NULL || data==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,"jni.jkInvoke() NPE\n");
         return JK_ERR;
     }
@@ -772,26 +540,47 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
 	return -1;
     }
     
-    ep->reply->reset(env, ep->reply);
+    if( raw==0 ) {
+        ep->reply->reset(env, ep->reply);
+    }
 
-    memcpy( ep->reply->buf, nbuf , len );
+    //    memcpy( ep->reply->buf, nbuf , len );
+    oldBuf=ep->reply->buf;
+    ep->reply->buf = nbuf;
+
     
-    rc=ep->reply->checkHeader( env, ep->reply, ep );
+    if( raw == 0 ) {
+        rc=ep->reply->checkHeader( env, ep->reply, ep );
+    } else {
+        ep->reply->len = len;
+        ep->reply->pos= off;
+    }
+
     /* ep->reply->dump( env, ep->reply ,"MESSAGE"); */
     if( rc < 0  ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "jkInvoke() invalid data\n");
         /* we just can't recover, unset recover flag */
         (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, 0);
+        ep->reply->buf=oldBuf;
         return JK_ERR;
     }
 
-    /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
-    /*               "jkInvoke() component dispatch %d %d\n", rc, code); */
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "jkInvoke() component dispatch %d %d %p\n", rc, code, bean->invoke);
 
-    rc=workerEnv->dispatch( env, workerEnv, target, ep, code, ep->reply );
+    if( bean->invoke != NULL ) {
+        rc=bean->invoke( env, bean, ep, code, ep->reply, raw );
+    } else {
+        /* Backward compat for AJP13 messages, where the code is used to
+         locate a handler. Deprecated, use the invoke() method  ! */
+        rc=workerEnv->dispatch( env, workerEnv, target, ep, code, ep->reply ); 
+    }
+    /* XXX Copy back the response, if any */
+
     
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, 0);
+    ep->reply->buf=oldBuf;
 
     /*     env->l->jkLog(env, env->l, JK_LOG_INFO, "jkInvoke() done\n"); */
 
