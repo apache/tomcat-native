@@ -60,18 +60,23 @@
 
 package org.apache.coyote.tomcat5;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-
-import javax.servlet.ServletInputStream;
 
 
 /**
- * This class handles reading bytes.
+ * Coyote implementation of the buffred reader.
  * 
  * @author Remy Maucherat
  */
-public class CoyoteInputStream
-    extends ServletInputStream {
+final class CoyoteReader
+    extends BufferedReader {
+
+
+    // -------------------------------------------------------------- Constants
+
+
+    private static final char[] LINE_SEP = { '\r', '\n' };
 
 
     // ----------------------------------------------------- Instance Variables
@@ -83,12 +88,19 @@ public class CoyoteInputStream
     // ----------------------------------------------------------- Constructors
 
 
-    protected CoyoteInputStream(InputBuffer ib) {
+    public CoyoteReader(InputBuffer ib) {
+        super(ib);
         this.ib = ib;
     }
 
 
-    // --------------------------------------------- ServletInputStream Methods
+    // --------------------------------------------------------- Reader Methods
+
+
+    public void close()
+        throws IOException {
+        ib.close();
+    }
 
 
     public int read()
@@ -96,33 +108,52 @@ public class CoyoteInputStream
         return ib.read();
     }
 
-    public int available() throws IOException {
-        return ib.available();
-    }
 
-    public int read(byte[] b) throws IOException {
-        return ib.read(b, 0, b.length);
-    }
-
-
-    public int read(byte[] b, int off, int len)
+    public int read(char[] cbuf)
         throws IOException {
-        return ib.read(b, off, len);
+        return ib.read(cbuf, 0, cbuf.length);
     }
 
 
-    public int readLine(byte[] b, int off, int len) throws IOException {
-        return super.readLine(b, off, len);
+    public int read(char[] cbuf, int off, int len)
+        throws IOException {
+        return ib.read(cbuf, off, len);
     }
 
 
-    /** 
-     * Close the stream
-     * Since we re-cycle, we can't allow the call to super.close()
-     * which would permantely disable us.
-     */
-    public void close() throws IOException {
-        ib.close();
+    public long skip(long n)
+        throws IOException {
+        return ib.skip(n);
+    }
+
+
+    public boolean ready()
+        throws IOException {
+        return ib.ready();
+    }
+
+
+    public boolean markSupported() {
+        return true;
+    }
+
+
+    public void mark(int readAheadLimit)
+        throws IOException {
+        ib.mark(readAheadLimit);
+    }
+
+
+    public void reset()
+        throws IOException {
+        ib.reset();
+    }
+
+
+    public String readLine()
+        throws IOException {
+        // FIXME
+        return "";
     }
 
 

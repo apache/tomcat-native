@@ -164,7 +164,7 @@ public class CoyoteRequest
      */
     public void setCoyoteRequest(Request coyoteRequest) {
         this.coyoteRequest = coyoteRequest;
-        inputStream.setRequest(coyoteRequest);
+        inputBuffer.setRequest(coyoteRequest);
     }
 
     /**
@@ -239,18 +239,22 @@ public class CoyoteRequest
 
 
     /**
-     * Reader.
-     * Note: At the moment, no attempt is being made at recycling the reader,
-     * but this could be implemented in the future, using a design like the one
-     * used for the output buffer.
+     * The associated input buffer.
      */
-    protected BufferedReader reader = null;
+    protected InputBuffer inputBuffer = new InputBuffer();
 
 
     /**
      * ServletInputStream.
      */
-    protected CoyoteInputStream inputStream = new CoyoteInputStream();
+    protected CoyoteInputStream inputStream = 
+        new CoyoteInputStream(inputBuffer);
+
+
+    /**
+     * Reader.
+     */
+    protected BufferedReader reader = new CoyoteReader(inputBuffer);
 
 
     /**
@@ -387,13 +391,12 @@ public class CoyoteRequest
         wrapper = null;
 
         authType = null;
+        inputBuffer.recycle();
         usingInputStream = false;
         usingReader = false;
         contextPath = "";
         pathInfo = null;
         servletPath = null;
-        reader = null;
-        inputStream.recycle();
         userPrincipal = null;
         sessionParsed = false;
         requestParametersParsed = false;
@@ -1037,16 +1040,7 @@ public class CoyoteRequest
                 (sm.getString("coyoteRequest.getReader.ise"));
 
         usingReader = true;
-        if (reader == null) {
-            String encoding = getCharacterEncoding();
-            if (encoding == null) {
-                encoding = 
-                    org.apache.coyote.Constants.DEFAULT_CHARACTER_ENCODING;
-            }
-            InputStreamReader r = new InputStreamReader(inputStream, encoding);
-            reader = new BufferedReader(r);
-        }
-        return (reader);
+        return reader;
 
     }
 
