@@ -222,6 +222,8 @@ final class CoyoteAdapter
             // Calling the container
             connector.getContainer().invoke(request, response);
             response.finishResponse();
+
+            req.action( ActionCode.ACTION_POST_REQUEST , null);
         } catch (IOException e) {
             ;
         } catch (Throwable t) {

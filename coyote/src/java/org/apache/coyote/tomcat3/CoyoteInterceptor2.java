@@ -205,6 +205,19 @@ public class CoyoteInterceptor2 extends BaseInterceptor
 	return 0;
     }
 
+    public int postRequest(org.apache.tomcat.core.Request request,
+                           org.apache.tomcat.core.Response response) {
+	if(request instanceof Tomcat3Request) {
+	    try {
+                Tomcat3Request httpReq=(Tomcat3Request)request;
+                org.apache.coyote.Request cReq = httpReq.getCoyoteRequest();
+                cReq.action( ActionCode.ACTION_POST_REQUEST , null);
+	    } catch(Exception ex) {
+		log("Can't send ACK", ex);
+	    }
+	}
+        return 0;
+    }
     
     /**
        getInfo calls for SSL data
