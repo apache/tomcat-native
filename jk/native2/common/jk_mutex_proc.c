@@ -53,7 +53,7 @@ jk2_mutex_proc_destroy(jk_env_t *env, jk_bean_t  *mutexB)
     jk_mutex_t *jkMutex=mutexB->object;
     
     apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)jkMutex->privateData;
-    apr_status_t  st;
+    apr_status_t  st = 0;
 
     if( mutex!= NULL )
         st=apr_proc_mutex_destroy( mutex );
