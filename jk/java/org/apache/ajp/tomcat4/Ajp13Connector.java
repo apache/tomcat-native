@@ -639,6 +639,14 @@ public final class Ajp13Connector
 
     }
 
+    /**
+     * Invoke a pre-startup initialization. This is used to allow connectors
+     * to bind to restricted ports under Unix operating environments.
+     * ServerSocket (we start as root and change user? or I miss something?).
+     */
+    public void initialize() throws LifecycleException {
+    }
+
 
     // -------------------------------------------------------- Package Methods
 
