@@ -78,18 +78,39 @@ import javax.security.cert.X509Certificate;
 
    @author EKR
 
-   Parts cribbed from JSSECertCompat	   
+   Parts cribbed from JSSECertCompat       
 */
 
 class JSSESupport implements SSLSupport {
+    /**
+     * A mapping table to determine the number of effective bits in the key
+     * when using a cipher suite containing the specified cipher name.  The
+     * underlying data came from the TLS Specification (RFC 2246), Appendix C.
+     */
+    protected static final CipherData ciphers[] = {
+        new CipherData("_WITH_NULL_", 0),
+        new CipherData("_WITH_IDEA_CBC_", 128),
+        new CipherData("_WITH_RC2_CBC_40_", 40),
+        new CipherData("_WITH_RC4_40_", 40),
+        new CipherData("_WITH_RC4_128_", 128),
+        new CipherData("_WITH_DES40_CBC_", 40),
+        new CipherData("_WITH_DES_CBC_", 56),
+        new CipherData("_WITH_3DES_EDE_CBC_", 168)
+    };
+
     private SSLSocket ssl;
 
+
     JSSESupport(SSLSocket sock){
-	ssl=sock;
+        ssl=sock;
     }
 
     public String getCipherSuite() throws IOException {
-	return "Unknown";
+        // Look up the current SSLSession
+        SSLSession session = ssl.getSession();
+        if (session == null)
+            return null;
+        return session.getCipherSuite();
     }
 
     public Object[] getPeerCertificateChain()
@@ -127,4 +148,71 @@ class JSSESupport implements SSLSupport {
 
         return x509Certs;
     }
+
+    /**
+     * Copied from <code>org.apache.catalina.valves.CertificateValve</code>
+     */
+    public Integer getKeySize() 
+        throws IOException {
+        // Look up the current SSLSession
+        SSLSession session = ssl.getSession();
+        if (session == null)
+            return null;
+        Integer keySize = (Integer) session.getValue(KEY_SIZE_KEY);
+        if (keySize == null) {
+            int size = 0;
+            String cipherSuite = session.getCipherSuite();
+            for (int i = 0; i < ciphers.length; i++) {
+                if (cipherSuite.indexOf(ciphers[i].phrase) >= 0) {
+                    size = ciphers[i].keySize;
+                    break;
+                }
+            }
+            keySize = new Integer(size);
+            session.putValue(KEY_SIZE_KEY, keySize);
+        }
+        return keySize;
+    }
+
+    public String getSessionId()
+        throws IOException {
+        // Look up the current SSLSession
+        SSLSession session = ssl.getSession();
+        if (session == null)
+            return null;
+        // Expose ssl_session (getId)
+        byte [] ssl_session = session.getId();
+        if ( ssl_session == null) 
+            return null;
+        StringBuffer buf=new StringBuffer("");
+        for(int x=0; x<ssl_session.length; x++) {
+            String digit=Integer.toHexString((int)ssl_session[x]);
+            if (digit.length()<2) buf.append('0');
+            if (digit.length()>2) digit=digit.substring(digit.length()-2);
+            buf.append(digit);
+        }
+        return buf.toString();
+    }
+}
+
+// ------------------------------------------------------------ Private Classes
+
+
+/**
+ * Simple data class that represents the cipher being used, along with the
+ * corresponding effective key size.  The specified phrase must appear in the
+ * name of the cipher suite to be recognized.
+ */
+
+final class CipherData {
+
+    String phrase = null;
+
+    int keySize = 0;
+
+    public CipherData(String phrase, int keySize) {
+        this.phrase = phrase;
+        this.keySize = keySize;
+    }
+
 }

@@ -70,9 +70,37 @@ import java.net.*;
 */
 
 public interface SSLSupport {
+    /**
+     * The Request attribute key for the cipher suite.
+     */
+    public static final String CIPHER_SUITE_KEY = "javax.servlet.request.cipher_suite";
+
+    /**
+     * The Request attribute key for the key size.
+     */
+    public static final String KEY_SIZE_KEY = "javax.servlet.request.key_size";
+
+    /**
+     * The Request attribute key for the client certificate chain.
+     */
+    public static final String CERTIFICATE_KEY = "javax.servlet.request.X509Certificate";
+
+    /**
+     * The Request attribute key for the session id.
+     * This one is a Tomcat extension to the Servlet spec.
+     */
+    public static final String SESSION_ID_KEY = "javax.servlet.request.ssl_session";
+
+    /**
+     * The cipher suite being used on this connection.
+     */
     public String getCipherSuite() throws IOException;
+
+    /**
+     * The client certificate chain (if any).
+     */
     public Object[] getPeerCertificateChain()
-	throws IOException;
+        throws IOException;
 
     /**
      * Get the keysize.
@@ -88,4 +116,12 @@ public interface SSLSupport {
      *
      * Unfortunately, all of these values are nonsensical.
      **/
+    public Integer getKeySize()
+        throws IOException;
+
+    /**
+     * The current session Id.
+     */
+    public String getSessionId()
+        throws IOException;
 }

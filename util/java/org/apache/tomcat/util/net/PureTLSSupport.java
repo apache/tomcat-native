@@ -63,6 +63,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Vector;
 import java.security.cert.CertificateFactory;
+import org.apache.tomcat.util.buf.HexUtils;
 
 import COM.claymoresystems.sslg.*;
 import COM.claymoresystems.ptls.*;
@@ -124,4 +125,26 @@ class PureTLSSupport implements SSLSupport {
 	}
 	return chain;
     }
+
+    public Integer getKeySize()
+	throws IOException {
+	/*
+	int cs = ssl.getCipherSuite();
+	int  ks = SSLCipherSuite.findCipherSuite(cs).getCipherKeyLength();
+	return new Integer(ks);
+	*/
+	return null;
+    }
+
+    public String getSessionId()
+	throws IOException {
+	byte [] ssl_session = ssl.getSessionID();
+	if(ssl_session == null)
+	    return null;
+	return HexUtils.convert(ssl_session);
+    }
+
 }
+
+
+
