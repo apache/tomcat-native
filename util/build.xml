@@ -29,6 +29,7 @@
         <pathelement location="${jcert.jar}" />
         <pathelement location="${puretls.jar}" />
         <pathelement location="${commons-logging.jar}" />
+        <pathelement location="${commons-modeler.jar}" />
     </path>
 
     <target name="detect">
@@ -36,6 +37,7 @@
         <available property="jmx.present" file="${jmx.jar}"/>
         <available property="puretls.present" file="${puretls.jar}"/>
         <available property="commons-logging.present" file="${commons-logging.jar}"/>
+        <available property="modeler.present" file="${commons-modeler.jar}"/>
     </target>
 
     <target name="build-prepare" depends="detect">
@@ -50,6 +52,7 @@
         <echo message="-- jsse.present = ${jsse.present}"/>
         <echo message="-- commons-logging = ${commons-logging.present}"/>
         <echo message="-- jmx = ${jmx.present} ${jmx.jar}"/>
+        <echo message="-- modeler = ${modeler.present} ${commons-modeler.jar}"/>
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
 	       deprecation="on"
@@ -63,6 +66,7 @@
             <exclude name="**/util/log/CommonLogHandler.java" unless="commons-logging.present"/>
             <exclude name="**/util/net/puretls/*" unless="puretls.present"/>
             <exclude name="**/util/mx/*" unless="jmx.present"/>
+            <exclude name="**/util/threads/ThreadPoolMX*" unless="modeler.present"/>
 	</javac>
 
 	<!-- Copy static resource files -->
