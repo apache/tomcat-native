@@ -205,28 +205,53 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
 
         if (requestedProtocols != null) {
             Vector vec = null;
-            int fromIndex = 0;
-            int index = requestedProtocols.indexOf(',', fromIndex);
-            while (index != -1) {
-                String protocol
-                    = requestedProtocols.substring(fromIndex, index).trim();
-                /*
-                 * Check to see if the requested protocol is among the
-                 * supported protocols, i.e., may be enabled
-                 */
-                for (int i=0; supportedProtocols != null
-                             && i<supportedProtocols.length; i++) {
-                    if (supportedProtocols[i].equals(protocol)) {
-                        if (vec == null) {
-                            vec = new Vector();
+            String protocol = requestedProtocols;
+            int index = requestedProtocols.indexOf(',');
+            if (index != -1) {
+                int fromIndex = 0;
+                while (index != -1) {
+                    protocol = requestedProtocols.substring(fromIndex, index).trim();
+                    if (protocol.length() > 0) {
+                        /*
+                         * Check to see if the requested protocol is among the
+                         * supported protocols, i.e., may be enabled
+                         */
+                        for (int i=0; supportedProtocols != null
+                                     && i<supportedProtocols.length; i++) {
+                            if (supportedProtocols[i].equals(protocol)) {
+                                if (vec == null) {
+                                    vec = new Vector();
+                                }
+                                vec.addElement(protocol);
+                                break;
+                            }
                         }
-                        vec.addElement(protocol);
-                        break;
+                    }
+                    fromIndex = index+1;
+                    index = requestedProtocols.indexOf(',', fromIndex);
+                } // while
+                protocol = requestedProtocols.substring(fromIndex);
+            }
+
+            if (protocol != null) {
+                protocol = protocol.trim();
+                if (protocol.length() > 0) {
+                    /*
+                     * Check to see if the requested protocol is among the
+                     * supported protocols, i.e., may be enabled
+                     */
+                    for (int i=0; supportedProtocols != null
+                                 && i<supportedProtocols.length; i++) {
+                        if (supportedProtocols[i].equals(protocol)) {
+                            if (vec == null) {
+                                vec = new Vector();
+                            }
+                            vec.addElement(protocol);
+                            break;
+                        }
                     }
                 }
-                fromIndex = index+1;
-                index = requestedProtocols.indexOf(',', fromIndex);
-            }
+            }           
 
             if (vec != null) {
                 enabledProtocols = new String[vec.size()];
