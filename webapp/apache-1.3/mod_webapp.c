@@ -296,7 +296,7 @@ void wam_handler_setstatus(wa_request *r, int status, char *message) {
     request_rec *req=(request_rec *)r->data;
 
     if ((message!=NULL) && (message[0]!='\0'))
-        req->status_line=apr_psprintf(req->pool,"%03d %s", status, message);
+        req->status_line=ap_psprintf(req->pool,"%03d %s", status, message);
 
     req->status=status;
 }
