@@ -1,0 +1,15 @@
+20010608 1.0.2 AA
+
+Banished malloc()/free() in favour of jk_pool based memory allocation for configuration data. Added syntax checking and test harness to inifile code.
+
+20010607 1.0.2 AA
+
+Fixed broken SSL detection and started passing any available client certificate through to Tomcat.
+			
+20010603 1.0.1 AA
+
+Made it work under Linux, which principally involved adding support for reading the configuration from an ini file rather than the registry
+
+20010603 1.0.1 AA
+
+Tidied up configuration file handling, so the code that gets the config items is mostly common for Registry based config and inifile based config

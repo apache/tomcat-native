@@ -88,23 +88,7 @@ static size_t klen;			/* length of the key array				*/
 ERRTYPE inifile_outofmemory		= ERRPFX "Out of memory";
 ERRTYPE inifile_filenotfound	= ERRPFX "File not found";
 ERRTYPE inifile_readerror		= ERRPFX "Error reading file";
-
-/* Discard the current ini file */
-void inifile_dispose(void)
-{
-	if (NULL != file)
-	{
-		free(file);
-		file = NULL;
-	}
-
-	if (NULL != keys)
-	{
-		free(keys);
-		keys = NULL;
-		klen = 0;
-	}
-}
+#define SYNFMT ERRPFX "File %s, line %d: %s"
 
 /* Case insensitive string comparison, works like strcmp() */
 static int inifile__stricmp(const char *s1, const char *s2)
@@ -122,7 +106,21 @@ static int inifile__cmp(const void *k1, const void *k2)
 	return inifile__stricmp(kk1->key, kk2->key);
 }
 
+/* Return a new syntax error message. */
+static ERRTYPE inifile__syntax(jk_pool_t *p, const char *file, int line, const char *msg)
+{
+	static const char synfmt[] = SYNFMT;
+	size_t len = sizeof(synfmt) + strlen(msg) + strlen(file) + 10 /* fudge for line number */;
+	char *buf = jk_pool_alloc(p, len);
+	sprintf(buf, synfmt, file, line, msg);
+	return buf;
+}
+
 /* Various macros to tidy up the parsing code */
+
+/* Characters that are OK in the keyname */
+#define KEYCHR(c) \
+	(isalnum(c) || (c) == '.' || (c) == '_')
 
 /* Skip whitespace */
 #define SKIPSPC() \
@@ -132,15 +130,19 @@ static int inifile__cmp(const void *k1, const void *k2)
 #define SKIPLN() \
 	while (*fp != '\0' && *fp != '\r' && *fp != '\n') fp++
 
-/* Move from the end of the current line to the start of the next */
+/* Move from the end of the current line to the start of the next, learning what the
+ * newline character is and counting lines
+ */
 #define NEXTLN() \
-	while (*fp == '\r' || *fp == '\n') fp++
+	do { while (*fp == '\r' || *fp == '\n') { if (nlc == -1) nlc = *fp; if (*fp == nlc) ln++; fp++; } } while (0)
 
 /* Build the index. Called when the inifile is loaded by inifile_load()
  */
-static ERRTYPE inifile__index(void)
+static ERRTYPE inifile__index(jk_pool_t *p, const char *name)
 {
 	int pass;
+	int ln = 1;
+	int nlc = -1;
 
 	/* Make two passes over the data. First time we're just counting
 	 * the lines that contain values so we can allocate the index, second
@@ -164,43 +166,39 @@ static ERRTYPE inifile__index(void)
 			if (*fp != '\0' && *fp != '\r' && *fp != '\n')
 			{
 				ks = fp;		/* start of key */
-				while (*fp > ' ' && *fp != '=') fp++;
+				while (KEYCHR(*fp)) fp++;
 				ke = fp;		/* end of key */
 				SKIPSPC();
-				if (*fp == '=') /* lines with no equals are ignored */
+
+				if (*fp != '=')
+					return inifile__syntax(p, name, ln, "Missing '=' or illegal character in key");
+
+				fp++; /* past the = */
+				SKIPSPC();
+				vs = fp;
+				SKIPLN();
+				ve = fp;
+				/* back up over any trailing space */
+				while (ve > vs && (ve[-1] == ' ' || ve[-1] == '\t')) ve--;
+				NEXTLN(); /* move forwards *before* we trash the eol characters */
+
+				if (NULL != keys) /* second pass? if so stash a pointer */
 				{
-					fp++; /* past the = */
-					SKIPSPC();
-					vs = fp;
-					SKIPLN();
-					ve = fp;
-					/* back up over any trailing space */
-					while (ve > vs && (ve[-1] == ' ' || ve[-1] == '\t')) ve--;
-					NEXTLN(); /* see note[1] below */
-
-					if (NULL != keys) /* second pass? if so stash a pointer */
-					{
-						*ke = '\0';
-						*ve = '\0';
-						keys[klen].key = ks;
-						keys[klen].value = vs;
-					}
-
-					klen++;
+					*ke = '\0';
+					*ve = '\0';
+					keys[klen].key = ks;
+					keys[klen].value = vs;
 				}
-			}
 
-			/* [1] you may notice that this macro might get invoked twice
-			 * for any given line. This isn't a problem -- it won't do anything
-			 * if it's called other than at the end of a line, and it needs to
-			 * be called the first time above to move fp past the line end
-			 * before the line end gets trampled on during the stringification
-			 * of the value.
-			 */
-			NEXTLN();
+				klen++;
+			}
+			else
+			{
+				NEXTLN();
+			}
 		}
 
-		if (NULL == keys && (keys = malloc(sizeof(inifile_key) * klen), NULL == keys))
+		if (NULL == keys && (keys = jk_pool_alloc(p, sizeof(inifile_key) * klen), NULL == keys))
 			return inifile_outofmemory;
 	}
 
@@ -212,15 +210,13 @@ static ERRTYPE inifile__index(void)
 
 /* Read an INI file from disk
  */
-ERRTYPE inifile_read(const char *name)
+ERRTYPE inifile_read(jk_pool_t *p, const char *name)
 {
 	FILE *fl;
-	ERRTYPE e;
 	size_t flen;
+	int ok;
 
-	inifile_dispose();
-
-	if (fl = fopen(name, "r"), NULL == fl)
+	if (fl = fopen(name, "rb"), NULL == fl)
 		return inifile_filenotfound;
 
 	fseek(fl, 0L, SEEK_END);
@@ -229,28 +225,19 @@ ERRTYPE inifile_read(const char *name)
 
 	/* allocate one extra byte for trailing \0
 	 */
-	if (file = malloc(flen+1), NULL == file)
+	if (file = jk_pool_alloc(p, flen+1), NULL == file)
 	{
 		fclose(fl);
 		return inifile_outofmemory;
 	}
 
-	if (fread(file, flen, 1, fl) < 1)
-	{
-		inifile_dispose();
-		fclose(fl);
-		return inifile_readerror;
-	}
+	ok = (fread(file, flen, 1, fl) == 1);
+	fclose(fl);
+	if (!ok) return inifile_readerror;
 
 	file[flen] = '\0';	/* terminate it to simplify parsing */
 
-	if (e = inifile__index(), ERRNONE != e)
-	{
-		inifile_dispose();
-		fclose(fl);
-	}
-
-	return e;
+	return inifile__index(p, name);
 }
 
 /* Find the value associated with the given key returning it or NULL
@@ -277,3 +264,55 @@ const char *inifile_lookup(const char *key)
 
 	return NULL;
 }
+
+#ifdef TEST
+
+static jk_pool_t pool;
+extern void jk_dump_pool(jk_pool_t *p, FILE *f); /* not declared in header */
+
+int main(void)
+{
+	ERRTYPE e;
+	unsigned k;
+	int rc = 0;
+
+	jk_open_pool(&pool, NULL, 0);
+
+	e = inifile_read(&pool, "ok.ini");
+	if (e == ERRNONE)
+	{
+		printf("%u keys in ok.ini\n", klen);
+		for (k = 0; k < klen; k++)
+		{
+			const char *val = inifile_lookup(keys[k].key);
+			printf("Key: \"%s\", value: \"%s\"\n", keys[k].key, val);
+		}
+	}
+	else
+	{
+		printf("Error reading ok.ini: %s\n", e);
+		rc = 1;
+	}
+
+	e = inifile_read(&pool, "bad.ini");
+	if (e == ERRNONE)
+	{
+		printf("%u keys in bad.ini\n", klen);
+		for (k = 0; k < klen; k++)
+		{
+			const char *val = inifile_lookup(keys[k].key);
+			printf("Key: \"%s\", value: \"%s\"\n", keys[k].key, val);
+		}
+		rc = 1;		/* should be a syntax error */
+	}
+	else
+	{
+		printf("Error reading bad.ini: %s (which is OK: that's what we expected)\n", e);
+	}
+
+	jk_dump_pool(&pool, stdout);
+	jk_close_pool(&pool);
+
+	return rc;
+}
+#endif

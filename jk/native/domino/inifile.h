@@ -62,6 +62,8 @@
 #ifndef __inifile_h
 #define __inifile_h
 
+#include "jk_pool.h"
+
 #define ERRTYPE const char *
 #define ERRFMT  "%s"			/* natural printf format for errors */
 #define ERRTXT(e) (e)			/* macro to return text for an error */
@@ -70,13 +72,9 @@ extern ERRTYPE inifile_outofmemory;
 extern ERRTYPE inifile_filenotfound;
 extern ERRTYPE inifile_readerror;
 
-/* Discard the current ini file
- */
-void inifile_dispose(void);
-
 /* Read an INI file from disk
  */
-ERRTYPE inifile_read(const char *name);
+ERRTYPE inifile_read(jk_pool_t *pool, const char *name);
 
 /* Find the value associated with the given key returning it or NULL
  * if no match is found. Key name matching is case insensitive.
