@@ -234,42 +234,9 @@
     <xsl:variable name="void">
       <xsl:value-of select="$relative-path"/><xsl:value-of select="$void-image"/>
     </xsl:variable>
-    <div align="left">
-      <table cellspacing="4" cellpadding="0" border="0">
-        <tr>
-          <td bgcolor="{$source-color}" width="1" height="1">
-            <img src="{$void}" width="1" height="1" vspace="0" hspace="0" border="0"/>
-          </td>
-          <td bgcolor="{$source-color}" height="1">
-            <img src="{$void}" width="1" height="1" vspace="0" hspace="0" border="0"/>
-          </td>
-          <td bgcolor="{$source-color}" width="1" height="1">
-            <img src="{$void}" width="1" height="1" vspace="0" hspace="0" border="0"/>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor="{$source-color}" width="1">
-            <img src="{$void}" width="1" height="1" vspace="0" hspace="0" border="0"/>
-          </td>
-          <td bgcolor="#ffffff" height="1"><pre>
-            <xsl:value-of select="."/>
-          </pre></td>
-          <td bgcolor="{$source-color}" width="1">
-            <img src="{$void}" width="1" height="1" vspace="0" hspace="0" border="0"/>
-          </td>
-        </tr>
-        <tr>
-          <td bgcolor="{$source-color}" width="1" height="1">
-            <img src="{$void}" width="1" height="1" vspace="0" hspace="0" border="0"/>
-          </td>
-          <td bgcolor="{$source-color}" height="1">
-            <img src="{$void}" width="1" height="1" vspace="0" hspace="0" border="0"/>
-          </td>
-          <td bgcolor="{$source-color}" width="1" height="1">
-            <img src="{$void}" width="1" height="1" vspace="0" hspace="0" border="0"/>
-          </td>
-        </tr>
-      </table>
+    <div class="example"><pre>
+        <xsl:value-of select="."/>
+        </pre>
     </div>
   </xsl:template>
 
