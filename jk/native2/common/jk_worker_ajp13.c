@@ -35,22 +35,25 @@
 #include "jk_registry.h"
 
 /* -------------------- Impl -------------------- */
-static char *jk2_worker_ajp13_getAttributeInfo[] =
-    { "lb_factor", "lb_value", "debug", "channel", "level",
-    "route", "routeRedirect", "errorState", "graceful", "groups", "disabled",
-    "epCount", "errorTime", "connectTimeout", "replyTimeout",
-    "prepostTimeout", NULL
+/*
+ * Properties available to Get.
+ */
+static char *jk2_worker_ajp13_getAttributeInfo[] = {
+    "channel", "groups", "max_connections", "epCount", "level", "lb_factor",
+    "lb_value", "route", "routeRedirect","graceful", "errorState", "errorTime",
+    "connectTimeout", "replyTimeout", "prepostTimeout", "debug", "disabled", NULL
 };
 
 static char *jk2_worker_ajp13_multiValueInfo[] = { "group", NULL };
 
-static char *jk2_worker_ajp13_setAttributeInfo[] =
-    { "debug", "channel", "route", "routeRedirect", "secretkey", "group",
-"graceful",
-    "disabled", "lb_factor", "level", "connectTimeout", "replyTimeout",
-    "prepostTimeout", NULL
+/*
+ * Properties available to Set.
+ */
+static char *jk2_worker_ajp13_setAttributeInfo[] = {
+    "channel", "group", "secretkey", "max_connections", "level", "lb_factor",
+    "route", "routeRedirect", "graceful", "connectTimeout", "replyTimeout",
+    "prepostTimeout", "debug", "disabled", NULL
 };
-
 
 static void *JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env,
                                                      jk_bean_t *bean,
@@ -75,6 +78,9 @@ static void *JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env,
     }
     else if (strcmp(name, "groups") == 0) {
         return jk2_map_concatKeys(env, worker->groups, ":");
+    }
+    else if (strcmp(name, "max_connections") == 0) {
+        return jk2_env_itoa(env, worker->maxEndpoints);
     }
     else if (strcmp(name, "level") == 0) {
         return jk2_env_itoa(env, worker->level);
@@ -116,9 +122,8 @@ static void *JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env,
     }
 }
 
-
 /*
- * Initialize the worker
+ * Set worker properties.
  */
 static int JK_METHOD
 jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
@@ -168,6 +173,9 @@ jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
     }
     else if (strcmp(name, "max_connections") == 0) {
         ajp13->maxEndpoints = atoi(value);
+    }
+     else if (strcmp(name, "debug") == 0) {
+        mbean->debug = atoi(value);
     }
     else {
         return JK_ERR;
