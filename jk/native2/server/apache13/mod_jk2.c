@@ -73,6 +73,7 @@
 #include "http_main.h"
 #include "http_log.h"
 #include "util_script.h"
+#include "http_conf_globals.h"
 
 /*
  * Jakarta (jk_) include files
@@ -173,6 +174,8 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
        to a file. Check the logger for default settings.
     */
     jkb=env->createBean2( env, env->globalPool, "logger.file", "");
+    env->alias( env, "logger.file:", "logger");
+    env->alias( env, "logger.file:", "logger:"); 
     if( jkb==NULL ) {
         fprintf(stderr, "Error creating logger ");
         return JK_ERR;
@@ -195,14 +198,17 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
         return JK_ERR;
     }
 
-    /* Local initialization.
-     */
-    workerEnv->_private = (void *)s;
-
-    /* serverRoot via ap_server_root_relative()
+    /* serverRoot via ap_server_root
      */
     workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
-                              ap_server_root_relative(p,""));
+                             workerEnv->pool->pstrdup( env, workerEnv->pool, ap_server_root));
+
+                             /* Local initialization.
+     */
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "Set serverRoot %s\n", ap_server_root); 
+
+    workerEnv->_private = (void *)s;
+
     return JK_OK;
 }
 
