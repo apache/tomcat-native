@@ -344,7 +344,7 @@ char * jk2_map_concatKeys( jk_env_t *env, jk_map_t *map, char *delim )
     for( i=0; i<sz; i++ ) {
         if( map->keys[i] != NULL ) {
             len+=strlen( map->keys[i] );
-            len++;
+            len+=delimLen;
         }
     }
     buf=env->tmpPool->calloc( env, env->tmpPool, len + 10 );
