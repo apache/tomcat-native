@@ -92,7 +92,7 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
                 return JK_ERR;
             }
             wEnv->epStat->structCnt=0;
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "workerEnv.init() create slot %s\n",  shmName );
         }
     }
