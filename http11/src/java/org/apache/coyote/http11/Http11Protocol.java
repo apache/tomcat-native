@@ -88,6 +88,9 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 {
 
     public Http11Protocol() {
+	setSoLinger(Constants.DEFAULT_CONNECTION_LINGER);
+	setSoTimeout(Constants.DEFAULT_CONNECTION_TIMEOUT);
+	setServerSoTimeout(Constants.DEFAULT_SERVER_SOCKET_TIMEOUT);
     }
 
     /**
@@ -216,7 +219,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     private int	timeout = 300000;	// 5 minutes as in Apache HTTPD server
     private String reportedname;
     private int socketCloseDelay=-1;
-    private boolean disableUploadTimeout = false;
+    private boolean disableUploadTimeout = true;
+    /**
+     * Compression value.
+     */
     private String compression = "off";
 
     // -------------------- Pool setup --------------------
