@@ -2,13 +2,13 @@ Quick informations on building mod_jk2 :
 
 Starting with 2.0.4, APR is mandatory for jk2 so you should be
 sure to have it installed on your system, probably because you
-allready have an Apache 2.0 installed or have apr and apr-utils
+already have an Apache 2.0 installed or have apr and apr-utils
 sources tarball ready, since jk2 will first build APR/APR-UTILS
-for itw own purpose (Apache 1.3 case).
+for its own purpose (Apache 1.3 case).
 
 
 If you want to have JNI support, add --with-jni and be sure to
-have JAVA_HOME env var point to your Java Environnement.
+have JAVA_HOME env var point to your Java Environment.
 
 * Linux distributions using Apache 2.0
 
@@ -37,9 +37,25 @@ cp ../build/jk2/apache13/mod_jk2.so /your/path/to/apache13modules
 
 There is a known issue with the latest APR 1.0 and MSVC6.
 If you want to use MSVC6, please use APR 0.9.x for now.
-MSVC7 doesnt have this issue, and could be used with APR 1.0.
+MSVC7 doesn't have this issue, and could be used with APR 1.0.
 
---> Mladen ?
+Isapi redirector requires the following libraries to build:
+apr, apr-util, apr-iconv and pcre.
+The easiest way to obtain all those libraries is to download
+the httpd-2.0.49-win32-src.zip from http://www.apache.org/dist/httpd or
+from any of the mirror sites.
+You will only need the srclib part (apr, apr-util, apr-iconv and pcre)
+Unzip the entire srclib folder to j-t-c native2 folder.
+Now open the isapi.dsw from MSVC6 and build.
+
+Building using VS.NET:
+Make sure that the required libraries are inside native2/srclib.
+Open the idapi.dsw and select 'Yes to all' when prompted to convert the project.
+During conversion the custom build adds extra quotations for
+jk_logger_win32_message.mc. Right click on that file and select Properties.
+For Custom Build Step remove all the quotations around ${InputDir}
+and ${InputPath}.
+
 
 
 * Netware
