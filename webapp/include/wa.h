@@ -82,7 +82,7 @@
 #include <apr_time.h>
 #include <apr_network_io.h>
 #include <apr_file_info.h>
-#if APR_HAS_THREAD
+#if APR_HAS_THREADS
 #include <apr_thread_mutex.h>
 #include <apr_atomic.h>
 #endif
