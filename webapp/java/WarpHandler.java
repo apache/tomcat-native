@@ -376,7 +376,7 @@ public abstract class WarpHandler implements Lifecycle, Runnable {
      */
     protected void log(String msg) {
         WarpConnection connection=this.getConnection();
-        if (connection!=null) connection.log("{"+this.name+"} "+msg);
+        if (connection!=null) connection.log(msg);
         else WarpDebug.debug(this,msg);
     }
 
