@@ -122,6 +122,15 @@ typedef struct jk_ws_service jk_ws_service_t;
  */
 struct jk_ws_service {
     struct jk_workerEnv *workerEnv;
+
+    /* JK_TRUE if a 'recoverable' error happened. That means a
+     * lb worker can retry on a different worker, without
+     * loosing any information. If JK_FALSE, an error will be reported
+     * to the client
+     */
+    int is_recoverable_error;
+
+    struct jk_worker *realWorker;
     
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
@@ -230,7 +239,7 @@ struct jk_ws_service {
     /* Initialize the service structure
      */
     int (*init)( struct jk_env *env, jk_ws_service_t *_this,
-                 struct jk_endpoint *e, void *serverObj);
+                 struct jk_worker *w, void *serverObj);
 
     /* Post request cleanup.
      */
@@ -257,6 +266,11 @@ struct jk_ws_service {
      */
     int (JK_METHOD *write)(struct jk_env *env, jk_ws_service_t *s,
                            const void *buffer, int len);
+
+    /*
+     * Flush the output buffers.
+     */
+    int (JK_METHOD *flush)(struct jk_env *env, jk_ws_service_t *s );
 };
 
 #ifdef __cplusplus
