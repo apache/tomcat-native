@@ -74,11 +74,11 @@ AC_DEFUN(
 #include "stdio.h"
 
 int main(void) [ {
-  printf(WA_VERSION "\n");
+  printf(WA_REVISION "\n");
   exit(0);
 } ]
 EOF
-    AC_MSG_CHECKING([for version])
+    AC_MSG_CHECKING([for webapp version])
     $2 ${TGT_DIR}/wa_version.c -o ${TGT_DIR}/wa_version.o
     if test "$?" != "0" ; then
       AC_MSG_ERROR([compiler didn't run successfully])
