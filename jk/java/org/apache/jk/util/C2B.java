@@ -146,17 +146,17 @@ public final class C2B {
         
         if( type==MessageBytes.T_STR ) {
             convert( mb.getString() );
-            System.out.println("XXX Converting " + mb.getString() );
+            // System.out.println("XXX Converting " + mb.getString() );
         } else if( type==MessageBytes.T_CHARS ) {
             CharChunk charC=mb.getCharChunk();
             convert( charC.getBuffer(),
                                 charC.getOffset(), charC.getLength());
-            System.out.println("XXX Converting " + mb.getCharChunk() );
+            //System.out.println("XXX Converting " + mb.getCharChunk() );
         } else {
             System.out.println("XXX unknowon type " + type );
         }
         flushBuffer();
-        System.out.println("C2B: XXX " + bb.getBuffer() + bb.getLength()); 
+        //System.out.println("C2B: XXX " + bb.getBuffer() + bb.getLength()); 
         setByteChunk(orig);
     }
 
