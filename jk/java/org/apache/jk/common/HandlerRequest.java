@@ -452,6 +452,10 @@ public class HandlerRequest extends JkHandler
             }
         }
 
+        MessageBytes tmpMB2 = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
+        if(tmpMB2 != null) {
+            tmpMB2.recycle();
+        }
         req.setStartTime(System.currentTimeMillis());
         JkInputStream jkBody=(JkInputStream)ep.getNote( bodyNote );
         if( jkBody==null ) {
@@ -573,10 +577,13 @@ public class HandlerRequest extends JkHandler
             case SC_A_SSL_CERT     :
                 req.scheme().setString( "https" );
                 // Transform the string into certificate.
-                MessageBytes tmpMB2 = new MessageBytes();
-                msg.getBytes(tmpMB2);
+                MessageBytes tmpMB2 = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
+                if(tmpMB2 == null) {
+                    tmpMB2 = new MessageBytes();
+                    req.setNote(WorkerEnv.SSL_CERT_NOTE, tmpMB2);
+                }
                 // SSL certificate extraction is costy, moved to JkCoyoteHandler
-                req.setNote(WorkerEnv.SSL_CERT_NOTE, tmpMB2);
+                msg.getBytes(tmpMB2);
                 break;
                 
             case SC_A_SSL_CIPHER   :

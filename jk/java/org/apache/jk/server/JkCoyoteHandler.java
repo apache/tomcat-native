@@ -423,7 +423,7 @@ public class JkCoyoteHandler extends JkHandler implements
 
                 // Extract SSL certificate information (if requested)
                 MessageBytes certString = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
-                if( certString != null ) {
+                if( certString != null && !certString.isNull() ) {
                     ByteChunk certData = certString.getByteChunk();
                     ByteArrayInputStream bais = 
                         new ByteArrayInputStream(certData.getBytes(),
