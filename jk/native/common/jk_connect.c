@@ -66,34 +66,8 @@
  */
 
 
-#if defined(NETWARE) && defined(__NOVELL_LIBC__)
-/* Since we want to use WinSock functionality here, don't allow the 
- * non-winsock headers 
- */
-#define __sys_types_h__
-#define __sys_socket_h__
-#define __netdb_h__
-#define __netinet_in_h__
-#define __arpa_inet_h__
-#define __sys_timeval_h__
-#endif
-
 #include "jk_connect.h"
 #include "jk_util.h"
-
-#if defined(NETWARE) && defined(__NOVELL_LIBC__)
-/* Now remove the defines so that including the WinSock headers won't cause 
- * complaining
- */
-#undef __sys_types_h__
-#undef __sys_socket_h__
-#undef __netdb_h__
-#undef __netinet_in_h__
-#undef __arpa_inet_h__
-#undef __sys_timeval_h__
-
-#include <novsock2.h>
-#endif
 
 #ifdef HAVE_APR
 #include "apr_network_io.h"
@@ -138,7 +112,7 @@ int jk_resolve(char *host,
 
 #ifdef HAVE_APR
         apr_pool_t *context;
-        apr_sockaddr_t *remote_sa;
+        apr_sockaddr_t *remote_sa, *temp_sa;
         char *remote_ipaddr;
 
         /* May be we could avoid to recreate it each time ? */
@@ -147,6 +121,18 @@ int jk_resolve(char *host,
 
         if (apr_sockaddr_info_get(&remote_sa, host, APR_UNSPEC, (apr_port_t)port, 0, context)
             != APR_SUCCESS) 
+            return JK_FALSE;
+
+        /* Since we are only handling AF_INET (IPV4) address (in_addr_t) */
+        /* make sure we find one of those.                               */
+        temp_sa = remote_sa;
+        while ((NULL != temp_sa) && (AF_INET != temp_sa->family))
+            temp_sa = temp_sa->next;
+
+        /* if temp_sa is set, we have a valid address otherwise, just return */
+        if (NULL != temp_sa)
+            remote_sa = temp_sa;
+        else
             return JK_FALSE;
 
         apr_sockaddr_ip_get(&remote_ipaddr, remote_sa);
