@@ -72,9 +72,8 @@
 #include "jk_requtil.h"
 #include "jk_registry.h"
 
-static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e, 
-                             jk_ws_service_t *s,
-                             int *is_recoverable_error)
+static int JK_METHOD service(jk_env_t *env, jk_worker_t *_this,
+                             jk_ws_service_t *s )
 {
     /* I should display a status page for the monitored processes
      */
@@ -90,64 +89,7 @@ static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e,
 
     s->afterRequest( env, s);
     return JK_TRUE;
-
 }
-
-static int JK_METHOD done(jk_env_t *env, jk_endpoint_t *e)
-{
-    return JK_TRUE;
-}
-
-static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
-                              jk_map_t *props, jk_workerEnv_t *we)
-{
-    return JK_TRUE;
-}
-
-static int JK_METHOD init(jk_env_t *env, jk_worker_t *_this,
-                          jk_map_t *props, jk_workerEnv_t *we)
-{
-    return JK_TRUE;
-}
-
-static int JK_METHOD get_endpoint(jk_env_t *env, jk_worker_t *_this,
-                                  jk_endpoint_t **pend)
-{
-    jk_endpoint_t *e;
-    jk_pool_t *endpointPool;
-    
-    if (_this->endpointCache != NULL ) {
-        e=_this->endpointCache->get( env, _this->endpointCache );
-        if (e!=NULL) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                     "run.getEndpoint(): Reusing endpoint\n");
-            *pend = e;
-            return JK_TRUE;
-        }
-    }
-    
-    endpointPool=_this->pool->create( env, _this->pool, HUGE_POOL_SIZE);
-    
-    e = (jk_endpoint_t *)endpointPool->calloc(env, endpointPool,
-                                              sizeof(jk_endpoint_t));
-    if(e==NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "run_worker.getEndpoint() OutOfMemoryException\n");
-        return JK_FALSE;
-    }
-
-    e->pool = endpointPool;
-    e->cPool=endpointPool->create( env,endpointPool, HUGE_POOL_SIZE );
-    e->worker = _this;
-    e->service = service;
-    e->done = done;
-    e->channelData = NULL;
-    *pend = e;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "run_worker.getEndpoint() %p\n", e);
-    return JK_TRUE;
-}
-
 
 static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
 {
@@ -157,26 +99,6 @@ static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "run_worker.destroy() NullPointerException\n");
         return JK_FALSE;
-    }
-
-    if( w->endpointCache != NULL ) {
-        for( i=0; i< w->endpointCache->ep_cache_sz; i++ ) {
-            jk_endpoint_t *e;
-            
-            e= w->endpointCache->get( env, w->endpointCache );
-            if( e==NULL ) {
-                // we finished all endpoints in the cache
-                break;
-            }
-
-            /* Nothing else to clean up ? */
-            e->cPool->close( env, e->cPool );
-            e->pool->close( env, e->pool );
-        }
-        w->endpointCache->destroy( env, w->endpointCache );
-
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                      "run.destroy() closed %d cached endpoints\n",i);
     }
 
     w->pool->close(env, w->pool);    
@@ -211,10 +133,10 @@ int JK_METHOD jk_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
     _this->lb_workers = NULL;
     _this->num_of_workers = 0;
     _this->worker_private = NULL;
-    _this->validate       = validate;
-    _this->init           = init;
-    _this->get_endpoint   = get_endpoint;
-    _this->destroy        = destroy;
+    _this->validate       = NULL;
+    _this->init           = NULL;
+    _this->destroy        = NULL;
+    _this->service = service;
     
     *result=_this;
 
