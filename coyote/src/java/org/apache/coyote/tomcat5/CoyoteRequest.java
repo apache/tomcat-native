@@ -127,6 +127,7 @@ import org.apache.catalina.util.ParameterMap;
 import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringManager;
 import org.apache.catalina.util.StringParser;
+import org.apache.commons.logging.Log;
 
 /**
  * Wrapper object for the Coyote request.
@@ -385,6 +386,11 @@ public class CoyoteRequest
      */
     protected String localAddr = null;
     
+    /** After the request is mapped to a ServletContext, we can also
+     * map it to a logger.
+     */ 
+    protected Log log=null;
+    
     // --------------------------------------------------------- Public Methods
 
 
@@ -423,6 +429,7 @@ public class CoyoteRequest
         requestedSessionCookie = false;
         requestedSessionId = null;
         requestedSessionURL = false;
+        log = null;
 
         parameterMap.setLocked(false);
         parameterMap.clear();
@@ -531,7 +538,8 @@ public class CoyoteRequest
      * Return the Host within which this Request is being processed.
      */
     public Host getHost() {
-        return ((Host) mappingData.host);
+        return (Host)getContext().getParent();
+        //return ((Host) mappingData.host);
     }
 
 
