@@ -1609,6 +1609,11 @@ static int jk_handler(request_rec *r)
             jk_close_pool(&private_data.p);
 
             if(rc) {
+                /* If tomcat returned no body and the status is not OK,
+                   let apache handle the error code */
+                if( !r->sent_bodyct && r->status != HTTP_OK ) {
+                    return r->status;
+                }
                 return OK;  /* NOT r->status, even if it has changed. */
             }
         }
