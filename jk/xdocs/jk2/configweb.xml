@@ -17,14 +17,19 @@
 </p>
     </section>
     <section name="Config file">
-        <p> The default config file is user editable, but mod_jk will persist the 
-changes requested by protocol( not implemented). If you manually change the file while jk2 is 
-working, your changes will be lost. 
+        <p> The default config file is user editable, but mod_jk may persist 
+changes requested by protocol. If you manually change the file while jk2 is 
+working and make changes using jkstatus or a jmx proxy, your changes will be lost. 
   </p>
-        <p>The default configuration format . .  Each setting consists of an object 
+
+<p>Jk2 is modeled after JMX. It consist of a number of named components, each having
+certain management attributes. In order to configure jk2 you need to create 
+the components and set the desired attributes. </p>
+
+        <p>The format of the default config file.  Each setting consists of an object 
 name and a property, with the associated value. The property name is a simple
- string, with no '.' in it. The name can be anything, but it must have a
-known  'type' as prefix.  
+ string, with no '.' in it. The name has 2 parts, separated by ":". The first part
+is the component type, and the second is the local part of the name. 
   </p>
         <p>2 formats are supported:   
             <source>
