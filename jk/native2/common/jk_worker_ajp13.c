@@ -148,6 +148,35 @@ jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean,
     return JK_TRUE;
 }
 
+#define JK_AJP13_PING               (unsigned char)8
+
+/* 
+ * Build the ping cmd. Tomcat will get control and will be able 
+ * to send any command.
+ *
+ * +-----------------------+
+ * | PING CMD (1 byte) |
+ * +-----------------------+
+ *
+ * XXX Add optional Key/Value set .
+ *  
+ */
+int jk2_serialize_ping(jk_env_t *env, jk_msg_t *msg,
+                       jk_endpoint_t *ae)
+{
+    int rc;
+    
+    /* To be on the safe side */
+    msg->reset(env, msg);
+
+    rc= msg->appendByte( env, msg, JK_AJP13_PING);
+    if (rc!=JK_TRUE )
+        return JK_FALSE;
+
+    return JK_TRUE;
+}
+
+
 /*
  * Close the endpoint (clean buf and close socket)
  */
