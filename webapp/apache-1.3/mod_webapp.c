@@ -74,9 +74,9 @@
 /* ************************************************************************* */
 
 /* Module declaration */
-module webapp_module;
+module MODULE_VAR_EXPORT webapp_module;
 /* Wether the WebApp Library has been initialized or not */
-static boolean wam_initialized=FALSE;
+static wa_boolean wam_initialized=FALSE;
 /* The list of configured connections */
 static wa_chain *wam_connections=NULL;
 
@@ -476,7 +476,7 @@ static const handler_rec wam_handlers[] = {
 };
 
 /* Apache module declaration */
-module webapp_module = {
+module MODULE_VAR_EXPORT webapp_module = {
     STANDARD_MODULE_STUFF,
     NULL,                               /* module initializer */
     NULL,                               /* per-directory config creator */

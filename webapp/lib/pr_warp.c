@@ -101,14 +101,14 @@
 typedef struct warp_cconfig {
     apr_sockaddr_t *addr;
     apr_socket_t *sock;
-    boolean disc;
+    wa_boolean disc;
 } warp_cconfig;
 
 /* The WARP application configuration structure */
 typedef struct warp_aconfig {
     int host;
     int appl;
-    boolean depl;
+    wa_boolean depl;
 } warp_aconfig;
 
 typedef struct warp_packet {
@@ -141,14 +141,14 @@ static warp_packet *p_create(apr_pool_t *pool) {
     return(pack);
 }
 
-static boolean p_wshort(warp_packet *p, int k) {
+static wa_boolean p_wshort(warp_packet *p, int k) {
     if ((p->bpos+2)>MAXPAYLOAD) return(FALSE);
     p->buff[p->bpos++]=(char)((k>>8)&0x0ff);
     p->buff[p->bpos++]=(char)(k&0x0ff);
     return(TRUE);
 }
 
-static boolean p_wstring(warp_packet *p, char *s) {
+static wa_boolean p_wstring(warp_packet *p, char *s) {
     int l=0;
     int x=0;
 
@@ -189,7 +189,7 @@ static char *p_rstring(warp_packet *p) {
 
 /* Attempt to connect to the remote endpoint of the WARP connection (if not
    done already). */
-static boolean n_connect(wa_connection *conn) {
+static wa_boolean n_connect(wa_connection *conn) {
     warp_cconfig *conf=(warp_cconfig *)conn->conf;
     apr_status_t ret=APR_SUCCESS;
 
@@ -246,10 +246,10 @@ static void n_disconnect(wa_connection *conn) {
 
 
 /* Send a 16 bits value over a connection */
-static boolean n_sshort(wa_connection *conn, int k) {
+static wa_boolean n_sshort(wa_connection *conn, int k) {
     warp_cconfig *c=(warp_cconfig *)conn->conf;
-    apr_size_t len=2;
-    char buf[len];
+	apr_size_t len=2;
+    char buf[2];
 
     if (c->sock==NULL) {
         wa_log(WA_MARK,"Socket not initialized");
@@ -280,7 +280,7 @@ static boolean n_sshort(wa_connection *conn, int k) {
 }
 
 /* Send a packet over a connection */
-static boolean n_send(wa_connection *conn, int r, warp_packet *p) {
+static wa_boolean n_send(wa_connection *conn, int r, warp_packet *p) {
     warp_cconfig *c=(warp_cconfig *)conn->conf;
     apr_size_t len=2;
 
@@ -359,7 +359,7 @@ static int n_rshort(wa_connection *conn) {
 }
 
 /* Receive a warp packet. */
-static boolean n_recv(wa_connection *conn, int r, warp_packet *p) {
+static wa_boolean n_recv(wa_connection *conn, int r, warp_packet *p) {
     warp_cconfig *c=(warp_cconfig *)conn->conf;
     apr_size_t num=0;
     int rid=-1;
@@ -645,7 +645,7 @@ static char *warp_applinfo(wa_application *appl, apr_pool_t *pool) {
 typedef struct warp_rheader {
     wa_connection *conn;
     warp_packet *pack;
-    boolean fail;
+    wa_boolean fail;
     int wrid;
 } warp_rheader;
 
@@ -671,7 +671,7 @@ static int warp_handle(wa_request *r, wa_application *a) {
     warp_packet *i=p_create(r->pool);
     warp_packet *o=p_create(r->pool);
     wa_connection *conn=a->conn;
-    boolean committed=FALSE;
+    wa_boolean committed=FALSE;
     int rid=0;
     int sta=500;
 

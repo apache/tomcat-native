@@ -66,7 +66,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+
+#ifdef WIN32
+#define vsnprintf _vsnprintf
+#else
 #include <unistd.h>
+#endif /* ifdef WIN32 */
 
 /* APR Library includes */
 #include <apr_general.h>
@@ -78,7 +83,7 @@
 #include <apr_network_io.h>
 
 /* WebApp Library type definitions. */
-typedef int boolean;
+typedef int wa_boolean;
 
 typedef struct wa_chain wa_chain;
 

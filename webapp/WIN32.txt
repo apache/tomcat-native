@@ -1,0 +1,15 @@
+1. Get and extract apr and apr-utils from http://apr.apache.org to c:\apr and c:\apr-utils (for example).
+2. Build them with Visual C++. (Use the aprutils.dsw in the c:\apr-utils directory and choose to batch build everything).
+3. Add the following environment variables (With paths appropriate for your system):
+    APACHE1_HOME=C:\Program Files\Apache Group\Apache
+    APR_HOME=C:\apr
+4. Build mod_webapp.dll with Visual C++. (Use the mod_webapp.dsp in the %TOMCAT4_SRC_HOME%\connectors\apache-1.3 directory and choose to batch build everything).
+5. Do the following:
+    copy %APR_HOME%\Release\libapr.dll %APACHE1_HOME%\modules
+    copy %TOMCAT4_SRC_HOME%\connectors\apache-1.3\Release\mod_webapp.dll %APACHE1_HOME%\modules
+6. Add the following lines to %APACHE1_HOME%\conf\httpd.conf:
+    LoadModule webapp_module modules/mod_webapp.dll
+    WebAppConnection warpConnection warp localhost:8008
+    WebAppDeploy examples warpConnection /examples/
+7. Change ServerName in %APACHE1_HOME%\conf\httpd.conf and defaultHost in %TOMCAT4_HOME%\conf\server.xml to match.
+8. Start Tomcat followed by Apache.
