@@ -73,13 +73,7 @@
 #include "jk_pool.h"
 #include "jk_env.h"
 #include "jk_uriMap.h"
-
-int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
-                                 const char *type, const char *name);
-
-static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this,
-                           jk_workerEnv_t *workerEnv,
-                           jk_map_t *init_data);
+#include "jk_registry.h"
 
 static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
                                           const char *vhost,
@@ -174,50 +168,21 @@ static int jk2_uriMap_realloc(jk_env_t *env,jk_uriMap_t *_this)
     return JK_TRUE;
 }
 
-/* -------------------- XXX Move to uriEnv.c -------------------- */
-static jk_uriEnv_t *jk2_uriEnv_setProperty(jk_env_t *env,
-                                           jk_uriEnv_t *uriEnv,
-                                           const char *nameParam,
-                                           const char *valueParam)
-{
-    char *name=uriEnv->pool->pstrdup(env,uriEnv->pool, nameParam);
-    char *val=uriEnv->pool->pstrdup(env,uriEnv->pool, valueParam);
-
-    uriEnv->properties->add( env ,uriEnv->properties,
-                             name, val );
-    if( strcmp("worker", name) == 0 ) {
-        uriEnv->workerName=val;
-    }
-    
-}
-
-
 static jk_uriEnv_t *jk2_uriEnv_createUriEnv(jk_env_t *env,
                                             jk_uriMap_t *uriMap,
-                                            const char *vhost,
-                                            const char *path) 
+                                            char *vhost,
+                                            char *path) 
 {
-    jk_pool_t *uriPool;
     int err;
     jk_uriEnv_t *uriEnv;
-    jk_workerEnv_t *wEnv=uriMap->workerEnv;
 
-    /** Will be discarded/flushed on reload */
-    /** XXX Group by webapp */
-    uriPool=(jk_pool_t *)uriMap->pool->create( env, uriMap->pool,
-                                                 HUGE_POOL_SIZE);
+    jk2_uriEnv_factory( env, uriMap->pool, (void *)&uriEnv, "uriEnv", NULL );
 
-    uriEnv=(jk_uriEnv_t *)uriMap->pool->calloc(env, uriPool,
-                                              sizeof(jk_uriEnv_t));
-    
-    uriEnv->setProperty=&jk2_uriEnv_setProperty;
-    uriEnv->pool=uriPool;
-    
     uriEnv->workerEnv=uriMap->workerEnv;
-    jk2_map_default_create( env, &uriEnv->properties, uriPool );
-
-    uriEnv->uri=uriPool->pstrdup(env, uriPool, path);
-    uriEnv->virtual=uriPool->pstrdup(env, uriPool, vhost);
+    
+    uriEnv->setProperty( env, uriEnv, "uri", path );
+    uriEnv->setProperty( env, uriEnv, "vhost", vhost );
+    uriEnv->init( env, uriEnv );
 
     /* Register it */
     /* make sure we have space */
@@ -234,106 +199,8 @@ static jk_uriEnv_t *jk2_uriEnv_createUriEnv(jk_env_t *env,
 }
 
 
-static jk_uriEnv_t *jk2_uriMap_prepareUriEnv(jk_env_t *env, jk_uriMap_t *_this,
-                                             jk_uriEnv_t *uwr,
-                                             char *vhost, char *uri, char *worker)
-{
-    int err;
-    char *asterisk;
-    
-    if ('/' != uri[0]) {
-        /*
-         * JFC: please check...
-         * Not sure what to do, but I try to prevent problems.
-         * I have fixed jk_mount_context() in apaches/mod_jk2.c so we should
-         * not arrive here when using Apache.
-         */
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "uriMap.addMapping() context must start with '/' in %s\n",
-                      uri);
-        return NULL;
-    }
-
-    asterisk = strchr(uri, '*');
-
-    // set the mapping type
-    if (!asterisk) {
-        /* Something like:  JkMount /login/j_security_check ajp13 */
-        uwr->prefix      = uri;
-        uwr->prefix_len  =strlen( uwr->prefix );
-        uwr->suffix      = NULL;
-        uwr->match_type  = MATCH_TYPE_EXACT;
-        if( _this->debug > 0 ) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "uriMap.addMapping() exact mapping %s=%s was added\n",
-                          uri, worker);
-        }
-        return uwr;
-    }
-
-    /*
-     * Now, lets check that the pattern is /context/STAR.suffix
-     * or /context/STAR
-     * we need to have a '/' then a '*' and the a '.' or a
-     * '/' then a '*'
-     */
-    asterisk--;
-    if ('/' == asterisk[0]) {
-        if ('.' == asterisk[2]) {
-            /* suffix rule: /foo/bar/STAR.extension */
-            asterisk[1]      = '\0';
-            asterisk[2]      = '\0';
-            uwr->prefix      = uri;
-            uwr->prefix_len  =strlen( uwr->prefix );
-            uwr->suffix      = asterisk + 3;
-            uwr->match_type  = MATCH_TYPE_SUFFIX;
-            if( _this->debug > 0 ) {
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "uriMap.addMapping() suffix mapping %s.%s=%s was added\n",
-                              uri, asterisk + 3, worker);
-            }
-        } else if ('\0' != asterisk[2]) {
-            /* general suffix rule /foo/bar/STARextraData */
-            asterisk[1] = '\0';
-            uwr->suffix  = asterisk + 2;
-            uwr->prefix  = uri;
-            uwr->prefix_len  =strlen( uwr->prefix );
-            uwr->match_type = MATCH_TYPE_GENERAL_SUFFIX;
-            if( _this->debug > 0 ) {
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
-                         "uriMap.addMapping() general suffix mapping %s.%s=%s\n",
-                              uri, asterisk + 2, worker);
-            }
-        } else {
-            /* context based /foo/bar/STAR  */
-            asterisk[1]      = '\0';
-            uwr->suffix      = NULL;
-            uwr->prefix      = uri;
-            uwr->prefix_len  =strlen( uwr->prefix );
-            uwr->match_type  = MATCH_TYPE_CONTEXT;
-            if( _this->debug > 0 ) {
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "uriMap.addMapping() prefix mapping %s=%s\n",
-                              uri, worker);
-            }
-        }
-    } else {
-        /* Something like : JkMount /servlets/exampl* ajp13 */
-        /* Is this valid ??? */
-        uwr->prefix      = uri;
-        uwr->prefix_len  =strlen( uwr->prefix );
-        uwr->suffix      = NULL;
-        uwr->match_type  = MATCH_TYPE_EXACT;
-        if( _this->debug > 0 ) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                     "uriMap.addMapping() prefix mapping2 %s=%s\n",
-                          uri, worker);
-        }
-    }
-
-    return uwr;
-}
-
+/** XXX remove
+ */
 static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
                                           const char *vhost,
                                           const char *puri, 
@@ -351,7 +218,7 @@ static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
 
     uwr->setProperty( env, uwr, "worker", pworker );
 
-    return jk2_uriMap_prepareUriEnv(env, _this, uwr, vhost, uwr->uri, worker);
+    return uwr;
 }
 
 static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this,
@@ -559,7 +426,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
                 }
             }
         } else /* MATCH_TYPE_SUFFIX */ {
-            if( suffix != NULL ) {
+            if( uwr->suffix!=NULL && suffix != NULL ) {
                 /* for WinXX, fix the JsP != jsp problems */
 #ifdef WIN32                        
                 if(0 == strcasecmp(suffix, uwr->suffix))  {

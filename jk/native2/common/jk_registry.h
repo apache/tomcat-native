@@ -154,3 +154,10 @@ int JK_METHOD jk2_handler_discovery_factory(jk_env_t *env, jk_pool_t *pool,
 int JK_METHOD jk2_handler_response_factory(jk_env_t *env, jk_pool_t *pool,
                                            void **result,
                                            const char *type, const char *name);
+
+int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+                                 const char *type, const char *name);
+
+int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+                                 const char *type, const char *name);
+

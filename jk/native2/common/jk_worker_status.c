@@ -172,9 +172,13 @@ static void jk2_worker_status_displayWorkerEnv(jk_env_t *env, jk_buff_t *buf,
     for( i=0; i< map->size( env, map ) ; i++ ) {
         char *name=map->nameAt( env, map, i );
         char *value=(char *)map->valueAt( env, map,i );
-
-        jk2_printf(env, buf, "<tr><td>%s</td><td>%s</td></tr>", name,
-                  value);
+        /* Don't display worker properties or uris, those are displayed separately
+           for each worker */
+/*         if( strncmp( name, "worker.", 7 ) !=0 && */
+/*             name[0] != '/' ) { */
+            jk2_printf(env, buf, "<tr><td>%s</td><td>%s</td></tr>", name,
+                       value);
+/*         } */
     }
     jk2_printf(env, buf, "</table>\n");
 

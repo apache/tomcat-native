@@ -180,6 +180,9 @@ struct jk_uriEnv {
     char **(*getPropertyNames)( struct jk_env *env,
                                 struct jk_uriEnv *_this );
     
+
+    int (*init)( struct jk_env *env, struct jk_uriEnv *_this);
+
 };
 
 

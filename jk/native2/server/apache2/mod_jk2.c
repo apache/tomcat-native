@@ -650,8 +650,8 @@ static int jk2_translate(request_rec *r)
        the real mapping. 
     */
     uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri );
-    
-    if(uriEnv==NULL ) {
+
+    if( uriEnv== NULL || uriEnv->workerName == NULL) {
         return DECLINED;
     }
 
