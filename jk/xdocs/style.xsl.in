@@ -12,6 +12,7 @@
     doctype-system="http://www.w3.org/TR/html4/strict.dtd"/>
 
   <!-- Define default values for parameters -->
+  <xsl:param name="styles" select="''"/>
   <xsl:param name="images" select="'../images'"/>
   <xsl:param name="homedoc" select="'../'"/>
 
@@ -59,7 +60,7 @@
           <meta name="author" content="{$name}"/>
           <meta name="email" content="{$email}"/>
         </xsl:for-each>
-        <link rel="stylesheet" type="text/css" href="style.css"/>
+        <link rel="stylesheet" type="text/css" href="{$styles}/style.css"/>
         <link rel="shortcut icon" href="{$images}/tomcat.ico"/>
       </head>
 
@@ -161,6 +162,8 @@
                       </nobr>
                     </td>
                   </tr>
+                  <tr height="2">
+                  </tr>
 
                   <!--
                     Slightly more complicated, we use the document-location function
@@ -176,6 +179,8 @@
                             <xsl:value-of select="@name"/>
                           </a>
                         </td>
+                       </tr>
+                       <tr height="1">
                       </tr>
                     </xsl:for-each>
                   </xsl:if>
@@ -244,7 +249,7 @@
         </tr>
       </table>
     </a>
-    <xsl:apply-templates select="subsection|p|ul|img|screen|todo"/>
+    <xsl:apply-templates select="subsection|p|ul|img|screen|screendos|screen5250|todo"/>
     <br/>
   </xsl:template>
 
@@ -262,7 +267,7 @@
         </tr>
       </table>
     </a>
-    <xsl:apply-templates select="subsection|p|ul|img|screen|todo"/>
+    <xsl:apply-templates select="subsection|p|ul|img|screen|screendos|screen5250|todo"/>
     <br/>
   </xsl:template>
 
@@ -277,7 +282,7 @@
   </xsl:template>
 
   <xsl:template match="p">
-    <p class="section"><xsl:apply-templates select="author|code|source|table|ul|br|b|a|text()"/></p>
+    <p class="section"><xsl:apply-templates select="author|code|source|screen|screendos|screen5250|table|ul|br|b|a|text()"/></p>
   </xsl:template>
 
   <xsl:template match="b">
@@ -337,7 +342,7 @@
   </xsl:template>
 
   <xsl:template match="source">
-    <pre><xsl:apply-templates select="text()"/></pre>
+    <pre class="section"><xsl:apply-templates select="text()"/></pre>
   </xsl:template>
 
   <xsl:template match="code">
@@ -351,7 +356,7 @@
         <table width="80%" border="1" cellspacing="0" cellpadding="2" bgcolor="#cccccc">
           <tr>
             <td bgcolor="#cccccc">
-              <xsl:apply-templates select="note|wait|type|read"/>
+              <xsl:apply-templates select="note|wait|type|typenext|read"/>
             </td>
           </tr>
         </table>
@@ -359,6 +364,36 @@
     </p>
   </xsl:template>
   
+  <xsl:template match="screendos">
+    <p class="screendos">
+      <div align="center">
+        <table width="80%" border="1" cellspacing="0" cellpadding="2" bgcolor="#000000">
+          <tr>
+            <td bgcolor="#000000">
+              <xsl:apply-templates select="notedos|waitdos|typedos|typedosnext|readdos"/>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </p>
+  </xsl:template>
+  
+  <xsl:template match="screen5250">
+    <p class="screen5250">
+      <div align="center">
+        <table width="80%" border="1" cellspacing="0" cellpadding="2" bgcolor="#000000">
+          <tr>
+            <td bgcolor="#000000">
+              <xsl:apply-templates select="note5250|wait5250|type5250|type5250next|read5250"/>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </p>
+  </xsl:template>
+  
+  <!-- Unix look -->
+
   <xsl:template match="note">
     <div class="screen">
       <xsl:value-of select="text()"/>
@@ -388,6 +423,20 @@
     <br/>
   </xsl:template>
 
+  <xsl:template match="typenext">
+    <code>
+      <nobr>
+        <em class="screen">        
+          <xsl:text> </xsl:text>
+        </em>
+        <xsl:if test="string-length(text()) > 0">
+          <b class="screen"><xsl:value-of select="text()"/></b>
+        </xsl:if>
+      </nobr>
+    </code>
+    <br/>
+  </xsl:template>
+
   <xsl:template match="read">
     <code>
       <nobr>
@@ -399,6 +448,117 @@
 
   <xsl:template match="enter">
     <b class="screen"><xsl:value-of select="text()"/></b>
+  </xsl:template>
+
+  <!-- DOS/Windows look -->
+
+  <xsl:template match="notedos">
+    <div class="screendos">
+      <xsl:value-of select="text()"/>
+    </div>
+  </xsl:template>
+
+  <xsl:template match="waitdos">
+    <div class="screendos">[...]</div>
+  </xsl:template>
+
+  <xsl:template match="readdos">
+    <code>
+      <nobr>
+        <xsl:apply-templates select="text()|enterdos"/>
+      </nobr>
+    </code>
+    <br/>
+  </xsl:template>
+
+  <xsl:template match="typedos">
+    <code>
+      <nobr>
+        <em class="screendos">
+          <xsl:text>c:\</xsl:text>
+          <xsl:if test="string-length(@dir) > 0">
+            <xsl:text>/</xsl:text>
+            <xsl:value-of select="@dir"/>
+          </xsl:if>
+          <xsl:text>></xsl:text>
+        </em>
+        <xsl:if test="string-length(text()) > 0">
+          <b class="screendos"><xsl:value-of select="text()"/></b>
+        </xsl:if>
+      </nobr>
+    </code>
+    <br/>
+  </xsl:template>
+
+  <xsl:template match="typedosnext">
+    <code>
+      <nobr>
+        <em class="screendos">        
+          <xsl:text> </xsl:text>
+        </em>
+        <xsl:if test="string-length(text()) > 0">
+          <b class="screendos"><xsl:value-of select="text()"/></b>
+        </xsl:if>
+      </nobr>
+    </code>
+    <br/>
+  </xsl:template>
+
+  <xsl:template match="enterdos">
+    <b class="screendos"><xsl:value-of select="text()"/></b>
+  </xsl:template>
+
+  <!-- iSeries/5250 look -->
+
+  <xsl:template match="note5250">
+    <div class="screen5250">
+      <xsl:value-of select="text()"/>
+    </div>
+  </xsl:template>
+
+  <xsl:template match="wait5250">
+    <div class="screen5250">[...]</div>
+  </xsl:template>
+
+  <xsl:template match="read5250">
+    <code>
+      <nobr>
+        <xsl:apply-templates select="text()|enter5250"/>
+      </nobr>
+    </code>
+    <br/>
+  </xsl:template>
+
+  <xsl:template match="type5250">
+    <code>
+      <nobr>
+        <em class="screen5250">
+          <xsl:text>===></xsl:text>
+        </em>
+        <xsl:if test="string-length(text()) > 0">
+          <b class="screen5250"><xsl:value-of select="text()"/></b>
+        </xsl:if>
+      </nobr>
+    </code>
+    <br/>
+  </xsl:template>
+
+  <xsl:template match="type5250next">
+    <code>
+      <nobr>
+        <em class="screen5250">        
+          <xsl:text> </xsl:text>
+        </em>
+        <xsl:if test="string-length(text()) > 0">
+          <b class="screen5250"><xsl:value-of select="text()"/></b>
+        </xsl:if>
+      </nobr>
+    </code>
+    <br/>
+  </xsl:template>
+
+  <xsl:template match="enter5250">
+    <b class="screen5250"><xsl:value-of select="text()"/></b>
   </xsl:template>
 
   <xsl:template match="a">
@@ -501,7 +661,6 @@
           </xsl:if>
           <xsl:value-of select="$anchor"/>
         </xsl:variable>
-
         
         <!--
           Now, we want to set the attribute to contain the "target" variable.
