@@ -55,13 +55,16 @@
  *                                                                           *
  * ========================================================================= */
 
-/***************************************************************************
- * Description: Data marshaling. XDR like                                  *
- * Author:      Costin Manolache
- * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
- ***************************************************************************/
+/**
+ *  Data marshaling. Originally based on Jserv's ajp12 and other similar
+ *  formats. Implements the jk_msg interface. 
+ *
+ *  Will be eventually replaced with XDR or CDR.
+ *
+ * @author:      Gal Shachor <shachor@il.ibm.com>                           
+ * @author:      Henri Gomez <hgomez@slib.fr>                               
+ * @author:      Costin Manolache
+ */
 
 #include "jk_pool.h"
 #include "jk_msg.h"
@@ -70,33 +73,65 @@
 #include "jk_channel.h"
 #include "jk_requtil.h"
 
+/* Signature for the messages sent from Apache to tomcat
+ */
 #define AJP13_WS_HEADER           0x1234
+/* Size of the header ( signature + len )
+ */
 #define AJP_HEADER_LEN            (4)
 #define AJP_HEADER_SZ_LEN         (2)
 
+char *jk_HEX="0123456789ABCDEFX";
+
 /*
- * Simple marshaling code.
+ * Debugging - display the buffer.
  */
 static void jk2_msg_ajp_dump(jk_env_t *env, struct jk_msg *_this,
                              char *err)
 {
-    int i=0;
+    unsigned int i=0;
+    char line[80];
+    char *current;
+    unsigned int j;
+    unsigned int len=_this->len;
+
+    if( len > 1024 ) len=1024;
+    
     env->l->jkLog( env, env->l, JK_LOG_INFO,
                    "%s pos=%d len=%d max=%d \n",
                    err, _this->pos, _this->len, _this->maxlen );
-    
-    env->l->jkLog( env, env->l, JK_LOG_INFO,
-                "%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x \n", 
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++]);
-    env->l->jkLog( env, env->l, JK_LOG_INFO,
-                "%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x \n", 
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++]);
+
+    for( i=0; i< len; i+=16) {
+        current=line;
+/*         I can't believe I did this ! That's the %.4x :-) 
+           *current++= jk_HEX[ ( i & 0xf000 ) >> 12  ]; */
+/*         *current++= jk_HEX[ ( i & 0x0f00 ) >> 8  ]; */
+/*         *current++= jk_HEX[ ( i & 0xf0 ) >> 4 ]; */
+/*         *current++= jk_HEX[ ( i & 0x0f )  ]; */
+        
+        for( j=0; j<16; j++ ) {
+            unsigned char x=(_this->buf[i+j]);
+
+            *current++ = jk_HEX[x >> 4 ];
+            *current++ = jk_HEX[x & 0x0f ];
+            *current++ =' ';
+        }
+        *current++=' ';
+        *current++='-';
+        *current++=' ';
+        for( j=0; j<16; j++ ) {
+            unsigned char x=_this->buf[i+j];
+
+            if( x > 0x20 && x < 0x7F ) {
+                *current++=x;
+            } else {
+                *current++='.';
+            }
+        }
+        *current++='\n';
+        *current++='\0';
+        fprintf( stderr, "%.4x    %s", i, line );
+    }
 }
 
  
