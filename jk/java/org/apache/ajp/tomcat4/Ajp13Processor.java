@@ -441,9 +441,15 @@ final class Ajp13Processor
             try {
                 // set flag
                 handlingRequest.set(true);
-                
+
+                boolean bad_request = false;
+
                 // set up request
-                request.setAjpRequest(ajpRequest);
+                try {
+                    request.setAjpRequest(ajpRequest);
+                } catch (IllegalArgumentException e) {
+                    bad_request = true;
+                }
                 request.setResponse(response);
                 request.setStream(input);
                 
@@ -455,7 +461,11 @@ final class Ajp13Processor
                     logger.log("invoking...");
                 }
 
-                connector.getContainer().invoke(request, response);
+                if (!bad_request) {
+                    connector.getContainer().invoke(request, response);
+                } else {
+                    response.sendError(400);
+                }
 
                 if (debug > 0) {
                     logger.log("done invoking, finishing request/response....");
@@ -468,6 +478,13 @@ final class Ajp13Processor
                     logger.log("finished handling request.");
                 }
 
+            } catch (IOException ioe) {
+                // Normally this catches a socket Broken Pipe caused by the
+                // remote client aborting the request. mod_jk will close the
+                // socket on its side and the processor will get a socket EOF
+                // when it next tries to read from mod_jk, then recycle itself
+                // normally. Don't print the stack trace in this case.
+                logger.log("process: IOException " + ioe.getMessage());
             } catch (Throwable e) {
                 logger.log("process: invoke", e);
             }
