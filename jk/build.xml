@@ -154,6 +154,14 @@
 	       optimize="${optimize}"
 	       verbose="off" >
 	</javac>
+
+	<!-- Copy static resource files -->
+	<copy todir="${jk.build}/WEB-INF/classes">
+	    <fileset dir="../util/java">
+	    	<include name="**/*.properties"/>
+	    </fileset>
+        </copy>
+
 	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-util.jar"
 	     basedir="${jk.build}/WEB-INF/classes" >
             <include name="org/apache/tomcat/util/**" />
