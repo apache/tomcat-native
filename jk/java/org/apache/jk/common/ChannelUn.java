@@ -136,6 +136,10 @@ public class ChannelUn extends JkHandler {
             log.error("No file, disabling unix channel");
             return;
         }
+        if( wEnv.getLocalId() != 0 ) {
+            file=file+ wEnv.getLocalId();
+        }
+        
         if( next==null ) {
             if( nextName!=null ) 
                 setNext( wEnv.getHandler( nextName ) );

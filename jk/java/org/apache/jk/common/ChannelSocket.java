@@ -98,7 +98,9 @@ public class ChannelSocket extends JkHandler {
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( ChannelSocket.class );
 
-    int port=8009;
+    int startPort=8009;
+    int maxPort=8019; // 0 for backward compat.
+    int port=startPort;
     InetAddress inet;
     int serverTimeout;
     boolean tcpNoDelay;
@@ -112,9 +114,18 @@ public class ChannelSocket extends JkHandler {
     public ThreadPool getThreadPool() {
         return tp;
     }
-    
+
+    /** Set the port for the ajp13 channel.
+     *  To support seemless load balancing and jni, we treat this
+     *  as the 'base' port - we'll try up until we find one that is not
+     *  used. We'll also provide the 'difference' to the main coyote
+     *  handler - that will be our 'sessionID' and the position in
+     *  the scoreboard and the suffix for the unix domain socket.
+     */
     public void setPort( int port ) {
+        this.startPort=port;
         this.port=port;
+        this.maxPort=port+10;
     }
 
     public void setAddress(InetAddress inet) {
@@ -153,6 +164,14 @@ public class ChannelSocket extends JkHandler {
 	socketTimeout=i;
     }
 
+    public void setMaxPort( int i ) {
+        maxPort=i;
+    }
+
+    public int getInstanceId() {
+        return port-startPort;
+    }
+    
     /* ==================== ==================== */
     ServerSocket sSocket;
     int socketNote=1;
@@ -160,6 +179,7 @@ public class ChannelSocket extends JkHandler {
     int osNote=3;
 
     public void accept( MsgContext ep ) throws IOException {
+        if( sSocket==null ) return;
         Socket s=sSocket.accept();
         ep.setNote( socketNote, s );
         if(log.isDebugEnabled() )
@@ -176,7 +196,33 @@ public class ChannelSocket extends JkHandler {
     }
 
     public void init() throws IOException {
-        sSocket=new ServerSocket( port );
+        // Find a port.
+        if( maxPort<startPort) maxPort=startPort;
+
+        for( int i=startPort; i<=maxPort; i++ ) {
+            try {
+                sSocket=new ServerSocket( i );
+                port=i;
+                break;
+            } catch( IOException ex ) {
+                log.info("Port busy " + i + " " + ex.toString());
+                continue;
+            }
+        }
+        
+        if( sSocket==null ) {
+            log.error("Can't find free port " + startPort + " " + maxPort );
+            return;
+        }
+        log.info("Init " + port );
+        
+        // If this is not the base port and we are the 'main' channleSocket and
+        // SHM didn't already set the localId - we'll set the instance id
+        if( "channelSocket".equals( name ) &&
+            port != startPort &&
+            (wEnv.getLocalId()==0) ) {
+            wEnv.setLocalId(  port - startPort );
+        }
         if( serverTimeout > 0 )
             sSocket.setSoTimeout( serverTimeout );
 
