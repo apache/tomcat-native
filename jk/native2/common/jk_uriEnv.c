@@ -462,6 +462,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
          */
         uriEnv->suffix      = uri;
         uriEnv->prefix      = NULL;
+        uriEnv->prefix_len  = 0;
         uriEnv->suffix_len  = strlen(uri);
         uriEnv->match_type  = MATCH_TYPE_SUFFIX;
         if( uriEnv->mbean->debug > 0 ) {
