@@ -276,9 +276,10 @@ static int jk2_config_file_readFile(jk_env_t *env,
 
     rc=stat(cfg->file, &statbuf);
     if (rc == -1) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+        /* Don't report it as an error - it's a common case*/
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "config.update(): Can't find config file %s\n", cfg->file );
-        return JK_ERR;
+        return JK_OK;
     }
     
     if( !firstTime && statbuf.st_mtime < cfg->mtime ) {
