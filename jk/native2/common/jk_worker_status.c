@@ -506,6 +506,7 @@ static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
         char *name=env->_objects->nameAt( env, env->_objects, i );
         jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
         char **getAtt=mbean->getAttributeInfo;
+        char **setAtt=mbean->setAttributeInfo;
         
         /* That's a bad name, created for backward compat. It should be deprecated.. */
         if( strchr( name, ':' )==NULL )
