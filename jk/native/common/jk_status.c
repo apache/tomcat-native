@@ -32,6 +32,7 @@
 #include "jk_ajp13_worker.h"
 #include "jk_ajp14_worker.h"
 #include "jk_connect.h"
+#include "jk_uri_worker_map.h"
 
 #define HUGE_BUFFER_SIZE (8*1024)
 
@@ -213,6 +214,28 @@ static const char *status_val_status(int d, int e, int r, int b)
         return "OK";
 }
 
+static const char *status_val_match(unsigned int match)
+{
+    if (match & MATCH_TYPE_DISABLED)
+        return "Disabled";
+    else if (match & MATCH_TYPE_NO_MATCH)
+        return "Unmount";
+    else if (match & MATCH_TYPE_EXACT)
+        return "Exact";
+    else if (match & MATCH_TYPE_CONTEXT)
+        return "Context";
+    else if (match & MATCH_TYPE_CONTEXT_PATH)
+        return "Context Path";
+    else if (match & MATCH_TYPE_SUFFIX)
+        return "Suffix";
+    else if (match & MATCH_TYPE_GENERAL_SUFFIX)
+        return "General Suffix";
+    else if (match & MATCH_TYPE_WILDCHAR_PATH)
+        return "Wildchar";
+    else
+        return "Error";
+}
+
 static void jk_puts(jk_ws_service_t *s, const char *str)
 {
     if (str)
@@ -293,6 +316,28 @@ static int status_bool(const char *param, const char *req)
     }
     return rv;
 }
+
+static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
+                         jk_uri_worker_map_t *uwmap,
+                         const char *worker, jk_logger_t *l)
+{
+    unsigned int i;
+    
+    jk_puts(s, "<tr><td collpan=\"2\">Uri mappings</td></tr>\n");
+    for (i = 0; i < uwmap->size; i++) {
+        uri_worker_record_t *uwr = uwmap->maps[i];
+        if (strcmp(uwr->worker_name, worker))
+            continue;
+        jk_printf(s, "<tr><td><input name=\"mi%d\" type=checkbox", i);
+        if (uwr->s->match_type & MATCH_TYPE_DISABLED)
+            jk_puts(s, " checked");
+        jk_putv(s, ">", status_val_match(uwr->s->match_type),
+                "</td><td>", NULL);
+        jk_puts(s, uwr->uri);
+        jk_puts(s, "</td></tr>\n");
+    }
+}
+
 
 /**
  * Command line reference:
@@ -421,6 +466,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 if (wr->s->is_disabled)
                     jk_puts(s, " checked");
                 jk_puts(s, "></td></tr>\n");
+                display_maps(s, sw, s->uw_map, wr->s->name, l);
 
                 jk_puts(s, "<tr><td colspan=2>&nbsp;</td></tr>\n");
                 jk_puts(s, "<tr><td colspan=2><input type=submit value=\"Update Worker\">");
@@ -453,7 +499,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     jk_puts(s, " checked");
                 jk_puts(s, "></td></tr>\n");
 
-                /* TODO: display uri mappings with checkbox for disable */
+                display_maps(s, sw, s->uw_map, dworker, l);
 
                 jk_puts(s, "<tr><td colspan=2>&nbsp;</td></tr>\n");
                 jk_puts(s, "<tr><td colspan=2><input type=submit value=\"Update Balancer\">");
@@ -494,6 +540,7 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
                           const char *dworker, jk_logger_t *l)
 {
     int i;
+    unsigned int j;
     char buf[1024];
     const char *b;
     lb_worker_t *lb;
@@ -509,6 +556,17 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
             lb->s->recover_wait_time = i;
         lb->s->sticky_session = status_bool("ls", s->query_string);
         lb->s->sticky_session_force = status_bool("lf", s->query_string);
+        for (j = 0; j < s->uw_map->size; j++) {
+            uri_worker_record_t *uwr = s->uw_map->maps[j];
+            if (strcmp(uwr->worker_name, dworker))
+                continue;
+            sprintf(buf, "mi%d", j);
+            if (status_bool(buf, s->query_string))
+                uwr->s->match_type |= MATCH_TYPE_DISABLED;
+            else
+                uwr->s->match_type &= ~MATCH_TYPE_DISABLED;
+                
+        }
     }
     else  {
         int n = status_int("lb", s->query_string, -1);
@@ -552,7 +610,6 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
         if (i > 0)
             wr->s->lb_factor = i;
     }
-
 }
 
 static int status_cmd_type(const char *req)
@@ -598,8 +655,19 @@ static int JK_METHOD service(jk_endpoint_t *e,
         cmd = status_cmd_type(s->query_string);
         if (cmd > 0 && (status_cmd("w", s->query_string, buf, sizeof(buf)) != NULL))
             worker = strdup(buf);
-        if (cmd == 2 && worker)
+        if (cmd == 2 && worker) {
+            /* lock shared memory */
+            jk_shm_lock();
             update_worker(s, p->s_worker, worker, l);
+            /* update modification time to reflect the current config */
+            jk_shm_set_workers_time(time(NULL));
+            /* Since we updated the config no need to reload
+             * on the next request
+             */
+            jk_shm_sync_access_time();
+            /* unlock the shared memory */
+            jk_shm_unlock();
+        }
         /* Step 2: Display configuration */
         display_workers(s, p->s_worker, worker, l);
 
