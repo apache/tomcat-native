@@ -357,26 +357,6 @@ static void *jk2_merge_config(apr_pool_t *p,
 }
 
 
-/** Standard apache callback, initialize jk.
- */
-static void jk2_child_init(apr_pool_t *pconf, 
-                           server_rec *s)
-{
-    jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
-        ap_get_module_config(s->module_config, &jk2_module);
-    jk_env_t *env;
-        
-    if( workerEnv==NULL )
-        workerEnv = serverEnv->workerEnv;
-
-    env=workerEnv->globalEnv;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init\n" );
-    
-    /* jk2_init( pconf, conf, s );
-       do we need jk2_child_init? For ajp14? */
-}
-
 /** Initialize jk, using worker.properties. 
     We also use apache commands ( JkWorker, etc), but this use is 
     deprecated, as we'll try to concentrate all config in
@@ -458,14 +438,39 @@ static int jk2_post_config(apr_pool_t *pconf,
         
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
                   "mod_jk.post_config() second invocation\n" ); 
+
+
+/*     if(!workerEnv->was_initialized) { */
+/*         workerEnv->was_initialized = JK_TRUE;         */
+        
+/*         jk2_init( env, pconf, workerEnv, s ); */
+/*     } */
+    return OK;
+}
+
+/** Standard apache callback, initialize jk.
+ */
+static void jk2_child_init(apr_pool_t *pconf, 
+                           server_rec *s)
+{
+    jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
+        ap_get_module_config(s->module_config, &jk2_module);
+    jk_env_t *env;
+        
+    if( workerEnv==NULL )
+        workerEnv = serverEnv->workerEnv;
+
+    env=workerEnv->globalEnv;
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init %d\n", workerEnv->was_initialized );
     
     if(!workerEnv->was_initialized) {
         workerEnv->was_initialized = JK_TRUE;        
         
         jk2_init( env, pconf, workerEnv, s );
     }
-    return OK;
 }
+
 
 /* ========================================================================= */
 /* The JK module handlers                                                    */
