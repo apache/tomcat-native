@@ -2568,9 +2568,9 @@ static int jk_translate(request_rec * r)
                                 || !strcasecmp(child_dir, "META-INF")) {
                                 if (JK_IS_DEBUG_LEVEL(conf->log))
                                     jk_log(conf->log, JK_LOG_DEBUG,
-                                           "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s",
+                                           "mod_jk::jk_translate, AutoAlias HTTP_NOT_FOUND for URI: %s",
                                            r->uri);
-                                return HTTP_FORBIDDEN;
+                                return HTTP_NOT_FOUND;
                             }
                         }
                     }

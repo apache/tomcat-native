@@ -79,11 +79,11 @@
                                 "Your browser (or proxy) sent a request that "                      \
                                 "this server could not understand.</DL></DD></BODY></HTML>"
 
-#define HTML_ERROR_403          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">"  \
-                                "<HTML><HEAD><TITLE>Access forbidden!!</TITLE></HEAD>"              \
-                                "<BODY><H1>Access forbidden!</H1><DL><DD>\n"                        \
-                                "You don't have permission to access the requested object."         \
-                                "It is either read-protected or not readable by the server.</DL></DD></BODY></HTML>"
+#define HTML_ERROR_404          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">"  \
+                                "<HTML><HEAD><TITLE>Object not found!</TITLE></HEAD>"               \
+                                "<BODY><H1>The requested URL was not found on this server"          \
+                                "</H1><DL><DD>\nIf you entered the URL manually please check your"  \
+                                "spelling and try again.</DL></DD></BODY></HTML>"
 
 
 #define JK_TOLOWER(x)   ((char)tolower((BYTE)(x)))
@@ -337,42 +337,42 @@ static char *status_reason(int status)
         int status;
         char *reason;
     } *r, reasons[] = {
-        { 100, "Continue" }, 
-        { 101, "Switching Protocols" }, 
-        { 200, "OK" }, 
-        { 201, "Created" }, 
-        { 202, "Accepted" }, 
-        { 203, "Non-Authoritative Information" }, 
-        { 204, "No Content" }, 
-        { 205, "Reset Content" }, 
-        { 206, "Partial Content" }, 
-        { 300, "Multiple Choices" }, 
-        { 301, "Moved Permanently" }, 
-        { 302, "Moved Temporarily" }, 
-        { 303, "See Other" }, 
-        { 304, "Not Modified" }, 
-        { 305, "Use Proxy" }, 
-        { 400, "Bad Request" }, 
-        { 401, "Unauthorized" }, 
-        { 402, "Payment Required" }, 
-        { 403, "Forbidden" }, 
-        { 404, "Not Found" }, 
-        { 405, "Method Not Allowed" }, 
-        { 406, "Not Acceptable" }, 
-        { 407, "Proxy Authentication Required" }, 
-        { 408, "Request Timeout" }, 
-        { 409, "Conflict" }, 
-        { 410, "Gone" }, 
-        { 411, "Length Required" }, 
-        { 412, "Precondition Failed" }, 
-        { 413, "Request Entity Too Large" }, 
-        { 414, "Request-URI Too Long" }, 
-        { 415, "Unsupported Media Type" }, 
-        { 500, "Internal Server Error" }, 
-        { 501, "Not Implemented" }, 
-        { 502, "Bad Gateway" }, 
-        { 503, "Service Unavailable" }, 
-        { 504, "Gateway Timeout" }, 
+        { 100, "Continue" },
+        { 101, "Switching Protocols" },
+        { 200, "OK" },
+        { 201, "Created" },
+        { 202, "Accepted" },
+        { 203, "Non-Authoritative Information" },
+        { 204, "No Content" },
+        { 205, "Reset Content" },
+        { 206, "Partial Content" },
+        { 300, "Multiple Choices" },
+        { 301, "Moved Permanently" },
+        { 302, "Moved Temporarily" },
+        { 303, "See Other" },
+        { 304, "Not Modified" },
+        { 305, "Use Proxy" },
+        { 400, "Bad Request" },
+        { 401, "Unauthorized" },
+        { 402, "Payment Required" },
+        { 403, "Forbidden" },
+        { 404, "Not Found" },
+        { 405, "Method Not Allowed" },
+        { 406, "Not Acceptable" },
+        { 407, "Proxy Authentication Required" },
+        { 408, "Request Timeout" },
+        { 409, "Conflict" },
+        { 410, "Gone" },
+        { 411, "Length Required" },
+        { 412, "Precondition Failed" },
+        { 413, "Request Entity Too Large" },
+        { 414, "Request-URI Too Long" },
+        { 415, "Unsupported Media Type" },
+        { 500, "Internal Server Error" },
+        { 501, "Not Implemented" },
+        { 502, "Bad Gateway" },
+        { 503, "Service Unavailable" },
+        { 504, "Gateway Timeout" },
         { 505, "HTTP Version Not Supported" },
         { 000, NULL}
     };
@@ -384,7 +384,7 @@ static char *status_reason(int status)
         else
             r++;
     return "No Reason";
-} 
+}
 
 static int escape_url(const char *path, char *dest, int destsize)
 {
@@ -775,8 +775,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 jk_log(logger, JK_LOG_EMERG,
                        "[%s] contains forbidden escape sequences.",
                        uri);
-                write_error_response(pfc, "403 Forbidden",
-                                     HTML_ERROR_403);
+                write_error_response(pfc, "404 Not Found",
+                                     HTML_ERROR_404);
                 return SF_STATUS_REQ_FINISHED;
             }
             getparents(uri);
@@ -830,8 +830,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                        "[%s] points to the web-inf or meta-inf directory.\nSomebody try to hack into the site!!!",
                        uri);
 
-                write_error_response(pfc, "403 Forbidden",
-                                     HTML_ERROR_403);
+                write_error_response(pfc, "404 Not Found",
+                                     HTML_ERROR_404);
                 return SF_STATUS_REQ_FINISHED;
             }
 
@@ -1085,14 +1085,14 @@ static int init_jk(char *serverName)
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
     }
-     /* Simulate shared memory 
+     /* Simulate shared memory
       * For now use fixed size.
       */
      jk_shm_open(NULL, JK_SHM_DEF_SIZE, logger);
 
      /* 10 is minimum supported on WINXP */
      jk_set_worker_def_cache_size(10);
- 
+
     /* Logging the initialization type: registry or properties file in virtual dir
      */
     if (JK_IS_DEBUG_LEVEL(logger)) {

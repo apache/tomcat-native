@@ -2122,9 +2122,9 @@ static int jk_translate(request_rec * r)
                             if (!strcasecmp(child_dir, "WEB-INF") ||
                                 !strcasecmp(child_dir, "META-INF")) {
                                 jk_log(l, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias FORBIDDEN for URI: %s",
+                                       "mod_jk::jk_translate, AutoAlias HTTP_NOT_FOUND for URI: %s",
                                        r->uri);
-                                return FORBIDDEN;
+                                return HTTP_NOT_FOUND;
                             }
                         }
                     }
