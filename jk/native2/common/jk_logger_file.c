@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -149,7 +149,6 @@ int jk2_logger_file_parseLogLevel(jk_env_t *env, const char *level)
     return JK_LOG_DEBUG_LEVEL;
 }
 
-
 static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
 {
     FILE *oldF=(FILE *)_this->logger_private;
@@ -240,7 +239,23 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
     if(l->logger_private==NULL ||
        l->level <= level) {
         char *f = (char *)(file + strlen(file) - 1);
+        char *slevel;
+        switch (level){
+            case JK_LOG_INFO_LEVEL : 
+                slevel=JK_LOG_INFO_VERB;
+                break;
+            case JK_LOG_ERROR_LEVEL : 
+                slevel=JK_LOG_ERROR_VERB;
+                break;
+            case JK_LOG_EMERG_LEVEL : 
+                slevel=JK_LOG_EMERG_VERB;
+                break;
+            case JK_LOG_DEBUG_LEVEL : 
+            default:
+                slevel=JK_LOG_DEBUG_VERB;
+                break;
 
+        }
         while(f != file && '\\' != *f && '/' != *f) {
             f--;
         }
@@ -250,7 +265,7 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
         
         /* XXX or apr_ctime ? */
         apr_rfc822_date( rfctime, time );
-        fmt1=apr_psprintf( aprPool, "[%s] [%s:%d] %s", rfctime, f, line, fmt );
+        fmt1=apr_psprintf( aprPool, "[%s] (%5s) [%s:%d]  %s", rfctime, slevel, f, line, fmt );
         buf=apr_pvsprintf( aprPool, fmt1, args );
 
         l->log(env, l, level, buf);
