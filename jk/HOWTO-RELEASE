@@ -154,6 +154,10 @@ Create a tar gzip'd archive
 
 tar zcf jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz jakarta-tomcat-connectors-jk-1.2.5-src
 
+Create a zip archive
+
+zip -r jakarta-tomcat-connectors-jk-1.2.5-src.zip jakarta-tomcat-connectors-jk-1.2.5-src
+
 Sign the release using PGP. Here is an example using gpg:
 
 gpg -abs -o jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz.asc jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz
