@@ -210,36 +210,14 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
 
     public MessageBytes remoteAddr() {
 	if( remoteAddrMB.isNull() ) {
-	    try {
-		remoteAddrMB.duplicate(coyoteRequest.remoteAddr());
-	    } catch(IOException iex) { // can't happen
-	    }
-	}
-	if( remoteAddrMB.isNull() ) {
 	    coyoteRequest.action( ActionCode.ACTION_REQ_HOST_ATTRIBUTE, coyoteRequest );
-	    try{
-		remoteAddrMB.duplicate( coyoteRequest.remoteAddr() );
-		remoteHostMB.duplicate( coyoteRequest.remoteHost() );
-	    } catch(IOException iex) { // can't happen
-	    }
 	}
 	return remoteAddrMB;
     }
 
     public MessageBytes remoteHost() {
 	if( remoteHostMB.isNull() ) {
-	    try {
-		remoteHostMB.duplicate(coyoteRequest.remoteHost());
-	    } catch(IOException iex) { // can't happen
-	    }
-	}
-	if( remoteHostMB.isNull() ) {
 	    coyoteRequest.action( ActionCode.ACTION_REQ_HOST_ATTRIBUTE, coyoteRequest );
-	    try{
-		remoteAddrMB.duplicate( coyoteRequest.remoteAddr() );
-		remoteHostMB.duplicate( coyoteRequest.remoteHost() );
-	    } catch(IOException iex) { // can't happen
-	    }
 	}
 	return remoteHostMB;
     }
