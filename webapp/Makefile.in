@@ -116,6 +116,9 @@ lib-build:
 lib-clean:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/lib" SUBT="clean" subdir
 
+ant-build:
+	@$(ANT) -buildfile "$(SRC_DIR)/build.xml" init $(ANT_TGT)
+
 apr-build: $(LIB_DIR)
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="all" subdir
 	$(LIBTOOL) --mode=install \
