@@ -521,7 +521,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
         ci = context_find_base(c, cname);
 
         if (! ci) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb - unknow context %s\n", cname);
+            jk_log(l, JK_LOG_ERROR, "Warning ajp14_marshal_context_state_into_msgb - unknown context %s\n", cname);
             return JK_FALSE;
         }
 
@@ -529,8 +529,8 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
          * CONTEXT CSTRING
          */
 
-        if (jk_b_append_string(msg, c->contexts[i]->cbase )) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb - Error appending the context string\n");
+        if (jk_b_append_string(msg, cname )) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb - Error appending the context string %s\n", cname);
             return JK_FALSE;
         }
     }
