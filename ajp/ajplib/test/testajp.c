@@ -256,12 +256,8 @@ int main(int argc, const char * const * argv, const char * const *env)
     ajp_msg_dump(msg, "");
 #endif
     {
-        /* XXX we will need a function for this */
-        apr_byte_t t;
-        /* Get Type */
-        ajp_msg_get_byte(msg, &t);
-        fprintf(stdout, "Message Len Type %d should be (SC_BODY_CHUNK 3)\n", t);
-        ajp_msg_get_string(msg, &buf);
+        apr_uint16_t blen;
+        ajp_parse_data(r, msg, &blen, &buf);
         fputs(buf, stdout);
     }
     /* 6. Release the connection            */
