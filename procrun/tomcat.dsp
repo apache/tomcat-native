@@ -85,7 +85,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib shlwapi.lib /nologo /subsystem:windows /debug /machine:IX86 /out:"bin\tomcatw.exe" /pdbtype:sept /opt:ref /opt:icf
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib shlwapi.lib /nologo /subsystem:windows /debug /machine:IX86 /out:"bin\tomcatw.exe" /pdbtype:sept /opt:ref /opt:icf
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib shlwapi.lib /nologo /subsystem:windows /machine:IX86 /out:"bin\tomcatw.exe" /pdbtype:sept /opt:ref /opt:icf
+# SUBTRACT LINK32 /debug
 
 !ELSEIF  "$(CFG)" == "tomcat - Win32 Debug CONSOLE"
 
@@ -101,7 +102,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "_WIN32" /D "WIN32" /D "_DEBUG" /D "_DEBUG_TRACE" /D "_CONSOLE" /D "STRICT" /D _WIN32_WINNT=0x0400 /D "PROCRUN_CONSOLE" /D "_MBCS" /GZ PRECOMP_VC7_TOBEREMOVED /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "_WIN32" /D "WIN32" /D "_DEBUG" /D "_DEBUG_TRACE" /D "_CONSOLE" /D "STRICT" /D _WIN32_WINNT=0x0400 /D "PROCRUN_CONSOLE" /D "_MBCS" /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "_WIN32" /D "WIN32" /D "_DEBUG" /D "_DEBUG_TRACE" /D "_CONSOLE" /D "STRICT" /D _WIN32_WINNT=0x0400 /D "PROCRUN_CONSOLE" /D "_MBCS" /D "PROCRUN_EXTENDED" /GZ /c
 # ADD BASE MTL /nologo /win32
 # ADD MTL /nologo /win32
 # ADD BASE RSC /l 0x409
@@ -129,17 +130,18 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /Zi /O2 /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "_WIN32" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "STRICT" /D _WIN32_WINNT=0x0400 /D "PROCRUN_CONSOLE" /D "_MBCS" /GF PRECOMP_VC7_TOBEREMOVED /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "_WIN32" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "STRICT" /D _WIN32_WINNT=0x0400 /D "PROCRUN_CONSOLE" /D "_MBCS" /D "PROCRUN_EXTEND" /GF /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "_WIN32" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "STRICT" /D _WIN32_WINNT=0x0400 /D "PROCRUN_CONSOLE" /D "_MBCS" /D "PROCRUN_EXTENDED" /GF /c
 # ADD BASE MTL /nologo /win32
 # ADD MTL /nologo /win32
 # ADD BASE RSC /l 0x409
-# ADD RSC /l 0x409 /d "PROCRUN_EXTENDED"
+# ADD RSC /l 0x409 /d "PROCRUN_EXTENDED" /d "PROCRUN_CONSOLE"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib shlwapi.lib /nologo /subsystem:console /debug /machine:IX86 /out:"bin\tomcat.exe" /pdbtype:sept /opt:ref /opt:icf
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib shlwapi.lib /nologo /subsystem:console /debug /machine:IX86 /out:"bin\tomcat.exe" /pdbtype:sept /opt:ref /opt:icf
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib shlwapi.lib /nologo /subsystem:console /machine:IX86 /out:"bin\tomcat.exe" /pdbtype:sept /opt:ref /opt:icf
+# SUBTRACT LINK32 /debug
 
 !ELSEIF  "$(CFG)" == "tomcat - Win32 DebugDLL"
 
