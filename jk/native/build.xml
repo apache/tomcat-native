@@ -49,15 +49,51 @@
 	<include name="common/jk_map.c" />
 	<include name="common/jk_util.c" />
 	<include name="common/jk_pool.c" />
+        <include name="common/jk_nwmain.c" if="netware" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
 	<include name="${java.home}/../include" />
-	<include name="${apache2.home}/include" />
+	<include name="${build.compiler.base}/include" />
+        
+        <!-- Platform specific includes -->
+	<include name="${novellndk.dir}/include/nlm" if="netware" />
+	<include name="${novellndk.dir}/include" if="netware" />
+        <include name="${java.home}/../include/netware" if="netware" />
+        
+        <include name="${java.home}/../include/win32" if="win32" />
       </includes>
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
       </depends>
+      
+      <!-- Platform-specific tags -->
+      <def name="N_PLAT_NLM" if="netware"
+	   info="Building for NetWare platform" />
+      <def name="NETWARE" if="netware"
+	   info="Building for NetWare platform" />
+      <def name="XP_NETWARE" if="netware"
+	   info="Building for NetWare platform" />
+           
+      <import fileName="${novellndk.dir}/imports/clib.imp" if="netware" />
+      <import fileName="${novellndk.dir}/imports/lib0.imp" if="netware" />
+      <import fileName="${novellndk.dir}/imports/nlmlib.imp" if="netware" />
+      <import fileName="${novellndk.dir}/imports/threads.imp" if="netware" />
+      <import fileName="${novellndk.dir}/imports/socklib.imp" if="netware" />
+      <export fileName="jk_jnicb.exp" if="netware" />
+      <linkOpt value="-desc &quot;JNI Natives for Tomcat&quot;" if="netware" />
+      <linkOpt value="-screenname &quot;System Console&quot;" if="netware" />
+      <linkOpt value="-nlmversion 1,20,2" if="netware" />
+      <linkOpt value="-threadname &quot;JK_JNI Thread&quot;" if="netware" />
+      <linkOpt value="-stacksize 64000" if="netware" />
+      
+      <def name="WIN32" if="win32" />
+      <def name="NDEBUG" if="win32"  />
+      <def name="_WINDOWS" if="win32" />
+      <def name="_MBCS" if="win32" />
+      <def name="_USRDLL" if="win32" />
+      <def name="JNI_CONNECT_EXPORTS" if="win32" />
+      <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
     </so>
   </target>
 
@@ -103,7 +139,6 @@
       <src dir=".">
 	<include name="apache-1.3/mod_jk.c" />
 	<include name="common/*.c" />
-        <exclude name="common/jk_jni_worker.c" />
         <exclude name="jk_nwmain.c" 
 		 unless="netware" />
       </src>
@@ -112,12 +147,14 @@
 	<include name="${build.compiler.base}/include" />
 	<include name="${apache13.home}/include/apache" />
 	<include name="${apache13.home}/include" />
+	<include name="${java.home}/../include" />
 
         <!-- Platform specific includes -->
 	<include name="${apache13.home}/os/netware" if="netware" />
 	<include name="${novellndk.dir}/include/nlm" if="netware" />
 	<include name="${novellndk.dir}/include" if="netware" />
 	<include name="${novellndk.dir}/include/winsock" if="netware" />
+        <include name="${java.home}/../include/netware" if="netware" />
                  
 	<include name="${apache13.home}/os/win32" if="win32" />
         <include name="${java.home}/../include/win32" if="win32" />
@@ -172,23 +209,6 @@
     </so>
   </target>
 
-  <target name="clean" >
-    <delete >
-      <fileset dir=".">
-	<include name="**/*.o"/>
-	<include name="**/*.so"/>
-	<include name="**/*.lo"/>
-	<include name="**/*.la"/>
-	<include name="**/.libs"/>
-	<include name="**/*.nlm"/>
-	<include name="**/*.map"/>
-	<include name="**/*.sym"/>
-	<include name="**/*.obj"/>
-	<include name="**/*.dll"/>
-      </fileset>
-    </delete>
-  </target>
-
   <target name="iis" depends="init">
       <so sofile="isapi_redirector" 
             buildDir="iis"
@@ -229,6 +249,101 @@
         <export symbol="TerminateExtension"/>
         <linkOpt value="/libpath:${build.compiler.base}/lib" if="win32" />
      </so>
+  </target>
+
+  <target name="netscape" depends="init">
+    <so sofile="nsapi_redirector" 
+	buildDir="netscape"
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	profile="${so.profile}">
+      <apacheConfig apxs="${apxs13}" />
+
+      <src dir=".">
+	<include name="netscape/jk_nsapi_plugin.c" />
+	<include name="common/*.c" />
+        <exclude name="jk_nwmain.c" 
+		 unless="netware" />
+      </src>
+      <includes>
+	<include name="${native.dir}/common" />
+	<include name="${build.compiler.base}/include" />
+	<include name="${netscape.home}/include" />
+	<include name="${java.home}/../include" />
+
+        <!-- Platform specific includes -->
+	<include name="${novellndk.dir}/include/nlm" if="netware" />
+	<include name="${novellndk.dir}/include" if="netware" />
+        <include name="${java.home}/../include/netware" if="netware" />
+                 
+	<include name="${apache13.home}/os/win32" if="win32" />
+        <include name="${java.home}/../include/win32" if="win32" />
+        <include name="${native.dir}/common" if="win32" />
+      </includes>
+      <depends>
+	<fileset dir="${native.dir}/common" includes="*.h" />
+      </depends>
+
+      <!-- Platform-specific tags -->
+      <def name="N_PLAT_NLM" if="netware"
+	   info="Building for NetWare platform" />
+      <def name="NETWARE" if="netware"
+	   info="Building for NetWare platform" />
+      <def name="XP_NETWARE" if="netware"
+	   info="Building for NetWare platform" />
+      <def name="USE_SPRINTF" if="netware"
+	   info="Use the sprintf function to build strings" />
+           
+      <def name="WIN32" if="win32" />
+      <def name="NDEBUG" if="win32"  />
+      <def name="_WINDOWS" if="win32" />
+      <def name="_MBCS" if="win32" />
+      <def name="_USRDLL" if="win32" />
+      <def name="XP_WIN32" if="win32" />
+      <def name="NSAPI_EXPORTS" if="win32" />
+      
+      <nlmmodule value="nshttpd" if="netware" />
+      <import fileName="${novellndk.dir}/imports/clib.imp" if="netware" />
+      <import fileName="${novellndk.dir}/imports/lib0.imp" if="netware" />
+      <import fileName="${novellndk.dir}/imports/nlmlib.imp" if="netware" />
+      <import fileName="${novellndk.dir}/imports/threads.imp" if="netware" />
+      <import fileName="${novellndk.dir}/imports/socklib.imp" if="netware" />
+      <import fileName="${netscape.home}/imports/nsapi.imp" if="netware" />
+      <export symbol="jk_init" if="netware" />
+      <export symbol="jk_service" if="netware" />
+      <linkOpt value="-desc &quot;Netscape Plugin for Tomcat&quot;" if="netware" />
+      <linkOpt value="-screenname &quot;System Console&quot;" if="netware" />
+      <linkOpt value="-nlmversion 1,20,2" if="netware" />
+      <linkOpt value="-threadname &quot;NSTomcat Thread&quot;" if="netware" />
+      <linkOpt value="-stacksize 64000" if="netware" />
+      
+      <import fileName="ns-httpd36.lib" if="win32" />
+      <import fileName="wsock32.lib" if="win32" />
+      <import fileName="kernel32.lib" if="win32" />
+      <import fileName="user32.lib" if="win32" />
+      <import fileName="gdi32.lib" if="win32" />
+      <import fileName="winspool.lib" if="win32" />
+      <import fileName="comdlg32.lib" if="win32" />
+      <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
+      <linkOpt value="/libpath:&quot;${netscape.home}/lib&quot;" if="win32" />
+    </so>
+  </target>
+
+  <target name="clean" >
+    <delete >
+      <fileset dir=".">
+	<include name="**/*.o"/>
+	<include name="**/*.so"/>
+	<include name="**/*.lo"/>
+	<include name="**/*.la"/>
+	<include name="**/.libs"/>
+	<include name="**/*.nlm"/>
+	<include name="**/*.map"/>
+	<include name="**/*.sym"/>
+	<include name="**/*.obj"/>
+	<include name="**/*.dll"/>
+      </fileset>
+    </delete>
   </target>
 
 </project>
