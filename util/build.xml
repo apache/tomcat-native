@@ -1,6 +1,9 @@
 <project name="tomcat-util" default="build-main" basedir=".">
 
     <!-- ===================== Initialize Property Values =================== -->
+    <property file="build.properties"/>
+    <property file="${user.home}/build.properties"/>
+
     <property name="tomcat-util.build" value="${basedir}/build"/>
 
     <target name="build-prepare">
