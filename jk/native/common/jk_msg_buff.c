@@ -39,11 +39,15 @@ struct jk_msg_buf_t
     int maxlen;
 };
 
+static char *jk_HEX = "0123456789ABCDEFX";
 
 /*
  * Simple marshaling code.
  */
 
+/* Deprecated: We need smarter way for that.
+   Do not use stderr for logging
+ */
 #if defined(DEBUG) || defined(_DEBUG)
 static void jk_b_dump(jk_msg_buf_t *msg, char *err)
 {
@@ -388,12 +392,50 @@ void jk_dump_buff(jk_logger_t *l,
                   int line, const char *funcname,
                   int level, char *what, jk_msg_buf_t *msg)
 {
-#ifdef USE_ALSO_BODY
-    jk_log(l, file, line, funcname, level, "%s #%d %.*s\n",
-           what, jk_b_get_len(msg), jk_b_get_len(msg), jk_b_get_buff(msg));
-#else
-    jk_log(l, file, line, funcname, level, "%s #%d\n", what, jk_b_get_len(msg));
-#endif
+    int i = 0;
+    char lb[80];
+    char *current;
+    int j;
+    int len = msg->len;
+
+    if (l->level == JK_LOG_DEBUG_LEVEL) {
+        len = 0;
+    }
+    else if (len > 1024)
+        len = 1024;
+
+    jk_log(l, file, line, funcname, level,
+           "%s pos=%d len=%d max=%d \n",
+           what, msg->pos, msg->len, msg->maxlen);
+
+    for (i = 0; i < len; i += 16) {
+        current = &lb[0];
+
+        for (j = 0; j < 16; j++) {
+            unsigned char x = (msg->buf[i + j]);
+
+            *current++ = jk_HEX[x >> 4];
+            *current++ = jk_HEX[x & 0x0f];
+            *current++ = ' ';
+        }
+        *current++ = ' ';
+        *current++ = '-';
+        *current++ = ' ';
+        for (j = 0; j < 16; j++) {
+            unsigned char x = msg->buf[i + j];
+
+            if (x > 0x20 && x < 0x7F) {
+                *current++ = x;
+            }
+            else {
+                *current++ = '.';
+            }
+        }
+        *current++ = '\n';
+        *current++ = '\0';
+            jk_log(l, file, line, funcname, level,
+                   "%.4x    %s", i, line);
+    }
 }
 
 
