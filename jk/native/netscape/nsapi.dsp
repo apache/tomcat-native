@@ -164,6 +164,14 @@ SOURCE=..\common\jk_util.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_registry.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_env.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_worker.c
 # End Source File
 # End Group
@@ -260,7 +268,7 @@ SOURCE=..\common\jk_worker.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\jk_worker_list.h
+SOURCE=..\common\jk_env.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
