@@ -100,7 +100,7 @@ import java.util.*;
 public class SoTask extends Task {
     protected String apxs;
     // or FileSet ?
-    protected FileSet src;
+    protected Vector src; //[FileSet]
     protected PatternSet includes;
     protected Path depends;
     protected Path libs;
@@ -120,8 +120,8 @@ public class SoTask extends Task {
     protected Vector modules = new Vector();    // used by the NetWare linker
 
     // Computed fields 
-    protected Vector compileList;
-    protected String srcList[];
+    protected Vector compileList; // [Source]
+    protected Vector srcList=new Vector();
     protected CompilerAdapter compiler;
     protected GlobPatternMapper co_mapper;
     
@@ -158,6 +158,7 @@ public class SoTask extends Task {
 	so.srcList=srcList;
 	so.compileList=compileList;
 	so.compiler=compiler;
+	so.co_mapper=co_mapper;
     }
 
     /**  @deprecated use setTarget
@@ -275,7 +276,8 @@ public class SoTask extends Task {
      * @return a nested src element.
      */
     public void addSrc(FileSet fl) {
-	src=fl;
+	if( src==null ) src=new Vector();
+	src.addElement(fl);
     }
 
     /**
@@ -389,6 +391,14 @@ public class SoTask extends Task {
 	    // 		return cc;
 	    // 	    }
 	}
+
+	String cc=project.getProperty("build.compiler.cc");
+	if( "gcj".equals( cc ) ) {
+	    linkerAdapter=new GcjLinker();
+	    linkerAdapter.setSoTask( this );
+	    return linkerAdapter;
+	}
+
 	
 	linkerAdapter=new LibtoolLinker(); 
 	linkerAdapter.setSoTask( this );
@@ -399,37 +409,45 @@ public class SoTask extends Task {
     public void findSourceFiles() {
 	if (buildDir == null) buildDir = project.getBaseDir();
 
-	DirectoryScanner ds=src.getDirectoryScanner( project );
-	srcList= ds.getIncludedFiles(); 
-	if (srcList.length == 0) 
-            throw new BuildException("No source files");
+	Enumeration e=src.elements();
+	while( e.hasMoreElements() ) {
+	    FileSet fs=(FileSet)e.nextElement();
+	    DirectoryScanner ds=fs.getDirectoryScanner( project );
+	    String localList[]= ds.getIncludedFiles(); 
+	    if (localList.length == 0) 
+		throw new BuildException("No source files ");
+	    for( int i=0; i<localList.length; i++ ) {
+		srcList.addElement( new Source( fs.getDir(project), localList[i]));
+	    }
+	}
     }
  
     public void findCompileList() throws BuildException {
 	findSourceFiles();
 	compileList=new Vector();
 
-	File baseDir=src.getDir( project );
+        for (int i = 0; i < srcList.size(); i++) {
+	    Source source=(Source)srcList.elementAt(i);
+	    File srcFile=source.getFile();
 	
-        for (int i = 0; i < srcList.length; i++) {
-	    File srcFile = new File( baseDir, srcList[i]);
             if (!srcFile.exists()) {
                 throw new BuildException("Source \"" + srcFile.getPath() +
                                          "\" does not exist!", location);
             }
 
 	    // Check the dependency
-	    if( needCompile( srcFile, buildDir ) ) 
-		compileList.addElement( srcFile );
+	    if( needCompile( source ) ) 
+		compileList.addElement( source );
 	}
 
 	if( checkDepend() ) {
 	    log("Dependency expired, removing .o files and doing a full build ");
 	    removeOFiles();
 	    compileList=new Vector();
-	    for(int i=0; i<srcList.length; i++ ) {
-		File srcFile = (File)project.resolveFile(srcList[i]);
-		compileList.addElement( srcFile );
+	    for(int i=0; i<srcList.size(); i++ ) {
+		Source source=(Source)srcList.elementAt(i);
+		File srcFile = source.getFile();
+		compileList.addElement( source );
 	    }
 	}
     }
@@ -443,19 +461,18 @@ public class SoTask extends Task {
      *
      *  XXX Hack makedepend somehow into this.
      */
-    public boolean needCompile( File srcF, File oDir ) {
+    public boolean needCompile( Source source ) {
 	// For each .c file we'll have a .o file in the build dir,
 	// with the same name.
+	File srcF = source.getFile();
 	if( !srcF.exists() )
 	    return false;
 
-	String name=srcF.getName();
-	String targetNA[]=co_mapper.mapFileName( name );
-	if( targetNA==null )
+	String targetName=source.getTargetFile( co_mapper );
+	if( targetName==null )
 	    return true; // strange, probably different extension ?
-	File target=new File( oDir, targetNA[0] );
-	//     System.out.println("XXX " + name + " " + targetNA[0]
-	// 	   + target.exists());
+	File target=new File( buildDir, targetName );
+	//	System.out.println("XXX " + target );
 	if( ! target.exists() )
 	    return true;
 	if( oldestO > target.lastModified() ) {
@@ -474,8 +491,9 @@ public class SoTask extends Task {
 	findSourceFiles();
 	compileList=new Vector();
 
-        for (int i = 0; i < srcList.length; i++) {
-	    File srcFile = (File)project.resolveFile(srcList[i]);
+        for (int i = 0; i < srcList.size(); i++) {
+	    Source srcF=(Source)srcList.elementAt(i);
+	    File srcFile = srcF.getFile();
 
 	    String name=srcFile.getName();
 	    String targetNA[]=co_mapper.mapFileName( name );
