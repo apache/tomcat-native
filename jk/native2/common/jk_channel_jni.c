@@ -129,6 +129,11 @@ static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
     jk_channel_t *jniW=jniWB->object;
     jk_workerEnv_t *wEnv=jniW->workerEnv;
 
+    if (wEnv->childId != 0) {
+        if( jniW->worker != NULL )
+            jniW->worker->mbean->disabled=JK_TRUE;
+        return JK_ERR;
+    }
     if( wEnv->vm == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.init() no VM found\n" );
@@ -628,11 +633,6 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
 
 
     wEnv = env->getByName( env, "workerEnv" );
-    if (wEnv->childId != 0) {
-        result->disabled = 1;		      
-        return JK_OK;
-    }
-
     ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
     ch->recv= jk2_channel_jni_recv;

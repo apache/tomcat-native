@@ -193,14 +193,18 @@ static void jk2_jni_error_hook(int code)
 {
     jk2_jni_error_signaled = JK_TRUE;
     jk2_jni_error_code = code;
-    
+
+#ifdef DEBUG    
     fprintf(stderr, "JVM error hook called %d\n", code);
+#endif
 }
 
 static void jk2_jni_abort_hook()
 {
     jk2_jni_abort_signaled = JK_TRUE;    
+#ifdef DEBUG
     fprintf(stderr, "JVM abort hook\n");
+#endif
 } 
 
 /** Load the VM. Must be called after init.
@@ -276,7 +280,8 @@ static void *jk2_vm_attach(jk_env_t *env, jk_vm_t *jkvm)
     int err;
     JavaVM *jvm = (JavaVM *)jkvm->jvm;
     
-     if( jvm == NULL ) return NULL;
+     if (jvm == NULL || jk2_jni_abort_signaled)
+         return NULL;
     
 #if defined LINUX && defined APACHE2_SIGHACK
     /* [V] This message is important. If there are signal mask issues,    *
@@ -324,7 +329,7 @@ static void jk2_vm_detach(jk_env_t *env, jk_vm_t *jkvm)
     int err;
     JavaVM *jvm = (JavaVM *)jkvm->jvm;
     
-    if( jvm == NULL ) {
+    if (jvm == NULL || jk2_jni_abort_signaled) {
         return;
     }
 
@@ -608,7 +613,7 @@ static void jk2_vm_destroy(jk_env_t *env, jk_vm_t *jkvm)
     int err;
     JavaVM *jvm = (JavaVM *)jkvm->jvm;
     
-    if( jvm == NULL ) {
+    if (jvm == NULL || jk2_jni_abort_signaled) {
         return;
     }
 

@@ -234,6 +234,15 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
         return JK_ERR;
     }
     
+    /* Allow only the first child to execute the worker */
+    if (_this->workerEnv->childId != 0) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "workerJni.Init() Skipping initialization for the %d %d\n",
+                      _this->workerEnv->childId, 
+                      _this->workerEnv->childProcessId);
+        return JK_ERR;
+    }
+
     props=_this->workerEnv->initData;
     jniWorker = _this->worker_private;
     
@@ -462,15 +471,6 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     }
 
     wEnv = env->getByName( env, "workerEnv" );
-    /* Allow only the first child to execute the worker */
-    if (wEnv->childId != 0) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "workerJni.factory() Skipping initialization for the %d %d\n",
-                      wEnv->childId, wEnv->childProcessId);
-        result->disabled = 1;		      
-        return JK_OK;
-    }
-
 
     /* No singleton - you can have multiple jni workers,
      running different bridges or starting different programs inprocess*/
