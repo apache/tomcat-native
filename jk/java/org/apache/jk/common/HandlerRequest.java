@@ -251,6 +251,14 @@ public class HandlerRequest extends JkHandler
         return tomcatAuthentication;
     }
 
+    public void setShutdownEnabled(boolean se) {
+        shutdownEnabled = se;
+    }
+
+    public boolean getShutdownEnabled() {
+        return shutdownEnabled;
+    }
+
     public void setTomcatAuthentication(boolean newTomcatAuthentication) {
         tomcatAuthentication = newTomcatAuthentication;
     }
@@ -324,6 +332,7 @@ public class HandlerRequest extends JkHandler
     boolean decoded=true;
     boolean tomcatAuthentication=true;
     boolean registerRequests=true;
+    boolean shutdownEnabled=false;
     
     public int invoke(Msg msg, MsgContext ep ) 
         throws IOException
@@ -399,9 +408,14 @@ public class HandlerRequest extends JkHandler
 	    if( !ch.isSameAddress(ep) ) {
 		log.error("Shutdown request not from 'same address' ");
 		return ERROR;
-	    }
+            }
 
+            if( !shutdownEnabled ) {
+                log.warn("Ignoring shutdown request: shutdown not enabled");
+                return ERROR;
+            }
             // forward to the default handler - it'll do the shutdown
+            checkRequest(ep);
             next.invoke( msg, ep );
 
             log.info("Exiting");
@@ -429,10 +443,7 @@ public class HandlerRequest extends JkHandler
 
     static int count = 0;
 
-    private int decodeRequest( Msg msg, MsgContext ep, MessageBytes tmpMB )
-        throws IOException
-    {
-        // FORWARD_REQUEST handler
+    private Request checkRequest(MsgContext ep) {
         Request req=(Request)ep.getRequest();
         if( req==null ) {
             req=new Request();
@@ -440,9 +451,17 @@ public class HandlerRequest extends JkHandler
             req.setResponse(res);
             ep.setRequest( req );
             if( registerRequests ) {
-		ep.getSource().registerRequest(req, ep, count++);
+                ep.getSource().registerRequest(req, ep, count++);
             }
         }
+        return req;
+    }
+
+    private int decodeRequest( Msg msg, MsgContext ep, MessageBytes tmpMB )
+        throws IOException
+    {
+        // FORWARD_REQUEST handler
+        Request req = checkRequest(ep);
 
 	RequestInfo rp = req.getRequestProcessor();
 	rp.setStage(Constants.STAGE_PARSE);
