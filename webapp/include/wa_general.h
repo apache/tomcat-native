@@ -56,17 +56,12 @@
  * ========================================================================= */
 
 /**
- * @package General
+ * @package Main
  * @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
  * @version $Id$
  */
 #ifndef _WA_GENERAL_H_
 #define _WA_GENERAL_H_
-
-/**
- * A freakin' int.
- */
-extern int errno;
 
 /**
  * The WebApp Library connection structure.
