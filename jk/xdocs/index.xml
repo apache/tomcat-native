@@ -108,7 +108,7 @@ But it would be possible to implement the <b>WARP</b> protocol in
 <b>JK2</b> ;-))
 </p>
 <p>
-The disadvantage is that it requires the <b>Apache Portable Library</b>
+The disadvantage is that it requires the <b>Apache Portable Runtime</b>
 which is still only easily available via Apache 2.0 and that it didn't support
 webservers like IIS, NES/iPlanet or Domino.
 </p>
