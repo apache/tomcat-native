@@ -13,13 +13,27 @@
 
   <target name="dist" 
           description="Compile jtc distribution" depends="build,javadoc">
-    <copy file="LICENSE" todir="${dist.dir}" />
-    <copy file="README.txt" todir="${dist.dir}" />
-    <copy file="RELEASE-NOTES.txt" todir="${dist.dir}" />
-
-    <copy todir="${dist.dir}/doc">
-     <fileset dir="doc" includes="**" />
+    <copy todir="${dist.dir}" >
+      <fileset dir="." >
+        <include name="LICENSE" />
+        <include name="build.xml" />
+        <include name="build.properties.default" />
+        <include name="README.txt" />
+        <include name="RELEASE-NOTES.txt" />
+        <include name="doc/**" />
+      </fileset>
     </copy>
+
+    <jar file="${dist.dir}/tomcat-connectors-src.jar">
+       <fileset dir="." includes="**" >        
+          <exclude name="webapp/**"/>
+          <exclude name="naming/**"/>
+          <exclude name="build/**"/>
+          <exclude name="dist/**"/>
+          <exclude name="release/**"/>
+          <exclude name="scandoc/**"/>
+       </fileset>
+     </jar>
   </target>
 
 
@@ -79,6 +93,14 @@
         <include name="**/*.properties" />
       </fileset>
     </jar>
+
+    <jar file="${dist.dir}/tomcat-connectors.jar" index="true" >
+      <fileset dir="${build.dir}/classes" >
+        <include name="**" />
+        <exclude name="org/apache/ajp/**" />
+      </fileset>
+    </jar>
+
   </target>
 
   <target name="javadoc" 
@@ -229,6 +251,70 @@
     <get src="${sourcefile}" dest="${destfile}" />
   </target>
 
+
+  <target name="release" >
+    <property name="ver" value="1.1M1" />
+<!--
+    <property name="tag" value="JTC_1_1_M1" />
+-->
+    <property name="tag" value="HEAD" />
+    <property name="rel.name" value="tomcat-connectors" />
+
+<!--
+-->
+    <delete dir="release" />
+    <mkdir dir="release" />
+
+    <cvs command="checkout" 
+         package="jakarta-tomcat-connectors" 
+         cvsroot=":pserver:anoncvs@cvs.apache.org:/home/cvspublic"
+         dest="release" 
+         tag="${tag}"/> 
+
+    <rename src="release/jakarta-tomcat-connectors" dest="release/${rel.name}-${ver}-src" />
+
+    <zip file="release/${rel.name}-${ver}-src.zip" >
+      <fileset dir="release" >
+        <include name="${rel.name}-${ver}-src/**" />
+        <exclude name="${rel.name}-${ver}-src/webapp/**" />
+        <exclude name="${rel.name}-${ver}-src/build/**" />
+        <exclude name="${rel.name}-${ver}-src/dist/**" />
+        <exclude name="${rel.name}-${ver}-src/scandoc/**" />
+        <exclude name="${rel.name}-${ver}-src/naming/**" />
+      </fileset>
+    </zip>
+    <tar  tarfile="release/${rel.name}-${ver}-src.tar" >
+      <tarfileset dir="release" >
+        <include name="${rel.name}-${ver}-src/**" />
+        <exclude name="${rel.name}-${ver}-src/webapp/**" />
+        <exclude name="${rel.name}-${ver}-src/build/**" />
+        <exclude name="${rel.name}-${ver}-src/dist/**" />
+        <exclude name="${rel.name}-${ver}-src/scandoc/**" />
+        <exclude name="${rel.name}-${ver}-src/naming/**" />
+      </tarfileset>
+    </tar> 
+    <gzip zipfile="release/${rel.name}-${ver}-src.tar.gz" src="release/${rel.name}-${ver}-src.tar"/>
+    <delete file="release/${rel.name}-${ver}-src.tar" />
+
+<!--
+-->
+    <ant dir="release/${rel.name}-${ver}-src" target="download" />
+    <ant dir="release/${rel.name}-${ver}-src" target="dist" inheritAll="false" />
+
+    <mkdir dir="release/${rel.name}-${ver}" />
+    <copy todir="release/${rel.name}-${ver}" >
+       <fileset dir="release/${rel.name}-${ver}-src/dist" includes="**"/>
+    </copy>
+    <copy file="release/${rel.name}-${ver}/${rel.name}.jar" tofile="release/${rel.name}-${ver}.jar" />
+    <zip file="release/${rel.name}-${ver}.zip" >
+       <fileset dir="release" includes="${rel.name}-${ver}/**"/>
+    </zip>
+    <tar  tarfile="release/${rel.name}-${ver}.tar" >
+       <tarfileset dir="release" includes="${rel.name}-${ver}/**"/>
+    </tar> 
+    <gzip zipfile="release/${rel.name}-${ver}.tar.gz" src="release/${rel.name}-${ver}.tar"/>
+    
+  </target>
 
   
 </project>
