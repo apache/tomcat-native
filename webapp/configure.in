@@ -72,7 +72,7 @@ dnl --------------------------------------------------------------------------
 dnl Initialize GNU Autoconf (note, this requires autoconf vers. >= 2.52)
 dnl --------------------------------------------------------------------------
 AC_INIT([WebApp Module],[""],[http://nagoya.apache.org/bugzilla])
-AC_CONFIG_SRCDIR([VERSION])
+AC_CONFIG_SRCDIR([configure.in])
 
 dnl --------------------------------------------------------------------------
 dnl Get rid of all that "--prefix" ... "--xxxdir" in the help message
@@ -109,12 +109,6 @@ WA_VARIABLE([EXTRA_LDFLAGS])
 WA_VARIABLE([EXTRA_INCLUDES])
 WA_VARIABLE([EXTRA_BUILD])
 WA_VARIABLE([EXTRA_CLEAN])
-
-WA_VARIABLE([APACHE_VERSION])
-WA_VARIABLE([WEBAPP_VERSION])
-AC_MSG_CHECKING([for version])
-WEBAPP_VERSION=`cat ${SRC_DIR}/VERSION`
-AC_MSG_RESULT([${WEBAPP_VERSION}])
 
 WA_VARIABLE([MODULE])
 
@@ -242,11 +236,6 @@ else
 
     MODULE="apache-2.0"
 fi
-
-dnl --------------------------------------------------------------------------
-dnl Get some informations about the server
-dnl --------------------------------------------------------------------------
-WA_APXS_SERVER([APACHE_VERSION],[${APXS}])
 
 dnl --------------------------------------------------------------------------
 dnl All done
