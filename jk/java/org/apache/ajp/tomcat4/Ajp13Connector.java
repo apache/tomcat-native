@@ -271,6 +271,7 @@ public final class Ajp13Connector
      */
     private Service service = null;
 
+    private String secret = null;
 
     // ------------------------------------------------------------- Properties
 
@@ -296,6 +297,14 @@ public final class Ajp13Connector
 
     }
 
+    public void setSecret( String s ) {
+        secret=s;
+    }
+
+    public String getSecret() {
+        return secret;
+    }
+    
 
     /**
      * Return the accept count for this Connector.

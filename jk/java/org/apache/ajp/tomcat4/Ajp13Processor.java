@@ -360,6 +360,10 @@ final class Ajp13Processor
         }
 
         boolean moreRequests = true;
+        String expectedSecret=connector.getSecret();
+        
+        boolean needAuth= ( expectedSecret != null );
+        
         while (moreRequests && !stopped.value()) {
             
             int status = 0;
@@ -369,6 +373,21 @@ final class Ajp13Processor
                 logger.log("process: ajp13.receiveNextRequest", e);
             }
 
+            if( needAuth ) {
+                String connSecret=ajp13.getSecret();
+                if( connSecret == null ) {
+                    logger.log( "Connection without password, " +
+                                "tomcat is configured to require one" );
+                    break;
+                }
+                if( ! connSecret.equals(expectedSecret) ) {
+                    logger.log( "Connection with wrong password" );
+                    break;
+                }
+                
+                needAuth=false;
+            }
+            
             if (stopped.value()) {
                 if (debug > 0) {
                     logger.log("process:  received request, but we're stopped");
