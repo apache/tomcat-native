@@ -246,19 +246,14 @@ final class CoyoteAdapter
     protected void postParseRequest(Request req, CoyoteRequest request,
                                     Response res, CoyoteResponse response)
         throws IOException {
-
-        request.setSecure(connector.getSecure());
-        req.scheme().setString(connector.getScheme());
+        // XXX the processor needs to set a correct scheme and port prior to this point, 
+        // in ajp13 protocols dont make sense to get the port from the connector..
+        request.setSecure(req.scheme().equals("https"));
 
         request.setAuthorization
             (req.getHeader(Constants.AUTHORIZATION_HEADER));
-
-        // Replace the default port if we are in secure mode
-        if (req.getServerPort() == 80 
-            && connector.getScheme().equals("https")) {
-            req.setServerPort(443);
-        }
-
+        // FIXME: the code below doesnt belongs to here, this is only  have sense 
+        // in Http11, not in ajp13..
         // At this point the Host header has been processed.
         // Override if the proxyPort/proxyHost are set 
         String proxyName = connector.getProxyName();
