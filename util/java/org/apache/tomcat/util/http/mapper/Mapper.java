@@ -648,7 +648,7 @@ public final class Mapper {
             }
             if ((b - a) == 1) {
                 int result2 = compare(name, start, end, map[b].name);
-                if (result2 < 1) {
+                if (result2 < 0) {
                     return a;
                 } else {
                     return b;
@@ -693,7 +693,7 @@ public final class Mapper {
             }
             if ((b - a) == 1) {
                 int result2 = name.compareTo(map[b].name);
-                if (result2 < 1) {
+                if (result2 < 0) {
                     return a;
                 } else {
                     return b;
