@@ -551,6 +551,7 @@ public class InternalInputBuffer implements InputBuffer {
 
             if ((chr == Constants.CR) || (chr == Constants.LF)) {
                 if (chr == Constants.LF) {
+                    pos++;
                     return false;
                 }
             } else {
