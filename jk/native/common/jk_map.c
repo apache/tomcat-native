@@ -153,7 +153,24 @@ double jk_map_get_double(jk_map_t *m, const char *name, double def)
     sprintf(buf, "%f", def);
     rc = jk_map_get_string(m, name, buf);
 
-    return atof(rc);
+    return atof(rc); 
+}
+
+int jk_map_get_bool(jk_map_t *m, const char *name, int def)
+{
+    char buf[100];
+    int rv = 0;
+    
+    sprintf(buf, "%d", def);
+    rc = jk_map_get_string(m, name, buf);
+
+    len = strlen(rc);
+    if (len) {
+        if (strcasecmp(rc, "true") == 0 ||
+            *rc == 'Y' || *rc == 'y' || *rc == '1') {
+            rv = 1;
+        }
+    }    
 }
 
 char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)

@@ -47,6 +47,8 @@ int jk_map_get_int(jk_map_t *m, const char *name, int def);
 
 double jk_map_get_double(jk_map_t *m, const char *name, double def);
 
+int jk_map_get_bool(jk_map_t *m, const char *name, int def);
+
 char *jk_map_get_string(jk_map_t *m, const char *name, const char *def);
 
 char **jk_map_get_string_list(jk_map_t *m,
