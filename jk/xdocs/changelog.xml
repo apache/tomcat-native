@@ -25,6 +25,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      Use infinite socket timeout if socket_timeout is set to zero or less then zero. (mturk)
+      </fix>
       <update>
       Change <b>balanced_workers</b> to <b>balance_workers</b> but keep
       backward compatibility preserving old directive. (mturk).
