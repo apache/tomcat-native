@@ -24,6 +24,7 @@
 
 #include "jk_global.h"
 #include "jk_pool.h"
+#include "jk_util.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -40,6 +41,7 @@ extern "C"
 #define JK_SHM_MAJOR    '1'
 #define JK_SHM_MINOR    '0'
 #define JK_SHM_STR_SIZ  63
+#define JK_SHM_URI_SIZ  127
 #define JK_SHM_DYNAMIC  16
 #define JK_SHM_MAGIC    '!', 'J', 'K', 'S', 'H', 'M', JK_SHM_MAJOR, JK_SHM_MINOR
 
@@ -90,11 +92,23 @@ struct jk_shm_worker
 };
 typedef struct jk_shm_worker jk_shm_worker_t;
 
+/** jk shm uri worker map record structure */
+struct jk_shm_urimap
+{
+    int          id;
+    unsigned int match_type;
+    size_t       ctxt_len;
+    char         context[JK_SHM_URI_SIZ+1];
+    char         worker[JK_SHM_STR_SIZ+1];
+    char         suffix[JK_SHM_STR_SIZ+1];
+};
+typedef struct jk_shm_urimap jk_shm_urimap_t;
+
 const char *jk_shm_name();
 
 /* Open the shared memory creating file if needed
  */
-int jk_shm_open(const char *fname);
+int jk_shm_open(const char *fname, jk_logger_t *l);
 
 /* Close the shared memory
  */
@@ -103,12 +117,22 @@ void jk_shm_close();
 /* Attach the shared memory in child process.
  * File has to be opened in parent.
  */
-int jk_shm_attach(const char *fname);
+int jk_shm_attach(const char *fname, jk_logger_t *l);
 
 /* allocate shm memory
  * If there is no shm present the pool will be used instead
  */
 void *jk_shm_alloc(jk_pool_t *p, size_t size);
+
+/* allocate shm worker record
+ * If there is no shm present the pool will be used instead
+ */
+jk_shm_worker_t *jk_shm_alloc_worker(jk_pool_t *p);
+
+/* allocate shm uri worker map record
+ * If there is no shm present the pool will be used instead
+ */
+jk_shm_urimap_t *jk_shm_alloc_urimap(jk_pool_t *p);
 
 /* Return workers.properties last modified time
  */
