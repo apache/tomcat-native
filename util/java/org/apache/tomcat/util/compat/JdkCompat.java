@@ -141,7 +141,7 @@ public class JdkCompat {
             javaVersion = JAVA_1_3;
             Class.forName("java.lang.CharSequence");
             javaVersion = JAVA_1_4;
-            java14=true;
+            //java14=true;
         } catch (ClassNotFoundException cnfe) {
             // swallow as we've hit the max class version that we have
         }
@@ -211,7 +211,8 @@ public class JdkCompat {
         StringWriter stackTrace = new StringWriter();
         t.printStackTrace(new PrintWriter(stackTrace));
         String st = stackTrace.toString();
-        int i = st.lastIndexOf("javax.servlet.");
+        int i = st.lastIndexOf
+            ("org.apache.catalina.core.ApplicationFilterChain.internalDoFilter");
         if (i > -1) {
             return st.substring(0, i - 4);
         } else {

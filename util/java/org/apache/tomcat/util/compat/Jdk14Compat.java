@@ -132,14 +132,18 @@ public class Jdk14Compat extends JdkCompat {
         trace.append(t.toString()).append('\n');
         StackTraceElement[] elements = t.getStackTrace();
         int pos = elements.length;
-        for (int i = (elements.length - 1); i >= 0; i--) {
-            if (elements[i].getClassName().startsWith("javax.servlet.")) {
-                pos = i + 1;
-                break;
+        for (int i = 0; i < elements.length; i++) {
+            if ((elements[i].getClassName().startsWith
+                 ("org.apache.catalina.core.ApplicationFilterChain"))
+                && (elements[i].getMethodName().equals("internalDoFilter"))) {
+                pos = i;
             }
         }
         for (int i = 0; i < pos; i++) {
-            trace.append('\t').append(elements[i].toString()).append('\n');
+            if (!(elements[i].getClassName().startsWith
+                  ("org.apache.catalina.core."))) {
+                trace.append('\t').append(elements[i].toString()).append('\n');
+            }
         }
         return trace.toString();
     }
