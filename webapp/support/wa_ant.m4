@@ -61,9 +61,9 @@ dnl Version $Id$
 dnl --------------------------------------------------------------------------
 
 dnl --------------------------------------------------------------------------
-dnl WA_APXS
-dnl   Locate the APXS script
-dnl   $1 => Environment variable where the APXS script name will be stored
+dnl WA_ANT
+dnl   Locate Apache ANT
+dnl   $1 => Environment variable where the ANT binary? name will be stored
 dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_ANT],
