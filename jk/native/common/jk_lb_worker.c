@@ -203,6 +203,7 @@ static worker_record_t *find_by_session(lb_worker_t *p,
     for (i = 0; i < p->num_of_workers; i++) {
         if (strcmp(p->lb_workers[i].s->name, name) == 0) {
             rc = &p->lb_workers[i];
+            rc->r = &(rc->s->name[0]);
             break;
         }
     }
@@ -324,8 +325,9 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
                 curmin = mytraffic;
             }
         }
-    }
-    
+    }    
+    if (candidate)
+        candidate->r = &(candidate->s->name[0]);
     return candidate;
 }
 
