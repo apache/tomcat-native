@@ -287,7 +287,7 @@ public class JkMain implements MBeanRegistration
                     log.debug( "No properties file found " + propsF );
             }
         }
-        String initHTTPS = props.get("class.initHTTPS");
+        String initHTTPS = (String)props.get("class.initHTTPS");
         if("true".equalsIgnoreCase(initHTTPS)) {
             initHTTPSUrls();
         }
