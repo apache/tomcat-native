@@ -1130,7 +1130,7 @@ static int jk_translate(request_rec *r)
     return DECLINED;
 }
 
-static void jk_register_hooks(void)
+static void jk_register_hooks(apr_pool_t *p)
 {
     ap_hook_handler(jk_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(jk_post_config,NULL,NULL,APR_HOOK_MIDDLE);
