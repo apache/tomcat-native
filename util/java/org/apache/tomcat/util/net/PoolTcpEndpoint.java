@@ -569,7 +569,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                     try {
                         s.close();
                     } catch (IOException e) {}
-		    return;
+                    return;
                 }
 
                 TcpConnection con = null;
