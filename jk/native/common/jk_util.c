@@ -85,6 +85,7 @@
 #define TYPE_OF_WORKER              ("type")
 #define CACHE_OF_WORKER             ("cachesize")
 #define CACHE_TIMEOUT_OF_WORKER     ("cache_timeout")
+#define RECOVERY_OPTS_OF_WORKER     ("recovery_options")
 #define CONNECT_TIMEOUT_OF_WORKER 	("connect_timeout")
 #define PREPOST_TIMEOUT_OF_WORKER 	("prepost_timeout")
 #define REPLY_TIMEOUT_OF_WORKER 	("reply_timeout")
@@ -488,6 +489,21 @@ int jk_get_worker_reply_timeout(jk_map_t *m,
     }
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, REPLY_TIMEOUT_OF_WORKER);
+
+    return map_get_int(m, buf, def);
+}
+
+int jk_get_worker_recovery_opts(jk_map_t *m,
+                                const char *wname,
+                                int def)
+{
+    char buf[1024];
+
+    if(!m || !wname) {
+        return -1;
+    }
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, RECOVERY_OPTS_OF_WORKER);
 
     return map_get_int(m, buf, def);
 }

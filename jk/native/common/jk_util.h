@@ -122,6 +122,10 @@ int jk_get_worker_cache_timeout(jk_map_t *m,
                              const char *wname,
                              int def);
 
+int jk_get_worker_recovery_opts(jk_map_t *m,
+                             const char *wname,
+                             int def);
+
 int jk_get_worker_connect_timeout(jk_map_t *m,
                                   const char *wname,
                                   int def);

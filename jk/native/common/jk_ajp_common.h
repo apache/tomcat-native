@@ -232,6 +232,12 @@ extern "C" {
 #define AJP_DEF_CONNECT_TIMEOUT   (0)		/* NO CONNECTION TIMEOUT => NO CPING/CPONG */
 #define AJP_DEF_REPLY_TIMEOUT     (0)		/* NO REPLY TIMEOUT                        */
 #define AJP_DEF_PREPOST_TIMEOUT   (0)		/* NO PREPOST TIMEOUT => NO CPING/CPONG    */
+#define AJP_DEF_RECOVERY_OPTS	  (0)		/* NO RECOVERY / NO    */
+
+#define RECOVER_ABORT_IF_TCGETREQUEST  	 0x0001	/* DONT RECOVER IF TOMCAT FAIL AFTER RECEIVING REQUEST */
+#define RECOVER_ABORT_IF_TCSENDHEADER    0x0002	/* DONT RECOVER IF TOMCAT FAIL AFTER SENDING HEADERS */
+
+
 
 struct jk_res_data {
     int         status;
@@ -307,6 +313,11 @@ struct ajp_worker {
 	unsigned connect_timeout;	/* connect cping/cpong delay in ms (0 means disabled) 							*/
 	unsigned reply_timeout;	    /* reply timeout delay in ms (0 means disabled)     							*/
 	unsigned prepost_timeout;	/* before sending a request cping/cpong timeout delay in ms (0 means disabled)    */
+
+	/*
+	 * Recovery option
+	 */
+	unsigned recovery_opts;		/* Set the recovery option */
 }; 
  
 

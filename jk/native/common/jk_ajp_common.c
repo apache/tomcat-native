@@ -1174,7 +1174,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                                   (const char * const *)res.header_values,
                                   res.num_headers);
             }
-        break;
+        return JK_AJP13_SEND_HEADERS;
 
         case JK_AJP13_SEND_BODY_CHUNK:
             {
@@ -1261,6 +1261,9 @@ static int ajp_get_reply(jk_endpoint_t *e,
                          ajp_endpoint_t *p,
                          ajp_operation_t *op)
 {
+	/* Don't get header from tomcat yet */
+	int headeratclient = JK_FALSE;
+
     /* Start read all reply message */
     while(1) {
         int rc = 0;
@@ -1279,18 +1282,66 @@ static int ajp_get_reply(jk_endpoint_t *e,
 		}
 		
         if(!ajp_connection_tcp_get_message(p, op->reply, l)) {
+        /* we just can't recover, unset recover flag */
+	    if(headeratclient == JK_FALSE) {
             jk_log(l, JK_LOG_ERROR,
+                   "Tomcat is down or network problems. "
+                   "No response has been sent to the client (yet)\n");
+         /*
+          * communication with tomcat has been interrupted BEFORE 
+ 		  * headers have been sent to the client.
+ 		  * DISCUSSION: As we suppose that tomcat has already started
+		  * to process the query we think it's unrecoverable (and we
+		  * should not retry or switch to another tomcat in the 
+		  * cluster). 
+		  */
+		  
+		  /*
+		   * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCGETREQUEST 
+		   */
+            if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
+	        	op->recoverable = JK_FALSE;
+		  /* 
+		   * we want to display the webservers error page, therefore
+		   * we return JK_FALSE 
+		   */
+		   return JK_FALSE;
+		   
+	    } else {
+                jk_log(l, JK_LOG_ERROR,
                    "Error reading reply from tomcat. "
-                   "Tomcat is down or network problems.\n");
-            /* we just can't recover, unset recover flag */
-            return JK_FALSE;
-        }
-
+                   "Tomcat is down or network problems. "
+		           "Part of the response has already been sent to the client\n");
+      	        
+      	        /* communication with tomcat has been interrupted AFTER 
+        		 * headers have been sent to the client.
+	             * headers (and maybe parts of the body) have already been
+  		         * sent, therefore the response is "complete" in a sense
+		         * that nobody should append any data, especially no 500 error 
+        		 * page of the webserver! 
+        		 *
+      		     * BUT if you retrun JK_TRUE you have a 200 (OK) code in your
+		         * in your apache access.log instead of a 500 (Error). 
+			     * Therefore return FALSE/FALSE
+                 * return JK_TRUE; 
+                 */
+            
+   		        /*
+		         * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCSENDHEADER 
+		        */
+                if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCSENDHEADER)
+		            op->recoverable = JK_FALSE;
+		        
+			return JK_FALSE;
+	    }
+		
         rc = ajp_process_callback(op->reply, op->post, p, s, l);
 
         /* no more data to be sent, fine we have finish here */
         if(JK_AJP13_END_RESPONSE == rc) {
             return JK_TRUE;
+    	} else if(JK_AJP13_SEND_HEADERS == rc) {
+ 	        headeratclient = JK_TRUE;            
         } else if(JK_AJP13_HAS_RESPONSE == rc) {
             /* 
              * in upload-mode there is no second chance since
@@ -1597,6 +1648,13 @@ int ajp_init(jk_worker_t *pThis,
         jk_log(l, JK_LOG_DEBUG,
 	           "In jk_worker_t::init, setting prepost timeout to %d\n",
     	       p->prepost_timeout);
+
+        p->recovery_opts =
+            jk_get_worker_recovery_opts(props, p->name, AJP_DEF_RECOVERY_OPTS);
+
+    	jk_log(l, JK_LOG_DEBUG,
+        	   "In jk_worker_t::init, setting recovery opts to %d\n",
+           		p->recovery_opts);
 
         /* 
          *  Need to initialize secret here since we could return from inside
