@@ -213,7 +213,7 @@ public class JdkCompat {
         String st = stackTrace.toString();
         int i = st.lastIndexOf("javax.servlet.");
         if (i > -1) {
-            return st.substring(0, i);
+            return st.substring(0, i - 4);
         } else {
             return st;
         }
