@@ -64,10 +64,12 @@
 
 package org.apache.coyote.tomcat5;
 
-
 import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Locale;
@@ -83,21 +85,134 @@ import javax.servlet.http.HttpSession;
 import org.apache.catalina.connector.RequestFacade;
 import org.apache.catalina.session.StandardSessionFacade;
 
-
 /**
  * Facade class that wraps a Coyote request object.  
  * All methods are delegated to the wrapped request.
  *
  * @author Craig R. McClanahan
  * @author Remy Maucherat
+ * @author Jean-Francois Arcand
  * @version $Revision$ $Date$
  */
+
 
 public class CoyoteRequestFacade 
     extends RequestFacade
     implements HttpServletRequest {
+        
+        
+    // ----------------------------------------------------------- DoPrivileged
+    
+    private final class GetAttributePrivilegedAction implements PrivilegedAction{
+        
+        public Object run() {
+            return request.getAttributeNames();
+        }            
+    }
+     
+    
+    private final class GetParameterMapPrivilegedAction implements PrivilegedAction{
+        
+        public Object run() {
+            return request.getParameterMap();
+        }        
+    }    
+    
+    
+    private final class GetRequestDispatcherPrivilegedAction implements PrivilegedAction{
+        private String path;
+        public GetRequestDispatcherPrivilegedAction(String path){
+            this.path = path;
+        }
+        
+        public Object run() {   
+            return request.getRequestDispatcher(path);
+       }           
+    }    
+    
+    
+    private final class GetParameterPrivilegedAction implements PrivilegedAction{
+        public String name;
+        public GetParameterPrivilegedAction(String name){
+            this.name = name;
+        }
+        public Object run() {       
+            return request.getParameter(name);
+        }           
+    }    
+    
+     
+    private final class GetParameterNamesPrivilegedAction implements PrivilegedAction{
+        
+        public Object run() {          
+            return request.getParameterNames();
+        }           
+    } 
+    
+    
+    private final class GetParameterValuePrivilegedAction implements PrivilegedAction{
+        public String name;
+        public GetParameterValuePrivilegedAction(String name){
+            this.name = name;
+        }
+        public Object run() {       
+            return request.getParameterValues(name);
+        }           
+    }    
+  
+    
+    private final class GetCookiesPrivilegedAction implements PrivilegedAction{
+        
+       public Object run() {       
+            return request.getCookies();
+        }           
+    }      
+    
+    
+    private final class GetCharacterEncodingPrivilegedAction implements PrivilegedAction{
+        
+        public Object run() {       
+            return request.getCharacterEncoding();
+        }           
+    }   
+        
+    
+    private final class GetHeadersPrivilegedAction implements PrivilegedAction{
+        private String name;
+        public GetHeadersPrivilegedAction(String name){
+            this.name = name;
+        }
+        
+        public Object run() {       
+            return request.getHeaders(name);
+        }           
+    }    
+        
+    
+    private final class GetHeaderNamesPrivilegedAction implements PrivilegedAction{
 
+        public Object run() {       
+            return request.getHeaderNames();
+        }           
+    }  
+            
+    
+    private final class GetLocalePrivilegedAction implements PrivilegedAction{
 
+        public Object run() {       
+            return request.getLocale();
+        }           
+    }    
+            
+    
+    private final class GetLocalesPrivilegedAction implements PrivilegedAction{
+
+        public Object run() {       
+            return request.getLocales();
+        }           
+    }    
+    
+    
     // ----------------------------------------------------------- Constructors
 
 
@@ -143,12 +258,22 @@ public class CoyoteRequestFacade
 
 
     public Enumeration getAttributeNames() {
-        return request.getAttributeNames();
+        if (System.getSecurityManager() != null){
+            return (Enumeration)AccessController.doPrivileged(
+                new GetAttributePrivilegedAction());        
+        } else {
+            return request.getAttributeNames();
+        }
     }
 
 
     public String getCharacterEncoding() {
-        return request.getCharacterEncoding();
+        if (System.getSecurityManager() != null){
+            return (String)AccessController.doPrivileged(
+                new GetCharacterEncodingPrivilegedAction());
+        } else {
+            return request.getCharacterEncoding();
+        }         
     }
 
 
@@ -175,22 +300,42 @@ public class CoyoteRequestFacade
 
 
     public String getParameter(String name) {
-        return request.getParameter(name);
+        if (System.getSecurityManager() != null){
+            return (String)AccessController.doPrivileged(
+                new GetParameterPrivilegedAction(name));
+        } else {
+            return request.getParameter(name);
+        }
     }
 
 
     public Enumeration getParameterNames() {
-        return request.getParameterNames();
+        if (System.getSecurityManager() != null){
+            return (Enumeration)AccessController.doPrivileged(
+                new GetParameterNamesPrivilegedAction());
+        } else {
+            return request.getParameterNames();
+        }
     }
 
 
     public String[] getParameterValues(String name) {
-        return request.getParameterValues(name);
+        if (System.getSecurityManager() != null){
+            return (String[]) AccessController.doPrivileged(
+                new GetParameterValuePrivilegedAction(name));
+        } else {
+            return request.getParameterValues(name);
+        }
     }
 
 
     public Map getParameterMap() {
-        return request.getParameterMap();
+        if (System.getSecurityManager() != null){
+            return (Map)AccessController.doPrivileged(
+                new GetParameterMapPrivilegedAction());        
+        } else {
+            return request.getParameterMap();
+        }
     }
 
 
@@ -241,12 +386,22 @@ public class CoyoteRequestFacade
 
 
     public Locale getLocale() {
-        return request.getLocale();
+        if (System.getSecurityManager() != null){
+            return (Locale)AccessController.doPrivileged(
+                new GetLocalePrivilegedAction());
+        } else {
+            return request.getLocale();
+        }        
     }
 
 
     public Enumeration getLocales() {
-        return request.getLocales();
+        if (System.getSecurityManager() != null){
+            return (Enumeration)AccessController.doPrivileged(
+                new GetLocalesPrivilegedAction());
+        } else {
+            return request.getLocales();
+        }        
     }
 
 
@@ -256,8 +411,12 @@ public class CoyoteRequestFacade
 
 
     public RequestDispatcher getRequestDispatcher(String path) {
-        // TODO : Facade !!
-        return request.getRequestDispatcher(path);
+        if (System.getSecurityManager() != null){
+            return (RequestDispatcher)AccessController.doPrivileged(
+                new GetRequestDispatcherPrivilegedAction(path));
+        } else {
+            return request.getRequestDispatcher(path);
+        }
     }
 
 
@@ -272,7 +431,12 @@ public class CoyoteRequestFacade
 
 
     public Cookie[] getCookies() {
-        return request.getCookies();
+        if (System.getSecurityManager() != null){
+            return (Cookie[])AccessController.doPrivileged(
+                new GetCookiesPrivilegedAction());
+        } else {
+            return request.getCookies();
+        }        
     }
 
 
@@ -287,12 +451,22 @@ public class CoyoteRequestFacade
 
 
     public Enumeration getHeaders(String name) {
-        return request.getHeaders(name);
+        if (System.getSecurityManager() != null){
+            return (Enumeration)AccessController.doPrivileged(
+                new GetHeadersPrivilegedAction(name));
+        } else {
+            return request.getHeaders(name);
+        }         
     }
 
 
     public Enumeration getHeaderNames() {
-        return request.getHeaderNames();
+        if (System.getSecurityManager() != null){
+            return (Enumeration)AccessController.doPrivileged(
+                new GetHeaderNamesPrivilegedAction());
+        } else {
+            return request.getHeaderNames();
+        }             
     }
 
 

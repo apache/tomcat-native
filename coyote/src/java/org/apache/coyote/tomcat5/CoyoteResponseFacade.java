@@ -64,10 +64,11 @@
 
 package org.apache.coyote.tomcat5;
 
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Locale;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -82,14 +83,30 @@ import org.apache.catalina.connector.ResponseFacade;
  * All methods are delegated to the wrapped response.
  *
  * @author Remy Maucherat
+ * @author Jean-Francois Arcand
  * @version $Revision$ $Date$
  */
+
 
 public class CoyoteResponseFacade 
     extends ResponseFacade
     implements HttpServletResponse {
 
-
+    // ----------------------------------------------------------- DoPrivileged
+    
+    private final class SetContentTypePrivilegedAction implements PrivilegedAction{
+        private String contentType;
+        public SetContentTypePrivilegedAction(String contentType){
+            this.contentType = contentType;
+        }
+        
+        public Object run() {
+            response.setContentType(contentType);
+            return null;
+        }            
+    }
+     
+    
     // ----------------------------------------------------------- Constructors
 
 
@@ -192,9 +209,12 @@ public class CoyoteResponseFacade
 
         if (isCommitted())
             return;
-
-        response.setContentType(type);
-
+        
+        if (System.getSecurityManager() != null){
+            AccessController.doPrivileged(new SetContentTypePrivilegedAction(type));
+        } else {
+            response.setContentType(type);            
+        }
     }
 
 
