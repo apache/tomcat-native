@@ -26,6 +26,7 @@
         <item name="AJPv13 Protocol"       href="common/ajpv13a.html"/>
         <item name="HowTo"                 href="howto/index.html"/>
         <item name="Frequently asked questions"  href="faq.html"/>
+        <item name="Changelog"             href="changelog.html"/> 
     </menu>
 
 </body>

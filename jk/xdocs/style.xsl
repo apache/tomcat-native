@@ -399,7 +399,7 @@
   <xsl:template match="changelog/add">
     <tr>
       <xsl:variable name="src"><xsl:value-of select="$relative-path"/>/images/add.gif</xsl:variable>
-      <td><img alt="add" class="icon" src="{$src}"/></td>
+      <td valign="top"><img alt="add" class="icon" src="{$src}"/></td>
       <td><xsl:apply-templates/></td>
     </tr>
   </xsl:template>
@@ -407,7 +407,7 @@
   <xsl:template match="changelog/update">
     <tr>
       <xsl:variable name="src"><xsl:value-of select="$relative-path"/>/images/update.gif</xsl:variable>
-      <td><img alt="update" class="icon" src="{$src}"/></td>
+      <td valign="top"><img alt="update" class="icon" src="{$src}"/></td>
       <td><xsl:apply-templates/></td>
     </tr>
   </xsl:template>
@@ -415,7 +415,7 @@
   <xsl:template match="changelog/design">
     <tr>
       <xsl:variable name="src"><xsl:value-of select="$relative-path"/>/images/design.gif</xsl:variable>
-      <td><img alt="design" class="icon" src="{$src}"/></td>
+      <td valign="top"><img alt="design" class="icon" src="{$src}"/></td>
       <td><xsl:apply-templates/></td>
     </tr>
   </xsl:template>
@@ -423,7 +423,7 @@
   <xsl:template match="changelog/docs">
     <tr>
       <xsl:variable name="src"><xsl:value-of select="$relative-path"/>/images/docs.gif</xsl:variable>
-      <td><img alt="docs" class="icon" src="{$src}"/></td>
+      <td valign="top"><img alt="docs" class="icon" src="{$src}"/></td>
       <td><xsl:apply-templates/></td>
     </tr>
   </xsl:template>
@@ -431,7 +431,7 @@
   <xsl:template match="changelog/fix">
     <tr>
       <xsl:variable name="src"><xsl:value-of select="$relative-path"/>/images/fix.gif</xsl:variable>
-      <td><img alt="fix" class="icon" src="{$src}"/></td>
+      <td valign="top"><img alt="fix" class="icon" src="{$src}"/></td>
       <td><xsl:apply-templates/></td>
     </tr>
   </xsl:template>
@@ -439,7 +439,7 @@
   <xsl:template match="changelog/scode">
     <tr>
       <xsl:variable name="src"><xsl:value-of select="$relative-path"/>/images/code.gif</xsl:variable>
-      <td><img alt="code" class="icon" src="{$src}"/></td>
+      <td valign="top"><img alt="code" class="icon" src="{$src}"/></td>
       <td><xsl:apply-templates/></td>
     </tr>
   </xsl:template>
