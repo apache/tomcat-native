@@ -566,6 +566,8 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         if (uwr->ctxt_len < longest_match) {
             continue;       /* can not be a best match anyway */
         }
+        jk_log(l, JK_LOG_DEBUG, "Attempting to map context URI '%s'\n", uwr->uri);
+
         if (uwr->match_type == MATCH_TYPE_WILDCHAR_PATH) {
             /* Map is already sorted by ctxt_len */
             if (wildchar_match(uri, uwr->context,
