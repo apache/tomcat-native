@@ -6,7 +6,7 @@ JAVA_HOME=@JAVA_HOME@
 APXSLDFLAGS=@APXSLDFLAGS@
 APXSCFLAGS=@APXSCFLAGS@
 
-JK=../common
+JK=../common/
 JK_INCL=-DUSE_APACHE_MD5 -I ${JK}
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
