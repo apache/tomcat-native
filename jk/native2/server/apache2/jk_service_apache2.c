@@ -343,7 +343,6 @@ static long jk2_get_content_length(jk_env_t *env, request_rec *r)
 static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
                                          jk_worker_t *worker, void *serverObj)
 {
-    apr_port_t port;
     char *ssl_temp      = NULL;
     jk_workerEnv_t *workerEnv;
     request_rec *r=serverObj;
@@ -376,8 +375,7 @@ static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     s->server_name= (char *)ap_get_server_name(r);
 
     /* get the real port (otherwise redirect failed) */
-    apr_sockaddr_port_get(&port,r->connection->local_addr);
-    s->server_port = port;
+    s->server_port = r->connection->local_addr->port;
 
     s->server_software = (char *)ap_get_server_version();
 
