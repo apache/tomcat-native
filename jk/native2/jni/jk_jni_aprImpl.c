@@ -255,11 +255,11 @@ Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint signa
     return 0;
 }
 
-JNIEXPORT jint JNICALL 
+JNIEXPORT void JNICALL 
 Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint signo,
-                                          jlong target)
+                                          jint target)
 {
-    return 0;
+
 }
 
 #endif

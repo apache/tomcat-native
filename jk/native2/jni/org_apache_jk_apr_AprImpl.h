@@ -17,6 +17,8 @@ extern "C" {
 #define org_apache_jk_apr_AprImpl_HANDLE_RECEIVE_PACKET 10L
 #undef org_apache_jk_apr_AprImpl_HANDLE_SEND_PACKET
 #define org_apache_jk_apr_AprImpl_HANDLE_SEND_PACKET 11L
+#undef org_apache_jk_apr_AprImpl_HANDLE_FLUSH
+#define org_apache_jk_apr_AprImpl_HANDLE_FLUSH 12L
 /* Inaccessible static: aprSingleton */
 /* Inaccessible static: ok */
 /* Inaccessible static: jniMode */
@@ -36,55 +38,6 @@ JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_initialize
 JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_terminate
   (JNIEnv *, jobject);
 
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    unSocketClose
- * Signature: (JJI)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unSocketClose
-  (JNIEnv *, jobject, jlong, jint);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    unSocketListen
- * Signature: (JLjava/lang/String;I)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unSocketListen
-  (JNIEnv *, jobject, jstring, jint);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    unSocketConnect
- * Signature: (JLjava/lang/String;)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unSocketConnect
-  (JNIEnv *, jobject, jstring);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    unAccept
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unAccept
-  (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    unRead
- * Signature: (JJ[BII)I
- */
-JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_unRead
-  (JNIEnv *, jobject, jlong, jbyteArray, jint, jint);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    unWrite
- * Signature: (JJ[BII)I
- */
-JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_unWrite
-  (JNIEnv *, jobject, jlong, jbyteArray, jint, jint);
-
 /*
  * Class:     org_apache_jk_apr_AprImpl
  * Method:    getJkEnv
@@ -100,14 +53,6 @@ JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_getJkEnv
  */
 JNIEXPORT void JNICALL Java_org_apache_jk_apr_AprImpl_releaseJkEnv
   (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    jkRecycle
- * Signature: (JJ)V
- */
-JNIEXPORT void JNICALL Java_org_apache_jk_apr_AprImpl_jkRecycle
-  (JNIEnv *, jobject, jlong, jlong);
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
@@ -127,21 +72,83 @@ JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_createJkHandler
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
- * Method:    jkGetId
- * Signature: (JLjava/lang/String;Ljava/lang/String;)I
+ * Method:    jkSetAttribute
+ * Signature: (JJLjava/lang/String;Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_jkGetId
-  (JNIEnv *, jobject, jlong, jstring, jstring);
+JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_jkSetAttribute
+  (JNIEnv *, jobject, jlong, jlong, jstring, jstring);
+
+/*
+ * Class:     org_apache_jk_apr_AprImpl
+ * Method:    jkGetAttribute
+ * Signature: (JJLjava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_apache_jk_apr_AprImpl_jkGetAttribute
+  (JNIEnv *, jobject, jlong, jlong, jstring);
+
+/*
+ * Class:     org_apache_jk_apr_AprImpl
+ * Method:    jkInit
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_jkInit
+  (JNIEnv *, jobject, jlong, jlong);
+
+/*
+ * Class:     org_apache_jk_apr_AprImpl
+ * Method:    jkDestroy
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_jkDestroy
+  (JNIEnv *, jobject, jlong, jlong);
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
  * Method:    jkInvoke
- * Signature: (JJJI[BI)I
+ * Signature: (JJJI[BIII)I
  */
 JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_jkInvoke
-  (JNIEnv *jniEnv, jobject o, jlong envJ, jlong componentP, jlong endpointP, jint code,
-   jbyteArray data, jint off, jint len,
-   jint raw);
+  (JNIEnv *, jclass, jlong, jlong, jlong, jint, jbyteArray, jint, jint, jint);
+
+/*
+ * Class:     org_apache_jk_apr_AprImpl
+ * Method:    jkRecycle
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_jk_apr_AprImpl_jkRecycle
+  (JNIEnv *, jobject, jlong, jlong);
+
+/*
+ * Class:     org_apache_jk_apr_AprImpl
+ * Method:    setUser
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_setUser
+  (JNIEnv *, jobject, jstring, jstring);
+
+/*
+ * Class:     org_apache_jk_apr_AprImpl
+ * Method:    setPid
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_setPid
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     org_apache_jk_apr_AprImpl
+ * Method:    signal
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_signal
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     org_apache_jk_apr_AprImpl
+ * Method:    sendSignal
+ * Signature: (II)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_jk_apr_AprImpl_sendSignal
+  (JNIEnv *, jobject, jint, jint);
 
 #ifdef __cplusplus
 }
