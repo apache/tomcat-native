@@ -282,3 +282,38 @@ AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
 
     return c;
 } 
+
+AP_DECLARE(const char *) ap_get_remote_host(conn_rec *conn, void *dir_config,
+                                            int type, int *str_is_ip)
+{
+    int ignored_str_is_ip;
+
+    if (!str_is_ip) { /* caller doesn't want to know */
+        str_is_ip = &ignored_str_is_ip;
+    }
+    *str_is_ip = 0;
+
+    /*
+     * Return the desired information; either the remote DNS name, if found,
+     * or either NULL (if the hostname was requested) or the IP address
+     * (if any identifier was requested).
+     */
+    if (conn->remote_host != NULL && conn->remote_host[0] != '\0') {
+        return conn->remote_host;
+    }
+    else {
+        if (type == REMOTE_HOST || type == REMOTE_DOUBLE_REV) {
+            return NULL;
+        }
+        else {
+            *str_is_ip = 1;
+            return conn->remote_ip;
+        }
+    }
+} 
+
+AP_DECLARE(const char *) ap_get_server_name(request_rec *r)
+{
+    /* default */
+    return r->server->server_hostname;
+} 

@@ -163,6 +163,30 @@ extern "C" {
  */
 #define DEFAULT_VHOST_ADDR 0xfffffffful
  
+/* options for get_remote_host() */
+/* REMOTE_HOST returns the hostname, or NULL if the hostname
+ * lookup fails.  It will force a DNS lookup according to the
+ * HostnameLookups setting.
+ */
+#define REMOTE_HOST (0)
+
+/* REMOTE_NAME returns the hostname, or the dotted quad if the
+ * hostname lookup fails.  It will force a DNS lookup according
+ * to the HostnameLookups setting.
+ */
+#define REMOTE_NAME (1)
+
+/* REMOTE_NOLOOKUP is like REMOTE_NAME except that a DNS lookup is
+ * never forced.
+ */
+#define REMOTE_NOLOOKUP (2)
+
+/* REMOTE_DOUBLE_REV will always force a DNS lookup, and also force
+ * a double reverse lookup, regardless of the HostnameLookups
+ * setting.  The result is the (double reverse checked) hostname,
+ * or NULL if any of the lookups fail.
+ */
+#define REMOTE_DOUBLE_REV (3)
                      
 /** @} */
 /**
@@ -328,6 +352,11 @@ struct request_rec {
     apr_finfo_t finfo;
     /** A struct containing the components of URI */
     apr_uri_t parsed_uri;
+    /** Options set in config files, etc. */
+    void *per_dir_config;
+    /** Notes on *this* request */
+    void *request_config;
+ 
 };
 
 /** Structure to store things which are per connection */
@@ -547,6 +576,40 @@ AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
                                   server_rec *server,
                                   apr_socket_t *csd, long id, void *sbh,
                                   apr_bucket_alloc_t *alloc);
+
+/**
+ * Get the current server name from the request
+ * @param r The current request
+ * @return the server name
+ * @deffunc const char *ap_get_server_name(request_rec *r)
+ */
+AP_DECLARE(const char *) ap_get_server_name(request_rec *r);
+
+/**
+ * Lookup the remote client's DNS name or IP address
+ * @param conn The current connection
+ * @param dir_config The directory config vector from the request
+ * @param type The type of lookup to perform.  One of:
+ * <pre>
+ *     REMOTE_HOST returns the hostname, or NULL if the hostname
+ *                 lookup fails.  It will force a DNS lookup according to the
+ *                 HostnameLookups setting.
+ *     REMOTE_NAME returns the hostname, or the dotted quad if the
+ *                 hostname lookup fails.  It will force a DNS lookup according
+ *                 to the HostnameLookups setting.
+ *     REMOTE_NOLOOKUP is like REMOTE_NAME except that a DNS lookup is
+ *                     never forced.
+ *     REMOTE_DOUBLE_REV will always force a DNS lookup, and also force
+ *                   a double reverse lookup, regardless of the HostnameLookups
+ *                   setting.  The result is the (double reverse checked) 
+ *                   hostname, or NULL if any of the lookups fail.
+ * </pre>
+ * @param str_is_ip unless NULL is passed, this will be set to non-zero on output when an IP address 
+ *        string is returned
+ * @return The remote hostname
+ * @deffunc const char *ap_get_remote_host(conn_rec *conn, void *dir_config, int type, int *str_is_ip)
+ */
+AP_DECLARE(const char *) ap_get_remote_host(conn_rec *conn, void *dir_config, int type, int *str_is_ip);
 
 
 /**
