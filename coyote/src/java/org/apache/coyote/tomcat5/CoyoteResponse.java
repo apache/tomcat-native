@@ -136,12 +136,6 @@ public class CoyoteResponse
 
     // ----------------------------------------------------- Instance Variables
 
-   /**
-     * Default locale as mandated by the spec.
-     */
-    private static Locale DEFAULT_LOCALE = new Locale("en", "US");
-
-    
     /**
      * The date format we will use for creating date headers.
      */
@@ -612,10 +606,6 @@ public class CoyoteResponse
      * Return the Locale assigned to this response.
      */
     public Locale getLocale() {
-        // Lazy setting. If the local is null, then return the default one.
-        if ( coyoteResponse.getLocale() == null){
-            coyoteResponse.setLocale(DEFAULT_LOCALE);            
-        }
         return (coyoteResponse.getLocale());
     }
 
