@@ -238,6 +238,10 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected int timeout = 300000;   // 5 minutes as in Apache HTTPD server
 
+    /**
+     * Flag to disable setting a different time-out on uploads.
+     */
+    protected boolean disableUploadTimeout = false;
 
     /**
      * Host name (used to avoid useless B2C conversion on the host name).
@@ -341,6 +345,19 @@ public class Http11Processor implements Processor, ActionHook {
     }
 
     /**
+     * Set the flag to control upload time-outs.
+     */
+    public void setDisableUploadTimeout(boolean isDisabled) {
+        disableUploadTimeout = isDisabled;
+    }
+    /**
+     * Get the flag that controls upload time-outs.
+     */
+    public boolean getDisableUploadTimeout() {
+        return disableUploadTimeout;
+    }
+
+    /**
      * Set the upload timeout.
      */
     public void setTimeout( int timeouts ) {
@@ -380,10 +397,12 @@ public class Http11Processor implements Processor, ActionHook {
         int keepAliveLeft = maxKeepAliveRequests;
         int soTimeout = socket.getSoTimeout();
         boolean keptAlive = false;
-        socket.setSoTimeout(timeout);
+        if( !disableUploadTimeout ) {
+            socket.setSoTimeout(timeout);
+        }
         while (started && !error && keepAlive) {
             try {
-                if( keptAlive && soTimeout > 0 ) {
+                if( !disableUploadTimeout && keptAlive && soTimeout > 0 ) {
                     socket.setSoTimeout(soTimeout);
                 }
                 inputBuffer.parseRequestLine();

@@ -185,6 +185,7 @@ public class Http11Protocol implements ProtocolHandler
     private int	timeout = 300000;	// 5 minutes as in Apache HTTPD server
     private String reportedname;
     private int socketCloseDelay=-1;
+    private boolean disableUploadTimeout = false;
 
     // -------------------- Pool setup --------------------
 
@@ -244,6 +245,10 @@ public class Http11Protocol implements ProtocolHandler
     public void setTcpNoDelay( boolean b ) {
 	ep.setTcpNoDelay( b );
         setAttribute("tcpNoDelay", "" + b);
+    }
+
+    public void setDisableUploadTimeout(boolean isDisabled) {
+        disableUploadTimeout = isDisabled;
     }
 
     public void setSoLinger( int i ) {
@@ -346,6 +351,7 @@ public class Http11Protocol implements ProtocolHandler
             processor.setAdapter( proto.adapter );
             processor.setMaxKeepAliveRequests( proto.maxKeepAliveRequests );
             processor.setTimeout( proto.timeout );
+            processor.setDisableUploadTimeout( proto.disableUploadTimeout );
 
             //thData[0]=adapter;
             thData[1]=processor;
