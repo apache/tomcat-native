@@ -81,9 +81,7 @@ AC_ARG_WITH(apxs,
             fi
 
             dnl test apache version
-            $RM -rf test
-            $APXS -n test -g
-            APA=`grep STANDARD20 test/mod_test.c`
+            APA=`${GREP} STANDARD20 ${APXS}`
             $RM -rf test
             if ${TEST} -z "$APA" ; then
                 WEBSERVER="apache-1.3"
