@@ -417,7 +417,8 @@ public class WebXml2Jk {
                                                    String systemId)
             throws SAXException, IOException
         {
-            System.out.println("ResolveEntity: " + publicId + " " + systemId);
+            if (log.isDebugEnabled())
+                log.debug("ResolveEntity: " + publicId + " " + systemId);
             return new InputSource(new StringReader(""));
         }
     }

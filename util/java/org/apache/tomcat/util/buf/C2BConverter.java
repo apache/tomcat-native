@@ -29,6 +29,10 @@ import java.io.UnsupportedEncodingException;
  * 
  */
 public final class C2BConverter {
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(C2BConverter.class );
+    
     private IntermediateOutputStream ios;
     private WriteConvertor conv;
     private ByteChunk bb;
@@ -108,7 +112,8 @@ public final class C2BConverter {
                                 charC.getOffset(), charC.getLength());
             //System.out.println("XXX Converting " + mb.getCharChunk() );
         } else {
-            System.out.println("XXX unknowon type " + type );
+            if (log.isDebugEnabled())
+                log.debug("XXX unknowon type " + type );
         }
         flushBuffer();
         //System.out.println("C2B: XXX " + bb.getBuffer() + bb.getLength()); 

@@ -34,6 +34,9 @@ import org.apache.tomcat.util.http.MimeHeaders;
 
 public class TestAjp13 extends TestCase {
 
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( TestAjp13.class );
+
     Ajp13Server server = null;
 
     public TestAjp13(String name) {
@@ -167,7 +170,8 @@ public class TestAjp13 extends TestCase {
     }
 
     protected static void println(String msg) {
-        System.out.println("[TestAjp13] " + msg);
+        if (log.isDebugEnabled())
+            log.debug("[TestAjp13] " + msg);
     }
 
     public static void main(String[] args) throws Exception {
