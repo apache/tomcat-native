@@ -55,6 +55,14 @@
  *                                                                           *
  * ========================================================================= */
 
+#ifndef JK_CHANNEL_H
+#define JK_CHANNEL_H
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #include "jk_global.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
@@ -127,3 +135,8 @@ struct jk_channel {
 
 typedef struct jk_channel jk_channel_t;
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif 
