@@ -355,7 +355,8 @@ public class SoTask extends Task {
 	}
 
 	if( checkDepend() ) {
-	    log("Dependency expired, full build ");
+	    log("Dependency expired, removing .o files and doing a full build ");
+	    removeOFiles();
 	    compileList=new Vector();
 	    for(int i=0; i<srcList.length; i++ ) {
 		File srcFile = (File)project.resolveFile(srcList[i]);
@@ -409,9 +410,28 @@ public class SoTask extends Task {
 	if( debug > 0 )
 	    log("No need to compile " + srcF + " target " + target ); 
 	return false;
-	
     }
 
+    public void removeOFiles( ) {
+	findSourceFiles();
+	compileList=new Vector();
+
+        for (int i = 0; i < srcList.length; i++) {
+	    File srcFile = (File)project.resolveFile(srcList[i]);
+
+	    String name=srcFile.getName();
+	    String targetNA[]=co_mapper.mapFileName( name );
+	    if( targetNA==null )
+		continue;
+	    File target=new File( buildDir, targetNA[0] );
+	    // Check the dependency
+	    if( target.exists() ) {
+		// Remove it - we'll do a full build
+		target.delete();
+	    }
+	}
+    }
+    
     public boolean checkDepend() {
 	if( depends==null )
 	    return false;
