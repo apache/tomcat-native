@@ -240,12 +240,12 @@ public class BaseNaming {
         // nothing yet.
     }
     
-    // -------------------- Abstract methods -------------------- 
+    // -------------------- Not so Abstract methods -------------------- 
     // This is what a subclass should implement.
 
     // XXX Base resolveLinks() method ?? And then use lookup without resolveLinks flag
     
-    /** The lookup method. 
+    /** The lookup method. This is the main method you should implement.
      *
      * @param Name
      * @param resolveLinks. If false, this is a lookupLink call. 
@@ -256,9 +256,13 @@ public class BaseNaming {
         throw new OperationNotSupportedException();
     }
 
-    /** This is the main bind operation to support.
+    /** The setter method. Implement it if the context is read/write.
      *
-     *  
+     * @param name 
+     * @param obj The object to be bound.
+     * @param attrs Attributes - if this is a dir context, null otherwise
+     * @param rebind What to do if the name is already bound. 
+     *     XXX can be further simplified - do a lookup and implement it. 
      */
     public void bind(Name name, Object obj, Attributes attrs, boolean rebind )
         throws NamingException
@@ -266,7 +270,7 @@ public class BaseNaming {
         throw new OperationNotSupportedException();
     }
 
-    /** Remove a binding
+    /** Remove a binding. XXX do we need the isContext case ?
      */
     public void unbind(Name name, boolean isContext)
         throws NamingException
@@ -274,21 +278,26 @@ public class BaseNaming {
         throw new OperationNotSupportedException();
     }
 
-    public int size() throws NamingException
-    {
-        return 0;
-    }
+    /* XXX There are 2 ways to list the childs: array ( size/elementAt ) or
+       iterator/Enumeration. Since the JNDI interface uses iteration -
+       that's what we should use.
+       */
 
-    public Name childNameAt( int i ) throws NamingException
-    {
+    /** Return the child elements, if any.
+     *
+     * This is a String or Name or Binding or NameClassPari enumeration -
+     *  the Context implementation will wrap it as a NamingEnumeration and
+     *  construct the right information.
+     *
+     * XXX name is all we need - all other info can be extracted - with some
+     * penalty. It's easy to do some instanceof tricks to avoid it, if possible,
+     * but the goal is to make it easy to write contexts, and name should be
+     * enough.
+     */
+    public Enumeration getChildren() throws NamingException {
         return null;
     }
 
-    public Object childAt( int i ) throws NamingException
-    {
-        return null;
-    }
-    
     public DirContext createSubcontext(Name name, Attributes attrs)
         throws NamingException
     {
@@ -303,14 +312,31 @@ public class BaseNaming {
         Object value = lookup(oldName, false);
         bind(newName, value, null, false);
         unbind(oldName, true);
+        
     }
 
-    public Attributes getAttributes(Name name, String[] attrIds)
+    /** Implement for directories
+     *
+     */
+    public Object getAttribute( Name name, String attName )
         throws NamingException
     {
         throw new OperationNotSupportedException();
     }
-    
+
+    public void setAttribute( Name name, String attName, Object value )
+        throws NamingException
+    {
+        throw new OperationNotSupportedException();
+    }
+
+    public String[] getAttributeNames(Name name )
+        throws NamingException
+    {
+        throw new OperationNotSupportedException();
+    }
+
+
     // -------------------- Utils --------------------
     
 
@@ -344,22 +370,6 @@ public class BaseNaming {
     
 
 
-    /**
-     * Closes this context. This method releases this context's resources 
-     * immediately, instead of waiting for them to be released automatically 
-     * by the garbage collector.
-     * This method is idempotent: invoking it on a context that has already 
-     * been closed has no effect. Invoking any other method on a closed 
-     * context is not allowed, and results in undefined behaviour.
-     * 
-     * @exception NamingException if a naming exception is encountered
-     */
-    public void close()
-        throws NamingException
-    {
-        // We don't own the env., but the clone
-        env.clear();
-    }
 
     //-------------------- Helpers -------------------- 
 
