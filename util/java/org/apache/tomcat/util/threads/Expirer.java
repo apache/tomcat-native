@@ -175,7 +175,7 @@ public final class Expirer  implements ThreadPoolRunnable
 		continue;
 	    
 	    long maxInactiveInterval = ts.getMaxInactiveInterval();
-1	    if( dL > 3 ) debug( "TS: " + maxInactiveInterval + " " +
+	    if( dL > 3 ) debug( "TS: " + maxInactiveInterval + " " +
 				ts.getLastAccessedTime());
 	    if (maxInactiveInterval < 0)
 		continue;
