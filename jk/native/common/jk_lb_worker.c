@@ -537,12 +537,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 int service_ok = JK_FALSE;
                 jk_endpoint_t *end = NULL;
                 
-                /* XXX: No need to strdup here ? */
-#if 0
-                s->jvm_route = jk_pool_strdup(s->pool, rec->r);
-#else
                 s->jvm_route = rec->r;
-#endif
                 rc = rec->w->get_endpoint(rec->w, &end, l);
 
                 if (JK_IS_DEBUG_LEVEL(l))
