@@ -107,7 +107,11 @@
 
 jint (JNICALL *jni_get_default_java_vm_init_args)(void *) = NULL;
 jint (JNICALL *jni_create_java_vm)(JavaVM **, JNIEnv **, void *) = NULL;
+#ifdef AS400
+jint (JNICALL *jni_get_created_java_vms)(JavaVM **, long, long *) = NULL;
+#else
 jint (JNICALL *jni_get_created_java_vms)(JavaVM **, int, int *) = NULL;
+#endif
 
 #define TC33_JAVA_BRIDGE_CLASS_NAME ("org/apache/tomcat/modules/server/JNIEndpoint")
 #define TC32_JAVA_BRIDGE_CLASS_NAME ("org/apache/tomcat/service/JNIEndpoint")
@@ -337,8 +341,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
                                     p->worker->jk_service_method,
     /* [V] For some reason gcc likes this pointer -> int -> jlong conversion, */
     /*     but not the direct pointer -> jlong conversion. I hope it's okay.  */
+#ifdef AS400
+                                    s,
+                                    l
+#else
                                     (jlong)(int)s,
-                                    (jlong)(int)l);
+                                    (jlong)(int)l
+#endif
+);
 
     /* [V] Righ now JNIEndpoint::service() only returns 1 or 0 */
     if(rc) {
@@ -533,9 +543,9 @@ static int JK_METHOD init(jk_worker_t *pThis,
 
     /* if(env = attach_to_jvm(p,l)) { */
     if((env = p->tmp_env)) {
-        jstring cmd_line = NULL;
-        jstring stdout_name = NULL;
-        jstring stderr_name = NULL;
+        jstring cmd_line = (jstring)NULL;
+        jstring stdout_name = (jstring)NULL;
+        jstring stderr_name = (jstring)NULL;
         jint rc = 0;
 
 		/* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
@@ -699,11 +709,11 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
     private_data->was_initialized       = JK_FALSE;
     private_data->jvm                   = NULL;
     private_data->tmp_env               = NULL;
-    private_data->jk_java_bridge_object = NULL;
-    private_data->jk_java_bridge_class  = NULL;
-    private_data->jk_startup_method     = NULL;
-    private_data->jk_service_method     = NULL;
-    private_data->jk_shutdown_method    = NULL;
+    private_data->jk_java_bridge_object = (jobject)NULL;
+    private_data->jk_java_bridge_class  = (jclass)NULL;
+    private_data->jk_startup_method     = (jmethodID)NULL;
+    private_data->jk_service_method     = (jmethodID)NULL;
+    private_data->jk_shutdown_method    = (jmethodID)NULL;
     private_data->tomcat_cmd_line       = NULL;
     private_data->tomcat_classpath      = NULL;
     private_data->bridge_type      		= TC33_BRIDGE_TYPE;
@@ -1045,7 +1055,11 @@ static int open_jvm2(jni_worker_t *p,
     err=jni_create_java_vm(&(p->jvm), &penv, &vm_args);
 
     if (JNI_EEXIST == err) {
-        int vmCount;
+#ifdef AS400
+        long vmCount;
+#else
+        int  vmCount;
+#endif
        jk_log(l, JK_LOG_DEBUG, "JVM alread instantiated."
               "Trying to attach instead.\n");
 
@@ -1118,7 +1132,7 @@ static int get_bridge_object(jni_worker_t *p,
                                                 strdup_ascii(&p->p, "()V"));   /* method sign */
 
     if(!constructor_method_id) {
-	    p->jk_java_bridge_class = NULL;
+	    p->jk_java_bridge_class = (jclass)NULL;
 	    jk_log(l, JK_LOG_EMERG, 
                "Can't find constructor\n");
 	    return JK_FALSE;
@@ -1128,7 +1142,7 @@ static int get_bridge_object(jni_worker_t *p,
                                                  p->jk_java_bridge_class,
                                                  constructor_method_id);
     if(! p->jk_java_bridge_object) {
-	    p->jk_java_bridge_class = NULL;
+	    p->jk_java_bridge_class = (jclass)NULL;
 	    jk_log(l, JK_LOG_EMERG, 
                "Can't create new bridge object\n");
 	    return JK_FALSE;
@@ -1137,8 +1151,8 @@ static int get_bridge_object(jni_worker_t *p,
     p->jk_java_bridge_object = (jobject)(*env)->NewGlobalRef(env, p->jk_java_bridge_object);
     if(! p->jk_java_bridge_object) {
 	    jk_log(l, JK_LOG_EMERG, "Can't create global ref to bridge object\n");
-	    p->jk_java_bridge_class = NULL;
-        p->jk_java_bridge_object = NULL;
+	    p->jk_java_bridge_class = (jclass)NULL;
+        p->jk_java_bridge_object = (jobject)NULL;
 	    return JK_FALSE;
     }
 
