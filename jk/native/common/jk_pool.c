@@ -114,7 +114,7 @@ void *jk_pool_alloc(jk_pool_t *p,
     void *rc = NULL;
 
     if(p && size > 0) {
-        /* Round size to the upper mult of 8. */
+        /* Round size to the upper mult of 8 (or 16 on iSeries) */
 	size--;
 #ifdef AS400
         size /= 16;
