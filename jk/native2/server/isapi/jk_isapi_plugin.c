@@ -130,13 +130,8 @@ int use_thread_pool = 0;
 static void write_error_response(PHTTP_FILTER_CONTEXT pfc,char *status,char * msg)
 {
     char crlf[3] = { (char)13, (char)10, '\0' };
-    char ctype[30];
+    char *ctype = "Content-Type:text/html\r\n\r\n";
     DWORD len = strlen(msg);
-
-    sprintf(ctype, 
-            "Content-Type:text/html%s%s", 
-            crlf, 
-            crlf);
 
     /* reject !!! */
     pfc->ServerSupportFunction(pfc, 
@@ -151,7 +146,7 @@ HANDLE jk2_starter_event;
 HANDLE jk2_inited_event;
 HANDLE jk2_starter_thread = NULL;
 
-DWORD WINAPI jk2_isapi_starter( LPVOID lpParam ) 
+VOID jk2_isapi_starter( LPVOID lpParam ) 
 {
     Sleep(1000);
     
@@ -177,7 +172,8 @@ DWORD WINAPI jk2_isapi_starter( LPVOID lpParam )
     }
     apr_pool_destroy(jk_globalPool);
     apr_terminate();
-    return 0; 
+    /* Clean up and die. */
+    ExitThread(0); 
 } 
 
 BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
@@ -189,7 +185,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     jk2_starter_event = CreateEvent(NULL, FALSE, FALSE, NULL);
 
     jk2_starter_thread = CreateThread(NULL, 0,
-                                      jk2_isapi_starter,
+                                      (LPTHREAD_START_ROUTINE)jk2_isapi_starter,
                                       NULL,
                                       0,
                                       &dwThreadId);
@@ -319,8 +315,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                            "HttpFilterProc [%s] contains one or more invalid escape sequences.\n", 
                            uri);
-                    write_error_response(pfc,"400 Bad Request",
-                            "<HTML><BODY><H1>Request contains invalid encoding</H1></BODY></HTML>");
+                    write_error_response(pfc,"400 Bad Request", HTML_ERROR_400);
                     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                     return SF_STATUS_REQ_FINISHED;
                 }
@@ -328,8 +323,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
                            "HttpFilterProc [%s] contains forbidden escape sequences.\n", 
                            uri);
-                    write_error_response(pfc,"403 Forbidden",
-                            "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                    write_error_response(pfc,"403 Forbidden", HTML_ERROR_403);
                     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                     return SF_STATUS_REQ_FINISHED;
                 }
@@ -374,8 +368,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                             env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                                    "HttpFilterProc [%s] re-encoding request exceeds maximum buffer size.\n", 
                                    uri);
-                            write_error_response(pfc,"400 Bad Request",
-                                    "<HTML><BODY><H1>Request contains too many characters that need to be encoded.</H1></BODY></HTML>");
+                            write_error_response(pfc,"400 Bad Request", HTML_ERROR_400);
                             workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                             return SF_STATUS_REQ_FINISHED;
                         }
@@ -430,8 +423,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                            "HttpFilterProc [%s] points to the web-inf or meta-inf directory.\nSomebody try to hack into the site!!!\n", 
                            uri);
 
-                    write_error_response(pfc,"403 Forbidden",
-                            "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                    write_error_response(pfc,"403 Forbidden", HTML_ERROR_403);
                     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                     return SF_STATUS_REQ_FINISHED;
                 }
