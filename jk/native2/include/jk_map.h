@@ -116,6 +116,10 @@ struct jk_map {
     */
     void (*clear)(struct jk_env *env, struct jk_map *m);
 
+    /* Sort the map, 
+    */
+    void (*sort)(struct jk_env *env, struct jk_map *m);
+
     struct jk_pool *pool;
     void *_private;
 
