@@ -145,7 +145,7 @@ SOURCE=..\..\common\jk_logger_file.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\jk_logger_win32.c
+SOURCE=..\..\common\jk_logger_win32.c
 # End Source File
 # Begin Source File
 
@@ -329,27 +329,19 @@ SOURCE=..\..\include\jk_workerEnv.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\jk_logger_win32_message.mc
+SOURCE=..\..\common\jk_logger_win32_message.mc
 
 !IF  "$(CFG)" == "isapi - Win32 Release"
-
-# PROP Ignore_Default_Tool 1
-# Begin Custom Build - Creating resources from $(InputPath)
-InputPath=.\jk_logger_win32_message.mc
-
-"jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	mc $(InputPath)
-
-# End Custom Build
 
 !ELSEIF  "$(CFG)" == "isapi - Win32 Debug"
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build - Creating resources from $(InputPath)
-InputPath=.\jk_logger_win32_message.mc
+InputDir=\tomcat\jakarta-tomcat-connectors\jk\native2\common
+InputPath=..\..\common\jk_logger_win32_message.mc
 
-"jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	mc $(InputPath)
+"..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	mc -h $(InputDir) -r $(InputDir) $(InputPath)
 
 # End Custom Build
 
@@ -358,7 +350,7 @@ InputPath=.\jk_logger_win32_message.mc
 # End Source File
 # Begin Source File
 
-SOURCE=.\jk_logger_win32_message.rc
+SOURCE=..\..\common\jk_logger_win32_message.rc
 # End Source File
 # End Group
 # End Target
