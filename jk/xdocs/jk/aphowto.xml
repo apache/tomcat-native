@@ -572,12 +572,12 @@ document space for a VirtualHost:
 </screen>
 
 <p>
-Since mod_jk 1.2.6, and under Apache 2.0, it's possible to exclude some URL/URI from
-jk processing by setting the env var no-jk, for example with the SetEnvIf Directive.
+Starting with mod_jk 1.2.6, and under Apache 2.0, it's possible to exclude some URL/URI from
+jk processing by setting the env var <b>no-jk</b>, for example with the SetEnvIf Directive.
 </p>
 
 <p>
-You could use no-jk env var to fix problem with mod_alias or mod_userdir
+You could use <b>no-jk</b> env var to fix problem with mod_alias or mod_userdir
 directive when jk and alias/userdir URLs matches. 
 </p>
 
