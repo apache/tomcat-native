@@ -37,6 +37,11 @@ extern "C"
 #define JK_LB_WORKER_TYPE     (5)
 #define JK_LB_DEF_DOMAIN_NAME ("unknown")
 
+#define JK_LB_BYREQUESTS      (0)
+#define JK_LB_BYTRAFFIC       (1)
+#define JK_LB_METHOD_REQUESTS ("request")
+#define JK_LB_METHODTRAFFIC   ("traffic")
+
 struct worker_record
 {
     jk_worker_t     *w;
@@ -48,8 +53,8 @@ typedef struct worker_record worker_record_t;
 struct lb_worker
 {
     worker_record_t *lb_workers;
-    unsigned num_of_workers;
-    unsigned num_of_local_workers;
+    unsigned int num_of_workers;
+    int          lbmethod;
 
     jk_pool_t p;
     jk_pool_atom_t buf[TINY_POOL_SIZE];
