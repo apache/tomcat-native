@@ -35,10 +35,13 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
+#define JK_SOCKET_EOF      (-2)
+#define JK_SOCKET_ERROR    (-3)
+
 int jk_resolve(const char *host, int port, struct sockaddr_in *rc);
 
-int jk_open_socket(struct sockaddr_in *addr,
-                   int keepalive, int timeout, jk_logger_t *l);
+int jk_open_socket(struct sockaddr_in *addr, int keepalive,
+                   int timeout, int sock_buf, jk_logger_t *l);
 
 int jk_close_socket(int s);
 
@@ -48,8 +51,7 @@ int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len);
 
 char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf);
 
-int jk_socket_timeout_set(int sd, int timeout, int t);
-
+int jk_is_socket_connected(int sd, int timeout);
 
 #ifdef __cplusplus
 }

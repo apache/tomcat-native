@@ -33,6 +33,8 @@
 #include "apr_network_io.h"
 #include "apr_errno.h"
 #include "apr_general.h"
+#include "apr_pools.h"
+static apr_pool_t *jk_apr_pool = NULL;
 #endif
 
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -57,7 +59,7 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
     rc->sin_family = AF_INET;
 
     /* Check if we only have digits in the string */
-    for (x = 0; '\0' != host[x]; x++) {
+    for (x = 0; host[x] != '\0'; x++) {
         if (!isdigit(host[x]) && host[x] != '.') {
             break;
         }
@@ -67,16 +69,15 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
     if (host[x] != '\0') {
 
 #ifdef HAVE_APR
-        apr_pool_t *context;
         apr_sockaddr_t *remote_sa, *temp_sa;
         char *remote_ipaddr;
-
-        /* May be we could avoid to recreate it each time ? */
-        if (apr_pool_create(&context, NULL) != APR_SUCCESS)
-            return JK_FALSE;
-
+        
+        if (!jk_apr_pool) {
+            if (apr_pool_create(&jk_apr_pool, NULL) != APR_SUCCESS)
+                return JK_FALSE;
+        }
         if (apr_sockaddr_info_get
-            (&remote_sa, host, APR_UNSPEC, (apr_port_t) port, 0, context)
+            (&remote_sa, host, APR_UNSPEC, (apr_port_t) port, 0, jk_apr_pool)
             != APR_SUCCESS)
             return JK_FALSE;
 
@@ -94,9 +95,6 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 
         apr_sockaddr_ip_get(&remote_ipaddr, remote_sa);
         laddr.s_addr = inet_addr(remote_ipaddr);
-
-        /* May be we could avoid to delete it each time ? */
-        apr_pool_destroy(context);
 
 #else /* HAVE_APR */
 
@@ -122,114 +120,123 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 
 /** connect to Tomcat */
 
-int jk_open_socket(struct sockaddr_in *addr,
-                   int keepalive, int timeout, jk_logger_t *l)
+int jk_open_socket(struct sockaddr_in *addr, int keepalive,
+                   int timeout, int sock_buf, jk_logger_t *l)
 {
     char buf[32];
     int sock;
     int set = 1;
+    int ret;
 
     JK_TRACE_ENTER(l);
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock >= 0) {
-        int ret, len;
-        if (timeout != -1) {
-            /* do not allow non blocking sockets for now */
-            if (timeout == 0)
-                timeout = -1;            
-            ret = jk_socket_timeout_set(sock, -1, timeout * 1000);
-            if (ret) {
-                jk_close_socket(sock);
-                jk_log(l, JK_LOG_ERROR,
-                       "timeout_set failed with errno = %d",
-                       ret);
-                JK_TRACE_EXIT(l);
-                return -1;
-            }
-            if (JK_IS_DEBUG_LEVEL(l))
-                jk_log(l, JK_LOG_DEBUG,
-                       "set timeout to %d with status %d",
-                       timeout, ret);
-
-        }
-
-        /* Tries to connect to Tomcat (continues trying while error is EINTR) */
-        do {
-            if (JK_IS_DEBUG_LEVEL(l))
-                jk_log(l, JK_LOG_DEBUG,
-                       "try to connect socket = %d to %s", sock,
-                       jk_dump_hinfo(addr, buf));
-
-/* Need more infos for BSD 4.4 and Unix 98 defines, for now only 
-   iSeries when Unix98 is required at compil time */
-#if (_XOPEN_SOURCE >= 520) && defined(AS400)
-            ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in);
-#endif
-            ret = connect(sock,
-                          (struct sockaddr *)addr,
-                          sizeof(struct sockaddr_in));            
-#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-            if (SOCKET_ERROR == ret) {
-                errno = WSAGetLastError() - WSABASEERR;
-            }
-#endif /* WIN32 */
-            if (JK_IS_DEBUG_LEVEL(l))
-                jk_log(l, JK_LOG_DEBUG,
-                       "after connect ret = %d", ret);
-        } while (-1 == ret && EINTR == errno);
-
-        /* Check if we connected */
-        if (ret == -1) {
-            jk_log(l, JK_LOG_INFO,
-                   "connect() failed errno = %d", errno);
-            jk_close_socket(sock);
-            JK_TRACE_EXIT(l);
-            return -1;
-        }
-        setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&set,
-                   sizeof(set));
-        if (keepalive) {
-            set = 1;
-            if (JK_IS_DEBUG_LEVEL(l))
-                jk_log(l, JK_LOG_DEBUG,
-                       "jk_open_socket, set SO_KEEPALIVE to on");
-            setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (const char *)&set,
-                        sizeof(set));
-        }
-        len = 8*1024; /* Default AJP packet size */
-
-        /* Set socket send buffer size */
-        if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char *)&len,
-                       sizeof(len))) {
-            JK_GET_SOCKET_ERRNO();
-            jk_log(l, JK_LOG_ERROR,
-                   "failed setting sndbuf errno = %d", errno);
-            jk_close_socket(sock);
-            JK_TRACE_EXIT(l);
-            return -1;
-        }
-        /* Set socket receive buffer size */
-        if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (const char *)&len,
-                              sizeof(len))) {
-            JK_GET_SOCKET_ERRNO();
-            jk_log(l, JK_LOG_ERROR,
-                   "failed setting rcvbuf errno = %d", errno);
-            jk_close_socket(sock);
-            JK_TRACE_EXIT(l);
-            return -1;
-        }
-
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG, "connected sd = %d",
-                   sock);
-    }
-    else {
+    if (sock < 0) {
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
-               "socket() failed with errno = %d", errno);
+               "socket() failed with errno=%d", errno);
+        JK_TRACE_EXIT(l);
+        return -1;
+    }
+    /* Disable Nagle algorithm */
+    if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&set,
+                   sizeof(set))) {
+        jk_log(l, JK_LOG_ERROR,
+                "failed setting TCP_NODELAY with errno=%d", errno);
+        jk_close_socket(sock);
+        JK_TRACE_EXIT(l);
+        return -1;
+    }
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "socket TCP_NODELAY set to On");
+    if (keepalive) {
+        set = 1;
+        if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (const char *)&set,
+                       sizeof(set))) {
+            jk_log(l, JK_LOG_ERROR,
+                   "failed setting SO_KEEPALIVE with errno=%d", errno);
+            jk_close_socket(sock);
+            JK_TRACE_EXIT(l);
+            return -1;
+        }
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "socket SO_KEEPALIVE set to On");
     }
 
+    if (sock_buf) {
+        set =  DEF_BUFFER_SZ;
+        /* Set socket send buffer size */
+        if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char *)&set,
+                        sizeof(set))) {
+            JK_GET_SOCKET_ERRNO();
+            jk_log(l, JK_LOG_ERROR,
+                    "failed setting SO_SNDBUF with errno=%d", errno);
+            jk_close_socket(sock);
+            JK_TRACE_EXIT(l);
+            return -1;
+        }
+        set =  DEF_BUFFER_SZ;
+        /* Set socket receive buffer size */
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (const char *)&set,
+                                sizeof(set))) {
+            JK_GET_SOCKET_ERRNO();
+            jk_log(l, JK_LOG_ERROR,
+                    "failed setting SO_RCVBUF with errno=%d", errno);
+            jk_close_socket(sock);
+            JK_TRACE_EXIT(l);
+            return -1;
+        }
+    }
+
+#ifdef WIN32
+    if (timeout > 0) {
+        timeout = timeout * 1000;
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, 
+                   (char *) &timeout, sizeof(int));
+        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, 
+                   (char *) &timeout, sizeof(int));
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "timeout %d set for socket=%d",
+                   timeout, sock);
+    }
+#endif
+    /* Tries to connect to Tomcat (continues trying while error is EINTR) */
+    do {
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "trying to connect socket %d to %s", sock,
+                   jk_dump_hinfo(addr, buf));
+
+/* Need more infos for BSD 4.4 and Unix 98 defines, for now only 
+iSeries when Unix98 is required at compil time */
+#if (_XOPEN_SOURCE >= 520) && defined(AS400)
+        ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in);
+#endif
+        ret = connect(sock, (struct sockaddr *)addr,
+                      sizeof(struct sockaddr_in));            
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+        if (ret == SOCKET_ERROR) {
+            errno = WSAGetLastError() - WSABASEERR;
+        }
+#endif /* WIN32 */
+    } while (ret == -1 && errno == EINTR);
+
+    /* Check if we are connected */
+    if (ret == -1) {
+        jk_log(l, JK_LOG_INFO,
+                "connect to %s failed with errno=%d",
+                jk_dump_hinfo(addr, buf), errno);
+        jk_close_socket(sock);
+        sock = -1;
+    }
+    else {
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG, "socket %d connected to %s",
+                   sock, jk_dump_hinfo(addr, buf));
+    }
     JK_TRACE_EXIT(l);
     return sock;
 }
@@ -239,13 +246,11 @@ int jk_open_socket(struct sockaddr_in *addr,
 int jk_close_socket(int s)
 {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-    if (INVALID_SOCKET != s) {
+    if (s != INVALID_SOCKET)
         return closesocket(s) ? -1 : 0;
-    }
 #else
-    if (-1 != s) {
+    if (s != -1)
         return close(s);
-    }
 #endif
 
     return -1;
@@ -278,12 +283,10 @@ int jk_tcp_socket_sendfull(int sd, const unsigned char *b, int len)
 #endif
         } while (wr == -1 && errno == EINTR);
 
-        if (wr == -1) {
-            return -3;
-        }
-        else if (wr == 0) {
-            return -2;
-        }
+        if (wr == -1)
+            return (errno > 0) ? -errno : errno;
+        else if (wr == 0)
+            return JK_SOCKET_EOF;
         sent += wr;
     }
 
@@ -315,19 +318,10 @@ int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len)
 #endif
         } while (rd == -1 && errno == EINTR);
         
-        if (rd == -1) {
-            /* XXX: EAGAIN is reported only on nonblocking sockets */
-            if (errno == EAGAIN)
-                continue;
-            else {
-                /** Pass the errno to the caller */
-                return (errno > 0) ? -errno : errno;
-            }
-        }
-        else if (rd == 0) {
-            /** XXX: Return EOF? */
-            return -1;
-        }
+        if (rd == -1)
+            return (errno > 0) ? -errno : errno;
+        else if (rd == 0)
+            return JK_SOCKET_EOF;
         rdlen += rd;
     }
 
@@ -407,41 +401,32 @@ static int sononblock(int sd)
     return 0;
 } 
 
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+#define EWOULDBLOCK (WSAEWOULDBLOCK - WSABASEERR)
+#endif
 
-int jk_socket_timeout_set(int sd, int timeout, int t)
+int jk_is_socket_connected(int sd, int timeout)
 {
+    unsigned char test_buffer[1]; 
+    int  rc;    
+    /* Set socket to nonblocking */
+    if ((rc = sononblock(sd)) != 0)
+        return (errno > 0) ? -errno : errno;
 
-    int rc = 0;
-
-    if (t == 0) {
-        /* Set the socket non-blocking if it was previously blocking */
-        if (timeout != 0)
-            rc = sononblock(sd);
-    }
-    else if (t > 0) {
-        /* Set the socket to blocking if it was previously non-blocking */
-        if (timeout == 0) {
-            if ((rc = soblock(sd)) != 0)
-                return rc;
-        } 
-        /* Reset socket timeouts if the new timeout differs from the old timeout */
-        if (timeout != t) {
-            /* Timeouts are in msec, represented as int */
-            setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, 
-                       (char *) &t, sizeof(int));
-            setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, 
-                       (char *) &t, sizeof(int));
-        } 
-    }
-    else if (t < 0) {
-        int zero = 0;
-        /* Set the socket to blocking with infinite timeouts */
-        if ((rc = soblock(sd)) != 0)
-            return rc;
+    rc = jk_tcp_socket_recvfull(sd, test_buffer, 1) * (-1);
+    soblock(sd);
+#ifdef WIN32
+    /* Reset socket timeouts if the new timeout differs from the old timeout */
+    if (timeout > 0) {
+        /* Timeouts are in msec, represented as int */
         setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, 
-                   (char *) &zero, sizeof(zero));
+                    (char *) &timeout, sizeof(int));
         setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, 
-                   (char *) &zero, sizeof(zero));
+                    (char *) &timeout, sizeof(int));
     } 
-    return rc;
+#endif
+    if (rc == EWOULDBLOCK || rc == -1)
+        return 1;
+    else
+        return rc;
 }
