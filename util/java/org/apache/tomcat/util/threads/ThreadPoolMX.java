@@ -163,7 +163,7 @@ public class ThreadPoolMX extends ThreadPool {
      *
      * @return
      */
-    public String[] threadStatus() {
+    public String[] getThreadStatus() {
         String status[]=new String[ threads.size()];
         Iterator it=threads.keySet().iterator();
         for( int i=0; ( i<status.length && it.hasNext()); i++ ) {
@@ -179,7 +179,7 @@ public class ThreadPoolMX extends ThreadPool {
      *
      * @return
      */
-    public String[] threadParam() {
+    public String[] getThreadParam() {
         String status[]=new String[ threads.size()];
         Iterator it=threads.keySet().iterator();
         for( int i=0; ( i<status.length && it.hasNext()); i++ ) {
