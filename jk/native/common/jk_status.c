@@ -322,8 +322,9 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
                          const char *worker, jk_logger_t *l)
 {
     unsigned int i;
-    
-    jk_puts(s, "<tr><td collpan=\"2\">Uri mappings</td></tr>\n");
+
+    jk_puts(s, "<br />Uri Mappings:\n");
+    jk_puts(s, "<table><tr><th>Disabled</th><th>Match Type</th><th>Uri</th></tr>\n");
     for (i = 0; i < uwmap->size; i++) {
         uri_worker_record_t *uwr = uwmap->maps[i];
         if (strcmp(uwr->worker_name, worker))
@@ -331,11 +332,13 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
         jk_printf(s, "<tr><td><input name=\"mi%d\" type=checkbox", i);
         if (uwr->s->match_type & MATCH_TYPE_DISABLED)
             jk_puts(s, " checked");
-        jk_putv(s, ">", status_val_match(uwr->s->match_type),
+        jk_putv(s, "></td><td>",
+                status_val_match(uwr->s->match_type),
                 "</td><td>", NULL);
         jk_puts(s, uwr->uri);
         jk_puts(s, "</td></tr>\n");
     }
+    jk_puts(s, "</table>\n");
 }
 
 
@@ -431,8 +434,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_putv(s, "<td>", status_strfsize(wr->s->transferred, buf),
                         "</td>", NULL);
                 jk_putv(s, "<td>", status_strfsize(wr->s->readed, buf),
-                        "</td><td>", NULL);
-                jk_printf(s, "<td>%u</td>", wr->s->busy);
+                        "</td>", NULL);
+                jk_printf(s, "<td>%u</td><td>", wr->s->busy);
                 jk_puts(s, wr->s->redirect);
                 jk_puts(s, "</td><td>\n");
                 jk_puts(s, wr->s->domain);
@@ -466,11 +469,11 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 if (wr->s->is_disabled)
                     jk_puts(s, " checked");
                 jk_puts(s, "></td></tr>\n");
+                jk_puts(s, "</td></tr>\n</table>\n");
+
                 display_maps(s, sw, s->uw_map, wr->s->name, l);
 
-                jk_puts(s, "<tr><td colspan=2>&nbsp;</td></tr>\n");
-                jk_puts(s, "<tr><td colspan=2><input type=submit value=\"Update Worker\">");
-                jk_puts(s, "</td></tr>\n</table>\n</form>\n");
+                jk_puts(s, "<br /><input type=submit value=\"Update Worker\">\n</form>\n");
 
             }
             else if (dworker && strcmp(dworker, sw->we->worker_list[i]) == 0) {
@@ -498,12 +501,10 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 if (lb->s->sticky_session_force)
                     jk_puts(s, " checked");
                 jk_puts(s, "></td></tr>\n");
+                jk_puts(s, "</td></tr>\n</table>\n");
 
                 display_maps(s, sw, s->uw_map, dworker, l);
-
-                jk_puts(s, "<tr><td colspan=2>&nbsp;</td></tr>\n");
-                jk_puts(s, "<tr><td colspan=2><input type=submit value=\"Update Balancer\">");
-                jk_puts(s, "</td></tr>\n</table>\n</form>\n");
+                jk_puts(s, "<br /><input type=submit value=\"Update Balancer\"></form>\n");
             }
         }
         else {
@@ -565,7 +566,7 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
                 uwr->s->match_type |= MATCH_TYPE_DISABLED;
             else
                 uwr->s->match_type &= ~MATCH_TYPE_DISABLED;
-                
+
         }
     }
     else  {
@@ -589,7 +590,7 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
             for (i = 0; i < (int)lb->num_of_workers; i++) {
                 if (strcmp(dworker, lb->lb_workers[i].s->name) == 0) {
                     wr = &(lb->lb_workers[i]);
-                    break;            
+                    break;
                 }
             }
         }
