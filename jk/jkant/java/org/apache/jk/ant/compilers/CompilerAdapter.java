@@ -95,11 +95,7 @@ public abstract class CompilerAdapter extends SoTask {
     }
 
     public GlobPatternMapper getOMapper() {
-	GlobPatternMapper co_mapper=new GlobPatternMapper();
-	co_mapper.setFrom("*.c");
-	co_mapper.setTo("*.o");
-
-	return co_mapper;
+        return null;
     }
 
     public void execute() throws BuildException {
@@ -179,32 +175,11 @@ public abstract class CompilerAdapter extends SoTask {
     }
 
     protected void addDebug(Commandline cmd) {
-	if( optG ) {
-	    cmd.createArgument().setValue("-g" );
-	    cmd.createArgument().setValue("-W");
-	    cmd.createArgument().setValue("-Wall");
-	    
-	    cmd.createArgument().setValue("-Wtraditional");
-	    cmd.createArgument().setValue("-Wredundant-decls");
-	    cmd.createArgument().setValue("-Wmissing-declarations");
-	    cmd.createArgument().setValue("-Wmissing-prototypes");
-	    cmd.createArgument().setValue("-Wconversions");
-	    cmd.createArgument().setValue("-Wcast-align");
-
-	    cmd.createArgument().setValue("-pedantic" );
-	}
     }
 
     protected void addOptimize( Commandline cmd ) {
-	if( optimize )
-	    cmd.createArgument().setValue("-O3" );
     }
 
     protected void addProfile( Commandline cmd ) {
-	if( profile ) {
-	    cmd.createArgument().setValue("-pg" );
-	    // bb.in 
-	    // cmd.createArgument().setValue("-ax" );
-	}
     }
 }

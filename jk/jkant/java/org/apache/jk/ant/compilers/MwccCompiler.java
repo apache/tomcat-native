@@ -73,7 +73,7 @@ import java.util.*;
  *
  * @author Mike Anderson
  */
-public class MwccCompiler extends CompilerAdapter {
+public class MwccCompiler extends CcCompiler {
     
     public MwccCompiler() {
         super();

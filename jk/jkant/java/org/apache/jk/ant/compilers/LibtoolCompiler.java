@@ -73,7 +73,7 @@ import java.util.*;
  *
  * @author Costin Manolache
  */
-public class LibtoolCompiler extends CompilerAdapter {
+public class LibtoolCompiler extends CcCompiler {
 
     public LibtoolCompiler() {
 	super();

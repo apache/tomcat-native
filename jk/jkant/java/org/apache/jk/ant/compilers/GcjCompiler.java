@@ -68,7 +68,7 @@ import java.util.*;
  * 
  * @author Costin Manolache
  */
-public class GcjCompiler extends CompilerAdapter {
+public class GcjCompiler extends CcCompiler {
     static GlobPatternMapper co_mapperS=new GlobPatternMapper();
     static {
 	co_mapperS.setFrom("*.java");
