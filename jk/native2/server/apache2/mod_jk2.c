@@ -82,6 +82,10 @@
 
 #include "util_script.h"
 
+#ifdef WIN32
+static char  file_name[_MAX_PATH];
+#endif
+
 /*
  * Jakarta (jk_) include files
  */
@@ -284,6 +288,17 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     
     env->l=l;
     
+#ifdef WIN32
+    env->soName=env->globalPool->calloc(env, env->globalPool, strlen(file_name)+1);
+    
+    if( env->soName == NULL ){
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating env->soName\n");
+        return env;
+    }
+    strcpy(env->soName,file_name);
+#else 
+    env->soName=NULL;
+#endif
     /* We should make it relative to JK_HOME or absolute path.
        ap_server_root_relative(cmd->pool,opt); */
     
@@ -708,3 +723,15 @@ module AP_MODULE_DECLARE_DATA jk2_module =
     jk2_register_hooks     /* register hooks */
 };
 
+#ifdef WIN32
+
+BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
+                    ULONG ulReason,         // Reason why NT called this DLL
+                    LPVOID lpReserved)      // Reserved parameter for future use
+{
+    GetModuleFileName( hInst, file_name, sizeof(file_name)));
+    return TRUE;
+}
+
+
+#endif
