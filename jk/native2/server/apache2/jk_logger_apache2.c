@@ -170,7 +170,8 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
 
     if( strcmp( name, "level" )==0 ) {
         _this->level = jk2_logger_file_parseLogLevel(env, value);
-        if( _this->level == 0 ) {
+        if( _this->level == JK_LOG_DEBUG_LEVEL ) {
+            env->debug = 1;
             /*             _this->jkLog( env, _this, JK_LOG_ERROR, */
             /*                           "Level %s %d \n", value, _this->level ); */
         }
