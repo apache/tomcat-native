@@ -159,15 +159,15 @@ public class ThreadPool  {
      *   call register() in order to set a name.
      */
     public static ThreadPool createThreadPool(boolean jmx) {
-        if( jmx ) {
-            try {
-                Class.forName( "org.apache.commons.modeler.Registry");
-                Class tpc=Class.forName( "org.apache.tomcat.util.threads.ThreadPoolMX");
-                ThreadPool res=(ThreadPool)tpc.newInstance();
-                return res;
-            } catch( Exception ex ) {
-            }
-        }
+//        if( jmx ) {
+//            try {
+//                Class.forName( "org.apache.commons.modeler.Registry");
+//                Class tpc=Class.forName( "org.apache.tomcat.util.threads.ThreadPoolMX");
+//                ThreadPool res=(ThreadPool)tpc.newInstance();
+//                return res;
+//            } catch( Exception ex ) {
+//            }
+//        }
         return new ThreadPool();
     }
 
@@ -264,6 +264,11 @@ public class ThreadPool  {
         return threads.keys();
     }
 
+    public void run(Runnable r) {
+        ControlRunnable c = findControlRunnable();
+        c.runIt(r);
+    }    
+    
     //
     // You may wonder what you see here ... basically I am trying
     // to maintain a stack of threads. This way locality in time
@@ -275,17 +280,20 @@ public class ThreadPool  {
      * Executes a given Runnable on a thread in the pool, block if needed.
      */
     public void runIt(ThreadPoolRunnable r) {
-
         if(null == r) {
             throw new NullPointerException();
         }
 
+        ControlRunnable c = findControlRunnable();
+        c.runIt(r);
+    }
+
+    private ControlRunnable findControlRunnable() {
+        ControlRunnable c=null;
+
         if(0 == currentThreadCount || stopThePool) {
             throw new IllegalStateException();
         }
-
-        ControlRunnable c = null;
-
         // Obtain a free thread from the pool.
         synchronized(this) {
             if(currentThreadsBusy == currentThreadCount) {
@@ -323,7 +331,7 @@ public class ThreadPool  {
             c = pool[currentThreadCount - currentThreadsBusy - 1];
             currentThreadsBusy++;
         }
-        c.runIt(r);
+        return c;
     }
 
     static boolean logfull=true;
@@ -542,27 +550,29 @@ public class ThreadPool  {
         /**
 	 * ThreadPool where this thread will be returned
 	 */
-        ThreadPool p;
+        private ThreadPool p;
 
 	/**
 	 * The thread that executes the actions
 	 */
-        Thread     t;
+        private ThreadWithAttributes     t;
 
 	/**
 	 * The method that is executed in this thread
 	 */
-        ThreadPoolRunnable   toRun;
+        
+        private ThreadPoolRunnable   toRun;
+        private Runnable toRunRunnable;
 
 	/**
 	 * Stop this thread
 	 */
-	boolean    shouldTerminate;
+	private boolean    shouldTerminate;
 
 	/**
 	 * Activate the execution of the action
 	 */
-        boolean    shouldRun;
+        private boolean    shouldRun;
 
 	/**
 	 * Per thread data - can be used only if all actions are
@@ -570,8 +580,7 @@ public class ThreadPool  {
 	 *  A better mechanism is possible ( that would allow association of
 	 *  thread data with action type ), but right now it's enough.
 	 */
-	boolean noThData;
-	Object thData[]=null;
+	private boolean noThData;
 
 	/**
 	 * Start a new thread, with no method in it
@@ -586,7 +595,6 @@ public class ThreadPool  {
             t.start();
             p.addThread( t, this );
 	    noThData=true;
-	    thData=null;
         }
 
         public void run() {
@@ -599,10 +607,6 @@ public class ThreadPool  {
                             this.wait();
                         }
                     }
-                    if(toRun == null ) {
-                            if( p.log.isDebugEnabled())
-                                p.log.debug( "No toRun ???");
-                    }
 
                     if( shouldTerminate ) {
                             if( p.log.isDebugEnabled())
@@ -613,14 +617,24 @@ public class ThreadPool  {
                     /* Check if should execute a runnable.  */
                     try {
                         if(noThData) {
-                            if(p.log.isDebugEnabled())
-                                p.log.debug( "Getting new thread data");
-                            thData=toRun.getInitData();
+                            if( toRun != null ) {
+                                Object thData[]=toRun.getInitData();
+                                t.setThreadData(p, thData);
+                                if(p.log.isDebugEnabled())
+                                    p.log.debug( "Getting new thread data");
+                            }
                             noThData = false;
                         }
 
                         if(shouldRun) {
-			    toRun.runIt(thData);
+			    if( toRun != null ) { 
+                                toRun.runIt(t.getThreadData(p));
+                            } else if( toRunRunnable != null ) { 
+                                toRunRunnable.run();
+                            } else {
+                                if( p.log.isDebugEnabled())
+                                    p.log.debug( "No toRun ???");
+                            }
                         }
                     } catch(Throwable t) {
 			p.log.error("Caught exception executing " + toRun.toString() + ", terminating thread", t);
@@ -665,6 +679,20 @@ public class ThreadPool  {
          *
          * @param toRun
          */
+        public synchronized void runIt(Runnable toRun) {
+	    this.toRunRunnable = toRun;
+	    // Do not re-init, the whole idea is to run init only once per
+	    // thread - the pool is supposed to run a single task, that is
+	    // initialized once.
+            // noThData = true;
+            shouldRun = true;
+            this.notify();
+        }
+
+        /** Run a task
+         *
+         * @param toRun
+         */
         public synchronized void runIt(ThreadPoolRunnable toRun) {
 	    this.toRun = toRun;
 	    // Do not re-init, the whole idea is to run init only once per
@@ -689,6 +717,62 @@ public class ThreadPool  {
         }
     }
 
+    /** Debug display of the stage of each thread. The return is html style,
+     * for display in the console ( it can be easily parsed too )
+     *
+     * @return
+     */
+    public String threadStatusString() {
+        StringBuffer sb=new StringBuffer();
+        Iterator it=threads.keySet().iterator();
+        sb.append("<ul>");
+        while( it.hasNext()) {
+            sb.append("<li>");
+            ThreadWithAttributes twa=(ThreadWithAttributes)
+                    it.next();
+            sb.append(twa.getCurrentStage(this) ).append(" ");
+            sb.append( twa.getParam(this));
+            sb.append( "</li>\n");
+        }
+        sb.append("</ul>");
+        return sb.toString();
+    }
+
+    /** Return an array with the status of each thread. The status
+     * indicates the current request processing stage ( for tomcat ) or
+     * whatever the thread is doing ( if the application using TP provide
+     * this info )
+     *
+     * @return
+     */
+    public String[] getThreadStatus() {
+        String status[]=new String[ threads.size()];
+        Iterator it=threads.keySet().iterator();
+        for( int i=0; ( i<status.length && it.hasNext()); i++ ) {
+            ThreadWithAttributes twa=(ThreadWithAttributes)
+                    it.next();
+            status[i]=twa.getCurrentStage(this);
+        }
+        return status;
+    }
+
+    /** Return an array with the current "param" ( XXX better name ? )
+     * of each thread. This is typically the last request.
+     *
+     * @return
+     */
+    public String[] getThreadParam() {
+        String status[]=new String[ threads.size()];
+        Iterator it=threads.keySet().iterator();
+        for( int i=0; ( i<status.length && it.hasNext()); i++ ) {
+            ThreadWithAttributes twa=(ThreadWithAttributes)
+                    it.next();
+            Object o=twa.getParam(this);
+            status[i]=(o==null)? null : o.toString();
+        }
+        return status;
+    }
+    
     /** Interface to allow applications to be notified when
      * a threads are created and stopped.
      */
