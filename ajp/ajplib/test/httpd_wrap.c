@@ -509,7 +509,7 @@ AP_DECLARE(apr_status_t) ap_wrap_make_request(request_rec *r, const char *url,
     }
     if (!method)
         method = "GET";
-    if ((r->method_number == lookup_builtin_method(method, strlen(method))) ==
+    if ((r->method_number = lookup_builtin_method(method, strlen(method))) ==
                                 UNKNOWN_METHOD) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "Unknown HTTP metdod %s",
                       method);
