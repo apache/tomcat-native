@@ -90,6 +90,10 @@ public class WarpEngine extends StandardEngine {
 
     /** The Java class name of the default Mapper class for this Container. */
     private String mapper="org.apache.catalina.connector.warp.WarpEngineMapper";
+    /** The root path for web applications. */
+    private String appbase="";
+    /** The Host ID to use for the next dynamically configured host. */
+    private int hostid=0;
 
     // ------------------------------------------------------------ CONSTRUCTOR
 
@@ -111,14 +115,68 @@ public class WarpEngine extends StandardEngine {
     }
 
     /**
-     * Add a default Mapper implementation if none have been configured
-     * explicitly.
-     *
-     * @param mapperClass Java class name of the default Mapper
+     * Create a new WarpHost with the specified host name, setup the appropriate
+     * values and add it to the list of children.
      */
-    public void addDefaultMapper(String mapper) {
-        if (DEBUG) this.debug("Adding default mapper "+mapper);
-        super.addDefaultMapper(this.mapper);
+    public synchronized WarpHost setupChild(String name) {
+        WarpHost host=(WarpHost)this.findChild(name);
+        if (host==null) {
+            this.debug("Creating new host "+name);
+            host=new WarpHost();
+            host.setName(name);
+            host.setHostID(this.hostid++);
+            host.setAppBase(this.appbase);
+            this.addChild(host);
+        }
+        return(host);
+    }
+
+    /**
+     * Add a child WarpHost to the current WarpEngine.
+     */
+    public void addChild(Container child) {
+        if (child instanceof WarpHost) {
+            WarpHost byid=this.findChild(((WarpHost)child).getHostID());
+            if (byid!=null) {
+                throw new IllegalArgumentException("Host "+byid.getName()+
+                          " already configured with ID="+byid.getHostID());
+            } else {
+                super.addChild(child);
+            }
+        } else throw new IllegalArgumentException("Child is not a WarpHost");
+    }
+
+    /**
+     * Find a child WarpHost associated with the specified Host ID.
+     */
+    public WarpHost findChild(int id) {
+        Container children[]=this.findChildren();
+        for (int x=0; x<children.length; x++) {
+            WarpHost curr=(WarpHost)children[x];
+            if (curr.getHostID()==id) return(curr);
+        }
+        return(null);
+    }
+
+    // ----------------------------------------------------------- BEAN METHODS
+
+    /**
+     * Return the application root for this Connector. This can be an absolute
+     * pathname, a relative pathname, or a URL.
+     */
+    public String getAppBase() {
+        return (this.appbase);
+    }
+
+    /**
+     * Set the application root for this Connector. This can be an absolute
+     * pathname, a relative pathname, or a URL.
+     */
+    public void setAppBase(String appbase) {
+        if (appbase==null) return;
+        if (DEBUG) this.debug("Setting application root to "+appbase);
+        String old=this.appbase;
+        this.appbase=appbase;
     }
 
     // ------------------------------------------------------ DEBUGGING METHODS
