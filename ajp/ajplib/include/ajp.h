@@ -92,10 +92,10 @@ typedef struct ajp_msg ajp_msg_t;
 struct ajp_msg
 {
     apr_byte_t  *buf;
-    apr_size_t  headerLen;
+    apr_size_t  header_len;
     apr_size_t  len;
     apr_size_t  pos;
-    int         serverSide;
+    int         server_side;
 };
 
 #define AJP_HEADER_LEN              4

@@ -139,7 +139,7 @@ apr_status_t ajp_msg_end(ajp_msg_t *msg)
 {
     apr_size_t len = msg->len - AJP_HEADER_LEN;
 
-    if (msg->serverSide) {
+    if (msg->server_side) {
         msg->buf[0] = 0x41;
         msg->buf[1] = 0x42;
     }
@@ -516,7 +516,7 @@ apr_status_t ajp_msg_create(apr_pool_t *pool, ajp_msg_t **rmsg)
         return APR_ENOPOOL;
     }
     
-    msg->serverSide = 0;
+    msg->server_side = 0;
 
     msg->buf = (apr_byte_t *)apr_palloc(pool, AJP_MSG_BUFFER_SZ);
 
@@ -527,7 +527,7 @@ apr_status_t ajp_msg_create(apr_pool_t *pool, ajp_msg_t **rmsg)
     }
 
     msg->len = 0;
-    msg->headerLen = AJP_HEADER_LEN;
+    msg->header_len = AJP_HEADER_LEN;
     *rmsg = msg;
     
     return APR_SUCCESS;
