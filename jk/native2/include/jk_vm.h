@@ -70,6 +70,7 @@
 #include "jk_service.h"
 #include "jk_map.h"
 
+#define JK2_MAXOPTIONS  64
 struct jk_vm {
     struct jk_bean *mbean;
     
@@ -91,10 +92,16 @@ struct jk_vm {
     /*
      * All initialization options
      */
-    char **options;
+    char *options[JK2_MAXOPTIONS];
+
+    /*
+     * -Djava.class.path options
+     */
+    char *classpath[JK2_MAXOPTIONS];
 
     int nOptions;
     
+    int nClasspath;
     /** Create the VM, attach - don't execute anything
      */
     int (*init)(struct jk_env *env, struct jk_vm *p );

@@ -424,10 +424,11 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
     jk_map_t *props=jkvm->properties;
     JavaVMInitArgs vm_args;
     JNIEnv *penv;
-    JavaVMOption options[100];
+    JavaVMOption options[JK2_MAXOPTIONS * 2];
     JavaVM *jvm;
-    int optn = 0, err;
-    
+    int optn = 0, err, classn = 0, classl = 0, i;
+    char *classpath = NULL;
+
     /** Make sure we have the vm dll */
     if( jkvm->jvm_dll_path ==NULL ||
         ! jk2_file_exists(env, jkvm->jvm_dll_path )) {
@@ -486,13 +487,31 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
 
     vm_args.version = JNI_VERSION_1_2;
     vm_args.options = options;
-
+    for (classn = 0; classn < jkvm->nClasspath; classn++)
+        classl += strlen(jkvm->classpath[classn]);
+    if (classl) {
+        classpath = jkvm->pool->calloc(env, jkvm->pool, 
+                                       classl + classn + sizeof("-Djava.class.path="));
+        strcpy(classpath, "-Djava.class.path=");
+        strcat(classpath, jkvm->classpath[0]);        
+        for (i = 1; i < classn; i++) {
+            strcat(classpath, ";");
+            strcat(classpath, jkvm->classpath[i]);
+        }
+    }
     while(jkvm->options[optn]) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "vm.openJvm2() Option: %s\n", jkvm->options[optn]);
+        if (jkvm->mbean->debug > 1)
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "vm.openJvm2() Option: %s\n", jkvm->options[optn]);
         /* Pass it "as is" */
         options[optn].optionString = jkvm->options[optn];
         optn++;
+    }
+    if (classpath) {
+        if (jkvm->mbean->debug > 1)
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "vm.openJvm2() Classpath: %s\n", classpath);
+        options[optn++].optionString = classpath;
     }
 
     vm_args.nOptions = optn;
@@ -557,10 +576,18 @@ jk2_jk_vm_setProperty(jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP 
     char *value=valueP;
     
     if( strcmp( name, "OPT" )==0 ) {
-        jkvm->options[jkvm->nOptions]=value;
-        jkvm->nOptions++;
+        if (jkvm->nOptions < JK2_MAXOPTIONS) {
+            jkvm->options[jkvm->nOptions]=value;
+            jkvm->nOptions++;
+        }
     } else if( strcmp( name, "JVM" )==0 ) {
         jkvm->jvm_dll_path=value;
+    }
+    else if( strcmp( name, "classpath" )==0 ) {
+        if (jkvm->nClasspath < JK2_MAXOPTIONS) {
+            jkvm->classpath[jkvm->nClasspath]=value;
+            jkvm->nClasspath++;
+        }
     } else {
         return JK_ERR;
     }
@@ -580,7 +607,6 @@ int JK_METHOD jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
     jkvm->pool=pool;
 
     jkvm->jvm_dll_path = NULL;
-    jkvm->options = pool->calloc( env, pool, 64 * sizeof( char *));
     jkvm->nOptions =0;
 
     jkvm->init=jk2_vm_initVM;

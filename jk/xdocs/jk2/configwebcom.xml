@@ -190,6 +190,11 @@ and  provides access to all other objects</p>
                         <td/>
                         <td>Option to pass to this vm, this is a multivalued property</td>
                     </tr>
+                    <tr>
+                        <td>classpath</td>
+                        <td/>
+                        <td>-Djava.class.path 0ption to pass to this vm, this is a multivalued property</td>
+                    </tr>
                 </table>
             </p>
         </section>
