@@ -17,6 +17,7 @@
 /***************************************************************************
  * Description: General purpose map object                                 *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
+ * Author:      Mladen Turk <mturk@apache.org>                             *
  * Version:     $Revision$                                          *
  ***************************************************************************/
 #ifdef AS400
@@ -45,7 +46,7 @@ struct jk_map
 };
 
 static void trim_prp_comment(char *prp);
-static int trim(char *s);
+static size_t trim(char *s);
 static int map_realloc(jk_map_t *m);
 
 int map_alloc(jk_map_t **m)
@@ -57,7 +58,7 @@ int map_alloc(jk_map_t **m)
     return JK_FALSE;
 }
 
-int jk_map_free(jk_map_t **m)
+int map_free(jk_map_t **m)
 {
     int rc = JK_FALSE;
 
@@ -119,7 +120,7 @@ int map_get_int(jk_map_t *m, const char *name, int def)
 {
     char buf[100];
     char *rc;
-    int len;
+    size_t len;
     int int_res;
     int multit = 1;
 
@@ -245,6 +246,58 @@ int map_put(jk_map_t *m, const char *name, const void *value, void **old)
     return rc;
 }
 
+int map_read_property(jk_map_t *m, const char *str)
+{
+    int rc = JK_TRUE;
+    char buf[LENGTH_OF_LINE + 1];
+    char *prp = &buf[0];
+
+    if (strlen(str) > LENGTH_OF_LINE)
+        return JK_FALSE;
+    
+    strcpy(prp, str);
+    if (trim(prp)) {
+        char *v = strchr(prp, '=');
+        if (v) {
+            *v = '\0';
+            v++;
+            if (strlen(v) && strlen(prp)) {
+                char *oldv = map_get_string(m, prp, NULL);
+                v = map_replace_properties(v, m);
+                if (oldv) {
+                    char *tmpv = jk_pool_alloc(&m->p,
+                        strlen(v) +
+                        strlen(oldv) + 3);
+                    if (tmpv) {
+                        char sep = '*';
+                        if (jk_is_path_poperty(prp)) {
+                            sep = PATH_SEPERATOR;
+                        }
+                        else if (jk_is_cmd_line_poperty(prp)) {
+                            sep = ' ';
+                        }
+
+                        sprintf(tmpv, "%s%c%s", oldv, sep, v);
+                    }
+                    v = tmpv;
+                }
+                else {
+                    v = jk_pool_strdup(&m->p, v);
+                }
+                if (v) {
+                    void *old = NULL;
+                    map_put(m, prp, v, &old);
+                }
+                else {
+                    rc = JK_FALSE;
+                }
+            }
+        }
+    }
+    return rc;
+}
+
+
 int map_read_properties(jk_map_t *m, const char *f)
 {
     int rc = JK_FALSE;
@@ -264,47 +317,9 @@ int map_read_properties(jk_map_t *m, const char *f)
 
             while (NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
                 trim_prp_comment(prp);
-                if (trim(prp)) {
-                    char *v = strchr(prp, '=');
-                    if (v) {
-                        *v = '\0';
-                        v++;
-                        if (strlen(v) && strlen(prp)) {
-                            char *oldv = map_get_string(m, prp, NULL);
-                            v = map_replace_properties(v, m);
-                            if (oldv) {
-                                char *tmpv = jk_pool_alloc(&m->p,
-                                                           strlen(v) +
-                                                           strlen(oldv) + 3);
-                                if (tmpv) {
-                                    char sep = '*';
-                                    if (jk_is_path_poperty(prp)) {
-                                        sep = PATH_SEPERATOR;
-                                    }
-                                    else if (jk_is_cmd_line_poperty(prp)) {
-                                        sep = ' ';
-                                    }
-
-                                    sprintf(tmpv, "%s%c%s", oldv, sep, v);
-                                }
-                                v = tmpv;
-                            }
-                            else {
-                                v = jk_pool_strdup(&m->p, v);
-                            }
-                            if (v) {
-                                void *old = NULL;
-                                map_put(m, prp, v, &old);
-                            }
-                            else {
-                                rc = JK_FALSE;
-                                break;
-                            }
-                        }
-                    }
-                }
+                if ((rc = map_read_property(m, prp)) == JK_FALSE)
+                    break;
             }
-
             fclose(fp);
         }
     }
@@ -354,9 +369,9 @@ static void trim_prp_comment(char *prp)
     }
 }
 
-static int trim(char *s)
+static size_t trim(char *s)
 {
-    int i;
+    size_t i;
 
     for (i = strlen(s) - 1; (i >= 0) && isspace(s[i]); i--);
 
@@ -409,14 +424,16 @@ char *map_replace_properties(const char *value, jk_map_t *m)
     char *env_start = rc;
     int rec = 0;
 
-    while (env_start = strstr(env_start, "$(")) {
+    while ((env_start = strstr(env_start, "$(")) != NULL) {
         char *env_end = strstr(env_start, ")");
         if (rec++ > 20)
             return rc;
         if (env_end) {
             char env_name[LENGTH_OF_LINE + 1] = "";
             char *env_value;
-
+#if defined(WIN32)
+            char env_buf[LENGTH_OF_LINE + 1];
+#endif
             *env_end = '\0';
             strcpy(env_name, env_start + 2);
             *env_end = ')';
@@ -425,12 +442,20 @@ char *map_replace_properties(const char *value, jk_map_t *m)
             if (!env_value) {
                 env_value = getenv(env_name);
             }
+#if defined(WIN32)
+            if (!env_value) {
+                /* Try the env block from calling process */
+                if (GetEnvironmentVariable(env_name, env_buf,
+                                           sizeof(env_buf)))
+                    env_value = &env_buf[0];
+            }
+#endif
             if (env_value) {
-                int offset = 0;
+                size_t offset = 0;
                 char *new_value = jk_pool_alloc(&m->p,
                                                 (sizeof(char) *
-                                                 (strlen(rc) +
-                                                  strlen(env_value))));
+                                                (strlen(rc) +
+                                                strlen(env_value))));
                 if (!new_value) {
                     break;
                 }
