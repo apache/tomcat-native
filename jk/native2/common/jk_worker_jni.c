@@ -415,8 +415,9 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
     jniWorker = _this->worker_private;
     
     if (jniWorker->hook < JK2_WORKER_HOOK_CLOSE) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                       "jni.destroy(), done...worker is not hooked for close\n");
+        if( bean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "jni.destroy(), done...worker is not hooked for close\n");
         return JK_OK;
     }
     if (jniWorker->jk_java_bridge_class == NULL ||
