@@ -225,7 +225,7 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
 	    } catch(IOException iex) { // can't happen
 	    }
 	}
-	if( remoteAddrMB.isNull() ) {
+	if( remoteHostMB.isNull() ) {
 	    coyoteRequest.action( ActionCode.ACTION_REQ_HOST_ATTRIBUTE, coyoteRequest );
 	    try{
 		remoteAddrMB.duplicate( coyoteRequest.remoteAddr() );
