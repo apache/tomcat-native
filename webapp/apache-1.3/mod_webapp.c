@@ -412,10 +412,13 @@ static boolean webapp_callback_setstatus(wa_request *req, int status) {
  */
 static boolean webapp_callback_settype(wa_request *req, char *type) {
     request_rec *r=webapp_callback_check(WA_LOG,req);
+    char *t="";
 
     if (r==NULL) return(FALSE);
+    if (t!=NULL) t=ap_pstrdup(r->pool,type);
 
-    r->content_type=type;
+    r->content_type=t;
+    ap_table_add(r->headers_out, "Content-Type", t);
     return(TRUE);
 }
 
@@ -430,10 +433,15 @@ static boolean webapp_callback_settype(wa_request *req, char *type) {
 static boolean webapp_callback_setheader(wa_request *req, char *name,
                                          char *value) {
     request_rec *r=webapp_callback_check(WA_LOG,req);
+    char *n="";
+    char *v="";
 
     if (r==NULL) return(FALSE);
-
-    ap_table_add(r->headers_out, name, value);
+    
+    if (n!=NULL) n=ap_pstrdup(r->pool,name);
+    if (v!=NULL) v=ap_pstrdup(r->pool,value);
+    
+    ap_table_add(r->headers_out,n,v);
     return(TRUE);
 }
 
