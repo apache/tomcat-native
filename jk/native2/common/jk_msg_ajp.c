@@ -130,7 +130,8 @@ static void jk2_msg_ajp_dump(jk_env_t *env, struct jk_msg *_this,
         }
         *current++='\n';
         *current++='\0';
-        fprintf( stderr, "%.4x    %s", i, line );
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "%.4x    %s", i, line);
     }
 }
 
