@@ -114,17 +114,18 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
     double lb_min = 0.0;    
     int i;
     char *session_route;
+    time_t now = 0;
 
     session_route = jk2_requtil_getSessionRoute(env, s);
        
     if(session_route) {
         for(i = 0 ; i < lb->num_of_workers ; i++) {
-            if(0 == strcmp(session_route, lb->lb_workers[i]->mbean->name)) {
+            if(0 == strcmp(session_route, lb->lb_workers[i]->route)) {
                 if(attempt > 0 && lb->lb_workers[i]->in_error_state) {
                    break;
                 } else {
                     return lb->lb_workers[i];
-                }
+                 }
             }
         }
     }
@@ -133,7 +134,8 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
     for(i = 0 ; i < lb->num_of_workers ; i++) {
         if(lb->lb_workers[i]->in_error_state) {
             if(!lb->lb_workers[i]->in_recovering) {
-                time_t now = time(0);
+                if( now==0 )
+                    now = time(NULL);
                 
                 if((now - lb->lb_workers[i]->error_time) > WAIT_BEFORE_RECOVER) {
                     
@@ -146,14 +148,25 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                 }
             }
         } else {
-            if(lb->lb_workers[i]->lb_value < lb_min || !rc) {
+            if(lb->lb_workers[i]->lb_value == 0 ) {
+                /* That's the 'default' worker, it'll take all requests.
+                 * All other workers are not used unless this is in error state.
+                 *
+                 * The 'break' will disable checking for recovery on other
+                 * workers - but that doesn't matter as long as the default is alive.
+                 */
+                rc=lb->lb_workers[i];
+                break;
+            }
+            if(lb->lb_workers[i]->lb_value < lb_min ||
+               ( rc==NULL ) ) {
                 lb_min = lb->lb_workers[i]->lb_value;
                 rc = lb->lb_workers[i];
             }
         }            
     }
 
-    if ( !rc ) {
+    if ( rc==NULL ) {
         /* no workers found (rc is null), now try as hard as possible to get a
            worker anyway, pick one with largest error time.. */
         for(i = 0 ; i < lb->num_of_workers ; i++) {
@@ -164,7 +177,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                        not continue to be retried over and over again.
                     */
                     if ( lb->lb_workers[i]->retry_count == 0 ) {
-                        if ( rc ) {
+                        if ( rc != NULL ) {
                             /* pick the oldest failed worker */
                             if ( lb->lb_workers[i]->error_time < rc->error_time ) {
                                 rc = lb->lb_workers[i];
@@ -185,7 +198,8 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
         }
         
         if ( rc  && rc->in_error_state ) {
-            time_t now = time(0);
+            if(now==0)
+                now = time(0);
             rc->in_recovering  = JK_TRUE;
             rc->error_time     = now;
             rc->retry_count++;
@@ -193,7 +207,12 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
     }
     
     if(rc) {
-        rc->lb_value += rc->lb_factor;                
+        if( rc->lb_value != 0 ) {
+            /* It it's the default, it'll remain the default - we don't
+               increase the factor
+            */
+            rc->lb_value += rc->lb_factor;
+        }
     }
 
     return rc;
@@ -232,7 +251,22 @@ static int JK_METHOD jk2_lb_updateWorkers(jk_env_t *env,
             /* */
             char *instanceId=slot->name+7;
             char *data=slot->data;
+            jk_msg_t *msg;
+            int chCnt;
 
+            msg=jk2_msg_ajp_create2( env, env->tmpPool, slot->data, slot->size);
+            chCnt=msg->getInt(env, msg );
+
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "lb.updateWorkers() Reading %s %d channels \n",
+                          slot->name, chCnt );
+
+            if( chCnt == 0 ) {
+                /* Remove all channels used by this tomcat instance */
+                
+            }
+            /* Create all channels we don't have */
+            /* XXX Not sure what's the best solution, we can do it in many ways */
             
         }
     }
@@ -313,11 +347,15 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         
         s->jvm_route = s->pool->pstrdup(env, s->pool,  rec->mbean->name);
 
+        rec->reqCnt++;
+        
         rc = rec->service(env, rec, s);
 
         if(rc==JK_OK) {                        
             if(rec->in_recovering) {
-                rec->lb_value = jk2_get_max_lb(rec) + ADDITINAL_WAIT_LOAD;
+                /* Don't change '0' XXX A special flag may avoid those strange tests */
+                if( rec->lb_value != 0 ) 
+                    rec->lb_value = jk2_get_max_lb(rec) + ADDITINAL_WAIT_LOAD;
             }
             rec->in_error_state = JK_FALSE;
             rec->in_recovering  = JK_FALSE;
@@ -370,8 +408,8 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
             lb->lb_workers_size = 2 * lb->lb_workers_size;
         }
         lb->lb_workers =
-            lb->pool->alloc(env, lb->pool, 
-                               lb->lb_workers_size * sizeof(jk_worker_t *));
+            lb->mbean->pool->alloc(env, lb->mbean->pool, 
+                                   lb->lb_workers_size * sizeof(jk_worker_t *));
         if(!lb->lb_workers) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "lb_worker.validate(): OutOfMemoryException\n");
@@ -389,13 +427,18 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
             continue;
         }
         
-        lb->lb_workers[currentWorker]=w;
-
-        if( w->lb_factor == 0 )
-            w->lb_factor = DEFAULT_LB_FACTOR;
+        if( w->lb_factor != 0 ) {
+            w->lb_factor = 1/ w->lb_factor;
+            lb->lb_workers[currentWorker]=w;
+        } else {
+            /* If == 0, then this is the default worker. Switch it with the first
+               worker to avoid looking too much for it.
+             */
+            jk_worker_t *first=lb->lb_workers[0];
+            lb->lb_workers[0]=w;
+            lb->lb_workers[currentWorker]=first;
+        }
         
-        w->lb_factor =
-            1/ w->lb_factor;
 
         /* 
          * Allow using lb in fault-tolerant mode.
@@ -403,8 +446,7 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
          * a worker used only when principal is down or session route
          * point to it. Provided by Paul Frieden <pfrieden@dchain.com>
          */
-        w->lb_value =
-            w->lb_factor;
+        w->lb_value = w->lb_factor;
         w->in_error_state = JK_FALSE;
         w->in_recovering  = JK_FALSE;
         w->retry_count  = 0;
@@ -417,7 +459,7 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
 static int JK_METHOD jk2_lb_addWorker(jk_env_t *env, jk_worker_t *lb, 
                                       char *name)
 {
-    name = lb->pool->pstrdup(env, lb->pool, name);
+    name = lb->mbean->pool->pstrdup(env, lb->mbean->pool, name);
     lb->lbWorkerMap->add(env, lb->lbWorkerMap, name, "");
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -437,7 +479,7 @@ static int JK_METHOD jk2_lb_setProperty(jk_env_t *env, jk_bean_t *mbean,
     char *tmp;
     
     if( strcmp( name, "balanced_workers") == 0 ) {
-        worker_names=jk2_config_split( env,  lb->pool,
+        worker_names=jk2_config_split( env,  lb->mbean->pool,
                                        value, NULL, &num_of_workers );
         if( worker_names==NULL || num_of_workers==0 ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -501,8 +543,6 @@ static int JK_METHOD jk2_lb_destroy(jk_env_t *env, jk_worker_t *w)
     }
     */
 
-    w->pool->close(env, w->pool);    
-
     return JK_OK;
 }
 
@@ -526,8 +566,6 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
         return JK_ERR;
     }
 
-    w->pool=pool;
-
     w->lb_workers = NULL;
     w->num_of_workers = 0;
     w->worker_private = NULL;
@@ -535,7 +573,7 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
     w->destroy        = jk2_lb_destroy;
     w->service        = jk2_lb_service;
    
-    jk2_map_default_create(env,&w->lbWorkerMap, w->pool);
+    jk2_map_default_create(env,&w->lbWorkerMap, pool);
 
     result->setAttribute=jk2_lb_setProperty;
     result->object=w;
