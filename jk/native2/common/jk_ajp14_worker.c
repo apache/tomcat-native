@@ -90,50 +90,60 @@
 /*
  * Initialize the worker.
  */
-static int JK_METHOD
-jk2_worker_ajp14_setProperty(jk_env_t *env, jk_worker_t *_this,
-                             char *name, char *value )
+static int 
+jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean, 
+                              char *name, void *valueP )
 {
+    jk_worker_t *ajp14=(jk_worker_t *)mbean->object;
+    char *value=(char *)valueP;
     int    port;
     char * host;
     int err;
-    jk_worker_t *p = _this;
     char * secret_key;
     char *channelType;
            
     if( strcmp( name, "secretkey" )==0 ) {
-        _this->secret = value;
+        ajp14->secret = value;
     } else if( strcmp( name, "cachesize" )==0 ) {
-        _this->cache_sz=atoi( value );
+        ajp14->cache_sz=atoi( value );
+    } else if( strcmp( name, "lb_factor" )==0 ) {
+        ajp14->lb_factor=atof( value );
     } else if( strcmp( name, "channel" )==0 ) {
-        _this->channel=env->getInstance(env, _this->pool,"channel",
-                                        value );
-        if( _this->channel == NULL ) {
+        if( strncmp( value, "channel.", 8 ) != 0 ) {
+            char *newValue=(char *)ajp14->pool->calloc( env, ajp14->pool, strlen(value) + 10 );
+            strcpy( newValue, "channel." );
+            strcat( newValue, value );
+            env->l->jkLog(env, env->l, JK_LOG_INFO, "ajp14.setProperty() auto replace %s %s\n",
+                          value, newValue);
+            value=newValue;
+        }
+        ajp14->channel=env->createInstance(env, ajp14->pool, value, NULL );
+        if( ajp14->channel == NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "Error creating %s channel\n", channelType);
+                          "Error creating %s channel\n", channelType );
             return JK_FALSE;
         }
-        _this->channel->worker=_this;
-        _this->channel->name=value;
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.setProperty() channel %s\n",
-                      value);
-    } else {
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "ajp14.setProperty() channel: %s %s\n",
+                      value,ajp14->channel->mbean->name);
+
+     } else {
         /* It's probably a channel property
          */
-        if( _this->channel==NULL ) {
+        if( ajp14->channel==NULL ) {
+            
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "No channel for %s, set channel before other properties %s=%s\n",
-                          _this->name, name, value );
+                          mbean->name, name, value );
             return JK_FALSE;
         }
 
         env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.setProperty() channel %s=%s\n",
                       name, value);
-        _this->channel->setProperty( env, _this->channel, name, value );
+        ajp14->channel->mbean->setAttribute( env, ajp14->channel->mbean, name, value );
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.setProperty() %s %s %s\n", _this->name, name, value );
+                  "ajp14.setProperty() %s %s %s\n", mbean->name, name, value );
     
     return JK_TRUE;
 }
@@ -144,7 +154,7 @@ jk2_worker_ajp14_setProperty(jk_env_t *env, jk_worker_t *_this,
 static void jk2_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
 {
     env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.close() %s\n",
-                  ae->worker->name);
+                  ae->worker->mbean->name);
 
     ae->reuse = JK_FALSE;
     ae->worker->channel->close( env, ae->worker->channel, ae );
@@ -164,7 +174,7 @@ static int jk2_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
 
     if( err != JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp14.connect() failed %s\n", ae->worker->name );
+                      "ajp14.connect() failed %s\n", ae->worker->mbean->name );
         return JK_FALSE;
     }
 
@@ -234,13 +244,13 @@ jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
         if( e->recoverable != JK_TRUE ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                      "ajp14.service() error sending request %s, giving up\n",
-                     worker->name);
+                     worker->mbean->name);
             return JK_FALSE;
         }
         
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                 "ajp14.service() error sending, retry on a new endpoint %s\n",
-                      e->worker->name);
+                      e->worker->mbean->name);
 
         channel->close( env, channel, e );
 
@@ -384,7 +394,7 @@ jk2_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.service() %s\n", e->worker->name);
+                  "ajp14.service() %s\n", e->worker->mbean->name);
 
     if( w->channel->beforeRequest != NULL ) {
         w->channel->beforeRequest( env, w->channel, w, e, s );
@@ -424,7 +434,7 @@ jk2_worker_ajp14_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
         if( err==JK_TRUE ) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "ajp14.done() return to pool %s\n",
-                          w->name );
+                          w->mbean->name );
             return JK_TRUE;
         }
     }
@@ -434,25 +444,25 @@ jk2_worker_ajp14_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
     jk2_close_endpoint(env, e);
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "ajp14.done() close endpoint %s\n",
-                  w->name );
+                  w->mbean->name );
     
     return JK_TRUE;
 }
 
 static int JK_METHOD
 jk2_worker_ajp14_getEndpoint(jk_env_t *env,
-                            jk_worker_t *_this,
+                            jk_worker_t *ajp14,
                             jk_endpoint_t **eP)
 {
     jk_endpoint_t *e = NULL;
     jk_pool_t *endpointPool;
     
-    if( _this->secret ==NULL ) {
+    if( ajp14->secret ==NULL ) {
     }
 
-    if (_this->endpointCache != NULL ) {
+    if (ajp14->endpointCache != NULL ) {
 
-        e=_this->endpointCache->get( env, _this->endpointCache );
+        e=ajp14->endpointCache->get( env, ajp14->endpointCache );
 
         if (e!=NULL) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -462,7 +472,7 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
         }
     }
 
-    endpointPool = _this->pool->create( env, _this->pool, HUGE_POOL_SIZE );
+    endpointPool = ajp14->pool->create( env, ajp14->pool, HUGE_POOL_SIZE );
     
     e = (jk_endpoint_t *)endpointPool->alloc(env, endpointPool,
                                               sizeof(jk_endpoint_t));
@@ -484,7 +494,7 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
 
     e->cPool=endpointPool->create(env, endpointPool, HUGE_POOL_SIZE );
 
-    e->worker = _this;
+    e->worker = ajp14;
     e->channelData = NULL;
     
     *eP = e;
@@ -512,36 +522,48 @@ jk2_worker_ajp14_service(jk_env_t *env, jk_worker_t *w,
 
 
 static int JK_METHOD
-jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this)
+jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
 {
     int  rc;
 
-    if( _this->cache_sz == -1 )
-        _this->cache_sz=JK_OBJCACHE_DEFAULT_SZ;
+    if( ajp14->cache_sz == -1 )
+        ajp14->cache_sz=JK_OBJCACHE_DEFAULT_SZ;
 
-    if (_this->cache_sz > 0) {
-        _this->endpointCache=jk2_objCache_create( env, _this->pool  );
+    if (ajp14->cache_sz > 0) {
+        ajp14->endpointCache=jk2_objCache_create( env, ajp14->pool  );
         
-        if( _this->endpointCache != NULL ) {
-            rc=_this->endpointCache->init( env, _this->endpointCache,
-                                           _this->cache_sz );
+        if( ajp14->endpointCache != NULL ) {
+            rc=ajp14->endpointCache->init( env, ajp14->endpointCache,
+                                           ajp14->cache_sz );
             if( rc!= JK_TRUE ) {
-                _this->endpointCache=NULL;
+                ajp14->endpointCache=NULL;
             }
         }
     } else {
-        _this->endpointCache=NULL;
+        ajp14->endpointCache=NULL;
     }
 
-    if( _this->channel == NULL ) {
+    if( ajp14->channelName == NULL ) {
         /* Use default channel */
-        _this->setProperty( env, _this, "channel", "socket" );
+        ajp14->channelName="channel.default";
+    }
+
+    ajp14->channel= env->getByName( env, ajp14->channelName );
+    
+    if( ajp14->channel == NULL ) {
+        /* XXX  Create a default channel using socket/localhost/8009 ! */
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp14.validate(): no channel found %s\n",
+                      ajp14->channelName);
+        return JK_FALSE;
     }
     
-    rc=_this->channel->init( env, _this->channel );
+    ajp14->channel->worker=ajp14;
+
+    rc=ajp14->channel->init( env, ajp14->channel );
     if( rc != JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp14.validate(): channel init failed\n");
+                      "ajp14.init(): channel init failed\n");
         return rc;
     }
 
@@ -550,19 +572,19 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this)
 
 
 static int JK_METHOD
-jk2_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *_this)
+jk2_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *ajp14)
 {
     int i;
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "ajp14.destroy()\n");
 
-    if( _this->endpointCache != NULL ) {
+    if( ajp14->endpointCache != NULL ) {
         jk_endpoint_t *e;
 
-        while( _this->endpointCache->count > 0 ) {
+        while( ajp14->endpointCache->count > 0 ) {
             
-            e= _this->endpointCache->get( env, _this->endpointCache );
+            e= ajp14->endpointCache->get( env, ajp14->endpointCache );
             
             if( e==NULL ) {
                 // we finished all endpoints in the cache
@@ -571,21 +593,21 @@ jk2_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *_this)
             
             jk2_close_endpoint(env, e);
         }
-        _this->endpointCache->destroy( env, _this->endpointCache );
+        ajp14->endpointCache->destroy( env, ajp14->endpointCache );
 
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp14.destroy() closed %d cached endpoints\n",
                       i);
     }
 
-    _this->pool->close( env, _this->pool );
+    ajp14->pool->close( env, ajp14->pool );
 
     return JK_TRUE;
 }
 
 int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
-                                       void **result,
-                                       const char *type, const char *name)
+                                        jk_bean_t *result,
+                                        const char *type, const char *name)
 {
     jk_worker_t *w=(jk_worker_t *)pool->calloc(env, pool, sizeof(jk_worker_t));
 
@@ -595,7 +617,6 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
         return JK_FALSE;
     }
     w->pool = pool;
-    w->name = NULL;
     w->cache_sz=-1;
     
     w->endpointCache= NULL;
@@ -603,12 +624,16 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     w->channel= NULL;
     w->secret= NULL;
    
-    w->setProperty= jk2_worker_ajp14_setProperty;
     w->init= jk2_worker_ajp14_init;
     w->destroy=jk2_worker_ajp14_destroy;
     w->service = jk2_worker_ajp14_service;
 
-    *result = w;
+    result->setAttribute= jk2_worker_ajp14_setAttribute;
+    result->object = w;
+    w->mbean=result;
 
+    w->workerEnv=env->getByName( env, "workerEnv" );
+    w->workerEnv->addWorker( env, w->workerEnv, w );
+    
     return JK_TRUE;
 }

@@ -108,7 +108,7 @@ static int JK_METHOD jk2_worker_run_destroy(jk_env_t *env, jk_worker_t *w)
 
 
 int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
-                                     void **result,
+                                     jk_bean_t *result,
                                      const char *type, const char *name)
 {
     jk_worker_t *_this;
@@ -127,17 +127,15 @@ int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
         return JK_FALSE;
     }
 
-    _this->name=(char *)name;
     _this->pool=pool;
 
-    _this->lb_workers     = NULL;
-    _this->num_of_workers = 0;
-    _this->worker_private = NULL;
-    _this->init           = NULL;
-    _this->destroy        = NULL;
     _this->service        = jk2_worker_run_service;
     
-    *result=_this;
+    result->object=_this;
+    _this->mbean=result;
+
+    _this->workerEnv=env->getByName( env, "workerEnv" );
+    _this->workerEnv->addWorker( env, _this->workerEnv, _this );
 
     return JK_TRUE;
 }
