@@ -145,6 +145,9 @@ struct jk_msg {
     int (*appendString)(struct jk_env *env, struct jk_msg *_this, 
                          const char *param);
 
+    int (*appendMap)(struct jk_env *env, struct jk_msg *_this, 
+                     struct jk_map map);
+
     unsigned char (*getByte)(struct jk_env *env, struct jk_msg *_this);
 
     unsigned short (*getInt)(struct jk_env *env, struct jk_msg *_this);
@@ -168,6 +171,12 @@ struct jk_msg {
     unsigned char *(*getBytes)(struct jk_env *env,
                                struct jk_msg *_this,
                                int *len);
+
+    /** Read a map structure from the message. The map is encoded
+        as an int count and then the NV pairs
+    */
+    int (*getMap)(struct jk_env *env, struct jk_msg *_this, 
+                  struct jk_map map);
 
     /** 
      * Special method. Will read data from the server and add them as
@@ -198,6 +207,9 @@ struct jk_msg {
 /* Temp */
 jk_msg_t *jk2_msg_ajp_create(struct jk_env *env, struct jk_pool *p,
                             int buffSize);
+    
+jk_msg_t *jk2_msg_ajp_create2(struct jk_env *env, struct jk_pool *pool,
+                              char *buf, int buffSize);
     
 #ifdef __cplusplus
 }

@@ -99,6 +99,9 @@ static apr_pool_t *globalShmPool;
 #define SHM_WRITE_SLOT 2
 #define SHM_ATTACH 3
 #define SHM_DETACH 4
+#define SHM_RESET 5
+#define SHM_DUMP 6
+#define SHM_DESTROY 7
 
 
 static int jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
@@ -118,6 +121,65 @@ static int jk2_shm_detach(jk_env_t *env, jk_shm_t *shm)
 static int jk2_shm_attach(jk_env_t *env, jk_shm_t *shm)
 {
     return apr_shm_attach((apr_shm_t **)&shm->privateData, shm->fname, globalShmPool );
+}
+
+/** Reset the scoreboard, in case it gets corrupted.
+ *  Will remove all slots and set the head in the original state.
+ */
+static int jk2_shm_reset(jk_env_t *env, jk_shm_t *shm)
+{
+    if( shm->head == NULL ) {
+        return JK_ERR;
+    }
+    memset(shm->image, 0, shm->size);
+
+    shm->head->slotSize = shm->slotSize;
+    shm->head->slotMaxCount = shm->slotMaxCount;
+    shm->head->lastSlot = 1;
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                  "shm.init() Initalized %s %p\n",
+                  shm->fname, shm->image);
+
+    return JK_OK;
+}
+
+static int jk2_shm_dump(jk_env_t *env, jk_shm_t *shm, char *name)
+{
+    FILE *f;
+    int i;
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.dump(): Struct Size=%d slotSize=%d slotCnt=%d head=%p\n",
+                  shm->size, shm->slotSize, shm->slotMaxCount, shm->head );
+
+    if( shm->head==NULL ) return JK_ERR;
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.dump(): shmem  slotSize=%d slotCnt=%d lastSlot=%d ver=%d\n",
+                  shm->head->slotSize, shm->head->slotMaxCount, shm->head->lastSlot, shm->head->lbVer );
+
+    for( i=1; i< shm->head->lastSlot; i++ ) {
+        jk_shm_slot_t *slot=shm->getSlot( env, shm, i );
+        jk_msg_t *msg;
+
+        if( slot==NULL ) continue;
+        msg=jk2_msg_ajp_create2( env, env->tmpPool, slot->data, slot->size);
+
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.dump(): slot %d ver=%d size=%d name=%s\n",
+                      i, slot->ver, slot->size, slot->name );
+
+        msg->dump( env, msg, "Slot content ");
+    }
+    
+    if( name==NULL ) return JK_ERR;
+    
+    f=fopen(name, "a+");
+    fwrite( shm->head, 1, shm->size, f ); 
+    fclose( f );
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.dump(): Dumped %d in %s\n",
+                  shm->size, name);
+    
+    return JK_OK;
 }
 
 
@@ -230,16 +292,8 @@ static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
                       shm->fname);
         return JK_ERR;
     }
-    
-    memset(shm->image, 0, shm->size);
 
-    shm->head->slotSize = shm->slotSize;
-    shm->head->slotMaxCount = shm->slotMaxCount;
-    shm->head->lastSlot = 1;
-    
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "shm.init() Initalized %s %p\n",
-                  shm->fname, shm->image);
+    jk2_shm_reset( env, shm );
 
     return JK_OK;
 }
@@ -307,8 +361,41 @@ static int jk2_shm_setAttribute( jk_env_t *env, jk_bean_t *mbean, char *name, vo
 
 }
 
-/* ==================== Dispatch messages from java ==================== */
+/** Copy a chunk of data into a named slot
+ */
+static int jk2_shm_writeSlot( jk_env_t *env, jk_shm_t *shm,
+                              char *instanceName, char *buf, int len )
+{
+    jk_shm_slot_t *slot;
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                  "shm.writeSlot() %s %d\n", instanceName, len );
+    if( len > shm->slotSize ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.writeSlot() Packet too large %d %d\n",
+                      shm->slotSize, len );
+        return JK_ERR;
+    }
+    if( shm->head == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.writeSlot() No head - shm was not initalized\n");
+        return JK_ERR;
+    }
+    slot=shm->createSlot( env, shm, instanceName, 0 );
+    
+    /*  Copy the body in the slot */
+    memcpy( slot->data, buf, len );
+    slot->size=len;
+    slot->ver++;
+    /* Update the head lb version number - that would triger
+       reconf on the next request */
+    shm->head->lbVer++;
 
+    return JK_OK;
+}
+
+/* ==================== Dispatch messages from java ==================== */
+    
 /** Called by java. Will call the right shm method.
  */
 static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
@@ -343,31 +430,20 @@ static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_m
     }
     case SHM_WRITE_SLOT: {
         char *instanceName=msg->getString( env, msg );
-        jk_shm_slot_t *slot;
-        
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "shm.writeSlot() %s %d\n",
-                      instanceName, msg->len );
-        if( msg->len > shm->slotSize ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                          "shm.writeSlot() Packet too large %d %d\n",
-                          shm->slotSize, msg->len );
-            return JK_ERR;
-        }
-        if( shm->head == NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                          "shm.writeSlot() No head - shm was not initalized\n");
-            return JK_ERR;
-        }
-        slot=shm->createSlot( env, shm, instanceName, 0 );
-        
-        /*  Copy the body in the slot */
-        memcpy( slot->data, msg->buf, msg->len );
-        slot->size=msg->len;
-        slot->ver++;
-        /* Update the head lb version number - that would triger
-           reconf on the next request */
-        shm->head->lbVer++;
+        char *buf=msg->buf;
+        int len=msg->len;
+
+        return jk2_shm_writeSlot( env, shm, instanceName, buf, len );
+    }
+    case SHM_RESET: {
+        jk2_shm_reset( env, shm );
+
+        return JK_OK;
+    }
+    case SHM_DUMP: {
+        char *name=msg->getString( env, msg );
+
+        jk2_shm_dump( env, shm, name );
         return JK_OK;
     }
     }/* switch */
@@ -393,6 +469,7 @@ int JK_METHOD jk2_shm_factory( jk_env_t *env ,jk_pool_t *pool,
     if( shm == NULL )
         return JK_ERR;
 
+    shm->pool=pool;
     shm->privateData=NULL;
 
     shm->slotSize=DEFAULT_SLOT_SIZE;

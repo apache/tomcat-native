@@ -466,7 +466,10 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
 
     /* XXX Don't detach if worker is reused per thread */
     endpoint->endpoint_private=NULL;
-    we->vm->detach( env, we->vm ); 
+    if( we==NULL || we->vm==NULL ) {
+        return JK_OK;
+    }
+    /* we->vm->detach( env, we->vm );  */
     
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "channelJni.afterRequest() ok\n");

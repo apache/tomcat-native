@@ -191,7 +191,6 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     s->msg="OK";
     s->headers_out->put(env, s->headers_out,
                         "Content-Type", "text/html", NULL);
-    fprintf(stderr, "Writing head \n");
     s->head(env, s );
 
     /** Process the query string.
@@ -206,7 +205,6 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     jk2_worker_status_displayRuntimeProperties(env, s, s->workerEnv );
     
     s->afterRequest( env, s);
-    fprintf(stderr, "After req %s \n", s);
     return JK_OK;
 }
 

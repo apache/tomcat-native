@@ -83,7 +83,7 @@ static void jk2_msg_ajp_dump(jk_env_t *env, struct jk_msg *_this,
     int i=0;
     env->l->jkLog( env, env->l, JK_LOG_INFO,
                    "%s pos=%d len=%d max=%d \n",
-                err, _this->pos, _this->len, _this->maxlen );
+                   err, _this->pos, _this->len, _this->maxlen );
     
     env->l->jkLog( env, env->l, JK_LOG_INFO,
                 "%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x \n", 
@@ -168,6 +168,21 @@ static int jk2_msg_ajp_appendByte(jk_env_t *env, jk_msg_t *msg,
 
     return JK_OK;
 }
+
+static int jk2_msg_ajp_appendMap(jk_env_t *env, jk_msg_t *msg, 
+                                 jk_map_t *map) 
+{
+
+    return JK_OK;
+}
+
+static int jk2_msg_ajp_getMap(jk_env_t *env, jk_msg_t *msg, 
+                              jk_map_t *map) 
+{
+
+    return JK_OK;
+}
+
 
 static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg, 
                                     const char *param) 
@@ -413,6 +428,61 @@ static int jk2_msg_ajp_appendFromServer(jk_env_t *env, jk_msg_t    *msg,
     return len;
 }
 
+static void jk2_msg_ajp_init(jk_env_t *env, jk_msg_t *msg, int buffSize) 
+{
+    msg->maxlen=buffSize;
+    msg->len=0;
+
+    msg->headerLength=4;
+
+    msg->reset=jk2_msg_ajp_reset;
+    msg->end=jk2_msg_ajp_end;
+    msg->dump=jk2_msg_ajp_dump;
+
+    msg->appendByte=jk2_msg_ajp_appendByte;
+    msg->appendBytes=jk2_msg_ajp_appendBytes;
+    msg->appendInt=jk2_msg_ajp_appendInt;
+    msg->appendLong=jk2_msg_ajp_appendLong;
+    msg->appendString=jk2_msg_ajp_appendString;
+    msg->appendMap=jk2_msg_ajp_appendMap;
+
+    msg->appendFromServer=jk2_msg_ajp_appendFromServer;
+
+    msg->getByte=jk2_msg_ajp_getByte;
+    msg->getInt=jk2_msg_ajp_getInt;
+    msg->peekInt=jk2_msg_ajp_peekInt;
+    msg->getLong=jk2_msg_ajp_getLong;
+    msg->getString=jk2_msg_ajp_getString;
+    msg->getMap=jk2_msg_ajp_getMap;
+    msg->getBytes=jk2_msg_ajp_getBytes;
+
+    msg->checkHeader=jk2_msg_ajp_checkHeader;
+}
+
+
+jk_msg_t *jk2_msg_ajp_create2(jk_env_t *env, jk_pool_t *pool, char *buf, int buffSize)
+{
+    jk_msg_t *msg = 
+        (jk_msg_t *)pool->calloc(env, pool, sizeof(jk_msg_t));
+
+    if( buffSize==0 )
+        buffSize=DEF_BUFFER_SZ;
+    if(!msg) {
+        return NULL;
+    }
+    msg->pool = pool;
+
+    msg->buf= buf;
+    
+    if(msg->buf==NULL) {
+        return NULL;
+    }
+
+    jk2_msg_ajp_init( env, msg, buffSize );
+
+    return msg;
+}
+
 
 jk_msg_t *jk2_msg_ajp_create(jk_env_t *env, jk_pool_t *pool, int buffSize) 
 {
@@ -431,33 +501,9 @@ jk_msg_t *jk2_msg_ajp_create(jk_env_t *env, jk_pool_t *pool, int buffSize)
     if(msg->buf==NULL) {
         return NULL;
     }
-    
-    msg->maxlen=buffSize;
-    msg->len=0;
 
-    msg->headerLength=4;
+    jk2_msg_ajp_init( env, msg, buffSize );
 
-    msg->reset=jk2_msg_ajp_reset;
-    msg->end=jk2_msg_ajp_end;
-    msg->dump=jk2_msg_ajp_dump;
-
-    msg->appendByte=jk2_msg_ajp_appendByte;
-    msg->appendBytes=jk2_msg_ajp_appendBytes;
-    msg->appendInt=jk2_msg_ajp_appendInt;
-    msg->appendLong=jk2_msg_ajp_appendLong;
-    msg->appendString=jk2_msg_ajp_appendString;
-
-    msg->appendFromServer=jk2_msg_ajp_appendFromServer;
-
-    msg->getByte=jk2_msg_ajp_getByte;
-    msg->getInt=jk2_msg_ajp_getInt;
-    msg->peekInt=jk2_msg_ajp_peekInt;
-    msg->getLong=jk2_msg_ajp_getLong;
-    msg->getString=jk2_msg_ajp_getString;
-    msg->getBytes=jk2_msg_ajp_getBytes;
-
-    msg->checkHeader=jk2_msg_ajp_checkHeader;
-                       
     return msg;
 }
 
