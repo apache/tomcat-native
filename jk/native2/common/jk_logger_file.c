@@ -221,7 +221,8 @@ static int jk_logger_file_jkLog(jk_logger_t *l,
 #ifdef WIN32
 	set_time_str(buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
-        used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
+        if( level >= JK_LOG_DEBUG_LEVEL )
+            used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
 #elif defined(NETWARE) /* until we get a snprintf function */
         buf = (char *) malloc(HUGE_BUFFER_SIZE);
         if (NULL == buf)
@@ -229,11 +230,13 @@ static int jk_logger_file_jkLog(jk_logger_t *l,
 
 	jk_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
-        used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
+        if( level >= JK_LOG_DEBUG_LEVEL )
+            used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
 #else 
 	jk_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
-        used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
+        if( level >= JK_LOG_DEBUG_LEVEL )
+            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
 #endif
         if(used < 0) {
             return 0; /* [V] not sure what to return... */
