@@ -91,6 +91,7 @@ struct jk_bean;
 typedef struct jk_bean jk_bean_t;
 typedef struct jk_env jk_env_t;
 
+extern struct jk_env *jk_env_globalEnv;
     
 /**
  * Factory used to create all jk objects. Factories are registered with 
@@ -184,13 +185,9 @@ struct jk_bean {
      *  XXX Implement run-time change in the status/ctl workers.
      */
     int  ( JK_METHOD *setAttribute)(struct jk_env *env, struct jk_bean *bean,
-                         char *name, void *value );
+                                    char *name, void *value );
 
     void *  ( JK_METHOD *getAttribute)(struct jk_env *env, struct jk_bean *bean, char *name );
-
-    /* getBeanInfo() */
-
-    /* invoke() */
 };
     
 /**
@@ -223,6 +220,8 @@ struct jk_env {
     /** Release the env instance. The tmpPool will be recycled.
      */
     int (JK_METHOD *releaseEnv)(struct jk_env *parent, struct jk_env *chld);
+
+    int (JK_METHOD *recycleEnv)(struct jk_env *env);
 
     /* -------------------- Exceptions -------------------- */
     
