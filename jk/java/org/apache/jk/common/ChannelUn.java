@@ -103,8 +103,9 @@ public class ChannelUn extends JniHandler {
     
     public void init() throws IOException {
         if( file==null ) {
-            log.error("No file, disabling unix channel");
-            throw new IOException( "No file for the unix socket channel");
+            log.info("No file, disabling unix channel");
+            return;
+            //throw new IOException( "No file for the unix socket channel");
         }
         if( wEnv.getLocalId() != 0 ) {
             file=file+ wEnv.getLocalId();
