@@ -60,7 +60,7 @@
  *
  */
 
-package org.apache.catalina.util;
+package org.apache.tomcat.util.compat;
 
 import java.io.File;
 import java.io.IOException;
