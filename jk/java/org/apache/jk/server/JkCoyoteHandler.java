@@ -132,9 +132,13 @@ public class JkCoyoteHandler extends JkHandler implements
         if( value instanceof String )
             this.setProperty( name, (String)value );
     }
-    
+
+    /**
+     * Retrieve config info.
+     * Primarily for use with the admin webapp.
+     */   
     public Object getAttribute( String name ) {
-        return null;
+        return getJkMain().getProperty(name);
     }
 
     /** The adapter, used to call the connector 

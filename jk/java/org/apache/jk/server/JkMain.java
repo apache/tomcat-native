@@ -188,7 +188,20 @@ public class JkMain implements MBeanRegistration
             saveProperties();
         }
     }
-
+    /**
+     * Retrieve a property.
+     */
+    public Object getProperty(String name) {
+        String alias = (String)replacements.get(name);
+        Object result = null;
+        if(alias != null) {
+            result = props.get(alias);
+        }
+        if(result == null) {
+            result = props.get(name);
+        }
+        return result;
+    }
     /**
      * Set the <code>channelClassName</code> that will used to connect to
      * httpd.
