@@ -327,6 +327,9 @@ public class JkCoyoteHandler extends JkHandler implements
                     // Double close - it may happen with forward
                     return;
                 }
+                 
+                if( !res.isCommitted() )
+                    this.action( ActionCode.ACTION_COMMIT, param );
                 
                 MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
                 msg.reset();
