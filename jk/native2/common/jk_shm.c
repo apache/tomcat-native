@@ -179,6 +179,91 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     return JK_OK;
 }
 
+#elif defined(HAVE_MMAP) && !defined(WIN32)
+
+static int JK_METHOD jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
+{
+    caddr_t shmf=(caddr_t)shm->privateData;
+
+    munmap(shmf, shm->size);
+
+    return JK_OK;
+}
+
+static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
+{
+    int rc;
+    struct stat filestat;
+
+    int fd = open(shm->fname, O_RDWR|O_CREAT, 0777);
+    
+    if (fd == -1) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.create(): Can't open %s %d %s\n",
+                      shm->fname, errno, strerror( errno ));
+        return JK_ERR;
+    }
+
+    rc=stat( shm->fname, &filestat);
+    if ( rc == -1) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.create(): Can't stat %s %d %s\n",
+                      shm->fname, errno, strerror( errno ));
+        return JK_ERR;
+    }
+
+    if( shm->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                      "shm.create(): file open %s %d %d\n", shm->fname, shm->size, filestat.st_size );
+
+    if (filestat.st_size < shm->size ) {
+        char bytes[1024];
+        int toWrite=shm->size - filestat.st_size;
+        
+        memset( bytes, 0, 1024 );        
+        lseek(fd, 0, SEEK_END);
+
+        while( toWrite > 0 ) {
+            int written;
+            written=write(fd, bytes, 1024);
+            if( written == -1 ) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                              "shm.create(): Can't write %s %d %s\n",
+                              shm->fname, errno, strerror( errno ));
+                return JK_ERR;
+            }
+            toWrite-=written;
+        }
+        
+        rc=stat( shm->fname, &filestat);
+        if ( rc == -1) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                          "shm.create(): Can't stat2 %s %d %s\n",
+                          shm->fname, errno, strerror( errno ));
+            return JK_ERR;
+         }
+    }
+
+    shm->privateData = mmap(NULL, filestat.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+    if (shm->privateData == (caddr_t)-1 ||
+        shm->privateData == NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                          "shm.create(): Can't mmap %s %d %s\n",
+                          shm->fname, errno, strerror( errno ));
+
+        close(fd);
+        return JK_ERR;
+    }
+
+    shm->image = (void *)shm->privateData;
+    shm->head = (jk_shm_head_t *)shm->image;
+    
+    close(fd);
+    
+    return JK_OK;
+}
+
 
 #else
 
