@@ -57,6 +57,7 @@ dnl # ========================================================================= 
 
 dnl -----------------------------------------------------------------------------
 dnl Author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
+dnl Author Jon S. Stevens <mailto:jon@latchkey.com>
 dnl Version $Id$
 dnl -----------------------------------------------------------------------------
 
@@ -71,32 +72,40 @@ dnl ----------------------------------------------------------------------------
 AC_PROG_CC
 AC_PROG_RANLIB
 
-dnl -----------------------------------------------------------------------------
-dnl Check out where AR is
-dnl -----------------------------------------------------------------------------
-AC_CHECK_PROG(AR,ar,ar,"")
-if test -z "$AR" ; then
-	AC_MSG_ERROR([Cannot find ar])
-fi
+AC_PATH_PROG(AR,ar,$PATH)dnl
+AC_PATH_PROG(TEST,test,$PATH)dnl
+
 AC_SUBST(AR)
+AC_SUBST(TEST)
 
 dnl -----------------------------------------------------------------------------
 dnl Process the --with-apr=... command line argument (required)
 dnl -----------------------------------------------------------------------------
 AC_MSG_CHECKING([APR directory])
 AC_ARG_WITH(apr,
-	[  --with-apr=DIR          where the compiled APR sources can be found [required]],
+	[  --with-apr=DIR          where the APR installation can be found [required]],
 	APRDIR=$withval,
 	APRDIR="")
-if test -z "$APRDIR" ; then
+if ${TEST} -z "$APRDIR" ; then
 	AC_MSG_ERROR([Required command line argument \"--with-apr=...\" not specified])
 fi
-if ! test -d "$APRDIR" ; then
+if ${TEST} ! -d "$APRDIR" ; then
 	AC_MSG_ERROR([Invalid APR directory \"$APRDIR\" specified])
 fi
-if ! test -f "$APRDIR/include/apr.h" ; then
+if ${TEST} ! -f "$APRDIR/include/apr.h" ; then
 	AC_MSG_ERROR([No APR headers in \"$APRDIR\"])
 fi
+for i in "$APRDIR/lib/libapr*"
+do
+    if ${TEST} -f "$i" ; then
+        has_apr_lib = true
+        break
+    fi
+done
+if ${TEST} ${has_apr_lib} ; then
+	AC_MSG_ERROR([No APR libraries in \"$APRDIR\"])
+fi
+
 CURDIR=`pwd`
 cd $APRDIR
 APRDIR=`pwd`
@@ -109,35 +118,52 @@ AC_MSG_RESULT([setting target directories to \"$TGTDIRS\"])
 AC_SUBST(TGTDIRS)
 
 dnl -----------------------------------------------------------------------------
-dnl Process the --with-apache=... command line argument
+dnl Process the --with-apxs=FILE... command line argument
 dnl -----------------------------------------------------------------------------
-AC_MSG_CHECKING([Apache HTTPd 1.3.x])
-AC_ARG_WITH(apache,
-	[  --with-apache=DIR       where the Apache 1.3.x APXS utility can be found],
-	TMPDIR=$withval,
-	TMPDIR="")
-if ! test -z "$TMPDIR" ; then
-	if ! test -d "$TMPDIR" ; then
-		AC_MSG_ERROR([Invalid Apache 1.3.x directory \"$TMPDIR\" specified])
-	fi
-	if ! test -f "$TMPDIR/apxs" ; then
-		AC_MSG_ERROR([Cannot locate \"apxs\" in \"$TMPDIR\"])
-	fi
+AC_ARG_WITH(apxs,
+[  --with-apxs[=FILE]        Build shared Apache module. FILE is the optional      
+                          pathname to the Apache apxs tool; defaults to apxs.],
+[
+    case "${withval}" in 
+        y | yes | true) find_apxs=true ;;
+        n | no | false) find_apxs=false ;;
+        *) find_apxs=true ;;
+    esac
 
-	CURDIR=`pwd`
-	cd $TMPDIR
-	TMPDIR=`pwd`
-	cd $CURDIR
-	APXS=$TMPDIR/apxs
-	AC_MSG_RESULT($APXS)
-	AC_SUBST(APXS)
-
-	TGTDIRS="$TGTDIRS apache-1.3"
-	AC_MSG_RESULT([setting target directories to \"$TGTDIRS\"])
-	AC_SUBST(TGTDIRS)
-else
+    if ${TEST} ${find_apxs} ; then    
+        AC_MSG_RESULT([need to check for Perl first, apxs depends on it...])
+        AC_PATH_PROG(PERL,perl,$PATH)dnl
+    
+        if ${TEST} ${find_apxs} ; then
+            AC_PATH_PROG(APXS_CMD,apxs,$PATH)dnl
+        else
+            APXS_CMD=${withval}
+        fi
+    
+        if ${TEST} -n "${APXS_CMD}" ; then
+            dnl Seems that we have it, but have to check if it is OK first        
+            if ${TEST} ! -x "${APXS_CMD}" ; then
+                AC_MSG_ERROR(Invalid location for apxs: '${APXS_CMD}')
+            fi
+            
+            $APXS_CMD -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
+    
+            if ${TEST} "${apxs_support}" = "false" ; then
+                AC_MSG_RESULT(could not find apxs)
+                AC_MSG_ERROR(You must specify a valid --with-apxs path)
+            fi
+            
+            TGTDIRS="$TGTDIRS apache-1.3"
+            AC_MSG_RESULT([adding apache-1.3 to target directories: \"$TGTDIRS\"])
+    
+            AC_SUBST(TGTDIRS)
+            AC_SUBST(APXS_CMD)
+        fi
+    fi
+],
+[
 	AC_MSG_RESULT(no)
-fi
+])
 
 dnl -----------------------------------------------------------------------------
 dnl Check where sources are
@@ -152,9 +178,9 @@ AC_MSG_RESULT($SRCDIR)
 AC_SUBST(SRCDIR)
 
 dnl -----------------------------------------------------------------------------
-dnl Check where we (targets) are
+dnl Check where targets are
 dnl -----------------------------------------------------------------------------
-AC_MSG_CHECKING([current (targets) directory])
+AC_MSG_CHECKING([targets directory])
 TGTDIR=`pwd`
 AC_MSG_RESULT($TGTDIR)
 AC_SUBST(TGTDIR)
