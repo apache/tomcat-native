@@ -254,44 +254,62 @@ static jk_uriEnv_t *jk2_uriMap_suffixMap(jk_env_t *env, jk_uriMap_t *uriMap,
 static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
                                        const char *vhost, int port)
 {
-    int i, j;
+    int i, j, n;
     char *name;
-    char vs[1024] = {0};
-    char vv[1024] = {0};
+    char hostame[1024] = {0};
 
-    int n = uriMap->vhosts->size(env, uriMap->vhosts);
     if (port) {
-        if (vhost && strchr(vhost, ':'))
-            strcpy(vs, vhost);
+        if (vhost) {
+            if (strchr(vhost, ':'))
+                strcpy(hostame, vhost);
+            else
+               sprintf(hostame, "%s:%d", vhost, port);
+        }
         else
-            sprintf(vs, "%s:%d", vhost ? vhost : "*", port);
-        sprintf(vv, "*:%d", port);
+            sprintf(hostame, "*:%d", port);
     }
-    else
-        strcpy(vs, vhost ? vhost : "*"); 
-
+    else if (vhost)
+        strcpy(hostame, vhost); 
+    else /* Return default host if vhost and port wasn't suplied */
+        return uriMap->vhosts->get(env, uriMap->vhosts, "*");
+    
+    n = uriMap->vhosts->size(env, uriMap->vhosts);
+    /* Check the hostnames first */
     for (i = 0 ; i < n ; i++) {
         jk_uriEnv_t *uriEnv = uriMap->vhosts->valueAt(env, uriMap->vhosts, i);
         name = uriMap->vhosts->nameAt(env, uriMap->vhosts, i);
         /* Host name is not case sensitive */
-        if (strcasecmp(name, vs) == 0) {
+        if (strcasecmp(name, hostame) == 0) {
             if (port == 0 || port == uriEnv->port)
                 return uriEnv;
         }
-        else if (uriEnv->aliases) {
+    }
+    /* Then for each vhost, check the aliases */
+    for (i = 0 ; i < n ; i++) {
+        jk_uriEnv_t *uriEnv = uriMap->vhosts->valueAt(env, uriMap->vhosts, i);
+        name = uriMap->vhosts->nameAt(env, uriMap->vhosts, i);
+        if (uriEnv->aliases && vhost) {
             int m = uriEnv->aliases->size(env, uriEnv->aliases);
             for (j = 0; j < m; j++) {
                 name = uriEnv->aliases->nameAt(env, uriEnv->aliases, j);
-                if (strcasecmp(name, vhost) == 0) {
+                if (strcasecmp(name, hostame) == 0) {
                     if (port == 0 || port == uriEnv->port)
                         return uriEnv;
                 }
             }
         }
-        else if (port && strcasecmp(name, vv) == 0) {
-            return uriEnv;
+    }
+    /* Finally, check aginst *:port hostname */
+    if (port) {
+        for (i = 0 ; i < n ; i++) {
+            jk_uriEnv_t *uriEnv = uriMap->vhosts->valueAt(env, uriMap->vhosts, i);
+            name = uriMap->vhosts->nameAt(env, uriMap->vhosts, i);
+            if ((strncmp(name, "*:", 2) == 0) && uriEnv->port == port) {
+                return uriEnv;
+            }
         }
     }
+    /* Return default host if none found */
     return uriMap->vhosts->get(env, uriMap->vhosts, "*");
 }
 
