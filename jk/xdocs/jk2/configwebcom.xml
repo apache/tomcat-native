@@ -231,15 +231,15 @@ Other  important  channels are unix socket and jni</p>
             </subsection>
             <subsection name="channel.socket">
                 <p>
-    A communication transport to a remote Engine
-    <b>Magic:</b> The local part of the name will be the Engine name,
-    to use when defining the uri mappings. For example
-    channel.socket.local_9009 will automatically define an engine named
-    local_9009, and if no other setting is set ajp13 will be used for
-    communication.
-    <b>Magic:</b> If no channel is defined in the config, a default channel
-    will be constructed with port=8009, engine=DEFAULT, worker=ajp13 -
-    named 'channel.socket.DEFAULT'
+    Defines a communication transport to a remote Servlet Engine. </p>
+
+<p>The name of the channels should be: channel.socket:HOST:PORT, where HOST and PORT are the 
+tomcat Ajp location.  You could use other names and explicitely set HOST and PORT, but this
+is discouraged. In most cases, you don't need to set any other config - just add a line like
+[channel.socket:localhost:8009] and all other things will have good defaults. 
+</p>
+<p>
+Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcatId of the channel.
 </p>
                 <p>
                     <table>
@@ -250,13 +250,18 @@ Other  important  channels are unix socket and jni</p>
                         </tr>
                         <tr>
                             <td>port</td>
-                            <td>8009</td>
-                            <td>Port where Tomcat is listening</td>
+                            <td>extracted from the component name</td>
+                            <td>Port where Tomcat is listening. It is automatically extracted from the name - you shouldn't have to specify it explicitely.</td>
                         </tr>
                         <tr>
                             <td>host</td>
-                            <td>localhost</td>
-                            <td>Remote host</td>
+                            <td>extracted from the component name</td>
+                            <td>Remote host. You should use the name, no need to override it</td>
+                        </tr>
+                        <tr>
+                            <td>graceful</td>
+                            <td>0</td>
+                            <td>If 1, only requests for existing sessions will be forwarded</td>
                         </tr>
                         <tr>
                             <td>keepalive</td>
@@ -273,13 +278,13 @@ Other  important  channels are unix socket and jni</p>
                         </tr>
                         <tr>
                             <td>group</td>
-                            <td>lb:0</td>
-                            <td>loadbalanced groups to which this channel and the associated worker will be added, multivalued</td>
+                            <td>lb</td>
+                            <td>loadbalanced groups to which this channel and the associated worker will be added, multivalued. You need to set it only if you have an advanced setup with multiple clusters.</td>
                         </tr>
                         <tr>
                             <td>tomcatId</td>
-                            <td>?</td>
-                            <td>?</td>
+                            <td>Automatically set to the localname ( host:port )</td>
+                            <td>Must match the JVM route on tomcat Engine, for load balancing</td>
                         </tr>
                     </table>
                 </p>

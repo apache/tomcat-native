@@ -7,94 +7,145 @@
 <date>$Date$</date>
 </properties>
     <section name="Intro">
-        <p>Jk2 uses a config file ( workers2.properties ) in the style of a .properties or ini
- file. It can be configured to use any other backend that provides similar
- capabilities.
-  </p>
-        <p>
-  This document describes the format of this configuration file. Its default name is ${serverRoot}/conf/workers2.properties,
-  where ${serverRoot} is something like /opt/apache.
-</p>
+
+        <p>Jk2 uses an architecture and configuration mechanism modeled after JMX. It consist of 
+"jk_bean" components, with a registry and API that attempts to mirror JMX.</p>
+
+        <p>As in JMX, multiple config formats and stores are possible. The default is a neutral .INI-style 
+file, and Apache2 also supports configuration in httpd.conf. Other formats and repositories can be
+easily implemented, but the general concept is the same.</p>
+
+        <p>Each component has a name, a type and a set of attributes. Reasonable defaults are provided, and 
+some components are created automatically using the defaults if not explicitely configured. 
+You need to specify the config only where you want to override the defaults.</p>
+
     </section>
-    <section name="Config file">
-        <p> The default config file is user editable, but mod_jk may persist 
-changes requested by protocol. If you manually change the file while jk2 is 
-working and make changes using jkstatus or a jmx proxy, your changes will be lost. 
-  </p>
 
-<p>Jk2 is modeled after JMX. It consist of a number of named components, each having
-certain management attributes. In order to configure jk2 you need to create 
-the components and set the desired attributes. </p>
+    <section name="Config file format">
 
-        <p>The format of the default config file.  Each setting consists of an object 
-name and a property, with the associated value. The property name is a simple
- string, with no '.' in it. The name has 2 parts, separated by ":". The first part
-is the component type, and the second is the local part of the name. 
-  </p>
-        <p>2 formats are supported:   
-            <source>
-                TYPE:NAME.PROPERTY=VALUE 
-            </source>
-        </p>
-        <p>and
+        <p>The config file is named "workers2.properties", located by default in ${serverRoot}/conf, 
+where ${serverRoot} is the web server dir, like /usr/local/apache. It is possible to modify the location
+of the file using server-specific directives.</p>
+
+        <p>Settings are grouped in sections - one section for each object. The section head is the component
+name, and must include the type and local name of the component, separated by ":". Inside each section
+you must define the attributes of the component. The attribute name is a simple string, with no '.' or
+special characters. The value is a string - no quoting is currently supported. It should be noted that
+the component name is processed to compute default for the component attributes - for example 
+[channel.socket:localhost:8009] name will create a socket channel object with host=locahost and 
+port=8009. You don't need to provide this information twice. It is highly recommended to use
+this naming scheme for consistency, even if you could use any name and then specify the properties
+explicitely.</p>
+
+        <p>The general syntax is:
             <source>
                 [TYPE:NAME]
                 PROPERTY=VALUE
             </source>
         </p>
+
+        <p>It is also possible to use an alternate format, mostly for backward compatibility:
+            <source>
+                TYPE:NAME.PROPERTY=VALUE 
+            </source>
+        </p>
     </section>
 
-    <section name="Advanced: reconfiguration">
-        <p>One of the features ok jk2 is support for (partial) reconfiguration at runtime, without a restart. The main 
-use is to add/remove/change workers and uris. This allows smooth updates, without server restarts, where each 
-worker is upgraded while the other workers server content. </p>
+    <section name="Runtime reconfiguration">
 
-<p>The jk2 architecture is modeled after JMX, and in future it'll have a JMX proxy that will make most 
-reconfiguration transparent. This section describes the mechanisms used for reconfiguration.</p>
+      <p>The main purpose of this reconfiguration is to implement "graceful" shutdown and 
+to allow adding or disabling of more tomcat instances in the load balancing mode</p>
 
-<p>Each Jk2 component has a name and a number of attributes. The config is abstracted - but for simplicity
-we'll discuss the default ( ini-file ) format. Some of the attributes and components support run time
-changes. The most important is "disabled", that allows a component to be included or excluded from
-the runtime. </p>
+      <p>Each component has a "ver" attribute - it is initially set to the value in the 
+config file or 0 if this is not specified. Every time the config file is read, jk will 
+check the version number in the component, and reconfigure if it is different.</p>
 
-<p>The easiest way to reconfigure jk2 is by making modifications to the config file. Jk will 
-process the file again and call the setters for attributes - including disabled, etc. Only 
-components and attributes that include support for reloading will be affected.
+   <p>If Jk2 reloads the config file, it detect modified components using "ver" and reconfigures them.
+To avoid performance hits, the check is done only when the /jkstatus page is accessed - or 
+if the scoreboard signature changes. An access to /jkstatus will check the timestamp of the 
+config file and if a change is detected it'll reload the config file. In apache and multiprocess
+servers - this can only affect the current process, so /jkstatus will increment the scoreboard mark.
+All other processes in a multiprocess server will see the modified byte and reload before serving the next request.</p>
+
+<p>Changing the file and forcing a reload is currently the easiest way to reconfigure. A JMX proxy 
+is in experimental stage and will allow the user to perform all configuration in JMX - using same 
+tools that he uses for tomcat, and completely transparent. The internal implementation will also
+save the file - it is the cleanest way to sync multi-process web servers.
 </p>
 
-<p>The reconfig is enabled by using a flag in the scoreboard. The flag can be set programmatically,
-or it'll be set automatically every time the jk_status page is displayed if a change is
-detected in the config file </p>
 
-<p>A more advanced ( and less tested ) reconfiguration mechanism uses the jk_config API, called
-programmatically using messages from server or using jk_status web interfaces. Every time 
-a change is made, the config file will be written ( for persistence and to allow other processes to
-get the same change ). The scoreboard will be changed, and then all other server processes will 
-act just like in the case of a file change.</p>   
+    </section>
 
-<p>A typical user will just edit the config file, add more workers or URIs or change disabled flag
-of existing workers/uris. Then it'll access the jk_status page, which will detect the config
-file changes and reload the config in the current server process, and use the scoreboard to 
-inform other server processes of the change. </p>
+    <section name="Changing 'graceful' stop state">
+
+      <p>Each tomcat instance corresponds to a "channel" jk component that defines the host and port. The 
+channel can be set in a special "graceful" mode or back to active by setting the corresponding attribute.
+This mode disables sending any new requests to that tomcat instance - only requests for
+an existing session are permitted.</p>
+
+      <p>When you want to disable a tomcat instance, you should first set the channel in
+"graceful" mode, then wait until all existing sessions expire or are completed. If the sessions
+are serializable and tomcat is configured in clustering mode - you can also migrate the 
+sessions to a different instance.</p>
+
+     <p>1. Edit workers2.properties. Find the channel. Change "graceful" to "1" to disable or "0"
+        to reactivate". Increment "ver".<br></br>
+      2. Access /jkstatus page. You should see the value changed in the channel and worker info.</p>
+
+     <p>When a worker is in this state, no new requests will be sent to that worker - only requests that have an 
+explicit session ID for that particular worker. It is recommended you wait for all sessions to expire 
+before stopping the tomcat instance, or you use a session migration mechanism.
+</p> 
 
 </section>
-    <section name="Server-specific configuration">
+    <section name="Adding a new tomcat instance">
 
-<p>Since the config is abstracted, some servers ( Apache2 only at this moment ) may support a 
-server-specific configuration mode. This configuration mode is less tested - but provides some
+     <p>1. Edit workers2.properties. Add a new channel. If you want, also add a worker.ajp entry - 
+but this is optional</p>
+     <p>2. Access the /jkstatus page or triger reloading with a program. You should see the 
+new channel displayed in the status page, and requests should start going to the new tomcat instance</p>
+
+</section>
+    <section name="Advanced: reconfiguration using JMX">
+
+        <p>This is very experimental. On tomcat side, you must enable the JMX proxy. This is done by
+setting "modjk.webServerHost" and "modjk.webServerPort" in jk2.properties to point to the web server 
+port that contains /jkstatus. ( recent versions of jk and mod_jk are required ). You can also add mx4j-tools.jar to 
+server/lib and set "mx.port=PORT" in jk2.properties to enable the console, or use your favorite JMX
+console or tools.</p>
+   
+         <p>When tomcat starts up, it'll connect to the web server and create JMX mbean proxies for each
+mod_jk component. The data will be refreshed when JMX operations are performed - a set or invoke will
+allways refresh, while get will use cached values and refresh only periodically ( 5 sec default ).</p>
+
+<p>Every time  a change is made, the config file will be written ( for persistence and to allow other 
+processes to get the same change ). The scoreboard will be changed, and then all other server processes will 
+act just like in the case of a file change. All comments will be lost - you should use "info" attributes
+in components and set "disabled" to 1 if you want to temporary disable some components.</p>   
+
+
+</section>
+    <section name="Native server configuration">
+
+<p>For Apache2 you can also use httpd.conf instead or in addition to workers2.properties.
+Other servers may support similar configuration - for example using registry or their native
+formats. This configuration mode is less tested - but provides some
 unique advantages (and disadvantages )</p>
 
-<p>I'll describe the apache2 specifics, since this is the only one implemented. In this mode the
-config will be included in httpd.conf. The JkSet top-level directive is used to set global
-config options, and JkUriSet is used to set options for Location sections</p>
+<p>I'll describe the apache2 specifics, since this is the only one implemented. We use 2 directives - JkSet
+is a top-level directive is used to set global config options, and JkUriSet is used to set options
+ for Location sections</p>
 
-<p>You can mix workers2.properties and JkUriSet - for example workers and global options
-can be set in worker2.properties, but all uri properties in httpd.conf. Some people 
-might preffer to have only one config file and use httpd.conf for all configuration.</p>
+<p>JkSet takes 2 parameters, the property name ( including component name ) and the value. (Note:
+probably we should change it to 3 params, and separate the component name from property )</p>
 
 <p>Each Location that has a JkUriSet will automatically create a jk2 [uri] object,
 using the Location path and the vhost. All JkUriSet directives will set attributes
 in this [uri] object, exactly like properties in a ini file section</p>
+
+<p>You can mix workers2.properties and JkUriSet - for example workers and global options
+can be set in worker2.properties, but all uri properties in httpd.conf. Some people 
+might preffer to have only one config file and use httpd.conf for all configuration.</p>
 
 <p>The biggest benefit is that Apache2 mapping is used instead of jk2 to detect the
 requests that need to be sent to tomcat. Apache2 has been optimized and tuned to
