@@ -179,12 +179,12 @@ public class JkMX extends JkHandler
             }
         }
 
-        if (classExists("mx4j.tools.naming.NamingService")) {
+        if (! adapterLoaded && classExists("mx4j.tools.naming.NamingService")) {
             try {
-                ObjectName serverName2 = new ObjectName("Naming:name=rmiregistry");
-                mserver.createMBean("mx4j.tools.naming.NamingService", serverName2, null);
-                mserver.invoke(serverName2, "start", null, null);
-                log.info( "Creating " + serverName2 );
+                serverName = new ObjectName("Naming:name=rmiregistry");
+                mserver.createMBean("mx4j.tools.naming.NamingService", serverName, null);
+                mserver.invoke(serverName, "start", null, null);
+                log.info( "Creating " + serverName );
 
                 // Create the JRMP adaptor
                 ObjectName adaptor = new ObjectName("Adaptor:protocol=jrmp");
@@ -219,11 +219,12 @@ public class JkMX extends JkHandler
                 adapterLoaded = true;
 
             } catch( Exception ex ) {
-                log.info( "MX4j RMI adapter not loaded: " + ex.toString());
+				serverName = null;
+                log.error( "MX4j RMI adapter not loaded: " + ex.toString());
             }
         }
 
-        if (classExists("com.sun.jdmk.comm.HtmlAdaptorServer")) {
+        if (! adapterLoaded && classExists("com.sun.jdmk.comm.HtmlAdaptorServer")) {
             try {
                 Class c=Class.forName( "com.sun.jdmk.comm.HtmlAdaptorServer" );
                 Object o=c.newInstance();
@@ -238,6 +239,7 @@ public class JkMX extends JkHandler
 
                 adapterLoaded = true;
             } catch( Throwable t ) {
+				serverName = null;
                 log.error( "Can't load the JMX_RI http adapter " + t.toString()  );
             }
         }
