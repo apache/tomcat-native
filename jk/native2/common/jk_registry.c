@@ -116,8 +116,9 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
 #ifdef HAS_APR
   env->registerFactory( env, "channel", "apr",
                         jk_channel_apr_socket_factory );
-#endif
+#else
   env->registerFactory( env, "channel", "socket", jk_channel_socket_factory );
+#endif
   
   env->registerFactory( env, "handler", "response",
                         jk_handler_response_factory );

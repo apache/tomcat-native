@@ -98,6 +98,10 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
                                     void **result,
                                     const char *type, const char *name);
 
+int JK_METHOD jk_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
+                                     void **result,
+                                     const char *type, const char *name);
+
 int JK_METHOD jk_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
                                        void **result,
                                        const char *type, const char *name);
