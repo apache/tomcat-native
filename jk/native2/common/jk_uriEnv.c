@@ -135,6 +135,9 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     }
     else
         uri = strchr(host, '/');
+        
+    uriEnv->uri = uri;
+    
     if (!uri) {
         /* That's a virtual host definition ( no actual mapping, just global
          * settings like aliases, etc
