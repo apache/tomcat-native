@@ -93,7 +93,6 @@ typedef struct {
 
     jmethodID writeMethod;
     int status;
-    int wait_initialized;
 } jk_channel_jni_private_t;
 
 typedef struct {
@@ -119,8 +118,10 @@ static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
     if( wEnv->vm == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.init() no VM found\n" );
-        if( jniW->worker != NULL )
+        if( jniW->worker != NULL ) {
             jniW->worker->mbean->disabled=JK_TRUE;
+            jniW->worker->mbean->initialize=60;
+        }
         return JK_ERR;
     }
     return JK_OK;
@@ -541,10 +542,6 @@ static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
     if( strcmp( "class", name ) == 0 ) {
         jniInfo->className=value;
     }
-    else if( strcmp( "init", name ) == 0 ) {
-        jniInfo->wait_initialized=atoi(value);
-    }
-
     /* TODO: apache protocol hooks
     else if( strcmp( "xxxx", name ) == 0 ) {
         jniInfo->xxxx=value;
@@ -579,11 +576,12 @@ int JK_METHOD jk2_channel_jni_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint
 }
 
 static int JK_METHOD jk2_channel_jni_status(jk_env_t *env,
+                                            struct jk_worker *worker,
                                             jk_channel_t *_this)
 {
 
     jk_channel_jni_private_t *jniCh=_this->_privatePtr;
-    if ( jniCh->status != JNI_TOMCAT_STARTED && jniCh->wait_initialized) {
+    if ( jniCh->status != JNI_TOMCAT_STARTED && worker->mbean->initialize) {
         jniCh->status = jk_jni_status_code;
         if (jniCh->status != JNI_TOMCAT_STARTED)
             return JK_ERR;
@@ -628,7 +626,8 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     wEnv->addChannel( env, wEnv, ch );
 
     result->invoke=jk2_channel_jni_invoke;
-    
+    ch->worker->mbean->initialize = 60;
+
     return JK_OK;
 }
 
