@@ -717,7 +717,7 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *resu
     uriMap->addUriEnv=jk2_uriMap_addUriEnv;
     uriMap->checkUri=jk2_uriMap_checkUri;
     uriMap->mapUri=jk2_uriMap_mapUri;
-    uriMap->debug= 1;
+    uriMap->debug= 0;
             
     result->object=uriMap;
     result->setAttribute=jk2_uriMap_setProperty;

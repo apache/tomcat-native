@@ -59,8 +59,7 @@
  * Description: Load balancer worker, knows how to load balance among      *
  *              several workers.                                           *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Based on:                                                               *
- * Version:     $Revision$                                           *
+ * Author:      Costin Manolache
  ***************************************************************************/
 
 #include "jk_pool.h"
@@ -361,7 +360,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
             rec->in_recovering  = JK_FALSE;
             rec->retry_count    = 0;
             rec->error_time     = 0;
-            rc->errCnt++;
+            rec->errCnt++;
             /* the endpoint that succeeded is saved for done() */
             s->realWorker = rec;
             return JK_OK;
