@@ -68,43 +68,49 @@
 
 /** AJP Specific error codes
  */
-
-/** @see APR_STATUS_IS_ENOSTAT */
-/* Buffer overflow exception */
+/** Buffer overflow exception */
 #define AJP_EOVERFLOW           (APR_OS_START_USERERR + 1) 
-/* Destination Buffer is to small */
+/** Destination Buffer is to small */
 #define AJP_ETOSMALL            (APR_OS_START_USERERR + 2) 
-/* Invalid input parameters */
+/** Invalid input parameters */
 #define AJP_EINVAL              (APR_OS_START_USERERR + 3) 
-/* Bad message signature */
+/** Bad message signature */
 #define AJP_EBAD_SIGNATURE      (APR_OS_START_USERERR + 4) 
-/* Incoming message too bg */
+/** Incoming message too bg */
 #define AJP_ETOBIG              (APR_OS_START_USERERR + 5) 
+/** Missing message header */
+#define AJP_ENO_HEADER          (APR_OS_START_USERERR + 6) 
+/** Bad message header */
+#define AJP_EBAD_HEADER         (APR_OS_START_USERERR + 7) 
+/** Bad message */
+#define AJP_EBAD_MESSAGE        (APR_OS_START_USERERR + 8) 
 
+/** A structure that represents ajp message */ 
+typedef struct ajp_msg ajp_msg_t;
+
+/** A structure that represents ajp message */ 
 struct ajp_msg
 {
-    char *      buf;
+    apr_byte_t  *buf;
     apr_size_t  headerLen;
     apr_size_t  len;
     apr_size_t  pos;
-    int     serverSide;
+    int         serverSide;
 };
-
-typedef struct ajp_msg ajp_msg_t;
 
 #define AJP_HEADER_LEN              4
 #define AJP_HEADER_SZ_LEN           2
-#define AJP_MSG_BUFFER_SZ       (8*1024)
+#define AJP_MSG_BUFFER_SZ           (8*1024)
 #define AJP13_MAX_SEND_BODY_SZ      (AJP_DEF_BUFFER_SZ - 6)
 
 /* Webserver ask container to take control (logon phase) */
-#define CMD_AJP13_PING               (unsigned char)8
+#define CMD_AJP13_PING              (unsigned char)8
 
 /* Webserver check if container is alive, since container should respond by cpong */
-#define CMD_AJP13_CPING              (unsigned char)10
+#define CMD_AJP13_CPING             (unsigned char)10
 
 /* Container response to cping request */
-#define CMD_AJP13_CPONG              (unsigned char)9
+#define CMD_AJP13_CPONG             (unsigned char)9
 
 /**
  * Check a new AJP Message by looking at signature and return its size
