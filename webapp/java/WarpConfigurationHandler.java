@@ -288,7 +288,7 @@ public class WarpConfigurationHandler {
             Deployer deployer=(Deployer)host;
             File file=new File(host.getAppBase()+File.separator+applName);
             if (!file.isAbsolute()) {
-                file=new File(System.getProperty("catalina.home"),
+                file=new File(System.getProperty("catalina.base"),
                               host.getAppBase()+File.separator+applName);
             }
 
