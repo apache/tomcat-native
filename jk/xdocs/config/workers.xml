@@ -61,6 +61,19 @@ The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z
 </warn>
 </p>
 
+<subsection name="Defining workers">
+<p>Defining workers to the Tomcat web server plugin can be done using a properties file
+(a sample file named workers.properties is available in the conf/ directory).
+</p>
+<directives>
+<directive name="worker.list" required="true">
+A comma separated list of workers names that the JK will use. When starting up,
+the web server plugin will instantiate the workers whose name appears in the
+worker.list property, these are also the workers to whom you can map requests. 
+</directive>
+</directives>
+</subsection>
+
 <subsection name="Mandatory directives">
 <p>Mandatory directives are the one that each worker <b>must</b> contain. Without them the worker will
 be unavailable or will misbehave.
@@ -69,15 +82,18 @@ be unavailable or will misbehave.
 <directive name="type" default="ajp13" required="true">
 Type of the worker (can be one of ajp13, ajp14, jni or lb). The type of the worker
 defines the directives that can be applied to the worker.
+<p>AJP13 worker is the preferred worker type that JK uses for communication
+between web server and Tomcat. This type of worker uses sockets as communication
+channel. For detailed description of the AJP13 protocol stack browse to
+<a href="../common/ajpv13a.html">AJPv13 protocol specification</a>
+</p>
 </directive>
 </directives>
 </subsection>
 
-<subsection name="AJP13 worker directives">
-<p>AJP13 worker directives are the preferred worker type that JK uses for communication
-between web server and Tomcat. This type of worker uses sockets as communication
-channel. For detailed description of the AJP13 protocol stack browse to
-<a href="../common/ajpv13a.html">AJPv13 protocol specification</a>
+<subsection name="Connection directives">
+<p>Connection directives defines the parameters needed to connect and maintain
+the connections pool of persisten connections between JK and remote Tomcat.
 </p>
 <directives>
 
@@ -130,6 +146,7 @@ web servers such as Apache 2.0 (worker), IIS and Netscape. They will benefit the
 setting this value to a higher level (such as the estimated average concurrent users for Tomcat).
 If cachesize is not set, the connection cache support is disabled.
 Cachesize determines the minimum number of open connections to backend Tomcat.
+<warn>Do not use cachesize with <b>prefork mpm</b> or <b>apache 1.3.x</b>!</warn>
 </directive>
 
 <directive name="cache_timeout" default="0" required="false">
@@ -148,11 +165,189 @@ finish having many unused ajp13 threads on the Tomcat side.
 </p>
 </directive>
 
+<directive name="lb_factor" default="1" required="false">
+Integer number used when the worker will be used inside load balancer worker,
+this is the load-balancing factor for the worker.
+The load-balancing factor is <i>how much we expect this worker to work</i>, or
+<i>the worker's work quota</i>. Load balancing factor is compared with other workers
+that makes the load balancer. For example if one worker has lb_factor 5 times higher then
+other worker, then it will receive five times more requests. 
+</directive>
 
 </directives>
 </subsection>
 
+<subsection name="Load balancing directives">
+<p>Loadbalancer directives defines the parameters needed to create a workers that are
+connectiong to a remote cluster of backend Tomcat servers. Each cluster node has to
+have a worker defined.
+</p>
+<p>
+The load-balancing worker does not really communicate with Tomcat workers.
+Instead it is responsible for the management of several "real" workers. 
+This management includes:
+</p>
 
+<ul>
+<li>
+Instantiating the workers in the web server.
+</li>
+<li>
+Using the worker's load-balancing factor, perform weighed-round-robin load balancing where 
+high lbfactor means stronger machine (that is going to handle more requests)
+</li>
+<li>
+Keeping requests belonging to the same session executing on the same Tomcat worker.
+</li>
+<li>
+Identifying failed Tomcat workers, suspending requests to them and instead fall-backing on 
+other workers managed by the lb worker.
+</li>
+</ul>
+
+<p>
+The overall result is that workers managed by the same lb worker are load-balanced
+(based on their lbfactor and current user session) and also fall-backed so a single
+Tomcat process death will not "kill" the entire site.
+The following table specifies properties that the lb worker can accept:
+</p>
+
+<directives>
+<directive name="balanced_workers" required="true">
+A comma separated list of workers that the load balancer
+need to manage. 
+<warn>These workers should <b>not</b> appear in the worker.list property!</warn>
+</directive>
+
+<directive name="sticky_session" default="True" required="false">
+Specifies whether requests with SESSION ID's should be routed back to the same
+Tomcat worker. If sticky_session is set to <b>True</b> or <b>1</b> sessions are sticky, otherwise
+sticky_session is set to <b>False</b>. Set sticky_session to <b>False</b> when Tomcat
+is using a Session Manager which can persist session data across multiple
+instances of Tomcat. By default sticky_session is set to True.
+</directive>
+</directives>
+
+</subsection>
+
+<subsection name="Advanced worker directives">
+
+<directives>
+<directive name="connect_timeout" required="false">
+Connect timeout property told webserver to send a PING request on ajp13 connection after 
+connection is established. The parameter is the delay in milliseconds to wait for the PONG reply.
+<p>
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13 
+ping/pong support which has been implemented on Tomcat <b>3.3.2+, 4.1.28+ and 5.0.13+</b>.
+Disabled by default.
+</p>
+</directive>
+
+<directive name="prepost_timeout" required="false">
+Prepost timeout property told webserver to send a PING request on ajp13 connection before 
+forwarding to it a request. The parameter is the delay in milliseconds to wait for the PONG reply.
+<p>
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13 
+ping/pong support which has been implemented on <b>Tomcat 3.3.2+, 4.1.28+ and 5.0.13+</b>.
+Disabled by default.
+</p>
+</directive>
+
+<directive name="reply_timeout" required="false">
+Reply_timeout property told webserver to wait some time for reply to a forwarded request
+before considering the remote tomcat is dead and eventually switch to another tomcat in a cluster
+group. By default webserver will wait forever which could be an issue for you.
+The parameter is the number of milliseconds to wait for reply, so adjust it carrefully if you 
+have long running servlets.
+<p>
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and works on all
+servlet engines supporting ajp13.
+Disabled by default.
+</p> 
+</directive>
+
+<directive name="recovery_options" default="0" required="false">
+Recovery options property told webserver how to handle recovery when
+it detect that tomcat failed.
+By default, webserver will forward the request to another tomcat in LB mode
+(or to another ajp thread in ajp13 mode).
+values are : 0 (full recovery), 1 (don't recover if tomcat failed after getting the request),
+2 (don't recover if tomcat failed after sending the headers to client), 3 (don't recover if tomcat failed 
+getting the request or after sending the headers to client).
+<p>
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung/broken tomcat's 
+and works on all servlet engines supporting ajp13.
+Full recovery by default.
+</p>
+</directive>
+
+</directives>
+</subsection>
+
+<subsection name="Advanced load balancer directives">
+<p>
+With JK 1.2.x, new load-balancing and fault-tolerant support has been added via
+2 new properties, <b>local_worker_only</b> and <b>local_worker</b>.
+</p>
+ 
+<directives>
+<directive name="local_worker" default="False" required="false">
+If local_worker is set to <b>True</b> it is marked as local worker. 
+If in minimum one worker is marked as local worker, lb_worker is in local worker mode. 
+All local workers are moved to the beginning of the internal worker list
+in lb_worker during validation. 
+</directive>
+
+<directive name="local_worker_only" default="False" required="false">
+If local_worker_only is set to <b>True</b> it is marked as local only worker. 
+If all local worker are in error state, and if set to <b>False</b>
+lb_worker tries to route the request to another balanced worker. If set to
+<b>True</b> error is returned.
+</directive>
+</directives>
+
+<p>
+The <b>local_worker</b> flag on worker tells the <b>lb_worker</b> which connections
+are going to the local worker. 
+</p>
+<p>
+This means that if a request with a session id comes in it would be routed to the appropriate worker. 
+If this worker is down it will be send to the first local worker which is not in error state.
+</p>
+<p>
+If a request without a session comes in, it would be routed to the first local worker. 
+If all local worker are in error state, then the <b>local_worker_only</b> flag is important. 
+With set to True, this request gets an error response.
+If set to False lb_worker tries to route the request to another balanced worker.
+</p>
+<p>
+If one of the worker was in error state and has recovered nothing changes. 
+The local worker will be check for requests without a session id (and with a session on himself) and 
+the other worker will only be checked if a request with a session id of this worker comes in.
+</p>
+<p>
+Why do we need souch a complex behavior ?
+</p>
+<p>
+We need a graceful shut down of a node for maintenance. The balancer in front asks a special port on each 
+node periodically. If we want to remove a node from the cluster, we switch off this port. 
+The loadbalancer can't connect to it and marks the node as down. 
+But we don't move the sessions to another node. In this environment it is an error
+if the balancer sends a request without a session to an apache+mod_jk+tomcat which
+port is switched off. And if the load balancer determines that a node is down no
+other node is allowed to send a request without a session to it. Only requests with
+old sessions on the switched off node would be routed to this node. After some time
+nobody uses the old sessions and the sessions will time out.
+Then nobody uses this node, because all session are gone and the node is
+unreachable without a session-id in the request. If someone uses a session which
+timed out, our servlet system sends a redirect response without a session id to the browser.
+This is necessary, because on a switched off node apache and tomcat can still be up and running,
+but they are in an old state and should only be asked for valid old sessions.
+After the last session timed out, you can update the node etc. without killing
+sessions or moving them to another node. Sometimes we have a lot of big objects
+in our sessions, so it would be really time consuming to move them.
+</p>
+</subsection>
 </section>
  
 </body>
