@@ -1882,7 +1882,7 @@ int ajp_init(jk_worker_t *pThis,
             /* Initialize cache slots */
             for (i = 0; i < p->ep_cache_sz; i++) {
                 p->ep_cache[i] = ajp_create_endpoint(pThis, proto, now);
-                if (p->ep_cache[i]) {
+                if (!p->ep_cache[i]) {
                     jk_log(l, JK_LOG_ERROR,
                             "Failed creating enpont cache slot %d errno=%d",
                             i, errno);
