@@ -83,14 +83,6 @@
 /*
  * Jakarta (jk_) include files
  */
-#ifdef NETWARE
-#define _SYS_TYPES_H_
-#define _NETDB_H_INCLUDED
-#define _IN_
-#define _INET_
-#define _SYS_TIMEVAL_H_
-#define _SYS_SOCKET_H_
-#endif
 #include "jk_global.h"
 #include "jk_util.h"
 #include "jk_map.h"

@@ -66,7 +66,6 @@
 /*
  * mod_jk: keeps all servlet/jakarta related ramblings together.
  */
-
 #include "apu_compat.h"
 #include "ap_config.h"
 #include "apr_lib.h"
@@ -89,14 +88,6 @@
 /*
  * Jakarta (jk_) include files
  */
-#ifdef NETWARE
-#define _SYS_TYPES_H_
-#define _NETDB_H_INCLUDED
-#define _IN_
-#define _INET_
-#define _SYS_TIMEVAL_H_
-#define _SYS_SOCKET_H_
-#endif
 #include "jk_global.h"
 #include "jk_util.h"
 #include "jk_map.h"
@@ -253,7 +244,7 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
 
         /* this NOP function was removed in apache 2.0 alpha14 */
         /* ap_send_http_header(r); */
-        p->response_started = JK_TRUE;
+          p->response_started = JK_TRUE;
         
         return JK_TRUE;
     }
@@ -1284,7 +1275,7 @@ static int jk_handler(request_rec *r)
 #endif
         {   
             int is_recoverable_error = JK_FALSE;
-                rc = end->service(end, &s, xl, &is_recoverable_error);
+            rc = end->service(end, &s, xl, &is_recoverable_error);
 
             if (s.content_read < s.content_length ||
                 (s.is_chunked && ! s.no_more_chunks)) {
@@ -1578,7 +1569,7 @@ static int jk_translate(request_rec *r)
 /* bypass the directory_walk and file_walk for non-file requests */
 static int jk_map_to_storage(request_rec *r)
 {
-    if (apr_table_get(r->notes, JK_WORKER_ID)) {
+    if (apr_table_get(r->notes, JK_WORKER_ID) != NULL ) {
         r->filename = (char *)apr_filename_of_pathname(r->uri);
         return OK;
     }

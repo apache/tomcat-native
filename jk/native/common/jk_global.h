@@ -65,6 +65,15 @@
 #ifndef JK_GLOBAL_H
 #define JK_GLOBAL_H
 
+#ifdef NETWARE
+#define _SYS_TYPES_H_
+#define _NETDB_H_INCLUDED
+#define _IN_
+#define _INET_
+#define _SYS_TIMEVAL_H_
+#define _SYS_SOCKET_H_
+#endif
+
 #include "jk_version.h"
 
 #include <stdio.h>
