@@ -401,6 +401,9 @@
         todir="${build.docs}" >
       <fileset dir="${source.docs}">
         <exclude name="**.xml"/>
+        <exclude name="**.css.in"/>
+        <exclude name="**.xsl.in"/>
+        <exclude name="**.samples"/>
         <exclude name="**.xsl"/>
         <exclude name="**.idx"/>
         <exclude name="**/images/originals/**"/>
