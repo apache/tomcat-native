@@ -136,6 +136,11 @@ public class ChunkedInputFilter implements InputFilter {
      */
     protected boolean endChunk = false;
 
+    /**
+     * Flag set to true if the next call to doRead() must parse a CRLF pair
+     * before doing anything else.
+     */
+    protected boolean needCRLFParse = false;
 
     // ------------------------------------------------------------- Properties
 
@@ -157,6 +162,11 @@ public class ChunkedInputFilter implements InputFilter {
 
         if (endChunk)
             return -1;
+
+        if(needCRLFParse) {
+            needCRLFParse = false;
+            parseCRLF();
+        }
 
         if (remaining <= 0) {
             if (!parseChunkHeader()) {
@@ -184,7 +194,7 @@ public class ChunkedInputFilter implements InputFilter {
             chunk.setBytes(buf, pos, remaining);
             pos = pos + remaining;
             remaining = 0;
-            parseCRLF();
+            needCRLFParse = true;
         }
 
         return result;
