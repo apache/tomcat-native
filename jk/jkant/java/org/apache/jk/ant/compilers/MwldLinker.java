@@ -90,7 +90,7 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
 
     /** Link using libtool.
      */
-    public boolean link(String srcList[]) throws BuildException {
+    public boolean link(Vector srcList) throws BuildException {
         Commandline cmd = new Commandline();
         File linkOpt = new File(buildDir, "link.opt");
         File linkDef = new File(buildDir, "link.def");
@@ -137,8 +137,9 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
             linkOptPw.println(libBase + "\\lib\\nwpre.obj");
 
             // write the objects to link with to the .opt file
-            for( int i=0; i<srcList.length; i++ ) {
-                File srcF = (File)project.resolveFile(srcList[i]);
+            for( int i=0; i<srcList.size(); i++ ) {
+		Source source=(Source)srcList.elementAt(i);
+                File srcF = source.getFile();
                 String name=srcF.getName();
                 String targetNA[]=co_mapper.mapFileName( name );
                 if( targetNA!=null )

@@ -69,7 +69,7 @@ import java.util.*;
  *
  * @author Costin Manolache
  */
-public class CcCompiler extends BaseCompiler {
+public class CcCompiler extends CompilerAdapter {
     
     public CcCompiler() {
 	super();
@@ -79,7 +79,9 @@ public class CcCompiler extends BaseCompiler {
      *  a 'normal' platform - no need for libtool
      */
 
-    public void compileSingleFile(String source) throws BuildException {
+    public void compileSingleFile(Source sourceObj) throws BuildException {
+	File f=sourceObj.getFile();
+	String source=f.toString();
 	Commandline cmd = new Commandline();
 
 	String cc=project.getProperty("build.native.cc");

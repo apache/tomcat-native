@@ -73,7 +73,7 @@ import java.util.*;
  *
  * @author Mike Anderson
  */
-public class MwccCompiler extends BaseCompiler {
+public class MwccCompiler extends CompilerAdapter {
     
     public MwccCompiler() {
         super();
@@ -88,7 +88,9 @@ public class MwccCompiler extends BaseCompiler {
 
     /** Compile  using mwccnlm.
      */
-    public void compileSingleFile(String source) throws BuildException {
+    public void compileSingleFile(Source sourceObj) throws BuildException {
+	File f=sourceObj.getFile();
+	String source=f.toString();
         String [] includeList = ( includes==null ) ?
             new String[] {} : includes.getIncludePatterns(project);
 
