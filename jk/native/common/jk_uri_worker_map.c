@@ -453,6 +453,32 @@ int uri_worker_map_close(jk_uri_worker_map_t *uw_map,
     return JK_FALSE;
 }
 
+void jk_no2slash(char *name)
+{
+    char *d, *s;
+
+    s = d = name;
+
+#if defined(WIN32)
+    /* Check for UNC names.  Leave leading two slashes. */
+    if (s[0] == '/' && s[1] == '/')
+        *d++ = *s++;
+#endif
+
+    while (*s) {
+        if ((*d++ = *s) == '/') {
+            do {
+                ++s;
+            } while (*s == '/');
+        }
+        else {
+            ++s;
+        }
+    }
+    *d = '\0';
+}
+
+
 char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                         const char *uri,
                         jk_logger_t *l)
@@ -464,17 +490,16 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         unsigned i;
         unsigned best_match = -1;
         unsigned longest_match = 0;
-        char * clean_uri = NULL;
-        char *url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
+        char * clean_uri = jk_pool_strdup(&uw_map->tp,uri);
+        char *url_rewrite = strstr(clean_uri, JK_PATH_SESSION_IDENTIFIER);
         
         if(url_rewrite) {
-            clean_uri = jk_pool_strdup(&uw_map->tp,uri);
-            url_rewrite = strstr(clean_uri, JK_PATH_SESSION_IDENTIFIER);
             *url_rewrite = '\0';
-            uri = clean_uri;
         }
+        jk_no2slash(clean_uri);
+        uri = clean_uri;
 
-		jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s'\n", uri);
+        jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s'\n", uri);
         for(i = 0 ; i < uw_map->size ; i++) {
             uri_worker_record_t *uwr = uw_map->maps[i];
 
