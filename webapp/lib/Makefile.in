@@ -67,7 +67,7 @@ LIB = libwebapp.la
 
 all: $(LIB)
 
-$(LIB): $(OBJS) $(PROVS)
+$(LIB): $(OBJS) $(PROVS) @SRCDIR@/Makedefs
 	@echo Creating library $(LIB)
 	@$(LIBTOOL) --silent --mode=link $(CC) -static -o $(LIB) \
 		$(OBJS) $(PROVS) 1> /dev/null
