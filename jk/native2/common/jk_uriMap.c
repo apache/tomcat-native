@@ -370,9 +370,25 @@ static void jk2_uriMap_createHosts(jk_env_t *env, jk_uriMap_t *uriMap)
             else { /* Create the missing vhosts */
                 if (!uriMap->vhosts->get(env, uriMap->vhosts,
                                          uriEnv->virtual)) {
-                    jk2_map_default_create(env, &uriEnv->webapps, uriMap->pool);
+                    /* Actually create the bean */
+                    jk_uriEnv_t *hostEnv = env->getByName2(env, "uri",
+                                                           uriEnv->virtual);
+                    if (hostEnv == NULL) {
+                        env->createBean2(env, uriMap->mbean->pool, "uri",
+                                         uriEnv->virtual);
+                        hostEnv = env->getByName2(env, "uri",
+                                                  uriEnv->virtual);
+                        if (!hostEnv) {
+                            /* XXX this is a error. */
+                            continue;
+                        }
+                        if (uriMap->mbean->debug > 0) 
+                            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                                "uriMap.init() Create missing host %s\n", uriEnv->virtual);
+                    }
+                    jk2_map_default_create(env, &hostEnv->webapps, uriMap->pool);
                     uriMap->vhosts->put(env, uriMap->vhosts,
-                                        uriEnv->virtual, uriEnv, NULL);
+                                        uriEnv->virtual, hostEnv, NULL);
 
                     env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                                   "uriMap.init() Fixing Host %s\n", 
@@ -566,7 +582,7 @@ static int jk2_uriMap_createMappings(jk_env_t *env, jk_uriMap_t *uriMap)
 
         if (uriMap->mbean->debug > 5) 
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                          "uriMap.init() adding context %s for %s\n", ctxEnv->prefix, uri); 
+                          "uriMap.init() adding context %s:%s for %s\n", vhost, ctxEnv->prefix, uri); 
 
         switch (uriEnv->match_type) {
             case MATCH_TYPE_EXACT:
@@ -883,7 +899,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     
     if (uriMap == NULL || uri==NULL) 
         return NULL;
-    
+
     if (uriMap->mbean->debug > 1)
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "uriMap.mapUri() hostname %s port %d uri %s\n", vhost, port, uri);    
