@@ -78,7 +78,7 @@ warp_packet *p_create(apr_pool_t *pool) {
 wa_boolean p_read_ushort(warp_packet *pack, int *x) {
     int k=0;
 
-    if ((pack->curr+2)>=pack->size) return(wa_false);
+    if ((pack->curr+2)>pack->size) return(wa_false);
     k=(pack->buff[pack->curr++]&0x0ff)<<8;
     k=k|(pack->buff[pack->curr++]&0x0ff);
     *x=k;
@@ -88,7 +88,7 @@ wa_boolean p_read_ushort(warp_packet *pack, int *x) {
 wa_boolean p_read_int(warp_packet *pack, int *x) {
     int k=0;
 
-    if ((pack->curr+2)>=pack->size) return(wa_false);
+    if ((pack->curr+2)>pack->size) return(wa_false);
     k=(pack->buff[pack->curr++]&0x0ff)<<24;
     k=k|((pack->buff[pack->curr++]&0x0ff)<<16);
     k=k|((pack->buff[pack->curr++]&0x0ff)<<8);
@@ -102,10 +102,13 @@ wa_boolean p_read_string(warp_packet *pack, char **x) {
 
     if (p_read_ushort(pack,&len)==wa_false) {
         *x=NULL;
+        wa_debug(WA_MARK,"Cannot read string length");
         return(wa_false);
     }
-    if ((pack->curr+len)>=pack->size) {
+    if ((pack->curr+len)>pack->size) {
         *x=NULL;
+        wa_debug(WA_MARK,"String too long (len=%d curr=%d size=%d)",
+                 len,pack->curr,pack->size);
         return(wa_false);
     }
 
