@@ -131,7 +131,7 @@ static void info_handle_application(wa_request *r, wa_application *a) {
     wa_rprintf(r,"<br>\n");
 
     desc=a->conn->prov->applinfo(a,r->pool);
-    if (desc==NULL) wa_rprintf(r,"      <i>No configuration iformation</i>");
+    if (desc==NULL) wa_rprintf(r,"      <i>No configuration information</i>");
     else            wa_rprintf(r,"      <b>&quot;%s&quot;</b>",desc);
     wa_rprintf(r,"<br>\n");
 
@@ -209,7 +209,7 @@ static void info_handle_connection(wa_request *r, wa_connection *c) {
     wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",c->prov->name);
 
     desc=c->prov->conninfo(c,r->pool);
-    if (desc==NULL) wa_rprintf(r,"      <i>No configuration iformation</i>\n");
+    if (desc==NULL) wa_rprintf(r,"      <i>No configuration information</i>\n");
     else            wa_rprintf(r,"      <b>&quot;%s&quot;</b>\n",desc);
 
     wa_rprintf(r,"     </font>\n");
