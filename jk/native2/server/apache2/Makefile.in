@@ -91,14 +91,14 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache2/%.c
 
 # ---------- Targets -------------------- 
 
-all: prepare ${BUILD_DIR}/mod_jk2.so ${BUILD_DIR}/jkjni.so
+all: prepare ${BUILD_DIR}/mod_jk2.so ${BUILD_DIR}/libjkjni.so
 
 ${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
 	$(MOD_INSTALL) cp $^ `pwd`/${BUILD_DIR}
-${BUILD_DIR}/jkjni.so: ${BUILD_DIR}/jkjni.la
+${BUILD_DIR}/libjkjni.so: ${BUILD_DIR}/libjkjni.la
 	$(MOD_INSTALL) cp $^ `pwd`/${BUILD_DIR}
 
-${BUILD_DIR}/jkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
+${BUILD_DIR}/libjkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
 	$(MOD_LINK) -o $@ $(JK_LDFLAGS) $^
 
 ${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${JNI_LO_FILES} ${A2_LO_FILES}
