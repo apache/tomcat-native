@@ -92,6 +92,7 @@ public  class CommonLogHandler extends LogHandler {
 		    int verbosityLevel)
     {
         if( prefix==null ) prefix="tomcat";
+
         org.apache.commons.logging.Log l=(org.apache.commons.logging.Log)loggers.get( prefix );
         if( l==null ) {
             l=LogFactory.getLog( prefix );
@@ -101,41 +102,27 @@ public  class CommonLogHandler extends LogHandler {
 	if( verbosityLevel > this.level ) return;
 
         if( t==null ) {
-            switch( verbosityLevel ) {
-            case Log.FATAL:
-                l.fatal( msg );
-                break;
-            case Log.ERROR:
+            if( verbosityLevel == Log.FATAL )
+                l.fatal(msg);
+            else if( verbosityLevel == Log.ERROR )
                 l.error( msg );
-                break;
-            case Log.WARNING:
+            else if( verbosityLevel == Log.WARNING )
                 l.warn( msg );
-                break;
-            case Log.INFORMATION:
+            else if( verbosityLevel == Log.INFORMATION)
                 l.info( msg );
-                break;
-            case Log.DEBUG:
+            else if( verbosityLevel == Log.DEBUG )
                 l.debug( msg );
-                break;
-            }
         } else {
-            switch( verbosityLevel ) {
-            case Log.FATAL:
-                l.fatal( msg, t );
-                break;
-            case Log.ERROR:
+            if( verbosityLevel == Log.FATAL )
+                l.fatal(msg, t);
+            else if( verbosityLevel == Log.ERROR )
                 l.error( msg, t );
-                break;
-            case Log.WARNING:
+            else if( verbosityLevel == Log.WARNING )
                 l.warn( msg, t );
-                break;
-            case Log.INFORMATION:
+            else if( verbosityLevel == Log.INFORMATION)
                 l.info( msg, t );
-                break;
-            case Log.DEBUG:
+            else if( verbosityLevel == Log.DEBUG )
                 l.debug( msg, t );
-                break;
-            }
         }
     }
 
