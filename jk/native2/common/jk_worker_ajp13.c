@@ -627,7 +627,7 @@ jk2_worker_ajp13_service(jk_env_t *env, jk_worker_t *w,
       return err;
 
     if (w->channel->status) {
-        err = w->channel->status(env, w->channel); 
+        err = w->channel->status(env, w, w->channel); 
         if  (err!=JK_OK) {
             jk2_worker_ajp13_done( env, w, e);
             return err;
@@ -840,6 +840,5 @@ int JK_METHOD jk2_worker_ajp13_factory( jk_env_t *env, jk_pool_t *pool,
     w->workerEnv=env->getByName( env, "workerEnv" );
     w->workerEnv->addWorker( env, w->workerEnv, w );
 
-    
     return JK_OK;
 }
