@@ -35,7 +35,7 @@
     </path>
 
     <target name="detect">
-        <available property="jsse.present" file="${jsse.jar}"/>
+        <available property="jsse.present" classname="javax.net.ssl.SSLSocket"/>
         <available property="jmx.present" file="${jmx.jar}"/>
         <available property="puretls.present" file="${puretls.jar}"/>
         <available property="commons-logging.present" file="${commons-logging.jar}"/>
