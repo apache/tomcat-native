@@ -107,6 +107,7 @@ public class SoTask extends Task {
     String cflags;
     File buildDir;
     int debug;
+    Vector defines = new Vector();
     
     public SoTask() {};
 
@@ -116,6 +117,11 @@ public class SoTask extends Task {
 
     public void setDebug(int i) {
 	debug=i;
+    }
+
+    public void addDef(Def var ) {
+	var.setProject( project );
+	defines.addElement(var);
     }
     
     public void setTarget(String s ) {
@@ -370,6 +376,20 @@ public class SoTask extends Task {
 	    cmd.createArgument().setValue(includeList[i] );
 	}
 
+	if( defines.size() > 0 ) {
+	    Enumeration defs=defines.elements();
+	    while( defs.hasMoreElements() ) {
+		Def d=(Def)defs.nextElement();
+		String name=d.getName();
+		String val=d.getValue();
+		if( name==null ) continue;
+		String arg="-D" + name;
+		if( val!=null )
+		    arg+= "=" + val;
+		cmd.createArgument().setValue( arg );
+		if( debug > 0 ) project.log(arg);
+            }
+        }
 
 	cmd.createArgument().setValue( "-c" );
 
