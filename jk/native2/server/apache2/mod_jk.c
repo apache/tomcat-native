@@ -158,9 +158,9 @@ static const char *jk_setWebapp(cmd_parms *cmd, void *per_dir,
         uriEnv->webapp=workerEnv->createWebapp( workerEnv->globalEnv, workerEnv,
                                                 NULL, cmd->path, NULL );
 
-        fprintf(stderr, "New webapp %p %p\n",uriEnv, uriEnv->webapp);
+        /* fprintf(stderr, "New webapp %p %p\n",uriEnv, uriEnv->webapp); */
     } else {
-        fprintf(stderr, "Existing webapp %p\n",uriEnv->webapp);
+        /* fprintf(stderr, "Existing webapp %p\n",uriEnv->webapp); */
     }
 
     if( strcmp( name, "worker") == 0 ) {
@@ -173,8 +173,8 @@ static const char *jk_setWebapp(cmd_parms *cmd, void *per_dir,
                                          ap_pstrdup(cmd->pool, val));
     }
     
-    fprintf(stderr, "XXX Set worker %p %s %s dir=%s args=%s\n",
-            uriEnv, uriEnv->webapp->workerName, cmd->path,
+    fprintf(stderr, "JkWebapp  %s %s dir=%s args=%s\n",
+            uriEnv->webapp->workerName, cmd->path,
             cmd->directive->directive,
             cmd->directive->args);
 
@@ -205,7 +205,7 @@ static const char *jk_setServlet(cmd_parms *cmd, void *per_dir,
                                  ap_pstrdup(cmd->pool, val));
     }
     
-    fprintf(stderr, "XXX SetServlet %p %p %s %s dir=%s args=%s\n",
+    fprintf(stderr, "JkServlet %p %p %s %s dir=%s args=%s\n",
             uriEnv, uriEnv->webapp, name, val,
             cmd->directive->directive,
             cmd->directive->args);
@@ -293,7 +293,7 @@ static const char *jk_set2(cmd_parms *cmd,void *per_dir,
         /* Generic JkSet foo bar */
         m->add(env, m, ap_pstrdup( cmd->pool, name),
                ap_pstrdup( cmd->pool, value));
-        fprintf( stderr, "set2.init_data: %s %s\n", name, value );
+        /* fprintf( stderr, "set2.init_data: %s %s\n", name, value ); */
     } else if( strcmp(type, "env")==0) {
         workerEnv->envvars_in_use = JK_TRUE;
         workerEnv->envvars->put(env, workerEnv->envvars,
@@ -447,10 +447,10 @@ static void *merge_jk_dir_config(apr_pool_t *p, void *basev, void *addv)
     
     
     /* XXX */
-    fprintf(stderr, "XXX Merged dir config %p %p %s %s %p %p\n",
-            base, new,
-            base->uri, add->uri,
-            base->webapp, add->webapp);
+/*     fprintf(stderr, "XXX Merged dir config %p %p %s %s %p %p\n", */
+/*             base, new, */
+/*             base->uri, add->uri, */
+/*             base->webapp, add->webapp); */
 
     if( add->webapp == NULL ) {
         add->webapp=base->webapp;
@@ -501,7 +501,6 @@ static void create_workerEnv(apr_pool_t *p, server_rec *s) {
 
     /* Local initialization */
     workerEnv->_private = s;
-    fprintf( stderr, "Create worker env %p\n", workerEnv );
 }
 
 /** Create default jk_config. XXX This is mostly server-independent,
