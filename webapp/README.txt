@@ -22,7 +22,7 @@ APR (Apache Portable Runtime) sources. To do this simply:
 When the APR sources are in place, we need to create the configure
 script, configure both APR and the WebApp module and compile:
 
-    ./buildconf.sh
+    ./support/buildconf.sh
     ./configure --with-apxs
     make
 
@@ -41,6 +41,18 @@ Apache 1.3. The available options for the configure script are:
         If you already have the APR sources lying around somewhere, and
         want to use them instead of checking them out from CVS, you can
         specify where these can be found.
+
+    --with-java=DIR
+        If the JAVA_HOME environment variable has not been set, you will
+        need to specify this option on the command line for the configure
+        script in order to compile the Java portion of WebApp.
+
+    --enable-debug
+        Enable compiled-in debugging output. Using this option the WebApp
+        module, library, and Java counterpart will be built with debugging
+        information. This will create a lot of output in your log files,
+        and will kill performances, but it's a good starting poing when
+        something goes wrong.
 
 Once built, the DSO module will be built in the webapp/apache-1.3 directory.
 To install it copy the mod_webapp.so file in your Apache 1.3 libexec
