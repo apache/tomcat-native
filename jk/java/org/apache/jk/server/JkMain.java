@@ -131,11 +131,33 @@ public class JkMain
     public void setJkHome( String s ) {
         wEnv.setJkHome(s);
     }
+    
+    String out;
+    String err;
+    
+    public void setOut( String s ) {
+        this.out=s;
+    }
 
+    public void setErr( String s ) {
+        this.err=s;
+    }
+    
     // -------------------- Initialization --------------------
     
     public void init() throws IOException
     {
+        if(null != out) {
+            PrintStream outS=new PrintStream(new FileOutputStream(out));
+            System.setOut(outS);
+//             if( stderr==null ) 
+//                 System.setErr(out);
+        }
+        if(null != err) {
+            PrintStream errS=new PrintStream(new FileOutputStream(err));
+            System.setErr(errS);
+        }
+
         String home=wEnv.getJkHome();
         if( home==null ) {
             // XXX use IntrospectionUtil to find myself
@@ -215,7 +237,7 @@ public class JkMain
     /* A bit of magic to support workers.properties without giving
        up the clean get/set
     */
-    public void setProperty( Object target, String name, String val ) {
+    public void setBeanProperty( Object target, String name, String val ) {
         if( val!=null )
             val=IntrospectionUtils.replaceProperties( val, props );
         if( log.isDebugEnabled())
@@ -232,7 +254,7 @@ public class JkMain
             log.debug( "setProperty " + handlerN + " " + name + "=" + val );
         Object target=wEnv.getHandler( handlerN );
 
-        setProperty( target, name, val );
+        setBeanProperty( target, name, val );
     }
 
     public long getStartTime() {
@@ -284,7 +306,7 @@ public class JkMain
             String propValue=props.getProperty( k );
             if( "className".equals( name ) )
                 continue;
-            this.setProperty( o, name, propValue );
+            this.setBeanProperty( o, name, propValue );
         }
     }
 
