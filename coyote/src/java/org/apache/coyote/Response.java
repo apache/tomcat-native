@@ -92,13 +92,7 @@ public final class Response {
 
     // ----------------------------------------------------- Instance Variables
     
-    
-    /**
-     * Default locale
-     */
-    private static Locale DEFAULT_LOCALE = new Locale("en", "US");
-
-    
+       
     /**
      * Status code.
      */
@@ -148,7 +142,7 @@ public final class Response {
     protected String contentLanguage = null;
     protected String characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
     protected int contentLength = -1;
-    private Locale locale = DEFAULT_LOCALE;
+    private Locale locale = null;
 
     /**
      * Holds request error exception.
@@ -317,7 +311,7 @@ public final class Response {
         // Reset the headers only if this is the main request,
         // not for included
         contentType = Constants.DEFAULT_CONTENT_TYPE;
-        locale = DEFAULT_LOCALE;
+        locale = null;
         contentLanguage = null;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         contentLength = -1;
@@ -531,7 +525,7 @@ public final class Response {
         
         contentType = Constants.DEFAULT_CONTENT_TYPE;
         contentLanguage = null;
-        locale = DEFAULT_LOCALE;
+        locale = null;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         contentLength = -1;
         status = 200;
