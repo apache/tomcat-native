@@ -104,16 +104,6 @@
 
 AP_MODULE_DECLARE_DATA module jk_module;
 
-struct apache_private_data {
-    jk_pool_t p;
-    
-    int response_started;
-    int read_body_started;
-    request_rec *r;
-};
-
-typedef struct apache_private_data apache_private_data_t;
-
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -147,8 +137,7 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
 {
     if(s && s->ws_private) {
         unsigned h;
-        apache_private_data_t *p = s->ws_private;
-        request_rec *r = p->r;
+        request_rec *r = (request_rec *)s->ws_private;  
         
         if(!reason) {
             reason = "";
@@ -185,8 +174,8 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
 
         /* this NOP function was removed in apache 2.0 alpha14 */
         /* ap_send_http_header(r); */
-          p->response_started = JK_TRUE;
-        
+        s->response_started = JK_TRUE;
+          
         return JK_TRUE;
     }
     return JK_FALSE;
@@ -207,16 +196,15 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
                              unsigned *actually_read)
 {
     if(s && s->ws_private && b && actually_read) {
-        apache_private_data_t *p = s->ws_private;
-        if(!p->read_body_started) {
-           if(ap_should_client_block(p->r)) {
-                p->read_body_started = JK_TRUE;
+        if(!s->read_body_started) {
+           if(ap_should_client_block(s->ws_private)) {
+                s->read_body_started = JK_TRUE;
             }
         }
 
-        if(p->read_body_started) {
+        if(s->read_body_started) {
             long rv;
-            if ((rv = ap_get_client_block(p->r, b, len)) < 0) {
+            if ((rv = ap_get_client_block(s->ws_private, b, len)) < 0) {
                 *actually_read = 0;
             } else {
                 *actually_read = (unsigned) rv;
@@ -250,8 +238,6 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
     jk_logger_t *l=s->workerEnv->l;
     
     if(s && s->ws_private && b) {
-        apache_private_data_t *p = s->ws_private;
-
         if(l) {
             /* BUFF *bf = p->r->connection->client; */
             size_t w = (size_t)l;
@@ -259,7 +245,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             long ll=len;
             char *bb=(char *)b;
             
-            if(!p->response_started) {
+            if(!s->response_started) {
                 l->jkLog(l, JK_LOG_DEBUG, 
                        "Write without start, starting with defaults\n");
                 if(!s->start_response(s, 200, NULL, NULL, NULL, 0)) {
@@ -270,7 +256,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             /* Debug - try to get around rwrite */
             while( ll > 0 ) {
                 unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
-                r = ap_rwrite((const char *)bb, toSend, p->r );
+                r = ap_rwrite((const char *)bb, toSend, s->ws_private );
                 l->jkLog(l, JK_LOG_DEBUG, 
                        "writing %ld (%ld) out of %ld \n",toSend, r, ll );
                 ll-=CHUNK_SIZE;
@@ -285,7 +271,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             /*
              * To allow server push. After writing full buffers
              */
-            if(ap_rflush(p->r) != APR_SUCCESS) {
+            if(ap_rflush(s->ws_private) != APR_SUCCESS) {
                 ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
                              NULL, "mod_jk: Error flushing \n"  );
                 return JK_FALSE;
@@ -342,16 +328,15 @@ static int get_content_length(request_rec *r)
     return 0;
 }
 
-static int init_ws_service(apache_private_data_t *private_data,
-                           jk_ws_service_t *s,
+static int init_ws_service(jk_ws_service_t *s,
                            jk_workerEnv_t *workerEnv)
 {
-    request_rec *r      = private_data->r;
-    jk_logger_t *l=s->workerEnv->l;
-
+    request_rec *r=s->ws_private;
+    jk_logger_t *l=workerEnv->l;
     apr_port_t port;
-
     char *ssl_temp      = NULL;
+
+    s->workerEnv=workerEnv;
     s->jvm_route        = NULL;    /* Used for sticky session routing */
 
     /* Copy in function pointers (which are really methods) */
@@ -1200,22 +1185,21 @@ static int jk_handler(request_rec *r)
 
         if(worker) {
             int rc = JK_FALSE;
-            apache_private_data_t private_data;
+            jk_pool_t p;
             jk_ws_service_t s;
             jk_pool_atom_t buf[SMALL_POOL_SIZE];
-            jk_open_pool(&private_data.p, buf, sizeof(buf));
+            jk_open_pool(&p, buf, sizeof(buf));
             
             s.workerEnv=workerEnv;
-            private_data.response_started = JK_FALSE;
-            private_data.read_body_started = JK_FALSE;
-            private_data.r = r;
+            s.response_started = JK_FALSE;
+            s.read_body_started = JK_FALSE;
             
             jk_requtil_initRequest(&s);
 
-            s.ws_private = &private_data;
-            s.pool = &private_data.p;            
+            s.ws_private = r;
+            s.pool = &p;            
             
-            if(init_ws_service(&private_data, &s, workerEnv)) {
+            if(init_ws_service(&s, workerEnv)) {
                 jk_endpoint_t *end = NULL;
 
                 /* Use per/thread pool ( or "context" ) to reuse the 
@@ -1264,7 +1248,7 @@ static int jk_handler(request_rec *r)
                 }
             }
 
-            jk_close_pool(&private_data.p);
+            p.close(&p);
             
             if(rc) {
                 return OK;    /* NOT r->status, even if it has changed. */
@@ -1273,6 +1257,27 @@ static int jk_handler(request_rec *r)
     }
 
     return DECLINED;
+}
+
+static void *create_jk_dir_config(apr_pool_t *p, char *dummy)
+{
+    jk_uriEnv_t *new =
+        (jk_uriEnv_t *)apr_pcalloc(p, sizeof(jk_uriEnv_t));
+
+    printf("XXX Create dir config \n");
+    return new;
+}
+
+
+static void *merge_jk_dir_configs(apr_pool_t *p, void *basev, void *addv)
+{
+    jk_uriEnv_t *base =(jk_uriEnv_t *)basev;
+    jk_uriEnv_t *add = (jk_uriEnv_t *)addv;
+    jk_uriEnv_t *new = (jk_uriEnv_t *)apr_pcalloc(p,sizeof(jk_uriEnv_t));
+    
+    /* XXX */
+    printf("XXX Merged dir config \n");
+    return add;
 }
 
 /** Create default jk_config. XXX This is mostly server-independent,
@@ -1453,44 +1458,60 @@ static int jk_post_config(apr_pool_t *pconf,
 static int jk_translate(request_rec *r)
 {
     jk_logger_t *l;
-    
-    if(!r->proxyreq) {        
-        jk_workerEnv_t *workerEnv =
-            (jk_workerEnv_t *)ap_get_module_config(r->server->module_config,
-                                                     &jk_module);
-
-        l=workerEnv->l;
-        
-        if(workerEnv) {
-            char *workerName;
-            jk_uriEnv_t *uriEnv;
+    jk_workerEnv_t *workerEnv;
+    jk_uriEnv_t *uriEnv;
             
-            if( (r->handler != NULL ) && 
-                (! strcmp( r->handler, JK_HANDLER ) )) {
-                /* Somebody already set the handler, probably manual config
-                 * or "native" configuration, no need for extra overhead
-                 */
-                l->jkLog(l, JK_LOG_DEBUG, 
-                       "Manually mapped, no need to call uri_to_worker\n");
-                return DECLINED;
-            }
-            uriEnv = workerEnv->uriMap->mapUri(workerEnv->uriMap,
-                                               NULL,
-                                               r->uri );
-
-            if(uriEnv==NULL ) {
-                return DECLINED;
-            }
-
-            r->handler=apr_pstrdup(r->pool,JK_HANDLER);
-            apr_table_setn(r->notes, JK_WORKER_ID, uriEnv->worker->name);
-            l->jkLog(l, JK_LOG_DEBUG, 
-                       "mod_jk: map %s %s\n", r->uri, uriEnv->worker->name);
-            return OK;
-        }
+    if(r->proxyreq) {
+        return DECLINED;
     }
 
-    return DECLINED;
+    workerEnv=(jk_workerEnv_t *)ap_get_module_config(r->server->module_config,
+                                                     &jk_module);
+    l=workerEnv->l;
+        
+    if(!workerEnv) {
+        /* Shouldn't happen, init problems ! */
+        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, 
+                     NULL, "Assertion failed, workerEnv==NULL"  );
+        return DECLINED;
+    }
+
+    if( (r->handler != NULL ) && 
+        ( strcmp( r->handler, JK_HANDLER ) == 0 )) {
+        /* Somebody already set the handler, probably manual config
+         * or "native" configuration, no need for extra overhead
+         */
+        l->jkLog(l, JK_LOG_DEBUG, 
+                 "Manually mapped, no need to call uri_to_worker\n");
+        return DECLINED;
+    }
+
+    {
+        /* XXX Split mapping, similar with tomcat. First step will
+           be a quick test ( the context mapper ), with no allocations.
+           If positive, we'll fill a ws_service_t and do the rewrite and
+           the real mapping.
+        */
+        uriEnv = workerEnv->uriMap->mapUri(workerEnv->uriMap,NULL,r->uri );
+    }
+    
+    if(uriEnv==NULL ) {
+        return DECLINED;
+    }
+
+    /* Why do we need to duplicate a constant ??? */
+    r->handler=apr_pstrdup(r->pool,JK_HANDLER);
+
+    apr_table_setn(r->notes, JK_WORKER_ID, uriEnv->worker->name);
+    l->jkLog(l, JK_LOG_DEBUG, 
+             "mod_jk: map %s %s\n", r->uri, uriEnv->worker->name);
+
+    /* XXXX XXXX
+       Use request_config -> it's much cheaper then notes !!!
+       
+       ap_set_module_config(r->request_config, &jk_module, XXX);
+    */
+    return OK;
 }
 
 /* XXX Can we use type checker step to set our stuff ? */
@@ -1499,6 +1520,12 @@ static int jk_translate(request_rec *r)
 /* bypass the directory_walk and file_walk for non-file requests */
 static int jk_map_to_storage(request_rec *r)
 {
+    if( (r->handler != NULL ) && 
+        ( strcmp( r->handler, JK_HANDLER ) == 0 )) {
+
+        r->filename = (char *)apr_filename_of_pathname(r->uri);
+        printf( "XXX (httpd -X): manual mapping, map to storage OK \n" );
+    }
     if (apr_table_get(r->notes, JK_WORKER_ID) != NULL ) {
         /* XXX Does this ever happens ? I doubt, it seems to be
            run too early - and even if it would be, what happens
