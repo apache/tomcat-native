@@ -581,11 +581,11 @@ static void wa_warp_handle_error(wa_request *req, wa_callbacks *cb,
                                  const char *fmt, ...) {
     char buf[1024];
     va_list ap;
-    
+
     va_start(ap,fmt);
     vsprintf(buf,fmt,ap);
     va_end(ap);
-    
+
     wa_callback_setstatus(cb,req,500);
     wa_callback_settype(cb,req,"text/html");
     wa_callback_commit(cb,req);
@@ -600,8 +600,8 @@ static void wa_warp_handle_error(wa_request *req, wa_callbacks *cb,
     wa_callback_printf(cb,req,"</html>\n");
     wa_callback_flush(cb,req);
     return;
-}    
-    
+}
+
 /**
  * Handle a connection from the web server.
  *
@@ -662,19 +662,19 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     }
     rid=wa_warp_packet_get_short(in);
     wa_warp_packet_free(in);
-    
+
     // Send the request method
     wa_warp_packet_reset(out);
     out->typ=TYP_REQINIT_MET;
     wa_warp_packet_set_string(out,req->meth);
     wa_warp_send(cc,rid,out);
-    
+
     // Send the request URI
     wa_warp_packet_reset(out);
     out->typ=TYP_REQINIT_URI;
     wa_warp_packet_set_string(out,req->ruri);
     wa_warp_send(cc,rid,out);
-    
+
     // Send the request arguments
     wa_warp_packet_reset(out);
     out->typ=TYP_REQINIT_ARG;

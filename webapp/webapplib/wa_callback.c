@@ -60,59 +60,272 @@
 
 #include <wa.h>
 
-// Allocate memory while processing a request.
-void *wa_callback_alloc(wa_callbacks *c, wa_request *r, int size) {
-    return((*c->alloc)(r->data, size));
+/* The list of configured hosts */
+wa_callback *wa_callbacks=NULL;
+
+/**
+ * Add a component to the the current SERVER_SOFTWARE string and return the
+ * new value.
+ *
+ * @param component The new component to add to the SERVER_SOFTWARE string
+ *                  or NULL if no modification is necessary.
+ * @return The updated SERVER_SOFTWARE string.
+ */
+const char *wa_callback_serverinfo(const char *component) {
+    if (wa_callbacks==NULL) return("Unknown");
+    return((*wa_callbacks->serverinfo)(component));
 }
 
-// Read part of the request content.
-int wa_callback_read(wa_callbacks *c, wa_request *r, char *buf, int size) {
-    return((*c->read)(r->data,buf,size));
-}
-
-// Set the HTTP response status code.
-boolean wa_callback_setstatus(wa_callbacks *c, wa_request *r, int status) {
-    return((*c->setstatus)(r->data,status));
-}
-
-// Set the HTTP response mime content type.
-boolean wa_callback_settype(wa_callbacks *c, wa_request *r, char *type) {
-    return((*c->settype)(r->data,type));
-}
-
-// Set an HTTP mime header.
-boolean wa_callback_setheader(wa_callbacks *c,wa_request *r,char *n,char *v) {
-    return((*c->setheader)(r->data,n,v));
-}
-
-
-// Commit the first part of the response (status and headers).
-boolean wa_callback_commit(wa_callbacks *c, wa_request *r) {
-    return((*c->commit)(r->data));
-}
-
-// Write part of the response data back to the client.
-int wa_callback_write(wa_callbacks *c, wa_request *r, char *buf, int size) {
-    return((*c->write)(r->data,buf,size));
-}
-
-// Write part of the response data back to the client.
-int wa_callback_printf(wa_callbacks *c, wa_request *r, const char *fmt, ...) {
+/**
+ * Log data on the web server log file.
+ *
+ * @param f The source file of this log entry.
+ * @param l The line number within the source file of this log entry.
+ * @param r The wa_request structure associated with the current request,
+ *          or NULL.
+ * @param fmt The format string (printf style).
+ * @param ... All other parameters (if any) depending on the format.
+ */
+void wa_callback_log(const char *f,int l,wa_request *r,const char *fmt,...) {
     va_list ap;
     char buf[1024];
     int ret;
 
+    if (wa_callbacks==NULL) return;
+
     va_start(ap,fmt);
     ret=vsnprintf(buf,1024,fmt,ap);
+    if (ret<1) {
+        (*wa_callbacks->log)(WA_LOG,r,"Cannot format log message");
+    } else if (ret>1023) {
+        (*wa_callbacks->log)(WA_LOG,r,"Log message too long");
+    } else {
+        (*wa_callbacks->log)(f,l,r,buf);
+    }
     va_end(ap);
-
-    if (ret<0) return(-1);
-
-    return(wa_callback_write(c,r,buf,ret));
 }
 
-// Flush any unwritten response data to the client.
-boolean wa_callback_flush(wa_callbacks *c, wa_request *r) {
-    return((*c->flush)(r->data));
+/**
+ * Log debugging informations data on the web server log file.
+ *
+ * @param f The source file of this log entry.
+ * @param l The line number within the source file of this log entry.
+ * @param r The wa_request structure associated with the current request,
+ *          or NULL.
+ * @param fmt The format string (printf style).
+ * @param ... All other parameters (if any) depending on the format.
+ */
+void wa_callback_debug(const char *f,int l,wa_request *r,const char *fmt,...) {
+#ifdef DEBUG
+    va_list ap;
+    char buf[1024];
+    int ret;
+
+    if (wa_callbacks==NULL) return;
+
+    va_start(ap,fmt);
+    ret=vsnprintf(buf,1024,fmt,ap);
+    if (ret<1) {
+        wa_callback_log(WA_LOG,r,"[%s:%d] Cannot format log message",WA_LOG);
+    } else if (ret>1023) {
+        wa_callback_log(WA_LOG,r,"[%s:%d] Log message too long",WA_LOG);
+    } else {
+        wa_callback_log(f,l,r,"[%s:%d] %s",f,l,buf);
+    }
+    va_end(ap);
+#endif
 }
 
+/**
+ * Allocate memory while processing a request. (The memory allocated by
+ * this fuction must be released after the request is processed).
+ *
+ * @param r The request member associated with this call.
+ * @param size The size in bytes of the memory to allocate.
+ * @return A pointer to the allocated memory or NULL.
+ */
+void *wa_callback_alloc(wa_request *r, int size) {
+    if (wa_callbacks==NULL) return(NULL);
+    if (r==NULL) {
+        wa_callback_debug(WA_LOG,r,"Null wa_request member specified");
+        return(NULL);
+    }
+    return((*wa_callbacks->alloc)(r, size));
+}
+
+/**
+ * Read part of the request content.
+ *
+ * @param r The request member associated with this call.
+ * @param buf The buffer that will hold the data.
+ * @param size The buffer length.
+ * @return The number of bytes read, 0 on end of file or -1 on error.
+ */
+int wa_callback_read(wa_request *r, char *buf, int size) {
+    if (wa_callbacks==NULL) return(-1);
+    if (r==NULL) {
+        wa_callback_debug(WA_LOG,r,"Null wa_request member specified");
+        return(-1);
+    }
+    return((*wa_callbacks->read)(r,buf,size));
+}
+
+/**
+ * Set the HTTP response status code.
+ *
+ * @param r The request member associated with this call.
+ * @param status The HTTP status code for the response.
+ * @return TRUE on success, FALSE otherwise
+ */
+boolean wa_callback_setstatus(wa_request *r, int status) {
+    if (wa_callbacks==NULL) return(FALSE);
+    if (r==NULL) {
+        wa_callback_debug(WA_LOG,r,"Null wa_request member specified");
+        return(FALSE);
+    }
+    return((*wa_callbacks->setstatus)(r,status));
+}
+
+/**
+ * Set the HTTP response mime content type.
+ *
+ * @param r The request member associated with this call.
+ * @param type The mime content type of the HTTP response.
+ * @return TRUE on success, FALSE otherwise
+ */
+boolean wa_callback_settype(wa_request *r, char *type) {
+    if (wa_callbacks==NULL) return(FALSE);
+    if (r==NULL) {
+        wa_callback_debug(WA_LOG,r,"Null wa_request member specified");
+        return(FALSE);
+    }
+    return((*wa_callbacks->settype)(r,type));
+}
+
+/**
+ * Set an HTTP mime header.
+ *
+ * @param r The request member associated with this call.
+ * @param n The mime header name.
+ * @param v The mime header value.
+ * @return TRUE on success, FALSE otherwise
+ */
+boolean wa_callback_setheader(wa_request *r, char *n, char *v) {
+    if (wa_callbacks==NULL) return(FALSE);
+    if (r==NULL) {
+        wa_callback_debug(WA_LOG,r,"Null wa_request member specified");
+        return(FALSE);
+    }
+    return((*wa_callbacks->setheader)(r,n,v));
+}
+
+
+/**
+ * Commit the first part of the response (status and headers).
+ *
+ * @param r The request member associated with this call.
+ * @return TRUE on success, FALSE otherwise
+ */
+boolean wa_callback_commit(wa_request *r) {
+    if (wa_callbacks==NULL) return(FALSE);
+    if (r==NULL) {
+        wa_callback_debug(WA_LOG,r,"Null wa_request member specified");
+        return(FALSE);
+    }
+    return((*wa_callbacks->commit)(r));
+}
+
+/**
+ * Write part of the response data back to the client.
+ *
+ * @param r The request member associated with this call.
+ * @param buf The buffer containing the data to be written.
+ * @param len The number of characters to be written.
+ * @return The number of characters written to the client or -1 on error.
+ */
+int wa_callback_write(wa_request *r, char *buf, int size) {
+    if (wa_callbacks==NULL) return(-1);
+    if (r==NULL) {
+        wa_callback_debug(WA_LOG,r,"Null wa_request member specified");
+        return(-1);
+    }
+    return((*wa_callbacks->write)(r,buf,size));
+}
+
+/**
+ * Flush any unwritten response data to the client.
+ *
+ * @param r The request member associated with this call.
+ * @return TRUE on success, FALSE otherwise
+ */
+boolean wa_callback_flush(wa_request *r) {
+    if (wa_callbacks==NULL) return(FALSE);
+    if (r==NULL) {
+        wa_callback_debug(WA_LOG,r,"Null wa_request member specified");
+        return(FALSE);
+    }
+    return((*wa_callbacks->flush)(r));
+}
+
+/**
+ * Print a message back to the client using the printf standard.
+ *
+ * @param r The request member associated with this call.
+ * @param fmt The format string (printf style).
+ * @param ... All other parameters (if any) depending on the format.
+ * @return The number of characters written to the client or -1 on error.
+ */
+int wa_callback_printf(wa_request *r, const char *fmt, ...) {
+    va_list ap;
+    char *buf=NULL;
+    int ret;
+
+    if (wa_callbacks==NULL) return(-1);
+    if (r==NULL) {
+        wa_callback_debug(WA_LOG,r,"Null wa_request member specified");
+        return(FALSE);
+    }
+
+    // Allocate some data for the buffer
+    buf=(char *)(*wa_callbacks->alloc)(r,1024*sizeof(char));
+    if (buf==NULL) {
+        wa_callback_debug(WA_LOG,r,"Cannot allocate buffer");
+        return(-1);
+    }
+
+    // Check if we can write some data.
+    if (wa_callbacks==NULL) {
+        return(-1);
+    }
+
+    // Try to fill our buffer with printf data
+    va_start(ap,fmt);
+    ret=vsnprintf(buf,1024,fmt,ap);
+
+    // If vsnprintf returned null, we weren't able to format the message
+    if (ret<0) {
+        wa_callback_log(WA_LOG,r,"Cannot format message");
+        va_end(ap);
+        return(-1);
+
+    // If vsnprintf is greater than 1024 the buffer was too small
+    } else if (ret>1024) {
+        // Reallocate the buffer for the bigger message and check if we were
+        // able to print the message.
+        buf=(char *)(*wa_callbacks->alloc)(r,(ret+1)*sizeof(char));
+        if (buf==NULL) {
+            va_end(ap);
+            wa_callback_debug(WA_LOG,r,"Cannot allocate buffer");
+            return(-1);
+        }
+        ret=vsnprintf(buf,ret+1,fmt,ap);
+        if (ret<0) {
+            wa_callback_log(WA_LOG,r,"Cannot format message");
+            va_end(ap);
+            return(-1);
+        }
+    }
+
+    va_end(ap);
+    return(wa_callback_write(r,buf,ret));
+}

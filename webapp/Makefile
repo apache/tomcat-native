@@ -63,7 +63,15 @@ MODULES = apache-1.3/mod_webapp.so
 
 all: Makedefs $(MODULES)
 
-recompile: clean all
+recompile:
+	@echo "$(MAKE): ***"
+	@echo "$(MAKE): *** Cleaning up previous compilation"
+	@echo "$(MAKE): ***"
+	@$(MAKE) clean
+	@echo "$(MAKE): ***"
+	@echo "$(MAKE): *** Recompiling from sources"
+	@echo "$(MAKE): ***"
+	@$(MAKE) all
 
 Makedefs:
 	@cp Makedefs.orig Makedefs
@@ -71,10 +79,10 @@ Makedefs:
 	@exit 1
 
 webapplib/libwebapp.a: Makedefs
-	@make -C webapplib libwebapp.a
+	@$(MAKE) -C webapplib libwebapp.a
 
 apache-1.3/mod_webapp.so: Makedefs webapplib/libwebapp.a
-	@make -C apache-1.3 mod_webapp.so
+	@$(MAKE) -C apache-1.3 mod_webapp.so
 
 clean: Makedefs
 	@for DIR in $(DIRS) ; do \
@@ -82,7 +90,7 @@ clean: Makedefs
 			echo "$(MAKE): *** Cannot find directory '$$DIR'" ; \
 			exit 1 ; \
 		fi ; \
-		make -C $$DIR clean ; \
+		$(MAKE) -C $$DIR clean ; \
 		RET="$$?" ; \
 		if [ "$$RET" != "0" ] ; then \
 			exit $$RET ; \
@@ -91,4 +99,3 @@ clean: Makedefs
 
 distclean: clean
 	rm -f Makedefs
-

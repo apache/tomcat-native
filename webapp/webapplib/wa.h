@@ -69,10 +69,19 @@
 #include <string.h>
 #include <netdb.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+/* Our name and version */
+#ifndef WA_NAME
+#define WA_NAME "WebApp"
+#endif
+#ifndef WA_VERSION
+#define WA_VERSION "0.5-dev"
+#endif
 
 /* Define TRUE and FALSE */
 #ifndef TRUE
@@ -94,7 +103,7 @@ typedef struct wa_host wa_host;
 typedef struct wa_provider wa_provider;
 typedef struct wa_header wa_header;
 typedef struct wa_request wa_request;
-typedef struct wa_callbacks wa_callbacks;
+typedef struct wa_callback wa_callback;
 
 /* Other includes from the webapp lib */
 #include <wa_host.h>
@@ -103,4 +112,33 @@ typedef struct wa_callbacks wa_callbacks;
 #include <wa_request.h>
 #include <wa_callback.h>
 
+/* Function prototype declaration */
+// Initialize the webapp library and all connections.
+void wa_init(wa_callback *);
+// Reset the webapp library and all connections.
+void wa_destroy(void);
+
+//
 #endif // ifdef _WA_H_
+
+/* Where are the different servlet methods in our wa_request structure?
+ * (Comparison between methods, CGI variables and wa_request pointers
+ *
+ *   c.getServerInfo()       SERVER_SOFTWARE         wa_callback->serverinfo()
+ *   r.getProtocol()         SERVER_PROTOCOL         r->prot
+ *   r.getMethod()           REQUEST_METHOD          r->meth
+ *   r.getScheme()           -                       r->schm
+ *   r.getQueryString()      QUERY_STRING            r->args
+ *   r.getPathInfo()         PATH_INFO               -
+ *   r.getPathTranslated()   PATH_TRANSLATED         -
+ *   r.getServletPath()      SCRIPT_NAME             -
+ *   r.isSecure()            -                       -
+ *   r.getContentType()      CONTENT_TYPE            [header]
+ *   r.getContentLength()    CONTENT_LENGTH          r->clen
+ *   r.getServerName()       SERVER_NAME             r->name
+ *   r.getServerPort()       SERVER_PORT             r->port
+ *   r.getRemoteHost()       REMOTE_HOST             r->rhst
+ *   r.getRemoteAddr()       REMOTE_ADDR             r->radr
+ *   r.getRemoteUser()       REMOTE_USER             r->user
+ *   r.getAuthType()         AUTH_TYPE               r->auth
+ */

@@ -72,6 +72,15 @@ struct wa_request {
     char *ruri;             // The HTTP URI requested
     char *args;             // The HTTP query arguments
     char *prot;             // The HTTP protocol (HTTP/1.0, HTTP/1.1)
+    char *schm;             // The HTTP scheme info (http, https)
+    char *name;             // The requested name of the server
+    int port;               // The requested port of the server
+    char *rhst;             // The remote client host name
+    char *radr;             // The remote client address
+    char *user;             // The user name, if authenticated by the web server
+    char *auth;             // The authentication metod used by the web server
+    long clen;              // The Content-Length of the request
+    long rlen;              // The number of bytes read out of this request
     int hnum;               // The number of headers in this request
     char **hnam;            // The array of header names
     char **hval;            // The array of header values
@@ -79,6 +88,6 @@ struct wa_request {
 
 /* Function prototype declaration */
 // Handle a request.
-const char *wa_request_handle(wa_request *, wa_callbacks *);
+const char *wa_request_handle(wa_request *);
 
 #endif // ifdef _WA_HOST_H_

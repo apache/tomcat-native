@@ -60,17 +60,24 @@
 
 #include <wa.h>
 
-/* Function prototype declaration */
-// Handle a request.
-const char *wa_request_handle(wa_request *req, wa_callbacks *cb) {
-    if (cb==NULL) return("Callback structure pointer is NULL");
-    if (req==NULL) return("Request structure pointer is NULL");
-    if (req->host==NULL) return("Web application host is NULL");
-    if (req->appl==NULL) return("Web application structure is NULL");
-    if (req->meth==NULL) return("Request method is NULL");
-    if (req->ruri==NULL) return("Request URI is NULL ");
-    if (req->prot==NULL) return("Request protocol is NULL");
+/**
+ * Handle a request.
+ *
+ * @param r The wa_request structure describing the current request.
+ * @return An error message if something went wrong or NULL.
+ */
+const char *wa_request_handle(wa_request *r) {
+    // Primary parameter check
+    if (wa_callbacks==NULL) return("WebApp library not initialized");
+    if (r==NULL) return("Request structure pointer is NULL");
+    if (r->host==NULL) return("Web application host is NULL");
+    if (r->appl==NULL) return("Web application structure is NULL");
+    if (r->meth==NULL) return("Request method is NULL");
+    if (r->ruri==NULL) return("Request URI is NULL ");
+    if (r->prot==NULL) return("Request protocol is NULL");
 
-    (*req->appl->conn->prov->handle)(req,cb);
+    wa_callback_debug(WA_LOG,r,"Dispatching for %s%s to provider %s",
+                      r->host->name,r->ruri,r->appl->conn->prov->name);
+    (*r->appl->conn->prov->handle)(r);
     return(NULL);
 }

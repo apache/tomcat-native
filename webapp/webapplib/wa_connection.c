@@ -134,30 +134,3 @@ wa_connection *wa_connection_get(char *name) {
     // No host found, sorry!
     return(NULL);
 }
-
-/**
- * Initialize all configured connections.
- */
-void wa_connection_init(void) {
-    wa_connection *curr=wa_connections;
-
-    // Iterate thru our hosts chain
-    while(curr!=NULL) {
-        (*curr->prov->init)(curr);
-        curr=curr->next;
-    }
-}
-
-/**
- * Initialize all configured connections.
- */
-void wa_connection_destroy(void) {
-    wa_connection *curr=wa_connections;
-
-    // Iterate thru our hosts chain
-    while(curr!=NULL) {
-        (*curr->prov->destroy)(curr);
-        curr=curr->next;
-    }
-}
-

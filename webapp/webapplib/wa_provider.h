@@ -65,20 +65,62 @@
  * The wa_provider structure describes a connection provider.
  */
 struct wa_provider {
-    // The name of the current provider
+    /**
+     * The name of this provider.
+     */
     const char *name;
-    // Configure a connection
-    const char *(*configure) (wa_connection *, char *);
-    // Initialize a connection
-    void (*init) (wa_connection *);
-    // Clean up a connection
-    void (*destroy) (wa_connection *);
-    // Handle an HTTP request
-    void (*handle) (wa_request *, wa_callbacks *);
-    // Get a descriptive string on a connection (based on wa_connection->conf)
-    int (*conninfo) (wa_connection *, char *, int);
-    // Get a descriptive string on a connection (based on wa_application->conf)
-    int (*applinfo) (wa_application *, char *, int);
+
+    /**
+     * Configure a connection with the parameter from the web server
+     * configuration file.
+     *
+     * @param conn The connection to configure.
+     * @param param The extra parameter from web server configuration.
+     * @return An error message or NULL.
+     */
+    const char *(*configure) (wa_connection *conn, char *param);
+
+    /**
+     * Initialize a connection.
+     *
+     * @param conn The connection to initialize.
+     */
+    const char *(*init) (wa_connection *conn);
+
+    /**
+     * Destroys a connection.
+     *
+     * @param conn The connection to destroy.
+     */
+    const char *(*destroy) (wa_connection *conn);
+
+    /**
+     * Describe the configuration member found in a connection.
+     *
+     * @param conn The connection for wich a description must be produced.
+     * @param buf The buffer where the description must be stored.
+     * @param len The buffer length.
+     * @return The number of bytes written to the buffer (terminator included).
+     */
+    int (*conninfo) (wa_connection *conn, char *buf, int len);
+
+    /**
+     * Describe the configuration member found in a web application.
+     *
+     * @param appl The application for wich a description must be produced.
+     * @param buf The buffer where the description must be stored.
+     * @param len The buffer length.
+     * @return The number of bytes written to the buffer (terminator included).
+     */
+    int (*applinfo) (wa_application *appl, char *buf, int len);
+
+
+    /**
+     * Handle a connection from the web server.
+     *
+     * @param req The request data.
+     */
+    void (*handle) (wa_request *req);
 };
 
 /* The list of all compiled in providers */
@@ -86,7 +128,7 @@ extern wa_provider *wa_providers[];
 
 /* Pointers to the different providers */
 extern wa_provider wa_provider_info;
-extern wa_provider wa_provider_warp;
+//extern wa_provider wa_provider_warp;
 
 /* Function prototype declaration */
 // Retrieve a provider.

@@ -82,7 +82,6 @@ wa_provider *wa_provider_get(char *name) {
 /* The list of all compiled in providers */
 wa_provider *wa_providers[] = {
     &wa_provider_info,
-    &wa_provider_warp,
+//    &wa_provider_warp,
     NULL,
 };
-

@@ -67,4 +67,3 @@ mod_webapp.so: ../webapplib/libwebapp.a mod_webapp.c
 
 clean:
 	rm -f mod_webapp.o mod_webapp.so
-

@@ -70,8 +70,26 @@
  */
 static const char *wa_info_configure(wa_connection *conn, char *param) {
     if(conn==NULL) return("Connection not specified");
-    if (param==NULL) conn->conf=strdup("[No data supplied]");
+    if (param==NULL) conn->conf=NULL;
     else conn->conf=strdup(param);
+    return(NULL);
+}
+
+/**
+ * Initialize a connection.
+ *
+ * @param conn The connection to initialize.
+ */
+static const char *wa_info_init(wa_connection *conn) {
+    return(NULL);
+}
+
+/**
+ * Destroys a connection.
+ *
+ * @param conn The connection to destroy.
+ */
+static const char *wa_info_destroy(wa_connection *conn) {
     return(NULL);
 }
 
@@ -86,9 +104,11 @@ static const char *wa_info_configure(wa_connection *conn, char *param) {
 static int wa_info_conninfo(wa_connection *conn, char *buf, int len) {
     int x=0;
     char *msg="Null connection specified\0";
+    return(0);
 
     if ((buf==NULL)||(len==0)) return(0);
     if(conn!=NULL) msg=(char *)conn->conf;
+    if (msg==NULL) msg="No extra parameters specified for this connection\0";
 
     // Copy the message string in the buffer and return
     for (x=0; x<len; x++) {
@@ -112,118 +132,161 @@ static int wa_info_applinfo(wa_application *conn, char *buf, int len) {
 }
 
 /**
- * Initialize a connection.
- *
- * @param conn The connection to initialize.
- */
-static void wa_info_init(wa_connection *conn) {
-    return;
-}
-
-/**
- * Destroys a connection.
- *
- * @param conn The connection to destroy.
- */
-static void wa_info_destroy(wa_connection *conn) {
-    return;
-}
-
-/**
  * Handle a connection from the web server.
  *
  * @param req The request data.
- * @param cb The web-server callback information.
  */
-void wa_info_handle(wa_request *req, wa_callbacks *cb) {
+void wa_info_handle(wa_request *req) {
     int x=0;
+    int ret=0;
+    char *buf;
+    time_t t=0;
+    char *ts=NULL;
     wa_connection *conn=wa_connections;
     wa_host *host=wa_hosts;
 
-    wa_callback_setstatus(cb,req,200);
-    wa_callback_settype(cb,req,"text/html");
-    wa_callback_commit(cb,req);
-    wa_callback_printf(cb,req,"<html>\n");
-    wa_callback_printf(cb,req," <head>\n");
-    wa_callback_printf(cb,req,"  <title>mod_webapp: status</title>\n");
-    wa_callback_printf(cb,req," </head>\n");
-    wa_callback_printf(cb,req," <body>\n");
+    time(&t);
+    ts=ctime(&t);
+    if (ts==NULL) ts=strdup("[Unknown generation time]");
+    else ts[24]='\0';
 
+    wa_callback_setstatus(req,200);
+    wa_callback_settype(req,"text/html");
+    wa_callback_commit(req);
+    wa_callback_printf(req,"<html>\n");
+    wa_callback_printf(req," <head>\n");
+    wa_callback_printf(req,"  <title>mod_webapp: status</title>\n");
+    wa_callback_printf(req," </head>\n");
+    wa_callback_printf(req," <body>\n");
+    wa_callback_printf(req,"  <form action=\"%s://%s:%d%s\"",req->schm,
+                       req->name,req->port,req->ruri);
+    wa_callback_printf(req," method=\"post\">\n");
+    wa_callback_printf(req,"   <input type=\"submit\" value=\"Refresh\">\n");
+    wa_callback_printf(req,"   <input type=\"hidden\" name=\"lastcall\"");
+    wa_callback_printf(req," value=\"%s\">\n",ts);
+    wa_callback_printf(req,"   Generated on %s<br>\n",ts);
+    wa_callback_printf(req,"  </form>\n");
+    free(ts);
+    wa_callback_flush(req);
+
+    wa_callback_printf(req,"  <dl>\n");
+    wa_callback_printf(req,"   <dt><b>Connections:</b></dt>\n");
     // Dump configured connections
     while (conn!=NULL) {
         char desc[1024];
 
-        wa_callback_printf(cb,req,"  <dl>\n");
-        wa_callback_printf(cb,req,"   <dt><b>Connection: %s</b></dt>\n",
-                           conn->name);
-        wa_callback_printf(cb,req,"   <dd>\n");
-        wa_callback_printf(cb,req,"    Provider &quot;%s&quot;\n",
-                           conn->prov->name);
+        wa_callback_printf(req,"   <dd>\n");
+        wa_callback_printf(req,"    Connection &quot;%s&quot;\n",conn->name);
+        wa_callback_printf(req,"    Prov. &quot;%s&quot;\n",conn->prov->name);
         if ((*conn->prov->conninfo)(conn,desc,1024)>0)
-            wa_callback_printf(cb,req,"    (Descr.: &quot;%s&quot;)\n",desc);
+            wa_callback_printf(req,"    (%s)\n",desc);
         else
-            wa_callback_printf(cb,req,"    (No description available)\n");
-        wa_callback_printf(cb,req,"   </dd>\n");
+            wa_callback_printf(req,"    [No description available]\n");
+        wa_callback_printf(req,"   </dd>\n");
+        wa_callback_flush(req);
         conn=conn->next;
-        wa_callback_printf(cb,req,"  </dl>\n");
     }
-
+    wa_callback_printf(req,"  </dl>\n");
+    wa_callback_flush(req);
 
     // Dump configured hosts and applications
     while (host!=NULL) {
         wa_application *appl=host->apps;
 
-        wa_callback_printf(cb,req,"  <dl>\n");
-        wa_callback_printf(cb,req,"   <dt><b>Host: %s:%d</b></dt>\n",
+        wa_callback_printf(req,"  <dl>\n");
+        wa_callback_printf(req,"   <dt><b>Host: %s:%d</b></dt>\n",
                            host->name,host->port);
+        wa_callback_printf(req,"   <dd>\n");
         while (appl!=NULL) {
             char d[1024];
 
-            wa_callback_printf(cb,req,"   <dd>\n");
-            wa_callback_printf(cb,req,"    Application &quot;%s&quot;\n",
+            wa_callback_printf(req,"    Application &quot;%s&quot;\n",
                                appl->name);
-            wa_callback_printf(cb,req,"    mounted under &quot;%s&quot;\n",
+            wa_callback_printf(req,"    mounted under &quot;%s&quot;\n",
                                appl->path);
-            wa_callback_printf(cb,req,"    using connection &quot;%s&quot;\n",
+            wa_callback_printf(req,"    using connection &quot;%s&quot;\n",
                                appl->conn->name);
+            wa_callback_flush(req);
 
             // Get provider specific description of the application
             if ((*appl->conn->prov->applinfo)(appl,d,1024)>0)
-                wa_callback_printf(cb,req,"    (Descr.: &quot;%s&quot;)\n",d);
+                wa_callback_printf(req,"    (%s)\n",d);
             else
-                wa_callback_printf(cb,req,"    (No description available)\n");
+                wa_callback_printf(req,"    [No description available]\n");
 
-            wa_callback_printf(cb,req,"   </dd>\n");
+            wa_callback_printf(req,"   </dd>\n");
+            wa_callback_flush(req);
             appl=appl->next;
         }
+        wa_callback_printf(req,"  </dl>\n");
+        wa_callback_flush(req);
         host=host->next;
-        wa_callback_printf(cb,req,"  </dl>\n");
+    }
+    wa_callback_flush(req);
+
+    // Dump the first line of the request
+    wa_callback_printf(req,"  <dl>\n");
+    wa_callback_printf(req,"   <dt><b>This Request (%d bytes):</b></dt>\n",
+                       req->clen);
+    wa_callback_printf(req,"   <dd>\n");
+    wa_callback_printf(req,"    Request URI: &quot;%s://%s:%d%s",
+                       req->schm,req->name,req->port,req->ruri);
+    if (req->args==NULL) wa_callback_printf(req,"&quot;<br>\n");
+    else wa_callback_printf(req,"?%s&quot;<br>\n",req->args);
+    wa_callback_printf(req,"    Configured Host: &quot;%s:%d&quot;<br>\n",
+                       req->host->name,req->host->port);
+    wa_callback_printf(req,"    Requested Host: &quot;%s:%d&quot;<br>\n",
+                       req->name,req->port);
+    wa_callback_printf(req,"    Remote Host: &quot;%s&quot;<br>\n",
+                       req->rhst==NULL?"[NULL]":req->rhst);
+    wa_callback_printf(req,"    Remote Address: &quot;%s&quot;<br>\n",
+                       req->radr==NULL?"[NULL]":req->radr);
+    wa_callback_printf(req,"    Remote User: &quot;%s&quot;<br>\n",
+                       req->user==NULL?"[NULL]":req->user);
+    wa_callback_printf(req,"    Authentication Method: &quot;%s&quot;<br>\n",
+                       req->auth==NULL?"[NULL]":req->auth);
+    wa_callback_printf(req,"    <br>\n");
+    wa_callback_printf(req,"    <code>\n");
+    wa_callback_printf(req,"     %s",req->meth);
+    wa_callback_printf(req," %s",req->ruri);
+    if (req->args!=NULL) wa_callback_printf(req,"?%s",req->args);
+    wa_callback_printf(req," %s<br>\n",req->prot);
+    wa_callback_printf(req,"    <br>\n");
+    wa_callback_flush(req);
+
+    // Dump the request headers
+    for (x=0; x<req->hnum; x++) {
+        wa_callback_printf(req,"     %s: %s<br>\n",req->hnam[x],
+                                                    req->hval[x]);
+    }
+    wa_callback_flush(req);
+
+    // Dump the request body
+    wa_callback_printf(req,"    </code>\n");
+    if (req->clen>0) {
+        wa_callback_printf(req,"<pre>\n");
+        buf=(char *)wa_callback_alloc(req,1024*sizeof(char));
+        ret=1;
+        while (ret>0) {
+            ret=wa_callback_read(req,buf,1024);
+            if (ret>0) {
+                wa_callback_write(req,buf,ret);
+                wa_callback_flush(req);
+            } else if (ret<0) {
+                wa_callback_printf(req,">\n<b>TRANSFER INTERRUPTED</b>\n");
+            }
+        }
+        wa_callback_printf(req,"\n</pre>\n");
     }
 
-    // Dump the first line of the request
-    wa_callback_printf(cb,req,"  <dl>\n");
-    wa_callback_printf(cb,req,"   <dt><b>This request:</b></dt>\n");
-    wa_callback_printf(cb,req,"   <dd>\n");
-    wa_callback_printf(cb,req,"    <code>\n");
-    wa_callback_printf(cb,req,"     %s",req->meth);
-    wa_callback_printf(cb,req," %s",req->ruri);
-    if (req->args!=NULL) wa_callback_printf(cb,req,"?%s",req->args);
-    wa_callback_printf(cb,req," %s<br>\n",req->prot);
-
-    // Dump the first line of the request
-    for (x=0; x<req->hnum; x++)
-        wa_callback_printf(cb,req,"     %s: %s<br>",req->hnam[x],
-                                                    req->hval[x]);
-
     // Finish the request dump
-    wa_callback_printf(cb,req,"    </code>\n");
-    wa_callback_printf(cb,req,"   </dd>\n");
-    wa_callback_printf(cb,req,"  </dl>\n");
+    wa_callback_printf(req,"   </dd>\n");
+    wa_callback_printf(req,"  </dl>\n");
 
     // Finish the page
-    wa_callback_printf(cb,req," </body>\n");
-    wa_callback_printf(cb,req,"<html>\n");
-    wa_callback_flush(cb,req);
+    wa_callback_printf(req," </body>\n");
+    wa_callback_printf(req,"<html>\n");
+    wa_callback_flush(req);
 }
 
 /** WebAppLib plugin description. */
@@ -232,7 +295,7 @@ wa_provider wa_provider_info = {
     wa_info_configure,
     wa_info_init,
     wa_info_destroy,
-    wa_info_handle,
     wa_info_conninfo,
     wa_info_applinfo,
+    wa_info_handle,
 };

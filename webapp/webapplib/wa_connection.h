@@ -79,9 +79,5 @@ extern wa_connection *wa_connections;
 const char *wa_connection_create(char *, char *, char *);
 // Get a specific webapp connection.
 wa_connection *wa_connection_get(char *);
-// Initialize all configured connections.
-void wa_connection_init(void);
-// Initialize all configured connections.
-void wa_connection_destroy(void);
 
 #endif // ifdef _WA_CONNECTION_H_

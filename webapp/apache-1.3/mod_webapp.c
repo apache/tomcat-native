@@ -75,7 +75,9 @@
 /* Module declaration */
 module webapp_module;
 /* Callback structure declaration */
-static wa_callbacks webapp_callbacks;
+static wa_callback webapp_callbacks;
+/* Our server (used to log error messages from the library) */
+static server_rec *webapp_server=NULL;
 
 
 /* ************************************************************************* */
@@ -168,8 +170,10 @@ static int webapp_translate(request_rec *r) {
  * @param r The Apache request structure.
  */
 static int webapp_handler(request_rec *r) {
-    const char *message=NULL;
+    conn_rec *c = r->connection;
+    const char *msg=NULL;
     wa_request *req=NULL;
+    int ret=0;
 
     // Try to get a hold on the webapp request structure
     req=(wa_request *)ap_get_module_config(r->request_config, &webapp_module);
@@ -181,6 +185,15 @@ static int webapp_handler(request_rec *r) {
     req->ruri=r->uri;
     req->args=r->args;
     req->prot=r->protocol;
+    req->schm=ap_http_method(r);
+    req->name=(char *)r->hostname;
+    req->port=ap_get_server_port(r);
+    req->rhst=(char *)ap_get_remote_host(c, r->per_dir_config, REMOTE_HOST);
+    req->radr=c->remote_ip;
+    req->user=c->user;
+    req->auth=c->ap_auth_type;
+    req->clen=0;
+    req->rlen=0;
 
     // Copy headers into webapp request structure
     if (r->headers_in!=NULL) {
@@ -199,24 +212,40 @@ static int webapp_handler(request_rec *r) {
             if (ele[x].key==NULL) continue;
             req->hnam[x]=ele[x].key;
             req->hval[x]=ele[x].val;
+            if (strcasecmp(ele[x].key,"Content-Length")==0)
+                req->clen=atol(req->hval[x]);
         }
     } else {
-        fprintf(stderr,"NO HEADERS\n");
         req->hnum=0;
         req->hnam=NULL;
         req->hval=NULL;
     }
 
+    // Check if we can read something from the request
+    ret=ap_setup_client_block(r,REQUEST_CHUNKED_DECHUNK);
+    if (ret!=OK) return(ret);
+
     // Try to handle the request
-    message=wa_request_handle(req,&webapp_callbacks);
+    msg=wa_request_handle(req);
 
     // We got an error message (critical error, not from providers)
-    if (message!=NULL) {
-        ap_log_error(APLOG_MARK,APLOG_CRIT,r->server,"%s",message);
+    if (msg!=NULL) {
+        ap_log_error(APLOG_MARK,APLOG_NOERRNO|APLOG_ERR,r->server,"%s",msg);
         return(HTTP_INTERNAL_SERVER_ERROR);
     }
 
     return OK;
+}
+
+/**
+ * Initialize the webapp library.
+ *
+ * @param s The server_rec structure associated with the main server.
+ * @param p The pool for memory allocation (it never gets cleaned).
+ */
+static void webapp_init(server_rec *s, pool *p) {
+    webapp_server=s;
+    wa_init(&webapp_callbacks);
 }
 
 /**
@@ -226,19 +255,7 @@ static int webapp_handler(request_rec *r) {
  * @param p The pool for memory allocation (it never gets cleaned).
  */
 static void webapp_exit(server_rec *s, pool *p) {
-    // Destroy connections
-    wa_connection_destroy();
-}
-
-/**
- * Initialize webapp connections.
- *
- * @param s The server_rec structure associated with the main server.
- * @param p The pool for memory allocation (it never gets cleaned).
- */
-static void webapp_init(server_rec *s, pool *p) {
-    // Initialize connections
-    wa_connection_init();
+    wa_destroy();
 }
 
 /* ************************************************************************* */
@@ -246,80 +263,141 @@ static void webapp_init(server_rec *s, pool *p) {
 /* ************************************************************************* */
 
 /**
- * Log data on the web server log file.
+ * Add a component to the the current SERVER_SOFTWARE string and return the
+ * new value.
  *
- * @param file The source file of this log entry.
- * @param line The line number within the source file of this log entry.
- * @param data The web-server specific data (wa_request->data).
- * @param fmt The format string (printf style).
- * @param ... All other parameters (if any) depending on the format.
+ * @param component The new component to add to the SERVER_SOFTWARE string
+ *                  or NULL if no modification is necessary.
+ * @return The updated SERVER_SOFTWARE string.
  */
-static void webapp_callback_log(void *data, const char *file, int line,
-                                const char *fmt, ...) {
-    request_rec *r=(request_rec *)data;
-    va_list ap;
+const char *webapp_callback_serverinfo(const char *component) {
+    const char *ret=NULL;
 
-    va_start (ap,fmt);
-    if (r==NULL) {
-        fprintf(stderr,"[%s:%d] ",file,line);
-        vfprintf(stderr,fmt,ap);
-        fprintf(stderr,"\n");
+    if (component!=NULL) ap_add_version_component(component);
+
+    ret=ap_get_server_version();
+    if (ret==NULL) return("Unknown");
+    return(ret);
+}
+
+/**
+ * Print a debug or log message to the apache error log file.
+ *
+ * @param f The source file of this log entry.
+ * @param l The line number within the source file of this log entry.
+ * @param r The wa_request structure associated with the current request,
+ *          or NULL.
+ * @param msg The message to be logged.
+ */
+static void webapp_callback_log(const char *f,int l,wa_request *r,char *msg) {
+    server_rec *s=webapp_server;
+
+    // Try to get the current request server_rec member.
+    if (r!=NULL)
+        if (r->data!=NULL)
+            s=((request_rec *)r->data)->server;
+
+    if (s==NULL) {
+        // We don't yet know our server_rec, simply dump to stderr and hope :)
+#ifdef DEBUG
+        fprintf(stderr,"[%s:%l] %s\n",f,l,msg);
+#else
+        fprintf(stderr,"%s\n",msg);
+#endif
     } else {
-        char *message=ap_pvsprintf(r->pool,fmt,ap);
-        ap_log_error(file,line,APLOG_ERR,r->server,"%s",message);
+#ifdef DEBUG
+        // We are debugging, so we want to make sure that file and line are in
+        // our error message.
+        ap_log_error(f,l,APLOG_NOERRNO|APLOG_ERR,s,"[%s:%l] %s",f,l,msg);
+#else
+        // We are not debugging, so let Apache handle the file and line
+        ap_log_error(f,l,APLOG_NOERRNO|APLOG_ERR,s,"%s",msg);
+#endif
     }
+}
+
+/**
+ * Return the current request_rec structure from a wa_request structure and log
+ * if we weren't able to retrieve it.
+ *
+ * @param f The file from where this function was called.
+ * @param l The line from where this function was called.
+ * @param r The wa_request structure.
+ * @return A request_rec pointer or NULL.
+ */
+static request_rec *webapp_callback_check(const char *f,int l,wa_request *r) {
+    if (r==NULL) {
+        webapp_callback_log(f,l,r, "Invalid wa_request member (NULL)");
+        return(NULL);
+    }
+    if (r->data==NULL) {
+        webapp_callback_log(f,l,r, "Invalid wa_request->data member (NULL)");
+        return(NULL);
+    }
+    return((request_rec *)r->data);
 }
 
 /**
  * Allocate memory while processing a request.
  *
- * @param data The web-server specific data (wa_request->data).
+ * @param req The request member associated with this call.
  * @param size The size in bytes of the memory to allocate.
  * @return A pointer to the allocated memory or NULL.
  */
-static void *webapp_callback_alloc(void *data, int size) {
-    request_rec *r=(request_rec *)data;
+static void *webapp_callback_alloc(wa_request *req, int size) {
+    request_rec *r=webapp_callback_check(WA_LOG,req);
 
-    if (r==NULL) {
-        webapp_callback_log(r,WA_LOG,"Apache request_rec pointer is NULL");
-        return(NULL);
-    }
+    if (r==NULL) return(NULL);
     return(ap_palloc(r->pool,size));
 }
 
 /**
  * Read part of the request content.
  *
- * @param data The web-server specific data (wa_request->data).
+ * @param req The request member associated with this call.
  * @param buf The buffer that will hold the data.
  * @param len The buffer length.
  * @return The number of bytes read, 0 on end of file or -1 on error.
  */
-static int webapp_callback_read(void *data, char *buf, int len) {
-    request_rec *r=(request_rec *)data;
+static int webapp_callback_read(wa_request *req, char *buf, int len) {
+    request_rec *r=webapp_callback_check(WA_LOG,req);
+    long ret=0;
 
-    if (r==NULL) {
-        webapp_callback_log(r,WA_LOG,"Apache request_rec pointer is NULL");
+    if (r==NULL) return(-1);
+
+    // Check if we have something to read.
+    if (req->clen==0) return(0);
+
+    // Check if we had an error previously.
+    if (req->rlen==-1) return(-1);
+
+    // Send HTTP_CONTINUE to client when we're ready to read for the first time.
+    if (req->rlen==0)
+        if (ap_should_client_block(r)==0) return(0);
+
+    // Read some data from the client and fill the buffer.
+    ret=ap_get_client_block(r,buf,len);
+    if (ret==-1) {
+        req->rlen=-1;
         return(-1);
     }
 
-    return((int)ap_get_client_block(r,buf,len));
+    // We did read some bytes, increment the current rlen counter and return.
+    req->rlen+=ret;
+    return((int)ret);
 }
 
 /**
  * Set the HTTP response status code.
  *
- * @param data The web-server specific data (wa_request->data).
+ * @param req The request member associated with this call.
  * @param status The HTTP status code for the response.
  * @return TRUE on success, FALSE otherwise
  */
-static boolean webapp_callback_setstatus(void *data, int status) {
-    request_rec *r=(request_rec *)data;
+static boolean webapp_callback_setstatus(wa_request *req, int status) {
+    request_rec *r=webapp_callback_check(WA_LOG,req);
 
-    if (r==NULL) {
-        webapp_callback_log(r,WA_LOG,"Apache request_rec pointer is NULL");
-        return(FALSE);
-    }
+    if (r==NULL) return(FALSE);
 
     r->status=status;
     return(TRUE);
@@ -328,17 +406,14 @@ static boolean webapp_callback_setstatus(void *data, int status) {
 /**
  * Set the HTTP response mime content type.
  *
- * @param data The web-server specific data (wa_request->data).
+ * @param req The request member associated with this call.
  * @param type The mime content type of the HTTP response.
  * @return TRUE on success, FALSE otherwise
  */
-static boolean webapp_callback_settype(void *data, char *type) {
-    request_rec *r=(request_rec *)data;
+static boolean webapp_callback_settype(wa_request *req, char *type) {
+    request_rec *r=webapp_callback_check(WA_LOG,req);
 
-    if (r==NULL) {
-        webapp_callback_log(r,WA_LOG,"Apache request_rec pointer is NULL");
-        return(FALSE);
-    }
+    if (r==NULL) return(FALSE);
 
     r->content_type=type;
     return(TRUE);
@@ -347,18 +422,16 @@ static boolean webapp_callback_settype(void *data, char *type) {
 /**
  * Set an HTTP mime header.
  *
- * @param data The web-server specific data (wa_request->data).
+ * @param req The request member associated with this call.
  * @param name The mime header name.
  * @param value The mime header value.
  * @return TRUE on success, FALSE otherwise
  */
-static boolean webapp_callback_setheader(void *data, char *name, char *value) {
-    request_rec *r=(request_rec *)data;
+static boolean webapp_callback_setheader(wa_request *req, char *name,
+                                         char *value) {
+    request_rec *r=webapp_callback_check(WA_LOG,req);
 
-    if (r==NULL) {
-        webapp_callback_log(r,WA_LOG,"Apache request_rec pointer is NULL");
-        return(FALSE);
-    }
+    if (r==NULL) return(FALSE);
 
     ap_table_add(r->headers_out, name, value);
     return(TRUE);
@@ -367,16 +440,13 @@ static boolean webapp_callback_setheader(void *data, char *name, char *value) {
 /**
  * Commit the first part of the response (status and headers).
  *
- * @param data The web-server specific data (wa_request->data).
+ * @param req The request member associated with this call.
  * @return TRUE on success, FALSE otherwise
  */
-static boolean webapp_callback_commit(void *data) {
-    request_rec *r=(request_rec *)data;
+static boolean webapp_callback_commit(wa_request *req) {
+    request_rec *r=webapp_callback_check(WA_LOG,req);
 
-    if (r==NULL) {
-        webapp_callback_log(r,WA_LOG,"Apache request_rec pointer is NULL");
-        return(FALSE);
-    }
+    if (r==NULL) return(FALSE);
 
     ap_send_http_header(r);
     return(TRUE);
@@ -385,17 +455,14 @@ static boolean webapp_callback_commit(void *data) {
 /**
  * Write part of the response data back to the client.
  *
- * @param buf The buffer holding the data to be written.
+ * @param req The request member associated with this call.
  * @param len The number of characters to be written.
  * @return The number of characters written to the client or -1 on error.
  */
-static int webapp_callback_write(void *data, char *buf, int len) {
-    request_rec *r=(request_rec *)data;
+static int webapp_callback_write(wa_request *req, char *buf, int len) {
+    request_rec *r=webapp_callback_check(WA_LOG,req);
 
-    if (r==NULL) {
-        webapp_callback_log(r,WA_LOG,"Apache request_rec pointer is NULL");
-        return(FALSE);
-    }
+    if (r==NULL) return(-1);
 
     return(ap_rwrite(buf, len, r));
 }
@@ -403,16 +470,13 @@ static int webapp_callback_write(void *data, char *buf, int len) {
 /**
  * Flush any unwritten response data to the client.
  *
- * @param data The web-server specific data (wa_request->data).
+ * @param req The request member associated with this call.
  * @return TRUE on success, FALSE otherwise
  */
-static boolean webapp_callback_flush(void *data) {
-    request_rec *r=(request_rec *)data;
+static boolean webapp_callback_flush(wa_request *req) {
+    request_rec *r=webapp_callback_check(WA_LOG,req);
 
-    if (r==NULL) {
-        webapp_callback_log(r,WA_LOG,"Apache request_rec pointer is NULL");
-        return(FALSE);
-    }
+    if (r==NULL) return(FALSE);
 
     ap_rflush(r);
     return(TRUE);
@@ -424,7 +488,8 @@ static boolean webapp_callback_flush(void *data) {
 /* ************************************************************************* */
 
 /* Our callback functions structure */
-static wa_callbacks webapp_callbacks = {
+static wa_callback webapp_callbacks = {
+    webapp_callback_serverinfo,
     webapp_callback_log,
     webapp_callback_alloc,
     webapp_callback_read,

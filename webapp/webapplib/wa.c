@@ -58,6 +58,50 @@
 // CVS $Id$
 // Author: Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 
-int main(int argc, char *argv[]) {
-    return(0);
+#include <wa.h>
+
+/**
+ * Initialize the webapp library and all connections.
+ *
+ * @param cb The wa_callback structure specified by the web server.
+ */
+void wa_init(wa_callback *cb) {
+    wa_connection *curr=wa_connections;
+    const char *ret;
+
+    // Set our callbacks structure
+    if (cb==NULL) return;
+    wa_callbacks=cb;
+
+    // Set the SERVER_SOFTWARE string.
+    wa_callback_serverinfo(WA_NAME "/" WA_VERSION);
+
+    // Iterate thru our connections chain
+    while(curr!=NULL) {
+        ret=(*curr->prov->init)(curr);
+        if (ret!=NULL) wa_callback_log(WA_LOG,NULL,ret);
+        else wa_callback_debug(WA_LOG,NULL,"Connection \"%s\" initialized",
+                                curr->name);
+        curr=curr->next;
+    }
+    return;
+}
+
+/**
+ * Reset the webapp library and all connections.
+ */
+void wa_destroy(void) {
+    wa_connection *curr=wa_connections;
+    const char *ret;
+
+    // Iterate thru our hosts chain
+    while(curr!=NULL) {
+        ret=(*curr->prov->destroy)(curr);
+        if (ret!=NULL) wa_callback_log(WA_LOG,NULL,ret);
+        else wa_callback_debug(WA_LOG,NULL,"Connection \"%s\" destroyed",
+                                curr->name);
+        curr=curr->next;
+    }
+
+    wa_callbacks=NULL;
 }
