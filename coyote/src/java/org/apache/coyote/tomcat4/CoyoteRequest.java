@@ -412,6 +412,11 @@ public class CoyoteRequest
         parameterMap.setLocked(false);
         parameterMap.clear();
 
+        if (facade != null) {
+            facade.clear();
+            facade = null;
+        }
+
     }
 
 
@@ -507,13 +512,16 @@ public class CoyoteRequest
     /**
      * The facade associated with this request.
      */
-    protected HttpRequestFacade facade = new HttpRequestFacade(this);
+    protected HttpRequestFacade facade = null;
 
     /**
      * Return the <code>ServletRequest</code> for which this object
      * is the facade.  This method must be implemented by a subclass.
      */
     public ServletRequest getRequest() {
+        if (facade == null) {
+            facade = new HttpRequestFacade(this);
+        }
         return (facade);
     }
 

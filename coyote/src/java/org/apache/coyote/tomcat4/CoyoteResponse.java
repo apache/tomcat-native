@@ -306,6 +306,7 @@ public class CoyoteResponse
      * preparation for reuse of this object.
      */
     public void recycle() {
+
         outputBuffer.recycle();
         usingOutputStream = false;
         usingWriter = false;
@@ -313,6 +314,12 @@ public class CoyoteResponse
         included = false;
         error = false;
         cookies.clear();
+
+        if (facade != null) {
+            facade.clear();
+            facade = null;
+        }
+
     }
 
 
@@ -399,13 +406,16 @@ public class CoyoteResponse
     /**
      * The facade associated with this response.
      */
-    protected HttpResponseFacade facade = new HttpResponseFacade(this);
+    protected HttpResponseFacade facade = null;
 
     /**
      * Return the <code>ServletResponse</code> for which this object
      * is the facade.
      */
     public ServletResponse getResponse() {
+        if (facade == null) {
+            facade = new HttpResponseFacade(this);
+        }
         return (facade);
     }
 
