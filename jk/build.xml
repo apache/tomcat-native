@@ -23,29 +23,7 @@
 	      location="../../jakarta-tomcat-4.0/build" />
     <property name="tomcat41.home" 
 	      location="../../jakarta-tomcat-4.1/build" />
-
-    <path id="build-main.classpath">
-        <pathelement location="${tomcat40.home}/server/lib/catalina.jar"/>
-        <pathelement location="${tomcat40.home}/common/lib/servlet.jar"/>
-        <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
-        <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
-        <pathelement 
-           location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
-        <pathelement 
-           location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
-    </path>
-
-    <path id="build-tomcat33.classpath">
-	<pathelement location="${tomcat-util.jar}"/>
-        <pathelement location="${tomcat33.home}/lib/common/servlet.jar"/>
-        <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
-        <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
-        <pathelement 
-           location="${tomcat33.home}/lib/container/tomcat_modules.jar"/> 
-        <pathelement 
-           location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
-   </path>
- 
+    
     <!-- ==================== Detection and reports ==================== -->
 
     <target name="report"  >
@@ -56,9 +34,43 @@
         <echo message="Apache2: ${apache2.detect} ${apache2.home}" />
         <echo message="iPlanet:  ${iplanet.detect} ${iplanet.home}" />
         <echo message="IIS:      ${iis.detect} ${iis.home}" />
+        <echo message="Using catalina.home:      ${catalina.home}" />
     </target>
 
-    <target name="prepare">
+    <target name="detect" >
+        <available property="tomcat33.detect" 
+                   file="${tomcat33.home}/lib/common/tomcat_core.jar" />
+        <available property="tomcat40.detect" 
+                   file="${tomcat40.home}/server/lib/catalina.jar" />
+        <available property="tomcat41.detect" 
+                   file="${tomcat41.home}/server/webapps" />
+        <available property="apache13.detect" 
+                   file="${apache13.home}" />
+        <available property="apache2.detect" 
+                   file="${apache2.home}" />
+        <available property="iis.detect" 
+                   file="${iis.home}" />
+        <available property="iplanet.detect" 
+                   file="${iplanet.home}" />
+    </target>
+
+    <target name="cpath" depends="guess_catalina40,guess_catalina41" />
+    <!-- If both 4.0 and 4.1 are present ( developer machine ), use 4.1 jars.
+         If only 4.0 is present or
+         If only 4.1 is present - use what's available.
+     -->
+
+    <target name="guess_catalina40" unless="tomcat41.detect">
+        <property name="catalina.home" 
+                  location="${tomcat40.home}" />
+    </target>
+
+    <target name="guess_catalina41" if="tomcat41.detect">
+        <property name="catalina.home" 
+                  location="${tomcat41.home}" />
+    </target>
+
+    <target name="prepare" depends="detect,cpath" >
         <mkdir dir="${jk.build}"/>
         <mkdir dir="${jk.build}/WEB-INF"/>
         <mkdir dir="${jk.build}/WEB-INF/conf"/>
@@ -71,22 +83,17 @@
 	    <fileset dir="conf" includes="*" />
 	</copy>
 
-        <available property="tomcat33.detect" 
-                   file="${tomcat33.home}/lib/common/tomcat_core.jar" />
-        <available property="tomcat40.detect" 
-                   file="${tomcat40.home}/server/lib/catalina.jar" />
-        <available property="tomcat41.detect" 
-                   file="${tomcat41.home}/server/webapps" />
-        <available property="tomcat41.detect" 
-                   file="${tomcat41.home}/server/webapps" />
-        <available property="apache13.detect" 
-                   file="${apache13.home}" />
-        <available property="apache2.detect" 
-                   file="${apache2.home}" />
-        <available property="iis.detect" 
-                   file="${iis.home}" />
-        <available property="iplanet.detect" 
-                   file="${iplanet.home}" />
+        <path id="build-main.classpath">
+            <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
+            <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
+            <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
+            <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
+            <pathelement 
+                         location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
+            <pathelement 
+                         location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+        </path>
+
     </target>
 
     <target name="build-main" 
@@ -153,7 +160,7 @@
     </target>
 
     <!-- It's better to call it directly with individual tags -->
-    <target name="native" >
+    <target name="native" depends="jkant" >
 	<ant  dir="native" antfile="build.xml"  />
 	<ant  dir="native2" antfile="build.xml"  />
     </target>
@@ -169,7 +176,7 @@
             <fileset dir="${jk.build}" >
                 <include name="WEB-INF/lib/**" />
                 <include name="WEB-INF/conf/**" />
-                <include name="WEB-INF/*.xml" />
+                <include name="WEB-INF/interceptors.xml" />
             </fileset>
         </copy>
     </target>
@@ -183,9 +190,32 @@
     </target>
 
     <target name="install-t41" if="tomcat41.detect" > 
+        <!-- 4.0 style --> 
+        <copy todir="${tomcat41.home}/server/lib" 
+              file="${jk.build}/WEB-INF/lib/tomcat-util.jar"/>
+        <copy todir="${tomcat41.home}/server/lib" 
+              file="${jk.build}/WEB-INF/lib/ajp.jar"/>
+        <echo message="Don't forget to add the connector to ${tomcat41.home}/conf/server.xml" />
+
+        <!-- 3.3 style -->
+        <mkdir dir="${tomcat41.home}/server/webapps/jk" />
+        <copy todir="${tomcat41.home}/server/webapps/jk" >
+            <fileset dir="${jk.build}" >
+                <include name="WEB-INF/lib/**" />
+                <include name="WEB-INF/conf/**" />
+                <include name="WEB-INF/web.xml" />
+            </fileset>
+        </copy>
+        
+        <copy file="conf/webapp_41.xml" 
+              tofile="${tomcat41.home}/webapps/jk.xml" />
     </target>
 
     <target name="install-a20" if="apache2.detect" > 
+        <!--
+    <copy file="${jk.build}/WEB-INF/jk/mod_jk.so" 
+              tofile="${apache2.home}/modules/mod_jk.so" />
+        -->
     </target>
 
     <target name="install-a13" if="apache13.detect" > 
