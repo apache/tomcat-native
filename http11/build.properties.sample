@@ -1,0 +1,32 @@
+# -------------------------------------------------------------------
+# build.properties.sample
+#
+# This is an example "build.properties" file, used to customize 
+# building Jakarta Coyote for your local environment.  
+# Make any changes you need, and rename this file to 
+# "build.properties" 
+#
+# $Id$
+# -------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------
+# CONFIGURATION OPTIONS
+# -------------------------------------------------------------------
+
+# 
+
+
+# -------------------------------------------------------------------
+# EXTERNAL DEPENDENCIES 
+# -------------------------------------------------------------------
+
+# tomcat-util.jar -- Tomcat util package
+tomcat-util.jar=../util/build/lib/tomcat-util.jar
+
+# coyote.jar -- Coyote package
+coyote.jar=../coyote/dist/coyote.jar
+
+# junit.jar -- JUnit classes (http://junit.org)
+junit.jar=/java/junit/junit.jar
+
