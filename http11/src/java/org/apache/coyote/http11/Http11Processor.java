@@ -300,7 +300,7 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * Allow a customized the server header for the tin-foil hat folks.
      */
-    protected String server = Constants.SERVER;
+    protected String server = null;
 
 
     // ------------------------------------------------------------- Properties
@@ -708,7 +708,7 @@ public class Http11Processor implements Processor, ActionHook {
      */
     public void setServer( String server ) {
         if (server==null || server.equals("")) {
-            this.server = Constants.SERVER;
+            this.server = null;
         } else {
             this.server = server;
         }
@@ -1500,7 +1500,9 @@ public class Http11Processor implements Processor, ActionHook {
                 outputBuffer.addActiveFilter
                     (outputFilters[Constants.CHUNKED_FILTER]);
                 contentDelimitation = true;
-                headers.addValue("Transfer-Encoding").setString("chunked");
+                headers.addValue(Constants.TRANSFERENCODING_BYTES, 
+                        0, Constants.TRANSFERENCODING_BYTES.length).setBytes
+                    (Constants.CHUNKED_BYTES, 0, Constants.CHUNKED_BYTES.length);
             } else {
                 outputBuffer.addActiveFilter
                     (outputFilters[Constants.IDENTITY_FILTER]);
@@ -1530,7 +1532,12 @@ public class Http11Processor implements Processor, ActionHook {
         headers.setValue("Date").setString(date);
 
         // Add server header
-        headers.setValue("Server").setString(server);
+        if (server != null) {
+            headers.setValue("Server").setString(server);
+        } else {
+            headers.setValue("Server").setBytes(Constants.SERVER_BYTES, 
+                    0, Constants.SERVER_BYTES.length);
+        }
 
         // FIXME: Add transfer encoding header
 
@@ -1544,9 +1551,11 @@ public class Http11Processor implements Processor, ActionHook {
         // Connection: close header.
         keepAlive = keepAlive && !statusDropsConnection(statusCode);
         if (!keepAlive) {
-            headers.addValue("Connection").setString("close");
+            headers.addValue(Constants.CONNECTION_BYTES, 0, Constants.CONNECTION_BYTES.length)
+                .setBytes(Constants.CLOSE_BYTES, 0, Constants.CLOSE_BYTES.length);
         } else if (!http11) {
-            headers.addValue("Connection").setString("Keep-Alive");
+            headers.addValue(Constants.CONNECTION_BYTES, 0, Constants.CONNECTION_BYTES.length)
+                .setBytes(Constants.KEEPALIVE_BYTES, 0, Constants.KEEPALIVE_BYTES.length);
         }
 
         // Build the response header

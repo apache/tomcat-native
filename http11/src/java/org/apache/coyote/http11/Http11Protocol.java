@@ -115,7 +115,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
      */
     public void init() throws Exception {
         ep.setConnectionHandler( cHandler );
-    try {
+        try {
             checkSocketFactory();
         } catch( Exception ex ) {
             log.error(sm.getString("http11protocol.socketfactory.initerror"),
@@ -128,7 +128,8 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             while( attE.hasMoreElements() ) {
                 String key=(String)attE.nextElement();
                 Object v=attributes.get( key );
-                socketFactory.setAttribute( key, v );
+                String trnName = translateAttributeName(key);
+                socketFactory.setAttribute( trnName, v );
             }
         }
 
@@ -304,7 +305,6 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public void setPort( int port ) {
         ep.setPort(port);
         setAttribute("port", "" + port);
-        //this.port=port;
     }
 
     public InetAddress getAddress() {
@@ -326,12 +326,6 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         }
         return ("http-" + encodedAddr + ep.getPort());
     }
-
-    // commenting out for now since it's not doing anything
-    //public void setHostName( String name ) {
-    // ??? Doesn't seem to be used in existing or prev code
-    // vhost=name;
-    //}
 
     public String getSocketFactory() {
         return socketFactoryName;
@@ -557,6 +551,22 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public void setMaxKeepAliveRequests(int mkar) {
         maxKeepAliveRequests = mkar;
         setAttribute("maxKeepAliveRequests", "" + mkar);
+    }
+
+    /**
+     * Return the Keep-Alive policy for the connection.
+     */
+    public boolean getKeepAlive() {
+        return ((maxKeepAliveRequests != 0) && (maxKeepAliveRequests != 1));
+    }
+
+    /**
+     * Set the keep-alive policy for this connection.
+     */
+    public void setKeepAlive(boolean keepAlive) {
+        if (!keepAlive) {
+            setMaxKeepAliveRequests(1);
+        }
     }
 
     public int getSocketCloseDelay() {
@@ -796,31 +806,26 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         }
     }
 
-    /*
-    public boolean isKeystoreSet() {
-        return (attributes.get("keystore") != null);
+    private String translateAttributeName(String name) {
+        if ("clientAuth".equals(name)) {
+            return "clientauth";
+        } else if ("keystoreFile".equals(name)) {
+            return "keystore";
+        } else if ("randomFile".equals(name)) {
+            return "randomfile";
+        } else if ("rootFile".equals(name)) {
+            return "rootfile";
+        } else if ("keystorePass".equals(name)) {
+            return "keypass";
+        } else if ("keystoreType".equals(name)) {
+            return "keytype";
+        } else if ("sslProtocol".equals(name)) {
+            return "protocol";
+        } else if ("sslProtocols".equals(name)) {
+            return "protocols";
+        }
+        return name;
     }
-
-    public boolean isKeypassSet() {
-        return (attributes.get("keypass") != null);
-    }
-
-    public boolean isClientauthSet() {
-        return (attributes.get("clientauth") != null);
-    }
-
-    public boolean isAttributeSet( String attr ) {
-        return (attributes.get(attr) != null);
-    }
-
-    public boolean isSecure() {
-        return secure;
-    }
-
-    public PoolTcpEndpoint getEndpoint() {
-        return ep;
-    }
-    */
 
     protected String domain;
     protected ObjectName oname;

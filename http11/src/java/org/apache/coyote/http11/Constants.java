@@ -39,12 +39,13 @@ public final class Constants {
     public static final int DEFAULT_SERVER_SOCKET_TIMEOUT = 0;
     public static final boolean DEFAULT_TCP_NO_DELAY = true;
     
+    
     /**
      * Server string.
      */
-    public static final String SERVER = "Apache-Coyote/1.1";
+    public static final byte[] SERVER_BYTES = convertToBytes("Apache-Coyote/1.1");
 
-
+    
     /**
      * CR.
      */
@@ -116,47 +117,17 @@ public final class Constants {
      */
     public static final String CRLF = "\r\n";
 
-
-    /**
-     * CRLF bytes.
-     */
-    public static final byte[] CRLF_BYTES = {(byte) '\r', (byte) '\n'};
-
-
-    /**
-     * Colon bytes.
-     */
-    public static final byte[] COLON_BYTES = {(byte) ':', (byte) ' '};
-
-
-    /**
-     * Close bytes.
-     */
-    public static final byte[] CLOSE_BYTES = {
-        (byte) 'c',
-        (byte) 'l',
-        (byte) 'o',
-        (byte) 's',
-        (byte) 'e'
-    };
-
-
-    /**
-     * Keep-alive bytes.
-     */
-    public static final byte[] KEEPALIVE_BYTES = {
-        (byte) 'k',
-        (byte) 'e',
-        (byte) 'e',
-        (byte) 'p',
-        (byte) '-',
-        (byte) 'a',
-        (byte) 'l',
-        (byte) 'i',
-        (byte) 'v',
-        (byte) 'e'
-    };
-
+    
+    /* Various constant "strings" */
+    public static final byte[] CRLF_BYTES = convertToBytes(CRLF);
+    public static final byte[] COLON_BYTES = convertToBytes(": ");
+    public static final byte[] CONNECTION_BYTES = convertToBytes("Connection");
+    public static final byte[] CLOSE_BYTES = convertToBytes("close");
+    public static final byte[] KEEPALIVE_BYTES = convertToBytes("keep-alive");
+    public static final byte[] CHUNKED_BYTES = convertToBytes("chunked");
+    public static final byte[] ACK_BYTES = convertToBytes("HTTP/1.1 100 Continue" + CRLF + CRLF);
+    public static final byte[] TRANSFERENCODING_BYTES = convertToBytes("Transfer-Encoding");
+    
 
     /**
      * Identity filters (input and output).
@@ -219,35 +190,17 @@ public final class Constants {
 
 
     /**
-     * Ack string when pipelining HTTP requests.
+     * Utility method.
+     * 
+     * @param value to convert to byte array
+     * @return the byte array value
      */
-    public static final byte[] ACK_BYTES = {
-        (byte) 'H',
-        (byte) 'T',
-        (byte) 'T',
-        (byte) 'P',
-        (byte) '/',
-        (byte) '1',
-        (byte) '.',
-        (byte) '1',
-        (byte) ' ',
-        (byte) '1',
-        (byte) '0',
-        (byte) '0',
-        (byte) ' ',
-        (byte) 'C',
-        (byte) 'o',
-        (byte) 'n',
-        (byte) 't',
-        (byte) 'i',
-        (byte) 'n',
-        (byte) 'u',
-        (byte) 'e',
-        (byte) '\r',
-        (byte) '\n',
-        (byte) '\r',
-        (byte) '\n'
-    };
-
-
+    public static final byte[] convertToBytes(String value) {
+        byte[] result = new byte[value.length()];
+        for (int i = 0; i < value.length(); i++) {
+            result[i] = (byte) value.charAt(i);
+        }
+        return result;
+    }
+    
 }
