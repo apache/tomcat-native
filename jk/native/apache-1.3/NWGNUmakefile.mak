@@ -8,8 +8,8 @@
 #
 
 # Edit the path below to point to the base of your NetWare Java SDK.
-ifndef NW_JDK
-NW_JDK	= d:/projects/sdks/java-nw
+ifndef JAVA_HOME
+JAVA_HOME = c:/projects/sdks/java-nw
 endif
 
 JKCOMMON = ../common
@@ -29,8 +29,8 @@ endif
 #
 XINCDIRS	+= \
 			$(JKCOMMON) \
-			$(NW_JDK)/include \
-			$(NW_JDK)/include/netware \
+			$(JAVA_HOME)/include \
+			$(JAVA_HOME)/include/netware \
 			$(SRC)\include \
 			$(NWOS) \
 			$(EOLIST)

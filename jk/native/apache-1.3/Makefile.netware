@@ -1,21 +1,21 @@
 #
 # Makefile for mod_jk (NetWare version - gnu make)
-# created by Guenter Knauf <eflash@gmx.net>
+# created by Guenter Knauf <fuankg@apache.org>
 #
 
 # Edit the path below to point to the base of your Apache 1.3 includes.
 ifndef AP_HOME
-AP_HOME	= c:/projects/cw/apache_1.3.31
+AP_HOME	= c:/projects/cw/apache_1.3.33
 endif
 # Edit the path below to point to the base of your NetWare Java SDK.
-ifndef NW_JDK
-NW_JDK	= c:/projects/sdks/java-nw
+ifndef JAVA_HOME
+JAVA_HOME	= c:/projects/sdks/java-nw
 endif
 # Edit the path below to point to the base of your Novell NDK.
 ifndef NDKBASE
 NDKBASE	= c:/novell
 endif
-INSTDIR = s:/apache/modules
+INSTDIR	= s:/apache/modules
 
 # Edit the vars below to change NLM target settings.
 TARGET  = mod_jk
@@ -103,7 +103,7 @@ SDK_LIBC = $(NDK_ROOT)/libc
 JKCOMMON = ../common
 
 INCLUDES = -I$(AP_HOME)/src/include -I$(AP_HOME)/src/os/netware
-INCLUDES += -I$(JKCOMMON) -I$(NW_JDK)/include -I$(NW_JDK)/include/netware 
+INCLUDES += -I$(JKCOMMON) -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/netware 
 
 ifeq ($(LIBARCH),LIBC)
 	INCLUDES += -I$(SDK_LIBC)/include -I$(SDK_LIBC)/include/nks
