@@ -30,8 +30,11 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                               jk_map_t *props,
                               jk_worker_env_t *we, jk_logger_t *l)
 {
+    int rc;
     JK_TRACE_ENTER(l);
-    return (ajp_validate(pThis, props, we, l, AJP13_PROTO));
+    rc = ajp_validate(pThis, props, we, l, AJP13_PROTO);
+    JK_TRACE_EXIT(l);
+    return rc;
 }
 
 
@@ -39,23 +42,32 @@ static int JK_METHOD init(jk_worker_t *pThis,
                           jk_map_t *props,
                           jk_worker_env_t *we, jk_logger_t *l)
 {
+    int rc;
     JK_TRACE_ENTER(l);
-    return (ajp_init(pThis, props, we, l, AJP13_PROTO));
+    rc = ajp_init(pThis, props, we, l, AJP13_PROTO);
+    JK_TRACE_EXIT(l);
+    return rc;
 }
 
 
 static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
 {
+    int rc;
     JK_TRACE_ENTER(l);
-    return (ajp_destroy(pThis, l, AJP13_PROTO));
+    rc = ajp_destroy(pThis, l, AJP13_PROTO);
+    JK_TRACE_EXIT(l);
+    return rc;
 }
 
 
 static int JK_METHOD get_endpoint(jk_worker_t *pThis,
                                   jk_endpoint_t **pend, jk_logger_t *l)
 {
+    int rc;
     JK_TRACE_ENTER(l);
-    return (ajp_get_endpoint(pThis, pend, l, AJP13_PROTO));
+    rc = ajp_get_endpoint(pThis, pend, l, AJP13_PROTO);
+    JK_TRACE_EXIT(l);
+    return rc;
 }
 
 int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
@@ -65,29 +77,26 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
 
     JK_TRACE_ENTER(l);
     if (name == NULL || w == NULL) {
-        jk_log(l, JK_LOG_ERROR, "In ajp13_worker_factory, NULL parameters\n");
+        JK_LOG_NULL_PARAMS(l);
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     if (!aw) {
         jk_log(l, JK_LOG_ERROR,
-               "In ajp13_worker_factory, malloc of private_data failed\n");
+               "malloc of private_data failed\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     aw->name = strdup(name);
 
-    /* Lets core dump for every malloc.
-       If we can not allocate few bytes what's the purpose
-       to keep anyhow and waste cpr cycles
-     */
-#if 0
     if (!aw->name) {
         free(aw);
-        jk_log(l, JK_LOG_ERROR, "In ajp13_worker_factory, malloc failed\n");
+        jk_log(l, JK_LOG_ERROR, "malloc failed\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-#endif
 
     aw->proto = AJP13_PROTO;
     aw->login = NULL;
