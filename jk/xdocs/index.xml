@@ -122,7 +122,11 @@ port the protocol to some other container.
 <p>
 </p>
 </li>
-
+<li><a href="http://jakarta.apache.org/tomcat/connectors-doc-archive/jk2/index.html">
+<b>Old JK/JK2 documentation archive.</b></a>
+<p>Here you can find old JK and JK2 documentation.
+</p>
+</li>
 </ul>
 
 </section>
