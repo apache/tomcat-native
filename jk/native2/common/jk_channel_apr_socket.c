@@ -152,7 +152,7 @@ static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
 static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
-                                             jk_channel_t *_this)
+                                          jk_channel_t *_this)
 {
     jk_channel_apr_private_t *socketInfo=
         (jk_channel_apr_private_t *)(_this->_privatePtr);
@@ -161,8 +161,14 @@ static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
 
     if( socketInfo->host==NULL ) {
         char *localName=_this->mbean->localName;
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.init(): use name %s\n", localName );
+        jk_config_t *cfg=_this->workerEnv->config;
+        
+        /* Set the 'name' property
+         */
+        localName = jk2_config_replaceProperties(env, cfg->map, cfg->map->pool, localName);
+
+        /*   env->l->jkLog(env, env->l, JK_LOG_INFO, */
+        /*                 "channelApr.init(): use name %s\n", localName ); */
         
         if (localName[0]=='/') {
             _this->mbean->setAttribute( env, _this->mbean, "file", localName );
@@ -182,9 +188,6 @@ static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk2_channel_apr_init: "
                       "can't resolve %s:%d errno=%d\n", socketInfo->host, socketInfo->port, errno );
     }
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_apr.init(): %s:%d for %s\n", socketInfo->host,
-                  socketInfo->port, _this->worker->mbean->name );
 
     return rc;
 }
@@ -192,25 +195,27 @@ static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
 /** private: resolve the address on init
  */
 static int JK_METHOD jk2_channel_apr_resolve(jk_env_t *env,
-                                               char *host, short port,
-                                               jk_channel_apr_private_t *rc)
+                                             char *host, short port,
+                                             jk_channel_apr_private_t *rc)
 {
     /*
      * If the hostname is an absolut path, we want a UNIX socket.
      * otherwise it is a TCP/IP socket.
      */ 
-    env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "jk2_channel_apr_resolve: %s %d\n",
-                          host, port);
+    /*    env->l->jkLog(env, env->l, JK_LOG_ERROR, */
+    /*                           "jk2_channel_apr_resolve: %s %d\n", */
+    /*                           host, port); */
     if (host[0]=='/') {
         rc->type = TYPE_UNIX;
         memset(&rc->unix_addr, 0, sizeof(struct sockaddr_un));
         rc->unix_addr.sun_family = AF_UNIX;
         strcpy(rc->unix_addr.sun_path, host);
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.resolve(): create unix_addr  %s\n", host );
+                      "channelApr.resolve(): create AF_UNIX  %s\n", host );
     } else {
         rc->type = TYPE_NET;
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelApr.resolve(): create AF_NET  %s %d\n", host, port );
         if ( apr_sockaddr_info_get(&rc->addr, host, APR_UNSPEC, port, 0,
             (apr_pool_t *)env->globalPool->_private)!=APR_SUCCESS) {
             return JK_FALSE;
@@ -251,7 +256,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
             return JK_FALSE;
         }
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.open(): create unix socket %d\n", unixsock );
+                      "channelApr.open(): create unix socket %s %d\n", socketInfo->host, unixsock );
         if (connect(unixsock,(struct sockaddr *)&(socketInfo->unix_addr),
                     sizeof(struct sockaddr_un))<0) {
             close(unixsock);
@@ -543,23 +548,26 @@ int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
                                              jk_bean_t *result,
                                              const char *type, const char *name)
 {
-    jk_channel_t *_this;
+    jk_channel_t *ch;
     
-    _this=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
+    ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
-    _this->_privatePtr= (jk_channel_apr_private_t *)
+    ch->_privatePtr= (jk_channel_apr_private_t *)
         pool->calloc( env, pool, sizeof( jk_channel_apr_private_t));
 
-    _this->recv= jk2_channel_apr_recv; 
-    _this->send= jk2_channel_apr_send; 
-    _this->init= jk2_channel_apr_init; 
-    _this->open= jk2_channel_apr_open; 
-    _this->close= jk2_channel_apr_close; 
-    _this->is_stream=JK_TRUE;
+    ch->recv= jk2_channel_apr_recv; 
+    ch->send= jk2_channel_apr_send; 
+    ch->init= jk2_channel_apr_init; 
+    ch->open= jk2_channel_apr_open; 
+    ch->close= jk2_channel_apr_close; 
+    ch->is_stream=JK_TRUE;
 
     result->setAttribute= jk2_channel_apr_setProperty; 
-    _this->mbean=result;
-    result->object= _this;
-    
+    ch->mbean=result;
+    result->object= ch;
+
+    ch->workerEnv=env->getByName( env, "workerEnv" );
+    ch->workerEnv->addChannel( env, ch->workerEnv, ch );
+
     return JK_TRUE;
 }
