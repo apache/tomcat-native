@@ -284,6 +284,22 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
 }
 
 
+static int jk2_uriEnv_beanInit(jk_env_t *env, jk_bean_t *bean)
+{
+    jk_uriEnv_t *uriEnv=bean->object;
+    int res=JK_OK;
+
+    if( bean->state == JK_STATE_INIT ) return JK_OK;
+    
+    if( uriEnv->init ) {
+        res=uriEnv->init( env, uriEnv );
+    }
+    if( res==JK_OK ) {
+        bean->state=JK_STATE_INIT;
+    }
+    return res;
+}
+
 static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
 {
 /*    int err; */
@@ -299,12 +315,16 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     if( uriEnv->workerName == NULL ) {
         /* The default worker */
         uriEnv->workerName=uriEnv->uriMap->workerEnv->defaultWorker->mbean->name;;
+        wname=uriEnv->workerName;
         uriEnv->worker=uriEnv->uriMap->workerEnv->defaultWorker;
 
         if( uriEnv->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "uriEnv.init() map %s %s\n",
-                          uriEnv->uri, uriEnv->uriMap->workerEnv->defaultWorker->mbean->name);
+                          "uriEnv.init() map %s %s %s\n",
+                          uriEnv->uri, uriEnv->uriMap->workerEnv->defaultWorker->mbean->name, uriEnv->workerName);
+        if( uriEnv->workerName == NULL ) {
+            uriEnv->workerName="lb:lb";
+        }
     }
 
     /* No further init - will be called by uriMap.init() */
@@ -467,6 +487,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
                        uriEnv->mbean->name, uriEnv->virtual, uriEnv->uri,
                        uriEnv->match_type, uriEnv->contextPath, uriEnv->prefix, uriEnv->suffix );
     
+    uriEnv->mbean->state=JK_STATE_INIT;
     return JK_OK;
 }
 
@@ -487,6 +508,7 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     
     jk2_map_default_create(env, &uriEnv->properties, uriPool);
 
+    result->init = jk2_uriEnv_beanInit;
     uriEnv->init = jk2_uriEnv_init;
 
     result->setAttribute = jk2_uriEnv_setAttribute;
