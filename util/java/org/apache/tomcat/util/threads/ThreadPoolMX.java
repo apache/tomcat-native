@@ -63,7 +63,6 @@ package org.apache.tomcat.util.threads;
 import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.modeler.Registry;
 
 /**
  * Manageable thread pool
@@ -72,24 +71,12 @@ import org.apache.commons.modeler.Registry;
  */
 public class ThreadPoolMX extends ThreadPool {
     static Log log = LogFactory.getLog(ThreadPoolMX.class);
-    Registry reg;
     protected String domain;
 
     protected String name;
 
     public ThreadPoolMX() {
         super();
-    }
-
-    public void register(String domain, String name) {
-        this.name=name;
-        this.domain=domain;
-        reg=Registry.getRegistry();
-        try {
-            reg.registerComponent(this, domain, "ThreadPool",  name);
-        } catch( Exception ex ) {
-            log.error( "Error registering thread pool", ex );
-        }
     }
 
     public synchronized void start() {

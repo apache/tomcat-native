@@ -171,11 +171,6 @@ public class ThreadPool  {
         return new ThreadPool();
     }
 
-    public void register( String domain, String name ) {
-        // nothing in the base class - it'll register in jmx mode
-        // We could use the name to create a ThreadGroup and name threads
-    }
-
     public synchronized void start() {
 	stopThePool=false;
         currentThreadCount  = 0;
