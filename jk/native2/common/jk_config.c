@@ -78,9 +78,13 @@ static char **jk2_config_getValues(jk_env_t *env, jk_config_t *m,
                                    int *countP);
 
 
-/* ==================== Backward compatibility ==================== */
+/* ==================== ==================== */
 
-static int jk2_config_setWorkerFile( jk_env_t *env,
+/* Set the file where the config will be read and
+ * ( in future ) stored.
+ *
+ */
+static int jk2_config_setConfigFile( jk_env_t *env,
                                      jk_config_t *cfg,
                                      jk_workerEnv_t *wEnv,
                                      char *workerFile)
@@ -90,30 +94,15 @@ static int jk2_config_setWorkerFile( jk_env_t *env,
     jk_map_t *props;
     int i;
     
-    /* We should make it relative to JK_HOME or absolute path.
-       ap_server_root_relative(cmd->pool,opt); */
-    
-    /* Avoid recursivity */
-    for( i=0; i<cfg->map->size( env, cfg->map ); i++ ) {
-        char *name=cfg->map->nameAt(env, cfg->map, i);
-        char *val=cfg->map->valueAt(env, cfg->map, i);
-        if( strcmp( name, "workerFile" )==0 &&
-            strcmp( val, workerFile ) == 0 ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "Recursive init - already read %s", workerFile );
-            return JK_FALSE;
-        }
-    }
-
     if (stat(workerFile, &statbuf) == -1) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "Can't find the workers file %s", workerFile );
+                      "Can't find config file %s", workerFile );
         return JK_FALSE;
     }
     
     /** Read worker files
      */
-    env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Reading properties %s %d\n",
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Reading config %s %d\n",
                   workerFile, cfg->map->size(env, cfg->map) );
     
     jk2_map_default_create(env, &props, wEnv->pool);
@@ -141,49 +130,17 @@ static int jk2_config_setWorkerFile( jk_env_t *env,
     return JK_TRUE;
 }
 
+/** Interpret the 'name' as [OBJECT].[PROPERTY].
+    If the [OBJECT] is not found, construct it using
+    the prefix ( i.e. we'll search for a factory that matches
+    name - XXX make it longest match ? ).
 
-static int jk2_config_setLogLevel( struct jk_env *env,
-                                   char *level)
-{
-    if(0 == strcasecmp(level, JK_LOG_INFO_VERB)) {
-        env->l->level=JK_LOG_INFO_LEVEL;
-    }
-    if(0 == strcasecmp(level, JK_LOG_DEBUG_VERB)) {
-        env->l->level=JK_LOG_DEBUG_LEVEL;
-    }
-    fprintf( stderr, "Setting %s %d \n", level, env->l->level );
-    return JK_TRUE;
-}
-
-/* Backward compatiblity ? This is not used in jk2, all workers are loaded
- */
-static int jk2_config_setWorkerList( struct jk_env *env,
-                                     struct jk_workerEnv *wEnv,
-                                     char *wlist)
-{
-    wEnv->worker_list=jk2_config_split( env, wEnv->pool,
-                                        wlist, NULL, & wEnv->declared_workers );
-}
-
-/** Backward compat
-      host:port/path=worker
- */
-static int jk2_config_setUriProperty( jk_env_t *env,
-                                      jk_config_t *cfg,
-                                      char *name, char *val)
-
-{
-    /* only /path supported for now */
-    jk_pool_t *workerPool=cfg->pool->create(env, cfg->pool, HUGE_POOL_SIZE);
-    
-    env->createInstance( env, workerPool, "uri", name );
-    return JK_TRUE;
-}
-
-static int jk2_config_setWorkerProperty( jk_env_t *env,
-                                        jk_config_t *cfg,
-                                        char *name, char *val)
-
+    Then set the property on the object that is found or
+    constructed.
+*/
+static int jk2_config_setBeanPropertyString( jk_env_t *env,
+                                             jk_config_t *cfg,
+                                             char *name, char *val)
 {
     jk_bean_t *w = NULL;
     char *type=NULL;
@@ -256,9 +213,27 @@ static int jk2_config_setWorkerProperty( jk_env_t *env,
     return JK_FALSE;
 }
 
+/** Set a property for this config object
+ */
+static int jk2_config_setAttribute( struct jk_env *env, struct jk_bean *mbean,
+                                    char *name, void *valueP)
+{
+    jk_config_t *cfg=mbean->object;
+    char *value=valueP;
+    
+    if( strcmp( name, "file" )==0 ) {
+        return jk2_config_setConfigFile(env, cfg, cfg->workerEnv, value);
+    } else {
+        return JK_FALSE;
+    }
 
+    return JK_TRUE;
+}
+
+/** Set a property on a bean
+ */
 static int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
-                                  jk_bean_t *mbean, const char *name, void *val)
+                                  jk_bean_t *mbean, char *name, void *val)
 {
     char *pname=cfg->pool->calloc( env, cfg->pool,
                                    strlen( name ) + strlen( mbean->name ) + 4 );
@@ -274,7 +249,7 @@ static int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
 }
 
 static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
-                                          const char *name, char *value)
+                                        char *name, char *value)
 {
     jk_bean_t *mbean;
 
@@ -284,15 +259,8 @@ static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
 
     value = jk2_config_replaceProperties(env, initData, initData->pool, value);
 
-    if( strcmp( name, "workerFile" ) == 0 ) {
-        return jk2_config_setWorkerFile(env, cfg, wEnv, value);
-    } else if( strcmp( name, "logLevel") == 0 ) {
-        return jk2_config_setLogLevel( env, value );
-        /* XXX other special cases, backward compat, /, etc */
-    }
-    
     /* Default format */
-    status=jk2_config_setWorkerProperty(env, cfg, name, value );
+    status=jk2_config_setBeanPropertyString(env, cfg, name, value );
     if( status==JK_TRUE ) return status;
 
     /* It may be a 'normal' property */
@@ -723,6 +691,7 @@ int jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
     _this->setProperty=jk2_config_setProperty;
     
     result->object=_this;
+    result->setAttribute=jk2_config_setAttribute;
 
     
     return JK_TRUE;
