@@ -658,28 +658,28 @@ int ajp_is_input_event(ajp_endpoint_t *ae,
                        int            timeout,
                        jk_logger_t   *l)
 {
-	fd_set  rset; 
-	fd_set  eset; 
-	struct  timeval tv;
-	int		rc;
-	
-	FD_ZERO(&rset);
-	FD_ZERO(&eset);
-	FD_SET(ae->sd, &rset);
-	FD_SET(ae->sd, &eset);
+    fd_set  rset; 
+    fd_set  eset; 
+    struct  timeval tv;
+    int     rc;
+    
+    FD_ZERO(&rset);
+    FD_ZERO(&eset);
+    FD_SET(ae->sd, &rset);
+    FD_SET(ae->sd, &eset);
 
-	tv.tv_sec  = timeout / 1000;
-	tv.tv_usec = (timeout % 1000) * 1000;
+    tv.tv_sec  = timeout / 1000;
+    tv.tv_usec = (timeout % 1000) * 1000;
 
-	rc = select(ae->sd + 1, &rset, NULL, &eset, &tv);
+    rc = select(ae->sd + 1, &rset, NULL, &eset, &tv);
       
     if ((rc < 1) || (FD_ISSET(ae->sd, &eset)))
-	{
-		jk_log(l, JK_LOG_ERROR, "Error ajp13:is_input_event: error during select [%d]\n", rc);
-		return JK_FALSE;
-	}
-	
-	return ((FD_ISSET(ae->sd, &rset)) ? JK_TRUE : JK_FALSE) ;
+    {
+        jk_log(l, JK_LOG_ERROR, "Error ajp13:is_input_event: error during select [%d]\n", rc);
+        return JK_FALSE;
+    }
+    
+    return ((FD_ISSET(ae->sd, &rset)) ? JK_TRUE : JK_FALSE) ;
 }
 
                          
@@ -687,46 +687,46 @@ int ajp_is_input_event(ajp_endpoint_t *ae,
  * Handle the CPING/CPONG initial query
  */
 int ajp_handle_cping_cpong(ajp_endpoint_t *ae,
-					  	   int 			timeout,
+                           int            timeout,
                            jk_logger_t    *l)
 {
-	int	cmd;
-	jk_msg_buf_t * msg;
+    int    cmd;
+    jk_msg_buf_t * msg;
 
-	msg = jk_b_new(&ae->pool);
-	jk_b_set_buffer_size(msg, 16);	/* 16 is way too large but I'm lazy :-) */
-	jk_b_reset(msg);
-	jk_b_append_byte(msg, AJP13_CPING_REQUEST); 
+    msg = jk_b_new(&ae->pool);
+    jk_b_set_buffer_size(msg, 16);    /* 16 is way too large but I'm lazy :-) */
+    jk_b_reset(msg);
+    jk_b_append_byte(msg, AJP13_CPING_REQUEST); 
 
-	/* Send CPing query */		
-	if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
-	{
-		jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: can't send cping query\n");
-		return JK_FALSE;
-	}
-		
-	/* wait for Pong reply for timeout milliseconds
-	 */
-	if (ajp_is_input_event(ae, timeout, l) == JK_FALSE)
-	{
-		jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: timeout in reply pong\n");
-		return JK_FALSE;
-	}
-		
-	/* Read and check for Pong reply 
-	 */
-	if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
-	{
-		jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: awaited reply cpong, not received\n");
-		return JK_FALSE;
-	}
-	
-	if ((cmd = jk_b_get_byte(msg)) != AJP13_CPONG_REPLY) {
-		jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: awaited reply cpong, received %d instead\n", cmd);
-		return JK_FALSE;
-	}
+    /* Send CPing query */        
+    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
+    {
+        jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: can't send cping query\n");
+        return JK_FALSE;
+    }
+        
+    /* wait for Pong reply for timeout milliseconds
+     */
+    if (ajp_is_input_event(ae, timeout, l) == JK_FALSE)
+    {
+        jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: timeout in reply pong\n");
+        return JK_FALSE;
+    }
+        
+    /* Read and check for Pong reply 
+     */
+    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
+    {
+        jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: awaited reply cpong, not received\n");
+        return JK_FALSE;
+    }
+    
+    if ((cmd = jk_b_get_byte(msg)) != AJP13_CPONG_REPLY) {
+        jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: awaited reply cpong, received %d instead\n", cmd);
+        return JK_FALSE;
+    }
 
-	return JK_TRUE;
+    return JK_TRUE;
 }
 
 int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
@@ -749,10 +749,10 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
             if (ae->worker->logon != NULL)
                 return (ae->worker->logon(ae, l));
 
-			/* should we send a CPING to validate connection ? */
-			if (ae->worker->connect_timeout != 0)
-				return (ajp_handle_cping_cpong(ae, ae->worker->connect_timeout, l));
-				
+            /* should we send a CPING to validate connection ? */
+            if (ae->worker->connect_timeout != 0)
+                return (ajp_handle_cping_cpong(ae, ae->worker->connect_timeout, l));
+                
             return JK_TRUE;
         }
     }
@@ -970,7 +970,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t  *ae,
     }
 
     if (!r->is_chunked) {
-	ae->left_bytes_to_send -= len;
+        ae->left_bytes_to_send -= len;
     }
 
     if (len > 0) {
@@ -1006,46 +1006,46 @@ static int ajp_send_request(jk_endpoint_t *e,
                             ajp_endpoint_t *ae,
                             ajp_operation_t *op)
 {
-	int err = 0;
-	int postlen;
-	
+    int err = 0;
+    int postlen;
+    
     /* Up to now, we can recover */
     op->recoverable = JK_TRUE;
 
     /*
      * First try to reuse open connections...
-    */
+     */
     while ((ae->sd > 0))
     {
-    	err = 0;
-    	
-    	/* handle cping/cpong before request if timeout is set */
-		if (ae->worker->prepost_timeout != 0)
-		{
-			if (ajp_handle_cping_cpong(ae, ae->worker->prepost_timeout, l) == JK_FALSE)
-				err++;
-		}	
+        err = 0;
+        
+        /* handle cping/cpong before request if timeout is set */
+        if (ae->worker->prepost_timeout != 0)
+        {
+            if (ajp_handle_cping_cpong(ae, ae->worker->prepost_timeout, l) == JK_FALSE)
+                err++;
+        }    
 
-        /* If we got an error or can't send data, then try to get a pooled */
-        /* connection and try again.  If we are succesful, break out of this */
-        /* loop. */
+        /* If we got an error or can't send data, then try to get a pooled
+         * connection and try again.  If we are succesful, break out of this
+         * loop. */
         if (err || ajp_connection_tcp_send_message(ae, op->request, l) == JK_FALSE) {
-	        jk_log(l, JK_LOG_INFO,
-	               "Error sending request try another pooled connection\n");
-	        jk_close_socket(ae->sd);
-	        ae->sd = -1;
-	        ajp_reuse_connection(ae, l);
-	    }
+            jk_log(l, JK_LOG_INFO,
+                   "Error sending request try another pooled connection\n");
+            jk_close_socket(ae->sd);
+            ae->sd = -1;
+            ajp_reuse_connection(ae, l);
+        }
         else
             break;
-	}
-	
+    }
+    
     /*
      * If we failed to reuse a connection, try to reconnect.
      */
     if (ae->sd < 0) {
 
-    	/* no need to handle cping/cpong here since it should be at connection time */
+        /* no need to handle cping/cpong here since it should be at connection time */
 
         if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
             /*
@@ -1090,21 +1090,21 @@ static int ajp_send_request(jk_endpoint_t *e,
             return JK_FALSE;
         }
         else
-        	jk_log(l, JK_LOG_DEBUG, "Resent the request body (%d)\n", postlen);
+            jk_log(l, JK_LOG_DEBUG, "Resent the request body (%d)\n", postlen);
     }
     else if (s->reco_status == RECO_FILLED)
     {
-	/* Recovery in LB MODE */
-    	postlen = jk_b_get_len(s->reco_buf);
+    /* Recovery in LB MODE */
+        postlen = jk_b_get_len(s->reco_buf);
 
-	if (postlen > AJP_HEADER_LEN) {
-		if(!ajp_connection_tcp_send_message(ae, s->reco_buf, l)) {
-			jk_log(l, JK_LOG_ERROR, "Error resending request body (lb mode) (%d)\n", postlen);
-			return JK_FALSE;
-		}
-	}
-	else
-		jk_log(l, JK_LOG_DEBUG, "Resent the request body (lb mode) (%d)\n", postlen);
+    if (postlen > AJP_HEADER_LEN) {
+        if(!ajp_connection_tcp_send_message(ae, s->reco_buf, l)) {
+            jk_log(l, JK_LOG_ERROR, "Error resending request body (lb mode) (%d)\n", postlen);
+            return JK_FALSE;
+        }
+    }
+    else
+        jk_log(l, JK_LOG_DEBUG, "Resent the request body (lb mode) (%d)\n", postlen);
     }
     else {
         /* We never sent any POST data and we check if we have to send at
@@ -1112,13 +1112,13 @@ static int ajp_send_request(jk_endpoint_t *e,
          * for resend if the remote Tomcat is down, a fact we will learn only
          * doing a read (not yet) 
          */
-	/* || s->is_chunked - this can't be done here. The original protocol
+        /* || s->is_chunked - this can't be done here. The original protocol
            sends the first chunk of post data ( based on Content-Length ),
            and that's what the java side expects.
-	   Sending this data for chunked would break other ajp13 servers.
+           Sending this data for chunked would break other ajp13 servers.
 
-	   Note that chunking will continue to work - using the normal read.
-	*/
+           Note that chunking will continue to work - using the normal read.
+         */
 
         if (ae->left_bytes_to_send > 0) {
             int len = ae->left_bytes_to_send;
@@ -1131,11 +1131,11 @@ static int ajp_send_request(jk_endpoint_t *e,
                 return JK_CLIENT_ERROR;
             }
 
-	   /* If a RECOVERY buffer is available in LB mode, fill it */
-	   if (s->reco_status == RECO_INITED) {
-		jk_b_copy(op->post, s->reco_buf);
-		s->reco_status = RECO_FILLED;
-	   }
+       /* If a RECOVERY buffer is available in LB mode, fill it */
+       if (s->reco_status == RECO_INITED) {
+        jk_b_copy(op->post, s->reco_buf);
+        s->reco_status = RECO_FILLED;
+       }
 
             s->content_read = len;
             if (!ajp_connection_tcp_send_message(ae, op->post, l)) {
@@ -1261,87 +1261,87 @@ static int ajp_get_reply(jk_endpoint_t *e,
                          ajp_endpoint_t *p,
                          ajp_operation_t *op)
 {
-	/* Don't get header from tomcat yet */
-	int headeratclient = JK_FALSE;
+    /* Don't get header from tomcat yet */
+    int headeratclient = JK_FALSE;
 
     /* Start read all reply message */
     while(1) {
         int rc = 0;
 
-		/* If we set a reply timeout, check it something is available */
-		if (p->worker->reply_timeout != 0)
-		{
-			if (ajp_is_input_event(p, p->worker->reply_timeout, l) == JK_FALSE)
-			{
-	            jk_log(l, JK_LOG_ERROR,
-	                   "Timeout will waiting reply from tomcat. "
-	                   "Tomcat is down, stopped or network problems.\n");
+        /* If we set a reply timeout, check it something is available */
+        if (p->worker->reply_timeout != 0)
+        {
+            if (ajp_is_input_event(p, p->worker->reply_timeout, l) == JK_FALSE)
+            {
+                jk_log(l, JK_LOG_ERROR,
+                       "Timeout will waiting reply from tomcat. "
+                       "Tomcat is down, stopped or network problems.\n");
 
-				return JK_FALSE;
-			}
-		}
-		
+                return JK_FALSE;
+            }
+        }
+        
         if(!ajp_connection_tcp_get_message(p, op->reply, l)) {
-	        /* we just can't recover, unset recover flag */
-		    if(headeratclient == JK_FALSE) {
-	            jk_log(l, JK_LOG_ERROR,
-	                   "Tomcat is down or network problems. "
-	                   "No response has been sent to the client (yet)\n");
-	         /*
-	          * communication with tomcat has been interrupted BEFORE 
-	 		  * headers have been sent to the client.
-	 		  * DISCUSSION: As we suppose that tomcat has already started
-			  * to process the query we think it's unrecoverable (and we
-			  * should not retry or switch to another tomcat in the 
-			  * cluster). 
-			  */
-			  
-			  /*
-			   * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCGETREQUEST 
-			   */
-	            if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
-		        	op->recoverable = JK_FALSE;
-			  /* 
-			   * we want to display the webservers error page, therefore
-			   * we return JK_FALSE 
-			   */
-			   return JK_FALSE;
-		    } else {
-	                jk_log(l, JK_LOG_ERROR,
-	                   "Error reading reply from tomcat. "
-	                   "Tomcat is down or network problems. "
-			           "Part of the response has already been sent to the client\n");
-	      	        
-	      	        /* communication with tomcat has been interrupted AFTER 
-	        		 * headers have been sent to the client.
-		             * headers (and maybe parts of the body) have already been
-	  		         * sent, therefore the response is "complete" in a sense
-			         * that nobody should append any data, especially no 500 error 
-	        		 * page of the webserver! 
-	        		 *
-	      		     * BUT if you retrun JK_TRUE you have a 200 (OK) code in your
-			         * in your apache access.log instead of a 500 (Error). 
-				     * Therefore return FALSE/FALSE
-	                 * return JK_TRUE; 
-	                 */
-	            
-	   		        /*
-			         * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCSENDHEADER 
-			        */
-	                if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCSENDHEADER)
-			            op->recoverable = JK_FALSE;
-			        
-				return JK_FALSE;
-	    	}
-		}
-		
+            /* we just can't recover, unset recover flag */
+            if(headeratclient == JK_FALSE) {
+                jk_log(l, JK_LOG_ERROR,
+                       "Tomcat is down or network problems. "
+                       "No response has been sent to the client (yet)\n");
+             /*
+              * communication with tomcat has been interrupted BEFORE 
+              * headers have been sent to the client.
+              * DISCUSSION: As we suppose that tomcat has already started
+              * to process the query we think it's unrecoverable (and we
+              * should not retry or switch to another tomcat in the 
+              * cluster). 
+              */
+              
+              /*
+               * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCGETREQUEST 
+               */
+                if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
+                    op->recoverable = JK_FALSE;
+              /* 
+               * we want to display the webservers error page, therefore
+               * we return JK_FALSE 
+               */
+               return JK_FALSE;
+            } else {
+                    jk_log(l, JK_LOG_ERROR,
+                       "Error reading reply from tomcat. "
+                       "Tomcat is down or network problems. "
+                       "Part of the response has already been sent to the client\n");
+                      
+                    /* communication with tomcat has been interrupted AFTER 
+                     * headers have been sent to the client.
+                     * headers (and maybe parts of the body) have already been
+                     * sent, therefore the response is "complete" in a sense
+                     * that nobody should append any data, especially no 500 error 
+                     * page of the webserver! 
+                     *
+                     * BUT if you retrun JK_TRUE you have a 200 (OK) code in your
+                     * in your apache access.log instead of a 500 (Error). 
+                     * Therefore return FALSE/FALSE
+                     * return JK_TRUE; 
+                     */
+                
+                    /*
+                     * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCSENDHEADER 
+                     */
+                    if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCSENDHEADER)
+                        op->recoverable = JK_FALSE;
+                    
+                return JK_FALSE;
+            }
+        }
+        
         rc = ajp_process_callback(op->reply, op->post, p, s, l);
 
         /* no more data to be sent, fine we have finish here */
         if(JK_AJP13_END_RESPONSE == rc) {
             return JK_TRUE;
-    	} else if(JK_AJP13_SEND_HEADERS == rc) {
- 	        headeratclient = JK_TRUE;            
+        } else if(JK_AJP13_SEND_HEADERS == rc) {
+             headeratclient = JK_TRUE;            
         } else if(JK_AJP13_HAS_RESPONSE == rc) {
             /* 
              * in upload-mode there is no second chance since
@@ -1608,7 +1608,7 @@ int ajp_init(jk_worker_t *pThis,
         ajp_worker_t *p = pThis->worker_private;
         int cache_sz = jk_get_worker_cache_size(props, p->name, cache);
         p->socket_timeout =
-           jk_get_worker_socket_timeout(props, p->name, AJP13_DEF_TIMEOUT);
+            jk_get_worker_socket_timeout(props, p->name, AJP13_DEF_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
                "In jk_worker_t::init, setting socket timeout to %d\n",
@@ -1631,30 +1631,30 @@ int ajp_init(jk_worker_t *pThis,
         p->connect_timeout =
             jk_get_worker_connect_timeout(props, p->name, AJP_DEF_CONNECT_TIMEOUT);
 
-    	jk_log(l, JK_LOG_DEBUG,
-        	   "In jk_worker_t::init, setting connect timeout to %d\n",
-           		p->connect_timeout);
+        jk_log(l, JK_LOG_DEBUG,
+               "In jk_worker_t::init, setting connect timeout to %d\n",
+               p->connect_timeout);
 
         p->reply_timeout =
             jk_get_worker_reply_timeout(props, p->name, AJP_DEF_REPLY_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
-	           "In jk_worker_t::init, setting reply timeout to %d\n",
-    	       p->reply_timeout);
+               "In jk_worker_t::init, setting reply timeout to %d\n",
+               p->reply_timeout);
 
         p->prepost_timeout =
             jk_get_worker_prepost_timeout(props, p->name, AJP_DEF_PREPOST_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
-	           "In jk_worker_t::init, setting prepost timeout to %d\n",
-    	       p->prepost_timeout);
+               "In jk_worker_t::init, setting prepost timeout to %d\n",
+               p->prepost_timeout);
 
         p->recovery_opts =
             jk_get_worker_recovery_opts(props, p->name, AJP_DEF_RECOVERY_OPTS);
 
-    	jk_log(l, JK_LOG_DEBUG,
-        	   "In jk_worker_t::init, setting recovery opts to %d\n",
-           		p->recovery_opts);
+        jk_log(l, JK_LOG_DEBUG,
+               "In jk_worker_t::init, setting recovery opts to %d\n",
+               p->recovery_opts);
 
         /* 
          *  Need to initialize secret here since we could return from inside
