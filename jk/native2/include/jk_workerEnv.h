@@ -122,7 +122,6 @@ struct jk_workerEnv {
     */
     int childId;
     int childProcessId;
-    int childGeneration;
     /* maximum configured number of child processes */
     int maxDaemons;
 
