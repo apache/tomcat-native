@@ -97,6 +97,12 @@ public final class Mapper {
      */
     protected boolean processWelcomeResources = true;
 
+    /**
+     * Flag indicating that we should redirect to a directory when the URL
+     * doesn't end in a '/'.  It overrided the Authenticator, so the redirect 
+     * done before authentication.
+     */
+    protected boolean redirectDirectories = false;
 
     // --------------------------------------------------------- Public Methods
 
@@ -143,6 +149,21 @@ public final class Mapper {
         this.processWelcomeResources = processWelcomeResources;
     }
 
+    /**
+     * Get the flag that indicates if we redirect to directories that don't
+     * end a '/'.
+     */
+    public boolean getRedirectDirectories() {
+        return redirectDirectories;
+    }
+
+    /**
+     * Set the flag that indicates if we redirect to directories that don't
+     * end in a '/'.
+     */
+    public void setRedirectDirectories(boolean rd) {
+        redirectDirectories = rd;
+    }
 
     /**
      * Add a new host to the mapper.
@@ -570,6 +591,24 @@ public final class Mapper {
                     (path.getBuffer(), path.getStart(), path.getLength());
                 mappingData.wrapperPath.setChars
                     (path.getBuffer(), path.getStart(), path.getLength());
+            }
+            if( redirectDirectories ) {
+                char[] buf = path.getBuffer();
+                if( context.resources != null && buf[pathEnd -1 ] != '/') {
+                    Object file = null;
+                    try {
+                        file = context.resources.lookup(path.toString());
+                    } catch(NamingException nex) {
+                        // Swallow, since someone else handles the 404
+                    }
+                    if(file != null && file instanceof DirContext ) {
+                        CharChunk dirPath = path.getClone();
+                        dirPath.append('/');
+                        mappingData.redirectPath.setChars
+                            (dirPath.getBuffer(), dirPath.getStart(), 
+                             dirPath.getLength());
+                    }
+                }
             }
         }
 
