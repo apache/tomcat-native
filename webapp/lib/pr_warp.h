@@ -103,7 +103,7 @@ typedef struct warp_header {
 
 /* WARP definitions */
 #define VERS_MAJOR 0
-#define VERS_MINOR 9
+#define VERS_MINOR 10
 #include "pr_warp_defs.h"
 
 /* ************************************************************************* */
