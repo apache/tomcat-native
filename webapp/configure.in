@@ -248,8 +248,8 @@ then
   cd ${curdir}
 
   APR_INCDIR="${APR_SRCDIR}/include"
-  APR_LIBDIR="${APR_SRCDIR}/lib
-  APR_VARFIL="${APR_SRCDIR}/APRVARS
+  APR_LIBDIR="${APR_SRCDIR}/lib"
+  APR_VARFIL="${APR_SRCDIR}/APRVARS"
 fi
 
 
