@@ -279,9 +279,11 @@ static wa_warp_packet *wa_warp_recv(wa_warp_conn_config *c, int r) {
     // Read from the socket and fill the packet buffer
     while(TRUE) {
         p->len+=recv(c->sock,p->buf+p->len,(siz-p->len),0);
-        if (p->len<siz) fprintf(stderr,"SHORT len=%d siz=%d\n",p->len,siz);
-        if (p->len>siz) fprintf(stderr,"INCONSIST len=%d siz=%d\n",p->len,siz);
-        else {
+        if (p->len<siz) {
+            fprintf(stderr,"SHORT len=%d siz=%d\n",p->len,siz);
+        } else if (p->len>siz) {
+            fprintf(stderr,"INCONSIST len=%d siz=%d\n",p->len,siz);
+        } else {
             p->len=0;
             return(p);
         }
@@ -901,6 +903,7 @@ static void wa_warp_handle(wa_request *req) {
             buf1[x]='\0';
             x=wa_warp_packet_get_string(in,buf2,8192);
             buf2[x]='\0';
+            fprintf(stderr,"HEADER \"%s: %s\"\n",buf1,buf2);
             if (strcasecmp("Connection",buf1)!=0) {
                 wa_callback_setheader(req,buf1,buf2);
             }
