@@ -22,6 +22,8 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import org.apache.tomcat.util.compat.JdkCompat;
+
 /**
  * An internationalization / localization helper class which reduces
  * the bother of handling ResourceBundles and takes care of the
@@ -51,6 +53,7 @@ import java.util.ResourceBundle;
 
 public class StringManager {
 
+    private static JdkCompat jdkcompat = JdkCompat.getJdkCompat();
     /**
      * The ResourceBundle for this StringManager.
      */
@@ -154,7 +157,8 @@ public class StringManager {
                 }
             }
             if( value==null ) value=key;
-            iString = MessageFormat.format(value, nonNullArgs);
+	    MessageFormat mf = jdkcompat.getMessageFormat(value, bundle.getLocale());
+            iString = mf.format(nonNullArgs, new StringBuffer(), null).toString();
         } catch (IllegalArgumentException iae) {
             StringBuffer buf = new StringBuffer();
             buf.append(value);

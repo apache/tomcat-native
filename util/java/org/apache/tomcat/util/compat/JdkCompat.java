@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.Vector;
+import java.util.Locale;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.MessageFormat;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -222,4 +224,15 @@ public class JdkCompat {
     public void chainException(Throwable wrapper, Throwable wrapped) {
         // do nothing
     }
+
+    /**
+     * Obtain a MessageFormat for the correct pattern and Locale.
+     *
+     * @param pattern The pattern to format with.
+     * @param locale The Locale to use.
+     */
+    public MessageFormat getMessageFormat(String pattern, Locale locale) {
+        return new MessageFormat(pattern);
+    }
+
  }

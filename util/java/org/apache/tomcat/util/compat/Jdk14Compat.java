@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Locale;
+import java.text.MessageFormat;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -116,4 +118,7 @@ public class Jdk14Compat extends JdkCompat {
         wrapper.initCause(wrapped);
     }
 
+    public MessageFormat getMessageFormat(String pattern, Locale locale) {
+        return new MessageFormat(pattern, locale);
+    }
  }
