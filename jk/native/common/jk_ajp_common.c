@@ -1750,9 +1750,7 @@ int ajp_get_endpoint(jk_worker_t    *pThis,
             if (rc) {
                 unsigned i;
                 time_t now;
-                if (aw->socket_timeout > 0 || aw->cache_timeout) {
-                    now = time(NULL);
-                }
+                now = time(NULL);
                 for (i = 0 ; i < aw->ep_cache_sz ; i++) {
                     if (aw->ep_cache[i]) {
                         ae = aw->ep_cache[i];
@@ -1768,7 +1766,7 @@ int ajp_get_endpoint(jk_worker_t    *pThis,
                             if (elapsed > aw->cache_timeout) {
                                 jk_log(l, JK_LOG_DEBUG, 
                                     "In jk_endpoint_t::ajp_get_endpoint," 
-                                    " cleaning cache slot = %d elapsed %d\n",
+                                    " cleaning cache slot = %d elapsed %u\n",
                                      i, elapsed);
                                 ajp_close_endpoint(aw->ep_cache[i], l);
                                 aw->ep_cache[i] = NULL;
@@ -1784,7 +1782,7 @@ int ajp_get_endpoint(jk_worker_t    *pThis,
                         ae->last_access = now;
                         jk_log(l, JK_LOG_DEBUG,
                               "In jk_endpoint_t::ajp_get_endpoint, "
-                              "time elapsed since last request = %d seconds\n",
+                              "time elapsed since last request = %u seconds\n",
                                elapsed);
                         if (aw->socket_timeout > 0 &&
                             elapsed > aw->socket_timeout) {
