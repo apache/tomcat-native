@@ -112,7 +112,9 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *p,
     jk_worker_t *rc = NULL;
     double lb_min = 0.0;    
     int i;
-    char *session_route = jk2_requtil_getSessionRoute(env, s);
+    char *session_route;
+
+    session_route = jk2_requtil_getSessionRoute(env, s);
        
     if(session_route) {
         for(i = 0 ; i < p->num_of_workers ; i++) {
@@ -176,9 +178,16 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
     s->realWorker=NULL;
 
     while(1) {
-        jk_worker_t *rec = jk2_get_most_suitable_worker(env, w, s, attempt++);
+        jk_worker_t *rec;
         int rc;
 
+        if( w->num_of_workers==1 ) {
+            /* A single worker - no need to search */
+            rec=w->lb_workers[0];
+        } else {
+            rec=jk2_get_most_suitable_worker(env, w, s, attempt++);
+        }
+        
         s->is_recoverable_error = JK_FALSE;
 
         if(rec == NULL) {
@@ -233,6 +242,65 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
     return JK_FALSE;
 }
 
+/** Init internal structures.
+    Called any time the config changes
+*/
+static int JK_METHOD jk2_lb_initLbArray(jk_env_t *env, jk_worker_t *_this)
+{
+    int currentWorker=0;
+    int i;
+    _this->num_of_workers=_this->lbWorkerMap->size( env, _this->lbWorkerMap);
+
+    if( _this->lb_workers_size < _this->num_of_workers ) {
+        if( _this->lb_workers_size==0 ) {
+            _this->lb_workers_size=10;
+        } else {
+            _this->lb_workers_size = 2 * _this->lb_workers_size;
+        }
+        _this->lb_workers =
+            _this->pool->alloc(env, _this->pool, 
+                               _this->lb_workers_size * sizeof(jk_worker_t *));
+        if(!_this->lb_workers) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "lb_worker.validate(): OutOfMemoryException\n");
+            return JK_FALSE;
+        }
+    }    
+
+    for(i = 0 ; i < _this->num_of_workers ; i++) {
+        char *name = _this->lbWorkerMap->nameAt( env, _this->lbWorkerMap, i);
+        jk_worker_t *w= env->getByName( env, name );
+        if( w== NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "lb_worker.init(): no worker found %s\n", name);
+           _this->num_of_workers--;
+            continue;
+        }
+        
+        _this->lb_workers[currentWorker]=w;
+
+        if( _this->lb_workers[currentWorker]->lb_factor == 0 )
+            _this->lb_workers[currentWorker]->lb_factor = DEFAULT_LB_FACTOR;
+        
+        _this->lb_workers[currentWorker]->lb_factor =
+            1/ _this->lb_workers[currentWorker]->lb_factor;
+
+        /* 
+         * Allow using lb in fault-tolerant mode.
+         * Just set lbfactor in worker.properties to 0 to have 
+         * a worker used only when principal is down or session route
+         * point to it. Provided by Paul Frieden <pfrieden@dchain.com>
+         */
+        _this->lb_workers[currentWorker]->lb_value =
+            _this->lb_workers[currentWorker]->lb_factor;
+        _this->lb_workers[currentWorker]->in_error_state = JK_FALSE;
+        _this->lb_workers[currentWorker]->in_recovering  = JK_FALSE;
+
+        currentWorker++;
+    }
+    return JK_TRUE;
+}
+
 static int JK_METHOD jk2_lb_setProperty(jk_env_t *env, jk_bean_t *mbean, 
                                         char *name, void *valueP)
 {
@@ -257,62 +325,31 @@ static int JK_METHOD jk2_lb_setProperty(jk_env_t *env, jk_bean_t *mbean,
         for(i = 0 ; i < num_of_workers ; i++) {
             char *name = _this->pool->pstrdup(env, _this->pool, worker_names[i]);
             _this->lbWorkerMap->add(env, _this->lbWorkerMap, name, "");
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "lb_worker.setAttribute(): Adding %s %s\n", _this->mbean->name, name);
         }
+        jk2_lb_initLbArray( env, _this );
         return JK_TRUE;
     }
     return JK_FALSE;
 }
-    
+
+
 static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_worker_t *_this)
 {
     int err;
     char **worker_names;
     int i = 0;
-    int currentWorker=0;
     char *tmp;
 
     int num_of_workers=_this->lbWorkerMap->size( env, _this->lbWorkerMap);
-    _this->lb_workers =
-        _this->pool->alloc(env, _this->pool, 
-                           num_of_workers * sizeof(jk_worker_t *));
-    
-    if(!_this->lb_workers) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "lb_worker.validate(): OutOfMemoryException\n");
-        return JK_FALSE;
-    }
 
-    for(i = 0 ; i < num_of_workers ; i++) {
-        char *name = _this->lbWorkerMap->nameAt( env, _this->lbWorkerMap, i);
-        jk_worker_t *w= env->getByName( env, name );
-        if( w== NULL )
-            continue;
+    err=jk2_lb_initLbArray(env, _this );
+    if( err != JK_TRUE )
+        return err;
         
-        _this->lb_workers[currentWorker]=w;
-
-        if( _this->lb_workers[currentWorker]->lb_factor == 0 )
-            _this->lb_workers[currentWorker]->lb_factor = DEFAULT_LB_FACTOR;
-        
-        _this->lb_workers[currentWorker]->lb_factor =
-            1/ _this->lb_workers[currentWorker]->lb_factor;
-
-        /* 
-         * Allow using lb in fault-tolerant mode.
-         * Just set lbfactor in worker.properties to 0 to have 
-         * a worker used only when principal is down or session route
-         * point to it. Provided by Paul Frieden <pfrieden@dchain.com>
-         */
-        _this->lb_workers[currentWorker]->lb_value =
-            _this->lb_workers[currentWorker]->lb_factor;
-        _this->lb_workers[currentWorker]->in_error_state = JK_FALSE;
-        _this->lb_workers[currentWorker]->in_recovering  = JK_FALSE;
-        currentWorker++;
-    }
-    
-    _this->num_of_workers=currentWorker;
-
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "lb.validate() %s %d workers\n",
+                  "lb.init() %s %d workers\n",
                   _this->mbean->name, _this->num_of_workers );
 
     return JK_TRUE;
@@ -346,7 +383,7 @@ static int JK_METHOD jk2_lb_destroy(jk_env_t *env, jk_worker_t *w)
 int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
                                     jk_bean_t *result, char *type, char *name)
 {
-    jk_worker_t *_this;
+    jk_worker_t *w;
     
     if(NULL == name ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -354,28 +391,31 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
         return JK_FALSE;
     }
     
-    _this = (jk_worker_t *)pool->calloc(env, pool, sizeof(jk_worker_t));
+    w = (jk_worker_t *)pool->calloc(env, pool, sizeof(jk_worker_t));
 
-    if(_this==NULL) {
+    if(w==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "lb_worker.factory() OutOfMemoryException\n");
         return JK_FALSE;
     }
 
-    _this->pool=pool;
+    w->pool=pool;
 
-    _this->lb_workers = NULL;
-    _this->num_of_workers = 0;
-    _this->worker_private = NULL;
-    _this->init           = jk2_lb_init;
-    _this->destroy        = jk2_lb_destroy;
-    _this->service        = jk2_lb_service;
+    w->lb_workers = NULL;
+    w->num_of_workers = 0;
+    w->worker_private = NULL;
+    w->init           = jk2_lb_init;
+    w->destroy        = jk2_lb_destroy;
+    w->service        = jk2_lb_service;
    
-    jk2_map_default_create(env,&_this->lbWorkerMap, _this->pool);
+    jk2_map_default_create(env,&w->lbWorkerMap, w->pool);
 
-    result->setAttribute    = jk2_lb_setProperty;
-    result->object=_this;
-    _this->mbean=result;
+    result->setAttribute=jk2_lb_setProperty;
+    result->object=w;
+    w->mbean=result;
+
+    w->workerEnv=env->getByName( env, "workerEnv" );
+    w->workerEnv->addWorker( env, w->workerEnv, w );
     
     return JK_TRUE;
 }
