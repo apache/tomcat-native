@@ -110,11 +110,6 @@
 #define HUGE_BUFFER_SIZE (8*1024)
 #define LOG_LINE_SIZE    (1024)
 
-struct file_logger {
-    FILE *logfile;
-};
-typedef struct file_logger file_logger_t;
-
 /* 
  * define the log format, we're using by default the one from error.log 
  *

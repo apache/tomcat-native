@@ -72,6 +72,7 @@
 #include "apr_lib.h"
 #include "apr_date.h"
 #include "apr_file_info.h"
+#include "apr_file_io.h"
 #include "httpd.h"
 #include "http_config.h"
 #include "http_request.h"
@@ -109,6 +110,7 @@
 #include "jk_service.h"
 #include "jk_worker.h"
 #include "jk_uri_worker_map.h"
+#include "jk_logger.h"
 
 #define JK_WORKER_ID        ("jakarta.worker")
 #define JK_HANDLER          ("jakarta-servlet")
@@ -127,7 +129,6 @@
 /* module MODULE_VAR_EXPORT jk_module; */
 AP_MODULE_DECLARE_DATA module jk_module;
 
-
 typedef struct {
 
     /*
@@ -136,6 +137,7 @@ typedef struct {
     char *log_file;
     int  log_level;
     jk_logger_t *log;
+    apr_file_t *jklogfp;
 
     /*
      * Worker stuff
@@ -199,7 +201,7 @@ typedef struct apache_private_data apache_private_data_t;
 
 static jk_logger_t *     main_log = NULL;
 static jk_worker_env_t   worker_env;
-
+static apr_global_mutex_t *jk_log_lock = NULL;
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -313,8 +315,9 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
     int long rv = OK;
     if (rv = ap_change_request_body_xlate(p->r, 65535, 65535)) /* turn off request body translation*/
     {		 
-        ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
-                     NULL, "mod_jk: Error on ap_change_request_body_xlate, rc=%d \n", rv);
+        ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, NULL,
+                     "mod_jk: Error on ap_change_request_body_xlate, rc=%d \n",
+                     rv);
         return JK_FALSE;
     }
 #else
@@ -382,12 +385,12 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
 #ifdef AS400
             rc = ap_change_response_body_xlate(p->r, 65535, 65535); /* turn off response body translation*/
 	    if(rc){
-                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
-                             NULL, "mod_jk: Error on ap_change_response_body_xlate, rc=%d \n", rc);
-                 return JK_FALSE;	     
+                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, NULL,
+                             "mod_jk: Error on ap_change_response_body_xlate, rc=%d \n", rc);
+                 return JK_FALSE;
             }
 #endif
-            
+
             /* Debug - try to get around rwrite */
             while( ll > 0 ) {
                 size_t toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
@@ -858,9 +861,12 @@ static const char *jk_set_log_file(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    /* we need an absolut path */
-    conf->log_file = ap_server_root_relative(cmd->pool,log_file);
- 
+    /* we need an absolute path */
+    if (*log_file != '|' )
+        conf->log_file = ap_server_root_relative(cmd->pool,log_file);
+    else
+        conf->log_file = apr_pstrdup(cmd->pool, log_file);
+
     if (conf->log_file == NULL)
         return "JkLogFile file_name invalid";
 
@@ -971,7 +977,7 @@ static int request_log_transaction(request_rec *r,
     }
     *s = 0;
     
-    jk_log(conf->log ? conf->log : main_log, JK_LOG_REQUEST, str);
+    jk_log(main_log, JK_LOG_REQUEST, str);
 }
 
 /*****************************************************************
@@ -1651,7 +1657,6 @@ static int jk_handler(request_rec *r)
 {   
     const char       *worker_name;
     jk_server_conf_t *xconf;
-    jk_logger_t      *xl;
     jk_server_conf_t *conf;
     int              rc,dmt=1;
 
@@ -1672,7 +1677,6 @@ static int jk_handler(request_rec *r)
         return DECLINED;
 
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
-    xl = xconf->log ? xconf->log : main_log;
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
@@ -1690,22 +1694,21 @@ static int jk_handler(request_rec *r)
               I'm not sure how ). We also have a manual config directive that
               explicitely give control to us. */
           worker_name=  worker_env.first_worker;
-          jk_log(xl, JK_LOG_DEBUG, 
+          jk_log(main_log, JK_LOG_DEBUG, 
                  "Manual configuration for %s %s %d\n",
                  r->uri, worker_env.first_worker, worker_env.num_of_workers); 
       } else {
-          worker_name = map_uri_to_worker(xconf->uw_map, r->uri, 
-                                          xconf->log ? xconf->log : main_log);
+          worker_name = map_uri_to_worker(xconf->uw_map, r->uri, main_log);
           if( worker_name == NULL ) 
               worker_name=  worker_env.first_worker;
-          jk_log(xl, JK_LOG_DEBUG, 
+          jk_log(main_log, JK_LOG_DEBUG, 
                  "Manual configuration for %s %d\n",
                  r->uri, worker_env.first_worker); 
       }
     }
 
     if (1) {
-        jk_log(xl, JK_LOG_DEBUG, "Into handler r->proxyreq=%d "
+        jk_log(main_log, JK_LOG_DEBUG, "Into handler r->proxyreq=%d "
                "r->handler=%s r->notes=%d worker=%s\n", 
                r->proxyreq, r->handler, r->notes, worker_name); 
     }
@@ -1720,8 +1723,7 @@ static int jk_handler(request_rec *r)
 
     if(conf && ! worker_name ) {
         /* Direct mapping ( via setHandler ). Try overrides */
-        worker_name = map_uri_to_worker(conf->uw_map, r->uri, 
-                                        conf->log ? conf->log : main_log);
+        worker_name = map_uri_to_worker(conf->uw_map, r->uri, main_log);
         if( ! worker_name ) {
             /* Since we are here, an explicit (native) mapping has been used */
             /* Use default worker */
@@ -1733,9 +1735,7 @@ static int jk_handler(request_rec *r)
     }
       
     if(worker_name) {
-        jk_logger_t *l = conf->log ? conf->log : main_log;
-
-        jk_worker_t *worker = wc_get_worker_for_name(worker_name, l);
+        jk_worker_t *worker = wc_get_worker_for_name(worker_name, main_log);
 
         if(worker) {
         	struct timeval tv_begin,tv_end;
@@ -1775,18 +1775,18 @@ static int jk_handler(request_rec *r)
         
         apr_pool_userdata_get( (void **)&end, "jk_thread_endpoint", tpool );
         if(end==NULL ) {
-            worker->get_endpoint(worker, &end, l);
+            worker->get_endpoint(worker, &end, main_log);
             apr_pool_userdata_set( end , "jk_thread_endpoint", 
                                    &jk_cleanup_endpoint,  tpool );
         }
 #else */
         /* worker->get_endpoint might fail if we are out of memory so check */
         /* and handle it */
-        if (worker->get_endpoint(worker, &end, l))
+        if (worker->get_endpoint(worker, &end, main_log))
 /* #endif */
         {   
             int is_recoverable_error = JK_FALSE;
-                rc = end->service(end, &s, l, &is_recoverable_error);
+                rc = end->service(end, &s, main_log, &is_recoverable_error);
 
             if (s.content_read < s.content_length ||
                 (s.is_chunked && ! s.no_more_chunks)) {
@@ -1806,7 +1806,7 @@ static int jk_handler(request_rec *r)
             }
                                                                             
 /* #ifndef REUSE_WORKER */
-            end->done(&end, l); 
+            end->done(&end, main_log); 
 /* #endif */
                 }
                 else /* this means we couldn't get an endpoint */
@@ -2004,12 +2004,6 @@ static void *merge_jk_config(apr_pool_t *p,
                                                base->envvars);
     }
 
-    if(overrides->log_file && overrides->log_level >= 0) {
-        if(!jk_open_file_logger(&(overrides->log), overrides->log_file, 
-                                overrides->log_level)) {
-            overrides->log = NULL;
-        }
-    }
     if(!uri_worker_map_alloc(&(overrides->uw_map), 
                              overrides->uri_to_context, 
                              overrides->log)) {
@@ -2023,15 +2017,135 @@ static void *merge_jk_config(apr_pool_t *p,
     return overrides;
 }
 
+static int jk_log_to_file(jk_logger_t *l,
+                          int level,
+                          const char *what)
+{
+    if( l &&
+        (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
+        l->logger_private && what) {
+        unsigned sz = strlen(what);
+        unsigned wrote = sz;
+        char error[256];
+        if(sz) {
+            apr_status_t status;
+            file_logger_t *p = l->logger_private;
+            if(p->jklogfp) {
+                 apr_status_t rv;
+                 rv = apr_global_mutex_lock(jk_log_lock);
+                 if (rv != APR_SUCCESS) {           
+                     ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL,
+                                   "apr_global_mutex_lock(jk_log_lock) failed");
+                     /* XXX: Maybe this should be fatal? */
+                }
+                status = apr_file_write(p->jklogfp,what,&wrote);
+                if (status != APR_SUCCESS) {
+                    apr_strerror(status, error, 254);
+                    ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
+                             NULL, "mod_jk: jk_log_to_file failed: %s\n",error);
+                }
+                rv = apr_global_mutex_unlock(jk_log_lock);
+                if (rv != APR_SUCCESS) {           
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, NULL,
+                                  "apr_global_mutex_unlock(jk_log_lock) failed");
+                    /* XXX: Maybe this should be fatal? */
+                }
+            }
+        }
+
+        return JK_TRUE;
+    }
+
+    return JK_FALSE;
+}
+
+/*
+** +-------------------------------------------------------+
+** |                                                       |
+** |              jk logfile support                       |
+** |                                                       |
+** +-------------------------------------------------------+
+*/
+
+static void open_jklog(server_rec *s, apr_pool_t *p)
+{
+    jk_server_conf_t *conf;
+    const char *fname;
+    apr_status_t rc;
+    piped_log *pl;
+    jk_logger_t *jkl;
+    file_logger_t *flp;
+    int    jklog_flags = ( APR_WRITE | APR_APPEND | APR_CREATE );
+    apr_fileperms_t jklog_mode  = ( APR_UREAD | APR_UWRITE | APR_GREAD | APR_WREAD );
+
+    conf = ap_get_module_config(s->module_config, &jk_module);
+
+    if (main_log != NULL) {
+        conf->log = main_log;
+    }
+
+    if (conf->log_file == NULL) {
+        return;
+    }
+    if (*(conf->log_file) == '\0') {
+        return;
+    }
+
+    if (*conf->log_file == '|') {
+        if ((pl = ap_open_piped_log(p, conf->log_file+1)) == NULL) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+                         "mod_jk: could not open reliable pipe "
+                         "to jk log %s", conf->log_file+1);
+            exit(1);
+        }
+        conf->jklogfp = (void *)ap_piped_log_write_fd(pl);
+    }
+    else if (*conf->log_file != '\0') {
+        fname = ap_server_root_relative(p, conf->log_file);
+        if (!fname) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, APR_EBADPATH, s,
+                         "mod_jk: Invalid JkLog "
+                         "path %s", conf->log_file);
+            exit(1);
+        }
+        if ((rc = apr_file_open(&conf->jklogfp, fname,
+                                jklog_flags, jklog_mode, p))
+                != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
+                         "mod_jk: could not open JkLog "
+                         "file %s", fname);
+            exit(1);
+        }
+        apr_file_inherit_set(conf->jklogfp);
+    }
+    jkl = (jk_logger_t *)apr_palloc(p,sizeof(jk_logger_t));
+    flp = (file_logger_t *)apr_palloc(p,sizeof(file_logger_t));
+    if(jkl && flp) {                              
+        jkl->log = jk_log_to_file;              
+        jkl->level = conf->log_level;      
+        jkl->logger_private = flp; 
+        flp->jklogfp = conf->jklogfp;
+        conf->log = jkl;
+        if (main_log == NULL)
+            main_log = conf->log;
+        return;
+    }
+    if(jkl) {
+        free(jkl);
+    }
+    if(flp) {
+        free(flp);
+    }
+
+    exit(1);
+}
+
+
 /** Standard apache callback, initialize jk.
  */
 static void jk_child_init(apr_pool_t *pconf, 
               server_rec *s)
 {
-    jk_server_conf_t *conf =
-        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
-
-/*     init_jk( pconf, conf, s ); */
 }
 
 /** Initialize jk, using worker.properties. 
@@ -2047,15 +2161,6 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
     /*     jk_map_t *init_map = NULL; */
     jk_map_t *init_map = conf->worker_properties;
 
-   if(conf->log_file && conf->log_level >= 0) {
-        if(!jk_open_file_logger(&(conf->log), 
-                                conf->log_file, conf->log_level)) {
-            conf->log = NULL;
-        } else {
-            main_log = conf->log;
-        }
-    }
-    
     if(!uri_worker_map_alloc(&(conf->uw_map), 
                              conf->uri_to_context, conf->log)) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, pconf, "Memory error");
@@ -2064,9 +2169,10 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
     /*     if(map_alloc(&init_map)) { */
     if( ! map_read_properties(init_map, conf->worker_file)) {
         if( map_size( init_map ) == 0 ) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, APLOG_EMERG, 
-                         NULL, "No worker file and no worker options in httpd.conf \n"
-                          "use JkWorkerFile to set workers\n");
+            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO,
+                         APLOG_EMERG, NULL,
+                         "No worker file and no worker options in httpd.conf \n"
+                         "use JkWorkerFile to set workers\n");
             return;
         }
     }
@@ -2088,15 +2194,42 @@ static int jk_post_config(apr_pool_t *pconf,
                           apr_pool_t *ptemp, 
                           server_rec *s)
 {
+    apr_status_t rv;
+
     if(!s->is_virtual) {
         jk_server_conf_t *conf =
-            (jk_server_conf_t *)ap_get_module_config(s->module_config, 
+            (jk_server_conf_t *)ap_get_module_config(s->module_config,
                                                      &jk_module);
         if(!conf->was_initialized) {
-            conf->was_initialized = JK_TRUE;        
+            conf->was_initialized = JK_TRUE;
             init_jk( pconf, conf, s );
         }
     }
+
+    /* create the jk log lockfiles in the parent */
+    if ((rv = apr_global_mutex_create(&jk_log_lock, NULL,
+                                      APR_LOCK_DEFAULT, pconf)) != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+                     "mod_jk: could not create jk_log_lock");
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+#if APR_USE_SYSVSEM_SERIALIZE
+    rv = unixd_set_global_mutex_perms(jk_log_lock);
+    if (rv != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+                     "mod_jk: Could not set permissions on "
+                     "jk_log_lock; check User and Group directives");
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }      
+#endif     
+     
+    /* step through the servers and
+     * - open each jk logfile
+     */    
+    for (; s; s = s->next) {
+        open_jklog(s, pconf);
+    }      
     return OK;
 }
 
@@ -2121,8 +2254,7 @@ static int jk_translate(request_rec *r)
                        "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
-            worker = map_uri_to_worker(conf->uw_map, r->uri, 
-                                       conf->log ? conf->log : main_log);
+            worker = map_uri_to_worker(conf->uw_map, r->uri, main_log);
 
             if(worker) {
                 r->handler=apr_pstrdup(r->pool,JK_HANDLER);

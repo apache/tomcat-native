@@ -81,6 +81,13 @@ struct jk_logger {
 
 };
 
+struct file_logger {
+    FILE *logfile;
+    /* For Apache 2 APR piped logging */
+    void *jklogfp;
+};
+typedef struct file_logger file_logger_t;
+
 #define JK_LOG_DEBUG_LEVEL   0
 #define JK_LOG_INFO_LEVEL    1
 #define JK_LOG_ERROR_LEVEL   2
