@@ -173,21 +173,24 @@ static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
                 /* if that's all what that server wants to read, return... */
                 if (toread == rdlen) {
                     env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                                  "jk_ws_service_t::read buffer readed %d from already %d of total %d bytes\n",
-                                  toread, s->content_read, lpEcb->cbAvailable);    
+                                  "jk_ws_service_t::read buffer readed %d from already %d of initial %d bytes from %d\n",
+                                  toread, s->content_read, lpEcb->cbAvailable, lpEcb->cbTotalBytes);    
                     return JK_OK;
                 }
                 else {
                     /* Adjust the read buffer and length */
                     rdlen -= toread;
                     buff  += toread;
+                    env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                                  "jk_ws_service_t::read initial readed %d going to read %d\n",
+                                  toread, rdlen);    
                 }
             }
 
             /*
             * Now try to read from the client ...
             */
-            if (lpEcb->ReadClient(lpEcb->ConnID, b, &rdlen)) {
+            if (lpEcb->ReadClient(lpEcb->ConnID, buff, &rdlen)) {
                 *actually_read += rdlen;        
                  env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                                "jk_ws_service_t::read ReadClient readed %d (actually %d) bytes\n",
