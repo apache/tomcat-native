@@ -7,7 +7,7 @@
   <document href="jk/aphowto.xml"/>
   <document href="jk/iishowto.xml"/>
   <document href="jk/neshowto.xml"/>
-  <document href="jk/configjk.xml"/>
+  <document href="jk/domhowto.xml"/>
   <document href="jk2/configtc.xml"/>
   <document href="jk2/configweb.xml"/>
   <document href="faq.xml"/>
