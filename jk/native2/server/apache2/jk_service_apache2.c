@@ -92,7 +92,7 @@
 
 #include "jk_apache2.h"
 
-#define USE_APRTABLES 
+/* #define USE_APRTABLES  */
 
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
 
@@ -113,8 +113,31 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
     }
     r->status = s->status;
     r->status_line = apr_psprintf(r->pool, "%d %s", s->status, s->msg);
-
     headers=s->headers_out;
+
+#ifdef USE_APRTABLES
+    {
+        char *val= headers->get( env, headers, "Content-Type");
+        if( val!=NULL ) {
+            char *tmp = apr_pstrdup(r->pool, val);
+            ap_content_type_tolower(tmp); 
+            r->content_type = tmp;
+        }
+        val= headers->get( env, headers, "Last-Modified");
+        if( val!=NULL ) {
+            /*
+             * If the script gave us a Last-Modified header, we can't just
+             * pass it on blindly because of restrictions on future values.
+             */
+            ap_update_mtime(r, ap_parseHTTPdate(val));
+            ap_set_last_modified(r);
+        }
+
+        /* No other change required - headers is the same as req->headers_out,
+           just with a different interface
+        */
+    }
+#else
     numheaders = headers->size(env, headers);
     /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
@@ -124,7 +147,9 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
     for(h = 0 ; h < numheaders; h++) {
         char *name=headers->nameAt( env, headers, h );
         char *val=headers->valueAt( env, headers, h );
-
+        name=s->pool->pstrdup( env, s->pool, name );
+        val=s->pool->pstrdup( env, s->pool, val );
+        
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "service.head() %s: %s %d %d\n", name, val, h, headers->size( env, headers ));
 
@@ -156,7 +181,8 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
                apr_table_set(r->headers_out, name, val);
         }
     }
-
+#endif
+    
     /* this NOP function was removed in apache 2.0 alpha14 */
     /* ap_send_http_header(r); */
     s->response_started = JK_TRUE;
