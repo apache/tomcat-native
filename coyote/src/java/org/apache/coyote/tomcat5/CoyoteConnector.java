@@ -155,6 +155,12 @@ public final class CoyoteConnector
 
 
     /**
+     * Compression value.
+     */
+    private String compression = "off";
+
+
+    /**
      * The set of processors that have ever been created.
      */
     private Vector created = new Vector();
@@ -347,6 +353,29 @@ public final class CoyoteConnector
     public void setService(Service service) {
 
         this.service = service;
+
+    }
+
+
+    /**
+     * Get the value of compression.
+     */
+    public String getCompression() {
+
+        return (compression);
+
+    }
+
+
+    /**
+     * Set the value of compression.
+     * 
+     * @param compression The new compression value, which can be "on", "off"
+     * or "force"
+     */
+    public void setCompression(String compression) {
+
+        this.compression = compression;
 
     }
 
@@ -964,6 +993,8 @@ public final class CoyoteConnector
                                        "" + connectionTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "disableUploadTimeout", 
                                        "" + disableUploadTimeout);
+        IntrospectionUtils.setProperty(protocolHandler, "compression", 
+                                       compression);
         if (address != null) {
             IntrospectionUtils.setProperty(protocolHandler, "address", 
                                            address);

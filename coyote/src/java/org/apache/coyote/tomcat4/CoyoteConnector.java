@@ -259,13 +259,6 @@ public final class CoyoteConnector
      */
     private boolean secure = false;
 
-    /**
-     * Flag to disable setting a seperate time-out for uploads.
-     * If <code>true</code>, then the <code>timeout</code> parameter is
-     * ignored.  If <code>false</code>, then the <code>timeout</code>
-     * parameter is used to control uploads.
-     */
-    private boolean disableUploadTimeout = false;
 
     /**
      * The string manager for this package.
@@ -302,6 +295,21 @@ public final class CoyoteConnector
      * Use TCP no delay ?
      */
     private boolean tcpNoDelay = true;
+
+
+    /**
+     * Flag to disable setting a seperate time-out for uploads.
+     * If <code>true</code>, then the <code>timeout</code> parameter is
+     * ignored.  If <code>false</code>, then the <code>timeout</code>
+     * parameter is used to control uploads.
+     */
+    private boolean disableUploadTimeout = false;
+
+
+    /**
+     * Compression value.
+     */
+    private String compression = "off";
 
 
     /**
@@ -473,6 +481,29 @@ public final class CoyoteConnector
     public void setContainer(Container container) {
 
         this.container = container;
+
+    }
+
+
+    /**
+     * Get the value of compression.
+     */
+    public String getCompression() {
+
+        return (compression);
+
+    }
+
+
+    /**
+     * Set the value of compression.
+     * 
+     * @param compression The new compression value, which can be "on", "off"
+     * or "force"
+     */
+    public void setCompression(String compression) {
+
+        this.compression = compression;
 
     }
 
@@ -990,6 +1021,8 @@ public final class CoyoteConnector
                                        "" + connectionTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "disableUploadTimeout", 
                                        "" + disableUploadTimeout);
+        IntrospectionUtils.setProperty(protocolHandler, "compression", 
+                                       compression);
         if (address != null) {
             IntrospectionUtils.setProperty(protocolHandler, "address", 
                                            address);
