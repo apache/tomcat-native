@@ -114,6 +114,10 @@ public class JniHandler extends JkHandler {
         jkHome=s;
     }
 
+    public String getJkHome() {
+        return jkHome;
+    }
+
     /** You must call initNative() inside the component init()
      */
     public void init() throws IOException {
