@@ -99,7 +99,7 @@ static void jk_printf( jk_env_t *env, jk_buff_t *buf, char *fmt,... )
     va_end(vargs);
 
     buf->s->write( env, buf->s, buf->buf, strlen(buf->buf) );
-    fprintf(stderr, "Writing %d %s \n", ret, buf->buf);
+    /*fprintf(stderr, "Writing %d %s \n", ret, buf->buf); */
 }
 
 static void jk_worker_status_displayWorkers( jk_env_t *env, jk_buff_t *buf,
@@ -107,25 +107,39 @@ static void jk_worker_status_displayWorkers( jk_env_t *env, jk_buff_t *buf,
 {
     jk_map_t *map=wenv->worker_map;
     int i;
+    int count=map->size( env, map );
     
-    jk_printf(env, buf, "<H2>Workers</H2>\n" );
+    jk_printf(env, buf, "<H2>Active workers</H2>\n" );
     jk_printf(env, buf, "<table border>\n");
 
-    jk_printf(env, buf, "<tr><th>Name</th><th>Retries</th>"
-              "<th>Err</th><th>Recovery</th></tr>");
+    jk_printf(env, buf, "<tr><th>Name</th><th>Type</th>"
+              "<th>Channel</th><th>Route</th>"
+              "<th>Error state</th><th>Recovery</th>"
+              "<th>Endpoint cache</th></tr>");
     
-    for( i=0; i< map->size( env, map ) ; i++ ) {
+    for( i=0; i< count ; i++ ) {
         char *name=map->nameAt( env, map, i );
         jk_worker_t *worker=(jk_worker_t *)map->valueAt( env, map,i );
 
-        jk_printf(env, buf, "<tr id='worker.%s'>", name );
-        jk_printf(env, buf, "<td class='name'>%s</td>", name );
-        jk_printf(env, buf, "<td class='connect_retry'>%d</td>",
-                  worker->connect_retry_attempts );
+        jk_printf(env, buf, "<tr><td>%s</td>", name );
+        jk_printf(env, buf, "<td>%s</td>", worker->type );
+        if( worker->channel != NULL ) {
+            jk_printf(env, buf, "<td>%s</td>",worker->channel->name );
+        } else {
+            jk_printf(env, buf, "<td>&nbsp;</td>" );
+        }
+        if( worker->route != NULL ) {
+            jk_printf(env, buf, "<td>%s</td>",worker->route );
+        } else {
+            jk_printf(env, buf, "<td>&nbsp;</td>" );
+        }
         jk_printf(env, buf, "<td class='in_error'>%d</td>",
                   worker->in_error_state );
-        jk_printf(env, buf, "<td class='in_error'>%d</td>",
+        jk_printf(env, buf, "<td class='in_recovering'>%d</td>",
                   worker->in_recovering );
+        jk_printf(env, buf, "<td class='epCount'>%d</td>",
+                  ( worker->endpointCache == NULL ? 0 :
+                    worker->endpointCache->count ));
 
         /* Endpoint cache ? */
 
@@ -145,9 +159,6 @@ static void jk_worker_status_displayWorkerEnv( jk_env_t *env, jk_buff_t *buf,
     jk_printf(env, buf, "<H2>Worker Env Info</H2>\n");
 
     jk_printf(env, buf, "<table border>\n");
-    jk_printf(env, buf, "<tr><th>num_workers</th>"
-              "<td id='workersCount'>%d</td></tr>\n",
-              wenv->num_of_workers);        
     /* Could be modified dynamically */
     jk_printf(env, buf, "<tr><th>LogLevel</th>"
               "<td id='logLevel'>%d</td></tr>\n",
