@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <document>
 <properties>
-<title>AJPv14 Proposal</title>
+<title>AJPv13 extensions Proposal</title>
 <author email="hgomez@apache.org">Henri Gomez</author>
-<date>$Date$</date>
+<date>$Date: 2002/09/20 21:35:31 $</date>
 </properties>
 
 <section name="Introduction">
@@ -15,7 +15,7 @@ I'll not cover here the full protocol but only the add-on from ajp13.
 This nth pass include comments from the tomcat-dev list and
 misses discovered during developpment.
 </p>
-<subsection name="Missing features in AJPv13">
+<subsection name="Missing features in AJP13">
 <p>
 ajp13 is a good protocol to link a servlet engine like tomcat to a web server like Apache: 
 
@@ -69,11 +69,10 @@ But ajp13 lacks support for :
 </p>
 </subsection>
 
-<subsection name="AJPv14 add-ons to AJPv13">
+<subsection name="Proposed add-ons to AJP13">
 <p>
-Let's descrive here the features and add-on that will be added to AJP13, 
-which will became AJP14. Since this document is a proposal, a resonable level 
-of chaos must be expected at start.
+Let's descrive here the features and add-on that could be added to AJP13.
+Since this document is a proposal, a reasonable level of chaos must be expected at first.
 Be sure that discussion on tomcat list will help clarify points, add 
 features but the current list seems to be a 'minimun vital'
 
@@ -90,7 +89,7 @@ present in web server and servlet engine.
 
 <li>
 Basic protocol negociation, just to be sure that if functionnalities are added
-to AJP14 in the future, current implementations will still works.
+to AJP13 in the future, current implementations will still works.
 </li>
 
 <li>
@@ -139,7 +138,7 @@ The login command will contains basic protocol
 negociation information like compressing ability, 
 crypto, context info (at start up), context update at 
 run-time (up/down), level of SSL env vars, AJP protocol
-supported (AJP14/AJP15/AJP16...)
+level supported (level1/level2/level3...)
 
 The Web server info will contain web server info and
 connector name (ie Apache 1.3.26 + mod_ssl 2.8.8 + mod_jk 1.2.0 + mod_perl 1.25).
@@ -147,8 +146,8 @@ connector name (ie Apache 1.3.26 + mod_ssl 2.8.8 + mod_jk 1.2.0 + mod_perl 1.25)
 The servlet engine will mask the negociation mask with it's own
 mask (what it can do) and return it when loggin is accepted.
 
-This will help having a basic ajp14 implementation
-on a web-server working with a more advanced ajp14 on
+This will help having a basic AJP13 implementation (level 1)
+on a web-server working with a more advanced protocol handler on
 the servlet engine side or vice-versa.
 
 AJP13 was designed to be small and fast and so many
@@ -203,10 +202,10 @@ WEB SERVER INFO, SERVLET ENGINE INFO are CString.
 The secret key will be set by a new propertie in
 workers.properties : secretkey
 <source>
-worker.ajp14.port=8009
-worker.ajp14.host=localhost
-worker.ajp14.type=ajp14
-worker.ajp14.secretkey=myverysecretkey
+worker.ajp13.port=8009
+worker.ajp13.host=localhost
+worker.ajp13.type=ajp13
+worker.ajp13.secretkey=myverysecretkey
 </source>
 </p>
 </subsection>
@@ -248,9 +247,10 @@ FAILURE CODE is 32 bits long.
 <p>
 NOTA:
 
-While working on AJP14 in JK, I really discovered "JkEnvVar". 
+While working on AJP13 in JK, I really discovered "JkEnvVar". 
 The following "Extended Env Vars feature" description may not
-be implemented in AJP14 since allready available in AJP13.
+be implemented in extended AJP13 since allready available in original
+implementation.
 
 DESC:
 
@@ -321,7 +321,7 @@ JkExtVars S3 SSL_SESSION_ID     javax.servlet.request.ssl_session_id
 +----+-----------------------------------------+
 </source>
 
-During transmission in AJP14 we'll see attributes name
+During transmission in extended AJP13 we'll see attributes name
 containing S1, S2, S3 and attributes values of 
 2001/01/03, 2002/01/03, 0123AFE56.
  
@@ -413,7 +413,7 @@ In that case the servlet engine will send all contexts handled.
 <p>
 Context update are messages caming from the servlet engine each time a context 
 is desactivated/reactivated. The update will be in use when the directive JkUpdateMount.
-This directive will set the AJP14_CONTEXT_UPDATE_NEG flag.
+This directive will set the AJP13_CONTEXT_UPDATE_NEG flag.
 
 ie: JkUpdateMount myworker1
 
@@ -534,7 +534,7 @@ AJP HTTP-REPLY					(SERVLET->WEB)
 
 AJP END OF DISCUSSION			(SERVLET->WEB)
 						
----> AJP STATUS 				(SERVLET->WEB AJP14)
+---> AJP STATUS 				(SERVLET->WEB AJP13)
 </source>
 
 The AJP STATUS will not be read by the servlet engine at the end of 
@@ -569,7 +569,7 @@ STATUS CMD and STATUS DATA are one byte long.
 
 <section name="Conclusion">
 <p>
-The goal of the AJP14 protocol is to overcome some of the AJP13 limitation.
+The goal of the extended AJP13 protocol is to overcome some of the original AJP13 limitation.
 An easier configuration, a better support for large site and farm of Tomcat, 
 a simple authentification system and provision for protocol updates.
 
@@ -578,30 +578,30 @@ engine (java), it's a reasonable evolution of the well known ajp13.
 </p>
 </section>
 
-<section name="Commands and IDs in AJP14 Index">
+<section name="Commands and IDs in extended AJP13 Index">
 <p>
-Index of Commands and ID to be added in AJP14 Protocol
+Index of Commands and ID to be added in AJP13 Protocol
 </p>
 
 <subsection name="Commands IDs">
 <p>
 <table>
   <tr><th>Command Name</th><th>Command Number</th></tr>
-  <tr><td>AJP14_LOGINIT_CMD</td><td>0x10</td></tr>
-  <tr><td>AJP14_LOGSEED_CMD</td><td>0x11</td></tr>
-  <tr><td>AJP14_LOGCOMP_CMD</td><td>0x12</td></tr>
-  <tr><td>AJP14_LOGOK_CMD</td><td>0x13</td></tr>
-  <tr><td>AJP14_LOGNOK_CMD</td><td>0x14</td></tr>
-  <tr><td>AJP14_CONTEXT_QRY_CMD</td><td>0x15</td></tr>
-  <tr><td>AJP14_CONTEXT_INFO_CMD</td><td>0x16</td></tr>
-  <tr><td>AJP14_CONTEXT_UPDATE_CMD</td><td>0x17</td></tr>
-  <tr><td>AJP14_STATUS_CMD</td><td>0x18</td></tr>
-  <tr><td>AJP14_SHUTDOWN_CMD</td><td>0x19</td></tr>
-  <tr><td>AJP14_SHUTOK_CMD</td><td>0x1A</td></tr>
-  <tr><td>AJP14_SHUTNOK_CMD</td><td>0x1B</td></tr>
-  <tr><td>AJP14_CONTEXT_STATE_CMD</td><td>0x1C</td></tr>
-  <tr><td>AJP14_CONTEXT_STATE_REP_CMD</td><td>0x1D</td></tr>
-  <tr><td>AJP14_UNKNOW_PACKET_CMD</td><td>0x1E</td></tr>
+  <tr><td>AJP13_LOGINIT_CMD</td><td>0x10</td></tr>
+  <tr><td>AJP13_LOGSEED_CMD</td><td>0x11</td></tr>
+  <tr><td>AJP13_LOGCOMP_CMD</td><td>0x12</td></tr>
+  <tr><td>AJP13_LOGOK_CMD</td><td>0x13</td></tr>
+  <tr><td>AJP13_LOGNOK_CMD</td><td>0x14</td></tr>
+  <tr><td>AJP13_CONTEXT_QRY_CMD</td><td>0x15</td></tr>
+  <tr><td>AJP13_CONTEXT_INFO_CMD</td><td>0x16</td></tr>
+  <tr><td>AJP13_CONTEXT_UPDATE_CMD</td><td>0x17</td></tr>
+  <tr><td>AJP13_STATUS_CMD</td><td>0x18</td></tr>
+  <tr><td>AJP13_SHUTDOWN_CMD</td><td>0x19</td></tr>
+  <tr><td>AJP13_SHUTOK_CMD</td><td>0x1A</td></tr>
+  <tr><td>AJP13_SHUTNOK_CMD</td><td>0x1B</td></tr>
+  <tr><td>AJP13_CONTEXT_STATE_CMD</td><td>0x1C</td></tr>
+  <tr><td>AJP13_CONTEXT_STATE_REP_CMD</td><td>0x1D</td></tr>
+  <tr><td>AJP13_UNKNOW_PACKET_CMD</td><td>0x1E</td></tr>
 </table>
 
 </p>
@@ -611,24 +611,24 @@ Index of Commands and ID to be added in AJP14 Protocol
 <p>
 <table>
   <tr><th>Command Name</th><th>Number</th><th>Description</th></tr>
-  <tr><td>AJP14_CONTEXT_INFO_NEG</td><td>0x80000000</td><td>web-server want context info after login</td></tr>
-  <tr><td>AJP14_CONTEXT_UPDATE_NEG</td><td>0x40000000</td><td>web-server want context updates</td></tr>
-  <tr><td>AJP14_GZIP_STREAM_NEG</td><td>0x20000000</td><td>web-server want compressed stream</td></tr>
-  <tr><td>AJP14_DES56_STREAM_NEG</td><td>0x10000000</td><td>web-server want crypted DES56 stream with secret key</td></tr>
-  <tr><td>AJP14_SSL_VSERVER_NEG</td><td>0x08000000</td><td>Extended info on server SSL vars</td></tr>
-  <tr><td>AJP14_SSL_VCLIENT_NEG</td><td>0x04000000</td><td>Extended info on client SSL vars</td></tr>
-  <tr><td>AJP14_SSL_VCRYPTO_NEG</td><td>0x02000000</td><td>Extended info on crypto SSL vars</td></tr>
-  <tr><td>AJP14_SSL_VMISC_NEG</td><td>0x01000000</td><td>Extended info on misc SSL vars</td></tr>
+  <tr><td>AJP13_CONTEXT_INFO_NEG</td><td>0x80000000</td><td>web-server want context info after login</td></tr>
+  <tr><td>AJP13_CONTEXT_UPDATE_NEG</td><td>0x40000000</td><td>web-server want context updates</td></tr>
+  <tr><td>AJP13_GZIP_STREAM_NEG</td><td>0x20000000</td><td>web-server want compressed stream</td></tr>
+  <tr><td>AJP13_DES56_STREAM_NEG</td><td>0x10000000</td><td>web-server want crypted DES56 stream with secret key</td></tr>
+  <tr><td>AJP13_SSL_VSERVER_NEG</td><td>0x08000000</td><td>Extended info on server SSL vars</td></tr>
+  <tr><td>AJP13_SSL_VCLIENT_NEG</td><td>0x04000000</td><td>Extended info on client SSL vars</td></tr>
+  <tr><td>AJP13_SSL_VCRYPTO_NEG</td><td>0x02000000</td><td>Extended info on crypto SSL vars</td></tr>
+  <tr><td>AJP13_SSL_VMISC_NEG</td><td>0x01000000</td><td>Extended info on misc SSL vars</td></tr>
 </table>
 
 <br/>
 
 <table>
   <tr><th>Negociation ID</th><th>Number</th><th>Description</th></tr>
-  <tr><td>AJP14_PROTO_SUPPORT_AJPXX_NEG</td><td>0x00FF0000</td><td>mask of protocol supported</td></tr>
-  <tr><td>AJP14_PROTO_SUPPORT_AJP14_NEG</td><td>0x00010000</td><td>communication could use AJP14</td></tr>
-  <tr><td>AJP14_PROTO_SUPPORT_AJP15_NEG</td><td>0x00020000</td><td>communication could use AJP15</td></tr>
-  <tr><td>AJP14_PROTO_SUPPORT_AJP16_NEG</td><td>0x00040000</td><td>communication could use AJP16</td></tr>
+  <tr><td>AJP13_PROTO_SUPPORT_AJPXX_NEG</td><td>0x00FF0000</td><td>mask of protocol supported</td></tr>
+  <tr><td>AJP13_PROTO_SUPPORT_AJP13L1_NEG</td><td>0x00010000</td><td>communication could use AJP13 Level 1</td></tr>
+  <tr><td>AJP13_PROTO_SUPPORT_AJP13L2_NEG</td><td>0x00020000</td><td>communication could use AJP13 Level 2</td></tr>
+  <tr><td>AJP13_PROTO_SUPPORT_AJP13L3_NEG</td><td>0x00040000</td><td>communication could use AJP13 Level 3</td></tr>
 </table>
 
 <br/>
@@ -641,10 +641,10 @@ All others flags must be set to 0 since they are reserved for future use.
 <p>
 <table>
   <tr><th>Failure Id</th><th>Number</th></tr>
-  <tr><td>AJP14_BAD_KEY_ERR</td><td>0xFFFFFFFF</td></tr>
-  <tr><td>AJP14_ENGINE_DOWN_ERR</td><td>0xFFFFFFFE</td></tr>
-  <tr><td>AJP14_RETRY_LATER_ERR</td><td>0xFFFFFFFD</td></tr>
-  <tr><td>AJP14_SHUT_AUTHOR_FAILED_ERR</td><td>0xFFFFFFFC</td></tr>
+  <tr><td>AJP13_BAD_KEY_ERR</td><td>0xFFFFFFFF</td></tr>
+  <tr><td>AJP13_ENGINE_DOWN_ERR</td><td>0xFFFFFFFE</td></tr>
+  <tr><td>AJP13_RETRY_LATER_ERR</td><td>0xFFFFFFFD</td></tr>
+  <tr><td>AJP13_SHUT_AUTHOR_FAILED_ERR</td><td>0xFFFFFFFC</td></tr>
 </table>
 </p>
 </subsection>
@@ -653,9 +653,9 @@ All others flags must be set to 0 since they are reserved for future use.
 <p>
 <table>
   <tr><th>Failure Id</th><th>Number</th></tr>
-  <tr><td>AJP14_CONTEXT_DOWN</td><td>0x01</td></tr>
-  <tr><td>AJP14_CONTEXT_UP</td><td>0x02</td></tr>
-  <tr><td>AJP14_CONTEXT_OK</td><td>0x03</td></tr>
+  <tr><td>AJP13_CONTEXT_DOWN</td><td>0x01</td></tr>
+  <tr><td>AJP13_CONTEXT_UP</td><td>0x02</td></tr>
+  <tr><td>AJP13_CONTEXT_OK</td><td>0x03</td></tr>
 </table>
 </p>
 </subsection>
