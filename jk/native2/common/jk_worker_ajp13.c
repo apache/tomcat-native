@@ -626,6 +626,14 @@ jk2_worker_ajp13_service(jk_env_t *env, jk_worker_t *w,
     if  (err!=JK_OK)
       return err;
 
+    if (w->channel->status) {
+        err = w->channel->status(env, w->channel); 
+        if  (err!=JK_OK) {
+            jk2_worker_ajp13_done( env, w, e);
+            return err;
+        }
+    }
+
 #ifdef HAS_APR
     if( s->uriEnv!=NULL && s->uriEnv->timing == JK_TRUE ) {
         e->stats->startTime=s->startTime;
