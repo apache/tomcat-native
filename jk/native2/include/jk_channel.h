@@ -162,6 +162,10 @@ struct jk_channel {
                                   struct jk_endpoint *endpoint,
                                   struct jk_ws_service *r );
    
+    /** Obtain the channel status code
+     */
+    int (JK_METHOD *status)(struct jk_env *env, jk_channel_t *_this);
+
     void *_privatePtr;
 };
 
