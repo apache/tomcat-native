@@ -81,6 +81,8 @@ dnl package and version. (synchronization with common/jk_version.h ?)
 PACKAGE=mod_jk2
 VERSION=2.0.0
 
+AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
+
 AC_PROG_CC
 AC_PROG_LD
 
