@@ -151,7 +151,7 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                               "uriEnv.parseName() error compiling regexp %s\n",
                               uri);
-	            return JK_ERR;
+                return JK_ERR;
             }
             uriEnv->regexp = preg;
         }
@@ -284,7 +284,7 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
 }
 
 
-static int jk2_uriEnv_beanInit(jk_env_t *env, jk_bean_t *bean)
+static int JK_METHOD jk2_uriEnv_beanInit(jk_env_t *env, jk_bean_t *bean)
 {
     jk_uriEnv_t *uriEnv=bean->object;
     int res=JK_OK;
