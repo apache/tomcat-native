@@ -177,7 +177,7 @@ dnl New vars: TC4DIR
 dnl Upd vars: N/A
 dnl -------------------------------------------------------------------------
 AC_ARG_WITH(tomcat,
-  [  --with-tomcat[=DIR]     path of a Tomcat 4.0 distribution. (DIR defaults
+  [  --with-tomcat[=DIR]       path of a Tomcat 4.0 distribution. (DIR defaults
                           to \"/usr/local/tomcat\"). Not required and ignored
                           when the --enable-java option is not specified.],
   [
@@ -241,7 +241,7 @@ LOCAL_HEADER([API documentation generation])
 AC_MSG_CHECKING([for C API documentation])
 AC_ARG_ENABLE(apidocs-c,
   [  --enable-apidocs-c[=PERL]
-                          enbale generation of C API documentation using
+                          enable generation of C API documentation using
                           ScanDoc (PERL is the name of the Perl interpreter
                           used to run ScanDoc. If not specified this is
                           looked up in your current path).],
@@ -302,7 +302,7 @@ dnl -------------------------------------------------------------------------
 AC_MSG_CHECKING([for Java API documentation])
 AC_ARG_ENABLE(apidocs-java,
   [  --enable-apidocs-java[=JAVADOC]
-                          enbale generation of Java API documentation using
+                          enable generation of Java API documentation using
                           JavaDoc (If JAVADOC is not set its value will be
                           discovered by \"--enable-java\").],
   [
@@ -347,10 +347,10 @@ dnl New vars: N/A
 dnl Upd vars: APR_SRCDIR
 dnl --------------------------------------------------------------------------
 AC_ARG_WITH(apr,
-  [  --with-apr[=DIR]        path of an APR (Apache Portable Runtime) source
+  [  --with-apr[=DIR]          path of an APR (Apache Portable Runtime) source
                           distribution or CVS snapshot. (DIR defaults to
-                          \"./apr\"). Not required and ignored when the
-                          --with-apxs2 option is specified.],
+                          \"./apr\"). Not required and ignored when an
+                          Apache 2.0 apxs is specified (--with-apxs).],
   [
     case "${withval}" in
     ""|"yes"|"YES"|"true"|"TRUE")
@@ -382,7 +382,7 @@ dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 AC_MSG_CHECKING([for Apache apxs])
 AC_ARG_WITH(apxs,
-  [  --with-apxs[=FILE]      build a shared Apache module. If FILE was not
+  [  --with-apxs[=FILE]        build a shared Apache module. If FILE was not
                           specified, then APXS will be searched within the
                           current PATH. The Apache server version (1.3 or 2.0)
                           will be automatically detected.],
@@ -425,7 +425,7 @@ AC_ARG_WITH(apxs,
       dnl Upd vars: APR_CFGFLG APR_VARFIL APR_LIBDIR APR_INCDIR
       dnl -----------------------------------------------------
       MODULE="apache-2.0"
-      local_prefix="`apxs -q PREFIX`"
+      local_prefix="`${APXS} -q PREFIX`"
       APR_CFGFLG=""
       APR_VARFIL="${local_prefix}/lib/APRVARS"
       APR_LIBDIR="${local_prefix}/lib"

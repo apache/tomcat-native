@@ -107,6 +107,12 @@ apache-1.3-build:
 apache-1.3-clean:
 	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-1.3" MTGT="clean"
 
+apache-2.0-build:
+       @$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-2.0" MTGT="build"
+
+apache-2.0-clean:
+       @$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-2.0" MTGT="clean"
+
 template:
 	@ { \
 	    $(ECHO) "" ; \

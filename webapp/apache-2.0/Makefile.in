@@ -65,6 +65,7 @@ APXS =               @APXS@
 MODULE = mod_webapp.la
 
 all: $(MODULE)
+build: $(MODULE)
 
 mod_webapp.la: mod_webapp.c
 	@$(ECHO) Compiling and Linking Apache 2.0 WebApp Module
