@@ -67,10 +67,8 @@ import java.net.Socket;
 import java.util.Enumeration;
 import java.security.*;
 
-import org.apache.tomcat.util.http.MimeHeaders;
-import org.apache.tomcat.util.buf.MessageBytes;
-import org.apache.tomcat.util.http.HttpMessages;
-import org.apache.tomcat.util.buf.HexUtils;
+import org.apache.tomcat.util.http.*;
+import org.apache.tomcat.util.buf.*;
 
 
 /**
@@ -92,7 +90,7 @@ import org.apache.tomcat.util.buf.HexUtils;
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  */
-public class Ajp14 extends Ajp13
+public class Ajp14
 {
     // Original AJP13 commands    
     // Prefix codes for message types from server to container
@@ -207,12 +205,118 @@ public class Ajp14 extends Ajp13
     public static final byte AJP14_CONTEXT_DOWN       		 = 0x01;
     public static final byte AJP14_CONTEXT_UP         		 = 0x02;
     public static final byte AJP14_CONTEXT_OK         		 = 0x03;
+
     
+    public static final int MAX_PACKET_SIZE=8192;
+    public static final int H_SIZE=4;  // Size of basic packet header
+
+    public static final int  MAX_READ_SIZE = MAX_PACKET_SIZE - H_SIZE - 2;
+    public static final int  MAX_SEND_SIZE = MAX_PACKET_SIZE - H_SIZE - 4;
+
+    // Integer codes for common response header strings
+    public static final int SC_RESP_CONTENT_TYPE        = 0xA001;
+    public static final int SC_RESP_CONTENT_LANGUAGE    = 0xA002;
+    public static final int SC_RESP_CONTENT_LENGTH      = 0xA003;
+    public static final int SC_RESP_DATE                = 0xA004;
+    public static final int SC_RESP_LAST_MODIFIED       = 0xA005;
+    public static final int SC_RESP_LOCATION            = 0xA006;
+    public static final int SC_RESP_SET_COOKIE          = 0xA007;
+    public static final int SC_RESP_SET_COOKIE2         = 0xA008;
+    public static final int SC_RESP_SERVLET_ENGINE      = 0xA009;
+    public static final int SC_RESP_STATUS              = 0xA00A;
+    public static final int SC_RESP_WWW_AUTHENTICATE    = 0xA00B;
+	
+    // Integer codes for common (optional) request attribute names
+    public static final byte SC_A_CONTEXT       = 1;  // XXX Unused
+    public static final byte SC_A_SERVLET_PATH  = 2;  // XXX Unused
+    public static final byte SC_A_REMOTE_USER   = 3;
+    public static final byte SC_A_AUTH_TYPE     = 4;
+    public static final byte SC_A_QUERY_STRING  = 5;
+    public static final byte SC_A_JVM_ROUTE     = 6;
+    public static final byte SC_A_SSL_CERT      = 7;
+    public static final byte SC_A_SSL_CIPHER    = 8;
+    public static final byte SC_A_SSL_SESSION   = 9;
+
+    // Used for attributes which are not in the list above
+    public static final byte SC_A_REQ_ATTRIBUTE = 10; 
+
+    // Terminates list of attributes
+    public static final byte SC_A_ARE_DONE      = (byte)0xFF;
+    
+    // Translates integer codes to names of HTTP methods
+    public static final String []methodTransArray = {
+        "OPTIONS",
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "DELETE",
+        "TRACE",
+        "PROPFIND",
+        "PROPPATCH",
+        "MKCOL",
+        "COPY",
+        "MOVE",
+        "LOCK",
+        "UNLOCK",
+        "ACL"
+    };
+    
+    // id's for common request headers
+    public static final int SC_REQ_ACCEPT          = 1;
+    public static final int SC_REQ_ACCEPT_CHARSET  = 2;
+    public static final int SC_REQ_ACCEPT_ENCODING = 3;
+    public static final int SC_REQ_ACCEPT_LANGUAGE = 4;
+    public static final int SC_REQ_AUTHORIZATION   = 5;
+    public static final int SC_REQ_CONNECTION      = 6;
+    public static final int SC_REQ_CONTENT_TYPE    = 7;
+    public static final int SC_REQ_CONTENT_LENGTH  = 8;
+    public static final int SC_REQ_COOKIE          = 9;
+    public static final int SC_REQ_COOKIE2         = 10;
+    public static final int SC_REQ_HOST            = 11;
+    public static final int SC_REQ_PRAGMA          = 12;
+    public static final int SC_REQ_REFERER         = 13;
+    public static final int SC_REQ_USER_AGENT      = 14;
     // AJP14 new header
-    public static final byte SC_A_SSL_KEY_SIZE  = 11;
+    public static final byte SC_A_SSL_KEY_SIZE  = 11; // XXX ??? 
 
+    // Translates integer codes to request header names    
+    public static final String []headerTransArray = {
+        "accept",
+        "accept-charset",
+        "accept-encoding",
+        "accept-language",
+        "authorization",
+        "connection",
+        "content-type",
+        "content-length",
+        "cookie",
+        "cookie2",
+        "host",
+        "pragma",
+        "referer",
+        "user-agent"
+    };
+
+    
     // ============ Instance Properties ====================
+    // Ajp13
+    OutputStream out;
+    InputStream in;
 
+    // Buffer used of output body and headers
+    Ajp14Packet outBuf = new Ajp14Packet( MAX_PACKET_SIZE );
+    // Buffer used for input body
+    Ajp14Packet inBuf  = new Ajp14Packet( MAX_PACKET_SIZE );
+    // Buffer used for request head ( and headers )
+    Ajp14Packet hBuf=new Ajp14Packet( MAX_PACKET_SIZE );
+    
+    // Holds incoming reads of request body data (*not* header data)
+    byte []bodyBuff = new byte[MAX_READ_SIZE];
+    
+    int blen;  // Length of current chunk of body data in buffer
+    int pos;   // Current read position within that buffer
+    
     // AJP14 
     boolean logged = false;
     int	    webserverNegociation	= 0;
@@ -237,6 +341,30 @@ public class Ajp14 extends Ajp13
 	outBuf = new Ajp14Packet( MAX_PACKET_SIZE );
 	inBuf  = new Ajp14Packet( MAX_PACKET_SIZE );
 	hBuf   = new Ajp14Packet( MAX_PACKET_SIZE );
+    }
+
+    public void recycle() {
+        if (debug > 0) {
+            log("recycle()");
+        }
+
+        // This is a touch cargo-cultish, but I think wise.
+        blen = 0; 
+        pos = 0;
+    }
+    
+    /**
+     * Associate an open socket with this instance.
+     */
+    public void setSocket( Socket socket ) throws IOException {
+        if (debug > 0) {
+            log("setSocket()");
+        }
+        
+	socket.setSoLinger( true, 100);
+	out = socket.getOutputStream();
+	in  = socket.getInputStream();
+	pos = 0;
     }
 
     // -------------------- Parameters --------------------
@@ -288,7 +416,7 @@ public class Ajp14 extends Ajp13
      * if there were errors in the reading of the request, and -2 if the
      * server is asking the container to shut itself down.  
      */
-    public int receiveNextRequest(AjpRequest req) throws IOException 
+    public int receiveNextRequest(BaseRequest req) throws IOException 
     {
 	// XXX The return values are awful.
 	int err = receive(hBuf);
@@ -379,6 +507,184 @@ public class Ajp14 extends Ajp13
     }
 
     //-------------------- Implementation for various protocol commands --------------------
+
+    /**
+     * Try to decode Headers - AJP13 will do nothing but descendant will	
+     * override this method to handle new headers (ie SSL_KEY_SIZE in AJP14)
+     */
+    int decodeMoreHeaders(BaseRequest req, byte attribute, Ajp14Packet msg)
+    {
+	if (attribute == SC_A_SSL_KEY_SIZE) {
+	    req.setAttribute("javax.servlet.request.key_size", Integer.toString(msg.getInt()));
+	    return 200;
+	}
+	return 500; // Error
+    }
+    
+    /**
+     * Parse a FORWARD_REQUEST packet from the web server and store its
+     * properties in the passed-in request object.
+     *
+     * @param req An empty (newly-recycled) request object.
+     * @param msg Holds the packet which has just been sent by the web
+     * server, with its read position just past the packet header (which in
+     * this case includes the prefix code for FORWARD_REQUEST).
+     *
+     * @return 200 in case of a successful decoduing, 500 in case of error.  
+     */
+    protected int decodeRequest(BaseRequest req, Ajp14Packet msg)
+        throws IOException
+    {
+        
+        if (debug > 0) {
+            log("decodeRequest()");
+        }
+
+	// XXX Awful return values
+
+        boolean isSSL = false;
+
+        // Translate the HTTP method code to a String.
+        byte methodCode = msg.getByte();
+        req.method().setString(methodTransArray[(int)methodCode - 1]);
+
+        msg.getMessageBytes(req.protocol()); 
+        msg.getMessageBytes(req.requestURI());
+
+        msg.getMessageBytes(req.remoteAddr());
+        msg.getMessageBytes(req.remoteHost());
+        msg.getMessageBytes(req.serverName());
+        req.setServerPort(msg.getInt());
+
+	isSSL = msg.getBool();
+
+	// Decode headers
+	MimeHeaders headers = req.headers();
+	int hCount = msg.getInt();
+        for(int i = 0 ; i < hCount ; i++) {
+            String hName = null;
+
+	    // Header names are encoded as either an integer code starting
+	    // with 0xA0, or as a normal string (in which case the first
+	    // two bytes are the length).
+            int isc = msg.peekInt();
+            int hId = isc & 0xFF;
+
+	    MessageBytes vMB=null;
+            isc &= 0xFF00;
+            if(0xA000 == isc) {
+                msg.getInt(); // To advance the read position
+                hName = headerTransArray[hId - 1];
+		vMB= headers.addValue(hName);
+            } else {
+		// XXX Not very elegant
+		vMB = msg.addHeader(headers);
+		if (vMB == null) {
+                    return 500; // wrong packet
+                }
+            }
+
+            msg.getMessageBytes(vMB);
+
+            // set content length, if this is it...
+            if (hId == SC_REQ_CONTENT_LENGTH) {
+                int contentLength = (vMB == null) ? -1 : vMB.getInt();
+                req.setContentLength(contentLength);
+            } else if (hId == SC_REQ_CONTENT_TYPE) {
+                ByteChunk bchunk = vMB.getByteChunk();
+                req.contentType().setBytes(bchunk.getBytes(),
+                                           bchunk.getOffset(),
+                                           bchunk.getLength());
+            }
+        }
+
+	byte attributeCode;
+        for(attributeCode = msg.getByte() ;
+            attributeCode != SC_A_ARE_DONE ;
+            attributeCode = msg.getByte()) {
+            switch(attributeCode) {
+	    case SC_A_CONTEXT      :
+                break;
+		
+	    case SC_A_SERVLET_PATH :
+                break;
+		
+	    case SC_A_REMOTE_USER  :
+                msg.getMessageBytes(req.remoteUser());
+                break;
+		
+	    case SC_A_AUTH_TYPE    :
+                msg.getMessageBytes(req.authType());
+                break;
+		
+	    case SC_A_QUERY_STRING :
+		msg.getMessageBytes(req.queryString());
+                break;
+		
+	    case SC_A_JVM_ROUTE    :
+                msg.getMessageBytes(req.jvmRoute());
+                break;
+		
+	    case SC_A_SSL_CERT     :
+		isSSL = true;
+		req.setAttribute("javax.servlet.request.X509Certificate",
+				 msg.getString());
+                break;
+		
+	    case SC_A_SSL_CIPHER   :
+		isSSL = true;
+		req.setAttribute("javax.servlet.request.cipher_suite",
+				 msg.getString());
+                break;
+		
+	    case SC_A_SSL_SESSION  :
+		isSSL = true;
+		req.setAttribute("javax.servlet.request.ssl_session",
+				  msg.getString());
+                break;
+		
+	    case SC_A_REQ_ATTRIBUTE :
+		req.setAttribute(msg.getString(), 
+				 msg.getString());
+                break;
+
+	    default:
+		if (decodeMoreHeaders(req, attributeCode, msg) != 500)
+		    break;
+
+		return 500;
+            }
+        }
+
+        if(isSSL) {
+            req.setScheme(req.SCHEME_HTTPS);
+            req.setSecure(true);
+        }
+
+        // set cookies on request now that we have all headers
+        req.cookies().setHeaders(req.headers());
+
+	// Check to see if there should be a body packet coming along
+	// immediately after
+    	if(req.getContentLength() > 0) {
+
+	    /* Read present data */
+	    int err = receive(inBuf);
+            if(err < 0) {
+            	return 500;
+	    }
+	    
+	    blen = inBuf.peekInt();
+	    pos = 0;
+	    inBuf.getBytes(bodyBuff);
+    	}
+    
+        if (debug > 5) {
+            log(req.toString());
+        }
+
+        return 200; // Success
+    }
     
     /**
      * Handle the Initial Login Message from Web-Server
@@ -388,7 +694,7 @@ public class Ajp14 extends Ajp13
      * 
 	 * Send Login Seed (MD5 of seed)
 	 */
-    private int handleLogInit( Ajp13Packet msg ) throws IOException
+    private int handleLogInit( Ajp14Packet msg ) throws IOException
     {
 	webserverNegociation = msg.getLongInt();
 	webserverName 		 = msg.getString();
@@ -413,7 +719,7 @@ public class Ajp14 extends Ajp13
      * If the authentification is valid send back LogOk
      * If the authentification failed send back LogNok
      */
-    private int handleLogComp( Ajp13Packet msg ) throws IOException
+    private int handleLogComp( Ajp14Packet msg ) throws IOException
     {
 	// log("in handleLogComp :");
 	
@@ -461,50 +767,356 @@ public class Ajp14 extends Ajp13
 	return (304);
     }
 
-    private int handleContextQuery( Ajp13Packet msg ) throws IOException
+    private int handleContextQuery( Ajp14Packet msg ) throws IOException
     {
 	log("in handleContextQuery :");
 	return (304);
     }
     
-    private int handleStatus( Ajp13Packet msg ) throws IOException
+    private int handleStatus( Ajp14Packet msg ) throws IOException
     {
 	log("in handleStatus :");
 	return (304);
     }
 
-    private int handleShutdown( Ajp13Packet msg ) throws IOException
+    private int handleShutdown( Ajp14Packet msg ) throws IOException
     {
 	log("in handleShutdown :");
 	return (304);
     }
     
-    private int handleContextState( Ajp13Packet msg ) throws IOException
+    private int handleContextState( Ajp14Packet msg ) throws IOException
     {
 	log("in handleContextState :");
 	return (304);
     }
     
-    private int handleUnknowPacket( Ajp13Packet msg ) throws IOException
+    private int handleUnknowPacket( Ajp14Packet msg ) throws IOException
     {
 	log("in handleUnknowPacket :");
 	return (304);
     }
 
-    int decodeMoreHeaders(AjpRequest req, byte attribute, Ajp13Packet msg)
-    {
-	if (attribute == SC_A_SSL_KEY_SIZE) {
-	    req.setAttribute("javax.servlet.request.key_size", Integer.toString(msg.getInt()));
-	    return 200;
-	}
-	return 500; // Error
+    // ==================== Servlet Input Support =================
+
+    public int available() throws IOException {
+        if (debug > 0) {
+            log("available()");
+        }
+
+        if (pos >= blen) {
+            if( ! refillReadBuffer()) {
+		return 0;
+	    }
+        }
+        return blen - pos;
     }
 
+    /**
+     * Return the next byte of request body data (to a servlet).
+     *
+     * @see Request#doRead
+     */
+    public int doRead() throws IOException 
+    {
+        if (debug > 0) {
+            log("doRead()");
+        }
+
+        if(pos >= blen) {
+            if( ! refillReadBuffer()) {
+		return -1;
+	    }
+        }
+        return (char) bodyBuff[pos++];
+    }
+    
+    /**
+     * Store a chunk of request data into the passed-in byte buffer.
+     *
+     * @param b A buffer to fill with data from the request.
+     * @param off The offset in the buffer at which to start filling.
+     * @param len The number of bytes to copy into the buffer.
+     *
+     * @return The number of bytes actually copied into the buffer, or -1
+     * if the end of the stream has been reached.
+     *
+     * @see Request#doRead
+     */
+    public int doRead(byte[] b, int off, int len) throws IOException 
+    {
+        if (debug > 0) {
+            log("doRead(byte[], int, int)");
+        }
+
+	if(pos >= blen) {
+	    if( ! refillReadBuffer()) {
+		return -1;
+	    }
+	}
+
+	if(pos + len <= blen) { // Fear the off by one error
+	    // Sanity check b.length > off + len?
+	    System.arraycopy(bodyBuff, pos, b, off, len);
+	    pos += len;
+	    return len;
+	}
+
+	// Not enough data (blen < pos + len)
+	int toCopy = len;
+	while(toCopy > 0) {
+	    int bytesRemaining = blen - pos;
+	    if(bytesRemaining < 0) 
+		bytesRemaining = 0;
+	    int c = bytesRemaining < toCopy ? bytesRemaining : toCopy;
+
+	    System.arraycopy(bodyBuff, pos, b, off, c);
+
+	    toCopy    -= c;
+
+	    off       += c;
+	    pos       += c; // In case we exactly consume the buffer
+
+	    if(toCopy > 0) 
+		if( ! refillReadBuffer()) { // Resets blen and pos
+		    break;
+		}
+	}
+
+	return len - toCopy;
+    }
+    
+    /**
+     * Get more request body data from the web server and store it in the 
+     * internal buffer.
+     *
+     * @return true if there is more data, false if not.    
+     */
+    private boolean refillReadBuffer() throws IOException 
+    {
+        if (debug > 0) {
+            log("refillReadBuffer()");
+        }
+
+	// If the server returns an empty packet, assume that that end of
+	// the stream has been reached (yuck -- fix protocol??).
+
+	// Why not use outBuf??
+	inBuf.reset();
+	inBuf.appendByte(JK_AJP13_GET_BODY_CHUNK);
+	inBuf.appendInt(MAX_READ_SIZE);
+	send(inBuf);
+	
+	int err = receive(inBuf);
+        if(err < 0) {
+	    throw new IOException();
+	}
+	
+    	blen = inBuf.peekInt();
+    	pos = 0;
+    	inBuf.getBytes(bodyBuff);
+
+	return (blen > 0);
+    }    
+
+    // ==================== Servlet Output Support =================
+    
+    /**
+     */
+    public void beginSendHeaders(int status,
+                                 String statusMessage,
+                                 int numHeaders) throws IOException {
+
+        if (debug > 0) {
+            log("sendHeaders()");
+        }
+
+	// XXX if more headers that MAX_SIZE, send 2 packets!
+
+	outBuf.reset();
+        outBuf.appendByte(JK_AJP13_SEND_HEADERS);
+
+        if (debug > 0) {
+            log("status is:  " + status +
+                       "(" + statusMessage + ")");
+        }
+
+        // set status code and message
+        outBuf.appendInt(status);
+        outBuf.appendString(statusMessage);
+
+        // write the number of headers...
+        outBuf.appendInt(numHeaders);
+    }
+
+    public void sendHeader(String name, String value) throws IOException {
+        int sc = headerNameToSc(name);
+        if(-1 != sc) {
+            outBuf.appendInt(sc);
+        } else {
+            outBuf.appendString(name);
+        }
+        outBuf.appendString(value);
+    }
+
+    public void endSendHeaders() throws IOException {
+        outBuf.end();
+        send(outBuf);
+    }
+
+    /**
+     * Send the HTTP headers back to the web server and on to the browser.
+     *
+     * @param status The HTTP status code to send.
+     * @param headers The set of all headers.
+     */
+    public void sendHeaders(int status, MimeHeaders headers)
+        throws IOException {
+        sendHeaders(status, HttpMessages.getMessage(status), headers);
+    }
+    
+    /**
+     * Send the HTTP headers back to the web server and on to the browser.
+     *
+     * @param status The HTTP status code to send.
+     * @param statusMessage the HTTP status message to send.
+     * @param headers The set of all headers.
+     */
+    public void sendHeaders(int status, String statusMessage, MimeHeaders headers)
+        throws IOException {
+	// XXX if more headers that MAX_SIZE, send 2 packets!
+
+	outBuf.reset();
+        outBuf.appendByte(JK_AJP13_SEND_HEADERS);
+        outBuf.appendInt(status);
+	
+	outBuf.appendString(statusMessage);
+        
+	int numHeaders = headers.size();
+        outBuf.appendInt(numHeaders);
+        
+	for( int i=0 ; i < numHeaders ; i++ ) {
+	    String headerName = headers.getName(i).toString();
+	    int sc = headerNameToSc(headerName);
+            if(-1 != sc) {
+                outBuf.appendInt(sc);
+            } else {
+                outBuf.appendString(headerName);
+            }
+            outBuf.appendString(headers.getValue(i).toString() );
+        }
+
+        outBuf.end();
+        send(outBuf);
+    } 
+
+
+    /**
+     * Translate an HTTP response header name to an integer code if
+     * possible.  Case is ignored.
+     * 
+     * @param name The name of the response header to translate.
+     *
+     * @return The code for that header name, or -1 if no code exists.
+     */
+    protected int headerNameToSc(String name)
+    {       
+        switch(name.charAt(0)) {
+	case 'c':
+	case 'C':
+	    if(name.equalsIgnoreCase("Content-Type")) {
+		return SC_RESP_CONTENT_TYPE;
+	    } else if(name.equalsIgnoreCase("Content-Language")) {
+		return SC_RESP_CONTENT_LANGUAGE;
+	    } else if(name.equalsIgnoreCase("Content-Length")) {
+		return SC_RESP_CONTENT_LENGTH;
+	    }
+            break;
+            
+	case 'd':
+	case 'D':
+	    if(name.equalsIgnoreCase("Date")) {
+                return SC_RESP_DATE;
+	    }
+            break;
+            
+	case 'l':
+	case 'L':
+	    if(name.equalsIgnoreCase("Last-Modified")) {
+		return SC_RESP_LAST_MODIFIED;
+	    } else if(name.equalsIgnoreCase("Location")) {
+		return SC_RESP_LOCATION;
+	    }
+            break;
+
+	case 's':
+	case 'S':
+	    if(name.equalsIgnoreCase("Set-Cookie")) {
+		return SC_RESP_SET_COOKIE;
+	    } else if(name.equalsIgnoreCase("Set-Cookie2")) {
+		return SC_RESP_SET_COOKIE2;
+	    }
+            break;
+            
+	case 'w':
+	case 'W':
+	    if(name.equalsIgnoreCase("WWW-Authenticate")) {
+		return SC_RESP_WWW_AUTHENTICATE;
+	    }
+            break;          
+        }
+        
+        return -1;
+    }
+
+    
+    /**
+     * Signal the web server that the servlet has finished handling this
+     * request, and that the connection can be reused.
+     */
+    public void finish() throws IOException {
+        if (debug > 0) {
+            log("finish()");
+        }
+
+	outBuf.reset();
+        outBuf.appendByte(JK_AJP13_END_RESPONSE);
+        outBuf.appendBool(true); // Reuse this connection
+        outBuf.end();
+        send(outBuf);
+    }
+
+    /**
+     * Send a chunk of response body data to the web server and on to the
+     * browser.
+     *
+     * @param b A huffer of bytes to send.
+     * @param off The offset into the buffer from which to start sending.
+     * @param len The number of bytes to send.
+     */    
+    public void doWrite(byte b[], int off, int len) throws IOException {
+        if (debug > 0) {
+            log("doWrite(byte[], " + off + ", " + len + ")");
+        }
+
+	int sent = 0;
+	while(sent < len) {
+	    int to_send = len - sent;
+	    to_send = to_send > MAX_SEND_SIZE ? MAX_SEND_SIZE : to_send;
+
+	    outBuf.reset();
+	    outBuf.appendByte(JK_AJP13_SEND_BODY_CHUNK);	        	
+	    outBuf.appendBytes(b, off + sent, to_send);	        
+	    send(outBuf);
+	    sent += to_send;
+	}
+    }
+    
     // ========= Internal Packet-Handling Methods =================
 
     /**
      * Read in a packet from the web server and store it in the passed-in
-     * <CODE>Ajp13Packet</CODE> object.
+     * <CODE>Ajp14Packet</CODE> object.
      *
      * @param msg The object into which to store the incoming packet -- any
      * current contents will be overwritten.
@@ -512,7 +1124,7 @@ public class Ajp14 extends Ajp13
      * @return The number of bytes read on a successful read or -1 if there 
      * was an error.
      **/
-    public int receive(Ajp13Packet msg) throws IOException {
+    public int receive(Ajp14Packet msg) throws IOException {
 	// XXX If the length in the packet header doesn't agree with the
 	// actual number of bytes read, it should probably return an error
 	// value.  Also, callers of this method never use the length
@@ -525,9 +1137,10 @@ public class Ajp14 extends Ajp13
 	    if( debug > 5 ) log( "Error reading " + rd );
 	    return rd; 
 	}
-	if( debug > 5 ) log( "Read " + rd );
 	
 	int len = msg.checkIn();
+
+	if( debug > 5 ) log( "Received " + rd + " " + len + " " + b[0] );
 	
 	// XXX check if enough space - it's assert()-ed !!!
 
@@ -542,6 +1155,7 @@ public class Ajp14 extends Ajp13
 	    }
      	    total_read += rd;
 	}
+	if( debug > 10 ) log( "Received total:  " + total_read );
 	return total_read;
     }
 
@@ -551,10 +1165,11 @@ public class Ajp14 extends Ajp13
      * @param msg A packet with accumulated data to send to the server --
      * this method will write out the length in the header.  
      */
-    protected void send( Ajp13Packet msg ) throws IOException {
+    protected void send( Ajp14Packet msg ) throws IOException {
 	msg.end(); // Write the packet header
 	byte b[] = msg.getBuff();
 	int len  = msg.getLen();
+        if (debug > 5 ) log("send() " + len + " " + b[0] );
 	out.write( b, 0, len );
     }
 	
@@ -566,6 +1181,8 @@ public class Ajp14 extends Ajp13
      * @see Ajp14Interceptor#processConnection
      */
     public void close() throws IOException {
+        if (debug > 0) log("close()");
+
 	if(null != out) {        
 	    out.close();
 	}

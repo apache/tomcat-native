@@ -163,7 +163,7 @@ public class Ajp14Interceptor extends PoolTcpConnector
 	Ajp14 ajp14=new Ajp14();
 	ajp14.setContainerSignature( ContextManager.TOMCAT_NAME +
 				     " v" + ContextManager.TOMCAT_VERSION);
-	AjpRequest ajpreq=new AjpRequest();
+	BaseRequest ajpreq=new BaseRequest();
 	log( "Setting pass " + password );
 	ajp14.setPassword( password );
 	req=new Ajp14Request(ajp14, ajpreq);
@@ -186,7 +186,7 @@ public class Ajp14Interceptor extends PoolTcpConnector
             Ajp14Request req=initRequest( thData );
             Ajp14Response res= (Ajp14Response)req.getResponse();
             Ajp14 ajp14=req.ajp14;
-	    AjpRequest ajpReq=req.ajpReq;
+	    BaseRequest ajpReq=req.ajpReq;
 
             ajp14.setSocket(socket);
 
@@ -279,18 +279,18 @@ public class Ajp14Interceptor extends PoolTcpConnector
 class Ajp14Request extends Request 
 {
     Ajp14 ajp14;
-    AjpRequest ajpReq;
+    BaseRequest ajpReq;
     
-    public Ajp14Request(Ajp14 ajp14, AjpRequest ajpReq) 
+    public Ajp14Request(Ajp14 ajp14, BaseRequest ajpReq) 
     {
-	headers = ajpReq.getHeaders();
-	methodMB=ajpReq.getMethod();
-	protoMB=ajpReq.getProtocol();
-	uriMB = ajpReq.getRequestURI();
-	queryMB = ajpReq.getQueryString();
-	remoteAddrMB = ajpReq.getRemoteAddr();
-	remoteHostMB = ajpReq.getRemoteHost();
-	serverNameMB = ajpReq.getServerName();
+	headers = ajpReq.headers();
+	methodMB=ajpReq.method();
+	protoMB=ajpReq.protocol();
+	uriMB = ajpReq.requestURI();
+	queryMB = ajpReq.queryString();
+	remoteAddrMB = ajpReq.remoteAddr();
+	remoteHostMB = ajpReq.remoteHost();
+	serverNameMB = ajpReq.serverName();
 
 	// XXX sync cookies 
 	scookies = new Cookies( headers );
@@ -308,7 +308,7 @@ class Ajp14Request extends Request
     }
 
     // -------------------- Wrappers for changed method names, and to use the buffers
-    // XXX Move AjpRequest into util !!! ( it's just a stuct with some MessageBytes )
+    // XXX Move BaseRequest into util !!! ( it's just a stuct with some MessageBytes )
 
     public int getServerPort() {
         return ajpReq.getServerPort();
@@ -320,30 +320,30 @@ class Ajp14Request extends Request
 
     public  void setRemoteUser( String s ) {
 	super.setRemoteUser(s);
-	ajpReq.getRemoteUser().setString(s);
+	ajpReq.remoteUser().setString(s);
     }
 
     public String getRemoteUser() {
-	String s=ajpReq.getRemoteUser().toString();
+	String s=ajpReq.remoteUser().toString();
 	if( s == null )
 	    s=super.getRemoteUser();
 	return s;
     }
 
     public String getAuthType() {
-	return ajpReq.getAuthType().toString();
+	return ajpReq.authType().toString();
     }
     
     public void setAuthType(String s ) {
-	ajpReq.getAuthType().setString(s);
+	ajpReq.authType().setString(s);
     }
 
     public String getJvmRoute() {
-	return ajpReq.getJvmRoute().toString();
+	return ajpReq.jvmRoute().toString();
     }
     
     public void setJvmRoute(String s ) {
-	ajpReq.getJvmRoute().setString(s);
+	ajpReq.jvmRoute().setString(s);
     }
 
     // XXX scheme
