@@ -86,8 +86,14 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
             snprintf( shmName, 128, "epStat.%d", wEnv->childId );
             
             wEnv->epStat=wEnv->shm->createSlot( env, wEnv->shm, shmName, 8096 );
+            if (wEnv->epStat==NULL) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "workerEnv.init() create slot %s failed\n",  shmName );
+                return JK_ERR;
+            }
             wEnv->epStat->structCnt=0;
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create slot %s\n",  shmName );
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "workerEnv.init() create slot %s\n",  shmName );
         }
     }
 
