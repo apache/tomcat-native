@@ -265,9 +265,14 @@ public abstract class JSSESocketFactory
     protected KeyStore getTrustStore(String keystoreType) throws IOException {
         KeyStore trustStore = null;
 
-        String trustStoreFile = System.getProperty("javax.net.ssl.trustStore");
-        String trustStorePassword =
-            System.getProperty("javax.net.ssl.trustStorePassword");
+        String trustStoreFile = (String)attributes.get("truststoreFile");
+	if(trustStoreFile == null) {
+	    trustStoreFile = System.getProperty("javax.net.ssl.trustStore");
+	}
+        String trustStorePassword = (String)attributes.get("truststorePass");
+	if( trustStorePassword == null) {
+            trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
+	}
         if (trustStoreFile != null && trustStorePassword != null){
             trustStore = getStore(keystoreType, trustStoreFile,
                                   trustStorePassword);
