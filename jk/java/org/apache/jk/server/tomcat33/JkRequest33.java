@@ -111,7 +111,7 @@ class JkRequest33 extends Request
         this.ep=ep;
     }
     
-    // -------------------- Wrappers for changed method names, and to use the buffers
+    // -------------------- Wrappers for changed method names
 
     public int getServerPort() {
         return ajpReq.getServerPort();

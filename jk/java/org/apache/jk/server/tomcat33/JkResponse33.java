@@ -66,6 +66,7 @@ import java.util.*;
 import org.apache.jk.*;
 import org.apache.jk.core.*;
 import org.apache.jk.common.*;
+import org.apache.jk.util.*;
 import org.apache.tomcat.modules.server.PoolTcpConnector;
 
 import org.apache.tomcat.core.*;
@@ -145,7 +146,7 @@ class JkResponse33 extends Response
             c2b.convert( hV );
             msg.appendBytes( hV );
         }
-        msg.send( ch, ep );
+        ch.send( msg, ep );
         if( dL > 0 ) d("Sending head");
     } 
 
@@ -161,7 +162,7 @@ class JkResponse33 extends Response
             msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
             msg.appendInt( 1 );
             
-            msg.send(ch, ep );
+            ch.send(msg, ep );
             if( dL > 0 ) d( "sending end message " );
 	}
     }
@@ -173,7 +174,7 @@ class JkResponse33 extends Response
         msg.reset();
         msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
         msg.appendBytes( b, off, len );
-        msg.send( ch, ep );
+        ch.send( msg, ep );
         if( dL > 0 ) d( "sending block " + len );
     }
 

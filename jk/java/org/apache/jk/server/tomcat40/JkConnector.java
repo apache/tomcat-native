@@ -92,6 +92,8 @@ public final class JkConnector
     private boolean stopped = false;
     private Service service = null;
 
+    JkMain jkMain=new JkMain();
+
 
     // ------------------------------------------------------------- Properties
 
@@ -135,12 +137,12 @@ public final class JkConnector
 	this.service = service;
     }
 
-    String channelclassname = "org.apache.jk.common.ChannelSocket";
     /**
-     * Set the <code>channelClassName</code> that will used to connect to httpd.
+     * Set the <code>channelClassName</code> that will used to connect to
+     *  httpd.
      */
     public void setChannelClassName(String name) {
-        channelclassname = name; // Could have stored it in properties?
+        jkMain.setChannelClassName( name );
     }
 
     // --------------------------------------------------------- Public Methods
@@ -184,8 +186,6 @@ public final class JkConnector
 	lifecycle.removeLifecycleListener(listener);
     }
 
-    Properties props=new Properties();
-
     /**
      * Begin processing requests via this Connector.
      *
@@ -204,19 +204,7 @@ public final class JkConnector
         ((ContainerBase)ct).addLifecycleListener(config);
         config.loadExisting( ct );
 
-        JkMain jkMain=new JkMain();
-        jkMain.setProperties( props );
         jkMain.setDefaultWorker( worker );
-
-        // Get the Class that will be used to make the connection.
-        try {
-            Class channelclass = Class.forName(channelclassname);
-                  // ct.getParentClassLoader().loadClass(channelclassname);
-            jkMain.setChannelClass( channelclass );
-        } catch( Exception ex ) {
-            ex.printStackTrace();
-            throw new LifecycleException("Cannot find " + channelclassname);
-        }
 
         String catalinaHome=System.getProperty("catalina.home");
         File f=new File( catalinaHome );

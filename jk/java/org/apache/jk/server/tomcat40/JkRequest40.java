@@ -79,6 +79,7 @@ import org.apache.tomcat.util.http.MimeHeaders;
 
 import org.apache.jk.core.*;
 import org.apache.jk.common.*;
+import org.apache.jk.util.*;
 
 
 public class JkRequest40 extends HttpRequestBase {

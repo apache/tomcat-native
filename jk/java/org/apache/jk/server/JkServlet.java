@@ -91,22 +91,20 @@ public class JkServlet extends HttpServlet
     {
     }
 
-    protected Properties servletConfig2properties(ServletConfig conf ) {
-        Properties props=new Properties();
+    protected void servletConfig2properties(JkMain jk, ServletConfig conf )
+    {
         if( conf==null ) {
-            d("No config ");
-            return props;
+            d("No servlet config ");
+            return;
         }
         Enumeration paramNE=conf.getInitParameterNames();
         while( paramNE.hasMoreElements() ){
             String s=(String)paramNE.nextElement();
             String v=conf.getInitParameter(s);
 
-            props.put( s, v );
+            jk.setProperty( s, v );
         }
-        return props;
     }
-    
     
     public void init(ServletConfig conf) throws ServletException {
         try {
@@ -177,7 +175,7 @@ public class JkServlet extends HttpServlet
     
     protected void initJkMain(ServletConfig cfg, Worker defaultWorker) {
         jkMain=new JkMain();
-        jkMain.setProperties( servletConfig2properties( cfg ));
+        servletConfig2properties( jkMain, cfg );
         jkMain.setDefaultWorker( defaultWorker );
 
         String jkHome=cfg.getServletContext().getRealPath("/");

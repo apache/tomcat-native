@@ -72,6 +72,7 @@ import org.apache.catalina.util.CookieTools;
 
 import org.apache.jk.core.*;
 import org.apache.jk.common.*;
+import org.apache.jk.util.*;
 import org.apache.tomcat.util.http.MimeHeaders;
 
 public class JkResponse40 extends HttpResponseBase {
@@ -214,7 +215,7 @@ public class JkResponse40 extends HttpResponseBase {
             }
         }
 
-        msg.send( ch, ep );
+        ch.send( msg, ep );
 
         // The response is now committed
         committed = true;
@@ -245,7 +246,7 @@ public class JkResponse40 extends HttpResponseBase {
             msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
             msg.appendInt( 1 );
             
-            msg.send(ch, ep );
+            ch.send(msg, ep );
 	}        
     }
 
@@ -256,7 +257,7 @@ public class JkResponse40 extends HttpResponseBase {
         msg.reset();
         msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
         msg.appendBytes( b, off, len );
-        msg.send( ch, ep );
+        ch.send( msg, ep );
      }
 
     void setEndpoint(Channel ch, Endpoint ep) {

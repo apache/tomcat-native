@@ -91,7 +91,7 @@ public class Worker33 extends Worker
 
     private int reqNote;
     
-    public void init(WorkerEnv we) throws IOException {
+    public void init() throws IOException {
         reqNote=we.getNoteId( WorkerEnv.REQUEST_NOTE, "tomcat33Request" );
     }
 
