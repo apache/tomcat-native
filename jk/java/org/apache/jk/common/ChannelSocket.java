@@ -471,7 +471,8 @@ public class ChannelSocket extends JkHandler {
                         log.warn("Closing ajp connection " + status );
                     break;
                 }
-
+                ep.setLong( MsgContext.TIMER_RECEIVED, System.currentTimeMillis());
+                
                 ep.setType( 0 );
                 status= this.invoke( recv, ep );
                 if( status!= JkHandler.OK ) {

@@ -83,6 +83,10 @@ public class JkCoyoteHandler extends JkHandler implements
 {
     protected static org.apache.commons.logging.Log log 
         = org.apache.commons.logging.LogFactory.getLog(JkCoyoteHandler.class);
+    // Set debug on this logger to see the container request time
+    private static org.apache.commons.logging.Log logTime=
+        org.apache.commons.logging.LogFactory.getLog( "org.apache.jk.REQ_TIME" );
+
     int headersMsgNote;
     int c2bConvertersNote;
     int utfC2bNote;
@@ -185,8 +189,8 @@ public class JkCoyoteHandler extends JkHandler implements
 
         int len=chunk.getLength();
         byte buf[]=msg.getBuffer();
-        // 3 - hardcoded, byte[] marshalling overhead 
-        int chunkSize=buf.length - msg.getHeaderLength() - 3;
+        // 4 - hardcoded, byte[] marshalling overhead 
+        int chunkSize=buf.length - msg.getHeaderLength() - 4;
         int off=0;
         while( len > 0 ) {
             int thisTime=len;
@@ -224,6 +228,9 @@ public class JkCoyoteHandler extends JkHandler implements
     public int invoke( Msg msg, MsgContext ep ) 
         throws IOException
     {
+        if( logTime.isDebugEnabled() ) 
+                ep.setLong( MsgContext.TIMER_PRE_REQUEST, System.currentTimeMillis());
+        
         org.apache.coyote.Request req=(org.apache.coyote.Request)ep.getRequest();
         org.apache.coyote.Response res=req.getResponse();
         res.setHook( this );
@@ -241,7 +248,7 @@ public class JkCoyoteHandler extends JkHandler implements
         
         res.setNote( epNote, ep );
         ep.setStatus( JK_STATUS_HEAD );
-        
+
         try {
             adapter.service( req, res );
         } catch( Exception ex ) {
@@ -301,6 +308,7 @@ public class JkCoyoteHandler extends JkHandler implements
     public void action(ActionCode actionCode, Object param) {
         try {
             if( actionCode==ActionCode.ACTION_COMMIT ) {
+                if( log.isDebugEnabled() ) log.debug("COMMIT " );
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
 
                 if(  res.isCommitted() ) {
@@ -312,15 +320,17 @@ public class JkCoyoteHandler extends JkHandler implements
             } else if( actionCode==ActionCode.ACTION_RESET ) {
                 if( log.isInfoEnabled() )
                     log.info("RESET " );
+
             } else if( actionCode==ActionCode.ACTION_CLIENT_FLUSH ) {
+                if( log.isDebugEnabled() ) log.debug("CLIENT_FLUSH " );
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
                 MsgContext ep=(MsgContext)res.getNote( epNote );
                 ep.setType( JkHandler.HANDLE_FLUSH );
                 ep.getSource().invoke( null, ep );
+                
             } else if( actionCode==ActionCode.ACTION_CLOSE ) {
-                if( log.isDebugEnabled() ) {
-                    log.debug("CLOSE " );
-                }
+                if( log.isDebugEnabled() ) log.debug("CLOSE " );
+
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
                 MsgContext ep=(MsgContext)res.getNote( epNote );
                 if( ep.getStatus()== JK_STATUS_CLOSED ) {
@@ -343,12 +353,16 @@ public class JkCoyoteHandler extends JkHandler implements
                 ep.getSource().invoke( msg, ep );
 
                 ep.setStatus(JK_STATUS_CLOSED );
+
+                if( logTime.isDebugEnabled() ) 
+                    logTime(res.getRequest(), res);
             } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
                 
                 
             } else if( actionCode==ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
 
-                
+            } else if( actionCode==ActionCode.ACTION_POST_REQUEST ) {
+
             } else if( actionCode==ActionCode.ACTION_ACK ) {
                 if( log.isDebugEnabled() )
                     log.debug("ACK " );
@@ -359,5 +373,22 @@ public class JkCoyoteHandler extends JkHandler implements
         }
     }
 
-
+    private void logTime(Request req, Response res ) {
+        // called after the request
+        //            org.apache.coyote.Request req=(org.apache.coyote.Request)param;
+        //            Response res=req.getResponse();
+        MsgContext ep=(MsgContext)res.getNote( epNote );
+        String uri=req.requestURI().toString();
+        if( uri.indexOf( ".gif" ) >0 ) return;
+        
+        ep.setLong( MsgContext.TIMER_POST_REQUEST, System.currentTimeMillis());
+        long t1= ep.getLong( MsgContext.TIMER_PRE_REQUEST ) -
+            ep.getLong( MsgContext.TIMER_RECEIVED );
+        long t2= ep.getLong( MsgContext.TIMER_POST_REQUEST ) -
+            ep.getLong( MsgContext.TIMER_PRE_REQUEST );
+        
+        logTime.debug("Time pre=" + t1 + "/ service=" + t2 + " " +
+                      res.getContentLength() + " " + 
+                      uri );
+    }
 }
