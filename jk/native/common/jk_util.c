@@ -273,8 +273,9 @@ int jk_log(jk_logger_t *l,
 #endif
         set_time_str(buf, HUGE_BUFFER_SIZE);
         used = strlen(buf);
-
-        if (l->level == JK_LOG_TRACE_LEVEL) {
+        
+        /* Log [pid:threadid] for debug and trace levels */
+        if (l->level < JK_LOG_INFO_LEVEL) {
 #ifdef USE_SPRINTF              /* until we get a snprintf function */        
             used += sprintf(&buf[used], "[%d:%d] ", getpid(),
                             jk_gettid());
