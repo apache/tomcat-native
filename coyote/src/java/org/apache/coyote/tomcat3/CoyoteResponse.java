@@ -78,7 +78,6 @@ import org.apache.tomcat.util.compat.*;
 
 class CoyoteResponse extends  Response {
     String reportedname=null;
-    DateFormat dateFormat=null;
     org.apache.coyote.Response coyoteResponse=null;
     ByteChunk outputChunk = new ByteChunk();
     
@@ -88,15 +87,12 @@ class CoyoteResponse extends  Response {
 
     public void setCoyoteResponse(org.apache.coyote.Response cRes) {
 	coyoteResponse = cRes;
+	headers = coyoteResponse.getMimeHeaders();
     }
 
     public void init() {
 	super.init();
-	dateFormat=new SimpleDateFormat(DateTool.RFC1123_PATTERN,
-					Locale.US);
-	dateFormat.setTimeZone(DateTool.GMT_ZONE);
     }
-    
 
     public void recycle() {
 	super.recycle();
@@ -111,16 +107,6 @@ class CoyoteResponse extends  Response {
     public void endHeaders()  throws IOException {
 	super.endHeaders();
 	coyoteResponse.setStatus(getStatus());
-
-	Enumeration names = getMimeHeaders().names();
-	while( names.hasMoreElements() ) {
-	    String hname = (String)names.nextElement();
-	    Enumeration values = getMimeHeaders().values(hname);
-	    while( values.hasMoreElements() ) {
-		String hvalue = (String)values.nextElement();
-		coyoteResponse.addHeader(hname, hvalue);
-	    }
-	}
 	coyoteResponse.sendHeaders();
     }
 
