@@ -310,6 +310,7 @@
         <include name="${java.home}/../include" />
         <include name="${java.home}/../include/win32" />
         <include name="${native.dir}/common" />
+        <include name="${mssdk.include}" />
         <include name="${build.compiler.base}/include" />
       </includes>
       <depends>
@@ -332,7 +333,8 @@
       <export symbol="HttpExtensionProc"/>
       <export symbol="TerminateFilter"/>
       <export symbol="TerminateExtension"/>
-      <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
+      <linkOpt value="/libpath:&quot;${mssdk.lib}&quot;" />
+      <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" />
     </so>
   </target>
 
