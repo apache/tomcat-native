@@ -780,7 +780,9 @@ static jk_env_t * jk2_create_config()
 {
     jk_env_t *env;
     if(  workerEnv==NULL ) {
-        env=jk2_create_workerEnv();
+        env = jk2_create_workerEnv();
+    } else {
+        env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
     }
 
     env->l->jkLog(env, env->l, JK_LOG_ERROR, "JK2 Config Created");
