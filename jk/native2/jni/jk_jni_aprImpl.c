@@ -356,7 +356,7 @@ Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis,
                                                jlong poolJ, jstring hostJ )
 {
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
-    char *host;
+    const char *host;
     int status;
     int unixSocket;
     struct sockaddr_un unixAddr;

@@ -302,7 +302,7 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
 
     workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
                               workerEnv->pool->pstrdup( env, workerEnv->pool, ap_server_root));
-    env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", ap_server_root);
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "Set serverRoot %s\n", ap_server_root);
     
     /* Local initialization */
     workerEnv->_private = s;
@@ -432,13 +432,13 @@ static int jk2_post_config(apr_pool_t *pconf,
 
     if( rc == JK_OK && gPool != NULL ) {
         /* This is the first step */
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "mod_jk.post_config() first invocation\n");
         apr_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool );
         return OK;
     }
         
-    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "mod_jk.post_config() second invocation\n" ); 
 
 
@@ -524,12 +524,9 @@ static int jk2_handler(request_rec *r)
                       r->uri, worker->mbean->name); 
     } else {
         worker=uriEnv->worker;
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.handler() per dir worker for %p\n",
-                      worker );
         
         if( worker==NULL && uriEnv->workerName != NULL ) {
-             worker=env->getByName( env, uriEnv->workerName);
+            worker=env->getByName( env, uriEnv->workerName);
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
                           "mod_jk.handler() finding worker for %p %p\n",
                           worker, uriEnv );
@@ -544,6 +541,10 @@ static int jk2_handler(request_rec *r)
         return 500;
     }
 
+    if( uriEnv->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "mod_jk.handler() serving %s with %s\n",
+                      uriEnv->mbean->localName, worker->mbean->localName );
     {
         jk_ws_service_t sOnStack;
         jk_ws_service_t *s=&sOnStack;
@@ -563,12 +564,14 @@ static int jk2_handler(request_rec *r)
         jk2_service_apache2_init( env, s );
 
         s->pool = rPool;
-        s->uriEnv = uriEnv; 
-        s->is_recoverable_error = JK_FALSE;
         s->init( env, s, worker, r );
 
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "modjk.handler() Calling %s\n", worker->mbean->name); 
+        s->is_recoverable_error = JK_FALSE;
+        s->uriEnv = uriEnv; 
+
+        /* env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+        /*              "mod_jk.handler() Calling %s\n", worker->mbean->name); */
+        
         rc = worker->service(env, worker, s);
 
         s->afterRequest(env, s);
@@ -653,9 +656,10 @@ static int jk2_translate(request_rec *r)
     ap_set_module_config( r->request_config, &jk2_module, uriEnv );
     r->handler=JK_HANDLER;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "mod_jk.translate(): uriMap %s %s\n",
-                  r->uri, uriEnv->workerName);
+    if( uriEnv->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "mod_jk.translate(): uriMap %s %s\n",
+                      r->uri, uriEnv->workerName);
 
     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     return OK;
@@ -670,11 +674,11 @@ static int jk2_map_to_storage(request_rec *r)
     
     if( uriEnv != NULL ) {
         r->filename = (char *)apr_filename_of_pathname(r->uri);
-        if( uriEnv->debug > 0 ) {
+        /*         if( uriEnv->mbean->debug > 0 ) { */
             /*   env->l->jkLog(env, env->l, JK_LOG_INFO,  */
             /*     "mod_jk.map_to_storage(): map %s %s\n", */
             /*                  r->uri, r->filename); */
-        }
+        /* } */
         return OK;
     }
     return DECLINED;

@@ -108,7 +108,7 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
         return JK_ERR;
     
     if( s->uriEnv != NULL )
-        debug=s->uriEnv->debug;
+        debug=s->uriEnv->mbean->debug;
 
     r = (request_rec *)s->ws_private;  
         
@@ -146,8 +146,8 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
     /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
     if( debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "service.head() %d %d\n", s->status,
-                      numheaders);
+                      "service.head() %d %d %p\n", s->status,
+                      numheaders, s->uriEnv);
     
     for(h = 0 ; h < numheaders; h++) {
         char *name=headers->nameAt( env, headers, h );
@@ -258,7 +258,7 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
         return JK_ERR;
     }
     if( s->uriEnv != NULL )
-        debug=s->uriEnv->debug;
+        debug=s->uriEnv->mbean->debug;
     
     if(len==0 ) {
         return JK_OK;
