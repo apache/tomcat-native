@@ -489,7 +489,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
 		if ( ep->worker->reply_timeout != 0) {
 		    if (ep->worker->channel->hasinput(env, ep->worker->channel, ep, ep->worker->reply_timeout) != JK_TRUE) {
 	        	env->l->jkLog(env, env->l, JK_LOG_ERROR,
-	                      "workerEnv.processCallbacks() no reply after %d ms waiting\n", timeout);
+	                      "workerEnv.processCallbacks() no reply after %d ms waiting\n",  ep->worker->reply_timeout);
 	
 	        	return JK_ERR;
 	    	}
