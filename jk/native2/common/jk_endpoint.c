@@ -115,6 +115,7 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     jk_workerEnv_t *workerEnv;
     jk_stat_t *stats;
     jk_pool_t *endpointPool = pool->create( env, pool, HUGE_POOL_SIZE );
+    int epId;
 
     if (e==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -139,7 +140,8 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     e->currentRequest = NULL;
     //    w->init= jk2_worker_ajp14_init;
     //    w->destroy=jk2_worker_ajp14_destroy;
-
+    epId=atoi( result->localName );
+    
     result->getAttribute= jk2_endpoint_getAttribute;
     result->object = e;
     e->mbean=result;
@@ -147,7 +149,18 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     workerEnv=env->getByName( env, "workerEnv" );
     
     /* XXX alloc it inside the shm */
-    stats = (jk_stat_t *)pool->calloc( env, pool, sizeof( jk_stat_t ) );
+    if( workerEnv->epStat != NULL && workerEnv->childId >= 0 ) {
+        stats= (jk_stat_t *) (workerEnv->epStat->data + sizeof( jk_stat_t ) * epId);
+        workerEnv->epStat->structSize=sizeof( jk_stat_t );
+        workerEnv->epStat->structCnt=epId + 1;
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "SHM stats %d %p %p %s %s childId=%d\n", epId, workerEnv->epStat->data, stats,
+                      result->localName, result->name, workerEnv->childId);
+    } else {
+        stats = (jk_stat_t *)pool->calloc( env, pool, sizeof( jk_stat_t ) );
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "Local stats %d %p %d\n", epId, workerEnv->epStat, workerEnv->childId );
+    }
     
     e->stats=stats;
     
