@@ -173,6 +173,7 @@ struct jk_worker {
     double  lb_value;
     int     in_error_state;
     int     in_recovering;
+    int     retry_count;
     time_t  error_time;
     /** Last exception recorded on this worker, the reason for
      *  which this worker is in error state and can't perform.
