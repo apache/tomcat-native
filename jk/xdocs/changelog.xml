@@ -21,7 +21,20 @@
   new documentation project for JK has been started.
   </p>
 </section>
-
+<section name="Changes from JK 1.2.7">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <update>
+      <bug>32317</bug>: Making mod_jk replication aware (Clustering Support).
+      Patch provided by Rainer Jung. (mturk).
+      </update>
+      <fix>
+      <bug>31132</bug>: Core dump when JkLogFile is missing from conf. (mturk)
+      </fix>
+    </changelog>
+  </subsection>
+</section>
 <section name="Changes from JK 1.2.6">
   <br />
   <subsection name="Native">
