@@ -113,6 +113,7 @@ public final class MessageBytes implements Cloneable, Serializable {
 	hasStrValue=false;
 	hasHashCode=false;
 	hasIntValue=false;
+    hasLongValue=false;
 	hasDateValue=false;	
     }
 
