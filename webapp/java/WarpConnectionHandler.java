@@ -91,36 +91,69 @@ public class WarpConnectionHandler extends WarpHandler {
      *         false if this was the last packet.
      */
     public boolean process(int type, byte buffer[]) {
+        WarpEngine engine=(WarpEngine)this.getConnector().getContainer();
+
         this.reader.reset(buffer);
         this.packet.reset();
         try {
             switch (type) {
-                case WarpConstants.TYP_CONINIT_HST:
+                case WarpConstants.TYP_CONINIT_HST: {
                     String name=reader.readString()+":"+reader.readShort();
                     
                     // Retrieve this host id
-                    int hid=this.getConnector().setupHost(name);
-                    if (DEBUG) this.debug("Created new host "+name+" ID="+hid);
+                    int hid=engine.setupChild(name).getHostID();
+                    if (DEBUG) this.debug("Host "+name+" has ID="+hid);
 
                     // Send the HOST ID back to the WARP client
                     this.packet.reset();
                     this.packet.writeShort(hid);
                     this.send(WarpConstants.TYP_CONINIT_HID,this.packet);
                     break;
+                }
 
-                case WarpConstants.TYP_CONINIT_APP:
+                case WarpConstants.TYP_CONINIT_APP: {
+                    int hid=reader.readShort();
+                    String name=reader.readString();
+                    String path=reader.readString();
 
-                    // Retrieve this application id
-                    int aid=321;
-                    if (DEBUG) this.debug("CONINIT_APP "+reader.readString()+
-                                          ":"+reader.readString()+"="+aid);
+                    // Retrieve this host (based on the host ID)
+                    WarpHost host=(WarpHost)engine.findChild(hid);
+                    if (host==null) {
+                        this.log("Host ID "+hid+" not found");
+                        this.packet.reset();
+                        this.send(WarpConstants.TYP_CONINIT_ERR,this.packet);
+                        return(false);
+                    }
+
+                    // Retrieve this application (based on the path)
+                    WarpContext cont=(WarpContext)host.findChild(path);
+                    // Check if we can find it by application name
+                    if (cont==null)
+                        cont=(WarpContext)host.findChild('/'+name);
+
+                    // We definitely didn't find the application
+                    if (cont==null) {
+                        this.log("Application "+name+" with path "+path+
+                                 " not found");
+                        this.packet.reset();
+                        this.send(WarpConstants.TYP_CONINIT_ERR,this.packet);
+                        return(false);
+                    }
+
+                    // Ok, we found the right application
+                    int aid=cont.getApplicationID();
+                    cont.setPath(path);
+                    cont.setDisplayName(name);
+                    if (DEBUG) this.debug("Application "+name+" mapped in "+
+                                          host.getName()+path+" has ID "+aid);
                     // Send the APPLICATION ID back to the WARP client
                     this.packet.reset();
                     this.packet.writeShort(aid);
                     this.send(WarpConstants.TYP_CONINIT_AID,this.packet);
                     break;
+                }
 
-                case WarpConstants.TYP_CONINIT_REQ:
+                case WarpConstants.TYP_CONINIT_REQ: {
                     // Create a new WarpRequestHandler and register it with
                     // an unique RID.
                     int r=this.request;
@@ -144,12 +177,15 @@ public class WarpConnectionHandler extends WarpHandler {
                     this.packet.writeShort(r);
                     this.send(WarpConstants.TYP_CONINIT_RID,this.packet);
                     break;
-                default:
+                }
+
+                default: {
                     this.log("Wrong packet type "+type+". Closing connection");
                     // Post an error message back to the WARP client
                     this.packet.reset();
                     this.send(WarpConstants.TYP_CONINIT_ERR,this.packet);
                     return(false);
+                }
             }
             return(true);
         } catch (IOException e) {
