@@ -148,7 +148,8 @@ public class RequestHandler extends AjpHandler
         "MOVE",
         "LOCK",
         "UNLOCK",
-        "ACL"
+        "ACL",
+        "REPORT"
     };
     
     // id's for common request headers

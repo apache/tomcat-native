@@ -130,6 +130,8 @@ static int sc_for_req_method(const char    *method,
 	*sc = SC_M_UNLOCK;
     } else if(0 == strcmp(method, "ACL")) {
 	*sc = SC_M_ACL;
+    } else if(0 == strcmp(method, "REPORT")) {
+	*sc = SC_M_REPORT;
     } else {
         rc = JK_FALSE;
     }

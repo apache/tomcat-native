@@ -109,6 +109,7 @@ extern "C" {
  *                        | "LOCK"
  *                        | "UNLOCK"
  *                        | "ACL"
+ *                        | "REPORT"
  * 
  */
 #define SC_M_OPTIONS            (unsigned char)1
@@ -126,6 +127,7 @@ extern "C" {
 #define SC_M_LOCK               (unsigned char)13
 #define SC_M_UNLOCK             (unsigned char)14
 #define SC_M_ACL				(unsigned char)15
+#define SC_M_REPORT             (unsigned char)16
 
 
 /*

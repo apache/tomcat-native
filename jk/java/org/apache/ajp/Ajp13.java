@@ -154,7 +154,8 @@ public class Ajp13 {
         "MOVE",
         "LOCK",
         "UNLOCK",
-        "ACL"
+        "ACL",
+        "REPORT"
     };
 
     // id's for common request headers
