@@ -63,8 +63,6 @@
  ***************************************************************************/
 
 
-#include "apr_strings.h"
-
 #include "jk_env.h"
 #include "jk_map.h"
 #include "jk_logger.h"
