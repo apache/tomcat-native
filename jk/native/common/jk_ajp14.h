@@ -249,7 +249,12 @@ struct jk_login_service {
     /*
 	 *  Pointer to web-server name
      */
-    char * server_name;
+    char * web_server_name;
+
+	/*
+	 * Pointer to servlet-engine name
+	 */
+	char * servlet_engine_name;
 
 	/*
 	 * Pointer to secret key
