@@ -1568,7 +1568,7 @@ static const command_rec jk_cmds[] = {
      "Adds a name of environment variable that should be sent to servlet-engine"},
 
     {"JkWorkerProperty", jk_set_worker_property, NULL, RSRC_CONF, RAW_ARGS,
-     "Set worker.properties directive"},
+     "Set workers.properties formated directive"},
 
     {NULL}
 };
