@@ -61,7 +61,16 @@ package org.apache.ajp;
 import java.io.UnsupportedEncodingException;
 
 /**
- * a cheap rip-off of MessageBytes from tomcat 3
+ * A cheap rip-off of MessageBytes from tomcat 3.x.
+ *
+ * The idea is simple:  delay expensive conversion from bytes -> String
+ * until necessary.
+ *
+ * A <code>MessageBytes</code> object will contain a reference to an
+ * array of bytes that it provides a view into, via an offset and
+ * a length.
+ *
+ * @author Kevin Seguin [kseguin@yahoo.com]
  */
 public class MessageBytes {
 
@@ -92,6 +101,13 @@ public class MessageBytes {
         enc = DEFAULT_ENCODING;
     }
 
+    /**
+     * Set the bytes that will be represented by this object.
+     * @param bytes the bytes that will be represented by this object.
+     * @param off offset into <code>bytes</code>
+     * @param len number of bytes from <code>offset</code> in
+     *            <code>bytes</code> that this object will represent.
+     */
     public void setBytes(byte[] bytes, int off, int len) {
         recycle();
         this.bytes = bytes;
@@ -99,31 +115,69 @@ public class MessageBytes {
         this.len = len;
     }
 
+    /**
+     * Get the byte array into which this object provides
+     * a view.
+     * @return the byte array into which this object provides
+     *         a view. 
+     */
     public byte[] getBytes() {
         return bytes;
     }
 
+    /**
+     * Get the offset into the byte array contained by this
+     * object.
+     * @return offset into contained array
+     */
     public int getOffset() {
         return off;
     }
 
+    /**
+     * Get the number of bytes this object represents in the
+     * contained byte array
+     * @return number of bytes represented.
+     */
     public int getLength() {
         return len;
     }
 
+    /**
+     * Set the encoding that will be used when (if) the represented
+     * bytes are converted into a <code>String</code>.
+     * @param enc encoding to use for conversion to string.
+     */
     public void setEncoding(String enc) {
         this.enc = enc;
     }
 
+    /**
+     * Get the encoding that will be used when (if) the represented
+     * bytes are converted into a <code>String</code>.
+     * @return encoding that will be used for conversion to string.
+     */
     public String getEncoding() {
         return enc;
     }
 
+    /**
+     * Set the string this object will represent.  Any contained
+     * bytes will be ignored.
+     * @param str string this object will represent.
+     */
     public void setString(String str) {
         this.str = str;
         gotStr = true;
     }
 
+    /**
+     * Get the string this object represents.  If the underlying bytes
+     * have not yet been converted to a string, they will be.  Any
+     * encoding set with {@link #setEncoding} will be used, otherwise
+     * the default encoding will be used (ISO-8859-1).
+     * @return the string this object represents
+     */
     public String getString() throws UnsupportedEncodingException {
         if (!gotStr) {
             if (bytes == null || len == 0) {
@@ -135,6 +189,13 @@ public class MessageBytes {
         return str;
     }
 
+    /**
+     * Get the string this object represents.  If the underlying bytes
+     * have not yet been converted to a string, they will be.  Any
+     * encoding set with {@link #setEncoding} will be used, otherwise
+     * the default encoding will be used (ISO-8859-1).
+     * @return the string this object represents
+     */
     public String toString() {
         try {
             return getString();
