@@ -92,8 +92,14 @@ tarball: dist
 	gzip -9f $(TARBALL).tar
 	rm -rf $(TARBALL)
 
-$(OBJ_DIR):
+$(LIB_DIR): $(BLD_DIR)
+	mkdir $(LIB_DIR)
+
+$(OBJ_DIR): $(BLD_DIR)
 	mkdir $(OBJ_DIR)
+
+$(BLD_DIR):
+	mkdir $(BLD_DIR)
 
 $(DST_DIR):
 	mkdir $(DST_DIR)
@@ -110,11 +116,11 @@ lib-build:
 lib-clean:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/lib" SUBT="clean" subdir
 
-apr-build:
+apr-build: $(LIB_DIR)
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="all" subdir
 	$(LIBTOOL) --mode=install \
-	  cp $(APR_DIR)/libapr.la $(OBJ_DIR)/libapr.la
-	$(LIBTOOL) --mode=finish $(OBJ_DIR)
+	  cp $(APR_DIR)/libapr.la $(LIB_DIR)/libapr.la
+	$(LIBTOOL) --mode=finish $(LIB_DIR)
 
 apr-clean:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="clean" subdir

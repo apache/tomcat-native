@@ -87,8 +87,10 @@ MODULE = @MODULE@
 APR_DIR = @APR_DIR@
 SRC_DIR = @SRC_DIR@
 TGT_DIR = @TGT_DIR@
-OBJ_DIR = @TGT_DIR@/build
-DST_DIR = @TGT_DIR@/distribution
+BLD_DIR = @TGT_DIR@/build
+OBJ_DIR = $(BLD_DIR)/objs
+LIB_DIR = $(BLD_DIR)/libs
+DST_DIR = @TGT_DIR@/dist
 TARBALL = webapp-module-$(WEBAPP_VERSION)
 MODFILE = mod_webapp.so
 
