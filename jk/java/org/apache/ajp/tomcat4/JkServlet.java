@@ -87,7 +87,7 @@ public class JkServlet
     }
     
     private static final int dL=10;
-    private static void d(String s ) {
+    private  void d(String s ) {
         log( "JkServlet: " + s );
     }
 

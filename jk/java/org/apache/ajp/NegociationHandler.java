@@ -528,6 +528,6 @@ public class NegociationHandler extends AjpHandler
     private static int debug=10;
     void log(String s) {
         if (log.isDebugEnabled())
-	    log.ebug("Ajp14Negotiation: " + s );
+	    log.debug("Ajp14Negotiation: " + s );
     }
  }

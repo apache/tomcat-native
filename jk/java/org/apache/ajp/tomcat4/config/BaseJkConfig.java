@@ -483,4 +483,8 @@ public class BaseJkConfig  implements LifecycleListener {
 
 	return false;
     }
+
+    protected void log(String msg) {
+        log.info(msg);
+    }
 }
