@@ -365,7 +365,8 @@ public class CoyoteResponse
      */
     public boolean isAppCommitted() {
         return (this.appCommitted || isCommitted() || isSuspended()
-                || (getContentCount() >= getContentLength()));
+                || ((getContentLength() != -1) 
+                    && (getContentCount() >= getContentLength())));
     }
 
 
