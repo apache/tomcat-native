@@ -297,7 +297,7 @@ public class JkCoyoteHandler extends JkHandler implements
                 MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
                 msg.reset();
                 msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
-                msg.appendInt( 1 );
+                msg.appendByte( 1 );
                 
                 ep.setType( JkHandler.HANDLE_SEND_PACKET );
                 ep.getSource().invoke( msg, ep );
