@@ -102,10 +102,6 @@ typedef struct jk_worker jk_worker_t;
  * There is also a load balancing worker (jk_lb_worker.c), which itself
  * manages a group of workers.
  *
- * Web servers are configured to forward requests to a given worker.  To
- * handle those requests, the worker's get_endpoint method is called, and
- * then the service() method of that endpoint is called.
- *
  * As with all the core jk classes, this is essentially an abstract base
  * class which is implemented/extended by classes which are specific to a
  * particular protocol (or request-handling system).  By using an abstract
@@ -124,7 +120,8 @@ typedef struct jk_worker jk_worker_t;
  * imagine that you are seeing the internal vtables of your favorite OO
  * language.  Whatever works for you.
  *
- * See jk_ajp14_worker.c, jk_ajp13_worker.c and jk_ajp12_worker.c for examples.  
+ * See jk_ajp14_worker.c, jk_worker_status for examples.  
+ *
  */
 struct jk_worker {
 
@@ -159,6 +156,10 @@ struct jk_worker {
     /** Reuse the endpoint and it's connection
      */
     struct jk_objCache *endpointCache;
+
+    /** Request pool cache. XXX We may use reqCache.
+     */
+    struct jk_objCache *rPoolCache;
     
     /* 
      * Open connections cache...
@@ -214,34 +215,28 @@ struct jk_worker {
     /*
      * Do whatever initialization needs to be done to start this worker up.
      * Configuration options are passed in via the props parameter.  
+     *
+     * You can skip this by setting it to NULL.
      */
     int (JK_METHOD *init)(struct jk_env *env, jk_worker_t *_this,
                           struct jk_map *props,
                           struct jk_workerEnv *we );
 
     /*
-     * Obtain an endpoint to service a particular request.  A pointer to
-     * the endpoint is stored in pend. The done() method in the
-     * endpoint will be called when the endpoint is no longer needed.
-     */
-    int (JK_METHOD *get_endpoint)(struct jk_env *env, jk_worker_t *_this,
-                                  struct jk_endpoint **pend );
-
-    /*
-     * Called when this particular endpoint has finished processing a
-     * request.  For some protocols (e.g. ajp12), this frees the memory
-     * associated with the endpoint.  For others (e.g. ajp13/ajp14), this can
-     * return the endpoint to a cache of already opened endpoints.  
-     */
-/*     int (JK_METHOD *done)(jk_env_t *env, */
-/*                           jk_worker_t *_this, */
-/*                           struct jk_endpoint *p ); */
-
-    
-    /*
-     * Shutdown this worker. 
+     * Shutdown this worker. XXX Some cleanup must be made by default
+     * by workerEnv, so we don't need to duplicate the code.
      */
     int (JK_METHOD *destroy)(struct jk_env *env, jk_worker_t *_thisP );
+
+    /*
+     * Forward a request to the servlet engine.  The request is described
+     * by the jk_ws_service_t object.  I'm not sure exactly how
+     * is_recoverable_error is being used.  
+     */
+    int (JK_METHOD *service)(struct jk_env *env,
+                             struct jk_worker *_this,
+                             struct jk_ws_service *s);
+    
 };
 
 #ifdef __cplusplus
