@@ -130,7 +130,6 @@ public class JkMain implements MBeanRegistration
         modules.put("container","org.apache.jk.common.HandlerRequest");
         modules.put("modjk","org.apache.jk.common.ModJkMX");
 
-        initHTTPSUrls();
     }
 
     public static JkMain getJkMain() {
@@ -288,6 +287,11 @@ public class JkMain implements MBeanRegistration
                     log.debug( "No properties file found " + propsF );
             }
         }
+        String initHTTPS = props.get("class.initHTTPS");
+        if("true".equalsIgnoreCase(initHTTPS)) {
+            initHTTPSUrls();
+        }
+
         long t2=System.currentTimeMillis();
         initTime=t2-t1;
     }
