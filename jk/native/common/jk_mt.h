@@ -37,11 +37,19 @@
  * _REENTRANT define.
  */
 #if defined (WIN32) || defined(_REENTRANT) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+#ifdef JK_PREFORK 
+#define _MT_CODE 0
+#else
+#define _MT_CODE 1
+#endif
+#else
+#define _MT_CODE 0
+#endif
 
 /*
  * Marks execution under MT compilation
  */
-#define _MT_CODE
+#if _MT_CODE
 #ifdef WIN32
 #include <windows.h>
 
