@@ -626,7 +626,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     }
     if (s->query_string) {
         if (msg->appendByte(env, msg, SC_A_QUERY_STRING) ||
-#idef AS400
+#ifdef AS400
             msg->appendAsciiString(env, msg, s->query_string)) {
 #else
             msg->appendString(env, msg, s->query_string)) {
