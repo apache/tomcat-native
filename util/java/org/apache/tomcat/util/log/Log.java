@@ -100,7 +100,7 @@ import java.util.*;
  * @author Alex Chaffee [alex@jguru.com]
  * @author Costin Manolache
  **/
-public class Log {
+public class Log implements org.apache.commons.logging.Log {
 
     /**
      * Verbosity level codes.
@@ -253,6 +253,75 @@ public class Log {
 	proxy=l;
     }
 
+
+    // -------------------- Common-logging impl --------------------
+
+    
+    // -------------------- Log implementation -------------------- 
+
+    public void debug(Object message) {
+        log(message.toString(), null, DEBUG);
+    }
+
+    public void debug(Object message, Throwable exception) {
+        log(message.toString(), exception, DEBUG);
+    }
+
+    public void error(Object message) {
+        log(message.toString(), null, ERROR);
+    }
+
+    public void error(Object message, Throwable exception) {
+        log(message.toString(), exception, ERROR);
+    }
+
+    public void fatal(Object message) {
+        log(message.toString(), null, FATAL);
+    }
+
+    public void fatal(Object message, Throwable exception) {
+        log(message.toString(), exception, FATAL);
+    }
+
+    public void info(Object message) {
+        log(message.toString(), null, INFORMATION);
+    }
+
+    public void info(Object message, Throwable exception) {
+        log(message.toString(), exception, INFORMATION);
+    }
+    public void trace(Object message) {
+        log(message.toString(), null, DEBUG);
+    }
+    public void trace(Object message, Throwable exception) {
+        log(message.toString(), exception, DEBUG);
+    }
+    public void warn(Object message) {
+        log(message.toString(), null, WARNING);
+    }
+    public void warn(Object message, Throwable exception) {
+        log(message.toString(), exception, WARNING);
+    }
+
+    public boolean isDebugEnabled() {
+        return proxy.getLevel() <= DEBUG;
+    }
+    public boolean isErrorEnabled() {
+        return proxy.getLevel() <= ERROR;
+    }
+    public boolean isFatalEnabled() {
+        return proxy.getLevel() <= FATAL;
+    }
+    public boolean isInfoEnabled() {
+        return proxy.getLevel() <= INFORMATION;
+    }
+    public boolean isTraceEnabled() {
+        return proxy.getLevel() <= DEBUG;
+    }
+    public boolean isWarnEnabled() {
+        return proxy.getLevel() <= WARNING;
+    }
+    
     /** Security notes:
 
     Log acts as a facade to an actual logger ( which has setters, etc).
