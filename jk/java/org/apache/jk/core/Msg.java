@@ -76,6 +76,9 @@ import org.apache.tomcat.util.buf.HexUtils;
  * A single packet for communication between the web server and the
  * container.
  *
+ * In a more generic sense, it's the event that drives the processing chain.
+ * XXX Use Event, make Msg a particular case.
+ *
  * @author Henri Gomez [hgomez@slib.fr]
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
@@ -84,6 +87,8 @@ import org.apache.tomcat.util.buf.HexUtils;
  */
 public abstract class Msg {
 
+    
+    
     /**
      * Prepare this packet for accumulating a message from the container to
      * the web server.  Set the write position to just after the header
@@ -135,6 +140,8 @@ public abstract class Msg {
 
     public abstract byte getByte();
 
+    public abstract byte peekByte();
+
     public abstract void getBytes(MessageBytes mb);
     
     /**
@@ -163,5 +170,19 @@ public abstract class Msg {
     public abstract int getLen();
     
     public abstract void dump(String msg);
+
+
     
+    int tag;
+    
+    /** Message type - the tag is used to fast dispatch
+     *  by message type
+     */
+    public void setTag( int i ) {
+        tag=i;
+    }
+
+    public int getTag() {
+        return tag;
+    }
 }
