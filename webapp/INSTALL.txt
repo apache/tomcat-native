@@ -1,6 +1,17 @@
 Installing mod_webapp and using it with Apache 1.3
 --------------------------------------------------
 
+Notice
+------
+
+NO, IT DOES NOT RUN WITH WINDOWS (your images don't appear and the
+whole thing hangs?) AND SINCE I DON'T USE NEITHER POSSESS A MICROSOFT
+WINDOWS BASED MACHINE, THERE ARE NO CURRENT PLANS ON MAKING IT WORK
+OVER THERE (from my side).
+
+Installing
+----------
+
 Once you have successfully built the mod_webapp DSO as described in the
 README.txt file coming with the sources, installing the module is pretty
 easy.

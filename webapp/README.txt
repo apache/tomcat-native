@@ -1,6 +1,28 @@
 README for WebApp Library and Related Modules
 ---------------------------------------------
 
+Notice
+------
+
+NO, IT DOES NOT RUN WITH WINDOWS (your images don't appear and the
+whole thing hangs?) AND SINCE I DON'T USE NEITHER POSSESS A MICROSOFT
+WINDOWS BASED MACHINE, THERE ARE NO CURRENT PLANS ON MAKING IT WORK 
+OVER THERE (from my side).
+
+If you want to do it (port it to Windows), those are few hints:
+- Apache 1.3 on Windows is MultiThreaded
+- Therefore the error coming out is a multi-threading issue
+- The WARP socket is unique in WebApp
+- You need to change that and build up a socket pool
+- And add some locking mechanism to prevent race conditions
+
+If you don't know what the above means, simply forget it (and I suggest
+you doing a "format c:" and install Solaris 8 - my favorite preference
+or throw out your x86 hardware out of in the dumpster and get an
+Apple PowerMac with MacOS/X installed). If you are willing to do the
+job, you're more than welcome to write to me or to the mailing list
+with some patches.
+
 How to obtain the WebApp and Apache Portable Runtime sources:
 -------------------------------------------------------------
 
