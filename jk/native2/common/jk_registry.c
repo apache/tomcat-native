@@ -140,7 +140,7 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
   env->registerFactory( env, "channel.jni",   jk2_channel_jni_factory );
   env->registerFactory( env, "worker.jni",   jk2_worker_jni_factory );
   env->registerFactory( env, "vm",   jk2_vm_factory );
-
-
+  env->registerFactory( env, "signal",  jk2_signal_factory);
+  env->registerFactory( env, "user",  jk2_user_factory);
 }
 

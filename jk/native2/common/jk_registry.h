@@ -183,3 +183,11 @@ int JK_METHOD jk2_mutex_thread_factory( jk_env_t *env ,jk_pool_t *pool,
 int JK_METHOD jk2_mutex_proc_factory( jk_env_t *env ,jk_pool_t *pool,
                                       jk_bean_t *result,
                                       const char *type, const char *name);
+
+int JK_METHOD jk2_signal_factory( jk_env_t *env ,jk_pool_t *pool,
+                                  jk_bean_t *result,
+                                  const char *type, const char *name);
+
+int JK_METHOD jk2_user_factory( jk_env_t *env ,jk_pool_t *pool,
+                                jk_bean_t *result,
+                                const char *type, const char *name);
