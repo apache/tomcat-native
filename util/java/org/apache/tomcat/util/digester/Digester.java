@@ -1694,35 +1694,6 @@ public class Digester extends DefaultHandler {
 
 
     /**
-     * Add a "bean property setter" rule for the specified parameters.
-     *
-     * @param pattern Element matching pattern
-     * @see BeanPropertySetterRule
-     */
-    public void addBeanPropertySetter(String pattern) {
-
-        addRule(pattern,
-                new BeanPropertySetterRule());
-
-    }
-
-
-    /**
-     * Add a "bean property setter" rule for the specified parameters.
-     *
-     * @param pattern Element matching pattern
-     * @param propertyName Name of property to set
-     * @see BeanPropertySetterRule
-     */
-    public void addBeanPropertySetter(String pattern,
-                                      String propertyName) {
-
-        addRule(pattern,
-                new BeanPropertySetterRule(propertyName));
-
-    }
-
-    /**
      * Add an "call method" rule for a method which accepts no arguments.
      *
      * @param pattern Element matching pattern
