@@ -324,15 +324,19 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
     unsigned int i;
 
     jk_puts(s, "<br />Uri Mappings:\n");
-    jk_puts(s, "<table><tr><th>Match Type</th><th>Uri</th></tr>\n");
+    jk_puts(s, "<table>\n<tr><th>Match Type</th><th>Uri</th>"
+               "<th>Context</th><th>Suffix</th></tr>\n");
     for (i = 0; i < uwmap->size; i++) {
         uri_worker_record_t *uwr = uwmap->maps[i];
-        if (strcmp(uwr->worker_name, worker))
+        if (strcmp(uwr->worker_name, worker)) {
             continue;
+        }
         jk_putv(s, "<tr><td>",
                 status_val_match(uwr->match_type),
                 "</td><td>", NULL);
         jk_puts(s, uwr->uri);
+        jk_putv(s, "</td><td>", uwr->context, NULL);
+        jk_putv(s, "</td><td>", uwr->suffix, NULL);
         jk_puts(s, "</td></tr>\n");
     }
     jk_puts(s, "</table>\n");
