@@ -1,18 +1,27 @@
 <?xml version="1.0"?>
 
 <index>
+  <section name="Presentation">
   <document href="index.xml"/>
+  </section>
+  
+  <section name="Commons">
   <document href="common/AJPv13.xml"/>
   <document href="common/AJPv14-proposal.xml"/>
-  <document/>
+  <document href="faq.xml"/>
+  </section>
+  
+  <section name="JK">
   <document href="jk/aphowto.xml"/>
+  <document href="jk/domhowto.xml"/>
   <document href="jk/iishowto.xml"/>
   <document href="jk/neshowto.xml"/>
-  <document href="jk/domhowto.xml"/>
   <document href="jk/workershowto.xml"/>
-  <document/>
+  </section>
+  
+  <section name="JK2">
   <document href="jk2/configtc.xml"/>
   <document href="jk2/configweb.xml"/>
-  <document/>
-  <document href="faq.xml"/>
+  </section>
+  
 </index>

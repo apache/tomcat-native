@@ -150,50 +150,60 @@
                   within the index.
                 -->
                 <xsl:variable name="root" select="/"/>
-                <xsl:for-each select="document('menu.idx')/index/document">
-                  <xsl:variable name="href" select="@href"/>
-                  <xsl:if test="string-length($href) = 0">
-                    <tr height="6"/>
-                  </xsl:if>
-                  <tr>
-                    <td bgcolor="#cccccc" width="150" colspan="2">
-                      <nobr>
-                        <a class="menu">
-                          <xsl:call-template name="converturi">
-                            <xsl:with-param name="href" select="@href"/>
-                          </xsl:call-template>
-                        </a>
-                      </nobr>
-                    </td>
+                <xsl:for-each select="document('menu.idx')/index/section">
+                  <tr height="6">
+                  <td bgcolor="#cccccc" width="150" colspan="2">
+                  <xsl:value-of select="@name"/>
+                  </td>
                   </tr>
-                  <tr height="2">
-                  </tr>
+	                <xsl:for-each select="./document">
+	                  <xsl:variable name="href" select="@href"/>
+	                  <tr>
+	                    <td bgcolor="#cccccc" width="150" colspan="2">
+	                      <nobr>
+	                        <a class="menu">
+	                          <xsl:call-template name="converturi">
+	                            <xsl:with-param name="href" select="@href"/>
+	                          </xsl:call-template>
+	                        </a>
+	                      </nobr>
+	                    </td>
+	                  </tr>
+	                  <tr height="2">
+	                  </tr>
 
-                  <!--
-                    Slightly more complicated, we use the document-location function
-                    and compare against it to see whether we are in the same file or
-                    not. If we actually are, we expand to the "section" level.
-                  -->
-                  <xsl:if test="$root/document/properties/title = document(@href)/document/properties/title">
-                    <xsl:for-each select="document(@href)/document/section">
-                      <tr>
-                        <td bgcolor="#cccccc" width="10"/>
-                        <td bgcolor="#cccccc" width="140">
-                          <a class="menu" href="#{@name}">
-                            <xsl:value-of select="@name"/>
-                          </a>
-                        </td>
-                       </tr>
-                       <tr height="1">
-                      </tr>
-                    </xsl:for-each>
-                  </xsl:if>
+	                  <!--
+	                    Slightly more complicated, we use the document-location function
+	                    and compare against it to see whether we are in the same file or
+	                    not. If we actually are, we expand to the "section" level.
+	                  -->
+	                  <xsl:if test="$root/document/properties/title = document(@href)/document/properties/title">
+	                    <xsl:for-each select="document(@href)/document/section">
+	                      <tr>
+	                        <td bgcolor="#cccccc" width="10"/>
+	                        <td bgcolor="#cccccc" width="140">
+	                          <a class="menu" href="#{@name}">
+	                            <xsl:value-of select="@name"/>
+	                          </a>
+	                        </td>
+	                       </tr>
+	                       <tr height="1">
+	                      </tr>
+	                    </xsl:for-each>
+	                  </xsl:if>
+                  </xsl:for-each>
+                  <tr height="6"/>
                 </xsl:for-each>
 
                 <!--
                   The last thing to put down in the index are the API docs,
                   both for C and for Java
                 -->
+                <tr height="6">
+                <td bgcolor="#cccccc" width="150" colspan="2">
+                Developpers
+                </td>
+                </tr>
                 <tr>
                   <td bgcolor="#cccccc" width="150" colspan="2">
                     <nobr>
