@@ -105,7 +105,17 @@ struct jk_uriMap {
     int capacity;
     struct jk_workerEnv *workerEnv;
     int debug;
-    
+
+    /* Virtual host map. For each host and alias there is one
+     * entry, the value is a uriEnv that corresponds to the vhost top
+     * level.
+     */
+    struct jk_map *vhosts;
+
+    /** Managed webapps. Key is VHOST/CONTEXT, value is the
+     *  uriEnv that corresponds to the top level of the webapp.
+     */
+    struct jk_map *webapps;
     /* ---------- Methods ---------- */
 
     /** Initialize the map. This should be called after all workers
