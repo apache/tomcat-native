@@ -82,7 +82,7 @@ public class MimeMap implements FileNameMap {
         defaultMap.put("jpg", "image/jpeg");
         defaultMap.put("jpe", "image/jpeg");
         defaultMap.put("jpeg", "image/jpeg");
-	defaultMap.put("java", "text/plain");
+		defaultMap.put("java", "text/plain");
         defaultMap.put("body", "text/html");
         defaultMap.put("rtx", "text/richtext");
         defaultMap.put("tsv", "text/tab-separated-values");
@@ -158,6 +158,18 @@ public class MimeMap implements FileNameMap {
         defaultMap.put("avx", "video/x-rad-screenplay");
         defaultMap.put("wrl", "x-world/x-vrml");
         defaultMap.put("mpv2", "video/mpeg2");
+        
+        /* Add XML related MIMEs */
+        
+        defaultMap.put("xml", "text/xml");
+        defaultMap.put("xsl", "text/xml");        
+        defaultMap.put("svg", "image/svg+xml");
+        defaultMap.put("svgz", "image/svg+xml");
+        defaultMap.put("wbmp", "image/vnd.wap.wbmp");
+        defaultMap.put("wml", "text/vnd.wap.wml");
+        defaultMap.put("wmlc", "application/vnd.wap.wmlc");
+        defaultMap.put("wmls", "text/vnd.wap.wmlscript");
+        defaultMap.put("wmlscriptc", "application/vnd.wap.wmlscriptc");
     }
     
 
