@@ -109,6 +109,8 @@
                  3.3 classes. -->
             <pathelement 
                  location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+	    <pathelement
+	         location="${tomcat33.home}/lib/common/servlet.jar"/>
             <pathelement location="${coyote.home}/lib/tomcat-coyote.jar"/>
         </path>
 
