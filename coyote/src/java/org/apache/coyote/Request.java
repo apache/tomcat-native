@@ -62,7 +62,6 @@ package org.apache.coyote;
 
 import java.io.IOException;
 import java.util.Hashtable;
-import java.net.Socket;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -137,8 +136,6 @@ public final class Request {
     private String localHost;
     
     private int remotePort;
-
-    private Socket socket;
 
     private MessageBytes schemeMB = new MessageBytes();
 
@@ -307,23 +304,6 @@ public final class Request {
         this.remotePort = port;
     }
 
-    /**
-     * Sets the socket through which this request was received.
-     *
-     * @param socket The socket through which this request was received
-     */
-    public void setSocket(Socket socket) {
-	this.socket = socket;
-    }
-
-    /**
-     * Gets the socket through which this request was received.
-     *
-     * @return The socket through which this request was received
-     */
-    public Socket getSocket() {
-	return socket;
-    }
 
     // -------------------- encoding/type --------------------
 
