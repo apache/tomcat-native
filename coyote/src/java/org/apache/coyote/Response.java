@@ -100,7 +100,7 @@ public final class Response {
     protected String contentType = null;
     protected String contentLanguage = null;
     protected String characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
-    protected int contentLength = -1;
+    protected long contentLength = -1;
     private Locale locale = DEFAULT_LOCALE;
 
     // General informations
@@ -529,6 +529,15 @@ public final class Response {
     }
 
     public int getContentLength() {
+        long length = getContentLengthLong();
+        
+        if (length < Integer.MAX_VALUE) {
+            return (int) length;
+        }
+        return -1;
+    }
+    
+    public long getContentLengthLong() {
         return contentLength;
     }
 

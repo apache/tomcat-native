@@ -141,7 +141,7 @@ public class IdentityOutputFilter implements OutputFilter {
      * after the response header processing is complete.
      */
     public void setResponse(Response response) {
-        contentLength = response.getContentLength();
+        contentLength = response.getContentLengthLong();
         remaining = contentLength;
     }
 
