@@ -172,19 +172,17 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
         jk_worker_t *w= wEnv->worker_map->valueAt( env, wEnv->worker_map, i );
         int err;
 
-        if( w->init != NULL )
+        if( w->init != NULL ) {
             err=w->init(env, w);
     
-        if(err!=JK_TRUE) {
-            if( w->destroy != NULL ) 
-                w->destroy(env, w);
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "workerEnv.initWorkers() init failed for %s\n", 
-                          name); 
+            if(err!=JK_TRUE) {
+                if( w->destroy != NULL ) 
+                    w->destroy(env, w);
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "workerEnv.initWorkers() init failed for %s\n", 
+                              name); 
+            }
         }
-    
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "workerEnv.initWorkers(): init ok %s\n", name);
     }
     return JK_TRUE;
 }
@@ -204,9 +202,11 @@ static void jk2_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *wEnv)
 
         char *name= registry->nameAt( env, registry, i );
         if( strncmp( name, "handler.", 8 ) == 0 ) {
-            handler=(jk_handler_t *)env->createInstance(env, wEnv->pool, name, name  );
-            if( handler!=NULL )
-                handler->init( env, handler, wEnv );
+            jk_bean_t *jkb=env->createBean2(env, wEnv->pool, name, ""  );
+            if( jkb==NULL || jkb->object==NULL )
+                continue;
+            handler=(jk_handler_t *)jkb->object;
+            handler->init( env, handler, wEnv );
         }
     }
 }
@@ -233,7 +233,7 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
 
     env->l->init( env, env->l );
 
-    configFile=wEnv->initData->get( env, wEnv->initData, "config.file" );
+    configFile=wEnv->config->file;
     env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() %s\n", configFile );
     if(  configFile == NULL ) {
         wEnv->config->setPropertyString( env, wEnv->config,
@@ -416,7 +416,7 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
 }
 
 static jk_worker_t *jk2_workerEnv_createWorker(jk_env_t *env,
-                                            jk_workerEnv_t *wEnv,
+                                               jk_workerEnv_t *wEnv,
                                                char *type, char *name) 
 {
     int err=JK_TRUE;
@@ -424,6 +424,7 @@ static jk_worker_t *jk2_workerEnv_createWorker(jk_env_t *env,
     jk_worker_t *w = NULL;
     jk_worker_t *oldW = NULL;
     jk_pool_t *workerPool;
+    jk_bean_t *jkb;
 
     /* First find if it already exists */
     w=env->getByName( env, name );
@@ -433,38 +434,24 @@ static jk_worker_t *jk2_workerEnv_createWorker(jk_env_t *env,
                       name);
         return w;
     }
-
-    workerPool=wEnv->pool->create(env, wEnv->pool, HUGE_POOL_SIZE);
-
-    /* Each worker has it's own pool */
-    if( type == NULL ) type="ajp13";
     
+    jkb=env->createBean(env, wEnv->pool, name );
 
-    w=(jk_worker_t *)env->createInstance(env, workerPool, type, name );
-
-    if( w == NULL ) {
+    if( jkb == NULL || jkb->object==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                "workerEnv.createWorker(): factory can't create worker %s:%s\n",
+                      "workerEnv.createWorker(): factory can't create worker %s:%s\n",
                       type, name); 
         return NULL;
     }
+    w=(jk_worker_t *)jkb->object;
 
-    w->pool=workerPool;
     w->workerEnv=wEnv;
 
-    w->rPoolCache= jk2_objCache_create( env, workerPool  );
+    w->rPoolCache= jk2_objCache_create( env, w->pool  );
     err=w->rPoolCache->init( env, w->rPoolCache,
                                     1024 ); /* XXX make it unbound */
     wEnv->worker_map->put(env, wEnv->worker_map, name, w, (void *)&oldW);
             
-    if(oldW!=NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "workerEnv.createWorker() duplicated %s worker \n",
-                      name);
-        if( w->destroy != NULL )
-            oldW->destroy(env, oldW);
-    }
-    
     return w;
 }
 
@@ -476,6 +463,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     jk_workerEnv_t *wEnv;
     int err;
     jk_pool_t *uriMapPool;
+    jk_bean_t *jkb;
 
     env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Creating workerEnv \n");
 
@@ -551,17 +539,18 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
 
     jk2_map_default_create(env,&wEnv->worker_map, wEnv->pool);
 
-    uriMapPool = wEnv->pool->create(env, wEnv->pool, HUGE_POOL_SIZE);
-    
-    wEnv->uriMap=env->createInstance(env, uriMapPool,"uriMap", "uriMap");
+    jkb=env->createBean2(env, wEnv->pool,"uriMap", "");
 
-    if( wEnv->uriMap==NULL ) {
+    if( jkb==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Error getting uriMap implementation\n");
         return JK_FALSE;
     }
+    wEnv->uriMap=jkb->object;
 
-    wEnv->config=env->createInstance(env, pool,"config", "config");
+    jkb=env->createBean2(env, wEnv->pool,"config", "");
+    env->alias(env, "config:", "config");
+    wEnv->config=jkb->object;
     wEnv->config->workerEnv = wEnv;
     wEnv->config->map = wEnv->initData;
     
