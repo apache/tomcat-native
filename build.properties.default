@@ -135,6 +135,8 @@ xmlParserAPIs.jar=${xerces.lib}/xmlParserAPIs.jar
 #                OPTIONAL LIBRARIES
 # --------------------------------------------------
 
+# ----- Mirror ------
+mirror=http://www.apache.org/dist
 
 # ----- Java Activation Framework (JAF), version 1.0.1 or later -----
 activation.home=${base.path}/jaf-1.0.1
@@ -150,27 +152,31 @@ commons-daemon.loc=jakarta-commons-sandbox/daemon
 
 
 # ----- Commons DBCP, version 1.0 or later -----
-commons-dbcp.home=${base.path}/commons-dbcp-1.0
+commons-dbcp.version=1.1
+commons-dbcp.home=${base.path}/commons-dbcp-${commons-dbcp.version}
 commons-dbcp.lib=${commons-dbcp.home}/commons-dbcp-1.0
 commons-dbcp.jar=${commons-dbcp.lib}/commons-dbcp.jar
-commons-dbcp.loc=http://jakarta.apache.org/builds/jakarta-commons/release/commons-dbcp/v1.0/commons-dbcp-1.0.zip
+commons-dbcp.loc=${mirror}/jakarta/commons/dbcp/binaries/commons-dbcp-${commons-dbcp.version}.tar.gz
 
 
 # ----- Commons Modeler, version 1.0 or later -----
-commons-modeler.home=${base.path}/commons-modeler-1.1M1
+commons-modeler.version=1.1
+commons-modeler.home=${base.path}/commons-modeler-${commons-modeler.version}
 commons-modeler.lib=${commons-modeler.home}
 commons-modeler.jar=${commons-modeler.lib}/commons-modeler.jar
-commons-modeler.loc=http://jakarta.apache.org/builds/jakarta-commons/release/commons-modeler/v1.1-M1/commons-modeler-1.1M1.tar.gz
+commons-modeler.loc=${mirror}/jakarta/commons/modeler/binaries/modeler-${commons-modeler.version}.tar.gz
 
 
 # ----- Commons Pool, version 1.0 or later -----
-commons-pool.home=${base.path}/commons-pool-1.0.1
+commons-pool.version=1.1
+commons-pool.home=${base.path}/commons-pool-${commons-pool.version}
 commons-pool.lib=${commons-pool.home}
 commons-pool.jar=${commons-pool.lib}/commons-pool.jar
-commons-pool.loc=http://jakarta.apache.org/builds/jakarta-commons/release/commons-pool/v1.0.1/commons-pool-1.0.1.tar.gz
+commons-pool.loc=${mirror}/jakarta/commons/pool/binaries/commons-pool-${commons-pool.version}.tar.gz
 
 
 # ----- JavaService, version 1.2.0 or later -----
+# do we really need this anymore?
 javaservice.home=${base.path}/javaservice
 javaservice.loc=http://www.alexandriasc.com/software/JavaService/JavaService-bin-1.2.0.zip
 
@@ -182,10 +188,11 @@ jdbc20ext.jar=${jdbc20ext.lib}/jdbc2_0-stdext.jar
 
 
 # ----- Java Management Extensions (JMX), JMX RI 1.0.1 or later or MX4J 1.0 or later -----
-jmx.home=${base.path}/mx4j-1.1.1
+jmx.version=1.1.1
+jmx.home=${base.path}/mx4j-${jmx.version}
 jmx.lib=${jmx.home}/lib
 jmx.jar=${jmx.lib}/mx4j-jmx.jar
-jmx.loc=http://telia.dl.sourceforge.net/sourceforge/mx4j/mx4j-1.1.1.tar.gz
+jmx.loc=http://telia.dl.sourceforge.net/sourceforge/mx4j/mx4j-${jmx.version}.tar.gz
 
 
 # ----- Java Secure Sockets Extension (JSSE), version 1.0.2 or later -----
@@ -227,10 +234,11 @@ puretls.jar=${puretls.lib}/puretls.jar
 
 
 # ----- Struts, version 1.0.1 or later -----
-struts.home=${base.path}/jakarta-struts-1.0.2
+struts.version=1.1
+struts.home=${base.path}/jakarta-struts-${struts.version}
 struts.lib=${struts.home}/lib
 struts.jar=${struts.lib}/struts.jar
-struts.loc=http://jakarta.apache.org/builds/jakarta-struts/release/v1.0.2/jakarta-struts-1.0.2.tar.gz
+struts.loc=${mirror}/jakarta/struts/binaries/jakarta-struts-${struts.version}.tar.gz
 
 
 # ----- Tyrex Data Source, version 1.0 -----
@@ -241,12 +249,15 @@ tyrex.jar=${tyrex.lib}/tyrex-1.0.jar
 tyrex.loc=http://belnet.dl.sourceforge.net/sourceforge/tyrex/tyrex-1.0.tgz
 
 
-# ----- Tomcat4.1.24 -----
-tomcat41.home=${base.path}/jakarta-tomcat-4.1.24
+# ----- Tomcat4.1.x -----
+tomcat41.version=4.1.30
+tomcat41.home=${base.path}/jakarta-tomcat-${tomcat41.version}
 tomcat41.jar=${tomcat41.home}/server/lib/catalina.jar
-tomcat41.loc=http://www.apache.org/dist/jakarta/tomcat-4/binaries/tomcat-4.1.24.tar.gz 
+servlet-api.jar=${tomcat41.home}/common/lib/servlet.jar
+tomcat41.loc=http://www.apache.org/dist/jakarta/tomcat-4/v${tomcat41.version}/bin/jakarta-tomcat-${tomcat41.version}.tar.gz 
 
 # ----- Tomcat33 -----
-tomcat33.home=${base.path}/jakarta-tomcat-3.3.1a
+tomcat33.version=3.3.2
+tomcat33.home=${base.path}/jakarta-tomcat-${tomcat33.version}
 tomcat33.jar=${tomcat33.home}/lib/common/tomcat_core.jar
-tomcat33.loc=http://jakarta.apache.org/builds/jakarta-tomcat/release/v3.3.1a/bin/jakarta-tomcat-3.3.1a.tar.gz
+tomcat33.loc=${mirror}/jakarta/tomcat-3/v${tomcat33.version}/bin/jakarta-tomcat-${tomcat33.version}.tar.gz
