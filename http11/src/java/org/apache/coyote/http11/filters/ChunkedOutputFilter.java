@@ -167,6 +167,9 @@ public class ChunkedOutputFilter implements OutputFilter {
 
         buffer.doWrite(chunk);
 
+        chunkHeader.setBytes(chunkLength, 8, 2);
+        buffer.doWrite(chunkHeader);
+
         return result;
 
     }
