@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# ScanDoc - Version 0.12,  A C/C++ Embedded Documentation Analyser
+# ScanDoc - Version 0.14,  A C/C++ Embedded Documentation Analyser
 # ----------------------------------------------------------------
 #
 # Distributed under the "Artistic License".  See the file 
@@ -23,7 +23,7 @@ $date = &ctime(time);
 # Set the default tab size
 $tabSize = 4;
 
-$minorVersion = 12;
+$minorVersion = 14;
 $majorVersion = 0;
 $scandocURL   = "http://scandoc.sourceforge.net/";
 
@@ -239,11 +239,12 @@ sub parseParenPointer {
   if (s/^(\s*\(\s*\*)//) {
     $decl .= $1;
     $nest = 1;
-
+    
     for (;;) {
       # Preserve spaces, eliminate in-line comments
       &removeComment;
       while (s/^(\s+)//) { $decl .= $1; &rdln; }
+      
       if (&matchRParen) { $nest++; $decl .= "("; }
       elsif (&matchLParen) {
 	$decl .= ")";
@@ -253,13 +254,13 @@ sub parseParenPointer {
       elsif ((($valid, $d) = &matchKW( "[^\(\)]*")) && $valid) { $decl .= $d; }
       else { last; }
     }
+    
     # Just in case there are array braces afterwards.
     while ((($valid, $d) = &matchDecl) && $valid) { $decl .= $d; }
     $parenPointerFunction = $decl;
     $parenPointerFunction =~ s/^\s+//;	# Remove whitespace from beginning
     $parenPointerFunction =~ s/\s+$//;	# Remove whitespace from end
   }
-
 }
 
 # Parse template arguments
@@ -672,13 +673,11 @@ sub parseDeclaration {
     }
 
     ($type,$mod,$decl) = $decl =~ /([\s\w]*)([\s\*\&]+\s?)(\~?\w+(\[.*\])*)/;
-
-	if ($parenPointerFunction) {
-	  # print STDERR "Detected ret(*name)(param)... \"$decl\" --> \"$parenPointerFunction\"\n";
-	  $decl=$parenPointerFunction;
-	}
-
-   
+    
+    if ($parenPointerFunction) {
+      $decl=$parenPointerFunction;
+    }
+    
     $type = $tempArgs . $type;
     $decl .= $oper;
     
