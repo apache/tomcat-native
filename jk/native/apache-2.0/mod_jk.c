@@ -2225,7 +2225,6 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
 static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 {
     jk_server_conf_t *conf;
-    int mpm_threads = 1;
     apr_status_t rv;
     int rc;
 
@@ -2238,15 +2237,6 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
     }
 
     JK_TRACE_ENTER(conf->log);
-
-    /* Set default connection cache size for worker mpm */
-#if APR_HAS_THREADS
-#ifndef AS400
-    ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads);
-#endif
-#endif
-    if (mpm_threads > 0)
-        jk_set_worker_def_cache_size(mpm_threads);
 
     if ((rc = jk_shm_attach(jk_shm_file)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
@@ -2277,10 +2267,11 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                     server_rec * s)
 {
     int rc;
+    int mpm_threads = 1;
+
     /*     jk_map_t *init_map = NULL; */
     jk_map_t *init_map = conf->worker_properties;
 
-    ;
     if ((rc = jk_shm_open(jk_shm_file)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
             jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s",
@@ -2291,6 +2282,15 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     else
         jk_log(conf->log, JK_LOG_ERROR, "Initializing shm:%s errno=%d",
                jk_shm_name(), rc);
+
+    /* Set default connection cache size for worker mpm */
+#if APR_HAS_THREADS
+#ifndef AS400
+    if (ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads) != APR_SUCCESS)
+        mpm_threads = 1;
+#endif
+#endif
+     jk_set_worker_def_cache_size(mpm_threads);
 
     if (!uri_worker_map_alloc(&(conf->uw_map),
                               conf->uri_to_context,
