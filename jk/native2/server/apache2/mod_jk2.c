@@ -708,12 +708,31 @@ static int jk2_map_to_storage(request_rec *r)
     jk_uriEnv_t *uriEnv=ap_get_module_config( r->request_config, &jk2_module );
     
     if( uriEnv != NULL ) {
-        r->filename = (char *)apr_filename_of_pathname(r->uri);
+        char *uri_p=r->uri;
+
+        /* This is old code which doesn't seem to work well with mod_dir
+            r->filename = (char *)apr_filename_of_pathname(r->uri); */
+
         /*         if( uriEnv->mbean->debug > 0 ) { */
             /*   env->l->jkLog(env, env->l, JK_LOG_INFO,  */
             /*     "mod_jk.map_to_storage(): map %s %s\n", */
             /*                  r->uri, r->filename); */
         /* } */
+
+        /* Absolute paths cannot be merged */
+        if(r->uri[0] == '/') ++uri_p;
+
+        /* Need absolute path to stat */
+        if (apr_filepath_merge(&r->filename, ap_document_root(r), uri_p,
+                               APR_FILEPATH_SECUREROOT | APR_FILEPATH_TRUENAME,
+                               r->pool)
+            != APR_SUCCESS){
+          return DECLINED;
+        }
+
+        /* Stat the file so that mod_dir knows it's there */
+        apr_stat(&r->finfo, r->filename, APR_FINFO_TYPE, r->pool);
+
         return OK;
     }
     return DECLINED;
@@ -724,8 +743,8 @@ static void jk2_register_hooks(apr_pool_t *p)
     ap_hook_handler(jk2_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(jk2_post_config,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_child_init(jk2_child_init,NULL,NULL,APR_HOOK_MIDDLE);
-    ap_hook_translate_name(jk2_translate,NULL,NULL,APR_HOOK_MIDDLE);
-    ap_hook_map_to_storage(jk2_map_to_storage, NULL, NULL, APR_HOOK_FIRST);
+    ap_hook_translate_name(jk2_translate,NULL,NULL,APR_HOOK_FIRST);
+    ap_hook_map_to_storage(jk2_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
 module AP_MODULE_DECLARE_DATA jk2_module =
