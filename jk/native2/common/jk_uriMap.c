@@ -170,8 +170,8 @@ static int jk2_uriMap_realloc(jk_env_t *env,jk_uriMap_t *_this)
 
 static jk_uriEnv_t *jk2_uriEnv_createUriEnv(jk_env_t *env,
                                             jk_uriMap_t *uriMap,
-                                            char *vhost,
-                                            char *path) 
+                                            const char *vhost,
+                                            const char *path) 
 {
     int err;
     jk_uriEnv_t *uriEnv;
@@ -216,45 +216,80 @@ static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
         return NULL;
     }
 
-    uwr->setProperty( env, uwr, "worker", pworker );
+    uwr->setProperty( env, uwr, "worker", (char *)pworker );
 
     return uwr;
 }
 
-static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this,
-                           jk_workerEnv_t *workerEnv,
-                           jk_map_t *init_data)
+
+static int jk2_uriMap_setUriProperty( struct jk_env *env,
+                                      struct jk_uriMap *uMap,
+                                      char *name, char *val)
+
+{
+    jk_worker_t *w = NULL;
+    char *uname=NULL;
+    char *pname=NULL;
+    char *dot=0;
+    int i;
+    jk_uriEnv_t *uriEnv;
+
+    if( strncmp( name, "uri.", 4 ) != 0 )
+        return JK_FALSE;
+
+    pname=uMap->pool->pstrdup( env, uMap->pool, name + 4);
+    dot=strchr( pname, '.' );
+    if( dot== NULL )
+        return JK_FALSE;
+    *dot='\0';
+    uname= dot+1;
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, "UriMap: wname1= %s pname=%s\n", uname, pname); 
+
+    /* Get mapping */
+    uriEnv=uMap->addMapping(env, uMap, NULL, uname, NULL);
+
+    if( uriEnv != NULL ) {
+        /* If we have an object with that name, set the prop */
+        return uriEnv->setProperty( env, uriEnv, pname, val );
+    }
+    return JK_TRUE;
+}
+
+
+
+static int jk2_uriMap_setProperty(jk_env_t *env, jk_uriMap_t *_this,
+                                  char *name, char *value)
+{
+    int rc=JK_TRUE;
+    
+    if( strcmp( name, "uriMap.debug" )==0 ) {
+        _this->debug=atoi( value );
+    } else if( name[0]=='/' ) {
+        jk_uriEnv_t *uriEnv=_this->addMapping(env, _this, NULL, name, value);
+        if ( uriEnv==NULL) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "uriMap.init() error adding %s %s\n", name, value);
+            rc=JK_FALSE;
+        }
+    } else if ( strncmp( name, "uri.", 4) == 0 ) {
+        return jk2_uriMap_setUriProperty( env, _this, name, value );
+    } else {
+        return JK_FALSE;
+    }
+
+    return rc;
+}
+
+
+
+static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this)
 {
     int rc=JK_TRUE;
     int sz;
     int err;
     int i;
+    jk_workerEnv_t *workerEnv=_this->workerEnv;
 
-    _this->workerEnv = workerEnv;
-                                           
-    sz = init_data->size(env, init_data);
-
-    _this->debug=jk2_map_getIntProp(env,
-                                   init_data,"urimap", "default", "debug", 0 );
-    
-    for(i = 0; i < sz ; i++) {
-        char *name=init_data->nameAt(env, init_data, i);
-        if( name!=NULL && name[0]=='/' ) {
-            jk_uriEnv_t *uriEnv=_this->addMapping(env, _this,NULL,name,
-                                    init_data->valueAt(env, init_data, i));
-            if ( uriEnv==NULL) {
-                env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "uriMap.init() error adding %s\n",
-                         init_data->nameAt(env, init_data, i));
-                rc=JK_FALSE;
-            }
-        }
-    }
-
-    if( _this->debug > 0 )  
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "uriMap.init(): rules=%d properties=\n",
-                      _this->size, sz );
 
     /* Set uriEnv->worker ( can't be done earlier since we might not have
        the workers set up */
@@ -270,7 +305,6 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this,
             }
         }
     }
-    
     
     return rc;
 }
@@ -491,6 +525,7 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
     *result=_this;
 
     _this->init=jk2_uriMap_init;
+    _this->setProperty=jk2_uriMap_setProperty;
     _this->destroy=jk2_uriMap_destroy;
     _this->createUriEnv=jk2_uriEnv_createUriEnv;
     _this->addMapping=jk2_uriMap_addMapping;
