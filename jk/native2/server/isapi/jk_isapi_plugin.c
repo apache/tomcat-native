@@ -474,6 +474,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         s->response_started = JK_FALSE;
         s->content_read = 0;
         s->ws_private = lpEcb;
+        s->workerEnv = workerEnv;
 
         /* Initialize the ws_service structure */
         s->init( env, s, worker, lpEcb );
