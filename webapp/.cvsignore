@@ -1,3 +1,5 @@
+.DS_Store
+apr
 Makefile
 Makedefs
 configure
