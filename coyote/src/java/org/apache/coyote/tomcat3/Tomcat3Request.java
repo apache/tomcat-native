@@ -78,18 +78,23 @@ import org.apache.coyote.Processor;
 /** The Request to connect with Coyote.
  *  This class handles the I/O requirements and transferring the request
  *  line and Mime headers between Coyote and Tomcat.
- *  @Author Bill Barker
+ * 
+ *  @author Bill Barker
+ *  @author Costin Manolache
  */
 public class Tomcat3Request extends org.apache.tomcat.core.Request {
 
     org.apache.coyote.Request coyoteRequest=null;
-    
-    SSLSupport sslSupport=null;
+
+    // For SSL attributes we need to call an ActionHook to get
+    // info from the protocol handler.
+    //    SSLSupport sslSupport=null;
+
     ByteChunk  readChunk = new ByteChunk();
     int  pos=-1;
     int  end=-1;
     byte [] readBuffer = null;
-    Socket socket = null;
+
 
     public Tomcat3Request() {
         super();
@@ -100,11 +105,11 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
     public void recycle() {
 	super.recycle();
 	if( coyoteRequest != null) coyoteRequest.recycle();
+
         remoteAddrMB.recycle();
         remoteHostMB.recycle();
-
 	readChunk.recycle();
-	sslSupport=null;
+
 	readBuffer=null;
 	pos=-1;
 	end=-1;
@@ -115,32 +120,22 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
      *  attributes to the Tomcat attributes.
      */
     public void setCoyoteRequest(org.apache.coyote.Request cReq) {
-	coyoteRequest=cReq;
-	// This is really ugly, but fast.
-	// I could still be talked out of it.
-	schemeMB.recycle();
-	methodMB.recycle();
-	uriMB.recycle();
-	queryMB.recycle();
-	protoMB.recycle();
-	try {
-	    schemeMB.duplicate(coyoteRequest.scheme());
-	    methodMB.duplicate(coyoteRequest.method());
-	    uriMB.duplicate(coyoteRequest.requestURI());
-	    queryMB.duplicate(coyoteRequest.query());
-	    protoMB.duplicate(coyoteRequest.protocol());
-	} catch(IOException iex) { // ignore
-	}
+        coyoteRequest=cReq;
+
+        // The CoyoteRequest/Tomcat3Request are bound togheter, they
+        // don't change. That means we can use the same field ( which
+        // doesn't change as well.
+        schemeMB = coyoteRequest.scheme();
+        methodMB = coyoteRequest.method();
+        uriMB = coyoteRequest.requestURI();
+        queryMB = coyoteRequest.query();
+        protoMB = coyoteRequest.protocol();
+
 	headers  = coyoteRequest.getMimeHeaders();
 	scookies.setHeaders(headers);
 	params.setHeaders(headers);
     }
-    /** Set the socket for this request.
-     */
-    public void setSocket(Socket socket) {
-	this.socket = socket;
-    }
-
+    
     /** Read a single character from the request body.
      */
     public int doRead() throws IOException {
@@ -201,43 +196,35 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
     // -------------------- override special methods
 
     public MessageBytes remoteAddr() {
-	if( remoteAddrMB.isNull() ) {
-	    remoteAddrMB.setString(socket.getInetAddress().getHostAddress());
-	}
+
+// XXX Call back the protocol layer - lazy evaluation.
+// 	if( remoteAddrMB.isNull() ) {
+// 	    remoteAddrMB.setString(socket.getInetAddress().getHostAddress());
+// 	}
 	return remoteAddrMB;
     }
 
     public MessageBytes remoteHost() {
-	if( remoteHostMB.isNull() ) {
-	    remoteHostMB.setString( socket.getInetAddress().getHostName() );
-	}
+// 	if( remoteHostMB.isNull() ) {
+// 	    remoteHostMB.setString( socket.getInetAddress().getHostName() );
+// 	}
 	return remoteHostMB;
     }
 
     public String getLocalHost() {
-	InetAddress localAddress = socket.getLocalAddress();
-	localHost = localAddress.getHostName();
+// 	InetAddress localAddress = socket.getLocalAddress();
+// 	localHost = localAddress.getHostName();
 	return localHost;
     }
 
     public MessageBytes serverName(){
-        // if(! serverNameMB.isNull()) return serverNameMB;
-        // parseHostHeader();
+        // That's set by protocol in advance, it's needed for mapping anyway,
+        // no need to do lazy eval.
         return coyoteRequest.serverName();
     }
 
     public int getServerPort(){
-        // if(serverPort!=-1) return serverPort;
-        //No need to delay execution - the host is certainly needed for
-        // mapping.
-        // parseHostHeader();
         return coyoteRequest.getServerPort();
     }
 
-    /** Define the SSL Support support instance for this socket.
-     */
-    void setSSLSupport(SSLSupport s){
-        sslSupport=s;
-    }
- 
 }

@@ -81,8 +81,11 @@ import org.apache.tomcat.util.compat.*;
 
 class Tomcat3Response extends  Response {
     String reportedname=null;
+
     org.apache.coyote.Response coyoteResponse=null;
+
     ByteChunk outputChunk = new ByteChunk();
+
     boolean  acknowledged=false;
     
     public Tomcat3Response() {
@@ -107,6 +110,7 @@ class Tomcat3Response extends  Response {
 	acknowledged=false;
     }
 
+    // XXX What is this ? */
     public void setReported(String reported) {
         reportedname = reported;
     }
@@ -114,6 +118,7 @@ class Tomcat3Response extends  Response {
     public void endHeaders()  throws IOException {
 	super.endHeaders();
 	coyoteResponse.setStatus(getStatus());
+        // Calls a sendHeaders callback to the protocol
 	coyoteResponse.sendHeaders();
     }
 
@@ -121,6 +126,7 @@ class Tomcat3Response extends  Response {
 	throws IOException
     {
 	if( count > 0 ) {
+            // XXX should be an explicit callback as well.
 	    outputChunk.setBytes(buffer, pos, count);
 	    coyoteResponse.doWrite( outputChunk );
 	}
@@ -131,10 +137,12 @@ class Tomcat3Response extends  Response {
 	if( ! included )
 	    coyoteResponse.reset();
     }
+    
     public void finish() throws IOException {
 	super.finish();
 	coyoteResponse.finish();
     }
+
     /**
      * Send an acknowledgment of a request.
      * 
@@ -145,7 +153,7 @@ class Tomcat3Response extends  Response {
 
 	if( status >= 300 ) // Don't ACK on errors.
 	    acknowledged = true;
-	// Don't ACK twice on the same request. (e.g. on a forward)
+        // Don't ACK twice on the same request. (e.g. on a forward)
 	if(acknowledged)
 	    return;
         // Ignore any call from an included servlet

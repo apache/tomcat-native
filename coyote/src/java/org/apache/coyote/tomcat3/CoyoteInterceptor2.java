@@ -193,9 +193,9 @@ public class CoyoteInterceptor2 extends BaseInterceptor
      */
     public int preService(org.apache.tomcat.core.Request request,
                           org.apache.tomcat.core.Response response) {
-	if(response instanceof CoyoteResponse) {
+	if(response instanceof Tomcat3Response) {
 	    try {
-		((CoyoteResponse)response).sendAcknowledgement();
+		((Tomcat3Response)response).sendAcknowledgement();
 	    } catch(Exception ex) {
 		log("Can't send ACK", ex);
 	    }
