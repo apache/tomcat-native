@@ -121,9 +121,9 @@ static const char *defaultVM_PATH[]={
 
 /** Where to try to find jk jars ( if user doesn't specify it explicitely ) */
 static const char *defaultJK_PATH[]={
-    "$(tomcat.home)$(fs)modules$(fs)jk$(fs)WEB-INF$(fs)lib$(fs)jk2.jar",
+    "$(tomcat.home)$(fs)modules$(fs)jk$(fs)WEB-INF$(fs)lib$(fs)tomcat-jk2.jar",
  "$(tomcat.home)$(fs)modules$(fs)jk$(fs)WEB-INF$(fs)lib$(fs)tomcat-utils.jar",
-    "$(tomcat.home)$(fs)webapps(fs)jk$(fs)WEB-INF$(fs)lib$(fs)ajp.jar",
+    "$(tomcat.home)$(fs)webapps(fs)jk$(fs)WEB-INF$(fs)lib$(fs)tomcat-jk2.jar",
  "$(tomcat.home)$(fs)webapps(fs)jk$(fs)WEB-INF$(fs)lib$(fs)tomcat-utils.jar",
     NULL
 };
@@ -409,20 +409,16 @@ static int open_jvm1(jk_env_t *env, jk_vm_t *p)
 
     if(vm_args.classpath) {
         unsigned len = strlen(vm_args.classpath) + 
-                       strlen(p->tomcat_classpath) + 
-                       3;
+            strlen(p->tomcat_classpath) +  3;
         char *tmp = p->pool->alloc(env, p->pool, len);
-        if(tmp) {
-            sprintf(tmp, "%s%c%s", 
-                    p->tomcat_classpath, 
-                    PATH_SEPERATOR,
-                    vm_args.classpath);
-            p->tomcat_classpath = tmp;
-        } else {
+        if(tmp==NULL) { 
             env->l->jkLog(env, env->l, JK_LOG_EMERG, 
                           "Fail-> allocation error for classpath\n"); 
             return JK_FALSE;
         }
+        sprintf(tmp, "%s%c%s", p->tomcat_classpath, 
+                PATH_SEPERATOR, vm_args.classpath);
+        p->tomcat_classpath = tmp;
     }
     
     vm_args.classpath = p->tomcat_classpath;
