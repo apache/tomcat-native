@@ -207,8 +207,8 @@ public class MsvcLinker extends LinkerAdapter {
 
             throw new BuildException("Link failed " + soFile);
         }
-        linkOpt.delete();
-        linkDef.delete();
+        //         linkOpt.delete();
+        //         linkDef.delete();
         closeStreamHandler();
         return true;
     }

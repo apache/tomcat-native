@@ -107,6 +107,16 @@ public class LibtoolLinker extends LinkerAdapter {
 	if( profile )
 	    cmd.createArgument().setValue("-pg" );
 
+        // write out any additional link options
+        Enumeration opts = linkOpts.elements();
+        while( opts.hasMoreElements() ) {
+            JkData opt = (JkData) opts.nextElement();
+            String option = opt.getValue();
+            if( option == null ) continue;
+
+            cmd.createArgument().setValue( option );
+        }
+        
 	// All .o files must be included
 	project.log( "Linking " + buildDir + "/" + soFile + ".so");
 

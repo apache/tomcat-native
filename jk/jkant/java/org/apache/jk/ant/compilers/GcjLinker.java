@@ -124,6 +124,16 @@ public class GcjLinker extends LinkerAdapter {
 
 	project.log( "Linking " + buildDir + "/" + soFile + ".so");
 
+        // write out any additional link options
+        Enumeration opts = linkOpts.elements();
+        while( opts.hasMoreElements() ) {
+            JkData opt = (JkData) opts.nextElement();
+            String option = opt.getValue();
+            if( option == null ) continue;
+
+            cmd.createArgument().setValue( option );
+        }
+
 	for( int i=0; i<srcList.size(); i++ ) {
 	    Source source=(Source)srcList.elementAt(i);
 	    File f1=new File(buildDir, source.getPackage());
