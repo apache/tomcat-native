@@ -108,6 +108,29 @@ import org.apache.tomcat.util.http.BaseRequest;
 final class Ajp13Processor
     implements Lifecycle, Runnable {
 
+    /**
+     * A simple class to provide synchronized access
+     * to a boolean.
+     */
+    private class Bool {
+
+        private boolean b = false;
+
+        Bool() {
+        }
+        
+        Bool(boolean b) {
+            this.b = b;
+        }
+
+        synchronized boolean value() {
+            return b;
+        }
+
+        synchronized void set(boolean b) {
+            this.b = b;
+        }
+    }
 
     // ----------------------------------------------------------- Constructors
 
@@ -207,7 +230,12 @@ final class Ajp13Processor
     /**
      * The shutdown signal to our background thread
      */
-    private boolean stopped = false;
+    private Bool stopped = new Bool(true);
+
+    /**
+     * Are we currently handling a request?
+     */
+    private Bool handlingRequest = new Bool(false);
 
 
     /**
@@ -256,7 +284,7 @@ final class Ajp13Processor
 	available = true;
 	notifyAll();
 
-	if ((debug >= 1) && (socket != null))
+	if ((debug > 0) && (socket != null))
 	    logger.log(" An incoming request is being assigned");
 
     }
@@ -284,7 +312,7 @@ final class Ajp13Processor
 	available = false;
 	notifyAll();
 
-	if ((debug >= 1) && (socket != null))
+	if ((debug > 0) && (socket != null))
 	    logger.log("  The incoming request has been awaited");
 
 	return (socket);
@@ -332,13 +360,20 @@ final class Ajp13Processor
         }
 
         boolean moreRequests = true;
-        while (moreRequests) {
+        while (moreRequests && !stopped.value()) {
             
             int status = 0;
             try {
                 status = ajp13.receiveNextRequest(ajpRequest);                
             } catch (IOException e) {
                 logger.log("process: ajp13.receiveNextRequest", e);
+            }
+
+            if (stopped.value()) {
+                if (debug > 0) {
+                    logger.log("process:  received request, but we're stopped");
+                }
+                break;
             }
             
             if( status==-2) {
@@ -356,6 +391,9 @@ final class Ajp13Processor
                 break;
 
             try {
+                // set flag
+                handlingRequest.set(true);
+                
                 // set up request
                 request.setAjpRequest(ajpRequest);
                 request.setResponse(response);
@@ -365,13 +403,22 @@ final class Ajp13Processor
                 response.setRequest(request);
                 response.setStream(output);
                 
-                if (this.debug > 0) {
+                if (debug > 0) {
                     logger.log("invoking...");
                 }
+
                 connector.getContainer().invoke(request, response);
+
+                if (debug > 0) {
+                    logger.log("done invoking, finishing request/response....");
+                }
 
                 response.finishResponse();
                 request.finishRequest();
+
+                if (debug > 0) {
+                    logger.log("finished handling request.");
+                }
 
             } catch (Exception e) {
                 logger.log("process: invoke", e);
@@ -384,6 +431,9 @@ final class Ajp13Processor
 
             // recycle ajp13 object
             ajp13.recycle();
+
+            // reset flag
+            handlingRequest.set(false);
         }
         
 	try {
@@ -399,7 +449,9 @@ final class Ajp13Processor
 	}
 	socket = null;
 
-        logger.log("process:  done");
+        if (debug > 0) {
+            logger.log("process:  done");
+        }
     }
 
 
@@ -413,7 +465,7 @@ final class Ajp13Processor
     public void run() {
 
         // Process requests until we receive a shutdown signal
-	while (!stopped) {
+	while (!stopped.value()) {
 
 	    // Wait for the next socket to be assigned
 	    Socket socket = await();
@@ -443,11 +495,12 @@ final class Ajp13Processor
 
 	logger.log(sm.getString("ajp13Processor.starting"));
 
+        stopped.set(false);
 	thread = new Thread(this, threadName);
 	thread.setDaemon(true);
 	thread.start();
 
-	if (debug >= 1)
+	if (debug > 0)
 	    logger.log(" Background thread has been started");
 
     }
@@ -460,11 +513,22 @@ final class Ajp13Processor
 
 	logger.log(sm.getString("ajp13Processor.stopping"));
 
-	stopped = true;
+	stopped.set(true);
         assign(null);
 	synchronized (threadSync) {
 	    try {
-		threadSync.wait(5000);
+                if (handlingRequest.value()) {
+                    if (debug > 0) {
+                        logger.log
+                            ("currentling handling a request, so waiting....");
+                    }
+                    threadSync.wait(5000);
+                } else {
+                    if (debug > 0) {
+                        logger.log
+                            ("not currently handling a request, not waiting.");
+                    }
+                }
 	    } catch (InterruptedException e) {
 		;
 	    }
