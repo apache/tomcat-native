@@ -305,6 +305,11 @@ public final class CoyoteConnector
      */
     private boolean disableUploadTimeout = false;
 
+    /**
+     * Maximum number of Keep-Alive requests to honor per connection.
+     */
+    private int maxKeepAliveRequests = 100;
+
 
     /**
      * Compression value.
@@ -778,6 +783,20 @@ public final class CoyoteConnector
     }
 
     /**
+     * Return the maximum number of Keep-Alive requests to honor per connection.
+     */
+    public int getMaxKeepAliveRequests() {
+        return maxKeepAliveRequests;
+    }
+
+    /**
+     * Set the maximum number of Keep-Alive requests to honor per connection.
+     */
+    public void setMaxKeepAliveRequests(int mkar) {
+        maxKeepAliveRequests = mkar;
+    }
+
+    /**
      * Return the scheme that will be assigned to requests received
      * through this connector.  Default value is "http".
      */
@@ -1021,6 +1040,8 @@ public final class CoyoteConnector
                                        "" + connectionTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "disableUploadTimeout", 
                                        "" + disableUploadTimeout);
+        IntrospectionUtils.setProperty(protocolHandler, "maxKeepAliveRequests",
+                                       "" + maxKeepAliveRequests);
         IntrospectionUtils.setProperty(protocolHandler, "compression", 
                                        compression);
         if (address != null) {
