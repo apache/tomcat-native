@@ -238,16 +238,20 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
 {
     int i, j;
     char *name;
-    char vs[1024];
-    char vv[1024];
+    char vs[1024] = {0};
+    char vv[1024] = {0};
 
     int n = uriMap->vhosts->size(env, uriMap->vhosts);
     if (port) {
-        sprintf(vs, "%s:%d", vhost ? vhost : "*", port);
-        sprintf(vs, "*:%d", port);
+        if (vhost && strchr(vhost, ':'))
+            strcpy(vs, vhost);
+        else
+            sprintf(vs, "%s:%d", vhost ? vhost : "*", port);
+        sprintf(vv, "*:%d", port);
     }
     else
         strcpy(vs, vhost ? vhost : "*"); 
+
     for (i = 0 ; i < n ; i++) {
         jk_uriEnv_t *uriEnv = uriMap->vhosts->valueAt(env, uriMap->vhosts, i);
         name = uriMap->vhosts->nameAt(env, uriMap->vhosts, i);
@@ -273,7 +277,6 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
     return uriMap->vhosts->get(env, uriMap->vhosts, "*");
 }
 
-
 static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
 {
     int rc = JK_OK;
@@ -290,6 +293,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
             return JK_ERR;
         }
     }
+
     /* Initialize the context table */
     for (i = 0; i < uriMap->maps->size(env, uriMap->maps); i++) {
         jk_uriEnv_t *uriEnv = uriMap->maps->valueAt(env, uriMap->maps, i);
@@ -300,6 +304,19 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
             if (uriEnv->virtual != NULL && strlen(uriEnv->virtual)) {
                 uriMap->vhosts->put(env, uriMap->vhosts,
                                     uriEnv->virtual, uriEnv, NULL);
+            }
+        }
+        /* Create the missing vhosts */
+        else if (uriEnv->virtual != NULL && strlen(uriEnv->virtual)) {
+            if (!uriMap->vhosts->get(env, uriMap->vhosts,
+                                     uriEnv->virtual)) {
+                jk2_map_default_create(env, &uriEnv->webapps, uriMap->pool);
+                uriMap->vhosts->put(env, uriMap->vhosts,
+                                    uriEnv->virtual, uriEnv, NULL);
+
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "uriMap.init() Fixing Host %s\n", 
+                              uriEnv->virtual);
             }
         }
     }
@@ -504,7 +521,6 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                       "uriMap.mapUri() uri must start with /\n");
         return NULL;
     }
-
     hostEnv = jk2_uriMap_hostMap(env, uriMap, vhost, port);
     if (!hostEnv) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
