@@ -323,7 +323,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
         /* you can not recover on another load balancer */
         *is_recoverable_error = JK_FALSE;
 
-        
+        /* set the recovery post, for LB mode */        
+        s->reco_buf = jk_b_new(s->pool);
+        jk_b_set_buffer_size(s->reco_buf, DEF_BUFFER_SZ);
+        jk_b_reset(s->reco_buf);
+        s->reco_status = RECO_INITED;                                                                                                                                
         while(1) {
             worker_record_t *rec = get_most_suitable_worker(p->worker, s, attempt++);
             int rc;

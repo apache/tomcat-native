@@ -476,3 +476,19 @@ jk_log(l, file, line, level, "%s #%d\n", what, jk_b_get_len(msg));
 #endif
 }
 
+
+int jk_b_copy(jk_msg_buf_t *smsg,
+              jk_msg_buf_t *dmsg)
+{
+	if (smsg == NULL || dmsg == NULL)
+		return (-1);
+
+	if (dmsg->maxlen < smsg->len)
+		return (-2);
+
+	memcpy(dmsg->buf, smsg->buf, smsg->len);
+	dmsg->len = smsg->len;
+
+	return (smsg->len);
+}
+

@@ -74,6 +74,7 @@
 #include "jk_logger.h"
 #include "jk_pool.h"
 #include "jk_uri_worker_map.h"
+#include "jk_msg_buff.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -241,6 +242,12 @@ struct jk_ws_service {
      * essentially a 'this' pointer.  All return JK_TRUE on success
      * and JK_FALSE on failure.
      */
+
+    /*
+     * Area to get POST data for fail-over recovery in POST
+     */
+    jk_msg_buf_t    *reco_buf; 
+    int		    reco_status;
 
     /*
      * Send the response headers to the browser.

@@ -1091,7 +1091,20 @@ static int ajp_send_request(jk_endpoint_t *e,
         }
         else
         	jk_log(l, JK_LOG_DEBUG, "Resent the request body (%d)\n", postlen);
-        	
+    }
+    else if (s->reco_status == RECO_FILLED)
+    {
+	/* Recovery in LB MODE */
+    	postlen = jk_b_get_len(s->reco_buf);
+
+	if (postlen > AJP_HEADER_LEN) {
+		if(!ajp_connection_tcp_send_message(ae, s->reco_buf, l)) {
+			jk_log(l, JK_LOG_ERROR, "Error resending request body (lb mode) (%d)\n", postlen);
+			return JK_FALSE;
+		}
+	}
+	else
+		jk_log(l, JK_LOG_DEBUG, "Resent the request body (lb mode) (%d)\n", postlen);
     }
     else {
         /* We never sent any POST data and we check if we have to send at
@@ -1117,6 +1130,13 @@ static int ajp_send_request(jk_endpoint_t *e,
                 op->recoverable = JK_FALSE;
                 return JK_CLIENT_ERROR;
             }
+
+	   /* If a RECOVERY buffer is available in LB mode, fill it */
+	   if (s->reco_status == RECO_INITED) {
+		jk_b_copy(op->post, s->reco_buf);
+		s->reco_status = RECO_FILLED;
+	   }
+
             s->content_read = len;
             if (!ajp_connection_tcp_send_message(ae, op->post, l)) {
                 jk_log(l, JK_LOG_ERROR, "Error sending request body\n");

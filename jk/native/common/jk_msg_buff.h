@@ -227,6 +227,11 @@ void jk_dump_buff(jk_logger_t *l,
                       char * what,
                       jk_msg_buf_t * msg);
 
+/** Copy a msg buf into another one
+  */
+int jk_b_copy(jk_msg_buf_t *smsg,
+              jk_msg_buf_t *dmsg);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
