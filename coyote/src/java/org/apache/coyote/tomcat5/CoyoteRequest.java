@@ -1293,12 +1293,11 @@ public class CoyoteRequest
         if (readOnlyAttributes.containsKey(name)) {
             return;
         }
-        oldValue = attributes.get(name);
+
+        oldValue = attributes.put(name, value);
         if (oldValue != null) {
             replaced = true;
         }
-
-        attributes.put(name, value);
 
         // Notify interested application event listeners
         Object listeners[] = context.getApplicationListeners();
