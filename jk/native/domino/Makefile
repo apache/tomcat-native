@@ -47,11 +47,13 @@ LIBS=-lc -ldl -lnotes -L$(NOTESHOME)
 INC=-I$(NOTESINC) -I$(JAVAINC) -I$(JKINC)
 DEFS=-DLINUX -DUNIX
 
-JKOBJ = ../jk/jk_ajp12_worker.o ../jk/jk_ajp13.o ../jk/jk_ajp13_worker.o ../jk/jk_connect.o \
-	../jk/jk_jni_worker.o ../jk/jk_lb_worker.o ../jk/jk_map.o ../jk/jk_msg_buff.o \
-	../jk/jk_nwmain.o ../jk/jk_pool.o ../jk/jk_sockbuf.o ../jk/jk_uri_worker_map.o \
-	../jk/jk_util.o ../jk/jk_worker.o ../jk/jk_ajp14.o ../jk/jk_ajp14_worker.o \
-	../jk/jk_context.o ../jk/jk_md5.o ../jk/jk_ajp_common.o
+JKOBJ = ../common/jk_ajp12_worker.o ../common/jk_ajp13.o ../common/jk_ajp13_worker.o \
+	../common/jk_connect.o 	../common/jk_jni_worker.o ../common/jk_lb_worker.o \
+	../common/jk_map.o ../common/jk_msg_buff.o ../common/jk_nwmain.o \
+	../common/jk_pool.o ../common/jk_sockbuf.o ../common/jk_uri_worker_map.o \
+	../common/jk_util.o ../common/jk_worker.o ../common/jk_ajp14.o \
+	../common/jk_ajp14_worker.o ../common/jk_context.o ../common/jk_md5.o \
+	../common/jk_ajp_common.o
 
 LOBJ  =	jk_dsapi_plugin.o inifile.o
 OBJ   = $(JKOBJ) $(LOBJ)

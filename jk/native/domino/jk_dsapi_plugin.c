@@ -525,9 +525,11 @@ DLLEXPORT unsigned int FilterInit(FilterInitData * filterInitData)
 	if (map_alloc(&map))
 	{
 		if (map_read_properties(map, workerFile))
+#if 0
             /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
             worker_env.uri_to_worker = &uw_map;
 			GETVARIABLE("SERVER_SOFTWARE", &worker_env.server_name, "Lotus Domino");
+#endif
 			if (wc_open(map, &worker_env, logger))
 				rc = JK_TRUE;
 
@@ -888,7 +890,7 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 	/* There's no point in doing this because Domino never seems to
 	 * set any of these CGI variables.
 	 */
-	/*
+#if 0
 	if (s->is_ssl)
 	{
 		char *sslNames[] =
@@ -941,7 +943,7 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 			s->num_attributes = varCount;
 		}
 	}
-	*/
+#endif
 
 	/* Duplicate all the headers now */
 

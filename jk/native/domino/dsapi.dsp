@@ -55,10 +55,6 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib notes.lib /nologo /dll /machine:I386 /out:"Release/tomcat_redirector.dll" /libpath:"C:\notesapi\lib\mswin32"
-# Begin Special Build Tool
-SOURCE="$(InputPath)"
-PostBuild_Cmds=copy Release\tomcat_redirector.dll \\london\c$\lotus\domino
-# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "dsapi - Win32 Debug"
 
@@ -161,29 +157,6 @@ SOURCE=..\jk\jk_util.c
 SOURCE=..\jk\jk_worker.c
 # End Source File
 # End Group
-
-SOURCE=..\jk\jk_worker_ajp14.c
-# End Source File
-# End Group
-
-SOURCE=..\jk\jk_ajp14.c
-# End Source File
-# End Group
-
-SOURCE=..\jk\jk_context.c
-# End Source File
-# End Group
-
-SOURCE=..\jk\jk_ajp_common.c
-# End Source File
-# End Group
-
-SOURCE=..\jk\jk_md5.c
-# End Source File
-# End Group
-
-# End Source File
-# End Group
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
@@ -272,35 +245,13 @@ SOURCE=..\jk\jk_worker.h
 SOURCE=..\jk\jk_worker_list.h
 # End Source File
 # End Group
-
-SOURCE=..\jk\jk_worker_ajp14.h
-# End Source File
-# End Group
-
-SOURCE=..\jk\jk_ajp14.h
-# End Source File
-# End Group
-
-SOURCE=..\jk\jk_context.h
-# End Source File
-# End Group
-
-SOURCE=..\jk\jk_ajp_common.h
-# End Source File
-# End Group
-
-SOURCE=..\jk\jk_md5.h
-# End Source File
-# End Group
-
-
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # End Group
 # Begin Source File
 
-SOURCE=.\HISTORY
+SOURCE=.\ReadMe.txt
 # End Source File
 # End Target
 # End Project
