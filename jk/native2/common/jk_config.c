@@ -69,8 +69,14 @@
 #define CAPACITY_INC_SIZE (50)
 #define LENGTH_OF_LINE    (1024)
 
+int jk2_config_read(struct jk_env *env, struct jk_config *cfg,
+                    struct jk_map *map);
 static void jk2_trim_prp_comment(char *prp);
 static int  jk2_trim(char *s);
+
+static int JK_METHOD jk2_config_readFile(jk_env_t *env,
+                                         jk_config_t *cfg,
+                                         int *didReload, int firstTime);
 
 /* ==================== ==================== */
 
@@ -84,45 +90,13 @@ static int jk2_config_setConfigFile( jk_env_t *env,
 {
     struct stat statbuf;
     int err;
-    jk_map_t *props;
+    jk_map_t *cfgData;
     int i;
+    int j;
     
-    if (stat(workerFile, &statbuf) == -1) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.setConfig(): Can't find config file %s", workerFile );
-        return JK_ERR;
-    }
-
     cfg->file=workerFile;
-    
-    /** Read worker files
-     */
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "config.setConfig(): Reading config %s %d\n",
-                  workerFile, cfg->map->size(env, cfg->map) );
-    
-    jk2_map_default_create(env, &props, wEnv->pool);
-    
-    err=jk2_config_read(env, cfg, props, workerFile );
-    
-    if( err==JK_OK ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "config.setConfig():  Reading properties %s %d\n",
-                      workerFile, props->size( env, props ) );
-    } else {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.setConfig(): Error reading properties %s\n",
-                      workerFile );
-        return JK_ERR;
-    }
 
-    for( i=0; i<props->size( env, props); i++ ) {
-        char *name=props->nameAt(env, props, i);
-        char *val=props->valueAt(env, props, i);
-
-        cfg->setPropertyString( env, cfg, name, val );
-    }
-    
-    return JK_OK;
+    return jk2_config_readFile( env, cfg, NULL, JK_TRUE );
 }
 
 /* Experimental. Dangerous. The file param will go away, for security
@@ -247,9 +221,12 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
                            jk_bean_t *mbean, char *name, char *val)
 {
     char *pname;
+    int multiValue=JK_FALSE;
+    
     if( mbean == cfg->mbean ) {
         pname=name;
     } else {
+        /* Make substitution work for ${OBJ_NAME.PROP} */
         pname=cfg->pool->calloc( env, cfg->pool,
                                  strlen( name ) + strlen( mbean->name ) + 4 );
         strcpy( pname, mbean->name );
@@ -257,14 +234,32 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
         strcat( pname, name );
     }
 
-    /* fprintf( stderr, "config.setProperty %s %s %s \n", mbean->name, name, val ); */
-
+    name= cfg->pool->pstrdup( env, cfg->pool, name );
+    val= cfg->pool->pstrdup( env, cfg->pool, val );
+    
     /** Save it on the config. XXX no support for deleting yet */
     /* The _original_ value. Will be saved with $() in it */
     if( mbean->settings == NULL )
         jk2_map_default_create(env, &mbean->settings, cfg->pool);
     
-    mbean->settings->add( env, mbean->settings, name, val );
+    if( mbean->multiValueInfo != NULL ) {
+        int i;
+        for( i=0; i<64; i++ ) {
+            if(mbean->multiValueInfo[i]== NULL)
+                break;
+            if( strcmp( name, mbean->multiValueInfo[i])==0 ) {
+                multiValue=JK_TRUE;
+                break;
+            }
+        }
+    }
+
+    if( multiValue ) {
+        mbean->settings->add( env, mbean->settings, name, val );
+        fprintf( stderr, "config.setProperty MULTI %s %s %s \n", mbean->name, name, val ); 
+    } else {
+        mbean->settings->put( env, mbean->settings, name, val, NULL );
+    }
 
     /* Call the 'active' setter
      */
@@ -274,7 +269,11 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     
     /** Used for future replacements
      */
-    cfg->map->add( env, cfg->map, pname, val );
+    if( multiValue ) {
+        cfg->map->add( env, cfg->map, pname, val );
+    } else {
+        cfg->map->put( env, cfg->map, pname, val, NULL );
+    }
 
     /*     env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s / %s / %s=%s\n", */
     /*                    mbean->name, name, pname, val); */
@@ -345,10 +344,6 @@ int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
         return status;
     }
 
-    if( strncmp( objName, "disabled:", 9) == 0 ) {
-        return JK_OK;
-    }
-    
     /** Replace properties in the object name */
     objName = jk2_config_replaceProperties(env, cfg->map, cfg->map->pool, objName);
 
@@ -372,11 +367,13 @@ int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
 
 
 /* ==================== */
-/*  Reading / parsing */
+/*  Reading / parsing. 
+ */
 int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char *prp )
 {
     int rc = JK_ERR;
     char *v;
+    jk_map_t *prefNode=NULL;
 
     jk2_trim_prp_comment(prp);
     
@@ -391,12 +388,12 @@ int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char 
         *v='\0';
         jk2_trim( v );
         prp++;
-        cfg->section=cfg->pool->pstrdup(env, cfg->pool, prp);
-        /* Add a dummy property, so the object will be created */
-        dummyProp=cfg->pool->calloc( env, cfg->pool, strlen( prp ) + 7 );
-        strcpy(dummyProp, prp );
-        strcat( dummyProp, ".name");
-        m->add( env, m, dummyProp, cfg->section);
+        
+        cfg->section=cfg->pool->pstrdup(env, m->pool, prp);
+
+        jk2_map_default_create( env, &prefNode, m->pool );
+
+        m->add( env, m, cfg->section, prefNode);
 
         return JK_OK;
     }
@@ -407,33 +404,18 @@ int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char 
         
     *v = '\0';
     v++;                        
-    
+
     if(strlen(v)==0 || strlen(prp)==0)
         return JK_OK;
 
-    /* [ ] Shortcut */
-    if( cfg->section != NULL ) {
-        char *newN=cfg->pool->calloc( env, cfg->pool, strlen( prp ) + strlen( cfg->section ) + 4 );
-        strcpy( newN, cfg->section );
-        strcat( newN, "." );
-        strcat( newN, prp );
-        prp=newN;
-    }
-
+    prefNode=m->get( env, m, cfg->section);
     
-    /* Don't replace now - the caller may want to
-       save the file, and it'll replace them anyway for runtime changes
-       v = jk2_config_replaceProperties(env, cfg->map, cfg->pool, v); */
+    if( prefNode==NULL )
+        return JK_ERR;
 
-    /* We don't contatenate the values - but use multi-value
-       fields. This eliminates the ugly hack where readProperties
-       tried to 'guess' the separator, and the code is much
-       cleaner. If we have multi-valued props, it's better
-       to deal with that instead of forcing a single-valued
-       model.
-    */
-    m->add( env, m, cfg->pool->pstrdup(env, cfg->pool, prp),
-            cfg->pool->pstrdup(env, cfg->pool, v));
+    /* fprintf(stderr, "Adding [%s] %s=%s\n", cfg->section, prp, v ); */
+    prefNode->add( env, prefNode, m->pool->pstrdup(env, m->pool, prp),
+                   m->pool->pstrdup(env, m->pool, v));
 
     return JK_OK;
 }
@@ -466,13 +448,15 @@ int jk2_config_queryRead(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const cha
     }
     return JK_OK;
 }
-     
-int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *f)
+
+/** Read the config file
+ */
+int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m)
 {
     FILE *fp;
     char buf[LENGTH_OF_LINE + 1];            
     char *prp;
-//    char *v;
+    char *f=cfg->file;
         
     if(m==NULL || f==NULL )
         return JK_ERR;
@@ -504,7 +488,7 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
     char *rc;
     char *env_start;
     int rec = 0;
-
+    int didReplace=JK_FALSE;
     rc = value;
     env_start = value;
 
@@ -525,8 +509,9 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
 
             if(env_value != NULL ) {
                 int offset=0;
-                char *new_value = resultPool->calloc(env, resultPool, 
-                                                    (strlen(rc) + strlen(env_value)));
+                /* tmp allocations in tmpPool */
+                char *new_value = env->tmpPool->calloc(env, env->tmpPool, 
+                                                       (strlen(rc) + strlen(env_value)));
                 if(!new_value) {
                     break;
                 }
@@ -542,7 +527,8 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
 		offset= env_start - rc + strlen( env_value );
                 rc = new_value;
 		/* Avoid recursive subst */
-                env_start = rc + offset; 
+                env_start = rc + offset;
+                didReplace=JK_TRUE;
             } else {
                 env_start = env_end;
             }
@@ -550,10 +536,173 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
             break;
         }
     }
+    
+    if( didReplace && resultPool!=NULL && resultPool != env->tmpPool ) {
+        /* Make sure the result is allocated in the right mempool.
+           tmpPool will be reset for each request.
+        */
+        rc=resultPool->pstrdup( env, resultPool, rc );
+    }
 
     return rc;
 }
 
+/* -------------------- Reconfiguration -------------------- */
+
+/** cfgData has component names as keys and a map of attributes as value.
+ *  We'll create the beans and call the setters.
+ *  If this is not firstTime, we create new componens and modify those
+ *  with a lower 'ver'.
+ *
+ *  Note that _no_ object can be ever destroyed. You can 'disable' them,
+ *  but _never_ remove/destroy it. We work in a multithreaded environment,
+ *  and any removal may have disastrous consequences. Using critical
+ *  sections would drastically affect the performance.
+ */
+static int jk2_config_processConfigData(jk_env_t *env, jk_config_t *cfg,
+                                        jk_map_t *cfgData, int firstTime )
+{
+    int rc;
+    int i;
+    int j;
+    
+    for( i=0; i<cfgData->size( env, cfgData ); i++ ) {
+        char *name=cfgData->nameAt(env, cfgData, i);
+        jk_map_t *prefNode=cfgData->valueAt(env, cfgData, i);
+        jk_bean_t *bean;
+        int ver;
+        char *verString;
+
+        bean=env->getBean( env, name );
+        if( bean==NULL ) {
+            if( cfg->mbean->debug > 0 ) {
+                env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                              "config.setConfig():  Creating %s\n", name );
+            }
+            bean=env->createBean( env, cfg->pool, name );
+        }
+
+        if( bean == NULL ) {
+            /* Can't create it, save the value in our map */
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "config.update(): Can't create %s\n", name );
+            continue;
+        }
+
+        verString= prefNode->get( env, prefNode, "ver" );
+        if( !firstTime ) {
+            if( verString == NULL ) continue;
+        
+            ver=atoi( verString );
+            
+            if( ver <= bean->ver) {
+                /* Object didn't change
+                 */
+                continue;
+            }
+        }
+        
+        if( !firstTime )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "config.update(): Updating %s\n", name );
+        
+        /* XXX Maybe we shoud destroy/init ? */
+        
+        for( j=0; j<prefNode->size( env, prefNode ); j++ ) {
+            char *pname=prefNode->nameAt(env, prefNode, j);
+            char *pvalue=prefNode->valueAt(env, prefNode, j);
+
+            cfg->setProperty( env, cfg, bean, pname, pvalue );
+        }
+    }
+
+    return JK_OK;
+}
+
+static int jk2_config_readFile(jk_env_t *env,
+                               jk_config_t *cfg,
+                               int *didReload, int firstTime)
+{
+    int rc;
+    struct stat statbuf;
+    time_t mtime;
+    jk_map_t *cfgData;
+
+    if( didReload!=NULL )
+        *didReload=JK_FALSE;
+
+    if( cfg->file==NULL )
+        return JK_ERR;
+
+    rc=stat(cfg->file, &statbuf);
+    if (rc == -1) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "config.update(): Can't find config file %s", cfg->file );
+        return JK_ERR;
+    }
+    
+    if( statbuf.st_mtime < cfg->mtime )
+        return JK_OK;
+     
+    JK_ENTER_CS(&cfg->cs, rc);
+    
+    if(rc !=JK_TRUE) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "cfg.update() Can't enter critical section\n");
+        return JK_ERR;
+    }
+
+    /* Check if another thread has updated the config */
+
+    rc=stat(cfg->file, &statbuf);
+    if (rc == -1) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "config.update(): Can't find config file %s", cfg->file );
+        JK_LEAVE_CS(&cfg->cs, rc);
+        return JK_ERR;
+    }
+    
+    if( statbuf.st_mtime <= cfg->mtime ) {
+        JK_LEAVE_CS(&cfg->cs, rc);
+        return JK_OK;
+    }
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "cfg.update() Updating config %s %d %d\n",
+                  cfg->file, cfg->mtime, statbuf.st_mtime);
+    
+    jk2_map_default_create(env, &cfgData, env->tmpPool);
+
+    rc=jk2_config_read(env, cfg, cfgData );
+    
+    if( rc==JK_OK ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "config.setConfig():  Reading properties %s %d\n",
+                      cfg->file, cfgData->size( env, cfgData ) );
+    } else {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "config.setConfig(): Error reading properties %s\n",
+                      cfg->file );
+        JK_LEAVE_CS(&cfg->cs, rc);
+        return JK_ERR;
+    }
+    
+    rc=jk2_config_processConfigData( env, cfg, cfgData, firstTime );
+
+    if( didReload!=NULL )
+        *didReload=JK_TRUE;
+    cfg->mtime= statbuf.st_mtime;
+
+    JK_LEAVE_CS(&cfg->cs, rc);
+    return rc;
+}
+
+
+static int JK_METHOD jk2_config_update(jk_env_t *env,
+                                       jk_config_t *cfg, int *didReload)
+{
+    jk2_config_readFile( env, cfg, didReload, JK_FALSE );
+}
 
 /** Set a property for this config object
  */
@@ -611,6 +760,7 @@ int JK_METHOD jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
                         const char *type, const char *name)
 {
     jk_config_t *_this;
+    int i;
 
     _this=(jk_config_t *)pool->alloc(env, pool, sizeof(jk_config_t));
     if( _this == NULL )
@@ -618,12 +768,23 @@ int JK_METHOD jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
     _this->pool = pool;
 
     _this->setPropertyString=jk2_config_setPropertyString;
+    _this->update=jk2_config_update;
     _this->setProperty=jk2_config_setProperty;
     _this->save=jk2_config_saveConfig;
     _this->mbean=result;
     
+    _this->ver=0;
+
     result->object=_this;
     result->setAttribute=jk2_config_setAttribute;
 
+    JK_INIT_CS(&(_this->cs), i);
+    if (!i) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "config.factory(): Can't init CS\n");
+        return JK_ERR;
+    }
+
+    
     return JK_OK;
 }
