@@ -431,12 +431,12 @@ static int warp_handle(wa_request *r, wa_application *appl) {
             case TYPE_ASK_SSL_CLIENT: {
                 wa_log(WA_MARK,"TYPE_ASK_SSL_CLIENT");
                 /* Request for client certificate */
-                if (r->ssld->ssl_cert==NULL) {
+                if (r->ssld->cert==NULL) {
                     pack->type=TYPE_REP_SSL_NO;
                     pack->size=0;
                 } else {
                     pack->type=TYPE_REP_SSL_CERT;
-                    p_write_string(pack,r->ssld->ssl_cert);
+                    p_write_string(pack,r->ssld->cert);
                 }
                 wa_debug(WA_MARK,"CC bytes: (Sent=%d)",pack->size);
                 if (n_send(conf->sock,pack)!=wa_true) {
