@@ -66,10 +66,18 @@
   <!-- Should Java compilations set the 'optimize' compiler option? -->
   <property name="compile.optimize"        value="true"/>
 
+    <!-- default locations -->
+    <property name="tomcat33.home" 
+	      location="../../jakarta-tomcat/build/tomcat" />
+    <property name="catalina.home" 
+	      location="../../jakarta-tomcat-4.0/build" />
+
   <!-- Construct compile classpath -->
   <path id="compile.classpath">
     <pathelement location="${build.home}/classes"/>
     <pathelement location="${tomcat-util.jar}"/>
+    <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
+    <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
   </path>
 
 
@@ -92,6 +100,16 @@
   <property name="test.entry" value="org.apache.coyote.TestAll"/>
 
 
+<!-- ========== Detection and Reports ===================================== -->
+
+
+    <target name="report-tc4" if="tomcat4.detect" >
+	<echo message="Tomcat4 detected "  />
+    </target>
+
+    <target name="report" depends="report-tc4" />
+
+
 <!-- ========== Executable Targets ======================================== -->
 
 
@@ -112,6 +130,7 @@
     <mkdir dir="${build.home}/docs/api"/>
     <mkdir dir="${build.home}/lib"/>
     <mkdir dir="${build.home}/tests"/>
+    <available property="tomcat4.detect" file="${catalina.home}/server/lib/catalina.jar" />
   </target>
 
 
@@ -124,7 +143,7 @@
   </target>
 
 
-  <target name="compile" depends="static,javadoc"
+  <target name="compile.shared"
    description="Compile shareable components">
     <javac  srcdir="${source.home}"
            destdir="${build.home}/classes"
@@ -132,13 +151,40 @@
        deprecation="${compile.deprecation}"
           optimize="${compile.optimize}">
       <classpath refid="compile.classpath"/>
+      <exclude name="org/apache/coyote/tomcat4/**" />
     </javac>
     <copy    todir="${build.home}/classes" filtering="on">
       <fileset dir="${source.home}" excludes="**/*.java"/>
     </copy>
     <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
             basedir="${build.home}/classes"
-           manifest="${build.home}/conf/MANIFEST.MF"/>
+           manifest="${build.home}/conf/MANIFEST.MF"
+           excludes="org/apache/coyote/tomcat4/**" />
+  </target>
+
+
+  <target name="compile.tomcat4" if="tomcat4.detect"
+   description="Compile Tomcat 4.x Adapter">
+    <javac  srcdir="${source.home}"
+           destdir="${build.home}/classes"
+             debug="${compile.debug}"
+       deprecation="${compile.deprecation}"
+          optimize="${compile.optimize}">
+      <classpath refid="compile.classpath"/>
+      <include name="org/apache/coyote/tomcat4/**" />
+    </javac>
+    <copy    todir="${build.home}/classes" filtering="on">
+      <fileset dir="${source.home}" excludes="**/*.java"/>
+    </copy>
+    <jar    jarfile="${build.home}/lib/tomcat-${component.name}-catalina.jar"
+            basedir="${build.home}/classes"
+           manifest="${build.home}/conf/MANIFEST.MF"
+           includes="org/apache/coyote/tomcat4/**" />
+  </target>
+
+  <target name="compile" 
+   depends="static,javadoc,report,compile.shared,compile.tomcat4"
+   description="Compile Coyote and its Adapters">
   </target>
 
 
