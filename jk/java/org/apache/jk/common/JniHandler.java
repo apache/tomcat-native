@@ -71,14 +71,16 @@ import org.apache.tomcat.util.threads.*;
 
 import org.apache.jk.core.*;
 import org.apache.jk.apr.*;
+import org.apache.commons.modeler.Registry;
+import javax.management.ObjectName;
 
 
-/** 
+/**
  * Base class for components using native code ( libjkjni.so ).
  * It allows to access the jk_env and wrap ( 'box' ? ) a native
  * jk component, and call it's methods.
  *
- * Note that get/setAttribute are expensive ( Strings, etc ), 
+ * Note that get/setAttribute are expensive ( Strings, etc ),
  * invoke() is were all optimizations are done. We do recycle
  * all memory on both C and java sides ( the only exception is
  * when we attempt pinning but the VM doesn't support it ). The
@@ -89,26 +91,26 @@ import org.apache.jk.apr.*;
  */
 public class JniHandler extends JkHandler {
     protected AprImpl apr;
-    
+
     // The native side handler
     protected long nativeJkHandlerP;
 
     protected String jkHome;
 
     // Dispatch table codes. Hardcoded for now, will change when we have more handlers.
-    public static final int JK_HANDLE_JNI_DISPATCH=0x15; 
-    public static final int JK_HANDLE_SHM_DISPATCH=0x16; 
+    public static final int JK_HANDLE_JNI_DISPATCH=0x15;
+    public static final int JK_HANDLE_SHM_DISPATCH=0x16;
 
 
     public static final int MSG_NOTE=0;
     public static final int C2B_NOTE=1;
     public static final int MB_NOTE=2;
-    
-    
+
+
     public JniHandler() {
     }
 
-    /** 
+    /**
      */
     public void setJkHome( String s ) {
         jkHome=s;
@@ -126,23 +128,45 @@ public class JniHandler extends JkHandler {
 
     protected void initNative(String nativeComponentName) {
         apr=(AprImpl)wEnv.getHandler("apr");
-        if( apr==null || ! apr.isLoaded() ) { 
+        if( apr==null ) {
+            // In most cases we can just load it automatically.
+            // that requires all libs to be installed in standard places
+            // ( LD_LIBRARY_PATH, /usr/lib
+            try {
+                apr=new AprImpl();
+                wEnv.addHandler("apr", apr);
+                apr.init();
+                if( oname != null ) {
+                    ObjectName aprname=new ObjectName(oname.getDomain() +
+                            ":type=JkHandler, name=apr");
+                    Registry.getRegistry().registerComponent(apr, aprname, null);
+                }
+            } catch( Throwable t ) {
+                log.debug("Can't load apr", t);
+                apr=null;
+            }
+        }
+        if( apr==null || ! apr.isLoaded() ) {
             if( log.isDebugEnabled() )
                 log.debug("No apr, disabling jni proxy ");
             apr=null;
             return;
         }
-        
-        long xEnv=apr.getJkEnv();
-        nativeJkHandlerP=apr.getJkHandler(xEnv, nativeComponentName );
-        
-        if( nativeJkHandlerP==0 ) {
-            log.debug("Component not found, creating it " + nativeComponentName ); 
-            nativeJkHandlerP=apr.createJkHandler(xEnv, nativeComponentName);
+
+        try {
+            long xEnv=apr.getJkEnv();
+            nativeJkHandlerP=apr.getJkHandler(xEnv, nativeComponentName );
+            
+            if( nativeJkHandlerP==0 ) {
+                log.debug("Component not found, creating it " + nativeComponentName );
+                nativeJkHandlerP=apr.createJkHandler(xEnv, nativeComponentName);
+            }
+            log.debug("Native proxy " + nativeJkHandlerP );
+            apr.releaseJkEnv(xEnv);
+        } catch( Throwable t ) {
+            apr=null;
+            log.info("Error calling apr ", t);
         }
-        log.debug("Native proxy " + nativeJkHandlerP );
-        
-        apr.releaseJkEnv(xEnv); 
    }
 
     public void appendString( Msg msg, String s, C2BConverter charsetDecoder)
@@ -154,7 +178,7 @@ public class JniHandler extends JkHandler {
         charsetDecoder.flushBuffer();
         msg.appendByteChunk( bc );
     }
-    
+
     /** Create a msg context to be used with the shm channel
      */
     public MsgContext createMsgContext() {
@@ -167,14 +191,14 @@ public class JniHandler extends JkHandler {
 
             msgCtx.setSource( this );
             msgCtx.setWorkerEnv( wEnv );
-            
+
             msgCtx.setNext( this );
-            
+
             msgCtx.setMsg( MSG_NOTE, msg); // XXX Use noteId
-            
+
             C2BConverter c2b=new C2BConverter(  "UTF8" );
             msgCtx.setNote( C2B_NOTE, c2b );
-            
+
             MessageBytes tmpMB=new MessageBytes();
             msgCtx.setNote( MB_NOTE, tmpMB );
             return msgCtx;
@@ -246,22 +270,22 @@ public class JniHandler extends JkHandler {
     protected void recycleNative(MsgContext ep) {
         apr.jkRecycle(ep.getJniEnv(), ep.getJniContext());
     }
-    
-    /** send and get the response in the same buffer. This calls the 
-    * method on the wrapped jk_bean object. 
+
+    /** send and get the response in the same buffer. This calls the
+    * method on the wrapped jk_bean object.
      */
     protected int nativeDispatch( Msg msg, MsgContext ep, int code, int raw )
         throws IOException
     {
-        if( log.isDebugEnabled() ) 
+        if( log.isDebugEnabled() )
             log.debug( "Sending packet " + code + " " + raw);
 
         if( raw == 0 ) {
             msg.end();
-        
+
             if( log.isTraceEnabled() ) msg.dump("OUT:" );
         }
-        
+
         // Create ( or reuse ) the jk_endpoint ( the native pair of
         // MsgContext )
         long xEnv=ep.getJniEnv();
@@ -283,11 +307,11 @@ public class JniHandler extends JkHandler {
                                  nativeJkHandlerP,
                                  nativeContext,
                                  code, msg.getBuffer(), 0, msg.getLen(), raw );
-                                 
+
         if( status != 0 && status != 2 ) {
-            log.error( "nativeDispatch: error " + status );
+            log.error( "nativeDispatch: error " + status, new Throwable() );
         }
-        
+
         if( log.isDebugEnabled() ) log.debug( "Sending packet - done " + status);
         return status;
     }
@@ -302,11 +326,11 @@ public class JniHandler extends JkHandler {
         int type=ep.getType();
 
         int status=nativeDispatch(msg, ep, type, 0 );
-        
+
         apr.jkRecycle(xEnv, ep.getJniContext());
         apr.releaseJkEnv( xEnv );
         return status;
-    }    
+    }
 
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( JniHandler.class );
