@@ -67,7 +67,13 @@
 #include "jk_service.h"
 #include "jk_util.h"
 #include "jk_worker.h"
-#include "jk_lb_worker.h"
+#include "jk_logger.h"
+#include "jk_service.h"
+
+int JK_METHOD lb_worker_factory(jk_worker_t **w,
+                                const char *name,
+                                jk_logger_t *l);
+
 
 /*
  * The load balancing code in this 

@@ -62,8 +62,23 @@
  ***************************************************************************/
 
 #include "jk_context.h"
-#include "jk_ajp14_worker.h"
+#include "jk_pool.h"
+#include "jk_connect.h"
+#include "jk_util.h"
+#include "jk_msg_buff.h"
+#include "jk_ajp13.h"
+#include "jk_ajp14.h"
+#include "jk_logger.h"
+#include "jk_service.h"
 
+int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
+                                   const char *name,
+                                   jk_logger_t *l);
+
+#ifdef WIN32
+/* define snprint to match windows version */
+#define snprintf _snprintf
+#endif
 
 /*
  * AJP14 Autoconf Phase

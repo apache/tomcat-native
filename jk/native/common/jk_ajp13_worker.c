@@ -63,7 +63,17 @@
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
-#include "jk_ajp13_worker.h"
+#include "jk_pool.h"
+#include "jk_connect.h"
+#include "jk_util.h"
+#include "jk_msg_buff.h"
+#include "jk_ajp_common.h"
+#include "jk_ajp13.h"
+#include "jk_logger.h"
+
+int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
+                                   const char *name,
+                                   jk_logger_t *l);
 
 
 /* -------------------- Method -------------------- */
