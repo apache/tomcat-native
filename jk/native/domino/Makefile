@@ -41,12 +41,11 @@ JAVAINC=$(JAVA_HOME)/include
 #										#
 #################################################################################
 
-JKINC=../jk
+JK=../common
 LIBS=-lc -ldl -lnotes -L$(NOTESHOME)
 
-INC=-I$(NOTESINC) -I$(JAVAINC) -I$(JKINC)
+INC=-I$(NOTESINC) -I$(JAVAINC) -I$(JK)
 DEFS=-DLINUX -DUNIX
-JK=../common
 
 JKOBJ = $(JK)/jk_ajp12_worker.o $(JK)/jk_ajp13.o $(JK)/jk_ajp13_worker.o \
 	$(JK)/jk_connect.o $(JK)/jk_jni_worker.o $(JK)/jk_lb_worker.o \
