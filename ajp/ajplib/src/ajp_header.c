@@ -399,6 +399,8 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
     }
     remote_host = (char *)ap_get_remote_host(r->connection, r->per_dir_config, REMOTE_HOST, NULL);
 
+    ajp_msg_reset(msg);
+
     if (ajp_msg_append_uint8(msg, AJP13_FORWARD_REQUEST)         ||
         ajp_msg_append_uint8(msg, method)                        ||
         ajp_msg_append_string(msg, r->protocol)                  ||
