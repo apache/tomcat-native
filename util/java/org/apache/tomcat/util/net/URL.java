@@ -159,6 +159,10 @@ public final class URL implements Serializable {
                     newProtocol = s;
                     start = i + 1;
                     break;
+                } else if( c == '#' ) {
+                    aRef = true;
+                } else if( c == '?' ) {
+                    break;
                 }
             }
 
