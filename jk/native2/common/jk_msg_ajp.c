@@ -195,7 +195,13 @@ static int jk2_msg_ajp_getMap(jk_env_t *env, jk_msg_t *msg,
 {
     int size=msg->getInt( env, msg );
     int i;
-    
+
+    if( size < 0 ) {
+        env->l->jkLog( env, env->l, JK_LOG_ERROR,
+                       "msg_ajp.getMap(): negative size %d\n",
+                       size);
+        return JK_ERR;
+    }
     for( i=0; i<size; i++ ) {
         char *name= msg->getString( env, msg );
         char *val=msg->getString( env, msg );
