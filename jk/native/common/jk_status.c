@@ -478,7 +478,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "\"/></td></tr>\n");
                 jk_puts(s, "<tr><td>Disabled:</td><td><input name=\"wd\" type=\"checkbox\"");
                 if (wr->s->is_disabled)
-                    jk_puts(s, " value=\"checked\"");
+                    jk_puts(s, " checked");
                 jk_puts(s, "/></td></tr>\n");
                 jk_puts(s, "</td></tr>\n</table>\n");
                 jk_puts(s, "<br/><input type=\"submit\" value=\"Update Worker\"/>\n</form>\n");
@@ -503,11 +503,11 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->s->recover_wait_time);
                 jk_puts(s, "<tr><td>Sticky session:</td><td><input name=\"ls\" type=\"checkbox\"");
                 if (lb->s->sticky_session)
-                    jk_puts(s, " value=\"checked\"");
+                    jk_puts(s, " checked");
                 jk_puts(s, "/></td></tr>\n");
                 jk_puts(s, "<tr><td>Force Sticky session:</td><td><input name=\"lf\" type=\"checkbox\"");
                 if (lb->s->sticky_session_force)
-                    jk_puts(s, " value=\"checked\"");
+                    jk_puts(s, " checked");
                 jk_puts(s, "/></td></tr>\n");
                 jk_puts(s, "</table>\n");
 
