@@ -704,12 +704,21 @@ int jk_get_is_sticky_session_force(jk_map_t *m, const char *wname)
 int jk_get_lb_method(jk_map_t *m, const char *wname)
 {
     char buf[1024];
+    const char *v;
     if (!m || !wname) {
         return DEFAULT_LB_FACTOR;
     }
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, METHOD_OF_WORKER);
-    return jk_map_get_int(m, buf, JK_LB_BYREQUESTS);
+    v = jk_map_get_string(m, buf, NULL);
+    if (!v)
+        return JK_LB_BYREQUESTS;
+    else if  (*v == 't' || *v == 'T' || *v == '1')
+        return JK_LB_BYTRAFFIC;
+    else if  (*v == 'r' || *v == 'R' || *v == '0')
+        return JK_LB_BYREQUESTS;
+    else
+        return JK_LB_BYREQUESTS;
 }
 
 int jk_get_lb_worker_list(jk_map_t *m,
