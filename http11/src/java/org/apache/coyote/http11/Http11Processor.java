@@ -1126,9 +1126,10 @@ public class Http11Processor implements Processor, ActionHook {
             methodMB.setString(Constants.POST);
         }
 
+        MimeHeaders headers = request.getMimeHeaders();
+        
         // Check connection header
-        MessageBytes connectionValueMB = 
-            request.getMimeHeaders().getValue("connection");
+        MessageBytes connectionValueMB = headers.getValue("connection");
         if (connectionValueMB != null) {
             ByteChunk connectionValueBC = connectionValueMB.getByteChunk();
             if (findBytes(connectionValueBC, Constants.CLOSE_BYTES) != -1) {
@@ -1141,7 +1142,7 @@ public class Http11Processor implements Processor, ActionHook {
 
         MessageBytes expectMB = null;
         if (http11)
-            expectMB = request.getMimeHeaders().getValue("expect");
+            expectMB = headers.getValue("expect");
         if ((expectMB != null)
             && (expectMB.indexOfIgnoreCase("100-continue", 0) != -1)) {
             inputBuffer.setSwallowInput(false);
@@ -1150,8 +1151,7 @@ public class Http11Processor implements Processor, ActionHook {
 
         // Check user-agent header
         if ((restrictedUserAgents != null) && ((http11) || (keepAlive))) {
-            MessageBytes userAgentValueMB =  
-                request.getMimeHeaders().getValue("user-agent");
+            MessageBytes userAgentValueMB = headers.getValue("user-agent");
             // Check in the restricted list, and adjust the http11 
             // and keepAlive flags accordingly
             if(userAgentValueMB != null) {
@@ -1186,8 +1186,7 @@ public class Http11Processor implements Processor, ActionHook {
                         (uriB, uriBCStart + slashPos, 
                          uriBC.getLength() - slashPos);
                 }
-                MessageBytes hostMB = 
-                    request.getMimeHeaders().setValue("host");
+                MessageBytes hostMB = headers.setValue("host");
                 hostMB.setBytes(uriB, uriBCStart + pos + 3, 
                                 slashPos - pos - 3);
             }
@@ -1208,8 +1207,7 @@ public class Http11Processor implements Processor, ActionHook {
         // Parse transfer-encoding header
         MessageBytes transferEncodingValueMB = null;
         if (http11)
-            transferEncodingValueMB = 
-                request.getMimeHeaders().getValue("transfer-encoding");
+            transferEncodingValueMB = headers.getValue("transfer-encoding");
         if (transferEncodingValueMB != null) {
             String transferEncodingValue = transferEncodingValueMB.toString();
             // Parse the comma separated list. "identity" codings are ignored
@@ -1238,7 +1236,7 @@ public class Http11Processor implements Processor, ActionHook {
             }
         }
 
-        MessageBytes valueMB = request.getMimeHeaders().getValue("host");
+        MessageBytes valueMB = headers.getValue("host");
 
         // Check host header
         if (http11 && (valueMB == null)) {
@@ -1467,8 +1465,7 @@ public class Http11Processor implements Processor, ActionHook {
 
         int contentLength = response.getContentLength();
         if (contentLength != -1) {
-            response.getMimeHeaders().setValue("Content-Length")
-                .setInt(contentLength);
+            headers.setValue("Content-Length").setInt(contentLength);
             outputBuffer.addActiveFilter
                 (outputFilters[Constants.IDENTITY_FILTER]);
             contentDelimitation = true;
@@ -1477,7 +1474,7 @@ public class Http11Processor implements Processor, ActionHook {
                 outputBuffer.addActiveFilter
                     (outputFilters[Constants.CHUNKED_FILTER]);
                 contentDelimitation = true;
-                response.addHeader("Transfer-Encoding", "chunked");
+                headers.addValue("Transfer-Encoding").setString("chunked");
             } else {
                 outputBuffer.addActiveFilter
                     (outputFilters[Constants.IDENTITY_FILTER]);
@@ -1486,35 +1483,30 @@ public class Http11Processor implements Processor, ActionHook {
 
         if (useCompression) {
             outputBuffer.addActiveFilter(outputFilters[Constants.GZIP_FILTER]);
-            // FIXME: Make content-encoding generation dynamic
-            response.setHeader("Content-Encoding", "gzip");
+            headers.setValue("Content-Encoding").setString("gzip");
             // Make Proxies happy via Vary (from mod_deflate)
-            response.setHeader("Vary", "Accept-Encoding");
+            headers.setValue("Vary").setString("Accept-Encoding");
         }
 
         // Add date header
-        if (! response.containsHeader("Date")){
-          
-          String date = null;
-          if (System.getSecurityManager() != null){
+        String date = null;
+        if (System.getSecurityManager() != null){
             date = (String)AccessController.doPrivileged( 
-                new PrivilegedAction() {
-                    public Object run(){
-                        return FastHttpDateFormat.getCurrentDate();
+                    new PrivilegedAction() {
+                        public Object run(){
+                            return FastHttpDateFormat.getCurrentDate();
+                        }
                     }
-                }
             );
-          } else {
+        } else {
             date = FastHttpDateFormat.getCurrentDate();
-          }
-          response.addHeader("Date", date);
         }
-         
-        // Add server header
-        response.addHeader("Server", Constants.SERVER);
+        headers.setValue("Date").setString(date);
 
-        // Add transfer encoding header
-        // FIXME
+        // Add server header
+        headers.setValue("Server").setString(Constants.SERVER);
+
+        // FIXME: Add transfer encoding header
 
         if ((entityBody) && (!contentDelimitation)) {
             // Mark as close the connection after the request, and add the 
@@ -1526,9 +1518,9 @@ public class Http11Processor implements Processor, ActionHook {
         // Connection: close header.
         keepAlive = keepAlive && !statusDropsConnection(statusCode);
         if (!keepAlive) {
-            response.addHeader("Connection", "close");
+            headers.addValue("Connection").setString("close");
         } else if (!http11) {
-            response.addHeader("Connection", "Keep-Alive");
+            headers.addValue("Connection").setString("Keep-Alive");
         }
 
         // Build the response header
