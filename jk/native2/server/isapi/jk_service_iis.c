@@ -59,8 +59,7 @@
  * Description: IIS Jk2 Service 
  * Author:      Gal Shachor <shachor@il.ibm.com>                           
  *              Henri Gomez <hgomez@slib.fr> 
- *				Ignacio J. Ortega <nacho@apache.org>
- * Version:     $Revision$                                           
+ *		Ignacio J. Ortega <nacho@apache.org>
  */
 
 // This define is needed to include wincrypt,h, needed to get client certificates
@@ -71,7 +70,7 @@
 #include <wininet.h>
 
 #include "jk_global.h"
-//#include "jk_util.h"
+#include "jk_requtil.h"
 #include "jk_map.h"
 #include "jk_pool.h"
 #include "jk_env.h"
@@ -79,387 +78,134 @@
 #include "jk_worker.h"
 
 #include "jk_iis.h"
-//#include "jk_uri_worker_map.h"
 
 
 static char *SERVER_NAME = "SERVER_NAME";
 static char *SERVER_SOFTWARE = "SERVER_SOFTWARE";
 
-static const char begin_cert [] = 
-	"-----BEGIN CERTIFICATE-----\r\n";
 
-static const char end_cert [] = 
-	"-----END CERTIFICATE-----\r\n";
-
-static const char basis_64[] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-static int base64_encode_cert_len(int len)
-{
-	int n = ((len + 2) / 3 * 4) + 1; // base64 encoded size
-	n += (n + 63 / 64) * 2; // add CRLF's
-	n += sizeof(begin_cert) + sizeof(end_cert) - 2;  // add enclosing strings.
-    return n;
-}
-
-static int base64_encode_cert(char *encoded,
-                              const unsigned char *string, int len)
-{
-    int i,c;
-    char *p;
-	const char *t;
-
-    p = encoded;
-
-	t = begin_cert;
-	while (*t != '\0')
-		*p++ = *t++;
-
-    c = 0;
-    for (i = 0; i < len - 2; i += 3) {
-        *p++ = basis_64[(string[i] >> 2) & 0x3F];
-        *p++ = basis_64[((string[i] & 0x3) << 4) |
-                        ((int) (string[i + 1] & 0xF0) >> 4)];
-        *p++ = basis_64[((string[i + 1] & 0xF) << 2) |
-                        ((int) (string[i + 2] & 0xC0) >> 6)];
-        *p++ = basis_64[string[i + 2] & 0x3F];
-        c += 4;
-        if ( c >= 64 ) {
-            *p++ = '\r';
-            *p++ = '\n';
-            c = 0;
-		}
-    }
-    if (i < len) {
-        *p++ = basis_64[(string[i] >> 2) & 0x3F];
-        if (i == (len - 1)) {
-            *p++ = basis_64[((string[i] & 0x3) << 4)];
-            *p++ = '=';
-        }
-        else {
-            *p++ = basis_64[((string[i] & 0x3) << 4) |
-                            ((int) (string[i + 1] & 0xF0) >> 4)];
-            *p++ = basis_64[((string[i + 1] & 0xF) << 2)];
-        }
-        *p++ = '=';
-        c++;
-    }
-    if ( c != 0 ) {
-        *p++ = '\r';
-        *p++ = '\n';
-    }
-
-	t = end_cert;
-	while (*t != '\0')
-		*p++ = *t++;
-
-    *p++ = '\0';
-    return p - encoded;
-}
-
-
-static char x2c(const char *what)
-{
-    register char digit;
-
-    digit = ((what[0] >= 'A') ? ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
-    digit *= 16;
-    digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
-    return (digit);
-}
-
-static int unescape_url(char *url)
-{
-    register int x, y, badesc, badpath;
-
-    badesc = 0;
-    badpath = 0;
-    for (x = 0, y = 0; url[y]; ++x, ++y) {
-        if (url[y] != '%')
-            url[x] = url[y];
-        else {
-            if (!isxdigit(url[y + 1]) || !isxdigit(url[y + 2])) {
-                badesc = 1;
-                url[x] = '%';
-            }
-            else {
-                url[x] = x2c(&url[y + 1]);
-                y += 2;
-                if (url[x] == '/' || url[x] == '\0')
-                    badpath = 1;
-            }
-        }
-    }
-    url[x] = '\0';
-    if (badesc)
-            return BAD_REQUEST;
-    else if (badpath)
-            return BAD_PATH;
-    else
-            return 0;
-}
-
-static void getparents(char *name)
-{
-    int l, w;
-
-    /* Four paseses, as per RFC 1808 */
-    /* a) remove ./ path segments */
-
-    for (l = 0, w = 0; name[l] != '\0';) {
-        if (name[l] == '.' && name[l + 1] == '/' && (l == 0 || name[l - 1] == '/'))
-            l += 2;
-        else
-            name[w++] = name[l++];
-    }
-
-    /* b) remove trailing . path, segment */
-    if (w == 1 && name[0] == '.')
-        w--;
-    else if (w > 1 && name[w - 1] == '.' && name[w - 2] == '/')
-        w--;
-    name[w] = '\0';
-
-    /* c) remove all xx/../ segments. (including leading ../ and /../) */
-    l = 0;
-
-    while (name[l] != '\0') {
-        if (name[l] == '.' && name[l + 1] == '.' && name[l + 2] == '/' &&
-            (l == 0 || name[l - 1] == '/')) {
-            register int m = l + 3, n;
-
-            l = l - 2;
-            if (l >= 0) {
-                while (l >= 0 && name[l] != '/')
-                    l--;
-                l++;
-            }
-            else
-                l = 0;
-            n = l;
-            while ((name[n] = name[m]))
-                (++n, ++m);
-        }
-        else
-            ++l;
-    }
-
-    /* d) remove trailing xx/.. segment. */
-    if (l == 2 && name[0] == '.' && name[1] == '.')
-        name[0] = '\0';
-    else if (l > 2 && name[l - 1] == '.' && name[l - 2] == '.' && name[l - 3] == '/') {
-        l = l - 4;
-        if (l >= 0) {
-            while (l >= 0 && name[l] != '/')
-                l--;
-            l++;
-        }
-        else
-            l = 0;
-        name[l] = '\0';
-    }
-}
-
-/* Apache code to escape a URL */
-
-#define T_OS_ESCAPE_PATH	(4)
-
-static const unsigned char test_char_table[256] = {
-    0,14,14,14,14,14,14,14,14,14,15,14,14,14,14,14,14,14,14,14,
-    14,14,14,14,14,14,14,14,14,14,14,14,14,0,7,6,1,6,1,1,
-    9,9,1,0,8,0,0,10,0,0,0,0,0,0,0,0,0,0,8,15,
-    15,8,15,15,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,15,15,15,7,0,7,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,15,7,15,1,14,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6 
-};
-
-#define TEST_CHAR(c, f)	(test_char_table[(unsigned)(c)] & (f))
-
-static const char c2x_table[] = "0123456789abcdef";
-
-static unsigned char *c2x(unsigned what, unsigned char *where)
-{
-    *where++ = '%';
-    *where++ = c2x_table[what >> 4];
-    *where++ = c2x_table[what & 0xf];
-    return where;
-}
-
-static int escape_url(const char *path, char *dest, int destsize)
-{
-    const unsigned char *s = (const unsigned char *)path;
-    unsigned char *d = (unsigned char *)dest;
-    unsigned char *e = dest + destsize - 1;
-    unsigned char *ee = dest + destsize - 3;
-    unsigned c;
-
-    while ((c = *s)) {
-	if (TEST_CHAR(c, T_OS_ESCAPE_PATH)) {
-            if (d >= ee )
-                return JK_FALSE;
-	    d = c2x(c, d);
-	}
-	else {
-            if (d >= e )
-                return JK_FALSE;
-	    *d++ = c;
-	}
-	++s;
-    }
-    *d = '\0';
-    return JK_TRUE;
-}
-
-
-
-static void write_error_response(PHTTP_FILTER_CONTEXT pfc,char *status,char * msg)
-{
-    char crlf[3] = { (char)13, (char)10, '\0' };
-    char ctype[30];
-    DWORD len = strlen(msg);
-
-    sprintf(ctype, 
-            "Content-Type:text/html%s%s", 
-            crlf, 
-            crlf);
-
-    /* reject !!! */
-    pfc->ServerSupportFunction(pfc, 
-                               SF_REQ_SEND_RESPONSE_HEADER,
-                               status,
-                               (DWORD)crlf,
-                               (DWORD)ctype);
-    pfc->WriteClient(pfc, msg, &len, 0);
-}
 
 
 static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
     static char crlf[3] = { (char)13, (char)10, '\0' };
-	char *reason;
+    char *reason;
+    LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
+    DWORD len_of_status;
+    char *status_str;
+    char *headers_str;
+    int headerCount;
+    
     env->l->jkLog(env,env->l, JK_LOG_DEBUG, 
-           "Into jk_ws_service_t::start_response\n");
+                  "Into jk_ws_service_t::start_response\n");
 
     if (s->status< 100 || s->status > 1000) {
         env->l->jkLog(env,env->l, JK_LOG_ERROR, 
                "jk_ws_service_t::jk2_service_iis_head, invalid status %d\n", s->status);
         return JK_FALSE;
     }
-
-    if (s && s->ws_private) {
-        isapi_private_data_t *p = s->ws_private;
-        if (!p->request_started) {
-            DWORD len_of_status;
-            char *status_str;
-            char *headers_str;
-
-            p->request_started = JK_TRUE;
-
-            /*
-             * Create the status line
-             */
-            if (!s->msg) {
-                reason = "";
-            } else {
-				reason = s->msg;
-			}
-            status_str = (char *)_alloca((6 + strlen(reason)) * sizeof(char));
-            sprintf(status_str, "%d %s", s->status, reason);
-            len_of_status = strlen(status_str); 
-        
-            /*
-             * Create response headers string
-             */
-            if (s->headers_out->size) {
-                int i;
-                unsigned len_of_headers;
-                for(i = 0 , len_of_headers = 0 ; i < s->headers_out->size(env,s->headers_out) ; i++) {
-                    len_of_headers += strlen(s->headers_out->nameAt(env,s->headers_out,i));
-                    len_of_headers += strlen(s->headers_out->valueAt(env,s->headers_out,i));
-                    len_of_headers += 4; /* extra for colon, space and crlf */
-                }
-
-                len_of_headers += 3;  /* crlf and terminating null char */
-                headers_str = (char *)_alloca(len_of_headers * sizeof(char));
-                headers_str[0] = '\0';
-
-                for(i = 0 ; i < s->headers_out->size(env,s->headers_out) ; i++) {
-                    strcat(headers_str, s->headers_out->nameAt(env,s->headers_out,i));
-                    strcat(headers_str, ": ");
-                    strcat(headers_str, s->headers_out->valueAt(env,s->headers_out,i));
-                    strcat(headers_str, crlf);
-                }
-                strcat(headers_str, crlf);
-            } else {
-                headers_str = crlf;
-            }
-
-            if (!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID, 
-                                                HSE_REQ_SEND_RESPONSE_HEADER,
-                                                status_str,
-                                                (LPDWORD)&len_of_status,
-                                                (LPDWORD)headers_str)) {
-                env->l->jkLog(env,env->l, JK_LOG_ERROR, 
-                       "jk_ws_service_t::jk2_service_iis_head, ServerSupportFunction failed\n");
-                return JK_FALSE;
-            }       
-
-
-        }
+    
+    if (!s->response_started) {
         return JK_TRUE;
-
     }
 
-    env->l->jkLog(env,env->l, JK_LOG_ERROR, 
-           "jk_ws_service_t::jk2_service_iis_head, NULL parameters\n");
+    if( lpEcb == NULL ) {
+        env->l->jkLog(env,env->l, JK_LOG_ERROR, 
+                      "jk_ws_service_t::start_response, no lpEcp\n");
+        return JK_FALSE;
+    }
+    
+    s->response_started = JK_TRUE;
+            
+    /*
+     * Create the status line
+     */
+    if (!s->msg) {
+        reason = "";
+    } else {
+        reason = s->msg;
+    }
 
-    return JK_FALSE;
+    status_str = (char *)_alloca((6 + strlen(reason)) * sizeof(char));
+    sprintf(status_str, "%d %s", s->status, reason);
+    len_of_status = strlen(status_str); 
+
+    headerCount=s->headers_out->size( env, s->headers_out );
+    /*
+     * Create response headers string
+     */
+    if ( headerCount> 0 ) {
+        int i;
+        unsigned len_of_headers;
+        
+        for(i = 0 , len_of_headers = 0 ; i < headerCount ; i++) {
+            len_of_headers += strlen(s->headers_out->nameAt(env,s->headers_out,i));
+            len_of_headers += strlen(s->headers_out->valueAt(env,s->headers_out,i));
+            len_of_headers += 4; /* extra for colon, space and crlf */
+        }
+        
+        len_of_headers += 3;  /* crlf and terminating null char */
+        headers_str = (char *)_alloca(len_of_headers * sizeof(char));
+        headers_str[0] = '\0';
+            
+        for(i = 0 ; i < headerCount ; i++) {
+            strcat(headers_str, s->headers_out->nameAt(env,s->headers_out,i));
+            strcat(headers_str, ": ");
+            strcat(headers_str, s->headers_out->valueAt(env,s->headers_out,i));
+            strcat(headers_str, crlf);
+        }
+    } else {
+        headers_str = crlf;
+    }
+
+    if (!lpEcb->ServerSupportFunction(lpEcb->ConnID, 
+                                      HSE_REQ_SEND_RESPONSE_HEADER,
+                                      status_str,
+                                      (LPDWORD)&len_of_status,
+                                      (LPDWORD)headers_str)) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "jk_ws_service_t::start_response, ServerSupportFunction failed\n");
+        return JK_FALSE;
+    }       
+    
+    return JK_TRUE;
 }
 
 static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
-                          void *b,
-                          unsigned l,
-                          unsigned *a)
+                                          void *b, unsigned len, unsigned *actually_read)
 {
-    env->l->jkLog(env,env->l, JK_LOG_DEBUG, 
-           "Into jk_ws_service_t::read\n");
-
-    if (s && s->ws_private && b && a) {
-        isapi_private_data_t *p = s->ws_private;
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                  "Into jk_ws_service_t::read\n");
+    
+    if (s && s->ws_private && b && actually_read) {
+        LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
         
-        *a = 0;
-        if (l) {
+        *actually_read = 0;
+        if (len) {
             char *buf = b;
-            DWORD already_read = p->lpEcb->cbAvailable - p->bytes_read_so_far;
+            DWORD already_read = lpEcb->cbAvailable - s->content_read;
             
-            if (already_read >= l) {
-                memcpy(buf, p->lpEcb->lpbData + p->bytes_read_so_far, l);
-                p->bytes_read_so_far += l;
-                *a = l;
+            if (already_read >= len) {
+                memcpy(buf, lpEcb->lpbData + s->content_read, len);
+                s->content_read += len;
+                *actually_read = len;
             } else {
                 /*
                  * Try to copy what we already have 
                  */
                 if (already_read > 0) {
-                    memcpy(buf, p->lpEcb->lpbData + p->bytes_read_so_far, already_read);
+                    memcpy(buf, lpEcb->lpbData + s->content_read, already_read);
                     buf += already_read;
-                    l   -= already_read;
-                    p->bytes_read_so_far = p->lpEcb->cbAvailable;
+                    len   -= already_read;
+                    s->content_read = lpEcb->cbAvailable;
                     
-                    *a = already_read;
+                    *actually_read = already_read;
                 }
                 
                 /*
                  * Now try to read from the client ...
                  */
-                if (p->lpEcb->ReadClient(p->lpEcb->ConnID, buf, &l)) {
-                    *a += l;            
+                if (lpEcb->ReadClient(lpEcb->ConnID, buf, &len)) {
+                    *actually_read +=  len;            
                 } else {
                     env->l->jkLog(env,env->l, JK_LOG_ERROR, 
                            "jk_ws_service_t::read, ReadClient failed\n");
@@ -469,69 +215,52 @@ static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
         }
         return JK_TRUE;
     }
-
-    env->l->jkLog(env,env->l, JK_LOG_ERROR, 
-           "jk_ws_service_t::read, NULL parameters\n");
+    
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                  "jk_ws_service_t::read, NULL parameters\n");
     return JK_FALSE;
 }
 
-static int JK_METHOD jk2_service_iis_write(jk_env_t *env,jk_ws_service_t *s,
-                           const void *b,
-                           unsigned l)
+static int JK_METHOD jk2_service_iis_write(jk_env_t *env, jk_ws_service_t *s,
+                                           const void *b, unsigned len)
 {
-    env->l->jkLog(env,env->l, JK_LOG_DEBUG, 
-           "Into jk_ws_service_t::write\n");
-
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                  "Into jk_ws_service_t::write\n");
+    
     if (s && s->ws_private && b) {
-        isapi_private_data_t *p = s->ws_private;
-
-        if (l) {
+        LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
+        
+        if (len) {
             unsigned written = 0;           
             char *buf = (char *)b;
-
-            if (!p->request_started) {
-                jk2_service_iis_head(env, s );
+            
+            if (!s->response_started) {
+                s->head(env, s );
             }
-
-            while(written < l) {
-                DWORD try_to_write = l - written;
-                if (!p->lpEcb->WriteClient(p->lpEcb->ConnID, 
-                                          buf + written, 
-                                          &try_to_write, 
-                                          0)) {
-                    env->l->jkLog(env,env->l, JK_LOG_ERROR, 
+            
+            while(written < len) {
+                DWORD try_to_write = len - written;
+                if (!lpEcb->WriteClient(lpEcb->ConnID, 
+                                        buf + written, 
+                                        &try_to_write, 
+                                        0)) {
+                    env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                            "jk_ws_service_t::write, WriteClient failed\n");
                     return JK_FALSE;
                 }
                 written += try_to_write;
             }
         }
-
+        
         return JK_TRUE;
-
+        
     }
-
-    env->l->jkLog(env,env->l, JK_LOG_ERROR, 
+    
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, 
            "jk_ws_service_t::write, NULL parameters\n");
-
+    
     return JK_FALSE;
 }
-
-
-int JK_METHOD jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s)
-{
-    if(s==NULL ) {
-        return JK_FALSE;
-    }
-
-    s->head   = jk2_service_iis_head;
-    s->read   = jk2_service_iis_read;
-    s->write  = jk2_service_iis_write;
-    s->init   = jk2_service_iis_init_ws_service;
-    
-    return JK_TRUE;
-}
-
 
 static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
                             char *name,
@@ -550,32 +279,49 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
     if (bufsz > 0) {
         buf[bufsz - 1] = '\0';
     }
+    env->l->jkLog(env,env->l, JK_LOG_ERROR, 
+           "jk_ws_service_t::write, NULL parameters\n");
 
     return JK_TRUE;
 }
 
 
+int JK_METHOD jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s)
+{
+    if(s==NULL ) {
+        return JK_FALSE;
+    }
+
+    s->head   = jk2_service_iis_head;
+    s->read   = jk2_service_iis_read;
+    s->write  = jk2_service_iis_write;
+    s->init   = jk2_service_iis_init_ws_service;
+    
+    return JK_TRUE;
+}
+
 static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_service_t *s,
                  struct jk_worker *w, void *serverObj )
-
 /* */
-
 {
-    isapi_private_data_t *private_data=serverObj;
-    char huge_buf[16 * 1024]; /* should be enough for all */
-	char **worker_name;
+    LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)serverObj;
+    char **worker_name;
 	
     DWORD huge_buf_sz;
 
     s->jvm_route = NULL;
-    
-    GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, (*worker_name));           
+
+    s->head = jk_service_iis_head;
+    s->read = read;
+    s->write = write;
+
+    GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, ( worker->name ));
     GET_SERVER_VARIABLE_VALUE(HTTP_URI_HEADER_NAME, s->req_uri);     
     GET_SERVER_VARIABLE_VALUE(HTTP_QUERY_HEADER_NAME, s->query_string);     
-
+    
     if (s->req_uri == NULL) {
-        s->query_string = private_data->lpEcb->lpszQueryString;
-        *worker_name    = DEFAULT_WORKER_NAME;
+        s->query_string = lpEcb->lpszQueryString;
+        /* *worker_name    = DEFAULT_WORKER_NAME; */
         GET_SERVER_VARIABLE_VALUE("URL", s->req_uri);       
         if (unescape_url(s->req_uri) < 0)
             return JK_FALSE;
@@ -588,18 +334,18 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
     GET_SERVER_VARIABLE_VALUE("REMOTE_HOST", s->remote_host);
     GET_SERVER_VARIABLE_VALUE("REMOTE_ADDR", s->remote_addr);
     GET_SERVER_VARIABLE_VALUE(SERVER_NAME, s->server_name);
-    GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT", s->server_port, 80)
+    GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT", s->server_port, 80);
     GET_SERVER_VARIABLE_VALUE(SERVER_SOFTWARE, s->server_software);
     GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT_SECURE", s->is_ssl, 0);
 
-    s->method           = private_data->lpEcb->lpszMethod;
-    s->content_length   = private_data->lpEcb->cbTotalBytes;
+    s->method           = lpEcb->lpszMethod;
+    s->content_length   = lpEcb->cbTotalBytes;
 
     s->ssl_cert     = NULL;
     s->ssl_cert_len = 0;
     s->ssl_cipher   = NULL;
     s->ssl_session  = NULL;
-	s->ssl_key_size = -1;
+    s->ssl_key_size = -1;
 
     jk2_map_default_create(env, &s->headers_in, s->pool );
 //    s->headers_values   = NULL;
@@ -643,46 +389,47 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
         if (num_of_vars) {
             unsigned j;
 
-			jk2_map_default_create(env, &s->attributes, s->pool );
-
+            jk2_map_default_create(env, &s->attributes, s->pool );
             j = 0;
             for(i = 0 ; i < 9 ; i++) {                
                 if (ssl_env_values[i]) {
-                    s->attributes->put(env,s->attributes,ssl_env_names[i],ssl_env_values[i],NULL);
+                    s->attributes->put( env, s->attributes, 
+                                        ssl_env_names[i], ssl_env_values[i]);
                     j++;
                 }
             }
- 			if (ssl_env_values[4] && ssl_env_values[4][0] == '1') {
-				CERT_CONTEXT_EX cc;
-				DWORD cc_sz = sizeof(cc);
-				cc.cbAllocated = sizeof(huge_buf);
-				cc.CertContext.pbCertEncoded = (BYTE*) huge_buf;
-				cc.CertContext.cbCertEncoded = 0;
-
-				if (private_data->lpEcb->ServerSupportFunction(private_data->lpEcb->ConnID,
-											 (DWORD)HSE_REQ_GET_CERT_INFO_EX,                               
-											 (LPVOID)&cc,NULL,NULL) != FALSE)
-				{
-					env->l->jkLog(env,env->l, JK_LOG_DEBUG,"Client Certificate encoding:%d sz:%d flags:%ld\n",
-								cc.CertContext.dwCertEncodingType & X509_ASN_ENCODING ,
-								cc.CertContext.cbCertEncoded,
-								cc.dwCertificateFlags);
-                    s->ssl_cert=private_data->p.alloc(env,&private_data->p,
-                                base64_encode_cert_len(cc.CertContext.cbCertEncoded));
-
-                    s->ssl_cert_len = base64_encode_cert(s->ssl_cert,
-                                huge_buf,cc.CertContext.cbCertEncoded) - 1;
-				}
-			}
+            if (ssl_env_values[4] && ssl_env_values[4][0] == '1') {
+                CERT_CONTEXT_EX cc;
+                DWORD cc_sz = sizeof(cc);
+                cc.cbAllocated = sizeof(huge_buf);
+                cc.CertContext.pbCertEncoded = (BYTE*) huge_buf;
+                cc.CertContext.cbCertEncoded = 0;
+                
+                if (lpEcb->ServerSupportFunction(lpEcb->ConnID,
+                                                 (DWORD)HSE_REQ_GET_CERT_INFO_EX,                               
+                                                 (LPVOID)&cc,NULL,NULL) != FALSE)
+                    {
+                        env->l->jkLog(env, env->l, JK_LOG_DEBUG,"Client Certificate encoding:%d sz:%d flags:%ld\n",
+                                      cc.CertContext.dwCertEncodingType & X509_ASN_ENCODING ,
+                                      cc.CertContext.cbCertEncoded,
+                                      cc.dwCertificateFlags);
+                        s->ssl_cert=s->pool->alloc(env, s->pool,
+                                                   jk_requtil_base64CertLen(cc.CertContext.cbCertEncoded));
+                        
+                        s->ssl_cert_len = jk_requtil_base64EncodeCert(s->ssl_cert,
+                                                                      huge_buf,cc.CertContext.cbCertEncoded) - 1;
+                    }
+            }
         }
     }
 
-	huge_buf_sz = sizeof(huge_buf);         
-    if (get_server_value(private_data->lpEcb,
-                        "ALL_HTTP",             
-                        huge_buf,           
-                        huge_buf_sz,        
-                        "")) {              
+    
+    huge_buf_sz = sizeof(huge_buf);         
+    if (get_server_value(lpEcb,
+                         "ALL_HTTP",             
+                         huge_buf,           
+                         huge_buf_sz,        
+                         "")) {              
         unsigned cnt = 0;
         char *tmp;
 
@@ -691,46 +438,37 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
                 cnt++;
             }
         }
-
+        
         if (cnt) {
-            char *headers_buf = private_data->p.pstrdup(env,&private_data->p, huge_buf);
+            char *headers_buf = s->pool->pstrdup(env, s->pool, huge_buf);
             unsigned i;
             unsigned len_of_http_prefix = strlen("HTTP_");
             BOOL need_content_length_header = (s->content_length == 0);
             
             cnt -= 2; /* For our two special headers */
             /* allocate an extra header slot in case we need to add a content-length header */
-/*
-            s->headers_names  = jk_pool_alloc(&private_data->p, (cnt + 1) * sizeof(char *));
-            s->headers_values = jk_pool_alloc(&private_data->p, (cnt + 1) * sizeof(char *));
-
-            if (!s->headers_names || !s->headers_values || !headers_buf) {
-                return JK_FALSE;
-            }
-
- */
+            jk2_map_default_create(env, &s->headers_in, s->pool );
             for(i = 0, tmp = headers_buf ; *tmp && i < cnt ; ) {
                 int real_header = JK_TRUE;
-				char *name;
-
+                char *headerName;
                 /* Skipp the HTTP_ prefix to the beginning of th header name */
                 tmp += len_of_http_prefix;
 
                 if (!strnicmp(tmp, URI_HEADER_NAME, strlen(URI_HEADER_NAME)) ||
-                   !strnicmp(tmp, WORKER_HEADER_NAME, strlen(WORKER_HEADER_NAME))) {
+                    !strnicmp(tmp, WORKER_HEADER_NAME, strlen(WORKER_HEADER_NAME))) {
                     real_header = JK_FALSE;
                 } else if(need_content_length_header &&
-                   !strnicmp(tmp, CONTENT_LENGTH, strlen(CONTENT_LENGTH))) {
+                          !strnicmp(tmp, CONTENT_LENGTH, strlen(CONTENT_LENGTH))) {
                     need_content_length_header = FALSE;
-                    name  = tmp;
+                    headerName  = tmp;
                 } else if (!strnicmp(tmp, TOMCAT_TRANSLATE_HEADER_NAME,
-                                          strlen(TOMCAT_TRANSLATE_HEADER_NAME))) {
+                                     strlen(TOMCAT_TRANSLATE_HEADER_NAME))) {
                     tmp += 6; /* TOMCAT */
-                    name  = tmp;
+                    headerName  = tmp;
                 } else {
-                    name  = tmp;
+                    headerName  = tmp;
                 }
-
+                
                 while(':' != *tmp && *tmp) {
                     if ('_' == *tmp) {
                         *tmp = '-';
@@ -748,7 +486,7 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
                 }
 
                 if (real_header) {
-                    s->headers_in->put(env,s->headers_in,name,tmp,NULL);
+                    s->headers_in->put( env, s->headers_in, headerName, tmp );
                 }
                 
                 while(*tmp != '\n' && *tmp != '\r') {
@@ -756,12 +494,12 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
                 }
                 *tmp = '\0';
                 tmp++;
-
+                
                 /* skipp CR LF */
                 while(*tmp == '\n' || *tmp == '\r') {
                     tmp++;
                 }
-
+                
                 if (real_header) {
                     i++;
                 }
@@ -771,7 +509,8 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
              * but non-zero length body.
              */
             if(need_content_length_header) {
-                s->headers_in->put(env,s->headers_in,"content-length","0",NULL);
+                s->headers_in->put( env, s->headers_in,
+                                    "content-length", "0");
                 cnt++;
             }
         } else {
@@ -785,4 +524,38 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
     return JK_TRUE;
 }
 
+static void jk2_service_iis_afterRequest(jk_env_t *env, jk_ws_service_t *s )
+{
+    
+    if (s->content_read < s->content_length ||
+        (s->is_chunked && ! s->no_more_chunks)) {
+        
+        request_rec *r=s->ws_private;
+
+        char *buff = apr_palloc(r->pool, 2048);
+        if (buff != NULL) {
+            int rd;
+            /* Is there a IIS equivalent ? */
+            /*             while ((rd = ap_get_client_block(r, buff, 2048)) > 0) { */
+            /*                 s->content_read += rd; */
+            /*             } */
+        }
+    }
+}
+
+
+int jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s)
+{
+    if(s==NULL ) {
+        return JK_FALSE;
+    }
+    
+    s->head   = jk2_service_iis_head;
+    s->read   = jk2_service_iis_read;
+    s->write  = jk2_service_iis_write;
+    s->init   = jk2_service_iis_initService;
+    s->afterRequest = jk2_service_iis_afterRequest;
+    
+    return JK_TRUE;
+}
 
