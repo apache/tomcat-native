@@ -41,6 +41,7 @@ public class JkMX extends JkHandler
     private String httphost="localhost";
     private int jrmpport=-1;
     private String jrmphost="localhost";
+    private boolean useXSLTProcessor = true;
 
     public JkMX() {
     }
@@ -103,6 +104,14 @@ public class JkMX extends JkHandler
         return jrmphost;
     }
 
+    public boolean getUseXSLTProcessor() {
+        return useXSLTProcessor;
+    }
+
+    public void setUseXSLTProcessor(boolean uxsltp) {
+        useXSLTProcessor = uxsltp;
+    }        
+
     /* ==================== Start/stop ==================== */
     ObjectName httpServerName=null;
     ObjectName jrmpServerName=null;
@@ -124,30 +133,40 @@ public class JkMX extends JkHandler
                     mserver.setAttribute(httpServerName, new Attribute("Host", httphost));
                 mserver.setAttribute(httpServerName, new Attribute("Port", new Integer(httpport)));
 
-                ObjectName processorName = registerObject("mx4j.adaptor.http.XSLTProcessor",
+                if(useXSLTProcessor) {
+                    ObjectName processorName = registerObject("mx4j.adaptor.http.XSLTProcessor",
                                                           "Http:name=XSLTProcessor");
-                //mserver.setAttribute(processorName, new Attribute("File", "/opt/41/server/lib/openjmx-tools.jar"));
-                //mserver.setAttribute(processorName, new Attribute("UseCache", new Boolean(false)));
-                //mserver.setAttribute(processorName, new Attribute("PathInJar", "/openjmx/adaptor/http/xsl"));
-                mserver.setAttribute(httpServerName, new Attribute("ProcessorName", processorName));
+                    mserver.setAttribute(httpServerName, new Attribute("ProcessorName", processorName));
+                }
 
-                //server.invoke(serverName, "addAuthorization",
-                //             new Object[] {"openjmx", "openjmx"},
-                //             new String[] {"java.lang.String", "java.lang.String"});
+                // starts the server
+                mserver.invoke(httpServerName, "start", null, null);
 
-                // use basic authentication
-                //server.setAttribute(serverName, new Attribute("AuthenticationMethod", "basic"));
+                log.info( "Started MX4J console on host " + httphost + " at port " + httpport);
+                
+                httpAdapterLoaded = true;
 
-                //  ObjectName sslFactory = new ObjectName("Adaptor:service=SSLServerSocketFactory");
-                //         server.createMBean("openjmx.adaptor.ssl.SSLAdaptorServerSocketFactory", sslFactory, null);
-                //        SSLAdaptorServerSocketFactoryMBean factory =
-                // (SSLAdaptorServerSocketFactoryMBean)StandardMBeanProxy.create(SSLAdaptorServerSocketFactoryMBean.class, server, sslFactory);
-                //             // Customize the values below
-                //             factory.setKeyStoreName("certs");
-                //             factory.setKeyStorePassword("openjmx");
+            } catch( Throwable t ) {
+                httpServerName=null;
+                log.error( "Can't load the MX4J http adapter ", t );
+            }
+        }
 
-                //             server.setAttribute(serverName, new Attribute("SocketFactoryName", sslFactory.toString()));
+        if ((httpport != -1) && (!httpAdapterLoaded) && classExists("mx4j.tools.adaptor.http.HttpAdaptor")) {
+            try {
+                httpServerName = registerObject("mx4j.tools.adaptor.http.HttpAdaptor",
+                                                "Http:name=HttpAdaptor");
 
+                        
+                if( httphost!=null )
+                    mserver.setAttribute(httpServerName, new Attribute("Host", httphost));
+                mserver.setAttribute(httpServerName, new Attribute("Port", new Integer(httpport)));
+
+                if(useXSLTProcessor) {
+                    ObjectName processorName = registerObject("mx4j.tools.adaptor.http.XSLTProcessor",
+                                                          "Http:name=XSLTProcessor");
+                    mserver.setAttribute(httpServerName, new Attribute("ProcessorName", processorName));
+		}
                 // starts the server
                 mserver.invoke(httpServerName, "start", null, null);
 
@@ -174,8 +193,6 @@ public class JkMX extends JkHandler
                 ObjectName adaptor = registerObject("mx4j.adaptor.rmi.jrmp.JRMPAdaptor",
                                                     "Adaptor:protocol=jrmp");
 
-                //    mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean mbean = (mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean)mx4j.util.StandardMBeanProxy.
-                //        create(mx4j.adaptor.rmi.jrmp.JRMPAdaptorMBean.class, mserver, adaptor);
 
                 mserver.setAttribute(adaptor, new Attribute("JNDIName", "jrmp"));
 
@@ -193,11 +210,8 @@ public class JkMX extends JkHandler
                             jrpmurl},
                         new String[] { "java.lang.Object", "java.lang.Object" });
 
-                //mbean.putNamingProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.rmi.registry.RegistryContextFactory");
-                //mbean.putNamingProperty(javax.naming.Context.PROVIDER_URL, "rmi://localhost:1099");
                 // Registers the JRMP adaptor in JNDI and starts it
                 mserver.invoke(adaptor, "start", null, null);
-                //   mbean.start();
                 log.info( "Creating " + adaptor + " on host " + jrmphost + " at port " + jrmpport);
 
                 jrmpAdapterLoaded = true;
