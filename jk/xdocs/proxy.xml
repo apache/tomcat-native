@@ -32,14 +32,25 @@ ProxyPassReverse http://localhost:8080/examples/
 </p>
 </section>
 
-<section name="Ajp proxy">
+<section name="AJP proxy">
 <p>
-The Ajp proxy is a new module based on the standard Http proxy it uses AJP instead of HTTP.
+The AJP proxy is a new module based on the standard Http proxy it uses AJP instead of HTTP.
 <source>
 &lt;Location /examples/&gt;
    ProxyPass ajp://localhost:8009/examples/
 &lt;/Location&gt;
 </source>
+</p>
+</section>
+
+<section name="Source and Configuration">
+<p>
+AJP proxy is integrated in httpd-2.1 and the developement and discussions take
+place <a href="http://httpd.apache.org/lists.html">there</a>.
+More documentation can be found there
+<a href="http://httpd.apache.org/docs-2.1/mod/mod_proxy_ajp.html">mod_proxy_ajp</a>
+and
+<a href="http://httpd.apache.org/docs-2.1/mod/mod_proxy_balancer.html">mod_proxy_balancer</a>.
 </p>
 </section>
 
