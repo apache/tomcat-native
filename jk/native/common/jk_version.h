@@ -67,14 +67,14 @@
 /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
 #define JK_VERMAJOR     1
 #define JK_VERMINOR     2
-#define JK_VERFIX       4
-#define JK_VERSTRING    "1.2.4"
+#define JK_VERFIX       5
+#define JK_VERSTRING    "1.2.5"
 
 /* Beta number */
 #define JK_VERBETA      0
 #define JK_BETASTRING   "1"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
-#define JK_VERISRELEASE 1
+#define JK_VERISRELEASE 0
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
 
 #define PACKAGE "mod_jk/"
