@@ -308,7 +308,7 @@ public class ChannelSocket extends JkHandler {
         
         if(rd < 0) {
             // Most likely normal apache restart.
-            log.warn("Wrong message " + rd );
+            // log.warn("Wrong message " + rd );
             return rd;
         }
 
@@ -378,7 +378,7 @@ public class ChannelSocket extends JkHandler {
                 // This happens periodically, as apache restarts
                 // periodically.
                 // It should be more gracefull ! - another feature for Ajp14
-                log.warn( "Read result -1, connection close by server" );
+                // log.warn( "server has closed the current connection (-1)" );
                 return -3;
             }
 
@@ -418,7 +418,10 @@ public class ChannelSocket extends JkHandler {
             while( running ) {
                 int status= this.receive( recv, ep );
                 if( status <= 0 ) {
-                    log.warn("Invalid packet, closing connection" );
+                    if( status==-3)
+                        log.warn( "server has closed the current connection (-1)" );
+                    else 
+                        log.warn("Closing ajp connection " + status );
                     break;
                 }
 
