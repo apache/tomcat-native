@@ -69,6 +69,9 @@ all: $(MODULE)
 mod_webapp.so:
 	@echo Linking Apache 1.3.x module
 	@$(APXS) -c $(APXSFLAGS) mod_webapp.c
+install: mod_webapp.so
+	@echo Installing Apache 1.3.x module
+	@$(APXS) -i mod_webapp.so
 
 clean:
 	@echo Removing object files $(OBJS) $(MODULE)

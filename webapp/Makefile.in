@@ -73,7 +73,7 @@ CFGS = config.cache \
 all:
 	@for DIR in $(DIRS) ; do \
 		echo "Compiling sources in $$DIR..." ; \
-		$(MAKE) -C $$DIR all ; \
+		(cd $$DIR; $(MAKE) all) ; \
 		RET=$$? ; \
 		if ( test "$$RET" != "0" ) ; then \
 			exit $$RET ; \
@@ -83,12 +83,23 @@ all:
 clean:
 	@for DIR in $(DIRS) ; do \
 		echo "Cleaning up $$DIR..." ; \
-		$(MAKE) -C $$DIR clean ; \
+		(cd $$DIR; $(MAKE) clean) ; \
 		RET=$$? ; \
 		if ( test "$$RET" != "0" ) ; then \
 			exit $$RET ; \
 		fi ; \
 	done
+
+install:
+	@for DIR in $(DIRS) ; do \
+		echo "Installing $$DIR..." ; \
+		(cd $$DIR; $(MAKE) install) ; \
+		RET=$$? ; \
+		if ( test "$$RET" != "0" ) ; then \
+			exit $$RET ; \
+		fi ; \
+	done
+
 
 apidocs: include/*.h
 	@echo "Generating API documentation..."

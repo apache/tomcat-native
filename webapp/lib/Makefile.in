@@ -75,3 +75,6 @@ $(LIB): $(OBJS) $(PROVS)
 clean:
 	@echo Removing object files $(OBJS) $(PROVS) $(LIB)
 	@rm -f $(OBJS) $(PROVS) $(LIB)
+
+install:
+
