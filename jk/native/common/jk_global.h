@@ -178,6 +178,8 @@ extern "C" {
 /* Check for Apache 2.0 running on an EBCDIC system */
 #if APR_CHARSET_EBCDIC 
 
+#include <util_ebcdic.h>
+
 #define USE_CHARSET_EBCDIC
 #define jk_xlate_to_ascii(b, l) ap_xlate_proto_to_ascii(b, l)
 #define jk_xlate_from_ascii(b, l) ap_xlate_proto_from_ascii(b, l)

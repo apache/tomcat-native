@@ -62,7 +62,7 @@
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
-#if !defined(WIN32) && !defined(NETWARE)
+#if !defined(WIN32) && !defined(NETWARE) && !defined(AS400)
 #include <dlfcn.h>
 #endif
 
