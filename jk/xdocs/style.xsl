@@ -279,12 +279,14 @@
     <table border="1" cellpadding="5">
       <tr>
         <th width="220px" bgcolor="{$attributes-color}">
-          <xsl:if test="@name = ''">
-             <font color="#ffffff">Attribute</font>
-          </xsl:if>           
-          <xsl:if test="@name != ''">
-             <font color="#ffffff"><xsl:value-of select="@name"/></font>
-          </xsl:if>           
+     	  <xsl:choose>
+            <xsl:when test="@name != ''">
+               <font color="#ffffff"><xsl:value-of select="@name"/></font>
+            </xsl:when>
+            <xsl:otherwise>
+               <font color="#ffffff">Attribute</font>
+            </xsl:otherwise>
+          </xsl:choose>          
         </th>
         <th width="*" bgcolor="{$attributes-color}">
           <font color="#ffffff">Description</font>
@@ -300,6 +302,50 @@
               <code><xsl:value-of select="@name"/></code>
             </xsl:if>
           </td>
+          <td align="left" valign="center">
+            <xsl:apply-templates/>
+          </td>
+        </tr>
+      </xsl:for-each>
+    </table>
+  </xsl:template>
+
+  <!-- Process an attributes list with nested attribute elements -->
+  <xsl:template match="directives">
+    <table border="1" cellpadding="5">
+      <tr>
+        <th width="15%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Directive</font>
+        </th>
+        <th width="10%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Default</font>
+        </th>
+        <th width="75%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Description</font>
+        </th>
+      </tr>
+      <xsl:for-each select="directive">
+        <tr>
+          <td align="left" valign="center">
+            <xsl:if test="@required = 'true'">
+              <strong><code><xsl:value-of select="@name"/></code></strong>
+            </xsl:if>
+            <xsl:if test="@required != 'true'">
+              <code><xsl:value-of select="@name"/></code>
+            </xsl:if>
+          </td>
+     	  <xsl:choose>
+            <xsl:when test="@default != ''">
+               <td align="left" valign="center">          
+               <code><xsl:value-of select="@default"/></code>
+              </td>
+            </xsl:when>
+            <xsl:otherwise>
+               <td align="center" valign="center">          
+              <code>-</code>
+              </td>
+            </xsl:otherwise>
+          </xsl:choose>          
           <td align="left" valign="center">
             <xsl:apply-templates/>
           </td>
@@ -332,6 +378,15 @@
         <a name="{$name}"><xsl:apply-templates/></a>
       </xsl:otherwise>
     </xsl:choose>
+  </xsl:template>
+    
+  <!-- Warning -->
+  <xsl:template match="warn">
+    <p>
+    <font color="#ff0000">
+    <xsl:apply-templates/>
+    </font>
+    </p>
   </xsl:template>
 
   <!-- Changelog related tags -->
