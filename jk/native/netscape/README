@@ -1,0 +1,34 @@
+ABOUT
+-----
+
+The redirector was originally developed using Visual C++ Ver.6.0, 
+so having this environment is a prerequisite if you want to perform 
+a custom build on Windows systems
+
+On Unix system, a Makefile.solaris is provided and should be 
+adapted to tailor to your own configuration.
+
+
+REQUIREMENT for Windows build
+-----------------------------
+
+MS VC 6.0 (+ update, latest service pack is 5)
+
+BUILDING on Windows
+-------------------
+ 
+The steps that you need to take are:
+
+   1. Change directory to the nsapi redirector plugins source directory.
+
+   2. Execute the following command:
+      MSDEV nsapi.dsp /MAKE ALL
+      If msdev is not in your path, enter the full path to msdev.exe
+
+This will build both release and debug versions of the redirector plugin.
+
+An alternative will be to open the isapi workspace file (nsapi.dsw) in msdev and 
+build it using the build menu.
+
+
+
