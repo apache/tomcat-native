@@ -86,8 +86,8 @@ extern char *strdup (const char *str);
 /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
 #define JK_VERMAJOR     2
 #define JK_VERMINOR     0
-#define JK_VERFIX       0
-#define JK_VERSTRING    "2.0.0"
+#define JK_VERFIX       2
+#define JK_VERSTRING    "2.0.2"
 
 /* Beta number */
 #define JK_VERBETA      1
