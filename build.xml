@@ -18,7 +18,7 @@
             <fileset dir="util/build/classes" includes="org/apache/**" />
             <fileset dir="coyote/build/classes" includes="org/apache/coyote/**" />
             <fileset dir="http11/build/classes" includes="org/apache/coyote/**" />
-            <fileset dir="jk/build/WEB-INF/classes" >
+            <fileset dir="jk/build/classes" >
                 <include name="org/apache/**" />
                 <exclude name="org/apache/jk/ant/**" />
             </fileset>
