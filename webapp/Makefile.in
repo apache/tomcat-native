@@ -84,8 +84,10 @@ apr_all:
 	@for DIR in $(APRDIR) ; do \
 		echo "" ; \
 		echo "Compiling sources in $$DIR..." ; \
-		$(MAKE) -C $$DIR all ; \
+		cd $$DIR ; \
+		$(MAKE) all ; \
 		RET=$$? ; \
+		cd $(SRCDIR) ; \
 		if test "$$RET" != "0" ; then \
 			exit $$RET ; \
 		fi ; \
@@ -95,8 +97,10 @@ apr_clean:
 	@for DIR in $(APRDIR) ; do \
 		echo "" ; \
 		echo "Cleaning up $$DIR..." ; \
-		$(MAKE) -C $$DIR clean ; \
+		cd $$DIR ; \
+		$(MAKE) clean ; \
 		RET=$$? ; \
+		cd $(SRCDIR) ; \
 		if test "$$RET" != "0" ; then \
 			exit $$RET ; \
 		fi ; \
@@ -106,8 +110,10 @@ local_all:
 	@for DIR in $(LOCALDIRS) ; do \
 		echo "" ; \
 		echo "Compiling sources in $$DIR..." ; \
-		$(MAKE) -C $$DIR all ; \
+		cd $$DIR ; \
+		$(MAKE) all ; \
 		RET=$$? ; \
+		cd $(SRCDIR) ; \
 		if test "$$RET" != "0" ; then \
 			exit $$RET ; \
 		fi ; \
@@ -117,8 +123,10 @@ local_clean:
 	@for DIR in $(LOCALDIRS) ; do \
 		echo "" ; \
 		echo "Cleaning up $$DIR..." ; \
-		$(MAKE) -C $$DIR clean ; \
+		cd $$DIR ; \
+		$(MAKE) clean ; \
 		RET=$$? ; \
+		cd $(SRCDIR) ; \
 		if test "$$RET" != "0" ; then \
 			exit $$RET ; \
 		fi ; \
