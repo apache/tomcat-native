@@ -78,8 +78,13 @@
 #undef HAVE_MEMICMP
 #define USE_INIFILE
 
+#elif defined(SOLARIS)
+
+#undef HAVE_MEMICMP
+#define USE_INIFILE
+
 #else
-#error Please define either WIN32 or LINUX
+#error Please define one of WIN32, LINUX or SOLARIS
 #endif
 
 /* define if you don't have the Notes C API which is available from
