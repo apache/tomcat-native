@@ -128,7 +128,7 @@ public class ServerCookie implements Serializable {
     // from RFC 2068, token special case characters
     //
     // private static final String tspecials = "()<>@,;:\\\"/[]?={} \t";
-    private static final String tspecials = ",;";
+    private static final String tspecials = ",; ";
 
     /*
      * Tests a string and returns true if the string counts as a
@@ -272,20 +272,15 @@ public class ServerCookie implements Serializable {
     }
 
     public static void maybeQuote (int version, StringBuffer buf,
-                                    String value)
-    {
-	// special case - a \n or \r  shouldn't happen in any case
-	if ( isToken (value))
-	  buf.append (value);
-	else {
-	    if(version==0)
-		throw new IllegalArgumentException( value );
-	    else {
-		buf.append ('"');
-		buf.append (value);
-		buf.append ('"');
-	    }
-	}
+            String value) {
+        // special case - a \n or \r  shouldn't happen in any case
+        if (isToken(value)) {
+            buf.append(value);
+        } else {
+            buf.append('"');
+            buf.append(value);
+            buf.append('"');
+        }
     }
 
     // log
