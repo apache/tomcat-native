@@ -190,6 +190,25 @@ public final class Parameters extends MultiMap {
     
     // This is the original data representation ( hash of String->String[])
 
+    public void addParameterValues( String key, String[] newValues) {
+        if ( key==null ) return;
+        String values[];
+        if (paramHashStringArray.containsKey(key)) {
+            String oldValues[] = (String[])paramHashStringArray.get(key);
+            values = new String[oldValues.length + newValues.length];
+            for (int i = 0; i < oldValues.length; i++) {
+                values[i] = oldValues[i];
+            }
+            for (int i = 0; i < newValues.length; i++) {
+                values[i+ oldValues.length] = newValues[i];
+            }
+        } else {
+            values = newValues;
+        }
+
+        paramHashStringArray.put(key, values);
+    }
+
     public String[] getParameterValues(String name) {
 	handleQueryParameters();
 	// sub-request
