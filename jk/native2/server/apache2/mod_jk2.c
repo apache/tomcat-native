@@ -134,8 +134,8 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
     
     rc=workerEnv->config->setPropertyString( env, workerEnv->config, (char *)name, value );
     if (rc!=JK_OK) {
-		ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
-					  "mod_jk2: Unrecognized option %s %s\n", name, value);
+        ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
+                      "mod_jk2: Unrecognized option %s %s\n", name, value);
     }
 
     return NULL;
@@ -525,13 +525,13 @@ static void jk2_child_init(apr_pool_t *pconf,
         if (max_daemons_limit == 0) {
             workerEnv->childId = 0;    
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                "jk2_init() Found child %d in scoreboard slot %d\n",
-                proc.pid, workerEnv->childId);
+                "jk2_init() Setting scoreboard slot 0 for child %d\n",
+                proc.pid);
         }
         else {
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                "jk2_init() Can't find child %d in scoreboard\n",
-                proc.pid);
+                "jk2_init() Can't find child %d in none of the %d scoreboard slots\n",
+                proc.pid, max_daemons_limit);
             workerEnv->childId = -2;
         }
     } else {
@@ -553,9 +553,9 @@ static void jk2_child_init(apr_pool_t *pconf,
         
         jk2_init( env, pconf, workerEnv, s );
 
-        if( workerEnv->childId <= 0 ) 
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, "mod_jk child init %d %d\n",
-                          workerEnv->was_initialized, workerEnv->childId );
+        if (workerEnv->childId <= 0) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child %d initialized\n",
+                          workerEnv->childId);
     }
     if (workerEnv->childGeneration)
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "mod_jk child workerEnv in error state %d\n",
