@@ -44,6 +44,7 @@ public class JkMX extends JkHandler
 {
     MBeanServer mserver;
     private boolean enabled=false;
+    private boolean log4jEnabled=true;
     private int httpport=-1;
     private String httphost="localhost";
     private String authmode="none";
@@ -68,6 +69,16 @@ public class JkMX extends JkHandler
         return enabled;
     }
         
+    /** Enable the Log4j MBean)
+     */
+    public void setLog4jEnabled(boolean b) {
+        log4jEnabled=b;
+    }
+        
+    public boolean getLog4jEnabled() {
+        return log4jEnabled;
+    }
+
     /** Enable the MX4J adapters (old way, compatible)
      */
     public void setPort(int i) {
@@ -223,8 +234,8 @@ public class JkMX extends JkHandler
 		}
                 // starts the server
                 mserver.invoke(httpServerName, "start", null, null);
-
-                log.info( "Started MX4J console on host " + httphost + " at port " + httpport);
+                if(log.isInfoEnabled())
+                    log.info( "Started MX4J console on host " + httphost + " at port " + httpport);
                 
                 httpAdapterLoaded = true;
 
@@ -241,7 +252,8 @@ public class JkMX extends JkHandler
 				mserver.setAttribute(jrmpServerName, new Attribute("Port", 
 				                                     new Integer(jrmpport)));
                 mserver.invoke(jrmpServerName, "start", null, null);
-                log.info( "Creating " + jrmpServerName );
+                if(log.isInfoEnabled())
+                    log.info( "Creating " + jrmpServerName );
 
                 // Create the JRMP adaptor
                 ObjectName adaptor = registerObject("mx4j.adaptor.rmi.jrmp.JRMPAdaptor",
@@ -266,7 +278,8 @@ public class JkMX extends JkHandler
 
                 // Registers the JRMP adaptor in JNDI and starts it
                 mserver.invoke(adaptor, "start", null, null);
-                log.info( "Creating " + adaptor + " on host " + jrmphost + " at port " + jrmpport);
+                if(log.isInfoEnabled())
+                    log.info( "Creating " + adaptor + " on host " + jrmphost + " at port " + jrmpport);
 
                 jrmpAdapterLoaded = true;
 
@@ -280,7 +293,8 @@ public class JkMX extends JkHandler
             try {
                 httpServerName=registerObject("com.sun.jdmk.comm.HtmlAdaptorServer",
                                               "Adaptor:name=html,port=" + httpport);
-                log.info("Registering the JMX_RI html adapter " + httpServerName + " at port " + httpport);
+                if(log.isInfoEnabled())
+                    log.info("Registering the JMX_RI html adapter " + httpServerName + " at port " + httpport);
 
                 mserver.setAttribute(httpServerName,
                                      new Attribute("Port", new Integer(httpport)));
@@ -301,7 +315,8 @@ public class JkMX extends JkHandler
 
     public void destroy() {
         try {
-            log.info("Stoping JMX ");
+            if(log.isInfoEnabled())
+                log.info("Stoping JMX ");
 
             if( httpServerName!=null ) {
                 mserver.invoke(httpServerName, "stop", null, null);
@@ -321,15 +336,17 @@ public class JkMX extends JkHandler
             if( enabled ) {
                 loadAdapter();
             }
-
-            try {
-                registerObject("org.apache.log4j.jmx.HierarchyDynamicMBean" ,
-                               "log4j:hierarchy=default");
-                log.info("Registering the JMX hierarchy for Log4J ");
-            } catch( Throwable t ) {
-                log.info("Can't enable log4j mx: " +  t.toString());
+            if( log4jEnabled) {
+                try {
+                    registerObject("org.apache.log4j.jmx.HierarchyDynamicMBean" ,
+                                   "log4j:hierarchy=default");
+                    if(log.isInfoEnabled())
+                         log.info("Registering the JMX hierarchy for Log4J ");
+                } catch( Throwable t ) {
+                    if(log.isInfoEnabled())
+                        log.info("Can't enable log4j mx: ",t);
+                }
             }
-
         } catch( Throwable t ) {
             log.error( "Init error", t );
         }
