@@ -572,6 +572,41 @@ document space for a VirtualHost:
 </screen>
 
 <p>
+Since mod_jk 1.2.6, and under Apache 2.0, it's possible to exclude some URL/URI from
+jk processing by setting the env var no-jk, for example with the SetEnvIf Directive.
+</p>
+
+<p>
+You could use no-jk env var to fix problem with mod_alias or mod_userdir
+directive when jk and alias/userdir URLs matches. 
+</p>
+
+<screen>
+<note># All URL goes to tomcat except the one containing /home</note>
+<read>&lt;VirtualHost *:80&gt;
+<read> ServerName testxxx.mysys
+<read> DocumentRoot /www/testxxx/htdocs
+<read />
+<note># Use SetEnvIf to st no-jk when /home/ is encountered</note>
+<read>SetEnvIf Request_URI "/home/*" no-jk</read>
+<read />
+<note># Now /home will goes to /home/dataxxx/</note>
+<read>Alias /home /home/dataxxx/</read>
+<read />
+<read>&lt;Directory "/home/dataxxx"&gt;</read>
+<read>  Options Indexes MultiViews</read>
+<read>  AllowOverride None</read>
+<read>  Order allow,deny</read>
+<read>  Allow from all</read>
+<read>&lt;/Directory&gt;</read>
+<read />
+<read>JkMount /* myssys-xxx</read>
+<read />
+<read>&lt;/VirtualHost&gt;</read>
+</screen>
+
+
+<p>
 Use the mod_jk <b>JkAutoAlias</b> directive to map all web application context directories 
 into Apache's document space. 
 </p>
