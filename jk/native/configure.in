@@ -100,7 +100,7 @@ AC_ARG_WITH(apxs,
 		APXS_CPPFLAGS=""
             else
                 WEBSERVER="apache-2.0"
-              	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS`"
+              	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR"
               	APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
                 APACHE_CONFIG_VARS=${apache_dir}/build/config_vars.mk
                 LIBTOOL=`$APXS -q LIBTOOL`
