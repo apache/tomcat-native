@@ -50,6 +50,7 @@
 #define REPLY_TIMEOUT_OF_WORKER     ("reply_timeout")
 #define SOCKET_TIMEOUT_OF_WORKER    ("socket_timeout")
 #define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
+#define RECYCLE_TIMEOUT_OF_WORKER   ("recycle_timeout")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
 #define BALANCED_WORKERS            ("balanced_workers")
 #define STICKY_SESSION              ("sticky_session")
@@ -61,7 +62,7 @@
 
 #define DEFAULT_WORKER              JK_AJP12_WORKER_NAME
 #define WORKER_LIST_PROPERTY_NAME   ("worker.list")
-#define DEFAULT_LB_FACTOR           (1.0)
+#define DEFAULT_LB_FACTOR           (1)
 #define LOG_FORMAT                  ("log_format")
 
 #define TOMCAT32_BRIDGE_NAME        ("tomcat32")
@@ -205,11 +206,9 @@ int jk_close_file_logger(jk_logger_t **l)
 {
     if (l && *l) {
         file_logger_t *p = (*l)->logger_private;
-        if (p) {
-          fflush(p->logfile);
-          fclose(p->logfile);
-          free(p);
-        }
+        fflush(p->logfile);
+        fclose(p->logfile);
+        free(p);
         free(*l);
         *l = NULL;
 
@@ -471,6 +470,20 @@ int jk_get_worker_reply_timeout(jk_map_t *m, const char *wname, int def)
     return map_get_int(m, buf, def);
 }
 
+int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def)
+{
+    char buf[1024];
+
+    if (!m || !wname) {
+        return -1;
+    }
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
+            RECYCLE_TIMEOUT_OF_WORKER);
+
+    return map_get_int(m, buf, def);
+}
+
 int jk_get_worker_recovery_opts(jk_map_t *m, const char *wname, int def)
 {
     char buf[1024];
@@ -520,7 +533,7 @@ void jk_set_log_format(const char *logformat)
     jk_log_fmt = (logformat) ? logformat : JK_TIME_FORMAT;
 }
 
-double jk_get_lb_factor(jk_map_t *m, const char *wname)
+int jk_get_lb_factor(jk_map_t *m, const char *wname)
 {
     char buf[1024];
 
@@ -530,7 +543,7 @@ double jk_get_lb_factor(jk_map_t *m, const char *wname)
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, LOAD_FACTOR_OF_WORKER);
 
-    return map_get_double(m, buf, DEFAULT_LB_FACTOR);
+    return map_get_int(m, buf, DEFAULT_LB_FACTOR);
 }
 
 int jk_get_is_sticky_session(jk_map_t *m, const char *wname)
