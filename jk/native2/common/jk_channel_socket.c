@@ -94,12 +94,6 @@ struct jk_channel_socket_private {
     short port;
 };
 
-/** Informations for each connection
- */
-typedef struct jk_channel_socket_data {
-    int sock;
-} jk_channel_socket_data_t;
-
 typedef struct jk_channel_socket_private jk_channel_socket_private_t;
 
 /*
@@ -313,16 +307,8 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channelSocket.connect(), sock = %d\n", sock);
 
-    {
-        jk_channel_socket_data_t *sd=endpoint->channelData;
-        if( sd==NULL ) {
-            sd=(jk_channel_socket_data_t *)
-                endpoint->pool->calloc( env, endpoint->pool,
-                                        sizeof( jk_channel_socket_data_t ));
-            endpoint->channelData=sd;
-        }
-        sd->sock=sock;
-    }
+    endpoint->sd=sock;
+
     return JK_OK;
 }
 
@@ -333,12 +319,9 @@ static int JK_METHOD jk2_channel_socket_close(jk_env_t *env,jk_channel_t *ch,
                                              jk_endpoint_t *endpoint)
 {
     int sd;
-    jk_channel_socket_data_t *chD=endpoint->channelData;
-    if( chD==NULL ) 
-	return JK_ERR;
 
-    sd=chD->sock;
-    chD->sock=-1;
+    sd=endpoint->sd;
+    endpoint->sd=-1;
     /* nothing else to clean, the socket_data was allocated ouf of
      *  endpoint's pool
      */
@@ -364,17 +347,16 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
     int len;
     int sd;
     int  sent=0;
-    jk_channel_socket_data_t *chD=endpoint->channelData;
 
-    if( chD==NULL ) {
+    sd=endpoint->sd;
+    if( sd<0 )
         return JK_ERR;
-    }
-
+    
     msg->end( env, msg );
     len=msg->len;
     b=msg->buf;
-    sd=chD->sock;
 
+    
     while(sent < len) {
         int this_time = send(sd, (char *)b + sent , len - sent,  0);
 	    
@@ -404,20 +386,58 @@ static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
                                               jk_endpoint_t *endpoint,
                                               char *b, int len )
 {
-    jk_channel_socket_data_t *chD=endpoint->channelData;
     int sd;
     int rdlen;
 
-    if( chD==NULL ) 
-	return JK_ERR;
-    sd=chD->sock;
+    sd=endpoint->sd;
     rdlen = 0;
+
+    if( sd<0 ) return JK_ERR;
     
     while(rdlen < len) {
 	int this_time = recv(sd, 
 			     (char *)b + rdlen, 
 			     len - rdlen, 
 			     0);	
+	if(-1 == this_time) {
+#ifdef WIN32
+	    if(SOCKET_ERROR == this_time) { 
+		errno = WSAGetLastError() - WSABASEERR;
+	    }
+#endif /* WIN32 */
+	    
+	    if(EAGAIN == errno) {
+		continue;
+	    } 
+	    return -1;
+	}
+	if(0 == this_time) {
+	    return -1; 
+	}
+	rdlen += this_time;
+    }
+    return rdlen; 
+}
+
+static int JK_METHOD jk2_channel_socket_readN2( jk_env_t *env,
+                                                jk_channel_t *ch,
+                                                jk_endpoint_t *endpoint,
+                                                char *b, int minLen, int maxLen )
+{
+    int sd;
+    int rdlen;
+
+    sd=endpoint->sd;
+    rdlen = 0;
+
+    if( sd<0 ) return JK_ERR;
+    
+    while(rdlen < minLen ) {
+	int this_time = recv(sd, 
+			     (char *)b + rdlen, 
+			     maxLen - rdlen, 
+			     0);
+/*         fprintf(stderr, "XXX received %d\n", this_time ); */
 	if(-1 == this_time) {
 #ifdef WIN32
 	    if(SOCKET_ERROR == this_time) { 
@@ -448,13 +468,12 @@ static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
  * Was: tcp_socket_recvfull
  */
 static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *ch,
-                                             jk_endpoint_t *endpoint,
-                                             jk_msg_t *msg )
+                                                  jk_endpoint_t *endpoint,
+                                                  jk_msg_t *msg )
 {
     int hlen=msg->headerLength;
     int blen;
     int rc;
-    
 
     jk2_channel_socket_readN( env, ch, endpoint, msg->buf, hlen );
 
@@ -479,7 +498,69 @@ static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *ch,
                       "channelSocket.receive(): Received len=%d type=%d\n",
                       blen, (int)msg->buf[hlen]);
     return JK_OK;
+}
 
+static int JK_METHOD jk2_channel_socket_recvNew( jk_env_t *env, jk_channel_t *ch,
+                                             jk_endpoint_t *endpoint,
+                                             jk_msg_t *msg )
+{
+    int hlen=msg->headerLength;
+    int blen;
+    int inBuf=0;
+
+    if( endpoint->bufPos > 0 ) {
+        memcpy( msg->buf, endpoint->readBuf, endpoint->bufPos );
+        inBuf=endpoint->bufPos;
+        endpoint->bufPos=0;
+    }
+
+    /* Read at least hlen, at most maxlen ( we try to minimize the number
+     of read() operations )
+    */
+    if( inBuf < hlen ) {
+        /* Need more data to get the header
+         */
+        int newData=jk2_channel_socket_readN2( env, ch, endpoint, msg->buf + inBuf, hlen - inBuf, msg->maxlen - inBuf );
+        if(newData < 0) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "channelSocket.receive(): Error receiving message head %d %d\n",
+                          inBuf, errno);
+            return JK_ERR;
+        }
+        inBuf+=newData;
+    }
+
+    blen=msg->checkHeader( env, msg, endpoint );
+    if( blen < 0 ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "channelSocket.receive(): Bad header\n" );
+        return JK_ERR;
+    }
+
+    if( inBuf < hlen + blen ) {
+        /* We need more data */
+        int newData=jk2_channel_socket_readN2( env, ch, endpoint, msg->buf + inBuf,
+                                               blen + hlen - inBuf, msg->maxlen - inBuf );
+        inBuf+=newData;
+        if(newData < 0) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "channelSocket.receive(): Error receiving message body %d %d\n",
+                          newData, errno);
+            return JK_ERR;
+        }
+    }
+
+    /* Now we have enough data - possibly more */
+    endpoint->bufPos = inBuf - hlen - blen;
+    if( endpoint->bufPos > 0 ) {
+        memcpy( endpoint->readBuf, msg->buf + hlen + blen, endpoint->bufPos );
+    }
+    
+    if( ch->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelSocket.receive(): Received len=%d type=%d total=%d\n",
+                      blen, (int)msg->buf[hlen], inBuf );
+    return JK_OK;
 }
 
 
