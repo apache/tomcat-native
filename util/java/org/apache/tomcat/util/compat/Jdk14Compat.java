@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+//import org.apache.commons.logging.Log;
+//import org.apache.commons.logging.LogFactory;
 
 
 /**
@@ -35,7 +35,7 @@ public class Jdk14Compat extends JdkCompat {
     // -------------------------------------------------------------- Constants
 
     // ------------------------------------------------------- Static Variables
-    static Log logger = LogFactory.getLog(Jdk14Compat.class);
+    //static Log logger = LogFactory.getLog(Jdk14Compat.class);
 
     // ----------------------------------------------------------- Constructors
     /**
