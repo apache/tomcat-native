@@ -418,7 +418,6 @@ public class HandlerRequest extends JkHandler
     {
         // FORWARD_REQUEST handler
         Request req=(Request)ep.getRequest();
-        req.setStartTime(System.currentTimeMillis());
         if( req==null ) {
             req=new Request();
             Response res=new Response();
@@ -444,6 +443,7 @@ public class HandlerRequest extends JkHandler
             }
         }
 
+        req.setStartTime(System.currentTimeMillis());
         JkInputStream jkBody=(JkInputStream)ep.getNote( bodyNote );
         if( jkBody==null ) {
             jkBody=new JkInputStream();

@@ -360,7 +360,7 @@ public class ChannelSocket extends JkHandler {
         if( this.domain != null ) {
             try {
                 Registry.getRegistry().registerComponent(tp, domain,"ThreadPool",
-                        "type=ThreadPool,worker=jk,name=" + getAddress() + "%" + port);
+                        "type=ThreadPool,worker=jk,name=Jk" + port);
             } catch (Exception e) {
                 log.error("Can't register threadpool" );
             }
