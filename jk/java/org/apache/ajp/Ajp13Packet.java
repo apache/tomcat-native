@@ -73,6 +73,8 @@ import org.apache.tomcat.util.http.MimeHeaders;
 public class Ajp13Packet {
 
     public static final String DEFAULT_CHAR_ENCODING = "8859_1";
+    public static final int    AJP13_WS_HEADER       = 0x1234;
+    public static final int    AJP13_SW_HEADER       = 0x4142;  // 'AB'
 
     /**
      * encoding to use when converting byte[] <-> string
@@ -179,7 +181,7 @@ public class Ajp13Packet {
         int mark = getInt();
         len      = getInt();
 	    
-        if( mark != 0x1234 ) {
+        if( mark != AJP13_WS_HEADER ) {
             // XXX Logging
             System.out.println("BAD packet " + mark);
             dump( "In: " );
@@ -196,8 +198,8 @@ public class Ajp13Packet {
     public void reset() {
         len = 4;
         pos = 4;
-        buff[0] = (byte)'A';
-        buff[1] = (byte)'B';
+        buff[0] = (byte)(AJP13_WS_HEADER >> 8);
+        buff[1] = (byte)(AJP13_WS_HEADER & 0xFF);
     }
 	
     /**
