@@ -69,8 +69,6 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
-#ifdef HAS_APR
-#include "apr_uri.h"
 /** Parse the name:
        VHOST/PATH
 
@@ -79,46 +77,6 @@
     The PATH will be further split in CONTEXT/LOCALPATH during init ( after
     we have all uris, including the context paths ).
 */
-static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
-                                 char *name)
-{
-
-    apr_uri_t uri;
-    char s[1024];
-
-    /* If it uri starts with / then it is simple 
-     * default host uri
-     */
-    if (*name == '/')
-        strcpy(s, name);
-    else {
-        strcpy(s, "http://");
-        strcat(s, name);
-    }
-    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                  "uriEnv.parseName() uri %s name %s real %s\n", 
-                  uriEnv->name, name, s);
-    
-    if (apr_uri_parse(uriEnv->pool->_private, s, &uri) == APR_SUCCESS) {
-        
-        uriEnv->port = uri.port;
-        if (uri.hostname) {
-            if (!uriEnv->port)
-                uriEnv->virtual = uri.hostname;
-            else
-                uriEnv->virtual = apr_pstrcat(uriEnv->pool->_private,
-                                    uri.hostname, ":", uri.port_str, NULL);
-        }
-        else
-            uriEnv->virtual = "*";
-        uriEnv->uri = uri.path;
-        if (!uri.path)
-            uriEnv->match_type = MATCH_TYPE_HOST;
-        return JK_OK;
-    }
-    return JK_ERR;
-}
-#else
 static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
                                  char *name)
 {
@@ -162,7 +120,6 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
 
     return JK_OK;
 }
-#endif /* HAS_APR */
 
 
 static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
@@ -397,9 +354,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         } else {
             /* context based /context/prefix/ASTERISK  */
             asterisk[1]      = '\0';
-#if 0
-            asterisk[0]      = '\0'; /* Remove the extra '/' */
-#endif
+
             uriEnv->suffix      = NULL;
             uriEnv->prefix      = uri;
             uriEnv->prefix_len  =strlen( uriEnv->prefix );
