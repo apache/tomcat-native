@@ -25,7 +25,7 @@
 
   <tr>
   <td>handler.list</td>
-  <td>apr,shm,request,container,channelSocket,channelJni,channelUnix</td>
+  <td>request,container,channelSocket</td>
   <td>Handlers to load.</td>
   </tr>
 
@@ -45,7 +45,15 @@
   <td>jkjni</td>
   <td>
     Location of the jkjni dynamic library.
-    It is searched in java.library.path but a absolut path can be specified.
+    It is searched in java.library.path but a absolute path can be specified.
+  </td>
+  </tr>
+  <tr>
+  <td>jniModeSo</td>
+  <td>inprocess</td>
+  <td>
+    If set to "inprocess" the jk2 will regiter native library functions by itself.
+	If not then it has to be the absolute path of the jkjni dynamic library.
   </td>
   </tr>
 
@@ -203,5 +211,32 @@ apr.NativeSo=${jtc}/jk/build/jk2/apache2/jkjni.so
 </source>
 </p>
 </subsection>
+
+<subsection name="using jni channel class for communication">
+<p>
+Here we have the minimum configuration needed for the jni communication.
+</p>
+
+<p>
+<source>
+# list of needed handlers.
+handler.list=apr,request,channelJni
+
+# Dynamic library needs to be defined only if Tomcat is used
+# out of process
+jtc=/home1/jakarta/jakarta-tomcat-connectors
+apr.NativeSo=${jtc}/jk/build/jk2/apache2/jkjni.so
+# Or you can use the mod_jk2 directly
+apr.jniModeSo=/opt/apache2/modules/mod_jk2.so
+
+# If you wish to start the Tomcat from inside web server then
+# you don't need any above directive. Here is shown the default
+# value for the apr that you can ommit
+apr.jniModeSo=inprocess
+
+</source>
+</p>
+</subsection>
+
 </section>
 </document>
