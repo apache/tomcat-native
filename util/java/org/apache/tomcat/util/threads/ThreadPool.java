@@ -556,7 +556,7 @@ public class ThreadPool  {
 
                     // Sleep for a while.
                     synchronized(this) {
-                        this.wait(WORK_WAIT_TIMEOUT);
+                        this.wait(interval);
                     }
 
                     // Check if should terminate.
