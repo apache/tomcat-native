@@ -458,28 +458,13 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->no_more_chunks = 0;
     s->query_string   = r->args;
 
-    if (conf->options & JK_OPT_FWDUNPARSED) {
     /*
      * The 2.2 servlet spec errata says the uri from
      * HttpServletRequest.getRequestURI() should remain encoded.
      * [http://java.sun.com/products/servlet/errata_042700.html]
      *
-     * we follow spec in that case but can't use mod_rewrite
      */
-        s->req_uri      = r->unparsed_uri;
-        if (s->req_uri != NULL) {
-            char *query_str = strchr(s->req_uri, '?');
-            if (query_str != NULL) {
-                *query_str = 0;
-            }
-        }
-    }
-    else {
-    /*
-     * we don't follow spec but we can use mod_rewrite
-     */
-        s->req_uri      = r->uri;
-    }
+    s->req_uri      = ap_escape_uri(r->pool, r->uri);
 
     s->is_ssl       = JK_FALSE;
     s->ssl_cert     = NULL;
@@ -867,8 +852,6 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
  * JkOptions Directive Handling
  *
  *
- * +ForwardUnparsed   => Forward URI as unparsed, spec compliant but broke mod_rewrite
- * -ForwardUnparsed   => Forward URI normally, less spec compliant but mod_rewrite compatible
  * +ForwardSSLKeySize => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
  * -ForwardSSLKeySize => Don't Forward SSL Key Size, will make mod_jk works with all TC release
  */
@@ -893,9 +876,7 @@ const char *jk_set_options(cmd_parms *cmd,
             action = *(w++);
         }
 
-        if (!strcasecmp(w, "ForwardUnparsedUri"))
-            opt = JK_OPT_FWDUNPARSED;
-        else if (!strcasecmp(w, "ForwardKeySize"))
+        if (!strcasecmp(w, "ForwardKeySize"))
             opt = JK_OPT_FWDKEYSIZE;
         else
             return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w, "'", NULL);
@@ -1008,8 +989,6 @@ static const command_rec jk_cmds[] =
     /*
      * Options to tune mod_jk configuration
      * for now we understand :
-     * +ForwardUnparsed   => Forward URI as unparsed, spec compliant but broke mod_rewrite
-     * -ForwardUnparsed   => Forward URI normally, less spec compliant but mod_rewrite compatible
      * +ForwardSSLKeySize => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
      * -ForwardSSLKeySize => Don't Forward SSL Key Size, will make mod_jk works with all TC release
      */
