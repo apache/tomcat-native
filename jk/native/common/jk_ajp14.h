@@ -72,77 +72,54 @@ extern "C" {
 
 #define AJP14_PROTO					14
 
-#define AJP14_DEF_HOST            	("localhost")
-#define AJP14_DEF_PORT            	(8011)
-#define AJP14_READ_BUF_SIZE         (8*1024)
-#define AJP14_DEF_RETRY_ATTEMPTS    (1)
-#define AJP14_DEF_CACHE_SZ      	(1)
-#define AJP14_MAX_SEND_BODY_SZ  	(DEF_BUFFER_SZ - 6)
-#define AJP14_HEADER_LEN    		(4)
-#define AJP14_HEADER_SZ_LEN 		(2)
-
-/*
- * Initial Login Phase (web server -> servlet engine)
- */
-#define AJP14_LOGINIT_CMD			(unsigned char)0x10
-
-/*
- * Second Login Phase (servlet engine -> web server), md5 seed is received
- */
-#define AJP14_LOGSEED_CMD			(unsigned char)0x11
-
-/*
- * Third Login Phase (web server -> servlet engine), md5 of seed + secret is sent
- */
-#define AJP14_LOGCOMP_CMD			(unsigned char)0x12
-
-/*
- * Login Accepted (servlet engine -> web server)
- */
-#define AJP14_LOGOK_CMD				(unsigned char)0x13
-
-/*
- * Login Rejected (servlet engine -> web server), will be logged
- */
-#define AJP14_LOGNOK_CMD			(unsigned char)0x14
+#define AJP14_DEF_HOST         	("localhost")
+#define AJP14_DEF_PORT         	(8011)
+#define AJP14_READ_BUF_SIZEd    (8*1024)
+#define AJP14_DEF_RETRY_ATTEMPTS  (1)
+#define AJP14_DEF_CACHE_SZ      (1)
+#define AJP14_MAX_SEND_BODY_SZ  (DEF_BUFFER_SZ - 6)
+#define AJP14_HEADER_LEN    	(4)
+#define AJP14_HEADER_SZ_LEN 	(2)
 
 /*
  * Context Query (web server -> servlet engine), which URI are handled by servlet engine ?
  */
-#define AJP14_CONTEXT_QRY_CMD		(unsigned char)0x15
+#define AJP14_CONTEXT_QRY_CMD	(unsigned char)0x15
 
 /*
  * Context Info (servlet engine -> web server), URI handled response
  */
-#define AJP14_CONTEXT_INFO_CMD		(unsigned char)0x16
+#define AJP14_CONTEXT_INFO_CMD	(unsigned char)0x16
 
 /* 
  * Context Update (servlet engine -> web server), status of context changed
  */
-#define AJP14_CONTEXT_UPDATE_CMD	(unsigned char)0x17
+#define AJP14_CONTEXT_UPDATE_CMD (unsigned char)0x17
 
 /*
  * Servlet Engine Status (web server -> servlet engine), what's the status of the servlet engine ?
  */
-#define AJP14_STATUS_CMD			(unsigned char)0x18
+#define AJP14_STATUS_CMD	(unsigned char)0x18
 
 /*
- * Secure Shutdown command (web server -> servlet engine), please servlet stop yourself.
+ * Secure Shutdown command (web server -> servlet engine),
+ * please servlet stop yourself.
  */
-#define AJP14_SHUTDOWN_CMD			(unsigned char)0x19
+#define AJP14_SHUTDOWN_CMD	(unsigned char)0x19
 
 /*
  * Secure Shutdown command Accepted (servlet engine -> web server)
  */
-#define AJP14_SHUTOK_CMD			(unsigned char)0x1A
+#define AJP14_SHUTOK_CMD	(unsigned char)0x1A
 
 /*
  * Secure Shutdown Rejected (servlet engine -> web server)
  */
-#define AJP14_SHUTNOK_CMD			(unsigned char)0x1B
+#define AJP14_SHUTNOK_CMD	(unsigned char)0x1B
 
 /*
- * Context Status (web server -> servlet engine), what's the status of the context ?
+ * Context Status (web server -> servlet engine), what's
+ * the status of the context ?
  */
 #define AJP14_CONTEXT_STATE_CMD		(unsigned char)0x1C
 
@@ -152,7 +129,8 @@ extern "C" {
 #define AJP14_CONTEXT_STATE_REP_CMD	(unsigned char)0x1D
 
 /*
- * Unknown Packet Reply (web server <-> servlet engine), when a packet couldn't be decoded
+ * Unknown Packet Reply (web server <-> servlet engine),
+ * when a packet couldn't be decoded
  */
 #define AJP14_UNKNOW_PACKET_CMD		(unsigned char)0x1E
 
@@ -212,21 +190,11 @@ extern "C" {
 #define AJP14_PROTO_SUPPORT_AJP14_NEG   0x00010000 
 
 /*
- * communication could use AJP15 
- */
-#define AJP14_PROTO_SUPPORT_AJP15_NEG   0x00020000 
-
-/*
- * communication could use AJP16
- */
-#define AJP14_PROTO_SUPPORT_AJP16_NEG   0x00040000 
-
-/*
  * Some failure codes
  */
-#define AJP14_BAD_KEY_ERR				0xFFFFFFFF
-#define AJP14_ENGINE_DOWN_ERR			0xFFFFFFFE
-#define AJP14_RETRY_LATER_ERR			0xFFFFFFFD
+#define AJP14_BAD_KEY_ERR		0xFFFFFFFF
+#define AJP14_ENGINE_DOWN_ERR		0xFFFFFFFE
+#define AJP14_RETRY_LATER_ERR		0xFFFFFFFD
 #define AJP14_SHUT_AUTHOR_FAILED_ERR    0xFFFFFFFC
 
 /*
@@ -250,98 +218,75 @@ typedef struct jk_login_service jk_login_service_t;
 struct jk_login_service {
 
     /*
-	 *  Pointer to web-server name
+     *  Pointer to web-server name
      */
     char * web_server_name;
-
-	/*
-	 * Pointer to servlet-engine name
-	 */
-	char * servlet_engine_name;
-
-	/*
-	 * Pointer to secret key
-	 */
-	char * secret_key;
-
-	/*
-	 * Received entropy seed
-	 */
-	char entropy[AJP14_ENTROPY_SEED_LEN + 1];
-
-	/*
-	 * Computed key
-	 */
-	char computed_key[AJP14_COMPUTED_KEY_LEN + 1];
-
+    
+    /*
+     * Pointer to servlet-engine name
+     */
+    char * servlet_engine_name;
+    
+    /*
+     * Pointer to secret key
+     */
+    char * secret_key;
+    
+    /*
+     * Received entropy seed
+     */
+    char entropy[AJP14_ENTROPY_SEED_LEN + 1];
+    
+    /*
+     * Computed key
+     */
+    char computed_key[AJP14_COMPUTED_KEY_LEN + 1];
+    
     /*
      *  What we want to negociate
      */
     unsigned long negociation;
-
-	/*
-	 * What we received from servlet engine 
+    
+    /*
+     * What we received from servlet engine 
      */
-	unsigned long negociated;
+    unsigned long negociated;
 };                                
-
+    
 /*
  * functions defined here 
  */
+int ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t *msg, 
+                                     jk_login_service_t *s, 
+                                     jk_logger_t *l);
 
-void 	ajp14_compute_md5(jk_login_service_t *s, 
-						  jk_logger_t *l);
+int ajp14_unmarshal_shutdown_nok(jk_msg_buf_t *msg, 
+                                 jk_logger_t *l);
 
-int 	ajp14_marshal_login_init_into_msgb(jk_msg_buf_t *msg, 
-										   jk_login_service_t *s, 
-										   jk_logger_t *l);
+int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t *msg, 
+                                           jk_msg_buf_t *unk, 
+                                           jk_logger_t *l);
 
-int 	ajp14_unmarshal_login_seed(jk_msg_buf_t *msg, 
-								   jk_login_service_t *s, 
-								   jk_logger_t *l);
+int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg, 
+                                          char *virtual, 
+                                          jk_logger_t *l);
 
-int 	ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t *msg, 
-										   jk_login_service_t *s, 
-										   jk_logger_t *l);
+int ajp14_unmarshal_context_info(jk_msg_buf_t *msg, 
+                                 jk_context_t *context, 
+                                 jk_logger_t *l);
 
-int 	ajp14_unmarshal_log_ok(jk_msg_buf_t *msg, 
-							   jk_login_service_t *s, 
-							   jk_logger_t *l);
+int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg, 
+                                          jk_context_t *context, 
+                                          char         *cname,
+                                          jk_logger_t *l);
+    
+int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg, 
+                                        jk_context_t *context, 
+                                        jk_logger_t *l);
 
-int 	ajp14_unmarshal_log_nok(jk_msg_buf_t *msg, 
-								jk_logger_t *l);
-
-int 	ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t *msg, 
-										 jk_login_service_t *s, 
-										 jk_logger_t *l);
-
-int 	ajp14_unmarshal_shutdown_nok(jk_msg_buf_t *msg, 
-									 jk_logger_t *l);
-
-int 	ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t *msg, 
-											   jk_msg_buf_t *unk, 
-											   jk_logger_t *l);
-
-int 	ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg, 
-											  char *virtual, 
-											  jk_logger_t *l);
-
-int 	ajp14_unmarshal_context_info(jk_msg_buf_t *msg, 
-									 jk_context_t *context, 
-									 jk_logger_t *l);
-
-int 	ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg, 
-											  jk_context_t *context, 
-                                              char         *cname,
-											  jk_logger_t *l);
-
-int 	ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg, 
-											jk_context_t *context, 
-											jk_logger_t *l);
-
-int 	ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg, 
-										   jk_context_t *context, 
-										   jk_logger_t *l);
+int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg, 
+                                       jk_context_t *context, 
+                                       jk_logger_t *l);
 
 #ifdef __cplusplus
 }
