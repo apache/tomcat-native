@@ -37,6 +37,7 @@
         <echo message="----- Java-utils -----" />
         <echo message="-- puretls.present = ${puretls.present}" />
         <echo message="-- jsse.present = ${jsse.present}"/>
+        <echo message="-- commons-logging = ${commons-logging.present}"/>
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
 	       deprecation="on"
