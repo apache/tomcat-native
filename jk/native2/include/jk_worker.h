@@ -50,6 +50,7 @@ typedef struct jk_worker jk_worker_t;
    in error state, we move to the next leve.
 */
 #define JK_LB_LEVELS 4
+#define JK_LB_MAX_WORKERS 256
 
 /* XXX Separate this in 2 structures: jk_lb.h and jk_ajp.h.
    Using 'worker' as a generic term is confusing, the objects are very different.
