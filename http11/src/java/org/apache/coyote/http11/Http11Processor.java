@@ -271,13 +271,9 @@ public class Http11Processor implements Processor, ActionHook {
                 // Check for HTTP/0.9
                 
                 inputBuffer.parseHeaders();
-            } catch (EOFException e) {
+            } catch (IOException e) {
                 error = true;
                 break;
-            } catch (InterruptedIOException e) {
-                e.printStackTrace();
-                //HttpServletResponse.SC_BAD_REQUEST
-                error = true;
             } catch (Exception e) {
                 e.printStackTrace();
                 //SC_BAD_REQUEST
@@ -291,7 +287,6 @@ public class Http11Processor implements Processor, ActionHook {
             try {
                 adapter.service(request, response);
             } catch (InterruptedIOException e) {
-                e.printStackTrace();
                 error = true;
             } catch (Throwable t) {
                 // ISE
@@ -303,7 +298,6 @@ public class Http11Processor implements Processor, ActionHook {
             try {
                 inputBuffer.endRequest();
             } catch (IOException e) {
-                e.printStackTrace();
                 error = true;
             } catch (Throwable t) {
                 // Problem ...
@@ -313,7 +307,6 @@ public class Http11Processor implements Processor, ActionHook {
             try {
                 outputBuffer.endRequest();
             } catch (IOException e) {
-                e.printStackTrace();
                 error = true;
             } catch (Throwable t) {
                 // Problem ...
@@ -505,9 +498,14 @@ public class Http11Processor implements Processor, ActionHook {
 
         // Parse content-length header
         int contentLength = request.getContentLength();
-        if (contentLength != -1) {
+        if (contentLength > 0) {
             inputBuffer.addActiveFilter
                 (inputFilters[Constants.IDENTITY_FILTER]);
+            contentDelimitation = true;
+        } else if (contentLength == 0) {
+            // No content to read
+            inputBuffer.addActiveFilter
+                (inputFilters[Constants.VOID_FILTER]);
             contentDelimitation = true;
         }
 
@@ -552,10 +550,15 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         if (!contentDelimitation) {
+            /*
             // If method is GET or HEAD, prevent from reading any content
-            if ((methodMB.equals("GET"))
-                || (methodMB.equals("HEAD"))
-                || (methodMB.equals("TRACE"))) {
+              if ((methodMB.equals("GET"))
+              || (methodMB.equals("HEAD"))
+              || (methodMB.equals("TRACE"))) {
+            */
+            // If there's no content length and we're using HTTP/1.1, assume
+            // the client is not broken and didn't send a body
+            if (http11) {
                 inputBuffer.addActiveFilter
                     (inputFilters[Constants.VOID_FILTER]);
                 contentDelimitation = true;
