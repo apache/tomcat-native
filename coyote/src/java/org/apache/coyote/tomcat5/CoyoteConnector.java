@@ -1236,8 +1236,9 @@ public final class CoyoteConnector
                  ("coyoteConnector.protocolHandlerStartFailed", e));
         }
 
-        mapperListener.init();
         if( this.domain != null ) {
+            mapperListener.setDomain( domain );
+            mapperListener.init();
             try {
                 Registry.getRegistry().registerComponent
                         (mapper, this.domain, "Mapper",
@@ -1266,6 +1267,11 @@ public final class CoyoteConnector
         lifecycle.fireLifecycleEvent(STOP_EVENT, null);
         started = false;
 
+        try {
+            Registry.getRegistry().unregisterComponent(new ObjectName(domain,"type", "Mapper"));
+        } catch (MalformedObjectNameException e) {
+            log.info( "Error unregistering mapper ", e);
+        }
         try {
             protocolHandler.destroy();
         } catch (Exception e) {
