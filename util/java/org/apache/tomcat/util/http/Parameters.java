@@ -258,9 +258,7 @@ public final class Parameters extends MultiMap {
             // Can't happen, as decodedQuery can't overflow
             e.printStackTrace();
         }
-        ByteChunk bc = decodedQuery.getByteChunk();
-        processParameters( bc.getBytes(), bc.getOffset(),
-                           bc.getLength(), queryStringEncoding );
+        processParameters( decodedQuery, queryStringEncoding );
     }
 
     // --------------------
@@ -491,12 +489,16 @@ public final class Parameters extends MultiMap {
     }
     
     public void processParameters( MessageBytes data ) {
+        processParameters(data, encoding);
+    }
+
+    public void processParameters( MessageBytes data, String encoding ) {
 	if( data==null || data.isNull() || data.getLength() <= 0 ) return;
 
 	if( data.getType() == MessageBytes.T_BYTES ) {
 	    ByteChunk bc=data.getByteChunk();
 	    processParameters( bc.getBytes(), bc.getOffset(),
-			       bc.getLength());
+			       bc.getLength(), encoding);
 	} else {
 	    if (data.getType()!= MessageBytes.T_CHARS ) 
 		data.toChars();
