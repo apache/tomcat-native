@@ -89,6 +89,7 @@ static int init_on_other_thread_is_done = JK_FALSE;
 static int init_on_other_thread_is_ok = JK_FALSE;
 
 static jk_logger_t *logger = NULL;
+static jk_worker_env_t	 worker_env;
 
 #ifdef NETWARE
 int (*PR_IsSocketSecure)(SYS_NETFD *csd); /* pointer to PR_IsSocketSecure function */
@@ -131,7 +132,7 @@ static void init_workers_on_other_threads(void *init_d)
     jk_map_t *init_map = (jk_map_t *)init_d;
     /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 	/* but where are they here in Netscape ? */
-    if(wc_open(init_map, NULL, logger)) {
+    if(wc_open(init_map, &worker_env, logger)) {
         init_on_other_thread_is_ok = JK_TRUE;
     } else {
         jk_log(logger, JK_LOG_EMERG, "In init_workers_on_other_threads, failed\n");
@@ -269,7 +270,7 @@ NSAPI_PUBLIC int jk_init(pblock *pb,
     int rc = REQ_ABORTED;
     jk_map_t *init_map;
 
-    fprintf(stderr, "In jk_init %s %s %s\n",worker_prp_file, log_level_str,  log_file);
+    fprintf(stderr, "In jk_init.\n   Worker file = %s.\n   Log level = %s.\n   Log File = %s\n",worker_prp_file, log_level_str,  log_file);
     if(!worker_prp_file) {
         worker_prp_file = JK_WORKER_FILE_DEF;
     }
@@ -455,6 +456,8 @@ static int init_ws_service(nsapi_private_data_t *private_data,
     else
 #endif
     s->is_ssl           = security_active;
+
+    s->ssl_key_size     = -1; /* required by Servlet 2.3 Api, added in jtc */
     if(s->is_ssl) {
         s->ssl_cert     = pblock_findval("auth-cert", private_data->rq->vars);
         if(s->ssl_cert) {
