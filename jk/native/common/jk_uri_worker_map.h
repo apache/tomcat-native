@@ -32,8 +32,61 @@ extern "C"
 #include "jk_global.h"
 #include "jk_map.h"
 #include "jk_logger.h"
+#include "jk_shm.h"
 
-struct jk_uri_worker_map;
+#define MATCH_TYPE_EXACT            0x0001
+#define MATCH_TYPE_CONTEXT          0x0002
+/* match all context path URIs with a path component suffix */
+#define MATCH_TYPE_CONTEXT_PATH     0x0004
+#define MATCH_TYPE_SUFFIX           0x0010
+/* match all URIs of the form *ext */
+#define MATCH_TYPE_GENERAL_SUFFIX   0x0020
+/* match multiple wild characters (*) and (?) */
+#define MATCH_TYPE_WILDCHAR_PATH    0x0040
+#define MATCH_TYPE_NO_MATCH         0x1000
+#define MATCH_TYPE_DISABLED         0x2000
+
+struct uri_worker_record
+{
+    /* Original uri for logging */
+    char *uri;
+
+    /* Name of worker mapped */
+    const char *worker_name;
+
+    /* Shared memory uri->worker mappings */
+    jk_shm_urimap_t *s;
+
+    /* Suffix of uri */
+    const char *suffix;
+
+    /* Base context */
+    const char *context;
+
+    /* char length of the context */
+    size_t context_len;
+};
+typedef struct uri_worker_record uri_worker_record_t;
+
+struct jk_uri_worker_map
+{
+    /* Memory Pool */
+    jk_pool_t p;
+    jk_pool_atom_t buf[BIG_POOL_SIZE];
+
+    /* map URI->WORKER */
+    uri_worker_record_t **maps;
+    
+    /* Map Number */
+    unsigned int size;
+
+    /* Map Capacity */
+    unsigned int capacity;
+
+    /* NoMap Number */
+    unsigned int nosize;
+
+};
 typedef struct jk_uri_worker_map jk_uri_worker_map_t;
 
 int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,

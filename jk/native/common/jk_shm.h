@@ -92,11 +92,8 @@ typedef struct jk_shm_worker jk_shm_worker_t;
 struct jk_shm_urimap
 {
     int          id;
+    int          worker_id;
     unsigned int match_type;
-    size_t       ctxt_len;
-    char         context[JK_SHM_URI_SIZ+1];
-    char         worker[JK_SHM_STR_SIZ+1];
-    char         suffix[JK_SHM_STR_SIZ+1];
 };
 typedef struct jk_shm_urimap jk_shm_urimap_t;
 
@@ -137,6 +134,19 @@ time_t jk_shm_get_workers_time();
 /* Set workers.properties last modified time
  */
 void jk_shm_set_workers_time(time_t t);
+
+/* Check if the shared memory has been modified
+ * by some other process.
+ */
+int jk_shm_is_modified();
+
+/* Synchronize access and modification time.
+ * This function should be called when the shared memory
+ * is modified and after we update the config acording
+ * to the current shared memory data.
+ */
+void jk_shm_sync_access_time();
+
 
 /* Lock shared memory for thread safe access */
 int jk_shm_lock();

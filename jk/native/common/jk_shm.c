@@ -20,7 +20,9 @@
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
+#include "jk_global.h"
 #include "jk_pool.h"
+#include "jk_util.h"
 #include "jk_mt.h"
 #include "jk_shm.h"
 
@@ -33,7 +35,6 @@ struct jk_shm_header
     size_t pos;
     unsigned int childs;
     unsigned int workers;
-
     unsigned int urimaps;
     time_t modified;
     char   buf[1];
@@ -58,6 +59,7 @@ typedef struct jk_shm jk_shm_t;
 static const char shm_signature[] = { JK_SHM_MAGIC };
 static jk_shm_t jk_shmem = { 0, NULL, -1, -1, 0, NULL};
 static time_t jk_workers_modified_time = 0;
+static time_t jk_workers_access_time = 0;
 
 #if defined (WIN32) || defined(NETWARE)
 
@@ -366,6 +368,21 @@ void jk_shm_set_workers_time(time_t t)
         jk_shmem.hdr->modified = t;
     else
         jk_workers_modified_time = t;
+    jk_workers_access_time = t;
+}
+
+int jk_shm_is_modified()
+{
+    time_t m = jk_shm_get_workers_time();
+    if (m != jk_workers_access_time)
+        return 1;
+    else
+        return 0;
+}
+
+void jk_shm_sync_access_time()
+{
+    jk_workers_access_time = jk_shm_get_workers_time();
 }
 
 int jk_shm_lock()
