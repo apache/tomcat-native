@@ -59,10 +59,12 @@
  
  package org.apache.jk.apr;
 
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
-import org.apache.jk.core.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Hashtable;
+import org.apache.jk.core.JkHandler;
+import org.apache.jk.core.MsgContext;
 
 /** Implements the interface with the APR library. This is for internal-use
  *  only. The goal is to use 'natural' mappings for user code - for example
@@ -77,6 +79,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     String soExt="so";
 
     static boolean ok=true;
+    boolean initialized=false;
     // Handlers for native callbacks
     Hashtable jkHandlers=new Hashtable();
 
@@ -240,18 +243,28 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
 
     public void init() throws IOException {
         try {
+            initialized=true;
             loadNative();
 
             initialize();
             jkSetAttribute(0, 0, "channel:jni", "starting");
+            
             log.info("JK2: Initialized apr" );
+            
         } catch( Throwable t ) {
-            throw new IOException( t.getMessage() );
+            throw new IOException( t.toString() );
         }
         ok=true;
     }
 
     public boolean isLoaded() {
+        if( ! initialized ) {
+            try {
+                init();
+            } catch( Throwable t ) {
+                log.info("Apr not loaded: " + t);
+            }
+        }
         return ok;
     }
 
@@ -288,7 +301,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
                 return;                                
             }
             try {
-                System.out.println("Loading " + jniModeSo);
+                log.info("Loading " + jniModeSo);
                 if( jniModeSo!= null ) System.load( jniModeSo );
             } catch( Throwable ex ) {
                 // ignore
@@ -319,12 +332,14 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
         try {
             if( nativeSo == null ) {
                 // This will load libjkjni.so or jkjni.dll in LD_LIBRARY_PATH
+                log.debug("Loading jkjni from " + System.getProperty("java.library.path"));
                 System.loadLibrary( "jkjni" );
             } else {
                 System.load( nativeSo );
             }
         } catch( Throwable ex ) {
             ok=false;
+            ex.printStackTrace();
             throw ex;
         }
     } 
@@ -334,7 +349,8 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
             System.load( libPath );
         } catch( Throwable ex ) {
             ok=false;
-            ex.printStackTrace();
+            if( log.isDebugEnabled() ) 
+                log.debug( "Error loading native library ", ex.printStackTrace());
         }
     }
     private static org.apache.commons.logging.Log log=
