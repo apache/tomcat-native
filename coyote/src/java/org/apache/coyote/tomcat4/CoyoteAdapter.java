@@ -533,9 +533,11 @@ final class CoyoteAdapter
 
         // Replace "//" with "/"
         for (pos = start; pos < (end - 1); pos++) {
-            if ((b[pos] == (byte) '/') && (b[pos + 1] == (byte) '/')) {
-                copyBytes(b, pos, pos + 1, end - pos - 1);
-                end--;
+            if (b[pos] == (byte) '/') {
+                while ((pos + 1 < end) && (b[pos + 1] == (byte) '/')) {
+                    copyBytes(b, pos, pos + 1, end - pos - 1);
+                    end--;
+                }
             }
         }
 
