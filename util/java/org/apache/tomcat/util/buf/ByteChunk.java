@@ -557,7 +557,7 @@ public final class ByteChunk implements Cloneable, Serializable {
         }
 
         int len = end - start;
-        if (b2.length > len || b1 == null || b2 == null) {
+        if (b1 == null || b2 == null || b2.length > len) {
             return false;
         }
         for (int i = start, j = 0; i < end && j < b2.length; ) {
