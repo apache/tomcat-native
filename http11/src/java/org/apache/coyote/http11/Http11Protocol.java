@@ -357,6 +357,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         setAttribute("ciphers", ciphers);
     }
 
+    public void setKeyAlias(String keyAlias) {
+        setAttribute("keyAlias", keyAlias);
+    }
+
     /** Set the maximum number of Keep-Alive requests that we will honor.
      */
     public void setMaxKeepAliveRequests(int mkar) {
