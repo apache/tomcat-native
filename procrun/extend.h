@@ -66,13 +66,10 @@
  */
 
 
-#define IDB_BMPSPLASH         201
-#define IDI_ICOI              202
-#define IDI_ICOS              203
-#define IDI_ICOW              204
-#define IDD_DLGSPLASH         205
-#define IDL_INFO              206
-
+#define EXT_ICOCONWRAP        1
+#define EXT_ICOCONTRY         1
+#define EXT_ICOCONTRYSTOP     1
+#define EXT_BMPSPLASH         1
 
 #define PROCRUN_REGKEY_ROOT         "SOFTWARE\\Apache Software Foundation\\Tomcat Service Manager"
 #define PROCRUN_GUI_DISPLAY         "Tomcat Service Manager"

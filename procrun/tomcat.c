@@ -92,15 +92,11 @@
  
 #include "procrun.h"
 
-
-int                    ac_lview_current = 0;
-static struct {
-    char *  label;
-    DWORD   width;
-} ac_columns[] = {
+prcrun_lview_t tac_columns[] = {
     {   "Status",   140     },
     {   "Class",    172     },
     {   "Message",  300     },
+    {   NULL,       0       },
 };
 
 static char *ac_lv_stat = NULL;
@@ -108,70 +104,10 @@ static char ac_lv_clbuf[1024] = {0};
 static char *ac_lv_class = NULL;
 static char *ac_lv_clmsg = NULL;
 static int  ac_lv_iicon = 0;
-/* splash window handle */
-static HWND ac_splash_hwnd = NULL;
-static HWND ac_splist_hwnd;
-
-#define STR_NOT_NULL(s) { if((s) == NULL) (s) = ""; }
 
 
-LRESULT CALLBACK ac_splash_dlg_proc(HWND hdlg, UINT message, WPARAM wparam, LPARAM lparam)
-{
 
-    switch (message) {
-        case WM_INITDIALOG:
-           ac_splash_hwnd = hdlg;
-           ac_center_window(hdlg);
-           ac_splist_hwnd = GetDlgItem(hdlg, IDL_INFO); 
-           break;
-    }
-
-    return FALSE;
-}
-
-void acx_create_view(HWND hdlg, LPRECT pr, LPRECT pw)
-{
-    LV_COLUMN lvc;
-    int i;
-    HIMAGELIST  imlist;
-    HICON hicon; 
-    imlist = ImageList_Create(16, 16, ILC_COLORDDB | ILC_MASK, 3, 0);
-    hicon = LoadImage(ac_instance, MAKEINTRESOURCE(IDI_ICOI),
-                      IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-    ImageList_AddIcon(imlist, hicon);
-    hicon = LoadImage(ac_instance, MAKEINTRESOURCE(IDI_ICOW),
-                      IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-    ImageList_AddIcon(imlist, hicon);
-    hicon = LoadImage(ac_instance, MAKEINTRESOURCE(IDI_ICOS),
-                      IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-    ImageList_AddIcon(imlist, hicon);
-    
-    ac_list_hwnd = CreateWindowEx(0L, WC_LISTVIEW, "", 
-                                  WS_VISIBLE | WS_CHILD |
-                                  LVS_REPORT | WS_EX_CLIENTEDGE,
-                                  0, 0, pr->right - pr->left,
-                                  pr->bottom - abs((pw->top - pw->bottom)),
-                                  hdlg, NULL, ac_instance, NULL);
-    lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-    lvc.fmt  = LVCFMT_LEFT;
-    
-    ListView_SetImageList(ac_list_hwnd,imlist, LVSIL_SMALL);
-    
-    for (i = 0; i < sizeof(ac_columns) / sizeof(ac_columns[0]); ++i)  {
-        lvc.iSubItem    = i;
-        lvc.cx          = ac_columns[i].width;
-        lvc.pszText     = ac_columns[i].label;
-        ListView_InsertColumn(ac_list_hwnd, i, &lvc );
-    }
-#ifdef LVS_EX_FULLROWSELECT
-    ListView_SetExtendedListViewStyleEx(ac_list_hwnd, 0,
-        LVS_EX_FULLROWSELECT |
-        LVS_EX_INFOTIP);
-#endif
-    
-}
-
-void acx_parse_list_string(const char *str)
+void tc_parse_list_string(const char *str)
 {
     int row = 0x7FFFFFFF;
     LV_ITEM lvi;
@@ -246,43 +182,12 @@ void acx_parse_list_string(const char *str)
 }
 
 
-void acx_process_splash(const char *str)
-{
-   /* set the status to 'green' when received Jk running 
-    * and close the spash window if present
-    */
-    if (STRN_COMPARE(str, "INFO: Jk running")) {
-        ac_show_try_icon(ac_main_hwnd, NIM_MODIFY, ac_cmdname, 0);
-        /* kill the splash window if present */
-        if (ac_splash_hwnd)
-            EndDialog(ac_splash_hwnd, TRUE);
-        ac_splash_hwnd = NULL;
-    }
-    else if (ac_splash_hwnd) {
-        SendMessage(ac_splist_hwnd, LB_INSERTSTRING, 0, (LPARAM)str);
-    }
-
-}
-
-void acx_create_spash(HWND hwnd)
-{
-
-    if (ac_use_try) {
-        DialogBox(ac_instance, MAKEINTRESOURCE(IDD_DLGSPLASH),
-            hwnd, (DLGPROC)ac_splash_dlg_proc);
-    }
-
-}
-
-void acx_close_spash()
-{
-    if (ac_use_try && ac_splash_hwnd)
-        EndDialog(ac_splash_hwnd, TRUE);
-}
-
 void acx_init_extended()
 {
     ac_use_lview = 1;
+    ac_splash_msg = "INFO: Jk running";
+    ac_columns = &tac_columns[0];
+    lv_parser = tc_parse_list_string;
 }
 
 #endif
