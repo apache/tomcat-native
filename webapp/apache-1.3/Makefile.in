@@ -80,7 +80,7 @@ $(MOD): $(SRCS) $(TGTDIR)/lib/libapr.a $(TGTDIR)/lib/libwebapp.a
             $(APXS) -c \
 	        -S LDFLAGS_SHLIB="$${APXS_LDFLAGS_SHLIB}" \
 	        -S CFLAGS="$${APXS_CFLAGS}" \
-	        -I$(APR_INCDIR) -I$(SRCDIR)/include $(APR_INCLUDES) \
+	        -I$(APR_INCDIR) -I$(SRCDIR)/include $(APR_INCLUDES) $(APR_LIBS) \
 	        $(TGTDIR)/lib/libapr.a $(TGTDIR)/lib/libwebapp.a \
 	        -o "$@" $< ; \
 	}
