@@ -164,7 +164,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         if( this.domain != null ) {
             try {
                 Registry.getRegistry().registerComponent(tp, domain,"ThreadPool",
-                        "type=ThreadPool,worker=http11,name=http%" + ep.getPort());
+                        "type=ThreadPool,name=http" + ep.getPort());
             } catch (Exception e) {
                 log.error("Can't register threadpool" );
             }
@@ -386,13 +386,15 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                         global=new RequestGroupInfo();
                         Registry.getRegistry().registerComponent( global,
                                 proto.getDomain(), "GlobalRequestProcessor",
-                                "type=GlobalRequestProcessor,name=http");
+                                "type=GlobalRequestProcessor,name=http" +
+                                proto.ep.getPort());
                     }
                     RequestInfo rp=processor.getRequest().getRequestProcessor();
                     rp.setGlobalProcessor(global);
                     Registry.getRegistry().registerComponent( rp,
                             proto.getDomain(), "RequestProcessor",
-                            "type=RequestProcessor,name=HttpRequest" + count++ );
+                            "type=RequestProcessor,worker=http" +
+                            proto.ep.getPort() +",name=HttpRequest" + count++ );
                 } catch( Exception ex ) {
                     log.warn("Error registering request");
                 }
