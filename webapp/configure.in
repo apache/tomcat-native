@@ -206,8 +206,17 @@ AC_ARG_WITH(apxs,
     AC_SUBST(APXS_LIBS_SHLIB)
     AC_SUBST(APXS_PREFIX)
 
-    TARGET="${SRCDIR}/apache-1.3"
-    makefile="apache-1.3/Makefile"
+    dnl test apache version (from mod_jk)
+    $RM -rf test
+    $APXS -n test -g
+    APA=`grep STANDARD20 test/mod_test.c`
+    if  ${TEST} -z "$APA" ; then
+      TARGET="${SRCDIR}/apache-1.3"
+      makefile="apache-1.3/Makefile"
+    else
+      TARGET="${SRCDIR}/apache-2.0"
+      makefile="apache-2.0/Makefile"
+    fi
     AC_MSG_RESULT([setting target module to... ${TARGET}])
   ]
 )
