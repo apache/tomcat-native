@@ -65,10 +65,12 @@
 
 #include "jk_pool.h"
 #include "jk_service.h"
-#include "jk_util.h"
 #include "jk_worker.h"
 #include "jk_logger.h"
 #include "jk_env.h"
+#include "jk_requtil.h"
+
+#define DEFAULT_LB_FACTOR           (1.0)
 
 int JK_METHOD lb_worker_factory(jk_worker_t **w,
                                 const char *name,
@@ -117,112 +119,6 @@ struct lb_endpoint {
 };
 typedef struct lb_endpoint lb_endpoint_t;
 
-
-/* ========================================================================= */
-/* Retrieve the parameter with the given name                                */
-static char *get_path_param(jk_ws_service_t *s,
-                            const char *name)
-{
-    char *id_start = NULL;
-    for(id_start = strstr(s->req_uri, name) ; 
-        id_start ; 
-        id_start = strstr(id_start + 1, name)) {
-        if('=' == id_start[strlen(name)]) {
-            /*
-             * Session path-cookie was found, get it's value
-             */
-            id_start += (1 + strlen(name));
-            if(strlen(id_start)) {
-                char *id_end;
-                id_start = jk_pool_strdup(s->pool, id_start);
-                /* 
-                 * The query string is not part of req_uri, however
-                 * to be on the safe side lets remove the trailing query 
-                 * string if appended...
-                 */
-                if(id_end = strchr(id_start, '?')) { 
-                    *id_end = '\0';
-                }
-                return id_start;
-            }
-        }
-    }
-  
-    return NULL;
-}
-
-/* ========================================================================= */
-/* Retrieve the cookie with the given name                                   */
-static char *get_cookie(jk_ws_service_t *s,
-                        const char *name)
-{
-    unsigned i;
-
-    for(i = 0 ; i < s->num_headers ; i++) {
-        if(0 == strcasecmp(s->headers_names[i], "cookie")) {
-
-            char *id_start;
-            for(id_start = strstr(s->headers_values[i], name) ; 
-                id_start ; 
-                id_start = strstr(id_start + 1, name)) {
-                if('=' == id_start[strlen(name)]) {
-                    /*
-                     * Session cookie was found, get it's value
-                     */
-                    id_start += (1 + strlen(name));
-                    if(strlen(id_start)) {
-                        char *id_end;
-                        id_start = jk_pool_strdup(s->pool, id_start);
-                        if(id_end = strchr(id_start, ';')) {
-                            *id_end = '\0';
-                        }
-                        return id_start;
-                    }
-                }
-            }
-        }
-    }
-
-    return NULL;
-}
-
-
-/* ========================================================================= */
-/* Retrieve session id from the cookie or the parameter                      */
-/* (parameter first)                                                         */
-static char *get_sessionid(jk_ws_service_t *s)
-{
-    char *val;
-    val = get_path_param(s, JK_PATH_SESSION_IDENTIFIER);
-    if(!val) {
-        val = get_cookie(s, JK_SESSION_IDENTIFIER);
-    }
-    return val;
-}
-
-static char *get_session_route(jk_ws_service_t *s)
-{
-    char *sessionid = get_sessionid(s);
-    char *ch;
-
-    if(!sessionid) {
-        return NULL;
-    }
-
-    /*
-     * Balance parameter is appended to the end
-     */  
-    ch = strrchr(sessionid, '.');
-    if(!ch) {
-        return 0;
-    }
-    ch++;
-    if(*ch == '\0') {
-        return NULL;
-    }
-    return ch;
-}
-
 static void close_workers(lb_worker_t *p, 
                           int num_of_workers,
                           jk_logger_t *l)
@@ -251,13 +147,51 @@ static double get_max_lb(lb_worker_t *p)
 
 }
 
+double jk_get_lb_factor(jk_map_t *m, 
+                        const char *wname)
+{
+    char buf[1024];
+    
+    if(!m || !wname) {
+        return DEFAULT_LB_FACTOR;
+    }
+
+    sprintf(buf, "%s.%s.%s", "worker", wname, "lbfactor");
+
+    return map_get_double(m, buf, DEFAULT_LB_FACTOR);
+}
+
+int jk_get_lb_worker_list(jk_map_t *m, 
+                          const char *lb_wname,
+                          char ***list, 
+                          unsigned *num_of_wokers)
+{
+    char buf[1024];
+
+    if(m && list && num_of_wokers && lb_wname) {
+        char **ar = NULL;
+
+        sprintf(buf, "%s.%s.%s", "worker", lb_wname, "balanced_workers");
+        ar = map_get_string_list(m, buf, num_of_wokers, NULL);
+        if(ar)  {
+            *list = ar;     
+            return JK_TRUE;
+        }
+        *list = NULL;   
+        *num_of_wokers = 0;
+    }
+
+    return JK_FALSE;
+}
+
+
 static worker_record_t *get_most_suitable_worker(lb_worker_t *p, 
                                                  jk_ws_service_t *s)
 {
     worker_record_t *rc = NULL;
     double lb_min = 0.0;    
     unsigned i;
-    char *session_route = get_session_route(s);
+    char *session_route = jk_requtil_getSessionRoute(s);
        
     if(session_route) {
         for(i = 0 ; i < p->num_of_workers ; i++) {
