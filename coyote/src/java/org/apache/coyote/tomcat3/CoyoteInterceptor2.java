@@ -221,20 +221,30 @@ public class CoyoteInterceptor2 extends BaseInterceptor
         }
         
         if(key!=null && httpReq!=null ){
-	    org.apache.coyote.Request cReq = httpReq.getCoyoteRequest();
-	    Object info = cReq.getAttribute(key);
-	    if( info != null)
-		return info;
+            org.apache.coyote.Request cReq = httpReq.getCoyoteRequest();
+            Object info = cReq.getAttribute(key);
+            if( info != null)
+                return info;
             // XXX Should use MsgContext, pass the attribute we need.
             // This will extract both 
-	    // XXX the startsWith is a hack, but it is supposed to be reserved.
-	    if(key.startsWith("javax.servlet.request.")) {
-		cReq.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,
-			    httpReq.getCoyoteRequest() );
-		return cReq.getAttribute(key);
-	    }
+            if(isSSLAttribute(key)) {
+                cReq.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,
+                            httpReq.getCoyoteRequest() );
+                return cReq.getAttribute(key);
+            }
         }
         return super.getInfo(ctx,request,id,key);
+    }
+
+    /**
+     * Check if a string is a reserved SSL attribute key.
+     */
+    public static boolean isSSLAttribute(String key) {
+        if(key == null)
+            return false;
+        return key.equals("javax.servlet.request.cipher_suite") ||
+            key.equals("javax.servlet.request.X509Certificate") ||
+            key.equals("javax.servlet.request.key_size");
     }
 }
 
