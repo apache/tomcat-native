@@ -71,6 +71,10 @@
 #include "jk_env.h"
 #include "jk_requtil.h"
 
+#ifdef AS400
+#include "util_ebcdic.h"
+#endif
+
 #define CHUNK_BUFFER_PAD          (12)
 
 static const char *response_trans_headers[] = {
@@ -622,7 +626,11 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     }
     if (s->query_string) {
         if (msg->appendByte(env, msg, SC_A_QUERY_STRING) ||
+#idef AS400
+            msg->appendAsciiString(env, msg, s->query_string)) {
+#else
             msg->appendString(env, msg, s->query_string)) {
+#endif
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing query string\n");
             return JK_ERR;

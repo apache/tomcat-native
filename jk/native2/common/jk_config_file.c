@@ -83,7 +83,11 @@ static int jk2_config_file_saveConfig( jk_env_t *env,
     if( workerFile== NULL )
         return JK_ERR;
     
-    fp= fopen(workerFile, "w");
+#ifdef AS400
+     fp = fopen(workerFile, "w, o_ccsid=0");
+#else
+     fp = fopen(workerFile, "w");
+#endif        
         
     if(fp==NULL)
         return JK_ERR;
@@ -226,8 +230,12 @@ int jk2_config_file_read(jk_env_t *env, jk_map_t *m,const char *file)
     if(m==NULL || file==NULL )
         return JK_ERR;
 
-    fp= fopen(file, "r");
-        
+#ifdef AS400
+    fp = fopen(file, "r, o_ccsid=0");
+#else
+    fp = fopen(file, "r");
+#endif        
+
     if(fp==NULL)
         return JK_ERR;
 

@@ -160,7 +160,13 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
     if( strcmp( "stderr", _this->name )==0 ) {
         _this->logger_private = stderr;
     } else {
-        f = fopen(_this->name, "a+");
+    
+#ifdef AS400
+     	f = fopen(_this->name, "a+, o_ccsid=0");
+#else
+     	f = fopen(_this->name, "a+");
+#endif        
+        
         if(f==NULL) {
             _this->jkLog(env, _this,JK_LOG_ERROR,
                          "Can't open log file %s\n", _this->name );

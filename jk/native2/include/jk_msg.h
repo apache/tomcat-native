@@ -142,6 +142,9 @@ struct jk_msg {
     int (*appendString)(struct jk_env *env, struct jk_msg *_this, 
                          const char *param);
 
+    int (*appendAsciiString)(struct jk_env *env, struct jk_msg *_this, 
+                             const char *param);
+
     int (*appendMap)(struct jk_env *env, struct jk_msg *_this, 
                      struct jk_map *map);
 

@@ -215,10 +215,15 @@ static void *jk2_pool_alloc(jk_env_t *env, jk_pool_t *p,
 
     pp=(jk_pool_private_t *)p->_private;
 
-    /* Round size to the upper mult of 8. */
-    size -= 1;
-    size /= 8;
-    size = (size + 1) * 8;
+    /* Round size to the upper mult of 8 (or 16 on iSeries) */
+	size--;
+#ifdef AS400
+        size /= 16;
+        size = (size + 1) * 16;
+#else
+        size /= 8;
+        size = (size + 1) * 8;
+#endif
 
     if((pp->size - pp->pos) >= (int)size) {
         /* We have space */
