@@ -114,8 +114,11 @@ public class MwccCompiler extends CcCompiler {
             
             throw new BuildException("Compile failed " + source);
         }
-        File ccOpt = new File(buildDir, "cc.opt");
-        ccOpt.delete();
+        if (null == project.getProperty("save.optionFiles"))
+        {
+            File ccOpt = new File(buildDir, "cc.opt");
+            ccOpt.delete();
+        }
         closeStreamHandler();
 
     }
@@ -126,27 +129,14 @@ public class MwccCompiler extends CcCompiler {
         String extra_cflags=project.getProperty("build.native.extra_cflags");
         String localCflags=cflags;
         File ccOpt = new File(buildDir, "cc.opt");
-        if( localCflags==null ) {
-            localCflags=new String("-nosyspath -c -w nocmdline -bool on");
-            if (null == project.getProperty("use.novelllibc"))
-                localCflags += " -align 1";
-            else
-                localCflags += " -align 4";
-
-            if( extra_cflags!=null )
-                localCflags+=" " + extra_cflags;
-        }
-
-        if (optG)
-            localCflags += " -g";
+        boolean useLibC = false;
 
         // create a cc.opt file 
         PrintWriter ccpw = null;
         try
         {
             ccpw = new PrintWriter(new FileWriter(ccOpt));
-            // write the compilation flags out
-            ccpw.println(localCflags);
+
             for( int i=0; i<includeList.length; i++ ) {
                 ccpw.print("-I");
                 ccpw.println(includeList[i] );
@@ -159,12 +149,35 @@ public class MwccCompiler extends CcCompiler {
                     String name=d.getName();
                     String val=d.getValue();
                     if( name==null ) continue;
+                    
                     String arg="-D" + name;
                     if( val!=null )
                         arg+= "=" + val;
                     ccpw.println(arg);
+
+                    // check to see if we are building using LibC
+                    if (name.equals("__NOVELL_LIBC__"))
+                        useLibC = true;
                 }
             }
+
+            // finalize the cflags
+            if( localCflags==null ) {
+                localCflags=new String("-nosyspath -c -w nocmdline -bool on");
+                if (useLibC)
+                    localCflags += " -align 4";
+                else
+                    localCflags += " -align 1";
+
+                if( extra_cflags!=null )
+                    localCflags+=" " + extra_cflags;
+            }
+
+            if (optG)
+                localCflags += " -g";
+
+            // write the compilation flags out
+            ccpw.println(localCflags);
         }
         catch (IOException ioe)
         {

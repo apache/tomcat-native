@@ -111,6 +111,7 @@ public class MwldLinker extends LinkerAdapter {
         Commandline cmd = new Commandline();
         File linkOpt = new File(buildDir, "link.opt");
         File linkDef = new File(buildDir, "link.def");
+        boolean useLibC = false;
 
         String libtool=project.getProperty("build.compiler.ld");
         if(libtool==null) libtool="mwldnlm";
@@ -152,14 +153,20 @@ public class MwldLinker extends LinkerAdapter {
                 JkData opt = (JkData) opts.nextElement();
                 String option = opt.getValue();
                 if( option == null ) continue;
+
                 linkOptPw.println( option );
+                option = option.toLowerCase();
+
+                // check to see if we are building using LibC
+                if (option.indexOf("libc") > 0)
+                    useLibC = true;
             }
 
             // add the default startup code to the list of objects
-            if (null == project.getProperty("use.novelllibc"))
-                linkOptPw.println(libBase + "\\lib\\nwpre.obj");
-            else
+            if (useLibC)
                 linkOptPw.println("-llibcpre.o");
+            else
+                linkOptPw.println(libBase + "\\lib\\nwpre.obj");
 
             // write the objects to link with to the .opt file
             for( int i=0; i<srcList.size(); i++ ) {
@@ -237,8 +244,11 @@ public class MwldLinker extends LinkerAdapter {
             
             throw new BuildException("Link failed " + soFile);
         }
-        linkOpt.delete();
-        linkDef.delete();
+        if (null == project.getProperty("save.optionFiles"))
+        {
+            linkOpt.delete();
+            linkDef.delete();
+        }
         closeStreamHandler();
         return true;
     }
