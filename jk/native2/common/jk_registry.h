@@ -60,7 +60,6 @@
 #include "jk_service.h"
 #include "jk_env.h"
 
-#include "jk_registry.h"
 /***************************************************************************
  * Description: Worker list                                                *
  * Version:     $Revision$                                           *
@@ -85,47 +84,51 @@
  *  
  */
 
-/**
- *   Init the components that we compile in by default. 
- *   In future we should have a more flexible mechanism that would allow 
- *   different server modules to load and register various jk objects, or 
- *   even have jk load it's own modules from .so files.
- * 
- *   For now the static registrartion should work.
+int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
+                                       void **result,
+                                       const char *type, const char *name);
+
+                                   
+int JK_METHOD jk_worker_lb_factory(jk_env_t *env, jk_pool_t *pool,
+                                   void **result,
+                                   const char *type, const char *name);
+
+
+int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
+                                    void **result,
+                                    const char *type, const char *name);
+
+int JK_METHOD jk_worker_ajp12_factory(jk_env_t *env, jk_pool_t *pool,
+                                      void **result,
+                                      const char *type, const char *name);
+
+/* Factories for 'new' types. We use the new factory interface,
+ *  workers will be updated later 
  */
-void JK_METHOD jk_registry_init(jk_env_t *env) {
-  if( env==NULL ) {
-    /* XXX do something ! */
-    printf("jk_registry_init: Assertion failed, env==NULL\n" );
-    return;
-  }
-  /**
-   * Because the functions being referenced here (apjp14_work_factory, and
-   * lb_worker_factory) don't match the prototype declared for registerFactory,
-   * and because the MetroWerks compiler (used for NetWare) treats this as an
-   * error, I'm casting the function pointers to (void *) - mmanders
-   */
-  env->registerFactory( env, "logger", "file",   jk_logger_file_factory );
-  env->registerFactory( env, "workerEnv", "default", jk_workerEnv_factory );
-  env->registerFactory( env, "uriMap", "default",    jk_uriMap_factory );
-  env->registerFactory( env, "worker", "ajp13", jk_worker_ajp14_factory );
-  env->registerFactory( env, "worker", "ajp14", jk_worker_ajp14_factory );
-  env->registerFactory( env, "worker", "lb",    jk_worker_lb_factory );
-  env->registerFactory( env, "channel", "socket", jk_channel_socket_factory );
-  env->registerFactory( env, "handler", "response", jk_handler_response_factory );
-  env->registerFactory( env, "handler", "logon",   jk_handler_logon_factory );
-  env->registerFactory( env, "handler", "discovery",
-                        jk_handler_discovery_factory );
+int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
+                                        void **result,
+					const char *type, const char *name);
 
-  /* Optional objects */
+int JK_METHOD jk_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
+                                   void **result,
+                                   const char *type, const char *name);
 
-#ifdef HAVE_JNI
-  env->registerFactory( env, "worker", "jni",   jk_worker_jni_factory );
-#endif
-#ifdef AJP12
-  env->registerFactory( env, "worker", "ajp12", jk_worker_ajp12_factory );
-#endif
+int JK_METHOD jk_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+                                const char *type, const char *name);
+
+int JK_METHOD jk_logger_file_factory(jk_env_t *env, jk_pool_t *pool,
+                                     void **result,
+                                     const char *type, const char *name);
 
 
-}
+int JK_METHOD jk_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
+                                        void **result,
+                                        const char *type, const char *name);
 
+int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
+                                            void **result,
+                                            const char *type, const char *name);
+
+int JK_METHOD jk_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
+                                           void **result,
+                                           const char *type, const char *name);
