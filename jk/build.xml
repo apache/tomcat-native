@@ -328,6 +328,7 @@
         <delete dir="${build.docs}"/>
         <delete file="${source.docs}/style.css"/>
         <delete file="${source.docs}/style.xsl"/>
+        <delete file="${source.docs}/menu.idx"/>
     </target>
 
     <!-- It's better to call it directly with individual tags -->
