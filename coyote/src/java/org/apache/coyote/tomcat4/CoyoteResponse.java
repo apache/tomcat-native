@@ -90,6 +90,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUtils;
 
+import org.apache.tomcat.util.buf.CharChunk;
+import org.apache.tomcat.util.buf.UEncoder;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.http.ServerCookie;
 
@@ -127,6 +129,7 @@ public class CoyoteResponse
     public CoyoteResponse() {
 
         format.setTimeZone(TimeZone.getTimeZone("GMT"));
+        urlEncoder.addSafeCharacter('/');
 
     }
 
@@ -283,6 +286,18 @@ public class CoyoteResponse
     protected boolean usingWriter = false;
 
 
+    /**
+     * URL encoder.
+     */
+    protected UEncoder urlEncoder = new UEncoder();
+
+
+    /**
+     * Recyclable buffer to hold the redirect URL.
+     */
+    protected CharChunk redirectURLCC = new CharChunk();
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -362,7 +377,7 @@ public class CoyoteResponse
     /**
      * The request with which this response is associated.
      */
-    protected org.apache.catalina.Request request = null;
+    protected CoyoteRequest request = null;
 
     /**
      * Return the Request with which this Response is associated.
@@ -377,7 +392,7 @@ public class CoyoteResponse
      * @param request The new associated request
      */
     public void setRequest(org.apache.catalina.Request request) {
-        this.request = request;
+        this.request = (CoyoteRequest) request;
     }
 
 
@@ -1265,6 +1280,47 @@ public class CoyoteResponse
         if (location == null)
             return (location);
 
+        boolean leadingSlash = location.startsWith("/");
+
+        if (leadingSlash 
+            || (!leadingSlash && (location.indexOf("://") == -1))) {
+
+            redirectURLCC.recycle();
+
+            String scheme = request.getScheme();
+            String name = request.getServerName();
+            int port = request.getServerPort();
+            String encodedURI = 
+                urlEncoder.encodeURL(request.getDecodedRequestURI());
+
+            try {
+                redirectURLCC.append(scheme, 0, scheme.length());
+                redirectURLCC.append("://", 0, 3);
+                redirectURLCC.append(name, 0, name.length());
+                if ((scheme.equals("http") && port != 80)
+                    || (scheme.equals("https") && port != 443)) {
+                    redirectURLCC.append(':');
+                    String portS = port + "";
+                    redirectURLCC.append(portS, 0, portS.length());
+                }
+                if (!leadingSlash) {
+                    redirectURLCC.append(encodedURI, 0, encodedURI.length());
+                    redirectURLCC.append('/');
+                }
+                redirectURLCC.append(location, 0, location.length());
+            } catch (IOException e) {
+                throw new IllegalArgumentException(location);
+            }
+
+            return redirectURLCC.toString();
+
+        } else {
+
+            return (location);
+
+        }
+
+/*
         // Construct a new absolute URL if possible (cribbed from
         // the DefaultErrorPage servlet)
         URL url = null;
@@ -1281,6 +1337,7 @@ public class CoyoteResponse
             }
         }
         return (url.toExternalForm());
+*/
 
     }
 
