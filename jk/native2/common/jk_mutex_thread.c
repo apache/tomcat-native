@@ -79,6 +79,7 @@
 static int JK_METHOD jk2_mutex_thread_init(jk_env_t *env, jk_bean_t  *mutexB)
 {
     jk_mutex_t *jkMutex=mutexB->object;
+    mutexB->state=JK_STATE_INIT;
 
     return apr_thread_mutex_create( &jkMutex->threadMutex,
                                     0,
@@ -90,6 +91,7 @@ jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t  *mutexB)
 {
     jk_mutex_t *jkMutex=mutexB->object;
 
+    mutexB->state=JK_STATE_NEW;
     if( jkMutex==NULL || jkMutex->threadMutex==NULL ) return JK_ERR;
 
     return apr_thread_mutex_destroy( jkMutex->threadMutex);
@@ -124,6 +126,7 @@ jk2_mutex_thread_unLock(jk_env_t *env, jk_mutex_t  *jkMutex)
 static int JK_METHOD jk2_mutex_thread_init(jk_env_t *env, jk_bean_t  *mutexB)
 {
     jk_mutex_t *jkMutex=mutexB->object;
+    mutexB->state=JK_STATE_INIT;
     InitializeCriticalSection( & jkMutex->threadMutex );
     return JK_OK;
 }
@@ -133,6 +136,7 @@ jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t  *mutexB)
 {
     jk_mutex_t *jkMutex=mutexB->object;
 
+    mutexB->state=JK_STATE_NEW;
     if( jkMutex==NULL ) return JK_ERR;
     DeleteCriticalSection( & jkMutex->threadMutex );
     return JK_OK;
@@ -167,6 +171,7 @@ jk2_mutex_thread_unLock(jk_env_t *env, jk_mutex_t  *jkMutex)
 static int JK_METHOD jk2_mutex_thread_init(jk_env_t *env, jk_bean_t  *mutexB)
 {
     jk_mutex_t *jkMutex=mutexB->object;
+    mutexB->state=JK_STATE_INIT;
 
     return pthread_mutex_init( &jkMutex->threadMutex, NULL );
 }
@@ -175,6 +180,7 @@ static int JK_METHOD
 jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t  *mutexB)
 {
     jk_mutex_t *jkMutex=mutexB->object;
+    mutexB->state=JK_STATE_NEW;
 
     if( jkMutex==NULL ) return JK_ERR;
     return pthread_mutex_destroy( & jkMutex->threadMutex);
@@ -204,12 +210,14 @@ jk2_mutex_thread_unLock(jk_env_t *env, jk_mutex_t  *jkMutex)
 
 static int JK_METHOD jk2_mutex_thread_init(jk_env_t *env, jk_bean_t  *mutexB)
 {
+    mutexB->state=JK_STATE_INIT;
     return JK_OK;
 }
 
 static int JK_METHOD 
 jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t  *mutexB)
 {
+    mutexB->state=JK_STATE_NEW;
     return JK_OK;
 }
 
