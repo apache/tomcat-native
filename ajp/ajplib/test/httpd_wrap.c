@@ -179,23 +179,42 @@ AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
     c->notes = apr_table_make(ptrans, 5);
 
     c->pool = ptrans;
-    if ((rv = apr_socket_addr_get(&c->local_addr, APR_LOCAL, csd))
-        != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, rv, server,
-                     "apr_socket_addr_get(APR_LOCAL)");
-        apr_socket_close(csd);
-        return NULL;
-    }
 
+    /* Socket is used only for backend connections
+     * Since we don't have client socket skip the 
+     * creation of adresses. They will be default
+     * to 127.0.0.1:0 both local and remote
+     */
+    if (csd) {
+        if ((rv = apr_socket_addr_get(&c->local_addr, APR_LOCAL, csd))
+            != APR_SUCCESS) {
+                ap_log_error(APLOG_MARK, APLOG_INFO, rv, server,
+                    "apr_socket_addr_get(APR_LOCAL)");
+                apr_socket_close(csd);
+                return NULL;
+         }
+         if ((rv = apr_socket_addr_get(&c->remote_addr, APR_REMOTE, csd))
+                != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_INFO, rv, server,
+                    "apr_socket_addr_get(APR_REMOTE)");
+                apr_socket_close(csd);
+            return NULL;
+         }
+    } 
+    else {
+        /* localhost should be reachable on all platforms */
+        if ((rv = apr_sockaddr_info_get(&c->local_addr, "localhost",
+                                        APR_UNSPEC, 0,
+                                        APR_IPV4_ADDR_OK, 
+                                        c->pool))
+            != APR_SUCCESS) {
+                ap_log_error(APLOG_MARK, APLOG_INFO, rv, server,
+                    "apr_sockaddr_info_get()");
+                return NULL;
+         }
+         c->remote_addr = c->local_addr;        
+    }
     apr_sockaddr_ip_get(&c->local_ip, c->local_addr);
-    if ((rv = apr_socket_addr_get(&c->remote_addr, APR_REMOTE, csd))
-        != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, rv, server,
-                     "apr_socket_addr_get(APR_REMOTE)");
-        apr_socket_close(csd);
-        return NULL;
-    }
-
     apr_sockaddr_ip_get(&c->remote_ip, c->remote_addr);
     c->base_server = server;
 

@@ -39,20 +39,38 @@
 #include <arpa/inet.h>
 #endif
 
+int test_create_conn(apr_pool_t *pool)
+{
+    conn_rec *c;
+    
+    if (!(c = ap_run_create_connection(pool, NULL, NULL,
+                                       0, NULL, NULL)))
+        return -1;
+    ap_log_error(APLOG_MARK, APLOG_INFO, 0, NULL, "local ip %s:%d", 
+                 c->local_ip, c->local_addr->port);
+        
+    return 0;
+}
+
+
 int main(int argc, const char * const * argv, const char * const *env)
 {
     int rv = 0;
-
+    apr_pool_t *ctx;
     apr_app_initialize(&argc, &argv, &env);
 
+    apr_pool_create(&ctx, NULL);
     /* This is done in httpd.conf using LogLevel debug directive.
      * We are setting this directly.
      */
     ap_default_loglevel = APLOG_DEBUG;
 
     ap_log_error(APLOG_MARK, APLOG_INFO, 0, NULL, "Testing ajp...");
+    ap_log_error(APLOG_MARK, APLOG_INFO, 0, NULL, "create conn...");
+    if ((rv = test_create_conn(ctx)))
+        goto finished;
 
-
+finished:
     ap_log_error(APLOG_MARK, APLOG_INFO, 0, NULL, "%s", rv == 0 ? "OK" : "FAILED");
     apr_terminate();
 }
