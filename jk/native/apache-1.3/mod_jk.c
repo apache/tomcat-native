@@ -1793,12 +1793,13 @@ static int jk_handler(request_rec * r)
                 return OK;      /* NOT r->status, even if it has changed. */
             }
             else if (rc == JK_CLIENT_ERROR) {
-                r->connection->aborted = 1;
+                if (is_error != HTTP_REQUEST_ENTITY_TOO_LARGE)
+                    r->connection->aborted = 1;
                 jk_log(l, JK_LOG_INFO, "Aborting connection"
                        " for worker=%s",
                        worker_name);
                 JK_TRACE_EXIT(l);
-                return OK;
+                return is_error;
             }
             else {
                 jk_log(l, JK_LOG_INFO, "Service error=%d"
