@@ -79,8 +79,12 @@
 #endif
 
 #ifdef NETWARE
+#ifdef __NOVELL_LIBC__
+#include <dlfcn.h>
+#else
 #include <nwthread.h>
 #include <nwadv.h>
+#endif
 #endif
 
 #ifndef JNI_VERSION_1_1
@@ -722,7 +726,7 @@ static int load_jvm_dll(jni_worker_t *p,
 
         FreeLibrary(hInst);
     }
-#elif defined(NETWARE)
+#elif defined(NETWARE) && !defined(__NOVELL_LIBC__)
     int javaNlmHandle = FindNLMHandle("JVM");
     if (0 == javaNlmHandle) {
         /* if we didn't get a handle, try to load java and retry getting the */
