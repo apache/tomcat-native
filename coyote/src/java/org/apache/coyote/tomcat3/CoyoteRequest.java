@@ -80,9 +80,10 @@ import org.apache.coyote.Processor;
  *  line and Mime headers between Coyote and Tomcat.
  *  @Author Bill Barker
  */
-class CoyoteRequest extends Request {
+public class CoyoteRequest extends org.apache.tomcat.core.Request {
 
     org.apache.coyote.Request coyoteRequest=null;
+    
     SSLSupport sslSupport=null;
     ByteChunk  readChunk = new ByteChunk();
     int  pos=-1;
@@ -197,57 +198,6 @@ class CoyoteRequest extends Request {
 
     }
 
-    /** Determine the local virual host and port from the <code>host</code>
-     *  header.
-     */
-    protected void parseHostHeader() {
-	MessageBytes hH=getMimeHeaders().getValue("host");
-        serverPort = socket.getLocalPort();
-	if (hH != null) {
-	    ByteChunk valueBC = hH.getByteChunk();
-	    byte [] valueB = valueBC.getBytes();
-	    int valueL = valueBC.getLength();
-	    int valueS = valueBC.getStart();
-	    int colonPos = -1;
-	    for( int i = 0; i < valueL; i++) {
-		byte b = valueB[i+valueS];
-		if(b == ':') {
-		    colonPos = i;
-		    break;
-		}
-	    }
-	    if (colonPos > -1) {
-		serverNameMB.setBytes( valueB, valueS, colonPos);
-		int port = 0;
-		int mult = 1;
-		try {
-		    for(int i = colonPos+1; i < valueL; i++) {
-			int charValue = HexUtils.DEC[(int)valueB[i+valueS]];
-			if(charValue == -1) {
-			    throw new NumberFormatException(
-					      "Invalid port number: " + 
-					      valueB[i+valueS]);
-			}
-			port *= 10;
-			port += charValue;
-		    }
-		    serverPort = port;
-                }catch(NumberFormatException  nfe){
-		    contextM.log("Port Parsing error", nfe);
-                }
-	    }else {
-		serverNameMB.setBytes(valueB, valueS, valueL);
-	    }
-	    return;
-	}
-	if( localHost != null ) {
-	    serverNameMB.setString( localHost );
-	}
-	// default to localhost - and warn
-	//	log("No server name, defaulting to localhost");
-        serverNameMB.setString( getLocalHost() );
-    }
-
     // -------------------- override special methods
 
     public MessageBytes remoteAddr() {
@@ -268,19 +218,20 @@ class CoyoteRequest extends Request {
 	InetAddress localAddress = socket.getLocalAddress();
 	localHost = localAddress.getHostName();
 	return localHost;
-
     }
 
     public MessageBytes serverName(){
-        if(! serverNameMB.isNull()) return serverNameMB;
-        parseHostHeader();
-        return serverNameMB;
+        // if(! serverNameMB.isNull()) return serverNameMB;
+        // parseHostHeader();
+        return coyoteRequest.serverName();
     }
 
     public int getServerPort(){
-        if(serverPort!=-1) return serverPort;
-        parseHostHeader();
-        return serverPort;
+        // if(serverPort!=-1) return serverPort;
+        //No need to delay execution - the host is certainly needed for
+        // mapping.
+        // parseHostHeader();
+        return coyoteRequest.getServerPort();
     }
 
     /** Define the SSL Support support instance for this socket.

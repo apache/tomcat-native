@@ -142,8 +142,6 @@ final class CoyoteProcessor
         this.connector = connector;
         this.debug = connector.getDebug();
         this.id = id;
-        this.proxyName = connector.getProxyName();
-        this.proxyPort = connector.getProxyPort();
         this.request = (CoyoteRequest) connector.createRequest();
         this.response = (CoyoteResponse) connector.createResponse();
         this.request.setResponse(this.response);
@@ -214,18 +212,6 @@ final class CoyoteProcessor
 
 
     /**
-     * The proxy server name for our Connector.
-     */
-    private String proxyName = null;
-
-
-    /**
-     * The proxy server port for our Connector.
-     */
-    private int proxyPort = 0;
-
-
-    /**
      * The Coyote request object we will pass to our associated container.
      */
     private CoyoteRequest request = null;
@@ -291,12 +277,6 @@ final class CoyoteProcessor
      * Processor state
      */
     private int status = Constants.PROCESSOR_IDLE;
-
-
-    /**
-     * Host name.
-     */
-    private char[] hostName = new char[128];
 
 
     // -------------------------------------------------------- Adapter Methods
@@ -393,10 +373,30 @@ final class CoyoteProcessor
         request.setAuthorization
             (req.getHeader(Constants.AUTHORIZATION_HEADER));
 
-        if (proxyPort != 0)
+        // At this point the Host header has been processed.
+        // Override if the proxyPort/proxyHost are set 
+
+        // Replace the default port if we are in secure mode
+        if (req.getServerPort()==80 && connector.getScheme().equals("https")) {
+            req.setServerPort(443);
+        }
+
+        String proxyName=connector.getProxyName();
+        int proxyPort=connector.getProxyPort();
+        
+        if (proxyPort != 0) {
             request.setServerPort(proxyPort);
-        else
-            request.setServerPort(serverPort);
+            req.setServerPort( proxyPort );
+        } else {
+            request.setServerPort(req.getServerPort() );
+        }
+
+        if (proxyName != null) {
+            request.setServerName(proxyName);
+            req.serverName().setString( proxyName );
+        } else {
+            request.setServerName( req.serverName().toString());
+        }
 
         if (!normalize(req.decodedURI())) {
             res.setStatus(400);
@@ -422,76 +422,9 @@ final class CoyoteProcessor
             }
         }
 
-        parseHost(req);
         parseCookies(req);
 
     }
-
-
-    /**
-     * Parse host.
-     */
-    protected void parseHost(Request req)
-        throws IOException {
-
-        MessageBytes valueMB = req.getMimeHeaders().getValue("host");
-        ByteChunk valueBC = null;
-        if (valueMB != null) {
-            valueBC = valueMB.getByteChunk();
-            byte[] valueB = valueBC.getBytes();
-            int valueL = valueBC.getLength();
-            int valueS = valueBC.getStart();
-            int colonPos = -1;
-            if (valueL > hostName.length) {
-                hostName = new char[valueL];
-            }
-            for (int i = 0; i < valueL; i++) {
-                char b = (char) valueB[i + valueS];
-                if (b == ':') {
-                    colonPos = i;
-                    break;
-                }
-                hostName[i] = b;
-            }
-            if (colonPos < 0) {
-                if (connector.getScheme().equals("http")) {
-                    request.setServerPort(80);
-                } else if (connector.getScheme().equals("https")) {
-                    request.setServerPort(443);
-                }
-                if (proxyName != null) {
-                    request.setServerName(proxyName);
-                } else {
-                    request.setServerName(new String(hostName, 0, valueL));
-                }
-            } else {
-                if (proxyName != null) {
-                    request.setServerName(proxyName);
-                } else {
-                    request.setServerName(new String(hostName, 0, colonPos));
-                }
-                if (proxyPort != 0) {
-                    request.setServerPort(proxyPort);
-                } else {
-                    int port = 0;
-                    int mult = 1;
-                    for (int i = valueL - 1; i > colonPos; i--) {
-                        int charValue = HexUtils.DEC[(int) valueB[i + valueS]];
-                        if (charValue == -1) {
-                            throw new IOException
-                                (sm.getString
-                                 ("coyoteProcessor.parseHeaders.portNumber"));
-                        }
-                        port = port + (charValue * mult);
-                        mult = 10 * mult;
-                    }
-                    request.setServerPort(port);
-                }
-            }
-        }
-
-    }
-
 
     /**
      * Parse session id in URL.
