@@ -135,10 +135,10 @@ static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
                                                     jk_bean_t *mbean, 
                                                     char *name, void *valueP)
 {
-    jk_channel_t *_this=(jk_channel_t *)mbean->object;
+    jk_channel_t *ch=(jk_channel_t *)mbean->object;
     char *value=valueP;
     jk_channel_apr_private_t *socketInfo=
-        (jk_channel_apr_private_t *)(_this->_privatePtr);
+        (jk_channel_apr_private_t *)(ch->_privatePtr);
 
     if( strcmp( "host", name ) == 0 ) {
         socketInfo->host=value;
@@ -148,6 +148,9 @@ static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
         socketInfo->host=value;
         socketInfo->type=AF_UNIX;
     } else {
+	if( ch->worker!=NULL ) {
+            return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );
+        }
         return JK_ERR;
     }
     return JK_OK;
@@ -257,9 +260,6 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
 #ifdef HAVE_UNIXSOCKETS
 
     int unixsock;
-
-    env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                  "channelApr.open(): can't create socket \n");
 
     /* UNIX socket (to be moved in APR) */
     if (socketInfo->type==TYPE_UNIX) {
@@ -415,8 +415,6 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
 
     jk_channel_apr_data_t *chD=endpoint->channelData;
 
-    env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                  "jk2_channel_apr_send %p\n", chD);
     if( chD==NULL ) 
         return JK_ERR;
 
@@ -446,6 +444,8 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
     while(sent < len) {
         this_time = send(unixsock, (char *)b + sent , len - sent,  0);
             
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "channel.apr:send() send() %d %d\n", this_time, errno);
         if(0 == this_time) {
             return -2;
         }

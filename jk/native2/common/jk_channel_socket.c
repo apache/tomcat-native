@@ -131,7 +131,10 @@ static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
     } else if( strcmp( "port", name ) == 0 ) {
         socketInfo->port=atoi( value );
     } else {
-	return JK_ERR;
+	if( ch->worker!=NULL ) {
+            return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );
+        }
+        return JK_ERR;
     }
     return JK_OK;
 }
