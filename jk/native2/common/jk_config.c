@@ -268,7 +268,7 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     if( strcmp( name, "name" ) == 0 ) {
         return JK_OK;
     }
-    if( strcmp( name, "ver " ) == 0 ) {
+    if( strcmp( name, "ver" ) == 0 ) {
         mbean->ver=atol(val);
         return JK_OK;
     }
