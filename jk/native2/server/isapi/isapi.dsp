@@ -109,6 +109,10 @@ SOURCE=..\..\common\jk_channel_socket.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\common\jk_channel_un.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\common\jk_config.c
 # End Source File
 # Begin Source File
