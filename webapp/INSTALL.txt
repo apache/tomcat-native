@@ -29,6 +29,10 @@ you have to "replace" libexec with "modules" - I'm paranoid, sorry):
 and
     AddModule mod_webapp.c
 
+NOTE: It was reported that sometimes Apache under windows doesn't like the
+AddModule line in the configuration file. Please, if you can't start your
+Apache service, try commenting out that line in your httpd.conf file.
+
 Looking at the default "httpd.conf" file coming with Apache 1.3, I usually
 add the "LoadModule ..." line at the end of all pre-written and commented out
 "LoadModule" directives, and my "AddModule ..." directive at the end of all
