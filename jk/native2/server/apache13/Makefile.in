@@ -1,433 +1,97 @@
-# Makefile.in generated automatically by automake 1.4 from Makefile.am
+# Gnu makefile and libtool are required
+# use -D options to overrides defaults
 
-# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
-# This Makefile.in is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
+APACHE_HOME=@APACHE_HOME@
+OS=@OS@
+JAVA_HOME=@JAVA_HOME@
+APACHE_INCL=@APACHE_INCL@
+APR_INCL=@APR_INCL@
+EXTRA_CFLAGS=@EXTRA_CFLAGS@
+EXTRA_CPPFLAGS=@EXTRA_CPPFLAGS@
 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
-# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE.
+JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
+JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 
+JK_DIR := ../..
+BUILD_DIR = ${JK_DIR}/../build/jk2/apache13
 
+#LIBTOOL=@LIBTOOL@
 
-SHELL = @SHELL@
+# It doesn't hurt if we include all
+INCLUDES= -I${JK_DIR}/include \
+          ${APACHE_INCL} \
+          ${APR_INCL} \
+          ${JAVA_INCL}
 
-srcdir = @srcdir@
-top_srcdir = @top_srcdir@
-VPATH = @srcdir@
-prefix = @prefix@
-exec_prefix = @exec_prefix@
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @HAS_APR@ -DHAVE_JNI @APR_INCL@
+JK_LDFLAGS=-L${APACHE_HOME}/lib -lcrypt @APR_LDFLAGS@
 
-bindir = @bindir@
-sbindir = @sbindir@
-libexecdir = @libexecdir@
-datadir = @datadir@
-sysconfdir = @sysconfdir@
-sharedstatedir = @sharedstatedir@
-localstatedir = @localstatedir@
-infodir = @infodir@
-mandir = @mandir@
-includedir = @includedir@
-oldincludedir = /usr/include
+###### Based on rules.mk ##########################################
+ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)
+ALL_CPPFLAGS = $(DEFS) $(EXTRA_CPPFLAGS) $(NOTEST_CPPFLAGS) $(CPPFLAGS)
+ALL_LDFLAGS  = $(EXTRA_LDFLAGS) $(NOTEST_LDFLAGS) $(LDFLAGS)
+ALL_LIBS     = $(EXTRA_LIBS) $(NOTEST_LIBS) $(LIBS)
+ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
 
-pkgdatadir = $(datadir)/@PACKAGE@
-pkglibdir = $(libdir)/@PACKAGE@
-pkgincludedir = $(includedir)/@PACKAGE@
+# Compile commands
+COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
 
-top_builddir = ../..
+SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
+MOD_LINK = $(LIBTOOL) --mode=link $(CC) -module -shared $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
 
-ACLOCAL = @ACLOCAL@
-AUTOCONF = @AUTOCONF@
-AUTOMAKE = @AUTOMAKE@
-AUTOHEADER = @AUTOHEADER@
+#############################################################################
 
-INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
-INSTALL_DATA = @INSTALL_DATA@
-INSTALL_SCRIPT = @INSTALL_SCRIPT@
-transform = @program_transform_name@
+# ---------- File list creation -------------------- 
+# Same behavior as ant - 'all files from a dir'. 
+# Excludes are not yet implemented.
 
-NORMAL_INSTALL = :
-PRE_INSTALL = :
-POST_INSTALL = :
-NORMAL_UNINSTALL = :
-PRE_UNINSTALL = :
-POST_UNINSTALL = :
-host_alias = @host_alias@
-host_triplet = @host@
-APACHE20_OEXT = @APACHE20_OEXT@
-APACHE_CONFIG_VARS = @APACHE_CONFIG_VARS@
-APXSCFLAGS = @APXSCFLAGS@
-APXSLDFLAGS = @APXSLDFLAGS@
-AS = @AS@
-CC = @CC@
-CFLAGS = @CFLAGS@
-DLLTOOL = @DLLTOOL@
-ECHO = @ECHO@
-GREP = @GREP@
-HAS_APR = @HAS_APR@
-INSTALL_TYPE = @INSTALL_TYPE@
-JK_CHANNEL_APR_SOCKET = @JK_CHANNEL_APR_SOCKET@
-JK_JNI_WORKER = @JK_JNI_WORKER@
-JK_POOL_APR = @JK_POOL_APR@
-LIBTOOL = @LIBTOOL@
-LIB_JK_TYPE = @LIB_JK_TYPE@
-LN_S = @LN_S@
-MAKEINFO = @MAKEINFO@
-OBJDUMP = @OBJDUMP@
-PACKAGE = @PACKAGE@
-PERL = @PERL@
-RANLIB = @RANLIB@
-RM = @RM@
-SED = @SED@
-TEST = @TEST@
-VERSION = @VERSION@
-WEBSERVER = @WEBSERVER@
-apache_include = @apache_include@
+COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
+JNI_C_FILES := $(wildcard ${JK_DIR}/jni/*.c )
+A_C_FILES := $(wildcard ${JK_DIR}/server/apache13/*.c )
+H_FILES := $(wildcard ${JK_DIR}/include/*.h )
 
-APXS = @APXS@
-OS = @OS@
-JAVA_HOME = @JAVA_HOME@
-CP = @CP@
-APACHE_DIR = @APACHE_DIR@
-MKDIR = @MKDIR@
-DESTDIR = @APACHE_DIR@
-libdir = /libexec
-
-#VPATH=.:../common
-APACHE_FILES = Makefile.tmpl Makefile.libdir libjk2.module
-
-JK = ../../common/
-JKINC = ../../include/
-JK_INCL = -DUSE_APACHE_MD5 -I ${JK} -I ${JKINC}
-JAVA_INCL = -I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
-JAVA_LIB = -L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
-AM_CFLAGS = @apache_include@ -I../common
-
-APACHE_OBJECTS =  @JK_CHANNEL_APR_SOCKET@ ${JK}jk_channel_jni${OEXT} ${JK}jk_channel_socket${OEXT} ${JK}jk_config${OEXT} ${JK}jk_endpoint${OEXT} ${JK}jk_env${OEXT} ${JK}jk_handler_logon${OEXT} ${JK}jk_handler_response${OEXT} ${JK}jk_logger_file${OEXT} ${JK}jk_map${OEXT} ${JK}jk_md5${OEXT} ${JK}jk_msg_ajp${OEXT} ${JK}jk_nwmain${OEXT} ${JK}jk_objCache${OEXT} ${JK}jk_pool${OEXT} @JK_POOL_APR@ ${JK}jk_registry${OEXT} ${JK}jk_requtil${OEXT} ${JK}jk_shm${OEXT} ${JK}jk_uriEnv${OEXT} ${JK}jk_uriMap${OEXT} ${JK}jk_vm_default${OEXT} ${JK}jk_worker_ajp13${OEXT} ${JK}jk_workerEnv${OEXT} ${JK}jk_worker_jni${OEXT} ${JK}jk_worker_lb${OEXT} ${JK}jk_worker_run${OEXT} ${JK}jk_worker_status${OEXT}
+COMMON_LO_FILES := $(patsubst ${JK_DIR}/common/%, ${BUILD_DIR}/%, \
+			 $(patsubst %c, %lo, ${COMMON_C_FILES} ))
+JNI_LO_FILES := $(patsubst ${JK_DIR}/jni/%, ${BUILD_DIR}/%, \
+			 $(patsubst %c, %lo, ${JNI_C_FILES} ))
+A_LO_FILES := $(patsubst ${JK_DIR}/server/apache13/%, ${BUILD_DIR}/%, \
+			 $(patsubst %c, %lo, ${A_C_FILES} ))
 
 
-@MAKE_DYNAMIC_APACHE_TRUE@OEXT = .lo
-@MAKE_DYNAMIC_APACHE_FALSE@OEXT = .o
+# ---------- Compile rules --------------------
 
-@MAKE_DYNAMIC_APACHE_TRUE@lib_LTLIBRARIES = libjk2.la
-@MAKE_DYNAMIC_APACHE_TRUE@libjk2_la_SOURCES = mod_jk2.c
-@MAKE_DYNAMIC_APACHE_TRUE@libjk2_la_LIBADD = $(APACHE_OBJECTS)
-
-@MAKE_DYNAMIC_APACHE_FALSE@noinst_LIBRARIES = libjk2.a
-@MAKE_DYNAMIC_APACHE_FALSE@libjk2_a_SOURCES = mod_jk2.c
-@MAKE_DYNAMIC_APACHE_FALSE@libjk2_a_LIBADD = $(APACHE_OBJECTS)
-mkinstalldirs = $(SHELL) $(top_srcdir)/scripts/build/unix/mkinstalldirs
-CONFIG_CLEAN_FILES =  Makefile.apxs
-LIBRARIES =  $(noinst_LIBRARIES)
+.PHONY: all
 
 
-DEFS = @DEFS@ -I. -I$(srcdir) 
-CPPFLAGS = @CPPFLAGS@
-LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@
-@MAKE_DYNAMIC_APACHE_FALSE@libjk2_a_DEPENDENCIES =  \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_channel_jni${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_channel_socket${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_config${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_endpoint${OEXT} ${JK}jk_env${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_handler_logon${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_handler_response${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_logger_file${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_map${OEXT} ${JK}jk_md5${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_msg_ajp${OEXT} ${JK}jk_nwmain${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_objCache${OEXT} ${JK}jk_pool${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_registry${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_requtil${OEXT} ${JK}jk_shm${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_uriEnv${OEXT} ${JK}jk_uriMap${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_vm_default${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_worker_ajp13${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_workerEnv${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_worker_jni${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_worker_lb${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_worker_run${OEXT} \
-@MAKE_DYNAMIC_APACHE_FALSE@${JK}jk_worker_status${OEXT}
-@MAKE_DYNAMIC_APACHE_FALSE@libjk2_a_OBJECTS =  mod_jk2.o
-AR = ar
-LTLIBRARIES =  $(lib_LTLIBRARIES)
-
-libjk2_la_LDFLAGS = 
-@MAKE_DYNAMIC_APACHE_TRUE@libjk2_la_DEPENDENCIES =  \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_channel_jni${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_channel_socket${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_config${OEXT} ${JK}jk_endpoint${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_env${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_handler_logon${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_handler_response${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_logger_file${OEXT} ${JK}jk_map${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_md5${OEXT} ${JK}jk_msg_ajp${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_nwmain${OEXT} ${JK}jk_objCache${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_pool${OEXT} ${JK}jk_registry${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_requtil${OEXT} ${JK}jk_shm${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_uriEnv${OEXT} ${JK}jk_uriMap${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_vm_default${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_worker_ajp13${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_workerEnv${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_worker_jni${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_worker_lb${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_worker_run${OEXT} \
-@MAKE_DYNAMIC_APACHE_TRUE@${JK}jk_worker_status${OEXT}
-@MAKE_DYNAMIC_APACHE_TRUE@libjk2_la_OBJECTS =  mod_jk2.lo
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
-DIST_COMMON =  Makefile.am Makefile.apxs.in Makefile.in
-
-
-DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
-
-TAR = gtar
-GZIP_ENV = --best
-SOURCES = $(libjk2_a_SOURCES) $(libjk2_la_SOURCES)
-OBJECTS = $(libjk2_a_OBJECTS) $(libjk2_la_OBJECTS)
-
-all: all-redirect
-.SUFFIXES:
-.SUFFIXES: .S .c .lo .o .s
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(srcdir)/../../common/list.mk.in
-	cd $(top_srcdir) && $(AUTOMAKE) --foreign --include-deps server/apache13/Makefile
-
-Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
-
-Makefile.apxs: $(top_builddir)/config.status Makefile.apxs.in
-	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
-
-mostlyclean-noinstLIBRARIES:
-
-clean-noinstLIBRARIES:
-	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-
-distclean-noinstLIBRARIES:
-
-maintainer-clean-noinstLIBRARIES:
-
-.c.o:
-	$(COMPILE) -c $<
-
-.s.o:
-	$(COMPILE) -c $<
-
-.S.o:
-	$(COMPILE) -c $<
-
-mostlyclean-compile:
-	-rm -f *.o core *.core
-
-clean-compile:
-
-distclean-compile:
-	-rm -f *.tab.c
-
-maintainer-clean-compile:
+VPATH=.:../../common
 
 .c.lo:
-	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+	 ${SH_COMPILE} -c $< -o $>
 
-.s.lo:
-	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+${BUILD_DIR}/%.lo: ${JK_DIR}/common/%.c
+	 ${SH_COMPILE} -c $< -o $@
 
-.S.lo:
-	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+${BUILD_DIR}/%.lo: ${JK_DIR}/jni/%.c
+	 ${SH_COMPILE} -c $< -o $@
 
-mostlyclean-libtool:
-	-rm -f *.lo
-
-clean-libtool:
-	-rm -rf .libs _libs
-
-distclean-libtool:
-
-maintainer-clean-libtool:
-
-libjk2.a: $(libjk2_a_OBJECTS) $(libjk2_a_DEPENDENCIES)
-	-rm -f libjk2.a
-	$(AR) cru libjk2.a $(libjk2_a_OBJECTS) $(libjk2_a_LIBADD)
-	$(RANLIB) libjk2.a
-
-mostlyclean-libLTLIBRARIES:
-
-clean-libLTLIBRARIES:
-	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
-
-distclean-libLTLIBRARIES:
-
-maintainer-clean-libLTLIBRARIES:
-
-install-libLTLIBRARIES: $(lib_LTLIBRARIES)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(libdir)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    echo "$(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p"; \
-	    $(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p; \
-	  else :; fi; \
-	done
-
-uninstall-libLTLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
-	done
-
-libjk2.la: $(libjk2_la_OBJECTS) $(libjk2_la_DEPENDENCIES)
-	$(LINK) -rpath $(libdir) $(libjk2_la_LDFLAGS) $(libjk2_la_OBJECTS) $(libjk2_la_LIBADD) $(LIBS)
-
-tags: TAGS
-
-ID: $(HEADERS) $(SOURCES) $(LISP)
-	list='$(SOURCES) $(HEADERS)'; \
-	unique=`for i in $$list; do echo $$i; done | \
-	  awk '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
-	here=`pwd` && cd $(srcdir) \
-	  && mkid -f$$here/ID $$unique $(LISP)
-
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
-	tags=; \
-	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS)'; \
-	unique=`for i in $$list; do echo $$i; done | \
-	  awk '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
-	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
-
-mostlyclean-tags:
-
-clean-tags:
-
-distclean-tags:
-	-rm -f TAGS ID
-
-maintainer-clean-tags:
-
-distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
-
-subdir = server/apache13
-
-distdir: $(DISTFILES)
-	@for file in $(DISTFILES); do \
-	  d=$(srcdir); \
-	  if test -d $$d/$$file; then \
-	    cp -pr $$d/$$file $(distdir)/$$file; \
-	  else \
-	    test -f $(distdir)/$$file \
-	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
-	    || cp -p $$d/$$file $(distdir)/$$file || :; \
-	  fi; \
-	done
-info-am:
-info: info-am
-dvi-am:
-dvi: dvi-am
-check-am: all-am
-check: check-am
-installcheck-am:
-installcheck: installcheck-am
-install-exec-am: install-libLTLIBRARIES
-install-exec: install-exec-am
-
-install-data-am: install-data-local
-install-data: install-data-am
-
-install-am: all-am
-	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
-install: install-am
-uninstall-am: uninstall-libLTLIBRARIES
-uninstall: uninstall-am
-all-am: Makefile $(LIBRARIES) $(LTLIBRARIES)
-all-redirect: all-am
-install-strip:
-	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
-installdirs:
-	$(mkinstalldirs)  $(DESTDIR)$(libdir)
+${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache13/%.c
+	 ${SH_COMPILE} -c $< -o $@
 
 
-mostlyclean-generic:
+# ---------- Targets -------------------- 
 
-clean-generic:
+all: prepare ${BUILD_DIR}/mod_jk2.so ${BUILD_DIR}/jkjni.so
 
-distclean-generic:
-	-rm -f Makefile $(CONFIG_CLEAN_FILES)
-	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+${BUILD_DIR}/jkjni.so: ${JNI_LO_FILES}
+	$(MOD_LINK) -o $@ $^
 
-maintainer-clean-generic:
-mostlyclean-am:  mostlyclean-noinstLIBRARIES mostlyclean-compile \
-		mostlyclean-libtool mostlyclean-libLTLIBRARIES \
-		mostlyclean-tags mostlyclean-generic
+${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${A_LO_FILES}
+	${MOD_LINK} -o $@ $^ @APR_LIB_STATIC@
 
-mostlyclean: mostlyclean-am
+${COMMON_C_FILES} ${A_C_FILES}: ${H_FILES}
 
-clean-am:  clean-noinstLIBRARIES clean-compile clean-libtool \
-		clean-libLTLIBRARIES clean-tags clean-generic \
-		mostlyclean-am
+prepare: 
+	mkdir -p ${BUILD_DIR}
 
-clean: clean-am
-
-distclean-am:  distclean-noinstLIBRARIES distclean-compile \
-		distclean-libtool distclean-libLTLIBRARIES \
-		distclean-tags distclean-generic clean-am
-	-rm -f libtool
-
-distclean: distclean-am
-
-maintainer-clean-am:  maintainer-clean-noinstLIBRARIES \
-		maintainer-clean-compile maintainer-clean-libtool \
-		maintainer-clean-libLTLIBRARIES maintainer-clean-tags \
-		maintainer-clean-generic distclean-am
-	@echo "This command is intended for maintainers to use;"
-	@echo "it deletes files that may require special tools to rebuild."
-
-maintainer-clean: maintainer-clean-am
-
-.PHONY: mostlyclean-noinstLIBRARIES distclean-noinstLIBRARIES \
-clean-noinstLIBRARIES maintainer-clean-noinstLIBRARIES \
-mostlyclean-compile distclean-compile clean-compile \
-maintainer-clean-compile mostlyclean-libtool distclean-libtool \
-clean-libtool maintainer-clean-libtool mostlyclean-libLTLIBRARIES \
-distclean-libLTLIBRARIES clean-libLTLIBRARIES \
-maintainer-clean-libLTLIBRARIES uninstall-libLTLIBRARIES \
-install-libLTLIBRARIES tags mostlyclean-tags distclean-tags clean-tags \
-maintainer-clean-tags distdir info-am info dvi-am dvi check check-am \
-installcheck-am installcheck install-exec-am install-exec \
-install-data-local install-data-am install-data install-am install \
-uninstall-am uninstall all-redirect all-am all installdirs \
-mostlyclean-generic distclean-generic clean-generic \
-maintainer-clean-generic clean mostlyclean distclean maintainer-clean
-
-
-@MAKE_DYNAMIC_APACHE_TRUE@all: mod_jk2.so
-
-@MAKE_DYNAMIC_APACHE_TRUE@mod_jk2.la: mod_jk2.lo $(APACHE_OBJECTS)
-@MAKE_DYNAMIC_APACHE_TRUE@	$(LIBTOOL) --mode=link ${COMPILE} -o $@ -module -rpath ${libexecdir} -avoid-version mod_jk2.lo $(APACHE_OBJECTS)
-
-@MAKE_DYNAMIC_APACHE_TRUE@mod_jk2.so: mod_jk2.la
-@MAKE_DYNAMIC_APACHE_TRUE@	$(LIBTOOL) --mode=install cp $< `pwd`/$@
-
-@MAKE_DYNAMIC_APACHE_FALSE@install-data-local:
-@MAKE_DYNAMIC_APACHE_FALSE@	@echo ""
-@MAKE_DYNAMIC_APACHE_FALSE@	@echo "Copying files to Apache Modules Directory..."
-@MAKE_DYNAMIC_APACHE_FALSE@	-${MKDIR} ${APACHE_DIR}/src/modules/jk
-@MAKE_DYNAMIC_APACHE_FALSE@	${CP} ${APACHE_FILES} ${APACHE_DIR}/src/modules/jk
-@MAKE_DYNAMIC_APACHE_FALSE@	${CP} ${noinst_LIBRARIES} ${APACHE_DIR}/src/modules/jk
-@MAKE_DYNAMIC_APACHE_FALSE@	@echo ""
-@MAKE_DYNAMIC_APACHE_FALSE@	@echo "Please be sure to re-compile Apache..."
-@MAKE_DYNAMIC_APACHE_FALSE@	@echo ""
-@MAKE_DYNAMIC_APACHE_FALSE@	@echo "cd ${APACHE_DIR}"
-@MAKE_DYNAMIC_APACHE_FALSE@	@echo "./config.status --activate-module=src/modules/jk/libjk2.a"
-@MAKE_DYNAMIC_APACHE_FALSE@	@echo "make"
-@MAKE_DYNAMIC_APACHE_FALSE@	@echo ""
-
-# Tell versions [3.59,3.63) of GNU make to not export all variables.
-# Otherwise a system limit (for SysV at least) may be exceeded.
-.NOEXPORT:
+clean: 
+	rm -rf ${BUILD_DIR}/*.lo ${BUILD_DIR}/*.la ${BUILD_DIR}/*.o ${BUILD_DIR}/.libs ${BUILD_DIR}/*.so

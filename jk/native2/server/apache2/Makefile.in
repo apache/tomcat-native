@@ -1,79 +1,104 @@
-## 
+# Gnu makefile and libtool are required
+# use -D options to overrides defaults
 
-APXS=@APXS@
+APACHE_HOME=@APACHE_HOME@
 OS=@OS@
 JAVA_HOME=@JAVA_HOME@
-CP=@CP@
-APACHE_DIR=@APACHE_DIR@
-MKDIR=@MKDIR@
+APACHE_INCL=@APACHE_INCL@
+APR_INCL=@APR_INCL@
+EXTRA_CFLAGS=@EXTRA_CFLAGS@
+EXTRA_CPPFLAGS=@EXTRA_CPPFLAGS@
 
-# Defaults
-libexecdir=${APACHE_DIR}/modules
-
-JK=../../common/
-JKINC=../../include/
-# Defines APACHE_OBJECTS - the list of all common files
-include ../../common/list.mk
-
-# Apache2 settings, values guessed by Apache config and used to build it
-# Will define libexecdir, LIBTOOL, etc
-include @APACHE_CONFIG_VARS@
-
-# Local settings ( overriding/appending to Apache's ) 
-COMMON=../../common
-JK_INCL=-DUSE_APACHE_MD5 -I ${COMMON} -I ${JKINC} @HAS_APR@
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
-CFLAGS=@apache_include@ @CFLAGS@ ${JK_INCL} ${JAVA_INCL} -D_REENTRANT -Wall ${EXTRA_CFLAGS} ${EXTRA_CPPFLAGS}
+
+JK_DIR := ../..
+BUILD_DIR = ${JK_DIR}/../build/jk2/apache2
+
+# Extract EXTRA_CFLAGS and EXTRA_CPPFLAGS - same flags used during apache2 
+# compilation
+#include ${APACHE_HOME}/build/config_vars.mk
+
+# Yes, we use the same properties file as ant
+#include ../../../build.properties
+
+LIBTOOL=${APACHE_HOME}/build/libtool 
+
+# It doesn't hurt if we include all
+INCLUDES= -I${JK_DIR}/include \
+          ${APACHE_INCL} \
+          ${APR_INCL} \
+          ${JAVA_INCL}
+
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 -DHAS_APR -DHAVE_JNI
+JK_LDFLAGS=-L${APACHE_HOME}/lib -lapr -lcrypt
+
+###### Based on rules.mk ##########################################
+ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)
+ALL_CPPFLAGS = $(DEFS) $(EXTRA_CPPFLAGS) $(NOTEST_CPPFLAGS) $(CPPFLAGS)
+ALL_LDFLAGS  = $(EXTRA_LDFLAGS) $(NOTEST_LDFLAGS) $(LDFLAGS)
+ALL_LIBS     = $(EXTRA_LIBS) $(NOTEST_LIBS) $(LIBS)
+ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
+
+# Compile commands
+COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
+
+SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
+MOD_LINK = $(LIBTOOL) --mode=link $(CC) -module -shared $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
+
+#############################################################################
+
+# ---------- File list creation -------------------- 
+# Same behavior as ant - 'all files from a dir'. 
+# Excludes are not yet implemented.
+
+COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
+JNI_C_FILES := $(wildcard ${JK_DIR}/jni/*.c )
+A2_C_FILES := $(wildcard ${JK_DIR}/server/apache2/*.c )
+H_FILES := $(wildcard ${JK_DIR}/include/*.h )
+
+COMMON_LO_FILES := $(patsubst ${JK_DIR}/common/%, ${BUILD_DIR}/%, \
+			 $(patsubst %c, %lo, ${COMMON_C_FILES} ))
+JNI_LO_FILES := $(patsubst ${JK_DIR}/jni/%, ${BUILD_DIR}/%, \
+			 $(patsubst %c, %lo, ${JNI_C_FILES} ))
+A2_LO_FILES := $(patsubst ${JK_DIR}/server/apache2/%, ${BUILD_DIR}/%, \
+			 $(patsubst %c, %lo, ${A2_C_FILES} ))
 
 
-# Implicit rules
-include ../../scripts/build/rules.mk
+# ---------- Compile rules --------------------
 
-OEXT=.lo
+.PHONY: all
 
-all: Makefile @LIB_JK_TYPE@ 
-install: @INSTALL_TYPE@
 
-Makefile: Makefile.in
-	echo Regenerating Makefile
-	( cd ../..; ./config.status )
+VPATH=.:../../common
 
-lib_jk.la: mod_jk.lo ${APACHE_OBJECTS}
-	$(LIBTOOL) --mode=link $(CC) -o lib_jk.la -static -rpath ${libexecdir} mod_jk.lo $(APACHE_OBJECTS)
+.c.lo:
+	 ${SH_COMPILE} -c $< -o $>
 
-install_static:
-	@echo ""
-	@echo "Copying files to Apache Modules Directory..."
-	-${MKDIR} ${APACHE_DIR}/modules/jk
-	${CP} config.m4 ${APACHE_DIR}/modules/jk
-	${LIBTOOL} --mode=install cp lib_jk.la ${APACHE_DIR}/modules/jk
-	@echo ""
-	@echo "Please be sure to re-compile Apache..."
-	@echo ""
-	@echo "cd ${APACHE_DIR}"
-	@echo "./buildconf"
-	@echo "./configure --with-mod_jk=static"
-	@echo "make"
-	@echo ""
+${BUILD_DIR}/%.lo: ${JK_DIR}/common/%.c
+	 ${SH_COMPILE} -c $< -o $@
 
-#################### Dynamic .so file ####################
-# APXS will compile every file, this is derived from apxs
+${BUILD_DIR}/%.lo: ${JK_DIR}/jni/%.c
+	 ${SH_COMPILE} -c $< -o $@
 
-mod_jk.la: mod_jk.lo $(APACHE_OBJECTS)
-	$(LIBTOOL) --mode=link ${COMPILE} -o $@ -module -rpath ${libexecdir} -avoid-version mod_jk.lo $(APACHE_OBJECTS)
+${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache2/%.c
+	 ${SH_COMPILE} -c $< -o $@
 
-mod_jk.so: mod_jk.la
-	$(LIBTOOL) --mode=install cp $< `pwd`/$@
 
-install_dynamic:
-	@echo ""
-	@echo "Installing files to Apache Modules Directory..."
-	$(APXS) -i mod_jk.la
-	@echo ""
-	@echo "Please be sure to arrange ${APACHE_DIR}/conf/httpd.conf..."
-	@echo ""
+# ---------- Targets -------------------- 
 
-clean:
-	rm -f *.o *.so *.lo *.la *.slo
-	rm -rf .libs
+all: prepare ${BUILD_DIR}/mod_jk2.so ${BUILD_DIR}/jkjni.so
+
+${BUILD_DIR}/jkjni.so: ${JNI_LO_FILES}
+	$(MOD_LINK) -o $@ $^
+
+${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${A2_LO_FILES}
+	${MOD_LINK} -o $@ $^ 
+
+${COMMON_C_FILES} ${A2_C_FILES}: ${H_FILES}
+
+prepare: 
+	mkdir -p ${BUILD_DIR}
+
+clean: 
+	rm -rf ${BUILD_DIR}/*.lo ${BUILD_DIR}/*.la ${BUILD_DIR}/*.o ${BUILD_DIR}/.libs ${BUILD_DIR}/*.so
