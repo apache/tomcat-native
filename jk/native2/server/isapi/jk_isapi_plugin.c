@@ -315,22 +315,6 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 }
 
                 rc = jk_requtil_unescapeUrl(uri);
-                if (rc == BAD_REQUEST) {
-                    env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
-                           "HttpFilterProc [%s] contains one or more invalid escape sequences.\n", 
-                           uri);
-                    write_error_response(pfc,"400 Bad Request", HTML_ERROR_400);
-                    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                    return SF_STATUS_REQ_FINISHED;
-                }
-                else if(rc == BAD_PATH) {
-                    env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
-                           "HttpFilterProc [%s] contains forbidden escape sequences.\n", 
-                           uri);
-                    write_error_response(pfc,"403 Forbidden", HTML_ERROR_403);
-                    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                    return SF_STATUS_REQ_FINISHED;
-                }
                 jk_requtil_getParents(uri);
 
                 if (pfc->GetServerVariable(pfc, SERVER_NAME, (LPVOID)Host, (LPDWORD)&szHost)){
@@ -354,6 +338,23 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     char *forwardURI;
 
                     /* This is a servlet, should redirect ... */
+                    /* First check if the request was invalidated at decode */
+                    if (rc == BAD_REQUEST) {
+                        env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
+                            "HttpFilterProc [%s] contains one or more invalid escape sequences.\n", 
+                            uri);
+                        write_error_response(pfc,"400 Bad Request", HTML_ERROR_400);
+                        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+                        return SF_STATUS_REQ_FINISHED;
+                    }
+                    else if(rc == BAD_PATH) {
+                        env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
+                            "HttpFilterProc [%s] contains forbidden escape sequences.\n", 
+                            uri);
+                        write_error_response(pfc,"403 Forbidden", HTML_ERROR_403);
+                        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+                        return SF_STATUS_REQ_FINISHED;
+                    }
                     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                            "HttpFilterProc [%s] is a servlet url - should redirect to %s\n", 
                            uri, uriEnv->workerName);
@@ -408,7 +409,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                             workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                             return SF_STATUS_REQ_ERROR;
                         }
-                    SetHeader(pfc, "Translate:", NULL);
+                        SetHeader(pfc, "Translate:", NULL);
                     }
                 } else {
                     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
