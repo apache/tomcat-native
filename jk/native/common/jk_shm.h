@@ -45,11 +45,11 @@ extern "C"
 
 /* Really huge numbers, but 512 workers should be enough */
 #define JK_SHM_MAX_WORKERS  512
-
+#define JK_SHM_SIZE         (1024 * 1024)
 #define JK_SHM_ALIGN(x)  JK_ALIGN(x, 1024)
 
 /** jk shm worker record structure */
-struct jk_shm_w_rec
+struct jk_shm_worker
 {
     int     id;
     /* Number of currently busy channels */
@@ -88,7 +88,7 @@ struct jk_shm_w_rec
     /* Number of non 200 responses */
     size_t   errors;
 };
-typedef struct jk_shm_w_rec jk_shm_w_rec_t;
+typedef struct jk_shm_worker jk_shm_worker_t;
 
 const char *jk_shm_name();
 
@@ -105,14 +105,10 @@ void jk_shm_close();
  */
 int jk_shm_attach(const char *fname);
 
-
-/* Return shm worker record
+/* allocate shm memory
+ * If there is no shm present the pool will be used instead
  */
-jk_shm_w_rec_t *jk_shm_worker(int id);
-
-/* allocate shm worker record
- */
-jk_shm_w_rec_t *jk_shm_worker_alloc();
+void *jk_shm_alloc(jk_pool_t *p, size_t size);
 
 
 #ifdef __cplusplus

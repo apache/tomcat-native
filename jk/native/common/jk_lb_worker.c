@@ -56,7 +56,7 @@ struct worker_record
 {
     jk_worker_t     *w;
     /* Shared memory worker data */
-    jk_shm_w_rec_t  *s;
+    jk_shm_worker_t  *s;
 };
 
 typedef struct worker_record worker_record_t;
@@ -74,7 +74,7 @@ struct lb_worker
     JK_CRIT_SEC cs; 
 
     /* Shared memory worker data */
-    jk_shm_w_rec_t  *s;
+    jk_shm_worker_t  *s;
 };
 
 typedef struct lb_worker lb_worker_t;
@@ -575,7 +575,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                           num_of_workers *
                                           sizeof(worker_record_t));
             for (i = 0; i < num_of_workers; i++) {
-                p->lb_workers[i].s = jk_shm_worker_alloc();
+                p->lb_workers[i].s = jk_shm_alloc(&p->p, sizeof(jk_shm_worker_t));
                 if (p->lb_workers[i].s == NULL) {
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
@@ -776,7 +776,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
                         private_data->buf,
                         sizeof(jk_pool_atom_t) * TINY_POOL_SIZE);
 
-        private_data->s = jk_shm_worker_alloc();
+        private_data->s = jk_shm_alloc(&private_data->p, sizeof(jk_shm_worker_t));
         if (!private_data->s) {
             free(private_data);
             JK_TRACE_EXIT(l);
