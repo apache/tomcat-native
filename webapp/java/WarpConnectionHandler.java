@@ -99,10 +99,11 @@ public class WarpConnectionHandler extends WarpHandler {
         try {
             switch (type) {
                 case WarpConstants.TYP_CONINIT_HST: {
-                    String name=reader.readString()+"."+reader.readShort();
+                    String name=reader.readString();
+                    int port=reader.readShort();
                     
                     // Retrieve this host id
-                    WarpHost host=engine.setupChild(name);
+                    WarpHost host=engine.setupChild(name,port);
                     if (host==null) {
                         this.log("Cannot retrieve host instance");
                         this.send(WarpConstants.TYP_CONINIT_ERR,this.packet);
@@ -188,6 +189,7 @@ public class WarpConnectionHandler extends WarpHandler {
                     h.request.setRequestedApplicationID(aid);
                     h.request.setWarpRequestHandler(h);
                     h.response.setWarpRequestHandler(h);
+                    h.request.setScheme("http");
 
                     // Start the request handler
                     try {
