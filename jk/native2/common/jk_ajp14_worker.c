@@ -91,48 +91,49 @@
  * Initialize the worker.
  */
 static int JK_METHOD
-jk2_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
-                         jk_map_t    *props,
-                         jk_workerEnv_t *we)
+jk2_worker_ajp14_setProperty(jk_env_t *env, jk_worker_t *_this,
+                             char *name, char *value )
 {
     int    port;
     char * host;
     int err;
     jk_worker_t *p = _this;
-    jk_worker_t *aw;
     char * secret_key;
     char *channelType;
-    
-    aw = _this;
-    _this->secret = jk2_map_getStrProp( env, props,
-                                       "worker", aw->name, "secretkey", NULL );
-    _this->secret= _this->pool->pstrdup(env, _this->pool, _this->secret);
-    
-    channelType = jk2_map_getStrProp( env, props,
-                                     "worker", aw->name, "channel", "socket" );
-
-    if( _this->channel == NULL ) {
-	/* Create a default channel */
-	_this->channel=env->getInstance(env, _this->pool,"channel",
-                                        channelType );
-
-	if( _this->channel == NULL ) {
-	    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+           
+    if( strcmp( name, "secretkey" )==0 ) {
+        _this->secret = value;
+    } else if( strcmp( name, "cachesize" )==0 ) {
+        _this->cache_sz=atoi( value );
+    } else if( strcmp( name, "channel" )==0 ) {
+        _this->channel=env->getInstance(env, _this->pool,"channel",
+                                        value );
+        if( _this->channel == NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "Error creating %s channel\n", channelType);
-	    return JK_FALSE;
-	}
-    }
-    
-    err=_this->channel->init( env, _this->channel, props, p->name, _this);
-    if( err != JK_TRUE ) {
-	env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp14.validate(): channel init failed\n");
-	return err;
+            return JK_FALSE;
+        }
+        _this->channel->worker=_this;
+        _this->channel->name=value;
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.setProperty() channel %s\n",
+                      value);
+    } else {
+        /* It's probably a channel property
+         */
+        if( _this->channel==NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "No channel for %s, set channel before other properties %s=%s\n",
+                          _this->name, name, value );
+            return JK_FALSE;
+        }
+
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.setProperty() channel %s=%s\n",
+                      name, value);
+        _this->channel->setProperty( env, _this->channel, name, value );
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.validate() %s %s\n", _this->name,
-                  _this->channel->name);
+                  "ajp14.setProperty() %s %s %s\n", _this->name, name, value );
     
     return JK_TRUE;
 }
@@ -511,26 +512,20 @@ jk2_worker_ajp14_service(jk_env_t *env, jk_worker_t *w,
 
 
 static int JK_METHOD
-jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
-                     jk_map_t    *props, 
-                     jk_workerEnv_t *we)
+jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this)
 {
-    jk_endpoint_t *e;
     int  rc;
-    int cache_sz;
 
-    /* start the connection cache */
-    cache_sz=jk2_map_getIntProp(env, props,
-                               "worker", _this->name, "cachesize",
-                               JK_OBJCACHE_DEFAULT_SZ );
-    if (cache_sz > 0) {
-        int err;
+    if( _this->cache_sz == -1 )
+        _this->cache_sz=JK_OBJCACHE_DEFAULT_SZ;
+
+    if (_this->cache_sz > 0) {
         _this->endpointCache=jk2_objCache_create( env, _this->pool  );
-
+        
         if( _this->endpointCache != NULL ) {
-            err=_this->endpointCache->init( env, _this->endpointCache,
-                                            cache_sz );
-            if( err!= JK_TRUE ) {
+            rc=_this->endpointCache->init( env, _this->endpointCache,
+                                           _this->cache_sz );
+            if( rc!= JK_TRUE ) {
                 _this->endpointCache=NULL;
             }
         }
@@ -538,39 +533,18 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
         _this->endpointCache=NULL;
     }
 
-    if (_this->secret == NULL) {
-        /* No extra initialization for AJP13 */
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "ajp14.init() ajp1x worker name=%s\n",
-                      _this->name);
-        return JK_TRUE;
+    if( _this->channel == NULL ) {
+        /* Use default channel */
+        _this->setProperty( env, _this, "channel", "socket" );
+    }
+    
+    rc=_this->channel->init( env, _this->channel );
+    if( rc != JK_TRUE ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp14.validate(): channel init failed\n");
+        return rc;
     }
 
-    /* -------------------- Ajp14 discovery -------------------- */
-
-    /* (try to) connect with the worker and get any information
-     *  If the worker is down, we'll use the cached data and update
-     *  at the first connection
-     *
-     *  Tomcat can triger a 'ping' at startup to force us to
-     *  update.
-     */
-    
-    if (jk2_worker_ajp14_getEndpoint(env, _this, &e) == JK_FALSE) 
-        return JK_FALSE; 
-    
-    rc=jk2_worker_ajp14_connect(env, e);
-
-    
-    if ( rc == JK_TRUE) {
-        env->l->jkLog( env, env->l, JK_LOG_INFO,
-                       "ajp14.init() %s connected ok\n",
-                       _this->name );
-    } else {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "ajp14.init() delayed connection %s\n",
-                      _this->name);
-    }
     return JK_TRUE;
 }
 
@@ -622,13 +596,14 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     }
     w->pool = pool;
     w->name = NULL;
+    w->cache_sz=-1;
     
     w->endpointCache= NULL;
 
     w->channel= NULL;
     w->secret= NULL;
    
-    w->validate= jk2_worker_ajp14_validate;
+    w->setProperty= jk2_worker_ajp14_setProperty;
     w->init= jk2_worker_ajp14_init;
     w->destroy=jk2_worker_ajp14_destroy;
     w->service = jk2_worker_ajp14_service;
