@@ -130,6 +130,7 @@ typedef struct
      */
     jk_map_t *worker_properties;
     char *worker_file;
+    char *mount_file;
     jk_map_t *uri_to_context;
 
     int mountcopy;
@@ -839,6 +840,34 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
 
     if (stat(conf->worker_file, &statbuf) == -1)
         return "Can't find the workers file specified";
+
+    return NULL;
+}
+
+/*
+ * JkMountFile Directive Handling
+ *
+ * JkMountFile file
+ */
+
+static const char *jk_set_mount_file(cmd_parms * cmd,
+                                     void *dummy, const char *mount_file)
+{
+    server_rec *s = cmd->server;
+    struct stat statbuf;
+
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+
+    /* we need an absolut path (ap_server_root_relative does the ap_pstrdup) */
+    conf->mount_file = ap_server_root_relative(cmd->pool, mount_file);
+
+    if (conf->mount_file == NULL)
+        return "JkMountFile file name invalid";
+
+    if (stat(conf->mount_file, &statbuf) == -1)
+        return "Can't find the mount file specified";
 
     return NULL;
 }
@@ -1563,6 +1592,16 @@ static const command_rec jk_cmds[] = {
                   "the name of a worker file for the Jakarta servlet containers"),
 
     /*
+     * JkMountFile specifies a full path to the location of the
+     * uriworker properties file.
+     *
+     * This file defines the different mapping for workers used by apache
+     * to redirect servlet requests.
+     */
+    AP_INIT_TAKE1("JkMountFile", jk_set_mount_file, NULL, RSRC_CONF,
+                  "the name of a mount file for the Jakarta servlet uri mapping"),
+
+    /*
      * JkAutoMount specifies that the list of handled URLs must be
      * asked to the servlet engine (autoconf feature)
      */
@@ -1997,6 +2036,7 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->worker_properties = NULL;
     jk_map_alloc(&c->worker_properties);
     c->worker_file = NULL;
+    c->mount_file = NULL;
     c->log_file = NULL;
     c->log_level = -1;
     c->log = NULL;
@@ -2097,6 +2137,7 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
         copy_jk_map(p, overrides->s, base->uri_to_context,
                     overrides->uri_to_context);
         copy_jk_map(p, overrides->s, base->automount, overrides->automount);
+        overrides->mount_file = base->mount_file;
     }
 
     if (base->envvars_in_use) {
@@ -2324,7 +2365,7 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     }
 
     /*     if(map_alloc(&init_map)) { */
-    if (!jk_map_read_properties(init_map, conf->worker_file)) {
+    if (!jk_map_read_properties(init_map, conf->worker_file, NULL)) {
         if (jk_map_size(init_map) == 0) {
             ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO,
                          APLOG_EMERG, NULL,
@@ -2339,7 +2380,7 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     worker_env.uri_to_worker = conf->uw_map;
     worker_env.virtual = "*";   /* for now */
     worker_env.server_name = (char *)ap_get_server_version();
-    if (wc_open(init_map, &worker_env, conf->log)) {
+    if (wc_open(init_map, &worker_env, conf->log)) {        
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
     }
 }
@@ -2349,6 +2390,8 @@ static int jk_post_config(apr_pool_t * pconf,
                           apr_pool_t * ptemp, server_rec * s)
 {
     apr_status_t rv;
+    jk_server_conf_t *conf;
+    server_rec *srv = s;
 
     /* create the jk log lockfiles in the parent */
     if ((rv = apr_global_mutex_create(&jk_log_lock, NULL,
@@ -2370,11 +2413,9 @@ static int jk_post_config(apr_pool_t * pconf,
 #endif
 
     if (!s->is_virtual) {
-        jk_server_conf_t *conf =
-            (jk_server_conf_t *) ap_get_module_config(s->module_config,
-                                                      &jk_module);
+        conf = (jk_server_conf_t *)ap_get_module_config(s->module_config,
+                                                        &jk_module);
         if (!conf->was_initialized) {
-            server_rec *srv = s;
             conf->was_initialized = JK_TRUE;
             /* step through the servers and open each jk logfile.
              */
@@ -2383,6 +2424,14 @@ static int jk_post_config(apr_pool_t * pconf,
                     return HTTP_INTERNAL_SERVER_ERROR;
             }
             init_jk(pconf, conf, s);
+        }
+    }
+    for (srv = s; srv; srv = srv->next) {
+        conf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
+                                                        &jk_module);
+        if (conf && conf->mount_file) {
+            conf->uw_map->fname = conf->mount_file;
+            uri_worker_map_load(conf->uw_map, conf->log);
         }
     }
 
