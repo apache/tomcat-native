@@ -474,6 +474,8 @@ static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
 
     workerEnv->init(env, workerEnv );
     workerEnv->server_name   = (char *)ap_get_server_version();
+    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &workerEnv->maxDaemons);
+
     /* Should be done in post config instead (cf DAV2) */
     /* ap_add_version_component(pconf, JK_EXPOSED_VERSION); */
     apr_pool_cleanup_register(pconf, NULL, jk2_shutdown, apr_pool_cleanup_null);
@@ -586,11 +588,12 @@ static void jk2_child_init(apr_pool_t *pconf,
     *  and fix the mpm_winnt reporting 0 daemons.
     */
     if (workerEnv->childId == -1) {
-        int max_daemons_limit;
-        ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &max_daemons_limit);
-
-        if (max_daemons_limit == 0) {
-            workerEnv->childId = 0;    
+        /* If the server max daemons are less then 2
+         * this is the single child mpm.
+         * the WINNT mpm has a bug returning 0 instead 1
+         */
+        if (workerEnv->maxDaemons < 2) {
+            workerEnv->childId = proc.pid;    
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
                 "jk2_init() Setting scoreboard slot 0 for child %d\n",
                 proc.pid);
@@ -598,7 +601,7 @@ static void jk2_child_init(apr_pool_t *pconf,
         else {
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                 "jk2_init() Can't find child %d in none of the %d scoreboard slots\n",
-                proc.pid, max_daemons_limit);
+                proc.pid, workerEnv->maxDaemons);
             workerEnv->childId = -2;
         }
     } else {
