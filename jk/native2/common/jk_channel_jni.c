@@ -522,11 +522,15 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
 {
     jk_workerEnv_t *we=worker->workerEnv;
 
-    /* XXX Don't detach if worker is reused per thread */
-    if( we==NULL || we->vm==NULL ) {
+    if( we==NULL || we->vm==NULL) {
         return JK_OK;
     }
-    we->vm->detach( env, we->vm );
+    /* 
+     * In case of not having the endpoint detach the jvm.
+     * XXX Remove calling this function from ajp13 worker?
+     */
+    if (endpoint == NULL)
+        we->vm->detach( env, we->vm );
     if( worker->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "channelJni.afterRequest() ok\n");
