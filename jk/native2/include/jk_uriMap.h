@@ -141,7 +141,7 @@ struct jk_uriMap {
     */
     struct jk_uriEnv *(*mapUri)(struct jk_env *env, jk_uriMap_t *_this,
                                 const char *vhost,
-                                const char *uri );
+                                const char *uri, int reverse );
     
     /* -------------------- @deprecated -------------------- */
     /* used by the mapper, temp storage ( ??? )*/
