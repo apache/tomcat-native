@@ -77,7 +77,7 @@ apr_status_t comp_md5(char *org, char *org2, char *dst)
  * @param servername local server name (ie: Apache 2.0.50)
  * @return           APR_SUCCESS or error
  */
-apr_status_t ajp_handle_login(ajp_msg *msg, char *secret, char *servername)
+apr_status_t ajp_handle_login(ajp_msg_t *msg, char *secret, char *servername)
 {
     int             status;
     char            *entropy;
@@ -92,13 +92,13 @@ apr_status_t ajp_handle_login(ajp_msg *msg, char *secret, char *servername)
         return AJP_ELOGFAIL;
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL,
                  "ajp_handle_login(): received entropy %s",
                  entropy);
 
     comp_md5(entropy, secret, computedKey);
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL,
                  "ajp_handle_login(): computed md5 (%s/%s) -> (%s)",
                  entropy, secret, computedKey);
 
@@ -155,7 +155,7 @@ apr_status_t ajp_handle_login(ajp_msg *msg, char *secret, char *servername)
  * @param msg        AJP Message to be decoded
  * @return           APR_SUCCESS or error
  */
-apr_status ajp_handle_logok(ajp_msg_t *msg)
+apr_status_t ajp_handle_logok(ajp_msg_t *msg)
 {
     apr_status_t status;
     apr_uint32_t negociation;
@@ -163,8 +163,6 @@ apr_status ajp_handle_logok(ajp_msg_t *msg)
 
     status = ajp_msg_get_uint32(msg, &negociation);
     
-    nego = msg->getLong(env, msg);
-
     if (status != APR_SUCCESS) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_handle_logok(): can't get negociation header");
@@ -181,7 +179,7 @@ apr_status ajp_handle_logok(ajp_msg_t *msg)
         return AJP_ELOGFAIL;
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL,
                  "ajp_handle_logok(): Successfully logged to %s",
                  server_name);
 
@@ -208,7 +206,7 @@ apr_status_t ajp_handle_lognok(ajp_msg_t *msg)
         return AJP_ELOGFAIL;
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL,
                  "ajp_handle_logok(): logon failure code is %08lx",
                  (long)failurecode);
 
