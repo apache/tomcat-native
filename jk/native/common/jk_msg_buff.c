@@ -437,7 +437,7 @@ void jk_dump_buff(jk_logger_t *l,
         *current++ = '\n';
         *current++ = '\0';
             jk_log(l, file, line, funcname, level,
-                   "%.4x    %s", i, line);
+                   "%.4x    %s", i, lb);
     }
 }
 
