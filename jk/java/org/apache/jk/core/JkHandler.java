@@ -68,7 +68,7 @@ import org.apache.tomcat.util.handler.*;
  *
  * @author Costin Manolache
  */
-public abstract class JkHandler {
+public class JkHandler {
     public static final int OK=0;
     public static final int LAST=1;
     public static final int ERROR=2;
@@ -80,8 +80,11 @@ public abstract class JkHandler {
     protected String name;
     protected int id;
 
-    private static org.apache.commons.logging.Log log=
-        org.apache.commons.logging.LogFactory.getLog( JkHandler.class );
+    // XXX Will be replaced with notes and (configurable) ids
+    // Each represents a 'chain' - similar with ActionCode in Coyote ( the concepts
+    // will be merged ).    
+    public static final int HANDLE_RECEIVE_PACKET   = 10;
+    public static final int HANDLE_SEND_PACKET      = 11;
     
     public void setWorkerEnv( WorkerEnv we ) {
         this.wEnv=we;
@@ -111,8 +114,6 @@ public abstract class JkHandler {
      *  A chain is used for Apache/3.3 style iterative invocation.
      */
     public void setNext( JkHandler h ) {
-        if( log.isDebugEnabled() )
-            log.debug("setNext " + h.getClass().getName());
         next=h;
     }
 
@@ -131,8 +132,13 @@ public abstract class JkHandler {
     public void destroy() throws IOException {
     }
 
-    public abstract int invoke(Msg msg, MsgContext mc )  throws IOException;
-
+    public MsgContext createMsgContext() {
+        return new MsgContext();
+    }
+    
+    public int invoke(Msg msg, MsgContext mc )  throws IOException {
+        return OK;
+    }
     
     public void setProperty( String name, String value ) {
         properties.put( name, value );
