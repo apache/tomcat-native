@@ -90,6 +90,7 @@ endif
 	@echo -DN_PLAT_NLM >> $@
 	@echo -DNETWARE >> $@
 	@echo -DXP_NETWARE >> $@
+	@echo -DUSE_SPRINTF >> $@
 
 link.opt: Makefile.nw
 	-@del link.opt > NUL
