@@ -244,7 +244,7 @@ static int info_handle(wa_request *r, wa_application *a) {
     wa_chain *conn=(wa_chain *)apr_palloc(r->pool,sizeof(wa_chain));
     wa_chain *elem=NULL;
 
-    wa_rsetstatus(r,200);
+    wa_rsetstatus(r,200,NULL);
     wa_rsetctype(r,"text/html");
     wa_rcommit(r);
 

@@ -144,7 +144,7 @@ int wa_rerror(const char *file, const int line, wa_request *r, int s,
 
     r->hand->log(r,WA_MARK,buf);
 
-    wa_rsetstatus(r,s);
+    wa_rsetstatus(r,s,NULL);
     wa_rsetctype(r,"text/html");
     wa_rcommit(r);
 
@@ -218,11 +218,8 @@ void wa_rlog(wa_request *r, const char *f, const int l, const char *fmt, ...) {
     r->hand->log(r,f,l,buf);
 }
 
-void wa_rsetstatus(wa_request *r, int status) {
-    r->hand->setstatus(r,status);
-}
-void wa_rsetstatusline(wa_request *r, char *status) {
-    r->hand->setstatusline(r,status);
+void wa_rsetstatus(wa_request *r, int status, char *message) {
+    r->hand->setstatus(r,status,message);
 }
 
 void wa_rsetctype(wa_request *r, char *type) {

@@ -294,20 +294,14 @@ static void wam_handler_log(wa_request *r, const char *f, const int l, char *msg
 }
 
 /* Set the HTTP status of the response. */
-static void wam_handler_setstatus(wa_request *r, int status) {
+static void wam_handler_setstatus(wa_request *r, int status, char *message) {
     request_rec *req=(request_rec *)r->data;
+
+    if ((message!=NULL) && (message[0]!='\0'))
+        req->status_line=apr_psprintf(req->pool,"%03d %s", status, message);
 
     req->status=status;
 }
-
-/* Set the HTTP status of the response. */
-void wam_handler_setstatusline(wa_request *r, char * status) {
-    request_rec *req=(request_rec *)r->data;
-
-    if (status !=NULL && status[0]!='\0')
-        req->status_line=apr_pstrdup(req->pool,status);
-}
-
 
 /* Set the MIME Content-Type of the response. */
 static void wam_handler_setctype(wa_request *r, char *type) {
@@ -390,7 +384,6 @@ static int wam_handler_write(wa_request *r, char *buf, int len) {
 static wa_handler wam_handler = {
     wam_handler_log,
     wam_handler_setstatus,
-    wam_handler_setstatusline,
     wam_handler_setctype,
     wam_handler_setheader,
     wam_handler_commit,
