@@ -85,6 +85,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.tomcat.util.buf.MessageBytes;
 
+import org.apache.coyote.ActionCode;
+import org.apache.coyote.ActionHook;
 import org.apache.coyote.Adapter;
 import org.apache.coyote.InputBuffer;
 import org.apache.coyote.OutputBuffer;
@@ -925,6 +927,10 @@ final class CoyoteProcessor
 
         threadStart();
 
+        if (processor instanceof ActionHook) {
+            ((ActionHook) processor).action(ActionCode.ACTION_START, null);
+        }
+
     }
 
 
@@ -940,6 +946,10 @@ final class CoyoteProcessor
                 (sm.getString("coyoteProcessor.notStarted"));
         lifecycle.fireLifecycleEvent(STOP_EVENT, null);
         started = false;
+
+        if (processor instanceof ActionHook) {
+            ((ActionHook) processor).action(ActionCode.ACTION_STOP, null);
+        }
 
         threadStop();
 

@@ -85,6 +85,12 @@ public final class ActionCode {
     public static final ActionCode ACTION_RESET = new ActionCode();
 
 
+    public static final ActionCode ACTION_START = new ActionCode();
+
+
+    public static final ActionCode ACTION_STOP = new ActionCode();
+
+
     // ----------------------------------------------------------- Constructors
 
 
