@@ -161,11 +161,15 @@ jk_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
     jk_worker_t *aw;
     char * secret_key;
     int proto=AJP14_PROTO;
-
+    char *channelType;
+    
     aw = _this;
     secret_key = jk_map_getStrProp( env, props,
                                     "worker", aw->name, "secretkey", NULL );
-    
+
+    channelType = jk_map_getStrProp( env, props,
+                                     "worker", aw->name, "channel", "socket" );
+
     if ((!secret_key) || (!strlen(secret_key))) {
         proto=AJP13_PROTO;
         aw->proto= AJP13_PROTO;
@@ -185,10 +189,12 @@ jk_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
     if( _this->channel == NULL ) {
 	/* Create a default channel */
 
-	_this->channel=env->getInstance(env, _this->pool,"channel", "socket" );
+	_this->channel=env->getInstance(env, _this->pool,"channel",
+                                        channelType );
 
 	if( _this->channel == NULL ) {
-	    env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating socket channel\n");
+	    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "Error creating %s channel\n", channelType);
 	    return JK_FALSE;
 	}
     }
@@ -215,7 +221,8 @@ jk_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
  */
 static void jk_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
 {
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.close() %s\n", ae->worker->name);
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.close() %s\n",
+                  ae->worker->name);
 
     ae->reuse = JK_FALSE;
     ae->worker->channel->close( env, ae->worker->channel, ae );
@@ -283,7 +290,8 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
     if( ( e== NULL ) 
 	|| ( s == NULL )
         || ! is_recoverable_error ) {
-	env->l->jkLog(env, env->l, JK_LOG_ERROR, "ajp14.service() NullPointerException\n");
+	env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp14.service() NullPointerException\n");
 	return JK_FALSE;
     }
 
@@ -323,7 +331,7 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
      * XXX JK_RETRIES could be replaced by the number of workers in
      * a load-balancing configuration 
      */
-    for(attempt = 0 ; attempt < e->worker->connect_retry_attempts ; attempt++) {
+    for(attempt = 0 ; attempt < e->worker->connect_retry_attempts ;attempt++) {
         jk_channel_t *channel=e->worker->channel;
 
         /* e->request->dump(env, e->request, "Before sending "); */
@@ -383,7 +391,7 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
             /* the browser stop sending data, no need to recover */
             e->recoverable = JK_FALSE;
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp14.service() Error receiving initial post data\n");
+                          "ajp14.service() Error receiving initial post \n");
             return JK_FALSE;
         }
 
@@ -407,7 +415,8 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
 
     if( err != JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp14.service() ajpGetReply recoverable error %d\n", err);
+                      "ajp14.service() ajpGetReply recoverable error %d\n",
+                      err);
     }
     
     return err;
@@ -427,7 +436,8 @@ jk_worker_ajp14_done(jk_env_t *env, jk_endpoint_t *e)
         int err=0;
         err=w->endpointCache->put( env, w->endpointCache, e );
         if( err==JK_TRUE ) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "ajp14.done() return to pool %s\n",
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "ajp14.done() return to pool %s\n",
                           w->name );
             return JK_TRUE;
         }
@@ -531,7 +541,8 @@ jk_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
         _this->endpointCache=jk_objCache_create( env, _this->pool  );
 
         if( _this->endpointCache != NULL ) {
-            err=_this->endpointCache->init( env, _this->endpointCache, cache_sz );
+            err=_this->endpointCache->init( env, _this->endpointCache,
+                                            cache_sz );
             if( err!= JK_TRUE ) {
                 _this->endpointCache=NULL;
             }
@@ -546,7 +557,8 @@ jk_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
 
     if (_this->secret == NULL) {
         /* No extra initialization for AJP13 */
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "ajp14.init() ajp1x worker name=%s\n",
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "ajp14.init() ajp1x worker name=%s\n",
                       _this->name);
         return JK_TRUE;
     }
