@@ -249,8 +249,8 @@ static void detach_from_jvm(jni_worker_t *p,
 
 
 /*
-   Duplicate string and convert it to ASCII on EBDIC based system
-   Needed for at least AS/400, BS2000 and what about other EBDIC systems ?
+   Duplicate string and convert it to ASCII on EBDIC based systems
+   Needed for at least AS/400 and BS2000 but what about other EBDIC systems ?
 */
 static void *strdup_ascii(jk_pool_t *p, 
                           char *s)
@@ -538,7 +538,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
         jstring stderr_name = NULL;
         jint rc = 0;
 
-		/* AS400 need EBCDIC to ASCII conversion for JNI */
+		/* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
 		
         if(p->tomcat_cmd_line) {
             cmd_line = (*env)->NewStringUTF(env, strdup_ascii(&p->p, p->tomcat_cmd_line));
@@ -1098,7 +1098,7 @@ static int get_bridge_object(jni_worker_t *p,
 	    	return JK_FALSE;
 	}
 	
-/* OS400 need conversion from EBCDIC to ASCII before passing to JNI */
+/* AS400/BS2000 need conversion from EBCDIC to ASCII before passing to JNI */
 /* for others, strdup_ascii is just jk_pool_strdup */
 
     ctype = strdup_ascii(&p->p, btype);
@@ -1112,17 +1112,10 @@ static int get_bridge_object(jni_worker_t *p,
     jk_log(l, JK_LOG_DEBUG, 
            "In get_bridge_object, loaded %s bridge class\n", btype);
 
-#ifdef AS400
-#pragma convert(819)
-#endif
-
     constructor_method_id = (*env)->GetMethodID(env,
                                                 p->jk_java_bridge_class,
-                                                "<init>", /* method name */
-                                                "()V");   /* method sign */
-#ifdef AS400
-#pragma convert(0)
-#endif
+                                                strdup_ascii(&p->p, "<init>"), /* method name */
+                                                strdup_ascii(&p->p, "()V"));   /* method sign */
 
     if(!constructor_method_id) {
 	    p->jk_java_bridge_class = NULL;
@@ -1159,52 +1152,32 @@ static int get_method_ids(jni_worker_t *p,
                           jk_logger_t *l)
 {
 
-#ifdef AS400
-#pragma convert(819)
-#endif
+/* AS400/BS2000 need conversion from EBCDIC to ASCII before passing to JNI */
 
     p->jk_startup_method = (*env)->GetMethodID(env,
                                                p->jk_java_bridge_class, 
-                                               "startup", 
-                                               "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");  
-
-#ifdef AS400
-#pragma convert(0)
-#endif
+                                               strdup_ascii(&p->p, "startup"), 
+                                               strdup_ascii(&p->p, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I"));  
 
     if(!p->jk_startup_method) {
 	jk_log(l, JK_LOG_EMERG, "Can't find startup()\n"); 
 	return JK_FALSE;
     }
 
-#ifdef AS400
-#pragma convert(819)
-#endif
-
     p->jk_service_method = (*env)->GetMethodID(env,
                                                p->jk_java_bridge_class, 
-                                               "service", 
-                                               "(JJ)I");   
-#ifdef AS400
-#pragma convert(0)
-#endif
+                                               strdup_ascii(&p->p, "service"), 
+                                               strdup_ascii(&p->p, "(JJ)I"));   
 
     if(!p->jk_service_method) {
 	jk_log(l, JK_LOG_EMERG, "Can't find service()\n"); 
         return JK_FALSE;
     }
 
-#ifdef AS400
-#pragma convert(819)
-#endif
-
     p->jk_shutdown_method = (*env)->GetMethodID(env,
                                                 p->jk_java_bridge_class, 
-                                                "shutdown", 
-                                                "()V");   
-#ifdef AS400
-#pragma convert(0)
-#endif
+                                                strdup_ascii(&p->p, "shutdown"), 
+                                                strdup_ascii(&p->p, "()V"));   
 
     if(!p->jk_shutdown_method) {
 	jk_log(l, JK_LOG_EMERG, "Can't find shutdown()\n"); 
