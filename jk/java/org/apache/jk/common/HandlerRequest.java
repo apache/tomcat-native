@@ -62,6 +62,7 @@ package org.apache.jk.common;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.CharConversionException;
 import java.net.InetAddress;
 import java.util.Properties;
 
@@ -75,6 +76,8 @@ import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
 import org.apache.jk.core.WorkerEnv;
 import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.CharChunk;
+import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.net.SSLSupport;
@@ -109,16 +112,16 @@ public class HandlerRequest extends JkHandler
     
     // Prefix codes for message types from server to container
     public static final byte JK_AJP13_FORWARD_REQUEST   = 2;
-	public static final byte JK_AJP13_SHUTDOWN          = 7;
-	public static final byte JK_AJP13_PING_REQUEST      = 8;
-	public static final byte JK_AJP13_CPING_REQUEST     = 10;
+        public static final byte JK_AJP13_SHUTDOWN          = 7;
+        public static final byte JK_AJP13_PING_REQUEST      = 8;
+        public static final byte JK_AJP13_CPING_REQUEST     = 10;
 
     // Prefix codes for message types from container to server
     public static final byte JK_AJP13_SEND_BODY_CHUNK   = 3;
     public static final byte JK_AJP13_SEND_HEADERS      = 4;
     public static final byte JK_AJP13_END_RESPONSE      = 5;
-	public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
-	public static final byte JK_AJP13_CPONG_REPLY       = 9;
+        public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
+        public static final byte JK_AJP13_CPONG_REPLY       = 9;
     
     // Integer codes for common response header strings
     public static final int SC_RESP_CONTENT_TYPE        = 0xA001;
@@ -132,7 +135,7 @@ public class HandlerRequest extends JkHandler
     public static final int SC_RESP_SERVLET_ENGINE      = 0xA009;
     public static final int SC_RESP_STATUS              = 0xA00A;
     public static final int SC_RESP_WWW_AUTHENTICATE    = 0xA00B;
-	
+        
     // Integer codes for common (optional) request attribute names
     public static final byte SC_A_CONTEXT       = 1;  // XXX Unused
     public static final byte SC_A_SERVLET_PATH  = 2;  // XXX Unused
@@ -219,6 +222,11 @@ public class HandlerRequest extends JkHandler
         "user-agent"
     };
 
+    /*
+     * Note for Host parsing.
+     */
+    public static final int HOSTBUFFER = 10;
+
     HandlerDispatch dispatch;
     String ajpidDir="conf";
     
@@ -239,9 +247,9 @@ public class HandlerRequest extends JkHandler
                                           "JK_AJP13_SHUTDOWN",
                                           this, null); // 7
             
-			dispatch.registerMessageType( JK_AJP13_CPING_REQUEST,
-										  "JK_AJP13_CPING_REQUEST",
-										  this, null); // 10
+                        dispatch.registerMessageType( JK_AJP13_CPING_REQUEST,
+                                                                                  "JK_AJP13_CPING_REQUEST",
+                                                                                  this, null); // 10
             
             // register outgoing messages handler
             dispatch.registerMessageType( JK_AJP13_SEND_BODY_CHUNK, // 3
@@ -272,7 +280,7 @@ public class HandlerRequest extends JkHandler
     }
 
     public void setDecodedUri( boolean b ) {
-	decoded=b;
+        decoded=b;
     }
 
     public boolean isTomcatAuthentication() {
@@ -422,21 +430,21 @@ public class HandlerRequest extends JkHandler
             log.info("Exiting");
             System.exit(0);
             
-	    return OK;
+            return OK;
 
-		// We got a PING REQUEST, quickly respond with a PONG
-		case JK_AJP13_CPING_REQUEST:
-			msg.reset();
-			msg.appendByte(JK_AJP13_CPONG_REPLY);
-			ep.setType( JkHandler.HANDLE_SEND_PACKET );
-			ep.getSource().invoke( msg, ep );
-			
-			return OK;
+                // We got a PING REQUEST, quickly respond with a PONG
+                case JK_AJP13_CPING_REQUEST:
+                        msg.reset();
+                        msg.appendByte(JK_AJP13_CPONG_REPLY);
+                        ep.setType( JkHandler.HANDLE_SEND_PACKET );
+                        ep.getSource().invoke( msg, ep );
+                        
+                        return OK;
 
         default:
             System.err.println("Unknown message " + type );
             msg.dump("Unknown message" );
-	}
+        }
 
         return OK;
     }
@@ -500,8 +508,8 @@ public class HandlerRequest extends JkHandler
 
         msg.getBytes(req.remoteAddr());
         msg.getBytes(req.remoteHost());
-        msg.getBytes(req.serverName());
-        req.setServerPort(msg.getInt());
+        msg.getBytes(req.localName());
+        req.setLocalPort(msg.getInt());
 
         boolean isSSL = msg.getByte() != 0;
         if( isSSL ) {
@@ -516,17 +524,18 @@ public class HandlerRequest extends JkHandler
 //         if(req.getSecure() ) {
 //             req.setScheme(req.SCHEME_HTTPS);
 //         }
-
+        MessageBytes valueMB = req.getMimeHeaders().getValue("host");
+        parseHost(valueMB, req);
         // set cookies on request now that we have all headers
         req.getCookies().setHeaders(req.getMimeHeaders());
 
-	// Check to see if there should be a body packet coming along
-	// immediately after
+        // Check to see if there should be a body packet coming along
+        // immediately after
         int cl=req.getContentLength();
-    	if(cl > 0) {
+        if(cl > 0) {
             jkBody.setContentLength( cl );
             jkBody.receive();
-    	}
+        }
     
         if (log.isTraceEnabled()) {
             log.trace(req.toString());
@@ -548,9 +557,9 @@ public class HandlerRequest extends JkHandler
              */
             if( attributeCode == SC_A_SSL_KEY_SIZE ) {
                 // Bug 1326: it's an Integer.
-		req.setAttribute(SSLSupport.KEY_SIZE_KEY,
+                req.setAttribute(SSLSupport.KEY_SIZE_KEY,
                                  new Integer( msg.getInt()));
-	       //Integer.toString(msg.getInt()));
+               //Integer.toString(msg.getInt()));
             }
 
             if( attributeCode == SC_A_REQ_ATTRIBUTE ) {
@@ -559,23 +568,23 @@ public class HandlerRequest extends JkHandler
                 String n=tmpMB.toString();
                 msg.getBytes( tmpMB );
                 String v=tmpMB.toString();
-		req.setAttribute(n, v );
+                req.setAttribute(n, v );
             }
 
 
             // 1 string attributes
             switch(attributeCode) {
-	    case SC_A_CONTEXT      :
+            case SC_A_CONTEXT      :
                 msg.getBytes( tmpMB );
                 // nothing
                 break;
-		
-	    case SC_A_SERVLET_PATH :
+                
+            case SC_A_SERVLET_PATH :
                 msg.getBytes( tmpMB );
                 // nothing 
                 break;
-		
-	    case SC_A_REMOTE_USER  :
+                
+            case SC_A_REMOTE_USER  :
                 if( tomcatAuthentication ) {
                     // ignore server
                     msg.getBytes( tmpMB );
@@ -583,19 +592,19 @@ public class HandlerRequest extends JkHandler
                     msg.getBytes(req.getRemoteUser());
                 }
                 break;
-		
-	    case SC_A_AUTH_TYPE    :
+                
+            case SC_A_AUTH_TYPE    :
                 msg.getBytes(req.getAuthType());
                 break;
-		
-	    case SC_A_QUERY_STRING :
-		msg.getBytes(req.queryString());
+                
+            case SC_A_QUERY_STRING :
+                msg.getBytes(req.queryString());
                 break;
-		
-	    case SC_A_JVM_ROUTE    :
+                
+            case SC_A_JVM_ROUTE    :
                 msg.getBytes(req.instanceId());
                 break;
-		
+                
             case SC_A_SSL_CERT     :
                 req.scheme().setString( "https" );
                 // Transform the string into certificate.
@@ -609,29 +618,29 @@ public class HandlerRequest extends JkHandler
                 break;
                 
             case SC_A_SSL_CIPHER   :
-		req.scheme().setString( "https" );
+                req.scheme().setString( "https" );
                 msg.getBytes(tmpMB);
-		req.setAttribute(SSLSupport.CIPHER_SUITE_KEY,
-				 tmpMB.toString());
-                break;
-		
-	    case SC_A_SSL_SESSION  :
-		req.scheme().setString( "https" );
-                msg.getBytes(tmpMB);
-		req.setAttribute(SSLSupport.SESSION_ID_KEY, 
-				  tmpMB.toString());
+                req.setAttribute(SSLSupport.CIPHER_SUITE_KEY,
+                                 tmpMB.toString());
                 break;
                 
-	    case SC_A_SECRET  :
+            case SC_A_SSL_SESSION  :
+                req.scheme().setString( "https" );
+                msg.getBytes(tmpMB);
+                req.setAttribute(SSLSupport.SESSION_ID_KEY, 
+                                  tmpMB.toString());
+                break;
+                
+            case SC_A_SECRET  :
                 msg.getBytes(tmpMB);
                 String secret=tmpMB.toString();
                 log.info("Secret: " + secret );
                 // endpoint note
                 ep.setNote( secretNote, secret );
                 break;
-	    default:
-		break; // ignore, we don't know about it - backward compat
-	    }
+            default:
+                break; // ignore, we don't know about it - backward compat
+            }
         }
         return 200;
     }
@@ -641,17 +650,17 @@ public class HandlerRequest extends JkHandler
         // Decode headers
         MimeHeaders headers = req.getMimeHeaders();
 
-	int hCount = msg.getInt();
+        int hCount = msg.getInt();
         for(int i = 0 ; i < hCount ; i++) {
             String hName = null;
 
-	    // Header names are encoded as either an integer code starting
-	    // with 0xA0, or as a normal string (in which case the first
-	    // two bytes are the length).
+            // Header names are encoded as either an integer code starting
+            // with 0xA0, or as a normal string (in which case the first
+            // two bytes are the length).
             int isc = msg.peekInt();
             int hId = isc & 0xFF;
 
-	    MessageBytes vMB=null;
+            MessageBytes vMB=null;
             isc &= 0xFF00;
             if(0xA000 == isc) {
                 msg.getInt(); // To advance the read position
@@ -689,6 +698,81 @@ public class HandlerRequest extends JkHandler
                                            bchunk.getLength());
             }
         }
+    }
+
+    /**
+     * Parse host.
+     */
+    private void parseHost(MessageBytes valueMB, Request request) 
+        throws IOException {
+
+        if (valueMB == null || valueMB.isNull()) {
+            // HTTP/1.0
+            // Default is what the socket tells us. Overriden if a host is 
+            // found/parsed
+            request.setServerPort(request.getLocalPort());
+            request.serverName().duplicate(request.localName());
+            return;
+        }
+
+        ByteChunk valueBC = valueMB.getByteChunk();
+        byte[] valueB = valueBC.getBytes();
+        int valueL = valueBC.getLength();
+        int valueS = valueBC.getStart();
+        int colonPos = -1;
+        CharChunk hostNameC = (CharChunk)request.getNote(HOSTBUFFER);
+        if(hostNameC == null) {
+            hostNameC = new CharChunk(valueL);
+            request.setNote(HOSTBUFFER, hostNameC);
+        }
+        hostNameC.recycle();
+
+        boolean ipv6 = (valueB[valueS] == '[');
+        boolean bracketClosed = false;
+        for (int i = 0; i < valueL; i++) {
+            char b = (char) valueB[i + valueS];
+            hostNameC.append(b);
+            if (b == ']') {
+                bracketClosed = true;
+            } else if (b == ':') {
+                if (!ipv6 || bracketClosed) {
+                    colonPos = i;
+                    break;
+                }
+            }
+        }
+
+        if (colonPos < 0) {
+            if (request.scheme().equalsIgnoreCase("https")) {
+                // 80 - Default HTTTP port
+                request.setServerPort(443);
+            } else {
+                // 443 - Default HTTPS port
+                request.setServerPort(80);
+            }
+            request.serverName().setChars(hostNameC.getChars(), 
+                                          hostNameC.getStart(), 
+                                          hostNameC.getLength());
+        } else {
+
+            request.serverName().setChars(hostNameC.getChars(), 
+                                          hostNameC.getStart(), colonPos);
+
+            int port = 0;
+            int mult = 1;
+            for (int i = valueL - 1; i > colonPos; i--) {
+                int charValue = HexUtils.DEC[(int) valueB[i + valueS]];
+                if (charValue == -1) {
+                    // Invalid character
+                    throw new CharConversionException("Invalid char in port: " + valueB[i + valueS]); 
+                }
+                port = port + (charValue * mult);
+                mult = 10 * mult;
+            }
+            request.setServerPort(port);
+
+        }
+
     }
 
 }
