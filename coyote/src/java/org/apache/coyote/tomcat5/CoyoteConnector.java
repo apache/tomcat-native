@@ -859,6 +859,22 @@ public final class CoyoteConnector
      }
 
     /**
+     * Set the flag to see if we do a redirect to directories that don't end
+     * in a '/'.
+     */
+    public void setRedirectDirectories(boolean rd) {
+        mapper.setRedirectDirectories(rd);
+    }
+
+    /**
+     * Return the flag to see if we do a redirect to directories that don't 
+     * end in a '/'.
+     */
+    public boolean getRedirectDirectories() {
+        return mapper.getRedirectDirectories();
+    }
+
+    /**
      * Return the scheme that will be assigned to requests received
      * through this connector.  Default value is "http".
      */
