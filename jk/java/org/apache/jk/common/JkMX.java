@@ -131,7 +131,7 @@ public class JkMX extends JkHandler
             
             // use basic authentication
             //server.setAttribute(serverName, new Attribute("AuthenticationMethod", "basic"));
-
+             
             //  ObjectName sslFactory = new ObjectName("Adaptor:service=SSLServerSocketFactory");
             //         server.createMBean("openjmx.adaptor.ssl.SSLAdaptorServerSocketFactory", sslFactory, null);
             //        SSLAdaptorServerSocketFactoryMBean factory =
@@ -148,6 +148,7 @@ public class JkMX extends JkHandler
             log.info( "Started MX4J console on " + port);
             //return;
         } catch( Throwable t ) {
+            serverName=null;
             log.error( "Can't load the MX4J http adapter " + t.toString()  );
         }
         try {
@@ -213,7 +214,7 @@ public class JkMX extends JkHandler
                 mserver.invoke(serverName, "stop", null, null);
             }
         } catch( Throwable t ) {
-            log.error( "Destroy error", t );
+            log.error( "Destroy error" + t );
         }
     }
 
