@@ -76,7 +76,12 @@
 #include "http_main.h"
 #include "http_log.h"
 #include "util_script.h"
+
+/* moved to apr since http-2.0.19-dev */
+#if (MODULE_MAGIC_NUMBER_MAJOR < 20010523)
 #include "util_date.h"
+#endif
+
 #include "apr_strings.h"
 /*
  * Jakarta (jk_) include files
