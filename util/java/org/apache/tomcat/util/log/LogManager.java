@@ -56,9 +56,8 @@
  */ 
 package org.apache.tomcat.util.log;
 
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 
 /**

@@ -60,9 +60,6 @@
 package org.apache.tomcat.util.collections;
 
 import org.apache.tomcat.util.buf.MessageBytes;
-import java.io.*;
-import java.util.*;
-import java.text.*;
 
 // Originally MimeHeaders
 

@@ -59,15 +59,15 @@
 
 package org.apache.tomcat.util.net.jsse;
 
-import org.apache.tomcat.util.net.SSLSupport;
-import java.io.*;
-import java.net.*;
-import java.util.Vector;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.cert.CertificateFactory;
+
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import java.security.cert.CertificateFactory;
 import javax.security.cert.X509Certificate;
+
+import org.apache.tomcat.util.net.SSLSupport;
 
 /* JSSESupport
 

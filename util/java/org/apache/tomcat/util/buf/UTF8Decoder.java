@@ -59,11 +59,7 @@
 
 package org.apache.tomcat.util.buf;
 
-import java.text.*;
-import java.util.*;
-import java.io.Serializable;
 import java.io.IOException;
-import org.apache.tomcat.util.buf.*;
 
 /**
  * Moved from ByteChunk - code to convert from UTF8 bytes to chars.

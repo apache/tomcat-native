@@ -58,7 +58,6 @@
  */ 
 package org.apache.tomcat.util.http.mapper;
 
-import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 
 /**

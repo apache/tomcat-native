@@ -59,8 +59,7 @@
 
 package org.apache.tomcat.util.net;
 
-import java.io.*;
-import java.net.*;
+import java.net.Socket;
 
 /* SSLImplementation:
 

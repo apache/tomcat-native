@@ -59,13 +59,12 @@
 
 package org.apache.tomcat.util.http;
 
-import org.apache.tomcat.util.buf.MessageBytes;
-import org.apache.tomcat.util.buf.CharChunk;
-import org.apache.tomcat.util.buf.ByteChunk;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.StringTokenizer;
 
-import java.io.*;
-import java.util.*;
-import java.text.*;
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.MessageBytes;
 
 /**
  * A collection of cookies - reusable and tuned for server side performance.

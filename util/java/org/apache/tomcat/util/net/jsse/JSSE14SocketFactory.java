@@ -59,18 +59,18 @@
 
 package org.apache.tomcat.util.net.jsse;
 
-import java.io.*;
-import java.net.*;
-import java.util.Vector;
+import java.io.IOException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLContext;
+import java.util.Vector;
+
 import javax.net.ssl.KeyManager;
-import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
 
 /*
   1. Make the JSSE's jars available, either as an installed

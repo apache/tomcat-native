@@ -59,10 +59,11 @@
 
 package org.apache.tomcat.util.http;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.text.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 /**
  * Util to process the "Accept-Language" header. Used by facade to implement

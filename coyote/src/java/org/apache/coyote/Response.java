@@ -64,11 +64,8 @@ import java.io.IOException;
 import java.util.Locale;
 
 import org.apache.tomcat.util.buf.ByteChunk;
-
-import org.apache.tomcat.util.res.StringManager;
-
-import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.http.ContentType;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 /**
  * Response object.

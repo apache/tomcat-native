@@ -59,11 +59,7 @@
 
 package org.apache.tomcat.util.collections;
 
-import org.apache.tomcat.util.buf.MessageBytes;
-
-import java.io.*;
-import java.util.*;
-import java.text.*;
+import java.util.Enumeration;
 
 /** Enumerate the distinct header names.
     Each nextElement() is O(n) ( a comparation is

@@ -59,10 +59,6 @@
 
 package org.apache.tomcat.util.http;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.text.*;
 
 /**
  * Usefull methods for Content-Type processing

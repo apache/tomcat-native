@@ -58,10 +58,11 @@
  */ 
 package org.apache.tomcat.util.http;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Enumeration;
+
 import org.apache.tomcat.util.buf.MessageBytes;
-import java.io.*;
-import java.util.*;
-import java.text.*;
 
 /* XXX XXX XXX Need a major rewrite  !!!!
  */

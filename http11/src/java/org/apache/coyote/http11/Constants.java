@@ -58,7 +58,6 @@
  */ 
 package org.apache.coyote.http11;
 
-import java.util.Locale;
 
 /**
  * Constants.

@@ -59,11 +59,9 @@
 
 package org.apache.tomcat.util.collections;
 
-import org.apache.tomcat.util.buf.MessageBytes;
+import java.util.Enumeration;
 
-import java.io.*;
-import java.util.*;
-import java.text.*;
+import org.apache.tomcat.util.buf.MessageBytes;
 
 /** Enumerate the values for a (possibly ) multiple
  *    value element.

@@ -59,11 +59,15 @@
 
 package org.apache.tomcat.util.http;
 
-import  org.apache.tomcat.util.buf.*;
-import  org.apache.tomcat.util.collections.MultiMap;
-import java.io.*;
-import java.util.*;
-import java.text.*;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.CharChunk;
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.buf.UDecoder;
+import org.apache.tomcat.util.collections.MultiMap;
 
 /**
  * 

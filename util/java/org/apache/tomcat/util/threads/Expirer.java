@@ -58,11 +58,7 @@
  */ 
 package org.apache.tomcat.util.threads;
 
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
-import org.apache.tomcat.util.buf.*;
+import org.apache.tomcat.util.buf.TimeStamp;
 
 /**
  * Expire unused objects. 

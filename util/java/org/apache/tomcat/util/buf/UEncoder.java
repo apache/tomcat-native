@@ -60,9 +60,10 @@
 
 package org.apache.tomcat.util.buf;
 
-import org.apache.tomcat.util.buf.*;
+import java.io.CharArrayWriter;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.BitSet;
-import java.io.*;
 
 /** Efficient implementation for encoders.
  *  This class is not thread safe - you need one encoder per thread.

@@ -63,10 +63,9 @@
 
 package org.apache.tomcat.util.net;
 
-import org.apache.tomcat.util.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
 
 /**
  *

@@ -60,7 +60,6 @@
 
 package org.apache.coyote;
 
-import java.util.ArrayList;
 
 /**
  * Structure holding the Request and Response objects. It also holds statistical

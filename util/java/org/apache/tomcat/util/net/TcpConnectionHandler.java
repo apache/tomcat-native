@@ -63,10 +63,6 @@
 
 package org.apache.tomcat.util.net;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import org.apache.tomcat.util.*;
 
 /**
  * This interface will be implemented by any object that

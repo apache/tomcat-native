@@ -59,10 +59,8 @@
 
 package org.apache.tomcat.util.buf;
 
-import java.text.*;
-import java.util.*;
-import java.io.Serializable;
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Utilities to manipluate char chunks. While String is

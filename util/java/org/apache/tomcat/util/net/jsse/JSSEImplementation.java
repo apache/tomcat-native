@@ -59,12 +59,12 @@
 
 package org.apache.tomcat.util.net.jsse;
 
+import java.net.Socket;
+
 import org.apache.tomcat.util.compat.JdkCompat;
 import org.apache.tomcat.util.net.SSLImplementation;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.ServerSocketFactory;
-import java.io.*;
-import java.net.*;
 
 /* JSSEImplementation:
 

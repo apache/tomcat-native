@@ -56,18 +56,9 @@
  */ 
 package org.apache.tomcat.util.log;
 
-import org.apache.tomcat.util.log.*;
-import java.io.Writer;
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import java.io.File;
-import java.io.OutputStreamWriter;
-import java.io.IOException;
-import java.io.StringWriter;
+import java.util.Hashtable;
 
-import java.util.*;
-
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.LogFactory;
 
 /**
  *  Log using common-logging.

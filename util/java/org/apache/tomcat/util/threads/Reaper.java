@@ -58,7 +58,6 @@
  */ 
 package org.apache.tomcat.util.threads;
 
-import org.apache.tomcat.util.*;
 
 /**
  * The reaper is a background thread with which ticks every minute

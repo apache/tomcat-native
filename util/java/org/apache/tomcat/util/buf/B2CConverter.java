@@ -60,9 +60,10 @@
 
 package org.apache.tomcat.util.buf;
 
-import org.apache.tomcat.util.buf.*;
-
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 
 /** Efficient conversion of bytes  to character .
  *  

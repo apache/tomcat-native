@@ -58,22 +58,34 @@
  */ 
 package org.apache.coyote.http11;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
-import org.apache.coyote.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import javax.management.MBeanRegistration;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+
+import org.apache.commons.modeler.Registry;
+import org.apache.coyote.ActionCode;
+import org.apache.coyote.ActionHook;
+import org.apache.coyote.Adapter;
+import org.apache.coyote.ProtocolHandler;
+import org.apache.coyote.RequestGroupInfo;
+import org.apache.coyote.RequestInfo;
+import org.apache.tomcat.util.net.PoolTcpEndpoint;
+import org.apache.tomcat.util.net.SSLImplementation;
+import org.apache.tomcat.util.net.SSLSupport;
+import org.apache.tomcat.util.net.ServerSocketFactory;
+import org.apache.tomcat.util.net.TcpConnection;
+import org.apache.tomcat.util.net.TcpConnectionHandler;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.util.threads.ThreadPool;
 import org.apache.tomcat.util.threads.ThreadWithAttributes;
-import org.apache.tomcat.util.net.*;
-import org.apache.commons.modeler.Registry;
-import javax.management.ObjectName;
-import javax.management.MBeanServer;
-import javax.management.MBeanRegistration;
 
 
 /**

@@ -56,16 +56,9 @@
  */ 
 package org.apache.tomcat.util.log;
 
-import org.apache.tomcat.util.log.*;
-import java.io.Writer;
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import java.io.File;
 import java.io.OutputStreamWriter;
-import java.io.IOException;
-import java.io.StringWriter;
-
-import java.util.*;
+import java.io.PrintWriter;
+import java.io.Writer;
 
 
 /**

@@ -58,13 +58,6 @@
  */
 package org.apache.tomcat.util.handler;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.util.Enumeration;
-
 
 /**
  * Store all context informations for the invocation of a handler chain.

@@ -58,14 +58,7 @@
  */ 
 package org.apache.tomcat.util.buf;
 
-import org.apache.tomcat.util.buf.MessageBytes;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
 
 // XXX Shouldn't be here - has nothing to do with buffers.
 

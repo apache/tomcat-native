@@ -59,10 +59,6 @@
 
 package org.apache.tomcat.util.threads;
 
-import java.util.zip.*;
-import java.net.*;
-import java.util.*;
-import java.io.*;
 
 /** Implemented if you want to run a piece of code inside a thread pool.
  */

@@ -59,10 +59,7 @@
 
 package org.apache.tomcat.util.handler;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import org.apache.tomcat.util.IntrospectionUtils;
+import java.util.Hashtable;
 
 /** Hooks support. Hooks implement a chain-of-command pattern, and
  * are commonly used in most web servers as a mechanism of extensibility.

@@ -61,11 +61,6 @@ package org.apache.tomcat.util.http;
 
 import org.apache.tomcat.util.res.StringManager;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.text.*;
-
 /**
  * Handle (internationalized) HTTP messages.
  * 

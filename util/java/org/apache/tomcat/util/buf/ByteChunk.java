@@ -59,10 +59,8 @@
 
 package org.apache.tomcat.util.buf;
 
-import java.text.*;
-import java.util.*;
-import java.io.Serializable;
 import java.io.IOException;
+import java.io.Serializable;
 
 /*
  * In a server it is very important to be able to operate on

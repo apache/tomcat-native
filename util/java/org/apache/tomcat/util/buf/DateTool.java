@@ -59,10 +59,13 @@
 
 package org.apache.tomcat.util.buf;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.*;
-import java.text.*;
+import java.text.DateFormat;
+import java.text.FieldPosition;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import org.apache.tomcat.util.res.StringManager;
 

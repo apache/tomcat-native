@@ -59,10 +59,8 @@
 
 package org.apache.tomcat.util.buf;
 
-import org.apache.tomcat.util.buf.*;
-
-import java.util.BitSet;
-import java.io.*;
+import java.io.CharConversionException;
+import java.io.IOException;
 
 /** 
  *  All URL decoding happens here. This way we can reuse, review, optimize
