@@ -57,7 +57,7 @@
  *
  */ 
 
-package org.apache.coyote.http11;
+package org.apache.coyote.http11.filters;
 
 import java.io.IOException;
 
@@ -65,13 +65,42 @@ import org.apache.tomcat.util.buf.ByteChunk;
 
 import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Response;
+import org.apache.coyote.http11.OutputFilter;
 
 /**
- * Output filter.
+ * Void output filter, which silently swallows bytes written. Used with a 204
+ * status (no content) or a HEAD request.
  * 
  * @author Remy Maucherat
  */
-public interface OutputFilter extends OutputBuffer {
+public class VoidOutputFilter implements OutputFilter {
+
+
+    // -------------------------------------------------------------- Constants
+
+
+    protected static final String ENCODING_NAME = "void";
+    protected static final ByteChunk ENCODING = new ByteChunk();
+
+
+    // ----------------------------------------------------- Static Initializer
+
+
+    static {
+        ENCODING.setBytes(ENCODING_NAME.getBytes(), 0, ENCODING_NAME.length());
+    }
+
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    /**
+     * Next buffer in the pipeline.
+     */
+    protected OutputBuffer buffer;
+
+
+    // --------------------------------------------------- OutputBuffer Methods
 
 
     /**
@@ -80,7 +109,14 @@ public interface OutputFilter extends OutputBuffer {
      * @return number of bytes written by the filter
      */
     public int doWrite(ByteChunk chunk)
-        throws IOException;
+        throws IOException {
+
+        return chunk.getLength();
+
+    }
+
+
+    // --------------------------------------------------- OutputFilter Methods
 
 
     /**
@@ -88,25 +124,32 @@ public interface OutputFilter extends OutputBuffer {
      * necessary reading can occur in that method, as this method is called
      * after the response header processing is complete.
      */
-    public void setResponse(Response response);
-
-
-    /**
-     * Make the filter ready to process the next request.
-     */
-    public void recycle();
-
-
-    /**
-     * Get the name of the encoding handled by this filter.
-     */
-    public ByteChunk getEncodingName();
+    public void setResponse(Response response) {
+    }
 
 
     /**
      * Set the next buffer in the filter pipeline.
      */
-    public void setBuffer(OutputBuffer buffer);
+    public void setBuffer(OutputBuffer buffer) {
+        this.buffer = buffer;
+    }
+
+
+    /**
+     * Make the filter ready to process the next request.
+     */
+    public void recycle() {
+    }
+
+
+    /**
+     * Return the name of the associated encoding; Here, the value is 
+     * "identity".
+     */
+    public ByteChunk getEncodingName() {
+        return ENCODING;
+    }
 
 
     /**
@@ -119,7 +162,9 @@ public interface OutputFilter extends OutputBuffer {
      * Note: It is recommended that extra bytes be swallowed by the filter.
      */
     public long end()
-        throws IOException;
+        throws IOException {
+        return 0;
+    }
 
 
 }

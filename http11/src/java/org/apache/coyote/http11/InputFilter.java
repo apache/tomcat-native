@@ -77,11 +77,7 @@ public interface InputFilter extends InputBuffer {
     /**
      * Read bytes.
      * 
-     * @return If the filter does request length control, this value is
-     * significant; it should be the number of bytes consumed from the buffer,
-     * up until the end of the current request body, or the buffer length, 
-     * whichever is greater. If the filter does not do request body length
-     * control, the returned value should be -1.
+     * @return Number of bytes read.
      */
     public int doRead(ByteChunk chunk)
         throws IOException;
@@ -111,6 +107,18 @@ public interface InputFilter extends InputBuffer {
      * Set the next buffer in the filter pipeline.
      */
     public void setBuffer(InputBuffer buffer);
+
+
+    /**
+     * End the current request.
+     * 
+     * @return 0 is the expected return value. A positive value indicates that
+     * too many bytes were read. This method is allowed to use buffer.doRead
+     * to consume extra bytes. The result of this method can't be negative (if
+     * an error happens, an IOException should be thrown instead).
+     */
+    public long end()
+        throws IOException;
 
 
 }

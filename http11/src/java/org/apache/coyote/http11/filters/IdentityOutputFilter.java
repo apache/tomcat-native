@@ -197,36 +197,17 @@ public class IdentityOutputFilter implements OutputFilter {
 
 
     /**
-     * Don't do anything in particular when flushing.
+     * End the current request. It is acceptable to write extra bytes using
+     * buffer.doWrite during the execution of this method.
      */
-    /*
-    public int flush(ByteChunk chunk)
-        throws IOException {
-        return doWrite(chunk);
-    }
-    */
-
-
-    /**
-     * Write the remaining bytes, and check that the number of bytes written
-     * is correct.
-     */
-    /*
-    public int close(ByteChunk chunk)
+    public long end()
         throws IOException {
 
-        int n = doWrite(chunk);
-
-        if (remaining > 0) {
-            // FIXME: Throw an exception if the number of bytes written is less
-            // than the advertised content length.
-            throw new IOException();
-        }
-
-        return n;
+        if (remaining > 0)
+            return remaining;
+        return 0;
 
     }
-    */
 
 
     /**

@@ -280,7 +280,7 @@ public class InternalInputBuffer implements InputBuffer {
     public void clearFilters() {
 
         filterLibrary = new InputFilter[0];
-        lastActiveFilter = 0;
+        lastActiveFilter = -1;
 
     }
 
@@ -293,7 +293,7 @@ public class InternalInputBuffer implements InputBuffer {
         // FIXME: Check for null ?
         // FIXME: Check index ?
 
-        if (lastActiveFilter == 0) {
+        if (lastActiveFilter == -1) {
             filter.setBuffer(inputStreamInputBuffer);
         } else {
             filter.setBuffer(activeFilters[lastActiveFilter]);
@@ -319,7 +319,7 @@ public class InternalInputBuffer implements InputBuffer {
         buf = headerBuffer1;
         lastValid = 0;
         pos = 0;
-        lastActiveFilter = 0;
+        lastActiveFilter = -1;
         parsingHeader = true;
 
     }
@@ -351,17 +351,30 @@ public class InternalInputBuffer implements InputBuffer {
         buf = newHeaderBuf;
 
         // Recycle filters
-        if (lastActiveFilter > 0) {
-            for (int i = 0; i < lastActiveFilter; i++) {
-                activeFilters[i].recycle();
-            }
+        for (int i = 0; i <= lastActiveFilter; i++) {
+            activeFilters[i].recycle();
         }
 
         // Reset pointers
         lastValid = lastValid - pos;
         pos = 0;
-        lastActiveFilter = 0;
+        lastActiveFilter = -1;
         parsingHeader = true;
+
+    }
+
+
+    /**
+     * End request (consumes leftover bytes).
+     * 
+     * @throws IOException an undelying I/O error occured
+     */
+    public void endRequest()
+        throws IOException {
+
+        for (int i = 0; i <= lastActiveFilter; i++) {
+            pos -= activeFilters[i].end();
+        }
 
     }
 

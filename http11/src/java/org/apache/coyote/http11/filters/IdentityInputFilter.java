@@ -194,6 +194,19 @@ public class IdentityInputFilter implements InputBuffer {
 
 
     /**
+     * End the current request.
+     */
+    public long end()
+        throws IOException {
+
+        // FIXME: Consume extra bytes.
+        // FIXME: If too many bytes were read, return the amount.
+        return 0;
+
+    }
+
+
+    /**
      * Set the next buffer in the filter pipeline.
      */
     public void setBuffer(InputBuffer buffer) {

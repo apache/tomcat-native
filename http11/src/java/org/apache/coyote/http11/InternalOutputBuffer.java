@@ -256,7 +256,7 @@ public class InternalOutputBuffer implements OutputBuffer {
     public void clearFilters() {
 
         filterLibrary = new OutputFilter[0];
-        lastActiveFilter = 0;
+        lastActiveFilter = -1;
 
     }
 
@@ -269,7 +269,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         // FIXME: Check for null ?
         // FIXME: Check index ?
 
-        if (lastActiveFilter == 0) {
+        if (lastActiveFilter == -1) {
             filter.setBuffer(outputStreamOutputBuffer);
         } else {
             filter.setBuffer(activeFilters[lastActiveFilter]);
@@ -294,7 +294,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         outputStream = null;
         buf = headerBuffer;
         pos = 0;
-        lastActiveFilter = 0;
+        lastActiveFilter = -1;
         committed = false;
 
     }
@@ -314,15 +314,13 @@ public class InternalOutputBuffer implements OutputBuffer {
         buf = headerBuffer;
 
         // Recycle filters
-        if (lastActiveFilter > 0) {
-            for (int i = 0; i < lastActiveFilter; i++) {
-                activeFilters[i].recycle();
-            }
+        for (int i = 0; i <= lastActiveFilter; i++) {
+            activeFilters[i].recycle();
         }
 
         // Reset pointers
         pos = 0;
-        lastActiveFilter = 0;
+        lastActiveFilter = -1;
         committed = false;
 
     }
@@ -345,6 +343,10 @@ public class InternalOutputBuffer implements OutputBuffer {
 
             commit();
 
+        }
+
+        for (int i = lastActiveFilter; i >= 0; i--) {
+            activeFilters[i].end();
         }
 
     }
