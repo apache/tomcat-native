@@ -147,6 +147,9 @@ Remove all the CVS directories from the new source distribution.
 
 find jakarta-tomcat-connectors-jk-1.2.5-src -type d -name CVS | xargs rm -rf
 
+cd to jakarta-tomcat-connectors-jk-1.2.5-src/jk/native and run buildconf.sh
+to create the configure script.
+
 Create a tar gzip'd archive
 
 tar zcf jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz jakarta-tomcat-connectors-jk-1.2.5-src
