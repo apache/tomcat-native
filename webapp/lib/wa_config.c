@@ -129,6 +129,7 @@ const char *wa_cconnection(wa_connection **c, const char *n,
                            const char *p, const char *a) {
     wa_connection *conn=NULL;
     const char *ret=NULL;
+    int x=0;
 
     /* Check parameters */
     if (c==NULL) return("Invalid connection storage location");
@@ -149,10 +150,14 @@ const char *wa_cconnection(wa_connection **c, const char *n,
 
     /* Retrieve the provider and set up the conection */
     conn->conf=NULL;
-    //conn->prov=wa_provider_get(p);
-    //if (conn->prov==NULL) return("Invalid provider name specified");
-    //ret=conn->prov->configure(conn,a);
-    if (ret!=NULL) return(ret);
+    while(wa_providers[x]!=NULL) {
+        if(strcasecmp(wa_providers[x]->name,p)==0) {
+             conn->prov=wa_providers[x];
+             break;
+        } else x++;
+    }
+    if (conn->prov==NULL) return("Invalid provider name specified");
+    if ((ret=conn->prov->connect(conn,a))!=NULL) return(ret);
 
     /* Done */
     wa_debug(WA_MARK,"Created connection \"%s\" (Prov: \"%s\" Param: \"%s\")",

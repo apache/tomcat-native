@@ -62,9 +62,18 @@
 apr_pool_t *wa_pool=NULL;
 /* The list of all deployed applications. */
 wa_chain *wa_configuration=NULL;
+/* The list of all compiled in providers */
+wa_provider *wa_providers[] = {
+    //&wa_provider_info,
+    //&wa_provider_warp,
+    //&wa_provider_jni,
+    NULL,
+};
 
 /* Initialize the WebApp Library. */
 const char *wa_init(void) {
+    int x=0;
+
     /* Check the main APR pool. */
     if (wa_pool==NULL) {
         if (apr_initialize()!=APR_SUCCESS)
@@ -75,13 +84,39 @@ const char *wa_init(void) {
             return("Invalid WebApp Library memory pool created");
     }
 
+    /* Initialize providers */
+    while(wa_providers[x]!=NULL) {
+        const char *ret=wa_providers[x]->init();
+        if (ret!=NULL) {
+            wa_destroy();
+            return(ret);
+        }
+        x++;
+    }
+
+    /* Done */
     wa_debug(WA_MARK,"WebApp Library initialized (PID=%d)",getpid());
     return(NULL);
 }
 
+/* Startup all providers. */
+void wa_startup(void) {
+    int x=0;
+
+    while(wa_providers[x]!=NULL) wa_providers[x++]->startup();
+
+    wa_debug(WA_MARK,"WebApp Library started (PID=%d)",getpid());
+}
+
 /* Clean up the WebApp Library. */
-const char *wa_destroy(void) {
-    if (wa_pool==NULL) return("WebApp Library not initialized");
+void wa_destroy(void) {
+    int x=0;
+
+    /* Initialization check */
+    if (wa_pool==NULL) return;
+
+    /* Destroy providers */
+    while(wa_providers[x]!=NULL) wa_providers[x++]->destroy();
 
     /* Clean up this library and APR */
     apr_pool_destroy(wa_pool);
@@ -90,13 +125,12 @@ const char *wa_destroy(void) {
     apr_terminate();
 
     wa_debug(WA_MARK,"WebApp Library destroyed (PID=%d)",getpid());
-    return(NULL);
 }
 
 /* Deploy a web-application. */
 const char *wa_deploy(wa_application *a, wa_virtualhost *h, wa_connection *c) {
     wa_chain *elem=NULL;
-    //const char *ret=NULL;
+    const char *ret=NULL;
 
     /* Check parameters */
     if (a==NULL) return("Invalid application for deployment");
@@ -119,8 +153,7 @@ const char *wa_deploy(wa_application *a, wa_virtualhost *h, wa_connection *c) {
 
     /* Give the opportunity to the provider to be notified of the deployment of
        this application */
-    //ret=c->prov->deploy(a);
-    //if (ret!=NULL) return(ret);
+    if ((ret=c->prov->deploy(a))!=NULL) return(ret);
 
     /* Append this application to the list of deployed applications in the
        virtual host */

@@ -61,16 +61,17 @@
 include ../Makedefs
 
 OBJS = wa_main.o wa_config.o wa_request.o
+PROVS = # pr_info.o pr_warp.o pr_jni.o
 
 LIB = libwebapp.a
 
 all: $(LIB)
 
-$(LIB): $(OBJS)
+$(LIB): $(OBJS) $(PROVS)
 	@echo - Linking library $(LIB)
-	@$(AR) -cr $(LIB) $(OBJS)
+	@$(AR) -cr $(LIB) $(OBJS) $(PROVS)
 	@$(RANLIB) $(LIB)
 
 clean:
-	@echo Removing object files $(OBJS) $(LIB)
-	@rm -f $(OBJS) $(LIB)
+	@echo Removing object files $(OBJS) $(PROVS) $(LIB)
+	@rm -f $(OBJS) $(PROVS) $(LIB)
