@@ -147,6 +147,18 @@ public class ThreadPool  {
         stopThePool = false;
     }
 
+
+    public static ThreadPool createThreadPool() {
+        try {
+            Class.forName( "org.apache.commons.modeler.Registry");
+            Class tpc=Class.forName( "org.apache.tomcat.util.threads.ThreadPoolMX");
+            ThreadPool res=(ThreadPool)tpc.newInstance();
+            return res;
+        } catch( Exception ex ) {
+        }
+        return new ThreadPool();
+    }
+
     public synchronized void start() {
 	stopThePool=false;
         currentThreadCount  = 0;
@@ -295,7 +307,7 @@ public class ThreadPool  {
                 }
             }
 
-            // If we are here it means that there is a free thred. Take it.
+            // If we are here it means that there is a free thread. Take it.
             c = pool[currentThreadCount - currentThreadsBusy - 1];
             currentThreadsBusy++;
         }
@@ -371,7 +383,9 @@ public class ThreadPool  {
             return;
         }
 
+        // atomic
         currentThreadsBusy--;
+
         pool[currentThreadCount - currentThreadsBusy - 1] = c;
         notify();
     }
@@ -424,6 +438,10 @@ public class ThreadPool  {
         }
     }
 
+    /** Create missing threads.
+     *
+     * @param toOpen Total number of threads we'll have open
+     */
     protected void openThreads(int toOpen) {
 
         if(toOpen > maxThreads) {
@@ -636,10 +654,7 @@ public class ThreadPool  {
          * @param toRun
          */
         public synchronized void runIt(ThreadPoolRunnable toRun) {
-	    if( toRun == null ) {
-		throw new NullPointerException("No Runnable");
-	    }
-            this.toRun = toRun;
+	    this.toRun = toRun;
 	    // Do not re-init, the whole idea is to run init only once per
 	    // thread - the pool is supposed to run a single task, that is
 	    // initialized once.
@@ -659,52 +674,6 @@ public class ThreadPool  {
         public synchronized void terminate() {
             shouldTerminate = true;
             this.notify();
-        }
-    }
-
-    /** Special thread that allows storing of attributes and notes.
-     *  A guard is used to prevent untrusted code from accessing the
-     *  attributes.
-     *
-     *  This avoids hash lookups and provide something very similar
-     * with ThreadLocal ( but compatible with JDK1.1 and faster on
-     * JDK < 1.4 ).
-     *
-     * The main use is to store 'state' for monitoring ( like "processing
-     * request 'GET /' ").
-     */
-    public static class ThreadWithAttributes extends Thread {
-        private Object control;
-        public static int MAX_NOTES=16;
-        private Object notes[]=new Object[MAX_NOTES];
-        private Hashtable attributes=new Hashtable();
-        private String currentStage;
-
-        public ThreadWithAttributes(Object control, Runnable r) {
-            super(r);
-            this.control=control;
-        }
-
-        public void setNote( Object control, int id, Object value ) {
-            if( this.control != control ) return;
-            notes[id]=value;
-        }
-
-        public String getCurrentStage() {
-            return currentStage;
-        }
-
-        public void setCurrentStage(String currentStage) {
-            this.currentStage = currentStage;
-        }
-
-        public Object getNote(Object control, int id ) {
-            if( this.control != control ) return null;
-            return notes[id];
-        }
-
-        public Hashtable getAttributes(Object control) {
-            return attributes;
         }
     }
 
