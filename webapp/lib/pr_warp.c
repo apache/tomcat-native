@@ -303,6 +303,38 @@ static int warp_handle(wa_request *r, wa_application *appl) {
         return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
     }
 
+    /* The request client data */
+    if (r->clnt!=NULL) {
+        p_reset(pack);
+        pack->type=TYPE_REQ_CLIENT;
+        p_write_string(pack,r->clnt->host);
+        p_write_string(pack,r->clnt->addr);
+        p_write_ushort(pack,r->clnt->port);
+        if (n_send(conf->sock,pack)!=wa_true) {
+            n_disconnect(conn);
+            return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+        } else {
+            wa_debug(WA_MARK,"Req. server %s:%d (%s)",r->clnt->host,
+                     r->clnt->port,r->clnt->addr);
+        }
+    }
+
+    /* The request server data */
+    if (r->serv!=NULL) {
+        p_reset(pack);
+        pack->type=TYPE_REQ_SERVER;
+        p_write_string(pack,r->serv->host);
+        p_write_string(pack,r->serv->addr);
+        p_write_ushort(pack,r->serv->port);
+        if (n_send(conf->sock,pack)!=wa_true) {
+            n_disconnect(conn);
+            return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+        } else {
+            wa_debug(WA_MARK,"Req. client %s:%d (%s)",r->serv->host,
+                     r->serv->port,r->serv->addr);
+        }
+    }
+
     p_reset(pack);
     pack->type=TYPE_REQ_PROCEED;
     if (n_send(conf->sock,pack)!=wa_true) {

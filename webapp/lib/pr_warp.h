@@ -121,6 +121,8 @@ typedef struct warp_header {
 #define TYPE_REQ_SCHEME   0x12
 #define TYPE_REQ_AUTH     0x13
 #define TYPE_REQ_HEADER   0x14
+#define TYPE_REQ_SERVER   0x15
+#define TYPE_REQ_CLIENT   0x16
 #define TYPE_REQ_PROCEED  0x1f
 
 #define TYPE_RES_STATUS   0x20

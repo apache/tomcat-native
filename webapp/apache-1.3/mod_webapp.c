@@ -435,8 +435,10 @@ static int wam_invoke(request_rec *r) {
        data (from the connection */
     stmp=(char *)r->hostname;
     ctmp=(char *)ap_get_remote_host(con,r->per_dir_config, REMOTE_HOST);
-    req->serv->host=apr_pstrdup(req->pool,stmp);
-    req->clnt->host=apr_pstrdup(req->pool,ctmp);
+    if (stmp==NULL) req->serv->host="";
+    else req->serv->host=apr_pstrdup(req->pool,stmp);
+    if (ctmp==NULL) req->clnt->host="";
+    else req->clnt->host=apr_pstrdup(req->pool,ctmp);
     req->serv->addr=apr_pstrdup(req->pool,con->local_ip);
     req->clnt->addr=apr_pstrdup(req->pool,con->remote_ip);
     req->serv->port=ntohs(con->local_addr.sin_port);

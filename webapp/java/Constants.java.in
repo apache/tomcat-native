@@ -154,6 +154,8 @@ public class Constants {
     public static final int TYPE_REQ_SCHEME=0x12;
     public static final int TYPE_REQ_AUTH=0x13;
     public static final int TYPE_REQ_HEADER=0x14;
+    public static final int TYPE_REQ_SERVER=0x15;
+    public static final int TYPE_REQ_CLIENT=0x16;
     public static final int TYPE_REQ_PROCEED=0x1f;
     
     public static final int TYPE_RES_STATUS=0x20;

@@ -140,7 +140,7 @@ public class WarpRequestHandler {
                 case Constants.TYPE_REQ_SCHEME: {
                     String schm=packet.readString();
                     if (Constants.DEBUG)
-                        logger.debug("Request schere="+schm);
+                        logger.debug("Request scheme="+schm);
                     request.setScheme(schm);
                     break;
                 }
@@ -161,6 +161,30 @@ public class WarpRequestHandler {
                     if (Constants.DEBUG)
                         logger.debug("Request header "+hnam+": "+hval);
                     request.addHeader(hnam,hval);
+                    break;
+                }
+
+                case Constants.TYPE_REQ_SERVER: {
+                    String host=packet.readString();
+                    String addr=packet.readString();
+                    int port=packet.readUnsignedShort();
+                    if (Constants.DEBUG)
+                        logger.debug("Server detail "+host+":"+port+
+                                     " ("+addr+")");
+                    request.setServerName(host);
+                    request.setServerPort(port);
+                    break;
+                }
+
+                case Constants.TYPE_REQ_CLIENT: {
+                    String host=packet.readString();
+                    String addr=packet.readString();
+                    int port=packet.readUnsignedShort();
+                    if (Constants.DEBUG)
+                        logger.debug("Client detail "+host+":"+port+
+                                     " ("+addr+")");
+                    request.setRemoteHost(host);
+                    request.setRemoteAddr(addr);
                     break;
                 }
 
