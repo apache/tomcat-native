@@ -148,25 +148,24 @@ public interface SSLSupport {
      */
     public String getSessionId()
         throws IOException;
-}
-// ------------------------------------------------------------ Private Classes
-
-
-/**
- * Simple data class that represents the cipher being used, along with the
- * corresponding effective key size.  The specified phrase must appear in the
- * name of the cipher suite to be recognized.
- */
-
-final class CipherData {
-
-    String phrase = null;
-
-    int keySize = 0;
-
-    public CipherData(String phrase, int keySize) {
-        this.phrase = phrase;
-        this.keySize = keySize;
+    /**
+     * Simple data class that represents the cipher being used, along with the
+     * corresponding effective key size.  The specified phrase must appear in the
+     * name of the cipher suite to be recognized.
+     */
+    
+    final class CipherData {
+    
+        public String phrase = null;
+    
+        public int keySize = 0;
+    
+        public CipherData(String phrase, int keySize) {
+            this.phrase = phrase;
+            this.keySize = keySize;
+        }
+    
     }
-
+    
 }
+

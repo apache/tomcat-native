@@ -57,8 +57,9 @@
  *
  */ 
 
-package org.apache.tomcat.util.net;
+package org.apache.tomcat.util.net.puretls;
 
+import org.apache.tomcat.util.net.SSLSupport;
 import java.io.*;
 import java.net.*;
 import java.util.Vector;
@@ -82,7 +83,7 @@ import COM.claymoresystems.cert.*;
 */
 
 class PureTLSSupport implements SSLSupport {
-    private SSLSocket ssl;
+    private COM.claymoresystems.ptls.SSLSocket ssl;
 
     PureTLSSupport(SSLSocket sock){
         ssl=sock;

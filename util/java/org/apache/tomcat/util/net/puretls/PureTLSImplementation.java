@@ -57,39 +57,44 @@
  *
  */ 
 
-package org.apache.tomcat.util.net;
+package org.apache.tomcat.util.net.puretls;
 
+import org.apache.tomcat.util.net.SSLImplementation;
+import org.apache.tomcat.util.net.SSLSupport;
+import org.apache.tomcat.util.net.ServerSocketFactory;
 import java.io.*;
 import java.net.*;
-import javax.net.ssl.SSLSocket;
 
-/* JSSEImplementation:
+import COM.claymoresystems.sslg.*;
+import COM.claymoresystems.ptls.*;
+import COM.claymoresystems.cert.*;
 
-   Concrete implementation class for JSSE
+/* PureTLSImplementation:
+
+   Concrete implementation class for PureTLS
 
    @author EKR
 */
-	
-class JSSEImplementation extends SSLImplementation
+
+public class PureTLSImplementation extends SSLImplementation
 {
-    JSSEImplementation() throws ClassNotFoundException {
-	// Check to see if JSSE is floating around somewhere
-	Class.forName("javax.net.ssl.SSLServerSocketFactory");
+    public PureTLSImplementation() throws ClassNotFoundException {
+	// Check to see if PureTLS is floating around somewhere
+	Class.forName("COM.claymoresystems.ptls.SSLContext");
     }
 
-
     public String getImplementationName(){
-      return "JSSE";
+      return "PureTLS";
     }
       
     public ServerSocketFactory getServerSocketFactory()
     {
-	return new JSSESocketFactory();
+	return new PureTLSSocketFactory();
     } 
 
     public SSLSupport getSSLSupport(Socket s)
     {
-	return new JSSESupport((SSLSocket)s);
+	return new PureTLSSupport((SSLSocket)s);
     }
 
 

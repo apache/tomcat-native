@@ -55,36 +55,46 @@
  *
  * [Additional notices, if required by prior licensing conditions]
  *
- */
+ */ 
 
-package org.apache.tomcat.util.net;
+package org.apache.tomcat.util.net.jsse;
 
+import org.apache.tomcat.util.net.SSLImplementation;
+import org.apache.tomcat.util.net.SSLSupport;
+import org.apache.tomcat.util.net.ServerSocketFactory;
 import java.io.*;
 import java.net.*;
+import javax.net.ssl.SSLSocket;
 
-import COM.claymoresystems.ptls.*;
-import COM.claymoresystems.cert.*;
-import COM.claymoresystems.sslg.*;
+/* JSSEImplementation:
 
-/*
- * PureTLSSocket.java
- *
- * Wraps COM.claymoresystems.ptls.SSLSocket
- *
- * This class translates PureTLS's interfaces into those
- * expected by Tomcat
- *
- * @author Eric Rescorla
- *
- */
+   Concrete implementation class for JSSE
 
-public class PureTLSSocket extends COM.claymoresystems.ptls.SSLSocket
+   @author EKR
+*/
+	
+public class JSSEImplementation extends SSLImplementation
 {
-    // The only constructor we need here is the no-arg
-    // constructor since this class is only used with
-    // implAccept
-    public PureTLSSocket() throws IOException {
-	super();
+    public JSSEImplementation() throws ClassNotFoundException {
+	// Check to see if JSSE is floating around somewhere
+	Class.forName("javax.net.ssl.SSLServerSocketFactory");
     }
+
+
+    public String getImplementationName(){
+      return "JSSE";
+    }
+      
+    public ServerSocketFactory getServerSocketFactory()
+    {
+	return new JSSESocketFactory();
+    } 
+
+    public SSLSupport getSSLSupport(Socket s)
+    {
+	return new JSSESupport((SSLSocket)s);
+    }
+
+
+
 }
- 

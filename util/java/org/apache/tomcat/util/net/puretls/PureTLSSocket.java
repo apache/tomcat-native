@@ -55,45 +55,36 @@
  *
  * [Additional notices, if required by prior licensing conditions]
  *
- */ 
+ */
 
-package org.apache.tomcat.util.net;
+package org.apache.tomcat.util.net.puretls;
 
 import java.io.*;
 import java.net.*;
 
-import COM.claymoresystems.sslg.*;
 import COM.claymoresystems.ptls.*;
 import COM.claymoresystems.cert.*;
+import COM.claymoresystems.sslg.*;
 
-/* PureTLSImplementation:
+/*
+ * PureTLSSocket.java
+ *
+ * Wraps COM.claymoresystems.ptls.SSLSocket
+ *
+ * This class translates PureTLS's interfaces into those
+ * expected by Tomcat
+ *
+ * @author Eric Rescorla
+ *
+ */
 
-   Concrete implementation class for PureTLS
-
-   @author EKR
-*/
-
-class PureTLSImplementation extends SSLImplementation
+public class PureTLSSocket extends COM.claymoresystems.ptls.SSLSocket
 {
-    PureTLSImplementation() throws ClassNotFoundException {
-	// Check to see if PureTLS is floating around somewhere
-	Class.forName("COM.claymoresystems.ptls.SSLContext");
+    // The only constructor we need here is the no-arg
+    // constructor since this class is only used with
+    // implAccept
+    public PureTLSSocket() throws IOException {
+	super();
     }
-
-    public String getImplementationName(){
-      return "PureTLS";
-    }
-      
-    public ServerSocketFactory getServerSocketFactory()
-    {
-	return new PureTLSSocketFactory();
-    } 
-
-    public SSLSupport getSSLSupport(Socket s)
-    {
-	return new PureTLSSupport((SSLSocket)s);
-    }
-
-
-
 }
+ 

@@ -56,7 +56,7 @@
  * [Additional notices, if required by prior licensing conditions]
  *
  */ 
-package org.apache.tomcat.util.net;
+package org.apache.tomcat.util.net.jsse;
 
 import java.io.*;
 import java.net.*;

@@ -57,8 +57,9 @@
  *
  */ 
 
-package org.apache.tomcat.util.net;
+package org.apache.tomcat.util.net.jsse;
 
+import org.apache.tomcat.util.net.SSLSupport;
 import java.io.*;
 import java.net.*;
 import java.util.Vector;
@@ -159,15 +160,16 @@ class JSSESupport implements SSLSupport {
         throws IOException {
         // Look up the current SSLSession
         SSLSession session = ssl.getSession();
+        SSLSupport.CipherData c_aux[]=ciphers;
         if (session == null)
             return null;
         Integer keySize = (Integer) session.getValue(KEY_SIZE_KEY);
         if (keySize == null) {
             int size = 0;
             String cipherSuite = session.getCipherSuite();
-            for (int i = 0; i < ciphers.length; i++) {
-                if (cipherSuite.indexOf(ciphers[i].phrase) >= 0) {
-                    size = ciphers[i].keySize;
+            for (int i = 0; i < c_aux.length; i++) {
+                if (cipherSuite.indexOf(c_aux[i].phrase) >= 0) {
+                    size = c_aux[i].keySize;
                     break;
                 }
             }

@@ -57,7 +57,7 @@
  *
  */
 
-package org.apache.tomcat.util.net;
+package org.apache.tomcat.util.net.puretls;
 
 import java.io.*;
 import java.net.*;
@@ -86,7 +86,7 @@ public class PureTLSSocketFactory
     static String defaultRootFile = "root.pem";
     static String defaultRandomFile = "random.pem";
     
-    private SSLContext context=null;
+    private COM.claymoresystems.ptls.SSLContext context=null;
     
     public PureTLSSocketFactory() {
     }
