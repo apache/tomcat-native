@@ -225,9 +225,11 @@ int jk_close_file_logger(jk_logger_t **l)
 {
     if (l && *l) {
         file_logger_t *p = (*l)->logger_private;
-        fflush(p->logfile);
-        fclose(p->logfile);
-        free(p);
+        if (p) {
+            fflush(p->logfile);
+            fclose(p->logfile);
+            free(p);
+        }
         free(*l);
         *l = NULL;
 
