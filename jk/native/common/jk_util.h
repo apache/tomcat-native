@@ -130,7 +130,7 @@ int jk_get_worker_reply_timeout(jk_map_t *m,
                                 const char *wname,
                                  int def);
 
-int jk_get_prepost_timeout(jk_map_t *m,
+int jk_get_worker_prepost_timeout(jk_map_t *m,
                            const char *wname,
                            int def);
 
