@@ -979,6 +979,11 @@ public final class CoyoteConnector
             }
             IntrospectionUtils.setProperty(protocolHandler, "keystore", 
                                            ssf.getKeystoreFile());
+            IntrospectionUtils.setProperty(protocolHandler, "randomfile", 
+                                           ssf.getRandomFile());
+            IntrospectionUtils.setProperty(protocolHandler, "rootfile", 
+                                           ssf.getRootFile());
+			
             IntrospectionUtils.setProperty(protocolHandler, "keypass", 
                                            ssf.getKeystorePass());
             IntrospectionUtils.setProperty(protocolHandler, "keytype", 
@@ -988,8 +993,6 @@ public final class CoyoteConnector
             IntrospectionUtils.setProperty(protocolHandler, 
                                            "sSLImplementation", 
                                            ssf.getSSLImplementation());
-            IntrospectionUtils.setProperty(protocolHandler, "socketFactory", 
-                                           ssf.getSocketFactoryName());
         } else {
             IntrospectionUtils.setProperty(protocolHandler, "secure", 
                                            "" + false);
@@ -1002,7 +1005,6 @@ public final class CoyoteConnector
                 (sm.getString
                  ("coyoteConnector.protocolHandlerInitializationFailed", e));
         }
-
     }
 
 

@@ -145,6 +145,7 @@ public class CoyoteServerSocketFactory
     }
 
     public void setKeystoreFile(String keystoreFile) {
+      
         File file = new File(keystoreFile);
         if (!file.isAbsolute())
             file = new File(System.getProperty("catalina.base"),
@@ -152,7 +153,44 @@ public class CoyoteServerSocketFactory
         this.keystoreFile = file.getAbsolutePath();
     }
 
+    /**
+     * Pathname to the random file to be used.
+     */
+    private String randomFile =
+        System.getProperty("user.home") + File.separator + "random.pem";
 
+    public String getRandomFile() {
+        return (this.randomFile);
+    }
+
+    public void setRandomFile(String randomFile) {
+      
+        File file = new File(randomFile);
+        if (!file.isAbsolute())
+            file = new File(System.getProperty("catalina.base"),
+                            randomFile);
+        this.randomFile = file.getAbsolutePath();
+    }
+
+    /**
+     * Pathname to the root list to be used.
+     */
+    private String rootFile =
+        System.getProperty("user.home") + File.separator + "root.pem";
+
+    public String getRootFile() {
+        return (this.rootFile);
+    }
+
+    public void setRootFile(String rootFile) {
+      
+        File file = new File(rootFile);
+        if (!file.isAbsolute())
+            file = new File(System.getProperty("catalina.base"),
+                            rootFile);
+        this.rootFile = file.getAbsolutePath();
+    }
+     
     /**
      * Password for accessing the key store file.
      */
@@ -208,19 +246,6 @@ public class CoyoteServerSocketFactory
         this.sslImplementation = sslImplementation;
     }
 
-
-    /**
-     * Socket factory classname.
-     */
-    private String socketFactoryName = null;
-
-    public String getSocketFactoryName() {
-        return (this.socketFactoryName);
-    }
-
-    public void setSocketFactoryName(String socketFactoryName) {
-        this.socketFactoryName = socketFactoryName;
-    }
 
 
     // --------------------------------------------------------- Public Methods

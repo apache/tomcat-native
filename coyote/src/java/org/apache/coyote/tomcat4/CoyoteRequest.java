@@ -116,6 +116,7 @@ import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringManager;
 import org.apache.catalina.util.StringParser;
 
+import org.apache.tomcat.util.net.SSLSupport;
 
 /**
  * Wrapper object for the Coyote request.
@@ -783,7 +784,12 @@ public class CoyoteRequest
      * @param name Name of the request attribute to return
      */
     public Object getAttribute(String name) {
-        return (attributes.get(name));
+	Object attr=attributes.get(name);
+
+	if(attr!=null)
+	    return(attr);
+
+	return coyoteRequest.getAttribute(name);
     }
 
 
@@ -1141,7 +1147,7 @@ public class CoyoteRequest
      * @param value The associated value
      */
     public void setAttribute(String name, Object value) {
-
+	
         // Name cannot be null
         if (name == null)
             throw new IllegalArgumentException
