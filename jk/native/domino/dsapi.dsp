@@ -98,6 +98,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=.\inifile.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\jk\jk_ajp12_worker.c
 # End Source File
 # Begin Source File
@@ -167,6 +171,10 @@ SOURCE=.\config.h
 # Begin Source File
 
 SOURCE=.\dsapifilter.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\inifile.h
 # End Source File
 # Begin Source File
 

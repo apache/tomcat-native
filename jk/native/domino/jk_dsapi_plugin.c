@@ -62,6 +62,7 @@
 /* Based on the IIS redirector by Gal Shachor <shachor@il.ibm.com> */
 
 #include "config.h"
+#include "inifile.h"
 
 /* JK stuff */
 #include "jk_global.h"
@@ -100,8 +101,9 @@
 #define FILTERDESC			"Apache Tomcat Interceptor (" VERSION_STRING ")"
 /* Registry location of configuration data */
 #define REGISTRY_LOCATION	"Software\\Apache Software Foundation\\Jakarta Dsapi Redirector\\1.0"
+#define ININAME				"libtomcat.ini"
 
-/* Names of registry keys that contain commands to start, stop Tomcat */
+/* Names of registry keys/ini items that contain commands to start, stop Tomcat */
 #define TOMCAT_START		"tomcat_start"
 #define TOMCAT_STOP			"tomcat_stop"
 #define TOMCAT_STARTSTOP_TO	30000				/* 30 seconds */
@@ -111,11 +113,24 @@ static jk_uri_worker_map_t	*uw_map		= NULL;
 static jk_logger_t			*logger		= NULL;
 
 static int					logLevel	= JK_LOG_EMERG_LEVEL;
-static char					logFile[MAX_PATH];
-static char					workerFile[MAX_PATH];
-static char					workerMountFile[MAX_PATH];
-static char					tomcatStart[MAX_PATH];
-static char					tomcatStop[MAX_PATH];
+
+#ifdef USE_INIFILE
+static const char *logFile;
+static const char *workerFile;
+static const char *workerMountFile;
+static const char *tomcatStart;
+static const char *tomcatStop;
+#else
+#ifndef MAX_PATH
+#define MAX_PATH 1024
+#endif
+static char	logFile[MAX_PATH];
+static char	workerFile[MAX_PATH];
+static char	workerMountFile[MAX_PATH];
+static char	tomcatStart[MAX_PATH];
+static char	tomcatStop[MAX_PATH];
+#endif
+
 static char					*crlf		= "\r\n";
 
 typedef struct private_ws
@@ -155,7 +170,9 @@ static int JK_METHOD Read(jk_ws_service_t * s, void *b, unsigned l, unsigned *a)
 static int JK_METHOD Write(jk_ws_service_t * s, const void *b, unsigned l);
 
 static int ReadInitData(void);
+#ifndef USE_INIFILE
 static int GetRegParam(HKEY hkey, const char *tag, char *b, DWORD sz);
+#endif
 
 static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *reqData);
 
@@ -246,6 +263,7 @@ static int JK_METHOD StartResponse(jk_ws_service_t *s, int status, const char *r
 									const char *const *hdrNames,
 									const char *const *hdrValues, unsigned hdrCount)
 {
+	DEBUG(("StartResponse()\n"));
 	jk_log(logger, JK_LOG_DEBUG, "Into jk_ws_service_t::StartResponse\n");
 
 	if (status < 100 || status > 1000)
@@ -303,11 +321,11 @@ static int JK_METHOD StartResponse(jk_ws_service_t *s, int status, const char *r
 			frh.reasonText = (char *) reason;
 			frh.headerText = hdrBuf;
 
-			//printf("%d %s\n%s", status, reason, hdrBuf);
+			DEBUG(("%d %s\n%s", status, reason, hdrBuf));
 
 			/* Send the headers */
 			rc = p->context->ServerSupport(p->context, kWriteResponseHeaders, &frh, NULL, 0, &errID);
-			
+
 			/*
 			if (rc)
 			{
@@ -329,6 +347,7 @@ static int JK_METHOD StartResponse(jk_ws_service_t *s, int status, const char *r
 
 static int JK_METHOD Read(jk_ws_service_t * s, void *bytes, unsigned len, unsigned *countp)
 {
+	DEBUG(("Read(%p, %p, %u, %p)\n", s, bytes, len, countp));
 	jk_log(logger, JK_LOG_DEBUG, "Into jk_ws_service_t::Read\n");
 
 	if (s && s->ws_private && bytes && countp)
@@ -354,6 +373,7 @@ static int JK_METHOD Read(jk_ws_service_t * s, void *bytes, unsigned len, unsign
 
 static int JK_METHOD Write(jk_ws_service_t *s, const void *bytes, unsigned len)
 {
+	DEBUG(("Write(%p, %p, %u)\n", s, bytes, len));
 	jk_log(logger, JK_LOG_DEBUG, "Into jk_ws_service_t::Write\n");
 
 	if (s && s->ws_private && bytes)
@@ -368,7 +388,7 @@ static int JK_METHOD Write(jk_ws_service_t *s, const void *bytes, unsigned len)
 		if (!p->responseStarted)
 			StartResponse(s, 200, NULL, NULL, NULL, 0);
 
-		//printf("Writing %d bytes of content\n", len);
+		DEBUG(("Writing %d bytes of content\n", len));
 
 		/* Send the data */
 		if (len > 0)
@@ -382,17 +402,18 @@ static int JK_METHOD Write(jk_ws_service_t *s, const void *bytes, unsigned len)
 	return JK_FALSE;
 }
 
-static int RunProg(char *cmd)
+static int RunProg(const char *cmd)
 {
+#ifdef WIN32
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
-    
+
 	ZeroMemory(&si, sizeof(si));
     si.cb			= sizeof(si);    // Start the child process.
 	si.dwFlags		= STARTF_USESHOWWINDOW;
 	si.wShowWindow	= SW_SHOWMAXIMIZED;
 
-	if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+	if (!CreateProcess(NULL, (char *) cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
 	{
 		DWORD err = GetLastError();
 		AddInLogMessageText("Command \"%s\" (error %u)", NOERROR, cmd, err);
@@ -403,8 +424,14 @@ static int RunProg(char *cmd)
 		return TRUE;
 
 	AddInLogMessageText("Command \"%s\" didn't complete in time", NOERROR, cmd);
-
 	return FALSE;
+
+#else
+	int err = system(cmd);
+	if (0 == err) return 1;
+	AddInLogMessageText("Command \"%s\" failed (error %d)", NOERROR, cmd, err);
+	return 0;
+#endif
 }
 
 /* Called when the filter is unloaded. Free various resources and
@@ -422,7 +449,7 @@ DLLEXPORT unsigned int TerminateFilter(unsigned int reserved)
 			jk_close_file_logger(&logger);
 	}
 
-	if (tomcatStop[0])
+	if (NULL != tomcatStop && '\0' != *tomcatStop)
 	{
 		AddInLogMessageText("Attempting to stop Tomcat: %s", NOERROR, tomcatStop);
 		RunProg(tomcatStop);
@@ -446,7 +473,7 @@ DLLEXPORT unsigned int FilterInit(FilterInitData * filterInitData)
 	if (!jk_open_file_logger(&logger, logFile, logLevel))
 		logger = NULL;
 
-	if (tomcatStart[0])
+	if (NULL != tomcatStart && '\0' != *tomcatStart)
 	{
 		AddInLogMessageText("Attempting to start Tomcat: %s", NOERROR, tomcatStart);
 		RunProg(tomcatStart);
@@ -497,10 +524,43 @@ initFailed:
  */
 static int ReadInitData(void)
 {
+#ifdef USE_INIFILE
+
+#define GET(tag, var) \
+	var = inifile_lookup(tag); \
+	if (NULL == var) \
+	{ \
+		AddInLogMessageText("%s not defined in %s", NOERROR, tag, ININAME); \
+		ok = JK_FALSE; \
+	}
+
+	int ok = JK_TRUE;
+	ERRTYPE e;
+	const char *v;
+
+	if (e = inifile_read(ININAME), ERRNONE != e)
+	{
+		AddInLogMessageText("Error reading: %s, %s", NOERROR, ININAME, ERRTXT(e));
+		return JK_FALSE;
+	}
+
+	GET(JK_LOG_FILE_TAG, logFile)
+	GET(JK_LOG_LEVEL_TAG, v);
+	GET(JK_WORKER_FILE_TAG, workerFile);
+	GET(JK_MOUNT_FILE_TAG, workerMountFile);
+
+	logLevel = (NULL == v) ? 0 : jk_parse_log_level(v);
+
+	tomcatStart	= inifile_lookup(TOMCAT_START);
+	tomcatStop	= inifile_lookup(TOMCAT_STOP);
+
+	return ok;
+
+#else
+	int ok = JK_TRUE;
 	char tmpbuf[1024];
 	HKEY hkey;
 	long rc;
-	int ok = JK_TRUE;
 
 	rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, REGISTRY_LOCATION, (DWORD) 0, KEY_READ, &hkey);
 	if (ERROR_SUCCESS != rc) return JK_FALSE;
@@ -537,9 +597,12 @@ static int ReadInitData(void)
 		strcpy(tomcatStop, tmpbuf);
 
 	RegCloseKey(hkey);
+
 	return ok;
+#endif
 }
 
+#ifndef USE_INIFILE
 static int GetRegParam(HKEY hkey, const char *tag, char *b, DWORD sz)
 {
 	DWORD type = 0;
@@ -551,10 +614,11 @@ static int GetRegParam(HKEY hkey, const char *tag, char *b, DWORD sz)
 
 	b[sz] = '\0';
 
-	//printf("%s = %s\n", tag, b);
+	DEBUG(("%s = %s\n", tag, b));
 
 	return JK_TRUE;
 }
+#endif
 
 /* Main entry point for the filter. Called by Domino for every HTTP request.
  */
@@ -616,7 +680,7 @@ static int GetVariable(private_ws_t *ws, char *hdrName,
 	else
 		*dest = jk_pool_strdup(&ws->p, dflt);
 
-	//printf("%s = %s\n", hdrName, *dest);
+	DEBUG(("%s = %s\n", hdrName, *dest));
 
 	return JK_TRUE;
 }
@@ -633,12 +697,12 @@ static int GetVariableInt(private_ws_t *ws, char *hdrName,
 	else
 		*dest = dflt;
 
-	//printf("%s = %d\n", hdrName, *dest);
+	DEBUG(("%s = %d\n", hdrName, *dest));
 
 	return JK_TRUE;
 }
 
-/* A couple of utility macros to supply standard arguments to GetVariable() and 
+/* A couple of utility macros to supply standard arguments to GetVariable() and
  * GetVariableInt().
  */
 #define GETVARIABLE(name, dest, dflt)		GetVariable(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
@@ -685,7 +749,7 @@ static int ParseHeaders(private_ws_t *ws, const char *hdrs, int hdrsz, jk_ws_ser
 
 		if (hdrs >= limit)
 			break;
-		
+
 		name = nameEnd = value = valueEnd = NULL;
 
 		name = hdrs;
@@ -708,7 +772,7 @@ static int ParseHeaders(private_ws_t *ws, const char *hdrs, int hdrsz, jk_ws_ser
 		{
 			s->headers_names[hdrCount]	= MemDup(ws, name, nameEnd);
 			s->headers_values[hdrCount] = MemDup(ws, value, valueEnd);
-			//printf("%s = %s\n", s->headers_names[hdrCount], s->headers_values[hdrCount]);
+			DEBUG(("%s = %s\n", s->headers_names[hdrCount], s->headers_values[hdrCount]));
 		}
 		hdrCount++;
 	}
@@ -812,14 +876,14 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 	}
 
 	/* Duplicate all the headers now */
-	
+
 	hdrsz = ws->reqData->GetAllHeaders(ws->context, &hdrs, &errID);
-	//printf("\nGot headers (length %d)\n--------\n%s\n--------\n\n", hdrsz, hdrs);
+	DEBUG(("\nGot headers (length %d)\n--------\n%s\n--------\n\n", hdrsz, hdrs));
 
 	s->headers_names =
 	s->headers_values = NULL;
 	hdrCount = ParseHeaders(ws, hdrs, hdrsz, s);
-	//printf("Found %d headers\n", hdrCount);
+	DEBUG(("Found %d headers\n", hdrCount));
 	s->num_headers = hdrCount;
 	s->headers_names	= jk_pool_alloc(&ws->p, hdrCount * sizeof(char *));
 	s->headers_values	= jk_pool_alloc(&ws->p, hdrCount * sizeof(char *));
@@ -838,7 +902,7 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 	FilterRequest fr;
 	int result = kFilterNotHandled;
 
-	//printf("\nParsedRequest starting\n");
+	DEBUG(("\nParsedRequest starting\n"));
 
 	rc = context->GetRequest(context, &fr, &errID);
 
@@ -851,7 +915,7 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 		workerName = map_uri_to_worker(uw_map, uri, logger);
 		if (qp) *qp = '?';
 
-		//printf("Worker for this URL is %s\n", workerName);
+		DEBUG(("Worker for this URL is %s\n", workerName));
 
 		if (NULL != workerName)
 		{
@@ -890,18 +954,23 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 					if (worker->get_endpoint(worker, &e, logger))
 					{
 						int recover = JK_FALSE;
+						DEBUG(("About to call e->service()\n"));
 
 						if (e->service(e, &s, logger, &recover))
 						{
 							result = kFilterHandledRequest;
 							jk_log(logger, JK_LOG_DEBUG, "HttpExtensionProc service() returned OK\n");
+							DEBUG(("HttpExtensionProc service() returned OK\n"));
 						}
 						else
 						{
 							result = kFilterError;
 							jk_log(logger, JK_LOG_ERROR, "HttpExtensionProc error, service() failed\n");
+							DEBUG(("HttpExtensionProc error, service() failed\n"));
 						}
+						DEBUG(("About to call e->done()\n"));
 						e->done(&e, logger);
+						DEBUG(("Returned OK\n"));
 					}
 				}
 				else

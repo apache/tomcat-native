@@ -59,31 +59,28 @@
  * Version:     $Revision$                                             *
  ***************************************************************************/
 
-#ifndef __config_h
-#define __config_h
+#ifndef __inifile_h
+#define __inifile_h
 
-/* the _memicmp() function is available */
-#if defined(WIN32)
+#define ERRTYPE const char *
+#define ERRFMT  "%s"			/* natural printf format for errors */
+#define ERRTXT(e) (e)			/* macro to return text for an error */
+#define ERRNONE NULL
+extern ERRTYPE inifile_outofmemory;
+extern ERRTYPE inifile_filenotfound;
+extern ERRTYPE inifile_readerror;
 
-#define HAVE_MEMICMP
-#undef USE_INIFILE
-
-#elif defined(LINUX)
-
-#undef HAVE_MEMICMP
-#define USE_INIFILE
-
-#else
-#error Please define either WIN32 or LINUX
-#endif
-
-/* define if you don't have the Notes C API which is available from
- *
- *    http://www.lotus.com/rw/dlcapi.nsf
+/* Discard the current ini file
  */
-/* #undef NO_CAPI */
+void inifile_dispose(void);
 
-#define DEBUG(args) \
-	do { /*printf args ;*/ } while (0)
+/* Read an INI file from disk
+ */
+ERRTYPE inifile_read(const char *name);
 
-#endif /* __config_h */
+/* Find the value associated with the given key returning it or NULL
+ * if no match is found. Key name matching is case insensitive.
+ */
+const char *inifile_lookup(const char *key);
+
+#endif /* __inifile_h */
