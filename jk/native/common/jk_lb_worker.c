@@ -392,7 +392,8 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                    "found domain %s in route %s\n",
                    session_domain, session_route);
 
-            rc = get_suitable_worker(p, 2, session_domain, 0, p->num_of_workers, 1, &domain_id, l);
+            rc = get_suitable_worker(p, 2, session_domain, 0, p->num_of_workers,
+                                     1, &domain_id, l);
             if (rc) {
                 JK_TRACE_EXIT(l);
                 return rc;
@@ -403,25 +404,28 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     }
 
 
+    if (p->num_of_local_workers) {
+        rc = get_suitable_worker(p, 3, "any", 0, p->num_of_local_workers,
+                                 1, &domain_id, l);
+        if (rc) {
+            JK_TRACE_EXIT(l);
+            return rc;
+        }
 
-    rc = get_suitable_worker(p, 3, "any", 0, p->num_of_local_workers, 1, &domain_id, l);
-    if (rc) {
-        JK_TRACE_EXIT(l);
-        return rc;
+        if (p->local_worker_only) {
+            JK_TRACE_EXIT(l);
+            return NULL;
+        }
+
+        rc = get_suitable_worker(p, 4, "any", p->num_of_local_workers,
+                                 p->num_of_workers, 1, &domain_id, l);
+        if (rc) {
+            JK_TRACE_EXIT(l);
+            return rc;
+        }
     }
-
-    if (p->local_worker_only) {
-        JK_TRACE_EXIT(l);
-        return NULL;
-    }
-
-    rc = get_suitable_worker(p, 4, "any", p->num_of_local_workers, p->num_of_workers, 1, &domain_id, l);
-    if (rc) {
-        JK_TRACE_EXIT(l);
-        return rc;
-    }
-
-    rc = get_suitable_worker(p, 5, "any", p->num_of_local_workers, p->num_of_workers, 1, &domain_id, l);
+    rc = get_suitable_worker(p, 5, "any", p->num_of_local_workers, p->num_of_workers,
+                             1, &domain_id, l);
     JK_TRACE_EXIT(l);
     return rc;
 }
