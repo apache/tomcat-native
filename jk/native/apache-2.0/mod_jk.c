@@ -71,6 +71,7 @@
 #include "ap_config.h"
 #include "apr_lib.h"
 #include "apr_date.h"
+#include "apr_file_info.h"
 #include "httpd.h"
 #include "http_config.h"
 #include "http_request.h"
@@ -150,6 +151,11 @@ typedef struct {
     jk_uri_worker_map_t *uw_map;
 
     int was_initialized;
+
+    /*
+     * Automatic context path apache alias
+     */
+    char *alias_dir;
 
     /*
      * Request Logging
@@ -894,6 +900,29 @@ static const char * jk_set_log_fmt(cmd_parms *cmd,
     return NULL;
 }
 
+
+/*
+ * JkAutoAlias Directive Handling
+ *
+ * JkAutoAlias application directory
+ */
+
+static const char *jk_set_auto_alias(cmd_parms *cmd,
+                                    void *dummy,
+                                    char *directory)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+
+    conf->alias_dir = directory;
+
+    if (conf->alias_dir == NULL)
+        return "JkAutoAlias directory invalid";
+
+    return NULL;
+}
+
 /*****************************************************************
  *
  * Actually logging.
@@ -1540,6 +1569,14 @@ static const command_rec jk_cmds[] =
      	"The Jakarta mod_jk module request log format string"),
 
     /*
+     * Automatically Alias webapp context directories into the Apache
+     * document space.
+     */
+    AP_INIT_TAKE1(
+        "JkAutoAlias", jk_set_auto_alias, NULL, RSRC_CONF,
+        "The Jakarta mod_jk module automatic context apache alias directory"),
+
+    /*
      * Apache has multiple SSL modules (for example apache_ssl, stronghold
      * IHS ...). Each of these can have a different SSL environment names
      * The following properties let the administrator specify the envoiroment
@@ -1853,6 +1890,9 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
     c->log_file        = NULL;
     c->log_level       = -1;
     c->log             = NULL;
+    c->alias_dir       = NULL;
+    c->format_string   = NULL;
+    c->format          = NULL;
     c->mountcopy       = JK_FALSE;
     c->was_initialized = JK_FALSE;
     c->options         = JK_OPT_FWDURIDEFAULT;
@@ -2088,6 +2128,75 @@ static int jk_translate(request_rec *r)
                     apr_table_setn(r->main->notes, JK_WORKER_ID, worker);
 
                 return OK;
+            } else if(conf->alias_dir != NULL) {
+                /* Automatically map uri to a context static file */
+                jk_log(conf->log, JK_LOG_DEBUG,
+                    "mod_jk::jk_translate, check alias_dir: %s\n",
+                    conf->alias_dir);
+                if (strlen(r->uri) > 1) {
+                    /* Get the context directory name */
+                    char *context_dir = NULL;
+                    char *context_path = NULL;
+                    char *child_dir = NULL;
+                    char *index = r->uri;
+                    char *suffix = strchr(index+1,'/');
+                    if( suffix != NULL ) {
+                        int size = suffix - index;
+                        context_dir = ap_pstrndup(r->pool,index,size);
+                        /* Get the context child directory name */
+                        index = index + size + 1;
+                        suffix = strchr(index,'/');
+                        if( suffix != NULL ) {
+                            size = suffix - index;
+                            child_dir = ap_pstrndup(r->pool,index,size);
+                        } else {
+                            child_dir = index;
+                        }
+                        /* Deny access to WEB-INF and META-INF directories */
+                        if( child_dir != NULL ) {
+                            jk_log(conf->log, JK_LOG_DEBUG,
+                                "mod_jk::jk_translate, AutoAlias child_dir: %s\n",child_dir);
+                            if( !strcasecmp(child_dir,"WEB-INF") ||
+                                !strcasecmp(child_dir,"META-INF") ) {
+                                jk_log(conf->log, JK_LOG_DEBUG,
+                                    "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s\n",
+                                    r->uri);
+                                return HTTP_FORBIDDEN;
+                            }
+                        }
+                    } else {
+                        context_dir = ap_pstrdup(r->pool,index);
+                    }
+
+                    context_path = ap_pstrcat(r->pool,conf->alias_dir,
+                                              ap_os_escape_path(r->pool,context_dir,1),
+                                              NULL);
+                    if( context_path != NULL ) {
+                        apr_finfo_t finfo;
+                        finfo.filetype = APR_NOFILE;
+                        apr_stat(&finfo,context_path,APR_FINFO_TYPE,r->pool);
+                        if( finfo.filetype == APR_DIR ) {
+                            char *escurl = ap_os_escape_path(r->pool, r->uri, 1);
+                            char *ret = ap_pstrcat(r->pool,conf->alias_dir,escurl,NULL);
+                            /* Add code to verify real path ap_os_canonical_name */
+                            if( ret != NULL ) {
+                                jk_log(conf->log, JK_LOG_DEBUG,
+                                    "mod_jk::jk_translate, AutoAlias OK for file: %s\n",ret);
+                                r->filename = ret;
+                                return OK;
+                            }
+                        } else {
+                            /* Deny access to war files in web app directory */
+                            int size = strlen(context_dir);
+                            if( size > 4 && !strcasecmp(context_dir+(size-4),".war") ) {
+                                jk_log(conf->log, JK_LOG_DEBUG,
+                                    "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s\n",
+                                    r->uri);
+                                return HTTP_FORBIDDEN;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
