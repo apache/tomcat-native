@@ -628,10 +628,25 @@ static void jk2_child_init(apr_pool_t * pconf, server_rec * s)
                           proc.pid);
         }
         else {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "jk2_init() Can't find child %d in none of the %d scoreboard slots\n",
-                          proc.pid, workerEnv->maxDaemons);
-            workerEnv->childId = -2;
+             /*
+              * try again several times, there's a
+              * race condition here where jk2_child_init gets
+              * called before make_child completes.
+              */
+             int counter = 0;
+             while (counter++ < 50 && workerEnv->childId == -1) {
+                 env->l->jkLog(env, env->l, JK_LOG_INFO,
+                     "jk2_child_init() child %d not in scoreboard yet, spin %d\n", 
+                     proc.pid, counter);
+                 usleep(10);
+                 workerEnv->childId = find_child_by_pid(&proc);
+             }
+             if (workerEnv->childId == -1) {
+                 env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                    "jk2_init() Can't find child %d in any of the %d scoreboard slots\n",
+                     proc.pid, max_daemons_limit);
+                 workerEnv->childId = -2;
+             }
         }
     }
     else {
