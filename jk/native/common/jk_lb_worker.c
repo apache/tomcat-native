@@ -372,7 +372,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * another worker... Lets try to do that.
                  */
                  jk_log(l, JK_LOG_DEBUG, 
-                        "In jk_endpoint_t::service, recoverable error... will try to recover on other host\n");
+                        "lb: recoverable error... will try to recover on other host\n");
             } else {
                 /* NULL record, no more workers left ... */
                  jk_log(l, JK_LOG_ERROR, 
@@ -384,7 +384,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
 
     jk_log(l, JK_LOG_ERROR, 
-           "In jk_endpoint_t::service: NULL Parameters\n");
+           "lb: end of service with error\n");
 
     return JK_FALSE;
 }
