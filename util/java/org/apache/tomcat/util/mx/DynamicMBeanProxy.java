@@ -65,8 +65,6 @@ import java.lang.reflect.*;
 import java.util.*;
 import javax.management.*;
 
-import org.apache.tomcat.util.IntrospectionUtils;
-
 /**
  * DynamicMBean implementation using introspection to manage any
  * component that follows the bean/ant/Interceptor/Valve/Jk2 patterns.
