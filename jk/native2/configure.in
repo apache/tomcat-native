@@ -123,19 +123,22 @@ JK_APXS([], [location of apxs for Apache 1.3])
 JK_APXS([2], [location of apxs for Apache 2.0])
 
 dnl APACHE13 settings
-JK_WS_DIR([apache13], [src/include/httpd.h])
+AC_MSG_RESULT([Checking for apache13...])
+JK_WS_DIR([apache13], [APACHE], [src/include/httpd.h])
 JK_WS_INCDIR([apache13], [httpd.h])
 JK_WS_LIBDIR([apache13])
 
 
 dnl APACHE2 settings
-JK_WS_DIR([apache2], [include/httpd.h])
+AC_MSG_RESULT([Checking for apache20...])
+JK_WS_DIR([apache2], [APACHE2], [include/httpd.h])
 JK_WS_INCDIR([apache2], [httpd.h])
 JK_WS_LIBDIR([apache2])
 
 
 dnl IIS settings
-JK_WS_DIR([iis], [.])
+AC_MSG_RESULT([Checking for iis...])
+JK_WS_DIR([iis], [IIS], [.])
 JK_WS_INCDIR([iis], [.])
 JK_WS_LIBDIR([iis])
 
@@ -148,7 +151,8 @@ AC_SUBST(IIS_LIBDIR)
 
 
 dnl iPlanet settings
-JK_WS_DIR([iplanet], [.])
+AC_MSG_RESULT([Checking for iPlanet...])
+JK_WS_DIR([iplanet], [IPLANET], [.])
 JK_WS_INCDIR([iplanet], [.])
 JK_WS_LIBDIR([iplanet])
 
