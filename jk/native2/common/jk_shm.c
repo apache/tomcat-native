@@ -236,7 +236,7 @@ jk_shm_slot_t * JK_METHOD jk2_shm_createSlot(struct jk_env *env,
     /* For now all slots are equal size
      */
     int i;
-    jk_shm_slot_t *slot;
+    jk_shm_slot_t *slot = NULL;
 
     if (shm->head != NULL) { 
         for (i = 0; i < shm->head->lastSlot; i++) {
