@@ -444,6 +444,10 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
 	                s->is_recoverable_error = JK_FALSE;
 	                env->l->jkLog(env, env->l, JK_LOG_ERROR,
 	                              "ajp13.service() Error receiving initial post %d %d %d\n", err, errno, attempt);
+
+                    /* BR #27281 : Should we return HTTP 500 since its the user who stop the sending ? */
+                    /* may be not, so return another HTTP code -> use PARTIAL CONTENT, 206 instead */
+                    s->status = 206;
 	                return JK_ERR;
 	            }
 
