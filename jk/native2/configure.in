@@ -64,6 +64,7 @@ dnl --------------------------------------------------------------------------
 dnl sinclude(../support/jk_apache_static.m4)
 sinclude(../support/jk_apxs.m4)
 sinclude(../support/jk_ws.m4)
+sinclude(../support/jk_exec.m4)
 sinclude(../support/jk_apr.m4)
 sinclude(../support/jk_tchome.m4)
 sinclude(../support/jk_java.m4)
@@ -172,6 +173,7 @@ AC_SUBST(TOMCAT41_HOME)
 
 dnl APR settings
 
+JK_APR_THREADS()
 JK_APR([include/apr.h.in])
 JK_APR_INCDIR([apr.h])
 JK_APR_LIBDIR()
@@ -203,16 +205,37 @@ fi
 
 AC_SUBST(WEBSERVERS)
 
-dnl check if apache 1.3 selected with jni support
+dnl apache 1.3 consistancy checks
 if ! ${TEST} -z "$APACHE_HOME" ; then
-dnl check jni wanted
-	if ${TEST} "${use_jni}" = "true"; then 
-		if ! ${TEST} "${use_apr}" = "true"; then
-			AC_MSG_ERROR(Apache 1.3 need apr to use jni)
-		fi
-	fi
+dnl check if apache 1.3 was selected without apr sources
+        if ${TEST} -z "$APR_BUILD"; then
+                AC_MSG_ERROR([Apache 1.3 requires apr to built from source, use --with-apr])
+        fi
+dnl make sure compiler matchs apxs
+        if ${TEST} "$APACHE_CC" != "$CC"; then
+                AC_MSG_RESULT([error])
+                AC_MSG_RESULT([compiler discovered by configure: ${CC}])
+                AC_MSG_RESULT([compiler used by apache: ${APACHE_CC}])
+                AC_MSG_RESULT([delete config.cache and try CC=${APACHE_CC} ./configure])
+                AC_MSG_ERROR([jk2 and apache compilers must be the same])
+        fi
 fi
 
+dnl apache 2 consistancy checks
+if ! ${TEST} -z "$APACHE2_HOME" ; then
+dnl check if apache 2 was selected with apr sources
+        if ${TEST} -z "$APR_BUILD"; then
+                AC_MSG_ERROR([Use apr that comes with Apache 2, remove --with-apr])
+        fi
+dnl make sure compiler matchs apxs
+        if ${TEST} "$APACHE2_CC" != "$CC"; then
+                AC_MSG_RESULT([error])
+                AC_MSG_RESULT([compiler discovered by configure: ${CC}])
+                AC_MSG_RESULT([compiler used by apache: ${APACHE2_CC}])
+                AC_MSG_RESULT([delete config.cache and try CC=${APACHE2_CC} ./configure])
+                AC_MSG_ERROR([jk2 and apache compilers must be the same])
+        fi
+fi
 AC_SUBST(APACHE20_OEXT)
 AC_SUBST(LIB_JK_TYPE)
 AC_SUBST(INSTALL_TYPE)
@@ -225,6 +248,7 @@ AC_SUBST(APR_DIR)
 AC_SUBST(APR_HOME)
 AC_SUBST(APR_INCDIR)
 AC_SUBST(APR_LIBDIR)
+AC_SUBST(APR_CONFIGURE_ARGS)
 AC_SUBST(APR_LDFLAGS)
 AC_SUBST(COMMON_APR_OBJECTS)
 

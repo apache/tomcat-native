@@ -41,7 +41,7 @@ jk2-clean-apxs:
 	done;
 
 apr-build:
-	( cd @APR_DIR@ && ./configure && make )
+	( cd @APR_DIR@ && make )
 
 apr-clean:
 	( cd @APR_DIR@ && make clean )

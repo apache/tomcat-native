@@ -64,6 +64,31 @@ dnl Version $Id$
 dnl --------------------------------------------------------------------------
 
 dnl --------------------------------------------------------------------------
+dnl JK_APR_THREADS
+dnl   Configure APR threading for use with --with-apr.
+dnl   Result goes into APR_CONFIGURE_ARGS
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [JK_APR_THREADS],
+  [
+    AC_ARG_ENABLE(
+      [apr-threads],
+      [  --enable-apr-threads        Configure APR threading for use with --with-apr ],
+      [
+        case "${enableval}" in
+          ""|"yes"|"YES"|"true"|"TRUE")
+            APR_CONFIGURE_ARGS="--enable-threads ${APR_CONFIGURE_ARGS}"
+          ;;
+          "no"|"NO"|"false"|"FALSE")
+            APR_CONFIGURE_ARGS="--disable-threads ${APR_CONFIGURE_ARGS}"
+          ;;
+        *)
+          APR_CONFIGURE_ARGS="--enable-threads=${enableval} ${APR_CONFIGURE_ARGS}"
+         esac
+      ])
+  ])
+
+dnl --------------------------------------------------------------------------
 dnl JK_APR
 dnl   Set the APR source dir.
 dnl   $1 => File which should be present
@@ -99,7 +124,21 @@ AC_DEFUN(
             APR_CLEAN="apr-clean"
             APR_DIR=${tempval}
             APR_INCDIR="${tempval}/include"
-            APR_LDFLAGS="${tempval}/.libs/libapr-0.a"
+            AC_MSG_RESULT(configuring apr...)
+            APR_CONFIGURE_ARGS="--enable-static --disable-shared ${APR_CONFIGURE_ARGS}"
+            tempret="0"
+            JK_EXEC(
+              [tempret],
+              [./configure ${APR_CONFIGURE_ARGS}],
+              [apr],
+              [${APR_DIR}])
+            if ${TEST} "${tempret}" = "0"; then
+              AC_MSG_RESULT(apr configure ok)
+            else
+              AC_MSG_ERROR(apr configure failed with ${tempret})
+            fi
+            JK_APR_LIBNAME(APR_LDFLAGS,${APR_DIR})
+            APR_LDFLAGS="${APR_DIR}/.libs/${APR_LDFLAGS}"
             APR_LIBDIR=""
 			use_apr=true
             COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
@@ -108,6 +147,7 @@ AC_DEFUN(
         esac
       ])
 
+      unset tempret
       unset tempval
   ])
 
@@ -199,6 +239,30 @@ AC_DEFUN(
       ])
 
       unset tempval
+  ])
+
+
+dnl --------------------------------------------------------------------------
+dnl JK_APR_LIBNAME
+dnl   Retrieve the complete name of the library.
+dnl   $1 => Environment variable name for the returned value
+dnl   $2 => APR sources directory
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [JK_APR_LIBNAME],
+  [
+    AC_MSG_CHECKING([for apr APR_LIBNAME])
+    if test ! -f "$2/apr-config" ; then
+      AC_MSG_ERROR([cannot find apr-config file in $2])
+    fi
+    jk_apr_get_tempval=`$2/apr-config --link-libtool 2> /dev/null`
+    if test -z "${jk_apr_get_tempval}" ; then
+      AC_MSG_ERROR([$2/apr-config --link-libtool failed])
+    fi
+    jk_apr_get_tempval=`basename ${jk_apr_get_tempval} | sed 's/\.la/\.a/g'`
+    $1="${jk_apr_get_tempval}"
+    AC_MSG_RESULT([${jk_apr_get_tempval}])
+    unset jk_apr_get_tempval
   ])
 
 dnl vi:set sts=2 sw=2 autoindent:
