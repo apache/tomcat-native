@@ -306,9 +306,8 @@ APR_DECLARE_EXTERNAL_HOOK(proxy, PROXY, int, fixups, (request_rec *r))
  */
 APR_DECLARE_EXTERNAL_HOOK(proxy, PROXY, int, pre_request, (proxy_worker **worker,
                           struct proxy_balancer **balancer,
-                          request_rec *r, 
-                          proxy_server_conf *conf, char **url,                          
-                          const char *proxyhost, apr_port_t proxyport))
+                          request_rec *r,
+                          proxy_server_conf *conf, char **url))                          
 /**
  * post request hook.
  * It is called after request for updating runtime balancer status.
