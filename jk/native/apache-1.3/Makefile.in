@@ -73,7 +73,7 @@ install_dynamic: mod_jk.la
 # Clean part.
 #
 clean:
-	rm -rf *.lo *.la
+	rm -rf *.lo *.la *.a
 	rm -rf *.o .libs *.so
 
 #
