@@ -562,6 +562,7 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
     SetEvent(jk2_starter_event);
     WaitForSingleObject(jk2_starter_thread, 3000);
     CloseHandle(jk2_starter_thread);
+    jk2_starter_thread = INVALID_HANDLE_VALUE;
     return TRUE;
 }
 
@@ -577,13 +578,6 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     char fname[_MAX_FNAME];
 
     switch (ulReason) {
-        case DLL_PROCESS_DETACH:
-            /* Dirty hack to unload the jvm */
-            if (was_inited && jk_jni_status_code) {
-                ExitProcess(0);
-            }
-      break;
-
         case DLL_PROCESS_ATTACH:
             if (GetModuleFileName( hInst, file_name, sizeof(file_name))) {
                 _splitpath( file_name, drive, dir, fname, NULL );
@@ -667,6 +661,8 @@ static int read_registry_init_data(jk_env_t *env)
             tmp = map->get(env,map,THREAD_POOL_TAG);
             if (tmp) {
                 use_thread_pool = atoi(tmp);
+                if (use_thread_pool < 10)
+                    use_thread_pool = 0;
             }
             tmp = map->get(env,map,USE_AUTH_COMP_TAG);
             if (tmp) {
@@ -720,6 +716,11 @@ static int read_registry_init_data(jk_env_t *env)
                                      tmpbuf,
                                      8)) {
         use_thread_pool = atoi(tmpbuf);
+        if (use_thread_pool < 10) {
+            use_thread_pool = 0;
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "read_registry_init_data, ThreadPool must be set to the value 10 or higher\n");
+        }
     }
     if(get_registry_config_parameter(hkey,
                                      USE_AUTH_COMP_TAG,
