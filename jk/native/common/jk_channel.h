@@ -58,17 +58,19 @@
 #ifndef JK_CHANNEL_H
 #define JK_CHANNEL_H
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include "jk_global.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
 #include "jk_msg_buff.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+struct jk_worker;
+struct jk_endpoint;
 struct jk_channel;
+
 typedef struct jk_channel jk_channel_t;
 
 /**
@@ -95,52 +97,70 @@ typedef struct jk_channel jk_channel_t;
  * @author Costin Manolache
  */
 struct jk_channel {
-  /** Pool for the channel 
-   */
-  jk_pool_t *pool;
-  jk_logger_t *logger;
+    char *name;
 
-  char *name;
-
-  /** Prepare the channel, check the properties. This 
-   * will resolve the host and do all the validations.
-   * ( needed to remove the dependencies on sockets in ajp)
-   */
-  int (JK_METHOD *init)(jk_channel_t *_this );
-  
-  /** Open the communication channel
-   */
-  int (JK_METHOD *open)(jk_channel_t *_this );
-  
-  /** Close the communication channel
-   */
-  int (JK_METHOD *close)(jk_channel_t *_this );
-
+    /** List of properties this channel 'knows'. 
+     *  This will permit admin code to 'query' each channel
+     *  and the setting code can better report errors.
+     */
+    char **supportedProperties;
+    
+    struct jk_worker *worker; /* XXX Do we need it ? */
+    jk_logger_t *logger;
+    jk_map_t *properties;
+    jk_pool_t *pool; /* XXX Do we need it ? */
+    
+    
+    /** Prepare the channel, check the properties. This 
+     * will resolve the host and do all the validations.
+     * ( needed to remove the dependencies on sockets in ajp)
+     * 
+     * The channel may save or use data from the worker ( like cache
+     *  the inet addr, etc )
+     *  XXX revisit this - we may pass too much that is not needed
+     */
+    int (JK_METHOD *init)(jk_channel_t *_this,
+			  jk_map_t *properties,
+			  char *worker_name,
+			  struct jk_worker *worker, 
+			  jk_logger_t *l );
+    
+    /** Open the communication channel
+     */
+    int (JK_METHOD *open)(jk_channel_t *_this, 
+			  struct jk_endpoint *endpoint );
+    
+    /** Close the communication channel
+     */
+    int (JK_METHOD *close)(jk_channel_t *_this, 
+			   struct jk_endpoint *endpoint );
+    
   /** Send a packet
    */
-  int (JK_METHOD *send)(jk_channel_t *_this,
-			jk_msg_buf_t *b );
-
-  /** Receive a packet
-   */
-  int (JK_METHOD *recv)(jk_channel_t *_this,
-			jk_msg_buf_t *b );
-
-  /** Set a channel property. Properties are used to configure the 
-   * communication channel ( example: port, host, file, shmem_name, etc).
-   */
-  int (JK_METHOD *setProperty)(jk_channel_t *_this, 
-			       char *name, char *value);
-
-  /** Get a channel property 
-   */
-  int (JK_METHOD *getProperty)(jk_channel_t *_this, 
+    int (JK_METHOD *send)(jk_channel_t *_this,
+			  struct jk_endpoint *endpoint,
+			  char *b, int len );
+    
+    /** Receive a packet
+     */
+    int (JK_METHOD *recv)(jk_channel_t *_this,
+			  struct jk_endpoint *endpoint,
+			  char *b, int len );
+    
+    /** Set a channel property. Properties are used to configure the 
+     * communication channel ( example: port, host, file, shmem_name, etc).
+     */
+    int (JK_METHOD *setProperty)(jk_channel_t *_this, 
+				 char *name, char *value);
+    
+    /** Get a channel property 
+     */
+    int (JK_METHOD *getProperty)(jk_channel_t *_this, 
 			       char *name, char **value);
-
-  void *_privatePtr;
-  int _privateInt;
+    
+    void *_privatePtr;
 };
-
+    
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
