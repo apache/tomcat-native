@@ -216,7 +216,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     int ndelay=socketInfo->ndelay;
     int keepalive=socketInfo->keepalive;
 
-    apr_socket_t *sock=endpoint->channelData;
+    apr_socket_t *sock;
     apr_status_t ret;
     apr_int32_t timeout = (apr_int32_t)(socketInfo->timeout * APR_USEC_PER_SEC);
     char msg[128];
@@ -232,7 +232,8 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
             remote_sa = remote_sa->next;
             continue;
         }
-
+        /* store the channel information */
+        endpoint->channelData=sock;
 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
             "channelApr.open(): create tcp socket %d\n", sock );
@@ -240,8 +241,9 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
         /* the default timeout (0) will set the socket to blocking with
            infinite timeouts.
         */
+
         if (timeout <= 0)
-            apr_socket_timeout_set(sock, 0);
+            apr_socket_timeout_set(sock, -1);
         else
             apr_socket_timeout_set(sock, timeout);
 
@@ -295,9 +297,6 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     if( ch->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelApr.open(), sock = %d\n", sock);
-
-    /* store the channel information */
-    endpoint->channelData=sock;
 
     return JK_OK;
 }
@@ -360,13 +359,20 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *ch,
     b=msg->buf;
 
     length = (apr_size_t) len;
-    stat = apr_send(sock, b, &length);
-    if (stat!= APR_SUCCESS) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "jk2_channel_apr_send send failed %d %s\n",
-                      stat, apr_strerror( stat, data, sizeof(data) ) );
-        return -3; /* -2 is not possible... */
-    }
+    do {
+        apr_size_t written = length;
+
+        stat = apr_send(sock, b, &written);
+        if (stat!= APR_SUCCESS) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                "jk2_channel_apr_send send failed %d %s\n",
+                stat, apr_strerror( stat, data, sizeof(data) ) );
+            return -3; /* -2 is not possible... */
+        }
+        length -= written;
+        b += written;
+    } while (length); 
+
     return JK_OK;
 }
 
@@ -395,17 +401,21 @@ static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
         return JK_ERR;
 
     rdlen = 0;
+    length = (apr_size_t)len;
+    while (rdlen < len) {
 
-    length = (apr_size_t) len;
-    stat =  apr_recv(sock, b, &length);
+        stat =  apr_recv(sock, b + rdlen, &length);
 
-    if ( stat == APR_EOF)
-        return -1; /* socket closed. */
-    else if ( stat == APR_SUCCESS) {
-        rdlen = (int) length;
-        return rdlen; 
-    } else
-        return -1; /* any error. */
+        if (stat == APR_EOF)
+            return -1; /* socket closed. */
+        else if (APR_STATUS_IS_EAGAIN(stat))
+            continue;
+        else if (stat != APR_SUCCESS)
+            return -1; /* any error. */
+        rdlen += length;
+        length = (apr_size_t)(len - rdlen);
+    }
+    return rdlen;
 }
 
 /** receive len bytes.
