@@ -152,15 +152,18 @@ void jk_b_dump(jk_msg_buf_t *msg,
 
 /* -------------------- Real encoding -------------------- */
 
-void jk_b_set_int(jk_msg_buf_t *msg, 
-                  int pos, 
-                  unsigned short val);
-
 int jk_b_append_byte(jk_msg_buf_t *msg, 
                      unsigned char val);
 
+int jk_b_append_bytes(jk_msg_buf_t *        msg, 
+                      const unsigned char * param,
+					  int                   len);
+
 int jk_b_append_int(jk_msg_buf_t *msg, 
                     unsigned short val);
+
+int jk_b_append_long(jk_msg_buf_t *msg,
+                     unsigned long val);
 
 int jk_b_append_string(jk_msg_buf_t *msg, 
                        const char *param);
@@ -168,20 +171,35 @@ int jk_b_append_string(jk_msg_buf_t *msg,
 
 /* -------------------- Decoding -------------------- */
 
-unsigned char *jk_b_get_string(jk_msg_buf_t *msg);
+/** Get a byte from the current position 
+ */
+unsigned char jk_b_get_byte(jk_msg_buf_t *msg);
 
-/** Get an int from the current position 
+/** Get an int from the current position
  */
 unsigned short jk_b_get_int(jk_msg_buf_t *msg);
 
-unsigned char jk_b_get_byte(jk_msg_buf_t *msg);
+/** Get a long from the current position
+ */
+unsigned long jk_b_get_long(jk_msg_buf_t *msg);
+
+/** Get a String from the current position
+ */
+unsigned char *jk_b_get_string(jk_msg_buf_t *msg);
+
+/** Get a byte from an arbitrary position
+ */
+unsigned char jk_b_pget_byte(jk_msg_buf_t *msg,
+                             int pos);
 
 /** Get an int from an arbitrary position 
  */
 unsigned short jk_b_pget_int(jk_msg_buf_t *msg, 
                              int pos);
 
-unsigned char jk_b_pget_byte(jk_msg_buf_t *msg, 
+/** Get a long from an arbitrary position 
+ */
+unsigned long jk_b_pget_long(jk_msg_buf_t *msg, 
                              int pos);
 
 /* --------------------- Help ------------------------ */

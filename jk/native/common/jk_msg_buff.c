@@ -112,12 +112,39 @@ void jk_b_reset(jk_msg_buf_t *msg)
     msg->pos = 4;
 }
 
-void jk_b_set_int(jk_msg_buf_t *msg, 
+
+static void jk_b_set_long(jk_msg_buf_t *msg,
+                  int pos,
+                  unsigned long val)
+{   
+    msg->buf[pos]       = (unsigned char)((val >> 24) & 0xFF);
+    msg->buf[pos + 1]   = (unsigned char)((val >> 16) & 0xFF);
+    msg->buf[pos + 2]   = (unsigned char)((val >> 8) & 0xFF);
+    msg->buf[pos + 3]   = (unsigned char)(val & 0xFF);
+}
+
+
+int jk_b_append_long(jk_msg_buf_t *msg,
+                    unsigned long val)
+{
+    if(msg->len + 4 > msg->maxlen) {
+        return -1;
+    }
+
+    jk_b_set_long(msg, msg->len, val);
+
+    msg->len += 4;
+
+    return 0;
+}
+
+
+static void jk_b_set_int(jk_msg_buf_t *msg, 
                   int pos, 
                   unsigned short val) 
 {
-    msg->buf[pos]       = (unsigned char)((val >> 8) & 0xff);
-    msg->buf[pos + 1]   = (unsigned char)(val & 0xff);
+    msg->buf[pos]       = (unsigned char)((val >> 8) & 0xFF);
+    msg->buf[pos + 1]   = (unsigned char)(val & 0xFF);
 }
 
 
@@ -136,7 +163,7 @@ int jk_b_append_int(jk_msg_buf_t *msg,
 }
 
 
-void jk_b_set_byte(jk_msg_buf_t *msg, 
+static void jk_b_set_byte(jk_msg_buf_t *msg, 
                    int pos, 
                    unsigned char val) 
 {
@@ -268,6 +295,52 @@ int jk_b_append_string(jk_msg_buf_t *msg,
     return 0;
 }
 
+
+int jk_b_append_bytes(jk_msg_buf_t         *msg,
+                      const unsigned char  *param,
+					  int                   len)
+{
+    if (! len) {
+        return 0;
+    }
+
+    if (msg->len + len > msg->maxlen) {
+        return -1;
+    }
+
+    /* We checked for space !!  */
+    memcpy((char *)msg->buf + msg->len, param, len); 
+    msg->len += len;
+
+    return 0;
+}
+
+unsigned long jk_b_get_long(jk_msg_buf_t *msg)
+{
+    unsigned long i;
+    if(msg->pos + 3 > msg->len) {
+        printf( "Read after end \n");
+        return -1;
+    }
+    i  = ((msg->buf[(msg->pos++)] & 0xFF)<<24);
+    i |= ((msg->buf[(msg->pos++)] & 0xFF)<<16);
+    i |= ((msg->buf[(msg->pos++)] & 0xFF)<<8);
+    i |= ((msg->buf[(msg->pos++)] & 0xFF));
+    return i;
+}
+
+unsigned long jk_b_pget_long(jk_msg_buf_t *msg,
+                             int pos)
+{
+    unsigned long i;
+    i  = ((msg->buf[(pos++)] & 0xFF)<<24);
+    i |= ((msg->buf[(pos++)] & 0xFF)<<16);
+    i |= ((msg->buf[(pos++)] & 0xFF)<<8);
+    i |= ((msg->buf[(pos  )] & 0xFF));
+    return i;
+}
+
+
 unsigned short jk_b_get_int(jk_msg_buf_t *msg) 
 {
     int i;
@@ -275,16 +348,17 @@ unsigned short jk_b_get_int(jk_msg_buf_t *msg)
 	    printf( "Read after end \n");
 	    return -1;
     }
-    i  = ((msg->buf[msg->pos++]&0xff)<<8);
-    i += (msg->buf[(msg->pos++)] & 0xFF);
+    i  = ((msg->buf[(msg->pos++)] & 0xFF)<<8);
+    i += ((msg->buf[(msg->pos++)] & 0xFF));
     return i;
 }
 
 unsigned short jk_b_pget_int(jk_msg_buf_t *msg, 
                              int pos) 
 {
-    int i= ((msg->buf[pos++]&0xff)<<8);
-    i+= (msg->buf[pos] & 0xFF);
+    int i;
+	i  = ((msg->buf[pos++] & 0xFF)<<8);
+    i += ((msg->buf[pos]   & 0xFF));
     return i;
 }
 
