@@ -85,33 +85,33 @@
  */
 
 int JK_METHOD jk2_worker_ajp14_factory(jk_env_t *env, jk_pool_t *pool,
-                                       void **result,
+                                       jk_bean_t *result,
                                        const char *type, const char *name);
 
                                    
 int JK_METHOD jk2_worker_lb_factory(jk_env_t *env, jk_pool_t *pool,
-                                    void **result,
+                                    jk_bean_t *result,
                                     const char *type, const char *name);
 
 
 int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
-                                     void **result,
+                                     jk_bean_t *result,
                                      const char *type, const char *name);
 
 int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
-                                      void **result,
+                                      jk_bean_t *result,
                                       const char *type, const char *name);
 
 int JK_METHOD jk2_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
-                                        void **result,
+                                        jk_bean_t *result,
                                         const char *type, const char *name);
 
 int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
-                                     void **result,
+                                     jk_bean_t *result,
                                      const char *type, const char *name);
 
 int JK_METHOD jk2_worker_ajp12_factory(jk_env_t *env, jk_pool_t *pool,
-                                       void **result,
+                                       jk_bean_t *result,
                                        const char *type, const char *name);
 
 /* Factories for 'new' types. We use the new factory interface,
@@ -119,45 +119,41 @@ int JK_METHOD jk2_worker_ajp12_factory(jk_env_t *env, jk_pool_t *pool,
  */
 #ifdef HAS_APR
 int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env, jk_pool_t *pool,
-                                             void **result,
+                                             jk_bean_t *result,
 					                         const char *type, const char *name);
 #endif
 
 int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
-                                      void **result,
+                                      jk_bean_t *result,
                                       const char *type, const char *name);
 
 int JK_METHOD jk2_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
-                                        void **result,
+                                        jk_bean_t *result,
 					                    const char *type, const char *name);
 
 int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
-                                    void **result,
+                                    jk_bean_t *result,
                                     const char *type, const char *name);
 
-int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
-                                 const char *type, const char *name);
-
 int JK_METHOD jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool,
-                                      void **result,
+                                      jk_bean_t *result,
                                       const char *type, const char *name);
 
 
 int JK_METHOD jk2_handler_logon_factory(jk_env_t *env, jk_pool_t *pool,
-                                        void **result,
+                                        jk_bean_t *result,
                                         const char *type, const char *name);
 
-int JK_METHOD jk2_handler_discovery_factory(jk_env_t *env, jk_pool_t *pool,
-                                            void **result,
-                                            const char *type, const char *name);
-
 int JK_METHOD jk2_handler_response_factory(jk_env_t *env, jk_pool_t *pool,
-                                           void **result,
+                                           jk_bean_t *result,
                                            const char *type, const char *name);
 
-int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
                                  const char *type, const char *name);
 
-int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
+                                 const char *type, const char *name);
+
+int JK_METHOD jk2_config_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
                                  const char *type, const char *name);
 
