@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<document>
+<properties>
+<title>Workers HowTo</title>
+<author email="hgomez@apache.org">Henri Gomez</author>
+<author email="shachor@il.ibm.com">Gal Shachor</author>
+</properties>
+
+<section name="Introduction">
+<p>
+A Tomcat worker is a Tomcat instance that is waiting to execute servlets on behalf of some web server. 
+For example, we can have a web server such as Apache forwarding servlet requests to a 
+Tomcat process (the worker) running behind it.
+</p>
+<p>
+The scenario described above is a very simple one; 
+in fact one can configure multiple Tomcat workers to serve servlets on 
+behalf of a certain web server. 
+The reasons for such configuration can be:
+</p>
+<ul>
+<li>
+We want different contexts to be served by different Tomcat workers to provide a 
+development environment where all the developers share the same web server but own a Tomcat worker of their own.
+</li>
+<li>
+We want different virtual hosts served by different Tomcat processes to provide a 
+clear separation between sites belonging to different companies.
+</li>
+<li>
+We want to provide load balancing, meaning run multiple Tomcat workers each on a 
+machine of its own and distribute the requests between them.
+</li>
+</ul>
+
+<p>
+There are probably more reasons for having multiple workers but I guess that this list is enough...
+Tomcat workers are defined in a properties file dubbed workers.properties and this tutorial 
+explains how to work with it.
+</p>
+
+<p>
+This document was originally part of <b>Tomcat: A Minimalistic User's Guide</b> written by Gal Shachor, 
+but has been split off for organizational reasons. 
+</p>
+</section>
+
+<section name="Defining Workers">
+<p>
+Defining workers to the Tomcat web server plugin can be done using a properties file 
+(a sample file named workers.properties is available in the conf/ directory).
+</p>
+
+<p>
+the file contains entries of the following form:
+</p>
+
+<p>
+<b>worker.list</b>=&lt;a comma separated list of worker names&gt;
+</p>
+
+<screen>
+<note>the list of workers</note>
+<read>worker.list= worker1, worker2</read>
+</screen>
+
+<p>
+When starting up, the web server plugin will instantiate the workers whose name appears in the 
+<b>worker.list</b> property, these are also the workers to whom you can map requests.
+</p>
+
+<subsection name="Workers Type">
+<p>
+Each named worker should also have a few entries to provide additional information on his behalf.
+This information includes the worker's type and other related worker information. 
+Currently the following worker types that exists are (jk 1.2.0):
+</p>
+
+<table>
+  <tr><th>Type</th><th>Description</th></tr>
+  <tr><td>ajp12</td><td>This worker knows how to forward requests to out-of-process Tomcat workers using the ajpv12 protocol.</td></tr>
+  <tr><td>ajp13</td><td>This worker knows how to forward requests to out-of-process Tomcat workers using the ajpv13 protocol.</td></tr>
+  <tr><td>jni</td><td>This worker knows how to forward requests to in-process Tomcat workers using JNI.</td></tr>
+  <tr><td>lb</td><td>This is a load-balancing worker; it knows how to provide round-robin based sticky load balancing with a certain level of fault-tolerance.</td></tr>
+</table>
+
+<p>
+Defining workers of a certain type should be done with the following property format:
+</p>
+
+<p>
+<b>worker</b>. <b>worker name</b>.<b>type</b>=&lt;worker type&gt;
+Where worker name is the name assigned to the worker and the worker type is one of the four types defined 
+in the table (a worker name may not contain any space (a good naming convention for queue named should 
+follow the Java variable naming rules).
+</p>
+
+<screen>
+<note>Defines a worker named "local" that uses the ajpv12 protocol to forward requests to a Tomcat process.</note>
+<read>worker.local.type=ajp12</read>
+<note>Defines a worker named "remote" that uses the ajpv13 protocol to forward requests to a Tomcat process.</note>
+<read>worker.remote.type=ajp13</read>
+<note>Defines a worker named "fast" that uses JNI to forward requests to a Tomcat process.</note>
+<read>worker.fast.type=jni</read>
+<note>Defines a worker named "loadbalancer" that loadbalances several Tomcat processes transparently.</note>
+<read>worker.loadbalancer.type=lb</read>
+</screen>
+
+</subsection>
+
+</section>
+
+<section name="Setting Worker Properties">
+<p>
+After defining the workers you can also specify properties for them. 
+Properties can be specified in the following manner:
+</p>
+
+<p>
+worker.&lt;worker name&gt;.&lt;property&gt;=&lt;property value&gt;
+</p>
+
+Each worker has a set of properties that you can set as specified in the following subsections:
+
+<subsection name="ajp12 Worker properties">
+<p>
+The ajp12 typed workers forward requests to out-of-process Tomcat workers 
+using the ajpv12 protocol over TCP/IP sockets.
+</p>
+
+<p>
+the ajp12 worker properties are :
+</p>
+
+<p>
+<b>host</b> property set the host where the Tomcat worker is listening for ajp12 requests.
+</p>
+
+<p>
+<b>port</b> property set The port where the Tomcat worker is listening for ajp12 requests
+</p>
+
+<p>
+<b>lbfactor</b>property is used when working with a load balancer worker, this is the load-balancing factor for the worker.
+We'll see more on this in the lb worker section.
+</p>
+
+<screen>
+<note>worker "worker1" will talk to Tomcat listening on machine www.x.com at port 8007 using 2.5 lb factor</note>
+<read>worker.worker1.host=www.x.com</read>
+<read>worker.worker1.port=8007</read>
+<read>worker.worker1.lbfactor=2.5</read>
+</screen>
+
+<p>
+Notes: In the ajpv12 protocol, connections are created, used and then closed at each request.
+The default port for ajp12 is 8007
+</p>
+
+</subsection>
+
+<subsection name="ajp13 Worker properties">
+<p>
+The ajp13 typed workers forward requests to out-of-process Tomcat workers using the ajpv13 protocol over TCP/IP sockets.
+The main difference between ajpv12 and ajpv13 are that:
+<ul>
+<li>
+ajpv13 is a more binary protocol and it try to compress some of the request data by coding 
+frequently used strings as small integers.
+</li>
+<li>
+ajpv13 reuse open sockets and leaves them open for future requests (remember when you've got a Firewall between your 
+WebServer and Tomcat).
+</li>
+<li>
+ajpv13 has special treatment for SSL information so that the container can implement 
+SSL related methods such as isSecure().
+</li>
+</ul>
+
+</p>
+
+<p>
+You should note that Ajp13 is now the only out-process protocol supported by Tomcat 4.0.x, 4.1.x and 5.
+</p>
+
+<p>
+The following table specifies properties that the ajp13 worker can accept:
+</p>
+
+
+<p>
+<b>host</b> property set the host where the Tomcat worker is listening for ajp13 requests.
+</p>
+
+<p>
+<b>port</b> property set The port where the Tomcat worker is listening for ajp13 requests
+</p>
+
+<p>
+<b>lbfactor</b> property is used when working with a load balancer worker, this is the load-balancing factor for the worker.
+We'll see more on this in the lb worker section.
+</p>
+
+<p>
+<b>cachesize</b> property is usefull when you're using jk in multithreaded 
+web servers such as Apache 2.0, IIS and Netscape. They will benefit the most by 
+setting this value to a higher level (such as the estimated average concurrent users for Tomcat).
+</p>
+
+<p>
+<b>cache_timeout</b> property should be used with <b>cachesize</b> to specify how to time jk should keep
+an open socket in cache before closing it. This property should be used to reduce the number of threads 
+on the Tomcat WebServer.
+</p>
+
+<p>
+You should know that under heavy load some WebServers, for example Apache's create many childs/threads
+to handle the load and they destroy the childs/threads only when the load decrease.
+</p>
+
+<p> 
+Each child could open an ajp13 connection if it have to forward a request to Tomcat, creating
+a new ajp13 thread on Tomcat side.
+</p>
+
+<p>
+The problem is that after an ajp13 connection is created, the child won't drop it
+until killed. And since the webserver will keep its childs/threads running
+to handle high-load, even it the child/thread handle only static contents, you could
+finish having many unused ajp13 threads on the Tomcat side.
+</p>
+
+<p>
+<b>socket_keepalive</b> property should be used when you have a firewall between your webserver
+and the Tomcat engine, who tend to drop inactive connections. This flag will told Operating System
+to send <code>KEEP_ALIVE</code> message on inactive connections (interval depend on global OS settings,
+generally 120mn), and sus prevent the firewall to cut the connection.
+</p>
+
+<p>
+The problem with Firewall cutting inactive connections is that sometimes, neither webserver or tomcat
+have informations about the cut and couldn't handle it.
+</p>
+
+<p>
+<b>socket_timeout</b> property told webserver to cut an ajp13 connection after some time of use.
+It's a good way to ensure that there won't be any unused threads living on Tomcat side, with the
+extra cost of reopening sockets next time a request be forwarded.
+This property is very similar to <b>cache_timeout</b> but works also in non-cache mode.
+</p>
+
+<screen>
+<note>worker "worker2" will talk to Tomcat listening on machine www2.x.com at port 8009 using 3.5 lb factor</note>
+<read>worker.worker2.host=www2.x.com</read>
+<read>worker.worker2.port=8009</read>
+<read>worker.worker2.lbfactor=3.5</read>
+<note>worker "worker2" use up to 10 sockets, which will stay no more than 10mn in cache</note>
+<read>worker.worker2.cachesize=10</read>
+<read>worker.worker2.cache_timeout=600</read>
+<note>worker "worker2" ask operating system to send KEEP-ALIVE signal on the connection</note>
+<read>worker.worker2.socket_keepalive=1</read>
+<note>worker "worker2" want ajp13 connection to be dropped after 5mn (timeout)</note>
+<read>worker.worker2.socket_timeout=300</read>
+</screen>
+
+<p>
+Notes: In the ajpv13 protocol, the default port is 8009
+</p>
+
+</subsection>
+
+<subsection name="lb Worker properties">
+<p>
+The load-balancing worker does not really communicate with Tomcat workers.
+Instead it is responsible for the management of several "real" workers. 
+This management includes:
+</p>
+
+<ul>
+<li>
+Instantiating the workers in the web server.
+</li>
+<li>
+Using the worker's load-balancing factor, perform weighed-round-robin load balancing where 
+high lbfactor means stronger machine (that is going to handle more requests)
+</li>
+<li>
+Keeping requests belonging to the same session executing on the same Tomcat worker.
+</li>
+<li>
+Identifying failed Tomcat workers, suspending requests to them and instead fall-backing on 
+other workers managed by the lb worker.
+</li>
+</ul>
+
+<p>
+The overall result is that workers managed by the same lb worker are load-balanced (based on their lbfactor and current user session) and also fall-backed so a single Tomcat process death will not "kill" the entire site.
+The following table specifies properties that the lb worker can accept:
+</p>
+
+<p>
+<b>balanced_workers</b> is a comma separated list of workers that the load balancer need to manage. 
+These workers should not appear in the worker.list property.
+</p>
+
+<screen>
+<note> The worker balance1 while use "real" workers worker1 and worker2</note>
+<read>worker.balance1.balanced_workers= worker1, worker2</read>
+</screen>
+
+</subsection>
+
+<subsection name="jni Worker properties">
+<p>
+The jni worker opens a JVM inside the web server process and executes Tomcat within it (that is in-process). 
+Following that, messages to and from the JVM are passed using JNI method calls, this makes the jni worker faster 
+then the out-of-process workers that need to communicate to the Tomcat workers by writing AJP messages over 
+TCP/IP sockets.
+</p>
+
+<p>
+Note: Since the JVM is multithreaded; the jni worker should be used only within multithreaded servers 
+such as AOLServer, IIS, Netscape and Apache 2.0.<br/> 
+You should also make sure that the threading scheme used by the web servers match the one 
+used to build the jk web server plugin.
+</p>
+
+<p>
+Since the jni worker opens a JVM it can accept many properties that it forward to the JVM such as 
+the classpath etc. as we can see in the following table.
+</p>
+
+<p>
+<b>class_path</b> is the classpath as used by the in-process JVM. This should point to all Tomcats' 
+jar/file files as well as any class or other jar file that you want to add to the JVM.
+</p>
+
+<p>
+To have JSP compile support, you should remember to also add Javac to the classpath. 
+This can be done in Java2 by adding tools.jar to the classpath. 
+In JDK1.xx you should just add classes.zip.
+</p>
+
+<p>
+The <b>class_path</b> property can be given in multiple lines. 
+In this case the jk environment will concatenate all the classpath entries together 
+by putting path delimiter (":"/";") between the entries.
+</p>
+
+<screen>
+<note>Set the classpath for worker "wrkjni"</note>
+<read>worker.wrkjni.class_path=/var/tomcat3/lib/tomcat.jar</read>
+<note>we don't forget to add JAVAC (tools.jar)</note>
+<read>worker.wrkjni.class_path=/opt/IBMJava2-131/lib/tools.jar</read>
+</screen>
+
+<p>
+<b>cmd_line</b> is the command line that is handed over to Tomcats' startup code.
+</p>
+
+<p>
+The cmd_line property can be given in multiple lines. 
+In this case the jk environment will concatenate all the cmd_line entries together by putting spaces 
+between the entries.
+</p>
+
+<screen>
+<note>Set command line for "wrkjni"</note>
+<read>worker.wrkjni.cmd_line=-config</read>
+<note>Next arg</note>
+<read>worker.wrkjni.cmd_line=/etc/tomcat3/conf/alt-server.xml</read>
+<note>Very important tomcat.home</note>
+<read>worker.wrkjni.cmd_line=-home</read>
+<note>Location of tomcat.home</note>
+<read>worker.wrkjni.cmd_line=/var/tomcat3</read>
+</screen>
+
+<p>
+<b>jvm_lib</b> is the full path to the JVM implementation library. 
+The jni worker will use this path to load the JVM dynamically.
+</p>
+
+<screen>
+<note>Set full path for JVM shared lib (IBM SDK on Linux)</note>
+<read>worker.wrkjni.jvm_lib=/opt/IBMJava2-131/jre/bin/classic/libjvm.so</read>
+<note>Set full path for JVM shared lib (Sun SDK on Windows)</note>
+<read>worker.wrkjni.jvm_lib=c:\JDK\1.3.1\jre\bin\classic</read>
+</screen>
+
+<p>
+<b>stdout</b> is full path to where the JVM write its System.out
+</p>
+
+<screen>
+<note>Put logs in /var/log/http/jk-jvm-out.log</note>
+<read>worker.wrkjni.stdout=/var/log/http/jk-jvm-out.log</read>
+</screen>
+
+<p>
+<b>stderr</b> is full path to where the JVM write its System.err
+</p>
+
+<screen>
+<note>Put logs in /var/log/http/jk-jvm-err.log</note>
+<read>worker.wrkjni.stderr=/var/log/http/jk-jvm-err.log</read>
+</screen>
+
+<p>
+<b>sysprops</b> set the Java system properties for the JVM
+</p>
+
+<screen>
+<note>Told Java to stay in 64m</note>
+<read>worker.wrkjni.sysprops=-Xmx64</read>
+</screen>
+
+<p>
+<b>ld_path</b> set the additional dynamic libraries path (similar in nature to LD_LIBRARY_PATH)
+</p>
+
+<screen>
+<note>Told system which library path to be added to access Java Env</note>
+<read>worker.wrkjni.ld_path=/opt/IBMJava2-131/jre/bin/</read>
+<read>worker.wrkjni.ld_path=/opt/IBMJava2-131/jre/bin/classic</read>
+</screen>
+
+<p>
+Notes: Under Linux it seems that processes can't update their own LD_LIBRARY_PATH,
+so you'll have to update it BEFORE launching the webserver...
+</p>
+
+</subsection>
+
+
+</section>
+
+</document>
