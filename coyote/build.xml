@@ -35,7 +35,6 @@
 
   <!-- The name of this component -->
   <property name="component.name"          value="coyote"/>
-
   <!-- The title of this component -->
   <property name="component.title"         value="Coyote"/>
 
@@ -79,6 +78,12 @@
     <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
     <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
   </path>
+  <path id="compile.classpath.tomcat33">
+    <pathelement location="${build.home}/classes"/>
+    <pathelement location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+    <pathelement location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
+    <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
+  </path>
 
 
 <!-- ========== Test Execution Defaults =================================== -->
@@ -106,8 +111,11 @@
     <target name="report-tc4" if="tomcat4.detect" >
 	<echo message="Tomcat4 detected "  />
     </target>
+    <target name="report-tc33" if="tomcat33.detect" >
+	<echo message="Tomcat3.3 detected "  />
+    </target>
 
-    <target name="report" depends="report-tc4" />
+    <target name="report" depends="report-tc4, report-tc33" />
 
 
 <!-- ========== Executable Targets ======================================== -->
@@ -131,6 +139,7 @@
     <mkdir dir="${build.home}/lib"/>
     <mkdir dir="${build.home}/tests"/>
     <available property="tomcat4.detect" file="${catalina.home}/server/lib/catalina.jar" />
+    <available property="tomcat33.detect" file="${tomcat33.home}/lib/common/tomcat_core.jar" />
   </target>
 
 
@@ -152,6 +161,7 @@
           optimize="${compile.optimize}">
       <classpath refid="compile.classpath"/>
       <exclude name="org/apache/coyote/tomcat4/**" />
+      <exclude name="org/apache/coyote/tomcat3/**" />
     </javac>
     <copy    todir="${build.home}/classes" filtering="on">
       <fileset dir="${source.home}" excludes="**/*.java"/>
@@ -173,14 +183,34 @@
       <fileset dir="${source.home}" excludes="**/*.java"/>
     </copy>
   </target>
+  <target name="compile.tomcat33" if="tomcat33.detect"
+   description="Compile Tomcat 3.3.x Adapter">
+    <javac  srcdir="${source.home}"
+           destdir="${build.home}/classes"
+             debug="${compile.debug}"
+       deprecation="${compile.deprecation}"
+          optimize="${compile.optimize}">
+      <classpath refid="compile.classpath.tomcat33"/>
+      <include name="org/apache/coyote/tomcat3/**" />
+    </javac>
+    <copy    todir="${build.home}/classes" filtering="on">
+      <fileset dir="${source.home}" excludes="**/*.java"/>
+    </copy>
+  </target>
 
   <target name="compile" 
-   depends="static,report,compile.shared,compile.tomcat4"
+   depends="static,report,compile.shared,compile.tomcat4,compile.tomcat33"
    description="Compile Coyote and its Adapters">
     <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
             basedir="${build.home}/classes"
            manifest="${build.home}/conf/MANIFEST.MF"
-           includes="org/apache/coyote/**" />
+           includes="org/apache/coyote/**" 
+	   excludes="**/tomcat3/*" />
+    <jar    jarfile="${build.home}/lib/tomcat33-${component.name}.jar"
+            basedir="${build.home}/classes"
+           manifest="${build.home}/conf/MANIFEST.MF"
+           includes="org/apache/coyote/**" 
+	   excludes="**/tomcat4/*" />
   </target>
 
 
