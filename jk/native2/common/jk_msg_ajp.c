@@ -145,8 +145,14 @@ static void jk2_msg_ajp_end(jk_env_t *env, jk_msg_t *msg)
 {
     unsigned short len=msg->len - 4;
     
-    msg->buf[0]=0x12;
-    msg->buf[1]=0x34;
+
+    if(msg->serverSide ) {
+        msg->buf[0]=0x41;
+        msg->buf[1]=0x42;
+    } else {
+        msg->buf[0]=0x12;
+        msg->buf[1]=0x34;
+    }
 
     msg->buf[2]=(unsigned char)((len >> 8) & 0xFF);
     msg->buf[3]=(unsigned char)(len & 0xFF);
@@ -416,7 +422,9 @@ static int jk2_msg_ajp_checkHeader(jk_env_t *env, jk_msg_t *msg,
     char *head=msg->buf;
     int msglen;
 
-    if( head[0] != 0x41 || head[1] != 0x42 ) {
+    if( ! (
+           ( head[0] == 0x41 && head[1] == 0x42 ) ||
+           ( head[0] == 0x12 && head[1] == 0x34 ))) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "msgAjp.receive(): Bad signature %x%x\n",
                       head[0], head[1]);
@@ -561,6 +569,7 @@ jk_msg_t *jk2_msg_ajp_create(jk_env_t *env, jk_pool_t *pool, int buffSize)
         return NULL;
     }
     msg->pool = pool;
+    msg->serverSide=JK_FALSE;
 
     msg->buf= (unsigned char *)msg->pool->alloc(env, msg->pool, buffSize);
     
