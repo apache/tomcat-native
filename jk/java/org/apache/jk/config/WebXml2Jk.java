@@ -131,7 +131,7 @@ public class WebXml2Jk {
     
     /** Set the canonycal name of the virtual host.
      */
-    public void setVhost( String vhost ) {
+    public void setHost( String vhost ) {
         this.vhost=vhost; 
     }
     
@@ -169,7 +169,7 @@ public class WebXml2Jk {
      *
      * This is equivalent to the worker in jk1.
      */
-    public void setJkGroup(String route ) {
+    public void setGroup(String route ) {
         worker=route;
     }
 
@@ -190,6 +190,7 @@ public class WebXml2Jk {
             out.println( "#servlet=" +  getContent( servN ));
             out.println( "#cpath=" +  cpath );
             out.println( "#vhost=" +  vhost );
+            out.println();
         }
 
         Node lcN=getChild( webN, "login-config" );
@@ -204,8 +205,72 @@ public class WebXml2Jk {
             String loginPage=getContent( getChild( n1, "form-login-page"));
             String errPage=getContent( getChild( n1, "form-error-page"));
 
-            System.out.println("LOGIN: " + loginPage );
-            System.out.println("ERR: " + errPage );
+            out.println("[url:" + vhost + cpath + loginPage  + "]" );
+            out.println( "group=" + worker );
+            out.println();
+            out.println("[url:" + vhost + cpath + errPage  + "]" );
+            out.println( "group=" + worker );
+            out.println();
+        }
+
+        System.out.println("Generating mappings for security constraints " );
+        for( Node mapN=getChild( webN, "security-constraint" );
+             mapN != null; mapN = getNext( mapN )) {
+            Node wrcN=getChild( mapN, "web-resource-collection");
+
+            Vector methods=new Vector();
+            for( Node uN=getChild(wrcN, "http-method");
+                 uN!=null; uN=getNext( uN )) {
+                methods.addElement( getContent( uN ));
+            }
+
+            Vector urls=new Vector();
+            for( Node uN=getChild(wrcN, "url-pattern");
+                 uN!=null; uN=getNext( uN )) {
+                urls.addElement( getContent( uN ));
+            }
+
+            // Not used at the moment
+            Node acN=getChild( mapN, "auth-constraint");
+            Vector roles=new Vector();
+            for( Node rN=getChild(acN, "role-name");
+                 rN!=null; rN=getNext( rN )) {
+                roles.addElement(getContent( rN ));
+            }
+            generateConstraints( urls, methods, roles );
+        }
+    }
+
+    // To be included in a <VirtualHost> section
+    void generateJk1Mount(Node webN, PrintWriter out) {
+
+        System.out.println("Generating JkMount for servlets " );
+        for( Node mapN=getChild( webN, "servlet-mapping" );
+             mapN != null; mapN = getNext( mapN ) ) {
+            
+            Node servN=getChild( mapN, "servlet-name");
+            if( servN==null )
+                servN=getChild( mapN, "jsp-file");
+            Node url=getChild( mapN, "url-pattern");
+            
+            out.println( "JkMount " + cpath + getContent(url) + " " + worker);
+        }
+
+        Node lcN=getChild( webN, "login-config" );
+        if( lcN!=null ) {
+            System.out.println("Generating mapping for login-config " );
+            
+            Node authMethN=getChild( lcN, "auth-method");
+            String authMeth=getContent( authMethN );
+            if( authMeth == null ) authMeth="FORM";
+
+            Node n1=getChild( lcN, "form-login-config");
+            String loginPage=getContent( getChild( n1, "form-login-page"));
+            String errPage=getContent( getChild( n1, "form-error-page"));
+
+            out.println("JkMount " + cpath + loginPage  + " " + worker );
+            out.println("JkMount " + cpath + errPage  + " " + worker );
+            out.println();
         }
 
         System.out.println("Generating mappings for security constraints " );
@@ -362,6 +427,11 @@ public class WebXml2Jk {
                 System.out.println("Usage: ");
                 System.out.println("  WebXml2Jk [OPTIONS]");
                 System.out.println();
+                System.out.println("  -docBase DIR        The location of the webapp. Required");
+                System.out.println("  -group GROUP        Group, if you have multiple tomcats with diffrent content. " );
+                System.out.println("                      The default is 'lb', and should be used in most cases");
+                System.out.println("  -host HOSTNAME      Canonical hostname - for virtual hosts");
+                System.out.println("  -context /CPATH     Context path where the app will be mounted");
                 return;
             }
 
