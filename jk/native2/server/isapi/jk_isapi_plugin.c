@@ -366,6 +366,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         SetHeader(pfc, "Translate:", NULL);
                     }
                 } else {
+                    char *jsessionid = strstr(uri, JK_PATH_SESSION_IDENTIFIER); 
+                    if (jsessionid) {
+                        env->l->jkLog(env, env->l,  JK_LOG_INFO, 
+                                      "HttpFilterProc removing session identifier [%s] for non servlet url\n", 
+                                      jsessionid);
+                        *jsessionid = '\0';                    
+                        SetHeader(pfc, "url", uri);
+                    }
                     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                            "HttpFilterProc [%s] is not a servlet url\n", 
                            uri);
