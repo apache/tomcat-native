@@ -126,6 +126,7 @@ typedef struct {
 
 	char * secret_key;
     jk_map_t *automount;
+    jk_map_t *secretkeys;
 
     jk_uri_worker_map_t *uw_map;
 
@@ -614,13 +615,13 @@ static const char *jk_secret_key(cmd_parms *cmd,
 /*
  * JkAutoMount directive handling 
  *
- * JkAutoMount worker secretkey
+ * JkAutoMount worker [virtualhost]
  */
 
 static const char *jk_automount_context(cmd_parms *cmd,
                                         void *dummy,
 										char *worker,
-										char *secret_key)
+										char *virtualhost)
 {
 	server_rec *s = cmd->server;
 	jk_server_conf_t *conf =
@@ -630,10 +631,36 @@ static const char *jk_automount_context(cmd_parms *cmd,
 	 * Add the new automount to the auto map.
 	 */
 	char * old;
-	map_put(conf->automount, worker, secret_key, (void **)&old);
+	map_put(conf->automount, worker, virtualhost, (void **)&old);
 	return NULL;
 }
 	
+
+/*
+ * JkWorkerSecretKey directive handling
+ *
+ * JkWorkerSecretKey worker secretkey
+ */
+
+static const char *jk_worker_secret_key(cmd_parms *cmd,
+                                       void *dummy,
+                                       char *worker,
+                                       char *secretkey)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+
+    /*
+     * Add the new automount to the auto map.
+     */
+    char * old;
+    map_put(conf->secretkeys, worker, secretkey, (void **)&old);
+    return NULL;
+}
+   
+
+
 /*
  * JkWorkersFile Directive Handling
  *
@@ -852,14 +879,21 @@ static const command_rec jk_cmds[] =
 	 * asked to the servlet engine (autoconf feature)
 	 */
 	{"JkAutoMount", jk_automount_context, NULL, RSRC_CONF, TAKE12,
-     "automatic mount points to a Tomcat worker"},
+     "automatic mount points to a servlet-engine worker"},
 
+    /*
+     * JkWorkerSecretKey specifies that the secret key associated to a
+     * worker
+     */
+    {"JkWorkerSecretKey", jk_worker_secret_key, NULL, RSRC_CONF, TAKE2,
+     "Secret key for a worker"},
+	
     /*
      * JkMount mounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
      */
     {"JkMount", jk_mount_context, NULL, RSRC_CONF, TAKE23,
-     "A mount point from a context to a Tomcat worker"},
+     "A mount point from a context to a servlet-engine worker"},
 
     /*
      * JkMountCopy specifies if mod_jk should copy the mount points
@@ -874,11 +908,11 @@ static const command_rec jk_cmds[] =
 	 * JkLogStampFormat specify the time-stamp to be used on log
      */
     {"JkLogFile", jk_set_log_file, NULL, RSRC_CONF, TAKE1,
-     "Full path to the Jakarta Tomcat module log file"},
+     "Full path to the Jakarta mod_jk module log file"},
     {"JkLogLevel", jk_set_log_level, NULL, RSRC_CONF, TAKE1,
-     "The Jakarta Tomcat module log level, can be debug, info, error or emerg"},
+     "The Jakarta mod_jk module log level, can be debug, info, error or emerg"},
     {"JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF, TAKE1,
-     "The Jakarta Tomcat module log format, follow strftime synthax"},
+     "The Jakarta mod_jk module log format, follow strftime synthax"},
 
     /*
      * Apache has multiple SSL modules (for example apache_ssl, stronghold
@@ -1031,6 +1065,9 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
     if(!map_alloc(&(c->automount))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
+	if(!map_alloc(&(c->secretkeys))) {
+		jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
+	}
     c->uw_map = NULL;
 	c->secret_key = NULL;
 
@@ -1076,6 +1113,7 @@ static void *merge_jk_config(ap_pool *p,
     if(overrides->mountcopy) {
 		copy_jk_map(p, overrides->s, base->uri_to_context, overrides->uri_to_context);
 		copy_jk_map(p, overrides->s, base->automount, overrides->automount);
+		copy_jk_map(p, overrides->s, base->secretkeys, overrides->secretkeys);
     }
 
     if(base->envvars_in_use) {
@@ -1113,14 +1151,27 @@ static void jk_init(server_rec *s, ap_pool *p)
         }
     }
     
+/*
 { int i;
-jk_log(conf->log, JK_LOG_DEBUG, "secret = %s\n", conf->secret_key);
+jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s\n", conf->secret_key);
 for (i = 0; i < map_size(conf->automount); i++)
 {
             char *name = map_name_at(conf->automount, i);
-			jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and key = %s\n", name, map_get_string(conf->automount, name, NULL));
+			jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s\n", name, map_get_string(conf->automount, name, NULL));
 }
 }
+*/
+
+/*
+{ int i;
+jk_log(conf->log, JK_LOG_DEBUG, "secret = %s\n", conf->secret_key);
+for (i = 0; i < map_size(conf->secretkeys); i++)
+{
+            char *name = map_name_at(conf->secretkeys, i);
+            jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and secretkey = %s\n", name, map_get_string(conf->secretkeys, name, NULL));
+}
+}
+*/
 
     /* Create mapping from uri's to workers, and start up all the workers */
     if(!uri_worker_map_alloc(&(conf->uw_map), conf->uri_to_context, conf->log)) {
@@ -1172,15 +1223,26 @@ static int jk_translate(request_rec *r)
 
 static void exit_handler (server_rec *s, ap_pool *p)
 {
-   jk_server_conf_t *conf =
-       (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+	server_rec *tmp = s;
 
-   wc_close(conf->log);
-   uri_worker_map_free(&(conf->uw_map), conf->log);
-   map_free(&(conf->uri_to_context));
-   map_free(&(conf->automount));
-   if (conf->log)
-      jk_close_file_logger(&(conf->log));
+	/* loop through all available servers to clean up all configuration
+	 * records we've created
+	 */
+    while (NULL != tmp)
+    {
+        jk_server_conf_t *conf =
+            (jk_server_conf_t *)ap_get_module_config(tmp->module_config, &jk_module);
+
+        if (NULL != conf)
+        {
+            wc_close(conf->log);
+            uri_worker_map_free(&(conf->uw_map), conf->log);
+            map_free(&(conf->uri_to_context));
+            if (conf->log)
+                jk_close_file_logger(&(conf->log));
+        }
+        tmp = tmp->next;
+    }
 }
 
 static const handler_rec jk_handlers[] =
