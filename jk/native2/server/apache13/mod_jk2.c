@@ -122,7 +122,7 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
     
     if( type==NULL || type[0]=='\0') {
         /* Generic Jk2Set foo bar */
-        workerEnv->setProperty( env, workerEnv, name, value );
+        workerEnv->config->setPropertyString( env, workerEnv->config, name, value );
     } else if( strcmp(type, "env")==0) {
         workerEnv->envvars_in_use = JK_TRUE;
         workerEnv->envvars->put(env, workerEnv->envvars,
@@ -131,7 +131,7 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
                                 NULL);
     } else if( strcmp(type, "mount")==0) {
         if (name[0] !='/') return "Context must start with /";
-        workerEnv->setProperty( env, workerEnv, name, value );
+        workerEnv->mbean->setAttribute( env, workerEnv->mbean, name, value );
     } else {
         fprintf( stderr, "set2 error %s %s %s ", type, name, value );
     }
@@ -168,7 +168,7 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
 {
     jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)per_dir;
 
-    uriEnv->setProperty( workerEnv->globalEnv, uriEnv, name, val );
+    uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, name, val );
     
     return NULL;
 }
@@ -190,11 +190,14 @@ static const command_rec jk2_cmds[] =
 
 static void *jk2_create_dir_config(ap_pool *p, char *path)
 {
-    jk_uriEnv_t *new =
-        workerEnv->uriMap->createUriEnv( workerEnv->globalEnv,
-                                         workerEnv->uriMap, NULL, path );
-    
-    return new;
+    /* We don't know the vhost yet - so path is not
+     * unique. We'll have to generate a unique name
+     */
+    jk_uriEnv_t *newUri = workerEnv->globalEnv->createInstance( workerEnv->globalEnv,
+                                                                workerEnv->pool,
+                                                                "uri", path );
+    newUri->mbean->setAttribute( workerEnv->globalEnv, newUri->mbean, "path", path );
+    return newUri;
 }
 
 static void *jk2_merge_dir_config(ap_pool *p, void *basev, void *addv)
@@ -231,12 +234,12 @@ static void jk2_create_workerEnv(ap_pool *p, const server_rec *s)
     /* Init the environment. */
     
     /* Create the logger */
-    l = env->getInstance( env, env->globalPool, "logger", "file");
+    l = env->createInstance( env, env->globalPool, "logger.file", "logger");
     
     env->l=l;
     
     /* Create the workerEnv */
-    workerEnv= env->getInstance( env, env->globalPool,"workerEnv", "default");
+    workerEnv= env->createInstance( env, env->globalPool,"workerEnv", "workerEnv");
 
     if( workerEnv==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating workerEnv\n");
@@ -417,7 +420,7 @@ static int jk2_handler(request_rec *r)
         worker =  workerEnv->defaultWorker;
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "mod_jk.handler() Default worker for %s %s\n",
-                      r->uri, worker->name); 
+                      r->uri, worker->mbean->name); 
     } else {
         worker=uriEnv->worker;
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
@@ -425,8 +428,7 @@ static int jk2_handler(request_rec *r)
                       worker, uriEnv );
         
         if( worker==NULL && uriEnv->workerName != NULL ) {
-            worker=workerEnv->getWorkerForName( env, workerEnv,
-                                                uriEnv->workerName);
+            worker=env->getByName( env,uriEnv->workerName);
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
                           "mod_jk.handler() finding worker for %p %p\n",
                           worker, uriEnv );
@@ -465,7 +467,7 @@ static int jk2_handler(request_rec *r)
         s->init( env, s, worker, r );
         
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "modjk.handler() Calling %s\n", worker->name); 
+                      "modjk.handler() Calling %s\n", worker->mbean->name); 
         rc = worker->service(env, worker, s);
 
         s->afterRequest(env, s);
