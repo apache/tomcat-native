@@ -1,701 +1,459 @@
 <<
 # Scandoc template file.
 #
-# This is an example set of templates that is designed to create several 
-# different kinds of index files. It generates a "master index" which intended 
-# for use with a frames browser; A "package index" which is the root page of 
-# the index, and then "package files" containing documentation for all of the 
+# This is an example set of templates that is designed to create several
+# different kinds of index files. It generates a "master index" which intended
+# for use with a frames browser; A "package index" which is the root page of
+# the index, and then "package files" containing documentation for all of the
 # classes within a single package.
 
-######################################################################
+###############################################################################
+## Defaults for look and feel
 
-## For quick and superficial customization, 
-## simply change these variables
+if ($project == "") { $project = "WebApp Library"; }
+if ($copyright == "") { $copyright = "2001, The Apache Software Foundation"; }
+if ($body_bgcolor == "") { $body_bgcolor = '#ffffff'; }
+if ($body_text    == "") { $body_text    = '#000000'; }
+if ($body_link    == "") { $body_link    = '#0000ff'; }
+if ($body_vlink   == "") { $body_vlink   = '#0000ff'; }
+if ($body_alink   == "") { $body_alink   = '#0000ff'; }
 
-$project_name     = 'Apache WebApp';
-$copyright        = '2000-2001 The Apache Software Foundation';
-
-######################################################################
-
-## Begin generating frame index file.
+###############################################################################
+# Generate the frameset index                                                 #
+###############################################################################
 
 file "index.html";
+@p = packages();
+$_ = @p[0]->url;
+s/\s/_/g;
+y/[A-Z]/[a-z]/;
 >>
 <html>
- <head>
-  <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
-  <title>$project_name</title>
- </head>
- <frameset cols="200,*">
-  <frame src="master.html" name="master">
-  <frame src="packages.html" name="documentation">
- </frameset>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
+    <title>$project API Documentation</title>
+  </head>
+  <frameset cols="200,*">
+    <frameset rows="150,*">
+      <frame src="packages.html">
+      <frame src="pkg.$_" name="pkg">
+    </frameset>
+    <frame src="doc.$_" name="doc">
+  </frameset>
 </html>
 <<
 
-######################################################################
-
-## Begin generating master index file (left-hand frame).
-
-file "master.html";
->>
-<html>
- <head>
-  <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
-  <title>$project_name - Master Index</title>
- </head>
- <body bgcolor="#999999" text="#000000" link="#0000ff" vlink="#0000ff" alink="#0000ff">
-  <table width="100%" bgcolor="#999999" border="0" cellspacing="1" cellpadding="0">
-   <tr>
-    <td bgcolor="#ffcccc" align="center" colspan="2"><font size="+1"><nobr><b>$project_name</b></nobr></font></td>
-   </tr>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2"><font size="-1"><a href="master.html" target="documentation">Master Index:</a></font></td>
-   </tr>
-   <tr>
-    <td bgcolor="#ccccff" width="10"><font size="-1">&nbsp;</font></td>
-    <td bgcolor="#ffffff" align="left"><font size="-1"><nobr><a href="packages.html" target="documentation">Packages list</a></nobr></font></td>
-   </tr>
-   <tr>
-    <td bgcolor="#ccccff" width="10"><font size="-1">&nbsp;</font></td>
-    <td bgcolor="#ffffff" align="left"><font size="-1"><nobr><a href="todolist.html" target="documentation">To-Do list</a></nobr></font></td>
-   </tr>
-<<
-
-## For each package, generate an index entry.
-
-foreach $p (packages()) {
-  $_ = $p->url;
-  s/\s/_/g;
->>
-   <tr><td bgcolor="#999999" height="4" colspan="2">&nbsp;</td></tr>
-   <tr>
-    <td bgcolor="#ccffcc" align="center" colspan="2"><nobr><b><a href="$_" target="documentation">$(p.name)</a></b></nobr></td>
-   </tr>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2"><font size="-1">Classes:</font></td>
-   </tr>
-<<
-
-  foreach $e ($p->classes()) {
-    $_ = $e->url;
-    s/\s/_/g;
->>
-   <tr>
-    <td bgcolor="#ccccff" width="10"><font size="-1">&nbsp;</font></td>
-    <td bgcolor="#ffffff" align="left"><font size="-1"><nobr><a href="$_" target="documentation">$(e.fullname)</a></nobr></font></td>
-   </tr>
-<<
-  }
-
->>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2"><nobr><font size="-1">Global Variables:</font></nobr></td>
-   </tr>
-<<
-
-  foreach $e ($p->globalvars()) {
-    $_ = $e->url;
-    s/\s/_/g;
->>
-   <tr>
-    <td bgcolor="#ccccff" width="10"><font size="-1">&nbsp;</font></td>
-    <td bgcolor="#ffffff" align="left"><nobr><font size="-1"><a href="$_" target="documentation">$(e.fullname)</a></font></nobr></td>
-   </tr>
-<<
-  }
-
->>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2"><nobr><font size="-1">Global Functions:</font></nobr></td>
-   </tr>
-<<
-
-  foreach $e ($p->globalfuncs()) {
-    $_ = $e->url;
-    s/\s/_/g;
->>
-   <tr>
-    <td bgcolor="#ccccff" width="10"><font size="-1">&nbsp;</font></td>
-    <td bgcolor="#ffffff" align="left"><font size="-1"><nobr><a href="$_" target="documentation">$(e.fullname)</a></nobr></font></td>
-   </tr>
-<<
-  }
-}
-
->>
-   <tr><td bgcolor="#999999" height="4" colspan="2">&nbsp;</td></tr>
-   <tr><td bgcolor="#666666" height="1" colspan="2"></td></tr>
-   <tr>
-    <td bgcolor="#999999" colspan="2" align="center">
-     <font size="-1">
-      Copyright &copy; $copyright. All Rights Reserved.<br>
-      Generated by <a href="$scandocURL"><b>ScanDoc $majorVersion.$minorVersion</b></a>
-      on $date<br>
-     </font>
-    </td>
-   </tr>
-  </table>
- </body>
-</html>
-<<
-
-######################################################################
-
-## Begin generating package index file
+###############################################################################
+# Generate the packages list                                                  #
+###############################################################################
 
 file "packages.html";
 >>
 <html>
- <head>
-  <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
-  <title>$project_name - Packages List</title>
- </head>
- <body bgcolor="#999999" text="#000000" link="#0000ff" vlink="#0000ff" alink="#0000ff">
-  <table width="100%" bgcolor="#999999" border="0" cellspacing="1" cellpadding="0">
-   <tr>
-    <td bgcolor="#ffcccc" align="center" colspan="2"><font size="+1"><nobr><b>$project_name - Packages List</b></nobr></font></td>
-   </tr>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2"><font size="-1">Packages:</font></td>
-   </tr>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
+    <title>$project - Packages List</title>
+  </head>
+  <body link="$body_link" vlink="$body_vlink" alink="$body_alink"
+        bgcolor="$body_bgcolor" text="$body_text">
+    <font size="+1" face="arial,helvetica,sans serif">
+      <nobr><b>$project packages:</b></nobr>
+    </font>
+    <table border="0" cellspacing="0" cellpadding="0">
+      <tr>
+        <td width="10">&nbsp;</td>
+        <td>&nbsp;</td>
+      </tr>
 <<
 
 ## For each package, generate an index entry.
 
 foreach $p (packages()) {
-  $_ = $p->url;
-  s/\s/_/g;
->>
-   <tr>
-    <td bgcolor="#ccccff" width="10"><font size="-1">&nbsp;</font></td>
-    <td bgcolor="#ffffff" align="left"><font size="-1"><nobr><a href = "$_">$(p.name)</a></nobr></font></td>
-   </tr>
-<<
+    $_ = $p->url;
+    s/\s/_/g;
+    y/[A-Z]/[a-z]/;
+    >>
+          <tr>
+            <td width="10">&nbsp;</td>
+            <td>
+              <font face="arial,helvetica,sans serif">
+                <nobr><a href="pkg.$_" target="pkg">$(p.name)</a></nobr>
+              </font>
+            </td>
+          </tr>
+    <<
 }
 
 >>
-   <tr><td bgcolor="#999999" height="4" colspan="2">&nbsp;</td></tr>
-   <tr><td bgcolor="#666666" height="1" colspan="2"></td></tr>
-   <tr>
-    <td bgcolor="#999999" colspan="2" align="center">
-     <font size="-1">
-      Copyright &copy; $copyright. All Rights Reserved.<br>
-      Generated by <a href="$scandocURL"><b>ScanDoc $majorVersion.$minorVersion</b></a>
-      on $date<br>
-     </font>
-    </td>
-   </tr>
-  </table>
- </body>
+    </table>
+    <hr>
+    <font size="-2" face="arial,helvetica,sans serif">
+      <div align="center">
+        Copyright &copy; $copyright.<br>
+        All Rights Reserved.<br>
+      </div>
+    </font>
+  </body>
 </html>
 <<
 
-######################################################################
-
-## Generate "To-do list"
-
-file "todolist.html";
->>
-<html>
- <head>
-  <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
-  <title>$project_name - To-Do List</title>
- </head>
- <body bgcolor="#999999" text="#000000" link="#0000ff" vlink="#0000ff" alink="#0000ff">
-  <table width="100%" bgcolor="#999999" border="0" cellspacing="1" cellpadding="0">
-   <tr>
-    <td bgcolor="#ffcccc" align="center" colspan="2"><font size="+1"><nobr><b>$project_name - Packages List</b></nobr></font></td>
-   </tr>
-<<
-
-if (&todolistFiles()) {
-  foreach $f (&todolistFiles()) {
-    my @m = &todolistEntries( $f );
-    if ($f =~ /([^\/]+)$/) { $f = $1; }
->>
-   <tr><td bgcolor="#999999" height="4" colspan="2">&nbsp;</td></tr>
-   <tr>
-    <td bgcolor="#ccffcc" align="left" colspan="2"><b>$f</b> notes:</font></td>
-   </tr>
-   <tr>
-    <td bgcolor="#ccccff" width="10"><font size="-1">&nbsp;</font></td>
-    <td bgcolor="#ffffff" align="left"><font size="-1">
-<<
-    foreach $text (@m) {
-      if ($text) {
->>
-     $text
-<<
-      }
-    }
->>
-    </td>
-   </tr>
-<<
-  }
-}
-
->>
-   <tr><td bgcolor="#999999" height="4" colspan="2">&nbsp;</td></tr>
-   <tr><td bgcolor="#666666" height="1" colspan="2"></td></tr>
-   <tr>
-    <td bgcolor="#999999" colspan="2" align="center">
-     <font size="-1">
-      Copyright &copy; $copyright. All Rights Reserved.<br>
-      Generated by <a href="$scandocURL"><b>ScanDoc $majorVersion.$minorVersion</b></a>
-      on $date<br>
-     </font>
-    </td>
-   </tr>
-  </table>
- </body>
-</html>
-<<
-
-######################################################################
-
-## Generate individual files for each package.
-
-my $p;
+###############################################################################
+# Generate the packages table of content for each package                     #
+###############################################################################
 foreach $p (packages()) {
-  $_ = $p->name;
-  s/\s/_/g;
-  file $_ . ".html";
->>
-<html>
- <head>
-  <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
-  <title>$project_name - Package $(p.name)</title>
- </head>
- <body bgcolor="#999999" text="#000000" link="#0000ff" vlink="#0000ff" alink="#0000ff">
-  <table width="100%" bgcolor="#999999" border="0" cellspacing="1" cellpadding="0">
-   <tr>
-    <td bgcolor="#ffcccc" align="center" colspan="2"><font size="+2"><nobr><b>$project_name - Package $(p.name)</b></nobr></font></td>
-   </tr>
-<<
-
-## Generate class and member index at the top of the file.
-
->>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2">Classes:</td>
-   </tr>
-<<
-  foreach $e ($p->classes()) {
-    $_ = $e->url;
+    $_ = $p->url;
     s/\s/_/g;
->>
-   <tr>
-    <td bgcolor="#ccccff" width="10">&nbsp;</td>
-    <td bgcolor="#ffffff" align="left">
-     <dl>
-      <dt><a href="$_">$(e.fullname)</a></dt>
-<<
+    y/[A-Z]/[a-z]/;
+    file "pkg.$_";
+    >>
+    <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
+        <title>$project - Packages List</title>
+      </head>
 
-    # Output class member index
-    if ($e->members()) {
-      foreach $m ($e->members()) {
-        $_ = $m->url;
+      <body link="$body_link" vlink="$body_vlink" alink="$body_alink"
+            bgcolor="$body_bgcolor" text="$body_text">
+        <font size="+1" face="arial,helvetica,sans serif">
+          <nobr><b><a href="doc.$_" target="doc">$(p.name)</a> package:</b></nobr>
+        </font>
+        <table border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td width="10">&nbsp;</td>
+            <td>&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <font face="arial,helvetica,sans serif">
+                <nobr>Classes:</nobr>
+              </font>
+            </td>
+          </tr>
+    <<
+    foreach $e ($p->classes()) {
+        $_ = $e->url;
         s/\s/_/g;
->>
-      <dd><font size="-1"><a href="$_">$(m.fullname)</a></font></dd>
-<<
+        y/[A-Z]/[a-z]/;
+        >>
+              <tr>
+                <td width="10">&nbsp;</td>
+                <td>
+                  <font face="arial,helvetica,sans serif">
+                    <nobr><a href="doc.$_" target="doc">$(e.fullname)</a></nobr>
+                  </font>
+                </td>
+              </tr>
+        <<
     }
-  }
->>
-     </dl>
-    </td>
-   </tr>
-<<
-  }
 
->>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2">Global Variables:</td>
-   </tr>
-<<
-  foreach $e ($p->globalvars()) {
-    $_ = $e->url;
+    if ($p->globalfuncs()) {
+        >>
+              <tr>
+                <td colspan="2">
+                  <font face="arial,helvetica,sans serif">
+                    <nobr>Global Functions:</nobr>
+                  </font>
+                </td>
+              </tr>
+        <<
+        foreach $e ($p->globalfuncs()) {
+            $_ = $e->url;
+            s/\s/_/g;
+            y/[A-Z]/[a-z]/;
+            >>
+                  <tr>
+                    <td width="10">&nbsp;</td>
+                    <td>
+                      <font face="arial,helvetica,sans serif">
+                        <nobr><a href="doc.$_" target="doc">$(e.fullname)</a></nobr>
+                      </font>
+                    </td>
+                  </tr>
+            <<
+        }
+    } else {
+        >>
+              <tr>
+                <td colspan="2">
+                  <font face="arial,helvetica,sans serif">
+                    <nobr><i>No Global Functions defined.</i></nobr>
+                  </font>
+                </td>
+              </tr>
+        <<
+    }
+
+    if ($p->globalvars()) {
+        >>
+              <tr>
+                <td colspan="2">
+                  <font face="arial,helvetica,sans serif">
+                    <nobr>Global Variables:</nobr>
+                  </font>
+                </td>
+              </tr>
+        <<
+        foreach $e ($p->globalvars()) {
+            $_ = $e->url;
+            s/\s/_/g;
+            y/[A-Z]/[a-z]/;
+            >>
+                  <tr>
+                    <td width="10">&nbsp;</td>
+                    <td>
+                      <font face="arial,helvetica,sans serif">
+                        <nobr><a href="doc.$_" target="doc">$(e.fullname)</a></nobr>
+                      </font>
+                    </td>
+                  </tr>
+            <<
+        }
+    } else {
+        >>
+              <tr>
+                <td colspan="2">
+                  <font face="arial,helvetica,sans serif">
+                    <nobr><i>No Global Variables defined.</i></nobr>
+                  </font>
+                </td>
+              </tr>
+        <<
+    }
+
+    >>
+        </table>
+        <hr>
+        <font size="-2" face="arial,helvetica,sans serif">
+          <div align="center">
+            Copyright &copy; $copyright.<br>
+            All Rights Reserved.<br>
+          </div>
+        </font>
+      </body>
+    </html>
+    <<
+}
+
+###############################################################################
+# Generate the packages detailed description for each package                 #
+###############################################################################
+foreach $p (packages()) {
+    $_ = $p->url;
     s/\s/_/g;
->>
-   <tr>
-    <td bgcolor="#ccccff" width="10">&nbsp;</td>
-    <td bgcolor="#ffffff" align="left"><a href="$_">$(e.fullname)</a></td>
-   </tr>
-<<
-  }
-
->>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2">Global Functions:</td>
-   </tr>
-<<
-  foreach $e ($p->globalfuncs()) {
-    $_ = $e->url;
-    s/\s/_/g;
->>
-   <tr>
-    <td bgcolor="#ccccff" width="10">&nbsp;</td>
-    <td bgcolor="#ffffff" align="left"><a href="$_">$(e.fullname)</a></td>
-   </tr>
-<<
-  }
-
->>
-   <tr><td bgcolor="#999999" height="4" colspan="2">&nbsp;</td></tr>
-  </table>
-<<
-
-## Generate detailed class documentation
-foreach $c ($p->classes()) {
- ## Output searchable keyword list
- if ($c->keywords()) {
-   print "<!-- ", $c->keywords(), " -->\n";
- }
-
->>
-  <a name="$(c.anchor)"></a>
-  <table width="100%" bgcolor="#999999" border="0" cellspacing="1" cellpadding="0">
-   <tr>
-    <td bgcolor="#ccffcc" align="center" colspan="2"><nobr>Class: <b>$(c.fullname)</b></nobr></td>
-   </tr>
-<<
-
-  # Output main class description
->>
-   <tr>
-    <td bgcolor="#ccccff" align="right" width="10%">Description</td>
-    <td bgcolor="#ffffff" align="left" width="90%">$(c.description)</td>
-   </tr>
-<<
-  
-  # Output author tag
-  if ($c->author()) {
->>
-   <tr>
-    <td bgcolor="#ccccff" align="right" width="10%">Author</td>
-    <td bgcolor="#ffffff" align="left" width="90%">$(c.author)</td>
-   </tr>
-<<
-  }
-
-  # Output package version
-  if ($c->version()) {
->>
-   <tr>
-    <td bgcolor="#ccccff" align="right" width="10%">Version</td>
-    <td bgcolor="#ffffff" align="left" width="90%">$(c.version)</td>
-   </tr>
-<<
-  }
-
-  # Output Source file
-  if ($c->sourcefile()) {
->>
-   <tr>
-    <td bgcolor="#ccccff" align="right" width="10%">Source&nbsp;File</td>
-    <td bgcolor="#ffffff" align="left" width="90%">$(c.sourcefile)</td>
-   </tr>
-<<
-  }
-
-  # Output "see also" information
-  if ($c->seealso()) {
->>
-   <tr>
-    <td bgcolor="#ccccff" align="right" width="10%">See&nbsp;Also</td>
-    <td bgcolor="#ffffff" align="left" width="90%">
-<<
-    my @r = ();
-    foreach $a ($c->seealso()) {
-      my $name = $a->name();
-      if ($url = $a->url()) {
-        $_ = $url;
+    y/[A-Z]/[a-z]/;
+    file "doc.$_";
+    >>
+    <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
+        <title>$project - Packages List</title>
+      </head>
+      <body link="$body_link" vlink="$body_vlink" alink="$body_alink"
+            bgcolor="$body_bgcolor" text="$body_text">
+        <table width="100%" cellspacing="0" cellpadding="2" border="1">
+          <tr>
+            <td bgcolor="ccccff">
+              <table border="0" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td bgcolor="ccccff" align="left">
+                    <font size="+1" face="arial,helvetica,sans serif">
+                      <b>$project</b>
+                    </font>
+                  </td>
+                  <td bgcolor="ccccff" align="right">
+                    <font size="+1" face="arial,helvetica,sans serif">
+                      <b>$(p.name) package</b>
+                    </font>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        <br>
+        <table width="100%" cellspacing="0" cellpadding="2" border="1">
+          <tr>
+            <td bgcolor="eeeeff" align="left">
+              <font face="arial,helvetica,sans serif">
+                <b>Classes</b>
+              </font>
+            </td>
+          </tr>
+    <<
+    foreach $e ($p->classes()) {
+        $_ = $e->url;
         s/\s/_/g;
-        push @r, "<a href=\"$_\">$name</a>";
-      }
-      else { push @r, $name; }
+        y/[A-Z]/[a-z]/;
+        >>
+              <tr>
+                <td>
+                  <dl>
+                    <dt>
+                      <font face="arial,helvetica,sans serif">
+                        <nobr><a href="$_">$(e.fullname)</a></nobr>
+                      </font>
+                    </dt>
+        <<
+        if ($e->members()) {
+            foreach $m ($e->members()) {
+                $_ = $m->url;
+                s/\s/_/g;
+                y/[A-Z]/[a-z]/;
+                >>
+                            <dd>
+                              <font size="-1" face="arial,helvetica,sans serif">
+                                <nobr><a href="$_">$(m.fullname)</a></nobr>
+                              </font>
+                            </dd>
+                <<
+            }
+        }
+        >>
+                  </dl>
+                </td>
+              </tr>
+        <<
     }
-    print join( ', ', @r );
->>
-    </td>
-   </tr>
-<<
-  }
 
-
-  # Output base class list
-  if ($c->baseclasses()) {
->>
-   <tr>
-    <td bgcolor="#ccccff" align="right" width="10%">Base&nbsp;Classes</td>
-    <td bgcolor="#ffffff" align="left" width="90%">
-<<
-    my @t = ();
-    foreach $b ($c->baseclasses()) {
-      my $name = $b->name();
-      if ($url = $b->url()) {
-        $_ = $url;
-        s/\s/_/g;
-        push @t, "<a href=\"$_\">$name</a>";
-      }
-      else { push @t, $name; }
+    if ($p->globalfuncs()) {
+        >>
+            </table>
+            <br>
+            <table width="100%" cellspacing="0" cellpadding="2" border="1">
+              <tr>
+                <td bgcolor="eeeeff" align="left">
+                  <font face="arial,helvetica,sans serif">
+                    <b>Global Functions</b>
+                  </font>
+                </td>
+              </tr>
+        <<
+        foreach $e ($p->globalfuncs()) {
+            $_ = $e->url;
+            s/\s/_/g;
+            y/[A-Z]/[a-z]/;
+            >>
+                  <tr>
+                    <td>
+                      <font face="arial,helvetica,sans serif">
+                        <nobr><a href="$_">$(e.fullname)</a></nobr>
+                      </font>
+                    </td>
+                  </tr>
+            <<
+        }
     }
-    print join( ', ', @t );
->>
-    </td>
-   </tr>
-<<
-  }	
 
-  # Output subclasses list
-  if ($c->subclasses()) {
->>
-   <tr>
-    <td bgcolor="#ccccff" align="right" width="10%">Sub&nbsp;Classes</td>
-    <td bgcolor="#ffffff" align="left" width="90%">
-<<
-    my @t = ();
-    foreach $s ($c->subclasses()) {
-      my $name = $s->name();
-      if ($url = $s->url()) {
-        $_ = $url;
-        s/\s/_/g;
-        push @t, "<a href=\"$_\">$name</a>";
-      }
-      else { push @t, $name; }
+    if ($p->globalvars()) {
+        >>
+            </table>
+            <br>
+            <table width="100%" cellspacing="0" cellpadding="2" border="1">
+              <tr>
+                <td bgcolor="eeeeff" align="left">
+                  <font face="arial,helvetica,sans serif">
+                    <b>Global Variables</b>
+                  </font>
+                </td>
+              </tr>
+        <<
+        foreach $e ($p->globalvars()) {
+            $_ = $e->url;
+            s/\s/_/g;
+            y/[A-Z]/[a-z]/;
+            >>
+                  <tr>
+                    <td>
+                      <font face="arial,helvetica,sans serif">
+                        <nobr><a href="$_">$(e.fullname)</a></nobr>
+                      </font>
+                    </td>
+                  </tr>
+            <<
+        }
     }
-    print join( ', ', @t );
->>
-    </td>
-   </tr>
-<<
-  }
 
-  # Output class member variable documentation
-  if ($c->membervars()) {
->>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2">Class Variables</td>
-   </tr>
-<<
-    foreach $m ($c->membervars()) { &variable( $m ); }
-  }
+    >>
+        </table>
+        <br>
+    <<
 
-  # Output class member function documentation
-  if ($c->memberfuncs()) {
->>
-   <tr>
-    <td bgcolor="#cccccc" align="left" colspan="2">Class Functions</td>
-   </tr>
-<<
-    foreach $m ($c->memberfuncs()) { &function( $m ); }
-  }
->>
-   <tr><td bgcolor="#999999" height="4" colspan="2">&nbsp;</td></tr>
-   </table>
-<<
-}
 
-# Output global variables
-if ($p->globalvars()) {
->>
-  <table width="100%" bgcolor="#999999" border="0" cellspacing="1" cellpadding="0">
-   <tr>
-    <td bgcolor="#ccffcc" align="center" colspan="2"><nobr><b>Global Variables:</b></nobr></td>
-   </tr>
-<<
-  foreach $m ($p->globalvars()) { &variable( $m ); }
->>
-   <tr><td bgcolor="#999999" height="4" colspan="2">&nbsp;</td></tr>
-  </table>
-<<
-}
 
-# Output global functions
-if ($p->globalfuncs()) {
->>
-  <table width="100%" bgcolor="#999999" border="0" cellspacing="1" cellpadding="0">
-   <tr>
-    <td bgcolor="#ccffcc" align="center" colspan="2"><nobr><b>Global Functions:</b></nobr></td>
-   </tr>
-<<
-  foreach $m ($p->globalfuncs()) { &function( $m ); }
->>
-   <tr><td bgcolor="#999999" height="4" colspan="2">&nbsp;</td></tr>
-  </table>
-<<
-}
 
->>
-  <table width="100%" bgcolor="#999999" border="0" cellspacing="1" cellpadding="0">
-   <tr><td bgcolor="#999999" height="4">&nbsp;</td></tr>
-   <tr><td bgcolor="#666666" height="1"></td></tr>
-   <tr>
-    <td bgcolor="#999999" align="center">
-     <font size="-1">
-      Copyright &copy; $copyright. All Rights Reserved.<br>
-      Generated by <a href="$scandocURL"><b>ScanDoc $majorVersion.$minorVersion</b></a>
-      on $date<br>
-     </font>
-    </td>
-   </tr>
-  </table>
- </body>
-</html>
-<<
-} # end of foreach (packages) loop
-
-######################################################################
-
-## Subroutine to generate documentation for a member function or global function
-
-sub function {
-  local ($f) = @_;
-  
->>
-   <tr>
-    <td bgcolor="#ccccff" align="right" width="10%" valign="top">
-     <nobr><a name="$(f.name)">$(f.fullname)</a></nobr>
-    </td>
-    <td bgcolor="#ffffff" align="left" width="90%">
-<<
-
-  if ($f->keywords()) {
->>
-     <!-- $(f.keywords) -->
-<<
-  }
-
->>
-     <dl>
-      <dt>
-       $(f.description)
-      </dt>
-<<
-
-  if ($f->params()) {
->>
-      <dt><font size="-1"><b>Parameters</b></font></dt>
-<<
-    foreach $a ($f->params()) {
->>
-      <dd>
-       <font size="-1">
-        <b>$(a.name):</b>
-        $(a.description)
-       </font>
-      </dd>
-<<
+    if ($p->globalfuncs()) {
+        >>
+            <table width="100%" cellspacing="0" cellpadding="2" border="1">
+              <tr>
+                <td bgcolor="ccccff" align="left">
+                  <font size="+1" face="arial,helvetica,sans serif">
+                    <b>Global Functions Detail:</b>
+                  </font>
+                </td>
+              </tr>
+            </table>
+        <<
+        foreach $e ($p->globalfuncs()) {
+            $_ = $e->url;
+            s/\s/_/g;
+            y/[A-Z]/[a-z]/;
+            >>
+                <font size="+1" face="arial,helvetica,sans serif">
+                  <b><a name="$(e.name)">$(e.name)</a></b>
+                </font>
+                <dl>
+                  <dt><code>$(e.fullname)</code></dt>
+                  <dd>
+                    <dl>
+                      <dt>$(e.description)</dt>
+            <<
+            if ($e->params()) {
+                >>
+                          <dt><b>Parameters</b></dt>
+                <<
+                foreach $a ($e->params()) {
+                >>
+                          <dd>
+                            <code>$(a.name)</code>
+                            $(a.description)
+                          </dd>
+                <<
+                }
+            }
+            if ($e->returnValue()) {
+                >>
+                          <dt><b>Return Value</b></dt>
+                          <dd>$(e.returnValue)</dd>
+                <<
+            }
+            if ($e->exceptions()) {
+                >>
+                          <dt><b>Exceptions</b></dt>
+                <<
+                foreach $a ($e->exceptions()) {
+                >>
+                          <dd>
+                            <code>$(a.name)</code>
+                            $(a.description)
+                          </dd>
+                <<
+                }
+            }
+            >>
+                    </dl>
+                  </dd>
+                </dl>
+                <hr>
+            <<
+        }
     }
-  }
-	
-  if ($f->returnValue()) {
->>
-      <dt><font size="-1"><b>Return Value</b></font></dt>
-      <dd><font size="-1">$(f.returnValue)</font></dd>
-<<
-  }
-  
-  if ($f->exceptions()) {
->>
-      <dt><font size="-1"><b>Exceptions</b></font></dt>
-<<
-    foreach $a ($f->exceptions()) {
->>
-      <dd>
-       <font size="-1">
-        <b>$(a.name):</b>
-        $(a.description)
-       </font>
-      </dd>
-<<
-    }
-  }
-	
-  if ($f->seealso()) {
->>
-      <dt><font size="-1"><b>See Also</b></font></dt>
-      <dd>
-       <font size="-1">
-<<
-    my @r = ();
-    foreach $a ($f->seealso()) {
-      my $name = $a->name();
-      if ($url = $a->url()) {
-        $_ = $url;
-        s/\s/_/g;
-        push @r, "<a href=\"$_\">$name</a>";
-      }
-      else { push @r, $name; }
-    }
-    print join( ', ', @r );
->>
-       </font>
-      </dd>
-<<
-  }
->>
-     </dl>
-    </td>
-   </tr>
-<<
-}
-
-######################################################################
-
-## Subroutine to generate documentation for a member variable or global variable.
-
-sub variable {
-  local ($v) = @_;
-  
->>
-   <tr>
-    <td bgcolor="#ccccff" align="right" width="10%" valign="top">
-     <nobr><a name="$(v.name)">$(v.fullname)</a></nobr>
-    </td>
-    <td bgcolor="#ffffff" align="left" width="90%">
-<<
-
-  if ($v->keywords()) {
->>
-     <!-- $(v.keywords) -->
-<<
-  }
-
->>
-     <dl>
-      <dt>
-       $(v.description)
-      </dt>
-<<
-
-  if ($v->seealso()) {
->>
-      <dt><font size="-1"><b>See Also</b></font></dt>
-      <dd>
-       <font size="-1">
-<<
-    my @r = ();
-    foreach $a ($v->seealso()) {
-      my $name = $a->name();
-      if ($url = $a->url()) {
-        $_ = $url;
-        s/\s/_/g;
-        push @r, "<a href=\"$_\">$name</a>";
-      }
-      else { push @r, $name; }
-    }
-    print join( ', ', @r );
->>
-       </font>
-      </dd>
-<<
-  }
->>
-     </dl>
-    </td>
-   </tr>
-<<
+    >>
+        <font size="-2">
+          Copyright &copy; $copyright. All Rights Reserved.<br>
+          Generated by <a href="$scandocURL"><b>ScanDoc
+          $majorVersion.$minorVersion</b></a> on $date
+        </font>
+      </body>
+    </html>
+    <<
 }
