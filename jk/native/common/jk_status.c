@@ -29,6 +29,14 @@
 
 #define HUGE_BUFFER_SIZE (8*1024)
 
+#define JK_STATUS_HEAD "<!DOCTYPE HTML PUBLIC \"-//W3C//" \
+                       "DTD HTML 3.2 Final//EN\">\n"      \
+                       "<html><head><title>JK Status Manager</title></head>\n"  \
+                       "<body>\n"
+
+#define JK_STATUS_HEND "</body>\n</html>\n"
+
+
 typedef struct status_worker status_worker_t;
 
 struct status_endpoint
@@ -47,6 +55,7 @@ struct status_worker
     const char        *name;
     jk_worker_t       worker;
     status_endpoint_t ep;
+    jk_worker_env_t   *we;
 };
 
 static const char *headers_names[] = {
@@ -130,7 +139,15 @@ static int JK_METHOD service(jk_endpoint_t *e,
     if (e && e->endpoint_private && s) {
         status_endpoint_t *p = e->endpoint_private;
 
+        s->start_response(s, 200, "OK", headers_names, headers_vals, 3);
+        s->write(s, JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
+        
+        /* Step 1: Process GET params and update configuration */
 
+        /* Step 2: Display configuration */
+
+
+        s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
@@ -163,6 +180,9 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     if (pThis && pThis->worker_private) {
         status_worker_t *p = pThis->worker_private;
+
+        JK_TRACE_EXIT(l);
+        return JK_TRUE;
     }
 
     JK_LOG_NULL_PARAMS(l);
@@ -176,7 +196,10 @@ static int JK_METHOD init(jk_worker_t *pThis,
 {
     status_worker_t *p = (status_worker_t *)pThis->worker_private;
     JK_TRACE_ENTER(log);
-
+    if (pThis && pThis->worker_private) {
+        status_worker_t *p = pThis->worker_private;
+        p->we = we;
+    }
     JK_TRACE_EXIT(log);
     return JK_TRUE;
 }
