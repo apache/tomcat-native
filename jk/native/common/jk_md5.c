@@ -165,7 +165,7 @@ static void Encode(unsigned char *output, const JK_UINT4 *input, unsigned int le
 static void Decode(JK_UINT4 *output, const unsigned char *input, unsigned int len);
 static void jk_MD5Init(JK_MD5_CTX *context);
 static void jk_MD5Update(JK_MD5_CTX *context, const unsigned char *input, unsigned int inputLen);
-static void jk_MD5Final(unsigned char digest[JK_MD5_DIGESTSIZE], JK_MD5_CTX *context);
+/*static void jk_MD5Final(unsigned char digest[JK_MD5_DIGESTSIZE], JK_MD5_CTX *context);*/
 
 static unsigned char PADDING[64] =
 {

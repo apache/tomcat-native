@@ -101,7 +101,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
 	ajp_worker_t   *aw;
 	ajp_endpoint_t *ae;
 	jk_endpoint_t  *je;
-	char           *secret_key;
+	/*char           *secret_key; unused */
 
    	if (ajp_init(pThis, props, we, l, AJP14_PROTO) == JK_FALSE)
 		return JK_FALSE;

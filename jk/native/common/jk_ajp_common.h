@@ -304,8 +304,8 @@ int ajp_destroy(jk_worker_t **pThis,
                 jk_logger_t *l,
                 int          proto);
 
-int ajp_done(jk_endpoint_t **e,
-             jk_logger_t    *l);
+int JK_METHOD ajp_done(jk_endpoint_t **e,
+                       jk_logger_t    *l);
 
 int ajp_get_endpoint(jk_worker_t    *pThis,
                      jk_endpoint_t **pend,

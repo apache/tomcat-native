@@ -66,6 +66,7 @@
 #include "jk_ajp13.h"
 #include "jk_ajp14.h"
 #include "jk_ajp_common.h"
+#include "jk_connect.h"
 
 const char *response_trans_headers[] = {
     "Content-Type", 
@@ -361,7 +362,7 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
      */
     if ((ae->proto == AJP14_PROTO) && (s->ssl_key_size != -1)) {
         if (jk_b_append_byte(msg, SC_A_SSL_KEY_SIZE) ||
-            jk_b_append_int(msg, s->ssl_key_size)) {
+            jk_b_append_int(msg, (unsigned short) s->ssl_key_size)) {
             jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL key size\n");
             return JK_FALSE;
         }
@@ -984,7 +985,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
  * We serve here the request, using AJP13/AJP14 (e->proto)
  *
  */
-int ajp_service(jk_endpoint_t   *e, 
+int JK_METHOD ajp_service(jk_endpoint_t   *e, 
                 jk_ws_service_t *s,
                 jk_logger_t     *l,
                 int             *is_recoverable_error)
@@ -1205,8 +1206,8 @@ int ajp_destroy(jk_worker_t **pThis,
     return JK_FALSE;
 }
 
-int ajp_done(jk_endpoint_t **e,
-             jk_logger_t    *l)
+int JK_METHOD ajp_done(jk_endpoint_t **e,
+                       jk_logger_t    *l)
 {
     jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done\n");
 

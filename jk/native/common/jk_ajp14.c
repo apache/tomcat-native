@@ -65,6 +65,7 @@
 #include "jk_map.h"
 #include "jk_ajp_common.h"
 #include "jk_ajp14.h"
+#include "jk_md5.h"
 
 /*
  * Compute the MD5 with ENTROPY / SECRET KEY
@@ -340,7 +341,7 @@ int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t		*msg,
 	/*
 	 * UNHANDLED MESSAGE SIZE
 	 */
-	if (jk_b_append_int(msg, jk_b_get_len(unk)))
+	if (jk_b_append_int(msg, (unsigned short) jk_b_get_len(unk)))
 		return JK_FALSE;
 
 	/*
@@ -408,7 +409,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
                                  jk_logger_t *l)
 {
     char *sname;
-	char *old;
+	/* char *old; unused */
 	int	 i;
 
     sname  = (char *)jk_b_get_string(msg);
@@ -431,7 +432,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
     sname  = (char *)jk_b_get_string(msg); 
 
     if (! sname) {
-        log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get context\n");
+        jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get context\n");
         return JK_FALSE;
     }   
 
@@ -441,7 +442,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
     context->cbase = strdup(sname);
  
     if (! context->cbase) {
-        log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't malloc context\n");
+        jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't malloc context\n");
         return JK_FALSE;
     }
 
@@ -450,16 +451,16 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 		sname  = (char *)jk_b_get_string(msg);
 
 		if (!sname) {
-			log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get URL\n");
+			jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get URL\n");
 			return JK_FALSE;
 		}
 
 		if (! strlen(sname)) {
-			log(l, JK_LOG_INFO, "No more URI/URL (%d)", i);
+			jk_log(l, JK_LOG_INFO, "No more URI/URL (%d)", i);
 			break;
 		}
 
-		log(l, JK_LOG_INFO, "Got URL (%s) for virtualhost %s and base context %s", sname, context->virtual, context->cbase);
+		jk_log(l, JK_LOG_INFO, "Got URL (%s) for virtualhost %s and base context %s", sname, context->virtual, context->cbase);
 		context_add_uri(context, sname);
 	}
 	
@@ -546,7 +547,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
 	sname  = (char *)jk_b_get_string(msg);
 
 	if (! sname) {
-		log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - can't get context\n");
+		jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - can't get context\n");
 		return JK_FALSE;
 	}	
 
@@ -556,7 +557,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
 	context->cbase = strdup(sname);
 
 	if (! context->cbase) {
-		log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - can't malloc context\n");
+		jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_state_reply - can't malloc context\n");
 		return JK_FALSE;
 	}
 

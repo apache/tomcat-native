@@ -191,7 +191,7 @@ void jk_b_end(jk_msg_buf_t *msg, int protoh)
      * Ugly way to set the size in the right position 
      */
     jk_b_set_int(msg, 2, (unsigned short )(msg->len - 4)); /* see protocol */
-    jk_b_set_int(msg, 0, protoh);
+    jk_b_set_int(msg, 0, (unsigned short) protoh);
 }
 
 
