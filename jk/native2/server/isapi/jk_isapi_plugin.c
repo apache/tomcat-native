@@ -85,6 +85,7 @@
 #define SERVER_ROOT_TAG         ("serverRoot")
 #define EXTENSION_URI_TAG       ("extensionUri")
 #define WORKERS_FILE_TAG        ("workersFile")
+#define USE_AUTH_COMP_TAG       ("authComplete")
 
 
 static char  file_name[_MAX_PATH];
@@ -93,7 +94,7 @@ static int   using_ini_file = JK_FALSE;
 static int   is_inited = JK_FALSE;
 static int   is_mapread = JK_FALSE;
 static int   was_inited = JK_FALSE;
-static int   iis5 = -1;
+static int   auth_notification_flags = 0;
 
 static jk_workerEnv_t *workerEnv;
 static apr_pool_t *jk_globalPool;
@@ -117,7 +118,7 @@ static int get_registry_config_parameter(HKEY hkey,
 
 
 static jk_env_t* jk2_create_config();
-
+static int get_auth_flags();
 
 
 static void write_error_response(PHTTP_FILTER_CONTEXT pfc,char *status,char * msg)
@@ -151,20 +152,23 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     if (pVer->dwFilterVersion > http_filter_revision) {
         pVer->dwFilterVersion = http_filter_revision;
     }
-
+    auth_notification_flags = get_auth_flags();
 #ifdef SF_NOTIFY_AUTH_COMPLETE
-
-    pVer->dwFlags = SF_NOTIFY_ORDER_HIGH        | 
-                    SF_NOTIFY_SECURE_PORT       | 
-                    SF_NOTIFY_NONSECURE_PORT    |
-                    SF_NOTIFY_PREPROC_HEADERS   |
-                    SF_NOTIFY_AUTH_COMPLETE;
-#else
-        pVer->dwFlags = SF_NOTIFY_ORDER_HIGH    | 
-                    SF_NOTIFY_SECURE_PORT       | 
-                    SF_NOTIFY_NONSECURE_PORT    |
-                    SF_NOTIFY_PREPROC_HEADERS;   
+    if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
+        pVer->dwFlags = SF_NOTIFY_ORDER_HIGH        | 
+                        SF_NOTIFY_SECURE_PORT       | 
+                        SF_NOTIFY_NONSECURE_PORT    |
+                        SF_NOTIFY_PREPROC_HEADERS   |
+                        SF_NOTIFY_AUTH_COMPLETE;
+    }
+    else
 #endif
+    {
+        pVer->dwFlags = SF_NOTIFY_ORDER_HIGH        | 
+                        SF_NOTIFY_SECURE_PORT       | 
+                        SF_NOTIFY_NONSECURE_PORT    |
+                        SF_NOTIFY_PREPROC_HEADERS;   
+    }
 
     strcpy(pVer->lpszFilterDesc, VERSION_STRING);
 
@@ -201,28 +205,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
     }
     if (is_inited && is_mapread) {
         env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
-        if (is_inited && (iis5 < 0) ) {
-            char serverSoftware[256];
-            DWORD dwLen = sizeof(serverSoftware);
-            iis5=0;
-            if (pfc->GetServerVariable(pfc,SERVER_SOFTWARE, serverSoftware, &dwLen)){
-                iis5=(atof(serverSoftware + 14) >= 5.0);
-                if (iis5) {
-                    env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS >= 5.0\n");
-                } else {
-                    env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS < 5.0\n");
-                }
-            }
-        }
-#ifdef SF_NOTIFY_AUTH_COMPLETE
-        if (is_inited &&
-             (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) ||
-              ((SF_NOTIFY_AUTH_COMPLETE   == dwNotificationType) &&  iis5)
-              )
-            )
-#else
-        if (is_inited && (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType))
-#endif
+
+        if (auth_notification_flags == dwNotificationType)
         { 
             char uri[INTERNET_MAX_URL_LENGTH]; 
             char snuri[INTERNET_MAX_URL_LENGTH]="/";
@@ -240,22 +224,18 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             DWORD szTranslate = sizeof(Translate);
 
 #ifdef SF_NOTIFY_AUTH_COMPLETE
-            if (iis5) {
+            if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
                 GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
                 SetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->SetHeader;
                 AddHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->AddHeader;
-            } else {
+            } 
+            else 
+#endif
+            {
                 GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
                 SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
                 AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
             }
-#else
-                GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
-                SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
-                AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
-#endif
-
-
 
             env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                    "HttpFilterProc started\n");
@@ -814,3 +794,60 @@ static jk_env_t * jk2_create_config()
    
     return env;
 }
+
+#ifdef SF_NOTIFY_AUTH_COMPLETE
+static int get_auth_flags()
+{
+    HKEY hkey;
+    long rc;
+    int maj, sz;
+    int rv = SF_NOTIFY_PREPROC_HEADERS;
+    int use_auth = JK_FALSE;
+    /* Retreive the IIS version Major*/
+    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+                      W3SVC_REGISTRY_KEY,
+                      (DWORD)0,
+                      KEY_READ,
+                      &hkey);
+    if(ERROR_SUCCESS != rc) {
+        return rv;
+    } 
+    sz = sizeof(int);
+    rc = RegQueryValueEx(hkey,     
+                         "MajorVersion",      
+                          NULL,
+                          NULL,    
+                          (LPBYTE)&maj,
+                          &sz); 
+    if (ERROR_SUCCESS != rc) {
+        CloseHandle(hkey);
+        return rv;        
+    }
+    CloseHandle(hkey);
+    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+                      REGISTRY_LOCATION,
+                      (DWORD)0,
+                      KEY_READ,
+                      &hkey);
+    if(ERROR_SUCCESS != rc) {
+        return rv;
+    } 
+
+    rc = RegQueryValueEx(hkey,     
+                         USE_AUTH_COMP_TAG,      
+                         NULL,
+                         NULL,    
+                         (LPBYTE)&use_auth,
+                         &sz); 
+    CloseHandle(hkey);
+    if (use_auth && maj > 4)
+        rv = SF_NOTIFY_AUTH_COMPLETE;
+
+    return rv;
+}
+#else
+static int get_auth_flags()
+{
+    return SF_NOTIFY_PREPROC_HEADERS;
+}
+#endif
