@@ -176,7 +176,7 @@ public final class Expirer  implements ThreadPoolRunnable
 	    if (maxInactiveInterval < 0)
 		continue;
 	    
-	    long timeIdle = timeNow - ts.getLastAccessedTime();
+	    long timeIdle = timeNow - ts.getThisAccessedTime();
 	    
 	    if (timeIdle >= maxInactiveInterval) {
 		if( expireCallback != null ) {

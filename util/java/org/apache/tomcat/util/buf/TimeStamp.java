@@ -146,6 +146,10 @@ public final class TimeStamp implements  Serializable {
 	return lastAccessedTime;
     }
 
+    public long getThisAccessedTime() {
+        return thisAccessedTime;
+    }
+
     /** Inactive interval in millis - the time is computed
      *  in millis, convert to secs in the upper layer
      */
