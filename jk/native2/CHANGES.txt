@@ -2,7 +2,10 @@ JAKARTA TOMCAT CONNECTORS 2 (JK2) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
 Changes with JK2 2.0.3:
-
+    * jk2 set correctly the content-type in Apache 2.0,
+      making it ready to works with mod_deflate and AddOutputFilterByType 
+      [Henri Gomez]
+      
 Changes with JK2 2.0.2:
     * Fix the bug 14293. Thanks to Martin Kraemer for his help.
       [Jean-Frederic Clere]
