@@ -186,6 +186,7 @@ public class SoTask extends Task {
 
     // XXX Add specific code for Linux and platforms where things are
     // clean, libtool should be just a fallback.
+    String srcList[];
     
     public void execute() throws BuildException {
 	if( soFile==null )
@@ -196,14 +197,14 @@ public class SoTask extends Task {
         if (buildDir == null) buildDir = project.getBaseDir();
 
 	DirectoryScanner ds=src.getDirectoryScanner( project );
-        String [] list = ds.getIncludedFiles(); 
-	if (list.length == 0) 
+	srcList= ds.getIncludedFiles(); 
+	if (srcList.length == 0) 
             throw new BuildException("No source files");
 
 	Vector compileList=new Vector();
 
-        for (int i = 0; i < list.length; i++) {
-	    File srcFile = (File)project.resolveFile(list[i]);
+        for (int i = 0; i < srcList.length; i++) {
+	    File srcFile = (File)project.resolveFile(srcList[i]);
             if (!srcFile.exists()) {
                 throw new BuildException("Source \"" + srcFile.getPath() +
                                          "\" does not exist!", location);
@@ -224,14 +225,26 @@ public class SoTask extends Task {
 	    File f=(File)en.nextElement();
 	    executeLibtoolCompile(f.toString(), includeList );
 	}
-	
 
+	File soTarget=new File( buildDir, soFile + ".so" );
+	if( compileList.size() == 0 && soTarget.exists()) {
+	    // No dependency, no need to relink
+	    return;
+	}
+
+	executeLibtoolLink();
+	
     }
 
     protected static GlobPatternMapper co_mapper=new GlobPatternMapper();
+    protected static GlobPatternMapper lo_mapper=new GlobPatternMapper();
     static {
 	co_mapper.setFrom("*.c");
 	co_mapper.setTo("*.o");
+    }
+    static {
+	lo_mapper.setFrom("*.c");
+	lo_mapper.setTo("*.lo");
     }
     
     /** Verify if a .c file needs compilation.
@@ -264,52 +277,17 @@ public class SoTask extends Task {
 	
     }
     
-    /** Generate the .so file using 'standard' gcc flags. This assume
-     *  a 'current' gcc on a 'normal' platform. 
+    /** Compile  using 'standard' gcc flags. This assume a 'current' gcc on
+     *  a 'normal' platform - no need for libtool
      */
-    public void executeGcc() throws BuildException {
-    }
-
-    /** Generate the .so file using libtool.
-     *  XXX check version, etc.
-     */
-    public void executeLibtoolCompile(String source, String includeList[]) throws BuildException {
+    public void executeGcc(String source, String includeList[]) throws BuildException {
 	Commandline cmd = new Commandline();
 
-	String libtool=project.getProperty("build.native.libtool");
-	if(libtool==null) libtool="libtool";
 	String cc=project.getProperty("build.native.cc");
 	if(cc==null) cc="gcc";
-	String extra_cflags=project.getProperty("build.native.extra_cflags");
-	String localCflags=cflags;
-	if( localCflags==null ) {
-	    localCflags=extra_cflags;
-	} else {
-	    if( extra_cflags!=null ) {
-		localCflags+=" " + extra_cflags;
-	    }
- 	}
-
-	cmd.setExecutable( libtool );
 	
-	cmd.createArgument().setValue("--mode=compile");
-
-	cmd.createArgument().setValue( cc );
-
-	for( int i=0; i<includeList.length; i++ ) {
-	    cmd.createArgument().setValue("-I");
-	    cmd.createArgument().setValue(includeList[i] );
-	}
-
-
-	cmd.createArgument().setValue( "-c" );
-
-	if( localCflags != null )
-	    cmd.createArgument().setLine( localCflags );
-	
-	project.log( "Compiling " + source);
-
-	cmd.createArgument().setValue( source );
+	cmd.setExecutable( cc );
+	addCCArgs( cmd, source, includeList );
 
 	int result=execute( cmd );
 	if( result!=0 ) {
@@ -324,8 +302,165 @@ public class SoTask extends Task {
 	    throw new BuildException("Compile failed " + source);
 	}
 	closeStreamHandler();
+
     }
 
+    private void addCCArgs(Commandline cmd, String source, String includeList[]) {
+	String extra_cflags=project.getProperty("build.native.extra_cflags");
+	String localCflags=cflags;
+	if( localCflags==null ) {
+	    localCflags=extra_cflags;
+	} else {
+	    if( extra_cflags!=null ) {
+		localCflags+=" " + extra_cflags;
+	    }
+ 	}
+
+	for( int i=0; i<includeList.length; i++ ) {
+	    cmd.createArgument().setValue("-I");
+	    cmd.createArgument().setValue(includeList[i] );
+	}
+
+
+	cmd.createArgument().setValue( "-c" );
+
+	if( localCflags != null )
+	    cmd.createArgument().setLine( localCflags );
+
+	project.log( "Compiling " + source);
+	cmd.createArgument().setValue( source );
+    }
+
+    /** Compile using libtool.
+     */
+    public void executeLibtoolCompile(String source, String includeList[]) throws BuildException {
+	Commandline cmd = new Commandline();
+
+	String libtool=project.getProperty("build.native.libtool");
+	if(libtool==null) libtool="libtool";
+
+	cmd.setExecutable( libtool );
+	
+	cmd.createArgument().setValue("--mode=compile");
+
+	String cc=project.getProperty("build.native.cc");
+	if(cc==null) cc="gcc";
+
+	cmd.createArgument().setValue( cc );
+
+	addCCArgs(cmd, source, includeList);
+
+	int result=execute( cmd );
+	if( result!=0 ) {
+	    log("Compile failed " + result + " " +  source );
+	    log("Command:" + cmd.toString());
+	    log("Output:" );
+	    if( outputstream!=null ) 
+		log( outputstream.toString());
+	    log("StdErr:" );
+	    if( errorstream!=null ) 
+		log( errorstream.toString());
+	    
+	    throw new BuildException("Compile failed " + source);
+	}
+	closeStreamHandler();
+    }
+
+    /** Link using gcc ( or ld -G ? ).
+     */
+    public void executeGccLink() throws BuildException {
+
+    }
+    
+    /** Link using libtool.
+     */
+    public void executeLibtoolLink() throws BuildException {
+	Commandline cmd = new Commandline();
+
+	String libtool=project.getProperty("build.native.libtool");
+	if(libtool==null) libtool="libtool";
+
+	cmd.setExecutable( libtool );
+	
+	cmd.createArgument().setValue("--mode=link");
+
+	String cc=project.getProperty("build.native.cc");
+	if(cc==null) cc="gcc";
+
+	cmd.createArgument().setValue( cc );
+	
+	cmd.createArgument().setValue("-module");
+	cmd.createArgument().setValue("-avoid-version");
+	cmd.createArgument().setValue("-rpath");
+	cmd.createArgument().setValue( buildDir.getAbsolutePath());
+
+	cmd.createArgument().setValue( "-o" );
+	cmd.createArgument().setValue( soFile + ".la" );
+
+	// All .o files must be included
+	project.log( "Linking " + soFile + ".la");
+
+	for( int i=0; i<srcList.length; i++ ) {
+	    File srcF = (File)project.resolveFile(srcList[i]);
+	    String name=srcF.getName();
+	    String targetNA[]=lo_mapper.mapFileName( name );
+	    if( targetNA!=null )
+		cmd.createArgument().setValue( targetNA[0] );
+	}
+	
+	int result=execute( cmd );
+	if( result!=0 ) {
+	    log("Link failed " + result );
+	    log("Command:" + cmd.toString());
+	    log("Output:" );
+	    if( outputstream!=null ) 
+		log( outputstream.toString());
+	    log("StdErr:" );
+	    if( errorstream!=null ) 
+		log( errorstream.toString());
+	    
+	    throw new BuildException("Link failed " + soFile);
+	}
+	closeStreamHandler();
+
+	executeLibtoolInstall();
+    }
+
+    /** Final step using libtool.
+     */
+    public void executeLibtoolInstall() throws BuildException {
+	Commandline cmd = new Commandline();
+
+	String libtool=project.getProperty("build.native.libtool");
+	if(libtool==null) libtool="libtool";
+
+	cmd.setExecutable( libtool );
+	
+	cmd.createArgument().setValue("--mode=install");
+
+	cmd.createArgument().setValue( "cp" );
+
+	File laFile=new File( buildDir, soFile + ".la" );
+	cmd.createArgument().setValue( laFile.getAbsolutePath());
+	
+	File soFileF=new File( buildDir, soFile + ".so" );
+	cmd.createArgument().setValue( soFileF.getAbsolutePath());
+
+	int result=execute( cmd );
+	if( result!=0 ) {
+	    log("Link/install failed " + result );
+	    log("Command:" + cmd.toString());
+	    log("Output:" );
+	    if( outputstream!=null ) 
+		log( outputstream.toString());
+	    log("StdErr:" );
+	    if( errorstream!=null ) 
+		log( errorstream.toString());
+	    
+	    throw new BuildException("Link failed " + soFile);
+	}
+	closeStreamHandler();
+    }
     
     // ==================== Execution utils ==================== 
 
