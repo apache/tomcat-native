@@ -61,7 +61,10 @@
 package org.apache.coyote.tomcat5;
 
 import java.io.IOException;
-
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
 import javax.servlet.ServletInputStream;
 
 
@@ -69,6 +72,7 @@ import javax.servlet.ServletInputStream;
  * This class handles reading bytes.
  * 
  * @author Remy Maucherat
+ * @author Jean-Francois Arcand
  */
 public class CoyoteInputStream
     extends ServletInputStream {
@@ -92,22 +96,120 @@ public class CoyoteInputStream
 
 
     public int read()
-        throws IOException {
-        return ib.read();
+        throws IOException {    
+        if (System.getSecurityManager() != null){
+            
+            try{
+                Integer result = 
+                    (Integer)AccessController.doPrivileged(
+                        new PrivilegedExceptionAction(){
+
+                            public Object run() throws IOException{
+                                Integer integer = new Integer(ib.read());
+                                return integer;
+                            }
+
+                });
+                return result.intValue();
+            } catch(PrivilegedActionException pae){
+                Exception e = pae.getException();
+                if (e instanceof IOException){
+                    throw (IOException)e;
+                } else {
+                    throw new RuntimeException(e.getMessage());
+                }
+            }
+        } else {
+            return ib.read();
+        }
     }
 
     public int available() throws IOException {
-        return ib.available();
+        
+        if (System.getSecurityManager() != null){
+            try{
+                Integer result = 
+                    (Integer)AccessController.doPrivileged(
+                        new PrivilegedExceptionAction(){
+
+                            public Object run() throws IOException{
+                                Integer integer = new Integer(ib.available());
+                                return integer;
+                            }
+
+                });
+                return result.intValue();
+            } catch(PrivilegedActionException pae){
+                Exception e = pae.getException();
+                if (e instanceof IOException){
+                    throw (IOException)e;
+                } else {
+                    throw new RuntimeException(e.getMessage());
+                }
+            }
+        } else {
+           return ib.available();
+        }    
     }
 
-    public int read(byte[] b) throws IOException {
-        return ib.read(b, 0, b.length);
+    public int read(final byte[] b) throws IOException {
+        
+        if (System.getSecurityManager() != null){
+            try{
+                Integer result = 
+                    (Integer)AccessController.doPrivileged(
+                        new PrivilegedExceptionAction(){
+
+                            public Object run() throws IOException{
+                                Integer integer = 
+                                    new Integer(ib.read(b, 0, b.length));
+                                return integer;
+                            }
+
+                });
+                return result.intValue();
+            } catch(PrivilegedActionException pae){
+                Exception e = pae.getException();
+                if (e instanceof IOException){
+                    throw (IOException)e;
+                } else {
+                    throw new RuntimeException(e.getMessage());
+                }
+            }
+        } else {
+            return ib.read(b, 0, b.length);
+         }        
     }
 
 
-    public int read(byte[] b, int off, int len)
+    public int read(final byte[] b, final int off, final int len)
         throws IOException {
-        return ib.read(b, off, len);
+            
+        if (System.getSecurityManager() != null){
+            try{
+                Integer result = 
+                    (Integer)AccessController.doPrivileged(
+                        new PrivilegedExceptionAction(){
+
+                            public Object run() throws IOException{
+                                Integer integer = 
+                                    new Integer(ib.read(b, off, len));
+                                return integer;
+                            }
+
+                });
+                return result.intValue();
+            } catch(PrivilegedActionException pae){
+                Exception e = pae.getException();
+                if (e instanceof IOException){
+                    throw (IOException)e;
+                } else {
+                    throw new RuntimeException(e.getMessage());
+                }
+            }
+        } else {
+            return ib.read(b, off, len);
+        }            
     }
 
 
@@ -122,8 +224,29 @@ public class CoyoteInputStream
      * which would permantely disable us.
      */
     public void close() throws IOException {
-        ib.close();
-    }
+        
+        if (System.getSecurityManager() != null){
+            try{
+                AccessController.doPrivileged(
+                    new PrivilegedExceptionAction(){
 
+                        public Object run() throws IOException{
+                            ib.close();
+                            return null;
+                        }
+
+                });
+            } catch(PrivilegedActionException pae){
+                Exception e = pae.getException();
+                if (e instanceof IOException){
+                    throw (IOException)e;
+                } else {
+                    throw new RuntimeException(e.getMessage());
+                }
+            }
+        } else {
+             ib.close();
+        }            
+    }
 
 }

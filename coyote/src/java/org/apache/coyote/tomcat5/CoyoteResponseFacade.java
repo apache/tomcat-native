@@ -69,6 +69,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
 import java.util.Locale;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -242,9 +244,28 @@ public class CoyoteResponseFacade
             //                (/*sm.getString("responseFacade.finished")*/);
             return;
 
-        response.setAppCommitted(true);
+        if (System.getSecurityManager() != null){
+            try{
+                AccessController.doPrivileged(new PrivilegedExceptionAction(){
 
-        response.flushBuffer();
+                    public Object run() throws IOException{
+                        response.setAppCommitted(true);
+
+                        response.flushBuffer();
+                        return null;
+                    }
+                });
+            } catch(PrivilegedActionException e){
+                Exception ex = e.getException();
+                if (ex instanceof IOException){
+                    throw (IOException)ex;
+                }
+            }
+        } else {
+            response.setAppCommitted(true);
+
+            response.flushBuffer();            
+        }
 
     }
 
