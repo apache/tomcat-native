@@ -25,8 +25,18 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      <bug>33248</bug>Fix builds where apxs defines multiple
+      directories for APR includes. (mturk)
+      </fix>
+      <fix>
+      <bug>32696</bug>Return 404 instead 403 when WEB-INF is requested
+      to comply with Servlet spec. (mturk)
+      </fix>
+      <update>Added ANT task for managing jkstatus. (pero)    
+      </update>
       <update>
-      If socket_timeout is set check if socket is alive before
+      If socket_timeout is set, check if socket is alive before
       sending any request to Tomcat. (mturk)
       </update>
       <update>
