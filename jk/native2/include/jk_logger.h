@@ -104,6 +104,14 @@ struct jk_logger {
                            int level,
                            const char *fmt, ...);
 
+    int (JK_METHOD *jkVLog)(struct jk_env *env,
+                            jk_logger_t *_this,
+                            const char *file,
+                            int line,
+                            int level,
+                            char *fmt,
+                            va_list msg);
+
 };
 
 #define JK_LOG_DEBUG_LEVEL 0

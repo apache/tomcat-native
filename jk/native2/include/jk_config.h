@@ -150,6 +150,8 @@ struct jk_config {
     struct jk_workerEnv *workerEnv;
     struct jk_map *map;
 
+    char *file;
+    
     char *section;
 };
 

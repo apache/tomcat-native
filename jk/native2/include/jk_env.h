@@ -91,6 +91,7 @@ struct jk_bean;
 typedef struct jk_bean jk_bean_t;
 typedef struct jk_env jk_env_t;
 
+    
 /**
  * Factory used to create all jk objects. Factories are registered with 
  * jk2_env_registerFactory. The 'core' components are registered in
@@ -131,11 +132,15 @@ typedef struct jk_exception jk_exception_t;
 struct jk_bean {
     /* Type of this object
      */
-    const char *type;
+    char *type;
 
     /* Name of the object
      */
-    const char *name;
+    char *name;
+
+    /* Local part of the name
+     */
+    char *localName;
 
     /* The wrapped object
      */
@@ -149,6 +154,13 @@ struct jk_bean {
     */
     struct jk_map *settings;
 
+    /* Object pool. The jk_bean and the object itself are created in this
+     * pool. If this pool is destroyed or recycled, the object and all its
+     * data are destroyed as well ( assuming the pool corectly cleans child pools
+     * and object data are not created explicitely in a different pool ).
+     */
+    struct jk_pool *pool;
+    
     /* Temp - will change !*/
     /* Attributes supported by getAttribute method */
     char **getAttributeInfo;
@@ -196,9 +208,27 @@ struct jk_env {
         env is released ( the equivalent of 'detach' ). Can be
         used for temp. allocation of small objects.
     */
-    struct jk_pool *localPool;
+    struct jk_pool *tmpPool;
 
+    /* -------------------- Get/release ent -------------------- */
+    
+    /** Get an env instance. Must be called from each thread. The object
+     *  can be reused in the thread, or it can be get/released on each used.
+     *
+     *  The env will store the exception status and the tmp pool - the pool will
+     *  be recycled when the env is released, use it only for tmp things.
+     */
+    struct jk_env *(*getEnv)(struct jk_env *parent);
+
+    /** Release the env instance. The tmpPool will be recycled.
+     */
+    int (*releaseEnv)(struct jk_env *parent, struct jk_env *chld);
+
+    /* -------------------- Exceptions -------------------- */
+    
     /* Exceptions.
+     *   TODO: create a 'stack trace' (i.e. a stack of errors )
+     *   TODO: set 'error state'
      *  XXX Not implemented/not used
      */
     void (JK_METHOD *jkThrow)( jk_env_t *env,
@@ -222,7 +252,10 @@ struct jk_env {
      *  XXX Not implemented/not used
      */
     void (JK_METHOD *jkClearException)( jk_env_t *env );
-
+    
+    /* -------------------- Object management -------------------- */
+    /* Register types, create instances, get by name */
+    
     /** Create an object using the name. Use the : separated prefix as
      *  type. XXX This should probably replace createInstance.
      *
@@ -233,31 +266,34 @@ struct jk_env {
      */
     struct jk_bean *(*createBean)( struct jk_env *env, struct jk_pool *parentPool, char *objName );
 
+    /** Same as createBean, but pass the split name
+     */
+    struct jk_bean *(*createBean2)( struct jk_env *env, struct jk_pool *parentPool,
+                                    char *type, char *localName );
     
-    /** Create an object instance. It'll first get the factory, then
-        call it. This is a very frequent operation.
-    */
+    /** Register an alias for a name ( like the local part, etc ), for simpler config.
+     */
+    void (JK_METHOD *alias)(struct jk_env *env, char *name, char *alias );
+    
+    /** Get an object by name, using the full name
+     */
     void *
-    (JK_METHOD *createInstance)( jk_env_t *env, struct jk_pool *parentPool,
-                                 const char *type, const char *name );
+    (JK_METHOD *getByName)( struct jk_env *env, const char *name );
 
+    /** Get an object by name, using the split name ( type + localName )
+     */
     void *
-    (JK_METHOD *getByName)( jk_env_t *env, const char *name );
+    (JK_METHOD *getByName2)(struct jk_env *env, char *type, char *localName);
 
     /** Return the configuration object
      */
     struct jk_bean *
-    (JK_METHOD *getMBean)( jk_env_t *env, const char *name );
+    (JK_METHOD *getBean)( struct jk_env *env, char *name );
     
-    /** Report an error. 
-     *   TODO: create a 'stack trace' (i.e. a stack of errors )
-     *   TODO: set 'error state'
-     *  Right now is equivalent with l->jkLog(env, JK_LOG_ERROR,... )
+    /** Return the configuration object
      */
-    void *(JK_METHOD *error)(jk_env_t *env,
-                             const char *file, int line, 
-                             const char *fmt, ...);
-
+    struct jk_bean *
+    (JK_METHOD *getBean2)( struct jk_env *env, char *type, char *localName );
 
     /** Register a factory for a type ( channel, worker ).
      */
@@ -265,17 +301,10 @@ struct jk_env {
                                        jk_env_objectFactory_t factory);
     
     
-    /** (Future)
-     *  Register a factory for a type ( channel, worker ), using a .so 
-     *  model.
-     */
-    void (JK_METHOD *registerExternalFactory)( jk_env_t *env, char *type, 
-                                               char *name, char *dll,
-                                               char *factorySymbol);
-    
     /* private */
     struct jk_map *_registry;
     struct jk_map *_objects;
+    struct jk_objCache *envCache; 
     struct jk_exception *lastException;
     int id;
 };
