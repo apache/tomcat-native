@@ -800,6 +800,7 @@ static jk_uriEnv_t *jk2_uriMap_getHostCache(jk_env_t *env, jk_uriMap_t *uriMap,
         return uriMap->vhosts->get(env, uriMap->vhosts, "*");
     if (!vhost)
         vhost = "*";
+    sprintf(key, "%s:%d", vhost, port);
     return uriMap->vhcache->get(env, uriMap->vhosts, key);
 }
 
