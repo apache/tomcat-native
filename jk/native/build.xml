@@ -164,6 +164,7 @@
         <include name="${java.home}/../include/netware" if="netware" />
         <include name="${java.home}/../include/linux"  if="linux"/>
 	<include name="${novelllibc.dir}/include" if="netware" />
+	<include name="${novelllibc.dir}/include/winsock" if="netware" />
       </includes>
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
