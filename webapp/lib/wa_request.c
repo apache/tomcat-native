@@ -71,3 +71,11 @@ boolean wa_match(const char *u, wa_application *a) {
 int wa_invoke(wa_request *r, wa_application *a) {
 	return(404);
 }
+
+/* Display an informative status page. */
+int wa_status(wa_request *r, wa_application **appl, wa_connection **conn,
+			  int anum, int cnum) {
+	int x;
+
+	return(404);
+}

@@ -81,10 +81,9 @@ clean:
 		$(MAKE) -C $$DIR clean ; \
 	done
 
-docs: include/*.h
-	@if ! test -d docs ; then mkdir docs ; fi
-	./scandoc/scandoc.pl -i ./scandoc/template.pl -p ./docs/ include/*.h
-	@touch docs
+apidocs: include/*.h
+	@if ! test -d docs/api ; then mkdir docs/api ; fi
+	@./scandoc/scandoc.pl -i ./scandoc/template.pl -p ./docs/api/ include/*.h
 
 allclean: clean
 
