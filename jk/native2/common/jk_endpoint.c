@@ -103,9 +103,10 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
                       jk_bean_t *result,
                       const char *type, const char *name)
 {
+    jk_endpoint_t *e = (jk_endpoint_t *)pool->alloc(env, pool,
+                                                    sizeof(jk_endpoint_t));
     jk_pool_t *endpointPool = pool->create( env, pool, HUGE_POOL_SIZE );
-    jk_endpoint_t *e = (jk_endpoint_t *)endpointPool->alloc(env, endpointPool,
-                                                            sizeof(jk_endpoint_t));
+    
     if (e==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "endpoint.factory() OutOfMemoryException\n");
@@ -126,7 +127,7 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     e->cPool=endpointPool->create(env, endpointPool, HUGE_POOL_SIZE );
 
     e->channelData = NULL;
-    
+    e->currentRequest = NULL;
     //    w->init= jk2_worker_ajp14_init;
     //    w->destroy=jk2_worker_ajp14_destroy;
 
