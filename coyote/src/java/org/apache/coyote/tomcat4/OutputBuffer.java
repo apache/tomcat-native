@@ -362,6 +362,12 @@ public class OutputBuffer extends Writer
         if (realFlush) {
             coyoteResponse.action(ActionCode.ACTION_CLIENT_FLUSH, 
                                   coyoteResponse);
+            // If some exception occurred earlier, or if some IOE occurred
+            // here, notify the servlet with an IOE
+            if (coyoteResponse.isExceptionPresent()) {
+                throw new ClientAbortException
+                    (coyoteResponse.getErrorException());
+            }
         }
 
     }
