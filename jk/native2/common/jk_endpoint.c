@@ -89,11 +89,14 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
             if (wEnv->epStat==NULL) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "workerEnv.init() create slot %s failed\n",  shmName );
-                return JK_ERR;
-            }
-            wEnv->epStat->structCnt=0;
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                /* If epStat is NULL - no statistics will be collected, but the server should still work.
+                 */
+                /*return JK_ERR; */
+            } else {
+                wEnv->epStat->structCnt=0;
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "workerEnv.init() create slot %s\n",  shmName );
+            }
         }
     }
 

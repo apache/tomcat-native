@@ -471,11 +471,18 @@ jk_shm_slot_t * JK_METHOD jk2_shm_createSlot(struct jk_env *env, struct jk_shm *
         /* XXX interprocess sync */
         slotId=shm->head->lastSlot++;
     }
-    else
+    else {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.createSlot() no shared memory head\n");
         return NULL;
+    }
     slot=shm->getSlot( env, shm, slotId );
 
-    if( slot==NULL ) return NULL;
+    if( slot==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.createSlot() getSlot() returned NULL\n");
+        return NULL;
+    }
     
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "shm.createSlot() Create %d %#lx %#lx\n", slotId, shm->image, slot );
