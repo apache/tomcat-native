@@ -744,7 +744,7 @@ static int load_jvm_dll(jni_worker_t *p,
     } else {
         jni_create_java_vm = dlsym(handle, "JNI_CreateJavaVM");
         jni_get_default_java_vm_init_args = dlsym(handle, "JNI_GetDefaultJavaVMInitArgs");
-        jni_get_created_java_vms =  dlsym(hInst, "JNI_GetCreatedJavaVMs");
+        jni_get_created_java_vms =  dlsym(handle, "JNI_GetCreatedJavaVMs");
 
         if(jni_create_java_vm && jni_get_default_java_vm_init_args &&
            jni_get_created_java_vms) {
