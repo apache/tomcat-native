@@ -98,7 +98,8 @@ and  provides access to all other objects</p>
                        <th>Property name</th>
                        <th>Default</th>
                        <th>Description</th>
-                   </tr>
+                    </tr>
+                    <tr>
                         <td>file</td>
                         <td>${serverRoot}/conf/workers2.properties</td>
                         <td>Location of the workers2.properties file</td>
