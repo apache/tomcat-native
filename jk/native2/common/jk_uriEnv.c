@@ -84,7 +84,8 @@ static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
     }
     
     /* Cut the "uri." prefix, if any */
-    if( strncmp( name, "uri.", 4 ) == 0 ) {
+    if( (strncmp( name, "uri.", 4 ) == 0 )||
+        (strncmp( name, "uri:", 4 ) == 0 )) {
         n=name+4;
     }
     /* Cut the " */

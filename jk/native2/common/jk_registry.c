@@ -109,6 +109,7 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
   env->registerFactory( env, "workerEnv", jk2_workerEnv_factory );
   env->registerFactory( env, "uriMap", jk2_uriMap_factory );
   env->registerFactory( env, "uriEnv", jk2_uriEnv_factory );
+  env->registerFactory( env, "endpoint", jk2_endpoint_factory );
   env->registerFactory( env, "uri", jk2_uriEnv_factory );
   env->registerFactory( env, "config", jk2_config_factory );
   
