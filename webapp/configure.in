@@ -67,15 +67,16 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN(LOCAL_INIT,[
   AC_PATH_PROG(test,test,${PATH})
   AC_PATH_PROG(true,true,${PATH})
-  AC_PATH_PROG(printf,printf,${PATH})
+  AC_PATH_PROG(echo,echo,${PATH})
 ])
 
 AC_DEFUN(LOCAL_HEADER,[
-  ${printf} "\n\033\13301;31m%s\033\13300m\n" "$1" 1>&2
+  ${echo} ""
+  ${echo} "$1" 1>&2
 ])
 
 AC_DEFUN(LOCAL_FILTEREXEC,[
-  ${printf} "\033\13301mInvoking\033\13300m: %s\n" "$1"
+  ${echo} "  Invoking: $1"
   {
     $1
     echo retvalue $?
@@ -92,13 +93,12 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
         then
           ret="${line}"
         else
-          ${printf} "\033\13301m%s\033\13300m: %s\n" "$2" "${first} ${line}"
+          ${echo} "    $2: ${first} ${line}"
         fi
       fi
     done
     unset first
     unset line
-    exit $ret
   }
   ret=$?
 ])
@@ -217,7 +217,7 @@ curdir=`pwd`
 cd ${APRDIR}
 
 LOCAL_HEADER([Building APR configure script])
-LOCAL_FILTEREXEC([./buildconf],[  APR buildconf])
+LOCAL_FILTEREXEC([./buildconf],[APR buildconf])
 if ${test} "${ret}" -ne "0"
 then
   AC_MSG_ERROR([APR buildconf terminated with error code ${ret}])
@@ -225,7 +225,7 @@ fi
 
 LOCAL_HEADER([Configuring APR])
 LOCAL_FILTEREXEC([./configure --enable-static --disable-shared --disable-threads],
-                 [  APR configure])
+                 [APR configure])
 if ${test} "${ret}" -ne "0"
 then
   AC_MSG_ERROR([APR configure script terminated with error code ${ret}])
