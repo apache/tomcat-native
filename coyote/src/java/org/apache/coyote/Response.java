@@ -552,9 +552,11 @@ public final class Response {
 
         String ret = contentType;
 
-        if (ret != null && characterEncoding != null) {
-            ret += ";charset=";
-            ret += characterEncoding;
+        if (ret != null 
+            && characterEncoding != null
+            && !(Constants.DEFAULT_CHARACTER_ENCODING.equals
+                 (characterEncoding))) {
+            ret = ret + ";charset=" + characterEncoding;
         }
 
         return ret;
