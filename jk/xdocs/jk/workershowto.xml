@@ -297,8 +297,8 @@ values are : 0 (full recovery), 1 (don't recover if tomcat failed after getting 
 getting the request or after sending the headers to client).
 </p>
 <p>
-This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and works on all
-servlet engines supporting ajp13.
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung/broken tomcat's 
+and works on all servlet engines supporting ajp13.
 Full recovery by default.
 </p>
 
