@@ -69,6 +69,10 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
+#ifdef HAS_PCRE
+#include "pcre.h"
+#include "pcreposix.h"
+#endif
 /** Parse the name:
        VHOST/PATH
 
@@ -83,16 +87,31 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     char *uri = NULL;
     char *colon;
     char host[1024];
+    int pcre = 0;
+
+    if (*name == '$') {
+        ++name;
+        uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, name);
+        uriEnv->match_type = MATCH_TYPE_REGEXP;
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                    "uriEnv.parseName() parsing %s regexp\n",
+                    name);
+        return JK_OK;
+    }
 
     strcpy(host, name);
     colon = strchr(host, ':');
+    uri = strchr(host, '$');
+    if (uri)
+        pcre = 1;
     if (colon != NULL) {
         ++colon;
-        uri = strchr(colon, '/');
+        if (!uri)
+            uri = strchr(colon, '/');
     }
-    else
+    else if (!uri)
         uri = strchr(host, '/');
-            
+
     if (!uri) {
         /* That's a virtual host definition ( no actual mapping, just global
          * settings like aliases, etc
@@ -104,6 +123,7 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
         uriEnv->virtual = uriEnv->pool->pstrdup(env, uriEnv->pool, host);
         return JK_OK;
     }
+
     *uri = '\0';
     if (colon)
         uriEnv->port = atoi(colon);
@@ -115,8 +135,34 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     }
     else
         uriEnv->virtual = "*";
+
     *uri = '/';
-    uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, uri);
+    if (pcre) {
+        ++uri;
+        uriEnv->match_type = MATCH_TYPE_REGEXP;
+#ifdef HAS_PCRE
+        uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, uri);
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                    "uriEnv.parseName() parsing regexp %s\n",
+                    uri);
+        {
+            regex_t *preg = (regex_t *)uriEnv->pool->calloc( env, uriEnv->pool, sizeof(regex_t));
+            if (regcomp(preg, uriEnv->uri, REG_EXTENDED)) {
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "uriEnv.parseName() error compiling regexp %s\n",
+                              uri);
+	            return JK_ERR;
+            }
+            uriEnv->regexp = preg;
+        }
+#else
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                    "uriEnv.parseName() parsing regexp %s not supported\n",
+                    uri);
+#endif
+    }
+    else
+        uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, uri);
 
     return JK_OK;
 }
@@ -261,6 +307,18 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     if( uri==NULL ) 
         return JK_ERR;
     
+    if (uriEnv->match_type == MATCH_TYPE_REGEXP) {
+        uriEnv->prefix      = uri;
+        uriEnv->prefix_len  = strlen( uriEnv->prefix );
+        uriEnv->suffix      = NULL;
+        if( uriEnv->mbean->debug > 0 ) {
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "uriEnv.init() regexp mapping %s=%s \n",
+                          uriEnv->prefix, uriEnv->workerName);
+
+        }
+        return JK_OK;
+    }
     if ('/' != uri[0]) {
         /*
          * JFC: please check...

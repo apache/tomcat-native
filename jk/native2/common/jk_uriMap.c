@@ -75,6 +75,11 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
+#ifdef HAS_PCRE
+#include "pcre.h"
+#include "pcreposix.h"
+#endif
+
 static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri);
 
 static int jk2_uriMap_checkUri(jk_env_t *env, jk_uriMap_t *uriMap, 
@@ -319,6 +324,35 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
     return uriMap->vhosts->get(env, uriMap->vhosts, "*");
 }
 
+#ifdef HAS_PCRE
+static jk_uriEnv_t *jk2_uriMap_regexpMap(jk_env_t *env, jk_uriMap_t *uriMap,
+                                         jk_map_t *mapTable, const char *uri) 
+{
+    int i;    
+    int sz = mapTable->size(env, mapTable);
+    
+    for (i = 0; i < sz; i++) {
+        jk_uriEnv_t *uwr = mapTable->valueAt(env, mapTable, i);
+
+        if (uwr->regexp) {
+            regex_t *r = (regex_t *)uwr->regexp;
+            regmatch_t regm[10];
+            if (!regexec(r, uri, r->re_nsub + 1, regm, 0)) {
+                return uwr;
+            }
+        }
+    }
+    return NULL;
+
+}
+#else
+static jk_uriEnv_t *jk2_uriMap_regexpMap(jk_env_t *env, jk_uriMap_t *uriMap,
+                                         jk_map_t *mapTable, const char *uri) 
+{
+    return NULL;
+}
+#endif
+
 static void jk2_uriMap_createHosts(jk_env_t *env, jk_uriMap_t *uriMap)
 {
     int i;
@@ -412,6 +446,7 @@ static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
             jk2_map_default_create(env, &uriEnv->exactMatch, uriMap->pool);
             jk2_map_default_create(env, &uriEnv->prefixMatch, uriMap->pool);
             jk2_map_default_create(env, &uriEnv->suffixMatch, uriMap->pool);
+            jk2_map_default_create(env, &uriEnv->regexpMatch, uriMap->pool);
         }
     }
     
@@ -469,6 +504,7 @@ static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
             jk2_map_default_create(env, &ctxEnv->exactMatch, uriMap->pool);
             jk2_map_default_create(env, &ctxEnv->prefixMatch, uriMap->pool);
             jk2_map_default_create(env, &ctxEnv->suffixMatch, uriMap->pool);
+            jk2_map_default_create(env, &ctxEnv->regexpMatch, uriMap->pool);
         }
     } 
 
@@ -511,6 +547,9 @@ static int jk2_uriMap_createMappings(jk_env_t *env, jk_uriMap_t *uriMap)
             ctxEnv = jk2_uriMap_exactMap(env, uriMap, hostEnv->webapps,
                                          uriEnv->contextPath,
                                          uriEnv->ctxt_len);
+        else if (uriEnv->match_type == MATCH_TYPE_REGEXP) {
+            ctxEnv = hostEnv->webapps->get(env, hostEnv->webapps, "/");
+        }
         /* Next find by uri prefix */
         if (ctxEnv == NULL)
             ctxEnv = jk2_uriMap_prefixMap(env, uriMap, hostEnv->webapps, uri,
@@ -539,6 +578,10 @@ static int jk2_uriMap_createMappings(jk_env_t *env, jk_uriMap_t *uriMap)
                 break;
             case MATCH_TYPE_PREFIX:
                 ctxEnv->prefixMatch->add(env, ctxEnv->prefixMatch, uri, uriEnv);
+                break;
+            case MATCH_TYPE_REGEXP:
+                if (uriEnv->regexp)
+                    ctxEnv->regexpMatch->add(env, ctxEnv->regexpMatch, uri, uriEnv);
                 break;
         }
     }
@@ -577,7 +620,8 @@ static jk_uriEnv_t* jk2_uriMap_duplicateUri(jk_env_t *env, jk_uriMap_t *uriMap,
     newEnv->worker = mapEnv->worker;
     newEnv->workerName = mapEnv->workerName;
     newEnv->workerEnv = mapEnv->workerEnv;
-    
+    newEnv->regexp = mapEnv->regexp;
+
     return newEnv;
 }
 
@@ -617,6 +661,7 @@ static jk_uriEnv_t* jk2_uriMap_duplicateContext(jk_env_t *env, jk_uriMap_t *uriM
     jk2_map_default_create(env, &newEnv->exactMatch, uriMap->pool);
     jk2_map_default_create(env, &newEnv->prefixMatch, uriMap->pool);
     jk2_map_default_create(env, &newEnv->suffixMatch, uriMap->pool);
+    jk2_map_default_create(env, &newEnv->regexpMatch, uriMap->pool);
 
     return newEnv;
 }
@@ -896,6 +941,19 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     if (uriMap->mbean->debug > 1)
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "uriMap.mapUri() found ctx %s\n", ctxEnv->uri);    
+
+    match = jk2_uriMap_regexpMap(env, uriMap, ctxEnv->regexpMatch, uri);
+    if (match != NULL) {
+        /* restore */
+        if (url_rewrite)
+            *url_rewrite = origChar;
+        if (uriMap->mbean->debug > 0)
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "uriMap.mapUri() regexp match %s %s\n",
+                          uri, match->workerName); 
+        return match;
+    }
+
 
     /* As per Servlet spec, do exact match first */
     match = jk2_uriMap_exactMap(env, uriMap, ctxEnv->exactMatch, uri, uriLen);
