@@ -43,6 +43,11 @@
 
 #define JK_STATUS_HEND "</body>\n</html>\n"
 
+#define JK_STATUS_XMLH "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"          \
+                       "<jk:manager xmlns:jk=\"http://jakarta.apache.org\">\n"
+
+#define JK_STATUS_XMLE "</jk:manager>\n"
+
 #define JK_STATUS_TEXTUPDATE_RESPONCE "OK - jk status worker updated\n"
 
 typedef struct status_worker status_worker_t;
@@ -84,11 +89,21 @@ static const char *headers_names[] = {
     NULL
 };
 
-static const char *headers_vals[] = {
+#define HEADERS_NO_CACHE "no-cache", "no-cache", NULL
+
+static const char *headers_vhtml[] = {
     "text/html",
-    "no-cache",
-    "no-cache",
-    NULL
+    HEADERS_NO_CACHE
+};
+
+static const char *headers_vxml[] = {
+    "text/xml",
+    HEADERS_NO_CACHE
+};
+
+static const char *headers_vtxt[] = {
+    "text/plain",
+    HEADERS_NO_CACHE
 };
 
 #if !defined(HAVE_VSNPRINTF) && !defined(HAVE_APR)
@@ -348,6 +363,36 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
     jk_puts(s, "</table>\n");
 }
 
+static void dump_maps(jk_ws_service_t *s, status_worker_t *sw,
+                      jk_uri_worker_map_t *uwmap,
+                      const char *worker, jk_logger_t *l)
+{
+    unsigned int i;
+
+    for (i = 0; i < uwmap->size; i++) {
+        uri_worker_record_t *uwr = uwmap->maps[i];
+        if (strcmp(uwr->worker_name, worker)) {
+            continue;
+        }
+        jk_puts(s, "    <jk:map>\n");
+        jk_putv(s, "      <jk:type>",
+                status_val_match(uwr->match_type),
+                "</jk:type>\n", NULL);
+        jk_putv(s, "      <jk:uri>",
+                uwr->uri,
+                "</jk:uri>\n", NULL);
+        jk_putv(s, "      <jk:context>",
+                uwr->context,
+                "</jk:context>\n", NULL);
+
+        if (uwr->suffix)
+            jk_putv(s, "      <jk:suffix>",
+                    uwr->suffix,
+                    "</jk:suffix>\n", NULL);
+        jk_puts(s, "    </jk:map>\n");
+    }
+}
+
 
 /**
  * Command line reference:
@@ -547,6 +592,91 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             "</table>");
 }
 
+static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
+                        jk_logger_t *l)
+{
+    unsigned int i;
+    char buf[32];
+    int has_lb = 0;
+
+    for (i = 0; i < sw->we->num_of_workers; i++) {
+        jk_worker_t *w = wc_get_worker_for_name(sw->we->worker_list[i], l);
+        if (w == NULL)
+            continue;
+        if (w->type == JK_LB_WORKER_TYPE) {
+            has_lb = 1;
+            break;
+        }
+    }
+
+    jk_printf(s, "  <jk:server name=\"%s\" port=\"%d\" software=\"%s\" version=\"%s\" />\n",
+              s->server_name, s->server_port, s->server_software,  JK_VERSTRING);
+    if (has_lb)
+        jk_puts(s, "  <jk:balancers>\n");
+    for (i = 0; i < sw->we->num_of_workers; i++) {
+        jk_worker_t *w = wc_get_worker_for_name(sw->we->worker_list[i], l);
+        lb_worker_t *lb = NULL;
+        unsigned int j;
+
+        if (w == NULL)
+            continue;
+        if (w->type == JK_LB_WORKER_TYPE) {
+            lb = (lb_worker_t *)w->worker_private;
+        }
+        else {
+            /* Skip non lb workers */
+            continue;
+        }
+        jk_printf(s, "  <jk:balancer>\n    <jk:id>%d</jk:id>\n", i);
+        jk_putv(s, "    <jk:name>", lb->s->name, "</jk:name>\n", NULL);
+        jk_putv(s, "    <jk:type>", status_worker_type(w->type), "</jk:type>\n", NULL);
+        jk_putv(s, "    <jk:sticky>", status_val_bool(lb->s->sticky_session),
+                   "</jk:sticky>\n", NULL);
+        jk_putv(s, "    <jk:stickyforce>", status_val_bool(lb->s->sticky_session_force),
+                   "</jk:stickyforce>\n", NULL);
+        jk_printf(s, "    <jk:retries>%d</jk:retries>\n", lb->s->retries);
+        jk_printf(s, "    <jk:recover>%d</jk:recover>\n", lb->s->recover_wait_time);
+        for (j = 0; j < lb->num_of_workers; j++) {
+            worker_record_t *wr = &(lb->lb_workers[j]);
+            ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
+            jk_puts(s, "    <jk:member>\n");
+            jk_putv(s, "      <jk:name>", wr->s->name, "</jk:name>\n", NULL);
+            jk_putv(s, "      <jk:type>", status_worker_type(wr->w->type),
+                       "</jk:type>\n", NULL);
+
+            jk_putv(s, "      <jk:host>", a->host, "</jk:host>\n", NULL);
+            jk_printf(s, "      <jk:port>%d</jk:port>\n", a->port);
+            jk_putv(s, "      <jk:address>", jk_dump_hinfo(&a->worker_inet_addr, buf),
+                       "</jk:address>\n", NULL);
+            /* TODO: descriptive status */
+            jk_putv(s, "      <jk:status>",
+                        status_val_status(wr->s->is_disabled,
+                                          wr->s->in_error_state,
+                                          wr->s->in_recovering,
+                                          wr->s->is_busy),
+                        "</jk:status>\n", NULL);
+            jk_printf(s, "      <jk:lbfactor>%d</jk:lbfactor>\n", wr->s->lb_factor);
+            jk_printf(s, "      <jk:lbvalue>%d</jk:lbvalue>\n", wr->s->lb_value);
+            jk_printf(s, "      <jk:elected>%u</jk:elected>\n", wr->s->elected);
+            jk_printf(s, "      <jk:readed>%u</jk:readed>\n", wr->s->readed);
+            jk_printf(s, "      <jk:transferred>%u</jk:transferred>\n", wr->s->transferred);
+            jk_printf(s, "      <jk:errors>%u</jk:errors>\n", wr->s->errors);
+            jk_printf(s, "      <jk:busy>%u</jk:busy>\n", wr->s->busy);
+            if (wr->s->redirect && *wr->s->redirect)
+                jk_putv(s, "      <jk:redirect>", wr->s->redirect, "</jk:redirect>\n", NULL);
+            if (wr->s->domain && *wr->s->domain)
+                jk_putv(s, "      <jk:domain>", wr->s->domain, "</jk:domain>\n", NULL);
+            jk_puts(s, "    </jk:member>\n");
+        }
+        dump_maps(s, sw, s->uw_map, lb->s->name, l);
+        jk_puts(s, "  </jk:balancer>\n");
+
+    }
+    if (has_lb)
+        jk_puts(s, "  </jk:balancers>\n");
+
+}
+
 static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
                           const char *dworker, jk_logger_t *l)
 {
@@ -621,8 +751,20 @@ static int status_cmd_type(const char *req)
         return 1;
     else if (!strncmp(req, "cmd=update", 10))
         return 2;
-    else if (!strncmp(req, "cmd=textupdate", 14))
-        return 3;
+    else
+        return 0;
+}
+
+static int status_mime_type(const char *req)
+{
+    if (!req)
+        return 0;
+    else if (!strncmp(req, "mime=html", 9))
+        return 0;
+    else if (!strncmp(req, "mime=xml", 8))
+        return 1;
+    else if (!strncmp(req, "mime=txt", 8))
+        return 2;
     else
         return 0;
 }
@@ -637,17 +779,17 @@ static int JK_METHOD service(jk_endpoint_t *e,
         char buf[128];
         char *worker = NULL;
         int cmd;
+        int mime;
         status_endpoint_t *p = e->endpoint_private;
 
         *is_recoverable_error = JK_FALSE;
 
-        s->start_response(s, 200, "OK", headers_names, headers_vals, 3);
-
         /* Step 1: Process GET params and update configuration */
         cmd = status_cmd_type(s->query_string);
+        mime = status_mime_type(s->query_string);
         if (cmd > 0 && (status_cmd("w", s->query_string, buf, sizeof(buf)) != NULL))
             worker = strdup(buf);
-        if (((cmd == 2) || (cmd == 3)) && worker) {
+        if ((cmd == 2) && worker) {
             /* lock shared memory */
             jk_shm_lock();
             update_worker(s, p->s_worker, worker, l);
@@ -660,23 +802,34 @@ static int JK_METHOD service(jk_endpoint_t *e,
             /* unlock the shared memory */
             jk_shm_unlock();
         }
-        if(cmd == 3) {
-	        s->write(s,  JK_STATUS_TEXTUPDATE_RESPONCE, sizeof(JK_STATUS_TEXTUPDATE_RESPONCE) - 1);
-        } else {
-	        s->write(s,  JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
-	
-	        jk_puts(s, "<h1>JK Status Manager for ");
-	        jk_puts(s, s->server_name);
-	        jk_puts(s, "</h1>\n\n");
-	        jk_putv(s, "<dl><dt>Server Version: ",
-	                s->server_software, "</dt>\n", NULL);
-	        jk_putv(s, "<dt>JK Version: ",
-	                JK_VERSTRING, "\n</dt></dl>\n", NULL);
-	        /* Step 2: Display configuration */
-	        display_workers(s, p->s_worker, worker, l);
-	
-	
-	        s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
+        if(mime == 0) {
+            s->start_response(s, 200, "OK", headers_names, headers_vhtml, 3);
+            s->write(s, JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
+
+            jk_puts(s, "<h1>JK Status Manager for ");
+            jk_puts(s, s->server_name);
+            jk_puts(s, "</h1>\n\n");
+            jk_putv(s, "<dl><dt>Server Version: ",
+                    s->server_software, "</dt>\n", NULL);
+            jk_putv(s, "<dt>JK Version: ",
+                    JK_VERSTRING, "\n</dt></dl>\n", NULL);
+            /* Step 2: Display configuration */
+            display_workers(s, p->s_worker, worker, l);
+
+
+            s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
+
+        }
+        else if (mime == 1) {
+            s->start_response(s, 200, "OK", headers_names, headers_vxml, 3);
+            s->write(s, JK_STATUS_XMLH, sizeof(JK_STATUS_XMLH) - 1);
+            dump_config(s, p->s_worker, l);
+            s->write(s, JK_STATUS_XMLE, sizeof(JK_STATUS_XMLE) - 1);
+        }
+        else {
+            s->start_response(s, 200, "OK", headers_names, headers_vtxt, 3);
+            s->write(s,  JK_STATUS_TEXTUPDATE_RESPONCE,
+                     sizeof(JK_STATUS_TEXTUPDATE_RESPONCE) - 1);
         }
         if (worker)
             free(worker);
