@@ -111,6 +111,10 @@ public class JkHandler {
         this.id=id;
     }
 
+    public int getId() {
+        return id;
+    }
+    
     /** Catalina-style "recursive" invocation.
      *  A chain is used for Apache/3.3 style iterative invocation.
      */
@@ -120,6 +124,14 @@ public class JkHandler {
 
     public void setNext( String s ) {
         nextName=s;
+    }
+
+    public String getNext() {
+        if( nextName==null ) {
+            if( next!=null)
+                nextName=next.getName();
+        }
+        return nextName;
     }
 
     /** Should register the request types it can handle,

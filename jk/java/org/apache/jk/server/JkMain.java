@@ -115,6 +115,7 @@ public class JkMain
     
     public JkMain()
     {
+        JkMain.jkMain=this;
         modules.put("channelSocket", "org.apache.jk.common.ChannelSocket");
         modules.put("channelUnix", "org.apache.jk.common.ChannelUn");
         modules.put("channelJni", "org.apache.jk.common.ChannelJni");
@@ -124,6 +125,11 @@ public class JkMain
         modules.put("request","org.apache.jk.common.HandlerRequest");
         modules.put("container","org.apache.jk.common.HandlerRequest");
     }
+
+    public static JkMain getJkMain() {
+        return jkMain;
+    }
+
     // -------------------- Setting --------------------
     
     /** Load a .properties file into and set the values
@@ -136,6 +142,10 @@ public class JkMain
         } catch(IOException ex ){
             ex.printStackTrace();
         }
+    }
+
+    public String getPropertiesFile() {
+        return propFile;
     }
 
     /** Set a name/value as a jk2 property
@@ -159,12 +169,20 @@ public class JkMain
         props.put( "handler.channel.className",name);
     }
 
+    public String getChannelClassName() {
+        return (String)props.get( "handler.channel.className");
+    }
+
     /**
      * Set the <code>workerClassName</code> that will handle the request.
      * ( sort of 'pivot' in axis :-)
      */
     public void setWorkerClassName(String name) {
         props.put( "handler.container.className",name);
+    }
+
+    public String getWorkerClassName() {
+        return (String)props.get( "handler.container.className");
     }
 
     /** Set the base dir of jk2. ( including WEB-INF if in a webapp ).
@@ -176,22 +194,36 @@ public class JkMain
     public void setJkHome( String s ) {
         wEnv.setJkHome(s);
     }
+
+    public String getJkHome() {
+        return wEnv.getJkHome();
+    }
     
     String out;
     String err;
+    File propsF;
     
     public void setOut( String s ) {
         this.out=s;
+    }
+
+    public String getOut() {
+        return this.out;
     }
 
     public void setErr( String s ) {
         this.err=s;
     }
     
+    public String getErr() {
+        return this.err;
+    }
+    
     // -------------------- Initialization --------------------
     
     public void init() throws IOException
     {
+        long t1=System.currentTimeMillis();
         if(null != out) {
             PrintStream outS=new PrintStream(new FileOutputStream(out));
             System.setOut(outS);
@@ -215,17 +247,19 @@ public class JkMain
             if( ! conf.exists() )
                 conf=new File( home, "etc" );
 
-            File propsF=new File( conf, "jk2.properties" );
+            propsF=new File( conf, "jk2.properties" );
             
             if( propsF.exists() ) {
-                log.info("Starting Jk2, base dir= " + home + " conf=" + propsF );
+                log.debug("Starting Jk2, base dir= " + home + " conf=" + propsF );
                 setPropertiesFile( propsF.getAbsolutePath());
             } else {
-                log.info("Starting Jk2, base dir= " + home );
+                log.debug("Starting Jk2, base dir= " + home );
                 if( log.isWarnEnabled() )
                     log.warn( "No properties file found " + propsF );
             }
         }
+        long t2=System.currentTimeMillis();
+        initTime=t2-t1;
     }
     
     static String defaultHandlers[]= { "request",
@@ -258,6 +292,7 @@ public class JkMain
     
     public void start() throws IOException
     {
+        long t1=System.currentTimeMillis();
         // We must have at least 3 handlers:
         // channel is the 'transport'
         // request is the request processor or 'global' chain
@@ -300,10 +335,12 @@ public class JkMain
         }
 
         started=true;
-        long initTime=System.currentTimeMillis() - start_time;
+        long t2=System.currentTimeMillis();
+        startTime=t2-t1;
 
         this.saveProperties();
-        log.info("Jk running ID=" + wEnv.getLocalId() + " ... init time=" + initTime + " ms");
+        log.info("Jk running ID=" + wEnv.getLocalId() + " time=" + initTime + "/" + startTime +
+                 "  config=" + propFile);
     }
 
     // -------------------- Usefull methods --------------------
@@ -339,14 +376,24 @@ public class JkMain
 
     }
 
+    /** The time it took to initialize jk ( ms)
+     */
+    public long getInitTime() {
+        return initTime;
+    }
+
+    /** The time it took to start jk ( ms )
+     */
     public long getStartTime() {
-        return start_time;
+        return startTime;
     }
     
     // -------------------- Main --------------------
 
-    static long start_time=System.currentTimeMillis();
-    
+    long initTime;
+    long startTime;
+    static JkMain jkMain=null;
+
     public static void main(String args[]) {
         try {
             if( args.length == 1 &&
@@ -360,7 +407,7 @@ public class JkMain
                 return;
             }
 
-            JkMain jkMain=new JkMain();
+            jkMain=new JkMain();
 
             IntrospectionUtils.processArgs( jkMain, args, new String[] {},
                                             null, new Hashtable());
