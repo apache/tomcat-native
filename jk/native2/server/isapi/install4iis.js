@@ -256,7 +256,7 @@ function createISAPIFilter(webServer, appParams)
         filters = findADSIObject(webServer, _IIS_FILTERS, "Filters");
         if (filters == null) {
             //may have to create the website-level filters container
-            filters = webserver.create(_IIS_FILTERS, "Filters");
+            filters = webServer.create(_IIS_FILTERS, "Filters");
         }
         newFilter = findADSIObject(filters, _IIS_FILTER, appParams.FilterName);
         if (newFilter == null) {
