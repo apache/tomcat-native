@@ -96,7 +96,7 @@ struct jk_logger {
 #define JK_LOG_INFO    __FILE__,__LINE__,JK_LOG_INFO_LEVEL
 #define JK_LOG_ERROR   __FILE__,__LINE__,JK_LOG_ERROR_LEVEL
 #define JK_LOG_EMERG   __FILE__,__LINE__,JK_LOG_EMERG_LEVEL
-#define JK_LOG_REQUEST __FILE__,NULL,JK_LOG_REQUEST_LEVEL
+#define JK_LOG_REQUEST __FILE__,0,JK_LOG_REQUEST_LEVEL
 
 #ifdef __cplusplus
 }
