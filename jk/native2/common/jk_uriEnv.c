@@ -180,6 +180,9 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
             uriEnv->aliases->put(env, uriEnv->aliases, val, uriEnv, NULL);
         }
     }
+    else if (strcmp("inheritGlobals", name) == 0) {
+        uriEnv->inherit_globals = atoi(val);
+    }
     else {
         /* OLD - DEPRECATED */
         int d = 1;
@@ -429,6 +432,14 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     uriEnv->workerEnv->uriMap->addUriEnv(env, uriEnv->workerEnv->uriMap,
                                          uriEnv);
     uriEnv->uriMap = uriEnv->workerEnv->uriMap;
+
+    /* ??? This may be turned on by default 
+     * so that global mappings are always present
+     * on each vhost, instead of explicitly defined.
+     */
+#if 0
+    uriEnv->inherit_globals = 1;
+#endif
 
     return JK_OK;
 }
