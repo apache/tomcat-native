@@ -369,16 +369,16 @@ public class InputBuffer extends Reader
             int nRead = realReadBytes(bb.getBytes(), 0, bb.getBytes().length);
             if (nRead < 0) {
                 return -1;
-            } else {
-                bb.setBytes(bb.getBytes(), 0, nRead);
             }
         }
 
         if (markPos == -1) {
-            cb.setChars(cb.getChars(), 0, 0);
+            cb.setOffset(0);
+            cb.setEnd(0);
         }
 
         conv.convert(bb, cb);
+        bb.setOffset(bb.getEnd());
         state = CHAR_STATE;
 
         return cb.getLength();
