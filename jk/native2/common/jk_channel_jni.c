@@ -110,12 +110,6 @@ static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
 static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
                                           jk_channel_t *_this)
 {
-    /* the channel is init-ed during a worker validation. If a jni worker
-       is not already defined... well, not good. But on open we should
-       have it.
-    */
-    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.init():  %s\n", 
-                  _this->worker->mbean->name );
 
     return JK_TRUE;
 }
@@ -141,7 +135,14 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
         return JK_TRUE;
     }
     
+    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.init():  \n" );
+
     jniCh->vm=(jk_vm_t *)we->vm;
+    if( jniCh->vm == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel_jni.open() no VM found\n" ); 
+        return JK_FALSE;
+    }
 
     jniEnv = (JNIEnv *)jniCh->vm->attach( env, jniCh->vm );
     if( jniEnv == NULL ) {
@@ -176,7 +177,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     }
 
     jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
-                 "createEndpointStatic", "(JJ)Lorg/apache/jk/core/Endpoint;");
+                 "createEndpointStatic", "(JJ)Lorg/apache/jk/core/MsgContext;");
     if( jmethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.open() can't find createEndpointStatic\n"); 
@@ -225,7 +226,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     jniCh->writeMethod =
         (*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
                                      "receiveRequest",
-                                     "(JJLorg/apache/jk/core/Endpoint;"
+                                     "(JJLorg/apache/jk/core/MsgContext;"
                                      "Lorg/apache/jk/common/MsgAjp;)I");
     
     if( jniCh->writeMethod == NULL ) {
