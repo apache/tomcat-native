@@ -630,12 +630,13 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     unsigned char head[AJP_HEADER_LEN];
     int           rc;
     int           msglen;
-	unsigned int  header;
+    unsigned int  header;
 
-	if ((ae->proto != AJP13_PROTO) && (ae->proto != AJP14_PROTO)) {
-		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Can't handle unknown protocol %d\n", ae->proto);
-		return JK_FALSE;
-	}
+    if ((ae->proto != AJP13_PROTO) && (ae->proto != AJP14_PROTO)) {
+	jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
+	       " Can't handle unknown protocol %d\n", ae->proto);
+	return JK_FALSE;
+    }
 
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN);
 
@@ -644,30 +645,32 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
         return JK_FALSE;
     }
 
-	header = ((unsigned int)head[0] << 8) | head[1];
-  
-	if (ae->proto == AJP13_PROTO) {
-    	if (header != AJP13_SW_HEADER) {
-
-			if (header == AJP14_SW_HEADER)
-				jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - received AJP14 reply on an AJP13 connection\n");
-			else
-        		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - Wrong message format 0x%04x\n", header);
-
-        	return JK_FALSE;
+    header = ((unsigned int)head[0] << 8) | head[1];
+    
+    if (ae->proto == AJP13_PROTO) {
+	if (header != AJP13_SW_HEADER) {
+	    if (header == AJP14_SW_HEADER) {
+		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
+		       " Error - received AJP14 reply on an AJP13 connection\n");
+	    } else {
+		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
+		       "Error - Wrong message format 0x%04x\n", header);
+	    }
+	    return JK_FALSE;
     	}
+    } else if (ae->proto == AJP14_PROTO) {
+	if (header != AJP14_SW_HEADER) {
+	    if (header == AJP13_SW_HEADER) {
+		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
+		       " Error - received AJP13 reply on an AJP14 connection\n");
+	    } else {
+		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
+		       "Error - Wrong message format 0x%04x\n", header);
+	    }
+	    
+	    return JK_FALSE;
 	}
-	else if (ae->proto == AJP14_PROTO) {
-		if (header != AJP14_SW_HEADER) {
-
-			if (header == AJP13_SW_HEADER)
-				jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - received AJP13 reply on an AJP14 connection\n");
-			else
-				jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - Wrong message format 0x%04x\n", header);
-
-			return JK_FALSE;
-		}
-	}	
+    }	
 
     msglen  = ((head[2]&0xff)<<8);
     msglen += (head[3] & 0xFF);
@@ -686,11 +689,11 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
         return JK_FALSE;
     }
 
-	if (ae->proto == AJP13_PROTO) 
+    if (ae->proto == AJP13_PROTO) 
     	jk_dump_buff(l, JK_LOG_DEBUG, "received from ajp13", msg);
-	else if (ae->proto == AJP14_PROTO)
-		jk_dump_buff(l, JK_LOG_DEBUG, "received from ajp14", msg);
-	
+    else if (ae->proto == AJP14_PROTO)
+	jk_dump_buff(l, JK_LOG_DEBUG, "received from ajp14", msg);
+    
     return JK_TRUE;
 }
 
@@ -968,6 +971,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
 
         default:
 	        jk_log(l, JK_LOG_ERROR, "Error ajp_process_callback - Invalid code: %d\n", code);
+		jk_dump_buff(l, JK_LOG_ERROR, "Message: ", msg);
 	        return JK_AJP13_ERROR;
     }
     
@@ -1311,6 +1315,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e,
                     }
                     JK_LEAVE_CS(&w->cs, rc);
                     if(i < w->ep_cache_sz) {
+			jk_log(l, JK_LOG_DEBUG, "Return endpoint to pool\n");
                         return JK_TRUE;
                     }
                 }
@@ -1353,6 +1358,7 @@ int ajp_get_endpoint(jk_worker_t    *pThis,
                 }
                 JK_LEAVE_CS(&aw->cs, rc);
                 if (ae) {
+		    jk_log(l, JK_LOG_DEBUG, "Reusing endpoint\n");
                     *je = &ae->endpoint;
                     return JK_TRUE;
                 }
