@@ -125,7 +125,7 @@ static char *get_cookie(jk_ws_service_t *s,
                 if(id_start == s->headers_values[i] ||
                    id_start[-1] == ';' ||
                    id_start[-1] == ',' ||
-                   isspace(is_start[-1]) ) {
+                   isspace(id_start[-1]) ) {
                     id_start += strlen(name);
                     while(*id_start && isspace(*id_start))
                         ++id_start;
