@@ -83,6 +83,8 @@ struct jni_worker_data {
     jclass      jk_java_bridge_class;
     jmethodID   jk_main_method;
     char *className;
+    char *stdout_name;
+    char *stderr_name;
     /* Hack to allow multiple 'options' for the class name */
     char **classNameOptions;
     char **args;
@@ -100,7 +102,7 @@ static int jk2_get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEn
     p->jk_main_method =
         (*jniEnv)->GetStaticMethodID(jniEnv, p->jk_java_bridge_class,
                                      "main", 
-                                     "([Ljava/lang/String;)V");
+                                     "([Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
 
     
     if(!p->jk_main_method) {
@@ -122,20 +124,24 @@ static int JK_METHOD jk2_jni_worker_service(jk_env_t *env,
 static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
                                                 char *name, void *valueP)
 {
-    jk_worker_t *pThis=mbean->object;
+    jk_worker_t *_this=mbean->object;
     char *value=valueP;
     jni_worker_data_t *jniWorker;
     int mem_config = 0;
 
-    if(! pThis || ! pThis->worker_private) {
+    if(! _this || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "In validate, assert failed - invalid parameters\n");
         return JK_ERR;
     }
 
-    jniWorker = pThis->worker_private;
+    jniWorker = _this->worker_private;
 
-    if( strcmp( name, "class" )==0 ) {
+    if( strcmp( name, "stdout" )==0 ) {
+        jniWorker->stdout_name = value;
+    } else if( strcmp( name, "stderr" )==0 ) {
+        jniWorker->stderr_name = value;
+    } else if( strcmp( name, "class" )==0 ) {
         if( jniWorker->className != NULL ) {
             int i;
             for( i=0; i<4; i++ ) {
@@ -172,7 +178,6 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
     jclass jstringClass;
     jarray jargs;
     int i=0;
-    
     if(! _this || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "In init, assert failed - invalid parameters\n");
@@ -200,6 +205,13 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerJni.init() Can't attach to VM\n");
         return JK_ERR;
+    }
+
+    if(jniWorker->stdout_name) {
+        stdout_name = (*jniEnv)->NewStringUTF(jniEnv, jniWorker->stdout_name);
+    }
+    if(jniWorker->stderr_name) {
+        stderr_name = (*jniEnv)->NewStringUTF(jniEnv, jniWorker->stderr_name);
     }
     
     jniWorker->jk_java_bridge_class =
@@ -283,7 +295,7 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
     (*jniEnv)->CallStaticVoidMethod(jniEnv,
                                     jniWorker->jk_java_bridge_class,
                                     jniWorker->jk_main_method,
-                                    jargs);
+                                    jargs,stdout_name,stderr_name);
     
     vm->detach(env, vm);
 
@@ -365,6 +377,8 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
 
     jniData->args = pool->calloc( env, pool, 64 * sizeof( char *));
     jniData->nArgs =0;
+    jniData->stdout_name= NULL;
+    jniData->stderr_name= NULL;
 
     result->init           = jk2_jni_worker_init;
     result->destroy        = jk2_jni_worker_destroy;

@@ -23,14 +23,19 @@ public class TomcatStarter implements Runnable {
     // If someone has time - we can also guess the classpath and do other
     // fancy guessings.
     
-    public static void main( String args[] ) {
+    public static void main( String args[], String stdout, String stderr ) {
         System.err.println("TomcatStarter: main()");
         
         try {
-            System.setOut( System.err );
-            System.err.println("TomcatStarter: err");
-            System.out.println("TomcatStarter: out");
-
+            try{ 
+                if( stdout!=null ){
+                    System.setOut( new PrintStream(new FileOutputStream(stdout)));
+                }
+                if( stderr!=null ){
+                    System.setErr( new PrintStream(new FileOutputStream(stderr)));
+                }                                                 
+            }catch (Throwable th){
+            }
             AprImpl.jniMode();
             
             // Find the class
