@@ -137,6 +137,8 @@ final class CoyoteProcessor
         this.proxyPort = connector.getProxyPort();
         this.request = (CoyoteRequest) connector.createRequest();
         this.response = (CoyoteResponse) connector.createResponse();
+        this.request.setResponse(this.response);
+        this.response.setRequest(this.request);
         this.serverPort = connector.getPort();
         this.threadName =
             "CoyoteProcessor[" + connector.getPort() + "][" + id + "]";
@@ -371,7 +373,6 @@ final class CoyoteProcessor
 
         parseHost();
         // parseSession(req);
-        // parseParameters(req);
 
     }
 

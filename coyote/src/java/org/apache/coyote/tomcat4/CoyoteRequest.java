@@ -91,6 +91,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import org.apache.tomcat.util.http.Parameters;
+
 import org.apache.coyote.Request;
 
 import org.apache.catalina.Connector;
@@ -200,21 +202,6 @@ public class CoyoteRequest
 
 
     /**
-     * The parsed parameters for this request.  This is populated only if
-     * parameter information is requested via one of the
-     * <code>getParameter()</code> family of method calls.  The key is the
-     * parameter name, while the value is a String array of values for this
-     * parameter.
-     * <p>
-     * <strong>IMPLEMENTATION NOTE</strong> - Once the parameters for a
-     * particular request are parsed and stored here, they are not modified.
-     * Therefore, application level access to the parameters need not be
-     * synchronized.
-     */
-    protected ParameterMap parameters = null;
-
-
-    /**
      * Authentication type.
      */
     protected String authType = null;
@@ -239,6 +226,12 @@ public class CoyoteRequest
      * Using stream flag.
      */
     protected boolean usingInputStream = false;
+
+
+    /**
+     * Using writer flag.
+     */
+    protected boolean usingReader = false;
 
 
     /**
@@ -284,9 +277,28 @@ public class CoyoteRequest
 
 
     /**
+     * Authorization parsed flag.
+     */
+    protected boolean authorizationParsed = false;
+
+
+    /**
      * Secure flag.
      */
     protected boolean secure = false;
+
+
+    /**
+     * Post data buffer.
+     */
+    protected static int CACHED_POST_LEN = 8192;
+    protected byte[] postData = null;
+
+
+    /**
+     * Hash map used in the getParametersMap method.
+     */
+    protected ParameterMap parameterMap = new ParameterMap();
 
 
     // --------------------------------------------------------- Public Methods
@@ -303,6 +315,7 @@ public class CoyoteRequest
 
         authType = null;
         usingInputStream = false;
+        usingReader = false;
         contextPath = "";
         pathInfo = null;
         servletPath = null;
@@ -311,15 +324,15 @@ public class CoyoteRequest
         userPrincipal = null;
         sessionParsed = false;
         requestParametersParsed = false;
+        authorizationParsed = false;
         secure = false;
 
         attributes.clear();
         notes.clear();
         cookies.clear();
-        if (parameters != null) {
-            parameters.setLocked(false);
-            parameters.clear();
-        }
+
+        parameterMap.setLocked(false);
+        parameterMap.clear();
 
     }
 
@@ -331,18 +344,20 @@ public class CoyoteRequest
      * The authorization credentials sent with this Request.
      */
     protected String authorization = null;
-    protected boolean authorizationParsed = false;
 
     /**
      * Return the authorization credentials sent with this request.
      */
     public String getAuthorization() {
+
         if (!authorizationParsed) {
             setAuthorization(coyoteRequest.getHeader
                              (Constants.AUTHORIZATION_HEADER));
             authorizationParsed = true;
         }
+
         return (this.authorization);
+
     }
 
     /**
@@ -735,7 +750,7 @@ public class CoyoteRequest
      */
     public ServletInputStream getInputStream() throws IOException {
 
-        if (reader != null)
+        if (usingReader)
             throw new IllegalStateException
                 (sm.getString("requestBase.getInputStream.ise"));
 
@@ -787,7 +802,12 @@ public class CoyoteRequest
      * @param name Name of the desired request parameter
      */
     public String getParameter(String name) {
-        return null;
+
+        if (!requestParametersParsed)
+            parseRequestParameters();
+
+        return coyoteRequest.getParameters().getParameter(name);
+
     }
 
 
@@ -802,7 +822,21 @@ public class CoyoteRequest
      *  and parameter values as map values.
      */
     public Map getParameterMap() {
-        return null;
+
+        if (parameterMap.isLocked())
+            return parameterMap;
+
+        Enumeration enum = getParameterNames();
+        while (enum.hasMoreElements()) {
+            String name = enum.nextElement().toString();
+            String[] values = getParameterValues(name);
+            parameterMap.put(name, values);
+        }
+
+        parameterMap.setLocked(true);
+
+        return parameterMap;
+
     }
 
 
@@ -810,7 +844,12 @@ public class CoyoteRequest
      * Return the names of all defined request parameters for this request.
      */
     public Enumeration getParameterNames() {
-        return null;
+
+        if (!requestParametersParsed)
+            parseRequestParameters();
+
+        return coyoteRequest.getParameters().getParameterNames();
+
     }
 
 
@@ -821,7 +860,12 @@ public class CoyoteRequest
      * @param name Name of the desired request parameter
      */
     public String[] getParameterValues(String name) {
-        return null;
+
+        if (!requestParametersParsed)
+            parseRequestParameters();
+
+        return coyoteRequest.getParameters().getParameterValues(name);
+
     }
 
 
@@ -848,6 +892,7 @@ public class CoyoteRequest
             throw new IllegalStateException
                 (sm.getString("requestBase.getReader.ise"));
 
+        usingReader = true;
         if (reader == null) {
             String encoding = getCharacterEncoding();
             InputStreamReader r = new InputStreamReader(inputStream, encoding);
@@ -1064,7 +1109,7 @@ public class CoyoteRequest
      * @param values Corresponding values for this request parameter
      */
     public void addParameter(String name, String values[]) {
-        parameters.put(name, values);
+        // Not used
     }
 
 
@@ -1096,7 +1141,7 @@ public class CoyoteRequest
      * Clear the collection of parameters associated with this Request.
      */
     public void clearParameters() {
-        parameters.clear();
+        // Not used
     }
 
 
@@ -1384,7 +1429,6 @@ public class CoyoteRequest
     }
 
 
-
     /**
      * Return the query string associated with this request.
      */
@@ -1569,6 +1613,76 @@ public class CoyoteRequest
      */
     public Principal getUserPrincipal() {
         return (userPrincipal);
+    }
+
+
+    // ------------------------------------------------------ Protected Methods
+
+
+    /**
+     * Parse request parameters.
+     */
+    protected void parseRequestParameters() {
+
+        requestParametersParsed = true;
+
+        Parameters parameters = coyoteRequest.getParameters();
+
+        String enc = coyoteRequest.getCharacterEncoding();
+        if (enc != null) {
+            parameters.setEncoding(enc);
+        } else {
+            parameters.setEncoding
+                (org.apache.coyote.Constants.DEFAULT_CHARACTER_ENCODING);
+        }
+
+        parameters.handleQueryParameters();
+
+        if (usingInputStream || usingReader)
+            return;
+
+        if (!getMethod().equalsIgnoreCase("POST"))
+            return;
+
+        int len = getContentLength();
+
+        if (len > 0) {
+            try {
+                byte[] formData = null;
+                if (len < CACHED_POST_LEN) {
+                    if (postData == null)
+                        postData = new byte[CACHED_POST_LEN];
+                    formData = postData;
+                } else {
+                    formData = new byte[len];
+                }
+                readPostBody(formData, len);
+                parameters.processParameters(formData, 0, len);
+            } catch (Throwable t) {
+                t.printStackTrace(); // TEMP
+                ; // Ignore
+            }
+        }
+
+    }
+
+
+    /**
+     * Read post body in an array.
+     */
+    protected int readPostBody(byte body[], int len)
+        throws IOException {
+
+        int offset = 0;
+        do {
+            int inputLen = getStream().read(body, offset, len - offset);
+            if (inputLen <= 0) {
+                return offset;
+            }
+            offset += inputLen;
+        } while ((len - offset) > 0);
+        return len;
+
     }
 
 
