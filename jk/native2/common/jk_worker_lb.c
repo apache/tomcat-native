@@ -77,7 +77,7 @@
 
 #define MAX_ATTEMPTS 3
 
-#define NO_WORKER_MSG "The servlet container is temporary unavailable or beeing upgraded\n";
+#define NO_WORKER_MSG "The servlet container is temporary unavailable or being upgraded\n";
 
 /** Find the best worker. In process, check if timeout expired
     for workers that failed in the past and give them another chance.
