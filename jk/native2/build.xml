@@ -14,6 +14,7 @@
 
   <property name="netscape.home" location="${iplanet.home}/plugins" />
   <property name="apache2.home" location="/opt/apache2" />
+  <!-- That's the default RedHat package -->
   <property name="apache13.home" location="/usr" />
   
   <property name="apache2.include" location="${apache2.home}/include" />
@@ -44,16 +45,16 @@
 
   <!-- ==================== Targets ==================== -->
 
-  <target name="main" depends="init,apache20,jni">
+  <target name="main" depends="init,apache20,apache13,jni">
   </target>
 
   <target name="init" >
-          <echo message="build.properties.${os.arch}.${os.name}" />
+    <echo message="build.properties.${os.arch}.${os.name}" />
     <taskdef resource="META-INF/ant.tasks" 
 	     classpathref="jkant" />
     <available property="HAVE_APR" file="${apr.include}/apr.h" />
     <available property="apache13.detect" 
-               file="${apache13.home}" />
+               file="${apache13.home}/bin/htpasswd" />
     <available property="apache2.detect" 
                file="${apache2.home}" />
     <available property="iis.detect" 
@@ -61,6 +62,10 @@
     <available property="iplanet.detect" 
                file="${iplanet.home}" />
     <mkdir dir="${build.dir}" />
+    <echo message="Apache2 ${apache2.home} ${apache2.detect}" />
+    <echo message="Apache13 ${apache13.home} ${apache13.detect}" />
+    <echo message="IIS ${iis.home} ${iis.detect}" />
+    <echo message="Iplanet ${iplanet.home} ${iplanet.detect}" />
   </target>
 
   <target name="apache20" depends="init" if="apache2.detect">
@@ -177,7 +182,7 @@
 
   <target name="apache13" depends="init" if="apache13.detect">
     <mkdir dir="${jk.build}/WEB-INF/jk2/apache13" />
-    <so sofile="mod_jk" 
+    <so sofile="mod_jk2" 
 	buildDir="${jk.build}/WEB-INF/jk2/apache13"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
@@ -189,11 +194,15 @@
         <exclude name="jk_nwmain.c" 
 		 unless="netware" />
         <include name="common/apr/*.c" if="HAVE_APR" />
+        <exclude name="common/apr_socket.c" />
       </src>
       <includes>
+	<include name="${native.dir}/include" />
 	<include name="${native.dir}/common" />
 	<include name="${build.compiler.base}/include" />
 	<include name="${apache13.include}" />
+        <!-- Redhat package -->
+	<include name="${apache13.home}/include/apache" />
 	<include name="${native.dir}/include" />
 	<include name="${java.home}/../include" />
 
@@ -207,7 +216,7 @@
 	<include name="${apache13.home}/os/win32" if="win32" />
         <include name="${java.home}/../include/win32" if="win32" />
         <include name="${native.dir}/common" if="win32" />
-
+        <include name="${java.home}/../include/hp-ux" if="hpux" />        
         <include name="${java.home}/../include/linux" if="linux" />
       </includes>
       <depends>
