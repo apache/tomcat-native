@@ -78,12 +78,13 @@ AC_SUBST(SYSTEM)
 dnl --------------------------------------------------------------------------
 dnl Setup initial variable value
 dnl
-dnl New vars: MODULE TARGET
+dnl New vars: MODULE TARGET CFGFILES
 dnl           APR_CFGFLG APR_SRCDIR APR_LIBDIR APR_INCDIR APR_VARFIL
 dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 MODULE=""
 TARGET="lib"
+CFGFILES="./Makefile ./Makedefs ./lib/Makefile ./java/Constants.java"
 APR_CFGFLG=""
 APR_SRCDIR=""
 APR_LIBDIR=""
@@ -92,6 +93,7 @@ APR_VARFIL=""
 
 AC_SUBST(MODULE)
 AC_SUBST(TARGET)
+AC_SUBST(CFGFILES)
 AC_SUBST(APR_CFGFLG)
 AC_SUBST(APR_SRCDIR)
 AC_SUBST(APR_LIBDIR)
@@ -124,7 +126,9 @@ LOCAL_CHECK_PROG(RANLIB,ranlib)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_PROG_CC()
-LOCAL_CHECK_PROG(CC,${CC})
+local_cc="${CC}"
+LOCAL_CHECK_PROG(CC,"${local_cc}")
+unset local_cc
 AC_PROG_CC_C_O()
 AC_PROG_CPP()
 AC_SUBST(CPPFLAGS)
@@ -190,6 +194,42 @@ AC_ARG_WITH(tomcat,
   ]
 )
 AC_SUBST(TC4DIR)
+
+dnl --------------------------------------------------------------------------
+dnl Check that we can build all classes depending on Tomcat if Java is enabled
+dnl
+dnl New vars: CLASSPATH
+dnl Upd vars: TC4DIR TARGET CFGFILES
+dnl --------------------------------------------------------------------------
+if ${TEST} "$JAVA_ENABLE" = "true"
+then
+  LOCAL_RESOLVEDIR(TC4DIR,"${TC4DIR}",[tomcat distribution directory])
+  
+  if ${TEST} ! -f "${TC4DIR}/common/lib/servlet.jar"
+  then
+    AC_MSG_ERROR([Cannot find Servlet 2.3 jar in \"${TC4DIR}\"])
+  fi
+
+  if ${TEST} ! -f "${TC4DIR}/server/lib/catalina.jar"
+  then
+    AC_MSG_ERROR([Cannot find Catalina jar in \"${TC4DIR}\"])
+  fi
+
+  if ${TEST} -z "${CLASSPATH}"
+  then
+    CLASSPATH="${TC4DIR}/common/lib/servlet.jar"
+  else
+    CLASSPATH="${CLASSPATH}:${TC4DIR}/common/lib/servlet.jar"
+  fi
+  CLASSPATH="${CLASSPATH}:${TC4DIR}/server/lib/catalina.jar"
+
+  TARGET="${TARGET} java"
+  CFGFILES="${CFGFILES} ./java/Makefile"
+else
+  CLASSPATH=""
+  TC4DIR=""
+fi
+AC_SUBST(CLASSPATH)
 
 dnl -------------------------------------------------------------------------
 dnl Check wether we have to build the C API documentation or not
@@ -294,41 +334,6 @@ AC_ARG_ENABLE(apidocs-java,
     JAVADOC=""
   ]
 )
-
-dnl --------------------------------------------------------------------------
-dnl Check that we can build all classes depending on Tomcat if Java is enabled
-dnl
-dnl New vars: CLASSPATH
-dnl Upd vars: TC4DIR TARGET
-dnl --------------------------------------------------------------------------
-if ${TEST} "$JAVA_ENABLE" = "true"
-then
-  LOCAL_RESOLVEDIR(TC4DIR,"${TC4DIR}",[tomcat distribution directory])
-  
-  if ${TEST} ! -f "${TC4DIR}/common/lib/servlet.jar"
-  then
-    AC_MSG_ERROR([Cannot find Servlet 2.3 jar in \"${TC4DIR}\"])
-  fi
-
-  if ${TEST} ! -f "${TC4DIR}/server/lib/catalina.jar"
-  then
-    AC_MSG_ERROR([Cannot find Catalina jar in \"${TC4DIR}\"])
-  fi
-
-  if ${TEST} -z "${CLASSPATH}"
-  then
-    CLASSPATH="${TC4DIR}/common/lib/servlet.jar"
-  else
-    CLASSPATH="${CLASSPATH}:${TC4DIR}/common/lib/servlet.jar"
-  fi
-  CLASSPATH="${CLASSPATH}:${TC4DIR}/server/lib/catalina.jar"
-
-  TARGET="${TARGET} java"
-else
-  CLASSPATH=""
-  TC4DIR=""
-fi
-AC_SUBST(CLASSPATH)
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apr=... command line argument
@@ -449,6 +454,9 @@ AC_ARG_WITH(apxs,
 
 dnl --------------------------------------------------------------------------
 dnl Was a module specified?
+dnl
+dnl New vars: N/A
+dnl Upd vars: CFGFILES
 dnl --------------------------------------------------------------------------
 AC_MSG_CHECKING([target module])
 
@@ -458,6 +466,7 @@ then
   AC_MSG_ERROR([No target module specified])
 fi
 AC_MSG_RESULT([${MODULE}])
+CFGFILES="${CFGFILES} ./${MODULE}/Makefile"
 
 dnl --------------------------------------------------------------------------
 dnl Configure the APR source distribution
@@ -538,7 +547,7 @@ AC_SUBST(APR_LIBS)
 dnl --------------------------------------------------------------------------
 dnl Set up targets for building and cleaning
 dnl
-dnl New vars: TARGET_BUILD TARGET_CLEAN
+dnl New vars: TARGET_BUILD TARGET_CLEAN TARGET_LBUILD TARGET_LCLEAN
 dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 AC_MSG_CHECKING([for Makefile targets])
@@ -548,22 +557,25 @@ for local_target in ${TARGET}
 do
   TARGET_BUILD="${TARGET_BUILD} ${local_target}-build"
   TARGET_CLEAN="${TARGET_CLEAN} ${local_target}-clean"
+  if ${TEST} ! "${local_target}" = "apr"
+  then
+    TARGET_LBUILD="${TARGET_LBUILD} ${local_target}-build"
+    TARGET_LCLEAN="${TARGET_LCLEAN} ${local_target}-clean"
+  fi
 done
 unset local_target
 TARGET_BUILD="${TARGET_BUILD} ${MODULE}-build"
 TARGET_CLEAN="${TARGET_CLEAN} ${MODULE}-clean"
+TARGET_LBUILD="${TARGET_BUILD} ${MODULE}-build"
+TARGET_LCLEAN="${TARGET_CLEAN} ${MODULE}-clean"
 AC_MSG_RESULT([${TARGET} ${MODULE}])
 AC_SUBST(TARGET_BUILD)
 AC_SUBST(TARGET_CLEAN)
+AC_SUBST(TARGET_LBUILD)
+AC_SUBST(TARGET_LCLEAN)
 
 dnl --------------------------------------------------------------------------
 dnl Finish up
-dnl
-dnl New vars: CFGFILES
-dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
-CFGFILES="./Makefile ./Makedefs ./lib/Makefile"
-CFGFILES="${CFGFILES} ./${MODULE}/Makefile ./java/Constants.java"
-AC_SUBST(CFGFILES)
 AC_OUTPUT(${CFGFILES})
 LOCAL_HEADER([All done. Now you can issue \"make\". Good luck.])
