@@ -281,28 +281,35 @@ public class RequestHandler extends AjpHandler
 	    MessageBytes vMB=null;
             isc &= 0xFF00;
             if(0xA000 == isc) {
+                //
+                // header name is encoded as an int
+                //
                 msg.getInt(); // To advance the read position
                 hName = headerTransArray[hId - 1];
 		vMB= headers.addValue(hName);
+                msg.getMessageBytes(vMB);
+
+                if (hId == SC_REQ_CONTENT_LENGTH) {
+                    // just read content-length header
+                    int contentLength = (vMB == null) ? -1 : vMB.getInt();
+                    req.setContentLength(contentLength);
+                } else if (hId == SC_REQ_CONTENT_TYPE) {
+                    // just read content-type header
+                    ByteChunk bchunk = vMB.getByteChunk();
+                    req.contentType().setBytes(bchunk.getBytes(),
+                                               bchunk.getOffset(),
+                                               bchunk.getLength());
+                }
             } else {
+                //
+                // header name is a string
+                //
 		// XXX Not very elegant
 		vMB = msg.addHeader(headers);
 		if (vMB == null) {
                     return 500; // wrong packet
                 }
-            }
-
-            msg.getMessageBytes(vMB);
-
-            // set content length, if this is it...
-            if (hId == SC_REQ_CONTENT_LENGTH) {
-                int contentLength = (vMB == null) ? -1 : vMB.getInt();
-                req.setContentLength(contentLength);
-            } else if (hId == SC_REQ_CONTENT_TYPE) {
-                ByteChunk bchunk = vMB.getByteChunk();
-                req.contentType().setBytes(bchunk.getBytes(),
-                                           bchunk.getOffset(),
-                                           bchunk.getLength());
+                msg.getMessageBytes(vMB);
             }
         }
 
