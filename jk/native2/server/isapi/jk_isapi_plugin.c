@@ -475,7 +475,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
                worker_name);
         
         if( worker==NULL ){
-            env->l->jkLog(env, env->l,  JK_LOG_INFO, 
+            env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                    "HttpExtensionProc worker is NULL\n");
             return rc;            
         }
@@ -484,7 +484,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         rPool= worker->rPoolCache->get( env, worker->rPoolCache );
         if( rPool == NULL ) {
             rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "HttpExtensionProc: new rpool\n");
         }
 
@@ -580,7 +580,7 @@ static int init_jk(char *serverName)
         rc=(JK_OK != workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file ));
     }
     workerEnv->init(env,workerEnv);
-    env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", server_root);
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "Set serverRoot %s\n", server_root);
     if (using_ini_file) {
         env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using ini file %s.\n", ini_file_name);
     } else {
@@ -763,10 +763,10 @@ static jk_env_t * jk2_create_config()
     jk_env_t *env;
     if(  workerEnv==NULL ) {
         env = jk2_create_workerEnv();
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "JK2 Config Created");
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "JK2 Config Created");
     } else {
         env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "JK2 Config Reused");
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "JK2 Config Reused");
     }
 
     
