@@ -42,7 +42,6 @@ static char  file_name[_MAX_PATH];
  */
 static int dirCounter=0;
 
-
 #define JK_HANDLER          ("jakarta-servlet2")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet2")
 
@@ -662,9 +661,11 @@ static int jk2_handler(request_rec *r)
     int rc1;
 
     uriEnv=ap_get_module_config( r->request_config, &jk2_module );
+    if (uriEnv==NULL) 
+      uriEnv=ap_get_module_config( r->per_dir_config, &jk2_module );
 
     /* not for me, try next handler */
-    if(uriEnv==NULL || strcmp(r->handler,JK_HANDLER))
+    if(uriEnv==NULL || !strcmp(r->handler,JK_HANDLER))
       return DECLINED;
     
     /* If this is a proxy request, we'll notify an error */
@@ -854,38 +855,35 @@ static int jk2_translate(request_rec *r)
 /* bypass the directory_walk and file_walk for non-file requests */
 static int jk2_map_to_storage(request_rec *r)
 {
-    jk_uriEnv_t *uriEnv=ap_get_module_config( r->request_config, &jk2_module );
-    
-    if( uriEnv != NULL ) {
-    
-        /* First find just the name of the file, no directory */
-        r->filename = (char *)apr_filepath_name_get(r->uri);
+    jk_uriEnv_t *uriEnv;
+    jk_env_t *env;
 
-        /* Only if sub-request for a directory, most likely from mod_dir */
-        if (r->main && r->main->filename &&
-            !*apr_filepath_name_get(r->main->filename)){
+    if (r->proxyreq || workerEnv==NULL) {
+        return DECLINED;
+    }
 
-            /* The filename from the main request will be set to what should
-             * be picked up, aliases included. Tomcat will need to know about
-             * those aliases or things won't work for them. Normal files
-             * should be fine. */
+    /* From something like [uri:/examples/STAR] in workers2.properties */
+    env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+    uriEnv=workerEnv->uriMap->mapUri(env, workerEnv->uriMap,
+        ap_get_server_name(r),
+        ap_get_server_port(r),
+        r->uri);
 
-            /* Need absolute path to stat */
-            if (apr_filepath_merge(&r->filename,
-                                   r->main->filename, r->filename,
-                                   APR_FILEPATH_SECUREROOT |
-                                   APR_FILEPATH_TRUENAME,
-                                   r->pool)
-                != APR_SUCCESS){
-              return DECLINED; /* We should never get here, very bad */
-            }
-
-            /* Stat the file so that mod_dir knows it's there */
-            apr_stat(&r->finfo, r->filename, APR_FINFO_TYPE, r->pool);
+    if (uriEnv!=NULL && uriEnv->workerName != NULL) {
+        ap_set_module_config( r->request_config, &jk2_module, uriEnv );
+        r->handler=JK_HANDLER;
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+ 
+        /* This could be a sub-request, possibly from mod_dir */
+        if(r->main){
+            ap_set_module_config( r->main->request_config, &jk2_module, uriEnv );
+            r->main->handler=JK_HANDLER;
         }
 
         return OK;
     }
+
+    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     return DECLINED;
 }
 
@@ -897,7 +895,6 @@ static void jk2_register_hooks(apr_pool_t *p)
     /* Force the mpm to run before us and set the scoreboard image */
     ap_hook_child_init(jk2_child_init, NULL, NULL, APR_HOOK_LAST);
     
-    ap_hook_translate_name(jk2_translate, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_map_to_storage(jk2_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
