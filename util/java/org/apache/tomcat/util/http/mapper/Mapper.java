@@ -154,15 +154,24 @@ public final class Mapper {
      *
      * @param name Virtual host name
      */
-    public synchronized void removeHost(String name, String[] aliases) {
+    public synchronized void removeHost(String name) {
+        // Find and remove the old host
+        int pos = find(hosts, name);
+        if (pos < 0) {
+            return;
+        }
+        Object host = hosts[pos].object;
         Host[] newHosts = new Host[hosts.length - 1];
         if (removeMap(hosts, newHosts, name)) {
             hosts = newHosts;
         }
-        for (int i = 0; i < aliases.length; i++) {
-            newHosts = new Host[hosts.length - 1];
-            if (removeMap(hosts, newHosts, aliases[i])) {
-                hosts = newHosts;
+        // Remove all aliases (they will map to the same host object)
+        for (int i = 0; i < newHosts.length; i++) {
+            if (newHosts[i].object == host) {
+                Host[] newHosts2 = new Host[hosts.length - 1];
+                if (removeMap(hosts, newHosts2, newHosts[i].name)) {
+                    hosts = newHosts2;
+                }
             }
         }
     }
