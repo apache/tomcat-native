@@ -43,15 +43,18 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
     JK_TRACE_ENTER(l);
 
     if (!jk_map_alloc(&worker_map)) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     if (!jk_get_worker_list(init_data, &worker_list, &num_of_workers)) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     if (!build_worker_map(init_data, worker_list, num_of_workers, we, l)) {
         close_workers(l);
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
@@ -75,15 +78,15 @@ jk_worker_t *wc_get_worker_for_name(const char *name, jk_logger_t *l)
 
     JK_TRACE_ENTER(l);
     if (!name) {
-        jk_log(l, JK_LOG_ERROR, "wc_get_worker_for_name NULL name\n");
+        JK_LOG_NULL_PARAMS(l);
+        JK_TRACE_EXIT(l);
+        return NULL;
     }
-
-    jk_log(l, JK_LOG_DEBUG, "Into wc_get_worker_for_name %s\n", name);
 
     rc = jk_map_get(worker_map, name, NULL);
 
-    jk_log(l, JK_LOG_DEBUG, "wc_get_worker_for_name, done %s a worker\n",
-           rc ? "found" : "did not find");
+    jk_log(l, JK_LOG_DEBUG, "%s a worker %s\n",
+           rc ? "found" : "did not find", name);
     JK_TRACE_EXIT(l);
     return rc;
 }
@@ -105,6 +108,7 @@ int wc_create_worker(const char *name,
         if (!fac) {
             jk_log(l, JK_LOG_ERROR, "NULL factory for %s\n",
                    type);
+            JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
 
@@ -116,6 +120,7 @@ int wc_create_worker(const char *name,
             jk_log(l, JK_LOG_ERROR,
                    "factory for %s failed for %s\n", type,
                    name);
+            JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
 
@@ -125,6 +130,7 @@ int wc_create_worker(const char *name,
             w->destroy(&w, l);
             jk_log(l, JK_LOG_ERROR,
                    "validate failed for %s\n", name);
+            JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
 
@@ -132,6 +138,7 @@ int wc_create_worker(const char *name,
             w->destroy(&w, l);
             jk_log(l, JK_LOG_ERROR, "init failed for %s\n",
                    name);
+            JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
 
@@ -162,8 +169,8 @@ static void close_workers(jk_logger_t *l)
             }
         }
     }
-    JK_TRACE_EXIT(l);
     jk_map_free(&worker_map);
+    JK_TRACE_EXIT(l);
 }
 
 static int build_worker_map(jk_map_t *init_data,
@@ -185,6 +192,7 @@ static int build_worker_map(jk_map_t *init_data,
             jk_worker_t *oldw = NULL;
             if (!jk_map_put(worker_map, worker_list[i], w, (void *)&oldw)) {
                 w->destroy(&w, l);
+                JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
 
@@ -199,6 +207,7 @@ static int build_worker_map(jk_map_t *init_data,
             jk_log(l, JK_LOG_ERROR,
                    "failed to create worker%s\n",
                    worker_list[i]);
+            JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
     }

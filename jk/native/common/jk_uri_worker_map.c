@@ -136,13 +136,16 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
     JK_TRACE_ENTER(l);
 
     if (init_data && uw_map) {
-        return uri_worker_map_open(*uw_map =
-                                   (jk_uri_worker_map_t *)
-                                   malloc(sizeof(jk_uri_worker_map_t)),
-                                   init_data, l);
+        int rc = uri_worker_map_open(*uw_map =
+                                     (jk_uri_worker_map_t *)
+                                     malloc(sizeof(jk_uri_worker_map_t)),
+                                     init_data, l);
+        JK_TRACE_EXIT(l);
+        return rc;
     }
 
     JK_LOG_NULL_PARAMS(l);
+    JK_TRACE_EXIT(l);
 
     return JK_FALSE;
 }
@@ -161,6 +164,7 @@ int uri_worker_map_free(jk_uri_worker_map_t **uw_map, jk_logger_t *l)
     else
         JK_LOG_NULL_PARAMS(l);
 
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 
@@ -204,9 +208,10 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     char *worker;
 
     JK_TRACE_ENTER(l);
-    if (uri_worker_map_realloc(uw_map) == JK_FALSE)
+    if (uri_worker_map_realloc(uw_map) == JK_FALSE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
+    }
     uwr =
         (uri_worker_record_t *) jk_pool_alloc(&uw_map->p,
                                               sizeof(uri_worker_record_t));
@@ -214,6 +219,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     if (!uwr) {
         jk_log(l, JK_LOG_ERROR,
                "can't alloc map entry\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
@@ -223,6 +229,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     if (!uri || !worker) {
         jk_log(l, JK_LOG_ERROR,
                "can't alloc uri/worker strings\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
@@ -235,6 +242,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
             if (!uwr->uri) {
                 jk_log(l, JK_LOG_ERROR,
                        "can't alloc uri string\n");
+                JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
 
@@ -326,6 +334,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         jk_log(l, JK_LOG_ERROR,
                "invalid context %s\n",
                uri);
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
@@ -423,6 +432,7 @@ int uri_worker_map_close(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
     }
 
     JK_LOG_NULL_PARAMS(l);
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 
@@ -482,6 +492,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                         jk_log(l, JK_LOG_DEBUG,
                                "Found an exact match %s -> %s\n",
                                uwr->worker_name, uwr->context);
+                        JK_TRACE_EXIT(l);
                         return uwr->worker_name;
                     }
                 }
@@ -554,6 +565,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         }
 
         if (-1 != best_match) {
+            JK_TRACE_EXIT(l);
             return uw_map->maps[best_match]->worker_name;
         }
         else {
@@ -571,6 +583,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                 jk_log(l, JK_LOG_EMERG,
                        "Found a security fraud in '%s'\n",
                        uri);
+                JK_TRACE_EXIT(l);
                 return uw_map->maps[fraud]->worker_name;
             }
         }
