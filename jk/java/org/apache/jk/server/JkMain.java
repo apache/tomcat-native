@@ -130,11 +130,6 @@ public class JkMain
         wEnv.setJkHome(s);
     }
 
-    public void setDebug( int i ) {
-        dL=i;
-        d("set debug " + i );
-    }
-    
     // -------------------- Initialization --------------------
     
     public void init() throws IOException
@@ -146,12 +141,16 @@ public class JkMain
         if( home != null ) {
             File hF=new File(home);
             File conf=new File( home, "conf" );
+            if( ! conf.exists() )
+                conf=new File( home, "etc" );
+
             File propsF=new File( conf, "jk2.properties" );
             
             if( propsF.exists() ) {
                 setPropertiesFile( propsF.getAbsolutePath());
             } else {
-                if( dL > 0 ) d( "No properties file found " + propsF );
+                if( log.isWarnEnabled() )
+                    log.warn( "No properties file found " + propsF );
             }
         }
     }
@@ -177,15 +176,18 @@ public class JkMain
         String workers=props.getProperty( "handler.list",
                                           "channel,request,container" );
         Vector workerNamesV= split( workers, ",");
-        if( dL > 0 ) d("workers: " + workers + " " + workerNamesV.size() );
+        if( log.isDebugEnabled() )
+            log.debug("workers: " + workers + " " + workerNamesV.size() );
+        
         for( int i=0; i<workerNamesV.size(); i++ ) {
             String name= (String)workerNamesV.elementAt( i );
-            if( dL > 0 ) d("Configuring " + name );
+            if( log.isDebugEnabled() )
+                log.debug("Configuring " + name );
             JkHandler w=wEnv.getHandler( name );
             if( w==null )
                 w=(JkHandler)newInstance( "handler", name, null );
             if( w==null ) {
-                d("Can't create handler for name " + name );
+                log.warn("Can't create handler for name " + name );
                 continue;
             }
 
@@ -196,7 +198,7 @@ public class JkMain
         
         wEnv.start();
         long initTime=System.currentTimeMillis() - start_time;
-        d("Jk running... init time=" + initTime + " ms");
+        log.info("Jk running... init time=" + initTime + " ms");
     }
 
     // -------------------- Usefull methods --------------------
@@ -209,9 +211,8 @@ public class JkMain
        up the clean get/set
     */
     public void setProperty( Object target, String name, String val ) {
-        /* XXX we need an improved IntrospectionUtils, to report error
-           without d() */
-        d( "setProperty " + target + " " + name + "=" + val );
+        if( log.isDebugEnabled())
+            log.debug( "setProperty " + target + " " + name + "=" + val );
         IntrospectionUtils.setProperty( target, name, val );
     }
 
@@ -219,7 +220,8 @@ public class JkMain
      * Set a handler property
      */
     public void setProperty( String handlerN, String name, String val ) {
-        d( "setProperty " + handlerN + " " + name + "=" + val );
+        if( log.isDebugEnabled() )
+            log.debug( "setProperty " + handlerN + " " + name + "=" + val );
         Object target=wEnv.getHandler( handlerN );
         IntrospectionUtils.setProperty( target, name, val );
     }
@@ -282,15 +284,16 @@ public class JkMain
     private Object newInstance( String type, String name, String def )
         throws IOException
     {
+        String classN=null;
         try {
-            String classN=props.getProperty( type + "." + name + ".className",
+            classN=props.getProperty( type + "." + name + ".className",
                                              def );
             if( classN== null ) return null;
             Class channelclass = Class.forName(classN);
             return channelclass.newInstance();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             ex.printStackTrace();
-            throw new IOException("Cannot create channel class");
+            throw new IOException("Cannot create channel class " + classN);
         }
     }
 
@@ -313,15 +316,11 @@ public class JkMain
         home=IntrospectionUtils.guessInstall( "jk2.home","jk2.home",
                                               "tomcat-jk2.jar", CNAME );
         if( home != null ) {
-            if( dL > -1 ) d("Guessed home " + home );
+            log.info("Guessed home " + home );
             wEnv.setJkHome( home );
         }
     }
-    
-    private static int dL=0;
-    private static void d(String s ) {
-        System.err.println( "JkMain: " + s );
-    }
 
-
+    static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( JkMain.class );
 }
