@@ -1305,9 +1305,9 @@ for (i = 0; i < map_size(conf->automount); i++)
 #endif
             
 			/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
-			worker_env.uri_to_worker = conf->uw_map;
+            worker_env.uri_to_worker = conf->uw_map;
             worker_env.virtual       = "*";     /* for now */
-			worker_env.server_name   = (char *)ap_get_server_version();
+            worker_env.server_name   = (char *)ap_get_server_version();
             if(wc_open(init_map, &worker_env, conf->log)) {
                 /* we don't need this any more so free it */
                 map_free(&init_map);
@@ -1316,7 +1316,8 @@ for (i = 0; i < map_size(conf->automount); i++)
         }
     }
     
-    jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Error while opening the workers");
+    aplog_error(APLOG_MARK, APLOG_ERR, NULL,
+                "Error while opening the workers, jk will not work\n");
 }
 
 /*
