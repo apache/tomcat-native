@@ -317,6 +317,8 @@ public class ChunkedInputFilter implements InputFilter {
             endChunk = true;
 
         remaining = result;
+        if (remaining < 0)
+            return false;
 
         return true;
 
@@ -335,14 +337,14 @@ public class ChunkedInputFilter implements InputFilter {
 
             if (pos >= lastValid) {
                 if (readBytes() <= 0)
-                    return false;
+                    throw new IOException("Invalid CRLF");
             }
 
             if (buf[pos] == Constants.CR) {
             } else if (buf[pos] == Constants.LF) {
                 eol = true;
             } else {
-                return false;
+                throw new IOException("Invalid CRLF");
             }
 
             pos++;
