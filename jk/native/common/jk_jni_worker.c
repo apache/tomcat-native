@@ -554,7 +554,7 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
                                   jk_endpoint_t **pend, jk_logger_t *l)
 {
     /* [V] This slow, needs replacement */
-    jni_endpoint_t *p = (jni_endpoint_t *) malloc(sizeof(jni_endpoint_t));
+    jni_endpoint_t *p;
 
     JK_TRACE_ENTER(l);
 
@@ -563,7 +563,8 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-
+    
+    p = (jni_endpoint_t *) calloc(1, sizeof(jni_endpoint_t));
     if (p) {
         p->attached = JK_FALSE;
         p->env = NULL;

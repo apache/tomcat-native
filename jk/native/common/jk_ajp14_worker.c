@@ -380,7 +380,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
 int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
                                    const char *name, jk_logger_t *l)
 {
-    ajp_worker_t *aw = (ajp_worker_t *) malloc(sizeof(ajp_worker_t));
+    ajp_worker_t *aw;
 
     JK_TRACE_ENTER(l);
 
@@ -390,6 +390,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
         return JK_FALSE;
     }
 
+    aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
     if (!aw) {
         jk_log(l, JK_LOG_ERROR,
                "malloc of private data failed\n");

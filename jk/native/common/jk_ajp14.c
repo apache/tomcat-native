@@ -417,7 +417,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
     JK_TRACE_ENTER(l);
     jk_log(l, JK_LOG_DEBUG,
            "get virtual %s for virtual %s\n",
-           vname, c->virtual);
+           vname, c->virt);
 
     if (!vname) {
         jk_log(l, JK_LOG_ERROR,
@@ -427,7 +427,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
     }
 
     /* Check if we get the correct virtual host */
-    if (c->virtual != NULL && vname != NULL && strcmp(c->virtual, vname)) {
+    if (c->virt != NULL && vname != NULL && strcmp(c->virt, vname)) {
         /* set the virtual name, better to add to a virtual list ? */
 
         if (context_set_virtual(c, vname) == JK_FALSE) {
@@ -536,7 +536,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
     /*
      * VIRTUAL HOST CSTRING
      */
-    if (jk_b_append_string(msg, c->virtual)) {
+    if (jk_b_append_string(msg, c->virt)) {
         jk_log(l, JK_LOG_ERROR,
                "failed appending the virtual host string\n");
         JK_TRACE_EXIT(l);
@@ -628,10 +628,10 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
     }
 
     /* Check if we speak about the correct virtual */
-    if (strcmp(c->virtual, vname)) {
+    if (strcmp(c->virt, vname)) {
         jk_log(l, JK_LOG_ERROR,
                "incorrect virtual %s instead of %s\n",
-               vname, c->virtual);
+               vname, c->virt);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }

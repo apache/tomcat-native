@@ -1947,7 +1947,7 @@ int ajp_get_endpoint(jk_worker_t *pThis,
             }
         }
 
-        ae = (ajp_endpoint_t *) malloc(sizeof(ajp_endpoint_t));
+        ae = (ajp_endpoint_t *) calloc(1, sizeof(ajp_endpoint_t));
         if (ae) {
             ae->sd = -1;
             ae->reuse = JK_FALSE;

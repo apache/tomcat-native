@@ -566,7 +566,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
 
     if (NULL != name && NULL != w) {
         lb_worker_t *private_data =
-            (lb_worker_t *) malloc(sizeof(lb_worker_t));
+            (lb_worker_t *) calloc(1, sizeof(lb_worker_t));
 
         jk_open_pool(&private_data->p,
                         private_data->buf,

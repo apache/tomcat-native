@@ -78,7 +78,7 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
 int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
                                    const char *name, jk_logger_t *l)
 {
-    ajp_worker_t *aw = (ajp_worker_t *) malloc(sizeof(ajp_worker_t));
+    ajp_worker_t *aw;
 
     JK_TRACE_ENTER(l);
     if (name == NULL || w == NULL) {
@@ -86,7 +86,8 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-
+    
+    aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
     if (!aw) {
         jk_log(l, JK_LOG_ERROR,
                "malloc of private_data failed\n");
