@@ -59,10 +59,14 @@
 
 package org.apache.coyote.tomcat5;
 
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
 import java.util.HashMap;
 
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -604,7 +608,30 @@ public class OutputBuffer extends Writer
             enc = DEFAULT_ENCODING;
         conv = (C2BConverter) encoders.get(enc);
         if (conv == null) {
-            conv = new C2BConverter(bb, enc);
+            
+            if (System.getSecurityManager() != null){
+                try{
+                    conv = (C2BConverter)AccessController.doPrivileged(
+                            new PrivilegedExceptionAction(){
+
+                                public Object run() throws IOException{
+                                    return new C2BConverter(bb, enc);
+                                }
+
+                            }
+                    );              
+                }catch(PrivilegedActionException ex){
+                    Exception e = ex.getException();
+                    if (e instanceof IOException)
+                        throw (IOException)e; 
+                    
+                    if (debug > 0)
+                        log("setConverter: " + ex.getMessage());
+                }
+            } else {
+                conv = new C2BConverter(bb, enc);
+            }
+            
             encoders.put(enc, conv);
             /*
             try {
