@@ -58,58 +58,31 @@
 # @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 # @version $Id$
 
-include @SRCDIR@/Makedefs
+include @TGTDIR@/Makedefs
 
-APXS_CC =            @APXS_CC@
-APXS_TARGET =        @APXS_TARGET@
-APXS_CFLAGS =        @APXS_CFLAGS@
-APXS_SBINDIR =       @APXS_SBINDIR@
-APXS_CFLAGS_SHLIB =  @APXS_CFLAGS_SHLIB@
-APXS_INCLUDEDIR =    @APXS_INCLUDEDIR@
-APXS_LD_SHLIB =      @APXS_LD_SHLIB@
-APXS_LIBEXECDIR =    @APXS_LIBEXECDIR@
-APXS_LDFLAGS_SHLIB = @APXS_LDFLAGS_SHLIB@
-APXS_SYSCONFDIR =    @APXS_SYSCONFDIR@
-APXS_LIBS_SHLIB =    @APXS_LIBS_SHLIB@
-APXS_PREFIX =        @APXS_PREFIX@
-APXS =               @APXS@ 
+SRCS =  mod_webapp.c
 
-MODULE = mod_webapp.so
+OBJS =  mod_webapp.o
 
-all: $(MODULE)
+MOD =	mod_webapp.so
 
-mod_webapp.lo: mod_webapp.c @SRCDIR@/Makedefs
-	@$(ECHO) Compiling Apache 1.3 WebApp module
-	@$(SHELL) $(LIBTOOL) $(LTFLAGS) --mode=compile \
-		$(CC) $(CFLAGS) $(APXS_CFLAGS) \
-			$(APXS_CFLAGS_SHLIB) \
-			-I$(APXS_INCLUDEDIR) \
-			$(CPPFLAGS) \
-			-c $< -o $@
+APXS =  @APXS@
 
-mod_webapp.so: mod_webapp.lo @SRCDIR@/lib/libwebapp.la @APRDIR@/libapr.la
-	@$(ECHO) Linking Apache 1.3 WebApp Module
-	@$(SHELL) $(LIBTOOL) $(LTFLAGS) --mode=link \
-		$(APXS_LD_SHLIB) $(APXS_LDFLAGS_SHLIB) \
-		mod_webapp.lo @SRCDIR@/lib/libwebapp.la \
-		$(LIBTOOL_LIBS) $(EXTRA_LIBS) @APRDIR@/libapr.la \
-		-o mod_webapp.so
-
-install: mod_webapp.so
-	@$(ECHO) Installing Apache 1.3 WebApp Module
-	@$(SHELL) $(LIBTOOL)  --mode=install cp $(MODULE) $(APXS_LIBEXECDIR)
+build: $(MOD)
 
 clean:
-	@for ENTRY in *.o *.lo $(MODULE) .libs ; \
-	do \
-		if $(TEST) -f $${ENTRY} ; \
-		then \
-			$(ECHO) Removing file $${ENTRY} ; \
-			$(RM) -f $${ENTRY} ; \
-		fi ; \
-		if $(TEST) -d $${ENTRY} ; \
-		then \
-			$(ECHO) Removing directory $${ENTRY} ; \
-			$(RM) -rf $${ENTRY} ; \
-		fi ; \
-	done
+	@$(MECHO) "Cleaning up"
+	@$(DEXEC) $(RM) -f $(OBJS) $(MOD)
+
+$(MOD): $(SRCS)
+	@$(APXS) -c \
+	    -Wc,"$(CFLAGS) $(APR_CFLAGS) $(CPPFLAGS) $(APR_CPPFLAGS)" \
+	    -Wl,"$(APR_LDFLAGS)" $(APR_LIBS) \
+	    -I$(APR_INCDIR) -I$(SRCDIR)/include $(APR_INCLUDES) \
+	    -L$(TGTDIR)/lib -L$(APR_LIBDIR) \
+	    -lapr -lwebapp -o "$@" $<
+
+$(SRCS):
+	@$(MECHO) "Linking \"$@\""
+	@$(DEXEC) $(LN) -s $(SRCDIR)/apache-1.3/$@ ./$@
+
