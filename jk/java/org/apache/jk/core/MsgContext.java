@@ -90,9 +90,17 @@ public class MsgContext {
     private Msg msgs[]=new Msg[10];
     private int status=0;
 
+    // Application managed, like notes 
+    private long timers[]=new long[20];
+    
     // The context can be used by JNI components as well
     private long jkEndpointP;
     private long xEnvP;
+
+    // Temp: use notes and dynamic strings
+    public static final int TIMER_RECEIVED=0;
+    public static final int TIMER_PRE_REQUEST=1;
+    public static final int TIMER_POST_REQUEST=2;
     
     public final Object getNote( int id ) {
         return notes[id];
@@ -111,6 +119,14 @@ public class MsgContext {
         type=i;
     }
 
+    public final void setLong( int i, long l) {
+        timers[i]=l;
+    }
+    
+    public final long getLong( int i) {
+        return timers[i];
+    }
+    
     // Common attributes ( XXX should be notes for flexibility ? )
 
     public final WorkerEnv getWorkerEnv() {
