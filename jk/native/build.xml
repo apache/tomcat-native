@@ -20,7 +20,7 @@
   <property name="apxs13" value="/usr/sbin/apxs" />
   <property name="apxs20" value="/opt/apache2/bin/apxs" />
   
-  <property name="netscape.home" location="/opt/iplanet/plugins" />
+  <property name="iplanet.home" location="/opt/iplanet" />
   <property name="apache2.home" location="/opt/apache2" />
   <property name="apache13.home" location="/usr" />
   
