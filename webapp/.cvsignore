@@ -1,8 +1,8 @@
 .DS_Store
-apr
-Makefile
 Makedefs
-configure
+Makefile
+apr
 config.cache
 config.log
 config.status
+configure

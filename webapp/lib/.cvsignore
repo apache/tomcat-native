@@ -1,8 +1,8 @@
-.libs
 .DS_Store
+.libs
 Makefile
-libwebapp.la
 libwebapp.a
+libwebapp.la
 pr_info.lo
 pr_info.o
 pr_warp.lo
