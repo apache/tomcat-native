@@ -477,8 +477,6 @@ static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
     workerEnv->init(env, workerEnv );
     workerEnv->server_name   = (char *)ap_get_server_version();
 
-    /* Should be done in post config instead (cf DAV2) */
-    /* ap_add_version_component(pconf, JK_EXPOSED_VERSION); */
     apr_pool_cleanup_register(pconf, NULL, jk2_shutdown, apr_pool_cleanup_null);
     return NULL;
 }
