@@ -135,9 +135,6 @@ public final class Request {
      * HTTP specific fields. (remove them ?)
      */
     private int contentLength = -1;
-    // how much body we still have to read.
-    // Apparently nobody uses this field...
-    private int available = -1;
     private MessageBytes contentTypeMB = null;
     private String charEncoding = null;
     private Cookies cookies = new Cookies(headers);
@@ -222,7 +219,7 @@ public final class Request {
      * Host: header.
      */
     public MessageBytes serverName() {
-	return serverNameMB;
+        return serverNameMB;
     }
 
     public int getServerPort() {
@@ -230,31 +227,31 @@ public final class Request {
     }
     
     public void setServerPort(int serverPort ) {
-	this.serverPort=serverPort;
+        this.serverPort=serverPort;
     }
 
     public MessageBytes remoteAddr() {
-	return remoteAddrMB;
+        return remoteAddrMB;
     }
 
     public MessageBytes remoteHost() {
-	return remoteHostMB;
+        return remoteHostMB;
     }
 
     public MessageBytes localName() {
-	return localNameMB;
+        return localNameMB;
     }    
 
     public MessageBytes localAddr() {
-	return localAddrMB;
+        return localAddrMB;
     }
     
     public String getLocalHost() {
-	return localHost;
+        return localHost;
     }
 
     public void setLocalHost(String host) {
-	this.localHost = host;
+        this.localHost = host;
     }    
     
     public int getRemotePort(){
@@ -291,24 +288,22 @@ public final class Request {
 
 
     public void setCharacterEncoding(String enc) {
-	this.charEncoding = enc;
+        this.charEncoding = enc;
     }
 
 
     public void setContentLength(int len) {
-	this.contentLength = len;
-	available = len;
+        this.contentLength = len;
     }
 
 
     public int getContentLength() {
         if( contentLength > -1 ) return contentLength;
 
-	MessageBytes clB = headers.getValue("content-length");
+        MessageBytes clB = headers.getValue("content-length");
         contentLength = (clB == null || clB.isNull()) ? -1 : clB.getInt();
-	available = contentLength;
 
-	return contentLength;
+        return contentLength;
     }
 
 
@@ -369,7 +364,7 @@ public final class Request {
 
 
     public Cookies getCookies() {
-	return cookies;
+        return cookies;
     }
 
 
@@ -377,7 +372,7 @@ public final class Request {
 
 
     public Parameters getParameters() {
-	return parameters;
+        return parameters;
     }
 
 
@@ -424,7 +419,6 @@ public final class Request {
         throws IOException {
         int n = inputBuffer.doRead(chunk, this);
         if (n > 0) {
-            available -= n;
             bytesRead+=n;
         }
         return n;
@@ -434,7 +428,7 @@ public final class Request {
     // -------------------- debug --------------------
 
     public String toString() {
-	return "R( " + requestURI().toString() + ")";
+        return "R( " + requestURI().toString() + ")";
     }
 
     public long getStartTime() {
@@ -449,12 +443,12 @@ public final class Request {
 
 
     public final void setNote(int pos, Object value) {
-	notes[pos] = value;
+        notes[pos] = value;
     }
 
 
     public final Object getNote(int pos) {
-	return notes[pos];
+        return notes[pos];
     }
 
 
@@ -464,7 +458,7 @@ public final class Request {
     public void recycle() {
         bytesRead=0;
 
-	contentLength = -1;
+        contentLength = -1;
         contentTypeMB = null;
         charEncoding = null;
         headers.recycle();
@@ -473,21 +467,21 @@ public final class Request {
         localPort = -1;
         remotePort = -1;
 
-	cookies.recycle();
+        cookies.recycle();
         parameters.recycle();
 
         unparsedURIMB.recycle();
         uriMB.recycle(); 
         decodedUriMB.recycle();
-	queryMB.recycle();
-	methodMB.recycle();
-	protoMB.recycle();
-	//remoteAddrMB.recycle();
-	//remoteHostMB.recycle();
+        queryMB.recycle();
+        methodMB.recycle();
+        protoMB.recycle();
+        //remoteAddrMB.recycle();
+        //remoteHostMB.recycle();
 
-	// XXX Do we need such defaults ?
+        // XXX Do we need such defaults ?
         schemeMB.recycle();
-	methodMB.setString("GET");
+        methodMB.setString("GET");
         uriMB.setString("/");
         queryMB.setString("");
         protoMB.setString("HTTP/1.0");
