@@ -84,7 +84,7 @@ dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 MODULE=""
 TARGET="lib"
-CFGFILES="./Makefile ./Makedefs ./lib/Makefile ./java/Constants.java"
+CFGFILES="./Makefile ./Makedefs ./lib/Makefile"
 APR_CFGFLG=""
 APR_SRCDIR=""
 APR_LIBDIR=""
@@ -143,7 +143,7 @@ LOCAL_HELP([External libraries and compilation flags])
 AC_MSG_CHECKING([for debug build])
 AC_ARG_ENABLE(debug,
   [  --enable-debug          enable compilation of  debug information messages
-                          within both C and Java code (this will slow down
+                          within C code (this will slow down
                           execution and create huge log files).],
   [
     AC_MSG_RESULT([yes])
@@ -155,81 +155,6 @@ AC_ARG_ENABLE(debug,
   ]
 )
 AC_SUBST(DEBUG)
-
-dnl -------------------------------------------------------------------------
-dnl Check JAVA environment
-dnl
-dnl New vars: JAVA_HOME JAVAC JAVACFLAGS JAR JAVADOC
-dnl Upd vars: N/A
-dnl -------------------------------------------------------------------------
-LOCAL_HEADER([JAVA-Language compilation tools])
-JAVA_INIT()
-JAVA_JAVAC()
-JAVA_JAR()
-JAVA_JAVADOC()
-
-dnl --------------------------------------------------------------------------
-dnl Process the --with-tomcat=... command line argument
-dnl
-dnl   This is always processed, and sets the CLASSPATH variable.
-dnl
-dnl New vars: TC4DIR
-dnl Upd vars: N/A
-dnl -------------------------------------------------------------------------
-AC_ARG_WITH(tomcat,
-  [  --with-tomcat[=DIR]       path of a Tomcat 4.0 distribution. (DIR defaults
-                          to \"/usr/local/tomcat\"). Not required and ignored
-                          when the --enable-java option is not specified.],
-  [
-    case "${withval}" in
-    ""|"yes"|"YES"|"true"|"TRUE")
-      TC4DIR="/usr/local/tomcat"
-      ;;
-    *)
-      TC4DIR="${withval}"
-      ;;
-    esac
-  ],[
-    TC4DIR="/usr/local/tomcat"
-  ]
-)
-AC_SUBST(TC4DIR)
-
-dnl --------------------------------------------------------------------------
-dnl Check that we can build all classes depending on Tomcat if Java is enabled
-dnl
-dnl New vars: CLASSPATH
-dnl Upd vars: TC4DIR TARGET CFGFILES
-dnl --------------------------------------------------------------------------
-if ${TEST} "$JAVA_ENABLE" = "true"
-then
-  LOCAL_RESOLVEDIR(TC4DIR,"${TC4DIR}",[tomcat distribution directory])
-  
-  if ${TEST} ! -f "${TC4DIR}/common/lib/servlet.jar"
-  then
-    AC_MSG_ERROR([Cannot find Servlet 2.3 jar in \"${TC4DIR}\"])
-  fi
-
-  if ${TEST} ! -f "${TC4DIR}/server/lib/catalina.jar"
-  then
-    AC_MSG_ERROR([Cannot find Catalina jar in \"${TC4DIR}\"])
-  fi
-
-  if ${TEST} -z "${CLASSPATH}"
-  then
-    CLASSPATH="${TC4DIR}/common/lib/servlet.jar"
-  else
-    CLASSPATH="${CLASSPATH}:${TC4DIR}/common/lib/servlet.jar"
-  fi
-  CLASSPATH="${CLASSPATH}:${TC4DIR}/server/lib/catalina.jar"
-
-  TARGET="${TARGET} java"
-  CFGFILES="${CFGFILES} ./java/Makefile"
-else
-  CLASSPATH=""
-  TC4DIR=""
-fi
-AC_SUBST(CLASSPATH)
 
 dnl -------------------------------------------------------------------------
 dnl Check wether we have to build the C API documentation or not
@@ -292,48 +217,6 @@ AC_ARG_ENABLE(apidocs-c,
 AC_SUBST(PERL)
 AC_SUBST(SCANDOC)
 AC_SUBST(SCANDOCFLAGS)
-
-dnl -------------------------------------------------------------------------
-dnl Check wether we have to build the Java API documentation or not
-dnl
-dnl New vars: N/A
-dnl Upd vars: JAVADOC TARGET
-dnl -------------------------------------------------------------------------
-AC_MSG_CHECKING([for Java API documentation])
-AC_ARG_ENABLE(apidocs-java,
-  [  --enable-apidocs-java[=JAVADOC]
-                          enable generation of Java API documentation using
-                          JavaDoc (If JAVADOC is not set its value will be
-                          discovered by \"--enable-java\").],
-  [
-    AC_MSG_RESULT([yes])
-
-    case "${enableval}" in
-    ""|"yes"|"YES"|"true"|"TRUE")
-      if ${TEST} -z "${JAVADOC}"
-      then
-        AC_MSG_ERROR([JavaDoc cannot be found. Use \"--enable-java\"])
-      fi
-      ;;
-    *)
-      JAVADOC="${enableval}"
-      ;;
-    esac
-
-    AC_MSG_CHECKING([for JavaDoc to use])
-    if ${TEST} ! -x "${JAVADOC}"
-    then
-      AC_MSG_RESULT([error])
-      AC_MSG_ERROR([cannot execute JavaDoc \"${JAVADOC}\"])
-    fi
-    AC_MSG_RESULT([${JAVADOC}])
-
-    TARGET="${TARGET} apidocs-java"
-  ],[
-    AC_MSG_RESULT([no])
-    JAVADOC=""
-  ]
-)
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apr=... command line argument

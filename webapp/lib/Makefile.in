@@ -111,7 +111,7 @@ libwebapp.la: $(SRCS) $(WARPH) $(OBJS) $(PROVS)
 	@$(MECHO) "Creating library \"$@\""
 	$(LIBTOOL) $(CC) -rpath $(TGTDIR)/lib -static -o $@ $(OBJS) $(PROVS)
 
-pr_warp_defs.h: $(TGTDIR)/java/Constants.java
+pr_warp_defs.h: $(TGTDIR)/java/org/apache/catalina/connector/warp/Constants.java
 	@$(MECHO) "Generating \"$@\" from \"$?\""
 	@$(CAT) "$?" | \
 	    $(GREP) "TYPE_" | \
