@@ -55,7 +55,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib /nologo /dll /debug /machine:I386 /out:"Debug/isapi_redirector2.dll" /pdbtype:sept /libpath:"$(APACHE2_HOME)\lib"
 # SUBTRACT BASE LINK32 /nodefaultlib
-# ADD LINK32 ws2_32.lib wsock32.lib advapi32.lib /nologo /dll /debug /machine:I386 /out:"Debug/isapi_redirector2.dll" /pdbtype:sept /libpath:"..\..\srclib\apr\libD" /libpath:"..\..\srclib\apr-util\libD" /libpath:"..\..\srclib\apr-iconv\libD" /libpath:"..\..\srclib\pcre\libD"
+# ADD LINK32 ws2_32.lib wsock32.lib advapi32.lib /nologo /dll /debug /machine:I386 /out:"Debug/isapi_redirector2.dll" /pdbtype:sept
 # SUBTRACT LINK32 /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "isapi - Win32 Release"
@@ -83,7 +83,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib /nologo /dll /machine:I386 /out:"Release/isapi_redirector2.dll" /libpath:"$(APACHE2_HOME)\lib"
-# ADD LINK32 ws2_32.lib wsock32.lib advapi32.lib /nologo /dll /machine:I386 /out:"Release/isapi_redirector2.dll" /libpath:"..\..\srclib\apr\libR" /libpath:"..\..\srclib\apr-util\libR" /libpath:"..\..\srclib\apr-iconv\libR" /libpath:"..\..\srclib\pcre\libD"
+# ADD LINK32 ws2_32.lib wsock32.lib advapi32.lib /nologo /dll /machine:I386 /out:"Release/isapi_redirector2.dll"
 
 !ENDIF 
 
