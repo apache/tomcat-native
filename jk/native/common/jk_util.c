@@ -89,6 +89,7 @@
 #define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
 #define BALANCED_WORKERS            ("balanced_workers")
+#define STICKY_SESSION              ("sticky_session")
 #define LOCAL_WORKER_ONLY_FLAG      ("local_worker_only")
 #define LOCAL_WORKER_FLAG           ("local_worker")
 #define WORKER_AJP12                ("ajp12")
@@ -499,6 +500,19 @@ double jk_get_lb_factor(jk_map_t *m,
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, LOAD_FACTOR_OF_WORKER);
 
     return map_get_double(m, buf, DEFAULT_LB_FACTOR);
+}
+
+int jk_get_is_sticky_session(jk_map_t *m,
+                            const char *wname) {
+    int rc = JK_TRUE;
+    char buf[1024];
+    if (m && wname) {
+        int value;
+        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, STICKY_SESSION);
+        value = map_get_int(m, buf, 0);
+        if (!value) rc = JK_FALSE;
+    }
+    return rc;
 }
 
 int jk_get_is_local_worker(jk_map_t *m,

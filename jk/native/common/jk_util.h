@@ -134,6 +134,9 @@ int jk_get_worker_list(jk_map_t *m,
 double jk_get_lb_factor(jk_map_t *m, 
                         const char *wname);
 
+int jk_get_is_sticky_session(jk_map_t *m,
+                           const char *wname);
+
 int jk_get_is_local_worker(jk_map_t *m,
                            const char *wname);
 

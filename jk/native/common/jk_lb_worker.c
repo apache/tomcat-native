@@ -103,6 +103,7 @@ struct lb_worker {
     jk_worker_t worker;
     int  in_local_worker_mode;
     int  local_worker_only;
+    int  sticky_session;
 };
 typedef struct lb_worker lb_worker_t;
 
@@ -254,8 +255,12 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t *p,
     worker_record_t *rc = NULL;
     double lb_min = 0.0;    
     unsigned i;
-    char *session_route = get_session_route(s);
-       
+    char *session_route = NULL;
+
+    if (p->sticky_session) {
+        session_route = get_session_route(s);
+    }
+
     if(session_route) {
         for(i = 0 ; i < p->num_of_workers ; i++) {
             if(0 == strcmp(session_route, p->lb_workers[i].name)) {
@@ -421,6 +426,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         unsigned num_of_workers;
         p->in_local_worker_mode = JK_FALSE;
         p->local_worker_only = jk_get_local_worker_only_flag(props, p->name);
+        p->sticky_session = jk_get_is_sticky_session(props, p->name);
         
         if(jk_get_lb_worker_list(props,
                                  p->name,

@@ -300,11 +300,14 @@ other workers managed by the lb worker.
 <p>
 The overall result is that workers managed by the same lb worker are load-balanced (based on their lbfactor and current user session) and also fall-backed so a single Tomcat process death will not "kill" the entire site.
 The following table specifies properties that the lb worker can accept:
-</p>
-
-<p>
-<b>balanced_workers</b> is a comma separated list of workers that the load balancer need to manage. 
-These workers should not appear in the worker.list property.
+<ul>
+<li><b>balanced_workers</b> is a comma separated list of workers that the load balancer need to manage. 
+These workers should not appear in the worker.list property.</li>
+<li><b>sticky_session</b> specifies whether requests with SESSION ID's should be routed back to the same
+Tomcat worker. If sticky_session is an int and is not 0 it is set to JK_TRUE and sessions are sticky, otherwise
+sticky_session is set to false. Set sticky_session to JK_FALSE when Tomcat is using a Session Manager which
+can persist session data across multiple instances of Tomcat. By default sticky_session is set to JK_TRUE.</li>
+</ul>
 </p>
 
 <screen>
