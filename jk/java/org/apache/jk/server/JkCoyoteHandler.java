@@ -346,7 +346,11 @@ public class JkCoyoteHandler extends JkHandler implements
             ep.setNote( tmpMessageBytesNote, mb );
         }
         String message=res.getMessage();
-        if( message==null ) message= HttpMessages.getMessage(res.getStatus());
+        if( message==null ){
+            message= HttpMessages.getMessage(res.getStatus());
+        } else {
+            message = message.replace('\n', ' ').replace('\r', ' ');
+        }
         mb.setString( message );
         c2b.convert( mb );
         msg.appendBytes(mb);
