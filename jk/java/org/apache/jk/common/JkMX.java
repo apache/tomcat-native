@@ -58,22 +58,20 @@
  */
 package org.apache.jk.common;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
 
-import org.apache.jk.core.*;
-import org.apache.jk.server.JkMain;
+import org.apache.jk.core.JkHandler;
 
-import javax.management.*;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import javax.management.Attribute;
+import javax.management.MBeanServerFactory;
+import java.io.IOException;
 
-import org.apache.tomcat.util.mx.*;
-
-/** MX-enable jk.
+/**
+ * Load the HTTP or RMI adapters for MX4J and JMXRI.
  *
- *  Add "mx.port=PORT" in jk2.properties to enable it.
- *  If port==-1 the JMX will be enabled but no HTTP adapter will be loaded.
- *  Port > 0 will load the mx4j adapter, if possible.
+ * Add "mx.port=PORT" in jk2.properties to enable it.
+ *
  */
 public class JkMX extends JkHandler
 {
@@ -216,7 +214,7 @@ public class JkMX extends JkHandler
 
     public void init() throws IOException {
         try {
-            mserver = DynamicMBeanProxy.getMBeanServer();
+            mserver = getMBeanServer();
 
             if( port > 0 ) {
                 loadAdapter();
@@ -231,27 +229,40 @@ public class JkMX extends JkHandler
                 log.info("Can't enable log4j mx");
             }
 
-            DynamicMBeanProxy.createMBean( JkMain.getJkMain(), "jk2", "name=JkMain" ); 
+            /*
+            DynamicMBeanProxy.createMBean( JkMain.getJkMain(), "jk2", "name=JkMain" );
             
             for( int i=0; i< wEnv.getHandlerCount(); i++ ) {
                 JkHandler h=wEnv.getHandler( i );
                 DynamicMBeanProxy.createMBean( h, "jk2", "name=" + h.getName() );
             }
-            
+            */
         } catch( Throwable t ) {
             log.error( "Init error", t );
         }
     }
 
     public void addHandlerCallback( JkHandler w ) {
-        if( w!=this ) {
+        /*if( w!=this ) {
             DynamicMBeanProxy.createMBean( w, "jk2", "name=" + w.getName() );
         }
+        */
+    }
+
+    MBeanServer getMBeanServer() {
+        MBeanServer server;
+        if( MBeanServerFactory.findMBeanServer(null).size() > 0 ) {
+            server=(MBeanServer)MBeanServerFactory.findMBeanServer(null).get(0);
+        } else {
+            server=MBeanServerFactory.createMBeanServer();
+        }
+        return (server);
     }
 
 
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( JkMX.class );
+
 
 }
 

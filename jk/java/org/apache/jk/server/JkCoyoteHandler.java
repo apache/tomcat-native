@@ -108,7 +108,10 @@ public class JkCoyoteHandler extends JkHandler implements
     public final int JK_STATUS_NEW=0;
     public final int JK_STATUS_HEAD=1;
     public final int JK_STATUS_CLOSED=2;
-    
+
+    /** Set a property. Name is a "component.property". JMX should
+     * be used instead.
+     */
     public void setProperty( String name, String value ) {
         if( log.isTraceEnabled())
             log.trace("setProperty " + name + " " + value );

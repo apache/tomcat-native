@@ -220,6 +220,7 @@ public class MsgAjp extends Msg {
             log.error("Buffer overflow: buffer.len=" + buf.length + " pos=" +
                       pos + " data=" + numBytes );
             dump("Overflow/coBytes");
+            log.error( "Overflow ", new Throwable());
             return;
         }
         System.arraycopy( b, off, buf, pos, numBytes);

@@ -60,15 +60,9 @@
 package org.apache.jk.common;
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.security.*;
-import java.security.cert.*;
-
 import org.apache.jk.core.*;
 
-import org.apache.tomcat.util.http.*;
-import org.apache.tomcat.util.buf.*;
+
 
 
 /**
