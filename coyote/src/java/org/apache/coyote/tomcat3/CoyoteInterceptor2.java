@@ -233,18 +233,19 @@ public class CoyoteInterceptor2 extends BaseInterceptor
         return super.getInfo(ctx,request,id,key);
     }
 
-    public void setInfo( Context ctx, org.apache.tomcat.core.Request request,
+    public int setInfo( Context ctx, org.apache.tomcat.core.Request request,
                          int id, String key, String object ) {
         if( ! ( request instanceof Tomcat3Request ) )
-            return;
+            return DECLINED;
         
         Tomcat3Request httpReq=(Tomcat3Request)request;
         
         if(key!=null && httpReq!=null ){
             org.apache.coyote.Request cReq = httpReq.getCoyoteRequest();
             cReq.setAttribute(key, object);
+	    return OK;
         }
-        super.setInfo(ctx,request,id,key, object);
+	return super.setInfo(ctx, request, id, key, object);
     }
 
     /**
