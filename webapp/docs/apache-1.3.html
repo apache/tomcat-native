@@ -1,0 +1,297 @@
+<html>
+ <head>
+  <title>The WebApp Module for Apache 1.3</title>
+ </head>
+ <body bgcolor="#ffffff" text="#000000" link="#0000ff" vlink="#0000aa">
+  <table width="100%" cellspacing="0" cellpadding="2" border="1">
+   <tr>
+    <td align="center" bgcolor="#ccccff">
+     <font size="+2">
+      <b>The WebApp Module for Apache 1.3</b>
+     </font>
+    </td>
+   </tr>
+  </table>
+  <br>
+
+  <dl>
+   <dt><font size="+1"><b>Introduction</b></font></dt>
+   <dd>
+    <p>
+     The WebApp Module for Apache 1.3 (Mod WebApp) is a module
+     for the 1.3.x version of the Apache HTTPd Web Server, which allows the
+     deployment of Servlet Web Applications under Apache.
+    </p>
+    <p>
+     The module is built on top of the WebApp library, a native library written
+     in C language, which itself is built on top of the APR library (the Apache
+     Portable Runtime) for abstracting from the underlying operating system.
+    </p>
+    <p>
+     Being APR a part of WebApp does not mean that WebApp requires Apache 2.0,
+     of which APR is a feature, but means that it's built on top of the same
+     solid foundation for OS abstraction.
+    </p>
+   </dd>
+  </dl>
+
+  <dl>
+   <dt><font size="+1"><b>Compilation</b></font></dt>
+   <dd>
+    <p>
+     First of all, to compile Mod WebApp, you will need to compile the APR
+     library. The sources for the APR library can be found at
+     <a href="http://apr.apache.org/">http://apr.apache.org/</a>.
+     Do not use the APR version coming with Apache 2.0, but build a new copy
+     from the stand-alone sources.
+    </p>
+    <p>
+     To compile APR, download its tarball, unpack it, and then issue:
+    </p>
+    <p>
+     <nobr>
+      <code>
+       ./buildconf<br>
+       ./configure --prefix=[APR pfix dir] --enable-static --disable-shared<br>
+       make<br>
+       make install<br>
+      </code>
+     </nobr>
+    </p>
+    <p>
+     Calling <code>buildconf</code> will generate the configure script and the
+     initial makefiles from the tarball.
+    </p>
+    <p>
+     The <code>configure</code> call will start looking thru the definitions 
+     of your operating system and create a system dependant make environment.
+     In the fist parameter <code>--prefix=...</code> don't use a shared
+     directory, but use a temporary directory that will be used to install the
+     newly compiled targets for APR. <code>--enable-static</code> will tell to
+     configure to build a static version of the library (which is what we're
+     going to build the WebApp library against), and the
+     <code>--disable-shared</code> option will tell to configure not to
+     generate a target shared library (not needed during the WebApp library
+     build process.
+    </p>
+    <p>
+     The <code>make</code> and <code>make install</code> will respectively
+     build the APR library and then install it in the directory specified
+     in the <code>--prefix</code> parameter.
+    </p>
+    <p>
+     We're now ready to build the WebApp library and Mod WebApp, to do so,
+     unpack the sources tarball into a directory and issue:
+    </p>
+    <p>
+     <nobr>
+      <code>
+       ./buildconf.sh<br>
+       ./configure --with-apr=[APR pfix dir] --with-apxs=[APACHE dir]<br>
+       make<br>
+      </code>
+     </nobr>
+    </p>
+    <p>
+     Again, <code>buildconf</code> will build your OS-specific localized
+     <code>configure</code> script.
+    </p>
+    <p>
+     The <code>--with-apr=...</code> option will tell to configure where to
+     find the previously built APR library (it must be the parameter you gave
+     to the <code>--prefix=...</code> option when compiling APR), while the
+     <code>--with-apxs=...</code> option will specify where the Apache 1.3
+     <code>apxs</code> utility could be found for your Apache 1.3 installation.
+    </p>
+    <p>
+     Issuing <code>make</code> will build the WebApp library and at the end
+     generate a statically linked DSO module for your web server in the
+     <code>apache-1.3</code> directory. The newly generated file
+     <code>apache-1.3/mod_webapp.so</code> will contain both the required APR
+     and WebApp functions, so that you won't have to deal with moving those
+     library around your system.
+    </p>
+   </dd>
+  </dl>
+
+  <dl>
+   <dt><font size="+1"><b>Installation</b></font></dt>
+   <dd>
+    <p>
+     Once successfully generated, siply copy the newly generated
+     <code>apache-1.3/mod_webapp.so</code> file into your modules
+     directory and add the following two lines at the beginning of your
+     <code>httpd.conf</code> file:
+    </p>
+    <p>
+     <nobr>
+      <code>
+       LoadModule webapp_module [your modules directory]/mod_webapp.so<br>
+       AddModule webapp_module
+      </code>
+     </nobr>
+    </p>
+    <p>
+     This will instruct your Apache 1.3 web server to load and recognize the
+     newly compiled Mod WebApp.
+    </p>
+   </dd>
+  </dl>
+
+  <dl>
+   <dt><font size="+1"><b>Configuration</b></font></dt>
+   <dd>
+    <p>
+     As any other Apache module, Mod WebApp is configured thru some directives
+     specified in your <code>httpd.conf</code> file. These are the directives
+     available in Mod WebApp:
+    </p>
+   </dd>
+   <dt>
+    <p>
+     <nobr>
+      <code>
+       WebAppConnection [connection name] [connection provider] [parameter]
+      </code>
+     </nobr>
+    </p>
+   </dt>
+   <dd>
+    <p>
+     This directive will instruct the module to set up a new connection between
+     the web-server and the servlet container. The <code>connection name</code>
+     is a unique name of the connection (no multiple connections can have the
+     same name). The <code>connection provider</code> is the name of the
+     provider to use to establish the specified connection (see below
+     &quot;Providers&quot;). The <code>parameter</code> is an optional provider
+     specific parameter used to setup the connection (See &quot;Providers&quot;
+     below, again).
+    </p>
+    <p>
+     <nobr>
+      <code>
+       WebAppConnection myConnection warp localhost:8008
+      </code>
+     </nobr>
+    </p>
+    <p>
+     This will create a new connection called <code>myConnection</code> using
+     the <code>warp</code> provider to contact the servlet container, and
+     specifying that the warp-specific parameter for this connection is
+     <code>localhost:8008</code> (that tells that a servlet engine running a
+     warp server can be contacted on host localhost on port 8008).
+    </p>
+   </dd>
+   <dt>
+    <p>
+     <nobr>
+      <code>
+       WebAppDeploy [application name] [connection name] [URL path]
+      </code>
+     </nobr>
+    </p>
+   </dt>
+   <dd>
+    <p>
+     This directive will instruct the module deploy a web application under
+     a specified <code>URL path</code>. The <code>application name</code> is
+     the name of the web-application as it resides within the servlet container
+     (usually its WAR name without the .war extension). The <code>conneciton
+     name</code> parameter specifies the name of the connection to use to
+     connect to the servlet container in which the application resides (this
+     must be specified in a <code>WebAppConnection</code> directive). Finally
+     the <code>URL path</code> parameter specifies under which URL path the
+     web application should be deployed.
+    </p>
+    <p>
+     <nobr>
+      <code>
+       WebAppDeploy myApplication myConnection /test/
+      </code>
+     </nobr>
+    </p>
+    <p>
+     This will deploy an application called <code>myApplication</code> (its
+     name is specified by the servlet container, but it might mean that we
+     have a <code>myApplication.war</code> somewhere accessible in the 
+     servlet container path that will be expanded and deployed) and that all
+     requests coming in for <code>http://yourhost/test/...</code> will be 
+     forwarded to that web application.
+    </p>
+   </dd>
+   <dt>
+    <p>
+     <nobr>
+      <code>
+       WebAppInfo [URL path]
+      </code>
+     </nobr>
+    </p>
+   </dt>
+   <dd>
+    <p>
+     This directive will instruct the module dump out a status page whenever
+     the specified <code>URL path</code> is accessed. This is exactly like 
+     specifying:
+    </p>
+    <p>
+     <nobr>
+      <code>
+       WebAppConnection _INFO_ info<br>
+       WebAppDeploy _INFO_ _INFO_ [URL path]
+      </code>
+     </nobr>
+    </p>
+   </dd>
+  </dl>
+  
+  <dl>
+   <dt><font size="+1"><b>Providers</b></font></dt>
+   <dd>
+    <p>
+     Connection providers are several ways in which the web server can connect
+     to the servlet container. Each connection is uniquely identified by its
+     name and the parameter tells to the connection provider how the connection
+     must be set up. These are the currently available connectors:
+    </p>
+   </dd>
+   <dt>
+    <p>
+     <nobr>
+      <code>
+       info
+      </code>
+     </nobr>
+    </p>
+   </dt>
+   <dd>
+    <p>
+     A simple connector for testing purposes not accepting any parameter.
+     Any application deployed under one of its connections will display an
+     informative status page on the current configuration of the library.
+    </p>
+   </dd>
+   <dt>
+    <p>
+     <nobr>
+      <code>
+       warp
+      </code>
+     </nobr>
+    </p>
+   </dt>
+   <dd>
+    <p>
+     The <code>warp</code> provider connects to a servlet container thru a
+     network socket. The parameter for its connections are in the format of
+     <code>host:port</code> where <code>host</code> is the name or IP
+     address of the server where the servlet container is running and the 
+     <code>port</code> is the port number to which we must connect to be able
+     to use the <code>warp</code> protocol.
+    </p>
+  </dl>
+
+  
+ </body>
+</html>
+      
