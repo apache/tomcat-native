@@ -25,6 +25,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      Fix url rewriting by restoring the inplace uri from which the
+      jsessionid was removed. (mturk)
+      </fix>
       <update>
       Make load balancer algorithm thread safe by introducing mutex
       to the load balancer worker. (mturk)
