@@ -2367,8 +2367,12 @@ public class Digester extends DefaultHandler {
         params.clear();
         publicId = null;
         stack.clear();
-        root = null;
 
+    }
+
+    
+    public void reset() {
+        root = null;
     }
 
 
