@@ -47,6 +47,8 @@ typedef CRITICAL_SECTION JK_CRIT_SEC;
 #define JK_ENTER_CS(x, rc) EnterCriticalSection(x); rc = JK_TRUE;
 #define JK_LEAVE_CS(x, rc) LeaveCriticalSection(x); rc = JK_TRUE;
 
+#define JK_THREADID()      ((int)GetCurrentThreadId())
+
 #else /* Unix pthreads */
 
 #include <pthread.h>
@@ -64,6 +66,9 @@ typedef pthread_mutex_t JK_CRIT_SEC;
 
 #define JK_LEAVE_CS(x, rc)\
             if(pthread_mutex_unlock(x)) rc = JK_FALSE; else rc = JK_TRUE;
+
+#define JK_THREADID()      ((int)pthread_self())
+
 #endif /* Unix pthreads */
 
 #else /* Not an MT code */
@@ -74,6 +79,7 @@ typedef void *JK_CRIT_SEC;
 #define JK_DELETE_CS(x, rc) rc = JK_TRUE;
 #define JK_ENTER_CS(x, rc) rc = JK_TRUE;
 #define JK_LEAVE_CS(x, rc) rc = JK_TRUE;
+#define JK_THREADID()      0
 
 #endif /* Not an MT code */
 
