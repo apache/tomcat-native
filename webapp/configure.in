@@ -68,6 +68,7 @@ AC_DEFUN(LOCAL_INIT,[
   AC_PATH_PROG(test,test,${PATH})
   AC_PATH_PROG(true,true,${PATH})
   AC_PATH_PROG(echo,echo,${PATH})
+  AC_PATH_PROG(rm,rm,${PATH})
 ])
 
 AC_DEFUN(LOCAL_HEADER,[
@@ -99,7 +100,10 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
     done
     unset first
     unset line
+    echo "${ret}" > retvalue.tmp
   }
+  ret=`cat retvalue.tmp`
+  ${rm} retvalue.tmp
   ${echo} "  Execution of $1 returned $ret"
 ])
 
