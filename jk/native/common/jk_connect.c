@@ -122,11 +122,12 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 
 /** connect to Tomcat */
 
-int jk_open_socket(struct sockaddr_in *addr, int ndelay,
+int jk_open_socket(struct sockaddr_in *addr,
                    int keepalive, int timeout, jk_logger_t *l)
 {
     char buf[32];
     int sock;
+    int set = 1;
 
     JK_TRACE_ENTER(l);
 
@@ -186,21 +187,15 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             JK_TRACE_EXIT(l);
             return -1;
         }
-        if (ndelay) {
-            int set = 1;
-            if (JK_IS_DEBUG_LEVEL(l))
-                jk_log(l, JK_LOG_DEBUG,
-                       "jk_open_socket, set TCP_NODELAY to on");
-            setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&set,
-                       sizeof(set));
-        }
+        setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&set,
+                   sizeof(set));
         if (keepalive) {
-            int keep = 1;
+            set = 1;
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "jk_open_socket, set SO_KEEPALIVE to on");
-            setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (const char *)&keep,
-                        sizeof(keep));
+            setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (const char *)&set,
+                        sizeof(set));
         }
         len = 8*1024; /* Default AJP packet size */
 

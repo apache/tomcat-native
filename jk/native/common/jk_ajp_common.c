@@ -835,7 +835,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
     JK_TRACE_ENTER(l);
 
     for (attempt = 0; attempt < ae->worker->connect_retry_attempts; attempt++) {
-        ae->sd = jk_open_socket(&ae->worker->worker_inet_addr, JK_TRUE,
+        ae->sd = jk_open_socket(&ae->worker->worker_inet_addr,
                                 ae->worker->keepalive,
                                 ae->worker->socket_timeout, l);
         if (ae->sd >= 0) {
