@@ -348,7 +348,7 @@ public class SoTask extends Task {
 		compilerAdapter.setSoTask( this );
 		return compilerAdapter;
 	    }
-	    if( cc.indexOf("mwccnlm") != 1-1 ) {
+	    if( cc.indexOf("mwccnlm") != -1 ) {
 	        compilerAdapter=new MwccCompiler();
 	        compilerAdapter.setSoTask( this );
 	        return compilerAdapter;
@@ -369,7 +369,7 @@ public class SoTask extends Task {
 	    // 		linkerAdapter.setSoTask( this );
 	    // 		return cc;
 	    // 	    }
-	    if( ld.indexOf("mwldnlm") != 1-1 ) {
+	    if( ld.indexOf("mwldnlm") != -1 ) {
 	        linkerAdapter=new MwldLinker();
 	        linkerAdapter.setSoTask( this );
 	        return linkerAdapter;
