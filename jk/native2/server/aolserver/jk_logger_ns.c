@@ -128,11 +128,11 @@ static int JK_METHOD jk2_logger_ns_jkVLog(jk_env_t *env, jk_logger_t *l,
     }
     
     if( level == JK_LOG_DEBUG_LEVEL ) {
-        Ns_Log (Debug, buf3);
+        Ns_Log (Debug, "nsjk2: %s", buf3);
     } else if( level == JK_LOG_INFO_LEVEL ) {
-        Ns_Log (Notice, buf3);
+        Ns_Log (Notice, "nsjk2: %s", buf3);
     } else {
-        Ns_Log (Error, buf3);
+        Ns_Log (Error, "nsjk2: %s", buf3);
     }
 
     return JK_OK;

@@ -64,9 +64,12 @@
 
 #include "ns.h"
 #include "jk_ns.h"
-#include "jni_nstcl.h"
 #include <jni.h>
 
+#define LOG_ERROR(msg) Ns_Log(Error,"nsjk2: %s:%d:$s",__FILE__,__LINE__,msg)
+#define LOG_ERROR2(msg1,msg2) Ns_Log(Error,"nsjk2: %s:%d:$s:%s",__FILE__,__LINE__,msg1,msg2)
+
+/* Context allows request handler extract worker and vhost for the URI quickly */
 typedef struct {
     char* serverName;
     jk_uriEnv_t* uriEnv;
@@ -78,6 +81,7 @@ static char  file_name[_MAX_PATH];
 #endif
 
 
+/* Standard AOLserver module global */
 int Ns_ModuleVersion = 1;
 
 /* Globals 
@@ -90,30 +94,8 @@ int Ns_ModuleVersion = 1;
  */
 static jk_workerEnv_t *workerEnv = NULL; /* JK2 environment */
 static JavaVM* jvmGlobal = NULL; /* JVM instance */
-static Ns_Thread initThread = 0; /* thread which initialized JVM */
 static Ns_Tls jkTls; /* TLS destructor detaches request thread from JVM */
 static unsigned jkInitCount =0; /* number of running virtual servers using this module */
-
-/* argument to pass into JK2 init. thread */
-struct init_thread_arg {
-    /* Tomcat home */
-    char* server_root;
-
-    /* current working directory - temporary storage */
-    char cwd_buf[PATH_MAX];
-
-    /* synchronization for init phase */
-    Ns_Mutex init_lock;
-    Ns_Cond init_cond;
-    int     init_flag;
-    int     init_rc;
-
-    /* synchronization for shutdown phase */
-    Ns_Mutex shut_lock;
-    Ns_Cond shut_cond;
-    int     shut_flag;
-} initThreadArg;
-
 
 /** Basic initialization for jk2.
  */
@@ -124,7 +106,7 @@ static int jk2_create_workerEnv(apr_pool_t *p, char* serverRoot) {
     jk_bean_t *jkb;
     
     if (jk2_pool_apr_create( NULL, &globalPool, NULL, p) != JK_OK) {
-        Ns_Log (Error, "jk2_create_workerEnv: Cannot create apr pool");
+        LOG_ERROR("Cannot create apr pool");
 	return JK_ERR;
     }
 
@@ -133,7 +115,7 @@ static int jk2_create_workerEnv(apr_pool_t *p, char* serverRoot) {
     */
     env=jk2_env_getEnv( NULL, globalPool );
     if (env == NULL) {
-        Ns_Log (Error, "jk2_create_workerEnv: Cannot get environment");
+        LOG_ERROR("jk2_create_workerEnv: Cannot get environment");
 	return JK_ERR;
     }
         
@@ -141,29 +123,16 @@ static int jk2_create_workerEnv(apr_pool_t *p, char* serverRoot) {
     /* Init the environment. */
     
     /* Create the logger */
-#ifdef NO_NS_LOGGER
-    jkb=env->createBean2( env, env->globalPool, "logger.file", "");
-    if (jkb == NULL) {
-        Ns_Log (Error, "jk2_create_workerEnv: Cannot create logger bean");
-	return JK_ERR;
-    }
-
-    env->alias( env, "logger.file:", "logger");
-    env->alias( env, "logger.file:", "logger:");
-    l = jkb->object;
-#else
     env->registerFactory( env, "logger.ns",  jk2_logger_ns_factory );
 
     jkb=env->createBean2( env, env->globalPool, "logger.ns", "");
     if (jkb == NULL) {
-        Ns_Log (Error, "jk2_create_workerEnv: Cannot create logger bean (with factory)");
+        LOG_ERROR("Cannot create logger bean (with factory)");
 	return JK_ERR;
     }
 
     env->alias( env, "logger.ns:", "logger");
     l = jkb->object;
-#endif
-    
     env->l=l;
     
 #ifdef WIN32
@@ -180,7 +149,7 @@ static int jk2_create_workerEnv(apr_pool_t *p, char* serverRoot) {
     /* Create the workerEnv */
     jkb=env->createBean2( env, env->globalPool,"workerEnv", "");
     if (jkb == NULL) {
-        Ns_Log (Error, "jk2_create_workerEnv: Cannot create worker environment bean");
+        LOG_ERROR("Cannot create worker environment bean");
 	return JK_ERR;
     }
 
@@ -212,17 +181,10 @@ static int jk2_create_workerEnv(apr_pool_t *p, char* serverRoot) {
  */
 void jk2_shutdown_system (void* data)
 {
-    void* thread_rc;
+    if (--jkInitCount == 0) {
 
-    if (--jkInitCount==0 && initThread!=0) {
-
-        Ns_MutexLock (&initThreadArg.shut_lock);
-	initThreadArg.shut_flag=1;
-	Ns_CondSignal (&initThreadArg.shut_cond);
-	Ns_MutexUnlock (&initThreadArg.shut_lock);
-
-	Ns_ThreadJoin (&initThread, &thread_rc);
-	initThread = 0;
+	apr_pool_terminate ();
+	apr_terminate ();
     }
 }    
 
@@ -240,31 +202,13 @@ static apr_status_t jk2_shutdown(void *data)
 	workerEnv->close(env, workerEnv);
 	*/
 
-	if( workerEnv->vm != NULL  && ! workerEnv->vm->mbean->disabled )
+	if( workerEnv->vm != NULL  && !workerEnv->vm->mbean->disabled)
 	    workerEnv->vm->destroy( env, workerEnv->vm );
 
         workerEnv = NULL;
     }
     return APR_SUCCESS;
 }
-
-
-/** Initialize jk, using workers2.properties. 
-*/
-static int jk2_init(jk_env_t *env, apr_pool_t *pconf,
-		     jk_workerEnv_t *workerEnv)
-{
-    if (workerEnv->init(env, workerEnv ) != JK_OK) {
-        Ns_Log (Error, "jk2_init: Cannot initialize worker environment");
-	return JK_ERR;
-    }
-
-    workerEnv->server_name   = Ns_InfoServerVersion ();
-    apr_pool_cleanup_register(pconf, NULL, jk2_shutdown, apr_pool_cleanup_null);
-
-    return JK_OK;
-}
-
 
 
 /* ========================================================================= */
@@ -311,21 +255,21 @@ static int jk2_handler(void* context, Ns_Conn *conn)
     if( worker==NULL && workerName!=NULL ) {
         worker=env->getByName( env, workerName);
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "nsjk2.handler() finding worker for %#lx %#lx %s\n",
+                      "finding worker for %#lx %#lx %s\n",
                       worker, uriEnv, workerName);
         uriEnv->worker=worker;
     }
 
     if(worker==NULL || worker->mbean==NULL || worker->mbean->localName==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "nsjk2.handle() No worker for %s\n", conn->request->url); 
+                      "No worker for %s\n", conn->request->url); 
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return NS_FILTER_RETURN;
     }
 
     if( uriEnv->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                      "nsjk2.handler() serving %s with %#lx %#lx %s\n",
+                      "serving %s with %#lx %#lx %s\n",
                       uriEnv->mbean->localName, worker, worker->mbean, worker->mbean->localName );
 
     /* Get a pool for the request */
@@ -333,8 +277,7 @@ static int jk2_handler(void* context, Ns_Conn *conn)
     if( rPool == NULL ) {
         rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
         if( uriEnv->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "nsjk2.handler(): new rpool %#lx\n", rPool );
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "new rpool %#lx\n", rPool );
     }
     
     s=(jk_ws_service_t *)rPool->calloc( env, rPool, sizeof( jk_ws_service_t ));
@@ -364,8 +307,7 @@ static int jk2_handler(void* context, Ns_Conn *conn)
         return NS_OK;
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                  "nsjk2.handler() Error connecting to tomcat %d\n", rc);
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error connecting to tomcat %d\n", rc);
     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     Ns_ConnReturnInternalError (conn);
     return NS_FILTER_RETURN;
@@ -388,163 +330,35 @@ static void jkTlsDtor (void* arg) {
 }
 
 
-/* APR, JNI and JK2 initialization. Call this from a thread separate from AOLserver main thread
- * because of the Java garbage collection using signals that AOLserver tends to override
+/** Register a URI pattern with AOLserver
  */
-static int InitJK2Module (char* server_root) {
-    jk_env_t *env;
-    apr_status_t aprrc;
-    char errbuf[512];
-    apr_pool_t *jk_globalPool = NULL;
-        
-    if ((aprrc=apr_initialize()) != APR_SUCCESS) {
-        Ns_Log (Error, "InitJK2Module: Cannot initialize APR:%s", apr_strerror (aprrc, errbuf, sizeof(errbuf)));
-	return JK_ERR;
-    }
+static void registerURI (jk_env_t* env, jk_uriEnv_t* uriEnv, char* vserver, char* serverName) {
+    uriContext* ctx;
+    char* uriname;
 
-    if ((aprrc=apr_pool_create(&jk_globalPool, NULL)) != APR_SUCCESS) {
-        Ns_Log (Error, "InitJK2Module: Cannot create global APR pool:%s", apr_strerror (aprrc, errbuf, sizeof(errbuf)));
-	return JK_ERR;
-    }
+    if (uriEnv==NULL || uriEnv->mbean==NULL)
+	return;
 
-    if (workerEnv==NULL && jk2_create_workerEnv(jk_globalPool, server_root)==JK_ERR)
-        return JK_ERR;
+    uriname=uriEnv->mbean->getAttribute (env, uriEnv->mbean, "uri");
+    if (uriname==NULL || strcmp(uriname, "/")==0)
+        return;
 
-    env=workerEnv->globalEnv;
-    env->setAprPool(env, jk_globalPool);
-    
-    if (jk2_init( env, jk_globalPool, workerEnv) != JK_OK) {
-        Ns_Log (Error, "InitJK2Module: Cannot initialize module");
-	return JK_ERR;
-    }
+    ctx = Ns_Malloc (sizeof (uriContext));
+    if (ctx == NULL)
+        return;
 
-    workerEnv->was_initialized = JK_TRUE; 
-    
-    if ((aprrc=apr_pool_userdata_set( "INITOK", "InitJK2Module", NULL, jk_globalPool )) != APR_SUCCESS) {
-        Ns_Log (Error, "InitJK2Module: Cannot set APR pool user data:%s", apr_strerror (aprrc, errbuf, sizeof(errbuf)));
-	return JK_ERR;
-    }
+    ctx->serverName = serverName;
+    ctx->uriEnv = uriEnv;
 
-    if (workerEnv->parentInit( env, workerEnv) != JK_OK) {
-        Ns_Log (Error, "InitJK2Module: Cannot initialize global environment");
-	return JK_ERR;
-    }
+    if (uriEnv->mbean->debug > 0)
+        env->l->jkLog (env, env->l, JK_LOG_DEBUG, "registering URI %s", uriname);
 
-    /* Obtain TLS slot - it's destructor will detach threads from JVM */
-    jvmGlobal = workerEnv->vm->jvm;
-    Ns_TlsAlloc (&jkTls, jkTlsDtor);
-
-    /* TLS slot for non-server Tcl interpreter */
-    Ns_TlsAlloc (&tclInterpData, tclInterpDataDtor);
-    
-    return JK_OK;
-}
-
-/*
- * Must initialize JVM in a separate thread due to signal conflicts (failed to confirm existance, but strongly
- * recommended by nsjava code).
- * AOLserver main thread allegedly masks signals that JVM uses for garbage collection
- *
- */
-static void InitJK2ModuleThread (void* arg) {
-   int rc;
-
-   Ns_ThreadSetName ("nsjk2");
-
-   rc =InitJK2Module (initThreadArg.server_root);
-
-   /* prepare to report initialization results */
-   Ns_MutexLock(&initThreadArg.init_lock);
-   initThreadArg.init_rc = rc;
-   initThreadArg.init_flag =1;
-   Ns_CondSignal (&initThreadArg.init_cond);
-   Ns_MutexUnlock(&initThreadArg.init_lock);
-   
-   if (rc==JK_OK) {
-       /* wait for shutdown */
-
-       Ns_MutexLock (&initThreadArg.shut_lock);
-
-       while (!initThreadArg.shut_flag)
-	   Ns_CondWait (&initThreadArg.shut_cond, &initThreadArg.shut_lock);
-    
-       Ns_MutexUnlock (&initThreadArg.shut_lock);
-
-       apr_pool_terminate ();
-       apr_terminate ();
-   }
-     
-   Ns_ThreadExit ((void*)rc);
+    Ns_RegisterRequest(vserver, "GET", uriname, jk2_handler, NULL, ctx, 0);
+    Ns_RegisterRequest(vserver, "HEAD", uriname, jk2_handler, NULL, ctx, 0);
+    Ns_RegisterRequest(vserver, "POST", uriname, jk2_handler, NULL, ctx, 0);
 }
 
 
-/**
- * Initialize JK2 in a new thread
- */
-int CreateJK2InitThread (char* module)
-{
-    int init_rc;
-    char* modPath;
-    char cwdBuf[PATH_MAX];
-
-    modPath = Ns_ConfigGetPath (NULL, module, NULL);
-    initThreadArg.server_root = (modPath? Ns_ConfigGetValue (modPath, "serverRoot") : NULL);
-
-    if (initThreadArg.server_root == NULL)
-       initThreadArg.server_root  = getenv ("TOMCAT_HOME");
-
-    if (initThreadArg.server_root == NULL)
-        initThreadArg.server_root = getcwd (initThreadArg.cwd_buf, sizeof(cwdBuf));
-
-    initThreadArg.init_flag = 0;
-    Ns_MutexInit (&initThreadArg.init_lock);
-    Ns_CondInit (&initThreadArg.init_cond);
-
-    initThreadArg.shut_flag = 0;
-    Ns_MutexInit (&initThreadArg.shut_lock);
-    Ns_CondInit (&initThreadArg.shut_cond);
-
-    /* create thread with 2M of stack */
-    Ns_ThreadCreate (InitJK2ModuleThread, &initThreadArg, 2*1024*1024, &initThread);
-    if (initThread == 0) {
-        Ns_Log (Error, "Ns_ModuleInit: Cannot create JK2 initialization thread");
-	return NS_ERROR;
-    }
-    
-    /* wait till JVM is initialized */
-    Ns_MutexLock (&initThreadArg.init_lock);
-
-    while (initThreadArg.init_flag==0)
-        Ns_CondWait (&initThreadArg.init_cond, &initThreadArg.init_lock);
-
-    init_rc=initThreadArg.init_rc;
-
-    Ns_MutexUnlock (&initThreadArg.init_lock);
-
-    return init_rc;
-}
-
-
-/** Create context to pass to URI handler
- */
-uriContext* createURIContext (jk_uriEnv_t* uriEnv, char* serverName) {
-    uriContext* ctx = Ns_Malloc (sizeof (uriContext));
-
-    if (ctx) {
-        ctx->serverName = serverName;
-	ctx->uriEnv = uriEnv;
-    }
-
-    return ctx;
-}
-
-
-/** Callback to get rid of URI context in registered procs
- */
-static void deleteURIContext (void* context) {
-    Ns_Free (context);
-}
- 
 /** Standard AOLserver callback.
  * Initialize jk2, unless already done in another server. Register URI mappping for Tomcat
  * If multiple virtual servers use this module, calls to Ns_ModuleInit will be made serially
@@ -552,49 +366,157 @@ static void deleteURIContext (void* context) {
  */
 int Ns_ModuleInit(char *server, char *module)
 {
-    int init_rc = JK_OK;
-    jk_map_t* uriMap;
-    int i, urimapsz;
-    char *uriname, *vhost;
     jk_env_t *env;
-    jk_uriEnv_t* uriEnv;
-    uriContext* ctx;
+    
+    /* configuration-related */
     char* serverName=NULL;
     char* confPath;
+    static char cwdBuf[PATH_MAX];
+    static char* serverRoot = NULL;
 
-    if (jkInitCount++ == 0)
-        init_rc = CreateJK2InitThread (module);
+    /* APR-related */
+    apr_status_t aprrc;
+    char errbuf[512];
+    apr_pool_t *jk_globalPool = NULL;
+
+    /* URI registration */
+    char *hosts[2] = {"*", NULL};
+    jk_map_t *vhosts;
+    int i, j, k, l, cnt1, cnt2;
+    jk_map_t *uriMap, *webapps, *uriMaps[3];
+    jk_uriEnv_t *uriEnv, *hostEnv, *appEnv;
+
+
+    if (jkInitCount++ == 0) {
+
+        /* Get Tomcat installation root - this value is same for all virtual servers*/
+        if (serverRoot == NULL) {
+            confPath = Ns_ConfigGetPath (NULL, module, NULL);
+            serverRoot = (confPath? Ns_ConfigGetValue (confPath, "serverRoot") : NULL);
+        }
+
+        /* not configured in nsd.tcl? try env. variable */
+        if (serverRoot == NULL) {
+            serverRoot = getenv ("TOMCAT_HOME");
+        }
+
+        /* not in env. variables? get it from CWD */
+        if (serverRoot == NULL) {
+            serverRoot = getcwd (cwdBuf, sizeof(cwdBuf));
+        }
+
+	/* Initialize APR */
+	if ((aprrc=apr_initialize()) != APR_SUCCESS) {
+	    LOG_ERROR2 ("Cannot initialize APR", apr_strerror (aprrc, errbuf, sizeof(errbuf)));
+	    return NS_ERROR;
+	}
+
+	if ((aprrc=apr_pool_create(&jk_globalPool, NULL)) != APR_SUCCESS) {
+	    LOG_ERROR2 ("Cannot create global APR pool", apr_strerror (aprrc, errbuf, sizeof(errbuf)));
+	    return NS_ERROR;
+	}
+
+	/* Initialize JNI */
+	if (workerEnv==NULL && jk2_create_workerEnv(jk_globalPool, serverRoot)==JK_ERR) {
+	    return NS_ERROR;
+	}
+
+	env=workerEnv->globalEnv;
+	env->setAprPool(env, jk_globalPool);
+
+	/* Initialize JK2 */
+	if (workerEnv->init(env, workerEnv ) != JK_OK) {
+	    LOG_ERROR("Cannot initialize worker environment");
+	    return NS_ERROR;
+	}
+
+	workerEnv->server_name = apr_pstrcat (jk_globalPool, Ns_InfoServerName(), " ", Ns_InfoServerVersion (), NULL);
+	apr_pool_cleanup_register(jk_globalPool, NULL, jk2_shutdown, apr_pool_cleanup_null);
+
+	workerEnv->was_initialized = JK_TRUE; 
+    
+	if ((aprrc=apr_pool_userdata_set( "INITOK", "Ns_ModuleInit", NULL, jk_globalPool )) != APR_SUCCESS) {
+	    LOG_ERROR2 ("Cannot set APR pool user data", apr_strerror (aprrc, errbuf, sizeof(errbuf)));
+	    return NS_ERROR;
+	}
+
+	if (workerEnv->parentInit( env, workerEnv) != JK_OK) {
+	    LOG_ERROR ("Cannot initialize global environment");
+	    return NS_ERROR;
+	}
+
+	/* Obtain TLS slot - it's destructor will detach threads from JVM */
+	jvmGlobal = workerEnv->vm->jvm;
+	Ns_TlsAlloc (&jkTls, jkTlsDtor);
+
+	Ns_Log (Notice, "nsjk2: Initialized JK2 environment");
+
+    } else {
+      
+      env = workerEnv->globalEnv;
+    }
 
     Ns_RegisterShutdown (jk2_shutdown_system, NULL);
 
-    if (init_rc != JK_OK) {
-        Ns_Log (Error, "Ns_ModuleInit: Cannot initialize JK2 module");
-	return NS_ERROR;
-    }
+    /* Register URI patterns from workers2.properties with AOLserver 
+     *  
+     * Worker environment has a list of vhosts, including "*" vhost.
+     * Each vhost has a list of web applications (contexts) associated with it.
+     * Each webapp has a list of exact, prefix, suffix and regexp URI patterns.
+     *
+     * Will register URIs that are either in vhost "*", or one with name matching
+     * this AOLserver virtual server. Will ignore regexp patterns. Will register 
+     * exact webapp URIs (context root) as JK2 somehow doesn't include them in URI
+     * maps, even if specified in workers2.properties.
+     *
+     */
 
-    /* get Tomcat serverName override if specified */
+    /* virtual server name override if specified */
     confPath = Ns_ConfigGetPath (server, module, NULL);
     if (confPath != NULL)
         serverName = Ns_ConfigGetValue (confPath, "serverName");
+
+    if (serverName == NULL)
+        serverName = server;
     
-    /* create context with proper worker info for each URI registered in workers2.properties */
-    uriMap = workerEnv->uriMap->maps;
-    env=workerEnv->globalEnv;
+    vhosts=workerEnv->uriMap->vhosts;
+    hosts[1]= serverName;
 
-    for (i=0, urimapsz=uriMap->size(env, uriMap); i<urimapsz; i++) {
-        uriEnv = uriMap->valueAt(env, uriMap, i);
-        uriname=uriEnv->mbean->getAttribute(env, uriEnv->mbean, "uri");
-        vhost=uriEnv->mbean->getAttribute(env, uriEnv->mbean, "host");
+    for (i=0; i<sizeof(hosts)/sizeof(*hosts); i++) {
+        hostEnv=vhosts->get (env, vhosts, hosts[i]);
 
-	if (uriname!=NULL && strcmp(uriname, "/") && /* i.e., not global root */ 
-	    (vhost==NULL || strcmp(vhost, "*")==0 || strcmp(vhost, server)==0)) /* match virtual server */ {
+	if (hostEnv==NULL || hostEnv->webapps==NULL)
+	    continue;
 
-	    ctx = createURIContext (uriEnv, serverName);
-	    Ns_RegisterRequest(server, "GET", uriname, jk2_handler, NULL, ctx, 0);
-	    Ns_RegisterRequest(server, "HEAD", uriname, jk2_handler, NULL, ctx, 0);
-	    Ns_RegisterRequest(server, "POST", uriname, jk2_handler, NULL, ctx, 0);
+	webapps=hostEnv->webapps;
+	cnt1=webapps->size(env, webapps);
+
+	for (j=0; j<cnt1; j++) {
+	    appEnv = webapps->valueAt (env, webapps, j);
+	    if (appEnv == NULL)
+	        continue;
+
+	    /* register webapp root - registerURI checks if it is "/" */
+	    registerURI (env, appEnv, server, serverName);
+	    
+	    uriMaps[0] = appEnv->exactMatch;
+	    uriMaps[1] = appEnv->prefixMatch;
+	    uriMaps[2] = appEnv->suffixMatch;
+
+	    for (k=0; k<sizeof(uriMaps)/sizeof(*uriMaps); k++) {
+	        if (uriMaps[k] == NULL)
+		    continue;
+
+	        cnt2 = uriMaps[k]->size (env, uriMaps[k]);
+		
+		for (l=0; l<cnt2; l++) {
+		     registerURI (env, uriMaps[k]->valueAt (env, uriMaps[k], l), server, serverName);
+		}
+	    }
 	}
     }
+
+    Ns_Log (Notice, "nsjk2: Initialized on %s", server);
 
     return NS_OK;
 }

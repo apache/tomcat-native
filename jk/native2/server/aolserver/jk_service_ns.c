@@ -313,12 +313,14 @@ static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     s->remote_user  = NULL_FOR_EMPTY(Ns_ConnAuthUser (conn));
     s->auth_type    = (s->remote_user==NULL? NULL : "Basic");
 
-    s->protocol = Ns_ConnDriverName (conn);
+    /* conn->request->line has HTTP request line */
+    if (conn->request!=NULL && conn->request->line!=NULL)
+        s->protocol = strrchr (conn->request->line, ' ');
 
-    if (s->protocol==NULL || strcmp(s->protocol, "nssock")==0)
-        s->protocol = "HTTP";
+    if (s->protocol != NULL)
+        s->protocol++;
     else
-        s->protocol = "HTTPS";
+        s->protocol = "HTTP/1.0";
 
     s->remote_host  = s->remote_addr = NULL_FOR_EMPTY(Ns_ConnPeer (conn));
 
@@ -417,7 +419,10 @@ static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
 
     if (workerEnv->ssl_enable || workerEnv->envvars_in_use) {
         if (workerEnv->ssl_enable) {
-	    if (s->protocol!=NULL && strcmp(s->protocol, workerEnv->https_indicator)==0)
+
+	    name = Ns_ConnDriverName (conn);
+
+	    if (name!=NULL && strcmp(name, "nsssl")==0)
 	        s->is_ssl = JK_TRUE;
 	    else 
 	        s->is_ssl = JK_FALSE;
