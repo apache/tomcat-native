@@ -200,7 +200,12 @@ public class IdentityInputFilter implements InputFilter {
 
         // Consume extra bytes.
         while (remaining > 0) {
-            remaining = remaining - buffer.doRead(endChunk, null);
+            int nread = buffer.doRead(endChunk, null);
+            if (nread > 0 ) {
+                remaining = remaining - nread;
+            } else { // errors are handled higher up.
+                remaining = 0;
+            }
         }
 
         // If too many bytes were read, return the amount.
