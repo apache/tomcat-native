@@ -98,10 +98,16 @@ public class Reaper extends Thread {
     Object lock=new Object();
     static boolean running=true;
 
+    // XXX Should be called 'interval' not defaultInterval
+
     public void setDefaultInterval( long t ) {
 	interval=t;
     }
-    
+
+    public long getDefaultIntervale() {
+        return interval;
+    }
+
     public int addCallback( ThreadPoolRunnable c, int interval ) {
 	synchronized( lock ) {
 	    cbacks[count]=c;
