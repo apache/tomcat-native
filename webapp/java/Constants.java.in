@@ -299,6 +299,9 @@ public class Constants {
      * RES_STATUS: The server replies with the HTTP response status for the
      * request.
      * <br>
+     * Payload description:<br>
+     * [ushort] The HTTP status of the response.<br>
+     * [string] The HTTP response message.<br>
      */
     public static final int TYPE_RES_STATUS=0x20;
 

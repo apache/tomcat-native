@@ -164,7 +164,6 @@ public class WarpResponse extends HttpResponseBase {
 
         this.packet.reset();
         this.packet.setType(Constants.TYPE_RES_STATUS);
-        this.packet.writeString(request.getRequest().getProtocol());
         this.packet.writeUnsignedShort(status);
         this.packet.writeString(message);
         this.connection.send(this.packet);
