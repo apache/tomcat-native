@@ -132,6 +132,7 @@ struct jk_bean {
     /* Type of this object
      */
     const char *type;
+
     /* Name of the object
      */
     const char *name;
@@ -148,6 +149,13 @@ struct jk_bean {
     */
     struct jk_map *settings;
 
+    /* Temp - will change !*/
+    /* Attributes supported by getAttribute method */
+    char **getAttributeInfo;
+    
+    /* Attributes supported by setAttribute method */
+    char **setAttributeInfo;
+    
     /** Set a jk property. This is similar with the mechanism
      *  used by java side ( with individual setters for
      *  various properties ), except we use a single method
