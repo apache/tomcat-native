@@ -241,28 +241,40 @@ static jk_uriEnv_t *jk2_uriMap_suffixMap(jk_env_t *env, jk_uriMap_t *uriMap,
     return NULL;
 }
 
+#define MAX_HOST_LENGTH			1024
+
 /* Find the vhost */
 static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
                                        const char *vhost, int port)
 {
     int i, j, n;
     char *name;
-    char hostname[1024] = {0};
+    char hostname[MAX_HOST_LENGTH] = {0};
+    char portSuffix[32];
+    int vhostLen;
 
     if (port) {
         if (vhost) {
-            if (strchr(vhost, ':'))
-                strcpy(hostname, vhost);
-            else
-               sprintf(hostname, "%s:%d", vhost, port);
+            vhostLen = strlen(vhost);
+            if (strchr(vhost, ':')) {
+               strncpy(hostname, vhost, MAX_HOST_LENGTH);
+            } else {
+               strncpy(hostname, vhost, MAX_HOST_LENGTH);
+               if (strlen(vhost) < MAX_HOST_LENGTH - 1) {
+                  sprintf(portSuffix,":%d", port);
+                  strncat(hostname+vhostLen, portSuffix, MAX_HOST_LENGTH-vhostLen);
+               }
+            }
         }
         else
             sprintf(hostname, "*:%d", port);
     }
     else if (vhost)
-        strcpy(hostname, vhost); 
+        strncpy(hostname, vhost, MAX_HOST_LENGTH);
     else /* Return default host if vhost and port wasn't suplied */
         return uriMap->vhosts->get(env, uriMap->vhosts, "*");
+    
+    hostname[MAX_HOST_LENGTH - 1] = 0;
     
     n = uriMap->vhosts->size(env, uriMap->vhosts);
     /* Check the exact hostname:port first */
@@ -837,13 +849,21 @@ static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri) {
 static jk_uriEnv_t *jk2_uriMap_getHostCache(jk_env_t *env, jk_uriMap_t *uriMap,
                                             const char *vhost, int port)
 {
-    char key[1024];
+    char key[MAX_HOST_LENGTH];
+    char portSuffix[32];
+    int vhostLen;
     
     if (!vhost && !port)
         return uriMap->vhosts->get(env, uriMap->vhosts, "*");
     if (!vhost)
         vhost = "*";
-    sprintf(key, "%s:%d", vhost, port);
+    vhostLen = strlen(vhost);
+    strncpy(key, vhost, MAX_HOST_LENGTH);
+    if (vhostLen < MAX_HOST_LENGTH - 1) {
+       sprintf(portSuffix,":%d", port);
+       strncat(key+vhostLen, portSuffix, MAX_HOST_LENGTH);
+    }
+    key[MAX_HOST_LENGTH - 1] = 0;
     return uriMap->vhcache->get(env, uriMap->vhcache, key);
 }
 
