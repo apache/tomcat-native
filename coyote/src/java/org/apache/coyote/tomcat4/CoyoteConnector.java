@@ -960,6 +960,10 @@ public final class CoyoteConnector
                                        "" + connectionTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "timeout", 
                                        "" + connectionTimeout);
+        if (address != null) {
+            IntrospectionUtils.setProperty(protocolHandler, "address", 
+                                           address);
+        }
 
         // Configure secure socket factory
         if (factory instanceof CoyoteServerSocketFactory) {
