@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -215,7 +215,7 @@ static void jk2_SigAction(int sig) {
 
     if( jniChannel==NULL ) {
         jniChannel=env->getByName( env, "channel.jni:jni" );
-        fprintf(stderr, "Got jniChannel %p\n", jniChannel );
+        fprintf(stderr, "Got jniChannel %#lx\n", jniChannel );
     }
     if( jniChannel==NULL ) {
         return;
@@ -227,7 +227,7 @@ static void jk2_SigAction(int sig) {
             return;
         }
         component->init( env, component );
-        fprintf(stderr, "Create endpoint %p\n", component->object );
+        fprintf(stderr, "Create endpoint %#lx\n", component->object );
         signalEndpoint=component->object;
     }
 
@@ -341,11 +341,11 @@ Java_org_apache_jk_apr_AprImpl_getJkEnv
     if( jk_env_globalEnv == NULL )
         return 0;
 
-    /* fprintf(stderr, "Get env %p\n", jk_env_globalEnv); */
+    /* fprintf(stderr, "Get env %#lx\n", jk_env_globalEnv); */
     env=jk_env_globalEnv->getEnv( jk_env_globalEnv );
     /*     if( env!=NULL) */
     /*         env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-    /*                       "aprImpl.getJkEnv()  %p\n", env); */
+    /*                       "aprImpl.getJkEnv()  %#lx\n", env); */
     return (jlong)(long)(void *)env;
 }
 
@@ -364,7 +364,7 @@ Java_org_apache_jk_apr_AprImpl_releaseJkEnv
 
     if( jniDebug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "aprImpl.releaseJkEnv()  %p\n", env);
+                      "aprImpl.releaseJkEnv()  %#lx\n", env);
 }
 
 /*
@@ -388,7 +388,7 @@ Java_org_apache_jk_apr_AprImpl_jkRecycle
     env->recycleEnv( env );
 
     /*     env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-    /*                   "aprImpl.releaseJkEnv()  %p\n", env); */
+    /*                   "aprImpl.releaseJkEnv()  %#lx\n", env); */
 }
 
 
@@ -407,7 +407,7 @@ Java_org_apache_jk_apr_AprImpl_getJkHandler
     component=env->getBean( env, cname );
     
     /*     env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-    /*                   "aprImpl.getJkHandler()  %p %s\n", component, cname ); */
+    /*                   "aprImpl.getJkHandler()  %#lx %s\n", component, cname ); */
     
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, compNameJ, cname);
 
@@ -534,7 +534,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     jk_bean_t *bean=(jk_bean_t *)target;
     jk_endpoint_t *ep;
 
-    jbyte *nbuf;
+    jbyte *nbuf=NULL;
     jboolean iscopy;
 
     int cnt=0;
@@ -553,7 +553,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
         env->l->jkLog(env, env->l, JK_LOG_ERROR,"jni.jkInvoke() NPE ep==null\n");
         return JK_ERR;
     }
-        
+            
     if( arrayAccessMethod == JK_GET_BYTE_ARRAY_ELEMENTS ) {
         nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, data, &iscopy);
         if( iscopy )
@@ -568,7 +568,6 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
         if( raw==0 ) {
             ep->reply->reset(env, ep->reply);
         }
-        
         oldBuf=ep->reply->buf;
         ep->reply->buf = (unsigned char *)nbuf;
     } else if ( arrayAccessMethod == JK_GET_REGION ) {
@@ -588,16 +587,20 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "jkInvoke() invalid data\n");
         /* we just can't recover, unset recover flag */
-        (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, 0);
-        ep->reply->buf=oldBuf;
+        if( arrayAccessMethod == JK_GET_BYTE_ARRAY_ELEMENTS ) {
+            (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, ep->reply->buf, 0);
+            ep->reply->buf=oldBuf;
+        }
         return JK_ERR;
     }
 
     if( bean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "jkInvoke() component dispatch %d %d %p\n", rc, code, bean->invoke);
+                      "jkInvoke() component dispatch %d %d \n", rc, code );
     
     if( bean->invoke != NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jkInvoke() invoke %#lx \n", bean->invoke );
         rc=bean->invoke( env, bean, ep, code, ep->reply, raw );
     } else {
         /* Backward compat for AJP13 messages, where the code is used to
@@ -618,7 +621,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     } else if ( arrayAccessMethod == JK_GET_REGION ) {
         if( rc == JK_INVOKE_WITH_RESPONSE ) {
             /*   env->l->jkLog(env, env->l, JK_LOG_INFO, */
-            /*                "jkInvoke() release %d %d %p\n", */
+            /*                "jkInvoke() release %d %d %#lx\n", */
             /*                ep->reply->pos, ep->reply->len , ep->reply->buf ); */
             (*jniEnv)->SetByteArrayRegion( jniEnv, data, 0, ep->reply->len + 4 , (jbyte *)ep->reply->buf );
             rc=JK_OK;
@@ -627,7 +630,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
 
     if( (*jniEnv)->ExceptionCheck( jniEnv ) ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "jkInvoke() component dispatch %d %d %p\n", rc, code, bean->invoke);
+                      "jkInvoke() component dispatch %d %d %#lx\n", rc, code, bean->invoke);
         (*jniEnv)->ExceptionDescribe( jniEnv );
         /* Not needed if Describe is used.
             (*jniEnv)->ExceptionClear( jniEnv ) */
