@@ -68,9 +68,9 @@ CFGS = @CONFIGFILES@ \
 	config.log \
 	config.status
 
-all: apr_all local_all
+all: apr-all local-all
 
-clean: apr_clean local_clean
+clean: apr-clean local-clean
 
 distclean: clean
 	@echo Removing configure generated files...
@@ -80,7 +80,7 @@ cvsclean: distclean
 	@echo Removing configure script...
 	@rm -f configure
 
-apr_all:
+apr-all:
 	@for DIR in $(APRDIR) ; do \
 		echo "" ; \
 		echo "Compiling sources in $$DIR..." ; \
@@ -93,7 +93,7 @@ apr_all:
 		fi ; \
 	done
 
-apr_clean:
+apr-clean:
 	@for DIR in $(APRDIR) ; do \
 		echo "" ; \
 		echo "Cleaning up $$DIR..." ; \
@@ -106,7 +106,7 @@ apr_clean:
 		fi ; \
 	done
 
-local_all:
+local-all:
 	@for DIR in $(LOCALDIRS) ; do \
 		echo "" ; \
 		echo "Compiling sources in $$DIR..." ; \
@@ -119,7 +119,7 @@ local_all:
 		fi ; \
 	done
 
-local_clean:
+local-clean:
 	@for DIR in $(LOCALDIRS) ; do \
 		echo "" ; \
 		echo "Cleaning up $$DIR..." ; \
