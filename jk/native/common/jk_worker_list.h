@@ -54,8 +54,6 @@ struct worker_factory_record
 };
 typedef struct worker_factory_record worker_factory_record_t;
 
-static jk_map_t *worker_map;
-
 static worker_factory_record_t worker_factories[] = {
     /*
      * AJPv12 worker, this is the stable worker.

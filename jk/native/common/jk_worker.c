@@ -35,6 +35,9 @@ static int build_worker_map(jk_map_t *init_data,
                             unsigned num_of_workers,
                             jk_worker_env_t *we, jk_logger_t *l);
 
+/* Global worker list */
+static jk_map_t *worker_map;
+
 int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
 {
     char **worker_list = NULL;
