@@ -207,6 +207,21 @@ public final class CoyoteConnector
 
 
     /**
+     * Timeout value on the incoming connection during request processing.
+     * Note : a value of 0 means no timeout.
+     */
+    private int connectionUploadTimeout = 
+        Constants.DEFAULT_CONNECTION_UPLOAD_TIMEOUT;
+
+
+    /**
+     * Timeout value on the server socket.
+     * Note : a value of 0 means no timeout.
+     */
+    private int serverSocketTimeout = Constants.DEFAULT_SERVER_SOCKET_TIMEOUT;
+
+
+    /**
      * The port number on which we listen for requests.
      */
     private int port = 8080;
@@ -398,6 +413,50 @@ public final class CoyoteConnector
     public void setConnectionTimeout(int connectionTimeout) {
 
         this.connectionTimeout = connectionTimeout;
+
+    }
+
+
+    /**
+     * Return the connection upload timeout for this Connector.
+     */
+    public int getConnectionUploadTimeout() {
+
+        return (connectionUploadTimeout);
+
+    }
+
+
+    /**
+     * Set the connection upload timeout for this Connector.
+     *
+     * @param connectionUploadTimeout The new connection upload timeout
+     */
+    public void setConnectionUploadTimeout(int connectionUploadTimeout) {
+
+        this.connectionUploadTimeout = connectionUploadTimeout;
+
+    }
+
+
+    /**
+     * Return the server socket timeout for this Connector.
+     */
+    public int getServerSocketTimeout() {
+
+        return (serverSocketTimeout);
+
+    }
+
+
+    /**
+     * Set the server socket timeout for this Connector.
+     *
+     * @param connectionUploadTimeout The new server socket timeout
+     */
+    public void setServerSocketTimeout(int serverSocketTimeout) {
+
+        this.serverSocketTimeout = serverSocketTimeout;
 
     }
 
@@ -1051,7 +1110,9 @@ public final class CoyoteConnector
         IntrospectionUtils.setProperty(protocolHandler, "soTimeout",
                                        "" + connectionTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "timeout",
-                                       "" + connectionTimeout);
+                                       "" + connectionUploadTimeout);
+        IntrospectionUtils.setProperty(protocolHandler, "serverSoTimeout",
+                                       "" + serverSocketTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "disableUploadTimeout",
                                        "" + disableUploadTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "maxKeepAliveRequests",
