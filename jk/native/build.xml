@@ -132,7 +132,7 @@
 	debug="${so.debug}"
 	taskDebug="0"
 	profile="${so.profile}"	>
-      <def name="_REENTRANT" />
+      <def name="_REENTRANT" unless="netware" />
       <def name="CHANNEL" if="use.channel"
            info="Use the new (experimental) channel interface" />
       <def name="AJP12" if="use.ajp12"
@@ -142,7 +142,7 @@
       <def name="REUSE_WORKER" 
 	   unless="option_no_reuse_worker"
 	   info="Reuse the worker endpoint, using per thread data" />
-      <def name="USE_APACHE_MD5" 
+      <def name="USE_APACHE_MD5" unless="netware"
 	   info="Use the MD5 implementation that is part of apache2" />
       <def name="HPUX11" if="hpux" />
       <apacheConfig apxs="${apxs20}" />
@@ -157,8 +157,12 @@
 	<include name="${native.dir}/common" />
 	<include name="${apache2.include}" />
 	<include name="${java.home}/../include" />
-	<include name="${java.home}/../include/win32" if="win32" />
+        
+        <!-- Platform specific includes -->
+        <include name="${java.home}/../include/win32" if="win32" />
         <include name="${java.home}/../include/hp-ux" if="hpux" />        
+        <include name="${java.home}/../include/netware" if="netware" />
+	<include name="${novelllibc.dir}/include" if="netware" />
       </includes>
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
@@ -178,6 +182,30 @@
       <import fileName="wsock32.lib" if="win32" />
       <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apache2.home}/lib&quot;" if="win32" />
+      
+      <def name="N_PLAT_NLM" if="netware"
+	   info="Building for NetWare platform" />
+      <def name="NETWARE" if="netware"
+	   info="Building for NetWare platform" />
+      <def name="__NETWARE__" if="netware"
+	   info="Building for NetWare platform" />
+      <def name="__NOVELL_LIBC__" if="netware"
+	   info="Building for NetWare platform with LibC libraries" />
+           
+      <nlmmodule value="Apache2" if="netware" />
+      <import fileName="${novelllibc.dir}/imports/libc.imp" if="netware" />
+      <import fileName="${novelllibc.dir}/imports/ws2nlm.imp" if="netware" />
+      <import fileName="${apache2.home}/lib/httpd.imp" if="netware" />
+      <import fileName="${apache2.home}/lib/aprlib.imp" if="netware" />
+      <export symbol="jk_module" if="netware" />
+      <linkOpt value="-desc &quot;Apache 2.0 plugin for Tomcat&quot;" if="netware" />
+      <linkOpt value="-nlmversion 2,0,0" if="netware" />
+      <linkOpt value="-threadname &quot;mod_jk Module&quot;" if="netware" />
+      <linkOpt value="-stacksize 8192" if="netware" />
+      <linkOpt value="-l ${novelllibc.dir}/imports" if="netware" />
+      <linkOpt value="-flags AUTOUNLOAD, PSEUDOPREEMPTION" if="netware" />
+      <linkOpt value="-entry _LibCPrelude" if="netware" />
+      <linkOpt value="-exit _LibCPostlude" if="netware" />
     </so>
 
   </target>
@@ -205,6 +233,7 @@
 	<include name="${java.home}/../include" />
 
         <!-- Platform specific includes -->
+	<include name="${apache13.home}/include" if="netware" />
 	<include name="${apache13.home}/os/netware" if="netware" />
 	<include name="${novellndk.dir}/include/nlm" if="netware" />
 	<include name="${novellndk.dir}/include" if="netware" />
