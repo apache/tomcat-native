@@ -946,6 +946,7 @@ public class Http11Processor implements Processor, ActionHook {
             } catch (IOException e) {
                 // Set error flag
                 error = true;
+                response.setErrorException(e);
             }
 
         } else if (actionCode == ActionCode.ACTION_CLOSE) {
