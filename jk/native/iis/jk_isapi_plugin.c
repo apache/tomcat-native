@@ -528,7 +528,7 @@ static int JK_METHOD write(jk_ws_service_t *s,
 
 BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
 {
-    ULONG http_filter_revision = HTTP_FILTER_REVISION 
+    ULONG http_filter_revision = HTTP_FILTER_REVISION;
 
     pVer->dwFilterVersion = pVer->dwServerFilterVersion;
                         
