@@ -170,12 +170,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
     /* The 'real' endpoint */
     jk_endpoint_t *end = NULL;
     
-    l->jkLog(l, JK_LOG_DEBUG, 
-           "Into jk_endpoint_t::service\n");
-
     if(e==NULL || s==NULL || is_recoverable_error==NULL) {
-        l->jkLog(l, JK_LOG_ERROR, 
-           "In jk_endpoint_t::service: NULL Parameters\n");
+        l->jkLog(l, JK_LOG_ERROR, "lb.service() NullPointerException\n");
         return JK_FALSE;
     }
 
@@ -195,13 +191,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
             return JK_FALSE;
         }
                 
+        l->jkLog(l, JK_LOG_INFO, "lb.service() try %s\n", rec->name );
+        
         s->jvm_route = s->pool->pstrdup(s->pool,  rec->name);
 
         rc = rec->get_endpoint(rec, &end, l);
         if( rc!= JK_TRUE ||
             end==NULL ) {
-            
-        } else {
+         } else {
 
             rc = end->service(end, s, l, &is_recoverable);
             end->done(&end, l);
@@ -249,25 +246,41 @@ static int JK_METHOD service(jk_endpoint_t *e,
 static int JK_METHOD done(jk_endpoint_t **eP,
                           jk_logger_t *l)
 {
-    l->jkLog(l, JK_LOG_DEBUG, 
-           "Into jk_endpoint_t::done\n");
-
-    if(eP && *eP ) {
-        jk_endpoint_t *e = *eP;
-
-        if(e->realEndpoint!=NULL) {  
-            e->realEndpoint->done(&e->realEndpoint, l);  
-        }  
-
-        free(e);
-        *eP = NULL;
-        return JK_TRUE;
+    jk_worker_t *w;
+    jk_endpoint_t *e;
+    int err;
+    
+    if(eP==NULL || *eP==NULL ) {
+        l->jkLog(l, JK_LOG_ERROR, "lb.done() NullPointerException\n" );
+        return JK_FALSE;
     }
 
-    l->jkLog(l, JK_LOG_ERROR, 
-           "In jk_endpoint_t::done: NULL Parameters\n");
+    e=*eP;
+    w=e->worker;
 
-    return JK_FALSE;
+    if( e->cPool != NULL ) 
+        e->cPool->reset(e->cPool);
+
+    if(e->realEndpoint!=NULL) {  
+        e->realEndpoint->done(&e->realEndpoint, l);  
+    }  
+
+    if (w->endpointCache != NULL ) {
+        err=w->endpointCache->put( w->endpointCache, e );
+        if( err==JK_TRUE ) {
+            l->jkLog(l, JK_LOG_INFO, "lb.done() return to pool %s\n",
+                     w->name );
+            return JK_TRUE;
+        }
+    }
+    
+    l->jkLog(l, JK_LOG_INFO, "lb.done() %s\n", w->name );
+
+    e->cPool->close( e->cPool );
+    e->pool->close( e->pool );
+
+    *eP = NULL;
+    return JK_TRUE;
 }
 
 static int JK_METHOD validate(jk_worker_t *_this,
@@ -280,10 +293,8 @@ static int JK_METHOD validate(jk_worker_t *_this,
     unsigned num_of_workers;
     unsigned i = 0;
     
-    l->jkLog(l, JK_LOG_DEBUG, "lb_workers.validate()\n");
-
     if(! _this ) {
-        l->jkLog(l, JK_LOG_ERROR,"lb_worker.validate(): NPE\n");
+        l->jkLog(l, JK_LOG_ERROR,"lb_worker.validate(): NullPointerException\n");
         return JK_FALSE;
     }
 
@@ -306,11 +317,9 @@ static int JK_METHOD validate(jk_worker_t *_this,
     _this->num_of_workers=0;
     for(i = 0 ; i < num_of_workers ; i++) {
         char *name = _this->pool->pstrdup(_this->pool, worker_names[i]);
-            
+
         _this->lb_workers[i]=
-            _this->workerEnv->createWorker( _this->workerEnv,
-                                            name, props );
-        
+            _this->workerEnv->createWorker( _this->workerEnv,  name, props );
         if( _this->lb_workers[i] == NULL ) {
             l->jkLog(l, JK_LOG_ERROR,
                      "lb_worker.validate(): Error creating %s %s\n",
@@ -337,15 +346,36 @@ static int JK_METHOD validate(jk_worker_t *_this,
         _this->num_of_workers++;
     }
 
+    l->jkLog(l, JK_LOG_INFO, "lb_workers.validate() %s %d workers\n",
+             _this->name, _this->num_of_workers );
+
     return JK_TRUE;
 }
 
-static int JK_METHOD init(jk_worker_t *pThis,
+static int JK_METHOD init(jk_worker_t *_this,
                           jk_map_t *props, 
                           jk_workerEnv_t *we,
                           jk_logger_t *log)
 {
-    /* Nothing to do for now */
+    /* start the connection cache */
+    int cache_sz = map_getIntProp( props, "worker", _this->name, "cachesize",
+                                   JK_OBJCACHE_DEFAULT_SZ );
+
+    if (cache_sz > 0) {
+        int err;
+        _this->endpointCache=jk_objCache_create( _this->pool,
+                                                 _this->workerEnv->l );
+        
+        if( _this->endpointCache != NULL ) {
+            err=_this->endpointCache->init( _this->endpointCache, cache_sz );
+            if( err!= JK_TRUE ) {
+                _this->endpointCache=NULL;
+            }
+        }
+    } else {
+        _this->endpointCache=NULL;
+    }
+    
     return JK_TRUE;
 }
 
@@ -356,13 +386,22 @@ static int JK_METHOD get_endpoint(jk_worker_t *_this,
     jk_endpoint_t *e;
     jk_pool_t *endpointPool;
     
-    l->jkLog(l, JK_LOG_DEBUG, "lb_worker.getEndpoint()\n");
-
     if(_this==NULL || pend==NULL ) {        
         l->jkLog(l, JK_LOG_ERROR, 
-               "lb_worker.getEndpoint() NPE\n");
+                 "lb.getEndpoint() NullPointerException\n");
     }
 
+    if (_this->endpointCache != NULL ) {
+
+        e=_this->endpointCache->get( _this->endpointCache );
+        
+        if (e!=NULL) {
+            l->jkLog(l, JK_LOG_INFO, "lb.getEndpoint(): Reusing endpoint\n");
+            *pend = e;
+            return JK_TRUE;
+        }
+    }
+    
     endpointPool=_this->pool->create( _this->pool, HUGE_POOL_SIZE);
     
     e = (jk_endpoint_t *)endpointPool->calloc(endpointPool,
@@ -374,6 +413,8 @@ static int JK_METHOD get_endpoint(jk_worker_t *_this,
     }
 
     e->pool = endpointPool;
+
+    e->cPool=endpointPool->create( endpointPool, HUGE_POOL_SIZE );
     
     e->worker = _this;
     e->service = service;
@@ -381,6 +422,7 @@ static int JK_METHOD get_endpoint(jk_worker_t *_this,
     e->channelData = NULL;
     *pend = e;
 
+    l->jkLog(l, JK_LOG_INFO, "lb_worker.getEndpoint()\n");
     return JK_TRUE;
 }
 
@@ -389,6 +431,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
                              jk_logger_t *l)
 {
     int i = 0;
+    jk_worker_t *w;
 
     l->jkLog(l, JK_LOG_DEBUG, "lb_worker.destroy()\n");
 
@@ -397,14 +440,35 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
         return JK_FALSE;
     }
 
-    for(i = 0 ; i < (*pThis)->num_of_workers ; i++) {
-        (*pThis)->lb_workers[i]->destroy( & (*pThis)->lb_workers[i],
-                                         l);
+    w=*pThis;
+
+    for(i = 0 ; i < w->num_of_workers ; i++) {
+        w->lb_workers[i]->destroy( & w->lb_workers[i], l);
     }
 
-    (*pThis)->pool->close((*pThis)->pool);
-    free(pThis);
-    
+    if( w->endpointCache != NULL ) {
+        
+        for( i=0; i< w->endpointCache->ep_cache_sz; i++ ) {
+            jk_endpoint_t *e;
+            
+            e= w->endpointCache->get( w->endpointCache );
+            
+            if( e==NULL ) {
+                // we finished all endpoints in the cache
+                break;
+            }
+
+            /* Nothing else to clean up ? */
+            e->cPool->close( e->cPool );
+            e->pool->close( e->pool );
+        }
+        w->endpointCache->destroy( w->endpointCache );
+
+        l->jkLog(l, JK_LOG_DEBUG, "ajp14.destroy() closed %d cached endpoints\n",
+                 i);
+    }
+
+    w->pool->close(w->pool);    
     return JK_TRUE;
 }
 
@@ -418,8 +482,6 @@ int JK_METHOD jk_worker_lb_factory(jk_env_t *env,
     jk_logger_t *l=env->logger;
     jk_worker_t *_this;
     
-    l->jkLog(l, JK_LOG_DEBUG, "lb_worker.factory()\n");
-
     if(NULL == name ) {
         l->jkLog(l, JK_LOG_ERROR,"lb_worker.factory() NullPointerException\n");
         return JK_FALSE;
@@ -432,6 +494,7 @@ int JK_METHOD jk_worker_lb_factory(jk_env_t *env,
         return JK_FALSE;
     }
 
+    _this->name=name;
     _this->pool=pool;
 
     _this->lb_workers = NULL;
@@ -443,6 +506,9 @@ int JK_METHOD jk_worker_lb_factory(jk_env_t *env,
     _this->destroy        = destroy;
     
     *result=_this;
+
+    l->jkLog(l, JK_LOG_INFO, "lb_worker.factory() New lb worker %s\n",
+             _this->name);
     
     /* name, pool will be set by workerEnv ( our factory ) */
     
