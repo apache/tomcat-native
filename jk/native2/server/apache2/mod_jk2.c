@@ -724,8 +724,8 @@ static void jk2_register_hooks(apr_pool_t *p)
     ap_hook_handler(jk2_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(jk2_post_config,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_child_init(jk2_child_init,NULL,NULL,APR_HOOK_MIDDLE);
-    ap_hook_translate_name(jk2_translate,NULL,NULL,APR_HOOK_FIRST);
-    ap_hook_map_to_storage(jk2_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_translate_name(jk2_translate,NULL,NULL,APR_HOOK_MIDDLE);
+    ap_hook_map_to_storage(jk2_map_to_storage, NULL, NULL, APR_HOOK_FIRST);
 }
 
 module AP_MODULE_DECLARE_DATA jk2_module =
