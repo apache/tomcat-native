@@ -13,7 +13,7 @@
     <package>org.apache.tomcat.util</package>
     <ant basedir="util">
       <property name="jmx.home" reference="home" project="jmx"/>
-      <property name="jmx.jar" value="${jmx.home}/lib/jmxri.jar" />
+      <property name="jmx.jar" project="jmx" path="jmx/lib/jmxri.jar" />
       <property name="jsse.home" reference="home" project="jsse"/>
     </ant>
 
