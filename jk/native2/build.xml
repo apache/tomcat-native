@@ -182,6 +182,10 @@
   
   <target name="jni" depends="init">
     <mkdir dir="${build.dir}/jni" />
+    <!-- can be overriden -->
+    <property name="apr.home" location="${apache2.home}" />
+    <property name="apr.include" location="${apr.home}/include" />
+    <property name="apr.lib" location="${apr.home}/lib" />
     <so sofile="libjkjni" 
 	buildDir="${build.dir}/jni" 
 	optimize="${so.optimize}"
@@ -214,6 +218,10 @@
       </depends>
       
       <!-- Platform-specific tags -->
+      <linkOpt value="-lcrypt" if="linux" />
+      <linkOpt value="-L${apr.lib}" if="linux" />
+      <linkOpt value="-lapr" if="linux" />
+
       <altSoFile value="jni_conn" if="netware" />
       
       <def name="N_PLAT_NLM" if="netware"
