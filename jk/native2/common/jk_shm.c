@@ -154,7 +154,7 @@ static int jk2_shm_attach(jk_env_t *env, jk_shm_t *shm)
 /* Create or reinit an existing scoreboard. The MPM can control whether
  * the scoreboard is shared across multiple processes or not
  */
-static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
+int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
 {
     apr_status_t rv;
     jk_shm_private_t *shmP=shm->privateData;
@@ -163,15 +163,42 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     if ( shm->fname == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "No name for jk_shm\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
     
+    rv=apr_shm_attach(&shmP->aprShm, shm->fname, globalShmPool );
+    if( rv ) {
+        char error[256];
+        apr_strerror( rv, error, 256 );
+        
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.create(): error attaching shm, will create %s %d %p %s\n",
+                      shm->fname, rv, globalShmPool, error );
+        shmP->aprShm=NULL;
+    } else {
+        return JK_OK;
+    }
+
     /* make sure it's an absolute pathname */
     /*  fname = ap_server_root_relative(pconf, ap_scoreboard_fname); */
 
     /* The shared memory file must not exist before we create the
      * segment. */
-    apr_file_remove(shm->fname, globalShmPool ); /* ignore errors */
+    rv = apr_file_remove(shm->fname, globalShmPool ); /* ignore errors */
+    if (rv) {
+        char error[256];
+        apr_strerror( rv, error, 256 );
+        
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.create(): error removing shm %s %d %s\n",
+                      shm->fname, rv, error );
+        shmP->aprShm=NULL;
+        return rv;
+    } else {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.create(): file removed ok\n");
+    }
+
 
     rv = apr_shm_create(&shmP->aprShm, shmP->size, shm->fname, globalShmPool);
     
@@ -180,7 +207,8 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
         apr_strerror( rv, error, 256 );
         
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.create(): error creating named scoreboard %s %d %s\n",
+                      "shm.create(): error creating shm %d %s %d %s\n",
+                      shmP->size, 
                       shm->fname, rv, error );
         shmP->aprShm=NULL;
         return rv;
@@ -225,14 +253,14 @@ static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
         char error[256];
         apr_strerror( rv, error, 256 );
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "Unable to attach to %s %d %s\n", shm->fname, rv, error);
+                      "Unable to attach  %s %d %s\n", shm->fname, rv, error);
     }
 
     rv=jk2_shm_create( env, shm );
     
     if( rv || shmP->aprShm==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "Unable to create to %s %d\n", shm->fname, rv);
+                      "Unable to create %s %d\n", shm->fname, rv);
         return JK_FALSE;
     }
 
@@ -246,6 +274,11 @@ static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
     }
     
     memset(shmP->image, 0, shmP->size);
+    strcpy(shmP->image, "Hello From Apache");
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                  "shm.init() Initalized %s %p\n",
+                      shm->fname, shmP->image);
 
     return JK_TRUE;
 }
