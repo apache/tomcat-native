@@ -25,12 +25,33 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Make load balancer algorithm thread safe by introducing mutex
+      to the load balancer worker. (mturk)
+      </update>
+      <fix>
+      Fix sending error pages for IIS to client by adding Content-Type header
+      using correct api function all. (mturk)
+      </fix>
+      <fix>
+      <bug>32696</bug>: Prevent IIS from crushing when web-inf url was requested. (mturk)
+      </fix>
+      <update>
+      Use default cachesize for servers that support discovering the number of
+      threads per child process. (mturk).
+      </update>
+      <fix>
+      Fix Apache content-length header parsing using case insensitive compare. (billbarker) 
+      </fix>
+      <fix>
+      Fix parsing AJP headers using case insensitive compare. (mturk) 
+      </fix>
       <fix>
       Use infinite socket timeout if socket_timeout is set to zero or less then zero. (mturk)
       </fix>
       <update>
       Change <b>balanced_workers</b> to <b>balance_workers</b> but keep
-      backward compatibility preserving old directive. (mturk).
+      backward compatibility preserving the old directive. (mturk).
       </update>
       <fix>
       Fix ajp initialization for workers with cache_size set to zero. (mturk)
