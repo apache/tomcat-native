@@ -281,9 +281,9 @@ Here is a simple configuration:
 <note># JkRequestLogFormat set the request format </note>
 <read>JkRequestLogFormat     "%w %V %T"</read>
 <note># Send servlet for context /examples to worker named worker1</note>
-<read>JkMout  /examples/servlet/* </read>
+<read>JkMout  /examples/servlet/* worker1</read>
 <note># Send JSPs  for context /examples to worker named worker1</note>
-<read>JkMount  /examples/*.jsp</read>
+<read>JkMount  /examples/*.jsp worker1</read>
 </screen>
 
 </subsection>
@@ -294,6 +294,19 @@ Here is a simple configuration:
 We'll discuss here about mod_jk directives and details them
 </p>
 
+<subsection name="Define workers">
+<p>
+<b>JkWorkersFile</b> specify the location where mod_jk will find the workers definitions.
+
+<screen>
+<read>JkWorkersFile     /etc/httpd/conf/workers.properties</read>
+</screen>
+
+<br/>
+<br/>
+</p>
+</subsection>
+
 <subsection name="Logging">
 <p>
 <b>JkLogFile</b> specify the location where mod_jk is going to place its log file.
@@ -302,12 +315,18 @@ We'll discuss here about mod_jk directives and details them
 <read>JkLogFile     /var/log/httpd/mod_jk.log</read>
 </screen>
 
+<br/>
+<br/>
 </p>
+
 <p>
-<b>JkLogLevel</b> set the log level between :
+<b>JkLogLevel</b>
+set the log level between :
+</p>
+
 <ul>
 <li>
-<b>info</b> log will contains standard mod_jk activity.
+<b>info</b> log will contains standard mod_jk activity (default).
 </li>
 <li>
 <b>error</b> log will contains also error reports.
@@ -317,25 +336,28 @@ We'll discuss here about mod_jk directives and details them
 </li>
 </ul>
 
-<p>
-<b>info</b> should be your default selection for normal operations.
-</p>
-
 <screen>
 <read>JkLogLevel    info</read>
 </screen>
 
+<p>
+<code>info</code> should be your default selection for normal operations.
+<br/>
+<br/>
 </p>
-
 
 <p>
 <b>JkLogStampFormat</b> will configure the date/time format found on mod_jk logfile. 
 Using the strftime() format string it's set by default to <b>"[%a %b %d %H:%M:%S %Y]"</b>
+</p>
 
 <screen>
 <read>JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "</read>
 </screen>
 
+<p>
+<br/>
+<br/>
 </p>
 
 <p>
@@ -371,59 +393,119 @@ here is a list of the avaialbe request log format options:
 <read>JkRequestLogFormat     "%w %V %T"</read>
 </screen>
 
+<br/>
+<br/>
 </p>
 
 </subsection>
 
 <subsection name="Forwarding">
 <p>
-The directive JkOptions allow you to set many forwarding options :
+The directive JkOptions allow you to set many forwarding options which will enable (+)
+or disable (-) following option.
+<br/>
+<br/>
 </p>
 
 <p>
-With <b>ForwardKeySize</b>,  you ask mod_jk, when using ajp13, to forward also the SSL Key Size  as 
+JkOptions <b>ForwardKeySize</b>,  you ask mod_jk, when using ajp13, to forward also the SSL Key Size  as 
 required by Servlet API 2.3.
 This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
+
+<screen>
+<read>JkOptions     +ForwardKeySize</read>
+</screen>
+
+<br/>
+<br/>
 </p>
 
 <p>
-With <b>ForwardURICompat</b>, you told mod_jk to send the URI to Tomcat normally, 
+JkOptions <b>ForwardURICompat</b>, you told mod_jk to send the URI to Tomcat normally, 
 which is less spec compliant but mod_rewrite compatible, 
 use it for compatibility with Tomcat 3.2.x engines (on by default).
+
+<screen>
+<read>JkOptions     +ForwardURICompat</read>
+</screen>
+
+<br/>
+<br/>
 </p>
 
 <p>
-With <b>ForwardURICompatUnparsed</b>, the forwarded URI is unparsed, it's spec compliant but broke mod_rewrite.
+JkOptions <b>ForwardURICompatUnparsed</b>, the forwarded URI 
+is unparsed, it's spec compliant but broke mod_rewrite.
+
+<screen>
+<read>JkOptions     +ForwardURICompatUnparsed</read>
+</screen>
+
+<br/>
+<br/>
 </p>
 
 <p>
-With <b>ForwardURIEscaped</b>, the forwarded URI is escaped and Tomcat (since 3.3 rc2) will do the decoding part.
+JkOptions <b>ForwardURIEscaped</b>, the forwarded URI is escaped and 
+Tomcat (since 3.3 rc2) will do the decoding part.
+
+<screen>
+<read>JkOptions     +ForwardURIEscaped</read>
+</screen>
+
+<br/>
+<br/>
 </p>
 
 <p>
-With <b>ForwardDirectories</b>, This option is used in conjunction with DirectoryIndex directive of Apache web
-server. When DirectoryIndex is configured, Apache will create sub-requests for
+JkOptions <b>ForwardDirectories</b> is used in conjunction with <b>DirectoryIndex</b> 
+directive of Apache web server. As such mod_dir should be available to Apache,
+statically or dynamically (DSO)
+<br/>
+<br/>
+</p>
+
+<p>
+When DirectoryIndex is configured, Apache will create sub-requests for
 each of the local-url's specified in the directive, to determine if there is a
 local file that matches (this is done by stat-ing the file).
+</p>
 
-If JkForwardDirectories is set to false (default) and Apache doesn't find any
+<p>
+If ForwardDirectories is set to false (default) and Apache doesn't find any
 files that match, Apache will serve the content of the directory (if directive
-Options specifies Indexes for that directory) or a 403 Forbidden response (if
+Options specifies Indexes for that directory) or a <code>403 Forbidden</code> response (if
 directive Options doesn't specify Indexes for that directory).
+</p>
 
-If JkForwarDirectories is set to true and Apache doesn't find any files that
+<p>
+If ForwarDirectories is set to true and Apache doesn't find any files that
 match, the request will be forwarded to Tomcat for resolution. This is used in
 cases when Apache cannot see the index files on the file system for various
 reasons: Tomcat is running on a different machine, the JSP file has been
-precompiled etc. Note that locally visible files will take precedence over the
+precompiled etc. 
+</p>
+
+<p>Note that locally visible files will take precedence over the
 ones visible only to Tomcat (i.e. if Apache can see the file, that's the one
 that's going to get served). This is important if there is more then one type of
 file that Tomcat normally serves - for instance Velocity pages and JSP pages.
-.
+
+<screen>
+<read>JkOptions     +ForwardDirectories</read>
+</screen>
+<br/>
+<br/>
 </p>
 
 <p>
 The directive <b>JkEnvVar</b> allow you to forward an environment vars from Apache server to Tomcat engine.
+
+<screen>
+<read>JkEnvVar     SSL_CLIENT_V_START</read>
+</screen>
+<br/>
+<br/>
 </p>
 
 </subsection>
@@ -435,7 +517,7 @@ you can change settings such as the workers or URL prefix.
 </p>
 
 <p>
-Use mod_jk's <b>JkMount</b> directive to assign specific URLs to Tomcat. 
+<b>JkMount</b> directive assign specific URLs to Tomcat. 
 In general the structure of a JkMount directive is:
 </p>
 
@@ -474,7 +556,14 @@ document space for a VirtualHost:
 <screen>
 <note># Static files in the examples webapp are served by apache</note>
 <read>Alias /examples /vat/tomcat3/webapps/examples</read>
+<note># The following line prohibits users from directly access WEB-INF</note>
+<read>&lt;Location "/examples/WEB-INF/"&gt;></read>
+<read>AllowOverride None</read>
+<read>deny from all</read>
+<read>&lt;Location&gt;></read>
+<note># All JSP will goes to worker1</note>
 <read>JkMount /*.jsp worker1</read>
+<note># All servlets goes to worker1</note>
 <read>JkMount /*/servlet/ worker1</read>
 </screen>
 
@@ -486,7 +575,7 @@ into Apache's document space.
 <p>
 Attempts to access the WEB-INF or META-INF directories within a web application context 
 or a Web Archive *.war within the Tomcat Host appBase (webapps) directory will fail with an 
-<source>HTTP 403, Access Forbidden</source>
+<code>HTTP 403, Access Forbidden</code>
 </p>
 
 <screen>
