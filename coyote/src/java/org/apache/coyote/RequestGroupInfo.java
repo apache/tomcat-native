@@ -24,17 +24,33 @@ import java.util.ArrayList;
  */
 public class RequestGroupInfo {
     ArrayList processors=new ArrayList();
+    private long deadMaxTime = 0;
+    private long deadProcessingTime = 0;
+    private int deadRequestCount = 0;
+    private int deadErrorCount = 0;
+    private long deadBytesReceived = 0;
+    private long deadBytesSent = 0;
 
     public synchronized void addRequestProcessor( RequestInfo rp ) {
         processors.add( rp );
     }
 
     public synchronized void removeRequestProcessor( RequestInfo rp ) {
-        processors.remove( rp );
+        if( rp != null ) {
+            if( deadMaxTime < rp.getMaxTime() )
+                deadMaxTime = rp.getMaxTime();
+            deadProcessingTime += rp.getProcessingTime();
+            deadRequestCount += rp.getRequestCount();
+            deadErrorCount += rp.getErrorCount();
+            deadBytesReceived += rp.getBytesReceived();
+            deadBytesSent += rp.getBytesSent();
+
+            processors.remove( rp );
+        }
     }
 
     public synchronized long getMaxTime() {
-        long maxTime=0;
+        long maxTime=deadMaxTime;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             if( maxTime < rp.getMaxTime() ) maxTime=rp.getMaxTime();
@@ -44,6 +60,7 @@ public class RequestGroupInfo {
 
     // Used to reset the times
     public synchronized void setMaxTime(long maxTime) {
+        deadMaxTime = maxTime;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setMaxTime(maxTime);
@@ -51,7 +68,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized long getProcessingTime() {
-        long time=0;
+        long time=deadProcessingTime;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             time += rp.getProcessingTime();
@@ -60,6 +77,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized void setProcessingTime(long totalTime) {
+        deadProcessingTime = totalTime;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setProcessingTime( totalTime );
@@ -67,7 +85,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized int getRequestCount() {
-        int requestCount=0;
+        int requestCount=deadRequestCount;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             requestCount += rp.getRequestCount();
@@ -76,6 +94,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized void setRequestCount(int requestCount) {
+        deadRequestCount = requestCount;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setRequestCount( requestCount );
@@ -83,7 +102,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized int getErrorCount() {
-        int requestCount=0;
+        int requestCount=deadErrorCount;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             requestCount += rp.getErrorCount();
@@ -92,6 +111,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized void setErrorCount(int errorCount) {
+        deadErrorCount = errorCount;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setErrorCount( errorCount);
@@ -99,7 +119,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized long getBytesReceived() {
-        long bytes=0;
+        long bytes=deadBytesReceived;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             bytes += rp.getBytesReceived();
@@ -108,6 +128,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized void setBytesReceived(long bytesReceived) {
+        deadBytesReceived = bytesReceived;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setBytesReceived( bytesReceived );
@@ -115,7 +136,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized long getBytesSent() {
-        long bytes=0;
+        long bytes=deadBytesSent;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             bytes += rp.getBytesSent();
@@ -124,6 +145,7 @@ public class RequestGroupInfo {
     }
 
     public synchronized void setBytesSent(long bytesSent) {
+        deadBytesSent = bytesSent;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setBytesSent( bytesSent );
