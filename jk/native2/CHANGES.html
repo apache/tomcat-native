@@ -1,0 +1,64 @@
+<h3>Changes in Jk2</h2>
+
+</h4>User visible</h4>
+
+<ul>
+<li>Logging. Jk2 will use the 'native' logging mechanism, wherever is available.
+For example in apache the logs will go to apache's error.log. If a 'native'
+implementation is not available jk will use the old mod_jk.log.
+
+<li>Apache(2) configuration 
+  <ul>
+    <li><b>"JkSet name value"</b> can be used to specify the same options as in
+workers.properties. The admin can choose to use only apache's httpd.conf, without
+any external file.</li>
+    <li>(not completed) <b>"JkWorker worker"</b> directive can be used in a Location 
+context to specify a webapp. This is particularly usefull for sites with many
+virtual hosts / webapps where the Location-based and native vhost  mapping is more 
+efficient.</li>
+    <li> 
+  </ul>
+</ul>
+
+<h4>Developer specific</h4>
+
+<ul>
+<li>Created an 'object' registry. All jk components will follow a common pattern
+for creation, and developers will be able to 'plug' their own 
+implementation and override the defaults. 
+
+<li>Memory manangement. Use pools more extensively, almost all mallocs have been
+replaced. 
+
+<li>Native pools. The pool is based on virtual functions and may use the native
+server mechanism. For Apache2 ( and as a default for servers not having a pool )
+we can use APR ( or the original jk_pool if APR is not available for a server ).
+
+<li>Reorganised and simplified data structures. Now most usefull information about
+workers is exposed in the core interfaces.
+
+<li>Pool reuse. In normal operation jk2 will operate in constant memory, the 
+endpoint pool will be reset and will not require a malloc per request. ( same is 
+true for apache2 request processing )
+
+<li>Method signatures. Jk2 uses the same 'patterns' as jni, with a jk_env as 
+first parameter, then 'this' (the pointer to the object ), then regular parameters.
+The same pattern is used no consistently in all methods.
+
+<li>(not completed) Error handling. The env parameter will provide a mechanism to
+pass error information up the stack ( eventually a stack trace ). It'll also 
+provide per/thread storage and a temp pool.
+
+</ul>
+
+<h4>Features</h4>
+ 
+<h4>Bug fixes</h4>
+
+<ul>
+<li>Initial fixed for thread safety issue in uriMap ( when rewriting is needed )
+
+</ul>
+
+
+
