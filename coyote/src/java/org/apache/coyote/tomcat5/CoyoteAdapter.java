@@ -272,18 +272,17 @@ final class CoyoteAdapter
         // URI character decoding
         convertURI(req.decodedURI(), request);
 
-        /*
-	 * Request mapping.
-	 * Remove any remaining parameters (other than session id, which has
-	 * already been removed in parseSessionId()) from the URI, so they
-	 * won't be considered by the mapping algorithm.
-	 */
-	MessageBytes decodedURI = req.decodedURI();
+        // Request mapping.
+        // Remove any remaining parameters (other than session id, which has
+        // already been removed in parseSessionId()) from the URI, so they
+        // won't be considered by the mapping algorithm.
+        MessageBytes decodedURI = req.decodedURI();
         CharChunk uriCC = decodedURI.getCharChunk();
         int semicolon = uriCC.indexOf(';');
         if (semicolon > 0) {
-            decodedURI.setString(uriCC.toString().substring(0, semicolon));
-	}
+            decodedURI.setChars(uriCC.getBuffer(), uriCC.getStart(), 
+                                semicolon);
+        }
         connector.getMapper().map(req.serverName(), decodedURI, 
                                   request.getMappingData());
         request.setContext((Context) request.getMappingData().context);
