@@ -473,8 +473,8 @@ public final class IntrospectionUtils {
                 sb.append('$');
                 prev = pos + 1;
             } else if (value.charAt(pos + 1) != '{') {
-                sb.append(value.charAt(pos + 1));
-                prev = pos + 2; // XXX
+                sb.append('$');
+                prev = pos + 1; // XXX
             } else {
                 int endName = value.indexOf('}', pos);
                 if (endName < 0) {
