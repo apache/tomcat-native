@@ -95,15 +95,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
         return JK_FALSE;
     }
 
-    aw->name = strdup(name);
-
-    if (!aw->name) {
-        free(aw);
-        jk_log(l, JK_LOG_ERROR, "malloc failed");
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
-
+    aw->name = name;
     aw->proto = AJP13_PROTO;
     aw->login = NULL;
 

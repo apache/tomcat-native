@@ -310,7 +310,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
                                            JK_RETRIES);
 
     /* Set Secret Key (used at logon time) */
-    aw->login->secret_key = strdup(jk_get_worker_secret_key(props, aw->name));
+    aw->login->secret_key = jk_get_worker_secret_key(props, aw->name);
 
     if (aw->login->secret_key == NULL) {
         jk_log(l, JK_LOG_ERROR, "can't malloc secret_key");
@@ -357,17 +357,6 @@ static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
     JK_TRACE_ENTER(l);
 
     if (aw->login) {
-
-        if (aw->login->web_server_name) {
-            free(aw->login->web_server_name);
-            aw->login->web_server_name = NULL;
-        }
-
-        if (aw->login->secret_key) {
-            free(aw->login->secret_key);
-            aw->login->secret_key = NULL;
-        }
-
         free(aw->login);
         aw->login = NULL;
     }

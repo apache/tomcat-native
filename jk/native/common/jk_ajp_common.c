@@ -1899,6 +1899,10 @@ int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto)
         }
 
         if (aw->login) {
+             /* take care of removing previously allocated data */
+            if (aw->login->servlet_engine_name)
+                free(aw->login->servlet_engine_name);
+
             free(aw->login);
             aw->login = NULL;
         }

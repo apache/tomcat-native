@@ -216,7 +216,7 @@ struct jk_login_service
     /*
      *  Pointer to web-server name
      */
-    char *web_server_name;
+    const char *web_server_name;
 
     /*
      * Pointer to servlet-engine name
@@ -226,7 +226,7 @@ struct jk_login_service
     /*
      * Pointer to secret key
      */
-    char *secret_key;
+    const char *secret_key;
 
     /*
      * Received entropy seed
