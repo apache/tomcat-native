@@ -6,29 +6,31 @@ CP=@CP@
 APACHE_HOME=@APACHE_HOME@
 OS=@OS@
 APACHE_INCL=@APACHE_INCL@
+APACHE_LIBEXEC=@APACHE_LIBEXEC@
+APACHE_LIBDIR=${APACHE_HOME}/lib
 EXTRA_CFLAGS=@APXS_CFLAGS@
 EXTRA_CPPFLAGS=@APXS_CPPFLAGS@
 JAVA_HOME=@JAVA_HOME@
 APR_LDFLAGS=@APR_LDFLAGS@ `@APR_DIR@/apr-config --ldflags --libs` `@APR_UTIL_DIR@/apu-config --ldflags --libs`
 
 ifneq ($(strip $(JAVA_HOME)),)
-JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS} @HAVE_JNI@
+JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 endif
 
 JK_DIR := ../..
 BUILD_DIR = ${JK_DIR}/../build/jk2/apache13
-APACHE_LIBEXEC=${APACHE_HOME}/libexec
 
 top_builddir=../..
 LIBTOOL=@LIBTOOL@
 
 # It doesn't hurt if we include all
 INCLUDES= -I${JK_DIR}/include \
-          ${APACHE_INCL}
+          ${APACHE_INCL} \
+	  ${JAVA_INCL}
 
-JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @APR_CFLAGS@ -DHAVE_MMAP ${JAVA_INCL}
-JK_LDFLAGS=-L${APACHE_HOME}/lib ${JAVA_LIB}
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @APR_CFLAGS@ -DHAVE_MMAP @HAVE_JNI@
+JK_LDFLAGS=${APR_LDFLAGS} ${JAVA_LIB}
 
 ###### Based on rules.mk ##########################################
 ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)
@@ -51,11 +53,14 @@ MOD_INSTALL = $(LIBTOOL) --mode=install $(CP)
 # Excludes are not yet implemented.
 
 COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
+JNI_C_FILES := $(wildcard ${JK_DIR}/jni/*.c )
 A_C_FILES := $(wildcard ${JK_DIR}/server/apache13/*.c )
 H_FILES := $(wildcard ${JK_DIR}/include/*.h )
 
 COMMON_LO_FILES := $(patsubst ${JK_DIR}/common/%, ${BUILD_DIR}/%, \
 			 $(patsubst %c, %lo, ${COMMON_C_FILES} ))
+JNI_LO_FILES := $(patsubst ${JK_DIR}/jni/%, ${BUILD_DIR}/%, \
+			 $(patsubst %c, %lo, ${JNI_C_FILES} ))
 A_LO_FILES := $(patsubst ${JK_DIR}/server/apache13/%, ${BUILD_DIR}/%, \
 			 $(patsubst %c, %lo, ${A_C_FILES} ))
 
@@ -73,13 +78,18 @@ VPATH=.:../../common
 ${BUILD_DIR}/%.lo: ${JK_DIR}/common/%.c
 	 ${SH_COMPILE} -c $< -o $@
 
+${BUILD_DIR}/%.lo: ${JK_DIR}/jni/%.c
+	 ${SH_COMPILE} -c $< -o $@
+
 ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache13/%.c
 	 ${SH_COMPILE} -c $< -o $@
 
 
 # ---------- Targets -------------------- 
 
-all: prepare ${BUILD_DIR}/mod_jk2.so
+all: prepare ${BUILD_DIR}/mod_jk2.so @JNI_BUILD@
+
+jni-build: ${BUILD_DIR}/libjkjni.so
 
 ${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/$(APACHE_LIBEXEC)/mod_jk2.so
 	$(CP) $^ $@
@@ -88,7 +98,17 @@ ${BUILD_DIR}/$(APACHE_LIBEXEC)/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
 	mkdir -p ${BUILD_DIR}$(APACHE_LIBEXEC)
 	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}/$(APACHE_LIBEXEC)
 
-${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${A_LO_FILES}
+${BUILD_DIR}/libjkjni.so: ${BUILD_DIR}/${APACHE_LIBEXEC}/libjkjni.so
+	$(CP) $^ $@
+
+${BUILD_DIR}/${APACHE_LIBEXEC}/libjkjni.so: ${BUILD_DIR}/libjkjni.la
+	mkdir -p ${BUILD_DIR}/${APACHE_LIBEXEC}
+	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}/${APACHE_LIBEXEC}
+
+${BUILD_DIR}/libjkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
+	$(MOD_LINK) -o $@ $(JK_LDFLAGS) $^
+
+${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${JNI_LO_FILES} ${A_LO_FILES}
 	${MOD_LINK} -o $@ $^ ${APR_LDFLAGS}
 
 ${COMMON_C_FILES} ${A_C_FILES}: ${H_FILES}
