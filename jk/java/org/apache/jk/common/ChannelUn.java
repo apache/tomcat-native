@@ -114,8 +114,8 @@ public class ChannelUn extends Channel {
          */
         ep.setNote( socketNote, new Long( l ) );
 
-        if(dL>0 )
-            d("Accepted socket " + l );
+        if( log.isDebugEnabled() )
+            log.debug("Accepted socket " + l );
     }
 
     public void init() throws IOException {
@@ -127,7 +127,7 @@ public class ChannelUn extends Channel {
 
         apr.initialize();
         gPool=apr.poolCreate( 0 );
-        if( dL > 0 ) d( "Create pool " + gPool );
+        if( log.isDebugEnabled() ) log.debug( "Create pool " + gPool );
 
         File socketFile=new File( file );
         if( socketFile.exists() ) {
@@ -170,8 +170,8 @@ public class ChannelUn extends Channel {
         byte buf[]=msg.getBuffer();
         int len=msg.getLen();
         
-        if(dL > 5 )
-            d("send() " + len + " " + buf[4] );
+        if(log.isDebugEnabled() )
+            log.debug("send() " + len + " " + buf[4] );
 
         Long s=(Long)ep.getNote( socketNote );
 
@@ -182,8 +182,8 @@ public class ChannelUn extends Channel {
     public int receive( Msg msg, MsgContext ep )
         throws IOException
     {
-        if (dL > 0) {
-            d("receive()");
+        if (log.isDebugEnabled()) {
+            log.debug("receive()");
         }
 
         byte buf[]=msg.getBuffer();
@@ -215,18 +215,18 @@ public class ChannelUn extends Channel {
         total_read = this.read(ep, buf, hlen, blen);
         
         if (total_read <= 0) {
-            d("can't read body, waited #" + blen);
+            log.warn("can't read body, waited #" + blen);
             return  -1;
         }
         
         if (total_read != blen) {
-             d( "incomplete read, waited #" + blen +
+             log.warn( "incomplete read, waited #" + blen +
                         " got only " + total_read);
             return -2;
         }
         
-        if (dL > 0)
-             d("receive:  total read = " + total_read);
+        if (log.isDebugEnabled())
+             log.debug("receive:  total read = " + total_read);
 	return total_read;
     }
     
@@ -258,8 +258,8 @@ public class ChannelUn extends Channel {
             got=apr.unRead( gPool, s.longValue(),
                             b, pos + offset, len - pos);
 
-            if (dL > 5) {
-                d("reading  # " + b + " " + (b==null ? 0: b.length) + " " +
+            if (log.isDebugEnabled()) {
+                log.debug("reading  # " + b + " " + (b==null ? 0: b.length) + " " +
                   offset + " " + len + " got # " + got);
             }
             // connection just closed by remote. 
@@ -286,8 +286,8 @@ public class ChannelUn extends Channel {
     /** Accept incoming connections, dispatch to the thread pool
      */
     void acceptConnections() {
-        if( dL>0 )
-            d("Accepting ajp connections on " + file);
+        if( log.isDebugEnabled() )
+            log.debug("Accepting ajp connections on " + file);
         while( running ) {
             try {
                 MsgContext ep=this.createEndpoint();
@@ -304,8 +304,8 @@ public class ChannelUn extends Channel {
     /** Process a single ajp connection.
      */
     void processConnection(MsgContext ep) {
-        if( dL > 0 )
-            d( "New ajp connection ");
+        if( log.isDebugEnabled() )
+            log.debug( "New ajp connection ");
         try {
             MsgAjp recv=new MsgAjp();
             while( running ) {
@@ -321,11 +321,9 @@ public class ChannelUn extends Channel {
             ex.printStackTrace();
         }
     }
-    
-    private static final int dL=10;
-    private static void d(String s ) {
-        System.err.println( "ChannelUn: " + s );
-    }
+
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( ChannelUn.class );
 
 }
 
