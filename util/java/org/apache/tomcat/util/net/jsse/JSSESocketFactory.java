@@ -302,7 +302,7 @@ public abstract class JSSESocketFactory
      * the requested protocol variants are supported
      */
     abstract protected String[] getEnabledProtocols(SSLServerSocket socket,
-						    String requestedProtocols);
+                                                    String requestedProtocols);
 
     /**
      * Set the SSL protocol variants to be enabled.
@@ -310,7 +310,7 @@ public abstract class JSSESocketFactory
      * @param protocols the protocols to use.
      */
     abstract protected void setEnabledProtocols(SSLServerSocket socket, 
-					    String [] protocols);
+                                            String [] protocols);
 
     /**
      * Configures the given SSL server socket with the requested cipher suites,
@@ -325,8 +325,8 @@ public abstract class JSSESocketFactory
         }
 
         String requestedProtocols = (String) attributes.get("protocols");
-	setEnabledProtocols(socket, getEnabledProtocols(socket, 
-							 requestedProtocols));
+        setEnabledProtocols(socket, getEnabledProtocols(socket, 
+                                                         requestedProtocols));
 
         // we don't know if client auth is needed -
         // after parsing the request we may re-handshake

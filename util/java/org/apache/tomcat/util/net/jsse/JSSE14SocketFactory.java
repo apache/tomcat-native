@@ -192,14 +192,14 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
         return tms;
     }
     protected void setEnabledProtocols(SSLServerSocket socket, String []protocols){
-	if (protocols != null) {
+        if (protocols != null) {
             socket.setEnabledProtocols(protocols);
         }
     }
 
     protected String[] getEnabledProtocols(SSLServerSocket socket,
-					   String requestedProtocols){
-	String[] supportedProtocols = socket.getSupportedProtocols();
+                                           String requestedProtocols){
+        String[] supportedProtocols = socket.getSupportedProtocols();
 
         String[] enabledProtocols = null;
 
