@@ -105,7 +105,10 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
         if( val!=NULL ) {
             char *tmp = apr_pstrdup(r->pool, val);
             ap_content_type_tolower(tmp); 
-            r->content_type = tmp;
+            /* It should be done like this in Apache 2.0 */
+            /* This way, Apache 2.0 will be able to set the output filter */
+            /* and it make jk useable with deflate using AddOutputFilterByType DEFLATE text/html */
+            ap_set_content_type(r, tmp);
         }
         val= headers->get( env, headers, "Last-Modified");
         if( val!=NULL ) {
