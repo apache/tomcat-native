@@ -464,7 +464,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
     */
     PoolTcpEndpoint endpoint;
     SimplePool connectionCache;
-    static final boolean usePool=true;
+    static final boolean usePool=false;
     
     public TcpWorkerThread(PoolTcpEndpoint endpoint) {
 	this.endpoint = endpoint;
