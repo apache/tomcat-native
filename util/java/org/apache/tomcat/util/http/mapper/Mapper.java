@@ -183,13 +183,13 @@ public final class Mapper {
         }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
-            Context[] contexts = host.contextList.contexts;
-            // Update nesting
             int slashCount = slashCount(path);
-            if (slashCount > host.contextList.nesting) {
-                host.contextList.nesting = slashCount;
-            }
             synchronized (host) {
+                Context[] contexts = host.contextList.contexts;
+                // Update nesting
+                if (slashCount > host.contextList.nesting) {
+                    host.contextList.nesting = slashCount;
+                }
                 Context[] newContexts = new Context[contexts.length + 1];
                 Context newContext = new Context();
                 newContext.name = path;
@@ -219,11 +219,11 @@ public final class Mapper {
         }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
-            Context[] contexts = host.contextList.contexts;
-            if( contexts.length == 0 ){
-                return;
-            }
             synchronized (host) {
+                Context[] contexts = host.contextList.contexts;
+                if( contexts.length == 0 ){
+                    return;
+                }
                 Context[] newContexts = new Context[contexts.length - 1];
                 if (removeMap(contexts, newContexts, path)) {
                     host.contextList.contexts = newContexts;
