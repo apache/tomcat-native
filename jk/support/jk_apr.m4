@@ -195,7 +195,7 @@ AC_DEFUN(
             tempret="0"
             JK_EXEC(
               [tempret],
-              [./configure --with-apr=${APR_DIR}],
+              [${SHELL} ./configure --with-apr=${APR_DIR}],
               [apr-util],
               [${APR_UTIL_DIR}])
             if ${TEST} "${tempret}" = "0"; then
