@@ -176,7 +176,7 @@ public class Shm extends JniHandler {
     public  int invoke(Msg msg, MsgContext ep )
         throws IOException
     {
-        if( apr==null ) return;
+        if( apr==null ) return 0;
         System.err.println("ChannelShm.invoke: "  + ep );
         super.nativeDispatch( msg, ep, JK_HANDLE_SHM_DISPATCH );
         return 0;

@@ -115,6 +115,7 @@ public class JniHandler extends JkHandler {
         apr=(AprImpl)wEnv.getHandler("apr");
         if( apr==null || ! apr.isLoaded() ) { 
             log.error("No apr, disabling jni proxy ");
+            apr=null;
             return;
         }
         
