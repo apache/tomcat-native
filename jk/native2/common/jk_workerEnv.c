@@ -66,6 +66,7 @@
 #include "jk_workerEnv.h" 
 #include "jk_config.h"
 #include "jk_worker.h"
+#include "jk_shm.h"
 #include "jk_channel.h"
 #include "jk_registry.h"
 
@@ -243,6 +244,10 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     
     jk2_workerEnv_initWorkers( env, wEnv );
     jk2_workerEnv_initHandlers( env, wEnv );
+
+    if( wEnv->shm != NULL ) {
+        wEnv->shm->init( env, wEnv->shm );
+    }
     
     wEnv->uriMap->init(env, wEnv->uriMap );
 
@@ -554,8 +559,15 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     wEnv->config->file = NULL;
     wEnv->config->workerEnv = wEnv;
     wEnv->config->map = wEnv->initData;
-    
 
+    jkb=env->createBean2(env, wEnv->pool,"shm", "");
+    if( jkb==NULL ) {
+        wEnv->shm=NULL;
+    } else {
+        env->alias(env, "shm:", "shm");
+        wEnv->shm=(jk_shm_t *)jkb->object;
+    }
+    
     wEnv->uriMap->workerEnv = wEnv;
     wEnv->perThreadWorker=0;
     
