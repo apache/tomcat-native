@@ -63,14 +63,16 @@ package org.apache.naming.core;
 import javax.naming.*;
 
 /**
- * Extended version for Attribute. All our dirContexts should return objects
- * of this type. Methods that take attribute param should use this type
- * of objects for performance.
+ * Implementation of Name  with support for extra information.
  *
- * This is an extension of the 'note' in tomcat 3.3. Each attribute will have an
- * 'ID' ( small int ) and an associated namespace. The attributes are recyclable.
+ * An extra feature ( not yet implemneted ) is the support for
+ * MessageBytes. This allows tomcat to operate lookup operations
+ * on the original message, without creating Strings.
  *
- * The attribute is designed for use in server env, where performance is important.
+ * Another feature is support for extra information that can be cached.
+ * This brakes a bit the JNDI requirements, as Contexts can modify the
+ * Name and add anotations. The main benefit is that after the first
+ * lookup it'll be possible to avoid some expensive operations.
  *
  * @author Costin Manolache
  */
@@ -101,6 +103,7 @@ public class ServerName extends CompositeName
     }
 
     /**
+     * Factory method to create server names. 
      */
     public static Name getName( String s ) throws InvalidNameException {
         return new ServerName( s );
