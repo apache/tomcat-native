@@ -157,9 +157,6 @@ static int jk2_uriMap_addUriEnv(jk_env_t *env, jk_uriMap_t *uriMap,
 static int JK_METHOD jk2_uriMap_setProperty(jk_env_t *env, jk_bean_t *mbean,
                                             char *name, void *valueP)
 {
-    jk_uriMap_t *uriMap = mbean->object;
-    char *value = valueP;
-    
     return JK_OK;
 }
 
@@ -885,9 +882,6 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                                       const char *vhost, int port,
                                       const char *uri)
 {
-    int best_match = -1;
-    int longest_match = 0;
-    char *clean_uri = NULL;
     char *url_rewrite = NULL;
     int uriLen;
     jk_uriEnv_t *hostEnv;
@@ -1008,7 +1002,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
         }
     }
     
-    /* Try to find exact match of /uri and prefix /uri/* */
+    /* Try to find exact match of /uri and prefix /uri/star (*) */
     match = jk2_uriMap_contextMap(env, uriMap, ctxEnv->prefixMatch, uri, uriLen);
     if (match != NULL) {
         /* restore */

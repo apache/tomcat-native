@@ -166,12 +166,9 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
                                      jk_workerEnv_t *wEnv)
 {
     int i;
-    jk_worker_t *lb=wEnv->defaultWorker;
 
     for( i=0; i< wEnv->worker_map->size( env, wEnv->worker_map ); i++ ) {
-        char *name= wEnv->worker_map->nameAt( env, wEnv->worker_map, i );
         jk_worker_t *w= wEnv->worker_map->valueAt( env, wEnv->worker_map, i );
-
         jk2_workerEnv_initWorker( env, wEnv, w );
     }
     return JK_OK;
@@ -210,8 +207,6 @@ static int jk2_workerEnv_initChannels(jk_env_t *env,
     int i;
 
     for( i=0; i< wEnv->channel_map->size( env, wEnv->channel_map ); i++ ) {
-
-        char *name= wEnv->channel_map->nameAt( env, wEnv->channel_map, i );
         jk_channel_t *ch= wEnv->channel_map->valueAt( env, wEnv->channel_map, i );
         jk2_workerEnv_initChannel( env, wEnv, ch );
     }
@@ -431,9 +426,6 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
     int code;
     jk_handler_t *handler;
     int rc;
-    jk_handler_t **handlerTable=wEnv->handlerTable;
-    int maxHandler=wEnv->lastMessageId;
-	int headeratclient=JK_FALSE;
     ep->currentRequest=req;
     
     /* Process reply - this is the main loop */
@@ -560,7 +552,6 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
 static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
                                     jk_channel_t *ch) 
 {
-    int err=JK_OK;
     jk_bean_t *jkb;
     
     ch->mbean->id=wEnv->channel_map->size( env, wEnv->channel_map );
@@ -627,9 +618,7 @@ static jk_worker_t *jk2_workerEnv_createWorker(jk_env_t *env,
                                                jk_workerEnv_t *wEnv,
                                                char *type, char *name) 
 {
-    int err=JK_OK;
     jk_worker_t *w = NULL;
-    jk_worker_t *oldW = NULL;
     jk_bean_t *jkb;
 
     /* First find if it already exists */
