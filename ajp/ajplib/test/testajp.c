@@ -208,7 +208,7 @@ int main(int argc, const char * const * argv, const char * const *env)
      */
 
     /* 1. Obtain a connection to backend    */
-    if ((rc = connect_to_backend(&sock, &con, "127.0.0.1", 8009,
+    if ((rc = connect_to_backend(&sock, &con, AJP13_DEF_HOST, AJP13_DEF_PORT,
             main_server, r->pool)) != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, rc, NULL, "connect_to_backend");
         rv = -1;

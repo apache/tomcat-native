@@ -40,6 +40,13 @@
 #include <arpa/inet.h>
 #endif
 
+#define AJP13_DEF_HOST "127.0.0.1"
+#ifdef NETWARE
+#define AJP13_DEF_PORT 9009     /* default to 9009 since 8009 is used by OS */
+#else
+#define AJP13_DEF_PORT 8009
+#endif
+
 #if APR_CHARSET_EBCDIC
 
 #define USE_CHARSET_EBCDIC
