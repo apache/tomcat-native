@@ -70,9 +70,9 @@ fi
 if [ -f "./apr/buildconf" ]
 then
     echo "--- Running the \"buildconf\" script for APR"
-    cd ./apr
+    ( cd ./apr
     sh ./buildconf
-    cd ..
+    )
 else
     echo "--- Cannot run APR \"buildconf\" script"
     echo "Don't a forget to download a copy of the APR sources, and to run"
