@@ -42,6 +42,7 @@
           <meta name="author" content="@email"/>
         </xsl:for-each>
         <link rel="stylesheet" type="text/css" href="style.css"/>
+        <link rel="shortcut icon" href="images/tomcat.ico"/>
       </head>
 
       <!--
