@@ -16,7 +16,7 @@ JK=../../common/
 JKINC=../../include/
 JK_INCL=-DUSE_APACHE_MD5 -I ${JK} -I ${JKINC} -DHAVE_MMAP
 
-ifdef JAVA_HOME
+ifneq ($(strip $(JAVA_HOME)),)
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS} @HAVE_JNI@
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 endif
