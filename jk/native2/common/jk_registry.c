@@ -126,6 +126,9 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
 #ifdef HAS_APR
   env->registerFactory( env, "channel.apr",
                         jk2_channel_apr_socket_factory );
+#if APR_HAS_SHARED_MEMORY
+  env->registerFactory( env, "shm", jk2_shm_factory );
+#endif
 #endif
   env->registerFactory( env, "channel.socket", jk2_channel_socket_factory );
 
