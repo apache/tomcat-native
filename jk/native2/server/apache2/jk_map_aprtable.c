@@ -152,7 +152,7 @@ int  jk_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
                              void **result,
                              char *type, char *name)
 {
-    jk_map_t *_this=(jk_map_t *)pool->calloc( pool, sizeof(jk_map_t));
+    jk_map_t *_this=(jk_map_t *)pool->calloc( env, pool, sizeof(jk_map_t));
 
     *result=_this;
     

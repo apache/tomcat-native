@@ -92,7 +92,7 @@ int JK_METHOD jk_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
                                         char *type, char *name);
 
 
-static int jk_logger_apache2_log(jk_logger_t *l,                                 
+static int jk_logger_apache2_log(jk_env_t *env, jk_logger_t *l,                                 
                                  int level,
                                  const char *what)
 {
@@ -100,18 +100,18 @@ static int jk_logger_apache2_log(jk_logger_t *l,
 }
 
 
-static int jk_logger_apache2_open(jk_logger_t *_this,
+static int jk_logger_apache2_open(jk_env_t *env, jk_logger_t *_this,
                                   jk_map_t *properties )
 {
     return JK_TRUE;
 }
 
-static int jk_logger_apache2_close(jk_logger_t *_this)
+static int jk_logger_apache2_close(jk_env_t *env, jk_logger_t *_this)
 {
     return JK_TRUE;
 }
 
-static int jk_logger_apache2_jkLog(jk_logger_t *l,
+static int jk_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
                                    const char *file,
                                    int line,
                                    int level,
@@ -174,7 +174,8 @@ int jk_logger_apache2_factory(jk_env_t *env,
                               char *type,
                               char *name)
 {
-    jk_logger_t *l = (jk_logger_t *)pool->calloc(pool, sizeof(jk_logger_t));
+    jk_logger_t *l = (jk_logger_t *)pool->calloc(env, pool,
+                                                 sizeof(jk_logger_t));
 
     if(l==NULL ) {
         return JK_FALSE;

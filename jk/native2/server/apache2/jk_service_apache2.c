@@ -96,7 +96,7 @@
 
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
 
-static int JK_METHOD jk_service_apache2_head(jk_ws_service_t *s )
+static int JK_METHOD jk_service_apache2_head(jk_env_t *env, jk_ws_service_t *s )
 {
     int h;
     request_rec *r;
@@ -116,9 +116,9 @@ static int JK_METHOD jk_service_apache2_head(jk_ws_service_t *s )
     headers=s->headers_out;
     /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
     
-    for(h = 0 ; h < headers->size( NULL, headers ) ; h++) {
-        char *name=headers->nameAt( NULL, headers, h );
-        char *val=headers->valueAt( NULL, headers, h );
+    for(h = 0 ; h < headers->size( env, headers ) ; h++) {
+        char *name=headers->nameAt( env, headers, h );
+        char *val=headers->valueAt( env, headers, h );
 
         /* the cmp can also be avoided in we do this earlier and use
            the header id */
@@ -162,7 +162,7 @@ static int JK_METHOD jk_service_apache2_head(jk_ws_service_t *s )
  * the jk_ws_service class.  Think of the *s param as a "this" or "self"
  * pointer.
  */
-static int JK_METHOD jk_service_apache2_read(jk_ws_service_t *s,
+static int JK_METHOD jk_service_apache2_read(jk_env_t *env, jk_ws_service_t *s,
                                              void *b, unsigned len,
                                              unsigned *actually_read)
 {
@@ -202,24 +202,21 @@ static int JK_METHOD jk_service_apache2_read(jk_ws_service_t *s,
 #define CHUNK_SIZE 4096
 #endif
 
-static int JK_METHOD jk_service_apache2_write(jk_ws_service_t *s,
-                                              const void *b,
-                                              unsigned len)
+static int JK_METHOD jk_service_apache2_write(jk_env_t *env, jk_ws_service_t *s,
+                                              const void *b, int len)
 {
-    jk_logger_t *l=s->workerEnv->l;
-    
     if(s && s->ws_private && b) {
-        if(l) {
+        if(len) {
             /* BUFF *bf = p->r->connection->client; */
-            size_t w = (size_t)l;
+            /* size_t w = (size_t)l; */
             size_t r = 0;
             long ll=len;
             char *bb=(char *)b;
             
             if(!s->response_started) {
-                l->jkLog(l, JK_LOG_DEBUG, 
-                       "Write without start, starting with defaults\n");
-                if(!s->head(s)) {
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                              "Write without start, starting with defaults\n");
+                if(!s->head(env, s)) {
                     return JK_FALSE;
                 }
             }
@@ -228,8 +225,8 @@ static int JK_METHOD jk_service_apache2_write(jk_ws_service_t *s,
             while( ll > 0 ) {
                 unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
                 r = ap_rwrite((const char *)bb, toSend, s->ws_private );
-                l->jkLog(l, JK_LOG_DEBUG, 
-                       "writing %ld (%ld) out of %ld \n",toSend, r, ll );
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                              "writing %ld (%ld) out of %ld \n",toSend, r, ll );
                 ll-=CHUNK_SIZE;
                 bb+=CHUNK_SIZE;
                 
@@ -259,7 +256,7 @@ static int JK_METHOD jk_service_apache2_write(jk_ws_service_t *s,
 /* Utility functions                                                         */
 /* ========================================================================= */
 
-static int get_content_length(request_rec *r)
+static int get_content_length(jk_env_t *env, request_rec *r)
 {
     if(r->clength > 0) {
         return r->clength;
@@ -277,20 +274,18 @@ static int get_content_length(request_rec *r)
     return 0;
 }
 
-static int init_ws_service(jk_ws_service_t *s,
-                           jk_endpoint_t *e,
-                           void *serverObj)
+static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
+                           jk_endpoint_t *e, void *serverObj)
 {
     apr_port_t port;
     char *ssl_temp      = NULL;
     jk_workerEnv_t *workerEnv=e->worker->workerEnv;
-    jk_logger_t *l=workerEnv->l;
     request_rec *r=serverObj;
     int need_content_length_header=JK_FALSE;
 
     /* Common initialization */
     /* XXX Probably not needed, we're duplicating */
-    jk_requtil_initRequest(s);
+    jk_requtil_initRequest(env, s);
     
     s->ws_private = r;
     s->pool=e->cPool;
@@ -321,7 +316,7 @@ static int init_ws_service(jk_ws_service_t *s,
     s->server_software = (char *)ap_get_server_version();
 
     s->method         = (char *)r->method;
-    s->content_length = get_content_length(r);
+    s->content_length = get_content_length(env, r);
     s->is_chunked     = r->read_chunked;
     s->no_more_chunks = 0;
     s->query_string   = r->args;
@@ -417,33 +412,33 @@ static int init_ws_service(jk_ws_service_t *s,
           "map", "aprtable" );
           s->attributes->init( NULL, s->attributes, 0, XXX);
         */
-        jk_map_default_create(NULL, &s->attributes, s->pool );
+        jk_map_default_create(env, &s->attributes, s->pool );
 #else
-        jk_map_default_create(NULL, &s->attributes, s->pool );
+        jk_map_default_create(env, &s->attributes, s->pool );
 #endif
         
         if(workerEnv->envvars_in_use) {
-            int envCnt=workerEnv->envvars->size( NULL, workerEnv->envvars );
+            int envCnt=workerEnv->envvars->size( env, workerEnv->envvars );
             int i;
 
             for( i=0; i< envCnt ; i++ ) {
-                char *name= workerEnv->envvars->nameAt( NULL, workerEnv->envvars, i );
+                char *name= workerEnv->envvars->nameAt( env, workerEnv->envvars, i );
                 char *val= (char *)apr_table_get(r->subprocess_env, name);
                 if(val==NULL) {
-                    val=workerEnv->envvars->valueAt( NULL, workerEnv->envvars, i );
+                    val=workerEnv->envvars->valueAt( env, workerEnv->envvars, i );
                 }
-                s->attributes->put( NULL, s->attributes, name, val, NULL );
+                s->attributes->put( env, s->attributes, name, val, NULL );
             }
         }
     }
 
 #ifdef USE_APRTABLES
-    jk_map_aprtable_factory( workerEnv->env, s->pool,
+    jk_map_aprtable_factory( env, s->pool,
                              &s->headers_in,
                              "map", "aprtable" );
-    s->headers_in->init( NULL, s->headers_in, 0, r->headers_in);
+    s->headers_in->init( env, s->headers_in, 0, r->headers_in);
 #else
-    jk_map_default_create(NULL, &s->headers_in, s->pool );
+    jk_map_default_create(env, &s->headers_in, s->pool );
 
     if(r->headers_in && apr_table_elts(r->headers_in)) {
         const apr_array_header_t *t = apr_table_elts(r->headers_in);
@@ -453,7 +448,7 @@ static int init_ws_service(jk_ws_service_t *s,
             apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
 
             for(i = 0 ; i < t->nelts ; i++) {
-                s->headers_in->add( NULL, s->headers_in,
+                s->headers_in->add( env, s->headers_in,
                                     elts[i].key, elts[i].val);
             }
         }
@@ -464,16 +459,15 @@ static int init_ws_service(jk_ws_service_t *s,
         /* XXX if r->contentLength == 0 I assume there's no header
            or a header with '0'. In the second case, put will override it 
          */
-        s->headers_in->put( NULL, s->headers_in, "content-length", "0", NULL );
+        s->headers_in->put( env, s->headers_in, "content-length", "0", NULL );
     }
 
 #ifdef USE_APRTABLES
-    jk_map_aprtable_factory( workerEnv->env, s->pool,
-                             &s->headers_out,
+    jk_map_aprtable_factory( env, s->pool, &s->headers_out,
                              "map", "aprtable" );
-    s->headers_in->init( NULL, s->headers_out, 0, r->headers_out);
+    s->headers_in->init( env, s->headers_out, 0, r->headers_out);
 #else
-    jk_map_default_create(NULL, &s->headers_out, s->pool );
+    jk_map_default_create(env, &s->headers_out, s->pool );
 #endif
 
     return JK_TRUE;
@@ -489,7 +483,7 @@ static int init_ws_service(jk_ws_service_t *s,
  *  jk shouldn't do it instead, and the user should get the
  *  error message !
  */
-static void jk_service_apache2_afterRequest(jk_ws_service_t *s )
+static void jk_service_apache2_afterRequest(jk_env_t *env, jk_ws_service_t *s )
 {
     
     if (s->content_read < s->content_length ||
@@ -515,7 +509,7 @@ int jk_service_apache2_factory(jk_env_t *env,
 {
     jk_ws_service_t *s = *result;
     if( s==NULL ) {
-        s=(jk_ws_service_t *)pool->calloc(pool, sizeof(jk_ws_service_t));
+        s=(jk_ws_service_t *)pool->calloc(env, pool, sizeof(jk_ws_service_t));
     }
 
     if(s==NULL ) {
