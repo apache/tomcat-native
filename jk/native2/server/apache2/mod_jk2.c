@@ -221,14 +221,25 @@ static const char *jk2_uriSet(cmd_parms * cmd, void *per_dir,
             strcpy(tmp_full_url, s->server_hostname);
             strcat(tmp_full_url, uriEnv->uri);
         }
+
         uriEnv->mbean->setAttribute(workerEnv->globalEnv, uriEnv->mbean,
                                     "uri", tmp_full_url);
         uriEnv->mbean->setAttribute(workerEnv->globalEnv, uriEnv->mbean,
                                     "path", cmd->path);
+
         uriEnv->name = tmp_virtual;
         uriEnv->virtual = tmp_virtual;
 
+    } else {
+        /*
+         * The jk2_create_dir_config added an id to uri and  path
+         * we have to correct it here.
+         */
+
+        uriEnv->mbean->setAttribute(workerEnv->globalEnv, uriEnv->mbean,
+                                    "uri", cmd->path);
     }
+
     /* now lets actually add the parameter set in the <Location> block */
     uriEnv->mbean->setAttribute(workerEnv->globalEnv, uriEnv->mbean,
                                 (char *)name, (void *)val);
@@ -293,40 +304,46 @@ static void *jk2_merge_dir_config(apr_pool_t * p, void *childv, void *parentv)
     jk_uriEnv_t *child = (jk_uriEnv_t *)childv;
     jk_uriEnv_t *parent = (jk_uriEnv_t *)parentv;
     jk_uriEnv_t *winner = NULL;
-    jk_uriEnv_t *loser = NULL;
+    char *hostchild;
+    char *hostparent;
 
     if (child == NULL || child->uri == NULL || child->workerName == NULL) {
         winner = parent;
-        loser = child;
     }
     else if (parent == NULL || parent->uri == NULL
              || parent->workerName == NULL) {
         winner = child;
-        loser = parent;
         /* interresting bit... so far they are equal ... */
     }
     else if (strlen(parent->uri) > strlen(child->uri)) {
         winner = parent;
-        loser = child;
+    }
+    else if (strlen(parent->uri) == strlen(child->uri)) {
+        /* Try the virtual host to decide */
+        hostchild = child->mbean->getAttribute(workerEnv->globalEnv, child->mbean,"host");
+        hostparent = parent->mbean->getAttribute(workerEnv->globalEnv, parent->mbean,"host");
+        if (hostchild == NULL)
+            winner = parent;
+        if (hostparent == NULL)
+            winner = child;
+        if (winner == NULL) {
+            if (strlen(hostchild) > strlen(hostparent))
+                winner = child;
+            else
+                winner = parent;
+        }
     }
     else {
         winner = child;
-        loser = parent;
     }
 
     /* Do we merge loser into winner - i.e. inherit properties ? */
 
-    /*if ( winner == child )
-       fprintf(stderr, "Going with the child\n");
-       else if ( winner == parent )
-       fprintf(stderr, "Going with the parent\n");
-       else 
-       fprintf(stderr, "Going with NULL\n");
-     */
-    fprintf(stderr, "Merging %s %s %s\n",
-            (winner == NULL || winner->uri == NULL) ? "" : winner->uri,
+    ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, NULL, 
+                  "mod_jk2 Merging %s %s winner: %s\n",
             (child == NULL || child->uri == NULL) ? "" : child->uri,
-            (parent == NULL || parent->uri == NULL) ? "" : parent->uri);
+            (parent == NULL || parent->uri == NULL) ? "" : parent->uri,
+            (winner == child) ? "parent" : "child" );
 
 
     return (void *)winner;
