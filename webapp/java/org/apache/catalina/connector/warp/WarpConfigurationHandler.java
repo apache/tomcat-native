@@ -65,11 +65,10 @@ import org.apache.catalina.Context;
 import org.apache.catalina.Deployer;
 import org.apache.catalina.Host;
 import org.apache.catalina.Wrapper;
-import org.apache.catalina.core.StandardHost;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.FilterMap;
-import org.apache.catalina.deploy.SecurityConstraint;
 import org.apache.catalina.deploy.SecurityCollection;
+import org.apache.catalina.deploy.SecurityConstraint;
 
 public class WarpConfigurationHandler {
 

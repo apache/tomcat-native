@@ -56,14 +56,9 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
-import java.io.IOException;
-import javax.servlet.ServletException;
-
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Request;
-import org.apache.catalina.Response;
-import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardHost;
 
 public class WarpHost extends StandardHost {

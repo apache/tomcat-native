@@ -56,9 +56,9 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
-import org.apache.catalina.Context;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.HttpRequestBase;
 

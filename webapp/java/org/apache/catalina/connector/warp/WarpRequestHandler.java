@@ -56,26 +56,21 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.util.*;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.TreeMap;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.catalina.Container;
 import org.apache.catalina.Context;
-import org.apache.catalina.Deployer;
 import org.apache.catalina.Globals;
 import org.apache.catalina.Host;
-import org.apache.catalina.core.StandardHost;
 import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringParser;
-
-import java.security.Principal;
 
 public class WarpRequestHandler {
 

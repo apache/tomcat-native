@@ -58,30 +58,16 @@ package org.apache.catalina.connector.warp;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
-import java.util.TimeZone;
-import javax.servlet.ServletResponse;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-//import javax.servlet.http.HttpUtils;
-import org.apache.catalina.HttpResponse;
+
 import org.apache.catalina.Globals;
-import org.apache.catalina.Logger;
 import org.apache.catalina.connector.HttpResponseBase;
 import org.apache.catalina.util.CookieTools;
-import org.apache.catalina.util.RequestUtil;
 
 public class WarpResponse extends HttpResponseBase {
     /** The local stream */
