@@ -132,7 +132,7 @@ public class JkMX extends JkHandler
     public void loadAdapter() throws IOException {
         boolean adapterLoaded = false;
 
-        if (classExists("mx4j.adaptor.http")) {
+        if (classExists("mx4j.adaptor.http.HttpAdaptor")) {
             try {
                 serverName = new ObjectName("Http:name=HttpAdaptor");
                 mserver.createMBean("mx4j.adaptor.http.HttpAdaptor", serverName, null);
