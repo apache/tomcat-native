@@ -66,6 +66,10 @@ extern "C" {
 #include "jk_global.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
+#include "jk_msg_buff.h"
+
+struct jk_channel;
+typedef struct jk_channel jk_channel_t;
 
 /**
  * Abstraction (interface) for sending/receiving blocks of data ( packets ).
@@ -91,8 +95,6 @@ extern "C" {
  * @author Costin Manolache
  */
 struct jk_channel {
-  void *private;
-
   /** Pool for the channel 
    */
   jk_pool_t *pool;
@@ -100,10 +102,16 @@ struct jk_channel {
 
   char *name;
 
+  /** Prepare the channel, check the properties. This 
+   * will resolve the host and do all the validations.
+   * ( needed to remove the dependencies on sockets in ajp)
+   */
+  int (JK_METHOD *init)(jk_channel_t *_this );
+  
   /** Open the communication channel
    */
   int (JK_METHOD *open)(jk_channel_t *_this );
-
+  
   /** Close the communication channel
    */
   int (JK_METHOD *close)(jk_channel_t *_this );
@@ -111,14 +119,12 @@ struct jk_channel {
   /** Send a packet
    */
   int (JK_METHOD *send)(jk_channel_t *_this,
-			const unsigned char *b,
-			int len);
+			jk_msg_buf_t *b );
 
   /** Receive a packet
    */
   int (JK_METHOD *recv)(jk_channel_t *_this,
-			const unsigned char *b,
-			int len);
+			jk_msg_buf_t *b );
 
   /** Set a channel property. Properties are used to configure the 
    * communication channel ( example: port, host, file, shmem_name, etc).
@@ -131,9 +137,9 @@ struct jk_channel {
   int (JK_METHOD *getProperty)(jk_channel_t *_this, 
 			       char *name, char **value);
 
-}
-
-typedef struct jk_channel jk_channel_t;
+  void *_privatePtr;
+  int _privateInt;
+};
 
 #ifdef __cplusplus
 }
