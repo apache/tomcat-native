@@ -1,0 +1,9 @@
+Changes with webapp-1.1:
+  *) Fix some the of the bugs.
+
+  *) Add SSL support for Apache-1.3. [JFrederic.Clere@fujitsu-siemens.com]
+
+  *) Fix configure.in to prevent building with a broken apxs [JFC]
+
+  *) Fix configure.in to prevent mixing native cc and gcc on Solaris [JFC]
+
