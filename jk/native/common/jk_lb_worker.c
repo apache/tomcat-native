@@ -550,12 +550,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     end->rd = end->wr = 0;
                     /* Increment the number of workers serving request */
                     p->worker->s->busy++;
+                    rec->s->busy++;
                     service_ok = end->service(end, s, l, &is_service_error);
                     /* Update partial reads and writes if any */
                     rec->s->readed += end->rd;
                     rec->s->transferred += end->wr;
                     end->done(&end, l);
                     /* Decrement the busy worker count */
+                    rec->s->busy--;
                     p->worker->s->busy--;
                     if (service_ok) {
                         rec->s->in_error_state = JK_FALSE;
