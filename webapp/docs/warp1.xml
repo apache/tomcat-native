@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+
+<document title="WARP 1.0 (draft)">
+  <description>
+    The WARP protocol version 1.0 (draft)
+  </description>
+
+  <section title="Introduction">
+    <description>
+      An overview of the WARP protocol
+    </description>
+
+    <p>
+      WARP was inspired by the great effort made by the Apache JServ team
+      in finding an efficent transport protocol allowing to connect over a
+      reliable full-duplex transmission channel (such as TCP over IP,
+      bi-directional pipes or UNIX sockets) a servlet container and an
+      HTTP protocol stack (normally, a web server).
+    </p>
+
+    <p>
+      Note, this revision of the WARP protocol has not been adopted yet by
+      the <b>WebApp module</b> for the Apache Web Server or by <b>Apache
+      Tomcat</b>.
+    </p>
+  </section>
+
+  <section title="The WARP name">
+    <description>
+      Maximum WARP, engage! (Tales about a name)
+    </description>
+
+    <p>
+      First of all, for non science fiction fanatics, WARP is an acronym and
+      means, (to use a syntax similar to Perl regular expressions) "Web
+      Application Remote (Access|Control)+ Protocol".
+    </p>
+
+    <p>
+      In "Star Trek" terms, WARP is a measuring unit for speed, such as
+      "miles per hour" or "meters per seconds". Always in "Star Trek" terms,
+      <b>Radio Free Tomorrow</b> gives us a very nice description about what
+      exactly the term "WARP" means (you can see the full text
+      <a href="http://rft.melm.org/story/2002/3/25/182619/336">here</a>):
+    </p>
+
+    <ul>
+      <li>
+        [...] Warping space as a means of traveling faster than light is a
+        method based in solid fact, and physicists have devised a mathematical
+        model of the universe which would allow it to work.
+        <br/>
+        The idea behind warp drive is this: you bend a small section of space
+        to the extent that it completely encloses your starship, effectively
+        isolating it from the outside universe. You then move this isolated
+        pocket of space time to your destination, and allow it to rejoin normal
+        space.
+        <br/>
+        Because it's not moving through normal physical space, the lightspeed
+        limit doesn't apply to the warp. It can travel as fast as you want it
+        to. And because space itself is being bent, the starship technically
+        isn't moving at all, so restrictions on normal Newtonian motion don't
+        affect it.
+      </li>
+    </ul>
+
+    <p>
+      In other terms, then, WARP is all about "bending" something (space), to
+      allow something else (the spaceship) to move faster from one point to
+      another.
+    </p>
+
+    <p>
+      How does this applies to our case? Given that we can't "bend" your OS
+      kernel to transmit data faster over a reliable full-duplex connection,
+      neither we can "bend" the data included into the HTTP request to be
+      transmitted from one point to another, the WARP protocol "bends" the
+      rules of HTTP, transmitting an HTTP request, with all operational data
+      attached to it, into a different and more efficent manner, to minimize
+      the computational time required by both parties to process it.
+    </p>
+
+    <p>
+      To simplify, although HTTP version 1.1 is a great protocol for hypertext
+      data, it is not suited to encapsulate a pre-parsed half-processed HTTP
+      request and transmit it to another party for further elaboration.
+    </p>
+
+    <p>
+      And by all means, we hope that when you fire up your servlet container,
+      you won't stand up in your cubicle sticking your index finger out and
+      screaming "Maximum WARP, engage!".
+    </p>
+  </section>
+</document>
