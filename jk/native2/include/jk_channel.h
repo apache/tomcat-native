@@ -102,12 +102,6 @@ typedef struct jk_channel jk_channel_t;
 struct jk_channel {
     char *name;
 
-    /** List of properties this channel 'knows'. 
-     *  This will permit admin code to 'query' each channel
-     *  and the setting code can better report errors.
-     */
-    char **supportedProperties;
-
     /* JK_TRUE if the channel is 'stream' based, i.e. it works using
        send() followed by blocking reads().
        XXX make it type and define an enum of supported types ?
@@ -121,7 +115,6 @@ struct jk_channel {
     int is_stream;
     
     struct jk_worker *worker; 
-    jk_map_t *properties;
     
     /** Prepare the channel, check the properties. This 
      * will resolve the host and do all the validations.
@@ -131,11 +124,8 @@ struct jk_channel {
      *  the inet addr, etc )
      *  XXX revisit this - we may pass too much that is not needed
      */
-    int (JK_METHOD *init)(struct jk_env *env, jk_channel_t *_this,
-			  jk_map_t *properties,
-			  char *worker_name,
-			  struct jk_worker *worker );
-    
+    int (JK_METHOD *init)(struct jk_env *env, jk_channel_t *_this);
+
     /** Open the communication channel
      */
     int (JK_METHOD *open)(struct jk_env *env, jk_channel_t *_this, 
@@ -175,8 +165,6 @@ struct jk_channel {
    
     
 
-    
-    /* XXX remove for now, add later in all objects */
     /** Set a channel property. Properties are used to configure the 
      * communication channel ( example: port, host, file, shmem_name, etc).
      */
@@ -185,8 +173,8 @@ struct jk_channel {
     
     /** Get a channel property 
      */
-    int (JK_METHOD *getProperty)(struct jk_env *env, jk_channel_t *_this, 
-			       char *name, char **value);
+    char *(JK_METHOD *getProperty)(struct jk_env *env, jk_channel_t *_this,
+                                   char *name);
     
     void *_privatePtr;
 };

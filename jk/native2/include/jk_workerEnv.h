@@ -111,6 +111,12 @@ struct jk_workerEnv {
      */
     struct jk_map *worker_map;
 
+    /* worker.list - workers to load at startup
+     */
+    char **worker_list;
+    int declared_workers;
+
+
     struct jk_env *globalEnv;
 
     /** Worker that will be used by default, if no other
@@ -245,7 +251,7 @@ struct jk_workerEnv {
     struct jk_worker *(*createWorker)(struct jk_env *env,
                                       struct jk_workerEnv *_this,
                                       const char *name, 
-                                      struct jk_map *init_data);
+                                      char *type);
 
     /** Call the handler associated with the message type.
      */
