@@ -415,6 +415,8 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 
     vname  = (char *)jk_b_get_string(msg);
 
+    jk_log(l, JK_LOG_DEBUG, "ajp14_unmarshal_context_info - get virtual %s for virtual %s\n", vname, c->virtual);
+
     if (! vname) {
         jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't get virtual hostname\n");
         return JK_FALSE;
@@ -439,6 +441,8 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
             return JK_FALSE;
         }   
 
+        jk_log(l, JK_LOG_DEBUG, "ajp14_unmarshal_context_info - get context %s for virtual %s\n", cname, vname);
+
         /* grab all contexts up to empty one which indicate end of contexts */
         if (! strlen(cname)) 
             break;
@@ -460,11 +464,11 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 		    }
 
 		    if (! strlen(uri)) {
-			    jk_log(l, JK_LOG_DEBUG, "No more URI/URL for context %s", cname);
+			    jk_log(l, JK_LOG_DEBUG, "No more URI for context %s", cname);
 			    break;
 		    }
 
-		    jk_log(l, JK_LOG_INFO, "Got URL/URI (%s) for virtualhost %s and context %s", uri, vname, cname);
+		    jk_log(l, JK_LOG_INFO, "Got URI (%s) for virtualhost %s and context %s\n", uri, vname, cname);
 
 		    if (context_add_uri(c, cname, uri) == JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_context_info - can't add/set uri (%s) for context %s\n", uri, cname);
