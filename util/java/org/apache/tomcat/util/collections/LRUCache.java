@@ -88,12 +88,11 @@ public class LRUCache
     {
         currentSize = 0;
         cacheSize = i;
+        nodes = new Hashtable(i);
     }
 
     public Object get(Object key)
     {
-        if(nodes == null)
-            return null;
         CacheNode node = (CacheNode)nodes.get(key);
         if(node != null)
         {
@@ -108,8 +107,6 @@ public class LRUCache
 
     public void put(Object key, Object value)
     {
-        if(nodes == null)
-            nodes = new Hashtable(cacheSize);
         CacheNode node = (CacheNode)nodes.get(key);
         if(node == null)
         {
@@ -131,10 +128,25 @@ public class LRUCache
         nodes.put(key, node);
     }
 
+    public Object remove(Object key) {
+        CacheNode node = (CacheNode)nodes.get(key);
+        if (node != null) {
+            if (node.prev != null) {
+                node.prev.next = node.next;
+            }
+            if (node.next != null) {
+                node.next.prev = node.prev;
+            }
+            if (last == node)
+                last = node.prev;
+            if (first == node)
+                first = node.next;
+        }
+        return node;
+    }
+
     public void clear()
     {
-        if(nodes != null)
-            nodes.clear();
         first = null;
         last = null;
     }
