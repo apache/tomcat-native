@@ -80,10 +80,12 @@ extern "C" {
 #endif /* __cplusplus */
     
 struct jk_endpoint;
+struct jk_stat;
 struct jk_ws_service;
 struct jk_logger;
 struct jk_map;
 typedef struct jk_endpoint   jk_endpoint_t;
+typedef struct jk_stat   jk_stat_t;
 
 /* XXX replace worker with channel, endpoints are specific to channels not workers */
     
@@ -151,8 +153,6 @@ struct jk_endpoint {
     */
     struct jk_pool *cPool;
     
-    int proto;	/* PROTOCOL USED AJP13/AJP14 */
-
     int sd;
     int reuse;
 
@@ -170,20 +170,36 @@ struct jk_endpoint {
     struct jk_msg *post;
     
     struct jk_msg *request;   /* original request storage */
-    int     uploadfd;           /* future persistant storage id */
     int     recoverable;        /* if exchange could be conducted on
                                    another TC ??? */
 
     /* For redirecting endpoints like lb */
     jk_endpoint_t *realEndpoint;
 
-    /* Ajp14-specific field, negotiate protocol features.
-       XXX Replace it with a name/value set */
-    unsigned long negociation;
-    unsigned long negociated;
-
     char *servletContainerName;
+
+    /* The struct will be created in shm if available
+     */
+    struct jk_stat *stats;
+    
 };
+
+/** Statistics collected per endpoint
+ */
+struct jk_stat {
+    /* Number of requests served by this worker and the number of errors */
+    int reqCnt;
+    int errCnt;
+
+    /* Total time ( for average - divide by reqCnt ) and maxTime */
+    long totalTime;
+    long maxTime;
+
+    /* Active request
+     */
+    char active[128];
+};
+
     
 #ifdef __cplusplus
 }
