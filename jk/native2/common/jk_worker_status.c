@@ -414,7 +414,196 @@ static void jk2_worker_status_displayConfigProperties(jk_env_t *env, jk_ws_servi
     }
     s->jkprintf( env,s , "</table>\n" );
 }
- 
+
+static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
+                                            jk_worker_t *w, 
+                                            jk_ws_service_t *s)
+{
+    char *cName=s->query_string + 4;
+    int i;
+    int qryLen=0;
+    int exact=1;
+    
+        /* Dump all attributes for the beans */
+    if( strcmp( cName, "*" )==0 ) {
+        *cName='\0';
+        qryLen=0;
+    } else {
+        qryLen=strlen( cName );
+    }
+    if( qryLen >0 ) {
+        if( cName[strlen(cName)] == '*' ) {
+            printf("Exact match off %s\n", cName );
+            cName[strlen(cName)]='\0';
+            exact=0;
+        }
+    }
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        char **getAtt=mbean->getAttributeInfo;
+        char **setAtt=mbean->setAttributeInfo;
+        
+        /* That's a bad name, created for backward compat. It should be deprecated.. */
+        if( strchr( name, ':' )==NULL )
+            continue;
+        
+        /* Prefix */
+        if( ! exact  && qryLen != 0 && strncmp( name, cName, qryLen )!= 0 )
+            continue;
+        
+        /* Exact */
+        if( exact && qryLen != 0 && strcmp( name, cName )!= 0 )
+            continue;
+        
+        if( mbean==NULL ) 
+            continue;
+        s->jkprintf(env, s, "N:%s:%s\n", mbean->type, name);
+        
+        while( getAtt != NULL && *getAtt != NULL && **getAtt!='\0' ) {
+            s->jkprintf(env, s, "G:%s:%s\n", name, *getAtt);
+            getAtt++;
+        }
+        
+        while( setAtt != NULL && *setAtt != NULL && **setAtt!='\0' ) {
+            s->jkprintf(env, s, "S:%s:%s\n", name, *setAtt);
+            setAtt++;
+        }
+        
+    }
+    return JK_OK;
+}
+
+static int JK_METHOD jk2_worker_status_dmp(jk_env_t *env,
+                                           jk_worker_t *w, 
+                                           jk_ws_service_t *s)
+{
+    char *cName=s->query_string + 4;
+    int i;
+    int qryLen=0;
+    int exact=1;
+    
+    /* Dump all attributes for the beans */
+    if( strcmp( cName, "*" )==0 ) {
+        *cName='\0';
+        qryLen=0;
+    } else {
+        qryLen=strlen( cName );
+    }
+    if( qryLen >0 ) {
+        if( cName[strlen(cName)] == '*' ) {
+            printf("Exact match off %s\n", cName );
+            cName[strlen(cName)]='\0';
+            exact=0;
+        }
+    }
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        char **getAtt=mbean->getAttributeInfo;
+        char **setAtt=mbean->setAttributeInfo;
+        
+        /* That's a bad name, created for backward compat. It should be deprecated.. */
+        if( strchr( name, ':' )==NULL )
+            continue;
+        
+        /* Prefix */
+        if( ! exact  && qryLen != 0 && strncmp( name, cName, qryLen )!= 0 )
+            continue;
+        
+        /* Exact */
+        if( exact && qryLen != 0 && strcmp( name, cName )!= 0 )
+            continue;
+        
+        if( mbean==NULL ) 
+            continue;
+        s->jkprintf(env, s, "P:%s:%s:%lp\n", mbean->type, name, mbean->object );
+        
+        while( getAtt != NULL && *getAtt != NULL && **getAtt!='\0' ) {
+            char *attName=*getAtt;
+            char *val=mbean->getAttribute(env, mbean, *getAtt );
+            s->jkprintf(env, s, "G:%s:%s:%s\n", name, *getAtt, (val==NULL)? "NULL": val);
+                getAtt++;
+        }
+    }
+    return JK_OK;
+}
+
+static int JK_METHOD jk2_worker_status_get(jk_env_t *env,
+                                           jk_worker_t *w, 
+                                           jk_ws_service_t *s)
+{
+    char *cName=s->query_string + 4;
+    char *attName=rindex(cName, ':' );
+    int i;
+    
+    if( attName == NULL ) {
+        s->jkprintf( env, s, "ERROR: no attribute value found %s\n", cName);
+        return JK_OK;
+    }
+    *attName='\0';
+    attName++;
+    
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        
+        if( mbean==NULL ) 
+            continue;
+        
+        if( strcmp( name, cName ) == 0 &&
+            mbean->getAttribute != NULL ) {
+            void *result=mbean->getAttribute( env, mbean, attName );
+            s->jkprintf( env, s, "OK:%s:%s", cName, attName );
+            s->jkprintf( env, s, "%s", result );
+            return JK_OK;
+        }
+    }
+    s->jkprintf( env, s, "ERROR: mbean not found %s\n", cName );
+    return JK_OK;
+}
+
+static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
+                                           jk_worker_t *w, 
+                                           jk_ws_service_t *s)
+{
+    char *cName=s->query_string + 4;
+    char *attVal=rindex(cName, ':' );
+    char *attName;
+    int i;
+    
+    if( attVal == NULL ) {
+        s->jkprintf( env, s, "ERROR: no attribute value found %s\n", cName);
+        return JK_OK;
+    }
+    *attVal='\0';
+    attVal++;
+    
+    attName=rindex( cName, ':' );
+    if( attName == NULL ) {
+        s->jkprintf( env, s, "ERROR: attribute name not found\n", cName);
+        return JK_OK;
+    }
+    *attName='\0';
+    attName++;
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        
+        if( mbean==NULL ) 
+            continue;
+        
+        if( strcmp( name, cName ) == 0 &&
+            mbean->setAttribute != NULL ) {
+            int res=mbean->setAttribute( env, mbean, attName, attVal );
+            s->jkprintf( env, s, "OK:%s:%s:%d", cName, attName, res );
+            return JK_OK;
+        }
+    }
+    s->jkprintf( env, s, "ERROR: mbean not found %s\n", cName );
+    return JK_OK;
+}
+
 static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
                                                jk_worker_t *w, 
                                                jk_ws_service_t *s)
@@ -441,119 +630,47 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
 
     if( strcmp( s->query_string, "scoreboard.reset" ) == 0 ) {
         jk2_worker_status_resetScoreboard(env, s, s->workerEnv );
+        s->jkprintf(env, s, "Scoreboard reset\n"  );
     }
 
+    /* Reset the scoreboard */
+    if( strncmp( s->query_string, "rst=",4 ) == 0 ) {
+        jk2_worker_status_resetScoreboard(env, s, s->workerEnv );
+        s->jkprintf(env, s, "Scoreboard reset\n"  );
+        return JK_OK;
+    }
+
+    /* Increment the scoreboard version counter, reload */
+    if( strncmp( s->query_string, "rld=",4 ) == 0 ) {
+        jk_shm_t *shm=w->workerEnv->shm;
+        
+        /* Update the scoreboard's version - all other
+           jk2 processes will see this and update
+        */
+        if( shm!=NULL && shm->head!=NULL )
+            shm->head->lbVer++;
+        s->jkprintf(env, s, "Updated config version to %d\n", shm->head->lbVer  );
+        return JK_OK;
+    }
+
+    /** list all mbeans and their attributes  */
+    if( strncmp( s->query_string, "lst=", 4) == 0 ) {
+        return jk2_worker_status_list(env, w, s);
+    }
+
+    /** Dump multiple attributes  */
+    if( strncmp( s->query_string, "dmp=", 4) == 0 ) {
+        return jk2_worker_status_dmp(env, w, s);
+    }
+
+    /** Get a single attribute. This also works for attributes that are not listed in getAtt **/
     if( strncmp( s->query_string, "get=", 4) == 0 ) {
-        /* Get a jmx-like attribute. Very inefficient ( only one attribute per req ) - but it doesn't
-           happen too often. We should do a POST */
-        char *cName=s->query_string + 4;
-        char *attName=rindex(cName, ':' );
-        int i;
-        
-        if( attName == NULL ) {
-            s->jkprintf( env, s, "ERROR: no attribute found %s\n", cName);
-            return JK_OK;
-        }
-        *attName='\0';
-        attName++;
-        for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-            char *name=env->_objects->nameAt( env, env->_objects, i );
-            jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
-
-            if( mbean==NULL ) 
-                continue;
-
-            if( strcmp( name, cName ) == 0 &&
-                mbean->getAttribute != NULL ) {
-                char *value=mbean->getAttribute( env, mbean, attName );
-                if( value!=NULL && (*value != '\0') ) {
-                    s->jkprintf( env, s, "%s", value );
-                } else {
-                    s->jkprintf( env, s, "NULL" );
-                }
-                return JK_OK;
-            }
-        }
-        s->jkprintf( env, s, "ERROR: attribute not found %s %s", cName, attName );
-        return JK_OK;
+        return jk2_worker_status_get(env, w, s);
     }
-    if( strncmp( s->query_string, "qry=", 4) == 0 ) {
-        char *cName=s->query_string + 4;
-        int i,j;
-        
-        if( *cName== '\0' ) {
-            /* No string - list all components */
-            for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-                char *name=env->_objects->nameAt( env, env->_objects, i );
-                jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
-                char **getAtt=mbean->getAttributeInfo;
-                char **setAtt=mbean->setAttributeInfo;
-                
-                if( mbean==NULL ) 
-                    continue;
-                
-                s->jkprintf(env, s, "%s %s\n", name, mbean->type );
-            } 
-        } else {
-            /* List all attributes of an object */
 
-            for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-                char *name=env->_objects->nameAt( env, env->_objects, i );
-                jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
-                char **getAtt=mbean->getAttributeInfo;
-                char **setAtt=mbean->setAttributeInfo;
-
-                if( mbean==NULL || getAtt==NULL ) 
-                    continue;
-                 
-                if( strcmp( name, cName ) == 0 ) {
-                    while( getAtt != NULL && *getAtt != NULL && **getAtt!='\0' ) {
-                        char *attName=*getAtt;
-                        char *val=mbean->getAttribute(env, mbean, *getAtt );
-                        s->jkprintf(env, s, "%s %s %s\n", name, *getAtt, (val==NULL)? "NULL": val);
-                        getAtt++;
-                    }
-                }
-            } 
-        }
-        return JK_OK;  
-    }
+    /** Set an attribute. Works for attributes that are not listed in setAtt **/
     if( strncmp( s->query_string, "set=", 4) == 0 ) {
-        char *cName=s->query_string + 4;
-        char *attVal=rindex(cName, ':' );
-        char *attName;
-        int i;
-        
-        if( attVal == NULL ) {
-            s->jkprintf( env, s, "ERROR: no attribute value found %s\n", cName);
-            return JK_OK;
-        }
-        *attVal='\0';
-        attVal++;
-        
-        attName=rindex( cName, ':' );
-        if( attName == NULL ) {
-            s->jkprintf( env, s, "ERROR: attribute name not found\n", cName);
-            return JK_OK;
-        }
-        *attName='\0';
-        attName++;
-        for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-            char *name=env->_objects->nameAt( env, env->_objects, i );
-            jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
-
-            if( mbean==NULL ) 
-                continue;
-
-            if( strcmp( name, cName ) == 0 &&
-                mbean->getAttribute != NULL ) {
-                int res=mbean->setAttribute( env, mbean, attName, attVal );
-                s->jkprintf( env, s, "%d", res );
-                return JK_OK;
-            }
-        }
-        s->jkprintf( env, s, "ERROR: mbean not found %d\n", cName );
-        return JK_OK;
+        return jk2_worker_status_set(env, w, s);
     }
 
     w->workerEnv->config->update( env, w->workerEnv->config, &didUpdate );
