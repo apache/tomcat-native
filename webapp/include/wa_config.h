@@ -70,14 +70,14 @@
  * to connect to a web-application container and to handle HTTP requests.
  */
 struct wa_connection {
-	/** The connection name. */
-	char *name;
-	/** The connection provider. */
-	void *prov;
+    /** The connection name. */
+    char *name;
+    /** The connection provider. */
+    void *prov;
     /** The connection parameter (as in the configuration file). */
     char *parm;
-	/** The provider-specific configuration member for this connection. */
-	void *conf;
+    /** The provider-specific configuration member for this connection. */
+    void *conf;
 };
 
 /**
@@ -87,12 +87,12 @@ struct wa_connection {
  * web-applications are deployed.
  */
 struct wa_virtualhost {
-	/** The virtual host name. */
-	char *name;
-	/** The virtual host port. */
-	int port;
-	/** The list of all applications deployed in this virtual hosts. */
-	wa_chain *apps;
+    /** The virtual host name. */
+    char *name;
+    /** The virtual host port. */
+    int port;
+    /** The list of all applications deployed in this virtual hosts. */
+    wa_chain *apps;
 };
 
 /**
@@ -105,18 +105,18 @@ struct wa_virtualhost {
  * a single web application can be shared across multiple virtual host.
  */
 struct wa_application {
-	/** The application virtual host. */
-	wa_virtualhost *host;
-	/** The application connection. */
-	wa_connection *conn;
-	/** The provider-specific configuration member for this application. */
-	void *conf;
-	/** The application name. */
-	char *name;
-	/** The application root URL path. */
-	char *rpth;
-	/** The local expanded application path (if any). */
-	char *lpth;
+    /** The application virtual host. */
+    wa_virtualhost *host;
+    /** The application connection. */
+    wa_connection *conn;
+    /** The provider-specific configuration member for this application. */
+    void *conf;
+    /** The application name. */
+    char *name;
+    /** The application root URL path. */
+    char *rpth;
+    /** The local expanded application path (if any). */
+    char *lpth;
     /** Wether this web-application has been deployed or not. */
 };
 
@@ -132,8 +132,8 @@ struct wa_application {
  * @return <b>NULL</b> on success or an error message on faliure.
  */
 const char *wa_capplication(wa_application **a,
-						    const char *n,
-							const char *p);
+                            const char *n,
+                            const char *p);
 
 /**
  * Allocate and set up a <code>wa_virtualhost</code> member.
@@ -145,8 +145,8 @@ const char *wa_capplication(wa_application **a,
  * @return <b>NULL</b> on success or an error message on faliure.
  */
 const char *wa_cvirtualhost(wa_virtualhost **h,
-							const char *n,
-							int p);
+                            const char *n,
+                            int p);
 
 /**
  * Allocate and set up a <code>wa_connection</code> member.
@@ -160,7 +160,7 @@ const char *wa_cvirtualhost(wa_virtualhost **h,
  */
 const char *wa_cconnection(wa_connection **c,
                            const char *n,
-						   const char *p,
-						   const char *a);
+                           const char *p,
+                           const char *a);
 
 #endif /* ifndef _WA_CONFIG_H_ */
