@@ -246,8 +246,13 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, short
     int x;
 
     /* TODO: Should be updated for IPV6 support. */
-    /* for now use the correct type, in_addr_t */    
+    /* for now use the correct type, in_addr_t (or u_long for OS400) */    
+
+#ifdef AS400
+    u_long laddr;
+#else
     in_addr_t laddr;
+#endif
     
     rc->sin_port   = htons((short)port);
     rc->sin_family = AF_INET;
