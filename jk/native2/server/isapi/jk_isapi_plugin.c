@@ -95,7 +95,7 @@ static int   using_ini_file = JK_FALSE;
 static int   is_inited = JK_FALSE;
 static int   is_mapread = JK_FALSE;
 static int   was_inited = JK_FALSE;
-static int   auth_notification_flags = 0;
+static DWORD auth_notification_flags = 0;
 static int   use_auth_notification_flags = 0;
 
 static jk_workerEnv_t *workerEnv;
@@ -342,7 +342,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     }
                 }
                 szPort = atoi(Port);
-                if (szPort == 80)
+                if (szPort == 80 || szPort == 443)
                     szPort = 0;
                 env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                             "In HttpFilterProc Virtual Host redirection of %s : %d\n", 
