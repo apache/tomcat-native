@@ -226,12 +226,14 @@ Java_org_apache_jk_apr_AprImpl_mutexCreate(JNIEnv *jniEnv, jobject _jthis, jlong
                                            jint mechJ )
 {
     apr_proc_mutex_t *mutex;
-    char *fname;
-    apr_lockmech_e mech;
-    apr_pool_t *pool;
+    apr_lockmech_e mech=(apr_lockmech_e)mechJ;
+    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolP;
     apr_status_t  st;
-    
+    char *fname=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, fileJ, 0);
+
     st=apr_proc_mutex_create( &mutex, fname, mech, pool );
+
+    (*jniEnv)->ReleaseStringUTFChars(jniEnv, fileJ, fname);
     
     return (jlong)(long)(void *)mutex;
 }
