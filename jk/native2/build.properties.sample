@@ -1,0 +1,31 @@
+
+# Location where Apache2.0 is installed. 
+# We assume include and lib are below this
+apache2.home=/opt/apache2
+
+# Same for Apache1.3
+apache13.home=/usr
+  
+# Same for Netscape
+netscape.home=d:/tools/sdk/netscape
+  
+# Compile-time options
+so.debug=true
+so.optimize=false
+so.profile=false
+
+# Settings for building NetWare binaries.  Uncomment these and modify for your
+# environment to build NetWare binaries.
+#
+# novellndk.dir=d:/tools/nwsdk
+# build.compiler.base=d:/tools/mw/6.0
+# build.compiler.cc=${build.compiler.base}/bin/mwccnlm
+# build.compiler.ld=${build.compiler.base}/bin/mwldnlm
+
+# Settings for building Windows binaries.  Uncomment these and modify for your
+# environment to build Windows binaries.
+#
+# build.compiler.base=c:/Program Files/Microsoft Visual Studio/VC98
+# build.compiler.cc=${build.compiler.base}/bin/cl
+# build.compiler.ld=${build.compiler.base}/bin/link
+
