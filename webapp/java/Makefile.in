@@ -58,41 +58,32 @@
 # @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 # @version $Id$
 
-include @SRCDIR@/Makedefs
+include @TGTDIR@/Makedefs
+
+SRCS =  WarpConfigurationHandler.java \
+	WarpConnection.java \
+	WarpConnector.java \
+	WarpEngine.java \
+	WarpHost.java \
+	WarpLogger.java \
+	WarpPacket.java \
+	WarpRequest.java \
+	WarpRequestHandler.java \
+	WarpResponse.java \
 
 ARCHIVE = warp.jar
 
-all: $(ARCHIVE)
-
-$(ARCHIVE): *.java @SRCDIR@/Makedefs
-	@$(ECHO) "Compiling Java sources with CLASSPATH set to:"
-	
-	@CP="$(JAVACPATH):$${CLASSPATH}" ; \
-	for ENTRY in `$(ECHO) $${CP} | $(SED) y/:/\ /` ; \
-	do \
-		$(ECHO) "  $${ENTRY}" ; \
-	done ; \
-	for ENTRY in *.java ; \
-	do \
-		$(ECHO) "Compiling $${ENTRY}" ; \
-	done ; \
-	$(JAVAC) $(JAVACFLAGS) -d . -classpath $(JAVACPATH):$${CLASSPATH} \
-		*.java
-
-	@$(ECHO) "Storing classes in warp.jar"
-	@$(JAR) -cvf0 warp.jar org/ 1>/dev/null
+build: $(SRCS) $(ARCHIVE)
 
 clean:
-	@for ENTRY in $(ARCHIVE) org ; \
-	do \
-		if $(TEST) -f $${ENTRY} ; \
-		then \
-			$(ECHO) Removing file $${ENTRY} ; \
-			$(RM) -f $${ENTRY} ; \
-		fi ; \
-		if $(TEST) -d $${ENTRY} ; \
-		then \
-			$(ECHO) Removing directory $${ENTRY} ; \
-			$(RM) -rf $${ENTRY} ; \
-		fi ; \
-	done
+	$(RM) -f $(ARCHIVE)
+	$(RM) -rf ./org
+
+$(ARCHIVE): $(SRCS) Constants.java 
+	$(JAVAC) $(JAVACFLAGS) -d . -classpath $(CLASSPATH):$${CLASSPATH} \
+	    Constants.java $(SRCS)
+	$(JAR) -cf0 warp.jar org/
+
+$(SRCS):
+	$(LN) -s $(SRCDIR)/java/$@ ./$@
+	@$(ECHO) $(TGTDIR)/java/$@ >> $(LSTFILE)
