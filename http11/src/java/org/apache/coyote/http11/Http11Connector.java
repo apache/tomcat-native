@@ -82,6 +82,7 @@ import org.apache.coyote.http11.filters.ChunkedInputFilter;
 import org.apache.coyote.http11.filters.ChunkedOutputFilter;
 import org.apache.coyote.http11.filters.IdentityInputFilter;
 import org.apache.coyote.http11.filters.IdentityOutputFilter;
+import org.apache.coyote.http11.filters.VoidInputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
 
 
@@ -264,12 +265,15 @@ public class Http11Connector implements Connector, ActionHook {
                 
                 inputBuffer.parseHeaders();
             } catch (EOFException e) {
+                e.printStackTrace();
                 error = true;
                 break;
             } catch (InterruptedIOException e) {
+                e.printStackTrace();
                 //HttpServletResponse.SC_BAD_REQUEST
                 error = true;
             } catch (Exception e) {
+                e.printStackTrace();
                 //SC_BAD_REQUEST
                 error = true;
             }
@@ -281,6 +285,7 @@ public class Http11Connector implements Connector, ActionHook {
             try {
                 adapter.service(request, response);
             } catch (InterruptedIOException e) {
+                e.printStackTrace();
                 error = true;
             } catch (Throwable t) {
                 // ISE
@@ -292,6 +297,7 @@ public class Http11Connector implements Connector, ActionHook {
             try {
                 outputBuffer.endRequest();
             } catch (IOException e) {
+                e.printStackTrace();
                 error = true;
             } catch (Throwable t) {
                 // Problem ...
@@ -299,11 +305,15 @@ public class Http11Connector implements Connector, ActionHook {
                 error = true;
             }
 
-            // FIXME: Next request
+            // Next request
+            inputBuffer.nextRequest();
+            outputBuffer.nextRequest();
 
         }
 
-        // FIXME: Recycle
+        // Recycle
+        inputBuffer.recycle();
+        outputBuffer.recycle();
 
     }
 
@@ -552,7 +562,8 @@ public class Http11Connector implements Connector, ActionHook {
         inputBuffer.addFilter(new ChunkedInputFilter());
         outputBuffer.addFilter(new ChunkedOutputFilter());
 
-        // Create and add the void filter.
+        // Create and add the void filters.
+        inputBuffer.addFilter(new VoidInputFilter());
         outputBuffer.addFilter(new VoidOutputFilter());
 
     }

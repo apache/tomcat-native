@@ -290,7 +290,8 @@ public class InternalOutputBuffer implements OutputBuffer {
      */
     public void recycle() {
 
-        // FIXME: Recycle Request object (or do it elsewhere) ?
+        // Recycle Request object
+        response.recycle();
 
         outputStream = null;
         buf = headerBuffer;
@@ -309,7 +310,8 @@ public class InternalOutputBuffer implements OutputBuffer {
      */
     public void nextRequest() {
 
-        // FIXME: Recycle Response object (or do it elsewhere) ?
+        // Recycle Request object
+        response.recycle();
 
         // Determine the header buffer used for next request
         buf = headerBuffer;

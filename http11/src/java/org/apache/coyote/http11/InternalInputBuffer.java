@@ -116,6 +116,7 @@ public class InternalInputBuffer implements InputBuffer {
 
         filterLibrary = new InputFilter[0];
         activeFilters = new InputFilter[0];
+        lastActiveFilter = -1;
 
         parsingHeader = true;
 
@@ -314,7 +315,8 @@ public class InternalInputBuffer implements InputBuffer {
      */
     public void recycle() {
 
-        // FIXME: Recycle Request object (or do it elsewhere) ?
+        // Recycle Request object
+        request.recycle();
 
         inputStream = null;
         buf = headerBuffer1;
@@ -335,7 +337,8 @@ public class InternalInputBuffer implements InputBuffer {
     public void nextRequest()
         throws IOException {
 
-        // FIXME: Recycle Request object (or do it elsewhere) ?
+        // Recycle Request object
+        request.recycle();
 
         // Determine the header buffer used for next request
         byte[] newHeaderBuf = null;

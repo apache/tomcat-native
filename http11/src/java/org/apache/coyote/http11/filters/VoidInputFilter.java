@@ -1,6 +1,6 @@
 /*
  * ====================================================================
- *
+ * 
  * The Apache Software License, Version 1.1
  *
  * Copyright (c) 1999 The Apache Software Foundation.  All rights 
@@ -56,121 +56,106 @@
  * [Additional notices, if required by prior licensing conditions]
  *
  */ 
-package org.apache.coyote.http11;
 
-import java.util.Locale;
+package org.apache.coyote.http11.filters;
+
+import java.io.IOException;
+
+import org.apache.tomcat.util.buf.ByteChunk;
+
+import org.apache.coyote.InputBuffer;
+import org.apache.coyote.Request;
+import org.apache.coyote.http11.InputFilter;
 
 /**
- * Constants.
- *
+ * Void input filter, which returns -1 when attempting a read. Used with a GET,
+ * HEAD, or a similar request.
+ * 
  * @author Remy Maucherat
  */
-public final class Constants {
+public class VoidInputFilter implements InputFilter {
 
 
     // -------------------------------------------------------------- Constants
 
 
-    /**
-     * Package name.
-     */
-    public static final String Package = "org.apache.coyote.http11";
+    protected static final String ENCODING_NAME = "void";
+    protected static final ByteChunk ENCODING = new ByteChunk();
+
+
+    // ----------------------------------------------------- Static Initializer
+
+
+    static {
+        ENCODING.setBytes(ENCODING_NAME.getBytes(), 0, ENCODING_NAME.length());
+    }
+
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    // --------------------------------------------------- OutputBuffer Methods
 
 
     /**
-     * CR.
+     * Write some bytes.
+     * 
+     * @return number of bytes written by the filter
      */
-    public static final byte CR = (byte) '\r';
+    public int doRead(ByteChunk chunk)
+        throws IOException {
+
+        return -1;
+
+    }
+
+
+    // --------------------------------------------------- OutputFilter Methods
 
 
     /**
-     * LF.
+     * Set the associated reauest.
      */
-    public static final byte LF = (byte) '\n';
+    public void setRequest(Request request) {
+    }
 
 
     /**
-     * SP.
+     * Set the next buffer in the filter pipeline.
      */
-    public static final byte SP = (byte) ' ';
+    public void setBuffer(InputBuffer buffer) {
+    }
 
 
     /**
-     * HT.
+     * Make the filter ready to process the next request.
      */
-    public static final byte HT = (byte) '\t';
+    public void recycle() {
+    }
 
 
     /**
-     * COLON.
+     * Return the name of the associated encoding; Here, the value is 
+     * "void".
      */
-    public static final byte COLON = (byte) ':';
+    public ByteChunk getEncodingName() {
+        return ENCODING;
+    }
 
 
     /**
-     * 'A'.
+     * End the current request. It is acceptable to write extra bytes using
+     * buffer.doWrite during the execution of this method.
+     * 
+     * @return Should return 0 unless the filter does some content length 
+     * delimitation, in which case the number is the amount of extra bytes or
+     * missing bytes, which would indicate an error. 
+     * Note: It is recommended that extra bytes be swallowed by the filter.
      */
-    public static final byte A = (byte) 'A';
-
-
-    /**
-     * 'a'.
-     */
-    public static final byte a = (byte) 'a';
-
-
-    /**
-     * 'Z'.
-     */
-    public static final byte Z = (byte) 'Z';
-
-
-    /**
-     * Lower case offset.
-     */
-    public static final byte LC_OFFSET = A - a;
-
-
-    /**
-     * Default HTTP header buffer size.
-     */
-    public static final int DEFAULT_HTTP_HEADER_BUFFER_SIZE = 128 * 1024;
-
-
-    /**
-     * CRLF.
-     */
-    public static final String CRLF = "\r\n";
-
-
-    /**
-     * Indetity filters (input and output).
-     */
-    public static final int IDENTITY_FILTER = 0;
-
-
-    /**
-     * Chunked filters (input and output).
-     */
-    public static final int CHUNKED_FILTER = 1;
-
-
-    /**
-     * Void filters (input and output).
-     */
-    public static final int VOID_FILTER = 2;
-
-
-    /**
-     * HTTP/1.0.
-     */
-    public static final String HTTP_10 = "HTTP/1.0";
-
-
-    /**
-     * HTTP/1.1.
-     */
-    public static final String HTTP_11 = "HTTP/1.1";
+    public long end()
+        throws IOException {
+        return 0;
+    }
 
 
 }
