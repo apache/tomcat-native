@@ -39,6 +39,12 @@
 #include <arpa/inet.h>
 #endif
 
+#define TEST_POST_DATA "This document is a proposal of evolution of the current " \
+                       "Apache JServ Protocol version 1.3, also known as ajp13. " \
+                       "I'll not cover here the full protocol but only the add-on from ajp13. " \
+                       "This nth pass include comments from the tomcat-dev list and " \
+                       "misses discovered during developpment."
+
 #define TEST_CASE_URL "http://localhost/servlets-examples/HelloWorldExample"
 
 /* Main process */
@@ -77,7 +83,6 @@ static apr_status_t connect_to_backend(apr_socket_t **socket, conn_rec **con,
 
     return APR_SUCCESS;
 }
-
 
 #if APR_HAS_THREADS
 
@@ -157,6 +162,7 @@ int main(int argc, const char * const * argv, const char * const *env)
     conn_rec *c, *con;
     request_rec *r;
     apr_socket_t *sock;
+    ajp_msg_t *msg;
 
     apr_app_initialize(&argc, &argv, &env);
 
@@ -186,7 +192,9 @@ int main(int argc, const char * const * argv, const char * const *env)
     
     /* 0. Fill in the request data          */
     if (ap_wrap_make_request(r, TEST_CASE_URL,
-                             NULL, NULL, NULL, 0, NULL) != APR_SUCCESS) {
+                             "POST", NULL, NULL,
+                             0,
+                             NULL) != APR_SUCCESS) {
         goto finished;
     }
     /*
@@ -198,20 +206,25 @@ int main(int argc, const char * const * argv, const char * const *env)
     /* 1. Obtain a connection to backend    */
     if ((rc = connect_to_backend(&sock, &con, "127.0.0.1", 8009,
             main_server, r->pool)) != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, rc, NULL, "connect_to_backend");
+        ap_log_error(APLOG_MARK, APLOG_ERR, rc, NULL, "connect_to_backend");
         rv = -1;
         goto finished;
     }
 
     /* 2. Create AJP message                */
     if ((rc = ajp_send_header(sock, r)) != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, rc, NULL, "ajp_send_header");
+        ap_log_error(APLOG_MARK, APLOG_ERR, rc, NULL, "ajp_send_header");
         rv = -1;
         goto finished;
     }
     /* 3. Send AJP message                  */
 
     /* 4. Read AJP response                 */
+    if ((rc = ajp_read_header(sock, r, &msg)) != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, rc, NULL, "ajp_read_header");
+        rv = -1;
+        goto finished;
+    }
 
     /* 5. Display results                   */
 
