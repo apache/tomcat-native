@@ -185,16 +185,8 @@ public class BaseJkConfig  implements LifecycleListener {
 	    if( ! generateJkHead(mod_jk) )
 		return;
 	    generateSSLConfig(mod_jk);
-	}
-	Service [] services = svr.findServices();
-	for(int ii=0; ii < services.length; ii++) {
-	    Container  con = services[ii].getContainer();
-	    if( con instanceof Engine ) {
-		executeEngine((Engine)con, mod_jk);
-	    }
-	}
-	if( ! append )
 	    generateJkTail(mod_jk);
+	}
     }
 
     /** Generate SSL options
@@ -419,6 +411,7 @@ public class BaseJkConfig  implements LifecycleListener {
         return docBase;
     }
 
+    // ------------------ Grabbed from FileUtil -----------------
     public static File getConfigFile( File base, File configDir, String defaultF )
     {
         if( base==null )
