@@ -250,7 +250,7 @@ static void detach_from_jvm(jni_worker_t *p,
 
 /*
    Duplicate string and convert it to ASCII on EBDIC based system
-   Needed for at least AS/400, what about BS2000 ?
+   Needed for at least AS/400, BS2000 and what about other EBDIC systems ?
 */
 static void *strdup_ascii(jk_pool_t *p, 
                           char *s)
@@ -258,7 +258,7 @@ static void *strdup_ascii(jk_pool_t *p,
 	char * rc;	
 	rc = jk_pool_strdup(p, s);
 
-#ifdef AS400
+#if defined(AS400) || defined(_OSD_POSIX)
 	jk_xlate_to_ascii(rc, strlen(rc));
 #endif
 

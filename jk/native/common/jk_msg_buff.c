@@ -319,7 +319,10 @@ int jk_b_append_string(jk_msg_buf_t *msg,
 
     /* We checked for space !!  */
     strncpy((char *)msg->buf + msg->len , param, len+1);    /* including \0 */
-    jk_xlate_to_ascii((char *)msg->buf + msg->len, len+1);  /* convert from EBCDIC if needed */
+#if defined(AS400) || defined(_OSD_POSIX)
+    /* convert from EBCDIC if needed */
+    jk_xlate_to_ascii((char *)msg->buf + msg->len, len+1);
+#endif
     msg->len += len + 1;
 
     return 0;

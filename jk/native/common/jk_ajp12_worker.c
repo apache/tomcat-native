@@ -357,7 +357,7 @@ static int ajpv12_sendstring(ajp12_endpoint_t *p,
     int bufferlen;
 
     if(buffer && (bufferlen = strlen(buffer))) {
-#ifdef AS400
+#if defined(AS400) || defined(_OSD_POSIX)
         jk_xlate_to_ascii(buffer, bufferlen);
 #endif  
 	return ajpv12_sendnbytes(p, buffer, bufferlen);
@@ -559,7 +559,7 @@ static int ajpv12_handle_response(ajp12_endpoint_t *p,
             jk_log(l, JK_LOG_ERROR, "ajpv12_handle_response, error reading header line\n");
             return JK_FALSE;
         }
-#ifdef AS400
+#if defined(AS400) || defined(_OSD_POSIX)
         jk_xlate_from_ascii(line, strlen(line));
 #endif
         

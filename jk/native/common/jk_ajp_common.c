@@ -475,7 +475,9 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
 
     d->msg = (char *)jk_b_get_string(msg);
     if (d->msg) {
+#if defined(AS400) || defined(_OSD_POSIX)
         jk_xlate_from_ascii(d->msg, strlen(d->msg));
+#endif
     }
 
     jk_log(l, JK_LOG_DEBUG, "ajp_unmarshal_response: status = %d\n", d->status);
@@ -509,8 +511,10 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
                         jk_log(l, JK_LOG_ERROR, "Error ajp_unmarshal_response - Null header name\n");
                         return JK_FALSE;
                     }
+#if defined(AS400) || defined(_OSD_POSIX)
                     jk_xlate_from_ascii(d->header_names[i],
                                  strlen(d->header_names[i]));
+#endif
 
                 }
 
@@ -520,8 +524,10 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
                     return JK_FALSE;
                 }
 
+#if defined(AS400) || defined(_OSD_POSIX)
                 jk_xlate_from_ascii(d->header_values[i],
                              strlen(d->header_values[i]));
+#endif
 
                 jk_log(l, JK_LOG_DEBUG, "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
                        i,
