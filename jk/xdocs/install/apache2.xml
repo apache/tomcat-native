@@ -161,7 +161,7 @@ Ccopy the <b>nmake.exe</b> from PlatformSDK\bin\Win64 to PlatformSDK\bin.
 </screen>
 </li>
 <li>
-Copy mod_jk.dll to Apache's modules directory.
+Copy mod_jk.so to Apache's modules directory.
 </li>
 </ul>
 
@@ -176,7 +176,7 @@ An example on how to build mod_jk for Apache 2.0:
 <note>Build the sources using MSDEV</note>
 <typedos>MSDEV mod_jk.dsp /MAKE ALL</typedos>
 <note>Copy the dll to your apache modules directory</note>
-<typedos>cp release\mod_jk.dll c:\apache20\modules\</typedos>
+<typedos>cp release\mod_jk.so c:\apache20\modules\</typedos>
 </screen>
 
 <p>
