@@ -1276,7 +1276,8 @@ static int jk_handler(request_rec *r)
            how to deal with load balancing - but it's usefull for JNI
         */
 
-#ifdef REUSE_WORKER
+/* Disable "re-use" for now since the following code is currently platform specific */
+/* #ifdef REUSE_WORKER
         apr_pool_t *rpool=r->pool;
         apr_pool_t *parent_pool= apr_pool_get_parent( rpool );
         apr_pool_t *tpool= apr_pool_get_parent( parent_pool );
@@ -1287,9 +1288,9 @@ static int jk_handler(request_rec *r)
             apr_pool_userdata_set( end , "jk_thread_endpoint", 
                                    &jk_cleanup_endpoint,  tpool );
         }
-#else
+#else */
         worker->get_endpoint(worker, &end, l);
-#endif
+/* #endif */
         {   
             int is_recoverable_error = JK_FALSE;
                 rc = end->service(end, &s, l, &is_recoverable_error);
@@ -1311,9 +1312,9 @@ static int jk_handler(request_rec *r)
                 }
             }
                                                                             
-#ifndef REUSE_WORKER            
+/* #ifndef REUSE_WORKER */
             end->done(&end, l); 
-#endif
+/* #endif */
                 }
             }
 
