@@ -6,7 +6,7 @@ How to build the WebApp module from CVS sources:
 
 Check out the module sources from CVS using the following commands:
 
-    cvs -d :pserver:anoncvs@cvs.apache.org:/home/cvspublic
+    cvs -d :pserver:anoncvs@cvs.apache.org:/home/cvspublic login
     (Logging in to anoncvs@cvs.apache.org)
     CVS password: anoncvs
     cvs -d :pserver:anoncvs@cvs.apache.org:/home/cvspublic \
