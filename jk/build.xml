@@ -113,7 +113,6 @@
             <exclude name="org/apache/ajp/tomcat33/**" unless="tomcat33.detect"/>
             <exclude name="org/apache/jk/server/tomcat33/**" unless="tomcat33.detect"/>
             <exclude name="org/apache/jk/server/tomcat40/**" unless="tomcat40.detect"/>
-            <exclude name="org/apache/jk/**" unless="tomcat33.detect"/>
 	    <exclude name="org/apache/catalina/**" unless="tomcat40.detect"/>
 	    <classpath refid="build-main.classpath"/>
 	</javac>
@@ -133,7 +132,7 @@
 	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-ajp2.jar"
 	     basedir="${jk.build}/WEB-INF/classes">
             <include name="org/apache/jk/**" />
-            <include name="org/apache/catalina/jk/**" />
+            <exclude name="org/apache/jk/ant/**" />
         </jar>
 	
     </target>
