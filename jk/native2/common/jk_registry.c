@@ -55,10 +55,12 @@
  *                                                                           *
  * ========================================================================= */
 
+#include "jk_global.h"
+
 #include "jk_logger.h"
 #include "jk_pool.h"
 #include "jk_service.h"
-#include "jk_env.h"
+#include "jk_env.h" 
 
 #ifdef HAS_APR
 #include "apr.h"
@@ -128,7 +130,9 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
   env->registerFactory( env, "run", jk2_worker_run_factory );
   env->registerFactory( env, "worker.run", jk2_worker_run_factory );
 
+#ifdef HAVE_UNIXSOCKETS
   env->registerFactory( env, "channel.un", jk2_channel_un_factory );
+#endif
 
 #ifdef HAS_APR
   env->registerFactory( env, "channel.apr",
