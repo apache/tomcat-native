@@ -1572,7 +1572,7 @@ int ajp_get_endpoint(jk_worker_t    *pThis,
                             unsigned elapsed = (unsigned)(now-ae->last_access);
                             if (elapsed > aw->cache_timeout) {
                                 jk_log(l, JK_LOG_DEBUG, 
-                                    "In jk_endpoint_t::ajp_get_endpoint," \
+                                    "In jk_endpoint_t::ajp_get_endpoint," 
                                     " cleaning cache slot = %d elapsed %d\n",
                                      i, elapsed);
                                 ajp_close_endpoint(aw->ep_cache[i], l);
