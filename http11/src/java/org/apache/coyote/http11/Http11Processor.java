@@ -240,6 +240,11 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected String remoteHost = null;
 
+    /**
+     * Remote port to which the socket is connected
+     */
+    protected int localPort = -1;
+    
     
     /**
      * Remote port to which the socket is connected
@@ -733,7 +738,8 @@ public class Http11Processor implements Processor, ActionHook {
         remoteHost = null;
         localAddr = null;
         remotePort = -1;
-
+        localPort = -1;
+        
         // Setting up the I/O
         inputBuffer.setInputStream(input);
         outputBuffer.setOutputStream(output);
@@ -1003,15 +1009,6 @@ public class Http11Processor implements Processor, ActionHook {
             request.remoteAddr().setString(remoteAddr);
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
-
-            if ((remoteAddr == null) && (socket !=null)) {
-                InetAddress inetAddr = socket.getInetAddress();
-                if (inetAddr != null) {
-                    remoteAddr = inetAddr.getHostAddress();
-                }
-            }
-            request.remoteAddr().setString(remoteAddr);
-            
             if ((remoteHost == null) && (socket != null)) {
                 InetAddress inetAddr = socket.getInetAddress();
                 if (inetAddr != null) {
@@ -1019,17 +1016,28 @@ public class Http11Processor implements Processor, ActionHook {
                 }
             }
             request.remoteHost().setString(remoteHost);
+            
+        } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_ADDR_ATTRIBUTE) {
                        
-            if (remotePort == -1)
-                remotePort = socket.getPort();
-                
-            request.setRemotePort(remotePort);
-                        
             if (localAddr == null)
                localAddr = socket.getLocalAddress().getHostAddress();
 
             request.localAddr().setString(localAddr);
+            
+        } else if (actionCode == ActionCode.ACTION_REQ_REMOTEPORT_ATTRIBUTE) {
+            
+            if ((remotePort == -1 ) && (socket !=null)) {
+                remotePort = socket.getPort(); 
+            }    
+            request.setRemotePort(remotePort);
 
+        } else if (actionCode == ActionCode.ACTION_REQ_LOCALPORT_ATTRIBUTE) {
+            
+            if ((localPort == -1 ) && (socket !=null)) {
+                localPort = socket.getLocalPort(); 
+            }            
+            request.setLocalPort(localPort);
+       
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
             if( sslSupport != null) {
                 /*

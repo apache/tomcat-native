@@ -135,7 +135,24 @@ public final class ActionCode {
      * (including forcing a re-handshake if necessary)
      */
     public static final ActionCode ACTION_REQ_SSL_CERTIFICATE = new ActionCode(15);
+    
+    
+    /**
+     * Callback for lazy evaluation - socket remote port.
+     **/
+    public static final ActionCode ACTION_REQ_REMOTEPORT_ATTRIBUTE = new ActionCode(16);
 
+    
+    /**
+     * Callback for lazy evaluation - socket local port.
+     **/
+    public static final ActionCode ACTION_REQ_LOCALPORT_ATTRIBUTE = new ActionCode(17);
+    
+    
+    /**
+     * Callback for lazy evaluation - local address.
+     **/
+    public static final ActionCode ACTION_REQ_LOCAL_ADDR_ATTRIBUTE = new ActionCode(18);
 
     // ----------------------------------------------------------- Constructors
     int code;

@@ -136,6 +136,7 @@ public final class Request {
     private String localHost;
     
     private int remotePort;
+    private int localPort;
 
     private MessageBytes schemeMB = new MessageBytes();
 
@@ -303,7 +304,14 @@ public final class Request {
     public void setRemotePort(int port){
         this.remotePort = port;
     }
-
+    
+    public int getLocalPort(){
+        return localPort;
+    }
+        
+    public void setLocalPort(int port){
+        this.localPort = port;
+    }
 
     // -------------------- encoding/type --------------------
 
@@ -502,6 +510,8 @@ public final class Request {
         headers.recycle();
         serverNameMB.recycle();
         serverPort=-1;
+        localPort = -1;
+        remotePort = -1;
 
 	cookies.recycle();
         parameters.recycle();
