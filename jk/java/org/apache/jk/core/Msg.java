@@ -170,19 +170,4 @@ public abstract class Msg {
     public abstract int getLen();
     
     public abstract void dump(String msg);
-
-
-    
-    int tag;
-    
-    /** Message type - the tag is used to fast dispatch
-     *  by message type
-     */
-    public void setTag( int i ) {
-        tag=i;
-    }
-
-    public int getTag() {
-        return tag;
-    }
 }
