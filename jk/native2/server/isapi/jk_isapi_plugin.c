@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -803,7 +803,7 @@ static int get_auth_flags()
     int maj, sz;
     int rv = SF_NOTIFY_PREPROC_HEADERS;
     int use_auth = JK_FALSE;
-    /* Retreive the IIS version Major*/
+    /* Retrieve the IIS version Major*/
     rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
                       W3SVC_REGISTRY_KEY,
                       (DWORD)0,

@@ -383,7 +383,7 @@ public class ChannelSocket extends JkHandler {
         
         total_read = this.read(ep, buf, hlen, blen);
         
-        if (total_read <= 0) {
+        if ((total_read <= 0) && (blen > 0)) {
             log.warn("can't read body, waited #" + blen);
             return  -1;
         }

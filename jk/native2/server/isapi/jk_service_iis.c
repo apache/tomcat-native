@@ -172,38 +172,46 @@ static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
         LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
         
         *actually_read = 0;
-        if (len) {
-            char *buf = b;
-            DWORD already_read = lpEcb->cbAvailable - s->content_read;
-            
-            if (already_read >= len) {
-                memcpy(buf, lpEcb->lpbData + s->content_read, len);
-                s->content_read += len;
-                *actually_read = len;
-            } else {
-                /*
-                 * Try to copy what we already have 
-                 */
-                if (already_read > 0) {
-                    memcpy(buf, lpEcb->lpbData + s->content_read, already_read);
-                    buf += already_read;
-                    len   -= already_read;
-                    s->content_read = lpEcb->cbAvailable;
-                    
-                    *actually_read = already_read;
-                }
-                
-                /*
-                 * Now try to read from the client ...
-                 */
-                if (lpEcb->ReadClient(lpEcb->ConnID, buf, &len)) {
-                    *actually_read +=  len;            
+        if ((s->content_read < (long)lpEcb->cbTotalBytes)&& !s->end_of_stream ){
+            if (len) {
+                char *buf = b;
+                long already_read = (long)lpEcb->cbAvailable - s->content_read;
+      
+                if (already_read >= (long)len) {
+                    memcpy(buf, lpEcb->lpbData + s->content_read, len);
+                    *actually_read = len;
                 } else {
-                    env->l->jkLog(env,env->l, JK_LOG_ERROR, 
-                           "jk_ws_service_t::read, ReadClient failed\n");
-                    return JK_ERR;
-                }                   
+                    /*
+                     * Try to copy what we already have 
+                     */
+                    if (already_read > 0) {
+                        memcpy(buf, lpEcb->lpbData + s->content_read, already_read);
+                        buf   += already_read;
+                        len   -= already_read;
+//                        s->content_read = lpEcb->cbAvailable;
+            
+                        *actually_read = already_read;
+                    }
+                    if ((s->content_read+*actually_read)==lpEcb->cbTotalBytes) {
+                        s->end_of_stream=JK_TRUE;
+                    }
+                    /*
+                     * Now try to read from the client ...
+                     */
+                    if (!s->end_of_stream ) {
+                        if ( lpEcb->ReadClient(lpEcb->ConnID, buf, &len)) {
+                            *actually_read +=  len;            
+                        } else {
+                            env->l->jkLog(env,env->l, JK_LOG_ERROR, 
+                                   "jk_ws_service_t::read, ReadClient failed\n");
+                            return JK_OK;
+                        }
+                    }
+                }
             }
+        }
+        if ((s->content_read+*actually_read)==lpEcb->cbTotalBytes) {
+            s->end_of_stream=JK_TRUE;
         }
         return JK_OK;
     }
@@ -367,6 +375,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
 
     s->method           = lpEcb->lpszMethod;
     s->content_length   = lpEcb->cbTotalBytes;
+    s->end_of_stream    = JK_FALSE;
 
     s->ssl_cert     = NULL;
     s->ssl_cert_len = 0;

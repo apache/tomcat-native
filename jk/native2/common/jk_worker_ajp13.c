@@ -496,6 +496,10 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
     } else {
         err=jk2_worker_ajp13_forwardSingleThread( env, w, s, e );
     }
+    if (err != JK_OK){
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+              "ajp13.service() Error  forwarding %s\n", e->worker->mbean->name);
+    }
 
     if( w->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,

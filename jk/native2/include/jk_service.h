@@ -204,6 +204,7 @@ struct jk_ws_service {
     unsigned is_chunked;        /* 1 if content length is unknown (chunked rq) */
     unsigned no_more_chunks;    /* 1 if last chunk has been read */
     long     content_read;      /* number of bytes read */
+    int      end_of_stream;     /* For IIS avoids blocking calls to lpEcb->ReadClient */
 
     /*
      * SSL information
