@@ -169,7 +169,7 @@ static int context_realloc(jk_context_t *c)
         jk_context_item_t **contexts;
         int  capacity = c->capacity + CBASE_INC_SIZE;
         
-        contexts = (jk_context_item_t **)jk_pool_alloc(&c->p, sizeof(jk_context_item_t *) * capacity);
+        contexts = (jk_context_item_t **)c->p.alloc(&c->p, sizeof(jk_context_item_t *) * capacity);
 
         if (! contexts)
             return JK_FALSE;
@@ -191,7 +191,7 @@ static int context_item_realloc(jk_context_t *c, jk_context_item_t *ci)
             char **uris;
             int capacity = ci->capacity + URI_INC_SIZE;
 
-            uris = (char **)jk_pool_alloc(&c->p, sizeof(char *) * capacity);
+            uris = (char **)c->p.alloc(&c->p, sizeof(char *) * capacity);
 
         if (! uris)
             return JK_FALSE;
@@ -218,7 +218,7 @@ int context_open(jk_context_t *c, char *virtual)
         c->contexts = NULL;
 
         if( virtual ) {
-            c->virtual=jk_pool_strdup(&c->p, virtual);
+            c->virtual=c->p.pstrdup(&c->p, virtual);
         }
         return JK_TRUE;
     }
@@ -312,7 +312,7 @@ static int handle_discovery(jk_endpoint_t  *ae,
     }
     
     free(buf);
-    jk_close_pool(&c->p);
+    c->p.close(&c->p);
     free(c);
     c = NULL;
 #else 
@@ -432,7 +432,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
         /* set the virtual name, better to add to a virtual list ? */
 
         if( vname != NULL ) {
-            c->virtual=  jk_pool_strdup(&c->p, vname);
+            c->virtual=  c->p.pstrdup(&c->p, vname);
         }
     }
     
@@ -682,7 +682,7 @@ int context_set_virtual(jk_context_t *c, char *virtual)
     if (c) {
 
         if (virtual) {
-            c->virtual = jk_pool_strdup(&c->p, virtual);
+            c->virtual = c->p.pstrdup(&c->p, virtual);
 
             if (! c->virtual)
                 return JK_FALSE;
@@ -776,14 +776,14 @@ jk_context_item_t * context_add_base(jk_context_t *c, char *cbase)
     if (context_realloc(c) != JK_TRUE)
         return NULL;
 
-    ci = (jk_context_item_t *)jk_pool_alloc(&c->p, sizeof(jk_context_item_t));
+    ci = (jk_context_item_t *)c->p.alloc(&c->p, sizeof(jk_context_item_t));
 
     if (! ci)
         return NULL;
 
     c->contexts[c->size] = ci;
     c->size++;
-    ci->cbase       = jk_pool_strdup(&c->p, cbase);
+    ci->cbase       = c->p.pstrdup(&c->p, cbase);
     ci->status      = 0;
     ci->size        = 0;
     ci->capacity    = 0;
@@ -815,7 +815,7 @@ int context_add_uri(jk_context_t *c, char *cbase, char * uri)
     if (context_item_realloc(c, ci) == JK_FALSE)
         return JK_FALSE;
 
-    ci->uris[ci->size] = jk_pool_strdup(&c->p, uri);
+    ci->uris[ci->size] = c->p.pstrdup(&c->p, uri);
 
     if (ci->uris[ci->size] == NULL)
         return JK_FALSE;

@@ -136,7 +136,7 @@ static int uriMap_realloc(jk_uriMap_t *_this)
         int  capacity = _this->capacity + UW_INC_SIZE;
 
         uwr = (jk_uriEnv_t **)
-            jk_pool_alloc(&_this->p, sizeof(jk_uriEnv_t *) * capacity);
+            _this->p.alloc(&_this->p, sizeof(jk_uriEnv_t *) * capacity);
 
         if (! uwr)
             return JK_FALSE;
@@ -153,7 +153,7 @@ static int uriMap_realloc(jk_uriMap_t *_this)
 }
 
 static jk_uriEnv_t *jk_uriMap_createUriEnv(jk_uriMap_t *_this ) {
-    jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)jk_pool_alloc(&_this->p,
+    jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)_this->p.alloc(&_this->p,
                                                      sizeof(jk_uriEnv_t));
     memset(uriEnv, 0, sizeof(jk_uriEnv_t));
     
@@ -183,8 +183,8 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
 
     uwr = jk_uriMap_createUriEnv(_this);
     
-    uri = jk_pool_strdup(&_this->p, puri);
-    worker = jk_pool_strdup(&_this->p, pworker);
+    uri = _this->p.pstrdup(&_this->p, puri);
+    worker = _this->p.pstrdup(&_this->p, pworker);
     uwr->workerName = worker;
 
     if (uri==NULL ||
@@ -227,7 +227,7 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
         return uwr;
     }
 
-    uwr->uri = jk_pool_strdup(&_this->p, uri);
+    uwr->uri = _this->p.pstrdup(&_this->p, uri);
 
     if (!uwr->uri) {
         l->jkLog(l, JK_LOG_ERROR,"Allocation error\n");
@@ -299,11 +299,6 @@ int jk_uriMap_init(jk_uriMap_t *_this,
 
     _this->workerEnv = workerEnv;
                                            
-    jk_open_pool(&_this->p,_this->buf, 
-                 sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
-    jk_open_pool(&_this->tp,_this->tbuf,
-                 sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
-
     sz = map_size(init_data);
 
     for(i = 0; i < sz ; i++) {
@@ -349,8 +344,8 @@ static void jk_uriMap_destroy(jk_uriMap_t *_this)
 
     /* this can't be null ( or a NPE would have been generated */
     
-    jk_close_pool(&_this->p);
-    jk_close_pool(&_this->tp);
+    _this->p.close(&_this->p);
+    _this->tp.close(&_this->tp);
 }
 
 
@@ -423,8 +418,9 @@ jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
     url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
         
     if(url_rewrite) {
-        jk_reset_pool(&_this->tp);
-        clean_uri = jk_pool_strdup(&_this->tp,uri);
+        /* XXXXXXXXXX NOT THREAD SAFE ! ???? XXXXXX */
+        _this->tp.reset(&_this->tp);
+        clean_uri = _this->tp.pstrdup(&_this->tp,uri);
         url_rewrite = strstr(clean_uri, JK_PATH_SESSION_IDENTIFIER);
         *url_rewrite = '\0';
         if( _this->debug > 0 )
@@ -520,6 +516,11 @@ int JK_METHOD jk_uriMap_factory( jk_env_t *env, void **result,
     _this = (jk_uriMap_t *)calloc(1,sizeof(jk_uriMap_t));
     _this->size     = 0;
     _this->capacity = 0;
+
+    jk_open_pool(&_this->p,_this->buf, 
+                 sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
+    jk_open_pool(&_this->tp,_this->tbuf,
+                 sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
 
     if(  ! _this) {
         l->jkLog(l, JK_LOG_ERROR, "Allocation error\n");

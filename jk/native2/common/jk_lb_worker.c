@@ -257,7 +257,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             if(rec) {
                 int is_recoverable = JK_FALSE;
                 
-                s->jvm_route = jk_pool_strdup(s->pool,  rec->name);
+                s->jvm_route = s->pool->pstrdup(s->pool,  rec->name);
 
                 rc = rec->w->get_endpoint(rec->w, &end, l);
                 if(rc && end) {
@@ -358,15 +358,15 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                  &num_of_workers) && num_of_workers) {
             unsigned i = 0;
 
-            p->lb_workers = jk_pool_alloc(&p->p, 
-                                          num_of_workers * sizeof(worker_record_t));
+            p->lb_workers = p->p.alloc(&p->p, 
+                                       num_of_workers * sizeof(worker_record_t));
 
             if(!p->lb_workers) {
                 return JK_FALSE;
             }
 
             for(i = 0 ; i < num_of_workers ; i++) {
-                p->lb_workers[i].name = jk_pool_strdup(&p->p, worker_names[i]);
+                p->lb_workers[i].name = p->p.pstrdup(&p->p, worker_names[i]);
                 p->lb_workers[i].lb_factor = jk_get_lb_factor(props, 
                                                                worker_names[i]);
                 p->lb_workers[i].lb_factor = 1/p->lb_workers[i].lb_factor;
@@ -461,7 +461,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
                       private_data->num_of_workers,
                       l);
 
-        jk_close_pool(&private_data->p);
+        private_data->p.close(&private_data->p);
         free(private_data);
 
         return JK_TRUE;
@@ -498,10 +498,10 @@ int JK_METHOD jk_worker_lb_factory(jk_env_t *env,
                  private_data->buf, 
                  sizeof(jk_pool_atom_t) * TINY_POOL_SIZE);
 
-    private_data->name = jk_pool_strdup(&private_data->p, name);          
+    private_data->name = private_data->p.pstrdup(&private_data->p, name);          
     if(! private_data->name) {
         l->jkLog(l, JK_LOG_ERROR,"In lb_worker_factory, malloc failed\n");
-        jk_close_pool(&private_data->p);
+        private_data->p.close(&private_data->p);
         free(private_data);
         return JK_FALSE;
     }

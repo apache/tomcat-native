@@ -268,7 +268,7 @@ char *jk_requtil_getCookieByName(jk_ws_service_t *s,
                     id_start += (1 + strlen(name));
                     if(strlen(id_start)) {
                         char *id_end;
-                        id_start = jk_pool_strdup(s->pool, id_start);
+                        id_start = s->pool->pstrdup(s->pool, id_start);
                         if(id_end = strchr(id_start, ';')) {
                             *id_end = '\0';
                         }
@@ -297,7 +297,7 @@ char *jk_requtil_getPathParam(jk_ws_service_t *s, const char *name)
             id_start += (1 + strlen(name));
             if(strlen(id_start)) {
                 char *id_end;
-                id_start = jk_pool_strdup(s->pool, id_start);
+                id_start = s->pool->pstrdup(s->pool, id_start);
                 /* 
                  * The query string is not part of req_uri, however
                  * to be on the safe side lets remove the trailing query 

@@ -364,10 +364,10 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_startReasponse
     if(hcnt) {
         ok = JK_FALSE;
 
-        nhnames = (char **)jk_pool_alloc(ps->pool, hcnt * sizeof(char *));
-        nhvalues = (char **)jk_pool_alloc(ps->pool, hcnt * sizeof(char *));            
-        shnames = (jstring *)jk_pool_alloc(ps->pool, hcnt * sizeof(jstring));
-        shvalues = (jstring *)jk_pool_alloc(ps->pool, hcnt * sizeof(jstring));
+        nhnames = (char **)ps->pool->alloc(ps->pool, hcnt * sizeof(char *));
+        nhvalues = (char **)ps->pool->alloc(ps->pool, hcnt * sizeof(char *));            
+        shnames = (jstring *)ps->pool->alloc(ps->pool, hcnt * sizeof(jstring));
+        shvalues = (jstring *)ps->pool->alloc(ps->pool, hcnt * sizeof(jstring));
 
         if(nhvalues && nhnames && shnames && shnames) {	    
             for( ; i < hcnt ; i++) {

@@ -132,10 +132,19 @@ struct jk_pool {
     
     void (*reset)(jk_pool_t *_this);
 
-    void *(*alloc)(jk_pool_t *_this);
+    void *(*alloc)(jk_pool_t *_this, size_t size);
 
-    void *(*strdup)(jk_pool_t *_this, const char *s);
-        
+    void *(*realloc)(jk_pool_t *_this, size_t size,
+                     const void *old, size_t old_sz);
+
+    void *(*calloc)(jk_pool_t *_this, size_t size);
+
+    void *(*pstrdup)(jk_pool_t *_this, const char *s);
+
+    /** Points to the private data. In the case of APR,
+        it's a apr_pool you can use directly */
+    void *_private;
+    
     /* Private data - XXX move to impl */
     unsigned size;      
     unsigned pos;       
@@ -144,24 +153,21 @@ struct jk_pool {
     unsigned dyn_pos;   
     void     **dynamic;
 };
+
+/** Create a pool
+ */
+int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent );
+
+/** Open a pool using allocated space. The pool can grow by
+    (m)allocating more storage, but it'll first use buf.
+    This is used in jk with stack-allocated pools.
+*/
+void jk_pool_open(jk_pool_t *p, jk_pool_atom_t *buf, unsigned size);
+
+
 void jk_open_pool(jk_pool_t *p,
                   jk_pool_atom_t *buf,
                   unsigned size);
-
-void jk_close_pool(jk_pool_t *p);
-
-void jk_reset_pool(jk_pool_t *p);
-
-void *jk_pool_alloc(jk_pool_t *p, 
-                    size_t sz);
-
-void *jk_pool_realloc(jk_pool_t *p, 
-                      size_t sz,
-                      const void *old,
-                      size_t old_sz);
-
-void *jk_pool_strdup(jk_pool_t *p, 
-                     const char *s);
 
 #ifdef __cplusplus
 }

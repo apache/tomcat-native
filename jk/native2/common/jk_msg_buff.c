@@ -197,7 +197,7 @@ void jk_b_end(jk_msg_buf_t *msg, int protoh)
 jk_msg_buf_t *jk_b_new(jk_pool_t *p) 
 {
     jk_msg_buf_t *msg = 
-            (jk_msg_buf_t *)jk_pool_alloc(p, sizeof(jk_msg_buf_t));
+            (jk_msg_buf_t *)p->alloc(p, sizeof(jk_msg_buf_t));
 
     if(!msg) {
         return NULL;
@@ -227,7 +227,7 @@ int jk_b_set_buffer(jk_msg_buf_t *msg,
 int jk_b_set_buffer_size(jk_msg_buf_t *msg, 
                          int buffSize) 
 {
-    unsigned char *data = (unsigned char *)jk_pool_alloc(msg->pool, buffSize);
+    unsigned char *data = (unsigned char *)msg->pool->alloc(msg->pool, buffSize);
     
     if(!data) {
 	    return -1;

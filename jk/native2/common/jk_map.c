@@ -127,7 +127,7 @@ int map_close(jk_map_t *m)
     int rc = JK_FALSE;
 
     if(m) {
-        jk_close_pool(&m->p);
+        m->p.close(&m->p);
         rc = JK_TRUE;
     }
     
@@ -216,7 +216,7 @@ char **map_get_string_list(jk_map_t *m,
     if(l) {
         unsigned capacity = 0;
         unsigned idex = 0;    
-        char *v = jk_pool_strdup(&m->p, l);
+        char *v = m->p.pstrdup(&m->p, l);
         
         if(!v) {
             return NULL;
@@ -232,7 +232,7 @@ char **map_get_string_list(jk_map_t *m,
             l = strtok(NULL, " \t,*")) {
         
             if(idex == capacity) {
-                ar = jk_pool_realloc(&m->p, 
+                ar = m->p.realloc(&m->p, 
                                      sizeof(char *) * (capacity + 5),
                                      ar,
                                      sizeof(char *) * capacity);
@@ -241,7 +241,7 @@ char **map_get_string_list(jk_map_t *m,
                 }
                 capacity += 5;
             }
-            ar[idex] = jk_pool_strdup(&m->p, l);
+            ar[idex] = m->p.pstrdup(&m->p, l);
             idex ++;
         }
         
@@ -276,7 +276,7 @@ int map_put(jk_map_t *m,
 
             if(m->size < m->capacity) {
                 m->values[m->size] = value;
-                m->names[m->size] = jk_pool_strdup(&m->p, name);
+                m->names[m->size] = m->p.pstrdup(&m->p, name);
                 m->size ++;
                 rc = JK_TRUE;
             }
@@ -331,8 +331,8 @@ int map_read_properties(jk_map_t *m,
                             v = map_replace_properties(v, m);
 
                             if(oldv) {
-                                char *tmpv = jk_pool_alloc(&m->p, 
-                                                           strlen(v) + strlen(oldv) + 3);
+                                char *tmpv = m->p.alloc(&m->p, 
+                                                        strlen(v) + strlen(oldv) + 3);
                                 if(tmpv) {
                                     char sep = '*';
                                     if(jk_is_some_property(prp, "path")) {
@@ -346,7 +346,7 @@ int map_read_properties(jk_map_t *m,
                                 }                                
                                 v = tmpv;
                             } else {
-                                v = jk_pool_strdup(&m->p, v);
+                                v = m->p.pstrdup(&m->p, v);
                             }
                             if(v) {
                                 void *old = NULL;
@@ -431,8 +431,8 @@ static int map_realloc(jk_map_t *m)
         void **values;
         int  capacity = m->capacity + CAPACITY_INC_SIZE;
 
-        names = (char **)jk_pool_alloc(&m->p, sizeof(char *) * capacity);
-        values = (void **)jk_pool_alloc(&m->p, sizeof(void *) * capacity);
+        names = (char **)m->p.alloc(&m->p, sizeof(char *) * capacity);
+        values = (void **)m->p.alloc(&m->p, sizeof(void *) * capacity);
         
         if(values && names) {
             if (m->capacity && m->names) 
@@ -479,7 +479,7 @@ char *map_replace_properties(const char *value, jk_map_t *m)
 	    }
             if(env_value) {
                 int offset=0;
-                char *new_value = jk_pool_alloc(&m->p, 
+                char *new_value = m->p.alloc(&m->p, 
                                                 (sizeof(char) * (strlen(rc) + strlen(env_value))));
                 if(!new_value) {
                     break;

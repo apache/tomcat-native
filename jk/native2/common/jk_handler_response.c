@@ -113,8 +113,8 @@ int ajp_unmarshal_response(jk_msg_buf_t   *msg,
     l->jkLog(l, JK_LOG_DEBUG, "ajp_unmarshal_response: Number of headers is = %d\n", s->out_headers);
 
     if (s->out_headers) {
-        s->out_header_names = jk_pool_alloc(p, sizeof(char *) * s->out_headers);
-        s->out_header_values = jk_pool_alloc(p, sizeof(char *) * s->out_headers);
+        s->out_header_names = p->alloc(p, sizeof(char *) * s->out_headers);
+        s->out_header_values = p->alloc(p, sizeof(char *) * s->out_headers);
 
         if (s->out_header_names && s->out_header_values) {
             unsigned i;

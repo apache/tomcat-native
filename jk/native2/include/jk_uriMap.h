@@ -121,6 +121,16 @@ struct jk_uriMap {
     int (*checkUri)( jk_uriMap_t *_this,
                      char *uri );
 
+    /** Mapping the uri. To be thread safe, we need to pass a pool.
+        Or even better, create the jk_service structure already.
+        mapUri() can set informations on it as well.
+        
+        MapUri() method should behave exactly like the native apache2
+        mapper - we need it since the mapping rules for servlets are
+        different ( or we don't know yet how to 'tweak' apache config
+        to do what we need ). Even when we'll know, uriMap will be needed
+        for other servers. 
+    */
     struct jk_uriEnv *(*mapUri)(jk_uriMap_t *_this,
                                 const char *vhost,
                                 const char *uri );

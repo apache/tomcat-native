@@ -74,7 +74,7 @@
 void ajp_reset_endpoint(jk_endpoint_t *ae)
 {
     ae->reuse = JK_FALSE;
-    jk_reset_pool(&(ae->pool));
+    ae->pool.reset( &ae->pool );
 }
 
 /*
@@ -87,8 +87,7 @@ void ajp_close_endpoint(jk_endpoint_t *ae,
     l->jkLog(l, JK_LOG_DEBUG, "In jk_endpoint_t::ajp_close_endpoint\n");
 
     ajp_reset_endpoint(ae);
-    jk_close_pool(&(ae->pool));
-
+    ae->pool.close( &ae->pool );
     {
 	jk_channel_t *channel=ae->worker->channel;
 	int err=channel->close( channel, ae );
