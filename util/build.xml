@@ -17,10 +17,13 @@
     <property name="puretls.jar" location="${puretls.lib}/puretls.jar"/>
     
     <property name="commons-logging.jar" value="../lib/commons-logging.jar" />
+    <property name="jmx.jar" value="../lib/mx4j.jar" />
     
     <target name="detect">
         <available property="jsse.present"
                    file="${jsse.jar}"/>
+        <available property="jmx.present"
+                   file="${jmx.jar}"/>
         <available property="puretls.present"
  	           file="${puretls.jar}"/>
         <available property="commons-logging.present"
@@ -38,13 +41,16 @@
         <echo message="-- puretls.present = ${puretls.present}" />
         <echo message="-- jsse.present = ${jsse.present}"/>
         <echo message="-- commons-logging = ${commons-logging.present}"/>
+        <echo message="-- jmx = ${jmx.present}"/>
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
 	       deprecation="on"
 	       debug="on"
+	       target="1.1"
 	       optimize="off"
 	       verbose="off"
 	       excludes="**/CVS/**">
+            <classpath location="${jmx.jar}" />
             <classpath location="${jsse.jar}" />
             <classpath location="${jnet.jar}" />
             <classpath location="${jcert.jar}" />
@@ -53,6 +59,7 @@
             <exclude name="**/util/net/JSSE*" unless="jsse.present"/>
             <exclude name="**/util/log/CommonLogHandler.java" unless="commons-logging.present"/>
             <exclude name="**/util/net/PureTLS*" unless="puretls.present"/>
+            <exclude name="**/util/mx/*" unless="jmx.present"/>
 	</javac>
 
 	<!-- Copy static resource files -->
@@ -71,6 +78,7 @@
 
 	<jar jarfile="${tomcat-util.build}/lib/tomcat-util.jar"
 	     basedir="${tomcat-util.build}/classes"
+             manifest="java/tomcat-util.manifest"
 	     />
 
 	<!-- Include a copy of the commons-logging.jar that we built with -->
