@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE20_HOME)\include" /I "$(APACHE20_HOME)\os\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\os\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /D "HAS_APR" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc0a /d "NDEBUG"
@@ -360,6 +360,15 @@ SOURCE=..\..\include\jk_workerEnv.h
 SOURCE=..\..\common\jk_logger_win32_message.mc
 
 !IF  "$(CFG)" == "isapi - Win32 Release"
+
+# Begin Custom Build - Creating resources from $(InputPath)
+InputDir=\tomcat\jakarta-tomcat-connectors\jk\native2\common
+InputPath=..\..\common\jk_logger_win32_message.mc
+
+"..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	mc -h $(InputDir) -r $(InputDir) $(InputPath)
+
+# End Custom Build
 
 !ELSEIF  "$(CFG)" == "isapi - Win32 Debug"
 
