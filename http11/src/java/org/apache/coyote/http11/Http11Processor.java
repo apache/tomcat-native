@@ -609,7 +609,7 @@ public class Http11Processor implements Processor, ActionHook {
                 break;
             } catch (Exception e) {
                 log.debug("Error parsing HTTP request", e);
-                // 500 - Bad Request
+                // 400 - Bad Request
                 response.setStatus(400);
                 error = true;
             }
@@ -621,7 +621,7 @@ public class Http11Processor implements Processor, ActionHook {
                 prepareRequest();
             } catch (Throwable t) {
                 log.debug("Error preparing request", t);
-                // 500 - Internal Server Error
+                // 400 - Internal Server Error
                 response.setStatus(400);
                 error = true;
             }
