@@ -4,7 +4,7 @@ dnl
 AC_REVISION($Id$)dnl
 
 AC_PREREQ(2.13)
-AC_INIT(common/jk_ajp13.h)
+AC_INIT(common/jk_worker.h)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
 
 dnl package and version. (synchronization with common/jk_version.h ?)
