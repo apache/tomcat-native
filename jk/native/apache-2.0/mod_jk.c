@@ -510,10 +510,10 @@ static int init_ws_service(apache_private_data_t *private_data,
 	s->server_name  = (char *)ap_get_server_name(r);
 
     /* get the real port (otherwise redirect failed) */
-    /* apr_sockaddr_port_get(&port,r->connection->local_addr); */
-    /* s->server_port = port; */
-    /* XXX : à la jk2 */
-	s->server_port  = ap_get_server_port(r);
+    apr_sockaddr_port_get(&port,r->connection->local_addr);
+    s->server_port = port;
+    /* XXX : à la jk2 ???*/
+	/* s->server_port  = ap_get_server_port(r); */
 
     s->server_software = (char *)ap_get_server_version();
 
@@ -1880,7 +1880,11 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
                 map_free(&conf->automount);
             if (conf->uw_map)
                 uri_worker_map_free(&conf->uw_map, conf->log);
-            jk_close_file_logger(&conf->log);
+            /* Since we are now using apache to do logging, this 
+             * cleanup will just cause problems so don't do it
+             *
+             * jk_close_file_logger(&conf->log);
+             */
         }
         s = s->next;
     }
@@ -2023,7 +2027,7 @@ static void *merge_jk_config(apr_pool_t *p,
     return overrides;
 }
 
-static int jk_log_to_file(jk_logger_t *l,
+static int JK_METHOD jk_log_to_file(jk_logger_t *l,
                           int level,
                           const char *what)
 {
