@@ -753,6 +753,12 @@ public class CoyoteResponse
 
         coyoteResponse.setLocale(locale);
 
+        CharsetMapper cm = context.getCharsetMapper();
+        String charset = cm.getCharset( locale );
+
+        if ( charset != null )
+            setCharacterEncoding( charset);
+
     }
 
 

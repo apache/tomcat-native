@@ -455,8 +455,6 @@ public final class Response {
         if (isCommitted())
             return;
 
-        characterEncoding = charset;
-
         String type = this.contentType;
         int start = type.indexOf("charset=");
         if ( start != -1 ) {
@@ -468,8 +466,11 @@ public final class Response {
                 type = type.substring(0,start+8)
                     +charset;
             this.contentType = type;
-
+        } else {
+            type += "charset=" + charset;
         }
+        setContentType( type );
+        
     }
 
     public String getCharacterEncoding() {
