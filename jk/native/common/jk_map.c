@@ -303,7 +303,8 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
         }
 
         if (i < m->size) {
-            *old = (void *)m->values[i];        /* DIRTY */
+            if (old)
+                *old = (void *)m->values[i];        /* DIRTY */
             m->values[i] = value;
             rc = JK_TRUE;
         }
@@ -362,8 +363,7 @@ int jk_map_read_property(jk_map_t *m, const char *str)
                     v = jk_pool_strdup(&m->p, v);
                 }
                 if (v) {
-                    void *old = NULL;
-                    jk_map_put(m, prp, v, &old);
+                    jk_map_put(m, prp, v, NULL);
                 }
                 else {
                     rc = JK_FALSE;

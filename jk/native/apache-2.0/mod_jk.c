@@ -715,7 +715,6 @@ static const char *jk_mount_context(cmd_parms * cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
-    char *old;
     const char *c, *w;
 
     if (worker != NULL && cmd->path == NULL ) {
@@ -739,7 +738,7 @@ static const char *jk_mount_context(cmd_parms * cmd,
     /*
      * Add the new worker to the alias map.
      */
-    jk_map_put(conf->uri_to_context, c, w, (void **)&old);
+    jk_map_put(conf->uri_to_context, c, w, NULL);
     return NULL;
 }
 
@@ -758,7 +757,7 @@ static const char *jk_unmount_context(cmd_parms * cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
-    char *old , *uri;
+    char *uri;
     const char *c, *w;
 
     if (worker != NULL && cmd->path == NULL ) {
@@ -783,7 +782,7 @@ static const char *jk_unmount_context(cmd_parms * cmd,
     /*
      * Add the new worker to the alias map.
      */
-    jk_map_put(conf->uri_to_context, uri, w, (void **)&old);
+    jk_map_put(conf->uri_to_context, uri, w, NULL);
     return NULL;
 }
 
@@ -807,8 +806,7 @@ static const char *jk_automount_context(cmd_parms * cmd,
     /*
      * Add the new automount to the auto map.
      */
-    char *old;
-    jk_map_put(conf->automount, worker, virtualhost, (void **)&old);
+    jk_map_put(conf->automount, worker, virtualhost, NULL);
     return NULL;
 }
 
@@ -1978,12 +1976,11 @@ static void copy_jk_map(apr_pool_t * p, server_rec * s, jk_map_t *src,
     int sz = jk_map_size(src);
     int i;
     for (i = 0; i < sz; i++) {
-        void *old;
         char *name = jk_map_name_at(src, i);
         if (jk_map_get(src, name, NULL) == NULL) {
             if (!jk_map_put(dst, name,
                             apr_pstrdup(p, jk_map_get_string(src, name, NULL)),
-                            &old)) {
+                            NULL)) {
                 jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
             }
         }
