@@ -1740,7 +1740,9 @@ static int jk_handler(request_rec *r)
                                    &jk_cleanup_endpoint,  tpool );
         }
 #else */
-        worker->get_endpoint(worker, &end, l);
+        /* worker->get_endpoint might fail if we are out of memory so check */
+        /* and handle it */
+        if (worker->get_endpoint(worker, &end, l))
 /* #endif */
         {   
             int is_recoverable_error = JK_FALSE;
@@ -1767,6 +1769,8 @@ static int jk_handler(request_rec *r)
             end->done(&end, l); 
 /* #endif */
                 }
+                else /* this means we couldn't get an endpoint */
+                    rc = 0; /* just to make sure that we know we've failed */
             }
 
 #ifndef NO_GETTIMEOFDAY
