@@ -294,6 +294,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
+    uwr->suffix = NULL;
     
     if (*puri == '!') {
         uwr->no_match = 1;
@@ -317,21 +318,12 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         
         if ((asterisk && strchr(asterisk + 1, '*')) ||
             strchr(uri, '?')) {
-            uwr->uri = jk_pool_strdup(&uw_map->p, uri);
-
-            if (!uwr->uri) {
-                jk_log(l, JK_LOG_ERROR,
-                       "can't alloc uri string");
-                JK_TRACE_EXIT(l);
-                return JK_FALSE;
-            }
+            uwr->uri = uri;
             /* Lets check if we have multiple
              * asterixes in the uri like:
              * /context/ * /user/ *
              */
-            uwr->worker_name = worker;
             uwr->context = uri;
-            uwr->suffix = NULL;
             uwr->match_type = MATCH_TYPE_WILDCHAR_PATH;
             jk_log(l, JK_LOG_DEBUG,
                     "wild chars path rule %s=%s was added",
@@ -358,7 +350,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                 if (0 == strncmp("/*/", uri, 3)) {
                     /* general context path */
                     asterisk[1] = '\0';
-                    uwr->worker_name = worker;
                     uwr->context = uri;
                     uwr->suffix = asterisk + 2;
                     uwr->match_type = MATCH_TYPE_CONTEXT_PATH;
@@ -369,7 +360,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                 else if ('.' == asterisk[2]) {
                     /* suffix rule */
                     asterisk[1] = asterisk[2] = '\0';
-                    uwr->worker_name = worker;
                     uwr->context = uri;
                     uwr->suffix = asterisk + 3;
                     uwr->match_type = MATCH_TYPE_SUFFIX;
@@ -380,7 +370,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                 else if ('\0' != asterisk[2]) {
                     /* general suffix rule */
                     asterisk[1] = '\0';
-                    uwr->worker_name = worker;
                     uwr->context = uri;
                     uwr->suffix = asterisk + 2;
                     uwr->match_type = MATCH_TYPE_GENERAL_SUFFIX;
@@ -391,9 +380,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                 else {
                     /* context based */
                     asterisk[1] = '\0';
-                    uwr->worker_name = worker;
                     uwr->context = uri;
-                    uwr->suffix = NULL;
                     uwr->match_type = MATCH_TYPE_CONTEXT;
                     jk_log(l, JK_LOG_DEBUG,
                            "match rule %s=%s was added", uri, worker);
@@ -402,9 +389,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
             else {
                 /* Something like : JkMount /servlets/exampl* ajp13 */
                 uwr->uri = uri;
-                uwr->worker_name = worker;
                 uwr->context = uri;
-                uwr->suffix = NULL;
                 uwr->match_type = MATCH_TYPE_EXACT;
                 jk_log(l, JK_LOG_DEBUG,
                        "exact rule %s=%s was added",
@@ -415,14 +400,13 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         else {
             /* Something like:  JkMount /login/j_security_check ajp13 */
             uwr->uri = uri;
-            uwr->worker_name = worker;
             uwr->context = uri;
-            uwr->suffix = NULL;
             uwr->match_type = MATCH_TYPE_EXACT;
             jk_log(l, JK_LOG_DEBUG,
                    "exact rule %s=%s was added",
                    uri, worker);
         }
+        uwr->worker_name = worker;
         uwr->ctxt_len = strlen(uwr->context);
     }
     else {
