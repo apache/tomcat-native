@@ -72,6 +72,41 @@ of existing workers/uris. Then it'll access the jk_status page, which will detec
 file changes and reload the config in the current server process, and use the scoreboard to 
 inform other server processes of the change. </p>
 
+    <section name="Server-specific configuration">
+
+<p>Since the config is abstracted, some servers ( Apache2 only at this moment ) may support a 
+server-specific configuration mode. This configuration mode is less tested - but provides some
+unique advantages (and disadvantages )</p>
+
+<p>I'll describe the apache2 specifics, since this is the only one implemented. In this mode the
+config will be included in httpd.conf. The JkSet top-level directive is used to set global
+config options, and JkUriSet is used to set options for Location sections</p>
+
+<p>You can mix workers2.properties and JkUriSet - for example workers and global options
+can be set in worker2.properties, but all uri properties in httpd.conf. Some people 
+might preffer to have only one config file and use httpd.conf for all configuration.</p>
+
+<p>Each Location that has a JkUriSet will automatically create a jk2 [uri] object,
+using the Location path and the vhost. All JkUriSet directives will set attributes
+in this [uri] object, exactly like properties in a ini file section</p>
+
+<p>The biggest benefit is that Apache2 mapping is used instead of jk2 to detect the
+requests that need to be sent to tomcat. Apache2 has been optimized and tuned to
+server huge number of servers and uris - if you have only few the diference may be
+hard to notice. Some people preffer to use the httpd.conf format and some tools 
+could be better used in this mode.</p>
+
+<p>One major problem is that reconfiguration is not supported if httpd.conf is used. 
+You can still enable/disable/add workers if you use workers2.properties, and 
+you could add or change uri properties in that file. </p>
+
+
+    <section name="Config generators">
  
+<p>There is work in progress to support automatic generation of the config file. The code is
+included in org.apache.jk.config and consist of a number of ant tasks ( that work from CLI as well)
+ that process web.xml files and generate worker2.properties or server-specific config files</p>
+
+
 
 </document>
