@@ -55,6 +55,14 @@
 
 #ifdef AJP_USE_HTTPD_WRAP
 #include "httpd_wrap.h"
+#else
+#include "httpd.h"
+#include "http_config.h"
+#include "http_request.h"
+#include "http_core.h"
+#include "http_protocol.h"
+#include "http_main.h"
+#include "http_log.h"
 #endif
 
 struct ajp_msg

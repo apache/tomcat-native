@@ -1,9 +1,12 @@
 #
 # You need an installed httpd-2.x to use this Makefile
 #
+
 APACHE_DIR=/home2/apache20/apache20
 APR_DIR=$(APACHE_DIR)
 APU_DIR=$(APACHE_DIR)
+
+include $(APR_DIR)/build/config_vars.mk
 
 # in httpd-2.x sources...
 #APR_DIR=$(APACHE_DIR)/srclib/apr
@@ -11,17 +14,17 @@ APU_DIR=$(APACHE_DIR)
 
 APR_INCLUDE=$(APR_DIR)/include
 APU_INCLUDE=$(APU_DIR)/include
+APA_INCLUDE=$(APACHE_DIR)/include
 
 SRC_DIR=.
 INCLUDE=.
-AJP_OBJECTS = ajp_link.lo  ajp_msg.lo  httpd_wrap.lo
+AJP_OBJECTS = ajp_link.lo  ajp_msg.lo  httpd_wrap.lo ajp_header.lo
 AJP_PROGRAM = testajp.lo
 AJP_LIB     = lib_ajp.la
 
-INCLUDES = -I $(INCLUDE) -I $(APR_INCLUDE) -I $(APU_INCLUDE)
+INCLUDES = -I $(INCLUDE) -I $(APR_INCLUDE) -I $(APU_INCLUDE) -I $(APA_INCLUDE)
 
 include $(APR_DIR)/build/apr_rules.mk
-include $(APR_DIR)/build/config_vars.mk
 
 all: testajp
 
