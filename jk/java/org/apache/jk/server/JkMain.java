@@ -230,7 +230,24 @@ public class JkMain
                                        "shm",
                                        "request",
                                        "container",
-                                       "channelSocket"};
+                                       "channelSocket",
+                                       "channelJni",
+                                       "channelUn"};
+    
+    public void stop() 
+    {
+        for( int i=0; i<wEnv.getHandlerCount(); i++ ) {
+            if( wEnv.getHandler(i) != null ) {
+                try {
+                    wEnv.getHandler(i).destroy();
+                } catch( IOException ex) {
+                    log.error("Error stoping " + wEnv.getHandler(i).getName(), ex);
+                }
+            }
+        }
+
+        started=false;
+    }
     
     public void start() throws IOException
     {

@@ -155,7 +155,7 @@ public class JkCoyoteHandler extends JkHandler implements
     }
 
     public void destroy() {
-        //  jkMain.stop();
+        jkMain.stop();
     }
 
     // -------------------- OutputBuffer implementation --------------------
