@@ -301,7 +301,7 @@ final class CoyoteProcessor
         try {
             // Parse and set Catalina and configuration specific 
             // request parameters
-            postParseRequest(req);
+            postParseRequest(req, res);
             // Calling the container
             connector.getContainer().invoke(request, response);
             response.finishResponse();
@@ -370,7 +370,7 @@ final class CoyoteProcessor
     /**
      * Parse additional request parameters.
      */
-    protected void postParseRequest(Request req)
+    protected void postParseRequest(Request req, Response res)
         throws IOException {
 
         request.setSocket(socket);
@@ -384,6 +384,17 @@ final class CoyoteProcessor
             request.setServerPort(proxyPort);
         else
             request.setServerPort(serverPort);
+
+        // Normalize URI is needed for security reasons on older versions 
+        // of Tomcat
+        if (connector.getUseURINormalizationHack()) {
+            String uri = normalize(request.getRequestURI());
+            if (uri == null) {
+                res.setStatus(400);
+                res.setMessage("Invalid URI");
+                throw new IOException("Invalid URI");
+            }
+        }
 
         parseHost();
         parseSessionId();
@@ -472,7 +483,7 @@ final class CoyoteProcessor
      * Parse cookies.
      * Note: Using Coyote native cookie parser to parse cookies would be faster
      * but a conversion to Catalina own cookies would then be needed, which 
-     * would take away most if not all of theperformance benefit.
+     * would take away most if not all of the performance benefit.
      */
     protected void parseCookies() {
 
@@ -501,6 +512,90 @@ final class CoyoteProcessor
                 request.addCookie(cookies[i]);
             }
         }
+
+    }
+
+
+    /**
+     * Return a context-relative path, beginning with a "/", that represents
+     * the canonical version of the specified path after ".." and "." elements
+     * are resolved out.  If the specified path attempts to go outside the
+     * boundaries of the current context (i.e. too many ".." path elements
+     * are present), return <code>null</code> instead.
+     *
+     * @param path Path to be normalized
+     */
+    protected String normalize(String path) {
+
+        if (path == null)
+            return null;
+
+        // Create a place for the normalized path
+        String normalized = path;
+
+        // Normalize "/%7E" and "/%7e" at the beginning to "/~"
+        if (normalized.startsWith("/%7E") ||
+            normalized.startsWith("/%7e"))
+            normalized = "/~" + normalized.substring(4);
+
+        // Prevent encoding '%', '/', '.' and '\', which are special reserved
+        // characters
+        if ((normalized.indexOf("%25") >= 0)
+            || (normalized.indexOf("%2F") >= 0)
+            || (normalized.indexOf("%2E") >= 0)
+            || (normalized.indexOf("%5C") >= 0)
+            || (normalized.indexOf("%2f") >= 0)
+            || (normalized.indexOf("%2e") >= 0)
+            || (normalized.indexOf("%5c") >= 0)) {
+            return null;
+        }
+
+        if (normalized.equals("/."))
+            return "/";
+
+        // Normalize the slashes and add leading slash if necessary
+        if (normalized.indexOf('\\') >= 0)
+            normalized = normalized.replace('\\', '/');
+        if (!normalized.startsWith("/"))
+            normalized = "/" + normalized;
+
+        // Resolve occurrences of "//" in the normalized path
+        while (true) {
+            int index = normalized.indexOf("//");
+            if (index < 0)
+                break;
+            normalized = normalized.substring(0, index) +
+                normalized.substring(index + 1);
+        }
+
+        // Resolve occurrences of "/./" in the normalized path
+        while (true) {
+            int index = normalized.indexOf("/./");
+            if (index < 0)
+                break;
+            normalized = normalized.substring(0, index) +
+                normalized.substring(index + 2);
+        }
+
+        // Resolve occurrences of "/../" in the normalized path
+        while (true) {
+            int index = normalized.indexOf("/../");
+            if (index < 0)
+                break;
+            if (index == 0)
+                return (null);  // Trying to go outside our context
+            int index2 = normalized.lastIndexOf('/', index - 1);
+            normalized = normalized.substring(0, index2) +
+                normalized.substring(index + 3);
+        }
+
+        // Declare occurrences of "/..." (three or more dots) to be invalid
+        // (on some Windows platforms this walks the directory tree!!!)
+        if (normalized.indexOf("/...") >= 0)
+            return (null);
+
+        // Return the normalized path that we have completed
+        return (normalized);
 
     }
 

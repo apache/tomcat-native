@@ -326,6 +326,12 @@ public final class CoyoteConnector
         "org.apache.coyote.http11.Http11Processor";
 
 
+    /**
+     * Use URI normalization.
+     */
+    private boolean useURINormalizationHack = true;
+
+
     // ------------------------------------------------------------- Properties
 
 
@@ -820,6 +826,28 @@ public final class CoyoteConnector
     public void setTcpNoDelay(boolean tcpNoDelay) {
 
         this.tcpNoDelay = tcpNoDelay;
+
+    }
+
+
+    /**
+     * Return the value of the Uri normalization flag.
+     */
+    public boolean getUseURINormalizationHack() {
+
+        return (this.useURINormalizationHack);
+
+    }
+
+
+    /**
+     * Set the value of the Uri normalization flag.
+     * 
+     * @param useURINormalizationHack The new flag value
+     */
+    public void setUseURINormalizationHack(boolean useURINormalizationHack) {
+
+        this.useURINormalizationHack = useURINormalizationHack;
 
     }
 
