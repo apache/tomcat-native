@@ -187,6 +187,8 @@ public abstract class JSSESocketFactory
                 enabledCiphers = new String[vec.size()];
                 vec.copyInto(enabledCiphers);
             }
+        } else {
+            enabledCiphers = supportedCiphers;
         }
 
         return enabledCiphers;
@@ -351,7 +353,7 @@ public abstract class JSSESocketFactory
 
         SSLServerSocket socket = (SSLServerSocket) ssocket;
 
-        if (attributes.get("ciphers") != null) {
+        if (enabledCiphers != null) {
             socket.setEnabledCipherSuites(enabledCiphers);
         }
 
