@@ -54,7 +54,7 @@
 
 package org.apache.jk.ant;
 
-import org.apache.tools.ant.*;
+import org.apache.tools.ant.Project;
 
 /** Define name/value, value is optional
  *  The define will take place if the condition
