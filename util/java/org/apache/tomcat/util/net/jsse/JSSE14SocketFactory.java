@@ -172,7 +172,7 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
         KeyStore ks = getKeystore(keystoreType, keystorePass);
         if (!ks.isKeyEntry(keyAlias)) {
-            throw new Exception(sm.getString("jsse.alias_no_key_entry", keyAlias));
+            throw new IOException(sm.getString("jsse.alias_no_key_entry", keyAlias));
         }
 
         kmf.init(ks, keystorePass.toCharArray());
