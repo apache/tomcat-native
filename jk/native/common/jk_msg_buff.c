@@ -397,7 +397,9 @@ void jk_dump_buff(jk_logger_t *l,
     char *current;
     int j;
     int len = msg->len;
-
+    
+    if (l == NULL)
+        return;
     if (level == JK_LOG_DEBUG_LEVEL) {
         len = 0;
         if (l->level == JK_LOG_TRACE_LEVEL)
