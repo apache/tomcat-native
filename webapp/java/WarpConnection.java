@@ -210,7 +210,8 @@ public class WarpConnection implements LifecycleListener, Runnable {
     public void send(WarpPacket packet)
     throws IOException {
         if (Constants.DEBUG) {
-            logger.debug(">> TYPE="+packet.getType()+" LENGTH="+packet.size);
+            String typ=Integer.toHexString(packet.getType());
+            logger.debug(">> TYPE="+typ+" LENGTH="+packet.size);
             logger.debug(">> "+packet.dump());
         }
 
@@ -251,7 +252,8 @@ public class WarpConnection implements LifecycleListener, Runnable {
         }
             
         if (Constants.DEBUG) {
-            logger.debug("<< TYPE="+packet.getType()+" LENGTH="+packet.size);
+            String typ=Integer.toHexString(packet.getType());
+            logger.debug("<< TYPE="+typ+" LENGTH="+packet.size);
             logger.debug("<< "+packet.dump());
         }
     }
