@@ -93,8 +93,6 @@
 
 #include "signal.h"
 
-#include "apr_proc_mutex.h"
-
 static apr_pool_t *jniAprPool;
 static jk_workerEnv_t *workerEnv;
 static int jniDebug=0;
@@ -182,6 +180,9 @@ static struct sigaction jkAction;
 
 static void jk2_SigAction(int sig) {
     fprintf(stderr, "Signal %d\n", sig );
+    
+    /* Make a callback using the jni channel */
+    
     signal( sig, jk2_SigAction );
 }
 #endif
@@ -193,13 +194,12 @@ static void jk2_SigAction(int sig) {
 */
 
 JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint bitMask,
-                                      jobject func)
+Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint signalNr )
 {
 #ifdef HAVE_SIGNALS
     memset(& jkAction, 0, sizeof(jkAction));
     jkAction.sa_handler=jk2_SigAction;
-    sigaction((int)bitMask, &jkAction, (void *) NULL);
+    sigaction((int)signalNr, &jkAction, (void *) NULL);
 #endif
     return 0;
 }
@@ -214,21 +214,14 @@ Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint s
 
 /* -------------------- User related functions -------------------- */
 
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_userId(JNIEnv *jniEnv, jobject _jthis)
-{
-    
-    return 0;
-}
-
-JNIEXPORT jlong JNICALL 
+JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_getPid(JNIEnv *jniEnv, jobject _jthis)
 {
-  return (jlong) getpid();
+  return (jint) getpid();
 }
 
 
-JNIEXPORT jlong JNICALL 
+JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_setUser(JNIEnv *jniEnv, jobject _jthis,
                                        jstring userJ, jstring groupJ)
 {
@@ -259,77 +252,10 @@ Java_org_apache_jk_apr_AprImpl_setUser(JNIEnv *jniEnv, jobject _jthis,
 
 #endif
 
-    return rc;
+    return (jint)rc;
 }
 
 /* -------------------- interprocess mutexes -------------------- */
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_mutexCreate(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
-                                           jstring fileJ,
-                                           jint mechJ )
-{
-    apr_proc_mutex_t *mutex;
-    apr_lockmech_e mech=(apr_lockmech_e)mechJ;
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolP;
-    apr_status_t  st;
-    char *fname=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, fileJ, 0);
-
-    st=apr_proc_mutex_create( &mutex, fname, mech, pool );
-
-    (*jniEnv)->ReleaseStringUTFChars(jniEnv, fileJ, fname);
-    
-    return (jlong)(long)(void *)mutex;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_mutexLock(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
-                                         jlong mutexP )
-{
-    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)(void *)(long)mutexP;
-    apr_status_t  st;
-    
-    st=apr_proc_mutex_lock( mutex );
-    
-    return (jlong)(long)st;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_mutexTryLock(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
-                                         jlong mutexP )
-{
-    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)(void *)(long)mutexP;
-    apr_status_t  st;
-    
-    st=apr_proc_mutex_trylock( mutex );
-    
-    return (jlong)(long)st;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_mutexUnLock(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
-                                         jlong mutexP )
-{
-    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)(void *)(long)mutexP;
-    apr_status_t  st;
-    
-    st=apr_proc_mutex_unlock( mutex );
-    
-    return (jlong)(long)st;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_mutexDestroy(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
-                                            jlong mutexP )
-{
-    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)(void *)(long)mutexP;
-    apr_status_t  st;
-    
-    st=apr_proc_mutex_destroy( mutex );
-    
-    return (jlong)(long)st;
-}
-
 
 /* ==================== Unix sockets ==================== */
 /* It seems apr doesn't support them yet, so this code will use the
@@ -765,7 +691,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     jk_env_t *env = (jk_env_t *)(void *)(long)envJ;
     jk_bean_t *compCtx=(jk_bean_t *)(void *)(long)endpointP;
     void *target=(void *)(long)componentP;
-    jk_endpoint_t *ep = compCtx->object;
+    jk_endpoint_t *ep;
 
     jbyte *nbuf;
     jboolean iscopy;
@@ -774,7 +700,17 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     jint rc = -1;
     unsigned acc = 0;
 
-    /*env->l->jkLog(env, env->l, JK_LOG_INFO,"jkInvoke()\n"); */
+    if( compCtx==NULL || data==NULL || endpointP==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,"jni.jkInvoke() NPE\n");
+        return JK_ERR;
+    }
+
+    ep = compCtx->object;
+
+    if( ep==NULL || ep->reply==NULL) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,"jni.jkInvoke() NPE ep==null\n");
+        return JK_ERR;
+    }
         
     nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, data, &iscopy);
 
