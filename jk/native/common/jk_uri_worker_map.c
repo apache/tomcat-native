@@ -413,11 +413,11 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         unsigned i;
         unsigned best_match = -1;
         unsigned longest_match = 0;
-        char clean_uri[4096];
+        char clean_uri = NULL;
         char *url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
         
         if(url_rewrite) {
-            strcpy(clean_uri, uri);
+            clean_uri = strdup(uri);
             url_rewrite = strstr(clean_uri, JK_PATH_SESSION_IDENTIFIER);
             *url_rewrite = '\0';
             uri = clean_uri;
@@ -485,6 +485,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         }
 
         if(-1 != best_match) {
+            free(clean_uri);
             return uw_map->maps[best_match]->worker_name;
         } else {
             /*
@@ -501,6 +502,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                 jk_log(l, JK_LOG_EMERG, 
                        "In jk_uri_worker_map_t::map_uri_to_worker, found a security fraud in '%s'\n",
                        uri);    
+                free(clean_uri);
                 return uw_map->maps[fraud]->worker_name;
             }
        }        
