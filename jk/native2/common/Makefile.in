@@ -1,0 +1,27 @@
+#### XXXX DO we need this Makefile ????
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+top_builddir = ..
+
+LIBTOOL = @LIBTOOL@
+
+OEXT=.lo
+include list.mk
+
+JAVA_INCL=-I @JAVA_HOME@/include -I @JAVA_HOME@/include/@OS@ -I ../include @HAS_APR@
+CFLAGS=@apache_include@ @CFLAGS@ ${JAVA_INCL}
+
+include ../scripts/build/rules.mk
+
+JK=./
+
+all: ${APACHE_OBJECTS}
+
+install:
+
+clean:
+	rm -f *.o *.slo *.lo
