@@ -845,17 +845,17 @@ public class Http11Processor implements Processor, ActionHook {
             }
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
-
-            try {
-                Object sslO = sslSupport.getPeerCertificateChain(true);
-                if( sslO != null) {
-                    request.setAttribute
-                        (SSLSupport.CERTIFICATE_KEY, sslO);
+            if( sslSupport != null) { 
+                try {
+                    Object sslO = sslSupport.getPeerCertificateChain(true);
+                    if( sslO != null) {
+                        request.setAttribute
+                            (SSLSupport.CERTIFICATE_KEY, sslO);
+                    }
+                } catch (Exception e) {
+                    log.warn("Exception getting SSL Cert",e);
                 }
-            } catch (Exception e) {
-                log.warn("Exception getting SSL Cert",e);
             }
-
         }
 
     }
