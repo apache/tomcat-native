@@ -28,6 +28,52 @@
         <read>LoadModule jk2_module modules/mod_jk2.so</read>
       </screen>
     </subsection>
-    <subsection name="IIS"/>
+    <subsection name="IIS">
+        <p>A pre-built version of the ISAPI redirector server plugin, isapi_redirector2.dll,
+        is available under the win32/i386 directory of jakarta-tomcat-connectors distribution.
+        You can also build a copy locally from the source present in jakarta-tomcat-connectors
+        distribution.<br />The Tomcat redirector requires three entities:
+            <ul>
+            <li>
+            <b>isapi_redirector2.dll</b> - The IIS server plugin, either obtain a pre-built DLL or build it yourself (see the build section).
+            </li><li>
+            <b>workers2.properties</b> - A file that describes the host(s) and port(s) used by the workers (Tomcat processes). 
+                A sample workers2.properties can be found under the conf directory.
+            </li><li>
+            <b>jk2.properties</b> - A configuration file used by mod_jk2 on the Tomcat side.
+            </li>
+            </ul>
+        </p>
+        <p>
+            <ol><li>In the registry, create a new registry key named
+            <b>"HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Jakarta Isapi Redirector\2.0"</b>
+            </li><li>
+            Add a string value with the name <b>serverRoot</b> and a value which is a full path
+            to your Tomcat installation (for example <b>c:\jakarta-tomcat</b>)
+            </li><li>
+            Add a string value with the name <b>extensionUri</b> and a value of <b>/jakarta/isapi_redirector2.dll</b>
+            </li><li>
+            Add a string value with the name <b>workersFile</b> and a value which is the full path 
+            to your workers2.properties file (for example <b>c:\jakarta-tomcat\conf\workers2.properties</b>)
+            </li><li>
+            Add a string value with the name <b>logLevel</b> and a value for your log level 
+            (can be DEBUG, INFO or ERROR).
+            </li><li>Using the IIS management console, add a new virtual directory to your IIS web site.
+            The name of the virtual directory must be jakarta. 
+            Its physical path should be the directory where you placed isapi_redirector2.dll 
+            While creating this new virtual directory assign it with execute access.
+            </li><li>
+            Using the IIS management console, add isapi_redirector2.dll as a filter in your IIS web site. 
+            The name of the filter should reflect its task (I use the name jakarta), 
+            its executable must full path to the isapi_redirector2.dll. 
+            </li>            
+            </ol>        
+        </p>
+        <p>
+        That's all, you should now start Tomcat and ask IIS to serve you the /examples context. 
+        Try <a href="http://localhost/examples/jsp/index.html">http://localhost/examples/jsp/index.html</a> for example and 
+        execute some of the JSP examples. 
+        </p>        
+    </subsection>            
   </section>
 </document>
