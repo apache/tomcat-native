@@ -201,10 +201,11 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     }
 
     /*
-     * Now, lets check that the pattern is /context/STAR.suffix
-     * or /context/STAR
-     * we need to have a '/' then a '*' and the a '.' or a
-     * '/' then a '*'
+     * We have an * in the uri. Check the type.
+     *  - /ASTERISK/PREFIX
+     * 
+     *  - /context/ASTERISK.suffix
+     *  - /context/PREFIX/ASTERISK
      */
     asterisk--;
     if ('/' == asterisk[0]) {
@@ -223,7 +224,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
                               uri, asterisk + 2, uriEnv->workerName);
 
         } else if ('.' == asterisk[2]) {
-            /* suffix rule: /foo/bar/STAR.extension */
+            /* suffix rule: /foo/bar/ASTERISK.extension */
             asterisk[1]      = '\0';
             asterisk[2]      = '\0';
             uriEnv->prefix      = uri;
@@ -236,7 +237,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
                               uri, asterisk + 3, uriEnv->workerName);
             }
         } else if ('\0' != asterisk[2]) {
-            /* general suffix rule /foo/bar/STARextraData */
+            /* general suffix rule /foo/bar/ASTERISKextraData */
             asterisk[1] = '\0';
             uriEnv->suffix  = asterisk + 2;
             uriEnv->prefix  = uri;
@@ -248,12 +249,12 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
                               uri, asterisk + 2, uriEnv->workerName);
             }
         } else {
-            /* context based /foo/bar/STAR  */
+            /* context based /foo/bar/ASTERISK  */
             asterisk[1]      = '\0';
             uriEnv->suffix      = NULL;
             uriEnv->prefix      = uri;
             uriEnv->prefix_len  =strlen( uriEnv->prefix );
-            uriEnv->match_type  = MATCH_TYPE_CONTEXT;
+            uriEnv->match_type  = MATCH_TYPE_PREFIX;
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                               "uriMap.addMapping() prefix mapping %s=%s\n",
@@ -266,7 +267,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         uriEnv->prefix      = uri;
         uriEnv->prefix_len  =strlen( uriEnv->prefix );
         uriEnv->suffix      = NULL;
-        uriEnv->match_type  = MATCH_TYPE_EXACT;
+        uriEnv->match_type  = MATCH_TYPE_PREFIX;
         if( uriEnv->debug > 0 ) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                      "uriMap.addMapping() prefix mapping2 %s=%s\n",

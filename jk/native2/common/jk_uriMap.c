@@ -66,8 +66,8 @@
  * This lets us either partition the work among the web server and the     
  * servlet container.                                                      
  *                                                                         
- * Author:      Gal Shachor <shachor@il.ibm.com>                           
- * Version:     $Revision$                                           
+ * @author: Gal Shachor <shachor@il.ibm.com>
+ * @author: Costin Manolache
  */
 
 #include "jk_pool.h"
@@ -233,14 +233,12 @@ static int JK_METHOD jk2_uriMap_setProperty(jk_env_t *env, jk_bean_t *mbean,
 {
     jk_uriMap_t *_this=mbean->object;
     char *value=valueP;
-    int rc=JK_OK;
     
     if( strcmp( name, "debug" )==0 ) {
         _this->debug=atoi( value );
-    } else {
-        return JK_ERR;
-    }
-    return rc;
+        return JK_OK;
+    } 
+    return JK_OK;
 }
 
 
@@ -346,7 +344,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
     char *url_rewrite=NULL;
     const char *suffix;
     int uriLen;
-
+    
     /* Ugly hack to avoid using non-thread safe code.
        Modify the uri in place for uri session encoding, then
        restore it to the original. That works since the processing
@@ -373,7 +371,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
                       "uriMap.mapUri() uri must start with /\n");
         return NULL;
     }
-
+    
     url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
         
     if(url_rewrite) {
@@ -416,7 +414,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
             /* restore */
             if( url_rewrite ) *url_rewrite=origChar;
             return uwr;
-        } else if(MATCH_TYPE_CONTEXT == uwr->match_type) {
+        } else if(MATCH_TYPE_PREFIX == uwr->match_type) {
             if(uwr->prefix_len > longest_match) {
                 /* This takes care of 'shorter' matches */
                 if( _this->debug > 0 )
@@ -436,6 +434,20 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
                                       uwr->suffix );
                     longest_match = uwr->prefix_len;
                     best_match = i;
+                }
+            }
+        } else if(MATCH_TYPE_CONTEXT_PATH == uwr->match_type) {
+            char *suffix_path = NULL;
+            if (strlen(uri) > 1 && (suffix_path = strchr(uri+1,'/')) != NULL) {
+                if (0 == strncmp(suffix_path,uwr->suffix, strlen(uwr->suffix))) {
+                    if(uwr->prefix_len >= longest_match) {
+                        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                                      "jk_uri_worker_map_t::map_uri_to_worker, "
+                                      "Found a general context path match %s -> *%s\n",
+                                      uwr->worker_name, uwr->suffix );   
+                        longest_match = uwr->prefix_len;
+                        best_match = i;
+                    }
                 }
             }
         } else /* MATCH_TYPE_SUFFIX */ {

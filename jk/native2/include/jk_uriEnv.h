@@ -87,13 +87,28 @@ struct jk_webapp;
 struct jk_uriEnv;
 typedef struct jk_uriEnv jk_uriEnv_t;
 
-
+/* Standard exact mapping */
 #define MATCH_TYPE_EXACT    (0)
-#define MATCH_TYPE_CONTEXT  (1)
+
+/* Standard prefix mapping */
+#define MATCH_TYPE_PREFIX  (1)
+
+/* Standard suffix mapping ( *.jsp ) */
 #define MATCH_TYPE_SUFFIX   (2)
-#define MATCH_TYPE_GENERAL_SUFFIX (3) /* match all URIs of the form *ext */
-/* match all context path URIs with a path component suffix */
+
+/* Special: match all URIs of the form *ext */
+#define MATCH_TYPE_GENERAL_SUFFIX (3) 
+
+/* Special: match all context path URIs with a path component suffix */
 #define MATCH_TYPE_CONTEXT_PATH (4)
+
+/* The uriEnv corresponds to a virtual host */
+#define MATCH_TYPE_HOST  (5)
+
+/* Top level context mapping. WEB-INF and META-INF will be checked,
+   and the information will be passed to tomcat
+*/
+#define MATCH_TYPE_CONTEXT  (6)
 
 
 struct jk_uriEnv {
