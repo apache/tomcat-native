@@ -1,27 +1,34 @@
 ## configure should make the Makefile out of this file.
+prefix=@prefix@
+exec_prefix=@prefix@
 
 APXS=@APXS@
 OS=@OS@
 JK_DIR := ../..
-COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
 APR_CFLAGS=@APR_CFLAGS@
-C_FILES=jk_service_apache13.c mod_jk2.c
 JAVA_HOME=@JAVA_HOME@
 APR_LIBS=`@APR_DIR@/bin/apr-config --link-ld`
 APR_UTIL_LIBS=`@APR_UTIL_DIR@/bin/apu-config --link-ld`
 
 ifneq ($(strip $(JAVA_HOME)),)
-JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS} @HAVE_JNI@
+JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 endif
 
-JK_CFLAGS=-I ${JK_DIR}/include -DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 ${APR_CFLAGS} -DHAVE_MMAP
+INCLUDES= -I${JK_DIR}/include \
+	  ${JAVA_INCL}
+
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 ${APR_CFLAGS} -DHAVE_MMAP @HAVE_JNI@ @HAS_PCRE@
+
+COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
+JNI_C_FILES := $(wildcard ${JK_DIR}/jni/*.c )
+C_FILES=jk_service_apache13.c mod_jk2.c
 
 all: mod_jk2.so
 
 mod_jk2.so: 
-	$(APXS) -c -o $@ ${JK_CFLAGS} ${JAVA_INCL} ${C_FILES} ${COMMON_C_FILES} \
-		${APR_LIBS} ${APR_UTIL_LIBS} ${JAVA_LIB}
+	$(APXS) -c -o $@ ${INCLUDES} ${JK_CFLAGS} ${C_FILES} ${COMMON_C_FILES} ${JNI_C_FILES} \
+		${APR_LIBS} ${APR_UTIL_LIBS} ${JAVA_LIB} @PCRE_LIBS@
 
 install: mod_jk2.so
 	$(APXS) -i mod_jk2.so

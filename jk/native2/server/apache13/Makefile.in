@@ -2,6 +2,8 @@
 # use -D options to overrides defaults
 CC=@CC@
 CP=@CP@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
 
 APACHE_HOME=@APACHE_HOME@
 OS=@OS@
@@ -29,8 +31,8 @@ INCLUDES= -I${JK_DIR}/include \
           ${APACHE_INCL} \
 	  ${JAVA_INCL}
 
-JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @APR_CFLAGS@ -DHAVE_MMAP @HAVE_JNI@
-JK_LDFLAGS=${APR_LDFLAGS} ${JAVA_LIB}
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @APR_CFLAGS@ -DHAVE_MMAP @HAVE_JNI@ @HAS_PCRE@
+JK_LDFLAGS=${APR_LDFLAGS} ${JAVA_LIB} @PCRE_LIBS@
 
 ###### Based on rules.mk ##########################################
 ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)
@@ -95,14 +97,12 @@ ${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/$(APACHE_LIBEXEC)/mod_jk2.so
 	$(CP) $^ $@
 
 ${BUILD_DIR}/$(APACHE_LIBEXEC)/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
-	mkdir -p ${BUILD_DIR}$(APACHE_LIBEXEC)
 	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}/$(APACHE_LIBEXEC)
 
 ${BUILD_DIR}/libjkjni.so: ${BUILD_DIR}/${APACHE_LIBEXEC}/libjkjni.so
 	$(CP) $^ $@
 
 ${BUILD_DIR}/${APACHE_LIBEXEC}/libjkjni.so: ${BUILD_DIR}/libjkjni.la
-	mkdir -p ${BUILD_DIR}/${APACHE_LIBEXEC}
 	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}/${APACHE_LIBEXEC}
 
 ${BUILD_DIR}/libjkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
@@ -114,7 +114,8 @@ ${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${JNI_LO_FILES} ${A_LO_FILES}
 ${COMMON_C_FILES} ${A_C_FILES}: ${H_FILES}
 
 prepare: 
-	mkdir -p ${BUILD_DIR}
+	mkdir -p ${BUILD_DIR}${APACHE_LIBEXEC}
 
 clean: 
-	rm -rf ${BUILD_DIR}/*.lo ${BUILD_DIR}/*.la ${BUILD_DIR}/*.o ${BUILD_DIR}/.libs ${BUILD_DIR}/*.so
+	rm -rf ${BUILD_DIR}/*.lo ${BUILD_DIR}/*.la ${BUILD_DIR}/*.o ${BUILD_DIR}/.libs \
+		${BUILD_DIR}/*.so ${BUILD_DIR}${APACHE_LIBEXEC}/*.so

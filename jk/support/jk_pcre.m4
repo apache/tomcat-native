@@ -29,8 +29,8 @@ AC_DEFUN(
 	      esac
 
 		if ${TEST} ${use_pcre} ; then
-		  HAS_PCRE="-DHAS_PCRE"
-		  PCRE_LIBS="-lpcre -lpcreposix"
+		  HAS_PCRE="-I${includedir} -DHAS_PCRE"
+		  PCRE_LIBS="-L${libdir} -lpcre -lpcreposix"
 		fi
       ])
   ])
