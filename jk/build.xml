@@ -8,6 +8,8 @@
   
     <!-- ===================== Initialize Property Values ================ -->
     <property file="build.properties"/>
+    <property file="../build.properties"/>
+    <property file="../build.properties.default"/>
     <property file="${user.home}/build.properties"/>
     <property file="${user.home}/.build.properties"/>
 
