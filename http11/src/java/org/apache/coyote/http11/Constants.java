@@ -161,25 +161,42 @@ public final class Constants {
     /**
      * CRLF bytes.
      */
-    public static final byte[] CRLF_BYTES = "\r\n".getBytes();
+    public static final byte[] CRLF_BYTES = {(byte) '\r', (byte) '\n'};
 
 
     /**
      * Colon bytes.
      */
-    public static final byte[] COLON_BYTES = ": ".getBytes();
+    public static final byte[] COLON_BYTES = {(byte) ':', (byte) ' '};
 
 
     /**
      * Close bytes.
      */
-    public static final byte[] CLOSE_BYTES = "close".getBytes();
+    public static final byte[] CLOSE_BYTES = {
+        (byte) 'c',
+        (byte) 'l',
+        (byte) 'o',
+        (byte) 's',
+        (byte) 'e'
+    };
 
 
     /**
      * Keep-alive bytes.
      */
-    public static final byte[] KEEPALIVE_BYTES = "keep-alive".getBytes();
+    public static final byte[] KEEPALIVE_BYTES = {
+        (byte) 'k',
+        (byte) 'e',
+        (byte) 'e',
+        (byte) 'p',
+        (byte) '-',
+        (byte) 'a',
+        (byte) 'l',
+        (byte) 'i',
+        (byte) 'v',
+        (byte) 'e'
+    };
 
 
     /**
@@ -239,8 +256,28 @@ public final class Constants {
     /**
      * Ack string when pipelining HTTP requests.
      */
-    public static final byte[] ACK_BYTES =
-        "HTTP/1.1 100 Continue\r\n\r\n".getBytes();
+    public static final byte[] ACK_BYTES = {
+        (byte) '1',
+        (byte) '.',
+        (byte) '1',
+        (byte) ' ',
+        (byte) '1',
+        (byte) '0',
+        (byte) '0',
+        (byte) ' ',
+        (byte) 'C',
+        (byte) 'o',
+        (byte) 'n',
+        (byte) 't',
+        (byte) 'i',
+        (byte) 'n',
+        (byte) 'u',
+        (byte) 'e',
+        (byte) '\r',
+        (byte) '\n',
+        (byte) '\r',
+        (byte) '\n'
+    };
 
 
 }
