@@ -144,7 +144,7 @@ public final class Response {
     /**
      * HTTP specific fields.
      */
-    protected String contentType = Constants.DEFAULT_CONTENT_TYPE;
+    protected String contentType = null;
     protected String contentLanguage = null;
     protected String characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
     protected int contentLength = -1;
@@ -319,7 +319,7 @@ public final class Response {
         
         // Reset the headers only if this is the main request,
         // not for included
-        contentType = Constants.DEFAULT_CONTENT_TYPE;
+        contentType = null;;
         locale = DEFAULT_LOCALE;
         contentLanguage = null;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
@@ -470,6 +470,8 @@ public final class Response {
 
         if (isCommitted())
             return;
+        if (contentType == null)
+            return;
 
         String type = this.contentType;
         int start = type.indexOf("charset=");
@@ -533,7 +535,7 @@ public final class Response {
     
     public void recycle() {
         
-        contentType = Constants.DEFAULT_CONTENT_TYPE;
+        contentType = null;
         contentLanguage = null;
         locale = DEFAULT_LOCALE;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;

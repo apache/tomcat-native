@@ -71,9 +71,6 @@ public final class Constants {
     // -------------------------------------------------------------- Constants
 
 
-    public static final String DEFAULT_CONTENT_TYPE = "text/plain";
-
-
     public static final String DEFAULT_CHARACTER_ENCODING="ISO-8859-1";
 
 
