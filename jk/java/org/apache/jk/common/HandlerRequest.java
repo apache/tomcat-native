@@ -473,8 +473,7 @@ public class HandlerRequest extends JkHandler
             return OK;
 
         default:
-            System.err.println("Unknown message " + type );
-            msg.dump("Unknown message" );
+            log.info("Unknown message " + type);
         }
 
         return OK;
