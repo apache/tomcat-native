@@ -359,7 +359,7 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
             if( serverSocket!=null)
                 serverSocket.close();
         } catch(Exception e) {
-            log.error("Caught exception trying to close socket.", e);
+            log.error(sm.getString("endpoint.err.close"), e);
         }
         serverSocket = null;
     }
@@ -369,16 +369,17 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
         try {
             // Need to create a connection to unlock the accept();
             if (inet == null) {
-                s=new Socket("127.0.0.1", port );
-            }else{
-                s=new Socket(inet, port );
+                s = new Socket("127.0.0.1", port);
+            } else {
+                s = new Socket(inet, port);
                     // setting soLinger to a small value will help shutdown the
                     // connection quicker
                 s.setSoLinger(true, 0);
             }
         } catch(Exception e) {
-            log.debug("Caught exception trying to unlock accept on " + port
-                      + " " + e.toString());
+            if (log.isDebugEnabled()) {
+                log.debug(sm.getString("endpoint.debug.unlock", "" + port), e);
+            }
         } finally {
             if (s != null) {
                 try {
@@ -404,7 +405,7 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
                 accepted = factory.acceptSocket(serverSocket);
             }
             if (null == accepted) {
-                log.warn("Null socket returned by accept");
+                log.warn(sm.getString("endpoint.warn.nullSocket"));
             } else {
                 if (!running) {
                     accepted.close();  // rude, but unlikely!
@@ -425,7 +426,7 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
             // socket with SocketPermission's.
             // Log the unauthorized access and continue
             String msg = sm.getString("endpoint.warn.security",
-                                      serverSocket,ace);
+                                      serverSocket, ace);
             log.warn(msg);
         }
         catch (IOException e) {
@@ -524,11 +525,8 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
             getConnectionHandler().processConnection(con, threadData);
             
         } catch (SocketException se) {
-            PoolTcpEndpoint.log.error(
-                    "Remote Host "
-                    + s.getInetAddress()
-                    + " SocketException: "
-                    + se.getMessage());
+            log.error(sm.getString("endpoint.err.socket", s.getInetAddress()),
+                    se);
             // Try to close the socket
             try {
                 s.close();
@@ -536,9 +534,11 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
             }
         } catch (Throwable t) {
             if (step == 2) {
-                PoolTcpEndpoint.log.debug("Handshake failed", t);
+                if (log.isDebugEnabled()) {
+                    log.debug(sm.getString("endpoint.err.handshake"), t);
+                }
             } else {
-                PoolTcpEndpoint.log.error("Unexpected error", t);
+                log.error(sm.getString("endpoint.err.unexpected"), t);
             }
             // Try to close the socket
             try {
