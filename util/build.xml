@@ -69,8 +69,9 @@
             <exclude name="**/util/net/puretls/*" unless="puretls.present"/>
             <exclude name="**/util/mx/*" unless="jmx.present"/>
             <exclude name="**/util/threads/ThreadPoolMX*" unless="modeler.present"/>
-	    <exclude name="**/util/compat/Jdk14Compat.java" unless="jdk1.4.present" />
-	</javac>
+            <exclude name="**/util/compat/Jdk14Compat.java" unless="jdk1.4.present" />
+            <exclude name="**/util/net/jsse/JSSE14*" unless="jdk1.4.present" />
+        </javac>
 
 	<!-- Copy static resource files -->
 	<copy todir="${tomcat-util.build}/classes">
