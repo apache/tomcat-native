@@ -66,7 +66,12 @@ package org.apache.ajp.tomcat33;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+
+import org.apache.ajp.*;
+
+import org.apache.tomcat.modules.server.*;
 import org.apache.tomcat.core.*;
+
 import org.apache.tomcat.util.net.*;
 import org.apache.tomcat.util.*;
 import org.apache.tomcat.util.log.*;
@@ -90,6 +95,7 @@ public class Ajp14Interceptor extends PoolTcpConnector
     implements  TcpConnectionHandler
 {
     int ajp14_note=-1;
+    String password;
     
     public Ajp14Interceptor()
     {
@@ -104,6 +110,10 @@ public class Ajp14Interceptor extends PoolTcpConnector
 
     // -------------------- Ajp14 specific parameters --------------------
 
+    public void setPassword( String s ) {
+	log( "Password=" + s);
+	this.password=s;
+    }
 
     
     // -------------------- PoolTcpConnector --------------------
@@ -154,7 +164,12 @@ public class Ajp14Interceptor extends PoolTcpConnector
 	}
 	// either thData==null or broken ( req==null)
 	Ajp14 ajp14=new Ajp14();
-	req=new Ajp14Request(ajp14);
+	ajp14.setContainerSignature( ContextManager.TOMCAT_NAME +
+				     " v" + ContextManager.TOMCAT_VERSION);
+	AjpRequest ajpreq=new AjpRequest();
+	log( "Setting pass " + password );
+	ajp14.setPassword( password );
+	req=new Ajp14Request(ajp14, ajpreq);
 	Ajp14Response res=new Ajp14Response(ajp14);
 	cm.initRequest(req, res);
 	return  req;
@@ -174,16 +189,29 @@ public class Ajp14Interceptor extends PoolTcpConnector
             Ajp14Request req=initRequest( thData );
             Ajp14Response res= (Ajp14Response)req.getResponse();
             Ajp14 ajp14=req.ajp14;
+	    AjpRequest ajpReq=req.ajpReq;
 
             ajp14.setSocket(socket);
 
 	    if( debug>0)
 		log( "Received ajp14 connection ");
+
+	    // first request should be the loginit.
+	    int status=ajp14.receiveNextRequest( ajpReq );
+	    if( status != 304 )  { // XXX use better codes
+		log( "Failure in logInit ");
+		return;
+	    }
+
+	    status=ajp14.receiveNextRequest( ajpReq );
+	    if( status != 304 ) { // XXX use better codes
+		log( "Failure in login ");
+		return;
+	    }
 	    
             boolean moreRequests = true;
             while(moreRequests) {
-		// first request should be the logon.
-		int status=ajp14.receiveNextRequest( req );
+		status=ajp14.receiveNextRequest( ajpReq );
 
 		if( status==-2) {
 		    // special case - shutdown
@@ -254,10 +282,12 @@ public class Ajp14Interceptor extends PoolTcpConnector
 class Ajp14Request extends Request 
 {
     Ajp14 ajp14;
+    AjpRequest ajpReq;
     
-    public Ajp14Request(Ajp14 ajp14) 
+    public Ajp14Request(Ajp14 ajp14, AjpRequest ajpReq) 
     {
         this.ajp14=ajp14;
+	this.ajpReq=ajpReq;
     }
 
     // XXX This should go away if we introduce an InputBuffer.
