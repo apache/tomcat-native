@@ -93,6 +93,7 @@ public class Http11Protocol implements ProtocolHandler
     public void setAttribute( String name, Object value ) {
 
         log.info("setAttribute " + name + " " + value );
+        attributes.put(name, value);
 /*
         if ("maxKeepAliveRequests".equals(name)) {
             maxKeepAliveRequests = Integer.parseInt((String) value.toString());
@@ -186,13 +187,14 @@ public class Http11Protocol implements ProtocolHandler
     }
     
     public void setPort( int port ) {
-        log.info("setPort " + port );
 	ep.setPort(port);
+        setAttribute("port", "" + port);
     	//this.port=port;
     }
 
     public void setAddress(InetAddress ia) {
 	ep.setAddress( ia );
+        setAttribute("address", "" + ia);
     }
 
     public void setHostName( String name ) {
@@ -202,52 +204,62 @@ public class Http11Protocol implements ProtocolHandler
 
     public void setSocketFactory( String valueS ) {
 	socketFactoryName = valueS;
+        setAttribute("socketFactory", valueS);
     }
 
     public void setSSLImplementation( String valueS) {
  	sslImplementationName=valueS;
+        setAttribute("sslImplementation", valueS);
     }
  	
     public void setTcpNoDelay( boolean b ) {
 	ep.setTcpNoDelay( b );
+        setAttribute("tcpNoDelay", "" + b);
     }
 
     public void setSoLinger( int i ) {
 	ep.setSoLinger( i );
+        setAttribute("soLinger", "" + i);
     }
 
     public void setSoTimeout( int i ) {
 	ep.setSoTimeout(i);
+        setAttribute("soTimeout", "" + i);
     }
     
     public void setServerSoTimeout( int i ) {
-	ep.setServerSoTimeout( i );
+	ep.setServerSoTimeout(i);
+        setAttribute("serverSoTimeout", "" + i);
     }
     
     public void setKeystore( String k ) {
-	attributes.put( "keystore", k);
+        setAttribute("keystore", k);
     }
 
     public void setKeypass( String k ) {
-	attributes.put( "keypass", k);
+        attributes.put("keypass", k);
+        //setAttribute("keypass", k);
     }
 
     public void setClientauth( String k ) {
-	attributes.put( "clientauth", k);
+        setAttribute("clientauth", k);
     }
 
     public void setSecure( boolean b ) {
     	secure=b;
+        setAttribute("secure", "" + b);
     }
 
     /** Set the maximum number of Keep-Alive requests that we will honor.
      */
     public void setMaxKeepAliveRequests(int mkar) {
 	maxKeepAliveRequests = mkar;
+        setAttribute("maxKeepAliveRequests", "" + mkar);
     }
 
     public void setSocketCloseDelay( int d ) {
         socketCloseDelay=d;
+        setAttribute("socketCloseDelay", "" + d);
     }
 
     private static ServerSocketFactory string2SocketFactory( String val)
