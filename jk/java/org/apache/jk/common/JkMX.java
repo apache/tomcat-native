@@ -63,6 +63,7 @@ import java.net.*;
 import java.util.*;
 
 import org.apache.jk.core.*;
+import org.apache.jk.server.JkMain;
 
 import javax.management.*;
 
@@ -102,20 +103,6 @@ public class JkMX extends JkHandler
 
     public String getHost() {
         return host;
-    }
-    
-    public void createMBean( Object proxy, String name ) {
-        try {
-            DynamicMBeanProxy mbean=new DynamicMBeanProxy();
-            mbean.setReal( proxy );
-            if( name!=null ) {
-                mbean.setName( name );
-            }
-
-            mbean.registerMBean( "jk2" );
-        } catch( Throwable t ) {
-            log.error( "Error creating mbean ", t );
-        }
     }
 
     /* ==================== Start/stop ==================== */
@@ -205,15 +192,17 @@ public class JkMX extends JkHandler
             try {
                 Class c=Class.forName( "org.apache.log4j.jmx.HierarchyDynamicMBean" );
                 Object o=c.newInstance();
-                log.info("Registering the root hierarchy for JMX ");
+                log.info("Registering the JMX hierarchy for Log4J ");
                 mserver.registerMBean(o, new ObjectName("log4j:hierarchy=default"));
             } catch( Throwable t ) {
                 log.info("Can't enable log4j mx");
             }
 
+            DynamicMBeanProxy.createMBean( JkMain.getJkMain(), "jk2", "name=JkMain" ); 
+            
             for( int i=0; i< wEnv.getHandlerCount(); i++ ) {
                 JkHandler h=wEnv.getHandler( i );
-                createMBean( h, h.getName() );
+                DynamicMBeanProxy.createMBean( h, "jk2", "name=" + h.getName() );
             }
             
         } catch( Throwable t ) {
@@ -223,7 +212,7 @@ public class JkMX extends JkHandler
 
     public void addHandlerCallback( JkHandler w ) {
         if( w!=this ) {
-            createMBean( w, w.getName() );
+            DynamicMBeanProxy.createMBean( w, "jk2", "name=" + w.getName() );
         }
     }
 
