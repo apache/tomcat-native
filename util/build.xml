@@ -3,6 +3,7 @@
     <!-- ===================== Initialize Property Values =================== -->
     <property file="${user.home}/build.properties"/>
     <property file="build.properties"/>
+    <property file="../build.properties.default"/>
     <property file="build.properties.sample"/>
 
     <property name="tomcat-util.build" value="${basedir}/build"/>
@@ -51,10 +52,11 @@
     <target name="build-main" depends="build-prepare">
         <echo message="----- Java-utils -----" />
         <echo message="-- puretls.present = ${puretls.present}" />
-        <echo message="-- jsse.present = ${jsse.present}"/>
+        <echo message="-- jsse.present = ${jsse.present} ${jsse.jar}"/>
         <echo message="-- commons-logging = ${commons-logging.present}"/>
         <echo message="-- jmx = ${jmx.present} ${jmx.jar}"/>
         <echo message="-- modeler = ${modeler.present} ${commons-modeler.jar}"/>
+        <echo message="-- JDK14 = ${jdk1.4.present}"/>
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
 	       deprecation="on"
