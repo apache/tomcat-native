@@ -89,8 +89,7 @@ AC_SUBST(APR_VARFIL)
 dnl --------------------------------------------------------------------------
 dnl Check where sources are
 dnl --------------------------------------------------------------------------
-LOCAL_RESOLVEDIR([${srcdir}],[sources directory])
-SRCDIR=${DIR}
+LOCAL_RESOLVEDIR(SRCDIR,[${srcdir}],[sources directory])
 
 dnl -------------------------------------------------------------------------
 dnl Check C environment
@@ -100,10 +99,11 @@ dnl   distribution from a binary tarball (such as in Apache 2.0) and the
 dnl   compiler is not available.
 dnl -------------------------------------------------------------------------
 LOCAL_HEADER([C-Language compilation tools])
+LOCAL_CHECK_PROG(AR,ar)
+LOCAL_CHECK_PROG(RANLIB,ranlib)
 AC_PROG_CC()
+AC_PROG_CC_C_O()
 AC_PROG_CPP()
-AC_PATH_PROG(AR,ar,${PATH})
-AC_PATH_PROG(RANLIB,ranlib,${PATH})
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 
@@ -219,8 +219,7 @@ then
     AC_MSG_ERROR([Cannot find APR buildconf program in \"${APR_SRCDIR}\"])
   fi
   
-  LOCAL_RESOLVEDIR([${APR_SRCDIR}],[full APR directory path])
-  APR_SRCDIR="${DIR}"
+  LOCAL_RESOLVEDIR(APR_SRCDIR,[${APR_SRCDIR}],[full APR directory path])
   
   dnl ---------------------------------------------
   dnl Build the configure script for APR and run it
@@ -230,14 +229,16 @@ then
   cd ${APR_SRCDIR}
   
   LOCAL_HEADER([Building APR configure script])
-  LOCAL_FILTEREXEC([./buildconf],[APR buildconf])
+  LOCAL_FILTEREXEC(ret,
+    [./buildconf],
+    [APR buildconf])
   if ${TEST} "${ret}" -ne "0"
   then
     AC_MSG_ERROR([APR buildconf terminated with error code ${ret}])
   fi
   
   LOCAL_HEADER([Configuring APR])
-  LOCAL_FILTEREXEC(
+  LOCAL_FILTEREXEC(ret,
     [./configure --enable-static --disable-shared --disable-threads],
     ["APR configure"])
   if ${TEST} "${ret}" -ne "0"
