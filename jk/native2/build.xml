@@ -11,10 +11,7 @@
 
   <!-- ========== Local paths, overriden in build.properties ========== -->
 
-  <property name="apxs13" value="/usr/sbin/apxs" />
-  <property name="apxs20" value="/opt/apache2/bin/apxs" />
-  
-  <property name="netscape.home" location="/opt/iplanet/plugins" />
+  <property name="netscape.home" location="${iplanet.home}/plugins" />
   <property name="apache2.home" location="/opt/apache2" />
   <property name="apache13.home" location="/usr" />
   
@@ -32,6 +29,7 @@
  
   <!-- Base dir for jk sources -->
   <property name="jk.src" location=".." />
+  <property name="jk.build" location="../build" />
 
   <property name="native.dir" location="${jk.src}/native2" />
 
@@ -43,17 +41,25 @@
 
   <!-- ==================== Targets ==================== -->
 
-  <target name="main" depends="init,apache20,jni">
+  <target name="main" depends="init,apache20,jni,apache13">
   </target>
 
   <target name="init" >
     <taskdef resource="META-INF/ant.tasks" 
 	     classpathref="jkant" />
     <available property="HAVE_APR" file="${apr.include}/apr.h" />
+    <available property="apache13.detect" 
+               file="${apache13.home}" />
+    <available property="apache2.detect" 
+               file="${apache2.home}" />
+    <available property="iis.detect" 
+               file="${iis.home}" />
+    <available property="iplanet.detect" 
+               file="${iplanet.home}" />
     <mkdir dir="${build.dir}" />
   </target>
 
-  <target name="apache20" depends="init">
+  <target name="apache20" depends="init" if="apache2.detect">
     <mkdir dir="${build.dir}/apache2" />
     <so sofile="mod_jk" 
 	buildDir="${build.dir}/apache2"
@@ -159,17 +165,16 @@
   </target>
 
 
-  <target name="apache13" depends="init">
-    <mkdir dir="apache-1.3/obj" />
+  <target name="apache13" depends="init" if="apache13.detect">
+    <mkdir dir="${jk.build}/WEB-INF/jk2/apache13" />
     <so sofile="mod_jk" 
-	buildDir="apache-1.3/obj"
+	buildDir="${jk.build}/WEB-INF/jk2/apache13"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}">
-      <apacheConfig apxs="${apxs13}" />
 
       <src dir=".">
-	<include name="apache-1.3/mod_jk.c" />
+	<include name="server/apache13/mod_jk.c" />
 	<include name="common/*.c" />
         <exclude name="jk_nwmain.c" 
 		 unless="netware" />
@@ -242,7 +247,7 @@
     </so>
   </target>
 
-  <target name="iis" depends="init">
+  <target name="iis" depends="init" if="iis.detect">
     <so sofile="isapi_redirector" 
         buildDir="iis"
         optimize="${so.optimize}"
@@ -286,7 +291,9 @@
     </so>
   </target>
 
-  <target name="netscape" depends="init">
+  <target name="netscape" depends="init" if="iplanet.detect">
+    <available property="unix" file="/etc/passwd" />
+  
     <mkdir dir="netscape/obj" />
     <so sofile="nsapi_redirector" 
 	buildDir="netscape/obj"

@@ -41,8 +41,8 @@
 	     classpathref="cp.jkant" />
     <available property="apache13.detect" 
                file="${apache13.home}" />
-    <available property="apache20.detect" 
-               file="${apache20.home}" />
+    <available property="apache2.detect" 
+               file="${apache2.home}" />
     <available property="iis.detect" 
                file="${iis.home}" />
     <available property="iplanet.detect" 
