@@ -226,6 +226,7 @@ public class WarpConfigurationHandler {
                     packet.reset();
                     packet.setType(Constants.TYPE_CONF_MAP_DONE);
                     connection.send(packet);
+                    break;
                 }
 
                 case Constants.TYPE_CONF_DONE: {
