@@ -1473,6 +1473,27 @@ static const char *jk_add_env_var(cmd_parms * cmd,
     return NULL;
 }
 
+/*
+ * JkWorkerProperty Directive Handling
+ *
+ * JkWorkerProperty name=value
+ */
+
+static const char *jk_set_worker_property(cmd_parms * cmd,
+                                          void *dummy,
+                                          const char *line)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+    
+    if (jk_map_read_property(conf->worker_properties, line) == JK_FALSE)
+        return apr_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line);
+
+    return NULL;
+}
+
 static const command_rec jk_cmds[] = {
     /*
      * JkWorkersFile specifies a full path to the location of the worker
@@ -1583,6 +1604,10 @@ static const command_rec jk_cmds[] = {
     AP_INIT_TAKE2("JkEnvVar", jk_add_env_var, NULL, RSRC_CONF,
                   "Adds a name of environment variable that should be sent "
                   "to servlet-engine"),
+
+    AP_INIT_RAW_ARGS("JkWorkerProperty", jk_set_worker_property,
+                     NULL, RSRC_CONF,
+                     "Set worker.properties directive"),
 
     {NULL}
 };
