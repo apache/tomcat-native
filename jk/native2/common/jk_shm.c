@@ -564,10 +564,6 @@ static int JK_METHOD jk2_shm_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_
     return JK_ERR;
 }
 
-static int JK_METHOD jk2_shm_setWorkerEnv( jk_env_t *env, jk_shm_t *shm, jk_workerEnv_t *wEnv ) {
-    return JK_OK;
-}
-
 int JK_METHOD jk2_shm_factory( jk_env_t *env ,jk_pool_t *pool,
                                jk_bean_t *result,
                                const char *type, const char *name)
@@ -590,14 +586,12 @@ int JK_METHOD jk2_shm_factory( jk_env_t *env ,jk_pool_t *pool,
     shm->mbean=result; 
     result->object=shm;
     result->invoke=jk2_shm_invoke;
+    shm->init=jk2_shm_init;
+    shm->destroy=jk2_shm_destroy;
     
     shm->getSlot=jk2_shm_getSlot;
     shm->createSlot=jk2_shm_createSlot;
-    shm->getId=jk2_shm_getId;
-    shm->init=jk2_shm_init;
     shm->reset=jk2_shm_reset;
-    shm->destroy=jk2_shm_destroy;
-    shm->setWorkerEnv=jk2_shm_setWorkerEnv;
     
     return JK_OK;
 }
