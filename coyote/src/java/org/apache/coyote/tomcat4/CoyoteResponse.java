@@ -1321,25 +1321,6 @@ public class CoyoteResponse
 
         }
 
-/*
-        // Construct a new absolute URL if possible (cribbed from
-        // the DefaultErrorPage servlet)
-        URL url = null;
-        try {
-            url = new URL(location);
-        } catch (MalformedURLException e1) {
-            HttpServletRequest hreq =
-                (HttpServletRequest) request.getRequest();
-            String requrl = HttpUtils.getRequestURL(hreq).toString();
-            try {
-                url = new URL(new URL(requrl), location);
-            } catch (MalformedURLException e2) {
-                throw new IllegalArgumentException(location);
-            }
-        }
-        return (url.toExternalForm());
-*/
-
     }
 
 
@@ -1373,8 +1354,8 @@ public class CoyoteResponse
             sb.append(";jsessionid=");
             sb.append(sessionId);
         }
-        sb.append(anchor);
         sb.append(query);
+        sb.append(anchor);
         return (sb.toString());
 
     }
