@@ -99,13 +99,15 @@ typedef struct warp_packet {
 #define VERS_MINOR 9
 
 #define TYPE_INVALID -1
-#define TYPE_ERROR   0x00
-#define TYPE_FATAL   0xff
+#define TYPE_ERROR        0x00
+#define TYPE_DISCONNECT   0xfe
+#define TYPE_FATAL        0xff
 
 #define TYPE_CONF_WELCOME 0x01
 #define TYPE_CONF_DEPLOY  0x02
 #define TYPE_CONF_APPLIC  0x03
 #define TYPE_CONF_DONE    0x04
+#define TYPE_CONF_PROCEED 0x05
 
 /* ************************************************************************* */
 /* PACKET FUNCTIONS FROM PR_WARP_PACKET.C                                    */
