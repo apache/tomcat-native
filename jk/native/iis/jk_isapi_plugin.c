@@ -554,21 +554,21 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                             DWORD dwNotificationType, 
                             LPVOID pvNotification)
 {
-	/* Initialise jk */
-	if (is_inited && !is_mapread) {
-		char serverName[MAX_SERVERNAME];
-		DWORD dwLen = sizeof(serverName);
+    /* Initialise jk */
+    if (is_inited && !is_mapread) {
+        char serverName[MAX_SERVERNAME];
+        DWORD dwLen = sizeof(serverName);
 
-		if (pfc->GetServerVariable(pfc, SERVER_NAME, serverName, &dwLen))
-		{
-			if (dwLen > 0) serverName[dwLen-1] = '\0';
-			if (init_jk(serverName))
-				is_mapread = JK_TRUE;
-		}
-		/* If we can't read the map we become dormant */
-		if (!is_mapread)
-			is_inited = JK_FALSE;
-	}
+        if (pfc->GetServerVariable(pfc, SERVER_NAME, serverName, &dwLen))
+        {
+            if (dwLen > 0) serverName[dwLen-1] = '\0';
+            if (init_jk(serverName))
+                is_mapread = JK_TRUE;
+        }
+        /* If we can't read the map we become dormant */
+        if (!is_mapread)
+            is_inited = JK_FALSE;
+    }
 
     if (is_inited &&
        (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType)) { 
@@ -627,22 +627,30 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             }
             getparents(uri);
 
-			if(p->GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
-				strcat(snuri,Host);
-				strcat(snuri,uri);
-				jk_log(logger, JK_LOG_DEBUG, 
-					   "In HttpFilterProc Virtual Host redirection of %s\n", 
-					   snuri);
-				worker = map_uri_to_worker(uw_map, snuri, logger);                
-			}
-			if (!worker) {
-				jk_log(logger, JK_LOG_DEBUG, 
-					   "In HttpFilterProc test Default redirection of %s\n", 
-					   uri);
-				worker = map_uri_to_worker(uw_map, uri, logger);
-			}
-            if (query) {
-                *query = '?';
+            if(p->GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
+                strcat(snuri,Host);
+                strcat(snuri,uri);
+                jk_log(logger, JK_LOG_DEBUG, 
+                       "In HttpFilterProc Virtual Host redirection of %s\n", 
+                       snuri);
+                worker = map_uri_to_worker(uw_map, snuri, logger);                
+            }
+            if (!worker) {
+                jk_log(logger, JK_LOG_DEBUG, 
+                       "In HttpFilterProc test Default redirection of %s\n", 
+                       uri);
+                worker = map_uri_to_worker(uw_map, uri, logger);
+            }
+            if(query) {
+                char *querytmp = uri + strlen(uri);
+                *querytmp++ = '?';
+                query++;
+                /* if uri was shortened, move the query characters */
+                if (querytmp != query) {
+                    while (*query != '\0')
+                        *querytmp++ = *query++;
+                    *querytmp = '\0';
+                }
             }
 
             if (worker) {
