@@ -180,6 +180,13 @@ struct jk_worker {
      */
     struct jk_exception *lastError;
 
+    /* 'Version' or generation. Used to update the workers dynamically
+       at runtime */
+    int     ver;
+    /* Only one thread can update the config
+     */
+    JK_CRIT_SEC cs;
+
     /** For load balancing workers
      */
     struct jk_map *lbWorkerMap;
