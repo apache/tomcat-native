@@ -84,6 +84,10 @@ public class RequestInfo  {
         this.req=req;
     }
 
+    public RequestGroupInfo getGlobalProcessor() {
+        return global;
+    }
+    
     public void setGlobalProcessor(RequestGroupInfo global) {
         if( global != null) {
             this.global=global;
