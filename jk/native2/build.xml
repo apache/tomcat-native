@@ -52,6 +52,9 @@
   <target name="main" depends="init,apache20,apache13,jni">
   </target>
 
+  <target name="all" depends="jkant,init,apache20,apache13,jni">
+  </target>
+
   <target name="init" >
     <echo message="build.properties.${os.arch}.${os.name}" />
     <taskdef resource="META-INF/ant.tasks" 
@@ -70,7 +73,9 @@
     <echo message="Apache13 ${apache13.home} ${apache13.detect}" />
     <echo message="IIS ${iis.home} ${iis.detect}" />
     <echo message="Iplanet ${iplanet.home} ${iplanet.detect}" />
+  </target>
 
+  <target name="jkant" >
     <ant dir="${jk.src}" target="jkant"/>
   </target>
 
@@ -217,6 +222,9 @@
 	   info="Building for NetWare platform" />
       <def name="XP_NETWARE" if="netware"
 	   info="Building for NetWare platform" />
+      <def name="HAS_APR"
+	   info="JNI is no based on APR" />
+      <def name="HAVE_JNI" />
            
       <import fileName="${novellndk.dir}/imports/clib.imp" if="netware" />
       <import fileName="${novellndk.dir}/imports/lib0.imp" if="netware" />
@@ -347,16 +355,18 @@
         <exclude name="common/jk_pool_apr.c"/>
         <exclude name="jk_nwmain.c" 
                  unless="netware" />
+	<include name="jni/*.c" />
         <exclude name="jk_apr.c" 
                  unless="netware" />
         <include name="common/apr/*.c" unless="HAVE_APR"  />
-	<!-- include name="jni/*.c" /-->
       </src>
       <includes>
         <include name="${java.home}/../include" />
 	<include name="${native.dir}/include" />
         <include name="${java.home}/../include/win32" />
         <include name="${native.dir}/common" />
+        <include name="${native.dir}/server/isapi" />
+        <include name="${build.compiler.base}/include" />
         <!--include name="&quot;${build.compiler.base}/include&quot;" /-->
         <include name="&quot;$(mssdk.include)&quot;"/>
       </includes>
