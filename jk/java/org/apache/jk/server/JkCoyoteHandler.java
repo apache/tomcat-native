@@ -347,8 +347,8 @@ public class JkCoyoteHandler extends JkHandler implements
                     appendHead( res );
                 }
             } else if( actionCode==ActionCode.ACTION_RESET ) {
-                if( log.isInfoEnabled() )
-                    log.info("RESET " );
+                if( log.isDebugEnabled() )
+                    log.debug("RESET " );
 
             } else if( actionCode==ActionCode.ACTION_CLIENT_FLUSH ) {
                 if( log.isDebugEnabled() ) log.debug("CLIENT_FLUSH " );
