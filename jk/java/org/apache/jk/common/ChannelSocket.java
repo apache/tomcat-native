@@ -107,6 +107,13 @@ public class ChannelSocket extends JkHandler {
     int linger=100;
     int socketTimeout;
 
+    /* Turning this to true will reduce the latency with about 20%.
+       But it requires changes in tomcat to make sure client-requested
+       flush() is honored ( on my test, I got 367->433 RPS and
+       52->35ms average time with a simple servlet )
+    */
+    static final boolean BUFFER_WRITE=false;
+    
     ThreadPool tp=new ThreadPool();
 
     /* ==================== Tcp socket options ==================== */
@@ -190,7 +197,11 @@ public class ChannelSocket extends JkHandler {
             s.setSoTimeout( socketTimeout );
 
         InputStream is=new BufferedInputStream(s.getInputStream());
-        OutputStream os= s.getOutputStream();
+        OutputStream os;
+        if( BUFFER_WRITE )
+            os = new BufferedOutputStream( s.getOutputStream());
+        else
+            os = s.getOutputStream();
         ep.setNote( isNote, is );
         ep.setNote( osNote, os );
     }
@@ -287,6 +298,16 @@ public class ChannelSocket extends JkHandler {
         OutputStream os=(OutputStream)ep.getNote( osNote );
         os.write( buf, 0, len );
         return len;
+    }
+
+    public int flush( Msg msg, MsgContext ep)
+        throws IOException
+    {
+        if( BUFFER_WRITE ) {
+            OutputStream os=(OutputStream)ep.getNote( osNote );
+            os.flush();
+        }
+        return 0;
     }
 
     public int receive( Msg msg, MsgContext ep )
@@ -451,6 +472,8 @@ public class ChannelSocket extends JkHandler {
             return receive( msg, ep );
         case JkHandler.HANDLE_SEND_PACKET:
             return send( msg, ep );
+        case JkHandler.HANDLE_FLUSH:
+            return flush( msg, ep );
         }
 
         return next.invoke( msg, ep );
