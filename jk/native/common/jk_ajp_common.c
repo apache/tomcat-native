@@ -692,7 +692,6 @@ void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
 
-    ajp_reset_endpoint(ae);
     jk_close_pool(&(ae->pool));
 
     if (ae->sd > 0) {
@@ -702,8 +701,8 @@ void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
         ae->sd = -1;            /* just to avoid twice close */
     }
 
-    JK_TRACE_EXIT(l);
     free(ae);
+    JK_TRACE_EXIT(l);
 }
 
 
