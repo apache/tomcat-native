@@ -143,6 +143,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
 
             if( w->mbean->disabled ) continue;
             if( w->in_error_state ) continue;
+            if( w->lb_disabled ) continue;
 
             if( rc==NULL ) {
                 rc=w;
@@ -182,6 +183,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
             jk_worker_t *w=lb->workerTables[level][i];
 
             if( w->mbean->disabled ) continue;
+            if( w->lb_disabled ) continue;
         
             if(w->in_error_state) {
                 /* Check if it's ready for recovery */
@@ -221,6 +223,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                 jk_worker_t *w=lb->workerTables[level][i];
 
                 if( w->mbean->disabled == JK_TRUE ) continue;
+                if( w->lb_disabled ) continue;
 
                 error_workers++;
 
