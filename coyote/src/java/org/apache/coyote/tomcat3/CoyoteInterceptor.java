@@ -269,5 +269,18 @@ public class CoyoteInterceptor extends PoolTcpConnector
        }
        return super.getInfo(ctx,request,id,key);
      }
+
+    /** Handle HTTP expectations.
+     */
+    public int preService(Request request, Response response) {
+	if(response instanceof CoyoteResponse) {
+	    try {
+		((CoyoteResponse)response).sendAcknowledgement();
+	    } catch(IOException iex) {
+		log("Can't send ACK",iex);
+	    }
+	}
+	return 0;
+    }
 }
 

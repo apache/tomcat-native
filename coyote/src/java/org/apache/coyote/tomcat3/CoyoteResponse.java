@@ -133,4 +133,21 @@ class CoyoteResponse extends  Response {
 	super.finish();
 	coyoteResponse.finish();
     }
+    /**
+     * Send an acknowledgment of a request.
+     * 
+     * @exception IOException if an input/output error occurs
+     */
+    public void sendAcknowledgement()
+        throws IOException {
+
+        // Ignore any call from an included servlet
+        if (isIncluded())
+            return; 
+        if (isBufferCommitted())
+            throw new IllegalStateException
+                (sm.getString("hsrf.error.ise"));
+
+        coyoteResponse.acknowledge();
+    }
 }
