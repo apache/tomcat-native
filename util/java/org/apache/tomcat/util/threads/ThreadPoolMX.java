@@ -81,8 +81,9 @@ public class ThreadPoolMX extends ThreadPool {
         super();
     }
 
-    public void register(String name) {
+    public void register(String domain, String name) {
         this.name=name;
+        this.domain=domain;
         reg=Registry.getRegistry();
         try {
             reg.registerComponent(this, domain, "ThreadPool",  name);
