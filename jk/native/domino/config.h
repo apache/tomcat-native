@@ -89,6 +89,6 @@
 /* #undef NO_CAPI */
 
 #define DEBUG(args) \
-	do { printf args ; } while (0)
+	do { /*printf args ;*/ } while (0)
 
 #endif /* __config_h */
