@@ -270,6 +270,10 @@ public class Http11Protocol implements ProtocolHandler
         //setAttribute("keypass", k);
     }
 
+    public void setKeytype( String k ) {
+        setAttribute("keystoreType", k);
+    }
+
     public void setClientauth( String k ) {
         setAttribute("clientauth", k);
     }
