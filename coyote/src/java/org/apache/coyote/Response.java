@@ -168,7 +168,7 @@ public final class Response {
     }
 
     public OutputBuffer getOutputBuffer() {
-    return outputBuffer;
+        return outputBuffer;
     }
 
 
@@ -178,7 +178,7 @@ public final class Response {
 
 
     public MimeHeaders getMimeHeaders() {
-    return headers;
+        return headers;
     }
 
 
@@ -196,12 +196,12 @@ public final class Response {
 
 
     public final void setNote(int pos, Object value) {
-    notes[pos] = value;
+        notes[pos] = value;
     }
 
 
     public final Object getNote(int pos) {
-    return notes[pos];
+        return notes[pos];
     }
 
 
@@ -230,7 +230,7 @@ public final class Response {
      * Set the response status 
      */ 
     public void setStatus( int status ) {
-    this.status = status;
+        this.status = status;
     }
 
 
@@ -251,12 +251,12 @@ public final class Response {
 
 
     public boolean isCommitted() {
-    return commited;
+        return commited;
     }
 
 
     public void setCommitted(boolean v) {
-    this.commited = v;
+        this.commited = v;
     }
 
 
@@ -277,12 +277,12 @@ public final class Response {
      * processing.
      */
     public Exception getErrorException() {
-    return errorException;
+        return errorException;
     }
 
 
     public boolean isExceptionPresent() {
-    return ( errorException != null );
+        return ( errorException != null );
     }
 
 
@@ -291,14 +291,14 @@ public final class Response {
      * request processing.
      */
     public void setErrorURI(String uri) {
-    errorURI = uri;
+        errorURI = uri;
     }
 
 
     /** Get the request URI that caused the original error.
      */
     public String getErrorURI() {
-    return errorURI;
+        return errorURI;
     }
 
 
@@ -319,14 +319,14 @@ public final class Response {
         message = null;
         headers.clear();
         
-    // Force the PrintWriter to flush its data to the output
-    // stream before resetting the output stream
-    //
-    // Reset the stream
-    if (commited) {
-        //String msg = sm.getString("servletOutputStreamImpl.reset.ise"); 
-        throw new IllegalStateException();
-    }
+        // Force the PrintWriter to flush its data to the output
+        // stream before resetting the output stream
+        //
+        // Reset the stream
+        if (commited) {
+            //String msg = sm.getString("servletOutputStreamImpl.reset.ise"); 
+            throw new IllegalStateException();
+        }
         
         action(ActionCode.ACTION_RESET, this);
     }
@@ -344,27 +344,27 @@ public final class Response {
 
     // -------------------- Headers --------------------
     public boolean containsHeader(String name) {
-    return headers.getHeader(name) != null;
+        return headers.getHeader(name) != null;
     }
 
 
     public void setHeader(String name, String value) {
-    char cc=name.charAt(0);
-    if( cc=='C' || cc=='c' ) {
-        if( checkSpecialHeader(name, value) )
-        return;
-    }
-    headers.setValue(name).setString( value);
+        char cc=name.charAt(0);
+        if( cc=='C' || cc=='c' ) {
+            if( checkSpecialHeader(name, value) )
+            return;
+        }
+        headers.setValue(name).setString( value);
     }
 
 
     public void addHeader(String name, String value) {
-    char cc=name.charAt(0);
-    if( cc=='C' || cc=='c' ) {
-        if( checkSpecialHeader(name, value) )
-        return;
-    }
-    headers.addValue(name).setString( value );
+        char cc=name.charAt(0);
+        if( cc=='C' || cc=='c' ) {
+            if( checkSpecialHeader(name, value) )
+            return;
+        }
+        headers.addValue(name).setString( value );
     }
 
     
@@ -374,27 +374,27 @@ public final class Response {
      * Return true if the header is special, no need to set the header.
      */
     private boolean checkSpecialHeader( String name, String value) {
-    // XXX Eliminate redundant fields !!!
-    // ( both header and in special fields )
-    if( name.equalsIgnoreCase( "Content-Type" ) ) {
-        setContentType( value );
-        return true;
-    }
-    if( name.equalsIgnoreCase( "Content-Length" ) ) {
-        try {
-        int cL=Integer.parseInt( value );
-        setContentLength( cL );
-        return true;
-        } catch( NumberFormatException ex ) {
-        // Do nothing - the spec doesn't have any "throws" 
-        // and the user might know what he's doing
-        return false;
+        // XXX Eliminate redundant fields !!!
+        // ( both header and in special fields )
+        if( name.equalsIgnoreCase( "Content-Type" ) ) {
+            setContentType( value );
+            return true;
         }
-    }
-    if( name.equalsIgnoreCase( "Content-Language" ) ) {
-        // XXX XXX Need to construct Locale or something else
-    }
-    return false;
+        if( name.equalsIgnoreCase( "Content-Length" ) ) {
+            try {
+                int cL=Integer.parseInt( value );
+                setContentLength( cL );
+                return true;
+            } catch( NumberFormatException ex ) {
+            // Do nothing - the spec doesn't have any "throws" 
+            // and the user might know what he's doing
+            return false;
+            }
+        }
+        if( name.equalsIgnoreCase( "Content-Language" ) ) {
+            // XXX XXX Need to construct Locale or something else
+        }
+        return false;
     }
 
 
@@ -404,7 +404,7 @@ public final class Response {
      */
     public void sendHeaders() throws IOException {
         action(ActionCode.ACTION_COMMIT, this);
-    commited = true;
+        commited = true;
     }
 
 
@@ -479,29 +479,29 @@ public final class Response {
     }
 
     public String getCharacterEncoding() {
-    return characterEncoding;
+        return characterEncoding;
     }
 
     public void setContentType(String contentType) {
-    this.contentType = contentType;
-    String encoding = ContentType.getCharsetFromContentType(contentType);
+        this.contentType = contentType;
+        String encoding = ContentType.getCharsetFromContentType(contentType);
         if (encoding != null) {
-        characterEncoding = encoding;
+            characterEncoding = encoding;
         }
-    headers.setValue("Content-Type").setString(contentType);
+        headers.setValue("Content-Type").setString(contentType);
     }
 
     public String getContentType() {
-    return contentType;
+        return contentType;
     }
     
     public void setContentLength(int contentLength) {
-    this.contentLength = contentLength;
-    headers.setValue("Content-Length").setInt(contentLength);
+        this.contentLength = contentLength;
+        headers.setValue("Content-Length").setInt(contentLength);
     }
 
     public int getContentLength() {
-    return contentLength;
+        return contentLength;
     }
 
 
@@ -518,17 +518,17 @@ public final class Response {
     
     public void recycle() {
         
-    contentType = Constants.DEFAULT_CONTENT_TYPE;
-    contentLanguage = null;
+        contentType = Constants.DEFAULT_CONTENT_TYPE;
+        contentLanguage = null;
         locale = Constants.DEFAULT_LOCALE;
-    characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
-    contentLength = -1;
-    status = 200;
+        characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
+        contentLength = -1;
+        status = 200;
         message = null;
-    commited = false;
-    errorException = null;
-    errorURI = null;
-    headers.clear();
+        commited = false;
+        errorException = null;
+        errorURI = null;
+        headers.clear();
         
     }
 

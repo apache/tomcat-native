@@ -497,9 +497,9 @@ public class CoyoteResponse
         try {
             outputBuffer.close();
         } catch(IOException e) {
-        ;
+            ;
         } catch(Throwable t) {
-        t.printStackTrace();
+            t.printStackTrace();
         }
         coyoteResponse.finish();
     }
