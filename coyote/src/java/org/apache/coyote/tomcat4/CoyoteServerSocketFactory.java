@@ -158,7 +158,7 @@ public class CoyoteServerSocketFactory
      */
     private String keystorePass = "changeit";
 
-    String getKeystorePass() {
+    public String getKeystorePass() {
         return (this.keystorePass);
     }
 
