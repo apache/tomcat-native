@@ -430,6 +430,13 @@ public class HandlerRequest extends Handler
                 msg.getInt(); // To advance the read position
                 hName = headerTransArray[hId - 1];
             } else {
+                // reset hId -- if the header currently being read
+                // happens to be 7 or 8 bytes long, the code below
+                // will think it's the content-type header or the
+                // content-length header - SC_REQ_CONTENT_TYPE=7,
+                // SC_REQ_CONTENT_LENGTH=8 - leading to unexpected
+                // behaviour.  see bug 5861 for more information.
+                hId = -1;
                 msg.getBytes( tmpMB );
                 hName=tmpMB.toString();
             }
@@ -437,11 +444,12 @@ public class HandlerRequest extends Handler
             vMB=headers.addValue( hName );
             msg.getBytes(vMB);
 
-            // set content length, if this is it...
             if (hId == SC_REQ_CONTENT_LENGTH) {
+                // just read the content-length header, so set it
                 int contentLength = (vMB == null) ? -1 : vMB.getInt();
                 req.setContentLength(contentLength);
             } else if (hId == SC_REQ_CONTENT_TYPE) {
+                // just read the content-type header, so set it
                 ByteChunk bchunk = vMB.getByteChunk();
                 req.contentType().setBytes(bchunk.getBytes(),
                                            bchunk.getOffset(),
