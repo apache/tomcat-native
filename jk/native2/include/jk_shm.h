@@ -117,6 +117,10 @@ struct jk_shm {
      */
     int (*init)(struct jk_env *env, struct jk_shm *shm);
 
+    /** Detach from the shared memory segment
+     */
+    int (*destroy)(struct jk_env *env, struct jk_shm *shm);
+
     /** Get a shm slot. Each slot has different rules for synchronization, based on type. 
      */
     struct jk_shm_slot *(*getSlot)(struct jk_env *env, struct jk_shm *shm, char *name, int size);
