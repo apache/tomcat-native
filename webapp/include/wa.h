@@ -66,25 +66,37 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 
 /* APR Library includes */
-#include <apr_main.h>
+#include <apr_general.h>
 #include <apr_pools.h>
 #include <apr_strings.h>
 #include <apr_tables.h>
+#include <apr_time.h>
 
 /* WebApp Library type definitions. */
 typedef int boolean;
+
+typedef struct wa_chain wa_chain;
+
 typedef struct wa_application wa_application;
+typedef struct wa_virtualhost wa_virtualhost;
 typedef struct wa_connection wa_connection;
-typedef struct wa_provider wa_provider;
+
 typedef struct wa_request wa_request;
-typedef struct wa_webserver wa_webserver;
+typedef struct wa_hostdata wa_hostdata;
+typedef struct wa_handler wa_handler;
+
+//typedef struct wa_provider wa_provider;
 
 /* WebApp Library includes */
-#include <wa_general.h>
-#include <wa_provider.h>
+#include <wa_main.h>
+#include <wa_config.h>
 #include <wa_request.h>
-#include <wa_webserver.h>
+//#include <wa_provider.h>
+
+/* Debugging mark */
+#define WA_MARK __FILE__,__LINE__
 
 #endif /* ifndef _WA_H_ */
