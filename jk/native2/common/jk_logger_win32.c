@@ -68,13 +68,13 @@
 #include "jk_logger.h"
 #include <stdio.h>
 
-#include "jk_logger_win32_message.h"
-
 
 #define HUGE_BUFFER_SIZE (8*1024)
 #define JAKARTA_EVENT_SOURCE "Apache Jakarta Connector2"
 
 #ifdef WIN32
+
+#include "jk_logger_win32_message.h"
 
 static int JK_METHOD jk2_logger_win32_log(jk_env_t *env, jk_logger_t *l,                                 
                                  int level,
@@ -140,11 +140,13 @@ static int JK_METHOD jk2_logger_win32_jkVLog(jk_env_t *env, jk_logger_t *l,
     buf2=buf;
     Buffer=&buf2;
     if( level == JK_LOG_DEBUG_LEVEL ) {
-        ReportEvent(h,EVENTLOG_INFORMATION_TYPE,0,MSG_DEBUG,NULL,1,0,Buffer,NULL);
+        ReportEvent(h,EVENTLOG_SUCCESS,0,MSG_DEBUG,NULL,1,0,Buffer,NULL);
     } else if( level == JK_LOG_INFO_LEVEL ) {
-        ReportEvent(h,EVENTLOG_WARNING_TYPE,0,MSG_INFO,NULL,1,0,Buffer,NULL);
-    } else {
-        ReportEvent(h,EVENTLOG_INFORMATION_TYPE,0,MSG_ERROR,NULL,1,0,Buffer,NULL);
+        ReportEvent(h,EVENTLOG_INFORMATION_TYPE,0,MSG_INFO,NULL,1,0,Buffer,NULL);
+    } else if( level == JK_LOG_ERROR_LEVEL ){
+        ReportEvent(h,EVENTLOG_WARNING_TYPE,0,MSG_ERROR,NULL,1,0,Buffer,NULL);
+    } else if( level == JK_LOG_EMERG_LEVEL ){
+        ReportEvent(h,EVENTLOG_ERROR_TYPE,0,MSG_EMERG,NULL,1,0,Buffer,NULL);
     }
     DeregisterEventSource(h);
     return rc ;
@@ -218,7 +220,9 @@ jk2_logger_win32_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
                            const char *type, const char *name)
 {
     env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                   "win32logger.factory(): Support for win32 logger is disabled, ");
+                   "win32logger.factory(): Support for win32 logger is disabled.");
+    env->l->jkLog( env, env->l, JK_LOG_ERROR,
+                   "win32logger.factory(): Needs WINNT > 4.0 ");
     result->disabled=1;
     return JK_FALSE;
 }
