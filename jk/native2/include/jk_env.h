@@ -104,7 +104,7 @@ typedef struct jk_env jk_env_t;
  * jk_worker_list.h).  
  */
 typedef int (JK_METHOD *jk_env_objectFactory_t)(jk_env_t *env,
-                                                jk_pool_t *pool,
+                                                struct jk_pool *pool,
                                                 void **result, 
                                                 const char *type,
                                                 const char *name);
@@ -123,8 +123,8 @@ jk_env_t* JK_METHOD jk_env_getEnv( char *id, struct jk_pool *pool );
  *  the other methods parameters.  
  */
 struct jk_env {
-    struct jk_logger *logger;
-    jk_pool_t   *globalPool; 
+    struct jk_logger *l;
+    struct jk_pool   *globalPool; 
     
     /** Global properties ( similar with System properties in java)
      */
@@ -140,9 +140,19 @@ struct jk_env {
         call it. This is a very frequent operation.
     */
     void *
-    (JK_METHOD *getInstance)( jk_env_t *env, jk_pool_t *pool, const char *type,
+    (JK_METHOD *getInstance)( jk_env_t *env, struct jk_pool *pool,
+                              const char *type,
                               const char *name );
-    
+
+    /** Report an error. 
+     *   TODO: create a 'stack trace' (i.e. a stack of errors )
+     *   TODO: set 'error state'
+     *  Right now is equivalent with l->jkLog(env, JK_LOG_ERROR,... )
+     */
+    void *(JK_METHOD *error)(jk_env_t *env,
+                             const char *file, int line, 
+                             const char *fmt, ...);
+
 
     /** Register a factory for a type ( channel, worker ).
      */

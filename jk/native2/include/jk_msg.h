@@ -59,6 +59,7 @@
 #define JK_REQ_H
 
 #include "jk_global.h"
+#include "jk_env.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
 #include "jk_endpoint.h"
@@ -68,6 +69,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
+struct jk_env;
 struct jk_msg;
 typedef struct jk_msg jk_msg_t;
 
@@ -108,66 +110,66 @@ struct jk_msg {
     /*
      * Prepare the buffer for a new invocation 
      */
-    void (*reset)(struct jk_msg *_this);
+    void (*reset)(struct jk_env *env, struct jk_msg *_this);
 
     /*
      * Finalize the buffer before sending - set length fields, etc
      */
-    void (*end)(struct jk_msg *_this);
+    void (*end)(struct jk_env *env, struct jk_msg *_this);
 
     /*
      * Dump the buffer header
      *   @param err Message text
      */
-    void (*dump)(struct jk_msg *_this, struct jk_logger *log, char *err);
+    void (*dump)(struct jk_env *env, struct jk_msg *_this, char *err);
 
-    int (*appendByte)(struct jk_msg *_this, unsigned char val);
+    int (*appendByte)(struct jk_env *env, struct jk_msg *_this, unsigned char val);
     
-    int (*appendBytes)(struct jk_msg *_this, 
-                        const unsigned char * param,
-                        const int len);
+    int (*appendBytes)(struct jk_env *env, struct jk_msg *_this, 
+                       const unsigned char * param,
+                       const int len);
 
-    int (*appendInt)(struct jk_msg *_this, 
+    int (*appendInt)(struct jk_env *env, struct jk_msg *_this, 
                      const unsigned short val);
 
-    int (*appendLong)(struct jk_msg *_this, 
+    int (*appendLong)(struct jk_env *env, struct jk_msg *_this, 
                        const unsigned long val);
 
-    int (*appendString)(struct jk_msg *_this, 
+    int (*appendString)(struct jk_env *env, struct jk_msg *_this, 
                          const char *param);
 
-    unsigned char (*getByte)(struct jk_msg *_this);
+    unsigned char (*getByte)(struct jk_env *env, struct jk_msg *_this);
 
-    unsigned short (*getInt)(struct jk_msg *_this);
+    unsigned short (*getInt)(struct jk_env *env, struct jk_msg *_this);
 
     /** Look at the next int, without reading it
      */
-    unsigned short (*peekInt)(struct jk_msg *_this);
+    unsigned short (*peekInt)(struct jk_env *env, struct jk_msg *_this);
 
-    unsigned long (*getLong)(struct jk_msg *_this);
+    unsigned long (*getLong)(struct jk_env *env, struct jk_msg *_this);
 
     /** Return a string. 
         The buffer is internal to the message, you must save
         or make sure the message lives long enough.
      */ 
-    unsigned char *(*getString)(struct jk_msg *_this);
+    unsigned char *(*getString)(struct jk_env *env, struct jk_msg *_this);
 
     /** Return a byte[] and it's length.
         The buffer is internal to the message, you must save
         or make sure the message lives long enough.
      */ 
-    unsigned char *(*getBytes)(struct jk_msg *_this, int *len);
+    unsigned char *(*getBytes)(struct jk_env *env, struct jk_msg *_this, int *len);
 
 
     /*
      * Receive a message from endpoint
      */
-    int (*receive)(jk_msg_t *_this, struct jk_endpoint *ae );
+    int (*receive)(struct jk_env *env, jk_msg_t *_this, struct jk_endpoint *ae );
 
     /*
      * Send a message to endpoint
      */
-    int (*send)(jk_msg_t *_this, struct jk_endpoint *ae );
+    int (*send)(struct jk_env *env, jk_msg_t *_this, struct jk_endpoint *ae );
 
     /** 
      * Special method. Will read data from the server and add them as
@@ -177,7 +179,8 @@ struct jk_msg {
      *
      * Returns -1 on error, else number of bytes read
      */
-    int (*appendFromServer)(struct jk_msg *_this,
+    int (*appendFromServer)(struct jk_env *env,
+                            struct jk_msg *_this,
                             struct jk_ws_service *r,
                             struct jk_endpoint  *ae,
                             int            len );
@@ -186,7 +189,6 @@ struct jk_msg {
     
     /* Temporary, don't use */
     struct jk_pool *pool;
-    struct jk_logger *l;
     
     unsigned char *buf;
     int pos; 
@@ -196,8 +198,8 @@ struct jk_msg {
 };
 
 /* Temp */
-jk_msg_t *jk_msg_ajp_create(struct jk_pool *p,
-                            struct jk_logger *l, int buffSize);
+jk_msg_t *jk_msg_ajp_create(struct jk_env *env, struct jk_pool *p,
+                            int buffSize);
     
 #ifdef __cplusplus
 }

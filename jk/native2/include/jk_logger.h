@@ -64,6 +64,7 @@
 #ifndef JK_LOGGER_H
 #define JK_LOGGER_H
 
+#include "jk_env.h"
 #include "jk_global.h"
 #include "jk_map.h"
 
@@ -72,6 +73,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 struct jk_map;
+struct jk_env;
 struct jk_logger;
 typedef struct jk_logger jk_logger_t;
 
@@ -84,24 +86,29 @@ struct jk_logger {
     void *logger_private;
     int  level;
 
-    void (JK_METHOD *setProperty)(jk_logger_t *_this,
+    void (JK_METHOD *setProperty)(struct jk_env *env,
+                                  jk_logger_t *_this,
                                   const char *name,
                                   const char *value );
 
-    char *(JK_METHOD *getProperty)(jk_logger_t *_this,
+    char *(JK_METHOD *getProperty)(struct jk_env *env,
+                                   jk_logger_t *_this,
                                    const char *name,
                                    const char *def );
 
-    int (JK_METHOD *open)( jk_logger_t *_this,
+    int (JK_METHOD *open)( struct jk_env *env,
+                           jk_logger_t *_this,
                            struct jk_map *properties );
 
-    void (JK_METHOD *close)( jk_logger_t *_this );
+    void (JK_METHOD *close)( struct jk_env *env, jk_logger_t *_this );
 
-    int (JK_METHOD *log)(jk_logger_t *_this,
+    int (JK_METHOD *log)(struct jk_env *env,
+                         jk_logger_t *_this,
                          int level,
                          const char *what);
 
-    int (JK_METHOD *jkLog)(jk_logger_t *_this,
+    int (JK_METHOD *jkLog)(struct jk_env *env,
+                           jk_logger_t *_this,
                            const char *file,
                            int line,
                            int level,

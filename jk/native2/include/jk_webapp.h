@@ -81,6 +81,7 @@ struct jk_endpoint;
 struct jk_env;
 struct jk_uri_worker_map;
 struct jk_map;
+struct jk_uriMap;
 struct jk_logger;
 
 struct jk_webapp;
@@ -108,6 +109,11 @@ struct jk_webapp {
      *  worker will be set on init.
      */
     char *workerName; 
+
+    /* 'Local' mappings. This is the information from web.xml, either
+       read from file or received from tomcat
+    */
+    struct jk_uriMap *uriMap;
     
     /* Virtual server handled - NULL means 'global' ( visible in all
      * virtual servers ). This is the canonical name.

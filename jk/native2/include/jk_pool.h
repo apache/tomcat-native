@@ -64,6 +64,7 @@
 #define _JK_POOL_H
 
 #include "jk_global.h"
+#include "jk_env.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,6 +118,7 @@ extern "C" {
 #define HUGE_POOL_SIZE  2*BIG_POOL_SIZE     /* Huge 2K atom pool. */
 
 struct jk_pool;
+struct jk_env;
 typedef struct jk_pool jk_pool_t;
 
 
@@ -126,26 +128,26 @@ struct jk_pool {
     /** Create a child pool. Size is a hint for the
      *  estimated needs of the child.
      */
-    jk_pool_t *(*create)(jk_pool_t *_this,
+    jk_pool_t *(*create)(struct jk_env *env, jk_pool_t *_this,
                          int size );
     
-    void (*close)(jk_pool_t *_this);
+    void (*close)(struct jk_env *env, jk_pool_t *_this);
 
     /** Empty the pool using the same space.
      *  XXX should we rename it to clear() - consistent with apr ?
      */
-    void (*reset)(jk_pool_t *_this);
+    void (*reset)(struct jk_env *env, jk_pool_t *_this);
 
     /* Memory allocation */
     
-    void *(*alloc)(jk_pool_t *_this, size_t size);
+    void *(*alloc)(struct jk_env *env, jk_pool_t *_this, size_t size);
 
-    void *(*realloc)(jk_pool_t *_this, size_t size,
+    void *(*realloc)(struct jk_env *env, jk_pool_t *_this, size_t size,
                      const void *old, size_t old_sz);
 
-    void *(*calloc)(jk_pool_t *_this, size_t size);
+    void *(*calloc)(struct jk_env *env, jk_pool_t *_this, size_t size);
 
-    void *(*pstrdup)(jk_pool_t *_this, const char *s);
+    void *(*pstrdup)(struct jk_env *env, jk_pool_t *_this, const char *s);
 
     /** Points to the private data. In the case of APR,
         it's a apr_pool you can use directly */
@@ -157,7 +159,7 @@ struct jk_pool {
 
     XXX move this to the factory
  */
-int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent, int size );
+int jk_pool_create( struct jk_env *env, jk_pool_t **newPool, jk_pool_t *parent, int size );
 
 
 #ifdef __cplusplus

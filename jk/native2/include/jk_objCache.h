@@ -59,6 +59,7 @@
 #define JK_OBJCACHE_H
 
 #include "jk_global.h"
+#include "jk_env.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
 #include "jk_msg.h"
@@ -68,6 +69,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
+struct jk_env;
 struct jk_objCache;
 struct jk_logger;
 struct jk_pool;
@@ -76,7 +78,7 @@ typedef struct jk_objCache jk_objCache_t;
 #define JK_OBJCACHE_DEFAULT_SZ          (128)
 
     
-jk_objCache_t *jk_objCache_create(struct jk_pool *pool, struct jk_logger *l );
+jk_objCache_t *jk_objCache_create(struct jk_env *env, struct jk_pool *pool );
     
 /**
  * Simple object cache ( or pool for java people - don't confuse with the
@@ -95,19 +97,18 @@ struct jk_objCache {
     /** Return an object to the pool.
      *  @return JK_FALSE the object can't be taken back, caller must free it.
      */
-    int (*put)(jk_objCache_t *_this, void *obj);
+    int (*put)(struct jk_env *env, jk_objCache_t *_this, void *obj);
 
-    void *(*get)(jk_objCache_t *_this);
+    void *(*get)(struct jk_env *env, jk_objCache_t *_this);
 
-    int (*init)(jk_objCache_t *_this, int cacheSize);
+    int (*init)(struct jk_env *env, jk_objCache_t *_this, int cacheSize);
 
-    int (*destroy)(jk_objCache_t *_this);
+    int (*destroy)(struct jk_env *env, jk_objCache_t *_this);
 
     /* private, move to impl ( if any other impl is available) */
     int ep_cache_sz;
     JK_CRIT_SEC cs;
     void **ep_cache;
-    struct jk_logger *l;
     struct jk_pool *pool;
 };
     

@@ -79,9 +79,11 @@
 #define JK_URIMAP_H
 
 #include "jk_global.h"
+#include "jk_env.h"
 #include "jk_logger.h"
 #include "jk_uriEnv.h"
 #include "jk_map.h"
+#include "jk_pool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,6 +91,9 @@ extern "C" {
 
 struct jk_uriMap;
 struct jk_map;
+struct jk_env;
+struct jk_pool;
+    
 typedef struct jk_uriMap jk_uriMap_t;
 
 struct jk_uriMap {
@@ -104,22 +109,22 @@ struct jk_uriMap {
     /** Initialize the map. This should be called after all workers
         were added. It'll check if mappings have valid workers.
     */
-    int (*init)( jk_uriMap_t *_this,
+    int (*init)( struct jk_env *env, jk_uriMap_t *_this,
                  struct jk_workerEnv *workerEnv,
                  struct jk_map *init_data );
 
-    void (*destroy)( jk_uriMap_t *_this );
+    void (*destroy)( struct jk_env *env, jk_uriMap_t *_this );
 
     /** Add a servlet mapping. Can be done before init()
      */
-    jk_uriEnv_t *(*addMapping)( jk_uriMap_t *_this,
+    jk_uriEnv_t *(*addMapping)( struct jk_env *env, jk_uriMap_t *_this,
                                 const char *vhost,
                                 const char *uri,
                                 const char *worker);
 
     /** Check the uri for potential security problems
      */
-    int (*checkUri)( jk_uriMap_t *_this,
+    int (*checkUri)( struct jk_env *env, jk_uriMap_t *_this,
                      const char *uri );
 
     /** Mapping the uri. To be thread safe, we need to pass a pool.
@@ -132,7 +137,7 @@ struct jk_uriMap {
         to do what we need ). Even when we'll know, uriMap will be needed
         for other servers. 
     */
-    struct jk_uriEnv *(*mapUri)(jk_uriMap_t *_this,
+    struct jk_uriEnv *(*mapUri)(struct jk_env *env, jk_uriMap_t *_this,
                                 const char *vhost,
                                 const char *uri );
     
@@ -142,7 +147,7 @@ struct jk_uriMap {
     /* pool for mappings. Mappings will change at runtime, we can't
      * recycle the main pool.
     */
-    jk_pool_t  *pool;
+    struct jk_pool  *pool;
 };
     
 #ifdef __cplusplus

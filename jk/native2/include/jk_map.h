@@ -191,7 +191,7 @@ char *jk_map_replaceProperties(struct jk_env *env, jk_map_t *m,
 
 /* XXX Very strange hack to deal with special properties
  */
-int jk_is_some_property(const char *prp_name, const char *suffix);
+int jk_is_some_property(struct jk_env *env, const char *prp_name, const char *suffix);
     
 #ifdef __cplusplus
 }

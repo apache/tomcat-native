@@ -64,6 +64,8 @@
 #ifndef JK_WORKER_H
 #define JK_WORKER_H
 
+#include "jk_env.h"
+#include "jk_pool.h"
 #include "jk_logger.h"
 #include "jk_service.h"
 #include "jk_endpoint.h"
@@ -133,7 +135,7 @@ struct jk_worker {
         In future we may start/stop/reload workers at runtime, but that's
         far away
     */
-    jk_pool_t *pool;
+    struct jk_pool *pool;
     
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
@@ -205,28 +207,25 @@ struct jk_worker {
      *
      * You can skip this by setting it to NULL.
      */
-    int (JK_METHOD *validate)(jk_worker_t *_this,
+    int (JK_METHOD *validate)(struct jk_env *env, jk_worker_t *_this,
                               struct jk_map *props,
-                              struct jk_workerEnv *we,
-                              struct jk_logger *l);
+                              struct jk_workerEnv *we);
 
     /*
      * Do whatever initialization needs to be done to start this worker up.
      * Configuration options are passed in via the props parameter.  
      */
-    int (JK_METHOD *init)(jk_worker_t *_this,
+    int (JK_METHOD *init)(struct jk_env *env, jk_worker_t *_this,
                           struct jk_map *props,
-                          struct jk_workerEnv *we,
-                          struct jk_logger *l );
+                          struct jk_workerEnv *we );
 
     /*
      * Obtain an endpoint to service a particular request.  A pointer to
      * the endpoint is stored in pend. The done() method in the
      * endpoint will be called when the endpoint is no longer needed.
      */
-    int (JK_METHOD *get_endpoint)(jk_worker_t *_this,
-                                  struct jk_endpoint **pend,
-                                  struct jk_logger *l );
+    int (JK_METHOD *get_endpoint)(struct jk_env *env, jk_worker_t *_this,
+                                  struct jk_endpoint **pend );
 
     /*
      * Called when this particular endpoint has finished processing a
@@ -242,7 +241,7 @@ struct jk_worker {
     /*
      * Shutdown this worker. 
      */
-    int (JK_METHOD *destroy)(jk_worker_t **_thisP, struct jk_logger *l );
+    int (JK_METHOD *destroy)(struct jk_env *env, jk_worker_t *_thisP );
 };
 
 #ifdef __cplusplus

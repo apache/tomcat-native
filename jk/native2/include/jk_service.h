@@ -71,6 +71,7 @@
 
 #include "jk_global.h"
 #include "jk_map.h"
+#include "jk_env.h"
 #include "jk_workerEnv.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
@@ -87,6 +88,8 @@ struct jk_endpoint;
 struct jk_worker;
 struct jk_workerEnv;
 struct jk_channel;
+struct jk_pool;
+struct jk_env;
 typedef struct jk_ws_service jk_ws_service_t;
 
 /*
@@ -138,7 +141,7 @@ struct jk_ws_service {
      * Alive as long as the request is alive.
      * You can use endpoint pool for communication - it is recycled.
      */
-    jk_pool_t *pool;
+    struct jk_pool *pool;
 
     /* 
      * CGI Environment needed by servlets
@@ -226,25 +229,25 @@ struct jk_ws_service {
 
     /* Initialize the service structure
      */
-    int (*init)( jk_ws_service_t *_this,
+    int (*init)( struct jk_env *env, jk_ws_service_t *_this,
                  struct jk_endpoint *e, void *serverObj);
 
     /* Post request cleanup.
      */
-    void (*afterRequest)( jk_ws_service_t *_this );
+    void (*afterRequest)( struct jk_env *env, jk_ws_service_t *_this );
     
     /*
      * Set the response head in the server structures. This will be called
      * before the first write.
      */
-    int (JK_METHOD *head)(jk_ws_service_t *s);
+    int (JK_METHOD *head)(struct jk_env *env, jk_ws_service_t *s);
 
     /*
      * Read a chunk of the request body into a buffer.  Attempt to read len
      * bytes into the buffer.  Write the number of bytes actually read into
      * actually_read.  
      */
-    int (JK_METHOD *read)(jk_ws_service_t *s,
+    int (JK_METHOD *read)(struct jk_env *env, jk_ws_service_t *s,
                           void *buffer,
                           unsigned len,
                           unsigned *actually_read);
@@ -252,9 +255,8 @@ struct jk_ws_service {
     /*
      * Write a chunk of response data back to the browser.
      */
-    int (JK_METHOD *write)(jk_ws_service_t *s,
-                           const void *buffer,
-                           unsigned len);
+    int (JK_METHOD *write)(struct jk_env *env, jk_ws_service_t *s,
+                           const void *buffer, int len);
 };
 
 #ifdef __cplusplus

@@ -67,6 +67,7 @@
 #ifndef JK_ENDPOINT_H
 #define JK_ENDPOINT_H
 
+#include "jk_env.h"
 #include "jk_map.h"
 #include "jk_service.h"
 #include "jk_logger.h"
@@ -132,12 +133,12 @@ struct jk_endpoint {
     /** 'main' pool for this endpoint. Used to store properties of the
         endpoint. Will be alive until the endpoint is destroyed.
     */
-    jk_pool_t *pool;
+    struct jk_pool *pool;
 
     /** Connection pool. Used to store temporary data. It'll be
         recycled after each transaction.
     */
-    jk_pool_t *cPool;
+    struct jk_pool *cPool;
     
     int proto;	/* PROTOCOL USED AJP13/AJP14 */
 
@@ -177,9 +178,8 @@ struct jk_endpoint {
      * by the jk_ws_service_t object.  I'm not sure exactly how
      * is_recoverable_error is being used.  
      */
-    int (JK_METHOD *service)(jk_endpoint_t *e, 
+    int (JK_METHOD *service)(struct jk_env *env, jk_endpoint_t *_this, 
                              struct jk_ws_service *s,
-                             struct jk_logger *l,
                              int *is_recoverable_error);
 
     /*
@@ -195,8 +195,7 @@ struct jk_endpoint {
      * XXX This is the 'pair' of worker.getEndpoint - it should be part of
      * worker.
      */
-    int (JK_METHOD *done)(jk_endpoint_t **p,
-                          struct jk_logger *l);
+    int (JK_METHOD *done)(struct jk_env *env, jk_endpoint_t *p );
 };
     
 #ifdef __cplusplus

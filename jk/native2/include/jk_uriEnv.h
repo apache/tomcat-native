@@ -125,6 +125,7 @@ struct jk_uriEnv {
 
     int match_type;
 
+    int debug;
     /* -------------------- Methods -------------------- */
 
     /* get/setProperty */

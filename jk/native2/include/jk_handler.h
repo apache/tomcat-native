@@ -70,6 +70,7 @@
 #define JK_HANDLER_H
 
 #include "jk_global.h"
+#include "jk_env.h"
 #include "jk_map.h"
 #include "jk_workerEnv.h"
 #include "jk_logger.h"
@@ -120,11 +121,12 @@ struct jk_msg;
 struct jk_ws_service;
 struct jk_endpoint;
 struct jk_logger;
+struct jk_env;
     
-typedef int (JK_METHOD *jk_handler_callback)(struct jk_msg *msg,
+typedef int (JK_METHOD *jk_handler_callback)(struct jk_env *env,
+                                             struct jk_msg *msg,
                                              struct jk_ws_service *r,
-                                             struct jk_endpoint *ae,
-                                             struct jk_logger *l);
+                                             struct jk_endpoint *ae);
 
 struct jk_handler;
 typedef struct jk_handler jk_handler_t;

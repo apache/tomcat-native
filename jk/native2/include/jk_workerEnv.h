@@ -110,6 +110,8 @@ struct jk_workerEnv {
      */
     struct jk_map *worker_map;
 
+    struct jk_env *globalEnv;
+
     /** Number of workers that are configured. XXX same as
         size( worker_map )
     */
@@ -135,17 +137,13 @@ struct jk_workerEnv {
 
     /** Root env, used to register object types, etc
      */
-    struct jk_env *env;
+    struct jk_env *rootEnv;
 
     /*
      * Log options. Extracted from init_data.
      */
     char *log_file;
     int  log_level;
-
-    /** Global logger for jk messages. Set at init.
-     */
-    struct jk_logger *l;
 
     /*
      * Worker stuff
@@ -208,20 +206,24 @@ struct jk_workerEnv {
     
     /** Get worker by name
      */
-    struct jk_worker *(*getWorkerForName)(struct jk_workerEnv *_this,
+    struct jk_worker *(*getWorkerForName)(struct jk_env *env,
+                                          struct jk_workerEnv *_this,
                                           const char *name);
 
     
-    struct jk_worker *(*createWorker)(struct jk_workerEnv *_this,
+    struct jk_worker *(*createWorker)(struct jk_env *env,
+                                      struct jk_workerEnv *_this,
                                       const char *name, 
                                       struct jk_map *init_data);
 
-    struct jk_webapp *(*createWebapp)(struct jk_workerEnv *_this,
+    struct jk_webapp *(*createWebapp)(struct jk_env *env,
+                                      struct jk_workerEnv *_this,
                                       const char *vhost,
                                       const char *name, 
                                       struct jk_map *init_data);
 
-    int (*processCallbacks)(struct jk_workerEnv *_this,
+    int (*processCallbacks)(struct jk_env *env,
+                            struct jk_workerEnv *_this,
                             struct jk_endpoint *e,
                             struct jk_ws_service *r );
 
@@ -230,12 +232,12 @@ struct jk_workerEnv {
      * 
      *  Replaces wc_open
      */
-    int (*init)(struct jk_workerEnv *_this);
+    int (*init)(struct jk_env *env, struct jk_workerEnv *_this);
 
     /** Close all workers, clean up
      *
      */
-    void (*close)(struct jk_workerEnv *_this);
+    void (*close)(struct jk_env *env, struct jk_workerEnv *_this);
 };
 
 
