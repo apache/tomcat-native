@@ -46,8 +46,9 @@
     <target name="javadoc">
         <delete dir="${jk.build}/javadoc"/>
 	<mkdir dir="${jk.build}/javadoc"/>
-	<javadoc packagenames="org.apache.tomcat.util.*"
+	<javadoc packagenames="org.apache.ajp.*"
                sourcepath="src/java"
+	       classpath="${tomcat-util.jar}:${catalina.jar}:${servlet.jar}"
                   destdir="${jk.build}/javadoc"
                    author="true"
                   version="true"
