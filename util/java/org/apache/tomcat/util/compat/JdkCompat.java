@@ -82,15 +82,14 @@ import org.apache.commons.logging.LogFactory;
  *  @author Tim Funk
  */
 public class JdkCompat {
-    // -------------------------------------------------------------- Constants
-    public static final String JDK14_CLASS = "org.apache.catalina.util.Jdk14Compat";
 
     // ------------------------------------------------------- Static Variables
-    /**
-     *  The static instance holder.
-     */
-    static JdkCompat jdkCompat;
 
+    /**
+     * class providing java2 support
+     */
+    static final String JAVA14_SUPPORT =
+        "org.apache.tomcat.util.compat.Jdk14Compat";
     /**
      *  Commons logger wrapper
      */
@@ -99,15 +98,15 @@ public class JdkCompat {
     /** Return java version as a string
      */
     public static String getJavaVersion() {
-	return javaVersion;
+        return javaVersion;
     }
 
     public static boolean isJava2() {
-	return java2;
+        return java2;
     } 
    
     public static boolean isJava14() {
-	return java14;
+        return java14;
     }
 
     // -------------------- Implementation --------------------
@@ -122,15 +121,11 @@ public class JdkCompat {
     static String javaVersion;
     static boolean java2=false;
     static boolean java14=false;
-    static JdkCompat compat;
+    static JdkCompat jdkCompat;
     
     static {
-	init();
+        init();
     }
-
-    // class providing java2 support
-    static final String JAVA14_SUPPORT=
-	"org.apache.tomcat.util.compat.Jdk14Compat";
 
     private static void init() {
         try {
@@ -138,27 +133,27 @@ public class JdkCompat {
             Class.forName("java.lang.Void");
             javaVersion = JAVA_1_1;
             Class.forName("java.lang.ThreadLocal");
-	    java2=true;
+            java2=true;
             javaVersion = JAVA_1_2;
             Class.forName("java.lang.StrictMath");
             javaVersion = JAVA_1_3;
-	    Class.forName("java.lang.CharSequence");
-	    javaVersion = JAVA_1_4;
-	    java14=true;
+            Class.forName("java.lang.CharSequence");
+            javaVersion = JAVA_1_4;
+            java14=true;
         } catch (ClassNotFoundException cnfe) {
             // swallow as we've hit the max class version that we have
         }
-	if( java14 ) {
-	    try {
-		Class c=Class.forName(JAVA14_SUPPORT);
-		compat=(JdkCompat)c.newInstance();
-	    } catch( Exception ex ) {
-		compat=new JdkCompat();
-	    }
-	} else {
-	    compat=new JdkCompat();
-	    // Install jar handler if none installed
-	}
+        if( java14 ) {
+            try {
+                Class c=Class.forName(JAVA14_SUPPORT);
+                jdkCompat=(JdkCompat)c.newInstance();
+            } catch( Exception ex ) {
+                jdkCompat=new JdkCompat();
+            }
+        } else {
+            jdkCompat=new JdkCompat();
+            // Install jar handler if none installed
+        }
     }
 
     // ----------------------------------------------------------- Constructors
