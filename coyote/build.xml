@@ -78,6 +78,8 @@
   <path id="compile.classpath">
     <pathelement location="${build.home}/classes"/>
     <pathelement location="../util/build/classes"/>
+    <pathelement location="${commons-logging.jar}"/>
+    <pathelement location="${commons-modeler.jar}"/>
     <pathelement location="${jmx.jar}"/>
     <pathelement location="${tomcat-util.jar}"/>
     <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
