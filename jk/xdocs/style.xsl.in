@@ -518,7 +518,7 @@
               <xsl:value-of select="$file"/>
             </xsl:when>
             <xsl:otherwise>
-              <xsl:value-of select="document($file)/document/@title"/>
+              <xsl:value-of select="document($file)/document/properties/title"/>
             </xsl:otherwise>
           </xsl:choose>
         </xsl:if>

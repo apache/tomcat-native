@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+
+<document title="Introduction">
+  <properties>
+    <title>The mod_jk Module for the Apache Web Server</title>
+    <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+  </properties>
+
+  <section name="What is the mod_jk Module">
+
+    <p>
+      <b>mod_jk2</b> is originated back to the old <b>mod_jserv</b>.
+      <b>mod_jk2</b> is a rewrite of <b>mod_jk</b>.
+      The native part has been completly
+      restructured and the configuration has been simplified a lot.
+    </p>
+
+  </section>
+
+  <section name="Why should I use the mod_jk2 Module?">
+
+    <p>
+      Because it offers a lot of different and flexible communications
+      between a Web Server and the Tomcat Servlet Engine. 
+    </p>
+
+<!-- Pier's mod_webapp text we need our building.xml
+    <p>
+      If instead you're an adventurous geek who's up for a challenge, skip
+      the rest of this document and go to the <a href="building.xml"/>
+      section, there's where the fun starts.
+    </p>
+ -->
+
+  </section>
+
+
+  <section name="Are there alternative ways to connect Apache and Tomcat?">
+
+    <p>
+      The alternative ways are better described in <b>mod_webapp</b>
+      documentation.
+      Check there for it and then decide if you want to go on reading. 
+      The big advantage of <b>mod_webapp</b> is that is very easy to configure,
+      has a well defined protocol named <b>WARP</b>, does not care about the old
+      crappy protocols used in Tomcat-3.x and so.
+      But it would be possible to implement the <b>WARP</b> protocol in
+      <b>mod_jk2</b> ;-))
+    </p>
+    
+  </section>
+
+</document>

@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 
 <index>
+  <document href="index.xml"/>
   <document href="AJPv13.xml"/>
+  <document href="configtc.xml"/>
+  <document href="configweb.xml"/>
 </index>
