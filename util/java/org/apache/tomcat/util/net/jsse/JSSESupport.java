@@ -84,7 +84,7 @@ import javax.security.cert.X509Certificate;
 */
 
 class JSSESupport implements SSLSupport {
-    private org.apache.commons.logging.Log log =
+    private static org.apache.commons.logging.Log log =
 	org.apache.commons.logging.LogFactory.getLog(JSSESupport.class);
 
     protected SSLSocket ssl;
