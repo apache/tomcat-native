@@ -169,6 +169,8 @@ struct jk_worker {
 
     struct jk_workerEnv *workerEnv;
     char *name;
+
+    jk_pool_t *pool;
     
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
@@ -187,7 +189,7 @@ struct jk_worker {
     /* XXX Stuff from ajp, some is generic, some not - need to
        sort out after */
     struct sockaddr_in worker_inet_addr; /* Contains host and port */
-    unsigned connect_retry_attempts;
+    int connect_retry_attempts;
  
     /* 
      * Open connections cache...
@@ -197,12 +199,27 @@ struct jk_worker {
      * 3. An array of "open" endpoints.
      */
     JK_CRIT_SEC cs;
-    unsigned ep_cache_sz;
+    int ep_cache_sz;
     struct jk_endpoint **ep_cache;
 
     int proto;
     struct jk_login_service *login;
- 
+
+    /* Each worker can be part of a load-balancer scheme.
+     * The information can be accessed by other components -
+     * for example to report status, etc.
+     */
+    double  lb_factor;
+    double  lb_value;
+    int     in_error_state;
+    int     in_recovering;
+    time_t  error_time;
+
+    /** If num_of_workers > 0 this is an load balancing worker
+     */
+    jk_worker_t **lb_workers;
+    int num_of_workers;
+    
     int (* logon)(struct jk_endpoint *ae,
                   jk_logger_t    *l);
 

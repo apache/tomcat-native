@@ -130,7 +130,7 @@ struct jk_uriEnv {
 
     /* ---------- For our internal mapper use ---------- */
     char *suffix;
-    unsigned int ctxt_len;
+    int ctxt_len;
     int match_type;
 
     /** You can fine-tune the logging level per location

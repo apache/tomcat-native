@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil-*- */
 /* ========================================================================= *
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
@@ -56,99 +57,53 @@
  * ========================================================================= */
 
 /**
- * Manages the request mappings. It includes the internal mapper and all
- * properties associated with a location ( or virtual host ). The information
- * is set using:
- *   - various autoconfiguration mechanisms.
- *   - uriworkers.properties
- *   - JkMount directives
- *   - <SetHandler> and apache specific directives.
- *   - XXX workers.properties-like directives ( for a single config file )
- *   - other server-specific directives
+ * Handle jk messages. Each handler will register a number of
+ * callbacks for certain message types. 
  *
- * The intention is to allow the user to use whatever is more comfortable
- * and fits his needs. For 'basic' configuration the autoconf will be enough,
- * server-specific configs are the best for fine-tunning, properties are
- * easy to generate and edit.
+ * This is based on a simple generalization of the code in ajp13,
+ * with the goal of making the system extensible for ajp14.
  *
- *
- * Author: Gal Shachor <shachor@il.ibm.com>
- * author: Costin Manolache
+ * @author Costin Manolache
  */
-#ifndef JK_URIMAP_H
-#define JK_URIMAP_H
+
+#ifndef JK_HANDLER_H
+#define JK_HANDLER_H
 
 #include "jk_global.h"
 #include "jk_map.h"
+#include "jk_workerEnv.h"
 #include "jk_logger.h"
-#include "jk_uriEnv.h"
+#include "jk_pool.h"
+#include "jk_uriMap.h"
+#include "jk_worker.h"
+#include "jk_endpoint.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-struct jk_uriMap;
-typedef struct jk_uriMap jk_uriMap_t;
 
-struct jk_uriMap {
-    /* map URI->WORKER */
-    struct jk_uriEnv **maps;
-    int size;
-    int capacity;
-    struct jk_workerEnv *workerEnv;
-    int debug;
+typedef int (JK_METHOD *jk_handle_in_t)(jk_msg_buf_t   *msg,
+                                        jk_ws_service_t  *r,
+                                        jk_endpoint_t *ae,
+                                        jk_logger_t    *l);
+
+typedef int (JK_METHOD *jk_handle_out_t)(jk_msg_buf_t   *msg,
+                                         jk_ws_service_t  *r,
+                                         jk_endpoint_t *ae,
+                                         jk_logger_t    *l);
+
+struct jk_handler;
+typedef struct jk_handler jk_handler_t;
+
+struct jk_handler {
     
-    /* ---------- Methods ---------- */
+    int (*init)( jk_worker_t *w );
 
-    /** Initialize the map. This should be called after all workers
-        were added. It'll check if mappings have valid workers.
-    */
-    int (*init)( jk_uriMap_t *_this,
-                 struct jk_workerEnv *workerEnv,
-                 jk_map_t *init_data );
-
-    void (*destroy)( jk_uriMap_t *_this );
-
-    /** Add a servlet mapping. Can be done before init()
-     */
-    jk_uriEnv_t *(*addMapping)( jk_uriMap_t *_this,
-                                const char *vhost,
-                                const char *uri,
-                                const char *worker);
-
-    /** Check the uri for potential security problems
-     */
-    int (*checkUri)( jk_uriMap_t *_this,
-                     const char *uri );
-
-    /** Mapping the uri. To be thread safe, we need to pass a pool.
-        Or even better, create the jk_service structure already.
-        mapUri() can set informations on it as well.
-        
-        MapUri() method should behave exactly like the native apache2
-        mapper - we need it since the mapping rules for servlets are
-        different ( or we don't know yet how to 'tweak' apache config
-        to do what we need ). Even when we'll know, uriMap will be needed
-        for other servers. 
-    */
-    struct jk_uriEnv *(*mapUri)(jk_uriMap_t *_this,
-                                const char *vhost,
-                                const char *uri );
-    
-    /* -------------------- @deprecated -------------------- */
-    /* used by the mapper, temp storage ( ??? )*/
-
-    /* Memory Pool */
-    jk_pool_t           p;
-    jk_pool_atom_t      buf[SMALL_POOL_SIZE];
-
-    /* Temp Pool */
-    jk_pool_t tp; 
-    jk_pool_atom_t tbuf[SMALL_POOL_SIZE];
 };
-    
+                                        
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* JK_URI_MAP_H */
+#endif 

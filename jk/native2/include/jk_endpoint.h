@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil-*- */
 /* ========================================================================= *
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
@@ -135,7 +134,7 @@ struct jk_endpoint {
 
     int sd;
     int reuse;
-    unsigned left_bytes_to_send;
+    int left_bytes_to_send;
 
     /* Buffers for req/res */
     /* Used to be ajp_operation */
@@ -145,6 +144,12 @@ struct jk_endpoint {
     int     uploadfd;           /* future persistant storage id */
     int     recoverable;        /* if exchange could be conducted on another TC */
 
+    /* For redirecting endpoints like lb */
+    jk_endpoint_t *realEndpoint;
+    
+    /*     int (JK_METHOD *sendRequest)(jk_endpoint_t *e,  */
+    /*                                  struct jk_ws_service *s, */
+    /*                                  jk_logger_t *l );     */
     
     /*
      * Forward a request to the servlet engine.  The request is described
@@ -188,6 +193,24 @@ int ajp_connection_tcp_send_message(jk_endpoint_t *ae,
 int ajp_connection_tcp_get_message(jk_endpoint_t *ae,
                                    jk_msg_buf_t   *msg,
                                    jk_logger_t    *l);
+
+
+int ajp_send_request(jk_endpoint_t *e,
+                     struct jk_ws_service *s,
+                     jk_logger_t *l);
+
+int ajp_get_reply(jk_endpoint_t *e,
+                  struct jk_ws_service *s,
+                  jk_logger_t *l);
+
+void ajp_reset_endpoint(jk_endpoint_t *ae);
+
+int ajp_read_into_msg_buff(jk_endpoint_t  *ae,
+                           struct jk_ws_service *r,
+                           jk_msg_buf_t    *msg,
+                           int            len,
+                           jk_logger_t     *l);
+
 
     
 #ifdef __cplusplus

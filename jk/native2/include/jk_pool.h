@@ -148,7 +148,8 @@ struct jk_pool {
     /* Private data - XXX move to impl */
     unsigned size;      
     unsigned pos;       
-    char     *buf;      
+    jk_pool_atom_t  *buf;
+    int own_buffer;
     unsigned dyn_size;  
     unsigned dyn_pos;   
     void     **dynamic;
@@ -156,7 +157,7 @@ struct jk_pool {
 
 /** Create a pool
  */
-int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent );
+int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent, int size );
 
 /** Open a pool using allocated space. The pool can grow by
     (m)allocating more storage, but it'll first use buf.

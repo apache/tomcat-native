@@ -132,7 +132,7 @@ char *map_getStrProp(jk_map_t *m,
                      const char *objType,
                      const char *objName,
                      const char *pname,
-                     const char *def);
+                     char *def);
 
 int map_getIntProp(jk_map_t *m,
                    const char *objType,
@@ -140,6 +140,21 @@ int map_getIntProp(jk_map_t *m,
                    const char *pname,
                    const int def);
 
+double map_getDoubleProp(jk_map_t *m,
+                         const char *objType,
+                         const char *objName,
+                         const char *pname,
+                         const double def);
+
+char **map_getListProp(jk_map_t *m,
+                       const char *objType,
+                       const char *objName,
+                       const char *pname, 
+                       unsigned *size);
+
+/* XXX Very strange hack to deal with special properties
+ */
+    int jk_is_some_property(const char *prp_name, const char *suffix);
     
 #ifdef __cplusplus
 }

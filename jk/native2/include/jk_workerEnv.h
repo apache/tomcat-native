@@ -109,7 +109,7 @@ struct jk_workerEnv {
         to avoid the lookup
     */
     struct jk_worker *defaultWorker;
-
+    
     /* Web-Server we're running on (Apache/IIS/NES).
      */
     char *server_name;
