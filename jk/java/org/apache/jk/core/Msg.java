@@ -67,7 +67,7 @@ import java.util.Enumeration;
 import java.security.*;
 
 import org.apache.tomcat.util.http.MimeHeaders;
-import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.buf.HexUtils;
 
@@ -105,15 +105,11 @@ public abstract class Msg {
     public abstract void appendLongInt( int val );
 
     /**
-     * Write a String out at the current write position.  Strings are
-     * encoded with the length in two bytes first, then the string, and
-     * then a terminating \0 (which is <B>not</B> included in the
-     * encoded length).  The terminator is for the convenience of the C
-     * code, where it saves a round of copying.  A null string is
-     * encoded as a string with length 0.  
      */
     public abstract void appendBytes(MessageBytes mb) throws IOException;
 
+    public abstract void appendByteChunk(ByteChunk bc) throws IOException;
+    
     /** 
      * Copy a chunk of bytes into the packet, starting at the current
      * write position.  The chunk of bytes is encoded with the length

@@ -83,6 +83,7 @@ public class WorkerEnv {
     int webappCnt=0;
 
     public static final int ENDPOINT_NOTE=0;
+    public static final int REQUEST_NOTE=1;
     int noteId[]=new int[4];
     String noteName[][]=new String[4][];
 

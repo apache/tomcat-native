@@ -82,7 +82,7 @@ import org.apache.tomcat.util.buf.HexUtils;
  * @author Costin Manolache
  */
 public class Endpoint {
-    private Object notes[]=new Object[8];
+    private Object notes[]=new Object[16];
 
     public final Object getNote( int id ) {
         return notes[id];
