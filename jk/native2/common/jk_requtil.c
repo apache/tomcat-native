@@ -529,7 +529,12 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     int i;
     int headerCount;
     int rc;
+    int debug=0;
 
+    if( s->uriEnv != NULL ) {
+        debug=s->uriEnv->debug;
+    }
+    
     rc=jk2_requtil_getMethodId(env, s->method, &method);
     if (rc!=JK_OK) { 
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -570,8 +575,9 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
                 return JK_ERR;
             }
         } else {
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "serialize.request() Add headerName %s\n", name);
+            if( debug > 0 )
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "serialize.request() Add headerName %s\n", name);
             if (msg->appendString(env, msg, name)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "serialize.request() Error serializing header name\n");
@@ -579,9 +585,6 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
             }
         }
         
-        /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
-        /*                "serialize.request() Add headerValue %s\n", */
-        /*                 s->headers_in->valueAt( env, s->headers_in, i)); */
         if (msg->appendString(env, msg,
                                s->headers_in->valueAt( env, s->headers_in, i))) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -695,9 +698,11 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
                  "handle.request() Error serializing end marker\n");
         return JK_ERR;
     }
+
     
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "serialize.request() serialized %s\n", s->req_uri);
+    if( debug > 0  )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "serialize.request() serialized %s\n", s->req_uri);
 
     /*  msg->dump( env, msg, "Dump: " ); */
     return JK_OK;
@@ -1017,6 +1022,7 @@ void jk2_requtil_initRequest(jk_env_t *env, jk_ws_service_t *s)
     s->ssl_cipher           = NULL;
     s->ssl_session          = NULL;
     s->jvm_route            = NULL;
+    s->uriEnv               = NULL;
     s->outBuf=NULL;
     
     s->jkprintf=jk2_requtil_printf;

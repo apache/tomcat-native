@@ -369,7 +369,7 @@ static int jk2_handler(request_rec *r)
 
         jk2_service_apache13_init(env, s);
         s->pool = rPool;
-        
+        s->uriEnv = uriEnv;
         s->is_recoverable_error = JK_FALSE;
         s->init( env, s, worker, r );
         

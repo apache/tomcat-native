@@ -181,6 +181,10 @@ struct jk_ws_service {
      */
     struct jk_pool *pool;
 
+    /* Result of the mapping
+     */
+    
+    struct jk_uriEnv *uriEnv;
     /* 
      * CGI Environment needed by servlets
      */
