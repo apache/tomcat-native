@@ -29,7 +29,23 @@ script, configure both APR and the WebApp module and compile:
 
     ./support/buildconf.sh
 
-To build the sources, now follow the steps in the next chapter.
+To build the sources, now follow the steps in the next chapters.
+
+How to build the tomcat-webapp.jar module from CVS sources:
+------------------------------------------------
+
+The tomcat-webapp.jar is build using Ant.
+To get Ant see (http://jakarta.apache.org/ant/index.html).
+
+To build the tomcat-webapp.jar you have to do the following:
+
+* Copy build.properties.sample to build.properties
+
+* Edit build.properties to taste.
+
+* Run "ant". It'll build the tomcat-webapp.jar
+
+* Copy the build/lib/tomcat-webapp.jar in the Tomcat server/lib directory.
 
 How to build the WebApp module from CVS sources:
 ------------------------------------------------
@@ -63,21 +79,6 @@ Apache 1.3. The available options for the configure script are:
         If you already have the APR sources lying around somewhere, and
         want to use them instead of checking them out from CVS, you can
         specify where these can be found.
-
-    --with-java[=JAVA_HOME]
-        Compile also the Java portion of WebApp. If the JAVA_HOME variable
-        is not set in your environment, you'll have to specify the root
-        path of your JDK installation on this command line.
-        This will generate a new "warp.jar" file in the "java" directory
-        that you must use instead of the one provided with the default
-        Tomcat distribution. For example:
-          # mv ./java/warp.jar $CATALINA_HOME/server/lib/warp.jar
-
-    --with-tomcat[=TOMCAT_HOME]
-        When compiling the Java portion of WebApp, you will also need to
-        specify where a Tomcat 4.0 distribution can be found. This will
-        automatically set up your CLASSPATH environment with the required
-        JAR files included with Tomcat 4.0.
 
     --enable-debug
         Enable compiled-in debugging output. Using this option the WebApp
