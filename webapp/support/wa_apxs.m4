@@ -68,7 +68,7 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_APXS],
   [
-    tempval="apxs"
+    wa_apxs_tempval="apxs"
     AC_MSG_CHECKING([for apxs name])
     AC_ARG_WITH(
       [apxs],
@@ -81,26 +81,25 @@ AC_DEFUN(
           WA_ERROR([apxs required for compilation])
           ;;
         *)
-          tempval="${withval}"
+          wa_apxs_tempval="${withval}"
           ;;
         esac
       ])
-    AC_MSG_RESULT([${tempval}])
-    if test -x "${tempval}" ; then
-      tempdir=`dirname "${tempval}"`
-      tempfil=`basename "${tempval}"`
-      WA_PATH_DIR([tempdir],[${tempdir}],[apxs])
-      $1="${tempdir}/${tempfil}"
+    AC_MSG_RESULT([${wa_apxs_tempval}])
+    if test -x "${wa_apxs_tempval}" ; then
+      wa_apxs_tempdir=`dirname "${wa_apxs_tempval}"`
+      wa_apxs_tempfil=`basename "${wa_apxs_tempval}"`
+      WA_PATH_DIR([wa_apxs_tempdir],[${wa_apxs_tempdir}],[apxs])
+      $1="${wa_apxs_tempdir}/${wa_apxs_tempfil}"
     else
-      AC_PATH_PROG($1,[${tempval}])
+      AC_PATH_PROG($1,[${wa_apxs_tempval}])
     fi
     
     if test -z "${$1}" ; then
-      AC_MSG_ERROR([cannot find apxs utility "${tempval}"])
+      AC_MSG_ERROR([cannot find apxs utility "${wa_apxs_tempval}"])
       exit 1
     fi
-    unset tempval
-    AC_SUBST($1)
+    unset wa_apxs_tempval
   ])
 
 dnl --------------------------------------------------------------------------
@@ -112,18 +111,18 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_APXS_CHECK],
   [
-    tempval=""
+    wa_apxs_check_tempval=""
     AC_MSG_CHECKING([for apxs version])
     if grep "STANDARD_MODULE_STUFF" "$2" > /dev/null ; then
-      tempval="1.3"
+      wa_apxs_check_tempval="1.3"
     elif grep "STANDARD20_MODULE_STUFF" "$2" > /dev/null ; then
-      tempval="2.0"
+      wa_apxs_check_tempval="2.0"
     else
       WA_ERROR([$2 invalid])
     fi
-    AC_MSG_RESULT([$2 (${tempval})])
-    $1=${tempval}
-    unset tempval
+    AC_MSG_RESULT([$2 (${wa_apxs_check_tempval})])
+    $1=${wa_apxs_check_tempval}
+    unset wa_apxs_check_tempval
     
     AC_MSG_CHECKING([for apxs sanity])
     $2 -q CC > /dev/null 2>&1
@@ -134,8 +133,6 @@ AC_DEFUN(
       WA_ERROR([apxs cannot compile])
     fi
     AC_MSG_RESULT([ok])
-
-    AC_SUBST($1)
   ])
 
 dnl --------------------------------------------------------------------------
@@ -149,11 +146,15 @@ AC_DEFUN(
   [WA_APXS_GET],
   [
     AC_MSG_CHECKING([for apxs $3 variable])
-    tempval=`"$2" -q "$3" 2> /dev/null`;
+    wa_apxs_get_tempval=`"$2" -q "$3" 2> /dev/null`
     if test "$?" != "0" ; then
-        WA_ERROR([cannot execute $2])
+      WA_ERROR([cannot execute $2])
     fi
-    AC_MSG_RESULT([${tempval}])
-    $1="${$1} ${tempval}"
-    unset tempval
+    AC_MSG_RESULT([${wa_apxs_get_tempval}])
+    if test -z "${$1}" ; then
+      $1="${wa_apxs_get_tempval}"
+    else
+      $1="${$1} ${wa_apxs_get_tempval}"
+    fi
+    unset wa_apxs_get_tempval
   ])
