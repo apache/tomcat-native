@@ -191,7 +191,9 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
             _this->jkLog( env, _this, JK_LOG_ERROR,
                           "Level %s %d \n", value, _this->level );
         }
+        return JK_OK;
     }
+    return JK_ERR;
 }
 
 
