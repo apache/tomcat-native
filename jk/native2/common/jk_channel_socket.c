@@ -114,19 +114,22 @@ int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
                                         void **result,
 					const char *type, const char *name);
 
-static int JK_METHOD jk_channel_socket_resolve(char *host, short port,
-				     struct sockaddr_in *rc);
+static int JK_METHOD jk_channel_socket_resolve(jk_env_t *env, char *host,
+                                               short port,
+                                               struct sockaddr_in *rc);
 
-static int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
-                                      jk_endpoint_t *endpoint);
+static int JK_METHOD jk_channel_socket_close(jk_env_t *env, jk_channel_t *_this,
+                                             jk_endpoint_t *endpoint);
 
-static int JK_METHOD jk_channel_socket_getProperty(jk_channel_t *_this, 
-					 char *name, char **value)
+static int JK_METHOD jk_channel_socket_getProperty(jk_env_t *env,
+                                                   jk_channel_t *_this, 
+                                                   char *name, char **value)
 {
     return JK_FALSE;
 }
 
-static int JK_METHOD jk_channel_socket_setProperty(jk_channel_t *_this, 
+static int JK_METHOD jk_channel_socket_setProperty(jk_env_t *env,
+                                                   jk_channel_t *_this, 
                                                    char *name, char *value)
 {
     jk_channel_socket_private_t *socketInfo=
@@ -144,11 +147,11 @@ static int JK_METHOD jk_channel_socket_setProperty(jk_channel_t *_this,
 
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
-static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this, 
+static int JK_METHOD jk_channel_socket_init(jk_env_t *env,
+                                            jk_channel_t *_this, 
                                             jk_map_t *props,
                                             char *worker_name, 
-                                            jk_worker_t *worker, 
-                                            jk_logger_t *l )
+                                            jk_worker_t *worker )
 {
     int err;
     jk_channel_socket_private_t *socketInfo=
@@ -159,12 +162,12 @@ static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this,
     jk_workerEnv_t *workerEnv=worker->workerEnv;
     char *tmp;
     
-    host = jk_map_getStrProp( NULL, props,
+    host = jk_map_getStrProp( env, props,
                               "worker", worker_name, "host", host);
-    tmp = jk_map_getStrProp( NULL, props,
+    tmp = jk_map_getStrProp( env, props,
                           "worker", worker_name, "port", NULL );
     if( tmp != NULL )
-        port=jk_map_str2int( NULL, tmp);
+        port=jk_map_str2int( env, tmp);
 
     _this->worker=worker;
     _this->properties=props;
@@ -172,20 +175,21 @@ static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this,
     if( host==NULL )
         host=DEFAULT_HOST;
     
-    err=jk_channel_socket_resolve( host, port, rc );
+    err=jk_channel_socket_resolve( env, host, port, rc );
     if( err!= JK_TRUE ) {
-	l->jkLog(l, JK_LOG_ERROR, "jk_channel_socket_init: "
+	env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk_channel_socket_init: "
 	       "can't resolve %s:%d errno=%d\n", host, port, errno );
     }
-    l->jkLog(l, JK_LOG_INFO, "channel_socket.init(): %s:%d for %s\n", host,
-             port, worker->name );
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "channel_socket.init(): %s:%d for %s\n", host,
+                  port, worker->name );
 
     return err;
 }
 
 /** private: resolve the address on init
  */
-static int JK_METHOD jk_channel_socket_resolve(char *host, short port,
+static int JK_METHOD jk_channel_socket_resolve(jk_env_t *env, char *host, short port,
                                                struct sockaddr_in *rc)
 {
     int x;
@@ -218,7 +222,7 @@ static int JK_METHOD jk_channel_socket_resolve(char *host, short port,
     return JK_TRUE;
 }
 
-static int jk_close_socket(int s)
+static int jk_close_socket(jk_env_t *env, int s)
 {
 #ifdef WIN32
     if(INVALID_SOCKET  != s) {
@@ -236,10 +240,10 @@ static int jk_close_socket(int s)
 
 /** connect to Tomcat (jk_open_socket)
  */
-static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
+static int JK_METHOD jk_channel_socket_open(jk_env_t *env,
+                                            jk_channel_t *_this,
                                             jk_endpoint_t *endpoint)
 {
-    jk_logger_t *l=_this->worker->workerEnv->l;
     int err;
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(_this->_privatePtr);
@@ -257,7 +261,7 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
             errno = WSAGetLastError() - WSABASEERR;
         }
 #endif /* WIN32 */
-        l->jkLog(l, JK_LOG_ERROR,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                  "channelSocket.open(): can't create socket %d %s\n",
                  errno, strerror( errno ) );
         return JK_FALSE;
@@ -265,7 +269,8 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
 
     /* Tries to connect to JServ (continues trying while error is EINTR) */
     do {
-        l->jkLog(l, JK_LOG_INFO, "channelSocket.open() connect on %d\n",sock);
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelSocket.open() connect on %d\n",sock);
         ret = connect(sock,(struct sockaddr *)addr,
                       sizeof(struct sockaddr_in));
         
@@ -279,10 +284,10 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
 
     /* Check if we connected */
     if(ret != 0 ) {
-        jk_close_socket(sock);
-        l->jkLog(l, JK_LOG_ERROR,
-                 "channelSocket.connect() connect failed %d %s\n",
-                 errno, strerror( errno ) );
+        jk_close_socket(env, sock);
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "channelSocket.connect() connect failed %d %s\n",
+                      errno, strerror( errno ) );
         return JK_FALSE;
     }
 
@@ -291,13 +296,14 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
         setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,(char *)&set,sizeof(set));
     }   
         
-    l->jkLog(l, JK_LOG_INFO, "channelSocket.connect(), sock = %d\n", sock);
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "channelSocket.connect(), sock = %d\n", sock);
 
     {
         jk_channel_socket_data_t *sd=endpoint->channelData;
         if( sd==NULL ) {
             sd=(jk_channel_socket_data_t *)
-                endpoint->pool->calloc( endpoint->pool,
+                endpoint->pool->calloc( env, endpoint->pool,
                                         sizeof( jk_channel_socket_data_t ));
             endpoint->channelData=sd;
         }
@@ -309,7 +315,7 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
 
 /** close the socket  ( was: jk_close_socket )
 */
-static int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
+static int JK_METHOD jk_channel_socket_close(jk_env_t *env,jk_channel_t *_this,
                                              jk_endpoint_t *endpoint)
 {
     int sd;
@@ -322,7 +328,7 @@ static int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
     /* nothing else to clean, the socket_data was allocated ouf of
      *  endpoint's pool
      */
-    return jk_close_socket(sd);
+    return jk_close_socket(env, sd);
 }
 
 /** send a long message
@@ -336,10 +342,9 @@ static int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
  *             protocol.
  * @was: jk_tcp_socket_sendfull
  */
-static int JK_METHOD jk_channel_socket_send(jk_channel_t *_this,
-				  jk_endpoint_t *endpoint,
-				  char *b,
-                                  int len) 
+static int JK_METHOD jk_channel_socket_send(jk_env_t *env, jk_channel_t *_this,
+                                            jk_endpoint_t *endpoint,
+                                            char *b, int len) 
 {
     int sd;
     int  sent=0;
@@ -373,7 +378,7 @@ static int JK_METHOD jk_channel_socket_send(jk_channel_t *_this,
  *            >0: length of the received data.
  * Was: tcp_socket_recvfull
  */
-static int JK_METHOD jk_channel_socket_recv( jk_channel_t *_this,
+static int JK_METHOD jk_channel_socket_recv( jk_env_t *env, jk_channel_t *_this,
                                              jk_endpoint_t *endpoint,
                                              char *b, int len ) 
 {
@@ -413,7 +418,8 @@ static int JK_METHOD jk_channel_socket_recv( jk_channel_t *_this,
 
 
 
-int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool, 
+int JK_METHOD jk_channel_socket_factory(jk_env_t *env,
+                                        jk_pool_t *pool, 
                                         void **result,
 					const char *type, const char *name)
 {
@@ -424,10 +430,10 @@ int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
 	*result=NULL;
 	return JK_FALSE;
     }
-    _this=(jk_channel_t *)pool->calloc(pool, sizeof( jk_channel_t));
+    _this=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
     _this->_privatePtr= (jk_channel_socket_private_t *)
-	pool->calloc( pool, sizeof( jk_channel_socket_private_t));
+	pool->calloc( env, pool, sizeof( jk_channel_socket_private_t));
 
     _this->recv= &jk_channel_socket_recv; 
     _this->send= &jk_channel_socket_send; 
@@ -437,7 +443,8 @@ int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
     _this->getProperty= &jk_channel_socket_getProperty; 
     _this->setProperty= &jk_channel_socket_setProperty; 
 
-    _this->supportedProperties=( char ** )pool->alloc( pool, 4 * sizeof( char * ));
+    _this->supportedProperties=( char ** )pool->alloc( env, pool,
+                                                       4 * sizeof( char * ));
     _this->supportedProperties[0]="host";
     _this->supportedProperties[1]="port";
     _this->supportedProperties[2]="defaultPort";

@@ -119,10 +119,9 @@ int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
  *CONTEXT NAME (CString (*)) | URL1 [\n] URL2 [\n] URL3 [\n] | NEXT CTX. |
  *-------------------+-------------------------------+-----------+
  */
-static int jk_handler_contextList(jk_msg_t       *msg,
+static int jk_handler_contextList(jk_env_t *env, jk_msg_t *msg,
                                   jk_ws_service_t *s,
-                                  jk_endpoint_t *ae,
-                                  jk_logger_t *l)
+                                  jk_endpoint_t *ae )
 {
     char *vname;
     char *cname;
@@ -137,43 +136,46 @@ static int jk_handler_contextList(jk_msg_t       *msg,
     /*     if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE) */
     /*         return JK_FALSE; */
 
-    cmd=msg->getByte( msg );
+    cmd=msg->getByte( env, msg );
     if (cmd != AJP14_CONTEXT_INFO_CMD) {
-        l->jkLog(l, JK_LOG_ERROR,
-                 "handler.discovery() - wrong cmd %d:%d\n",
-                 AJP14_CONTEXT_INFO_CMD, cmd);
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "handler.discovery() - wrong cmd %d:%d\n",
+                      AJP14_CONTEXT_INFO_CMD, cmd);
         return JK_FALSE;
     }
 
     for (;;) {
-        vname  = (char *)msg->getString(msg);
-        cname  = (char *)msg->getString(msg); 
+        vname  = (char *)msg->getString(env, msg);
+        cname  = (char *)msg->getString(env, msg); 
 
         if (cname==NULL || strlen( cname ) == 0 ) {
-            l->jkLog(l, JK_LOG_DEBUG, "End of contest list\n");
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "End of contest list\n");
             return JK_TRUE;
         }   
         
-        l->jkLog(l, JK_LOG_DEBUG,
-                 "contextList - Context: %s:%s \n", vname, cname);
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "contextList - Context: %s:%s \n",
+                      vname, cname);
 
-        webapp = we->createWebapp( we, vname, cname, NULL );
+        webapp = we->createWebapp( env, we, vname, cname, NULL );
         if( webapp==NULL ) {
-            l->jkLog(l, JK_LOG_ERROR,
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
                      "discoveryHandler: can't create webapp\n");
             return JK_FALSE;
         }
          
         for (;;) {
-            uri  = (char *)msg->getString(msg);
+            uri  = (char *)msg->getString(env, msg);
             
             if (uri==NULL || strlen( uri ) == 0 ) {
-                l->jkLog(l, JK_LOG_DEBUG, "No more URI for context %s", cname);
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "No more URI for context %s", cname);
                 break;
             }
             
-            l->jkLog(l, JK_LOG_INFO,
-                   "Got URI %s for %s:%s\n", uri, vname, cname);
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "Got URI %s for %s:%s\n", uri, vname, cname);
             
 /*             if (context_add_uri(c, cname, uri) == JK_FALSE) { */
 /*                 l->jkLog(l, JK_LOG_ERROR, */
@@ -200,20 +202,19 @@ static int jk_handler_contextList(jk_msg_t       *msg,
  *CONTEXT NAME (CString (*)) | UP/DOWN (1 byte) | .. |
  * ------------------------+------------------+----+
  */
-static int jk_handler_contextState(jk_msg_t       *msg,
-                                  jk_ws_service_t *s,
-                                  jk_endpoint_t *ae,
-                                  jk_logger_t *l)
+static int jk_handler_contextState(jk_env_t *env, jk_msg_t *msg,
+                                   jk_ws_service_t *s,
+                                   jk_endpoint_t *ae)
 {
     char                *vname;
     char                *cname;
     jk_webapp_t   *ci = NULL;
 
     /* get virtual name */
-    vname  = (char *)msg->getString(msg);
+    vname  = (char *)msg->getString(env, msg);
     
     /* get context name */
-    cname  = (char *)msg->getString(msg);
+    cname  = (char *)msg->getString(env, msg);
         
     if (! cname || ! strlen(cname)) {
         return JK_TRUE;
@@ -222,17 +223,18 @@ static int jk_handler_contextState(jk_msg_t       *msg,
     /* ci = context_find_base(c, cname); */
         
     if (! ci) {
-        l->jkLog(l, JK_LOG_ERROR,
-                 "Error ajp14_unmarshal_context_state_reply "
-                 "- unknow context %s for virtual %s\n", 
-                 cname, vname);
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Error ajp14_unmarshal_context_state_reply "
+                      "- unknow context %s for virtual %s\n", 
+                      cname, vname);
         return JK_FALSE;
     }
         
-    ci->status = msg->getInt(msg);
+    ci->status = msg->getInt(env, msg);
         
-    l->jkLog(l, JK_LOG_DEBUG, "ajp14_unmarshal_context_state_reply "
-             "- updated context %s to state %d\n", cname, ci->status);
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                  "handler.contextState() context %s state=%d\n",
+                  cname, ci->status);
     return JK_TRUE;
 }
 
@@ -247,13 +249,13 @@ int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
     jk_map_default_create( env, &map, pool );
     *result=map;
     
-    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="contextInfo";
     h->messageId=AJP14_CONTEXT_INFO_CMD;
     h->callback=jk_handler_contextList;
     map->put( env, map, h->name, h, NULL );
 
-    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="contextState";
     h->messageId=AJP14_CONTEXT_STATE_REP_CMD;
     h->callback=jk_handler_contextState;

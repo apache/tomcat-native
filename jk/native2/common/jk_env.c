@@ -70,9 +70,9 @@ static void jk_env_initEnv( jk_env_t *env, char *id );
 
 jk_env_t* JK_METHOD jk_env_getEnv( char *id, jk_pool_t *pool ) {
   if( jk_env_singleton == NULL ) {
-    jk_env_singleton=(jk_env_t *)pool->calloc( pool, sizeof( jk_env_t ));
-    jk_env_singleton->globalPool = pool;
-    jk_env_initEnv( (jk_env_t *)jk_env_singleton, id );
+      jk_env_singleton=(jk_env_t *)pool->calloc( NULL, pool, sizeof( jk_env_t ));
+      jk_env_singleton->globalPool = pool;
+      jk_env_initEnv( (jk_env_t *)jk_env_singleton, id );
   }
   return jk_env_singleton;
 }
@@ -114,16 +114,16 @@ static void *jk_env_getInstance( jk_env_t *_this, jk_pool_t *pool, const char *t
 
     fac=_this->getFactory( _this, type, name);
     if( fac==NULL ) {
-        if( _this->logger )
-            _this->logger->jkLog(_this->logger, JK_LOG_ERROR,
-                                "Error getting factory for %s:%s\n", type, name);
+        if( _this->l )
+            _this->l->jkLog(_this, _this->l, JK_LOG_ERROR,
+                            "Error getting factory for %s:%s\n", type, name);
         return NULL;
     }
 
     fac( _this, pool, &result, type, name );
     if( result==NULL ) {
-        if( _this->logger )
-            _this->logger->jkLog(_this->logger, JK_LOG_ERROR,
+        if( _this->l )
+            _this->l->jkLog(_this, _this->l, JK_LOG_ERROR,
                                 "Error getting instance for %s:%s\n", type, name);
         return NULL;
     }
@@ -141,7 +141,7 @@ static void JK_METHOD jk_env_registerFactory(jk_env_t *env,
   char *typeName;
   int size=( sizeof( char ) * (strlen(name) + strlen(type) + 2 ));
 
-  typeName=(char *)env->globalPool->calloc(env->globalPool, size);
+  typeName=(char *)env->globalPool->calloc(env, env->globalPool, size);
 
 
   strcpy(typeName, type );

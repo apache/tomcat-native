@@ -78,19 +78,22 @@ extern "C" {
 
 /* Common ajp13 methods */
 
-int jk_serialize_request13(jk_msg_t    *msg,
+int jk_serialize_request13(struct jk_env *env, jk_msg_t    *msg,
                            jk_ws_service_t *s );
 
-int jk_serialize_postHead(jk_msg_t   *msg,
+int jk_serialize_postHead(struct jk_env *env,
+                          jk_msg_t   *msg,
                           jk_ws_service_t  *s,
                           jk_endpoint_t *e);
 
-int jk_serialize_shutdown(jk_msg_t *msg,
+int jk_serialize_shutdown(struct jk_env *env,
+                          jk_msg_t *msg,
                           jk_ws_service_t  *r);
 
 /* Send a ping message to tomcat and pass control.
  */
-int jk_serialize_ping(jk_msg_t *msg,
+int jk_serialize_ping(struct jk_env *env,
+                      jk_msg_t *msg,
                       jk_endpoint_t *ae );
 
 

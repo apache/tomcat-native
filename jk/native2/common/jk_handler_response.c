@@ -111,24 +111,22 @@ body_chunk :=
     body    length*(var binary)
 
  */
-static int jk_handler_startResponse(jk_msg_t   *msg,
-                                   jk_ws_service_t  *s,
-                                   jk_endpoint_t *ae,
-                                   jk_logger_t    *l)
+static int jk_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
+                                    jk_ws_service_t  *s, jk_endpoint_t *ae )
 {
     int err=JK_FALSE;
     int i;
     jk_pool_t * pool = s->pool;
     int headerCount;
 
-    s->status = msg->getInt(msg);
-    s->msg = (char *)msg->getString(msg);
+    s->status = msg->getInt(env, msg);
+    s->msg = (char *)msg->getString(env, msg);
     if (s->msg) {
         jk_xlate_from_ascii(s->msg, strlen(s->msg));
         /* Do we want this ? Probably not needed, but safer ! */
-        s->msg = ae->cPool->pstrdup( ae->cPool, s->msg );
+        s->msg = ae->cPool->pstrdup( env, ae->cPool, s->msg );
     }
-    headerCount = msg->getInt(msg);
+    headerCount = msg->getInt(env, msg);
 
     /* XXX assert msg->headers_out is set - the server adapter should know what
        kind of map to use ! */
@@ -136,63 +134,61 @@ static int jk_handler_startResponse(jk_msg_t   *msg,
     for(i = 0 ; i < headerCount ; i++) {
         char *nameS;
         char *valueS;
-        unsigned short name = msg->peekInt(msg) ;
+        unsigned short name = msg->peekInt(env, msg) ;
 
         if ((name & 0XFF00) == 0XA000) {
-            msg->getInt(msg);
+            msg->getInt(env, msg);
             name = name & 0X00FF;
             if (name <= SC_RES_HEADERS_NUM) {
-                nameS =
-                    (char *)jk_requtil_getHeaderById(name);
+                nameS = (char *)jk_requtil_getHeaderById(env, name);
             } else {
-                l->jkLog(l, JK_LOG_ERROR,
-                         "handler.response() Invalid header id (%d)\n",
-                         name);
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "handler.response() Invalid header id (%d)\n",
+                              name);
                 return JK_HANDLER_FATAL;
             }
         } else {
-            nameS = (char *)msg->getString(msg);
+            nameS = (char *)msg->getString(env, msg);
             if (nameS==NULL) {
-                l->jkLog(l, JK_LOG_ERROR,
-                         "handler.response() Null header name \n");
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "handler.response() Null header name \n");
                 return JK_HANDLER_FATAL;
             }
             jk_xlate_from_ascii(nameS, strlen(nameS));
         }
         
-        valueS = (char *)msg->getString(msg);
+        valueS = (char *)msg->getString(env, msg);
         if (valueS==NULL ) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "Error ajp_unmarshal_response - Null header value\n");
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "Error ajp_unmarshal_response - Null header value\n");
             return JK_HANDLER_FATAL;
         }
         
-        jk_xlate_from_ascii(valueS,
-                            strlen(valueS));
+        jk_xlate_from_ascii(valueS, strlen(valueS));
         
-        l->jkLog(l, JK_LOG_DEBUG,
-                 "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
-                 i, nameS, valueS);
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
+                      i, nameS, valueS);
 
         /* Do we want this ? Preserve the headers, maybe someone will
          need them. Alternative is to use a different buffer every time,
          which may be more efficient. */
         /* We probably don't need that, we'll send them in the next call */
-/*Apache does it - will change if we add jk_map_apache
-           nameS=ae->cPool->pstrdup( ae->cPool, nameS ); */
-/*         valueS=ae->cPool->pstrdup( ae->cPool, valueS ); */
+        /*Apache does it - will change if we add jk_map_apache
+          nameS=ae->cPool->pstrdup( ae->cPool, nameS ); */
+        /*         valueS=ae->cPool->pstrdup( ae->cPool, valueS ); */
         
-        s->headers_out->add( NULL, s->headers_out, nameS, valueS );
+        s->headers_out->add( env, s->headers_out, nameS, valueS );
     }
     
-    l->jkLog(l, JK_LOG_INFO,
-             "handler.response(): status=%d headers=%d\n",
-             s->status, headerCount);
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "handler.response(): status=%d headers=%d\n",
+                  s->status, headerCount);
 
-    err=s->head(s);
+    err=s->head(env, s);
     if( err!=JK_TRUE ) {
-        l->jkLog(l, JK_LOG_ERROR,
-                 "handler.response() Error sending response");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "handler.response() Error sending response");
         return JK_HANDLER_ERROR;
     }
     
@@ -201,32 +197,28 @@ static int jk_handler_startResponse(jk_msg_t   *msg,
 
 /** SEND_BODY_CHUNK handler
  */
-static int jk_handler_sendChunk(jk_msg_t   *msg,
-                               jk_ws_service_t  *r,
-                               jk_endpoint_t *ae,
-                               jk_logger_t    *l)
+static int jk_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
+                                jk_ws_service_t  *r, jk_endpoint_t *ae)
 {
     int err;
     int len;
     char *buf;
 
-    buf=msg->getBytes( msg, &len );
+    buf=msg->getBytes( env, msg, &len );
 
-    err=r->write(r, buf, len);
+    err=r->write(env, r, buf, len);
     if( err!= JK_TRUE ) {
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - write failed\n");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error ajp_process_callback - write failed\n");
         return JK_HANDLER_ERROR;
     }
 
     return JK_HANDLER_OK;
 }
 
-static int jk_handler_endResponse(jk_msg_t   *msg,
-                                 jk_ws_service_t  *r,
-                                 jk_endpoint_t *ae,
-                                 jk_logger_t    *l)
+static int jk_handler_endResponse(jk_env_t *env, jk_msg_t   *msg,
+                                  jk_ws_service_t  *r,jk_endpoint_t *ae)
 {
-    ae->reuse = (int)msg->getByte(msg);
+    ae->reuse = (int)msg->getByte(env, msg);
             
     if((ae->reuse & 0X01) != ae->reuse) {
         /*
@@ -239,12 +231,10 @@ static int jk_handler_endResponse(jk_msg_t   *msg,
 
 /** SEND_BODY_CHUNK handler
  */
-static int jk_handler_getChunk(jk_msg_t   *msg,
-                              jk_ws_service_t  *r,
-                              jk_endpoint_t *ae,
-                              jk_logger_t    *l)
+static int jk_handler_getChunk(jk_env_t *env, jk_msg_t   *msg,
+                               jk_ws_service_t  *r, jk_endpoint_t *ae)
 {
-    int len = msg->getInt(msg);
+    int len = msg->getInt(env, msg);
     
     if(len > AJP13_MAX_SEND_BODY_SZ) {
         len = AJP13_MAX_SEND_BODY_SZ;
@@ -256,15 +246,15 @@ static int jk_handler_getChunk(jk_msg_t   *msg,
         len = 0;
     }
 
-    len=msg->appendFromServer( msg, r, ae, len );
+    len=msg->appendFromServer( env, msg, r, ae, len );
     /* the right place to add file storage for upload */
     if (len >= 0) {
         r->content_read += len;
         return JK_HANDLER_RESPONSE;
     }                  
             
-    l->jkLog(l, JK_LOG_ERROR,
-             "handler_request.getChunk() - ajp_read_into_msg_buff failed\n");
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                  "handler_request.getChunk() - read failed len=%d\n",len);
     return JK_HANDLER_FATAL;	    
 }
 
@@ -278,25 +268,25 @@ int JK_METHOD jk_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
     jk_map_default_create( env, &map, pool );
     *result=map;
     
-    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="sendHeaders";
     h->messageId=JK_AJP13_SEND_HEADERS;
     h->callback=jk_handler_startResponse;
     map->put( env, map, h->name, h, NULL );
 
-    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="sendChunk";
     h->messageId=JK_AJP13_SEND_BODY_CHUNK;
     h->callback=jk_handler_sendChunk;
     map->put( env, map, h->name, h, NULL );
     
-    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="endResponse";
     h->messageId=JK_AJP13_END_RESPONSE;
     h->callback=jk_handler_endResponse;
     map->put( env, map, h->name, h, NULL );
 
-    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="getChunk";
     h->messageId=JK_AJP13_GET_BODY_CHUNK;
     h->callback=jk_handler_getChunk;

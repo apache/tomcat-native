@@ -119,53 +119,52 @@
  *   String  serverName
  *
  */
-static int jk_handler_login(jk_msg_t       *msg,
-                            jk_ws_service_t *s,
-                            jk_endpoint_t *ae,
-                            jk_logger_t *l)
+static int jk_handler_login(jk_env_t *env, jk_msg_t *msg,
+                            jk_ws_service_t *s, jk_endpoint_t *ae)
 {
     int rc;
     char *entropy;
     char computedKey[AJP14_COMPUTED_KEY_LEN];
     char *secret=ae->worker->secret;
 
-    entropy= msg->getString( msg );
+    entropy= msg->getString( env, msg );
     if( entropy==NULL ) {
-        l->jkLog(l, JK_LOG_ERROR,
-                 "Error ajp14_unmarshal_login_seed - can't get seed\n");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Error ajp14_unmarshal_login_seed - can't get seed\n");
         return JK_HANDLER_FATAL;
     }
 
-    l->jkLog(l, JK_LOG_INFO,
-           "handle.logseed() received entropy %s\n", entropy);
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "handle.logseed() received entropy %s\n", entropy);
     
     jk_md5((const unsigned char *)entropy,
            (const unsigned char *)secret, computedKey);
 
-    l->jkLog(l, JK_LOG_DEBUG,
-             "Into ajp14_compute_md5 (%s/%s) -> (%s)\n",
-             entropy, secret, computedKey);
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                  "Into ajp14_compute_md5 (%s/%s) -> (%s)\n",
+                  entropy, secret, computedKey);
+    
+    msg->reset( env, msg );
 
-    msg->reset( msg );
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                  "Into ajp14_marshal_login_comp_into_msgb\n");
 
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_login_comp_into_msgb\n");
-
-    rc=msg->appendByte( msg, AJP14_LOGCOMP_CMD);
+    rc=msg->appendByte( env, msg, AJP14_LOGCOMP_CMD);
     if (rc!=JK_TRUE )
         return JK_HANDLER_FATAL;
 
     /* COMPUTED-SEED */
-    rc= msg->appendString( msg, (const unsigned char *)computedKey);
+    rc= msg->appendString( env, msg, (const unsigned char *)computedKey);
     if( rc!=JK_TRUE ) {
-        l->jkLog(l, JK_LOG_ERROR,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                  "handler.loginSecret() error serializing computed secret\n");
         return JK_HANDLER_FATAL;
     }
     ae->negociation=
         (AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
-    msg->appendLong(msg, ae->negociation);
+    msg->appendLong(env, msg, ae->negociation);
     
-    rc=msg->appendString(msg, ae->worker->workerEnv->server_name);
+    rc=msg->appendString(env, msg, ae->worker->workerEnv->server_name);
 
     if ( rc != JK_TRUE)
         return JK_HANDLER_FATAL;
@@ -183,29 +182,26 @@ static int jk_handler_login(jk_msg_t       *msg,
  * +--------------------+------------------------+---------------------------
  *
  */
-static int jk_handler_logok(jk_msg_t       *msg,
-                            jk_ws_service_t *s,
-                            jk_endpoint_t *ae,
-                            jk_logger_t *l)
+static int jk_handler_logok(jk_env_t *env, jk_msg_t *msg,
+                            jk_ws_service_t *s, jk_endpoint_t *ae )
 {
     unsigned long nego;
     char *sname;
     int rc;
 
-    nego = msg->getLong(msg);
+    nego = msg->getLong(env, msg);
     
     if (nego == 0xFFFFFFFF) {
-        l->jkLog(l, JK_LOG_ERROR,
-                 "Error ajp14_unmarshal_log_ok - can't get negociated data\n");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "handler.log_ok()  can't get negociated data\n");
         return JK_HANDLER_FATAL;
     }
     
-    sname = (char *)msg->getString(msg);
+    sname = (char *)msg->getString(env, msg);
     
     if (! sname) {
-        l->jkLog(l, JK_LOG_ERROR,
-                 "Error ajp14_unmarshal_log_ok - "
-                 "can't get servlet engine name\n");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "handler.logon() Error getting servlet engine name\n");
         return JK_HANDLER_FATAL;
     }
     
@@ -213,13 +209,13 @@ static int jk_handler_logok(jk_msg_t       *msg,
     /* XXXXXXXXX NEED A SUB POOL !!!! */
     if (ae->servletContainerName == NULL || 
         strcmp( sname, ae->servletContainerName) != 0 )  {
-        ae->servletContainerName=(char *)ae->pool->pstrdup( ae->pool,
-                                                            sname );
+        ae->servletContainerName=
+            (char *)ae->pool->pstrdup( env, ae->pool,sname );
     }
     
-    l->jkLog(l, JK_LOG_DEBUG,
-             "Successfully connected to servlet-engine %s\n",
-             ae->servletContainerName);
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "handler.logok() Successfully connected to %s\n",
+                  ae->servletContainerName);
 
     return JK_HANDLER_LAST;
 }
@@ -233,17 +229,15 @@ static int jk_handler_logok(jk_msg_t       *msg,
  * +---------------------+-----------------------+
  *
  */
-static int jk_handler_lognok(jk_msg_t       *msg,
-                             jk_ws_service_t *s,
-                             jk_endpoint_t *ae,
-                             jk_logger_t *l)
+static int jk_handler_lognok(jk_env_t *env, jk_msg_t *msg,
+                             jk_ws_service_t *s, jk_endpoint_t *ae )
 {
     unsigned long   status;
     
-    status = msg->getLong(msg);
+    status = msg->getLong(env, msg);
     
-    l->jkLog(l, JK_LOG_INFO,
-             "handler.logonFailure() code %08lx", status);
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "handler.logonFailure() code %08lx", status);
     
     return JK_HANDLER_FATAL;
 }
@@ -262,19 +256,19 @@ int JK_METHOD jk_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
     jk_map_default_create( env, &map, pool );
     *result=map;
     
-    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="login";
     h->messageId=AJP14_LOGSEED_CMD;
     h->callback=jk_handler_login;
     map->put( env, map, h->name, h, NULL );
 
-    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="logOk";
     h->messageId=AJP14_LOGOK_CMD;
     h->callback=jk_handler_logok;
     map->put( env, map, h->name, h, NULL );
 
-    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="logNok";
     h->messageId=AJP14_LOGNOK_CMD;
     h->callback=jk_handler_lognok;
