@@ -65,6 +65,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.InetAddress;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -345,7 +346,6 @@ public class Http11Processor implements Processor, ActionHook {
         int keepAliveLeft = maxKeepAliveRequests;
 
         while (started && !error && keepAlive) {
-
             try {
                 inputBuffer.parseRequestLine();
                 inputBuffer.parseHeaders();
@@ -720,19 +720,22 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * Parse host.
      */
-    public static void parseHost(Request req)
+    public void parseHost(Request req)
         throws IOException {
 
         MessageBytes valueMB = req.getMimeHeaders().getValue("host");
-        // 3.3 version. In 4.0 it is extracted from the host header.
-        // XXX I would rather trust the socket...
-        //serverPort = socket.getLocalPort();
+
+        // Default is what the socket tells us. Overriden if a host is found/parsed
+        req.setServerPort( socket.getLocalPort() );
+        InetAddress localAddress = socket.getLocalAddress();
+        
         ByteChunk valueBC = null;
         if (valueMB == null) {
             // That was in the 3.3 connector. 4.0 let it unset.
-            //// InetAddress localAddress = socket.getLocalAddress();
-            ////localHost = localAddress.getHostName();
-            // serverNameMB.setString( getLocalHost() );
+            // Setting the socket-related fields. The adapter doesn't know about
+            // socket.
+            req.setLocalHost( localAddress.getHostName() );
+            req.serverName().setString( localAddress.getHostName() );
             return;
         }
         valueBC = valueMB.getByteChunk();
@@ -750,7 +753,8 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         if (colonPos < 0) {
-            req.setServerPort(80);
+            //The info from socket is usually acurate
+            // req.setServerPort(80);
             req.serverName().setBytes( valueB, valueS, valueL);
         } else {
             req.serverName().setBytes( valueB, valueS, colonPos);
