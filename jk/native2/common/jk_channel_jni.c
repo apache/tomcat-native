@@ -317,7 +317,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     jbyte *nbuf;
     jbyteArray jbuf;
     int jlen;
-    jboolean iscommit=0;
+    jboolean iscopy=0;
     JNIEnv *jniEnv;
     jk_channel_jni_private_t *jniCh=_this->_privatePtr;
     jk_ch_jni_ep_private_t *epData=
@@ -369,8 +369,15 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
      *  write method. XXX We could try 'pining' if the vm supports
      *  it, this is a looong lived object.
      */
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscommit);
-
+#ifdef JK_JNI_CRITICAL
+    nbuf = (*jniEnv)->GetPrimitiveArrayCritical(jniEnv, jbuf, &iscopy);
+#else
+    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscopy);
+#endif
+    if( iscopy )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelJni.send() get java bytes iscopy %d\n", iscopy);
+    
     if(nbuf==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channelJni.send() Can't get java bytes");
@@ -384,8 +391,11 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
 
     memcpy( nbuf, b, len );
 
+#ifdef JK_JNI_CRITICAL
+    (*jniEnv)->ReleasePrimitiveArrayCritical(jniEnv, jbuf, nbuf, 0);
+#else
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
-    
+#endif    
     if( _this->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.send() before send %p\n",
