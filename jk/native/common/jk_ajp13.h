@@ -61,24 +61,22 @@
 #ifndef JK_AJP13_H
 #define JK_AJP13_H
 
-
-#include "jk_service.h"
-#include "jk_msg_buff.h"
-#include "jk_mt.h"
+#include "jk_ajp_common.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
+#define AJP13_PROTO					13
+#define AJP13_WS_HEADER				0x1234
+#define AJP13_SW_HEADER				0x4142	/* 'AB' */
+
 #define AJP13_DEF_HOST            	("localhost")
-#define AJP13_DEF_PORT            	(8008)
+#define AJP13_DEF_PORT            	(8009)
 #define AJP13_READ_BUF_SIZE         (8*1024)
-#define AJP13_DEF_RETRY_ATTEMPTS    (1)
 #define AJP13_DEF_CACHE_SZ          (1)
 #define JK_INTERNAL_ERROR       	(-2)
 #define AJP13_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
-#define AJP13_HEADER_LEN    		(4)
-#define AJP13_HEADER_SZ_LEN 		(2)
 
 /*
  * Message does not have a response (for example, JK_AJP13_END_RESPONSE)
@@ -123,27 +121,9 @@ extern "C" {
  */
 #define JK_AJP13_SHUTDOWN           (unsigned char)7
 
-struct jk_res_data {
-    int         status;
-    const char *msg;
-    unsigned    num_headers;
-    char      **header_names;
-    char      **header_values;
-};
-typedef struct jk_res_data jk_res_data_t;
-
 /*
  * Functions
  */
-int ajp13_marshal_into_msgb(jk_msg_buf_t *msg,
-                            jk_ws_service_t *s,
-                            jk_logger_t *l);
-
-int ajp13_unmarshal_response(jk_msg_buf_t *msg,
-                             jk_res_data_t *d,
-                             jk_pool_t *p,
-                             jk_logger_t *l);
-
 
 int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
                                      jk_pool_t *p,
