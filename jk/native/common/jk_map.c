@@ -482,8 +482,11 @@ static void trim_prp_comment(char *prp)
 static size_t trim(char *s)
 {
     size_t i;
-
-    for (i = strlen(s) - 1; (i >= 0) &&
+    
+    /* check for empry strings */
+    if (!(i = strlen(s)))
+        return 0;
+    for (i = i - 1; (i >= 0) &&
          isspace((int)((unsigned char)s[i])); i--);
 
     s[i + 1] = '\0';
