@@ -198,14 +198,20 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
     }
 
     if (timeout > 0) {
-#ifdef WIN32
+#if defined(WIN32)
         timeout = timeout * 1000;
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
-                   (char *) &timeout, sizeof(int));
+                   (const char *) &timeout, sizeof(int));
         setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
-                   (char *) &timeout, sizeof(int));
-#else
-        /* TODO: How to set the timeout for other platforms? */
+                   (const char *) &timeout, sizeof(int));
+#elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO) && defined(SO_SNDTIMEO) && defined(USE_SO_SNDTIMEO) 
+        struct timeval tv;
+        tv.tv_sec  = timeout;
+        tv.tv_usec = 0;
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
+                   (const void *) &tv, sizeof(tv));
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
+                   (const void *) &tv, sizeof(tv));
 #endif
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
@@ -446,7 +452,8 @@ int jk_is_socket_connected(int sd, int timeout)
 {
     fd_set fd;
     struct timeval tv;
- 
+    int rc;
+
     FD_ZERO(&fd);
     FD_SET(sd, &fd);
 
@@ -455,11 +462,14 @@ int jk_is_socket_connected(int sd, int timeout)
     tv.tv_usec = 1;
 
     /* If we get a timeout, then we are still connected */
-    if (select(1, &fd, NULL, NULL, &tv) == 0)
+    if ((rc = select(1, &fd, NULL, NULL, &tv)) == 0)
         return 1;
     else {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-        errno = WSAGetLastError() - WSABASEERR;
+        if (rc == SOCKET_ERROR)
+            errno = WSAGetLastError() - WSABASEERR;
+        else
+            errno = 0;
 #endif
         return 0;
     }
