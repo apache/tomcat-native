@@ -33,16 +33,12 @@
   <!-- Base dir for jk sources -->
   <property name="jk.src" location=".." />
 
-  <!-- Dependency: Ant Cc task -->
-  <property name="jkant.home" location="${jk.src}/jkant/build" />
-
   <property name="native.dir" location="${jk.src}/native2" />
 
-  <property name="build.dir" location="${jk.src}/build/obj" />
+  <property name="build.dir" location="${jk.build}/WEB-INF/jk2" />
 
   <path id="jkant" >
-    <pathelement location="${jkant.home}/classes"/>
-    <pathelement location="${jkant.home}/jkant.jar"/>
+    <pathelement location="${jk.build}/WEB-INF/lib/jkant.jar"/>
   </path>
 
   <!-- ==================== Targets ==================== -->

@@ -8,12 +8,12 @@
   <property file="${user.home}/build.properties" />
   <property file="../build.properties" />
   <property file="build.properties" />
-    
-  <!-- Experimental -->
 
-  <path id="jkant" >
-    <pathelement location="../jkant/build/classes"/>
-    <pathelement location="../jkant/build/jkant.jar"/>
+  <!-- Overriden if called from the main -->
+  <property name="jk.build" location="../build" /> 
+
+  <path id="cp.jkant" >
+    <pathelement location="${jk.build}/WEB-INF/lib/jkant.jar"/>
   </path>
 
   <property name="native.dir" location="." />
@@ -38,7 +38,7 @@
 
   <target name="init" >
     <taskdef resource="META-INF/ant.tasks" 
-	     classpathref="jkant" />
+	     classpathref="cp.jkant" />
     <available property="HAVE_APR" file="${apr.include}/apr.h" />
   </target>
 

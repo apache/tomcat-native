@@ -10,7 +10,7 @@
     <property file="${user.home}/build.properties"/>
     <property file="${user.home}/.build.properties"/>
 
-    <property name="jk.build" value="${basedir}/build"/>
+    <property name="jk.build" location="${basedir}/build"/>
 
     <!-- Compile options -->
     <property name="optimize" value="off" />
@@ -21,16 +21,12 @@
 	      location="../../jakarta-tomcat/build/tomcat" />
     <property name="catalina.home" 
 	      location="../../jakarta-tomcat-4.0/build" />
-
-    <!-- Need to build tomcat-util before jk, XXX automate -->
-    <property name="tomcat-util.jar" 
-	      location="../util/build/lib/tomcat-util.jar" />
+    <property name="tomcat41.home" 
+	      location="../../jakarta-tomcat-4.1/build" />
 
     <path id="build-main.classpath">
-	<pathelement location="${tomcat-util.jar}"/>
         <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
         <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
-	<pathelement location="${junit.jar}"/>
         <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
         <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
         <pathelement 
@@ -52,25 +48,24 @@
  
     <!-- ==================== Detection and reports ==================== -->
 
-    <target name="report-tc3" if="tomcat33.detect" >
-	<echo message="Tomcat.33 detected " />
+    <target name="report"  >
+        <echo message="Tomcat33: ${tomcat33.detect} ${tomcat33.home}" />
+        <echo message="Tomcat4:  ${tomcat4.detect} ${catalina.home}" />
+        <echo message="Tomcat41: ${tomcat41.detect} ${tomcat41.home}" />
+        <echo message="Apache13: ${apache13.detect} ${apache13.home}" />
+        <echo message="Apache20: ${apache20.detect} ${apache20.home}" />
+        <echo message="iPlanet:  ${iplanet.detect} ${iplanet.home}" />
+        <echo message="IIS:      ${iis.detect} ${iis.home}" />
     </target>
-
-    <target name="report-tc4" if="tomcat4.detect" >
-	<echo message="Tomcat4 detected "  />
-    </target>
-
-    <target name="report" depends="report-tc3,report-tc4" />
 
     <target name="build-prepare">
         <mkdir dir="${jk.build}"/>
-        <mkdir dir="${jk.build}/logs"/>
         <mkdir dir="${jk.build}/WEB-INF"/>
         <mkdir dir="${jk.build}/WEB-INF/conf"/>
 	<mkdir dir="${jk.build}/WEB-INF/classes"/>
+        <mkdir dir="${jk.build}/WEB-INF/classes/META-INF" />
 	<mkdir dir="${jk.build}/WEB-INF/lib"/>
         <copy file="conf/web.xml" tofile="${jk.build}/WEB-INF/web.xml" />
-	<copy file="${tomcat-util.jar}" todir="${jk.build}/WEB-INF/lib" />
 	<copy todir="${jk.build}/WEB-INF" file="interceptors.xml"/>
 	<copy todir="${jk.build}/WEB-INF/conf" >
 	    <fileset dir="conf" includes="*" />
@@ -78,22 +73,24 @@
 
         <available property="tomcat33.detect" file="${tomcat33.home}/lib/common/tomcat_core.jar" />
         <available property="tomcat4.detect" file="${catalina.home}/server/lib/catalina.jar" />
-	<echo message="${tomcat4.detect} file=${catalina.home}/server/lib/catalina.jar" />
+        <available property="tomcat41.detect" file="${tomcat41.home}/server/webapps" />
     </target>
 
-    <target name="build-main" depends="build-prepare,report">
-	<ant dir="../util" antfile="../util/build.xml"/>
-    
+    <target name="build-main" 
+            depends="build-prepare,report,jkutil,jkjava,jkant" />
+
+    <!-- ==================== Building ==================== -->
+
+    <target name="jkjava" 
+            description="Build java side of the connector" >
         <javac srcdir="java"
 	       destdir="${jk.build}/WEB-INF/classes"
-	       deprecation="on"
+	       deprecation="off"
 	       debug="${debug}"
 	       optimize="${optimize}"
-	       verbose="off"
-	       excludes="**/CVS/**">
+	       verbose="off" >
 	    <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat4.detect"/>
             <exclude name="org/apache/ajp/tomcat33/**" unless="tomcat33.detect"/>
-            <exclude name="org/apache/ajp/test/**" />
 	    <classpath refid="build-main.classpath"/>
 	</javac>
 
@@ -105,13 +102,80 @@
         </copy>
 
 	<jar jarfile="${jk.build}/WEB-INF/lib/ajp.jar"
-	     basedir="${jk.build}/WEB-INF/classes"
-	     excludes="org/apache/ajp/test"
-	     />
+	     basedir="${jk.build}/WEB-INF/classes" />
 	
-	<!-- Old behavior -->
-	<copy todir="${jk.build}" 
-	      file="${jk.build}/WEB-INF/lib/ajp.jar"/>
+    </target>
+    
+    <target name="jkant" >
+	<javac srcdir="jkant/java" 
+	       destdir="${jk.build}/WEB-INF/classes" 
+	       debug="${debug}"
+	       optimize="${optimize}"
+	       verbose="off" >
+	</javac>
+	<copy todir="${jk.build}/WEB-INF/classes/META-INF" 
+              file="jkant/ant.tasks"/>
+	<jar jarfile="${jk.build}/WEB-INF/lib/jkant.jar"
+	     basedir="${jk.build}/WEB-INF/classes" >
+            <include name="org/apache/jk/ant/**" />
+            <include name="META-INF/ant.tasks" />
+        </jar>
+    </target>
+    
+    <target name="jkutil" 
+            description="Build utils" >
+	<javac srcdir="../util/java" 
+	       destdir="${jk.build}/WEB-INF/classes" 
+	       debug="${debug}"
+	       optimize="${optimize}"
+	       verbose="off" >
+	</javac>
+	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-util.jar"
+	     basedir="${jk.build}/WEB-INF/classes" >
+            <include name="org/apache/tomcat/util/**" />
+        </jar>
+    </target>
+
+    <!-- It's better to call it directly with individual tags -->
+    <target name="native" >
+	<ant  dir="native" antfile="build.xml"  />
+	<ant  dir="native2" antfile="build.xml"  />
+    </target>
+
+    <!-- ================ Install =================== -->
+
+    <target name="install" 
+            depends="install-t33,install-t40,install-t41,install-a20,install-a13" />
+
+    <target name="install-t33" if="tomcat33.detected" > 
+    </target>
+
+    <target name="install-t40" if="tomcat40.detected" > 
+    </target>
+
+    <target name="install-t41" if="tomcat41.detected" > 
+    </target>
+
+    <target name="install-a20" if="apache20.detected" > 
+    </target>
+
+    <target name="install-a13" if="apache13.detected" > 
+    </target>
+
+    <!-- ================ javadocs =================== -->
+    <target name="javadoc">
+        <delete dir="${jk.build}/javadoc"/>
+	<mkdir dir="${jk.build}/javadoc"/>
+	<javadoc packagenames="org.apache.ajp,org.apache.ajp.tomcat4"
+                 sourcepath="java"
+                 classpath="${tomcat-util.jar}:${catalina.home}/server/lib/catalina.jar:${catalina.home}/common/lib/servlet.jar"
+                 destdir="${jk.build}/javadoc"
+                 author="true"
+                 version="true"
+                 windowtitle="Jk Connector Documentation"
+                 doctitle="Jk Connector"
+                 bottom="Copyright &#169; 2001 Apache Software Foundation.  All Rights Reserved."
+	/>
     </target>
 
     <!-- ==================== Tests ==================== -->
@@ -137,45 +201,6 @@
 	      <arg value="${test.entry}"/>
 	      <classpath refid="test.classpath"/>
 	</java>
-    </target>
-
-    <!-- ================ Create the helper ant tasks =================== -->
-    
-    <target name="jkant" >
-	<property name="jkant.build" location="jkant/build" />
-	<mkdir dir="${jkant.build}" />
-	<mkdir dir="${jkant.build}/classes" />
-	<javac srcdir="jkant/java" 
-	       destdir="${jkant.build}/classes" 
-	       debug="${debug}"
-	       optimize="${optimize}"
-	       verbose="off" >
-	</javac>
-        <mkdir dir="${jkant.build}/classes/META-INF" />
-	<copy todir="${jkant.build}/classes/META-INF" file="jkant/ant.tasks"/>
-	<jar jarfile="${jkant.build}/jkant.jar"
-	     basedir="${jkant.build}/classes" />
-    </target>
-    
-    <!-- It's better to call it directly with individual tags -->
-    <target name="native" >
-	<ant  dir="native" antfile="build.xml"  />
-    </target>
-
-    <!-- ================ BUILD: Create Jk Javadocs =================== -->
-    <target name="javadoc">
-        <delete dir="${jk.build}/javadoc"/>
-	<mkdir dir="${jk.build}/javadoc"/>
-	<javadoc packagenames="org.apache.ajp,org.apache.ajp.tomcat4"
-               sourcepath="java"
-	       classpath="${tomcat-util.jar}:${catalina.home}/server/lib/catalina.jar:${catalina.home}/common/lib/servlet.jar"
-                  destdir="${jk.build}/javadoc"
-                   author="true"
-                  version="true"
-              windowtitle="Jk Connector Documentation"
-                 doctitle="Jk Connector"
-                   bottom="Copyright &#169; 2001 Apache Software Foundation.  All Rights Reserved."
-	/>
     </target>
 
 
