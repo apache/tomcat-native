@@ -71,9 +71,6 @@
  * @author: Costin Manolache
  */
 
-/* affects include files on Solaris (for FIONBIO on Solaris 8) */
-#define BSD_COMP
-
 #include "jk_map.h"
 #include "jk_env.h"
 #include "jk_channel.h"
@@ -303,6 +300,15 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
     if (ntimeout >= 0) {
         /* convert from seconds to ms */
         int set = ntimeout * 1000;
+
+/* When a socket is created, it operates in blocking mode 
+ * by default (nonblocking mode is disabled), so there is no need
+ * to set it to the blocking mode prior timeout setting.
+ * This is consistent with BSD sockets.
+ *
+ * XXX: How to check the timeouts effectively?
+*/ 
+#if 0
         u_long zero = 0;
 #ifdef WIN32
         if (ioctlsocket(sock, FIONBIO, &zero) == SOCKET_ERROR) {
@@ -315,7 +321,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
                            socketInfo->host, socketInfo->port, errno, strerror( errno ) );
             return JK_ERR;
         }
-        
+#endif 
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &set, sizeof(set));
         setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *) &set, sizeof(set));
     }
