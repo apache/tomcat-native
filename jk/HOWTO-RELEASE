@@ -155,13 +155,15 @@ Sign the release using PGP. Here is an example using gpg:
 
 gpg -abs -o jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz.asc jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz
 
-Upload source distribution and documentation to daedalus.apache.org
+Upload source distribution and documentation to www.apache.org
 -------------------------------------------------------------------
-ssh to daedalus.apache.org and create the release directory.
+ssh to www.apache.org and create the release directory.
 
-mkdir /www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/jk/v1.2.5
+mkdir /www/www.apache.org/dist/jakarta/tomcat-connectors/jk/v1.2.5
 
-scp jakarta-tomcat-connectors/KEYS to the release directory on daedalus.
+scp jakarta-tomcat-connectors/KEYS to the
+/www/www.apache.org/dist/jakarta/tomcat-connectors
+directory on thewww.apache.org server.
 
 Copy a previous release directory README.html file to the new release
 directory and edit as necessary.
@@ -179,18 +181,20 @@ scp jakarta-tomcat-connectors/jk/build/docs to the release doc directory.
 scp ~/jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz* to the release src
 directory.
 
-scp -r jakarta-tomcat-connectors/jk/build/docs/* daedalus.apache.org:/www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.5/doc
+scp -r jakarta-tomcat-connectors/jk/build/docs/* www.apache.org:/www/www.apache.org/dist/jakarta/tomcat-connectors/jk/v1.2.5/doc
 
 Make sure the group write bit is set on all files and directories
 in the new release directory.
 
-chmod -R g+w /www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/jk/v1.2.5
+chmod -R g+w /www/www.apache.org/dist/jakarta/tomcat-connectors/jk/v1.2.5
 
-Build binaries and upload distributions to daedalus.apache.org
+Build binaries and upload distributions to www.apache.org
 --------------------------------------------------------------
 
 Build mod_jk for a specific web server and OS.  Package it as appropriate for
-the OS and sign the archive using PGP. Please include the ASF License in the archive.
+
+the OS and sign the archive using PGP. Please include the ASF License, the
+generated docs, and the tools.
 
 scp the binary distribution and pgp signature file to the appropriate bin/{os} directory.
 Create or modify that bin/{os} directory README.html file for the binary release.
@@ -204,9 +208,22 @@ Update source for next version
 Reset JK_VERISRELEASE to 0 and update JK_VERSTRING, JK_VERMAJOR,
 JK_VERMINOR, and JK_VERFIX as needed.  Commit your changes to CVS.
 
+Move old release distributions to archive.apache.org
+----------------------------------------------------
+
+Move any old mod_jk distribution directories to the
+/www/archive.apache.org/dist/jakarta/tomcat-connectors/jk/
+directory on the archive.apache.org server.
+
 Announcements
 -------------
 
+The release distribution directories are mirrored so that the
+releases can be downloaded from multiple sites.  Please wait
+24 hours before sending out the announcement so that the mirrors
+get a chance to get the new release distributions.
+
 Send an email announcement to announcements@jakarta.apache.org,
-tomcat-user@jakarta.apache.org, and tomcat-dev@jakarta.apache.org.
+tomcat-user@jakarta.apache.org, tomcat-dev@jakarta.apache.org,
+and announce@apache.org.
 
