@@ -253,7 +253,7 @@ AJPV13_REQUEST/AJPV14_REQUEST=
     ?ssl_cert      (byte)(string)
     ?ssl_cipher    (byte)(string)
     ?ssl_session   (byte)(string)
-    ?ssl_key_size  (byte)(int)		only AJP14
+    ?ssl_key_size  (byte)(int)		via JkOptions +ForwardKeySize
     request_terminator (byte)
     ?body          content_length*(var binary)
 

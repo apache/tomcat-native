@@ -87,7 +87,7 @@ extern "C" {
 #define SC_A_SSL_CIPHER         (unsigned char)8
 #define SC_A_SSL_SESSION        (unsigned char)9
 #define SC_A_REQ_ATTRIBUTE      (unsigned char)10
-#define SC_A_SSL_KEY_SIZE       (unsigned char)11		/* only in AJP14 protocol */
+#define SC_A_SSL_KEY_SIZE       (unsigned char)11		/* /* only in if JkOptions +ForwardKeySize */
 #define SC_A_ARE_DONE           (unsigned char)0xFF
 
 /*
