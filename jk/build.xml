@@ -35,13 +35,10 @@
 	      location="../coyote/build" />
     <property name="tomcat-coyote.jar" location="${coyote.home}/lib/tomcat-coyote.jar" />
     <property name="servlet-api.jar" location="${tomcat5.home}/common/lib/servlet-api.jar" />
-    <property name="commons-logging.jar" location="../lib/commons-logging.jar" />
     <property name="tomcat-util.jar" location="../util/build/lib/tomcat-util.jar" />
 
     <property name="commons-modeler.jar" location="../../jakarta-commons/modeler/dist/commons-modeler.jar" />
 
-    <property name="jmx.jar" location="../lib/mx4j.jar" />
-    
     <!-- Fix build via ECLIPSE which didn't export ant's jars -->
     <path id="xml-apis.classpath">
         <pathelement path="${jaxp.home}/jaxp.jar"/>
@@ -51,7 +48,6 @@
     </path>
     
     <path id="build-main.classpath">
-        <fileset dir="../lib" includes="*.jar" />
         <pathelement location="../util/build/classes"/>
         <pathelement location="${tomcat5.home}/server/lib/catalina.jar"/>
         <pathelement location="${tomcat41.home}/server/lib/catalina.jar"/>
