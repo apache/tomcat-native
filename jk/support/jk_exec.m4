@@ -59,7 +59,7 @@ dnl --------------------------------------------------------------------------
 dnl
 dnl Inspired by Pier works on webapp m4 macros :)
 dnl
-dnl Version $Id$
+dnl Version $Id:$
 dnl --------------------------------------------------------------------------
 
 dnl --------------------------------------------------------------------------
@@ -97,7 +97,7 @@ AC_DEFUN(
 
     {
       $2
-      echo "jk_exec_retvalue $?"
+      echo "\njk_exec_retvalue $?"
     } | {
       jk_exec_ret=0
       while true ; do

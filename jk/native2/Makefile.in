@@ -41,10 +41,10 @@ jk2-clean-apxs:
 	done;
 
 apr-build:
-	( cd @APR_DIR@ && make )
+	( cd @APR_DIR@ && make && cd @APR_UTIL_DIR@ && make )
 
 apr-clean:
-	( cd @APR_DIR@ && make clean )
+	( cd @APR_DIR@ && make clean && cd @APR_UTIL_DIR@ && make clean )
 
 apidocs: common/*.h
 	mkdir -p ./docs/api

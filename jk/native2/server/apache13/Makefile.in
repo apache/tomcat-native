@@ -23,7 +23,7 @@ INCLUDES= -I${JK_DIR}/include \
           ${APACHE_INCL}
 
 JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @APR_CFLAGS@ -DHAVE_MMAP ${JAVA_INCL}
-JK_LDFLAGS=-L${APACHE_HOME}/lib -lcrypt @APR_LDFLAGS@ ${JAVA_LIB}
+JK_LDFLAGS=-L${APACHE_HOME}/lib ${JAVA_LIB}
 
 ###### Based on rules.mk ##########################################
 ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)
@@ -36,7 +36,7 @@ ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
 COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
 
 SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
-MOD_LINK = $(LIBTOOL) --mode=link $(CC) -avoid-version -module -rpath $(APACHE_LIBEXEC) $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
+MOD_LINK = $(LIBTOOL) --mode=link $(CC) -avoid-version -module -shared -rpath $(APACHE_LIBEXEC) $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
 MOD_INSTALL = $(LIBTOOL) --mode=install $(CP)
 
 #############################################################################
@@ -76,10 +76,7 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache13/%.c
 
 all: prepare ${BUILD_DIR}/mod_jk2.so 
 
-${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
-	$(MOD_INSTALL) cp $^ `pwd`/${BUILD_DIR}
-
-${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${A_LO_FILES}
+${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${A_LO_FILES}
 	${MOD_LINK} -o $@ $^ @APR_LDFLAGS@
 
 ${COMMON_C_FILES} ${A_C_FILES}: ${H_FILES}

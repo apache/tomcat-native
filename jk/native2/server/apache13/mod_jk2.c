@@ -299,9 +299,7 @@ static void *jk2_merge_dir_config(pool *p, void *childv, void *parentv)
 
 
 
-#ifdef HAS_APR
 apr_pool_t *jk_globalPool;
-#endif
 
 /* Create the initial set of objects. You need to cut&paste this and
    adapt to your server.
@@ -312,17 +310,10 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
     jk_pool_t *globalPool;
     jk_bean_t *jkb;
 
-#ifdef HAS_APR
     apr_initialize();
     apr_pool_create( &jk_globalPool, NULL );
 
     jk2_pool_apr_create( NULL, &globalPool, NULL, jk_globalPool );
-#else
-    /** First create a pool. We use the default ( jk ) pool impl,
-     *  other choices are apr or native.
-     */
-    jk2_pool_create( NULL, &globalPool, NULL, 2048 );
-#endif
     
     /** Create the global environment. This will register the default
         factories, to be overriten later.

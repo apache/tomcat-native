@@ -175,14 +175,9 @@ dnl APR settings
 
 JK_APR_THREADS()
 JK_APR([include/apr.h.in])
+JK_APR_UTIL([include/apu.h.in])
 JK_APR_INCDIR([apr.h])
 JK_APR_LIBDIR()
-
-dnl Set these to empty until we know what to do with them
-
-AC_SUBST(APR_UTIL_INCL)
-AC_SUBST(APR_UTIL_LIB)
-
 
 dnl Java settings
 
@@ -205,11 +200,16 @@ fi
 
 AC_SUBST(WEBSERVERS)
 
+dnl if --with-apr is specified, --with-apr-util must be too
+if ${TEST} ! -z "$APR_BUILD" -a -z "$APR_UTIL_DIR"; then
+  AC_MSG_ERROR([--with-apr and --with-apr-util must be used together])
+fi
+
 dnl apache 1.3 consistancy checks
 if ! ${TEST} -z "$APACHE_HOME" ; then
 dnl check if apache 1.3 was selected without apr sources
         if ${TEST} -z "$APR_BUILD"; then
-                AC_MSG_ERROR([Apache 1.3 requires apr to built from source, use --with-apr])
+                AC_MSG_ERROR([Apache 1.3 requires apr to built from source, use --with-apr and --with-apr-util])
         fi
 dnl make sure compiler matchs apxs
         if ${TEST} "$APACHE_CC" != "$CC"; then
@@ -222,9 +222,9 @@ dnl make sure compiler matchs apxs
 fi
 
 dnl apache 2 consistancy checks
-if ! ${TEST} -z "$APACHE2_HOME" ; then
+if ${TEST} ! -z "$APACHE2_HOME" ; then
 dnl check if apache 2 was selected with apr sources
-        if ${TEST} -z "$APR_BUILD"; then
+        if ${TEST} ! -z "$APR_BUILD"; then
                 AC_MSG_ERROR([Use apr that comes with Apache 2, remove --with-apr])
         fi
 dnl make sure compiler matchs apxs
@@ -245,9 +245,12 @@ AC_SUBST(APR_BUILD)
 AC_SUBST(APR_CFLAGS)
 AC_SUBST(APR_CLEAN)
 AC_SUBST(APR_DIR)
+AC_SUBST(APR_UTIL_DIR)
 AC_SUBST(APR_HOME)
 AC_SUBST(APR_INCDIR)
+AC_SUBST(APR_UTIL_INCDIR)
 AC_SUBST(APR_LIBDIR)
+AC_SUBST(APR_UTIL_LIBDIR)
 AC_SUBST(APR_CONFIGURE_ARGS)
 AC_SUBST(APR_LDFLAGS)
 AC_SUBST(COMMON_APR_OBJECTS)
