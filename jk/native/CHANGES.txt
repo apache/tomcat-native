@@ -9,6 +9,9 @@ Changes with JK 1.2.4
       threads. This fixes a thread safe bug under Apache 2 and the
       worker MPM.
       [glenn]
+    * Fix the Apache 2 mod_jk hook priority so that mod_jk works
+      well with both mod_alias and mod_dir.
+      [glenn]
 
 Changes with JK 1.2.3:
     * Add the ability to configure JkLog to pipe its log output to an
