@@ -394,15 +394,11 @@ public class Http11Protocol implements ProtocolHandler
                 TcpConnection.shutdownInput( socket );
             } catch(java.net.SocketException e) {
                 // SocketExceptions are normal
-                proto.log.info(sm.getString
-                               ("http11protocol.proto.socketexception.info"));
                 proto.log.debug
                     (sm.getString
                      ("http11protocol.proto.socketexception.debug"), e);
             } catch (java.io.IOException e) {
                 // IOExceptions are normal 
-                proto.log.info(sm.getString
-                               ("http11protocol.proto.ioexception.info"));
                 proto.log.debug
                     (sm.getString
                      ("http11protocol.proto.ioexception.debug"), e);
