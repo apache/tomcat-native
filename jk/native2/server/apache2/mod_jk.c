@@ -96,7 +96,6 @@
 #include "jk_apache2.h"
 
 #define JK_HANDLER          ("jakarta-servlet")
-#define JK_CTL_HANDLER      ("jakarta-ctl")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
 
 module AP_MODULE_DECLARE_DATA jk_module;
@@ -965,32 +964,6 @@ static apr_status_t jk_cleanup_endpoint( void *data ) {
     return 0;
 }
 
-/** handler for 'ctl' requests. 
- */
-static int jk_ctl_handler(request_rec *r)
-{
-    jk_workerEnv_t *workerEnv;
-    jk_logger_t      *l;
-    jk_env_t *env;
-
-    if( strcmp( r->handler, JK_CTL_HANDLER ) != 0 )
-        return DECLINED;
-    
-    workerEnv=(jk_workerEnv_t *)ap_get_module_config(r->server->module_config,
-                                                     &jk_module);
-    /* XXX Get a 'local' env instance */
-    env = workerEnv->globalEnv;
-
-    /* Find what 'ctl' request we have */
-
-
-    /* 'Ping' clt - update the status for all workers, send ping
-       message. This will update 'up/down' state and give tomcat
-       an option to update the mapping tables. The ctl handler
-       will output an xhtml status page */
-    
-    return DECLINED;
-}
 /** Main service method, called to forward a request to tomcat
  */
 static int jk_handler(request_rec *r)

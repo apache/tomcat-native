@@ -313,25 +313,6 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
 	return JK_FALSE;
     }
 
-    /* Prepare to send some post data ( ajp13 proto ) */
-    if (s->is_chunked || s->left_bytes_to_send > 0) {
-        /* We never sent any POST data and we check it we have to send at
-	 * least of block of data (max 8k). These data will be kept in reply
-	 * for resend if the remote Tomcat is down, a fact we will learn only
-	 * doing a read (not yet) 
-	 */
-        err=jk_serialize_postHead( env, e->post, s, e );
-
-        if (err != JK_TRUE ) {
-            /* the browser stop sending data, no need to recover */
-            e->recoverable = JK_FALSE;
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp14.service() Error receiving initial post data\n");
-            return JK_FALSE;
-        }
-        hasPost=JK_TRUE;
-    }
-        
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "ajp14.service() %s\n", e->worker->name);
 
@@ -386,8 +367,28 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
     *is_recoverable_error = JK_TRUE;
     e->recoverable = JK_TRUE;
 
-    if( hasPost==JK_TRUE)
+    /* Prepare to send some post data ( ajp13 proto ). We do that after the
+     request was sent ( we're receiving data from client, can be slow, no
+     need to delay - we can do that in paralel. ( not very sure this is
+     very usefull, and it brakes the protocol ) ! */
+    if (s->is_chunked || s->left_bytes_to_send > 0) {
+        /* We never sent any POST data and we check it we have to send at
+	 * least of block of data (max 8k). These data will be kept in reply
+	 * for resend if the remote Tomcat is down, a fact we will learn only
+	 * doing a read (not yet) 
+	 */
+        err=jk_serialize_postHead( env, e->post, s, e );
+
+        if (err != JK_TRUE ) {
+            /* the browser stop sending data, no need to recover */
+            e->recoverable = JK_FALSE;
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "ajp14.service() Error receiving initial post data\n");
+            return JK_FALSE;
+        }
+
         err= e->post->send( env, e->post, e );
+    }
 
     err = e->worker->workerEnv->processCallbacks(env, e->worker->workerEnv,
                                                  e, s);

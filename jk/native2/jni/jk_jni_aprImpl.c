@@ -63,11 +63,105 @@
 
 #include <jni.h>
 #include "apr.h"
+#include "apr_pools.h"
 
 JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_initApr
-  (JNIEnv *env, jobject _jthis)
+Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *env, jobject _jthis)
 {
-    return;
+    apr_initialize();
+    return 0;
 }
+
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_terminate(JNIEnv *env, jobject _jthis)
+{
+    apr_terminate();
+    return 0;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_poolCreate(JNIEnv *env, jobject _jthis, jlong parentP)
+{
+    apr_pool_t *parent;
+    apr_pool_t *child;
+
+    parent=(apr_pool_t *)(void *)(long)parentP;
+    apr_pool_create( &child, parent );
+    return (jlong)(long)child;
+}
+
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_poolClear(JNIEnv *env, jobject _jthis,
+                                         jlong poolP)
+{
+    apr_pool_t *pool;
+
+    pool=(apr_pool_t *)(void *)poolP;
+    apr_pool_clear( pool );
+    return 0;
+}
+
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *env, jobject _jthis, jint signo,
+                                      jobject func)
+{
+
+    return 0;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_userId(JNIEnv *env, jobject _jthis, jlong pool)
+{
+
+    return 0;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmInit(JNIEnv *env, jobject _jthis, jlong pool,
+                                       jlong size, jstring file)
+{
+
+    return 0;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *env, jobject _jthis, jlong pool,
+                                          jlong size, jstring file)
+{
+
+    return 0;
+}
+
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_socketCreate(JNIEnv *env, jobject _jthis, jint fam,
+                                            jint type, jlong pool)
+{
+
+    return 0;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_socketBind(JNIEnv *env, jobject _jthis,
+                                          jlong socket, jlong sa )
+{
+
+    return 0;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_socketListen(JNIEnv *env, jobject _jthis,
+                                            jlong socket, jint bl )
+{
+
+    return 0;
+}
+
+
+
+
+
+
+
+
 

@@ -140,22 +140,11 @@ struct jk_webapp {
     
     /** You can fine-tune the logging level per location
      */
-    int log_level;
+    int logLevel;
 
     /** Different apps can have different loggers.
      */
     struct jk_logger *l;
-
-    /* SSL Support - you can fine tune this per application.
-     * ( most likely you only do it per virtual host or globally )
-     * XXX shouldn't SSL be enabled by default ???
-     */
-    int  ssl_enable;
-    char *https_indicator;
-    char *certs_indicator;
-    char *cipher_indicator;
-    char *session_indicator;
-    char *key_size_indicator;
 
     /* Jk Options. Bitflag. 
      */
