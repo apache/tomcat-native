@@ -116,6 +116,10 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
 	end=-1;
     }
 
+    public org.apache.coyote.Request getCoyoteRequest() {
+        return coyoteRequest;
+    }
+    
     /** Attach the Coyote Request to this Request.
      *  This is currently set pre-request to allow copying the request
      *  attributes to the Tomcat attributes.

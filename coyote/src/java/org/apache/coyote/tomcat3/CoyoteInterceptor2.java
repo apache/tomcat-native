@@ -202,5 +202,31 @@ public class CoyoteInterceptor2 extends BaseInterceptor
 	}
 	return 0;
     }
+
+    
+    /**
+       getInfo calls for SSL data
+       
+       @return the requested data
+    */
+    public Object getInfo( Context ctx, org.apache.tomcat.core.Request request,
+                           int id, String key ) {
+
+        Tomcat3Request httpReq;
+        
+        try {
+            httpReq=(Tomcat3Request)request;
+        } catch (ClassCastException e){
+            return null;
+        }
+        
+        if(key!=null && httpReq!=null ){
+            // XXX Should use MsgContext, pass the attribute we need.
+            // This will extract both 
+            httpReq.getCoyoteRequest().action( ActionCode.ACTION_REQ_SSL_ATTRIBUTE,
+                                               httpReq.getCoyoteRequest() );
+        }
+        return super.getInfo(ctx,request,id,key);
+    }
 }
 
