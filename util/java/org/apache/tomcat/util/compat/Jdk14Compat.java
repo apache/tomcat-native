@@ -75,7 +75,8 @@ import org.apache.commons.logging.LogFactory;
 /**
  *  See JdkCompat. This is an extension of that class for Jdk1.4 support.
  *
- *  @author Tim Funk
+ * @author Tim Funk
+ * @author Remy Maucherat
  */
 public class Jdk14Compat extends JdkCompat {
     // -------------------------------------------------------------- Constants
@@ -119,6 +120,28 @@ public class Jdk14Compat extends JdkCompat {
      */
     public long getMaxMemory() {
         return Runtime.getRuntime().maxMemory();
+    }
+
+
+    /**
+     * Print out a partial servlet stack trace (truncating at the last 
+     * occurrence of javax.servlet.).
+     */
+    public String getPartialServletStackTrace(Throwable t) {
+        StringBuffer trace = new StringBuffer();
+        trace.append(t.toString()).append('\n');
+        StackTraceElement[] elements = t.getStackTrace();
+        int pos = elements.length;
+        for (int i = (elements.length - 1); i >= 0; i--) {
+            if (elements[i].getClassName().startsWith("javax.servlet.")) {
+                pos = i + 1;
+                break;
+            }
+        }
+        for (int i = 0; i < pos; i++) {
+            trace.append('\t').append(elements[i].toString()).append('\n');
+        }
+        return trace.toString();
     }
 
 

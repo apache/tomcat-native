@@ -66,6 +66,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -198,6 +200,17 @@ public class JdkCompat {
      */
     public long getMaxMemory() {
         return (-1L);
+    }
+
+
+    /**
+     * Print out a partial servlet stack trace (truncating at the last 
+     * occurrence of javax.servlet.).
+     */
+    public String getPartialServletStackTrace(Throwable t) {
+        StringWriter stackTrace = new StringWriter();
+        t.printStackTrace(new PrintWriter(stackTrace));
+        return stackTrace.toString();
     }
 
 
