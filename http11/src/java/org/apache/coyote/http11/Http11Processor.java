@@ -114,6 +114,7 @@ public class Http11Processor implements Processor, ActionHook {
         response.setHook(this);
         outputBuffer = new InternalOutputBuffer(response);
         response.setOutputBuffer(outputBuffer);
+	request.setResponse(response);
 
         initializeFilters();
 
@@ -493,7 +494,10 @@ public class Http11Processor implements Processor, ActionHook {
             }
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
             Request req=(Request)param;
-
+	    String remoteAddr = socket.getInetAddress().getHostAddress();
+	    String remoteHost = socket.getInetAddress().getHostName();
+	    req.remoteAddr().setString(remoteAddr);
+	    req.remoteHost().setString(remoteHost);
             
         }
 
