@@ -56,7 +56,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 libapr.lib libaprutil.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib notes.lib /nologo /dll /machine:I386 /out:"Release/dsapi_redirector2.dll" /libpath:"..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\apr-util\Release" /libpath:"$(NOTESAPI)\lib\mswin32"
+# ADD LINK32 libapr.lib libaprutil.lib ws2_32.lib wsock32.lib advapi32.lib notes.lib libpcre.dll.a libpcreposix.dll.a /nologo /dll /machine:I386 /out:"Release/dsapi_redirector2.dll" /libpath:"..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\apr-util\Release" /libpath:"$(NOTESAPI)\lib\mswin32"
+# SUBTRACT LINK32 /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "dsapi - Win32 Debug"
 
@@ -83,7 +84,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 libapr.lib libaprutil.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib notes.lib /nologo /dll /debug /machine:I386 /out:"Debug/dsapi_redirector2.dll" /pdbtype:sept /libpath:"..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\apr-util\Release" /libpath:"$(NOTESAPI)\lib\mswin32"
+# ADD LINK32 libapr.lib libaprutil.lib ws2_32.lib wsock32.lib advapi32.lib notes.lib libpcre.dll.a libpcreposix.dll.a /nologo /dll /debug /machine:I386 /out:"Debug/dsapi_redirector2.dll" /pdbtype:sept /libpath:"..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\apr-util\Release" /libpath:"$(NOTESAPI)\lib\mswin32"
 # SUBTRACT LINK32 /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "dsapi - Win32 Debug Static"
@@ -113,7 +114,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib /nologo /dll /debug /machine:I386 /out:"Debug/dsapi_redirector2.dll" /pdbtype:sept /libpath:"$(APACHE2_HOME)\lib"
 # SUBTRACT BASE LINK32 /nodefaultlib
-# ADD LINK32 libapr.lib libaprutil.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib notes.lib /nologo /dll /debug /machine:I386 /out:"DebugS/dsapi_redirector2.dll" /pdbtype:sept /libpath:"..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\apr-util\Release" /libpath:"$(NOTESAPI)\lib\mswin32"
+# ADD LINK32 apr.lib aprutil.lib ws2_32.lib wsock32.lib advapi32.lib libpcre.a libpcreposix.a notes.lib /nologo /dll /debug /machine:I386 /out:"DebugS/dsapi_redirector2.dll" /pdbtype:sept /libpath:"..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\apr\LibR" /libpath:"..\..\..\..\..\apr-util\LibR" /libpath:"..\..\..\..\..\apr-iconv\LibR" /libpath:"$(NOTESAPI)\lib\mswin32"
 # SUBTRACT LINK32 /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "dsapi - Win32 Release Static"
@@ -142,7 +143,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib /nologo /dll /machine:I386 /out:"Release/dsapi_redirector2.dll" /libpath:"$(APACHE2_HOME)\lib"
-# ADD LINK32 libapr.lib libaprutil.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib notes.lib /nologo /dll /machine:I386 /out:"ReleaseS/dsapi_redirector2.dll" /libpath:"..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\apr-util\Release" /libpath:"$(NOTESAPI)\lib\mswin32"
+# ADD LINK32 apr.lib aprutil.lib ws2_32.lib wsock32.lib advapi32.lib libpcre.a libpcreposix.a notes.lib /nologo /dll /machine:I386 /out:"ReleaseS/dsapi_redirector2.dll" /libpath:"..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\apr\LibR" /libpath:"..\..\..\..\..\apr-util\LibR" /libpath:"..\..\..\..\..\apr-iconv\LibR" /libpath:"$(NOTESAPI)\lib\mswin32"
+# SUBTRACT LINK32 /nodefaultlib
 
 !ENDIF 
 

@@ -67,6 +67,9 @@
 #define MAKEVERSION(a, b, c, d) \
 	(((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
 
+#define NONBLANK(s) \
+	(NULL != (s) && '\0' != *(s))
+
 /* the _memicmp() function is available */
 #if defined(WIN32)
 
@@ -93,7 +96,35 @@
  */
 /* #undef NO_CAPI */
 
+#ifdef _DEBUG
 #define DEBUG(args) \
 	do { _printf args ; } while (0)
+#else
+#define DEBUG(args) \
+	do { } while (0)
+#endif
+
+#if !defined(DLLEXPORT)
+#if defined(WIN32) && !defined(TESTING)
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+#endif
+
+/* Configuration tags */
+#define SERVER_ROOT_TAG		"serverRoot"
+#define WORKER_FILE_TAG		"workersFile"
+#define TOMCAT_START_TAG	"tomcatStart"
+#define TOMCAT_STOP_TAG		"tomcatStop"
+#define TOMCAT_TIMEOUT_TAG	"tomcatTimeout"
+#define VERSION				"2.0.0"
+#define VERSION_STRING		"Jakarta/DSAPI/" VERSION
+#define FILTERDESC			"Apache Tomcat Interceptor (" VERSION_STRING ")"
+#define SERVERDFLT			"Lotus Domino"
+#define REGISTRY_LOCATION	"Software\\Apache Software Foundation\\Jakarta Dsapi Redirector\\2.0"
+#define TOMCAT_STARTSTOP_TO	30000				/* 30 seconds */
+#define CONTENT_LENGTH		"Content-length"	/* Name of CL header */
+#define PROPERTIES_EXT		".properties"
 
 #endif /* __config_h */

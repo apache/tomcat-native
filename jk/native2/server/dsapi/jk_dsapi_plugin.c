@@ -102,27 +102,6 @@
 /* Domino DSAPI filter definitions */
 #include "dsapifilter.h"
 
-#if !defined(DLLEXPORT)
-#if defined(WIN32) && !defined(TESTING)
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
-#endif
-
-/* Configuration tags */
-#define SERVER_ROOT_TAG		("serverRoot")
-#define WORKER_FILE_TAG		("workersFile")
-#define TOMCAT_START_TAG	("tomcatStart")
-#define TOMCAT_STOP_TAG		("tomcatStop")
-
-#define VERSION				"2.0.0"
-#define VERSION_STRING		"Jakarta/DSAPI/" VERSION
-
-#define FILTERDESC			"Apache Tomcat Interceptor (" VERSION_STRING ")"
-
-#define SERVERDFLT			"Lotus Domino"
-
 #ifdef TESTING
 #define LOGGER				"logger.printf"
 int JK_METHOD jk2_logger_printf_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result, const char *type, const char *name);
@@ -130,26 +109,21 @@ int JK_METHOD jk2_logger_printf_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_
 #define LOGGER				"logger.win32"
 #endif
 
-#define REGISTRY_LOCATION	"Software\\Apache Software Foundation\\Jakarta Dsapi Redirector\\2.0"
-
-#define TOMCAT_STARTSTOP_TO	30000				/* 30 seconds */
-
-#define CONTENT_LENGTH		"Content-length"	/* Name of CL header */
-
 static char  libFileName[MAX_PATH];
 static char  iniFileName[MAX_PATH];
-static int   iniFileUsed = JK_FALSE;
-static int   isInited = JK_FALSE;
+static int   iniFileUsed		= JK_FALSE;
+static int   isInited			= JK_FALSE;
 
 static const char *tomcatStart	= NULL;
 static const char *tomcatStop	= NULL;
 static const char *workersFile	= NULL;
 static const char *serverRoot	= NULL;
+static int tomcatTimeout		= TOMCAT_STARTSTOP_TO;
+
+static const char *crlf			= "\r\n";
 
 static jk_workerEnv_t *workerEnv;
 static apr_pool_t *jk_globalPool;
-
-static const char *crlf			= "\r\n";
 
 /* Per request private data */
 typedef struct private_ws {
@@ -174,9 +148,9 @@ typedef struct private_ws {
 /* Case insentive memcmp() clone
  */
 #ifdef HAVE_MEMICMP
-#define NoCaseMemCmp(ci, cj, l) _memicmp((void *) (ci), (void *) (cj), (l))
+#define noCaseMemCmp(ci, cj, l) _memicmp((void *) (ci), (void *) (cj), (l))
 #else
-static int NoCaseMemCmp(const char *ci, const char *cj, int len) {
+static int noCaseMemCmp(const char *ci, const char *cj, int len) {
 	if (0 == memcmp(ci, cj, len)) {
 		return 0;
 	}
@@ -197,9 +171,9 @@ static int NoCaseMemCmp(const char *ci, const char *cj, int len) {
 /* Case insentive strcmp() clone
  */
 #ifdef HAVE_STRICMP
-#define NoCaseStrCmp(si, sj) _stricmp((void *) (si), (void *) (sj))
+#define noCaseStrCmp(si, sj) _stricmp((void *) (si), (void *) (sj))
 #else
-static int NoCaseStrCmp(const char *si, const char *sj) {
+static int noCaseStrCmp(const char *si, const char *sj) {
 	if (0 == strcmp(si, sj)) {
 		return 0;
 	}
@@ -220,7 +194,7 @@ static int NoCaseStrCmp(const char *si, const char *sj) {
  * plen		length of pattern
  * returns	1 if there's a match otherwise 0
  */
-static int FindPathElem(const char *str, int slen, const char *ptn, int plen) {
+static int scanPath(const char *str, int slen, const char *ptn, int plen) {
 	const char *sp = str;
 
 	while (slen >= plen) {
@@ -230,7 +204,7 @@ static int FindPathElem(const char *str, int slen, const char *ptn, int plen) {
 		 * suspicion that a Windows hosted server might accept URIs
 		 * containing \.
 		 */
-		if (NoCaseMemCmp(sp, ptn, plen) == 0 &&
+		if (noCaseMemCmp(sp, ptn, plen) == 0 &&
 			(sp == str || sp[-1] == '\\' || sp[-1] == '/') &&
 			(slen == plen || sp[plen] == '\\' || sp[plen] == '/')) {
 			return 1;
@@ -258,6 +232,7 @@ static void AddInLogMessageText(char *msg, unsigned short code, ...) {
 }
 #endif
 
+#ifdef _DEBUG
 static void _printf(const char *msg, ...) {
 	char buf[512];		/* dangerous fixed size buffer */
 	va_list ap;
@@ -266,11 +241,12 @@ static void _printf(const char *msg, ...) {
 	va_end(ap);
 	AddInLogMessageText("Debug: %s", NOERROR, buf);
 }
+#endif
 
 /* Get the value of a server (CGI) variable as a string
  */
-static int GetVariable(struct jk_env *env, jk_ws_service_t *s, char *hdrName,
-					 char *buf, DWORD bufsz, char **dest, const char *dflt) {
+static int getVariable(struct jk_env *env, jk_ws_service_t *s, char *hdrName,
+						 char *buf, DWORD bufsz, char **dest, const char *dflt) {
 	int errID;
 	private_ws_t *ws = (private_ws_t *) s->ws_private;
 
@@ -287,7 +263,7 @@ static int GetVariable(struct jk_env *env, jk_ws_service_t *s, char *hdrName,
 
 /* Get the value of a server (CGI) variable as an integer
  */
-static int GetVariableInt(struct jk_env *env, jk_ws_service_t *s, char *hdrName,
+static int getVariableInt(struct jk_env *env, jk_ws_service_t *s, char *hdrName,
 						char *buf, DWORD bufsz, int *dest, int dflt) {
 	int errID;
 	private_ws_t *ws = (private_ws_t *) s->ws_private;
@@ -305,18 +281,19 @@ static int GetVariableInt(struct jk_env *env, jk_ws_service_t *s, char *hdrName,
 
 /* Get the value of a server (CGI) variable as an integer
  */
-static int GetVariableBool(struct jk_env *env, jk_ws_service_t *s, char *hdrName,
-						char *buf, DWORD bufsz, int *dest, int dflt) {
+static int getVariableBool(struct jk_env *env, jk_ws_service_t *s, char *hdrName,
+							char *buf, DWORD bufsz, int *dest, int dflt) {
 	int errID;
 	private_ws_t *ws = (private_ws_t *) s->ws_private;
 
 	if (ws->context->GetServerVariable(ws->context, hdrName, buf, bufsz, &errID)) {
-		if (isdigit(buf[0]))
+		if (isdigit(buf[0])) {
 			*dest = atoi(buf) != 0;
-		else if (NoCaseStrCmp(buf, "yes") == 0 || NoCaseStrCmp(buf, "on") == 0)
+		} else if (noCaseStrCmp(buf, "yes") == 0 || noCaseStrCmp(buf, "on") == 0) {
 			*dest = 1;
-		else
+		} else {
 			*dest = 0;
+		}
 	} else {
 		*dest = dflt;
 	}
@@ -326,25 +303,25 @@ static int GetVariableBool(struct jk_env *env, jk_ws_service_t *s, char *hdrName
 	return JK_TRUE;
 }
 
-/* A couple of utility macros to supply standard arguments to GetVariable() and
- * GetVariableInt().
+/* A couple of utility macros to supply standard arguments to getVariable() and
+ * getVariableInt().
  */
 #define GETVARIABLE(name, dest, dflt)		\
-	GetVariable(env, s, (name), workBuf, sizeof(workBuf), (dest), (dflt))
+	getVariable(env, s, (name), workBuf, sizeof(workBuf), (dest), (dflt))
 #define GETVARIABLEINT(name, dest, dflt)	\
-	GetVariableInt(env, s, (name), workBuf, sizeof(workBuf), (dest), (dflt))
+	getVariableInt(env, s, (name), workBuf, sizeof(workBuf), (dest), (dflt))
 #define GETVARIABLEBOOL(name, dest, dflt)	\
-	GetVariableBool(env, s, (name), workBuf, sizeof(workBuf), (dest), (dflt))
+	getVariableBool(env, s, (name), workBuf, sizeof(workBuf), (dest), (dflt))
 
 /* Return 1 iff the supplied string contains "web-inf" (in any case
  * variation. We don't allow URIs containing web-inf, although
- * FindPathElem() actually looks for the string bounded by path punctuation
+ * scanPath() actually looks for the string bounded by path punctuation
  * or the ends of the string, so web-inf must appear as a single element
  * of the supplied URI
  */
-static int BadURI(const char *uri) {
+static int badURI(const char *uri) {
 	static const char *wi = "web-inf";
-	return FindPathElem(uri, strlen(uri), wi, strlen(wi));
+	return scanPath(uri, strlen(uri), wi, strlen(wi));
 }
 
 /* Replacement for strcat() that updates a buffer pointer. It's
@@ -352,7 +329,7 @@ static int BadURI(const char *uri) {
  * in cases where the string being concatenated to gets long because
  * strcat() has to count from start of the string each time.
  */
-static void Append(char **buf, const char *str) {
+static void append(char **buf, const char *str) {
 	int l = strlen(str);
 	memcpy(*buf, str, l);
 	(*buf)[l] = '\0';
@@ -362,7 +339,7 @@ static void Append(char **buf, const char *str) {
 /* Allocate space for a string given a start pointer and an end pointer
  * and return a pointer to the allocated, copied string.
  */
-static char *SubStr(jk_env_t *env, jk_pool_t *pool, const char *start, const char *end) {
+static char *subStr(jk_env_t *env, jk_pool_t *pool, const char *start, const char *end) {
 	char *out = NULL;
 
 	if (start != NULL && end != NULL && end > start) {
@@ -375,9 +352,9 @@ static char *SubStr(jk_env_t *env, jk_pool_t *pool, const char *start, const cha
 	return out;
 }
 
-/* Like SubStr() but use a static buffer if possible.
+/* Like subStr() but use a static buffer if possible.
  */
-static char *MagicSubStr(jk_env_t *env, jk_pool_t *pool, char **bufp, int *bufSz,
+static char *smartSubStr(jk_env_t *env, jk_pool_t *pool, char **bufp, int *bufSz,
 							const char *start, const char *end) {
 	int len = end - start;
 	if (len < *bufSz) {
@@ -389,97 +366,12 @@ static char *MagicSubStr(jk_env_t *env, jk_pool_t *pool, char **bufp, int *bufSz
 		*bufSz -= len;
 		return rv;
 	} else {
-		return SubStr(env, pool, start, end);
+		return subStr(env, pool, start, end);
 	}
-}
-
-static char *StrDup(jk_env_t *env, jk_pool_t *pool, const char *str) {
-	if (NULL == str) {
-		return NULL;
-	}
-
-	return SubStr(env, pool, str, str + strlen(str));
-}
-
-/* Given all the HTTP headers as a single string parse them into individual
- * name, value pairs.
- */
-static int ParseHeaders(jk_env_t *env, jk_ws_service_t *s, const char *hdrs, int hdrSz) {
-	int hdrCount = 0;
-	const char *limit = hdrs + hdrSz;
-	const char *name, *nameEnd;
-	const char *value, *valueEnd;
-	int gotContentLength = FALSE;
-	char buf[256];		/* Static buffer used for headers that are short enough to fit
-						 * in it. A dynamic buffer is used for any longer headers.
-						 */
-
-	while (hdrs < limit) {
-		/* buf is re-used for each header */
-		char *bufp = buf;
-		char *hdrName, *hdrValue;
-		int sz = sizeof(buf);
-
-		/* Skip line *before* doing anything, cos we want to lose the first line which
-		 * contains the request. This code also moves to the next line after each header.
-		 */
-		while (hdrs < limit && (*hdrs != '\n' && *hdrs != '\r')) {
-			hdrs++;
-		}
-
-		while (hdrs < limit && (*hdrs == '\n' || *hdrs == '\r')) {
-			hdrs++;
-		}
-
-		if (hdrs >= limit) {
-			break;
-		}
-
-		name = nameEnd = value = valueEnd = NULL;
-		name = hdrs;
-		while (hdrs < limit && *hdrs >= ' ' && *hdrs != ':') {
-			hdrs++;
-		}
-
-		nameEnd = hdrs;
-
-		if (hdrs < limit && *hdrs == ':') {
-			hdrs++;
-			while (hdrs < limit && (*hdrs == ' ' || *hdrs == '\t')) {
-				hdrs++;
-			}
-			value = hdrs;
-			while (hdrs < limit && *hdrs >= ' ') {
-				hdrs++;
-			}
-			valueEnd = hdrs;
-		}
-
-		hdrName		= MagicSubStr(env, s->pool, &bufp, &sz, name, nameEnd);
-
-		/* Need to strdup the value because map->put doesn't for some reason */
-		hdrValue	= SubStr(env, s->pool, value, valueEnd);
-
-        s->headers_in->put(env, s->headers_in, hdrName, hdrValue, NULL);
-
-		gotContentLength |= (NoCaseStrCmp(hdrName, CONTENT_LENGTH) == 0);
-
-		hdrCount++;
-	}
-
-	/* Add a zero length content-length header if none was found in the 
-	 * request.
-	 */
-	if (!gotContentLength) {
-		s->headers_in->put(env, s->headers_in, CONTENT_LENGTH, "0", NULL);
-		hdrCount++;
-	}
-
-	return hdrCount;
 }
 
 static int JK_METHOD cbInit(struct jk_env *env, jk_ws_service_t *s,
-							struct jk_worker *w, void *serverObj) {
+							struct jk_worker *w, void *context) {
 	return JK_TRUE;
 }
 
@@ -495,7 +387,7 @@ static void JK_METHOD cbAfterRequest( struct jk_env *env, jk_ws_service_t *_this
 static int JK_METHOD cbHead(struct jk_env *env, jk_ws_service_t *s) {
 	/* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Into jk_ws_service_t::cbHead\n"); */
 
-	if (s->status < 100 || s->status > 1000) {
+	if (s->status < 100 || s->status >= 1000) {
 		env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk_ws_service_t::cbHead, invalid status %d\n", s->status);
 		return JK_ERR;
 	}
@@ -512,12 +404,7 @@ static int JK_METHOD cbHead(struct jk_env *env, jk_ws_service_t *s) {
 
 			p->responseStarted = JK_TRUE;
 
-			if (NULL == s->msg) {
-				reason = "";
-			} else {
-				reason = s->msg;
-			}
-
+			reason = (NULL == s->msg) ? "" : s->msg;
 			hdrCount = s->headers_out->size(env, s->headers_out);
 
 			/* Build a single string containing all the headers
@@ -538,22 +425,20 @@ static int JK_METHOD cbHead(struct jk_env *env, jk_ws_service_t *s) {
 				bufp = hdrBuf;
 
 				for (i = 0; i < hdrCount; i++) {
-					Append(&bufp, s->headers_out->nameAt(env, s->headers_out, i));
-					Append(&bufp, ": ");
-					Append(&bufp, s->headers_out->valueAt(env, s->headers_out, i));
-					Append(&bufp, crlf);
+					append(&bufp, s->headers_out->nameAt(env, s->headers_out, i));
+					append(&bufp, ": ");
+					append(&bufp, s->headers_out->valueAt(env, s->headers_out, i));
+					append(&bufp, crlf);
 				}
 
-				Append(&bufp, crlf);
+				append(&bufp, crlf);
 			} else {
 				hdrBuf = (char *) crlf;
 			}
 
-			frh.responseCode = s->status;
-			frh.reasonText = (char *) reason;
-			frh.headerText = hdrBuf;
-
-			/* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "%d %s\n", s->status, reason); */
+			frh.responseCode	= s->status;
+			frh.reasonText		= (char *) reason;
+			frh.headerText		= hdrBuf;
 
 			/* Send the headers */
 			rc = p->context->ServerSupport(p->context, kWriteResponseHeaders, &frh, NULL, 0, &errID);
@@ -569,26 +454,26 @@ static int JK_METHOD cbHead(struct jk_env *env, jk_ws_service_t *s) {
 /*
  * Read a chunk of the request body into a buffer.  Attempt to read len
  * bytes into the buffer.  Write the number of bytes actually read into
- * actually_read.  
+ * nRead.  
  */
 static int JK_METHOD cbRead(struct jk_env *env, jk_ws_service_t *s,
-							  void *bytes,
-							  unsigned len,
-							  unsigned *actually_read) {
-    /* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Into jk_ws_service_t::Read\n"); */
+							  void *bytes, unsigned len, unsigned *nRead) {
 
-	if (s && s->ws_private && bytes && actually_read) {
+	if (s && s->ws_private && bytes && nRead) {
 		private_ws_t *p = s->ws_private;
 
 		/* Copy data from Domino's buffer. Although it seems slightly
 		 * improbably we're believing that Domino always buffers the
 		 * entire request in memory. Not properly tested yet.
 		 */
-		if (len > p->reqSize) len = p->reqSize;
+		if (len > p->reqSize) {
+			len = p->reqSize;
+		}
 		memcpy(bytes, p->reqBuffer, len);
 		p->reqBuffer += len;
 		p->reqSize -= len;
-		*actually_read = len;
+		*nRead = len;
+
 		return JK_OK;
 	}
 
@@ -633,7 +518,7 @@ static int JK_METHOD cbFlush(struct jk_env *env, jk_ws_service_t *s) {
  * called in cases where the definition of 'absolute' is not security sensitive. I'm
  * sure there are ways of constructing absolute Win32 paths that it doesn't catch.
  */
-static int IsAbsolute(const char *fn) {
+static int isAbsolutePath(const char *fn) {
 #ifdef WIN32
 	return fn[0] == '\\' || (isalpha(fn[0]) && fn[1] == ':');
 #else
@@ -641,14 +526,15 @@ static int IsAbsolute(const char *fn) {
 #endif
 }
 
-static const char *AbsPath(jk_env_t *env, const char *base, const char *name) {
-	if (base == NULL || IsAbsolute(name)) {
+static const char *makeAbsolutePath(jk_env_t *env, const char *base, const char *name) {
+	if (base == NULL || isAbsolutePath(name)) {
 		return name;
 	} else {
 		int bsz = strlen(base);
 		int nsz = strlen(name);
 		int ads = (base[bsz-1] != PATHSEP) ? 1 : 0;
 		char *buf;
+
 		if (buf = workerEnv->pool->alloc(env, workerEnv->pool, bsz + ads + nsz + 1), NULL == buf) {
 			return NULL;
 		}
@@ -664,7 +550,7 @@ static const char *AbsPath(jk_env_t *env, const char *base, const char *name) {
 }
 
 #ifdef WIN32
-static const char *ReadRegistry(jk_env_t *env, HKEY hkey, const char *key, const char *base) {
+static const char *readRegistry(jk_env_t *env, HKEY hkey, const char *key, const char *base) {
 	DWORD type = 0;
 	DWORD sz = 0;
 	LONG rc;
@@ -681,27 +567,32 @@ static const char *ReadRegistry(jk_env_t *env, HKEY hkey, const char *key, const
 
 	rc = RegQueryValueEx(hkey, key, (LPDWORD) 0, &type, val, &sz);
 	if (rc == ERROR_SUCCESS) {
-		return AbsPath(env, base, val);
+		return makeAbsolutePath(env, base, val);
 	}
 
 	return NULL;
 }
 #endif
 
-static int ReadFromRegistry(jk_env_t *env) {
+static int readFromRegistry(jk_env_t *env) {
 #ifdef WIN32
 	HKEY hkey;
 	long rc;
+	const char *timeout;
 
 	rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, REGISTRY_LOCATION, (DWORD) 0, KEY_READ, &hkey);
 	if (ERROR_SUCCESS != rc) {
 		return JK_FALSE;
 	}
 
-	serverRoot	= ReadRegistry(env, hkey, SERVER_ROOT_TAG,	NULL);
-	workersFile	= ReadRegistry(env, hkey, WORKER_FILE_TAG,	serverRoot);
-	tomcatStart	= ReadRegistry(env, hkey, TOMCAT_START_TAG,	serverRoot);
-	tomcatStop	= ReadRegistry(env, hkey, TOMCAT_STOP_TAG,	serverRoot);
+	serverRoot	= readRegistry(env, hkey, SERVER_ROOT_TAG,		NULL);
+	workersFile	= readRegistry(env, hkey, WORKER_FILE_TAG,		serverRoot);
+	tomcatStart	= readRegistry(env, hkey, TOMCAT_START_TAG,		serverRoot);
+	tomcatStop	= readRegistry(env, hkey, TOMCAT_STOP_TAG,		serverRoot);
+	timeout		= readRegistry(env, hkey, TOMCAT_TIMEOUT_TAG,	NULL);
+	if (timeout != NULL) {
+		tomcatTimeout = atoi(timeout);
+	}
 
 	RegCloseKey(hkey);
 
@@ -718,27 +609,34 @@ static int ReadFromRegistry(jk_env_t *env) {
 /* Read an entry from a map and return a newly allocated copy of it
  * on success or NULL on failure.
  */
-static const char *ReadMap(jk_env_t *env, jk_map_t *map, const char *name, const char *base)
+static const char *readMap(jk_env_t *env, jk_map_t *map, const char *name, const char *base)
 {
 	const char *s = map->get(env, map, name);
 	if (s) {
-		return AbsPath(env, base, workerEnv->pool->pstrdup(env, workerEnv->pool, s));
+		return makeAbsolutePath(env, base, workerEnv->pool->pstrdup(env, workerEnv->pool, s));
 	}
 	return NULL;
 }
 
 /* Read parameters from an ini file or the registry
  */
-static int ReadInitData(jk_env_t *env) {
+static int readConfigData(jk_env_t *env) {
     jk_map_t *map;
 
 	/* Attempt to read from an ini file */
     if (JK_OK == jk2_map_default_create(env, &map, workerEnv->pool )) {
         if (JK_OK == jk2_config_file_read(env, map, iniFileName)) {
-			serverRoot	= ReadMap(env, map, SERVER_ROOT_TAG,	NULL);
-			workersFile = ReadMap(env, map, WORKER_FILE_TAG,	serverRoot);
-			tomcatStart = ReadMap(env, map, TOMCAT_START_TAG,	serverRoot);
-			tomcatStop	= ReadMap(env, map, TOMCAT_STOP_TAG,	serverRoot);
+			const char *timeout;
+
+			serverRoot	= readMap(env, map, SERVER_ROOT_TAG,	NULL);
+			workersFile = readMap(env, map, WORKER_FILE_TAG,	serverRoot);
+			tomcatStart = readMap(env, map, TOMCAT_START_TAG,	serverRoot);
+			tomcatStop	= readMap(env, map, TOMCAT_STOP_TAG,	serverRoot);
+			timeout		= readMap(env, map, TOMCAT_TIMEOUT_TAG,	NULL);
+
+			if (timeout != NULL) {
+				tomcatTimeout = atoi(timeout);
+			}
 
             iniFileUsed = JK_TRUE;
             return	NULL != serverRoot &&
@@ -749,14 +647,14 @@ static int ReadInitData(jk_env_t *env) {
                "read_registry_init_data, Failed to create map \n");
     }
 
-	return ReadFromRegistry(env);
+	return readFromRegistry(env);
 }
 
 /* Send a simple response. Used when we don't want to bother Tomcat,
  * which in practice means for various error conditions that we can
  * detect internally.
  */
-static void SimpleResponse(FilterContext *context, int status, char *reason, char *body) {
+static void simpleResponse(FilterContext *context, int status, char *reason, char *body) {
 	FilterResponseHeaders frh;
 	int rc, errID;
 	char hdrBuf[35];
@@ -774,29 +672,103 @@ static void SimpleResponse(FilterContext *context, int status, char *reason, cha
 /* Called to reject a URI that contains the string "web-inf". We block
  * these because they may indicate an attempt to invoke arbitrary code.
  */
-static unsigned int RejectBadURI(FilterContext *context) {
-	static char *msg = "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>";
+static unsigned int rejectBadURI(FilterContext *context) {
+	static char *msg = "<html><body><h1>Access is Forbidden</h1></body></html>";
 
-	SimpleResponse(context, 403, "Forbidden", msg);
+	simpleResponse(context, 403, "Forbidden", msg);
 
 	return kFilterHandledRequest;
 }
 
-/* Called to reject a URI that contains the string "web-inf". We block
- * these because they may indicate an attempt to invoke arbitrary code.
+/* Called to generate a generic error response.
  */
-static unsigned int RejectWithError(FilterContext *context) {
+static unsigned int rejectWithError(FilterContext *context) {
 	static char *msg = "<html><body><h1>Error in Filter</h1></body></html>";
 
-	SimpleResponse(context, 500, "Error in Filter", msg);
+	simpleResponse(context, 500, "Error in Filter", msg);
 
 	return kFilterHandledRequest;
+}
+
+/* Given all the HTTP headers as a single string parse them into individual
+ * name, value pairs.
+ */
+static int parseHeaders(jk_env_t *env, jk_ws_service_t *s, const char *hdrs, int hdrSz) {
+	int hdrCount = 0;
+	const char *limit = hdrs + hdrSz;
+	const char *name, *nameEnd;
+	const char *value, *valueEnd;
+	int gotContentLength = JK_FALSE;
+	char buf[256];		/* Static buffer used for headers that are short enough to fit
+						 * in it. A dynamic buffer is used for any longer headers.
+						 */
+
+	while (hdrs < limit) {
+		/* buf is re-used for each header */
+		char *bufp = buf;
+		char *hdrName, *hdrValue;
+		int sz = sizeof(buf);
+
+		/* Skip line *before* doing anything, cos we want to lose the first line which
+		 * contains the request. This code also moves to the next line after each header.
+		 */
+		while (hdrs < limit && (*hdrs != '\n' && *hdrs != '\r')) {
+			hdrs++;
+		}
+
+		while (hdrs < limit && (*hdrs == '\n' || *hdrs == '\r')) {
+			hdrs++;
+		}
+
+		if (hdrs >= limit) {
+			break;
+		}
+
+		name = nameEnd = value = valueEnd = NULL;
+		name = hdrs;
+		while (hdrs < limit && *hdrs >= ' ' && *hdrs != ':') {
+			hdrs++;
+		}
+
+		nameEnd = hdrs;
+		if (hdrs < limit && *hdrs == ':') {
+			hdrs++;
+			while (hdrs < limit && (*hdrs == ' ' || *hdrs == '\t')) {
+				hdrs++;
+			}
+			value = hdrs;
+			while (hdrs < limit && *hdrs >= ' ') {
+				hdrs++;
+			}
+			valueEnd = hdrs;
+		}
+
+		hdrName		= smartSubStr(env, s->pool, &bufp, &sz, name, nameEnd);
+		/* Need to strdup the value because map->put doesn't for some reason */
+		hdrValue	= subStr(env, s->pool, value, valueEnd);
+
+        s->headers_in->put(env, s->headers_in, hdrName, hdrValue, NULL);
+
+		gotContentLength |= (noCaseStrCmp(hdrName, CONTENT_LENGTH) == 0);
+
+		hdrCount++;
+	}
+
+	/* Add a zero length content-length header if none was found in the 
+	 * request.
+	 */
+	if (!gotContentLength) {
+		s->headers_in->put(env, s->headers_in, CONTENT_LENGTH, "0", NULL);
+		hdrCount++;
+	}
+
+	return hdrCount;
 }
 
 /* Initialize the service structure
  */
-static int ProcessRequest(struct jk_env *env, jk_ws_service_t *s,
-					struct jk_worker *w, void *serverObj) {
+static int processRequest(struct jk_env *env, jk_ws_service_t *s,
+					struct jk_worker *w, FilterRequest *fr) {
 	/* This is the only fixed size buffer left. It won't be overflowed
 	 * because the Domino API that reads into the buffer accepts a length
 	 * constraint, and it's unlikely ever to be exhausted because the
@@ -805,19 +777,14 @@ static int ProcessRequest(struct jk_env *env, jk_ws_service_t *s,
 	 */
 	char workBuf[16 * 1024];
 	private_ws_t *ws = (private_ws_t *) s->ws_private;
-	FilterRequest fr;
 	char *hdrs;
 	int hdrsz;
 	int errID = 0;
 	int hdrCount;
-	int rc;
 
 	static char *methodName[] = { "", "HEAD", "GET", "POST", "PUT", "DELETE" };
 
-	/* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ProcessRequest(), s = %p, ws = %p\n", s, ws); */
-
-	/* Should this rc be checked? */
-	rc = ws->context->GetRequest(ws->context, &fr, &errID);
+	/* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "processRequest(), s = %p, ws = %p\n", s, ws); */
 
 	s->jvm_route = NULL;
 
@@ -841,8 +808,8 @@ static int ProcessRequest(struct jk_env *env, jk_ws_service_t *s,
 	}
 
 	s->method			= methodName[ws->reqData->requestMethod];
-	s->ssl_cert_len		= fr.clientCertLen;
-	s->ssl_cert			= fr.clientCert;
+	s->ssl_cert_len		= fr->clientCertLen;
+	s->ssl_cert			= fr->clientCert;
 	s->ssl_cipher		= NULL;
 	s->ssl_session		= NULL;
 	s->ssl_key_size		= -1;
@@ -855,10 +822,9 @@ static int ProcessRequest(struct jk_env *env, jk_ws_service_t *s,
     if (JK_OK != jk2_map_default_create(env, &s->attributes, s->pool)) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk_ws_service_t::init, Failed to create attributes map\n");
         return JK_ERR;
-
     }
 
-    if (JK_OK!=jk2_map_default_create(env, &s->headers_in, s->pool)) {
+    if (JK_OK != jk2_map_default_create(env, &s->headers_in, s->pool)) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk_ws_service_t::init, Failed to create headers_in map\n");
         return JK_ERR;
     }
@@ -866,6 +832,8 @@ static int ProcessRequest(struct jk_env *env, jk_ws_service_t *s,
 	if (s->is_ssl) {
 		int i, dummy;
 
+		/* It seems that Domino doesn't actually expose many of these but we live in hope.
+		 */
 		char *sslNames[] = {
 			"CERT_ISSUER", "CERT_SUBJECT", "CERT_COOKIE", "CERT_FLAGS", "CERT_SERIALNUMBER",
 			"HTTPS_SERVER_SUBJECT", "HTTPS_SECRETKEYSIZE", "HTTPS_SERVER_ISSUER", "HTTPS_KEYSIZE"
@@ -893,14 +861,14 @@ static int ProcessRequest(struct jk_env *env, jk_ws_service_t *s,
 		}
 	}
 
-	/* Duplicate all the headers now */
-
+	/* Duplicate all the headers now
+	 */
 	hdrsz = ws->reqData->GetAllHeaders(ws->context, &hdrs, &errID);
 	if (0 == hdrsz) {
 		return JK_ERR;
 	}
 
-	hdrCount = ParseHeaders(env, s, hdrs, hdrsz);
+	hdrCount = parseHeaders(env, s, hdrs, hdrsz);
 
 	return JK_OK;
 }
@@ -908,7 +876,7 @@ static int ProcessRequest(struct jk_env *env, jk_ws_service_t *s,
 /* Handle an HTTP request. Works out whether Tomcat will be interested then either
  * despatches it to Tomcat or passes it back to Domino.
  */
-static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *reqData) {
+static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *reqData) {
 	unsigned int errID;
 	int rc;
 	FilterRequest fr;
@@ -917,7 +885,7 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 	/* TODO: presumably this return code should be checked */
 	rc = context->GetRequest(context, &fr, &errID);
 
-	if (fr.URL && strlen(fr.URL)) {
+	if (NONBLANK(fr.URL)) {
 		char *uri = fr.URL;
 		char *qp, *turi;
 	    jk_uriEnv_t *uriEnv = NULL;
@@ -930,16 +898,16 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 		size_t uriSz, uriBufSz;
 	    jk_env_t *env = workerEnv->globalEnv->getEnv(workerEnv->globalEnv);
 
-		/* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ParsedRequest() - %s\n", uri); */
+		/* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "parsedRequest() - %s\n", uri); */
 
 		if (!context->GetServerVariable(context, "SERVER_PORT", buf, sizeof(buf), &errID)) {
-			return RejectWithError(context);
+			return rejectWithError(context);
 		}
 
 		serverPort = atoi(buf);
 
 		if (!context->GetServerVariable(context, "SERVER_NAME", buf, sizeof(buf), &errID)) {
-			return RejectWithError(context);
+			return rejectWithError(context);
 		}
 
 		serverName = buf;	/* note serverName just aliases buf
@@ -962,7 +930,7 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 	
         rc = jk_requtil_unescapeUrl(turi);
 		if (rc < 0) {
-			return RejectWithError(context);
+			return rejectWithError(context);
 		}
 
         jk_requtil_getParents(turi);
@@ -970,8 +938,8 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 			*qp++ = '\0';
 		}
 
-		if (BadURI(turi)) {
-			return RejectBadURI(context);
+		if (badURI(turi)) {
+			return rejectBadURI(context);
 		}
 
         uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap, serverName, serverPort, turi);
@@ -991,7 +959,7 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 
 			jk2_requtil_initRequest(env, &s);
 
-			s.pool					= rPool;		/* Do we need one? */
+			s.pool					= rPool;
 			s.is_recoverable_error	= JK_FALSE;
 			s.response_started		= JK_FALSE;
 			s.content_read			= 0;
@@ -1000,11 +968,11 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 			s.head					= cbHead;
 			s.read					= cbRead;
 			s.write					= cbWrite;
-			s.init					= cbInit;
+			s.init					= cbInit;			/* never seems to be used */
 			s.afterRequest			= cbAfterRequest;
 
             if (workerEnv->options == JK_OPT_FWDURICOMPATUNPARSED) {
-				s.req_uri = StrDup(env, rPool, uri);
+				s.req_uri = env->globalPool->pstrdup(env, rPool, libFileName);
 				/* Find the query string again in the original URI */
 				if (qp = strchr(s.req_uri, '?'), NULL != qp) {
 					*qp++ = '\0';
@@ -1012,7 +980,7 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
             } else if (workerEnv->options == JK_OPT_FWDURIESCAPED) {
 				/* Nasty static buffer */
 				char euri[256];
-				if (jk_requtil_escapeUrl(turi, euri, sizeof(euri))) {
+				if (jk_requtil_escapeUrl(turi, buf, sizeof(euri))) {
 					turi = euri;
 				}
 				s.req_uri = turi;
@@ -1020,19 +988,19 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 				s.req_uri = turi;
             }
 
-			s.query_string			= qp;
+			s.query_string		= qp;
 
 			/* Init our private structure
 			 */
-			ws.responseStarted		= JK_FALSE;
-			ws.context				= context;
-			ws.reqData				= reqData;
+			ws.responseStarted	= JK_FALSE;
+			ws.context			= context;
+			ws.reqData			= reqData;
 
 			/* Fetch info about the request
 			 */
-			ws.reqSize = context->GetRequestContents(context, &ws.reqBuffer, &errID);
+			ws.reqSize			= context->GetRequestContents(context, &ws.reqBuffer, &errID);
 
-			rc = ProcessRequest(env, &s, worker, context);
+			rc = processRequest(env, &s, worker, &fr);
 			if (JK_OK == rc) {
 				rc = worker->service(env, uriEnv->worker, &s);
 			}
@@ -1045,8 +1013,6 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 				env->l->jkLog(env, env->l, JK_LOG_ERROR, "HttpExtensionProc error, service() failed\n");
 			}
 
-			s.afterRequest(env, &s);
-
 			rPool->reset(env, rPool);
 			rc = worker->rPoolCache->put(env, worker->rPoolCache, rPool);
 		}
@@ -1057,25 +1023,12 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 	return result;
 }
 
-/* Main entry point for the filter. Called by Domino for every HTTP request.
- */
-DLLEXPORT unsigned int HttpFilterProc(FilterContext *context, unsigned int eventType, void *eventData) {
-	switch (eventType) {
-	case kFilterParsedRequest:
-		return ParsedRequest(context, (FilterParsedRequest *) eventData);
-	default:
-		break;
-	}
-
-	return kFilterNotHandled;
-}
-
-static int RunProg(const char *cmd) {
+static int runProg(const char *cmd) {
 #ifdef WIN32
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
 
-	ZeroMemory(&si, sizeof(si));
+	memset(&si, 0, sizeof(si));
     si.cb			= sizeof(si);    // Start the child process.
 	si.dwFlags		= STARTF_USESHOWWINDOW;
 	si.wShowWindow	= SW_SHOWMAXIMIZED;
@@ -1083,16 +1036,15 @@ static int RunProg(const char *cmd) {
 	if (!CreateProcess(NULL, (char *) cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))	{
 		DWORD err = GetLastError();
 		AddInLogMessageText("Command \"%s\" failed (error %u)", NOERROR, cmd, err);
-		return FALSE;
+		return JK_FALSE;
 	}
 
-	if (WAIT_OBJECT_0 == WaitForSingleObject(pi.hProcess, TOMCAT_STARTSTOP_TO)) {
-		return TRUE;
+	if (WAIT_OBJECT_0 == WaitForSingleObject(pi.hProcess, tomcatTimeout)) {
+		return JK_TRUE;
 	}
 
 	AddInLogMessageText("Command \"%s\" didn't complete in time", NOERROR, cmd);
-	return FALSE;
-
+	return JK_FALSE;
 #else
 	int err = system(cmd);
 	if (0 == err) {
@@ -1101,6 +1053,19 @@ static int RunProg(const char *cmd) {
 	AddInLogMessageText("Command \"%s\" failed (error %d)", NOERROR, cmd, err);
 	return 0;
 #endif
+}
+
+/* Main entry point for the filter. Called by Domino for every HTTP request.
+ */
+DLLEXPORT unsigned int HttpFilterProc(FilterContext *context, unsigned int eventType, void *eventData) {
+	switch (eventType) {
+	case kFilterParsedRequest:
+		return parsedRequest(context, (FilterParsedRequest *) eventData);
+	default:
+		break;
+	}
+
+	return kFilterNotHandled;
 }
 
 /* Called when the filter is unloaded. Free various resources and
@@ -1117,13 +1082,12 @@ DLLEXPORT unsigned int TerminateFilter(unsigned int reserved) {
         }
 
 		isInited = JK_FALSE;
-
 	}
 
 #ifndef TESTING
-	if (NULL != tomcatStop && '\0' != *tomcatStop) {
+	if (NONBLANK(tomcatStop)) {
 		AddInLogMessageText("Attempting to stop Tomcat: %s", NOERROR, tomcatStop);
-		RunProg(tomcatStop);
+		runProg(tomcatStop);
 	}
 #endif
 
@@ -1154,17 +1118,17 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
 
 	lstrcpyn(libFileName, info.dli_fname, sizeof(libFileName)-1);
 	lstrcpyn(iniFileName, info.dli_fname, sizeof(libFileName)-1);
-	char *slash = strrchr(iniFileName, PATHSEP);
+	slash = strrchr(iniFileName, PATHSEP);
 	if (NULL == slash) {
 		slash = iniFileName;
 	} else {
 		slash++;
 	}
-	char *dot = strrchr(slash, '.');
+	dot = strrchr(slash, '.');
 	if (NULL == dot) {
 		dot = slash + strlen(slash);
 	}
-	lstrcpyn(slash, ".properties", (iniFileName + sizeof(iniFileName) - 1) - slash);
+	lstrcpyn(slash, PROPERTIES_EXT, (iniFileName + sizeof(iniFileName) - 1) - slash);
 #endif
 
     apr_initialize();
@@ -1185,10 +1149,6 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
     env->alias(env, LOGGER ":", "logger");
     l = jkb->object;
 
-#ifdef _DEBUG
-	l->level = JK_LOG_DEBUG_LEVEL;	/* is that naughty? */
-#endif
-
     env->l = l;
     env->soName = env->globalPool->pstrdup(env, env->globalPool, libFileName);
 
@@ -1200,9 +1160,6 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
 	/* Initialise logger
 	 */
     env->l->init(env, env->l);
-
-    /* We should make it relative to JK_HOME or absolute path.
-       ap_serverRoot_relative(cmd->pool, opt); */
 
     /* Create the workerEnv
 	 */
@@ -1217,7 +1174,7 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
 
     workerEnv->childId = 0;
 
-	if (!ReadInitData(env)) {
+	if (!readConfigData(env)) {
 		goto initFailed;
 	}
 
@@ -1228,7 +1185,6 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
 
 	/* Note: we cast away the const qualifier on workersFile here
 	 */
-
 	if (JK_OK != workerEnv->config->setPropertyString(env, workerEnv->config,
 														"config.file", (char *) workersFile)) {
 		goto initFailed;
@@ -1239,16 +1195,16 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
 #ifndef TESTING
 	/* Attempt to launch Tomcat
 	 */
-	if (NULL != tomcatStart && '\0' != *tomcatStart) {
+	if (NONBLANK(tomcatStart)) {
 		AddInLogMessageText("Attempting to start Tomcat: %s", NOERROR, tomcatStart);
-		RunProg(tomcatStart);
+		runProg(tomcatStart);
 	}
 #endif
 
-	filterInitData->appFilterVersion = kInterfaceVersion;
-	filterInitData->eventFlags = kFilterParsedRequest;
-	strcpy(filterInitData->filterDesc, FILTERDESC);
+	filterInitData->appFilterVersion	= kInterfaceVersion;
+	filterInitData->eventFlags			= kFilterParsedRequest;
 
+	lstrcpyn(filterInitData->filterDesc, FILTERDESC, sizeof(filterInitData->filterDesc));
 	isInited = JK_TRUE;
 
 	/* Display banner
@@ -1274,10 +1230,9 @@ BOOL WINAPI DllMain(HINSTANCE hInst, ULONG ulReason, LPVOID lpReserved) {
 
 	switch (ulReason) {
 	case DLL_PROCESS_ATTACH:
-		/* TODO: Work out a way to do this on other platforms. */
 		if (GetModuleFileName(hInst, libFileName, sizeof(libFileName))) {
 			_splitpath(libFileName, drive, dir, fname, NULL);
-			_makepath(iniFileName, drive, dir, fname, ".properties");
+			_makepath(iniFileName, drive, dir, fname, PROPERTIES_EXT);
 		} else {
 			fReturn = FALSE;
 		}
@@ -1294,6 +1249,6 @@ BOOL WINAPI DllMain(HINSTANCE hInst, ULONG ulReason, LPVOID lpReserved) {
  */
 void TestMain(void) {
 	strcpy(libFileName, "test.exe");
-	strcpy(iniFileName, "test.properties");
+	strcpy(iniFileName, "test" PROPERTIES_EXT);
 }
 #endif

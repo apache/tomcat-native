@@ -1,0 +1,98 @@
+$Id$
+
+Installing the Domino Redirector
+--------------------------------
+
+If necessary build dsapi_redirector2.dll as per the instructions in
+BUILD.txt. Copy the DLL into the Domino program directory (this is the
+directory, which may be called something like C:\Lotus\Domino, that
+contains a file called nlnotes.exe). Shortly we will tell Domino where
+to find this file, but before we do that we need to make some registry
+entries. The simplest way is to edit the supplied file
+dsapi_redirector2.reg, which initially will look like this
+
+    Windows Registry Editor Version 5.00
+
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Jakarta Dsapi Redirector\2.0]
+    "serverRoot"="D:\\Works\\Tomcat\\jakarta-tomcat-4.1.27"
+    "workersFile"="conf\\workers2.properties"
+    "tomcatStart"="bin\\startup.bat"
+    "tomcatStop"="bin\\shutdown.bat"
+    "tomcatTimeout"="30000"
+
+Change serverRoot to reflect the location of your Tomcat installation.
+The other filename parameters can either be relative to serverRoot or
+absolute paths. Once edited double click on dsapi_redirector2.reg to
+enter it into the registry.
+
+Automatically Starting Tomcat
+-----------------------------
+
+The last three registry entries above provide commands that the
+redirector DLL will use to start and stop Tomcat when the Domino http
+server starts and stops respectively. If you don't require this
+behaviour these two lines can be omitted (or deleted if you've already
+placed them in the registry).
+
+The Workers File
+----------------
+
+If necessary take the sample workers2.properties file from jakarta-
+tomcat- connectors\jk\conf and place it in the location specified in the
+registry settings above (typically the conf directory of your Tomcat
+installation). Edit the file to suit your Tomcat setup.
+
+Configuring Domino
+------------------
+
+Finally we need to configure Domino to use the DSAPI extension DLL. For
+those who are unfamiliar with Domino server configuration most of a
+server's configurable behavior is dictated by a document called the
+"server document" in a database called the "Public Name and Address
+Book" or "NAB" for short (N.B. Lotus have renamed the NAB to "Domino
+Directory" from Domino 5 onwards). Each Domino server will have a NAB
+(called names.nsf) and each NAB will have a number of server documents
+including one for the current server. If you have not previously
+configured a Domino server you may need to refer to the supplied
+documentation, or you may need to pass this document to your tame Domino
+administrator.
+
+Assuming you know your way around a Domino server document what we're
+going to do is actually quite simple. Open the server document for this
+server, place it in Edit mode, then locate the DSAPI section and the
+'DSAPI filter file names' field on the Internet Protocols tab, HTTP sub-
+tab. Add "dsapi_redirector2.dll" to the DSAPI field, then save and close
+the document.
+
+Restart Domino
+--------------
+
+In order to get these settings to take effect and make sure that you
+haven't disrupted anything else you should now restart the Domino
+server. If the server is running as a service and you have changed any
+relevant system variables (JAVA_HOME, TOMCAT_HOME, CLASSPATH) since the
+last time you restarted the computer you should do a complete restart
+now because updates to system variables are not seen by services until
+after a reboot. If all goes well you should see something like this on
+the server console when the web server starts up.
+
+    14/11/2003 13:02:18   Attempting to start Tomcat: D:\Works\Tomcat\jakarta-tomcat-4.1.27\bin\startup.bat
+    Using CATALINA_BASE:   D:\Works\Tomcat\jakarta-tomcat-4.1.27
+    Using CATALINA_HOME:   D:\Works\Tomcat\jakarta-tomcat-4.1.27
+    Using CATALINA_TMPDIR: D:\Works\Tomcat\jakarta-tomcat-4.1.27\temp
+    Using JAVA_HOME:       C:\JBuilder8\jdk1.4
+    14/11/2003 13:02:18   Apache Tomcat Interceptor (Jakarta/DSAPI/2.0.0) loaded
+    14/11/2003 13:02:19   HTTP Web Server started
+
+At about the same time Tomcat should open in a new window (assuming you
+enabled the autostart option in the registry settings). You should now
+be able to visit a URL that is handled by Tomcat. Something like
+
+    http://name-of-server/servlet/SnoopServlet
+
+may be available, depending on how Tomcat is configured. If that all
+works you're done ;-)
+
+Please let me know if you have any problems.
+
+Andy Armstrong, <andy@tagish.com>

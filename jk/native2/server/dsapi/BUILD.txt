@@ -1,0 +1,67 @@
+$Id$
+
+Building the Domino Redirector
+------------------------------
+
+This release currently only builds on Windows using MSVC 6.0. As soon as
+I can I'll test it on Linux and produce a Makefile and I also hope to
+get it to build under CygWin.
+
+Prerequisites
+-------------
+
+You need to be able to build the jk2 code which requires both APR and
+PCRE. You can get a suitable Win32 build of APR from here:
+
+  http://apr.apache.org/
+  
+and a Win32 version of PCRE can be found here:
+
+  http://gnuwin32.sourceforge.net/packages/pcre.htm
+  
+To avoid messing around with the paths in the MSVC project place the APR
+and PCRE directories in the same parent directory as jakarta-tomcat-
+connectors. Here's what I have
+
+tomcat\
+    apr\
+    apr-iconv\
+    apr-util\
+    jakarta-tomcat-connectors\
+    pcre\
+
+By default the project also depends on the Lotus Notes C API which can
+be downloaded here:
+
+  http://www-10.lotus.com/ldd/toolkits
+  
+If you're using the C API set the environment variable NOTESAPI to the
+directory where you've installed it. You can reconfigure the project not
+to depend on the API. To do that remove references to NOTESAPI from the
+compiler and linker settings and add the preprocessor directive NO_CAPI.
+The only current implication of doing this is that messages from the
+redirector will be displayed using printf() rather than Notes API for
+displaying messages on the server console.
+
+You'll also need to have a suitable (for jk2) JVM installed and
+JAVA_HOME properly set.
+
+Finally there's a header file which we can't currently redistribute with
+the redirector although I'm trying to get IBM to clear it for release.
+It's the header that describes the DSAPI interface. For now you should
+get a copy of the header here:
+
+  http://www-12.lotus.com/ldd/doc/domino_notes/5.0/readme.nsf/0/
+   528b461a3cdc2a798525677400499305?OpenDocument
+
+and save it as dsapifilter.h in the dsapi directory (join the two parts
+of the above URL back together).
+
+Once you've done all that you should be able to fire up MSVC, open the
+dsapi.dsw and build it. You'll most likely want to build the
+configuration 'Release Static' which will build a standalone
+dsapi_redirector2.dll.
+
+Please let me know if you have any problems.
+
+Andy Armstrong, <andy@tagish.com>
