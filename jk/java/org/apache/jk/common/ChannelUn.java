@@ -128,7 +128,7 @@ public class ChannelUn extends JkHandler {
     public void init() throws IOException {
         apr=(AprImpl)wEnv.getHandler("apr");
         if( apr==null || ! apr.isLoaded() ) {
-            log.error("Apr is not available, disabling unix channel ");
+            log.debug("Apr is not available, disabling unix channel ");
             apr=null;
             return;
         }
@@ -163,7 +163,7 @@ public class ChannelUn extends JkHandler {
         if (unixListenSocket<0)
             throw(new IOException("Cannot create listening socket " + file));
 
-        log.info("Listening on unix socket: " + file );
+        log.info("JK: listening on unix socket: " + file );
         
         // Run a thread that will accept connections.
         tp.start();

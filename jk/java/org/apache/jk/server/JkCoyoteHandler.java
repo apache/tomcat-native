@@ -94,7 +94,8 @@ public class JkCoyoteHandler extends JkHandler implements
     protected JkMain jkMain=new JkMain();
     
     public void setProperty( String name, String value ) {
-        log.info("setProperty " + name + " " + value );
+        if( log.isDebugEnabled())
+            log.debug("setProperty " + name + " " + value );
         jkMain.setProperty( name, value );
         properties.put( name, value );
     }
@@ -139,8 +140,6 @@ public class JkCoyoteHandler extends JkHandler implements
             
             jkMain.init();
             jkMain.start();
-
-            log.info("Jk2 started ");
 
             headersMsgNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "headerMsg" );
             utfC2bNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "utfC2B" );

@@ -114,7 +114,8 @@ public class JniHandler extends JkHandler {
     protected void initNative(String nativeComponentName) {
         apr=(AprImpl)wEnv.getHandler("apr");
         if( apr==null || ! apr.isLoaded() ) { 
-            log.error("No apr, disabling jni proxy ");
+            if( log.isDebugEnabled() )
+                log.debug("No apr, disabling jni proxy ");
             apr=null;
             return;
         }
@@ -126,7 +127,7 @@ public class JniHandler extends JkHandler {
             log.info("Component not found, creating it " + nativeComponentName ); 
             nativeJkHandlerP=apr.createJkHandler(xEnv, nativeComponentName);
         }
-        log.info("Native proxy " + nativeJkHandlerP );
+        log.debug("Native proxy " + nativeJkHandlerP );
         
         apr.releaseJkEnv(xEnv); 
    }

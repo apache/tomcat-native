@@ -207,7 +207,6 @@ public class JkMain
             // XXX use IntrospectionUtil to find myself
             this.guessHome();
         }
-        log.info("Jk2 home " + home );
         if( home != null ) {
             File hF=new File(home);
             File conf=new File( home, "conf" );
@@ -217,9 +216,10 @@ public class JkMain
             File propsF=new File( conf, "jk2.properties" );
             
             if( propsF.exists() ) {
-                log.info("Jk2 conf " + propsF );
+                log.info("Starting Jk2, base dir= " + home + " conf=" + propsF );
                 setPropertiesFile( propsF.getAbsolutePath());
             } else {
+                log.info("Starting Jk2, base dir= " + home );
                 if( log.isWarnEnabled() )
                     log.warn( "No properties file found " + propsF );
             }
@@ -284,9 +284,9 @@ public class JkMain
                     wEnv.getHandler(i).init();
                 } catch( IOException ex) {
                     if( "apr".equals(wEnv.getHandler(i).getName() )) {
-                        log.error( "WorkerEnv: APR not initialized " + ex.toString());
+                        log.error( "APR error, disabling jni components: " + ex.toString());
                     } else {
-                        log.error( "WorkerEnv: error initializing " + wEnv.getHandler(i).getName(), ex );
+                        log.error( "error initializing " + wEnv.getHandler(i).getName(), ex );
                     }
                 }
             }
@@ -370,7 +370,7 @@ public class JkMain
     public  void saveProperties() {
         // Temp - to check if it works
         String outFile=propFile + ".save";
-        log.info("Saving properties " + outFile );
+        log.debug("Saving properties " + outFile );
         try {
             props.save( new FileOutputStream(outFile), "AUTOMATICALLY GENERATED" );
         } catch(IOException ex ){

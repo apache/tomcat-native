@@ -214,7 +214,7 @@ public class ChannelSocket extends JkHandler {
             log.error("Can't find free port " + startPort + " " + maxPort );
             return;
         }
-        log.info("Init " + port );
+        log.info("JK: listening on tcp port " + port );
         
         // If this is not the base port and we are the 'main' channleSocket and
         // SHM didn't already set the localId - we'll set the instance id
