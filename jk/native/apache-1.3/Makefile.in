@@ -1,6 +1,9 @@
 
 ## configure should make the Makefile out of this file.
 
+srcdir=@srcdir@
+top_srcdir=@top_srcdir@
+VPATH=@srcdir@
 APXS=@APXS@
 OS=@OS@
 JAVA_HOME=@JAVA_HOME@
@@ -17,14 +20,12 @@ libexecdir=${APACHE_DIR}/libexec
 JK_DIR := ..
 BUILD_DIR = ${JK_DIR}/../build/jk/apache13
 
-#VPATH=.:../common
 APACHE_FILES = Makefile.tmpl Makefile.libdir libjk.module
 
-JK=../common/
-JK_INCL=-DUSE_APACHE_MD5 -I ${JK}
+JK_INCL=-DUSE_APACHE_MD5 -I ${top_srcdir}/common
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
-APACHE_CFLAGS=@apache_include@ @APXSCFLAGS@ @APXSCPPFLAGS@ -I../common
+APACHE_CFLAGS=@apache_include@ @APXSCFLAGS@ @APXSCPPFLAGS@ -I${top_srcdir}/common
 
 # Compile commands
 JK_CFLAGS  = $(JK_INCL) $(JAVA_INCL) $(APACHE_CFLAGS)
