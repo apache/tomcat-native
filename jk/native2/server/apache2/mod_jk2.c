@@ -815,6 +815,11 @@ static int jk2_map_to_storage(request_rec *r)
         return DECLINED;
     }
 
+    /* If already mapped by translate just returns OK */
+    uriEnv = ap_get_module_config( r->request_config, &jk2_module );
+    if (uriEnv!=NULL && uriEnv->workerName != NULL)
+        return OK;
+
     /* From something like [uri:/examples/STAR] in workers2.properties */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
     uriEnv=workerEnv->uriMap->mapUri(env, workerEnv->uriMap,
