@@ -138,6 +138,7 @@ typedef struct {
     char *certs_indicator;
     char *cipher_indicator;
     char *session_indicator;
+	char *key_size_indicator;
 
     /*
      * Environment variables support
@@ -473,8 +474,9 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->is_ssl       = JK_FALSE;
     s->ssl_cert     = NULL;
     s->ssl_cert_len = 0;
-    s->ssl_cipher   = NULL;
+    s->ssl_cipher   = NULL;		/* required by Servlet 2.3 Api, allready in original ajp13 */
     s->ssl_session  = NULL;
+	s->ssl_key_size = -1;		/* required by Servlet 2.3 Api, added in jtc */
 
     if(conf->ssl_enable || conf->envvars_in_use) {
         ap_add_common_vars(r);
@@ -487,8 +489,14 @@ static int init_ws_service(apache_private_data_t *private_data,
                 if(s->ssl_cert) {
                     s->ssl_cert_len = strlen(s->ssl_cert);
                 }
+				/* Servlet 2.3 API */
                 s->ssl_cipher   = (char *)ap_table_get(r->subprocess_env, conf->cipher_indicator);
                 s->ssl_session  = (char *)ap_table_get(r->subprocess_env, conf->session_indicator);
+
+				/* Servlet 2.3 API */
+                ssl_temp = (char *)ap_table_get(r->subprocess_env, conf->key_size_indicator);
+				if (ssl_temp) 
+            		s->ssl_key_size = atoi(ssl_temp);
             }
         }
 
@@ -834,6 +842,25 @@ static const char *jk_set_session_indicator(cmd_parms *cmd,
 }
 
 /*
+ * JkKEYSIZEIndicator Directive Handling
+ *
+ * JkKEYSIZEIndicator SSL_CIPHER_USEKEYSIZE
+ */
+
+static const char *jk_set_key_size_indicator(cmd_parms *cmd,
+                                           void *dummy,
+                                           char *indicator)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+
+    conf->key_size_indicator = indicator;
+
+    return NULL;
+}
+
+/*
  * JkEnvVar Directive Handling
  *
  * JkEnvVar MYOWNDIR
@@ -933,6 +960,8 @@ static const command_rec jk_cmds[] =
      "Name of the Apache environment that contains SSL client cipher"},
     {"JkSESSIONIndicator", jk_set_session_indicator, NULL, RSRC_CONF, TAKE1,
      "Name of the Apache environment that contains SSL session"},
+    {"JkKEYSIZEIndicator", jk_set_key_size_indicator, NULL, RSRC_CONF, TAKE1,
+     "Name of the Apache environment that contains SSL key size in use"},
     {"JkExtractSSL", jk_set_enable_ssl, NULL, RSRC_CONF, FLAG,
      "Turns on SSL processing and information gathering by mod_jk"},     
 
@@ -1058,6 +1087,7 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
      */
     c->cipher_indicator = "SSL_CIPHER";
     c->session_indicator = "SSL_SESSION_ID";
+	c->key_size_indicator = "SSL_CIPHER_USEKEYSIZE";
 
     if(!map_alloc(&(c->uri_to_context))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
