@@ -64,8 +64,8 @@ import java.net.*;
 import java.util.*;
 
 import org.apache.ajp.*;
+import org.apache.tomcat.modules.server.PoolTcpConnector;
 
-import org.apache.tomcat.modules.server.*;
 import org.apache.tomcat.core.*;
 
 import org.apache.tomcat.util.net.*;
@@ -93,6 +93,8 @@ public class Ajp14Interceptor extends PoolTcpConnector
 {
     int ajp14_note=-1;
     String password;
+    RequestHandler reqHandler=new RequestHandler();
+    NegociationHandler negHandler=new NegociationHandler();
     
     public Ajp14Interceptor()
     {
@@ -119,6 +121,13 @@ public class Ajp14Interceptor extends PoolTcpConnector
 	this.password=s;
     }
 
+    /**
+     * Set the original entropy seed
+     */
+    public void setSeed(String pseed) 
+    {
+	negHandler.setSeed( pseed );
+    }
     
     // -------------------- PoolTcpConnector --------------------
 
@@ -164,17 +173,24 @@ public class Ajp14Interceptor extends PoolTcpConnector
 	    req.recycle();
 	    res.recycle();
 	    // make the note available to other modules
-	    req.setNote( ajp14_note, req.ajp14);
+	    req.setNote( ajp14_note, req.ajp13);
 	    return req;
 	}
 	// either thData==null or broken ( req==null)
-	Ajp14 ajp14=new Ajp14();
-	ajp14.setContainerSignature( ContextManager.TOMCAT_NAME +
-				     " v" + ContextManager.TOMCAT_VERSION);
-	AjpRequest ajpreq=new AjpRequest();
-	ajp14.setPassword( password );
-	req=new Ajp14Request(ajp14, ajpreq);
-	Ajp14Response res=new Ajp14Response(ajp14);
+       	Ajp13 ajp13=new Ajp13(reqHandler);
+        negHandler.init( ajp13 );
+
+	negHandler.setContainerSignature( ContextManager.TOMCAT_NAME +
+                                          " v" + ContextManager.TOMCAT_VERSION);
+	if( password!= null ) {
+            negHandler.setPassword( password );
+            ajp13.setBackward(false); 
+        }
+
+	BaseRequest ajpreq=new BaseRequest();
+
+	req=new Ajp14Request(ajp13, ajpreq);
+	Ajp14Response res=new Ajp14Response(ajp13);
 	cm.initRequest(req, res);
 	return  req;
     }
@@ -194,19 +210,19 @@ public class Ajp14Interceptor extends PoolTcpConnector
 
             Ajp14Request req=initRequest( thData );
             Ajp14Response res= (Ajp14Response)req.getResponse();
-            Ajp14 ajp14=req.ajp14;
-	    AjpRequest ajpReq=req.ajpReq;
+            Ajp13 ajp13=req.ajp13;
+	    BaseRequest ajpReq=req.ajpReq;
 
-            ajp14.setSocket(socket);
+            ajp13.setSocket(socket);
 
 	    // first request should be the loginit.
-	    int status=ajp14.receiveNextRequest( ajpReq );
+	    int status=ajp13.receiveNextRequest( ajpReq );
 	    if( status != 304 )  { // XXX use better codes
 		log( "Failure in logInit ");
 		return;
 	    }
 
-	    status=ajp14.receiveNextRequest( ajpReq );
+	    status=ajp13.receiveNextRequest( ajpReq );
 	    if( status != 304 ) { // XXX use better codes
 		log( "Failure in login ");
 		return;
@@ -214,7 +230,7 @@ public class Ajp14Interceptor extends PoolTcpConnector
 	    
             boolean moreRequests = true;
             while(moreRequests) {
-		status=ajp14.receiveNextRequest( ajpReq );
+		status=ajp13.receiveNextRequest( ajpReq );
 
 		if( status==-2) {
 		    // special case - shutdown
@@ -237,7 +253,7 @@ public class Ajp14Interceptor extends PoolTcpConnector
 		res.recycle();
             }
             if( debug > 0 ) log("Closing ajp14 connection");
-            ajp14.close();
+            ajp13.close();
 	    socket.close();
         } catch (Exception e) {
 	    log("Processing connection " + connection, e);
@@ -284,10 +300,10 @@ public class Ajp14Interceptor extends PoolTcpConnector
 
 class Ajp14Request extends Request 
 {
-    Ajp14 ajp14;
-    AjpRequest ajpReq;
+    Ajp13 ajp13;
+    BaseRequest ajpReq;
     
-    public Ajp14Request(Ajp14 ajp14, AjpRequest ajpReq) 
+    public Ajp14Request(Ajp13 ajp13, BaseRequest ajpReq) 
     {
 	headers = ajpReq.headers();
 	methodMB=ajpReq.method();
@@ -309,12 +325,12 @@ class Ajp14Request extends Request
 	params.setHeaders( headers );
 	initRequest(); 	
 
-        this.ajp14=ajp14;
+        this.ajp13=ajp13;
 	this.ajpReq=ajpReq;
     }
 
     // -------------------- Wrappers for changed method names, and to use the buffers
-    // XXX Move AjpRequest into util !!! ( it's just a stuct with some MessageBytes )
+    // XXX Move BaseRequest into util !!! ( it's just a stuct with some MessageBytes )
 
     public int getServerPort() {
         return ajpReq.getServerPort();
@@ -394,7 +410,7 @@ class Ajp14Request extends Request
     public void recycle() {
 	super.recycle();
 	ajpReq.recycle();
-	if( ajp14!=null) ajp14.recycle();
+	if( ajp13!=null) ajp13.recycle();
     }
 
     public String dumpRequest() {
@@ -411,14 +427,14 @@ class Ajp14Request extends Request
 	if( available <= 0 )
 	    return -1;
 	available--;
-	return ajp14.reqHandler.doRead(ajp14);
+	return ajp13.reqHandler.doRead(ajp13);
     }
     
     public int doRead(byte[] b, int off, int len) throws IOException 
     {
 	if( available <= 0 )
 	    return -1;
-	int rd=ajp14.reqHandler.doRead( ajp14, b,off, len );
+	int rd=ajp13.reqHandler.doRead( ajp13, b,off, len );
 	available -= rd;
 	return rd;
     }
@@ -427,13 +443,13 @@ class Ajp14Request extends Request
 
 class Ajp14Response extends Response 
 {
-    Ajp14 ajp14;
+    Ajp13 ajp13;
     boolean finished=false;
     
-    public Ajp14Response(Ajp14 ajp14) 
+    public Ajp14Response(Ajp13 ajp13) 
     {
 	super();
-	this.ajp14=ajp14;
+	this.ajp13=ajp13;
     }
 
     public void recycle() {
@@ -451,7 +467,7 @@ class Ajp14Response extends Response
             return;
         }
 
-	ajp14.reqHandler.sendHeaders(ajp14, ajp14.outBuf, getStatus(),
+	ajp13.reqHandler.sendHeaders(ajp13, ajp13.outBuf, getStatus(),
 				     HttpMessages.getMessage(status),
 				     getMimeHeaders());
     } 
@@ -462,14 +478,14 @@ class Ajp14Response extends Response
 	if(!finished) {
 	    super.finish();
 		finished = true; // Avoid END_OF_RESPONSE sent 2 times
-	    ajp14.reqHandler.finish(ajp14, ajp14.outBuf);
+	    ajp13.reqHandler.finish(ajp13, ajp13.outBuf);
 	}
     }
 
     // XXX Can be implemented using the buffers, no need to extend
     public void doWrite(  byte b[], int off, int len) throws IOException 
     {
-	ajp14.reqHandler.doWrite(ajp14, ajp14.outBuf, b, off, len );
+	ajp13.reqHandler.doWrite(ajp13, ajp13.outBuf, b, off, len );
     }
     
 }
