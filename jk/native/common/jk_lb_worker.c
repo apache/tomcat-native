@@ -28,15 +28,16 @@
 #include "jk_util.h"
 #include "jk_worker.h"
 #include "jk_lb_worker.h"
+#include "jk_ajp13.h"
 #include "jk_mt.h"
 #include "jk_shm.h"
 
 /*
- * The load balancing code in this 
+ * The load balancing code in this
  */
 
 
-/* 
+/*
  * Time to wait before retry...
  */
 #define JK_WORKER_IN_ERROR(w) ((w)->in_error_state && !(w)->is_disabled && !(w)->is_busy)
@@ -66,9 +67,9 @@ static char *get_path_param(jk_ws_service_t *s, const char *name)
             if (strlen(id_start)) {
                 char *id_end;
                 id_start = jk_pool_strdup(s->pool, id_start);
-                /* 
+                /*
                  * The query string is not part of req_uri, however
-                 * to be on the safe side lets remove the trailing query 
+                 * to be on the safe side lets remove the trailing query
                  * string if appended...
                  */
                 if ((id_end = strchr(id_start, '?')) != NULL) {
@@ -186,14 +187,14 @@ static void retry_worker(worker_record_t *w,
     JK_TRACE_EXIT(l);
 }
 
-static worker_record_t *find_by_session(lb_worker_t *p, 
+static worker_record_t *find_by_session(lb_worker_t *p,
                                         const char *name,
                                         jk_logger_t *l)
 {
 
     worker_record_t *rc = NULL;
     unsigned int i;
-    
+
     for (i = 0; i < p->num_of_workers; i++) {
         if (strcmp(p->lb_workers[i].s->name, name) == 0) {
             rc = &p->lb_workers[i];
@@ -214,7 +215,7 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
     size_t curmin = 0;
 
     worker_record_t *candidate = NULL;
-    
+
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* Skip all workers that are not member of domain */
@@ -258,7 +259,7 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
     unsigned int i;
     int total_factor = 0;
     worker_record_t *candidate = NULL;
-    
+
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* If the worker is in error state run
@@ -286,14 +287,14 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
     return candidate;
 }
 
-static worker_record_t *find_best_bytraffic(lb_worker_t *p, 
+static worker_record_t *find_best_bytraffic(lb_worker_t *p,
                                              jk_logger_t *l)
 {
     unsigned int i;
     size_t mytraffic = 0;
     size_t curmin = 0;
     worker_record_t *candidate = NULL;
-    
+
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* If the worker is in error state run
@@ -316,11 +317,11 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
                 curmin = mytraffic;
             }
         }
-    }    
+    }
     return candidate;
 }
 
-static worker_record_t *find_bysession_route(lb_worker_t *p, 
+static worker_record_t *find_bysession_route(lb_worker_t *p,
                                              const char *name,
                                              jk_logger_t *l)
 {
@@ -379,7 +380,7 @@ static worker_record_t *find_failover_worker(lb_worker_t * p,
 {
     worker_record_t *rc = NULL;
     unsigned int i;
-    const char *redirect = NULL;    
+    const char *redirect = NULL;
 
     for (i = 0; i < p->num_of_workers; i++) {
         if (strlen(p->lb_workers[i].s->redirect)) {
@@ -522,6 +523,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         lb_endpoint_t *p = e->endpoint_private;
         int attempt = 0;
         int num_of_workers = p->worker->num_of_workers;
+        worker_record_t *prec = NULL;
         /* Set returned error to OK */
         *is_error = JK_HTTP_OK;
 
@@ -539,12 +541,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
             worker_record_t *rec =
                 get_most_suitable_worker(p->worker, s, attempt++, l);
             int rc;
-
-            if (rec) {
+            /* Do not reuse previous worker, because
+             * that worker already failed.
+             */
+            if (rec && rec != prec) {
                 int is_service_error = JK_HTTP_OK;
-                int service_ok = JK_FALSE;
+                int service_stat = JK_FALSE;
                 jk_endpoint_t *end = NULL;
-                
+
                 s->jvm_route = rec->r;
                 rc = rec->w->get_endpoint(rec->w, &end, l);
 
@@ -561,7 +565,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     /* Increment the number of workers serving request */
                     p->worker->s->busy++;
                     rec->s->busy++;
-                    service_ok = end->service(end, s, l, &is_service_error);
+                    service_stat = end->service(end, s, l, &is_service_error);
                     /* Update partial reads and writes if any */
                     rec->s->readed += end->rd;
                     rec->s->transferred += end->wr;
@@ -573,7 +577,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     /* Decrement the busy worker count */
                     rec->s->busy--;
                     p->worker->s->busy--;
-                    if (service_ok) {
+                    if (service_stat == JK_TRUE) {
                         rec->s->in_error_state = JK_FALSE;
                         rec->s->in_recovering = JK_FALSE;
                         rec->s->error_time = 0;
@@ -592,9 +596,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                            rec->s->name);
                     /* Decrement the worker count and try another worker */
                     --num_of_workers;
+                    prec = rec;
                     continue;
                 }
-                if (!service_ok) {
+                if (service_stat == JK_FALSE) {
                     /*
                     * Service failed !!!
                     *
@@ -623,6 +628,26 @@ static int JK_METHOD service(jk_endpoint_t *e,
                            "service failed, worker %s is in error state",
                            rec->s->name);
                 }
+                else if (service_stat == JK_CLIENT_ERROR) {
+                    /*
+                    * Clent error !!!
+                    * Since this is bad request do not fail over.
+                    */
+                    is_service_error = JK_HTTP_BAD_REQUEST;
+                    rec->s->errors++;
+                    rec->s->in_error_state = JK_FALSE;
+                    rec->s->in_recovering = JK_FALSE;
+                    rec->s->error_time = 0;
+                    *is_error = is_service_error;
+
+                    jk_log(l, JK_LOG_INFO,
+                           "unrecoverable error %d, request failed."
+                           " Client failed in the middle of request,"
+                           " we can't recover to another instance.",
+                           is_service_error);
+                    JK_TRACE_EXIT(l);
+                    return JK_CLIENT_ERROR;
+                }
                 else {
                     /* If we can not get the endpoint from the worker
                      * that does not mean that the worker is in error
@@ -630,9 +655,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      * We will try another worker.
                      * To prevent infinite loop decrement worker count;
                      */
-                    --num_of_workers;
                 }
-                /* 
+                /*
                  * Error is recoverable by submitting the request to
                  * another worker... Lets try to do that.
                  */
@@ -648,6 +672,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 *is_error = JK_HTTP_SERVER_ERROR;
                 return JK_FALSE;
             }
+            --num_of_workers;
+            prec = rec;
         }
         jk_log(l, JK_LOG_INFO,
                "All tomcat instances are busy or in error state");
@@ -716,7 +742,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             for (i = 0; i < num_of_workers; i++) {
                 p->lb_workers[i].s = jk_shm_alloc_worker(&p->p);
                 if (p->lb_workers[i].s == NULL) {
-                    jk_log(l, JK_LOG_ERROR, 
+                    jk_log(l, JK_LOG_ERROR,
                            "allocating worker record from shared memory");
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
