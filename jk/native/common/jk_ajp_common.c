@@ -718,7 +718,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
 
     jk_log(l, JK_LOG_INFO,
            "Error connecting to tomcat. Tomcat is probably not started or is "
-           "listenning on the wrong port. Failed errno = %d\n",
+           "listening on the wrong port. Failed errno = %d\n",
            errno);
     return JK_FALSE;
 }
