@@ -6,3 +6,4 @@ Makefile
 config.cache
 libtool
 config.status
+build.properties
