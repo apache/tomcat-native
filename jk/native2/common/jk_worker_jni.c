@@ -73,8 +73,6 @@
 
 struct jni_worker_data {
 
-    jk_vm_t *vm;
-    
     jclass      jk_java_bridge_class;
     jmethodID   jk_startup_method;
     jmethodID   jk_shutdown_method;
@@ -87,6 +85,8 @@ struct jni_worker_data {
 
 typedef struct jni_worker_data jni_worker_data_t;
 
+
+/** -------------------- Startup -------------------- */
 
 /** Static methods - much easier...
  */
@@ -147,13 +147,10 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
         jniWorker->tomcat_cmd_line = value;
     } else if( strcmp( name, "stdout" )==0 ) {
         jniWorker->stdout_name=value;
-    } else if( strcmp( name, "lb_factor" )==0 ) {
-        pThis->lb_factor=atof( value );
     } else if( strcmp( name, "stderr" )==0 ) {
         jniWorker->stderr_name=value;
     } else {
-        return rc=jniWorker->vm->mbean->setAttribute(env, jniWorker->vm->mbean,
-                                                     name, value );
+        return JK_FALSE;
     }
 
     return JK_TRUE;
@@ -170,6 +167,7 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
     char *str_config = NULL;
     jk_map_t *props=_this->workerEnv->initData;
     jk_bean_t *chB;
+    jk_vm_t *vm=_this->workerEnv->vm;
     
     if(! _this || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
@@ -177,19 +175,14 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
         return JK_FALSE;
     }
 
-    jniWorker = _this->worker_private;
-    {
-        jniWorker->vm->properties=_this->workerEnv->initData;
-        
-        rc=jniWorker->vm->init(env, jniWorker->vm );
-        
-        if( rc!=JK_TRUE ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "jni.validate() failed to load vm init params\n");
-            return JK_FALSE;
-        }
+    if( vm == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "workerJni.init() No VM found\n");
+        return JK_FALSE;
     }
-        
+    
+    jniWorker = _this->worker_private;
+    
     if( jniWorker->className==NULL )
         jniWorker->className=JAVA_BRIDGE_CLASS_NAME;
     
@@ -198,36 +191,24 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
                   jniWorker->className, jniWorker->tomcat_cmd_line,
                   jniWorker->stdout_name, jniWorker->stderr_name);
     
-    /* Verify if we can load the vm XXX do we want this now ? */
-    
-    rc= jniWorker->vm->load(env, jniWorker->vm );
-    
-    if( !rc ) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "jni.validated() Error - can't load jvm dll\n");
-        /* [V] no detach needed here */
+
+    jniEnv = (JNIEnv *)vm->attach( env, vm );
+
+    if( jniEnv==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "workerJni.init() Can't attach to VM\n");
+        
         return JK_FALSE;
     }
-
-    rc = jniWorker->vm->open(env, jniWorker->vm );
-    
-    if( rc== JK_FALSE ) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG, "Fail-> can't open jvm\n");
-        /* [V] no detach needed here */
-        return JK_FALSE;
-    }
-
-    jniEnv = (JNIEnv *)jniWorker->vm->attach( env, jniWorker->vm );
     
     jniWorker->jk_java_bridge_class =
         (*jniEnv)->FindClass(jniEnv, jniWorker->className );
 
     if( jniWorker->jk_java_bridge_class == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "Can't find class %s in %s\n", jniWorker->className,
-                      jniWorker->vm->tomcat_classpath );
+                      "Can't find class %s\n", jniWorker->className );
         /* [V] the detach here may segfault on 1.1 JVM... */
-        jniWorker->vm->detach(env,  jniWorker->vm);
+        vm->detach(env, vm);
         return JK_FALSE;
     }
     
@@ -239,38 +220,11 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "Fail-> can't get method ids\n");
         /* [V] the detach here may segfault on 1.1 JVM... */
-        jniWorker->vm->detach(env, jniWorker->vm);
-        return JK_FALSE;
-    }
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "jni.validate() ok\n");
-
-
-
-    
-    if(_this->workerEnv->vm != NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                      "jni.init(), done (been here!)\n");
-        return JK_TRUE;
-    }
-
-    if(!jniWorker->vm ||
-       !jniWorker->jk_startup_method     ||
-       !jniWorker->jk_shutdown_method) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "Fail-> worker not set completely\n");
+        vm->detach(env, vm);
         return JK_FALSE;
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.init()\n");
-
-    jniEnv=jniWorker->vm->attach(env, jniWorker->vm );
-    if(jniEnv == NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "jni.init() can't attach to vm\n");
-        return JK_FALSE;
-    }
 
     if(jniWorker->tomcat_cmd_line) {
         cmd_line = (*jniEnv)->NewStringUTF(jniEnv, jniWorker->tomcat_cmd_line);
@@ -292,36 +246,15 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
                                         stdout_name,
                                         stderr_name);
     
-    jniWorker->vm->detach(env, jniWorker->vm);
-    
-
-    _this->workerEnv->vm= jniWorker->vm;
-
-    /* We can have a single jni channel per instance, the name is
-       hardcoded */
-    chB=env->createBean2(env, _this->pool,"channel.jni", "");
-    
-    if( chB == NULL || chB->object==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "Error creating jni channel\n");
-        return JK_FALSE;
-    }
-    _this->channel=chB->object;
-    if(rc) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "jni.init() Tomcat initialized OK, done\n");
-        return JK_TRUE;
-    } else {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG, 
-                      "Fail-> could not initialize Tomcat\n");
-        return JK_FALSE;
-    }
+    vm->detach(env, vm);
+    return JK_TRUE;
 }
 
 static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
 {
     jni_worker_data_t *jniWorker;
     JNIEnv *jniEnv;
+    jk_vm_t *vm=_this->workerEnv->vm;
 
     if(!_this  || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
@@ -331,25 +264,19 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
 
     jniWorker = _this->worker_private;
 
-    if(!jniWorker->vm) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "In destroy, JVM not intantiated\n");
-        return JK_FALSE;
-    }
-    
     if(! jniWorker->jk_shutdown_method) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "In destroy, Tomcat not intantiated\n");
         return JK_FALSE;
     }
 
-    if((jniEnv = jniWorker->vm->attach(env, jniWorker->vm))) {
+    if((jniEnv = vm->attach(env, vm))) {
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "jni.destroy(), shutting down Tomcat...\n");
         (*jniEnv)->CallStaticVoidMethod(jniEnv,
                                   jniWorker->jk_java_bridge_class,
                                   jniWorker->jk_shutdown_method);
-        jniWorker->vm->detach(env, jniWorker->vm);
+        vm->detach(env, vm);
     }
 
     _this->pool->close(env, _this->pool);
@@ -390,11 +317,6 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
 
     _this->pool=pool;
 
-    /* XXX split it in VM11 and VM12 util */
-    jkb=env->createBean2( env, pool, "vm", "" );
-    if( jkb==NULL ) return JK_FALSE;
-    jniData->vm=jkb->object;
-    
     jniData->jk_java_bridge_class  = NULL;
     jniData->jk_startup_method     = NULL;
     jniData->jk_shutdown_method    = NULL;
@@ -414,9 +336,6 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     _this->workerEnv=env->getByName( env, "workerEnv" );
     _this->workerEnv->addWorker( env, _this->workerEnv, _this );
     
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "jni.worker_factory() done\n");
-
     return JK_TRUE;
 }
 
