@@ -1269,7 +1269,7 @@ public class Http11Processor implements Processor, ActionHook {
 
         // If we know that the request is bad this early, add the
         // Connection: close header.
-        keepAlive = keepAlive && statusDropsConnection(statusCode);
+        keepAlive = keepAlive && !statusDropsConnection(statusCode);
         if (!keepAlive) {
             response.addHeader("Connection", "close");
         } else if (!http11) {
