@@ -57,7 +57,7 @@ Apache 1.3. The available options for the configure script are:
         include the "catalina.jar" and "servlet.jar" distributed with
         Tomcat 4.0. For example:
           # CLASSPATH=$CATALINA_HOME/server/lib/catalina.jar
-          # CLASSPATH=$CLASSPATH:$CATALINA_HOME/common/lib/server.jar
+          # CLASSPATH=$CLASSPATH:$CATALINA_HOME/common/lib/servlet.jar
           # export CLASSPATH
 
     --enable-debug

@@ -129,7 +129,7 @@ wa_boolean n_send(apr_socket_t *sock, warp_packet *pack) {
         if (len==0) break;
     }
 
-    wa_debug(WA_MARK,"WARP >>> TYP=%d LEN=%d",pack->type,pack->size);
+    wa_debug(WA_MARK,"WARP >>> TYP=%2X LEN=%d",pack->type,pack->size);
 
     p_reset(pack);
     return(wa_true);
