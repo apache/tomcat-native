@@ -35,6 +35,11 @@
 
 #include "jk_version.h"
 
+#ifdef HAVE_APR
+#include "apr_lib.h"
+#include "apr_strings.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,11 +52,6 @@
 #include "ap_config.h"
 #endif
 
-#ifdef HAVE_APR
-#include "apr_lib.h"
-#include "apr_strings.h"
-#endif
-
 #ifdef AS400
 #include "ap_config.h"
 extern char *strdup(const char *str);
@@ -61,8 +61,35 @@ extern char *strdup(const char *str);
 #include <sys/stat.h>
 
 #ifdef WIN32
+#ifndef _WINDOWS_
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef _WIN32_WINNT
+
+/* Restrict the server to a subset of Windows NT 4.0 header files by default
+ */
+#define _WIN32_WINNT 0x0400
+#endif
+#ifndef NOUSER
+#define NOUSER
+#endif
+#ifndef NOMCX
+#define NOMCX
+#endif
+#ifndef NOIME
+#define NOIME
+#endif
 #include <windows.h>
-#include <winsock.h>
+/* 
+ * Add a _very_few_ declarations missing from the restricted set of headers
+ * (If this list becomes extensive, re-enable the required headers above!)
+ * winsock headers were excluded by WIN32_LEAN_AND_MEAN, so include them now
+ */
+#include <winsock2.h>
+#include <mswsock.h>
+#include <ws2tcpip.h>
+#endif
 #include <sys/timeb.h>
 #include <process.h>
 #else
