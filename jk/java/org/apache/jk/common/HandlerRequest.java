@@ -504,7 +504,7 @@ public class HandlerRequest extends JkHandler
                     RequestInfo rp=req.getRequestProcessor();
                     rp.setGlobalProcessor(global);
                     ObjectName roname = new ObjectName(getDomain() + 
-                                       "type=RequestProcessor,name=JkRequest" +count++);
+                                       ":type=RequestProcessor,name=JkRequest" +count++);
                     ep.setNote(JMXRequestNote, roname);
                         
                     Registry.getRegistry().registerComponent( rp,
