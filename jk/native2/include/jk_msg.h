@@ -77,7 +77,7 @@ struct jk_endpoint;
 struct jk_ws_service;
 struct jk_logger;
     
-#define DEF_BUFFER_SZ (8 * 1024)
+#define DEF_BUFFER_SZ (8300)
 #define AJP13_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
     
 /**
