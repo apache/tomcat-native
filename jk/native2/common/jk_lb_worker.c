@@ -159,28 +159,30 @@ static jk_worker_t *get_most_suitable_worker(jk_env_t *env, jk_worker_t *p,
 }
 
 
-static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e, 
-                             jk_ws_service_t *s,
-                             int *is_recoverable_error)
+/** Get the best worker and forward to it.
+    Since we don't directly connect to anything, there's no
+    need for an endpoint.
+*/
+static int JK_METHOD service(jk_env_t *env,
+                             jk_worker_t *w,
+                             jk_ws_service_t *s)
 {
-    /* The 'real' endpoint */
-    jk_endpoint_t *end = NULL;
     int attempt=0;
-    
-    if(e==NULL || s==NULL || is_recoverable_error==NULL) {
+
+    if( s==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "lb.service() NullPointerException\n");
         return JK_FALSE;
     }
 
     /* you can not recover on another load balancer */
-    *is_recoverable_error = JK_FALSE;
-    e->realEndpoint=NULL;
+    s->realWorker=NULL;
 
     while(1) {
-        jk_worker_t *rec = get_most_suitable_worker(env, e->worker, s, attempt++);
+        jk_worker_t *rec = get_most_suitable_worker(env, w, s, attempt++);
         int rc;
-        int is_recoverable = JK_FALSE;
+
+        s->is_recoverable_error = JK_FALSE;
 
         if(rec == NULL) {
             /* NULL record, no more workers left ... */
@@ -194,26 +196,18 @@ static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e,
         
         s->jvm_route = s->pool->pstrdup(env, s->pool,  rec->name);
 
-        rc = rec->get_endpoint(env, rec, &end);
-        if( rc!= JK_TRUE ||
-            end==NULL ) {
-         } else {
+        rc = rec->service(env, rec, s);
 
-            rc = end->service(env, end, s, &is_recoverable);
-            end->done(env, end);
-
-            if(rc==JK_TRUE) {                        
-                if(rec->in_recovering) {
-                    rec->lb_value = get_max_lb(e->worker) +
-                        ADDITINAL_WAIT_LOAD;
-                }
-                rec->in_error_state = JK_FALSE;
-                rec->in_recovering  = JK_FALSE;
-                rec->error_time     = 0;
-                /* the endpoint that succeeded is saved for done() */
-                e->realEndpoint = end;
-                return JK_TRUE;
+        if(rc==JK_TRUE) {                        
+            if(rec->in_recovering) {
+                rec->lb_value = get_max_lb(rec) + ADDITINAL_WAIT_LOAD;
             }
+            rec->in_error_state = JK_FALSE;
+            rec->in_recovering  = JK_FALSE;
+            rec->error_time     = 0;
+            /* the endpoint that succeeded is saved for done() */
+            s->realWorker = rec;
+            return JK_TRUE;
         }
         
         /*
@@ -225,7 +219,7 @@ static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e,
         rec->in_recovering  = JK_FALSE;
         rec->error_time     = time(0);
         
-        if(!is_recoverable) {
+        if(!s->is_recoverable_error) {
             /* Error is not recoverable - break with an error. */
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                           "lb.service() unrecoverable error...\n");
@@ -242,45 +236,6 @@ static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e,
     return JK_FALSE;
 }
 
-static int JK_METHOD done(jk_env_t *env, jk_endpoint_t *e)
-{
-    jk_worker_t *w;
-    int err;
-    
-    if(e==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "lb.done() NullPointerException\n" );
-        return JK_FALSE;
-    }
-
-    w=e->worker;
-
-    if( e->cPool != NULL ) 
-        e->cPool->reset(env, e->cPool);
-
-    if(e->realEndpoint!=NULL) {  
-        e->realEndpoint->done(env, e->realEndpoint);  
-    }  
-
-    if (w->endpointCache != NULL ) {
-        err=w->endpointCache->put( env, w->endpointCache, e );
-        if( err==JK_TRUE ) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "lb.done() return to pool %s\n",
-                          w->name );
-            return JK_TRUE;
-        }
-    }
-    
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "lb.done() %s\n", w->name );
-
-    e->cPool->close( env, e->cPool );
-    e->pool->close( env, e->pool );
-
-    return JK_TRUE;
-}
-
 static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
                               jk_map_t *props, jk_workerEnv_t *we)
 {
@@ -290,7 +245,7 @@ static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
     unsigned i = 0;
     char *tmp;
     
-    if(! _this ) {
+    if( _this == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "lb_worker.validate(): NullPointerException\n");
         return JK_FALSE;
@@ -328,7 +283,8 @@ static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
         char *name = _this->pool->pstrdup(env, _this->pool, worker_names[i]);
 
         _this->lb_workers[i]=
-            _this->workerEnv->createWorker( env, _this->workerEnv,  name, props );
+            _this->workerEnv->createWorker( env, _this->workerEnv,  name,
+                                            props );
         if( _this->lb_workers[i] == NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "lb.validate(): Error creating %s %s\n",
@@ -364,79 +320,6 @@ static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
     return JK_TRUE;
 }
 
-static int JK_METHOD init(jk_env_t *env, jk_worker_t *_this,
-                          jk_map_t *props, jk_workerEnv_t *we)
-{
-    /* start the connection cache */
-    int cache_sz = jk_map_getIntProp( env, props, "worker", _this->name,
-                                      "cachesize", JK_OBJCACHE_DEFAULT_SZ );
-
-    if (cache_sz > 0) {
-        int err;
-        _this->endpointCache=jk_objCache_create( env, _this->pool);
-        
-        if( _this->endpointCache != NULL ) {
-            err=_this->endpointCache->init( env, _this->endpointCache,
-                                            cache_sz );
-            if( err!= JK_TRUE ) {
-                _this->endpointCache=NULL;
-            }
-        }
-    } else {
-        _this->endpointCache=NULL;
-    }
-    
-    return JK_TRUE;
-}
-
-static int JK_METHOD get_endpoint(jk_env_t *env, jk_worker_t *_this,
-                                  jk_endpoint_t **pend)
-{
-    jk_endpoint_t *e;
-    jk_pool_t *endpointPool;
-    
-    if(_this==NULL || pend==NULL ) {        
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "lb.getEndpoint() NullPointerException\n");
-    }
-
-    if (_this->endpointCache != NULL ) {
-
-        e=_this->endpointCache->get( env, _this->endpointCache );
-        
-        if (e!=NULL) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                     "lb.getEndpoint(): Reusing endpoint\n");
-            *pend = e;
-            return JK_TRUE;
-        }
-    }
-    
-    endpointPool=_this->pool->create( env, _this->pool, HUGE_POOL_SIZE);
-    
-    e = (jk_endpoint_t *)endpointPool->calloc(env, endpointPool,
-                                              sizeof(jk_endpoint_t));
-    if(e==NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "lb_worker.getEndpoint() OutOfMemoryException\n");
-        return JK_FALSE;
-    }
-
-    e->pool = endpointPool;
-
-    e->cPool=endpointPool->create( env,endpointPool, HUGE_POOL_SIZE );
-    
-    e->worker = _this;
-    e->service = service;
-    e->done = done;
-    e->channelData = NULL;
-    *pend = e;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "lb_worker.getEndpoint()\n");
-    return JK_TRUE;
-}
-
-
 static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
 {
     int i = 0;
@@ -447,31 +330,14 @@ static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
         return JK_FALSE;
     }
 
+    /* Workers are destroyed by the workerEnv. It is possible
+       that a worker is part of more than a lb.
+    */
+    /*
     for(i = 0 ; i < w->num_of_workers ; i++) {
         w->lb_workers[i]->destroy( env, w->lb_workers[i]);
     }
-
-    if( w->endpointCache != NULL ) {
-        
-        for( i=0; i< w->endpointCache->ep_cache_sz; i++ ) {
-            jk_endpoint_t *e;
-            
-            e= w->endpointCache->get( env, w->endpointCache );
-            
-            if( e==NULL ) {
-                // we finished all endpoints in the cache
-                break;
-            }
-
-            /* Nothing else to clean up ? */
-            e->cPool->close( env, e->cPool );
-            e->pool->close( env, e->pool );
-        }
-        w->endpointCache->destroy( env, w->endpointCache );
-
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                      "lb.destroy() closed %d cached endpoints\n",i);
-    }
+    */
 
     w->pool->close(env, w->pool);    
 
@@ -505,9 +371,9 @@ int JK_METHOD jk_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
     _this->num_of_workers = 0;
     _this->worker_private = NULL;
     _this->validate       = validate;
-    _this->init           = init;
-    _this->get_endpoint   = get_endpoint;
+    _this->init           = NULL;
     _this->destroy        = destroy;
+    _this->service = service;
     
     *result=_this;
 
