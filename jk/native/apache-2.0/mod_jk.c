@@ -59,7 +59,7 @@
 /***************************************************************************
  * Description: Apache 2 plugin for Jakarta/Tomcat                         *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * 		        Henri Gomez <hgomez@slib.fr>                               *
+ *                 Henri Gomez <hgomez@slib.fr>                               *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
@@ -113,7 +113,7 @@ typedef struct {
     int  mountcopy;
     jk_map_t *uri_to_context;
 
-	char * secret_key;
+    char * secret_key;
     jk_map_t *automount;
 
     jk_uri_worker_map_t *uw_map;
@@ -128,13 +128,13 @@ typedef struct {
     char *certs_indicator;
     char *cipher_indicator;
     char *session_indicator;  /* Servlet API 2.3 requirement */
-	char *key_size_indicator; /* Servlet API 2.3 requirement */
+    char *key_size_indicator; /* Servlet API 2.3 requirement */
 
     /*
      * Environment variables support
      */
     int envvars_in_use;
-	apr_table_t * envvars;
+    apr_table_t * envvars;
 
     server_rec *s;
 } jk_server_conf_t;
@@ -148,7 +148,7 @@ struct apache_private_data {
 };
 typedef struct apache_private_data apache_private_data_t;
 
-static jk_logger_t *	 main_log = NULL;
+static jk_logger_t *     main_log = NULL;
 static jk_worker_env_t   worker_env;
 
 
@@ -190,8 +190,8 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
         if(!reason) {
             reason = "";
         }
-	    r->status = status;
-	    r->status_line = apr_psprintf(r->pool, "%d %s", status, reason);
+        r->status = status;
+        r->status_line = apr_psprintf(r->pool, "%d %s", status, reason);
 
         for(h = 0 ; h < num_of_headers ; h++) {
             if(!strcasecmp(header_names[h], "Content-type")) {
@@ -199,23 +199,23 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                 ap_content_type_tolower(tmp);
                 r->content_type = tmp;
             } else if(!strcasecmp(header_names[h], "Location")) {
-	            apr_table_set(r->headers_out, 
+                apr_table_set(r->headers_out, 
                               header_names[h], header_values[h]);
-	        } else if(!strcasecmp(header_names[h], "Content-Length")) {
-	            apr_table_set(r->headers_out, 
+            } else if(!strcasecmp(header_names[h], "Content-Length")) {
+                apr_table_set(r->headers_out, 
                               header_names[h], header_values[h]);
-	        } else if(!strcasecmp(header_names[h], "Transfer-Encoding")) {
-	            apr_table_set(r->headers_out, 
+            } else if(!strcasecmp(header_names[h], "Transfer-Encoding")) {
+                apr_table_set(r->headers_out, 
                               header_names[h], header_values[h]);
             } else if(!strcasecmp(header_names[h], "Last-Modified")) {
-	            /*
-	             * If the script gave us a Last-Modified header, we can't just
-	             * pass it on blindly because of restrictions on future values.
-	             */
-	            ap_update_mtime(r, ap_parseHTTPdate(header_values[h]));
-	            ap_set_last_modified(r);
-	        } else {	            
-	            apr_table_add(r->headers_out, 
+                /*
+                 * If the script gave us a Last-Modified header, we can't just
+                 * pass it on blindly because of restrictions on future values.
+                 */
+                ap_update_mtime(r, ap_parseHTTPdate(header_values[h]));
+                ap_set_last_modified(r);
+            } else {                
+                apr_table_add(r->headers_out, 
                               header_names[h], header_values[h]);
             }
         }
@@ -335,11 +335,11 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
 /* ========================================================================= */
 /* Log something to Jk log file then exit */
 static void jk_error_exit(const char *file, 
-						  int line, 
-						  int level, 
-						  const server_rec *s, 
-						  apr_pool_t *p, 
-						  const char *fmt, ...)
+                          int line, 
+                          int level, 
+                          const server_rec *s, 
+                          apr_pool_t *p, 
+                          const char *fmt, ...)
 {
     va_list ap;
     char *res;
@@ -374,16 +374,16 @@ static int get_content_length(request_rec *r)
 
 static int init_ws_service(apache_private_data_t *private_data,
                            jk_ws_service_t *s,
-						   jk_server_conf_t *conf)
+                           jk_server_conf_t *conf)
 {
     request_rec *r      = private_data->r;
 
     apr_port_t port;
 
-	char *ssl_temp      = NULL;
-    s->jvm_route        = NULL;	/* Used for sticky session routing */
+    char *ssl_temp      = NULL;
+    s->jvm_route        = NULL;    /* Used for sticky session routing */
 
-	/* Copy in function pointers (which are really methods) */
+    /* Copy in function pointers (which are really methods) */
     s->start_response   = ws_start_response;
     s->read             = ws_read;
     s->write            = ws_write;
@@ -398,15 +398,15 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->remote_host  = NULL_FOR_EMPTY(s->remote_host);
     s->remote_addr  = NULL_FOR_EMPTY(r->connection->remote_ip);
 
-	jk_log(main_log, JK_LOG_DEBUG, 
-		 		"agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d \n",
-				ap_get_server_port( r ),
-				ap_get_server_name( r ),
-				r->hostname,
-				r->server->server_hostname,
-				r->connection->base_server->port,
-				r->server->port
-				);
+    jk_log(main_log, JK_LOG_DEBUG, 
+                 "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d \n",
+                ap_get_server_port( r ),
+                ap_get_server_name( r ),
+                r->hostname,
+                r->server->server_hostname,
+                r->connection->base_server->port,
+                r->server->port
+                );
 
 #if 1
     /* Wrong:    s->server_name  = (char *)ap_get_server_name( r ); */
@@ -436,8 +436,8 @@ static int init_ws_service(apache_private_data_t *private_data,
         );
     */
 #else
-	s->server_name  = (char *)ap_get_server_name( r );
-	s->server_port  = r->server->port;
+    s->server_name  = (char *)ap_get_server_name( r );
+    s->server_port  = r->server->port;
 #endif
 
     s->server_software = (char *)ap_get_server_version();
@@ -462,10 +462,10 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->is_ssl       = JK_FALSE;
     s->ssl_cert     = NULL;
     s->ssl_cert_len = 0;
-    s->ssl_cipher   = NULL;		/* required by Servlet 2.3 Api, 
+    s->ssl_cipher   = NULL;        /* required by Servlet 2.3 Api, 
                                    allready in original ajp13 */
     s->ssl_session  = NULL;
-	s->ssl_key_size = -1;		/* required by Servlet 2.3 Api, added in jtc */
+    s->ssl_key_size = -1;        /* required by Servlet 2.3 Api, added in jtc */
 
     if(conf->ssl_enable || conf->envvars_in_use) {
         ap_add_common_vars(r);
@@ -482,7 +482,7 @@ static int init_ws_service(apache_private_data_t *private_data,
                 if(s->ssl_cert) {
                     s->ssl_cert_len = strlen(s->ssl_cert);
                 }
-				/* Servlet 2.3 API */
+                /* Servlet 2.3 API */
                 s->ssl_cipher   = 
                     (char *)apr_table_get(r->subprocess_env, 
                                           conf->cipher_indicator);
@@ -625,7 +625,7 @@ static const char *jk_automount_context(cmd_parms *cmd,
      * Add the new automount to the auto map.
      */
     char * old;
-	map_put(conf->automount, worker, virtualhost, (void **)&old);
+    map_put(conf->automount, worker, virtualhost, (void **)&old);
     return NULL;
 }
 
@@ -849,7 +849,7 @@ static const char *jk_add_env_var(cmd_parms *cmd,
 
     return NULL;
 }
-	
+    
 static const command_rec jk_cmds[] =
     {
     /*
@@ -886,7 +886,7 @@ static const command_rec jk_cmds[] =
     /*
      * JkLogFile & JkLogLevel specifies to where should the plugin log
      * its information and how much.
-	 * JkLogStampFormat specify the time-stamp to be used on log
+     * JkLogStampFormat specify the time-stamp to be used on log
      */
     {"JkLogFile", jk_set_log_file, NULL, RSRC_CONF, TAKE1,
      "Full path to the Jakarta Tomcat module log file"},
@@ -954,7 +954,7 @@ static int jk_handler(request_rec *r)
     jk_logger_t *xl;
     jk_server_conf_t *conf;
 
-    if(strcmp(r->handler,JK_HANDLER))	/* not for me, try next handler */
+    if(strcmp(r->handler,JK_HANDLER))    /* not for me, try next handler */
       return DECLINED;
     
     xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
@@ -1039,55 +1039,55 @@ static int jk_handler(request_rec *r)
             if(init_ws_service(&private_data, &s, conf)) {
                 jk_endpoint_t *end = NULL;
 
-		/* Use per/thread pool ( or "context" ) to reuse the 
-		   endpoint. It's a bit faster, but I don't know 
-		   how to deal with load balancing - but it's usefull for JNI
-		*/
+        /* Use per/thread pool ( or "context" ) to reuse the 
+           endpoint. It's a bit faster, but I don't know 
+           how to deal with load balancing - but it's usefull for JNI
+        */
 
 #ifdef REUSE_WORKER
-		apr_pool_t *rpool=r->pool;
-		apr_pool_t *tpool=rpool->parent->parent;
-		
-		ap_get_userdata( &end, "jk_thread_endpoint", tpool );
+        apr_pool_t *rpool=r->pool;
+        apr_pool_t *tpool=rpool->parent->parent;
+        
+        ap_get_userdata( &end, "jk_thread_endpoint", tpool );
                 if(end==NULL ) {
-		    worker->get_endpoint(worker, &end, l);
-		    ap_set_userdata( end , "jk_thread_endpoint", 
+            worker->get_endpoint(worker, &end, l);
+            ap_set_userdata( end , "jk_thread_endpoint", 
                              &jk_cleanup_endpoint,  tpool );
-		}
+        }
 #else
-		worker->get_endpoint(worker, &end, l);
+        worker->get_endpoint(worker, &end, l);
 #endif
-		{   
-		    int is_recoverable_error = JK_FALSE;
+        {   
+            int is_recoverable_error = JK_FALSE;
                     rc = end->service(end, 
                                       &s, 
                                       l, 
                                       &is_recoverable_error);
 
-			if (s.content_read < s.content_length) {
-			/* Toss all further characters left to read fm client */
-				char *buff = apr_palloc(r->pool, 2048);
-				if (buff != NULL) {
-					int rd;
-					while ((rd = ap_get_client_block(r, buff, 2048)) > 0) {
-						s.content_read += rd;
-					}
- 				}
-			}
+            if (s.content_read < s.content_length) {
+            /* Toss all further characters left to read fm client */
+                char *buff = apr_palloc(r->pool, 2048);
+                if (buff != NULL) {
+                    int rd;
+                    while ((rd = ap_get_client_block(r, buff, 2048)) > 0) {
+                        s.content_read += rd;
+                    }
+                 }
+            }
                                                                             
-#ifndef REUSE_WORKER		    
-		    end->done(&end, l); 
+#ifndef REUSE_WORKER            
+            end->done(&end, l); 
 #endif
                 }
             }
 
             if(rc) {
-                return OK;	/* NOT r->status, even if it has changed. */
+                return OK;    /* NOT r->status, even if it has changed. */
             }
         }
     }
 
-	return DECLINED;
+    return DECLINED;
 }
 
 /** Create default jk_config. XXX This is mostly server-independent,
@@ -1226,7 +1226,7 @@ static void *merge_jk_config(apr_pool_t *p,
 /** Standard apache callback, initialize jk.
  */
 static void jk_child_init(apr_pool_t *pconf, 
-			  server_rec *s)
+              server_rec *s)
 {
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
@@ -1345,11 +1345,11 @@ static void jk_register_hooks(apr_pool_t *p)
 module AP_MODULE_DECLARE_DATA jk_module =
 {
     STANDARD20_MODULE_STUFF,
-    NULL,	            /* dir config creater */
-    NULL,	            /* dir merger --- default is to override */
-    create_jk_config,	/* server config */
-    merge_jk_config,	/* merge server config */
-    jk_cmds,			/* command ap_table_t */
-    jk_register_hooks	/* register hooks */
+    NULL,                /* dir config creater */
+    NULL,                /* dir merger --- default is to override */
+    create_jk_config,    /* server config */
+    merge_jk_config,    /* merge server config */
+    jk_cmds,            /* command ap_table_t */
+    jk_register_hooks    /* register hooks */
 };
 
