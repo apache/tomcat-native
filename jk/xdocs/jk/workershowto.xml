@@ -254,6 +254,39 @@ with the extra cost you need to reopen the socket next time a request be forward
 This property is very similar to <b>cache_timeout</b> but works also in non-cache mode.
 </p>
 
+<p>
+<b>connect_timeout</b> property told webserver to send a PING request on ajp13 connection after 
+connection is established. The parameter is the delay in milliseconds to wait for the PONG reply.
+</p>
+<p>
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13 
+ping/pong support which has been implemented on Tomcat <b>3.3.2+, 4.1.28+ and 5.0.13+</b>.
+Disabled by default.
+</p>
+
+<p>
+<b>prepost_timeout</b> property told webserver to send a PING request on ajp13 connection before 
+forwarding to it a request. The parameter is the delay in milliseconds to wait for the PONG reply.
+</p>
+<p>
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13 
+ping/pong support which has been implemented on <b>Tomcat 3.3.2+, 4.1.28+ and 5.0.13+</b>.
+Disabled by default.
+</p>
+
+<p>
+<b>reply_timeout</b> property told webserver to wait some time for reply to a forwarded request
+before considering the remote tomcat is dead and eventually switch to another tomcat in a cluster
+group. By default webserver will wait forever which could be an issue for you.
+The parameter is the number of milliseconds to wait for reply, so adjust it carrefully if you 
+have long running servlets.
+</p>
+<p>
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and works on all
+servlet engines supporting ajp13.
+Disabled by default.
+</p>
+
 <screen>
 <note>worker "worker2" will talk to Tomcat listening on machine www2.x.com at port 8009 using 3.5 lb factor</note>
 <read>worker.worker2.host=www2.x.com</read>
