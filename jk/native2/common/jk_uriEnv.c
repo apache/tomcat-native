@@ -182,12 +182,13 @@ static int jk2_uriEnv_parseName(jk_env_t *env, jk_uriEnv_t *uriEnv,
 
 static char *getAttInfo[] =
     { "host", "uri", "group", "context", "inheritGlobals",
-    "match_type",
-    "servlet", "timing", "aliases", "path", NULL
+    "match_type", "servlet", "timing", "aliases", "debug", "disabled",
+    NULL
 };
 static char *setAttInfo[] =
     { "host", "uri", "group", "context", "inheritGlobals",
-    "servlet", "timing", "alias", "path", NULL
+    "servlet", "timing", "alias", "path", "debug", "disabled", 
+    NULL
 };
 
 static char *matchTypes[] = {
@@ -242,7 +243,12 @@ static void *JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
     else if (strcmp("inheritGlobals", name) == 0) {
         return jk2_env_itoa(env, uriEnv->inherit_globals);
     }
-    return NULL;
+    else if (strcmp(name, "debug") == 0) {
+        return jk2_env_itoa(env, bean->debug);
+    }
+    else if (strcmp(name, "disabled") == 0) {
+        return jk2_env_itoa(env, bean->disabled);
+    }    return NULL;
 }
 
 
@@ -297,27 +303,31 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
     else if (strcmp("inheritGlobals", name) == 0) {
         uriEnv->inherit_globals = atoi(val);
     }
-    else {
+    else if (strcmp("worker", name) == 0) {
         /* OLD - DEPRECATED */
-        if (strcmp("worker", name) == 0) {
-            uriEnv->workerName = val;
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "uriEnv.setAttribute() the %s directive is deprecated. Use 'group' instead.\n",
-                          name);
-        }
-        else if (strcmp("uri", name) == 0) {
-            jk2_uriEnv_parseName(env, uriEnv, val);
-        }
-        else if (strcmp("name", name) == 0) {
-            jk2_uriEnv_parseName(env, uriEnv, val);
-        }
-        else if (strcmp("vhost", name) == 0) {
-            if (val == NULL)
-                uriEnv->virtual = NULL;
-            else
-                uriEnv->virtual =
-                    uriEnv->pool->pstrdup(env, uriEnv->pool, val);
-        }
+       
+		uriEnv->workerName = val;
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "uriEnv.setAttribute() the %s directive is deprecated. Use 'group' instead.\n",
+                      name);
+    }
+    else if (strcmp("uri", name) == 0) {
+        jk2_uriEnv_parseName(env, uriEnv, val);
+    }
+    else if (strcmp("name", name) == 0) {
+        jk2_uriEnv_parseName(env, uriEnv, val);
+    }
+    else if (strcmp("vhost", name) == 0) {
+        if (val == NULL)
+            uriEnv->virtual = NULL;
+         else
+            uriEnv->virtual = uriEnv->pool->pstrdup(env, uriEnv->pool, val);
+    }
+    else if (strcmp(name, "debug") == 0) {
+        mbean->debug = atoi(val);
+    }
+    else if (strcmp(name, "disabled") == 0) {
+        mbean->disabled = atoi(val);
     }
     return JK_OK;
 }
