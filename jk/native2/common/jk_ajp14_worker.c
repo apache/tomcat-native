@@ -278,6 +278,7 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
 {
     int err;
     int attempt;
+    int hasPost=JK_FALSE;
 
     if( ( e== NULL ) 
 	|| ( s == NULL )
@@ -328,9 +329,11 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
                           "ajp14.service() Error receiving initial post data\n");
             return JK_FALSE;
         }
+        hasPost=JK_TRUE;
     }
         
-    env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ajp14.service() %s\n", e->worker->name);
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "ajp14.service() %s\n", e->worker->name);
 
     /*
      * Try to send the request on a valid endpoint. If one endpoint
@@ -342,6 +345,7 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
     for(attempt = 0 ; attempt < e->worker->connect_retry_attempts ; attempt++) {
         jk_channel_t *channel=e->worker->channel;
 
+        /* e->request->dump(env, e->request, "Before sending "); */
         err=e->request->send( env, e->request, e);
 
 	if (err==JK_TRUE ) {
@@ -381,8 +385,9 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
     /* We should have a channel now, send the post data */
     *is_recoverable_error = JK_TRUE;
     e->recoverable = JK_TRUE;
-    
-    err= e->post->send( env, e->post, e );
+
+    if( hasPost==JK_TRUE)
+        err= e->post->send( env, e->post, e );
 
     err = e->worker->workerEnv->processCallbacks(env, e->worker->workerEnv,
                                                  e, s);
@@ -398,10 +403,12 @@ jk_worker_ajp14_service(jk_env_t *env, jk_endpoint_t   *e,
                       err);
         return JK_FALSE;
     }
-    
-    env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                  "ajp14.service() ajpGetReply recoverable error %d\n", err);
 
+    if( err != JK_TRUE ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp14.service() ajpGetReply recoverable error %d\n", err);
+    }
+    
     return err;
 }
 
@@ -413,25 +420,14 @@ jk_worker_ajp14_done(jk_env_t *env, jk_endpoint_t *e)
     
     w= e->worker;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.done() before reset pool %p\n",
-                  e->cPool );
     if( e->cPool != NULL ) 
         e->cPool->reset(env, e->cPool);
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.done() after reset pool %p\n",
-                  e->cPool );
-
     if (w->endpointCache != NULL ) {
         int err=0;
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "ajp14.done() before return to pool %s\n",
-                      w->name );
-        
         err=w->endpointCache->put( env, w->endpointCache, e );
         if( err==JK_TRUE ) {
             env->l->jkLog(env, env->l, JK_LOG_INFO, "ajp14.done() return to pool %s\n",
-                     w->name );
+                          w->name );
             return JK_TRUE;
         }
     }

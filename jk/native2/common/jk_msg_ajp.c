@@ -82,22 +82,31 @@ static void jk_msg_ajp_dump(jk_env_t *env, struct jk_msg *_this,
 {
     int i=0;
     env->l->jkLog( env, env->l, JK_LOG_INFO,
-                "%s pos=%d len=%d max=%d "
-                "%x %x %x %x - %x %x %x %x -"
-                "%x %x %x %x - %x %x %x %x\n",
-                err, _this->pos, _this->len, _this->maxlen,  
+                   "%s pos=%d len=%d max=%d ",
+                err, _this->pos, _this->len, _this->maxlen );
+    
+    env->l->jkLog( env, env->l, JK_LOG_INFO,
+                "%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x\n", 
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++]);
-    
-    i = _this->pos - 4;
-    if(i < 0) {
-        i=0;
-    }
-    
+    i-=16;
     env->l->jkLog( env, env->l, JK_LOG_INFO,
-                "       %x %x %x %x - %x %x %x %x --- %x %x %x %x - %x %x %x %x\n", 
+                "%c  %c  %c  %c: %c  %c  %c  %c: %c  %c  %c  %c: %c  %c  %c  %c\n", 
+                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
+                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
+                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
+                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++]);
+    env->l->jkLog( env, env->l, JK_LOG_INFO,
+                "%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x\n", 
+                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
+                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
+                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
+                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++]);
+    i-=16;
+    env->l->jkLog( env, env->l, JK_LOG_INFO,
+                "%c  %c  %c  %c: %c  %c  %c  %c: %c  %c  %c  %c: %c  %c  %c  %c\n", 
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
@@ -180,7 +189,7 @@ static int jk_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg,
     int len;
 
     if(!param) {
-        msg->appendInt( env, msg, 0xFFFF );
+         msg->appendInt( env, msg, 0xFFFF );
         return 0; 
     }
 
@@ -334,7 +343,9 @@ static int jk_msg_ajp_send(jk_env_t *env, jk_msg_t *msg,
     jk_msg_ajp_end(env, msg);
 
     /* jk_msg_ajp_dump(l, JK_LOG_DEBUG, "sending to ajp13", msg); */
-
+    env->l->jkLog( env, env->l, JK_LOG_INFO,
+                   "msgAjp.send() %d\n", msg->len );
+    
     err=channel->send( env, channel, ae, 
                        msg->buf, msg->len );
     

@@ -180,7 +180,7 @@ int jk_logger_apache2_factory(jk_env_t *env,
     if(l==NULL ) {
         return JK_FALSE;
     }
-
+    
     l->log = jk_logger_apache2_log;
     l->logger_private = NULL;
     l->open =jk_logger_apache2_open;

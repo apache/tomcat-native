@@ -296,6 +296,8 @@ static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
             /* we just can't recover, unset recover flag */
             return JK_FALSE;
         }
+
+        /* e->reply->dump(env, e->reply, "Received ");  */
         
         code = (int)e->reply->getByte(env, e->reply);
         if( code < maxHandler ) {
@@ -309,7 +311,7 @@ static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
             return JK_FALSE;
         }
         
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "ajp14.dispath() Calling %d %s\n", handler->messageId,
                       handler->name);
         

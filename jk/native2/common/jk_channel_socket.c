@@ -435,13 +435,13 @@ int JK_METHOD jk_channel_socket_factory(jk_env_t *env,
     _this->_privatePtr= (jk_channel_socket_private_t *)
 	pool->calloc( env, pool, sizeof( jk_channel_socket_private_t));
 
-    _this->recv= &jk_channel_socket_recv; 
-    _this->send= &jk_channel_socket_send; 
-    _this->init= &jk_channel_socket_init; 
-    _this->open= &jk_channel_socket_open; 
-    _this->close= &jk_channel_socket_close; 
-    _this->getProperty= &jk_channel_socket_getProperty; 
-    _this->setProperty= &jk_channel_socket_setProperty; 
+    _this->recv= jk_channel_socket_recv; 
+    _this->send= jk_channel_socket_send; 
+    _this->init= jk_channel_socket_init; 
+    _this->open= jk_channel_socket_open; 
+    _this->close= jk_channel_socket_close; 
+    _this->getProperty= jk_channel_socket_getProperty; 
+    _this->setProperty= jk_channel_socket_setProperty; 
 
     _this->supportedProperties=( char ** )pool->alloc( env, pool,
                                                        4 * sizeof( char * ));

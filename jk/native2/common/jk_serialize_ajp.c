@@ -176,9 +176,6 @@ int jk_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     int i;
     int headerCount;
 
-    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                  "Into ajp_marshal_into_msgb\n");
-
     if (!jk_requtil_getMethodId(env, s->method, &method)) { 
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Error ajp_marshal_into_msgb - No such method %s\n",
@@ -329,7 +326,9 @@ int jk_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     }
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "handle.request() request serialized\n");
+                  "serialize.request() serialized %s\n", s->req_uri);
+
+    /*  msg->dump( env, msg, "Dump: " ); */
     return JK_TRUE;
 }
 

@@ -214,8 +214,8 @@ static int JK_METHOD jk_service_apache2_write(jk_env_t *env, jk_ws_service_t *s,
             char *bb=(char *)b;
             
             if(!s->response_started) {
-                env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                              "Write without start, starting with defaults\n");
+                env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                              "service.write() default head\n");
                 if(!s->head(env, s)) {
                     return JK_FALSE;
                 }
@@ -225,8 +225,8 @@ static int JK_METHOD jk_service_apache2_write(jk_env_t *env, jk_ws_service_t *s,
             while( ll > 0 ) {
                 unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
                 r = ap_rwrite((const char *)bb, toSend, s->ws_private );
-                env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                              "writing %ld (%ld) out of %ld \n",toSend, r, ll );
+                env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                              "service.write()  %ld (%ld) out of %ld \n",toSend, r, ll );
                 ll-=CHUNK_SIZE;
                 bb+=CHUNK_SIZE;
                 

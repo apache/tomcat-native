@@ -179,7 +179,9 @@ static const char *jk_set_worker(cmd_parms *cmd, void *per_dir,
     
     uriEnv->workerEnv=workerEnv;
     
-    fprintf(stderr, "XXX Set worker %p %s\n", uriEnv, workerName );
+    fprintf(stderr, "XXX Set worker %p %s %s dir=%s args=%s\n",
+            uriEnv, workerName, cmd->path, cmd->directive->directive,
+            cmd->directive->args);
 
     return NULL;
 }
@@ -325,11 +327,22 @@ static const char *jk_set_log_level(cmd_parms *cmd,
                                     const char *log_level)
 {
     server_rec *s = cmd->server;
+    jk_env_t *env;
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    workerEnv->init_data->put( NULL, workerEnv->init_data, "logger.file.level",
+    env=workerEnv->globalEnv;
+    
+    workerEnv->init_data->put( env, workerEnv->init_data, "logger.file.level",
                                ap_pstrdup(cmd->pool, log_level), NULL);
+
+    if(0 == strcasecmp(log_level, JK_LOG_INFO_VERB)) {
+        env->l->level=JK_LOG_INFO_LEVEL;
+    }
+    if(0 == strcasecmp(log_level, JK_LOG_DEBUG_VERB)) {
+        env->l->level=JK_LOG_DEBUG_LEVEL;
+    }
+    
     return NULL;
 }
 
@@ -1039,7 +1052,6 @@ static int jk_handler(request_rec *r)
     worker->get_endpoint(env, worker, &end);
 
     {
-        int rc = JK_FALSE;
         jk_ws_service_t sOnStack;
         jk_ws_service_t *s=&sOnStack;
         int is_recoverable_error = JK_FALSE;
@@ -1108,8 +1120,8 @@ static int jk_translate(request_rec *r)
         }
 
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "PerDir mapping %p %p  %s\n",
-                      uriEnv->webapp->workerName);
+                      "PerDir mapping  %s=%s\n",
+                      r->uri, uriEnv->webapp->workerName);
         
         ap_set_module_config( r->request_config, &jk_module, uriEnv );        
         r->handler=JK_HANDLER;
