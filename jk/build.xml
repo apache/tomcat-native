@@ -13,6 +13,17 @@
     <property name="test.runner" value="junit.textui.TestRunner"/>
     <property name="test.entry" value="org.apache.ajp.test.TestAll"/>
 
+    <property name="optimize" value="off" />
+    <property name="debug" value="on" />
+
+    <!-- default locations -->
+    <property name="tomcat-util.jar" 
+	      location="../util/build/lib/tomcat-util.jar" />
+    <property name="tomcat33.src" 
+	      location="../../jakarta-tomcat" />
+    <property name="tomcat33.home" 
+	      location="${tomcat33.src}/build/tomcat" />
+
     <path id="test.classpath">
         <pathelement location="${jk.build}/classes"/>
 	<pathelement location="${tomcat-util.jar}"/>
@@ -26,6 +37,15 @@
 	<pathelement location="${junit.jar}"/>
     </path>
 
+    <path id="build-tomcat33.classpath">
+	<pathelement location="${tomcat-util.jar}"/>
+        <pathelement location="${tomcat33.home}/lib/common/servlet.jar"/>
+        <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
+        <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
+        <pathelement 
+           location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+    </path>
+
     <target name="build-prepare">
         <mkdir dir="${jk.build}"/>
 	<mkdir dir="${jk.build}/classes"/>
@@ -37,8 +57,8 @@
         <javac srcdir="java"
 	       destdir="${jk.build}/classes"
 	       deprecation="on"
-	       debug="on"
-	       optimize="off"
+	       debug="${debug}"
+	       optimize="${optimize}"
 	       verbose="off"
 	       excludes="**/CVS/**">
 	    <exclude name="org/apache/ajp/tomcat4/**" if="tomcat4.skip"/>
@@ -89,4 +109,36 @@
     <target name="clean">
         <delete dir="${jk.build}"/>
     </target>
+
+  <!-- ==================== Experimental tomcat33 build ================= -->
+
+  <target name="build-tomcat" depends="build-prepare" >
+    <ant dir="../util" antfile="../util/build.xml"/>
+    <javac srcdir="java"
+	   destdir="${jk.build}/classes"
+	   deprecation="on"
+	   debug="${debug}"
+	   optimize="${optimize}"
+	   verbose="off"
+	   excludes="**/CVS/**">
+      <exclude name="org/apache/ajp/tomcat4/**" />
+      <exclude name="org/apache/ajp/test/**" />
+      <classpath refid="build-tomcat33.classpath"/>
+    </javac>
+    <!-- Copy static resource files -->
+    <copy todir="${jk.build}/classes">
+      <fileset dir="java">
+	<include name="**/*.properties"/>
+      </fileset>
+    </copy>
+    
+    <jar jarfile="${jk.build}/lib/tc33_ajp.jar"
+	 basedir="${jk.build}/classes"
+	 excludes="org/apache/ajp/test" />
+    
+    <copy todir="${tomcat33.home}/lib/container" 
+	  file="build/lib/tc33_ajp.jar" />
+  </target>
+
+
 </project>
