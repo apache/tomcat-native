@@ -58,47 +58,91 @@
 # @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 # @version $Id$
 
-.SUFFIXES: .c .lo
+.SUFFIXES: .c .o
 
-# Values imported from @APRDIR@/APRVARS
-CC =             @CC@
-CPP =            @CPP@
-SHELL =          @SHELL@
-LIBTOOL =        @LIBTOOL@
-EXTRA_CFLAGS =   @EXTRA_CFLAGS@
-EXTRA_CPPFLAGS = @EXTRA_CPPFLAGS@
-EXTRA_LDFLAGS =  @EXTRA_LDFLAGS@
-EXTRA_LIBS =     @EXTRA_LIBS@
-EXTRA_INCLUDES = @EXTRA_INCLUDES@
-LIBTOOL_LIBS =   @LIBTOOL_LIBS@
+# -------------------------------------------------------------------------
+# Programs discovered by "configure" during initialization
+# -------------------------------------------------------------------------
 
-# Default programs discovered by configure
-CAT =            @CAT@
-ECHO =           @ECHO@
-GREP =           @GREP@
-RM =             @RM@
-SED =            @SED@
-TEST =           @TEST@
-TRUE =           @TRUE@
+TEST = @TEST@
+TRUE = @TRUE@
+ECHO = @ECHO@
+GREP = @GREP@
+CAT = @CAT@
+SED = @SED@
+RM = @RM@
 
-# Java values discovered by configure
-JAVA_HOME =      @JAVA_HOME@
-JAR =            @JAR@
-JAVAC =          @JAVAC@
-JAVACFLAGS =     @JAVACFLAGS@
-JAVACPATH = 	 @TOMCATDIR@/common/lib/servlet.jar:@TOMCATDIR@/server/lib/catalina.jar
+# -------------------------------------------------------------------------
+# Compilation settings
+# -------------------------------------------------------------------------
 
-# Compilation flags set by configure
-CFLAGS =         @CFLAGS@
-CPPFLAGS =       @CPPFLAGS@
-LTFLAGS =        @LTFLAGS@
-DEBUG = 	 @DEBUG@
+# The target module to build
+MODULE = @MODULE@
+# The system which built this binary
+SYSTEM = @SYSTEM@
+# Wether to build debug information or not
+DEBUG = @DEBUG@
+# The WebApp sources directory
+SRCDIR = @SRCDIR@
+# The compilation (this) directory
+TGTDIR = @TGTDIR@
+# The directory of a Tomcat 4.0 binary distribution
+TC4DIR = @TC4DIR@
 
-# Compile a C source using APR's libtool
-.c.lo: @SRCDIR@/Makedefs
-	@echo Compiling $<
-	@$(SHELL) $(LIBTOOL) $(LTFLAGS) --mode=compile \
-		$(CC) \
-		$(CFLAGS) $(EXTRA_CFLAGS) \
-		$(CPPFLAGS) $(EXTRA_CPPFLAGS) \
-		-c $< -o $@
+# -------------------------------------------------------------------------
+# APR library values
+# -------------------------------------------------------------------------
+
+# The APR source directory (if needed)
+APR_SRCDIR = @APR_SRCDIR@
+# Where libapr.a resides
+APR_LIBDIR = @APR_LIBDIR@
+# Where APR include files are located
+APR_INCDIR = @APR_INCDIR@
+# Location of APRVARS
+APR_VARFIL = @APR_VARFIL@
+
+# -------------------------------------------------------------------------
+# C Compiler settings
+# -------------------------------------------------------------------------
+
+# Library archiver
+AR = @AR@
+# C compiler
+CC = @CC@
+# C macro pre-processor
+CPP = @CPP@
+# Library updater
+RANLIB = @RANLIB@
+# C compilation flags
+CFLAGS = @CFLAGS@
+# C macro pre-processor flags
+CPPFLAGS = @CPPFLAGS@
+
+# -------------------------------------------------------------------------
+# Java Compiler settings
+# -------------------------------------------------------------------------
+
+# The JVM home directory
+JAVA_HOME = @JAVA_HOME@
+# Jar archiver
+JAR = @JAR@
+# Java compiler
+JAVAC = @JAVAC@
+# JavaDoc documentation tool
+JAVADOC = @JAVADOC@
+# Java compilation flags
+JAVACFLAGS = @JAVACFLAGS@
+# Java Class Path
+CLASSPATH = @CLASSPATH@
+
+# -------------------------------------------------------------------------
+# C-Compilation default setting
+# -------------------------------------------------------------------------
+.c.o:
+	@$(ECHO) "Compiling \"$<\""
+	@$(CC) $(CFLAGS) $(CPPFLAGS) \
+		$(APR_CFLAGS) $(APR_CPPFLAGS) \
+		-I$(APR_INCDIR) -I$(SRCDIR)/include \
+		-c "$<" -o "$@"
+
