@@ -38,8 +38,9 @@ void ajp14_compute_md5(jk_login_service_t *s, jk_logger_t *l)
     jk_md5((const unsigned char *)s->entropy,
            (const unsigned char *)s->secret_key, s->computed_key);
 
-    jk_log(l, JK_LOG_DEBUG, "(%s/%s) -> (%s)\n",
-           s->entropy, s->secret_key, s->computed_key);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG, "(%s/%s) -> (%s)\n",
+               s->entropy, s->secret_key, s->computed_key);
     JK_TRACE_EXIT(l);
 }
 
@@ -663,9 +664,10 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
 
         ci->status = jk_b_get_int(msg);
 
-        jk_log(l, JK_LOG_DEBUG,
-               "updated context %s to state %d\n",
-               cname, ci->status);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "updated context %s to state %d\n",
+                   cname, ci->status);
     }
 
     JK_TRACE_EXIT(l);

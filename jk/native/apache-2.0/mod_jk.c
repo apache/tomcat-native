@@ -345,8 +345,9 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
             char *bb = (char *)b;
 
             if (!p->response_started) {
-                jk_log(main_log, JK_LOG_DEBUG,
-                       "Write without start, starting with defaults\n");
+                if (JK_IS_DEBUG_LEVEL(main_log))
+                    jk_log(main_log, JK_LOG_DEBUG,
+                           "Write without start, starting with defaults\n");
                 if (!s->start_response(s, 200, NULL, NULL, NULL, 0)) {
                     return JK_FALSE;
                 }
@@ -474,15 +475,16 @@ static int init_ws_service(apache_private_data_t * private_data,
     /* Dump all connection param so we can trace what's going to
      * the remote tomcat
      */
-    jk_log(conf->log, JK_LOG_DEBUG,
-           "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d claport=%d\n",
-           ap_get_server_port(r),
-           ap_get_server_name(r) != NULL ? ap_get_server_name(r) : "",
-           r->hostname != NULL ? r->hostname : "",
-           r->server->server_hostname !=
-           NULL ? r->server->server_hostname : "",
-           r->connection->base_server->port, r->server->port,
-           r->connection->local_addr->port);
+    if (JK_IS_DEBUG_LEVEL(conf->log))
+        jk_log(conf->log, JK_LOG_DEBUG,
+               "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d claport=%d\n",
+               ap_get_server_port(r),
+               ap_get_server_name(r) != NULL ? ap_get_server_name(r) : "",
+               r->hostname != NULL ? r->hostname : "",
+               r->server->server_hostname !=
+               NULL ? r->server->server_hostname : "",
+               r->connection->base_server->port, r->server->port,
+               r->connection->local_addr->port);
 
     /* get server name */
     s->server_name = (char *)ap_get_server_name(r);
@@ -1692,25 +1694,28 @@ static int jk_handler(request_rec * r)
               I'm not sure how ). We also have a manual config directive that
               explicitely give control to us. */
             worker_name = worker_env.first_worker;
-            jk_log(xconf->log, JK_LOG_DEBUG,
-                   "Manual configuration for %s %s %d\n",
-                   r->uri, worker_env.first_worker,
-                   worker_env.num_of_workers);
+            if (JK_IS_DEBUG_LEVEL(xconf->log))
+                jk_log(xconf->log, JK_LOG_DEBUG,
+                       "Manual configuration for %s %s %d\n",
+                       r->uri, worker_env.first_worker,
+                       worker_env.num_of_workers);
         }
         else {
             char *uri = apr_pstrdup(r->pool, r->uri);
             worker_name = map_uri_to_worker(xconf->uw_map, uri, xconf->log);
             if (worker_name == NULL)
                 worker_name = worker_env.first_worker;
-            jk_log(xconf->log, JK_LOG_DEBUG,
-                   "Manual configuration for %s %d\n",
-                   r->uri, worker_env.first_worker);
+            if (JK_IS_DEBUG_LEVEL(xconf->log))
+                jk_log(xconf->log, JK_LOG_DEBUG,
+                       "Manual configuration for %s %d\n",
+                       r->uri, worker_env.first_worker);
         }
     }
 
-    jk_log(xconf->log, JK_LOG_DEBUG, "Into handler %s worker=%s"
-           " r->proxyreq=%d\n",
-           r->handler, worker_name, r->proxyreq);
+    if (JK_IS_DEBUG_LEVEL(xconf->log))
+       jk_log(xconf->log, JK_LOG_DEBUG, "Into handler %s worker=%s"
+              " r->proxyreq=%d\n",
+              r->handler, worker_name, r->proxyreq);
 
     conf = (jk_server_conf_t *) ap_get_module_config(r->server->module_config,
                                                      &jk_module);
@@ -1852,9 +1857,10 @@ static int jk_handler(request_rec * r)
                     JK_TRACE_EXIT(xconf->log);
                     return r->status;
                 }
-                jk_log(xconf->log, JK_LOG_DEBUG, "Service finished"
-                       " with status=%d for worker=%s\n",
-                       r->status, worker_name);
+                if (JK_IS_DEBUG_LEVEL(xconf->log))
+                    jk_log(xconf->log, JK_LOG_DEBUG, "Service finished"
+                           " with status=%d for worker=%s\n",
+                           r->status, worker_name);
                 JK_TRACE_EXIT(xconf->log);
                 return OK;      /* NOT r->status, even if it has changed. */
             }
@@ -2192,7 +2198,8 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 #endif
     if (mpm_threads > 0)
         jk_set_worker_def_cache_size(mpm_threads);
-    jk_log(conf->log, JK_LOG_DEBUG, "Initialized %s\n", JK_EXPOSED_VERSION);
+    if (JK_IS_DEBUG_LEVEL(conf->log))
+        jk_log(conf->log, JK_LOG_DEBUG, "Initialized %s\n", JK_EXPOSED_VERSION);
     JK_TRACE_EXIT(conf->log);
 }
 
@@ -2302,15 +2309,17 @@ static int jk_translate(request_rec * r)
                 /* Somebody already set the handler, probably manual config
                  * or "native" configuration, no need for extra overhead
                  */
-                jk_log(conf->log, JK_LOG_DEBUG,
-                       "Manually mapped, no need to call uri_to_worker\n");
+                if (JK_IS_DEBUG_LEVEL(conf->log))
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                           "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
 
             if (apr_table_get(r->subprocess_env, "no-jk")) {
-                jk_log(conf->log, JK_LOG_DEBUG,
-                       "Into translate no-jk env var detected for uri=%s, declined\n",
-                       r->uri);
+                if (JK_IS_DEBUG_LEVEL(conf->log))
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                           "Into translate no-jk env var detected for uri=%s, declined\n",
+                           r->uri);
 
                 return DECLINED;
             }
@@ -2342,9 +2351,10 @@ static int jk_translate(request_rec * r)
                     }
                 }
                 if (finfo.filetype != APR_REG) {
-                    jk_log(conf->log, JK_LOG_DEBUG,
-                           "JkAutoAlias, no DirectoryIndex file for URI %s\n",
-                           r->uri);
+                    if (JK_IS_DEBUG_LEVEL(conf->log))
+                        jk_log(conf->log, JK_LOG_DEBUG,
+                               "JkAutoAlias, no DirectoryIndex file for URI %s\n",
+                               r->uri);
                     return DECLINED;
                 }
             }
@@ -2370,9 +2380,10 @@ static int jk_translate(request_rec * r)
                 char *clean_uri = apr_pstrdup(r->pool, r->uri);
                 ap_no2slash(clean_uri);
                 /* Automatically map uri to a context static file */
-                jk_log(conf->log, JK_LOG_DEBUG,
-                       "mod_jk::jk_translate, check alias_dir: %s\n",
-                       conf->alias_dir);
+                if (JK_IS_DEBUG_LEVEL(conf->log))
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                           "mod_jk::jk_translate, check alias_dir: %s\n",
+                           conf->alias_dir);
                 if (strlen(clean_uri) > 1) {
                     /* Get the context directory name */
                     char *context_dir = NULL;
@@ -2395,14 +2406,16 @@ static int jk_translate(request_rec * r)
                         }
                         /* Deny access to WEB-INF and META-INF directories */
                         if (child_dir != NULL) {
-                            jk_log(conf->log, JK_LOG_DEBUG,
-                                   "mod_jk::jk_translate, AutoAlias child_dir: %s\n",
-                                   child_dir);
+                            if (JK_IS_DEBUG_LEVEL(conf->log))
+                                jk_log(conf->log, JK_LOG_DEBUG,
+                                       "mod_jk::jk_translate, AutoAlias child_dir: %s\n",
+                                       child_dir);
                             if (!strcasecmp(child_dir, "WEB-INF")
                                 || !strcasecmp(child_dir, "META-INF")) {
-                                jk_log(conf->log, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s\n",
-                                       r->uri);
+                                if (JK_IS_DEBUG_LEVEL(conf->log))
+                                    jk_log(conf->log, JK_LOG_DEBUG,
+                                           "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s\n",
+                                           r->uri);
                                 return HTTP_FORBIDDEN;
                             }
                         }
@@ -2428,9 +2441,10 @@ static int jk_translate(request_rec * r)
                                             NULL);
                             /* Add code to verify real path ap_os_canonical_name */
                             if (ret != NULL) {
-                                jk_log(conf->log, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias OK for file: %s\n",
-                                       ret);
+                                if (JK_IS_DEBUG_LEVEL(conf->log))
+                                    jk_log(conf->log, JK_LOG_DEBUG,
+                                           "mod_jk::jk_translate, AutoAlias OK for file: %s\n",
+                                           ret);
                                 r->filename = ret;
                                 return OK;
                             }
@@ -2441,9 +2455,10 @@ static int jk_translate(request_rec * r)
                             if (size > 4
                                 && !strcasecmp(context_dir + (size - 4),
                                                ".war")) {
-                                jk_log(conf->log, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s\n",
-                                       r->uri);
+                                if (JK_IS_DEBUG_LEVEL(conf->log))
+                                    jk_log(conf->log, JK_LOG_DEBUG,
+                                           "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s\n",
+                                           r->uri);
                                 return HTTP_FORBIDDEN;
                             }
                         }
@@ -2474,15 +2489,17 @@ static int jk_map_to_storage(request_rec * r)
                 /* Somebody already set the handler, probably manual config
                  * or "native" configuration, no need for extra overhead
                  */
-                jk_log(conf->log, JK_LOG_DEBUG,
-                       "Manually mapped, no need to call uri_to_worker\n");
+                if (JK_IS_DEBUG_LEVEL(conf->log))
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                           "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
 
             if (apr_table_get(r->subprocess_env, "no-jk")) {
-                jk_log(conf->log, JK_LOG_DEBUG,
-                       "Into map_to_storage no-jk env var detected for uri=%s, declined\n",
-                       r->uri);
+                if (JK_IS_DEBUG_LEVEL(conf->log))
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                           "Into map_to_storage no-jk env var detected for uri=%s, declined\n",
+                           r->uri);
 
                 return DECLINED;
             }

@@ -547,7 +547,8 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t *msg,
         return JK_FALSE;
     }
 
-    jk_log(l, JK_LOG_DEBUG, "ajp marshaling done\n");
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG, "ajp marshaling done\n");
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -601,15 +602,17 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
 #endif
     }
 
-    jk_log(l, JK_LOG_DEBUG,
-           "status = %d\n", d->status);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "status = %d\n", d->status);
 
     d->num_headers = jk_b_get_int(msg);
     d->header_names = d->header_values = NULL;
 
-    jk_log(l, JK_LOG_DEBUG,
-           "Number of headers is = %d\n",
-           d->num_headers);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "Number of headers is = %d\n",
+               d->num_headers);
 
     if (d->num_headers) {
         d->header_names = jk_pool_alloc(p, sizeof(char *) * d->num_headers);
@@ -662,9 +665,10 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
                                     strlen(d->header_values[i]));
 #endif
 
-                jk_log(l, JK_LOG_DEBUG,
-                       "Header[%d] [%s] = [%s]\n",
-                       i, d->header_names[i], d->header_values[i]);
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Header[%d] [%s] = [%s]\n",
+                           i, d->header_names[i], d->header_values[i]);
             }
         }
     }
@@ -693,8 +697,9 @@ void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 
     if (ae->sd > 0) {
         jk_close_socket(ae->sd);
-        jk_log(l, JK_LOG_DEBUG,
-               "closed sd = %d\n", ae->sd);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "closed sd = %d\n", ae->sd);
     }
 
     jk_close_pool(&(ae->pool));
@@ -874,11 +879,13 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     JK_TRACE_ENTER(l); 
     if (ae->proto == AJP13_PROTO) {
         jk_b_end(msg, AJP13_WS_HEADER);
-        jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp13", msg);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp13", msg);
     }
     else if (ae->proto == AJP14_PROTO) {
         jk_b_end(msg, AJP14_WS_HEADER);
-        jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp14", msg);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp14", msg);
     }
     else {
         jk_log(l, JK_LOG_ERROR,
@@ -996,10 +1003,12 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     }
 
     if (ae->proto == AJP13_PROTO) {
-        jk_dump_buff(l, JK_LOG_DEBUG, "received from ajp13", msg);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_dump_buff(l, JK_LOG_DEBUG, "received from ajp13", msg);
     }
     else if (ae->proto == AJP14_PROTO) {
-        jk_dump_buff(l, JK_LOG_DEBUG, "received from ajp14", msg);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_dump_buff(l, JK_LOG_DEBUG, "received from ajp14", msg);
     }
     JK_TRACE_EXIT(l);
     return JK_TRUE;
@@ -1186,9 +1195,10 @@ static int ajp_send_request(jk_endpoint_t *e,
      * or Tomcat crashed. In any case we cannot recover this.
      */
 
-    jk_log(l, JK_LOG_DEBUG,
-           "request body to send %d - request body to resend %d\n",
-           ae->left_bytes_to_send, jk_b_get_len(op->reply) - AJP_HEADER_LEN);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "request body to send %d - request body to resend %d\n",
+               ae->left_bytes_to_send, jk_b_get_len(op->reply) - AJP_HEADER_LEN);
 
     /*
      * POST recovery job is done here and will work when data to 
@@ -1207,9 +1217,11 @@ static int ajp_send_request(jk_endpoint_t *e,
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        else
-            jk_log(l, JK_LOG_DEBUG, "Resent the request body (%d)\n",
-                   postlen);
+        else {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG, "Resent the request body (%d)\n",
+                       postlen);
+        }
     }
     else if (s->reco_status == RECO_FILLED) {
         /* Recovery in LB MODE */
@@ -1224,9 +1236,11 @@ static int ajp_send_request(jk_endpoint_t *e,
                 return JK_FALSE;
             }
         }
-        else
-            jk_log(l, JK_LOG_DEBUG,
-                   "Resent the request body (lb mode) (%d)\n", postlen);
+        else {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Resent the request body (lb mode) (%d)\n", postlen);
+        }
     }
     else {
         /* We never sent any POST data and we check if we have to send at
@@ -1350,7 +1364,8 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 /*
                  * Strange protocol error.
                  */
-                jk_log(l, JK_LOG_DEBUG, "Reuse: %d\n", ae->reuse);
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG, "Reuse: %d\n", ae->reuse);
                 ae->reuse = JK_FALSE;
             }
             /* Reuse in all cases */
@@ -1575,7 +1590,8 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
             return JK_FALSE;
         }
 
-        jk_log(l, JK_LOG_DEBUG, "processing with %d retries\n", s->retries);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG, "processing with %d retries\n", s->retries);
         /* 
          * JK_RETRIES could be replaced by the number of workers in
          * a load-balancing configuration 
@@ -1701,9 +1717,10 @@ int ajp_validate(jk_worker_t *pThis,
         port = jk_get_worker_port(props, p->name, port);
         host = jk_get_worker_host(props, p->name, host);
 
-        jk_log(l, JK_LOG_DEBUG,
-               "worker %s contact is %s:%d\n",
-               p->name, host, port);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "worker %s contact is %s:%d\n",
+                   p->name, host, port);
 
         if (port > 1024 && host) {
             if (jk_resolve(host, port, &p->worker_inet_addr)) {
@@ -1744,10 +1761,6 @@ int ajp_init(jk_worker_t *pThis,
         p->socket_timeout =
             jk_get_worker_socket_timeout(props, p->name, AJP_DEF_SOCKET_TIMEOUT);
 
-        jk_log(l, JK_LOG_DEBUG,
-               "setting socket timeout to %d\n",
-               p->socket_timeout);
-
         p->keepalive =
             jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
 
@@ -1758,49 +1771,25 @@ int ajp_init(jk_worker_t *pThis,
         p->recycle_timeout =
             jk_get_worker_recycle_timeout(props, p->name, AJP13_DEF_TIMEOUT);
 
-        jk_log(l, JK_LOG_DEBUG,
-               "setting connection recycle timeout to %d\n",
-               p->recycle_timeout);
-
         p->cache_timeout =
             jk_get_worker_cache_timeout(props, p->name,
                                         AJP_DEF_CACHE_TIMEOUT);
-
-        jk_log(l, JK_LOG_DEBUG,
-               "setting cache timeout to %d\n",
-               p->cache_timeout);
 
         p->connect_timeout =
             jk_get_worker_connect_timeout(props, p->name,
                                           AJP_DEF_CONNECT_TIMEOUT);
 
-        jk_log(l, JK_LOG_DEBUG,
-               "setting connect timeout to %d\n",
-               p->connect_timeout);
-
         p->reply_timeout =
             jk_get_worker_reply_timeout(props, p->name,
                                         AJP_DEF_REPLY_TIMEOUT);
-
-        jk_log(l, JK_LOG_DEBUG,
-               "setting reply timeout to %d\n",
-               p->reply_timeout);
 
         p->prepost_timeout =
             jk_get_worker_prepost_timeout(props, p->name,
                                           AJP_DEF_PREPOST_TIMEOUT);
 
-        jk_log(l, JK_LOG_DEBUG,
-               "setting prepost timeout to %d\n",
-               p->prepost_timeout);
-
         p->recovery_opts =
             jk_get_worker_recovery_opts(props, p->name,
                                         AJP_DEF_RECOVERY_OPTS);
-
-        jk_log(l, JK_LOG_DEBUG,
-               "setting recovery opts to %d\n",
-               p->recovery_opts);
 
         pThis->retries =
             jk_get_worker_retries(props, p->name,
@@ -1811,7 +1800,37 @@ int ajp_init(jk_worker_t *pThis,
                    JK_RETRIES);
             pThis->retries = JK_RETRIES;
         }
-        else {
+
+        if (JK_IS_DEBUG_LEVEL(l)) {
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "setting socket timeout to %d\n",
+                   p->socket_timeout);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "setting connection recycle timeout to %d\n",
+                   p->recycle_timeout);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "setting cache timeout to %d\n",
+                   p->cache_timeout);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "setting connect timeout to %d\n",
+                   p->connect_timeout);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "setting reply timeout to %d\n",
+                   p->reply_timeout);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "setting prepost timeout to %d\n",
+                   p->prepost_timeout);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "setting recovery opts to %d\n",
+                   p->recovery_opts);
+
             jk_log(l, JK_LOG_DEBUG,
                    "setting number of retries to %d\n",
                     pThis->retries);
@@ -1831,9 +1850,10 @@ int ajp_init(jk_worker_t *pThis,
             if (p->ep_cache) {
                 int i;
                 p->ep_cache_sz = cache_sz;
-                jk_log(l, JK_LOG_DEBUG,
-                       "setting connection cache size to %d\n",
-                       p->ep_cache_sz);
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "setting connection cache size to %d\n",
+                           p->ep_cache_sz);
                 /* Initialize cache slots */
                 for (i = 0; i < cache_sz; i++) {
                     p->ep_cache[i] = NULL;
@@ -1864,9 +1884,10 @@ int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto)
 
         free(aw->name);
 
-        jk_log(l, JK_LOG_DEBUG,
-               "up to %d endpoint to close\n",
-               aw->ep_cache_sz);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "up to %d endpoint to close\n",
+                   aw->ep_cache_sz);
 
         if (aw->ep_cache_sz) {
             unsigned int i;
@@ -1917,8 +1938,9 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
                     }
                     JK_LEAVE_CS(&w->cs, rc);
                     if (i < w->ep_cache_sz) {
-                        jk_log(l, JK_LOG_DEBUG,
-                               "recycling connection cache slot=%d\n", i);
+                        if (JK_IS_DEBUG_LEVEL(l))
+                            jk_log(l, JK_LOG_DEBUG,
+                                   "recycling connection cache slot=%d\n", i);
                         JK_TRACE_EXIT(l);
                         return JK_TRUE;
                     }
@@ -1929,9 +1951,10 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
                 }
             }
         }
-        jk_log(l, JK_LOG_DEBUG,
-               "done with connection %d for worker %s\n",
-               p->sd, p->worker->name);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "done with connection %d for worker %s\n",
+                   p->sd, p->worker->name);
         ajp_close_endpoint(p, l);
         *e = NULL;
 
@@ -1974,9 +1997,10 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                             int elapsed =
                                 (int)(now - ae->last_access);
                             if (elapsed > aw->cache_timeout) {
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "cleaning cache slot = %d elapsed %u\n",
-                                       i, elapsed);
+                                if (JK_IS_DEBUG_LEVEL(l))
+                                    jk_log(l, JK_LOG_DEBUG,
+                                           "cleaning cache slot = %d elapsed %u\n",
+                                           i, elapsed);
                                 ajp_close_endpoint(aw->ep_cache[i], l);
                                 aw->ep_cache[i] = NULL;
                             }
@@ -1988,15 +2012,17 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                     if (ae->sd > 0) {
                         /* Handle timeouts for open sockets */
                         int elapsed = (int)(now - ae->last_access);
-                        jk_log(l, JK_LOG_DEBUG,
-                               "time elapsed since last request = %u seconds\n",
-                               elapsed);
+                        if (JK_IS_DEBUG_LEVEL(l))
+                            jk_log(l, JK_LOG_DEBUG,
+                                   "time elapsed since last request = %u seconds\n",
+                                   elapsed);
                         if (aw->recycle_timeout > 0 &&
                             elapsed > aw->recycle_timeout) {
                             jk_close_socket(ae->sd);
-                            jk_log(l, JK_LOG_DEBUG,
-                                   "reached connection recycle timeout, closed sd = %d\n",
-                                   ae->sd);
+                            if (JK_IS_DEBUG_LEVEL(l))
+                                jk_log(l, JK_LOG_DEBUG,
+                                       "reached connection recycle timeout, closed sd = %d\n",
+                                       ae->sd);
                             ae->sd = -1;        /* just to avoid twice close */
                         }
                     }
@@ -2020,8 +2046,9 @@ int ajp_get_endpoint(jk_worker_t *pThis,
             ae->endpoint.service = ajp_service;
             ae->endpoint.done = ajp_done;
             *je = &ae->endpoint;
-            jk_log(l, JK_LOG_DEBUG,
-                   "created new endpoint for worker %s\n", aw->name);
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "created new endpoint for worker %s\n", aw->name);
             JK_TRACE_EXIT(l);
             return JK_TRUE;
         }

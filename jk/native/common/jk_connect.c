@@ -158,17 +158,19 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
                 JK_TRACE_EXIT(l);
                 return -1;
             }
-            jk_log(l, JK_LOG_DEBUG,
-                "set timeout to %d with status %d\n",
-                timeout, ret);
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "set timeout to %d with status %d\n",
+                       timeout, ret);
 
         }
 
         /* Tries to connect to Tomcat (continues trying while error is EINTR) */
         do {
-            jk_log(l, JK_LOG_DEBUG,
-                   "try to connect socket = %d to %s\n", sock,
-                   jk_dump_hinfo(addr, buf));
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "try to connect socket = %d to %s\n", sock,
+                       jk_dump_hinfo(addr, buf));
 
 /* Need more infos for BSD 4.4 and Unix 98 defines, for now only 
    iSeries when Unix98 is required at compil time */
@@ -183,8 +185,9 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
                 errno = WSAGetLastError() - WSABASEERR;
             }
 #endif /* WIN32 */
-            jk_log(l, JK_LOG_DEBUG,
-                   "after connect ret = %d\n", ret);
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "after connect ret = %d\n", ret);
         } while (-1 == ret && EINTR == errno);
 
         /* Check if we connected */
@@ -197,15 +200,17 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
         }
         if (ndelay) {
             int set = 1;
-            jk_log(l, JK_LOG_DEBUG,
-                   "jk_open_socket, set TCP_NODELAY to on\n");
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "jk_open_socket, set TCP_NODELAY to on\n");
             setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&set,
                        sizeof(set));
         }
         if (keepalive) {
             int keep = 1;
-            jk_log(l, JK_LOG_DEBUG,
-                "jk_open_socket, set SO_KEEPALIVE to on\n");
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "jk_open_socket, set SO_KEEPALIVE to on\n");
             setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&keep,
                         sizeof(keep));
         }
@@ -232,8 +237,9 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             return -1;
         }
 
-        jk_log(l, JK_LOG_DEBUG, "connected sd = %d\n",
-               sock);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG, "connected sd = %d\n",
+                   sock);
     }
     else {
         JK_GET_SOCKET_ERRNO();

@@ -545,7 +545,7 @@ static int JK_METHOD read(jk_ws_service_t *s,
 
 static int JK_METHOD write(jk_ws_service_t *s, const void *b, unsigned int l)
 {
-    jk_log(logger, JK_LOG_DEBUG, "Into jk_ws_service_t::write\n");
+    JK_TRACE_ENTER(logger);
 
     if (s && s->ws_private && b) {
         isapi_private_data_t *p = s->ws_private;
@@ -633,10 +633,10 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             GetServerVariable(pfc, SERVER_SOFTWARE, serverSoftware, &dwLen)) {
             iis5 = (atof(serverSoftware + 14) >= 5.0);
             if (iis5) {
-                jk_log(logger, JK_LOG_INFO, "Detected IIS >= 5.0\n");
+                jk_log(logger, JK_LOG_DEBUG, "Detected IIS >= 5.0\n");
             }
             else {
-                jk_log(logger, JK_LOG_INFO, "Detected IIS < 5.0\n");
+                jk_log(logger, JK_LOG_DEBUG, "Detected IIS < 5.0\n");
             }
         }
     }
@@ -683,9 +683,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 ((PHTTP_FILTER_PREPROC_HEADERS) pvNotification)->AddHeader;
         }
 
-
-        jk_log(logger, JK_LOG_DEBUG, "Filter started\n");
-
+        if (JK_IS_DEBUG_LEVEL(logger))
+            jk_log(logger, JK_LOG_DEBUG, "Filter started\n");
 
         /*
          * Just in case somebody set these headers in the request!
@@ -750,24 +749,27 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             if (szHost > 0) {
                 strcat(snuri, Host);
                 strcat(snuri, uri);
-                jk_log(logger, JK_LOG_DEBUG,
-                       "Virtual Host redirection of %s\n",
-                       snuri);
+                if (JK_IS_DEBUG_LEVEL(logger))
+                    jk_log(logger, JK_LOG_DEBUG,
+                           "Virtual Host redirection of %s\n",
+                           snuri);
                 worker = map_uri_to_worker(uw_map, snuri, logger);
             }
             if (!worker) {
-                jk_log(logger, JK_LOG_DEBUG,
-                       "Default redirection of %s\n",
-                       uri);
+                if (JK_IS_DEBUG_LEVEL(logger))
+                    jk_log(logger, JK_LOG_DEBUG,
+                           "Default redirection of %s\n",
+                           uri);
                 worker = map_uri_to_worker(uw_map, uri, logger);
             }
             /*
              * Check if somebody is feading us with his own TOMCAT data headers.
              * We reject such postings !
              */
-            jk_log(logger, JK_LOG_DEBUG,
-                   "check if [%s] is points to the web-inf directory\n",
-                   uri);
+            if (JK_IS_DEBUG_LEVEL(logger))
+                jk_log(logger, JK_LOG_DEBUG,
+                       "check if [%s] is points to the web-inf directory\n",
+                       uri);
 
             if (uri_is_web_inf(uri)) {
                 jk_log(logger, JK_LOG_EMERG,
@@ -794,9 +796,10 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     /* restore terminator for uri portion */
                     if (query)
                         *(query - 1) = '\0';
-                    jk_log(logger, JK_LOG_DEBUG,
-                           "fowarding original URI [%s]\n",
-                           uri);
+                    if (JK_IS_DEBUG_LEVEL(logger))
+                        jk_log(logger, JK_LOG_DEBUG,
+                               "fowarding original URI [%s]\n",
+                               uri);
                     forwardURI = uri;
                 }
                 else if (uri_select_option == URI_SELECT_OPT_ESCAPED) {
@@ -808,9 +811,10 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                                              HTML_ERROR_400);
                         return SF_STATUS_REQ_FINISHED;
                     }
-                    jk_log(logger, JK_LOG_DEBUG,
-                           "fowarding escaped URI [%s]\n",
-                           snuri);
+                    if (JK_IS_DEBUG_LEVEL(logger))
+                        jk_log(logger, JK_LOG_DEBUG,
+                               "fowarding escaped URI [%s]\n",
+                               snuri);
                     forwardURI = snuri;
                 }
                 else {
@@ -845,8 +849,9 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 }
             }
             else {
-                jk_log(logger, JK_LOG_DEBUG,
-                       "[%s] is not a servlet url\n", uri);
+                if (JK_IS_DEBUG_LEVEL(logger))
+                    jk_log(logger, JK_LOG_DEBUG,
+                           "[%s] is not a servlet url\n", uri);
             }
         }
     }
@@ -911,9 +916,10 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
         if (init_ws_service(&private_data, &s, &worker_name)) {
             jk_worker_t *worker = wc_get_worker_for_name(worker_name, logger);
 
-            jk_log(logger, JK_LOG_DEBUG,
-                   "%s a worker for name %s\n",
-                   worker ? "got" : "could not get", worker_name);
+            if (JK_IS_DEBUG_LEVEL(logger))
+                jk_log(logger, JK_LOG_DEBUG,
+                       "%s a worker for name %s\n",
+                       worker ? "got" : "could not get", worker_name);
 
             if (worker) {
                 jk_endpoint_t *e = NULL;
@@ -1026,20 +1032,22 @@ static int init_jk(char *serverName)
     }
     /* Logging the initialization type: registry or properties file in virtual dir
      */
-    if (using_ini_file) {
-        jk_log(logger, JK_LOG_DEBUG, "Using ini file %s.\n", ini_file_name);
-    }
-    else {
-        jk_log(logger, JK_LOG_DEBUG, "Using registry.\n");
-    }
-    jk_log(logger, JK_LOG_DEBUG, "Using log file %s.\n", log_file);
-    jk_log(logger, JK_LOG_DEBUG, "Using log level %d.\n", log_level);
-    jk_log(logger, JK_LOG_DEBUG, "Using extension uri %s.\n", extension_uri);
-    jk_log(logger, JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
-    jk_log(logger, JK_LOG_DEBUG, "Using worker mount file %s.\n",
-           worker_mount_file);
-    jk_log(logger, JK_LOG_DEBUG, "Using uri select %d.\n", uri_select_option);
+    if (JK_IS_DEBUG_LEVEL(logger)) {
+        if (using_ini_file) {
+            jk_log(logger, JK_LOG_DEBUG, "Using ini file %s.\n", ini_file_name);
+        }
+        else {
+            jk_log(logger, JK_LOG_DEBUG, "Using registry.\n");
+        }
 
+        jk_log(logger, JK_LOG_DEBUG, "Using log file %s.\n", log_file);
+        jk_log(logger, JK_LOG_DEBUG, "Using log level %d.\n", log_level);
+        jk_log(logger, JK_LOG_DEBUG, "Using extension uri %s.\n", extension_uri);
+        jk_log(logger, JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
+        jk_log(logger, JK_LOG_DEBUG, "Using worker mount file %s.\n",
+               worker_mount_file);
+        jk_log(logger, JK_LOG_DEBUG, "Using uri select %d.\n", uri_select_option);
+    }
     if (jk_map_alloc(&map)) {
         if (jk_map_read_properties(map, worker_mount_file)) {
             /* remove non-mapping entries (assume they were string substitutions) */
@@ -1055,9 +1063,10 @@ static int init_jk(char *serverName)
                         jk_map_put(map2, name, jk_map_value_at(map, i), &old);
                     }
                     else {
-                        jk_log(logger, JK_LOG_DEBUG,
-                               "Ignoring worker mount file entry %s=%s.\n",
-                               name, jk_map_value_at(map, i));
+                        if (JK_IS_DEBUG_LEVEL(logger))
+                            jk_log(logger, JK_LOG_DEBUG,
+                                   "Ignoring worker mount file entry %s=%s.\n",
+                                   name, jk_map_value_at(map, i));
                     }
                 }
 

@@ -88,8 +88,9 @@ jk_worker_t *wc_get_worker_for_name(const char *name, jk_logger_t *l)
 
     rc = jk_map_get(worker_map, name, NULL);
 
-    jk_log(l, JK_LOG_DEBUG, "%s a worker %s\n",
-           rc ? "found" : "did not find", name);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG, "%s a worker %s\n",
+               rc ? "found" : "did not find", name);
     JK_TRACE_EXIT(l);
     return rc;
 }
@@ -115,9 +116,10 @@ int wc_create_worker(const char *name,
             return JK_FALSE;
         }
 
-        jk_log(l, JK_LOG_DEBUG,
-               "about to create instance %s of %s\n", name,
-               type);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "about to create instance %s of %s\n", name,
+                   type);
 
         if (!fac(&w, name, l) || !w) {
             jk_log(l, JK_LOG_ERROR,
@@ -127,8 +129,9 @@ int wc_create_worker(const char *name,
             return JK_FALSE;
         }
 
-        jk_log(l, JK_LOG_DEBUG,
-               "about to validate and init %s\n", name);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "about to validate and init %s\n", name);
         if (!w->validate(w, init_data, we, l)) {
             w->destroy(&w, l);
             jk_log(l, JK_LOG_ERROR,
@@ -165,9 +168,10 @@ static void close_workers(jk_logger_t *l)
         for (i = 0; i < sz; i++) {
             jk_worker_t *w = jk_map_value_at(worker_map, i);
             if (w) {
-                jk_log(l, JK_LOG_DEBUG,
-                       "close_workers will destroy worker %s\n",
-                       jk_map_name_at(worker_map, i));
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "close_workers will destroy worker %s\n",
+                           jk_map_name_at(worker_map, i));
                 w->destroy(&w, l);
             }
         }
@@ -188,8 +192,9 @@ static int build_worker_map(jk_map_t *init_data,
     for (i = 0; i < num_of_workers; i++) {
         jk_worker_t *w = NULL;
 
-        jk_log(l, JK_LOG_DEBUG,
-               "creating worker %s\n", worker_list[i]);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "creating worker %s\n", worker_list[i]);
 
         if (wc_create_worker(worker_list[i], init_data, &w, we, l)) {
             jk_worker_t *oldw = NULL;
@@ -199,9 +204,10 @@ static int build_worker_map(jk_map_t *init_data,
                 return JK_FALSE;
             }
 
-            jk_log(l, JK_LOG_DEBUG,
-                   "removing old %s worker \n",
-                   worker_list[i]);
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "removing old %s worker \n",
+                       worker_list[i]);
             if (oldw) {
                 oldw->destroy(&oldw, l);
             }
