@@ -224,11 +224,6 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
     /* now lets actually add the parameter set in the <Location> block */
     uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, (char *)name, (void *)val );
 
-/*     fprintf(stderr, "JkUriSet  %s %s dir=%s args=%s", */
-/*             uriEnv->workerName, cmd->path, */
-/*             cmd->directive->directive, */
-/*             cmd->directive->args); */
-
     return NULL;
 }
 
@@ -661,11 +656,11 @@ static int jk2_handler(request_rec *r)
     int rc1;
 
     uriEnv=ap_get_module_config( r->request_config, &jk2_module );
-    if (uriEnv==NULL) 
+    if (uriEnv==NULL)
       uriEnv=ap_get_module_config( r->per_dir_config, &jk2_module );
 
     /* not for me, try next handler */
-    if(uriEnv==NULL || !strcmp(r->handler,JK_HANDLER))
+    if(uriEnv==NULL || strcmp(r->handler,JK_HANDLER)!=0)
       return DECLINED;
     
     /* If this is a proxy request, we'll notify an error */
@@ -777,17 +772,17 @@ static int jk2_translate(request_rec *r)
         return DECLINED;
     }
 
-
+    /* For the JkUriSet */
     uriEnv=ap_get_module_config( r->per_dir_config, &jk2_module );
-    
-    /* get_env() */
-    env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
 
     /* This has been mapped to a location by apache
      * In a previous ( experimental ) version we had a sub-map,
      * but that's too complex for now.
      */
     if( uriEnv!= NULL && uriEnv->workerName != NULL) {
+        /* get_env() */
+        env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+
         if( uriEnv->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                           "PerDir mapping  %s=%s\n",r->uri, uriEnv->workerName);
@@ -805,49 +800,7 @@ static int jk2_translate(request_rec *r)
         return OK;
     }
 
-    /* One idea was to use "SetHandler jakarta-servlet". This doesn't
-       allow the setting of the worker. Having a specific SetWorker directive
-       at location level is more powerfull. If anyone can figure any reson
-       to support SetHandler, we can add it back easily */
-
-    /* Check JkMount directives, if any */
-/*     if( workerEnv->uriMap->size == 0 ) { */
-/*         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env ); */
-/*         return DECLINED; */
-/*     } */
-    
-    /* XXX TODO: Split mapping, similar with tomcat. First step will
-       be a quick test ( the context mapper ), with no allocations.
-       If positive, we'll fill a ws_service_t and do the rewrite and
-       the real mapping. 
-    */
-
-    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,
-                ap_get_server_name(r),
-                ap_get_server_port(r),
-                r->uri);
-
-    if( uriEnv== NULL || uriEnv->workerName == NULL) {
-        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-        return DECLINED;
-    }
-    ap_set_module_config( r->request_config, &jk2_module, uriEnv );
-    r->handler=JK_HANDLER;
-
-    /* This could be a sub-request, possibly from mod_dir */
-    if(r->main){
-        ap_set_module_config( r->main->request_config, &jk2_module, uriEnv );
-        r->main->handler=JK_HANDLER;
-    }
-
-    if( uriEnv->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                      "mod_jk.translate(): uriMap %s %s %#lx\n",
-                      r->uri, uriEnv->workerName, uriEnv->worker);
-
-    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-
-    return OK;
+    return DECLINED;
 }
 
 /* XXX Can we use type checker step to set our stuff ? */
@@ -894,7 +847,8 @@ static void jk2_register_hooks(apr_pool_t *p)
 
     /* Force the mpm to run before us and set the scoreboard image */
     ap_hook_child_init(jk2_child_init, NULL, NULL, APR_HOOK_LAST);
-    
+
+    ap_hook_translate_name(jk2_translate, NULL, NULL, APR_HOOK_MIDDLE); 
     ap_hook_map_to_storage(jk2_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
