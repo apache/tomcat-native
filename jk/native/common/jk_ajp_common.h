@@ -230,7 +230,8 @@ struct ajp_worker
     struct sockaddr_in worker_inet_addr;    /* Contains host and port */
     unsigned connect_retry_attempts;
     const char *name;
-
+    const char *host;
+    int port;
     /* 
      * Open connections cache...
      *
@@ -307,7 +308,6 @@ struct ajp_endpoint
     /* time of the last request
        handled by this endpoint */
     time_t last_access;
-
 };
 
 /*
