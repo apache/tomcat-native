@@ -110,6 +110,7 @@ public class InternalInputBuffer implements InputBuffer {
         headerBuffer1 = new byte[headerBufferSize];
         headerBuffer2 = new byte[headerBufferSize];
         bodyBuffer = new byte[headerBufferSize];
+        buf = headerBuffer1;
 
         inputStreamInputBuffer = new InputStreamInputBuffer();
 
@@ -629,9 +630,11 @@ public class InternalInputBuffer implements InputBuffer {
                 }
 
                 if (buf[pos] == Constants.CR) {
-                } else if (buf[pos] == Constants.SP) {
                 } else if (buf[pos] == Constants.LF) {
                     eol = true;
+                } else if (buf[pos] == Constants.SP) {
+                    buf[realPos] = buf[pos];
+                    realPos++;
                 } else {
                     buf[realPos] = buf[pos];
                     realPos++;
