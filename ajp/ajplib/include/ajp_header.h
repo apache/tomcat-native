@@ -13,6 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#ifndef AJP_HEADER_H
+#define AJP_HEADER_H
 
 /*
  * Conditional request attributes
@@ -160,7 +162,4 @@
 #define SC_RESP_WWW_AUTHENTICATE    (unsigned short)0xA00B
 #define SC_RES_HEADERS_NUM          11
 
-/*
- * Protocol elements
- */
-#define AJP13_FORWARD_REQUEST    (unsigned char)2
+#endif /* AJP_HEADER_H */
