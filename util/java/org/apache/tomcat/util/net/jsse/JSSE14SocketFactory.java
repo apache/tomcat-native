@@ -71,6 +71,7 @@ import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 
@@ -116,27 +117,13 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
             String algorithm = (String)attributes.get("algorithm");
             if (algorithm == null) algorithm = defaultAlgorithm;
 
-            // Set up KeyManager, which will extract server key
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
             String keystoreType = (String)attributes.get("keystoreType");
-            if (keystoreType == null)
-                keystoreType = defaultKeystoreType;
-            String keystorePass = getKeystorePassword();
-            kmf.init(getKeystore(keystoreType, keystorePass),
-                     keystorePass.toCharArray());
-
-            // Set up TrustManager
-            TrustManager[] tm = null;
-            KeyStore trustStore = getTrustStore(keystoreType);
-            if (trustStore != null) {
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-                tmf.init(trustStore);
-                tm = tmf.getTrustManagers();
-            }
 
             // Create and init SSLContext
             SSLContext context = SSLContext.getInstance(protocol); 
-            context.init(kmf.getKeyManagers(), tm, new SecureRandom());
+            context.init(getKeyManagers(keystoreType, algorithm),
+                         getTrustManagers(keystoreType),
+                         new SecureRandom());
 
             // create proxy
             sslProxy = context.getServerSocketFactory();
@@ -151,4 +138,41 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
         }
     }
 
+    /**
+     * Gets the initialized key managers.
+     */
+    protected KeyManager[] getKeyManagers(String keystoreType,
+                                          String algorithm)
+                throws Exception {
+
+        if (keystoreType == null) {
+            keystoreType = defaultKeystoreType;
+        }
+
+        String keystorePass = getKeystorePassword();
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
+        kmf.init(getKeystore(keystoreType, keystorePass),
+                 keystorePass.toCharArray());
+
+        return kmf.getKeyManagers();
+    }
+
+    /**
+     * Gets the intialized trust managers.
+     */
+    protected TrustManager[] getTrustManagers(String keystoreType)
+                throws Exception {
+
+        TrustManager[] tm = null;
+
+        KeyStore trustStore = getTrustStore(keystoreType);
+        if (trustStore != null) {
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            tmf.init(trustStore);
+            tm = tmf.getTrustManagers();
+        }
+
+        return tm;
+    }
 }
