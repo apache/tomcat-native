@@ -58,16 +58,37 @@
 # CVS $Id$
 # Author: Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 
-include ../Makedefs
+DIRS =    webapplib apache-1.3
+MODULES = apache-1.3/mod_webapp.so
 
-OBJS = wa_callback.o wa_connection.o wa_host.o wa_provider.o wa_request.o \
-       wa_provider_info.o
+all: Makedefs $(MODULES)
 
-all: libwebapp.a
+recompile: clean all
 
-libwebapp.a: $(OBJS)
-	ar -cr libwebapp.a $(OBJS)
+Makedefs:
+	@cp Makedefs.orig Makedefs
+	@echo "$(MAKE): *** Please edit the 'Makedefs' file before compiling"
+	@exit 1
 
-clean:
-	rm -f $(OBJS) libwebapp.a
+webapplib/libwebapp.a: Makedefs
+	@make -C webapplib libwebapp.a
+
+apache-1.3/mod_webapp.so: Makedefs webapplib/libwebapp.a
+	@make -C apache-1.3 mod_webapp.so
+
+clean: Makedefs
+	@for DIR in $(DIRS) ; do \
+		if [ ! -d "$$DIR" ] ; then \
+			echo "$(MAKE): *** Cannot find directory '$$DIR'" ; \
+			exit 1 ; \
+		fi ; \
+		make -C $$DIR clean ; \
+		RET="$$?" ; \
+		if [ "$$RET" != "0" ] ; then \
+			exit $$RET ; \
+		fi ; \
+	done
+
+distclean: clean
+	rm -f Makedefs
 

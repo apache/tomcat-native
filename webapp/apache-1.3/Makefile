@@ -60,14 +60,11 @@
 
 include ../Makedefs
 
-OBJS = wa_callback.o wa_connection.o wa_host.o wa_provider.o wa_request.o \
-       wa_provider_info.o
+all: mod_webapp.so
 
-all: libwebapp.a
-
-libwebapp.a: $(OBJS)
-	ar -cr libwebapp.a $(OBJS)
+mod_webapp.so: ../webapplib/libwebapp.a mod_webapp.c
+	$(APXS) -c $(INCLUDES) $(LIBS) mod_webapp.c
 
 clean:
-	rm -f $(OBJS) libwebapp.a
+	rm -f mod_webapp.o mod_webapp.so
 
