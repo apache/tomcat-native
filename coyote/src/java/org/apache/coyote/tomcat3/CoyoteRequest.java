@@ -102,6 +102,11 @@ class CoyoteRequest extends Request {
 	coyoteRequest=cReq;
 	// This is really ugly, but fast.
 	// I could still be talked out of it.
+	schemeMB.recycle();
+	methodMB.recycle();
+	uriMB.recycle();
+	queryMB.recycle();
+	protoMB.recycle();
 	try {
 	    schemeMB.duplicate(coyoteRequest.scheme());
 	    methodMB.duplicate(coyoteRequest.method());
@@ -111,7 +116,6 @@ class CoyoteRequest extends Request {
 	} catch(IOException iex) { // ignore
 	}
 	headers  = coyoteRequest.getMimeHeaders();
-	contextM.log("Headers: " + headers);
 	scookies.setHeaders(headers);
 	params.setHeaders(headers);
     }
