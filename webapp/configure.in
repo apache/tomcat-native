@@ -209,6 +209,9 @@ AC_ARG_WITH(apxs,
     dnl test apache version
     APA=`${GREP} STANDARD20 ${APXS}`
     if  ${TEST} -z "$APA" ; then
+      if ${TEST} -z "APXS_LD_SHLIB"; then
+         AC_MSG_ERROR([${APXS} do not seem a valid apxs)]) 
+      fi
       TARGET="${SRCDIR}/apache-1.3"
       makefile="apache-1.3/Makefile"
     else
