@@ -66,7 +66,10 @@ import java.util.*;
 /**
  *  Compile using Microsoft Visual C++ v6.0
  * 
+ * @author Costin Manolache
  * @author Ignacio J. Ortega
+ * @author Mike Anderson
+ * @author Larry Isaacs
  */
 public class MsvcCompiler extends CompilerAdapter {
     GlobPatternMapper co_mapperS=new GlobPatternMapper();

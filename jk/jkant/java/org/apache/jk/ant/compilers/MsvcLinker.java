@@ -67,7 +67,10 @@ import java.util.*;
 /**
  * Link using MSVC Linker
  *
+ * @author Costin Manolache
  * @author Ignacio J. Ortega
+ * @author Mike Anderson
+ * @author Larry Isaacs
  */
 public class MsvcLinker extends LinkerAdapter {
     SoTask so;
@@ -75,8 +78,8 @@ public class MsvcLinker extends LinkerAdapter {
     
     public MsvcLinker() {
         so=this;
-	co_mapper.setFrom("*.c");
-	co_mapper.setTo("*.obj");
+        co_mapper.setFrom("*.c");
+        co_mapper.setTo("*.obj");
     }
 
     public void setSoTask(SoTask so ) {
@@ -159,6 +162,15 @@ public class MsvcLinker extends LinkerAdapter {
                 if( targetNA!=null )
                     linkOptPw.println( targetNA[0] );
             }
+            // Write the resources to link to .opt file
+            Enumeration ress = resources.elements();
+            while( ress.hasMoreElements() ) {
+                JkData res = (JkData) ress.nextElement();
+                String name = res.getValue();
+                if( name==null ) continue;
+                linkOptPw.println(name);
+            }
+            
             // Write the library name to the def file
             linkDefPw.println("LIBRARY\t\""+soFile+"\"");
 

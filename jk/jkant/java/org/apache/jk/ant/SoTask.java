@@ -99,6 +99,7 @@ import java.util.*;
  *
  * @author Costin Manolache
  * @author Mike Anderson
+ * @author Ignacio J. Ortega
  */
 public class SoTask extends Task {
     protected String apxs;
@@ -124,6 +125,7 @@ public class SoTask extends Task {
     protected Vector modules    = new Vector();     // used by the NetWare linker
     protected Vector linkOpts   = new Vector();     // used by the NetWare, win32 linkers
     protected Vector altSoFiles = new Vector();     // used by the NetWare linker
+    protected Vector resources  = new Vector();     // used by the win32 linker
 
     // Computed fields 
     //    protected Vector compileList; // [Source]
@@ -136,82 +138,83 @@ public class SoTask extends Task {
     // Hack to allow individual compilers/linkers to work
     // as regular Tasks, independnetly.
     public void duplicateTo(SoTask so) {
-	// This will act as a proxy for the child task 
-	so.project=project;
-	so.target=target;
-	so.location=location;
-	so.taskName=taskName;
-	so.taskType=taskType;
-	
-	so.apxs=apxs;
-	so.src=src;
-	so.includes=includes;
-	so.depends=depends;
-	so.libs=libs;
-	so.module=module;
-	so.soFile=soFile;
-	so.soExt=soExt;
-	so.cflags=cflags;
-	so.buildDir=buildDir;
-	so.debug=debug;
-	so.optG=optG;
+        // This will act as a proxy for the child task 
+        so.project=project;
+        so.target=target;
+        so.location=location;
+        so.taskName=taskName;
+        so.taskType=taskType;
+        
+        so.apxs=apxs;
+        so.src=src;
+        so.includes=includes;
+        so.depends=depends;
+        so.libs=libs;
+        so.module=module;
+        so.soFile=soFile;
+        so.soExt=soExt;
+        so.cflags=cflags;
+        so.buildDir=buildDir;
+        so.debug=debug;
+        so.optG=optG;
         so.optWgcc=optWgcc;
-	so.optimize=optimize;
-	so.profile=profile;
-	so.defines=defines;
-	so.imports=imports;
-	so.exports=exports;
-	so.modules=modules;
-	so.linkOpts=linkOpts;
-	so.srcList=srcList;
-        //	so.compileList=compileList;
-	so.compiler=compiler;
-        //	so.co_mapper=co_mapper;
-	so.altSoFiles=altSoFiles;
+        so.optimize=optimize;
+        so.profile=profile;
+        so.defines=defines;
+        so.imports=imports;
+        so.exports=exports;
+        so.resources=resources;
+        so.modules=modules;
+        so.linkOpts=linkOpts;
+        so.srcList=srcList;
+        //      so.compileList=compileList;
+        so.compiler=compiler;
+        //      so.co_mapper=co_mapper;
+        so.altSoFiles=altSoFiles;
     }
 
     /**  @deprecated use setTarget
      */
     public void setSoFile(String s ) {
-	soFile=s;
+        soFile=s;
     }
 
     /** Add debug information
      */
     public void setDebug(boolean b) {
-	optG=b;
+        optG=b;
     }
 
     /** Add debug information
      */
     public void setOptimize(boolean b) {
-	optimize=b;
+        optimize=b;
     }
 
     /** Add profiling information
      */
     public void setProfile(boolean b) {
-	profile=b;
+        profile=b;
     }
 
     /** Gcc warnings
      */
     public void setGccWarn(boolean b) {
-	optWgcc=b;
+        optWgcc=b;
     }
 
     /** Debug the <so> task
      */
     public void setTaskDebug(int i) {
-	debug=i;
+        debug=i;
     }
 
     /** Add a -D option. Note that each define has
      *  an if/unless attribute
      */ 
     public void addDef(Def var ) {
-	var.setProject( project );
-	defines.addElement(var);
+        var.setProject( project );
+        defines.addElement(var);
     }
 
     /**
@@ -220,7 +223,7 @@ public class SoTask extends Task {
      * 
      */
     public void addImport(JkData imp) {
-	imp.setProject( project );
+        imp.setProject( project );
         imports.add(imp);
     }
 
@@ -230,8 +233,18 @@ public class SoTask extends Task {
      * 
      */
     public void addExport(JkData exp) {
-	exp.setProject( project );
+        exp.setProject( project );
         exports.add(exp);
+    }
+
+    /**
+     * Add an resource file on win32 platform
+     *
+     * 
+     */
+    public void addResource(JkData res) {
+        res.setProject( project );
+        resources.add(res);
     }
 
     /**
@@ -240,7 +253,7 @@ public class SoTask extends Task {
      * 
      */
     public void addLinkOpt(JkData option) {
-	option.setProject( project );
+        option.setProject( project );
         linkOpts.add(option);
     }
 
@@ -250,7 +263,7 @@ public class SoTask extends Task {
      * 
      */
     public void addNLMModule(JkData module) {
-	module.setProject( project );
+        module.setProject( project );
         modules.add(module);
     }
 
@@ -260,7 +273,7 @@ public class SoTask extends Task {
      * 
      */
     public void addAltSoFile(JkData altSo) {
-	altSo.setProject( project );
+        altSo.setProject( project );
         altSoFiles.add(altSo);
     }
 
@@ -269,31 +282,31 @@ public class SoTask extends Task {
      *  to add lib automatically for unix, and nothing on win/etc ?  ).
      */
     public void setTarget(String s ) {
-	soFile=s;
+        soFile=s;
     }
 
     /** Set the extension for the target.  This will depend on the platform
      *  we are compiling for.
      */
     public void setExtension(String s ) {
-	soExt=s;
+        soExt=s;
     }
 
     /** Directory where intermediary objects will be
      *  generated
      */
     public void setBuildDir( File s ) {
-	buildDir=s;
+        buildDir=s;
     }
 
     public void setCflags(String s ) {
-	cflags=s;
+        cflags=s;
     }
     
     /** Directory where the .so file will be generated
      */
     public void setSoDir( String s ) {
-	
+        
     }
 
     public void addJniConfig( JniConfig jniCfg ) {
@@ -311,16 +324,16 @@ public class SoTask extends Task {
      * @return a nested src element.
      */
     public void addSrc(FileSet fl) {
-	if( src==null ) src=new Vector();
-	src.addElement(fl);
+        if( src==null ) src=new Vector();
+        src.addElement(fl);
     }
 
     /**
      * Include files
      */
     public PatternSet createIncludes() {
-	includes=new PatternSet(); //Path(project);
-	return includes;
+        includes=new PatternSet(); //Path(project);
+        return includes;
     }
 
     /**
@@ -333,8 +346,8 @@ public class SoTask extends Task {
      * was installed, maybe some flags or symbols changed )
      */
     public Path createDepends() {
-	depends=new Path(project);
-	return depends;
+        depends=new Path(project);
+        return depends;
     }
 
     /**
@@ -342,7 +355,7 @@ public class SoTask extends Task {
      */
     public Path createLibs() {
         libs=new Path(project);
-	return libs;
+        return libs;
     }
     
     
@@ -360,137 +373,137 @@ public class SoTask extends Task {
     // XXX Add specific code for Linux and platforms where things are
     // clean, libtool should be just a fallback.
     public void execute() throws BuildException {
-	compiler=findCompilerAdapter();
-        //	co_mapper=compiler.getOMapper();
-	LinkerAdapter linker=findLinkerAdapter();
+        compiler=findCompilerAdapter();
+        //      co_mapper=compiler.getOMapper();
+        LinkerAdapter linker=findLinkerAdapter();
 
-	if( soFile==null )
-	    throw new BuildException("No target ( " + soExt + " file )");
-	if (src == null) 
+        if( soFile==null )
+            throw new BuildException("No target ( " + soExt + " file )");
+        if (src == null) 
             throw new BuildException("No source files");
 
-	// XXX makedepend-type dependencies - how ??
-	// We could generate a dummy Makefile and parse the content...
+        // XXX makedepend-type dependencies - how ??
+        // We could generate a dummy Makefile and parse the content...
         findSourceFiles();
 
         // Copy all settings into compiler
         this.duplicateTo(compiler);
-	compiler.compile( srcList );
+        compiler.compile( srcList );
 
         // XXX move this checking to linker
-	File soTarget=new File( buildDir, soFile + soExt );
-	if( compiler.getCompiledFiles().size() == 0 && soTarget.exists()) {
-	    // No dependency, no need to relink
-	    return;
-	}
+        File soTarget=new File( buildDir, soFile + soExt );
+        if( compiler.getCompiledFiles().size() == 0 && soTarget.exists()) {
+            // No dependency, no need to relink
+            return;
+        }
 
         this.duplicateTo(linker);
-	linker.link(srcList);
+        linker.link(srcList);
     }
 
     public CompilerAdapter findCompilerAdapter() {
-	CompilerAdapter compilerAdapter;
-	String cc;
-	cc=project.getProperty("build.compiler.cc");
-	if( cc!=null ) {
-	    if( "cc".equals( cc ) ) {
-		compilerAdapter=new CcCompiler();
-		compilerAdapter.setSoTask( this );
-		return compilerAdapter;
-	    }
-	    if( "gcj".equals( cc ) ) {
-		compilerAdapter=new GcjCompiler();
-		compilerAdapter.setSoTask( this );
-		return compilerAdapter;
-	    }
-	    if( cc.indexOf("mwccnlm") != -1 ) {
-	        compilerAdapter=new MwccCompiler();
-	        compilerAdapter.setSoTask( this );
-	        return compilerAdapter;
-	    }
-	    if( cc.indexOf("cl") != -1 ) {
-	        compilerAdapter=new MsvcCompiler();
-	        compilerAdapter.setSoTask( this );
-	        return compilerAdapter;
-	    }
-	}
-	
-	compilerAdapter=new LibtoolCompiler(); 
-	compilerAdapter.setSoTask( this );
-	return compilerAdapter;
+        CompilerAdapter compilerAdapter;
+        String cc;
+        cc=project.getProperty("build.compiler.cc");
+        if( cc!=null ) {
+            if( "cc".equals( cc ) ) {
+                compilerAdapter=new CcCompiler();
+                compilerAdapter.setSoTask( this );
+                return compilerAdapter;
+            }
+            if( "gcj".equals( cc ) ) {
+                compilerAdapter=new GcjCompiler();
+                compilerAdapter.setSoTask( this );
+                return compilerAdapter;
+            }
+            if( cc.indexOf("mwccnlm") != -1 ) {
+                compilerAdapter=new MwccCompiler();
+                compilerAdapter.setSoTask( this );
+                return compilerAdapter;
+            }
+            if( cc.indexOf("cl") != -1 ) {
+                compilerAdapter=new MsvcCompiler();
+                compilerAdapter.setSoTask( this );
+                return compilerAdapter;
+            }
+        }
+        
+        compilerAdapter=new LibtoolCompiler(); 
+        compilerAdapter.setSoTask( this );
+        return compilerAdapter;
    }
 
     public LinkerAdapter findLinkerAdapter() {
-	LinkerAdapter linkerAdapter;
-	String ld=project.getProperty("build.compiler.ld");
-	if( ld!=null ) {
-	    if( ld.indexOf("mwldnlm") != -1 ) {
-	        linkerAdapter=new MwldLinker();
-	        linkerAdapter.setSoTask( this );
-	        return linkerAdapter;
-	    }
-	    if( ld.indexOf("link") != -1 ) {
-	        linkerAdapter=new MsvcLinker();
-	        linkerAdapter.setSoTask( this );
-	        return linkerAdapter;
-	    }
-	    // 	    if( "ld".equals( cc ) ) {
-	    // 		linkerAdapter=new LdLinker();
-	    // 		linkerAdapter.setSoTask( this );
-	    // 		return cc;
-	    // 	    }
-	}
+        LinkerAdapter linkerAdapter;
+        String ld=project.getProperty("build.compiler.ld");
+        if( ld!=null ) {
+            if( ld.indexOf("mwldnlm") != -1 ) {
+                linkerAdapter=new MwldLinker();
+                linkerAdapter.setSoTask( this );
+                return linkerAdapter;
+            }
+            if( ld.indexOf("link") != -1 ) {
+                linkerAdapter=new MsvcLinker();
+                linkerAdapter.setSoTask( this );
+                return linkerAdapter;
+            }
+            //      if( "ld".equals( cc ) ) {
+            //          linkerAdapter=new LdLinker();
+            //          linkerAdapter.setSoTask( this );
+            //          return cc;
+            //      }
+        }
 
-	String cc=project.getProperty("build.compiler.cc");
-	if( "gcj".equals( cc ) ) {
-	    linkerAdapter=new GcjLinker();
-	    linkerAdapter.setSoTask( this );
-	    return linkerAdapter;
-	}
+        String cc=project.getProperty("build.compiler.cc");
+        if( "gcj".equals( cc ) ) {
+            linkerAdapter=new GcjLinker();
+            linkerAdapter.setSoTask( this );
+            return linkerAdapter;
+        }
 
-	
-	linkerAdapter=new LibtoolLinker(); 
-	linkerAdapter.setSoTask( this );
-	return linkerAdapter;
+        
+        linkerAdapter=new LibtoolLinker(); 
+        linkerAdapter.setSoTask( this );
+        return linkerAdapter;
    }
 
     /** Find all source files declared with <src> elements
      */
     public void findSourceFiles() {
-	if (buildDir == null) buildDir = project.getBaseDir();
+        if (buildDir == null) buildDir = project.getBaseDir();
 
-	Enumeration e=src.elements();
-	while( e.hasMoreElements() ) {
-	    FileSet fs=(FileSet)e.nextElement();
-	    DirectoryScanner ds=fs.getDirectoryScanner( project );
-	    String localList[]= ds.getIncludedFiles(); 
-	    if (localList.length == 0) 
-		throw new BuildException("No source files ");
-	    for( int i=0; i<localList.length; i++ ) {
-		srcList.addElement( new Source( fs.getDir(project), localList[i]));
-	    }
-	}
+        Enumeration e=src.elements();
+        while( e.hasMoreElements() ) {
+            FileSet fs=(FileSet)e.nextElement();
+            DirectoryScanner ds=fs.getDirectoryScanner( project );
+            String localList[]= ds.getIncludedFiles(); 
+            if (localList.length == 0) 
+                throw new BuildException("No source files ");
+            for( int i=0; i<localList.length; i++ ) {
+                srcList.addElement( new Source( fs.getDir(project), localList[i]));
+            }
+        }
     }
  
     /** If any file declared in <depend> element has changed, we'll do
         a full rebuild.
     */
     public boolean checkDepend(long oldestO, File oldestOFile) {
-	if( depends==null )
-	    return false;
-	String dependsA[]=depends.list(); 
-	for( int i=0; i< dependsA.length; i++ ) {
-	    File f=new File( dependsA[i] );
-	    if( ! f.exists() ) {
-		log("Depend not found " + f );
-		return true;
-	    }
-	    if( f.lastModified() > oldestO ) {
-		log( "Depend " + f + " newer than " + oldestOFile );
-		return true;
-	    }
-	}
-	return false;
+        if( depends==null )
+            return false;
+        String dependsA[]=depends.list(); 
+        for( int i=0; i< dependsA.length; i++ ) {
+            File f=new File( dependsA[i] );
+            if( ! f.exists() ) {
+                log("Depend not found " + f );
+                return true;
+            }
+            if( f.lastModified() > oldestO ) {
+                log( "Depend " + f + " newer than " + oldestOFile );
+                return true;
+            }
+        }
+        return false;
     }
     
     // ==================== Execution utils ==================== 
@@ -501,44 +514,44 @@ public class SoTask extends Task {
 
     public int execute( Commandline cmd ) throws BuildException
     {
-	createStreamHandler();
+        createStreamHandler();
         Execute exe = new Execute(streamhandler, null);
         exe.setAntRun(project);
 
         exe.setWorkingDirectory(buildDir);
 
         exe.setCommandline(cmd.getCommandline());
-	int result=0;
-	try {
+        int result=0;
+        try {
             result=exe.execute();
         } catch (IOException e) {
             throw new BuildException(e, location);
         } 
-	return result;
+        return result;
     }
 
     public void createStreamHandler()  throws BuildException {
-	//	try {
-	outputstream= new ByteArrayOutputStream();
-	errorstream = new ByteArrayOutputStream();
-	
-	streamhandler =
-	    new PumpStreamHandler(new PrintStream(outputstream),
-				  new PrintStream(errorstream));
-	//	}  catch (IOException e) {
-	//	    throw new BuildException(e,location);
-	//	}
+        //      try {
+        outputstream= new ByteArrayOutputStream();
+        errorstream = new ByteArrayOutputStream();
+        
+        streamhandler =
+            new PumpStreamHandler(new PrintStream(outputstream),
+                                  new PrintStream(errorstream));
+        //      }  catch (IOException e) {
+        //          throw new BuildException(e,location);
+        //      }
     }
 
     public void closeStreamHandler() {
-	try {
-	    if (outputstream != null) 
-		outputstream.close();
-	    if (errorstream != null) 
-		errorstream.close();
-	    outputstream=null;
-	    errorstream=null;
-	} catch (IOException e) {}
+        try {
+            if (outputstream != null) 
+                outputstream.close();
+            if (errorstream != null) 
+                errorstream.close();
+            outputstream=null;
+            errorstream=null;
+        } catch (IOException e) {}
     }
 }
 
