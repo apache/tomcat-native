@@ -56,19 +56,67 @@
  * ========================================================================= */
 
 /**
- * Marshalling for request elements.
+ * Serializing requests.
  *
- * Author:      Gal Shachor <shachor@il.ibm.com>                           
- * Author:      Henri Gomez <hgomez@slib.fr>                               
+ * @author: Gal Shachor <shachor@il.ibm.com>                           
+ * @author: Henri Gomez <hgomez@slib.fr>
+ * @author: Costin Manolache
  */
 
 
 #include "jk_global.h"
-#include "jk_ajp14.h"
+#include "jk_handler.h"
 #include "jk_channel.h"
 #include "jk_env.h"
 #include "jk_requtil.h"
-#include "jk_msg_buff.h"
+#include "jk_msg.h"
+#include "jk_ajp14.h"
+
+/*
+ * Forward a request from the web server to the servlet container.
+ */
+#define JK_AJP13_FORWARD_REQUEST    (unsigned char)2
+
+/* Important: ajp13 protocol has the strange habit of sending
+   a second ( untyped ) message imediately following the request,
+   with a first chunk of POST body. This is nice for small post
+   requests, since it avoids a roundtrip, but it's horrible
+   because it brakes the model. So we'll have to remember this
+   as an exception to the rule as long as ajp13 is alive
+*/
+
+#define JK_AJP13_SHUTDOWN           (unsigned char)7
+
+#define JK_AJP13_PING           (unsigned char)8
+
+/* 
+ * Build the ping cmd. Tomcat will get control and will be able 
+ * to send any command.
+ *
+ * +-----------------------+
+ * | PING CMD (1 byte) |
+ * +-----------------------+
+ *
+ * XXX Add optional Key/Value set .
+ *  
+ */
+int jk_serialize_ping(jk_msg_t *msg,
+                      jk_endpoint_t  *ae)
+{
+    jk_logger_t *l=msg->l;
+    int rc;
+    
+    /* To be on the safe side */
+    msg->reset(msg);
+
+    /* SHUTDOWN CMD */
+    rc= msg->appendByte( msg, JK_AJP13_PING);
+    if (rc!=JK_TRUE )
+        return JK_FALSE;
+
+    return JK_TRUE;
+}
+
 
 /*
  * Conditional request attributes
@@ -84,13 +132,11 @@
 #define SC_A_SSL_CIPHER         (unsigned char)8
 #define SC_A_SSL_SESSION        (unsigned char)9
 #define SC_A_REQ_ATTRIBUTE      (unsigned char)10
-#define SC_A_SSL_KEY_SIZE       (unsigned char)11		/* only in if JkOptions +ForwardKeySize */
+/* only in if JkOptions +ForwardKeySize */
+#define SC_A_SSL_KEY_SIZE       (unsigned char)11		
 #define SC_A_ARE_DONE           (unsigned char)0xFF
 
-int jk_handler_request_marshal(jk_msg_buf_t    *msg,
-                               jk_ws_service_t *s,
-                               jk_logger_t     *l,
-                               jk_endpoint_t  *ae);
+
 
 /**
   Message structure
@@ -124,33 +170,34 @@ AJPV13_REQUEST/AJPV14_REQUEST=
 
     Was: ajp_marshal_into_msgb
  */
-int jk_handler_request_marshal(jk_msg_buf_t    *msg,
-                               jk_ws_service_t *s,
-                               jk_logger_t     *l,
-                               jk_endpoint_t  *ae)
+int jk_serialize_request13(jk_msg_t    *msg,
+                           jk_ws_service_t *s )
 {
     unsigned char method;
     unsigned i;
+    jk_logger_t *l=msg->l;
 
     l->jkLog(l, JK_LOG_DEBUG, "Into ajp_marshal_into_msgb\n");
 
     if (!jk_requtil_getMethodId(s->method, &method)) { 
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - No such method %s\n", s->method);
+        l->jkLog(l, JK_LOG_ERROR,
+                 "Error ajp_marshal_into_msgb - No such method %s\n", s->method);
         return JK_FALSE;
     }
 
-    if (jk_b_append_byte(msg, JK_AJP13_FORWARD_REQUEST)  ||
-        jk_b_append_byte(msg, method)               ||
-        jk_b_append_string(msg, s->protocol)        ||
-        jk_b_append_string(msg, s->req_uri)         ||
-        jk_b_append_string(msg, s->remote_addr)     ||
-        jk_b_append_string(msg, s->remote_host)     ||
-        jk_b_append_string(msg, s->server_name)     ||
-        jk_b_append_int(msg, (unsigned short)s->server_port) ||
-        jk_b_append_byte(msg, (unsigned char)(s->is_ssl)) ||
-        jk_b_append_int(msg, (unsigned short)(s->num_headers))) {
+    if (msg->appendByte(msg, JK_AJP13_FORWARD_REQUEST)  ||
+        msg->appendByte(msg, method)               ||
+        msg->appendString(msg, s->protocol)        ||
+        msg->appendString(msg, s->req_uri)         ||
+        msg->appendString(msg, s->remote_addr)     ||
+        msg->appendString(msg, s->remote_host)     ||
+        msg->appendString(msg, s->server_name)     ||
+        msg->appendInt(msg, (unsigned short)s->server_port) ||
+        msg->appendByte(msg, (unsigned char)(s->is_ssl)) ||
+        msg->appendInt(msg, (unsigned short)(s->num_headers))) {
 
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the message begining\n");
+        l->jkLog(l, JK_LOG_ERROR,
+                 "handle.request()  Error serializing the message head\n");
         return JK_FALSE;
     }
 
@@ -158,70 +205,83 @@ int jk_handler_request_marshal(jk_msg_buf_t    *msg,
         unsigned short sc;
 
         if (jk_requtil_getHeaderId(s->headers_names[i], &sc)) {
-            if (jk_b_append_int(msg, sc)) {
-                l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the header name\n");
+            if (msg->appendInt(msg, sc)) {
+                l->jkLog(l, JK_LOG_ERROR,
+                         "handle.request() Error serializing header id\n");
                 return JK_FALSE;
             }
         } else {
-            if (jk_b_append_string(msg, s->headers_names[i])) {
-                l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the header name\n");
+            if (msg->appendString(msg, s->headers_names[i])) {
+                l->jkLog(l, JK_LOG_ERROR,
+                         "handle.request() Error serializing header name\n");
                 return JK_FALSE;
             }
         }
         
-        if (jk_b_append_string(msg, s->headers_values[i])) {
-            l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the header value\n");
+        if (msg->appendString(msg, s->headers_values[i])) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handle.request() Error serializing header value\n");
             return JK_FALSE;
         }
     }
 
     if (s->remote_user) {
-        if (jk_b_append_byte(msg, SC_A_REMOTE_USER) ||
-            jk_b_append_string(msg, s->remote_user)) {
-            l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the remote user\n");
+        if (msg->appendByte(msg, SC_A_REMOTE_USER) ||
+            msg->appendString(msg, s->remote_user)) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handle.request() Error serializing user name\n");
             return JK_FALSE;
         }
     }
     if (s->auth_type) {
-        if (jk_b_append_byte(msg, SC_A_AUTH_TYPE) ||
-            jk_b_append_string(msg, s->auth_type)) {
-            l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the auth type\n");
+        if (msg->appendByte(msg, SC_A_AUTH_TYPE) ||
+            msg->appendString(msg, s->auth_type)) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handle.request() Error serializing auth type\n");
             return JK_FALSE;
         }
     }
     if (s->query_string) {
-        if (jk_b_append_byte(msg, SC_A_QUERY_STRING) ||
-            jk_b_append_string(msg, s->query_string)) {
-            l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the query string\n");
+        if (msg->appendByte(msg, SC_A_QUERY_STRING) ||
+            msg->appendString(msg, s->query_string)) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handle.request() Error serializing query string\n");
             return JK_FALSE;
         }
     }
+    /* XXX This can be sent only on startup ( ajp14 ) */
+     
     if (s->jvm_route) {
-        if (jk_b_append_byte(msg, SC_A_JVM_ROUTE) ||
-            jk_b_append_string(msg, s->jvm_route)) {
-            l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the jvm route\n");
+        if (msg->appendByte(msg, SC_A_JVM_ROUTE) ||
+            msg->appendString(msg, s->jvm_route)) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handle.request() Error serializing worker id\n");
             return JK_FALSE;
         }
     }
+    
     if (s->ssl_cert_len) {
-        if (jk_b_append_byte(msg, SC_A_SSL_CERT) ||
-            jk_b_append_string(msg, s->ssl_cert)) {
-            l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL certificates\n");
+        if (msg->appendByte(msg, SC_A_SSL_CERT) ||
+            msg->appendString(msg, s->ssl_cert)) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handle.request() Error serializing SSL cert\n");
             return JK_FALSE;
         }
     }
 
     if (s->ssl_cipher) {
-        if (jk_b_append_byte(msg, SC_A_SSL_CIPHER) ||
-            jk_b_append_string(msg, s->ssl_cipher)) {
-            l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL ciphers\n");
+        if (msg->appendByte(msg, SC_A_SSL_CIPHER) ||
+            msg->appendString(msg, s->ssl_cipher)) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handle.request() Error serializing SSL cipher\n");
             return JK_FALSE;
         }
     }
     if (s->ssl_session) {
-        if (jk_b_append_byte(msg, SC_A_SSL_SESSION) ||
-            jk_b_append_string(msg, s->ssl_session)) {
-            l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL session\n");
+        if (msg->appendByte(msg, SC_A_SSL_SESSION) ||
+            msg->appendString(msg, s->ssl_session)) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handle.request() Error serializing SSL session\n");
             return JK_FALSE;
         }
     }
@@ -232,9 +292,10 @@ int jk_handler_request_marshal(jk_msg_buf_t    *msg,
      * JFC removed: ae->proto == AJP14_PROTO
      */
     if (s->ssl_key_size != -1) {
-        if (jk_b_append_byte(msg, SC_A_SSL_KEY_SIZE) ||
-            jk_b_append_int(msg, (unsigned short) s->ssl_key_size)) {
-            l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL key size\n");
+        if (msg->appendByte(msg, SC_A_SSL_KEY_SIZE) ||
+            msg->appendInt(msg, (unsigned short) s->ssl_key_size)) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handle.request() Error serializing SSL key size\n");
             return JK_FALSE;
         }
     }
@@ -242,21 +303,85 @@ int jk_handler_request_marshal(jk_msg_buf_t    *msg,
 
     if (s->num_attributes > 0) {
         for (i = 0 ; i < s->num_attributes ; i++) {
-            if (jk_b_append_byte(msg, SC_A_REQ_ATTRIBUTE)       ||
-                jk_b_append_string(msg, s->attributes_names[i]) ||
-                jk_b_append_string(msg, s->attributes_values[i])) {
-                l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending attribute %s=%s\n",
-                      s->attributes_names[i], s->attributes_values[i]);
+            if (msg->appendByte(msg, SC_A_REQ_ATTRIBUTE)       ||
+                msg->appendString(msg, s->attributes_names[i]) ||
+                msg->appendString(msg, s->attributes_values[i])) {
+                l->jkLog(l, JK_LOG_ERROR,
+                         "handle.request() Error serializing attribute %s=%s\n",
+                         s->attributes_names[i], s->attributes_values[i]);
                 return JK_FALSE;
             }
         }
     }
 
-    if (jk_b_append_byte(msg, SC_A_ARE_DONE)) {
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the message end\n");
+    if (msg->appendByte(msg, SC_A_ARE_DONE)) {
+        l->jkLog(l, JK_LOG_ERROR,
+                 "handle.request() Error serializing end marker\n");
         return JK_FALSE;
     }
     
-    l->jkLog(l, JK_LOG_DEBUG, "ajp_marshal_into_msgb - Done\n");
+    l->jkLog(l, JK_LOG_INFO, "handle.request() request serialized\n");
     return JK_TRUE;
 }
+
+
+/** The inital BODY chunk 
+ */
+int jk_serialize_postHead(jk_msg_t   *msg,
+                          jk_ws_service_t  *r,
+                          jk_endpoint_t *e)
+{
+    jk_logger_t *l=msg->l;
+    int len = r->left_bytes_to_send;
+
+    if(len > AJP13_MAX_SEND_BODY_SZ) {
+        len = AJP13_MAX_SEND_BODY_SZ;
+    }
+    if(len <= 0) {
+        len = 0;
+        return JK_TRUE;
+    }
+
+    len=msg->appendFromServer( msg, r, e, len );
+    /* the right place to add file storage for upload */
+    if (len >= 0) {
+        r->content_read += len;
+        return JK_TRUE;
+    }                  
+            
+    l->jkLog(l, JK_LOG_ERROR,
+             "handler.marshapPostHead() - error len=%d\n", len);
+    return JK_FALSE;	    
+}
+
+/* 
+ * Build the Shutdown Cmd. ( no need to send any secret key,
+ * we already authenticated when opening the channel )
+ *
+ * +-----------------------+
+ * | SHUTDOWN CMD (1 byte) |
+ * +-----------------------+
+ *
+ */
+int jk_serialize_shutdown(jk_msg_t *msg,
+                          jk_ws_service_t  *r)
+{
+    jk_logger_t *l=msg->l;
+    int rc;
+    
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_shutdown_into_msgb\n");
+
+    /* To be on the safe side */
+    msg->reset(msg);
+
+    /* SHUTDOWN CMD */
+    rc= msg->appendByte( msg, JK_AJP13_SHUTDOWN);
+    if (rc!=JK_TRUE )
+        return JK_FALSE;
+
+	return JK_TRUE;
+}
+
+
+
+
