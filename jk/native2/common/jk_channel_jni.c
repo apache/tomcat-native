@@ -106,19 +106,6 @@ typedef struct {
 
 
 
-static int JK_METHOD jk2_channel_jni_setAttribute(jk_env_t *env,
-                                                 jk_bean_t *mbean, 
-                                                 char *name, void *valueP)
-{
-    jk_channel_t *ch=(jk_channel_t *)mbean->object;
-    char *value=valueP;
-
-    if( ch->worker!=NULL ) {
-        return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );
-    }
-    return JK_OK;
-}
-
 static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
                                           jk_bean_t *jniWB)
 {
@@ -553,7 +540,8 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
                     sizeof(jk_channel_jni_private_t));
     ch->is_stream=JK_FALSE;
 
-    result->setAttribute= jk2_channel_jni_setAttribute;
+    /* No special attribute */
+    result->setAttribute= jk2_channel_setAttribute;
     ch->mbean=result;
     result->object= ch;
     result->init= jk2_channel_jni_init; 

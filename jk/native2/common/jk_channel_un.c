@@ -118,16 +118,11 @@ static int JK_METHOD jk2_channel_un_setAttribute(jk_env_t *env,
         socketInfo->file=value;
     } else if( strcmp( "soLinger", name ) == 0 ) {
         socketInfo->l_linger=atoi( value );
-    } else if( strcmp( "debug", name ) == 0 ) {
-        ch->mbean->debug=atoi( value );
     } else if( strcmp( "listen", name ) == 0 ) {
         socketInfo->backlog=atoi( value );
         ch->serverSide=JK_TRUE;
     } else {
-	if( ch->worker!=NULL ) {
-            return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );
-        }
-        return JK_ERR;
+        return jk2_channel_setAttribute( env, mbean, name, valueP );
     }
     return JK_OK;
 }

@@ -69,6 +69,32 @@
 #include <string.h>
 #include "jk_registry.h"
 
+/** Common attributes for all channels
+ */
+int JK_METHOD jk2_channel_setAttribute(jk_env_t *env,
+                                       jk_bean_t *mbean, 
+                                       char *name, void *valueP)
+{
+    jk_channel_t *ch=(jk_channel_t *)mbean->object;
+    char *value=valueP;
+
+    if( strcmp( "debug", name ) == 0 ) {
+        ch->mbean->debug=atoi( value );
+    } else if( strcmp( "disabled", name ) == 0 ) {
+        ch->mbean->disabled=atoi( value );
+        if( ch->worker!=NULL)
+        ch->worker->mbean->disabled=ch->mbean->disabled;
+    } else {
+	if( ch->worker!=NULL ) {
+            return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );
+        }
+        return JK_ERR;
+    }
+    return JK_OK;
+}
+
+
+
 /** Called by java ( local or remote ). 
  */
 int JK_METHOD jk2_channel_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep, int code,
@@ -101,6 +127,8 @@ int JK_METHOD jk2_channel_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *
             env->l->jkLog(env, env->l, JK_LOG_INFO, "ch.recv()\n");
         if( ch->recv != NULL )
             rc=ch->recv(env, ch, ep, msg);
+        if( rc==JK_OK )
+            return JK_INVOKE_WITH_RESPONSE;
         return rc;
     }
     case CH_WRITE: {
