@@ -180,7 +180,7 @@ public class JkInputStream extends InputStream {
     
     // Holds incoming chunks of request body data
     // XXX We do a copy that could be avoided !
-    byte []bodyBuff = new byte[MAX_READ_SIZE];
+    byte []bodyBuff = new byte[9000];
     int blen;  // Length of current chunk of body data in buffer
     int pos;   // Current read position within that buffer
 
@@ -270,14 +270,18 @@ public class JkInputStream extends InputStream {
         contentLength=-1;
     }
 
+    /**
+     */
     public int doRead(ByteChunk responseChunk ) throws IOException {
         if( log.isDebugEnabled())
-            log.debug( "doRead " + pos + " " + blen + " " + available + " " + end_of_stream);
+            log.debug( "doRead " + pos + " " + blen + " " + available + " " + end_of_stream+
+                       " " + responseChunk.getOffset()+ " " + responseChunk.getLength());
         if( blen == pos ) {
             refillReadBuffer();
         }
-        responseChunk.setBytes( bodyBuff, pos, blen-pos );
-        return blen - pos;
+        responseChunk.setBytes( bodyBuff, pos, blen );
+        pos=blen;
+        return blen;
     }
     
     /** Receive a chunk of data. Called to implement the
@@ -287,9 +291,11 @@ public class JkInputStream extends InputStream {
     public boolean receive() throws IOException
     {
         mc.setType( JkHandler.HANDLE_RECEIVE_PACKET );
+        bodyMsg.reset();
         int err = mc.getSource().invoke(bodyMsg, mc);
         if( log.isDebugEnabled() )
             log.info( "Receiving: getting request body chunk " + err + " " + bodyMsg.getLen() );
+        
         if(err < 0) {
 	    throw new IOException();
 	}
@@ -307,6 +313,10 @@ public class JkInputStream extends InputStream {
 
         if( blen == 0 ) {
             return false;
+        }
+
+        if( blen > bodyBuff.length ) {
+            bodyMsg.dump("Body");
         }
         
         if( log.isTraceEnabled() ) {
