@@ -14,16 +14,27 @@ import java.util.Hashtable;
  * request 'GET /' ").
  */
 public class ThreadWithAttributes extends Thread {
+    
     private Object control;
     public static int MAX_NOTES=16;
     private Object notes[]=new Object[MAX_NOTES];
     private Hashtable attributes=new Hashtable();
     private String currentStage;
     private Object param;
+    
+    private Object thData[];
 
     public ThreadWithAttributes(Object control, Runnable r) {
         super(r);
         this.control=control;
+    }
+    
+    public final Object[] getThreadData(Object control ) {
+        return thData;
+    }
+    
+    public final void setThreadData(Object control, Object thData[] ) {
+        this.thData=thData;
     }
 
     /** Notes - for attributes that need fast access ( array )
