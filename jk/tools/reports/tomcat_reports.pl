@@ -277,6 +277,8 @@ sub MedianGraph {
   $div = 1 if $max >= 5;
   $div = 5 if $max >= 20;
   $div = 10 if $max >= 50;
+  $div = 50 if $max >= 200;
+  $div = 100 if $max >= 500;
   $ymax = (int($max/$div) + 1)*$div;
   $ytick = $ymax/$div;
 
@@ -317,6 +319,8 @@ sub DeviationGraph {
   $div = 1 if $max >= 5;
   $div = 5 if $max >= 20;
   $div = 10 if $max >= 50;
+  $div = 50 if $max >= 200;
+  $div = 100 if $max >= 500;
   $ymax = (int($max/$div) + 1)*$div;
   $ytick = $ymax/$div;
 
