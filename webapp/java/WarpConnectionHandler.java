@@ -96,16 +96,20 @@ public class WarpConnectionHandler extends WarpHandler {
         try {
             switch (type) {
                 case WarpConstants.TYP_CONINIT_HST:
+                    String name=reader.readString()+":"+reader.readShort();
+                    
                     // Retrieve this host id
-                    int hid=123;
-                    if (DEBUG) this.debug("CONINIT_HST "+reader.readString()+
-                                          ":"+reader.readShort()+"="+hid);
+                    int hid=this.getConnector().setupHost(name);
+                    if (DEBUG) this.debug("Created new host "+name+" ID="+hid);
+
                     // Send the HOST ID back to the WARP client
                     this.packet.reset();
                     this.packet.writeShort(hid);
                     this.send(WarpConstants.TYP_CONINIT_HID,this.packet);
                     break;
+
                 case WarpConstants.TYP_CONINIT_APP:
+
                     // Retrieve this application id
                     int aid=321;
                     if (DEBUG) this.debug("CONINIT_APP "+reader.readString()+
@@ -115,6 +119,7 @@ public class WarpConnectionHandler extends WarpHandler {
                     this.packet.writeShort(aid);
                     this.send(WarpConstants.TYP_CONINIT_AID,this.packet);
                     break;
+
                 case WarpConstants.TYP_CONINIT_REQ:
                     // Create a new WarpRequestHandler and register it with
                     // an unique RID.

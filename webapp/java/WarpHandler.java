@@ -338,6 +338,13 @@ public abstract class WarpHandler implements Lifecycle, Runnable {
     }
 
     /**
+     * Return the WarpConnector associated with this handler.
+     */
+    protected WarpConnector getConnector() {
+        return(this.connection.getConnector());
+    }
+
+    /**
      * Set the WarpConnection associated with this handler.
      */
     protected void setConnection(WarpConnection connection) {

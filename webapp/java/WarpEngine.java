@@ -77,7 +77,7 @@ import org.apache.catalina.core.StandardEngine;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpEngine extends StandardEngine implements Engine {
+public class WarpEngine extends StandardEngine {
 
     // -------------------------------------------------------------- CONSTANTS
 

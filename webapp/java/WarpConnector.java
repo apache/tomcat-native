@@ -116,6 +116,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     private int acceptcount=10;
     /** The root path for web applications. */
     private String appbase="";
+    /** The current Host ID. */
+    private int hostid=0;
 
     // ------------------------------------------------------------ CONSTRUCTOR
 
@@ -173,6 +175,22 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         return (response);
     }
 
+    /**
+     * Set up a virtual host in our Engine and return the associated host ID.
+     */
+    public int setupHost(String name) {
+        WarpHost host=new WarpHost();
+        int id=this.hostid++;
+
+        host.setName(name);
+        host.setAppBase(this.getAppBase());
+        host.setHostID(id);
+        
+        this.getContainer().addChild(host);
+        
+        return(id);
+    }
+    
     /**
      * Begin processing requests via this Connector.
      */
