@@ -78,7 +78,7 @@
 #include "jk_worker.h"
 #include "jk_uri_worker_map.h"
 
-#define VERSION_STRING "Jakarta/ISAPI/1.0b1"
+#define VERSION_STRING "Jakarta/ISAPI/" JK_VERSTRING
 
 #define DEFAULT_WORKER_NAME ("ajp13")
 /*
