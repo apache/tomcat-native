@@ -283,8 +283,6 @@ public class ChunkedInputFilter implements InputFilter {
 
         int result = 0;
         boolean eol = false;
-        int begin = pos;
-        int end = begin;
         boolean readDigit = false;
 
         while (!eol) {
@@ -299,11 +297,9 @@ public class ChunkedInputFilter implements InputFilter {
                 eol = true;
             } else {
                 if (HexUtils.DEC[buf[pos]] != -1) {
-                    if (!readDigit) {
-                        readDigit = true;
-                        begin = pos;
-                    }
-                    end = pos;
+                    readDigit = true;
+                    result *= 16;
+                    result += HexUtils.DEC[buf[pos]];
                 }
             }
 
@@ -313,15 +309,6 @@ public class ChunkedInputFilter implements InputFilter {
 
         if (!readDigit)
             return false;
-
-        int offset = 1;
-        for (int i = end; i >= begin; i--) {
-            int val = HexUtils.DEC[buf[i]];
-            if (val == -1)
-                return false;
-            result = result + val * offset;
-            offset = offset * 16;
-        }
 
         if (result == 0)
             endChunk = true;
