@@ -85,7 +85,8 @@
 
 #define HUGE_BUFFER_SIZE (8*1024)
 
-int JK_METHOD jk_logger_apache2_factory(jk_env_t *env, void **result,
+int JK_METHOD jk_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
+                                        void **result,
                                         char *type, char *name);
 
 
@@ -162,6 +163,7 @@ static int jk_logger_apache2_jkLog(jk_logger_t *l,
 
 
 int jk_logger_apache2_factory(jk_env_t *env,
+                              jk_pool_t *pool,
                               void **result,
                               char *type,
                               char *name)

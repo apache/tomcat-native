@@ -66,26 +66,27 @@
 #include "apr_pools.h"
 #include "apr_strings.h"
 
-int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent );
+int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent, apr_pool_t *aprPool );
 
-int JK_METHOD jk_pool_apr_factory(jk_env_t *env, void **result,
+int JK_METHOD jk_pool_apr_factory(jk_env_t *env,
+                                  jk_pool_t *pool,
+                                  void **result,
                                   char *type, char *name);
 
-void jk_pool_apr_open(jk_pool_t *_this, apr_pool_t *realPool );
-
-
-/** Nothing - apache will take care
+/** Nothing - apache will take care ??
  */
-static void jk_close_pool(jk_pool_t *p)
+static void jk_pool_apr_close(jk_pool_t *p)
 {
+    
 }
 
 /** Nothing - apache will take care.
     XXX with jk pools we can implement 'recycling',
     not sure what's the equivalent for apache
 */
-static void jk_reset_pool(jk_pool_t *p)
+static void jk_pool_apr_reset(jk_pool_t *p)
 {
+    apr_pool_clear(p->_private);
 }
 
 static void *jk_pool_apr_calloc(jk_pool_t *p, 
@@ -96,7 +97,7 @@ static void *jk_pool_apr_calloc(jk_pool_t *p,
 }
 
 static void *jk_pool_apr_alloc(jk_pool_t *p, 
-                           size_t size)
+                               size_t size)
 {
     return apr_palloc( (apr_pool_t *)p->_private, (apr_size_t)size);
 }
@@ -128,41 +129,49 @@ static void *jk_pool_apr_strdup(jk_pool_t *p,
 
 
 
-/* Not implemented yet */
-int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent ) {
+static jk_pool_t *jk_pool_apr_createChild( jk_pool_t *_this, int sizeHint ) {
+    apr_pool_t *parentAprPool=_this->_private;
+    apr_pool_t *childAprPool;
+    jk_pool_t *newPool;
 
-    return JK_TRUE;
+    apr_pool_create( &childAprPool, parentAprPool );
+
+    jk_pool_apr_create( &newPool, _this, childAprPool );
+    
+    return newPool;
 }
 
-static void init_methods(jk_pool_t *_this ) {
-    _this->open=jk_open_pool;
-    _this->close=jk_close_pool;
-    _this->reset=jk_reset_pool;
+
+int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent, apr_pool_t *aprPool)
+{
+    jk_pool_t *_this=(jk_pool_t *)apr_palloc(aprPool, sizeof( jk_pool_t ));
+    
+    _this->_private=aprPool;
+    
+    *newPool = _this;
+
+    /* methods */
+    _this->create=jk_pool_apr_createChild;
+    _this->close=jk_pool_apr_close;
+    _this->reset=jk_pool_apr_reset;
     _this->alloc=jk_pool_apr_alloc;
     _this->calloc=jk_pool_apr_calloc;
     _this->pstrdup=jk_pool_apr_strdup;
     _this->realloc=jk_pool_apr_realloc;
-}
-
-/* Not used yet */
-int JK_METHOD jk_pool_apr_factory(jk_env_t *env, void **result,
-                               char *type, char *name)
-{
-    jk_pool_t *_this=(jk_pool_t *)calloc( 1, sizeof(jk_pool_t));
-
-    init_methods(_this );
-
-    *result=_this;
     
     return JK_TRUE;
 }
 
-/* that's what jk use to create pools. Deprecated! */
-void jk_pool_apr_open(jk_pool_t *_this,
-                      apr_pool_t *realPool )
+/* Not used yet */
+int JK_METHOD jk_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,
+                                  void **result,
+                                  char *type, char *name)
 {
-    _this->_private=realPool;
-    init_methods( _this );
+    jk_pool_t *_this=(jk_pool_t *)calloc( 1, sizeof(jk_pool_t));
+
+    *result=_this;
+    
+    return JK_TRUE;
 }
 
 
