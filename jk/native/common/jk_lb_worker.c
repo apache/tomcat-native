@@ -212,10 +212,10 @@ static void close_workers(lb_worker_t * p, int num_of_workers, jk_logger_t *l)
 }
 
 
-int is_worker_candidate(worker_record_t *wr,
-                        int search_id,
-                        const char *search_string,
-                        jk_logger_t *l)
+static int is_worker_candidate(worker_record_t *wr,
+                               int search_id,
+                               const char *search_string,
+                               jk_logger_t *l)
 {
     switch (search_id) {
         case 1:
