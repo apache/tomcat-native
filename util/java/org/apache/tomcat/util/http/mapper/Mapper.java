@@ -634,17 +634,17 @@ public final class Mapper {
         int pathOffset = path.getOffset();
         int pathEnd = path.getEnd();
         int servletPath = pathOffset;
+        boolean noServletPath = false;
 
         int length = context.name.length();
         if (length != (pathEnd - pathOffset)) {
             servletPath = pathOffset + length;
         } else {
-            // The path is empty, redirect to "/"
+            noServletPath = true;
             path.append('/');
-            mappingData.redirectPath.setChars
-                (path.getBuffer(), path.getOffset(), path.getEnd());
-            path.setEnd(path.getEnd() - 1);
-            return;
+            pathOffset = path.getOffset();
+            pathEnd = path.getEnd();
+            servletPath = pathOffset+length;
         }
 
         path.setOffset(servletPath);
@@ -679,6 +679,14 @@ public final class Mapper {
                     mappingData.pathInfo.recycle();
                 }
             }
+        }
+
+        if(mappingData.wrapper == null && noServletPath) {
+            // The path is empty, redirect to "/"
+            mappingData.redirectPath.setChars
+                (path.getBuffer(), pathOffset, pathEnd);
+            path.setEnd(pathEnd - 1);
+            return;
         }
 
         // Rule 3 -- Extension Match
