@@ -157,6 +157,7 @@ extern "C" {
 #define JK_LOG_LEVEL_DEF    ("emerg")
 
 #define JK_OK (0)
+#define JK_ERR (1)
     
 #define JK_TRUE  (1)
 #define JK_FALSE (0)
