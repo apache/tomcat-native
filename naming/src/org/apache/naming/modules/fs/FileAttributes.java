@@ -60,31 +60,11 @@
 
 package org.apache.naming.modules.fs;
 
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.Date;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
-import java.io.OutputStream;
-import java.io.IOException;
-import javax.naming.Context;
-import javax.naming.Name;
-import javax.naming.NameParser;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.CompositeName;
-import javax.naming.NameParser;
-import javax.naming.OperationNotSupportedException;
-import javax.naming.NameAlreadyBoundException;
-import javax.naming.directory.*;
 
-import org.apache.tomcat.util.res.StringManager;
-
-import org.apache.naming.core.*;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.BasicAttribute;
+import javax.naming.directory.BasicAttributes;
 
 /**
  * This specialized resource attribute implementation does some lazy 

@@ -60,10 +60,9 @@
 package org.apache.naming.modules.memory;
 
 import java.util.Hashtable;
-import javax.naming.Name;
+
 import javax.naming.Context;
 import javax.naming.NamingException;
-import javax.naming.spi.ObjectFactory;
 import javax.naming.spi.InitialContextFactory;
 
 /**

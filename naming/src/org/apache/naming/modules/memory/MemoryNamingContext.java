@@ -60,13 +60,25 @@
 package org.apache.naming.modules.memory;
 
 import java.util.Hashtable;
-import java.util.Enumeration;
-import javax.naming.*;
-import javax.naming.directory.*;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.LinkRef;
+import javax.naming.Name;
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.NotContextException;
+import javax.naming.Reference;
+import javax.naming.Referenceable;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
 import javax.naming.spi.NamingManager;
 
-import org.apache.naming.core.*;
-import org.apache.tomcat.util.res.*;
+import org.apache.naming.core.BaseDirContext;
+import org.apache.naming.core.NamingContextEnumeration;
+import org.apache.naming.core.NamingEntry;
+import org.apache.tomcat.util.res.StringManager;
 
 /**
  * In-memory context.

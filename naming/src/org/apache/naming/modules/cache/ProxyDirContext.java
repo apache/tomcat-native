@@ -61,31 +61,23 @@
 package org.apache.naming.modules.cache;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.Hashtable;
 import java.util.Map;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
 
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.NameParser;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
 import javax.naming.directory.Attributes;
-import javax.naming.directory.Attribute;
+import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 
-// Better classloader support
-import org.apache.tomcat.util.res.StringManager;
-
-import org.apache.naming.core.*;
-import org.apache.naming.util.AttributeHelper;
-
 import org.apache.commons.collections.LRUMap;
+import org.apache.naming.core.BaseDirContext;
+import org.apache.naming.util.AttributeHelper;
+import org.apache.tomcat.util.res.StringManager;
 
 /* Changes( costin ): The goal is to make it a generic JNDI cache, not specific
    to file system. 

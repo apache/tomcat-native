@@ -61,15 +61,16 @@
 package org.apache.naming.modules.java;
 
 import java.util.Hashtable;
+
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.NameParser;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 
+import org.apache.naming.core.BaseContext;
+import org.apache.naming.modules.memory.MemoryNamingContext;
 import org.apache.tomcat.util.res.StringManager;
-import org.apache.naming.modules.memory.*;
-import org.apache.naming.core.*;
 
 /* This delegates to another context, removing a prefix.
    XXX make it generic, move to core. The context thread can be

@@ -60,12 +60,12 @@
 package org.apache.naming.modules.fs;
 
 import java.util.Hashtable;
-import javax.naming.Name;
+
 import javax.naming.Context;
+import javax.naming.Name;
 import javax.naming.NamingException;
-import javax.naming.spi.ObjectFactory;
 import javax.naming.spi.InitialContextFactory;
-import org.apache.naming.modules.memory.MemoryNamingContext;
+import javax.naming.spi.ObjectFactory;
 //import org.apache.naming.ContextBindings;
 
 /**

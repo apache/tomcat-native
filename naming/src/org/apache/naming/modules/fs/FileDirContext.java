@@ -51,35 +51,25 @@
 
 package org.apache.naming.modules.fs;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.Date;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
-import java.io.OutputStream;
-import java.io.IOException;
-import javax.naming.Context;
+
 import javax.naming.Name;
-import javax.naming.NameParser;
+import javax.naming.NameAlreadyBoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.CompositeName;
-import javax.naming.NameParser;
-import javax.naming.OperationNotSupportedException;
-import javax.naming.NameAlreadyBoundException;
-import javax.naming.directory.DirContext;
 import javax.naming.directory.Attributes;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.ModificationItem;
-import javax.naming.directory.SearchControls;
+import javax.naming.directory.DirContext;
 
+import org.apache.naming.core.BaseDirContext;
+import org.apache.naming.core.NamingContextEnumeration;
+import org.apache.naming.core.NamingEntry;
 import org.apache.tomcat.util.res.StringManager;
-
-import org.apache.naming.core.*;
 
 /**
  * DirContext for a filesystem directory.

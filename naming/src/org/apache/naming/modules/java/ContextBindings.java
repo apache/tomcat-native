@@ -60,11 +60,12 @@
 package org.apache.naming.modules.java;
 
 import java.util.Hashtable;
-import javax.naming.NamingException;
-import javax.naming.Context;
 
+import javax.naming.Context;
+import javax.naming.NamingException;
+
+import org.apache.naming.core.ContextAccessController;
 import org.apache.tomcat.util.res.StringManager;
-import org.apache.naming.core.*;
 
 // this can be a nice generic util that binds per thread or CL any object.
 
