@@ -235,7 +235,8 @@ static unsigned long jk_msg_ajp_getLong(jk_env_t *env, jk_msg_t *msg)
     
     if(msg->pos + 3 > msg->len) {
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                       "Error: try to get data past end of the buffer\n");
+                       "msg_ajp.getLong(): BufferOverflowException %d %d\n",
+                       msg->pos, msg->len);
         return -1;
     }
     i  = ((msg->buf[(msg->pos++)] & 0xFF)<<24);
@@ -250,7 +251,8 @@ static unsigned short jk_msg_ajp_getInt(jk_env_t *env, jk_msg_t *msg)
     int i;
     if(msg->pos + 1 > msg->len) {
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                       "Error: try to get data past end of the buffer\n");
+                       "msg_ajp.geInt(): BufferOverflowException %d %d\n",
+                       msg->pos, msg->len);
         return -1;
     }
     i  = ((msg->buf[(msg->pos++)] & 0xFF)<<8);
@@ -263,7 +265,8 @@ static unsigned short jk_msg_ajp_peekInt(jk_env_t *env, jk_msg_t *msg)
     int i;
     if(msg->pos + 1 > msg->len) {
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                       "Error: try to get data past end of the buffer\n");
+                       "msg_ajp.peekInt(): BufferOverflowException %d %d\n",
+                       msg->pos, msg->len);
         return -1;
     }
     i  = ((msg->buf[(msg->pos)] & 0xFF)<<8);
@@ -276,7 +279,8 @@ static unsigned char jk_msg_ajp_getByte(jk_env_t *env, jk_msg_t *msg)
     unsigned char rc;
     if(msg->pos > msg->len) {
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                       "Error: try to get data past end of the buffer\n");
+                       "msg_ajp.getByte(): BufferOverflowException %d %d\n",
+                       msg->pos, msg->len);
         return -1;
     }
     rc = msg->buf[msg->pos++];
@@ -291,7 +295,8 @@ static unsigned char *jk_msg_ajp_getString(jk_env_t *env, jk_msg_t *msg)
 
     if((size < 0 ) || (size + start > msg->maxlen)) { 
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                       "Error: try to get data past end of the buffer\n");
+                       "msg_ajp.getString(): BufferOverflowException %d %d\n",
+                       msg->pos, msg->len);
         return (unsigned char *)"ERROR"; /* XXX */
     }
 
@@ -310,7 +315,8 @@ static unsigned char *jk_msg_ajp_getBytes(jk_env_t *env, jk_msg_t *msg, int *len
     
     if((size < 0 ) || (size + start > msg->maxlen)) { 
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                       "Error: try to get data past end of the buffer\n");
+                       "msg_ajp.getBytes(): BufferOverflowException %d %d\n",
+                       msg->pos, msg->len);
         return (unsigned char *)"ERROR"; /* XXX */
     }
 
@@ -330,57 +336,21 @@ static void swap_16(unsigned char *src, unsigned char *dst)
     *dst= *src;
 }
 
-
-/*
- * Send a message to endpoint, using corresponding PROTO HEADER
- */
-static int jk_msg_ajp_send(jk_env_t *env, jk_msg_t *msg,
-                           jk_endpoint_t *ae )
+/** Process the request header. At least the header must be
+    available - the channel may get more data it it can, to
+    avoid multiple system calls.
+*/
+static int jk_msg_ajp_checkHeader(jk_env_t *env, jk_msg_t *msg,
+                                  jk_endpoint_t *ae )
 {
-    int err;
-    jk_channel_t *channel=ae->worker->channel;
-
-    jk_msg_ajp_end(env, msg);
-
-    /* jk_msg_ajp_dump(l, JK_LOG_DEBUG, "sending to ajp13", msg); */
-    env->l->jkLog( env, env->l, JK_LOG_INFO,
-                   "msgAjp.send() %d\n", msg->len );
-    
-    err=channel->send( env, channel, ae, 
-                       msg->buf, msg->len );
-    
-    if( err!=JK_TRUE ) {
-        return err;
-    }
-
-    return JK_TRUE;
-}
-
-
-/*
- * Receive a message from endpoint
- */
-static int jk_msg_ajp_receive(jk_env_t *env, jk_msg_t *msg,
-                              jk_endpoint_t *ae )
-{
-    unsigned char head[4];
-    int           rc;
-    int           msglen;
-    jk_channel_t *channel=ae->worker->channel;
-
-    rc=channel->recv( env, channel, ae, head, 4 );
-
-    if(rc < 0) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                 "msgAjp.receive(): Read head failed %d %d\n",
-                 rc, errno);
-        return JK_FALSE;
-    }
+    char *head=msg->buf;
+    int msglen;
 
     if( head[0] != 0x41 || head[1] != 0x42 ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "msgAjp.receive(): Bad signature %x%x\n", head[0], head[1]);
-        return JK_FALSE;
+                      "msgAjp.receive(): Bad signature %x%x\n",
+                      head[0], head[1]);
+        return -1;
     }
 
     msglen  = ((head[2]&0xff)<<8);
@@ -390,27 +360,15 @@ static int jk_msg_ajp_receive(jk_env_t *env, jk_msg_t *msg,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "msgAjp.receive(): Incoming message is too big %d\n",
                       msglen);
-        return JK_FALSE;
+        return -2;
     }
 
-    msg->len=msglen;
-    msg->pos=0;
+    msg->len=msglen+4;
+    msg->pos=4;
 
-    rc=channel->recv( env, channel, ae, msg->buf, msglen);
-
-    if(rc < 0) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "msgAjp.receive(): Error receiving message body %d %d\n",
-                      rc, errno);
-        return JK_FALSE;
-    }
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "msgAjp.receive(): Received len=%d type=%d\n",
-                  msglen, (int)msg->buf[0]);
-    
-    return JK_TRUE;
+    return msglen;
 }
+
 
 
 /** 
@@ -485,6 +443,8 @@ jk_msg_t *jk_msg_ajp_create(jk_env_t *env, jk_pool_t *pool, int buffSize)
     msg->maxlen=buffSize;
     msg->len=0;
 
+    msg->headerLength=4;
+
     msg->reset=jk_msg_ajp_reset;
     msg->end=jk_msg_ajp_end;
     msg->dump=jk_msg_ajp_dump;
@@ -504,8 +464,7 @@ jk_msg_t *jk_msg_ajp_create(jk_env_t *env, jk_pool_t *pool, int buffSize)
     msg->getString=jk_msg_ajp_getString;
     msg->getBytes=jk_msg_ajp_getBytes;
 
-    msg->send=jk_msg_ajp_send;
-    msg->receive=jk_msg_ajp_receive;
+    msg->checkHeader=jk_msg_ajp_checkHeader;
                        
     return msg;
 }
