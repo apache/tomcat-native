@@ -70,7 +70,7 @@ jk2_objCache_put(jk_env_t *env, jk_objCache_t *_this, void *obj)
     int rc;
     
     if(_this->size <= 0 )
-        return JK_FALSE;
+        return JK_ERR;
 
     
     JK_ENTER_CS(&_this->cs, rc);
@@ -96,14 +96,14 @@ jk2_objCache_put(jk_env_t *env, jk_objCache_t *_this, void *obj)
         }
 
         JK_LEAVE_CS(&_this->cs, rc);
-        if(rc) {
+        if(rc==JK_TRUE) {
             /*   l->jkLog(l, JK_LOG_DEBUG, "Return endpoint to pool\n"); */
-            return JK_TRUE;
+            return JK_OK;
         }
     }
 
     /* Can't enter CS */ 
-    return JK_FALSE; 
+    return JK_ERR; 
 }
 
 static int
@@ -123,16 +123,16 @@ jk2_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
                                      sizeof(void *) * _this->size);
 
     if( _this->data==NULL )
-        return JK_FALSE;
+        return JK_ERR;
     
     JK_INIT_CS(&(_this->cs), i);
     if (!i) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "objCache.create(): Can't init CS\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int  
@@ -144,7 +144,7 @@ jk2_objCache_destroy(jk_env_t *env, jk_objCache_t *_this ) {
     _this->count=0;
     /* Nothing to free, we use pools */
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -155,7 +155,7 @@ jk2_objCache_get(jk_env_t *env, jk_objCache_t *_this )
     void *ae=NULL;
 
     JK_ENTER_CS(&_this->cs, rc);
-    if (rc) {
+    if (rc==JK_TRUE) {
         if( _this->count > 0 ) {
             _this->count--;
             ae=_this->data[ _this->count ];

@@ -143,7 +143,7 @@ int jk2_pool_create(jk_env_t *env, jk_pool_t **newPool,
     
     *newPool = _this;
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static jk_pool_t *jk2_pool_createChild( jk_env_t *env, jk_pool_t *parent, int size ) {
@@ -328,7 +328,7 @@ int JK_METHOD jk2_pool_factory( jk_env_t *env, void **result,
 
     *result=_this;
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
