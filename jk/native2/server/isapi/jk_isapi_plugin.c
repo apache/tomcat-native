@@ -571,7 +571,7 @@ static int init_jk(char *serverName)
 {
     int rc = JK_TRUE;  
        
-    jk_env_t *env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+    jk_env_t *env = workerEnv->globalEnv;
     workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
                               workerEnv->pool->pstrdup( env, workerEnv->pool, server_root));
     /* Logging the initialization type: registry or properties file in virtual dir
