@@ -25,6 +25,10 @@
   make
 * make install
 
+  It is possible to set CFLAGS and LDFLAGS to add some platform specifics:
+  LDFLAGS=-lc \
+  ./configure -with-apxs=/home2/local/apache/bin/apxs
+
   jakarta-tomcat-connectors arguments
   -----------------------------------
   JVM related parameters:
