@@ -193,6 +193,8 @@ public class SoTask extends Task {
 	if (src == null) 
             throw new BuildException("No source files");
 
+        if (buildDir == null) buildDir = project.getBaseDir();
+
 	DirectoryScanner ds=src.getDirectoryScanner( project );
         String [] list = ds.getIncludedFiles(); 
 	if (list.length == 0) 
@@ -208,8 +210,8 @@ public class SoTask extends Task {
             }
 
 	    // Check the dependency
-
-	    compileList.addElement( srcFile );
+	    if( needCompile( srcFile, buildDir ) ) 
+		compileList.addElement( srcFile );
 	}
 
         String [] includeList = ( includes==null ) ?
@@ -226,6 +228,42 @@ public class SoTask extends Task {
 
     }
 
+    protected static GlobPatternMapper co_mapper=new GlobPatternMapper();
+    static {
+	co_mapper.setFrom("*.c");
+	co_mapper.setTo("*.o");
+    }
+    
+    /** Verify if a .c file needs compilation.
+     *	As with javac, we assume a fixed build structure, where all .o
+     *	files are in a separate directory from the sources ( no mess ).
+     *
+     *  XXX Hack makedepend somehow into this.
+     */
+    public boolean needCompile( File srcF, File oDir ) {
+	// For each .c file we'll have a .o file in the build dir,
+	// with the same name.
+	if( !srcF.exists() )
+	    return false;
+
+	String name=srcF.getName();
+	String targetNA[]=co_mapper.mapFileName( name );
+	if( targetNA==null )
+	    return true; // strange, probably different extension ?
+	File target=new File( oDir, targetNA[0] );
+	//     System.out.println("XXX " + name + " " + targetNA[0]
+	// 	   + target.exists());
+	if( ! target.exists() )
+	    return true;
+	if( srcF.lastModified() > target.lastModified() )
+	    return true;
+
+	if( debug > 0 )
+	    log("No need to compile " + srcF + " target " + target ); 
+	return false;
+	
+    }
+    
     /** Generate the .so file using 'standard' gcc flags. This assume
      *  a 'current' gcc on a 'normal' platform. 
      */
@@ -302,7 +340,6 @@ public class SoTask extends Task {
 
         exe.setAntRun(project);
 
-        if (buildDir == null) buildDir = project.getBaseDir();
         exe.setWorkingDirectory(buildDir);
 
         exe.setCommandline(cmd.getCommandline());

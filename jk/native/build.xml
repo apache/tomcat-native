@@ -11,6 +11,9 @@
   <property name="apxs13" value="/usr/sbin/apxs" />
   <property name="apxs20" value="/opt/apache2/bin/apxs" />
 
+  <property name="apache2.home" location="/opt/apache2" />
+  <property name="apache13.home" location="/usr" />
+
   <target name="main" >
     <taskdef resource="META-INF/ant.tasks" 
 	     classpathref="jkant" />
@@ -36,7 +39,9 @@
 	<include name="common/*.c" />
       </src>
       <includes>
-	<pathelement location="../common" />
+	<pathelement location="${native.dir}/common" />
+	<pathelement location="${apache2.home}/include" />
+	<pathelement location="${java.home}/../include" />
       </includes>
     </so>
     
@@ -48,7 +53,9 @@
         <exclude name="common/jk_jni_worker.c" />
       </src>
       <includes>
-	<pathelement location="../common" />
+	<pathelement location="${native.dir}/common" />
+	<pathelement location="${apache13.home}/include/apache" />
+	<pathelement location="${apache13.home}/include" />
       </includes>
     </so>
   </target>
