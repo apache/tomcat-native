@@ -38,8 +38,8 @@
         <mkdir dir="${naming.build.dir}/classes"/>
         <javac srcdir="src"
                destdir="${naming.build.dir}/classes"
-               deprecation="off"
-               debug="${debug}"
+               deprecation="${compile.deprecation}"
+               debug="${compile.debug}"
                optimize="${optimize}"
                verbose="off" >
             <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat40.detect"/>

@@ -133,7 +133,9 @@
     <!-- Compile our sources -->
     <javac
         srcdir="${source.java}"
-        destdir="${build.classes}">
+        destdir="${build.classes}"
+        debug="${compile.debug}"
+        deprecation="${compile.deprecation}">
       <classpath refid="classpath"/>
     </javac>
 

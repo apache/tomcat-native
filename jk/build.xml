@@ -20,7 +20,8 @@
 
     <!-- Compile options -->
     <property name="optimize" value="off" />
-    <property name="debug" value="on" />
+    <property name="compile.debug" value="true" />
+    <property name="compile.deprecation" value="false" />
 
     <!-- default locations, overrident by properties -->
     <property name="base.path" location="/usr/share/java"/>
@@ -170,8 +171,8 @@
             description="Build java side of the connector" >
         <javac srcdir="java"
                destdir="${jk.build}/classes"
-               deprecation="off"
-               debug="${debug}"
+               deprecation="${compile.deprecation}"
+               debug="${compile.debug}"
                optimize="${optimize}"
                verbose="off" >
             <exclude name="org/apache/ajp/**" if="tomcat5.detect"/>
@@ -248,7 +249,8 @@
         <mkdir dir="${jk.build}/lib"/>
 	<javac srcdir="jkant/java" 
 	       destdir="${jk.build}/classes" 
-	       debug="${debug}"
+	       debug="${compile.debug}"
+               deprecation="${compile.deprecation}"
 	       optimize="${optimize}"
 	       verbose="off" >
 	</javac>

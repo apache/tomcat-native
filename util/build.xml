@@ -59,8 +59,8 @@
         <echo message="-- JDK14 = ${jdk1.4.present}"/>
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
-	       deprecation="off"
-	       debug="on"
+	       deprecation="${compile.deprecation}"
+	       debug="${compile.debug}"
 	       optimize="off"
 	       verbose="off"
 	       excludes="**/CVS/**">
