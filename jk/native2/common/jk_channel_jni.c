@@ -146,20 +146,28 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.open():  \n" );
 
-    if( _this->worker != NULL )
-        _this->worker->mbean->disabled=JK_TRUE;
-    
+    /* It is useless to continue if the channel worker 
+       does not exist.
+     */
+    if( _this->worker == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "channel_jni.open()  NullPointerException, no channel worker found\n"); 
+        return JK_ERR;
+    }
+
     jniCh->vm=(jk_vm_t *)we->vm;
     if( jniCh->vm == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() no VM found\n" ); 
+        _this->worker->mbean->disabled=JK_TRUE;
         return JK_ERR;
     }
 
     jniEnv = (JNIEnv *)jniCh->vm->attach( env, jniCh->vm );
     if( jniEnv == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() can't attach\n" ); 
+        _this->worker->mbean->disabled=JK_TRUE;
         return JK_ERR;
     }
     /* Create the buffers used by the write method. We allocate a
@@ -174,24 +182,22 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
                                        sizeof( jk_ch_jni_ep_private_t ));
     
     endpoint->channelData=epData;
-    /** XXX make it customizable */
-    jniCh->className=JAVA_BRIDGE_CLASS_NAME;
 
-    jniCh->jniBridge =
-        (*jniEnv)->FindClass(jniEnv, jniCh->className );
-
+    jniCh->jniBridge = (*jniEnv)->FindClass(jniEnv, jniCh->className );
     
     if( jniCh->jniBridge == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() can't find %s\n",jniCh->className ); 
+        _this->worker->mbean->disabled=JK_TRUE;
         return JK_ERR;
     }
 
     jniCh->jniBridge=(*jniEnv)->NewGlobalRef( jniEnv, jniCh->jniBridge);
 
     if( jniCh->jniBridge == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() Unable to allocate globalref for %s\n",jniCh->className ); 
+        _this->worker->mbean->disabled=JK_TRUE;
         return JK_ERR;
     }
 
@@ -206,8 +212,9 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
                  "createJavaContext", "(Ljava/lang/String;J)Ljava/lang/Object;");
     if( jmethod == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() can't find createJavaContext\n"); 
+        _this->worker->mbean->disabled=JK_TRUE;
         return JK_ERR;
     }
     
@@ -222,6 +229,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() Can't create java context\n" ); 
         epData->jniJavaContext=NULL;
+        _this->worker->mbean->disabled=JK_TRUE;
         return JK_ERR;
     }
     epData->jniJavaContext=(*jniEnv)->NewGlobalRef( jniEnv, jobj );
@@ -235,8 +243,9 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
                                          "getBuffer",
                                          "(Ljava/lang/Object;I)[B");
     if( jmethod == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() can't find getBuffer\n"); 
+        _this->worker->mbean->disabled=JK_TRUE;
         return JK_ERR;
     }
 
@@ -259,17 +268,17 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
                                      "(JLjava/lang/Object;)I");
     
     if( jniCh->writeMethod == NULL ) {
-    env->l->jkLog(env, env->l, JK_LOG_EMERG,
+        env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "channel_jni.open() can't find jniInvoke\n"); 
+        
+        _this->worker->mbean->disabled=JK_TRUE;
         return JK_ERR;
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "channel_jni.open() found write method, open ok\n" ); 
 
-    
-    if( _this->worker != NULL )
-        _this->worker->mbean->disabled=JK_FALSE;
+    _this->worker->mbean->disabled=JK_FALSE;
     
     /* Don't detach ( XXX Need to find out when the thread is
      *  closing in order for this to work )
