@@ -143,6 +143,34 @@ static int jk_map_default_put(jk_env_t *env, jk_map_t *m,
     return rc;
 }
 
+static int jk_map_default_add(jk_env_t *env, jk_map_t *m,
+                              const char *name, void *value)
+{
+    int rc = JK_FALSE;
+    int i;
+    jk_map_private_t *mPriv;
+
+    if( name==NULL ) 
+        return JK_FALSE;
+
+    mPriv=(jk_map_private_t *)m->_private;
+    
+    jk_map_default_realloc(m);
+    
+    if(mPriv->size < mPriv->capacity) {
+        mPriv->values[mPriv->size] = value;
+        /* XXX this is wrong - either we take ownership and copy both
+           name and value,
+           or none. The caller should do that if he needs !
+        */
+        /*     mPriv->names[mPriv->size] = m->pool->pstrdup(m->pool, name); */
+        mPriv->names[mPriv->size] =  name; 
+        mPriv->size ++;
+        rc = JK_TRUE;
+    }
+    return rc;
+}
+
 static int jk_map_default_size(jk_env_t *env, jk_map_t *m)
 {
     jk_map_private_t *mPriv;
@@ -515,6 +543,7 @@ int jk_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
 
     _this->get=jk_map_default_get;
     _this->put=jk_map_default_put;
+    _this->add=jk_map_default_add;
     _this->size=jk_map_default_size;
     _this->nameAt=jk_map_default_nameAt;
     _this->valueAt=jk_map_default_valueAt;
