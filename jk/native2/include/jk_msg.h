@@ -106,7 +106,11 @@ struct jk_msg {
     /** Method id - to be sent in the packet
      */
     int id;
- 
+
+    /** Header length for this message
+     */
+    int headerLength;
+    
     /*
      * Prepare the buffer for a new invocation 
      */
@@ -116,6 +120,9 @@ struct jk_msg {
      * Finalize the buffer before sending - set length fields, etc
      */
     void (*end)(struct jk_env *env, struct jk_msg *_this);
+
+    int (*checkHeader)(struct jk_env *env, struct jk_msg *_this,
+                        struct jk_endpoint *e);
 
     /*
      * Dump the buffer header
@@ -158,18 +165,9 @@ struct jk_msg {
         The buffer is internal to the message, you must save
         or make sure the message lives long enough.
      */ 
-    unsigned char *(*getBytes)(struct jk_env *env, struct jk_msg *_this, int *len);
-
-
-    /*
-     * Receive a message from endpoint
-     */
-    int (*receive)(struct jk_env *env, jk_msg_t *_this, struct jk_endpoint *ae );
-
-    /*
-     * Send a message to endpoint
-     */
-    int (*send)(struct jk_env *env, jk_msg_t *_this, struct jk_endpoint *ae );
+    unsigned char *(*getBytes)(struct jk_env *env,
+                               struct jk_msg *_this,
+                               int *len);
 
     /** 
      * Special method. Will read data from the server and add them as
