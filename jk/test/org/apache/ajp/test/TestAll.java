@@ -1,10 +1,9 @@
 package org.apache.ajp.test;
 
 // junit
-import junit.framework.*;
-
-// ajp
-import org.apache.ajp.*;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class TestAll extends TestCase {
 

@@ -1,14 +1,20 @@
 package org.apache.ajp.test;
 
-import org.apache.ajp.*;
-import org.apache.tomcat.util.http.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
-// junit
-import junit.framework.*;
+import org.apache.ajp.Ajp13;
+import org.apache.ajp.Ajp13Packet;
+import org.apache.ajp.RequestHandler;
+import org.apache.tomcat.util.http.BaseRequest;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 public class TestAjp13 extends TestCase {
 
@@ -197,6 +203,13 @@ class Ajp13Server extends Thread {
                     break;
                 }
             
+            	// Special low level request allready handled (ie: PING/PONG)
+            	if( status == 999 )
+            	{
+					request.recycle();
+            		continue;
+            	}
+            	
                 if( status != 200 )
                     break;
 
