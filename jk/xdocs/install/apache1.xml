@@ -17,24 +17,6 @@
 <p>
 The mod_jk build use the widely used configure system.
 </p>
-<subsection name="Prepare your mod_jk configure from CVS">
-<p>
-In case you get source from CVS, ie without an existing configure script,
-you should have autoconf for configuration and installation.
-To create jakarta-tomcat-connectors's autoconf script, you will need libtool 1.3.3 or higher, 
-and autoconf 2.13 or newer.
-Those tools will not be required if you are just using a package downloaded from apache.org, 
-they are only required for developers.
-</p>
-<p>
-To create the configure script just type :
-<screen>
-<read />
-<type>./buildconf.sh</type>
-</screen>
-</p>
-</subsection>
-
 <subsection name="Using configure to build mod_jk">
 <p>The configure file produced using buildconf script will create all necesary make files.
 Here's how to use configure to prepare mod_jk for building, just type: 
@@ -135,6 +117,24 @@ autodetected.</p>
 </screen>
 
 
+</subsection>
+
+<subsection name="Prepare your mod_jk configure from CVS">
+<p>
+In case you get source from CVS, ie without an existing configure script,
+you should have autoconf for configuration and installation.
+To create jakarta-tomcat-connectors's autoconf script, you will need libtool 1.3.3 or higher, 
+and autoconf 2.13 or newer.
+Those tools will not be required if you are just using a package downloaded from apache.org, 
+they are only required for developers.
+</p>
+<p>
+To create the configure script just type :
+<screen>
+<read />
+<type>./buildconf.sh</type>
+</screen>
+</p>
 </subsection>
 
 </section>
