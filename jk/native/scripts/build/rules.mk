@@ -1,9 +1,6 @@
 # That an extract of what is in APR.
 #
 
-# may be libtool as to be the one of APR (that just not to forget it).
-LIBTOOL      = libtool
-
 # Compile commands
 VPATH=.:../common
 COMPILE      = $(CC) $(CFLAGS)

@@ -9,9 +9,14 @@ MKDIR=@MKDIR@
 DESTDIR=@APACHE_DIR@
 libdir=/libexec
 
+VPATH=.:../common
 APACHE_FILES = Makefile.tmpl Makefile.libdir libjk.module
 
+if MAKE_DYNAMIC_APACHE
+JK=
+else
 JK=../common
+endif
 JK_INCL=-DUSE_APACHE_MD5 -I ${JK}
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
@@ -26,6 +31,15 @@ OEXT=.lo
 lib_LTLIBRARIES = libjk.la
 libjk_la_SOURCES = mod_jk.c
 libjk_la_LIBADD = $(APACHE_OBJECTS)
+
+all: mod_jk.so
+
+mod_jk.la: mod_jk.lo $(APACHE_OBJECTS)
+	$(LIBTOOL) --mode=link ${COMPILE} -o $@ -module -rpath ${libexecdir} -avoid-version mod_jk.lo $(APACHE_OBJECTS)
+
+mod_jk.so: mod_jk.la
+	$(LIBTOOL) --mode=install cp $< `pwd`/$@
+
 
 else
 

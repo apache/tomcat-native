@@ -1,3 +1,4 @@
+#### XXXX DO we need this Makefile ????
 OEXT=.lo
 include list.mk
 
@@ -6,7 +7,7 @@ CFLAGS=@apache_include@ @CFLAGS@ ${JAVA_INCL}
 
 include ../scripts/build/rules.mk
 
-JK=.
+JK=./
 
 all: ${APACHE_OBJECTS}
 

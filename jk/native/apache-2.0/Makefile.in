@@ -7,21 +7,29 @@ CP=@CP@
 APACHE_DIR=@APACHE_DIR@
 MKDIR=@MKDIR@
 
+# Defaults
 LIBTOOL=libtool
+libexecdir=${APACHE_DIR}/modules
 
-JK=../common
-JK_INCL=-DUSE_APACHE_MD5 -I ${JK} -DHAVE_JNI
+JK=
+# Defines APACHE_OBJECTS - the list of all common files
+include ../common/list.mk
+
+# Apache2 settings, values guessed by Apache config and used to build it
+# Will define libexecdir, LIBTOOL, etc
+include ${APACHE_DIR}/build/config_vars.mk
+
+# Local settings ( overriding/appending to Apache's ) 
+COMMON=../common
+JK_INCL=-DUSE_APACHE_MD5 -I ${COMMON} 
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
-CFLAGS=@apache_include@ @CFLAGS@ ${JK_INCL} ${JAVA_INCL} -D_REENTRANT -Wall
+CFLAGS=@apache_include@ @CFLAGS@ ${JK_INCL} ${JAVA_INCL} -D_REENTRANT -Wall ${EXTRA_CFLAGS} ${EXTRA_CPPFLAGS}
 
-include ../common/list.mk
+
+# Implicit rules
 include ../scripts/build/rules.mk
-#include ${APACHE_DIR}/build/config_vars.mk
 
-LOCAL_OBJECTS=$(subst ../common/,,$(APACHE_OBJECTS))
-
-# OEXT=@APACHE20_OEXT@
 OEXT=.lo
 
 all: Makefile @LIB_JK_TYPE@ 
@@ -31,8 +39,8 @@ Makefile: Makefile.in
 	echo Regenerating Makefile
 	( cd ..; ./config.status )
 
-lib_jk.la: mod_jk.lo
-	$(LIBTOOL) --mode=link $(CC) -o lib_jk.la -static -rpath ${APACHE_DIR}/modules/jk mod_jk.lo $(APACHE_OBJECTS)
+lib_jk.la: mod_jk.lo ${APACHE_OBJECTS}
+	$(LIBTOOL) --mode=link $(CC) -o lib_jk.la -static -rpath ${libexecdir} mod_jk.lo $(APACHE_OBJECTS)
 
 install_static:
 	@echo ""
@@ -52,10 +60,8 @@ install_static:
 #################### Dynamic .so file ####################
 # APXS will compile every file, this is derived from apxs
 
-mod_jk.la: mod_jk.lo $(LOCAL_OBJECTS)
-	$(LIBTOOL) --mode=link ${COMPILE} -o $@ -module -rpath `pwd` -avoid-version mod_jk.lo $(LOCAL_OBJECTS)
-
-#$(APXS) ${JK_INCL} ${JAVA_INCL} -c -o mod_jk.la mod_jk.c $(APACHE_OBJECTS)
+mod_jk.la: mod_jk.lo $(APACHE_OBJECTS)
+	$(LIBTOOL) --mode=link ${COMPILE} -o $@ -module -rpath ${libexecdir} -avoid-version mod_jk.lo $(APACHE_OBJECTS)
 
 mod_jk.so: mod_jk.la
 	$(LIBTOOL) --mode=install cp $< `pwd`/$@
@@ -69,6 +75,5 @@ install_dynamic:
 	@echo ""
 
 clean:
-#	(cd ../common && $(MAKE) clean)
 	rm -f *.o *.so *.lo *.la *.slo
 	rm -rf .libs

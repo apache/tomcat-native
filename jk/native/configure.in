@@ -13,6 +13,10 @@ VERSION=1.2.0
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
 
+dnl Not sure what it does, but the libtool manual seems to require this
+dnl It should use the native platform dlopen ( if available )
+AC_LIBTOOL_DLOPEN
+
 dnl AM_PROG_LIBTOOL often causes problems.
 dnl I have solved them once using aclocal --acdir=/usr/local/share/aclocal/
 AM_PROG_LIBTOOL
@@ -187,7 +191,7 @@ AC_ARG_ENABLE(jni,
 [
     AC_MSG_RESULT(jni enable (need JDK))
     CFLAGS="${CFLAGS} -DHAVE_JNI"
-    JK_JNI_WORKER="\${JK}/jk_jni_worker\${OEXT}"
+    JK_JNI_WORKER="\${JK}jk_jni_worker\${OEXT}"
 ])dnl
 AC_SUBST(JK_JNI_WORKER)
 
@@ -406,7 +410,7 @@ if ${TEST} -z "$WEBSERVER" ; then
 fi
 
 dnl Add common to subdir list
-WEBSERVER="common ${WEBSERVER}"
+WEBSERVER="${WEBSERVER}"
 
 AC_SUBST(WEBSERVER)
 
