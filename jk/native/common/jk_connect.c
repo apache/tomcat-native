@@ -174,7 +174,7 @@ int jk_open_socket(struct sockaddr_in *addr,
             jk_log(l, JK_LOG_DEBUG, "jk_open_socket, return, sd = %d\n", sock);
             return sock;
         }   
-        jk_log(l, JK_LOG_ERROR, "jk_open_socket, connect() failed errno = %d\n", errno);
+        jk_log(l, JK_LOG_INFO, "jk_open_socket, connect() failed errno = %d\n", errno);
         jk_close_socket(sock);
     } else {
 #ifdef WIN32

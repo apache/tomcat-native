@@ -623,7 +623,9 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
         }
     }
 
-    jk_log(l, JK_LOG_ERROR, "ERROR connecting to tomcat. Tomcat is probably not started. Failed errno = %d\n", errno);
+    jk_log(l, JK_LOG_INFO,
+           "Error connecting to tomcat. Tomcat is probably not started or is listenning on the wrong port. Failed errno = %d\n",
+           errno);
     return JK_FALSE;
 }
 
@@ -869,7 +871,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             return JK_FALSE;
         }
         } else {
-            jk_log(l, JK_LOG_ERROR, "Error connecting to the Tomcat process.\n");
+            jk_log(l, JK_LOG_INFO, "Error connecting to the Tomcat process.\n");
             return JK_FALSE;
         }
     }
@@ -1175,15 +1177,19 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
                     return JK_FALSE;
                 }
                 
-                jk_log(l, JK_LOG_ERROR, "ERRORO: Receiving from tomcat failed, recoverable operation. err=%d\n", i);
+                jk_log(l, JK_LOG_ERROR, "ERROR: Receiving from tomcat failed, recoverable operation. err=%d\n", i);
             }
             else
-                jk_log(l, JK_LOG_ERROR, "ERROR: sending request to tomcat failed in send loop. err=%d\n", i);
+                jk_log(l, JK_LOG_INFO, "sending request to tomcat failed in send loop. err=%d\n", i);
         
             jk_close_socket(p->sd);
             p->sd = -1;
             ajp_reuse_connection(p, l);
         }
+        
+        /* Log the error only once per failed request. */
+        jk_log(l, JK_LOG_ERROR, "Error connecting to tomcat. Tomcat is probably not started or is listenning on the wrong port. Failed errno = %d\n", errno);
+
     } else {
             jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, NULL parameters\n");
     }
