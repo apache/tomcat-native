@@ -144,7 +144,8 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             log.error(sm.getString("http11protocol.endpoint.initerror"), ex);
             throw ex;
         }
-        log.info(sm.getString("http11protocol.init", getName()));
+        if(log.isInfoEnabled())
+            log.info(sm.getString("http11protocol.init", getName()));
 
     }
 
@@ -183,7 +184,8 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             log.error(sm.getString("http11protocol.endpoint.starterror"), ex);
             throw ex;
         }
-        log.info(sm.getString("http11protocol.start", getName()));
+        if(log.isInfoEnabled())
+            log.info(sm.getString("http11protocol.start", getName()));
     }
 
     public void pause() throws Exception {
@@ -193,7 +195,8 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             log.error(sm.getString("http11protocol.endpoint.pauseerror"), ex);
             throw ex;
         }
-        log.info(sm.getString("http11protocol.pause", getName()));
+        if(log.isInfoEnabled())
+            log.info(sm.getString("http11protocol.pause", getName()));
     }
 
     public void resume() throws Exception {
@@ -203,11 +206,13 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             log.error(sm.getString("http11protocol.endpoint.resumeerror"), ex);
             throw ex;
         }
-        log.info(sm.getString("http11protocol.resume", getName()));
+        if(log.isInfoEnabled())
+            log.info(sm.getString("http11protocol.resume", getName()));
     }
 
     public void destroy() throws Exception {
-        log.info(sm.getString("http11protocol.stop", getName()));
+        if(log.isInfoEnabled())
+            log.info(sm.getString("http11protocol.stop", getName()));
         ep.stopEndpoint();
         if( tpOname!=null )
             Registry.getRegistry(null, null).unregisterComponent(tpOname);

@@ -335,7 +335,8 @@ public class ChannelSocket extends JkHandler
         // Find a port.
         if (startPort == 0) {
             port = 0;
-            log.info("JK2: ajp13 disabling channelSocket");
+            if(log.isInfoEnabled())
+                log.info("JK2: ajp13 disabling channelSocket");
             running = true;
             return;
         }
@@ -351,7 +352,8 @@ public class ChannelSocket extends JkHandler
                 port=i;
                 break;
             } catch( IOException ex ) {
-                log.info("Port busy " + i + " " + ex.toString());
+                if(log.isInfoEnabled())
+                    log.info("Port busy " + i + " " + ex.toString());
                 continue;
             }
         }
@@ -360,7 +362,8 @@ public class ChannelSocket extends JkHandler
             log.error("Can't find free port " + startPort + " " + maxPort );
             return;
         }
-        log.info("JK2: ajp13 listening on " + getAddress() + ":" + port );
+        if(log.isInfoEnabled())
+            log.info("JK2: ajp13 listening on " + getAddress() + ":" + port );
 
         // If this is not the base port and we are the 'main' channleSocket and
         // SHM didn't already set the localId - we'll set the instance id

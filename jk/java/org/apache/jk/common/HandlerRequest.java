@@ -320,8 +320,8 @@ public class HandlerRequest extends JkHandler
             FileOutputStream stopF=new FileOutputStream( sf );
             props.store( stopF, "Automatically generated, don't edit" );
         } catch( IOException ex ) {
-            log.debug( "Can't create stop file: "+sf );
-            ex.printStackTrace();
+            if(log.isDebugEnabled())
+                log.debug( "Can't create stop file: "+sf,ex );
         }
     }
     
@@ -420,7 +420,8 @@ public class HandlerRequest extends JkHandler
             checkRequest(ep);
             next.invoke( msg, ep );
 
-            log.info("Exiting");
+            if(log.isInfoEnabled())
+                log.info("Exiting");
             System.exit(0);
             
             return OK;
@@ -437,7 +438,8 @@ public class HandlerRequest extends JkHandler
             return OK;
 
         default:
-            log.info("Unknown message " + type);
+            if(log.isInfoEnabled())
+                log.info("Unknown message " + type);
         }
 
         return OK;
