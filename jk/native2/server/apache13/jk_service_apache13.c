@@ -219,7 +219,8 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
         long ll=len;
         char *bb=(char *)b;
         request_rec *rr=s->ws_private;
-            
+        BUFF *bf = rr->connection->client;
+        
         if(!s->response_started) {
             if( s->uriEnv->mbean->debug > 0 ) 
                 env->l->jkLog(env, env->l, JK_LOG_INFO, 
@@ -231,7 +232,7 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
             }
         }
         if (rr->header_only) {
-            ap_bflush(rr);
+            ap_bflush(bf);
             return JK_OK;
         }
         
@@ -254,7 +255,7 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
         /*
          * To allow server push. After writing full buffers
          */
-        ap_bflush(rr);
+        ap_bflush(bf);
     }
     return JK_OK;
 }
