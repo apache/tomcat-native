@@ -102,6 +102,8 @@ struct jk_vm {
     void *(*attach)(struct jk_env *env, struct jk_vm *p);
 
     void (*detach)(struct jk_env *env, struct jk_vm *p);
+
+    void (*destroy)(struct jk_env *env, struct jk_vm *p);
 };
 
 typedef struct jk_vm jk_vm_t;
