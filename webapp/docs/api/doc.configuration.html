@@ -1,0 +1,797 @@
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
+    <title>WebApp Library - Packages List</title>
+  </head>
+  <body link="#0000ff" vlink="#0000ff" alink="#0000ff"
+        bgcolor="#ffffff" text="#000000">
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff">
+          <table border="0" width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td bgcolor="ccccff" align="left">
+                <font size="+1" face="arial,helvetica,sans serif">
+                  <b>WebApp Library</b>
+                </font>
+              </td>
+              <td bgcolor="ccccff" align="right">
+                <font size="+1" face="arial,helvetica,sans serif">
+                  <b>Configuration package</b>
+                </font>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Classes</b>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <dl>
+            <dt>
+              <font face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_application">struct wa_application</a></nobr>
+              </font>
+            </dt>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_application-conf">    void *conf</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_application-conn">    wa_connection *conn</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_application-host">    wa_virtualhost *host</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_application-lpth">    char *lpth</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_application-name">    char *name</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_application-rpth">    char *rpth</a></nobr>
+              </font>
+            </dd>
+
+          </dl>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <dl>
+            <dt>
+              <font face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_connection">struct wa_connection</a></nobr>
+              </font>
+            </dt>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_connection-conf">    void *conf</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_connection-name">    char *name</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_connection-parm">    char *parm</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_connection-prov">    void *prov</a></nobr>
+              </font>
+            </dd>
+
+          </dl>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <dl>
+            <dt>
+              <font face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_virtualhost">struct wa_virtualhost</a></nobr>
+              </font>
+            </dt>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_virtualhost-apps">    wa_chain *apps</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_virtualhost-name">    char *name</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.configuration.html#wa_virtualhost-port">    int port</a></nobr>
+              </font>
+            </dd>
+
+          </dl>
+        </td>
+      </tr>
+
+    </table>
+    <br>
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Global Functions</b>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.configuration.html#wa_capplication">const char *wa_capplication(wa_application **a, const char *n, const char *p)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.configuration.html#wa_cconnection">const char *wa_cconnection(wa_connection **c, const char *n, const char *p, const char *a)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.configuration.html#wa_cvirtualhost">const char *wa_cvirtualhost(wa_virtualhost **h, const char *n, int p)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+    </table>
+    <br>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <a name="wa_application">
+              <b>Class &quot;wa_application&quot; Detail:</b>
+            </a>
+          </font>
+        </td>
+      </tr>
+    </table>
+      <font size="+1" face="arial,helvetica,sans serif">
+        <b>wa_application</b>
+      </font>
+    <dl>
+      <dt><code>struct wa_application {</code></dt>
+
+      <dd><code>    void *conf;</code></dd>
+
+      <dd><code>    wa_connection *conn;</code></dd>
+
+      <dd><code>    wa_virtualhost *host;</code></dd>
+
+      <dd><code>    char *lpth;</code></dd>
+
+      <dd><code>    char *name;</code></dd>
+
+      <dd><code>    char *rpth;</code></dd>
+
+      <dt><code>};</code></dt>
+    </dl>
+    <p>
+      <font face="arial,helvetica,sans serif">
+        The WebApp Library application structure.
+<br>
+This structure holds all informations associated with an application.
+Applications are not grouped in virtual hosts inside the library as in
+specific cases (like when load balancing is in use), multiple applications
+can share the same root URL path, or (like when applications are shared),
+a single web application can be shared across multiple virtual host.
+      </font>
+    </p>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Class &quot;wa_application&quot; Variables:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_application-conf">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>conf</b>
+    </font>
+    <dl>
+      <dt><code>    void *conf;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The provider-specific configuration member for this application.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_application-conn">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>conn</b>
+    </font>
+    <dl>
+      <dt><code>    wa_connection *conn;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The application connection.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_application-host">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>host</b>
+    </font>
+    <dl>
+      <dt><code>    wa_virtualhost *host;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The application virtual host.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_application-lpth">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>lpth</b>
+    </font>
+    <dl>
+      <dt><code>    char *lpth;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The local expanded application path (if any).
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_application-name">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>name</b>
+    </font>
+    <dl>
+      <dt><code>    char *name;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The application name.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_application-rpth">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>rpth</b>
+    </font>
+    <dl>
+      <dt><code>    char *rpth;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The application root URL path.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <a name="wa_connection">
+              <b>Class &quot;wa_connection&quot; Detail:</b>
+            </a>
+          </font>
+        </td>
+      </tr>
+    </table>
+      <font size="+1" face="arial,helvetica,sans serif">
+        <b>wa_connection</b>
+      </font>
+    <dl>
+      <dt><code>struct wa_connection {</code></dt>
+
+      <dd><code>    void *conf;</code></dd>
+
+      <dd><code>    char *name;</code></dd>
+
+      <dd><code>    char *parm;</code></dd>
+
+      <dd><code>    void *prov;</code></dd>
+
+      <dt><code>};</code></dt>
+    </dl>
+    <p>
+      <font face="arial,helvetica,sans serif">
+        The WebApp Library connection structure.
+<br>
+This structure holds all required data required by a connection provider
+to connect to a web-application container and to handle HTTP requests.
+      </font>
+    </p>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Class &quot;wa_connection&quot; Variables:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_connection-conf">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>conf</b>
+    </font>
+    <dl>
+      <dt><code>    void *conf;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The provider-specific configuration member for this connection.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_connection-name">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>name</b>
+    </font>
+    <dl>
+      <dt><code>    char *name;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The connection name.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_connection-parm">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>parm</b>
+    </font>
+    <dl>
+      <dt><code>    char *parm;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The connection parameter (as in the configuration file).
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_connection-prov">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>prov</b>
+    </font>
+    <dl>
+      <dt><code>    void *prov;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The connection provider.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <a name="wa_virtualhost">
+              <b>Class &quot;wa_virtualhost&quot; Detail:</b>
+            </a>
+          </font>
+        </td>
+      </tr>
+    </table>
+      <font size="+1" face="arial,helvetica,sans serif">
+        <b>wa_virtualhost</b>
+      </font>
+    <dl>
+      <dt><code>struct wa_virtualhost {</code></dt>
+
+      <dd><code>    wa_chain *apps;</code></dd>
+
+      <dd><code>    char *name;</code></dd>
+
+      <dd><code>    int port;</code></dd>
+
+      <dt><code>};</code></dt>
+    </dl>
+    <p>
+      <font face="arial,helvetica,sans serif">
+        The WebApp Library virtual host structure.
+<br>
+This structure holds informations related to a virtual host under which
+web-applications are deployed.
+      </font>
+    </p>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Class &quot;wa_virtualhost&quot; Variables:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_virtualhost-apps">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>apps</b>
+    </font>
+    <dl>
+      <dt><code>    wa_chain *apps;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The list of all applications deployed in this virtual hosts.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_virtualhost-name">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>name</b>
+    </font>
+    <dl>
+      <dt><code>    char *name;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The virtual host name.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_virtualhost-port">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>port</b>
+    </font>
+    <dl>
+      <dt><code>    int port;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The virtual host port.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <b>Global Functions Detail:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_capplication">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_capplication</b>
+    </font>
+    <dl>
+      <dt><code>const char *wa_capplication(wa_application **a, const char *n, const char *p);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Allocate and set up a <code>wa_application</code> member.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Parameters</b>
+            </font>
+          </dt>
+
+          <dd>
+            <code>a</code> -
+            <font face="arial,helvetica,sans serif">
+              Where the pointer to where the <code>wa_application</code> member
+         must be stored.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>n</code> -
+            <font face="arial,helvetica,sans serif">
+              The application name. This parameter will be passed to the
+         application container as its unique selection key within its
+         array of deployable applications (for example the .war file name).
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>p</code> -
+            <font face="arial,helvetica,sans serif">
+              The root URL path of the web application to deploy.
+            </font>
+          </dd>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              <b>NULL</b> on success or an error message on faliure.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_cconnection">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_cconnection</b>
+    </font>
+    <dl>
+      <dt><code>const char *wa_cconnection(wa_connection **c, const char *n, const char *p, const char *a);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Allocate and set up a <code>wa_connection</code> member.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Parameters</b>
+            </font>
+          </dt>
+
+          <dd>
+            <code>c</code> -
+            <font face="arial,helvetica,sans serif">
+              Where the pointer to where the <code>wa_connection</code> member
+         must be stored.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>n</code> -
+            <font face="arial,helvetica,sans serif">
+              The connection name.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>p</code> -
+            <font face="arial,helvetica,sans serif">
+              The connection provider name.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>a</code> -
+            <font face="arial,helvetica,sans serif">
+              The connection provider parameter from a configuration file.
+            </font>
+          </dd>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              <b>NULL</b> on success or an error message on faliure.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_cvirtualhost">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_cvirtualhost</b>
+    </font>
+    <dl>
+      <dt><code>const char *wa_cvirtualhost(wa_virtualhost **h, const char *n, int p);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Allocate and set up a <code>wa_virtualhost</code> member.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Parameters</b>
+            </font>
+          </dt>
+
+          <dd>
+            <code>h</code> -
+            <font face="arial,helvetica,sans serif">
+              The pointer to where the <code>wa_virtualhost</code> member must
+         be stored.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>n</code> -
+            <font face="arial,helvetica,sans serif">
+              The virtual host base name.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>p</code> -
+            <font face="arial,helvetica,sans serif">
+              The virtual host primary port.
+            </font>
+          </dd>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              <b>NULL</b> on success or an error message on faliure.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <font size="-2" face="arial,helvetica,sans serif">
+      <div align="center">
+        Copyright &copy; 2001, The Apache Software Foundation.<br>
+        All Rights Reserved.<br>
+        Generated with <a href="http://scandoc.sourceforge.net/">ScanDoc
+        0.12</a> on Thu May 10  7:37:11 2001
+
+      </div>
+    </font>
+  </body>
+</html>
