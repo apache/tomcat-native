@@ -110,6 +110,8 @@ typedef struct jk_uriEnv jk_uriEnv_t;
 */
 #define MATCH_TYPE_CONTEXT  (6)
 
+/* Regular Expression match */ 
+#define MATCH_TYPE_REGEXP  (7)
 
 struct jk_uriEnv {
     struct jk_bean *mbean;
@@ -179,7 +181,10 @@ struct jk_uriEnv {
     int prefix_len;
 
     int match_type;
-
+    
+    /* Regular Expression structure
+     */ 
+    void *regexp;
     /** For MATCH_TYPE_HOST, the list of webapps in that host
      */
     struct jk_map *webapps;
@@ -189,6 +194,7 @@ struct jk_uriEnv {
     struct jk_map *exactMatch;
     struct jk_map *prefixMatch;
     struct jk_map *suffixMatch;
+    struct jk_map *regexpMatch;
 
     /** For MATCH_TYPE_CONTEXT, the config used to read properties
         for that context.
