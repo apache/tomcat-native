@@ -659,18 +659,6 @@ public class Http11Processor implements Processor, ActionHook {
 
         }
 
-        // URI decoding
-        try {
-            request.decodedURI().duplicate(request.requestURI());
-            request.getURLDecoder().convert(request.decodedURI(), true);
-            request.decodedURI().setEncoding("UTF-8");
-        } catch (IOException e) {
-            // 500 - Internal Server Error
-            response.setStatus(500);
-            log.warn("Error decoding URI");
-            error = true;
-        }
-
         // Input filter setup
         InputFilter[] inputFilters = inputBuffer.getFilters();
 
