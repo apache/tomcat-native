@@ -73,7 +73,7 @@ extra-clean: @EXTRA_BUILD@ clean
 build: lib-build $(MODULE)-build
 clean: lib-clean $(MODULE)-clean
 
-$(MODULE)-build: libapr.la
+$(MODULE)-build:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/$(MODULE)" SUBT="build" subdir
 
 $(MODULE)-clean:
