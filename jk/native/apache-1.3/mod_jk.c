@@ -667,7 +667,14 @@ static const char *jk_set_log_file(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->log_file = log_file;
+    if ( log_file[0] != '/' ) {
+        /* we need an absolut path */
+        conf->log_file = ap_server_root_relative(cmd->pool,log_file);
+    } else
+        conf->log_file = ap_pstrdup(cmd->pool,log_file);
+ 
+    if (conf->log_file == NULL)
+        return "JkLogFile file_name invalid";
 
     return NULL;
 }
