@@ -76,30 +76,15 @@ import org.apache.coyote.*;
 
 /** Plugs Jk2 into Coyote
  */
-public class JkCoyoteHandler implements ProtocolHandler
+public class JkCoyoteHandler extends JkHandler implements ProtocolHandler, ActionHook
 {
-    static class ResponseActionHook implements ActionHook {
-        public void action(ActionCode actionCode, Object param) {
-            if( actionCode==ActionCode.ACTION_COMMIT ) {
-
-            }
-            if( actionCode==ActionCode.ACTION_RESET ) {
-
-            }
-            if( actionCode==ActionCode.ACTION_CLOSE ) {
-            }
-            if( actionCode==ActionCode.ACTION_ACK ) {
-
-            }
-        }
-    }
-
     Adapter adapter;
+    protected JkMain jkMain=new JkMain();
     
     /** Pass config info
      */
     public void setAttribute( String name, Object value ) {
-
+        System.out.println("Set attribute " + name + " " + value );
     }
     
     public Object getAttribute( String name ) {
@@ -116,16 +101,59 @@ public class JkCoyoteHandler implements ProtocolHandler
         return adapter;
     }
 
+    boolean started=false;
+    
     /** Start the protocol
      */
     public void init() {
+        if( started ) return;
 
+        started=true;
+        jkMain.getWorkerEnv().addHandler("container", this );
+
+        try {
+            jkMain.init();
+            jkMain.start();
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
     }
 
     public void destroy() {
-
+        //  jkMain.stop();
     }
 
+
+    // Jk Handler mehod
+    public int invoke( Msg msg, MsgContext ep ) 
+        throws IOException
+    {
+        System.out.println("XXX Invoke " );
+        org.apache.coyote.Request req=(org.apache.coyote.Request)ep.getRequest();
+        org.apache.coyote.Response res=req.getResponse();
+        res.setHook( this );
+        try {
+            adapter.service( req, res );
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
+        return OK;
+    }
+
+    public void action(ActionCode actionCode, Object param) {
+        System.out.println("XXX Action " + actionCode + " " + param );
+        if( actionCode==ActionCode.ACTION_COMMIT ) {
+            
+        }
+        if( actionCode==ActionCode.ACTION_RESET ) {
+            
+        }
+        if( actionCode==ActionCode.ACTION_CLOSE ) {
+        }
+        if( actionCode==ActionCode.ACTION_ACK ) {
+            
+        }
+    }
 
 
 }
