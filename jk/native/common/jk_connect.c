@@ -194,17 +194,35 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                    sock_buf);
     }
 
-#ifdef WIN32
     if (timeout > 0) {
+#ifdef WIN32
         timeout = timeout * 1000;
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
                    (char *) &timeout, sizeof(int));
         setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
                    (char *) &timeout, sizeof(int));
+#else
+        /* TODO: How to set the timeout for other platforms? */
+#endif
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "timeout %d set for socket=%d",
                    timeout, sock);
+    }
+#ifdef SO_NOSIGPIPE
+    /* The preferred method on Mac OS X (10.2 and later) to prevent SIGPIPEs when
+     * sending data to a dead peer. Possibly also existing and in use on other BSD
+     * systems?
+    */
+    set = 1;
+    if (setsockopt(sd, SOL_SOCKET, SO_NOSIGPIPE, (const char *)&set,
+                   sizeof(int))) {
+        JK_GET_SOCKET_ERRNO();
+        jk_log(l, JK_LOG_ERROR,
+                "failed setting SO_NOSIGPIPE with errno=%d", errno);
+        jk_close_socket(sock);
+        JK_TRACE_EXIT(l);
+        return -1;
     }
 #endif
     /* Tries to connect to Tomcat (continues trying while error is EINTR) */
@@ -405,6 +423,32 @@ static int sononblock(int sd)
     return 0;
 }
 
+#if 1
+int jk_is_socket_connected(int sd, int timeout)
+{
+    fd_set fd;
+    struct timeval tv;
+ 
+    FD_ZERO(&fd);
+    FD_SET(sd, &fd);
+
+    /* Wait one microsecond */
+    tv.tv_sec  = 0;
+    tv.tv_usec = 1;
+
+    /* If we get a timeout, then we are still connected */
+    if (select(1, &fd, NULL, NULL, &tv) == 0)
+        return 1;
+    else {
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+        errno = WSAGetLastError() - WSABASEERR;
+#endif
+        return 0;
+    }
+}
+
+#else
+
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 #define EWOULDBLOCK (WSAEWOULDBLOCK - WSABASEERR)
 #endif
@@ -434,3 +478,5 @@ int jk_is_socket_connected(int sd, int timeout)
     else
         return rc;
 }
+
+#endif
