@@ -370,6 +370,17 @@ static void *jk2_merge_config(apr_pool_t *p,
     return overrides;
 }
 
+static apr_status_t jk2_shutdown(void *data)
+{
+    jk_env_t *env;
+    if (workerEnv) {
+        env=workerEnv->globalEnv;
+        workerEnv->close(env, workerEnv);
+        workerEnv = NULL;
+    }
+    return APR_SUCCESS;
+}
+
 
 /** Initialize jk, using worker.properties. 
     We also use apache commands ( JkWorker, etc), but this use is 
@@ -387,6 +398,7 @@ static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
     workerEnv->server_name   = (char *)ap_get_server_version();
     /* Should be done in post config instead (cf DAV2) */
     /* ap_add_version_component(pconf, JK_EXPOSED_VERSION); */
+    apr_pool_cleanup_register(pconf, NULL, jk2_shutdown, apr_pool_cleanup_null);
     return NULL;
 }
 
