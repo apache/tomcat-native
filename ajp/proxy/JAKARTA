@@ -1,0 +1,7 @@
+JAKARTA TOMCAT CONNECTORS AJP CHANGELOG FOR MOD_PROXY:  -*-text-*-
+Last modified at [$Date$]
+
+Changes in AJP HEAD:
+    * Imported proxy sources from 2.1-HEAD
+      Date: 2004/08/03 10:05:52
+      [Mladen Turk] 
