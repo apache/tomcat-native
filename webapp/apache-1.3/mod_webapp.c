@@ -476,7 +476,10 @@ static int wam_invoke(request_rec *r) {
 
         ssl_temp = (char *)ap_table_get(
             r->subprocess_env,"SSL_CIPHER_USEKEYSIZE");
-        req->ssld->size = atoi(ssl_temp);
+        if (ssl_temp)
+            req->ssld->size = atoi(ssl_temp);
+        else
+            req->ssld->size = 0;
 
         req->ssld->cert = (char *)ap_table_get(
             r->subprocess_env,"SSL_CLIENT_CERT");

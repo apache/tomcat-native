@@ -114,8 +114,9 @@ public class WarpRequest extends HttpRequestBase {
 
             super.setAttribute("javax.servlet.request.cipher_suite",
                 ssldata.ciph);
-            super.setAttribute("javax.servlet.request.key_size",
-                new Integer (ssldata.size));
+            if (ssldata.size)
+                super.setAttribute("javax.servlet.request.key_size",
+                    new Integer (ssldata.size));
             super.setAttribute("javax.servlet.request.ssl_session",
                 ssldata.sess);
         }
