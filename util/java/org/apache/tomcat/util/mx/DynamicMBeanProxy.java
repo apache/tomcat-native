@@ -119,19 +119,19 @@ public class DynamicMBeanProxy implements DynamicMBean {
     /** If a name was not provided, generate a name based on the
      *  class name and a sequence number.
      */
-    public String generateName(Class realClass) {
-        name=realClass.getName();
+    public static String generateName(Class realClass) {
+        String name=realClass.getName();
         name=name.substring( name.lastIndexOf( ".") + 1 );
         Integer iInt=(Integer)instances.get(name );
+        int seq=0;
         if( iInt!= null ) {
-            int i=iInt.intValue();
-            i++;
-            instances.put( name, new Integer( i ));
-            name=name + "_" + i;
+            seq=iInt.intValue();
+            seq++;
+            instances.put( name, new Integer( seq ));
         } else {
             instances.put( name, new Integer( 0 ));
         }
-        return name;
+        return "name=" + name + " seq=" + seq;
     }
 
     public static void createMBean( Object proxy, String domain, String name ) {
@@ -140,6 +140,8 @@ public class DynamicMBeanProxy implements DynamicMBean {
             mbean.setReal( proxy );
             if( name!=null ) {
                 mbean.setName( name );
+            } else {
+                mbean.setName( generateName( proxy.getClass() ));
             }
 
             mbean.registerMBean( domain );
@@ -151,7 +153,7 @@ public class DynamicMBeanProxy implements DynamicMBean {
     public void registerMBean( String domain ) {
         try {
             // XXX use aliases, suffix only, proxy.getName(), etc
-            ObjectName oname=new ObjectName( domain + ": name=" +  getName());
+            ObjectName oname=new ObjectName( domain + ": " +  getName());
 
             if(  getMBeanServer().isRegistered( oname )) {
                 log.info("Unregistering " + oname );
@@ -179,8 +181,12 @@ public class DynamicMBeanProxy implements DynamicMBean {
         return ret == String.class ||
             ret == Integer.class ||
             ret == Integer.TYPE ||
+            ret == Long.class ||
+            ret == Long.TYPE ||
             ret == java.io.File.class ||
-            ret == Boolean.class;
+            ret == Boolean.class ||
+            ret == Boolean.TYPE 
+            ; 
     }
     
     /** Set the managed object.
@@ -204,10 +210,14 @@ public class DynamicMBeanProxy implements DynamicMBean {
                 if( methods[j].getParameterTypes().length != 0 ) {
                     continue;
                 }
-                if( ! Modifier.isPublic( methods[j].getModifiers() ) )
+                if( ! Modifier.isPublic( methods[j].getModifiers() ) ) {
+                    //log.debug("not public " + methods[j] );
                     continue;
+                }
                 Class ret=methods[j].getReturnType();
                 if( ! supportedType( ret ) ) {
+                    if( log.isDebugEnabled() )
+                        log.debug("Unsupported " + ret );
                     continue;
                 }
                 name=unCapitalize( name.substring(3));
