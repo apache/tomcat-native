@@ -83,6 +83,7 @@ import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Logger;
 import org.apache.catalina.Request;
 import org.apache.catalina.Response;
+import org.apache.catalina.Service;
 import org.apache.catalina.net.DefaultServerSocketFactory;
 import org.apache.catalina.net.ServerSocketFactory;
 import org.apache.catalina.util.LifecycleSupport;
@@ -265,7 +266,10 @@ public final class Ajp13Connector
 
     private Ajp13Logger logger = new Ajp13Logger();
 
-
+    /**
+     * The service which which the connector is associated
+     */
+    private Service service = null;
 
 
     // ------------------------------------------------------------- Properties
@@ -610,6 +614,19 @@ public final class Ajp13Connector
 
     }
 
+    /**
+     * Returns the <code>Service</code> with which we are associated.
+     */
+    public Service getService() {
+	return service;
+    }
+
+    /**
+     * Set the <code>Service</code> with which we are associated.
+     */
+    public void setService(Service service) {
+	this.service = service;
+    }
 
     // --------------------------------------------------------- Public Methods
 
