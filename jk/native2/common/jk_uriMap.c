@@ -552,7 +552,7 @@ int JK_METHOD jk_uriMap_factory( jk_env_t *env, jk_pool_t *pool, void **result,
     jk_map_t *init_data;
     jk_logger_t *l=env->logger;
 
-    _this = (jk_uriMap_t *)calloc(1,sizeof(jk_uriMap_t));
+    _this = (jk_uriMap_t *)pool->calloc(pool, sizeof(jk_uriMap_t));
     if(  ! _this) {
         l->jkLog(l, JK_LOG_ERROR, "uriMap.factory() OutOfMemoryError\n");
         return JK_FALSE;

@@ -264,13 +264,13 @@ static void print_signals( sigset_t *sset) {
 }
 #endif
 
-static char **jk_parse_sysprops(jk_pool_t *p, 
-                         const char *sysprops)
+static char **jk_parse_sysprops(jk_pool_t *pool, 
+                                const char *sysprops)
 {
     char **rc = NULL;
 
-    if(p && sysprops) {
-        char *prps = p->pstrdup(p, sysprops);
+    if(pool && sysprops) {
+        char *prps = pool->pstrdup(pool, sysprops);
         if(prps && strlen(prps)) {
             unsigned num_of_prps;
 
@@ -280,7 +280,7 @@ static char **jk_parse_sysprops(jk_pool_t *p,
                 }
             }            
 
-            rc = p->alloc(p, (num_of_prps + 1) * sizeof(char *));
+            rc = pool->alloc(pool, (num_of_prps + 1) * sizeof(char *));
             if(rc) {
                 unsigned i = 0;
                 char *tmp = strtok(prps, "*");
@@ -310,16 +310,16 @@ static int jk_file_exists(const char *f)
 }
 
 
-static void jk_append_libpath(jk_pool_t *p, 
+static void jk_append_libpath(jk_pool_t *pool, 
                               const char *libpath)
 {
     char *env = NULL;
     char *current = getenv(PATH_ENV_VARIABLE);
 
     if(current) {
-        env = p->alloc(p, strlen(PATH_ENV_VARIABLE) + 
-                               strlen(current) + 
-                               strlen(libpath) + 5);
+        env = pool->alloc(pool, strlen(PATH_ENV_VARIABLE) + 
+                          strlen(current) + 
+                          strlen(libpath) + 5);
         if(env) {
             sprintf(env, "%s=%s%c%s", 
                     PATH_ENV_VARIABLE, 
@@ -328,8 +328,8 @@ static void jk_append_libpath(jk_pool_t *p,
                     current);
         }
     } else {
-        env = p->alloc(p, strlen(PATH_ENV_VARIABLE) +                               
-                               strlen(libpath) + 5);
+        env = pool->alloc(pool, strlen(PATH_ENV_VARIABLE) +
+                          strlen(libpath) + 5);
         if(env) {
             sprintf(env, "%s=%s", PATH_ENV_VARIABLE, libpath);
         }
@@ -406,20 +406,20 @@ static int JK_METHOD done(jk_endpoint_t **e,
 {
     jni_endpoint_t *p;
 
-    l->jkLog(l, JK_LOG_DEBUG, "Into done\n");
     if(!e || !*e || !(*e)->endpoint_private) {
-	    l->jkLog(l, JK_LOG_EMERG, 
-               "In done, assert failed - invalid parameters\n");
-	    return JK_FALSE;
+        l->jkLog(l, JK_LOG_EMERG,  "jni.done() NullPointerException\n");
+        return JK_FALSE;
     }
 
+    l->jkLog(l, JK_LOG_DEBUG, "jni.done()\n");
+    
     p = (*e)->endpoint_private;
 
     if(p->attached) {
         detach_from_jvm(p->worker,l);
     }
 
-    free(p);
+    (*e)->pool->close( (*e)->pool );
     *e = NULL;
     l->jkLog(l, JK_LOG_DEBUG, 
            "Done ok\n");
@@ -635,32 +635,41 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
                                   jk_logger_t *l)
 {
     /* [V] This slow, needs replacement */
-    jni_endpoint_t *p = (jni_endpoint_t *)malloc(sizeof(jni_endpoint_t));
+    jk_pool_t *endpointPool;
+    jni_endpoint_t *e;
+    
+    endpointPool=pThis->pool->create( pThis->pool, HUGE_POOL_SIZE );
+    
+    e = (jni_endpoint_t *)endpointPool->calloc(endpointPool,
+                                               sizeof(jni_endpoint_t));
 
     l->jkLog(l, JK_LOG_DEBUG, 
            "Into get_endpoint\n");
 
     if(!pThis || ! pThis->worker_private || !pend) {
 	    l->jkLog(l, JK_LOG_EMERG, 
-               "In get_endpoint, assert failed - invalid parameters\n");
+               "jniWorker.getEndpoint() NullPointerException\n");
 	    return JK_FALSE;
     }
 
-    if(p) {
-	p->attached = JK_FALSE;
-        p->env = NULL;
-        p->worker = pThis->worker_private;
-        p->endpoint.endpoint_private = p;
-        p->endpoint.service = service;
-        p->endpoint.done = done;
-	p->endpoint.channelData = NULL;
-        *pend = &p->endpoint;
-	
-        return JK_TRUE;
-    } else {
-	    l->jkLog(l, JK_LOG_ERROR, "In get_endpoint, could not allocate endpoint\n");
-	    return JK_FALSE;
+    if(e==NULL) {
+        l->jkLog(l, JK_LOG_ERROR,
+                 "jniWorker.getEndpoint() OutOfMemoryException\n");
+        return JK_FALSE;
     }
+
+    /** XXX Fix the spaghetti */
+    e->attached = JK_FALSE;
+    e->env = NULL;
+    e->worker = pThis->worker_private;
+    e->endpoint.endpoint_private = e;
+    e->endpoint.service = service;
+    e->endpoint.done = done;
+    e->endpoint.channelData = NULL;
+    e->endpoint.pool=endpointPool;
+    *pend = &e->endpoint;
+    
+    return JK_TRUE;
 }
 
 static int JK_METHOD destroy(jk_worker_t **pThis,
@@ -673,7 +682,8 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
            "Into destroy\n");
 
     if(!pThis || !*pThis || ! (*pThis)->worker_private) {
-	    l->jkLog(l, JK_LOG_EMERG, "In destroy, assert failed - invalid parameters\n");
+	    l->jkLog(l, JK_LOG_EMERG,
+                     "In destroy, assert failed - invalid parameters\n");
 	    return JK_FALSE;
     }
 
@@ -699,7 +709,6 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
     }
 
     p->pool->close(p->pool);
-    free(p);
 
     l->jkLog(l, JK_LOG_DEBUG, "Done destroy\n");
 
@@ -710,7 +719,7 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool, void **resul
                                     char *type, char *name)
 {
     jk_logger_t *l=env->logger;
-    jni_worker_t *private_data;
+    jni_worker_t *_this;
 
     l->jkLog(l, JK_LOG_DEBUG, "Into jni_worker_factory\n");
 
@@ -727,57 +736,56 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool, void **resul
         return JK_TRUE;
     }
 
-    private_data = (jni_worker_t *)pool->calloc(pool, sizeof(jni_worker_t ));
+    _this = (jni_worker_t *)pool->calloc(pool, sizeof(jni_worker_t ));
 
-    if(!private_data) {
+    if(!_this) {
 	    l->jkLog(l, JK_LOG_ERROR, 
                "In jni_worker_factory, memory allocation error\n");
 	    return JK_FALSE;
     }
 
-    private_data->pool=pool;
+    _this->pool=pool;
     
-    private_data->name = private_data->pool->pstrdup(private_data->pool, name);
+    _this->name = _this->pool->pstrdup(_this->pool, name);
 
-    if(!private_data->name) {
+    if(!_this->name) {
         l->jkLog(l, JK_LOG_ERROR, 
                  "In jni_worker_factory, memory allocation error\n");
-        private_data->pool->close(private_data->pool);
-        free(private_data);
+        _this->pool->close(_this->pool);
         return JK_FALSE;
     }
 
-    private_data->was_verified          = JK_FALSE;
-    private_data->was_initialized       = JK_FALSE;
-    private_data->jvm                   = NULL;
-    private_data->tmp_env               = NULL;
-    private_data->jk_java_bridge_object = NULL;
-    private_data->jk_java_bridge_class  = NULL;
-    private_data->jk_startup_method     = NULL;
-    private_data->jk_service_method     = NULL;
-    private_data->jk_shutdown_method    = NULL;
-    private_data->tomcat_cmd_line       = NULL;
-    private_data->tomcat_classpath      = NULL;
-    private_data->jvm_dll_path          = NULL;
-    private_data->tomcat_ms             = 0;
-    private_data->tomcat_mx             = 0;
-    private_data->sysprops              = NULL;
+    _this->was_verified          = JK_FALSE;
+    _this->was_initialized       = JK_FALSE;
+    _this->jvm                   = NULL;
+    _this->tmp_env               = NULL;
+    _this->jk_java_bridge_object = NULL;
+    _this->jk_java_bridge_class  = NULL;
+    _this->jk_startup_method     = NULL;
+    _this->jk_service_method     = NULL;
+    _this->jk_shutdown_method    = NULL;
+    _this->tomcat_cmd_line       = NULL;
+    _this->tomcat_classpath      = NULL;
+    _this->jvm_dll_path          = NULL;
+    _this->tomcat_ms             = 0;
+    _this->tomcat_mx             = 0;
+    _this->sysprops              = NULL;
 #ifdef JNI_VERSION_1_2
-    private_data->java2opts             = NULL;
-    private_data->java2lax              = JK_TRUE;
+    _this->java2opts             = NULL;
+    _this->java2lax              = JK_TRUE;
 #endif
-    private_data->stdout_name           = NULL;
-    private_data->stderr_name           = NULL;
+    _this->stdout_name           = NULL;
+    _this->stderr_name           = NULL;
 
-    private_data->worker.worker_private = private_data;
-    private_data->worker.validate       = validate;
-    private_data->worker.init           = init;
-    private_data->worker.get_endpoint   = get_endpoint;
-    private_data->worker.destroy        = destroy;
+    _this->worker.worker_private = _this;
+    _this->worker.validate       = validate;
+    _this->worker.init           = init;
+    _this->worker.get_endpoint   = get_endpoint;
+    _this->worker.destroy        = destroy;
 
-    *result = &private_data->worker;
-    the_singleton_jni_worker = &private_data->worker;
-    private_data->worker.pool=pool;
+    *result = &_this->worker;
+    the_singleton_jni_worker = &_this->worker;
+    _this->worker.pool=pool;
 
     l->jkLog(l, JK_LOG_DEBUG, "Done jni_worker_factory\n");
     return JK_TRUE;
@@ -985,7 +993,7 @@ static int detect_jvm_version(jk_logger_t *l)
     return vm_args.version;
 }
 
-static char* build_opt_str(jk_pool_t *p, 
+static char* build_opt_str(jk_pool_t *pool, 
                            char* opt_name, 
                            char* opt_value, 
                            jk_logger_t *l)
@@ -993,7 +1001,7 @@ static char* build_opt_str(jk_pool_t *p,
     unsigned len = strlen(opt_name) + strlen(opt_value) + 2;
 
     /* [V] IMHO, these should not be deallocated as long as the JVM runs */
-    char *tmp = p->alloc(p, len);
+    char *tmp = pool->alloc(pool, len);
 
     if(tmp) {
 	    sprintf(tmp, "%s%s", opt_name, opt_value);
@@ -1005,7 +1013,7 @@ static char* build_opt_str(jk_pool_t *p,
     }
 }
 
-static char* build_opt_int(jk_pool_t *p, 
+static char* build_opt_int(jk_pool_t *pool, 
                            char* opt_name, 
                            int opt_value, 
                            jk_logger_t *l)
@@ -1013,7 +1021,7 @@ static char* build_opt_int(jk_pool_t *p,
     /* [V] this should suffice even for 64-bit int */
     unsigned len = strlen(opt_name) + 20 + 2;
     /* [V] IMHO, these should not be deallocated as long as the JVM runs */
-    char *tmp = p->alloc(p, len);
+    char *tmp = pool->alloc(pool, len);
 
     if(tmp) {
 	    sprintf(tmp, "%s%d", opt_name, opt_value);

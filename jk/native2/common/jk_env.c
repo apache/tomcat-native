@@ -85,8 +85,11 @@ static jk_env_objectFactory_t JK_METHOD jk_env_getFactory(jk_env_t *env,
                                                           const char *name )
 {
   jk_env_objectFactory_t result;
+  /* malloc/free: this is really temporary, and is executed only at setup
+     time, not during request execution. We could create a subpool or alloc
+     from stack */
   char *typeName=
-      (char *)calloc( (strlen(name) + strlen(type) + 2 ), sizeof( char ));
+      (char *)malloc( (strlen(name) + strlen(type) + 2 ) * sizeof( char ));
 
   strcpy(typeName, type );
   strcat( typeName, "/" );
@@ -99,6 +102,7 @@ static jk_env_objectFactory_t JK_METHOD jk_env_getFactory(jk_env_t *env,
 
   /** XXX add check for the type */
   result=(jk_env_objectFactory_t)map_get( env->_registry, typeName, NULL );
+  free( typeName );
   return result;
 }
 

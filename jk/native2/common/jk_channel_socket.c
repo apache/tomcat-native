@@ -64,6 +64,8 @@
  *  - port
  *  - ndelay
  *
+ * This channel should 'live' as much as the workerenv. It is stateless.
+ * It allocates memory for endpoint private data ( using endpoint's pool ).
  *
  * @author:  Gal Shachor <shachor@il.ibm.com>                           
  * @author: Costin Manolache
@@ -288,7 +290,8 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
         jk_channel_socket_data_t *sd=endpoint->channelData;
         if( sd==NULL ) {
             sd=(jk_channel_socket_data_t *)
-                malloc( sizeof( jk_channel_socket_data_t ));
+                endpoint->pool->calloc( endpoint->pool,
+                                        sizeof( jk_channel_socket_data_t ));
             endpoint->channelData=sd;
         }
         sd->sock=sock;
@@ -306,8 +309,12 @@ static int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
     jk_channel_socket_data_t *chD=endpoint->channelData;
     if( chD==NULL ) 
 	return JK_FALSE;
-    sd=chD->sock;
 
+    sd=chD->sock;
+    chD->sock=-1;
+    /* nothing else to clean, the socket_data was allocated ouf of
+     *  endpoint's pool
+     */
     return jk_close_socket(sd);
 }
 
@@ -399,7 +406,8 @@ static int JK_METHOD jk_channel_socket_recv( jk_channel_t *_this,
 
 
 
-int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool, 
+                                        void **result,
 					const char *type, const char *name)
 {
     jk_channel_t *_this;
@@ -409,10 +417,10 @@ int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool, void **r
 	*result=NULL;
 	return JK_FALSE;
     }
-    _this=(jk_channel_t *)pool->alloc(pool, sizeof( jk_channel_t));
+    _this=(jk_channel_t *)pool->calloc(pool, sizeof( jk_channel_t));
     
     _this->_privatePtr= (jk_channel_socket_private_t *)
-	pool->alloc( pool, sizeof( jk_channel_socket_private_t));
+	pool->calloc( pool, sizeof( jk_channel_socket_private_t));
 
     _this->recv= &jk_channel_socket_recv; 
     _this->send= &jk_channel_socket_send; 

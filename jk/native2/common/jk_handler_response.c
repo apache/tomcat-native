@@ -116,7 +116,7 @@ static int jk_handler_startResponse(jk_msg_t   *msg,
 {
     int err;
     unsigned i;
-    jk_pool_t * p = s->pool;
+    jk_pool_t * pool = s->pool;
 
     s->status = msg->getInt(msg);
     s->msg = (char *)msg->getString(msg);
@@ -128,8 +128,8 @@ static int jk_handler_startResponse(jk_msg_t   *msg,
     s->out_header_values = NULL;
 
     if (s->out_headers > 0 ) {
-        s->out_header_names = p->alloc(p, sizeof(char *) * s->out_headers);
-        s->out_header_values = p->alloc(p, sizeof(char *) * s->out_headers);
+        s->out_header_names = pool->alloc(pool, sizeof(char *) * s->out_headers);
+        s->out_header_values = pool->alloc(pool, sizeof(char *) * s->out_headers);
         
         if (s->out_header_names==NULL ||
             s->out_header_values==NULL) {

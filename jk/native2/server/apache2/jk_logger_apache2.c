@@ -170,7 +170,7 @@ int jk_logger_apache2_factory(jk_env_t *env,
                               char *type,
                               char *name)
 {
-    jk_logger_t *l = (jk_logger_t *)malloc(sizeof(jk_logger_t));
+    jk_logger_t *l = (jk_logger_t *)pool->calloc(pool, sizeof(jk_logger_t));
 
     if(l==NULL ) {
         return JK_FALSE;

@@ -131,13 +131,12 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     w->connect_retry_attempts= AJP_DEF_RETRY_ATTEMPTS;
 
     w->channel= NULL;
+    w->secret= NULL;
    
     w->validate= jk_worker_ajp14_validate;
     w->init= jk_worker_ajp14_init;
     w->get_endpoint= jk_worker_ajp14_getEndpoint;
     w->destroy=jk_worker_ajp14_destroy;
-
-    w->logon= NULL; 
 
     *result = w;
 
@@ -172,7 +171,6 @@ jk_worker_ajp14_validate(jk_worker_t *_this,
                "ajp14.validate() No secretkey, use AJP13\n");
         proto=AJP13_PROTO;
         aw->proto= AJP13_PROTO;
-        aw->logon= NULL; 
     }
     
     if (proto == AJP13_PROTO) {
@@ -243,7 +241,7 @@ static int jk_worker_ajp14_connect(jk_endpoint_t *ae, jk_logger_t *l) {
     }
 
     /* Check if we must execute a logon after the physical connect */
-    if (ae->worker->logon == NULL)
+    if (ae->worker->secret == NULL)
         return JK_TRUE;
 
     /* Do the logon process */
@@ -519,10 +517,10 @@ jk_worker_ajp14_init(jk_worker_t *_this,
     if( secret_key==NULL ) {
         proto=AJP13_PROTO;
         _this->proto= AJP13_PROTO;
-        _this->logon= NULL; 
+        _this->secret=NULL;
     } else {
         /* Set Secret Key (used at logon time) */	
-        _this->secret = strdup(secret_key);
+        _this->secret = _this->pool->pstrdup(_this->pool, secret_key);
     }
 
 

@@ -72,6 +72,7 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
                                     const char *type, const char *name);
 
 static void jk_workerEnv_close(jk_workerEnv_t *_this);
+static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this);
 
 /**
  *  Init the workers, prepare the we.

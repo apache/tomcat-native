@@ -454,17 +454,17 @@ static int jk_msg_ajp_appendFromServer(jk_msg_t    *msg,
 }
 
 
-jk_msg_t *jk_msg_ajp_create(jk_pool_t *p, jk_logger_t *log, int buffSize) 
+jk_msg_t *jk_msg_ajp_create(jk_pool_t *pool, jk_logger_t *log, int buffSize) 
 {
     jk_msg_t *msg = 
-        (jk_msg_t *)p->calloc(p, sizeof(jk_msg_t));
+        (jk_msg_t *)pool->calloc(pool, sizeof(jk_msg_t));
 
     if( buffSize==0 )
         buffSize=DEF_BUFFER_SZ;
     if(!msg) {
         return NULL;
     }
-    msg->pool = p;
+    msg->pool = pool;
 
     msg->buf= (unsigned char *)msg->pool->alloc(msg->pool, buffSize);
     
