@@ -132,7 +132,7 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
 #ifdef AJP12
   env->registerFactory( env, "worker", "ajp12", &ajp12_worker_factory );
 #endif
-  env->registerFactory( env, "worker", "ajp13", &ajp13_worker_factory );
+  env->registerFactory( env, "worker", "ajp13", &ajp14_worker_factory );
   env->registerFactory( env, "worker", "ajp14", &ajp14_worker_factory );
   env->registerFactory( env, "worker", "lb",    &lb_worker_factory );
 #ifdef HAVE_JNI
