@@ -123,7 +123,10 @@ public class CcCompiler extends CompilerAdapter {
         }
 
         if( optWgcc ) {
-	    cmd.createArgument().setValue("-W");
+	    if( ! "HP-UX".equalsIgnoreCase( System.getProperty( "os.name" )) ) {
+                // HP-UX uses -W for some other things
+                cmd.createArgument().setValue("-W");
+            }
 
             if( cc!= null && cc.indexOf( "gcc" ) >= 0 ) {
                 //cmd.createArgument().setValue("-Wall");
