@@ -101,6 +101,7 @@ extern "C"
 #define JK_MOUNT_FILE_TAG       ("worker_mount_file")
 #define JK_LOG_LEVEL_TAG        ("log_level")
 #define JK_LOG_FILE_TAG         ("log_file")
+#define JK_SHM_FILE_TAG         ("shm_file")
 #define JK_WORKER_NAME_TAG      ("worker")
 
 #define JK_WORKER_FILE_DEF  ("workers.properties")
