@@ -1429,6 +1429,7 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
             worker_env.virtual       = "*";     /* for now */
             worker_env.server_name   = (char *)ap_get_server_version();
             if(wc_open(init_map, &worker_env, conf->log)) {
+                ap_add_version_component(pconf, JK_EXPOSED_VERSION);
                 return;
             }            
         }
