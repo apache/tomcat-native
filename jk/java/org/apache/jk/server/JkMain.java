@@ -451,8 +451,44 @@ public class JkMain
             ex.printStackTrace();
         }
     }
+
+    // translate top-level keys ( from coyote or generic ) into component keys
+    static Hashtable replacements=new Hashtable();
+    static {
+        replacements.put("port","channelSocket.port");
+        replacements.put("maxThreads", "channelSocket.maxThreads");   
+        replacements.put("backlog", "channelSocket.backlog");   
+        replacements.put("tcpNoDelay", "channelSocket.tcpNoDelay");
+        replacements.put("soTimeout", "channelSocket.soTimeout");
+        replacements.put("timeout", "channelSocket.timeout");
+        replacements.put("address", "channelSocket.address");            
+    }
+
+    private void preProcessProperties() {
+        Enumeration keys=props.keys();
+        Vector v=new Vector();
+        
+        while( keys.hasMoreElements() ) {
+            String key=(String)keys.nextElement();          
+            Object newName=replacements.get(key);
+            if( newName !=null ) {
+                v.addElement(key);
+            }
+        }
+        keys=v.elements();
+        while( keys.hasMoreElements() ) {
+            String key=(String)keys.nextElement();
+            Object propValue=props.getProperty( key );
+            String replacement=(String)replacements.get(key);
+            props.put(replacement, propValue);
+            if( log.isDebugEnabled()) 
+                log.debug("Substituting " + key + " " + replacement + " " + 
+                    propValue);
+        }
+    }
     
     private void processProperties() {
+        preProcessProperties();
         Enumeration keys=props.keys();
 
         while( keys.hasMoreElements() ) {
@@ -480,7 +516,6 @@ public class JkMain
             }
             propName=name.substring( lastDot+1);
         } else {
-            // No . -> global property, will be used in substitutions
             return;
         }
         
