@@ -73,17 +73,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-
-struct isapi_private_data {
-    jk_pool_t p;    
-    int request_started;
-    unsigned bytes_read_so_far;
-    LPEXTENSION_CONTROL_BLOCK  lpEcb;
-};
-typedef struct isapi_private_data isapi_private_data_t;
-
-
-
 #define VERSION_STRING "Jakarta/ISAPI/1.2Dev"
 
 #define DEFAULT_WORKER_NAME ("ajp13")
