@@ -211,7 +211,9 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
     apr_byte_t is_ssl;
     char *remote_host;
     char *uri;
-    
+    const char *session_route, *envvar;
+    const apr_array_header_t *arr = apr_table_elts(r->subprocess_env);
+    const apr_table_entry_t *elts = (const apr_table_entry_t *)arr->elts;
 
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
                          "Into ajp_marshal_into_msgb");
@@ -334,19 +336,25 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
             return APR_EGENERAL;
         }
     }
-/* XXXX ignored for the moment
-    if (s->jvm_route) {
+    if ((session_route = apr_table_get(r->notes, "session-route"))) {
         if (ajp_msg_append_uint8(msg, SC_A_JVM_ROUTE) ||
-            ajp_msg_append_string(msg, s->jvm_route)) {
+            ajp_msg_append_string(msg, session_route)) {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                    "Error ajp_marshal_into_msgb - "
                    "Error appending the jvm route");
             return APR_EGENERAL;
         }
     }
-    if (s->ssl_cert_len) {
+/* XXX: Is the subprocess_env a right place?
+ * <Location /examples>
+ *   ProxyPass ajp://remote:8009/servlets-examples 
+ *   SetEnv SSL_SESSION_ID CUSTOM_SSL_SESSION_ID
+ * </Location>
+ */
+    if ((envvar = apr_table_get(r->subprocess_env,
+                                AJP13_SSL_CLIENT_CERT_INDICATOR))) {
         if (ajp_msg_append_uint8(msg, SC_A_SSL_CERT) ||
-            ajp_msg_append_string(msg, s->ssl_cert)) {
+            ajp_msg_append_string(msg, envvar)) {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                    "Error ajp_marshal_into_msgb - "
                    "Error appending the SSL certificates");
@@ -354,25 +362,27 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
         }
     }
 
-    if (s->ssl_cipher) {
+    if ((envvar = apr_table_get(r->subprocess_env,
+                                AJP13_SSL_CIPHER_INDICATOR))) {
         if (ajp_msg_append_uint8(msg, SC_A_SSL_CIPHER) ||
-            ajp_msg_append_string(msg, s->ssl_cipher)) {
+            ajp_msg_append_string(msg, envvar)) {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                    "Error ajp_marshal_into_msgb - "
                    "Error appending the SSL ciphers");
             return APR_EGENERAL;
         }
     }
-    if (s->ssl_session) {
+
+    if ((envvar = apr_table_get(r->subprocess_env,
+                                AJP13_SSL_SESSION_INDICATOR))) {
         if (ajp_msg_append_uint8(msg, SC_A_SSL_SESSION) ||
-            ajp_msg_append_string(msg, s->ssl_session)) {
+            ajp_msg_append_string(msg, envvar)) {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                    "Error ajp_marshal_into_msgb - "
                    "Error appending the SSL session");
             return APR_EGENERAL;
         }
     }
- */
 
     /*
      * ssl_key_size is required by Servlet 2.3 API
@@ -390,22 +400,22 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
         }
     }
  */
-
- /* XXXX ignored for the moment
-    if (s->num_attributes > 0) {
-        for (i = 0 ; i < s->num_attributes ; i++) {
-            if (ajp_msg_append_uint8(msg, SC_A_REQ_ATTRIBUTE)       ||
-                ajp_msg_append_string(msg, s->attributes_names[i]) ||
-                ajp_msg_append_string(msg, s->attributes_values[i])) {
+    /* Use the environment vars prefixed with AJP_
+     * and pass it to the header striping that prefix.
+     */
+    for (i = 0; i < (apr_uint32_t)arr->nelts; i++) {
+        if (!strncmp(elts[i].key, "AJP_", 4)) {
+            if (ajp_msg_append_uint8(msg, SC_A_REQ_ATTRIBUTE) ||
+                ajp_msg_append_string(msg, elts[i].key + 4)   ||
+                ajp_msg_append_string(msg, elts[i].val)) {
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-                      "Error ajp_marshal_into_msgb - "
-                      "Error appending attribute %s=%s",
-                      s->attributes_names[i], s->attributes_values[i]);
+                        "Error ajp_marshal_into_msgb - "
+                        "Error appending attribute %s=%s",
+                        elts[i].key, elts[i].val);
                 return APR_EGENERAL;
             }
         }
     }
-  */
 
     if (ajp_msg_append_uint8(msg, SC_A_ARE_DONE)) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
