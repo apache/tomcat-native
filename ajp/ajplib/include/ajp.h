@@ -397,5 +397,31 @@ apr_status_t  ajp_alloc_data_msg(request_rec *r, char **ptr, apr_size_t *len,
 apr_status_t  ajp_send_data_msg(apr_socket_t *sock, request_rec  *r,
                                 ajp_msg_t *data, apr_size_t len);
 
+/**
+ * Parse the message type 
+ * @param r         current request
+ * @param msg       AJP message
+ * @return          AJP message type.
+ */
+int ajp_parse_type(request_rec  *r, ajp_msg_t *msg);
+
+/**
+ * Parse the headers 
+ * @param r         current request
+ * @param msg       AJP message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_parse_headers(request_rec  *r, ajp_msg_t *msg);
+
+/** parse the header and return data address and length 
+ * @param r         current request
+ * @param msg       AJP message
+ * @param len       returned AJP message length 
+ * @param ptr       returned data
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t  ajp_parse_data(request_rec  *r, ajp_msg_t *msg,
+                             apr_uint16_t *len, char **ptr);
+
 #endif /* AJP_H */
 
