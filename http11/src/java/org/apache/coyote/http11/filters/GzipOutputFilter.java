@@ -190,9 +190,14 @@ public class GzipOutputFilter implements OutputFilter {
     protected class FakeOutputStream
         extends OutputStream {
         protected ByteChunk outputChunk = new ByteChunk();
-        public void write(int b) {
-            // Shouldn't get called
-            System.out.println("FIXME");
+        protected byte[] singleByteBuffer = new byte[1];
+        public void write(int b)
+            throws IOException {
+            // Shouldn't get used for good performance, but is needed for 
+            // compatibility with Sun JDK 1.4.0
+            singleByteBuffer[0] = (byte) (b & 0xff);
+            outputChunk.setBytes(singleByteBuffer, 0, 1);
+            buffer.doWrite(outputChunk, null);
         }
         public void write(byte[] b, int off, int len)
             throws IOException {
