@@ -70,7 +70,6 @@
 #include "jk_env.h"
 #include "jk_requtil.h"
 #include "jk_msg.h"
-#include "jk_ajp14.h"
 
 /*
  * Forward a request from the web server to the servlet container.
@@ -133,6 +132,7 @@ int jk_serialize_ping(jk_env_t *env, jk_msg_t *msg,
 #define SC_A_REQ_ATTRIBUTE      (unsigned char)10
 /* only in if JkOptions +ForwardKeySize */
 #define SC_A_SSL_KEY_SIZE       (unsigned char)11		
+#define SC_A_SECRET             (unsigned char)12
 #define SC_A_ARE_DONE           (unsigned char)0xFF
 
 
@@ -170,7 +170,8 @@ AJPV13_REQUEST/AJPV14_REQUEST=
     Was: ajp_marshal_into_msgb
  */
 int jk_serialize_request13(jk_env_t *env, jk_msg_t *msg,
-                           jk_ws_service_t *s )
+                           jk_ws_service_t *s,
+                           jk_endpoint_t *ae)
 {
     unsigned char method;
     int i;
@@ -299,6 +300,15 @@ int jk_serialize_request13(jk_env_t *env, jk_msg_t *msg,
             msg->appendInt(env, msg, (unsigned short) s->ssl_key_size)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing SSL key size\n");
+            return JK_FALSE;
+        }
+    }
+
+    if (ae->worker->secret ) {
+        if (msg->appendByte(env, msg, SC_A_SECRET) ||
+            msg->appendString(env, msg, ae->worker->secret )) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing secret\n");
             return JK_FALSE;
         }
     }
