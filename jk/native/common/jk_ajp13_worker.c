@@ -59,8 +59,9 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
 {
     ajp_worker_t *aw = (ajp_worker_t *) malloc(sizeof(ajp_worker_t));
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp13_worker_factory\n");
-
+#ifdef JK_TRACE
+    jk_log(l, JK_LOG_TRACE, "enter ajp13_worker_factory\n");
+#endif
     if (name == NULL || w == NULL) {
         jk_log(l, JK_LOG_ERROR, "In ajp13_worker_factory, NULL parameters\n");
         return JK_FALSE;
@@ -74,11 +75,17 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
 
     aw->name = strdup(name);
 
+	/* Lets core dump for every malloc.
+	   If we can not allocate few bytes what's the purpose
+	   to keep anyhow and waste cpr cycles
+	 */
+#if 0
     if (!aw->name) {
         free(aw);
         jk_log(l, JK_LOG_ERROR, "In ajp13_worker_factory, malloc failed\n");
         return JK_FALSE;
     }
+#endif
 
     aw->proto = AJP13_PROTO;
     aw->login = NULL;
@@ -96,5 +103,8 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
     aw->logon = NULL;           /* No Logon on AJP13 */
 
     *w = &aw->worker;
+#ifdef JK_TRACE
+    jk_log(l, JK_LOG_TRACE, "exit ajp13_worker_factory\n");
+#endif
     return JK_TRUE;
 }
