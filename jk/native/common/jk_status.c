@@ -44,9 +44,9 @@
 #define JK_STATUS_HEND "</body>\n</html>\n"
 
 #define JK_STATUS_XMLH "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"          \
-                       "<jk:manager xmlns:jk=\"http://jakarta.apache.org\">\n"
+                       "<jk:status xmlns:jk=\"http://jakarta.apache.org\">\n"
 
-#define JK_STATUS_XMLE "</jk:manager>\n"
+#define JK_STATUS_XMLE "</jk:status>\n"
 
 #define JK_STATUS_TEXTUPDATE_RESPONCE "OK - jk status worker updated\n"
 
