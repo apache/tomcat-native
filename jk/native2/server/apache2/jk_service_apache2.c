@@ -230,7 +230,7 @@ static int JK_METHOD jk2_service_apache2_read(jk_env_t *env, jk_ws_service_t *s,
 #endif
 
 static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s,
-                                               const void *b, int len)
+                                               const void *b, unsigned int len)
 {
     size_t r = 0;
     long ll=len;
@@ -315,7 +315,7 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
 static long jk2_get_content_length(jk_env_t *env, request_rec *r)
 {
     if(r->clength > 0) {
-        return r->clength;
+        return (long)(r->clength);
     } else {
         char *lenp = (char *)apr_table_get(r->headers_in, "Content-Length");
 
