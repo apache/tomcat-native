@@ -83,6 +83,8 @@
 #include "httpd.h"
 #include "http_log.h"
 
+#include "jk_apache2.h"
+
 #define HUGE_BUFFER_SIZE (8*1024)
 
 int JK_METHOD jk_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,

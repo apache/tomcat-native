@@ -276,11 +276,10 @@ static int init_ws_service(jk_ws_service_t *s,
                            jk_endpoint_t *e,
                            void *serverObj)
 {
-    request_rec *r=s->ws_private;
-    jk_logger_t *l=workerEnv->l;
     apr_port_t port;
     char *ssl_temp      = NULL;
     jk_workerEnv_t *workerEnv=e->worker->workerEnv;
+    jk_logger_t *l=workerEnv->l;
     request_rec *r=serverObj;
 
     /* Common initialization */
@@ -495,7 +494,7 @@ static int init_ws_service(jk_ws_service_t *s,
  *  jk shouldn't do it instead, and the user should get the
  *  error message !
  */
-static int jk_service_apache2_finalize(jk_ws_service_t *s )
+static void jk_service_apache2_afterRequest(jk_ws_service_t *s )
 {
     
     if (s->content_read < s->content_length ||
@@ -521,10 +520,10 @@ int jk_service_apache2_factory(jk_env_t *env,
 {
     jk_ws_service_t *s = *result;
     if( s==NULL ) {
-        s=(jk_ws_service_t *)pool->calloc(pool, sizeof(jk_service_t));
+        s=(jk_ws_service_t *)pool->calloc(pool, sizeof(jk_ws_service_t));
     }
 
-    if(l==NULL ) {
+    if(s==NULL ) {
         return JK_FALSE;
     }
 
@@ -532,7 +531,7 @@ int jk_service_apache2_factory(jk_env_t *env,
     s->read             = ws_read;
     s->write            = ws_write;
     s->init             = init_ws_service;
-    s->finalize         = jk_service_apache2_finalize;
+    s->afterRequest     = jk_service_apache2_afterRequest;
     
     *result=(void *)s;
 

@@ -66,6 +66,8 @@
 #include "apr_pools.h"
 #include "apr_strings.h"
 
+#include "jk_apache2.h"
+
 int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent, apr_pool_t *aprPool );
 
 int JK_METHOD jk_pool_apr_factory(jk_env_t *env,
@@ -163,9 +165,9 @@ int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent, apr_pool_t *aprP
 }
 
 /* Not used yet */
-int JK_METHOD jk_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,
-                                  void **result,
-                                  char *type, char *name)
+int  jk_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,
+                         void **result,
+                         char *type, char *name)
 {
     jk_pool_t *_this=(jk_pool_t *)calloc( 1, sizeof(jk_pool_t));
 
