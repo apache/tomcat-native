@@ -67,7 +67,7 @@ import java.util.Enumeration;
 import java.security.*;
 
 import org.apache.tomcat.util.http.MimeHeaders;
-import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.buf.HexUtils;
 
@@ -167,10 +167,24 @@ public class MsgAjp extends Msg {
             return;
         }
 
-        byte[] bytes = mb.getByteChunk().getBytes();
-        int start=mb.getByteChunk().getStart();
-        appendInt( mb.getLength() );
-        appendBytes(bytes, start, mb.getLength());
+        // XXX Convert !!
+        ByteChunk bc= mb.getByteChunk();
+        appendByteChunk(bc);
+    }
+
+    public void appendByteChunk(ByteChunk bc) throws IOException {
+        if(bc==null || bc.isNull() ) {
+            appendInt( 0);
+            appendByte(0);
+            return;
+        }
+
+        byte[] bytes = bc.getBytes();
+        int start=bc.getStart();
+        appendInt( bc.getLength() );
+        System.out.println("XXX appending" + bytes + " " + bc.getLength() +
+                           " " + new String( bytes, 0, bc.getLength()));
+        cpBytes(bytes, start, bc.getLength());
         appendByte(0);
     }
 
@@ -186,6 +200,16 @@ public class MsgAjp extends Msg {
      * @param len The number of bytes to copy.  
      */
     public void appendBytes( byte b[], int off, int numBytes ) {
+        if( pos + numBytes >= buf.length ) {
+            System.out.println("Buffer overflow " + buf.length + " " + pos + " " + numBytes );
+            return;
+        }
+        appendInt( numBytes );
+        cpBytes( b, off, numBytes );
+        appendByte(0);
+    }
+    
+    private void cpBytes( byte b[], int off, int numBytes ) {
         if( pos + numBytes >= buf.length ) {
             System.out.println("Buffer overflow " + buf.length + " " + pos + " " + numBytes );
             return;
