@@ -86,7 +86,7 @@ import org.apache.jk.core.*;
  *  Various container adapters should load this object ( as a bean ),
  *  set configurations and use it. Note that the connector will handle
  *  all incoming protocols - it's not specific to ajp1x. The protocol
- *  is abstracted by Endpoint/Message/Channel.
+ *  is abstracted by MsgContext/Message/Channel.
  */
 
 
@@ -119,6 +119,14 @@ public class ChannelSocket extends Channel {
         this.inet=inet;
     }
 
+    public void setAddress(String inet) {
+        try {
+            this.inet= InetAddress.getByName( inet );
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
+    }
+
     /**
      * Sets the timeout in ms of the server sockets created by this
      * server. This method allows the developer to make servers
@@ -149,13 +157,15 @@ public class ChannelSocket extends Channel {
     int isNote=2;
     int osNote=3;
 
-    public void accept( Endpoint ep ) throws IOException {
+    public void accept( MsgContext ep ) throws IOException {
         Socket s=sSocket.accept();
         ep.setNote( socketNote, s );
         if(dL>0 )
             d("Accepted socket " + s );
         if( linger > 0 )
             s.setSoLinger( true, linger);
+        if( socketTimeout > 0 ) 
+            s.setSoTimeout( socketTimeout );
 
         InputStream is=new BufferedInputStream(s.getInputStream());
         OutputStream os= s.getOutputStream();
@@ -174,11 +184,11 @@ public class ChannelSocket extends Channel {
         tp.runIt( acceptAjp);
     }
 
-    public void open(Endpoint ep) throws IOException {
+    public void open(MsgContext ep) throws IOException {
     }
 
     
-    public void close(Endpoint ep) throws IOException {
+    public void close(MsgContext ep) throws IOException {
         Socket s=(Socket)ep.getNote( socketNote );
         s.close();
     }
@@ -204,7 +214,7 @@ public class ChannelSocket extends Channel {
         }
     }
 
-    public int send( Msg msg, Endpoint ep)
+    public int send( Msg msg, MsgContext ep)
         throws IOException
     {
         msg.end(); // Write the packet header
@@ -219,7 +229,7 @@ public class ChannelSocket extends Channel {
         return len;
     }
 
-    public int receive( Msg msg, Endpoint ep )
+    public int receive( Msg msg, MsgContext ep )
         throws IOException
     {
         if (dL > 0) {
@@ -289,7 +299,7 @@ public class ChannelSocket extends Channel {
      * case it is left unspecified whether the file position (if any) changes.
      *
      **/
-    public int read( Endpoint ep, byte[] b, int offset, int len)
+    public int read( MsgContext ep, byte[] b, int offset, int len)
         throws IOException
     {
         InputStream is=(InputStream)ep.getNote( isNote );
@@ -320,8 +330,11 @@ public class ChannelSocket extends Channel {
         return pos;
     }
     
-    public Endpoint createEndpoint() {
-        return new Endpoint();
+    public MsgContext createEndpoint() {
+        MsgContext mc=new MsgContext();
+        mc.setChannel(this);
+        mc.setWorkerEnv( wEnv );
+        return mc;
     }
 
     boolean running=true;
@@ -333,7 +346,7 @@ public class ChannelSocket extends Channel {
             d("Accepting ajp connections on " + port);
         while( running ) {
             try {
-                Endpoint ep=this.createEndpoint();
+                MsgContext ep=this.createEndpoint();
                 this.accept(ep);
                 SocketConnection ajpConn=
                     new SocketConnection(this, ep);
@@ -346,15 +359,15 @@ public class ChannelSocket extends Channel {
 
     /** Process a single ajp connection.
      */
-    void processConnection(Endpoint ep) {
+    void processConnection(MsgContext ep) {
         if( dL > 0 )
             d( "New ajp connection ");
         try {
             MsgAjp recv=new MsgAjp();
             while( running ) {
                 this.receive( recv, ep );
-                int status=we.processCallbacks( this, ep, recv );
-                if( status!= Handler.OK ) {
+                int status= this.invoke( recv, ep );
+                if( status!= JkHandler.OK ) {
                     d("processCallbacks status " + status );
                     break;
                 }
@@ -364,8 +377,49 @@ public class ChannelSocket extends Channel {
             ex.printStackTrace();
         }
     }
+
+    public boolean isSameAddress(MsgContext ep) {
+        Socket s=(Socket)ep.getNote( socketNote );
+        return isSameAddress( s.getLocalAddress(), s.getInetAddress());
+    }
     
-    private static final int dL=10;
+    
+    /**
+     * Return <code>true</code> if the specified client and server addresses
+     * are the same.  This method works around a bug in the IBM 1.1.8 JVM on
+     * Linux, where the address bytes are returned reversed in some
+     * circumstances.
+     *
+     * @param server The server's InetAddress
+     * @param client The client's InetAddress
+     */
+    public static boolean isSameAddress(InetAddress server, InetAddress client)
+    {
+	// Compare the byte array versions of the two addresses
+	byte serverAddr[] = server.getAddress();
+	byte clientAddr[] = client.getAddress();
+	if (serverAddr.length != clientAddr.length)
+	    return (false);
+	boolean match = true;
+	for (int i = 0; i < serverAddr.length; i++) {
+	    if (serverAddr[i] != clientAddr[i]) {
+		match = false;
+		break;
+	    }
+	}
+	if (match)
+	    return (true);
+
+	// Compare the reversed form of the two addresses
+	for (int i = 0; i < serverAddr.length; i++) {
+	    if (serverAddr[i] != clientAddr[(serverAddr.length-1)-i])
+		return (false);
+	}
+	return (true);
+    }
+
+    
+    private static final int dL=0;
     private static void d(String s ) {
         System.err.println( "ChannelSocket: " + s );
     }
@@ -390,9 +444,9 @@ class SocketAcceptor implements ThreadPoolRunnable {
 
 class SocketConnection implements ThreadPoolRunnable {
     ChannelSocket wajp;
-    Endpoint ep;
+    MsgContext ep;
 
-    SocketConnection(ChannelSocket wajp, Endpoint ep) {
+    SocketConnection(ChannelSocket wajp, MsgContext ep) {
         this.wajp=wajp;
         this.ep=ep;
     }

@@ -73,7 +73,7 @@ import org.apache.jk.core.*;
 import org.apache.jk.apr.*;
 
 
-/** Pass messages using unix domain sockets.
+/** Pass messages using jni 
  *
  * @author Costin Manolache
  */
@@ -88,20 +88,20 @@ public class ChannelJni extends Channel {
 
     public void init() throws IOException {
         // static field init, temp
-        wEnv=we;
+        wEnvStatic=wEnv;
     }
     
-    public int receive( Msg msg, Endpoint ep )
+    public int receive( Msg msg, MsgContext ep )
         throws IOException
     {
         Msg sentResponse=(Msg)ep.getNote( receivedNote );
         // same buffer is used, no need to copy
         if( msg==sentResponse ) {
-            d("Returned previously received message ");
+            if( dL > 0 ) d("Returned previously received message ");
             return 0;
         }
 
-        d("XXX Copy previously received message ");
+        if( dL > 0 ) d("XXX Copy previously received message ");
         // send will alter the msg and insert the response.
         // copy...
         // XXX TODO
@@ -113,14 +113,14 @@ public class ChannelJni extends Channel {
      *  We could use 2 packets, or sendAndReceive().
      *    
      */
-    public int send( Msg msg, Endpoint ep )
+    public int send( Msg msg, MsgContext ep )
         throws IOException
     {
         byte buf[]=msg.getBuffer();
         EpData epData=(EpData)ep.getNote( epDataNote );
 
         // send and get the response
-        d( "Sending packet ");
+        if( dL > 0 ) d( "Sending packet ");
         msg.end();
         //         msg.dump("Outgoing: ");
         
@@ -128,43 +128,78 @@ public class ChannelJni extends Channel {
                                epData.jkServiceP, buf, msg.getLen() );
         ep.setNote( receivedNote, msg );
         
-        d( "Sending packet - done ");
+        if( dL > 0 ) d( "Sending packet - done ");
+        return 0;
+    }
+
+    static int epDataNote=-1;
+
+    public MsgContext createEndpoint(long env, long epP) {
+        MsgContext ep=new MsgContext();
+        if( epDataNote==-1) 
+            epDataNote=wEnv.getNoteId(WorkerEnv.ENDPOINT_NOTE, "epData");
+
+        if( dL > 0 ) d("createEndpointStatic() " + env + " " + epP);
+        
+        EpData epData=new EpData();
+        epData.jkEnvP=env;
+        epData.jkEndpointP=epP;
+        ep.setNote( epDataNote, epData );
+        ep.setWorkerEnv( wEnv );
+
+        ep.setChannel( this );
+        return ep;
+    }
+
+    public int receive( long env, long rP, MsgContext ep,
+                        MsgAjp msg)
+    {
+        try {
+            // first, we need to get an endpoint. It should be
+            // per/thread - and probably stored by the C side.
+            if( dL > 0 ) d("Received request " + rP);
+            // The endpoint will store the message pt.
+
+            msg.processHeader();
+            if( dL > 5 ) msg.dump("Incoming msg ");
+
+            EpData epData=(EpData)ep.getNote( epDataNote );
+
+            epData.jkServiceP=rP;
+            
+            int status= this.invoke(  msg, ep );
+            
+            if(dL > 0 ) d("after processCallbacks " + status);
+            
+            return status;
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
         return 0;
     }
 
     /* ==================== ==================== */
     
-    static WorkerEnv wEnv=null;
-    static int epDataNote=-1;
+    static WorkerEnv wEnvStatic=null;
     static ChannelJni chJni=new ChannelJni();
-
+    
     static class EpData {
         public long jkEnvP;
         public long jkEndpointP;
         public long jkServiceP;
     }
     
-    public static Endpoint createEndpointStatic(long env, long epP) {
-        Endpoint ep=new Endpoint();
-        if( epDataNote==-1) 
-            epDataNote=wEnv.getNoteId(WorkerEnv.ENDPOINT_NOTE, "epData");
-
-        d("createEndpointStatic() " + env + " " + epP);
-        EpData epData=new EpData();
-        epData.jkEnvP=env;
-        epData.jkEndpointP=epP;
-        ep.setNote( epDataNote, epData );
-        return ep;
+    public static MsgContext createEndpointStatic(long env, long epP) {
+        return chJni.createEndpoint( env, epP );
     }
 
     public static MsgAjp createMessage() {
-        System.out.println("XXX CreateMessage");
         return new MsgAjp();
     }
 
     public static byte[] getBuffer(MsgAjp msg) {
-        System.out.println("XXX getBuffer " + msg.getBuffer() + " "
-                           + msg.getBuffer().length);
+        //if( dL > 0 ) d("XXX getBuffer " + msg.getBuffer() + " "
+        //               + msg.getBuffer().length);
         return msg.getBuffer();
     }
     
@@ -187,31 +222,12 @@ public class ChannelJni extends Channel {
      *  the conversion done in java ( after we know the encoding and
      *  if anyone asks for it - same lazy behavior as in 3.3 ).
      */
-    public static int receiveRequest( long env, long rP, Endpoint ep,
+    public static int receiveRequest( long env, long rP, MsgContext ep,
                                       MsgAjp msg)
     {
-        try {
-            // first, we need to get an endpoint. It should be
-            // per/thread - and probably stored by the C side.
-            d("Received request " + rP);
-            // The endpoint will store the message pt.
-            msg.processHeader();
-            // msg.dump("Incoming msg ");
-
-            EpData epData=(EpData)ep.getNote( epDataNote );
-
-            epData.jkServiceP=rP;
-            
-            int status=wEnv.processCallbacks( chJni, ep, msg );
-            
-            d("after processCallbacks ");
-
-        } catch( Exception ex ) {
-            ex.printStackTrace();
-        }
-        return 0;
+        return chJni.receive(env, rP, ep, msg );
     }
-
+    
     /** Send the packet to the C side. On return it contains the response
      *  or indication there is no response. Asymetrical because we can't
      *  do things like continuations.
@@ -219,7 +235,7 @@ public class ChannelJni extends Channel {
     public static native int sendPacket(long env, long e, long s,
                                         byte data[], int len);
     
-    private static final int dL=10;
+    private static final int dL=0;
     private static void d(String s ) {
         System.err.println( "ChannelJni: " + s );
     }

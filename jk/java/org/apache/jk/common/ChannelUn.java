@@ -108,7 +108,7 @@ public class ChannelUn extends Channel {
     AprImpl apr;
     long gPool;
     
-    public void accept( Endpoint ep ) throws IOException {
+    public void accept( MsgContext ep ) throws IOException {
         long l= apr.unAccept(gPool, unixListenSocket);
         /* We could create a real java.net.Socket, or a UnixSocket, etc
          */
@@ -145,11 +145,11 @@ public class ChannelUn extends Channel {
         tp.runIt( acceptAjp);
     }
 
-    public void open(Endpoint ep) throws IOException {
+    public void open(MsgContext ep) throws IOException {
     }
 
     
-    public void close(Endpoint ep) throws IOException {
+    public void close(MsgContext ep) throws IOException {
         Long s=(Long)ep.getNote( socketNote );
         apr.unSocketClose(gPool, s.longValue(),3);
     }
@@ -163,7 +163,7 @@ public class ChannelUn extends Channel {
             e.printStackTrace();
         }
     }
-    public int send( Msg msg, Endpoint ep)
+    public int send( Msg msg, MsgContext ep)
         throws IOException
     {
         msg.end(); // Write the packet header
@@ -179,7 +179,7 @@ public class ChannelUn extends Channel {
         return len;
     }
 
-    public int receive( Msg msg, Endpoint ep )
+    public int receive( Msg msg, MsgContext ep )
         throws IOException
     {
         if (dL > 0) {
@@ -249,7 +249,7 @@ public class ChannelUn extends Channel {
      * case it is left unspecified whether the file position (if any) changes.
      *
      **/
-    public int read( Endpoint ep, byte[] b, int offset, int len) throws IOException {
+    public int read( MsgContext ep, byte[] b, int offset, int len) throws IOException {
         Long s=(Long)ep.getNote( socketNote );
         int pos = 0;
         int got;
@@ -274,8 +274,11 @@ public class ChannelUn extends Channel {
 
     
     
-    public Endpoint createEndpoint() {
-        return new Endpoint();
+    public MsgContext createEndpoint() {
+        MsgContext mc=new MsgContext();
+        mc.setChannel( this );
+        mc.setWorkerEnv( wEnv );
+        return mc;
     }
 
     boolean running=true;
@@ -287,7 +290,7 @@ public class ChannelUn extends Channel {
             d("Accepting ajp connections on " + file);
         while( running ) {
             try {
-                Endpoint ep=this.createEndpoint();
+                MsgContext ep=this.createEndpoint();
                 this.accept(ep);
                 AprConnection ajpConn=
                     new AprConnection(this, ep);
@@ -300,7 +303,7 @@ public class ChannelUn extends Channel {
 
     /** Process a single ajp connection.
      */
-    void processConnection(Endpoint ep) {
+    void processConnection(MsgContext ep) {
         if( dL > 0 )
             d( "New ajp connection ");
         try {
@@ -311,7 +314,7 @@ public class ChannelUn extends Channel {
                     // EOS
                     break;
                 }
-                int status=we.processCallbacks( this, ep, recv );
+                int status=this.invoke( recv, ep );
             }
             this.close( ep );
         } catch( Exception ex ) {
@@ -344,9 +347,9 @@ class AprAcceptor implements ThreadPoolRunnable {
 
 class AprConnection implements ThreadPoolRunnable {
     ChannelUn wajp;
-    Endpoint ep;
+    MsgContext ep;
 
-    AprConnection(ChannelUn wajp, Endpoint ep) {
+    AprConnection(ChannelUn wajp, MsgContext ep) {
         this.wajp=wajp;
         this.ep=ep;
     }
