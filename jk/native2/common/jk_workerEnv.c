@@ -354,12 +354,11 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     }
 
     if( wEnv->logger_name!=NULL){
-        char alias_name[100]="";
         jkb=env->getBean(env,wEnv->logger_name);
         if (jkb == NULL){
-            jkb=env->createBean2( env, env->globalPool, wEnv->logger_name, "");
+            jkb=env->createBean( env, env->globalPool, wEnv->logger_name);
         }
-        env->alias( env, strcat(strcat(alias_name,wEnv->logger_name),":"), "logger");
+        env->alias( env, wEnv->logger_name, "logger");
         env->l = jkb->object;
     }
     env->l->init( env, env->l );
