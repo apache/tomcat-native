@@ -682,10 +682,24 @@ static unsigned int rejectBadURI(FilterContext *context) {
 
 /* Called to generate a generic error response.
  */
-static unsigned int rejectWithError(FilterContext *context) {
-	static char *msg = "<html><body><h1>Error in Filter</h1></body></html>";
+static unsigned int rejectWithError(FilterContext *context, const char *diagnostic) {
+	static char *msg = "<html><body><h1>Error in Filter</h1><p>%s</p></body></html>";
+	char *mbuf;
+	int errID;
+	size_t bufSz;
 
-	simpleResponse(context, 500, "Error in Filter", msg);
+	if (!NONBLANK(diagnostic)) {
+		diagnostic = "Unspecified error";
+	}
+
+	// This assumes that we're just going to expand the diagnostic into
+	// the page body.
+	bufSz = strlen(msg) + strlen(diagnostic) + 1;
+
+	mbuf = context->AllocMem(context, bufSz, 0, &errID);
+	sprintf(mbuf, msg, diagnostic);
+
+	simpleResponse(context, 500, "Error in Filter", mbuf);
 
 	return kFilterHandledRequest;
 }
@@ -901,13 +915,13 @@ static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *r
 		/* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "parsedRequest() - %s\n", uri); */
 
 		if (!context->GetServerVariable(context, "SERVER_PORT", buf, sizeof(buf), &errID)) {
-			return rejectWithError(context);
+			return rejectWithError(context, "Failed to retrieve SERVER_PORT");
 		}
 
 		serverPort = atoi(buf);
 
 		if (!context->GetServerVariable(context, "SERVER_NAME", buf, sizeof(buf), &errID)) {
-			return rejectWithError(context);
+			return rejectWithError(context, "Failed to retrieve SERVER_NAME");
 		}
 
 		serverName = buf;	/* note serverName just aliases buf
@@ -927,16 +941,17 @@ static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *r
 			turi = context->AllocMem(context, uriSz, 0, &errID);
 		}
 		memcpy(turi, uri, uriSz);
-	
-        rc = jk_requtil_unescapeUrl(turi);
-		if (rc < 0) {
-			return rejectWithError(context);
-		}
 
-        jk_requtil_getParents(turi);
         if (qp = strchr(turi, '?'), qp != NULL) {
 			*qp++ = '\0';
 		}
+	
+        rc = jk_requtil_unescapeUrl(turi);
+		if (rc < 0) {
+			return rejectWithError(context, "Failed to unescape URI");
+		}
+
+        jk_requtil_getParents(turi);
 
 		if (badURI(turi)) {
 			return rejectBadURI(context);

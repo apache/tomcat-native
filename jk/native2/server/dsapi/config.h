@@ -64,9 +64,6 @@
 #ifndef __config_h
 #define __config_h
 
-#define MAKEVERSION(a, b, c, d) \
-	(((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
-
 #define NONBLANK(s) \
 	(NULL != (s) && '\0' != *(s))
 
@@ -118,7 +115,7 @@
 #define TOMCAT_START_TAG	"tomcatStart"
 #define TOMCAT_STOP_TAG		"tomcatStop"
 #define TOMCAT_TIMEOUT_TAG	"tomcatTimeout"
-#define VERSION				"2.0.0"
+#define VERSION				"2.0.1"
 #define VERSION_STRING		"Jakarta/DSAPI/" VERSION
 #define FILTERDESC			"Apache Tomcat Interceptor (" VERSION_STRING ")"
 #define SERVERDFLT			"Lotus Domino"
