@@ -111,6 +111,7 @@
 		<!-- Fix build via ECLIPSE which didn't export ant's jars -->
         <path id="xml-apis.classpath">
           <pathelement path="${jaxp.home}/jaxp.jar"/>
+          <pathelement path="${jaxp.home}/crimson.jar"/>
           <pathelement path="${xerces2.home}/xmlParserAPIs.jar"/>
           <pathelement path="${xml-parser-apis.jar}"/>
         </path>
