@@ -127,7 +127,7 @@
     <mkdir dir="${build.home}/classes"/>
     <mkdir dir="${build.home}/conf"/>
     <mkdir dir="${build.home}/docs"/>
-    <mkdir dir="${build.home}/docs/api"/>
+    <mkdir dir="${build.home}/docs/api-java"/>
     <mkdir dir="${build.home}/lib"/>
     <mkdir dir="${build.home}/tests"/>
     <available property="tomcat4.detect" file="${catalina.home}/server/lib/catalina.jar" />
@@ -188,10 +188,10 @@
    description="Clean and compile all components"/>
 
 
-  <target name="javadoc"
-   description="Create component Javadoc documentation">
+  <target name="javadoc" depends="prepare"
+   description="Create Java API documentation">
     <javadoc sourcepath="${source.home}"
-                destdir="${build.home}/docs/api"
+                destdir="${build.home}/docs/api-java"
            packagenames="org.apache.*"
                  author="true"
                 private="true"
@@ -203,7 +203,8 @@
     </javadoc>
   </target>
 
-  <target name="docs" depends="prepare">
+  <target name="docs" depends="javadoc"
+   description="Create Documentation">
     <copy todir="${build.home}/docs" >
       <fileset dir="./docs">
         <exclude name="**.xml"/>

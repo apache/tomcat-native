@@ -1,7 +1,33 @@
 <?xml version="1.0"?>
 
-<document title="Introduction" description="The WebApp Module for the Apache Web Server">
-  <section title="Description" description="What is the WebApp Module"/>
-  <section title="Purpose" description="Why should I use the WebApp Module?"/>
-  <section title="Alternatives" description="Are there alternative ways to connect Apache and Tomcat?"/>
+<document title="Introduction">
+  <description>
+    The WebApp Module for the Apache Web Server
+  </description>
+
+  <section title="Description">
+    <description>
+      What is the WebApp Module
+    </description>
+
+    <todo/>
+  </section>
+
+  <section title="Purpose">
+    <description>
+      Why should I use the WebApp Module?
+    </description>
+
+    <todo/>
+  </section>
+
+
+  <section title="Alternatives">
+    <description>
+      Are there alternative ways to connect Apache and Tomcat?
+    </description>
+
+    <todo/>
+  </section>
+
 </document>

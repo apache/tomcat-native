@@ -160,6 +160,25 @@
                     </xsl:for-each>
                   </xsl:if>
                 </xsl:for-each>
+
+                <!--
+                  The last thing to put down in the index are the API docs,
+                  both for C and for Java
+                -->
+                <tr>
+                  <td bgcolor="#cccccc" width="150" colspan="2">
+                    <nobr>
+                      <a class="menu" href="./api-java/index.html">Java API Documentation</a>
+                    </nobr>
+                  </td>
+                </tr>
+                <tr>
+                  <td bgcolor="#cccccc" width="150" colspan="2">
+                    <nobr>
+                      <a class="menu" href="./api-c/">C API Documentation</a>
+                    </nobr>
+                  </td>
+                </tr>
               </table>
             </td>
 
@@ -192,17 +211,19 @@
   </xsl:template>
 
   <xsl:template match="section">
-    <table border="0" cellspacing="0" cellpadding="0" width="100%">
-      <tr>
-        <td bgcolor="#666666" class="section" valign="top" align="left">
-          <img src="images/corner.gif" valign="top" align="left" hspace="0" vspace="0" border="0"/>
-            <xsl:if test="string-length(description/text()) = 0">
-              <xsl:value-of select="@title"/>
-            </xsl:if>
-            <xsl:value-of select="description/text()"/>
-        </td>
-      </tr>
-    </table>
+    <a name="section_{position()}">
+      <table border="0" cellspacing="0" cellpadding="0" width="100%">
+        <tr>
+          <td bgcolor="#666666" class="section" valign="top" align="left">
+            <img src="images/corner.gif" valign="top" align="left" hspace="0" vspace="0" border="0"/>
+              <xsl:if test="string-length(description/text()) = 0">
+                <xsl:value-of select="@title"/>
+              </xsl:if>
+              <xsl:value-of select="description/text()"/>
+          </td>
+        </tr>
+      </table>
+    </a>
     <xsl:apply-templates select="p|screen|todo"/>
     <br/>
   </xsl:template>
