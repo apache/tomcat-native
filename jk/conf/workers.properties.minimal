@@ -5,7 +5,7 @@
 #
 # The workers that jk should create and work with
 #
-worker.list=ajp13worker
+worker.list=ajp13w
 
 
 #
