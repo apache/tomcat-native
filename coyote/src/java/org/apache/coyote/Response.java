@@ -21,6 +21,7 @@ import java.util.Locale;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.http.ContentType;
 
 /**
  * Response object.
@@ -524,6 +525,33 @@ public final class Response {
         return ret;
     }
     
+
+    /**
+     * Returns the value of the Content-Type response header, based on the
+     * current return value of getContentType().
+     *
+     * Notice that while the charset parameter must be omitted from the
+     * return value of ServletResponse.getContentType() if no character
+     * encoding has been specified, the spec requires that a charset (default:
+     * ISO-8859-1) always be included in the Content-Type response header
+     *
+     * @return Value of Content-Type response header
+     */
+    public String getContentTypeResponseHeader() {
+
+        String header = getContentType();
+        if (header != null) {
+            if (!ContentType.hasCharset(header)) {
+                // Must communicate response encoding to client
+                header = header + ";charset="
+                    + Constants.DEFAULT_CHARACTER_ENCODING;
+            }
+        }
+
+        return header;
+    }
+
+
     public void setContentLength(int contentLength) {
         this.contentLength = contentLength;
     }

@@ -52,27 +52,41 @@ public class ContentType {
     }
 
 
-    // Bad method: the user may set the charset explicitely
-    
-//     /** Utility method for parsing the mime type and setting
-//      *  the encoding to locale. Also, convert from java Locale to mime
-//      *  encodings
-//      */
-//     public static String constructLocalizedContentType(String type,
-// 							Locale loc) {
-//         // Cut off everything after the semicolon
-//         int semi = type.indexOf(";");
-//         if (semi != -1) {
-//             type = type.substring(0, semi);
-//         }
+    /**
+     * Returns true if the given content type contains a charset component,
+     * false otherwise.
+     *
+     * @param type Content type
+     * @return true if the given content type contains a charset component,
+     * false otherwise
+     */
+    public static boolean hasCharset(String type) {
 
-//         // Append the appropriate charset, based on the locale
-//         String charset = LocaleToCharsetMap.getCharset(loc);
-//         if (charset != null) {
-//             type = type + "; charset=" + charset;
-//         }
+        boolean hasCharset = false;
 
-//         return type;
-//     }
+        int len = type.length();
+        int index = type.indexOf(';');
+        while (index != -1) {
+            index++;
+            while (index < len && Character.isSpace(type.charAt(index))) {
+                index++;
+            }
+            if (index+8 < len
+                    && type.charAt(index) == 'c'
+                    && type.charAt(index+1) == 'h'
+                    && type.charAt(index+2) == 'a'
+                    && type.charAt(index+3) == 'r'
+                    && type.charAt(index+4) == 's'
+                    && type.charAt(index+5) == 'e'
+                    && type.charAt(index+6) == 't'
+                    && type.charAt(index+7) == '=') {
+                hasCharset = true;
+                break;
+            }
+            index = type.indexOf(';', index);
+        }
+
+        return hasCharset;
+    }
 
 }
