@@ -635,6 +635,9 @@ public class Http11Processor implements Processor, ActionHook {
                     thrA.setCurrentStage(threadPool, "service");
                     rp.setStage(org.apache.coyote.Constants.STAGE_SERVICE);
                     adapter.service(request, response);
+                    if(response.getStatus() >= 403) {
+                        error=true;
+                    }
                 } catch (InterruptedIOException e) {
                     error = true;
                 } catch (Throwable t) {
