@@ -377,6 +377,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 /* NULL record, no more workers left ... */
                  jk_log(l, JK_LOG_ERROR, 
                         "lb: All tomcat instances failed, no more workers left.\n");
+                 return JK_FALSE;
                 break;
             }
         }
