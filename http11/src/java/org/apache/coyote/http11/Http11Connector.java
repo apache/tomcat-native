@@ -84,6 +84,93 @@ import org.apache.coyote.Response;
 public class Http11Connector implements Connector, ActionHook {
 
 
+    // ----------------------------------------------------------- Constructors
+
+
+    /**
+     * Default constructor.
+     */
+    public Http11Connector() {
+
+        request = new Request();
+        inputBuffer = new InternalInputBuffer(request);
+        request.setInputBuffer(inputBuffer);
+
+        response = new Response();
+        response.setHook(this);
+        outputBuffer = new InternalOutputBuffer(response);
+        response.setOutputBuffer(outputBuffer);
+
+    }
+
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    /**
+     * Associated adapter.
+     */
+    protected Adapter adapter = null;
+
+
+    /**
+     * Request object.
+     */
+    protected Request request = null;
+
+
+    /**
+     * Response object.
+     */
+    protected Response response = null;
+
+
+    /**
+     * Input.
+     */
+    protected InternalInputBuffer inputBuffer = null;
+
+
+    /**
+     * Output.
+     */
+    protected InternalOutputBuffer outputBuffer = null;
+
+
+    // --------------------------------------------------------- Public Methods
+
+
+    /**
+     * Process pipelined HTTP requests using the specified input and output
+     * streams.
+     * 
+     * @param inputStream stream from which the HTTP requests will be read
+     * @param outputStream stream which will be used to output the HTTP 
+     * responses
+     * @throws IOException error during an I/O operation
+     */
+    public void process(InputStream input, OutputStream output)
+        throws IOException {
+
+        // Setting up the I/O
+        inputBuffer.setInputStream(input);
+        outputBuffer.setOutputStream(output);
+
+
+
+
+        try {
+            adapter.service(request, response);
+        } catch (Exception e) {
+            ;
+        }
+
+
+
+
+    }
+
+
     // ----------------------------------------------------- ActionHook Methods
 
 
@@ -94,18 +181,87 @@ public class Http11Connector implements Connector, ActionHook {
      * @param param Action parameter
      */
     public void action(ActionCode actionCode, Object param) {
+
+        if (actionCode == ActionCode.ACTION_COMMIT) {
+
+            // Commit current response
+
+            // Validate and write response headers
+            prepareResponse();
+
+        } else if (actionCode == ActionCode.ACTION_ACK) {
+
+            // Acknowlege request
+
+            // Send a 100 status back if it makes sense (response not committed
+            // yet, and client specified an expectation for 100-continue)
+
+        } else if (actionCode == ActionCode.ACTION_CLOSE) {
+
+            // Close
+
+            // End the processing of the current request, and stop any further
+            // transactions with the client
+
+        } else if (actionCode == ActionCode.ACTION_RESET) {
+
+            // Reset response
+
+            // Note: This must be called before the response is committed
+
+        } else if (actionCode == ActionCode.ACTION_CUSTOM) {
+
+            // Do nothing
+
+        }
+
     }
 
 
     // ------------------------------------------------------ Connector Methods
 
 
+    /**
+     * Set the associated adapter.
+     * 
+     * @param adapter the new adapter
+     */
     public void setAdapter(Adapter adapter) {
+        this.adapter = adapter;
     }
 
 
+    /**
+     * Get the associated adapter.
+     * 
+     * @return the associated adapter
+     */
     public Adapter getAdapter() {
-        return null;
+        return adapter;
+    }
+
+
+    // ------------------------------------------------------ Protected Methods
+
+
+    /**
+     * After reading the request headers, we have to setup the request filters.
+     */
+    protected void prepareRequest() {
+
+
+
+    }
+
+
+    /**
+     * When committing the response, we have to validate the set of headers, as
+     * well as setup the response filters.
+     */
+    protected void prepareResponse() {
+
+
+
     }
 
 

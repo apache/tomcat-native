@@ -64,9 +64,11 @@ import java.io.OutputStream;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.res.StringManager;
 
+import org.apache.coyote.ActionCode;
 import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Response;
 
@@ -146,12 +148,6 @@ public class InternalOutputBuffer implements OutputBuffer {
      * Pointer to the current read buffer.
      */
     protected byte[] buf;
-
-
-    /**
-     * Last valid byte.
-     */
-    protected int lastValid;
 
 
     /**
@@ -289,7 +285,6 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         outputStream = null;
         buf = headerBuffer;
-        lastValid = 0;
         pos = 0;
         lastActiveFilter = 0;
         committed = false;
@@ -304,8 +299,7 @@ public class InternalOutputBuffer implements OutputBuffer {
      * consumed. This method only resets all the pointers so that we are ready
      * to parse the next HTTP request.
      */
-    public void nextRequest()
-        throws IOException {
+    public void nextRequest() {
 
         // FIXME: Recycle Response object (or do it elsewhere) ?
 
@@ -320,7 +314,6 @@ public class InternalOutputBuffer implements OutputBuffer {
         }
 
         // Reset pointers
-        lastValid = 0;
         pos = 0;
         lastActiveFilter = 0;
         committed = false;
@@ -330,23 +323,23 @@ public class InternalOutputBuffer implements OutputBuffer {
 
 
     /**
-     * Send response header.
-     */
-    public void sendHeader()
-        throws IOException {
-
-        // FIXME
-
-        committed = true;
-
-    }
-
-
-    /**
      * End request.
+     * 
+     * @throws IOException an undelying I/O error occured
      */
     public void endRequest()
         throws IOException {
+
+        if (!committed) {
+
+            // Send the connector a request for commit. The connector should
+            // then validate the headers, send them (using sendHeader) and 
+            // set the filters accordingly.
+            response.action(ActionCode.ACTION_COMMIT, null);
+
+            commit();
+
+        }
 
         if (lastActiveFilter > 0) {
             // Parsing through the filter list
@@ -355,9 +348,105 @@ public class InternalOutputBuffer implements OutputBuffer {
             }
         }
 
-        if (closeChunk.getLength() > 0)
+        if (closeChunk.getLength() > 0) {
             outputStream.write(closeChunk.getBytes(), closeChunk.getStart(), 
                                closeChunk.getLength());
+            outputStream.flush();
+        }
+
+    }
+
+
+    // ------------------------------------------------ HTTP/1.1 Output Methods
+
+
+    /**
+     * Send the response status line.
+     */
+    public void sendStatus() {
+
+        // Write protocol name
+        write("HTTP/1.1 ");
+
+        // Write status code
+        int status = response.getStatus();
+	switch (status) {
+	case 200:
+            write("200");
+	    break;
+	case 400:
+            write("400");
+	    break;
+	case 404:
+            write("404");
+	    break;
+        default:
+	    write(status);
+	}
+
+        // Write message
+        write(HttpMessages.getMessage(status));
+
+        // End the response status line
+        write(Constants.CRLF);
+
+    }
+
+
+    /**
+     * Send a header.
+     * 
+     * @param name Header name
+     * @param value Header value
+     */
+    public void sendHeader(MessageBytes name, MessageBytes value) {
+
+        write(name);
+        write(": ");
+        write(value);
+        write(Constants.CRLF);
+
+    }
+
+
+    /**
+     * Send a header.
+     * 
+     * @param name Header name
+     * @param value Header value
+     */
+    public void sendHeader(ByteChunk name, ByteChunk value) {
+
+        write(name);
+        write(": ");
+        write(value);
+        write(Constants.CRLF);
+
+    }
+
+
+    /**
+     * Send a header.
+     * 
+     * @param name Header name
+     * @param value Header value
+     */
+    public void sendHeader(String name, String value) {
+
+        write(name);
+        write(": ");
+        write(value);
+        write(Constants.CRLF);
+
+    }
+
+
+    /**
+     * End the header block.
+     */
+    public void endHeaders() {
+
+        write(Constants.CRLF);
 
     }
 
@@ -365,11 +454,26 @@ public class InternalOutputBuffer implements OutputBuffer {
     // --------------------------------------------------- OutputBuffer Methods
 
 
+    /**
+     * Write the contents of a byte chunk.
+     * 
+     * @param chunk byte chunk
+     * @return number of bytes written
+     * @throws IOException an undelying I/O error occured
+     */
     public int doWrite(ByteChunk chunk) 
         throws IOException {
 
-        if (!committed)
-            sendHeader();
+        if (!committed) {
+
+            // Send the connector a request for commit. The connector should
+            // then validate the headers, send them (using sendHeaders) and 
+            // set the filters accordingly.
+            response.action(ActionCode.ACTION_COMMIT, null);
+
+            commit();
+
+        }
 
         int n = -1;
 
@@ -384,6 +488,111 @@ public class InternalOutputBuffer implements OutputBuffer {
                            chunk.getLength());
 
         return n;
+
+    }
+
+
+    // ------------------------------------------------------ Protected Methods
+
+
+    /**
+     * Commit the response.
+     * 
+     * @throws IOException an undelying I/O error occured
+     */
+    protected void commit()
+        throws IOException {
+
+        if (pos > 0) {
+            // Sending the response header buffer
+            outputStream.write(buf, 0, pos);
+            outputStream.flush(); // Is it really necessary ?
+        }
+
+        // The response is now committed
+        committed = true;
+        response.setCommitted(true);
+
+    }
+
+
+    /**
+     * This method will write the contents of the specyfied message bytes 
+     * buffer to the output stream, without filtering. This method is meant to
+     * be used to write the response header.
+     * 
+     * @param mb data to be written
+     */
+    protected void write(MessageBytes mb) {
+
+        mb.toBytes();
+        ByteChunk bc = mb.getByteChunk();
+        if (!bc.isNull()) {
+            // Writing the byte chunk to the output buffer
+            write(bc);
+        } else {
+            // Using toString
+            write(mb.toString());
+        }
+
+    }
+
+
+    /**
+     * This method will write the contents of the specyfied message bytes 
+     * buffer to the output stream, without filtering. This method is meant to
+     * be used to write the response header.
+     * 
+     * @param bc data to be written
+     */
+    protected void write(ByteChunk bc) {
+
+        // Writing the byte chunk to the output buffer
+        System.arraycopy(bc.getBytes(), bc.getStart(), buf, pos,
+                         bc.getLength());
+        pos = pos + bc.getLength();
+
+    }
+
+
+    /**
+     * This method will write the contents of the specyfied String to the 
+     * output stream, without filtering. This method is meant to be used to 
+     * write the response header.
+     * 
+     * @param s data to be written
+     */
+    protected void write(String s) {
+
+        // From the Tomcat 3.3 HTTP/1.0 connector
+        int len = s.length();
+        for (int i = 0; i < len; i++) {
+            char c = s.charAt (i);
+            // Note:  This is clearly incorrect for many strings,
+            // but is the only consistent approach within the current
+            // servlet framework.  It must suffice until servlet output
+            // streams properly encode their output.
+            if ((c & 0xff00) != 0) {
+                // High order byte must be zero
+                //log("Header character is not iso8859_1, " +
+                //"not supported yet: " + c, Log.ERROR ) ;
+            }
+            buf[pos++] = (byte) c;
+        }
+
+    }
+
+
+    /**
+     * This method will print the specified integer to the output stream, 
+     * without filtering. This method is meant to be used to write the 
+     * response header.
+     * 
+     * @param i data to be written
+     */
+    protected void write(int i) {
+
+        write(String.valueOf(i));
 
     }
 

@@ -137,4 +137,10 @@ public final class Constants {
     public static final int DEFAULT_HTTP_HEADER_BUFFER_SIZE = 128 * 1024;
 
 
+    /**
+     * CRLF.
+     */
+    public static final String CRLF = "\r\n";
+
+
 }
