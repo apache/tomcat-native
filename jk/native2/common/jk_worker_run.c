@@ -133,7 +133,6 @@ int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
     _this->lb_workers     = NULL;
     _this->num_of_workers = 0;
     _this->worker_private = NULL;
-    _this->validate       = NULL;
     _this->init           = NULL;
     _this->destroy        = NULL;
     _this->service        = jk2_worker_run_service;

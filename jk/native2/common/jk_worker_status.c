@@ -305,7 +305,7 @@ int JK_METHOD jk2_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
     _this->num_of_workers = 0;
     _this->worker_private = NULL;
     
-    _this->validate       = NULL;
+    _this->setProperty       = NULL;
     _this->init           = NULL;
     _this->destroy        = NULL;
     

@@ -124,7 +124,7 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
   env->registerFactory( env, "handler", "logon",   jk2_handler_logon_factory );
   env->registerFactory( env, "handler", "discovery",
                         jk2_handler_discovery_factory );
-
+  
   /* Optional objects */
 
 #ifdef HAVE_JNI

@@ -123,12 +123,11 @@ static int JK_METHOD jk2_jni_worker_service(jk_env_t *env,
 }
 
 
-static int JK_METHOD jk2_jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
-                                             jk_map_t *props, jk_workerEnv_t *we)
+static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_worker_t *pThis,
+                                                char *name, char *value)
 {
     jni_worker_data_t *jniWorker;
     int mem_config = 0;
-    char *str_config = NULL;
     int rc;
     JNIEnv *jniEnv;
     char *prefix;
@@ -141,31 +140,56 @@ static int JK_METHOD jk2_jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
 
     jniWorker = pThis->worker_private;
 
-    prefix=(char *)props->pool->alloc( env, props->pool,
-                                       strlen( pThis->name ) + 10 );
-    strcpy( prefix, "worker." );
-    strcat( prefix, pThis->name );
-    fprintf(stderr, "Prefix= %s\n", prefix );
+
+    return JK_TRUE;
+}
+
+static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
+{
+    jni_worker_data_t *jniWorker;
+    JNIEnv *jniEnv;
+    jstring cmd_line = NULL;
+    jstring stdout_name = NULL;
+    jstring stderr_name = NULL;
+    jint rc = 0;
+    char *str_config = NULL;
+    jk_map_t *props=_this->workerEnv->initData;
     
-    rc=jniWorker->vm->init(env, jniWorker->vm, props, prefix );
-    if( rc!=JK_TRUE ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "jni.validate() failed to load vm init params\n");
+    if(! _this || ! _this->worker_private) {
+        env->l->jkLog(env, env->l, JK_LOG_EMERG,
+                      "In init, assert failed - invalid parameters\n");
         return JK_FALSE;
+    }
+
+    jniWorker = _this->worker_private;
+    {
+        char *prefix=(char *)_this->pool->alloc( env, _this->pool,
+                                                 strlen( _this->name ) + 10 );
+        strcpy( prefix, "worker." );
+        strcat( prefix, _this->name );
+        fprintf(stderr, "Prefix= %s\n", prefix );
+        
+        rc=jniWorker->vm->init(env, jniWorker->vm, _this->workerEnv->initData, prefix );
+        
+        if( rc!=JK_TRUE ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "jni.validate() failed to load vm init params\n");
+            return JK_FALSE;
+        }
     }
     
     jniWorker->className = jk2_map_getStrProp( env, props, "worker",
-                                              pThis->name,
-                                              "class", JAVA_BRIDGE_CLASS_NAME);
-
+                                               _this->name,
+                                               "class", JAVA_BRIDGE_CLASS_NAME);
+    
     jniWorker->tomcat_cmd_line = jk2_map_getStrProp( env, props, "worker",
-                                                    pThis->name,
+                                                    _this->name,
                                                     "cmd_line", NULL ); 
 
     jniWorker->stdout_name= jk2_map_getStrProp( env, props, "worker",
-                                               pThis->name, "stdout", NULL ); 
+                                               _this->name, "stdout", NULL ); 
     jniWorker->stderr_name= jk2_map_getStrProp( env, props, "worker",
-                                               pThis->name, "stderr", NULL );
+                                               _this->name, "stderr", NULL );
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "jni.validate() cmd: %s %s %s %s\n",
@@ -198,7 +222,7 @@ static int JK_METHOD jk2_jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
 
     if( jniWorker->jk_java_bridge_class == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "Can't find class %s in %s\n", str_config,
+                      "Can't find class %s in %s\n", jniWorker->className,
                       jniWorker->vm->tomcat_classpath );
         /* [V] the detach here may segfault on 1.1 JVM... */
         jniWorker->vm->detach(env,  jniWorker->vm);
@@ -220,28 +244,9 @@ static int JK_METHOD jk2_jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "jni.validate() ok\n");
 
-    return JK_TRUE;
-}
 
-static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this,
-                                         jk_map_t *props, jk_workerEnv_t *we)
-{
-    jni_worker_data_t *jniWorker;
-    JNIEnv *jniEnv;
-    jstring cmd_line = NULL;
-    jstring stdout_name = NULL;
-    jstring stderr_name = NULL;
-    jint rc = 0;
+
     
-
-    if(! _this || ! _this->worker_private) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "In init, assert failed - invalid parameters\n");
-        return JK_FALSE;
-    }
-
-    jniWorker = _this->worker_private;
-
     if(_this->workerEnv->vm != NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "jni.init(), done (been here!)\n");
@@ -391,7 +396,7 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     jniData->stdout_name           = NULL;
     jniData->stderr_name           = NULL;
 
-    _this->validate       = jk2_jni_worker_validate;
+    _this->setProperty       = jk2_jni_worker_setProperty;
     _this->init           = jk2_jni_worker_init;
     _this->destroy        = jk2_jni_worker_destroy;
     _this->service = jk2_jni_worker_service;
