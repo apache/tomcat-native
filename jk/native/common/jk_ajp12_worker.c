@@ -16,9 +16,10 @@
 
 /***************************************************************************
  * Description: ajpv1.2 worker, used to call local or remote jserv hosts   *
+ *              This worker is deprecated                                  * 
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  * Based on:    jserv_ajpv12.c from Jserv                                  *
- * Version:     $Revision$                                           *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 #include "jk_ajp12_worker.h"
@@ -98,7 +99,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
              attempt++) {
             p->sd =
                 jk_open_socket(&p->worker->worker_inet_addr, JK_TRUE,
-                               JK_FALSE, l);
+                               JK_FALSE, -1, l);
 
             jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::service, sd = %d\n",
                    p->sd);
