@@ -84,7 +84,7 @@
  *  
  */
 
-int JK_METHOD jk2_worker_ajp14_factory(jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_worker_ajp13_factory(jk_env_t *env, jk_pool_t *pool,
                                        jk_bean_t *result,
                                        const char *type, const char *name);
 
@@ -129,11 +129,9 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env, jk_pool_t *pool,
 /* Factories for 'new' types. We use the new factory interface,
  *  workers will be updated later 
  */
-#ifdef HAS_APR
 int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env, jk_pool_t *pool,
                                              jk_bean_t *result,
                                              const char *type, const char *name);
-#endif
 
 int JK_METHOD jk2_shm_factory(jk_env_t *env, jk_pool_t *pool,
                               jk_bean_t *result,
