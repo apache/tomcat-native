@@ -258,7 +258,8 @@ public class WarpConfigurationHandler {
 
         Container container=connection.getConnector().getContainer();
 
-        Host host=(Host)container.findChild(hostName);
+        // the hostName should be in lowewr case (setName makes a toLowerCase).
+        Host host=(Host)container.findChild(hostName.toLowerCase());
         if (host==null) {
             WarpHost whost=new WarpHost();
             whost.setName(hostName);
