@@ -583,13 +583,40 @@ public final class MessageBytes implements Cloneable, Serializable {
      *  be done in headers
      */
     public void setInt(int i) {
-	// XXX replace it with a byte[] tool
 	recycle();
-	strValue=String.valueOf( i );
-	intValue=i;
-	hasIntValue=true;
-	hasStrValue=true;
-    	type=T_STR;
+        byteC.allocate(16, 32);
+        int current = i;
+        byte[] buf = byteC.getBuffer();
+        int start = 0;
+        int end = 0;
+        if (i == 0) {
+            buf[end++] = (byte) '0';
+        }
+        if (i < 0) {
+            current = -i;
+            buf[end++] = (byte) '-';
+        }
+        while (current > 0) {
+            int digit = current % 10;
+            current = current / 10;
+            buf[end++] = HexUtils.HEX[digit];
+        }
+        byteC.setEnd(end);
+        // Inverting buffer
+        end--;
+        if (i < 0) {
+            start++;
+        }
+        while (end > start) {
+            byte temp = buf[start];
+            buf[start] = buf[end];
+            buf[end] = temp;
+            start++;
+            end--;
+        }
+        intValue=i;
+        hasIntValue=true;
+        type=T_BYTES;
     }
 
 
