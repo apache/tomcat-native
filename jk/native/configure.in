@@ -103,7 +103,7 @@ AC_ARG_WITH(apxs,
               	APRINCLUDEDIR="-I`$APXS -q APR_INCLUDEDIR`"
               	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
               	APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
-                APACHE_CONFIG_VARS=${apache_dir}/build/config_vars.mk
+                APACHE_CONFIG_VARS="`${APXS} -q installbuilddir`/build/config_vars.mk"
                 LIBTOOL=`$APXS -q LIBTOOL`
             fi
             AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
