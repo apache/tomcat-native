@@ -102,7 +102,7 @@ import org.apache.catalina.util.StringManager;
 
 public final class CoyoteConnector
     implements Connector, Lifecycle, MBeanRegistration
- {
+{
     private static Log log = LogFactory.getLog(CoyoteConnector.class);
 
 
@@ -941,7 +941,7 @@ public final class CoyoteConnector
 
      /**
       * Set the URI encoding to be used for the URI.
-      * 
+      *
       * @param URIEncoding The new URI character encoding.
       */
      public void setURIEncoding(String URIEncoding) {
@@ -1062,11 +1062,12 @@ public final class CoyoteConnector
      * Initialize this connector (create ServerSocket here!)
      */
     public void initialize()
-        throws LifecycleException {
-
-        if (initialized)
-            throw new LifecycleException
-                (sm.getString("coyoteConnector.alreadyInitialized"));
+        throws LifecycleException
+    {
+        if (initialized) {
+            log.info(sm.getString("coyoteConnector.alreadyInitialized"));
+            return;
+        }
 
         this.initialized = true;
 
@@ -1162,11 +1163,14 @@ public final class CoyoteConnector
      * @exception LifecycleException if a fatal startup error occurs
      */
     public void start() throws LifecycleException {
+        if( !initialized )
+            initialize();
 
         // Validate and update our current state
-        if (started)
-            throw new LifecycleException
-                (sm.getString("coyoteConnector.alreadyStarted"));
+        if (started) {
+            log.info(sm.getString("coyoteConnector.alreadyStarted"));
+            return;
+        }
         lifecycle.fireLifecycleEvent(START_EVENT, null);
         started = true;
 
@@ -1177,7 +1181,7 @@ public final class CoyoteConnector
             try {
                 Registry.getRegistry().registerComponent
                     (protocolHandler, this.domain, "protocolHandler",
-                     "type=protocolHandler,className=" 
+                     "type=protocolHandler,className="
                      + protocolHandlerClassName);
             } catch (Exception ex) {
                 log.error(sm.getString
@@ -1197,7 +1201,16 @@ public final class CoyoteConnector
         }
 
         mapperListener.init();
-
+        if( this.domain != null ) {
+            try {
+                Registry.getRegistry().registerComponent
+                        (mapper, this.domain, "Mapper",
+                                "type=Mapper");
+            } catch (Exception ex) {
+                log.error(sm.getString
+                        ("coyoteConnector.protocolRegistrationFailed"), ex);
+            }
+        }
     }
 
 
@@ -1305,15 +1318,35 @@ public final class CoyoteConnector
             log.info( "Already configured" );
             return;
         }
+        if( container==null ) {
+            // Register to the service
+            ObjectName parentName=new ObjectName( domain + ":" +
+                    "type=Service,name=Tomcat-Standalone");
 
-        // Register to the service
-        ObjectName parentName=new ObjectName( domain + ":" +
-                "type=Service,name=Tomcat-Standalone");
-        log.info("Adding to " + parentName );
+            log.info("Adding to " + parentName );
+            if( mserver.isRegistered(parentName )) {
+                mserver.invoke(parentName, "addConnector", new Object[] { this },
+                        new String[] {"org.apache.catalina.Connector"});
+                // As a side effect we'll get the container field set
+                // Also initialize will be called
+                return;
+            }
+            // XXX Go directly to the Engine
+            // initialize(); - is called by addConnector
+            ObjectName engName=new ObjectName( domain + ":" +
+                    "type=Engine,name=Tomcat-Standalone");
+            if( mserver.isRegistered(parentName )) {
+                container=(Container)mserver.getAttribute(parentName, "managedResource");
+                log.info("Found engine " + container);
+                initialize();
 
-        mserver.invoke(parentName, "addConnector", new Object[] { this },
-                new String[] {"org.apache.catalina.Connector"});
-        // initialize(); - is called by addConnector
+                log.info("Initialized");
+                // As a side effect we'll get the container field set
+                // Also initialize will be called
+                return;
+            }
+
+        }
     }
 
     public void destroy() throws Exception {
