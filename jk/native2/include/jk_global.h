@@ -165,6 +165,20 @@ extern "C" {
 #define JK_SESSION_IDENTIFIER "JSESSIONID"
 #define JK_PATH_SESSION_IDENTIFIER ";jsessionid"
 
+#if defined(WIN32)
+    #define SO_EXTENSION "dll"
+#else
+  #if defined(NETWARE)
+      #define SO_EXTENSION "nlm"
+  #else
+      #define SO_EXTENSION "so"
+  #endif
+#endif
+
+#ifndef ARCH
+#define ARCH "i386"
+#endif
+    
 #if defined(WIN32) || defined(NETWARE)
     #define JK_METHOD __stdcall
     #define C_LEVEL_TRY_START       __try {
@@ -172,7 +186,9 @@ extern "C" {
     #define C_LEVEL_FINALLY_START   __finally {
     #define C_LEVEL_FINALLY_END     }
     #define PATH_SEPERATOR          (';')
+    #define PATH_SEPARATOR_STR      (";")
     #define FILE_SEPERATOR          ('\\')
+    #define FILE_SEPARATOR_STR      ("\\")
     #define PATH_ENV_VARIABLE       ("PATH")
 
     /* incompatible names... */
@@ -187,6 +203,8 @@ extern "C" {
     #define C_LEVEL_FINALLY_END     
     #define PATH_SEPERATOR          (':')
     #define FILE_SEPERATOR          ('/')
+    #define PATH_SEPARATOR_STR      (":")
+    #define FILE_SEPARATOR_STR      ("/")
     #define PATH_ENV_VARIABLE       ("LD_LIBRARY_PATH")
 #endif
 
