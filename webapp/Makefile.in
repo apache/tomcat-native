@@ -64,7 +64,7 @@ LOCALDIRS = @TGTDIRS@ @TARGET@
 APRDIR = @APRDIR@
 
 CFGS = @CONFIGFILES@ \
-	./lib/pr_warp_defs.h \
+	@SRCDIR@/lib/pr_warp_defs.h \
 	config.cache \
 	config.log \
 	config.status
@@ -74,61 +74,63 @@ all: apr-all local-all
 clean: apr-clean local-clean
 
 distclean: clean
-	@echo Removing configure generated files...
-	@rm -f $(CFGS)
+	@$(ECHO) ""
+	@$(ECHO) Removing configure generated files...
+	@$(RM) -f $(CFGS)
 
 cvsclean: distclean
-	@echo Removing configure script...
-	@rm -f configure
+	@$(ECHO) ""
+	@$(ECHO) Removing configure script...
+	@$(ECHO) -f configure
 
 apr-all:
 	@for DIR in $(APRDIR) ; do \
-		echo "" ; \
-		echo "Compiling sources in $$DIR..." ; \
-		cd $$DIR ; \
+		$(ECHO) "" ; \
+		$(ECHO) "Compiling sources in $${DIR}..." ; \
+		cd $${DIR} ; \
 		$(MAKE) all ; \
 		RET=$$? ; \
 		cd $(SRCDIR) ; \
-		if test "$$RET" != "0" ; then \
-			exit $$RET ; \
+		if $(TEST) "$${RET}" != "0" ; then \
+			exit $${RET} ; \
 		fi ; \
 	done
 
 apr-clean:
 	@for DIR in $(APRDIR) ; do \
-		echo "" ; \
-		echo "Cleaning up $$DIR..." ; \
-		cd $$DIR ; \
+		$(ECHO) "" ; \
+		$(ECHO) "Cleaning up $${DIR}..." ; \
+		cd $${DIR} ; \
 		$(MAKE) clean ; \
 		RET=$$? ; \
 		cd $(SRCDIR) ; \
-		if test "$$RET" != "0" ; then \
-			exit $$RET ; \
+		if test "$${RET}" != "0" ; then \
+			exit $${RET} ; \
 		fi ; \
 	done
 
 local-all:
 	@for DIR in $(LOCALDIRS) ; do \
-		echo "" ; \
-		echo "Compiling sources in $$DIR..." ; \
-		cd $$DIR ; \
+		$(ECHO) "" ; \
+		$(ECHO) "Compiling sources in $${DIR}..." ; \
+		cd $${DIR} ; \
 		$(MAKE) all ; \
 		RET=$$? ; \
 		cd $(SRCDIR) ; \
-		if test "$$RET" != "0" ; then \
-			exit $$RET ; \
+		if test "$${RET}" != "0" ; then \
+			exit $${RET} ; \
 		fi ; \
 	done
 
 local-clean:
 	@for DIR in $(LOCALDIRS) ; do \
-		echo "" ; \
-		echo "Cleaning up $$DIR..." ; \
-		cd $$DIR ; \
+		$(ECHO) "" ; \
+		$(ECHO) "Cleaning up $${DIR}..." ; \
+		cd $${DIR} ; \
 		$(MAKE) clean ; \
 		RET=$$? ; \
 		cd $(SRCDIR) ; \
-		if test "$$RET" != "0" ; then \
-			exit $$RET ; \
+		if test "$${RET}" != "0" ; then \
+			exit $${RET} ; \
 		fi ; \
 	done
