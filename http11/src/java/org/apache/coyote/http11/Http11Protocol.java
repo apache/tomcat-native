@@ -256,6 +256,14 @@ public class Http11Protocol implements ProtocolHandler
         setAttribute("clientauth", k);
     }
 
+    public void setProtocol( String k ) {
+        setAttribute("protocol", k);
+    }
+
+    public void setAlgorithm( String k ) {
+        setAttribute("algorithm", k);
+    }
+
     public void setSecure( boolean b ) {
     	secure=b;
         setAttribute("secure", "" + b);
