@@ -25,6 +25,16 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Allow anyone to debug and diagnose stack dumps using windbg or any
+      other debugging tool, and (if they add the .pdb files to their
+      installation) to make sense of dr watson logs.
+      Patch provided by William A. Rowe (wrowe)
+      </update>
+      <fix>
+      Fix in_addr_t usage by using the real struct ignoring typedef.
+      Patch provided by William A. Rowe (wrowe)
+      </fix>
       <fix>
       Fix url rewriting by restoring the in place uri from which the
       jsessionid was removed. (mturk)
