@@ -175,6 +175,8 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
         jk_worker_t *w= wEnv->worker_map->valueAt( env, wEnv->worker_map, i );
         int err;
 
+        if( w->mbean->disabled ) continue;
+        
         w->workerEnv=wEnv;
 
         if( w->init != NULL ) {
@@ -196,6 +198,8 @@ static int jk2_workerEnv_initChannel(jk_env_t *env,
     int rc=JK_OK;
     
     ch->workerEnv=wEnv;
+
+    if( ch->mbean->disabled ) return JK_OK;
     
     if( ch->init != NULL ) {
         rc=ch->init(env, ch);
@@ -305,7 +309,7 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
         wEnv->defaultWorker= w;
     }
 
-    if( wEnv->vm != NULL ) {
+    if( wEnv->vm != NULL  && ! wEnv->vm->mbean->disabled ) {
         wEnv->vm->init( env, wEnv->vm );
     }
 
@@ -314,7 +318,7 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     jk2_workerEnv_initWorkers( env, wEnv );
     jk2_workerEnv_initHandlers( env, wEnv );
 
-    if( wEnv->shm != NULL ) {
+    if( wEnv->shm != NULL && ! wEnv->shm->mbean->disabled ) {
         wEnv->shm->init( env, wEnv->shm );
     }
     
