@@ -78,9 +78,110 @@ import org.apache.tomcat.util.http.*;
  *  It'll just start/init jk and use a dummy endpoint ( i.e. no servlet
  *  container ).
  */
-public class JkServlet
+public class JkServlet extends HttpServlet
 {
+    String password;
+    String user;
+    /* Parameters for the ajp channel */
+    String port;
+    String host; /* If it starts with '/' we'll use ud */
+    ServletContext sctx;
+    
     public JkServlet()
     {
     }
+
+    protected Properties servletConfig2properties(ServletConfig conf ) {
+        Properties props=new Properties();
+        Enumeration paramNE=conf.getInitParameterNames();
+        while( paramNE.hasMoreElements() ){
+            String s=(String)paramNE.nextElement();
+            String v=conf.getInitParameter(s);
+
+            props.put( s, v );
+        }
+        return props;
+    }
+    
+    
+    public void init(ServletConfig conf) throws ServletException {
+        super.init(conf);
+        sctx=conf.getServletContext();
+        getServletAdapter();
+    }
+
+    /* Ok, this is a bit hacky - there is ( or I couldn't find ) any clean
+       way to access tomcat40 internals without implementing the interface,
+       and that will brake 3.3 ( and probably other things ).
+
+       It does seem to work for 4.0, and in future we can add a tomcat40 valve/whatever
+       that will provide an Attribute for 'trusted' apps with pointer to
+       the internals.
+    */
+    private void getServletAdapter() {
+        try40();
+        try33();
+    }
+            
+    private void try33() {
+        // 33 ?
+        try {
+            JkServlet t33=(JkServlet)newInstance( "org.apache.jk.server.tomcat33.JkServlet33" );
+            if( t33 == null ) {
+                d("3.3 not detected or untrusted app");
+                return;
+            }
+            t33.initializeContainer( getServletConfig());
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void try40() {
+        // 4.x ? 
+        try {
+            HttpServletRequest req=(HttpServletRequest)
+                newInstance( "org.apache.catalina.connector.HttpRequestBase");
+            if( req==null ) {
+                d("4.0 not detected or untrusted app");
+                return;
+            }
+            HttpServletResponse res=(HttpServletResponse)
+                newInstance( "org.apache.catalina.connector.HttpResponseBase");
+
+            RequestDispatcher rd=
+                sctx.getNamedDispatcher( "JkServlet40" );
+            if( rd==null ) return;
+            
+            try {
+                rd.include( req, res );
+            } catch( Exception ex ) {
+                ex.printStackTrace();
+                // ignore it - what would you expect, we pass dummy objects
+            }
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
+    }
+
+    private Object newInstance( String s ) {
+        try {
+            Class c=Class.forName( s );
+            return c.newInstance();
+        } catch( Exception ex ) {
+            // ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public void initializeContainer(ServletConfig cfg) {
+    }
+
+
+    private static final int dL=0;
+    private static void d(String s ) {
+        System.err.println( "JkServlet: " + s );
+    }
 }
+
+

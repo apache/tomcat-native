@@ -78,27 +78,53 @@ import org.apache.tomcat.util.http.*;
 public class JkMain
 {
     WorkerEnv wEnv=new WorkerEnv();
+    String propFile;
+    Properties props;
+
+    Worker defaultWorker;
     
     public JkMain()
     {
     }
-    
 
+    public void setPropFile( String p  ) {
+        propFile=p;
+        props=new Properties();
+        try {
+            props.load( new FileInputStream(propFile) );
+        } catch(IOException ex ){
+            ex.printStackTrace();
+        }
+    }
+
+    public void setProperties( Properties p ) {
+        props=p;
+    }
+
+    public void setDefaultWorker( Worker w ) {
+        defaultWorker=w;
+    }
+    
     public void start() throws IOException {
-        ChannelSocket csocket=new ChannelSocket();
+        ChannelUn csocket=new ChannelUn();
+        csocket.setFile( "/tmp/tomcatApr" );
+        /* ChannelSocket csocket=new ChannelSocket();
         csocket.setPort( 8009 );
+        */
         /*
         ChannelUnixSocket csocket=new ChannelUnixSocket(); // JFC tests
-        wEnv.addChannel( csocket );
          */
+        wEnv.addChannel( csocket );
 
-        WorkerDummy wdummy=new WorkerDummy();
-        csocket.setWorker( wdummy );
-        wEnv.addWorker( wdummy );
+        if( defaultWorker == null ) 
+            defaultWorker=new WorkerDummy();
+
+        csocket.setWorker( defaultWorker );
+        wEnv.addWorker( defaultWorker );
         
         HandlerRequest hReq=new HandlerRequest();
         wEnv.addHandler( hReq );
-        hReq.setWorker( wdummy );
+        hReq.setWorker( defaultWorker );
         
         HandlerEcho hEcho=new HandlerEcho();
         wEnv.addHandler( hEcho );
@@ -118,6 +144,7 @@ public class JkMain
             String propFile=args[0];
             
             JkMain jkMain=new JkMain();
+            jkMain.setPropFile(propFile);
             jkMain.start();
         } catch( Exception ex ) {
             ex.printStackTrace();
