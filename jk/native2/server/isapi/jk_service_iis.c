@@ -59,7 +59,7 @@
  * Description: IIS Jk2 Service 
  * Author:      Gal Shachor <shachor@il.ibm.com>                           
  *              Henri Gomez <hgomez@slib.fr> 
- *		Ignacio J. Ortega <nacho@apache.org>
+ *              Ignacio J. Ortega <nacho@apache.org>
  */
 
 // This define is needed to include wincrypt,h, needed to get client certificates
@@ -286,7 +286,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
 {
     LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)serverObj;
     char *worker_name;
-	char huge_buf[16 * 1024]; /* should be enough for all */
+        char huge_buf[16 * 1024]; /* should be enough for all */
 
     DWORD huge_buf_sz;
 
@@ -403,7 +403,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
     
     huge_buf_sz = sizeof(huge_buf);         
     if (get_server_value(env,
-						lpEcb,
+                                                lpEcb,
                          "ALL_HTTP",             
                          huge_buf,           
                          huge_buf_sz,        
@@ -508,7 +508,7 @@ static void JK_METHOD jk2_service_iis_afterRequest(jk_env_t *env, jk_ws_service_
     if (s->content_read < s->content_length ||
         (s->is_chunked && ! s->no_more_chunks)) {
 
-		LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
+                LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
 
         char *buff = s->pool->calloc(env,s->pool, 2048);
         if (buff != NULL) {
