@@ -56,7 +56,7 @@ import org.apache.tomcat.util.threads.ThreadWithAttributes;
 
 /**
  * Processes HTTP requests.
- * 
+ *
  * @author Remy Maucherat
  */
 public class Http11Processor implements Processor, ActionHook {
@@ -65,7 +65,7 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * Logger.
      */
-    protected static org.apache.commons.logging.Log log 
+    protected static org.apache.commons.logging.Log log
         = org.apache.commons.logging.LogFactory.getLog(Http11Processor.class);
 
 
@@ -210,31 +210,31 @@ public class Http11Processor implements Processor, ActionHook {
      * Remote Host associated with the current connection.
      */
     protected String remoteHost = null;
-    
-    
+
+
     /**
      * Local Host associated with the current connection.
      */
     protected String localName = null;
-    
-    
-    
+
+
+
     /**
      * Local port to which the socket is connected
      */
     protected int localPort = -1;
-    
-    
+
+
     /**
      * Remote port to which the socket is connected
      */
     protected int remotePort = -1;
-    
-    
+
+
     /**
      * The local Host address.
      */
-    protected String localAddr = null; 
+    protected String localAddr = null;
 
 
     /**
@@ -277,11 +277,11 @@ public class Http11Processor implements Processor, ActionHook {
      * List of user agents to not use gzip with
      */
     protected Pattern noCompressionUserAgents[] = null;
-    
+
     /**
      * List of MIMES which could be gzipped
      */
-    protected String[] compressableMimeTypes = 
+    protected String[] compressableMimeTypes =
     { "text/html", "text/xml", "text/plain" };
 
 
@@ -295,6 +295,12 @@ public class Http11Processor implements Processor, ActionHook {
      * Associated thread pool.
      */
     protected ThreadPool threadPool;
+
+
+    /**
+     * Allow a customized the server header for the tin-foil hat folks.
+     */
+    protected String server = Constants.SERVER;
 
 
     // ------------------------------------------------------------- Properties
@@ -344,7 +350,7 @@ public class Http11Processor implements Processor, ActionHook {
     public void setCompressionMinSize(int compressionMinSize) {
         this.compressionMinSize = compressionMinSize;
     }
-    
+
 
     public void setThreadPool(ThreadPool threadPool) {
         this.threadPool = threadPool;
@@ -354,13 +360,13 @@ public class Http11Processor implements Processor, ActionHook {
      * Add user-agent for which gzip compression didn't works
      * The user agent String given will be exactly matched
      * to the user-agent header submitted by the client.
-     * 
+     *
      * @param userAgent user-agent string
      */
     public void addNoCompressionUserAgent(String userAgent) {
         try {
             Pattern nRule = Pattern.compile(userAgent);
-            noCompressionUserAgents = 
+            noCompressionUserAgents =
                 addREArray(noCompressionUserAgents, nRule);
         } catch (PatternSyntaxException pse) {
             log.error("Error parsing regular expression: " + userAgent, pse);
@@ -369,8 +375,8 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
-     * Set no compression user agent list (this method is best when used with 
-     * a large number of connectors, where it would be better to have all of 
+     * Set no compression user agent list (this method is best when used with
+     * a large number of connectors, where it would be better to have all of
      * them referenced a single array).
      */
     public void setNoCompressionUserAgents(Pattern[] noCompressionUserAgents) {
@@ -381,13 +387,13 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * Set no compression user agent list.
      * List contains users agents separated by ',' :
-     * 
+     *
      * ie: "gorilla,desesplorer,tigrus"
      */
     public void setNoCompressionUserAgents(String noCompressionUserAgents) {
         if (noCompressionUserAgents != null) {
             StringTokenizer st = new StringTokenizer(noCompressionUserAgents, ",");
-        
+
             while (st.hasMoreTokens()) {
                 addNoCompressionUserAgent(st.nextToken().trim());
             }
@@ -398,18 +404,18 @@ public class Http11Processor implements Processor, ActionHook {
      * Add a mime-type which will be compressable
      * The mime-type String will be exactly matched
      * in the response mime-type header .
-     * 
+     *
      * @param mimeType mime-type string
      */
     public void addCompressableMimeType(String mimeType) {
-        compressableMimeTypes = 
+        compressableMimeTypes =
             addStringArray(compressableMimeTypes, mimeType);
     }
 
 
     /**
-     * Set compressable mime-type list (this method is best when used with 
-     * a large number of connectors, where it would be better to have all of 
+     * Set compressable mime-type list (this method is best when used with
+     * a large number of connectors, where it would be better to have all of
      * them referenced a single array).
      */
     public void setCompressableMimeTypes(String[] compressableMimeTypes) {
@@ -420,7 +426,7 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * Set compressable mime-type list
      * List contains users agents separated by ',' :
-     * 
+     *
      * ie: "text/html,text/xml,text/plain"
      */
     public void setCompressableMimeTypes(String compressableMimeTypes) {
@@ -448,7 +454,7 @@ public class Http11Processor implements Processor, ActionHook {
 
     /**
      * Add input or output filter.
-     * 
+     *
      * @param className class name of the filter
      */
     protected void addFilter(String className) {
@@ -470,8 +476,8 @@ public class Http11Processor implements Processor, ActionHook {
 
     /**
      * General use method
-     * 
-     * @param sArray the StringArray 
+     *
+     * @param sArray the StringArray
      * @param value string
      */
     private String[] addStringArray(String sArray[], String value) {
@@ -492,8 +498,8 @@ public class Http11Processor implements Processor, ActionHook {
 
     /**
      * General use method
-     * 
-     * @param rArray the REArray 
+     *
+     * @param rArray the REArray
      * @param value Obj
      */
     private Pattern[] addREArray(Pattern rArray[], Pattern value) {
@@ -502,7 +508,7 @@ public class Http11Processor implements Processor, ActionHook {
             result = new Pattern[1];
             result[0] = value;
         }
-        else {    
+        else {
             result = new Pattern[rArray.length + 1];
             for (int i = 0; i < rArray.length; i++)
                 result[i] = rArray[i];
@@ -514,8 +520,8 @@ public class Http11Processor implements Processor, ActionHook {
 
     /**
      * General use method
-     * 
-     * @param sArray the StringArray 
+     *
+     * @param sArray the StringArray
      * @param value string
      */
     private boolean inStringArray(String sArray[], String value) {
@@ -547,10 +553,10 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
-     * Add restricted user-agent (which will downgrade the connector 
+     * Add restricted user-agent (which will downgrade the connector
      * to HTTP/1.0 mode). The user agent String given will be matched
      * via regexp to the user-agent header submitted by the client.
-     * 
+     *
      * @param userAgent user-agent string
      */
     public void addRestrictedUserAgent(String userAgent) {
@@ -564,8 +570,8 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
-     * Set restricted user agent list (this method is best when used with 
-     * a large number of connectors, where it would be better to have all of 
+     * Set restricted user agent list (this method is best when used with
+     * a large number of connectors, where it would be better to have all of
      * them referenced a single array).
      */
     public void setRestrictedUserAgents(Pattern[] restrictedUserAgents) {
@@ -576,12 +582,12 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * Set restricted user agent list (which will downgrade the connector
      * to HTTP/1.0 mode). List contains users agents separated by ',' :
-     * 
+     *
      * ie: "gorilla,desesplorer,tigrus"
      */
     public void setRestrictedUserAgents(String restrictedUserAgents) {
         if (restrictedUserAgents != null) {
-            StringTokenizer st = 
+            StringTokenizer st =
                 new StringTokenizer(restrictedUserAgents, ",");
             while (st.hasMoreTokens()) {
                 addRestrictedUserAgent(st.nextToken().trim());
@@ -595,10 +601,10 @@ public class Http11Processor implements Processor, ActionHook {
      */
     public String[] findRestrictedUserAgents() {
         String[] sarr = new String [restrictedUserAgents.length];
-        
+
         for (int i = 0; i < restrictedUserAgents.length; i++)
             sarr[i] = restrictedUserAgents[i].toString();
-            
+
         return (sarr);
     }
 
@@ -696,6 +702,26 @@ public class Http11Processor implements Processor, ActionHook {
         return timeout;
     }
 
+
+    /**
+     * Set the server header name.
+     */
+    public void setServer( String server ) {
+        if (server==null || server.equals("")) {
+            this.server = Constants.SERVER;
+        } else {
+            this.server = server;
+        }
+    }
+
+    /**
+     * Get the server header name.
+     */
+    public String getServer() {
+        return server;
+    }
+
+
     /** Get the request associated with this processor.
      *
      * @return The request
@@ -707,7 +733,7 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * Process pipelined HTTP requests using the specified input and output
      * streams.
-     * 
+     *
      * @param input stream from which the HTTP requests will be read
      * @param output stream which will be used to output the HTTP
      * responses
@@ -727,7 +753,7 @@ public class Http11Processor implements Processor, ActionHook {
         localAddr = null;
         remotePort = -1;
         localPort = -1;
-        
+
         // Setting up the I/O
         inputBuffer.setInputStream(input);
         outputBuffer.setOutputStream(output);
@@ -739,8 +765,8 @@ public class Http11Processor implements Processor, ActionHook {
         int keepAliveLeft = maxKeepAliveRequests;
         int soTimeout = socket.getSoTimeout();
 
-        float threadRatio = 
-            (float) threadPool.getCurrentThreadsBusy() 
+        float threadRatio =
+            (float) threadPool.getCurrentThreadsBusy()
             / (float) threadPool.getMaxThreads();
         if ((threadRatio > 0.33) && (threadRatio <= 0.66)) {
             soTimeout = soTimeout / 2;
@@ -800,7 +826,7 @@ public class Http11Processor implements Processor, ActionHook {
                     // Handle when the response was committed before a serious
                     // error occurred.  Throwing a ServletException should both
                     // set the status to 500 and set the errorException.
-                    // If we fail here, then the response is likely already 
+                    // If we fail here, then the response is likely already
                     // committed, so we can't try and set headers.
                     if(keepAlive && !error) { // Avoid checking twice.
                         error = response.getErrorException() != null ||
@@ -876,7 +902,7 @@ public class Http11Processor implements Processor, ActionHook {
 
     /**
      * Send an action to the connector.
-     * 
+     *
      * @param actionCode Type of the action
      * @param param Action parameter
      */
@@ -989,12 +1015,12 @@ public class Http11Processor implements Processor, ActionHook {
                 InetAddress inetAddr = socket.getInetAddress();
                 if (inetAddr != null) {
                     remoteAddr = inetAddr.getHostAddress();
-                }   
+                }
             }
             request.remoteAddr().setString(remoteAddr);
 
         } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_NAME_ATTRIBUTE) {
-            
+
             if ((localName == null) && (socket != null)) {
                 InetAddress inetAddr = socket.getLocalAddress();
                 if (inetAddr != null) {
@@ -1004,7 +1030,7 @@ public class Http11Processor implements Processor, ActionHook {
             request.localName().setString(localName);
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
-            
+
             if ((remoteHost == null) && (socket != null)) {
                 InetAddress inetAddr = socket.getInetAddress();
                 if (inetAddr != null) {
@@ -1012,28 +1038,28 @@ public class Http11Processor implements Processor, ActionHook {
                 }
             }
             request.remoteHost().setString(remoteHost);
-            
+
         } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_ADDR_ATTRIBUTE) {
-                       
+
             if (localAddr == null)
                localAddr = socket.getLocalAddress().getHostAddress();
 
             request.localAddr().setString(localAddr);
-            
+
         } else if (actionCode == ActionCode.ACTION_REQ_REMOTEPORT_ATTRIBUTE) {
-            
+
             if ((remotePort == -1 ) && (socket !=null)) {
-                remotePort = socket.getPort(); 
-            }    
+                remotePort = socket.getPort();
+            }
             request.setRemotePort(remotePort);
 
         } else if (actionCode == ActionCode.ACTION_REQ_LOCALPORT_ATTRIBUTE) {
-            
+
             if ((localPort == -1 ) && (socket !=null)) {
-                localPort = socket.getLocalPort(); 
-            }            
+                localPort = socket.getLocalPort();
+            }
             request.setLocalPort(localPort);
-       
+
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
             if( sslSupport != null) {
                 /*
@@ -1065,7 +1091,7 @@ public class Http11Processor implements Processor, ActionHook {
 
     /**
      * Set the associated adapter.
-     * 
+     *
      * @param adapter the new adapter
      */
     public void setAdapter(Adapter adapter) {
@@ -1075,7 +1101,7 @@ public class Http11Processor implements Processor, ActionHook {
 
     /**
      * Get the associated adapter.
-     * 
+     *
      * @return the associated adapter
      */
     public Adapter getAdapter() {
@@ -1127,14 +1153,14 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         MimeHeaders headers = request.getMimeHeaders();
-        
+
         // Check connection header
         MessageBytes connectionValueMB = headers.getValue("connection");
         if (connectionValueMB != null) {
             ByteChunk connectionValueBC = connectionValueMB.getByteChunk();
             if (findBytes(connectionValueBC, Constants.CLOSE_BYTES) != -1) {
                 keepAlive = false;
-            } else if (findBytes(connectionValueBC, 
+            } else if (findBytes(connectionValueBC,
                                  Constants.KEEPALIVE_BYTES) != -1) {
                 keepAlive = true;
             }
@@ -1152,7 +1178,7 @@ public class Http11Processor implements Processor, ActionHook {
         // Check user-agent header
         if ((restrictedUserAgents != null) && ((http11) || (keepAlive))) {
             MessageBytes userAgentValueMB = headers.getValue("user-agent");
-            // Check in the restricted list, and adjust the http11 
+            // Check in the restricted list, and adjust the http11
             // and keepAlive flags accordingly
             if(userAgentValueMB != null) {
                 String userAgentValue = userAgentValueMB.toString();
@@ -1183,11 +1209,11 @@ public class Http11Processor implements Processor, ActionHook {
                         (uriB, uriBCStart + pos + 1, 1);
                 } else {
                     request.requestURI().setBytes
-                        (uriB, uriBCStart + slashPos, 
+                        (uriB, uriBCStart + slashPos,
                          uriBC.getLength() - slashPos);
                 }
                 MessageBytes hostMB = headers.setValue("host");
-                hostMB.setBytes(uriB, uriBCStart + pos + 3, 
+                hostMB.setBytes(uriB, uriBCStart + pos + 3,
                                 slashPos - pos - 3);
             }
 
@@ -1248,7 +1274,7 @@ public class Http11Processor implements Processor, ActionHook {
         parseHost(valueMB);
 
         if (!contentDelimitation) {
-            // If there's no content length and we're using keep-alive 
+            // If there's no content length and we're using keep-alive
             // (HTTP/1.0 with keep-alive or HTTP/1.1), assume
             // the client is not broken and didn't send a body
             if (keepAlive) {
@@ -1271,11 +1297,11 @@ public class Http11Processor implements Processor, ActionHook {
 
         if (valueMB == null || valueMB.isNull()) {
             // HTTP/1.0
-            // Default is what the socket tells us. Overriden if a host is 
+            // Default is what the socket tells us. Overriden if a host is
             // found/parsed
             request.setServerPort(socket.getLocalPort());
             InetAddress localAddress = socket.getLocalAddress();
-            // Setting the socket-related fields. The adapter doesn't know 
+            // Setting the socket-related fields. The adapter doesn't know
             // about socket.
             request.setLocalHost(localAddress.getHostName());
             request.serverName().setString(localAddress.getHostName());
@@ -1347,16 +1373,16 @@ public class Http11Processor implements Processor, ActionHook {
 
         // Nope Compression could works in HTTP 1.0 also
         // cf: mod_deflate
-        
+
         // Compression only since HTTP 1.1
         // if (! http11)
         //    return false;
 
         // Check if browser support gzip encoding
-        MessageBytes acceptEncodingMB = 
+        MessageBytes acceptEncodingMB =
             request.getMimeHeaders().getValue("accept-encoding");
-            
-        if ((acceptEncodingMB == null) 
+
+        if ((acceptEncodingMB == null)
             || (acceptEncodingMB.indexOf("gzip") == -1))
             return false;
 
@@ -1364,7 +1390,7 @@ public class Http11Processor implements Processor, ActionHook {
         MessageBytes contentEncodingMB =
             response.getMimeHeaders().getValue("Content-Encoding");
 
-        if ((contentEncodingMB != null) 
+        if ((contentEncodingMB != null)
             && (contentEncodingMB.indexOf("gzip") != -1))
             return false;
 
@@ -1374,7 +1400,7 @@ public class Http11Processor implements Processor, ActionHook {
 
         // Check for incompatible Browser
         if (noCompressionUserAgents != null) {
-            MessageBytes userAgentValueMB =  
+            MessageBytes userAgentValueMB =
                 request.getMimeHeaders().getValue("user-agent");
             if(userAgentValueMB != null) {
                 String userAgentValue = userAgentValueMB.toString();
@@ -1386,13 +1412,13 @@ public class Http11Processor implements Processor, ActionHook {
             }
         }
 
-        // Check if suffisant len to trig the compression        
+        // Check if suffisant len to trig the compression
         int contentLength = response.getContentLength();
-        if ((contentLength == -1) 
+        if ((contentLength == -1)
             || (contentLength > compressionMinSize)) {
             // Check for compatible MIME-TYPE
             if (compressableMimeTypes != null) {
-                return (startsWithStringArray(compressableMimeTypes, 
+                return (startsWithStringArray(compressableMimeTypes,
                                               response.getContentType()));
             }
         }
@@ -1420,7 +1446,7 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         int statusCode = response.getStatus();
-        if ((statusCode == 204) || (statusCode == 205) 
+        if ((statusCode == 204) || (statusCode == 205)
             || (statusCode == 304)) {
             // No entity body
             outputBuffer.addActiveFilter
@@ -1441,7 +1467,7 @@ public class Http11Processor implements Processor, ActionHook {
         boolean useCompression = false;
         if (entityBody && (compressionLevel > 0)) {
             useCompression = isCompressable();
-            
+
             // Change content-length to -1 to force chunking
             if (useCompression) {
                 response.setContentLength(-1);
@@ -1491,7 +1517,7 @@ public class Http11Processor implements Processor, ActionHook {
         // Add date header
         String date = null;
         if (System.getSecurityManager() != null){
-            date = (String)AccessController.doPrivileged( 
+            date = (String)AccessController.doPrivileged(
                     new PrivilegedAction() {
                         public Object run(){
                             return FastHttpDateFormat.getCurrentDate();
@@ -1504,12 +1530,12 @@ public class Http11Processor implements Processor, ActionHook {
         headers.setValue("Date").setString(date);
 
         // Add server header
-        headers.setValue("Server").setString(Constants.SERVER);
+        headers.setValue("Server").setString(server);
 
         // FIXME: Add transfer encoding header
 
         if ((entityBody) && (!contentDelimitation)) {
-            // Mark as close the connection after the request, and add the 
+            // Mark as close the connection after the request, and add the
             // connection: close header
             keepAlive = false;
         }
@@ -1564,11 +1590,11 @@ public class Http11Processor implements Processor, ActionHook {
 
     /**
      * Add an input filter to the current request.
-     * 
-     * @return false if the encoding was not found (which would mean it is 
+     *
+     * @return false if the encoding was not found (which would mean it is
      * unsupported)
      */
-    protected boolean addInputFilter(InputFilter[] inputFilters, 
+    protected boolean addInputFilter(InputFilter[] inputFilters,
                                      String encodingName) {
         if (encodingName.equals("identity")) {
             // Skip
@@ -1601,9 +1627,9 @@ public class Http11Processor implements Processor, ActionHook {
         int start = bc.getStart();
         int end = bc.getEnd();
 
-    // Look for first char 
+    // Look for first char
     int srcEnd = b.length;
-        
+
     for (int i = start; i <= (end - srcEnd); i++) {
         if (Ascii.toLower(buff[i]) != first) continue;
         // found first char, now look for a match
