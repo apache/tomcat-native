@@ -147,11 +147,6 @@ jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean,
 {
     jk_worker_t *ajp14=(jk_worker_t *)mbean->object;
     char *value=(char *)valueP;
-    int    port;
-    char * host;
-    int err;
-    char * secret_key;
-    char *channelType;
            
     if( strcmp( name, "secretkey" )==0 ) {
         ajp14->secret = value;
@@ -567,7 +562,6 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
                             jk_endpoint_t **eP)
 {
     jk_endpoint_t *e = NULL;
-    jk_pool_t *endpointPool;
     jk_bean_t *jkb;
     int csOk;
     
@@ -637,6 +631,7 @@ jk2_worker_ajp14_service(jk_env_t *env, jk_worker_t *w,
             e->stats->startTime=e->stats->jkStartTime;
     }
 #endif
+    e->stats->workerId=w->mbean->id;
     
     err=jk2_worker_ajp14_service1( env, w, s, e );
 

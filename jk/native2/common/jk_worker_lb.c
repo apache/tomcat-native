@@ -281,7 +281,6 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
                                     jk_ws_service_t *s)
 {
     int attempt=0;
-    int i;
     jk_workerEnv_t *wEnv=lb->workerEnv;
     
     if( s==NULL ) {
@@ -403,7 +402,6 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
 {
     int currentWorker=0;
     int i;
-    int level;
     int num_of_workers=lb->lbWorkerMap->size( env, lb->lbWorkerMap);
 
     for(i = 0 ; i < num_of_workers ; i++) {
@@ -445,11 +443,7 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
 {
     jk_worker_t *lb=mbean->object;
     char *value=valueP;
-    int err;
-    char **worker_names;
-    unsigned num_of_workers;
     unsigned i = 0;
-    char *tmp;
     
     if( strcmp( name, "worker") == 0 ) {
         if( lb->lbWorkerMap->get( env, lb->lbWorkerMap, name) != NULL ) {
@@ -458,9 +452,10 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         }
         value = lb->mbean->pool->pstrdup(env, lb->mbean->pool, value);
         lb->lbWorkerMap->add(env, lb->lbWorkerMap, value, "");
-        
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "lb_worker.setAttribute(): Adding to %s: %s\n", lb->mbean->localName, value);
+
+        if( lb->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "lb_worker.setAttribute(): Adding to %s: %s\n", lb->mbean->localName, value);
 
         jk2_lb_refresh( env, lb );
         return JK_OK;
@@ -480,9 +475,7 @@ static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_bean_t *bean)
 {
     jk_worker_t *lb=bean->object;
     int err;
-    char **worker_names;
     int i = 0;
-    char *tmp;
     int num_of_workers=lb->lbWorkerMap->size( env, lb->lbWorkerMap);
 
     err=jk2_lb_refresh(env, lb );
@@ -491,10 +484,9 @@ static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_bean_t *bean)
 
     /*     if( lb->workerEnv->shm != NULL && lb->workerEnv->shm->head != NULL)  */
     /*         jk2_lb_updateWorkers(env, lb, lb->workerEnv->shm); */
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "lb.init() %s %d workers\n",
-                  lb->mbean->name, num_of_workers );
+    if( lb->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "lb.init() %s %d workers\n",
+                      lb->mbean->name, num_of_workers );
     
     return JK_OK;
 }

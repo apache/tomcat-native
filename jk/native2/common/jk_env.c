@@ -181,6 +181,7 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
 
     if( localName!=NULL ) 
         result=env->getBean2( env, type, localName );
+
     if( result!=NULL )
         return result;
     
@@ -230,11 +231,12 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
 
     workerPool=pool->create(env, pool, HUGE_POOL_SIZE);
     
+
     /** Generate a unique name if none is specified
      */
     if( localName==NULL ) {
         localName=workerPool->calloc( env, workerPool,  10 );
-        sprintf( (char *)localName, "%d", env->id++ );
+        sprintf( (char *)localName, "%d", jk_env_globalEnv->id++ );
     }
 
     name=workerPool->calloc( env, workerPool,  strlen( type ) + strlen( localName ) + 2 );

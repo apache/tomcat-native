@@ -74,7 +74,7 @@ int jk2_config_read(struct jk_env *env, struct jk_config *cfg,
 static void jk2_trim_prp_comment(char *prp);
 static int  jk2_trim(char *s);
 
-static int JK_METHOD jk2_config_readFile(jk_env_t *env,
+static int jk2_config_readFile(jk_env_t *env,
                                          jk_config_t *cfg,
                                          int *didReload, int firstTime);
 
@@ -87,13 +87,7 @@ static int jk2_config_setConfigFile( jk_env_t *env,
                                      jk_config_t *cfg,
                                      jk_workerEnv_t *wEnv,
                                      char *workerFile)
-{
-    struct stat statbuf;
-    int err;
-    jk_map_t *cfgData;
-    int i;
-    int j;
-    
+{   
     cfg->file=workerFile;
 
     return jk2_config_readFile( env, cfg, NULL, JK_TRUE );
@@ -256,7 +250,6 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
 
     if( multiValue ) {
         mbean->settings->add( env, mbean->settings, name, val );
-        fprintf( stderr, "config.setProperty MULTI %s %s %s \n", mbean->name, name, val ); 
     } else {
         mbean->settings->put( env, mbean->settings, name, val, NULL );
     }
@@ -383,7 +376,6 @@ int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char 
     /* Support windows-style 'sections' - for cleaner config
      */
     if( prp[0] == '[' ) {
-        char *dummyProp;
         v=strchr(prp, ']' );
         *v='\0';
         jk2_trim( v );
@@ -562,7 +554,6 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
 static int jk2_config_processConfigData(jk_env_t *env, jk_config_t *cfg,
                                         jk_map_t *cfgData, int firstTime )
 {
-    int rc;
     int i;
     int j;
     
@@ -626,7 +617,6 @@ static int jk2_config_readFile(jk_env_t *env,
     int rc;
     int csOk;
     struct stat statbuf;
-    time_t mtime;
     jk_map_t *cfgData;
 
     if( didReload!=NULL )
@@ -703,10 +693,10 @@ static int jk2_config_readFile(jk_env_t *env,
 }
 
 
-static int JK_METHOD jk2_config_update(jk_env_t *env,
+static int jk2_config_update(jk_env_t *env,
                                        jk_config_t *cfg, int *didReload)
 {
-    jk2_config_readFile( env, cfg, didReload, JK_FALSE );
+	return jk2_config_readFile( env, cfg, didReload, JK_FALSE );
 }
 
 /** Set a property for this config object

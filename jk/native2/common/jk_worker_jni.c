@@ -119,8 +119,6 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
     char *value=valueP;
     jni_worker_data_t *jniWorker;
     int mem_config = 0;
-    int rc;
-    JNIEnv *jniEnv;
 
     if(! pThis || ! pThis->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -162,7 +160,6 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
     jint rc = 0;
     char *str_config = NULL;
     jk_map_t *props=_this->workerEnv->initData;
-    jk_bean_t *chB;
     jk_vm_t *vm=_this->workerEnv->vm;
     jclass jstringClass;
     jarray jargs;
@@ -267,7 +264,6 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
 {
     jk_worker_t *_this=bean->object;
     jni_worker_data_t *jniWorker;
-    JNIEnv *jniEnv;
     jk_vm_t *vm=_this->workerEnv->vm;
 
     if(!_this  || ! _this->worker_private) {
@@ -311,7 +307,6 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
 {
     jk_worker_t *_this;
     jni_worker_data_t *jniData;
-    jk_bean_t *jkb;
     
     if(name==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG, 

@@ -202,7 +202,6 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
                                             jk_channel_t *ch,
                                             jk_endpoint_t *endpoint)
 {
-    int err;
     jk_channel_apr_private_t *socketInfo=
         (jk_channel_apr_private_t *)(ch->_privatePtr);
 
@@ -315,8 +314,6 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *ch,
     char data[128];
 
     int  sent=0;
-    int this_time;
-    int unixsock;
 
     sock=endpoint->channelData;
 
@@ -355,8 +352,6 @@ static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
     apr_socket_t *sock;
     apr_size_t length;
     apr_status_t stat;
-
-    int sd;
     int rdlen;
 
     sock=endpoint->channelData;

@@ -203,6 +203,7 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
                           "Level %s %d \n", value, _this->level );
         }
     }
+	return JK_OK;
 }
 
 
@@ -298,26 +299,27 @@ static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
 }
 
 int JK_METHOD jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool, 
-                            jk_bean_t *result,
-                            const char *type, const char *name)
+                                      jk_bean_t *result,
+                                      const char *type, const char *name)
 {
-    jk_logger_t *l = (jk_logger_t *)pool->alloc(env, pool, sizeof(jk_logger_t));
+    jk_logger_t *log = (jk_logger_t *)pool->calloc(env, pool, sizeof(jk_logger_t));
 
-    if(l==NULL ) {
+    if(log==NULL ) {
+        fprintf(stderr, "loggerFile.factory(): OutOfMemoryException\n"); 
         return JK_ERR;
     }
 
-    l->log = jk2_logger_file_log;
-    l->logger_private = NULL;
-    l->init =jk2_logger_file_init;
-    l->jkLog = jk2_logger_file_jkLog;
-    l->jkVLog = jk2_logger_file_jkVLog;
-    l->level=JK_LOG_ERROR_LEVEL;
+    log->log = jk2_logger_file_log;
+    log->logger_private = NULL;
+    log->init =jk2_logger_file_init;
+    log->jkLog = jk2_logger_file_jkLog;
+    log->jkVLog = jk2_logger_file_jkVLog;
+    log->level=JK_LOG_ERROR_LEVEL;
     jk2_logger_file_logFmt = JK_TIME_FORMAT;
     
-
-    result->object=l;
-    l->mbean=result;
+    result->object=log;
+    log->mbean=result;
+    
     result->setAttribute = jk2_logger_file_setProperty;
 
     return JK_OK;

@@ -100,7 +100,6 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     
     /* If it doesn't start with /, it must have a vhost */
     if( *name != '/' ) {
-        jk_uriEnv_t *vhost;
         // char *portIdx=strchr( n, ':' );
         uriEnv->virtual=uriEnv->pool->calloc( env, uriEnv->pool, slash - name + 2 );
         strncpy( uriEnv->virtual, name, slash-name );
@@ -146,9 +145,6 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
         uriEnv->workerName=val;
         return JK_OK;
     } else if( strcmp("context", name) == 0 ) {
-        jk_bean_t *ctxMB;
-        jk_uriEnv_t *ctxEnv;
-        char *cname;
         
         uriEnv->contextPath=val;
         uriEnv->ctxt_len=strlen( val );

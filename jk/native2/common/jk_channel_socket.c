@@ -186,8 +186,9 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
                       "can't resolve %s:%d errno=%d\n", socketInfo->host, socketInfo->port, errno );
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_socket.init(): %s:%d \n", socketInfo->host, socketInfo->port );
+    if( ch->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel_socket.init(): %s:%d \n", socketInfo->host, socketInfo->port );
     
     return rc;
 }

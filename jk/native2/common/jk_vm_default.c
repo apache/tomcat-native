@@ -341,7 +341,6 @@ static char* jk2_vm_guessJvmDll(jk_env_t *env, jk_map_t *props,
     char *jvm;
     jk_pool_t *p=props->pool;
     const char **current=defaultVM_PATH;
-    char *libp;
     
     /* We need at least JAVA_HOME ( either env or in settings )
      */
@@ -377,7 +376,6 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
     JavaVMOption options[100];
     JavaVM *jvm;
     int optn = 0, err;
-    char* tmp;
     
     /** Make sure we have the vm dll */
     if( jkvm->jvm_dll_path ==NULL ||

@@ -316,7 +316,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     int len;
     jbyte *nbuf;
     jbyteArray jbuf;
-    int jlen;
+    int jlen=0;
     jboolean iscopy=0;
     JNIEnv *jniEnv;
     jk_channel_jni_private_t *jniCh=_this->_privatePtr;
@@ -382,11 +382,6 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channelJni.send() Can't get java bytes");
         return JK_ERR;
-    }
-
-    if( len > jlen ) {
-        /* XXX Reallocate the buffer */
-        len=jlen;
     }
 
     memcpy( nbuf, b, len );
@@ -462,8 +457,6 @@ int JK_METHOD jk2_channel_jni_beforeRequest(struct jk_env *env,
                                             struct jk_endpoint *endpoint,
                                             struct jk_ws_service *r )
 {
-    JNIEnv *jniEnv;
-    jint rc;
     jk_workerEnv_t *we=worker->workerEnv;
 
     if( worker->mbean->debug > 0 )

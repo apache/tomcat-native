@@ -155,7 +155,7 @@ static void jk2_msg_ajp_end(jk_env_t *env, jk_msg_t *msg)
 
 
 static int jk2_msg_ajp_appendLong(jk_env_t *env, jk_msg_t *msg,
-                                  unsigned long val)
+                                  const unsigned long val)
 {
     int len=msg->len;
     
@@ -175,7 +175,7 @@ static int jk2_msg_ajp_appendLong(jk_env_t *env, jk_msg_t *msg,
 
 
 static int jk2_msg_ajp_appendInt(jk_env_t *env, jk_msg_t *msg, 
-                                 unsigned short val) 
+                                 const unsigned short val) 
 {
     int len=msg->len;
     if(len + 2 > msg->maxlen) {
@@ -211,7 +211,7 @@ static int jk2_msg_ajp_appendMap(jk_env_t *env, jk_msg_t *msg,
     int i;
     int size=map->size(env, map);
 
-    rc=msg->appendInt( env, msg, size );
+    rc=msg->appendInt( env, msg, (short)size );
     
     for( i=0; i< size; i++ ) {
         char *name=map->nameAt( env, map, i );
@@ -276,7 +276,7 @@ static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg,
 
 static int jk2_msg_ajp_appendBytes(jk_env_t *env, jk_msg_t  *msg,
                                    const unsigned char  *param,
-                                   int len)
+                                   const int len)
 {
     if (! len) {
         return JK_OK;

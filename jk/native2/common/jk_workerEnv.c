@@ -258,11 +258,10 @@ static void jk2_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *wEnv)
     /* XXX accessing private data... env most provide some method to get this */
     jk_map_t *registry=env->_registry;
     int size=registry->size( env, registry );
-    int i,j;
+    int i;
     
     for( i=0; i<size; i++ ) {
         jk_handler_t *handler;
-        int rc;
 
         char *name= registry->nameAt( env, registry, i );
         if( strncmp( name, "handler.", 8 ) == 0 ) {
@@ -299,6 +298,8 @@ static int jk2_workerEnv_registerHandler(jk_env_t *env, jk_workerEnv_t *wEnv,
     return JK_OK;
 }
 
+/** Called from the parent, in a multi-process server.
+ */
 static int jk2_workerEnv_parentInit(jk_env_t *env, jk_workerEnv_t *wEnv)
 {
     char *configFile;
@@ -312,6 +313,9 @@ static int jk2_workerEnv_parentInit(jk_env_t *env, jk_workerEnv_t *wEnv)
                                          "${serverRoot}/conf/workers2.properties" );
         configFile=wEnv->config->file;
     }
+
+    if( wEnv->shm->mbean->disabled )
+        wEnv->shm=NULL;
     
     if( wEnv->shm != NULL && ! wEnv->shm->mbean->disabled ) {
         wEnv->shm->init( env, wEnv->shm );
@@ -319,20 +323,27 @@ static int jk2_workerEnv_parentInit(jk_env_t *env, jk_workerEnv_t *wEnv)
     
     if( wEnv->shm != NULL && wEnv->shm->head != NULL ) {
         wEnv->shm->reset( env, wEnv->shm);
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() Reset shm\n" );
+        if( wEnv->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() Reset shm\n" );
     }
+	return JK_OK;
 }
 
-
+/** Normal child init
+ */
 static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
 {
-    int err;
-    char *opt;
-    int options;
     char *configFile;
 
     env->l->init( env, env->l );
 
+    /* We need to pid here - Linux will return the pid of the thread if
+       called after init(), and we'll not be able to locate the slot id
+       This is part of the workarounds needed for Apache2's removal of
+       child_num from connection.
+    */
+    wEnv->childProcessId=getpid();
+    
     configFile=wEnv->config->file;
     if(  configFile == NULL ) {
         wEnv->config->setPropertyString( env, wEnv->config,
@@ -367,15 +378,8 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     if( wEnv->shm != NULL && ! wEnv->shm->mbean->disabled ) {
         wEnv->shm->init( env, wEnv->shm );
     }
-    
-    if( wEnv->shm != NULL && wEnv->childId >= 0 ) {
-        char shmName[128];
-        snprintf( shmName, 128, "epStat.%d", wEnv->childId );
-        
-        wEnv->epStat=wEnv->shm->createSlot( env, wEnv->shm, shmName, 8096 );
-        wEnv->epStat->structCnt=0;
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create slot %s\n",  shmName );
-    }
+
+    wEnv->epStat=NULL;
     
     wEnv->uriMap->init(env, wEnv->uriMap );
 
@@ -523,14 +527,6 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
     return JK_ERR;
 }
 
-static jk_worker_t *jk2_workerEnv_releasePool(jk_env_t *env,
-                                              jk_workerEnv_t *wEnv,
-                                              const char *name, 
-                                              jk_map_t *initData)
-{
-    
-}
-
 static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
                                     jk_channel_t *ch) 
 {
@@ -541,7 +537,7 @@ static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
     JK_ENTER_CS(&wEnv->cs, csOk);
     if( !csOk ) return JK_ERR;
 
-    ch->id=wEnv->channel_map->size( env, wEnv->channel_map );
+    ch->mbean->id=wEnv->channel_map->size( env, wEnv->channel_map );
     wEnv->channel_map->add(env, wEnv->channel_map, ch->mbean->name, ch);
 
     /* Automatically create the ajp13 worker to be used with this channel.
@@ -574,7 +570,7 @@ static int jk2_workerEnv_addEndpoint(jk_env_t *env, jk_workerEnv_t *wEnv, jk_end
         int pos=wEnv->endpointMap->size( env, wEnv->endpointMap );
         
         wEnv->endpointMap->add( env, wEnv->endpointMap, ep->mbean->localName, ep );
-        ep->id=pos;
+        ep->mbean->id=pos;
 
         ep->mbean->init( env, ep->mbean );
     }
@@ -595,7 +591,7 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
 
     w->workerEnv=wEnv;
 
-    w->id=wEnv->worker_map->size( env, wEnv->worker_map );
+    w->mbean->id=wEnv->worker_map->size( env, wEnv->worker_map );
 
     w->rPoolCache= jk2_objCache_create( env, w->mbean->pool  );
 
@@ -621,10 +617,8 @@ static jk_worker_t *jk2_workerEnv_createWorker(jk_env_t *env,
                                                char *type, char *name) 
 {
     int err=JK_OK;
-    jk_env_objectFactory_t fac;
     jk_worker_t *w = NULL;
     jk_worker_t *oldW = NULL;
-    jk_pool_t *workerPool;
     jk_bean_t *jkb;
 
     /* First find if it already exists */
@@ -655,8 +649,6 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                     const char *type, const char *name)
 {
     jk_workerEnv_t *wEnv;
-    int err;
-    jk_pool_t *uriMapPool;
     jk_bean_t *jkb;
     int csOk;
 
@@ -750,7 +742,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     wEnv->globalEnv=env;
 
     jkb=env->createBean2(env, wEnv->pool,"uriMap", "");
-    if( jkb==NULL ) {
+    if( jkb==NULL || jkb->object==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Error getting uriMap implementation\n");
         return JK_ERR;

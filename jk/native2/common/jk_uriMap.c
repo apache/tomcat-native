@@ -142,8 +142,6 @@ static int jk2_uriMap_checkUri(jk_env_t *env, jk_uriMap_t *uriMap,
  */
 static int jk2_uriMap_addUriEnv( jk_env_t *env, jk_uriMap_t *uriMap, jk_uriEnv_t *uriEnv )
 {
-    int rc;
-
     uriMap->maps->put( env, uriMap->maps, uriEnv->name, uriEnv, NULL );
     if( uriMap->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -302,7 +300,6 @@ static void jk2_uriMap_correctWebapps(jk_env_t *env, jk_uriMap_t *uriMap) {
         ctxEnv=jk2_uriMap_prefixMap( env, uriMap, hostEnv->webapps, context, strlen( context) );
         /* if not alredy created, create it */
         if( ctxEnv == NULL ) {
-            char *cname;
             env->l->jkLog( env, env->l, JK_LOG_INFO,
                            "uriMap: creating context %s\n", vhost);
             mbean=env->getBean2( env, "uri", context );
@@ -323,8 +320,6 @@ static void jk2_uriMap_correctWebapps(jk_env_t *env, jk_uriMap_t *uriMap) {
 static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
 {
     int rc=JK_OK;
-    int sz;
-    int err;
     int i;
     jk_workerEnv_t *workerEnv=uriMap->workerEnv;
     jk_bean_t *mbean;
@@ -542,7 +537,6 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                                       const char *vhost,
                                       const char *uri)
 {
-    int i;
     int best_match = -1;
     int longest_match = 0;
     char * clean_uri = NULL;
@@ -696,8 +690,6 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *resu
                                  const char *type, const char *name)
 {
     jk_uriMap_t *uriMap;
-    jk_map_t *init_data;
-    jk_bean_t *mbean;
 
     uriMap = (jk_uriMap_t *)pool->calloc(env, pool, sizeof(jk_uriMap_t));
     if(  ! uriMap) {
