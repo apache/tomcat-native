@@ -3,14 +3,10 @@
 
 APACHE_HOME=@APACHE_HOME@
 OS=@OS@
-JAVA_HOME=@JAVA_HOME@
 APACHE_INCL=@APACHE_INCL@
 APR_INCL=@APR_INCL@
 EXTRA_CFLAGS=@EXTRA_CFLAGS@
 EXTRA_CPPFLAGS=@EXTRA_CPPFLAGS@
-
-JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
-JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 
 JK_DIR := ../..
 BUILD_DIR = ${JK_DIR}/../build/jk2/apache13
@@ -20,10 +16,9 @@ BUILD_DIR = ${JK_DIR}/../build/jk2/apache13
 # It doesn't hurt if we include all
 INCLUDES= -I${JK_DIR}/include \
           ${APACHE_INCL} \
-          ${APR_INCL} \
-          ${JAVA_INCL}
+          ${APR_INCL} 
 
-JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @HAS_APR@ -DHAVE_JNI @APR_INCL@
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @HAS_APR@ @APR_INCL@ -DHAVE_MMAP
 JK_LDFLAGS=-L${APACHE_HOME}/lib -lcrypt @APR_LDFLAGS@
 
 ###### Based on rules.mk ##########################################
@@ -46,14 +41,11 @@ MOD_LINK = $(LIBTOOL) --mode=link $(CC) -module -shared $(LT_LDFLAGS) $(ALL_LDFL
 # Excludes are not yet implemented.
 
 COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
-JNI_C_FILES := $(wildcard ${JK_DIR}/jni/*.c )
 A_C_FILES := $(wildcard ${JK_DIR}/server/apache13/*.c )
 H_FILES := $(wildcard ${JK_DIR}/include/*.h )
 
 COMMON_LO_FILES := $(patsubst ${JK_DIR}/common/%, ${BUILD_DIR}/%, \
 			 $(patsubst %c, %lo, ${COMMON_C_FILES} ))
-JNI_LO_FILES := $(patsubst ${JK_DIR}/jni/%, ${BUILD_DIR}/%, \
-			 $(patsubst %c, %lo, ${JNI_C_FILES} ))
 A_LO_FILES := $(patsubst ${JK_DIR}/server/apache13/%, ${BUILD_DIR}/%, \
 			 $(patsubst %c, %lo, ${A_C_FILES} ))
 
@@ -71,19 +63,13 @@ VPATH=.:../../common
 ${BUILD_DIR}/%.lo: ${JK_DIR}/common/%.c
 	 ${SH_COMPILE} -c $< -o $@
 
-${BUILD_DIR}/%.lo: ${JK_DIR}/jni/%.c
-	 ${SH_COMPILE} -c $< -o $@
-
 ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache13/%.c
 	 ${SH_COMPILE} -c $< -o $@
 
 
 # ---------- Targets -------------------- 
 
-all: prepare ${BUILD_DIR}/mod_jk2.so ${BUILD_DIR}/jkjni.so
-
-${BUILD_DIR}/jkjni.so: ${JNI_LO_FILES}
-	$(MOD_LINK) -o $@ $^
+all: prepare ${BUILD_DIR}/mod_jk2.so 
 
 ${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${A_LO_FILES}
 	${MOD_LINK} -o $@ $^ @APR_LIB_STATIC@
