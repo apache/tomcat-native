@@ -68,13 +68,8 @@
 	taskDebug="0"
 	profile="${so.profile}"	>
       <def name="_REENTRANT" />
-      <def name="CHANNEL" if="use.channel"
-           info="Use the new (experimental) channel interface" />
       <def name="CHUNK_SIZE" value="4096" 
 	   info="Read/Write buffer size" />
-      <def name="REUSE_WORKER" 
-	   unless="option_no_reuse_worker"
-	   info="Reuse the worker endpoint, using per thread data" />
       <def name="USE_APACHE_MD5" 
 	   info="Use the MD5 implementation that is part of apache2" />
       <src dir=".">
