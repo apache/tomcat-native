@@ -203,6 +203,24 @@
     </javadoc>
   </target>
 
+  <target name="docs" depends="prepare">
+    <copy todir="${build.home}/docs" >
+      <fileset dir="./docs">
+        <exclude name="**.xml"/>
+        <exclude name="**.xsl"/>
+        <exclude name="**.idx"/>
+      </fileset>
+    </copy>
+
+    <style
+      basedir="./docs"
+      destdir="${build.home}/docs"
+      style="./docs/style.xsl"
+      includes="**.xml"
+    />
+  </target>
+
+
 
 <!-- ========== Unit Test Targets ========================================= -->
 
