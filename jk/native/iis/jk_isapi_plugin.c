@@ -669,26 +669,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         char snuri[INTERNET_MAX_URL_LENGTH]="/";
         char Host[INTERNET_MAX_URL_LENGTH];
         char Translate[INTERNET_MAX_URL_LENGTH];
-
-		BOOL (WINAPI * GetHeader) (
-			struct _HTTP_FILTER_CONTEXT * pfc,
-			LPSTR                         lpszName,
-			LPVOID                        lpvBuffer,
-			LPDWORD                       lpdwSize
-			);
-
-		BOOL (WINAPI * SetHeader) (
-			struct _HTTP_FILTER_CONTEXT * pfc,
-			LPSTR                         lpszName,
-			LPSTR                         lpszValue
-			);
-
-		BOOL (WINAPI * AddHeader) (
-			struct _HTTP_FILTER_CONTEXT * pfc,
-			LPSTR                         lpszName,
-			LPSTR                         lpszValue
-			);
-
+		BOOL (WINAPI * GetHeader) 
+			(struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPVOID lpvBuffer, LPDWORD lpdwSize );
+		BOOL (WINAPI * SetHeader) 
+			(struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPSTR lpszValue );
+		BOOL (WINAPI * AddHeader) 
+			(struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName,LPSTR lpszValue );
         char *query;
         DWORD sz = sizeof(uri);
         DWORD szHost = sizeof(Host);
@@ -917,7 +903,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
                 if (worker->get_endpoint(worker, &e, logger)) {
                     int recover = JK_FALSE;
                     if (e->service(e, &s, logger, &recover)) {
-                        rc = HSE_STATUS_SUCCESS_AND_KEEP_CONN;
+                        rc = HSE_STATUS_SUCCESS;
                         lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
                         jk_log(logger, JK_LOG_DEBUG, 
                                "HttpExtensionProc service() returned OK\n");
