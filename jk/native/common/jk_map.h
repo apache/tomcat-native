@@ -117,6 +117,13 @@ char *map_name_at(jk_map_t *m,
 
 void *map_value_at(jk_map_t *m,
                    int idex);
+  
+/**
+ *  Replace $(property) in value.
+ * 
+ */
+char *map_replace_properties(const char *value, jk_map_t *m);
+
 
 #ifdef __cplusplus
 }

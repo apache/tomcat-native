@@ -63,8 +63,12 @@
 
 #include "jk_pool.h"
 
+#define DEFAULT_DYNAMIC 10
+
+
 static void *jk_pool_dyn_alloc(jk_pool_t *p, 
                                size_t size);
+
 
 void jk_open_pool(jk_pool_t *p,
                   jk_pool_atom_t *buf,

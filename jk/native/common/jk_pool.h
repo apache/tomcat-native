@@ -69,7 +69,14 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define DEFAULT_DYNAMIC 10
+/**
+ * @file jk_pool.h
+ * @brief Jk memory allocation
+ *
+ * Similar with apr_pools, but completely unsynchronized.
+ * XXX use same names
+ * 
+ */
 
 /*
  * The pool atom (basic pool alocation unit) is an 8 byte long. 
@@ -109,6 +116,8 @@ extern "C" {
 #define BIG_POOL_SIZE   2*SMALL_POOL_SIZE   /* Bigger 1K atom pool. */
 #define HUGE_POOL_SIZE  2*BIG_POOL_SIZE     /* Huge 2K atom pool. */
 
+  /** XXX Move it to impl, make it incomplete 
+   */
 struct jk_pool {
     unsigned size;      
     unsigned pos;       

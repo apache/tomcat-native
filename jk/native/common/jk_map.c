@@ -84,7 +84,6 @@ struct jk_map {
 static void trim_prp_comment(char *prp);
 static int trim(char *s);
 static int map_realloc(jk_map_t *m);
-static char *update_env_variables(char *value, jk_map_t *m);
 
 int map_alloc(jk_map_t **m)
 {
@@ -310,7 +309,7 @@ int map_read_properties(jk_map_t *m,
                         v++;                        
                         if(strlen(v) && strlen(prp)) {
                             char *oldv = map_get_string(m, prp, NULL);
-                            v = update_env_variables(v, m);
+                            v = map_replace_properties(v, m);
                             if(oldv) {
                                 char *tmpv = jk_pool_alloc(&m->p, 
                                                            strlen(v) + strlen(oldv) + 3);
@@ -433,13 +432,19 @@ static int map_realloc(jk_map_t *m)
     return JK_FALSE;
 }
 
-static char *update_env_variables(char *value, jk_map_t *m)
+/**
+ *  Replace $(property) in value.
+ * 
+ */
+char *map_replace_properties(const char *value, jk_map_t *m)
 {
-    char *rc = value;
-    char *env_start = value;
+    char *rc = (char *)value;
+    char *env_start = rc;
+    int rec = 0;
 
     while(env_start = strstr(env_start, "$(")) {
         char *env_end = strstr(env_start, ")");
+        if( rec++ > 20 ) return rc;
         if(env_end) {
             char env_name[LENGTH_OF_LINE + 1] = ""; 
             char *env_value;
@@ -453,6 +458,7 @@ static char *update_env_variables(char *value, jk_map_t *m)
 	      env_value=getenv( env_name );
 	    }
             if(env_value) {
+                int offset=0;
                 char *new_value = jk_pool_alloc(&m->p, 
                                                 (sizeof(char) * (strlen(rc) + strlen(env_value))));
                 if(!new_value) {
@@ -462,8 +468,10 @@ static char *update_env_variables(char *value, jk_map_t *m)
                 strcpy(new_value, rc);
                 strcat(new_value, env_value);
                 strcat(new_value, env_end + 1);
+		offset= env_start - rc + strlen( env_value );
                 rc = new_value;
-                env_start = rc;
+		/* Avoid recursive subst */
+                env_start = rc + offset; 
             } else {
                 env_start = env_end;
             }
