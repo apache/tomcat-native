@@ -160,6 +160,16 @@ public final class Ajp13Connector
 
 
     /**
+     * redirect port.
+     */
+    private int redirectPort = -1;
+
+    /**
+     * enable DNS lookups.
+     */
+    private boolean enableLookups = false;
+
+    /**
      * The lifecycle event support for this component.
      */
     protected LifecycleSupport lifecycle = new LifecycleSupport(this);
@@ -415,6 +425,40 @@ public final class Ajp13Connector
 
     }
 
+    /**
+     * Return the "enable DNS lookups" flag.
+     */
+    public boolean getEnableLookups() {
+        return this.enableLookups;
+    }
+
+    /**
+     * Set the "enable DNS lookups" flag.
+     *
+     * @param enableLookups The new "enable DNS lookups" flag value
+     */
+    public void setEnableLookups(boolean enableLookups) {
+        this.enableLookups = enableLookups;
+    }
+
+    /**
+     * Return the port number to which a request should be redirected if
+     * it comes in on a non-SSL port and is subject to a security constraint
+     * with a transport guarantee that requires SSL.
+     */
+    public int getRedirectPort() {
+        return this.redirectPort;
+    }
+
+
+    /**
+     * Set the redirect port number.
+     *
+     * @param redirectPort The redirect port number (non-SSL to SSL)
+     */
+    public void setRedirectPort(int redirectPort) {
+        this.redirectPort = redirectPort;
+    }
 
     /**
      * Return the server socket factory used by this Container.
