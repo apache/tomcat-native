@@ -17,7 +17,7 @@
 /***************************************************************************
  * Description: Shared Memory support                                      *
  * Author:      Mladen Turk <mturk@jboss.com>                              *
- * Version:     $Revision$                                           *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 #include "jk_global.h"

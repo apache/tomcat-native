@@ -45,9 +45,9 @@ extern "C"
 #define JK_SHM_DYNAMIC  16
 #define JK_SHM_MAGIC    '!', 'J', 'K', 'S', 'H', 'M', JK_SHM_MAJOR, JK_SHM_MINOR
 
-/* Really huge numbers, but 512 workers should be enough */
-#define JK_SHM_MAX_WORKERS  512
-#define JK_SHM_DEF_SIZE     (1024 * 1024)
+/* Really huge numbers, but 64 workers should be enough */
+#define JK_SHM_MAX_WORKERS  64
+#define JK_SHM_DEF_SIZE     (JK_SHM_MAX_WORKERS * 1024)
 #define JK_SHM_ALIGN(x)     JK_ALIGN(x, 1024)
 
 /** jk shm worker record structure */
