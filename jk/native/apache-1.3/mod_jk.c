@@ -114,6 +114,7 @@
 #define ADD_SSL_INFO    
 
 module MODULE_VAR_EXPORT jk_module;
+extern module dir_module;
 
 /*
  * Configuration object for the mod_jk module.
@@ -130,6 +131,7 @@ typedef struct {
     /*
      * Worker stuff
      */
+    jk_map_t *worker_properties;
     char     *worker_file;
     jk_map_t *uri_to_context;
 
@@ -199,6 +201,10 @@ struct apache_private_data {
     request_rec *r; 
 };
 typedef struct apache_private_data apache_private_data_t;
+
+typedef struct dir_config_struct {
+    array_header *index_names;
+} dir_config_rec;
 
 static jk_logger_t 		*main_log = NULL;
 static jk_worker_env_t	 worker_env;
@@ -1501,7 +1507,6 @@ static int jk_handler(request_rec *r)
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
 	return rc;
@@ -1597,6 +1602,8 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
     jk_server_conf_t *c =
         (jk_server_conf_t *) ap_pcalloc(p, sizeof(jk_server_conf_t));
 
+    c->worker_properties = NULL;
+    map_alloc(&c->worker_properties);
     c->worker_file   = NULL;
     c->log_file      = NULL;
     c->log_level     = -1;
@@ -1715,9 +1722,9 @@ static void *merge_jk_config(ap_pool *p,
 
 static void jk_init(server_rec *s, ap_pool *p)
 {
-    jk_map_t *init_map = NULL;
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+    jk_map_t *init_map = conf->worker_properties;
 
     /* Open up log file */
     if(conf->log_file && conf->log_level >= 0) {
@@ -1744,24 +1751,23 @@ for (i = 0; i < map_size(conf->automount); i++)
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
 
-    if(map_alloc(&init_map)) {
-        if(map_read_properties(init_map, conf->worker_file)) {
-            
+    /*if(map_alloc(&init_map)) {*/
+
+    if(map_read_properties(init_map, conf->worker_file)) {
+
 #if MODULE_MAGIC_NUMBER >= 19980527
-            /* Tell apache we're here */
-            ap_add_version_component(JK_EXPOSED_VERSION);
+        /* Tell apache we're here */
+        ap_add_version_component(JK_EXPOSED_VERSION);
 #endif
             
-			/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
-            worker_env.uri_to_worker = conf->uw_map;
-            worker_env.virtual       = "*";     /* for now */
-            worker_env.server_name   = (char *)ap_get_server_version();
-            if(wc_open(init_map, &worker_env, conf->log)) {
-                /* we don't need this any more so free it */
-                map_free(&init_map);
-                return;
-            }            
-        }
+        /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+        worker_env.uri_to_worker = conf->uw_map;
+        worker_env.virtual       = "*";     /* for now */
+        worker_env.server_name   = (char *)ap_get_server_version();
+        if(wc_open(init_map, &worker_env, conf->log)) {
+            /* we don't need this any more so free it */
+            return;
+        }            
     }
     
     ap_log_error(APLOG_MARK, APLOG_ERR, NULL,
@@ -1777,11 +1783,28 @@ static int jk_translate(request_rec *r)
 {    
     if(!r->proxyreq) {        
         jk_server_conf_t *conf =
-            (jk_server_conf_t *)ap_get_module_config(r->server->module_config, &jk_module);
+            (jk_server_conf_t *)ap_get_module_config(r->server->module_config,
+                                                     &jk_module);
 
         if(conf) {
             jk_logger_t *l = conf->log ? conf->log : main_log;
             char *worker = map_uri_to_worker(conf->uw_map, r->uri, l);
+
+            /* Don't know the worker, ForwardDirectories is set, there is a
+             * previous request for which the handler is JK_HANDLER (as set by
+             * jk_fixups) and the request is for a directory:
+             * --> forward to Tomcat, via default worker */
+            if(!worker && (conf->options & JK_OPT_FWDDIRS) &&
+               r->prev && !strcmp(r->prev->handler,JK_HANDLER) &&
+               r->uri[strlen(r->uri)-1] == '/'){
+
+                /* Nothing here to do but assign the first worker since we
+                 * already tried mapping and it didn't work out */
+                worker=worker_env.first_worker;
+
+                jk_log(l, JK_LOG_DEBUG, "Manual configuration for %s %s\n",
+                       r->uri, worker_env.first_worker);
+            }
 
             if(worker) {
                 r->handler = ap_pstrdup(r->pool, JK_HANDLER);
@@ -1861,6 +1884,56 @@ static int jk_translate(request_rec *r)
     return DECLINED;
 }
 
+/* In case ForwardDirectories option is set, we need to know if all files
+ * mentioned in DirectoryIndex have been exhausted without success. If yes, we
+ * need to let mod_dir know that we want Tomcat to handle the directory
+ */
+static int jk_fixups(request_rec *r)
+{
+    /* This is a sub-request, probably from mod_dir */
+    if(r->main){
+        jk_server_conf_t *conf = (jk_server_conf_t *)
+            ap_get_module_config(r->server->module_config, &jk_module);
+        char *worker = (char *) ap_table_get(r->notes, JK_WORKER_ID);
+
+        /* Only if we have no worker and ForwardDirectories is set */
+        if(!worker && (conf->options & JK_OPT_FWDDIRS)){
+            char *dummy_ptr[1], **names_ptr, *idx;
+            int num_names;
+            dir_config_rec *d = (dir_config_rec *)
+                ap_get_module_config(r->per_dir_config, &dir_module);
+            jk_logger_t *l = conf->log ? conf->log : main_log;
+
+            /* Direct lift from mod_dir */
+            if (d->index_names) {
+                names_ptr = (char **)d->index_names->elts;
+                num_names = d->index_names->nelts;
+            } else {
+                dummy_ptr[0] = DEFAULT_INDEX;
+                names_ptr = dummy_ptr;
+                num_names = 1;
+            }
+
+            /* Where the index file would start within the filename */
+            idx=r->filename + strlen(r->filename) -
+                              strlen(names_ptr[num_names - 1]);
+
+            /* The requested filename has the last index file at the end */
+            if(idx >= r->filename && !strcmp(idx,names_ptr[num_names - 1])){
+                r->uri=r->main->uri;       /* Trick mod_dir with URI */
+                r->finfo.st_mode=S_IFREG;  /* Trick mod_dir with file stat */
+
+                /* We'll be checking for handler in r->prev later on */
+                r->main->handler=ap_pstrdup(r->pool, JK_HANDLER);
+
+                jk_log(l, JK_LOG_DEBUG, "ForwardDirectories on: %s\n", r->uri);
+             }
+        }
+    }
+
+    return DECLINED;
+}
+
 static void exit_handler (server_rec *s, ap_pool *p)
 {
 	server_rec *tmp = s;
@@ -1878,6 +1951,7 @@ static void exit_handler (server_rec *s, ap_pool *p)
             wc_close(conf->log);
             uri_worker_map_free(&(conf->uw_map), conf->log);
             map_free(&(conf->uri_to_context));
+            map_free(&(conf->worker_properties));
             if (conf->log)
                 jk_close_file_logger(&(conf->log));
         }
@@ -1906,7 +1980,7 @@ module MODULE_VAR_EXPORT jk_module = {
     NULL,                       /* [6] check user_id is valid *here* */
     NULL,                       /* [4] check access by host address */
     NULL,                       /* XXX [7] MIME type checker/setter */
-    NULL,                       /* [8] fixups */
+    jk_fixups,                  /* [8] fixups */
     NULL,                       /* [10] logger */
     NULL,                       /* [3] header parser */
     NULL,                       /* apache child process initializer */
