@@ -113,7 +113,7 @@ int jk_get_worker_cache_size(jk_map_t *m,
 char * jk_get_worker_secret_key(jk_map_t *m,
                                 const char *wname);
 
-void jk_set_log_format(char *logformat);
+void jk_set_log_format(const char *logformat);
 
 int jk_get_worker_list(jk_map_t *m,
                        char ***list,

@@ -74,8 +74,8 @@ struct jk_map {
     jk_pool_t p;
     jk_pool_atom_t buf[SMALL_POOL_SIZE];
 
-    char **names;
-    void **values;
+    const char **names;
+    const void **values;
 
     unsigned capacity;
     unsigned size;
@@ -140,7 +140,7 @@ void *map_get(jk_map_t *m,
               const char *name,
               const void *def)
 {
-    void *rc = (void *)def;
+    const void *rc = (void *)def;
     
     if(m && name) {
         unsigned i;
@@ -152,7 +152,7 @@ void *map_get(jk_map_t *m,
         }
     }
 
-    return rc;
+    return (void *)rc; /* DIRTY */
 }
 
 int map_get_int(jk_map_t *m,
@@ -255,7 +255,7 @@ char **map_get_string_list(jk_map_t *m,
 
 int map_put(jk_map_t *m,
             const char *name,
-            void *value,
+            const void *value,
             void **old)
 {
     int rc = JK_FALSE;
@@ -269,7 +269,7 @@ int map_put(jk_map_t *m,
         }
 
         if(i < m->size) {
-            *old = m->values[i];
+            *old = (void *) m->values[i]; /* DIRTY */
             m->values[i] = value;
             rc = JK_TRUE;
         } else {
@@ -362,7 +362,7 @@ char *map_name_at(jk_map_t *m,
                   int idex)
 {
     if(m && idex >= 0) {
-        return m->names[idex];
+        return (char *)m->names[idex]; /* DIRTY */
     }
 
     return NULL;
@@ -372,7 +372,7 @@ void *map_value_at(jk_map_t *m,
                    int idex)
 {
     if(m && idex >= 0) {
-        return m->values[idex];
+        return (void *) m->values[idex]; /* DIRTY */
     }
 
     return NULL;
@@ -422,8 +422,8 @@ static int map_realloc(jk_map_t *m)
             if (m->capacity && m->values)
                 memcpy(values, m->values, sizeof(void *) * m->capacity);
 
-            m->names = names;
-            m->values = values;
+            m->names = (const char **)names;
+            m->values = (const void **)values;
             m->capacity = capacity;
 
             return JK_TRUE;

@@ -104,7 +104,7 @@ char **map_get_string_list(jk_map_t *m,
 
 int map_put(jk_map_t *m,
             const char *name,
-            void *value,
+            const void *value,
             void **old);
 
 int map_read_properties(jk_map_t *m,

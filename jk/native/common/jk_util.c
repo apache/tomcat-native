@@ -110,7 +110,7 @@ typedef struct file_logger file_logger_t;
 #define JK_TIME_FORMAT "[%a %b %d %H:%M:%S %Y] "
 #endif
 
-char * jk_log_fmt = JK_TIME_FORMAT;
+const char * jk_log_fmt = JK_TIME_FORMAT;
 
 static void set_time_str(char * str, int len)
 {
@@ -402,7 +402,7 @@ int jk_get_worker_list(jk_map_t *m,
     return JK_FALSE;
 }
 
-void jk_set_log_format(char * logformat)
+void jk_set_log_format(const char * logformat)
 {
 	jk_log_fmt = (logformat) ? logformat : JK_TIME_FORMAT;
 }

@@ -565,9 +565,9 @@ static const char *jk_set_mountcopy(cmd_parms *cmd,
 
 static const char *jk_mount_context(cmd_parms *cmd, 
                                     void *dummy, 
-                                    char *context,
-                                    char *worker,
-                                    char *maybe_cookie)
+                                    const char *context,
+                                    const char *worker,
+                                    const char *maybe_cookie)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
@@ -591,8 +591,8 @@ static const char *jk_mount_context(cmd_parms *cmd,
 
 static const char *jk_automount_context(cmd_parms *cmd,
                                         void *dummy,
-                                        char *worker,
-                                        char *virtualhost)
+                                        const char *worker,
+                                        const char *virtualhost)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
@@ -614,7 +614,7 @@ static const char *jk_automount_context(cmd_parms *cmd,
 
 static const char *jk_set_worker_file(cmd_parms *cmd, 
                                       void *dummy, 
-                                      char *worker_file)
+                                      const char *worker_file)
 {
     server_rec *s = cmd->server;
     struct stat statbuf;
@@ -642,7 +642,7 @@ static const char *jk_set_worker_file(cmd_parms *cmd,
 
 static const char *jk_set_log_file(cmd_parms *cmd, 
                                    void *dummy, 
-                                   char *log_file)
+                                   const char *log_file)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
@@ -665,7 +665,7 @@ static const char *jk_set_log_file(cmd_parms *cmd,
 
 static const char *jk_set_log_level(cmd_parms *cmd, 
                                     void *dummy, 
-                                    char *log_level)
+                                    const char *log_level)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
@@ -684,7 +684,7 @@ static const char *jk_set_log_level(cmd_parms *cmd,
 
 static const char * jk_set_log_fmt(cmd_parms *cmd,
                       void *dummy,
-                      char * log_format)
+                      const char * log_format)
 {
     jk_set_log_format(log_format);
     return NULL;
@@ -718,13 +718,13 @@ static const char *jk_set_enable_ssl(cmd_parms *cmd,
 
 static const char *jk_set_https_indicator(cmd_parms *cmd,
                                           void *dummy,
-                                          char *indicator)
+                                          const char *indicator)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->https_indicator = indicator;
+    conf->https_indicator = ap_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -737,13 +737,13 @@ static const char *jk_set_https_indicator(cmd_parms *cmd,
 
 static const char *jk_set_certs_indicator(cmd_parms *cmd,
                                           void *dummy,
-                                          char *indicator)
+                                          const char *indicator)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->certs_indicator = indicator;
+    conf->certs_indicator = ap_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -756,13 +756,13 @@ static const char *jk_set_certs_indicator(cmd_parms *cmd,
 
 static const char *jk_set_cipher_indicator(cmd_parms *cmd,
                                            void *dummy,
-                                           char *indicator)
+                                           const char *indicator)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->cipher_indicator = indicator;
+    conf->cipher_indicator = ap_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -775,13 +775,13 @@ static const char *jk_set_cipher_indicator(cmd_parms *cmd,
 
 static const char *jk_set_session_indicator(cmd_parms *cmd,
                                            void *dummy,
-                                           char *indicator)
+                                           const char *indicator)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->session_indicator = indicator;
+    conf->session_indicator = ap_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -794,13 +794,13 @@ static const char *jk_set_session_indicator(cmd_parms *cmd,
 
 static const char *jk_set_key_size_indicator(cmd_parms *cmd,
                                            void *dummy,
-                                           char *indicator)
+                                           const char *indicator)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->key_size_indicator = indicator;
+    conf->key_size_indicator = ap_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -813,8 +813,8 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
 
 static const char *jk_add_env_var(cmd_parms *cmd,
                                   void *dummy,
-                                  char *env_name,
-                                  char *default_value)
+                                  const char *env_name,
+                                  const char *default_value)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
@@ -836,42 +836,49 @@ static const command_rec jk_cmds[] =
      * This file defines the different workers used by apache to redirect
      * servlet requests.
      */
-    {"JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF, TAKE1,
-     "the name of a worker file for the Jakarta servlet containers"},
+    AP_INIT_TAKE1(
+        "JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF,
+        "the name of a worker file for the Jakarta servlet containers"),
 
     /*
      * JkAutoMount specifies that the list of handled URLs must be
      * asked to the servlet engine (autoconf feature)
      */
-    {"JkAutoMount", jk_automount_context, NULL, RSRC_CONF, TAKE12,
-     "automatic mount points to a Tomcat worker"},
+    AP_INIT_TAKE12(
+        "JkAutoMount", jk_automount_context, NULL, RSRC_CONF,
+        "automatic mount points to a Tomcat worker"),
 
     /*
      * JkMount mounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
      */
-    {"JkMount", jk_mount_context, NULL, RSRC_CONF, TAKE23,
-     "A mount point from a context to a Tomcat worker"},
+    AP_INIT_TAKE23(
+        "JkMount", jk_mount_context, NULL, RSRC_CONF,
+        "A mount point from a context to a Tomcat worker"),
 
     /*
      * JkMountCopy specifies if mod_jk should copy the mount points
      * from the main server to the virtual servers.
      */
-    {"JkMountCopy", jk_set_mountcopy, NULL, RSRC_CONF, FLAG,
-     "Should the base server mounts be copied to the virtual server"},
+    AP_INIT_FLAG(
+        "JkMountCopy", jk_set_mountcopy, NULL, RSRC_CONF,
+        "Should the base server mounts be copied to the virtual server"),
 
     /*
      * JkLogFile & JkLogLevel specifies to where should the plugin log
      * its information and how much.
      * JkLogStampFormat specify the time-stamp to be used on log
      */
-    {"JkLogFile", jk_set_log_file, NULL, RSRC_CONF, TAKE1,
-     "Full path to the Jakarta Tomcat module log file"},
-    {"JkLogLevel", jk_set_log_level, NULL, RSRC_CONF, TAKE1,
-     "The Jakarta Tomcat module log level, can be debug, "
-     "info, error or emerg"},
-    {"JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF, TAKE1,
-     "The Jakarta Tomcat module log format, follow strftime synthax"},
+    AP_INIT_TAKE1(
+        "JkLogFile", jk_set_log_file, NULL, RSRC_CONF,
+        "Full path to the Jakarta Tomcat module log file"),
+    AP_INIT_TAKE1(
+        "JkLogLevel", jk_set_log_level, NULL, RSRC_CONF,
+        "The Jakarta Tomcat module log level, can be debug, "
+        "info, error or emerg"),
+    AP_INIT_TAKE1(
+        "JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF,
+        "The Jakarta Tomcat module log format, follow strftime synthax"),
 
     /*
      * Apache has multiple SSL modules (for example apache_ssl, stronghold
@@ -885,26 +892,33 @@ static const command_rec jk_cmds[] =
      * KEYSIZE - Size of Key used in dialogue (#bits are secure)
      * SESSION - A string specifing the current SSL session.
      */
-    {"JkHTTPSIndicator", jk_set_https_indicator, NULL, RSRC_CONF, TAKE1,
-     "Name of the Apache environment that contains SSL indication"},
-    {"JkCERTSIndicator", jk_set_certs_indicator, NULL, RSRC_CONF, TAKE1,
-     "Name of the Apache environment that contains SSL client certificates"},
-    {"JkCIPHERIndicator", jk_set_cipher_indicator, NULL, RSRC_CONF, TAKE1,
-     "Name of the Apache environment that contains SSL client cipher"},
-    {"JkSESSIONIndicator", jk_set_session_indicator, NULL, RSRC_CONF, TAKE1,
-     "Name of the Apache environment that contains SSL session"},
-    {"JkKEYSIZEIndicator", jk_set_key_size_indicator, NULL, RSRC_CONF, TAKE1,
-     "Name of the Apache environment that contains SSL key size in use"},
-    {"JkExtractSSL", jk_set_enable_ssl, NULL, RSRC_CONF, FLAG,
-     "Turns on SSL processing and information gathering by mod_jk"},
+    AP_INIT_TAKE1(
+        "JkHTTPSIndicator", jk_set_https_indicator, NULL, RSRC_CONF,
+        "Name of the Apache environment that contains SSL indication"),
+    AP_INIT_TAKE1(
+        "JkCERTSIndicator", jk_set_certs_indicator, NULL, RSRC_CONF,
+        "Name of the Apache environment that contains SSL client certificates"),
+    AP_INIT_TAKE1(
+        "JkCIPHERIndicator", jk_set_cipher_indicator, NULL, RSRC_CONF,
+        "Name of the Apache environment that contains SSL client cipher"),
+    AP_INIT_TAKE1(
+        "JkSESSIONIndicator", jk_set_session_indicator, NULL, RSRC_CONF,
+        "Name of the Apache environment that contains SSL session"),
+    AP_INIT_TAKE1(
+        "JkKEYSIZEIndicator", jk_set_key_size_indicator, NULL, RSRC_CONF,
+        "Name of the Apache environment that contains SSL key size in use"),
+    AP_INIT_FLAG(
+        "JkExtractSSL", jk_set_enable_ssl, NULL, RSRC_CONF,
+        "Turns on SSL processing and information gathering by mod_jk"),
 
     /*
      * JkEnvVar let user defines envs var passed from WebServer to
      * Servlet Engine
      */
-    {"JkEnvVar", jk_add_env_var, NULL, RSRC_CONF, TAKE2,
-     "Adds a name of environment variable that should be sent "
-     "to servlet-engine"},
+    AP_INIT_TAKE2(
+        "JkEnvVar", jk_add_env_var, NULL, RSRC_CONF,
+        "Adds a name of environment variable that should be sent "
+        "to servlet-engine"),
 
     {NULL}
 };
