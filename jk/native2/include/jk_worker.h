@@ -198,6 +198,11 @@ struct jk_worker {
      */
     int in_error_state;
     
+    /* Initialized. Will be set to JK_TRUE after first service 
+     * call to the worker 
+     */
+    int initialized;
+    
     /* Worker priority.
      * Workers with lower priority are allways preffered - regardless of lb_value
      * This is user to represent 'local' workers ( we can call it 'proximity' or 'distance' )
