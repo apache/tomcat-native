@@ -70,6 +70,7 @@ import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.buf.HexUtils;
+import org.apache.tomcat.util.threads.ThreadPool;
 
 
 /**
@@ -89,8 +90,10 @@ public class MsgContext {
     private WorkerEnv wEnv;
     private Msg msgs[]=new Msg[10];
     private int status=0;
+    // Control object
+    private Object control;
 
-    // Application managed, like notes 
+    // Application managed, like notes
     private long timers[]=new long[20];
     
     // The context can be used by JNI components as well
@@ -228,5 +231,13 @@ public class MsgContext {
 
     public long getJniContext() {
         return jkEndpointP;
+    }
+
+    public Object getControl() {
+        return control;
+    }
+
+    public void setControl(Object control) {
+        this.control = control;
     }
 }
