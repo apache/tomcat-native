@@ -4,7 +4,6 @@
  *                                                                           *
  *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
- *                                                                           *
  * ========================================================================= *
  *                                                                           *
  * Redistribution and use in source and binary forms,  with or without modi- *
@@ -26,10 +25,10 @@
  *    Alternately, this acknowlegement may appear in the software itself, if *
  *    and wherever such third-party acknowlegements normally appear.         *
  *                                                                           *
- * 4. The names  "The  Jakarta  Project",  "WebApp",  and  "Apache  Software *
- *    Foundation"  must not be used  to endorse or promote  products derived *
- *    from this  software without  prior  written  permission.  For  written *
- *    permission, please contact <apache@apache.org>.                        *
+ * 4. The names "The Jakarta Project",  "Apache WebApp Module",  and "Apache *
+ *    Software Foundation"  must not be used to endorse or promote  products *
+ *    derived  from this  software  without  prior  written  permission. For *
+ *    written permission, please contact <apache@apache.org>.                *
  *                                                                           *
  * 5. Products derived from this software may not be called "Apache" nor may *
  *    "Apache" appear in their names without prior written permission of the *
@@ -55,7 +54,11 @@
  *                                                                           *
  * ========================================================================= */
 
-/* @version $Id$ */
+/* ------------------------------------------------------------------------- *
+ * Author Pier Fumagalli <pier.fumagalli@sun.com>
+ * Version $Id$
+ * ------------------------------------------------------------------------- */
+
 #include <stdio.h>
 
 int main(void) {
