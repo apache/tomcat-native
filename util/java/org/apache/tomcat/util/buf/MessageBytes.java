@@ -486,13 +486,13 @@ public final class MessageBytes implements Cloneable, Serializable {
 	case MessageBytes.T_BYTES:
 	    type=T_BYTES;
 	    ByteChunk bc=src.getByteChunk();
-	    byteC.allocate( bc.getLength(), -1 );
+	    byteC.allocate( 2 * bc.getLength(), -1 );
 	    byteC.append( bc );
 	    break;
 	case MessageBytes.T_CHARS:
 	    type=T_CHARS;
 	    CharChunk cc=src.getCharChunk();
-	    charC.allocate( cc.getLength(), -1 );
+	    charC.allocate( 2 * cc.getLength(), -1 );
 	    charC.append( cc );
 	    break;
 	case MessageBytes.T_STR:
