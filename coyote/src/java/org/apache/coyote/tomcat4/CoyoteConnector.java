@@ -694,6 +694,16 @@ public final class CoyoteConnector
 
 
     /**
+     * Return the protocol handler associated with the connector.
+     */
+    public ProtocolHandler getProtocolHandler() {
+
+        return (this.protocolHandler);
+
+    }
+
+
+    /**
      * Return the proxy server name for this Connector.
      */
     public String getProxyName() {
