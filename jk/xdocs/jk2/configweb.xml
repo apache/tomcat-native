@@ -151,7 +151,14 @@ and  provides access to all other objects</p>
             <p>
             Special case is a default server named as <b>[uri:*]</b> that is used when the virtual
             host cannot be found inside the configuration. All the uri directives not containing
-            host name belongs to this default server making global mappings.<br />
+            host name belongs to this default server making global mappings.
+            </p>
+            <p>
+            Addition wild char scheme id <b>[uri:*:port]</b> that is used when you wish to
+            match any virtual host having specified (non-default) port number, like [uri:*:443].
+            This will map all the virtual hosts no mather what is their name but that have port number 443.            
+            </p>
+            <p>
             The order how the host names are resolved is :
             <ul>
                 <li>Exact host name and optional non default port number</li>
