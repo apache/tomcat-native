@@ -1,10 +1,15 @@
-Proposal for Apache JServ 1.4 - Second Pass
+/***************************************************************************
+ * Description: Proposal for Apache JServ 1.4                              *
+ * Author:      Henri Gomez <hgomez@slib.fr>                               *
+ * Version:     $Revision$                                           *
+ ***************************************************************************/
 
 This document is a proposal of evolution of the current
 Apache JServ Protocol version 1.3, also known as ajp13.  
 I'll not cover here the full protocol but only the add-on from ajp13.
 
-This second pass include comments from the tomca-dev list
+This third pass include comments from the tomcat-dev list and
+misses discovered during developpment.
 
 Missing features in AJP13
 -------------------------
@@ -157,6 +162,14 @@ A logout will tell servlet engine to shutdown itself.
 
 Extended Env Vars feature
 -------------------------
+
+NOTA:
+
+While working on AJP14 in mod_jk, I really discovered "JkEnvVar". 
+The following "Extended Env Vars feature" description may not
+be implemented in AJP14 since allready available in AJP13.
+
+DESC:
 
 Many users will want to see some of their web-server env vars 
 passed to their servlet engine.
@@ -318,12 +331,14 @@ where one end (web server or servlet engine), will receive a message it
 couldn't understand. In that case the receiver will send an 
 'UNKNOW PACKET CMD' with attached the unhandled message.
 
-+-----------------------------+------------------------------+
-| UNKNOWN PACKET CMD (1 byte) | UNHANDLED MESSAGE (bytes...) |
-+-----------------------------+------------------------------+
++-----------------------------+---------------------------------+------------------------------+
+| UNKNOWN PACKET CMD (1 byte) | UNHANDLED MESSAGE SIZE (32bits) | UNHANDLED MESSAGE (bytes...) |
++-----------------------------+---------------------------------+------------------------------+
 
 Depending on the message, the sender will report an error and if 
 possible will try to forward the message to another endpoint.
+
+* added UNHANDLED MESSAGE SIZE (developpment)
 
 
 Verification of connection before sending request
