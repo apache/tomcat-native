@@ -130,6 +130,40 @@ extern "C" {
                                     ((x) == HTTP_INTERNAL_SERVER_ERROR) || \
                                     ((x) == HTTP_SERVICE_UNAVAILABLE) || \
                     ((x) == HTTP_NOT_IMPLEMENTED))
+                    
+/* Default administrator's address */
+#define DEFAULT_ADMIN "[no address given]"
+/* The timeout for waiting for messages */
+#ifndef DEFAULT_TIMEOUT
+#define DEFAULT_TIMEOUT 300 
+#endif
+/* The timeout for waiting for keepalive timeout until next request */
+#ifndef DEFAULT_KEEPALIVE_TIMEOUT
+#define DEFAULT_KEEPALIVE_TIMEOUT 15
+#endif
+/* The number of requests to entertain per connection */
+#ifndef DEFAULT_KEEPALIVE
+#define DEFAULT_KEEPALIVE 100
+#endif
+#ifndef DEFAULT_LIMIT_REQUEST_LINE
+#define DEFAULT_LIMIT_REQUEST_LINE 8190
+#endif /* default limit on bytes in Request-Line (Method+URI+HTTP-version) */
+#ifndef DEFAULT_LIMIT_REQUEST_FIELDSIZE
+#define DEFAULT_LIMIT_REQUEST_FIELDSIZE 8190
+#endif /* default limit on bytes in any one header field  */
+#ifndef DEFAULT_LIMIT_REQUEST_FIELDS
+#define DEFAULT_LIMIT_REQUEST_FIELDS 100
+#endif /* default limit on number of request header fields */
+#ifndef DEFAULT_CONTENT_TYPE
+#define DEFAULT_CONTENT_TYPE "text/plain"
+#endif
+/**
+ * The address 255.255.255.255, when used as a virtualhost address,
+ * will become the "default" server when the ip doesn't match other vhosts.
+ */
+#define DEFAULT_VHOST_ADDR 0xfffffffful
+ 
+                     
 /** @} */
 /**
  * @defgroup Methods List of Methods recognized by the server
@@ -195,6 +229,14 @@ typedef struct server_rec   server_rec;
 struct process_rec {
     /** Global pool. Cleared upon normal exit */
     apr_pool_t *pool;
+    /** Configuration pool. Cleared upon restart */
+    apr_pool_t *pconf;
+    /** Number of command line arguments passed to the program */
+    int argc;
+    /** The command line arguments */
+    const char * const *argv;
+    /** The program name used to execute the program */
+    const char *short_name;
 };
 
 /** A structure that represents the current request */
@@ -323,14 +365,52 @@ struct conn_rec {
     struct apr_bucket_alloc_t *bucket_alloc;
 };
 
+/** A structure to be used for Per-vhost config */
+typedef struct server_addr_rec server_addr_rec;
+struct server_addr_rec {
+    /** The next server in the list */
+    server_addr_rec *next;
+    /** The bound address, for this server */
+    apr_sockaddr_t *host_addr;
+    /** The bound port, for this server */
+    apr_port_t host_port;
+    /** The name given in <VirtualHost> */
+    char *virthost;
+};
+
 /** A structure to store information for each virtual server */
 struct server_rec {
     /** The process this server is running in */
     process_rec *process;
-    /** The server hostname */
+    /* Contact information */
+    /** The admin's contact information */
+    char *server_admin;
+     /** The server hostname */
     char *server_hostname;
     /** for redirects, etc. */
     apr_port_t port;
+    /** The log level for this server */
+    int loglevel;
+
+    server_addr_rec *addrs; 
+    /** Timeout, as an apr interval, before we give up */
+    apr_interval_time_t timeout;
+    /** The apr interval we will wait for another request */
+    apr_interval_time_t keep_alive_timeout;
+    /** Maximum requests per connection */
+    int keep_alive_max;
+    /** Use persistent connections? */
+    int keep_alive;
+ 
+    /** true if this is the virtual server */
+    int is_virtual; 
+    /** limit on size of the HTTP request line    */
+    int limit_req_line;
+    /** limit on size of any request header field */
+    int limit_req_fieldsize;
+    /** limit on number of request header fields  */
+    int limit_req_fields;
+
 };
 
 /* Apache logging support */
@@ -474,7 +554,15 @@ AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
  */
 AP_DECLARE(request_rec *) ap_wrap_create_request(conn_rec *conn);
 
+/**
+ * create the server_rec structure from process_rec. 
+ */
+AP_DECLARE(server_rec *) ap_wrap_create_server(process_rec *process, apr_pool_t *p);
 
+/**
+ * create the main process_rec. 
+ */
+AP_DECLARE(process_rec *) ap_wrap_create_process(int argc, const char * const *argv);
 
 #ifdef __cplusplus
 }

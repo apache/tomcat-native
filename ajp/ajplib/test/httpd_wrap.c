@@ -162,6 +162,65 @@ AP_DECLARE(request_rec *) ap_wrap_create_request(conn_rec *conn)
     return r;
 }
 
+AP_DECLARE(process_rec *) ap_wrap_create_process(int argc, const char * const *argv)
+{
+    process_rec *process;
+    apr_pool_t *cntx;
+    apr_status_t stat;
+
+    stat = apr_pool_create(&cntx, NULL);
+    if (stat != APR_SUCCESS) {
+        /* XXX From the time that we took away the NULL pool->malloc mapping
+         *     we have been unable to log here without segfaulting.
+         */
+        ap_log_error(APLOG_MARK, APLOG_ERR, stat, NULL,
+                     "apr_pool_create() failed to create "
+                     "initial context");
+        apr_terminate();
+        exit(1);
+    }
+
+    apr_pool_tag(cntx, "process");
+
+    process = apr_palloc(cntx, sizeof(process_rec));
+    process->pool = cntx;
+
+    apr_pool_create(&process->pconf, process->pool);
+    apr_pool_tag(process->pconf, "pconf");
+    process->argc = argc;
+    process->argv = argv;
+    process->short_name = apr_filepath_name_get(argv[0]);
+    return process;
+}
+
+AP_DECLARE(server_rec *) ap_wrap_create_server(process_rec *process, apr_pool_t *p)
+{
+    apr_status_t rv;
+    server_rec *s = (server_rec *) apr_pcalloc(p, sizeof(server_rec));
+
+    s->process = process;
+    s->port = 0;
+    s->server_admin = DEFAULT_ADMIN;
+    s->server_hostname = NULL;
+    s->loglevel = DEFAULT_LOGLEVEL;
+    s->limit_req_line = DEFAULT_LIMIT_REQUEST_LINE;
+    s->limit_req_fieldsize = DEFAULT_LIMIT_REQUEST_FIELDSIZE;
+    s->limit_req_fields = DEFAULT_LIMIT_REQUEST_FIELDS;
+    s->timeout = apr_time_from_sec(DEFAULT_TIMEOUT);
+    s->keep_alive_timeout = apr_time_from_sec(DEFAULT_KEEPALIVE_TIMEOUT);
+    s->keep_alive_max = DEFAULT_KEEPALIVE;
+    s->keep_alive = 1;
+    s->addrs = apr_pcalloc(p, sizeof(server_addr_rec));
+
+    /* NOT virtual host; don't match any real network interface */
+    rv = apr_sockaddr_info_get(&s->addrs->host_addr,
+                               NULL, APR_INET, 0, 0, p);
+
+    s->addrs->host_port = 0; /* matches any port */
+    s->addrs->virthost = ""; /* must be non-NULL */
+
+    return s;
+} 
 
 AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
                                   server_rec *server,
