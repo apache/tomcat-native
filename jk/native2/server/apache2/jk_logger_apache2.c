@@ -75,13 +75,13 @@
  * @author Costin Manolache
  */ 
 
-#include "jk_util.h"
 #include "jk_env.h"
 #include "jk_map.h"
 #include "jk_logger.h"
 #include <stdio.h>
 
 #include "httpd.h"
+#include "http_log.h"
 
 #define HUGE_BUFFER_SIZE (8*1024)
 
@@ -147,8 +147,16 @@ static int jk_logger_apache2_jkLog(jk_logger_t *l,
     rc = vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
 #endif
     va_end(args);
+    rc=strlen( buf );
+    /* Remove trailing \n. XXX need to change the log() to not include \n */
+    if( buf[rc-1] == '\n' )
+        buf[rc-1]='\0';
     
-    ap_log_error( file, line, level, 0, s, buf);
+    if( level >= JK_LOG_ERROR ) {
+        ap_log_error( file, line, APLOG_EMERG | APLOG_NOERRNO, 0, s, buf);
+    } else {
+        ap_log_error( file, line, APLOG_DEBUG | APLOG_NOERRNO, 0, s, buf);
+    }
     return rc ;
 }
 

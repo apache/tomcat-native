@@ -62,7 +62,6 @@
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
-#include "jk_util.h"
 #include "jk_env.h"
 #include "jk_map.h"
 #include "jk_logger.h"
@@ -158,7 +157,7 @@ static int jk_logger_file_open(jk_logger_t *_this,
 
     _this->level = jk_logger_file_parseLogLevel(levelS);
     if( _this->level == 0 )
-        _this->jkLog( _this, JK_LOG_ERROR, "Level %s %d \n", levelS, _this->level ); */
+        _this->jkLog( _this, JK_LOG_ERROR, "Level %s %d \n", levelS, _this->level ); 
     
     if( logformat==NULL ) {
         logformat=JK_TIME_FORMAT;
@@ -228,7 +227,7 @@ static int jk_logger_file_jkLog(jk_logger_t *l,
         if (NULL == buf)
            return -1;
 
-	set_time_str(buf, HUGE_BUFFER_SIZE);
+	jk_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
         used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
 #else 
