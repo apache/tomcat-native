@@ -19,7 +19,9 @@
     
     <property name="commons-logging.jar" location="../lib/commons-logging.jar" />
     <property name="jmx.jar" location="../lib/mx4j.jar" />
-    
+    <property name="tomcat-util.lib" value="${tomcat-util.build}/lib" />
+    <property name="tomcat-util.jar" value="${tomcat-util.lib}/tomcat-util.jar" />
+
     <target name="detect">
         <available property="jsse.present" file="${jsse.jar}"/>
         <available property="jmx.present" file="${jmx.jar}"/>
@@ -30,7 +32,7 @@
     <target name="build-prepare" depends="detect">
         <mkdir dir="${tomcat-util.build}"/>
 	<mkdir dir="${tomcat-util.build}/classes"/>
-	<mkdir dir="${tomcat-util.build}/lib"/>
+	<mkdir dir="${tomcat-util.lib}"/>
     </target>
 
     <target name="build-main" depends="build-prepare">
@@ -73,10 +75,11 @@
 	    </fileset>
         </copy>
 
-	<jar jarfile="${tomcat-util.build}/lib/tomcat-util.jar"
+	<jar jarfile="${tomcat-util.jar}"
 	     basedir="${tomcat-util.build}/classes"
-             manifest="java/tomcat-util.manifest"
-	     />
+             manifest="java/tomcat-util.manifest" >
+            <include name="org/apache/tomcat/util/**"/>
+        </jar>
 
 	<!-- Include a copy of the commons-logging.jar that we built with -->
 	<copy todir="${tomcat-util.build}/lib"
