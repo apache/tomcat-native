@@ -87,7 +87,17 @@ WARPH = pr_warp_defs.h
 build: $(LIB)
 
 clean:
-	$(RM) -f $(OBJS) $(PROVS) $(LIB) $(WARPH)
+	@for ENTRY in *.o *.lo $(LIB) $(WARPH) .libs ; \
+	do \
+		if $(TEST) -d $${ENTRY} ; \
+		then \
+			$(ECHO) Removing directory $${ENTRY} ; \
+			$(RM) -rf $${ENTRY} ; \
+		else \
+			$(ECHO) Removing file $${ENTRY} ; \
+			$(RM) -f $${ENTRY} ; \
+		fi ; \
+	done
 
 $(LIB): libwebapp.la
 	$(LIBTOOL) --silent --mode=install \
