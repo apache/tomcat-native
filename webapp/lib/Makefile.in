@@ -69,14 +69,31 @@ PROVS = pr_info.lo \
 
 LIB = libwebapp.la
 
-all: $(LIB)
+all: pr_warp_defs.h $(LIB)
 
-$(LIB): $(OBJS) $(PROVS) @SRCDIR@/Makedefs
-	@echo Creating library $(LIB)
-	@$(LIBTOOL) --silent --mode=link $(CC) -static -o $(LIB) \
+$(LIB): $(OBJS) $(PROVS)
+	@$(ECHO) Creating library $(LIB)
+	@$(LIBTOOL) $(LTFLAGS) --mode=link $(CC) -static -o $(LIB) \
 		$(OBJS) $(PROVS) 1> /dev/null
 
-clean:
-	@echo Removing *.o *.lo $(LIB) .libs
-	@rm -rf *.o *.lo $(LIB) .libs
+pr_warp_defs.h: @SRCDIR@/java/Constants.java
+	@$(ECHO) Generating pr_warp_defs.h
+	@$(CAT) @SRCDIR@/java/Constants.java | \
+		grep TYPE_ | \
+		sed "s/public static final int/#define/g" | \
+		sed "y/=;/  /" > pr_warp_defs.h
 
+clean:
+	@for ENTRY in *.o *.lo $(LIB) pr_warp_defs.h .libs ; \
+	do \
+		if $(TEST) -f $${ENTRY} ; \
+		then \
+			$(ECHO) Removing file $${ENTRY} ; \
+			$(RM) -f $${ENTRY} ; \
+		fi ; \
+		if $(TEST) -d $${ENTRY} ; \
+		then \
+			$(ECHO) Removing directory $${ENTRY} ; \
+			$(RM) -rf $${ENTRY} ; \
+		fi ; \
+	done
