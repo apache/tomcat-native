@@ -512,6 +512,8 @@ public class InternalInputBuffer implements InputBuffer {
                     throw new EOFException(sm.getString("iib.eof.error"));
             }
 
+            ascbuf[pos] = (char) buf[pos];
+
             if (buf[pos] == Constants.SP) {
                 space = true;
                 if (internationalizedURIAllowed) {
