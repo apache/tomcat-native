@@ -406,7 +406,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
 	memset(aw->login, 0, sizeof(jk_login_service_t));
 
 	aw->login->negociation	    = (AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
-	aw->login->web_server_name  = NULL; // must be set in init
+	aw->login->web_server_name  = NULL; /* must be set in init */
 
     aw->ep_cache_sz            = 0;
     aw->ep_cache               = NULL;
