@@ -65,8 +65,6 @@ extern char *strdup(const char *str);
 #include <unistd.h>
 #if defined(NETWARE) && defined(__NOVELL_LIBC__)
 #include "novsock2.h"
-#include <nks/fsio.h>
-#include <nks/errno.h>
 #define __sys_socket_h__
 #define __netdb_h__
 #define __netinet_in_h__
@@ -76,11 +74,11 @@ extern char *strdup(const char *str);
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #ifndef NETWARE
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
-#include <fcntl.h>
 #if !defined(_OSD_POSIX) && !defined(AS400) && !defined(CYGWIN)
 #include <sys/socketvar.h>
 #endif

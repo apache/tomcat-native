@@ -57,8 +57,10 @@ extern "C"
 #define JK_MD5_DIGESTSIZE 16
 
 /* JK_UINT4 defines a four byte word */
-#ifdef WIN32
+#if defined (WIN32)
     typedef DWORD JK_UINT4;
+#elif defined(NETWARE) && !defined(__NOVELL_LIBC__)
+    typedef unsigned int JK_UINT4;
 #else
     typedef uint32_t JK_UINT4;
 #endif
