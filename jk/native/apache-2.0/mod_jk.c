@@ -977,7 +977,7 @@ static int request_log_transaction(request_rec *r,
     }
     *s = 0;
     
-    jk_log(conf->log, JK_LOG_REQUEST, str);
+    jk_log(conf->log, JK_LOG_REQUEST, "%s", str);
 }
 
 /*****************************************************************
@@ -1660,11 +1660,6 @@ static int jk_handler(request_rec *r)
     jk_server_conf_t *conf;
     int              rc,dmt=1;
 
-    /* If the remote client has aborted, just return */
-    if (r->connection->aborted) {
-        return HTTP_INTERNAL_SERVER_ERROR;
-    }
-
     /* We do DIR_MAGIC_TYPE here to make sure TC gets all requests, even
      * if they are directory requests, in case there are no static files
      * visible to Apache and/or DirectoryIndex was not used. This is only
@@ -1740,8 +1735,13 @@ static int jk_handler(request_rec *r)
     if(worker_name) {
         jk_worker_t *worker = wc_get_worker_for_name(worker_name, xconf->log);
 
+        /* If the remote client has aborted, just ignore the request */
+        if (r->connection->aborted) {
+            return OK;
+        }
+
         if(worker) {
-        	struct timeval tv_begin,tv_end;
+            struct timeval tv_begin,tv_end;
             int rc = JK_FALSE;
             apache_private_data_t private_data;
             jk_ws_service_t s;
@@ -1845,7 +1845,7 @@ static int jk_handler(request_rec *r)
                 return OK;    /* NOT r->status, even if it has changed. */
             } else if (rc == JK_CLIENT_ERROR) {
                 r->connection->aborted = 1;
-                return HTTP_INTERNAL_SERVER_ERROR;
+                return OK;
             } else {
                 return HTTP_INTERNAL_SERVER_ERROR;
             }

@@ -883,7 +883,7 @@ static int request_log_transaction(request_rec *r,
         s += strl[i];
     }
     *s = 0;
-    jk_log(conf->log ? conf->log : main_log,JK_LOG_REQUEST,str);
+    jk_log(conf->log ? conf->log : main_log, JK_LOG_REQUEST, "%s", str);
 }
 
 /*****************************************************************

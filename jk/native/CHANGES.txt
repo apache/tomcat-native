@@ -18,7 +18,10 @@ Changes with JK 1.2.3:
     * Fixed a bug in Apache 2.0 which caused a POST request forwarded to
       Tomcat to fail if it generated SSI directives which were post
       processed by mod_include. [glenn]
-
+    * Fixed a bug in JkRequestLogFormat when printing the request URI that
+      could cause a URI with hex escapes sequences to be formatted wrong.
+      [glenn]
+      
 Changes with JK 1.2.2:
     * tomcat_trend.pl updated script to support changed logging of 
       aborted requests
