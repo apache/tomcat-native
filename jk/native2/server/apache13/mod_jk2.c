@@ -281,7 +281,13 @@ static int jk2_init(server_rec *s, ap_pool *pconf)
         workerEnv->init(env, workerEnv );
         
         workerEnv->server_name   = (char *)ap_get_server_version();
-        /* ap_add_version_component(pconf, JK_EXPOSED_VERSION); */
+
+
+#if MODULE_MAGIC_NUMBER >= 19980527
+        /* Tell apache we're here */
+        ap_add_version_component(JK_EXPOSED_VERSION);
+#endif
+
     }
     return OK;
 }
