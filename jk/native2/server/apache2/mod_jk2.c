@@ -677,7 +677,9 @@ static int jk2_translate(request_rec *r)
        If positive, we'll fill a ws_service_t and do the rewrite and
        the real mapping. 
     */
-    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri );
+    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,
+                r->server->is_virtual ? r->server->server_hostname : NULL,
+                r->uri );
 
     if( uriEnv== NULL || uriEnv->workerName == NULL) {
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
