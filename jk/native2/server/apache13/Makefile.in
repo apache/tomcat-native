@@ -13,8 +13,9 @@ JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_thre
 
 JK_DIR := ../..
 BUILD_DIR = ${JK_DIR}/../build/jk2/apache13
+APACHE_LIBEXEC=${APACHE_HOME}/libexec
 
-#LIBTOOL=@LIBTOOL@
+LIBTOOL=@LIBTOOL@
 
 # It doesn't hurt if we include all
 INCLUDES= -I${JK_DIR}/include \
@@ -34,7 +35,8 @@ ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
 COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
 
 SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
-MOD_LINK = $(LIBTOOL) --mode=link $(CC) -module -shared $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
+MOD_LINK = $(LIBTOOL) --mode=link $(CC) -avoid-version -module -rpath $(APACHE_LIBEXEC) $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
+MOD_INSTALL = $(LIBTOOL) --mode=install $(CP)
 
 #############################################################################
 
@@ -73,7 +75,10 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache13/%.c
 
 all: prepare ${BUILD_DIR}/mod_jk2.so 
 
-${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${A_LO_FILES}
+${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
+	$(MOD_INSTALL) cp $^ `pwd`/${BUILD_DIR}
+
+${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${A_LO_FILES}
 	${MOD_LINK} -o $@ $^ @APR_LDFLAGS@
 
 ${COMMON_C_FILES} ${A_C_FILES}: ${H_FILES}
