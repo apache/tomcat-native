@@ -1507,7 +1507,12 @@ public class CoyoteRequest
      * Return the query string associated with this request.
      */
     public String getQueryString() {
-        return (coyoteRequest.queryString().toString());
+        String queryString = coyoteRequest.queryString().toString();
+        if (queryString.equals("")) {
+            return (null);
+        } else {
+            return queryString;
+        }
     }
 
 
