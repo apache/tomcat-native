@@ -173,7 +173,7 @@ public class JkCoyoteHandler extends JkHandler implements
                                              "jkInputStream");
 
         } catch( Exception ex ) {
-            ex.printStackTrace();
+            log.error("Error during init",ex);
         }
     }
 
@@ -189,7 +189,7 @@ public class JkCoyoteHandler extends JkHandler implements
             }
             getJkMain().start();
         } catch( Exception ex ) {
-            ex.printStackTrace();
+            log.error("Error during startup",ex);
         }
     }
 
@@ -295,7 +295,7 @@ public class JkCoyoteHandler extends JkHandler implements
         try {
             adapter.service( req, res );
         } catch( Exception ex ) {
-            ex.printStackTrace();
+            log.info("Error servicing request " + req,ex);
         }
         if(ep.getStatus() != JK_STATUS_CLOSED) {
             res.finish();
@@ -439,13 +439,16 @@ public class JkCoyoteHandler extends JkHandler implements
                 msg.reset();
                 msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
                 msg.appendByte( 1 );
-                
-                ep.setType( JkHandler.HANDLE_SEND_PACKET );
-                ep.getSource().invoke( msg, ep );
 
-                ep.setType( JkHandler.HANDLE_FLUSH );
-                ep.getSource().invoke( msg, ep );
+                try {                
+                    ep.setType( JkHandler.HANDLE_SEND_PACKET );
+                    ep.getSource().invoke( msg, ep );
 
+                    ep.setType( JkHandler.HANDLE_FLUSH );
+                    ep.getSource().invoke( msg, ep );
+                } catch(IOException iex) {
+                    log.debug("Connection error ending request.",iex);
+                }
                 ep.setStatus(JK_STATUS_CLOSED );
 
                 if( logTime.isDebugEnabled() ) 
