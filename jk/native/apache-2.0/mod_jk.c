@@ -1175,7 +1175,6 @@ apr_status_t jk_cleanup_endpoint( void *data ) {
 static int jk_handler(request_rec *r)
 {   
     const char       *worker_name;
-    jk_server_conf_t *xconf;
     jk_logger_t      *xl;
     jk_server_conf_t *conf;
     int              rc;
@@ -1183,10 +1182,10 @@ static int jk_handler(request_rec *r)
     if(strcmp(r->handler,JK_HANDLER))    /* not for me, try next handler */
       return DECLINED;
     
-    xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
+    conf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
                                                      &jk_module);
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
-    xl = xconf->log ? xconf->log : main_log;
+    xl = conf->log ? conf->log : main_log;
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
@@ -1208,8 +1207,7 @@ static int jk_handler(request_rec *r)
                  "Manual configuration for %s %s %d\n",
                  r->uri, worker_env.first_worker, worker_env.num_of_workers); 
       } else {
-          worker_name = map_uri_to_worker(xconf->uw_map, r->uri, 
-                                          xconf->log ? xconf->log : main_log);
+          worker_name = map_uri_to_worker(conf->uw_map, r->uri, xl);
           if( worker_name == NULL ) 
               worker_name=  worker_env.first_worker;
           jk_log(xl, JK_LOG_DEBUG, 
@@ -1224,9 +1222,6 @@ static int jk_handler(request_rec *r)
                r->proxyreq, r->handler, r->notes, worker_name); 
     }
 
-    conf=(jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
-                                                  &jk_module);
-
     /* If this is a proxy request, we'll notify an error */
     if(r->proxyreq) {
         return HTTP_INTERNAL_SERVER_ERROR;
@@ -1234,8 +1229,7 @@ static int jk_handler(request_rec *r)
 
     if(conf && ! worker_name ) {
         /* Direct mapping ( via setHandler ). Try overrides */
-        worker_name = map_uri_to_worker(conf->uw_map, r->uri, 
-                                        conf->log ? conf->log : main_log);
+        worker_name = map_uri_to_worker(conf->uw_map, r->uri, xl);
         if( ! worker_name ) {
             /* Since we are here, an explicit (native) mapping has been used */
             /* Use default worker */
@@ -1247,9 +1241,7 @@ static int jk_handler(request_rec *r)
     }
       
     if(worker_name) {
-        jk_logger_t *l = conf->log ? conf->log : main_log;
-
-        jk_worker_t *worker = wc_get_worker_for_name(worker_name, l);
+        jk_worker_t *worker = wc_get_worker_for_name(worker_name, xl);
 
         if(worker) {
             int rc = JK_FALSE;
@@ -1282,16 +1274,16 @@ static int jk_handler(request_rec *r)
         
         apr_pool_userdata_get( &end, "jk_thread_endpoint", tpool );
         if(end==NULL ) {
-            worker->get_endpoint(worker, &end, l);
+            worker->get_endpoint(worker, &end, xl);
             apr_pool_userdata_set( end , "jk_thread_endpoint", 
                                    &jk_cleanup_endpoint,  tpool );
         }
 #else
-        worker->get_endpoint(worker, &end, l);
+        worker->get_endpoint(worker, &end, xl);
 #endif
         {   
             int is_recoverable_error = JK_FALSE;
-                rc = end->service(end, &s, l, &is_recoverable_error);
+                rc = end->service(end, &s, xl, &is_recoverable_error);
 
             if (s.content_read < s.content_length ||
                 (s.is_chunked && ! s.no_more_chunks)) {
@@ -1311,7 +1303,7 @@ static int jk_handler(request_rec *r)
             }
                                                                             
 #ifndef REUSE_WORKER            
-            end->done(&end, l); 
+            end->done(&end, xl); 
 #endif
                 }
             }
