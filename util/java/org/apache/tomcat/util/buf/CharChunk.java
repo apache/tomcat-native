@@ -70,11 +70,23 @@ import java.io.IOException;
  * it is known to not be the most efficient solution - Strings are
  * designed as imutable and secure objects.
  * 
- * @author dac@eng.sun.com
- * @author James Todd [gonzo@eng.sun.com]
+ * @author dac@sun.com
+ * @author James Todd [gonzo@sun.com]
  * @author Costin Manolache
+ * @author Remy Maucherat
  */
 public final class CharChunk implements Cloneable, Serializable {
+
+    // Input interface, used when the buffer is emptied.
+    public static interface CharInputChannel {
+        /** 
+         * Read new bytes ( usually the internal conversion buffer ).
+         * The implementation is allowed to ignore the parameters, 
+         * and mutate the chunk if it wishes to implement its own buffering.
+         */
+        public int realReadChars(char cbuf[], int off, int len)
+            throws IOException;
+    }
     /**
      *  When we need more space we'll either
      *  grow the buffer ( up to the limit ) or send it to a channel.
@@ -83,8 +95,8 @@ public final class CharChunk implements Cloneable, Serializable {
 	/** Send the bytes ( usually the internal conversion buffer ).
 	 *  Expect 8k output if the buffer is full.
 	 */
-	public void realWriteChars( char cbuf[], int off, int len)
-	    throws IOException;
+        public void realWriteChars(char cbuf[], int off, int len)
+            throws IOException;
     }
     
     // -------------------- 
@@ -102,7 +114,8 @@ public final class CharChunk implements Cloneable, Serializable {
     // maximum amount to be cached
     private int limit=-1;
 
-    CharOutputChannel out=null;
+    private CharInputChannel in = null;
+    private CharOutputChannel out = null;
     
     /**
      * Creates a new, uninitialized CharChunk object.
@@ -180,6 +193,13 @@ public final class CharChunk implements Cloneable, Serializable {
     
     public int getLimit() {
 	return limit;
+    }
+
+    /**
+     * When the buffer is empty, read the data from the input channel.
+     */
+    public void setCharInputChannel(CharInputChannel in) {
+        this.in = in;
     }
 
     /** When the buffer is full, write the data to the output channel.
@@ -377,6 +397,41 @@ public final class CharChunk implements Cloneable, Serializable {
 	}
     }
     
+    // -------------------- Removing data from the buffer --------------------
+
+    public int substract()
+        throws IOException {
+
+        if ((end - start) == 0) {
+            int n = in.realReadChars(buff, 0, buff.length);
+            if (n < 0)
+                return -1;
+        }
+
+        return (buff[start++]);
+
+    }
+
+    public int substract( char src[], int off, int len )
+        throws IOException {
+
+        if ((end - start) == 0) {
+            int n = in.realReadChars( buff, 0, buff.length );
+            if (n < 0)
+                return -1;
+        }
+
+        int n = len;
+        if (len > getLength()) {
+            n = getLength();
+        }
+        System.arraycopy(buff, start, src, off, n);
+        start += n;
+        return n;
+
+    }
+
+
     public void flushBuffer()
 	throws IOException
     {

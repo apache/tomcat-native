@@ -85,18 +85,31 @@ import java.io.IOException;
  *
  * The buffer can be modified and used for both input and output.
  *
- * @author dac@eng.sun.com
- * @author James Todd [gonzo@eng.sun.com]
+ * @author dac@sun.com
+ * @author James Todd [gonzo@sun.com]
  * @author Costin Manolache
+ * @author Remy Maucherat
  */
 public final class ByteChunk implements Cloneable, Serializable {
+
+    // Input interface, used when the buffer is emptied.
+    public static interface ByteInputChannel {
+        /** 
+         * Read new bytes ( usually the internal conversion buffer ).
+         * The implementation is allowed to ignore the parameters, 
+         * and mutate the chunk if it wishes to implement its own buffering.
+         */
+        public int realReadBytes(byte cbuf[], int off, int len)
+            throws IOException;
+    }
     // Output interface, used when the buffer is filled.
     public static interface ByteOutputChannel {
-	/** Send the bytes ( usually the internal conversion buffer ).
-	 *  Expect 8k output if the buffer is full.
-	 */
-	public void realWriteBytes( byte cbuf[], int off, int len)
-	    throws IOException;
+        /** 
+         * Send the bytes ( usually the internal conversion buffer ).
+         * Expect 8k output if the buffer is full.
+         */
+        public void realWriteBytes(byte cbuf[], int off, int len)
+            throws IOException;
     }
 
     // --------------------
@@ -120,7 +133,8 @@ public final class ByteChunk implements Cloneable, Serializable {
     // How much can it grow, when data is added
     private int limit=-1;
 
-    private ByteOutputChannel out=null;
+    private ByteInputChannel in = null;
+    private ByteOutputChannel out = null;
 
     private boolean isOutput=false;
     
@@ -247,6 +261,13 @@ public final class ByteChunk implements Cloneable, Serializable {
 	return limit;
     }
 
+    /**
+     * When the buffer is empty, read the data from the input channel.
+     */
+    public void setByteInputChannel(ByteInputChannel in) {
+        this.in = in;
+    }
+
     /** When the buffer is full, write the data to the output channel.
      * 	Also used when large amount of data is appended.
      *
@@ -348,6 +369,42 @@ public final class ByteChunk implements Cloneable, Serializable {
 	    out.realWriteBytes( src, off, len );
 	}
     }
+
+
+    // -------------------- Removing data from the buffer --------------------
+
+    public int substract()
+        throws IOException {
+
+        if ((end - start) == 0) {
+            int n = in.realReadBytes( buff, 0, buff.length );
+            if (n < 0)
+                return -1;
+        }
+
+        return (buff[start++] & 0xFF);
+
+    }
+
+    public int substract( byte src[], int off, int len )
+        throws IOException {
+
+        if ((end - start) == 0) {
+            int n = in.realReadBytes( buff, 0, buff.length );
+            if (n < 0)
+                return -1;
+        }
+
+        int n = len;
+        if (len > getLength()) {
+            n = getLength();
+        }
+        System.arraycopy(buff, start, src, off, n);
+        start += n;
+        return n;
+
+    }
+
 
     public void flushBuffer()
 	throws IOException
