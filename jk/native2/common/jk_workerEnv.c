@@ -472,6 +472,11 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
         if( ep->worker->mbean->debug > 10 )
             ep->request->dump( env, msg, "Received" );
 
+        /* XXX Use this _only_ for backward compatibility.
+           invoke() and jk_bean should be used, probably with a first parameter
+           indicating the target component and a second param indicating the
+           code ( local to each component ).
+        */
         code = (int)msg->getByte(env, msg);
         rc=jk2_workerEnv_dispatch( env, wEnv, req, ep, code, msg );
 

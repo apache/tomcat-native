@@ -122,7 +122,11 @@ struct jk_bean {
      */
     char *type;
 
+    /** The index in the workerEnv table */
     int id;
+
+    /** The index in the env object table */
+    int objId;
     
     /* Full name of the object ( "channel.socket:localhost:8080" ).
      * Used to construct the object.

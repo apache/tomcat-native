@@ -251,7 +251,26 @@ static int JK_METHOD jk2_handler_getChunk(jk_env_t *env, void *target,
     return JK_HANDLER_FATAL;	    
 }
 
-int JK_METHOD jk2_handler_response_init( jk_env_t *env, jk_handler_t *_this,
+static int JK_METHOD jk2_handler_response_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep,
+                                                 int code, jk_msg_t *msg, int raw)
+{
+    void *target=ep->currentRequest;
+
+    switch( code ) {
+    case JK_HANDLE_AJP13_SEND_HEADERS:
+        return jk2_handler_startResponse( env, target, ep, msg );
+    case JK_HANDLE_AJP13_SEND_BODY_CHUNK:
+        return jk2_handler_sendChunk(env, target, ep, msg );
+    case JK_HANDLE_AJP13_END_RESPONSE:
+        return jk2_handler_endResponse(env, target, ep, msg );
+    case JK_HANDLE_AJP13_GET_BODY_CHUNK:
+        return jk2_handler_getChunk(env, target, ep, msg );
+    }
+    return JK_OK;
+}
+
+
+static int JK_METHOD jk2_handler_response_init( jk_env_t *env, jk_handler_t *_this,
                                          jk_workerEnv_t *wEnv) 
 {
     wEnv->registerHandler( env, wEnv, "handler.response",
@@ -282,7 +301,8 @@ int JK_METHOD jk2_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
 
     h->init=jk2_handler_response_init;
-
+    result->invoke=jk2_handler_response_invoke;
+    
     result->object=h;
     
     return JK_OK;

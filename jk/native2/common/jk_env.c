@@ -206,6 +206,7 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
     jk_bean_t *result=NULL;
     jk_pool_t *workerPool;
     char *name;
+    int i;
 
     if( localName!=NULL ) 
         result=env->getBean2( env, type, localName );
@@ -307,7 +308,15 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
     }
 
     jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, result->name, result, NULL );
-
+    
+    for( i=jk_env_globalEnv->_objects->size( env, jk_env_globalEnv->_objects ) - 1; i>=0 ; i-- ) {
+        if( jk_env_globalEnv->_objects->valueAt( env, jk_env_globalEnv->_objects, i ) == result ) {
+            fprintf( stderr, "Component id %s= %d\n", result->name, i );
+            result->objId=i;
+            break;
+        }
+    }
+    
     if( strcmp(localName,"")==0 ) {
         /* "" for local name is used as 'default'. Allow "type" as an alias for "type:"
          */
