@@ -81,7 +81,7 @@ public final class Constants {
      * Server string.
      */
     public static final String SERVER = 
-        "Apache Coyote HTTP/1.1 Connector [1.0]";
+        "Apache Coyote/1.0";
 
 
     /**
