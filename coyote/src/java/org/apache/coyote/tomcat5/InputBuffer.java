@@ -413,13 +413,19 @@ public class InputBuffer extends Reader
 
         long nRead = 0;
         while (nRead < n) {
-            if (cb.getLength() > n) {
+            if (cb.getLength() >= n) {
                 cb.setOffset(cb.getStart() + (int) n);
                 nRead = n;
             } else {
                 nRead += cb.getLength();
                 cb.setOffset(cb.getEnd());
-                int nb = realReadChars(cb.getChars(), 0, cb.getEnd());
+                int toRead = 0;
+                if (cb.getChars().length < (n - nRead)) {
+                    toRead = cb.getChars().length;
+                } else {
+                    toRead = (int) (n - nRead);
+                }
+                int nb = realReadChars(cb.getChars(), 0, toRead);
                 if (nb < 0)
                     break;
             }
@@ -450,19 +456,18 @@ public class InputBuffer extends Reader
 
     public void reset()
         throws IOException {
-        bb.recycle();
         if (state == CHAR_STATE) {
             if (markPos < 0) {
                 cb.recycle();
                 markPos = -1;
-                throw new IOException("Mark not set"); //FIXME: i18n
+                throw new IOException();
+            } else {
+                cb.setOffset(markPos);
+                markPos = -1;
             }
+        } else {
+            bb.recycle();
         }
-        /*
-        cb.recycle();
-        gotEnc = false;
-        enc = null;
-        */
     }
 
 
