@@ -1999,17 +1999,27 @@ public class CoyoteRequest
             // Extract the language and country for this entry
             String language = null;
             String country = null;
+            String variant = null;
             int dash = entry.indexOf('-');
             if (dash < 0) {
                 language = entry;
                 country = "";
+                variant = "";
             } else {
                 language = entry.substring(0, dash);
                 country = entry.substring(dash + 1);
+                int vDash = country.indexOf('-');
+                if (vDash > 0) {
+                    String cTemp = country.substring(0, vDash);
+                    variant = country.substring(vDash + 1);
+                    country = cTemp;
+                } else {
+                    variant = "";
+                }
             }
 
             // Add a new Locale to the list of Locales for this quality level
-            Locale locale = new Locale(language, country);
+            Locale locale = new Locale(language, country, variant);
             Double key = new Double(-quality);  // Reverse the order
             ArrayList values = (ArrayList) locales.get(key);
             if (values == null) {
