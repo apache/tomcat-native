@@ -67,12 +67,18 @@ import java.io.IOException;
  * @version CVS $Id$
  */
 public class WarpRequestHandler extends WarpHandler {
+
     /** The WarpReader associated with this WarpConnectionHandler. */
     private WarpReader reader=new WarpReader();
     /** The WarpPacket used to write data. */
     private WarpPacket packet=new WarpPacket();
     /** Wether we had an error in the request header. */
     private boolean headererr=false;
+
+    /** The WarpRequest object associated with this request handler. */
+    protected WarpRequest request=null;
+    /** The WarpRequest object associated with this request handler. */
+    protected WarpResponse response=null;    
 
     /**
      * Process a WARP packet.
@@ -91,47 +97,90 @@ public class WarpRequestHandler extends WarpHandler {
      *         false if this was the last packet.
      */
     public boolean process(int type, byte buffer[]) {
+        WarpConnector connector=this.getConnector();
+        WarpEngine engine=(WarpEngine)connector.getContainer();
+        String arg1=null;
+        String arg2=null;
+        int valu=-1;
+
         this.reader.reset(buffer);
         this.packet.reset();
         try {
             switch (type) {
                 // The Request method
                 case WarpConstants.TYP_REQINIT_MET:
-                    if (DEBUG) this.debug("REQINIT_MET "+reader.readString());
+                    arg1=reader.readString();
+                    if (DEBUG) this.debug("Request Method "+arg1);
+                    this.request.setMethod(arg1);
                     break;
+
                 // The Request URI
                 case WarpConstants.TYP_REQINIT_URI:
-                    if (DEBUG) this.debug("REQINIT_URI "+reader.readString());
+                    arg1=reader.readString();
+                    if (DEBUG) this.debug("Request URI "+arg1);
+                    this.request.setRequestURI(arg1);
                     break;
+
                 // The Request query arguments
                 case WarpConstants.TYP_REQINIT_ARG:
-                    if (DEBUG) this.debug("REQINIT_ARG "+reader.readString());
+                    arg1=reader.readString();
+                    if (DEBUG) this.debug("Request Query Argument "+arg1);
+                    this.request.setQueryString(arg1);
                     break;
+
                 // The Request protocol
                 case WarpConstants.TYP_REQINIT_PRO:
-                    if (DEBUG) this.debug("REQINIT_PRO "+reader.readString());
+                    arg1=reader.readString();
+                    if (DEBUG) this.debug("Request Protocol "+arg1);
+                    this.request.setProtocol(arg1);
                     break;
+
                 // A request header
                 case WarpConstants.TYP_REQINIT_HDR:
-                    if (DEBUG) this.debug("REQINIT_HDR "+reader.readString()+
-                                          ": "+reader.readString());
+                    arg1=reader.readString();
+                    arg2=reader.readString();
+                    if (DEBUG) this.debug("Request Header "+arg1+": "+arg2);
+                    this.request.addHeader(arg1,arg2);
                     break;
+
                 // A request variable
                 case WarpConstants.TYP_REQINIT_VAR:
-                    if (DEBUG) this.debug("REQINIT_VAR "+reader.readShort()+
-                                          "="+reader.readString());
+                    valu=reader.readShort();
+                    arg1=reader.readString();
+                    if (DEBUG) this.debug("Request Variable ["+valu+"]="+arg1);
                     break;
+
                 // The request header is finished, run the servlet (whohoo!)
                 case WarpConstants.TYP_REQINIT_RUN:
-                    if (DEBUG) this.debug("REQINIT_RUN");
+                    if (DEBUG) this.debug("Invoking request");
                     // Check if we can accept (or not) this request
                     this.packet.reset();
-                    if (this.headererr) {
-                        this.send(WarpConstants.TYP_REQINIT_ERR,this.packet);
-                        return(false);
-                    }
                     this.send(WarpConstants.TYP_REQINIT_ACK,this.packet);
-                    break;
+                    WarpInputStream win=new WarpInputStream(this);
+                    WarpOutputStream wout=new WarpOutputStream(this,response);
+                    this.request.setStream(win);
+                    this.response.setStream(wout);
+                    this.response.setRequest(this.request);
+                    try {
+                        engine.invoke(this.request, this.response);
+                    } catch (Exception e) {
+                        this.log(e);
+                    }
+                    try {
+                        this.response.flushBuffer();
+                        this.response.finishResponse();
+                        wout.flush();
+                        wout.close();
+                    } catch (Exception e) {
+                        if (DEBUG) this.debug(e);
+                    }
+                    this.packet.reset();
+                    this.packet.writeString("End of request");
+                    this.send(WarpConstants.TYP_REQUEST_ACK,this.packet);
+                    if (DEBUG) this.debug("End of request");
+                    return(false);
+
+                // Other packet types
                 default:
                     this.log("Wrong packet type "+type);
                     return(true);

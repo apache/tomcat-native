@@ -75,10 +75,45 @@ public class WarpRequest extends HttpRequestBase {
 
     // -------------------------------------------------------- LOCAL VARIABLES
 
-    /** The Warp Host ID of this Host. */
+    /** The Warp Host ID of this request. */
     private int hostid=-1;
+    /** The Warp Application ID of this request. */
+    private int applid=-1;
+    /** The Warp Request ID of this request. */
+    private int id=-1;
+    /** The WarpRequestHandler associated with this request. */
+    private WarpRequestHandler handler=null;
 
     // ----------------------------------------------------------- BEAN METHODS
+
+    /**
+     * Return the WarpRequestHandler associated with this request.
+     */
+    protected WarpRequestHandler getWarpRequestHandler() {
+        return(this.handler);
+    }
+
+    /**
+     * Set the WarpRequestHandler associated with this request.
+     */
+    protected void setWarpRequestHandler(WarpRequestHandler handler) {
+        this.handler=handler;
+    }
+
+    /**
+     * Return the Host ID associated with this WarpRequest instance.
+     */
+    protected int getRequestID() {
+        return(this.id);
+    }
+
+    /**
+     * Set the Host ID associated with this WarpRequest instance.
+     */
+    protected void setRequestID(int id) {
+        if (DEBUG) this.debug("Setting RequestID to "+id);
+        this.id=id;
+    }
 
     /**
      * Return the Host ID associated with this WarpRequest instance.
@@ -88,11 +123,26 @@ public class WarpRequest extends HttpRequestBase {
     }
 
     /**
-     * Set the Host ID associated with this WarpRequest instance.
+     * Set the Application ID associated with this WarpRequest instance.
      */
     protected void setRequestedHostID(int id) {
         if (DEBUG) this.debug("Setting request HostID to "+id);
         this.hostid=id;
+    }
+
+    /**
+     * Return the Application ID associated with this WarpRequest instance.
+     */
+    protected int getRequestedApplicationID() {
+        return(this.applid);
+    }
+
+    /**
+     * Set the Host ID associated with this WarpRequest instance.
+     */
+    protected void setRequestedApplicationID(int id) {
+        if (DEBUG) this.debug("Setting request ApplicationID to "+id);
+        this.applid=id;
     }
 
     // ------------------------------------------------------ DEBUGGING METHODS

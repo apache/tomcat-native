@@ -56,8 +56,13 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
+import java.io.IOException;
+import javax.servlet.ServletException;
+import org.apache.catalina.Request;
+import org.apache.catalina.Response;
 import org.apache.catalina.Container;
 import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.LifecycleException;
 
 /**
  *
@@ -83,6 +88,15 @@ public class WarpContext extends StandardContext {
     public WarpContext() {
         super();
         if (DEBUG) this.debug("New instance created");
+        this.setUseNaming(false);
+        this.setAvailable(true);
+        this.setDebug(9);
+    }
+
+    public void invoke(Request req, Response res)
+    throws ServletException, IOException {
+        if (DEBUG) this.debug("Invoked (available="+this.getAvailable()+")");
+        super.invoke(req,res);
     }
 
     // ----------------------------------------------------------- BEAN METHODS
@@ -101,6 +115,16 @@ public class WarpContext extends StandardContext {
         if (DEBUG) this.debug("Setting ApplicationID for context in path \""+
                               super.getName()+"\" to "+id);
         this.id=id;
+    }
+
+    public void start() throws LifecycleException {
+        if (DEBUG) this.debug("Starting");
+        super.start();
+    }
+
+    public void stop() throws LifecycleException {
+        if (DEBUG) this.debug("Stopping");
+        super.stop();
     }
 
     // ------------------------------------------------------ DEBUGGING METHODS

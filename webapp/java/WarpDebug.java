@@ -68,7 +68,7 @@ public class WarpDebug {
     // -------------------------------------------------------------- CONSTANTS
 
     /** Our debug flag status (Used to compile out debugging information). */
-    public static final boolean DEBUG=false;
+    public static final boolean DEBUG=true;
 
     // -------------------------------------------------------- LOCAL VARIABLES
 

@@ -56,112 +56,61 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
-import javax.servlet.ServletException;
-import org.apache.catalina.Request;
-import org.apache.catalina.Response;
+import java.io.OutputStream;
 import java.io.IOException;
-import java.net.URL;
-import org.apache.catalina.Container;
-import org.apache.catalina.core.StandardHost;
-import org.apache.catalina.core.StandardContext;
-import org.apache.catalina.startup.HostConfig;
-import org.apache.catalina.LifecycleException;
 
 /**
- *
  *
  * @author <a href="mailto:pier.fumagalli@eng.sun.com">Pier Fumagalli</a>
  * @author Copyright &copy; 1999, 2000 <a href="http://www.apache.org">The
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpHost extends StandardHost {
+public class WarpOutputStream extends OutputStream {
+    private WarpRequestHandler handler=null;
+    private WarpResponse response=null;
+
+    private byte buffer[]=new byte[4096];
+    private int pos=0;
+    private boolean closed=false;
 
     // -------------------------------------------------------------- CONSTANTS
 
     /** Our debug flag status (Used to compile out debugging information). */
     private static final boolean DEBUG=WarpDebug.DEBUG;
-    /** The class used for contexts. */
-    private static String cc="org.apache.catalina.connector.warp.WarpContext";
 
-    // -------------------------------------------------------- LOCAL VARIABLES
-
-    /** The Warp Host ID of this Host. */
-    private int id=-1;
-    /** The ID to use for the next dynamically configured application. */
-    private int applid=0;
-
-    /**
-     * Create a new instance of a WarpHost.
-     */
-    public WarpHost() {
+    private WarpOutputStream() {
         super();
-        HostConfig conf=new HostConfig();
-        conf.setContextClass(cc);
-        this.setContextClass(cc);
-        this.addLifecycleListener(conf);
-        this.setDebug(9);
     }
-
-    // --------------------------------------------------------- PUBLIC METHODS
-
-    public void invoke(Request req, Response res)
-    throws ServletException, IOException {
-        if (DEBUG) this.debug("Invoked");
-        super.invoke(req,res);
+    
+    public WarpOutputStream(WarpRequestHandler handler, WarpResponse response) {
+        super();
+        this.handler=handler;
+        this.response=response;
     }
-
-    public Container map(Request request, boolean update) {
-        if (DEBUG) this.debug("Trying to map request to context");
-        if (request instanceof WarpRequest) {
-            WarpRequest r=(WarpRequest)request;
-
-    	    Container children[]=this.findChildren();
-    	    for (int x=0; x<children.length; x++) {
-    	        if (children[x] instanceof WarpContext) {
-    	            WarpContext c=(WarpContext)children[x];
-    	            if (r.getRequestedApplicationID()==c.getApplicationID()) {
-    	                ((WarpRequest)request).setContextPath(c.getPath());
-    	                return(children[x]);
-    	            }
-                }
-            }
-        }
-        if (DEBUG) this.debug("Trying to map request to context (std)");
-        return(super.map(request,update));
+    
+    public void write(int k)
+    throws IOException {
+        if (closed) throw new IOException();
+        buffer[pos++]=(byte)k;
+        if (pos==4096) this.flush();
     }
-
-    /**
-     * Add a new context to this host.
-     */
-    public void addChild(Container container) {
-        if (container instanceof WarpContext) {
-            WarpContext cont=(WarpContext)container;
-            cont.setApplicationID(this.applid++);
-            if (DEBUG) this.debug("Adding context for path \""+cont.getName()+
-                                  "\" with ID="+cont.getApplicationID());
-            super.addChild(cont);
-        } else {
-            throw new IllegalArgumentException("Cannot add context class "+
-                             container.getClass().getName()+" to WarpContext");
-        }
+    
+    public void flush()
+    throws IOException {
+        if (closed) throw new IOException();
+        if (DEBUG) this.debug("Flushing "+pos+" bytes");
+        this.response.sendHeaders();
+        this.handler.send(WarpConstants.TYP_REQUEST_DAT,buffer,0,pos);
+        pos=0;
     }
-
-    // ----------------------------------------------------------- BEAN METHODS
-
-    /**
-     * Return the Host ID associated with this WarpHost instance.
-     */
-    protected int getHostID() {
-        return(this.id);
-    }
-
-    /**
-     * Set the Host ID associated with this WarpHost instance.
-     */
-    protected void setHostID(int id) {
-        if (DEBUG) this.debug("Setting HostID for "+super.getName()+" to "+id);
-        this.id=id;
+    
+    public void close()
+    throws IOException {
+        if (closed) throw new IOException();
+        this.flush();
+        closed=true;
+        if (DEBUG) this.debug("Closed");
     }
 
     // ------------------------------------------------------ DEBUGGING METHODS

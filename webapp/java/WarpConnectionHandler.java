@@ -91,14 +91,15 @@ public class WarpConnectionHandler extends WarpHandler {
      *         false if this was the last packet.
      */
     public boolean process(int type, byte buffer[]) {
-        WarpEngine engine=(WarpEngine)this.getConnector().getContainer();
+        WarpConnector connector=this.getConnector();
+        WarpEngine engine=(WarpEngine)connector.getContainer();
 
         this.reader.reset(buffer);
         this.packet.reset();
         try {
             switch (type) {
                 case WarpConstants.TYP_CONINIT_HST: {
-                    String name=reader.readString()+":"+reader.readShort();
+                    String name=reader.readString()+"."+reader.readShort();
                     
                     // Retrieve this host id
                     int hid=engine.setupChild(name).getHostID();
@@ -126,12 +127,7 @@ public class WarpConnectionHandler extends WarpHandler {
                     }
 
                     // Retrieve this application (based on the path)
-                    WarpContext cont=(WarpContext)host.findChild(path);
-                    // Check if we can find it by application name
-                    if (cont==null)
-                        cont=(WarpContext)host.findChild('/'+name);
-
-                    // We definitely didn't find the application
+                    WarpContext cont=(WarpContext)host.findChild('/'+name);
                     if (cont==null) {
                         this.log("Application "+name+" with path "+path+
                                  " not found");
@@ -142,10 +138,11 @@ public class WarpConnectionHandler extends WarpHandler {
 
                     // Ok, we found the right application
                     int aid=cont.getApplicationID();
-                    cont.setPath(path);
+                    cont.setPath('/'+name);
                     cont.setDisplayName(name);
                     if (DEBUG) this.debug("Application "+name+" mapped in "+
                                           host.getName()+path+" has ID "+aid);
+
                     // Send the APPLICATION ID back to the WARP client
                     this.packet.reset();
                     this.packet.writeShort(aid);
@@ -154,28 +151,44 @@ public class WarpConnectionHandler extends WarpHandler {
                 }
 
                 case WarpConstants.TYP_CONINIT_REQ: {
+                    // Get the Host and Application IDs
+                    int hid=reader.readShort();
+                    int aid=reader.readShort();
+                    if (DEBUG) this.debug("Request for HID="+hid+" AID="+aid);
+
                     // Create a new WarpRequestHandler and register it with
                     // an unique RID.
-                    int r=this.request;
+                    int rid=this.request;
                     WarpConnection c=this.getConnection();
                     WarpRequestHandler h=new WarpRequestHandler();
-                    // Iterate until a valid RID is found
-                    c.registerHandler(h,r);
-                    this.request=r+1;
+
+                    // TODO: Iterate until a valid RID is found
+                    c.registerHandler(h,rid);
+                    this.request=rid+1;
                     h.setConnection(c);
-                    h.setRequestID(r);
+                    h.setRequestID(rid);
+                    
+                    // Send the RID back to the WARP client
+                    this.packet.reset();
+                    this.packet.writeShort(rid);
+                    this.send(WarpConstants.TYP_CONINIT_RID,this.packet);
+                    
+                    // Create new Request and Response objects.
+                    h.request=(WarpRequest)connector.createRequest();
+                    h.response=(WarpResponse)connector.createResponse();
+                    h.request.setRequestID(rid);
+                    h.request.setRequestedHostID(hid);
+                    h.request.setRequestedApplicationID(aid);
+                    h.request.setWarpRequestHandler(h);
+                    h.response.setWarpRequestHandler(h);
+
+                    // Start the request handler
                     try {
                         h.start();
                     } catch (Exception e) {
                         this.log(e);
                         h.stop();
                     }
-                    if (DEBUG) this.debug("CONINIT_REQ "+reader.readShort()+
-                                          ":"+reader.readShort()+"="+r);
-                    // Send the RID back to the WARP client
-                    this.packet.reset();
-                    this.packet.writeShort(r);
-                    this.send(WarpConstants.TYP_CONINIT_RID,this.packet);
                     break;
                 }
 

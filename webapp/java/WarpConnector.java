@@ -166,7 +166,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      * of a Response from the responsible Container.
      */
     public Response createResponse() {
-        HttpResponseBase response = new HttpResponseBase();
+        WarpResponse response=new WarpResponse();
         response.setConnector(this);
         return (response);
     }

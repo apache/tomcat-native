@@ -56,16 +56,29 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
-import javax.servlet.ServletException;
-import org.apache.catalina.Request;
-import org.apache.catalina.Response;
+import org.apache.catalina.connector.HttpResponseBase;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
-import org.apache.catalina.Container;
-import org.apache.catalina.core.StandardHost;
-import org.apache.catalina.core.StandardContext;
-import org.apache.catalina.startup.HostConfig;
-import org.apache.catalina.LifecycleException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.TimeZone;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpUtils;
+import org.apache.catalina.HttpResponse;
+import org.apache.catalina.Globals;
+import org.apache.catalina.Logger;
+import org.apache.catalina.util.CookieTools;
+import org.apache.catalina.util.RequestUtil;
 
 /**
  *
@@ -75,93 +88,131 @@ import org.apache.catalina.LifecycleException;
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpHost extends StandardHost {
+public class WarpResponse extends HttpResponseBase {
 
     // -------------------------------------------------------------- CONSTANTS
 
     /** Our debug flag status (Used to compile out debugging information). */
     private static final boolean DEBUG=WarpDebug.DEBUG;
-    /** The class used for contexts. */
-    private static String cc="org.apache.catalina.connector.warp.WarpContext";
 
-    // -------------------------------------------------------- LOCAL VARIABLES
+    /** The WarpRequestHandler associated with this response. */
+    private WarpRequestHandler handler=null;
 
-    /** The Warp Host ID of this Host. */
-    private int id=-1;
-    /** The ID to use for the next dynamically configured application. */
-    private int applid=0;
+    /** The WarpPacket used to write data. */
+    private WarpPacket packet=new WarpPacket();
+    
+    private boolean committed=false;
 
     /**
-     * Create a new instance of a WarpHost.
+     * Return the WarpRequestHandler associated with this response.
      */
-    public WarpHost() {
-        super();
-        HostConfig conf=new HostConfig();
-        conf.setContextClass(cc);
-        this.setContextClass(cc);
-        this.addLifecycleListener(conf);
-        this.setDebug(9);
+    protected WarpRequestHandler getWarpRequestHandler() {
+        return(this.handler);
     }
 
-    // --------------------------------------------------------- PUBLIC METHODS
-
-    public void invoke(Request req, Response res)
-    throws ServletException, IOException {
-        if (DEBUG) this.debug("Invoked");
-        super.invoke(req,res);
+    /**
+     * Set the WarpRequestHandler associated with this response.
+     */
+    protected void setWarpRequestHandler(WarpRequestHandler handler) {
+        this.handler=handler;
     }
 
-    public Container map(Request request, boolean update) {
-        if (DEBUG) this.debug("Trying to map request to context");
-        if (request instanceof WarpRequest) {
-            WarpRequest r=(WarpRequest)request;
+    public boolean isCommitted() {
+        return(this.committed);
+    }
 
-    	    Container children[]=this.findChildren();
-    	    for (int x=0; x<children.length; x++) {
-    	        if (children[x] instanceof WarpContext) {
-    	            WarpContext c=(WarpContext)children[x];
-    	            if (r.getRequestedApplicationID()==c.getApplicationID()) {
-    	                ((WarpRequest)request).setContextPath(c.getPath());
-    	                return(children[x]);
-    	            }
+    protected void sendHeaders() throws IOException {
+        if (DEBUG) this.debug("Sending status and headers");
+
+        if (isCommitted()) return;
+
+        this.packet.reset();
+        String prot=request.getRequest().getProtocol();
+        this.packet.writeString(prot);
+        this.packet.writeShort(status);
+        if (message != null) this.packet.writeString(message);
+        else this.packet.writeString("");
+        this.handler.send(WarpConstants.TYP_REQUEST_STA,this.packet);
+
+        if (DEBUG)
+            this.debug(prot+" "+status+((message==null)?(""):(" "+message)));
+
+        // Send the content-length and content-type headers (if any)
+        if (getContentType() != null) {
+            this.packet.reset();
+            this.packet.writeString("Content-Type");
+            this.packet.writeString(getContentType());
+            this.handler.send(WarpConstants.TYP_REQUEST_HDR,this.packet);
+            if (DEBUG) this.debug("Content-Type: "+getContentType());
+        }
+        
+        if (getContentLength() >= 0) {
+            this.packet.reset();
+            this.packet.writeString("Content-Length");
+            this.packet.writeString(Integer.toString(getContentLength()));
+            this.handler.send(WarpConstants.TYP_REQUEST_HDR,this.packet);
+            if (DEBUG) this.debug("Content-Type: "+getContentType());
+        }
+    
+        // Send all specified headers (if any)
+        synchronized (headers) {
+            Iterator names = headers.keySet().iterator();
+            while (names.hasNext()) {
+                String name = (String) names.next();
+                ArrayList values = (ArrayList) headers.get(name);
+                Iterator items = values.iterator();
+                while (items.hasNext()) {
+                    String value = (String) items.next();
+                    this.packet.reset();
+                    this.packet.writeString(name);
+                    this.packet.writeString(value);
+                    this.handler.send(WarpConstants.TYP_REQUEST_HDR,this.packet);
+                    if (DEBUG) this.debug(name+": "+value);
                 }
             }
         }
-        if (DEBUG) this.debug("Trying to map request to context (std)");
-        return(super.map(request,update));
-    }
 
-    /**
-     * Add a new context to this host.
-     */
-    public void addChild(Container container) {
-        if (container instanceof WarpContext) {
-            WarpContext cont=(WarpContext)container;
-            cont.setApplicationID(this.applid++);
-            if (DEBUG) this.debug("Adding context for path \""+cont.getName()+
-                                  "\" with ID="+cont.getApplicationID());
-            super.addChild(cont);
-        } else {
-            throw new IllegalArgumentException("Cannot add context class "+
-                             container.getClass().getName()+" to WarpContext");
+        // Add the session ID cookie if necessary
+        HttpServletRequest hreq=(HttpServletRequest)request.getRequest();
+        HttpSession session=hreq.getSession(false);
+
+        if ((session!=null) && session.isNew() && getContext().getCookies()) {
+
+            Cookie cookie=new Cookie(Globals.SESSION_COOKIE_NAME,session.getId());
+            cookie.setMaxAge(-1);
+            String contextPath = null;
+            
+            if (context != null) contextPath = context.getPath();
+            
+            if ((contextPath != null) && (contextPath.length() > 0)) {
+                cookie.setPath(contextPath);
+            } else {
+                cookie.setPath("/");
+            }
+            
+            if (hreq.isSecure()) cookie.setSecure(true);
+            addCookie(cookie);
         }
-    }
 
-    // ----------------------------------------------------------- BEAN METHODS
+        // Send all specified cookies (if any)
+        synchronized (cookies) {
+            Iterator items = cookies.iterator();
+            while (items.hasNext()) {
+                Cookie cookie = (Cookie) items.next();
+                String name=CookieTools.getCookieHeaderName(cookie);
+                String value=CookieTools.getCookieHeaderValue(cookie);
+                this.packet.reset();
+                this.packet.writeString(name);
+                this.packet.writeString(value);
+                this.handler.send(WarpConstants.TYP_REQUEST_HDR,this.packet);
+                if (DEBUG) this.debug(name+": "+value);
+            }
+        }
 
-    /**
-     * Return the Host ID associated with this WarpHost instance.
-     */
-    protected int getHostID() {
-        return(this.id);
-    }
-
-    /**
-     * Set the Host ID associated with this WarpHost instance.
-     */
-    protected void setHostID(int id) {
-        if (DEBUG) this.debug("Setting HostID for "+super.getName()+" to "+id);
-        this.id=id;
+        // Commit the headers
+        this.packet.reset();
+        this.handler.send(WarpConstants.TYP_REQUEST_CMT,this.packet);
+        this.committed = true;
     }
 
     // ------------------------------------------------------ DEBUGGING METHODS
@@ -179,4 +230,5 @@ public class WarpHost extends StandardHost {
     private void debug(Exception exc) {
         if (DEBUG) WarpDebug.debug(this,exc);
     }
+
 }

@@ -76,7 +76,7 @@ public abstract class WarpHandler implements Lifecycle, Runnable {
     // -------------------------------------------------------------- CONSTANTS
 
     /** Our debug flag status (Used to compile out debugging information). */
-    protected static final boolean DEBUG=WarpDebug.DEBUG;
+    protected static final boolean DEBUG=true; //WarpDebug.DEBUG;
 
     // -------------------------------------------------------- LOCAL VARIABLES
 

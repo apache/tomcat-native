@@ -102,10 +102,47 @@ public class WarpEngine extends StandardEngine {
      */
     public WarpEngine() {
         super();
+        super.addDefaultMapper(this.mapper);
         if (DEBUG) this.debug("New instance created");
+        this.setDebug(9);
     }
 
     // --------------------------------------------------------- PUBLIC METHODS
+
+    public void invoke(Request req, Response res)
+    throws ServletException, IOException {
+        if (DEBUG) this.debug("Invoked");
+        super.invoke(req,res);
+    }
+
+    public Container map(Request request, boolean update) {
+        if (DEBUG) this.debug("Trying to map request to host");
+        if (request instanceof WarpRequest) {
+            WarpRequest r=(WarpRequest)request;
+
+    	    Container children[]=this.findChildren();
+    	    for (int x=0; x<children.length; x++) {
+    	        if (children[x] instanceof WarpHost) {
+    	            WarpHost host=(WarpHost)children[x];
+    	            if (r.getRequestedHostID()==host.getHostID()) {
+    	                return(children[x]);
+    	            }
+                }
+            }
+        }
+        if (DEBUG) this.debug("Trying to map request to host (std)");
+        return(super.map(request,update));
+    }
+
+    /**
+     * Add a default Mapper implementation if none have been configured
+     * explicitly.
+     *
+     * @param mapperClass Java class name of the default Mapper
+     */
+    protected void addDefaultMapper(String mapper) {
+        super.addDefaultMapper(this.mapper);
+    }
 
     /**
      * Return descriptive information about this implementation.

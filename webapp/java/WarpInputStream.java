@@ -56,127 +56,30 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
-import javax.servlet.ServletException;
-import org.apache.catalina.Request;
-import org.apache.catalina.Response;
+import java.io.InputStream;
 import java.io.IOException;
-import java.net.URL;
-import org.apache.catalina.Container;
-import org.apache.catalina.core.StandardHost;
-import org.apache.catalina.core.StandardContext;
-import org.apache.catalina.startup.HostConfig;
-import org.apache.catalina.LifecycleException;
 
 /**
- *
  *
  * @author <a href="mailto:pier.fumagalli@eng.sun.com">Pier Fumagalli</a>
  * @author Copyright &copy; 1999, 2000 <a href="http://www.apache.org">The
  *         Apache Software Foundation.
  * @version CVS $Id$
  */
-public class WarpHost extends StandardHost {
-
-    // -------------------------------------------------------------- CONSTANTS
-
-    /** Our debug flag status (Used to compile out debugging information). */
-    private static final boolean DEBUG=WarpDebug.DEBUG;
-    /** The class used for contexts. */
-    private static String cc="org.apache.catalina.connector.warp.WarpContext";
-
-    // -------------------------------------------------------- LOCAL VARIABLES
-
-    /** The Warp Host ID of this Host. */
-    private int id=-1;
-    /** The ID to use for the next dynamically configured application. */
-    private int applid=0;
-
-    /**
-     * Create a new instance of a WarpHost.
-     */
-    public WarpHost() {
+public class WarpInputStream extends InputStream {
+    private WarpRequestHandler handler=null;
+    
+    private WarpInputStream() {
         super();
-        HostConfig conf=new HostConfig();
-        conf.setContextClass(cc);
-        this.setContextClass(cc);
-        this.addLifecycleListener(conf);
-        this.setDebug(9);
     }
-
-    // --------------------------------------------------------- PUBLIC METHODS
-
-    public void invoke(Request req, Response res)
-    throws ServletException, IOException {
-        if (DEBUG) this.debug("Invoked");
-        super.invoke(req,res);
+    
+    public WarpInputStream(WarpRequestHandler handler) {
+        super();
+        this.handler=handler;
     }
-
-    public Container map(Request request, boolean update) {
-        if (DEBUG) this.debug("Trying to map request to context");
-        if (request instanceof WarpRequest) {
-            WarpRequest r=(WarpRequest)request;
-
-    	    Container children[]=this.findChildren();
-    	    for (int x=0; x<children.length; x++) {
-    	        if (children[x] instanceof WarpContext) {
-    	            WarpContext c=(WarpContext)children[x];
-    	            if (r.getRequestedApplicationID()==c.getApplicationID()) {
-    	                ((WarpRequest)request).setContextPath(c.getPath());
-    	                return(children[x]);
-    	            }
-                }
-            }
-        }
-        if (DEBUG) this.debug("Trying to map request to context (std)");
-        return(super.map(request,update));
-    }
-
-    /**
-     * Add a new context to this host.
-     */
-    public void addChild(Container container) {
-        if (container instanceof WarpContext) {
-            WarpContext cont=(WarpContext)container;
-            cont.setApplicationID(this.applid++);
-            if (DEBUG) this.debug("Adding context for path \""+cont.getName()+
-                                  "\" with ID="+cont.getApplicationID());
-            super.addChild(cont);
-        } else {
-            throw new IllegalArgumentException("Cannot add context class "+
-                             container.getClass().getName()+" to WarpContext");
-        }
-    }
-
-    // ----------------------------------------------------------- BEAN METHODS
-
-    /**
-     * Return the Host ID associated with this WarpHost instance.
-     */
-    protected int getHostID() {
-        return(this.id);
-    }
-
-    /**
-     * Set the Host ID associated with this WarpHost instance.
-     */
-    protected void setHostID(int id) {
-        if (DEBUG) this.debug("Setting HostID for "+super.getName()+" to "+id);
-        this.id=id;
-    }
-
-    // ------------------------------------------------------ DEBUGGING METHODS
-
-    /**
-     * Dump a debug message.
-     */
-    private void debug(String msg) {
-        if (DEBUG) WarpDebug.debug(this,msg);
-    }
-
-    /**
-     * Dump information for an Exception.
-     */
-    private void debug(Exception exc) {
-        if (DEBUG) WarpDebug.debug(this,exc);
+    
+    public int read()
+    throws IOException {
+        return(-1);
     }
 }

@@ -98,4 +98,11 @@ public class WarpConstants {
     public static final int TYP_REQINIT_RUN = 0x0001D;
     public static final int TYP_REQINIT_ERR = 0x0001E;
     public static final int TYP_REQINIT_ACK = 0x0001F;
+    
+    public static final int TYP_REQUEST_STA = 0x00020;
+    public static final int TYP_REQUEST_HDR = 0x00021;
+    public static final int TYP_REQUEST_CMT = 0x00022;
+    public static final int TYP_REQUEST_DAT = 0x00023;
+    public static final int TYP_REQUEST_ERR = 0x0002E;
+    public static final int TYP_REQUEST_ACK = 0x0002F;
 }
