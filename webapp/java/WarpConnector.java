@@ -413,7 +413,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      *
      * @param appBase The appbase property.
      */
-    public void setAppBase(String appbase) {
+    public void setAppBase(String appBase) {
         this.appBase = appBase;
 
         if (Constants.DEBUG) logger.debug("Setting appBase to "+appBase);
