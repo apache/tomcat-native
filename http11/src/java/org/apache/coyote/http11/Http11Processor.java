@@ -1511,7 +1511,9 @@ public class Http11Processor implements Processor, ActionHook {
         }
          
         // Add server header
-        response.addHeader("Server", Constants.SERVER);
+        if (! response.containsHeader("Server")){
+            response.addHeader("Server", Constants.SERVER);
+        }
 
         // Add transfer encoding header
         // FIXME
