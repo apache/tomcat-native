@@ -71,6 +71,10 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManager;
 
 /*
   1. Make the JSSE's jars available, either as an installed
@@ -89,67 +93,17 @@ import javax.net.ssl.HandshakeCompletedEvent;
  * @author Stefan Freyr Stefansson
  * @author EKR -- renamed to JSSESocketFactory
  */
-public class JSSESocketFactory
-    extends org.apache.tomcat.util.net.ServerSocketFactory
-{
-    String keystoreType;
+public class JSSE14SocketFactory  extends JSSESocketFactory {
 
-    static String defaultKeystoreType = "JKS";
-    static String defaultProtocol = "TLS";
-    static String defaultAlgorithm = "SunX509";
-    static boolean defaultClientAuth = false;
-
-    boolean clientAuth = false;
-    SSLServerSocketFactory sslProxy = null;
-    
-    // defaults
-    static String defaultKeystoreFile=System.getProperty("user.home") +
-	"/.keystore";
-    static String defaultKeyPass="changeit";
-
-    
-    public JSSESocketFactory () {
+    public JSSE14SocketFactory () {
+	super();
     }
 
-    public ServerSocket createSocket (int port)
-	throws IOException
-    {
-	if( sslProxy == null ) initProxy();
-	ServerSocket socket = 
-	    sslProxy.createServerSocket(port);
-	initServerSocket(socket);
-	return socket;
-    }
-    
-    public ServerSocket createSocket (int port, int backlog)
-	throws IOException
-    {
-	if( sslProxy == null ) initProxy();
-	ServerSocket socket = 
-	    sslProxy.createServerSocket(port, backlog);
-	initServerSocket(socket);
-	return socket;
-    }
-    
-    public ServerSocket createSocket (int port, int backlog,
-				      InetAddress ifAddress)
-	throws IOException
-    {	
-	if( sslProxy == null ) initProxy();
-	ServerSocket socket = 
-	    sslProxy.createServerSocket(port, backlog, ifAddress);
-	initServerSocket(socket);
-	return socket;
-    }
-    
-    
     // -------------------- Internal methods
     /** Read the keystore, init the SSL socket factory
      */
     void initProxy() throws IOException {
 	try {
-	    Security.addProvider (new sun.security.provider.Sun());
-	    Security.addProvider (new com.sun.net.ssl.internal.ssl.Provider());
 
 	    // Please don't change the name of the attribute - other
 	    // software may depend on it ( j2ee for sure )
@@ -192,30 +146,26 @@ public class JSSESocketFactory
 	    // Create a KeyStore ( to get server certs )
 	    KeyStore kstore = initKeyStore( keystoreFile, keystorePass );
 	    
-	    // Create a SSLContext ( to create the ssl factory )
-	    // This is the only way to use server sockets with JSSE 1.0.1
-	    com.sun.net.ssl.SSLContext context = 
-		com.sun.net.ssl.SSLContext.getInstance(protocol); //SSL
+	    SSLContext context = SSLContext.getInstance(protocol); //SSL
 
 	    // Key manager will extract the server key
-	    com.sun.net.ssl.KeyManagerFactory kmf = 
-		com.sun.net.ssl.KeyManagerFactory.getInstance(algorithm);
+	    KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
 	    kmf.init( kstore, keyPass.toCharArray());
 
 	    //  set up TrustManager
-	    com.sun.net.ssl.TrustManager[] tm = null;
+	    TrustManager[] tm = null;
 	    String trustStoreFile = System.getProperty("javax.net.ssl.trustStore");
 	    String trustStorePassword =
 	        System.getProperty("javax.net.ssl.trustStorePassword");
 	    if ( trustStoreFile != null && trustStorePassword != null ){
-            KeyStore trustStore = initKeyStore( trustStoreFile, trustStorePassword);
+		KeyStore trustStore = 
+		    initKeyStore( trustStoreFile, trustStorePassword);
             
-            com.sun.net.ssl.TrustManagerFactory tmf =
-                com.sun.net.ssl.TrustManagerFactory.getInstance("SunX509");
+		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 
-            tmf.init(trustStore);
-            tm = tmf.getTrustManagers();
-        }
+		tmf.init(trustStore);
+		tm = tmf.getTrustManagers();
+	    }
 
 	    // init context with the key managers
 	    context.init(kmf.getKeyManagers(), tm, 
@@ -232,61 +182,4 @@ public class JSSESocketFactory
 	}
     }
 
-    public Socket acceptSocket(ServerSocket socket)
-	throws IOException
-    {
-	SSLSocket asock = null;
-	try {
-	     asock = (SSLSocket)socket.accept();
-	     asock.setNeedClientAuth(clientAuth);
-	} catch (SSLException e){
-	  throw new SocketException("SSL handshake error" + e.toString());
-	}
-	return asock;
-    }
-     
-    /** Set server socket properties ( accepted cipher suites, etc)
-     */
-    void initServerSocket(ServerSocket ssocket) {
-	SSLServerSocket socket=(SSLServerSocket)ssocket;
-
-	// We enable all cipher suites when the socket is
-	// connected - XXX make this configurable 
-	String cipherSuites[] = socket.getSupportedCipherSuites();
-	socket.setEnabledCipherSuites(cipherSuites);
-
-	// we don't know if client auth is needed -
-	// after parsing the request we may re-handshake
-	socket.setNeedClientAuth(clientAuth);
-    }
-
-    KeyStore initKeyStore( String keystoreFile,
-				   String keyPass)
-	throws IOException
-    {
-	InputStream istream = null;
-	try {
-	    KeyStore kstore=KeyStore.getInstance( keystoreType );
-	    istream = new FileInputStream(keystoreFile);
-	    kstore.load(istream, keyPass.toCharArray());
-	    return kstore;
-	}
-	catch (FileNotFoundException fnfe) {
-	    throw fnfe;
-	}
-	catch (IOException ioe) {
-	    throw ioe;	    
-	}
-	catch(Exception ex) {
-	    ex.printStackTrace();
-	    throw new IOException( "Exception trying to load keystore " +
-				   keystoreFile + ": " + ex.getMessage() );
-	}
-    }
-
-    public void handshake(Socket sock)
-	 throws IOException
-    {
-	((SSLSocket)sock).startHandshake();
-    }
 }

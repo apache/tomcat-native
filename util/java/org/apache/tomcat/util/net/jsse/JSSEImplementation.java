@@ -59,6 +59,7 @@
 
 package org.apache.tomcat.util.net.jsse;
 
+import org.apache.tomcat.util.compat.JdkCompat;
 import org.apache.tomcat.util.net.SSLImplementation;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.ServerSocketFactory;
@@ -75,6 +76,8 @@ import javax.net.ssl.SSLSocket;
 	
 public class JSSEImplementation extends SSLImplementation
 {
+    static final String JSSE14SocketFactory = 
+	"org.apache.tomcat.net.jsse.JSSE11SocketFactory";
     public JSSEImplementation() throws ClassNotFoundException {
 	// Check to see if JSSE is floating around somewhere
 	Class.forName("javax.net.ssl.SSLServerSocketFactory");
@@ -87,7 +90,18 @@ public class JSSEImplementation extends SSLImplementation
       
     public ServerSocketFactory getServerSocketFactory()
     {
-	return new JSSESocketFactory();
+	ServerSocketFactory ssf = null;
+	if( JdkCompat.isJava14() ) {
+	    try {
+		Class ssfCl = Class.forName(JSSE14SocketFactory);
+		ssf =(ServerSocketFactory)ssfCl.newInstance();
+	    } catch(Exception ex) {
+		ssf = new JSSESocketFactory();
+	    }
+	} else {
+	    ssf = new JSSESocketFactory();
+	}
+	return ssf;
     } 
 
     public SSLSupport getSSLSupport(Socket s)
