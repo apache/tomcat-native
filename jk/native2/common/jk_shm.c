@@ -433,8 +433,8 @@ static int JK_METHOD jk2_shm_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_
         return JK_OK;
     }
     case SHM_DUMP: {
-        char *name=msg->getString( env, msg );
 #if 0
+        char *name=msg->getString( env, msg );
         /* XXX do we realy need that */
         jk2_shm_dump( env, shm, name );
 #endif
