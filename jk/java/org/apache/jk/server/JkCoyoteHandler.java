@@ -239,7 +239,7 @@ public class JkCoyoteHandler extends JkHandler implements
             if( actionCode==ActionCode.ACTION_COMMIT ) {
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
 
-                if(  res.isCommited() ) {
+                if(  res.isCommitted() ) {
                     if( log.isInfoEnabled() )
                         log.info("Response already commited " );
                 } else {
