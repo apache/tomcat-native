@@ -7,12 +7,14 @@
   <property file="build.properties"/>                <!-- Component local   -->
   <property file="build.properties.default"/>
 
+  <property name="dist.dir" location="dist" />
+  <property name="lib.dir" location="${dist.dir}/lib" />
+  <property name="build.dir" location="build" />
+
+
 
   <target name="dist" 
           description="Compile jtc">
-    <property name="lib.dir" location="dist/lib" />
-    <property name="build.dir" location="build" />
-
     <mkdir dir="${build.dir}/classes" />
     <mkdir dir="${lib.dir}" />
     
@@ -60,7 +62,11 @@
       <property name="tomcat-jni.jar" value="${lib.dir}/tomcat-jni.jar" />
     </ant>
 
-    <mkdir dir="${dist.dir}/javadoc"/>
+  </target>
+
+  <target name="javadoc" 
+          description="javadocs">
+    <mkdir dir="${dist.dir}/doc/api"/>
     <path id="compile.classpath">
         <pathelement location="${build.dir}/classes" />
         <pathelement location="${jmx.jar}" />
@@ -72,29 +78,21 @@
         <pathelement location="${commons-logging.jar}" />
         <pathelement location="${commons-modeler.jar}" />
     </path>
-  </target>
-
-  <target name="javadoc" 
-          description="javadocs">
     <javadoc 
-      destdir="${dist.dir}/javadoc"
+      destdir="${dist.dir}/doc/api"
       author="true"
       version="true"
       windowtitle="Tomcat Connector Documentation"
       doctitle="Tomcat Connector"
       bottom="Copyright &#169; 2003 Apache Software Foundation.  All Rights Reserved.">
-      <packageset>
-        <include name="org.apache.tomcat.util"/>
-        <include name="org.apache.tomcat.jk"/>
-        <include name="org.apache.tomcat.coyote"/>
-        <include name="org.apache.tomcat.coyote.http11"/>
-      </packageset>
-      <sourcepath>
-        <path location="util/java"/>
-        <path location="coyote/java"/>
-        <path location="jk/java"/>
-        <path location="http11/java"/>
-      </sourcepath>
+
+      <fileset dir="util/java" includes="**/*.java"/>
+      <fileset dir="coyote/src/java" includes="**/*.java">
+      </fileset>
+      <fileset dir="http11/src/java" includes="**/*.java"/>
+      <fileset dir="jk/java" includes="**/*.java">
+        <exclude name="org/apache/ajp/**"/>
+      </fileset>
       <classpath refid="compile.classpath"/>
     </javadoc>
 
