@@ -341,6 +341,12 @@ public final class CharChunk implements Cloneable, Serializable {
 
     /** Append a string to the buffer
      */
+    public void append(String s) throws IOException {
+        append(s, 0, s.length());
+    }
+    
+    /** Append a string to the buffer
+     */
     public void append(String s, int off, int len) throws IOException {
 	if (s==null) return;
 	

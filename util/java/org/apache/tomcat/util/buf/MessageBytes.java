@@ -229,13 +229,20 @@ public final class MessageBytes implements Cloneable, Serializable {
     /** Unimplemented yet. Do a char->byte conversion.
      */
     public void toBytes() {
-	// XXX todo - not used yet
+        type=T_BYTES;
+        if( ! byteC.isNull() ) {
+            return;
+        }
+        toString();
+        byte bb[] = strValue.getBytes();
+        byteC.setBytes(bb, 0, bb.length);
     }
 
     /** Convert to char[] and fill the CharChunk.
      *  XXX Not optimized - it converts to String first.
      */
     public void toChars() {
+        type=T_CHARS;
 	if( ! charC.isNull() ) {
 	    return;
 	}
@@ -243,7 +250,6 @@ public final class MessageBytes implements Cloneable, Serializable {
 	toString();
 	char cc[]=strValue.toCharArray();
 	charC.setChars(cc, 0, cc.length);
-	type=T_CHARS;
     }
     
 
