@@ -239,6 +239,7 @@ public class Ajp13
      */
     public int receiveNextRequest(Request req) throws IOException 
     {
+	System.out.println("XXX");
 	// XXX The return values are awful.
 
 	int err = receive(hBuf);
@@ -650,6 +651,7 @@ public class Ajp13
      * was an error.
      **/
     protected int receive(AjpPacket msg) throws IOException {
+	System.out.println("YYYY");
 	// XXX If the length in the packet header doesn't agree with the
 	// actual number of bytes read, it should probably return an error
 	// value.  Also, callers of this method never use the length

@@ -96,116 +96,132 @@ import org.apache.tomcat.util.buf.HexUtils;
  */
 public class Ajp14 extends Ajp13
 {
-	// AJP14 commands
+    // Original AJP13 commands    
+    // Prefix codes for message types from server to container
+    public static final byte JK_AJP13_FORWARD_REQUEST   = 2;
+    public static final byte JK_AJP13_SHUTDOWN          = 7;
+	
+    // Prefix codes for message types from container to server
+    public static final byte JK_AJP13_SEND_BODY_CHUNK   = 3;
+    public static final byte JK_AJP13_SEND_HEADERS      = 4;
+    public static final byte JK_AJP13_END_RESPONSE      = 5;
+    public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
+    
 
- 	// Initial Login Phase (web server -> servlet engine)
-	public static final byte JK_AJP14_LOGINIT_CMD			= 0x10;
- 
- 	// Second Login Phase (servlet engine -> web server), md5 seed is received
-	public static final byte JK_AJP14_LOGSEED_CMD			= 0x11;
- 
-	// Third Login Phase (web server -> servlet engine), md5 of seed + secret is sent
-	public static final byte JK_AJP14_LOGCOMP_CMD			= 0x12;
 
-	// Login Accepted (servlet engine -> web server)
-	public static final byte JK_AJP14_LOGOK_CMD         	= 0x13;
+    // New AJP14 commands
+    
+    // Initial Login Phase (web server -> servlet engine)
+    public static final byte JK_AJP14_LOGINIT_CMD			= 0x10;
+    
+    // Second Login Phase (servlet engine -> web server), md5 seed is received
+    public static final byte JK_AJP14_LOGSEED_CMD			= 0x11;
+    
+    // Third Login Phase (web server -> servlet engine), md5 of seed + secret is sent
+    public static final byte JK_AJP14_LOGCOMP_CMD			= 0x12;
+    
+    // Login Accepted (servlet engine -> web server)
+    public static final byte JK_AJP14_LOGOK_CMD         	= 0x13;
 
-	// Login Rejected (servlet engine -> web server), will be logged
+    // Login Rejected (servlet engine -> web server), will be logged
 	public static final byte JK_AJP14_LOGNOK_CMD        	= 0x14;
+    
+    // Context Query (web server -> servlet engine), which URI are handled by servlet engine ?
+    public static final byte JK_AJP14_CONTEXT_QRY_CMD		= 0x15;
+    
+    // Context Info (servlet engine -> web server), URI handled response
+    public static final byte JK_AJP14_CONTEXT_INFO_CMD		= 0x16;
+    
+    // Context Update (servlet engine -> web server), status of context changed
+    public static final byte JK_AJP14_CONTEXT_UPDATE_CMD	= 0x17;
+    
+    // Servlet Engine Status (web server -> servlet engine), what's the status of the servlet engine ?
+    public static final byte JK_AJP14_STATUS_CMD			= 0x18;
+    
+    // Secure Shutdown command (web server -> servlet engine), please servlet stop yourself.
+    public static final byte JK_AJP14_SHUTDOWN_CMD			= 0x19;
+    
+    // Secure Shutdown command Accepted (servlet engine -> web server)
+    public static final byte JK_AJP14_SHUTOK_CMD			= 0x1A;
+    
+    // Secure Shutdown Rejected (servlet engine -> web server)
+    public static final byte JK_AJP14_SHUTNOK_CMD           = 0x1B;
+    
+    // Context Status (web server -> servlet engine), what's the status of the context ?
+    public static final byte JK_AJP14_CONTEXT_STATE_CMD     = 0x1C;
+    
+    // Context Status Reply (servlet engine -> web server), status of context
+    public static final byte JK_AJP14_CONTEXT_STATE_REP_CMD = 0x1D;
+    
+    // Unknown Packet Reply (web server <-> servlet engine), when a packet couldn't be decoded
+    public static final byte JK_AJP14_UNKNOW_PACKET_CMD     = 0x1E;
 
- 	// Context Query (web server -> servlet engine), which URI are handled by servlet engine ?
-	public static final byte JK_AJP14_CONTEXT_QRY_CMD		= 0x15;
 
- 	// Context Info (servlet engine -> web server), URI handled response
-	public static final byte JK_AJP14_CONTEXT_INFO_CMD		= 0x16;
+    // -------------------- Other constants -------------------- 
 
-	// Context Update (servlet engine -> web server), status of context changed
-	public static final byte JK_AJP14_CONTEXT_UPDATE_CMD	= 0x17;
-
-	// Servlet Engine Status (web server -> servlet engine), what's the status of the servlet engine ?
-	public static final byte JK_AJP14_STATUS_CMD			= 0x18;
-
-	// Secure Shutdown command (web server -> servlet engine), please servlet stop yourself.
-	public static final byte JK_AJP14_SHUTDOWN_CMD			= 0x19;
-
-	// Secure Shutdown command Accepted (servlet engine -> web server)
-	public static final byte JK_AJP14_SHUTOK_CMD			= 0x1A;
-
-	// Secure Shutdown Rejected (servlet engine -> web server)
-	public static final byte JK_AJP14_SHUTNOK_CMD           = 0x1B;
-
-	// Context Status (web server -> servlet engine), what's the status of the context ?
-	public static final byte JK_AJP14_CONTEXT_STATE_CMD     = 0x1C;
-
-	// Context Status Reply (servlet engine -> web server), status of context
-	public static final byte JK_AJP14_CONTEXT_STATE_REP_CMD = 0x1D;
-
-	// Unknown Packet Reply (web server <-> servlet engine), when a packet couldn't be decoded
-	public static final byte JK_AJP14_UNKNOW_PACKET_CMD     = 0x1E;
-
-	// Entropy Packet Size
-	public static final int	 AJP14_ENTROPY_SEED_LEN 		= 32;
-	public static final int	 AJP14_COMPUTED_KEY_LEN 		= 32;
-
-	// web-server want context info after login
-	public static final int	 AJP14_CONTEXT_INFO_NEG			= 0x80000000;
-
-	// web-server want context updates
-	public static final int	 AJP14_CONTEXT_UPDATE_NEG		= 0x40000000;
-
-	// web-server want compressed stream
-	public static final int  AJP14_GZIP_STREAM_NEG			= 0x20000000;
-
-	// web-server want crypted DES56 stream with secret key
-	public static final int  AJP14_DES56_STREAM_NEG      	= 0x10000000;
-
-	// Extended info on server SSL vars
-	public static final int  AJP14_SSL_VSERVER_NEG			= 0x08000000;
-
-	// Extended info on client SSL vars
-	public static final int  AJP14_SSL_VCLIENT_NEG			= 0x04000000;
-
-	// Extended info on crypto SSL vars
-	public static final int	 AJP14_SSL_VCRYPTO_NEG			= 0x02000000;
-
-	// Extended info on misc SSL vars
-	public static final int  AJP14_SSL_VMISC_NEG         	= 0x01000000;
-
-	// mask of protocol supported
-	public static final int  AJP14_PROTO_SUPPORT_AJPXX_NEG  = 0x00FF0000;
-
-	// communication could use AJP14
-	public static final int  AJP14_PROTO_SUPPORT_AJP14_NEG  = 0x00010000;
-
-	// communication could use AJP15
-	public static final int  AJP14_PROTO_SUPPORT_AJP15_NEG  = 0x00020000;
-
-	// communication could use AJP16
-	public static final int  AJP14_PROTO_SUPPORT_AJP16_NEG  = 0x00040000;
-
-	// Some failure codes
-	public static final int  AJP14_BAD_KEY_ERR				 = 0xFFFFFFFF;
-	public static final int  AJP14_ENGINE_DOWN_ERR           = 0xFFFFFFFE;
-	public static final int  AJP14_RETRY_LATER_ERR           = 0xFFFFFFFD;
-	public static final int  AJP14_SHUT_AUTHOR_FAILED_ERR    = 0xFFFFFFFC;
-
-	// Some status codes
-	public static final byte AJP14_CONTEXT_DOWN       		 = 0x01;
-	public static final byte AJP14_CONTEXT_UP         		 = 0x02;
-	public static final byte AJP14_CONTEXT_OK         		 = 0x03;
-
-	// AJP14 new header
+    // Entropy Packet Size
+    public static final int	 AJP14_ENTROPY_SEED_LEN 		= 32;
+    public static final int	 AJP14_COMPUTED_KEY_LEN 		= 32;
+    
+    // web-server want context info after login
+    public static final int	 AJP14_CONTEXT_INFO_NEG			= 0x80000000;
+    
+    // web-server want context updates
+    public static final int	 AJP14_CONTEXT_UPDATE_NEG		= 0x40000000;
+    
+    // web-server want compressed stream
+    public static final int  AJP14_GZIP_STREAM_NEG			= 0x20000000;
+    
+    // web-server want crypted DES56 stream with secret key
+    public static final int  AJP14_DES56_STREAM_NEG      	= 0x10000000;
+    
+    // Extended info on server SSL vars
+    public static final int  AJP14_SSL_VSERVER_NEG			= 0x08000000;
+    
+    // Extended info on client SSL vars
+    public static final int  AJP14_SSL_VCLIENT_NEG			= 0x04000000;
+    
+    // Extended info on crypto SSL vars
+    public static final int	 AJP14_SSL_VCRYPTO_NEG			= 0x02000000;
+    
+    // Extended info on misc SSL vars
+    public static final int  AJP14_SSL_VMISC_NEG         	= 0x01000000;
+    
+    // mask of protocol supported
+    public static final int  AJP14_PROTO_SUPPORT_AJPXX_NEG  = 0x00FF0000;
+    
+    // communication could use AJP14
+    public static final int  AJP14_PROTO_SUPPORT_AJP14_NEG  = 0x00010000;
+    
+    // communication could use AJP15
+    public static final int  AJP14_PROTO_SUPPORT_AJP15_NEG  = 0x00020000;
+    
+    // communication could use AJP16
+    public static final int  AJP14_PROTO_SUPPORT_AJP16_NEG  = 0x00040000;
+    
+    // Some failure codes
+    public static final int  AJP14_BAD_KEY_ERR				 = 0xFFFFFFFF;
+    public static final int  AJP14_ENGINE_DOWN_ERR           = 0xFFFFFFFE;
+    public static final int  AJP14_RETRY_LATER_ERR           = 0xFFFFFFFD;
+    public static final int  AJP14_SHUT_AUTHOR_FAILED_ERR    = 0xFFFFFFFC;
+    
+    // Some status codes
+    public static final byte AJP14_CONTEXT_DOWN       		 = 0x01;
+    public static final byte AJP14_CONTEXT_UP         		 = 0x02;
+    public static final byte AJP14_CONTEXT_OK         		 = 0x03;
+    
+    // AJP14 new header
     public static final byte SC_A_SSL_KEY_SIZE  = 11;
 
     // ============ Instance Properties ====================
 
-	// AJP14 
-	boolean		logged 					= false;
-	int			webserverNegociation	= 0;
-	String		webserverName;
-	String		seed;
-	String		password;
-
+    // AJP14 
+    boolean		logged 					= false;
+    int			webserverNegociation	= 0;
+    String		webserverName;
+    String		seed;
+    String		password;
+    
     public Ajp14() 
     {
         super();
@@ -213,50 +229,50 @@ public class Ajp14 extends Ajp13
 		setPassword("myverysecretkey");
     }
 
-	public void initBuf()
-	{	
-		outBuf = new Ajp14Packet( headersWriter );
-		inBuf  = new Ajp14Packet( MAX_PACKET_SIZE );
-		hBuf   = new Ajp14Packet( MAX_PACKET_SIZE );
-	}
-
-	/**
-	 * Set the original entropy seed
+    public void initBuf()
+    {	
+	outBuf = new Ajp14Packet( headersWriter );
+	inBuf  = new Ajp14Packet( MAX_PACKET_SIZE );
+	hBuf   = new Ajp14Packet( MAX_PACKET_SIZE );
+    }
+    
+    /**
+     * Set the original entropy seed
      */
-	public void setSeed(String pseed) 
-	{
-		String[] credentials = new String[1];
-		credentials[0] = pseed;
-		seed = digest(credentials, "md5");
-	}
+    public void setSeed(String pseed) 
+    {
+	String[] credentials = new String[1];
+	credentials[0] = pseed;
+	seed = digest(credentials, "md5");
+    }
 
-	/**
-	 * Get the original entropy seed
-	 */
-	public String getSeed()
-	{
-		return seed;
-	}
-
-	/**
-	 * Set the secret password
+    /**
+     * Get the original entropy seed
      */
-	public void setPassword(String ppwd) 
-	{
-		password = ppwd;
-	}
+    public String getSeed()
+    {
+	return seed;
+    }
 
-	/**
-	 * Get the secret password
-	 */
-	public String getPassword()
-	{
-		return password;
-	}
-
-	/**
-	 * Compute a digest (MD5 in AJP14) for an array of String
-	 */
+    /**
+     * Set the secret password
+     */
+    public void setPassword(String ppwd) 
+    {
+	password = ppwd;
+    }
+    
+    /**
+     * Get the secret password
+     */
+    public String getPassword()
+    {
+	return password;
+    }
+    
+    /**
+     * Compute a digest (MD5 in AJP14) for an array of String
+     */
     public final static String digest(String[] credentials, String algorithm) {
         try {
             // Obtain a new message digest with MD5 encryption
@@ -275,6 +291,8 @@ public class Ajp14 extends Ajp13
         }
     }
 
+    
+    
     /**
      * Read a new packet from the web server and decode it.  If it's a
      * forwarded request, store its properties in the passed-in Request
@@ -289,13 +307,15 @@ public class Ajp14 extends Ajp13
     public int receiveNextRequest(Request req) throws IOException 
     {
 	// XXX The return values are awful.
-
 	int err = receive(hBuf);
 	if(err < 0) {
+	    if(debug >0 ) log( "Error receiving message ");
 	    return 500;
 	}
 	
 	int type = (int)hBuf.getByte();
+	if( debug > 0 ) log( "Received " + type + " " + MSG_NAME[type]);
+	
 	switch(type) {
 	    
 	case JK_AJP13_FORWARD_REQUEST:
@@ -550,6 +570,64 @@ public class Ajp14 extends Ajp13
 		return 500; // Error
 	}
 
+    // ========= Internal Packet-Handling Methods =================
+
+    /**
+     * Read in a packet from the web server and store it in the passed-in
+     * <CODE>Ajp13Packet</CODE> object.
+     *
+     * @param msg The object into which to store the incoming packet -- any
+     * current contents will be overwritten.
+     *
+     * @return The number of bytes read on a successful read or -1 if there 
+     * was an error.
+     **/
+    protected int receive(AjpPacket msg) throws IOException {
+	// XXX If the length in the packet header doesn't agree with the
+	// actual number of bytes read, it should probably return an error
+	// value.  Also, callers of this method never use the length
+	// returned -- should probably return true/false instead.
+	byte b[] = msg.getBuff();
+
+	if( debug > 5 ) log( "Reading head " );
+	int rd = in.read( b, 0, H_SIZE );
+	if(rd <= 0) {
+	    if( debug > 5 ) log( "Error reading " + rd );
+	    return rd; 
+	}
+	if( debug > 5 ) log( "Read " + rd );
+	
+	int len = msg.checkIn();
+	
+	// XXX check if enough space - it's assert()-ed !!!
+
+ 	int total_read = 0;
+  	while (total_read < len) {
+	    rd = in.read( b, 4 + total_read, len - total_read);
+            if (rd == -1) {
+ 		System.out.println( "Incomplete read, deal with it " + len + " " + rd);
+                break;
+		// XXX log
+		// XXX Return an error code?
+	    }
+     	    total_read += rd;
+	}
+	return total_read;
+    }
+
+    /**
+     * Send a packet to the web server.  Works for any type of message.
+     *
+     * @param msg A packet with accumulated data to send to the server --
+     * this method will write out the length in the header.  
+     */
+    protected void send( AjpPacket msg ) throws IOException {
+	msg.end(); // Write the packet header
+	byte b[] = msg.getBuff();
+	int len  = msg.getLen();
+	out.write( b, 0, len );
+    }
+	
     /**
      * Close the socket connection to the web server.  In general, sockets
      * are maintained across many requests, so this will not be called
@@ -567,4 +645,44 @@ public class Ajp14 extends Ajp13
 
 	logged = false;	// no more logged now 
     }
-}
+
+
+    
+    // -------------------- Debugging --------------------
+    // Very usefull for develoment
+    
+    // Debugging names
+    public final String MSG_NAME[]={
+	null, // 0
+	null, // 1
+	"JK_AJP13_FORWARD_REQUEST", // 2
+	"JK_AJP13_SEND_BODY_CHUNK", // 3
+	"JK_AJP13_SEND_HEADERS", // 4
+	"JK_AJP13_END_RESPONSE", // 5
+	"JK_AJP13_GET_BODY_CHUNK", // 6
+	"JK_AJP13_SHUTDOWN", // 7
+	null, null, null, null, // 8, 9, A, B
+	null, null, null, null,
+	"JK_AJP14_LOGINIT_CMD", // 0x10
+	"JK_AJP14_LOGSEED_CMD", // 0x11
+	"JK_AJP14_LOGCOMP_CMD", // 0x12
+	"JK_AJP14_LOGOK_CMD", // 0x13
+	"JK_AJP14_LOGNOK_CMD", // 0x14
+	"JK_AJP14_CONTEXT_QRY_CMD", // 0x15
+	"JK_AJP14_CONTEXT_INFO_CMD", // 0x16
+	"JK_AJP14_CONTEXT_UPDATE_CMD", // 0x17
+	"JK_AJP14_STATUS_CMD", // 0x18
+	"JK_AJP14_SHUTDOWN_CMD", // 0x19
+	"JK_AJP14_SHUTOK_CMD", // 0x1A
+	"JK_AJP14_SHUTNOK_CMD", // 0x1B
+	"JK_AJP14_CONTEXT_STATE_CMD ", // 0x1C
+	"JK_AJP14_CONTEXT_STATE_REP_CMD ", // 0x1D
+	"JK_AJP14_UNKNOW_PACKET_CMD " // 0x1E,
+    };
+
+    
+    private static int debug=10;
+    void log(String s) {
+	System.out.println("Ajp14: " + s );
+    }
+ }

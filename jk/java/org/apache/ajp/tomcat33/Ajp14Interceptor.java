@@ -71,81 +71,119 @@ import org.apache.tomcat.util.net.*;
 import org.apache.tomcat.util.*;
 import org.apache.tomcat.util.log.*;
 
+/** Note. PoolTcpConnector is a convenience base class used for
+    TCP-based connectors in tomcat33. It allows all those modules
+    to share the thread pool and listener code.
+
+    In future it's likely other optimizations will be implemented in
+    the PoolTcpConnector, so it's better to use it if you don't have
+    a good reason not to ( like a connector for J2ME, where you want
+    minimal footprint and don't care about high load )
+*/
+
+/** Tomcat 33 module implementing the Ajp14 protocol.
+ *
+ *  The actual protocol implementation is in Ajp14.java, this is just an
+ *  adapter to plug it into tomcat.
+ */
 public class Ajp14Interceptor extends PoolTcpConnector
     implements  TcpConnectionHandler
 {
+    int ajp14_note=-1;
+    
     public Ajp14Interceptor()
     {
         super();
     }
 
+    // initialization
+    public void engineInit(ContextManager cm) throws TomcatException {
+	super.engineInit( cm );
+	ajp14_note=cm.getNoteId( ContextManager.REQUEST_NOTE, "ajp14" );
+    }
+
+    // -------------------- Ajp14 specific parameters --------------------
+
+
+    
     // -------------------- PoolTcpConnector --------------------
 
+    /** Called by PoolTcpConnector to allow childs to init.
+     */
     protected void localInit() throws Exception {
 	ep.setConnectionHandler( this );
     }
 
     // -------------------- Handler implementation --------------------
-    
+
+    /*  The TcpConnectionHandler interface is used by the PoolTcpConnector to
+     *  handle incoming connections.
+     */
+
+    /** Called by the thread pool when a new thread is added to the pool,
+	in order to create the (expensive) objects that will be stored
+	as thread data.
+	XXX we should use a single object, not array ( several reasons ),
+	XXX Ajp14 should be storead as a request note, to be available in
+	all modules
+    */
     public Object[] init()
     {
-        Object thData[]=new Object[3];
-        Ajp14Request req=new Ajp14Request();
-        Ajp14Response res=new Ajp14Response();
-        cm.initRequest(req, res);
-        thData[0]=req;
-        thData[1]=res;
-        thData[2]=new Ajp14();
-
-        return  thData;
+        Object thData[]=new Object[1];
+	thData[0]=initRequest( null );
+	return thData;
     }
 
-    // XXX
-    //    Nothing overriden, right now AJPRequest implment AJP and read
-    // everything.
-    //    "Shortcuts" to be added here ( Vhost and context set by Apache, etc)
-    // XXX handleEndpoint( Endpoint x )
+    /** Construct the request object, with probably unnecesary
+	sanity tests ( should work without thread pool - but that is
+	not supported in PoolTcpConnector, maybe in future )
+    */
+    private Ajp14Request initRequest(Object thData[] ) {
+	if( ajp14_note < 0 ) throw new RuntimeException( "assert: ajp14_note>0" );
+	Ajp14Request req=null;
+	if( thData != null ) {
+	    req=(Ajp14Request)thData[0];
+	}
+	if( req != null ) {
+	    Response res=req.getResponse();
+	    req.recycle();
+	    res.recycle();
+	    // make the note available to other modules
+	    req.setNote( ajp14_note, req.ajp14);
+	    return req;
+	}
+	// either thData==null or broken ( req==null)
+	Ajp14 ajp14=new Ajp14();
+	req=new Ajp14Request(ajp14);
+	Ajp14Response res=new Ajp14Response(ajp14);
+	cm.initRequest(req, res);
+	return  req;
+    }
+    
+    /** Called whenever a new TCP connection is received. The connection
+	is reused.
+     */
     public void processConnection(TcpConnection connection, Object thData[])
     {
         try {
-            if(connection == null) {
-                return;
-            }
             Socket socket = connection.getSocket();
-            if(socket == null) {
-                return;
-            }
-
+	    // assert: socket!=null, connection!=null ( checked by PoolTcpEndpoint )
+	    
             socket.setSoLinger( true, 100);
 
-            Ajp14 con=null;
-            Ajp14Request req=null;
-            Ajp14Response res=null;
+            Ajp14Request req=initRequest( thData );
+            Ajp14Response res= (Ajp14Response)req.getResponse();
+            Ajp14 ajp14=req.ajp14;
 
-            if(thData != null) {
-                req = (Ajp14Request)thData[0];
-                res = (Ajp14Response)thData[1];
-                con = (Ajp14)thData[2];
-                if(req != null) req.recycle();
-                if(res != null) res.recycle();
-                if(con != null) con.recycle();
-            }
+            ajp14.setSocket(socket);
 
-            if(req == null || res == null || con == null) {
-                req = new Ajp14Request();
-                res = new Ajp14Response();
-                con = new Ajp14();
-                cm.initRequest( req, res );
-            }
-	    // XXX
-	    req.ajp14=con;
-	    res.ajp14=con;
+	    if( debug>0)
+		log( "Received ajp14 connection ");
 	    
-            con.setSocket(socket);
-
             boolean moreRequests = true;
             while(moreRequests) {
-		int status=req.receiveNextRequest();
+		// first request should be the logon.
+		int status=ajp14.receiveNextRequest( req );
 
 		if( status==-2) {
 		    // special case - shutdown
@@ -158,26 +196,24 @@ public class Ajp14Interceptor extends PoolTcpConnector
 		}
 		
 		if( status  == 200)
-			cm.service(req, res);
-		else if (status == 500)
-			break;
-
+		    cm.service(req, res);
+		else if (status == 500) {
+		    log( "Invalid request received " + req );
+		    break;
+		}
+		
 		req.recycle();
 		res.recycle();
             }
-            log("Closing connection", Log.DEBUG);
-            con.close();
+            if( debug > 0 ) log("Closing ajp14 connection");
+            ajp14.close();
 	    socket.close();
         } catch (Exception e) {
 	    log("Processing connection " + connection, e);
         }
     }
 
-    public void setServer(Object contextM)
-    {
-        this.cm=(ContextManager)contextM;
-    }
-    
+    // We don't need to check isSameAddress if we authenticate !!!
     protected boolean doShutdown(InetAddress serverAddr,
                                  InetAddress clientAddr)
     {
@@ -189,6 +225,9 @@ public class Ajp14Interceptor extends PoolTcpConnector
 		// same behavior as in past, because it seems that
 		// stopping everything doesn't work - need to figure
 		// out what happens with the threads ( XXX )
+
+		// XXX It should work now - but will fail if servlets create
+		// threads
 		System.exit(0);
 	    }
 	} catch(Exception ignored) {
@@ -197,23 +236,33 @@ public class Ajp14Interceptor extends PoolTcpConnector
 	log("Shutdown command ignored");
 	return false;
     }
+
+    // legacy, should be removed 
+    public void setServer(Object contextM)
+    {
+        this.cm=(ContextManager)contextM;
+    }
     
+
 }
+
+
+//-------------------- Glue code for request/response.
+// Probably not needed ( or can be simplified ), but it's
+// not that bad.
 
 class Ajp14Request extends Request 
 {
-    Ajp14 ajp14=new Ajp14();
+    Ajp14 ajp14;
     
-    public Ajp14Request() 
+    public Ajp14Request(Ajp14 ajp14) 
     {
-        super();
+        this.ajp14=ajp14;
     }
-    
-    protected int receiveNextRequest() throws IOException 
-    {
-	return ajp14.receiveNextRequest( this );
-    }
-    
+
+    // XXX This should go away if we introduce an InputBuffer.
+    // We almost have it as result of encoding fixes, but for now
+    // just keep this here, doesn't hurt too much.
     public int doRead() throws IOException 
     {
 	if( available <= 0 )
@@ -243,9 +292,10 @@ class Ajp14Response extends Response
     Ajp14 ajp14;
     boolean finished=false;
     
-    public Ajp14Response() 
+    public Ajp14Response(Ajp14 ajp14) 
     {
 	super();
+	this.ajp14=ajp14;
     }
 
     public void recycle() {
@@ -253,11 +303,8 @@ class Ajp14Response extends Response
 	finished=false;
     }
 
-    public void setSocket( Socket s ) {
-	ajp14=((Ajp14Request)request).ajp14;
-    }
-
-    // XXX if more headers that MAX_SIZE, send 2 packets!   
+    // XXX if more headers that MAX_SIZE, send 2 packets!
+    // XXX Can be implemented using module notification, no need to extend
     public void endHeaders() throws IOException 
     {
         super.endHeaders();
@@ -268,7 +315,8 @@ class Ajp14Response extends Response
 
 	ajp14.sendHeaders(getStatus(), getMimeHeaders());
     } 
-         
+
+    // XXX Can be implemented using module notification, no need to extend
     public void finish() throws IOException 
     {
 	if(!finished) {
@@ -277,7 +325,8 @@ class Ajp14Response extends Response
 	    ajp14.finish();
 	}
     }
-    
+
+    // XXX Can be implemented using the buffers, no need to extend
     public void doWrite(  byte b[], int off, int len) throws IOException 
     {
 	ajp14.doWrite(b, off, len );
