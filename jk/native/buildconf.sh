@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "libtoolize --force --automake"
-libtoolize --force --automake
+libtoolize --force --automake --copy
 echo "automake -a --foreign -i"
 automake -a --foreign -i
 echo "aclocal"
