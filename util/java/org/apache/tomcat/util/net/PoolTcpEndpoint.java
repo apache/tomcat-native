@@ -574,22 +574,22 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                 }
             }
 	    if (null != s) {
-                endpoint.setSocketOptions( s );
-		try {
+
+                TcpConnection con = null;
+                int step = 1;
+                try {
+
+                    // 1: Set socket options: timeout, linger, etc
+                    endpoint.setSocketOptions( s );
+
+                    // 2: SSL handshake
+                    step = 2;
  		    if(endpoint.getServerSocketFactory()!=null) {
                         endpoint.getServerSocketFactory().handshake(s);
  		    }
-                } catch (Throwable t) {
-                    endpoint.log.debug("Handshake failed", t);
-                    // Try to close the socket
-                    try {
-                        s.close();
-                    } catch (IOException e) {}
-                    return;
-                }
 
-                TcpConnection con = null;
-                try {
+                    // 3: Process the connection
+                    step = 3;
 		    if( usePool ) {
 			con=(TcpConnection)connectionCache.get();
 			if( con == null ) 
@@ -598,20 +598,26 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                         con = (TcpConnection) perThrData[0];
                         perThrData = (Object []) perThrData[1];
 		    }
-		    
+
 		    con.setEndpoint(endpoint);
 		    con.setSocket(s);
-		    endpoint.getConnectionHandler().processConnection(con, perThrData);
+		    endpoint.getConnectionHandler()
+                        .processConnection(con, perThrData);
+
                 } catch (SocketException se) {
-                    endpoint.log.error(
-                       "Remote Host " + s.getInetAddress() +
-                       " SocketException: " + se.getMessage());
+                    endpoint.log.error
+                        ("Remote Host " + s.getInetAddress() +
+                         " SocketException: " + se.getMessage());
                     // Try to close the socket
                     try {
                         s.close();
                     } catch (IOException e) {}
                 } catch (Throwable t) {
-                    endpoint.log.error("Unexpected error", t);
+                    if (step == 2) {
+                        endpoint.log.debug("Handshake failed", t);
+                    } else {
+                        endpoint.log.error("Unexpected error", t);
+                    }
                     // Try to close the socket
                     try {
                         s.close();
