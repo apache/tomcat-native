@@ -67,7 +67,7 @@
 #include "jk_env.h"
 
 
-int jk_channel_jni_javaSendPacket
+int jk2_channel_jni_javaSendPacket
 (JNIEnv *jniEnv, jobject o, jlong envJ, jlong eP, jlong s, jbyteArray data,
  jint len);
 
@@ -80,6 +80,6 @@ Java_org_apache_jk_common_ChannelJni_sendPacket
   (JNIEnv *jniEnv, jobject o, jlong envJ, jlong eP, jlong s, jbyteArray data,
    jint len)
 {
-    return (jint)jk_channel_jni_javaSendPacket( jniEnv, o, envJ, eP,
+    return (jint)jk2_channel_jni_javaSendPacket( jniEnv, o, envJ, eP,
                                                 s, data, len);
 }

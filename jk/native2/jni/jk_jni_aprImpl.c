@@ -113,14 +113,14 @@ Java_org_apache_jk_apr_AprImpl_poolClear(JNIEnv *jniEnv, jobject _jthis,
     return 0;
 }
 
-static void jkSigAction(int signal) {
+static void jk2_SigAction(int signal) {
 
 }
 
 static struct sigaction jkAction;
 
 /* XXX We need to: - preserve the old signal ( or get them ) - either
-     implement "waitSignal" or use invocation in jkSigAction
+     implement "waitSignal" or use invocation in jk2_SigAction
 
      Probably waitSignal() is better ( we can have a thread that waits )
 */
@@ -130,7 +130,7 @@ Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint bitMa
                                       jobject func)
 {
     memset(& jkAction, 0, sizeof(jkAction));
-    jkAction.sa_handler=jkSigAction;
+    jkAction.sa_handler=jk2_SigAction;
     sigaction((int)bitMask, &jkAction, (void *) NULL);
     return 0;
 }
