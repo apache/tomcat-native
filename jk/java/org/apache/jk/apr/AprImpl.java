@@ -58,6 +58,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     /** Name of the so used in inprocess mode
      */
     public void setJniModeSo(String jniModeSo ) {
+        System.out.println("XXX native so " + jniModeSo);
         this.jniModeSo=jniModeSo;
     }
 
@@ -75,55 +76,42 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
 
     public native int terminate();
 
-    public native long poolCreate(long parentPool);
-
-    public native long poolClear(long pool);
-
     // -------------------- Unix sockets --------------------
-    // XXX Will be 'apr sockets' as soon as APR supports unix domain sockets.
-    // For the moment there is little benefit of using APR TCP sockets, since
-    // the VM abstraction is decent. However poll and other advanced features
-    // are not available - and will be usefull. For the next release.
-    
-    public native long unSocketClose( long pool, long socket, int type );
+
+    // @deprecated. We'll use the same invocation path as for the jni channel
+
+    public native long unSocketClose( long socket, int type );
 
     /** Create a unix socket and start listening. 
      *  @param file the name of the socket
      *  @param bl backlog
      */
-    public native long unSocketListen( long pool, String file, int bl );
+    public native long unSocketListen( String file, int bl );
     
     /** Create a unix socket and connect. 
      *  @param file the name of the socket
      *  @param bl backlog
      */
-    public native long unSocketConnect( long pool, String file );
+    public native long unSocketConnect( String file );
 
     /** Accept a connection.
      */
-    public native long unAccept( long pool, long unListeningSocket );
+    public native long unAccept(  long unListeningSocket );
 
-    public native int unRead( long pool, long unSocket,
+    public native int unRead(  long unSocket,
+                               byte buf[], int off, int len );
+
+    public native int unWrite(  long unSocket,
                                 byte buf[], int off, int len );
 
-    public native int unWrite( long pool, long unSocket,
-                                byte buf[], int off, int len );
-
-    // -------------------- Mutexes --------------------
-
-    public native long mutexCreate( long pool, String file, int type );
-
-    public native long mutexLock( long pool, long mutexP );
-
-    public native long mutexUnLock( long pool, long mutexP );
-
-    public native long mutexTryLock( long pool, long mutexP );
-
-    public native long mutexDestroy( long pool, long mutexP );
-    
     // --------------------  Interface to jk components --------------------
     // 
 
+    /* -------------------- Access to the jk_env_t -------------------- */
+
+    /* The jk_env_t provide temporary storage ( pool ), logging, common services
+     */
+    
     /* Return a jk_env_t, used to keep the execution context ( temp pool, etc )
      */
     public native long getJkEnv();
@@ -132,8 +120,11 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
      */
     public native void releaseJkEnv(long xEnv);
 
-    public native void jkRecycle(long xEnv, long endpointP);
-
+    /* -------------------- Interface to the jk_bean object -------------------- */
+    /* Each jk component is 'wrapped' as a bean, with a specified lifecycle
+     *
+     */
+    
     /** Get a native component
      *  @return 0 if the component is not found.
      */
@@ -141,17 +132,24 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
 
     public native long createJkHandler(long xEnv, String compName );
 
-    /** Get the id of a method.
-     *  @return -1 if the method is not found.
-     */
-    public native int jkGetId(long xEnv, String ns, String name );
+    public native int jkSetAttribute( long xEnv, long componentP, String name, String val );
 
+    public native String jkGetAttribute( long xEnv, long componentP, String name );
+    
+    public native int jkInit( long xEnv, long componentP );
+
+    public native int jkDestroy( long xEnv, long componentP );
+    
     /** Send the packet to the C side. On return it contains the response
      *  or indication there is no response. Asymetrical because we can't
      *  do things like continuations.
      */
     public static native int jkInvoke(long xEnv, long componentP, long endpointP,
                                       int code, byte data[], int len);
+
+    /** Recycle an endpoint after use.
+     */
+    public native void jkRecycle(long xEnv, long endpointP);
 
     
     // -------------------- Called from C --------------------
@@ -278,6 +276,23 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
             throw ex;
         }
     } 
+
+    /** Set the user id, to avoid running as root. Should be called after we
+     *  aquire all resources ( i.e. open files and sockets ). 
+     */
+    public native int setUser( String user, String group );
+
+    /** Return the process id of the java process
+     */
+    public native int setPid();
+
+    /** Intercept the given signal. ( whenever this is possible )
+     */
+    public native int signal(int sig);
+
+    /** Send the given singal to a process
+     */
+    public native void sendSignal( int pid, int sig );
     
     public void loadNative(String libPath) {
         try {
