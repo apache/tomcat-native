@@ -1255,6 +1255,10 @@ public class CoyoteResponse
         URL url = null;
         try {
             url = new URL(location);
+
+            if (url.getAuthority() == null)
+                return location;
+
         } catch (MalformedURLException e1) {
             HttpServletRequest hreq =
                 (HttpServletRequest) request.getRequest();
