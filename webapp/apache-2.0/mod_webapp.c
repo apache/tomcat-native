@@ -309,7 +309,12 @@ static void wam_handler_setctype(wa_request *r, char *type) {
 
     if (type==NULL) return;
 
-    req->content_type=apr_pstrdup(req->pool,type);
+/*    req->content_type=apr_pstrdup(req->pool,type); */
+    /* It should be done like this in Apache 2.0 */
+    /* This way, Apache 2.0 will be able to set the output filter */
+    /* and it make webapp useable with deflate using AddOutputFilterByType DEFLATE text/html */
+    ap_set_content_type(req, apr_pstrdup(req->pool,type));
+    
     apr_table_add(req->headers_out,"Content-Type",apr_pstrdup(req->pool,type));
 }
 
