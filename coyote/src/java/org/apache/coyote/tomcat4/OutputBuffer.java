@@ -301,6 +301,8 @@ public class OutputBuffer extends Writer
     public void close()
         throws IOException {
 
+        if (closed)
+            return;
         if (suspended)
             return;
 
@@ -320,6 +322,8 @@ public class OutputBuffer extends Writer
 
         flush();
         closed = true;
+
+        coyoteResponse.finish();
 
     }
 

@@ -501,7 +501,6 @@ public class CoyoteResponse
         } catch(Throwable t) {
             t.printStackTrace();
         }
-        coyoteResponse.finish();
     }
 
 
