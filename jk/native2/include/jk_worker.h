@@ -71,6 +71,7 @@
 #include "jk_mt.h"
 #include "jk_uriMap.h"
 #include "jk_objCache.h"
+#include "jk_msg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,53 +81,8 @@ struct jk_worker;
 struct jk_endpoint;
 struct jk_env;
 struct jk_objCache;
+struct jk_msg;
 typedef struct jk_worker jk_worker_t;
-
-    
-/*
- * The login structure
- */
-typedef struct jk_login_service jk_login_service_t;
-#define AJP14_ENTROPY_SEED_LEN		32	/* we're using MD5 => 32 chars */
-#define AJP14_COMPUTED_KEY_LEN		32  /* we're using MD5 also */
-
-struct jk_login_service {
-
-    /*
-     *  Pointer to web-server name
-     */
-    char * web_server_name;
-    
-    /*
-     * Pointer to servlet-engine name
-     */
-    char * servlet_engine_name;
-    
-    /*
-     * Pointer to secret key
-     */
-    char * secret_key;
-    
-    /*
-     * Received entropy seed
-     */
-    char entropy[AJP14_ENTROPY_SEED_LEN + 1];
-    
-    /*
-     * Computed key
-     */
-    char computed_key[AJP14_COMPUTED_KEY_LEN + 1];
-    
-    /*
-     *  What we want to negociate
-     */
-    unsigned long negociation;
-    
-    /*
-     * What we received from servlet engine 
-     */
-    unsigned long negociated;
-};                                
 
 /*
  * The worker 'class', which represents something to which the web server
@@ -213,7 +169,8 @@ struct jk_worker {
     /*     struct jk_endpoint **ep_cache; */
 
     int proto;
-    struct jk_login_service *login;
+    /* Password for ajp14+ connections. If null we default to ajp13.*/
+    char * secret;
 
     /* Each worker can be part of a load-balancer scheme.
      * The information can be accessed by other components -
@@ -230,10 +187,6 @@ struct jk_worker {
     jk_worker_t **lb_workers;
     int num_of_workers;
     
-    int (* logon)(struct jk_endpoint *ae,
-                  jk_logger_t    *l);
-
-
     /*
      * For all of the below (except destroy), the first argument is
      * essentially a 'this' pointer.  
