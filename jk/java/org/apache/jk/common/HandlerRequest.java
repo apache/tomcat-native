@@ -60,8 +60,8 @@
 package org.apache.jk.common;
 
 import java.io.*;
-import java.net.Socket;
-import java.util.Enumeration;
+import java.net.*;
+import java.util.*;
 import java.security.*;
 import java.security.cert.*;
 
@@ -91,12 +91,14 @@ import org.apache.tomcat.util.buf.*;
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Costin Manolache
  */
-public class HandlerRequest extends Handler
+public class HandlerRequest extends JkHandler
 {
     // XXX Will move to a registry system.
     
     // Prefix codes for message types from server to container
     public static final byte JK_AJP13_FORWARD_REQUEST   = 2;
+
+    public static final byte JK_AJP13_SHUTDOWN   = 7;
 
     // Prefix codes for message types from container to server
     public static final byte JK_AJP13_SEND_BODY_CHUNK   = 3;
@@ -128,6 +130,7 @@ public class HandlerRequest extends Handler
     public static final byte SC_A_SSL_CIPHER    = 8;
     public static final byte SC_A_SSL_SESSION   = 9;
     public static final byte SC_A_SSL_KEYSIZE   = 11;
+    public static final byte SC_A_SECRET        = 12;
 
     // Used for attributes which are not in the list above
     public static final byte SC_A_REQ_ATTRIBUTE = 10; 
@@ -200,55 +203,179 @@ public class HandlerRequest extends Handler
     {
     }
 
-    public void init() {
-	// register incoming message handlers
-	we.registerMessageType( JK_AJP13_FORWARD_REQUEST,
-                                "JK_AJP13_FORWARD_REQUEST",
-                                this, null); // 2
+    HandlerDispatch dispatch;
 
-	// register outgoing messages handler
-	we.registerMessageType( JK_AJP13_SEND_BODY_CHUNK, // 3
-                                "JK_AJP13_SEND_BODY_CHUNK",
-                                this,null );
-	we.registerMessageType( JK_AJP13_SEND_HEADERS,  // 4
-                                "JK_AJP13_SEND_HEADERS",
-                                this,null );
-	we.registerMessageType( JK_AJP13_END_RESPONSE, // 5
-                                "JK_AJP13_END_RESPONSE",
-                                this,null );
-	we.registerMessageType( JK_AJP13_GET_BODY_CHUNK, // 6
-                                "JK_AJP13_GET_BODY_CHUNK",
-                                this, null );
+    public void init() {
+        dispatch=(HandlerDispatch)wEnv.getHandler( "dispatch" );
+        if( dispatch != null ) {
+            // register incoming message handlers
+            dispatch.registerMessageType( JK_AJP13_FORWARD_REQUEST,
+                                          "JK_AJP13_FORWARD_REQUEST",
+                                          this, null); // 2
+            
+            dispatch.registerMessageType( JK_AJP13_FORWARD_REQUEST,
+                                          "JK_AJP13_SHUTDOWN",
+                                          this, null); // 7
+            
+            // register outgoing messages handler
+            dispatch.registerMessageType( JK_AJP13_SEND_BODY_CHUNK, // 3
+                                          "JK_AJP13_SEND_BODY_CHUNK",
+                                          this,null );
+        }
+
+        bodyNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "jkInputStream" );
+        tmpBufNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "tmpBuf" );
+        secretNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "secret" );
+        
+        if( next==null )
+            next=wEnv.getHandler( "container" );
+
+        // should happen on start()
+        generateAjp13Id();
+    }
+
+    public void setSecret( String s ) {
+        requiredSecret=s;
+    }
+
+    public void setUseSecret( boolean b ) {
+        requiredSecret=Double.toString(Math.random());
+    }
+
+    public void setDecodedUri( boolean b ) {
+	decoded=b;
+    }
+
+    public boolean isTomcatAuthentication() {
+        return tomcatAuthentication;
+    }
+
+    public void setTomcatAuthentication(boolean newTomcatAuthentication) {
+        tomcatAuthentication = newTomcatAuthentication;
+    }
+
+    // -------------------- Ajp13.id --------------------
+
+    private void generateAjp13Id() {
+        int portInt=8009; // tcpCon.getPort();
+        InetAddress address=null; // tcpCon.getAddress();
+
+        File f1=new File( wEnv.getJkHome() );
+        
+        File sf=new File( f1, "conf/ajp13.id");
+        
+        if( dL > 0) d( "Using stop file: "+sf);
+
+        try {
+            Properties props=new Properties();
+
+            props.put( "port", Integer.toString( portInt ));
+            if( address!=null ) {
+                props.put( "address", address.getHostAddress() );
+            }
+            if( requiredSecret !=null ) {
+                props.put( "secret", requiredSecret );
+            }
+
+            FileOutputStream stopF=new FileOutputStream( sf );
+            props.save( stopF, "Automatically generated, don't edit" );
+        } catch( IOException ex ) {
+            d( "Can't create stop file: "+sf );
+            ex.printStackTrace();
+        }
     }
     
     // -------------------- Incoming message --------------------
-    int reqNote=4;
-    int postMsgNote=5;
-    int tmpBufNote=6;
+    String requiredSecret=null;
+    int bodyNote;
+    int tmpBufNote;
+    int secretNote;
 
-    public int callback(int type, Channel ch, Endpoint ep, Msg msg)
+    boolean decoded=true;
+    boolean tomcatAuthentication;
+    
+    public int invoke(Msg msg, MsgContext ep ) 
         throws IOException
     {
+        int type=msg.getByte();
 
-        // FORWARD_REQUEST handler
-        BaseRequest req=(BaseRequest)ep.getNote( reqNote );
-        if( req==null ) {
-            req=new BaseRequest();
-            ep.setNote( reqNote, req );
+        MessageBytes tmpMB=(MessageBytes)ep.getNote( tmpBufNote );
+        if( tmpMB==null ) {
+            tmpMB=new MessageBytes();
+            ep.setNote( tmpBufNote, tmpMB);
         }
 
-        decodeRequest( msg, req, ch, ep );
+        switch( type ) {
+        case JK_AJP13_FORWARD_REQUEST:
+            decodeRequest( msg, ep, tmpMB );
 
-        /* XXX it should be computed from request, by workerEnv */
-        worker.service( req, ch, ep );
+            if( requiredSecret != null ) {
+                String epSecret=(String)ep.getNote( secretNote );
+                if( epSecret==null || ! requiredSecret.equals( epSecret ) )
+                    return ERROR;
+            }
+            /* XXX it should be computed from request, by workerEnv */
+            if(dL >0 )
+                d("Calling next " + next.getName() + " " +
+                  next.getClass().getName());
+            
+            return next.invoke( msg, ep );
+            
+        case JK_AJP13_SHUTDOWN:
+            String epSecret=null;
+            if( msg.getLen() > 3 ) {
+                // we have a secret
+                msg.getBytes( tmpMB );
+                epSecret=tmpMB.toString();
+            }
+            
+            if( requiredSecret != null &&
+                requiredSecret.equals( epSecret ) ) {
+                d("Received wrong secret, no shutdown ");
+                return ERROR;
+            }
+
+            // XXX add isSameAddress check
+            Channel ch=ep.getChannel();
+            if( ch instanceof ChannelSocket ) {
+                if( ! ((ChannelSocket)ch).isSameAddress(ep) ) {
+                    d("Shutdown request not from 'same address' ");
+                    return ERROR;
+                }
+            }
+
+            // forward to the default handler - it'll do the shutdown
+            next.invoke( msg, ep );
+
+            d("Exiting");
+            System.exit(0);
+            
+	    return OK;
+	}
+
         return OK;
     }
 
-    private int decodeRequest( Msg msg, BaseRequest req, Channel ch,
-                               Endpoint ep )
+    private int decodeRequest( Msg msg, MsgContext ep, MessageBytes tmpMB )
         throws IOException
     {
+        // FORWARD_REQUEST handler
+        BaseRequest req=(BaseRequest)ep.getRequest();
+        if( req==null ) {
+            req=new BaseRequest();
+            ep.setRequest( req );
+        }
 
+        JkInputStream jkBody=(JkInputStream)ep.getNote( bodyNote );
+        if( jkBody==null ) {
+            jkBody=new JkInputStream();
+            jkBody.setMsgContext( ep );
+
+            ep.setNote( bodyNote, jkBody );
+        }
+
+        jkBody.recycle();
+        
         // Translate the HTTP method code to a String.
         byte methodCode = msg.getByte();
         String mName=methodTransArray[(int)methodCode - 1];
@@ -266,9 +393,9 @@ public class HandlerRequest extends Handler
         boolean isSSL = msg.getByte() != 0;
         if( isSSL ) req.setSecure( true );
 
-        decodeHeaders( ep, msg, req );
+        decodeHeaders( ep, msg, req, tmpMB );
 
-        decodeAttributes( ep, msg, req );
+        decodeAttributes( ep, msg, req, tmpMB );
 
         if(req.getSecure() ) {
             req.setScheme(req.SCHEME_HTTPS);
@@ -279,15 +406,10 @@ public class HandlerRequest extends Handler
 
 	// Check to see if there should be a body packet coming along
 	// immediately after
-    	if(req.getContentLength() > 0) {
-            Msg postMsg=(Msg)ep.getNote( postMsgNote );
-            if( postMsg==null ) {
-                postMsg=new MsgAjp();
-                ep.setNote( postMsgNote, postMsg );
-            }
-        
-	    /* Read present data */
-	    int err = ch.receive(postMsg, ep);
+        int cl=req.getContentLength();
+    	if(cl > 0) {
+            jkBody.setContentLength( cl );
+            jkBody.receive();
     	}
     
         if (dL > 5) {
@@ -297,14 +419,10 @@ public class HandlerRequest extends Handler
         return OK;
     }
         
-    private int decodeAttributes( Endpoint ep, Msg msg, BaseRequest req ) {
+    private int decodeAttributes( MsgContext ep, Msg msg, BaseRequest req,
+                                  MessageBytes tmpMB) {
         boolean moreAttr=true;
 
-        MessageBytes tmpMB=(MessageBytes)ep.getNote( tmpBufNote );
-        if( tmpMB==null ) {
-            tmpMB=new MessageBytes();
-            ep.setNote( tmpBufNote, tmpMB);
-        }
         while( moreAttr ) {
             byte attributeCode=msg.getByte();
             if( attributeCode == SC_A_ARE_DONE )
@@ -341,7 +459,12 @@ public class HandlerRequest extends Handler
                 break;
 		
 	    case SC_A_REMOTE_USER  :
-                msg.getBytes(req.remoteUser());
+                if( tomcatAuthentication ) {
+                    // ignore server
+                    msg.getBytes( tmpMB );
+                } else {
+                    msg.getBytes(req.remoteUser());
+                }
                 break;
 		
 	    case SC_A_AUTH_TYPE    :
@@ -395,25 +518,26 @@ public class HandlerRequest extends Handler
 		req.setAttribute("javax.servlet.request.ssl_session",
 				  tmpMB.toString());
                 break;
-		
+                
+	    case SC_A_SECRET  :
+                msg.getBytes(tmpMB);
+                String secret=tmpMB.toString();
+                d("Secret: " + secret );
+                // endpoint note
+                ep.setNote( secretNote, secret );
+                break;
 	    default:
-		return 500; // Error
+		break; // ignore, we don't know about it - backward compat
 	    }
         }
         return 200;
     }
     
-    private void decodeHeaders( Endpoint ep, Msg msg, BaseRequest req ) {
+    private void decodeHeaders( MsgContext ep, Msg msg, BaseRequest req,
+                                MessageBytes tmpMB ) {
         // Decode headers
         MimeHeaders headers = req.headers();
 
-        MessageBytes tmpMB=(MessageBytes)ep.getNote( tmpBufNote );
-        if( tmpMB==null ) {
-            tmpMB=new MessageBytes();
-            ep.setNote( tmpBufNote, tmpMB);
-        }
-
-        
 	int hCount = msg.getInt();
         for(int i = 0 ; i < hCount ; i++) {
             String hName = null;
@@ -458,7 +582,7 @@ public class HandlerRequest extends Handler
         }
     }
 
-    private static final int dL=0;
+    private static final int dL=4;
     private static void d(String s ) {
         System.err.println( "HandlerRequest: " + s );
     }
