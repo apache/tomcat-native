@@ -341,6 +341,8 @@ int jk_map_read_property(jk_map_t *m, const char *str)
         if (v) {
             *v = '\0';
             v++;
+            trim(prp);
+            trim(v);
             if (strlen(v) && strlen(prp)) {
                 const char *oldv = jk_map_get_string(m, prp, NULL);
                 v = jk_map_replace_properties(v, m);
@@ -452,11 +454,13 @@ static size_t trim(char *s)
 {
     size_t i;
 
-    for (i = strlen(s) - 1; (i >= 0) && isspace(s[i]); i--);
+    for (i = strlen(s) - 1; (i >= 0) &&
+         isspace((int)((unsigned char)s[i])); i--);
 
     s[i + 1] = '\0';
 
-    for (i = 0; ('\0' != s[i]) && isspace(s[i]); i++);
+    for (i = 0; ('\0' != s[i]) &&
+         isspace((int)((unsigned char)s[i])); i++);
 
     if (i > 0) {
         strcpy(s, &s[i]);
