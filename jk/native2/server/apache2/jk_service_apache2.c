@@ -257,18 +257,18 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
                 if(!s->head(env, s)) {
                     return JK_FALSE;
                 }
-            }
 
-            {
-                const apr_array_header_t *t = apr_table_elts(rr->headers_out);
-                if(t && t->nelts) {
-                    int i;
-                    
-                    apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
-
-                    for(i = 0 ; i < t->nelts ; i++) {
-                        env->l->jkLog(env, env->l, JK_LOG_INFO, "OutHeaders %s: %s\n",
-                                      elts[i].key, elts[i].val);
+                {
+                    const apr_array_header_t *t = apr_table_elts(rr->headers_out);
+                    if(t && t->nelts) {
+                        int i;
+                        
+                        apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
+                        
+                        for(i = 0 ; i < t->nelts ; i++) {
+                            env->l->jkLog(env, env->l, JK_LOG_INFO, "OutHeaders %s: %s\n",
+                                          elts[i].key, elts[i].val);
+                        }
                     }
                 }
             }

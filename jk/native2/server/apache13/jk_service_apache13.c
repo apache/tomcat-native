@@ -219,19 +219,17 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
                 if(!s->head(env, s)) {
                     return JK_FALSE;
                 }
-            }
-
-            
-            {
-                array_header *t = ap_table_elts(rr->headers_out);
-                if(t && t->nelts) {
-                    int i;
-                    
-                    table_entry *elts = (table_entry *)t->elts;
-
-                    for(i = 0 ; i < t->nelts ; i++) {
-                        env->l->jkLog(env, env->l, JK_LOG_INFO, "OutHeaders %s: %s\n",
-                                      elts[i].key, elts[i].val);
+                {
+                    array_header *t = ap_table_elts(rr->headers_out);
+                    if(t && t->nelts) {
+                        int i;
+                        
+                        table_entry *elts = (table_entry *)t->elts;
+                        
+                        for(i = 0 ; i < t->nelts ; i++) {
+                            env->l->jkLog(env, env->l, JK_LOG_INFO, "OutHeaders %s: %s\n",
+                                          elts[i].key, elts[i].val);
+                        }
                     }
                 }
             }
