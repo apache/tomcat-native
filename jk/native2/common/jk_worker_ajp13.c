@@ -109,37 +109,11 @@ jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean,
     } else if( strcmp( name, "lb_factor" )==0 ) {
         ajp14->lb_factor=atof( value );
     } else if( strcmp( name, "channel" )==0 ) {
-        if( strncmp( value, "channel.", 8 ) != 0 ) {
-            char *newValue=(char *)ajp14->pool->calloc( env, ajp14->pool, strlen(value) + 10 );
-            strcpy( newValue, "channel." );
-            strcat( newValue, value );
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "ajp14.setProperty() auto replace %s %s\n",
-                          value, newValue);
-            value=newValue;
-        }
-        ajp14->channel=env->createInstance(env, ajp14->pool, value, NULL );
-        if( ajp14->channel == NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "Error creating %s channel\n", channelType );
-            return JK_FALSE;
-        }
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "ajp14.setProperty() channel: %s %s\n",
-                      value,ajp14->channel->mbean->name);
-
-     } else {
-        /* It's probably a channel property
-         */
-        if( ajp14->channel==NULL ) {
-            
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "No channel for %s, set channel before other properties %s=%s\n",
-                          mbean->name, name, value );
-            return JK_FALSE;
-        }
-
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.setProperty() channel %s=%s\n",
-                      name, value);
-        ajp14->channel->mbean->setAttribute( env, ajp14->channel->mbean, name, value );
+        ajp14->channelName=value;
+    } else {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "ajp14.setProperty() Unknown property %s %s %s\n", mbean->name, name, value );
+        return JK_FALSE;
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -186,7 +160,8 @@ static void jk2_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
                   ae->worker->mbean->name);
 
     ae->reuse = JK_FALSE;
-    ae->worker->channel->close( env, ae->worker->channel, ae );
+    if( ae->worker->channel != NULL )
+        ae->worker->channel->close( env, ae->worker->channel, ae );
     ae->cPool->reset( env, ae->cPool );
     ae->cPool->close( env, ae->cPool );
     ae->pool->reset( env, ae->pool );
@@ -199,7 +174,15 @@ static int jk2_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
     jk_channel_t *channel=ae->worker->channel;
     jk_msg_t *msg;
     
-    int err=channel->open( env, channel, ae );
+    int err;
+
+    if( channel==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp14.connect() no channel %s\n", ae->worker->mbean->name );
+        return JK_FALSE;
+    }
+    
+    err=channel->open( env, channel, ae );
 
     if( err != JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -341,6 +324,9 @@ jk2_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
                                        e->post );
     }
 
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "ajp14.service() processing callbacks\n");
+
     err = e->worker->workerEnv->processCallbacks(env, e->worker->workerEnv,
                                                  e, s);
     
@@ -423,7 +409,7 @@ jk2_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.service() %s\n", e->worker->mbean->name);
+                  "ajp14.service() %s\n", w->channel->mbean->name);
 
     if( w->channel->beforeRequest != NULL ) {
         w->channel->beforeRequest( env, w->channel, w, e, s );
@@ -435,6 +421,9 @@ jk2_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
     } else {
         err=jk2_worker_ajp14_forwardSingleThread( env, w, s, e );
     }
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "ajp14.service() done %s\n", e->worker->mbean->name);
 
     if( w->channel->afterRequest != NULL ) {
         w->channel->afterRequest( env, w->channel, w, e, s );
@@ -501,7 +490,7 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
         }
     }
 
-    e = (jk_env_t *)env->createInstance( env, "endpoint", NULL );
+    e = (jk_endpoint_t *)env->createInstance( env,ajp14->pool,  "endpoint", NULL );
     if( e==NULL )
         return JK_FALSE;
     e->worker = ajp14;
@@ -553,8 +542,6 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
     }
 
     if( ajp14->channelName == NULL ) {
-        
-
         ajp14->channelName="channel.default";
     }
 

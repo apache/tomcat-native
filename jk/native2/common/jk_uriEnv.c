@@ -107,6 +107,17 @@ static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
     return JK_TRUE;
 }
 
+static void *jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
+                                     char *name )
+{
+    if( strcmp( name, "worker" ) ) {
+
+    } else if( strcmp( name, "reqCount" ) ) {
+
+    }
+    return NULL;
+}
+
 static int jk2_uriEnv_setProperty(jk_env_t *env,
                                   jk_bean_t *mbean,
                                   char *nameParam,
@@ -272,6 +283,7 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     uriEnv->init=jk2_uriEnv_init;
 
     result->setAttribute=&jk2_uriEnv_setProperty;
+    result->getAttribute=&jk2_uriEnv_getAttribute;
     uriEnv->mbean=result;
     result->object=uriEnv;
 

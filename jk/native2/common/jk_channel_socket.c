@@ -148,7 +148,7 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
     short port=socketInfo->port;
     
     if( port<=0 )
-        port=8007;
+        port=8009;
 
     if( host==NULL )
         host=DEFAULT_HOST;
@@ -264,8 +264,8 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
     if(ret != 0 ) {
         jk2_close_socket(env, sock);
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelSocket.connect() connect failed %d %s\n",
-                      errno, strerror( errno ) );
+                      "channelSocket.connect() connect failed %s:%d %d %s \n",
+                      socketInfo->host, socketInfo->port, errno, strerror( errno ) );
         return JK_FALSE;
     }
 

@@ -95,13 +95,13 @@ static int jk2_config_setConfigFile( jk_env_t *env,
     
     if (stat(workerFile, &statbuf) == -1) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "Can't find config file %s", workerFile );
+                      "config.setConfig(): Can't find config file %s", workerFile );
         return JK_FALSE;
     }
     
     /** Read worker files
      */
-    env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Reading config %s %d\n",
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "config.setConfig(): Reading config %s %d\n",
                   workerFile, cfg->map->size(env, cfg->map) );
     
     jk2_map_default_create(env, &props, wEnv->pool);
@@ -110,11 +110,11 @@ static int jk2_config_setConfigFile( jk_env_t *env,
     
     if( err==JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.initJk() Reading worker properties %s %d\n",
+                      "config.setConfig():  Reading properties %s %d\n",
                       workerFile, props->size( env, props ) );
     } else {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "mod_jk.initJk() Error reading worker properties %s\n",
+                      "config.setConfig(): Error reading properties %s\n",
                       workerFile );
         return JK_FALSE;
     }
@@ -163,7 +163,7 @@ static int jk2_config_saveConfig( jk_env_t *env,
         for( j=0; j < mbean->settings->size( env, mbean->settings ); j++ ) {
             char *pname=mbean->settings->nameAt( env, mbean->settings, j);
             /* Don't save redundant information */
-            if( strcmp( pname, "name" ) != NULL ) {
+            if( strcmp( pname, "name" ) != 0 ) {
                 fprintf( fp, "%s=%s\n",
                          pname,
                          mbean->settings->valueAt( env, mbean->settings, j));
@@ -252,27 +252,27 @@ static jk_bean_t *jk2_config_createInstance( jk_env_t *env, jk_config_t *cfg,
               (objName[len] == '\0') )  ) {
             /* We found the factory. */
             type=factName;
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "Found %s  %s %s %d %d\n", type, objName,
-                          factName, len, strncmp( objName, factName, len));
+            /*             env->l->jkLog(env, env->l, JK_LOG_INFO, */
+            /*                               "Found %s  %s %s %d %d\n", type, objName, */
+            /*                           factName, len, strncmp( objName, factName, len)); */
             break;
         }
     }
     if( type==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "Can't find type for %s \n", objName);
+                      "config.createInstance(): Can't find type for %s \n", objName);
         return NULL;
     } 
     
     workerPool=cfg->pool->create(env, cfg->pool, HUGE_POOL_SIZE);
     
-    env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                  "Create %s name=%s\n", type, objName);
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "config.createInstance(): Create [%s] %s\n", type, objName);
     env->createInstance( env, workerPool, type, objName );
     w=env->getMBean( env, objName );
     if( w==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "Error creating  %s %s\n", objName, type);
+                      "config.createInstance(): Error creating  [%s] %s\n", objName, type);
         return NULL;
     }
     if( w->settings == NULL )
@@ -303,7 +303,7 @@ static int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
         strcat( pname, name );
     }
 
-    fprintf( stderr, "config.setProperty %s %s %s \n", mbean->name, name, val );
+    /* fprintf( stderr, "config.setProperty %s %s %s \n", mbean->name, name, val ); */
 
     /** Save it on the config. XXX no support for deleting yet */
     /* The _original_ value. Will be saved with $() in it */
@@ -320,8 +320,8 @@ static int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
      */
     cfg->map->add( env, cfg->map, pname, val );
 
-    env->l->jkLog( env, env->l, JK_LOG_ERROR, "config: set %s / %s / %s=%s\n",
-                   mbean->name, name, pname, val);
+    /*     env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s / %s / %s=%s\n", */
+    /*                    mbean->name, name, pname, val); */
  
     if(mbean->setAttribute)
         return mbean->setAttribute( env, mbean, name, val );
@@ -339,7 +339,7 @@ static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
     char *objName=NULL;
     char *propName=NULL;
 
-    fprintf( stderr, "setPropertyString %s %s \n", name, value );
+    /*     fprintf( stderr, "setPropertyString %s %s \n", name, value ); */
 
     status=jk2_config_processBeanPropertyString(env, cfg, name, &objName, &propName );
     if( status!=JK_TRUE ) {

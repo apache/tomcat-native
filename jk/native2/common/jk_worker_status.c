@@ -134,11 +134,11 @@ static void jk2_worker_status_displayWorkerEnv(jk_env_t *env, jk_ws_service_t *s
     /* Could be modified dynamically */
     s->jkprintf(env, s, "<tr><th>LogLevel</th>"
               "<td id='logLevel'>%d</td></tr>\n",
-              wenv->log_level);
+              env->l->level);
     
     s->jkprintf(env, s, "</table>\n");
 
-    s->jkprintf(env, s, "<H3>Properties</H3>\n");
+    s->jkprintf(env, s, "<H3>Active Properties ( after substitution )</H3>\n");
     s->jkprintf(env, s, "<table border>\n");
     s->jkprintf(env, s, "<tr><th>Name</th><th>Value</td></tr>\n");
     for( i=0; i< map->size( env, map ) ; i++ ) {
@@ -146,7 +146,7 @@ static void jk2_worker_status_displayWorkerEnv(jk_env_t *env, jk_ws_service_t *s
         char *value=(char *)map->valueAt( env, map,i );
         /* Don't display worker properties or uris, those are displayed separately
            for each worker */
-/*         if( strncmp( name, "worker.", 7 ) !=0 && */
+/*         if( strncmp( name, "worker", 6 ) !=0 && */
 /*             name[0] != '/' ) { */
             s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td></tr>", name,
                        value);
@@ -154,8 +154,36 @@ static void jk2_worker_status_displayWorkerEnv(jk_env_t *env, jk_ws_service_t *s
     }
     s->jkprintf(env, s, "</table>\n");
 
-}
 
+    s->jkprintf(env, s, "<H3>Configured Properties</H3>\n");
+    s->jkprintf(env, s, "<table border>\n");
+    s->jkprintf(env, s, "<tr><th>Object name</th><th>Property</th><th>Value</td></tr>\n");
+
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        int j;
+        
+        if( mbean==NULL || mbean->settings==NULL ) 
+            continue;
+        
+        s->jkprintf(env, s, "<tr><td>%s</td>", mbean->name );
+        
+        for( j=0; j < mbean->settings->size( env, mbean->settings ); j++ ) {
+            char *pname=mbean->settings->nameAt( env, mbean->settings, j);
+            /* Don't save redundant information */
+            if( strcmp( pname, "name" ) != NULL ) {
+                s->jkprintf( env, s, "<td>%s</td><td>%s</td>\n",
+                             pname,
+                             mbean->settings->valueAt( env, mbean->settings, j));
+            }
+        }
+        s->jkprintf( env,s , "</tr>\n" );
+    }
+    s->jkprintf( env,s , "</table>\n" );
+
+}
+ 
 static void jk2_worker_status_displayMappings(jk_env_t *env, jk_ws_service_t *s,
                                              jk_workerEnv_t *wenv)
 {

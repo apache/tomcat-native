@@ -134,6 +134,8 @@ static void *jk2_env_createInstance(jk_env_t *env, jk_pool_t *pool,
     result->type=type;
     result->name=name;
     result->settings=NULL;
+    result->getAttributeInfo=NULL;
+    result->setAttributeInfo=NULL;
     
     fac( env, pool, result, type, name );
     if( result->object==NULL ) {
