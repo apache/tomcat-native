@@ -112,7 +112,15 @@ public class DynamicMBeanProxy implements DynamicMBean {
 
         if( real==null ) return null;
 
-        name=real.getClass().getName();
+        name=generateName(real.getClass());
+        return name;
+    }
+
+    /** If a name was not provided, generate a name based on the
+     *  class name and a sequence number.
+     */
+    public String generateName(Class realClass) {
+        name=realClass.getName();
         name=name.substring( name.lastIndexOf( ".") + 1 );
         Integer iInt=(Integer)instances.get(name );
         if( iInt!= null ) {
@@ -125,12 +133,30 @@ public class DynamicMBeanProxy implements DynamicMBean {
         }
         return name;
     }
+
+    public static void createMBean( Object proxy, String domain, String name ) {
+        try {
+            DynamicMBeanProxy mbean=new DynamicMBeanProxy();
+            mbean.setReal( proxy );
+            if( name!=null ) {
+                mbean.setName( name );
+            }
+
+            mbean.registerMBean( domain );
+        } catch( Throwable t ) {
+            log.error( "Error creating mbean ", t );
+        }
+    }
     
     public void registerMBean( String domain ) {
         try {
             // XXX use aliases, suffix only, proxy.getName(), etc
             ObjectName oname=new ObjectName( domain + ": name=" +  getName());
-            
+
+            if(  getMBeanServer().isRegistered( oname )) {
+                log.info("Unregistering " + oname );
+                getMBeanServer().unregisterMBean( oname );
+            }
             getMBeanServer().registerMBean( this, oname );
         } catch( Throwable t ) {
             log.error( "Error creating mbean ", t );
@@ -298,6 +324,7 @@ public class DynamicMBeanProxy implements DynamicMBean {
         throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException
     {
         if( methods==null ) init();
+        // XXX Send notification !!!
         Method m=(Method)setAttMap.get( attribute.getName() );
         if( m==null ) throw new AttributeNotFoundException(attribute.getName());
 
