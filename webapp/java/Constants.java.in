@@ -139,7 +139,7 @@ public class Constants {
      * <br>
      * No payload:<br>
      */
-    public static final int TYPE_CONF_DONE=0x04;
+    public static final int TYPE_CONF_DONE=0x0e;
 
     /**
      * CONF_PROCEED: Server issues this message in response to a CONF_DONE
@@ -147,7 +147,7 @@ public class Constants {
      * <br>
      * No payload:<br>
      */
-    public static final int TYPE_CONF_PROCEED=0x05;
+    public static final int TYPE_CONF_PROCEED=0x0f;
     
     public static final int TYPE_REQ_INIT=0x10;
     public static final int TYPE_REQ_CONTENT=0x11;
