@@ -64,7 +64,7 @@ apr_pool_t *wa_pool=NULL;
 wa_chain *wa_configuration=NULL;
 /* The list of all compiled in providers */
 wa_provider *wa_providers[] = {
-    //&wa_provider_info,
+    &wa_provider_info,
     //&wa_provider_warp,
     //&wa_provider_jni,
     NULL,
