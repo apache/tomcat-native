@@ -26,7 +26,7 @@
 #include "jk_logger.h"
 #include "jk_global.h"
 
-#ifndef WIN32
+#if !defined(WIN32) && !(defined(NETWARE) && defined(__NOVELL_LIBC__))
     #define closesocket         close
 #endif
 
