@@ -790,8 +790,10 @@ public class CoyoteRequest
             return(attr);
 
         attr =  coyoteRequest.getAttribute(name);
-        if(attr != null)
+        if(attr != null) {
+            attributes.put(name, attr);
             return attr;
+        }
         // XXX Should move to Globals
         if(Constants.SSL_CERTIFICATE_ATTR.equals(name)) {
             coyoteRequest.action(ActionCode.ACTION_REQ_SSL_CERTIFICATE, null);
