@@ -112,7 +112,11 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
   env->registerFactory( env, "worker", "ajp14", jk_worker_ajp14_factory );
   env->registerFactory( env, "worker", "lb",    jk_worker_lb_factory );
   env->registerFactory( env, "worker", "status", jk_worker_status_factory );
+#ifdef HAS_APR
+  env->registerFactory( env, "channel", "socket", jk_channel_apr_socket_factory );
+#else
   env->registerFactory( env, "channel", "socket", jk_channel_socket_factory );
+#endif
   env->registerFactory( env, "handler", "response", jk_handler_response_factory );
   env->registerFactory( env, "handler", "logon",   jk_handler_logon_factory );
   env->registerFactory( env, "handler", "discovery",

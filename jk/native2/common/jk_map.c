@@ -134,9 +134,10 @@ static int jk_map_default_put(jk_env_t *env, jk_map_t *m,
         /* XXX this is wrong - either we take ownership and copy both
            name and value,
            or none. The caller should do that if he needs !
-        */
-        /*     mPriv->names[mPriv->size] = m->pool->pstrdup(m->pool, name); */
+           Sure, but we should have our copy...
         mPriv->names[mPriv->size] =  (char *)name; 
+        */
+        mPriv->names[mPriv->size] = m->pool->pstrdup(env,m->pool, name);
         mPriv->size ++;
         rc = JK_TRUE;
     }

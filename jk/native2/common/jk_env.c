@@ -112,6 +112,10 @@ static void *jk_env_getInstance( jk_env_t *_this, jk_pool_t *pool, const char *t
     jk_env_objectFactory_t fac;
     void *result;
 
+    /* prevent core... */
+    if (name==NULL)
+        return(NULL);
+
     fac=_this->getFactory( _this, type, name);
     if( fac==NULL ) {
         if( _this->l )

@@ -109,9 +109,15 @@ int JK_METHOD jk_worker_ajp12_factory(jk_env_t *env, jk_pool_t *pool,
 /* Factories for 'new' types. We use the new factory interface,
  *  workers will be updated later 
  */
+#ifdef HAS_APR
+int JK_METHOD jk_channel_apr_socket_factory(jk_env_t *env, jk_pool_t *pool,
+                                        void **result,
+					const char *type, const char *name);
+#else
 int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
                                         void **result,
 					const char *type, const char *name);
+#endif
 
 int JK_METHOD jk_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                    void **result,
