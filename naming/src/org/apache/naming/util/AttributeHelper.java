@@ -59,25 +59,14 @@
 
 package org.apache.naming.util;
 
-import java.io.*;
-import java.security.Permission;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Vector;
-import javax.naming.NamingException;
-import javax.naming.NamingEnumeration;
-import javax.naming.NameClassPair;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-
-import java.text.SimpleDateFormat;
-import java.text.DateFormat;
 import java.text.ParseException;
-
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
-import org.apache.naming.core.JndiPermission;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
 // import org.apache.naming.resources.Resource;
 // import org.apache.naming.resources.ResourceAttributes;
 

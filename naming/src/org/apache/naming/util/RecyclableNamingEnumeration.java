@@ -64,12 +64,11 @@
 
 package org.apache.naming.util;
 
-import java.util.Hashtable;
-import java.util.Vector;
 import java.util.Enumeration;
-import javax.naming.NamingException;
+import java.util.Vector;
+
 import javax.naming.NamingEnumeration;
-import javax.naming.NameClassPair;
+import javax.naming.NamingException;
 
 /**
  * Naming enumeration implementation.
