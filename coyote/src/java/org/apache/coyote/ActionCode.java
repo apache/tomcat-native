@@ -134,7 +134,7 @@ public final class ActionCode {
      * Callback for lazy evaluation - extract the SSL-certificate 
      * (including forcing a re-handshake if necessary)
      */
-    public static final ActionCode ACTION_REQ_SSL_CERTIFICATE = new ActionCode(14);
+    public static final ActionCode ACTION_REQ_SSL_CERTIFICATE = new ActionCode(15);
 
 
     // ----------------------------------------------------------- Constructors
