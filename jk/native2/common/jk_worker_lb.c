@@ -78,6 +78,8 @@
 
 #define MAX_ATTEMPTS 3
 
+#define NO_WORKER_MSG "The servlet container is temporary unavailable or beeing upgraded\n";
+
 /** Find the best worker. In process, check if timeout expired
     for workers that failed in the past and give them another chance.
 
@@ -321,8 +323,25 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
             /* NULL record, no more workers left ... */
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                           "lb_worker.service() all workers in error or disabled state\n");
-            /* XXX set hwBalanceErr status */
-            /* XXX nice message or redirect */
+            /* set hwBalanceErr status */
+            if( lb->hwBalanceErr != 0 ) {
+                s->status=lb->hwBalanceErr;
+            } else {
+                s->status=lb->noWorkerCode; /* SERVICE_UNAVAILABLE is the default */
+            }
+
+            if( s->status == 302 ) {
+                s->headers_out->put(env, s->headers_out,
+                                    "Location", lb->noWorkerMsg, NULL);
+                s->head(env, s );
+            } else {
+                s->headers_out->put(env, s->headers_out,
+                                    "Content-Type", "text/html", NULL);
+                s->head(env, s );
+                s->jkprintf(env, s, lb->noWorkerMsg );
+            }
+            
+            s->afterRequest( env, s);
             return JK_ERR;
         }
 
@@ -419,7 +438,7 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
 
 
 static char *jk2_worker_lb_multiValueInfo[]={"worker", NULL };
-static char *jk2_worker_lb_setAttributeInfo[]={"hwBalanceErr", NULL };
+static char *jk2_worker_lb_setAttributeInfo[]={"hwBalanceErr", "noWorkerMsg", "noWorkerCode", NULL };
 
 static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean, 
                                          char *name, void *valueP)
@@ -445,6 +464,10 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
 
         jk2_lb_refresh( env, lb );
         return JK_OK;
+    } else if( strcmp( name, "noWorkerMsg") == 0 ) {
+        lb->noWorkerMsg=value;
+    } else if( strcmp( name, "noWorkerCode") == 0 ) {
+        lb->noWorkerCode=atoi( value );
     } else if( strcmp( name, "hwBalanceErr") == 0 ) {
         lb->hwBalanceErr=atoi( value );
     }
@@ -525,6 +548,8 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
     w->mbean=result;
 
     w->hwBalanceErr=0;
+    w->noWorkerCode=503;
+    w->noWorkerMsg=NO_WORKER_MSG;
 
     w->workerEnv=env->getByName( env, "workerEnv" );
     w->workerEnv->addWorker( env, w->workerEnv, w );
