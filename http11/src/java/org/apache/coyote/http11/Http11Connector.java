@@ -556,7 +556,7 @@ public class Http11Connector implements Connector, ActionHook {
 
         OutputFilter[] outputFilters = outputBuffer.getFilters();
 
-        int contentLength = request.getContentLength();
+        int contentLength = response.getContentLength();
         if (contentLength != -1) {
             outputBuffer.addActiveFilter
                 (outputFilters[Constants.IDENTITY_FILTER]);
