@@ -58,10 +58,6 @@
  */ 
 package org.apache.coyote;
 
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-
 
 /**
  * Abstract the protocol implementation, including threading, etc.
