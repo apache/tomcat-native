@@ -403,6 +403,7 @@ public final class Response {
      * the default encoding
      */
     public void setLocale(Locale locale) {
+
         if (locale == null) {
             return;  // throw an exception?
         }
@@ -412,9 +413,17 @@ public final class Response {
 
         // Set the contentLanguage for header output
         contentLanguage = locale.getLanguage();
+        if ((contentLanguage != null) && (contentLanguage.length() > 0)) {
+            String country = locale.getCountry();
+            StringBuffer value = new StringBuffer(contentLanguage);
+            if ((country != null) && (country.length() > 0)) {
+                value.append('-');
+                value.append(country);
+            }
+            // only one header !
+            headers.setValue("Content-Language").setString(value.toString());
+        }
 
-	// only one header !
-	headers.setValue("Content-Language").setString(contentLanguage);
     }
 
     public String getCharacterEncoding() {
