@@ -76,7 +76,7 @@ struct jk_channel_apr_private {
     int ndelay;
     apr_sockaddr_t *addr;
     char *host;
-    short port;
+    apr_port_t port;
     int keepalive;
     int timeout;
 };
@@ -92,7 +92,7 @@ typedef struct jk_channel_apr_private jk_channel_apr_private_t;
 */
 
 static int JK_METHOD jk2_channel_apr_resolve(jk_env_t *env, char *host,
-                                                short port,
+                                                apr_port_t port,
                                                 jk_channel_apr_private_t *rc);
 
 static int JK_METHOD jk2_channel_apr_close(jk_env_t *env, jk_channel_t *_this,
@@ -168,7 +168,7 @@ static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
     jk_channel_apr_private_t *socketInfo=
         (jk_channel_apr_private_t *)(ch->_privatePtr);
     int rc;
-    short port=socketInfo->port;
+    apr_port_t port=socketInfo->port;
 
     if( socketInfo->host==NULL ) {
         char *localName=ch->mbean->localName;
@@ -227,7 +227,7 @@ static int JK_METHOD jk2_channel_apr_hasinput(jk_env_t *env,
 /** private: resolve the address on init
  */
 static int JK_METHOD jk2_channel_apr_resolve(jk_env_t *env,
-                                             char *host, short port,
+                                             char *host, apr_port_t port,
                                              jk_channel_apr_private_t *rc)
 {
     int err;
