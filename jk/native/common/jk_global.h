@@ -47,10 +47,13 @@
 #include "ap_config.h"
 #endif
 
+#ifdef HAVE_APR
+#include "apr_lib.h"
+#include "apr_strings.h"
+#endif
+
 #ifdef AS400
 #include "ap_config.h"
-#include "apr_strings.h"
-#include "apr_lib.h"
 extern char *strdup(const char *str);
 #endif
 
