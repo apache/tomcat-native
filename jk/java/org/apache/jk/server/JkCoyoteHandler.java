@@ -304,7 +304,9 @@ public class JkCoyoteHandler extends JkHandler implements
             mb=new MessageBytes();
             ep.setNote( tmpMessageBytesNote, mb );
         }
-        mb.setString( res.getMessage());
+        String message=res.getMessage();
+        if( message==null ) message="OK";
+        mb.setString( message );
         c2b.convert( mb );
         msg.appendBytes(mb);
 
