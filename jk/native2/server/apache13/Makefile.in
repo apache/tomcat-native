@@ -9,6 +9,7 @@ APACHE_INCL=@APACHE_INCL@
 EXTRA_CFLAGS=@APXS_CFLAGS@
 EXTRA_CPPFLAGS=@APXS_CPPFLAGS@
 JAVA_HOME=@JAVA_HOME@
+APR_LDFLAGS=@APR_LDFLAGS@ `@APR_DIR@/apr-config --ldflags --libs` `@APR_UTIL_DIR@/apu-config --ldflags --libs`
 
 ifneq ($(strip $(JAVA_HOME)),)
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS} @HAVE_JNI@
@@ -84,7 +85,7 @@ ${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
 	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}
 
 ${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${A_LO_FILES}
-	${MOD_LINK} -o $@ $^ @APR_LDFLAGS@ `@APR_DIR@/apr-config --libs`
+	${MOD_LINK} -o $@ $^ ${APR_LDFLAGS}
 
 ${COMMON_C_FILES} ${A_C_FILES}: ${H_FILES}
 
