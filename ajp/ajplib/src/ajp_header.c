@@ -733,8 +733,8 @@ apr_status_t ajp_send_header(apr_socket_t *sock,
  * Read the ajp message and return the type of the message.
  */
 apr_status_t ajp_read_header(apr_socket_t *sock,
-                                  request_rec  *r,
-                                  void **data)
+                             request_rec  *r,
+                             void **data)
 {
     apr_byte_t result;
     ajp_msg_t *msg;
@@ -759,6 +759,7 @@ apr_status_t ajp_read_header(apr_socket_t *sock,
     *data = msg;
     return APR_SUCCESS;
 }
+
 /* parse the msg to read the type */
 int ajp_parse_type(request_rec  *r, void *data)
 {
@@ -770,6 +771,7 @@ int ajp_parse_type(request_rec  *r, void *data)
                "ajp_parse_type: got %02x", result);
     return (int) result;
 }
+
 /* parse the headers */
 apr_status_t ajp_parse_headers(request_rec  *r, void *data)
 {
@@ -791,8 +793,10 @@ apr_status_t ajp_parse_headers(request_rec  *r, void *data)
     }
     return ajp_unmarshal_response(msg, r);
 }
+
 /* parse the header and return data address and length */
-apr_status_t  ajp_parse_data(request_rec  *r, void *data, apr_uint16_t *len, char **ptr)
+apr_status_t  ajp_parse_data(request_rec  *r, void *data, apr_uint16_t *len,
+                             char **ptr)
 {
     ajp_msg_t *msg;
     apr_byte_t result;
@@ -814,6 +818,6 @@ apr_status_t  ajp_parse_data(request_rec  *r, void *data, apr_uint16_t *len, cha
     if (rc != APR_SUCCESS) {
         return APR_EGENERAL;
     }
-    *ptr = &(msg->buf[msg->pos]);
+    *ptr = (char *)&(msg->buf[msg->pos]);
     return APR_SUCCESS;
 }
