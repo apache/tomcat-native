@@ -26,6 +26,7 @@ public class TomcatStarter implements Runnable {
     
     public static void main( String args[] ) {
         System.err.println("TomcatStarter: main()");
+        int nClasses = 0;
         
         try {
             AprImpl.jniMode();            
@@ -39,13 +40,15 @@ public class TomcatStarter implements Runnable {
                     continue;
                 }
                 if( c!= null ) {
+                    ++nClasses;
                     Thread startThread=new Thread( new TomcatStarter(c, args));
                     c=null;
                     startThread.start();
                     break;
                 }
             }
-            System.err.println("No class found  ");
+            if (nClasses==0)
+                System.err.println("No class found  ");
 
         } catch (Throwable t ) {
             t.printStackTrace(System.err);
