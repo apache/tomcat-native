@@ -343,22 +343,33 @@ static int escape_url(const char *path, char *dest, int destsize)
     return JK_TRUE;
 }
 
+/*
+ * Find the first occurrence of find in s.
+ */
+static char *stristr(const char *s, const char *find)
+{
+	char c, sc;
+	size_t len;
+
+	if ((c = tolower((unsigned char)(*find++))) != 0) {
+		len = strlen(find);
+		do {
+			do {
+				if ((sc = tolower((unsigned char)(*s++))) == 0)
+					return (NULL);
+			} while (sc != c);
+		} while (strnicmp(s, find, len) != 0);
+		s--;
+	}
+	return ((char *)s);
+} 
+
 static int uri_is_web_inf(const char *uri)
 {
-    char b[INTERNET_MAX_URL_LENGTH + 1];
-    int i = 0;
-
-    while (*uri) {
-        b[i++] = JK_TOLOWER(*uri);
-        uri++;
-        if (i > (INTERNET_MAX_URL_LENGTH - 1))
-            break;
-    }
-    b[i] = '\0';
-    if (strstr(b, "web-inf")) {
+    if (stristr(uri, "web-inf")) {
         return JK_TRUE;
     }
-    if (strstr(b, "meta-inf")) {
+    if (stristr(uri, "meta-inf")) {
         return JK_TRUE;
     }
 
