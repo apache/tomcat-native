@@ -128,8 +128,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             while( attE.hasMoreElements() ) {
                 String key=(String)attE.nextElement();
                 Object v=attributes.get( key );
-                String trnName = translateAttributeName(key);
-                socketFactory.setAttribute( trnName, v );
+                socketFactory.setAttribute( key, v );
             }
         }
 
@@ -605,7 +604,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     }
 
     public void setTimeout( int timeouts ) {
-        timeout = timeouts * 1000;
+        timeout = timeouts;
         setAttribute("timeout", "" + timeouts);
     }
 
@@ -809,27 +808,6 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                 throw sfex;
             }
         }
-    }
-
-    private String translateAttributeName(String name) {
-        if ("clientAuth".equals(name)) {
-            return "clientauth";
-        } else if ("keystoreFile".equals(name)) {
-            return "keystore";
-        } else if ("randomFile".equals(name)) {
-            return "randomfile";
-        } else if ("rootFile".equals(name)) {
-            return "rootfile";
-        } else if ("keystorePass".equals(name)) {
-            return "keypass";
-        } else if ("keystoreType".equals(name)) {
-            return "keytype";
-        } else if ("sslProtocol".equals(name)) {
-            return "protocol";
-        } else if ("sslProtocols".equals(name)) {
-            return "protocols";
-        }
-        return name;
     }
 
     protected String domain;
