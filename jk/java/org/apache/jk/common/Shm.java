@@ -74,6 +74,13 @@ import org.apache.jk.apr.*;
 
 import org.apache.tomcat.util.IntrospectionUtils;
 
+/* The code is a bit confusing at this moment - the class is used as
+   a Bean, or ant Task, or CLI - i.e. you set properties and call execute.
+
+   That's different from the rest of jk handlers wich are stateless ( but
+   similar with Coyote-http ).
+*/
+
 
 /** Handle the shared memory objects.
  *
@@ -82,24 +89,78 @@ import org.apache.tomcat.util.IntrospectionUtils;
 public class Shm extends JniHandler {
     String file="/tmp/shm.file";
     int size;
+    String host="localhost";
+    int port=8009;
+    String unixSocket;
 
+    boolean unregister=false;
+    boolean reset=false;
+    
     // Will be dynamic ( getMethodId() ) after things are stable 
     static final int SHM_SET_ATTRIBUTE=0;
     static final int SHM_WRITE_SLOT=2;
     static final int SHM_ATTACH=3;
     static final int SHM_DETACH=4;
+    static final int SHM_RESET=5;
     
     public Shm() {
     }
-    
+
+    /** Scoreboard location
+     */
     public void setFile( String f ) {
         file=f;
     }
 
+    /** Size. Used only if the scoreboard is to be created.
+     */
     public void setSize( int size ) {
         this.size=size;
     }
 
+    /** Set this to get the scoreboard reset.
+     *  The shm segment will be destroyed and a new one created,
+     *  with the provided size.
+     *
+     *  Requires "file" and "size".
+     */
+    public void setReset(boolean b) {
+        reset=true;
+    }
+
+    /** Ajp13 host
+     */
+    public void setHost( String host ) {
+        this.host=host;
+    }
+
+    /** Ajp13 port
+     */
+    public void setPort( int port ) {
+        this.port=port;
+    }
+
+    /** Unix socket where tomcat is listening.
+     *  Use it only if tomcat is on the same host, of course
+     */
+    public void setUnixSocket( String unixSocket  ) {
+        this.unixSocket=unixSocket;
+    }
+
+    /** Set this option to mark the tomcat instance as
+        'down', so apache will no longer forward messages to it.
+        Note that requests with a session will still try this
+        host first.
+
+        This can be used to implement gracefull shutdown.
+
+        Host and port are still required, since they are used
+        to identify tomcat.
+    */
+    public void setUnregister( boolean unregister  ) {
+        this.unregister=unregister;
+    }
+    
     public void init() throws IOException {
         super.initNative( "shm" );
         if( apr==null ) return;
@@ -127,6 +188,17 @@ public class Shm extends JniHandler {
         this.invoke( msg, mCtx );
     }
 
+    public void resetScoreboard() throws IOException {
+        if( apr==null ) return;
+        MsgContext mCtx=createMsgContext();
+        Msg msg=(Msg)mCtx.getMsg(0);
+        msg.reset();
+
+        msg.appendByte( SHM_RESET );
+        
+        this.invoke( msg, mCtx );
+    }
+
     public void setNativeAttribute(String name, String val) throws IOException {
         if( apr==null ) return;
         MsgContext mCtx=createMsgContext();
@@ -143,15 +215,15 @@ public class Shm extends JniHandler {
         this.invoke( msg, mCtx );
     }
 
-    public void registerTomcat(String host, int port) throws IOException {
-        String slotName="TOMCAT:" + host + ":" + port;
-        writeSlot( slotName );
-    }
-    
-    public void writeSlot(String slotName)
+    /** Register a tomcat instance
+     *  XXX make it more flexible
+     */
+    public void registerTomcat(String host, int port, String unixDomain)
         throws IOException
     {
         if( apr==null ) return;
+
+        String slotName="TOMCAT:" + host + ":" + port;
         MsgContext mCtx=createMsgContext();
         Msg msg=(Msg)mCtx.getMsg(0);
         msg.reset();
@@ -160,6 +232,45 @@ public class Shm extends JniHandler {
         msg.appendByte( SHM_WRITE_SLOT );
         appendString( msg, slotName, c2b );
 
+        int channelCnt=1;
+        if( unixDomain != null ) channelCnt++;
+
+        // number of channels for this instance
+        msg.appendInt( channelCnt );
+        
+        // The body:
+        appendString(msg, "channel.socket:" + host + ":" + port, c2b );
+        msg.appendInt( 1 );
+        appendString(msg, "instance", c2b);
+        appendString(msg, host+":" + port, c2b);
+
+        if( unixDomain != null ) {
+            appendString(msg, "channel.apr:" + unixDomain, c2b );
+            msg.appendInt(1);
+            appendString(msg, "instance", c2b);
+            appendString(msg, host+":" + port, c2b);
+        }
+
+        this.invoke( msg, mCtx );
+    }
+
+    public void unRegisterTomcat(String host, int port)
+        throws IOException
+    {
+        if( apr==null ) return;
+
+        String slotName="TOMCAT:" + host + ":" + port;
+        MsgContext mCtx=createMsgContext();
+        Msg msg=(Msg)mCtx.getMsg(0);
+        msg.reset();
+        C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
+        
+        msg.appendByte( SHM_WRITE_SLOT );
+        appendString( msg, slotName, c2b );
+
+        // number of channels for this instance
+        msg.appendInt( 0 );
+        
         this.invoke( msg, mCtx );
     }
 
@@ -193,9 +304,26 @@ public class Shm extends JniHandler {
 
     public void execute() {
         try {
+            WorkerEnv wEnv=new WorkerEnv();
+            AprImpl apr=new AprImpl();
+            wEnv.addHandler( "apr", apr );
+            wEnv.addHandler( "shm", this );
+            apr.init();
+            if( ! apr.isLoaded() ) {
+                log.error( "No native support. " +
+                           "Make sure libapr.so and libjkjni.so are available in LD_LIBRARY_PATH");
+                return;
+            }
             init();
+            if( reset ) {
+                resetScoreboard();
+            } else if( unregister ) {
+                unRegisterTomcat( host, port );
+            } else {
+                registerTomcat( host, port, unixSocket );
+            }
         } catch (Exception ex ) {
-            ex.printStackTrace();
+            log.error( "Error executing Shm", ex);
         }
     }
     
