@@ -194,19 +194,21 @@ static jk_uriEnv_t *jk2_uriEnv_createUriEnv(jk_env_t *env,
     int err;
     jk_uriEnv_t *uriEnv;
     char *uriName;
+    jk_bean_t *jkb;
 
     uriName=(char *)uriMap->pool->calloc( env, uriMap->pool,
                                           (vhost==NULL ? 0 : strlen( vhost )) +
                                           (path==NULL ? 0 : strlen( path )) +
                                           + 10);
-    strcpy( uriName, "uri:" );
+    strcpy( uriName, "" );
     if( vhost != NULL ) strcat( uriName, vhost );
     if( path != NULL ) strcat( uriName, path );
-    
-    uriEnv=env->createInstance( env, uriMap->pool, "uriEnv", uriName );
-    if( uriEnv==NULL )
+
+    jkb=env->createBean2( env, uriMap->pool, "uri", uriName );
+    if( jkb==NULL || jkb->object==NULL )
         return NULL;
-    
+    uriEnv=jkb->object;
+
     uriEnv->workerEnv=uriMap->workerEnv;
     
     uriEnv->mbean->setAttribute( env, uriEnv->mbean, "path", path );

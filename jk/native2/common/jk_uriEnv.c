@@ -79,7 +79,7 @@ static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
 
     if( slash==NULL ) {
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                       "At least a '/' must be included %s\n", name);
+                       "uriEnv.parseUri(): At least a '/' must be included %s\n", name);
         return JK_FALSE;
     }
     
@@ -102,8 +102,8 @@ static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
     
     uriEnv->uri=uriEnv->pool->pstrdup(env, uriEnv->pool, n);
     jk2_uriEnv_init(env, uriEnv);
-    env->l->jkLog( env, env->l, JK_LOG_INFO,
-                   "Setting path %s for %s\n", n, name);
+    /*     env->l->jkLog( env, env->l, JK_LOG_INFO, */
+    /*                    "uriEnv.parseUri() Setting path %s for %s\n", n, name); */
     return JK_TRUE;
 }
 
@@ -267,8 +267,6 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     jk_pool_t *uriPool;
     int err;
     jk_uriEnv_t *uriEnv;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "uriEnv: Create URI %s %s \n", type, name );
 
     uriPool=(jk_pool_t *)pool->create( env, pool,
                                        HUGE_POOL_SIZE);
