@@ -139,7 +139,7 @@ static char *get_cookie(jk_ws_service_t *s,
                         if((id_end = strchr(id_start, ';')) != NULL) {
                             *id_end = '\0';
                         }
-                        if((id_start = strchr(id_start, ',')) != NULL) {
+                        if((id_end = strchr(id_start, ',')) != NULL) {
                             *id_end = '\0';
                         }
                         return id_start;
