@@ -1,2 +1,2 @@
-Main-Class: org.apache.jk.server.JkMain
-Class-Path: tomcat-util.jar workers.jar ../classes/ commons-logging.jar log4j.jar log4j-core.jar
+Main-Class: org.apache.jk.apr.TomcatStarter
+Class-Path: ../lib/tomcat.jar bootstrap.jar 
