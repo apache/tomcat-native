@@ -1985,6 +1985,7 @@ static void exit_handler (server_rec *s, ap_pool *p)
             uri_worker_map_free(&(conf->uw_map), conf->log);
             map_free(&(conf->uri_to_context));
             map_free(&(conf->worker_properties));
+            map_free(&(conf->automount));
             if (conf->log)
                 jk_close_file_logger(&(conf->log));
         }
