@@ -25,4 +25,15 @@
         </jar>
   </target>
 
+
+  <target name="clean" 
+          description="Compile Coyote and all related protocols">
+        <ant dir="util" target="clean" />
+        <ant dir="coyote" target="clean" />
+        <ant dir="http11" target="clean"/>
+        <ant dir="jk" target="clean" />
+
+        <delete file="jtc.jar" />
+  </target>
+
 </project>

@@ -74,15 +74,19 @@
   <!-- Construct compile classpath -->
   <path id="compile.classpath">
     <pathelement location="${build.home}/classes"/>
+    <pathelement location="../util/build/classes"/>
     <pathelement location="${tomcat-util.jar}"/>
     <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
     <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
   </path>
   <path id="compile.classpath.tomcat33">
     <pathelement location="${build.home}/classes"/>
+    <pathelement location="../util/build/classes"/>
     <pathelement location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+    <pathelement location="${tomcat33.home}/lib/container/jtc.jar"/>
     <pathelement location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
     <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
+    <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
   </path>
 
 
@@ -212,7 +216,6 @@
            includes="org/apache/coyote/**" 
 	   excludes="**/tomcat4/*" />
   </target>
-
 
   <target name="compile.tests" depends="compile"
    description="Compile unit test cases">
