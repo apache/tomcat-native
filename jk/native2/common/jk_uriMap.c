@@ -260,9 +260,6 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
             if (port == 0 || port == uriEnv->port)
                 return uriEnv;
         }
-        else if (port && strcasecmp(name, vv) == 0) {
-            return uriEnv;
-        }
         else if (uriEnv->aliases) {
             int m = uriEnv->aliases->size(env, uriEnv->aliases);
             for (j = 0; j < m; j++) {
@@ -272,6 +269,9 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
                         return uriEnv;
                 }
             }
+        }
+        else if (port && strcasecmp(name, vv) == 0) {
+            return uriEnv;
         }
     }
     return uriMap->vhosts->get(env, uriMap->vhosts, "*");
