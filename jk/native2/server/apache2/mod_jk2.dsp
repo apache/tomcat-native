@@ -74,7 +74,7 @@ LINK32=link.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc0a /d "_DEBUG"
-# ADD RSC /l 0xc0a /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -118,6 +118,10 @@ SOURCE=..\..\common\jk_channel_un.c
 # Begin Source File
 
 SOURCE=..\..\common\jk_config.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_config_file.c
 # End Source File
 # Begin Source File
 
@@ -169,6 +173,14 @@ SOURCE=..\..\common\jk_mutex.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\common\jk_mutex_proc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_mutex_thread.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\common\jk_nwmain.c
 # End Source File
 # Begin Source File
@@ -186,10 +198,6 @@ SOURCE=..\..\common\jk_pool_apr.c
 # Begin Source File
 
 SOURCE=..\..\common\jk_registry.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\common\jk_registry.h
 # End Source File
 # Begin Source File
 
@@ -242,10 +250,6 @@ SOURCE=..\..\common\jk_workerEnv.c
 # Begin Source File
 
 SOURCE=.\mod_jk2.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\jni\org_apache_jk_apr_AprImpl.h
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -305,6 +309,10 @@ SOURCE=..\..\include\jk_pool.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\common\jk_registry.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\jk_requtil.h
 # End Source File
 # Begin Source File
@@ -335,6 +343,10 @@ SOURCE=..\..\include\jk_worker.h
 
 SOURCE=..\..\include\jk_workerEnv.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\jni\org_apache_jk_apr_AprImpl.h
+# End Source File
 # End Group
 # Begin Group "Resource Files"
 
@@ -342,6 +354,31 @@ SOURCE=..\..\include\jk_workerEnv.h
 # Begin Source File
 
 SOURCE=..\..\common\jk_logger_win32_message.mc
+
+!IF  "$(CFG)" == "mod_jk2 - Win32 Release"
+
+# Begin Custom Build - Creating resources from $(InputPath)
+InputDir=\tomcat\jakarta-tomcat-connectors\jk\native2\common
+InputPath=..\..\common\jk_logger_win32_message.mc
+
+"..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	mc -h $(InputDir) -r $(InputDir) $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "mod_jk2 - Win32 Debug"
+
+# Begin Custom Build - Creating resources from $(InputPath)
+InputDir=\tomcat\jakarta-tomcat-connectors\jk\native2\common
+InputPath=..\..\common\jk_logger_win32_message.mc
+
+"..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	mc -h $(InputDir) -r $(InputDir) $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
