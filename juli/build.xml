@@ -1,0 +1,214 @@
+<project name="Juli" default="compile" basedir=".">
+
+
+<!--
+        "Coyote" connector framework for Jakarta Tomcat
+        $Id$
+-->
+
+
+<!-- ========== Initialize Properties ===================================== -->
+
+
+  <property file="build.properties"/>                <!-- Component local   -->
+  <property file="../build.properties"/>             <!-- Commons local     -->
+  <property file="${user.home}/build.properties"/>   <!-- User local        -->
+
+
+<!-- ========== External Dependencies ===================================== -->
+
+
+  <!-- The directories corresponding to your necessary dependencies -->
+  <property name="junit.home"              value="/usr/local/junit3.5"/>
+
+
+<!-- ========== Derived Values ============================================ -->
+
+
+	  <property name="junit.jar"        value="${junit.home}/junit.jar"/>
+	  <property name="jmx.jar" location="../lib/mx4j.jar" />
+
+	
+<!-- ========== Component Declarations ==================================== -->
+
+
+  <!-- The name of this component -->
+  <property name="component.name"          value="juli"/>
+
+  <!-- The title of this component -->
+  <property name="component.title"         value="Java Util Logging Implementation"/>
+
+  <!-- The current version number of this component -->
+  <property name="component.version"       value="1.0-dev"/>
+
+  <!-- The base directory for compilation targets -->
+  <property name="build.home"              value="build"/>
+
+  <!-- The base directory for component configuration files -->
+  <property name="conf.home"               value="src/conf"/>
+
+  <!-- The base directory for component sources -->
+  <property name="source.home"             value="src/java"/>
+
+  <!-- The base directory for unit test sources -->
+  <property name="test.home"               value="src/test"/>
+
+<!-- ========== Compiler Defaults ========================================= -->
+
+
+  <!-- Should Java compilations set the 'debug' compiler option? -->
+  <property name="compile.debug"           value="true"/>
+
+  <!-- Should Java compilations set the 'deprecation' compiler option? -->
+  <property name="compile.deprecation"     value="false"/>
+
+  <!-- Should Java compilations set the 'optimize' compiler option? -->
+  <property name="compile.optimize"        value="true"/>
+
+  <!-- Construct compile classpath -->
+  <path id="compile.classpath">
+    <pathelement location="${build.home}/classes"/>
+    <pathelement location="${jmx.jar}"/>
+  </path>
+
+
+<!-- ========== Test Execution Defaults =================================== -->
+
+
+  <!-- Construct unit test classpath -->
+  <path id="test.classpath">
+    <pathelement location="${build.home}/classes"/>
+    <pathelement location="${build.home}/tests"/>
+    <pathelement location="${jmx.jar}"/>
+    <pathelement location="${junit.jar}"/>
+  </path>
+
+  <!-- Should all tests fail if one does? -->
+  <property name="test.failonerror"        value="true"/>
+
+
+<!-- ========== Executable Targets ======================================== -->
+
+
+  <target name="init"
+   description="Initialize and evaluate conditionals">
+    <echo message="-------- ${component.title} ${component.version} --------"/>
+    <filter  token="name"                  value="${component.name}"/>
+    <filter  token="version"               value="${component.version}"/>
+  </target>
+
+
+  <target name="prepare" depends="init"
+   description="Prepare build directory">
+    <mkdir dir="${build.home}"/>
+    <mkdir dir="${build.home}/classes"/>
+    <mkdir dir="${build.home}/conf"/>
+    <mkdir dir="${build.home}/lib"/>
+    <mkdir dir="${build.home}/docs"/>
+    <mkdir dir="${build.home}/docs/api"/>
+    <mkdir dir="${build.home}/tests"/>
+  </target>
+
+
+  <target name="static" depends="prepare"
+   description="Copy static files to build directory">
+    <tstamp/>
+    <copy  todir="${build.home}/conf" filtering="on">
+      <fileset dir="${conf.home}" includes="*.MF"/>
+    </copy>
+  </target>
+
+
+  <target name="javadoc" unless="docs-uptodate"
+   description="Create component Javadoc documentation">
+    <mkdir dir="${build.home}/docs/api"/>
+    <javadoc sourcepath="${source.home}"
+                destdir="${build.home}/docs/api"
+           packagenames="org.apache.coyote.*"
+                 author="true"
+                private="true"
+                version="true"
+               doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;"
+            windowtitle="${component.title} (Version ${component.version})"
+                 bottom="Copyright (c) 2005 - Apache Software Foundation">
+      <classpath refid="compile.classpath"/>
+    </javadoc>
+  </target>
+
+  <target name="compile-only" 
+          description="Compile shareable components">
+
+    <javac  srcdir="${source.home}"
+           destdir="${build.home}/classes"
+             debug="${compile.debug}"
+       deprecation="${compile.deprecation}"
+			source="1.4"
+          optimize="${compile.optimize}">
+      <classpath refid="compile.classpath"/>
+    </javac>
+    <copy    todir="${build.home}/classes" filtering="on">
+      <fileset dir="${source.home}" excludes="**/*.java"/>
+    </copy>
+    <property name="tomcat-juli.jar" value="${build.home}/lib/tomcat-${component.name}.jar"/>
+    <jar    jarfile="${tomcat-juli.jar}"
+             index="true"
+            basedir="${build.home}/classes"
+             manifest="${build.home}/conf/MANIFEST.MF">
+      <include name="org/apache/juli/**"/>
+    </jar>
+  </target>
+
+  <target name="compile" depends="static,compile-only"
+          description="Compile shareable components">
+  </target>
+
+
+  <target name="compile.tests" depends="compile"
+   description="Compile unit test cases">
+    <javac  srcdir="${test.home}/java"
+           destdir="${build.home}/tests"
+             debug="${compile.debug}"
+       deprecation="${compile.deprecation}"
+          optimize="${compile.optimize}">
+      <classpath refid="test.classpath"/>
+    </javac>
+    <copy    todir="${build.home}/tests" filtering="on">
+      <fileset dir="${test.home}" excludes="**/*.java"/>
+    </copy>
+  </target>
+
+
+  <target name="clean"
+   description="Clean build and distribution directories">
+    <delete    dir="${build.home}"/>
+    <delete    dir="${dist.home}"/>
+  </target>
+
+
+  <target name="all" depends="clean,compile,compile.tests"
+   description="Clean and compile all components"/>
+
+
+<!-- ========== Unit Test Targets ========================================= -->
+
+
+  <target name="test"  depends="compile.tests" if="test.entry"
+   description="Run all unit test cases">
+      <!--
+      <junit printsummary="yes" fork="on" haltonfailure="yes">
+      	<formatter type="plain" usefile="false"/>
+      	<test name="${test.entry}"/>
+        <classpath refid="test.classpath"/>
+      </junit>
+
+      <java classname="${test.runner}" fork="yes"
+       failonerror="${test.failonerror}">
+        <jvmarg value="${java.protocol.handler.pkgs}"/>
+        <arg value="${test.entry}"/>
+        <classpath refid="test.classpath"/>
+      </java>
+      -->
+  </target>
+
+
+</project>
