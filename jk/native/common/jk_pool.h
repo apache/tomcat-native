@@ -104,6 +104,8 @@ extern "C" {
     typedef long long   jk_pool_atom_t;
 #elif defined(IRIX)
     typedef long long   jk_pool_atom_t;
+#elif defined(AS400)
+    typedef void *	jk_pool_atom_t;
 #else
     typedef long long   jk_pool_atom_t;
 #endif

@@ -177,7 +177,11 @@ int jk_open_file_logger(jk_logger_t **l,
             rc->log = log_to_file;
             rc->level = level;
             rc->logger_private = p;
+#ifdef AS400
+            p->logfile = fopen(file, "a+, o_ccsid=0");
+#else
             p->logfile = fopen(file, "a+");
+#endif
             if(p->logfile) {
                 *l = rc;
                 return JK_TRUE;
@@ -658,7 +662,11 @@ int jk_file_exists(const char *f)
 {
     if(f) {
         struct stat st;
+#ifdef AS400
+        if((0 == stat(f, &st)) && (st.st_mode & _S_IFREG)) {
+#else
         if((0 == stat(f, &st)) && (st.st_mode & S_IFREG)) {
+#endif
             return JK_TRUE;
         }
     }
@@ -770,6 +778,9 @@ char **jk_parse_sysprops(jk_pool_t *p,
                          const char *sysprops)
 {
     char **rc = NULL;
+#ifdef AS400
+    char *lasts;
+#endif
 
     if(p && sysprops) {
         char *prps = jk_pool_strdup(p, sysprops);
@@ -785,11 +796,19 @@ char **jk_parse_sysprops(jk_pool_t *p,
             rc = jk_pool_alloc(p, (num_of_prps + 1) * sizeof(char *));
             if(rc) {
                 unsigned i = 0;
+#ifdef AS400
+                char *tmp = strtok_r(prps, "*", &lasts);
+#else
                 char *tmp = strtok(prps, "*");
+#endif
 
                 while(tmp && i < num_of_prps) {
                     rc[i] = tmp;
+#ifdef AS400
+                    tmp = strtok_r(NULL, "*", &lasts);
+#else
                     tmp = strtok(NULL, "*");
+#endif
                     i++;
                 }
                 rc[i] = NULL;

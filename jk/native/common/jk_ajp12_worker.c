@@ -67,6 +67,10 @@
 #include "jk_connect.h"
 #include "jk_util.h"
 #include "jk_sockbuf.h"
+#ifdef AS400
+#include "util_ebcdic.h"
+#include <string.h>
+#endif
 
 #define AJP_DEF_HOST            ("localhost")
 #define AJP_DEF_PORT            (8007)
@@ -95,8 +99,18 @@ typedef struct ajp12_endpoint ajp12_endpoint_t;
 static int ajpv12_mark(ajp12_endpoint_t *p, 
                        unsigned char type);
 
+#ifdef AS400
+static int ajpv12_sendasciistring(ajp12_endpoint_t *p, 
+                             char *buffer);
+#endif
+
+#ifdef AS400
+static int ajpv12_sendstring(ajp12_endpoint_t *p, 
+                             char *buffer);
+#else
 static int ajpv12_sendstring(ajp12_endpoint_t *p, 
                              const char *buffer);
+#endif
 
 static int ajpv12_sendint(ajp12_endpoint_t *p, 
                           int d);
@@ -272,7 +286,7 @@ int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
             (ajp12_worker_t *)malloc(sizeof(ajp12_worker_t));
 
         if(private_data) {
-            private_data->name = strdup(name);          
+            private_data->name = strdup(name);
 
             if(private_data->name) {
                 private_data->connect_retry_attempts= DEF_RETRY_ATTEMPTS;
@@ -318,13 +332,35 @@ static int ajpv12_sendnbytes(ajp12_endpoint_t *p,
     }
 }
 
-static int ajpv12_sendstring(ajp12_endpoint_t *p, 
-                             const char *buffer) 
+#ifdef AS400
+static int ajpv12_sendasciistring(ajp12_endpoint_t *p, 
+                             char *buffer)  
 {
     int bufferlen;
 
     if(buffer && (bufferlen = strlen(buffer))) {
-        return ajpv12_sendnbytes(p, buffer, bufferlen);
+	return ajpv12_sendnbytes(p, buffer, bufferlen);
+    } else {
+        return ajpv12_sendnbytes(p, NULL, 0);
+    }
+}
+#endif
+
+#ifdef AS400
+static int ajpv12_sendstring(ajp12_endpoint_t *p, 
+                             char *buffer) 
+#else
+static int ajpv12_sendstring(ajp12_endpoint_t *p, 
+                             const char *buffer) 
+#endif
+{
+    int bufferlen;
+
+    if(buffer && (bufferlen = strlen(buffer))) {
+#ifdef AS400
+        jk_xlate_to_ascii(buffer, bufferlen);
+#endif  
+	return ajpv12_sendnbytes(p, buffer, bufferlen);
     } else {
         return ajpv12_sendnbytes(p, NULL, 0);
     }
@@ -373,17 +409,29 @@ static int ajpv12_handle_request(ajp12_endpoint_t *p,
            ajpv12_sendstring(p, 0) &&   /* doc root */
            ajpv12_sendstring(p, 0) &&   /* path info */
            ajpv12_sendstring(p, 0) &&   /* path translated */
+#ifdef AS400
+           ajpv12_sendasciistring(p, s->query_string) &&
+#else
            ajpv12_sendstring(p, s->query_string)&&
+#endif
            ajpv12_sendstring(p, s->remote_addr) &&
            ajpv12_sendstring(p, s->remote_host) &&
            ajpv12_sendstring(p, s->remote_user) &&
            ajpv12_sendstring(p, s->auth_type)   &&
            ajpv12_sendint(p, s->server_port)    &&
+#ifdef AS400
+           ajpv12_sendasciistring(p, s->method) &&
+#else
            ajpv12_sendstring(p, s->method)      &&
+#endif
            ajpv12_sendstring(p, s->req_uri)     &&
            ajpv12_sendstring(p, 0)              && /* */
            ajpv12_sendstring(p, 0)              && /* SCRIPT_NAME */
+#ifdef AS400
+           ajpv12_sendasciistring(p, s->server_name) &&
+#else
            ajpv12_sendstring(p, s->server_name) &&
+#endif
            ajpv12_sendint(p, s->server_port)    &&
            ajpv12_sendstring(p, s->protocol)    &&
            ajpv12_sendstring(p, 0)              && /* SERVER_SIGNATURE */ 
@@ -503,11 +551,17 @@ static int ajpv12_handle_response(ajp12_endpoint_t *p,
         char *line  = NULL;
         char *name  = NULL;
         char *value = NULL;
+#ifdef AS400
+        char *lasts;
+#endif
 
         if(!jk_sb_gets(&p->sb, &line)) {
             jk_log(l, JK_LOG_ERROR, "ajpv12_handle_response, error reading header line\n");
             return JK_FALSE;
         }
+#ifdef AS400
+        jk_xlate_from_ascii(line, strlen(line));
+#endif
         
         jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, read %s\n", line);
         if(0 == strlen(line)) {
@@ -539,14 +593,22 @@ static int ajpv12_handle_response(ajp12_endpoint_t *p,
 
         jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, read %s=%s\n", name, value);
         if(0 == strcmp("Status", name)) {
+#ifdef AS400
+            char *numeric = strtok_r(value, " \t", &lasts);
+#else
             char *numeric = strtok(value, " \t");
+#endif
 
             status = atoi(numeric);
             if(status < 100 || status > 999) {
                 jk_log(l, JK_LOG_ERROR, "ajpv12_handle_response, invalid status code\n");
                 return JK_FALSE;
             }
+#ifdef AS400
+            reason = jk_pool_strdup(s->pool, strtok_r(NULL, " \t", &lasts));
+#else 
             reason = jk_pool_strdup(s->pool, strtok(NULL, " \t"));
+#endif
         } else {
             if(headers_capacity == headers_len) {
                 jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, allocating header arrays\n");

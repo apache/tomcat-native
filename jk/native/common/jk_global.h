@@ -74,6 +74,12 @@
 #include <errno.h>
 #include <time.h>
 #include <ctype.h>
+#ifdef AS400
+#include "ap_config.h"
+#include "apr_strings.h"
+#include "apr_lib.h"
+extern char *strdup (const char *str);
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>

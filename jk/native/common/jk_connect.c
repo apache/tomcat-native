@@ -78,6 +78,9 @@ int jk_resolve(char *host,
     int x;
     u_long laddr;
 
+#ifdef AS400
+    memset(rc, 0, sizeof(struct sockaddr_in));		
+#endif
     rc->sin_port   = htons((short)port);
     rc->sin_family = AF_INET;
 
@@ -89,11 +92,23 @@ int jk_resolve(char *host,
     }
 
     if(host[x] != '\0') {
-        /* If we found also characters we use gethostbyname()*/
+#ifdef AS400
+       /* If we found also characters we use gethostbyname_r()*/
+       struct hostent hostentry;
+       struct hostent *hoste = &hostentry;
+       struct hostent_data hd;
+       memset( &hd, 0, sizeof(struct hostent_data) );
+       if ( (gethostbyname_r( host, hoste, &hd )) != 0 ) {
+        return JK_FALSE;
+       }
+#else /* If we found also characters we use gethostbyname()*/
+      /* XXX : WARNING : We should really use gethostbyname_r in multi-threaded env       */
+      /* take a look at APR which handle gethostbyname in apr/network_io/unix/sa_common.c */
         struct hostent *hoste = gethostbyname(host);
         if(!hoste) {
             return JK_FALSE;
         }
+#endif
 
         laddr = ((struct in_addr *)hoste->h_addr_list[0])->s_addr;
     } else {

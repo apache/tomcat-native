@@ -272,6 +272,33 @@ int jk_b_get_size(jk_msg_buf_t *msg)
     return msg->maxlen;
 }
 
+#ifdef AS400
+int jk_b_append_asciistring(jk_msg_buf_t *msg, 
+                       const char *param) 
+{
+    int len;
+
+    if(!param) {
+	    jk_b_append_int( msg, 0xFFFF );
+	    return 0; 
+    }
+
+    len = strlen(param);
+    if(msg->len + len + 2  > msg->maxlen) {
+	    return -1;
+    }
+
+    /* ignore error - we checked once */
+    jk_b_append_int(msg, (unsigned short )len);
+
+    /* We checked for space !!  */
+    strncpy((char *)msg->buf + msg->len , param, len+1);    /* including \0 */
+    msg->len += len + 1;
+
+    return 0;
+}
+#endif
+
 int jk_b_append_string(jk_msg_buf_t *msg, 
                        const char *param) 
 {

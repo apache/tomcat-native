@@ -79,6 +79,10 @@
 #include "http_main.h"
 #include "http_log.h"
 #include "util_script.h"
+#ifdef AS400
+#include "ap_charset.h"
+#include "util_charset.h"              /* ap_hdrs_from_ascii */
+#endif
 
 /* moved to apr since http-2.0.19-dev */
 #if (MODULE_MAGIC_NUMBER_MAJOR < 20010523)
@@ -230,6 +234,11 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                 ap_content_type_tolower(tmp);
                 r->content_type = tmp;
             } else if(!strcasecmp(header_names[h], "Location")) {
+#ifdef AS400 
+                /* Fix escapes in Location Header URL*/
+                ap_fixup_escapes((char *)header_values[h], 
+                strlen(header_values[h]), ap_hdrs_from_ascii);
+#endif 
                 apr_table_set(r->headers_out, 
                               header_names[h], header_values[h]);
             } else if(!strcasecmp(header_names[h], "Content-Length")) {
@@ -283,7 +292,18 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
         }
 
         if(p->read_body_started) {
-            long rv;
+#ifdef AS400
+    int long rv = OK;
+    if (rv = ap_change_request_body_xlate(p->r, 65535, 65535)) /* turn off request body translation*/
+    {		 
+        ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
+                     NULL, "mod_jk: Error on ap_change_request_body_xlate, rc=%d \n", rv);
+        return JK_FALSE;
+    }
+#else
+    long rv;
+#endif
+
             if ((rv = ap_get_client_block(p->r, b, len)) < 0) {
                 *actually_read = 0;
             } else {
@@ -315,6 +335,10 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
                               const void *b,
                               unsigned l)
 {
+#ifdef AS400
+    int rc;
+#endif
+
     if(s && s->ws_private && b) {
         apache_private_data_t *p = s->ws_private;
 
@@ -332,6 +356,14 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
                     return JK_FALSE;
                 }
             }
+#ifdef AS400
+            rc = ap_change_response_body_xlate(p->r, 65535, 65535); /* turn off response body translation*/
+	    if(rc){
+                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
+                             NULL, "mod_jk: Error on ap_change_response_body_xlate, rc=%d \n", rc);
+                 return JK_FALSE;	     
+            }
+#endif
             
             /* Debug - try to get around rwrite */
             while( ll > 0 ) {
@@ -351,11 +383,13 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             /*
              * To allow server push. After writing full buffers
              */
+#ifndef AS400
             if(ap_rflush(p->r) != APR_SUCCESS) {
                 ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
                              NULL, "mod_jk: Error flushing \n"  );
                 return JK_FALSE;
             }
+#endif
 
         }
         
@@ -459,7 +493,12 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->content_length = get_content_length(r);
     s->is_chunked     = r->read_chunked;
     s->no_more_chunks = 0;
+#ifdef AS400
+    /* Get the query string that is not translated to EBCDIC  */
+    s->query_string   = ap_get_original_query_string(r); 
+#else
     s->query_string   = r->args;
+#endif
 
     /*
      * The 2.2 servlet spec errata says the uri from

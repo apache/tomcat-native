@@ -115,9 +115,14 @@ void *jk_pool_alloc(jk_pool_t *p,
 
     if(p && size > 0) {
         /* Round size to the upper mult of 8. */
-        size -= 1;
+	size--;
+#ifdef AS400
+        size /= 16;
+        size = (size + 1) * 16;
+#else
         size /= 8;
         size = (size + 1) * 8;
+#endif
         if((p->size - p->pos) >= size) {
             rc = &(p->buf[p->pos]);
             p->pos += size;

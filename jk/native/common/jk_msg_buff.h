@@ -171,6 +171,11 @@ int jk_b_append_long(jk_msg_buf_t *msg,
 int jk_b_append_string(jk_msg_buf_t *msg, 
                        const char *param);
 
+#ifdef AS400
+int jk_b_append_asciistring(jk_msg_buf_t *msg, 
+                       const char *param);
+#endif
+
 int jk_b_append_bytes(jk_msg_buf_t         *msg,
                       const unsigned char  *param,
                       int                   len);

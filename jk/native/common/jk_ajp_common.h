@@ -233,7 +233,11 @@ extern "C" {
 
 struct jk_res_data {
     int         status;
+#ifdef AS400
+    char *msg;
+#else
     const char *msg;
+#endif
     unsigned    num_headers;
     char      **header_names;
     char      **header_values;

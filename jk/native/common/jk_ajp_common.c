@@ -69,6 +69,9 @@
 #include "jk_ajp14.h"
 #include "jk_ajp_common.h"
 #include "jk_connect.h"
+#ifdef AS400
+#include "util_ebcdic.h"
+#endif
 
 
 const char *response_trans_headers[] = {
@@ -357,7 +360,11 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
     }
     if (s->query_string) {
         if (jk_b_append_byte(msg, SC_A_QUERY_STRING) ||
+#ifdef AS400
+            jk_b_append_asciistring(msg, s->query_string)) {
+#else
             jk_b_append_string(msg, s->query_string)) {
+#endif
             jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the query string\n");
             return JK_FALSE;
         }

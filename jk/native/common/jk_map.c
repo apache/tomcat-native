@@ -60,6 +60,9 @@
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  * Version:     $Revision$                                           *
  ***************************************************************************/
+#ifdef AS400
+#include "apr_xlate.h"    
+#endif
 
 #include "jk_global.h"
 #include "jk_map.h"
@@ -211,6 +214,9 @@ char **map_get_string_list(jk_map_t *m,
 {
     char *l = map_get_string(m, name, def);
     char **ar = NULL;
+#ifdef AS400
+    char *lasts;
+#endif
 
     *list_len = 0;
 
@@ -227,10 +233,17 @@ char **map_get_string_list(jk_map_t *m,
          * GS, in addition to VG's patch, we now need to 
          * strtok also by a "*"
          */
-
+#ifdef AS400
+        for(l = strtok_r(v, " \t,*", &lasts) ;
+            l ;
+	    l = strtok_r(NULL, " \t,*",&lasts)) 
+#else
         for(l = strtok(v, " \t,*") ; 
             l ; 
-            l = strtok(NULL, " \t,*")) {
+	       l = strtok(NULL, " \t,*")) 
+#endif
+
+	   {
         
             if(idex == capacity) {
                 ar = jk_pool_realloc(&m->p, 
@@ -292,7 +305,11 @@ int map_read_properties(jk_map_t *m,
     int rc = JK_FALSE;
 
     if(m && f) {
+#ifdef AS400
+        FILE *fp = fopen(f, "r, o_ccsid=0");
+#else
         FILE *fp = fopen(f, "r");
+#endif        
         
         if(fp) {
             char buf[LENGTH_OF_LINE + 1];            
@@ -379,7 +396,13 @@ void *map_value_at(jk_map_t *m,
 
 static void trim_prp_comment(char *prp)
 {
+#ifdef AS400
+    char *comment;
+  /* lots of lines that translate a '#' realtime deleted   */
+    comment = strchr(prp, *APR_NUMBERSIGN); 
+#else
     char *comment = strchr(prp, '#');
+#endif
     if(comment) {
         *comment = '\0';
     }
