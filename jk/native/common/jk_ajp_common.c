@@ -699,8 +699,8 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
         if(ae->sd >= 0) {
             jk_log(l, JK_LOG_DEBUG,
                    "In jk_endpoint_t::ajp_connect_to_endpoint, "
-                   "connected sd = %d\n",
-                   ae->sd);
+                   "connected sd = %d, port = %d\n",
+                   ae->sd, (int)ae->worker->worker_inet_addr.sin_port);
 
              /* set last_access */
              ae->last_access = time(NULL);
@@ -718,8 +718,8 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
 
     jk_log(l, JK_LOG_INFO,
            "Error connecting to tomcat. Tomcat is probably not started or is "
-           "listening on the wrong port. Failed errno = %d\n",
-           errno);
+           "listening on the wrong port (%d). Failed errno = %d\n",
+           (int)ae->worker->worker_inet_addr.sin_port, errno);
     return JK_FALSE;
 }
 
