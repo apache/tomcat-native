@@ -77,15 +77,20 @@
 #define DEFAULT_LB_FACTOR           (1.0)
 
 /* Time to wait before retry... XXX make it configurable*/
-#define WAIT_BEFORE_RECOVER (60) 
+#define WAIT_BEFORE_RECOVER 60 
 
 #define MAX_ATTEMPTS 3
 
 #define NO_WORKER_MSG "The servlet container is temporary unavailable or being upgraded\n";
 
 typedef struct {
-    struct jk_mutex *cs;
-    int    initializing;
+    struct  jk_mutex *cs;
+    int     initializing;
+    int     attempts;
+    int     recovery;
+    int     timeout;
+    time_t  error_time;
+
 } jk_worker_lb_private_t;
 
 /** Find the best worker. In process, check if timeout expired
@@ -108,6 +113,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
     int currentLevel=JK_LB_LEVELS - 1;
     char *session_route;
     time_t now = 0;
+    jk_worker_lb_private_t *lb_priv = lb->worker_private;
 
     session_route = jk2_requtil_getSessionRoute(env, s);
        
@@ -181,7 +187,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                 /* Check if it's ready for recovery */
                 if( now==0 ) now = time(NULL);
                 
-                if((now - w->error_time) > WAIT_BEFORE_RECOVER) {
+                if((now - w->error_time) > lb_priv->recovery) {
                     env->l->jkLog(env, env->l, JK_LOG_ERROR,
                                   "lb.getWorker() reenable %s\n", w->mbean->name);
                     w->in_error_state = JK_FALSE;
@@ -332,6 +338,17 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
 
             if (lb_priv->cs != NULL)
                 lb_priv->cs->unLock(env, lb_priv->cs);
+            if (!rec && lb_priv->timeout) {
+                time_t now = time(NULL);
+                if ((int)(now - lb_priv->error_time) < lb_priv->timeout) {
+#ifdef HAS_APR
+                    apr_thread_yield();
+#endif
+                    continue;
+                }
+            }
+            else
+                lb_priv->error_time = time(NULL);
         }
         else if (!rec){
             /* If we are initializing the service wait until
@@ -370,6 +387,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
             }
             
             s->afterRequest( env, s);
+            lb_priv->error_time = time(NULL);
             return JK_ERR;
         }
 
@@ -502,6 +520,7 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
     jk_worker_t *lb=mbean->object;
     char *value=valueP;
     unsigned i = 0;
+    jk_worker_lb_private_t *lb_priv = lb->worker_private;
     
     if( strcmp( name, "worker") == 0 ) {
         if( lb->lbWorkerMap->get( env, lb->lbWorkerMap, name) != NULL ) {
@@ -523,6 +542,12 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         lb->noWorkerCode=atoi( value );
     } else if( strcmp( name, "hwBalanceErr") == 0 ) {
         lb->hwBalanceErr=atoi( value );
+    } else if( strcmp( name, "timeout") == 0 ) {
+        lb_priv->timeout=atoi( value );
+    } else if( strcmp( name, "recovery") == 0 ) {
+        lb_priv->recovery=atoi( value );
+    } else if( strcmp( name, "attempts") == 0 ) {
+        lb_priv->attempts=atoi( value );
     }
     return JK_ERR;
 }
@@ -595,6 +620,8 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
         worker_private->cs=jkb->object;
         jkb->init(env, jkb );
     }
+    worker_private->attempts = MAX_ATTEMPTS;
+    worker_private->recovery = WAIT_BEFORE_RECOVER;
     w->worker_private = worker_private;
     w->service        = jk2_lb_service;
     
