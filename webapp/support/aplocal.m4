@@ -82,6 +82,13 @@ AC_DEFUN(LOCAL_HEADER,[
   ${ECHO} "$1" 1>&2
 ])
 
+AC_DEFUN(LOCAL_HELP,[
+  AC_DIVERT_PUSH(AC_DIVERSION_NOTICE)
+  ac_help="${ac_help}
+[$1]"
+  AC_DIVERT_POP()
+])
+
 AC_DEFUN(LOCAL_FILTEREXEC,[
   ${ECHO} "  Invoking: $1"
   ${ECHO} "-1" > retvalue.tmp
