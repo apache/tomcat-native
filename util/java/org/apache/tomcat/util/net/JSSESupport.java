@@ -115,7 +115,11 @@ class JSSESupport implements SSLSupport {
         X509Certificate jsseCerts[] = null;
         java.security.cert.X509Certificate x509Certs[] = null;
         try {
-            jsseCerts = session.getPeerCertificateChain();
+	    try {
+		jsseCerts = session.getPeerCertificateChain();
+	    } catch(Exception bex) {
+		// ignore.
+	    }
             if (jsseCerts == null)
                 jsseCerts = new X509Certificate[0];
 	    if(jsseCerts.length <= 0 && force) {
@@ -138,8 +142,6 @@ class JSSESupport implements SSLSupport {
                 x509Certs[i] = (java.security.cert.X509Certificate)
                   cf.generateCertificate(stream);
             }
-	} catch (IOException iex) {
-	    throw iex;
 	} catch (Throwable t) {
 	    return null;
         }
