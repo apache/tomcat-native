@@ -223,9 +223,6 @@
       <classpath refid="compile.classpath"/>
       <include name="org/apache/coyote/tomcat5/**" />
     </javac>
-    <copy    todir="${build.home}/classes" filtering="on">
-      <fileset dir="${source.home}" excludes="**/*.java"/>
-    </copy>
   </target>
 
   <target name="jar.tomcat5" depends="static,compile.shared,compile.tomcat5" >
