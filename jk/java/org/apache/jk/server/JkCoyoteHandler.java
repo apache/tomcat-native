@@ -63,7 +63,6 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import org.apache.jk.*;
 import org.apache.jk.core.*;
 import org.apache.jk.common.*;
 
@@ -147,7 +146,6 @@ public class JkCoyoteHandler extends JkHandler implements
             // jkMain.setJkHome() XXX;
             
             jkMain.init();
-            jkMain.start();
 
             headersMsgNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "headerMsg" );
             utfC2bNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "utfC2B" );
@@ -162,6 +160,11 @@ public class JkCoyoteHandler extends JkHandler implements
     }
 
     public void start() {
+        try {
+            jkMain.start();
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
     }
 
     public void destroy() {
@@ -334,7 +337,8 @@ public class JkCoyoteHandler extends JkHandler implements
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
                 MsgContext ep=(MsgContext)res.getNote( epNote );
                 if( ep.getStatus()== JK_STATUS_CLOSED ) {
-                    // Double close - it may happen with forward
+                    // Double close - it may happen with forward 
+                    if( log.isDebugEnabled() ) log.debug("Double CLOSE - forward ? " + res.getRequest().requestURI() );
                     return;
                 }
                  
@@ -361,7 +365,7 @@ public class JkCoyoteHandler extends JkHandler implements
                 
             } else if( actionCode==ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
 
-            } else if( actionCode==ActionCode.ACTION_POST_REQUEST ) {
+            // } else if( actionCode==ActionCode.ACTION_POST_REQUEST ) {
 
             } else if( actionCode==ActionCode.ACTION_ACK ) {
                 if( log.isDebugEnabled() )
