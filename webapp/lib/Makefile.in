@@ -58,23 +58,21 @@
 # @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 # @version $Id$
 
-include ../Makedefs
+include @SRCDIR@/Makedefs
 
-OBJS = wa_main.o wa_config.o wa_request.o
-PROVS = pr_info.o pr_warp.o # pr_jni.o
+OBJS = wa_main.lo wa_config.lo wa_request.lo
+PROVS = pr_info.lo pr_warp.lo
 
-LIB = libwebapp.a
+LIB = libwebapp.la
 
 all: $(LIB)
 
 $(LIB): $(OBJS) $(PROVS)
-	@echo - Linking library $(LIB)
-	@$(AR) -cr $(LIB) $(OBJS) $(PROVS)
-	@$(RANLIB) $(LIB)
+	@echo Creating library $(LIB)
+	@$(LIBTOOL) --silent --mode=link $(CC) -static -o $(LIB) \
+		$(OBJS) $(PROVS) 1> /dev/null
 
 clean:
-	@echo Removing object files $(OBJS) $(PROVS) $(LIB)
-	@rm -f $(OBJS) $(PROVS) $(LIB)
-
-install:
+	@echo Removing *.o *.lo $(LIB) .libs
+	@rm -rf *.o *.lo $(LIB) .libs
 

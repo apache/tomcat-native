@@ -58,9 +58,9 @@
 # @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 # @version $Id$
 
-include Makedefs
+include @SRCDIR@/Makedefs
 
-DIRS = @TGTDIRS@
+DIRS = $(TGTDIRS) $(TARGET)
 
 CFGS = config.cache \
 	config.log \
@@ -72,42 +72,27 @@ CFGS = config.cache \
 
 all:
 	@for DIR in $(DIRS) ; do \
+		echo "" ; \
 		echo "Compiling sources in $$DIR..." ; \
-		(cd $$DIR; $(MAKE) all) ; \
+		$(MAKE) -C $$DIR all ; \
 		RET=$$? ; \
-		if ( test "$$RET" != "0" ) ; then \
+		if test "$$RET" != "0" ; then \
 			exit $$RET ; \
 		fi ; \
 	done
 
 clean:
 	@for DIR in $(DIRS) ; do \
+		echo "" ; \
 		echo "Cleaning up $$DIR..." ; \
-		(cd $$DIR; $(MAKE) clean) ; \
+		$(MAKE) -C $$DIR clean ; \
 		RET=$$? ; \
-		if ( test "$$RET" != "0" ) ; then \
+		if test "$$RET" != "0" ; then \
 			exit $$RET ; \
 		fi ; \
 	done
-
-install:
-	@for DIR in $(DIRS) ; do \
-		echo "Installing $$DIR..." ; \
-		(cd $$DIR; $(MAKE) install) ; \
-		RET=$$? ; \
-		if ( test "$$RET" != "0" ) ; then \
-			exit $$RET ; \
-		fi ; \
-	done
-
-
-apidocs: include/*.h
-	@echo "Generating API documentation..."
-	@if ! test -d docs/api ; then mkdir docs/api ; fi
-	@../scandoc/scandoc.pl -i ../scandoc/template.pl -p ./docs/api/ include/*.h
-
-dist: all apidocs
 
 distclean: clean
 	@echo Removing configure generated files...
 	@rm -f $(CFGS)
+

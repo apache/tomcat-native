@@ -1,37 +1,63 @@
 README for WebApp Library and Related Modules
 ---------------------------------------------
 
-Prerequisites:
---------------
+How to build the WebApp module from CVS sources:
+------------------------------------------------
 
-1) The Apache Portable Runtime library:
-      The APR library is an abstraction layer among several operating systems,
-      and it's used to simplify the porting operation of the WebApp Library and
-      its related modules to different environments.
+Check out the module sources from CVS using the following commands:
 
-      This doesn't mean that WebApp modules will require the Apache Web Server
-      2.0 to run, but only that both WebApp and Apache 2.0 are built on the
-      same OS abstraction layer (if Apache 2.0 can run on your operating system
-      also WebApp can)
-      
-      There is not yet a final release of APR, but you can download the lastest
-      development snapshot from <http://apr.apache.org/>
+    cvs -d :pserver:anoncvs@cvs.apache.org:/home/cvspublic
+    (Logging in to anoncvs@cvs.apache.org)
+    CVS password: anoncvs
+    cvs -d :pserver:anoncvs@cvs.apache.org:/home/cvspublic \
+        checkout jakarta-tomcat-connectors/webapp
 
-2) The Web Server of your choice:
-      Even if right now the only implemented web server plug-in is mod_webapp
-      for Apache 1.3, WebApp Library Modules can be written for any web server.
-      Currently, for Apache 1.3, you will need a fully installed version of
-      the web server with DSO (loadable modules) support and APXS, the Apache
-      modules compilation utility.
+Once CVS downloads the WebApp module sources, we need to download the
+APR (Apache Portable Runtime) sources. To do this simply:
 
-Configuration:
---------------
+    cd ./jakarta-tomcat-connectors/webapp
+    cvs -d :pserver:anoncvs@cvs.apache.org:/home/cvspublic \
+        checkout apr
 
-If you are building this from CVS, you will need to first execute 
-./buildconf.sh to build the "configure" script. This assumes that you have 
-autoconf 2.13 installed on your machine already.
+When the APR sources are in place, we need to create the configure
+script, configure both APR and the WebApp module and compile:
 
-Simply issue a "./configure --help" to see all the supported AutoConf 
-parameters. Example:
+    ./buildconf.sh
+    ./configure --with-apxs
+    make
 
-./configure --with-apr=/usr/local --with-apxs
+This will configure and build APR, and build the WebApp module for
+Apache 1.3. The available options for the configure script are:
+
+    --with-apxs[=FILE]
+        Use the APXS Apache 1.3 Extension Tool. If this option is
+        not specified, the Apache module will not be built (only the
+        APR and WEBAPP libraries will be build).
+        The "FILE" parameter specifies the full path for the apxs
+        executable. If this is not specified apxs will be searched in
+        the current path.
+
+    --with-apr=DIR
+        If you already have the APR sources lying around somewhere, and
+        want to use them instead of checking them out from CVS, you can
+        specify where these can be found.
+
+Once built, the DSO module will be built in the webapp/apache-1.3 directory.
+To install it copy the mod_webapp.so file in your Apache 1.3 libexec
+directory, and add the following lines to httpd.conf:
+
+    LoadModule webapp_module [path to mod_webapp.so]
+    AddModule mod_webapp.c
+
+To check out if everything is correctly configured, issue the following:
+
+    apachectl configtest
+
+If the output of the apachectl command doesn't include "Syntax OK", something
+went wrong with the build process. Please report that through our bug tracking
+database at <http://nagoya.apache.org/bugzilla> or to the Tomcat developers
+mailing list <mailto:tomcat-dev@jakarta.apache.org>
+
+Have fun...
+
+    Pier <pier.fumagalli@sun.com>

@@ -58,19 +58,37 @@
 # @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 # @version $Id$
 
-CC = @CC@
-AR = @AR@
-APXS = @APXS@
-APXSFLAGS = -I@SRCDIR@/include -I@APRDIR@/include \
-	-L@SRCDIR@/lib -lwebapp \
-	-L@APRDIR@/lib -lapr \
-	-Wc,"-Wall @APXSCFLAGS@" @APXSLDFLAGS@
-RANLIB = @RANLIB@
-CFLAGS = -Wall -Wstrict-prototypes @CFLAGS@
-CPPFLAGS = -I@SRCDIR@/include -I@APRDIR@/include @CPPFLAGS@
-SRCDIR = @SRCDIR@
-TGTDIR = @TGTDIR@
+CC =      @CC@
+CPP =     @CPP@
+SHELL =   @SHELL@
+LIBTOOL = @LIBTOOL@
+
+CFLAGS =         @CFLAGS@
+EXTRA_CFLAGS =   @EXTRA_CFLAGS@
+CPPFLAGS =       @CPPFLAGS@
+EXTRA_CPPFLAGS = @EXTRA_CPPFLAGS@
+
+EXTRA_LDFLAGS =  @EXTRA_LDFLAGS@
+EXTRA_LIBS =     @EXTRA_LIBS@
+EXTRA_INCLUDES = @EXTRA_INCLUDES@
+LIBTOOL_LIBS =   @LIBTOOL_LIBS@ @APRDIR@/libapr.la
+
+LTFLAGS =        --silent
+
+TGTDIRS = @TGTDIRS@
+TARGET =  @TARGET@
+SRCDIR =  @SRCDIR@
+
+.SUFFIXES: .c .lo .o
 
 .c.o:
-	@echo - Compiling $<
-	@$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	@echo Compiling $<
+	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(CPPFLAGS) $(EXTRA_CPPFLAGS) \
+		-c $< -o $@
+
+.c.lo:
+	@echo Compiling $<
+	@$(SHELL) $(LIBTOOL) --silent --mode=compile \
+		$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(CPPFLAGS) $(EXTRA_CPPFLAGS) \
+		-c $< -o $@
+

@@ -1,1 +1,4 @@
+.libs
 Makefile
+mod_webapp.lo
+mod_webapp.o

@@ -1,1 +1,14 @@
+.libs
 Makefile
+libwebapp.la
+libwebapp.a
+pr_info.lo
+pr_info.o
+pr_warp.lo
+pr_warp.o
+wa_config.lo
+wa_config.o
+wa_main.lo
+wa_main.o
+wa_request.lo
+wa_request.o
