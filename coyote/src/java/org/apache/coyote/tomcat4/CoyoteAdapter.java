@@ -370,14 +370,19 @@ final class CoyoteAdapter
                             .getRequestedSessionId());
                 }
             }
-	    try {
-		Cookie cookie = new Cookie(scookie.getName().toString(),
+            try {
+                Cookie cookie = new Cookie(scookie.getName().toString(),
                                        scookie.getValue().toString());
-		cookies[idx++] = cookie;
-	    } catch (Exception ex) {
-		log("Bad Cookie Name: " + scookie.getName() + 
-		    " /Value: " + scookie.getValue(),ex);
-	    }
+                cookies[idx++] = cookie;
+            } catch (Exception ex) {
+                log("Bad Cookie Name: " + scookie.getName() + 
+                    " /Value: " + scookie.getValue(),ex);
+            }
+        }
+        if( idx < count ) {
+            Cookie [] ncookies = new Cookie[idx];
+            System.arraycopy(cookies, 0, ncookies, 0, idx);
+            cookies = ncookies;
         }
 
         request.setCookies(cookies);
