@@ -102,6 +102,13 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
                                  jk_logger_t *l);
 #endif
 
+/* Factories for 'new' types. We use the new factory interface,
+ *  workers will be updated later 
+ */
+int JK_METHOD jk_channel_socket_factory(jk_env_t *env, void **result,
+					char *type, char *name);
+
+
 /**
  *   Init the components that we compile in by default. 
  *   In future we should have a more flexible mechanism that would allow 
@@ -122,6 +129,9 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
 #ifdef HAVE_JNI
   env->registerFactory( env, "worker", "jni",   (void *)&jni_worker_factory );
 #endif
+
+  env->registerFactory( env, "channel", "socket",   
+			(void *)&jk_channel_socket_factory );
 
   /*
   env->registerFactory( env, "channel", "socket",   &jk_channel_socket_factory );

@@ -113,7 +113,7 @@ int wc_open(jk_map_t *init_data,
 
     we->num_of_workers=num_of_workers;
     we->first_worker=worker_list[0];
-    jk_log(l, JK_LOG_DEBUG, "wc_open, done %d\n", num_of_workers); 
+    jk_log(l, JK_LOG_DEBUG, "wc_open, done %d %s\n", num_of_workers, worker_list[0]); 
     return JK_TRUE;
 }
 
