@@ -198,17 +198,14 @@ fi
 
 AC_SUBST(WEBSERVERS)
 
-AM_CONDITIONAL(MAKE_DYNAMIC_APACHE, ${TEST} "${apache_dir_is_src}" = "false")
-
-if ${TEST} "${apache_dir_is_src}" = "false" ; then
-dnl ???? 
-	APACHE20_OEXT=.c
-	LIB_JK_TYPE=mod_jk.so
-	INSTALL_TYPE=install_dynamic
-else
-	APACHE20_OEXT=.lo
-	LIB_JK_TYPE=lib_jk.la
-	INSTALL_TYPE=install_static
+dnl check if apache 1.3 selected with jni support
+if ! ${TEST} -z "$APACHE_HOME" ; then
+dnl check jni wanted
+	if ${TEST} "${use_jni}" = "true"; then 
+		if ! ${TEST} "${use_apr}" = "true"; then
+			AC_MSG_ERROR(Apache 1.3 need apr to use jni)
+		fi
+	fi
 fi
 
 AC_SUBST(APACHE20_OEXT)

@@ -101,8 +101,8 @@ AC_DEFUN(
             APR_INCDIR="${tempval}/include"
             APR_LDFLAGS="${tempval}/.libs/libapr.a"
             APR_LIBDIR=""
+			use_apr=true
             COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
-            AC_MSG_RESULT(${APR_DIR})
           fi
           ;;
         esac
@@ -148,7 +148,7 @@ AC_DEFUN(
             APR_DIR=""
             APR_INCDIR=${tempval}
             COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
-            AC_MSG_RESULT(${APR_INCDIR})
+			use_apr=true
           fi
           ;;
 
@@ -191,7 +191,7 @@ AC_DEFUN(
               APR_LIBDIR=${tempval}
               APR_LDFLAGS="-lapr -L${tempval}"
               COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
-              AC_MSG_RESULT(${APR_LIBDIR})
+			  use_apr=true
             fi
 
             ;;
