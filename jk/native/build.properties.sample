@@ -1,0 +1,12 @@
+
+# Location where Apache2.0 is installed. 
+# We assume include and lib are below this
+apache2.home=/opt/apache2
+
+# Same for Apache1.3
+apache13.home=/usr
+  
+# Compile-time options
+so.debug=true
+so.optimize=false
+so.profile=false
