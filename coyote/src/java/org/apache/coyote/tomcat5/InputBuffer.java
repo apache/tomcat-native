@@ -63,7 +63,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 import org.apache.tomcat.util.buf.B2CConverter;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -161,7 +161,7 @@ public class InputBuffer extends Reader
     /**
      * List of encoders.
      */
-    protected Hashtable encoders = new Hashtable();
+    protected HashMap encoders = new HashMap();
 
 
     /**

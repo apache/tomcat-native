@@ -63,7 +63,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.C2BConverter;
@@ -167,7 +167,7 @@ public class OutputBuffer extends Writer
     /**
      * List of encoders.
      */
-    protected Hashtable encoders = new Hashtable();
+    protected HashMap encoders = new HashMap();
 
 
     /**
