@@ -745,12 +745,12 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                 TcpConnection.shutdownInput( socket );
             } catch(java.net.SocketException e) {
                 // SocketExceptions are normal
-                proto.log.debug
+                Http11Protocol.log.debug
                     (sm.getString
                      ("http11protocol.proto.socketexception.debug"), e);
             } catch (java.io.IOException e) {
                 // IOExceptions are normal 
-                proto.log.debug
+                Http11Protocol.log.debug
                     (sm.getString
                      ("http11protocol.proto.ioexception.debug"), e);
             }
@@ -761,7 +761,8 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                 // any other exception or error is odd. Here we log it
                 // with "ERROR" level, so it will show up even on
                 // less-than-verbose logs.
-                proto.log.error(sm.getString("http11protocol.proto.error"), e);
+                Http11Protocol.log.error
+                    (sm.getString("http11protocol.proto.error"), e);
             } finally {
                 //       if(proto.adapter != null) proto.adapter.recycle();
                 //                processor.recycle();

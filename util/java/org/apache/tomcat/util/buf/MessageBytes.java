@@ -581,8 +581,6 @@ public final class MessageBytes implements Cloneable, Serializable {
     }
 
     /** Set the buffer to the representation of an int
-     *  @deprecated The buffer are general purpose, caching for headers should
-     *  be done in headers
      */
     public void setInt(int i) {
 	recycle();

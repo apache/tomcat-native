@@ -75,7 +75,6 @@ import java.security.AccessControlException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.tomcat.util.collections.SimplePool;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.util.threads.ThreadPool;
 import org.apache.tomcat.util.threads.ThreadPoolRunnable;
@@ -561,7 +560,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
     PoolTcpEndpoint endpoint;
     
     public TcpWorkerThread(PoolTcpEndpoint endpoint) {
-	this.endpoint = endpoint;
+        this.endpoint = endpoint;
     }
 
     public Object[] getInitData() {
@@ -574,8 +573,8 @@ class TcpWorkerThread implements ThreadPoolRunnable {
     
     public void runIt(Object perThrData[]) {
 
-	// Create per-thread cache
-	if (endpoint.isRunning()) {
+        // Create per-thread cache
+        if (endpoint.isRunning()) {
 
             // Loop if endpoint is paused
             while (endpoint.isPaused()) {
@@ -587,66 +586,70 @@ class TcpWorkerThread implements ThreadPoolRunnable {
             }
 
             // Accept a new connection
-	    Socket s = null;
-	    try {
+            Socket s = null;
+            try {
                 s = endpoint.acceptSocket();
-	    } finally {
-		// Continue accepting on another thread...
+            } finally {
+                // Continue accepting on another thread...
                 if (endpoint.isRunning()) {
                     endpoint.tp.runIt(this);
                 }
             }
 
             // Process the connection
-	    if (null != s) {
-
+            if (null != s) {
                 TcpConnection con = null;
                 int step = 1;
                 try {
 
                     // 1: Set socket options: timeout, linger, etc
-                    endpoint.setSocketOptions( s );
+                    endpoint.setSocketOptions(s);
 
                     // 2: SSL handshake
                     step = 2;
- 		    if(endpoint.getServerSocketFactory()!=null) {
+                    if (endpoint.getServerSocketFactory() != null) {
                         endpoint.getServerSocketFactory().handshake(s);
- 		    }
+                    }
 
                     // 3: Process the connection
                     step = 3;
                     con = (TcpConnection) perThrData[0];
-		    con.setEndpoint(endpoint);
-		    con.setSocket(s);
-		    endpoint.getConnectionHandler()
-                        .processConnection(con, (Object []) perThrData[1]);
+                    con.setEndpoint(endpoint);
+                    con.setSocket(s);
+                    endpoint.getConnectionHandler().processConnection(
+                        con,
+                        (Object[]) perThrData[1]);
 
                 } catch (SocketException se) {
-                    endpoint.log.error
-                        ("Remote Host " + s.getInetAddress() +
-                         " SocketException: " + se.getMessage());
+                    PoolTcpEndpoint.log.error(
+                        "Remote Host "
+                            + s.getInetAddress()
+                            + " SocketException: "
+                            + se.getMessage());
                     // Try to close the socket
                     try {
                         s.close();
-                    } catch (IOException e) {}
+                    } catch (IOException e) {
+                    }
                 } catch (Throwable t) {
                     if (step == 2) {
-                        endpoint.log.debug("Handshake failed", t);
+                        PoolTcpEndpoint.log.debug("Handshake failed", t);
                     } else {
-                        endpoint.log.error("Unexpected error", t);
+                        PoolTcpEndpoint.log.error("Unexpected error", t);
                     }
                     // Try to close the socket
                     try {
                         s.close();
-                    } catch (IOException e) {}
+                    } catch (IOException e) {
+                    }
                 } finally {
                     if (con != null) {
                         con.recycle();
                     }
                 }
-	    }
+            }
 
-	}
+        }
     }
-
+    
 }

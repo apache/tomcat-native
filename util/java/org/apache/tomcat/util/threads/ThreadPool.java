@@ -649,89 +649,89 @@ public class ThreadPool  {
 
         public void run() {
             boolean _shouldRun = false;
-            boolean _shouldTerminate = false; 
+            boolean _shouldTerminate = false;
             ThreadPoolRunnable _toRun = null;
-          try {
-            while(true) {
-                try {
-                    /* Wait for work. */
-                    synchronized(this) {
-                        while (!shouldRun && !shouldTerminate) {
-                            this.wait();
-                        }
-                        _shouldRun = shouldRun;
-                        _shouldTerminate = shouldTerminate;
-                        _toRun = toRun;
-                    }
-
-                    if( _shouldTerminate ) {
-                            if( p.log.isDebugEnabled())
-                                p.log.debug( "Terminate");
-                            break;
-                    }
-
-                    /* Check if should execute a runnable.  */
+            try {
+                while (true) {
                     try {
-                        if(noThData) {
-                            if( _toRun != null ) {
-                                Object thData[]=_toRun.getInitData();
-                                t.setThreadData(p, thData);
-                                if(p.log.isDebugEnabled())
-                                    p.log.debug( "Getting new thread data");
+                        /* Wait for work. */
+                        synchronized (this) {
+                            while (!shouldRun && !shouldTerminate) {
+                                this.wait();
                             }
-                            noThData = false;
+                            _shouldRun = shouldRun;
+                            _shouldTerminate = shouldTerminate;
+                            _toRun = toRun;
                         }
 
-                        if(_shouldRun) {
-			    if( _toRun != null ) { 
-                                _toRun.runIt(t.getThreadData(p));
-                            } else if( toRunRunnable != null ) { 
-                                toRunRunnable.run();
-                            } else {
-                                if( p.log.isDebugEnabled())
-                                    p.log.debug( "No toRun ???");
-                            }
+                        if (_shouldTerminate) {
+                            if (ThreadPool.log.isDebugEnabled())
+                                ThreadPool.log.debug("Terminate");
+                            break;
                         }
-                    } catch(Throwable t) {
-			p.log.error(sm.getString("threadpool.thread_error",
-                                                 t, toRun.toString()));
-                       /*
-                        * The runnable throw an exception (can be even a ThreadDeath),
-                        * signalling that the thread die.
-                        *
-			* The meaning is that we should release the thread from
-			* the pool.
-			*/
-                        shouldTerminate = true;
-                        shouldRun = false;
-                        p.notifyThreadEnd(this);
-                    } finally {
-                        if(_shouldRun) {
-                            shouldRun = false;
+
+                        /* Check if should execute a runnable.  */
+                        try {
+                            if (noThData) {
+                                if (_toRun != null) {
+                                    Object thData[] = _toRun.getInitData();
+                                    t.setThreadData(p, thData);
+                                    if (ThreadPool.log.isDebugEnabled())
+                                        ThreadPool.log.debug(
+                                            "Getting new thread data");
+                                }
+                                noThData = false;
+                            }
+
+                            if (_shouldRun) {
+                                if (_toRun != null) {
+                                    _toRun.runIt(t.getThreadData(p));
+                                } else if (toRunRunnable != null) {
+                                    toRunRunnable.run();
+                                } else {
+                                    if (ThreadPool.log.isDebugEnabled())
+                                    ThreadPool.log.debug("No toRun ???");
+                                }
+                            }
+                        } catch (Throwable t) {
+                            ThreadPool.log.error(sm.getString
+                                ("threadpool.thread_error", t, toRun.toString()));
                             /*
-			     * Notify the pool that the thread is now idle.
-                             */
-                            p.returnController(this);
+                             * The runnable throw an exception (can be even a ThreadDeath),
+                             * signalling that the thread die.
+                             *
+                            * The meaning is that we should release the thread from
+                            * the pool.
+                            */
+                            shouldTerminate = true;
+                            shouldRun = false;
+                            p.notifyThreadEnd(this);
+                        } finally {
+                            if (_shouldRun) {
+                                shouldRun = false;
+                                /*
+                                * Notify the pool that the thread is now idle.
+                                 */
+                                p.returnController(this);
+                            }
                         }
-                    }
 
-                    /*
-		     * Check if should terminate.
-		     * termination happens when the pool is shutting down.
-		     */
-                    if(_shouldTerminate) {
-                        break;
+                        /*
+                        * Check if should terminate.
+                        * termination happens when the pool is shutting down.
+                        */
+                        if (_shouldTerminate) {
+                            break;
+                        }
+                    } catch (InterruptedException ie) { /* for the wait operation */
+                        // can never happen, since we don't call interrupt
+                        ThreadPool.log.error("Unexpected exception", ie);
                     }
-                } catch(InterruptedException ie) { /* for the wait operation */
-		    // can never happen, since we don't call interrupt
-    		    p.log.error("Unexpected exception", ie);
                 }
+            } finally {
+                p.removeThread(Thread.currentThread());
             }
-          } finally {
-              p.removeThread(Thread.currentThread());
-          }
         }
-
         /** Run a task
          *
          * @param toRun

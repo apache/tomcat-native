@@ -94,10 +94,10 @@ public final class UDecoder {
 	byte buff[]=mb.getBytes();
 	int end=mb.getEnd();
 
-	int idx= mb.indexOf( buff, start, end, '%' );
+	int idx= ByteChunk.indexOf( buff, start, end, '%' );
         int idx2=-1;
         if( query )
-            idx2= mb.indexOf( buff, start, end, '+' );
+            idx2= ByteChunk.indexOf( buff, start, end, '+' );
 	if( idx<0 && idx2<0 ) {
 	    return;
 	}
@@ -154,10 +154,10 @@ public final class UDecoder {
 	char buff[]=mb.getBuffer();
 	int cend=mb.getEnd();
 
-	int idx= mb.indexOf( buff, start, cend, '%' );
+	int idx= CharChunk.indexOf( buff, start, cend, '%' );
         int idx2=-1;
         if( query )
-            idx2= mb.indexOf( buff, start, cend, '+' );
+            idx2= CharChunk.indexOf( buff, start, cend, '+' );
 	if( idx<0 && idx2<0 ) {
 	    return;
 	}

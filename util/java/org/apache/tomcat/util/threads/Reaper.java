@@ -68,91 +68,94 @@ package org.apache.tomcat.util.threads;
  * @author Costin Manolache
  */
 public class Reaper extends Thread {
-    private boolean daemon=false;
+    private boolean daemon = false;
 
     public Reaper() {
-	if( daemon )
+        if (daemon)
             this.setDaemon(true);
-	this.setName("TomcatReaper");
+        this.setName("TomcatReaper");
     }
 
     public Reaper(String name) {
-        if( daemon )
+        if (daemon)
             this.setDaemon(true);
-	this.setName(name);
+        this.setName(name);
     }
 
     private long interval = 1000 * 60; //ms
-    
+
     // XXX TODO Allow per/callback interval, find next, etc
     // Right now the "interval" is used for all callbacks
     // and it represent a sleep between runs.
-    
-    ThreadPoolRunnable cbacks[]=new ThreadPoolRunnable[30]; // XXX max
-    Object tdata[][]=new Object[30][]; // XXX max
-    int count=0;
+
+    ThreadPoolRunnable cbacks[] = new ThreadPoolRunnable[30]; // XXX max
+    Object tdata[][] = new Object[30][]; // XXX max
+    int count = 0;
 
     /** Adding and removing callbacks is synchronized
      */
-    Object lock=new Object();
-    static boolean running=true;
+    Object lock = new Object();
+    static boolean running = true;
 
     // XXX Should be called 'interval' not defaultInterval
 
-    public void setDefaultInterval( long t ) {
-	interval=t;
+    public void setDefaultInterval(long t) {
+        interval = t;
     }
 
     public long getDefaultIntervale() {
         return interval;
     }
 
-    public int addCallback( ThreadPoolRunnable c, int interval ) {
-	synchronized( lock ) {
-	    cbacks[count]=c;
-	    count++;
-	    return count-1;
-	}
+    public int addCallback(ThreadPoolRunnable c, int interval) {
+        synchronized (lock) {
+            cbacks[count] = c;
+            count++;
+            return count - 1;
+        }
     }
 
-    public void removeCallback( int idx ) {
-	synchronized( lock ) {
-	    count--;
-	    cbacks[idx]=cbacks[count];
-	    cbacks[count]=null;
-	}
+    public void removeCallback(int idx) {
+        synchronized (lock) {
+            count--;
+            cbacks[idx] = cbacks[count];
+            cbacks[count] = null;
+        }
     }
 
     public void startReaper() {
-	running=true;
-	this.start();
+        running = true;
+        this.start();
     }
 
     public synchronized void stopReaper() {
-	running=false;
-	System.out.println("Stop reaper ");
-	this.interrupt(); // notify() doesn't stop sleep
+        running = false;
+        System.out.println("Stop reaper ");
+        this.interrupt(); // notify() doesn't stop sleep
     }
-    
-    public void run() {
-	while (running) {
-	    if( !running) break;
-	    try {
-		this.sleep(interval);
-	    } catch (InterruptedException ie) {
-		// sometimes will happen
-	    }
 
-	    if( !running) break;
-	    for( int i=0; i< count; i++ ) {
-		ThreadPoolRunnable callB=cbacks[i];
-		// it may be null if a callback is removed.
-		//  I think the code is correct
-		if( callB!= null ) {
-		    callB.runIt( tdata[i] );
-		}
-		if( !running) break;
-	    }
-	}
+    public void run() {
+        while (running) {
+            if (!running)
+                break;
+            try {
+                Thread.sleep(interval);
+            } catch (InterruptedException ie) {
+                // sometimes will happen
+            }
+
+            if (!running)
+                break;
+            for (int i = 0; i < count; i++) {
+                ThreadPoolRunnable callB = cbacks[i];
+                // it may be null if a callback is removed.
+                //  I think the code is correct
+                if (callB != null) {
+                    callB.runIt(tdata[i]);
+                }
+                if (!running)
+                    break;
+            }
+        }
     }
 }
