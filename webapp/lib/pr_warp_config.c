@@ -155,10 +155,29 @@ wa_boolean c_configure(wa_connection *conn) {
         p_read_int(pack,(int *)&appl->conf);
         p_read_string(pack,&temp);
         appl->lpth=apr_pstrdup(wa_pool,temp);
-        appl->depl=wa_true;
-        wa_debug(WA_MARK,"Application \"%s\" deployed with root=%s id=%d",
-                appl->name,appl->lpth,appl->conf);
+        
+        /* Check if this web-application is local or not by checking if its
+           WEB-INF directory can be opened. */
+        if (appl->lpth!=NULL) {
+            apr_dir_t *dir=NULL;
+            char *webinf=apr_pstrcat(wa_pool,appl->lpth,"/WEB-INF",NULL);
+            if (apr_dir_open(&dir,webinf,wa_pool)==APR_SUCCESS) {
+                if (dir!=NULL) apr_dir_close(dir);
+                else appl->lpth=NULL;
+            } else {
+                appl->lpth=NULL;
+            }
+        }
 
+        if (appl->lpth==NULL) {
+            wa_debug(WA_MARK,"Application \"%s\" deployed with id=%d (%s)",
+                appl->name,appl->conf,"remote");
+        } else {
+            wa_debug(WA_MARK,"Application \"%s\" deployed with id=%d (%s)",
+                appl->name,appl->conf,appl->lpth);
+        }
+
+        appl->depl=wa_true;
         elem=elem->next;
     }
 
