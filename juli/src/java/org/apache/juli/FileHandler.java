@@ -20,7 +20,6 @@ package org.apache.juli;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
@@ -49,6 +48,14 @@ public class FileHandler
     public FileHandler() {
         configure();
         open();
+    }
+    
+    
+    public FileHandler(String directory, String prefix, String suffix) {
+        this();
+        this.directory = directory;
+        this.prefix = prefix;
+        this.suffix = suffix;
     }
     
 
@@ -84,63 +91,6 @@ public class FileHandler
      * The PrintWriter to which we are currently logging, if any.
      */
     private PrintWriter writer = null;
-
-
-    // ------------------------------------------------------------- Properties
-
-
-    /**
-     * Return the directory in which we create log files.
-    public String getDirectory() {
-        return (directory);
-    }
-     */
-
-
-    /**
-     * Set the directory in which we create log files.
-     *
-     * @param directory The new log file directory
-    public void setDirectory(String directory) {
-        this.directory = directory;
-    }
-     */
-
-
-    /**
-     * Return the log file prefix.
-    public String getPrefix() {
-        return (prefix);
-    }
-     */
-
-
-    /**
-     * Set the log file prefix.
-     *
-     * @param prefix The new log file prefix
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
-     */
-
-
-    /**
-     * Return the log file suffix.
-    public String getSuffix() {
-        return (suffix);
-    }
-     */
-
-
-    /**
-     * Set the log file suffix.
-     *
-     * @param suffix The new log file suffix
-    public void setSuffix(String suffix) {
-        this.suffix = suffix;
-    }
-     */
 
 
     // --------------------------------------------------------- Public Methods
@@ -196,7 +146,7 @@ public class FileHandler
 
 
     /**
-     * Close the currently open log file (if any)
+     * Close the currently open log file (if any).
      */
     public void close() {
         
@@ -216,7 +166,7 @@ public class FileHandler
 
 
     /**
-     * FLush
+     * Flush the writer.
      */
     public void flush() {
 
@@ -274,17 +224,6 @@ public class FileHandler
             }
         } else {
             setFormatter(new SimpleFormatter());
-        }
-        
-        // Set encoding
-        try {
-            setEncoding(manager.getProperty(className + ".encoding"));
-        } catch (UnsupportedEncodingException e) {
-            try {
-                setEncoding(null);
-            } catch (Exception ex) {
-                // Ignore
-            }
         }
         
         // Set error manager

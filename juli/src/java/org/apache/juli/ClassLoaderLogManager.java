@@ -159,6 +159,17 @@ public final class ClassLoaderLogManager extends LogManager {
                 }
             }
         }
+
+        // Parse useParentHandlers to set if the logger should delegate to its parent.
+        // Unlike java.util.logging, the default is to not delegate if a list of handlers
+        // has been specified for the logger.
+        String useParentHandlersString = getProperty(loggerName + ".useParentHandlers");
+        if ((useParentHandlersString != null) 
+                && (!Boolean.valueOf(useParentHandlersString).booleanValue())) {
+            logger.setUseParentHandlers(false);
+        } else {
+            logger.setUseParentHandlers(true);
+        }
         
         return true;
     }
@@ -216,11 +227,26 @@ public final class ClassLoaderLogManager extends LogManager {
         }
         final ClassLoader classLoader = Thread.currentThread()
                 .getContextClassLoader();
-        String result = 
-            getClassLoaderInfo(classLoader).props.getProperty(name);
-        if (result == null) {
-            // FIXME: Look in parent classloader ? Probably not.
-            result = super.getProperty(name);
+        ClassLoaderLogInfo info = getClassLoaderInfo(classLoader);
+        String result = info.props.getProperty(name);
+        // If the property was not found, and the current classloader had no 
+        // configuration (property list is empty), look for the parent classloader
+        // properties.
+        if ((result == null) && (info.props.isEmpty())) {
+            ClassLoader current = classLoader.getParent();
+            while (current != null) {
+                info = (ClassLoaderLogInfo) classLoaderLoggers.get(current);
+                if (info != null) {
+                    result = info.props.getProperty(name);
+                    if ((result != null) || (!info.props.isEmpty())) {
+                        break;
+                    }
+                }
+                current = current.getParent();
+            }
+            if (result == null) {
+                result = super.getProperty(name);
+            }
         }
         // Simple property replacement (mostly for folder names)
         if (result != null) {
