@@ -39,7 +39,6 @@
 #include "jk_worker.h"
 #include "apr_general.h"
 #include "jk_iis.h"
-//#include "jk_uri_worker_map.h"
 
 #define SERVER_ROOT_TAG         ("serverRoot")
 #define EXTENSION_URI_TAG       ("extensionUri")
@@ -160,7 +159,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
         pVer->dwFilterVersion = http_filter_revision;
     }
     auth_notification_flags = get_auth_flags();
-#ifdef SF_NOTIFY_AUTH_COMPLETE
+
     if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
         pVer->dwFlags = SF_NOTIFY_ORDER_HIGH        | 
                         SF_NOTIFY_SECURE_PORT       | 
@@ -168,9 +167,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
                         SF_NOTIFY_PREPROC_HEADERS   |
                         SF_NOTIFY_AUTH_COMPLETE;
     }
-    else
-#endif
-    {
+    else {
         pVer->dwFlags = SF_NOTIFY_ORDER_HIGH        | 
                         SF_NOTIFY_SECURE_PORT       | 
                         SF_NOTIFY_NONSECURE_PORT    |
@@ -232,15 +229,13 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             DWORD szTranslate = sizeof(Translate);
             DWORD szPort = sizeof(Port);
             int   nPort;
-#ifdef SF_NOTIFY_AUTH_COMPLETE
+
             if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
                 GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
                 SetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->SetHeader;
                 AddHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->AddHeader;
             } 
-            else 
-#endif
-            {
+            else {
                 GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
                 SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
                 AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
@@ -805,7 +800,6 @@ static jk_env_t * jk2_create_config()
     return env;
 }
 
-#ifdef SF_NOTIFY_AUTH_COMPLETE
 static int get_auth_flags()
 {
     HKEY hkey;
@@ -839,9 +833,3 @@ static int get_auth_flags()
 
     return rv;
 }
-#else
-static int get_auth_flags()
-{
-    return SF_NOTIFY_PREPROC_HEADERS;
-}
-#endif
