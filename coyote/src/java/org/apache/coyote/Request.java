@@ -127,61 +127,62 @@ public final class Request {
     // ----------------------------------------------------- Instance Variables
 
 
-    protected int serverPort = -1;
-    protected MessageBytes serverNameMB = new MessageBytes();
+    private int serverPort = -1;
+    private MessageBytes serverNameMB = new MessageBytes();
 
-    protected String localHost;
+    private String localHost;
 
-    protected MessageBytes schemeMB = new MessageBytes();
+    private MessageBytes schemeMB = new MessageBytes();
 
-    protected MessageBytes methodMB = new MessageBytes();
-    protected MessageBytes unparsedURIMB = new MessageBytes();
-    protected MessageBytes uriMB = new MessageBytes();
-    protected MessageBytes decodedUriMB = new MessageBytes();
-    protected MessageBytes queryMB = new MessageBytes();
-    protected MessageBytes protoMB = new MessageBytes();
+    private MessageBytes methodMB = new MessageBytes();
+    private MessageBytes unparsedURIMB = new MessageBytes();
+    private MessageBytes uriMB = new MessageBytes();
+    private MessageBytes decodedUriMB = new MessageBytes();
+    private MessageBytes queryMB = new MessageBytes();
+    private MessageBytes protoMB = new MessageBytes();
 
     // remote address/host
-    protected MessageBytes remoteAddrMB = new MessageBytes();
-    protected MessageBytes remoteHostMB = new MessageBytes();
+    private MessageBytes remoteAddrMB = new MessageBytes();
+    private MessageBytes remoteHostMB = new MessageBytes();
     
-    protected MimeHeaders headers = new MimeHeaders();
+    private MimeHeaders headers = new MimeHeaders();
 
-    protected MessageBytes instanceId = new MessageBytes();
+    private MessageBytes instanceId = new MessageBytes();
 
     /**
      * Notes.
      */
-    protected Object notes[] = new Object[Constants.MAX_NOTES];
+    private Object notes[] = new Object[Constants.MAX_NOTES];
 
 
     /**
      * Associated input buffer.
      */
-    protected InputBuffer inputBuffer = null;
+    private InputBuffer inputBuffer = null;
 
 
     /**
      * URL decoder.
      */
-    protected UDecoder urlDecoder = new UDecoder();
+    private UDecoder urlDecoder = new UDecoder();
 
 
     /**
      * HTTP specific fields. (remove them ?)
      */
-    protected int contentLength = -1;
+    private int contentLength = -1;
     // how much body we still have to read.
-    protected int available = -1; 
-    protected MessageBytes contentTypeMB = null;
-    protected String charEncoding = null;
-    protected Cookies cookies = new Cookies(headers);
-    protected Parameters parameters = new Parameters();
+    private int available = -1; 
+    private MessageBytes contentTypeMB = null;
+    private String charEncoding = null;
+    private Cookies cookies = new Cookies(headers);
+    private Parameters parameters = new Parameters();
 
-    protected MessageBytes remoteUser=new MessageBytes();
-    protected MessageBytes authType=new MessageBytes();
-    protected Hashtable attributes=new Hashtable();
+    private MessageBytes remoteUser=new MessageBytes();
+    private MessageBytes authType=new MessageBytes();
+    private Hashtable attributes=new Hashtable();
 
+    private Response response;
     // ------------------------------------------------------------- Properties
 
 
@@ -345,6 +346,16 @@ public final class Request {
         return headers.getHeader(name);
     }
 
+    // -------------------- Associated response --------------------
+
+    public Response getResponse() {
+        return response;
+    }
+
+    public void setResponse( Response response ) {
+        this.response=response;
+    }
+    
 
     // -------------------- Cookies --------------------
 
