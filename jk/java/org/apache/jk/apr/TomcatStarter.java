@@ -26,6 +26,10 @@ public class TomcatStarter implements Runnable {
         System.err.println("TomcatStarter: main()");
         
         try {
+            // Destroy out, it is lost since the server is detached
+            // err goes to error.log
+            System.setOut(System.err);
+            
             // Find the class
             Class c=null;
             for( int i=0; i<mainClasses.length; i++ ) {
@@ -57,6 +61,7 @@ public class TomcatStarter implements Runnable {
             Class argClass=args.getClass();
             Method m=c.getMethod( "main", new Class[] {argClass} );
             m.invoke( c, new Object[] { args } );
+            System.out.println("TomcatStarter: Done");
         } catch( Throwable t ) {
             t.printStackTrace(System.err);
         }
