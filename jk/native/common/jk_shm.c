@@ -88,8 +88,8 @@ int jk_shm_open(const char *fname, jk_logger_t *l)
     JK_INIT_CS(&(jk_shmem.cs), rc);
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "Initialized shared memory size=%u free=%u",
-               jk_shmem.size, jk_shmem.hdr->size);
+               "Initialized shared memory size=%u free=%u addr=%#lx",
+               jk_shmem.size, jk_shmem.hdr->size, jk_shmem.hdr);
     JK_TRACE_EXIT(l);
     return 0;
 }
@@ -102,9 +102,10 @@ int jk_shm_attach(const char *fname, jk_logger_t *l)
         jk_shmem.hdr->childs++;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "Attached shared memory [%d] size=%u free=%u",
+                   "Attached shared memory [%d] size=%u free=%u addr=%#lx",
                    jk_shmem.hdr->childs, jk_shmem.hdr->size,
-                   jk_shmem.hdr->size - jk_shmem.hdr->pos);
+                   jk_shmem.hdr->size - jk_shmem.hdr->pos,
+                   jk_shmem.hdr);
         JK_TRACE_EXIT(l);
         return 0;
     }
@@ -267,16 +268,17 @@ static int do_shm_open(const char *fname, int attached, jk_logger_t *l)
         jk_shmem.hdr->size = JK_SHM_SIZE;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "Initialized shared memory size=%u free=%u",
-                   jk_shmem.size, jk_shmem.hdr->size);
+                   "Initialized shared memory size=%u free=%u addr=%#lx",
+                   jk_shmem.size, jk_shmem.hdr->size, jk_shmem.hdr);
     }
     else {
         jk_shmem.hdr->childs++;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_INFO,
-                   "Attached shared memory [%d] size=%u free=%u",
+                   "Attached shared memory [%d] size=%u free=%u addr=%#lx",
                    jk_shmem.hdr->childs, jk_shmem.hdr->size,
-                   jk_shmem.hdr->size - jk_shmem.hdr->pos);
+                   jk_shmem.hdr->size - jk_shmem.hdr->pos,
+                   jk_shmem.hdr);
         /* TODO: check header magic */
     }
     JK_INIT_CS(&(jk_shmem.cs), rc);
