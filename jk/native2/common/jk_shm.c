@@ -258,11 +258,12 @@ jk_shm_slot_t *jk2_shm_createSlot(struct jk_env *env, struct jk_shm *shm,
     /* For now all slots are equal size
      */
     int slotId;
+    int i;
     jk_shm_slot_t *slot;
     
     for( i=1; i<shm->head->lastSlot; i++ ) {
         slot= shm->getSlot( env, shm, i );
-        if( strncmp( slot->name, name ) == 0 ) {
+        if( strncmp( slot->name, name, strlen(name) ) == 0 ) {
             return slot;
         }
     }
@@ -338,7 +339,7 @@ static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_m
     }
     case SHM_WRITE_SLOT: {
         char *instanceName=msg->getString( env, msg );
-        jk_shm_slot *slot;
+        jk_shm_slot_t *slot;
         
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "shm.registerTomcat() %s %d\n",
