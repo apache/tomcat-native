@@ -70,6 +70,8 @@
     <echo message="Apache13 ${apache13.home} ${apache13.detect}" />
     <echo message="IIS ${iis.home} ${iis.detect}" />
     <echo message="Iplanet ${iplanet.home} ${iplanet.detect}" />
+
+    <ant dir="${jk.src}" target="jkant"/>
   </target>
 
   <target name="apache20" depends="init" if="apache2.detect">
