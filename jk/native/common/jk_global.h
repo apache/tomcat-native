@@ -92,10 +92,10 @@
         #include <netinet/tcp.h>
         #include <arpa/inet.h>
         #include <sys/un.h>
-        #ifndef _OSD_POSIX
+        #if !defined(_OSD_POSIX) && !defined(AS400)
             #include <sys/socketvar.h>
         #endif
-        #ifndef HPUX11
+        #if !defined(HPUX11) && !defined(AS400)
             #include <sys/select.h>
         #endif
     #endif
