@@ -95,12 +95,16 @@
 #endif
 #endif
 
-#define VERSION				"1.0"
+#define VERSION				"1.0.2"
 #define VERSION_STRING		"Jakarta/DSAPI/" VERSION
 /* What we call ourselves */
 #define FILTERDESC			"Apache Tomcat Interceptor (" VERSION_STRING ")"
 /* Registry location of configuration data */
 #define REGISTRY_LOCATION	"Software\\Apache Software Foundation\\Jakarta Dsapi Redirector\\1.0"
+/* Name of INI file relative to whatever the 'current' directory is when the filter is
+ * loaded. Certainly on Linux this is the Domino data directory -- it seems likely that
+ * it's the same on other platforms
+ */
 #define ININAME				"libtomcat.ini"
 
 /* Names of registry keys/ini items that contain commands to start, stop Tomcat */
@@ -113,23 +117,15 @@ static jk_uri_worker_map_t	*uw_map		= NULL;
 static jk_logger_t			*logger		= NULL;
 
 static int					logLevel	= JK_LOG_EMERG_LEVEL;
+static jk_pool_t			cfgPool;
 
-#ifdef USE_INIFILE
 static const char *logFile;
 static const char *workerFile;
 static const char *workerMountFile;
 static const char *tomcatStart;
 static const char *tomcatStop;
-#else
-#ifndef MAX_PATH
-#define MAX_PATH 1024
-#endif
-static char	logFile[MAX_PATH];
-static char	workerFile[MAX_PATH];
-static char	workerMountFile[MAX_PATH];
-static char	tomcatStart[MAX_PATH];
-static char	tomcatStop[MAX_PATH];
-#endif
+
+static jk_worker_env_t   worker_env;
 
 static char					*crlf		= "\r\n";
 
@@ -170,8 +166,9 @@ static int JK_METHOD Read(jk_ws_service_t * s, void *b, unsigned l, unsigned *a)
 static int JK_METHOD Write(jk_ws_service_t * s, const void *b, unsigned l);
 
 static int ReadInitData(void);
+
 #ifndef USE_INIFILE
-static int GetRegParam(HKEY hkey, const char *tag, char *b, DWORD sz);
+static const char *GetRegString(HKEY hkey, const char *key);
 #endif
 
 static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *reqData);
@@ -179,9 +176,9 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 /* Case insentive memcmp() clone
  */
 #ifdef HAVE_MEMICMP
-#define NoCaseCmp(ci, cj, l) _memicmp((void *) (ci), (void *) (cj), (l))
+#define NoCaseMemCmp(ci, cj, l) _memicmp((void *) (ci), (void *) (cj), (l))
 #else
-static int NoCaseCmp(const char *ci, const char *cj, int len)
+static int NoCaseMemCmp(const char *ci, const char *cj, int len)
 {
 	if (0 == memcmp(ci, cj, len))
 		return 0;
@@ -197,6 +194,23 @@ static int NoCaseCmp(const char *ci, const char *cj, int len)
 }
 #endif
 
+/* Case insentive strcmp() clone
+ */
+#ifdef HAVE_STRICMP
+#define NoCaseStrCmp(si, sj) _stricmp((void *) (si), (void *) (sj))
+#else
+static int NoCaseStrCmp(const char *si, const char *sj)
+{
+	if (0 == strcmp(si, sj))
+		return 0;
+
+	while (*si && tolower(*si) == tolower(*sj))
+		si++, sj++;
+
+	return tolower(*si) - tolower(*sj);
+}
+#endif
+
 /* Case insensitive substring search.
  * str		string to search
  * slen		length of string to search
@@ -204,14 +218,24 @@ static int NoCaseCmp(const char *ci, const char *cj, int len)
  * plen		length of pattern
  * returns	1 if there's a match otherwise 0
  */
-static int NoCaseFind(const char *str, int slen, const char *ptn, int plen)
+static int FindPathElem(const char *str, int slen, const char *ptn, int plen)
 {
+	const char *sp = str;
+
 	while (slen >= plen)
 	{
-		if (NoCaseCmp(str, ptn, plen) == 0)
+		/* We're looking for a match for the specified string bounded by
+		 * the start of the string, \ or / at the left and the end of the
+		 * string, \ or / at the right. We look for \ as well as / on the
+		 * suspicion that a Windows hosted server might accept URIs
+		 * containing \.
+		 */
+		if (NoCaseMemCmp(sp, ptn, plen) == 0 &&
+			(sp == str || *sp == '\\' || *sp == '/') &&
+			(*sp == '\0' || *sp == '\\' || *sp == '/'))
 			return 1;
 		slen--;
-		str++;
+		sp++;
 	}
 	return 0;
 }
@@ -230,16 +254,18 @@ static void AddInLogMessageText(char *msg, unsigned short code, ...)
 	va_end(ap);
 	printf("\n");
 }
-
 #endif
 
 /* Return 1 iff the supplied string contains "web-inf" (in any case
- * variation. We don't allow URIs containing web-inf.
+ * variation. We don't allow URIs containing web-inf, although
+ * FindPathElem() actually looks for the string bounded by path punctuation
+ * or the ends of the string, so web-inf must appear as a single element
+ * of the supplied URI
  */
 static int BadURI(const char *uri)
 {
 	static char *wi = "web-inf";
-	return NoCaseFind(uri, strlen(uri), wi, strlen(wi));
+	return FindPathElem(uri, strlen(uri), wi, strlen(wi));
 }
 
 /* Replacement for strcat() that updates a buffer pointer. It's
@@ -456,6 +482,9 @@ DLLEXPORT unsigned int TerminateFilter(unsigned int reserved)
 	}
 
 	AddInLogMessageText(FILTERDESC " unloaded", NOERROR);
+
+	jk_close_pool(&cfgPool);
+
 	return kFilterHandledEvent;
 }
 
@@ -466,6 +495,8 @@ DLLEXPORT unsigned int FilterInit(FilterInitData * filterInitData)
 {
 	int rc = JK_FALSE;
 	jk_map_t *map = NULL;
+
+	jk_open_pool(&cfgPool, NULL, 0);		/* empty pool for config data */
 
 	if (!ReadInitData())
 		goto initFailed;
@@ -494,7 +525,10 @@ DLLEXPORT unsigned int FilterInit(FilterInitData * filterInitData)
 	if (map_alloc(&map))
 	{
 		if (map_read_properties(map, workerFile))
-			if (wc_open(map, uw_map, logger))
+            /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+            worker_env.uri_to_worker = &uw_map;
+			GETVARIABLE("SERVER_SOFTWARE", &worker_env.server_name, "Lotus Domino");
+			if (wc_open(map, &worker_env, logger))
 				rc = JK_TRUE;
 
 		map_free(&map);
@@ -517,106 +551,85 @@ initFailed:
 	AddInLogMessageText("Error loading %s", NOERROR, FILTERDESC);
 
 	return kFilterError;
-
 }
 
 /* Read parameters from the registry
  */
 static int ReadInitData(void)
 {
-#ifdef USE_INIFILE
-
-#define GET(tag, var) \
-	var = inifile_lookup(tag); \
-	if (NULL == var) \
-	{ \
-		AddInLogMessageText("%s not defined in %s", NOERROR, tag, ININAME); \
-		ok = JK_FALSE; \
-	}
-
 	int ok = JK_TRUE;
-	ERRTYPE e;
 	const char *v;
 
-	if (e = inifile_read(ININAME), ERRNONE != e)
+#ifdef USE_INIFILE
+// Using an INIFILE
+
+#define GETV(key) inifile_lookup(key)
+
+	ERRTYPE e;
+
+	if (e = inifile_read(&cfgPool, ININAME), ERRNONE != e)
 	{
 		AddInLogMessageText("Error reading: %s, %s", NOERROR, ININAME, ERRTXT(e));
 		return JK_FALSE;
 	}
 
-	GET(JK_LOG_FILE_TAG, logFile)
-	GET(JK_LOG_LEVEL_TAG, v);
-	GET(JK_WORKER_FILE_TAG, workerFile);
-	GET(JK_MOUNT_FILE_TAG, workerMountFile);
-
-	logLevel = (NULL == v) ? 0 : jk_parse_log_level(v);
-
-	tomcatStart	= inifile_lookup(TOMCAT_START);
-	tomcatStop	= inifile_lookup(TOMCAT_STOP);
-
-	return ok;
-
 #else
-	int ok = JK_TRUE;
-	char tmpbuf[1024];
+// Using the registry
+#define GETV(key) GetRegString(hkey, key)
+
 	HKEY hkey;
 	long rc;
 
 	rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, REGISTRY_LOCATION, (DWORD) 0, KEY_READ, &hkey);
 	if (ERROR_SUCCESS != rc) return JK_FALSE;
 
-	if (GetRegParam(hkey, JK_LOG_FILE_TAG, tmpbuf, sizeof (logFile)))
-		strcpy(logFile, tmpbuf);
-	else
-		ok = JK_FALSE;
+#endif
 
-	if (GetRegParam(hkey, JK_LOG_LEVEL_TAG, tmpbuf, sizeof (tmpbuf)))
-		logLevel = jk_parse_log_level(tmpbuf);
-	else
-		ok = JK_FALSE;
+#define GETVNB(tag, var) \
+	var = GETV(tag); \
+	if (NULL == var) \
+	{ \
+		AddInLogMessageText("%s not defined in %s", NOERROR, tag, ININAME); \
+		ok = JK_FALSE; \
+	}
 
-	if (GetRegParam(hkey, JK_WORKER_FILE_TAG, tmpbuf, sizeof (workerFile)))
-		strcpy(workerFile, tmpbuf);
-	else
-		ok = JK_FALSE;
+	GETVNB(JK_LOG_FILE_TAG, logFile)
+	GETVNB(JK_LOG_LEVEL_TAG, v);
+	GETVNB(JK_WORKER_FILE_TAG, workerFile);
+	GETVNB(JK_MOUNT_FILE_TAG, workerMountFile);
 
-	if (GetRegParam(hkey, JK_MOUNT_FILE_TAG, tmpbuf, sizeof (workerMountFile)))
-		strcpy(workerMountFile, tmpbuf);
-	else
-		ok = JK_FALSE;
+	logLevel = (NULL == v) ? 0 : jk_parse_log_level(v);
 
-	/* Get the commands that will start and stop Tomcat. We're not too bothered
-	 * if they don't exist.
-	 */
-	tomcatStart[0] = '\0';
-	if (GetRegParam(hkey, TOMCAT_START, tmpbuf, sizeof (tomcatStart)))
-		strcpy(tomcatStart, tmpbuf);
+	tomcatStart	= GETV(TOMCAT_START);
+	tomcatStop	= GETV(TOMCAT_STOP);
 
-	tomcatStop[0] = '\0';
-	if (GetRegParam(hkey, TOMCAT_STOP, tmpbuf, sizeof (tomcatStop)))
-		strcpy(tomcatStop, tmpbuf);
-
+#ifndef USE_INIFILE
 	RegCloseKey(hkey);
+#endif
 
 	return ok;
-#endif
 }
 
 #ifndef USE_INIFILE
-static int GetRegParam(HKEY hkey, const char *tag, char *b, DWORD sz)
+static const char *GetRegString(HKEY hkey, const char *key)
 {
 	DWORD type = 0;
-	LONG lrc;
+	DWORD sz = 0;
+	LONG rc;
+	char *val;
 
-	lrc = RegQueryValueEx(hkey, tag, (LPDWORD) 0, &type, (LPBYTE) b, &sz);
-	if (ERROR_SUCCESS != lrc || type != REG_SZ)
-		return JK_FALSE;
+	rc = RegQueryValueEx(hkey, key, (LPDWORD) 0, &type, NULL, &sz);
+	if (rc != ERROR_SUCCESS || type != REG_SZ)
+		return NULL;
 
-	b[sz] = '\0';
+	if (val = jk_pool_alloc(&cfgPool, sz), NULL == val)
+		return NULL;
 
-	DEBUG(("%s = %s\n", tag, b));
+	rc = RegQueryValueEx(hkey, key, (LPDWORD) 0, &type, val, &sz);
+	if (rc == ERROR_SUCCESS)
+		return val;
 
-	return JK_TRUE;
+	return NULL;
 }
 #endif
 
@@ -645,7 +658,7 @@ static void SimpleResponse(FilterContext *context, int status, char *reason, cha
 {
 	FilterResponseHeaders frh;
 	int rc, errID;
-	char hdrBuf[40];
+	char hdrBuf[35];
 
 	sprintf(hdrBuf, "Content-type: text/html%s%s", crlf, crlf);
 
@@ -701,12 +714,31 @@ static int GetVariableInt(private_ws_t *ws, char *hdrName,
 
 	return JK_TRUE;
 }
-
-/* A couple of utility macros to supply standard arguments to GetVariable() and
- * GetVariableInt().
+/* Get the value of a server (CGI) variable as an integer
  */
-#define GETVARIABLE(name, dest, dflt)		GetVariable(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
-#define GETVARIABLEINT(name, dest, dflt)	GetVariableInt(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
+static int GetVariableBool(private_ws_t *ws, char *hdrName,
+						char *buf, DWORD bufsz, int *dest, int dflt)
+{
+	int errID;
+
+	if (ws->context->GetServerVariable(ws->context, hdrName, buf, bufsz, &errID))
+	{
+		if (isdigit(buf[0]))
+			*dest = atoi(buf) != 0;
+		else if (NoCaseStrCmp(buf, "yes") == 0 || NoCaseStrCmp(buf, "on") == 0)
+			*dest = 1;
+		else
+			*dest = 0;
+	}
+	else
+	{
+		*dest = dflt;
+	}
+
+	DEBUG(("%s = %d\n", hdrName, *dest));
+
+	return JK_TRUE;
+}
 
 /* Allocate space for a string given a start pointer and an end pointer
  * and return a pointer to the allocated, copied string.
@@ -780,17 +812,30 @@ static int ParseHeaders(private_ws_t *ws, const char *hdrs, int hdrsz, jk_ws_ser
 	return hdrCount;
 }
 
+/* A couple of utility macros to supply standard arguments to GetVariable() and
+ * GetVariableInt().
+ */
+#define GETVARIABLE(name, dest, dflt)		GetVariable(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
+#define GETVARIABLEINT(name, dest, dflt)	GetVariableInt(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
+#define GETVARIABLEBOOL(name, dest, dflt)	GetVariableBool(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
+
 /* Set up all the necessary jk_* workspace based on the current HTTP request.
  */
 static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 {
+	/* This is the only fixed size buffer left. It won't be overflowed
+	 * because the Domino API that reads into the buffer accepts a length
+	 * constraint, and it's unlikely ever to be exhausted because the
+	 * strings being will typically be short, but it's still aesthetically
+	 * troublesome.
+	 */
 	char workBuf[16 * 1024];
 	FilterRequest fr;
 	char *hdrs, *qp;
 	int hdrsz;
 	int errID;
 	int hdrCount;
-	int rc;
+	int rc /*, dummy*/;
 
 	static char *methodName[] = { "", "HEAD", "GET", "POST", "PUT", "DELETE" };
 
@@ -818,20 +863,32 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 	GETVARIABLE("SERVER_NAME", &s->server_name, "");
 	GETVARIABLEINT("SERVER_PORT", &s->server_port, 80);
 	GETVARIABLE("SERVER_SOFTWARE", &s->server_software, "Lotus Domino");
-	GETVARIABLEINT("SERVER_PORT_SECURE", &s->is_ssl, 0);
-	GETVARIABLEINT("CONTENT_LENGTH", &s->content_length, 0); // not tested
+	GETVARIABLEINT("CONTENT_LENGTH", &s->content_length, 0);
+
+	/* SSL Support
+	 */
+	GETVARIABLEBOOL("HTTPS", &s->is_ssl, 0);
+
+	s->ssl_cert_len	= fr.clientCertLen;
+	s->ssl_cert		= fr.clientCert;
+	s->ssl_cipher	= NULL;		/* required by Servlet 2.3 Api */
+	s->ssl_session	= NULL;
+	s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
+
+	if (ws->reqData->requestMethod < 0 ||
+		ws->reqData->requestMethod >= sizeof(methodName) / sizeof(methodName[0]))
+		return JK_FALSE;
 
 	s->method = methodName[ws->reqData->requestMethod];
 
-	s->ssl_cert = NULL;
-	s->ssl_cert_len = 0;
-	s->ssl_cipher = NULL;
-	s->ssl_session = NULL;
+	s->headers_names	= NULL;
+	s->headers_values	= NULL;
+	s->num_headers		= 0;
 
-	s->headers_names = NULL;
-	s->headers_values = NULL;
-	s->num_headers = 0;
-
+	/* There's no point in doing this because Domino never seems to
+	 * set any of these CGI variables.
+	 */
+	/*
 	if (s->is_ssl)
 	{
 		char *sslNames[] =
@@ -848,11 +905,21 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 
 		unsigned i, varCount = 0;
 
+		DEBUG(("SSL request\n"));
+
 		for (i = 0; i < sizeof(sslNames)/sizeof(sslNames[0]); i++)
 		{
 			GETVARIABLE(sslNames[i], &sslValues[i], NULL);
 			if (sslValues[i]) varCount++;
 		}
+
+		/* Andy, some SSL vars must be mapped directly in  s->ssl_cipher,
+         * ssl-session and s->ssl_key_size
+		 * ie: 
+		 * Cipher could be "RC4-MD5"
+		 * KeySize 128 (bits)
+	     * SessionID a string containing the UniqID used in SSL dialogue
+         */
 
 		if (varCount > 0)
 		{
@@ -874,6 +941,7 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 			s->num_attributes = varCount;
 		}
 	}
+	*/
 
 	/* Duplicate all the headers now */
 
@@ -954,7 +1022,6 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 					if (worker->get_endpoint(worker, &e, logger))
 					{
 						int recover = JK_FALSE;
-						DEBUG(("About to call e->service()\n"));
 
 						if (e->service(e, &s, logger, &recover))
 						{
@@ -968,9 +1035,7 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 							jk_log(logger, JK_LOG_ERROR, "HttpExtensionProc error, service() failed\n");
 							DEBUG(("HttpExtensionProc error, service() failed\n"));
 						}
-						DEBUG(("About to call e->done()\n"));
 						e->done(&e, logger);
-						DEBUG(("Returned OK\n"));
 					}
 				}
 				else
