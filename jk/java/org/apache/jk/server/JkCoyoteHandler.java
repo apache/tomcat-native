@@ -419,7 +419,7 @@ public class JkCoyoteHandler extends JkHandler implements
 
             if(  res.isCommitted() ) {
                 if( log.isInfoEnabled() )
-                    log.info("Response already commited " );
+                    log.info("Response already committed " );
             } else {
                 try {
                     appendHead( res );
