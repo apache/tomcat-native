@@ -140,8 +140,12 @@ final class Ajp13Processor
      *
      * @param connector Ajp13Connector that owns this processor
      * @param id Identifier of this Ajp13Processor (unique per connector)
+     * @param threadGroup The thread group any threads created by the processor
+     *        should be in.
      */
-    public Ajp13Processor(Ajp13Connector connector, int id) {
+    public Ajp13Processor(Ajp13Connector connector,
+                          int id,
+                          ThreadGroup threadGroup) {
 
 	super();
 	this.connector = connector;
@@ -154,6 +158,7 @@ final class Ajp13Processor
         this.response.setConnector(connector);
 	this.threadName =
 	  "Ajp13Processor[" + connector.getPort() + "][" + id + "]";
+        this.threadGroup = threadGroup;
 
         this.logger.setConnector(connector);
         this.logger.setName(this.threadName);
@@ -251,6 +256,12 @@ final class Ajp13Processor
 
 
     /**
+     * This processor's thread group.
+     */
+    private ThreadGroup threadGroup = null;
+
+
+    /**
      * The thread synchronization object.
      */
     private Object threadSync = new Object();
@@ -330,7 +341,7 @@ final class Ajp13Processor
     private void parseConnection(Socket socket)
         throws IOException, ServletException {
 
-	if (debug >= 2)
+	if (debug > 1)
 	    logger.log("  parseConnection: address=" + socket.getInetAddress() +
 		", port=" + connector.getPort());
 	request.setServerPort(connector.getPort());
@@ -349,6 +360,16 @@ final class Ajp13Processor
 
         Ajp13 ajp13 = new Ajp13();
         ajp13.setDebug(debug);
+        ajp13.setLogger(new org.apache.ajp.Logger() {
+                public void log(String msg) {
+                    logger.log("[Ajp13] " + msg);
+                }
+                
+                public void log(String msg, Throwable t) {
+                    logger.log("[Ajp13] " + msg, t);
+                }
+            });
+
         Ajp13InputStream input = new Ajp13InputStream(ajp13);
         Ajp13OutputStream output = new Ajp13OutputStream(ajp13);
         response.setAjp13(ajp13);
@@ -368,7 +389,15 @@ final class Ajp13Processor
             
             int status = 0;
             try {
-                status = ajp13.receiveNextRequest(ajpRequest);                
+                if (debug > 0) {
+                    logger.log("waiting on next request...");
+                }
+                
+                status = ajp13.receiveNextRequest(ajpRequest);
+                
+                if (debug > 0) {
+                    logger.log("received next request, status=" + status);
+                }
             } catch (IOException e) {
                 logger.log("process: ajp13.receiveNextRequest", e);
             }
@@ -444,6 +473,10 @@ final class Ajp13Processor
             }
 
             // Recycling the request and the response objects
+            if (debug > 0) {
+                logger.log("recyling objects ...");
+            }
+            
             ajpRequest.recycle();
             request.recycle();
             response.recycle();
@@ -456,13 +489,29 @@ final class Ajp13Processor
         }
         
 	try {
+            if (debug > 0) {
+                logger.log("closing ajp13 object...");
+            }
+
             ajp13.close();
+
+            if (debug > 0) {
+                logger.log("ajp13 object closed.");
+            }
 	} catch (IOException e) {
 	    logger.log("process: ajp13.close", e);
 	}
 
 	try {
+            if (debug > 0) {
+                logger.log("closing socket...");
+            }
+
             socket.close();
+
+            if (debug > 0) {
+                logger.log("socket closed.");
+            }
 	} catch (IOException e) {
 	    logger.log("process: socket.close", e);
 	}
@@ -487,16 +536,25 @@ final class Ajp13Processor
 	while (!stopped.value()) {
 
 	    // Wait for the next socket to be assigned
+            if (debug > 0) {
+                logger.log("waiting for next socket to be assigned...");
+            }
 	    Socket socket = await();
 	    if (socket == null)
 		continue;
+
+            if (debug > 0) {
+                logger.log("socket assigned.");
+            }
 
 	    // Process the request from this socket
 	    process(socket);
 
 	    // Finish up this request
+            if (debug > 0) {
+                logger.log("recycling myself ...");
+            }
 	    connector.recycle(this);
-
 	}
 
 	// Tell threadStop() we have shut ourselves down successfully
@@ -515,7 +573,7 @@ final class Ajp13Processor
 	logger.log(sm.getString("ajp13Processor.starting"));
 
         stopped.set(false);
-	thread = new Thread(this, threadName);
+	thread = new Thread(threadGroup, this, threadName);
 	thread.setDaemon(true);
 	thread.start();
 

@@ -583,9 +583,19 @@ public class RequestHandler extends AjpHandler
         return -1;
     }
    
-    private static int debug=0;
+    private int debug=0;
+    private Logger logger = new Logger();
+    
+    public void setDebug(int debug) {
+        this.debug = debug;
+    }
+
+    public void setLogger(Logger l) {
+        this.logger = l;
+    }
+    
     void log(String s) {
-	System.out.println("RequestHandler: " + s );
+        logger.log("[RequestHandler] " + s );
     }
 
     // ==================== Servlet Input Support =================

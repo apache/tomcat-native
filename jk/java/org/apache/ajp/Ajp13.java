@@ -551,24 +551,16 @@ public class Ajp13 {
     
     public void setDebug(int debug) {
         this.debug = debug;
+        this.reqHandler.setDebug(debug);
     }
 
     public void setLogger(Logger l) {
         this.logger = l;
+        this.reqHandler.setLogger(l);
     }
 
     /**
      * XXX place holder...
      */
     Logger logger = new Logger();
-    public static class Logger {
-        void log(String msg) {
-            System.out.println("[Ajp13] " + msg);
-        }
-        
-        void log(String msg, Throwable t) {
-            System.out.println("[Ajp13] " + msg);
-            t.printStackTrace(System.out);
-        }
-    }
 }

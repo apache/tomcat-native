@@ -254,9 +254,21 @@ public final class Ajp13Connector
 
 
     /**
+     * This connector's thread group.
+     */
+    private ThreadGroup threadGroup = null;
+
+
+    /**
      * The name to register for the background thread.
      */
     private String threadName = null;
+
+
+    /**
+     * A thread that periodically logs debug info if debug > 0.
+     */
+    private DebugThread debugThread = null;
 
 
     /**
@@ -711,7 +723,13 @@ public final class Ajp13Connector
      */
     void recycle(Ajp13Processor processor) {
 
-        processors.push(processor);
+        synchronized(processors) {
+            if (debug > 0) {
+                logger.log("added processor to available processors, available="
+                           + processors.size());
+            }
+            processors.push(processor);
+        }
 
     }
 
@@ -745,7 +763,7 @@ public final class Ajp13Connector
      */
     private Ajp13Processor newProcessor() {
 
-        Ajp13Processor processor = new Ajp13Processor(this, curProcessors++);
+        Ajp13Processor processor = new Ajp13Processor(this, curProcessors++, threadGroup);
 	if (processor instanceof Lifecycle) {
 	    try {
 	        ((Lifecycle) processor).start();
@@ -816,7 +834,16 @@ public final class Ajp13Connector
 	    // Accept the next incoming connection from the server socket
 	    Socket socket = null;
 	    try {
+                if (debug > 0) {
+                    logger.log("accepting socket...");
+                }
+                
 		socket = serverSocket.accept();
+
+                if (debug > 0) {
+                    logger.log("accepted socket, assigning to processor.");
+                }
+                
                 socket.setSoLinger(true, 100);
                 socket.setKeepAlive(true);
                 
@@ -855,6 +882,13 @@ public final class Ajp13Connector
 	    }
 
 	    // Hand this socket off to an appropriate processor
+            if (debug > 0) {
+                synchronized(processors) {
+                    logger.log("about to create a processor, available="
+                               + processors.size() + ", created=" + created.size()
+                               + ", maxProcessors=" + maxProcessors);
+                }
+            }
 	    Ajp13Processor processor = createProcessor();
 	    if (processor == null) {
 		try {
@@ -886,7 +920,7 @@ public final class Ajp13Connector
 
 	logger.log(sm.getString("ajp13Connector.starting"));
 
-	thread = new Thread(this, threadName);
+	thread = new Thread(threadGroup, this, threadName);
 	thread.setDaemon(true);
 	thread.start();
 
@@ -959,7 +993,14 @@ public final class Ajp13Connector
 	if (started)
 	    throw new LifecycleException
 		(sm.getString("ajp13Connector.alreadyStarted"));
+
+        debugThread = new DebugThread();
+        debugThread.setDaemon(true);
+        debugThread.start();
+
         threadName = "Ajp13Connector[" + port + "]";
+        threadGroup = new ThreadGroup(threadName);
+        threadGroup.setDaemon(true);
         logger.setConnector(this);
         logger.setName(threadName);
 	lifecycle.fireLifecycleEvent(START_EVENT, null);
@@ -1027,5 +1068,29 @@ public final class Ajp13Connector
 
     }
 
+    /**
+     * Debugging thread used to debug thread activity in this
+     * connector.
+     */
+    private class DebugThread extends Thread
+    {
+        public void run() {
+            while (true) {
+                try {
+                    sleep(60 * 1000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+                if (debug > 0) {
+                    logger.log("active threads=" + threadGroup.activeCount());
+                    System.out.println("===================================");
+                    System.out.println("Ajp13Connector active threads="
+                                       + threadGroup.activeCount());
+                    threadGroup.list();
+                    System.out.println("===================================");
+                }
+            }
+        }
+    }
 
 }
