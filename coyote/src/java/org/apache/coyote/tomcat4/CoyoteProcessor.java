@@ -296,8 +296,12 @@ final class CoyoteProcessor
         response.setCoyoteResponse(res);
 
         try {
+            // Parse and set Catalina and configuration specific 
+            // request parameters
+            postParseRequest(req);
             // Calling the container
             connector.getContainer().invoke(request, response);
+            response.finishResponse();
         } finally {
             // Recycle the wrapper request and response
             request.recycle();
@@ -349,6 +353,69 @@ final class CoyoteProcessor
 
         if ((debug >= 1) && (socket != null))
             log(" An incoming request is being assigned");
+
+    }
+
+
+    // ------------------------------------------------------ Protected Methods
+
+
+    /**
+     * Parse additional request parameters.
+     */
+    protected void postParseRequest(Request req)
+        throws IOException {
+
+        req.setSecure(connector.getSecure());
+        req.scheme().setString(connector.getScheme());
+
+        parseHost();
+        // parseSession(req);
+        // parseParameters(req);
+
+    }
+
+
+    /**
+     * Parse host.
+     */
+    protected void parseHost()
+        throws IOException {
+
+        String value = request.getHeader("host");
+        if (value != null) {
+            int n = value.indexOf(':');
+            if (n < 0) {
+                if (connector.getScheme().equals("http")) {
+                    request.setServerPort(80);
+                } else if (connector.getScheme().equals("https")) {
+                    request.setServerPort(443);
+                }
+                if (proxyName != null)
+                    request.setServerName(proxyName);
+                else
+                    request.setServerName(value);
+            } else {
+                if (proxyName != null)
+                    request.setServerName(proxyName);
+                else
+                    request.setServerName(value.substring(0, n).trim());
+                if (proxyPort != 0)
+                    request.setServerPort(proxyPort);
+                else {
+                    int port = 80;
+                    try {
+                        port =
+                            Integer.parseInt(value.substring(n + 1).trim());
+                    } catch (Exception e) {
+                        throw new IOException
+                            (sm.getString
+                             ("coyoteProcessor.parseHeaders.portNumber"));
+                    }
+                    request.setServerPort(port);
+                }
+            }
+        }
 
     }
 
