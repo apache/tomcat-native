@@ -11,6 +11,9 @@ div.example {
 }
 pre {
     font-family: "Courier New", Courier, monospace;
+    font-weight: normal;
+    font-style: normal;
+    font-size: smaller;
 }
 em.screen {
     font-weight: normal;
