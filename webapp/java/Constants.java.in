@@ -87,6 +87,13 @@ public class Constants {
     public static final int TYPE_ERROR=0x00;
 
     /**
+     * DISCONNECT: The connection is being closed.
+     * <br>
+     * No payload:<br>
+     */
+    public static final int TYPE_DISCONNECT=0xfe;
+
+    /**
      * FATAL: A protocol error occourred, the connection must be closed.
      * <br>
      * Payload description:<br>
@@ -106,41 +113,25 @@ public class Constants {
     public static final int TYPE_CONF_WELCOME=0x01;
 
     /**
-     * CONF_HOST: The client attempts to configure a new virtual host.
+     * CONF_DEPLOY: The client attempts deploy a web application.
      * <br>
      * Payload description:<br>
+     * [string] The application name.<br>
      * [string] The virtual host name.<br>
      * [ushort] The virtual host port.<br>
+     * [string] The web-application URL path.<br>
      */
-    public static final int TYPE_CONF_HOST=0x02;
+    public static final int TYPE_CONF_DEPLOY=0x02;
 
     /**
-     * CONF_HOSTID: The server replies to a CONF_HOST message with the host
-     * identifier of the configured host.
-     * <br>
-     * Payload description:<br>
-     * [integer] The virtual unique id for this server.<br>
-     */
-    public static final int TYPE_CONF_HOSTID=0x03;
-
-    /**
-     * CONF_APPL: The client attempts to configure a new web application.
-     * <br>
-     * Payload description:<br>
-     * [string] The application name (jar file or directory).<br>
-     * [string] The application deployment path.<br>
-     * [integer] The virtual host unique id for this server.<br>
-     */
-    public static final int TYPE_CONF_APPL=0x04;
-
-    /**
-     * CONF_APPLID: The server replies to a CONF_APPL message with the web
+     * CONF_APPLIC: The server replies to a CONF_DEPLOY message with the web
      * application identifier of the configured application.
      * <br>
      * Payload description:<br>
      * [integer] The web application unique id for this server.<br>
+     * [string] The web application real path (where it's expanded).<br>
      */
-    public static final int TYPE_CONF_APPLID=0x05;
+    public static final int TYPE_CONF_APPLIC=0x03;
 
     /**
      * CONF_DONE: Client issues this message when all configurations have been
@@ -148,13 +139,13 @@ public class Constants {
      * <br>
      * No payload:<br>
      */
-    public static final int TYPE_CONF_DONE=0x06;
+    public static final int TYPE_CONF_DONE=0x04;
 
-    /*
-     * Added by JFC (please check)
+    /**
+     * CONF_PROCEED: Server issues this message in response to a CONF_DONE
+     * message, to acknowledge its readiness to accept requests.
+     * <br>
+     * No payload:<br>
      */
-    public static final int TYPE_DISCONNECT=0x07;
-    public static final int TYPE_CONF_DEPLOY=0x08;
-    public static final int TYPE_CONF_APPLIC=0x09;
-    public static final int TYPE_CONF_PROCEED=0x10;
+    public static final int TYPE_CONF_PROCEED=0x05;
 }
