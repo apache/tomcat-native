@@ -97,6 +97,10 @@
     <td>SSL_CLIENT_CERT</td>
     <td>SSL Certificate of client</td>
   </tr>
+  <tr> 
+    <td>SSL_CIPHER_USEKEYSIZE</td>
+    <td>Number of cipher bits (actually used)</td>
+  </tr>
 </table>
 <p>Since apache-ssl and apache-mod_ssl use differents env vars, you could adapt 
   SSL vars via the following JK vars </p>
@@ -105,7 +109,8 @@
   <li>JkHTTPSIndicator</li>
   <li>JkSESSIONIndicator</li>
   <li>JkCIPHERIndicator</li>
-  <li>JkCERTSIndicator: </li>
+  <li>JkCERTSIndicator</li>
+  <li>JkKEYSIZEIndicator</li>
 </ul>
 <p>here is an example of directive to include in httpd.conf for use with mod_ssl 
 </p>
@@ -120,13 +125,25 @@
   JkCIPHERIndicator SSL_CIPHER <br>
   # What is the indicator for the client SSL certificated (default is SSL_CLIENT_CERT) 
   <br>
-  JkCERTSIndicator SSL_CLIENT_CERT </font></p>
+  JkCERTSIndicator SSL_CLIENT_CERT <br>
+  # What is the indicator for the number of cipher bits (default is SSL_CIPHER_USEKEYSIZE) 
+  <br>
+  JkKEYSIZEIndicator SSL_CIPHER_USEKEYSIZE </font></p>
 <p>When using mod_jk with Apache & mod_ssl it is essential to specify "SSLOptions 
   +StdEnvVars +ExportCertData" in the httpd.conf file.<br>
   Otherwise mod_ssl will not produce the neccessary environment variables for 
   mod_jk. (Tilo Christ &lt;tilo.christ@med.siemens.de&gt;)</p>
-<p>Warning, even if mod_jk support both ajp12 (old version from ApacheJServ) and 
+<p>Warnings:
+<ul>
+<li>
+  even if mod_jk support both ajp12 (old version from ApacheJServ) and 
   ajp13, only ajp13 could forward SSL informations to tomcat.</p>
+</li>
+<li>
+  JkKEYSIZEIndicator is for TC 4.x (javax.servlet.request.key_size). To get it
+  working JkOptions +ForwardKeySize must be added to the httpd.conf file.
+</li>
+</ul>
 <hr>
 <h2><a name=s5>SSL via apache</a></h2>
 <p>mod_jk seems to support the VirtualHost directive of Apache. It's specialy 
