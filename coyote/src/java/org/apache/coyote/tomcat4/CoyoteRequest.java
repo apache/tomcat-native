@@ -1016,8 +1016,12 @@ public class CoyoteRequest
      */
     public String getRemoteAddr() {
         if (remoteAddr == null) {
-            InetAddress inet = socket.getInetAddress();
-            remoteAddr = inet.getHostAddress();
+            if (socket != null) {
+                InetAddress inet = socket.getInetAddress();
+                remoteAddr = inet.getHostAddress();
+            } else {
+                remoteAddr = coyoteRequest.remoteAddr().toString();
+            }
         }
         return remoteAddr;
     }
@@ -1028,11 +1032,15 @@ public class CoyoteRequest
      */
     public String getRemoteHost() {
         if (remoteHost == null) {
-            if (connector.getEnableLookups()) {
-                InetAddress inet = socket.getInetAddress();
-                remoteHost = inet.getHostName();
+            if (socket != null) {
+                if (connector.getEnableLookups()) {
+                    InetAddress inet = socket.getInetAddress();
+                    remoteHost = inet.getHostName();
+                } else {
+                    remoteHost = getRemoteAddr();
+                }
             } else {
-                remoteHost = getRemoteAddr();
+                remoteHost = coyoteRequest.remoteHost().toString();
             }
         }
         return remoteHost;

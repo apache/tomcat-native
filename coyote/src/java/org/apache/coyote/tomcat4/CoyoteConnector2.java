@@ -80,6 +80,8 @@ import java.security.cert.CertificateException;
 import java.security.UnrecoverableKeyException;
 import java.security.KeyManagementException;
 
+import org.apache.tomcat.util.IntrospectionUtils;
+
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.ActionHook;
 import org.apache.coyote.Adapter;
@@ -944,7 +946,18 @@ public final class CoyoteConnector2
         protocolHandler.setAdapter(adapter);
 
         // Set attributes
-        protocolHandler.setAttribute("port", "" + port);
+        IntrospectionUtils.setProperty(protocolHandler, "port", "" + port);
+        IntrospectionUtils.setProperty(protocolHandler, "maxThreads", 
+                                       "" + maxProcessors);
+        IntrospectionUtils.setProperty(protocolHandler, "backlog", 
+                                       "" + acceptCount);
+        IntrospectionUtils.setProperty(protocolHandler, "tcpNoDelay", 
+                                       "" + tcpNoDelay);
+        IntrospectionUtils.setProperty(protocolHandler, "soTimeout", 
+                                       "" + connectionTimeout);
+
+        // Configure socket factory
+        // TODO
 
         try {
             protocolHandler.init();

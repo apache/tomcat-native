@@ -93,13 +93,13 @@ public class Http11Protocol implements ProtocolHandler
     public void setAttribute( String name, Object value ) {
 
         log.info("setAttribute " + name + " " + value );
-
+/*
         if ("maxKeepAliveRequests".equals(name)) {
             maxKeepAliveRequests = Integer.parseInt((String) value.toString());
         } else if ("port".equals(name)) {
             setPort(Integer.parseInt((String) value.toString()));
         }
-
+*/
     }
 
     public Object getAttribute( String key ) {
