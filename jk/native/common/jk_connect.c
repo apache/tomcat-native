@@ -148,8 +148,8 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
         if (timeout != -1) {
             /* do not allow non blocking sockets for now */
             if (timeout == 0)
-                timeout = -1;
-            ret = jk_socket_timeout_set(sock, -1, timeout);
+                timeout = -1;            
+            ret = jk_socket_timeout_set(sock, -1, timeout * 1000);
             if (ret) {
                 jk_close_socket(sock);
                 jk_log(l, JK_LOG_ERROR,
