@@ -188,7 +188,7 @@ extern "C"
 #define AJP_HEADER_LEN            (4)
 #define AJP_HEADER_SZ_LEN         (2)
 #define CHUNK_BUFFER_PAD          (12)
-#define AJP_DEF_CACHE_TIMEOUT     (15)
+#define AJP_DEF_CACHE_TIMEOUT     (0)
 #define AJP_DEF_CONNECT_TIMEOUT   (0)   /* NO CONNECTION TIMEOUT => NO CPING/CPONG */
 #define AJP_DEF_REPLY_TIMEOUT     (0)   /* NO REPLY TIMEOUT                        */
 #define AJP_DEF_PREPOST_TIMEOUT   (0)   /* NO PREPOST TIMEOUT => NO CPING/CPONG    */

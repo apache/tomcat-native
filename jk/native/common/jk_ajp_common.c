@@ -1958,14 +1958,13 @@ int ajp_get_endpoint(jk_worker_t *pThis,
     if (pThis && pThis->worker_private && je) {
         ajp_worker_t *aw = pThis->worker_private;
         ajp_endpoint_t *ae = NULL;
+        time_t now = time(NULL);
 
         if (aw->ep_cache_sz) {
             int rc;
             JK_ENTER_CS(&aw->cs, rc);
             if (rc) {
                 unsigned i;
-                time_t now;
-                now = time(NULL);
                 for (i = 0; i < aw->ep_cache_sz; i++) {
                     if (aw->ep_cache[i]) {
                         ae = aw->ep_cache[i];
@@ -1974,9 +1973,10 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                     }
                 }
                 /* Handle enpoint cache timeouts */
-                if (aw->cache_timeout) {
-                    for (; i < aw->ep_cache_sz; i++) {
-                        if (aw->ep_cache[i]) {
+                if (ae && aw->cache_timeout) {
+                    for (i = 0; i < aw->ep_cache_sz; i++) {
+                        /* Skip the cached enty */
+                        if (aw->ep_cache[i] && (ae != aw->ep_cache[i])) {
                             int elapsed =
                                 (int)(now - ae->last_access);
                             if (elapsed > aw->cache_timeout) {
@@ -1994,7 +1994,6 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                     if (ae->sd > 0) {
                         /* Handle timeouts for open sockets */
                         int elapsed = (int)(now - ae->last_access);
-                        ae->last_access = now;
                         jk_log(l, JK_LOG_DEBUG,
                                "time elapsed since last request = %u seconds\n",
                                elapsed);
@@ -2007,18 +2006,19 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                             ae->sd = -1;        /* just to avoid twice close */
                         }
                     }
+                    ae->last_access = now;
                     *je = &ae->endpoint;
                     JK_TRACE_EXIT(l);
                     return JK_TRUE;
                 }
             }
         }
-
+        /* Create new endpoint */
         ae = (ajp_endpoint_t *) calloc(1, sizeof(ajp_endpoint_t));
         if (ae) {
             ae->sd = -1;
             ae->reuse = JK_FALSE;
-            ae->last_access = time(NULL);
+            ae->last_access = now;
             jk_open_pool(&ae->pool, ae->buf, sizeof(ae->buf));
             ae->worker = pThis->worker_private;
             ae->endpoint.endpoint_private = ae;
