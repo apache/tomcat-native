@@ -127,6 +127,7 @@ print "Today: " . scalar(localtime($curdate)) . "\n";
 foreach( @logs ) {
    $logfile = $_;
    chomp($logfile);
+   next if ( $logfile =~ /\.(bz2|gz|zip)$/ );
    @head = `head -1 $logfile`;
    ($mon, $day, $time, $year) = (split /\s+/,$head[0])[1..4];
    ($hour, $min, $sec) = split /:/,$time;
@@ -228,7 +229,7 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
          if( $line =~ /\d\)\]: / ) {
             # Handle a mod_jk error
             # print "mod_jk error! " . scalar(localtime($logtime)) . " $line\n";
-            if( $line =~ /jk_tcp_socket_recvfull failed/ ) {
+            if( $line =~ /(jk_tcp_socket_recvfull failed|ERROR: Receiving from tomcat failed)/ ) {
                $Global{tomcat_full}++;
                $Interval{tomcat_full}++;
             } elsif( $line =~ /(ajp_process_callback - write failed|ERROR sending data to client. Connection aborted or network problems)/ ) {
