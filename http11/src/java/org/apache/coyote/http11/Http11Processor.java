@@ -994,21 +994,30 @@ public class Http11Processor implements Processor, ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
 
-            if ((remoteAddr == null) && (socket != null))
-                remoteAddr = socket.getInetAddress().getHostAddress();
-
+            if ((remoteAddr == null) && (socket != null)) {
+                InetAddress inetAddr = socket.getInetAddress();
+                if (inetAddr != null) {
+                    remoteAddr = inetAddr.getHostAddress();
+                }   
+            }
             request.remoteAddr().setString(remoteAddr);
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
 
-            if (remoteAddr == null)
-                remoteAddr = socket.getInetAddress().getHostAddress();
-            
+            if ((remoteAddr == null) && (socket !=null)) {
+                InetAddress inetAddr = socket.getInetAddress();
+                if (inetAddr != null) {
+                    remoteAddr = inetAddr.getHostAddress();
+                }
+            }
             request.remoteAddr().setString(remoteAddr);
             
-            if (remoteHost == null)
-                remoteHost = socket.getInetAddress().getHostName();
-
+            if ((remoteHost == null) && (socket != null)) {
+                InetAddress inetAddr = socket.getInetAddress();
+                if (inetAddr != null) {
+                    remoteHost = inetAddr.getHostName();
+                }
+            }
             request.remoteHost().setString(remoteHost);
                        
             if (remotePort == -1)
