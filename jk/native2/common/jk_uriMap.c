@@ -460,10 +460,13 @@ static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
         char *context= uriEnv->contextPath;
         jk_uriEnv_t *hostEnv = jk2_uriMap_hostMap(env, uriMap, vhost, port);
         jk_uriEnv_t *ctxEnv;
-        
+       
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "uriMap: fix uri %s context %s host %s\n", uriEnv->uri, 
-                              uriEnv->contextPath, hostEnv->virtual);
+                      "uriMap: fix uri %s context %s host %s\n",
+                       uriEnv->uri==NULL ? "null":uriEnv->uri,
+                       uriEnv->contextPath==NULL ? "null":uriEnv->contextPath,
+                       hostEnv->virtual);
+
         if (context == NULL) {
             if (  uriMap->mbean->debug > 5) 
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
