@@ -19,6 +19,7 @@
 <title>IIS HowTo</title>
 <author email="hgomez@apache.org">Henri Gomez</author>
 <author email="shachor@il.ibm.com">Gal Shachor</author>
+<author email="yoavs@apache.org">Yoav Shapira</author>
 <date>$Date$</date>
 </properties>
 
@@ -71,10 +72,10 @@ The IIS-Tomcat redirector was developed and tested on:
 WinNT4.0-i386 SP4/SP5/SP6a (should be able to work with other service packs), Win2K and WinXP and Win98
 </li>
 <li>
-IIS4.0 and PWS4.0
+IIS4.0 and PWS4.0 (numerous people have working IIS 5 and IIS 6 configurations)
 </li>
 <li>
-Tomcat 3.2.x, Tomcat 3.3.x, Tomcat 4.0.x, Tomcat 4.1.x and Tomcat 5
+Tomcat 3.2 and later, Tomcat 4.x and Tomcat 5
 </li>
 </ul>
 </p>
@@ -85,6 +86,13 @@ more about the in-process mode can be found in the in process howto.
 </p>
 </subsection>
 
+<subsection name="IIS 5 and 6 Notes">
+<p>
+There are extra steps you need to take for configuring Tomcat with IIS 5 and 6.  Please see the appropriate links from 
+<a href="http://wiki.apache.org/jakarta-tomcat/Tomcat_2fLinks">Tomcat Useful Links</a>.
+</p>
+</subsection>
+
 <subsection name="Who support ajp protocols ?">
 <p>
 The ajp12 protocol is only available in Tomcat 3.2.x and 3.3.x.
@@ -92,7 +100,7 @@ The ajp12 protocol is only available in Tomcat 3.2.x and 3.3.x.
 
 <p>
 The <b>ajp12</b> has been <b>deprecated</b> with Tomcat 3.3.x and you should use instead 
-<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.0.x, 4.1.x and 5.
+<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.x and 5.
 </p>
 
 <p>
