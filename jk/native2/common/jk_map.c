@@ -359,6 +359,49 @@ char * jk2_map_concatKeys( jk_env_t *env, jk_map_t *map, char *delim )
     return buf;
 }
 
+void qsort2(char **a, void **d, int n)
+{
+    int i, j;
+    char *x, *w;
+    
+    do {
+        i = 0; j = n - 1;
+        x = a[j/2];
+        do {
+            /* XXX: descending length sorting */
+            while (strlen(a[i]) > strlen(x)) i++;
+            while (strlen(a[j]) < strlen(x)) j--;
+            if (i > j)
+                break;
+            w = a[i]; a[i] = a[j]; a[j] = w;
+            w = d[i]; d[i] = d[j]; d[j] = w;
+        }
+        while (++i <= --j);
+        if (j + 1 < n - i) {
+            if (j > 0)
+                qsort2(a, d, j + 1);
+            a += i; d += i; n -= i;
+        }
+        else {
+            if (i < n - 1) qsort2(a + i, d + i, n - i);
+            n = j + 1;
+        }
+    }
+    while (n > 1);
+}
+
+
+
+static void jk2_map_qsort(jk_env_t *env, jk_map_t *map)
+{
+    int n = map->size(env, map);
+    
+    if (n < 2)
+        return;
+    qsort2(map->keys, map->values, n);
+}
+
+
 
 /* ==================== */
 /* Internal utils */
@@ -401,7 +444,7 @@ int jk2_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
     _this->valueAt=jk2_map_default_valueAt;
     _this->init=jk2_map_default_init;
     _this->clear=jk2_map_default_clear;
-
+    _this->sort=jk2_map_qsort;
     return JK_OK;
 }
 
