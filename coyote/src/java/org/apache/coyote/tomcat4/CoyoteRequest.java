@@ -110,8 +110,6 @@ import org.apache.catalina.Realm;
 import org.apache.catalina.Session;
 import org.apache.catalina.Wrapper;
 
-import org.apache.catalina.connector.HttpRequestFacade;
-
 import org.apache.catalina.util.Enumerator;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.catalina.util.RequestUtil;
@@ -512,7 +510,7 @@ public class CoyoteRequest
     /**
      * The facade associated with this request.
      */
-    protected HttpRequestFacade facade = null;
+    protected CoyoteRequestFacade facade = null;
 
     /**
      * Return the <code>ServletRequest</code> for which this object
@@ -520,7 +518,7 @@ public class CoyoteRequest
      */
     public ServletRequest getRequest() {
         if (facade == null) {
-            facade = new HttpRequestFacade(this);
+            facade = new CoyoteRequestFacade(this);
         }
         return (facade);
     }

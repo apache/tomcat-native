@@ -105,7 +105,6 @@ import org.apache.catalina.Manager;
 import org.apache.catalina.Realm;
 import org.apache.catalina.Session;
 import org.apache.catalina.Wrapper;
-import org.apache.catalina.connector.HttpResponseFacade;
 import org.apache.catalina.util.CharsetMapper;
 import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringManager;
@@ -406,7 +405,7 @@ public class CoyoteResponse
     /**
      * The facade associated with this response.
      */
-    protected HttpResponseFacade facade = null;
+    protected CoyoteResponseFacade facade = null;
 
     /**
      * Return the <code>ServletResponse</code> for which this object
@@ -414,7 +413,7 @@ public class CoyoteResponse
      */
     public ServletResponse getResponse() {
         if (facade == null) {
-            facade = new HttpResponseFacade(this);
+            facade = new CoyoteResponseFacade(this);
         }
         return (facade);
     }
