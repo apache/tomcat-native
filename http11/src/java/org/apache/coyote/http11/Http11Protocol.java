@@ -246,7 +246,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     private String reportedname;
     private int socketCloseDelay=-1;
     private boolean disableUploadTimeout = true;
-    private int socketBuffer = 1500;
+    private int socketBuffer = 9000;
     private Adapter adapter;
     private Http11ConnectionHandler cHandler;
 
