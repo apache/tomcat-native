@@ -197,6 +197,15 @@ extern "C" {
 #ifdef WIN32
 /* For WIN32, emulate gettimeofday() using _ftime() */
 #define gettimeofday(tv,tz) { struct _timeb tb; _ftime(&tb); (tv)->tv_sec = tb.time; (tv)->tv_usec = tb.millitm * 1000; }
+/* define snprint to match windows version */
+#define snprintf _snprintf
+/* define vsnprint to match windows version */
+#define vsnprintf _vsnprintf
+#endif
+
+#ifdef NETWARE
+#define USE_SPRINTF
+#define USE_VSPRINTF
 #endif
 
 #ifdef __cplusplus
