@@ -29,6 +29,7 @@
 #include "jk_pool.h"
 #include "jk_map.h"
 #include "jk_util.h"
+#include "jk_shm.h"
 
 #define CAPACITY_INC_SIZE (50)
 #define LENGTH_OF_LINE    (1024)
@@ -384,10 +385,14 @@ int jk_map_read_properties(jk_map_t *m, const char *f)
     int rc = JK_FALSE;
 
     if (m && f) {
+        struct stat statbuf;
+        FILE *fp;
+        if ((rc = stat(f, &statbuf)) == -1)
+            return JK_FALSE;
 #ifdef AS400
-        FILE *fp = fopen(f, "r, o_ccsid=0");
+        fp = fopen(f, "r, o_ccsid=0");
 #else
-        FILE *fp = fopen(f, "r");
+        fp = fopen(f, "r");
 #endif
 
         if (fp) {
@@ -402,6 +407,8 @@ int jk_map_read_properties(jk_map_t *m, const char *f)
                     break;
             }
             fclose(fp);
+            /* Update shared memory */
+            jk_shm_set_workers_time(statbuf.st_mtime);
         }
     }
 
