@@ -192,9 +192,10 @@ public class WarpConnection implements LifecycleListener, Runnable {
             }
             WarpRequestHandler requestHandler=new WarpRequestHandler();
             while (requestHandler.handle(this,packet));
-            this.stop();
         } catch (IOException e) {
             logger.log("Exception on socket",e);
+        } finally {
+            this.stop();
         }
 
         if (Constants.DEBUG) logger.debug("Connection terminated");
