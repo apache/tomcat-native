@@ -284,6 +284,8 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
     
     env=workerEnv->globalEnv;
 
+fprintf( stderr, "jk2_set2 : name=%s value=%s\n", name, value);
+
     value = jk2_map_replaceProperties(env, m, m->pool, value);
 
     if(value==NULL)
@@ -324,6 +326,15 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
 static const char *jk2_setWorker(cmd_parms *cmd,void *per_dir,
                                 const char *wname, const char *wparam, const char *value)
 {
+#ifndef OLD_WAY
+
+    char * name;
+    name = ap_pstrcat(cmd->pool, "worker.", wname, ".", wparam, NULL);
+/*  fprintf( stderr, "jk2_setWorker : name=%s value=%s\n", name, value); */
+    return (jk2_set2(cmd, per_dir, name, value));
+
+#else
+
     server_rec *s = cmd->server;
     struct stat statbuf;
     char *oldv;
@@ -339,9 +350,8 @@ static const char *jk2_setWorker(cmd_parms *cmd,void *per_dir,
     jk_map_t *m=workerEnv->init_data;
     
     env=workerEnv->globalEnv;
-    
-    nvalue = ap_pstrcat(cmd->pool, "worker.", wname, wparam);
-/*  fprintf( stderr, "wname=%s wparam=%s value=%s\n", wname, wparam, value); */
+    nvalue = ap_pstrcat(cmd->pool, "worker.", wname, ".", wparam, NULL); */
+/*  fprintf( stderr, "wname=%s wparam=%s value=%s zvalue=%s nvalue=%s\n", wname, wparam, value, zvalue, nvalue); */
     value = jk2_map_replaceProperties(env, m, m->pool, nvalue);
 
     if(value==NULL)
@@ -351,6 +361,8 @@ static const char *jk2_setWorker(cmd_parms *cmd,void *per_dir,
 /*                                 ap_pstrdup(cmd->pool,name), */
 /*                                 ap_pstrdup(cmd->pool,value)); */
     return NULL;
+
+#endif
 }
 
 /* Command table.
