@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <document>
 <properties>
-<title>Configuration in the Tomcat</title>
+<title>Configuration options</title>
 <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
 <date>$Date$</date>
 </properties>
@@ -17,7 +17,7 @@
 <section name="Config options">
 <p>
 <table>
-
+ 
   <tr>
   <th>Property name</th>
   <th>Default</th>
@@ -142,102 +142,5 @@
 
 </table>
 </p>
-</section>
-  
-<section name="Examples">
-<p>
-The examples below are working when the Web Server is configured according the 
-examples described in the configweb file.
-</p>
-<subsection name="using normal socket">
-<p>
-There is no need to use the jkjni logic to use normal socket, so that just for
-Fun.
-</p>
-
-<p>
-<source>
-# list of needed handlers.
-handler.list=apr,channelSocket,request
-
-# Override the default port for the channelSocket
-channelSocket.port=8019
-
-# Dynamic library
-apr.NativeSo=/home1/jakarta/jakarta-tomcat-connectors/jk/build/jk2/apache2/jkjni.so
-</source>
-</p>
-</subsection>
-
-<subsection name="using AF_UNIX socket">
-<p>
-Create and listen on a AF_UNIX socket. The location of the socket must be the
-same in the Web Server configuration file.
-</p>
-
-<p>
-<source>
-# list of needed handlers.
-handler.list=apr,channelUnix,request
-
-# Location of the socket.
-channelUnix.file=${jkHome}/work/jk2.socket
-
-# Dynamic library
-jtc=/home1/jakarta/jakarta-tomcat-connectors
-apr.NativeSo=${jtc}/jk/build/jk2/apache2/jkjni.so
-</source>
-</p>
-</subsection>
-
-<subsection name="using user defined class for communication">
-<p>
-It is possible to have a user defined class for the communication.
-Here we have used the ChannelUn as example.
-</p>
-
-<p>
-<source>
-# Define our own handler.
-class.mychannel=org.apache.jk.common.ChannelUn
-# list of needed handlers.
-handler.list=apr,mychannel,request
-
-# Location of the socket.
-channelUnix.file=${jkHome}/work/jk2.socket
-
-# Dynamic library
-jtc=/home1/jakarta/jakarta-tomcat-connectors
-apr.NativeSo=${jtc}/jk/build/jk2/apache2/jkjni.so
-</source>
-</p>
-</subsection>
-
-<subsection name="using jni channel class for communication">
-<p>
-Here we have the minimum configuration needed for the jni communication.
-</p>
-
-<p>
-<source>
-# list of needed handlers.
-handler.list=apr,request,channelJni
-
-# Dynamic library needs to be defined only if Tomcat is used
-# out of process
-jtc=/home1/jakarta/jakarta-tomcat-connectors
-apr.NativeSo=${jtc}/jk/build/jk2/apache2/jkjni.so
-# Or you can use the mod_jk2 directly
-apr.jniModeSo=/opt/apache2/modules/mod_jk2.so
-
-# If you wish to start the Tomcat from inside web server then
-# you don't need any above directive. Here is shown the default
-# value for the apr that you can ommit
-apr.jniModeSo=inprocess
-
-</source>
-</p>
-</subsection>
-
 </section>
 </document>
