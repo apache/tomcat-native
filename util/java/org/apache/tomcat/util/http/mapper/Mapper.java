@@ -216,15 +216,12 @@ public final class Mapper {
     /**
      * Set context, used for wrapper mapping (request dispatcher).
      * 
-     * @param path Context path
-     * @param context Context object
      * @param welcomeResources Welcome files defined for this context
      * @param resources Static resources of the context
      */
-    public void setContext(String path, String[] welcomeResources, 
+    public void setContext(String[] welcomeResources, 
                            javax.naming.Context resources) {
-        context.name = path;
-        //context.object = context; // Likely useless
+        context.name = "";
         context.welcomeResources = welcomeResources;
         context.resources = resources;
     }
@@ -548,7 +545,6 @@ public final class Mapper {
         uri.toChars();
         CharChunk uricc = uri.getCharChunk();
         uricc.setLimit(-1);
-        mappingData.contextPath.setString(context.path);
         internalMapWrapper(context, uricc, mappingData);
 
     }
