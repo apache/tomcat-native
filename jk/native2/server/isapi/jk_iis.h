@@ -157,6 +157,13 @@ int get_server_value( LPEXTENSION_CONTROL_BLOCK lpEcb,
                             DWORD bufsz,
                             char  *def_val);
 
+DWORD WINAPI HttpExtensionProcWorker(LPEXTENSION_CONTROL_BLOCK  lpEcb, 
+                                     jk_ws_service_t *service);
+
+int jk2_iis_init_pool(jk_env_t *env);
+int jk2_iis_thread_pool(LPEXTENSION_CONTROL_BLOCK lpEcb);
+int jk2_iis_close_pool(jk_env_t *env);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
