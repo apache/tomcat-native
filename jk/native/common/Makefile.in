@@ -13,4 +13,4 @@ all: ${APACHE_OBJECTS}
 install:
 
 clean:
-	-rm *.o *.slo *.lo
+	rm -f *.o *.slo *.lo
