@@ -118,16 +118,6 @@ struct jk_channel {
     struct jk_worker *worker; 
     char *workerName; 
     
-    /** Prepare the channel, check the properties. This 
-     * will resolve the host and do all the validations.
-     * ( needed to remove the dependencies on sockets in ajp)
-     * 
-     * The channel may save or use data from the worker ( like cache
-     *  the inet addr, etc )
-     *  XXX revisit this - we may pass too much that is not needed
-     */
-    int (JK_METHOD *init)(struct jk_env *env, jk_channel_t *_this);
-
     /** Open the communication channel
      */
     int (JK_METHOD *open)(struct jk_env *env, jk_channel_t *_this, 

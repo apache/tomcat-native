@@ -115,14 +115,14 @@ struct jk_ws_service;
 /* Login Rejected (servlet engine -> web server) */
 #define JK_HANDLE_LOGON_ERR	0x14
 
-/* Dispatcher for jni channel ( JNI -> web server ) */
+/* Dispatcher for jni channel ( java->C ) */
 #define JK_HANDLE_JNI_DISPATCH 0x15
 
 /* Dispatcher for shm object ( java->C) */
 #define JK_HANDLE_SHM_DISPATCH 0x16
 
-/* Dispatcher for unix socket channel ( java->C )*/
-#define JK_HANDLE_UN_DISPATCH 0x17
+/* Dispatcher for channel components ( java->C )*/
+#define JK_HANDLE_CH_DISPATCH 0x17
 
 /* Dispatcher for mutex object  ( java->C ) */
 #define JK_HANDLE_MUTEX_DISPATCH 0x18
