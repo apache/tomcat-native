@@ -53,9 +53,9 @@
             <classpath location="${jcert.jar}" />
             <classpath location="${puretls.jar}" />
             <classpath location="${commons-logging.jar}" />
-            <exclude name="**/util/net/jsse/**" unless="jsse.present"/>
+            <exclude name="**/util/net/jsse/*" unless="jsse.present"/>
             <exclude name="**/util/log/CommonLogHandler.java" unless="commons-logging.present"/>
-            <exclude name="**/util/net/puretls/**" unless="puretls.present"/>
+            <exclude name="**/util/net/puretls/*" unless="puretls.present"/>
             <exclude name="**/util/mx/*" unless="jmx.present"/>
 	</javac>
 
