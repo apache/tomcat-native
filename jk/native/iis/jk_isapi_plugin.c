@@ -93,10 +93,12 @@
 #define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\1.0")
 #define EXTENSION_URI_TAG       ("extension_uri")
 
+#define MAX_SERVERNAME			128
+
 #define GET_SERVER_VARIABLE_VALUE(name, place) {    \
     (place) = NULL;                                   \
     huge_buf_sz = sizeof(huge_buf);                 \
-    if(get_server_value(private_data->lpEcb,        \
+    if (get_server_value(private_data->lpEcb,        \
                         (name),                     \
                         huge_buf,                   \
                         huge_buf_sz,                \
@@ -107,13 +109,13 @@
 
 #define GET_SERVER_VARIABLE_VALUE_INT(name, place, def) {   \
     huge_buf_sz = sizeof(huge_buf);                 \
-    if(get_server_value(private_data->lpEcb,        \
+    if (get_server_value(private_data->lpEcb,        \
                         (name),                     \
                         huge_buf,                   \
                         huge_buf_sz,                \
                         "")) {                      \
         (place) = atoi(huge_buf);                   \
-        if(0 == (place)) {                          \
+        if (0 == (place)) {                          \
             (place) = def;                          \
         }                                           \
     } else {    \
@@ -121,9 +123,12 @@
     }           \
 }\
 
-static int   is_inited = JK_FALSE;
-static jk_uri_worker_map_t *uw_map = NULL; 
-static jk_logger_t *logger = NULL; 
+static char *SERVER_NAME = "SERVER_NAME";
+
+static int					is_inited	= JK_FALSE;
+static int					is_mapread	= JK_FALSE;
+static jk_uri_worker_map_t	*uw_map		= NULL; 
+static jk_logger_t			*logger		= NULL; 
 
 static char extension_uri[INTERNET_MAX_URL_LENGTH] = "/jakarta/isapi_redirect.dll";
 static char log_file[MAX_PATH * 2];
@@ -163,6 +168,8 @@ static int init_ws_service(isapi_private_data_t *private_data,
                            jk_ws_service_t *s,
                            char **worker_name);
 
+static int init_jk(char *serverName);
+
 static int initialize_extension(void);
 
 static int read_registry_init_data(void);
@@ -186,7 +193,7 @@ static int uri_is_web_inf(char *uri)
         *c = tolower(*c);
         c++;
     }                    
-    if(strstr(uri, "web-inf")) {
+    if (strstr(uri, "web-inf")) {
         return JK_TRUE;
     }
 
@@ -205,15 +212,15 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
     jk_log(logger, JK_LOG_DEBUG, 
            "Into jk_ws_service_t::start_response\n");
 
-    if(status < 100 || status > 1000) {
+    if (status < 100 || status > 1000) {
         jk_log(logger, JK_LOG_ERROR, 
                "jk_ws_service_t::start_response, invalid status %d\n", status);
         return JK_FALSE;
     }
 
-    if(s && s->ws_private) {
+    if (s && s->ws_private) {
         isapi_private_data_t *p = s->ws_private;
-        if(!p->request_started) {
+        if (!p->request_started) {
             DWORD len_of_status;
             char *status_str;
             char *headers_str;
@@ -223,7 +230,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
             /*
              * Create the status line
              */
-            if(!reason) {
+            if (!reason) {
                 reason = "";
             }
             status_str = (char *)_alloca((6 + strlen(reason)) * sizeof(char));
@@ -233,7 +240,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
             /*
              * Create response headers string
              */
-            if(num_of_headers) {
+            if (num_of_headers) {
                 unsigned i;
                 unsigned len_of_headers;
                 for(i = 0 , len_of_headers = 0 ; i < num_of_headers ; i++) {
@@ -257,7 +264,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                 headers_str = crlf;
             }
 
-            if(!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID, 
+            if (!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID, 
                                                 HSE_REQ_SEND_RESPONSE_HEADER,
                                                 status_str,
                                                 (LPDWORD)&len_of_status,
@@ -287,15 +294,15 @@ static int JK_METHOD read(jk_ws_service_t *s,
     jk_log(logger, JK_LOG_DEBUG, 
            "Into jk_ws_service_t::read\n");
 
-    if(s && s->ws_private && b && a) {
+    if (s && s->ws_private && b && a) {
         isapi_private_data_t *p = s->ws_private;
         
         *a = 0;
-        if(l) {
+        if (l) {
             char *buf = b;
             DWORD already_read = p->lpEcb->cbAvailable - p->bytes_read_so_far;
             
-            if(already_read >= l) {
+            if (already_read >= l) {
                 memcpy(buf, p->lpEcb->lpbData + p->bytes_read_so_far, l);
                 p->bytes_read_so_far += l;
                 *a = l;
@@ -303,7 +310,7 @@ static int JK_METHOD read(jk_ws_service_t *s,
                 /*
                  * Try to copy what we already have 
                  */
-                if(already_read > 0) {
+                if (already_read > 0) {
                     memcpy(buf, p->lpEcb->lpbData + p->bytes_read_so_far, already_read);
                     buf += already_read;
                     l   -= already_read;
@@ -315,7 +322,7 @@ static int JK_METHOD read(jk_ws_service_t *s,
                 /*
                  * Now try to read from the client ...
                  */
-                if(p->lpEcb->ReadClient(p->lpEcb->ConnID, buf, &l)) {
+                if (p->lpEcb->ReadClient(p->lpEcb->ConnID, buf, &l)) {
                     *a += l;            
                 } else {
                     jk_log(logger, JK_LOG_ERROR, 
@@ -339,20 +346,20 @@ static int JK_METHOD write(jk_ws_service_t *s,
     jk_log(logger, JK_LOG_DEBUG, 
            "Into jk_ws_service_t::write\n");
 
-    if(s && s->ws_private && b) {
+    if (s && s->ws_private && b) {
         isapi_private_data_t *p = s->ws_private;
 
-        if(l) {
+        if (l) {
             unsigned written = 0;           
             char *buf = (char *)b;
 
-            if(!p->request_started) {
+            if (!p->request_started) {
                 start_response(s, 200, NULL, NULL, NULL, 0);
             }
 
             while(written < l) {
                 DWORD try_to_write = l - written;
-                if(!p->lpEcb->WriteClient(p->lpEcb->ConnID, 
+                if (!p->lpEcb->WriteClient(p->lpEcb->ConnID, 
                                           buf + written, 
                                           &try_to_write, 
                                           0)) {
@@ -380,7 +387,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
 
     pVer->dwFilterVersion = pVer->dwServerFilterVersion;
                         
-    if(pVer->dwFilterVersion > http_filter_revision) {
+    if (pVer->dwFilterVersion > http_filter_revision) {
         pVer->dwFilterVersion = http_filter_revision;
     }
 
@@ -391,7 +398,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
                     
     strcpy(pVer->lpszFilterDesc, VERSION_STRING);
 
-    if(!is_inited) {
+    if (!is_inited) {
         return initialize_extension();
     }
 
@@ -402,7 +409,23 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                             DWORD dwNotificationType, 
                             LPVOID pvNotification)
 {
-    if(is_inited &&
+	/* Initialise jk */
+	if (is_inited && !is_mapread) {
+		char serverName[MAX_SERVERNAME];
+		DWORD dwLen = sizeof(serverName);
+
+		if (pfc->GetServerVariable(pfc, SERVER_NAME, serverName, &dwLen))
+		{
+			if (dwLen > 0) serverName[dwLen-1] = '\0';
+			if (init_jk(serverName))
+				is_mapread = JK_TRUE;
+		}
+		/* If we can't read the map we become dormant */
+		if (!is_mapread)
+			is_inited = JK_FALSE;
+	}
+
+    if (is_inited &&
        (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType)) { 
         PHTTP_FILTER_PREPROC_HEADERS p = (PHTTP_FILTER_PREPROC_HEADERS)pvNotification;
         char uri[INTERNET_MAX_URL_LENGTH]; 
@@ -412,40 +435,41 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         jk_log(logger, JK_LOG_DEBUG, 
                "HttpFilterProc started\n");
 
+
         /*
          * Just in case somebody set these headers in the request!
          */
         p->SetHeader(pfc, URI_HEADER_NAME, NULL);
 	    p->SetHeader(pfc, WORKER_HEADER_NAME, NULL);
         
-        if(!p->GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz)) {
+        if (!p->GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz)) {
             jk_log(logger, JK_LOG_ERROR, 
                    "HttpFilterProc error while getting the url\n");
             return SF_STATUS_REQ_ERROR;
         }
 
-        if(strlen(uri)) {
+        if (strlen(uri)) {
             char *worker;
             query = strchr(uri, '?');
-            if(query) {
+            if (query) {
                 *query = '\0';
             }
             jk_log(logger, JK_LOG_DEBUG, 
                    "In HttpFilterProc test redirection of %s\n", 
                    uri);
             worker = map_uri_to_worker(uw_map, uri, logger);                
-            if(query) {
+            if (query) {
                 *query = '?';
             }
 
-            if(worker) {
+            if (worker) {
                 /* This is a servlet, should redirect ... */
                 jk_log(logger, JK_LOG_DEBUG, 
                        "HttpFilterProc [%s] is a servlet url - should redirect to %s\n", 
                        uri, worker);
 
                 
-				if(!p->AddHeader(pfc, URI_HEADER_NAME, uri) || 
+				if (!p->AddHeader(pfc, URI_HEADER_NAME, uri) || 
                    !p->AddHeader(pfc, WORKER_HEADER_NAME, worker) ||
                    !p->SetHeader(pfc, "url", extension_uri)) {
                     jk_log(logger, JK_LOG_ERROR, 
@@ -466,7 +490,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                    "HttpFilterProc check if [%s] is points to the web-inf directory\n", 
                    uri);
 
-            if(uri_is_web_inf(uri)) {
+            if (uri_is_web_inf(uri)) {
                 char crlf[3] = { (char)13, (char)10, '\0' };
                 char ctype[30];
                 char *msg = "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>";
@@ -505,7 +529,7 @@ BOOL WINAPI GetExtensionVersion(HSE_VERSION_INFO  *pVer)
     strcpy(pVer->lpszExtensionDesc, VERSION_STRING);
 
 
-    if(!is_inited) {
+    if (!is_inited) {
         return initialize_extension();
     }
 
@@ -521,11 +545,26 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
     jk_log(logger, JK_LOG_DEBUG, 
            "HttpExtensionProc started\n");
 
-    if(is_inited) {
+	/* Initialise jk */
+	if (is_inited && !is_mapread) {
+		char serverName[MAX_SERVERNAME];
+		DWORD dwLen = sizeof(serverName);
+		if (lpEcb->GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName, &dwLen))
+		{
+			if (dwLen > 0) serverName[dwLen-1] = '\0';
+			if (init_jk(serverName))
+				is_mapread = JK_TRUE;
+		}
+		if (!is_mapread)
+			is_inited = JK_FALSE;
+	}
+
+	if (is_inited) {
         isapi_private_data_t private_data;
         jk_ws_service_t s;
         jk_pool_atom_t buf[SMALL_POOL_SIZE];
         char *worker_name;
+
 
         jk_init_ws_service(&s);
         jk_open_pool(&private_data.p, buf, sizeof(buf));
@@ -537,7 +576,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         s.ws_private = &private_data;
         s.pool = &private_data.p;
 
-        if(init_ws_service(&private_data, &s, &worker_name)) {
+        if (init_ws_service(&private_data, &s, &worker_name)) {
             jk_worker_t *worker = wc_get_worker_for_name(worker_name, logger);
 
             jk_log(logger, JK_LOG_DEBUG, 
@@ -545,11 +584,11 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
                    worker ? "got" : "could not get",
                    worker_name);
 
-            if(worker) {
+            if (worker) {
                 jk_endpoint_t *e = NULL;
-                if(worker->get_endpoint(worker, &e, logger)) {
+                if (worker->get_endpoint(worker, &e, logger)) {
                     int recover = JK_FALSE;
-                    if(e->service(e, &s, logger, &recover)) {
+                    if (e->service(e, &s, logger, &recover)) {
                         rc = HSE_STATUS_SUCCESS_AND_KEEP_CONN;
                         lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
                         jk_log(logger, JK_LOG_DEBUG, 
@@ -584,12 +623,15 @@ BOOL WINAPI TerminateExtension(DWORD dwFlags)
 
 BOOL WINAPI TerminateFilter(DWORD dwFlags) 
 {
-    if(is_inited) {
+    if (is_inited) {
         is_inited = JK_FALSE;
 
-        uri_worker_map_free(&uw_map, logger);
+		if (is_mapread) {
+			uri_worker_map_free(&uw_map, logger);
+			is_mapread = JK_FALSE;
+		}
         wc_close(logger);
-        if(logger) {
+        if (logger) {
             jk_close_file_logger(&logger);
         }
     }
@@ -619,47 +661,51 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     return fReturn;
 }
 
-static int initialize_extension(void)
+static int init_jk(char *serverName)
 {
     int rc = JK_FALSE;  
+    jk_map_t *map;
 
-    if(read_registry_init_data()) {
-        jk_map_t *map;
-
-        if(!jk_open_file_logger(&logger, log_file, log_level)) {
-            logger = NULL;
+    if (!jk_open_file_logger(&logger, log_file, log_level)) {
+        logger = NULL;
+    }
+    
+    if (map_alloc(&map)) {
+        if (map_read_properties(map, worker_mount_file)) {
+            if (uri_worker_map_alloc(&uw_map, map, logger)) {
+                rc = JK_TRUE;
+            }
         }
-        
-        if(map_alloc(&map)) {
-            if(map_read_properties(map, worker_mount_file)) {
-                if(uri_worker_map_alloc(&uw_map, map, logger)) {
+        map_free(&map);
+    }
+
+    if (rc) {
+        rc = JK_FALSE;
+        if (map_alloc(&map)) {
+            if (map_read_properties(map, worker_file)) {
+				/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+
+				worker_env.uri_to_worker = uw_map;
+				worker_env.server_name = serverName;
+
+                if (wc_open(map, &worker_env, logger)) {
                     rc = JK_TRUE;
                 }
             }
             map_free(&map);
         }
-
-        if(rc) {
-            rc = JK_FALSE;
-            if(map_alloc(&map)) {
-                if(map_read_properties(map, worker_file)) {
-					/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
-					/*worker_env.uri_to_worker = uw_map;
-					GET_SERVER_VARIABLE_VALUE("SERVER_SOFTWARE", worker_env.server_name);*/
-                    if(wc_open(map, &worker_env, logger)) {
-                        rc = JK_TRUE;
-                    }
-                }
-                map_free(&map);
-            }
-        }
-
     }
 
-    if(rc) {
+	return rc;
+}
+
+static int initialize_extension(void)
+{
+
+    if (read_registry_init_data()) {
         is_inited = JK_TRUE;
     }
-    return rc;
+    return is_inited;
 }
 
 static int read_registry_init_data(void)
@@ -673,11 +719,11 @@ static int read_registry_init_data(void)
                       (DWORD)0,         
                       KEY_READ,         
                       &hkey);            
-    if(ERROR_SUCCESS != rc) {
+    if (ERROR_SUCCESS != rc) {
         return JK_FALSE;
     } 
 
-    if(get_registry_config_parameter(hkey,
+    if (get_registry_config_parameter(hkey,
                                      JK_LOG_FILE_TAG, 
                                      tmpbuf,
                                      sizeof(log_file))) {
@@ -686,7 +732,7 @@ static int read_registry_init_data(void)
         ok = JK_FALSE;
     }
     
-    if(get_registry_config_parameter(hkey,
+    if (get_registry_config_parameter(hkey,
                                      JK_LOG_LEVEL_TAG, 
                                      tmpbuf,
                                      sizeof(tmpbuf))) {
@@ -695,7 +741,7 @@ static int read_registry_init_data(void)
         ok = JK_FALSE;
     }
 
-    if(get_registry_config_parameter(hkey,
+    if (get_registry_config_parameter(hkey,
                                      EXTENSION_URI_TAG, 
                                      tmpbuf,
                                      sizeof(extension_uri))) {
@@ -704,7 +750,7 @@ static int read_registry_init_data(void)
         ok = JK_FALSE;
     }
 
-    if(get_registry_config_parameter(hkey,
+    if (get_registry_config_parameter(hkey,
                                      JK_WORKER_FILE_TAG, 
                                      tmpbuf,
                                      sizeof(worker_file))) {
@@ -713,7 +759,7 @@ static int read_registry_init_data(void)
         ok = JK_FALSE;
     }
 
-    if(get_registry_config_parameter(hkey,
+    if (get_registry_config_parameter(hkey,
                                      JK_MOUNT_FILE_TAG, 
                                      tmpbuf,
                                      sizeof(worker_mount_file))) {
@@ -741,7 +787,7 @@ static int get_registry_config_parameter(HKEY hkey,
                           &type,    
                           (LPBYTE)b,
                           &sz); 
-    if((ERROR_SUCCESS != lrc) || (type != REG_SZ)) {
+    if ((ERROR_SUCCESS != lrc) || (type != REG_SZ)) {
         return JK_FALSE;        
     }
     
@@ -767,12 +813,12 @@ static int init_ws_service(isapi_private_data_t *private_data,
     GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, (*worker_name));           
     GET_SERVER_VARIABLE_VALUE(HTTP_URI_HEADER_NAME, s->req_uri);     
 
-    if(s->req_uri) {
+    if (s->req_uri) {
         char *t = strchr(s->req_uri, '?');
-        if(t) {
+        if (t) {
             *t = '\0';
             t++;
-            if(!strlen(t)) {
+            if (!strlen(t)) {
                 t = NULL;
             }
         }
@@ -788,7 +834,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
     GET_SERVER_VARIABLE_VALUE("SERVER_PROTOCOL", s->protocol);
     GET_SERVER_VARIABLE_VALUE("REMOTE_HOST", s->remote_host);
     GET_SERVER_VARIABLE_VALUE("REMOTE_ADDR", s->remote_addr);
-    GET_SERVER_VARIABLE_VALUE("SERVER_NAME", s->server_name);
+    GET_SERVER_VARIABLE_VALUE(SERVER_NAME, s->server_name);
     GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT", s->server_port, 80)
     GET_SERVER_VARIABLE_VALUE("SERVER_SOFTWARE", s->server_software);
     GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT_SECURE", s->is_ssl, 0);
@@ -809,7 +855,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
     /*
      * Add SSL IIS environment
      */
-    if(s->is_ssl) {         
+    if (s->is_ssl) {         
         char *ssl_env_names[9] = {
             "CERT_ISSUER", 
             "CERT_SUBJECT", 
@@ -837,11 +883,11 @@ static int init_ws_service(isapi_private_data_t *private_data,
 
         for(i = 0 ; i < 9 ; i++) {
             GET_SERVER_VARIABLE_VALUE(ssl_env_names[i], ssl_env_values[i]);
-            if(ssl_env_values[i]) {
+            if (ssl_env_values[i]) {
                 num_of_vars++;
             }
         }
-        if(num_of_vars) {
+        if (num_of_vars) {
             unsigned j;
 
             s->attributes_names = 
@@ -851,7 +897,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
 
             j = 0;
             for(i = 0 ; i < 9 ; i++) {                
-                if(ssl_env_values[i]) {
+                if (ssl_env_values[i]) {
                     s->attributes_names[j] = ssl_env_names[i];
                     s->attributes_values[j] = ssl_env_values[i];
                     j++;
@@ -862,7 +908,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
     }
 
     huge_buf_sz = sizeof(huge_buf);         
-    if(get_server_value(private_data->lpEcb,
+    if (get_server_value(private_data->lpEcb,
                         "ALL_HTTP",             
                         huge_buf,           
                         huge_buf_sz,        
@@ -871,12 +917,12 @@ static int init_ws_service(isapi_private_data_t *private_data,
         char *tmp;
 
         for(tmp = huge_buf ; *tmp ; tmp++) {
-            if(*tmp == '\n'){
+            if (*tmp == '\n'){
                 cnt++;
             }
         }
 
-        if(cnt) {
+        if (cnt) {
             char *headers_buf = jk_pool_strdup(&private_data->p, huge_buf);
             unsigned i;
             unsigned len_of_http_prefix = strlen("HTTP_");
@@ -885,7 +931,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
             s->headers_names  = jk_pool_alloc(&private_data->p, cnt * sizeof(char *));
             s->headers_values = jk_pool_alloc(&private_data->p, cnt * sizeof(char *));
 
-            if(!s->headers_names || !s->headers_values || !headers_buf) {
+            if (!s->headers_names || !s->headers_values || !headers_buf) {
                 return JK_FALSE;
             }
 
@@ -895,7 +941,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
                 /* Skipp the HTTP_ prefix to the beginning of th header name */
                 tmp += len_of_http_prefix;
 
-                if(!strnicmp(tmp, URI_HEADER_NAME, strlen(URI_HEADER_NAME)) ||
+                if (!strnicmp(tmp, URI_HEADER_NAME, strlen(URI_HEADER_NAME)) ||
                    !strnicmp(tmp, WORKER_HEADER_NAME, strlen(WORKER_HEADER_NAME))) {
                     real_header = JK_FALSE;
                 } else {
@@ -903,7 +949,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
                 }
 
                 while(':' != *tmp && *tmp) {
-                    if('_' == *tmp) {
+                    if ('_' == *tmp) {
                         *tmp = '-';
                     } else {
                         *tmp = tolower(*tmp);
@@ -918,7 +964,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
                     tmp++;
                 }
 
-                if(real_header) {
+                if (real_header) {
                     s->headers_values[i]  = tmp;
                 }
                 
@@ -933,7 +979,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
                     tmp++;
                 }
 
-                if(real_header) {
+                if (real_header) {
                     i++;
                 }
             }
@@ -955,7 +1001,7 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
                             DWORD bufsz,
                             char  *def_val)
 {
-    if(!lpEcb->GetServerVariable(lpEcb->ConnID, 
+    if (!lpEcb->GetServerVariable(lpEcb->ConnID, 
                                  name,
                                  buf,
                                  (LPDWORD)&bufsz)) {
@@ -963,7 +1009,7 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
         return JK_FALSE;
     }
 
-    if(bufsz > 0) {
+    if (bufsz > 0) {
         buf[bufsz - 1] = '\0';
     }
 
