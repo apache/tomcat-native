@@ -198,9 +198,6 @@ public class FileHandler
         prefix = getProperty(className + ".prefix", "juli.");
         suffix = getProperty(className + ".suffix", ".log");
 
-        // FIXME: This should IMO be shared at the LogManager level, but the javadocs
-        // seem to imply that this should not be the case for some reason
-        
         // Get logging level for the handler
         setLevel(Level.parse(getProperty(className + ".level", "" + Level.ALL)));
 
