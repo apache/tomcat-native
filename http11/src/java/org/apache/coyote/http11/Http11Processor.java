@@ -374,14 +374,15 @@ public class Http11Processor implements Processor, ActionHook {
         int soTimeout = socket.getSoTimeout();
         boolean keptAlive = false;
         socket.setSoTimeout(timeout);
-
+	log.warn("soTimeout = " + soTimeout + " timeout = " + timeout);
         while (started && !error && keepAlive) {
             try {
                 if( keptAlive && soTimeout > 0 ) {
                     socket.setSoTimeout(soTimeout);
                 }
+		log.warn("timeout = " + socket.getSoTimeout());
                 inputBuffer.parseRequestLine();
-                keptAlive = false;
+                keptAlive = true;
                 socket.setSoTimeout(timeout);
                 inputBuffer.parseHeaders();
             } catch (IOException e) {
