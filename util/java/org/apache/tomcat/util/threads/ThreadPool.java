@@ -193,7 +193,9 @@ public class ThreadPool  {
         pool = new ControlRunnable[maxThreads];
 
         openThreads(minSpareThreads);
-        monitor = new MonitorRunnable(this);
+        if (maxSpareThreads < maxThreads) {
+            monitor = new MonitorRunnable(this);
+        }
     }
 
     public MonitorRunnable getMonitor() {
@@ -387,8 +389,10 @@ public class ThreadPool  {
     public synchronized void shutdown() {
         if(!stopThePool) {
             stopThePool = true;
-            monitor.terminate();
-            monitor = null;
+            if (monitor != null) {
+                monitor.terminate();
+                monitor = null;
+            }
             for(int i = 0 ; i < (currentThreadCount - currentThreadsBusy - 1) ; i++) {
                 try {
                     pool[i].terminate();
