@@ -1181,8 +1181,7 @@ static int jk_handler(request_rec *r)
     jk_server_conf_t *conf;
     int              rc;
 
-    /* not for me, try next handler */
-    if(strcmp(r->handler,JK_HANDLER) && strcmp(r->handler,DIR_MAGIC_TYPE))
+    if(strcmp(r->handler,JK_HANDLER)) /* not for me, try next handler */
       return DECLINED;
     
     xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
@@ -1619,7 +1618,25 @@ static int jk_translate(request_rec *r)
 static int jk_map_to_storage(request_rec *r)
 {
     if (apr_table_get(r->notes, JK_WORKER_ID)) {
-        r->filename = (char *)apr_filename_of_pathname(r->uri);
+        char *uri_p=r->uri;
+
+        /* This is old code which doesn't seem to work well with mod_dir
+            r->filename = (char *)apr_filename_of_pathname(r->uri); */
+
+        /* Absolute paths cannot be merged */
+        if(r->uri[0] == '/') ++uri_p;
+	
+        /* Need absolute path to stat */
+        if (apr_filepath_merge(&r->filename, ap_document_root(r), uri_p,
+                               APR_FILEPATH_SECUREROOT | APR_FILEPATH_TRUENAME,
+                               r->pool)
+            != APR_SUCCESS){
+          return DECLINED;
+        }
+
+        /* Stat the file so that mod_dir knows it's there */
+        apr_stat(&r->finfo, r->filename, APR_FINFO_TYPE, r->pool);
+
         return OK;
     }
     return DECLINED;
