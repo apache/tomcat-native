@@ -162,6 +162,7 @@ static void jk2_workerEnv_checkSpace(jk_env_t *env, jk_pool_t *pool,
     *sizeP=newSize;
 }
 
+
 static int jk2_workerEnv_initWorkers(jk_env_t *env,
                                      jk_workerEnv_t *wEnv)
 {
@@ -321,7 +322,12 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
         wEnv->defaultWorker= w;
     }
 
+    if( wEnv->vm != NULL ) {
+        wEnv->vm->init( env, wEnv->vm );
+    }
+    
     jk2_workerEnv_initChannels( env, wEnv );
+
     jk2_workerEnv_initWorkers( env, wEnv );
     jk2_workerEnv_initHandlers( env, wEnv );
 
