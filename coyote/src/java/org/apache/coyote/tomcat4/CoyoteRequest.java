@@ -369,6 +369,7 @@ public class CoyoteRequest
         context = null;
         wrapper = null;
 
+        authorization = null;
         authType = null;
         usingInputStream = false;
         usingReader = false;
