@@ -1,11 +1,14 @@
-JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
+JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:           -*-text-*-
 Last modified at [$Date$]
 
+Changes in JK 1.2.10
+    * Do not mark the worker in error state if headers are larger then AJP13
+      limit.
 Changes in JK 1.2.9
-	* lbfactor is now relationship between members, so worker.a.lbfactor=1 and worker.b.lbfactor=1
-	  will give 50-50% load.
-	* Use of shm for load balancer via JkShmFile. Be sure to define JkShmFile /path/to/smfile 
-	  in your httpd.conf
+    * lbfactor is now relationship between members, so worker.a.lbfactor=1 and worker.b.lbfactor=1
+      will give 50-50% load.
+    * Use of shm for load balancer via JkShmFile. Be sure to define JkShmFile /path/to/smfile 
+      in your httpd.conf
     * on Series you should use the latest PTF for Apache 2.0 (which is now 2.0.52) and ad minima
       SI17402/SI17061 or cumulative including them.
      
