@@ -631,7 +631,7 @@ static int proxy_handler(request_rec *r)
 
                 /* an error or success */
                 if (access_status != DECLINED && access_status != HTTP_BAD_GATEWAY) {
-                    return access_status;
+                    goto cleanup;
                 }
                 /* we failed to talk to the upstream proxy */
             }
@@ -653,12 +653,15 @@ static int proxy_handler(request_rec *r)
                     "If you are using a DSO version of mod_proxy, make sure "
                     "the proxy submodules are included in the configuration "
                     "using LoadModule.", r->uri);
-        return HTTP_FORBIDDEN;
+        access_status = HTTP_FORBIDDEN;
+        goto cleanup;
     }
+
+cleanup:
     if (balancer) {
-        access_status = proxy_run_post_request(worker, balancer, r, conf);
-        if (access_status == DECLINED) {
-            access_status = OK; /* no post_request handler available */
+        int post_status = proxy_run_post_request(worker, balancer, r, conf);
+        if (post_status == DECLINED) {
+            post_status = OK; /* no post_request handler available */
             /* TODO: reclycle direct worker */
         }
     }
