@@ -59,12 +59,15 @@ package org.apache.catalina.connector.warp;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import javax.servlet.http.Cookie;
 
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Deployer;
+import org.apache.catalina.Globals;
 import org.apache.catalina.Host;
 import org.apache.catalina.core.StandardHost;
+import org.apache.catalina.util.RequestUtil;
 
 public class WarpRequestHandler {
 
@@ -161,6 +164,7 @@ public class WarpRequestHandler {
                     if (Constants.DEBUG)
                         logger.debug("Request header "+hnam+": "+hval);
                     request.addHeader(hnam,hval);
+                    this.processHeader(request,hnam,hval);
                     break;
                 }
 
@@ -212,6 +216,33 @@ public class WarpRequestHandler {
                     connection.send(packet);
                     return(false);
                 }
+            }
+        }
+    }
+    
+    private void processHeader(WarpRequest req, String name, String value) {
+        if ("cookie".equalsIgnoreCase(name)) {
+            Cookie cookies[] = RequestUtil.parseCookieHeader(value);
+            for (int i = 0; i < cookies.length; i++) {
+                if (cookies[i].getName().equals
+                    (Globals.SESSION_COOKIE_NAME)) {
+                    // Override anything requested in the URL
+                    if (!req.isRequestedSessionIdFromCookie()) {
+                        // Accept only the first session id cookie
+                        req.setRequestedSessionId
+                            (cookies[i].getValue());
+                        req.setRequestedSessionCookie(true);
+                        req.setRequestedSessionURL(false);
+/*                        if (Constants.DEBUG)
+                            logger.debug(" Requested cookie session id is " +
+                                ((HttpServletRequest) request.getRequest())
+                                .getRequestedSessionId());
+*/                    }
+                }
+/*                if (Constants.DEBUG)
+                    logger.debug(" Adding cookie " + cookies[i].getName() + "=" +
+                        cookies[i].getValue());
+*/                req.addCookie(cookies[i]);
             }
         }
     }
