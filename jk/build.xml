@@ -158,7 +158,6 @@
     
     <target name="jkjava" 
             description="Build java side of the connector" >
-        <echo message="Logging: ${commons-logging.jar}" />
         <javac srcdir="java"
                destdir="${jk.build}/classes"
                deprecation="off"
@@ -184,31 +183,37 @@
 	    </fileset>
         </copy>
 
-	<jar jarfile="${jk.build}/lib/tomcat-jk.jar"
+        <property name="tomcat-jk.jar" value="${jk.build}/lib/tomcat-jk.jar" />
+        <property name="tomcat-jkconfig.jar" value="${jk.build}/lib/jkconfig.jar" />
+        <property name="tomcat-jkshm.jar" value="${jk.build}/lib/jkshm.jar" />
+        <property name="tomcat-jk2.jar" value="${jk.build}/lib/tomcat-jk2.jar" />
+        <property name="tomcat-jni.jar" value="${jk.build}/lib/tomcat-jni.jar" />
+
+	<jar jarfile="${tomcat-jk.jar}"
 	     basedir="${jk.build}/classes">
             <include name="org/apache/ajp/**" />
         </jar>
 	
-	<jar jarfile="${jk.build}/lib/jkconfig.jar"
+	<jar jarfile="${tomcat-jkconfig.jar}"
 	     basedir="${jk.build}/classes" 
              manifest="conf/jkconfig.manifest">
             <include name="org/apache/ajp/config/**" />
         </jar>
 	
-	<jar jarfile="${jk.build}/lib/jkshm.jar"
+	<jar jarfile="${tomcat-jkshm.jar}"
 	     basedir="${jk.build}/classes" 
              manifest="conf/shm.manifest">
             <include name="org/apache/ajp/common/Shm.class" />
         </jar>
 	
-	<jar jarfile="${jk.build}/lib/tomcat-jk2.jar"
+	<jar jarfile="${tomcat-jk2.jar}"
              manifest="conf/tomcat-jk2.manifest"
 	     basedir="${jk.build}/classes" >
             <include name="org/apache/jk/**" />
             <exclude name="org/apache/jk/ant/**" />
         </jar>
 	
-	<jar jarfile="${jk.build}/lib/tomcat-jni.jar"
+	<jar jarfile="${tomcat-jni.jar}"
 	     basedir="${jk.build}/classes" 
              manifest="conf/jk2.manifest" >
             <include name="org/apache/jk/apr/**" />
