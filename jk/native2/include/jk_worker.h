@@ -135,10 +135,6 @@ struct jk_worker {
     
     struct jk_workerEnv *workerEnv;
     
-    /** Pool for worker specific informations. XXX to be removed, is duplicated
-    */
-    struct jk_pool *pool;
-
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol 
@@ -172,15 +168,6 @@ struct jk_worker {
      */
     char *route;
 
-    /* Number of requests served by this worker and the number of errors */
-    int reqCnt;
-    int errCnt;
-
-    /* Total time ( for average - divide by reqCnt ) and maxTime */
-    /* XXX Not used curently. XXX Mutex for mt access  */
-    long time;
-    long maxTime;
-    
     /** lb groups in which this worker belongs */
     struct jk_map *groups;
 
@@ -206,15 +193,6 @@ struct jk_worker {
      */
     int level;
     
-    /* -------------------- Information for reconfiguration -------------------- */
-    
-    /* Only one thread can update the config
-     */
-    JK_CRIT_SEC cs;
-    /* 'Version' or generation. Used to update the workers dynamically
-       at runtime */
-    int     ver;
-
     /* -------------------- Information specific to the lb worker -------------------- */
 
     /** Load balanced workers. Maps name->worker, used at config time.
@@ -223,23 +201,21 @@ struct jk_worker {
      */
     struct jk_map *lbWorkerMap;
 
+    /** Support for some hardware load-balancing schemes.
+        If this is set, jk2 will only forward new requests to local
+        workers ( level=0 ). All other workers will get requests
+        with a session id.
+
+        The value of this field will be used as a status code if
+        all local workers are down. This way the front load-balancers
+        will know this server shouldn't be used for new requests.
+    */
+    int hwBalanceErr;
+    
     int workerCnt[JK_LB_LEVELS];
     jk_worker_t *workerTables[JK_LB_LEVELS][JK_LB_MAX_WORKERS];
     
     /* -------------------- Methods supported by all workers -------------------- */
-    /*
-     * Do whatever initialization needs to be done to start this worker up.
-     * Configuration options are passed in via the props parameter.  
-     *
-     * You can skip this by setting it to NULL.
-     */
-    int (JK_METHOD *init)(struct jk_env *env, jk_worker_t *_this);
-
-    /*
-     * Shutdown this worker. XXX Some cleanup must be made by default
-     * by workerEnv, so we don't need to duplicate the code.
-     */
-    int (JK_METHOD *destroy)(struct jk_env *env, jk_worker_t *_thisP );
 
     /*
      * Forward a request to the servlet engine.  The request is described
