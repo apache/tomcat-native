@@ -526,7 +526,10 @@ public final class CoyoteConnector
      * Connector.
      */
     public Container getContainer() {
-
+        if( container==null ) {
+            // Lazy - maybe it was added later
+            findContainer();     
+        }
         return (container);
 
     }
@@ -1078,7 +1081,6 @@ public final class CoyoteConnector
 
     }
 
-
     /**
      * Initialize this connector (create ServerSocket here!)
      */
@@ -1269,6 +1271,9 @@ public final class CoyoteConnector
 
         try {
             Registry.getRegistry().unregisterComponent(new ObjectName(domain,"type", "Mapper"));
+            Registry.getRegistry().unregisterComponent(new ObjectName(domain
+                    + ":type=protocolHandler,className="
+                    + protocolHandlerClassName));
         } catch (MalformedObjectNameException e) {
             log.info( "Error unregistering mapper ", e);
         }
@@ -1391,18 +1396,13 @@ public final class CoyoteConnector
             log.error( "Unregistering - can't stop", t);
         }
     }
-
-    public void init() throws Exception {
-
-        if( this.getService() != null ) {
-            log.info( "Already configured" );
-            return;
-        }
-        if( container==null ) {
+    
+    private void findContainer() {
+        try {
             // Register to the service
             ObjectName parentName=new ObjectName( domain + ":" +
                     "type=Service");
-
+            
             log.info("Adding to " + parentName );
             if( mserver.isRegistered(parentName )) {
                 mserver.invoke(parentName, "addConnector", new Object[] { this },
@@ -1418,16 +1418,28 @@ public final class CoyoteConnector
                 Object obj=mserver.getAttribute(engName, "managedResource");
                 log.info("Found engine " + obj + " " + obj.getClass());
                 container=(Container)obj;
-
+                
                 // Internal initialize - we now have the Engine
                 initialize();
-
+                
                 log.info("Initialized");
                 // As a side effect we'll get the container field set
                 // Also initialize will be called
                 return;
             }
+        } catch( Exception ex ) {
+            log.error( "Error finding container " + ex);
+        }
+    }
 
+    public void init() throws Exception {
+
+        if( this.getService() != null ) {
+            log.info( "Already configured" );
+            return;
+        }
+        if( container==null ) {
+            findContainer();
         }
     }
 
