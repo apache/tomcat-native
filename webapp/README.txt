@@ -59,6 +59,10 @@ Apache 1.3. The available options for the configure script are:
           # CLASSPATH=$CATALINA_HOME/server/lib/catalina.jar
           # CLASSPATH=$CLASSPATH:$CATALINA_HOME/common/lib/servlet.jar
           # export CLASSPATH
+        This will generate a new "warp.jar" file in the "java" directory
+        that you must use instead of the one provided with the default
+        Tomcat distribution. For example:
+          # mv ./java/warp.jar $CATALINA_HOME/server/lib/warp.jar
 
     --enable-debug
         Enable compiled-in debugging output. Using this option the WebApp
