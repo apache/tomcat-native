@@ -448,7 +448,8 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
         char *name = lb->lbWorkerMap->nameAt( env, lb->lbWorkerMap, i);
         jk_worker_t *w= env->getByName( env, name );
         int level=0;
-        int pos=0;
+        int pos;
+        int workerCnt;
 
         if( w== NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -463,12 +464,27 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
         /* It's like disabled */
         if( level >= JK_LB_LEVELS ) continue;
 
-        pos=lb->workerCnt[level]++;
-        
-        lb->workerTables[level][pos]=w;
+        /* check if worker is already in the table */
+        workerCnt = lb->workerCnt[level];
+        for(pos = 0 ; pos < workerCnt ; pos++) {
+            if( lb->workerTables[level][pos] == w ) {
+                break;
+            }
+        }
 
-        w->lb_value = w->lb_factor;
-        w->in_error_state = JK_FALSE;
+        if( pos == workerCnt ) {
+            if( pos == JK_LB_MAX_WORKERS ) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "lb_worker.init(): maximum lb workers reached %s\n", name);
+                continue;
+            }
+            pos=lb->workerCnt[level]++;
+        
+            lb->workerTables[level][pos]=w;
+
+            w->lb_value = w->lb_factor;
+            w->in_error_state = JK_FALSE;
+        }
     }
     
     return JK_OK;
