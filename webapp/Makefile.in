@@ -152,7 +152,10 @@ $(LIB_DIR): $(BLD_DIR)
 $(OBJ_DIR): $(BLD_DIR)
 	@if test ! -d "$(OBJ_DIR)" ; then mkdir $(OBJ_DIR) ; fi
 
-$(API_DIR): $(BLD_DIR)
+$(DOC_DIR): $(BLD_DIR)
+	@if test ! -d "$(DOC_DIR)" ; then mkdir $(DOC_DIR) ; fi
+
+$(API_DIR): $(DOC_DIR)
 	@if test ! -d "$(API_DIR)" ; then mkdir $(API_DIR) ; fi
 
 $(BLD_DIR):

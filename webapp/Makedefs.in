@@ -90,7 +90,8 @@ TGT_DIR = @TGT_DIR@
 BLD_DIR = $(TGT_DIR)/build
 OBJ_DIR = $(BLD_DIR)/objs
 LIB_DIR = $(BLD_DIR)/libs
-API_DIR = $(BLD_DIR)/api-c
+DOC_DIR = $(BLD_DIR)/docs
+API_DIR = $(DOC_DIR)/api-c
 
 # Distribution file names
 TARBALL = webapp-module-$(WEBAPP_VERSION)

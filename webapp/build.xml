@@ -19,7 +19,7 @@
   <property name="build.jar"      value="${build.home}/tomcat-warp.jar"/>
   <property name="build.classes"  value="${build.home}/classes"/>
   <property name="build.docs"     value="${build.home}/docs"/>
-  <property name="build.javadoc"  value="${build.home}/api-java"/>
+  <property name="build.javadoc"  value="${build.docs}/api-java"/>
 
   <!-- The layout of the sources directory -->
   <property name="source.home"    value="${basedir}"/>
@@ -32,10 +32,6 @@
     <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
     <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
   </path>
-
-
-  <target name="clean">
-  </target>
 
 <!-- === PREPARATION AND GLOBAL TASKS ==================================== -->
 
@@ -83,6 +79,12 @@
       name="all"
       description="Build everything"
       depends="compile,docs,javadoc"/>
+
+  <!--
+    Clean up all we generated using ANT (and nothing more)
+  -->
+  <target
+      name="clean"/>
 
 
 <!-- === COMPILATION TASKS =============================================== -->
@@ -207,6 +209,7 @@
       description="Create Java API documentation">
 
     <!-- Create the directory where we're going to store the docs -->
+    <mkdir dir="${build.docs}"/>
     <mkdir dir="${build.javadoc}"/>
 
     <!-- Run JavaDoc -->
