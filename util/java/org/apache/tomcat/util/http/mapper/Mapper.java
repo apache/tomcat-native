@@ -900,9 +900,14 @@ public final class Mapper {
         if (b == -1) {
             return -1;
         }
-        if (compare(name, start, end, map[0].name) < 0) {
+        
+        int result = compare(name, start, end, map[0].name);
+        if (result < 0 ) {
             return -1;
+        } else if (result == 0){
+            return 0;   
         }
+        
         if (b == 0) {
             return 0;
         }
@@ -910,7 +915,7 @@ public final class Mapper {
         int i = 0;
         while (true) {
             i = (b + a) / 2;
-            int result = compare(name, start, end, map[i].name);
+            result = compare(name, start, end, map[i].name);
             if (result == 1) {
                 a = i;
             } else if (result == 0) {
@@ -945,9 +950,14 @@ public final class Mapper {
         if (b == -1) {
             return -1;
         }
-        if (name.compareTo(map[0].name) < 0) {
+        
+        int result = name.compareTo(map[0].name);
+        if (result < 0) {
             return -1;
-        }
+        } else if (result == 0){
+            return 0;
+        }   
+        
         if (b == 0) {
             return 0;
         }
@@ -955,7 +965,7 @@ public final class Mapper {
         int i = 0;
         while (true) {
             i = (b + a) / 2;
-            int result = name.compareTo(map[i].name);
+            result = name.compareTo(map[i].name);
             if (result > 0) {
                 a = i;
             } else if (result == 0) {
