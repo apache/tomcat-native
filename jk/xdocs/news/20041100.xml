@@ -21,6 +21,27 @@
 </a>
 <hr size="1" noshade="noshade" />
 -->
+<a name="20041207.1"> 
+<h3>7 December - JK-1.2.7-beta-2 released</h3>
+<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
+of Jakarta Tomcat Connectors 1.2.7-beta-2. The release contains a fix to few compilation
+problems detected with JK-1.2.7-beta version. This release also introduces a new
+<b>domain</b> concept clustering support. See <bug>32317</bug> for details.
+</p>
+<p>
+We expect it to be ratified as a Stable release when the vote takes place
+in the next two weeks.
+</p>
+<p>
+ Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<p>If you find any bugs during testing this release, please fill in the
+<a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
+Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
+</a> 
+<hr size="1" noshade="noshade" />
+
 <a name="20041130.1"> 
 <h3>30 November - JK-1.2.7-beta released</h3>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
