@@ -682,7 +682,7 @@ public class InternalOutputBuffer
      * 
      * @param b data to be written
      */
-    protected void write(byte[] b) {
+    public void write(byte[] b) {
 
         // Writing the byte chunk to the output buffer
         System.arraycopy(b, 0, buf, pos, b.length);

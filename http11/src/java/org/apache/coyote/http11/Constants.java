@@ -41,9 +41,15 @@ public final class Constants {
     
     
     /**
+     * CRLF.
+     */
+    public static final String CRLF = "\r\n";
+
+    
+    /**
      * Server string.
      */
-    public static final byte[] SERVER_BYTES = convertToBytes("Apache-Coyote/1.1");
+    public static final byte[] SERVER_BYTES = convertToBytes("Server: Apache-Coyote/1.1" + CRLF);
 
     
     /**
@@ -112,21 +118,17 @@ public final class Constants {
     public static final int DEFAULT_HTTP_HEADER_BUFFER_SIZE = 48 * 1024;
 
 
-    /**
-     * CRLF.
-     */
-    public static final String CRLF = "\r\n";
-
-    
     /* Various constant "strings" */
     public static final byte[] CRLF_BYTES = convertToBytes(CRLF);
     public static final byte[] COLON_BYTES = convertToBytes(": ");
-    public static final byte[] CONNECTION_BYTES = convertToBytes("Connection");
+    public static final String CONNECTION = "Connection";
+    public static final String CLOSE = "close";
     public static final byte[] CLOSE_BYTES = convertToBytes("close");
+    public static final String KEEPALIVE = "keep-alive";
     public static final byte[] KEEPALIVE_BYTES = convertToBytes("keep-alive");
-    public static final byte[] CHUNKED_BYTES = convertToBytes("chunked");
+    public static final String CHUNKED = "chunked";
     public static final byte[] ACK_BYTES = convertToBytes("HTTP/1.1 100 Continue" + CRLF + CRLF);
-    public static final byte[] TRANSFERENCODING_BYTES = convertToBytes("Transfer-Encoding");
+    public static final String TRANSFERENCODING = "Transfer-Encoding";
     
 
     /**

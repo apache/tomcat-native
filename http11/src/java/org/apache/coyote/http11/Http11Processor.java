@@ -1500,9 +1500,7 @@ public class Http11Processor implements Processor, ActionHook {
                 outputBuffer.addActiveFilter
                     (outputFilters[Constants.CHUNKED_FILTER]);
                 contentDelimitation = true;
-                headers.addValue(Constants.TRANSFERENCODING_BYTES, 
-                        0, Constants.TRANSFERENCODING_BYTES.length).setBytes
-                    (Constants.CHUNKED_BYTES, 0, Constants.CHUNKED_BYTES.length);
+                headers.addValue(Constants.TRANSFERENCODING).setString(Constants.CHUNKED);
             } else {
                 outputBuffer.addActiveFilter
                     (outputFilters[Constants.IDENTITY_FILTER]);
@@ -1531,14 +1529,6 @@ public class Http11Processor implements Processor, ActionHook {
         }
         headers.setValue("Date").setString(date);
 
-        // Add server header
-        if (server != null) {
-            headers.setValue("Server").setString(server);
-        } else {
-            headers.setValue("Server").setBytes(Constants.SERVER_BYTES, 
-                    0, Constants.SERVER_BYTES.length);
-        }
-
         // FIXME: Add transfer encoding header
 
         if ((entityBody) && (!contentDelimitation)) {
@@ -1551,15 +1541,20 @@ public class Http11Processor implements Processor, ActionHook {
         // Connection: close header.
         keepAlive = keepAlive && !statusDropsConnection(statusCode);
         if (!keepAlive) {
-            headers.addValue(Constants.CONNECTION_BYTES, 0, Constants.CONNECTION_BYTES.length)
-                .setBytes(Constants.CLOSE_BYTES, 0, Constants.CLOSE_BYTES.length);
+            headers.addValue(Constants.CONNECTION).setString(Constants.CLOSE);
         } else if (!http11) {
-            headers.addValue(Constants.CONNECTION_BYTES, 0, Constants.CONNECTION_BYTES.length)
-                .setBytes(Constants.KEEPALIVE_BYTES, 0, Constants.KEEPALIVE_BYTES.length);
+            headers.addValue(Constants.CONNECTION).setString(Constants.KEEPALIVE);
         }
 
         // Build the response header
         outputBuffer.sendStatus();
+
+        // Add server header
+        if (server != null) {
+            headers.setValue("Server").setString(server);
+        } else {
+            outputBuffer.write(Constants.SERVER_BYTES);
+        }
 
         int size = headers.size();
         for (int i = 0; i < size; i++) {
