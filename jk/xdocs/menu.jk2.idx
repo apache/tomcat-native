@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<section name="JK2">
+<document href="jk2/configtc.xml"/>
+<document href="jk2/configweb.xml"/>
+</section>

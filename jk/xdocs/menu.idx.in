@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<!DOCTYPE index [
+<!ENTITY JK SYSTEM  "menu.jk.idx">
+<!ENTITY JK2 SYSTEM "menu.jk2.idx">
+]>
+
+<index>
+  <section name="Presentation">
+  <document href="index.xml"/>
+  </section>
+  
+  <section name="Commons">
+  <document href="common/AJPv13.xml"/>
+  <document href="common/AJPv14-proposal.xml"/>
+  <document href="faq.xml"/>
+  </section>
+  
+@JK@
+@JK2@
+  
+</index>
