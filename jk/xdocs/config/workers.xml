@@ -103,6 +103,10 @@ and the Tomcat engine, who tend to drop inactive connections. This flag will tol
 to send <code>KEEP_ALIVE</code> message on inactive connections (interval depend on global OS settings,
 generally 120ms), and thus prevent the firewall to cut the connection.
 To enable keepalive set this property value to the number greater then <b>0</b>.
+<p>
+The problem with Firewall cutting inactive connections is that sometimes, neither webserver or tomcat
+have informations about the cut and couldn't handle it.
+</p>
 </directive>
 
 <directive name="recycle_timeout" required="false">
@@ -118,6 +122,30 @@ This property is very similar to <b>cache_timeout</b> but works also in non-cach
 The number of retries that the worker will try in case of error returned from remote
 Tomcat. If the number of retries set is greater then three (the default value), on
 each retry after default an extra wait of 100ms will be inserted.
+</directive>
+
+<directive name="cachesize" default="0" required="false">
+Cachesize property is usefull when you're using JK in multithreaded 
+web servers such as Apache 2.0 (worker), IIS and Netscape. They will benefit the most by 
+setting this value to a higher level (such as the estimated average concurrent users for Tomcat).
+If cachesize is not set, the connection cache support is disabled.
+Cachesize determines the minimum number of open connections to backend Tomcat.
+</directive>
+
+<directive name="cache_timeout" default="0" required="false">
+Cache timeout property should be used with <b>cachesize</b> to specify how to time JK should keep
+an open socket in cache before closing it. This property should be used to reduce the number of threads 
+on the Tomcat WebServer.
+<p> 
+Each child could open an ajp13 connection if it have to forward a request to Tomcat, creating
+a new ajp13 thread on Tomcat side.
+</p>
+<p>
+The problem is that after an ajp13 connection is created, the child won't drop it
+until killed. And since the webserver will keep its childs/threads running
+to handle high-load, even it the child/thread handle only static contents, you could
+finish having many unused ajp13 threads on the Tomcat side.
+</p>
 </directive>
 
 
