@@ -123,6 +123,8 @@ static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *
         return jk2_env_itoa( env, worker->reply_timeout);
     } else if (strcmp( name, "prepostTimeout" )==0 ) {
         return jk2_env_itoa( env, worker->prepost_timeout);
+    } else if (strcmp( name, "recovery_opts" )==0 ) {
+        return jk2_env_itoa( env, worker->recovery_opts);
     } else if (strcmp( name, "disabled" )==0 ) {
         return jk2_env_itoa( env, bean->disabled );
     } else if (strcmp( name, "epCount" )==0 ) {
@@ -160,6 +162,8 @@ jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         ajp13->reply_timeout=atoi( value );
     } else if( strcmp( name, "prepostTimeout" )==0 ) {
         ajp13->prepost_timeout=atoi( value );
+    } else if( strcmp( name, "recovery_opts" )==0 ) {
+        ajp13->recovery_opts=atoi( value );
     } else if( strcmp( name, "disabled" )==0 ) {
         mbean->disabled=atoi( value );
     } else if( strcmp( name, "group" )==0 ) {

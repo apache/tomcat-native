@@ -228,6 +228,11 @@ struct jk_worker {
      */
     int reply_timeout;
     
+	/*
+	 * Recovery option
+	 */
+	int recovery_opts;		/* Set the recovery option */
+
     /** Delay in ms for Tomcat to respond to a PING request before 
      *  webserver start sending the request (ensure that Tomcat is not HOLDED)
      */

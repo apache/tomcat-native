@@ -10,7 +10,7 @@ Changes in JK2 HEAD:
     * Make use apr_port_t instead of short to fix problem to have port higher than 32K.
     * Make default port configurable (9009 on Netware, 8009 elsewhere)
     * Fix problem when in Load-Balancing and POST [Henri Gomez].
-    
+    * Add recovery_opts (recovery strategy) which help make POST recovery configurable [Henri Gomez].
 Changes with JK2 2.0.4:
     * Added the load balancer stickySession property. If set to 0
       requests with servlet SESSION ID's can be routed to any Tomcat
