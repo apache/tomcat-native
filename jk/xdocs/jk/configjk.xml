@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<document>
+<properties>
+<title>Configuring mod_jk</title>
+<author email="hgomez@apache.org">Henri Gomez</author>
+</properties>
+
+<section name="Introduction">
+<p>
+Here's how to configure mod_jk
+</p>
+<todo>
+More informations to be added, Mike ?
+</todo>
+</section>
+
+</document>
