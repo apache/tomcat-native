@@ -675,8 +675,6 @@ public class HandlerRequest extends JkHandler
                 hId = -1;
                 msg.getBytes( tmpMB );
                 ByteChunk bc=tmpMB.getByteChunk();
-                //hName=tmpMB.toString();
-                //                vMB=headers.addValue( hName );
                 vMB=headers.addValue( bc.getBuffer(),
                                       bc.getStart(), bc.getLength() );
             }
@@ -684,12 +682,11 @@ public class HandlerRequest extends JkHandler
             msg.getBytes(vMB);
 
             if (hId == SC_REQ_CONTENT_LENGTH ||
-                tmpMB.equalsIgnoreCase("Content-Length")) {
+                (hId == -1 && tmpMB.equalsIgnoreCase("Content-Length"))) {
                 // just read the content-length header, so set it
-                int contentLength = (vMB == null) ? -1 : vMB.getInt();
-                req.setContentLength(contentLength);
+                req.setContentLength( vMB.getInt() );
             } else if (hId == SC_REQ_CONTENT_TYPE ||
-                       tmpMB.equalsIgnoreCase("Content-Type")) {
+                (hId == -1 && tmpMB.equalsIgnoreCase("Content-Type"))) {
                 // just read the content-type header, so set it
                 ByteChunk bchunk = vMB.getByteChunk();
                 req.contentType().setBytes(bchunk.getBytes(),
