@@ -673,12 +673,39 @@ static const char *jk_mount_context(cmd_parms * cmd,
                                                   &jk_module);
     char *old;
     if (context[0] != '/')
-        return "Context should start with /";
+        return "Mount context should start with /";
 
     /*
      * Add the new worker to the alias map.
      */
     jk_map_put(conf->uri_to_context, context, worker, (void **)&old);
+    return NULL;
+}
+
+/*
+ * JkUnMount directive handling
+ *
+ * JkUnMount URI(context) worker
+ */
+
+static const char *jk_unmount_context(cmd_parms * cmd,
+                                      void *dummy,
+                                      const char *context,
+                                      const char *worker,
+                                      const char *maybe_cookie)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+    char *old , *uri;
+    if (context[0] != '/')
+        return "Unmount context should start with /";
+    uri = ap_pstrcat(cmd->temp_pool, "!", context, NULL);
+    /*
+     * Add the new worker to the alias map.
+     */
+    jk_map_put(conf->uri_to_context, uri, worker, (void **)&old);
     return NULL;
 }
 
@@ -1430,6 +1457,13 @@ static const command_rec jk_cmds[] = {
      "A mount point from a context to a servlet-engine worker"},
 
     /*
+     * JkUnMount unmounts a url prefix to a worker (the worker need to be
+     * defined in the worker properties file.
+     */
+    {"JkUnMount", jk_unmount_context, NULL, RSRC_CONF, TAKE23,
+     "A no mount point from a context to a servlet-engine worker"},
+
+     /*
      * JkMountCopy specifies if mod_jk should copy the mount points
      * from the main server to the virtual servers.
      */

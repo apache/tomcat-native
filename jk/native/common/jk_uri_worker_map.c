@@ -60,7 +60,11 @@ struct uri_worker_record
     unsigned ctxt_len;
 
     int match_type;
+
+    /* no map directive */
+    int no_match;
 };
+
 typedef struct uri_worker_record uri_worker_record_t;
 
 struct jk_uri_worker_map
@@ -270,6 +274,13 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
+    
+    if (*puri == '!') {
+        uwr->no_match = 1;
+        puri++;
+    }
+    else
+        uwr->no_match = 0;
 
     uri = jk_pool_strdup(&uw_map->p, puri);
     worker = jk_pool_strdup(&uw_map->p, pworker);
@@ -281,7 +292,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         return JK_FALSE;
     }
 
-    if ('/' == uri[0]) {
+    if (uri[0] == '/') {
         char *asterisk = strchr(uri, '*');
         
         if (asterisk && strchr(asterisk + 1, '*') ||
@@ -563,12 +574,15 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     for (i = 0; i < uw_map->size; i++) {
         uri_worker_record_t *uwr = uw_map->maps[i];
 
-        if (uwr->ctxt_len < longest_match) {
-            continue;       /* can not be a best match anyway */
+        /* Check for no match in any case */
+        if (uwr->ctxt_len < longest_match && !uwr->no_match) {
+            /* can not be a best match anyway */
+            continue;
         }
         jk_log(l, JK_LOG_DEBUG, "Attempting to map context URI '%s'\n", uwr->uri);
 
         if (uwr->match_type == MATCH_TYPE_WILDCHAR_PATH) {
+            char *wname;
             /* Map is already sorted by ctxt_len */
             if (wildchar_match(uri, uwr->context,
 #ifdef WIN32
@@ -577,17 +591,31 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                                0
 #endif
                                ) == 0) {
-
-                    jk_log(l, JK_LOG_DEBUG,
-                            "Found an wildchar match %s -> %s\n",
-                            uwr->worker_name, uwr->context);
+                    wname = uwr->worker_name;
+                    if (uwr->no_match) {
+                        jk_log(l, JK_LOG_DEBUG,
+                                "Found a wildchar no match %s -> %s\n",
+                                uwr->worker_name, uwr->context);
+                        wname = NULL;
+                    }
+                    else
+                        jk_log(l, JK_LOG_DEBUG,
+                                "Found a wildchar match %s -> %s\n",
+                                uwr->worker_name, uwr->context);
                     JK_TRACE_EXIT(l);
-                    return uwr->worker_name;
+                    return wname;
              }
         }
         else if (strncmp(uwr->context, uri, uwr->ctxt_len) == 0) {
             if (uwr->match_type == MATCH_TYPE_EXACT) {
                 if (strlen(uri) == uwr->ctxt_len) {
+                    if (uwr->no_match) {
+                        jk_log(l, JK_LOG_DEBUG,
+                                "Found an exact no match %s -> %s\n",
+                                uwr->worker_name, uwr->context);
+                        JK_TRACE_EXIT(l);
+                        return NULL;
+                    }
                     jk_log(l, JK_LOG_DEBUG,
                             "Found an exact match %s -> %s\n",
                             uwr->worker_name, uwr->context);
@@ -597,6 +625,13 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             }
             else if (uwr->match_type == MATCH_TYPE_CONTEXT) {
                 if (uwr->ctxt_len > longest_match) {
+                    if (uwr->no_match) {
+                        jk_log(l, JK_LOG_DEBUG,
+                                "Found a context no match %s -> %s\n",
+                                uwr->worker_name, uwr->context);
+                        JK_TRACE_EXIT(l);
+                        return NULL;
+                    }
                     jk_log(l, JK_LOG_DEBUG,
                             "Found a context match %s -> %s\n",
                             uwr->worker_name, uwr->context);
@@ -609,6 +644,13 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                 if (suffix_start >= 0
                     && 0 == strcmp(uri + suffix_start, uwr->suffix)) {
                     if (uwr->ctxt_len >= longest_match) {
+                        if (uwr->no_match) {
+                                jk_log(l, JK_LOG_DEBUG,
+                                        "Found a general no suffix match for %s -> %s\n",
+                                        uwr->worker_name, uwr->uri);
+                                JK_TRACE_EXIT(l);
+                                return NULL;
+                        }
                         jk_log(l, JK_LOG_DEBUG,
                                 "Found a general suffix match %s -> *%s\n",
                                 uwr->worker_name, uwr->suffix);
@@ -624,7 +666,14 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     if (0 ==
                         strncmp(suffix_path, uwr->suffix,
                                 strlen(uwr->suffix))) {
-                        if (uwr->ctxt_len >= longest_match) {
+                        if (uwr->no_match) {
+                            jk_log(l, JK_LOG_DEBUG,
+                                    "Found a general context no match %s -> %s\n",
+                                    uwr->worker_name, uwr->context);
+                            JK_TRACE_EXIT(l);
+                            return NULL;
+                        }
+                        else if (uwr->ctxt_len >= longest_match) {
                             jk_log(l, JK_LOG_DEBUG,
                                     "Found a general context path match %s -> *%s\n",
                                     uwr->worker_name, uwr->suffix);
@@ -650,7 +699,15 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 #else
                     if (strcmp(suffix, uwr->suffix) == 0) {
 #endif
+
                         if (uwr->ctxt_len >= longest_match) {
+                            if (uwr->no_match) {
+                                    jk_log(l, JK_LOG_DEBUG,
+                                            "Found a no suffix match for %s -> %s\n",
+                                            uwr->worker_name, uwr->uri);
+                                    JK_TRACE_EXIT(l);
+                                    return NULL;
+                            }
                             jk_log(l, JK_LOG_DEBUG,
                                     "Found a suffix match %s -> *.%s\n",
                                     uwr->worker_name, uwr->suffix);
