@@ -327,15 +327,14 @@ function Arguments()
 
     this.program = WScript.FullName.toLowerCase();
     this.program = this.program.substr(this.program.lastIndexOf("\\") + 1);
-//    if (this.program.indexOf("wscript.exe") == -1)
-//        _DEBUG = false;
+    if (this.program.indexOf("wscript.exe") == -1)
+        _DEBUG = false;
     this.script = WScript.ScriptName;
 }
 
 function getopt(args, ostr)
 {
     if (args.optind >= args.argc) {
-        
         return null;    
     }
     try {
@@ -422,19 +421,25 @@ function Main(args)
     while ((opt = getopt(args, "s:f:d:v:l:h"))) {
         switch (opt) {
             case "s":
-                params.ServerName = args.optarg;                        
+                params.ServerName = args.optarg;   
+                break;                                     
             case "f":
                 params.FilterName = args.optarg;                        
+                break;                                     
             case "d":
                 params.FilterDesc = args.optarg;                        
+                break;                                     
             case "l":
                 params.FilterLib  = args.optarg;                        
+                break;                                     
             case "v":
                 params.WebName    = args.optarg;                        
+                break;                                     
             case "h":
+            default:
                 Usage(args);
                 return 0;                        
-            
+                break;                                                 
         }        
     }
     TRACE("argc " + args.argc + " optind " + args.optind);
