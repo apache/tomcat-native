@@ -23,8 +23,12 @@
    -->
   <property name="apache13.include" location="${apache13.home}/include" />
 
-  <!-- ========== Build options ========== -->
+  <!-- Uncomment if you want to use APR in apache1.3 
+  <property name="APACHE13_APR" value="true" />
+    -->
 
+  <!-- ========== Build options ========== -->
+  
   <property name="so.debug" value="true" />
   <property name="so.optimize" value="false" />
   <property name="so.profile" value="false" />
@@ -37,10 +41,10 @@
 
   <property name="native.dir" location="${jk.src}/native2" />
 
-  <property name="build.dir" location="${jk.build}/WEB-INF/jk2" />
+  <property name="build.dir" location="${jk.build}/jk2" />
 
   <path id="jkant" >
-    <pathelement location="${jk.build}/WEB-INF/lib/jkant.jar"/>
+    <pathelement location="${jk.build}/lib/jkant.jar"/>
   </path>
 
   <!-- ==================== Targets ==================== -->
@@ -72,6 +76,45 @@
     <property name="apr.include" location="${apache2.home}/include" />
     <mkdir dir="${build.dir}/apache2" />
     <so sofile="mod_jk2" 
+	buildDir="${build.dir}/apache2"
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	taskDebug="0"
+	profile="${so.profile}"	>
+      <def name="_REENTRANT" />
+      <def name="CHUNK_SIZE" value="4096" 
+	   info="Read/Write buffer size" />
+      <def name="USE_APACHE_MD5" 
+	   info="Use the MD5 implementation that is part of apache2" />
+      <def name="HAS_APR" 
+	   info="Allow APR specific extensions" />
+      <def name="HAVE_JNI" 
+	   info="Jni worker" />
+      <def name="HPUX11" if="hpux" />
+      <src dir=".">
+	<include name="server/apache2/*.c" />
+	<include name="common/*.c" />
+	<include name="common/apr/*.c" />
+      </src>
+      <includes>
+	<include name="${native.dir}/common" />
+	<include name="${apache2.include}" />
+	<include name="${apr.include}" />
+	<include name="${native.dir}/include" />
+	<include name="${java.home}/../include" />
+        <include name="${java.home}/../include/linux" if="linux" />
+        <include name="${java.home}/../include/hp-ux" if="hpux" />        
+      </includes>
+      <depends>
+	<fileset dir="${native.dir}/common" includes="*.h" />
+	<fileset dir="${native.dir}/include" includes="*.h" />
+      </depends>
+    </so>
+  </target>
+  
+  <target name="nt_service" depends="init" if="win">
+    <mkdir dir="${build.dir}/nt_service" />
+    <so execFile="nt_service" 
 	buildDir="${build.dir}/apache2"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
@@ -182,9 +225,9 @@
 
 
   <target name="apache13" depends="init" if="apache13.detect">
-    <mkdir dir="${jk.build}/WEB-INF/jk2/apache13" />
+    <mkdir dir="${jk.build}/jk2/apache13" />
     <so sofile="mod_jk2" 
-	buildDir="${jk.build}/WEB-INF/jk2/apache13"
+	buildDir="${jk.build}/jk2/apache13"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}">
@@ -194,9 +237,8 @@
 	<include name="common/*.c" />
         <exclude name="jk_nwmain.c" 
 		 unless="netware" />
-        <include name="common/apr/*.c" if="HAVE_APR" />
-        <exclude name="common/jk_channel_apr_socket.c" />
-        <exclude name="common/jk_pool_apr.c" unless="HAVE_APR" />
+        <exclude name="common/jk_pool_apr.c" unless="APACHE13_APR" />
+        <exclude name="common/jk_channel_apr_socket.c" unless="APACHE13_APR" />
       </src>
       <includes>
 	<include name="${native.dir}/include" />
