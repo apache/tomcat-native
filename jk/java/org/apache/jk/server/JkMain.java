@@ -124,12 +124,32 @@ public class JkMain
         modules.put("shm", "org.apache.jk.common.Shm");
         modules.put("request","org.apache.jk.common.HandlerRequest");
         modules.put("container","org.apache.jk.common.HandlerRequest");
+
+        initHTTPSUrls();
     }
 
     public static JkMain getJkMain() {
         return jkMain;
     }
 
+    private static String DEFAULT_HTTPS="com.sun.net.ssl.internal.www.protocol";
+    private void initHTTPSUrls() {
+        try {
+            // 11657: if only ajp is used, https: redirects need to work ( at least for 1.3+)
+            String value = System.getProperty("java.protocol.handler.pkgs");
+            if (value == null) {
+                value = DEFAULT_HTTPS;
+            } else if (value.indexOf(DEFAULT_HTTPS) >= 0  ) {
+                return; // already set
+            } else {
+                value += "|" + DEFAULT_HTTPS;
+            }
+            System.setProperty("java.protocol.handler.pkgs", value);
+        } catch(Exception ex ) {
+            ex.printStackTrace();
+        }
+    }
+    
     // -------------------- Setting --------------------
     
     /** Load a .properties file into and set the values
