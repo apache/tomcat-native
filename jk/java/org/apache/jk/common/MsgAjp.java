@@ -173,7 +173,8 @@ public class MsgAjp extends Msg {
     }
 
     public void appendByteChunk(ByteChunk bc) throws IOException {
-        if(bc==null || bc.isNull() ) {
+        if(bc==null ) {
+            System.out.println("XXX appending BC null" + bc);
             appendInt( 0);
             appendByte(0);
             return;
@@ -182,8 +183,6 @@ public class MsgAjp extends Msg {
         byte[] bytes = bc.getBytes();
         int start=bc.getStart();
         appendInt( bc.getLength() );
-        System.out.println("XXX appending" + bytes + " " + bc.getLength() +
-                           " " + new String( bytes, 0, bc.getLength()));
         cpBytes(bytes, start, bc.getLength());
         appendByte(0);
     }

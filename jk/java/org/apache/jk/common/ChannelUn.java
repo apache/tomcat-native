@@ -82,6 +82,7 @@ public class ChannelUn extends Channel {
     String file;
     Worker worker;
     ThreadPool tp=new ThreadPool();
+    String jkHome;
 
     /* ==================== Tcp socket options ==================== */
 
@@ -99,6 +100,13 @@ public class ChannelUn extends Channel {
 
     public void setFile( String f ) {
         file=f;
+    }
+
+    /** Set the base dir of the jk webapp. This is used to locate
+     *  the (fixed) path to the native lib.
+     */
+    public void setJkHome( String s ) {
+        jkHome=s;
     }
 
     /* ==================== ==================== */
@@ -121,10 +129,10 @@ public class ChannelUn extends Channel {
 
     public void init() throws IOException {
         apr=new AprImpl();
-        File f=new File( "../jk2/jni/libapr.so" );
-        apr.loadNative( f.getAbsolutePath() );
-        f=new File( "../jk2/jni/jni_connect.so" );
-        apr.loadNative( f.getAbsolutePath() );
+        File f=new File( jkHome );
+        File aprBase=new File( jkHome, "/WEB-INF/jk2/jni" );
+        apr.setBaseDir( aprBase.getAbsolutePath() );
+        apr.loadNative();
 
         apr.initialize();
         gPool=apr.poolCreate( 0 );
@@ -191,15 +199,13 @@ public class ChannelUn extends Channel {
         int pos = 0;
         int got;
 
-        if (dL > 5) {
-            d("reading  # " + b + " " + (b==null ? 0: b.length) + " " + offset + " " + len);
-        }
         while(pos < len) {
             got=apr.unRead( gPool, s.longValue(),
                             b, pos + offset, len - pos);
 
             if (dL > 5) {
-                d("read got # " + got);
+                d("reading  # " + b + " " + (b==null ? 0: b.length) + " " +
+                  offset + " " + len + " got # " + got);
             }
             // connection just closed by remote. 
             if (got <= 0) {
