@@ -233,7 +233,7 @@ jk_shm_slot_t * JK_METHOD jk2_shm_createSlot(struct jk_env *env,
     jk_shm_slot_t *slot;
 
     if (shm->head != NULL) { 
-        for (i = 1; i < shm->head->lastSlot; i++) {
+        for (i = 0; i < shm->head->lastSlot; i++) {
             slot = shm->getSlot(env, shm, i);
             if (strncmp(slot->name, name, strlen(name)) == 0) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO, 
