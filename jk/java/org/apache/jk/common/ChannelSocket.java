@@ -415,7 +415,8 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
     private void unLockSocket() throws IOException {
 	// Need to create a connection to unlock the accept();
 	Socket s;
-	if (inet == null) {
+
+	if (inet == null || "0.0.0.0".equals(inet.getHostAddress())) {
 	    s=new Socket("127.0.0.1", port );
 	}else{
 	    s=new Socket(inet, port );
@@ -653,6 +654,8 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
 		MsgAjp endM = new MsgAjp();
                 endM.reset();
                 endM.appendByte((byte)HANDLE_THREAD_END);
+		endM.end();
+		endM.processHeader();
                 next.invoke(endM, ep);
             } catch( Exception ee) {
                 log.error( "Error, releasing connection",ee);
