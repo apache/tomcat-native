@@ -91,6 +91,14 @@ class Tomcat3Response extends  Response {
         super();
     }
 
+    /** Set the Content lenth
+     */
+    public void setContentLength(int contentLength) {
+	if(! isIncluded() ){
+	    super.setContentLength(contentLength);
+	    coyoteResponse.setContentLength(contentLength);
+	}
+    }
     /** Attach a Coyote Request to this request.
      */
     public void setCoyoteResponse(org.apache.coyote.Response cRes) {
