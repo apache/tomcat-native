@@ -71,13 +71,16 @@
     <property name="catalina.home" 
 	      location="../../jakarta-tomcat-4.0/build" />
 
+    <property name="servlet.jar"
+              value="${catalina.home}/common/lib/servlet.jar" />
+
   <!-- Construct compile classpath -->
   <path id="compile.classpath">
     <pathelement location="${build.home}/classes"/>
     <pathelement location="../util/build/classes"/>
     <pathelement location="${tomcat-util.jar}"/>
     <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
-    <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
+    <pathelement location="${servlet.jar}"/>
   </path>
   <path id="compile.classpath.tomcat33">
     <pathelement location="${build.home}/classes"/>
@@ -149,7 +152,7 @@
         <available file="${catalina.home}/server/lib/catalina.jar" />
         <available
           classname="javax.servlet.ServletRequestEvent"
-          classpath="${catalina.home}/common/lib/servlet.jar"
+          classpath="${servlet.jar}"
         />
       </and>
     </condition>
@@ -159,7 +162,7 @@
         <not>
           <available
             classname="javax.servlet.ServletRequestEvent"
-            classpath="${catalina.home}/common/lib/servlet.jar"
+            classpath="${servlet.jar}"
           />
         </not>
       </and>
