@@ -271,13 +271,9 @@
     </copy>
   </target>
 
-  <target name="compile" 
-   depends="static,report,compile.shared,compile.tomcat4,compile.tomcat33"
-   description="Compile Coyote and its Adapters">
+  <target name="shared.jar" depends="static,compile.shared"
+       description="Build shared Coyote jar"> 
     <property name="tomcat-coyote.jar" value="${build.home}/lib/tomcat-${component.name}.jar" />
-    <property name="tomcat33-coyote.jar" value="${build.home}/lib/tomcat33-${component.name}.jar" />
-    <property name="tomcat4-coyote.jar" value="${build.home}/lib/tomcat4-${component.name}.jar" />
-
     <jar    jarfile="${tomcat-coyote.jar}"
             index="true"
             manifest="${build.home}/conf/MANIFEST.MF">
@@ -288,18 +284,31 @@
         <include name="org/apache/coyote/**"/>
       </fileset>
     </jar>
-
-    <jar jarfile="${tomcat33-coyote.jar}"
-         index="true"
-         basedir="${build.home}/classes"
-         manifest="${build.home}/conf/MANIFEST.MF"
-         includes="org/apache/coyote/tomcat3/**" /> 
-
+  </target>
+ 
+  <target name="tomcat4.jar" depends="static,compile.shared,compile.tomcat4"
+       description="Build Tomcat 4 Adapter jar" if="tomcat4.detect">
+    <property name="tomcat4-coyote.jar" value="${build.home}/lib/tomcat4-${component.name}.jar" />
     <jar jarfile="${tomcat4-coyote.jar}"
          index="true"
          basedir="${build.home}/classes"
          manifest="${build.home}/conf/MANIFEST.MF"
          includes="org/apache/coyote/tomcat4/**" />
+  </target>
+
+  <target name="tomcat33.jar" depends="static,compile.shared,compile.tomcat33"
+       description="Build Tomcat 3.3 Adapter jar" if="tomcat33.detect">
+    <property name="tomcat33-coyote.jar" value="${build.home}/lib/tomcat33-${component.name}.jar" />
+    <jar jarfile="${tomcat33-coyote.jar}"
+         index="true"
+         basedir="${build.home}/classes"
+         manifest="${build.home}/conf/MANIFEST.MF"
+         includes="org/apache/coyote/tomcat3/**" /> 
+  </target>
+
+  <target name="compile" 
+   depends="static,report,shared.jar,tomcat4.jar,tomcat33.jar"
+   description="Compile Coyote and its Adapters">
   </target>
 
   <target name="compile.tests" depends="compile"
