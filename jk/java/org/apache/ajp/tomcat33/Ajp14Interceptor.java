@@ -289,7 +289,26 @@ public class Ajp14Interceptor extends PoolTcpConnector
     {
         this.cm=(ContextManager)contextM;
     }
-    
+
+    public Object getInfo( Context ctx, Request request,
+			   int id, String key ) {
+	if( ! ( request instanceof Ajp14Request ) ) {
+	    return null;
+	}
+	Ajp14Request ajp14req = (Ajp14Request)request;
+	return ajp14req.ajpReq.getAttribute( key );
+    }
+    public int setInfo( Context ctx, Request request,
+			int id, String key, Object obj ) {
+	if( ! ( request instanceof Ajp14Request ) ) {
+	    return DECLINED;
+	}
+	Ajp14Request ajp14req = (Ajp14Request)request;
+	ajp14req.ajpReq.setAttribute(key, obj);
+	return OK;
+    }
+		
+
 
 }
 
@@ -383,20 +402,6 @@ class Ajp14Request extends Request
 
     public void setContentLength( int i ) {
 	super.setContentLength(i); // XXX sync
-    }
-
-    // -------------------- Attributes --------------------
-    
-    public void setAttribute(String name, Object value) {
-	ajpReq.setAttribute( name, value );
-    }
-
-    public Object getAttribute(String name) {
-        if (name == null) {
-            return null;
-        }
-
-        return ajpReq.getAttribute( name );
     }
 
     // XXX broken
