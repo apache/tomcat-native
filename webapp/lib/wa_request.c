@@ -122,10 +122,11 @@ const char *wa_rfree(wa_request *r) {
 }
 
 
-int wa_rerror_headers(void *d, const char *key, const char *val) {
+/* Dump headers for wa_rerror */
+static int wa_rerror_headers(void *d, const char *key, const char *val) {
     wa_request *r=(wa_request *)d;
 
-    wa_rprintf(r,"   <DD>%s: %s</DD>\n",key,val);
+    wa_rprintf(r,"   <dd>%s: %s</dd>\n",key,val);
     return(TRUE);
 }
 
@@ -145,39 +146,40 @@ int wa_rerror(wa_request *r, int s, const char *fmt, ...) {
     wa_rcommit(r);
 
     wa_rprintf(r,"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">");
-    wa_rprintf(r,"<HTML>\n");
-    wa_rprintf(r," <HEAD>\n");
-    wa_rprintf(r,"  <TITLE>WebApp: %d Error</TITLE",s);
-    wa_rprintf(r," </HEAD>\n");
-    wa_rprintf(r," <BODY>\n");
-    wa_rprintf(r,"  <DIV ALIGN=\"CENTER\">");
-    wa_rprintf(r,"    <H1>WebApp: %d Error</H1>",s);
-    wa_rprintf(r,"  </DIV>\n");
-    wa_rprintf(r,"  <HR>\n");
+    wa_rprintf(r,"\n\n");
+    wa_rprintf(r,"<html>\n");
+    wa_rprintf(r," <head>\n");
+    wa_rprintf(r,"  <title>WebApp: %d Error</title>",s);
+    wa_rprintf(r," </head>\n");
+    wa_rprintf(r," <body>\n");
+    wa_rprintf(r,"  <div align=\"center\">");
+    wa_rprintf(r,"    <h1>WebApp: %d Error</h1>",s);
+    wa_rprintf(r,"  </div>\n");
+    wa_rprintf(r,"  <hr>\n");
     wa_rprintf(r,"  %s\n",buf);
-    wa_rprintf(r,"  <HR>\n");
-    wa_rprintf(r,"  <DL>\n");
-    wa_rprintf(r,"   <DT>Your Request:</DT>\n");
-    wa_rprintf(r,"   <DD>Server Host: \"%s\"</DD>\n",r->serv->host);
-    wa_rprintf(r,"   <DD>Server Address: \"%s\"</DD>\n",r->serv->addr);
-    wa_rprintf(r,"   <DD>Server Port: \"%d\"</DD>\n",r->serv->port);
-    wa_rprintf(r,"   <DD>Client Host: \"%s\"</DD>\n",r->clnt->host);
-    wa_rprintf(r,"   <DD>Client Address: \"%s\"</DD>\n",r->clnt->addr);
-    wa_rprintf(r,"   <DD>Client Port: \"%d\"</DD>\n",r->clnt->port);
-    wa_rprintf(r,"   <DD>Request Method: \"%s\"</DD>\n",r->meth);
-    wa_rprintf(r,"   <DD>Request URI: \"%s\"</DD>\n",r->ruri);
-    wa_rprintf(r,"   <DD>Request Arguments: \"%s\"</DD>\n",r->args);
-    wa_rprintf(r,"   <DD>Request Protocol: \"%s\"</DD>\n",r->prot);
-    wa_rprintf(r,"   <DD>Request Scheme: \"%s\"</DD>\n",r->schm);
-    wa_rprintf(r,"   <DD>Request User: \"%s\"</DD>\n",r->user);
-    wa_rprintf(r,"   <DD>Request Authentication Mech.: \"%s\"</DD>\n",r->auth);
-    wa_rprintf(r,"   <DD>Request Content-Length: \"%d\"</DD>\n",r->clen);
-    wa_rprintf(r,"   <DT>Your Headers:</DT>\n");
+    wa_rprintf(r,"  <hr>\n");
+    wa_rprintf(r,"  <dl>\n");
+    wa_rprintf(r,"   <dt>Your Request:</dt>\n");
+    wa_rprintf(r,"   <dd>Server Host: \"%s\"</dd>\n",r->serv->host);
+    wa_rprintf(r,"   <dd>Server Address: \"%s\"</dd>\n",r->serv->addr);
+    wa_rprintf(r,"   <dd>Server Port: \"%d\"</dd>\n",r->serv->port);
+    wa_rprintf(r,"   <dd>Client Host: \"%s\"</dd>\n",r->clnt->host);
+    wa_rprintf(r,"   <dd>Client Address: \"%s\"</dd>\n",r->clnt->addr);
+    wa_rprintf(r,"   <dd>Client Port: \"%d\"</dd>\n",r->clnt->port);
+    wa_rprintf(r,"   <dd>Request Method: \"%s\"</dd>\n",r->meth);
+    wa_rprintf(r,"   <dd>Request URI: \"%s\"</dd>\n",r->ruri);
+    wa_rprintf(r,"   <dd>Request Arguments: \"%s\"</dd>\n",r->args);
+    wa_rprintf(r,"   <dd>Request Protocol: \"%s\"</dd>\n",r->prot);
+    wa_rprintf(r,"   <dd>Request Scheme: \"%s\"</dd>\n",r->schm);
+    wa_rprintf(r,"   <dd>Request User: \"%s\"</dd>\n",r->user);
+    wa_rprintf(r,"   <dd>Request Authentication Mech.: \"%s\"</dd>\n",r->auth);
+    wa_rprintf(r,"   <dd>Request Content-Length: \"%d\"</dd>\n",r->clen);
+    wa_rprintf(r,"   <dt>Your Headers:</dt>\n");
     apr_table_do(wa_rerror_headers,r,r->hdrs,NULL);
-    wa_rprintf(r,"  </DL>\n");
-    wa_rprintf(r,"  <HR>\n");
-    wa_rprintf(r," </BODY>\n");
-    wa_rprintf(r,"</HTML>\n");
+    wa_rprintf(r,"  </dl>\n");
+    wa_rprintf(r,"  <hr>\n");
+    wa_rprintf(r," </body>\n");
+    wa_rprintf(r,"</html>\n");
     wa_rflush(r);
 
     return(s);
