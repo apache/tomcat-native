@@ -69,58 +69,19 @@
 #include <string.h>
 #include "jk_registry.h"
 
-#define CH_SET_ATTRIBUTE 0
-#define CH_GET_ATTRIBUTE 1
-#define CH_INIT 2
-#define CH_DESTROY 3
-
-
-#define CH_OPEN 4
-#define CH_CLOSE 5
-#define CH_READ 6
-#define CH_WRITE 7
-
-    
 /** Called by java ( local or remote ). 
  */
-int JK_METHOD jk2_channel_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
+int JK_METHOD jk2_channel_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep, int code,
+                                 jk_msg_t *msg, int raw)
 {
-    jk_bean_t *bean=(jk_bean_t *)target;
     jk_channel_t *ch=(jk_channel_t *)bean->object;
     int rc=JK_OK;
 
-    int code=msg->getByte(env, msg );
-    
     if( ch->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "ch.%d() \n", code);
     
     switch( code ) {
-    case CH_SET_ATTRIBUTE: {
-        char *name=msg->getString( env, msg );
-        char *value=msg->getString( env, msg );
-        if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                          "ch.setAttribute() %s %s %p\n", name, value, bean->setAttribute);
-        if( bean->setAttribute != NULL)
-            bean->setAttribute(env, bean, name, value );
-        return JK_OK;
-    }
-    case CH_INIT: { 
-        if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "ch.init()\n");
-        if( ch->mbean->init != NULL )
-            rc=ch->mbean->init(env, ch->mbean);
-        return rc;
-    }
-    case CH_DESTROY: {
-        if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "ch.init()\n");
-        if( ch->mbean->destroy != NULL )
-            rc=ch->mbean->destroy(env, ch->mbean);
-        return rc;
-        return rc;
-    }
     case CH_OPEN: {
         if( ch->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO, "ch.open()\n");
@@ -145,18 +106,13 @@ int JK_METHOD jk2_channel_dispatch(jk_env_t *env, void *target, jk_endpoint_t *e
     case CH_WRITE: {
         if( ch->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO, "ch.send()\n");
+        if( ch->serverSide )
+            msg->serverSide=JK_TRUE;
         if( ch->send != NULL )
             rc=ch->send(env, ch, ep, msg);
         return rc;
     }
     }/* switch */
     return JK_ERR;
-}
-
-int JK_METHOD jk2_channel_setWorkerEnv( jk_env_t *env, jk_channel_t *ch, jk_workerEnv_t *wEnv ) {
-    wEnv->registerHandler( env, wEnv, "channel",
-                           "channelDispatch", JK_HANDLE_CH_DISPATCH,
-                           jk2_channel_dispatch, NULL );
-    return JK_OK;
 }
 

@@ -94,7 +94,8 @@ typedef struct jk_channel_un_private {
     int l_linger;               /* Time to linger.  */
 
     int backlog;
-    int doListen;
+
+    int listenSocket;
 } jk_channel_un_private_t;
 
 static int JK_METHOD jk2_channel_un_close(jk_env_t *env, jk_channel_t *ch,
@@ -117,9 +118,11 @@ static int JK_METHOD jk2_channel_un_setAttribute(jk_env_t *env,
         socketInfo->file=value;
     } else if( strcmp( "soLinger", name ) == 0 ) {
         socketInfo->l_linger=atoi( value );
+    } else if( strcmp( "debug", name ) == 0 ) {
+        ch->mbean->debug=atoi( value );
     } else if( strcmp( "listen", name ) == 0 ) {
         socketInfo->backlog=atoi( value );
-        socketInfo->doListen=JK_TRUE;
+        ch->serverSide=JK_TRUE;
     } else {
 	if( ch->worker!=NULL ) {
             return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );
@@ -138,6 +141,7 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
     jk_channel_un_private_t *socketInfo=
         (jk_channel_un_private_t *)(ch->_privatePtr);
     int rc=JK_OK;
+    int omask;
 
     if( socketInfo->file==NULL ) {
         char *localName=ch->mbean->localName;
@@ -168,6 +172,50 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
                       "can't init %s errno=%d\n", socketInfo->file, errno );
     }
 
+    if( ch->serverSide == JK_TRUE ) {
+        
+        socketInfo->listenSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (socketInfo->listenSocket < 0) {
+            return JK_ERR;
+        }
+        
+        omask = umask(0117); /* so that only Apache can use socket */
+        
+        rc=bind(socketInfo->listenSocket,
+                (struct sockaddr *)& socketInfo->unix_addr,
+                strlen( socketInfo->unix_addr.sun_path ) +
+                sizeof( socketInfo->unix_addr.sun_family) );
+        
+        umask(omask); /* can't fail, so can't clobber errno */
+        
+        if (rc<0)
+            return -errno;
+
+        listen( socketInfo->listenSocket, socketInfo->backlog );
+    
+        if( ch->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "Unix socket listening on %d \n", socketInfo->listenSocket);
+        /*
+        {
+        struct linger {
+            int   l_onoff;    
+            int   l_linger;   
+        } lin;
+        int rc;
+        
+        lin.l_onoff = l_onoff;
+        lin.l_linger = l_linger;
+        rc=setsockopt(sd, SOL_SOCKET, SO_LINGER, &lin, sizeof(lin));
+        if( rc < 0) {
+            return -errno;
+        }
+        }
+        */
+
+    }
+    fprintf(stderr, "init %p %d %d\n", socketInfo, socketInfo->listenSocket, ch->serverSide );
+
     return rc;
 }
 
@@ -181,32 +229,63 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
     jk_channel_un_private_t *socketInfo=
         (jk_channel_un_private_t *)(ch->_privatePtr);
     int unixsock;
+    struct sockaddr_un client;
+    int clientlen;
 
-    unixsock = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (unixsock<0) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelUn.open(): can't create socket %d %s\n",
-                      errno, strerror( errno ) );
+    if( ch->serverSide ) {
+        while( 1 ) {
+            clientlen=sizeof( client );
+        
+            unixsock=accept( socketInfo->listenSocket, (struct sockaddr *)&client, &clientlen );
+
+            if( ch->mbean->debug > 0 )
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "channelUn.open(): accept  %d %d\n", unixsock, errno );
+
+            /* XXX Should we return EINTR ? This would allow us to stop
+             */
+            if( unixsock < 0 ) {
+                if( errno==EINTR ) {
+                    if( ch->mbean->debug > 0 )
+                        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                                      "channelUn.open(): accept EINTR  %d %d\n", unixsock, errno );
+                    continue;
+                } else {
+                    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                                  "channelUn.open(): accept error  %d %d %s\n", unixsock, errno,
+                                  strerror(errno));
+                    return -errno;
+                }
+            }
+            break;
+        }
+    } else {
+        unixsock = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (unixsock<0) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "channelUn.open(): can't create socket %d %s\n",
+                          errno, strerror( errno ) );
             return JK_ERR;
+        }
+        
+        if( ch->mbean->debug > 0 ) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "channelUn.open(): create unix socket %s %d\n", socketInfo->file, unixsock );
+        
+        if (connect(unixsock,(struct sockaddr *)&(socketInfo->unix_addr),
+                    sizeof(struct sockaddr_un))<0) {
+            close(unixsock);
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "channelUn.connect() connect failed %d %s\n",
+                          errno, strerror( errno ) );
+            return JK_ERR;
+        }
     }
 
-    if( ch->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelUn.open(): create unix socket %s %d\n", socketInfo->file, unixsock );
-    
-    if (connect(unixsock,(struct sockaddr *)&(socketInfo->unix_addr),
-                sizeof(struct sockaddr_un))<0) {
-        close(unixsock);
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelUn.connect() connect failed %d %s\n",
-                      errno, strerror( errno ) );
-        return JK_ERR;
-    }
     if( ch->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channelUn.open(): connect unix socket %d %s\n", unixsock, socketInfo->file );
     /* store the channel information */
-
     endpoint->sd=unixsock;
     return JK_OK;
 }
@@ -214,10 +293,13 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
 /** close the socket  ( was: jk2_close_socket )
 */
 static int JK_METHOD jk2_channel_un_close(jk_env_t *env,jk_channel_t *ch,
-                                             jk_endpoint_t *endpoint)
+                                          jk_endpoint_t *endpoint)
 {
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "channelUn.close(): close unix socket %d \n",  endpoint->sd );
     close( endpoint->sd );
     endpoint->sd=-1;
+    return JK_OK;
 }
 
 
@@ -385,10 +467,13 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
     ch->open= jk2_channel_un_open; 
     ch->close= jk2_channel_un_close; 
     ch->is_stream=JK_TRUE;
-
+    ch->serverSide=JK_FALSE;
+    
     result->setAttribute= jk2_channel_un_setAttribute; 
     result->multiValueInfo=jk2_channel_un_multiValueInfo;
     result->setAttributeInfo=jk2_channel_un_setAttributeInfo;
+    result->invoke=jk2_channel_invoke;
+
     ch->mbean=result;
     result->object= ch;
     result->init= jk2_channel_un_init; 
