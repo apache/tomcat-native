@@ -79,6 +79,7 @@
 #include "jk_global.h"
 
 #include <string.h>
+#include <fcntl.h>
 #include "jk_registry.h"
 
 #ifdef HAVE_UNIXSOCKETS    
@@ -275,6 +276,11 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
             return JK_ERR;
         }
     }
+
+#if defined(F_SETFD) && defined(FD_CLOEXEC)
+    /* Protect the socket so that it will not be inherited by child processes */
+    fcntl(unixsock, F_SETFD, FD_CLOEXEC);
+#endif
 
     if( ch->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,

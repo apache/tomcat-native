@@ -364,6 +364,11 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
         setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,(char *)&set,sizeof(set));
     }   
 
+#if defined(F_SETFD) && defined(FD_CLOEXEC)
+    /* Protect the socket so that it will not be inherited by child processes */
+    fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
+
     if( ch->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelSocket.connect(), sock = %d\n", sock);

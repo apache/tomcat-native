@@ -67,6 +67,7 @@
 #include "jk_map.h"
 #include "jk_logger.h"
 #include <stdio.h>
+#include <fcntl.h>
 
 #include "jk_registry.h"
 
@@ -172,6 +173,12 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
                          "Can't open log file %s\n", _this->name );
             return JK_ERR;
         }
+#if defined(F_SETFD) && defined(FD_CLOEXEC)
+        /* Protect the log file
+         * so that it will not be inherited by child processes
+         */
+        fcntl(fileno(f), F_SETFD, FD_CLOEXEC);
+#endif
         _this->logger_private = f;
     } 
     _this->jkLog(env, _this,JK_LOG_INFO,
