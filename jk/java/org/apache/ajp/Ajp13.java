@@ -210,24 +210,17 @@ public class Ajp13 {
     int blen;  // Length of current chunk of body data in buffer
     int pos;   // Current read position within that buffer
 
-    private int debug = 10;
-
-    /**
-     * XXX place holder...
-     */
-    Logger logger = new Logger();
-    class Logger {
-        void log(String msg) {
-            System.out.println("[Ajp13] " + msg);
-        }
-        
-        void log(String msg, Throwable t) {
-            System.out.println("[Ajp13] " + msg);
-            t.printStackTrace(System.out);
-        }
+    public Ajp13() {
+	super();
+	initBuf();
     }
 
-    public Ajp13() {
+    /** Will be overriden
+     */
+    public void initBuf() {
+	outBuf = new Ajp13Packet( MAX_PACKET_SIZE );
+	inBuf  = new Ajp13Packet( MAX_PACKET_SIZE );
+	hBuf=new Ajp13Packet( MAX_PACKET_SIZE );
     }
     
     public void recycle() {
@@ -290,6 +283,15 @@ public class Ajp13 {
     }
 
     /**
+     * Try to decode Headers - AJP13 will do nothing but descendant will	
+     * override this method to handle new headers (ie SSL_KEY_SIZE in AJP14)
+     */
+    int decodeMoreHeaders(AjpRequest req, byte attribute, Ajp13Packet msg)
+    {
+	return 500;
+    }
+
+    /**
      * Parse a FORWARD_REQUEST packet from the web server and store its
      * properties in the passed-in request object.
      *
@@ -300,8 +302,9 @@ public class Ajp13 {
      *
      * @return 200 in case of a successful decoduing, 500 in case of error.  
      */
-    private int decodeRequest(AjpRequest req, Ajp13Packet msg)
-        throws IOException {
+    protected int decodeRequest(AjpRequest req, Ajp13Packet msg)
+        throws IOException
+    {
         
         if (debug > 0) {
             logger.log("decodeRequest()");
@@ -413,7 +416,10 @@ public class Ajp13 {
                 break;
 
 	    default:
-		return 500; // Error
+		if (decodeMoreHeaders(req, attributeCode, msg) != 500)
+		    break;
+
+		return 500;
             }
         }
 
@@ -773,7 +779,7 @@ public class Ajp13 {
      * @return The number of bytes read on a successful read or -1 if there 
      * was an error.
      **/
-    private int receive(Ajp13Packet msg) throws IOException {
+    public int receive(Ajp13Packet msg) throws IOException {
         if (debug > 0) {
             logger.log("receive()");
         }
@@ -851,5 +857,23 @@ public class Ajp13 {
 	if(null !=in) {
 	    in.close();
 	}
+    }
+
+    // -------------------- Debug --------------------
+    private int debug = 10;
+
+    /**
+     * XXX place holder...
+     */
+    Logger logger = new Logger();
+    class Logger {
+        void log(String msg) {
+            System.out.println("[Ajp13] " + msg);
+        }
+        
+        void log(String msg, Throwable t) {
+            System.out.println("[Ajp13] " + msg);
+            t.printStackTrace(System.out);
+        }
     }
 }

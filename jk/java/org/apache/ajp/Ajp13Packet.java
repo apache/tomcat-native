@@ -58,6 +58,7 @@
  */
 package org.apache.ajp;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -69,6 +70,11 @@ import org.apache.tomcat.util.http.MimeHeaders;
  * garbage.  Understands the format of data types for these packets.
  * Can be used (somewhat confusingly) for both incoming and outgoing
  * packets.  
+ *
+ * @author Dan Milstein [danmil@shore.net]
+ * @author Keith Wannamaker [Keith@Wannamaker.org]
+ * @author Kevin Seguin
+ * @author Costin Manolache
  */
 public class Ajp13Packet {
 
@@ -215,7 +221,7 @@ public class Ajp13Packet {
     // ============ Data Writing Methods ===================
 
     /**
-     * Write an integer at an arbitrary position in the packet, but don't
+     * Write an 32 bit integer at an arbitrary position in the packet,but don't
      * change the write position.
      *
      * @param bpos The 0-indexed position within the buffer at which to
@@ -267,7 +273,7 @@ public class Ajp13Packet {
         byte[] bytes = str.getBytes(encoding);
         appendBytes(bytes, 0, bytes.length);
         
-        /*
+        /* XXX XXX XXX XXX Try to add it back.
         int strStart=pos;
 
         // This replaces the old ( buggy and slow ) str.length()
@@ -313,7 +319,45 @@ public class Ajp13Packet {
         pos += numBytes + 1;
     }
 
+        /**
+     * Write a 32 bits integer at an arbitrary position in the packet, but don't
+     * change the write position.
+     *
+     * @param bpos The 0-indexed position within the buffer at which to
+     * write the integer (where 0 is the beginning of the header).
+     * @param val The integer to write.
+     */
+    private void setLongInt( int bPos, int val ) {
+        buff[bPos]   = (byte) ((val >>>  24) & 0xFF);
+        buff[bPos+1] = (byte) ((val >>>  16) & 0xFF);
+        buff[bPos+2] = (byte) ((val >>>   8) & 0xFF);
+        buff[bPos+3] = (byte) (val & 0xFF);
+    }
+
+    public void appendLongInt( int val ) {
+        setLongInt( pos, val );
+        pos += 4;
+    }
+
+    /**
+     * Copy a chunk of bytes into the packet, starting at the current
+     * write position.  The chunk of bytes IS NOT ENCODED with ANY length
+     * header.
+     *
+     * @param b The array from which to copy bytes.
+     * @param off The offset into the array at which to start copying
+     * @param len The number of bytes to copy.
+     */
+    public void appendXBytes(byte[] b, int off, int numBytes) {
+        if( pos + numBytes > buff.length ) {
+        System.out.println("appendXBytes - Buffer overflow " + buff.length + " " + pos + " " + numBytes );
+        // XXX Log
+        }
+        System.arraycopy( b, off, buff, pos, numBytes);
+        pos += numBytes;
+    }
 	
+    
     // ============ Data Reading Methods ===================
 
     /**
@@ -416,6 +460,51 @@ public class Ajp13Packet {
         pos += length;
         pos++; // Skip terminating \0  XXX I believe this is wrong but harmless
         return length;
+    }
+
+        /**
+     * Read a 32 bits integer from packet, and advance the read position past
+     * it.  Integers are encoded as four unsigned bytes with the
+     * high-order byte first, and, as far as I can tell, in
+     * little-endian order within each byte.
+     */
+    public int getLongInt() {
+        int result = peekLongInt();
+        pos += 4;
+        return result;
+    }
+
+    /**
+     * Copy a chunk of bytes from the packet into an array and advance
+     * the read position past the chunk.  See appendXBytes() for details
+     * on the encoding.
+     *
+     * @return The number of bytes copied.
+     */
+    public int getXBytes(byte[] dest, int length) {
+        if( length > buff.length ) {
+        // XXX Should be if(pos + length > buff.legth)?
+        System.out.println("XXX Assert failed, buff too small ");
+        }
+
+        System.arraycopy( buff, pos,  dest, 0, length );
+        pos += length;
+        return length;
+    }
+
+    /**
+     * Read a 32 bits integer from the packet, but don't advance the read
+     * position past it.
+     */
+    public int peekLongInt() {
+        int b1 = buff[pos] & 0xFF;  // No swap, Java order
+        b1 <<= 8;
+        b1 |= (buff[pos + 1] & 0xFF);
+        b1 <<= 8;
+        b1 |= (buff[pos + 2] & 0xFF);
+        b1 <<=8;
+        b1 |= (buff[pos + 3] & 0xFF);
+        return  b1;
     }
 
     // ============== Debugging code =========================
