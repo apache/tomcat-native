@@ -25,7 +25,7 @@ BUILD_DIR = ${JK_DIR}/../build/jk2/apache2
 # Yes, we use the same properties file as ant
 #include ../../../build.properties
 
-LIBTOOL=${APACHE2_HOME}/build/libtool 
+LIBTOOL=@LIBTOOL@ 
 
 # It doesn't hurt if we include all
 INCLUDES= -I${JK_DIR}/include \

@@ -254,6 +254,7 @@ AC_SUBST(APR_UTIL_LIBDIR)
 AC_SUBST(APR_CONFIGURE_ARGS)
 AC_SUBST(APR_LDFLAGS)
 AC_SUBST(COMMON_APR_OBJECTS)
+AC_SUBST(LIBTOOL)
 
 dnl automake needs the path it does not work with $WEBSERVER
 dnl that why useless Makefiles are build.
