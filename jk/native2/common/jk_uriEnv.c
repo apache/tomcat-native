@@ -69,7 +69,9 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
+#ifdef HAS_APR
 #include "apr_uri.h"
+
 /** Parse the name:
        VHOST/PATH
 
@@ -117,6 +119,45 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     }
     return JK_ERR;
 }
+
+#else
+/* Old version, deprecated - used only if APR is not available
+ */
+static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
+                                 char *name)
+{
+    char *n=name;
+    char *slash=strchr( name, '/' );
+    
+    /* fprintf( stderr, "XXX parseURI %s\n", name ); */
+    
+    if( slash==NULL ) {
+        /* That's a virtual host definition ( no actual mapping, just global
+         * settings like aliases, etc
+         */
+        uriEnv->match_type= MATCH_TYPE_HOST;
+        if( name[0]=='\0' ) {
+            uriEnv->virtual=NULL; /* "" for the default host */
+        } else {
+            uriEnv->virtual=name;
+        }
+        return JK_OK;
+    }
+    
+    /* If it doesn't start with /, it must have a vhost */
+    if( *name != '/' ) {
+        uriEnv->virtual=uriEnv->pool->calloc( env, uriEnv->pool, slash - name + 2 );
+        strncpy( uriEnv->virtual, name, slash-name );
+    }
+    
+    n=slash;
+    
+    uriEnv->uri=uriEnv->pool->pstrdup(env, uriEnv->pool, n);
+
+    return JK_OK;
+}
+
+#endif
 
 static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
                                      char *name )
