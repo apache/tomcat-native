@@ -295,7 +295,7 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                             <td>? </td>
                         </tr>
                         <tr>
-                            <td>lbfactor</td>
+                            <td>lb_factor</td>
                             <td>1</td>
                             <td>
     Load balancing factor to use. At this moment, it'll be set on the worker,
@@ -360,7 +360,7 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                             <td>If set to 1 Disables the Nagle algorithm for send coalescing</td>
                         </tr>
                         <tr>
-                            <td>lbfactor</td>
+                            <td>lb_factor</td>
                             <td>1</td>
                             <td>
     Load balancing factor to use. At this moment, it'll be set on the worker,
