@@ -71,20 +71,17 @@ public class StringManager {
 	this( packageName, Locale.getDefault() );
     }
 
-    private StringManager(String packageName,Locale loc) {
-        locale = loc;
+    private StringManager(String packageName, Locale loc) {
         String bundleName = packageName + ".LocalStrings";
-        try {
-            bundle = ResourceBundle.getBundle(bundleName,loc);
-        } catch( MissingResourceException ex ) {
-            locale = Locale.US;
-            bundle= ResourceBundle.getBundle( bundleName, Locale.US);
-        }
+        bundle = ResourceBundle.getBundle(bundleName, loc);
+        // Get the actual locale, which may be different from the requested one
+        locale = bundle.getLocale();
     }
 
     private StringManager(ResourceBundle bundle )
     {
 	this.bundle=bundle;
+        locale = bundle.getLocale();
     }
 
     /**
