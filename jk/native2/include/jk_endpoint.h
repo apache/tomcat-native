@@ -128,6 +128,15 @@ struct jk_endpoint {
      */
     void *channelData;
 
+    /* Ok, this is going to be a Notes - similar with what we have on the
+     * java side. Various channels need to be able to store private data.
+     */
+    void *currentData;
+    int currentOffset;
+    int currentLen;
+
+    struct jk_ws_service *currentRequest;
+    
     struct jk_worker *worker;
 
     /** 'main' pool for this endpoint. Used to store properties of the
@@ -172,25 +181,6 @@ struct jk_endpoint {
     unsigned long negociated;
 
     char *servletContainerName;
-    
-    /*
-     * Forward a request to the servlet engine.  The request is described
-     * by the jk_ws_service_t object.  I'm not sure exactly how
-     * is_recoverable_error is being used.  
-     */
-    int (JK_METHOD *service)(struct jk_env *env, jk_endpoint_t *_this, 
-                             struct jk_ws_service *s,
-                             int *is_recoverable_error);
-
-    /*
-     * Called when this particular endpoint has finished processing a
-     * request.  For some protocols (e.g. ajp12), this frees the memory
-     * associated with the endpoint.  For others (e.g. ajp13/ajp14), this can
-      * return the endpoint to a cache of already opened endpoints.  
-     * XXX This is the 'pair' of worker.getEndpoint - it should be part of
-     * worker.
-     */
-    int (JK_METHOD *done)(struct jk_env *env, jk_endpoint_t *p );
 };
     
 #ifdef __cplusplus
