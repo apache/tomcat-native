@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FD /c
-# ADD CPP /nologo /MD /W3 /Zi /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\srclib\apr\include" /I "$(APACHE2_HOME)\srclib\apr-util\include" /Fd"Release/mod_jk_src" /FD /c
+# ADD CPP /nologo /MD /W3 /Zi /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\srclib\apr\include" /I "$(APACHE2_HOME)\srclib\apr-util\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /Fd"Release/mod_jk_src" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib advapi32.lib /nologo /dll /machine:I386
-# ADD LINK32 libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib advapi32.lib wsock32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"Release/mod_jk.so" /opt:ref /libpath:"$(APACHE2_HOME)\Release" /libpath:"$(APACHE2_HOME)\srclib\apr\Release" /libpath:"$(APACHE2_HOME)\srclib\apr-util\Release" /libpath:"$(APACHE2_HOME)\lib"
+# ADD LINK32 libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib advapi32.lib wsock32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /debug /machine:I386 /out:"Release/mod_jk.so" /libpath:"$(APACHE2_HOME)\Release" /libpath:"$(APACHE2_HOME)\srclib\apr\Release" /libpath:"$(APACHE2_HOME)\srclib\apr-util\Release" /libpath:"$(APACHE2_HOME)\lib" /opt:ref
 
 !ELSEIF  "$(CFG)" == "apache - Win32 Debug"
 
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FD /c
-# ADD CPP /nologo /MDd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\srclib\apr\include" /I "$(APACHE2_HOME)\srclib\apr-util\include" /Fd"Debug/mod_jk_src" /FD /c
+# ADD CPP /nologo /MDd /W3 /GX /Zi /Od /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\srclib\apr\include" /I "$(APACHE2_HOME)\srclib\apr-util\include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /Fd"Debug/mod_jk_src" /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -145,6 +145,10 @@ SOURCE=..\common\jk_msg_buff.c
 # Begin Source File
 
 SOURCE=..\common\jk_pool.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_shm.c
 # End Source File
 # Begin Source File
 
@@ -245,6 +249,10 @@ SOURCE=..\common\jk_pool.h
 # Begin Source File
 
 SOURCE=..\common\jk_service.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_shm.h
 # End Source File
 # Begin Source File
 

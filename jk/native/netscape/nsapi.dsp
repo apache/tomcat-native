@@ -154,6 +154,10 @@ SOURCE=..\common\jk_pool.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_shm.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_sockbuf.c
 # End Source File
 # Begin Source File
@@ -239,6 +243,10 @@ SOURCE=..\common\jk_pool.h
 # Begin Source File
 
 SOURCE=..\common\jk_service.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_shm.h
 # End Source File
 # Begin Source File
 

@@ -42,8 +42,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MD /W3 /O2 /Zi /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MOD_JK_EXPORTS" /FD /c
-# ADD CPP /nologo /MD /W3 /O2 /Zi /I "..\common" /I "$(APACHE1_HOME)\include" /I "$(APACHE1_HOME)\src\include" /I "$(APACHE1_HOME)\src\os\win32" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MOD_JK_EXPORTS" /Fd"Release\mod_jk_src" /FD /c
+# ADD BASE CPP /nologo /MD /W3 /Zi /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MOD_JK_EXPORTS" /FD /c
+# ADD CPP /nologo /MD /W3 /Zi /O2 /I "..\common" /I "$(APACHE1_HOME)\include" /I "$(APACHE1_HOME)\src\include" /I "$(APACHE1_HOME)\src\os\win32" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MOD_JK_EXPORTS" /Fd"Release\mod_jk_src" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 ApacheCore.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"Release/mod_jk.so" /opt:ref /libpath:"$(APACHE1_HOME)\libexec" /libpath:"$(APACHE1_HOME)\src\CoreR" /libpath:"$(APACHE1_HOME)\src\Release"
+# ADD LINK32 ApacheCore.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /debug /machine:I386 /out:"Release/mod_jk.so" /libpath:"$(APACHE1_HOME)\libexec" /libpath:"$(APACHE1_HOME)\src\CoreR" /libpath:"$(APACHE1_HOME)\src\Release" /opt:ref
 
 !ELSEIF  "$(CFG)" == "mod_jk - Win32 Debug"
 
@@ -104,7 +104,23 @@ SOURCE=..\common\jk_ajp13_worker.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_ajp14.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_ajp14_worker.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_ajp_common.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_connect.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_context.c
 # End Source File
 # Begin Source File
 
@@ -120,11 +136,19 @@ SOURCE=..\common\jk_map.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_md5.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_msg_buff.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\common\jk_pool.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_shm.c
 # End Source File
 # Begin Source File
 
@@ -146,28 +170,7 @@ SOURCE=..\common\jk_worker.c
 
 SOURCE=.\mod_jk.c
 # End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_ajp14.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_ajp14_worker.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_md5.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_context.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_ajp_common.c
-# End Source File
 # End Group
-
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
@@ -185,7 +188,23 @@ SOURCE=..\common\jk_ajp13_worker.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_ajp14.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_ajp14_worker.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_ajp_common.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_connect.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_context.h
 # End Source File
 # Begin Source File
 
@@ -209,6 +228,10 @@ SOURCE=..\common\jk_map.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_md5.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_msg_buff.h
 # End Source File
 # Begin Source File
@@ -222,6 +245,10 @@ SOURCE=..\common\jk_pool.h
 # Begin Source File
 
 SOURCE=..\common\jk_service.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_shm.h
 # End Source File
 # Begin Source File
 
@@ -243,28 +270,7 @@ SOURCE=..\common\jk_worker.h
 
 SOURCE=..\common\jk_worker_list.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_ajp14.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_ajp14_worker.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_md5.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_context.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_ajp_common.h
-# End Source File
 # End Group
-
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
