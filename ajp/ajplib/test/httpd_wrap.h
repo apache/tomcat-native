@@ -240,6 +240,16 @@ extern "C" {
 #define AP_METHOD_BIT ((apr_int64_t)1)
 /** @} */
 
+/** default HTTP Server protocol */
+#define AP_SERVER_PROTOCOL "HTTP/1.1"
+/** Internal representation for a HTTP protocol number, e.g., HTTP/1.1 */
+
+#define HTTP_VERSION(major,minor) (1000*(major)+(minor))
+/** Major part of HTTP protocol */
+#define HTTP_VERSION_MAJOR(number) ((number)/1000)
+/** Minor part of HTTP protocol */
+#define HTTP_VERSION_MINOR(number) ((number)%1000)
+
 
 /* fake structure declarations */
 typedef struct process_rec  process_rec;
@@ -626,6 +636,23 @@ AP_DECLARE(server_rec *) ap_wrap_create_server(process_rec *process, apr_pool_t 
  * create the main process_rec. 
  */
 AP_DECLARE(process_rec *) ap_wrap_create_process(int argc, const char * const *argv);
+
+/**
+ * Fill the request_rec with data. 
+ * @param r      The current request
+ * @param url    The full url http://[username:password@]hostname[:port]/uri
+ * @param method Method "GET", "POST", etc...
+ * @param content_type The post data content type
+ * @param content_encoding The post data transfer encoding
+ * @param content_length The post data content length
+ * @param content The post content data.
+ * @return APR_SUCCESS or error
+ */
+AP_DECLARE(apr_status_t) ap_wrap_make_request(request_rec *r, const char *url,
+                                              const char *method,
+                                              const char *content_type,
+                                              const char *content_encoding,
+                                              apr_size_t content_length, char *content);
 
 #ifdef __cplusplus
 }
