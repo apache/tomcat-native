@@ -73,8 +73,8 @@ static void info_startup(void) {
 }
 
 /* Cleans up all resources allocated by this provider. */
-static void info_destroy(void) {
-    wa_debug(WA_MARK,"INFO provider destroyed");
+static void info_shutdown(void) {
+    wa_debug(WA_MARK,"INFO provider shut down");
 }
 
 /* Configure a connection with the parameter from the web server
@@ -219,7 +219,7 @@ static void info_handle_connection(wa_request *r, wa_connection *c) {
 static int info_handle_hdrname(void *d, const char *n, const char *v) {
     wa_request *r=(wa_request *)d;
 
-    wa_rprintf(r,"       %s<br>\n",n);
+    wa_rprintf(r,"       <nobr>%s</nobr><br>\n",n);
     return(TRUE);
 }
 
@@ -232,7 +232,7 @@ static int info_handle_hdrvalue(void *d, const char *n, const char *v) {
         b=apr_pstrndup(r->pool,b,64);
         b=apr_pstrcat(r->pool,b," ....",NULL);
     }
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",b);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",b);
     return(TRUE);
 }
 
@@ -346,21 +346,21 @@ static int info_handle(wa_request *r, wa_application *a) {
     wa_rprintf(r,"     </font>\n");
     wa_rprintf(r,"    </td>\n");
     wa_rprintf(r,"    <td width=\"90%%\" valign=\"top\" align=\"left\">\n");
-    wa_rprintf(r,"     <font size=\"-1\">\n");
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->serv->host);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->serv->addr);
-    wa_rprintf(r,"      <b>&quot;%d&quot;</b><br>\n",r->serv->port);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->clnt->host);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->clnt->addr);
-    wa_rprintf(r,"      <b>&quot;%d&quot;</b><br>\n",r->clnt->port);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->meth);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->ruri);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->args);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->prot);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->schm);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->user);
-    wa_rprintf(r,"      <b>&quot;%s&quot;</b><br>\n",r->auth);
-    wa_rprintf(r,"      <b>&quot;%d&quot;</b>\n",r->clen);
+    wa_rprintf(r,"     <font size=\"-1\"><nobr>\n");
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->serv->host);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->serv->addr);
+    wa_rprintf(r,"      <b><nobr>&quot;%d&quot;</nobr></b><br>\n",r->serv->port);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->clnt->host);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->clnt->addr);
+    wa_rprintf(r,"      <b><nobr>&quot;%d&quot;</nobr></b><br>\n",r->clnt->port);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->meth);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->ruri);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->args);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->prot);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->schm);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->user);
+    wa_rprintf(r,"      <b><nobr>&quot;%s&quot;</nobr></b><br>\n",r->auth);
+    wa_rprintf(r,"      <b><nobr>&quot;%d&quot;</nobr></b>\n",r->clen);
     wa_rprintf(r,"     </font>\n");
     wa_rprintf(r,"    </td>\n");
 
@@ -439,7 +439,7 @@ wa_provider wa_provider_info = {
     "info",
     info_init,
     info_startup,
-    info_destroy,
+    info_shutdown,
     info_connect,
     info_deploy,
     info_conninfo,

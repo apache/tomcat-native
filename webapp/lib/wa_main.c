@@ -58,6 +58,10 @@
 /* @version $Id$ */
 #include <wa.h>
 
+#ifndef DEBUG
+#define DEBUG
+#endif
+
 /* The current APR memory pool. */
 apr_pool_t *wa_pool=NULL;
 /* The list of all deployed applications. */
@@ -88,7 +92,7 @@ const char *wa_init(void) {
     while(wa_providers[x]!=NULL) {
         const char *ret=wa_providers[x]->init();
         if (ret!=NULL) {
-            wa_destroy();
+            wa_shutdown();
             return(ret);
         }
         x++;
@@ -109,14 +113,14 @@ void wa_startup(void) {
 }
 
 /* Clean up the WebApp Library. */
-void wa_destroy(void) {
+void wa_shutdown(void) {
     int x=0;
 
     /* Initialization check */
     if (wa_pool==NULL) return;
 
-    /* Destroy providers */
-    while(wa_providers[x]!=NULL) wa_providers[x++]->destroy();
+    /* Shutdown providers */
+    while(wa_providers[x]!=NULL) wa_providers[x++]->shutdown();
 
     /* Clean up this library and APR */
     apr_pool_destroy(wa_pool);
@@ -124,7 +128,7 @@ void wa_destroy(void) {
     wa_configuration=NULL;
     apr_terminate();
 
-    wa_debug(WA_MARK,"WebApp Library destroyed");
+    wa_debug(WA_MARK,"WebApp Library shut down");
 }
 
 /* Deploy a web-application. */
@@ -188,6 +192,7 @@ const char *wa_deploy(wa_application *a, wa_virtualhost *h, wa_connection *c) {
 
 /* Dump some debugging information. */
 void wa_debug(const char *f, const int l, const char *fmt, ...) {
+#ifdef DEBUG
     apr_time_t at;
     char st[128];
     va_list ap;
@@ -200,21 +205,5 @@ void wa_debug(const char *f, const int l, const char *fmt, ...) {
     fprintf(stderr,"\n");
     fflush(stderr);
     va_end(ap);
-}
-
-
-/* Log an error message. */
-void wa_log(const char *f, const int l, const char *fmt, ...) {
-    apr_time_t at;
-    char st[128];
-    va_list ap;
-
-    at=apr_time_now();
-    apr_ctime(st, at);
-    va_start(ap,fmt);
-    fprintf(stderr,"[%s] %d (%s:%d) ",st,getpid(),f,l);
-    vfprintf(stderr,fmt,ap);
-    fprintf(stderr,"\n");
-    fflush(stderr);
-    va_end(ap);
+#endif /* ifdef DEBUG */
 }

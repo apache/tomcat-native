@@ -137,7 +137,7 @@ int wa_rerror(const char *file, const int line, wa_request *r, int s,
     char buf[1024];
 
     va_start(ap,fmt);
-    vsnprintf(buf,1024,fmt,ap);
+    apr_vsnprintf(buf,1024,fmt,ap);
     va_end(ap);
 
     r->hand->log(r,WA_MARK,buf);
@@ -150,13 +150,13 @@ int wa_rerror(const char *file, const int line, wa_request *r, int s,
     wa_rprintf(r,"\n\n");
     wa_rprintf(r,"<html>\n");
     wa_rprintf(r," <head>\n");
-    wa_rprintf(r,"  <title>WebApp: %d Error (File: %s Line: %d)</title>",s,
+    wa_rprintf(r,"  <title>WebApp: Error %d (File: %s Line: %d)</title>",s,
                file,line);
     wa_rprintf(r," </head>\n");
     wa_rprintf(r," <body>\n");
-    wa_rprintf(r,"  <div align=\"center\">");
-    wa_rprintf(r,"    <h1>WebApp: %d Error (File: %s Line: %d)</h1>",s,
-               file,line);
+    wa_rprintf(r,"  <div align=\"center\">\n");
+    wa_rprintf(r,"    <h1>WebApp: Error %d</h1>\n",s);
+    wa_rprintf(r,"    <i>(File: %s Line: %d)</i>\n",file,line);
     wa_rprintf(r,"  </div>\n");
     wa_rprintf(r,"  <hr>\n");
     wa_rprintf(r,"  %s\n",buf);
@@ -199,7 +199,7 @@ void wa_rlog(wa_request *r, const char *f, const int l, const char *fmt, ...) {
     char buf[1024];
 
     va_start(ap,fmt);
-    vsnprintf(buf,1024,fmt,ap);
+    apr_vsnprintf(buf,1024,fmt,ap);
     va_end(ap);
 
     r->hand->log(r,f,l,buf);
@@ -239,7 +239,7 @@ int wa_rprintf(wa_request *r, const char *fmt, ...) {
     int ret=0;
 
     va_start(ap,fmt);
-    ret=vsnprintf(buf,1024,fmt,ap);
+    ret=apr_vsnprintf(buf,1024,fmt,ap);
     va_end(ap);
 
     return(r->hand->write(r,buf,ret));
