@@ -380,7 +380,7 @@ public final class Parameters extends MultiMap {
 		nameEnd=end;
 
 	    if( ! noEq ) {
-		valStart=nameEnd+1;
+		valStart= (nameEnd < end) ? nameEnd+1 : end;
 		valEnd=ByteChunk.indexOf(bytes, valStart, end, '&');
 		if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
 	    }
