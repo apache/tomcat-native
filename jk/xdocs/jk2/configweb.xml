@@ -267,9 +267,9 @@ Other  important  channels are unix socket and jni</p>
         </subsection>
         <subsection name="workers">
             <p>
-             For the moment 4 worker types are supported: jni,ajp13,status,lb.
+             For the moment 4 worker types are supported: worker.jni,ajp13,status,lb.
             </p>
-            <subsection name="jni">
+            <subsection name="worker.jni">
                 <p>worker used in inprocess, holds the details of the Tomcat class to startup, and paramters to pass</p>
                 <p>
                     <table>
