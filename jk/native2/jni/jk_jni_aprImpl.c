@@ -78,6 +78,10 @@
 #include "jk_map.h"
 #include "jk_pool.h"
 
+#ifndef WIN32
+#include <unistd.h>
+#include <pwd.h>
+#endif
 
 #if APR_HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -107,7 +111,6 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 
     if( jk_env_globalEnv == NULL ) {
         jk_pool_t *globalPool;
-        jk_bean_t *jkb;
 
         if( jniAprPool==NULL ) {
             return 0;
@@ -212,10 +215,51 @@ Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint s
 /* -------------------- User related functions -------------------- */
 
 JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_userId(JNIEnv *jniEnv, jobject _jthis, jlong pool)
+Java_org_apache_jk_apr_AprImpl_userId(JNIEnv *jniEnv, jobject _jthis)
 {
     
     return 0;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_getPid(JNIEnv *jniEnv, jobject _jthis)
+{
+  return (jlong) getpid();
+}
+
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_setUser(JNIEnv *jniEnv, jobject _jthis,
+                                       jstring userJ, jstring groupJ)
+{
+    int rc=0;
+#ifndef WIN32
+    const char *user;
+    char *group;
+    struct passwd *passwd;
+    int uid;
+    int gid;
+
+    user = (*jniEnv)->GetStringUTFChars(jniEnv, userJ, 0);
+    
+    passwd = getpwnam(user);
+
+    (*jniEnv)->ReleaseStringUTFChars(jniEnv, userJ, user);
+
+    if (passwd == NULL ) {
+        return -1;
+    }
+    uid = passwd->pw_uid;
+    gid = passwd->pw_gid;
+
+    if (uid < 0 || gid < 0 ) 
+        return -2;
+
+    rc = setuid(uid);
+
+#endif
+
+    return rc;
 }
 
 /* -------------------- interprocess mutexes -------------------- */
