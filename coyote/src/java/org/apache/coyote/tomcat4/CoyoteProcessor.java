@@ -83,6 +83,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 
 import org.apache.coyote.ActionCode;
@@ -389,6 +390,8 @@ final class CoyoteProcessor
         else
             request.setServerPort(serverPort);
 
+        parseSessionId(req);
+
         if (!normalize(req.decodedURI())) {
             res.setStatus(400);
             res.setMessage("Invalid URI");
@@ -412,7 +415,6 @@ final class CoyoteProcessor
         }
 
         parseHost();
-        parseSessionId();
         parseCookies();
 
     }
@@ -464,13 +466,17 @@ final class CoyoteProcessor
 
     /**
      * Parse session id in URL.
+     * FIXME: Optimize this.
      */
-    protected void parseSessionId() {
+    protected void parseSessionId(Request req) {
 
-        String uri = request.getRequestURI();
+        ByteChunk uriBC = req.decodedURI().getByteChunk();
+        int semicolon = uriBC.indexOf(match, 0, match.length(), 0);
 
-        int semicolon = uri.indexOf(match);
-        if (semicolon >= 0) {
+        if (semicolon > 0) {
+
+            // Parse session ID, and extract it from the decoded request URI
+            String uri = uriBC.toString();
             String rest = uri.substring(semicolon + match.length());
             int semicolon2 = rest.indexOf(';');
             if (semicolon2 >= 0) {
@@ -481,11 +487,23 @@ final class CoyoteProcessor
                 rest = "";
             }
             request.setRequestedSessionURL(true);
-            uri = uri.substring(0, semicolon) + rest;
-            if (debug >= 1)
-                log(" Requested URL session id is " +
-                    ((HttpServletRequest) request.getRequest())
-                    .getRequestedSessionId());
+            req.decodedURI().setString(uri.substring(0, semicolon) + rest);
+
+            // Extract session ID from request URI
+            uri = req.requestURI().toString();
+            semicolon = uri.indexOf(match);
+
+            if (semicolon > 0) {
+                rest = uri.substring(semicolon + match.length());
+                semicolon2 = rest.indexOf(';');
+                if (semicolon2 >= 0) {
+                    rest = rest.substring(semicolon2);
+                } else {
+                    rest = "";
+                }
+                req.requestURI().setString(uri.substring(0, semicolon) + rest);
+            }
+
         } else {
             request.setRequestedSessionId(null);
             request.setRequestedSessionURL(false);
