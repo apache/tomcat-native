@@ -294,7 +294,7 @@ apr_status_t ajp_msg_get_bytes(ajp_msg_t *msg, apr_byte_t **rvalue,
  * @param rmsg      Pointer to newly created AJP message
  * @return          APR_SUCCESS or error
  */
-apr_status_t ajp_msg_create(apr_pool_t *pool, ajp_msg_t **rmsg);
+apr_status_t ajp_msg_create(apr_pool_t *pool, void **rmsg);
 
 /**
  * Recopy an AJP Message to another
@@ -373,7 +373,7 @@ apr_status_t ajp_send_header(apr_socket_t *sock, request_rec  *r);
  */
 apr_status_t ajp_read_header(apr_socket_t *sock,
                              request_rec  *r,
-                             void **msg);
+                             ajp_msg_t **msg);
 
 /**
  * Allocate a msg to send data
@@ -384,7 +384,7 @@ apr_status_t ajp_read_header(apr_socket_t *sock,
  * @return          APR_SUCCESS or error
  */
 apr_status_t  ajp_alloc_data_msg(request_rec *r, char **ptr, apr_size_t *len,
-                                 void **data);
+                                 ajp_msg_t **data);
 
 /**
  * Send the data message
@@ -395,7 +395,7 @@ apr_status_t  ajp_alloc_data_msg(request_rec *r, char **ptr, apr_size_t *len,
  * @return          APR_SUCCESS or error
  */
 apr_status_t  ajp_send_data_msg(apr_socket_t *sock, request_rec  *r,
-                                void *data, apr_size_t len);
+                                ajp_msg_t *data, apr_size_t len);
 
 #endif /* AJP_H */
 
