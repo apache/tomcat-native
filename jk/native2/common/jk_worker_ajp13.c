@@ -591,6 +591,8 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
 
     /* XXX configurable ? */
     strncpy( e->stats->active, s->req_uri, 64);
+    /* Be sure this is null terminated if it's a long url */
+    e->stats->active[63] = '\0';
     
     /* Prepare the messages we'll use.*/ 
     e->request->reset( env, e->request );
