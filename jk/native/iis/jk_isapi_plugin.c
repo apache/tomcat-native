@@ -71,6 +71,7 @@
 #define BAD_PATH        -2
 #define MAX_SERVERNAME  128
 
+#define JK_TOLOWER(x)   ((char)tolower((unsigned char)(x)))
 
 #define GET_SERVER_VARIABLE_VALUE(name, place)          \
   do {                                                  \
@@ -128,7 +129,8 @@ static int uri_select_option = URI_SELECT_OPT_PARSED;
 
 static jk_worker_env_t worker_env;
 
-struct isapi_private_data
+typedef struct isapi_private_data_t isapi_private_data_t;
+struct isapi_private_data_t
 {
     jk_pool_t p;
 
@@ -136,7 +138,6 @@ struct isapi_private_data
     unsigned bytes_read_so_far;
     LPEXTENSION_CONTROL_BLOCK lpEcb;
 };
-typedef struct isapi_private_data isapi_private_data_t;
 
 
 static int JK_METHOD start_response(jk_ws_service_t *s,
@@ -171,7 +172,7 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
 static int base64_encode_cert_len(int len);
 
 static int base64_encode_cert(char *encoded,
-                              const unsigned char *string, int len);
+                              const char *string, int len);
 
 
 static char x2c(const char *what)
@@ -256,8 +257,10 @@ static void getparents(char *name)
             else
                 l = 0;
             n = l;
-            while ((name[n] = name[m]))
-                (++n, ++m);
+            while ((name[n] = name[m])) {
+                n++;
+                m++;
+            }
         }
         else
             ++l;
@@ -319,20 +322,19 @@ static int escape_url(const char *path, char *dest, int destsize)
 {
     const unsigned char *s = (const unsigned char *)path;
     unsigned char *d = (unsigned char *)dest;
-    unsigned char *e = dest + destsize - 1;
-    unsigned char *ee = dest + destsize - 3;
-    unsigned c;
+    unsigned char *e = d + destsize - 1;
+    unsigned char *ee = d + destsize - 3;
 
-    while ((c = *s)) {
-        if (TEST_CHAR(c, T_OS_ESCAPE_PATH)) {
+    while (*s) {
+        if (TEST_CHAR(*s, T_OS_ESCAPE_PATH)) {
             if (d >= ee)
                 return JK_FALSE;
-            d = c2x(c, d);
+            d = c2x(*s, d);
         }
         else {
             if (d >= e)
                 return JK_FALSE;
-            *d++ = c;
+            *d++ = *s;
         }
         ++s;
     }
@@ -344,7 +346,7 @@ static int uri_is_web_inf(char *uri)
 {
     char *c = uri;
     while (*c) {
-        *c = tolower(*c);
+        *c = JK_TOLOWER(*c);
         c++;
     }
     if (strstr(uri, "web-inf")) {
@@ -360,17 +362,16 @@ static int uri_is_web_inf(char *uri)
 static void write_error_response(PHTTP_FILTER_CONTEXT pfc, char *status,
                                  char *msg)
 {
-    char crlf[3] = { (char)13, (char)10, '\0' };
     char ctype[30];
-    DWORD len = strlen(msg);
+    size_t len = strlen(msg);
 
-    sprintf(ctype, "Content-Type:text/html%s%s", crlf, crlf);
+    strcpy(ctype, "Content-Type:text/html\r\n\r\n");
 
     /* reject !!! */
     pfc->ServerSupportFunction(pfc,
                                SF_REQ_SEND_RESPONSE_HEADER,
-                               status, (DWORD) crlf, (DWORD) ctype);
-    pfc->WriteClient(pfc, msg, &len, 0);
+                               status, (DWORD) &ctype[0], 0);
+    pfc->WriteClient(pfc, msg, (LPDWORD)&len, 0);
 }
 
 
@@ -395,7 +396,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
     if (s && s->ws_private) {
         isapi_private_data_t *p = s->ws_private;
         if (!p->request_started) {
-            DWORD len_of_status;
+            size_t len_of_status;
             char *status_str;
             char *headers_str;
 
@@ -415,8 +416,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
              * Create response headers string
              */
             if (num_of_headers) {
-                unsigned i;
-                unsigned len_of_headers;
+                size_t i, len_of_headers;
                 for (i = 0, len_of_headers = 0; i < num_of_headers; i++) {
                     len_of_headers += strlen(header_names[i]);
                     len_of_headers += strlen(header_values[i]);
@@ -442,7 +442,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
             if (!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
                                                  HSE_REQ_SEND_RESPONSE_HEADER,
                                                  status_str,
-                                                 (LPDWORD) & len_of_status,
+                                                 (LPDWORD) &len_of_status,
                                                  (LPDWORD) headers_str)) {
                 jk_log(logger, JK_LOG_ERROR,
                        "jk_ws_service_t::start_response, ServerSupportFunction failed\n");
@@ -496,7 +496,7 @@ static int JK_METHOD read(jk_ws_service_t *s,
                 /*
                  * Now try to read from the client ...
                  */
-                if (p->lpEcb->ReadClient(p->lpEcb->ConnID, buf, &l)) {
+                if (p->lpEcb->ReadClient(p->lpEcb->ConnID, buf, (LPDWORD)&l)) {
                     *a += l;
                 }
                 else {
@@ -926,6 +926,8 @@ BOOL WINAPI TerminateExtension(DWORD dwFlags)
 
 BOOL WINAPI TerminateFilter(DWORD dwFlags)
 {
+    UNREFERENCED_PARAMETER(dwFlags);
+
     if (is_inited) {
         is_inited = JK_FALSE;
 
@@ -953,7 +955,18 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
     char fname[_MAX_FNAME];
     char file_name[_MAX_PATH];
 
+    UNREFERENCED_PARAMETER(lpReserved);
+
     switch (ulReason) {
+    case DLL_PROCESS_ATTACH:
+        if (GetModuleFileName(hInst, file_name, sizeof(file_name))) {
+            _splitpath(file_name, drive, dir, fname, NULL);
+            _makepath(ini_file_name, drive, dir, fname, ".properties");
+        }
+        else {
+            fReturn = JK_FALSE;
+        }
+    break;
     case DLL_PROCESS_DETACH:
         __try {
             TerminateFilter(HSE_TERM_MUST_UNLOAD);
@@ -964,13 +977,6 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
 
     default:
         break;
-    }
-    if (GetModuleFileName(hInst, file_name, sizeof(file_name))) {
-        _splitpath(file_name, drive, dir, fname, NULL);
-        _makepath(ini_file_name, drive, dir, fname, ".properties");
-    }
-    else {
-        fReturn = JK_FALSE;
     }
 
     return fReturn;
@@ -1340,7 +1346,6 @@ static int init_ws_service(isapi_private_data_t * private_data,
             s->num_attributes = num_of_vars;
             if (ssl_env_values[4] && ssl_env_values[4][0] == '1') {
                 CERT_CONTEXT_EX cc;
-                DWORD cc_sz = sizeof(cc);
                 cc.cbAllocated = sizeof(huge_buf);
                 cc.CertContext.pbCertEncoded = (BYTE *) huge_buf;
                 cc.CertContext.cbCertEncoded = 0;
@@ -1385,7 +1390,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
         if (cnt) {
             char *headers_buf = jk_pool_strdup(&private_data->p, huge_buf);
             unsigned i;
-            unsigned len_of_http_prefix = strlen("HTTP_");
+            size_t len_of_http_prefix = strlen("HTTP_");
             BOOL need_content_length_header = (s->content_length == 0);
 
             cnt -= 2;           /* For our two special headers */
@@ -1430,7 +1435,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
                         *tmp = '-';
                     }
                     else {
-                        *tmp = tolower(*tmp);
+                        *tmp = JK_TOLOWER(*tmp);
                     }
                     tmp++;
                 }
@@ -1466,7 +1471,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
              * but non-zero length body.
              */
             if (need_content_length_header) {
-                s->headers_names[cnt] = "content-length";
+                s->headers_names[cnt] = "Content-Length";
                 s->headers_values[cnt] = "0";
                 cnt++;
             }
@@ -1488,7 +1493,7 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
                             char *name, char *buf, DWORD bufsz, char *def_val)
 {
     if (!lpEcb->GetServerVariable(lpEcb->ConnID,
-                                  name, buf, (LPDWORD) & bufsz)) {
+                                  name, buf, (LPDWORD) &bufsz)) {
         strcpy(buf, def_val);
         return JK_FALSE;
     }
@@ -1516,7 +1521,7 @@ static int base64_encode_cert_len(int len)
 }
 
 static int base64_encode_cert(char *encoded,
-                              const unsigned char *string, int len)
+                              const char *string, int len)
 {
     int i, c;
     char *p;
@@ -1567,5 +1572,5 @@ static int base64_encode_cert(char *encoded,
         *p++ = *t++;
 
     *p++ = '\0';
-    return p - encoded;
+    return (int)(p - encoded);
 }
