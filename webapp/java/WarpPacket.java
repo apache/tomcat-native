@@ -181,9 +181,8 @@ public class WarpPacket {
         if ((this.pointer+2)>this.size)
             throw new ArrayIndexOutOfBoundsException("No data available");
 
-        int k=0;
-        k=(k<<8)|(this.buffer[this.pointer++]);
-        k=(k<<8)|(this.buffer[this.pointer++]);
+        int k=(this.buffer[this.pointer++])&0xff;
+        k=(k<<8)+((this.buffer[this.pointer++])&0xff);
 
         return(k);
     }
@@ -199,11 +198,10 @@ public class WarpPacket {
         if ((this.pointer+4)>this.size)
             throw new ArrayIndexOutOfBoundsException("No data available");
 
-        int k=0;
-        k=(k<<8)|(this.buffer[this.pointer++]);
-        k=(k<<8)|(this.buffer[this.pointer++]);
-        k=(k<<8)|(this.buffer[this.pointer++]);
-        k=(k<<8)|(this.buffer[this.pointer++]);
+        int k=(this.buffer[this.pointer++])&0xff;
+        k=(k<<8)+((this.buffer[this.pointer++])&0xff);
+        k=(k<<8)+((this.buffer[this.pointer++])&0xff);
+        k=(k<<8)+((this.buffer[this.pointer++])&0xff);
 
         return(k);
     }

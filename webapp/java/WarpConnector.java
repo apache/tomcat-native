@@ -122,6 +122,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     private int acceptCount=10;
     /** The server appBase for hosts created via WARP. */
     private String appBase="webapps";
+    /** The debug level. */
+    private int debug=0;
 
     /* -------------------------------------------------------------------- */
     /* Lifecycle variables */
@@ -333,6 +335,13 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     }
 
     /**
+     * Return the port to which this <code>Connector</code> will bind to.
+     */
+    public void setPort(int port) {
+        this.port=port;
+    }
+
+    /**
      * Set the IP address to which this <code>Connector</code> will bind to.
      *
      * @param address The bind IP address
@@ -381,6 +390,20 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         this.appBase = appBase;
 
         if (Constants.DEBUG) logger.debug("Setting appBase to "+appBase);
+    }
+
+    /**
+     * Return the debug level.
+     */
+    public int getDebug() {
+        return(this.debug);
+    }
+
+    /**
+     * Set the debug level.
+     */
+    public void setDebug(int debug) {
+        this.debug=debug;
     }
 
     /* ==================================================================== */
@@ -459,6 +482,17 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
             id=this.applications.indexOf(context);
         }
         return(id);
+    }
+
+    /**
+     * Return the application for a given ID.
+     */
+    protected Context applicationContext(int id) {
+        try {
+            return((Context)this.applications.elementAt(id));
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return(null);
+        }
     }
 
     /**
