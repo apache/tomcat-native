@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+
+<document title="FAQ about mod_webapp">
+  <description>
+    Foire Aux Questions de mod_webapp
+  </description>
+
+  <section title="Build">
+    <description>
+      FAQ about building mod_webapp
+    </description>
+
+    <screen>
+      <read>
+        ${warp.home}/build.xml:169: Cannot find the Apache Xalan XSLT processor
+      </read>
+      <note>
+        The xalan.jar file is missing in ${ant.home}/lib.
+      </note>
+      <note>
+        Dowload it from xml.apache.org:
+      </note>
+      <type>
+        wget http://xml.apache.org/dist/xalan-j/xalan-j_2_3_1-bin.tar.gz
+      </type><br/><type>
+        gzip -dc xalan-j_2_3_1-bin.tar.gz | tar xvf -
+      </type>
+      <note>
+       2.3.1 was the lastest version available when writting the document.
+       tar must be a gnu tar. And it probably accept the option z.
+      </note>
+      <note>
+        Extract it and copy it in ${ant.home}/lib
+      </note>
+      <type>
+        cp ${xalan.home}/bin/xalan.jar ${ant.home}/lib
+      </type>
+    </screen>
+
+    <screen>
+      <read>
+        java.lang.NoClassDefFoundError: org/w3c/dom/traversal/NodeIterator
+      </read>
+      <note>
+       No idea for the moment ;-(
+      </note>
+    </screen>
+
+  </section>
+
+</document>
