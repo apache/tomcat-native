@@ -217,6 +217,22 @@ struct jk_worker {
         session IDs matching the worker will be forwarded, nothing else */
     int graceful;
     
+    /** Delay in ms at connect time for Tomcat to respond to a PING request 
+     *  at connect time (ensure that Tomcat is not HOLDED)
+     */
+    int connect_timeout;
+    
+    /** When set, indicate delay in ms to wait a reply.
+     *  Warning it will mark as invalid long running request, should be set with
+     *  care but could be usefull to detect an HOLDED Tomcat.
+     */
+    int reply_timeout;
+    
+    /** Delay in ms for Tomcat to respond to a PING request before 
+     *  webserver start sending the request (ensure that Tomcat is not HOLDED)
+     */
+    int prepost_timeout;
+    
     /* Worker priority.
      * Workers with lower priority are allways preffered - regardless of lb_value
      * This is user to represent 'local' workers ( we can call it 'proximity' or 'distance' )

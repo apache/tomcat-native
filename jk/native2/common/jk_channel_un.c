@@ -238,6 +238,22 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
     return rc;
 }
 
+
+/*
+ * Wait input event on socket for timeout ms
+ */
+static int JK_METHOD jk2_channel_un_hasinput(jk_env_t *env,
+                                             jk_channel_t *ch,
+                                             jk_endpoint_t *endpoint,
+										     int timeout)
+
+{
+	/*
+	 * Should implements the select/poll for UN here
+	 */
+	return (JK_TRUE) ;
+}
+
 /** connect to Tomcat (jk_open_socket)
  */
 static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
@@ -490,6 +506,7 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
     ch->send= jk2_channel_un_send; 
     ch->open= jk2_channel_un_open; 
     ch->close= jk2_channel_un_close; 
+    ch->hasinput= jk2_channel_un_hasinput; 
     ch->is_stream=JK_TRUE;
     ch->serverSide=JK_FALSE;
     

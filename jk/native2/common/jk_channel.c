@@ -140,6 +140,15 @@ int JK_METHOD jk2_channel_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *
             rc=ch->send(env, ch, ep, msg);
         return rc;
     }
+    case CH_HASINPUT: {
+        if( ch->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.hasinput()\n");
+        if( ch->serverSide )
+            msg->serverSide=JK_TRUE;
+        if( ch->hasinput != NULL )
+            rc=ch->hasinput(env, ch, ep, 1000);	/* Well we should handle timeout better isn't it ? */
+        return rc;
+    }
     }/* switch */
     return JK_ERR;
 }

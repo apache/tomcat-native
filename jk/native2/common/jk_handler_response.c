@@ -255,6 +255,14 @@ static int JK_METHOD jk2_handler_getChunk(jk_env_t *env, void *target,
     return JK_HANDLER_FATAL;	    
 }
 
+/** PONG Reply handler
+ */
+static int JK_METHOD jk2_handler_getPong(jk_env_t *env, void *target, 
+                                         jk_endpoint_t *ae, jk_msg_t   *msg )
+{
+	return JK_HANDLER_LAST;
+}
+
 static int JK_METHOD jk2_handler_response_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep,
                                                  int code, jk_msg_t *msg, int raw)
 {
@@ -269,6 +277,8 @@ static int JK_METHOD jk2_handler_response_invoke(jk_env_t *env, jk_bean_t *bean,
         return jk2_handler_endResponse(env, target, ep, msg );
     case JK_HANDLE_AJP13_GET_BODY_CHUNK:
         return jk2_handler_getChunk(env, target, ep, msg );
+    case JK_HANDLE_AJP13_PONG_REPLY:
+        return jk2_handler_getPong(env, target, ep, msg );
     }
     return JK_OK;
 }
@@ -292,6 +302,10 @@ static int JK_METHOD jk2_handler_response_init( jk_env_t *env, jk_handler_t *_th
     wEnv->registerHandler( env, wEnv, "handler.response",
                            "getChunk", JK_HANDLE_AJP13_GET_BODY_CHUNK,
                            jk2_handler_getChunk, NULL );
+
+    wEnv->registerHandler( env, wEnv, "handler.response",
+                           "pongResponse", JK_HANDLE_AJP13_PONG_REPLY,
+                           jk2_handler_getPong, NULL );
 
     return JK_OK;
 }

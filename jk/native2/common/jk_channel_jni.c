@@ -144,6 +144,22 @@ static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
     return JK_OK;
 }
 
+/*
+ * Wait input event for timeout ms
+ */
+static int JK_METHOD jk2_channel_jni_hasinput(jk_env_t *env,
+                                              jk_channel_t *ch,
+                                              jk_endpoint_t *endpoint,
+											  int timeout)
+
+{
+	/*
+	 * No delay in such case
+	 */
+	return (JK_TRUE) ;
+}
+
+
 /** Assume the jni-worker or someone else started
  *  tomcat and initialized what is needed.
  */
@@ -637,6 +653,7 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     ch->send= jk2_channel_jni_send; 
     ch->open= jk2_channel_jni_open; 
     ch->close= jk2_channel_jni_close; 
+    ch->hasinput= jk2_channel_jni_hasinput; 
 
     ch->beforeRequest= jk2_channel_jni_beforeRequest;
     ch->afterRequest= jk2_channel_jni_afterRequest;

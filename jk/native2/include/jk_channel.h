@@ -78,6 +78,7 @@ struct jk_channel;
 #define CH_CLOSE 5
 #define CH_READ 6
 #define CH_WRITE 7
+#define CH_HASINPUT 8
     
 typedef struct jk_channel jk_channel_t;
 
@@ -146,6 +147,11 @@ struct jk_channel {
     int (JK_METHOD *recv)(struct jk_env *env, jk_channel_t *_this,
 			  struct jk_endpoint *endpoint,
                           struct jk_msg *msg );
+
+    /** Check if something is available in input on the communication channel
+     */
+    int (JK_METHOD *hasinput)(struct jk_env *env, jk_channel_t *_this,
+			  struct jk_endpoint *endpoint, int timeout);
 
     /** Called before request processing, to initialize resources.
         All following calls will be in the same thread.

@@ -91,6 +91,7 @@ struct jk_channel_apr_private {
     short port;
     int keepalive;
     int timeout;
+    int 
 };
 
 typedef struct jk_channel_apr_private jk_channel_apr_private_t;
@@ -110,6 +111,11 @@ static int JK_METHOD jk2_channel_apr_resolve(jk_env_t *env, char *host,
 static int JK_METHOD jk2_channel_apr_close(jk_env_t *env, jk_channel_t *_this,
                                               jk_endpoint_t *endpoint);
 
+
+static char *jk2_channel_apr_socket_getAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay", "graceful",
+	                                                    "debug", "disabled", NULL };
+static char *jk2_channel_apr_socket_setAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay", "graceful",
+	                                                    "debug", "disabled", NULL };
 
 static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
                                                     jk_bean_t *mbean, 
@@ -135,6 +141,36 @@ static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
     }
     return JK_OK;
 }
+
+static void * JK_METHOD jk2_channel_apr_socket_getAttribute(jk_env_t *env, jk_bean_t *bean,
+                                                            char *name )
+{
+    jk_channel_t *ch=(jk_channel_t *)bean->object;
+    jk_channel_socket_private_t *socketInfo=
+        (jk_channel_socket_private_t *)(ch->_privatePtr);
+    
+    if( strcmp( name, "name" )==0 ) {
+        return  bean->name;
+    } else if( strcmp( "host", name ) == 0 ) {
+        return socketInfo->host;
+    } else if( strcmp( "port", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->port );
+    } else if( strcmp( "nodelay", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->ndelay );
+    } else if( strcmp( "keepalive", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->keepalive );
+    } else if( strcmp( "timeout", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->timeout );
+    } else if( strcmp( "graceful", name ) == 0 ) {
+        return jk2_env_itoa( env, ch->worker->graceful );
+    } else if( strcmp( "debug", name ) == 0 ) {
+        return jk2_env_itoa( env, ch->mbean->debug );
+    } else if( strcmp( "disabled", name ) == 0 ) {
+        return jk2_env_itoa( env, ch->mbean->disabled );
+    }
+    return NULL;
+}
+
 
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
@@ -184,6 +220,22 @@ static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
 
     return rc;
 }
+
+/*
+ * Wait input event on socket for timeout ms
+ */
+static int JK_METHOD jk2_channel_apr_hasinput(jk_env_t *env,
+                                              jk_channel_t *ch,
+                                              jk_endpoint_t *endpoint,
+											  int timeout)
+
+{
+	/*
+	 * Should implements the APR select/poll for socket here
+	 */
+	return (JK_TRUE) ;
+}
+
 
 /** private: resolve the address on init
  */
@@ -497,12 +549,20 @@ int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
     ch->send= jk2_channel_apr_send; 
     ch->open= jk2_channel_apr_open; 
     ch->close= jk2_channel_apr_close; 
+    ch->hasinput= jk2_channel_apr_hasinput; 
+
     ch->is_stream=JK_TRUE;
 
     result->setAttribute= jk2_channel_apr_setProperty; 
+    result->getAttribute= jk2_channel_apr_socket_getAttribute; 
+    result->init= jk2_channel_apr_init; 
+    result->getAttributeInfo=jk2_channel_apr_socket_getAttributeInfo;
+    result->multiValueInfo=NULL;
+    result->setAttributeInfo=jk2_channel_apr_socket_setAttributeInfo;
+
     ch->mbean=result;
     result->object= ch;
-    result->init= jk2_channel_apr_init; 
+
 
     ch->workerEnv=env->getByName( env, "workerEnv" );
     ch->workerEnv->addChannel( env, ch->workerEnv, ch );

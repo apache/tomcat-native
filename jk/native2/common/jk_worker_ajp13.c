@@ -84,12 +84,14 @@
 /* -------------------- Impl -------------------- */
 static char *jk2_worker_ajp13_getAttributeInfo[]={ "lb_factor", "lb_value", "debug", "channel", "level",
                                                    "route", "routeRedirect", "errorState", "graceful", "groups", "disabled", 
-                                                   "epCount", "errorTime", NULL };
+                                                   "epCount", "errorTime", "connectTimeout", "replyTimeout",
+                                                   "prepostTimeout", NULL };
 
 static char *jk2_worker_ajp13_multiValueInfo[]={"group", NULL };
 
 static char *jk2_worker_ajp13_setAttributeInfo[]={"debug", "channel", "route", "routeRedirect","secretkey", "group", "graceful",
-                                                  "disabled", "lb_factor", "level", NULL };
+                                                  "disabled", "lb_factor", "level", "connectTimeout", "replyTimeout",
+                                                   "prepostTimeout", NULL };
 
 
 static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
@@ -121,6 +123,12 @@ static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *
         return jk2_env_itoa( env, worker->in_error_state );
     } else if (strcmp( name, "graceful" )==0 ) {
         return jk2_env_itoa( env, worker->graceful );
+    } else if (strcmp( name, "connectTimeout" )==0 ) {
+        return jk2_env_itoa( env, worket->connect_timeout);
+    } else if (strcmp( name, "replyTimeout" )==0 ) {
+        return jk2_env_itoa( env, worker->reply_timeout);
+    } else if (strcmp( name, "prepostTimeout" )==0 ) {
+        return jk2_env_itoa( env, worker->prepost_timeout);
     } else if (strcmp( name, "disabled" )==0 ) {
         return jk2_env_itoa( env, bean->disabled );
     } else if (strcmp( name, "epCount" )==0 ) {
@@ -152,6 +160,12 @@ jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         ajp13->routeRedirect=value;
     } else if( strcmp( name, "graceful" )==0 ) {
         ajp13->graceful=atoi( value );
+    } else if( strcmp( name, "connectTimeout" )==0 ) {
+        ajp13->connect_timeout=atoi( value );
+    } else if( strcmp( name, "replyTimeout" )==0 ) {
+        ajp13->reply_timeout=atoi( value );
+    } else if( strcmp( name, "prepostTimeout" )==0 ) {
+        ajp13->prepost_timeout=atoi( value );
     } else if( strcmp( name, "disabled" )==0 ) {
         mbean->disabled=atoi( value );
     } else if( strcmp( name, "group" )==0 ) {
@@ -171,14 +185,21 @@ jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
     return JK_OK;
 }
 
+/* Webserver ask container to take control (logon phase) */
 #define JK_AJP13_PING               (unsigned char)8
+
+/* Webserver check if container is alive, since container should respond by cpong */
+#define JK_AJP13_CPING              (unsigned char)10
+
+/* Container response to cping request */
+#define JK_AJP13_CPONG				(unsigned char)9
 
 /* 
  * Build the ping cmd. Tomcat will get control and will be able 
  * to send any command.
  *
  * +-----------------------+
- * | PING CMD (1 byte) |
+ * | PING CMD (1 byte)     |
  * +-----------------------+
  *
  * XXX Add optional Key/Value set .
@@ -193,6 +214,32 @@ int jk2_serialize_ping(jk_env_t *env, jk_msg_t *msg,
     msg->reset(env, msg);
 
     rc= msg->appendByte( env, msg, JK_AJP13_PING);
+    if (rc!=JK_OK )
+        return JK_ERR;
+
+    return JK_OK;
+}
+
+
+/* 
+ * Build the cping cmd. Tomcat should respond by a cpong.
+ *
+ * +-----------------------+
+ * | CPING CMD (1 byte)    |
+ * +-----------------------+
+ *
+ * XXX Add optional Key/Value set .
+ *  
+ */
+int jk2_serialize_cping(jk_env_t *env, jk_msg_t *msg,
+                       jk_endpoint_t *ae)
+{
+    int rc;
+    
+    /* To be on the safe side */
+    msg->reset(env, msg);
+
+    rc= msg->appendByte( env, msg, JK_AJP13_CPING);
     if (rc!=JK_OK )
         return JK_ERR;
 
@@ -223,6 +270,50 @@ static void jk2_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
        statistics */
     /* ae->pool->reset( env, ae->pool ); */
     /*     ae->pool->close( env, ae->pool ); */
+}
+
+/** Check if a channel is alive, send a cping and wait for a cpong
+    during timeoutms
+ */
+static int jk2_check_alive(jk_env_t *env, jk_endpoint_t *ae, int timeout) {
+
+    jk_channel_t *channel=ae->worker->channel;
+    jk_msg_t * msg=ae->reply;
+;
+
+	jk2_serialize_cping( env, msg, ae );
+	err = ae->worker->channel->send( env, ae->worker->channel, ae, msg );
+
+	if (err != JK_OK) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp13.checkalive() can't send cping request to %s\n", 
+                      ae->worker->mbean->name);
+
+		return JK_ERR;
+	}
+	
+	if (ae->worker->channel->hasinput(env, ae->worker->channel, ae, 
+	                                  timeout) != JK_TRUE) {
+	                                  
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp13.checkalive() can't get cpong reply from %s in %d ms\n", 
+                      ae->worker->mbean->name, timeout);
+
+		return JK_ERR;
+	}
+	
+	err = ae->worker->channel->recv( env, ae->worker->channel, ae, msg );
+
+	if (err != JK_OK) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp13.checkalive() can't read cpong reply from %s\n", 
+                      ae->worker->mbean->name);
+
+		return JK_ERR;
+	}
+	
+	
+	return JK_OK;
 }
 
 /** Connect a channel, implementing the logging protocol if ajp13
@@ -262,6 +353,11 @@ static int jk2_worker_ajp13_connect(jk_env_t *env, jk_endpoint_t *ae) {
     /** XXX use a 'connected' field */
     if( ae->sd == -1 ) ae->sd=0;
     
+	if (ae->worker->connect_timeout != 0 )
+		if (jk2_check_alive(env, ae, ae->worker->connect_timeout) != JK_OK)
+    		return JK_ERR;
+	}
+
     /* Check if we must execute a logon after the physical connect */
     if (ae->worker->secret == NULL)
         return JK_OK;
@@ -269,15 +365,15 @@ static int jk2_worker_ajp13_connect(jk_env_t *env, jk_endpoint_t *ae) {
     /* Do the logon process */
     env->l->jkLog(env, env->l, JK_LOG_INFO, "ajp13.connect() logging in\n" );
 
-    /* use the reply buffer - it's a new channel, it is cetainly not
+    /* use the reply buffer - it's a new channel, it is certainly not
      in use. The request and post buffers are probably in use if this
     is a reconnect */
     msg=ae->reply;
 
-    jk2_serialize_ping( env, msg, ae );
-    
-    err = ae->worker->channel->send( env, ae->worker->channel, ae, msg );
-
+	/* send a ping message to told container to take control (logon phase) */
+	jk2_serialize_ping( env, msg, ae );
+	err = ae->worker->channel->send( env, ae->worker->channel, ae, msg );
+	
     /* Move to 'slave' mode, listening to messages */
     err=ae->worker->workerEnv->processCallbacks( env, ae->worker->workerEnv,
                                                  ae, NULL);
@@ -485,6 +581,11 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
     s->left_bytes_to_send = s->content_length;
     s->content_read=0;
 
+	if (w->prepost_timeout != 0) {
+		if (jk2_check_alive(env, ae, ae->worker->prepost_timeout) != JK_OK)
+    		return JK_ERR;
+	}
+	
     /* 
      * We get here initial request (in reqmsg)
      */

@@ -106,6 +106,9 @@ struct jk_ws_service;
 /*  Marks the end of response. */
 #define JK_HANDLE_AJP13_END_RESPONSE       5
 
+/* Get a PONG reply from the servlet container. */
+#define JK_HANDLE_AJP13_PONG_REPLY       9
+
 /* Second Login Phase (servlet engine -> web server), md5 seed is received */
 #define JK_HANDLE_LOGON_SEED	0x11
 

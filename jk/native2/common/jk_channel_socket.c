@@ -238,6 +238,39 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
     return rc;
 }
 
+/*
+ * Wait input event on socket for timeout ms
+ */
+static int JK_METHOD jk2_channel_socket_hasinput(jk_env_t *env,
+                                                 jk_channel_t *ch,
+                                                 jk_endpoint_t *endpoint,
+											     int timeout)
+{
+	fd_set  rset; 
+	fd_set  eset; 
+	struct  timeval tv;
+	int		rc;
+	
+	FD_ZERO(&rset);
+	FD_ZERO(&eset);
+	FD_SET(endpoint->sd, &rset);
+	FD_SET(endpoint->sd, &eset);
+
+	tv.tv_sec  = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
+
+	rc = select(ae->sd + 1, &rset, NULL, &eset, &tv);
+      
+    if ((rc < 1) || (FD_ISSET(endpoint->sd, &eset)))
+	{
+		env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk2_channel_socket_isinput: "
+						"error during select [%d]\n", rc);
+		return JK_FALSE;
+	}
+	
+	return ((FD_ISSET(endpoint->sd, &rset)) ? JK_TRUE : JK_FALSE) ;
+}
+
 /** private: resolve the address on init
  */
 static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, short port,
@@ -704,13 +737,13 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
     ch->send= jk2_channel_socket_send; 
     ch->open= jk2_channel_socket_open; 
     ch->close= jk2_channel_socket_close; 
+    ch->hasinput = jk2_channel_socket_hasinput; 
 
     ch->is_stream=JK_TRUE;
 
     result->setAttribute= jk2_channel_socket_setAttribute; 
     result->getAttribute= jk2_channel_socket_getAttribute; 
     result->init= jk2_channel_socket_init; 
-
     result->getAttributeInfo=jk2_channel_socket_getAttributeInfo;
     result->multiValueInfo=NULL;
     result->setAttributeInfo=jk2_channel_socket_setAttributeInfo;

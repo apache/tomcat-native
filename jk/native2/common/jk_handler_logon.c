@@ -179,7 +179,7 @@ static int JK_METHOD jk2_handler_logok(jk_env_t *env, void *target,
     
     if (nego == 0xFFFFFFFF) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "handler.log_ok()  can't get negociated data\n");
+                      "handler.logok()  can't get negociated data\n");
         return JK_HANDLER_FATAL;
     }
     
@@ -187,7 +187,7 @@ static int JK_METHOD jk2_handler_logok(jk_env_t *env, void *target,
     
     if (! sname) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "handler.logon() Error getting servlet engine name\n");
+                      "handler.logok() Error getting servlet engine name\n");
         return JK_HANDLER_FATAL;
     }
     

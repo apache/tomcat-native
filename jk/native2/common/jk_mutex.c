@@ -83,17 +83,17 @@ int JK_METHOD jk2_mutex_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep
     switch( code ) {
     case MUTEX_LOCK: {
         if( mutex->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "mutex.open()\n");
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "mutex.lock()\n");
         return mutex->lock(env, mutex);
     }
     case MUTEX_TRYLOCK: {
         if( mutex->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "mutex.close()\n");
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "mutex.trylock()\n");
         return mutex->tryLock(env, mutex);
     }
     case MUTEX_UNLOCK: {
         if( mutex->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "mutex.recv()\n");
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "mutex.unlock()\n");
         return mutex->unLock(env, mutex);
     }
     }/* switch */
