@@ -71,7 +71,8 @@ public class ChannelJni extends JniHandler implements JkChannel {
                 log.debug("No send() prior to receive(), no data buffer");
             // No sent() was done prior to receive.
             msg.reset();
-            return 0;
+            msg.end();
+            sentResponse = msg;
         }
         
         sentResponse.processHeader();
