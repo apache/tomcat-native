@@ -502,7 +502,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
             /*              ep->reply->pos, ep->reply->len , ep->reply->buf ); */
             ep->reply->end( env, ep->reply );
 
-            (*jniEnv)->SetByteArrayRegion( jniEnv, data, 0, ep->post->len + 4 , (jbyte *)ep->post->buf );
+            (*jniEnv)->SetByteArrayRegion( jniEnv, data, 0, ep->reply->len, (jbyte *)ep->reply->buf );
             rc=JK_OK;
         }
     } 
