@@ -86,4 +86,14 @@ public final class Constants {
     public static final int MAX_NOTES = 32;
 
 
+    // Request states
+    public static final int STAGE_NEW = 0;
+    public static final int STAGE_PARSE = 1;
+    public static final int STAGE_PREPARE = 2;
+    public static final int STAGE_SERVICE = 3;
+    public static final int STAGE_ENDINPUT = 4;
+    public static final int STAGE_ENDOUTPUT = 5;
+    public static final int STAGE_ENDED = 6;
+
+
 }

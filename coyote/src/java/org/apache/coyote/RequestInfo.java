@@ -96,6 +96,7 @@ public class RequestInfo  {
     // ----------------------------------------------------- Instance Variables
     Request req;
     Response res;
+    int stage = Constants.STAGE_NEW;
 
     // -------------------- Information about the current request  -----------
     // This is usefull for long-running requests only
@@ -163,6 +164,14 @@ public class RequestInfo  {
             maxTime=time;
             maxRequestUri=req.requestURI().toString();
         }
+    }
+
+    public int getStage() {
+        return stage;
+    }
+
+    public void setStage(int stage) {
+        this.stage = stage;
     }
 
     public long getBytesSent() {
