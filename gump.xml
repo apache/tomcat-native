@@ -44,5 +44,25 @@
     <nag to="tomcat-dev@jakarta.apache.org"
          from="Craig McClanahan &lt;craigmcc@apache.org&gt;"/>
   </project>
+
+  <project name="jakarta-tomcat-jk">
+    <package>org.apache.jk</package>
+
+    <ant basedir="jk">
+      <property name="jsse.home" reference="home" project="jsse"/>
+    </ant>
+
+    <depend project="jakarta-ant"/>
+    <depend project="commons-logging"/>
+    <depend project="jakarta-tomcat-util"/>
+    <depend project="jakarta-tomcat-coyote"/>
+
+    <home nested="jk/build"/>
+    <jar name="lib/jkant.jar"/>
+    <jar name="lib/jkconfig.jar"/>
+    <jar name="lib/tomcat-jk2.jar"/>
+    <jar name="lib/tomcat-jni.jar"/>
+  </project>
+
   
 </module>
