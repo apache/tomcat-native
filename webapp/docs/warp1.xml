@@ -211,7 +211,7 @@
     <img src="images/japan.gif"/>
 
     <p>
-      For semplicity's sake, this is how one of the three above mentioned
+      For simplicity's sake, this is how one of the three above mentioned
       variable-length packet payload fields should be transfered (given that
       the three characters F, o and X have the same value in ISO-8859-1 and
       US-ASCII, and their hexadecimal value is respectively 0x46, 0x6f and
