@@ -137,6 +137,7 @@ public class OutputBuffer extends Writer
 
     private boolean suspended = false;
 
+    private boolean knownResponseSize = false;
 
     // ----------------------------------------------------------- Constructors
 
@@ -225,11 +226,17 @@ public class OutputBuffer extends Writer
         gotEnc = false;
         enc = null;
 
+        knownResponseSize = false;
+
     }
 
 
     public void close()
         throws IOException {
+
+        if (!coyoteResponse.isCommitted()) {
+            knownResponseSize = true;
+        }
 
         flush();
         closed = true;
@@ -273,6 +280,9 @@ public class OutputBuffer extends Writer
             return;
         if (coyoteResponse == null)
             return;
+
+        if (knownResponseSize)
+            coyoteResponse.setContentLength(cnt);
 
         // If we really have something to write
         if (cnt > 0) {
