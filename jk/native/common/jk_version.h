@@ -89,8 +89,7 @@
 #define JK_EXPOSED_VERSION JK_EXPOSED_VERSION_INT "-beta-" JK_BETASTRING
 #endif
 
-#define JK_MAKEVERSION(major, minor, fix, beta) \
- (((major) << 24) + ((minor) << 16) + ((fix) << 8) + (beta))
+#define JK_MAKEVERSION(major, minor, fix, beta) (((major) << 24) + ((minor) << 16) + ((fix) << 8) + (beta))
 
 #define JK_VERSION JK_MAKEVERSION(JK_VERMAJOR, JK_VERMINOR, JK_VERFIX, JK_VERBETA)
 
