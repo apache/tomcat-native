@@ -103,6 +103,12 @@
 #define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\1.0")
 #define EXTENSION_URI_TAG       ("extension_uri")
 
+#define URI_SELECT_TAG          ("uri_select")
+
+#define URI_SELECT_PARSED_VERB      ("parsed")
+#define URI_SELECT_UNPARSED_VERB    ("unparsed")
+#define URI_SELECT_ESCAPED_VERB     ("escaped")
+
 #define BAD_REQUEST		-1
 #define BAD_PATH		-2
 #define MAX_SERVERNAME			128
@@ -149,6 +155,12 @@ static char log_file[MAX_PATH * 2];
 static int  log_level = JK_LOG_EMERG_LEVEL;
 static char worker_file[MAX_PATH * 2];
 static char worker_mount_file[MAX_PATH * 2];
+
+#define URI_SELECT_OPT_PARSED       0
+#define URI_SELECT_OPT_UNPARSED     1
+#define URI_SELECT_OPT_ESCAPED      2
+
+static int uri_select_option = URI_SELECT_OPT_PARSED;
 
 static jk_worker_env_t worker_env;
 
@@ -307,6 +319,63 @@ static void getparents(char *name)
             l = 0;
         name[l] = '\0';
     }
+}
+
+/* Apache code to escape a URL */
+
+#define T_OS_ESCAPE_PATH	(4)
+
+static const unsigned char test_char_table[256] = {
+    0,14,14,14,14,14,14,14,14,14,15,14,14,14,14,14,14,14,14,14,
+    14,14,14,14,14,14,14,14,14,14,14,14,14,0,7,6,1,6,1,1,
+    9,9,1,0,8,0,0,10,0,0,0,0,0,0,0,0,0,0,8,15,
+    15,8,15,15,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,15,15,15,7,0,7,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,15,7,15,1,14,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6 
+};
+
+#define TEST_CHAR(c, f)	(test_char_table[(unsigned)(c)] & (f))
+
+static const char c2x_table[] = "0123456789abcdef";
+
+static unsigned char *c2x(unsigned what, unsigned char *where)
+{
+    *where++ = '%';
+    *where++ = c2x_table[what >> 4];
+    *where++ = c2x_table[what & 0xf];
+    return where;
+}
+
+static int escape_url(const char *path, char *dest, int destsize)
+{
+    const unsigned char *s = (const unsigned char *)path;
+    unsigned char *d = (unsigned char *)dest;
+    unsigned char *e = dest + destsize - 1;
+    unsigned char *ee = dest + destsize - 3;
+    unsigned c;
+
+    while ((c = *s)) {
+	if (TEST_CHAR(c, T_OS_ESCAPE_PATH)) {
+            if (d >= ee )
+                return JK_FALSE;
+	    d = c2x(c, d);
+	}
+	else {
+            if (d >= e )
+                return JK_FALSE;
+	    *d++ = c;
+	}
+	++s;
+    }
+    *d = '\0';
+    return JK_TRUE;
 }
 
 static int uri_is_web_inf(char *uri)
@@ -646,13 +715,40 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             }
 
             if (worker) {
+                char *forwardURI;
+
                 /* This is a servlet, should redirect ... */
                 jk_log(logger, JK_LOG_DEBUG, 
                        "HttpFilterProc [%s] is a servlet url - should redirect to %s\n", 
                        uri, worker);
-
                 
-                if(!p->AddHeader(pfc, URI_HEADER_NAME, uri) || 
+                /* get URI we should forward */
+                if (uri_select_option == URI_SELECT_OPT_UNPARSED) {
+                    /* get original unparsed URI */
+                    p->GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz);
+                    /* restore terminator for uri portion */
+                    if (query)
+                        *(query - 1) = '\0';
+                    jk_log(logger, JK_LOG_DEBUG, 
+                           "HttpFilterProc fowarding original URI [%s]\n",uri);
+                    forwardURI = uri;
+                } else if (uri_select_option == URI_SELECT_OPT_ESCAPED) {
+                    if (!escape_url(uri,snuri,INTERNET_MAX_URL_LENGTH)) {
+                        jk_log(logger, JK_LOG_ERROR, 
+                               "HttpFilterProc [%s] re-encoding request exceeds maximum buffer size.\n", 
+                               uri);
+                        write_error_response(pfc,"400 Bad Request",
+                                "<HTML><BODY><H1>Request contains too many characters that need to be encoded.</H1></BODY></HTML>");
+                        return SF_STATUS_REQ_FINISHED;
+                    }
+                    jk_log(logger, JK_LOG_DEBUG, 
+                           "HttpFilterProc fowarding escaped URI [%s]\n",snuri);
+                    forwardURI = snuri;
+                } else {
+                    forwardURI = uri;
+                }
+
+                if(!p->AddHeader(pfc, URI_HEADER_NAME, forwardURI) || 
                    ( (query != NULL && strlen(query) > 0)
                            ? !p->AddHeader(pfc, QUERY_HEADER_NAME, query) : FALSE ) || 
                    !p->AddHeader(pfc, WORKER_HEADER_NAME, worker) ||
@@ -873,6 +969,7 @@ static int init_jk(char *serverName)
     jk_log(logger, JK_LOG_DEBUG, "Using extension uri %s.\n", extension_uri);
     jk_log(logger, JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
     jk_log(logger, JK_LOG_DEBUG, "Using worker mount file %s.\n", worker_mount_file);
+    jk_log(logger, JK_LOG_DEBUG, "Using uri select %d.\n", uri_select_option);
 
     if (map_alloc(&map)) {
         if (map_read_properties(map, worker_mount_file)) {
@@ -941,6 +1038,23 @@ static int initialize_extension(void)
     return is_inited;
 }
 
+int parse_uri_select(const char *uri_select)
+{
+    if(0 == strcasecmp(uri_select, URI_SELECT_PARSED_VERB)) {
+        return URI_SELECT_OPT_PARSED;
+    }
+
+    if(0 == strcasecmp(uri_select, URI_SELECT_UNPARSED_VERB)) {
+        return URI_SELECT_OPT_UNPARSED;
+    }
+
+    if(0 == strcasecmp(uri_select, URI_SELECT_ESCAPED_VERB)) {
+        return URI_SELECT_OPT_ESCAPED;
+    }
+
+    return -1;
+}
+
 static int read_registry_init_data(void)
 {
     char tmpbuf[INTERNET_MAX_URL_LENGTH];
@@ -986,63 +1100,84 @@ static int read_registry_init_data(void)
         } else {
             ok = JK_FALSE;
         }
+        tmp = map_get_string(map, URI_SELECT_TAG, NULL);
+        if (tmp) {
+            int opt = parse_uri_select(tmp);
+            if (opt >= 0) {
+                uri_select_option = opt;
+            } else {
+                ok = JK_FALSE;
+            }
+        }
     
     } else {
-		rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-						  REGISTRY_LOCATION,
-						  (DWORD)0,         
-						  KEY_READ,         
-						  &hkey);            
-		if(ERROR_SUCCESS != rc) {
-			return JK_FALSE;
-		} 
+        rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+                          REGISTRY_LOCATION,
+                          (DWORD)0,
+                          KEY_READ,
+                          &hkey);
+        if(ERROR_SUCCESS != rc) {
+            return JK_FALSE;
+        } 
 
-		if(get_registry_config_parameter(hkey,
-										 JK_LOG_FILE_TAG, 
-										 tmpbuf,
-										 sizeof(log_file))) {
-			strcpy(log_file, tmpbuf);
-		} else {
-			ok = JK_FALSE;
-		}
+        if(get_registry_config_parameter(hkey,
+                                         JK_LOG_FILE_TAG, 
+                                         tmpbuf,
+                                         sizeof(log_file))) {
+            strcpy(log_file, tmpbuf);
+        } else {
+            ok = JK_FALSE;
+        }
     
-		if(get_registry_config_parameter(hkey,
-										 JK_LOG_LEVEL_TAG, 
-										 tmpbuf,
-										 sizeof(tmpbuf))) {
-			log_level = jk_parse_log_level(tmpbuf);
-		} else {
-			ok = JK_FALSE;
-		}
+        if(get_registry_config_parameter(hkey,
+                                         JK_LOG_LEVEL_TAG,
+                                         tmpbuf,
+                                         sizeof(tmpbuf))) {
+            log_level = jk_parse_log_level(tmpbuf);
+        } else {
+            ok = JK_FALSE;
+        }
 
-		if(get_registry_config_parameter(hkey,
-										 EXTENSION_URI_TAG, 
-										 tmpbuf,
-										 sizeof(extension_uri))) {
-			strcpy(extension_uri, tmpbuf);
-		} else {
-			ok = JK_FALSE;
-		}
+        if(get_registry_config_parameter(hkey,
+                                         EXTENSION_URI_TAG,
+                                         tmpbuf,
+                                         sizeof(extension_uri))) {
+            strcpy(extension_uri, tmpbuf);
+        } else {
+            ok = JK_FALSE;
+        }
 
-		if(get_registry_config_parameter(hkey,
-										 JK_WORKER_FILE_TAG, 
-										 tmpbuf,
-										 sizeof(worker_file))) {
-			strcpy(worker_file, tmpbuf);
-		} else {
-			ok = JK_FALSE;
-		}
+        if(get_registry_config_parameter(hkey,
+                                         JK_WORKER_FILE_TAG,
+                                         tmpbuf,
+                                         sizeof(worker_file))) {
+            strcpy(worker_file, tmpbuf);
+        } else {
+            ok = JK_FALSE;
+        }
 
-		if(get_registry_config_parameter(hkey,
-										 JK_MOUNT_FILE_TAG, 
-										 tmpbuf,
-										 sizeof(worker_mount_file))) {
-			strcpy(worker_mount_file, tmpbuf);
-		} else {
-			ok = JK_FALSE;
-		}
+        if(get_registry_config_parameter(hkey,
+                                         JK_MOUNT_FILE_TAG,
+                                         tmpbuf,
+                                         sizeof(worker_mount_file))) {
+            strcpy(worker_mount_file, tmpbuf);
+        } else {
+            ok = JK_FALSE;
+        }
 
-		RegCloseKey(hkey);
+        if(get_registry_config_parameter(hkey,
+                                         URI_SELECT_TAG, 
+                                         tmpbuf,
+                                         sizeof(tmpbuf))) {
+            int opt = parse_uri_select(tmpbuf);
+            if (opt >= 0) {
+                uri_select_option = opt;
+            } else {
+                ok = JK_FALSE;
+            }
+        }
+
+        RegCloseKey(hkey);
     }    
     return ok;
 } 
