@@ -113,6 +113,7 @@
             <pathelement location="../util/build/classes"/>
             <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
             <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
+            <pathelement location="${catalina.home}/common/lib/servlet-api.jar"/>
             <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
             <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
             <pathelement location="${tomcat-util.jar}" />
@@ -293,7 +294,7 @@
 	<mkdir dir="${jk.build}/javadoc"/>
 	<javadoc packagenames="org.apache.ajp,org.apache.ajp.tomcat4"
                  sourcepath="java"
-                 classpath="${tomcat-util.jar}:${tomcat40.home}/server/lib/catalina.jar:${tomcat40.home}/common/lib/servlet.jar"
+                 classpath="${tomcat-util.jar}:${tomcat40.home}/server/lib/catalina.jar:${tomcat40.home}/common/lib/servlet.jar:${tomcat40.home}/common/lib/servlet-api.jar"
                  destdir="${jk.build}/javadoc"
                  author="true"
                  version="true"
