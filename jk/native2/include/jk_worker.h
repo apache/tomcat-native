@@ -87,6 +87,13 @@ struct jk_msg;
 struct jk_map;
 typedef struct jk_worker jk_worker_t;
 
+/* Number of lb levels/priorities. Workers are grouped by the level,
+   lower levels will allways be prefered. If all workers in a level are
+   in error state, we move to the next leve.
+*/
+#define JK_LB_LEVELS 4
+#define JK_LB_MAX_WORKERS 256
+
 /*
  * The worker 'class', which represents something to which the web server
  * can delegate requests. 
@@ -181,8 +188,8 @@ struct jk_worker {
      * The information can be accessed by other components -
      * for example to report status, etc.
      */
-    double  lb_factor;
-    double  lb_value;
+    int  lb_factor;
+    int  lb_value;
 
     /* Time when the last error occured on this worker */
     time_t  error_time;
@@ -191,19 +198,14 @@ struct jk_worker {
      *  ( number of requests or time ), if no other worker is active
      *  or when the configuration changes.
      */
-    int     in_error_state;
+    int in_error_state;
     
     /* Worker priority.
      * Workers with lower priority are allways preffered - regardless of lb_value
      * This is user to represent 'local' workers ( we can call it 'proximity' or 'distance' )
      */
-    int priority;
+    int level;
     
-    /* I have no idea what it means... */
-    int     in_recovering;
-    /* I have no idea why we need this */
-    int     retry_count;
-
     /* -------------------- Information for reconfiguration -------------------- */
     
     /* Only one thread can update the config
@@ -215,15 +217,15 @@ struct jk_worker {
 
     /* -------------------- Information specific to the lb worker -------------------- */
 
-    /** For load balancing workers
+    /** Load balanced workers. Maps name->worker, used at config time.
+     *  When the worker is initialized or refreshed it'll set the runtime
+     *  tables.
      */
     struct jk_map *lbWorkerMap;
-    
-    /* Cache for fast access. Do we need it ? XXX Move to a private structure */
-    jk_worker_t **lb_workers;
-    int lb_workers_size;
-    int num_of_workers;
 
+    int workerCnt[JK_LB_LEVELS];
+    jk_worker_t *workerTables[JK_LB_LEVELS][JK_LB_MAX_WORKERS];
+    
     /* -------------------- Methods supported by all workers -------------------- */
     /*
      * Do whatever initialization needs to be done to start this worker up.
