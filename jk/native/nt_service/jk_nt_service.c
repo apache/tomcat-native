@@ -157,7 +157,7 @@ static int get_registry_config_parameter(HKEY hkey,
 static int start_tomcat(const char *name, 
                         HANDLE *hTomcat);
 static void stop_tomcat(char *name,
-                        short port, 
+                        int port, 
                         const char *protocol,
                         char *secret,
                         HANDLE hTomcat);
@@ -781,7 +781,7 @@ static void start_jk_service(char *name)
                          * Stop order arrived 
                          */ 
                         ResetEvent(hServerStopEvent);
-                        stop_tomcat(name, (short)shutdown_port, shutdown_protocol,
+                        stop_tomcat(name, shutdown_port, shutdown_protocol,
                                     shutdown_secret, hTomcat);
                         break;
                     case (WAIT_OBJECT_0 + 1):
@@ -799,7 +799,7 @@ static void start_jk_service(char *name)
                          * some error... 
                          * close the servlet container and exit 
                          */ 
-                        stop_tomcat(name, (short)shutdown_port, shutdown_protocol,
+                        stop_tomcat(name, shutdown_port, shutdown_protocol,
                                     shutdown_secret, hTomcat);
                     }
                     CloseHandle(hServerStopEvent);
@@ -897,7 +897,7 @@ char *GetLastErrorText( char *lpszBuf, DWORD dwSize )
 }
 
 static void stop_tomcat(char *name,
-                        short port, 
+                        int port, 
                         const char *protocol,
                         char *secret,
                         HANDLE hTomcat)
