@@ -155,6 +155,9 @@ public class JkCoyoteHandler extends JkHandler implements
     }
 
     public void destroy() {
+        if( started ) return;
+
+        started = false;
         jkMain.stop();
     }
 
