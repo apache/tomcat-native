@@ -208,30 +208,30 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
         char *name=s->headers_in->nameAt(env, s->headers_in, i);
 
         if (jk2_requtil_getHeaderId(env, name, &sc)) {
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "handle.request() Add headerId %s %d\n", name, sc);
+            /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
+            /*                "serialize.request() Add headerId %s %d\n", name, sc); */
             if (msg->appendInt(env, msg, sc)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "handle.request() Error serializing header id\n");
+                              "serialize.request() Error serializing header id\n");
                 return JK_FALSE;
             }
         } else {
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "handle.request() Add headerName %s\n", name);
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "serialize.request() Add headerName %s\n", name);
             if (msg->appendString(env, msg, name)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "handle.request() Error serializing header name\n");
+                              "serialize.request() Error serializing header name\n");
                 return JK_FALSE;
             }
         }
         
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                      "handle.request() Add headerValue %s\n",
-                      s->headers_in->valueAt( env, s->headers_in, i));
+        /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
+        /*                "serialize.request() Add headerValue %s\n", */
+        /*                 s->headers_in->valueAt( env, s->headers_in, i)); */
         if (msg->appendString(env, msg,
                               s->headers_in->valueAt( env, s->headers_in, i))) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "handle.request() Error serializing header value\n");
+                          "serialize.request() Error serializing header value\n");
             return JK_FALSE;
         }
     }
@@ -240,7 +240,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
         if (msg->appendByte(env, msg, SC_A_REMOTE_USER) ||
             msg->appendString(env, msg, s->remote_user)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "handle.request() Error serializing user name\n");
+                          "serialize.request() Error serializing user name\n");
             return JK_FALSE;
         }
     }
