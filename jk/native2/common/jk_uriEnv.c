@@ -226,22 +226,26 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
             uriEnv->aliases->put(env, uriEnv->aliases, val, uriEnv, NULL);
         }
     }
+    else if (strcmp("path", name) == 0) {
+        /** This is called from Location in jk2, it has the same effect
+         *    as using the constructor.
+         */
+        if (val == NULL)
+            uriEnv->uri = NULL;
+        else
+            uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, val);
+    }
     else if (strcmp("inheritGlobals", name) == 0) {
         uriEnv->inherit_globals = atoi(val);
     }
     else {
         /* OLD - DEPRECATED */
-        int d = 1;
         if (strcmp("worker", name) == 0) {
-            d = 1;
             uriEnv->workerName = val;
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                    "uriEnv.setAttribute() the %s directive is deprecated. Use 'group' instead.\n",
+                    name);
         } 
-        else if (strcmp("path", name) == 0) {
-            if (val == NULL)
-                uriEnv->uri = NULL;
-            else
-                uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, val);
-        }
         else if (strcmp("uri", name) == 0) {
             jk2_uriEnv_parseName(env, uriEnv, val);
         } 
@@ -254,13 +258,6 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
             else
                 uriEnv->virtual = uriEnv->pool->pstrdup(env, uriEnv->pool, val);
         }
-        else
-            d = 0;
-        if (d)
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                    "uriEnv.setAttribute() the %s directive is depriciated\n",
-                    name);
-        
     }
     return JK_OK;
 }
