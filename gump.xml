@@ -32,12 +32,15 @@
   <project name="jakarta-tomcat-coyote">
     <package>org.apache.coyote</package>
     <ant basedir="coyote">
+      <property name="jmx.home" reference="home" project="jmx"/>
+      <property name="jmx.jar" project="jmx" path="jmx/lib/jmxri.jar" />
       <property name="catalina.home" reference="home" 
         project="tomcat-catalina"/> 
     </ant>
 
     <depend project="jakarta-ant"/>
     <depend project="xml-xerces"/>
+    <depend project="jmx"/>
     <depend project="jakarta-tomcat-util"/>
     <depend project="jakarta-servletapi-4"/>
     <depend project="tomcat-catalina"/>
@@ -53,12 +56,15 @@
   <project name="jakarta-tomcat-coyote_tc5">
     <package>org.apache.coyote</package>
     <ant basedir="coyote">
+      <property name="jmx.home" reference="home" project="jmx"/>
+      <property name="jmx.jar" project="jmx" path="jmx/lib/jmxri.jar" />
       <property name="catalina.home" reference="home" 
         project="jakarta-tomcat-catalina"/> 
       <property name="tomcat33.home" value=""/>
     </ant>
 
     <depend project="jakarta-ant"/>
+    <depend project="jmx"/>
     <depend project="xml-xerces"/>
     <depend project="jakarta-tomcat-util"/>
     <depend project="jakarta-servletapi-5-servlet"/>
@@ -75,11 +81,14 @@
     <package>org.apache.jk</package>
 
     <ant basedir="jk">
+      <property name="jmx.home" reference="home" project="jmx"/>
+      <property name="jmx.jar" project="jmx" path="jmx/lib/jmxri.jar" />
       <property name="jsse.home" reference="home" project="jsse"/>
     </ant>
 
     <depend project="jakarta-ant"/>
     <depend project="commons-logging"/>
+    <depend project="jmx"/>
     <depend project="jakarta-tomcat-util"/>
     <depend project="xml-xerces"/>
     <depend project="jakarta-tomcat-coyote"/>
@@ -93,10 +102,23 @@
          from="Craig McClanahan &lt;craigmcc@apache.org&gt;"/>
   </project>
 
-  <project name="jakarta-tomcat-jk2-native">
-    <ant basedir="jk/native2" target="all" >
+  <project name="jakarta-tomcat-jk-ant">
+    <ant basedir="jk/jkant" target="all" >
     </ant>
+
     <depend project="jakarta-ant" />
+
+    <jar name="build/lib/jkant.jar"/>
+  </project>
+  
+  <project name="jakarta-tomcat-jk2-native">
+    <ant basedir="jk/native2" target="main" >
+    </ant>
+
+    <depend project="jakarta-ant" />
+    <depend project="jakarta-tomcat-jk-ant" />
+    <depend project="ant-contrib-cpptasks" />
+
   </project>
   
 </module>
