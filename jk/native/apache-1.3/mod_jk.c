@@ -734,6 +734,11 @@ static const char *jk_set_worker_file(cmd_parms *cmd,
 
     /* we need an absolut path */
     conf->worker_file = ap_server_root_relative(cmd->pool,worker_file);
+
+#idef CHROOTED_APACHE
+    ap_server_strip_chroot(conf->worker_file,0);
+#endif
+
     if (conf->worker_file == worker_file)
         conf->worker_file = ap_pstrdup(cmd->pool,worker_file);
  
@@ -762,6 +767,11 @@ static const char *jk_set_log_file(cmd_parms *cmd,
 
     /* we need an absolut path */
     conf->log_file = ap_server_root_relative(cmd->pool,log_file);
+
+#idef CHROOTED_APACHE
+    ap_server_strip_chroot(conf->log_file,0);
+#endif
+
     if ( conf->log_file == log_file)
         conf->log_file = ap_pstrdup(cmd->pool,log_file);
  
@@ -1742,7 +1752,11 @@ static void jk_init(server_rec *s, ap_pool *p)
     /* Open up log file */
     if(conf->log_file && conf->log_level >= 0) {
         if(!jk_open_file_logger(&(conf->log), conf->log_file, conf->log_level)) {
+#idef CHROOTED_APACHE
+            conf->log = main_log;
+#else
             conf->log = NULL;
+#endif
         } else {
             main_log = conf->log;
         }
