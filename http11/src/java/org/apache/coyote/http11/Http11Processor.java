@@ -86,6 +86,8 @@ import org.apache.coyote.Response;
 
 import org.apache.coyote.http11.filters.ChunkedInputFilter;
 import org.apache.coyote.http11.filters.ChunkedOutputFilter;
+//import org.apache.coyote.http11.filters.GzipInputFilter;
+import org.apache.coyote.http11.filters.GzipOutputFilter;
 import org.apache.coyote.http11.filters.IdentityInputFilter;
 import org.apache.coyote.http11.filters.IdentityOutputFilter;
 import org.apache.coyote.http11.filters.VoidInputFilter;
@@ -223,30 +225,74 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected Socket socket;
 
+
     /**
      * Remote Address associated with the current connection.
      */
     protected String remoteAddr = null;
+
 
     /**
      * Remote Host associated with the current connection.
      */
     protected String remoteHost = null;
 
+
     /**
      * Maximum timeout on uploads.
      */
     protected int timeout = 300000;   // 5 minutes as in Apache HTTPD server
+
 
     /**
      * Flag to disable setting a different time-out on uploads.
      */
     protected boolean disableUploadTimeout = false;
 
+
+    /**
+     * Allowed compression level.
+     */
+    protected int compressionLevel = 0;
+
+
     /**
      * Host name (used to avoid useless B2C conversion on the host name).
      */
     protected char[] hostNameC = new char[0];
+
+
+    // ------------------------------------------------------------- Properties
+
+
+    /**
+     * Return compression level.
+     */
+    public String getCompression() {
+        switch (compressionLevel) {
+        case 0:
+            return "off";
+        case 1:
+            return "on";
+        case 2:
+            return "force";
+        }
+        return "off";
+    }
+
+
+    /**
+     * Set compression level.
+     */
+    public void setCompression(String compression) {
+        if (compression.equals("on")) {
+            this.compressionLevel = 1;
+        } else if (compression.equals("force")) {
+            this.compressionLevel = 2;
+        } else {
+            this.compressionLevel = 0;
+        }
+    }
 
 
     // --------------------------------------------------------- Public Methods
@@ -350,6 +396,7 @@ public class Http11Processor implements Processor, ActionHook {
     public void setDisableUploadTimeout(boolean isDisabled) {
         disableUploadTimeout = isDisabled;
     }
+
     /**
      * Get the flag that controls upload time-outs.
      */
@@ -363,6 +410,7 @@ public class Http11Processor implements Processor, ActionHook {
     public void setTimeout( int timeouts ) {
         timeout = timeouts ;
     }
+
     /**
      * Get the upload timeout.
      */
@@ -918,6 +966,34 @@ public class Http11Processor implements Processor, ActionHook {
             contentDelimitation = true;
         }
 
+        // Check for compression
+        boolean useCompression = false;
+        if (entityBody && (compressionLevel > 0)) {
+            // Check accept-encoding
+            // FIXME: write a comma parser; also reuse 
+            // for transfer-encoding parsing
+            MessageBytes acceptEncodingMB = 
+                request.getMimeHeaders().getValue("accept-encoding");
+            if ((acceptEncodingMB != null) 
+                && (acceptEncodingMB.indexOf("gzip") != -1)) {
+                // Check content-type
+                if (compressionLevel == 1) {
+                    int contentLength = response.getContentLength();
+                    // FIXME: Make the value configurable
+                    if ((contentLength == -1) || (contentLength > 2048)) {
+                        useCompression = 
+                            response.getContentType().startsWith("text/");
+                    }
+                } else {
+                    useCompression = true;
+                }
+                // Change content-length to -1 to force chunking
+                if (useCompression) {
+                    response.setContentLength(-1);
+                }
+            }
+        }
+
         MimeHeaders headers = response.getMimeHeaders();
         if (!entityBody) {
             response.setContentLength(-1);
@@ -947,6 +1023,12 @@ public class Http11Processor implements Processor, ActionHook {
                 contentDelimitation = true;
                 response.addHeader("Transfer-Encoding", "chunked");
             }
+        }
+
+        if (useCompression) {
+            outputBuffer.addActiveFilter(outputFilters[Constants.GZIP_FILTER]);
+            // FIXME: Make content-encoding generation dynamic
+            response.setHeader("Content-Encoding", "gzip");
         }
 
         // Add date header
@@ -999,6 +1081,10 @@ public class Http11Processor implements Processor, ActionHook {
         // Create and add the void filters.
         inputBuffer.addFilter(new VoidInputFilter());
         outputBuffer.addFilter(new VoidOutputFilter());
+
+        // Create and add the chunked filters.
+        //inputBuffer.addFilter(new GzipInputFilter());
+        outputBuffer.addFilter(new GzipOutputFilter());
 
     }
 

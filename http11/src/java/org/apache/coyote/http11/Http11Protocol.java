@@ -186,6 +186,7 @@ public class Http11Protocol implements ProtocolHandler
     private String reportedname;
     private int socketCloseDelay=-1;
     private boolean disableUploadTimeout = false;
+    private String compression = "off";
 
     // -------------------- Pool setup --------------------
 
@@ -249,6 +250,10 @@ public class Http11Protocol implements ProtocolHandler
 
     public void setDisableUploadTimeout(boolean isDisabled) {
         disableUploadTimeout = isDisabled;
+    }
+
+    public void setCompression(String valueS) {
+        compression = valueS;
     }
 
     public void setSoLinger( int i ) {
@@ -352,6 +357,7 @@ public class Http11Protocol implements ProtocolHandler
             processor.setMaxKeepAliveRequests( proto.maxKeepAliveRequests );
             processor.setTimeout( proto.timeout );
             processor.setDisableUploadTimeout( proto.disableUploadTimeout );
+            processor.setCompression( proto.compression );
 
             //thData[0]=adapter;
             thData[1]=processor;

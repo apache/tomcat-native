@@ -199,6 +199,12 @@ public final class Constants {
 
 
     /**
+     * GZIP filters (input and output).
+     */
+    public static final int GZIP_FILTER = 3;
+
+
+    /**
      * HTTP/1.0.
      */
     public static final String HTTP_10 = "HTTP/1.0";
