@@ -1,0 +1,7 @@
+.libs
+Makefile
+Makefile.apxs
+*.o
+*.lo
+*.la
+*.slo
