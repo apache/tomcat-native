@@ -224,7 +224,7 @@
         </tr>
       </table>
     </a>
-    <xsl:apply-templates select="p|screen|todo"/>
+    <xsl:apply-templates select="p|img|screen|todo"/>
     <br/>
   </xsl:template>
 
@@ -248,6 +248,15 @@
 
   <xsl:template match="br">
     <br/>
+  </xsl:template>
+
+  <xsl:template match="img">
+    <p>
+      <div align="center">
+        <xsl:value-of select="@alt"/><br/>
+        <img src="{@src}" alt="{@alt}" vspace="0" hspace="0" border="0"/>
+      </div>
+    </p>
   </xsl:template>
 
   <!-- JFC added -->
