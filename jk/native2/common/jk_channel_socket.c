@@ -100,7 +100,7 @@ struct jk_channel_socket_private {
     int ndelay;
     struct sockaddr_in addr;    
     char *host;
-    short port; /* Should be unsigned - big ports will fail */
+    unsigned short port;
     int keepalive;
     int timeout;
 };
@@ -116,7 +116,7 @@ typedef struct jk_channel_socket_private jk_channel_socket_private_t;
 */
 
 static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host,
-                                               short port,
+                                               unsigned short port,
                                                struct sockaddr_in *rc);
 
 static int JK_METHOD jk2_channel_socket_close(jk_env_t *env, jk_channel_t *ch,
@@ -276,16 +276,22 @@ static int JK_METHOD jk2_channel_socket_hasinput(jk_env_t *env,
 
 /** private: resolve the address on init
  */
-static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, short port,
+static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, unsigned short port,
                                                struct sockaddr_in *rc)
 {
     int x;
 
     /* TODO: Should be updated for IPV6 support. */
-    /* for now use the correct type, in_addr_t   */    
-	in_addr_t laddr;
+    /* for now use the correct type, in_addr_t   */
     
-    rc->sin_port   = htons((short)port);
+    /* except on NetWare because of MetroWerks strictness */
+#ifdef NETWARE
+    u_long laddr;
+#else
+	in_addr_t laddr;
+#endif
+    
+    rc->sin_port   = htons((unsigned short)port);
     rc->sin_family = AF_INET;
 
     /* Check if we only have digits in the string */
