@@ -187,7 +187,11 @@ public class Ajp13Response extends HttpResponseBase {
 
     public void finishResponse() throws IOException {
 	if(!this.finished) {
-	    super.finishResponse();
+            try {
+                super.finishResponse();
+            } catch( Throwable t ) {
+                t.printStackTrace();
+            }
             this.finished = true; // Avoid END_OF_RESPONSE sent 2 times
 	    ajp13.finish();
 	}        

@@ -468,7 +468,7 @@ final class Ajp13Processor
                     logger.log("finished handling request.");
                 }
 
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.log("process: invoke", e);
             }
 
