@@ -111,6 +111,9 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
             if (algorithm == null) algorithm = defaultAlgorithm;
 
             String keystoreType = (String)attributes.get("keystoreType");
+            if (keystoreType == null) {
+                keystoreType = defaultKeystoreType;
+            }
 
             // Create and init SSLContext
             SSLContext context = SSLContext.getInstance(protocol); 
@@ -137,10 +140,6 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
     protected KeyManager[] getKeyManagers(String keystoreType,
                                           String algorithm)
                 throws Exception {
-
-        if (keystoreType == null) {
-            keystoreType = defaultKeystoreType;
-        }
 
         String keystorePass = getKeystorePassword();
 
