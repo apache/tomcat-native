@@ -438,14 +438,12 @@ static char* jk2_vm_guessJvmDll(jk_env_t *env, jk_map_t *props,
                     token = strtok(NULL, PATH_SEPARATOR_STR);                   
                 }
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "jni.guessJvmDll() could not find %s in the " \ 
-                              "LD_LIBRARY_PATH\n",
+                              "jni.guessJvmDll() could not find %s in the LD_LIBRARY_PATH\n",
                               jvm);
                 return NULL;                                    
             }
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "jni.guessJvmDll() LD_LIBRARY_PATH " \
-                          "environment var is not set\n");
+                          "jni.guessJvmDll() LD_LIBRARY_PATH environment var is not set\n");
             return NULL;                                
 #else
             return jvm;
