@@ -89,6 +89,8 @@ static int JK_METHOD jk2_workerEnv_setAttribute( struct jk_env *env, struct jk_b
      */
     if( strcmp( name, "sslEnable" )==0 ) {
         wEnv->ssl_enable = JK_TRUE;
+    } else if( strcmp( name, "timing" )==0 ) {
+        wEnv->timing= atoi( value );
     } else if( strcmp( name, "httpsIndicator" )==0 ) {
         wEnv->https_indicator = value;
     } else if( strcmp( name, "certsIndicator" )==0 ) {
@@ -297,6 +299,31 @@ static int jk2_workerEnv_registerHandler(jk_env_t *env, jk_workerEnv_t *wEnv,
     return JK_OK;
 }
 
+static int jk2_workerEnv_parentInit(jk_env_t *env, jk_workerEnv_t *wEnv)
+{
+    char *configFile;
+    
+    env->l->init( env, env->l );
+
+    configFile=wEnv->config->file;
+    if(  configFile == NULL ) {
+        wEnv->config->setPropertyString( env, wEnv->config,
+                                         "config.file",
+                                         "${serverRoot}/conf/workers2.properties" );
+        configFile=wEnv->config->file;
+    }
+    
+    if( wEnv->shm != NULL && ! wEnv->shm->mbean->disabled ) {
+        wEnv->shm->init( env, wEnv->shm );
+    }
+    
+    if( wEnv->shm != NULL && wEnv->shm->head != NULL ) {
+        wEnv->shm->reset( env, wEnv->shm);
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() Reset shm\n" );
+    }
+}
+
+
 static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
 {
     int err;
@@ -322,7 +349,7 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
         if( w==NULL ) {
             jk_bean_t *jkb=env->createBean2(env, wEnv->pool, "worker.lb", "lb" );
             w=jkb->object;
-            if( wEnv->debug > 0 )
+            if( wEnv->mbean->debug > 0 )
                 env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create default worker %s\n",  jkb->name );
         }
         wEnv->defaultWorker= w;
@@ -432,14 +459,15 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
         if( rc!=JK_OK ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "workerEnv.processCallbacks() Error reading reply\n");
-            /* We can recover */
-            return JK_ERR;
+            /* Probably protocol error, we can't recover
+             */
+            ep->recoverable=JK_FALSE;
+            return rc;
         }
 
         if( ep->worker->mbean->debug > 10 )
             ep->request->dump( env, msg, "Received" );
 
-        /*  ep->reply->dump(env, ep->reply, "Received ");   */
         code = (int)msg->getByte(env, msg);
         rc=jk2_workerEnv_dispatch( env, wEnv, req, ep, code, msg );
 
@@ -461,7 +489,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
              * A possible work-around could be to store the uploaded
              * data to file and replay for it
              */
-            ep->recoverable = JK_FALSE;
+            req->is_recoverable_error = JK_FALSE;
             if( ep->worker->mbean->debug > 10 )
                 ep->request->dump( env, ep->post, "Apache->tomcat" );
 
@@ -469,28 +497,27 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
             if (rc < 0) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "ajp14.processCallbacks() error sending response data\n");
-                return JK_ERR;
+                ep->recoverable = JK_FALSE;
+                return rc;
             }
             break;
         case JK_HANDLER_ERROR:
-            /*
-             * we won't be able to gracefully recover from this so
-             * set recoverable to false and get out.
+            /* Normal error ( for example writing to the client failed ).
+             * The ajp connection is still in a stable state.
              */
-            ep->recoverable = JK_FALSE;
-            return JK_ERR;
+            return rc;
         case JK_HANDLER_FATAL:
             /*
-             * Client has stop talking to us, so get out.
-             * We assume this isn't our fault, so just a normal exit.
-             * In most (all?)  cases, the ajp13_endpoint::reuse will still be
-             * false here, so this will be functionally the same as an
-             * un-recoverable error.  We just won't log it as such.
+             * Protocol error. We'll disconnect the ajp connection and reconnect.
              */
-            return JK_ERR;
+            ep->recoverable = JK_FALSE; 
+            return rc;
         default:
             /* Unknown status */
-            break;
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "ajp14.processCallbacks() unknonwn status %d\n", rc);
+            ep->recoverable = JK_FALSE; 
+            return rc;
         }
     }
     return JK_ERR;
@@ -509,16 +536,21 @@ static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
 {
     int err=JK_OK;
     jk_bean_t *jkb;
+    int csOk;
+    
+    JK_ENTER_CS(&wEnv->cs, csOk);
+    if( !csOk ) return JK_ERR;
 
-    wEnv->channel_map->put(env, wEnv->channel_map, ch->mbean->name, ch, NULL);
+    ch->id=wEnv->channel_map->size( env, wEnv->channel_map );
+    wEnv->channel_map->add(env, wEnv->channel_map, ch->mbean->name, ch);
 
     /* Automatically create the ajp13 worker to be used with this channel.
      */
-        
     jkb=env->createBean2(env, ch->mbean->pool, "ajp13", ch->mbean->localName );
     if( jkb == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerEnv.addChannel(): Can't find ajp13 worker\n" );
+        JK_LEAVE_CS( &wEnv->cs, csOk );
         return JK_ERR;
     }
     ch->worker=jkb->object;
@@ -526,7 +558,27 @@ static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
     ch->worker->channel=ch;
             
     /* XXX Set additional parameters - use defaults otherwise */
+    JK_LEAVE_CS( &wEnv->cs, csOk );
 
+    return JK_OK;
+}
+
+static int jk2_workerEnv_addEndpoint(jk_env_t *env, jk_workerEnv_t *wEnv, jk_endpoint_t *ep)
+{
+    int csOk;
+    
+    JK_ENTER_CS(&wEnv->cs, csOk);
+    if( !csOk ) return JK_ERR;
+
+    {
+        int pos=wEnv->endpointMap->size( env, wEnv->endpointMap );
+        
+        wEnv->endpointMap->add( env, wEnv->endpointMap, ep->mbean->localName, ep );
+        ep->id=pos;
+
+        ep->mbean->init( env, ep->mbean );
+    }
+    JK_LEAVE_CS( &wEnv->cs, csOk );
     return JK_OK;
 }
 
@@ -536,8 +588,14 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
 {
     int err=JK_OK;
     jk_worker_t *oldW = NULL;
+    int csOk;
+    
+    JK_ENTER_CS(&wEnv->cs, csOk);
+    if( !csOk ) return JK_ERR;
 
     w->workerEnv=wEnv;
+
+    w->id=wEnv->worker_map->size( env, wEnv->worker_map );
 
     w->rPoolCache= jk2_objCache_create( env, w->mbean->pool  );
 
@@ -554,6 +612,7 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
             oldW->mbean->destroy(env, oldW->mbean);
     }
     
+    JK_LEAVE_CS( &wEnv->cs, csOk );
     return JK_OK;
 }
 
@@ -599,6 +658,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     int err;
     jk_pool_t *uriMapPool;
     jk_bean_t *jkb;
+    int csOk;
 
     wEnv=(jk_workerEnv_t *)pool->calloc( env, pool, sizeof( jk_workerEnv_t ));
 
@@ -629,7 +689,6 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
 
     wEnv->log_file        = NULL;
     wEnv->log_level       = -1;
-    wEnv->mountcopy       = JK_FALSE;
     wEnv->was_initialized = JK_FALSE;
     wEnv->options         = JK_OPT_FWDURIDEFAULT;
 
@@ -667,21 +726,23 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     /*     } */
 
     wEnv->uriMap = NULL;
-    wEnv->secret_key = NULL; 
 
     wEnv->envvars_in_use = JK_FALSE;
     jk2_map_default_create(env, &wEnv->envvars, pool);
 
     jk2_map_default_create(env,&wEnv->worker_map, wEnv->pool);
     jk2_map_default_create(env,&wEnv->channel_map, wEnv->pool);
+    jk2_map_default_create(env, & wEnv->endpointMap, wEnv->pool);
 
     wEnv->perThreadWorker=0;
     
     /* methods */
     wEnv->init=&jk2_workerEnv_init;
+    wEnv->parentInit=&jk2_workerEnv_parentInit;
     wEnv->close=&jk2_workerEnv_close;
     wEnv->addWorker=&jk2_workerEnv_addWorker;
     wEnv->addChannel=&jk2_workerEnv_addChannel;
+    wEnv->addEndpoint=&jk2_workerEnv_addEndpoint;
     wEnv->initChannel=&jk2_workerEnv_initChannel;
     wEnv->registerHandler=&jk2_workerEnv_registerHandler;
     wEnv->processCallbacks=&jk2_workerEnv_processCallbacks;
@@ -720,6 +781,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
         wEnv->shm=(jk_shm_t *)jkb->object;
         wEnv->shm->setWorkerEnv( env, wEnv->shm, wEnv );
     }
+    JK_INIT_CS(&(wEnv->cs), csOk);
     
     return JK_OK;
 }
