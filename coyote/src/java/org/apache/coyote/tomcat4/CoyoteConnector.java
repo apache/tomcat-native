@@ -187,6 +187,12 @@ public final class CoyoteConnector
 
 
     /**
+     * The maximum amount of spare processors.
+     */
+    protected int maxSpareProcessors = 5;
+
+
+    /**
      * The maximum number of processors allowed, or <0 for unlimited.
      */
     private int maxProcessors = 20;
@@ -735,6 +741,28 @@ public final class CoyoteConnector
 
 
     /**
+     * Return the maximum number of spare processors allowed.
+     */
+    public int getMaxSpareProcessors() {
+
+        return (maxSpareProcessors);
+
+    }
+
+
+    /**
+     * Set the maximum number of spare processors allowed.
+     *
+     * @param maxSpareProcessors The new maximum of spare processors
+     */
+    public void setMaxProcessors(int maxSpareProcessors) {
+
+        this.maxSpareProcessors = maxSpareProcessors;
+
+    }
+
+
+    /**
      * Return the port number on which we listen for requests.
      */
     public int getPort() {
@@ -1167,6 +1195,10 @@ public final class CoyoteConnector
         IntrospectionUtils.setProperty(protocolHandler, "port", "" + port);
         IntrospectionUtils.setProperty(protocolHandler, "maxThreads",
                                        "" + maxProcessors);
+        IntrospectionUtils.setProperty(protocolHandler, "minSpareThreads",
+                                       "" + minProcessors);
+        IntrospectionUtils.setProperty(protocolHandler, "maxSpareThreads",
+                                       "" + maxSpareProcessors);
         IntrospectionUtils.setProperty(protocolHandler, "backlog",
                                        "" + acceptCount);
         IntrospectionUtils.setProperty(protocolHandler, "tcpNoDelay",
