@@ -199,7 +199,7 @@ public final class FastHttpDateFormat {
 
         Long cachedDate = null;
         try {
-            cachedDate = (Long) formatCache.get(value);
+            cachedDate = (Long) parseCache.get(value);
         } catch (Exception e) {
         }
         if (cachedDate != null)
