@@ -99,6 +99,8 @@ public class BaseRequest {
     MimeHeaders headers = new MimeHeaders();
     Cookies cookies = new Cookies();
     HashMap attributes = new HashMap();
+
+    MessageBytes tomcatInstanceId = new MessageBytes();
     
     /**
      * Recycles this object and readies it further use.
@@ -121,6 +123,7 @@ public class BaseRequest {
         headers.recycle();
         cookies.recycle();
         attributes.clear();
+        tomcatInstanceId.recycle();
     }
 
     /**
@@ -317,6 +320,21 @@ public class BaseRequest {
     }
 
     /**
+     * Get the host id ( or jvmRoute )
+     * @return the jvm route
+     */
+    public MessageBytes instanceId() {
+        return tomcatInstanceId;
+    }
+
+    // backward compat - jvmRoute is the id of this tomcat instance,
+    // used by a load balancer on the server side to implement sticky
+    // sessions, and on the tomcat side to format the session ids.
+    public MessageBytes jvmRoute() {
+        return tomcatInstanceId;
+    }
+    
+    /**
      * ** SLOW ** for debugging only!
      */
     public String toString() {
@@ -341,6 +359,7 @@ public class BaseRequest {
         pw.println("attributes      = " + attributes.toString());
         pw.println("headers         = " + headers.toString());
         pw.println("cookies         = " + cookies.toString());
+        pw.println("jvmRoute        = " + tomcatInstanceId.toString());
         return sw.toString();
     }
     
