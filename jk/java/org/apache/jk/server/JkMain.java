@@ -130,6 +130,10 @@ public class JkMain
         wEnv.setJkHome(s);
     }
 
+    public void setDebug( int i ) {
+        dL=i;
+        d("set debug " + i );
+    }
     
     // -------------------- Initialization --------------------
     
@@ -173,9 +177,10 @@ public class JkMain
         String workers=props.getProperty( "handler.list",
                                           "channel,request,container" );
         Vector workerNamesV= split( workers, ",");
-
+        if( dL > 0 ) d("workers: " + workers + " " + workerNamesV.size() );
         for( int i=0; i<workerNamesV.size(); i++ ) {
             String name= (String)workerNamesV.elementAt( i );
+            if( dL > 0 ) d("Configuring " + name );
             JkHandler w=wEnv.getHandler( name );
             if( w==null )
                 w=(JkHandler)newInstance( "handler", name, null );
@@ -232,8 +237,9 @@ public class JkMain
             if( args.length == 1 &&
                 ( "-?".equals(args[0]) || "-h".equals( args[0])) ) {
                 System.out.println("Usage: ");
-                System.out.println("  JkMain [workers.properties]");
+                System.out.println("  JkMain [args]");
                 System.out.println();
+                System.out.println("  Each bean setter corresponds to an arg ( like -debug 10 )");
                 System.out.println("  System properties:");
                 System.out.println("    jk2.home    Base dir of jk2");
                 return;
@@ -241,10 +247,10 @@ public class JkMain
 
             JkMain jkMain=new JkMain();
 
+            IntrospectionUtils.processArgs( jkMain, args, new String[] {},
+                                            null, new Hashtable());
+
             jkMain.guessHome();
-            
-            if( args.length > 0  ) 
-                jkMain.setPropertiesFile(args[0]);
             
             jkMain.init();
             jkMain.start();
@@ -312,7 +318,7 @@ public class JkMain
         }
     }
     
-    private static final int dL=0;
+    private static int dL=0;
     private static void d(String s ) {
         System.err.println( "JkMain: " + s );
     }

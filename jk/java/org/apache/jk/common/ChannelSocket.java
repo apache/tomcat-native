@@ -96,7 +96,7 @@ import org.apache.jk.core.*;
  */
 public class ChannelSocket extends Channel {
 
-    int port;
+    int port=8009;
     InetAddress inet;
     int serverTimeout;
     boolean tcpNoDelay;
