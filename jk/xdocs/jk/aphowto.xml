@@ -169,6 +169,7 @@ here</a> and contains the following:
 <p>
 <table>
   <tr><th>Location</th><th>Contents</th></tr>
+  <tr><td><a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/aix/">aix</a></td><td>SAVF including mod_jk for Apache 2.0 for iSeries V5R1/V5R2</td></tr>
   <tr><td><a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/iseries/">iseries</a></td><td>SAVF including mod_jk for Apache 2.0 for iSeries V5R1/V5R2</td></tr>
   <tr><td><a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/linux/">linux</a></td><td>mod_jk.so (Apache 1.3 standard API and EAPI and Apache 2.0) for some Linux Archs</td></tr>
   <tr><td><a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/macosx/">macosx</a></td><td>Contains the mod_jk.so for MacOS X</td></tr>
