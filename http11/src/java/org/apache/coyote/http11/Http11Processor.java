@@ -494,8 +494,7 @@ public class Http11Processor implements Processor, ActionHook {
         int questionPos = unparsedURI.indexOf('?');
         if (questionPos >= 0) {
             request.queryString().setString
-                (unparsedURI.substring
-                 (questionPos + 1, unparsedURI.length() - questionPos - 1));
+                (unparsedURI.substring(questionPos + 1));
             request.requestURI().setString
                 (unparsedURI.substring(0, questionPos));
         } else {
