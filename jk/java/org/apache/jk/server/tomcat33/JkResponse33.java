@@ -80,7 +80,7 @@ class JkResponse33 extends Response
 {
     boolean finished=false;
     Channel ch;
-    Endpoint ep;
+    MsgContext ep;
     int headersMsgNote;
     int c2bConvertersNote;
     int utfC2bNote;
@@ -92,8 +92,8 @@ class JkResponse33 extends Response
         utfC2bNote=we.getNoteId( WorkerEnv.ENDPOINT_NOTE, "utfC2B" );
     }
 
-    public void setEndpoint( Channel ch, Endpoint ep ) {
-        this.ch=ch;
+    public void setEndpoint( MsgContext ep ) {
+        this.ch=ep.getChannel();
         this.ep=ep;
         MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
         if( msg==null ) {

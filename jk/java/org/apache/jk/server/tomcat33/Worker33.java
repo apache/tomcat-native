@@ -80,7 +80,7 @@ import org.apache.jk.core.*;
 /** Tomcat 33 worker
  *
  */
-public class Worker33 extends Worker
+public class Worker33 extends JkHandler
 {
     ContextManager cm;
     
@@ -92,35 +92,38 @@ public class Worker33 extends Worker
     private int reqNote;
     
     public void init() throws IOException {
-        reqNote=we.getNoteId( WorkerEnv.REQUEST_NOTE, "tomcat33Request" );
+        reqNote=wEnv.getNoteId( WorkerEnv.REQUEST_NOTE, "tomcat33Request" );
     }
 
     public void setContextManager( ContextManager cm ) {
         this.cm=cm;
     }
     
-    public void service( BaseRequest req, Channel ch, Endpoint ep )
+    public int invoke( Msg msg, MsgContext ep ) // BaseRequest req, Channel ch, Endpoint ep )
         throws IOException
     {
         d("Incoming request " );
+        BaseRequest req=ep.getRequest();
+        Channel ch=ep.getChannel();
         JkRequest33 treq=(JkRequest33)req.getNote( reqNote );
         JkResponse33 tres;
         if( treq==null ) {
             treq=new JkRequest33(req);
             req.setNote( reqNote, treq );
-            tres=new JkResponse33(we);
+            tres=new JkResponse33(wEnv);
             treq.setResponse( tres );
             cm.initRequest( treq, tres );
         }
         tres=(JkResponse33)treq.getResponse();
-        treq.setEndpoint( ch, ep );
-        tres.setEndpoint( ch, ep );
+        treq.setEndpoint( ep );
+        tres.setEndpoint( ep );
 
         try {
             cm.service( treq, tres );
         } catch(Exception ex ) {
             ex.printStackTrace();
         }
+        return OK;
     }
 
     private static final int dL=0;

@@ -90,16 +90,17 @@ public class JkServlet33 extends JkServlet
     public void initializeContainer(ServletConfig cfg) {
         try {
             ServletContext sctx=cfg.getServletContext();
-            Context ctx=(Context)sctx.getAttribute( Context.ATTRIB_REAL_CONTEXT );
+            Context ctx=
+                (Context)sctx.getAttribute( Context.ATTRIB_REAL_CONTEXT );
             if( ctx==null ) {
                 d("Untrusted app or error, ctx==null ");
                 return;
             }
             cm=ctx.getContextManager();
-            
             // We now have control over the whole thing !
-            
+
             // We could register an interceptor to be notified
+            // on tomcat's events
             registerInterceptors();
             
             Worker33 worker=new Worker33();

@@ -63,7 +63,6 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import org.apache.jk.*;
 import org.apache.jk.core.*;
 import org.apache.jk.common.*;
 import org.apache.tomcat.modules.server.PoolTcpConnector;
@@ -78,8 +77,9 @@ import org.apache.tomcat.util.http.*;
 class JkRequest33 extends Request 
 {
     BaseRequest ajpReq;
-    Channel ch;
-    Endpoint ep;
+    MsgContext ep;
+
+    JkInputStream jkIS;
     
     public JkRequest33(BaseRequest ajpReq) 
     {
@@ -91,7 +91,7 @@ class JkRequest33 extends Request
 	remoteAddrMB = ajpReq.remoteAddr();
 	remoteHostMB = ajpReq.remoteHost();
 	serverNameMB = ajpReq.serverName();
-
+        
 	// XXX sync cookies 
 	scookies = new Cookies( headers );
 	urlDecoder=new UDecoder();
@@ -106,9 +106,11 @@ class JkRequest33 extends Request
 	this.ajpReq=ajpReq;
     }
 
-    public void setEndpoint( Channel ch, Endpoint ep ) {
-        this.ch=ch;
+    public void setEndpoint( MsgContext ep ) {
         this.ep=ep;
+        int bodyNote= ep.getWorkerEnv().getNoteId( WorkerEnv.ENDPOINT_NOTE,
+                                                   "jkInputStream");
+        jkIS=(JkInputStream)ep.getNote( bodyNote );
     }
     
     // -------------------- Wrappers for changed method names
@@ -155,17 +157,6 @@ class JkRequest33 extends Request
 	return ajpReq.getSecure();
     }
     
-    public int getContentLength() {
-        int i=ajpReq.getContentLength();
-	if( i >= 0 ) return i;
-	i= super.getContentLength();
-	return i;
-    }
-
-    public void setContentLength( int i ) {
-	super.setContentLength(i); // XXX sync
-    }
-
     // -------------------- Attributes --------------------
     
     public void setAttribute(String name, Object value) {
@@ -191,6 +182,7 @@ class JkRequest33 extends Request
     public void recycle() {
 	super.recycle();
 	ajpReq.recycle();
+        jkIS.recycle();
     }
 
     public String dumpRequest() {
@@ -199,26 +191,36 @@ class JkRequest33 extends Request
     
     // -------------------- 
     
-    // XXX This should go away if we introduce an InputBuffer.
-    // We almost have it as result of encoding fixes, but for now
-    // just keep this here, doesn't hurt too much.
     public int doRead() throws IOException 
     {
-	if( available <= 0 )
-	    return -1;
-// 	available--;
-// 	return ajp13.reqHandler.doRead(ajp13);
-        return -1;
+        // we need to manager the request's available
+        // this should go away, we support this in JkInputStream,
+        // which is similar with OutputBuffer - it should
+        // take away the body processing
+        if( contentLength == -1 ) {
+            return jkIS.read();
+	}
+	if( available <= 0 ) {
+            return -1;
+        }
+	available--;
+
+        return jkIS.read();
     }
     
     public int doRead(byte[] b, int off, int len) throws IOException 
     {
-	if( available <= 0 )
+        int rd=-1;
+        if( contentLength == -1 ) {
+	    rd=jkIS.read(b,off,len);
+	    return rd;
+	}
+	if( available <= 0 ) {
 	    return -1;
-// 	int rd=ajp13.reqHandler.doRead( ajp13, b,off, len );
-// 	available -= rd;
-// 	return rd;
-        return -1;
+        }
+	rd=jkIS.read( b,off, len );
+	available -= rd;
+	return rd;
     }
     
 }
