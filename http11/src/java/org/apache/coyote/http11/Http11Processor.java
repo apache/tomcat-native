@@ -372,8 +372,6 @@ public class Http11Processor implements Processor, ActionHook {
             // Setting up filters, and parse some request headers
             prepareRequest();
 
-            parseHost(request);
-
             if (maxKeepAliveRequests > 0 && --keepAliveLeft == 0)
                 keepAlive = false;
 
@@ -573,7 +571,7 @@ public class Http11Processor implements Processor, ActionHook {
         http11 = true;
         http09 = false;
         contentDelimitation = false;
-        if(sslSupport != null)
+        if (sslSupport != null)
             request.scheme().setString("https");
 
         MessageBytes protocolMB = request.protocol();
@@ -710,12 +708,16 @@ public class Http11Processor implements Processor, ActionHook {
             }
         }
 
+        MessageBytes valueMB = request.getMimeHeaders().getValue("host");
+
         // Check host header
-        if (http11 && (request.getMimeHeaders().getValue("host") == null)) {
+        if (http11 && (valueMB == null)) {
             error = true;
             // 400 - Bad request
             response.setStatus(400);
         }
+
+        parseHost(valueMB);
 
         if (!contentDelimitation) {
             // If there's no content length and we're using HTTP/1.1, assume
@@ -736,25 +738,22 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * Parse host.
      */
-    public void parseHost(Request req)
-        throws IOException {
+    public void parseHost(MessageBytes valueMB) {
 
-        MessageBytes valueMB = req.getMimeHeaders().getValue("host");
-
-        ByteChunk valueBC = null;
         if (valueMB == null || valueMB.isNull()) {
             // HTTP/1.0
             // Default is what the socket tells us. Overriden if a host is 
             // found/parsed
-            req.setServerPort(socket.getLocalPort());
+            request.setServerPort(socket.getLocalPort());
             InetAddress localAddress = socket.getLocalAddress();
-            // Setting the socket-related fields. The adapter doesn't know about
-            // socket.
-            req.setLocalHost(localAddress.getHostName());
-            req.serverName().setString(localAddress.getHostName());
+            // Setting the socket-related fields. The adapter doesn't know 
+            // about socket.
+            request.setLocalHost(localAddress.getHostName());
+            request.serverName().setString(localAddress.getHostName());
             return;
         }
-        valueBC = valueMB.getByteChunk();
+
+        ByteChunk valueBC = valueMB.getByteChunk();
         byte[] valueB = valueBC.getBytes();
         int valueL = valueBC.getLength();
         int valueS = valueBC.getStart();
@@ -769,32 +768,34 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         if (colonPos < 0) {
-            if( http11 ) {
-                if(sslSupport == null) // not configured Secure
-                    req.setServerPort(80);
-                else
-                    req.setServerPort(443); // if Secure, assume https
+            if (sslSupport == null) {
+                // 80 - Default HTTTP port
+                request.setServerPort(80);
             } else {
-                // Assume that non-HTTP/1.1 clients are broken
-                req.setServerPort(socket.getLocalPort());
+                // 443 - Default HTTPS port
+                request.setServerPort(443);
             }
-            req.serverName().setBytes( valueB, valueS, valueL);
+            request.serverName().setBytes(valueB, valueS, valueL);
         } else {
-            req.serverName().setBytes( valueB, valueS, colonPos);
+
+            request.serverName().setBytes(valueB, valueS, colonPos);
 
             int port = 0;
             int mult = 1;
             for (int i = valueL - 1; i > colonPos; i--) {
                 int charValue = HexUtils.DEC[(int) valueB[i + valueS]];
                 if (charValue == -1) {
-                    // Use the default
-                    port=80;
+                    // Invalid character
+                    error = true;
+                    // 400 - Bad request
+                    response.setStatus(400);
                     break;
                 }
                 port = port + (charValue * mult);
                 mult = 10 * mult;
             }
-            req.setServerPort(port);
+            request.setServerPort(port);
+
         }
 
     }
