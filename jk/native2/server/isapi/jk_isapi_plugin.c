@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2003 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -316,24 +316,20 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 
                 rc = jk_requtil_unescapeUrl(uri);
                 if (rc == BAD_REQUEST) {
-                    env->l->jkLog(env, env->l,  JK_LOG_INFO, 
+                    env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                            "HttpFilterProc [%s] contains one or more invalid escape sequences.\n", 
                            uri);
-                    // XXX: Let any other filter process the request, 
-                    //      if they take any security measure or not doesnt matter.
-                    //  write_error_response(pfc,"400 Bad Request", HTML_ERROR_400);
+                    write_error_response(pfc,"400 Bad Request", HTML_ERROR_400);
                     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                    return SF_STATUS_REQ_NEXT_NOTIFICATION;
+                    return SF_STATUS_REQ_FINISHED;
                 }
                 else if(rc == BAD_PATH) {
-                    env->l->jkLog(env, env->l,  JK_LOG_INFO, 
+                    env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
                            "HttpFilterProc [%s] contains forbidden escape sequences.\n", 
                            uri);
-                    // XXX: Let any other filter process the request, 
-                    //      if they take any security measure or not doesnt matter.
-                    //  write_error_response(pfc,"403 Forbidden", HTML_ERROR_403);
+                    write_error_response(pfc,"403 Forbidden", HTML_ERROR_403);
                     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                    return SF_STATUS_REQ_NEXT_NOTIFICATION;
+                    return SF_STATUS_REQ_FINISHED;
                 }
                 jk_requtil_getParents(uri);
 
