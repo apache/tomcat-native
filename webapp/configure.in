@@ -69,150 +69,173 @@ sinclude(./support/apjava.m4)
 AC_INIT(Makefile.in)
 LOCAL_INIT()
 
-TARGET=""
+dnl --------------------------------------------------------------------------
+dnl Setup initial variable value
+dnl --------------------------------------------------------------------------
+SRCDIR=""
+MODULE=""
+AC_SUBST(SRCDIR)
+AC_SUBST(MODULE)
+
+APR_SRCDIR=""
+APR_LIBDIR=""
+APR_INCDIR=""
+APR_VARFIL=""
+AC_SUBST(APR_SRCDIR)
+AC_SUBST(APR_LIBDIR)
+AC_SUBST(APR_INCDIR)
+AC_SUBST(APR_VARFIL)
 
 dnl --------------------------------------------------------------------------
 dnl Check where sources are
 dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([sources directory])
-SRCDIR="${srcdir}"
-curdir=`pwd`
-cd ${SRCDIR}
-SRCDIR=`pwd`
-cd ${curdir}
-AC_MSG_RESULT(${SRCDIR})
-AC_SUBST(SRCDIR)
-
-dnl --------------------------------------------------------------------------
-dnl Help message introducing --enable functions
-dnl --------------------------------------------------------------------------
-LOCAL_HELP([])
-LOCAL_HELP([Available compilation options:])
-
-dnl --------------------------------------------------------------------------
-dnl Process the --enable-debug[=FILE] command line argument
-dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([debugging flags])
-AC_ARG_ENABLE(debug,
-  [  --enable-debug          build with debugging information (not advisable
-                          for generic/production operation).],
-  [
-    AC_MSG_RESULT([enabled])
-    CFLAGS="${CFLAGS} -DDEBUG"
-    LTFLAGS=""
-    CFLAGS="-Wall ${CFLAGS}"
-    DEBUG="true"
-  ],[
-    AC_MSG_RESULT([disabled])
-    LTFLAGS="--silent"
-    DEBUG="false"
-  ]
-)
-AC_SUBST(LTFLAGS)
-AC_SUBST(DEBUG)
-AC_SUBST(CFLAGS)
+LOCAL_RESOLVEDIR([${srcdir}],[sources directory])
+SRCDIR=${DIR}
 
 dnl -------------------------------------------------------------------------
-dnl Check JAVA environment
+dnl Check C environment
+dnl
+dnl   We need to check local compilation in case the user got an APR
+dnl   distribution from a binary tarball (such as in Apache 2.0) and the
+dnl   compiler is not available.
 dnl -------------------------------------------------------------------------
-JAVA_CHECK()
-if ${TEST} "${JAVA_ENABLE}" = "true"
-then
-  JAVA_JAVAC()
-  JAVA_PROG_JAR()
-  TGTDIRS="${SRCDIR}/java ${TGTDIRS}"
-fi
-
-dnl --------------------------------------------------------------------------
-dnl Help message introducing --with functions for external libraries
-dnl --------------------------------------------------------------------------
-LOCAL_HELP([External libraries used:])
-
-dnl --------------------------------------------------------------------------
-dnl Process the --with-tomcat=... command line argument
-dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([Tomcat 4.0 directory])
-AC_ARG_WITH(tomcat,
-  [  --with-tomcat[=DIR]     path of a Tomcat 4.0 binary distribution (DIR
-                          defaults to \"/usr/local/tomcat\"). Required only in
-                          case the --enable-java option was specified too.],
-  TOMCATDIR="${withval}",
-  TOMCATDIR="/usr/local/tomcat"
-)
-
-if ${TEST} "${JAVA_ENABLE}" = "true"
-then
-  if ${TEST} ! -d "${TOMCATDIR}" ; then
-    AC_MSG_ERROR([Cannot find Tomcat directory \"${TOMCATDIR}\"])
-  fi
-
-  if ${TEST} ! -f "${TOMCATDIR}/common/lib/servlet.jar" ; then
-    AC_MSG_ERROR([Cannot find Servlet 2.3 jar in \"${TOMCATDIR}\"])
-  fi
-
-  if ${TEST} ! -f "${TOMCATDIR}/server/lib/catalina.jar" ; then
-    AC_MSG_ERROR([Cannot find Catalina jar in \"${TOMCATDIR}\"])
-  fi
-
-  curdir=`pwd`
-  cd ${TOMCATDIR}
-  TOMCATDIR=`pwd`
-  AC_MSG_RESULT([${TOMCATDIR}])
-  cd ${curdir}
-else
-  TOMCATDIR=""
-  AC_MSG_RESULT([not required])
-fi
-AC_SUBST(TOMCATDIR)
+LOCAL_HEADER([C-Language compilation tools])
+AC_PROG_CC()
+AC_PROG_CPP()
+AC_PATH_PROG(AR,ar,${PATH})
+AC_PATH_PROG(RANLIB,ranlib,${PATH})
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apr=... command line argument
+dnl
+dnl   This is always processed, and sets the APR_SRCDIR variable. After this
+dnl   is executed, for each module the APR_SRCDIR variable should be over
+dnl   written if the web server already knows the location of APR's include
+dnl   header and library directories. (As in Apache 2.0)
 dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([APR directory])
 AC_ARG_WITH(apr,
   [  --with-apr[=DIR]        path of an APR (Apache Portable Runtime) source
                           distribution or CVS snapshot. (DIR defaults to
                           \"./apr\"). Not required and ignored when the
                           --with-apxs2 option is specified.],
-  APRDIR="${withval}",
-  APRDIR="${SRCDIR}/apr"
+  APR_SRCDIR="${withval}",
+  APR_SRCDIR="${SRCDIR}/apr"
 )
 
-if ${TEST} -z "${APA}" -a -z "${APRDIR}" ; then
-  APRDIR="${SRCDIR}/apr"
-else
-  APRDIR="${APXS_PREFIX}"
+dnl --------------------------------------------------------------------------
+dnl Target module to build
+dnl --------------------------------------------------------------------------
+LOCAL_HEADER([APR location and target module])
+
+dnl --------------------------------------------------------------------------
+dnl Process the --with-apxs[=FILE] command line argument
+dnl
+dnl   Use Apache's APXS utility to compile the Apache module (1.3/2.0 is
+dnl   detected and APR variables are set accordingly).
+dnl --------------------------------------------------------------------------
+AC_ARG_WITH(apxs,
+  [  --with-apxs[=FILE]      build a shared Apache module. If FILE was not
+                          specified, then APXS will be searched within the
+                          current PATH. The Apache server version (1.3 or 2.0)
+                          will be automatically detected.],
+  [
+    if ${TEST} -n "${MODULE}"
+    then
+      AC_MSG_ERROR([target module already defined as ${MODULE}])
+    fi
+
+    APXS="${withval}"
+
+    if ${TEST} -z "${APXS}"
+    then
+      APXS="yes"
+    fi
+
+    if ${TEST} "${APXS}" = "yes"
+    then
+      AC_PATH_PROG(APXS,apxs,${PATH})
+    fi
+
+    apache=`${GREP} STANDARD20 ${APXS}`
+    if  ${TEST} -n "${apache}"
+    then
+      MODULE="apache-2.0"
+dnl ### FIXME ###
+dnl ### APXS For Apache 2.0 doesn't report the right values, we have to ###
+dnl ### guess from the prefix and hope everything goes all right ###
+      apache_prefix="`apxs -q PREFIX`"
+      APR_VARFIL="${apache_prefix}/lib/APRVARS"
+      APR_LIBDIR="${apache_prefix}/lib"
+      APR_INCDIR="${apache_prefix}/include"
+      APR_SRCDIR=""
+    else
+      MODULE="apache-1.3"
+      APR_VARFIL=""
+      APR_LIBDIR=""
+      APR_INCDIR=""
+      if ${TEST} -z "${APR_SRCDIR}"
+      then
+        AC_MSG_ERROR([You must specify --with-apr\[=DIR\] with this module])
+      fi
+    fi
+  ]
+)
+
+dnl --------------------------------------------------------------------------
+dnl Was a module specified?
+dnl --------------------------------------------------------------------------
+AC_MSG_CHECKING([target module])
+
+if ${TEST} -z "${MODULE}"
+then
+  AC_MSG_RESULT([error])
+  AC_MSG_ERROR([No target module specified])
 fi
+AC_MSG_RESULT([${MODULE}])
 
-if ${TEST} -z "${APA}" ; then
-  if ${TEST} ! -d "${APRDIR}" ; then
-    AC_MSG_ERROR([Cannot find APR sources directory \"${APRDIR}\"])
+dnl --------------------------------------------------------------------------
+dnl Configure the APR source distribution
+dnl 
+dnl   This step gets executed ONLY if APR_SRCDIR's length is nonzero. In
+dnl   case of Apache 2.0 and other APR based servers APR_SRCDIR must be set
+dnl   to the empty string "", and APR_INCDIR, APR_LIBDIR and APR_VARFIL must
+dnl   be defined with the appropriate values on where respectively apr.h,
+dnl   libapr.so/.a and APRVARS reside.
+dnl --------------------------------------------------------------------------
+if ${TEST} -n "${APR_SRCDIR}"
+then
+
+  dnl -----------------------------------------------
+  dnl Check if we were supplied a valid APR directory
+  dnl -----------------------------------------------
+
+  if ${TEST} ! -d "${APR_SRCDIR}" ; then
+    AC_MSG_ERROR([Cannot find APR sources directory \"${APR_SRCDIR}\"])
   fi
-
-  if ${TEST} ! -x "${APRDIR}/buildconf" ; then
-    AC_MSG_ERROR([Cannot find APR buildconf program in \"${APRDIR}\"])
+  
+  if ${TEST} ! -x "${APR_SRCDIR}/buildconf" ; then
+    AC_MSG_ERROR([Cannot find APR buildconf program in \"${APR_SRCDIR}\"])
   fi
-
-  curdir=`pwd`
-  cd ${APRDIR}
-  APRDIR=`pwd`
-  AC_MSG_RESULT([${APRDIR}])
-  cd ${curdir}
-  AC_SUBST(APRDIR)
-
+  
+  LOCAL_RESOLVEDIR([${APR_SRCDIR}],[full APR directory path])
+  APR_SRCDIR="${DIR}"
+  
+  dnl ---------------------------------------------
   dnl Build the configure script for APR and run it
-
+  dnl ---------------------------------------------
+  
   curdir=`pwd`
-  cd ${APRDIR}
-
+  cd ${APR_SRCDIR}
+  
   LOCAL_HEADER([Building APR configure script])
   LOCAL_FILTEREXEC([./buildconf],[APR buildconf])
   if ${TEST} "${ret}" -ne "0"
   then
     AC_MSG_ERROR([APR buildconf terminated with error code ${ret}])
   fi
-
-  dnl the --disable-shared prevent building shared libraries.
+  
   LOCAL_HEADER([Configuring APR])
   LOCAL_FILTEREXEC(
     [./configure --enable-static --disable-shared --disable-threads],
@@ -222,156 +245,14 @@ if ${TEST} -z "${APA}" ; then
     AC_MSG_ERROR([APR configure script terminated with error code ${ret}])
   fi
   cd ${curdir}
-else
-  AC_MSG_RESULT(Using APR from Apache build)
+
+  APR_INCDIR="${APR_SRCDIR}/include"
+  APR_LIBDIR="${APR_SRCDIR}/lib
+  APR_VARFIL="${APR_SRCDIR}/APRVARS
 fi
 
-dnl --------------------------------------------------------------------------
-dnl Help message introducing --with functions for external libraries
-dnl --------------------------------------------------------------------------
-LOCAL_HELP([Target web-server:])
 
-dnl --------------------------------------------------------------------------
-dnl Process the --with-apxs[=FILE] command line argument
-dnl --------------------------------------------------------------------------
-AC_ARG_WITH(apxs,
-  [  --with-apxs[=FILE]      build a shared Apache 1.3.x module.],
-  [
-    if ${TEST} -n "${TARGET}"
-    then
-      AC_MSG_ERROR([target already defined as ${TARGET}])
-    fi
 
-    APXS="${withval}"
 
-    if ${TEST} -z "${APXS}" ; then APXS="yes" ; fi
-    if ${TEST} "${APXS}" = "yes"
-    then
-      AC_PATH_PROG(APXS,apxs,${PATH})
-    fi
-
-    AC_MSG_CHECKING([if apxs is working])
-    ${APXS} -q CC 2>&1 1>/dev/null
-    if ${TEST} ! "$?" -eq "0"
-    then
-      AC_MSG_RESULT([no])
-      AC_MSG_ERROR([apxs is unworkable])
-    fi
-    AC_MSG_RESULT([ok])
-
-    APXS_CC=`${APXS} -q CC`
-    APXS_TARGET=`${APXS} -q TARGET`
-    APXS_CFLAGS=`${APXS} -q CFLAGS`
-    APXS_SBINDIR=`${APXS} -q SBINDIR`
-    APXS_CFLAGS_SHLIB=`${APXS} -q CFLAGS_SHLIB`
-    APXS_INCLUDEDIR=`${APXS} -q INCLUDEDIR`
-    APXS_LD_SHLIB=`${APXS} -q LD_SHLIB`
-    APXS_LIBEXECDIR=`${APXS} -q LIBEXECDIR`
-    APXS_LDFLAGS_SHLIB=`${APXS} -q LDFLAGS_SHLIB`
-    APXS_SYSCONFDIR=`${APXS} -q SYSCONFDIR`
-    APXS_LIBS_SHLIB=`${APXS} -q LIBS_SHLIB`
-    APXS_PREFIX=`${APXS} -q PREFIX`
-
-    AC_SUBST(APXS)
-    AC_SUBST(APXS_CC)
-    AC_SUBST(APXS_TARGET)
-    AC_SUBST(APXS_CFLAGS)
-    AC_SUBST(APXS_SBINDIR)
-    AC_SUBST(APXS_CFLAGS_SHLIB)
-    AC_SUBST(APXS_INCLUDEDIR)
-    AC_SUBST(APXS_LD_SHLIB)
-    AC_SUBST(APXS_LIBEXECDIR)
-    AC_SUBST(APXS_LDFLAGS_SHLIB)
-    AC_SUBST(APXS_SYSCONFDIR)
-    AC_SUBST(APXS_LIBS_SHLIB)
-    AC_SUBST(APXS_PREFIX)
-
-    dnl test apache version
-    APA=`${GREP} STANDARD20 ${APXS}`
-    if  ${TEST} -z "$APA" ; then
-      if ${TEST} -z "APXS_LD_SHLIB"; then
-         AC_MSG_ERROR([${APXS} do not seem a valid apxs)]) 
-      fi
-      TARGET="${SRCDIR}/apache-1.3"
-      APR_BUILD="apr-all"
-      APR_CLEAN="apr-clean"
-      makefile="apache-1.3/Makefile"
-    else
-      TARGET="${SRCDIR}/apache-2.0"
-      APR_BUILD=""
-      APR_CLEAN=""
-      makefile="apache-2.0/Makefile"
-    fi
-    AC_MSG_RESULT([setting target module to... ${TARGET}])
-  ]
-)
-AC_SUBST(TARGET)
-AC_SUBST(APR_BUILD)
-AC_SUBST(APR_CLEAN)
-
-dnl --------------------------------------------------------------------------
-dnl Retrieving APR default values
-dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([APR configuration])
-
-if ${TEST} ! -f ${APRDIR}/APRVARS
-then
-  if ${TEST} "${APA}" ; then
-    LIBDIR="/lib"
-  else
-    AC_MSG_RESULT([error])
-    AC_MSG_ERROR([Cannot find APR defaults in ${APRDIR}/APRVARS])
-  fi
-else
-  LIBDIR=""
-fi
-
-if ${TEST} ! -x ${APRDIR}/libtool
-then
-  if ${TEST} "${APA}" ; then
-    LIBTOOL="${APXS_PREFIX}/build/libtool"
-  else
-    AC_MSG_RESULT([error])
-    AC_MSG_ERROR([Cannot find APR libtool binary])
-  fi
-else
-  LIBTOOL="${APRDIR}/libtool"
-fi
-
-eval `cat ${APRDIR}${LIBDIR}/APRVARS`
-AC_SUBST(CC)
-AC_SUBST(CPP)
-AC_SUBST(SHELL)
-AC_SUBST(LIBTOOL)
-AC_SUBST(EXTRA_CPPFLAGS)
-AC_SUBST(EXTRA_CFLAGS)
-AC_SUBST(EXTRA_LDFLAGS)
-AC_SUBST(EXTRA_LIBS)
-AC_SUBST(EXTRA_INCLUDES)
-AC_SUBST(LIBTOOL_LIBS)
-AC_MSG_RESULT([ok])
-
-dnl --------------------------------------------------------------------------
-dnl Defining variables used by Make
-dnl --------------------------------------------------------------------------
-CPPFLAGS="-I${SRCDIR}/include -I${APRDIR}/include ${CPPFLAGS}"
-AC_SUBST(CPPFLAGS)
-
-TGTDIRS="${TGTDIRS} ${SRCDIR}/lib"
-AC_SUBST(TGTDIRS)
-
-dnl --------------------------------------------------------------------------
-dnl Output files
-dnl --------------------------------------------------------------------------
-CONFIGFILES=""
-CONFIGFILES="${CONFIGFILES} Makedefs"
-CONFIGFILES="${CONFIGFILES} Makefile"
-CONFIGFILES="${CONFIGFILES} lib/Makefile"
-CONFIGFILES="${CONFIGFILES} java/Makefile"
-CONFIGFILES="${CONFIGFILES} java/Constants.java"
-CONFIGFILES="${CONFIGFILES} ${makefile}"
-AC_SUBST(CONFIGFILES)
-
-AC_OUTPUT(${CONFIGFILES})
+AC_OUTPUT(Makefile)
 LOCAL_HEADER([All done. Now you can issue \"make\". Good luck.])
-
