@@ -79,6 +79,8 @@ module MODULE_VAR_EXPORT webapp_module;
 static wa_boolean wam_initialized=FALSE;
 /* The list of configured connections */
 static wa_chain *wam_connections=NULL;
+/* The main server using for logging error not related to requests */
+static server_rec *server=NULL;
 
 /* ************************************************************************* */
 /* MODULE AND LIBRARY INITIALIZATION AND DESTRUCTION                         */
@@ -87,6 +89,7 @@ static wa_chain *wam_connections=NULL;
 /* Startup the module and the WebApp Library */
 static void wam_startup(server_rec *s, pool *p) {
     if (!wam_initialized) return;
+    server=s;
     wa_startup();
 }
 
@@ -253,8 +256,20 @@ static const command_rec wam_directives[] = {
 };
 
 /* ************************************************************************* */
-/* CALLBACKS FROM WEB SERVER                                                 */
+/* CALLBACKS TO WEB SERVER                                                   */
 /* ************************************************************************* */
+
+/* Log a generic error */
+void wa_log(const char *f, const int l, const char *fmt, ...) {
+    va_list ap;
+    char buf[1024];
+
+    va_start(ap,fmt);
+    apr_vsnprintf(buf,1024,fmt,ap);
+    va_end(ap);
+
+    ap_log_error(f,l,APLOG_NOERRNO|APLOG_ERR,server,"%s",buf);
+}
 
 /* Log a message associated with a request */
 void wam_handler_log(wa_request *r, const char *f, const int l, char *msg) {
@@ -424,8 +439,8 @@ static int wam_invoke(request_rec *r) {
     req->clnt->host=apr_pstrdup(req->pool,ctmp);
     req->serv->addr=apr_pstrdup(req->pool,con->local_ip);
     req->clnt->addr=apr_pstrdup(req->pool,con->remote_ip);
-    req->serv->port=con->local_addr.sin_port;
-    req->clnt->port=con->remote_addr.sin_port;
+    req->serv->port=ntohs(con->local_addr.sin_port);
+    req->clnt->port=ntohs(con->remote_addr.sin_port);
 
     /* Set up all other members of the request structure */
     req->meth=apr_pstrdup(req->pool,(char *)r->method);
