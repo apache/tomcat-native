@@ -366,7 +366,7 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
          */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "jni.init() disabling the non init hook worker\n");
-        _this->mbean->disabled = 1;
+        _this->lb_disabled = JK_TRUE;
     }
 #if 0
     vm->detach(env, vm);
