@@ -510,7 +510,7 @@ The jni worker will use this path to load the JVM dynamically.
 
 <screen>
 <note>Told JVM to use 64MB of initial heap size</note>
-<read>worker.wrkjni.mS=64</read>
+<read>worker.wrkjni.ms=64</read>
 </screen>
 
 <p>
@@ -518,21 +518,12 @@ The jni worker will use this path to load the JVM dynamically.
 </p>
 
 <screen>
-<note>Told JVM to to not use more than 128MB for heap</note>
+<note>Told JVM to not use more than 128MB for heap</note>
 <read>worker.wrkjni.mx=128</read>
 </screen>
 
 <p>
-<b>sysprops</b> set the Java system properties for the JVM
-</p>
-
-<screen>
-<note>Told Java to stay in 64m</note>
-<read>worker.wrkjni.sysprops=-Xmx64</read>
-</screen>
-
-<p>
-<b>sysprops</b> set the Java system properties for the JVM
+<b>sysprops</b> set the system properties for the JVM
 </p>
 
 <screen>
