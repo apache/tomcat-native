@@ -125,10 +125,10 @@ public class SoTask extends Task {
     protected Vector altSoFiles = new Vector();     // used by the NetWare linker
 
     // Computed fields 
-    protected Vector compileList; // [Source]
+    //    protected Vector compileList; // [Source]
     protected Vector srcList=new Vector();
     protected CompilerAdapter compiler;
-    protected GlobPatternMapper co_mapper;
+    //    protected GlobPatternMapper co_mapper;
     
     public SoTask() {};
 
@@ -162,9 +162,9 @@ public class SoTask extends Task {
 	so.modules=modules;
 	so.linkOpts=linkOpts;
 	so.srcList=srcList;
-	so.compileList=compileList;
+        //	so.compileList=compileList;
 	so.compiler=compiler;
-	so.co_mapper=co_mapper;
+        //	so.co_mapper=co_mapper;
 	so.altSoFiles=altSoFiles;
     }
 
@@ -353,7 +353,7 @@ public class SoTask extends Task {
     // clean, libtool should be just a fallback.
     public void execute() throws BuildException {
 	compiler=findCompilerAdapter();
-	co_mapper=compiler.getOMapper();
+        //	co_mapper=compiler.getOMapper();
 	LinkerAdapter linker=findLinkerAdapter();
 
 	if( soFile==null )
@@ -363,16 +363,20 @@ public class SoTask extends Task {
 
 	// XXX makedepend-type dependencies - how ??
 	// We could generate a dummy Makefile and parse the content...
-	findCompileList();
+        findSourceFiles();
 
-	compiler.compile( compileList );
-	
+        // Copy all settings into compiler
+        this.duplicateTo(compiler);
+	compiler.compile( srcList );
+
+        // XXX move this checking to linker
 	File soTarget=new File( buildDir, soFile + soExt );
-	if( compileList.size() == 0 && soTarget.exists()) {
+	if( compiler.getCompiledFiles().size() == 0 && soTarget.exists()) {
 	    // No dependency, no need to relink
 	    return;
 	}
 
+        this.duplicateTo(linker);
 	linker.link(srcList);
     }
 
@@ -442,7 +446,8 @@ public class SoTask extends Task {
 	return linkerAdapter;
    }
 
-    
+    /** Find all source files declared with <src> elements
+     */
     public void findSourceFiles() {
 	if (buildDir == null) buildDir = project.getBaseDir();
 
@@ -459,93 +464,10 @@ public class SoTask extends Task {
 	}
     }
  
-    public void findCompileList() throws BuildException {
-	findSourceFiles();
-	compileList=new Vector();
-
-        for (int i = 0; i < srcList.size(); i++) {
-	    Source source=(Source)srcList.elementAt(i);
-	    File srcFile=source.getFile();
-	   
-            if (!srcFile.exists()) {
-                throw new BuildException("Source \"" + srcFile.getPath() +
-                                         "\" does not exist!", location);
-            }
-
-	    // Check the dependency
-	    if( needCompile( source ) ) 
-		compileList.addElement( source );
-	}
-
-	if( checkDepend() ) {
-	    log("Dependency expired, removing .o files and doing a full build ");
-	    removeOFiles();
-	    compileList=new Vector();
-	    for(int i=0; i<srcList.size(); i++ ) {
-		Source source=(Source)srcList.elementAt(i);
-		File srcFile = source.getFile();
-		compileList.addElement( source );
-	    }
-	}
-    }
-    
-    long oldestO=System.currentTimeMillis();
-    File oldestOFile=null;
-    
-    /** Verify if a .c file needs compilation.
-     *	As with javac, we assume a fixed build structure, where all .o
-     *	files are in a separate directory from the sources ( no mess ).
-     *
-     *  XXX Hack makedepend somehow into this.
-     */
-    public boolean needCompile( Source source ) {
-	// For each .c file we'll have a .o file in the build dir,
-	// with the same name.
-	File srcF = source.getFile();
-	if( !srcF.exists() )
-	    return false;
-
-	String targetName=source.getTargetFile( co_mapper );
-	if( targetName==null )
-	    return true; // strange, probably different extension ?
-	File target=new File( buildDir, targetName );
-	//	System.out.println("XXX " + target );
-	if( ! target.exists() )
-	    return true;
-	if( oldestO > target.lastModified() ) {
-	    oldestO=target.lastModified();
-	    oldestOFile=target;
-	}
-	if( srcF.lastModified() > target.lastModified() )
-	    return true;
-
-	if( debug > 0 )
-	    log("No need to compile " + srcF + " target " + target ); 
-	return false;
-    }
-
-    public void removeOFiles( ) {
-	findSourceFiles();
-	compileList=new Vector();
-
-        for (int i = 0; i < srcList.size(); i++) {
-	    Source srcF=(Source)srcList.elementAt(i);
-	    File srcFile = srcF.getFile();
-
-	    String name=srcFile.getName();
-	    String targetNA[]=co_mapper.mapFileName( name );
-	    if( targetNA==null )
-		continue;
-	    File target=new File( buildDir, targetNA[0] );
-	    // Check the dependency
-	    if( target.exists() ) {
-		// Remove it - we'll do a full build
-		target.delete();
-	    }
-	}
-    }
-    
-    public boolean checkDepend() {
+    /** If any file declared in <depend> element has changed, we'll do
+        a full rebuild.
+    */
+    public boolean checkDepend(long oldestO, File oldestOFile) {
 	if( depends==null )
 	    return false;
 	String dependsA[]=depends.list(); 
