@@ -252,6 +252,11 @@ The web server can send the following messages to the servlet container:
     <td>Shutdown</td>
     <td>The web server asks the container to shut itself down.</td>
   </tr>
+  <tr>
+    <td>8</td>
+    <td>Ping</td>
+    <td>The web server asks the container to respond quickly with a Pong.</td>
+  </tr>
 </table>
 
 </p>
@@ -284,6 +289,12 @@ server:
     <td>6</td>
     <td>Get Body Chunk</td>
     <td>Get further data from the request if it hasn't all been transferred
+    yet.</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>Pong Reply</td>
+    <td>The reply to a PING request.
     yet.</td>
   </tr>
 </table>
