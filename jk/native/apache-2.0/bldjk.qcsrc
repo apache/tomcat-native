@@ -97,7 +97,7 @@ CRTCMOD MODULE(MOD_JK/JK_CONTEXT)                               +
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
-CRTCMOD MODULE(MOD_JK/JNI_WORKER)                                  +
+CRTCMOD MODULE(MOD_JK/JK_JNI_WOR)                                  +
         SRCSTMF('/home/apache/jk/native/common/jk_jni_worker.c')   +
         DEFINE('AS400' 'HAVE_JNI' 'OS400_JVM_12' 'USE_APACHE_MD5') +
         TEXT('jk_jni_worker.c')                     +
@@ -105,8 +105,9 @@ CRTCMOD MODULE(MOD_JK/JNI_WORKER)                                  +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
-        INCDIR('/home/apache/jk/native/common')
-
+        INCDIR('/home/apache/jk/native/common'      +
+               '/QIBM/ProdData/HTTPA/Include')
+               
 CRTCMOD MODULE(MOD_JK/JK_LB_WORK)                               +
         SRCSTMF('/home/apache/jk/native/common/jk_lb_worker.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
