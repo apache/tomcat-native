@@ -261,7 +261,18 @@ public class CoyoteResponse
      */
     protected boolean included = false;
 
+    
+    /**
+     * The characterEncoding flag
+     */
+    private boolean isCharacterEncodingSet = false;
+    
+    /**
+     * The contextType flag
+     */    
+    private boolean isContentTypeSet = false;
 
+    
     /**
      * The error flag.
      */
@@ -313,6 +324,8 @@ public class CoyoteResponse
         appCommitted = false;
         included = false;
         error = false;
+        isContentTypeSet = false;
+        isCharacterEncodingSet = false;
         cookies.clear();
 
         if ((Constants.SECURITY) && (facade != null)) {
@@ -692,7 +705,10 @@ public class CoyoteResponse
         // Ignore any call from an included servlet
         if (included)
             return;
-
+        
+        if (usingWriter)
+            return;
+        
         coyoteResponse.setContentLength(length);
 
     }
@@ -713,7 +729,7 @@ public class CoyoteResponse
             return;
 
         coyoteResponse.setContentType(type);
-
+        isContentTypeSet = true;    
     }
 
 
@@ -728,14 +744,22 @@ public class CoyoteResponse
 
         if (isCommitted())
             return;
-
+        
+        // Ignore any call from an included servlet
         if (included)
-            return;     // Ignore any call from an included servlet
+            return;     
+        
+        // Ignore any call made after the getWriter has been invoked
+        // The default should be used
+        if (usingWriter)
+            return;
 
         coyoteResponse.setCharacterEncoding(charset);
-
+        isCharacterEncodingSet= true;
     }
 
+    
+    
     /**
      * Set the Locale that is appropriate for this response, including
      * setting the appropriate character encoding.
@@ -750,14 +774,27 @@ public class CoyoteResponse
         // Ignore any call from an included servlet
         if (included)
             return;
-
+        
+        // Ignore any call made after the getWriter has been invoked.
+        // The default should be used
+        if (usingWriter)
+            return;
+        
+        if (isCharacterEncodingSet){
+            return;       
+        }
+        
+        if (isContentTypeSet){
+            return;       
+        }
+        
         coyoteResponse.setLocale(locale);
 
         CharsetMapper cm = context.getCharsetMapper();
         String charset = cm.getCharset( locale );
-
-        if ( charset != null )
-            setCharacterEncoding( charset);
+        if ( charset != null ){
+            coyoteResponse.setCharacterEncoding(charset);
+        }
 
     }
 

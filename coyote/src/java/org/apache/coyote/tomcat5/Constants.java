@@ -58,8 +58,6 @@
  */ 
 package org.apache.coyote.tomcat5;
 
-import java.util.Locale;
-
 /**
  * Constants.
  *
@@ -92,5 +90,6 @@ public final class Constants {
      */
     protected static final boolean SECURITY = 
         (System.getSecurityManager() != null);
+
 
 }
