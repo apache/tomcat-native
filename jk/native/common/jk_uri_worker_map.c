@@ -74,62 +74,14 @@ static int wildchar_match(const char *str, const char *exp, int icase)
             return -1;
         }
         else if (exp[y] != '?') {
-            if (icase && tolower(str[x]) != tolower(exp[y]))
+            if (icase && (tolower(str[x]) != tolower(exp[y])))
                 return 1;
             else if (!icase && str[x] != exp[y])
                 return 1;
         }
     }
     return (str[x] != '\0');
-} 
-
-/*
- * We are now in a security nightmare, it maybe that somebody sent 
- * us a uri that looks like /top-secret.jsp. and the web server will 
- * fumble and return the jsp content. 
- *
- * To solve that we will check for path info following the suffix, we 
- * will also check that the end of the uri is not ".suffix.",
- * ".suffix/", or ".suffix ".
- */
-static int check_security_fraud(jk_uri_worker_map_t *uw_map, const char *uri)
-{
-    unsigned i;
-
-    for (i = 0; i < uw_map->size; i++) {
-        if (uw_map->maps[i]->match_type == MATCH_TYPE_SUFFIX) {
-            char *suffix_start;
-            for (suffix_start = strstr(uri, uw_map->maps[i]->suffix);
-                 suffix_start;
-                 suffix_start =
-                 strstr(suffix_start + 1, uw_map->maps[i]->suffix)) {
-
-                if ('.' != *(suffix_start - 1)) {
-                    continue;
-                }
-                else {
-                    char *after_suffix =
-                        suffix_start + strlen(uw_map->maps[i]->suffix);
-
-                    if ((('.' == *after_suffix) || ('/' == *after_suffix)
-                         || (' ' == *after_suffix))
-                        && (0 ==
-                            JK_STRNCMP(uw_map->maps[i]->context, uri,
-                                       uw_map->maps[i]->context_len))) {
-                        /* 
-                         * Security violation !!!
-                         * this is a fraud.
-                         */
-                        return i;
-                    }
-                }
-            }
-        }
-    }
-
-    return -1;
 }
-
 
 int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
                          jk_map_t *init_data, jk_logger_t *l)
@@ -249,8 +201,8 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         match_type |= MATCH_TYPE_NO_MATCH;
         puri++;
     }
-    
-    /* Find if duplicate entry */    
+
+    /* Find if duplicate entry */
     for (i = 0; i < uw_map->size; i++) {
         uwr = uw_map->maps[i];
         if (strcmp(uwr->uri, puri) == 0) {
@@ -289,7 +241,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         return JK_FALSE;
     }
     uwr->suffix = NULL;
-    
+
     uri = jk_pool_strdup(&uw_map->p, puri);
     if (!uri || !worker) {
         jk_log(l, JK_LOG_ERROR,
@@ -298,99 +250,28 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         return JK_FALSE;
     }
 
-    if (uri[0] == '/') {
-        char *asterisk = strchr(uri, '*');
-        
-        if ((asterisk && strchr(asterisk + 1, '*')) ||
+    if (*uri == '/') {
+        if (strchr(uri, '*') ||
             strchr(uri, '?')) {
-            uwr->uri = uri;
-            /* Lets check if we have multiple
-             * asterixes in the uri like:
+            /* Something like
              * /context/ * /user/ *
+             * /context/ *.suffix
              */
-            uwr->context = uri;
             match_type |= MATCH_TYPE_WILDCHAR_PATH;
             jk_log(l, JK_LOG_DEBUG,
-                    "wild chars path rule %s=%s was added",
+                    "wildchar rule %s=%s was added",
                     uri, worker);
-
-        }
-        else if (asterisk) {
-            uwr->uri = jk_pool_strdup(&uw_map->p, uri);
-
-            if (!uwr->uri) {
-                jk_log(l, JK_LOG_ERROR,
-                       "can't alloc uri string");
-                JK_TRACE_EXIT(l);
-                return JK_FALSE;
-            }
-            /*
-             * Now, lets check that the pattern is /context/asterisk.suffix
-             * or /context/asterisk
-             * we need to have a '/' then a '*' and the a '.' or a
-             * '/' then a '*'
-             */
-            asterisk--;
-            if ('/' == asterisk[0]) {
-                if (0 == strncmp("/*/", uri, 3)) {
-                    /* general context path */
-                    asterisk[1] = '\0';
-                    uwr->context = uri;
-                    uwr->suffix = asterisk + 2;
-                    match_type |= MATCH_TYPE_CONTEXT_PATH;
-                    jk_log(l, JK_LOG_DEBUG,
-                           "general context path rule %s*%s=%s was added",
-                           uri, asterisk + 2, worker);
-                }
-                else if ('.' == asterisk[2]) {
-                    /* suffix rule */
-                    asterisk[1] = asterisk[2] = '\0';
-                    uwr->context = uri;
-                    uwr->suffix = asterisk + 3;
-                    match_type |= MATCH_TYPE_SUFFIX;
-                    jk_log(l, JK_LOG_DEBUG,
-                           "suffix rule %s.%s=%s was added",
-                           uri, asterisk + 3, worker);
-                }
-                else if ('\0' != asterisk[2]) {
-                    /* general suffix rule */
-                    asterisk[1] = '\0';
-                    uwr->context = uri;
-                    uwr->suffix = asterisk + 2;
-                    match_type |= MATCH_TYPE_GENERAL_SUFFIX;
-                    jk_log(l, JK_LOG_DEBUG,
-                           "general suffix rule %s*%s=%s was added",
-                           uri, asterisk + 2, worker);
-                }
-                else {
-                    /* context based */
-                    asterisk[1] = '\0';
-                    uwr->context = uri;
-                    match_type |= MATCH_TYPE_CONTEXT;
-                    jk_log(l, JK_LOG_DEBUG,
-                           "match rule %s=%s was added", uri, worker);
-                }
-            }
-            else {
-                /* Something like : JkMount /servlets/exampl* ajp13 */
-                uwr->uri = uri;
-                uwr->context = uri;
-                match_type |= MATCH_TYPE_EXACT;
-                jk_log(l, JK_LOG_DEBUG,
-                       "exact rule %s=%s was added",
-                       uri, worker);
-            }
 
         }
         else {
             /* Something like:  JkMount /login/j_security_check ajp13 */
-            uwr->uri = uri;
-            uwr->context = uri;
             match_type |= MATCH_TYPE_EXACT;
             jk_log(l, JK_LOG_DEBUG,
                    "exact rule %s=%s was added",
                    uri, worker);
         }
+        uwr->uri = uri;
+        uwr->context = uri;
         uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
         uwr->context_len = strlen(uwr->context);
     }
@@ -410,7 +291,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     uwr->match_type = match_type;
     uw_map->maps[uw_map->size] = uwr;
     uw_map->size++;
-    if (match_type & MATCH_TYPE_NO_MATCH) {    
+    if (match_type & MATCH_TYPE_NO_MATCH) {
         /* If we split the mappings this one will be calculated */
         uw_map->nosize++;
     }
@@ -491,34 +372,6 @@ static int last_index_of(const char *str, char ch)
     return (s - str);
 }
 
-#if 0
-/* deprecated */
-static void jk_no2slash(char *name)
-{
-    char *d, *s;
-
-    s = d = name;
-
-#if defined(HAVE_UNC_PATHS)
-    /* Check for UNC names.  Leave leading two slashes. */
-    if (s[0] == '/' && s[1] == '/')
-        *d++ = *s++;
-#endif
-
-    while (*s) {
-        if ((*d++ = *s) == '/') {
-            do {
-                ++s;
-            } while (*s == '/');
-        }
-        else {
-            ++s;
-        }
-    }
-    *d = '\0';
-}
-#endif
-
 static int is_nomap_match(jk_uri_worker_map_t *uw_map,
                           const char *uri, const char* worker,
                           jk_logger_t *l)
@@ -533,7 +386,7 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
         /* Check only nomatch mappings */
         if (!(uwr->match_type & MATCH_TYPE_NO_MATCH) ||
             (uwr->match_type & MATCH_TYPE_DISABLED))
-            continue;        
+            continue;
         /* Check only mathing workers */
         if (strcmp(uwr->worker_name, worker))
             continue;
@@ -547,78 +400,20 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
 #endif
                                ) == 0) {
                     jk_log(l, JK_LOG_DEBUG,
-                           "Found a wildchar no match %s -> %s",
+                           "Found a no match %s -> %s",
                            uwr->worker_name, uwr->context);
                     JK_TRACE_EXIT(l);
                     return JK_TRUE;
              }
         }
         else if (JK_STRNCMP(uwr->context, uri, uwr->context_len) == 0) {
-            if (uwr->match_type & MATCH_TYPE_EXACT) {
-                if (strlen(uri) == uwr->context_len) {
-                    if (JK_IS_DEBUG_LEVEL(l))
-                        jk_log(l, JK_LOG_DEBUG,
-                               "Found an exact no match %s -> %s",
-                               uwr->worker_name, uwr->context);
-                    JK_TRACE_EXIT(l);
-                    return JK_TRUE;
-                }
-            }
-            else if (uwr->match_type & MATCH_TYPE_CONTEXT) {
+            if (strlen(uri) == uwr->context_len) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                           "Found a context no match %s -> %s",
-                           uwr->worker_name, uwr->context);
+                            "Found an exact no match %s -> %s",
+                            uwr->worker_name, uwr->context);
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
-            }
-            else if (uwr->match_type & MATCH_TYPE_GENERAL_SUFFIX) {
-                int suffix_start = last_index_of(uri, uwr->suffix[0]);
-                if (suffix_start >= 0
-                    && 0 == JK_STRCMP(uri + suffix_start, uwr->suffix)) {
-                        if (JK_IS_DEBUG_LEVEL(l))
-                            jk_log(l, JK_LOG_DEBUG,
-                                   "Found a general no suffix match for %s -> %s",
-                                   uwr->worker_name, uwr->uri);
-                        JK_TRACE_EXIT(l);
-                        return JK_TRUE;
-                }
-            }
-            else if (uwr->match_type & MATCH_TYPE_CONTEXT_PATH) {
-                char *suffix_path = NULL;
-                if (strlen(uri) > 1
-                    && (suffix_path = strchr(uri + 1, '/')) != NULL) {
-                    if (0 ==
-                        JK_STRNCMP(suffix_path, uwr->suffix,
-                                   strlen(uwr->suffix))) {
-                        jk_log(l, JK_LOG_DEBUG,
-                               "Found a general context no match %s -> %s",
-                               uwr->worker_name, uwr->context);
-                        JK_TRACE_EXIT(l);
-                        return JK_TRUE;
-                    }
-                }
-            }
-            else {          /* suffix match */
-                size_t suffix_start = strlen(uri) - 1;
-
-                for ( ; suffix_start > 0 && '.' != uri[suffix_start];
-                     suffix_start--) {
-                    /* TODO: use while loop */
-                }
-                if (uri[suffix_start] == '.') {
-                    const char *suffix = uri + suffix_start + 1;
-                    if (JK_STRCMP(suffix, uwr->suffix) == 0) {
-                        if (uwr->match_type & MATCH_TYPE_NO_MATCH) {
-                            if (JK_IS_DEBUG_LEVEL(l))
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "Found a no suffix match for %s -> %s",
-                                       uwr->worker_name, uwr->uri);
-                            JK_TRACE_EXIT(l);
-                            return JK_TRUE;
-                        }
-                    }
-                }
             }
         }
     }
@@ -632,8 +427,6 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               char *uri, jk_logger_t *l)
 {
     unsigned int i;
-    int best_match = -1;
-    size_t longest_match = 0;
     char *url_rewrite;
     char rewrite_char = ';';
     const char *rv = NULL;
@@ -653,19 +446,9 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
     if (url_rewrite) {
         rewrite_char = *url_rewrite;
-        *url_rewrite = '\0'; 
+        *url_rewrite = '\0';
     }
 
-#if 0
-    /* XXX: Disable checking for two slashes.
-     * We should not interfere in the web server
-     * request processing.
-     * It is up to the web server or Tomcat to decide if
-     * the url is valid.
-     */
-    jk_no2slash(uri);
-#endif
-    
     if (uw_map->fname)
         uri_worker_map_update(uw_map, l);
     if (JK_IS_DEBUG_LEVEL(l))
@@ -677,11 +460,9 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 
         /* Check for match types */
         if ((uwr->match_type & MATCH_TYPE_DISABLED) ||
-            (uwr->match_type & MATCH_TYPE_NO_MATCH) ||
-            (uwr->context_len < longest_match)) {
-            /* can not be a best match anyway */
+            (uwr->match_type & MATCH_TYPE_NO_MATCH))
             continue;
-        }
+
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG, "Attempting to map context URI '%s'", uwr->uri);
 
@@ -706,110 +487,18 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
              }
         }
         else if (JK_STRNCMP(uwr->context, uri, uwr->context_len) == 0) {
-            if (uwr->match_type & MATCH_TYPE_EXACT) {
-                if (strlen(uri) == uwr->context_len) {
-                    if (JK_IS_DEBUG_LEVEL(l))
-                        jk_log(l, JK_LOG_DEBUG,
-                               "Found an exact match %s -> %s",
-                               uwr->worker_name, uwr->context);
-                    JK_TRACE_EXIT(l);
-                    rv = uwr->worker_name;
-                    goto cleanup;
-                }
-            }
-            else if (uwr->match_type & MATCH_TYPE_CONTEXT) {
-                if (uwr->context_len > longest_match) {
-                    if (JK_IS_DEBUG_LEVEL(l))
-                        jk_log(l, JK_LOG_DEBUG,
-                               "Found a context match %s -> %s",
-                               uwr->worker_name, uwr->context);
-                    longest_match = uwr->context_len;
-                    best_match = i;
-                }
-            }
-            else if (uwr->match_type & MATCH_TYPE_GENERAL_SUFFIX) {
-                int suffix_start = last_index_of(uri, uwr->suffix[0]);
-                if (suffix_start >= 0
-                    && 0 == strcmp(uri + suffix_start, uwr->suffix)) {
-                    if (uwr->context_len >= longest_match) {
-                        if (JK_IS_DEBUG_LEVEL(l))
-                            jk_log(l, JK_LOG_DEBUG,
-                                   "Found a general suffix match %s -> *%s",
-                                   uwr->worker_name, uwr->suffix);
-                        longest_match = uwr->context_len;
-                        best_match = i;
-                    }
-                }
-            }
-            else if (uwr->match_type & MATCH_TYPE_CONTEXT_PATH) {
-                char *suffix_path = NULL;
-                if (strlen(uri) > 1
-                    && (suffix_path = strchr(uri + 1, '/')) != NULL) {
-                    if (0 ==
-                        JK_STRNCMP(suffix_path, uwr->suffix,
-                                   strlen(uwr->suffix))) {
-                        if (uwr->context_len >= longest_match) {
-                            if (JK_IS_DEBUG_LEVEL(l))
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "Found a general context path match %s -> *%s",
-                                       uwr->worker_name, uwr->suffix);
-                            longest_match = uwr->context_len;
-                            best_match = i;
-                        }
-                    }
-                }
-            }
-            else {          /* suffix match */
-
-                size_t suffix_start = strlen(uri) - 1;
-
-                for ( ; suffix_start > 0 && '.' != uri[suffix_start];
-                     suffix_start--) {
-                    /* TODO: use while loop */
-                }
-                if (uri[suffix_start] == '.') {
-                    const char *suffix = uri + suffix_start + 1;
-                    /* for WinXX, fix the JsP != jsp problems */
-                    if (JK_STRCMP(suffix, uwr->suffix) == 0) {
-                        if (uwr->context_len >= longest_match) {
-                            if (JK_IS_DEBUG_LEVEL(l))
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "Found a suffix match %s -> *.%s",
-                                       uwr->worker_name, uwr->suffix);
-                            longest_match = uwr->context_len;
-                            best_match = i;
-                        }
-                    }
-                }
+            if (strlen(uri) == uwr->context_len) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Found an exact match %s -> %s",
+                           uwr->worker_name, uwr->context);
+                JK_TRACE_EXIT(l);
+                rv = uwr->worker_name;
+                goto cleanup;
             }
         }
     }
-
-    if (best_match != -1) {
-        JK_TRACE_EXIT(l);
-        rv = uw_map->maps[best_match]->worker_name;
-        goto cleanup;
-    }
-    else {
-        /*
-        * We are now in a security nightmare, it maybe that somebody sent 
-        * us a uri that looks like /top-secret.jsp. and the web server will 
-        * fumble and return the jsp content. 
-        *
-        * To solve that we will check for path info following the suffix, we 
-        * will also check that the end of the uri is not .suffix.
-        */
-        int fraud = check_security_fraud(uw_map, uri);
-
-        if (fraud >= 0) {
-            jk_log(l, JK_LOG_EMERG,
-                   "Found a security fraud in '%s'",
-                   uri);
-            JK_TRACE_EXIT(l);
-            rv = uw_map->maps[fraud]->worker_name;
-            goto cleanup;
-        }
-    }
+    /* No matches found */
     JK_TRACE_EXIT(l);
 
 cleanup:
@@ -821,7 +510,6 @@ cleanup:
                 jk_log(l, JK_LOG_DEBUG,
                        "Denying matching for worker %s by nomatch rule",
                        rv);
-            JK_TRACE_EXIT(l);
             rv = NULL;
         }
     }
@@ -837,11 +525,38 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
     jk_map_alloc(&map);
     if (jk_map_read_properties(map, uw_map->fname,
                                &uw_map->modified)) {
-        int i;        
+        int i;
         for (i = 0; i < jk_map_size(map); i++) {
             const char *u = jk_map_name_at(map, i);
             const char *w = jk_map_value_at(map, i);
-            if (!uri_worker_map_add(uw_map, u, w, l)) {
+            /* Multiple mappings like :
+             * /servlets-examples|/ *
+             * will create two mappings:
+             * /servlets-examples
+             * and:
+             * /servlets-examples/ *
+             */
+            if (strchr(u, '|')) {
+                char *s, *r = strdup(u);
+                s = strchr(r, '|');
+                *s = '\0';
+                /* Add first mapping */
+                if (!uri_worker_map_add(uw_map, r, w, l)) {
+                    jk_log(l, JK_LOG_ERROR,
+                    "invalid mapping rule %s->%s", r, w);
+                }
+                s++;
+                while (*s)
+                   *(s - 1) = *s++;
+                *(s - 1) = '\0';
+                /* add second mapping */
+                if (!uri_worker_map_add(uw_map, r, w, l)) {
+                    jk_log(l, JK_LOG_ERROR,
+                    "invalid mapping rule %s->%s", r, w);
+                }
+                free(r);
+            }
+            else if (!uri_worker_map_add(uw_map, u, w, l)) {
                 jk_log(l, JK_LOG_ERROR,
                        "invalid mapping rule %s->%s",
                        u, w);
@@ -872,7 +587,7 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
         if (statbuf.st_mtime == uw_map->modified) {
             JK_LEAVE_CS(&(uw_map->cs), rc);
             return JK_TRUE;
-        }        
+        }
         rc = uri_worker_map_load(uw_map, l);
         JK_LEAVE_CS(&(uw_map->cs), rc);
         jk_log(l, JK_LOG_INFO,
