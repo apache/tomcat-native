@@ -37,6 +37,7 @@
 #include "jk_service.h"
 #include "jk_worker.h"
 #include "jk_uri_worker_map.h"
+#include "jk_shm.h"
 
 #define VERSION_STRING "Jakarta/ISAPI/" JK_VERSTRING
 
@@ -702,7 +703,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 
         if (strlen(uri)) {
             int rc;
-            char *worker = 0;
+            const char *worker = NULL;
             query = strchr(uri, '?');
             if (query) {
                 *query++ = '\0';
@@ -824,7 +825,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 if (!AddHeader(pfc, URI_HEADER_NAME, forwardURI) ||
                     ((query != NULL && strlen(query) > 0)
                      ? !AddHeader(pfc, QUERY_HEADER_NAME, query) : FALSE) ||
-                    !AddHeader(pfc, WORKER_HEADER_NAME, worker) ||
+                    !AddHeader(pfc, WORKER_HEADER_NAME, (LPSTR)worker) ||
                     !SetHeader(pfc, "url", extension_uri)) {
                     jk_log(logger, JK_LOG_ERROR,
                            "error while adding request headers");
@@ -1026,6 +1027,9 @@ static int init_jk(char *serverName)
 {
     int rc = JK_FALSE;
     jk_map_t *map;
+
+     /* Simulate shared memory */
+     jk_shm_open(NULL);
 
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;

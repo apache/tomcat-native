@@ -1926,7 +1926,7 @@ static int jk_translate(request_rec * r)
 
         if (conf) {
             jk_logger_t *l = conf->log ? conf->log : main_log;
-            char *worker = map_uri_to_worker(conf->uw_map, r->uri, l);
+            const char *worker = map_uri_to_worker(conf->uw_map, r->uri, l);
 
             /* Don't know the worker, ForwardDirectories is set, there is a
              * previous request for which the handler is JK_HANDLER (as set by

@@ -49,7 +49,7 @@ struct uri_worker_record
     char *uri;
 
     /* Name of worker mapped */
-    char *worker_name;
+    const char *worker_name;
 
     /* Suffix of uri */
     char *suffix;
@@ -569,7 +569,6 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
             continue;
 
         if (uwr->match_type == MATCH_TYPE_WILDCHAR_PATH) {
-            char *wname;
             /* Map is already sorted by ctxt_len */
             if (wildchar_match(uri, uwr->context,
 #ifdef WIN32
@@ -578,7 +577,6 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
                                0
 #endif
                                ) == 0) {
-                    wname = uwr->worker_name;
                     jk_log(l, JK_LOG_DEBUG,
                            "Found a wildchar no match %s -> %s",
                            uwr->worker_name, uwr->context);
@@ -661,15 +659,15 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
 }
 
 
-char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                        char *uri, jk_logger_t *l)
+const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
+                              char *uri, jk_logger_t *l)
 {
     unsigned int i;
     int best_match = -1;
     unsigned int longest_match = 0;
     char *url_rewrite;
     char rewrite_char = ';';
-    char *rv = NULL;
+    const char *rv = NULL;
 
     JK_TRACE_ENTER(l);
     if (!uw_map || !uri) {
@@ -721,7 +719,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             jk_log(l, JK_LOG_DEBUG, "Attempting to map context URI '%s'", uwr->uri);
 
         if (uwr->match_type == MATCH_TYPE_WILDCHAR_PATH) {
-            char *wname;
+            const char *wname;
             /* Map is already sorted by ctxt_len */
             if (wildchar_match(uri, uwr->context,
 #ifdef WIN32

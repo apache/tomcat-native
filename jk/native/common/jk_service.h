@@ -123,7 +123,7 @@ struct jk_ws_service
      */
     const char *method;
     const char *protocol;
-    const char *req_uri;
+    char *req_uri;
     const char *remote_addr;
     const char *remote_host;
     const char *remote_user;

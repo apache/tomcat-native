@@ -2376,7 +2376,7 @@ static int jk_translate(request_rec * r)
                                                       &jk_module);
 
         if (conf) {
-            char *worker;
+            const char *worker;
             char *uri;
             if ((r->handler != NULL) && (!strcmp(r->handler, JK_HANDLER))) {
                 /* Somebody already set the handler, probably manual config
@@ -2556,7 +2556,7 @@ static int jk_map_to_storage(request_rec * r)
                                                       &jk_module);
 
         if (conf) {
-            char *worker;
+            const char *worker;
             char *uri;
             if ((r->handler != NULL) && (!strcmp(r->handler, JK_HANDLER))) {
                 /* Somebody already set the handler, probably manual config

@@ -47,8 +47,8 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
 int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                        const char *puri, const char *pworker, jk_logger_t *l);
 
-char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                        char *uri, jk_logger_t *l);
+const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
+                              char *uri, jk_logger_t *l);
 
 #ifdef __cplusplus
 }
