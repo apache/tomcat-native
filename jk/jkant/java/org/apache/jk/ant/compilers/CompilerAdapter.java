@@ -58,8 +58,11 @@ import org.apache.tools.ant.types.*;
 import org.apache.tools.ant.util.*;
 import org.apache.tools.ant.BuildException;
 import org.apache.jk.ant.*;
+import org.apache.tools.ant.taskdefs.*;
+import org.apache.tools.ant.*;
 
 import java.util.*;
+import java.io.*;
 
 /* Modeled after javac
  */
@@ -77,23 +80,131 @@ import java.util.*;
  * reflection).</p>
  *
  * @author Jay Dickon Glanville <a href="mailto:jayglanville@home.com">jayglanville@home.com</a>
+ * @author Costin Manolache
  */
-public interface CompilerAdapter {
+public abstract class CompilerAdapter extends SoTask {
+    SoTask so;
 
-    /**
-     * Sets the compiler attributes, which are stored in the Javac task.
-     */
-    void setSoTask( SoTask attributes );
+    public CompilerAdapter() {
+	so=this;
+    };
 
-    /**
-     * Compile a set of files. The caller is supposed to
-     * detect dependencies.
-     *
-     * @return has the compilation been successful
-     */
-    public void compile(Vector files ) throws BuildException;
+    public void setSoTask(SoTask so ) {
+	this.so=so;
+	so.duplicateTo( this );
+    }
 
-    /** Return the extension ( including . ) for object files
+    public GlobPatternMapper getOMapper() {
+	GlobPatternMapper co_mapper=new GlobPatternMapper();
+	co_mapper.setFrom("*.c");
+	co_mapper.setTo("*.o");
+
+	return co_mapper;
+    }
+
+    public void execute() throws BuildException {
+	super.findCompileList();
+	compile( compileList );
+    }
+
+    public void compile(Vector compileList ) throws BuildException {
+	so.duplicateTo(this);
+	Enumeration en=compileList.elements();
+	while( en.hasMoreElements() ) {
+	    Source source=(Source)en.nextElement();
+	    compileSingleFile(source);
+	}
+    }
+    
+    /** Compile single file
      */
-    public GlobPatternMapper getOMapper();
+    public void compileSingleFile(Source sourceObj) throws BuildException {
+    }
+
+
+    protected void displayError( int result, String source, Commandline cmd )
+	throws BuildException
+    {
+	log("Compile failed " + result + " " +  source );
+	log("Command:" + cmd.toString());
+	log("Output:" );
+	if( outputstream!=null ) 
+	    log( outputstream.toString());
+	log("StdErr:" );
+	if( errorstream!=null ) 
+	    log( errorstream.toString());
+	
+	throw new BuildException("Compile failed " + source);
+    }
+
+    protected void addIncludes(Commandline cmd) {
+	String [] includeList = ( includes==null ) ?
+	    new String[] {} : includes.getIncludePatterns(project); 
+	for( int i=0; i<includeList.length; i++ ) {
+	    cmd.createArgument().setValue("-I" + includeList[i] );
+	}
+    }
+
+    /** Common cc parameters
+     */
+    protected void addExtraFlags(Commandline cmd )  {
+	String extra_cflags=project.getProperty("build.native.extra_cflags");
+	String localCflags=cflags;
+	if( localCflags==null ) {
+	    localCflags=extra_cflags;
+	} else {
+	    if( extra_cflags!=null ) {
+		localCflags+=" " + extra_cflags;
+	    }
+ 	}
+	if( localCflags != null )
+	    cmd.createArgument().setLine( localCflags );
+    }
+
+    protected void addDefines( Commandline cmd ) {
+	if( defines.size() > 0 ) {
+	    Enumeration defs=defines.elements();
+	    while( defs.hasMoreElements() ) {
+		Def d=(Def)defs.nextElement();
+		String name=d.getName();
+		String val=d.getValue();
+		if( name==null ) continue;
+		String arg="-D" + name;
+		if( val!=null )
+		    arg+= "=" + val;
+		cmd.createArgument().setValue( arg );
+		if( debug > 0 ) project.log(arg);
+            }
+        }
+    }
+
+    protected void addDebug(Commandline cmd) {
+	if( optG ) {
+	    cmd.createArgument().setValue("-g" );
+	    cmd.createArgument().setValue("-W");
+	    cmd.createArgument().setValue("-Wall");
+	    
+	    cmd.createArgument().setValue("-Wtraditional");
+	    cmd.createArgument().setValue("-Wredundant-decls");
+	    cmd.createArgument().setValue("-Wmissing-declarations");
+	    cmd.createArgument().setValue("-Wmissing-prototypes");
+	    cmd.createArgument().setValue("-Wconversions");
+	    cmd.createArgument().setValue("-Wcast-align");
+
+	    cmd.createArgument().setValue("-pedantic" );
+	}
+    }
+
+    protected void addOptimize( Commandline cmd ) {
+	if( optimize )
+	    cmd.createArgument().setValue("-O3" );
+    }
+
+    protected void addProfile( Commandline cmd ) {
+	if( profile ) {
+	    cmd.createArgument().setValue("-pg" );
+	    // bb.in 
+	    // cmd.createArgument().setValue("-ax" );
+	}
+    }
 }
