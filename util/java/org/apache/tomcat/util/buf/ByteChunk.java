@@ -338,34 +338,25 @@ public final class ByteChunk implements Cloneable, Serializable {
 
 	// the buffer is already at ( or bigger than ) limit
 
-	// Optimization:
-	// If len-avail < length ( i.e. after we fill the buffer with
-	// what we can, the remaining will fit in the buffer ) we'll just
-	// copy the first part, flush, then copy the second part - 1 write
-	// and still have some space for more. We'll still have 2 writes, but
-	// we write more on the first.
+        // We chunk the data into slices fitting in the buffer limit, although
+        // if the data is written directly if it doesn't fit
 
-	if( len + end < 2 * limit ) {
-	    /* If the request length exceeds the size of the output buffer,
-	       flush the output buffer and then write the data directly.
-	       We can't avoid 2 writes, but we can write more on the second
-	    */
-	    int avail=limit-end;
-	    System.arraycopy(src, off, buff, end, avail);
-	    end += avail;
+        int avail=limit-end;
+        System.arraycopy(src, off, buff, end, avail);
+        end += avail;
 
-	    flushBuffer();
+        flushBuffer();
 
-	    System.arraycopy(src, off+avail, buff, end, len - avail);
-	    end+= len - avail;
+        int remain = len - avail;
 
-	} else {	// len > buf.length + avail
-	    // long write - flush the buffer and write the rest
-	    // directly from source
-	    flushBuffer();
-	    
-	    out.realWriteBytes( src, off, len );
-	}
+        while (remain > (limit - end)) {
+            out.realWriteBytes( src, (off + len) - remain, limit - end );
+            remain = remain - (limit - end);
+        }
+
+        System.arraycopy(src, (off + len) - remain, buff, end, remain);
+        end += remain;
+
     }
 
 
