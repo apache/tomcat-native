@@ -136,7 +136,7 @@ static int jk_map_default_put(jk_env_t *env, jk_map_t *m,
            or none. The caller should do that if he needs !
         */
         /*     mPriv->names[mPriv->size] = m->pool->pstrdup(m->pool, name); */
-        mPriv->names[mPriv->size] =  name; 
+        mPriv->names[mPriv->size] =  (char *)name; 
         mPriv->size ++;
         rc = JK_TRUE;
     }
@@ -164,7 +164,7 @@ static int jk_map_default_add(jk_env_t *env, jk_map_t *m,
            or none. The caller should do that if he needs !
         */
         /*     mPriv->names[mPriv->size] = m->pool->pstrdup(m->pool, name); */
-        mPriv->names[mPriv->size] =  name; 
+        mPriv->names[mPriv->size] =  (char *)name; 
         mPriv->size ++;
         rc = JK_TRUE;
     }
@@ -208,6 +208,11 @@ static void *jk_map_default_valueAt(jk_env_t *env, jk_map_t *m,
 
 static void jk_map_default_clear(jk_env_t *env, jk_map_t *m )
 {
+    jk_map_private_t *mPriv;
+
+    /* assert(m!=NULL) -- we call it via m->... */
+    mPriv=(jk_map_private_t *)m->_private;
+    mPriv->size=0;
 
 }
 
@@ -216,11 +221,6 @@ static void jk_map_default_init(jk_env_t *env, jk_map_t *m, int initialSize,
 {
 
 }
-
-
-
-/* ==================== */
-/* General purpose map utils - independent of the map impl */
 
 int jk_map_append(jk_env_t *env, jk_map_t * dst, jk_map_t * src )
 {
@@ -241,6 +241,9 @@ int jk_map_append(jk_env_t *env, jk_map_t * dst, jk_map_t * src )
 }
 
 
+/* ==================== */
+/* General purpose map utils - independent of the map impl */
+
 
 char *jk_map_getString(jk_env_t *env, jk_map_t *m,
                        const char *name, char *def)
@@ -251,6 +254,25 @@ char *jk_map_getString(jk_env_t *env, jk_map_t *m,
     return val;
 }
 
+int jk_map_getBool(jk_env_t *env, jk_map_t *m,
+                   const char *prop, const char *def)
+{
+    char *val=jk_map_getString( env, m, prop, (char *)def );
+
+    if( val==NULL )
+        return JK_FALSE;
+
+    if( strcmp( val, "1" ) == 0 ||
+        strcmp( val, "true" ) == 0 ||
+        strcmp( val, "TRUE" ) == 0 ||
+        strcmp( val, "True" ) == 0 ||
+        strcmp( val, "on" ) == 0 ||
+        strcmp( val, "On" ) == 0 ||
+        strcmp( val, "ON" ) == 0 ) {
+        return JK_TRUE;
+    }
+    return JK_FALSE;
+}
 
 /** Get a string property, using the worker's style
     for properties.
@@ -282,7 +304,6 @@ int jk_map_getIntProp(jk_env_t *env, jk_map_t *m,
 
     return jk_map_str2int( env, val );
 }
-
 
 /* ==================== */
 /* Conversions */
@@ -418,45 +439,128 @@ int jk_map_readFileProperties(jk_env_t *env, jk_map_t *m,
         if(strlen(v)==0 || strlen(prp)==0)
             continue;
 
-        oldv = m->get(env, m, prp );
-        
         v = jk_map_replaceProperties(env, m, m->pool, v);
-                
-        if(oldv) {
-            char *tmpv = m->pool->alloc(env, m->pool, 
-                                        strlen(v) + strlen(oldv) + 3);
-            char sep = '*';
 
-            if(tmpv==NULL) {
-                rc=JK_FALSE;
-                break;
-            }
-
-            if(jk_is_some_property(env, prp, "path")) {
-                sep = PATH_SEPERATOR;
-            } else if(jk_is_some_property(env, prp, "cmd_line")) {
-                sep = ' ';
-            }
-                
-            sprintf(tmpv, "%s%c%s",  oldv, sep, v);
-            v = tmpv;
-        } else {
-            v = m->pool->pstrdup(env, m->pool, v);
-        }
-        
-        if(v==NULL) {
-            /* Allocation error */
-            rc = JK_FALSE;
-            break;
-        }
-
-        m->put(env, m, prp, v, NULL);
+        /* We don't contatenate the values - but use multi-value
+           fields. This eliminates the ugly hack where readProperties
+           tried to 'guess' the separator, and the code is much
+           cleaner. If we have multi-valued props, it's better
+           to deal with that instead of forcing a single-valued
+           model.
+        */
+        m->add( env, m, m->pool->pstrdup(env, m->pool, prp),
+                m->pool->pstrdup(env, m->pool, v));
     }
 
     fclose(fp);
     return rc;
 }
 
+/** For multi-value properties, return the concatenation
+ *  of all values.
+ *
+ * @param sep Separators used to separate multi-values and
+ *       when concatenating the values, NULL for none. The first
+ *       char will be used on the result, the other will be
+ *       used to split. ( i.e. the map may either have multiple
+ *       values or values separated by one of the sep's chars )
+ *    
+ */
+char *jk_map_getValuesString(jk_env_t *env, jk_map_t *m,
+                             struct jk_pool *resultPool,
+                             char *name,
+                             char *sep )
+{
+    char **values;
+    int valuesCount;
+    int i;
+    int len=0;
+    int pos=0;
+    int sepLen=0;
+    char *result;
+    char sepStr[2];
+    
+    if(sep==NULL)
+        values=jk_map_getValues( env, m, resultPool, name," \t,*", &valuesCount );
+    else
+        values=jk_map_getValues( env, m, resultPool, name, sep, &valuesCount );
+
+    if( values==NULL ) return NULL;
+    if( valuesCount<=0 ) return NULL;
+
+    if( sep!= NULL )
+        sepLen=strlen( sep );
+
+    for( i=0; i< valuesCount; i++ ) {
+        len+=strlen( values[i] );
+        if( sep!= NULL )
+            len+=1; /* Separator */
+    }
+
+    result=(char *)resultPool->alloc( env, resultPool, len + 1 );
+
+    result[0]='\0';
+    if( sep!=NULL ) {
+        sepStr[0]=sep[0];
+        sepStr[1]='\0';
+    }
+    
+    for( i=0; i< valuesCount; i++ ) {
+        strcat( values[i], result );
+        if( sep!=NULL )
+            strcat( sepStr, result );
+    }
+    return result;
+}
+
+/** For multi-value properties, return the array containing
+ * all values.
+ *
+ * @param sep Optional separator, it'll be used to split existing values.
+ *            Curently only single-char separators are supported. 
+ */
+char **jk_map_getValues(jk_env_t *env, jk_map_t *m,
+                       struct jk_pool *resultPool,
+                       char *name,
+                       char *sep,
+                       int *countP)
+{
+    char **result;
+    int count=0;
+    int capacity=8;
+    int mapSz= m->size(env, m );
+    int i;
+    char *l;
+
+    *countP=0;
+    result=(char **)resultPool->alloc( env, resultPool,
+                                       capacity * sizeof( char *));
+    for(i=0; i<mapSz; i++ ) {
+        char *cName= m->nameAt( env, m, i );
+        char *cVal= m->valueAt( env, m, i );
+
+        if(0 == strcmp(cName, name)) {
+            /* Split the value by sep, and add it to the result list
+             */
+            for(l = strtok(cVal, sep) ; l ; l = strtok(NULL, sep)) {
+                if(count == capacity) {
+                    result = resultPool->realloc(env, resultPool, 
+                                                 sizeof(char *) * (capacity + 5),
+                                                 result,
+                                                 sizeof(char *) * capacity);
+                    if(result==NULL) 
+                        return NULL;
+                    capacity += 5;
+                }
+                result[count] = resultPool->pstrdup(env, resultPool, l);
+                count++;
+            }
+        }
+    }
+    *countP=count;
+    return result;
+}
+                               
 
 /**
  *  Replace $(property) in value.
@@ -567,25 +671,6 @@ int jk_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
 /* } */
 
 
-/* XXX Very strange hack to deal with special properties
- */
-int jk_is_some_property(jk_env_t *env, const char *prp_name, const char *suffix)
-{
-    if (prp_name && suffix) {
-        size_t prp_name_len = strlen(prp_name);
-        size_t suffix_len = strlen(suffix);
-        if (prp_name_len >= suffix_len) {
-            const char *prp_suffix = prp_name + prp_name_len - suffix_len;
-            if(0 == strcmp(suffix, prp_suffix)) {
-                return JK_TRUE;
-            }
-        }
-    }
-
-    return JK_FALSE;
-}
-
-
 static void trim_prp_comment(char *prp)
 {
     char *comment = strchr(prp, '#');
@@ -593,7 +678,6 @@ static void trim_prp_comment(char *prp)
         *comment = '\0';
     }
 }
-
 
 static int trim(char *s)
 {

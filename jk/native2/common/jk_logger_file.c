@@ -284,6 +284,7 @@ int jk_logger_file_factory(jk_env_t *env,
     l->jkLog = jk_logger_file_jkLog;
 
     *result=(void *)l;
+    l->level=JK_LOG_ERROR_LEVEL;
 
     return JK_TRUE;
 }
