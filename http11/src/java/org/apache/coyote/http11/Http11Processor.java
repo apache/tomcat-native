@@ -520,14 +520,14 @@ public class Http11Processor implements Processor, ActionHook {
                     if (sslO != null)
                         request.setAttribute
                             (SSLSupport.CERTIFICATE_KEY, sslO);
-		    sslO = sslSupport.getKeySize();
-		    if (sslO != null)
-			request.setAttribute
-			    (SSLSupport.KEY_SIZE_KEY, sslO);
-		    sslO = sslSupport.getSessionId();
-		    if (sslO != null)
-			request.setAttribute
-			    (SSLSupport.SESSION_ID_KEY, sslO);
+                    sslO = sslSupport.getKeySize();
+                    if (sslO != null)
+                        request.setAttribute
+                            (SSLSupport.KEY_SIZE_KEY, sslO);
+                    sslO = sslSupport.getSessionId();
+                    if (sslO != null)
+                        request.setAttribute
+                            (SSLSupport.SESSION_ID_KEY, sslO);
                 }
             } catch (Exception e) {
                 //log("Exception getting SSL attribute " + key,e,Log.WARNING);
