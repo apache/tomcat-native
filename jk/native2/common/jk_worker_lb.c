@@ -146,6 +146,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
             jk_worker_t *w=lb->workerTables[level][i];
 
             if( w->mbean->disabled ) continue;
+            if( w->graceful ) continue;
             if( w->in_error_state ) continue;
             if( w->lb_disabled ) continue;
 
@@ -227,6 +228,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                 jk_worker_t *w=lb->workerTables[level][i];
 
                 if( w->mbean->disabled == JK_TRUE ) continue;
+                if( w->graceful ) continue;
                 if( w->lb_disabled ) continue;
 
                 error_workers++;
