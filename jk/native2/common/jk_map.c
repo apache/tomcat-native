@@ -72,23 +72,63 @@
 typedef struct jk_map_private {
     char **names;
     void **values;
+    apr_uint32_t  *keys;
 
     int capacity;
     int size;
 } jk_map_private_t;
+
+#if APR_CHARSET_EBCDIC
+#define CASE_MASK 0xbfbfbfbf
+#else
+#define CASE_MASK 0xdfdfdfdf
+#endif
+
+/* Compute the "checksum" for a key, consisting of the first
+ * 4 bytes, normalized for case-insensitivity and packed into
+ * an int...this checksum allows us to do a single integer
+ * comparison as a fast check to determine whether we can
+ * skip a strcasecmp
+ */
+#define COMPUTE_KEY_CHECKSUM(key, checksum)    \
+{                                              \
+    const char *k = (key);                     \
+    apr_uint32_t c = (apr_uint32_t)*k;         \
+    (checksum) = c;                            \
+    (checksum) <<= 8;                          \
+    if (c) {                                   \
+        c = (apr_uint32_t)*++k;                \
+        checksum |= c;                         \
+    }                                          \
+    (checksum) <<= 8;                          \
+    if (c) {                                   \
+        c = (apr_uint32_t)*++k;                \
+        checksum |= c;                         \
+    }                                          \
+    (checksum) <<= 8;                          \
+    if (c) {                                   \
+        c = (apr_uint32_t)*++k;                \
+        checksum |= c;                         \
+    }                                          \
+    checksum &= CASE_MASK;                     \
+}
 
 static void *jk2_map_default_get(jk_env_t *env, jk_map_t *m,
                                  const char *name)
 {
     int i;
     jk_map_private_t *mPriv;
-    
+    apr_uint32_t checksum;
+
     if(name==NULL )
         return NULL;
     mPriv=(jk_map_private_t *)m->_private;
 
+    COMPUTE_KEY_CHECKSUM(name, checksum);
+
     for(i = 0 ; i < mPriv->size ; i++) {
-        if(0 == strcmp(mPriv->names[i], name)) {
+        if (mPriv->keys[i] == checksum && 
+            strcmp(mPriv->names[i], name) == 0) {
             /*fprintf(stderr, "jk_map.get found %s %s \n", name, mPriv->values[i]  ); */
             return  mPriv->values[i];
         }
@@ -105,6 +145,7 @@ static int jk2_map_default_realloc(jk_env_t *env, jk_map_t *m)
     if(mPriv->size >= mPriv->capacity) {
         char **names;
         void **values;
+        apr_uint32_t *keys;
         int  capacity = mPriv->capacity + CAPACITY_INC_SIZE;
 
         names = (char **)m->pool->calloc(env, m->pool,
@@ -112,7 +153,9 @@ static int jk2_map_default_realloc(jk_env_t *env, jk_map_t *m)
         values = (void **)m->pool->calloc(env, m->pool,
                                          sizeof(void *) * capacity);
 
-        if( names== NULL || values==NULL ) {
+        keys = (apr_uint32_t *)m->pool->calloc(env, m->pool,
+                                                 sizeof(apr_uint32_t) * capacity);
+        if( names== NULL || values==NULL || keys==NULL) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "map.realloc(): AllocationError\n");
             return JK_ERR;
@@ -125,9 +168,13 @@ static int jk2_map_default_realloc(jk_env_t *env, jk_map_t *m)
         
         if (mPriv->capacity && mPriv->values)
             memcpy(values, mPriv->values, sizeof(void *) * mPriv->capacity);
+
+        if (mPriv->capacity && mPriv->keys)
+            memcpy(keys, mPriv->keys, sizeof(apr_uint32_t) * mPriv->capacity);
         
         mPriv->names = ( char **)names;
         mPriv->values = ( void **)values;
+        mPriv->keys = keys;
         mPriv->capacity = capacity;
         
         return JK_OK;
@@ -144,14 +191,18 @@ static int jk2_map_default_put(jk_env_t *env, jk_map_t *m,
     int rc = JK_ERR;
     int i;
     jk_map_private_t *mPriv;
+    apr_uint32_t checksum;
 
     if( name==NULL ) 
         return JK_ERR;
 
     mPriv=(jk_map_private_t *)m->_private;
     
+    COMPUTE_KEY_CHECKSUM(name, checksum);
+
     for(i = 0 ; i < mPriv->size ; i++) {
-        if(0 == strcmp(mPriv->names[i], name)) {
+        if (mPriv->keys[i] == checksum && 
+            strcmp(mPriv->names[i], name) == 0) {
             break;
         }
     }
@@ -175,6 +226,7 @@ static int jk2_map_default_put(jk_env_t *env, jk_map_t *m,
         mPriv->names[mPriv->size] =  (char *)name; 
         */
         mPriv->names[mPriv->size] = m->pool->pstrdup(env,m->pool, name);
+        mPriv->keys[mPriv->size] = checksum;
         mPriv->size ++;
         rc = JK_OK;
     }
@@ -195,6 +247,9 @@ static int jk2_map_default_add(jk_env_t *env, jk_map_t *m,
     jk2_map_default_realloc(env, m);
     
     if(mPriv->size < mPriv->capacity) {
+        apr_uint32_t checksum;
+    
+        COMPUTE_KEY_CHECKSUM(name, checksum);
         mPriv->values[mPriv->size] = value;
         /* XXX this is wrong - either we take ownership and copy both
            name and value,
@@ -202,6 +257,7 @@ static int jk2_map_default_add(jk_env_t *env, jk_map_t *m,
         */
         /*     mPriv->names[mPriv->size] = m->pool->pstrdup(m->pool, name); */
         mPriv->names[mPriv->size] =  (char *)name; 
+        mPriv->keys[mPriv->size] = checksum;
         mPriv->size ++;
         rc = JK_OK;
     }
