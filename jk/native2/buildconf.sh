@@ -2,11 +2,9 @@
 
 echo "libtoolize --force --automake"
 libtoolize --force --automake
-#echo "automake -a --foreign -i"
-#automake -a --foreign -i
+echo "automake --copy --add-missing"
+automake --copy --add-missing
 echo "aclocal"
-#aclocal --acdir=`aclocal --print-ac-dir`
-#aclocal --acdir=/usr/local/share/aclocal
 aclocal
 echo "autoconf"
 autoconf
