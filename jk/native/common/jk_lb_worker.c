@@ -28,6 +28,7 @@
 #include "jk_util.h"
 #include "jk_worker.h"
 #include "jk_lb_worker.h"
+#include "jk_mt.h"
 
 /*
  * The load balancing code in this 
@@ -86,6 +87,7 @@ struct lb_worker
     int local_worker_only;
     int sticky_session;
     int recover_wait_time;
+    JK_CRIT_SEC cs; 
 };
 
 typedef struct lb_worker lb_worker_t;
@@ -262,12 +264,20 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
     int total_factor = 0;
     const char *search_type = search_types[search_id];
     int i;
-
+    
     *domain_id = -1;
 
+    JK_ENTER_CS(&(p->cs), i);
+    if (!i) {
+        jk_log(l, JK_LOG_ERROR,
+               "could not lock load balancer = %s\n",
+               p->name);
+        return NULL;
+    }
     jk_log(l, JK_LOG_DEBUG,
            "searching for %s worker (%s)\n",
            search_type, search_string);
+
     for (i = start; i < stop; i++) {
        jk_log(l, JK_LOG_DEBUG,
              "testing worker %s (%d) for match with %s (%s)\n",
@@ -328,11 +338,13 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
         jk_log(l, JK_LOG_DEBUG,
                "found worker %s with new load %d in search with %s (%s)\n",
                rc->name, rc->lb_value, search_type, search_string);
+        JK_LEAVE_CS(&(p->cs), i);
         return rc;
     }
     jk_log(l, JK_LOG_DEBUG,
            "found no %s (%s) worker\n",
            search_type, search_string);
+   JK_LEAVE_CS(&(p->cs), i);
     return rc;
 }
 
@@ -669,6 +681,8 @@ static int JK_METHOD init(jk_worker_t *pThis,
     int i;
 
     lb_worker_t *p = (lb_worker_t *)pThis->worker_private;
+    JK_TRACE_ENTER(log);
+
     pThis->retries = jk_get_worker_retries(props, p->name,
                                            JK_RETRIES);
 
@@ -679,6 +693,13 @@ static int JK_METHOD init(jk_worker_t *pThis,
     if (p->recover_wait_time < WAIT_BEFORE_RECOVER)
         p->recover_wait_time = WAIT_BEFORE_RECOVER;
 
+    JK_INIT_CS(&(p->cs), i);
+    if (i == JK_FALSE) {
+        JK_TRACE_EXIT(log);
+        return JK_FALSE;
+    }
+
+    JK_TRACE_EXIT(log);
     return JK_TRUE;
 }
 
@@ -712,10 +733,11 @@ static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
     JK_TRACE_ENTER(l);
 
     if (pThis && *pThis && (*pThis)->worker_private) {
+        unsigned int i;
         lb_worker_t *private_data = (*pThis)->worker_private;
 
         close_workers(private_data, private_data->num_of_workers, l);
-
+        JK_DELETE_CS(&(private_data->cs), i);
         jk_close_pool(&private_data->p);
         free(private_data);
 
