@@ -2278,6 +2278,39 @@ static int jk_translate(request_rec *r)
                        "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
+
+            /* Special case to make sure that apache can serve a directory
+               listing if there are no matches for the DirectoryIndex and
+               Tomcat webapps are mapped into apache using JkAutoAlias. */
+            if(r->main != NULL && (conf->alias_dir != NULL) &&
+               !strcmp(r->main->handler,DIR_MAGIC_TYPE)) {
+
+                /* Append the request uri to the JkAutoAlias directory and
+                   determine if the file exists. */
+                char *clean_uri;        
+                apr_finfo_t finfo; 
+                finfo.filetype = APR_NOFILE;
+                clean_uri = apr_pstrdup(r->pool, r->uri);
+                ap_no2slash(clean_uri); 
+                /* Map uri to a context static file */
+                if (strlen(clean_uri) > 1) {
+                    char *context_path = NULL;
+
+                    context_path = apr_pstrcat(r->pool,conf->alias_dir,
+                                              ap_os_escape_path(r->pool,clean_uri,1),
+                                              NULL);                                 
+                    if( context_path != NULL ) {
+                        apr_stat(&finfo,context_path,APR_FINFO_TYPE,r->pool);
+                    }                   
+                }    
+                if(finfo.filetype != APR_REG) {
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                        "JkAutoAlias, no DirectoryIndex file for URI %s\n",
+                        r->uri);        
+                     return DECLINED;
+                }
+            }    
+
             uri = apr_pstrdup(r->pool, r->uri);
             worker = map_uri_to_worker(conf->uw_map, uri, conf->log);
 
