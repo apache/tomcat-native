@@ -161,8 +161,12 @@ public class Constants {
     public static final int TYPE_RES_STATUS=0x20;
     public static final int TYPE_RES_HEADER=0x21;
     public static final int TYPE_RES_COMMIT=0x2f;
+
     public static final int TYPE_RES_BODY=0x30;
     public static final int TYPE_RES_DONE=0x3f;
 
+    public static final int TYPE_CBK_READ=0x40;
+    public static final int TYPE_CBK_DATA=0x41;
+    public static final int TYPE_CBK_DONE=0x42;
 
 }
