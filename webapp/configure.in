@@ -239,7 +239,7 @@ AC_ARG_WITH(apr,
 )
 
 if ${TEST} -z "${APA}" -a -z "${APRDIR}" ; then
-  APRDIR="{SRCDIR}/apr"
+  APRDIR="${SRCDIR}/apr"
 else
   APRDIR="${APXS_PREFIX}"
 fi
