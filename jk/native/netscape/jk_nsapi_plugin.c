@@ -92,7 +92,7 @@ static void init_workers_on_other_threads(void *init_d)
     }
     else {
         jk_log(logger, JK_LOG_EMERG,
-               "In init_workers_on_other_threads, failed\n");
+               "In init_workers_on_other_threads, failed");
     }
 
     init_on_other_thread_is_done = JK_TRUE;
@@ -161,7 +161,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
                 ch = netbuf_getc(inbuf);
                 /*
                  * IO_EOF is 0 (zero) which is a very reasonable byte
-                 * when it comes to binary data. So we are not breaking 
+                 * when it comes to binary data. So we are not breaking
                  * out of the read loop when reading it.
                  *
                  * We are protected from an infinit loop by the Java part of
@@ -241,7 +241,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
                                 0, init_workers_on_other_threads, init_map);
             for (sleep_cnt = 0; sleep_cnt < 60; sleep_cnt++) {
                 systhread_sleep(1000);
-                jk_log(logger, JK_LOG_DEBUG, "jk_init, a second passed\n");
+                jk_log(logger, JK_LOG_DEBUG, "jk_init, a second passed");
                 if (init_on_other_thread_is_done) {
                     break;
                 }
@@ -319,10 +319,9 @@ NSAPI_PUBLIC int jk_service(pblock * pb, Session * sn, Request * rq)
 
         s.ws_private = &private_data;
         s.pool = &private_data.p;
+
         if (init_ws_service(&private_data, &s)) {
             jk_endpoint_t *e = NULL;
-            /* Update retries for this worker */
-            s.retries = worker->retries;                 
             if (worker->get_endpoint(worker, &e, logger)) {
                 int recover = JK_FALSE;
                 if (e->service(e, &s, logger, &recover)) {
@@ -392,7 +391,7 @@ static int init_ws_service(nsapi_private_data_t * private_data,
     s->num_headers = 0;
 
 #ifdef NETWARE
-    /* on NetWare, we can have virtual servers that are secure.  
+    /* on NetWare, we can have virtual servers that are secure.
      * PR_IsSocketSecure is an api made available with virtual servers to check
      * if the socket is secure or not
      */
@@ -469,9 +468,9 @@ static int setup_http_headers(nsapi_private_data_t * private_data,
                     h = h->next;
                 }
             }
-            /* Add a content-length = 0 header if needed. 
-             * Ajp13 assumes an absent content-length header means an unknown, 
-             * but non-zero length body. 
+            /* Add a content-length = 0 header if needed.
+             * Ajp13 assumes an absent content-length header means an unknown,
+             * but non-zero length body.
              */
             if (need_content_length_header) {
                 s->headers_names[cnt] = "content-length";

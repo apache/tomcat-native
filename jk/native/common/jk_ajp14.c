@@ -39,7 +39,7 @@ void ajp14_compute_md5(jk_login_service_t *s, jk_logger_t *l)
            (const unsigned char *)s->secret_key, s->computed_key);
 
     if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG, "(%s/%s) -> (%s)\n",
+        jk_log(l, JK_LOG_DEBUG, "(%s/%s) -> (%s)",
                s->entropy, s->secret_key, s->computed_key);
     JK_TRACE_EXIT(l);
 }
@@ -80,7 +80,7 @@ int ajp14_marshal_login_init_into_msgb(jk_msg_buf_t *msg,
      */
     if (jk_b_append_string(msg, s->web_server_name)) {
         jk_log(l, JK_LOG_ERROR,
-               "failed appending the web_server_name string\n");
+               "failed appending the web_server_name string");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -107,7 +107,7 @@ int ajp14_unmarshal_login_seed(jk_msg_buf_t *msg,
     if (jk_b_get_bytes
         (msg, (unsigned char *)s->entropy, AJP14_ENTROPY_SEED_LEN) < 0) {
         jk_log(l, JK_LOG_ERROR,
-               "can't get seed\n");
+               "can't get seed");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -148,7 +148,7 @@ int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t *msg,
         (msg, (const unsigned char *)s->computed_key,
          AJP14_COMPUTED_KEY_LEN)) {
         jk_log(l, JK_LOG_ERROR,
-               "failed appending the COMPUTED MD5 bytes\n");
+               "failed appending the COMPUTED MD5 bytes");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -179,7 +179,7 @@ int ajp14_unmarshal_log_ok(jk_msg_buf_t *msg,
 
     if (nego == 0xFFFFFFFF) {
         jk_log(l, JK_LOG_ERROR,
-               "can't get negociated data\n");
+               "can't get negociated data");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -188,7 +188,7 @@ int ajp14_unmarshal_log_ok(jk_msg_buf_t *msg,
 
     if (!sname) {
         jk_log(l, JK_LOG_ERROR,
-               "can't get servlet engine name\n");
+               "can't get servlet engine name");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -200,7 +200,7 @@ int ajp14_unmarshal_log_ok(jk_msg_buf_t *msg,
 
     if (!s->servlet_engine_name) {
         jk_log(l, JK_LOG_ERROR,
-               "can't malloc servlet engine name\n");
+               "can't malloc servlet engine name");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -229,7 +229,7 @@ int ajp14_unmarshal_log_nok(jk_msg_buf_t *msg, jk_logger_t *l)
 
     if (status == 0xFFFFFFFF) {
         jk_log(l, JK_LOG_ERROR,
-               "can't get failure code\n");
+               "can't get failure code");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -273,7 +273,7 @@ int ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
         (msg, (const unsigned char *)s->computed_key,
          AJP14_COMPUTED_KEY_LEN)) {
         jk_log(l, JK_LOG_ERROR,
-               "failed appending the COMPUTED MD5 bytes\n");
+               "failed appending the COMPUTED MD5 bytes");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -299,7 +299,7 @@ int ajp14_unmarshal_shutdown_nok(jk_msg_buf_t *msg, jk_logger_t *l)
 
     if (status == 0xFFFFFFFF) {
         jk_log(l, JK_LOG_ERROR,
-               "can't get failure code\n");
+               "can't get failure code");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -347,7 +347,7 @@ int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t *msg,
      */
     if (jk_b_append_bytes(msg, jk_b_get_buff(unk), jk_b_get_len(unk))) {
         jk_log(l, JK_LOG_ERROR,
-               "failed appending the UNHANDLED MESSAGE\n");
+               "failed appending the UNHANDLED MESSAGE");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -385,7 +385,7 @@ int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
      */
     if (jk_b_append_string(msg, virtual)) {
         jk_log(l, JK_LOG_ERROR,
-               "failed appending the virtual host string\n");
+               "failed appending the virtual host string");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -417,12 +417,12 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 
     JK_TRACE_ENTER(l);
     jk_log(l, JK_LOG_DEBUG,
-           "get virtual %s for virtual %s\n",
+           "get virtual %s for virtual %s",
            vname, c->virt);
 
     if (!vname) {
         jk_log(l, JK_LOG_ERROR,
-               "can't get virtual hostname\n");
+               "can't get virtual hostname");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -433,7 +433,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 
         if (context_set_virtual(c, vname) == JK_FALSE) {
             jk_log(l, JK_LOG_ERROR,
-                   "can't malloc virtual hostname\n");
+                   "can't malloc virtual hostname");
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -445,13 +445,13 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 
         if (!cname) {
             jk_log(l, JK_LOG_ERROR,
-                   "can't get context\n");
+                   "can't get context");
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
 
         jk_log(l, JK_LOG_DEBUG,
-               "get context %s for virtual %s\n",
+               "get context %s for virtual %s",
                cname, vname);
 
         /* grab all contexts up to empty one which indicate end of contexts */
@@ -462,7 +462,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 
         if (context_add_base(c, cname) == JK_FALSE) {
             jk_log(l, JK_LOG_ERROR,
-                   "can't add/set context %s\n",
+                   "can't add/set context %s",
                    cname);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
@@ -474,7 +474,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 
             if (!uri) {
                 jk_log(l, JK_LOG_ERROR,
-                       "can't get URI\n");
+                       "can't get URI");
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
@@ -485,12 +485,12 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
             }
 
             jk_log(l, JK_LOG_INFO,
-                   "Got URI (%s) for virtualhost %s and context %s\n", uri,
+                   "Got URI (%s) for virtualhost %s and context %s", uri,
                    vname, cname);
 
             if (context_add_uri(c, cname, uri) == JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR,
-                       "can't add/set uri (%s) for context %s\n",
+                       "can't add/set uri (%s) for context %s",
                        uri, cname);
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -539,7 +539,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
      */
     if (jk_b_append_string(msg, c->virt)) {
         jk_log(l, JK_LOG_ERROR,
-               "failed appending the virtual host string\n");
+               "failed appending the virtual host string");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -550,7 +550,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
 
         if (!ci) {
             jk_log(l, JK_LOG_ERROR,
-                   "unknown context %s\n",
+                   "unknown context %s",
                    cname);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
@@ -562,7 +562,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
 
         if (jk_b_append_string(msg, cname)) {
             jk_log(l, JK_LOG_ERROR,
-                   "failed appending the context string %s\n",
+                   "failed appending the context string %s",
                    cname);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
@@ -577,7 +577,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
              */
             if (jk_b_append_string(msg, c->contexts[i]->cbase)) {
                 jk_log(l, JK_LOG_ERROR,
-                       "failed appending the context string %s\n",
+                       "failed appending the context string %s",
                        c->contexts[i]->cbase);
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -589,7 +589,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
 
     if (jk_b_append_string(msg, "")) {
         jk_log(l, JK_LOG_ERROR,
-               "failed appending end of contexts\n");
+               "failed appending end of contexts");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -623,7 +623,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
 
     if (!vname) {
         jk_log(l, JK_LOG_ERROR,
-               "can't get virtual hostname\n");
+               "can't get virtual hostname");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -631,7 +631,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
     /* Check if we speak about the correct virtual */
     if (strcmp(c->virt, vname)) {
         jk_log(l, JK_LOG_ERROR,
-               "incorrect virtual %s instead of %s\n",
+               "incorrect virtual %s instead of %s",
                vname, c->virt);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
@@ -644,7 +644,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
 
         if (!cname) {
             jk_log(l, JK_LOG_ERROR,
-                   "can't get context\n");
+                   "can't get context");
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -656,7 +656,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
 
         if (!ci) {
             jk_log(l, JK_LOG_ERROR,
-                   "unknow context %s for virtual %s\n",
+                   "unknow context %s for virtual %s",
                    cname, vname);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
@@ -666,7 +666,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
 
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "updated context %s to state %d\n",
+                   "updated context %s to state %d",
                    cname, ci->status);
     }
 

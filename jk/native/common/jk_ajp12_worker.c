@@ -87,7 +87,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_recoverable_error)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::service\n");
+    jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::service");
 
     if (e && e->endpoint_private && s && is_recoverable_error) {
         ajp12_endpoint_t *p = e->endpoint_private;
@@ -101,7 +101,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 jk_open_socket(&p->worker->worker_inet_addr, JK_TRUE,
                                JK_FALSE, -1, l);
 
-            jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::service, sd = %d\n",
+            jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::service, sd = %d",
                    p->sd);
             if (p->sd >= 0) {
                 break;
@@ -117,16 +117,16 @@ static int JK_METHOD service(jk_endpoint_t *e,
             jk_sb_open(&p->sb, p->sd);
             if (ajpv12_handle_request(p, s, l)) {
                 jk_log(l, JK_LOG_DEBUG,
-                       "In jk_endpoint_t::service, sent request\n");
+                       "In jk_endpoint_t::service, sent request");
                 return ajpv12_handle_response(p, s, l);
             }
         }
-        jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, Error sd = %d\n",
+        jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, Error sd = %d",
                p->sd);
     }
     else {
         jk_log(l, JK_LOG_ERROR,
-               "In jk_endpoint_t::service, NULL parameters\n");
+               "In jk_endpoint_t::service, NULL parameters");
     }
 
     return JK_FALSE;
@@ -134,7 +134,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
 static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done\n");
+    jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done");
     if (e && *e && (*e)->endpoint_private) {
         ajp12_endpoint_t *p = (*e)->endpoint_private;
         if (p->sd > 0) {
@@ -145,7 +145,7 @@ static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
         return JK_TRUE;
     }
 
-    jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::done, NULL parameters\n");
+    jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::done, NULL parameters");
     return JK_FALSE;
 }
 
@@ -153,7 +153,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                               jk_map_t *props,
                               jk_worker_env_t *we, jk_logger_t *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into jk_worker_t::validate\n");
+    jk_log(l, JK_LOG_DEBUG, "Into jk_worker_t::validate");
 
     if (pThis && pThis->worker_private) {
         ajp12_worker_t *p = pThis->worker_private;
@@ -166,7 +166,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                         AJP_DEF_HOST);
 
         jk_log(l, JK_LOG_DEBUG,
-               "In jk_worker_t::validate for worker %s contact is %s:%d\n",
+               "In jk_worker_t::validate for worker %s contact is %s:%d",
                p->name, host, port);
 
         if (port > 1024 && host) {
@@ -174,14 +174,14 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 return JK_TRUE;
             }
             jk_log(l, JK_LOG_ERROR,
-                   "In jk_worker_t::validate, resolve failed\n");
+                   "In jk_worker_t::validate, resolve failed");
         }
-        jk_log(l, JK_LOG_ERROR, "In jk_worker_t::validate, Error %s %d\n",
+        jk_log(l, JK_LOG_ERROR, "In jk_worker_t::validate, Error %s %d",
                host, port);
     }
     else {
         jk_log(l, JK_LOG_ERROR,
-               "In jk_worker_t::validate, NULL parameters\n");
+               "In jk_worker_t::validate, NULL parameters");
     }
 
     return JK_FALSE;
@@ -198,7 +198,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
 static int JK_METHOD get_endpoint(jk_worker_t *pThis,
                                   jk_endpoint_t **pend, jk_logger_t *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into jk_worker_t::get_endpoint\n");
+    jk_log(l, JK_LOG_DEBUG, "Into jk_worker_t::get_endpoint");
 
     if (pThis && pThis->worker_private && pend) {
         ajp12_endpoint_t *p =
@@ -213,11 +213,11 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
             return JK_TRUE;
         }
         jk_log(l, JK_LOG_ERROR,
-               "In jk_worker_t::get_endpoint, malloc failed\n");
+               "In jk_worker_t::get_endpoint, malloc failed");
     }
     else {
         jk_log(l, JK_LOG_ERROR,
-               "In jk_worker_t::get_endpoint, NULL parameters\n");
+               "In jk_worker_t::get_endpoint, NULL parameters");
     }
 
     return JK_FALSE;
@@ -225,7 +225,7 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
 
 static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into jk_worker_t::destroy\n");
+    jk_log(l, JK_LOG_DEBUG, "Into jk_worker_t::destroy");
     if (pThis && *pThis && (*pThis)->worker_private) {
         ajp12_worker_t *private_data = (*pThis)->worker_private;
         free(private_data->name);
@@ -234,14 +234,14 @@ static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
         return JK_TRUE;
     }
 
-    jk_log(l, JK_LOG_ERROR, "In jk_worker_t::destroy, NULL parameters\n");
+    jk_log(l, JK_LOG_ERROR, "In jk_worker_t::destroy, NULL parameters");
     return JK_FALSE;
 }
 
 int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
                                    const char *name, jk_logger_t *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into ajp12_worker_factory\n");
+    jk_log(l, JK_LOG_DEBUG, "Into ajp12_worker_factory");
     if (NULL != name && NULL != w) {
         ajp12_worker_t *private_data =
             (ajp12_worker_t *) malloc(sizeof(ajp12_worker_t));
@@ -265,10 +265,10 @@ int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
 
             free(private_data);
         }
-        jk_log(l, JK_LOG_ERROR, "In ajp12_worker_factory, malloc failed\n");
+        jk_log(l, JK_LOG_ERROR, "In ajp12_worker_factory, malloc failed");
     }
     else {
-        jk_log(l, JK_LOG_ERROR, "In ajp12_worker_factory, NULL parameters\n");
+        jk_log(l, JK_LOG_ERROR, "In ajp12_worker_factory, NULL parameters");
     }
 
     return JK_FALSE;
@@ -357,12 +357,12 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
 {
     int ret;
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajpv12_handle_request\n");
+    jk_log(l, JK_LOG_DEBUG, "Into ajpv12_handle_request");
     /*
      * Start the ajp 12 service sequence
      */
     jk_log(l, JK_LOG_DEBUG,
-           "ajpv12_handle_request, sending the ajp12 start sequence\n");
+           "ajpv12_handle_request, sending the ajp12 start sequence");
 
     ret = (ajpv12_mark(p, 1) && ajpv12_sendstring(p, s->method) && ajpv12_sendstring(p, 0) &&   /* zone */
            ajpv12_sendstring(p, 0) &&   /* servlet */
@@ -398,14 +398,14 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
 
     if (!ret) {
         jk_log(l, JK_LOG_ERROR,
-               "In ajpv12_handle_request, failed to send the ajp12 start sequence\n");
+               "In ajpv12_handle_request, failed to send the ajp12 start sequence");
         return JK_FALSE;
     }
 
     if (s->num_attributes > 0) {
         unsigned i;
         jk_log(l, JK_LOG_DEBUG,
-               "ajpv12_handle_request, sending the environment variables\n");
+               "ajpv12_handle_request, sending the environment variables");
 
         for (i = 0; i < s->num_attributes; i++) {
             ret = (ajpv12_mark(p, 5) &&
@@ -413,13 +413,13 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
                    ajpv12_sendstring(p, s->attributes_values[i]));
             if (!ret) {
                 jk_log(l, JK_LOG_ERROR,
-                       "In ajpv12_handle_request, failed to send environment\n");
+                       "In ajpv12_handle_request, failed to send environment");
                 return JK_FALSE;
             }
         }
     }
 
-    jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_request, sending the headers\n");
+    jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_request, sending the headers");
 
     /* Send the request headers */
     if (s->num_headers) {
@@ -431,19 +431,19 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
 
             if (!ret) {
                 jk_log(l, JK_LOG_ERROR,
-                       "In ajpv12_handle_request, failed to send headers\n");
+                       "In ajpv12_handle_request, failed to send headers");
                 return JK_FALSE;
             }
         }
     }
 
     jk_log(l, JK_LOG_DEBUG,
-           "ajpv12_handle_request, sending the terminating mark\n");
+           "ajpv12_handle_request, sending the terminating mark");
 
     ret = (ajpv12_mark(p, 4) && ajpv12_flush(p));
     if (!ret) {
         jk_log(l, JK_LOG_ERROR,
-               "In ajpv12_handle_request, failed to send the terminating mark\n");
+               "In ajpv12_handle_request, failed to send the terminating mark");
         return JK_FALSE;
     }
 
@@ -452,7 +452,7 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
         unsigned so_far = 0;
 
         jk_log(l, JK_LOG_DEBUG,
-               "ajpv12_handle_request, sending the request body\n");
+               "ajpv12_handle_request, sending the request body");
 
         while (so_far < s->content_length) {
             unsigned this_time = 0;
@@ -463,31 +463,31 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
 
             if (!s->read(s, buf, to_read, &this_time)) {
                 jk_log(l, JK_LOG_ERROR,
-                       "In ajpv12_handle_request, failed to read from the web server\n");
+                       "In ajpv12_handle_request, failed to read from the web server");
                 return JK_FALSE;
             }
-            jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_request, read %d bytes\n",
+            jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_request, read %d bytes",
                    this_time);
             if (this_time > 0) {
                 so_far += this_time;
                 if ((int)this_time != send(p->sd, buf, this_time, 0)) {
                     jk_log(l, JK_LOG_ERROR,
-                           "In ajpv12_handle_request, failed to write to the container\n");
+                           "In ajpv12_handle_request, failed to write to the container");
                     return JK_FALSE;
                 }
                 jk_log(l, JK_LOG_DEBUG,
-                       "ajpv12_handle_request, sent %d bytes\n", this_time);
+                       "ajpv12_handle_request, sent %d bytes", this_time);
             }
             else if (this_time == 0) {
                 jk_log(l, JK_LOG_ERROR,
-                       "In ajpv12_handle_request, Error: short read. content length is %d, read %d\n",
+                       "In ajpv12_handle_request, Error: short read. content length is %d, read %d",
                        s->content_length, so_far);
                 return JK_FALSE;
             }
         }
     }
 
-    jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_request done\n");
+    jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_request done");
     return JK_TRUE;
 }
 
@@ -502,7 +502,7 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
     int headers_len = 0;
     int write_to_ws;
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajpv12_handle_response\n");
+    jk_log(l, JK_LOG_DEBUG, "Into ajpv12_handle_response");
     /*
      * Read headers ...
      */
@@ -516,17 +516,17 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
 
         if (!jk_sb_gets(&p->sb, &line)) {
             jk_log(l, JK_LOG_ERROR,
-                   "ajpv12_handle_response, error reading header line\n");
+                   "ajpv12_handle_response, error reading header line");
             return JK_FALSE;
         }
 #if defined(AS400) || defined(_OSD_POSIX)
         jk_xlate_from_ascii(line, strlen(line));
 #endif
 
-        jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, read %s\n", line);
+        jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, read %s", line);
         if (0 == strlen(line)) {
             jk_log(l, JK_LOG_DEBUG,
-                   "ajpv12_handle_response, headers are done\n");
+                   "ajpv12_handle_response, headers are done");
             break;              /* Empty line -> end of headers */
         }
 
@@ -536,12 +536,12 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
         }
         if (!*name) {           /* Empty header name */
             jk_log(l, JK_LOG_ERROR,
-                   "ajpv12_handle_response, empty header name\n");
+                   "ajpv12_handle_response, empty header name");
             return JK_FALSE;
         }
         if (!(value = strchr(name, ':'))) {
             jk_log(l, JK_LOG_ERROR,
-                   "ajpv12_handle_response, no value supplied\n");
+                   "ajpv12_handle_response, no value supplied");
             return JK_FALSE;    /* No value !!! */
         }
         *value = '\0';
@@ -551,11 +551,11 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
         }
         if (!*value) {          /* Empty header value */
             jk_log(l, JK_LOG_ERROR,
-                   "ajpv12_handle_response, empty header value\n");
+                   "ajpv12_handle_response, empty header value");
             return JK_FALSE;
         }
 
-        jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, read %s=%s\n", name,
+        jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, read %s=%s", name,
                value);
         if (0 == strcmp("Status", name)) {
 #if defined(AS400) || defined(_REENTRANT)
@@ -567,7 +567,7 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
             status = atoi(numeric);
             if (status < 100 || status > 999) {
                 jk_log(l, JK_LOG_ERROR,
-                       "ajpv12_handle_response, invalid status code\n");
+                       "ajpv12_handle_response, invalid status code");
                 return JK_FALSE;
             }
 #if defined(AS400) || defined(_REENTRANT)
@@ -579,7 +579,7 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
         else {
             if (headers_capacity == headers_len) {
                 jk_log(l, JK_LOG_DEBUG,
-                       "ajpv12_handle_response, allocating header arrays\n");
+                       "ajpv12_handle_response, allocating header arrays");
                 names =
                     (char **)jk_pool_realloc(s->pool,
                                              sizeof(char *) *
@@ -594,7 +594,7 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
                                              headers_capacity);
                 if (!values || !names) {
                     jk_log(l, JK_LOG_ERROR,
-                           "ajpv12_handle_response, malloc error\n");
+                           "ajpv12_handle_response, malloc error");
                     return JK_FALSE;
                 }
                 headers_capacity = headers_capacity + 5;
@@ -605,19 +605,19 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
         }
     }
 
-    jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, starting response\n");
+    jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, starting response");
     if (!s->start_response(s,
                            status,
                            reason,
                            (const char *const *)names,
                            (const char *const *)values, headers_len)) {
         jk_log(l, JK_LOG_ERROR,
-               "ajpv12_handle_response, error starting response\n");
+               "ajpv12_handle_response, error starting response");
         return JK_FALSE;
     }
 
     jk_log(l, JK_LOG_DEBUG,
-           "ajpv12_handle_response, reading response body\n");
+           "ajpv12_handle_response, reading response body");
     /*
      * Read response body
      */
@@ -629,25 +629,25 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
 
         if (!jk_sb_read(&p->sb, &buf, to_read, &acc)) {
             jk_log(l, JK_LOG_ERROR,
-                   "ajpv12_handle_response, error reading from \n");
+                   "ajpv12_handle_response, error reading from ");
             return JK_FALSE;
         }
 
         if (!acc) {
             jk_log(l, JK_LOG_DEBUG,
-                   "ajpv12_handle_response, response body is done\n");
+                   "ajpv12_handle_response, response body is done");
             break;
         }
 
         if (write_to_ws) {
             if (!s->write(s, buf, acc)) {
                 jk_log(l, JK_LOG_ERROR,
-                       "ajpv12_handle_response, error writing back to server\n");
+                       "ajpv12_handle_response, error writing back to server");
                 write_to_ws = JK_FALSE;
             }
         }
     }
 
-    jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response done\n");
+    jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response done");
     return JK_TRUE;
 }

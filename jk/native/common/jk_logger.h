@@ -96,18 +96,18 @@ struct file_logger_t
 #define JK_TRACE_ENTER(l)                               \
     do {                                                \
         if ((l) && (l)->level == JK_LOG_TRACE_LEVEL) {  \
-            jk_log((l), JK_LOG_TRACE, "enter\n");       \
+            jk_log((l), JK_LOG_TRACE, "enter");         \
     } } while (0)
 
 #define JK_TRACE_EXIT(l)                                \
     do {                                                \
         if ((l) && (l)->level == JK_LOG_TRACE_LEVEL) {  \
-            jk_log((l), JK_LOG_TRACE, "exit\n");        \
+            jk_log((l), JK_LOG_TRACE, "exit");          \
     } } while (0)
 
 #endif  /* JK_PRODUCTION */
 
-#define JK_LOG_NULL_PARAMS(l) jk_log((l), JK_LOG_ERROR, "NULL parameters\n")
+#define JK_LOG_NULL_PARAMS(l) jk_log((l), JK_LOG_ERROR, "NULL parameters")
 
 /* Debug level macro
  * It is more efficient to check the level prior

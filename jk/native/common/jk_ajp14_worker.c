@@ -51,13 +51,13 @@ static int handle_discovery(ajp_endpoint_t * ae,
 
     ajp14_marshal_context_query_into_msgb(msg, we->virtual, l);
 
-    jk_log(l, JK_LOG_DEBUG, "send query\n");
+    jk_log(l, JK_LOG_DEBUG, "send query");
 
     if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    jk_log(l, JK_LOG_DEBUG, "wait context reply\n");
+    jk_log(l, JK_LOG_DEBUG, "wait context reply");
 
     jk_b_reset(msg);
 
@@ -67,7 +67,7 @@ static int handle_discovery(ajp_endpoint_t * ae,
     }
     if ((cmd = jk_b_get_byte(msg)) != AJP14_CONTEXT_INFO_CMD) {
         jk_log(l, JK_LOG_ERROR,
-               "awaited command %d, received %d\n",
+               "awaited command %d, received %d",
                AJP14_CONTEXT_INFO_CMD, cmd);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
@@ -75,24 +75,24 @@ static int handle_discovery(ajp_endpoint_t * ae,
 
     if (context_alloc(&c, we->virtual) != JK_TRUE) {
         jk_log(l, JK_LOG_ERROR,
-               "can't allocate context room\n");
+               "can't allocate context room");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     if (ajp14_unmarshal_context_info(msg, c, l) != JK_TRUE) {
         jk_log(l, JK_LOG_ERROR,
-               "can't get context reply\n");
+               "can't get context reply");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
-    jk_log(l, JK_LOG_DEBUG, "received context\n");
+    jk_log(l, JK_LOG_DEBUG, "received context");
 
     buf = malloc(MAX_URI_SIZE); /* Really a very long URI */
 
     if (!buf) {
-        jk_log(l, JK_LOG_ERROR, "can't malloc buf\n");
+        jk_log(l, JK_LOG_ERROR, "can't malloc buf");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -108,7 +108,7 @@ static int handle_discovery(ajp_endpoint_t * ae,
 #endif
 
             jk_log(l, JK_LOG_INFO,
-                   "worker %s will handle uri %s in context %s [%s]\n",
+                   "worker %s will handle uri %s in context %s [%s]",
                    ae->worker->name, ci->uris[j], ci->cbase, buf);
 
             uri_worker_map_add(we->uri_to_worker, buf, ae->worker->name, l);
@@ -149,13 +149,13 @@ static int handle_logon(ajp_endpoint_t * ae,
 
     ajp14_marshal_login_init_into_msgb(msg, jl, l);
 
-    jk_log(l, JK_LOG_DEBUG, "send init\n");
+    jk_log(l, JK_LOG_DEBUG, "send init");
 
     if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    jk_log(l, JK_LOG_DEBUG, "wait init reply\n");
+    jk_log(l, JK_LOG_DEBUG, "wait init reply");
 
     jk_b_reset(msg);
 
@@ -165,7 +165,7 @@ static int handle_logon(ajp_endpoint_t * ae,
     }
     if ((cmd = jk_b_get_byte(msg)) != AJP14_LOGSEED_CMD) {
         jk_log(l, JK_LOG_ERROR,
-               "awaited command %d, received %d\n",
+               "awaited command %d, received %d",
                AJP14_LOGSEED_CMD, cmd);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
@@ -175,7 +175,7 @@ static int handle_logon(ajp_endpoint_t * ae,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    jk_log(l, JK_LOG_DEBUG, "received entropy %s\n",
+    jk_log(l, JK_LOG_DEBUG, "received entropy %s",
            jl->entropy);
 
     ajp14_compute_md5(jl, l);
@@ -199,7 +199,7 @@ static int handle_logon(ajp_endpoint_t * ae,
     case AJP14_LOGOK_CMD:
         if (ajp14_unmarshal_log_ok(msg, jl, l) == JK_TRUE) {
             jk_log(l, JK_LOG_DEBUG,
-                   "Successfully connected to servlet-engine %s\n",
+                   "Successfully connected to servlet-engine %s",
                    jl->servlet_engine_name);
             JK_TRACE_EXIT(l);
             return JK_TRUE;
@@ -270,12 +270,12 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     if ((!secret_key) || (!strlen(secret_key))) {
         jk_log(l, JK_LOG_ERROR,
-               "validate error, empty or missing secretkey\n");
+               "validate error, empty or missing secretkey");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
-    /* jk_log(l, JK_LOG_DEBUG, "Into ajp14:validate - secret_key=%s\n", secret_key); */
+    /* jk_log(l, JK_LOG_DEBUG, "Into ajp14:validate - secret_key=%s", secret_key); */
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -313,7 +313,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
     aw->login->secret_key = strdup(jk_get_worker_secret_key(props, aw->name));
 
     if (aw->login->secret_key == NULL) {
-        jk_log(l, JK_LOG_ERROR, "can't malloc secret_key\n");
+        jk_log(l, JK_LOG_ERROR, "can't malloc secret_key");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -322,7 +322,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
     aw->login->web_server_name = strdup(we->server_name);
 
     if (aw->login->web_server_name == NULL) {
-        jk_log(l, JK_LOG_ERROR, "can't malloc web_server_name\n");
+        jk_log(l, JK_LOG_ERROR, "can't malloc web_server_name");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -393,7 +393,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
     aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
     if (!aw) {
         jk_log(l, JK_LOG_ERROR,
-               "malloc of private data failed\n");
+               "malloc of private data failed");
        JK_TRACE_EXIT(l);
        return JK_FALSE;
     }
@@ -403,7 +403,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
     if (!aw->name) {
         free(aw);
         jk_log(l, JK_LOG_ERROR,
-               "malloc failed for name\n");
+               "malloc failed for name");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -414,7 +414,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
 
     if (aw->login == NULL) {
         jk_log(l, JK_LOG_ERROR,
-               "malloc failed for login area\n");
+               "malloc failed for login area");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }

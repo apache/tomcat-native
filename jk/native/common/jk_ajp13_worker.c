@@ -90,7 +90,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
     aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
     if (!aw) {
         jk_log(l, JK_LOG_ERROR,
-               "malloc of private_data failed\n");
+               "malloc of private_data failed");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -99,7 +99,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
 
     if (!aw->name) {
         free(aw);
-        jk_log(l, JK_LOG_ERROR, "malloc failed\n");
+        jk_log(l, JK_LOG_ERROR, "malloc failed");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }

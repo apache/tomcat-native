@@ -162,8 +162,10 @@ static int JK_METHOD log_to_file(jk_logger_t *l, int level, const char *what)
         if (sz) {
             file_logger_t *p = l->logger_private;
             fwrite(what, 1, sz, p->logfile);
+            fputc('\n', p->logfile);
             /* [V] Flush the dam' thing! */
-            fflush(p->logfile);
+            if (l->level < JK_LOG_INFO_LEVEL)
+                fflush(p->logfile);
         }
 
         return JK_TRUE;

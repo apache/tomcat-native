@@ -267,20 +267,20 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
     JK_ENTER_CS(&(p->cs), i);
     if (!i) {
         jk_log(l, JK_LOG_ERROR,
-               "could not lock load balancer = %s\n",
+               "could not lock load balancer = %s",
                p->name);
         return NULL;
     }
     if (JK_IS_DEBUG_LEVEL(l))
        jk_log(l, JK_LOG_DEBUG,
-              "searching for %s worker (%s)\n",
+              "searching for %s worker (%s)",
               search_type, search_string);
 
     for (i = start; i < stop; i++) {
         if (is_worker_candidate(&(p->lb_workers[i]), search_id, search_string, l)) {
             if (JK_IS_DEBUG_LEVEL(l))
                jk_log(l, JK_LOG_DEBUG,
-                      "found candidate worker %s (%d) for match with %s (%s)\n",
+                      "found candidate worker %s (%d) for match with %s (%s)",
                       p->lb_workers[i].name, i, search_type, search_string);
             if (search_id == 1) {
                 *domain_id = i;
@@ -288,7 +288,7 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
             if (!p->lb_workers[i].in_error_state || !p->lb_workers[i].in_recovering) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                           "found candidate worker %s (%d) with previous load %d in search with %s (%s)\n",
+                           "found candidate worker %s (%d) with previous load %d in search with %s (%s)",
                            p->lb_workers[i].name, i, p->lb_workers[i].lb_value, search_type, search_string);
 
                 if (p->lb_workers[i].in_error_state) {
@@ -298,7 +298,7 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
                     if (elapsed <= p->recover_wait_time) {
                         if (JK_IS_DEBUG_LEVEL(l))
                             jk_log(l, JK_LOG_DEBUG,
-                                   "worker candidate %s (%d) is in error state - will not yet recover (%d < %d)\n",
+                                   "worker candidate %s (%d) is in error state - will not yet recover (%d < %d)",
                                    p->lb_workers[i].name, i, elapsed, p->recover_wait_time);
                         continue;
                     }
@@ -312,7 +312,7 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
                         rc = &(p->lb_workers[i]);
                         if (JK_IS_DEBUG_LEVEL(l))
                             jk_log(l, JK_LOG_DEBUG,
-                                   "new maximal worker %s (%d) with previous load %d in search with %s (%s)\n",
+                                   "new maximal worker %s (%d) with previous load %d in search with %s (%s)",
                                    rc->name, i, rc->lb_value, search_type, search_string);
                     }
                 } else {
@@ -322,7 +322,7 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
             }
             else if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_TRACE,
-                    "worker candidate %s (%d) is in error state - already recovers\n",
+                    "worker candidate %s (%d) is in error state - already recovers",
                     p->lb_workers[i].name, i);
             }
         }
@@ -335,20 +335,20 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
             rc->error_time     = now;
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "found worker %s is in error state - will recover\n",
+                       "found worker %s is in error state - will recover",
                        rc->name);
         }
         rc->lb_value -= total_factor;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "found worker %s with new load %d in search with %s (%s)\n",
+                   "found worker %s with new load %d in search with %s (%s)",
                    rc->name, rc->lb_value, search_type, search_string);
         JK_LEAVE_CS(&(p->cs), i);
         return rc;
     }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "found no %s (%s) worker\n",
+               "found no %s (%s) worker",
                search_type, search_string);
     JK_LEAVE_CS(&(p->cs), i);
     return rc;
@@ -370,7 +370,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
 
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "total sessionid is %s.\n",
+               "total sessionid is %s.",
                 sessionid ? sessionid : "empty");
     while (sessionid) {
         char *next = strchr(sessionid, ';');
@@ -381,7 +381,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
         }
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "searching worker for partial sessionid %s.\n",
+                   "searching worker for partial sessionid %s.",
                    sessionid);
         session_route = strchr(sessionid, '.');
         if (session_route) {
@@ -401,7 +401,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             }
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "found domain %s in route %s\n",
+                       "found domain %s in route %s",
                        session_domain, session_route);
 
             rc = get_suitable_worker(p, 2, session_domain, 0, p->num_of_workers,
@@ -463,7 +463,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         s->reco_status = RECO_INITED;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "service sticky_session=%d\n",
+                   "service sticky_session=%d",
                    p->worker->sticky_session);
 
         while (1) {
@@ -480,7 +480,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                           "service worker=%s jvm_route=%s rc=%d\n",
+                           "service worker=%s jvm_route=%s rc=%d",
                            rec->name, s->jvm_route, rc);
 
                 if (rc && end) {
@@ -510,7 +510,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      * Error is not recoverable - break with an error.
                      */
                     jk_log(l, JK_LOG_ERROR,
-                           "lb: unrecoverable error, request failed. Tomcat failed in the middle of request, we can't recover to another instance.\n");
+                           "lb: unrecoverable error, request failed. Tomcat failed in the middle of request, we can't recover to another instance.");
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }
@@ -520,19 +520,19 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * another worker... Lets try to do that.
                  */
                 jk_log(l, JK_LOG_DEBUG,
-                       "recoverable error... will try to recover on other host\n");
+                       "recoverable error... will try to recover on other host");
             }
             else {
                 /* NULL record, no more workers left ... */
                 jk_log(l, JK_LOG_ERROR,
-                       "lb: All tomcat instances failed, no more workers left.\n");
+                       "lb: All tomcat instances failed, no more workers left.");
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
         }
     }
 
-    jk_log(l, JK_LOG_ERROR, "lb: end of service with error\n");
+    jk_log(l, JK_LOG_ERROR, "lb: end of service with error");
     JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
@@ -647,7 +647,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 close_workers(p, i, l);
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                           "Failed to create worker %s\n",
+                           "Failed to create worker %s",
                            p->lb_workers[i].name);
 
             }
@@ -668,17 +668,17 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 if (JK_IS_DEBUG_LEVEL(l)) {
                     for (i = 0; i < num_of_workers; i++) {
                         jk_log(l, JK_LOG_DEBUG,
-                               "Balanced worker %i has name %s in domain %s and has local=%d and local_domain=%d\n",
+                               "Balanced worker %i has name %s in domain %s and has local=%d and local_domain=%d",
                                i, p->lb_workers[i].name, p->lb_workers[i].domain,
                                p->lb_workers[i].is_local_worker, p->lb_workers[i].is_local_domain);
                     }
                 }
                 if (JK_IS_DEBUG_LEVEL(l)) {
                     jk_log(l, JK_LOG_DEBUG,
-                           "in_local_worker_mode: %s\n",
+                           "in_local_worker_mode: %s",
                            (p->in_local_worker_mode ? "true" : "false"));
                     jk_log(l, JK_LOG_DEBUG,
-                           "local_worker_only: %s\n",
+                           "local_worker_only: %s",
                            (p->local_worker_only ? "true" : "false"));
                 }
                 p->num_of_workers = num_of_workers;

@@ -364,7 +364,7 @@ void jk_dump_buff(jk_logger_t *l,
         len = 1024;
 
     jk_log(l, file, line, funcname, level,
-           "%s pos=%d len=%d max=%d \n",
+           "%s pos=%d len=%d max=%d",
            what, msg->pos, msg->len, msg->maxlen);
 
     for (i = 0; i < len; i += 16) {
@@ -390,7 +390,6 @@ void jk_dump_buff(jk_logger_t *l,
                 *current++ = '.';
             }
         }
-        *current++ = '\n';
         *current++ = '\0';
             jk_log(l, file, line, funcname, level,
                    "%.4x    %s", i, lb);

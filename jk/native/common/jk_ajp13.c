@@ -39,7 +39,7 @@ int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
      */
     if (jk_b_append_byte(msg, JK_AJP13_SHUTDOWN)) {
         jk_log(l, JK_LOG_ERROR,
-               "failed appending shutdown message\n");
+               "failed appending shutdown message");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }

@@ -141,14 +141,14 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             if (ret) {
                 jk_close_socket(sock);
                 jk_log(l, JK_LOG_ERROR,
-                       "timeout_set failed with errno = %d\n",
+                       "timeout_set failed with errno = %d",
                        ret);
                 JK_TRACE_EXIT(l);
                 return -1;
             }
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "set timeout to %d with status %d\n",
+                       "set timeout to %d with status %d",
                        timeout, ret);
 
         }
@@ -157,7 +157,7 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
         do {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "try to connect socket = %d to %s\n", sock,
+                       "try to connect socket = %d to %s", sock,
                        jk_dump_hinfo(addr, buf));
 
 /* Need more infos for BSD 4.4 and Unix 98 defines, for now only 
@@ -175,13 +175,13 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
 #endif /* WIN32 */
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "after connect ret = %d\n", ret);
+                       "after connect ret = %d", ret);
         } while (-1 == ret && EINTR == errno);
 
         /* Check if we connected */
         if (ret == -1) {
             jk_log(l, JK_LOG_INFO,
-                   "connect() failed errno = %d\n", errno);
+                   "connect() failed errno = %d", errno);
             jk_close_socket(sock);
             JK_TRACE_EXIT(l);
             return -1;
@@ -190,7 +190,7 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             int set = 1;
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "jk_open_socket, set TCP_NODELAY to on\n");
+                       "jk_open_socket, set TCP_NODELAY to on");
             setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&set,
                        sizeof(set));
         }
@@ -198,7 +198,7 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             int keep = 1;
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "jk_open_socket, set SO_KEEPALIVE to on\n");
+                       "jk_open_socket, set SO_KEEPALIVE to on");
             setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&keep,
                         sizeof(keep));
         }
@@ -209,7 +209,7 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
                        sizeof(len))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
-                   "failed setting sndbuf errno = %d\n", errno);
+                   "failed setting sndbuf errno = %d", errno);
             jk_close_socket(sock);
             JK_TRACE_EXIT(l);
             return -1;
@@ -219,20 +219,20 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
                               sizeof(len))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
-                   "failed setting rcvbuf errno = %d\n", errno);
+                   "failed setting rcvbuf errno = %d", errno);
             jk_close_socket(sock);
             JK_TRACE_EXIT(l);
             return -1;
         }
 
         if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG, "connected sd = %d\n",
+            jk_log(l, JK_LOG_DEBUG, "connected sd = %d",
                    sock);
     }
     else {
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
-               "socket() failed with errno = %d\n", errno);
+               "socket() failed with errno = %d", errno);
     }
 
     JK_TRACE_EXIT(l);

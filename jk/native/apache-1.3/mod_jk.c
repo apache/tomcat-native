@@ -66,7 +66,7 @@
 
 /*
  * If you are not using SSL, comment out the following line. It will make
- * apache run faster.  
+ * apache run faster.
  *
  * Personally, I (DM), think this may be a lie.
  */
@@ -142,13 +142,13 @@ typedef struct
  * The "private", or subclass portion of the web server service class for
  * Apache 1.3.  An instance of this class is created for each request
  * handled.  See jk_service.h for details about the ws_service object in
- * general.  
+ * general.
  */
 struct apache_private_data
 {
-    /* 
+    /*
      * For memory management for this request.  Aliased to be identical to
-     * the pool in the superclass (jk_ws_service).  
+     * the pool in the superclass (jk_ws_service).
      */
     jk_pool_t p;
 
@@ -198,7 +198,7 @@ static void jk_generic_cleanup(server_rec * s);
  *
  * Think of this function as a method of the apache1.3-specific subclass of
  * the jk_ws_service class.  Think of the *s param as a "this" or "self"
- * pointer.  
+ * pointer.
  */
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -263,11 +263,11 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
 /*
  * Read a chunk of the request body into a buffer.  Attempt to read len
  * bytes into the buffer.  Write the number of bytes actually read into
- * actually_read.  
+ * actually_read.
  *
  * Think of this function as a method of the apache1.3-specific subclass of
  * the jk_ws_service class.  Think of the *s param as a "this" or "self"
- * pointer.  
+ * pointer.
  */
 static int JK_METHOD ws_read(jk_ws_service_t *s,
                              void *b, unsigned len, unsigned *actually_read)
@@ -303,7 +303,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
  *
  * Think of this function as a method of the apache1.3-specific subclass of
  * the jk_ws_service class.  Think of the *s param as a "this" or "self"
- * pointer.  
+ * pointer.
  */
 static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned len)
 {
@@ -407,7 +407,7 @@ static int get_content_length(request_rec * r)
  * all of the important request information from the Apache request object
  * into the jk_ws_service_t object.
  *
- * Params 
+ * Params
  *
  * private_data: The subclass-specific data structure, already initialized
  * (with a pointer to the Apache request_rec structure, among other things)
@@ -415,9 +415,9 @@ static int get_content_length(request_rec * r)
  * s: The base class object.
  *
  * conf: Configuration information
- *  
+ *
  * Called from jk_handler().  See jk_service.h for explanations of what most
- * of these fields mean.  
+ * of these fields mean.
  */
 static int init_ws_service(apache_private_data_t * private_data,
                            jk_ws_service_t *s, jk_server_conf_t * conf)
@@ -468,9 +468,9 @@ static int init_ws_service(apache_private_data_t * private_data,
      * HttpServletRequest.getRequestURI() should remain encoded.
      * [http://java.sun.com/products/servlet/errata_042700.html]
      *
-     * We use JkOptions to determine which method to be used 
-     * 
-     * ap_escape_uri is the latest recommanded but require 
+     * We use JkOptions to determine which method to be used
+     *
+     * ap_escape_uri is the latest recommanded but require
      *               some java decoding (in TC 3.3 rc2)
      *
      * unparsed_uri is used for strict compliance with spec and
@@ -628,7 +628,7 @@ static int init_ws_service(apache_private_data_t * private_data,
  * The below are all installed so that Apache calls them while it is
  * processing its config files.  This allows configuration info to be
  * copied into a jk_server_conf_t object, which is then used for request
- * filtering/processing.  
+ * filtering/processing.
  *
  * See jk_cmds definition below for explanations of these options.
  */
@@ -653,7 +653,7 @@ static const char *jk_set_mountcopy(cmd_parms * cmd, void *dummy, int flag)
 }
 
 /*
- * JkMount directive handling 
+ * JkMount directive handling
  *
  * JkMount URI(context) worker
  */
@@ -680,7 +680,7 @@ static const char *jk_mount_context(cmd_parms * cmd,
     else {
         if (worker == NULL)
             return "JkMount needs a path when not defined in a location";
-        else 
+        else
             return "JkMount can not have a path when defined in a location";
     }
 
@@ -723,7 +723,7 @@ static const char *jk_unmount_context(cmd_parms * cmd,
     else {
         if (worker == NULL)
             return "JkUnMount needs a path when not defined in a location";
-        else 
+        else
             return "JkUnMount can not have a path when defined in a location";
     }
     if (c[0] != '/')
@@ -737,7 +737,7 @@ static const char *jk_unmount_context(cmd_parms * cmd,
 }
 
 /*
- * JkAutoMount directive handling 
+ * JkAutoMount directive handling
  *
  * JkAutoMount worker [virtualhost]
  */
@@ -845,7 +845,7 @@ static const char *jk_set_log_level(cmd_parms * cmd,
 /*
  * JkLogStampFormat Directive Handling
  *
- * JkLogStampFormat "[%a %b %d %H:%M:%S %Y] " 
+ * JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "
  */
 
 static const char *jk_set_log_fmt(cmd_parms * cmd,
@@ -857,7 +857,7 @@ static const char *jk_set_log_fmt(cmd_parms * cmd,
 
 /*
  * JkAutoAlias Directive Handling
- * 
+ *
  * JkAutoAlias application directory
  */
 
@@ -1200,8 +1200,8 @@ static array_header *parse_request_log_string(pool * p, const char *s,
  * JkRequestLogFormat format string
  *
  * %b - Bytes sent, excluding HTTP headers. In CLF format
- * %B - Bytes sent, excluding HTTP headers.             
- * %H - The request protocol              
+ * %B - Bytes sent, excluding HTTP headers.
+ * %H - The request protocol
  * %m - The request method
  * %p - The canonical Port of the server serving the request
  * %q - The query string (prepended with a ? if a query string exists,
@@ -1450,7 +1450,7 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
-    
+
     if (jk_map_read_property(conf->worker_properties, line) == JK_FALSE)
         return ap_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line);
 
@@ -1459,17 +1459,17 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
 
 static const command_rec jk_cmds[] = {
     /*
-     * JkWorkersFile specifies a full path to the location of the worker 
+     * JkWorkersFile specifies a full path to the location of the worker
      * properties file.
      *
-     * This file defines the different workers used by apache to redirect 
+     * This file defines the different workers used by apache to redirect
      * servlet requests.
      */
     {"JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF, TAKE1,
      "the name of a worker file for the Jakarta servlet containers"},
 
     /*
-     * JkAutoMount specifies that the list of handled URLs must be  
+     * JkAutoMount specifies that the list of handled URLs must be
      * asked to the servlet engine (autoconf feature)
      */
     {"JkAutoMount", jk_automount_context, NULL, RSRC_CONF, TAKE12,
@@ -1523,7 +1523,7 @@ static const command_rec jk_cmds[] = {
      * The following properties let the administrator specify the envoiroment
      * variables names.
      *
-     * HTTPS - indication for SSL 
+     * HTTPS - indication for SSL
      * CERTS - Base64-Der-encoded client certificates.
      * CIPHER - A string specifing the ciphers suite in use.
      * SESSION - A string specifing the current SSL session.
@@ -1555,7 +1555,7 @@ static const command_rec jk_cmds[] = {
      "Set one of more options to configure the mod_jk module"},
 
     /*
-     * JkEnvVar let user defines envs var passed from WebServer to 
+     * JkEnvVar let user defines envs var passed from WebServer to
      * Servlet Engine
      */
     {"JkEnvVar", jk_add_env_var, NULL, RSRC_CONF, TAKE2,
@@ -1638,7 +1638,7 @@ static int jk_handler(request_rec * r)
                         /*
                          * If the servlet engine didn't consume all of the
                          * request data, consume and discard all further
-                         * characters left to read from client 
+                         * characters left to read from client
                          */
                         char *buff = ap_palloc(r->pool, 2048);
                         if (buff != NULL) {
@@ -1671,10 +1671,10 @@ static int jk_handler(request_rec * r)
             }
             else {
                 jk_log(l, JK_LOG_ERROR, "Could not init service"
-                       " for worker=%s\n",
+                       " for worker=%s",
                        worker_name);
                 JK_TRACE_EXIT(l);
-                return HTTP_INTERNAL_SERVER_ERROR;                
+                return HTTP_INTERNAL_SERVER_ERROR;
             }
             jk_close_pool(&private_data.p);
 
@@ -1683,13 +1683,13 @@ static int jk_handler(request_rec * r)
                    let apache handle the error code */
                 if (!r->sent_bodyct && r->status >= HTTP_BAD_REQUEST) {
                     jk_log(l, JK_LOG_INFO, "No body with status=%d"
-                           " for worker=%s\n",
+                           " for worker=%s",
                            r->status, worker_name);
                     JK_TRACE_EXIT(l);
                     return r->status;
                 }
                 jk_log(l, JK_LOG_INFO, "Service returned error=%d"
-                       " with status=%d for worker=%s\n",
+                       " with status=%d for worker=%s",
                        rc, r->status, worker_name);
                 JK_TRACE_EXIT(l);
                 return OK;      /* NOT r->status, even if it has changed. */
@@ -1697,10 +1697,10 @@ static int jk_handler(request_rec * r)
         }
         else {
             jk_log(l, JK_LOG_ERROR, "Could not init service"
-                   " for worker=%s\n",
+                   " for worker=%s",
                    worker_name);
             JK_TRACE_EXIT(l);
-            return HTTP_INTERNAL_SERVER_ERROR;                
+            return HTTP_INTERNAL_SERVER_ERROR;
         }
     }
 
@@ -1728,25 +1728,25 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->options = JK_OPT_FWDURIDEFAULT;
 
     /*
-     * By default we will try to gather SSL info. 
+     * By default we will try to gather SSL info.
      * Disable this functionality through JkExtractSSL
      */
     c->ssl_enable = JK_TRUE;
     /*
-     * The defaults ssl indicators match those in mod_ssl (seems 
+     * The defaults ssl indicators match those in mod_ssl (seems
      * to be in more use).
      */
     c->https_indicator = "HTTPS";
     c->certs_indicator = "SSL_CLIENT_CERT";
 
     /*
-     * The following (comented out) environment variables match apache_ssl! 
-     * If you are using apache_sslapache_ssl uncomment them (or use the 
+     * The following (comented out) environment variables match apache_ssl!
+     * If you are using apache_sslapache_ssl uncomment them (or use the
      * configuration directives to set them.
      *
      c->cipher_indicator = "HTTPS_CIPHER";
      c->session_indicator = NULL;
-     c->key_size_indicator = NULL;      
+     c->key_size_indicator = NULL;
      */
 
     /*
@@ -1866,11 +1866,11 @@ static void jk_init(server_rec * s, ap_pool * p)
 
 /*
 { int i;
-jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s\n", conf->secret_key);
+jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s", conf->secret_key);
 for (i = 0; i < jk_map_size(conf->automount); i++)
 {
             char *name = jk_map_name_at(conf->automount, i);
-			jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s\n", name, map_get_string(conf->automount, name, NULL));
+			jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
 }
 }
 */
@@ -1887,10 +1887,10 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
 
         if (jk_map_size(init_map) == 0) {
             ap_log_error(APLOG_MARK, APLOG_ERR, NULL,
-                         "No worker file and no worker options in httpd.conf \n"
-                         "use JkWorkerFile to set workers\n");
+                         "No worker file and no worker options in httpd.conf "
+                         "use JkWorkerFile to set workers");
             return;
-        } 
+        }
 
     }
 #if MODULE_MAGIC_NUMBER >= 19980527
@@ -1908,7 +1908,7 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
     }
 
     ap_log_error(APLOG_MARK, APLOG_ERR, NULL,
-                 "Error while opening the workers, jk will not work\n");
+                 "Error while opening the workers, jk will not work");
 }
 
 /*
@@ -1933,14 +1933,15 @@ static int jk_translate(request_rec * r)
              * jk_fixups) and the request is for a directory:
              * --> forward to Tomcat, via default worker */
             if (!worker && (conf->options & JK_OPT_FWDDIRS) &&
-                r->prev && !strcmp(r->prev->handler, JK_HANDLER) &&
-                r->uri[strlen(r->uri) - 1] == '/') {
+                r->prev && r->prev->handler &&
+                !strcmp(r->prev->handler, JK_HANDLER) && r->uri &&
+                strlen(r->uri) && r->uri[strlen(r->uri) - 1] == '/') {
 
                 /* Nothing here to do but assign the first worker since we
                  * already tried mapping and it didn't work out */
                 worker = worker_env.first_worker;
 
-                jk_log(l, JK_LOG_DEBUG, "Manual configuration for %s %s\n",
+                jk_log(l, JK_LOG_DEBUG, "Manual configuration for %s %s",
                        r->uri, worker_env.first_worker);
             }
 
@@ -1953,7 +1954,7 @@ static int jk_translate(request_rec * r)
                 ap_no2slash(clean_uri);
                 /* Automatically map uri to a context static file */
                 jk_log(l, JK_LOG_DEBUG,
-                       "mod_jk::jk_translate, check alias_dir: %s\n",
+                       "mod_jk::jk_translate, check alias_dir: %s",
                        conf->alias_dir);
                 if (strlen(clean_uri) > 1) {
                     /* Get the context directory name */
@@ -1978,12 +1979,12 @@ static int jk_translate(request_rec * r)
                         /* Deny access to WEB-INF and META-INF directories */
                         if (child_dir != NULL) {
                             jk_log(l, JK_LOG_DEBUG,
-                                   "mod_jk::jk_translate, AutoAlias child_dir: %s\n",
+                                   "mod_jk::jk_translate, AutoAlias child_dir: %s",
                                    child_dir);
                             if (!strcasecmp(child_dir, "WEB-INF") ||
                                 !strcasecmp(child_dir, "META-INF")) {
                                 jk_log(l, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias FORBIDDEN for URI: %s\n",
+                                       "mod_jk::jk_translate, AutoAlias FORBIDDEN for URI: %s",
                                        r->uri);
                                 return FORBIDDEN;
                             }
@@ -2009,7 +2010,7 @@ static int jk_translate(request_rec * r)
                             /* Add code to verify real path ap_os_canonical_name */
                             if (ret != NULL) {
                                 jk_log(l, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias OK for file: %s\n",
+                                       "mod_jk::jk_translate, AutoAlias OK for file: %s",
                                        ret);
                                 r->filename = ret;
                                 return OK;
@@ -2022,7 +2023,7 @@ static int jk_translate(request_rec * r)
                                 && !strcasecmp(context_dir + (size - 4),
                                                ".war")) {
                                 jk_log(l, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias FORBIDDEN for URI: %s\n",
+                                       "mod_jk::jk_translate, AutoAlias FORBIDDEN for URI: %s",
                                        r->uri);
                                 return FORBIDDEN;
                             }
@@ -2079,7 +2080,7 @@ static int jk_fixups(request_rec * r)
                 /* We'll be checking for handler in r->prev later on */
                 r->main->handler = ap_pstrdup(r->pool, JK_HANDLER);
 
-                jk_log(l, JK_LOG_DEBUG, "ForwardDirectories on: %s\n",
+                jk_log(l, JK_LOG_DEBUG, "ForwardDirectories on: %s",
                        r->uri);
             }
         }
@@ -2102,7 +2103,7 @@ static void jk_server_cleanup(void *data)
 }
 
 
-/** BEGIN SREVILAK 
+/** BEGIN SREVILAK
  * body taken from exit_handler()
  */
 static void jk_generic_cleanup(server_rec * s)
