@@ -481,9 +481,10 @@ public class HandlerRequest extends JkHandler
             /* Special case ( XXX in future API make it separate type !)
              */
             if( attributeCode == SC_A_SSL_KEY_SIZE ) {
-                // int ???... 
+                // Bug 1326: it's an Integer.
 		req.setAttribute("javax.servlet.request.key_size",
-				 Integer.toString(msg.getInt()));
+                                 new Integer( msg.getInt()));
+	       //Integer.toString(msg.getInt()));
             }
 
             if( attributeCode == SC_A_REQ_ATTRIBUTE ) {
