@@ -77,10 +77,9 @@ import org.apache.jk.apr.*;
  *
  * @author Costin Manolache
  */
-public class ChannelUn extends JkChannel implements Channel {
+public class ChannelUn extends Channel {
 
     String file;
-    Worker worker;
     ThreadPool tp=new ThreadPool();
     String jkHome;
 
@@ -90,14 +89,6 @@ public class ChannelUn extends JkChannel implements Channel {
         return tp;
     }
     
-    public void setWorker( Worker w ) {
-        worker=w;
-    }
-
-    public Worker getWorker() {
-        return worker;
-    }
-
     public void setFile( String f ) {
         file=f;
     }
@@ -172,11 +163,71 @@ public class ChannelUn extends JkChannel implements Channel {
             e.printStackTrace();
         }
     }
+    public int send( Msg msg, Endpoint ep)
+        throws IOException
+    {
+        msg.end(); // Write the packet header
+        byte buf[]=msg.getBuffer();
+        int len=msg.getLen();
+        
+        if(dL > 5 )
+            d("send() " + len + " " + buf[4] );
 
-    public void write( Endpoint ep, byte[] b, int offset, int len) throws IOException {
         Long s=(Long)ep.getNote( socketNote );
 
-        apr.unWrite( gPool, s.longValue(), b, offset, len );
+        apr.unWrite( gPool, s.longValue(), buf, 0, len );
+        return len;
+    }
+
+    public int receive( Msg msg, Endpoint ep )
+        throws IOException
+    {
+        if (dL > 0) {
+            d("receive()");
+        }
+
+        byte buf[]=msg.getBuffer();
+        int hlen=msg.getHeaderLength();
+        
+	// XXX If the length in the packet header doesn't agree with the
+	// actual number of bytes read, it should probably return an error
+	// value.  Also, callers of this method never use the length
+	// returned -- should probably return true/false instead.
+
+        int rd = this.read(ep, buf, 0, hlen );
+        
+        if(rd < 0) {
+            // Most likely normal apache restart.
+            return rd;
+        }
+
+        msg.processHeader();
+
+        /* After processing the header we know the body
+           length
+        */
+        int blen=msg.getLen();
+        
+	// XXX check if enough space - it's assert()-ed !!!
+        
+ 	int total_read = 0;
+        
+        total_read = this.read(ep, buf, hlen, blen);
+        
+        if (total_read <= 0) {
+            d("can't read body, waited #" + blen);
+            return  -1;
+        }
+        
+        if (total_read != blen) {
+             d( "incomplete read, waited #" + blen +
+                        " got only " + total_read);
+            return -2;
+        }
+        
+        if (dL > 0)
+             d("receive:  total read = " + total_read);
+	return total_read;
     }
     
     /**
@@ -255,7 +306,7 @@ public class ChannelUn extends JkChannel implements Channel {
         try {
             MsgAjp recv=new MsgAjp();
             while( running ) {
-                int res=recv.receive( this, ep );
+                int res=this.receive( recv, ep );
                 if( res<0 ) {
                     // EOS
                     break;

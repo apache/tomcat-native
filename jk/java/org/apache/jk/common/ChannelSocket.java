@@ -94,7 +94,7 @@ import org.apache.jk.core.*;
  *
  * @author Costin Manolache
  */
-public class ChannelSocket extends JkChannel implements Channel {
+public class ChannelSocket extends Channel {
 
     int port;
     InetAddress inet;
@@ -102,8 +102,6 @@ public class ChannelSocket extends JkChannel implements Channel {
     boolean tcpNoDelay;
     int linger=100;
     int socketTimeout;
-
-    Worker worker;
 
     ThreadPool tp=new ThreadPool();
 
@@ -115,14 +113,6 @@ public class ChannelSocket extends JkChannel implements Channel {
     
     public void setPort( int port ) {
         this.port=port;
-    }
-
-    public void setWorker( Worker w ) {
-        worker=w;
-    }
-
-    public Worker getWorker() {
-        return worker;
     }
 
     public void setAddress(InetAddress inet) {
@@ -214,10 +204,70 @@ public class ChannelSocket extends JkChannel implements Channel {
         }
     }
 
-    public void write( Endpoint ep, byte[] b, int offset, int len) throws IOException {
-        OutputStream os=(OutputStream)ep.getNote( osNote );
+    public int send( Msg msg, Endpoint ep)
+        throws IOException
+    {
+        msg.end(); // Write the packet header
+        byte buf[]=msg.getBuffer();
+        int len=msg.getLen();
+        
+        if(dL > 5 )
+            d("send() " + len + " " + buf[4] );
 
-        os.write( b, offset, len );
+        OutputStream os=(OutputStream)ep.getNote( osNote );
+        os.write( buf, 0, len );
+        return len;
+    }
+
+    public int receive( Msg msg, Endpoint ep )
+        throws IOException
+    {
+        if (dL > 0) {
+            d("receive()");
+        }
+
+        byte buf[]=msg.getBuffer();
+        int hlen=msg.getHeaderLength();
+        
+	// XXX If the length in the packet header doesn't agree with the
+	// actual number of bytes read, it should probably return an error
+	// value.  Also, callers of this method never use the length
+	// returned -- should probably return true/false instead.
+
+        int rd = this.read(ep, buf, 0, hlen );
+        
+        if(rd < 0) {
+            // Most likely normal apache restart.
+            return rd;
+        }
+
+        msg.processHeader();
+
+        /* After processing the header we know the body
+           length
+        */
+        int blen=msg.getLen();
+        
+	// XXX check if enough space - it's assert()-ed !!!
+        
+ 	int total_read = 0;
+        
+        total_read = this.read(ep, buf, hlen, blen);
+        
+        if (total_read <= 0) {
+            d("can't read body, waited #" + blen);
+            return  -1;
+        }
+        
+        if (total_read != blen) {
+             d( "incomplete read, waited #" + blen +
+                        " got only " + total_read);
+            return -2;
+        }
+        
+        if (dL > 0)
+             d("receive:  total read = " + total_read);
+	return total_read;
     }
     
     /**
@@ -228,24 +278,27 @@ public class ChannelSocket extends JkChannel implements Channel {
      *
      * from read() Linux manual
      *
-     * On success, the number of bytes read is returned (zero indicates end of file),
-     * and the file position is advanced by this number.
-     * It is not an error if this number is smaller than the number of bytes requested;
-     * this may happen for example because fewer bytes
-     * are actually available right now (maybe because we were close to end-of-file,
-     * or because we are reading from a pipe, or  from  a
+     * On success, the number of bytes read is returned (zero indicates end
+     * of file),and the file position is advanced by this number.
+     * It is not an error if this number is smaller than the number of bytes
+     * requested; this may happen for example because fewer bytes
+     * are actually available right now (maybe because we were close to
+     * end-of-file, or because we are reading from a pipe, or  from  a
      * terminal),  or  because  read()  was interrupted by a signal.
      * On error, -1 is returned, and errno is set appropriately. In this
      * case it is left unspecified whether the file position (if any) changes.
      *
      **/
-    public int read( Endpoint ep, byte[] b, int offset, int len) throws IOException {
+    public int read( Endpoint ep, byte[] b, int offset, int len)
+        throws IOException
+    {
         InputStream is=(InputStream)ep.getNote( isNote );
         int pos = 0;
         int got;
 
         if (dL > 5) {
-            d("reading  # " + b + " " + (b==null ? 0: b.length) + " " + offset + " " + len);
+            d("reading  # " + b + " " + (b==null ? 0: b.length) + " " +
+              offset + " " + len);
         }
         while(pos < len) {
             got = is.read(b, pos + offset, len - pos);
@@ -266,8 +319,6 @@ public class ChannelSocket extends JkChannel implements Channel {
         }
         return pos;
     }
-
-    
     
     public Endpoint createEndpoint() {
         return new Endpoint();
@@ -279,7 +330,7 @@ public class ChannelSocket extends JkChannel implements Channel {
      */
     void acceptConnections() {
         if( dL>0 )
-            d("Accepting ajp connections");
+            d("Accepting ajp connections on " + port);
         while( running ) {
             try {
                 Endpoint ep=this.createEndpoint();
@@ -301,8 +352,12 @@ public class ChannelSocket extends JkChannel implements Channel {
         try {
             MsgAjp recv=new MsgAjp();
             while( running ) {
-                recv.receive( this, ep );
+                this.receive( recv, ep );
                 int status=we.processCallbacks( this, ep, recv );
+                if( status!= Handler.OK ) {
+                    d("processCallbacks status " + status );
+                    break;
+                }
             }
             this.close( ep );
         } catch( Exception ex ) {
