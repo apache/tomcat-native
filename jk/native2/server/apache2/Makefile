@@ -6,7 +6,7 @@ APACHE2_HOME=/opt/apache2
 #endif
 
 JK_DIR := ../..
-BUILD_DIR = ${JK_DIR}/../build/WEB-INF/jk2/apache2
+BUILD_DIR = ${JK_DIR}/../build/jk2/apache2
 
 
 # Extract EXTRA_CFLAGS and EXTRA_CPPFLAGS - same flags used during apache2 
