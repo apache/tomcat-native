@@ -58,7 +58,7 @@
            destdir="${build.dir}/${dist.name}/printer"
          extension=".html"
              style="style.xsl"
-          excludes="build.xml project.xml"
+          excludes="build.xml project.xml empty.xml"
           includes="*.xml">
       <param name="relative-path" expression="./.."/>
       <param name="project-menu" expression="nomenu"/>
