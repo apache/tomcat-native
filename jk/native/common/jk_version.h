@@ -30,7 +30,7 @@
 
 /* Beta number */
 #define JK_VERBETA      1
-#define JK_BETASTRING   "1"
+#define JK_BETASTRING   "2"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
 #define JK_VERISRELEASE 0
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
