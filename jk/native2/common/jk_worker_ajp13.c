@@ -72,7 +72,7 @@
 #include "jk_service.h"
 #include "jk_env.h"
 #include "jk_objCache.h"
-#include "jk_reqUtil.h"
+#include "jk_requtil.h"
 #include "jk_registry.h"
 
 #define AJP_DEF_RETRY_ATTEMPTS    (2)
