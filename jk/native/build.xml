@@ -17,12 +17,12 @@
   </path>
 
   <property name="native.dir" location="." />
-  <property name="apxs13" value="/usr/sbin/apxs" />
+  <property name="apxs13" value="/opt/apache13/bin/apxs" />
   <property name="apxs20" value="/opt/apache2/bin/apxs" />
   
   <property name="iplanet.home" location="/opt/iplanet" />
   <property name="apache2.home" location="/opt/apache2" />
-  <property name="apache13.home" location="/usr" />
+  <property name="apache13.home" location="/opt/apache13" />
   
   <property name="apache2.include" location="${apache2.home}/include" />
   <property name="apache13.include" location="${apache13.home}/include" />
