@@ -205,7 +205,7 @@ and  provides access to all other objects</p>
                     </tr>
                     <tr>
                         <td>group</td>
-                        <td>lb:0 (The default loadbalancer)</td>
+                        <td>lb:lb (The default loadbalancer)</td>
                         <td>Name of the tomcat group or worker that will process the request corresponding to the uri. This used
                             to be called 'worker'</td>
                     </tr>
