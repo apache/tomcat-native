@@ -145,7 +145,7 @@ void *jk_map_get(jk_map_t *m, const char *name, const void *def)
         unsigned int key;
         COMPUTE_KEY_CHECKSUM(name, key)
         for (i = 0; i < m->size; i++) {
-            if (m->keys[i] == key && strcmp(m->names[i], name) == 0) {
+            if (m->keys[i] == key && strcasecmp(m->names[i], name) == 0) {
                 rc = m->values[i];
                 break;
             }
@@ -164,7 +164,7 @@ char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
         unsigned int key;
         COMPUTE_KEY_CHECKSUM(name, key)
         for (i = 0; i < m->size; i++) {
-            if (m->keys[i] == key && strcmp(m->names[i], name) == 0) {
+            if (m->keys[i] == key && strcasecmp(m->names[i], name) == 0) {
                 rc = (char *)m->values[i];
                 break;
             }
@@ -297,7 +297,7 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
         unsigned int key;
         COMPUTE_KEY_CHECKSUM(name, key)
         for (i = 0; i < m->size; i++) {
-            if (m->keys[i] == key && strcmp(m->names[i], name) == 0) {
+            if (m->keys[i] == key && strcasecmp(m->names[i], name) == 0) {
                 break;
             }
         }
