@@ -70,7 +70,9 @@ import javax.management.*;
  * component that follows the bean/ant/Interceptor/Valve/Jk2 patterns.
  *
  * The class will wrap any component conforming to those patterns.
- * 
+ *
+ * @deprecated The same functionality ( and more ) is now available in
+ *         commons-modeler
  * @author Costin Manolache
  */
 public class DynamicMBeanProxy implements DynamicMBean {
