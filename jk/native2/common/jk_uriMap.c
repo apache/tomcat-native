@@ -415,16 +415,23 @@ static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
                                       strlen(context));
         /* if not alredy created, create it */
         if (ctxEnv == NULL) {
-           jk_bean_t *mbean;
- 
+            jk_bean_t *mbean;
+            char *ctxname;
+
+            ctxname = uriEnv->pool->calloc(env, uriEnv->pool, strlen(vhost) + 
+                                           strlen(context) + 1 );
+
+            strcpy(ctxname, vhost);
+            strcat(ctxname, context);
+
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "uriMap: creating context %s\n", context);
+                          "uriMap: creating context %s\n", ctxname);
             mbean = env->getBean2(env, "uri", context);
             if (mbean == NULL)
-                mbean = env->createBean2(env, uriMap->pool,"uri", context);
+                mbean = env->createBean2(env, uriMap->pool,"uri", ctxname);
             if (mbean == NULL || mbean->object == NULL) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "uriMap: can't create context object %s\n",context);
+                              "uriMap: can't create context object %s\n",ctxname);
                 continue;
             }
             ctxEnv = mbean->object;
