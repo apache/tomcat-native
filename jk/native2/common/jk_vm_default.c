@@ -121,8 +121,10 @@ static const char *defaultVM_PATH[]={
 
 /** Where to try to find jk jars ( if user doesn't specify it explicitely ) */
 static const char *defaultJK_PATH[]={
-    "$(tomcat.home)$(fs)modules$(fs)jk$(fs)WEB-INF$(fs)lib$(fs)ajp.jar",
+    "$(tomcat.home)$(fs)modules$(fs)jk$(fs)WEB-INF$(fs)lib$(fs)jk2.jar",
+ "$(tomcat.home)$(fs)modules$(fs)jk$(fs)WEB-INF$(fs)lib$(fs)tomcat-utils.jar",
     "$(tomcat.home)$(fs)webapps(fs)jk$(fs)WEB-INF$(fs)lib$(fs)ajp.jar",
+ "$(tomcat.home)$(fs)webapps(fs)jk$(fs)WEB-INF$(fs)lib$(fs)tomcat-utils.jar",
     NULL
 };
 
@@ -254,7 +256,7 @@ void *jk_vm_attach(jk_env_t *env, jk_vm_t *p)
     /*     linux_signal_hack(); */
 #endif
 
-    err= (*jvm)->GetEnv( jvm, (void **)&rc, 0 );
+    err= (*jvm)->GetEnv( jvm, (void **)&rc, JNI_VERSION_1_2 );
     if( err != 0 ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "vm.attach() GetEnv failed %d\n", err);
@@ -654,6 +656,9 @@ static char *guessTomcatHome(jk_env_t *env, jk_map_t *props )
         return NULL;
     }
 
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "jni.guessTomcatHome() %s\n", tomcat_home);
+    
     props->put(env, props, "tomcat.home",
                props->pool->pstrdup( env, props->pool, tomcat_home ), NULL);
     
@@ -666,6 +671,8 @@ static char *guessClassPath(jk_env_t *env, jk_map_t *props )
     char *jkJar;
     jk_pool_t *p=props->pool;
     const char **current=defaultJK_PATH;
+
+    guessTomcatHome( env, props );
     
     while( *current != NULL ) {
         jkJar = jk_map_replaceProperties(env, props, p,
