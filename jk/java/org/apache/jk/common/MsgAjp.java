@@ -326,7 +326,7 @@ public class MsgAjp extends Msg {
         int mark = getInt();
         len      = getInt();
 	    
-        if( mark != 0x1234 ) {
+        if( mark != 0x1234 && mark != 0x4142 ) {
             // XXX Logging
             log.error("BAD packet signature " + mark);
             dump( "In: " );

@@ -124,7 +124,7 @@ public class JniHandler extends JkHandler {
         nativeJkHandlerP=apr.getJkHandler(xEnv, nativeComponentName );
         
         if( nativeJkHandlerP==0 ) {
-            log.info("Component not found, creating it " + nativeComponentName ); 
+            log.debug("Component not found, creating it " + nativeComponentName ); 
             nativeJkHandlerP=apr.createJkHandler(xEnv, nativeComponentName);
         }
         log.debug("Native proxy " + nativeJkHandlerP );

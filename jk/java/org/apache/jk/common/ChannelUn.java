@@ -124,7 +124,7 @@ public class ChannelUn extends JniHandler {
         // unixListenSocket=apr.unSocketListen( file, 10 );
 
         setNativeAttribute( "listen", "10" );
-        setNativeAttribute( "debug", "10" );
+        // setNativeAttribute( "debug", "10" );
 
         // Initialize the thread pool and execution chain
         if( next==null ) {
