@@ -249,88 +249,6 @@ static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
     return JK_ERR;
 #endif
     
-/* #ifdef WIN32 */
-/*     HINSTANCE hInst = LoadLibrary(jkvm->jvm_dll_path); */
-/*     if(hInst) { */
-/*         (FARPROC)jni_create_java_vm =  */
-/*             GetProcAddress(hInst, "JNI_CreateJavaVM"); */
-
-/*         (FARPROC)jni_get_created_java_vms =  */
-/*             GetProcAddress(hInst, "JNI_GetCreatedJavaVMs"); */
-
-/*         (FARPROC)jni_get_default_java_vm_init_args =  */
-/*             GetProcAddress(hInst, "JNI_GetDefaultJavaVMInitArgs"); */
-
-/*         env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-/*                       "jni.loadJvmDll()\n"); */
-
-/*         if(jni_create_java_vm && */
-/*            jni_get_default_java_vm_init_args && */
-/*            jni_get_created_java_vms) { */
-/*             return JK_OK; */
-/*         } */
-
-/*         FreeLibrary(hInst); */
-/*     } */
-/*     return JK_OK; */
-/* #elif defined(NETWARE) */
-/*     int javaNlmHandle = FindNLMHandle("JVM"); */
-/*     if (0 == javaNlmHandle) { */
-        /* if we didn't get a handle, try to load java and retry getting the */
-        /* handle */
-/*         spawnlp(P_NOWAIT, "JVM.NLM", NULL); */
-/*         ThreadSwitchWithDelay(); */
-/*         javaNlmHandle = FindNLMHandle("JVM"); */
-/*         if (0 == javaNlmHandle) */
-/*             printf("Error loading Java."); */
-
-/*     } */
-/*     if (0 != javaNlmHandle) { */
-/*         jni_create_java_vm = ImportSymbol(GetNLMHandle(), "JNI_CreateJavaVM"); */
-/*         jni_get_created_java_vms = ImportSymbol(GetNLMHandle(), */
-/*                                                 "JNI_GetCreatedJavaVMs"); */
-/*         jni_get_default_java_vm_init_args = */
-/*             ImportSymbol(GetNLMHandle(), "JNI_GetDefaultJavaVMInitArgs"); */
-/*     } */
-/*     if(jni_create_java_vm && */
-/*        jni_get_default_java_vm_init_args && */
-/*        jni_get_created_java_vms) { */
-/*         return JK_OK; */
-/*     } */
-/*     return JK_OK; */
-/* #else  */
-/*     void *handle; */
-/*     handle = dlopen(jkvm->jvm_dll_path, RTLD_NOW | RTLD_GLOBAL); */
-
-/*     if(handle == NULL ) { */
-/*         env->l->jkLog(env, env->l, JK_LOG_EMERG,  */
-/*                       "Can't load native library %s : %s\n", jkvm->jvm_dll_path, */
-/*                       dlerror()); */
-/*         return JK_ERR; */
-/*     } */
-
-/*     jni_create_java_vm = dlsym(handle, "JNI_CreateJavaVM"); */
-/*     jni_get_default_java_vm_init_args = */
-/*         dlsym(handle, "JNI_GetDefaultJavaVMInitArgs"); */
-/*     jni_get_created_java_vms =  dlsym(handle, "JNI_GetCreatedJavaVMs"); */
-        
-/*     if(jni_create_java_vm == NULL || */
-/*        jni_get_default_java_vm_init_args == NULL  || */
-/*        jni_get_created_java_vms == NULL ) */
-/*     { */
-/*         env->l->jkLog(env, env->l, JK_LOG_EMERG,  */
-/*                       "jni.loadJvm() Can't resolve symbols %s\n", */
-/*                       jkvm->jvm_dll_path ); */
-/*         dlclose(handle); */
-/*         return JK_ERR; */
-/*     } */
-    /* env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-    /*                   "jni.loadJvm() %s symbols resolved\n",
-                         jkvm->jvm_dll_path); */
-    
-/*     return JK_OK; */
-/* #endif */
-
 }
 
 
@@ -357,7 +275,7 @@ static void *jk2_vm_attach(jk_env_t *env, jk_vm_t *jkvm)
     if( err == 0) {
         if( jkvm->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO, "vm.attach() allready attached\n");
-        return rc;        
+        return (void *)rc;        
     }
     /* The error code is either JNI_OK (allready attached) or JNI_EDETACHED.
        Othere possibility is that specified version is not supported,
@@ -379,7 +297,7 @@ static void *jk2_vm_attach(jk_env_t *env, jk_vm_t *jkvm)
     }
     if( jkvm->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, "vm.attach() ok\n");
-    return rc;
+    return (void *)rc;
 }
 
 
@@ -597,7 +515,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
             return JK_ERR;
         }
 
-        jkvm->jvm=jvm;
+        jkvm->jvm=(void *)jvm;
         return JK_OK;
     } else if( err!=0 ) {
     	env->l->jkLog(env, env->l, JK_LOG_EMERG,
@@ -605,7 +523,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
         return JK_ERR;
     }
 
-    jkvm->jvm=jvm;
+    jkvm->jvm=(void *)jvm;
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "vm.open2() done\n");
