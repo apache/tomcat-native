@@ -65,7 +65,6 @@
 #include "jk_map.h"
 #include "jk_pool.h"
 #include "jk_map.h"
-#include "jk_util.h"
 
 #define CAPACITY_INC_SIZE (50)
 #define LENGTH_OF_LINE    (1024)
@@ -287,6 +286,25 @@ int map_put(jk_map_t *m,
     return rc;
 }
 
+
+/* XXX Very strange hack to deal with special properties
+ */
+int jk_is_some_property(const char *prp_name, const char *suffix)
+{
+    if (prp_name && suffix) {
+		size_t prp_name_len = strlen(prp_name);
+		size_t suffix_len = strlen(suffix);
+		if (prp_name_len >= suffix_len) {
+			const char *prp_suffix = prp_name + prp_name_len - suffix_len;
+			if(0 == strcmp(suffix, prp_suffix)) {
+		        return JK_TRUE;
+			}
+        }
+    }
+
+    return JK_FALSE;
+}
+
 int map_read_properties(jk_map_t *m,
                         const char *f)
 {
@@ -311,14 +329,15 @@ int map_read_properties(jk_map_t *m,
                         if(strlen(v) && strlen(prp)) {
                             char *oldv = map_get_string(m, prp, NULL);
                             v = map_replace_properties(v, m);
+
                             if(oldv) {
                                 char *tmpv = jk_pool_alloc(&m->p, 
                                                            strlen(v) + strlen(oldv) + 3);
                                 if(tmpv) {
                                     char sep = '*';
-                                    if(jk_is_path_poperty(prp)) {
+                                    if(jk_is_some_property(prp, "path")) {
                                         sep = PATH_SEPERATOR;
-                                    } else if(jk_is_cmd_line_poperty(prp)) {
+                                    } else if(jk_is_some_property(prp, "cmd_line")) {
                                         sep = ' ';
                                     }
 
