@@ -66,7 +66,7 @@ struct file_logger_t
 #define JK_LOG_ERROR_VERB   "error"
 #define JK_LOG_EMERG_VERB   "emerg"
 
-#if defined(__GCC__) || defined(_MSC_VER)
+#if defined(__GNUC__) || defined(_MSC_VER)
 #define JK_LOG_TRACE   __FILE__,__LINE__,__FUNCTION__,JK_LOG_TRACE_LEVEL
 #define JK_LOG_DEBUG   __FILE__,__LINE__,__FUNCTION__,JK_LOG_DEBUG_LEVEL
 #define JK_LOG_ERROR   __FILE__,__LINE__,__FUNCTION__,JK_LOG_ERROR_LEVEL
@@ -84,7 +84,7 @@ struct file_logger_t
 
 /* Debug level is compile time only 
  */
-#if defined (DEBUG) || (_DEBUG)
+#if defined (DEBUG) || defined(_DEBUG)
 #define JK_TRACE    1
 #define JK_TRACE_ENTER(l) jk_log((l), JK_LOG_TRACE, "enter\n")
 #define JK_TRACE_EXIT(l)  jk_log((l), JK_LOG_TRACE, "exit\n")
@@ -96,6 +96,11 @@ struct file_logger_t
 
 #define JK_LOG_NULL_PARAMS(l) jk_log((l), JK_LOG_ERROR, "NULL parameters\n")
 
+/* Debug level macro
+ * It is more efficient to check the level prior
+ * calling function that will not execute anyhow because of level
+ */
+#define JK_IS_DEBUG_LEVEL(l)  ((l) && (l)->level <  JK_LOG_INFO_LEVEL)
 
 
 #ifdef __cplusplus
