@@ -697,7 +697,7 @@ public final class Mapper {
                     // Rule 4c -- Welcome resources processing
                     //            for physical folder
                     if (mappingData.wrapper == null
-                            && context.resources != null) {
+                        && context.resources != null) {
                         Object file = null;
                         String pathStr = path.toString();
                         try {
@@ -708,7 +708,8 @@ public final class Mapper {
                         if (file != null && !(file instanceof DirContext) ) {
                             internalMapExtensionWrapper(extensionWrappers,
                                                         path, mappingData);
-                            if (mappingData.wrapper == null) {
+                            if (mappingData.wrapper == null
+                                && context.defaultWrapper != null) {
                                 mappingData.wrapper =
                                     context.defaultWrapper.object;
                                 mappingData.requestPath.setChars
@@ -738,6 +739,7 @@ public final class Mapper {
                 mappingData.wrapperPath.setChars
                     (path.getBuffer(), path.getStart(), path.getLength());
             }
+            // Redirection to a folder
             char[] buf = path.getBuffer();
             if (context.resources != null && buf[pathEnd -1 ] != '/') {
                 Object file = null;
@@ -747,7 +749,7 @@ public final class Mapper {
                 } catch(NamingException nex) {
                     // Swallow, since someone else handles the 404
                 }
-                if (file != null && file instanceof DirContext ) {
+                if (file != null && file instanceof DirContext) {
                     // Note: this mutates the path: do not do any processing 
                     // after this (since we set the redirectPath, there 
                     // shouldn't be any)
