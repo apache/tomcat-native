@@ -459,7 +459,7 @@ void jk_no2slash(char *name)
 
     s = d = name;
 
-#if defined(WIN32)
+#if defined(HAVE_UNC_PATHS) 
     /* Check for UNC names.  Leave leading two slashes. */
     if (s[0] == '/' && s[1] == '/')
         *d++ = *s++;
