@@ -432,10 +432,11 @@ static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
         qryLen=strlen( cName );
     }
     if( qryLen >0 ) {
-        if( cName[strlen(cName)] == '*' ) {
+        if( cName[strlen(cName)-1] == '*' ) {
             printf("Exact match off %s\n", cName );
-            cName[strlen(cName)]='\0';
+            cName[strlen(cName)-1]='\0';
             exact=0;
+            qryLen--;
         }
     }
     for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
@@ -449,7 +450,7 @@ static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
             continue;
         
         /* Prefix */
-        if( ! exact  && qryLen != 0 && strncmp( name, cName, qryLen )!= 0 )
+        if( (! exact)  && qryLen != 0 && strncmp( name, cName, qryLen )!= 0 )
             continue;
         
         /* Exact */
@@ -458,15 +459,15 @@ static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
         
         if( mbean==NULL ) 
             continue;
-        s->jkprintf(env, s, "N:%s:%s\n", mbean->type, name);
+        s->jkprintf(env, s, "N|%s|%s\n", mbean->type, name);
         
         while( getAtt != NULL && *getAtt != NULL && **getAtt!='\0' ) {
-            s->jkprintf(env, s, "G:%s:%s\n", name, *getAtt);
+            s->jkprintf(env, s, "G|%s|%s\n", name, *getAtt);
             getAtt++;
         }
         
         while( setAtt != NULL && *setAtt != NULL && **setAtt!='\0' ) {
-            s->jkprintf(env, s, "S:%s:%s\n", name, *setAtt);
+            s->jkprintf(env, s, "S|%s|%s\n", name, *setAtt);
             setAtt++;
         }
         
@@ -491,10 +492,11 @@ static int JK_METHOD jk2_worker_status_dmp(jk_env_t *env,
         qryLen=strlen( cName );
     }
     if( qryLen >0 ) {
-        if( cName[strlen(cName)] == '*' ) {
+        if( cName[strlen(cName)-1] == '*' ) {
             printf("Exact match off %s\n", cName );
-            cName[strlen(cName)]='\0';
+            cName[strlen(cName)-1]='\0';
             exact=0;
+            qryLen--;
         }
     }
     for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
@@ -517,12 +519,12 @@ static int JK_METHOD jk2_worker_status_dmp(jk_env_t *env,
         
         if( mbean==NULL ) 
             continue;
-        s->jkprintf(env, s, "P:%s:%s:%lp\n", mbean->type, name, mbean->object );
+        s->jkprintf(env, s, "P|%s|%s|%lp\n", mbean->type, name, mbean->object );
         
         while( getAtt != NULL && *getAtt != NULL && **getAtt!='\0' ) {
             char *attName=*getAtt;
             char *val=mbean->getAttribute(env, mbean, *getAtt );
-            s->jkprintf(env, s, "G:%s:%s:%s\n", name, *getAtt, (val==NULL)? "NULL": val);
+            s->jkprintf(env, s, "G|%s|%s|%s\n", name, *getAtt, (val==NULL)? "NULL": val);
                 getAtt++;
         }
     }
@@ -554,7 +556,7 @@ static int JK_METHOD jk2_worker_status_get(jk_env_t *env,
         if( strcmp( name, cName ) == 0 &&
             mbean->getAttribute != NULL ) {
             void *result=mbean->getAttribute( env, mbean, attName );
-            s->jkprintf( env, s, "OK:%s:%s", cName, attName );
+            s->jkprintf( env, s, "OK|%s|%s", cName, attName );
             s->jkprintf( env, s, "%s", result );
             return JK_OK;
         }
@@ -596,7 +598,7 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
         if( strcmp( name, cName ) == 0 &&
             mbean->setAttribute != NULL ) {
             int res=mbean->setAttribute( env, mbean, attName, attVal );
-            s->jkprintf( env, s, "OK:%s:%s:%d", cName, attName, res );
+            s->jkprintf( env, s, "OK|%s|%s|%d", cName, attName, res );
             return JK_OK;
         }
     }
