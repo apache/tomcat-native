@@ -210,6 +210,7 @@ FILES_nlm_objs = \
 	$(OBJDIR)/jk_pool.o \
 	$(OBJDIR)/jk_shm.o \
 	$(OBJDIR)/jk_sockbuf.o \
+	$(OBJDIR)/jk_status.o \
 	$(OBJDIR)/jk_uri_worker_map.o \
 	$(OBJDIR)/jk_util.o \
 	$(OBJDIR)/jk_worker.o \

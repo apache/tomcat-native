@@ -140,7 +140,9 @@ OBJS	= \
 	$(OBJDIR)/jk_md5.o \
 	$(OBJDIR)/jk_msg_buff.o \
 	$(OBJDIR)/jk_pool.o \
+	$(OBJDIR)/jk_shm.o \
 	$(OBJDIR)/jk_sockbuf.o \
+	$(OBJDIR)/jk_status.o \
 	$(OBJDIR)/jk_uri_worker_map.o \
 	$(OBJDIR)/jk_util.o \
 	$(OBJDIR)/jk_worker.o \

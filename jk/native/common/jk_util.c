@@ -121,7 +121,7 @@ static void set_time_str(char *str, int len)
  */
 #if !defined(HAVE_VSNPRINTF) && !defined(HAVE_APR)
 static FILE *f = NULL;
-int vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
+static int vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
 {
     int res;
 
@@ -141,7 +141,7 @@ int vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
 }
 #endif
 #if !defined(HAVE_SNPRINTF) && !defined(HAVE_APR)
-int snprintf(char *str, size_t n, const char *fmt, ...)
+static int snprintf(char *str, size_t n, const char *fmt, ...)
 {
     va_list ap;
     int res;

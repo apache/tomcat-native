@@ -46,6 +46,7 @@
 #include "jk_jni_worker.h"
 #endif
 #include "jk_lb_worker.h"
+#include "jk_status.h"
 
 struct worker_factory_record
 {
@@ -79,6 +80,12 @@ static worker_factory_record_t worker_factories[] = {
      * session load balancing.
      */
     {JK_LB_WORKER_NAME, lb_worker_factory},
+
+    /*
+     * Status worker. Performs display display and
+     * worker management.
+     */
+    {JK_STATUS_WORKER_NAME, status_worker_factory},
 
     /*
      * Marks the end of the worker factory list.

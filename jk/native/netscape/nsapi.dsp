@@ -162,6 +162,10 @@ SOURCE=..\common\jk_sockbuf.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_status.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_uri_worker_map.c
 # End Source File
 # Begin Source File
@@ -247,6 +251,10 @@ SOURCE=..\common\jk_service.h
 # Begin Source File
 
 SOURCE=..\common\jk_shm.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_status.h
 # End Source File
 # Begin Source File
 
