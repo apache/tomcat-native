@@ -198,8 +198,8 @@ public class Ajp13Packet {
     public void reset() {
         len = 4;
         pos = 4;
-        buff[0] = (byte)(AJP13_WS_HEADER >> 8);
-        buff[1] = (byte)(AJP13_WS_HEADER & 0xFF);
+        buff[0] = (byte)(AJP13_SW_HEADER >> 8);
+        buff[1] = (byte)(AJP13_SW_HEADER & 0xFF);
     }
 	
     /**
