@@ -81,6 +81,7 @@
 #include <apr_tables.h>
 #include <apr_time.h>
 #include <apr_network_io.h>
+#include <apr_file_info.h>
 
 /* WebApp Library type definitions. */
 typedef enum {
