@@ -408,37 +408,14 @@ static int init_ws_service(apache_private_data_t *private_data,
                 r->server->port
                 );
 
-#if 1
-    /* Wrong:    s->server_name  = (char *)ap_get_server_name( r ); */
+    /* get server name */
     s->server_name= (char *)(r->hostname ? r->hostname :
                  r->server->server_hostname);
 
 
+    /* get the real port (otherwise redirect failed) */
     apr_sockaddr_port_get(&port,r->connection->local_addr);
     s->server_port = port;
-
-    /* Wrong: s->server_port  = r->server->port; */
-
-   
-    /*    Winners:  htons( r->connection->local_addr.sin_port )
-                      (r->hostname ? r->hostname :
-                             r->server->server_hostname),
-    */
-    /* printf( "Port %u %u %u %s %s %s %d %d \n",
-        ap_get_server_port( r ),
-        htons( r->connection->local_addr.sin_port ),
-        ntohs( r->connection->local_addr.sin_port ),
-        ap_get_server_name( r ),
-        (r->hostname ? r->hostname : r->server->server_hostname),
-        r->hostname,
-        r->connection->base_server->port,
-        r->server->port
-        );
-    */
-#else
-    s->server_name  = (char *)ap_get_server_name( r );
-    s->server_port  = r->server->port;
-#endif
 
     s->server_software = (char *)ap_get_server_version();
 
