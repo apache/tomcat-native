@@ -22,24 +22,22 @@ public class TestAjp13 extends TestCase {
         return new TestSuite(TestAjp13.class);
     }
 
-    protected void my_setUp() {
+    protected void setUp() {
         println("setup...");
 
         server = new Ajp13Server();
         server.start();
     }
 
-    protected void my_tearDown() {
+    protected void tearDown() {
         println("tear down...");
 
         server.shutdown();
     }
 
     public void test1() throws Exception {
-        System.out.println("running test1");
+        println("running test1");
 
-        my_setUp();
-        
         Socket s = new Socket("localhost", 8009);
 
         Ajp13Packet p = new Ajp13Packet(Ajp13.MAX_PACKET_SIZE);
@@ -73,7 +71,7 @@ public class TestAjp13 extends TestCase {
 
         InputStream is = s.getInputStream();
 
-        System.out.println("decoding response...");
+        println("decoding response...");
         
         boolean done = false;
         while (!done) {
@@ -86,7 +84,7 @@ public class TestAjp13 extends TestCase {
             b2 = is.read();
             assertTrue("byte 2 was " + (char)b2, b2 == (int)'B');
 
-            System.out.println("b1 = " + (char)b1 + "; b2 = " + (char)b2);
+            println("b1 = " + (char)b1 + "; b2 = " + (char)b2);
             
             // next is length
             b1 = is.read();
@@ -96,7 +94,7 @@ public class TestAjp13 extends TestCase {
             
             int l = (b1 << 8) + b2;
 
-            System.out.println("length = " + l);
+            println("length = " + l);
 
             // now get data
             byte[] buf = new byte[l];
@@ -108,7 +106,7 @@ public class TestAjp13 extends TestCase {
                 off += n;
             }
 
-            System.out.println("read " + total);
+            println("read " + total);
 
             assertTrue("total read was " + total +
                        ", should have been " + l,
@@ -120,17 +118,17 @@ public class TestAjp13 extends TestCase {
 
             switch (code) {
             case 3:
-                System.out.println("AJP13_SEND_BODY_CHUNK ");
+                println("AJP13_SEND_BODY_CHUNK ");
                 break;
             case 4:
-                System.out.println("AJP13_SEND_HEADERS ");
+                println("AJP13_SEND_HEADERS ");
                 break;
             case 5:
-                System.out.println("AJP13_END_RESPONSE ");
+                println("AJP13_END_RESPONSE ");
                 done = true;
                 break;
             case 6:
-                System.out.println("AJP13_GET_BODY_CHUNK ");
+                println("AJP13_GET_BODY_CHUNK ");
                 break;
             default:
                 assertTrue("invalid prefix code:  " + code, false);
@@ -138,13 +136,12 @@ public class TestAjp13 extends TestCase {
             }
         }
 
-        System.out.println("shutting down socket...");
+        println("shutting down socket...");
         s.shutdownOutput();
         s.shutdownInput();
         s.close();
 
-        System.out.println("shutting down server...");
-        my_tearDown();
+        println("done test1...");
     }
 
     protected static void println(String msg) {
@@ -173,7 +170,7 @@ class Ajp13Server extends Thread {
     public void run() {
         try {
             ServerSocket server = new ServerSocket(8009);
-            System.out.println("Ajp13Server running...");
+            TestAjp13.println("Ajp13Server running...");
             Socket socket = server.accept();
             Ajp13 ajp13 = new Ajp13();
             MimeHeaders headers = new MimeHeaders();
@@ -188,10 +185,10 @@ class Ajp13Server extends Thread {
                     status = ajp13.receiveNextRequest(request);
                 } catch (IOException e) {
                     if (shutdown) {
-                        System.out.println("Ajp13Server told to shutdown");
+                        TestAjp13.println("Ajp13Server told to shutdown");
                         break;
                     }
-                    System.out.println("process: ajp13.receiveNextRequest -> " + e);
+                    TestAjp13.println("process: ajp13.receiveNextRequest -> " + e);
                 }
             
                 if( status==-2) {
@@ -208,7 +205,7 @@ class Ajp13Server extends Thread {
                 if( status != 200 )
                     break;
 
-                System.out.println(request);
+                TestAjp13.println(request.toString());
 
                 String message =
                     "<html><body><pre>" +
@@ -234,17 +231,17 @@ class Ajp13Server extends Thread {
             try {
                 ajp13.close();
             } catch (IOException e) {
-                System.out.println("process: ajp13.close ->" + e);
+                TestAjp13.println("process: ajp13.close ->" + e);
             }
 
             try {
                 socket.close();
             } catch (IOException e) {
-                System.out.println("process: socket.close ->" + e);
+                TestAjp13.println("process: socket.close ->" + e);
             }
             socket = null;
 
-            System.out.println("process:  done");
+            TestAjp13.println("process:  done");
 
         } catch (Exception e) {
             e.printStackTrace();
