@@ -7,7 +7,9 @@ Changes in JK2 HEAD:
 	* Add hasinput method for channel, which will check if datas are
 	  available on input channel (TC->WEBSERVER).
 	  [Henri Gomez]
-	  
+    * Make use apr_port_t instead of short to fix problem to have port higher than 32K.
+    * Make default port configurable (9009 on Netware, 8009 elsewhere)
+    
 Changes with JK2 2.0.4:
     * Added the load balancer stickySession property. If set to 0
       requests with servlet SESSION ID's can be routed to any Tomcat
