@@ -305,11 +305,19 @@ public class ChannelSocket extends JkHandler {
      */
     public void init() throws IOException {
         // Find a port.
-        if( maxPort<startPort) maxPort=startPort;
-
+        if (startPort == 0) {
+            port = 0;
+            log.info("JK2: ajp13 disabling channelSocket");
+            running = true;
+            return;                    
+        }
+        if (maxPort < startPort) 
+            maxPort = startPort;
+        if (getAddress() == null)
+            setAddress("localhost");
         for( int i=startPort; i<=maxPort; i++ ) {
             try {
-                sSocket=new ServerSocket( i );
+                sSocket=new ServerSocket( i, 0, inet );
                 port=i;
                 break;
             } catch( IOException ex ) {
@@ -322,8 +330,8 @@ public class ChannelSocket extends JkHandler {
             log.error("Can't find free port " + startPort + " " + maxPort );
             return;
         }
-        log.info("JK2: ajp13 listening on tcp port " + port );
-        
+        log.info("JK2: ajp13 listening on " + getAddress() + ":" + port );
+                
         // If this is not the base port and we are the 'main' channleSocket and
         // SHM didn't already set the localId - we'll set the instance id
         if( "channelSocket".equals( name ) &&
@@ -363,6 +371,9 @@ public class ChannelSocket extends JkHandler {
     public void destroy() throws IOException {
         running = false;
         try {
+            /* If we disabled the channel return */
+            if (port == 0)
+                return;
             tp.shutdown();
 
             // Need to create a connection to unlock the accept();
