@@ -32,7 +32,7 @@ code.screen {
 b.code {
     font-weight: normal;
     font-style: normal;
-    color: @source-color@;
+    color: #023264;
 }
 p.todo {
     background-color: #ffffff;

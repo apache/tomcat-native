@@ -52,7 +52,7 @@
       <meta name="author" value="{$name}"/>
       <meta name="email" value="{$email}"/>
     </xsl:for-each>
-    <link href="{$relative-path}/stye.css" type="text/css" rel="stylesheet"/>    
+    <link href="{$relative-path}/style.css" type="text/css" rel="stylesheet"/>    
     </head>
 
     <body bgcolor="{$body-bg}" text="{$body-fg}" link="{$body-link}"
