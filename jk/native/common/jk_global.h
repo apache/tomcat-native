@@ -162,6 +162,35 @@ extern "C" {
 
 #define JK_OPT_FWDKEYSIZE           0x0004
 
+/* Check for EBCDIC systems */
+
+/* Check for Apache 2.0 running on an EBCDIC system */
+#if APR_CHARSET_EBCDIC 
+
+#define USE_CHARSET_EBCDIC
+#define jk_xlate_to_ascii(b, l) ap_xlate_proto_to_ascii(b, l)
+#define jk_xlate_from_ascii(b, l) ap_xlate_proto_from_ascii(b, l)
+
+#else   /* APR_CHARSET_EBCDIC */
+
+/* Check for Apache 1.3 running on an EBCDIC system */
+#ifdef CHARSET_EBCDIC
+
+#define USE_CHARSET_EBCDIC
+#define jk_xlate_to_ascii(b, l) ebcdic2ascii(b, b, l)
+#define jk_xlate_from_ascii(b, l) ascii2ebcdic(b, b, l)
+
+#else /* CHARSET_EBCDIC */
+
+/* We're in on an ASCII system
+
+#define jk_xlate_to_ascii(b, l)             /* NOOP */
+#define jk_xlate_from_ascii(b, l)           /* NOOP */
+
+#endif /* CHARSET_EBCDIC */
+
+#endif /* APR_CHARSET_EBCDIC */
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
