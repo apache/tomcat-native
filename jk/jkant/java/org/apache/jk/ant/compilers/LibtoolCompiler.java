@@ -106,7 +106,7 @@ public class LibtoolCompiler extends CcCompiler {
 	cmd.createArgument().setValue("--mode=compile");
 
 	String cc=project.getProperty("build.native.cc");
-	if(cc==null) cc="gcc";
+	if(cc==null) cc="cc";
 
 	cmd.createArgument().setValue( cc );
 

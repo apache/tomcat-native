@@ -297,7 +297,10 @@ public abstract class CompilerAdapter extends SoTask {
     }
 
     protected void addDefines( Commandline cmd ) {
-	if( defines.size() > 0 ) {
+        // Define by default the OS ( as known to java )
+        String os=System.getProperty("java.os");
+
+        if( defines.size() > 0 ) {
 	    Enumeration defs=defines.elements();
 	    while( defs.hasMoreElements() ) {
 		Def d=(Def)defs.nextElement();

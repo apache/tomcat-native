@@ -92,7 +92,7 @@ public class LibtoolLinker extends LinkerAdapter {
 	cmd.createArgument().setValue("--mode=link");
 
 	String cc=project.getProperty("build.native.cc");
-	if(cc==null) cc="gcc";
+	if(cc==null) cc="cc";
 
 	cmd.createArgument().setValue( cc );
 	

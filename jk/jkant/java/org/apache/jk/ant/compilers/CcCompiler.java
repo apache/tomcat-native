@@ -84,18 +84,19 @@ public class CcCompiler extends CompilerAdapter {
         
         return co_mapper.mapFileName( name );
     }
-
+    
+    String cc;
+    
     /** Compile  using 'standard' gcc flags. This assume a 'current' gcc on
      *  a 'normal' platform - no need for libtool
      */
-
     public void compileSingleFile(Source sourceObj) throws BuildException {
 	File f=sourceObj.getFile();
 	String source=f.toString();
 	Commandline cmd = new Commandline();
 
-	String cc=project.getProperty("build.native.cc");
-	if(cc==null) cc="gcc";
+	cc=project.getProperty("build.native.cc");
+	if(cc==null) cc="cc";
 	
 	cmd.setExecutable( cc );
 
@@ -123,24 +124,26 @@ public class CcCompiler extends CompilerAdapter {
 
         if( optWgcc ) {
 	    cmd.createArgument().setValue("-W");
-            
-            //cmd.createArgument().setValue("-Wall");
-            cmd.createArgument().setValue("-Wimplicit");
-            cmd.createArgument().setValue("-Wreturn-type");
-            cmd.createArgument().setValue("-Wcomment");
-            cmd.createArgument().setValue("-Wformat");
-            cmd.createArgument().setValue("-Wchar-subscripts");
-            cmd.createArgument().setValue("-O");
-            cmd.createArgument().setValue("-Wuninitialized");
 
-            // Non -Wall
-            // 	    cmd.createArgument().setValue("-Wtraditional");
-            // 	    cmd.createArgument().setValue("-Wredundant-decls");
-	    cmd.createArgument().setValue("-Wmissing-declarations");
-	    cmd.createArgument().setValue("-Wmissing-prototypes");
-            //	    cmd.createArgument().setValue("-Wconversions");
-	    cmd.createArgument().setValue("-Wcast-align");
-            // 	    cmd.createArgument().setValue("-pedantic" );
+            if( cc!= null && cc.indexOf( "gcc" ) >= 0 ) {
+                //cmd.createArgument().setValue("-Wall");
+                cmd.createArgument().setValue("-Wimplicit");
+                cmd.createArgument().setValue("-Wreturn-type");
+                cmd.createArgument().setValue("-Wcomment");
+                cmd.createArgument().setValue("-Wformat");
+                cmd.createArgument().setValue("-Wchar-subscripts");
+                cmd.createArgument().setValue("-O");
+                cmd.createArgument().setValue("-Wuninitialized");
+                
+                // Non -Wall
+                // 	    cmd.createArgument().setValue("-Wtraditional");
+                // 	    cmd.createArgument().setValue("-Wredundant-decls");
+                cmd.createArgument().setValue("-Wmissing-declarations");
+                cmd.createArgument().setValue("-Wmissing-prototypes");
+                //	    cmd.createArgument().setValue("-Wconversions");
+                cmd.createArgument().setValue("-Wcast-align");
+                // 	    cmd.createArgument().setValue("-pedantic" );
+            }
 	}
     }
     protected void addOptimize( Commandline cmd ) {
