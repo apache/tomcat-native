@@ -79,13 +79,13 @@
 static char *jk2_worker_ajp13_getAttributeInfo[]={ "lb_factor", "lb_value", "debug", "channel", "level",
                                                    "route", "routeRedirect", "errorState", "graceful", "groups", "disabled", 
                                                    "epCount", "errorTime", "connectTimeout", "replyTimeout",
-                                                   "prepostTimeout", NULL };
+                                                   "prepostTimeout", "recoveryOpts", NULL };
 
 static char *jk2_worker_ajp13_multiValueInfo[]={"group", NULL };
 
 static char *jk2_worker_ajp13_setAttributeInfo[]={"debug", "channel", "route", "routeRedirect","secretkey", "group", "graceful",
                                                   "disabled", "lb_factor", "level", "connectTimeout", "replyTimeout",
-                                                   "prepostTimeout", NULL };
+                                                   "prepostTimeout", "recoveryOpts", NULL };
 
 
 static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
