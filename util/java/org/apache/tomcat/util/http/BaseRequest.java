@@ -333,6 +333,16 @@ public class BaseRequest {
     public MessageBytes jvmRoute() {
         return tomcatInstanceId;
     }
+
+    private Object notes[]=new Object[16];
+    
+    public final Object getNote(int id) {
+        return notes[id];
+    }
+
+    public final void setNote(int id, Object cr) {
+        notes[id]=cr;
+    }
     
     /**
      * ** SLOW ** for debugging only!
