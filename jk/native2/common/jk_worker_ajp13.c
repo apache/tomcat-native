@@ -577,13 +577,14 @@ jk2_worker_ajp13_getEndpoint(jk_env_t *env,
         return JK_OK;
     }
 
-    JK_ENTER_CS(&ajp13->cs, csOk);
-    if( !csOk ) return JK_ERR;
+    if( ajp13->cs != NULL ) 
+        ajp13->cs->lock( env, ajp13->cs );
 
     {
         jkb=env->createBean2( env, ajp13->mbean->pool,  "endpoint", NULL );
         if( jkb==NULL ) {
-            JK_LEAVE_CS( &ajp13->cs, csOk );
+            if( ajp13->cs != NULL ) 
+                ajp13->cs->unLock( env, ajp13->cs );
             return JK_ERR;
         }
     
@@ -597,7 +598,8 @@ jk2_worker_ajp13_getEndpoint(jk_env_t *env,
 
         ajp13->workerEnv->addEndpoint( env, ajp13->workerEnv, e );
     }
-    JK_LEAVE_CS( &ajp13->cs, csOk );
+    if( ajp13->cs != NULL ) 
+        ajp13->cs->unLock( env, ajp13->cs );
         
     if( ajp13->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -786,6 +788,7 @@ int JK_METHOD jk2_worker_ajp13_factory( jk_env_t *env, jk_pool_t *pool,
                                         const char *type, const char *name)
 {
     jk_worker_t *w=(jk_worker_t *)pool->calloc(env, pool, sizeof(jk_worker_t));
+    jk_bean_t *jkb;
     int i;
 
     if (name == NULL || w == NULL) {
@@ -797,10 +800,10 @@ int JK_METHOD jk2_worker_ajp13_factory( jk_env_t *env, jk_pool_t *pool,
     jk2_map_default_create(env, &w->groups, pool);
     jk2_map_default_create(env, &w->endpointMap, pool);
 
-    JK_INIT_CS(&(w->cs), i);
-    if (i!=JK_TRUE) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "objCache.create(): Can't init CS\n");
+    jkb=env->createBean2(env, pool,"threadMutex", NULL);
+    if( jkb != NULL ) {
+        w->cs=jkb->object;
+        jkb->init(env, jkb );
     }
     
     w->endpointCache= NULL;

@@ -342,7 +342,7 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
                                             jk_endpoint_t *endpoint,
                                             jk_msg_t *msg) 
 {
-    char *b;
+    unsigned char *b;
     int len;
     int sd;
     int  sent=0;
@@ -381,9 +381,9 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
  * Was: tcp_socket_recvfull
  */
 static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
-                                              jk_channel_t *ch,
-                                              jk_endpoint_t *endpoint,
-                                              char *b, int len )
+                                               jk_channel_t *ch,
+                                               jk_endpoint_t *endpoint,
+                                               unsigned char *b, int len )
 {
     int sd;
     int rdlen;
@@ -421,7 +421,7 @@ static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
 static int JK_METHOD jk2_channel_socket_readN2( jk_env_t *env,
                                                 jk_channel_t *ch,
                                                 jk_endpoint_t *endpoint,
-                                                char *b, int minLen, int maxLen )
+                                                unsigned char *b, int minLen, int maxLen )
 {
     int sd;
     int rdlen;
@@ -467,8 +467,8 @@ static int JK_METHOD jk2_channel_socket_readN2( jk_env_t *env,
  * Was: tcp_socket_recvfull
  */
 static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *ch,
-                                                  jk_endpoint_t *endpoint,
-                                                  jk_msg_t *msg )
+                                              jk_endpoint_t *endpoint,
+                                              jk_msg_t *msg )
 {
     int hlen=msg->headerLength;
     int blen;

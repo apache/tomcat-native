@@ -312,7 +312,7 @@ static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *ch,
                                          jk_endpoint_t *endpoint,
                                          jk_msg_t *msg) 
 {
-    char *b;
+    unsigned char *b;
     int len;
     int  sent=0;
     int this_time;
@@ -359,9 +359,9 @@ static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *ch,
  * Was: tcp_socket_recvfull
  */
 static int JK_METHOD jk2_channel_un_readN( jk_env_t *env,
-                                            jk_channel_t *ch,
-                                            jk_endpoint_t *endpoint,
-                                            char *b, int len ) 
+                                           jk_channel_t *ch,
+                                           jk_endpoint_t *endpoint,
+                                           unsigned char *b, int len ) 
 {
     int sd;
     int rdlen;

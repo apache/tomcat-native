@@ -99,20 +99,20 @@ static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
         apr_ctime( ctimeBuf, stat->connectedTime );
         s->jkprintf(env, s, "<td>%s</td>\n", ctimeBuf );
         
-        s->jkprintf(env, s, "<td>%ld</td>\n", stat->totalTime );
-        s->jkprintf(env, s, "<td>%ld</td>\n", stat->maxTime );
+        s->jkprintf(env, s, "<td>%ld</td>\n", (long)stat->totalTime );
+        s->jkprintf(env, s, "<td>%ld</td>\n", (long)stat->maxTime );
         
         if( stat->reqCnt + stat->errCnt > 0 ) 
             s->jkprintf(env, s, "<td>%ld</td>\n",
-                        (stat->totalTime / ( stat->reqCnt + stat->errCnt )) );
+                        (long)(stat->totalTime / ( stat->reqCnt + stat->errCnt )) );
         else
             s->jkprintf(env, s, "<td>-</td>\n");
         
-        s->jkprintf(env, s, "<td>%lu</td>\n", stat->startTime );
+        s->jkprintf(env, s, "<td>%lu</td>\n", (long)stat->startTime );
         s->jkprintf(env, s, "<td>%ld</td>\n",
-                    stat->jkStartTime - stat->startTime );
+                    (long)(stat->jkStartTime - stat->startTime) );
         s->jkprintf(env, s, "<td>%ld</td>\n",
-                    stat->endTime - stat->startTime );
+                    (long)(stat->endTime - stat->startTime) );
         
         totalTime += stat->totalTime;
         if( maxTime < stat->maxTime )
@@ -454,6 +454,7 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
         */
         if( shm!=NULL && shm->head!=NULL )
             shm->head->lbVer++;
+        s->jkprintf(env, s, "Updated config %d", shm->head->lbVer  );
     }
     
     s->jkprintf(env, s, "Status information for child %d", s->workerEnv->childId  );

@@ -140,7 +140,7 @@ static int JK_METHOD jk2_handler_login(jk_env_t *env, void *target,
         return JK_HANDLER_FATAL;
 
     /* COMPUTED-SEED */
-    rc= msg->appendString( env, msg, (const unsigned char *)computedKey);
+    rc= msg->appendString( env, msg, (const char *)computedKey);
     if( rc!=JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                  "handler.loginSecret() error serializing computed secret\n");

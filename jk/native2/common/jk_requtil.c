@@ -735,6 +735,37 @@ int jk2_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
              "handler.marshapPostHead() - error len=%d\n", len);
     return JK_ERR;	    
 }
+/* -------------------- Query decoding -------------------- */
+
+/** Read a query string into the map
+ */
+int jk2_requtil_queryRead(jk_env_t *env, jk_map_t *m, const char *query)
+{
+    char *sep;
+    char *value;
+    char *qry=m->pool->pstrdup( env, m->pool, query );
+
+    while( qry != NULL ) {
+        sep=strchr( qry, '&');
+        if( sep !=NULL ) { 
+            *sep='\0';
+            sep++;
+        }
+
+        value = strchr(qry, '=');
+        if(value==NULL) {
+            value="";
+        } else {
+            *value = '\0';
+            value++;
+        }
+        m->add( env, m, m->pool->pstrdup( env, m->pool, qry ),
+                m->pool->pstrdup( env, m->pool, value ));
+        qry=sep;
+    }
+    return JK_OK;
+}
+
 
 /* -------------------- Request encoding -------------------- */
 /* Moved from IIS adapter */
