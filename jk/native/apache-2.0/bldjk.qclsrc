@@ -265,6 +265,34 @@ CRTCMOD MODULE(MOD_JK/JK_WORKER) +
     STGMDL(*INHERIT) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
 
+CRTCMOD MODULE(MOD_JK/JK_STATUS) +
+    SRCSTMF('/home/apache/jk/native/common/jk_status.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_status.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK/JK_SHM) +
+    SRCSTMF('/home/apache/jk/native/common/jk_shm.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_shm.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
+
 CRTSRVPGM SRVPGM(MOD_JK/MOD_JK) +
       MODULE(MOD_JK/MOD_JK +
              MOD_JK/JK_AJP_COM MOD_JK/JK_AJP12_W +
@@ -276,6 +304,7 @@ CRTSRVPGM SRVPGM(MOD_JK/MOD_JK) +
              MOD_JK/JK_MSG_BUF MOD_JK/JK_POOL +
              MOD_JK/JK_SOCKBUF MOD_JK/JK_URI_W_M +
              MOD_JK/JK_UTIL MOD_JK/JK_WORKER) +
+             MOD_JK/JK_STATUS MOD_JK/JK_SHM) +
       EXPORT(*SRCFILE) +
       BNDDIR() +
       SRCFILE(MOD_JK/QSRVSRC) +
