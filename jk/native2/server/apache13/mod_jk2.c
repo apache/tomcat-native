@@ -573,6 +573,8 @@ static int jk2_translate(request_rec *r)
     jk_uriMap_t *uriMap;
     char *name=NULL;
     int n;
+    const char *ptr;
+
     if(r->proxyreq) {
         return DECLINED;
     }
@@ -597,8 +599,15 @@ static int jk2_translate(request_rec *r)
     
     /* get_env() */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+    ptr = ap_get_server_name(r);
+    if ( strlen(ptr) > 1024 - 12 ) {
+        /* That is probably an invalid request, DECLINED could display jsp source code. */
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "jk2_map_to_storage Host too big %s\n", ptr);
+        return HTTP_BAD_REQUEST;
+    }
     uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,
-                                       ap_get_server_name(r),
+                                       ptr,
                                        ap_get_server_port(r),
                                        r->uri);
     
