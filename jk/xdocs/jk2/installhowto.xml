@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <document>
 <properties>
-<title>Installation of mod_jk2 in the Web Server</title>
+<title>Installation of jk2 in the Web Server</title>
 <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
 <date>$Date$</date>
 </properties>
@@ -13,16 +13,55 @@
       These files have to be copied in the right location of the web server
       installation.
     </p>
-    <subsection name="Apache 1"/>
+    <p>
+      JNI support in JK2 require APR, which is provded in Apache 2.0, and is
+      available for many platforms, so Apache 1.3, IIS and NES/iPlanet should be
+      able to use it
+    </p>
+    <subsection name="Apache 1.3">
+      <p>
+        In the following example Apache-1.3 is installed in
+        /home/apache13/ and the commands are executed in
+        the jakarta-tomcat-connectors directory.
+      </p>
+      <p>
+        Apache 1.3 require APR, and if APR has been built with pthread support
+        and your Apache 1.3 wasn't (general case in Unix platforms) you should :
+        <ul>
+        <li>
+        Rebuild Apache 1.3 with pthread support (recommanded)
+        </li>
+        <li>
+        Add the LoadFile /usr/lib/pthread.so in beginning of your httpd.conf
+        </li>
+        </ul>
+      </p>
+      <p>
+        You should also ensure that the linker will be able to locate the apr shared libraries,
+        <code>libapr.so</code>, and <code>libaprutil.so</code>, make sure they have been installed
+        in linker search locations.
+      </p>
+      <screen>
+        <note>Copy the dso files in the modules location:</note>
+        <type>cp jk/build/jk2/apache13/mod_jk2.so /home/apache13/modules</type>
+        <note>Copy jkjni.so if you're using JNI</note>
+        <type>cp jk/build/jk2/apache13/jkjni.so /home/apache13/modules</type>
+        <note>You may have to add pthread library in the httpd.conf:</note>
+        <read>LoadFile /usr/lib/pthread.so</read>
+        <note>Add mod_jk2 loading in the httpd.conf</note>
+        <read>LoadModule jk2_module modules/mod_jk2.so</read>
+      </screen>
+    </subsection>
     <subsection name="Apache 2">
       <p>
         In the following example Apache-2.0 is installed in
-        /home/apache20/apache40 and the commands are excuted in
+        /home/apache20/apache40 and the commands are executed in
         the jakarta-tomcat-connectors directory.
       </p>
       <screen>
         <note>Copy the dso files in the modules location:</note>
         <type>cp jk/build/jk2/apache2/mod_jk2.so /home/apache20/apache40/modules</type>
+        <note>Copy jkjni.so if you're using JNI</note>
         <type>cp jk/build/jk2/apache2/jkjni.so /home/apache20/apache40/modules</type>
         <note>Add mod_jk2 loading in the httpd.conf:</note>
         <read>LoadModule jk2_module modules/mod_jk2.so</read>
