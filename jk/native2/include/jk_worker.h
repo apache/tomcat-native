@@ -211,7 +211,11 @@ struct jk_worker {
      *  or when the configuration changes.
      */
     int in_error_state;
-        
+
+    /** Explicit field for gracefull state. In this mode only requests with 
+        session IDs matching the worker will be forwarded, nothing else */
+    int graceful;
+    
     /* Worker priority.
      * Workers with lower priority are allways preffered - regardless of lb_value
      * This is user to represent 'local' workers ( we can call it 'proximity' or 'distance' )
