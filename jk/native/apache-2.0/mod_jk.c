@@ -2097,6 +2097,7 @@ static void open_jklog(server_rec *s, apr_pool_t *p)
 
     if (main_log != NULL) {
         conf->log = main_log;
+        return;
     }
     if (conf->log_file == NULL) {
         return;
