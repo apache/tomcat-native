@@ -170,4 +170,34 @@ public abstract class Msg {
     public abstract int getLen();
     
     public abstract void dump(String msg);
+
+    /* -------------------- Utilities -------------------- */
+    // XXX Move to util package
+
+    public static String hexLine( byte buf[], int start, int len ) {
+        StringBuffer sb=new StringBuffer();
+        for( int i=start; i< start+16 ; i++ ) {
+            if( i < len + 4)
+                sb.append( hex( buf[i] ) + " ");
+            else
+                sb.append( "   " );
+        }
+        sb.append(" | ");
+        for( int i=start; i < start+16 && i < len + 4; i++ ) {
+            if( ! Character.isISOControl( (char)buf[i] ))
+                sb.append( new Character((char)buf[i]) );
+            else
+                sb.append( "." );
+        }
+        return sb.toString();
+    }
+
+    private  static String hex( int x ) {
+        //	    if( x < 0) x=256 + x;
+        String h=Integer.toHexString( x );
+        if( h.length() == 1 ) h = "0" + h;
+        return h.substring( h.length() - 2 );
+    }
+
+
 }
