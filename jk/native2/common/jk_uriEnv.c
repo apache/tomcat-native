@@ -82,8 +82,8 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
 {
     char *n=name;
     char *slash=strchr( name, '/' );
-
-    fprintf( stderr, "XXX parseURI %s\n", name );
+    
+    /* fprintf( stderr, "XXX parseURI %s\n", name ); */
     
     if( slash==NULL ) {
         /* That's a virtual host definition ( no actual mapping, just global
@@ -214,16 +214,17 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         uriEnv->workerName=uriEnv->uriMap->workerEnv->defaultWorker->mbean->name;;
         uriEnv->worker=uriEnv->uriMap->workerEnv->defaultWorker;
 
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                      "uriMap.init() map %s %s\n",
-                      uriEnv->uri, uriEnv->uriMap->workerEnv->defaultWorker->mbean->name);
+        if( uriEnv->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "uriEnv.init() map %s %s\n",
+                          uriEnv->uri, uriEnv->uriMap->workerEnv->defaultWorker->mbean->name);
     }
 
     if( uriEnv->workerName != NULL && uriEnv->worker==NULL ) {
         uriEnv->worker= env->getByName( env, wname );
         if( uriEnv->worker==NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "uriMap.init() map to invalid worker %s %s\n",
+                          "uriEnv.init() map to invalid worker %s %s\n",
                           uriEnv->uri, uriEnv->workerName);
             /* XXX that's allways a 'lb' worker, create it */
         }
@@ -240,7 +241,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
          * not arrive here when using Apache.
          */
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "uriMap.addMapping() context must start with '/' in %s\n",
+                      "uriEnv.init() context must start with '/' in %s\n",
                       uri);
         return JK_ERR;
     }
@@ -261,16 +262,16 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         if( uriEnv->debug > 0 ) {
             if( uriEnv->match_type == MATCH_TYPE_CONTEXT ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "uriMap.addMapping() context mapping %s=%s \n",
+                              "uriEnv.init() context mapping %s=%s \n",
                               uriEnv->prefix, uriEnv->workerName);
                 
             } else if( uriEnv->match_type == MATCH_TYPE_HOST ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "uriMap.addMapping() host mapping %s=%s \n",
+                              "uriEnv.init() host mapping %s=%s \n",
                               uriEnv->virtual, uriEnv->workerName);
             } else {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "uriMap.addMapping() exact mapping %s=%s \n",
+                              "uriEnv.init() exact mapping %s=%s \n",
                               uriEnv->prefix, uriEnv->workerName);
             }
         }
@@ -312,7 +313,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             uriEnv->match_type  = MATCH_TYPE_SUFFIX;
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "uriMap.addMapping() suffix mapping %s .%s=%s was added\n",
+                              "uriEnv.init() suffix mapping %s .%s=%s was added\n",
                               uriEnv->prefix, uriEnv->suffix, uriEnv->workerName);
             }
         } else if ('\0' != asterisk[2]) {
@@ -324,19 +325,20 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             uriEnv->match_type = MATCH_TYPE_GENERAL_SUFFIX;
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "uriMap.addMapping() general suffix mapping %s.%s=%s\n",
+                              "uriEnv.init() general suffix mapping %s.%s=%s\n",
                               uri, asterisk + 2, uriEnv->workerName);
             }
         } else {
-                /* context based /context/prefix/ASTERISK  */
+            /* context based /context/prefix/ASTERISK  */
             asterisk[1]      = '\0';
+            asterisk[0]      = '\0'; /* Remove the extra '/' */
             uriEnv->suffix      = NULL;
             uriEnv->prefix      = uri;
             uriEnv->prefix_len  =strlen( uriEnv->prefix );
             uriEnv->match_type  = MATCH_TYPE_PREFIX;
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "uriMap.addMapping() prefix mapping %s=%s\n",
+                              "uriEnv.init() prefix mapping %s=%s\n",
                               uriEnv->prefix, uriEnv->workerName);
             }
         }
@@ -349,7 +351,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         uriEnv->match_type  = MATCH_TYPE_PREFIX;
         if( uriEnv->debug > 0 ) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "uriMap.addMapping() prefix mapping2 %s=%s\n",
+                          "uriEnv.init() prefix mapping2 %s=%s\n",
                           uri, uriEnv->workerName);
         }
     }
@@ -375,7 +377,7 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     
     jk2_map_default_create( env, &uriEnv->properties, uriPool );
 
-    uriEnv->debug=10;
+    uriEnv->debug=0;
     uriEnv->init=jk2_uriEnv_init;
 
     result->setAttribute=jk2_uriEnv_setAttribute;

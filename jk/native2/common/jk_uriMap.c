@@ -332,9 +332,6 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
     jk_workerEnv_t *workerEnv=uriMap->workerEnv;
     jk_bean_t *mbean;
 
-    if( uriMap->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "uriMap.init()\n"); 
-
     mbean=env->getBean2( env, "uri", "" );
     if( mbean==NULL )
         mbean=env->createBean2(env, workerEnv->pool,"uri", "");
@@ -345,7 +342,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
     }
     uriMap->defaultVhost=mbean->object;
     
-    if( uriMap->debug > 0 ) 
+    if( uriMap->debug > 5 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO, "uriMap.init() set default host\n"); 
 
     /* Initialize the vhosts table */
@@ -359,7 +356,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
                 uriMap->vhosts->put( env, uriMap->vhosts,
                                      uriEnv->virtual, uriEnv, NULL );
             }
-            if( uriMap->debug > 0 ) 
+            if( uriMap->debug > 5 ) 
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                               "uriMap.init() loaded host %s\n",uriEnv->virtual); 
         }
@@ -396,7 +393,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
             char *vhost= uriEnv->virtual;
             jk_uriEnv_t *hostEnv=jk2_uriMap_hostMap( env, uriMap, vhost );
 
-            if( uriMap->debug > 0 ) 
+            if( uriMap->debug > 5 ) 
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                               "uriMap.init() loaded context %s %s %p %p %p\n",
                               uriEnv->virtual, context, hostEnv, hostEnv->webapps,
@@ -415,7 +412,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
     }
 
 
-    if( uriMap->debug > 0 ) 
+    if( uriMap->debug > 5 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "uriMap.init() processing mappings\n");
 
@@ -680,7 +677,7 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *resu
     uriMap->addUriEnv=jk2_uriMap_addUriEnv;
     uriMap->checkUri=jk2_uriMap_checkUri;
     uriMap->mapUri=jk2_uriMap_mapUri;
-    uriMap->debug= 10;
+    uriMap->debug= 1;
             
     result->object=uriMap;
     result->setAttribute=jk2_uriMap_setProperty;
