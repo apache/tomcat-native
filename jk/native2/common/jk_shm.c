@@ -141,6 +141,12 @@ static int JK_METHOD jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
     
     int rv=JK_OK;
     
+    /* In case the shm has been initialized already
+     * for the current process.
+     */
+    if (shm->head && shm->image)
+        return rv;
+        
     shm->privateData = NULL;
 
     if (shm->fname == NULL) {
