@@ -639,6 +639,14 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
             catch( Exception e) {
                 log.error( "Error, closing connection", e);
             }
+            try{
+		MsgAjp endM = new MsgAjp();
+                endM.reset();
+                endM.appendByte((byte)HANDLE_THREAD_END);
+                next.invoke(endM, ep);
+            } catch( Exception ee) {
+                log.error( "Error, releasing connection",ee);
+            }
         }
     }
 

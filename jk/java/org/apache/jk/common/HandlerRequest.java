@@ -65,6 +65,7 @@ import java.io.IOException;
 import java.io.CharConversionException;
 import java.net.InetAddress;
 import java.util.Properties;
+import javax.management.ObjectName;
 
 import org.apache.commons.modeler.Registry;
 import org.apache.coyote.Request;
@@ -247,10 +248,12 @@ public class HandlerRequest extends JkHandler
                                           "JK_AJP13_SHUTDOWN",
                                           this, null); // 7
             
-                        dispatch.registerMessageType( JK_AJP13_CPING_REQUEST,
-                                                                                  "JK_AJP13_CPING_REQUEST",
-                                                                                  this, null); // 10
-            
+            dispatch.registerMessageType( JK_AJP13_CPING_REQUEST,
+                                          "JK_AJP13_CPING_REQUEST",
+                                           this, null); // 10
+            dispatch.registerMessageType( HANDLE_THREAD_END,
+                                         "HANDLE_THREAD_END",
+                                         this, null);
             // register outgoing messages handler
             dispatch.registerMessageType( JK_AJP13_SEND_BODY_CHUNK, // 3
                                           "JK_AJP13_SEND_BODY_CHUNK",
@@ -260,6 +263,7 @@ public class HandlerRequest extends JkHandler
         bodyNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "jkInputStream" );
         tmpBufNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "tmpBuf" );
         secretNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "secret" );
+        JMXRequestNote =wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "requestNote");
 
         if( next==null )
             next=wEnv.getHandler( "container" );
@@ -356,6 +360,7 @@ public class HandlerRequest extends JkHandler
     int bodyNote;
     int tmpBufNote;
     int secretNote;
+    int JMXRequestNote;
 
     boolean decoded=true;
     boolean tomcatAuthentication=true;
@@ -447,14 +452,25 @@ public class HandlerRequest extends JkHandler
             
             return OK;
 
-                // We got a PING REQUEST, quickly respond with a PONG
-                case JK_AJP13_CPING_REQUEST:
-                        msg.reset();
-                        msg.appendByte(JK_AJP13_CPONG_REPLY);
-                        ep.setType( JkHandler.HANDLE_SEND_PACKET );
-                        ep.getSource().invoke( msg, ep );
+            // We got a PING REQUEST, quickly respond with a PONG
+        case JK_AJP13_CPING_REQUEST:
+            msg.reset();
+            msg.appendByte(JK_AJP13_CPONG_REPLY);
+            ep.setType( JkHandler.HANDLE_SEND_PACKET );
+            ep.getSource().invoke( msg, ep );
                         
-                        return OK;
+             return OK;
+
+        case HANDLE_THREAD_END:
+            if(registerRequests) {
+                Request req = (Request)ep.getRequest();
+                if( req != null ) {
+                    ObjectName roname = (ObjectName)ep.getNote(JMXRequestNote);
+                    Registry.getRegistry().unregisterComponent(roname);
+                    req.getRequestProcessor().setGlobalProcessor(null);
+                }
+            }
+            return OK;
 
         default:
             System.err.println("Unknown message " + type );
@@ -488,9 +504,12 @@ public class HandlerRequest extends JkHandler
 
                     RequestInfo rp=req.getRequestProcessor();
                     rp.setGlobalProcessor(global);
+                    ObjectName roname = new ObjectName(getDomain() + 
+                                       "type=RequestProcessor,name=JkRequest" +count++);
+                    ep.setNote(JMXRequestNote, roname);
+                        
                     Registry.getRegistry().registerComponent( rp,
-                            getDomain(), "RequestProcessor",
-                            "type=RequestProcessor,name=JkRequest" + count++ );
+                                                              roname, null);
                 } catch( Exception ex ) {
                     log.warn("Error registering request");
                 }

@@ -91,6 +91,7 @@ public class JkHandler implements MBeanRegistration, NotificationListener {
     public static final int HANDLE_RECEIVE_PACKET   = 10;
     public static final int HANDLE_SEND_PACKET      = 11;
     public static final int HANDLE_FLUSH            = 12;
+    public static final int HANDLE_THREAD_END       = 13;
     
     public void setWorkerEnv( WorkerEnv we ) {
         this.wEnv=we;
