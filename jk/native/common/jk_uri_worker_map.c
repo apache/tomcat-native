@@ -24,6 +24,8 @@
 
 #include "jk_pool.h"
 #include "jk_util.h"
+#include "jk_map.h"
+#include "jk_mt.h"
 #include "jk_uri_worker_map.h"
 
 #ifdef WIN32
@@ -135,10 +137,19 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
     JK_TRACE_ENTER(l);
 
     if (init_data && uw_map) {
-        int rc = uri_worker_map_open(*uw_map =
-                                     (jk_uri_worker_map_t *)
-                                     malloc(sizeof(jk_uri_worker_map_t)),
-                                     init_data, l);
+        int rc;
+        *uw_map = (jk_uri_worker_map_t *)calloc(1, sizeof(jk_uri_worker_map_t));
+
+        JK_INIT_CS(&((*uw_map)->cs), rc);
+        if (rc == JK_FALSE) {
+            jk_log(l, JK_LOG_ERROR,
+                   "creating thread lock errno=%d",
+                   errno);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
+
+        rc = uri_worker_map_open(*uw_map, init_data, l);
         JK_TRACE_EXIT(l);
         return rc;
     }
@@ -154,6 +165,8 @@ static int uri_worker_map_close(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
     JK_TRACE_ENTER(l);
 
     if (uw_map) {
+        int i;
+        JK_DELETE_CS(&(uw_map->cs), i);
         jk_close_pool(&uw_map->p);
         JK_TRACE_EXIT(l);
         return JK_TRUE;
@@ -225,8 +238,16 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 
     JK_TRACE_ENTER(l);
 
+    if (*puri == '-') {
+        /* Disable urimap.
+         * This way you can disable already mounted
+         * context.
+         */
+        match_type = MATCH_TYPE_DISABLED;
+        puri++;
+    }
     if (*puri == '!') {
-        match_type = MATCH_TYPE_NO_MATCH;
+        match_type |= MATCH_TYPE_NO_MATCH;
         puri++;
     }
     
@@ -234,6 +255,11 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     for (i = 0; i < uw_map->size; i++) {
         uwr = uw_map->maps[i];
         if (strcmp(uwr->uri, puri) == 0) {
+            /* Update disabled flag */
+            if (match_type & MATCH_TYPE_DISABLED)
+                uwr->match_type |= MATCH_TYPE_DISABLED;
+            else
+                uwr->match_type &= ~MATCH_TYPE_DISABLED;
             if (strcmp(uwr->worker_name, worker) == 0) {
                 jk_log(l, JK_LOG_DEBUG,
                        "map rule %s=%s already exists",
@@ -245,7 +271,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                 jk_log(l, JK_LOG_DEBUG,
                        "changing map rule %s=%s ",
                        puri, worker);
-                uwr->worker_name = worker;
+                uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
@@ -366,7 +392,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                    "exact rule %s=%s was added",
                    uri, worker);
         }
-        uwr->worker_name = worker;
+        uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
         uwr->context_len = strlen(uwr->context);
     }
     else {
@@ -640,7 +666,9 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
      */
     jk_no2slash(uri);
 #endif
-
+    
+    if (uw_map->fname)
+        uri_worker_map_update(uw_map, l);
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s' from %d maps",
                uri, uw_map->size);
@@ -792,11 +820,65 @@ cleanup:
         if (is_nomap_match(uw_map, uri, rv, l)) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                        "Denying matching for worker %s by nomatch rule",
-                        rv);
+                       "Denying matching for worker %s by nomatch rule",
+                       rv);
             JK_TRACE_EXIT(l);
             rv = NULL;
         }
     }
     return rv;
 }
+
+int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
+                        jk_logger_t *l)
+{
+    int rc = JK_FALSE;
+    jk_map_t *map;
+
+    jk_map_alloc(&map);
+    if (jk_map_read_properties(map, uw_map->fname,
+                               &uw_map->modified)) {
+        int i;        
+        for (i = 0; i < jk_map_size(map); i++) {
+            const char *u = jk_map_name_at(map, i);
+            const char *w = jk_map_value_at(map, i);
+            if (!uri_worker_map_add(uw_map, u, w, l)) {
+                jk_log(l, JK_LOG_ERROR,
+                       "invalid mapping rule %s->%s",
+                       u, w);
+            }
+        }
+        uw_map->checked = time(NULL);
+        rc = JK_TRUE;
+    }
+    jk_map_free(&map);
+    return rc;
+}
+
+int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
+                          jk_logger_t *l)
+{
+    int rc = JK_TRUE;
+    time_t now = time(NULL);
+
+    if ((now - uw_map->checked) > JK_URIMAP_RELOAD) {
+        struct stat statbuf;
+        uw_map->checked = now;
+        if ((rc = stat(uw_map->fname, &statbuf)) == -1)
+            return JK_FALSE;
+        if (statbuf.st_mtime == uw_map->modified)
+            return JK_TRUE;
+        JK_ENTER_CS(&(uw_map->cs), rc);
+        /* Check if some other thread updated status */
+        if (statbuf.st_mtime == uw_map->modified) {
+            JK_LEAVE_CS(&(uw_map->cs), rc);
+            return JK_TRUE;
+        }        
+        rc = uri_worker_map_load(uw_map, l);
+        JK_LEAVE_CS(&(uw_map->cs), rc);
+        jk_log(l, JK_LOG_INFO,
+               "Reloaded urimaps from %s", uw_map->fname);
+    }
+    return rc;
+}
+

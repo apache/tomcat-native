@@ -32,7 +32,12 @@ extern "C"
 #include "jk_global.h"
 #include "jk_map.h"
 #include "jk_logger.h"
+#include "jk_mt.h"
 #include "jk_shm.h"
+
+/* Urimap reload time. Use 60 seconds by default.
+ */
+#define JK_URIMAP_RELOAD            60
 
 #define MATCH_TYPE_EXACT            0x0001
 #define MATCH_TYPE_CONTEXT          0x0002
@@ -86,6 +91,15 @@ struct jk_uri_worker_map
     /* NoMap Number */
     unsigned int nosize;
 
+    /* Dynamic config support */
+
+    JK_CRIT_SEC cs;
+    /* uriworkermap filename */
+    const char *fname;    
+    /* Last modified time */
+    time_t  modified;
+    /* Last checked time */
+    time_t  checked;
 };
 typedef struct jk_uri_worker_map jk_uri_worker_map_t;
 
@@ -102,6 +116,12 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 
 const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               char *uri, jk_logger_t *l);
+
+int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
+                        jk_logger_t *l);
+
+int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
+                          jk_logger_t *l);
 
 #ifdef __cplusplus
 }
