@@ -186,7 +186,11 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
 
         TrustManager[] tms = null;
 
-        KeyStore trustStore = getTrustStore(keystoreType);
+        String truststoreType = (String)attributes.get("truststoreType");
+        if(truststoreType == null) {
+            truststoreType = keystoreType;
+        }
+        KeyStore trustStore = getTrustStore(truststoreType);
         if (trustStore != null) {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(algorithm);
             tmf.init(trustStore);

@@ -131,7 +131,11 @@ public class JSSE13SocketFactory extends JSSESocketFactory
 
             // Set up TrustManager
             com.sun.net.ssl.TrustManager[] tm = null;
-            KeyStore trustStore = getTrustStore(keystoreType);
+            String truststoreType = (String)attributes.get("truststoreType");
+            if(truststoreType == null) {
+                truststoreType = keystoreType;
+            }
+            KeyStore trustStore = getTrustStore(truststoreType);
             if (trustStore != null) {
                 com.sun.net.ssl.TrustManagerFactory tmf =
                     com.sun.net.ssl.TrustManagerFactory.getInstance("SunX509");
