@@ -159,12 +159,22 @@ and  provides access to all other objects</p>
                     <tr>
                         <td>file</td>
                         <td>No default value</td>
-                        <td>Name of the file that will be mmapped to use as shared memory.</td>
+                        <td>Name of the file that will be mmapped to use as shared memory, if set to 'anonymous' use the anonymous shered memory</td>
                     </tr>
                     <tr>
                         <td>size</td>
                         <td>No default value</td>
-                        <td>Size of the file.</td>
+                        <td>Deprecated. Size of the file.</td>
+                    </tr>
+                    <tr>
+                        <td>slots</td>
+                        <td>256</td>
+                        <td>Number of shared memory slots. Set to the number of child processes</td>
+                    </tr>
+                    <tr>
+                        <td>memory</td>
+                        <td>0</td>
+                        <td>Use the precess memory instead of shared memory. Useful for single child mpm's</td>
                     </tr>
                 </table>
             </p>
