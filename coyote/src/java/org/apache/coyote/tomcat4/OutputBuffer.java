@@ -232,7 +232,7 @@ public class OutputBuffer extends Writer
         throws IOException {
 
         flush();
-        closed =true;
+        closed = true;
 
     }
 
@@ -293,7 +293,7 @@ public class OutputBuffer extends Writer
         if (state == CHAR_STATE)
             cb.flushBuffer();
         state = BYTE_STATE;
-        writeBytes( b, off, len );
+        writeBytes(b, off, len);
 
     }
 
