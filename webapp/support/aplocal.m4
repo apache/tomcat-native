@@ -66,7 +66,7 @@ dnl   Discover binaries required further on in the automake process and to
 dnl   process makefiles. Those are TRUE, ECHO, GREP, CAT, SED and RM
 dnl --------------------------------------------------------------------------
 AC_DEFUN(LOCAL_INIT,[
-  AC_CHECK_PROG(TEST,"test","test","",${PATH})
+  AC_PATH_PROG(TEST,"test","test",${PATH})
   LOCAL_CHECK_PROG(TRUE,true)
   LOCAL_CHECK_PROG(ECHO,echo)
   LOCAL_CHECK_PROG(GREP,grep)
@@ -90,10 +90,18 @@ dnl
 dnl   Parameters:
 dnl     $1 - name of the variable where the program name must be stored
 dnl     $2 - binary name of the program to look for
+dnl     $3 - Extra PATH to be added to the search
 dnl --------------------------------------------------------------------------
 AC_DEFUN(LOCAL_CHECK_PROG,[
+  if ${TEST} -z "$3"
+  then
+    local_path="${PATH}"
+  else
+    local_path="$3:${PATH}"
+  fi
   local_vnam="$1"
-  AC_CHECK_PROG($1,$2,$2,,${PATH})
+  unset $1
+  AC_PATH_PROG($1,$2,"",${local_path})
   local_vval=`eval "echo \\$$local_vnam"`
   if ${TEST} -z "${local_vval}"
   then
@@ -101,6 +109,7 @@ AC_DEFUN(LOCAL_CHECK_PROG,[
   fi
   unset local_vnam
   unset local_vval
+  unset local_path
 ])
 
 dnl --------------------------------------------------------------------------
@@ -118,6 +127,7 @@ AC_DEFUN(LOCAL_HEADER,[
 AC_DEFUN(LOCAL_HELP,[
   AC_DIVERT_PUSH(AC_DIVERSION_NOTICE)
   ac_help="${ac_help}
+
 [$1]"
   AC_DIVERT_POP()
 ])
@@ -130,17 +140,24 @@ dnl   Parameters:
 dnl     $1 - name of the variable containing the return value (error code).
 dnl     $2 - name of the binary/script to invoke
 dnl     $3 - message used for pretty printing output
+dnl     $4 - the directory where the command must be executed
 dnl --------------------------------------------------------------------------
 AC_DEFUN(LOCAL_FILTEREXEC,[
+  local_curdir="`pwd`"
+  if ${TEST} -n "$4"
+  then
+    cd "$4"
+  fi
+
   local_vnam="$1"
-  ${ECHO} "  Invoking: $2"
+  ${ECHO} "  Invoking: \"$2\" in \"$4\""
   ${ECHO} "-1" > retvalue.tmp
 
   set local_file $2
   local_file=[$]2
   if ${TEST} ! -x "${local_file}"
   then
-    AC_MSG_ERROR([cannot find or execute \"${local_file}\" in \"`pwd`\"])
+    AC_MSG_ERROR([cannot find or execute \"${local_file}\" in \"$4\"])
   fi
 
   {
@@ -173,8 +190,13 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
   local_vval=`eval "echo \\$$local_vnam"`
   ${RM} retvalue.tmp
   ${ECHO} "  Execution of $2 returned ${local_vval}"
+
+  cd "${local_curdir}"
+  unset local_curdir
   unset local_vnam
   unset local_vval
+
+
 ])
 
 dnl --------------------------------------------------------------------------
