@@ -827,3 +827,54 @@ apr_status_t  ajp_parse_data(request_rec  *r, ajp_msg_t *msg, apr_uint16_t *len,
     *ptr = (char *)&(msg->buf[msg->pos]);
     return APR_SUCCESS;
 }
+
+/*
+ * Allocate a msg to send data
+ */
+apr_status_t  ajp_alloc_data_msg(request_rec *r, char **ptr, apr_size_t *len,
+                             void **data)
+{
+    apr_status_t rc;
+    ajp_msg_t **msg;
+
+    msg = data;
+    rc = ajp_msg_create(r->pool, msg);
+    if (rc != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+               "ajp_alloc_data_msg: ajp_msg_create failed");
+        return rc;
+    }
+    ajp_msg_reset(*msg);
+    *ptr = (char *)&((*msg)->buf[6]);
+    *len = AJP_MSG_BUFFER_SZ-6;
+
+    return APR_SUCCESS;
+}
+
+/*
+ * Send the data message
+ */
+apr_status_t  ajp_send_data_msg(apr_socket_t *sock, request_rec  *r,
+                             void *data, apr_size_t len)
+{
+    apr_status_t rc;
+    ajp_msg_t *msg;
+
+    msg = data;
+    msg->buf[4] = (apr_byte_t)((len >> 8) & 0xFF);
+    msg->buf[5] = (apr_byte_t)(len & 0xFF);
+
+    msg->len += len + 2; /* + 1 XXXX where is '\0' */
+
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+               "ajp_send_data_msg: sending %d", len);
+
+    rc = ajp_ilink_send(sock, msg);
+    if (rc != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+               "ajp_send_data_msg: ajp_ilink_send failed");
+        return rc;
+    }
+
+    return APR_SUCCESS;
+}
