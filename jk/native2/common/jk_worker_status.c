@@ -137,7 +137,6 @@ static void jk2_worker_status_displayEndpointInfo(jk_env_t *env, jk_ws_service_t
     s->jkprintf(env, s, "<th>ReqStart</th><th>+jk</th><th>+end</th>" );
 
     for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-        char *name=env->_objects->nameAt( env, env->_objects, i );
         jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
         jk_endpoint_t *ep;
 
@@ -166,14 +165,12 @@ static void jk2_worker_status_displayEndpointInfo(jk_env_t *env, jk_ws_service_t
 static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service_t *s,
                                                     jk_workerEnv_t *wenv)
 {
-    jk_map_t *map=wenv->initData;
     int i;
     int j;
     int totalReq=0;
     int totalErr=0;
     unsigned long totalTime=0;
     unsigned long maxTime=0;
-    int needHeader=JK_TRUE;
     
     if( wenv->shm==NULL || wenv->shm->head==NULL) {
         s->jkprintf(env, s, "<h3>No Scoreboard available</h3>\n"); 
@@ -228,7 +225,6 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
 static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t *s,
                                                  jk_workerEnv_t *wenv, char *type)
 {
-    jk_map_t *map=wenv->initData;
     int i;
     int needHeader=JK_TRUE;
     int typeLen=strlen( type );
@@ -389,14 +385,8 @@ static void jk2_worker_status_displayConfigProperties(jk_env_t *env, jk_ws_servi
 static void jk2_worker_status_lstEndpoints(jk_env_t *env, jk_ws_service_t *s,
                                            jk_workerEnv_t *wenv)
 {
-    jk_map_t *map=wenv->initData;
     int i;
     int j;
-    int totalReq=0;
-    int totalErr=0;
-    unsigned long totalTime=0;
-    unsigned long maxTime=0;
-    int needHeader=JK_TRUE;
     
     if( wenv->shm==NULL || wenv->shm->head==NULL) {
         return;
@@ -414,7 +404,6 @@ static void jk2_worker_status_lstEndpoints(jk_env_t *env, jk_ws_service_t *s,
 
             for( j=0; j<slot->structCnt ; j++ ) {
                 jk_stat_t *statArray=(jk_stat_t *)data;
-                jk_stat_t *stat=statArray + j;
 
                 s->jkprintf(env, s, "[endpoint:%s%d]\n", name, j );
                 s->jkprintf(env, s, "T=endpoint\n" );
@@ -441,14 +430,8 @@ static void jk2_worker_status_lstEndpoints(jk_env_t *env, jk_ws_service_t *s,
 static void jk2_worker_status_dmpEndpoints(jk_env_t *env, jk_ws_service_t *s,
                                            jk_workerEnv_t *wenv)
 {
-    jk_map_t *map=wenv->initData;
     int i;
     int j;
-    int totalReq=0;
-    int totalErr=0;
-    unsigned long totalTime=0;
-    unsigned long maxTime=0;
-    int needHeader=JK_TRUE;
 
     if( wenv->shm==NULL || wenv->shm->head==NULL) {
         return;
@@ -523,7 +506,6 @@ static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
         char *name=env->_objects->nameAt( env, env->_objects, i );
         jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
         char **getAtt=mbean->getAttributeInfo;
-        char **setAtt=mbean->setAttributeInfo;
         
         /* That's a bad name, created for backward compat. It should be deprecated.. */
         if( strchr( name, ':' )==NULL )
@@ -690,7 +672,6 @@ static int JK_METHOD jk2_worker_status_qry(jk_env_t *env,
         char *name=env->_objects->nameAt( env, env->_objects, i );
         jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
         char **getAtt=mbean->getAttributeInfo;
-        char **setAtt=mbean->setAttributeInfo;
         int j,k;
         
         /* That's a bad name, created for backward compat. It should be deprecated.. */
@@ -898,7 +879,7 @@ static int JK_METHOD jk2_worker_status_invoke(jk_env_t *env,
     for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
         char *name=env->_objects->nameAt( env, env->_objects, i );
         jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
-        int res;
+        int res = 0;
         
         if( mbean==NULL ) 
             continue;

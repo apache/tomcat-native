@@ -440,7 +440,6 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
 */
 static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
 {
-    int currentWorker=0;
     int i;
     int num_of_workers=lb->lbWorkerMap->size( env, lb->lbWorkerMap);
 
@@ -503,7 +502,6 @@ static void * JK_METHOD jk2_lb_getAttribute(jk_env_t *env, jk_bean_t *mbean,
                                             char *name)
 {
     jk_worker_t *lb=mbean->object;
-    unsigned i = 0;
     jk_worker_lb_private_t *lb_priv = lb->worker_private;
     
     if( strcmp( name, "workers") == 0 ) {
@@ -533,7 +531,6 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
 {
     jk_worker_t *lb=mbean->object;
     char *value=valueP;
-    unsigned i = 0;
     jk_worker_lb_private_t *lb_priv = lb->worker_private;
     
     if( strcmp( name, "worker") == 0 ) {
@@ -593,7 +590,6 @@ static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_bean_t *bean)
 
 static int JK_METHOD jk2_lb_destroy(jk_env_t *env, jk_bean_t *bean)
 {
-    jk_worker_t *w=bean->object;
     /* Workers are destroyed by the workerEnv. It is possible
        that a worker is part of more than a lb.
        Nothing to clean up so far.

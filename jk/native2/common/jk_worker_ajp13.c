@@ -231,7 +231,6 @@ static void jk2_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
 static int jk2_check_alive(jk_env_t *env, jk_endpoint_t *ae, int timeout) {
 
     int err;
-    jk_channel_t *channel=ae->worker->channel;
     jk_msg_t * msg=ae->reply;
 
     jk2_serialize_cping( env, msg, ae );
@@ -353,7 +352,6 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
     int err=JK_OK;
     int attempt;
     int has_post_body=JK_FALSE;
-    jk_channel_t *channel= worker->channel;
 
     e->recoverable = JK_TRUE;
     s->is_recoverable_error = JK_TRUE;
