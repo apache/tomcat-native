@@ -122,6 +122,8 @@ struct wa_request {
     char *auth;
     /** The content length of this request. */
     long clen;
+    /** The content type of this request. */
+    char *ctyp;
     /** The number of bytes read out of this request body. */
     long rlen;
     /** The current headers table. */
