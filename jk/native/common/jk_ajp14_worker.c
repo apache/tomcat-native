@@ -59,26 +59,117 @@
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
+#include "jk_context.h"
 #include "jk_ajp14_worker.h"
 
-int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
-                                   const char *name,
-                                   jk_logger_t *l)
+/* -------------------- Method -------------------- */
+static int JK_METHOD validate(jk_worker_t *pThis,
+                              jk_map_t    *props,
+                              jk_logger_t *l)
+{   
+	ajp_worker_t *aw;
+	char * secret_key;
+
+    if (ajp_validate(pThis, props, l, AJP14_PROTO) == JK_FALSE)
+		return JK_FALSE;
+
+   aw = pThis->worker_private;
+
+   secret_key = jk_get_worker_secret_key(props, aw->name);
+
+   if ((!secret_key) || (!strlen(secret_key))) {
+		jk_log(l, JK_LOG_ERROR, "validate error, empty or missing secretkey\n");
+		return JK_FALSE;
+	}
+
+	return JK_TRUE;
+}
+
+static int JK_METHOD init(jk_worker_t *pThis,
+                          jk_map_t    *props, 
+                          jk_logger_t *l)
 {
-    ajp14_worker_t *private_data = 
-            (ajp14_worker_t *)malloc(sizeof(ajp14_worker_t));
+   ajp_worker_t *aw;
+   char         *secret_key;
+
+   if (ajp_init(pThis, props, l, AJP14_PROTO) == JK_FALSE)
+		return JK_FALSE;
+
+   aw = pThis->worker_private;
+
+   aw->login->secret_key = jk_get_worker_secret_key(props, aw->name);
+   return JK_TRUE;
+}
     
+
+static int JK_METHOD destroy(jk_worker_t **pThis,
+                             jk_logger_t *l)
+{
+	ajp_worker_t *aw = (*pThis)->worker_private;
+
+	if (aw->login)
+		free(aw->login);
+
+    return (ajp_destroy(pThis, l, AJP14_PROTO));
+}
+
+static int JK_METHOD get_endpoint(jk_worker_t    *pThis,
+                                  jk_endpoint_t **pend,
+                                  jk_logger_t    *l)
+{
+    return (ajp_get_endpoint(pThis, pend, l, AJP14_PROTO));
+}
+
+int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
+                                   const char   *name,
+                                   jk_logger_t  *l)
+{
+    ajp_worker_t *aw = (ajp_worker_t *)malloc(sizeof(ajp_worker_t));
+   
     jk_log(l, JK_LOG_DEBUG, "Into ajp14_worker_factory\n");
 
     if (name == NULL || w == NULL) {
         jk_log(l, JK_LOG_ERROR, "In ajp14_worker_factory, NULL parameters\n");
-	    return JK_FALSE;
-    }
-        
-    if(!private_data) {
-        jk_log(l, JK_LOG_ERROR, "In ajp14_worker_factory, can't allocate private_data\n");
-	    return JK_FALSE;
+        return JK_FALSE;
     }
 
+    if (! aw) {
+        jk_log(l, JK_LOG_ERROR, "In ajp14_worker_factory, malloc of private data failed\n");
+        return JK_FALSE;
+    }
+
+    aw->name = strdup(name);
+   
+    if (! aw->name) {
+        free(aw);
+        jk_log(l, JK_LOG_ERROR, "In ajp14_worker_factory, malloc failed for name\n");
+        return JK_FALSE;
+    }
+
+    aw->proto                  = AJP14_PROTO;
+
+    aw->login                  = (jk_login_service_t *)malloc(sizeof(jk_login_service_t));
+
+	if (aw->login == NULL) {
+		jk_log(l, JK_LOG_ERROR, "In ajp14_worker_factory, malloc failed for login area\n");
+		return JK_FALSE;
+	}
+	
+	memset(aw->login, 0, sizeof(jk_login_service_t));
+
+	aw->login->negociation	    = (AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
+	aw->login->web_server_name  = "MyApache";
+
+    aw->ep_cache_sz            = 0;
+    aw->ep_cache               = NULL;
+    aw->connect_retry_attempts = AJP_DEF_RETRY_ATTEMPTS;
+    aw->worker.worker_private  = aw;
+   
+    aw->worker.validate        = validate;
+    aw->worker.init            = init;
+    aw->worker.get_endpoint    = get_endpoint;
+    aw->worker.destroy         = destroy;
+   
+    *w = &aw->worker;
     return JK_TRUE;
 }

@@ -78,15 +78,6 @@ extern "C" {
 
 #define JK_AJP14_WORKER_NAME ("ajp14")
 
-/*
- *
- */
-struct ajp14_worker {
-	ajp13_worker_t *	ajp_worker;
-};
-typedef struct ajp14_worker ajp14_worker_t;
-
-
 int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
                                    const char *name,
                                    jk_logger_t *l);
