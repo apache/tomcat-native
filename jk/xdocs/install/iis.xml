@@ -48,10 +48,16 @@ Make the source with MSDEV
 </screen>
 </p>
 <p>
-You can use the free Microsoft tools for building mod_jk. You will need to download the
+If msdev is not in your path, enter the full path to msdev.exe. 
+This will build both release and debug versions of the redirector plugin.
+An alternative will be to open the isapi workspace file (isapi.dsw) in msdev and 
+build it using the build menu.
+</p>
+<p>
+You can also use the free Microsoft tools for building mod_jk. You will need to download the
 <a href="http://www.microsoft.com/msdownload/platformsdk/sdkupdate/">Platform SDK</a> and
 <a href="http://msdn.microsoft.com/visualc/vctoolkit2003/">Microsoft Visual C++ Toolkit 2003</a>
-You will have to copy the <b>nmake.exe</b> from PlatformSDK\bin\Win64 to PlatformSDK\bin.
+Copy the <b>nmake.exe</b> from PlatformSDK\bin\Win64 to PlatformSDK\bin.
 <screen>
 <note>Change directory to the isapi plugins source directory</note>
 <typedos>C:\Vctoolkit\vcvars32.bat</typedos><br/>
@@ -60,12 +66,6 @@ You will have to copy the <b>nmake.exe</b> from PlatformSDK\bin\Win64 to Platfor
 </screen>
 </p>
 
-<p>
-If msdev is not in your path, enter the full path to msdev.exe. 
-This will build both release and debug versions of the redirector plugin.
-An alternative will be to open the isapi workspace file (isapi.dsw) in msdev and 
-build it using the build menu.
-</p>
 </section>
 
 </body>

@@ -159,11 +159,11 @@ to where your Apache 1.3 is installed.
 You can use the free Microsoft tools for building mod_jk. You will need to download the
 <a href="http://www.microsoft.com/msdownload/platformsdk/sdkupdate/">Platform SDK</a> and
 <a href="http://msdn.microsoft.com/visualc/vctoolkit2003/">Microsoft Visual C++ Toolkit 2003</a>
-You will have to copy the <b>nmake.exe</b> from PlatformSDK\bin\Win64 to PlatformSDK\bin.
+Copy the <b>nmake.exe</b> from PlatformSDK\bin\Win64 to PlatformSDK\bin.
 <screen>
 <note>Apache 1.3 build on WIN32 using free VCToolkit</note>
 <typedos>C:\Vctoolkit\vcvars32.bat</typedos><br/>
-<typedos>C:\PlatformSDK\vcvars32.bat</typedos><br/>
+<typedos>C:\PlatformSDK\setenv.bat</typedos><br/>
 <typedos>nmake -f Makefile.vc</typedos><br/>
 </screen>
 </li>
