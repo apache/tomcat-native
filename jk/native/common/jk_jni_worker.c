@@ -1061,11 +1061,11 @@ static int get_bridge_object(jni_worker_t *p,
 	switch (p->bridge_type)
 	{
 		case TC32_BRIDGE_TYPE :
-			btype = TOMCAT32_JAVA_BRIDGE_CLASS_NAME;
+			btype = TC32_JAVA_BRIDGE_CLASS_NAME;
 			break;
 			
 		case TC33_BRIDGE_TYPE :
-			btype = TOMCAT33_JAVA_BRIDGE_CLASS_NAME;
+			btype = TC33_JAVA_BRIDGE_CLASS_NAME;
 			break;
 			
 		case TC40_BRIDGE_TYPE :
