@@ -207,13 +207,21 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * Maximum number of Keep-Alive requests to honor.
      */
-    protected int maxKeepAliveRequests=-1;
+    protected int maxKeepAliveRequests = -1;
 
 
-    /** SSL support, socket - this is statefull anyway */
+    /**
+     * SSL information.
+     */
     protected SSLSupport sslSupport;
+
+
+    /**
+     * Socket associated with the current connection.
+     */
     protected Socket socket;
-    
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -306,7 +314,7 @@ public class Http11Processor implements Processor, ActionHook {
      */
     public void setSocket(Socket socket)
         throws IOException {
-        this.socket=socket;
+        this.socket = socket;
     }
 
 
@@ -322,6 +330,10 @@ public class Http11Processor implements Processor, ActionHook {
     public void process(InputStream input, OutputStream output)
         throws IOException {
 
+        // Set the remote address
+        String remoteAddr = socket.getInetAddress().getHostAddress();
+        request.remoteAddr().setString(remoteAddr);
+
         // Setting up the I/O
         inputBuffer.setInputStream(input);
         outputBuffer.setOutputStream(output);
@@ -330,7 +342,7 @@ public class Http11Processor implements Processor, ActionHook {
         error = false;
         keepAlive = true;
 
-        int keepAliveLeft=maxKeepAliveRequests;
+        int keepAliveLeft = maxKeepAliveRequests;
 
         while (started && !error && keepAlive) {
 
@@ -352,8 +364,8 @@ public class Http11Processor implements Processor, ActionHook {
 
             parseHost(request);
 
-            if(maxKeepAliveRequests > 0 && --keepAliveLeft == 0)
-                keepAlive=false;
+            if (maxKeepAliveRequests > 0 && --keepAliveLeft == 0)
+                keepAlive = false;
 
             // Process the request in the adapter
             if (!error) {
@@ -400,7 +412,8 @@ public class Http11Processor implements Processor, ActionHook {
         outputBuffer.recycle();
 
         // Recycle ssl info
-        sslSupport=null;
+        sslSupport = null;
+
     }
 
 
@@ -504,9 +517,7 @@ public class Http11Processor implements Processor, ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
 
-            String remoteAddr = socket.getInetAddress().getHostAddress();
             String remoteHost = socket.getInetAddress().getHostName();
-            request.remoteAddr().setString(remoteAddr);
             request.remoteHost().setString(remoteHost);
 
         }
