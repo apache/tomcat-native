@@ -1089,10 +1089,10 @@ int jk_gettid()
 {
     pthread_t t = pthread_self();
 #ifdef AS400
-	/* OS400 use 64 bits ThreadId, get only low 32 bits for now */
+    /* OS400 use 64 bits ThreadId, get only low 32 bits for now */
     pthread_id_np_t       tid;
     pthread_getunique_np(&t, &tid);      
-	return ((int)(tid.intId.lo & 0xFFFFFFFF));
+    return ((int)(tid.intId.lo & 0xFFFFFFFF));
 #else
     int tid = (int)(t & 0xFFFF);
     return tid;
