@@ -403,5 +403,6 @@ AC_OUTPUT([
 	apache-1.3/Makefile
 	apache-1.3/Makefile.apxs
 	apache-2.0/Makefile
+	apache-2.0/Makefile.apxs
 	common/Makefile
 	])
