@@ -47,46 +47,53 @@ static int handle_discovery(ajp_endpoint_t * ae,
     char *buf;
 
 #ifndef TESTME
+    JK_TRACE_ENTER(l);
 
     ajp14_marshal_context_query_into_msgb(msg, we->virtual, l);
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery - send query\n");
+    jk_log(l, JK_LOG_DEBUG, "send query\n");
 
-    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
+    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery - wait context reply\n");
+    }
+    jk_log(l, JK_LOG_DEBUG, "wait context reply\n");
 
     jk_b_reset(msg);
 
-    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
+    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
+    }
     if ((cmd = jk_b_get_byte(msg)) != AJP14_CONTEXT_INFO_CMD) {
         jk_log(l, JK_LOG_ERROR,
-               "Error ajp14:discovery - awaited command %d, received %d\n",
+               "awaited command %d, received %d\n",
                AJP14_CONTEXT_INFO_CMD, cmd);
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     if (context_alloc(&c, we->virtual) != JK_TRUE) {
         jk_log(l, JK_LOG_ERROR,
-               "Error ajp14:discovery - can't allocate context room\n");
+               "can't allocate context room\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     if (ajp14_unmarshal_context_info(msg, c, l) != JK_TRUE) {
         jk_log(l, JK_LOG_ERROR,
-               "Error ajp14:discovery - can't get context reply\n");
+               "can't get context reply\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery - received context\n");
+    jk_log(l, JK_LOG_DEBUG, "received context\n");
 
     buf = malloc(MAX_URI_SIZE); /* Really a very long URI */
 
     if (!buf) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14:discovery - can't alloc buf\n");
+        jk_log(l, JK_LOG_ERROR, "can't malloc buf\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
@@ -101,7 +108,7 @@ static int handle_discovery(ajp_endpoint_t * ae,
 #endif
 
             jk_log(l, JK_LOG_INFO,
-                   "Into ajp14:discovery - worker %s will handle uri %s in context %s [%s]\n",
+                   "worker %s will handle uri %s in context %s [%s]\n",
                    ae->worker->name, ci->uris[j], ci->cbase, buf);
 
             uri_worker_map_add(we->uri_to_worker, buf, ae->worker->name, l);
@@ -122,6 +129,7 @@ static int handle_discovery(ajp_endpoint_t * ae,
 
 #endif
 
+    JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
 
@@ -137,47 +145,55 @@ static int handle_logon(ajp_endpoint_t * ae,
     int cmd;
 
     jk_login_service_t *jl = ae->worker->login;
+    JK_TRACE_ENTER(l);
 
     ajp14_marshal_login_init_into_msgb(msg, jl, l);
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon - send init\n");
+    jk_log(l, JK_LOG_DEBUG, "send init\n");
 
-    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
+    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon - wait init reply\n");
+    }
+    jk_log(l, JK_LOG_DEBUG, "wait init reply\n");
 
     jk_b_reset(msg);
 
-    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
+    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
+    }
     if ((cmd = jk_b_get_byte(msg)) != AJP14_LOGSEED_CMD) {
         jk_log(l, JK_LOG_ERROR,
-               "Error ajp14:logon: awaited command %d, received %d\n",
+               "awaited command %d, received %d\n",
                AJP14_LOGSEED_CMD, cmd);
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
-    if (ajp14_unmarshal_login_seed(msg, jl, l) != JK_TRUE)
+    if (ajp14_unmarshal_login_seed(msg, jl, l) != JK_TRUE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon - received entropy %s\n",
+    }
+    jk_log(l, JK_LOG_DEBUG, "received entropy %s\n",
            jl->entropy);
 
     ajp14_compute_md5(jl, l);
 
-    if (ajp14_marshal_login_comp_into_msgb(msg, jl, l) != JK_TRUE)
+    if (ajp14_marshal_login_comp_into_msgb(msg, jl, l) != JK_TRUE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
-    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
+    }
+    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
+    }
     jk_b_reset(msg);
 
-    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
+    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
+    }
     switch (jk_b_get_byte(msg)) {
 
     case AJP14_LOGOK_CMD:
@@ -185,6 +201,7 @@ static int handle_logon(ajp_endpoint_t * ae,
             jk_log(l, JK_LOG_DEBUG,
                    "Successfully connected to servlet-engine %s\n",
                    jl->servlet_engine_name);
+            JK_TRACE_EXIT(l);
             return JK_TRUE;
         }
         break;
@@ -194,6 +211,7 @@ static int handle_logon(ajp_endpoint_t * ae,
         break;
     }
 
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 
@@ -203,7 +221,7 @@ static int logon(ajp_endpoint_t * ae, jk_logger_t *l)
     jk_msg_buf_t *msg;
     int rc;
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon\n");
+    JK_TRACE_ENTER(l);
 
     msg = jk_b_new(p);
     jk_b_set_buffer_size(msg, DEF_BUFFER_SZ);
@@ -211,6 +229,7 @@ static int logon(ajp_endpoint_t * ae, jk_logger_t *l)
     if ((rc = handle_logon(ae, msg, l)) == JK_FALSE)
         ajp_close_endpoint(ae, l);
 
+    JK_TRACE_EXIT(l);
     return rc;
 }
 
@@ -220,7 +239,7 @@ static int discovery(ajp_endpoint_t * ae, jk_worker_env_t *we, jk_logger_t *l)
     jk_msg_buf_t *msg;
     int rc;
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery\n");
+    JK_TRACE_ENTER(l);
 
     msg = jk_b_new(p);
     jk_b_set_buffer_size(msg, DEF_BUFFER_SZ);
@@ -228,6 +247,7 @@ static int discovery(ajp_endpoint_t * ae, jk_worker_env_t *we, jk_logger_t *l)
     if ((rc = handle_discovery(ae, we, msg, l)) == JK_FALSE)
         ajp_close_endpoint(ae, l);
 
+    JK_TRACE_EXIT(l);
     return rc;
 }
 
@@ -239,9 +259,11 @@ static int JK_METHOD validate(jk_worker_t *pThis,
     ajp_worker_t *aw;
     char *secret_key;
 
-    if (ajp_validate(pThis, props, we, l, AJP14_PROTO) == JK_FALSE)
+    JK_TRACE_ENTER(l);
+    if (ajp_validate(pThis, props, we, l, AJP14_PROTO) == JK_FALSE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
+    }
     aw = pThis->worker_private;
 
     secret_key = jk_get_worker_secret_key(props, aw->name);
@@ -249,17 +271,23 @@ static int JK_METHOD validate(jk_worker_t *pThis,
     if ((!secret_key) || (!strlen(secret_key))) {
         jk_log(l, JK_LOG_ERROR,
                "validate error, empty or missing secretkey\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     /* jk_log(l, JK_LOG_DEBUG, "Into ajp14:validate - secret_key=%s\n", secret_key); */
+    JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
 
 static int JK_METHOD get_endpoint(jk_worker_t *pThis,
                                   jk_endpoint_t **pend, jk_logger_t *l)
 {
-    return (ajp_get_endpoint(pThis, pend, l, AJP14_PROTO));
+    int rc;
+    JK_TRACE_ENTER(l);
+    rc = ajp_get_endpoint(pThis, pend, l, AJP14_PROTO);
+    JK_TRACE_EXIT(l);
+    return rc;
 }
 
 static int JK_METHOD init(jk_worker_t *pThis,
@@ -271,9 +299,12 @@ static int JK_METHOD init(jk_worker_t *pThis,
     jk_endpoint_t *je;
     int rc;
 
-    if (ajp_init(pThis, props, we, l, AJP14_PROTO) == JK_FALSE)
-        return JK_FALSE;
+    JK_TRACE_EXIT(l);
 
+    if (ajp_init(pThis, props, we, l, AJP14_PROTO) == JK_FALSE) {
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
     aw = pThis->worker_private;
 
     /* Set Secret Key (used at logon time) */
@@ -281,6 +312,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
 
     if (aw->login->secret_key == NULL) {
         jk_log(l, JK_LOG_ERROR, "can't malloc secret_key\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
@@ -289,12 +321,14 @@ static int JK_METHOD init(jk_worker_t *pThis,
 
     if (aw->login->web_server_name == NULL) {
         jk_log(l, JK_LOG_ERROR, "can't malloc web_server_name\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
-    if (get_endpoint(pThis, &je, l) == JK_FALSE)
+    if (get_endpoint(pThis, &je, l) == JK_FALSE) {
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
-
+    }
     ae = je->endpoint_private;
 
     if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
@@ -304,16 +338,21 @@ static int JK_METHOD init(jk_worker_t *pThis,
          */
         rc = discovery(ae, we, l);
         ajp_close_endpoint(ae, l);
+        JK_TRACE_EXIT(l);
         return rc;
     }
 
+    JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
 
 
 static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
 {
+    int rc;
     ajp_worker_t *aw = (*pThis)->worker_private;
+
+    JK_TRACE_ENTER(l);
 
     if (aw->login) {
 
@@ -331,7 +370,9 @@ static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
         aw->login = NULL;
     }
 
-    return (ajp_destroy(pThis, l, AJP14_PROTO));
+    rc = ajp_destroy(pThis, l, AJP14_PROTO);
+    JK_TRACE_EXIT(l);
+    return rc;
 }
 
 int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
@@ -339,17 +380,19 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
 {
     ajp_worker_t *aw = (ajp_worker_t *) malloc(sizeof(ajp_worker_t));
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14_worker_factory\n");
+    JK_TRACE_ENTER(l);
 
     if (name == NULL || w == NULL) {
-        jk_log(l, JK_LOG_ERROR, "In ajp14_worker_factory, NULL parameters\n");
+        JK_LOG_NULL_PARAMS(l);
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     if (!aw) {
         jk_log(l, JK_LOG_ERROR,
-               "In ajp14_worker_factory, malloc of private data failed\n");
-        return JK_FALSE;
+               "malloc of private data failed\n");
+       JK_TRACE_EXIT(l);
+       return JK_FALSE;
     }
 
     aw->name = strdup(name);
@@ -357,7 +400,8 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
     if (!aw->name) {
         free(aw);
         jk_log(l, JK_LOG_ERROR,
-               "In ajp14_worker_factory, malloc failed for name\n");
+               "malloc failed for name\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
@@ -367,7 +411,8 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
 
     if (aw->login == NULL) {
         jk_log(l, JK_LOG_ERROR,
-               "In ajp14_worker_factory, malloc failed for login area\n");
+               "malloc failed for login area\n");
+        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
@@ -389,5 +434,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
 
     aw->logon = logon;          /* LogOn Handler for AJP14 */
     *w = &aw->worker;
+
+    JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
