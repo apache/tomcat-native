@@ -72,6 +72,10 @@
 	<jar jarfile="${tomcat-util.build}/lib/tomcat-util.jar"
 	     basedir="${tomcat-util.build}/classes"
 	     />
+
+	<!-- Include a copy of the commons-logging.jar that we built with -->
+	<copy tofile="${tomcat-util.build}/lib/commons-logging.jar"
+	      file="${commons-logging.jar}"/>
     </target>
 
     <!-- ================ BUILD: Create Tomcat-Util Javadocs =================== -->
