@@ -18,15 +18,6 @@ compile.optimize=on
 
 # ----- Build Control Flags
 
-#Build all components
-#full.dist=on
-
-#Build lightweight JDK 1.4 distribution
-#light.dist=on
-
-#Hide configuration flags display
-#flags.hide=on
-
 #Version number
 version=4.1
 
@@ -41,14 +32,6 @@ cvsroot=":pserver:anoncvs@cvs.apache.org:/home/cvspublic"
 
 # ----- Default Base Path for Dependent Packages -----
 base.path=/usr/share/java
-
-
-# ----- Jakarta Tomcat Connectors source path -----
-#jtc.home=../../jakarta-tomcat-connectors
-
-
-# ----- Jakarta Tomcat Jasper source path -----
-#jasper.home=../jakarta-tomcat-jasper/jasper2
 
 
 # --------------------------------------------------
