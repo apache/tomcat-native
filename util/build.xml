@@ -6,14 +6,25 @@
 
     <property name="tomcat-util.build" value="${basedir}/build"/>
 
-    <target name="build-prepare">
+    
+    <target name="detect">
+        <available property="jsse.present"
+                   file="${jsse.lib}/jsse.jar"/>
+        <!-- XXX make this file based, I don't like requiring it in the classpath -->
+        <available property="puretls.present"
+                   classname="COM.claymoresystems.ptls.SSLContext"/>
+    </target>
+
+    <target name="build-prepare" depends="detect">
         <mkdir dir="${tomcat-util.build}"/>
 	<mkdir dir="${tomcat-util.build}/classes"/>
 	<mkdir dir="${tomcat-util.build}/lib"/>
     </target>
 
     <target name="build-main" depends="build-prepare">
-    
+        <echo message="----- Java-utils -----" />
+        <echo message="-- puretls.present = ${puretls.present}" />
+        <echo message="-- jsse.present = ${jsse.present}"/>
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
 	       deprecation="on"
@@ -21,6 +32,11 @@
 	       optimize="off"
 	       verbose="off"
 	       excludes="**/CVS/**">
+            <classpath location="${jsse.lib}/jsse.jar" />
+            <classpath location="${jsse.lib}/jnet.jar" />
+            <classpath location="${jsse.lib}/jcert.jar" />
+            <exclude name="**/util/net/JSSE*" unless="jsse.present"/>
+            <exclude name="**/util/net/PureTLS*" unless="puretls.present"/>
 	</javac>
 
 	<!-- Copy static resource files -->
