@@ -94,7 +94,7 @@ $(LIB): $(SRCS) $(WARPH) $(OBJS) $(PROVS)
 	$(AR) cr $@ $(OBJS) $(PROVS)
 	$(RANLIB) $@
 
-pr_warp_defs.h: $(SRCDIR)/java/Constants.java
+pr_warp_defs.h: $(TGTDIR)/java/Constants.java
 	@$(MECHO) "Generating \"$@\""
 	@$(CAT) "$<" | \
 	    $(GREP) "TYPE_" | \
@@ -103,5 +103,5 @@ pr_warp_defs.h: $(SRCDIR)/java/Constants.java
 
 $(SRCS):
 	$(LN) -s $(SRCDIR)/lib/$@ ./$@
-
+	@$(ECHO) $(TGTDIR)/lib/$@ >> $(LSTFILE)
 

@@ -124,6 +124,7 @@ LOCAL_CHECK_PROG(RANLIB,ranlib)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_PROG_CC()
+LOCAL_CHECK_PROG(CC,${CC})
 AC_PROG_CC_C_O()
 AC_PROG_CPP()
 AC_SUBST(CPPFLAGS)
@@ -483,10 +484,10 @@ then
   dnl Build the APR configure script
   dnl ------------------------------
   LOCAL_HEADER([Building APR configure script])
-dnl  LOCAL_FILTEREXEC(local_return,
-dnl    [./buildconf],
-dnl    [APR buildconf],
-dnl    [${APR_SRCDIR}])
+  LOCAL_FILTEREXEC(local_return,
+    [./buildconf],
+    [APR buildconf],
+    [${APR_SRCDIR}])
 
   if ${TEST} "${local_return}" -ne "0"
   then
@@ -497,10 +498,10 @@ dnl    [${APR_SRCDIR}])
   dnl Run the APR configure script
   dnl ----------------------------
   LOCAL_HEADER([Configuring APR])
-dnl  LOCAL_FILTEREXEC(local_return,
-dnl    [./configure ${APR_CFGFLG}],
-dnl    ["APR configure"],
-dnl    [${APR_SRCDIR}])
+  LOCAL_FILTEREXEC(local_return,
+    [./configure ${APR_CFGFLG}],
+    ["APR configure"],
+    [${APR_SRCDIR}])
 
   if ${TEST} "${local_return}" -ne "0"
   then
@@ -561,7 +562,8 @@ dnl
 dnl New vars: CFGFILES
 dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
-CFGFILES="./Makefile ./Makedefs ./lib/Makefile ./${MODULE}/Makefile"
+CFGFILES="./Makefile ./Makedefs ./lib/Makefile"
+CFGFILES="${CFGFILES} ./${MODULE}/Makefile ./java/Constants.java"
 AC_SUBST(CFGFILES)
 AC_OUTPUT(${CFGFILES})
 LOCAL_HEADER([All done. Now you can issue \"make\". Good luck.])

@@ -82,5 +82,6 @@ $(MOD): $(SRCS)
 	    -lapr -lwebapp -o "$@" $<
 
 $(SRCS):
-	@$(MECHO) "Linking \"$@\""
 	$(LN) -s $(SRCDIR)/apache-1.3/$@ ./$@
+	@$(ECHO) $(TGTDIR)/apache-1.3/$@ >> $(LSTFILE)
+

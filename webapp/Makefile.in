@@ -60,15 +60,18 @@
 
 include @TGTDIR@/Makedefs
 
-all: lib-build
+all: build
+
 build: @TARGET_BUILD@
+
 clean: @TARGET_CLEAN@
 
-lib-build:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="lib" MTGT="build"
-
-lib-clean:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="lib" MTGT="clean"
+distclean: clean
+	@$(MECHO) "Removing makefile generated files"
+	$(RM) -f `$(CAT) $(LSTFILE)`
+	$(RM) -f $(LSTFILE)
+	@$(MECHO) "Removing configure generated files"
+	$(RM) -f $(CFGFILES)
 
 apr-build:
 	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="$(APR_SRCDIR)" MTGT="all"
@@ -84,6 +87,12 @@ apr-clean:
 	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="$(APR_SRCDIR)" MTGT="clean"
 	@$(MECHO) "Cleaning up APR library in \"$(APR_LIBDIR)\""
 	@$(RM) -f $(APR_LIBDIR)/libapr.*
+
+lib-build:
+	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="lib" MTGT="build"
+
+lib-clean:
+	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="lib" MTGT="clean"
 
 apache-1.3-build:
 	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-1.3" MTGT="build"

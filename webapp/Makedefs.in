@@ -90,7 +90,9 @@ TGTDIR = @TGTDIR@
 # The directory of a Tomcat 4.0 binary distribution
 TC4DIR = @TC4DIR@
 # The list of configure-generated files
-CFGFILES = @CFCFILES@ ./config.cache ./config.log ./config.status
+CFGFILES = @CFGFILES@ ./config.cache ./config.log ./config.status
+# The file holding the list of makefile-generated files
+LSTFILE = $(TGTDIR)/config.list
 # GNU-Make style echo
 MECHO = $(ECHO) "$(MAKE)[$(MAKELEVEL)]:"
 
@@ -165,9 +167,11 @@ SCANDOCFLAGS = @SCANDOCFLAGS@
 # -------------------------------------------------------------------------
 # C-Compilation default setting
 # -------------------------------------------------------------------------
+
+ALL_CFLAGS = $(CFLAGS) $(CPPFLAGS) \
+	$(APR_CFLAGS) $(APR_CPPFLAGS) $(APR_INCLUDES) \
+	-I$(APR_INCDIR) -I$(SRCDIR)/include
+
 .c.o:
-	$(CC) $(CFLAGS) $(CPPFLAGS) \
-	    $(APR_CFLAGS) $(APR_CPPFLAGS) $(APR_INCLUDES) \
-	    -I$(APR_INCDIR) -I$(SRCDIR)/include \
-	    -c "$<" -o "$@"
+	$(CC) $(ALL_CFLAGS) -c "$<" -o "$@"
 
