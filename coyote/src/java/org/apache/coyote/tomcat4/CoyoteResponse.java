@@ -497,9 +497,9 @@ public class CoyoteResponse
         try {
             outputBuffer.close();
         } catch(IOException e) {
-	    ;
+        ;
         } catch(Throwable t) {
-	    t.printStackTrace();
+        t.printStackTrace();
         }
         coyoteResponse.finish();
     }
@@ -734,7 +734,15 @@ public class CoyoteResponse
             return;
 
         coyoteResponse.setLocale(locale);
+        
+        // Set the specified locale's default encoding of a response
+        CharsetMapper cm = context.getCharsetMapper();
+        String charset = cm.getCharset(locale);
 
+        if (charset != null) {
+            coyoteResponse.setCharacterEncoding(charset);
+        }
+    
     }
 
 
