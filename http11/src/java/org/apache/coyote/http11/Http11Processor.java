@@ -489,6 +489,19 @@ public class Http11Processor implements Processor, ActionHook {
             }
         }
 
+        // URI parsing
+        String unparsedURI = request.unparsedURI().toString();
+        int questionPos = unparsedURI.indexOf('?');
+        if (questionPos >= 0) {
+            request.queryString().setString
+                (unparsedURI.substring
+                 (questionPos + 1, unparsedURI.length() - questionPos - 1));
+            request.requestURI().setString
+                (unparsedURI.substring(0, questionPos));
+        } else {
+            request.requestURI().setString(unparsedURI);
+        }
+
         InputFilter[] inputFilters = inputBuffer.getFilters();
 
         // Parse content-length header
