@@ -79,6 +79,8 @@ import COM.claymoresystems.sslg.*;
 public class PureTLSSocketFactory
     extends org.apache.tomcat.util.net.ServerSocketFactory
 {
+    static org.apache.commons.logging.Log logger =
+	org.apache.commons.logging.LogFactory.getLog(PureTLSSocketFactory.class);
     static String defaultProtocol = "TLS";
     static boolean defaultClientAuth = false;
     static String defaultKeyStoreFile = "server.pem";
@@ -172,6 +174,7 @@ public class PureTLSSocketFactory
 	    tmpContext.setPolicy(policy);
 	    context=tmpContext;
 	} catch (Exception e){
+	    logger.info("Error initializing SocketFactory",e);
 	    throw new IOException(e.getMessage());
 	}
     }
@@ -183,6 +186,7 @@ public class PureTLSSocketFactory
 	    Socket sock=socket.accept();
 	    return sock;
 	} catch (SSLException e){
+            logger.debug("SSL handshake error",e);
             throw new SocketException("SSL handshake error" + e.toString());
 	}
     }
