@@ -85,8 +85,6 @@ void jk_shm_close(jk_shm_t *shm)
     }
 }
 
-
-
 #else
 
 #include <unistd.h>
@@ -110,18 +108,37 @@ static int do_shm_open(const char *fname, int workers, int dynamic,
     int fd;
     int flags = O_RDWR;
 
-    if (!attached)
-        flags |= (O_CREAT|O_TRUNC);
-    fd = open(fname, flags, 0666);
-    if (fd == -1)
-        return -1;
+    shm->size = 0;
+    shm->base = NULL;
 
     if (workers < 1 || workers > JK_SHM_MAX_WORKERS)
         workers = JK_SHM_MAX_WORKERS;
     if (dynamic < 1 || dynamic > JK_SHM_MAX_WORKERS)
         dynamic = JK_SHM_MAX_WORKERS;
 
+    shm->filename = fname;
+    shm->attached = attached;
     shm->size = sizeof(jk_shm_h_rec_t) + (workers + dynamic) * sizeof(jk_shm_w_rec_t);
+
+    /* Use plain memory in case there is no file name */
+    if (!fname) {
+        shm->base = calloc(1, shm->size);
+        if (!shm->base)
+            return -1;
+        hdr = (jk_shm_h_rec_t *)shm->base;
+
+        memcpy(hdr->magic, shm_signature, 8);
+        hdr->workers = workers;
+        hdr->dynamic = dynamic;
+        return 0;
+    }
+    if (!attached)
+        flags |= (O_CREAT|O_TRUNC);
+    fd = open(fname, flags, 0666);
+    if (fd == -1) {
+        shm->size = 0;
+        return -1;
+    }
 
     if (!attached) {
         size_t size = lseek(fd, 0, SEEK_END);
@@ -129,29 +146,30 @@ static int do_shm_open(const char *fname, int workers, int dynamic,
             size = shm->size;
             if (ftruncate(fd, shm->size)) {
                 close(fd);
+                shm->size = 0;
                 return -1;
             }
         }
     }
     if (lseek(fd, 0, SEEK_SET) != 0) {
         close(fd);
+        shm->size = 0;
         return -1;
     }
 
     shm->base = mmap(NULL, shm->size,
-                    PROT_READ | PROT_WRITE,
-                    MAP_FILE | MAP_SHARED,
-                    fd, 0);
+                     PROT_READ | PROT_WRITE,
+                     MAP_FILE | MAP_SHARED,
+                     fd, 0);
     if (shm->base == (void *)MAP_FAILED) {
         shm->base = NULL;
     }
     if (!shm->base) {
         close(fd);
+        shm->size = 0;
         return -1;
     }
-    shm->filename = fname;
     shm->fd = fd;
-    shm->attached = attached;
 
     /* Clear shared memory */
     if (!attached) {
@@ -185,8 +203,12 @@ void jk_shm_close(jk_shm_t *shm)
 {
     if (shm) {
         if (shm->base) {
-            munmap(shm->base, shm->size);
-            close(shm->fd);
+            if (shm->fd >= 0) {
+                munmap(shm->base, shm->size);
+                close(shm->fd);
+            }
+            else
+                free(shm->base);
         }
         shm->base = NULL;
         shm->fd = -1;
