@@ -69,7 +69,7 @@
 #include "jni.h"
 
 /* default only, will be  configurable  */
-#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/apr/AprImpl")
+#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/apr/TomcatStarter")
 
 struct jni_worker_data {
     jclass      jk_java_bridge_class;
