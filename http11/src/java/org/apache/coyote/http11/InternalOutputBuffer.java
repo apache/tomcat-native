@@ -234,7 +234,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         newFilterLibrary[filterLibrary.length] = filter;
         filterLibrary = newFilterLibrary;
 
-        activeFilters = new OutputFilter[filterLibrary.length + 1];
+        activeFilters = new OutputFilter[filterLibrary.length];
 
     }
 
@@ -268,6 +268,10 @@ public class InternalOutputBuffer implements OutputBuffer {
         if (lastActiveFilter == -1) {
             filter.setBuffer(outputStreamOutputBuffer);
         } else {
+            for (int i = 0; i <= lastActiveFilter; i++) {
+                if (activeFilters[i] == filter)
+                    return;
+            }
             filter.setBuffer(activeFilters[lastActiveFilter]);
         }
 

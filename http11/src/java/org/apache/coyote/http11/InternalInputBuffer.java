@@ -276,7 +276,7 @@ public class InternalInputBuffer implements InputBuffer {
         newFilterLibrary[filterLibrary.length] = filter;
         filterLibrary = newFilterLibrary;
 
-        activeFilters = new InputFilter[filterLibrary.length + 1];
+        activeFilters = new InputFilter[filterLibrary.length];
 
     }
 
@@ -307,12 +307,13 @@ public class InternalInputBuffer implements InputBuffer {
      */
     public void addActiveFilter(InputFilter filter) {
 
-        // FIXME: Check for null ?
-        // FIXME: Check index ?
-
         if (lastActiveFilter == -1) {
             filter.setBuffer(inputStreamInputBuffer);
         } else {
+            for (int i = 0; i <= lastActiveFilter; i++) {
+                if (activeFilters[i] == filter)
+                    return;
+            }
             filter.setBuffer(activeFilters[lastActiveFilter]);
         }
 
