@@ -299,10 +299,12 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
 {
     int err=JK_OK;
     int attempt;
+    int has_post_body=JK_FALSE;
+    jk_channel_t *channel= worker->channel;
 
     e->recoverable = JK_TRUE;
     s->is_recoverable_error = JK_TRUE;
-    
+
     /*
      * Try to send the request on a valid endpoint. If one endpoint
      * fails, close the channel and try again ( maybe tomcat was restarted )
@@ -311,7 +313,6 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
      * a load-balancing configuration 
      */
     for(attempt = 0 ; attempt < JK_RETRIES ;attempt++) {
-        jk_channel_t *channel= worker->channel;
 
         if( e->sd == -1 ) {
             err=jk2_worker_ajp13_connect(env, e);
@@ -322,6 +323,9 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
                 e->worker->in_error_state=JK_TRUE;
                 return err;
             }
+            if( worker->mbean->debug > 0 )
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "ajp13.service() connecting to endpoint \n");
         }
 
         err=e->worker->channel->send( env, e->worker->channel, e,
@@ -332,7 +336,6 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
         
         if (err!=JK_OK ) {
             /* Can't send - bad endpoint, try again */
-
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "ajp13.service() error sending, reconnect %s %d %d %s\n",
                           e->worker->channelName, err, errno, strerror(errno));
@@ -346,7 +349,7 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
            request was sent ( we're receiving data from client, can be slow, no
            need to delay - we can do that in paralel. ( not very sure this is
            very usefull, and it brakes the protocol ) ! */
-        if (s->is_chunked || s->left_bytes_to_send > 0) {
+        if (has_post_body || s->is_chunked || s->left_bytes_to_send > 0) {
             /* We never sent any POST data and we check it we have to send at
              * least of block of data (max 8k). These data will be kept in reply
              * for resend if the remote Tomcat is down, a fact we will learn only
@@ -354,6 +357,8 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
              */
             if( attempt==0 )
                 err=jk2_serialize_postHead( env, e->post, s, e );
+            else
+                err=JK_OK; /* We already have the initial body chunk */
             
             if( e->worker->mbean->debug > 10 )
                 e->request->dump( env, e->request, "Post head" );
@@ -363,17 +368,20 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
                 /* e->recoverable = JK_FALSE; */
                 s->is_recoverable_error = JK_FALSE;
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "ajp13.service() Error receiving initial post \n");
+                              "ajp13.service() Error receiving initial post %d %d %d\n", err, errno, attempt);
                 return JK_ERR;
             }
+            has_post_body=JK_TRUE;
             err= e->worker->channel->send( env, e->worker->channel, e,
                                            e->post );
             if( err != JK_OK ) {
                 /* e->recoverable = JK_FALSE; */
-                s->is_recoverable_error = JK_FALSE;
+                /*                 s->is_recoverable_error = JK_FALSE; */
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "ajp13.service() Error receiving initial post \n");
-                return JK_ERR;
+                              "ajp13.service() Error sending initial post %d %d %d\n", err, errno, attempt);
+                jk2_close_endpoint(env, e);
+                continue;
+                /*  return JK_ERR; */
             }
         }
 
@@ -399,6 +407,7 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
                           err);
             jk2_close_endpoint(env, e ); 
        }
+
         if( err==JK_OK )
             return err;
     }
