@@ -92,6 +92,39 @@ struct jk_logger;
 struct jk_handler;
 struct jk_ws_service;
 
+/* Temporary hardcoded handler IDs. Will be replaced with a name based dynamic mechanism */
+
+/* Write a body chunk from the servlet container to the web server */
+#define JK_HANDLE_AJP13_SEND_BODY_CHUNK    3
+
+/* Send response headers from the servlet container to the web server. */
+#define JK_HANDLE_AJP13_SEND_HEADERS       4
+
+/* Marks the end of response. */
+#define JK_HANDLE_AJP13_GET_BODY_CHUNK     6
+
+/*  Marks the end of response. */
+#define JK_HANDLE_AJP13_END_RESPONSE       5
+
+/* Second Login Phase (servlet engine -> web server), md5 seed is received */
+#define JK_HANDLE_LOGON_SEED	0x11
+
+/* Login Accepted (servlet engine -> web server) */
+#define JK_HANDLE_LOGON_OK	0x13
+
+/* Login Rejected (servlet engine -> web server) */
+#define JK_HANDLE_LOGON_ERR	0x14
+
+/* Dispatcher for jni channel ( JNI -> web server ) */
+#define JK_HANDLE_JNI_DISPATCH 0x15
+
+/* Dispatcher for shm ( JNI -> web server ) */
+#define JK_HANDLE_SHM_DISPATCH 0x16
+
+/* Dispatcher for apr channel ( JNI -> web server ) */
+#define JK_HANDLE_CHANNELAPR_DISPATCH 0x17
+
+    
 /*
  * Jk configuration and global methods. 
  * 
@@ -215,9 +248,13 @@ struct jk_workerEnv {
     
     /* -------------------- Methods -------------------- */
 
+    /* Register a callback handler, for methods from java to C
+     */
     int (*registerHandler)(struct jk_env *env,
                            struct jk_workerEnv *_this,
-                           struct jk_handler *h);
+                           const char *type, const char *name, int id,
+                           jk_handler_callback callback,
+                           char *signature);
 
     
     int (*addWorker)(struct jk_env *env,
@@ -234,7 +271,7 @@ struct jk_workerEnv {
     /** Call the handler associated with the message type.
      */
     int (*dispatch)(struct jk_env *env, struct jk_workerEnv *_this,
-                    struct jk_endpoint *e, struct jk_ws_service *r );
+                    void *target, struct jk_endpoint *ep, int code, struct jk_msg *msg);
 
     /** Utility method for stream-based workers. It'll read
      *  messages, dispatch, send the response if any until
