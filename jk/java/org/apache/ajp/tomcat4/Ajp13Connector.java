@@ -994,9 +994,11 @@ public final class Ajp13Connector
 	    throw new LifecycleException
 		(sm.getString("ajp13Connector.alreadyStarted"));
 
-        debugThread = new DebugThread();
-        debugThread.setDaemon(true);
-        debugThread.start();
+        if (debug > 0) {
+            debugThread = new DebugThread();
+            debugThread.setDaemon(true);
+            debugThread.start();
+        }
 
         threadName = "Ajp13Connector[" + port + "]";
         threadGroup = new ThreadGroup(threadName);
@@ -1081,14 +1083,12 @@ public final class Ajp13Connector
                 } catch (InterruptedException e) {
                     break;
                 }
-                if (debug > 0) {
-                    logger.log("active threads=" + threadGroup.activeCount());
-                    System.out.println("===================================");
-                    System.out.println("Ajp13Connector active threads="
-                                       + threadGroup.activeCount());
-                    threadGroup.list();
-                    System.out.println("===================================");
-                }
+                logger.log("active threads=" + threadGroup.activeCount());
+                System.out.println("===================================");
+                System.out.println("Ajp13Connector active threads="
+                                   + threadGroup.activeCount());
+                threadGroup.list();
+                System.out.println("===================================");
             }
         }
     }
