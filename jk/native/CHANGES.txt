@@ -2,6 +2,8 @@ JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
 Changes with JK 1.2.1:
+    * Add perl scripts for analyzing mod_jk logs and generating graphs/reports  
+      [glenn]
     * Make JK honor the CanonicalHost directive.
       [hgomez]
     * Log cleanup
