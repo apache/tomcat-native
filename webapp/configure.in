@@ -78,13 +78,12 @@ AC_SUBST(SYSTEM)
 dnl --------------------------------------------------------------------------
 dnl Setup initial variable value
 dnl
-dnl New vars: MODULE TARGET_BUILD TARGET_CLEAN
+dnl New vars: MODULE TARGET
 dnl           APR_CFGFLG APR_SRCDIR APR_LIBDIR APR_INCDIR APR_VARFIL
 dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 MODULE=""
-TARGET_BUILD="lib-build"
-TARGET_CLEAN="lib-clean"
+TARGET="lib"
 APR_CFGFLG=""
 APR_SRCDIR=""
 APR_LIBDIR=""
@@ -92,8 +91,7 @@ APR_INCDIR=""
 APR_VARFIL=""
 
 AC_SUBST(MODULE)
-AC_SUBST(TARGET_BUILD)
-AC_SUBST(TARGET_CLEAN)
+AC_SUBST(TARGET)
 AC_SUBST(APR_CFGFLG)
 AC_SUBST(APR_SRCDIR)
 AC_SUBST(APR_LIBDIR)
@@ -149,7 +147,9 @@ AC_ARG_ENABLE(debug,
   ],[
     AC_MSG_RESULT([no])
     DEBUG="false"
-  ])
+    DEXEC=""
+  ]
+)
 AC_SUBST(DEBUG)
 
 dnl -------------------------------------------------------------------------
@@ -178,7 +178,7 @@ AC_ARG_WITH(tomcat,
                           when the --enable-java option is not specified.],
   [
     case "${withval}" in
-    yes|YES|true|TRUE)
+    ""|"yes"|"YES"|"true"|"TRUE")
       TC4DIR="/usr/local/tomcat"
       ;;
     *)
@@ -191,13 +191,117 @@ AC_ARG_WITH(tomcat,
 )
 AC_SUBST(TC4DIR)
 
+dnl -------------------------------------------------------------------------
+dnl Check wether we have to build the C API documentation or not
+dnl
+dnl New vars: PERL SCANDOC SCANDOCFLAGS
+dnl Upd vars: TARGET
+dnl -------------------------------------------------------------------------
+LOCAL_HEADER([API documentation generation])
+AC_MSG_CHECKING([for C API documentation])
+AC_ARG_ENABLE(apidocs-c,
+  [  --enable-apidocs-c[=PERL]
+                          enbale generation of C API documentation using
+                          ScanDoc (PERL is the name of the Perl interpreter
+                          used to run ScanDoc. If not specified this is
+                          looked up in your current path).],
+  [
+    AC_MSG_RESULT([yes])
+
+    AC_MSG_CHECKING([for Perl interpreter])
+    case "${enableval}" in
+    ""|"yes"|"YES"|"true"|"TRUE")
+      LOCAL_CHECK_PROG(PERL,perl)
+      ;;
+    *)
+      PERL="${enableval}"
+      ;;
+    esac
+
+    if ${TEST} ! -x "${PERL}"
+    then
+      AC_MSG_RESULT([error])
+      AC_MSG_ERROR([cannot execute perl \"${PERL}\"])
+    fi
+    AC_MSG_RESULT([${PERL}])
+
+    AC_MSG_CHECKING([for ScanDoc to use])
+    SCANDOC="${SRCDIR}/support/scandoc.pl"
+    if ${TEST} ! -f "${SCANDOC}"
+    then
+      AC_MSG_RESULT([error])
+      AC_MSG_ERROR([cannof find ScanDoc \"${SCANDOC}\"])
+    fi
+    AC_MSG_RESULT([${SCANDOC}])
+
+    AC_MSG_CHECKING([for ScanDoc template])
+    if ${TEST} ! -f "${SRCDIR}/support/template.pl"
+    then
+      AC_MSG_RESULT([error])
+      AC_MSG_ERROR([cannof find ScanDoc \"${SRCDIR}/support/template.pl\"])
+    fi
+    AC_MSG_RESULT([${SRCDIR}/support/template.pl])
+    SCANDOCFLAGS="-i ${SRCDIR}/support/template.pl"
+
+    TARGET="${TARGET} apidocs-c"
+  ],[
+    AC_MSG_RESULT([no])
+    PERL=""
+  ]
+)
+AC_SUBST(PERL)
+AC_SUBST(SCANDOC)
+AC_SUBST(SCANDOCFLAGS)
+
+dnl -------------------------------------------------------------------------
+dnl Check wether we have to build the Java API documentation or not
+dnl
+dnl New vars: N/A
+dnl Upd vars: JAVADOC TARGET
+dnl -------------------------------------------------------------------------
+AC_MSG_CHECKING([for Java API documentation])
+AC_ARG_ENABLE(apidocs-java,
+  [  --enable-apidocs-java[=JAVADOC]
+                          enbale generation of Java API documentation using
+                          JavaDoc (If JAVADOC is not set its value will be
+                          discovered by \"--enable-java\").],
+  [
+    AC_MSG_RESULT([yes])
+
+    case "${enableval}" in
+    ""|"yes"|"YES"|"true"|"TRUE")
+      if ${TEST} -z "${JAVADOC}"
+      then
+        AC_MSG_ERROR([JavaDoc cannot be found. Use \"--enable-java\"])
+      fi
+      ;;
+    *)
+      JAVADOC="${enableval}"
+      ;;
+    esac
+
+    AC_MSG_CHECKING([for JavaDoc to use])
+    if ${TEST} ! -x "${JAVADOC}"
+    then
+      AC_MSG_RESULT([error])
+      AC_MSG_ERROR([cannot execute JavaDoc \"${JAVADOC}\"])
+    fi
+    AC_MSG_RESULT([${JAVADOC}])
+
+    TARGET="${TARGET} apidocs-java"
+  ],[
+    AC_MSG_RESULT([no])
+    JAVADOC=""
+  ]
+)
+
 dnl --------------------------------------------------------------------------
 dnl Check that we can build all classes depending on Tomcat if Java is enabled
 dnl
 dnl New vars: CLASSPATH
-dnl Upd vars: TC4DIR TARGET_BUILD TARGET_CLEAN
+dnl Upd vars: TC4DIR TARGET
 dnl --------------------------------------------------------------------------
-if ${TEST} "$JAVA_ENABLE" = "TRUE"
+if ${TEST} "$JAVA_ENABLE" = "true"
 then
   LOCAL_RESOLVEDIR(TC4DIR,"${TC4DIR}",[tomcat distribution directory])
   
@@ -219,8 +323,10 @@ then
   fi
   CLASSPATH="${CLASSPATH}:${TC4DIR}/server/lib/catalina.jar"
 
-  TARGET_BUILD="${TARGET_BUILD} java-build"
-  TARGET_CLEAN="${TARGET_CLEAN} java-clean"
+  TARGET="${TARGET} java"
+else
+  CLASSPATH=""
+  TC4DIR=""
 fi
 AC_SUBST(CLASSPATH)
 
@@ -242,7 +348,7 @@ AC_ARG_WITH(apr,
                           --with-apxs2 option is specified.],
   [
     case "${withval}" in
-    yes|YES|true|TRUE)
+    ""|"yes"|"YES"|"true"|"TRUE")
       APR_SRCDIR="${SRCDIR}/apr"
       ;;
     *)
@@ -269,19 +375,22 @@ dnl
 dnl New vars: APXS
 dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
+AC_MSG_CHECKING([for Apache apxs])
 AC_ARG_WITH(apxs,
   [  --with-apxs[=FILE]      build a shared Apache module. If FILE was not
                           specified, then APXS will be searched within the
                           current PATH. The Apache server version (1.3 or 2.0)
                           will be automatically detected.],
   [
+    AC_MSG_RESULT([yes])
+
     if ${TEST} -n "${MODULE}"
     then
       AC_MSG_ERROR([target module already defined as ${MODULE}])
     fi
 
     case "${withval}" in
-    yes|YES|true|TRUE)
+    ""|"yes"|"YES"|"true"|"TRUE")
       LOCAL_CHECK_PROG(APXS,apxs)
       ;;
     *)
@@ -289,14 +398,9 @@ AC_ARG_WITH(apxs,
       ;;
     esac
 
-    if ${TEST} ! -f ${APXS}
+    if ${TEST} ! -x ${APXS}
     then
-      APXS=""
-    fi
-
-    if ${TEST} -z "${APXS}"
-    then
-      AC_MSG_ERROR([cannot find apxs])
+      AC_MSG_ERROR([cannot execute apxs \"${APXS}\"])
     fi
 
     dnl ----------------------------------------------------------------------
@@ -338,6 +442,8 @@ AC_ARG_WITH(apxs,
       APR_INCDIR=""
     fi
     unset local_apache
+  ],[
+    AC_MSG_RESULT([no])
   ]
 )
 
@@ -360,7 +466,7 @@ dnl   This step gets executed ONLY if APR_VARFIL's length zero. Basically, if
 dnl   the module doesn't provide us with a name for the APRVARS file.
 dnl
 dnl New vars: N/A
-dnl Upd vars: APR_VARFIL APR_LIBDIR APR_INCDIR
+dnl Upd vars: APR_VARFIL APR_LIBDIR APR_INCDIR TARGET
 dnl --------------------------------------------------------------------------
 if ${TEST} -z "${APR_VARFIL}"
 then
@@ -370,7 +476,7 @@ then
   dnl -----------------------------------------------
   if ${TEST} ! -d "${APR_SRCDIR}"
   then
-    AC_MSG_ERROR([APR sources not found. Use --with-apr\[=DIR\]...])
+    AC_MSG_ERROR([APR sources not found. Use --with-apr=DIR.])
   fi
   LOCAL_RESOLVEDIR(APR_SRCDIR,[${APR_SRCDIR}],[full APR directory path])
   
@@ -378,10 +484,10 @@ then
   dnl Build the APR configure script
   dnl ------------------------------
   LOCAL_HEADER([Building APR configure script])
-  LOCAL_FILTEREXEC(local_return,
-    [./buildconf],
-    [APR buildconf],
-    [${APR_SRCDIR}])
+dnl  LOCAL_FILTEREXEC(local_return,
+dnl    [./buildconf],
+dnl    [APR buildconf],
+dnl    [${APR_SRCDIR}])
 
   if ${TEST} "${local_return}" -ne "0"
   then
@@ -392,10 +498,10 @@ then
   dnl Run the APR configure script
   dnl ----------------------------
   LOCAL_HEADER([Configuring APR])
-  LOCAL_FILTEREXEC(local_return,
-    [./configure ${APR_CFGFLG}],
-    ["APR configure"],
-    [${APR_SRCDIR}])
+dnl  LOCAL_FILTEREXEC(local_return,
+dnl    [./configure ${APR_CFGFLG}],
+dnl    ["APR configure"],
+dnl    [${APR_SRCDIR}])
 
   if ${TEST} "${local_return}" -ne "0"
   then
@@ -403,8 +509,9 @@ then
   fi
 
   APR_INCDIR="${APR_SRCDIR}/include"
-  APR_LIBDIR="${APR_SRCDIR}/lib"
   APR_VARFIL="${APR_SRCDIR}/APRVARS"
+  APR_LIBDIR="${TGTDIR}/lib"
+  TARGET="${TARGET} apr"
 fi
 
 dnl --------------------------------------------------------------------------
@@ -429,7 +536,33 @@ AC_SUBST(APR_LDFLAGS)
 AC_SUBST(APR_LIBS)
 
 dnl --------------------------------------------------------------------------
-dnl Finish up
+dnl Set up targets for building and cleaning
+dnl
+dnl New vars: TARGET_BUILD TARGET_CLEAN
+dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
-AC_OUTPUT(Makefile Makedefs)
+AC_MSG_CHECKING([for Makefile targets])
+TARGET_BUILD=""
+TARGET_CLEAN=""
+for local_target in ${TARGET}
+do
+  TARGET_BUILD="${TARGET_BUILD} ${local_target}-build"
+  TARGET_CLEAN="${TARGET_CLEAN} ${local_target}-clean"
+done
+unset local_target
+TARGET_BUILD="${TARGET_BUILD} ${MODULE}-build"
+TARGET_CLEAN="${TARGET_CLEAN} ${MODULE}-clean"
+AC_MSG_RESULT([${TARGET} ${MODULE}])
+AC_SUBST(TARGET_BUILD)
+AC_SUBST(TARGET_CLEAN)
+
+dnl --------------------------------------------------------------------------
+dnl Finish up
+dnl
+dnl New vars: CFGFILES
+dnl Upd vars: N/A
+dnl --------------------------------------------------------------------------
+CFGFILES="./Makefile ./Makedefs ./lib/Makefile ./${MODULE}/Makefile"
+AC_SUBST(CFGFILES)
+AC_OUTPUT(${CFGFILES})
 LOCAL_HEADER([All done. Now you can issue \"make\". Good luck.])
