@@ -66,6 +66,10 @@ public class JdkCompat {
         return java14;
     }
 
+    public static boolean isJava15() {
+        return java15;
+    }
+
     // -------------------- Implementation --------------------
     
     // from ant
@@ -74,10 +78,12 @@ public class JdkCompat {
     public static final String JAVA_1_2 = "1.2";
     public static final String JAVA_1_3 = "1.3";
     public static final String JAVA_1_4 = "1.4";
+    public static final String JAVA_1_5 = "1.5";
 
     static String javaVersion;
     static boolean java2=false;
     static boolean java14=false;
+    static boolean java15=false;
     static JdkCompat jdkCompat;
     
     static {
@@ -97,6 +103,9 @@ public class JdkCompat {
             Class.forName("java.lang.CharSequence");
             javaVersion = JAVA_1_4;
             java14=true;
+            Class.forName("java.lang.Appendable");
+            javaVersion = JAVA_1_5;
+            java15=true;
         } catch (ClassNotFoundException cnfe) {
             // swallow as we've hit the max class version that we have
         }
