@@ -12,11 +12,12 @@ JK=.
 
 all: jni_connect.so
 
-jni_connect.la: ${JNI_OBJECTS}
-	$(LIBTOOL) --mode=link $(COMPILE) -o $@ -module  -export-dynamic -avoid-version ${JNI_OBJECTS} 
+jk_jnicb.la: ${JNI_OBJECTS}
+	touch jk_jnicb.slo
+	$(LIBTOOL) --mode=link $(COMPILE) -module -o $@ -rpath `pwd` -g -O2 -avoid-version ${JNI_OBJECTS} 
 
-jni_connect.so: jni_connect.la
-	cp $< $@ 
+jni_connect.so: jk_jnicb.la
+	$(LIBTOOL) --mode=install cp $< `pwd`/jni_connect.so
 
 install:
 
