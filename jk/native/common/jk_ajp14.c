@@ -412,7 +412,6 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
     char *vname;
     char *cname;
     char *uri;
-	int	 i;
 
     vname  = (char *)jk_b_get_string(msg);
 
