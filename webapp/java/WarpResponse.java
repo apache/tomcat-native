@@ -276,6 +276,7 @@ public class WarpResponse extends HttpResponseBase {
         public void write(int b)
         throws IOException {
             if (closed) throw new IOException("Stream closed");
+            if (packet.size>=packet.buffer.length) this.flush();
             packet.buffer[packet.size++]=(byte)b;
         }
 

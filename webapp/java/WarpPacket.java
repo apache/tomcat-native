@@ -70,7 +70,7 @@ public class WarpPacket {
     /* Type of this packet */
     private int type=-1;
     /* Maximum value for a 16 bit unsigned value (0x0ffff +1) */
-    private static final int MAX_LENGTH=65536;
+    private static final int MAX_LENGTH=65535;
 
     /**
      * Construct a new WarpPacket instance.
