@@ -69,6 +69,8 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
+static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv);
+
 static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
                                 char *name)
 {
@@ -274,7 +276,7 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
 
     /* The name is a path */
     if( strchr( name, '/' ) != NULL ) {
-        jk2_uriEnv_setProperty( env, result, "uri", name );
+        jk2_uriEnv_setProperty( env, result, "uri", (char *)name );
     }
 
     uriEnv->workerEnv=env->getByName( env, "workerEnv" );

@@ -115,7 +115,7 @@ static int jk2_workerEnv_setAttribute( struct jk_env *env, struct jk_bean *mbean
         wEnv->options &= ~JK_OPT_FWDURIMASK;
         wEnv->options |= JK_OPT_FWDURIESCAPED;
     } else {
-        return JK_FALSE;
+         return JK_FALSE;
     }
 
     return JK_TRUE;

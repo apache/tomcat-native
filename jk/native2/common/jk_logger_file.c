@@ -142,30 +142,6 @@ static int jk2_logger_file_parseLogLevel(jk_env_t *env, const char *level)
     return JK_LOG_DEBUG_LEVEL;
 }
 
-static int JK_METHOD
-jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean, 
-                            char *name,  void *valueP )
-{
-    jk_logger_t *_this=mbean->object;
-    char *value=valueP;
-    if( strcmp( name, "name" )==0 ) {
-        _this->name=(char *)value;
-    } else if( strcmp( name, "file" )==0 ) {
-        _this->name=(char *)value;
-        /* Set the file imediately */
-        jk2_logger_file_init(env, (jk_logger_t *)mbean->object );
-
-    } else if( strcmp( name, "timeFormat" )==0 ) {
-        jk2_logger_file_logFmt = value;
-    } else if( strcmp( name, "level" )==0 ) {
-        _this->level = jk2_logger_file_parseLogLevel(env, value);
-        if( _this->level == 0 ) {
-            _this->jkLog( env, _this, JK_LOG_ERROR,
-                          "Level %s %d \n", value, _this->level );
-        }
-    }
-}
-
 
 static int jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
 {
@@ -202,6 +178,31 @@ static int jk2_logger_file_close(jk_env_t *env,jk_logger_t *_this)
     /*     free(_this); */
     return JK_TRUE;
 }
+
+static int JK_METHOD
+jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean, 
+                            char *name,  void *valueP )
+{
+    jk_logger_t *_this=mbean->object;
+    char *value=valueP;
+    if( strcmp( name, "name" )==0 ) {
+        _this->name=(char *)value;
+    } else if( strcmp( name, "file" )==0 ) {
+        _this->name=(char *)value;
+        /* Set the file imediately */
+        jk2_logger_file_init(env, (jk_logger_t *)mbean->object );
+
+    } else if( strcmp( name, "timeFormat" )==0 ) {
+        jk2_logger_file_logFmt = value;
+    } else if( strcmp( name, "level" )==0 ) {
+        _this->level = jk2_logger_file_parseLogLevel(env, value);
+        if( _this->level == 0 ) {
+            _this->jkLog( env, _this, JK_LOG_ERROR,
+                          "Level %s %d \n", value, _this->level );
+        }
+    }
+}
+
 
 static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
                                  const char *file,

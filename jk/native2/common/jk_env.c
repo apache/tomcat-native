@@ -116,7 +116,7 @@ static void *jk2_env_createInstance(jk_env_t *env, jk_pool_t *pool,
 
     if( name==NULL ) {
         name=pool->calloc( env, pool, 10 );
-        snprintf( name, 10, "%s.%d", type, env->id++ );
+        snprintf( (char *)name, 10, "%s.%d", type, env->id++ );
     }
 
     fac=jk2_env_getFactory( env, type);
