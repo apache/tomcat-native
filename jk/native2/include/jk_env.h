@@ -230,6 +230,7 @@ struct jk_env {
     struct jk_exception *lastException;
     int id;
     int debug;
+    char *soName;
 };
 
 void JK_METHOD jk2_registry_init(jk_env_t *env);

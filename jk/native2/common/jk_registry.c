@@ -110,6 +110,7 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
    * error, I'm casting the function pointers to (void *) - mmanders
    */
   env->registerFactory( env, "logger.file",   jk2_logger_file_factory );
+  env->registerFactory( env, "logger.win32",   jk2_logger_win32_factory );
   env->registerFactory( env, "workerEnv", jk2_workerEnv_factory );
   env->registerFactory( env, "uriMap", jk2_uriMap_factory );
   env->registerFactory( env, "uriEnv", jk2_uriEnv_factory );

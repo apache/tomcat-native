@@ -143,7 +143,8 @@ static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *parentEnv )
         env->globalPool=parentEnv->globalPool;
         env->envCache=parentEnv->envCache;
         env->debug=parentEnv->debug;
-        
+        env->soName=parentEnv->soName;
+
         if( env->debug > 0 ) {
             if( env->l == NULL ) 
                 fprintf( stderr, "env:Create child env %p %p\n", parentEnv, env);

@@ -479,7 +479,6 @@ Java_org_apache_jk_apr_AprImpl_jkGetAttribute
     char *name=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, nameJ, 0);
     char *value;
     jstring valueJ=NULL;
-    int rc;
     
     if( component->setAttribute ==NULL )
         return JK_OK;

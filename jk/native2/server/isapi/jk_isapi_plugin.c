@@ -82,16 +82,17 @@
 #include "jk_iis.h"
 //#include "jk_uri_worker_map.h"
 
-#define SERVER_ROOT_TAG          ("serverRoot")
+#define SERVER_ROOT_TAG         ("serverRoot")
 #define URI_SELECT_TAG          ("uriSelect")
 #define EXTENSION_URI_TAG       ("extensionUri")
-#define WORKERS_FILE_TAG       ("workersFile")
+#define WORKERS_FILE_TAG        ("workersFile")
 
 #define URI_SELECT_PARSED_VERB      ("parsed")
 #define URI_SELECT_UNPARSED_VERB    ("unparsed")
 #define URI_SELECT_ESCAPED_VERB     ("escaped")
 
 
+static char  file_name[_MAX_PATH];
 static char  ini_file_name[MAX_PATH];
 static int   using_ini_file = JK_FALSE;
 static int   is_inited = JK_FALSE;
@@ -102,16 +103,8 @@ static jk_workerEnv_t *workerEnv;
 
 
 static char extension_uri[INTERNET_MAX_URL_LENGTH] = "/jakarta/isapi_redirector2.dll";
-static char worker_file[MAX_PATH * 2];
-static char server_root[MAX_PATH * 2];
-
-
-
-#define URI_SELECT_OPT_PARSED       0
-#define URI_SELECT_OPT_UNPARSED     1
-#define URI_SELECT_OPT_ESCAPED      2
-
-static int uri_select_option = URI_SELECT_OPT_PARSED;
+static char worker_file[MAX_PATH * 2] = "";
+static char server_root[MAX_PATH * 2] = "";
 
 
 static int init_jk(char *serverName);
@@ -178,10 +171,6 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
 
     strcpy(pVer->lpszFilterDesc, VERSION_STRING);
 
-    if (!is_inited) {
-        return initialize_extension();
-    }
-
     return TRUE;
 }
 
@@ -192,227 +181,237 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
     jk_env_t *env=NULL; 
     jk_uriEnv_t *uriEnv=NULL;
 
+    if (!is_inited) {
+        initialize_extension();
+    }
+
     /* Initialise jk */
     if (is_inited && !is_mapread) {
         char serverName[MAX_SERVERNAME];
         DWORD dwLen = sizeof(serverName);
 
         if (pfc->GetServerVariable(pfc, SERVER_NAME, serverName, &dwLen)){
-            if (dwLen > 0) serverName[dwLen-1] = '\0';
-            if (init_jk(serverName))
+            if (dwLen > 0) {
+                serverName[dwLen-1] = '\0';
+            }
+            if (init_jk(serverName)){
                 is_mapread = JK_TRUE;
+            }
         }
         /* If we can't read the map we become dormant */
         if (!is_mapread)
             is_inited = JK_FALSE;
     }
-    env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
-    if (is_inited && (iis5 < 0) ) {
-        char serverSoftware[256];
-        DWORD dwLen = sizeof(serverSoftware);
-		iis5=0;
-        if (pfc->GetServerVariable(pfc,SERVER_SOFTWARE, serverSoftware, &dwLen)){
-			iis5=(atof(serverSoftware + 14) >= 5.0);
-			if (iis5) {
-				env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS >= 5.0\n");
-			} else {
-				env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS < 5.0\n");
-			}
+    if (is_inited && is_mapread) {
+        env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+        if (is_inited && (iis5 < 0) ) {
+            char serverSoftware[256];
+            DWORD dwLen = sizeof(serverSoftware);
+		    iis5=0;
+            if (pfc->GetServerVariable(pfc,SERVER_SOFTWARE, serverSoftware, &dwLen)){
+			    iis5=(atof(serverSoftware + 14) >= 5.0);
+			    if (iis5) {
+				    env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS >= 5.0\n");
+			    } else {
+				    env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS < 5.0\n");
+			    }
+            }
         }
-    }
 #ifdef SF_NOTIFY_AUTH_COMPLETE
-    if (is_inited &&
-         (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) ||
-		  ((SF_NOTIFY_AUTH_COMPLETE   == dwNotificationType) &&  iis5)
-		  )
-		)
+        if (is_inited &&
+             (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) ||
+		      ((SF_NOTIFY_AUTH_COMPLETE   == dwNotificationType) &&  iis5)
+		      )
+		    )
 #else
-	if (is_inited && (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType))
+	    if (is_inited && (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType))
 #endif
-	{ 
-        char uri[INTERNET_MAX_URL_LENGTH]; 
-        char snuri[INTERNET_MAX_URL_LENGTH]="/";
-        char Host[INTERNET_MAX_URL_LENGTH];
-        char Translate[INTERNET_MAX_URL_LENGTH];
-		BOOL (WINAPI * GetHeader) 
-			(struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPVOID lpvBuffer, LPDWORD lpdwSize );
-		BOOL (WINAPI * SetHeader) 
-			(struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPSTR lpszValue );
-		BOOL (WINAPI * AddHeader) 
-			(struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName,LPSTR lpszValue );
-        char *query;
-        DWORD sz = sizeof(uri);
-        DWORD szHost = sizeof(Host);
-        DWORD szTranslate = sizeof(Translate);
+	    { 
+            char uri[INTERNET_MAX_URL_LENGTH]; 
+            char snuri[INTERNET_MAX_URL_LENGTH]="/";
+            char Host[INTERNET_MAX_URL_LENGTH];
+            char Translate[INTERNET_MAX_URL_LENGTH];
+		    BOOL (WINAPI * GetHeader) 
+			    (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPVOID lpvBuffer, LPDWORD lpdwSize );
+		    BOOL (WINAPI * SetHeader) 
+			    (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPSTR lpszValue );
+		    BOOL (WINAPI * AddHeader) 
+			    (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName,LPSTR lpszValue );
+            char *query;
+            DWORD sz = sizeof(uri);
+            DWORD szHost = sizeof(Host);
+            DWORD szTranslate = sizeof(Translate);
 
 #ifdef SF_NOTIFY_AUTH_COMPLETE
-		if (iis5) {
-			GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
-			SetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->SetHeader;
-			AddHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->AddHeader;
-		} else {
-			GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
-			SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
-			AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
-		}
+		    if (iis5) {
+			    GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
+			    SetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->SetHeader;
+			    AddHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->AddHeader;
+		    } else {
+			    GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
+			    SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
+			    AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
+		    }
 #else
-			GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
-			SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
-			AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
+			    GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
+			    SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
+			    AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
 #endif
 
 
 
-        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-               "HttpFilterProc started\n");
+            env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                   "HttpFilterProc started\n");
 
 
-        /*
-         * Just in case somebody set these headers in the request!
-         */
-        SetHeader(pfc, URI_HEADER_NAME, NULL);
-        SetHeader(pfc, QUERY_HEADER_NAME, NULL);
-        SetHeader(pfc, WORKER_HEADER_NAME, NULL);
-        SetHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, NULL);
+            /*
+             * Just in case somebody set these headers in the request!
+             */
+            SetHeader(pfc, URI_HEADER_NAME, NULL);
+            SetHeader(pfc, QUERY_HEADER_NAME, NULL);
+            SetHeader(pfc, WORKER_HEADER_NAME, NULL);
+            SetHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, NULL);
         
-        if (!GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz)) {
-            env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
-                   "HttpFilterProc error while getting the url\n");
-            workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-            return SF_STATUS_REQ_ERROR;
-        }
-
-        if (strlen(uri)) {
-            int rc;
-            char *worker=0;
-            query = strchr(uri, '?');
-            if (query) {
-                *query++ = '\0';
-            }
-
-            rc = jk_requtil_unescapeUrl(uri);
-            if (rc == BAD_REQUEST) {
+            if (!GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz)) {
                 env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
-                       "HttpFilterProc [%s] contains one or more invalid escape sequences.\n", 
-                       uri);
-                write_error_response(pfc,"400 Bad Request",
-                        "<HTML><BODY><H1>Request contains invalid encoding</H1></BODY></HTML>");
+                       "HttpFilterProc error while getting the url\n");
                 workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                return SF_STATUS_REQ_FINISHED;
-            }
-            else if(rc == BAD_PATH) {
-                env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
-                       "HttpFilterProc [%s] contains forbidden escape sequences.\n", 
-                       uri);
-                write_error_response(pfc,"403 Forbidden",
-                        "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
-                workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                return SF_STATUS_REQ_FINISHED;
-            }
-            jk_requtil_getParents(uri);
-
-
-            if(GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
-                env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                       "In HttpFilterProc Virtual Host redirection of %s\n", 
-                       Host);
-                uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host,uri );
+                return SF_STATUS_REQ_ERROR;
             }
 
-            if (uriEnv==NULL) {
-                env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                       "In HttpFilterProc test Default redirection of %s\n", 
-                       uri);
-                uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,uri );
-            }
-
-            if (uriEnv!=NULL) {
-                char *forwardURI;
-
-                /* This is a servlet, should redirect ... */
-                env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                       "HttpFilterProc [%s] is a servlet url - should redirect to %s\n", 
-                       uri, uriEnv->workerName);
-                
-                /* get URI we should forward */
-                if (uri_select_option == URI_SELECT_OPT_UNPARSED) {
-                    /* get original unparsed URI */
-                    GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz);
-                    /* restore terminator for uri portion */
-                    if (query)
-                        *(query - 1) = '\0';
-                    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                           "HttpFilterProc fowarding original URI [%s]\n",uri);
-                    forwardURI = uri;
-                } else if (uri_select_option == URI_SELECT_OPT_ESCAPED) {
-                    if (!jk_requtil_escapeUrl(uri,snuri,INTERNET_MAX_URL_LENGTH)) {
-                        env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
-                               "HttpFilterProc [%s] re-encoding request exceeds maximum buffer size.\n", 
-                               uri);
-                        write_error_response(pfc,"400 Bad Request",
-                                "<HTML><BODY><H1>Request contains too many characters that need to be encoded.</H1></BODY></HTML>");
-                        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                        return SF_STATUS_REQ_FINISHED;
-                    }
-                    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                           "HttpFilterProc fowarding escaped URI [%s]\n",snuri);
-                    forwardURI = snuri;
-                } else {
-                    forwardURI = uri;
+            if (strlen(uri)) {
+                int rc;
+                char *worker=0;
+                query = strchr(uri, '?');
+                if (query) {
+                    *query++ = '\0';
                 }
 
-                if(!AddHeader(pfc, URI_HEADER_NAME, forwardURI) || 
-                   ( (query != NULL && strlen(query) > 0)
-                           ? !AddHeader(pfc, QUERY_HEADER_NAME, query) : FALSE ) || 
-                   !AddHeader(pfc, WORKER_HEADER_NAME, uriEnv->workerName) ||
-                   !SetHeader(pfc, "url", extension_uri)) {
+                rc = jk_requtil_unescapeUrl(uri);
+                if (rc == BAD_REQUEST) {
                     env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
-                           "HttpFilterProc error while adding request headers\n");
+                           "HttpFilterProc [%s] contains one or more invalid escape sequences.\n", 
+                           uri);
+                    write_error_response(pfc,"400 Bad Request",
+                            "<HTML><BODY><H1>Request contains invalid encoding</H1></BODY></HTML>");
                     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                    return SF_STATUS_REQ_ERROR;
+                    return SF_STATUS_REQ_FINISHED;
                 }
-				
-                /* Move Translate: header to a temporary header so
-                 * that the extension proc will be called.
-                 * This allows the servlet to handle 'Translate: f'.
-                 */
-                if(GetHeader(pfc, "Translate:", (LPVOID)Translate, (LPDWORD)&szTranslate) &&
-                    Translate != NULL && szTranslate > 0) {
-                    if (!AddHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, Translate)) {
+                else if(rc == BAD_PATH) {
+                    env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
+                           "HttpFilterProc [%s] contains forbidden escape sequences.\n", 
+                           uri);
+                    write_error_response(pfc,"403 Forbidden",
+                            "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+                    return SF_STATUS_REQ_FINISHED;
+                }
+                jk_requtil_getParents(uri);
+
+
+                if(GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
+                    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                           "In HttpFilterProc Virtual Host redirection of %s\n", 
+                           Host);
+                    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host,uri );
+                }
+
+                if (uriEnv==NULL) {
+                    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                           "In HttpFilterProc test Default redirection of %s\n", 
+                           uri);
+                    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,uri );
+                }
+
+                if( uriEnv!=NULL ) {
+                    char *forwardURI;
+
+                    /* This is a servlet, should redirect ... */
+                    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                           "HttpFilterProc [%s] is a servlet url - should redirect to %s\n", 
+                           uri, uriEnv->workerName);
+                
+                    /* get URI we should forward */
+                
+                    if( workerEnv->options == JK_OPT_FWDURICOMPATUNPARSED ){
+                        /* get original unparsed URI */
+                        GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz);
+                        /* restore terminator for uri portion */
+                        if (query)
+                            *(query - 1) = '\0';
+                        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                               "HttpFilterProc fowarding original URI [%s]\n",uri);
+                        forwardURI = uri;
+                    } else if( workerEnv->options == JK_OPT_FWDURIESCAPED ){
+                        if (!jk_requtil_escapeUrl(uri,snuri,INTERNET_MAX_URL_LENGTH)) {
+                            env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
+                                   "HttpFilterProc [%s] re-encoding request exceeds maximum buffer size.\n", 
+                                   uri);
+                            write_error_response(pfc,"400 Bad Request",
+                                    "<HTML><BODY><H1>Request contains too many characters that need to be encoded.</H1></BODY></HTML>");
+                            workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+                            return SF_STATUS_REQ_FINISHED;
+                        }
+                        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                               "HttpFilterProc fowarding escaped URI [%s]\n",snuri);
+                        forwardURI = snuri;
+                    } else {
+                        forwardURI = uri;
+                    }
+
+                    if(!AddHeader(pfc, URI_HEADER_NAME, forwardURI) || 
+                       ( (query != NULL && strlen(query) > 0)
+                               ? !AddHeader(pfc, QUERY_HEADER_NAME, query) : FALSE ) || 
+                       !AddHeader(pfc, WORKER_HEADER_NAME, uriEnv->workerName) ||
+                       !SetHeader(pfc, "url", extension_uri)) {
                         env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
-                          "HttpFilterProc error while adding Tomcat-Translate headers\n");
+                               "HttpFilterProc error while adding request headers\n");
                         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                         return SF_STATUS_REQ_ERROR;
                     }
-                SetHeader(pfc, "Translate:", NULL);
+				    
+                    /* Move Translate: header to a temporary header so
+                     * that the extension proc will be called.
+                     * This allows the servlet to handle 'Translate: f'.
+                     */
+                    if(GetHeader(pfc, "Translate:", (LPVOID)Translate, (LPDWORD)&szTranslate) &&
+                        Translate != NULL && szTranslate > 0) {
+                        if (!AddHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, Translate)) {
+                            env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
+                              "HttpFilterProc error while adding Tomcat-Translate headers\n");
+                            workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+                            return SF_STATUS_REQ_ERROR;
+                        }
+                    SetHeader(pfc, "Translate:", NULL);
+                    }
+                } else {
+                    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                           "HttpFilterProc [%s] is not a servlet url\n", 
+                           uri);
                 }
-            } else {
+
+                /*
+                 * Check if somebody is feeding us with his own TOMCAT data headers.
+                 * We reject such postings !
+                 */
                 env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                       "HttpFilterProc [%s] is not a servlet url\n", 
-                       uri);
-            }
-
-            /*
-             * Check if somebody is feeding us with his own TOMCAT data headers.
-             * We reject such postings !
-             */
-            env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                   "HttpFilterProc check if [%s] is pointing to the web-inf directory\n", 
-                   uri);
-
-            if(jk_requtil_uriIsWebInf(uri)) {
-                env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
-                       "HttpFilterProc [%s] points to the web-inf or meta-inf directory.\nSomebody try to hack into the site!!!\n", 
+                       "HttpFilterProc check if [%s] is pointing to the web-inf directory\n", 
                        uri);
 
-                write_error_response(pfc,"403 Forbidden",
-                        "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
-                workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                return SF_STATUS_REQ_FINISHED;
+                if(jk_requtil_uriIsWebInf(uri)) {
+                    env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
+                           "HttpFilterProc [%s] points to the web-inf or meta-inf directory.\nSomebody try to hack into the site!!!\n", 
+                           uri);
+
+                    write_error_response(pfc,"403 Forbidden",
+                            "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+                    return SF_STATUS_REQ_FINISHED;
+                }
             }
         }
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     }
-    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     return SF_STATUS_REQ_NEXT_NOTIFICATION;
 }
 
@@ -424,21 +423,18 @@ BOOL WINAPI GetExtensionVersion(HSE_VERSION_INFO  *pVer)
 
     strcpy(pVer->lpszExtensionDesc, VERSION_STRING);
 
-
-    if (!is_inited) {
-        return initialize_extension();
-    }
     return TRUE;
 }
 
 DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
 {   
     DWORD rc = HSE_STATUS_ERROR;
-    jk_env_t *env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+    jk_env_t *env;
     lpEcb->dwHttpStatusCode = HTTP_STATUS_SERVER_ERROR;
 
-    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-           "HttpExtensionProc started\n");
+    if (!is_inited) {
+        initialize_extension();
+    }
 
 	/* Initialise jk */
 	if (is_inited && !is_mapread) {
@@ -453,6 +449,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
 			is_inited = JK_FALSE;
 	}
 
+
 	if (is_inited) {
         jk_ws_service_t sOnStack;
         jk_ws_service_t *s=&sOnStack;
@@ -464,6 +461,10 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         jk_worker_t *worker;
         jk_pool_t *rPool=NULL;
         int rc1;
+
+        env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+               "HttpExtensionProc started\n");
 
         GET_SERVER_VARIABLE_VALUE(workerEnv->pool,HTTP_WORKER_HEADER_NAME, ( worker_name ));
         worker=env->getByName( env, worker_name);
@@ -512,11 +513,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         
         rPool->reset(env, rPool);
         
-        rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
-        
-    } else {
-        env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
-               "HttpExtensionProc error, not initialized\n");
+        rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );       
     }
     return rc;
 }
@@ -549,7 +546,6 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     char drive[_MAX_DRIVE];
     char dir[_MAX_DIR];
     char fname[_MAX_FNAME];
-    char file_name[_MAX_PATH];
 
     switch (ulReason) {
         case DLL_PROCESS_DETACH:
@@ -573,25 +569,26 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
 
 static int init_jk(char *serverName)
 {
-    int rc = JK_FALSE;  
+    int rc = JK_TRUE;  
        
     jk_env_t *env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+    workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
+                              workerEnv->pool->pstrdup( env, workerEnv->pool, server_root));
     /* Logging the initialization type: registry or properties file in virtual dir
     */
-//    rc=(JK_OK == workerEnv->config->update( env, workerEnv->config, NULL));
-    rc=(JK_OK == workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file ));
+    if(strlen(worker_file)){
+        rc=(JK_OK != workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file ));
+    }
+    workerEnv->init(env,workerEnv);
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", server_root);
     if (using_ini_file) {
         env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using ini file %s.\n", ini_file_name);
     } else {
         env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using registry.\n");
     }
-    //env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using log file %s.\n", log_file);
-    //env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using log level %d.\n", log_level);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using extension uri %s.\n", extension_uri);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using server root %s.\n", server_root);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
-    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using uri select %d.\n", uri_select_option);
-    workerEnv->init(env,workerEnv);
     return rc;
 }
 
@@ -599,29 +596,9 @@ static int initialize_extension()
 {
     jk_env_t *env=jk2_create_config();   
     if (read_registry_init_data(env)) {
-        workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
-                                  workerEnv->pool->pstrdup( env, workerEnv->pool, server_root));
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", server_root);
         is_inited = JK_TRUE;
     }
     return is_inited;
-}
-
-int parse_uri_select(const char *uri_select)
-{
-    if(0 == strcasecmp(uri_select, URI_SELECT_PARSED_VERB)) {
-        return URI_SELECT_OPT_PARSED;
-    }
-
-    if(0 == strcasecmp(uri_select, URI_SELECT_UNPARSED_VERB)) {
-        return URI_SELECT_OPT_UNPARSED;
-    }
-
-    if(0 == strcasecmp(uri_select, URI_SELECT_ESCAPED_VERB)) {
-        return URI_SELECT_OPT_ESCAPED;
-    }
-
-    return -1;
 }
 
 static int read_registry_init_data(jk_env_t *env)
@@ -650,17 +627,6 @@ static int read_registry_init_data(jk_env_t *env)
             tmp = map->get(env,map,WORKERS_FILE_TAG);
             if (tmp) {
                 strcpy(worker_file, tmp);
-            } else {
-                ok = JK_FALSE;
-            }
-            tmp = map->get(env,map,URI_SELECT_TAG);
-            if (tmp) {
-                int opt = parse_uri_select(tmp);
-                if (opt >= 0) {
-                    uri_select_option = opt;
-                } else {
-                    ok = JK_FALSE;
-                }
             }
             using_ini_file=JK_TRUE;            
             return ok;
@@ -704,17 +670,6 @@ static int read_registry_init_data(jk_env_t *env)
         strcpy(worker_file, tmpbuf);
     } else {
         ok = JK_FALSE;
-    }
-    if(get_registry_config_parameter(hkey,
-                                     URI_SELECT_TAG, 
-                                     tmpbuf,
-                                     sizeof(tmpbuf))) {
-        int opt = parse_uri_select(tmpbuf);
-        if (opt >= 0) {
-            uri_select_option = opt;
-        } else {
-            ok = JK_FALSE;
-        }
     }
     RegCloseKey(hkey);
     return ok;
@@ -768,12 +723,19 @@ static  jk_env_t*  jk2_create_workerEnv (void) {
     /* Init the environment. */
     
     /* Create the logger */
-    jkb=env->createBean2( env, env->globalPool, "logger.file", "");
-    env->alias( env, "logger.file:", "logger");
+    jkb=env->createBean2( env, env->globalPool, "logger.win32", "");
+    env->alias( env, "logger.win32:", "logger");
     l = jkb->object;
     
     env->l=l;
     
+    env->soName=env->globalPool->calloc(env, env->globalPool, strlen(file_name)+1);
+    
+    if( env->soName == NULL ){
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating env->soName\n");
+        return env;
+    }
+    strcpy(env->soName,file_name);
     /* We should make it relative to JK_HOME or absolute path.
        ap_server_root_relative(cmd->pool,opt); */
     

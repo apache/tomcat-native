@@ -110,6 +110,10 @@ struct jk_config {
      */
     int (*update)( struct jk_env *env, struct jk_config *cfg, int *didReload);
 
+    /** Process a node in config data
+     */
+    int (*processNode)( struct jk_env *env, struct jk_config *cfg, char *node, int didReload);
+
     /* Private data */
     struct jk_pool *pool;
     void *_private;
@@ -119,7 +123,7 @@ struct jk_config {
     char *file;
     
     char *section;
-
+    struct jk_map *cfgData;
     /* Only one thread can update the config
      */
     JK_CRIT_SEC cs;

@@ -189,8 +189,7 @@ struct jk_workerEnv {
      * Log options. XXX move it to uriEnv, make it configurable per webapp.
      * XXX What about apache native logger ?
      */
-    char *log_file;
-    int  log_level;
+    char *logger_name;
 
     struct jk_uriMap *uriMap;
 

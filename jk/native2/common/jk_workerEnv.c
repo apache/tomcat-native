@@ -87,7 +87,9 @@ static int JK_METHOD jk2_workerEnv_setAttribute( struct jk_env *env, struct jk_b
 
     /** XXX Should it be per/uri ?
      */
-    if( strcmp( name, "sslEnable" )==0 ) {
+    if( strcmp( name, "logger" )==0 ) {
+        wEnv->logger_name = value;
+    } else if( strcmp( name, "sslEnable" )==0 ) {
         wEnv->ssl_enable = JK_TRUE;
     } else if( strcmp( name, "timing" )==0 ) {
         wEnv->timing= atoi( value );
@@ -334,9 +336,8 @@ static int jk2_workerEnv_parentInit(jk_env_t *env, jk_workerEnv_t *wEnv)
 static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
 {
     char *configFile;
-
-    env->l->init( env, env->l );
-
+    jk_bean_t *jkb;
+   
     /* We need to pid here - Linux will return the pid of the thread if
        called after init(), and we'll not be able to locate the slot id
        This is part of the workarounds needed for Apache2's removal of
@@ -351,6 +352,17 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
                                          "${serverRoot}/conf/workers2.properties" );
         configFile=wEnv->config->file;
     }
+
+    if( wEnv->logger_name!=NULL){
+        char alias_name[100]="";
+        jkb=env->getBean(env,wEnv->logger_name);
+        if (jkb == NULL){
+            jkb=env->createBean2( env, env->globalPool, wEnv->logger_name, "");
+        }
+        env->alias( env, strcat(strcat(alias_name,wEnv->logger_name),":"), "logger");
+        env->l = jkb->object;
+    }
+    env->l->init( env, env->l );
 
     /* Set default worker. It'll be used for all uris that have no worker
      */
@@ -684,8 +696,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
                            ARCH, NULL );
 
 
-    wEnv->log_file        = NULL;
-    wEnv->log_level       = -1;
+    wEnv->logger_name     = "logger.file";
     wEnv->was_initialized = JK_FALSE;
     wEnv->options         = JK_OPT_FWDURIDEFAULT;
 

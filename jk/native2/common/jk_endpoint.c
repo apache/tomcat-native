@@ -152,6 +152,7 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     e->stats = NULL;
     e->channelData = NULL;
     e->currentRequest = NULL;
+    e->worker=NULL;
     epId=atoi( result->localName );
     
     result->object = e;
