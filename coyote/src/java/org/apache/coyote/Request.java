@@ -114,7 +114,13 @@ public final class Request {
 
 
     public Request() {
+
 	recycle();
+
+        parameters.setQuery(queryMB);
+        parameters.setURLDecoder(urlDecoder);
+        parameters.setHeaders(headers);
+
     }
 
 
@@ -127,7 +133,6 @@ public final class Request {
     protected String localHost;
 
     protected MessageBytes schemeMB = new MessageBytes();
-    protected boolean secure = false;
 
     protected MessageBytes methodMB = new MessageBytes();
     protected MessageBytes unparsedURIMB = new MessageBytes();
@@ -158,7 +163,7 @@ public final class Request {
     /**
      * URL decoder.
      */
-    UDecoder urlDecoder = new UDecoder();
+    protected UDecoder urlDecoder = new UDecoder();
 
 
     /**
@@ -170,16 +175,18 @@ public final class Request {
     protected MessageBytes contentTypeMB = null;
     protected String charEncoding = null;
     protected Cookies cookies = new Cookies(headers);
+    protected Parameters parameters = new Parameters();
 
 
     // ------------------------------------------------------------- Properties
 
 
     /**
-     * Get the host id ( or jvmRoute )
-     * @return the jvm route
+     * Get the instance id (or JVM route).
+     * 
+     * @return the instance id
      */
-    public MessageBytes getInstanceId() {
+    public MessageBytes instanceId() {
         return instanceId;
     }
 
@@ -260,22 +267,21 @@ public final class Request {
 	this.localHost = host;
     }
 
-    public boolean isSecure() {
-        return secure;
-    }
-
-    public void setSecure(boolean secure) {
-        this.secure = secure;
-    }
 
     // -------------------- encoding/type --------------------
 
 
+    /**
+     * Get the character encoding used for this request.
+     */
     public String getCharacterEncoding() {
-        if(charEncoding != null) return charEncoding;
+
+        if (charEncoding != null)
+            return charEncoding;
 
         charEncoding = ContentType.getCharsetFromContentType(getContentType());
-	return charEncoding;
+        return charEncoding;
+
     }
 
 
@@ -339,6 +345,14 @@ public final class Request {
     }
 
 
+    // -------------------- Parameters --------------------
+
+
+    public Parameters getParameters() {
+	return parameters;
+    }
+
+
     // -------------------- Input Buffer --------------------
 
 
@@ -389,14 +403,16 @@ public final class Request {
 
 
     public void recycle() {
+
 	contentLength = -1;
         contentTypeMB = null;
         charEncoding = null;
         headers.recycle();
         serverNameMB.recycle();
         serverPort=-1;
-	
+
 	cookies.recycle();
+        parameters.recycle();
 
         unparsedURIMB.recycle();
         uriMB.recycle();
@@ -408,13 +424,13 @@ public final class Request {
 
 	// XXX Do we need such defaults ?
         schemeMB.setString("http");
-        secure = false;
 	methodMB.setString("GET");
         uriMB.setString("/");
         queryMB.setString("");
         protoMB.setString("HTTP/1.0");
         remoteAddrMB.setString("127.0.0.1");
         remoteHostMB.setString("localhost");
+
     }
 
 

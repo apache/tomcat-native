@@ -283,6 +283,12 @@ public class CoyoteRequest
     protected boolean requestParametersParsed = false;
 
 
+    /**
+     * Secure flag.
+     */
+    protected boolean secure = false;
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -305,6 +311,7 @@ public class CoyoteRequest
         userPrincipal = null;
         sessionParsed = false;
         requestParametersParsed = false;
+        secure = false;
 
         attributes.clear();
         notes.clear();
@@ -646,7 +653,7 @@ public class CoyoteRequest
      * @param secure The new isSecure value
      */
     public void setSecure(boolean secure) {
-        // Not used
+        this.secure = secure;
     }
 
 
@@ -948,7 +955,7 @@ public class CoyoteRequest
      * Was this request received on a secure connection?
      */
     public boolean isSecure() {
-        return (coyoteRequest.isSecure());
+        return (secure);
     }
 
 
