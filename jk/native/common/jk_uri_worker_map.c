@@ -465,133 +465,138 @@ void jk_no2slash(char *name)
 char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                         char *uri, jk_logger_t *l)
 {
+    unsigned int i;
+    unsigned int best_match = -1;
+    unsigned int longest_match = 0;
+    char *url_rewrite;
+
     JK_TRACE_ENTER(l);
+    if (!uw_map || !uri) {
+        JK_LOG_NULL_PARAMS(l);
+        JK_TRACE_EXIT(l);
+        return NULL;
+    }
+    if (*uri != '/') {
+        jk_log(l, JK_LOG_ERROR,
+                "uri must start with /\n");
+        JK_TRACE_EXIT(l);
+        return NULL;
+    }
+    url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
+    if (url_rewrite) {
+        *url_rewrite = '\0'; 
+    }
+    jk_no2slash(uri);
 
-    if (uw_map && uri && '/' == uri[0]) {
-        unsigned i;
-        unsigned best_match = -1;
-        unsigned longest_match = 0;
-        char *url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
+    jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s'\n", uri);
+    for (i = 0; i < uw_map->size; i++) {
+        uri_worker_record_t *uwr = uw_map->maps[i];
 
-        if (url_rewrite) {
-            *url_rewrite = '\0';
+        if (uwr->ctxt_len < longest_match) {
+            continue;       /* can not be a best match anyway */
         }
-        jk_no2slash(uri);
 
-        jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s'\n", uri);
-        for (i = 0; i < uw_map->size; i++) {
-            uri_worker_record_t *uwr = uw_map->maps[i];
-
-            if (uwr->ctxt_len < longest_match) {
-                continue;       /* can not be a best match anyway */
-            }
-
-            if (0 == strncmp(uwr->context, uri, uwr->ctxt_len)) {
-                if (MATCH_TYPE_EXACT == uwr->match_type) {
-                    if (strlen(uri) == uwr->ctxt_len) {
-                        jk_log(l, JK_LOG_DEBUG,
-                               "Found an exact match %s -> %s\n",
-                               uwr->worker_name, uwr->context);
-                        JK_TRACE_EXIT(l);
-                        return uwr->worker_name;
-                    }
+        if (0 == strncmp(uwr->context, uri, uwr->ctxt_len)) {
+            if (uwr->match_type == MATCH_TYPE_EXACT) {
+                if (strlen(uri) == uwr->ctxt_len) {
+                    jk_log(l, JK_LOG_DEBUG,
+                            "Found an exact match %s -> %s\n",
+                            uwr->worker_name, uwr->context);
+                    JK_TRACE_EXIT(l);
+                    return uwr->worker_name;
                 }
-                else if (MATCH_TYPE_CONTEXT == uwr->match_type) {
-                    if (uwr->ctxt_len > longest_match) {
+            }
+            else if (uwr->match_type == MATCH_TYPE_CONTEXT) {
+                if (uwr->ctxt_len > longest_match) {
+                    jk_log(l, JK_LOG_DEBUG,
+                            "Found a context match %s -> %s\n",
+                            uwr->worker_name, uwr->context);
+                    longest_match = uwr->ctxt_len;
+                    best_match = i;
+                }
+            }
+            else if (uwr->match_type == MATCH_TYPE_GENERAL_SUFFIX) {
+                int suffix_start = last_index_of(uri, uwr->suffix[0]);
+                if (suffix_start >= 0
+                    && 0 == strcmp(uri + suffix_start, uwr->suffix)) {
+                    if (uwr->ctxt_len >= longest_match) {
                         jk_log(l, JK_LOG_DEBUG,
-                               "Found a context match %s -> %s\n",
-                               uwr->worker_name, uwr->context);
+                                "Found a general suffix match %s -> *%s\n",
+                                uwr->worker_name, uwr->suffix);
                         longest_match = uwr->ctxt_len;
                         best_match = i;
                     }
                 }
-                else if (MATCH_TYPE_GENERAL_SUFFIX == uwr->match_type) {
-                    int suffix_start = last_index_of(uri, uwr->suffix[0]);
-                    if (suffix_start >= 0
-                        && 0 == strcmp(uri + suffix_start, uwr->suffix)) {
+            }
+            else if (uwr->match_type == MATCH_TYPE_CONTEXT_PATH) {
+                char *suffix_path = NULL;
+                if (strlen(uri) > 1
+                    && (suffix_path = strchr(uri + 1, '/')) != NULL) {
+                    if (0 ==
+                        strncmp(suffix_path, uwr->suffix,
+                                strlen(uwr->suffix))) {
                         if (uwr->ctxt_len >= longest_match) {
                             jk_log(l, JK_LOG_DEBUG,
-                                   "Found a general suffix match %s -> *%s\n",
-                                   uwr->worker_name, uwr->suffix);
+                                    "Found a general context path match %s -> *%s\n",
+                                    uwr->worker_name, uwr->suffix);
                             longest_match = uwr->ctxt_len;
                             best_match = i;
                         }
                     }
                 }
-                else if (MATCH_TYPE_CONTEXT_PATH == uwr->match_type) {
-                    char *suffix_path = NULL;
-                    if (strlen(uri) > 1
-                        && (suffix_path = strchr(uri + 1, '/')) != NULL) {
-                        if (0 ==
-                            strncmp(suffix_path, uwr->suffix,
-                                    strlen(uwr->suffix))) {
-                            if (uwr->ctxt_len >= longest_match) {
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "Found a general context path match %s -> *%s\n",
-                                       uwr->worker_name, uwr->suffix);
-                                longest_match = uwr->ctxt_len;
-                                best_match = i;
-                            }
-                        }
-                    }
+            }
+            else {          /* suffix match */
+
+                size_t suffix_start = strlen(uri) - 1;
+
+                for ( ; suffix_start > 0 && '.' != uri[suffix_start];
+                     suffix_start--) {
+                    /* TODO: use while loop */
                 }
-                else {          /* suffix match */
-
-                    int suffix_start;
-
-                    for (suffix_start = strlen(uri) - 1;
-                         suffix_start > 0 && '.' != uri[suffix_start];
-                         suffix_start--);
-                    if ('.' == uri[suffix_start]) {
-                        const char *suffix = uri + suffix_start + 1;
-
-                        /* for WinXX, fix the JsP != jsp problems */
+                if (uri[suffix_start] == '.') {
+                    const char *suffix = uri + suffix_start + 1;
+                    /* for WinXX, fix the JsP != jsp problems */
 #ifdef WIN32
-                        if (0 == strcasecmp(suffix, uwr->suffix)) {
+                    if (strcasecmp(suffix, uwr->suffix) == 0) {
 #else
-                        if (0 == strcmp(suffix, uwr->suffix)) {
+                    if (strcmp(suffix, uwr->suffix) == 0) {
 #endif
-                            if (uwr->ctxt_len >= longest_match) {
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "Found a suffix match %s -> *.%s\n",
-                                       uwr->worker_name, uwr->suffix);
-                                longest_match = uwr->ctxt_len;
-                                best_match = i;
-                            }
+                        if (uwr->ctxt_len >= longest_match) {
+                            jk_log(l, JK_LOG_DEBUG,
+                                    "Found a suffix match %s -> *.%s\n",
+                                    uwr->worker_name, uwr->suffix);
+                            longest_match = uwr->ctxt_len;
+                            best_match = i;
                         }
                     }
                 }
             }
         }
+    }
 
-        if (-1 != best_match) {
-            JK_TRACE_EXIT(l);
-            return uw_map->maps[best_match]->worker_name;
-        }
-        else {
-            /*
-             * We are now in a security nightmare, it maybe that somebody sent 
-             * us a uri that looks like /top-secret.jsp. and the web server will 
-             * fumble and return the jsp content. 
-             *
-             * To solve that we will check for path info following the suffix, we 
-             * will also check that the end of the uri is not .suffix.
-             */
-            int fraud = check_security_fraud(uw_map, uri);
-
-            if (fraud >= 0) {
-                jk_log(l, JK_LOG_EMERG,
-                       "Found a security fraud in '%s'\n",
-                       uri);
-                JK_TRACE_EXIT(l);
-                return uw_map->maps[fraud]->worker_name;
-            }
-        }
+    if (best_match != -1) {
+        JK_TRACE_EXIT(l);
+        return uw_map->maps[best_match]->worker_name;
     }
     else {
-        jk_log(l, JK_LOG_ERROR, "wrong parameters\n");
-    }
+        /*
+            * We are now in a security nightmare, it maybe that somebody sent 
+            * us a uri that looks like /top-secret.jsp. and the web server will 
+            * fumble and return the jsp content. 
+            *
+            * To solve that we will check for path info following the suffix, we 
+            * will also check that the end of the uri is not .suffix.
+            */
+        int fraud = check_security_fraud(uw_map, uri);
 
+        if (fraud >= 0) {
+            jk_log(l, JK_LOG_EMERG,
+                    "Found a security fraud in '%s'\n",
+                    uri);
+            JK_TRACE_EXIT(l);
+            return uw_map->maps[fraud]->worker_name;
+        }
+    }
     JK_TRACE_EXIT(l);
     return NULL;
 }
