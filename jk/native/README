@@ -24,7 +24,7 @@ From mod_jk we gain :
   workers which handle a particular request, and a special worker
   , the lb worker, is a group (cluster ?) of physical workers.
 
-* Direct access to Tomcat 3.2/3.3 servlet engine via ajp12/ajp13
+* Direct access to Tomcat 3.2/3.3/4.0/4.1 servlet engine via ajp13
   protocol. 
 
 * OK, then how do I build web-connector ? Just take a look at README.configure
