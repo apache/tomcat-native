@@ -92,4 +92,128 @@
       screaming "Maximum WARP, engage!".
     </p>
   </section>
+
+  <section title="Packet structure">
+    <description>
+      The Warp 1.0 packet structure
+    </description>
+
+    <p>
+      Compared to previous releases of the WARP protocol, the new packet
+      structure looses its "packet lenght" field. This was done to allow
+      progressive memory allocation during process (we don't require the
+      packet to be fully read before starting to put data in the right
+      places) and because (apart from when raw data was transfered), its
+      value could be easily gathered by the content of the packet itself.
+    </p>
+    
+    <p>
+      The new structure of the WARP packet is therefore defined as follows:
+    </p>
+
+    <img src="images/packet1.gif"/>
+    
+    <ul>
+      <li>
+        <b>Packet Type</b>: is a unique one-byte value detailing what is
+        contained in the packet's payload.
+      </li>
+      <li>
+        <b>Packet Payload</b>: is a variable-length set of bytes containing
+        the data actually included in this packet. Its length and content
+        vary depending on the type of the packet.
+      </li>
+    </ul>
+  </section>
+
+  <section title="Packet payload">
+    <description>
+      The Warp 1.0 packet payload structure
+    </description>
+
+    <p>
+      Depending on the type of the packet, the payload can contain zero or
+      more fields (each packet type specifies exactly what or where those
+      fields appear in the payload). Here listed are all payload fields
+      recognized by the Warp 1.0 protocol, their field identifier is a
+      reference for the below mentioned packet type descriptions:
+    </p>
+
+    <p>
+      <b>Numeric packet payload fields:</b>
+    </p>
+
+    <ul>
+      <li>
+        <b>signed/unsigned byte</b>: is represented as a 8 bits sequence of
+        data. Its value can range between 0 and 255 decimal if unsigned and
+        between -128 and 127 decimal if signed, with the most significant bit
+        representing the sign. (field identifier: <b>BYTE/UBYTE</b>)
+      </li>
+      <li>
+        <b>signed/unsigned short integer</b>: is represented as a 16 bits
+        sequence of data, encoded in network-byte-order (most significant
+        bytes come first). Its value can range between 0 and 65535 decimal if
+        unsigned and between -32768 and 32767 when signed, with the most
+        significant bit representing the sign (field identifier:
+        <b>SHORT/USHORT</b>).
+      </li>
+      <li>
+        <b>signed/unsigned integer</b>: exactly as for short integers, apart
+        from the fact that it is represented as a sequence of 32 bits,
+        therefore its value can range between -2147483648 and 2147483647
+        decimal when signed or between 0 and 4294967295 when unsigned
+        (field identifier <b>INT/UINT</b>).
+      </li>
+      <li>
+        <b>signed/unsigned long integer</b>: exactly as short and integer, but
+        it is represented as a sequence of 64 bits (you do the maths).
+        (field identifier <b>LONG/ULONG</b>).
+      </li>
+    </ul>
+
+    <p>
+      <b>Variable-length packet payload fields:</b>
+    </p>
+
+    <ul>
+      <li>
+        <b>raw data</b>: a chunk of raw data is transferred following this
+        structure: a USHORT field representing the number of bytes that
+        will be transfered, or if this value is 65535 decimal (0xffff) the
+        "null" sequence of bytes, followed by a serie of bytes (zero or more).
+        (field identifier <b>RAW</b>).
+      </li>
+      <li>
+        <b>generic string</b>: a generic string follows the same structure
+        defined for RAW, but the byte sequence is a US-ASCII encoded
+        representation of a string, as outlined in the HTTP/1.1 specification
+        (<a href="http://www.rfc-editor.org/rfc/rfc2616.txt">RFC-2616</a>)
+        for everything but request and response bodies and header values
+        (field identifier <b>STRING</b>).
+      </li>
+      <li>
+        <b>mime string</b>: a mime string is exactly as a generic string,
+        but its byte-representation is supposed to be ISO-8859-1 encoded,
+        and must follow the rules defined by the HTTP/1.1 protocol
+        specification section 2.2 for TEXT (used by header values) referring
+        to <a href="http://www.rfc-editor.org/rfc/rfc2047.txt">RFC-2047</a>
+        (Message Header Extension for Non-ASCII Text). Thus (for example)
+        the string "I love Japan" with the word "Japan" translated in Japanese
+        and encoded in Shift_JIS would be represented as: <b>"I love 
+        =?Shift_JIS?q?=e6=97=a5=e6=9c=ac?="</b> (field identifier <b>MIME</b>).
+      </li>
+    </ul>
+
+    <p>
+      For semplicity's sake, this is how one of the three above mentioned
+      variable-length packet payload fields should be transfered (given that
+      the three characters F, o and X have the same value in ISO-8859-1 and
+      US-ASCII, and their hexadecimal value is respectively 0x46, 0x6f and
+      0x58):
+    </p>
+
+    <img src="images/string.gif"/>
+
+  </section>
 </document>
