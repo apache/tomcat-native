@@ -142,6 +142,7 @@ wa_boolean c_configure(wa_connection *conn) {
         }
         if (pack->type==TYPE_ERROR) {
             wa_log(WA_MARK,"Cannot deploy application %s",appl->name);
+            elem=elem->next;
             continue;
         }
         if (pack->type!=TYPE_CONF_APPLIC) {
