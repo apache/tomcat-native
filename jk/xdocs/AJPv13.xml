@@ -297,7 +297,7 @@ For messages from the server to the container of type "Forward Request":
 </p><p>
 <source>
 AJP13_FORWARD_REQUEST :=
-    prefix_code      2
+    prefix_code      (byte) 0x02 = JK_AJP13_FORWARD_REQUEST
     method           (byte)
     protocol         (string)
     req_uri          (string)
@@ -308,6 +308,55 @@ AJP13_FORWARD_REQUEST :=
     is_ssl           (boolean)
     num_headers      (integer)
     request_headers *(req_header_name req_header_value)
+    attributes      *(attribut_type attribute_value)
+</source>
+</p><p>
+The <code>request_headers</code> are:
+</p><p>
+<source>
+req_header_name := 
+    sc_req_header_name | (string)  [see below for how this is parsed]
+
+sc_req_header_name := 0xA0xx (integer)
+
+req_header_value := (string)
+</source>
+</p><p>
+
+The <code>request_headers</code> are <code>req_header_name</code>
+(string) or integer (0xAOxx) and <code>req_header_value</code>.
+Where xx are the followings:
+</p><p>
+<table>
+  <tr>
+    <td>Value</td>
+    <td>Name</td>
+    <td>Meaning</td>
+  </tr>
+  <tr>
+    <td>0x08</td>
+    <td>SC_REQ_CONTENT_LENGTH</td>
+    <td>content length</td>
+  </tr>
+  <tr>
+    <td>0x07</td>
+    <td>SC_REQ_CONTENT_TYPE</td>
+    <td>content type</td>
+  </tr>
+  <tr>
+    <td>0x05</td>
+    <td>SC_REQ_AUTHORIZATION</td>
+    <td>Authorization</td>
+  </tr>
+</table>
+</p><p>
+When <code>req_header_name</code> is a string <code>req_header_value</code>
+is a string.
+</p><p>
+The <code>attributs</code> are optional and have the following
+ structure:
+</p><p>
+<source>
 
     ?context       (byte string)
     ?servlet_path  (byte string)
@@ -321,13 +370,6 @@ AJP13_FORWARD_REQUEST :=
 
     ?attributes   *(attribute_name attribute_value)
     request_terminator (byte)
-
-req_header_name := 
-    sc_req_header_name | (string)  [see below for how this is parsed]
-
-sc_req_header_name := 0xA0 (byte)
-
-req_header_value := (string)
 
 attribute_name := (string)
 
