@@ -120,7 +120,7 @@ static int jk2_get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEn
         (*jniEnv)->GetStaticMethodID(jniEnv, p->jk_java_bridge_apri_class,
                                      "setOut", 
                                      "(Ljava/lang/String;)V");
-    if(!p->jk_main_method) {
+    if(!p->jk_setout_method) {
 	    env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find AprImpl.setOut(String)"); 
 	    return JK_ERR;
     }
@@ -129,7 +129,7 @@ static int jk2_get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEn
         (*jniEnv)->GetStaticMethodID(jniEnv, p->jk_java_bridge_apri_class,
                                      "setErr", 
                                      "(Ljava/lang/String;)V");
-    if(!p->jk_main_method) {
+    if(!p->jk_seterr_method) {
 	    env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find AprImpl.setErr(String)\n"); 
 	    return JK_ERR;
     }
@@ -318,21 +318,23 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
     }
     
     /* Set out and err stadard files */ 
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "jni.init() setting stdout=%s...\n",jniWorker->stdout_name);
-    (*jniEnv)->CallStaticVoidMethod(jniEnv,
-                                    jniWorker->jk_java_bridge_apri_class,
-                                    jniWorker->jk_setout_method,
-                                    stdout_name);
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "jni.init() setting stderr=%s...\n",jniWorker->stderr_name);
-    (*jniEnv)->CallStaticVoidMethod(jniEnv,
-                                    jniWorker->jk_java_bridge_apri_class,
-                                    jniWorker->jk_seterr_method,
-                                    stderr_name);
-
+    if (jniWorker->stdout_name && jniWorker->jk_setout_method) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.init() setting stdout=%s...\n",jniWorker->stdout_name);
+        (*jniEnv)->CallStaticVoidMethod(jniEnv,
+                                        jniWorker->jk_java_bridge_apri_class,
+                                        jniWorker->jk_setout_method,
+                                        stdout_name);
+    }
+    
+    if (jniWorker->stderr_name && jniWorker->jk_seterr_method) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.init() setting stderr=%s...\n",jniWorker->stderr_name);
+        (*jniEnv)->CallStaticVoidMethod(jniEnv,
+                                        jniWorker->jk_java_bridge_apri_class,
+                                        jniWorker->jk_seterr_method,
+                                        stderr_name);
+    }
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "jni.init() calling main()...\n");
     (*jniEnv)->CallStaticVoidMethod(jniEnv,
