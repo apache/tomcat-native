@@ -120,7 +120,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
     private ServerSocket serverSocket;
 
     ThreadPoolRunnable listener;
-    private boolean running = false;
+    private volatile boolean running = false;
     private boolean initialized = false;
     static final int debug=0;
 
@@ -338,40 +338,35 @@ public class PoolTcpEndpoint { // implements Endpoint {
     // -------------------- Private methods
 
     Socket acceptSocket() {
+        if( !running || serverSocket==null ) return null;
+
         Socket accepted = null;
 
     	try {
-    	    if (running) {
-		if(null!= serverSocket) {
-                     if(factory==null){
- 		        accepted = serverSocket.accept();
- 		    }
- 		    else {
- 		        accepted = factory.acceptSocket(serverSocket);
- 		    }
-		    if(!running) {
-			if(null != accepted) {
-			    accepted.close();  // rude, but unlikely!
-			    accepted = null;
-			}
-		    }
-		    if( factory != null && accepted != null)
-			factory.initSocket( accepted );
-    	        }
-    	    }
-    	}
-	catch(InterruptedIOException iioe) {
-    	    // normal part -- should happen regularly so
-    	    // that the endpoint can release if the server
-    	    // is shutdown.
-    	}
-	catch (IOException e) {
+            if(factory==null) {
+                accepted = serverSocket.accept();
+            } else {
+                accepted = factory.acceptSocket(serverSocket);
+            }
+            if(!running && (null != accepted)) {
+                    accepted.close();  // rude, but unlikely!
+                    accepted = null;
+            }
+            if( factory != null && accepted != null)
+                factory.initSocket( accepted );
+        }
+        catch(InterruptedIOException iioe) {
+            // normal part -- should happen regularly so
+            // that the endpoint can release if the server
+            // is shutdown.
+        }
+        catch (IOException e) {
 
-    	    if (running) {
+            if (running) {
 
-		String msg = sm.getString("endpoint.err.nonfatal",
-					  serverSocket, e);
-		log.error(msg, e);
+                String msg = sm.getString("endpoint.err.nonfatal",
+                        serverSocket, e);
+                log.error(msg, e);
 
                 if (accepted != null) {
                     try {
@@ -379,7 +374,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
                         accepted = null;
                     } catch(Exception ex) {
                         msg = sm.getString("endpoint.err.nonfatal",
-                                           accepted, ex);
+                                accepted, ex);
                         log.warn(msg, ex);
                     }
                 }
@@ -389,7 +384,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
                         serverSocket.close();
                     } catch(Exception ex) {
                         msg = sm.getString("endpoint.err.nonfatal",
-                                           serverSocket, ex);
+                                serverSocket, ex);
                         log.warn(msg, ex);
                     }
                     serverSocket = null;
@@ -397,14 +392,14 @@ public class PoolTcpEndpoint { // implements Endpoint {
                         if (inet == null) {
                             serverSocket = factory.createSocket(port, backlog);
                         } else {
-                            serverSocket = 
-                                factory.createSocket(port, backlog, inet);
+                            serverSocket =
+                                    factory.createSocket(port, backlog, inet);
                         }
                         if (serverTimeout >= 0)
                             serverSocket.setSoTimeout(serverTimeout);
                     } catch (Throwable t) {
-                        msg = sm.getString("endpoint.err.fatal", 
-                                           serverSocket, t);
+                        msg = sm.getString("endpoint.err.fatal",
+                                serverSocket, t);
                         log.error(msg, t);
                         stopEndpoint();
                     }
@@ -412,9 +407,9 @@ public class PoolTcpEndpoint { // implements Endpoint {
 
             }
 
-    	}
-	
-    	return accepted;
+        }
+
+        return accepted;
     }
 
     /** @deprecated
