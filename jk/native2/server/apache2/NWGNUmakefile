@@ -329,13 +329,7 @@ install :: nlms FORCE
 # Any specialized rules here
 #
 
-$(OBJDIR)/%.o: $(JKCOMMON)/%.c $(OBJDIR)\cc.opt
-	@echo Compiling $<
-	$(CC) $(JKCOMMON)/$(<F) -o=$(OBJDIR)\$(@F) @$(OBJDIR)\cc.opt
-
-$(OBJDIR)/%.o: $(JKJNI)/%.c $(OBJDIR)\cc.opt
-	@echo Compiling $<
-	$(CC) $(JKJNI)/$(<F) -o=$(OBJDIR)\$(@F) @$(OBJDIR)\cc.opt
+vpath %.c $(JKCOMMON);$(JKJNI)
 
 $(OBJDIR)/version.inc: $(JKINCLUDE)/jk_global.h $(OBJDIR)
 	@echo Creating $@
