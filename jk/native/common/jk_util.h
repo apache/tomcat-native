@@ -137,8 +137,6 @@ char **jk_parse_sysprops(jk_pool_t *p, const char *sysprops);
 
 void jk_append_libpath(jk_pool_t *p, const char *libpath);
 
-void jk_init_ws_service(jk_ws_service_t *s);
-
 void jk_set_worker_def_cache_size(int sz);
 
 int jk_get_worker_def_cache_size(int protocol);

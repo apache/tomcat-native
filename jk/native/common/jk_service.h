@@ -27,10 +27,10 @@
 #ifndef JK_SERVICE_H
 #define JK_SERVICE_H
 
-#include "jk_map.h"
 #include "jk_global.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
+#include "jk_map.h"
 #include "jk_uri_worker_map.h"
 #include "jk_msg_buff.h"
 
@@ -429,6 +429,9 @@ struct jk_worker
 typedef int (JK_METHOD * worker_factory) (jk_worker_t **w,
                                           const char *name,
                                           jk_logger_t *l);
+
+void jk_init_ws_service(jk_ws_service_t *s);
+
 
 #ifdef __cplusplus
 }
