@@ -100,7 +100,8 @@
       <linkOpt value="-stacksize 64000" if="netware" />
       
       <def name="WIN32" if="win32" />
-      <def name="NDEBUG" if="win32"  />
+      <def name="DEBUG" if="win32.debug"  />
+      <def name="NDEBUG" if="win32.release"  />
       <def name="_WINDOWS" if="win32" />
       <def name="_MBCS" if="win32" />
       <def name="_USRDLL" if="win32" />
@@ -135,16 +136,34 @@
 	<include name="apache-2.0/mod_jk.c" />
 	<include name="common/**/*.c" />
         <exclude name="common/ajp12/*.c" unless="use.ajp12" />
+        <exclude name="common/jk_nwmain.c" unless="netware" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
 	<include name="${apache2.include}" />
 	<include name="${java.home}/../include" />
+	<include name="${java.home}/../include/win32" if="win32" />
       </includes>
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
       </depends>
+
+      <!-- Platform-specific tags -->
+      <def name="WIN32" if="win32" />
+      <def name="DEBUG" if="win32.debug"  />
+      <def name="NDEBUG" if="win32.release"  />
+      <def name="_WINDOWS" if="win32" />
+      <def name="_MBCS" if="win32" />
+      <def name="_USRDLL" if="win32" />
+
+      <import fileName="libapr.lib" if="win32" />
+      <import fileName="libaprutil.lib" if="win32" />
+      <import fileName="libhttpd.lib" if="win32" />
+      <import fileName="wsock32.lib" if="win32" />
+      <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
+      <linkOpt value="/libpath:&quot;${apache2.home}/lib&quot;" if="win32" />
     </so>
+
   </target>
   
 
@@ -160,8 +179,7 @@
       <src dir=".">
 	<include name="apache-1.3/mod_jk.c" />
 	<include name="common/*.c" />
-        <exclude name="jk_nwmain.c" 
-		 unless="netware" />
+        <exclude name="common/jk_nwmain.c" unless="netware" />
         <include name="common/apr/*.c" unless="HAVE_APR" />
       </src>
       <includes>
@@ -196,7 +214,8 @@
 	   info="Use the sprintf function to build strings" />
            
       <def name="WIN32" if="win32" />
-      <def name="NDEBUG" if="win32"  />
+      <def name="DEBUG" if="win32.debug"  />
+      <def name="NDEBUG" if="win32.release"  />
       <def name="_WINDOWS" if="win32" />
       <def name="_MBCS" if="win32" />
       <def name="_USRDLL" if="win32" />
@@ -219,11 +238,6 @@
       
       <import fileName="ApacheCore.lib" if="win32" />
       <import fileName="wsock32.lib" if="win32" />
-      <import fileName="kernel32.lib" if="win32" />
-      <import fileName="user32.lib" if="win32" />
-      <import fileName="gdi32.lib" if="win32" />
-      <import fileName="winspool.lib" if="win32" />
-      <import fileName="comdlg32.lib" if="win32" />
       <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apache13.home}/CoreR&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apache13.home}/Release&quot;" if="win32" />
@@ -231,8 +245,9 @@
   </target>
 
   <target name="iis" depends="init">
+    <mkdir dir="iis/obj" />
     <so sofile="isapi_redirector" 
-        buildDir="iis"
+        buildDir="iis/obj"
         optimize="${so.optimize}"
         debug="${so.debug}"
         profile="${so.profile}">
@@ -240,8 +255,7 @@
       <src dir=".">
         <include name="iis/jk_isapi_plugin.c" />
         <include name="common/*.c" />
-        <exclude name="jk_nwmain.c" 
-                 unless="netware" />
+        <exclude name="common/jk_nwmain.c" unless="netware" />
         <include name="common/apr/*.c" unless="HAVE_APR" />
       </src>
       <includes>
@@ -256,7 +270,8 @@
         
       <!-- Platform-specific tags -->
       <def name="WIN32" />
-      <def name="NDEBUG" />
+      <def name="DEBUG" if="win32.debug"  />
+      <def name="NDEBUG" if="win32.release"  />
       <def name="_WINDOWS"  />
       <def name="_MBCS" />
       <def name="_USRDLL" />
@@ -269,7 +284,7 @@
       <export symbol="HttpExtensionProc"/>
       <export symbol="TerminateFilter"/>
       <export symbol="TerminateExtension"/>
-      <linkOpt value="/libpath:${build.compiler.base}/lib" if="win32" />
+      <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
     </so>
   </target>
 
@@ -284,8 +299,7 @@
       <src dir=".">
 	<include name="netscape/jk_nsapi_plugin.c" />
 	<include name="common/*.c" />
-        <exclude name="jk_nwmain.c" 
-		 unless="netware" />
+        <exclude name="common/jk_nwmain.c" unless="netware" />
         <include name="common/apr/*.c" unless="HAVE_APR" />
       </src>
       <includes>
@@ -321,7 +335,8 @@
 	   info="Use the sprintf function to build strings" />
            
       <def name="WIN32" if="win32" />
-      <def name="NDEBUG" if="win32"  />
+      <def name="DEBUG" if="win32.debug"  />
+      <def name="NDEBUG" if="win32.release"  />
       <def name="_WINDOWS" if="win32" />
       <def name="_MBCS" if="win32" />
       <def name="_USRDLL" if="win32" />
@@ -348,11 +363,6 @@
       
       <import fileName="ns-httpd36.lib" if="win32" />
       <import fileName="wsock32.lib" if="win32" />
-      <import fileName="kernel32.lib" if="win32" />
-      <import fileName="user32.lib" if="win32" />
-      <import fileName="gdi32.lib" if="win32" />
-      <import fileName="winspool.lib" if="win32" />
-      <import fileName="comdlg32.lib" if="win32" />
       <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${netscape.home}/lib&quot;" if="win32" />
     </so>
@@ -373,6 +383,8 @@
 	<include name="**/*.NCV"/>
 	<include name="**/*.obj"/>
 	<include name="**/*.dll"/>
+        <include name="**/*.pdb"/>
+        <include name="**/obj/*.exp"/>
       </fileset>
     </delete>
   </target>
