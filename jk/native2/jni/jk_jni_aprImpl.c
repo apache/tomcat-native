@@ -97,7 +97,8 @@
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 {
-/*     apr_initialize(); */
+    /*     fprintf(stderr, "XXX AprInitialize\n"); */
+    apr_initialize(); 
     return 0;
 }
 
