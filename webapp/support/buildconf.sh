@@ -80,16 +80,16 @@ VERSION=`autoconf --version 2> /dev/null | \
 
 if test -z "${VERSION}"; then
     echo "autoconf not found."
-    echo "autoconf version 2.13 or newer required to build from CVS."
+    echo "autoconf version 2.52 or newer required to build from CVS."
     exit 1
 fi
 
 IFS=.
 set $VERSION
 IFS=' '
-if test "$1" = "2" -a "$2" -lt "13" || test "$1" -lt "2"; then
+if test "$1" = "2" -a "$2" -lt "52" || test "$1" -lt "2"; then
     echo "autoconf version $VERSION found."
-    echo "autoconf version 2.13 or newer required to build from CVS."
+    echo "autoconf version 2.52 or newer required to build from CVS."
     exit 1
 fi
 
