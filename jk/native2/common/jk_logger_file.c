@@ -111,7 +111,7 @@ static int JK_METHOD jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,
     if( f==NULL ) {
         /* This is usefull to debug what happens before logger is set.
            On apache you need -X option ( no detach, single process ) */
-        fprintf(stderr, "JK_LOG: %s", what );
+        if( what != NULL ) fprintf(stderr, what );
         return JK_OK;
     }
     if(l && l->level <= level && l->logger_private && what) {       
@@ -261,9 +261,9 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
             f++;
         }
         
-        /* XXX or apr_ctime ? */
-        apr_rfc822_date( rfctime, time );
-        fmt1=apr_psprintf( aprPool, "[%s] (%5s) [%s (%d)]  %s", rfctime, slevel, f, line, fmt );
+        /* XXX rfc822_date or apr_ctime ? */
+        apr_ctime( rfctime, time );
+        fmt1=apr_psprintf( aprPool, "[%s] (%5s ) [%s (%d)]  %s", rfctime, slevel, f, line, fmt );
         buf=apr_pvsprintf( aprPool, fmt1, args );
 
         l->log(env, l, level, buf);

@@ -63,7 +63,7 @@
 #endif
 
 jk_env_t *jk_env_globalEnv;
-void *jkGlobalAprPool;
+void *jkGlobalAprPool=NULL;
 
 /* Private methods 
 */
@@ -82,7 +82,7 @@ static void * JK_METHOD jk2_env_getAprPool( jk_env_t *env ) {
      */
     if( jkGlobalAprPool==NULL ) {
         int rc;
-        
+
         rc = apr_pool_create(( apr_pool_t **)&jkGlobalAprPool, NULL);
         if (rc != APR_SUCCESS || jkGlobalAprPool==NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
@@ -96,7 +96,7 @@ static void * JK_METHOD jk2_env_getAprPool( jk_env_t *env ) {
 #endif
 }
 
-static void JK_METHOD jk2_env_setAprPool( jk_env_t *env, void *aprPool ) {
+void JK_METHOD jk2_env_setAprPool( jk_env_t *env, void *aprPool ) {
     jkGlobalAprPool=aprPool;
 }
 

@@ -98,18 +98,21 @@ jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t  *mutexB)
 static int JK_METHOD 
 jk2_mutex_thread_lock(jk_env_t *env, jk_mutex_t  *jkMutex)
 {
+    if( jkMutex==NULL || jkMutex->threadMutex==NULL ) return JK_ERR;
     return apr_thread_mutex_lock( jkMutex->threadMutex );
 }
 
 static int JK_METHOD 
 jk2_mutex_thread_tryLock(jk_env_t *env, jk_mutex_t  *jkMutex)
 {
+    if( jkMutex==NULL || jkMutex->threadMutex==NULL ) return JK_ERR;
     return apr_thread_mutex_trylock( jkMutex->threadMutex );
 }
 
 static int JK_METHOD 
 jk2_mutex_thread_unLock(jk_env_t *env, jk_mutex_t  *jkMutex)
 {
+    if( jkMutex==NULL || jkMutex->threadMutex==NULL ) return JK_ERR;
     return apr_thread_mutex_unlock( jkMutex->threadMutex );
 }
 

@@ -113,6 +113,7 @@ static int jniDebug=0;
 #define JK_DIRECT_BUFFER_NIO 3
 
 static int arrayAccessMethod=JK_GET_REGION;
+void JK_METHOD jk2_env_setAprPool( jk_env_t *env, void *aprPool );
 
 JNIEXPORT void JNICALL 
 Java_org_apache_jk_apr_AprImpl_setArrayAccessMode(JNIEnv *jniEnv, jobject _jthis, jint mode)
@@ -137,10 +138,12 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
         if( jniAprPool==NULL ) {
             return JK_ERR;
         }
+
+        jk2_env_setAprPool( NULL, jniAprPool );
+        
         jk2_pool_apr_create( NULL, &globalPool, NULL, jniAprPool );
         /* Create the global env */
         env=jk2_env_getEnv( NULL, globalPool );
-        env->setAprPool(env, globalPool);
     }
     
     env=jk_env_globalEnv;
@@ -168,6 +171,7 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
         }
 
         workerEnv=jkb->object;
+
         
         workerEnv->init( env, workerEnv );
     }
