@@ -51,6 +51,7 @@
 #include "apr_date.h"
 #include "apr_strmatch.h"
 #include "apr_fnmatch.h"
+#include "apr_reslist.h"
 #define APR_WANT_STRFUNC
 #include "apr_want.h"
 
@@ -96,6 +97,16 @@ struct proxy_remote {
     apr_port_t  port;		/* the port for this proxy */
     regex_t *regexp;		/* compiled regex (if any) for the remote */
     int use_regex;		/* simple boolean. True if we have a regex pattern */
+
+    const char *name;       /* name of the remote.
+                             * used for grouping remotes in loadbalancer.
+                             */
+    const char *sticky;     /* sticky session identifier */
+    int         sticky_force; /* Disable failover for sticky sessions */
+    int         lbfactor;   /* load balancing factor */
+    int         mmin;  /* Desired minimum number of available connections */
+    int         smax;  /* Soft maximum on the total number of connections */
+    int         hmax;  /* Hard maximum on the total number of connections */
 };
 
 struct proxy_alias {
@@ -188,6 +199,24 @@ typedef struct {
         int content_length; /* length of the content */
 } proxy_completion;
 
+/* Connection to the backend server */
+typedef struct {
+    apr_pool_t   *pool; /* Subpool used for creating socket */
+    apr_socket_t *sock;
+    int          close;
+} proxy_conn;
+
+/* Connection pool */
+typedef struct {
+    apr_pool_t     *pool;   /* The pool used in constructor and destructor calls */
+    struct proxy_remote *remote; /* Informations about remote backend */
+    apr_sockaddr_t *addr;   /* Preparsed remote address info */
+#if APR_HAS_THREADS
+    apr_reslist_t  *res;    /* Connection resource list */
+#else
+    proxy_conn     *con;    /* Single connection for prefork mpm's */
+#endif
+} proxy_conn_pool;
 
 /* hooks */
 
@@ -254,6 +283,9 @@ PROXY_DECLARE(void) ap_proxy_table_unmerge(apr_pool_t *p, apr_table_t *t, char *
 PROXY_DECLARE(int) ap_proxy_connect_to_backend(apr_socket_t **, const char *, apr_sockaddr_t *, const char *, proxy_server_conf *, server_rec *, apr_pool_t *);
 PROXY_DECLARE(int) ap_proxy_ssl_enable(conn_rec *c);
 PROXY_DECLARE(int) ap_proxy_ssl_disable(conn_rec *c);
+
+/* Connection pool API */
+
 
 /* For proxy_util */
 extern module PROXY_DECLARE_DATA proxy_module;
