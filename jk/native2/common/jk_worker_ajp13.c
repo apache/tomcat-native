@@ -561,6 +561,7 @@ jk2_worker_ajp13_getEndpoint(jk_env_t *env,
 {
     jk_endpoint_t *e = NULL;
     jk_bean_t *jkb;
+    int ret;
     
     if( ajp13->secret ==NULL ) {
     }
@@ -596,17 +597,23 @@ jk2_worker_ajp13_getEndpoint(jk_env_t *env,
                                  
         *eP = e;
 
-        ajp13->workerEnv->addEndpoint( env, ajp13->workerEnv, e );
+        ret = ajp13->workerEnv->addEndpoint( env, ajp13->workerEnv, e );
     }
     if( ajp13->cs != NULL ) 
         ajp13->cs->unLock( env, ajp13->cs );
         
-    if( ajp13->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+    if( ajp13->mbean->debug > 0 ) {
+        if (ret==JK_OK)
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "ajp13.getEndpoint(): Created endpoint %s %s \n",
                       ajp13->mbean->name, jkb->name);
+        else
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "ajp13.getEndpoint(): endpoint creation %s %s failed\n",
+                      ajp13->mbean->name, jkb->name);
+    }
     
-    return JK_OK;
+    return ret;
 }
 
 /*
@@ -620,7 +627,9 @@ jk2_worker_ajp13_service(jk_env_t *env, jk_worker_t *w,
     jk_endpoint_t   *e;
 
     /* Get endpoint from the pool */
-    jk2_worker_ajp13_getEndpoint( env, w, &e );
+    err=jk2_worker_ajp13_getEndpoint( env, w, &e );
+    if  (err!=JK_OK)
+      return err;
 
 #ifdef HAS_APR
     if( s->uriEnv!=NULL && s->uriEnv->timing == JK_TRUE ) {

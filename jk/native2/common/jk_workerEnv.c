@@ -580,7 +580,8 @@ static int jk2_workerEnv_addEndpoint(jk_env_t *env, jk_workerEnv_t *wEnv, jk_end
     wEnv->endpointMap->add( env, wEnv->endpointMap, ep->mbean->localName, ep );
     ep->mbean->id=pos;
     
-    ep->mbean->init( env, ep->mbean );
+    if (ep->mbean->init( env, ep->mbean )==JK_ERR)
+        return JK_ERR;
 
     return JK_OK;
 }

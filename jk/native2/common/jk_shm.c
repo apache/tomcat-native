@@ -447,16 +447,18 @@ jk_shm_slot_t * JK_METHOD jk2_shm_createSlot(struct jk_env *env, struct jk_shm *
     int slotId;
     int i;
     jk_shm_slot_t *slot;
-    
-    for( i=1; i<shm->head->lastSlot; i++ ) {
-        slot= shm->getSlot( env, shm, i );
-        if( strncmp( slot->name, name, strlen(name) ) == 0 ) {
-            return slot;
+   
+    if (shm->head!=NULL) { 
+        for( i=1; i<shm->head->lastSlot; i++ ) {
+            slot= shm->getSlot( env, shm, i );
+            if( strncmp( slot->name, name, strlen(name) ) == 0 ) {
+                return slot;
+            }
         }
+        /* New slot */
+        /* XXX interprocess sync */
+        slotId=shm->head->lastSlot++;
     }
-    /* New slot */
-    /* XXX interprocess sync */
-    slotId=shm->head->lastSlot++;
     slot=shm->getSlot( env, shm, slotId );
 
     if( slot==NULL ) return NULL;
