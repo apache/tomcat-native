@@ -564,10 +564,10 @@ document space for a VirtualHost:
 <note># Static files in the examples webapp are served by apache</note>
 <read>Alias /examples /vat/tomcat3/webapps/examples</read>
 <note># The following line prohibits users from directly access WEB-INF</note>
-<read>&lt;Location "/examples/WEB-INF/"&gt;></read>
+<read>&lt;Location "/examples/WEB-INF/"&gt;</read>
 <read>AllowOverride None</read>
 <read>deny from all</read>
-<read>&lt;Location&gt;></read>
+<read>&lt;Location&gt;</read>
 <note># All JSP will goes to worker1</note>
 <read>JkMount /*.jsp worker1</read>
 <note># All servlets goes to worker1</note>
