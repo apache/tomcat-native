@@ -219,7 +219,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "uriMap.addMapping() suffix mapping %s.%s=%s was added\n",
-                              uri, asterisk + 3, uriEnv->worker);
+                              uri, asterisk + 3, uriEnv->workerName);
             }
         } else if ('\0' != asterisk[2]) {
             /* general suffix rule /foo/bar/STARextraData */
@@ -231,7 +231,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                          "uriMap.addMapping() general suffix mapping %s.%s=%s\n",
-                              uri, asterisk + 2, uriEnv->worker);
+                              uri, asterisk + 2, uriEnv->workerName);
             }
         } else {
             /* context based /foo/bar/STAR  */
@@ -243,7 +243,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                               "uriMap.addMapping() prefix mapping %s=%s\n",
-                              uri, uriEnv->worker);
+                              uri, uriEnv->workerName);
             }
         }
     } else {
@@ -256,7 +256,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         if( uriEnv->debug > 0 ) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                      "uriMap.addMapping() prefix mapping2 %s=%s\n",
-                          uri, uriEnv->worker);
+                          uri, uriEnv->workerName);
         }
     }
 
