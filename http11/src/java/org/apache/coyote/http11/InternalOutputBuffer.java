@@ -407,7 +407,11 @@ public class InternalOutputBuffer implements OutputBuffer {
         write(" ");
 
         // Write message
-        write(HttpMessages.getMessage(status));
+        if (response.getMessage() == null) {
+            write(HttpMessages.getMessage(status));
+        } else {
+            write(response.getMessage());
+        }
 
         // End the response status line
         write(Constants.CRLF);
