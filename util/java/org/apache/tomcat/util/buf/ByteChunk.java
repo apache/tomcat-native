@@ -208,12 +208,13 @@ public final class ByteChunk implements Cloneable, Serializable {
     public int getStart() {
 	return start;
     }
-    
+
     public int getOffset() {
 	return getStart();
     }
 
     public void setOffset(int off) {
+        if (end < off ) end=off;
 	start=off;
     }
 
@@ -263,7 +264,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     {
 	append( (byte)c);
     }
-    
+
     public void append( byte b )
 	throws IOException
     {
@@ -275,13 +276,13 @@ public final class ByteChunk implements Cloneable, Serializable {
 	}
 	buff[end++]=b;
     }
-    
+
     public void append( ByteChunk src )
 	throws IOException
     {
-	append( src.getBytes(), src.getOffset(), src.getLength());
+	append( src.getBytes(), src.getStart(), src.getLength());
     }
-    
+
     /** Add data to the buffer
      */
     public void append( byte src[], int off, int len )
@@ -297,7 +298,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	    end+=len;
 	    return;
 	}
-	
+
 	// if we have limit and we're below
 	if( len <= limit - end ) {
 	    // makeSpace will grow the buffer to the limit,
@@ -311,7 +312,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	// buffer
 
 	// the buffer is already at ( or bigger than ) limit
-	
+
 	// Optimization:
 	// If len-avail < length ( i.e. after we fill the buffer with
 	// what we can, the remaining will fit in the buffer ) we'll just
@@ -327,12 +328,12 @@ public final class ByteChunk implements Cloneable, Serializable {
 	    int avail=limit-end;
 	    System.arraycopy(src, off, buff, end, avail);
 	    end += avail;
-	    
+
 	    flushBuffer();
-	    
+
 	    System.arraycopy(src, off+avail, buff, end, len - avail);
 	    end+= len - avail;
-	    
+
 	} else {	// len > buf.length + avail
 	    // long write - flush the buffer and write the rest
 	    // directly from source
@@ -478,7 +479,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     public boolean equals( ByteChunk bb ) {
-	return equals( bb.getBytes(), bb.getOffset(), bb.getLength());
+	return equals( bb.getBytes(), bb.getStart(), bb.getLength());
     }
     
     public boolean equals( byte b2[], int off2, int len2) {
@@ -500,7 +501,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     public boolean equals( CharChunk cc ) {
-	return equals( cc.getChars(), cc.getOffset(), cc.getLength());
+	return equals( cc.getChars(), cc.getStart(), cc.getLength());
     }
     
     public boolean equals( char c2[], int off2, int len2) {
