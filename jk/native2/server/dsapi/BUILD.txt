@@ -1,94 +1,108 @@
-$Id$
+Information on building mod_jk2:
 
-Building the Domino Redirector
-------------------------------
+  Starting with 2.0.4, APR is mandatory for jk2. For Apache 2.0
+  or greater jk2 will use APR that was used to build Apache 2.0.
+  For Apache 1.3, jk2 must build APR and APR_UTIL from source. 
 
-This release currently only builds on Windows using MSVC 6.0. As soon as
-I can I'll test it on Linux and produce a Makefile and I also hope to
-get it to build under CygWin.
+DSO build instructions for Unix-like systems:
 
-Prerequisites
--------------
+  The compiler used to build jk2 must match the one used to build
+  Apache. You may need to set an environment variable before 
+  configuring such as CC=cc. `apxs -q CC` will tell you what 
+  compiler was used for Apache.
 
-You need to be able to build the jk2 code which requires both APR and
-PCRE. You can get a suitable Win32 build of APR from here:
+  The most straightforward way to configure jk2 is to use apxs 
+  that comes with Apache. Linux distributions may need to have 
+  additional rpm's installed such as Apache2 devel rpm, 
+  httpd-devel or apache2-devel or for Apache 13, Apache devel 
+  rpm, httpd-devel or apache-devel depending on your 
+  distribution.
 
-  http://apr.apache.org/
-  
-and a Win32 version of PCRE can be found here:
+  Example Apache2 build and install:
 
-  http://gnuwin32.sourceforge.net/packages/pcre.htm
-  
-To avoid messing around with the paths in the MSVC project place the APR
-and PCRE directories in the same parent directory as jakarta-tomcat-
-connectors. Here's what I have
+    cd jakarta-tomcat-connectors/jk/native2
+    ./configure --with-apxs2=/your/path/to/apxs
+    make
+    cd ../build/jk2/apache2
+    apxs -n jk2 -i mod_jk2.so
 
-tomcat\
-    apr\
-    apr-iconv\
-    apr-util\
-    jakarta-tomcat-connectors\
-    pcre\
+  Example Apache13 build and install:
 
-By default the project also depends on the Lotus Notes C API which can
-be downloaded here:
+    apr and apr-util will be configured and built for you while
+    configuring and building jk2. There is no need to separately
+    configure and build them. 
 
-  http://www-10.lotus.com/ldd/toolkits
-  
-If you're using the C API set the environment variable NOTESAPI to the
-directory where you've installed it. You can reconfigure the project not
-to depend on the API. To do that remove references to NOTESAPI from the
-compiler and linker settings and add the preprocessor directive NO_CAPI.
-The only current implication of doing this is that messages from the
-redirector will be displayed using printf() rather than Notes API for
-displaying messages on the server console.
+      cd jakarta-tomcat-connectors/jk/native2
+      ./configure --with-apxs=/your/path/to/apxs \
+                  --with-apr=/absolute/path/to/apr-source \
+                  --with-apr-util=/absolute/path/to/apr-util-source
+      make
+      cd ../build/jk2/apache13
+      apxs -n jk2 -i mod_jk2.so
 
-You'll also need to have a suitable (for jk2) JVM installed and
-JAVA_HOME properly set.
+    NOTE: pthread support may be automatically detected and built
+    into apr. If apache13 was not built with pthread support, you
+    can either disable it by adding --disable-apr-threads while
+    configuring, or load the pthread library in httpd.conf using
+    the LoadFile directive.
 
-Finally there's a header file which we can't currently redistribute with
-the redirector although I'm trying to get IBM to clear it for release.
-It's the header that describes the DSAPI interface. For now you should
-get a copy of the header here:
+  Optional configure arguments (for 1.3 and 2.0):
 
-  http://www-12.lotus.com/ldd/doc/domino_notes/5.0/readme.nsf/0/
-   528b461a3cdc2a798525677400499305?OpenDocument
+    If you want to have JNI support, add --with-jni and be sure
+    to have the JAVA_HOME environment variable point to your Java
+    Environment. This will build inprocess jni support into
+    mod_jk2.so and additionally build libjkjni.so. libjkjni.so
+    can be used by tomcat to provide support for channel unix and
+    should be installed in the apache libexec dir. Use 
+    `apxs -q LIBEXECDIR` if you are unsure of its location. 
+    Libjkjni.so will be located in the same directory as 
+    mod_jk2.so after building with this option.
 
-and save it as dsapifilter.h in the dsapi directory (join the two parts
-of the above URL back together).
+    If you want to have PCRE (Perl Compatible Regular
+    Expressions) support for jk2 uri directives, add --with-pcre
+    while configuring.
 
-Once you've done all that you should be able to fire up MSVC, open the
-dsapi.dsw and build it. You'll most likely want to build the
-configuration 'Release Static' which will build a standalone
-dsapi_redirector2.dll.
 
-Mailing Lists
--------------
+Quick information on building mod_jk2 :
 
-There are two mailing lists dedicated to the Domino Tomcat redirector:
+* IIS 
 
-domino-tomcat-l:
- http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-l
+There is a known issue with the latest APR 1.0 and MSVC6.
+If you want to use MSVC6, please use APR 0.9.x for now.
+MSVC7 doesn't have this issue, and could be used with APR 1.0.
 
-domino-tomcat-l is a general discussion list for issues with the
-redirector and also wider Tomcat/Domino integration issues such as
-calling the Domino Java API from a Tomcat servlet. I expect it to be
-fairly low volume so please subscribe if you're actively using the
-redirector. If you have an issue with the redirector please post it to
-the list where it will be seen not only by me but by other users who may
-be able to help with any problems.
+Isapi redirector requires the following libraries to build:
+apr, apr-util, apr-iconv and pcre.
+The easiest way to obtain all those libraries is to download
+the httpd-2.0.49-win32-src.zip from http://www.apache.org/dist/httpd or
+from any of the mirror sites.
+You will only need the srclib part (apr, apr-util, apr-iconv and pcre)
+Unzip the entire srclib folder to j-t-c native2 folder.
+Now open the isapi.dsw from MSVC6 and build.
 
-domino-tomcat-announce-l:
- http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-announce-l:
+Building using VS.NET:
+Make sure that the required libraries are inside native2/srclib.
+Open the idapi.dsw and select 'Yes to all' when prompted to convert the project.
+During conversion the custom build adds extra quotations for
+jk_logger_win32_message.mc. Right click on that file and select Properties.
+For Custom Build Step remove all the quotations around ${InputDir}
+and ${InputPath}.
 
-domino-tomcat-announce-l is for announcements about the Domino Tomcat
-redirector. Mainly this list will be used for new releases but serious
-bugs will also be posted to it. This list will be very low volume; only
-I can post to it. I wouldn't expect more than a few posts per month. For
-this reason if you'd like to keep track of new redirector versions
-please subscribe to this list. From now on this list will be the main
-place to find out about new versions.
 
-Please let me know if you have any problems.
 
-Andy Armstrong, <andy@tagish.com>
+* Netware
+
+Buid the JK2 connector for NetWare platform.
+
+The current NWNGUmakefile uses the same build system as Apache2 self for NetWare target.
+Simply extract the downloaded archive, and follow the guideline which describes compilation of Apache2 self. 
+
+After you have compiled Apache2 (this is mandatory for now since the prebuild process must have finished) 
+you can simply call the makefile with 'make -f NWGNUmakefile', this builds the connector for Apache2 in a 
+release or debug subdirectory, dependent if you specify to build a debug version or not.
+
+It is recommended to use Metrowerks CodeWarrior compiler for now; although the connector builds with GCC 
+for NetWare, it is not tested yet if it works - there are known issues with a bitfied and alignment which 
+have to be solved.
+
+
