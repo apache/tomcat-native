@@ -1956,8 +1956,10 @@ public class CoyoteRequest
                 } else {
                     formData = new byte[len];
                 }
-                readPostBody(formData, len);
-                parameters.processParameters(formData, 0, len);
+                int actualLen = readPostBody(formData, len);
+                if (actualLen == len) {
+                    parameters.processParameters(formData, 0, len);
+                }
             } catch (Throwable t) {
                 ; // Ignore
             }
