@@ -138,7 +138,7 @@ static void jk2_worker_status_displayRuntimeWorkers(jk_env_t *env, jk_ws_service
         s->jkprintf(env, s, "</tr><tr><td>%s</td>\n", mbean->localName);
         for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
             char *pname=mbean->getAttributeInfo[j];
-            
+
             s->jkprintf(env, s, "<td>%s</td>",
                         mbean->getAttribute( env, mbean, pname));
         }

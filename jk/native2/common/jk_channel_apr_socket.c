@@ -444,8 +444,15 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
     while(sent < len) {
         this_time = send(unixsock, (char *)b + sent , len - sent,  0);
             
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channel.apr:send() send() %d %d\n", this_time, errno);
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel.apr:send() send() %d %d %s\n", this_time, errno,
+                      strerror( errno));
+        if( errno != 0 ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "channel.apr:send() send() %d %d %s\n", this_time, errno,
+                          strerror( errno));
+            return -2;
+        }
         if(0 == this_time) {
             return -2;
         }

@@ -361,6 +361,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
             rec->in_recovering  = JK_FALSE;
             rec->retry_count    = 0;
             rec->error_time     = 0;
+            rc->errCnt++;
             /* the endpoint that succeeded is saved for done() */
             s->realWorker = rec;
             return JK_OK;
