@@ -85,63 +85,63 @@ class PureTLSSupport implements SSLSupport {
     private SSLSocket ssl;
 
     PureTLSSupport(SSLSocket sock){
-	ssl=sock;
+        ssl=sock;
     }
 
     public String getCipherSuite() throws IOException {
-	int cs=ssl.getCipherSuite();
-	return SSLPolicyInt.getCipherSuiteName(cs);
+        int cs=ssl.getCipherSuite();
+        return SSLPolicyInt.getCipherSuiteName(cs);
     }
 
     public Object[] getPeerCertificateChain()
-	throws IOException
+        throws IOException
     {
-	Vector v=ssl.getCertificateChain();
+        Vector v=ssl.getCertificateChain();
 
-	if(v==null)
-	    return null;
-	
-	java.security.cert.X509Certificate[] chain=
+        if(v==null)
+            return null;
+        
+        java.security.cert.X509Certificate[] chain=
             new java.security.cert.X509Certificate[v.size()];
 
-	try {
-	  for(int i=1;i<=v.size();i++){
-	    // PureTLS provides cert chains with the peer
-	    // cert last but the Servlet 2.3 spec (S 4.7) requires
-	    // the opposite order so we reverse the chain as we go
-	    byte buffer[]=((X509Cert)v.elementAt(
-		 v.size()-i)).getDER();
-	    
-	    CertificateFactory cf =
-	      CertificateFactory.getInstance("X.509");
-	    ByteArrayInputStream stream =
-	      new ByteArrayInputStream(buffer);
-	    
-	    chain[i]=(java.security.cert.X509Certificate)
-	      cf.generateCertificate(stream);
-	  }
-	} catch (java.security.cert.CertificateException e) {
-	    throw new IOException("JDK's broken cert handling can't parse this certificate (which PureTLS likes");
-	}
-	return chain;
+        try {
+          for(int i=1;i<=v.size();i++){
+            // PureTLS provides cert chains with the peer
+            // cert last but the Servlet 2.3 spec (S 4.7) requires
+            // the opposite order so we reverse the chain as we go
+            byte buffer[]=((X509Cert)v.elementAt(
+                 v.size()-i)).getDER();
+            
+            CertificateFactory cf =
+              CertificateFactory.getInstance("X.509");
+            ByteArrayInputStream stream =
+              new ByteArrayInputStream(buffer);
+            
+            chain[i]=(java.security.cert.X509Certificate)
+              cf.generateCertificate(stream);
+          }
+        } catch (java.security.cert.CertificateException e) {
+            throw new IOException("JDK's broken cert handling can't parse this certificate (which PureTLS likes");
+        }
+        return chain;
     }
 
     public Integer getKeySize()
-	throws IOException {
-	/*
-	int cs = ssl.getCipherSuite();
-	int  ks = SSLCipherSuite.findCipherSuite(cs).getCipherKeyLength();
-	return new Integer(ks);
-	*/
-	return null;
+        throws IOException {
+        /*
+        int cs = ssl.getCipherSuite();
+        int  ks = SSLCipherSuite.findCipherSuite(cs).getCipherKeyLength();
+        return new Integer(ks);
+        */
+        return null;
     }
 
     public String getSessionId()
-	throws IOException {
-	byte [] ssl_session = ssl.getSessionID();
-	if(ssl_session == null)
-	    return null;
-	return HexUtils.convert(ssl_session);
+        throws IOException {
+        byte [] ssl_session = ssl.getSessionID();
+        if(ssl_session == null)
+            return null;
+        return HexUtils.convert(ssl_session);
     }
 
 }
