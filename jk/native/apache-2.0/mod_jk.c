@@ -1181,9 +1181,14 @@ static int jk_handler(request_rec *r)
     jk_server_conf_t *conf;
     int              rc;
 
-    if(strcmp(r->handler,JK_HANDLER)) /* not for me, try next handler */
+    /* We do DIR_MAGIC_TYPE here to make sure TC gets all requests, even
+     * if they are directory requests, in case there are no static files
+     * visible to Apache and/or DirectoryIndex was not used */
+
+    /* not for me, try next handler */
+    if(strcmp(r->handler,JK_HANDLER) && strcmp(r->handler,DIR_MAGIC_TYPE))
       return DECLINED;
-    
+
     xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
                                                      &jk_module);
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
@@ -1622,9 +1627,9 @@ static int jk_map_to_storage(request_rec *r)
         /* First find just the name of the file, no directory */
         r->filename = (char *)apr_filename_of_pathname(r->uri);
 
-        /* Ony if sub-request for a directory, most likely from mod_dir */
+        /* Only if sub-request for a directory, most likely from mod_dir */
         if (r->main && r->main->filename &&
-            ap_is_directory(r->pool, r->main->filename)){
+            !*apr_filename_of_pathname(r->main->filename)){
 	
             /* The filename from the main request will be set to what should
              * be picked up, aliases included. Tomcat will need to know about
@@ -1638,7 +1643,7 @@ static int jk_map_to_storage(request_rec *r)
                                    APR_FILEPATH_TRUENAME,
                                    r->pool)
                 != APR_SUCCESS){
-              return DECLINED;
+              return DECLINED; /* We should never get here, very bad */
             }
 
             /* Stat the file so that mod_dir knows it's there */
