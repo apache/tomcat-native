@@ -104,6 +104,10 @@ AC_ARG_WITH(apxs,
 	AC_MSG_RESULT(no apxs given)
 ])
 
+dnl Apache-2.0 needs the os subdirectory to include os.h
+dnl this include is copy from os/config.m4
+sinclude(../../common/build/os_apache.m4)
+
 dnl it is copied from the configure of JServ ;=)
 dnl and adapted. 
 
@@ -154,6 +158,7 @@ AC_ARG_WITH(apache,
               WEBSERVER="apache-2.0"
               apache_dir=${withval}
               apache_dir_is_src="true"
+              apache_include="-I${withval}/include -I${withval}/srclib/apr/include -I${withval}/os/${OS_APACHE_DIR} -I${withval}/srclib/apr-util/include"
               AC_MSG_RESULT(${apache_dir})
            fi
         fi
@@ -407,6 +412,19 @@ WEBSERVER="common ${WEBSERVER}"
 AC_SUBST(WEBSERVER)
 
 AM_CONDITIONAL(MAKE_DYNAMIC_APACHE, ${TEST} "${apache_dir_is_src}" = "false")
+
+if ${TEST} "${apache_dir_is_src}" = "false" ; then
+	APACHE20_OEXT=.c
+	LIB_JK_TYPE=mod_jk.so
+	INSTALL_TYPE=install_dynamic
+else
+	APACHE20_OEXT=.lo
+	LIB_JK_TYPE=lib_jk.la
+	INSTALL_TYPE=install_static
+fi
+AC_SUBST(APACHE20_OEXT)
+AC_SUBST(LIB_JK_TYPE)
+AC_SUBST(INSTALL_TYPE)
 
 dnl automake needs the path it does not work with $WEBSERVER
 dnl that why useless Makefiles are build.
