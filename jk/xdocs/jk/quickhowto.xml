@@ -36,7 +36,7 @@
 <read>worker.list=worker1</read>
 <note># Set properties for worker1 (ajp13)</note>
 <read>worker.worker1.type=ajp13</read>
-<read>worker.worker1.host=locahost</read>
+<read>worker.worker1.host=localhost</read>
 <read>worker.worker1.port=8009</read>
 <read>worker.worker1.lbfactor=50</read>
 <read>worker.worker1.cachesize=10</read>
