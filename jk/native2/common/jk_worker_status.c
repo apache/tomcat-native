@@ -180,8 +180,10 @@ static void jk2_worker_status_displayEndpointInfo(jk_env_t *env, jk_ws_service_t
             continue;
 
         ep=mbean->object;
-        jk2_worker_status_displayStat( env, s, ep->stats,
-                                       &totalReq, &totalErr, &totalTime, &maxTime);
+        if( ep->stats != NULL ){
+            jk2_worker_status_displayStat( env, s, ep->stats,
+                                           &totalReq, &totalErr, &totalTime, &maxTime);
+        }
     }
     s->jkprintf(env, s, "</table>\n");
 
