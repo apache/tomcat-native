@@ -61,6 +61,8 @@ package org.apache.coyote.http11;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -489,16 +491,40 @@ public class InternalOutputBuffer
         // Write message
         String message = response.getMessage();
         if (message == null) {
-            write(HttpMessages.getMessage(status));
+            write(getMessage(status));
         } else {
             write(message);
         }
 
         // End the response status line
-        write(Constants.CRLF_BYTES);
+        if (System.getSecurityManager() != null){
+           AccessController.doPrivileged(
+                new PrivilegedAction(){
+                    public Object run(){
+                        write(Constants.CRLF_BYTES);
+                        return null;
+                    }
+                }
+           );
+        } else {
+            write(Constants.CRLF_BYTES);
+        }
 
     }
 
+    private String getMessage(final int message){
+        if (System.getSecurityManager() != null){
+           return (String)AccessController.doPrivileged(
+                new PrivilegedAction(){
+                    public Object run(){
+                        return HttpMessages.getMessage(message); 
+                    }
+                }
+           );
+        } else {
+            return HttpMessages.getMessage(message);
+        }
+    }
 
     /**
      * Send a header.

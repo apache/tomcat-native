@@ -66,6 +66,8 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.StringTokenizer;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.ActionHook;
@@ -1434,9 +1436,23 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         // Add date header
-        if (! response.containsHeader("Date"))
-          response.addHeader("Date", FastHttpDateFormat.getCurrentDate());
-
+        if (! response.containsHeader("Date")){
+          
+          String date = null;
+          if (System.getSecurityManager() != null){
+            date = (String)AccessController.doPrivileged( 
+                new PrivilegedAction() {
+                    public Object run(){
+                        return FastHttpDateFormat.getCurrentDate();
+                    }
+                }
+            );
+          } else {
+            date = FastHttpDateFormat.getCurrentDate();
+          }
+          response.addHeader("Date", date);
+        }
+         
         // Add server header
         response.addHeader("Server", Constants.SERVER);
 
