@@ -295,7 +295,21 @@ public class HandlerRequest extends JkHandler
         if( "".equals( path ) ) path=null;
         ajpidDir=path;
     }
-    
+
+    /**
+     * Set the flag to tell if we JMX register requests.
+     */
+    public void setRegisterRequests(boolean srr) {
+        registerRequests = srr;
+    }
+
+    /**
+     * Get the flag to tell if we JMX register requests.
+     */
+    public boolean getRegisterRequests() {
+        return registerRequests;
+    }
+
     // -------------------- Ajp13.id --------------------
 
     private void generateAjp13Id() {
@@ -345,6 +359,7 @@ public class HandlerRequest extends JkHandler
 
     boolean decoded=true;
     boolean tomcatAuthentication=true;
+    boolean registerRequests=true;
     
     public int invoke(Msg msg, MsgContext ep ) 
         throws IOException
@@ -462,7 +477,7 @@ public class HandlerRequest extends JkHandler
             Response res=new Response();
             req.setResponse(res);
             ep.setRequest( req );
-            if( this.getDomain() != null ) {
+            if( registerRequests && this.getDomain() != null ) {
                 try {
                     if( global==null ) {
                         global=new RequestGroupInfo();
