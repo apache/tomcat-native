@@ -31,6 +31,7 @@
 #include "apr_buckets.h"
 
 #include "httpd_wrap.h"
+#include "ajp.h"
 
 #if APR_HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -39,10 +40,42 @@
 #include <arpa/inet.h>
 #endif
 
+#define TEST_CASE_URL "http://localhost/servlets-examples/HelloWorldExample"
+
 /* Main process */
 static process_rec *main_process;
 /* Default server */
 static server_rec *main_server;
+
+/* This function is part of backend.
+ * The backend return connected socket and conn_rec
+ */
+static apr_status_t connect_to_backend(apr_socket_t **socket, conn_rec **con,
+                                       const char *host, apr_uint16_t port,
+                                       server_rec *server, apr_pool_t *pool)
+{
+    apr_status_t rv;
+    apr_sockaddr_t *remote_sa;
+    
+    if ((rv = apr_sockaddr_info_get(&remote_sa, host, APR_UNSPEC,
+                                    port, 0, pool)) != APR_SUCCESS)
+        return rv;
+    if ((rv = apr_socket_create(socket, remote_sa->family, SOCK_STREAM,
+                                pool)) != APR_SUCCESS)
+        return rv;
+    if ((rv = apr_socket_timeout_set(*socket,
+                               apr_time_from_sec(3))) != APR_SUCCESS)  
+        return rv;
+    if ((rv = apr_socket_connect(*socket, remote_sa)) != APR_SUCCESS)
+        return rv;
+
+    if (!(*con = ap_run_create_connection(pool, server, *socket,
+                                          0, NULL, NULL)))
+        return APR_EGENERAL;
+
+    return APR_SUCCESS;
+}
+
 
 #if APR_HAS_THREADS
 
@@ -118,8 +151,10 @@ static int join_threads()
 int main(int argc, const char * const * argv, const char * const *env)
 {
     int rv = 0;
-    conn_rec *c;
+    apr_status_t rc;
+    conn_rec *c, *con;
     request_rec *r;
+    apr_socket_t *sock;
 
     apr_app_initialize(&argc, &argv, &env);
 
@@ -148,7 +183,10 @@ int main(int argc, const char * const * argv, const char * const *env)
 
     
     /* 0. Fill in the request data          */
-
+    if (ap_wrap_make_request(r, TEST_CASE_URL,
+                             NULL, NULL, NULL, 0, NULL) != APR_SUCCESS) {
+        goto finished;
+    }
     /*
      * Up to here HTTPD created that for each request.
      * From now on, we have a server_rec, conn_rec, and request_rec
@@ -156,9 +194,19 @@ int main(int argc, const char * const * argv, const char * const *env)
      */
 
     /* 1. Obtain a connection to backend    */
+    if ((rc = connect_to_backend(&sock, &con, "127.0.0.1", 8009,
+            main_server, r->pool)) != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_INFO, rc, NULL, "connect_to_backend");
+        rv = -1;
+        goto finished;
+    }
 
     /* 2. Create AJP message                */
-
+    if ((rc = ajp_send_header(sock, r)) != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_INFO, rc, NULL, "ajp_send_header");
+        rv = -1;
+        goto finished;
+    }
     /* 3. Send AJP message                  */
 
     /* 4. Read AJP response                 */
