@@ -228,7 +228,7 @@
     </copy>
   </target>
 
-  <target name="jar.tomcat5" depends="compile.shared,compile.tomcat5" >
+  <target name="jar.tomcat5" depends="static,compile.shared,compile.tomcat5" >
     <jar  jarfile="${tomcat-coyote.jar}"
          index="true"
          basedir="${build.home}/classes"
