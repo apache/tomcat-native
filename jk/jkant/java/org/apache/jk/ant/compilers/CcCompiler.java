@@ -96,7 +96,7 @@ public class CcCompiler extends LibtoolCompiler implements CompilerAdapter {
      */
     public void executeCc(String source) throws BuildException {
 	String [] includeList = ( includes==null ) ?
-	    new String[] {} : includes.list(); 
+	    new String[] {} : includes.getIncludePatterns(project); 
 
 	Commandline cmd = new Commandline();
 
