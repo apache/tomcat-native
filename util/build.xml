@@ -1,33 +1,30 @@
 <project name="tomcat-util" default="build-main" basedir=".">
 
     <!-- ===================== Initialize Property Values =================== -->
-    <property file="build.properties"/>
     <property file="${user.home}/build.properties"/>
+    <property file="build.properties"/>
+    <property file="build.properties.sample"/>
 
     <property name="tomcat-util.build" value="${basedir}/build"/>
 
-    <property name="jsse.home" location="../../jsse1.0.2"/>
+    <property name="jsse.home" location="${base.path}/jsse1.0.2"/>
     <property name="jsse.lib" location="${jsse.home}/lib"/>
     <property name="jsse.jar" location="${jsse.lib}/jsse.jar"/>
     <property name="jnet.jar" location="${jsse.lib}/jnet.jar"/>
     <property name="jcert.jar" location="${jsse.lib}/jcert.jar"/>
 
-    <property name="puretls.home" location="../../puretls-0.9b2"/>
-    <property name="puretls.lib" location="${puretls.home}/build"/>
+    <property name="puretls.home" location="${base.path}/puretls"/>
+    <property name="puretls.lib" location="${puretls.home}"/>
     <property name="puretls.jar" location="${puretls.lib}/puretls.jar"/>
     
-    <property name="commons-logging.jar" value="../lib/commons-logging.jar" />
-    <property name="jmx.jar" value="../lib/mx4j.jar" />
+    <property name="commons-logging.jar" location="../lib/commons-logging.jar" />
+    <property name="jmx.jar" location="../lib/mx4j.jar" />
     
     <target name="detect">
-        <available property="jsse.present"
-                   file="${jsse.jar}"/>
-        <available property="jmx.present"
-                   file="${jmx.jar}"/>
-        <available property="puretls.present"
- 	           file="${puretls.jar}"/>
-        <available property="commons-logging.present"
- 	           file="${commons-logging.jar}"/>
+        <available property="jsse.present" file="${jsse.jar}"/>
+        <available property="jmx.present" file="${jmx.jar}"/>
+        <available property="puretls.present" file="${puretls.jar}"/>
+        <available property="commons-logging.present" file="${commons-logging.jar}"/>
     </target>
 
     <target name="build-prepare" depends="detect">
@@ -41,7 +38,7 @@
         <echo message="-- puretls.present = ${puretls.present}" />
         <echo message="-- jsse.present = ${jsse.present}"/>
         <echo message="-- commons-logging = ${commons-logging.present}"/>
-        <echo message="-- jmx = ${jmx.present}"/>
+        <echo message="-- jmx = ${jmx.present} ${jmx.jar}"/>
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
 	       deprecation="on"

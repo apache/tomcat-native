@@ -22,11 +22,11 @@
 # -------------------------------------------------------------------
 
 # ----- (optional) Java Secure Sockets Extension (JSSE), v1.0.2 or later -----
-jsse.home=../../jsse1.0.2
+jsse.home=${base.path}/jsse1.0.2
 jsse.lib=${jsse.home}/lib
 
 
 # ----- (optional) PureTLS Extension -----
-puretls.home=../../puretls-0.9b2
+puretls.home=${base.path}/puretls-0.9b2
 puretls.lib=${puretls.home}/build
 puretls.jar=${puretls.lib}/puretls.jar
