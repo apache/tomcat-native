@@ -116,81 +116,80 @@ static int jk_handler_startResponse(jk_msg_t   *msg,
                                    jk_endpoint_t *ae,
                                    jk_logger_t    *l)
 {
-    int err;
-    unsigned i;
+    int err=JK_FALSE;
+    int i;
     jk_pool_t * pool = s->pool;
+    int headerCount;
 
     s->status = msg->getInt(msg);
     s->msg = (char *)msg->getString(msg);
     if (s->msg) {
         jk_xlate_from_ascii(s->msg, strlen(s->msg));
+        /* Do we want this ? Probably not needed, but safer ! */
+        s->msg = ae->cPool->pstrdup( ae->cPool, s->msg );
     }
-    s->out_headers = msg->getInt(msg);
-    s->out_header_names = NULL;
-    s->out_header_values = NULL;
+    headerCount = msg->getInt(msg);
 
-    if (s->out_headers > 0 ) {
-        s->out_header_names = pool->alloc(pool, sizeof(char *) * s->out_headers);
-        s->out_header_values = pool->alloc(pool, sizeof(char *) * s->out_headers);
-        
-        if (s->out_header_names==NULL ||
-            s->out_header_values==NULL) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handler.startResponse() OutOfMemoryError %d headers\n",
-                     s->out_headers);
-            return JK_HANDLER_FATAL;
-        }
-        for(i = 0 ; i < s->out_headers ; i++) {
-            unsigned short name = msg->peekInt(msg) ;
+    /* XXX assert msg->headers_out is set - the server adapter should know what
+       kind of map to use ! */
 
-            if ((name & 0XFF00) == 0XA000) {
-                msg->getInt(msg);
-                name = name & 0X00FF;
-                if (name <= SC_RES_HEADERS_NUM) {
-                    s->out_header_names[i] =
-                        (char *)jk_requtil_getHeaderById(name);
-                } else {
-                    l->jkLog(l, JK_LOG_ERROR,
-                             "handler.response() Invalid header id (%d)\n",
-                             name);
-                    return JK_HANDLER_FATAL;
-                }
+    for(i = 0 ; i < headerCount ; i++) {
+        char *nameS;
+        char *valueS;
+        unsigned short name = msg->peekInt(msg) ;
+
+        if ((name & 0XFF00) == 0XA000) {
+            msg->getInt(msg);
+            name = name & 0X00FF;
+            if (name <= SC_RES_HEADERS_NUM) {
+                nameS =
+                    (char *)jk_requtil_getHeaderById(name);
             } else {
-                s->out_header_names[i] = (char *)msg->getString(msg);
-                if (!s->out_header_names[i]) {
-                    l->jkLog(l, JK_LOG_ERROR,
-                             "handler.response() Null header name \n");
-                    return JK_HANDLER_FATAL;
-                }
-                jk_xlate_from_ascii(s->out_header_names[i],
-                                    strlen(s->out_header_names[i]));
-            }
-            s->out_header_values[i] = (char *)msg->getString(msg);
-            if (!s->out_header_values[i]) {
                 l->jkLog(l, JK_LOG_ERROR,
-                         "Error ajp_unmarshal_response - Null header value\n");
+                         "handler.response() Invalid header id (%d)\n",
+                         name);
                 return JK_HANDLER_FATAL;
             }
-
-            jk_xlate_from_ascii(s->out_header_values[i],
-                                strlen(s->out_header_values[i]));
-            
-            l->jkLog(l, JK_LOG_DEBUG,
-                     "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
-                     i,
-                     s->out_header_names[i],
-                     s->out_header_values[i]);
+        } else {
+            nameS = (char *)msg->getString(msg);
+            if (nameS==NULL) {
+                l->jkLog(l, JK_LOG_ERROR,
+                         "handler.response() Null header name \n");
+                return JK_HANDLER_FATAL;
+            }
+            jk_xlate_from_ascii(nameS, strlen(nameS));
         }
+        
+        valueS = (char *)msg->getString(msg);
+        if (valueS==NULL ) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "Error ajp_unmarshal_response - Null header value\n");
+            return JK_HANDLER_FATAL;
+        }
+        
+        jk_xlate_from_ascii(valueS,
+                            strlen(valueS));
+        
+        l->jkLog(l, JK_LOG_DEBUG,
+                 "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
+                 i, nameS, valueS);
+
+        /* Do we want this ? Preserve the headers, maybe someone will
+         need them. Alternative is to use a different buffer every time,
+         which may be more efficient. */
+        /* We probably don't need that, we'll send them in the next call */
+/*Apache does it - will change if we add jk_map_apache
+           nameS=ae->cPool->pstrdup( ae->cPool, nameS ); */
+/*         valueS=ae->cPool->pstrdup( ae->cPool, valueS ); */
+        
+        s->headers_out->add( NULL, s->headers_out, nameS, valueS );
     }
     
     l->jkLog(l, JK_LOG_INFO,
              "handler.response(): status=%d headers=%d\n",
-             s->status, s->out_headers);
+             s->status, headerCount);
 
-    err=s->start_response(s, s->status, s->msg, 
-                          (const char * const *)s->out_header_names,
-                          (const char * const *)s->out_header_values,
-                          s->out_headers);
+    err=s->head(s);
     if( err!=JK_TRUE ) {
         l->jkLog(l, JK_LOG_ERROR,
                  "handler.response() Error sending response");
