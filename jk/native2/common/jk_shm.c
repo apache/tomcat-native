@@ -454,7 +454,6 @@ static int jk2_shm_setWorkerEnv( jk_env_t *env, jk_shm_t *shm, jk_workerEnv_t *w
     wEnv->registerHandler( env, wEnv, "shm",
                            "shmDispatch", JK_HANDLE_SHM_DISPATCH,
                            jk2_shm_dispatch, NULL );
-    fprintf(stderr, "shm:setWorkerEnv \n");
 }
 
 int JK_METHOD jk2_shm_factory( jk_env_t *env ,jk_pool_t *pool,

@@ -127,7 +127,9 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
   env->registerFactory( env, "worker.status", jk2_worker_status_factory );
   env->registerFactory( env, "run", jk2_worker_run_factory );
   env->registerFactory( env, "worker.run", jk2_worker_run_factory );
-  
+
+  env->registerFactory( env, "channel.un", jk2_channel_un_factory );
+
 #ifdef HAS_APR
   env->registerFactory( env, "channel.apr",
                         jk2_channel_apr_socket_factory );

@@ -122,6 +122,10 @@ int JK_METHOD jk2_worker_ajp12_factory(jk_env_t *env, jk_pool_t *pool,
                                        jk_bean_t *result,
                                        const char *type, const char *name);
 
+int JK_METHOD jk2_channel_un_factory(jk_env_t *env, jk_pool_t *pool,
+                                     jk_bean_t *result,
+                                     const char *type, const char *name);
+
 /* Factories for 'new' types. We use the new factory interface,
  *  workers will be updated later 
  */
