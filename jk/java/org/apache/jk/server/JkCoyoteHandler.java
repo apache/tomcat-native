@@ -324,7 +324,7 @@ public class JkCoyoteHandler extends JkHandler implements
                               new PrivilegedExceptionAction () {
                                       public Object run() 
                                           throws IOException{
-                                          return new C2BConverter(  "UTF8" );
+                                          return new C2BConverter(  "iso-8859-1" );
                                       }
                                   });
                 } catch(PrivilegedActionException pae) {
@@ -333,7 +333,7 @@ public class JkCoyoteHandler extends JkHandler implements
                         throw (IOException)ex;
                 }
             } else {
-                c2b=new C2BConverter(  "UTF8" );
+                c2b=new C2BConverter(  "iso-8859-1" );
 	    }
             res.setNote( utfC2bNote, c2b );
         }
