@@ -1,0 +1,93 @@
+
+## configure should make the Makefile out of this file.
+
+APXS=@APXS@
+OS=@OS@
+JAVA_HOME=@JAVA_HOME@
+CP=@CP@
+APACHE_DIR=@APACHE_DIR@
+MKDIR=@MKDIR@
+DESTDIR=@APACHE_DIR@
+LIBTOOL=@LIBTOOL@
+CP=@CP@
+CC=@CC@
+
+OEXT=.lo
+libexecdir=${APACHE_DIR}/libexec
+JK_DIR := ..
+BUILD_DIR = ${JK_DIR}/../build/jk/apache13
+
+#VPATH=.:../common
+APACHE_FILES = Makefile.tmpl Makefile.libdir libjk.module
+
+JK=../common/
+JK_INCL=-DUSE_APACHE_MD5 -I ${JK}
+JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
+JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
+APACHE_CFLAGS=@apache_include@ @APXSCFLAGS@ @APXSCPPFLAGS@ -I../common
+
+# Compile commands
+JK_CFLAGS  = $(JK_INCL) $(JAVA_INCL) $(APACHE_CFLAGS)
+COMPILE    = $(CC)
+SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
+MOD_LINK   = $(LIBTOOL) --mode=link $(CC)
+
+include ../common/list.mk
+
+all: @LIB_JK_TYPE@
+
+#
+# install part
+#
+install: @INSTALL_TYPE@
+
+install_static: mod_jk.a
+	@echo ""
+	@echo "Copying files to Apache Modules Directory..."
+	-${MKDIR} ${APACHE_DIR}/src/modules/jk
+	${LIBTOOL} --mode=install ${CP} $< ${APACHE_DIR}/src/modules/jk/mod_jk.a
+	-${CP} Makefile.tmpl ${APACHE_DIR}/src/modules/jk
+	-${CP} Makefile.libdir ${APACHE_DIR}/src/modules/jk
+	-${CP} mod_jk.c ${APACHE_DIR}/src/modules/jk
+	-${MKDIR} ${APACHE_DIR}/src/modules/jk/include
+	-${CP} ../common/*.h ${APACHE_DIR}/src/modules/jk/include
+	@echo ""
+	@echo "Please be sure to re-compile Apache..."
+	@echo ""
+	@echo "cd ${APACHE_DIR}"
+	@echo "./config.status --activate-module=src/modules/jk/libjk.a \\"
+	@echo "                --enable-module=dir \\"
+	@echo "                --disable-shared=dir"
+	@echo "make"
+	@echo ""
+install_dynamic: mod_jk.la
+	@echo ""
+	@echo "Copying files to Apache libexec Directory..."
+	${LIBTOOL} --mode=install ${CP} $< ${libexecdir}/mod_jk.so
+
+#
+# Clean part.
+#
+clean:
+	rm -rf *.lo *.la
+	rm -rf *.o .libs *.so
+
+#
+# Compile part.
+#
+mod_jk.la: mod_jk.lo $(APACHE_OBJECTS)
+	 ${MOD_LINK} -o $@ -module -rpath ${libexecdir} $^
+mod_jk.a: mod_jk.lo $(APACHE_OBJECTS)
+	 ${MOD_LINK} -o $@ $^
+
+mod_jk.so: mod_jk.la
+	$(LIBTOOL) --mode=install cp $< `pwd`/$@
+
+#
+# Common part.
+#
+mod_jk.lo: mod_jk.c
+	${SH_COMPILE} -c $< -o $@
+
+.c.lo:
+	${SH_COMPILE} -c $< -o $@

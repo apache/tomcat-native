@@ -46,6 +46,9 @@ AC_SUBST(CP)
 AC_PATH_PROG(MKDIR,mkdir,$PATH)dnl
 AC_SUBST(MKDIR)
 
+AC_PATH_PROG(LIBTOOL,libtool,$PATH)dnl
+AC_SUBST(LIBTOOL)
+
 APACHE_CONFIG_VARS=`pwd`/scripts/build/config_vars.mk
 WEBSERVER=""
 apache_dir=""
@@ -425,13 +428,14 @@ AC_SUBST(WEBSERVER)
 AM_CONDITIONAL(MAKE_DYNAMIC_APACHE, ${TEST} "${apache_dir_is_src}" = "false")
 
 if ${TEST} "${apache_dir_is_src}" = "false" ; then
-dnl ???? 
+dnl normal apxs handling
 	APACHE20_OEXT=.c
 	LIB_JK_TYPE=mod_jk.so
 	INSTALL_TYPE=install_dynamic
 else
+dnl install static library in apache sources.
 	APACHE20_OEXT=.lo
-	LIB_JK_TYPE=lib_jk.la
+	LIB_JK_TYPE=mod_jk.a
 	INSTALL_TYPE=install_static
 fi
 AC_SUBST(APACHE20_OEXT)

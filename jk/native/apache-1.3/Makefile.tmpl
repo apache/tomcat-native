@@ -1,8 +1,38 @@
-LIB=libjk.a
+##
+## Apache 1.3 Makefile template for mod_jk
+##
+LIB=libjk.$(LIBEXT)
+JK_INCLUDES=$(INCLUDES) -I./include
+
+OBJS=mod_jk.o
+OBJS_LIB=mod_jk.a
+
+SHLIB_OBJS=mod_jk.so-o
+SHLIB_OBJS_LIB=mod_jk.a
 
 all: ${LIB}
 
-${LIB}:
+#   build the static library by merging the object files
+libjk.a: $(OBJS) $(OBJS_LIB)
+	cp $(OBJS_LIB) $@
+	ar r $@ $(OBJS)
 	${RANLIB} $@
+#   build the shared object library by linking the object files
+libjk.so: $(SHLIB_OBJS) $(SHLIB_OBJS_LIB)
+	rm -f $@
+	$(LD_SHLIB) $(LDFLAGS_SHLIB) -o $@ $(SHLIB_OBJS) $(SHLIB_OBJS_LIB) $(LIBS)
+
+.SUFFIXES: .o .so-o
+.c.o:
+	$(CC) -c $(JK_INCLUDES) $(CFLAGS) $(CPPFLAGS) $(SPACER) $<
+.c.so-o:
+	$(CC) -c $(JK_INCLUDES) $(CFLAGS) $(CFLAGS_SHLIB) $(CPPFLAGS) $(SPACER) $< && mv $*.o $*.so-o
 
 clean:
+	-rm -f $(OBJS) $(SHLIB_OBJS) $(LIB)
+
+distclean: clean
+	-rm -f Makefile
+ 
+depend:
+	echo "No depend"
