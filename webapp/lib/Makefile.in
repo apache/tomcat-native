@@ -58,7 +58,7 @@
 # @author  Pier Fumagalli <mailto:pier@betaversion.org>
 # @version $Id$
 
-LOCAL_INCLUDES = -I$(SRC_DIR)/include -I$(SRC_DIR)/lib
+LOCAL_INCLUDES = -I$(SRC_DIR)/include -I$(SRC_DIR)/lib -I.
 LOCAL_TGT_DIR = $(TGT_DIR)/lib
 LOCAL_SRC_DIR = $(SRC_DIR)/lib
 include @TGT_DIR@/Makedefs
