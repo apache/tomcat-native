@@ -613,6 +613,25 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
     return JK_OK;
 }
 
+static void jk2_vm_destroy(jk_env_t *env, jk_vm_t *jkvm)
+{
+    int err;
+    JavaVM *jvm = (JavaVM *)jkvm->jvm;
+    
+    if( jvm == NULL ) {
+        return;
+    }
+
+    err= (*jvm)->DestroyJavaVM(jvm);
+    if(err == 0 ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "vm.destroy() ok\n");
+    } else {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "vm.destroy() cannot destroy the JVM.\n");
+    }
+}
+
 static int JK_METHOD
 jk2_jk_vm_setProperty(jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP )
 {
@@ -649,6 +668,7 @@ int JK_METHOD jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
     jkvm->init=jk2_vm_initVM;
     jkvm->attach=jk2_vm_attach;
     jkvm->detach=jk2_vm_detach;
+    jkvm->destroy=jk2_vm_destroy;
     
     result->object=jkvm;
     result->setAttribute=jk2_jk_vm_setProperty;
