@@ -175,7 +175,7 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
     int needHeader=JK_TRUE;
     
     if( wenv->shm==NULL || wenv->shm->head==NULL) {
-		s->jkprintf(env, s, "<h3>No Scoreboard avaiable</h3>\n"); 
+		s->jkprintf(env, s, "<h3>No Scoreboard available</h3>\n"); 
         return;
     }
 
