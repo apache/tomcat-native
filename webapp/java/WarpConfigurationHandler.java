@@ -210,11 +210,11 @@ public class WarpConfigurationHandler {
                                             packet.reset();
                                             packet.setType(
                                                 Constants.TYPE_CONF_MAP_DENY);
-                                            packet.writeString(patt[x]);
+                                            packet.writeString(patt[q]);
                                             connection.send(packet);
                                             if (Constants.DEBUG) {
                                                 logger.debug("Seurity "+
-                                                    " mapping \""+patt[x]+
+                                                    " mapping \""+patt[q]+
                                                     "\"");
                                             }
                                         }
