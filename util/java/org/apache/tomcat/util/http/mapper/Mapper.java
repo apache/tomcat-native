@@ -433,7 +433,7 @@ public final class Mapper {
         }
 
         // Wrapper mapping
-        if (mappingData.wrapper == null) {
+        if ((context != null) && (mappingData.wrapper == null)) {
             internalMapWrapper(context, uri, mappingData);
         }
 
@@ -541,7 +541,7 @@ public final class Mapper {
                 }
                 if (mappingData.wrapper == null) {
                     // Restore the path if no welcome files was found
-                    path.setOffset(pathOffset);
+                    path.setOffset(servletPath);
                     path.setEnd(pathEnd);
                 }
             }
