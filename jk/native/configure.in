@@ -5,7 +5,7 @@ AC_REVISION($Id$)dnl
 
 AC_PREREQ(2.13)
 AC_INIT(common/jk_worker.h)
-AM_CONFIG_HEADER(common/portable.h)
+AC_CONFIG_HEADER(common/portable.h)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
 AC_CANONICAL_SYSTEM
 
