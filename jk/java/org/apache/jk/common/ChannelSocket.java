@@ -606,6 +606,7 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
         if( log.isDebugEnabled() )
             log.debug("Accepting ajp connections on " + port);
         while( running ) {
+	    try{
                 MsgContext ep=new MsgContext();
                 ep.setSource(this);
                 ep.setWorkerEnv( wEnv );
@@ -618,10 +619,10 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
                 SocketConnection ajpConn=
                     new SocketConnection(this, ep);
                 tp.runIt( ajpConn );
-            } catch( Exception ex ) {
+	    }catch(Exception ex) {
                 if (running)
-                    ex.printStackTrace();
-            }
+                    log.warn("Exception executing accept" ,ex);
+	    }
         }
     }
 
