@@ -88,6 +88,10 @@ static int init_on_other_thread_is_ok = JK_FALSE;
 
 static jk_logger_t *logger = NULL;
 
+#ifdef NETWARE
+int (*PR_IsSocketSecure)(SYS_NETFD *csd); /* pointer to PR_IsSocketSecure function */
+#endif
+
 static int JK_METHOD start_response(jk_ws_service_t *s,
                                     int status,
                                     const char *reason,
@@ -310,11 +314,21 @@ NSAPI_PUBLIC int jk_init(pblock *pb,
         map_free(&init_map);
     }
 
+#ifdef NETWARE
+    PR_IsSocketSecure = (int (*)(void **))ImportSymbol(GetNLMHandle(), "PR_IsSocketSecure");
+#endif
     return rc;    
 }
 
 NSAPI_PUBLIC void jk_term(void *p)
 {
+#ifdef NETWARE
+    if (NULL != PR_IsSocketSecure)
+    {
+       UnimportSymbol(GetNLMHandle(), "PR_IsSocketSecure");
+       PR_IsSocketSecure = NULL;
+    }
+#endif
     wc_close(logger);
     if(logger) {
         jk_close_file_logger(&logger);
@@ -411,6 +425,16 @@ static int init_ws_service(nsapi_private_data_t *private_data,
     s->query_string     = pblock_findval("query", private_data->rq->reqpb);
 
     s->server_name      = server_hostname;
+    
+#ifdef NETWARE
+    /* On NetWare, since we have virtual servers, we have a different way of
+     * getting the port that we need to try first.
+     */
+    tmp = pblock_findval("server_port", private_data->sn->client);
+    if (NULL != tmp)
+        s->server_port = atoi(tmp);
+    else
+#endif
     s->server_port      = server_portnum;
     s->server_software  = system_version();
 
@@ -419,6 +443,15 @@ static int init_ws_service(nsapi_private_data_t *private_data,
     s->headers_values   = NULL;
     s->num_headers      = 0;
     
+#ifdef NETWARE
+    /* on NetWare, we can have virtual servers that are secure.  
+     * PR_IsSocketSecure is an api made available with virtual servers to check
+     * if the socket is secure or not
+     */
+    if (NULL != PR_IsSocketSecure)
+        s->is_ssl       = PR_IsSocketSecure(private_data->sn->csd);
+    else
+#endif
     s->is_ssl           = security_active;
     if(s->is_ssl) {
         s->ssl_cert     = pblock_findval("auth-cert", private_data->rq->vars);
