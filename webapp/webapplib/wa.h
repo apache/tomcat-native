@@ -72,6 +72,7 @@
 #include <sys/errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 
 /* Define TRUE and FALSE */
 #ifndef TRUE
