@@ -28,7 +28,7 @@
 #ifdef __cplusplus
 extern "C"
 {
-#endif                          /* __cplusplus */
+#endif
 
 typedef struct jk_logger jk_logger_t;
 struct jk_logger
@@ -40,33 +40,51 @@ struct jk_logger
 
 };
 
-struct file_logger
+typedef struct file_logger_t file_logger_t;
+struct file_logger_t
 {
     FILE *logfile;
     /* For Apache 2 APR piped logging */
     void *jklogfp;
 };
-typedef struct file_logger file_logger_t;
 
-#define JK_LOG_DEBUG_LEVEL   0
-#define JK_LOG_INFO_LEVEL    1
-#define JK_LOG_ERROR_LEVEL   2
-#define JK_LOG_EMERG_LEVEL   3
-#define JK_LOG_REQUEST_LEVEL 4
+/* Level like Java tracing, but available only
+   at compile time on DEBUG preproc define.
+ */
+#define JK_LOG_TRACE_LEVEL   0
+#define JK_LOG_DEBUG_LEVEL   1
+#define JK_LOG_INFO_LEVEL    2
+#define JK_LOG_WARNING_LEVEL 3
+#define JK_LOG_ERROR_LEVEL   4
+#define JK_LOG_EMERG_LEVEL   5
+#define JK_LOG_REQUEST_LEVEL 6
 
+#define JK_LOG_TRACE_WERB	"trace"
 #define JK_LOG_DEBUG_VERB   "debug"
 #define JK_LOG_INFO_VERB    "info"
+#define JK_LOG_WARNING_VERB "warn"
 #define JK_LOG_ERROR_VERB   "error"
 #define JK_LOG_EMERG_VERB   "emerg"
 
+#define JK_LOG_TRACE   __FILE__,__LINE__,JK_LOG_TRACE_LEVEL
 #define JK_LOG_DEBUG   __FILE__,__LINE__,JK_LOG_DEBUG_LEVEL
 #define JK_LOG_INFO    __FILE__,__LINE__,JK_LOG_INFO_LEVEL
+#define JK_LOG_WARNING __FILE__,__LINE__,JK_LOG_WARNING_LEVEL
 #define JK_LOG_ERROR   __FILE__,__LINE__,JK_LOG_ERROR_LEVEL
 #define JK_LOG_EMERG   __FILE__,__LINE__,JK_LOG_EMERG_LEVEL
 #define JK_LOG_REQUEST __FILE__,0,JK_LOG_REQUEST_LEVEL
 
+/* Debug level is compile time only 
+ */
+#if defined (DEBUG) || (_DEBUG)
+#define JK_TRACE	1
+#else
+#define JK_TRACE	0
+#endif
+
+
+
 #ifdef __cplusplus
 }
-#endif                          /* __cplusplus */
-
-#endif                          /* JK_LOGGER_H */
+#endif		/* __cplusplus */
+#endif		/* JK_LOGGER_H */
