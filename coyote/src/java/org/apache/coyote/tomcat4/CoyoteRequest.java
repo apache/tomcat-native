@@ -65,10 +65,10 @@
 package org.apache.coyote.tomcat4;
 
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.BufferedReader;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -88,18 +88,12 @@ import java.util.TreeMap;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import org.apache.tomcat.util.http.Parameters;
-
-import org.apache.coyote.ActionCode;
-import org.apache.coyote.Request;
 
 import org.apache.catalina.Connector;
 import org.apache.catalina.Context;
@@ -109,14 +103,14 @@ import org.apache.catalina.Manager;
 import org.apache.catalina.Realm;
 import org.apache.catalina.Session;
 import org.apache.catalina.Wrapper;
-
 import org.apache.catalina.util.Enumerator;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringManager;
 import org.apache.catalina.util.StringParser;
-
-import org.apache.tomcat.util.net.SSLSupport;
+import org.apache.coyote.ActionCode;
+import org.apache.coyote.Request;
+import org.apache.tomcat.util.http.Parameters;
 
 /**
  * Wrapper object for the Coyote request.

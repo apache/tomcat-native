@@ -58,7 +58,6 @@
  */ 
 package org.apache.coyote.tomcat4;
 
-import java.util.Locale;
 
 /**
  * Constants.

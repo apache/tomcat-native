@@ -63,8 +63,6 @@ package org.apache.coyote.tomcat4;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import javax.servlet.ServletOutputStream;
-
 /**
  * Coyote implementation of the servlet writer.
  * 

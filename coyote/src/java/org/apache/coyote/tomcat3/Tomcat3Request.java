@@ -60,20 +60,11 @@
 
 package org.apache.coyote.tomcat3;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.text.*;
-import org.apache.tomcat.core.*;
-import org.apache.tomcat.util.res.StringManager;
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
-import org.apache.tomcat.util.net.*;
-import org.apache.tomcat.util.net.ServerSocketFactory;
-import org.apache.tomcat.util.log.*;
-import org.apache.coyote.Adapter;
+import java.io.IOException;
+
 import org.apache.coyote.ActionCode;
-import org.apache.coyote.Processor;
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.MessageBytes;
 
 /** The Request to connect with Coyote.
  *  This class handles the I/O requirements and transferring the request

@@ -66,12 +66,10 @@ package org.apache.coyote.tomcat4;
 
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Locale;
-import javax.servlet.ServletException;
+
 import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 

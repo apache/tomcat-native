@@ -60,18 +60,17 @@
 
 package org.apache.coyote.tomcat3;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.text.*;
-import org.apache.tomcat.core.*;
-import org.apache.tomcat.util.res.StringManager;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
+import org.apache.coyote.ActionCode;
+import org.apache.coyote.ProtocolHandler;
+import org.apache.tomcat.core.BaseInterceptor;
+import org.apache.tomcat.core.Context;
+import org.apache.tomcat.core.ContextManager;
+import org.apache.tomcat.core.TomcatException;
 import org.apache.tomcat.util.IntrospectionUtils;
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
-import org.apache.tomcat.util.log.*;
-import org.apache.tomcat.util.net.*;
-import org.apache.coyote.*;
+import org.apache.tomcat.util.net.SSLSupport;
 
 /** Standalone http.
  *

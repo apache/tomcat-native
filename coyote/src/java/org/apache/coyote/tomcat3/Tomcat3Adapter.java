@@ -60,19 +60,8 @@
 
 package org.apache.coyote.tomcat3;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.text.*;
-import org.apache.tomcat.core.*;
-import org.apache.tomcat.util.res.StringManager;
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
-import org.apache.tomcat.util.net.*;
-import org.apache.tomcat.util.net.ServerSocketFactory;
-import org.apache.tomcat.util.log.*;
 import org.apache.coyote.Adapter;
-import org.apache.coyote.Processor;
+import org.apache.tomcat.core.ContextManager;
 
 /** Adapter between Coyote and Tomcat.
  *

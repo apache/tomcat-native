@@ -59,15 +59,13 @@
 
 package org.apache.tomcat.util.net.puretls;
 
+import java.net.Socket;
+
 import org.apache.tomcat.util.net.SSLImplementation;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.ServerSocketFactory;
-import java.io.*;
-import java.net.*;
 
-import COM.claymoresystems.sslg.*;
-import COM.claymoresystems.ptls.*;
-import COM.claymoresystems.cert.*;
+import COM.claymoresystems.ptls.SSLSocket;
 
 /* PureTLSImplementation:
 

@@ -59,12 +59,7 @@
 
 package org.apache.tomcat.util.net.puretls;
 
-import java.io.*;
-import java.net.*;
-
-import COM.claymoresystems.ptls.*;
-import COM.claymoresystems.cert.*;
-import COM.claymoresystems.sslg.*;
+import java.io.IOException;
 
 /*
  * PureTLSSocket.java

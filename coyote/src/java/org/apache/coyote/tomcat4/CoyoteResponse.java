@@ -73,42 +73,28 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.Vector;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpUtils;
 
+import org.apache.catalina.Connector;
+import org.apache.catalina.Context;
+import org.apache.catalina.HttpResponse;
+import org.apache.catalina.util.CharsetMapper;
+import org.apache.catalina.util.StringManager;
+import org.apache.coyote.Response;
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.UEncoder;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.http.ServerCookie;
 import org.apache.tomcat.util.net.URL;
-
-import org.apache.coyote.Response;
-
-import org.apache.catalina.Connector;
-import org.apache.catalina.Context;
-import org.apache.catalina.Globals;
-import org.apache.catalina.HttpResponse;
-import org.apache.catalina.Manager;
-import org.apache.catalina.Realm;
-import org.apache.catalina.Session;
-import org.apache.catalina.Wrapper;
-import org.apache.catalina.util.CharsetMapper;
-import org.apache.catalina.util.RequestUtil;
-import org.apache.catalina.util.StringManager;
 
 
 /**

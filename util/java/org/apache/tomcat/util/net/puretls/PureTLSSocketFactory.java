@@ -59,13 +59,18 @@
 
 package org.apache.tomcat.util.net.puretls;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.Vector;
 
-import COM.claymoresystems.ptls.*;
-import COM.claymoresystems.cert.*;
-import COM.claymoresystems.sslg.*;
+import COM.claymoresystems.ptls.SSLContext;
+import COM.claymoresystems.ptls.SSLException;
+import COM.claymoresystems.ptls.SSLServerSocket;
+import COM.claymoresystems.ptls.SSLSocket;
+import COM.claymoresystems.sslg.SSLPolicyInt;
 
 /**
  * SSL server socket factory--wraps PureTLS

@@ -59,17 +59,18 @@
 
 package org.apache.tomcat.util.net.puretls;
 
-import org.apache.tomcat.util.net.SSLSupport;
-import java.io.*;
-import java.net.*;
-import java.util.Vector;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import org.apache.tomcat.util.buf.HexUtils;
+import java.util.Vector;
 
-import COM.claymoresystems.sslg.*;
-import COM.claymoresystems.ptls.*;
-import COM.claymoresystems.cert.*;
+import org.apache.tomcat.util.buf.HexUtils;
+import org.apache.tomcat.util.net.SSLSupport;
+
+import COM.claymoresystems.cert.X509Cert;
+import COM.claymoresystems.ptls.SSLSocket;
+import COM.claymoresystems.sslg.SSLPolicyInt;
 
 
 /* PureTLSSupport

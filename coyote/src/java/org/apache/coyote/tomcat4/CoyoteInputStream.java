@@ -60,14 +60,12 @@
 
 package org.apache.coyote.tomcat4;
 
-import java.io.InputStream;
 import java.io.IOException;
 
 import javax.servlet.ServletInputStream;
 
-import org.apache.tomcat.util.buf.ByteChunk;
-
 import org.apache.coyote.Request;
+import org.apache.tomcat.util.buf.ByteChunk;
 
 
 /**

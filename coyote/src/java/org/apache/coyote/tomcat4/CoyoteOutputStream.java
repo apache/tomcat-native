@@ -64,8 +64,6 @@ import java.io.IOException;
 
 import javax.servlet.ServletOutputStream;
 
-import org.apache.coyote.Response;
-
 /**
  * Coyote implementation of the servlet output stream.
  * 
