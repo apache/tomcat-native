@@ -1,12 +1,35 @@
+ifndef VERBOSE
 .SILENT:
+endif
 
 NLM_NAME=mod_jk
 
-JDKPATH=k:\jdk\jdk-1_2_2
-NOVELLNDK=r:\nwsdk
-APACHE_HOME=d:\apache_1.3.12\src
-WINSOCK_INCDIR=k:\ws295sdk\include
-METROWERKSPATH=k:\mw\5.3
+#
+# Base environment
+#
+ifndef TOOLPATH
+TOOLPATH = D:\Tools
+endif
+
+ifndef JDKPATH
+JDKPATH=$(TOOLPATH)\jdk\jdk-1_2_2
+endif
+
+ifndef NOVELLNDK
+NOVELLNDK=$(TOOLPATH)\nwsdk
+endif
+
+ifndef APACHE_SRC
+APACHE_SRC=d:\apache_1.3.19\src
+endif
+
+ifndef METROWERKSPATH
+METROWERKSPATH=$(TOOLPATH)\mw\5.3
+endif
+
+ifndef WINSOCK_INCDIR
+WINSOCK_INCDIR=$(NOVELLNDK)\include\winsock
+endif
 
 CC=$(METROWERKSPATH)\bin\mwccnlm
 LINK=$(METROWERKSPATH)\bin\mwldnlm
@@ -27,10 +50,6 @@ JK_OBJS=\
 	jk_worker.obj \
 	mod_jk.obj \
 	jk_nwmain.obj \
-	jk_ajp14.obj \
-	jk_ajp14_worker.obj \
-	jk_md5.obj
-
 	
 all: $(NLM_NAME).nlm
 
@@ -47,7 +66,7 @@ $(NLM_NAME).nlm: $(JK_OBJS) link.opt
 	@$(CC) $< -o=$(@F) @cc.opt
 	
 cc.opt: Makefile.nw
-	-@del cc.opt 2> NUL
+	-@del cc.opt > NUL
 	@echo Generating $@
 	@echo -nosyspath -ext obj -c -align 1 -w nocmdline -bool on >> $@
 ifdef DEBUG
@@ -60,16 +79,17 @@ endif
 	@echo -I$(METROWERKSPATH)\include >> $@
 	@echo -I$(JDKPATH)\include >> $@
 	@echo -I$(JDKPATH)\include\netware >> $@
-	@echo -I$(APACHE_HOME)\include >> $@
-	@echo -I$(APACHE_HOME)\os\netware >> $@
+	@echo -I$(APACHE_SRC)\include >> $@
+	@echo -I$(APACHE_SRC)\os\netware >> $@
 	@echo -I$(WINSOCK_INCDIR) >> $@
 	@echo -DN_PLAT_NLM >> $@
 	@echo -DNETWARE >> $@
 	@echo -DXP_NETWARE >> $@
 
 link.opt: Makefile.nw
-	-@del link.opt 2> NUL
-	-@del link.def 2> NUL
+	-@del link.opt > NUL
+	-@del link.def > NUL
+	@echo Generating $@
 	@echo -warnings off >> $@
 	@echo -zerobss >> $@
 	@echo -desc "Apache 1.3 Plugin for Tomcat" >> $@
@@ -95,14 +115,14 @@ endif
 	@echo Import @$(NOVELLNDK)\imports\threads.imp >> link.def
 	@echo Import @$(NOVELLNDK)\imports\socklib.imp >> link.def
 	@echo Import @$(NOVELLNDK)\imports\ws2nlm.imp >> link.def
-	@echo Import @$(APACHE_HOME)\os\netware\ApacheCore.imp >> link.def
+	@echo Import @$(APACHE_SRC)\os\netware\ApacheCore.imp >> link.def
 	@echo Export jk_module >> link.def
 
 clean:
-	-@del *.obj 2> NUL
-	-@del *.map 2> NUL
-	-@del link.* 2> NUL
-	-@del cc.opt 2> NUL
-	-@del *.nlm 2> NUL
-	-@del *.sym 2> NUL
+	-@del *.obj > NUL
+	-@del *.map > NUL
+	-@del link.* > NUL
+	-@del cc.opt > NUL
+	-@del *.nlm > NUL
+	-@del *.sym > NUL
 	

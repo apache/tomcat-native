@@ -1,10 +1,27 @@
+ifndef VERBOSE
 .SILENT:
+endif
 
 NLM_NAME=jni_conn
 
-JDKPATH=k:\jdk\jdk-1_2_2
-NOVELLNDK=r:\nwsdk
-METROWERKSPATH=k:\mw\5.3
+#
+# Base environment
+#
+ifndef TOOLPATH
+TOOLPATH = D:\Tools
+endif
+
+ifndef JDKPATH
+JDKPATH=$(TOOLPATH)\jdk\jdk-1_2_2
+endif
+
+ifndef NOVELLNDK
+NOVELLNDK=$(TOOLPATH)\nwsdk
+endif
+
+ifndef METROWERKSPATH
+METROWERKSPATH=$(TOOLPATH)\mw\5.3
+endif
 
 CC=$(METROWERKSPATH)\bin\mwccnlm
 LINK=$(METROWERKSPATH)\bin\mwldnlm
@@ -33,7 +50,7 @@ $(NLM_NAME).nlm: $(JK_OBJS) link.opt
 	
 
 cc.opt: Makefile.nw
-	-@del cc.opt 2> NUL
+	-@del cc.opt > NUL
 	@echo Generating $@
 	@echo -nosyspath -ext obj -c -align 1 -w nocmdline -bool on >> $@
 ifdef DEBUG
@@ -51,8 +68,9 @@ endif
 	@echo -DXP_NETWARE >> $@
 	
 link.opt: Makefile.nw
-	-@del link.opt 2> NUL
-	-@del link.def 2> NUL
+	-@del link.opt > NUL
+	-@del link.def > NUL
+	@echo Generating $@
 	@echo -warnings off >> $@
 	@echo -zerobss >> $@
 	@echo -desc "JNI Natives for Tomcat" >> $@
@@ -80,10 +98,10 @@ endif
 	@echo Export @jk_jnicb.exp >> link.def
 
 clean:
-	-@del *.obj 2> NUL
-	-@del *.map 2> NUL
-	-@del link.* 2> NUL
-	-@del cc.opt 2> NUL
-	-@del *.nlm 2> NUL
-	-@del *.sym 2> NUL
+	-@del *.obj > NUL
+	-@del *.map > NUL
+	-@del link.* > NUL
+	-@del cc.opt > NUL
+	-@del *.nlm > NUL
+	-@del *.sym > NUL
 	
