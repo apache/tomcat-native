@@ -1,5 +1,8 @@
 #!/bin/sh
 
+echo "rm autom4te.cache"
+rm -rf autom4te.cache
+
 echo "libtoolize --force --automake --copy"
 libtoolize --force --automake --copy
 echo "aclocal"

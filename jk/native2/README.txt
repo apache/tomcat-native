@@ -51,7 +51,7 @@ use a release version of APR:
 When the APR sources are in place,  we need to create the configure scripts.  It
 is done by running the command:
 
-    ./support/buildconf.sh
+    ./buildconf.sh
 
 
 WARNING:
