@@ -174,7 +174,8 @@ int jk_serialize_request13(jk_msg_t    *msg,
                            jk_ws_service_t *s )
 {
     unsigned char method;
-    unsigned i;
+    int i;
+    int headerCount;
     jk_logger_t *l=msg->l;
 
     l->jkLog(l, JK_LOG_DEBUG, "Into ajp_marshal_into_msgb\n");
@@ -185,6 +186,8 @@ int jk_serialize_request13(jk_msg_t    *msg,
         return JK_FALSE;
     }
 
+    headerCount=s->headers_in->size(NULL, s->headers_in);
+    
     if (msg->appendByte(msg, JK_AJP13_FORWARD_REQUEST)  ||
         msg->appendByte(msg, method)               ||
         msg->appendString(msg, s->protocol)        ||
@@ -194,31 +197,33 @@ int jk_serialize_request13(jk_msg_t    *msg,
         msg->appendString(msg, s->server_name)     ||
         msg->appendInt(msg, (unsigned short)s->server_port) ||
         msg->appendByte(msg, (unsigned char)(s->is_ssl)) ||
-        msg->appendInt(msg, (unsigned short)(s->num_headers))) {
+        msg->appendInt(msg, (unsigned short)(headerCount))) {
 
         l->jkLog(l, JK_LOG_ERROR,
                  "handle.request()  Error serializing the message head\n");
         return JK_FALSE;
     }
 
-    for (i = 0 ; i < s->num_headers ; i++) {
+    for (i = 0 ; i < headerCount ; i++) {
         unsigned short sc;
 
-        if (jk_requtil_getHeaderId(s->headers_names[i], &sc)) {
+        char *name=s->headers_in->nameAt(NULL, s->headers_in, i);
+
+        if (jk_requtil_getHeaderId(name, &sc)) {
             if (msg->appendInt(msg, sc)) {
                 l->jkLog(l, JK_LOG_ERROR,
                          "handle.request() Error serializing header id\n");
                 return JK_FALSE;
             }
         } else {
-            if (msg->appendString(msg, s->headers_names[i])) {
+            if (msg->appendString(msg, name)) {
                 l->jkLog(l, JK_LOG_ERROR,
                          "handle.request() Error serializing header name\n");
                 return JK_FALSE;
             }
         }
         
-        if (msg->appendString(msg, s->headers_values[i])) {
+        if (msg->appendString(msg, s->headers_in->valueAt( NULL, s->headers_in, i))) {
             l->jkLog(l, JK_LOG_ERROR,
                      "handle.request() Error serializing header value\n");
             return JK_FALSE;
@@ -301,14 +306,16 @@ int jk_serialize_request13(jk_msg_t    *msg,
     }
 
 
-    if (s->num_attributes > 0) {
-        for (i = 0 ; i < s->num_attributes ; i++) {
+    if (s->attributes->size( NULL, s->attributes) > 0) {
+        for (i = 0 ; i < s->attributes->size( NULL, s->attributes) ; i++) {
+            char *name=s->attributes->nameAt( NULL, s->attributes, i);
+            char *val=s->attributes->nameAt( NULL, s->attributes, i);
             if (msg->appendByte(msg, SC_A_REQ_ATTRIBUTE)       ||
-                msg->appendString(msg, s->attributes_names[i]) ||
-                msg->appendString(msg, s->attributes_values[i])) {
+                msg->appendString(msg, name ) ||
+                msg->appendString(msg, val)) {
                 l->jkLog(l, JK_LOG_ERROR,
                          "handle.request() Error serializing attribute %s=%s\n",
-                         s->attributes_names[i], s->attributes_values[i]);
+                         name, val);
                 return JK_FALSE;
             }
         }

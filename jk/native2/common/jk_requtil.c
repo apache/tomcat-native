@@ -254,13 +254,16 @@ int  jk_requtil_getHeaderId(const char *header_name,
 char *jk_requtil_getCookieByName(jk_ws_service_t *s,
                                  const char *name)
 {
-    unsigned i;
+    int i;
+    jk_map_t *headers=s->headers_in;
 
-    for(i = 0 ; i < s->num_headers ; i++) {
-        if(0 == strcasecmp(s->headers_names[i], "cookie")) {
+    /* XXX use 'get' - and make sure jk_map has support for
+       case insensitive search */
+    for(i = 0 ; i < headers->size( NULL, headers ) ; i++) {
+        if(0 == strcasecmp(headers->nameAt( NULL, headers, i), "cookie")) {
 
             char *id_start;
-            for(id_start = strstr(s->headers_values[i], name) ; 
+            for(id_start = strstr( headers->valueAt( NULL, headers, i ), name) ; 
                 id_start ; 
                 id_start = strstr(id_start + 1, name)) {
                 if('=' == id_start[strlen(name)]) {
@@ -429,11 +432,5 @@ void jk_requtil_initRequest(jk_ws_service_t *s)
     s->ssl_cert_len         = 0;
     s->ssl_cipher           = NULL;
     s->ssl_session          = NULL;
-    s->headers_names        = NULL;
-    s->headers_values       = NULL;
-    s->num_headers          = 0;
-    s->attributes_names     = NULL;
-    s->attributes_values    = NULL;
-    s->num_attributes       = 0;
     s->jvm_route            = NULL;
 }
