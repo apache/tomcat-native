@@ -79,6 +79,9 @@ typedef struct jk_map_private {
 
 static int  jk2_map_default_realloc(jk_env_t *env, jk_map_t *m);
 
+
+
+
 static void *jk2_map_default_get(jk_env_t *env, jk_map_t *m,
                                  const char *name)
 {
@@ -239,6 +242,148 @@ static int jk2_map_append(jk_env_t *env, jk_map_t * dst, jk_map_t * src )
     return JK_OK;
 }
                                
+
+/* ==================== */
+/*  Reading / parsing. 
+ */
+
+static void jk2_trim_prp_comment(char *prp)
+{
+    char *comment = strchr(prp, '#');
+    if(comment) {
+        *comment = '\0';
+    }
+}
+
+static int jk2_trim(char *s)
+{
+    int i;
+
+    for(i = strlen(s) - 1 ; (i >= 0) && isspace(s[i]) ;  i--)
+        ;
+    
+    s[i + 1] = '\0';
+    
+    for(i = 0 ; ('\0' !=  s[i]) && isspace(s[i]) ; i++)
+        ;
+    
+    if(i > 0) {
+        strcpy(s, &s[i]);
+    }
+
+    return strlen(s);
+}
+
+
+
+int jk2_map_parseProperty(jk_env_t *env, jk_map_t *m, char **section, char *prp )
+{
+    int rc = JK_ERR;
+    char *v;
+    jk_map_t *prefNode=NULL;
+
+    jk2_trim_prp_comment(prp);
+    
+    if( jk2_trim(prp)==0 )
+        return JK_OK;
+
+    /* Support windows-style 'sections' - for cleaner config
+     */
+    if( (prp[0] == '[') ) {
+        v=strchr(prp, ']' );
+        *v='\0';
+        jk2_trim( v );
+        prp++;
+        
+        *section=m->pool->pstrdup(env, m->pool, prp);
+
+        jk2_map_default_create( env, &prefNode, m->pool );
+
+        m->add( env, m, *section, prefNode);
+
+        return JK_OK;
+    }
+    
+    v = strchr(prp, '=');
+    if(v==NULL)
+        return JK_OK;
+        
+    *v = '\0';
+    v++;                        
+
+    if(strlen(v)==0 || strlen(prp)==0)
+        return JK_OK;
+
+    if (*section!=NULL){
+        prefNode=m->get( env, m, *section);
+    }else{
+        prefNode=m;
+    }
+    
+    if( prefNode==NULL )
+        return JK_ERR;
+
+    /* fprintf(stderr, "Adding [%s] %s=%s\n", cfg->section, prp, v ); */
+    prefNode->add( env, prefNode, m->pool->pstrdup(env, m->pool, prp),
+                   m->pool->pstrdup(env, m->pool, v));
+
+    return JK_OK;
+}
+
+/** Read a query string into the map
+ */
+int jk2_map_queryRead(jk_env_t *env, jk_map_t *m, const char *query)
+{
+    char *sep;
+    char *value;
+    char *qry=m->pool->pstrdup( env, m->pool, query );
+
+    while( qry != NULL ) {
+        sep=strchr( qry, '&');
+        if( sep !=NULL ) { 
+            *sep='\0';
+            sep++;
+        }
+
+        value = strchr(qry, '=');
+        if(value==NULL) {
+            value="";
+        } else {
+            *value = '\0';
+            value++;
+        }
+        m->add( env, m, m->pool->pstrdup( env, m->pool, qry ),
+                m->pool->pstrdup( env, m->pool, value ));
+        qry=sep;
+    }
+    return JK_OK;
+}
+
+/** Read the config file
+ */
+int jk2_map_read(jk_env_t *env, jk_map_t *m,const char *file)
+{
+    FILE *fp;
+    char buf[LENGTH_OF_LINE + 1];            
+    char *prp;
+    char *section=NULL;
+    if(m==NULL || file==NULL )
+        return JK_ERR;
+
+    fp= fopen(file, "r");
+        
+    if(fp==NULL)
+        return JK_ERR;
+
+    while(NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
+        jk2_map_parseProperty( env, m, &section, prp );
+    }
+
+    fclose(fp);
+    return JK_OK;
+}
+
+
 /* ==================== */
 /* Internal utils */
 

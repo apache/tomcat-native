@@ -69,11 +69,6 @@
 #define CAPACITY_INC_SIZE (50)
 #define LENGTH_OF_LINE    (1024)
 
-int jk2_config_read(struct jk_env *env, struct jk_config *cfg,
-                    struct jk_map *map);
-static void jk2_trim_prp_comment(char *prp);
-static int  jk2_trim(char *s);
-
 static int jk2_config_readFile(jk_env_t *env,
                                          jk_config_t *cfg,
                                          int *didReload, int firstTime);
@@ -359,113 +354,6 @@ int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
 
 
 
-/* ==================== */
-/*  Reading / parsing. 
- */
-int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char *prp )
-{
-    int rc = JK_ERR;
-    char *v;
-    jk_map_t *prefNode=NULL;
-
-    jk2_trim_prp_comment(prp);
-    
-    if( jk2_trim(prp)==0 )
-        return JK_OK;
-
-    /* Support windows-style 'sections' - for cleaner config
-     */
-    if( prp[0] == '[' ) {
-        v=strchr(prp, ']' );
-        *v='\0';
-        jk2_trim( v );
-        prp++;
-        
-        cfg->section=cfg->pool->pstrdup(env, m->pool, prp);
-
-        jk2_map_default_create( env, &prefNode, m->pool );
-
-        m->add( env, m, cfg->section, prefNode);
-
-        return JK_OK;
-    }
-    
-    v = strchr(prp, '=');
-    if(v==NULL)
-        return JK_OK;
-        
-    *v = '\0';
-    v++;                        
-
-    if(strlen(v)==0 || strlen(prp)==0)
-        return JK_OK;
-
-    prefNode=m->get( env, m, cfg->section);
-    
-    if( prefNode==NULL )
-        return JK_ERR;
-
-    /* fprintf(stderr, "Adding [%s] %s=%s\n", cfg->section, prp, v ); */
-    prefNode->add( env, prefNode, m->pool->pstrdup(env, m->pool, prp),
-                   m->pool->pstrdup(env, m->pool, v));
-
-    return JK_OK;
-}
-
-/** Read a query string into the map
- */
-int jk2_config_queryRead(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *query)
-{
-    char *sep;
-    char *value;
-    char *qry=cfg->pool->pstrdup( env, cfg->pool, query );
-
-    while( qry != NULL ) {
-        sep=strchr( qry, '&');
-        if( sep !=NULL ) { 
-            *sep='\0';
-            sep++;
-        }
-
-        value = strchr(qry, '=');
-        if(value==NULL) {
-            value="";
-        } else {
-            *value = '\0';
-            value++;
-        }
-        m->add( env, m, cfg->pool->pstrdup( env, cfg->pool, qry ),
-                cfg->pool->pstrdup( env, cfg->pool, value ));
-        qry=sep;
-    }
-    return JK_OK;
-}
-
-/** Read the config file
- */
-int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m)
-{
-    FILE *fp;
-    char buf[LENGTH_OF_LINE + 1];            
-    char *prp;
-    char *f=cfg->file;
-        
-    if(m==NULL || f==NULL )
-        return JK_ERR;
-
-    fp= fopen(f, "r");
-        
-    if(fp==NULL)
-        return JK_ERR;
-
-    cfg->section=NULL;
-    while(NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
-        jk2_config_parseProperty( env, cfg, m, prp );
-    }
-
-    fclose(fp);
-    return JK_OK;
-}
 
 
 
@@ -667,7 +555,7 @@ static int jk2_config_readFile(jk_env_t *env,
     
     jk2_map_default_create(env, &cfgData, env->tmpPool);
 
-    rc=jk2_config_read(env, cfg, cfgData );
+    rc=jk2_map_read(env, cfgData , cfg->file );
     
     if( rc==JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
@@ -722,33 +610,6 @@ static int JK_METHOD jk2_config_setAttribute( struct jk_env *env, struct jk_bean
     return JK_OK;
 }
 
-
-static void jk2_trim_prp_comment(char *prp)
-{
-    char *comment = strchr(prp, '#');
-    if(comment) {
-        *comment = '\0';
-    }
-}
-
-static int jk2_trim(char *s)
-{
-    int i;
-
-    for(i = strlen(s) - 1 ; (i >= 0) && isspace(s[i]) ;  i--)
-        ;
-    
-    s[i + 1] = '\0';
-    
-    for(i = 0 ; ('\0' !=  s[i]) && isspace(s[i]) ; i++)
-        ;
-    
-    if(i > 0) {
-        strcpy(s, &s[i]);
-    }
-
-    return strlen(s);
-}
 
 int JK_METHOD jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
                         jk_bean_t *result,
