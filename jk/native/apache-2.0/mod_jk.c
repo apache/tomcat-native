@@ -298,7 +298,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 #ifdef AS400
             int long rv = OK;
             if (rv = ap_change_request_body_xlate(p->r, 65535, 65535)) {        /* turn off request body translation */
-                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
+                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0,
                              NULL,
                              "mod_jk: Error on ap_change_request_body_xlate, rc=%d",
                              rv);
@@ -368,7 +368,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
 #ifdef AS400
             rc = ap_change_response_body_xlate(p->r, 65535, 65535);     /* turn off response body translation */
             if (rc) {
-                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
+                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0,
                              NULL,
                              "mod_jk: Error on ap_change_response_body_xlate, rc=%d",
                              rc);
@@ -396,7 +396,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
              */
 #ifndef AS400
             if (ap_rflush(p->r) != APR_SUCCESS) {
-                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
+                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0,
                              NULL, "mod_jk: Error flushing");
                 return JK_FALSE;
             }
@@ -2181,7 +2181,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
                 status = apr_file_write(p->jklogfp, what, &wrote);
                 if (status != APR_SUCCESS) {
                     apr_strerror(status, error, 254);
-                    ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
+                    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0,
                                  NULL,
                                  "mod_jk: jk_log_to_file %s failed: %s",
                                  what, error);
@@ -2349,11 +2349,16 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
         jk_log(conf->log, JK_LOG_ERROR, "Initializing shm:%s errno=%d",
                jk_shm_name(), rc);
 #if !defined(WIN32) && !defined(NETWARE)
-    if (!jk_shm_file)
-        ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_NOERRNO,
+    if (!jk_shm_file) {
+        ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT,
                      0, NULL,
                      "No JkShmFile defined in httpd.conf. "
                      "LoadBalancer will not function properly!");
+        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO,
+                     0, NULL,
+                     "No JkShmFile defined in httpd.conf. "
+                     "LoadBalancer will not function properly!");
+    }
 #endif
 
     /* Set default connection cache size for worker mpm */
@@ -2374,8 +2379,8 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     /*     if(map_alloc(&init_map)) { */
     if (!jk_map_read_properties(init_map, conf->worker_file, NULL)) {
         if (jk_map_size(init_map) == 0) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO,
-                         APLOG_EMERG, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT,
+                         0, NULL,
                          "No worker file and no worker options in httpd.conf"
                          "use JkWorkerFile to set workers");
             return;
