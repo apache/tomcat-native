@@ -108,7 +108,7 @@ struct ajp_msg
 #define AJP_HEADER_LEN              4
 #define AJP_HEADER_SZ_LEN           2
 #define AJP_MSG_BUFFER_SZ           (8*1024)
-#define AJP13_MAX_SEND_BODY_SZ      (AJP_DEF_BUFFER_SZ - 6)
+#define AJP13_MAX_SEND_BODY_SZ      (AJP_MSG_BUFFER_SZ - 6)
 
 /* Webserver ask container to take control (logon phase) */
 #define CMD_AJP13_PING              (unsigned char)8
@@ -367,6 +367,28 @@ apr_status_t ajp_send_header(apr_socket_t *sock, request_rec  *r);
 apr_status_t ajp_read_header(apr_socket_t *sock,
                              request_rec  *r,
                              void **msg);
+
+/**
+ * Allocate a msg to send data
+ * @param r         current request
+ * @param ptr       data buffer
+ * @param len       the length of allocated data buffer
+ * @param data      returned AJP message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t  ajp_alloc_data_msg(request_rec *r, char **ptr, apr_size_t *len,
+                                 void **data);
+
+/**
+ * Send the data message
+ * @param sock      backend socket
+ * @param r         current request
+ * @param data      AJP message to send
+ * @param len       AJP message length      
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t  ajp_send_data_msg(apr_socket_t *sock, request_rec  *r,
+                                void *data, apr_size_t len);
 
 #endif /* AJP_H */
 
