@@ -52,7 +52,7 @@ public class StringCache {
     
 
     protected static int cacheSize = 
-        Integer.parseInt(System.getProperty("tomcat.util.buf.StringCache.cacheSize", "1000"));
+        Integer.parseInt(System.getProperty("tomcat.util.buf.StringCache.cacheSize", "200"));
     
 
     /**
