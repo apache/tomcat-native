@@ -560,7 +560,7 @@ public class ThreadPool  {
         }
 
         public void run() {
-
+          try {
             while(true) {
                 try {
 		            /* Wait for work. */
@@ -626,6 +626,9 @@ public class ThreadPool  {
     		    p.log.error("Unexpected exception", ie);
                 }
             }
+          } finally {
+              p.removeThread(Thread.currentThread());
+          }
         }
 
         /** Run a task
