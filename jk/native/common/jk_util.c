@@ -272,11 +272,11 @@ int jk_log(jk_logger_t *l,
 #ifdef USE_SPRINTF              /* until we get a snprintf function */        
         if (line)
             used += sprintf(&buf[used], "[%d:%d] ", getpid(),
-                            JK_THREADID());
+                            jk_gettid());
 #else
         if (line)
             used += snprintf(&buf[used], HUGE_BUFFER_SIZE, "[%d:%d] ",
-                             getpid(), JK_THREADID());
+                             getpid(), jk_gettid());
 #endif
         if (used < 0) {
             return 0;           /* [V] not sure what to return... */
