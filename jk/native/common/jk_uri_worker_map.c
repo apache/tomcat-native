@@ -206,6 +206,22 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
     return JK_FALSE;
 }
 
+static int uri_worker_map_close(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
+{
+    JK_TRACE_ENTER(l);
+
+    if (uw_map) {
+        jk_close_pool(&uw_map->p);
+        jk_close_pool(&uw_map->tp);
+        JK_TRACE_EXIT(l);
+        return JK_TRUE;
+    }
+
+    JK_LOG_NULL_PARAMS(l);
+    JK_TRACE_EXIT(l);
+    return JK_FALSE;
+}
+
 int uri_worker_map_free(jk_uri_worker_map_t **uw_map, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
@@ -508,22 +524,6 @@ static int last_index_of(const char *str, char ch)
         --s;
     }
     return (s - str);
-}
-
-static int uri_worker_map_close(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
-{
-    JK_TRACE_ENTER(l);
-
-    if (uw_map) {
-        jk_close_pool(&uw_map->p);
-        jk_close_pool(&uw_map->tp);
-        JK_TRACE_EXIT(l);
-        return JK_TRUE;
-    }
-
-    JK_LOG_NULL_PARAMS(l);
-    JK_TRACE_EXIT(l);
-    return JK_FALSE;
 }
 
 static void jk_no2slash(char *name)
