@@ -262,13 +262,19 @@ public class MimeHeaders {
 	if this .
     */
     public MessageBytes setValue( String name ) {
- 	MessageBytes value=getValue(name);
-	if( value == null ) {
-	    MimeHeaderField mh = createHeader();
-	    mh.getName().setString(name);
-	    value=mh.getValue();
-	}
-	return value;
+        for ( int i = 0; i < count; i++ ) {
+            if(headers[i].getName().equalsIgnoreCase(name)) {
+                for ( int j=i+1; j < count; j++ ) {
+                    if(headers[j].getName().equalsIgnoreCase(name)) {
+                        removeHeader(j--);
+                    }
+                }
+                return headers[i].getValue();
+            }
+        }
+        MimeHeaderField mh = createHeader();
+        mh.getName().setString(name);
+        return mh.getValue();
     }
 
     //-------------------- Getting headers --------------------
@@ -304,19 +310,25 @@ public class MimeHeaders {
         // warning: rather sticky code; heavily tuned
 
         for (int i = 0; i < count; i++) {
-	    if (headers[i].getName().equalsIgnoreCase(name)) {
-	        // reset and swap with last header
-	        MimeHeaderField mh = headers[i];
-
-		mh.recycle();
-		headers[i] = headers[count - 1];
-		headers[count - 1] = mh;
-
-		count--;
-		i--;
-	    }
-	}
+            if (headers[i].getName().equalsIgnoreCase(name)) {
+                removeHeader(i--);
+            }
+        }
     }
+
+    /**
+     * reset and swap with last header
+     * @param idx the index of the header to remove.
+     */
+    private void removeHeader(int idx) {
+        MimeHeaderField mh = headers[idx];
+        
+        mh.recycle();
+        headers[idx] = headers[count - 1];
+        headers[count - 1] = mh;
+        count--;
+    }
+
 }
 
 /** Enumerate the distinct header names.
