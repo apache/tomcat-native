@@ -782,7 +782,7 @@ public final class CoyoteConnector
      *
      * @param maxSpareProcessors The new maximum of spare processors
      */
-    public void setMaxProcessors(int maxSpareProcessors) {
+    public void setMaxSpareProcessors(int maxSpareProcessors) {
 
         this.maxSpareProcessors = maxSpareProcessors;
 
