@@ -81,11 +81,18 @@ import org.apache.tomcat.util.buf.HexUtils;
  * @author Costin Manolache
  */
 public class MsgContext {
+    private int type;
     private Object notes[]=new Object[32];
-    private Channel ch;
+    private JkHandler next;
+    private JkHandler source;
     private Object req;
     private WorkerEnv wEnv;
+    private Msg msgs[]=new Msg[10];
 
+    // The context can be used by JNI components as well
+    private long jkEndpointP;
+    private long xEnvP;
+    
     public final Object getNote( int id ) {
         return notes[id];
     }
@@ -94,6 +101,14 @@ public class MsgContext {
         notes[id]=o;
     }
 
+    /** The id of the chain */
+    public final int getType() {
+        return type;
+    }
+
+    public final void setType(int i) {
+        type=i;
+    }
 
     // Common attributes ( XXX should be notes for flexibility ? )
 
@@ -105,12 +120,20 @@ public class MsgContext {
         this.wEnv=we;
     }
     
-    public final Channel getChannel() {
-        return ch;
+    public final JkHandler getSource() {
+        return source;
     }
     
-    public final void setChannel(Channel ch) {
-        this.ch=ch;
+    public final void setSource(JkHandler ch) {
+        this.source=ch;
+    }
+
+    public final JkHandler getNext() {
+        return next;
+    }
+    
+    public final void setNext(JkHandler ch) {
+        this.next=ch;
     }
 
     /** The high level request object associated with this context
@@ -122,5 +145,63 @@ public class MsgContext {
     public final  Object getRequest() {
         return req;
     }
+
+    /** The context may store a number of messages ( buffers + marshalling )
+     */
+    public final Msg getMsg(int i) {
+        return msgs[i];
+    }
+
+    public final void setMsg(int i, Msg msg) {
+        this.msgs[i]=msg;
+    }
     
+    /** Each context contains a number of byte[] buffers used for communication.
+     *  The C side will contain a char * equivalent - both buffers are long-lived
+     *  and recycled.
+     *
+     *  This will be called at init time. A long-lived global reference to the byte[]
+     *  will be stored in the C context.
+     */
+    public byte[] getBuffer( int id ) {
+        // We use a single buffer right now. 
+        if( msgs[id]==null ) {
+            return null;
+        }
+        return msgs[id].getBuffer();
+    }
+
+    /** Invoke a java hook. The xEnv is the representation of the current execution
+     *  environment ( the jni_env_t * )
+     */
+    public int execute() throws IOException {
+        int status=next.invoke(msgs[0], this);
+        return status;
+    }
+
+    // -------------------- Jni support --------------------
+    
+    /** Store native execution context data when this handler is called
+     *  from JNI. This will change on each call, represent temproary
+     *  call data.
+     */
+    public void setJniEnv( long xEnvP ) {
+            this.xEnvP=xEnvP;
+    }
+
+    public long getJniEnv() {
+        return xEnvP;
+    }
+    
+    /** The long-lived JNI context associated with this java context.
+     *  The 2 share pointers to buffers and cache data to avoid expensive
+     *  jni calls.
+     */
+    public void setJniContext( long cContext ) {
+        this.jkEndpointP=cContext;
+    }
+
+    public long getJniContext() {
+        return jkEndpointP;
+    }
 }
