@@ -55,7 +55,7 @@ install-data-local:
 	@echo "Please be sure to re-compile Apache..."
 	@echo ""
 	@echo "cd ${APACHE_DIR}"
-	@echo "./config-status --activate-module=src/modules/jk/libjk.a"
+	@echo "./config.status --activate-module=src/modules/jk/libjk.a"
 	@echo "make"
 	@echo ""
 endif
