@@ -895,6 +895,8 @@ public class Http11Processor implements Processor, ActionHook {
 
         if (!keepAlive) {
             response.addHeader("Connection", "close");
+        } else if(!http11) {
+            response.addHeader("Connection", "Keep-Alive");
         }
 
         // Build the response header
