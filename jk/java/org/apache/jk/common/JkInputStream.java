@@ -256,7 +256,7 @@ public class JkInputStream extends InputStream {
         blen=0;
 
         // No data received.
-	if( bodyMsg.getLen() <= 4 ) { // just the header
+	if( bodyMsg.getLen() == 0 ) { // just the header
             // Don't mark 'end of stream' for the first chunk.
             // end_of_stream = true;
 	    return false;
