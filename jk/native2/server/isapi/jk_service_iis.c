@@ -143,6 +143,7 @@ static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
             strcat(headers_str, s->headers_out->valueAt(env,s->headers_out,i));
             strcat(headers_str, crlf);
         }
+        strcat(headers_str, crlf);
     } else {
         headers_str = crlf;
     }

@@ -181,8 +181,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                             DWORD dwNotificationType, 
                             LPVOID pvNotification)
 {
-    jk_env_t *env; 
-    jk_uriEnv_t *uriEnv;
+    jk_env_t *env=NULL; 
+    jk_uriEnv_t *uriEnv=NULL;
 
     /* Initialise jk */
     if (is_inited && !is_mapread) {
@@ -480,6 +480,12 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         
         if (JK_OK == worker->service(env, worker, s)){
             rc=HSE_STATUS_SUCCESS;
+            lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
+            env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                   "HttpExtensionProc service() returned OK\n");
+        } else {
+            env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                   "HttpExtensionProc service() Failed\n");
         }
         
         s->afterRequest(env, s);
@@ -488,9 +494,6 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         
         rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
         
-        lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
-        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-               "HttpExtensionProc service() returned OK\n");
     } else {
         env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                "HttpExtensionProc error, not initialized\n");
