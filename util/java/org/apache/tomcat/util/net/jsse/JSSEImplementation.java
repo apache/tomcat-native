@@ -73,14 +73,14 @@ import javax.net.ssl.SSLSocket;
 
    @author EKR
 */
-	
+        
 public class JSSEImplementation extends SSLImplementation
 {
     static final String JSSE14SocketFactory = 
-	"org.apache.tomcat.net.jsse.JSSE11SocketFactory";
+        "org.apache.tomcat.net.jsse.JSSE11SocketFactory";
     public JSSEImplementation() throws ClassNotFoundException {
-	// Check to see if JSSE is floating around somewhere
-	Class.forName("javax.net.ssl.SSLServerSocketFactory");
+        // Check to see if JSSE is floating around somewhere
+        Class.forName("javax.net.ssl.SSLServerSocketFactory");
     }
 
 
@@ -90,23 +90,23 @@ public class JSSEImplementation extends SSLImplementation
       
     public ServerSocketFactory getServerSocketFactory()
     {
-	ServerSocketFactory ssf = null;
-	if( JdkCompat.isJava14() ) {
-	    try {
-		Class ssfCl = Class.forName(JSSE14SocketFactory);
-		ssf =(ServerSocketFactory)ssfCl.newInstance();
-	    } catch(Exception ex) {
-		ssf = new JSSESocketFactory();
-	    }
-	} else {
-	    ssf = new JSSESocketFactory();
-	}
-	return ssf;
+        ServerSocketFactory ssf = null;
+        if( JdkCompat.isJava14() ) {
+            try {
+                Class ssfCl = Class.forName(JSSE14SocketFactory);
+                ssf =(ServerSocketFactory)ssfCl.newInstance();
+            } catch(Exception ex) {
+                ssf = new JSSESocketFactory();
+            }
+        } else {
+            ssf = new JSSESocketFactory();
+        }
+        return ssf;
     } 
 
     public SSLSupport getSSLSupport(Socket s)
     {
-	return new JSSESupport((SSLSocket)s);
+        return new JSSESupport((SSLSocket)s);
     }
 
 
