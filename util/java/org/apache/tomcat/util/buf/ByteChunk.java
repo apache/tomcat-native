@@ -406,8 +406,8 @@ public final class ByteChunk implements Cloneable, Serializable {
 
 	// Can't grow above the limit
 	if( limit > 0 &&
-	    desiredSize > limit -start  ) {
-	    desiredSize=limit -start;
+	    desiredSize > limit) {
+	    desiredSize=limit;
 	}
 
 	if( buff==null ) {
