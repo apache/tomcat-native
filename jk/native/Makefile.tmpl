@@ -1,0 +1,47 @@
+##
+## Apache 1.3 Makefile template for mod_jk
+##
+
+LIB=mod_jk.$(LIBEXT)
+
+JKINCLUDES=$(INCLUDES) -I./common
+
+# standard targets
+all: lib
+lib: $(LIB)
+	echo "Building $(LIB)"
+
+JKOBJS=apache-1.3/mod_jk.o \
+common/jk_ajp12_worker.o \
+common/jk_ajp13.o         common/jk_ajp13_worker.o    common/jk_ajp14.o \
+common/jk_ajp14_worker.o  common/jk_ajp_common.o      common/jk_connect.o \
+common/jk_context.o       common/jk_lb_worker.o       common/jk_map.o \
+common/jk_md5.o           common/jk_msg_buff.o        common/jk_pool.o \
+common/jk_sockbuf.o       common/jk_uri_worker_map.o  common/jk_util.o \
+common/jk_worker.o \
+
+# static
+mod_jk.a: libjk.a
+libjk.a: $(JKOBJS)
+	rm -f $@
+	ar cr $@ $(JKOBJS)
+	$(RANLIB) $@
+
+# dynamic
+mod_jk.so: $(JKOBJS)
+	rm -f $@
+	$(LD_SHLIB) $(LDFLAGS_SHLIB) -o $@ $(JKOBJS) $(LIBS)
+
+clean:
+	rm -f $(JKOBJS) $(LIB)
+
+distclean: clean
+	-rm -f Makefile
+
+depend:
+	echo "No depend"
+
+.SUFFIXES: .o
+
+.c.o:
+	$(CC) -c $(JKINCLUDES) $(CFLAGS) $< -o $@
