@@ -25,6 +25,8 @@
 
 #include "jk_logger.h"
 #include "jk_service.h"
+#include "jk_mt.h"
+#include "jk_shm.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -33,6 +35,31 @@ extern "C"
 
 #define JK_LB_WORKER_NAME     ("lb")
 #define JK_LB_DEF_DOMAIN_NAME ("unknown")
+
+struct worker_record
+{
+    jk_worker_t     *w;
+    /* Shared memory worker data */
+    jk_shm_worker_t  *s;
+};
+typedef struct worker_record worker_record_t;
+
+struct lb_worker
+{
+    worker_record_t *lb_workers;
+    unsigned num_of_workers;
+    unsigned num_of_local_workers;
+
+    jk_pool_t p;
+    jk_pool_atom_t buf[TINY_POOL_SIZE];
+
+    jk_worker_t worker;
+    JK_CRIT_SEC cs; 
+
+    /* Shared memory worker data */
+    jk_shm_worker_t  *s;
+};
+typedef struct lb_worker lb_worker_t;
 
 int JK_METHOD lb_worker_factory(jk_worker_t **w,
                                 const char *name, jk_logger_t *l);

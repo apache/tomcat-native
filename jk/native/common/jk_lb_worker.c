@@ -52,33 +52,6 @@ static const char *search_types[] = {
     NULL
 };
 
-struct worker_record
-{
-    jk_worker_t     *w;
-    /* Shared memory worker data */
-    jk_shm_worker_t  *s;
-};
-
-typedef struct worker_record worker_record_t;
-
-struct lb_worker
-{
-    worker_record_t *lb_workers;
-    unsigned num_of_workers;
-    unsigned num_of_local_workers;
-
-    jk_pool_t p;
-    jk_pool_atom_t buf[TINY_POOL_SIZE];
-
-    jk_worker_t worker;
-    JK_CRIT_SEC cs; 
-
-    /* Shared memory worker data */
-    jk_shm_worker_t  *s;
-};
-
-typedef struct lb_worker lb_worker_t;
-
 struct lb_endpoint
 {
     jk_endpoint_t *e;
@@ -470,9 +443,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_log(l, JK_LOG_DEBUG,
                            "service worker=%s jvm_route=%s rc=%d",
                            rec->s->name, s->jvm_route, rc);
-
+                rec->s->elected++;
                 if (rc && end) {
-                    int src = end->service(end, s, l, &is_recoverable);
+                    int src;
+                    end->rd = end->wr = 0;
+                    src = end->service(end, s, l, &is_recoverable);
+                    rec->s->readed += end->rd;
+                    rec->s->transferred += end->wr;
                     end->done(&end, l);
                     if (src) {
                         rec->s->in_error_state = JK_FALSE;
