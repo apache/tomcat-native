@@ -43,7 +43,12 @@ static int JK_METHOD init(jk_worker_t *pThis,
                           jk_worker_env_t *we, jk_logger_t *l)
 {
     int rc;
+    ajp_worker_t *aw = ( ajp_worker_t *)pThis->worker_private;
     JK_TRACE_ENTER(l);
+
+    pThis->retries = jk_get_worker_retries(props, aw->name,
+                                           JK_RETRIES);
+
     rc = ajp_init(pThis, props, we, l, AJP13_PROTO);
     JK_TRACE_EXIT(l);
     return rc;
@@ -110,6 +115,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
     aw->worker.init = init;
     aw->worker.get_endpoint = get_endpoint;
     aw->worker.destroy = destroy;
+    aw->worker.retries = JK_RETRIES;
 
     aw->logon = NULL;           /* No Logon on AJP13 */
 

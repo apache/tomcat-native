@@ -700,6 +700,7 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
     private_data->worker.init = init;
     private_data->worker.get_endpoint = get_endpoint;
     private_data->worker.destroy = destroy;
+    private_data->worker.retries = JK_RETRIES;
 
     *w = &private_data->worker;
     the_singleton_jni_worker = &private_data->worker;

@@ -495,7 +495,10 @@ static int JK_METHOD init(jk_worker_t *pThis,
                           jk_map_t *props,
                           jk_worker_env_t *we, jk_logger_t *log)
 {
-    /* Nothing to do for now */
+
+    lb_worker_t *p = (lb_worker_t *)pThis->worker_private;
+    pThis->retries = jk_get_worker_retries(props, p->name,
+                                           JK_RETRIES);
     return JK_TRUE;
 }
 
@@ -567,6 +570,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->worker.init = init;
         private_data->worker.get_endpoint = get_endpoint;
         private_data->worker.destroy = destroy;
+        private_data->worker.retries = JK_RETRIES;
 
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);
