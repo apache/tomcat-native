@@ -59,11 +59,11 @@ struct jk_shm_w_rec
     /* Maximum number of channels */
     int     max_conn;
     /* worker name */
-    char    route[JK_SHM_STR_SIZ+1];
+    char    name[JK_SHM_STR_SIZ+1];
     /* worker domain */
     char    domain[JK_SHM_STR_SIZ+1];
     /* worker redirect route */
-    char    redirect_route[JK_SHM_STR_SIZ+1];
+    char    redirect[JK_SHM_STR_SIZ+1];
     /* current status of the worker */
     int     status;
     /* Current lb factor */
@@ -78,7 +78,7 @@ struct jk_shm_w_rec
     int     local_worker_only;
     int     sticky_session;
     int     recover_wait_time;
-    int     error_time;
+    time_t  error_time;
     /* Number of bytes read from remote */
     int     readed;
     /* Number of bytes transferred to remote */
@@ -112,7 +112,7 @@ jk_shm_w_rec_t *jk_shm_worker(int id);
 
 /* allocate shm worker record
  */
-jk_shm_w_rec_t *jk_shm_alloc();
+jk_shm_w_rec_t *jk_shm_worker_alloc();
 
 
 #ifdef __cplusplus
