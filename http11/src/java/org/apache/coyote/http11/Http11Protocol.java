@@ -86,8 +86,8 @@ import javax.management.MBeanRegistration;
  */
 public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 {
-
     public Http11Protocol() {
+	cHandler = new Http11ConnectionHandler( this );
         setSoLinger(Constants.DEFAULT_CONNECTION_LINGER);
         setSoTimeout(Constants.DEFAULT_CONNECTION_TIMEOUT);
         setServerSoTimeout(Constants.DEFAULT_SERVER_SOCKET_TIMEOUT);
@@ -98,9 +98,6 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
      */
     protected static StringManager sm =
         StringManager.getManager(Constants.Package);
-
-    Adapter adapter;
-    Http11ConnectionHandler cHandler=new Http11ConnectionHandler( this );
 
     /** Pass config info
      */
@@ -220,6 +217,9 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     private String reportedname;
     private int socketCloseDelay=-1;
     private boolean disableUploadTimeout = true;
+    private Adapter adapter;
+    private Http11ConnectionHandler cHandler;
+
     /**
      * Compression value.
      */
@@ -442,7 +442,8 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             return  thData;
         }
 
-        public void processConnection(TcpConnection connection, Object thData[]) {
+        public void processConnection(TcpConnection connection,
+				      Object thData[]) {
             Socket socket=null;
             Http11Processor  processor=null;
             try {

@@ -517,6 +517,7 @@ public class Http11Processor implements Processor, ActionHook {
     public void setSocket(Socket socket)
         throws IOException {
         this.socket = socket;
+	this.request.setSocket(socket);
     }
 
     /**
