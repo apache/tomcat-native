@@ -364,7 +364,8 @@ public class CoyoteResponse
      * Application commit flag accessor.
      */
     public boolean isAppCommitted() {
-        return (this.appCommitted || isCommitted() || isSuspended());
+        return (this.appCommitted || isCommitted() || isSuspended()
+                || (getContentCount() == getContentLength()));
     }
 
 
