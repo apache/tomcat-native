@@ -397,7 +397,7 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                 wa_rwrite(r,pack->buff,pack->size);
                 wa_rflush(r);
                 pack->buff[pack->size]='\0';
-                wa_debug(WA_MARK,"=== %s",pack->buff);
+                wa_debug(WA_MARK,"Response body bytes: %d",pack->size);
                 break;
             }
             case TYPE_RES_DONE: {
@@ -409,7 +409,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                 int size=-1;
                 p_read_ushort(pack,&size);
                 p_reset(pack);
+                wa_debug(WA_MARK,"Request body bytes: (Req=%d)",size);
                 size=wa_rread(r,pack->buff,size);
+                wa_debug(WA_MARK,"Request body bytes: (Got=%d)",size);
                 if (size==0) {
                     pack->type=TYPE_CBK_DONE;
                 } else if (size>0) {
@@ -419,6 +421,7 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                     pack->type=TYPE_ERROR;
                     p_write_string(pack,"Transfer interrupted");
                 }
+                wa_debug(WA_MARK,"Request body bytes: (Sent=%d)",pack->size);
                 if (n_send(conf->sock,pack)!=wa_true) {
                     n_disconnect(conn);
                     return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
