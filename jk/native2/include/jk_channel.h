@@ -164,7 +164,9 @@ struct jk_channel {
    
     /** Obtain the channel status code
      */
-    int (JK_METHOD *status)(struct jk_env *env, jk_channel_t *_this);
+    int (JK_METHOD *status)(struct jk_env *env, 
+                            struct jk_worker *worker,
+                            jk_channel_t *_this);
 
     void *_privatePtr;
 };
