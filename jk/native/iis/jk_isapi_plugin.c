@@ -343,17 +343,22 @@ static int escape_url(const char *path, char *dest, int destsize)
     return JK_TRUE;
 }
 
-static int uri_is_web_inf(char *uri)
+static int uri_is_web_inf(const char *uri)
 {
-    char *c = uri;
-    while (*c) {
-        *c = JK_TOLOWER(*c);
-        c++;
+    char b[INTERNET_MAX_URL_LENGTH + 1];
+    int i = 0;
+
+    while (*uri) {
+        b[i++] = JK_TOLOWER(*uri);
+        uri++;
+        if (i > (INTERNET_MAX_URL_LENGTH - 1))
+            break;
     }
-    if (strstr(uri, "web-inf")) {
+    b[i] = '\0';
+    if (strstr(b, "web-inf")) {
         return JK_TRUE;
     }
-    if (strstr(uri, "meta-inf")) {
+    if (strstr(b, "meta-inf")) {
         return JK_TRUE;
     }
 
@@ -731,6 +736,23 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                        uri);
                 worker = map_uri_to_worker(uw_map, uri, logger);
             }
+            /*
+             * Check if somebody is feading us with his own TOMCAT data headers.
+             * We reject such postings !
+             */
+            jk_log(logger, JK_LOG_DEBUG,
+                   "check if [%s] is points to the web-inf directory\n",
+                   uri);
+
+            if (uri_is_web_inf(uri)) {
+                jk_log(logger, JK_LOG_EMERG,
+                       "[%s] points to the web-inf or meta-inf directory.\nSomebody try to hack into the site!!!\n",
+                       uri);
+
+                write_error_response(pfc, "403 Forbidden",
+                                     "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                return SF_STATUS_REQ_FINISHED;
+            }
 
             if (worker) {
                 char *forwardURI;
@@ -800,24 +822,6 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             else {
                 jk_log(logger, JK_LOG_DEBUG,
                        "[%s] is not a servlet url\n", uri);
-            }
-
-            /*
-             * Check if somebody is feading us with his own TOMCAT data headers.
-             * We reject such postings !
-             */
-            jk_log(logger, JK_LOG_DEBUG,
-                   "check if [%s] is points to the web-inf directory\n",
-                   uri);
-
-            if (uri_is_web_inf(uri)) {
-                jk_log(logger, JK_LOG_EMERG,
-                       "[%s] points to the web-inf or meta-inf directory.\nSomebody try to hack into the site!!!\n",
-                       uri);
-
-                write_error_response(pfc, "403 Forbidden",
-                                     "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
-                return SF_STATUS_REQ_FINISHED;
             }
         }
     }
