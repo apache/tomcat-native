@@ -527,14 +527,17 @@ public class Ajp13Packet {
     }
 
     private void hexLine( int start ) {
+	int pkgEnd = len + 4;
+	if( pkgEnd > buff.length )
+	    pkgEnd = buff.length;
         for( int i=start; i< start+16 ; i++ ) {
-            if( i < len + 4)
+            if( i < pkgEnd)
                 System.out.print( hex( buff[i] ) + " ");
             else 
                 System.out.print( "   " );
         }
         System.out.print(" | ");
-        for( int i=start; i < start+16 && i < len + 4; i++ ) {
+        for( int i=start; i < start+16 && i < pkgEnd; i++ ) {
             if( Character.isLetterOrDigit( (char)buff[i] ))
                 System.out.print( new Character((char)buff[i]) );
             else
