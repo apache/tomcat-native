@@ -274,18 +274,32 @@
   <target name="compile" 
    depends="static,report,compile.shared,compile.tomcat4,compile.tomcat33"
    description="Compile Coyote and its Adapters">
-    <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
+    <property name="tomcat-coyote.jar" value="${build.home}/lib/tomcat-${component.name}.jar" />
+    <property name="tomcat33-coyote.jar" value="${build.home}/lib/tomcat33-${component.name}.jar" />
+    <property name="tomcat4-coyote.jar" value="${build.home}/lib/tomcat4-${component.name}.jar" />
+
+    <jar    jarfile="${tomcat-coyote.jar}"
             index="true"
-            basedir="${build.home}/classes"
-           manifest="${build.home}/conf/MANIFEST.MF"
-           includes="org/apache/coyote/**" 
-	   excludes="**/tomcat3/*" />
-    <jar    jarfile="${build.home}/lib/tomcat33-${component.name}.jar"
+            manifest="${build.home}/conf/MANIFEST.MF">
+      <fileset dir="${build.home}/classes" >
+        <exclude name="**/tomcat3/*"/>
+        <!-- exclude name="**/tomcat4/*"/ -->
+        <exclude name="**/tomcat5/*"/>
+        <include name="org/apache/coyote/**"/>
+      </fileset>
+    </jar>
+
+    <jar jarfile="${tomcat33-coyote.jar}"
          index="true"
          basedir="${build.home}/classes"
          manifest="${build.home}/conf/MANIFEST.MF"
-         includes="org/apache/coyote/**" 
-         excludes="**/tomcat4/*" />
+         includes="org/apache/coyote/tomcat3/**" /> 
+
+    <jar jarfile="${tomcat4-coyote.jar}"
+         index="true"
+         basedir="${build.home}/classes"
+         manifest="${build.home}/conf/MANIFEST.MF"
+         includes="org/apache/coyote/tomcat4/**" />
   </target>
 
   <target name="compile.tests" depends="compile"
