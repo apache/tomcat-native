@@ -189,12 +189,12 @@
 	profile="${so.profile}">
 
       <src dir=".">
-	<include name="server/apache13/mod_jk2.c" />
+	<include name="server/apache13/*.c" />
 	<include name="common/*.c" />
         <exclude name="jk_nwmain.c" 
 		 unless="netware" />
         <include name="common/apr/*.c" if="HAVE_APR" />
-        <exclude name="common/apr_socket.c" />
+        <exclude name="common/jk_channel_apr_socket.c" />
       </src>
       <includes>
 	<include name="${native.dir}/include" />
@@ -222,6 +222,8 @@
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
       </depends>
+
+      <def name="EAPI" info="Building with EAPI support " />
 
       <!-- Platform-specific tags -->
       <def name="N_PLAT_NLM" if="netware"
