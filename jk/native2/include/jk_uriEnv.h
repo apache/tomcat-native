@@ -95,6 +95,8 @@ typedef struct jk_uriEnv jk_uriEnv_t;
 
 
 struct jk_uriEnv {
+    struct jk_pool *pool;
+    
     struct jk_workerEnv *workerEnv;
 
     struct jk_webapp *webapp;
@@ -126,9 +128,58 @@ struct jk_uriEnv {
     int match_type;
 
     int debug;
+
+    /** Worker associated with this uri
+        Inherited by virtual host. Defaults to the first declared worker.
+        ( if null == use default worker ).
+    */
+    struct jk_worker *worker;
+    
+    /** worker name - allow this to be set before the worker is defined.
+     *  worker will be set on init.
+     */
+    char *workerName; 
+
+    /** You can fine-tune the logging level per location
+     */
+    int logLevel;
+
+    /** Different apps can have different loggers.
+     */
+    struct jk_logger *l;
+
+    /* Environment variables support
+     */
+    int envvars_in_use;
+    struct jk_map *envvars;
+
+    /* Virtual server handled - NULL means 'global' ( visible in all
+     * virtual servers ). This is the canonical name.
+     */
+    char *virtual;
+    int virtualPort;
+
+    /** Uri we're monted on
+     *  The 'id' is the index in the context table ( todo ), it
+     *  reduce the ammount of trafic ( and string creation on java )
+     */
+    char *context;
+    int ctxt_len;
+    int contextId;
+
     /* -------------------- Methods -------------------- */
 
-    /* get/setProperty */
+    int (*setProperty)( struct jk_env *env,
+                         struct jk_uriEnv *_this,
+                         const char *name, char *value);
+
+    char *(*getProperty)( struct jk_env *env,
+                          struct jk_uriEnv *_this,
+                          const char *name);
+
+    char **(*getPropertyNames)( struct jk_env *env,
+                                struct jk_uriEnv *_this );
+    
 };
 
 
