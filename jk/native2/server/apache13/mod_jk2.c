@@ -243,21 +243,12 @@ static void jk2_init(server_rec *s, ap_pool *pconf)
     
     jk_env_t *env=workerEnv->globalEnv;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init\n" );
-    
-}
-
-
-static int jk2_post_config(ap_pool *pconf, ap_pool *plog, 
-                           ap_pool *ptemp, server_rec *s)
-{
     ap_pool *gPool=NULL;
     void *data=NULL;
     int rc=JK_TRUE;
-    jk_env_t *env=workerEnv->globalEnv;
-    
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk.post_config()\n");
 
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init\n" );
+    
     if(s->is_virtual) 
         return OK;
     
