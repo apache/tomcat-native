@@ -123,7 +123,7 @@ public class RequestHandler extends AjpHandler
     public static final byte SC_A_SSL_CERT      = 7;
     public static final byte SC_A_SSL_CIPHER    = 8;
     public static final byte SC_A_SSL_SESSION   = 9;
-    public static final byte SC_A_SSL_KEYSIZE   = 11;
+    public static final byte SC_A_SSL_KEY_SIZE  = 11; // AJP14 new header?
     public static final byte SC_A_SECRET        = 12;
 
     // Used for attributes which are not in the list above
@@ -172,8 +172,6 @@ public class RequestHandler extends AjpHandler
     public static final int SC_REQ_PRAGMA          = 12;
     public static final int SC_REQ_REFERER         = 13;
     public static final int SC_REQ_USER_AGENT      = 14;
-    // AJP14 new header
-    public static final byte SC_A_SSL_KEY_SIZE  = 11; // XXX ??? 
 
     // Translates integer codes to request header names    
     public static final String []headerTransArray = {
