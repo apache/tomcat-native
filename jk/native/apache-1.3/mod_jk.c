@@ -1149,6 +1149,7 @@ for (i = 0; i < map_size(conf->automount); i++)
             
 			/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 			worker_env.uri_to_worker = conf->uw_map;
+            worker_env.virtual       = "*";     /* for now */
 			worker_env.server_name   = (char *)ap_get_server_version();
             if(wc_open(init_map, &worker_env, conf->log)) {
                 /* we don't need this any more so free it */
