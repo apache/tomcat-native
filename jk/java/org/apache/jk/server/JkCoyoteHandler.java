@@ -305,7 +305,7 @@ public class JkCoyoteHandler extends JkHandler implements
             ep.setNote( tmpMessageBytesNote, mb );
         }
         String message=res.getMessage();
-        if( message==null ) message="OK";
+        if( message==null ) message= HttpMessages.getMessage(res.getStatus());
         mb.setString( message );
         c2b.convert( mb );
         msg.appendBytes(mb);
@@ -402,8 +402,11 @@ public class JkCoyoteHandler extends JkHandler implements
                 // Extract SSL certificate information (if requested)
                 MessageBytes certString = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
                 if( certString != null ) {
-                    byte[] certData = certString.getByteChunk().getBytes();
-                    ByteArrayInputStream bais = new ByteArrayInputStream(certData);
+                    ByteChunk certData = certString.getByteChunk();
+                    ByteArrayInputStream bais = 
+                        new ByteArrayInputStream(certData.getBytes(),
+                                                 certData.getStart(),
+                                                 certData.getLength());
  
                     // Fill the first element.
                     X509Certificate jsseCerts[] = null;
