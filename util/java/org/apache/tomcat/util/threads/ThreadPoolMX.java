@@ -65,129 +65,22 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Manageable thread pool
- *
+ * Manageable thread pool. 
+ * 
  * @author Costin Manolache
+ * @deprecated This was an attempt to introduce a JMX dependency. A better solution
+ * was the ThreadPoolListener - which is more powerfull and provides the same
+ * features. The class is here for backward compatibility, all the methods are in
+ * super().  
  */
 public class ThreadPoolMX extends ThreadPool {
     static Log log = LogFactory.getLog(ThreadPoolMX.class);
-    protected String domain;
+    protected String domain; // not used 
 
-    protected String name;
+    protected String name; // not used
 
     public ThreadPoolMX() {
         super();
     }
 
-    public synchronized void start() {
-        super.start();
-    }
-
-    public void addThread( Thread t, ControlRunnable cr ) {
-        threads.put( t, cr );
-        for( int i=0; i<listeners.size(); i++ ) {
-            ThreadPoolListener tpl=(ThreadPoolListener)listeners.elementAt(i);
-            tpl.threadStart(this, t);
-        }
-    }
-
-    public void removeThread( Thread t ) {
-        threads.remove(t);
-        for( int i=0; i<listeners.size(); i++ ) {
-            ThreadPoolListener tpl=(ThreadPoolListener)listeners.elementAt(i);
-            tpl.threadEnd(this, t);
-        }
-    }
-
-    public void addThreadPoolListener( ThreadPoolListener tpl ) {
-        listeners.addElement( tpl );
-    }
-
-    /**
-     * Executes a given Runnable on a thread in the pool, block if needed.
-     */
-    public void runIt(ThreadPoolRunnable r) {
-        super.runIt( r );
-    }
-
-    /**
-     * Stop the thread pool
-     */
-    public synchronized void shutdown() {
-        super.shutdown();
-    }
-
-    /**
-     * Returns the thread to the pool.
-     * Called by threads as they are becoming idel.
-     */
-    protected synchronized void returnController(ControlRunnable c) {
-        super.returnController(c);
-    }
-
-    /**
-     * Inform the pool that the specific thread finish.
-     *
-     * Called by the ControlRunnable.run() when the runnable
-     * throws an exception.
-     */
-    protected synchronized void notifyThreadEnd(ControlRunnable c) {
-        super.notifyThreadEnd(c);
-    }
-
-    /** Debug display of the stage of each thread. The return is html style,
-     * for display in the console ( it can be easily parsed too )
-     *
-     * @return
-     */
-    public String threadStatusString() {
-        StringBuffer sb=new StringBuffer();
-        Iterator it=threads.keySet().iterator();
-        sb.append("<ul>");
-        while( it.hasNext()) {
-            sb.append("<li>");
-            ThreadWithAttributes twa=(ThreadWithAttributes)
-                    it.next();
-            sb.append(twa.getCurrentStage(this) ).append(" ");
-            sb.append( twa.getParam(this));
-            sb.append( "</li>\n");
-        }
-        sb.append("</ul>");
-        return sb.toString();
-    }
-
-    /** Return an array with the status of each thread. The status
-     * indicates the current request processing stage ( for tomcat ) or
-     * whatever the thread is doing ( if the application using TP provide
-     * this info )
-     *
-     * @return
-     */
-    public String[] getThreadStatus() {
-        String status[]=new String[ threads.size()];
-        Iterator it=threads.keySet().iterator();
-        for( int i=0; ( i<status.length && it.hasNext()); i++ ) {
-            ThreadWithAttributes twa=(ThreadWithAttributes)
-                    it.next();
-            status[i]=twa.getCurrentStage(this);
-        }
-        return status;
-    }
-
-    /** Return an array with the current "param" ( XXX better name ? )
-     * of each thread. This is typically the last request.
-     *
-     * @return
-     */
-    public String[] getThreadParam() {
-        String status[]=new String[ threads.size()];
-        Iterator it=threads.keySet().iterator();
-        for( int i=0; ( i<status.length && it.hasNext()); i++ ) {
-            ThreadWithAttributes twa=(ThreadWithAttributes)
-                    it.next();
-            Object o=twa.getParam(this);
-            status[i]=(o==null)? null : o.toString();
-        }
-        return status;
-    }
 }
