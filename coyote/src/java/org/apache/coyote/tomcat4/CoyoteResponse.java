@@ -991,8 +991,7 @@ public class CoyoteResponse
         throws IOException {
 
         if (isCommitted())
-            throw new IllegalStateException
-                (sm.getString("coyoteResponse.sendAck.ise"));
+            return;
 
         // Ignore any call from an included servlet
         if (included)
