@@ -319,9 +319,10 @@ NSAPI_PUBLIC int jk_service(pblock * pb, Session * sn, Request * rq)
 
         s.ws_private = &private_data;
         s.pool = &private_data.p;
-
         if (init_ws_service(&private_data, &s)) {
             jk_endpoint_t *e = NULL;
+            /* Update retries for this worker */
+            s.retries = worker->retries;                 
             if (worker->get_endpoint(worker, &e, logger)) {
                 int recover = JK_FALSE;
                 if (e->service(e, &s, logger, &recover)) {
