@@ -1,0 +1,529 @@
+PGM
+CRTCMOD MODULE(MOD_JK2/MOD_JK2) +
+	SRCSTMF('/home/apache/jk/native2/server/apache2/mod_jk2.c') +
+	DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' + 
+	       'USE_APACHE_MD5' '_REENTRANT') +
+	TEXT('mod_jk2.c') +
+	OPTIMIZE(40) +
+	SYSIFCOPT(*IFSIO) +
+	TGTCCSID(*JOB) +
+	OPTION(*LOGMSG) +
+	TERASPACE(*YES *TSIFC) +
+	STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' + 
+           '/home/apache/jk/native2/server/apache2' +
+           '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_LOG_AP2) +
+	SRCSTMF('/home/apache/jk/native2/server/apache2/jk_logger_apache2.c') +
+	DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' + 
+	       'USE_APACHE_MD5' '_REENTRANT') +
+	TEXT('jk_logger_apache2.c') +
+	OPTIMIZE(40) +
+	SYSIFCOPT(*IFSIO) +
+	TGTCCSID(*JOB) +
+	OPTION(*LOGMSG) +
+	TERASPACE(*YES *TSIFC) +
+	STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' + 
+           '/home/apache/jk/native2/server/apache2' +
+           '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_MAP_APR) +
+	SRCSTMF('/home/apache/jk/native2/server/apache2/jk_map_aprtable.c') +
+	DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' + 
+	       'USE_APACHE_MD5' '_REENTRANT') +
+	TEXT('jk_map_aprtable.c') +
+	OPTIMIZE(40) +
+	SYSIFCOPT(*IFSIO) +
+	TGTCCSID(*JOB) +
+	OPTION(*LOGMSG) +
+	TERASPACE(*YES *TSIFC) +
+	STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' + 
+           '/home/apache/jk/native2/server/apache2' +
+           '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_SRV_AP2) +
+	SRCSTMF('/home/apache/jk/native2/server/apache2/jk_service_apache2.c') +
+	DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' + 
+	       'USE_APACHE_MD5' '_REENTRANT') +
+	TEXT('jk_service_apache2.c') +
+	OPTIMIZE(40) +
+	SYSIFCOPT(*IFSIO) +
+	TGTCCSID(*JOB) +
+	OPTION(*LOGMSG) +
+	TERASPACE(*YES *TSIFC) +
+	STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' + 
+           '/home/apache/jk/native2/server/apache2' +
+           '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_CHANNEL) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_channel.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_channel.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_CH_APRS) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_channel_apr_socket.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_channel_apr_socket.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_CH_JNI) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_channel_jni.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' 'OS400_JVM_12' + 
+           '_XOPEN_SOURCE=520' +  'USE_APACHE_MD5' +
+    '_REENTRANT') +
+    TEXT('jk_channel_jni.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_CH_UN) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_channel_un.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_channel_un') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_CONFIG) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_config.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_config.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_ENDP) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_endpoint.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_endpoint.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_ENV) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_env.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_env.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_HDL_LOG) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_handler_logon.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_handler_logon.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_HDL_RES) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_handler_response.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_handler_response.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG ) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_LOG_FIL) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_logger_file.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_logger_file') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_MAP) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_map.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_map.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_MD5) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_md5.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_md5.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_MSG_AJP) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_msg_ajp.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_msg_ajp.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_MUTEX) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_mutex.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_mutex.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_MUTEX_T) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_mutex_thread.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_mutex_thread.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_OBJ_CAC) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_objCache.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_objCache.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_POOL_AP) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_pool_apr.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_pool_apr.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_REGIS) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_registry.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_registry.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_REQUTIL) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_requtil.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_requtil.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_SHM) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_shm.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_shm.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_SIGNAL) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_signal.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_signal.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_URIENV) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_uriEnv.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_uriEnv.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_URIMAP) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_uriMap.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_uriMap.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_USER) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_user.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_user.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_VM_DEF) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_vm_default.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' 'OS400_JVM_12' + 
+           '_XOPEN_SOURCE=520' +  'USE_APACHE_MD5' +
+    '_REENTRANT') +
+    TEXT('jk_vm_default.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_W_ENV) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_workerEnv.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_workerEnv.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_W_AJP13) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_worker_ajp13.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_worker_ajp13.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_W_JNI) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_worker_jni.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' 'OS400_JVM_12' + 
+           '_XOPEN_SOURCE=520' +  'USE_APACHE_MD5' +
+    '_REENTRANT') +
+    TEXT('jk_worker_jni.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_W_LB) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_worker_lb.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_worker_lb.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_W_RUN) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_worker_run.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_worker_run.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTCMOD MODULE(MOD_JK2/JK_W_STAT) +
+    SRCSTMF('/home/apache/jk/native2/common/jk_worker_status.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'HAS_PCRE' '_XOPEN_SOURCE=520' +  
+           'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_worker_status.c') +
+    OPTIMIZE(40) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*ANSI) +
+    TGTCCSID(*JOB) +
+    OPTION(*LOGMSG) +
+    TERASPACE(*YES *TSIFC) +
+    STGMDL(*INHERIT) +
+    INCDIR('/home/apache/jk/native2/include' '/QIBM/ProdData/HTTPA/Include')
+
+CRTSRVPGM SRVPGM(MOD_JK2/MOD_JK2) +
+      MODULE(MOD_JK2/MOD_JK2    MOD_JK2/JK_LOG_AP2 +
+             MOD_JK2/JK_MAP_APR MOD_JK2/JK_SRV_AP2 +
+             MOD_JK2/JK_CHANNEL MOD_JK2/JK_CH_APRS +
+             MOD_JK2/JK_CH_JNI  MOD_JK2/JK_CH_UN   +
+             MOD_JK2/JK_CONFIG  MOD_JK2/JK_ENDP    +
+             MOD_JK2/JK_ENV     MOD_JK2/JK_HDL_LOG +
+             MOD_JK2/JK_HDL_RES MOD_JK2/JK_LOG_FIL +
+             MOD_JK2/JK_MAP     MOD_JK2/JK_MD5     +
+             MOD_JK2/JK_MSG_AJP MOD_JK2/JK_MUTEX   +
+             MOD_JK2/JK_MUTEX_T MOD_JK2/JK_MSG_AJP +
+             MOD_JK2/JK_MUTEX_T MOD_JK2/JK_OBJ_CAC +
+             MOD_JK2/JK_POOL_AP MOD_JK2/JK_REGIS   +
+             MOD_JK2/JK_REQUTIL MOD_JK2/JK_SHM     +
+             MOD_JK2/JK_SIGNAL  MOD_JK2/JK_URIENV  +
+             MOD_JK2/JK_URIMAP  MOD_JK2/JK_USER    +
+             MOD_JK2/JK_VM_DEF  MOD_JK2/JK_W_ENV   +
+             MOD_JK2/JK_W_AJP13 MOD_JK2/JK_W_JNI   +
+             MOD_JK2/JK_W_LB    MOD_JK2/JK_W_RUN   +
+             MOD_JK2/JK_W_STAT) +
+      EXPORT(*SRCFILE) +
+      BNDDIR() +
+      SRCFILE(MOD_JK2/QSRVSRC) +
+      SRCMBR(MOD_JK2) +
+      DETAIL(*BASIC) +
+      STGMDL(*INHERIT) +
+      BNDSRVPGM(QHTTPSVR/QZSRAPR QHTTPSVR/QZSRCORE +
+                QHTTPSVR/QZSRXMLP QHTTPSVR/QZSRSDBM) +
+      TEXT('Apache mod_jk2 tomcat connector module')
+
+ENDPGM
