@@ -135,9 +135,7 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     }
     else
         uri = strchr(host, '/');
-        
-    uriEnv->uri = uri;
-    
+            
     if (!uri) {
         /* That's a virtual host definition ( no actual mapping, just global
          * settings like aliases, etc
@@ -155,12 +153,13 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
         uriEnv->port = atoi(colon);
     }
     /* If it doesn't start with /, it must have a vhost */
-    if (strlen(host)) {
+    if (strlen(host) && uri != host) {
         uriEnv->virtual = uriEnv->pool->calloc( env, uriEnv->pool, strlen(host) + 1 );
         strncpy(uriEnv->virtual, name, strlen(host));
     }
     else
         uriEnv->virtual = "*";
+   uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, path);
     
     return JK_OK;
 }
