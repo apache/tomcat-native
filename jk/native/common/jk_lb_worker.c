@@ -337,7 +337,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      */
                     jk_log(l, JK_LOG_ERROR,
                            "lb: unrecoverable error, request failed. Tomcat failed in the middle of request, we can't recover to another instance.\n");
-                    break;
+                    JK_TRACE_EXIT(l);
+                    return JK_FALSE;
                 }
 
                 /* 
@@ -351,13 +352,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 /* NULL record, no more workers left ... */
                 jk_log(l, JK_LOG_ERROR,
                        "lb: All tomcat instances failed, no more workers left.\n");
+                JK_TRACE_EXIT(l);
                 return JK_FALSE;
-                break;
             }
         }
     }
 
     jk_log(l, JK_LOG_ERROR, "lb: end of service with error\n");
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 
@@ -379,7 +381,7 @@ static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
     }
 
     JK_LOG_NULL_PARAMS(l);
-
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 
@@ -409,6 +411,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                           sizeof(worker_record_t));
 
             if (!p->lb_workers) {
+                JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
 
@@ -460,7 +463,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             if (i != num_of_workers) {
                 close_workers(p, i, l);
                 jk_log(l, JK_LOG_DEBUG,
-                       "In jk_worker_t::validate: Failed to create worker %s\n",
+                       "Failed to create worker %s\n",
                        p->lb_workers[i].name);
 
             }
@@ -484,6 +487,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
     }
 
     JK_LOG_NULL_PARAMS(l);
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 
@@ -516,6 +520,7 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
         JK_LOG_NULL_PARAMS(l);
     }
 
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 
@@ -536,6 +541,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis, jk_logger_t *l)
     }
 
     JK_LOG_NULL_PARAMS(l);
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 
@@ -570,5 +576,6 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         JK_LOG_NULL_PARAMS(l);
     }
 
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
