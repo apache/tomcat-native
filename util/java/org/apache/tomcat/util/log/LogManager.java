@@ -72,8 +72,8 @@ import java.util.*;
  **/
 public class LogManager {
 
-    static LogHandler defaultChannel=new LogHandler();
-    // static LogHandler defaultChannel=new CommonLogHandler();
+    //static LogHandler defaultChannel=new LogHandler();
+    static LogHandler defaultChannel=new CommonLogHandler();
     
     protected Hashtable loggers=new Hashtable();
     protected Hashtable channels=new Hashtable();
