@@ -6,6 +6,7 @@
   
   <property file="${user.home}/.ant.properties" />
   <property file="${user.home}/build.properties" />
+  <property file="build.properties.${os.arch}.${os.name}" />
   <property file="build.properties" />
   <property file="../build.properties" />
 
@@ -47,6 +48,7 @@
   </target>
 
   <target name="init" >
+          <echo message="build.properties.${os.arch}.${os.name}" />
     <taskdef resource="META-INF/ant.tasks" 
 	     classpathref="jkant" />
     <available property="HAVE_APR" file="${apr.include}/apr.h" />
