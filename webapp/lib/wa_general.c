@@ -63,48 +63,48 @@ static apr_pool_t *pool=NULL;
 
 /* Initialize the WebApp Library. */
 const char *wa_init(void) {
-	if (pool==NULL) {
-		if (apr_initialize()!=APR_SUCCESS)
-			return("Cannot initialize APR");
-		if (apr_pool_create(&pool,NULL)!=APR_SUCCESS)
-			return("Cannot create WebApp Library memory pool");
-		if (pool==NULL)
-			return("Invalid WebApp Library memory pool created");
-	}
-	return(NULL);
+    if (pool==NULL) {
+        if (apr_initialize()!=APR_SUCCESS)
+            return("Cannot initialize APR");
+        if (apr_pool_create(&pool,NULL)!=APR_SUCCESS)
+            return("Cannot create WebApp Library memory pool");
+        if (pool==NULL)
+            return("Invalid WebApp Library memory pool created");
+    }
+    return(NULL);
 }
 
 /* Clean up the WebApp Library. */
 const char *wa_destroy(void) {
-	if (pool==NULL) return("WebApp Library not initialized");
-	apr_pool_destroy(pool);
-	pool=NULL;
-	apr_terminate();
-	return(NULL);
+    if (pool==NULL) return("WebApp Library not initialized");
+    apr_pool_destroy(pool);
+    pool=NULL;
+    apr_terminate();
+    return(NULL);
 }
 
 /* Allocate and setup a connection */
 const char *wa_connect(wa_connection **c, const char *p, const char *a) {
-	wa_connection *conn=NULL;
-	const char *msg=NULL;
+    wa_connection *conn=NULL;
+    const char *msg=NULL;
 
-	/* Check parameters */
-	if (c==NULL) return("Invalid storage location specified");
+    /* Check parameters */
+    if (c==NULL) return("Invalid storage location specified");
 
-	/* Allocate some memory */
-	conn=(wa_connection *)apr_palloc(pool,sizeof(wa_connection));
-	if (conn==NULL) return("Cannot allocate memory");
-	conn->pool=pool;
-	
-	/* Retrieve the provider and set up the conection */
-	conn->conf=NULL;
-	// if ((conn->prov=wa_provider_get(p))==NULL)
-	// 	return("Invalid provider name specified");
-	// if ((msg=conn->prov->configure(conn,a))!=NULL) return(msg);
+    /* Allocate some memory */
+    conn=(wa_connection *)apr_palloc(pool,sizeof(wa_connection));
+    if (conn==NULL) return("Cannot allocate memory");
+    conn->pool=pool;
 
-	/* Done! :) */
-	*c=conn;
-	return(NULL);
+    /* Retrieve the provider and set up the conection */
+    conn->conf=NULL;
+    // if ((conn->prov=wa_provider_get(p))==NULL)
+    //  return("Invalid provider name specified");
+    // if ((msg=conn->prov->configure(conn,a))!=NULL) return(msg);
+
+    /* Done! :) */
+    *c=conn;
+    return(NULL);
 }
 
 /* Allocate, set up and deploy an application. */
@@ -114,33 +114,33 @@ const char *wa_deploy(wa_application **a, wa_connection *c, const char *n,
     const char *msg=NULL;
     char *buf=NULL;
     int l=0;
-    
-	/* Check parameters */
-	if (a==NULL) return("Invalid storage location specified");
-	if (c==NULL) return("Invalid connection specified");
-	if (n==NULL) return("Invalid application name");
-	if (p==NULL) return("Invalid application path");
 
-	/* Allocate some memory */
+    /* Check parameters */
+    if (a==NULL) return("Invalid storage location specified");
+    if (c==NULL) return("Invalid connection specified");
+    if (n==NULL) return("Invalid application name");
+    if (p==NULL) return("Invalid application path");
+
+    /* Allocate some memory */
     appl=(wa_application *)apr_palloc(pool,sizeof(wa_application));
     if (appl==NULL) return("Cannot allocate memory");
     appl->pool=pool;
 
-	/* Set up application structure */
-	appl->conn=c;
-	appl->name=apr_pstrdup(pool,n);
-	buf=apr_pstrdup(appl->pool,p);
-	l=strlen(buf)-1;
-	if (buf[l]=='/') buf[l]='\0';
-	if (buf[0]=='/') appl->rpth=apr_pstrcat(pool,buf,"/");
-	else appl->rpth=apr_pstrcat(pool,"/",buf,"/");
-	appl->lpth=NULL;
-	
-	/* Tell the connector provider we're deploying an application */
-	appl->conf=NULL;
-	// if ((msg=appl->conn->prov->deploy(a))!=NULL) return(msg);
+    /* Set up application structure */
+    appl->conn=c;
+    appl->name=apr_pstrdup(pool,n);
+    buf=apr_pstrdup(appl->pool,p);
+    l=strlen(buf)-1;
+    if (buf[l]=='/') buf[l]='\0';
+    if (buf[0]=='/') appl->rpth=apr_pstrcat(pool,buf,"/");
+    else appl->rpth=apr_pstrcat(pool,"/",buf,"/");
+    appl->lpth=NULL;
 
-	/* Done! :) */
-	*a=appl;
-	return(NULL);
+    /* Tell the connector provider we're deploying an application */
+    appl->conf=NULL;
+    // if ((msg=appl->conn->prov->deploy(a))!=NULL) return(msg);
+
+    /* Done! :) */
+    *a=appl;
+    return(NULL);
 }

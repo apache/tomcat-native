@@ -60,22 +60,22 @@
 
 /* Attempt to match an URL against a web application. */
 boolean wa_match(const char *u, wa_application *a) {
-	if (u==NULL) return(FALSE);
-	if (a==NULL) return(FALSE);
+    if (u==NULL) return(FALSE);
+    if (a==NULL) return(FALSE);
 
-	if (strncmp(u,a->rpth,strlen(a->rpth))==0) return(TRUE);
-	else return(FALSE);
+    if (strncmp(u,a->rpth,strlen(a->rpth))==0) return(TRUE);
+    else return(FALSE);
 }
 
 /* Invoke a request in a web application. */
 int wa_invoke(wa_request *r, wa_application *a) {
-	return(404);
+    return(404);
 }
 
 /* Display an informative status page. */
 int wa_status(wa_request *r, wa_application **appl, wa_connection **conn,
-			  int anum, int cnum) {
-	int x;
+              int anum, int cnum) {
+    int x;
 
-	return(404);
+    return(404);
 }
