@@ -154,10 +154,6 @@ SOURCE=..\common\jk_msg_buff.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\jk_nwmain.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\common\jk_pool.c
 # End Source File
 # Begin Source File
@@ -171,14 +167,6 @@ SOURCE=..\common\jk_uri_worker_map.c
 # Begin Source File
 
 SOURCE=..\common\jk_util.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_registry.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_env.c
 # End Source File
 # Begin Source File
 
@@ -291,10 +279,6 @@ SOURCE=..\common\jk_util.h
 # Begin Source File
 
 SOURCE=..\common\jk_worker.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_env.h
 # End Source File
 # Begin Source File
 
