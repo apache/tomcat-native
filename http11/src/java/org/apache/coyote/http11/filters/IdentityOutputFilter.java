@@ -138,7 +138,7 @@ public class IdentityOutputFilter implements OutputFilter {
      * 
      * @return number of bytes written by the filter
      */
-    public int doWrite(ByteChunk chunk)
+    public int doWrite(ByteChunk chunk, Response res)
         throws IOException {
 
         int result = -1;
@@ -157,7 +157,7 @@ public class IdentityOutputFilter implements OutputFilter {
                 } else {
                     remaining = remaining - result;
                 }
-                buffer.doWrite(chunk);
+                buffer.doWrite(chunk, res);
             } else {
                 // No more bytes left to be written : return -1 and clear the 
                 // buffer
@@ -166,7 +166,7 @@ public class IdentityOutputFilter implements OutputFilter {
             }
         } else {
             // If no content length was set, just write the bytes
-            buffer.doWrite(chunk);
+            buffer.doWrite(chunk, res);
             result = chunk.getLength();
         }
 

@@ -148,14 +148,14 @@ public class IdentityInputFilter implements InputFilter {
      * whichever is greater. If the filter does not do request body length
      * control, the returned value should be -1.
      */
-    public int doRead(ByteChunk chunk)
+    public int doRead(ByteChunk chunk, Request req)
         throws IOException {
 
         int result = -1;
 
         if (contentLength >= 0) {
             if (remaining > 0) {
-                int nRead = buffer.doRead(chunk);
+                int nRead = buffer.doRead(chunk, req);
                 if (nRead > remaining) {
                     // The chunk is longer than the number of bytes remaining
                     // in the body; changing the chunk length to the number
@@ -200,7 +200,7 @@ public class IdentityInputFilter implements InputFilter {
 
         // Consume extra bytes.
         while (remaining > 0) {
-            remaining = remaining - buffer.doRead(endChunk);
+            remaining = remaining - buffer.doRead(endChunk, null);
         }
 
         // If too many bytes were read, return the amount.

@@ -108,7 +108,7 @@ public class VoidOutputFilter implements OutputFilter {
      * 
      * @return number of bytes written by the filter
      */
-    public int doWrite(ByteChunk chunk)
+    public int doWrite(ByteChunk chunk, Response res)
         throws IOException {
 
         return chunk.getLength();

@@ -145,7 +145,7 @@ public class ChunkedOutputFilter implements OutputFilter {
      * 
      * @return number of bytes written by the filter
      */
-    public int doWrite(ByteChunk chunk)
+    public int doWrite(ByteChunk chunk, Response res)
         throws IOException {
 
         int result = chunk.getLength();
@@ -163,12 +163,12 @@ public class ChunkedOutputFilter implements OutputFilter {
             chunkLength[pos--] = HexUtils.HEX[digit];
         }
         chunkHeader.setBytes(chunkLength, pos + 1, 9 - pos);
-        buffer.doWrite(chunkHeader);
+        buffer.doWrite(chunkHeader, res);
 
-        buffer.doWrite(chunk);
+        buffer.doWrite(chunk, res);
 
         chunkHeader.setBytes(chunkLength, 8, 2);
-        buffer.doWrite(chunkHeader);
+        buffer.doWrite(chunkHeader, res);
 
         return result;
 
@@ -203,7 +203,7 @@ public class ChunkedOutputFilter implements OutputFilter {
         throws IOException {
 
         // Write end chunk
-        buffer.doWrite(END_CHUNK);
+        buffer.doWrite(END_CHUNK, null);
         
         return 0;
 

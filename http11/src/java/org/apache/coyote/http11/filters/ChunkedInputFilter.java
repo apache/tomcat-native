@@ -152,7 +152,7 @@ public class ChunkedInputFilter implements InputFilter {
      * whichever is greater. If the filter does not do request body length
      * control, the returned value should be -1.
      */
-    public int doRead(ByteChunk chunk)
+    public int doRead(ByteChunk chunk, Request req)
         throws IOException {
 
         if (endChunk)
@@ -208,7 +208,7 @@ public class ChunkedInputFilter implements InputFilter {
         throws IOException {
 
         // Consume extra bytes : parse the stream until the end chunk is found
-        while (doRead(readChunk) >= 0) {
+        while (doRead(readChunk, null) >= 0) {
         }
 
         // Return the number of extra bytes which were consumed
@@ -254,7 +254,7 @@ public class ChunkedInputFilter implements InputFilter {
     protected int readBytes()
         throws IOException {
 
-        int nRead = buffer.doRead(readChunk);
+        int nRead = buffer.doRead(readChunk, null);
         pos = readChunk.getStart();
         lastValid = readChunk.getEnd();
         buf = readChunk.getBytes();

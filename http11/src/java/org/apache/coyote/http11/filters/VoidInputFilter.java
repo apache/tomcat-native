@@ -102,7 +102,7 @@ public class VoidInputFilter implements InputFilter {
      * 
      * @return number of bytes written by the filter
      */
-    public int doRead(ByteChunk chunk)
+    public int doRead(ByteChunk chunk, Request req)
         throws IOException {
 
         return -1;

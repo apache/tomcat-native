@@ -505,7 +505,7 @@ public class InternalOutputBuffer implements OutputBuffer {
      * @return number of bytes written
      * @throws IOException an undelying I/O error occured
      */
-    public int doWrite(ByteChunk chunk) 
+    public int doWrite(ByteChunk chunk, Response res) 
         throws IOException {
 
         if (!committed) {
@@ -518,9 +518,9 @@ public class InternalOutputBuffer implements OutputBuffer {
         }
 
         if (lastActiveFilter == -1)
-            return outputStreamOutputBuffer.doWrite(chunk);
+            return outputStreamOutputBuffer.doWrite(chunk, res);
         else
-            return activeFilters[lastActiveFilter].doWrite(chunk);
+            return activeFilters[lastActiveFilter].doWrite(chunk, res);
 
     }
 
@@ -646,7 +646,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         /**
          * Write chunk.
          */
-        public int doWrite(ByteChunk chunk) 
+        public int doWrite(ByteChunk chunk, Response res) 
             throws IOException {
 
             outputStream.write(chunk.getBuffer(), chunk.getStart(), 

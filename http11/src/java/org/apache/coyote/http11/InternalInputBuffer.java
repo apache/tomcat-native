@@ -733,13 +733,13 @@ public class InternalInputBuffer implements InputBuffer {
     /**
      * Read some bytes.
      */
-    public int doRead(ByteChunk chunk) 
+    public int doRead(ByteChunk chunk, Request req) 
         throws IOException {
 
         if (lastActiveFilter == -1)
-            return inputStreamInputBuffer.doRead(chunk);
+            return inputStreamInputBuffer.doRead(chunk, req);
         else
-            return activeFilters[lastActiveFilter].doRead(chunk);
+            return activeFilters[lastActiveFilter].doRead(chunk,req);
 
     }
 
@@ -800,7 +800,7 @@ public class InternalInputBuffer implements InputBuffer {
         /**
          * Read bytes into the specified chunk.
          */
-        public int doRead(ByteChunk chunk) 
+        public int doRead(ByteChunk chunk, Request req ) 
             throws IOException {
 
             if (pos >= lastValid) {
