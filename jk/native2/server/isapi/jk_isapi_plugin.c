@@ -87,6 +87,7 @@
 #define WORKERS_FILE_TAG        ("workersFile")
 #define USE_AUTH_COMP_TAG       ("authComplete")
 #define THREAD_POOL_TAG         ("threadPool")
+#define SEND_GROUPS_TAG         ("sendGroups")
 
 
 static char  file_name[_MAX_PATH];
@@ -97,6 +98,7 @@ static int   is_mapread = JK_FALSE;
 static int   was_inited = JK_FALSE;
 static DWORD auth_notification_flags = 0;
 static int   use_auth_notification_flags = 0;
+int          send_groups = 0;
 
 static jk_workerEnv_t *workerEnv;
 apr_pool_t *jk_globalPool;
@@ -668,6 +670,10 @@ static int read_registry_init_data(jk_env_t *env)
             if (tmp) {
                 use_auth_notification_flags = atoi(tmp);
             }
+            tmp = map->get(env,map,SEND_GROUPS_TAG);
+            if (tmp) {
+                send_groups = atoi(tmp);
+            }
             using_ini_file=JK_TRUE;            
             return ok;
         }     
@@ -727,6 +733,13 @@ static int read_registry_init_data(jk_env_t *env)
                                      tmpbuf,
                                      8)) {
         use_auth_notification_flags = atoi(tmpbuf);
+    }
+
+    if(get_registry_config_parameter(hkey,
+                                     SEND_GROUPS_TAG,
+                                     tmpbuf,
+                                     8)) {
+        send_groups = atoi(tmpbuf);
     }
 
     RegCloseKey(hkey);
