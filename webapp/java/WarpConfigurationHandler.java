@@ -286,10 +286,13 @@ public class WarpConfigurationHandler {
                 logger.debug("No application for \""+applPath+"\"");
 
             Deployer deployer=(Deployer)host;
-            File file=new File(host.getAppBase()+File.separator+applName);
+            File file=new File(applName);
             if (!file.isAbsolute()) {
-                file=new File(System.getProperty("catalina.base"),
-                              host.getAppBase()+File.separator+applName);
+                file=new File(host.getAppBase()+File.separator+applName);
+                if (!file.isAbsolute()) {
+               	    file=new File(System.getProperty("catalina.base"),
+                                  host.getAppBase()+File.separator+applName);
+                }
             }
 
             if (!file.exists()) {
