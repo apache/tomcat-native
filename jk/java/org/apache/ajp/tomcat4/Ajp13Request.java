@@ -104,31 +104,31 @@ public class Ajp13Request extends HttpRequestBase {
         // we're more efficient (that's the whole point of
         // all of the MessageBytes in AjpRequest)
 
-        setMethod(ajp.getMethod().toString());
-        setProtocol(ajp.getProtocol().toString());
-        setRequestURI(ajp.getRequestURI().toString());
-        setRemoteAddr(ajp.getRemoteAddr().toString());
-        setRemoteHost(ajp.getRemoteHost().toString());
-        setServerName(ajp.getServerName().toString());
+        setMethod(ajp.method().toString());
+        setProtocol(ajp.protocol().toString());
+        setRequestURI(ajp.requestURI().toString());
+        setRemoteAddr(ajp.remoteAddr().toString());
+        setRemoteHost(ajp.remoteHost().toString());
+        setServerName(ajp.serverName().toString());
         setServerPort(ajp.getServerPort());
 
-        String remoteUser = ajp.getRemoteUser().toString();
+        String remoteUser = ajp.remoteUser().toString();
         if (remoteUser != null) {
             setUserPrincipal(new Ajp13Principal(remoteUser));
         }
 
-        setAuthType(ajp.getAuthType().toString());
-        setQueryString(ajp.getQueryString().toString());
+        setAuthType(ajp.authType().toString());
+        setQueryString(ajp.queryString().toString());
         setScheme(ajp.getScheme());
         setSecure(ajp.getSecure());
         setContentLength(ajp.getContentLength());
 
-        String contentType = ajp.getContentType().toString();
+        String contentType = ajp.contentType().toString();
         if (contentType != null) {
             setContentType(contentType);
         }
 
-        MimeHeaders mheaders = ajp.getHeaders();
+        MimeHeaders mheaders = ajp.headers();
         int nheaders = mheaders.size();
         for (int i = 0; i < nheaders; ++i) {
             MessageBytes name = mheaders.getName(i);
@@ -142,7 +142,7 @@ public class Ajp13Request extends HttpRequestBase {
             setAttribute(name, ajp.getAttribute(name));
         }
 
-        addCookies(ajp.getCookies());
+        addCookies(ajp.cookies());
     }
 
 //      public Object getAttribute(String name) {

@@ -316,20 +316,20 @@ public class Ajp13 {
 
         // Translate the HTTP method code to a String.
         byte methodCode = msg.getByte();
-        req.method.setString( methodTransArray[(int)methodCode - 1] );
+        req.method().setString(methodTransArray[(int)methodCode - 1]);
 
-        msg.getMessageBytes(req.protocol); 
-        msg.getMessageBytes(req.requestURI);
+        msg.getMessageBytes(req.protocol()); 
+        msg.getMessageBytes(req.requestURI());
 
-        msg.getMessageBytes(req.remoteAddr);
-        msg.getMessageBytes(req.remoteHost);
-        msg.getMessageBytes(req.serverName);
-        req.serverPort = msg.getInt();
+        msg.getMessageBytes(req.remoteAddr());
+        msg.getMessageBytes(req.remoteHost());
+        msg.getMessageBytes(req.serverName());
+        req.setServerPort(msg.getInt());
 
 	isSSL = msg.getBool();
 
 	// Decode headers
-	MimeHeaders headers = req.headers;
+	MimeHeaders headers = req.headers();
 	int hCount = msg.getInt();
         for(int i = 0 ; i < hCount ; i++) {
             String hName = null;
@@ -345,23 +345,26 @@ public class Ajp13 {
             if(0xA000 == isc) {
                 msg.getInt(); // To advance the read position
                 hName = headerTransArray[hId - 1];
-		vMB= headers.addValue( hName );
+		vMB= headers.addValue(hName);
             } else {
 		// XXX Not very elegant
-		vMB=msg.addHeader( headers );
-		if( vMB==null) return 500; // wrong packet
+		vMB = msg.addHeader(headers);
+		if (vMB == null) {
+                    return 500; // wrong packet
+                }
             }
 
             msg.getMessageBytes(vMB);
 
             // set content length, if this is it...
             if (hId == SC_REQ_CONTENT_LENGTH) {
-                req.contentLength = (vMB == null) ? -1 : vMB.getInt();
+                int contentLength = (vMB == null) ? -1 : vMB.getInt();
+                req.setContentLength(contentLength);
             } else if (hId == SC_REQ_CONTENT_TYPE) {
                 ByteChunk bchunk = vMB.getByteChunk();
-                req.contentType.setBytes(bchunk.getBytes(),
-                                         bchunk.getOffset(),
-                                         bchunk.getLength());
+                req.contentType().setBytes(bchunk.getBytes(),
+                                           bchunk.getOffset(),
+                                           bchunk.getLength());
             }
         }
 
@@ -377,19 +380,19 @@ public class Ajp13 {
                 break;
 		
 	    case SC_A_REMOTE_USER  :
-                msg.getMessageBytes(req.remoteUser);
+                msg.getMessageBytes(req.remoteUser());
                 break;
 		
 	    case SC_A_AUTH_TYPE    :
-                msg.getMessageBytes(req.authType);
+                msg.getMessageBytes(req.authType());
                 break;
 		
 	    case SC_A_QUERY_STRING :
-		msg.getMessageBytes(req.queryString);
+		msg.getMessageBytes(req.queryString());
                 break;
 		
 	    case SC_A_JVM_ROUTE    :
-                msg.getMessageBytes(req.jvmRoute);
+                msg.getMessageBytes(req.jvmRoute());
                 break;
 		
 	    case SC_A_SSL_CERT     :
@@ -424,16 +427,16 @@ public class Ajp13 {
         }
 
         if(isSSL) {
-            req.scheme = req.SCHEME_HTTPS;
-            req.secure = true;
+            req.setScheme(req.SCHEME_HTTPS);
+            req.setSecure(true);
         }
 
         // set cookies on request now that we have all headers
-        req.cookies.setHeaders(req.headers);
+        req.cookies().setHeaders(req.headers());
 
 	// Check to see if there should be a body packet coming along
 	// immediately after
-    	if(req.contentLength > 0) {
+    	if(req.getContentLength() > 0) {
 
 	    /* Read present data */
 	    int err = receive(inBuf);
