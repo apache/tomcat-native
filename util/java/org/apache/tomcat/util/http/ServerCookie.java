@@ -278,7 +278,7 @@ public class ServerCookie implements Serializable {
             buf.append(value);
         } else {
             buf.append('"');
-            buf.append(value);
+            buf.append(escapeDoubleQuotes(value));
             buf.append('"');
         }
     }
@@ -288,6 +288,32 @@ public class ServerCookie implements Serializable {
     public static void log(String s ) {
         if (log.isDebugEnabled())
             log.debug("ServerCookie: " + s);
+    }
+
+
+    /**
+     * Escapes any double quotes in the given string.
+     *
+     * @param s the input string
+     *
+     * @return The (possibly) escaped string
+     */
+    private static String escapeDoubleQuotes(String s) {
+
+        if (s == null || s.length() == 0 || s.indexOf('"') == -1) {
+            return s;
+        }
+
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '"')
+                b.append('\\').append('"');
+            else
+                b.append(c);
+        }
+
+        return b.toString();
     }
 
 }
