@@ -133,9 +133,9 @@ AC_DEFUN(
     if test ! -f "$2/apr-config" ; then
       WA_ERROR([cannot find apr-config file in $2])
     fi
-    wa_apr_get_tempval=`$2/apr-config --apr-la-file 2> /dev/null`
+    wa_apr_get_tempval=`$2/apr-config --link-libtool 2> /dev/null`
     if test -z "${wa_apr_get_tempval}" ; then
-      WA_ERROR([$2/apr-config --apr-la-file failed])
+      WA_ERROR([$2/apr-config --link-libtool failed])
     fi
     wa_apr_get_tempval=`basename ${wa_apr_get_tempval} |  sed 's/lib//g'`
     wa_apr_get_tempval=`echo ${wa_apr_get_tempval} | sed 's/\.la//g'`
@@ -157,9 +157,9 @@ AC_DEFUN(
     if test ! -f "$2/apr-config" ; then
       WA_ERROR([cannot find apr-config file in $2])
     fi
-    wa_apr_get_tempval=`$2/apr-config --apr-la-file 2> /dev/null`
+    wa_apr_get_tempval=`$2/apr-config --link-libtool 2> /dev/null`
     if test -z "${wa_apr_get_tempval}" ; then
-      WA_ERROR([$2/apr-config --apr-la-file failed])
+      WA_ERROR([$2/apr-config --link-libtool failed])
     fi
     wa_apr_get_tempval=`basename ${wa_apr_get_tempval}`
     WA_APPEND([$1],[${wa_apr_get_tempval}])
