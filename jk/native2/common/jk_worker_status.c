@@ -254,7 +254,7 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
             for( j=0; j<slot->structCnt ; j++ ) {
                 jk_stat_t *statArray=(jk_stat_t *)data;
                 jk_stat_t *stat=statArray + j;
-				
+                
                 jk2_worker_status_displayStat( env, s, stat,
                                                &totalReq, &totalErr, &totalTime, &maxTime);
             }
@@ -511,7 +511,7 @@ static void jk2_worker_status_dmpEndpoints(jk_env_t *env, jk_ws_service_t *s,
             /* XXX Add info about number of slots */
             for( j=0; j<slot->structCnt ; j++ ) {
                 jk_stat_t *statArray=(jk_stat_t *)data;
-				
+                
                 jk_stat_t *stat=statArray + j;
                 s->jkprintf(env, s, "[endpoint:%s%d]\n", name, j);
             
@@ -710,7 +710,7 @@ static int JK_METHOD jk2_worker_status_get(jk_env_t *env,
                                            jk_ws_service_t *s)
 {
     char *cName=s->query_string + 4;
-    char *attName=rindex(cName, '|' );
+    char *attName=strrchr(cName, '|' );
     int i;
     
     if( attName == NULL ) {
@@ -744,7 +744,7 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
                                            jk_ws_service_t *s)
 {
     char *cName=s->query_string + 4;
-    char *attVal=rindex(cName, '|' );
+    char *attVal=strrchr(cName, '|' );
     char *attName;
     int i;
     
@@ -755,7 +755,7 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
     *attVal='\0';
     attVal++;
     
-    attName=rindex( cName, '|' );
+    attName=strrchr( cName, '|' );
     if( attName == NULL ) {
         s->jkprintf( env, s, "ERROR: attribute name not found\n", cName);
         return JK_OK;
@@ -814,7 +814,7 @@ static int JK_METHOD jk2_worker_status_invoke(jk_env_t *env,
     char *attName;
     int i;
     
-    attName=rindex( cName, '|' );
+    attName=strrchr( cName, '|' );
     if( attName == NULL ) {
         s->jkprintf( env, s, "ERROR: attribute name not found\n", cName);
         return JK_OK;
