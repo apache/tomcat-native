@@ -1618,24 +1618,35 @@ static int jk_translate(request_rec *r)
 static int jk_map_to_storage(request_rec *r)
 {
     if (apr_table_get(r->notes, JK_WORKER_ID)) {
-        char *uri_p=r->uri;
 
-        /* This is old code which doesn't seem to work well with mod_dir
-            r->filename = (char *)apr_filename_of_pathname(r->uri); */
+        /* First find just the name of the file, no directory */
+        r->filename = (char *)apr_filename_of_pathname(r->uri);
 
-        /* Absolute paths cannot be merged */
-        while (*uri_p == '/') ++uri_p;
+        /* Ony if valid sub-request, most likely from mod_dir */
+        if (r->main && r->main->filename && *r->main->filename){
 	
-        /* Need absolute path to stat */
-        if (apr_filepath_merge(&r->filename, ap_document_root(r), uri_p,
-                               APR_FILEPATH_SECUREROOT | APR_FILEPATH_TRUENAME,
-                               r->pool)
-            != APR_SUCCESS){
-          return DECLINED;
-        }
+            /* The filename from the main request will be set to what should
+             * be picked up, aliases included. Tomcat will need to know about
+             * those aliases or things won't work for them. Normal files should
+             * be fine. */
 
-        /* Stat the file so that mod_dir knows it's there */
-        apr_stat(&r->finfo, r->filename, APR_FINFO_TYPE, r->pool);
+            /* Need absolute path to stat */
+            if (r->main->filename[strlen(r->main->filename)-1] == '/'){
+                if (apr_filepath_merge(&r->filename,
+                                       r->main->filename, r->filename,
+                                       APR_FILEPATH_SECUREROOT |
+                                       APR_FILEPATH_TRUENAME,
+                                       r->pool)
+                    != APR_SUCCESS){
+                  return DECLINED;
+                }
+            } else {
+                r->filename = apr_pstrdup(r->pool, r->main->filename);
+            }
+
+            /* Stat the file so that mod_dir knows it's there */
+            apr_stat(&r->finfo, r->filename, APR_FINFO_TYPE, r->pool);
+        }
 
         return OK;
     }
