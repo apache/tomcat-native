@@ -54,22 +54,14 @@
 
 	<jar jarfile="${jk.build}/lib/ajp.jar"
 	     basedir="${jk.build}/classes"
+	     excludes="org/apache/ajp/test"
 	     />
     </target>
 
     <target name="test" if="test.entry" depends="build-main"
             description="Run all unit test cases">
-        <!--
-	<junit printsummary="yes" fork="on" haltonfailure="yes">
-	    <formatter type="plain" usefile="false"/>
-      	    <test name="${test.entry}"/>
-            <classpath refid="test.classpath"/>
-	</junit>
-	-->
-
 	<java classname="${test.runner}" fork="yes"
 	      failonerror="${test.failonerror}">
-	      <!--<jvmarg value="${java.protocol.handler.pkgs}"/>-->
 	      <arg value="${test.entry}"/>
 	      <classpath refid="test.classpath"/>
 	</java>
@@ -80,7 +72,7 @@
     <target name="javadoc">
         <delete dir="${jk.build}/javadoc"/>
 	<mkdir dir="${jk.build}/javadoc"/>
-	<javadoc packagenames="org.apache.ajp.*"
+	<javadoc packagenames="org.apache.ajp,org.apache.ajp.tomcat4"
                sourcepath="src/java"
 	       classpath="${tomcat-util.jar}:${catalina.jar}:${servlet.jar}"
                   destdir="${jk.build}/javadoc"
