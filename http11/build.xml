@@ -35,7 +35,7 @@
 
 
   <!-- The name of this component -->
-  <property name="component.name"          value="coyote-http11"/>
+  <property name="component.name"          value="http11"/>
 
   <!-- The title of this component -->
   <property name="component.title"         value="Coyote HTTP/1.1 Connector"/>

@@ -124,12 +124,12 @@
 	    </fileset>
         </copy>
 
-	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-ajp.jar"
+	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-jk.jar"
 	     basedir="${jk.build}/WEB-INF/classes">
             <include name="org/apache/ajp/**" />
         </jar>
 	
-	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-ajp2.jar"
+	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-jk2.jar"
 	     basedir="${jk.build}/WEB-INF/classes">
             <include name="org/apache/jk/**" />
             <exclude name="org/apache/jk/ant/**" />
@@ -201,9 +201,9 @@
         <copy todir="${tomcat40.home}/server/lib" 
               file="${jk.build}/WEB-INF/lib/tomcat-util.jar"/>
         <copy todir="${tomcat40.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-ajp.jar"/>
+              file="${jk.build}/WEB-INF/lib/tomcat-jk.jar"/>
         <copy todir="${tomcat40.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-ajp2.jar"/>
+              file="${jk.build}/WEB-INF/lib/tomcat-jk2.jar"/>
     </target>
 
     <target name="install-t41" if="tomcat41.detect" > 
@@ -211,9 +211,9 @@
         <copy todir="${tomcat41.home}/server/lib" 
               file="${jk.build}/WEB-INF/lib/tomcat-util.jar"/>
         <copy todir="${tomcat41.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-ajp.jar"/>
+              file="${jk.build}/WEB-INF/lib/tomcat-jk.jar"/>
         <copy todir="${tomcat41.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-ajp2.jar"/>
+              file="${jk.build}/WEB-INF/lib/tomcat-jk2.jar"/>
         <echo message="Don't forget to add the connector to ${tomcat41.home}/conf/server.xml" />
 
         <!-- 3.3 style -->
