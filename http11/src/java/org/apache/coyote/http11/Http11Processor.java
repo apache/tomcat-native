@@ -1333,9 +1333,12 @@ public class Http11Processor implements Processor, ActionHook {
      */
     private boolean isCompressable() {
 
+        // Nope Compression could works in HTTP 1.0 also
+        // cf: mod_deflate
+        
         // Compression only since HTTP 1.1
-        if (! http11)
-            return false;
+        // if (! http11)
+        //    return false;
 
         // Check if browser support gzip encoding
         MessageBytes acceptEncodingMB = 
