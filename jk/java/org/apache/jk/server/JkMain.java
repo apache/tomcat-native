@@ -119,6 +119,7 @@ public class JkMain
         modules.put("channelUnix", "org.apache.jk.common.ChannelUn");
         modules.put("channelJni", "org.apache.jk.common.ChannelJni");
         modules.put("apr", "org.apache.jk.apr.AprImpl");
+        modules.put("mx", "org.apache.jk.common.JkMX");
         modules.put("shm", "org.apache.jk.common.Shm");
         modules.put("request","org.apache.jk.common.HandlerRequest");
         modules.put("container","org.apache.jk.common.HandlerRequest");
