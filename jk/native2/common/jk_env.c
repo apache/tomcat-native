@@ -91,87 +91,112 @@ static int JK_METHOD jk2_env_put( jk_env_t *parent, jk_env_t *chld )
 }
 
 static jk_env_objectFactory_t JK_METHOD jk2_env_getFactory(jk_env_t *env, 
-                                                           const char *type,
-                                                           const char *name)
+                                                           const char *type )
 {
-  jk_env_objectFactory_t result;
-  /* malloc/free: this is really temporary, and is executed only at setup
-     time, not during request execution. We could create a subpool or alloc
-     from stack */
-  char *typeName=
-      (char *)malloc( (strlen(name) + strlen(type) + 2 ) * sizeof( char ));
-
-  strcpy(typeName, type );
-  strcat( typeName, "/" );
-  strcat( typeName, name );
-
-  if( type==NULL || name==NULL ) {
-    // throw NullPointerException
-    return NULL;
+  if( type==NULL ) {
+      env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "env.getFactory(): NullPointerException\n");
+      return NULL;
   }
 
-  /** XXX add check for the type */
-  result=(jk_env_objectFactory_t)env->_registry->get( env, env->_registry,
-                                                      typeName);
-  free( typeName );
-  return result;
+  return (jk_env_objectFactory_t)env->_registry->get( env, env->_registry, type);
 }
 
-static void *jk2_env_getInstance(jk_env_t *_this, jk_pool_t *pool,
-                                 const char *type, const char *name)
+static void *jk2_env_createInstance(jk_env_t *env, jk_pool_t *pool,
+                                    const char *type, const char *name)
 {
     jk_env_objectFactory_t fac;
-    void *result;
-
-    /* prevent core... */
-    if (name==NULL)
-        return(NULL);
-
-    fac=_this->getFactory( _this, type, name);
-    if( fac==NULL ) {
-        if( _this->l )
-            _this->l->jkLog(_this, _this->l, JK_LOG_ERROR,
-                            "Error getting factory for %s:%s\n", type, name);
+    jk_bean_t *result;
+    
+    if( type==NULL  ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                        "env.createInstance(): NullPointerException\n");
         return NULL;
     }
 
-    fac( _this, pool, &result, type, name );
-    if( result==NULL ) {
-        if( _this->l )
-            _this->l->jkLog(_this, _this->l, JK_LOG_ERROR,
+    if( name==NULL ) {
+        name=pool->calloc( env, pool, 10 );
+        snprintf( name, 10, "%s.%d", type, env->id++ );
+    }
+
+    fac=jk2_env_getFactory( env, type);
+    if( fac==NULL ) {
+        if( env->l ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                            "Error getting factory for %s:%s\n", type, name);
+        } else {
+            fprintf( stderr, "Error getting factory for %s \n",  type );
+        }
+        return NULL;
+    }
+
+    result=(jk_bean_t *)pool->calloc( NULL, pool, sizeof( jk_bean_t ));
+    result->type=type;
+    result->name=name;
+    
+    fac( env, pool, result, type, name );
+    if( result->object==NULL ) {
+        if( env->l )
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
                                 "Error getting instance for %s:%s\n", type, name);
         return NULL;
     }
+
+    env->_objects->put( env, env->_objects, name, result, NULL );
     
-    return result;
+    return result->object;
 }
 
+static void *jk2_env_getByName(jk_env_t *env, const char *name)
+{
+    jk_bean_t *result;
+
+    if( name==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                        "env.getByName(): NullPointerException\n");
+        return NULL;
+    }
+
+    
+    result=(jk_bean_t *)env->_objects->get( env, env->_objects, name );
+    if( result==NULL ) return NULL;
+    
+    return result->object;
+}    
+
+static jk_bean_t JK_METHOD *jk2_env_getBean(jk_env_t *env, const char *name)
+{
+    if( name==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                        "env.getByName(): NullPointerException\n");
+        return NULL;
+    }
+
+    return (jk_bean_t *)env->_objects->get( env, env->_objects, name );
+}    
 
 static void JK_METHOD jk2_env_registerFactory(jk_env_t *env, 
                                              const char *type,
-                                             const char *name, 
                                              jk_env_objectFactory_t fact)
 {
-  void *old;
-  char *typeName;
-  int size=( sizeof( char ) * (strlen(name) + strlen(type) + 2 ));
-
-  typeName=(char *)env->globalPool->calloc(env, env->globalPool, size);
-
-
-  strcpy(typeName, type );
-  strcat( typeName, "/" );
-  strcat( typeName, name );
-  env->_registry->put( env, env->_registry, typeName, fact, &old );
+    if( type==NULL || fact==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                        "env.registerFactory(): NullPointerException\n");
+        return;
+    }
+    env->_registry->put( env, env->_registry, type, fact, NULL );
 }
 
 static void jk2_env_initEnv( jk_env_t *env, char *id ) {
   /*   env->logger=NULL; */
   /*   map_alloc( & env->properties ); */
-  env->getFactory= jk2_env_getFactory; 
   env->registerFactory= jk2_env_registerFactory;
-  env->getInstance= jk2_env_getInstance; 
+  env->getByName= jk2_env_getByName; 
+  env->getMBean= jk2_env_getBean; 
+  env->createInstance= jk2_env_createInstance;
+  env->id=0;
   jk2_map_default_create( env, & env->_registry, env->globalPool );
+  jk2_map_default_create( env, & env->_objects, env->globalPool );
   jk2_registry_init(env);
 }
 
