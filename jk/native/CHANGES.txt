@@ -2,6 +2,16 @@ JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
 Changes with JK 1.2.5
+    * Remove an unnecessary error message when connections to
+      all load balanced workers fail.
+      [glenn]
+    * When mod_jk cannot connect to a worker include the name of
+      the worker in the error message.  This is especially helpful
+      when you are using load balanced workers.
+      [glenn]
+    * Fix problem with mod_jk.log getting opened multiple times for
+      Apache 2. Only one mod_jk.log can be configured.
+      [glenn]
     * Fix Apache 2 connector so that DirectoryIndex works for an
       index.jsp page if JkOptions ForwardDirectories was configured.
       [hgomez]
