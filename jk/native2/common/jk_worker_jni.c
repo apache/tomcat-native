@@ -69,12 +69,14 @@
 #include "jni.h"
 
 /* default only, will be  configurable  */
-#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/server/JkMain")
+#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/apr/AprImpl")
 
 struct jni_worker_data {
     jclass      jk_java_bridge_class;
     jmethodID   jk_main_method;
     char *className;
+    /* Hack to allow multiple 'options' for the class name */
+    char **classNameOptions;
     char **args;
     int nArgs;
 };
@@ -129,7 +131,16 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
     jniWorker = pThis->worker_private;
 
     if( strcmp( name, "class" )==0 ) {
-        jniWorker->className = value;
+        if( jniWorker->className != NULL ) {
+            int i;
+            for( i=0; i<4; i++ ) {
+                if( jniWorker->classNameOptions[i]==NULL ) {
+                    jniWorker->classNameOptions[i]=value;
+                }
+            } 
+        } else {
+            jniWorker->className = value;
+        }
     } else if( strcmp( name, "ARG" )==0 ) {
         jniWorker->args[jniWorker->nArgs]=value;
         jniWorker->nArgs++;
@@ -189,7 +200,22 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
         (*jniEnv)->FindClass(jniEnv, jniWorker->className );
 
     if( jniWorker->jk_java_bridge_class == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG,
+        int i;
+        for( i=0;i<4; i++ ) {
+            if( jniWorker->classNameOptions[i] != NULL ) {
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "jni.validate() try %s \n",
+                              jniWorker->classNameOptions[i]);
+                jniWorker->jk_java_bridge_class =
+                    (*jniEnv)->FindClass(jniEnv, jniWorker->classNameOptions[i] );
+                if(jniWorker->jk_java_bridge_class != NULL )
+                    break;
+            }
+        }
+    }
+    
+    if( jniWorker->jk_java_bridge_class == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Can't find class %s\n", jniWorker->className );
         /* [V] the detach here may segfault on 1.1 JVM... */
         vm->detach(env, vm);
@@ -309,6 +335,7 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     _this->pool=pool;
 
     jniData->jk_java_bridge_class  = NULL;
+    jniData->classNameOptions=(char **)pool->calloc(env, pool, 4 * sizeof(char *));
 
     jniData->args = pool->calloc( env, pool, 64 * sizeof( char *));
     jniData->nArgs =0;
