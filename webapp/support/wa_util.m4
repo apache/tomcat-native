@@ -96,9 +96,10 @@ AC_DEFUN(
   [WA_PATH_DIR],
   [
     AC_MSG_CHECKING([for $3 path])
-    if test -d "$2" ; then
+    tempval="`echo $2`"
+    if test -d "${tempval}" ; then
       curdir="`pwd`"
-      cd "$2"
+      cd "${tempval}"
       newdir="`pwd`"
       $1="${newdir}"
       AC_SUBST($1)
@@ -107,8 +108,9 @@ AC_DEFUN(
       unset curdir
       unset newdir
     else
-      WA_ERROR([directory $2 not found])
+      WA_ERROR([directory ${tempval} not found])
     fi
+    unset tempval
   ])
 
 dnl --------------------------------------------------------------------------
