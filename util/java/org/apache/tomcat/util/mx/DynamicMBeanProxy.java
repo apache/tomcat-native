@@ -129,10 +129,10 @@ public class DynamicMBeanProxy implements DynamicMBean {
         } else {
             instances.put( name, new Integer( 0 ));
         }
-        return "name=" + name + " seq=" + seq;
+        return "name=" + name + ",seq=" + seq;
     }
 
-    public static void createMBean( Object proxy, String domain, String name ) {
+    public static String createMBean( Object proxy, String domain, String name ) {
         try {
             DynamicMBeanProxy mbean=new DynamicMBeanProxy();
             mbean.setReal( proxy );
@@ -142,24 +142,38 @@ public class DynamicMBeanProxy implements DynamicMBean {
                 mbean.setName( generateName( proxy.getClass() ));
             }
 
-            mbean.registerMBean( domain );
+            return mbean.registerMBean( domain );
         } catch( Throwable t ) {
             log.error( "Error creating mbean ", t );
+            return null;
         }
     }
     
-    public void registerMBean( String domain ) {
+    public String registerMBean( String domain ) {
         try {
             // XXX use aliases, suffix only, proxy.getName(), etc
-            ObjectName oname=new ObjectName( domain + ": " +  getName());
+            String fullName=domain + ": " +  getName();
+            ObjectName oname=new ObjectName( fullName );
 
             if(  getMBeanServer().isRegistered( oname )) {
                 log.info("Unregistering " + oname );
                 getMBeanServer().unregisterMBean( oname );
             }
             getMBeanServer().registerMBean( this, oname );
+            return fullName;
         } catch( Throwable t ) {
             log.error( "Error creating mbean ", t );
+            return null;
+        }
+    }
+
+    public static void unregisterMBean( Object o, String name ) {
+        try {
+            ObjectName oname=new ObjectName( name );
+
+            getMBeanServer().unregisterMBean( oname );
+        } catch( Throwable t ) {
+            log.error( "Error unregistering mbean ", t );
         }
     }
 
