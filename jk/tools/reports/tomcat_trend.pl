@@ -232,7 +232,7 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
             if( $line =~ /(jk_tcp_socket_recvfull failed|ERROR: Receiving from tomcat failed)/ ) {
                $Global{tomcat_full}++;
                $Interval{tomcat_full}++;
-            } elsif( $line =~ /(ajp_process_callback - write failed|ERROR sending data to client. Connection aborted or network problems)/ ) {
+            } elsif( $line =~ /(ajp_process_callback - write failed|ERROR sending data to client. Connection aborted or network problems|Client connection aborted or network problems)/ ) {
                $Global{client_gone}++;
                $Interval{client_gone}++;
             }
