@@ -53,34 +53,9 @@
 
 #endif
 
-struct ajp_idef
-{
-    char *           host;
-    apr_port_t       port;
-    apr_sockaddr_t * addr;
-    int              keepalive;
-    int              timeout;
-    int              ndelay;
-};
-
-typedef struct ajp_idef ajp_idef_t;
-
-struct ajp_ilink
-{
-    apr_socket_t * sock;
-	int			   requests;
-};
-
-typedef struct ajp_ilink ajp_ilink_t;
-
-struct ajp_env
-{
-	apr_pool_t *	log;
-	apr_pool_t *	pool;
-	int				loglevel;
-};
-
-typedef struct ajp_env ajp_env_t;
+#ifdef AJP_USE_HTTPD_WRAP
+#include "httpd_wrap.h"
+#endif
 
 struct ajp_msg
 {
@@ -97,6 +72,16 @@ typedef struct ajp_msg ajp_msg_t;
 #define AJP_HEADER_SZ_LEN         	2
 #define AJP_MSG_BUFFER_SZ 		(8*1024)
 #define AJP13_MAX_SEND_BODY_SZ      (AJP_DEF_BUFFER_SZ - 6)
+
+/* Webserver ask container to take control (logon phase) */
+#define CMD_AJP13_PING               (unsigned char)8
+
+/* Webserver check if container is alive, since container should respond by cpong */
+#define CMD_AJP13_CPING              (unsigned char)10
+
+/* Container response to cping request */
+#define CMD_AJP13_CPONG              (unsigned char)9
+
 
 #endif /* AJP_H */
 

@@ -15,17 +15,86 @@
 
 #include "ajp.h"
 
-apr_status_t ajp_msg_check_header(ajp_env_t *env, ajp_msg_t * msg)
+
+static char *hex_table = "0123456789ABCDEF";
+
+/**
+ * Dump up to the first 1024 bytes on an AJP Message
+ *
+ * @param msg       AJP Message to dump
+ * @param err       error string to display
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_dump(ajp_msg_t *msg, char *err)
+{
+    int         i;
+    int         j;
+    char        line[80];
+    char        *current;
+    apr_byte_t  x;
+    apr_size_t  len = msg->len;
+
+    /* Display only first 1024 bytes */
+    if (len > 1024)
+        len = 1024;
+
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, NULL,
+                  "ajp_msg_dump(): %s pos=%d len=%d max=%d",
+                  err, msg->pos, msg->len, AJP_MSG_BUFFER_SZ);
+
+    for (i = 0; i < len; i += 16) {
+        current = line;
+
+        for (j = 0; j < 16; j++) {
+             x = msg->buf[i + j];
+
+            *current++ = hex_table[x >> 4];
+            *current++ = hex_table[x & 0x0f];
+            *current++ = ' ';
+        }
+        *current++ = ' ';
+        *current++ = '-';
+        *current++ = ' ';
+        for (j = 0; j < 16; j++) {
+            x = msg->buf[i + j];
+
+            if (x > 0x20 && x < 0x7F) {
+                *current++ = x;
+            }
+            else {
+                *current++ = '.';
+            }
+        }
+
+        *current++ = '\0';
+
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, NULL,
+                      "ajp_msg_dump(): %.4x    %s",
+                      i, line);
+    }
+    
+    return APR_SUCCESS;
+}
+
+
+/**
+ * Check a new AJP Message by looking at signature and return its size
+ *
+ * @param msg       AJP Message to check
+ * @param len       Pointer to returned len
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_check_header(ajp_msg_t *msg, apr_size_t *len)
 {
     apr_byte_t *head = msg->buf;
     apr_size_t msglen;
 
     if (!((head[0] == 0x41 && head[1] == 0x42) ||
           (head[0] == 0x12 && head[1] == 0x34))) {
-        
-        fprintf(stderr, 
-                "ajp_check_msg_header() got bad signature %x%x\n",
-                head[0], head[1]);
+
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_check_msg_header() got bad signature %x%x",
+                      head[0], head[1]);
 
         return -1;
     }
@@ -34,25 +103,40 @@ apr_status_t ajp_msg_check_header(ajp_env_t *env, ajp_msg_t * msg)
     msglen += (head[3] & 0xFF);
 
     if (msglen > AJP_MSG_BUFFER_SZ) {
-        fprintf(stderr, 
-                "ajp_check_msg_header() incoming message is too big %d, max is %d\n",
-                 msglen, AJP_MSG_BUFFER_SZ);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_check_msg_header() incoming message is too big %d, max is %d",
+                      msglen, AJP_MSG_BUFFER_SZ);
         return -2;
     }
 
     msg->len = msglen + AJP_HEADER_LEN;
     msg->pos = AJP_HEADER_LEN;
-
-    return 0;
+    *len     = msglen;
+    
+    return APR_SUCCESS;
 }
 
-void ajp_msg_reset(ajp_env_t *env, ajp_msg_t * msg)
+/**
+ * Reset an AJP Message
+ *
+ * @param msg       AJP Message to reset
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_reset(ajp_msg_t *msg)
 {
     msg->len = AJP_HEADER_LEN;
     msg->pos = AJP_HEADER_LEN;
+    
+    return APR_SUCCESS;
 }
 
-void ajp_msg_end(ajp_env_t *env, ajp_msg_t * msg)
+/**
+ * Mark the end of an AJP Message
+ *
+ * @param msg       AJP Message to end
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_end(ajp_msg_t *msg)
 {
     apr_size_t len = msg->len - AJP_HEADER_LEN;
 
@@ -67,257 +151,453 @@ void ajp_msg_end(ajp_env_t *env, ajp_msg_t * msg)
 
     msg->buf[2] = (apr_byte_t)((len >> 8) & 0xFF);
     msg->buf[3] = (apr_byte_t)(len & 0xFF);
+    
+    return APR_SUCCESS;
 }
 
-apr_status_t ajp_msg_append_uint32(ajp_env_t *env, ajp_msg_t *msg,
-                                   const apr_uint32_t val)
+/**
+ * Add an unsigned 32bits value to AJP Message
+ *
+ * @param msg       AJP Message to get value from
+ * @param value     value to add to AJP Message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_append_uint32(ajp_msg_t *msg, const apr_uint32_t value)
 {
     apr_size_t len = msg->len;
 
-    if (len + AJP_HEADER_LEN > AJP_MSG_BUFFER_SZ) {
+    if ((len + 4) > AJP_MSG_BUFFER_SZ) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_append_uint32(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
         return -1;
     }
 
-    msg->buf[len]     = (apr_byte_t)((val >> 24) & 0xFF);
-    msg->buf[len + 1] = (apr_byte_t)((val >> 16) & 0xFF);
-    msg->buf[len + 2] = (apr_byte_t)((val >> 8) & 0xFF);
-    msg->buf[len + 3] = (apr_byte_t)(val & 0xFF);
+    msg->buf[len]     = (apr_byte_t)((value >> 24) & 0xFF);
+    msg->buf[len + 1] = (apr_byte_t)((value >> 16) & 0xFF);
+    msg->buf[len + 2] = (apr_byte_t)((value >> 8) & 0xFF);
+    msg->buf[len + 3] = (apr_byte_t)(value & 0xFF);
 
     msg->len += 4;
 
-    return 0;
+    return APR_SUCCESS;
 }
 
-apr_status_t ajp_msg_append_uint16(ajp_env_t *env, ajp_msg_t *msg,
-                                   const apr_uint16_t val)
+/**
+ * Add an unsigned 16bits value to AJP Message
+ *
+ * @param msg       AJP Message to get value from
+ * @param value     value to add to AJP Message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_append_uint16(ajp_msg_t *msg, const apr_uint16_t value)
 {
     apr_size_t len = msg->len;
 
-    if (len + 2 > AJP_MSG_BUFFER_SZ) {
+    if ((len + 2) > AJP_MSG_BUFFER_SZ) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_append_uint16(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
         return -1;
     }
 
-    msg->buf[len]     = (apr_byte_t)((val >> 8) & 0xFF);
-    msg->buf[len + 1] = (apr_byte_t)(val & 0xFF);
+    msg->buf[len]     = (apr_byte_t)((value >> 8) & 0xFF);
+    msg->buf[len + 1] = (apr_byte_t)(value & 0xFF);
 
     msg->len += 2;
 
-    return 0;
+    return APR_SUCCESS;
 }
 
-apr_status_t ajp_msg_append_byte(ajp_env_t *env, ajp_msg_t *msg,
-                                 const apr_byte_t val)
+/**
+ * Add an unsigned 8bits value to AJP Message
+ *
+ * @param msg       AJP Message to get value from
+ * @param value     value to add to AJP Message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_append_uint8(ajp_msg_t *msg, const apr_byte_t value)
 {
     apr_size_t len = msg->len;
 
     if ((len + 1) > AJP_MSG_BUFFER_SZ) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_append_uint8(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
         return -1;
     }
 
-    msg->buf[len] = val;
+    msg->buf[len] = value;
     msg->len += 1;
 
-    return 0;
+    return APR_SUCCESS;
 }
 
-apr_status_t ajp_msg_append_cvt_string(ajp_env_t *env, ajp_msg_t *msg,
-                                       const char *param, int convert)
+/**
+ *  Add a String in AJP message, and transform the String in ASCII 
+ *  if convert is set and we're on an EBCDIC machine    
+ *
+ * @param msg       AJP Message to get value from
+ * @param value     Pointer to String
+ * @param convert   When set told to convert String to ASCII
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_append_cvt_string(ajp_msg_t *msg, const char *value, int convert)
 {
-    apr_size_t len;
+    int len;
 
-    if (param == NULL) {
-        return(ajp_msg_append_int(env, msg, 0xFFFF));
+    if (value == NULL) {
+        return(ajp_msg_append_uint16(msg, 0xFFFF));
     }
 
-    len = strlen(param);
-    if (msg->len + len + 2 > AJP_MSG_BUFFER_SZ) {
+    len = strlen(value);
+    if ((msg->len + len + 2) > AJP_MSG_BUFFER_SZ) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_append_cvt_string(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
         return -1;
     }
 
     /* ignore error - we checked once */
-    ajp_msg_append_int(env, msg, (unsigned short)len);
+    ajp_msg_append_uint16(msg, (apr_uint16_t)len);
 
     /* We checked for space !!  */
-    strncpy((char *)msg->buf + msg->len, param, len + 1);          /* including \0 */
+    strncpy((char *)msg->buf + msg->len, value, len + 1);          /* including \0 */
 
     if (convert)
         ajp_xlate_to_ascii((char *)msg->buf + msg->len, len + 1);  /* convert from EBCDIC if needed */
 
     msg->len += len + 1;
 
-    return 0;
+    return APR_SUCCESS;
 }
 
-apr_status_t ajp_msg_append_string(ajp_env_t *env, ajp_msg_t *msg,
-                                   const char *param)
+/**
+ *  Add a String in AJP message, and transform 
+ *  the String in ASCII if we're on an EBCDIC machine    
+ *
+ * @param msg       AJP Message to get value from
+ * @param value     Pointer to String
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_append_string(ajp_msg_t *msg, const char *value)
 {
-    return ajp_msg_append_cvt_string(env, msg, param, 1);
+    return ajp_msg_append_cvt_string(msg, value, 1);
 }
 
 
-apr_status_t ajp_msg_append_bytes(ajp_env_t *env, ajp_msg_t *msg,
-                                  const apr_byte_t *param, const apr_size_t len)
+/**
+ *  Add a String in AJP message. 
+ *
+ * @param msg       AJP Message to get value from
+ * @param value     Pointer to String
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_append_ascii_string(ajp_msg_t *msg, const char *value)
 {
-    if (!len) {
-        return 0;
+    return ajp_msg_append_cvt_string(msg, value, 0);
+}
+
+
+/**
+ * Add a Byte array to AJP Message
+ *
+ * @param msg       AJP Message to get value from
+ * @param value     Pointer to Byte array
+ * @param valuelen  Byte array len
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_append_bytes(ajp_msg_t *msg, const apr_byte_t *value, const apr_size_t valuelen)
+{
+    if (! valuelen) {
+        return APR_SUCCESS; /* Shouldn't we indicate an error ? */
     }
 
-    if ((msg->len + len) > AJP_MSG_BUFFER_SZ) {
+    if ((msg->len + valuelen) > AJP_MSG_BUFFER_SZ) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_append_bytes(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
         return -1;
     }
 
     /* We checked for space !!  */
-    memcpy((char *)msg->buf + msg->len, param, len);
-    msg->len += len;
+    memcpy((char *)msg->buf + msg->len, value, valuelen);
+    msg->len += valuelen;
 
-    return 0;
+    return APR_SUCCESS;
 }
 
-apr_uint32_t ajp_msg_get_uint32(ajp_env_t *env, ajp_msg_t *msg)
+/**
+ * Get a 32bits unsigned value from AJP Message
+ *
+ * @param msg       AJP Message to get value from
+ * @param rvalue    Pointer where value will be returned
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_get_uint32(ajp_msg_t *msg, apr_uint32_t *rvalue)
 {
-    apr_uint32_t i;
+    apr_uint32_t value;
 
     if ((msg->pos + 3) > msg->len) {
-        fprintf(stderr, 
-                "ajp_msg_get_long(): BufferOverflowException %d %d\n",
-                msg->pos, msg->len);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_get_long(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
 
         return -1;
     }
 
-    i  = ((msg->buf[(msg->pos++)] & 0xFF) << 24);
-    i |= ((msg->buf[(msg->pos++)] & 0xFF) << 16);
-    i |= ((msg->buf[(msg->pos++)] & 0xFF) << 8);
-    i |= ((msg->buf[(msg->pos++)] & 0xFF));
-    return i;
-}
-
-apr_uint16_t ajp_msg_get_uint16(ajp_env_t *env, ajp_msg_t *msg)
-{
-    apr_uint16_t i;
+    value  = ((msg->buf[(msg->pos++)] & 0xFF) << 24);
+    value |= ((msg->buf[(msg->pos++)] & 0xFF) << 16);
+    value |= ((msg->buf[(msg->pos++)] & 0xFF) << 8);
+    value |= ((msg->buf[(msg->pos++)] & 0xFF));
     
-    if (msg->pos + 1 > msg->len) {
-        fprintf(stderr, 
-                "ajp_msg_get_int(): BufferOverflowException %d %d\n",
-                msg->pos, msg->len);
+    *rvalue = value;
+    return APR_SUCCESS;
+}
+
+
+/**
+ * Get a 16bits unsigned value from AJP Message
+ *
+ * @param msg       AJP Message to get value from
+ * @param rvalue    Pointer where value will be returned
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_get_uint16(ajp_msg_t *msg, apr_uint16_t *rvalue)
+{
+    apr_uint16_t value;
+    
+    if ((msg->pos + 1) > msg->len) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_get_int(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
 
         return -1;
     }
 
-    i  = ((msg->buf[(msg->pos++)] & 0xFF) << 8);
-    i += ((msg->buf[(msg->pos++)] & 0xFF));
+    value  = ((msg->buf[(msg->pos++)] & 0xFF) << 8);
+    value += ((msg->buf[(msg->pos++)] & 0xFF));
 
-    return i;
+    *rvalue = value;
+    return APR_SUCCESS;
 }
 
-apr_uint16_t ajp_msg_peek_int(ajp_env_t *env, ajp_msg_t *msg)
+/**
+ * Peek a 16bits unsigned value from AJP Message, position in message
+ * is not updated
+ *
+ * @param msg       AJP Message to get value from
+ * @param rvalue    Pointer where value will be returned
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_peek_int(ajp_msg_t *msg, apr_uint16_t *rvalue)
 {
-    apr_uint16_t i;
+    apr_uint16_t value;
 
-    if (msg->pos + 1 > msg->len) {
-        fprintf(stderr, 
-                "ajp_msg_peek_int(): BufferOverflowException %d %d\n",
-                msg->pos, msg->len);
+    if ((msg->pos + 1) > msg->len) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_peek_int(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
 
         return -1;
     }
-    i = ((msg->buf[(msg->pos)] & 0xFF) << 8);
-    i += ((msg->buf[(msg->pos + 1)] & 0xFF));
-    return i;
+    
+    value = ((msg->buf[(msg->pos)] & 0xFF) << 8);
+    value += ((msg->buf[(msg->pos + 1)] & 0xFF));
+    
+    *rvalue = value;
+    return APR_SUCCESS;
 }
 
-apr_byte_t ajp_msg_get_byte(ajp_env_t *env, ajp_msg_t *msg)
+/**
+ * Get a 8bits unsigned value from AJP Message
+ *
+ * @param msg       AJP Message to get value from
+ * @param rvalue    Pointer where value will be returned
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_get_byte(ajp_msg_t *msg, apr_byte_t *rvalue)
 {
-    apr_byte_t rc;
+    apr_byte_t value;
 
     if (msg->pos > msg->len) {
-        fprintf(stderr, 
-                "ajp_msg_get_byte(): BufferOverflowException %d %d\n",
-                msg->pos, msg->len);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_get_byte(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
 
         return -1;
     }
-    rc = msg->buf[msg->pos++];
-
-    return rc;
+    
+    *rvalue = msg->buf[msg->pos++];
+    return APR_SUCCESS;
 }
 
-char * ajp_msg_get_string(ajp_env_t *env, ajp_msg_t *msg)
+
+/**
+ * Get a String value from AJP Message
+ *
+ * @param msg       AJP Message to get value from
+ * @param rvalue    Pointer where value will be returned
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_get_string(ajp_msg_t *msg, char **rvalue)
 {
-    apr_size_t size  = (apr_size_t)ajp_msg_get_uint16(env, msg);
-    apr_size_t start = msg->pos;
+    apr_uint16_t size;
+    apr_size_t   start;
+    apr_status_t status;
+       
+    status = ajp_msg_get_uint16(msg, &size);
+    start = msg->pos;
 
-    if ((size < 0) || (size + start > AJP_MSG_BUFFER_SZ)) {
-        fprintf(stderr, 
-                "ajp_msg_get_string(): BufferOverflowException %d %d\n",
-                msg->pos, msg->len);
+    if ((status != APR_SUCCESS) || (size + start > AJP_MSG_BUFFER_SZ)) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_get_string(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
 
-        return (unsigned char *)"ERROR";        /* XXX */
+        return -1;
     }
 
-    msg->pos += size;
-    msg->pos++;                 /* terminating NULL */
+    msg->pos += (apr_size_t)size;
+    msg->pos++;                   /* a String in AJP is NULL terminated */
 
-    return (unsigned char *)(msg->buf + start);
+    *rvalue = (char *)(msg->buf + start);
+    return APR_SUCCESS;
 }
 
-apr_byte_t *ajp_msg_get_bytes(ajp_env_t *env, ajp_msg_t *msg, apr_size_t *lenP)
+
+/**
+ * Get a Byte array from AJP Message
+ *
+ * @param msg       AJP Message to get value from
+ * @param rvalue    Pointer where value will be returned
+ * @param rvalueLen Pointer where Byte array len will be returned
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_get_bytes(ajp_msg_t *msg, apr_byte_t **rvalue, apr_size_t *rvalueLen)
 {
-    apr_size_t size = (apr_size_t)ajp_msg_get_uint16(env, msg);
-    apr_size_t start = msg->pos;
+    apr_uint16_t size;
+    apr_size_t   start;
+    apr_status_t status;
 
-    *lenP = size;
+    status = ajp_msg_get_uint16(msg, &size);
+    start = msg->pos;
 
-    if ((size < 0) || (size + start > AJP_MSG_BUFFER_SZ)) {
-        fprintf(stderr, 
-                "ajp_msg_get_bytes(): BufferOverflowException %d %d\n",
-                msg->pos, msg->len);
-
-        return (unsigned char *)"ERROR";        /* XXX */
+    if ((status != APR_SUCCESS) || (size + start > AJP_MSG_BUFFER_SZ)) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_get_bytes(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
+        return -1;
     }
 
-    msg->pos += size;
-    msg->pos++;                 /* terminating NULL */
+    msg->pos += (apr_size_t)size;   /* only bytes, no trailer */
 
-    return (apr_byte_t *)(msg->buf + start);
+    *rvalue    = (apr_byte_t *)(msg->buf + start);
+    *rvalueLen = size;
+
+    return APR_SUCCESS;
 }
 
-ajp_msg_t *ajp_msg_create(ajp_env_t *env)
+
+/**
+ * Create an AJP Message from pool
+ *
+ * @param pool      memory pool to allocate AJP message from
+ * @param rmsg      Pointer to newly created AJP message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_create(apr_pool_t *pool, ajp_msg_t *rmsg)
 {
-    ajp_msg_t *msg = (ajp_msg_t *)apr_pcalloc(env->pool, sizeof(ajp_msg_t));
+    ajp_msg_t *msg = (ajp_msg_t *)apr_pcalloc(pool, sizeof(ajp_msg_t));
 
-    if (!msg)
-        return NULL;
-
+    if (! msg) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_create(): can't allocate AJP message memory");
+        return -1;
+    }
+    
     msg->serverSide = 0;
 
-    msg->buf = (apr_byte_t *)apr_palloc(env->pool, AJP_MSG_BUFFER_SZ);
+    msg->buf = (apr_byte_t *)apr_palloc(pool, AJP_MSG_BUFFER_SZ);
 
     if (msg->buf == NULL) {
-        return NULL;
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_create(): can't allocate AJP message memory");
+        return -1;
     }
 
     msg->len = 0;
     msg->headerLen = AJP_HEADER_LEN;
-
-    return msg;
+    rmsg = msg;
+    
+    return APR_SUCCESS;
 }
 
-apr_status_t ajp_msg_copy(ajp_env_t *env, ajp_msg_t *msg, ajp_msg_t *dmsg)
+/**
+ * Recopy an AJP Message to another
+ *
+ * @param smsg      source AJP message
+ * @param dmsg      destination AJP message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_copy(ajp_msg_t *smsg, ajp_msg_t *dmsg)
 {
-    if (dmsg == NULL)
+    if (dmsg == NULL) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_copy(): destination msg is null");
         return -1;
-
-    if (msg->len > AJP_MSG_BUFFER_SZ) {
-        fprintf(stderr, 
-                "ajp_msg_copy(): destination buffer too small %d/%d\n",
-                msg->len, AJP_MSG_BUFFER_SZ);
+    }
+    
+    if (smsg->len > AJP_MSG_BUFFER_SZ) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_copy(): destination buffer too small %d, max size is %d",
+                      smsg->len, AJP_MSG_BUFFER_SZ);
         return -2;
     }
 
-    memcpy(dmsg->buf, msg->buf, msg->len);
-    dmsg->len = msg->len;
-    dmsg->pos = msg->pos;
+    memcpy(dmsg->buf, smsg->buf, smsg->len);
+    dmsg->len = smsg->len;
+    dmsg->pos = smsg->pos;
 
-    return dmsg->len;
+    return APR_SUCCESS;
+}
+
+
+/**
+ * Serialize in an AJP Message a PING command
+ *
+ * +-----------------------+
+ * | PING CMD (1 byte)     |
+ * +-----------------------+
+ *
+ * @param smsg      AJP message to put serialized message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_serialize_ping(ajp_msg_t *msg)
+{
+    ajp_msg_reset(msg);
+
+    if (msg_append_uint8(msg, CMD_AJP13_PING) != APR_SUCCESS)
+        return -1;
+        
+    return APR_SUCCESS;
+}
+
+/** 
+ * Serialize in an AJP Message a CPING command
+ *
+ * +-----------------------+
+ * | CPING CMD (1 byte)    |
+ * +-----------------------+
+ *
+ * @param smsg      AJP message to put serialized message
+ * @return          APR_SUCCESS or error
+ */
+int ajp_msg_serialize_cping(ajp_msg_t *msg)
+{
+    ajp_msg_reset(msg);
+
+    if (msg_append_uint8(msg, CMD_AJP13_CPING) != APR_SUCCESS)
+        return -1;
+        
+    return APR_SUCCESS;
 }
