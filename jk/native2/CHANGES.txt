@@ -2,6 +2,11 @@ JAKARTA TOMCAT CONNECTORS 2 (JK2) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
 Changes with JK2 2.0.2:
+    * Add the regular expressions to uriMap. The regex uris are differentiated
+      to normal one by starting with dollar ($) sign.
+      [Mladen Turk]
+    * Add the max_connections to the wajp13 worker.
+      [Mladen Turk]    
     * Add the hostMap cache
       [Mladen Turk] 
     * Allow the lb:name scheme inside the [channel.xxx]
