@@ -480,7 +480,7 @@ void jk_no2slash(char *name)
 
 
 char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                        const char *uri,
+                        char *uri,
                         jk_logger_t *l)
 {
     jk_log(l, JK_LOG_DEBUG, 

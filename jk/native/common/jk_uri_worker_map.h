@@ -98,7 +98,7 @@ int uri_worker_map_close(jk_uri_worker_map_t *uw_map,
 void jk_no2slash(char *name);
 
 char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                        const char *uri,
+                        char *uri,
                         jk_logger_t *l);
 
 #ifdef __cplusplus
