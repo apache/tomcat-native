@@ -56,7 +56,7 @@ dnl
 dnl  =========================================================================
 
 dnl --------------------------------------------------------------------------
-dnl Author Pier Fumagalli <pier.fumagalli@eng.sun.com>
+dnl Author Pier Fumagalli <pier.fumagalli@sun.com>
 dnl Version $Id$
 dnl --------------------------------------------------------------------------
 

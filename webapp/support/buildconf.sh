@@ -57,7 +57,7 @@
 # ========================================================================= #
 
 # ------------------------------------------------------------------------- #
-# Author Pier Fumagalli <pier.fumagalli@eng.sun.com>
+# Author Pier Fumagalli <pier.fumagalli@sun.com>
 # Author Jon S. Stevens <mailto:jon@latchkey.com>
 # Version $Id$
 # ------------------------------------------------------------------------- #
