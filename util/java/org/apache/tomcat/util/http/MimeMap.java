@@ -40,6 +40,7 @@ public class MimeMap implements FileNameMap {
         defaultMap.put("jpg", "image/jpeg");
         defaultMap.put("jpe", "image/jpeg");
         defaultMap.put("jpeg", "image/jpeg");
+        defaultMap.put("png", "image/png");
 		defaultMap.put("java", "text/plain");
         defaultMap.put("body", "text/html");
         defaultMap.put("rtx", "text/richtext");
