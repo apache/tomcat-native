@@ -111,6 +111,7 @@ class CoyoteRequest extends Request {
 	} catch(IOException iex) { // ignore
 	}
 	headers  = coyoteRequest.getMimeHeaders();
+	contextM.log("Headers: " + headers);
 	scookies.setHeaders(headers);
 	params.setHeaders(headers);
     }
@@ -124,7 +125,7 @@ class CoyoteRequest extends Request {
 	if( available!= -1 )
 	    available--;
 	if(pos >= end) {
-	    if(doRead() < 0)
+	    if(readBytes() < 0)
 		return -1;
 	}
 	return readBuffer[pos++] & 0xFF;
@@ -135,7 +136,7 @@ class CoyoteRequest extends Request {
 	    return -1;
 	// if available == -1: unknown length, we'll read until end of stream.
 	if(pos >= end) {
-	    if(doRead() < 0) 
+	    if(readBytes() < 0) 
 		return -1;
 	}
 	int rd = -1;
