@@ -19,6 +19,7 @@
   <property name="apxs13" value="/usr/sbin/apxs" />
   <property name="apxs20" value="/opt/apache2/bin/apxs" />
   
+  <property name="netscape.home" location="/opt/iplanet/plugins" />
   <property name="apache2.home" location="/opt/apache2" />
   <property name="apache13.home" location="/usr" />
   
@@ -112,8 +113,10 @@
 	taskDebug="0"
 	profile="${so.profile}"	>
       <def name="_REENTRANT" />
-      <def name="CHANNEL" 
-           if="use.channel"/>
+      <def name="CHANNEL" if="use.channel"
+           info="Use the new (experimental) channel interface" />
+      <def name="AJP12" if="use.ajp12"
+           info="Build the deprecated ajp12 worker" />
       <def name="CHUNK_SIZE" value="4096" 
 	   info="Read/Write buffer size" />
       <def name="REUSE_WORKER" 
@@ -125,7 +128,8 @@
       <jniConfig />
       <src dir=".">
 	<include name="apache-2.0/mod_jk.c" />
-	<include name="common/*.c" />
+	<include name="common/**/*.c" />
+        <exclude name="common/ajp12/*.c" unless="use.ajp12" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
@@ -221,45 +225,45 @@
   </target>
 
   <target name="iis" depends="init">
-      <so sofile="isapi_redirector" 
-            buildDir="iis"
-            optimize="${so.optimize}"
-            debug="${so.debug}"
-            profile="${so.profile}">
+    <so sofile="isapi_redirector" 
+        buildDir="iis"
+        optimize="${so.optimize}"
+        debug="${so.debug}"
+        profile="${so.profile}">
         
-        <src dir=".">
-        	<include name="iis/jk_isapi_plugin.c" />
-            <include name="common/*.c" />
-            <exclude name="jk_nwmain.c" 
-        	 unless="netware" />
-        </src>
-        <includes>
-        	<include name="${java.home}/../include" />
-        	<include name="${java.home}/../include/win32" />
-        	<include name="${native.dir}/common" />
-        	<include name="${build.compiler.base}/include" />
-        </includes>
-        <depends>
-            <fileset dir="${native.dir}/common" includes="*.h" />
-        </depends>
+      <src dir=".">
+        <include name="iis/jk_isapi_plugin.c" />
+        <include name="common/*.c" />
+        <exclude name="jk_nwmain.c" 
+                 unless="netware" />
+      </src>
+      <includes>
+        <include name="${java.home}/../include" />
+        <include name="${java.home}/../include/win32" />
+        <include name="${native.dir}/common" />
+        <include name="${build.compiler.base}/include" />
+      </includes>
+      <depends>
+        <fileset dir="${native.dir}/common" includes="*.h" />
+      </depends>
         
-        <!-- Platform-specific tags -->
-        <def name="WIN32" />
-        <def name="NDEBUG" />
-        <def name="_WINDOWS"  />
-        <def name="_MBCS" />
-        <def name="_USRDLL" />
-        <def name="ISAPI_EXPORTS" />
-        <import fileName="advapi32.lib" />
-        <import fileName="wsock32.lib" />
-        <export symbol="HttpFilterProc"/>
-        <export symbol="GetFilterVersion"/>
-        <export symbol="GetExtensionVersion"/>
-        <export symbol="HttpExtensionProc"/>
-        <export symbol="TerminateFilter"/>
-        <export symbol="TerminateExtension"/>
-        <linkOpt value="/libpath:${build.compiler.base}/lib" if="win32" />
-     </so>
+      <!-- Platform-specific tags -->
+      <def name="WIN32" />
+      <def name="NDEBUG" />
+      <def name="_WINDOWS"  />
+      <def name="_MBCS" />
+      <def name="_USRDLL" />
+      <def name="ISAPI_EXPORTS" />
+      <import fileName="advapi32.lib" />
+      <import fileName="wsock32.lib" />
+      <export symbol="HttpFilterProc"/>
+      <export symbol="GetFilterVersion"/>
+      <export symbol="GetExtensionVersion"/>
+      <export symbol="HttpExtensionProc"/>
+      <export symbol="TerminateFilter"/>
+      <export symbol="TerminateExtension"/>
+      <linkOpt value="/libpath:${build.compiler.base}/lib" if="win32" />
+    </so>
   </target>
 
   <target name="netscape" depends="init">
@@ -268,7 +272,6 @@
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}">
-      <apacheConfig apxs="${apxs13}" />
 
       <src dir=".">
 	<include name="netscape/jk_nsapi_plugin.c" />
@@ -315,6 +318,8 @@
       <def name="_USRDLL" if="win32" />
       <def name="XP_WIN32" if="win32" />
       <def name="NSAPI_EXPORTS" if="win32" />
+      <def name="XP_UNIX" unless="win32"
+	   info="Unix platform - needed for nsapi.h" />
       
       <nlmmodule value="nshttpd" if="netware" />
       <import fileName="${novellndk.dir}/imports/clib.imp" if="netware" />
