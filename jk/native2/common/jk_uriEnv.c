@@ -126,7 +126,7 @@ static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
         return  (uriEnv->virtual==NULL) ? "*" : uriEnv->virtual;
     } else if( strcmp( name, "uri" ) ) {
         return uriEnv->uri;
-    } else if( strcmp( name, "worker" ) ) {
+    } else if( strcmp( name, "group" ) ) {
         return uriEnv->workerName;
     }
     return NULL;
@@ -223,10 +223,13 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     if( uriEnv->workerName != NULL && uriEnv->worker==NULL ) {
         uriEnv->worker= env->getByName( env, wname );
         if( uriEnv->worker==NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "uriEnv.init() map to invalid worker %s %s\n",
-                          uriEnv->uri, uriEnv->workerName);
-            /* XXX that's allways a 'lb' worker, create it */
+            uriEnv->worker= env->getByName2( env, "worker.lb", wname );
+            if( uriEnv->worker==NULL ) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "uriEnv.init() map to invalid worker %s %s\n",
+                              uriEnv->uri, uriEnv->workerName);
+                /* XXX that's allways a 'lb' worker, create it */
+            }
         }
     } 
     
@@ -358,7 +361,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     return JK_OK;
 }
 
-static char *myAttInfo[]={ "host", "uri", "worker", NULL };
+static char *myAttInfo[]={ "host", "uri", "group", NULL };
     
 int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                  jk_bean_t *result,
