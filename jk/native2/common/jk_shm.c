@@ -171,7 +171,11 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
                               shm->fname, errno, strerror( errno ));
                 return JK_ERR;
             }
-            toWrite-=written;
+            if( toWrite < written  ){
+                toWrite=0;
+            }else{
+                toWrite-=written;
+            }
         }
         
         rc=apr_file_info_get(&finfo, APR_FINFO_SIZE, file);
@@ -248,7 +252,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
         int toWrite=shm->size - filestat.st_size;
         
         memset( bytes, 0, 1024 );        
-	lseek(fd, 0, SEEK_END);
+	    lseek(fd, 0, SEEK_END);
 
         while( toWrite > 0 ) {
             int written;
