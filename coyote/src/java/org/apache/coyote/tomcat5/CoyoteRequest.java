@@ -1151,17 +1151,17 @@ public class CoyoteRequest
         boolean found = false;
 
         // Remove the specified attribute
-        synchronized (attributes) {
-            // Check for read only attribute
-           if (readOnlyAttributes.containsKey(name))
-                return;
-            found = attributes.containsKey(name);
-            if (found) {
-                value = attributes.get(name);
-                attributes.remove(name);
-            } else {
-                return;
-            }
+        // Check for read only attribute
+        // requests are per thread so synchronization unnecessary
+        if (readOnlyAttributes.containsKey(name)) {
+            return;
+        }
+        found = attributes.containsKey(name);
+        if (found) {
+            value = attributes.get(name);
+            attributes.remove(name);
+        } else {
+            return;
         }
 
         // Notify interested application event listeners
@@ -1209,15 +1209,17 @@ public class CoyoteRequest
         boolean replaced = false;
 
         // Add or replace the specified attribute
-        synchronized (attributes) {
-            // Check for read only attribute
-            if (readOnlyAttributes.containsKey(name))
-                return;
-            oldValue = attributes.get(name);
-            if (oldValue != null)
-                replaced = true;
-            attributes.put(name, value);
+        // Check for read only attribute
+        // requests are per thread so synchronization unnecessary
+        if (readOnlyAttributes.containsKey(name)) {
+            return;
         }
+        oldValue = attributes.get(name);
+        if (oldValue != null) {
+            replaced = true;
+        }
+
+        attributes.put(name, value);
 
         // Notify interested application event listeners
         Object listeners[] = context.getApplicationListeners();
