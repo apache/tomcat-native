@@ -490,7 +490,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         unsigned i;
         unsigned best_match = -1;
         unsigned longest_match = 0;
-        char * clean_uri = jk_pool_strdup(&uw_map->tp,uri);
+        char *clean_uri = jk_pool_strdup(&uw_map->tp,uri);
         char *url_rewrite = strstr(clean_uri, JK_PATH_SESSION_IDENTIFIER);
         
         if(url_rewrite) {
