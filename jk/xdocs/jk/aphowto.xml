@@ -850,7 +850,7 @@ You could start to build all the modules of mod_jk :
 <note5250>Launch the build</note5250>
 <type5250>CALL MOD_JK/BLDJK</type5250><br/>
 <note5250>If the build if successfull, copy the new mod_jk module</note5250>
-<type5250>CRTDUPOBJ OBJ(MOD_JK) FROMLIB(MOD_JK) OBJTYPE(*SRVPGM) TOLIB(QHTTPSVR) NEWOBJ(QZTCJK)</type5250>
+<type5250>CRTDUPOBJ OBJ(MOD_JK) FROMLIB(MOD_JK) OBJTYPE(*SRVPGM) TOLIB(QHTTPSVR) NEWOBJ(MODJK)</type5250>
 </screen5250>
 <p>
 Next, you should restart your Apache 2.0 server and enjoy this piece of OpenSource on iSeries.
