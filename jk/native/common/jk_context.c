@@ -164,7 +164,8 @@ static int context_realloc(jk_context_t *c)
         if (! contexts)
             return JK_FALSE;
 
-        memcpy(contexts, c->contexts, sizeof(jk_context_item_t *) * c->capacity);
+        if (c->capacity && c->contexts)
+            memcpy(contexts, c->contexts, sizeof(jk_context_item_t *) * c->capacity);
 
         c->contexts = contexts;
         c->capacity = capacity;
