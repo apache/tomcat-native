@@ -139,9 +139,10 @@ struct jk_uriMap {
         to do what we need ). Even when we'll know, uriMap will be needed
         for other servers. 
     */
+
     struct jk_uriEnv *(*mapUri)(struct jk_env *env, jk_uriMap_t *_this,
                                 const char *vhost,
-                                const char *uri, int reverse );
+                                const char *uri);
     
     /* -------------------- @deprecated -------------------- */
     /* used by the mapper, temp storage ( ??? )*/
