@@ -403,6 +403,8 @@ public final class CharChunk implements Cloneable, Serializable {
         throws IOException {
 
         if ((end - start) == 0) {
+            if (in == null)
+                return -1;
             int n = in.realReadChars(buff, 0, buff.length);
             if (n < 0)
                 return -1;
@@ -412,10 +414,30 @@ public final class CharChunk implements Cloneable, Serializable {
 
     }
 
+    public int substract(CharChunk src)
+        throws IOException {
+
+        if ((end - start) == 0) {
+            if (in == null)
+                return -1;
+            int n = in.realReadChars( buff, 0, buff.length );
+            if (n < 0)
+                return -1;
+        }
+
+        int len = getLength();
+        src.append(buff, start, len);
+        start = end;
+        return len;
+
+    }
+
     public int substract( char src[], int off, int len )
         throws IOException {
 
         if ((end - start) == 0) {
+            if (in == null)
+                return -1;
             int n = in.realReadChars( buff, 0, buff.length );
             if (n < 0)
                 return -1;
