@@ -253,7 +253,7 @@ public class Http11Processor implements Processor, ActionHook {
      * 
      * @param className class name of the filter
      */
-    public void addFilter(String className) {
+    protected void addFilter(String className) {
         try {
             Class clazz = Class.forName(className);
             Object obj = clazz.newInstance();
