@@ -801,7 +801,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
                 jk_log(l, JK_LOG_ERROR,
                        "ajp_connection_tcp_get_message: "
                        "Error - Wrong message format 0x%04x from %s\n",
-                       jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), header);
+                       header, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
             }
             return JK_FALSE;
         }
@@ -818,7 +818,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
                 jk_log(l, JK_LOG_ERROR,
                        "ajp_connection_tcp_get_message: "
                        "Error - Wrong message format 0x%04x from %s\n",
-                       jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), header);
+                       header, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
             }
             return JK_FALSE;
         }
