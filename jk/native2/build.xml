@@ -214,23 +214,6 @@
         
         <defineset refid="jk2-defs"/>
 
-        <!--
-        <defineset id="jk2-defs">
-           <define name="_REENTRANT" />
-           <define name="CHUNK_SIZE" value="4096" />
-           <define name="USE_APACHE_MD5" />
-           <define name="HAS_APR" />
-           <define name="HAVE_JNI" />
-
-           <define name="HPUX11" if="hpux" />
-           <define name="WIN32" if="win32" />
-           <define name="_WINDOWS" if="win32" />
-           <define name="_MBCS" if="win32" />
-           <define name="_USRDLL" if="win32" />
-           <define name="MOD_JK2_EXPORTS" if="win32" />
-        </defineset>
-        -->
-
         <syslibset libs="libhttpd" if="win32" />
         <syslibset libs="libapr" if="win32" />
         <syslibset libs="libaprutil" if="win32" />
@@ -318,6 +301,7 @@
       <import fileName="gdi32.lib" if="win32" />
       <import fileName="winspool.lib" if="win32" />
       <import fileName="comdlg32.lib" if="win32" /-->
+
       <linkOpt value="/libpath:&quot;${apr.lib}&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apr-util.lib}&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apache2.home}/lib&quot;" if="win32" />
@@ -379,7 +363,7 @@
       <def name="XP_NETWARE" if="netware"
 	   info="Building for NetWare platform" />
       <def name="HAS_APR"
-	   info="JNI is no based on APR" />
+	   info="JNI is now based on APR" />
       <def name="HAVE_JNI" />
            
       <import fileName="${novellndk.home}/imports/clib.imp" if="netware" />

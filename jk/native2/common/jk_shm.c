@@ -120,6 +120,22 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     if( globalShmPool==NULL )
         return JK_FALSE;
 
+    /* Check if the scoreboard is in a note. That's the only way we
+       can get HP-UX to work
+    */
+    apr_pool_userdata_get( & shm->image, "mod_jk_shm",globalShmPool );
+    if( shm->image!=NULL ) {
+        shm->head = (jk_shm_head_t *)shm->image;
+
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.create(): GLOBAL_SHM  %p\n", shm->image );
+        fprintf( stderr, "GLOBAL SHM: %p\n", shm->image );
+        return JK_OK;
+    } else {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.create(): NO GLOBAL_SHM  %p\n", shm->image );
+    }
+    
 
     /* First make sure the file exists and is big enough
      */
@@ -180,14 +196,18 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
         apr_strerror( rc, error, 256 );
         
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.create(): error attaching shm, will create %s %d %p %s\n",
-                      shm->fname, rc, globalShmPool, error );
+                      "shm.create(): error creating %s %d %d %p %s\n",
+                      shm->fname, finfo.size, rc, globalShmPool, error );
         shm->privateData=NULL;
         return rc;
     }
 
     shm->privateData=aprMmap;
+
     apr_mmap_offset(& shm->image, aprMmap, (apr_off_t)0);
+
+    apr_pool_userdata_set( shm->image, "mod_jk_shm", NULL, globalShmPool );
+        
     shm->head = (jk_shm_head_t *)shm->image;
 
     if( shm->image==NULL ) {

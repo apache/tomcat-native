@@ -58,7 +58,9 @@
 #include "jk_global.h"
 #include "jk_env.h"
 #include "jk_objCache.h"
+#ifdef HAS_APR
 #include "apr_general.h"
+#endif
 
 jk_env_t *jk_env_globalEnv;
 void *jkGlobalAprPool;
@@ -94,6 +96,10 @@ static void * JK_METHOD jk2_env_getAprPool( jk_env_t *env ) {
 #else
     return NULL;
 #endif
+}
+
+static void JK_METHOD jk2_env_setAprPool( jk_env_t *env, void *aprPool ) {
+    jkGlobalAprPool=aprPool;
 }
 
 /** Public method, creates/get the global env
@@ -136,6 +142,7 @@ static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *parentEnv )
         env->jkClearException=parentEnv->jkClearException;
         env->jkException=parentEnv->jkException;
         env->getAprPool=parentEnv->getAprPool;
+        env->setAprPool=parentEnv->setAprPool;
     
         env->_registry=parentEnv->_registry;
         env->_objects=parentEnv->_objects;
@@ -312,7 +319,6 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
     
     for( i=jk_env_globalEnv->_objects->size( env, jk_env_globalEnv->_objects ) - 1; i>=0 ; i-- ) {
         if( jk_env_globalEnv->_objects->valueAt( env, jk_env_globalEnv->_objects, i ) == result ) {
-            fprintf( stderr, "Component id %s= %d\n", result->name, i );
             result->objId=i;
             break;
         }
@@ -495,6 +501,7 @@ static void jk2_env_initEnv( jk_env_t *env, char *id ) {
     env->jkClearException=jk_env_jkClearException;
     env->jkException=jk_env_jkException;
     env->getAprPool=jk2_env_getAprPool;
+    env->setAprPool=jk2_env_setAprPool;
 
     env->id=0;
     

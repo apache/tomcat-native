@@ -209,6 +209,8 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
 
     s->jkprintf(env, s, "<h2>Scoreboard info (ver=%d slots=%d)</h2>\n", 
                 wenv->shm->head->lbVer, wenv->shm->head->lastSlot );
+
+    s->jkprintf(env, s, "<a href='jkstatus?scoreboard.reset'>reset</a>\n");
                 
     s->jkprintf(env, s, "<table border>\n");
 
@@ -236,9 +238,9 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
             /* XXX Add info about number of slots */
             for( j=0; j<slot->structCnt ; j++ ) {
                 jk_stat_t *statArray=(jk_stat_t *)data;
-                jk_stat_t stat=statArray[j];
+                jk_stat_t *stat=statArray + j;
 				
-                jk2_worker_status_displayStat( env, s, &stat,
+                jk2_worker_status_displayStat( env, s, stat,
                                                &totalReq, &totalErr, &totalTime, &maxTime);
             }
 
@@ -283,7 +285,8 @@ static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t 
             s->jkprintf(env, s, "<p>%s information, using getAttribute() </p>\n", type);
             
             s->jkprintf(env, s, "<table border>\n");
-            s->jkprintf(env, s, "<tr><th>name</th>\n");
+            s->jkprintf(env, s, "<tr><th>id</th>\n");
+            s->jkprintf(env, s, "<th>name</th>\n");
             for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
                 char *pname=mbean->getAttributeInfo[j];
                 
@@ -292,7 +295,7 @@ static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t 
             needHeader = JK_FALSE;
         } 
         
-        s->jkprintf(env, s, "</tr><tr><td>%s</td>\n", mbean->localName);
+        s->jkprintf(env, s, "</tr><tr><td>%d</td><td>%s</td>\n", mbean->id, mbean->localName);
         for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
             char *pname=mbean->getAttributeInfo[j];
 
@@ -303,6 +306,42 @@ static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t 
     if( ! needHeader ) {
         s->jkprintf( env,s , "</table>\n" );
     }
+}
+
+static void jk2_worker_status_resetScoreboard(jk_env_t *env, jk_ws_service_t *s,
+                                              jk_workerEnv_t *wenv)
+{
+    int i, j;
+    
+    if( wenv->shm==NULL || wenv->shm->head==NULL) {
+        return;
+    }
+    
+    for( i=1; i < wenv->shm->head->lastSlot; i++ ) {
+        jk_shm_slot_t *slot= wenv->shm->getSlot( env, wenv->shm, i );
+        
+        if( slot==NULL ) continue;
+        
+        if( strncmp( slot->name, "epStat", 6 ) == 0 ) {
+            /* This is an endpoint slot */
+            void *data=slot->data;
+
+            for( j=0; j<slot->structCnt ; j++ ) {
+                jk_stat_t *statArray=(jk_stat_t *)data;
+                jk_stat_t *stat=statArray + j;
+
+                stat->reqCnt=0;
+                stat->errCnt=0;
+#ifdef HAS_APR
+                stat->totalTime=0;
+                stat->maxTime=0;
+#endif
+                env->l->jkLog(env, env->l, JK_LOG_INFO, "reset() %s %p %p %p %d %d %d %d\n",
+                              slot->name, data, statArray, stat, i, j, stat->reqCnt, stat->errCnt );
+            }
+        }
+    }
+    
 }
 
 /** That's the 'bulk' data - everything that was configured, after substitution
@@ -396,6 +435,10 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
      */
     if( s->query_string == NULL ) {
         s->query_string="get=*";
+    }
+
+    if( strcmp( s->query_string, "scoreboard.reset" ) == 0 ) {
+        jk2_worker_status_resetScoreboard(env, s, s->workerEnv );
     }
 
     w->workerEnv->config->update( env, w->workerEnv->config, &didUpdate );

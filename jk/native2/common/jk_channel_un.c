@@ -214,7 +214,6 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
         */
 
     }
-    fprintf(stderr, "init %p %d %d\n", socketInfo, socketInfo->listenSocket, ch->serverSide );
 
     return rc;
 }

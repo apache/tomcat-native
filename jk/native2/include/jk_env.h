@@ -222,6 +222,7 @@ struct jk_env {
     /** If APR is used, return a global pool
      */
     void *(JK_METHOD *getAprPool)(jk_env_t *env );
+    void (JK_METHOD *setAprPool)(jk_env_t *env, void *aprPool );
     
     /* private */
     struct jk_map *_registry;

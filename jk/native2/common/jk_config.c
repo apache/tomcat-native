@@ -519,14 +519,14 @@ static int jk2_config_readFile(jk_env_t *env,
 
     if( cfg->file==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.update(): No config file" );
+                      "config.update(): No config file\n" );
         return JK_ERR;
     }
 
     rc=stat(cfg->file, &statbuf);
     if (rc == -1) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.update(): Can't find config file %s", cfg->file );
+                      "config.update(): Can't find config file %s\n", cfg->file );
         return JK_ERR;
     }
     

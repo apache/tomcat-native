@@ -134,7 +134,7 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 
         env->l=jkb->object;
         env->l->name="stderr";
-        env->l->level=JK_LOG_DEBUG_LEVEL;
+        env->l->level=JK_LOG_INFO_LEVEL;
         env->alias( env, "logger.file:", "logger");
 
         jkb=env->createBean2( env, env->globalPool,"workerEnv", "");
@@ -565,7 +565,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
         return JK_ERR;
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                   "jkInvoke() component dispatch %d %d %p\n", rc, code, bean->invoke);
 
     if( bean->invoke != NULL ) {

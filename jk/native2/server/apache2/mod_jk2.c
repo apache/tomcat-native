@@ -444,11 +444,13 @@ static int jk2_post_config(apr_pool_t *pconf,
     
     rc=jk2_apache2_isValidating( plog, &gPool );
 
+    env->setAprPool(env, gPool);
+    fprintf( stderr, "XXX Gpool %p\n", gPool );
+    
     if( rc == JK_OK && gPool != NULL ) {
         /* This is the first step */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "mod_jk.post_config() first invocation\n");
-        
         
         apr_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool );
         return OK;
