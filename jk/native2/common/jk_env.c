@@ -58,6 +58,7 @@
 #include "jk_global.h"
 #include "jk_env.h"
 #include "jk_objCache.h"
+#include "apr_general.h"
 
 jk_env_t *jk_env_globalEnv;
 void *jkGlobalAprPool;
@@ -72,7 +73,7 @@ static void jk2_env_initEnv( jk_env_t *env, char *id );
 
 /* -------------------- Env management -------------------- */
 
-static void JK_METHOD *jk2_env_getAprPool( jk_env_t *env ) {
+static void * JK_METHOD jk2_env_getAprPool( jk_env_t *env ) {
 #ifdef HAS_APR
     /* We don't want to have to recreate the scoreboard after
      * restarts, so we'll create a global pool and never clean it.
