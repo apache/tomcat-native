@@ -201,10 +201,11 @@ public class WarpConnection implements LifecycleListener, Runnable {
      */
     public void send(WarpPacket packet)
     throws IOException {
-        if (Constants.DEBUG)
-            this.getConnector().debug(this,"Sending packet TYPE="+
-                                      packet.getType()+" LENGTH="+
-                                      packet.size);
+        if (Constants.DEBUG) {
+            this.getConnector().debug(this,">> TYPE="+packet.getType()+
+                                           " LENGTH="+packet.size);
+            this.getConnector().debug(this,">> "+packet.dump());
+        }
 
         this.output.write(packet.getType()&0x0ff);
         this.output.write((packet.size>>8)&0x0ff);
@@ -217,5 +218,35 @@ public class WarpConnection implements LifecycleListener, Runnable {
     /**
      * Receive a WARP packet over this connection.
      */
+    public void recv(WarpPacket packet)
+    throws IOException {
+        int t=this.input.read();
+        int l1=this.input.read();
+        int l2=this.input.read();
 
+        if ((t|l1|l2)==-1)
+            throw new IOException("Premature packet header end");
+
+        packet.reset();
+        packet.setType(t&0x0ff);
+        packet.size=(( l1 & 0x0ff ) << 8) | ( l2 & 0x0ff );
+
+        if (packet.size>0) {
+            int off=0;
+            int ret=0;
+            while (true) {
+                ret=this.input.read(packet.buffer,off,packet.size-off);
+                if (ret==-1) 
+                    throw new IOException("Premature packet payload end");
+                off+=ret;
+                if(off==packet.size) break;
+            }
+        }
+            
+        if (Constants.DEBUG) {
+            this.getConnector().debug(this,"<< TYPE="+packet.getType()+
+                                           " LENGTH="+packet.size);
+            this.getConnector().debug(this,"<< "+packet.dump());
+        }
+    }
 }

@@ -78,6 +78,16 @@ public class WarpConfigurationHandler {
         packet.writeUnsignedShort(Constants.VERS_MINOR);
         packet.writeInteger(-1);
         connection.send(packet);
+        
+        connection.recv(packet);
+        String appl=packet.readString();
+        String host=packet.readString();
+        int port=packet.readUnsignedShort();
+        String path=packet.readString();
+        
+        if (Constants.DEBUG)
+            connection.getConnector().debug(this,"Deploying application \""+appl+
+                "\" under \"http://"+host+":"+port+path);
 
         return(true);
         //while (true) {

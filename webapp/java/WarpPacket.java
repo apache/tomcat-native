@@ -218,9 +218,28 @@ public class WarpPacket {
     public String readString() {
         int length=this.readUnsignedShort();
         try {
-            return(new String(this.buffer,this.pointer,length,"UTF-8"));
+            String ret=new String(this.buffer,this.pointer,length,"UTF-8");
+            this.pointer+=length;
+            return(ret);
         } catch (UnsupportedEncodingException s) {
             throw new RuntimeException("Unsupported encoding UTF-8");
         }
+    }
+    
+    public String dump() {
+        StringBuffer buf=new StringBuffer("DATA=");
+        for (int x=0; x<this.size; x++) {
+            if ((this.buffer[x]>32)&&(this.buffer[x]<127)) {
+                buf.append((char)this.buffer[x]);
+            } else {
+                buf.append("0x");
+                String digit=Integer.toHexString((int)this.buffer[x]);
+                if (digit.length()<2) buf.append('0');
+                if (digit.length()>2) digit=digit.substring(digit.length()-2);
+                buf.append(digit);
+            }
+            buf.append(" ");
+        }
+        return(buf.toString());
     }
 }
