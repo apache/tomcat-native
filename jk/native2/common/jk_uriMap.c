@@ -933,6 +933,8 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     ctxEnv = jk2_uriMap_prefixMap(env, uriMap, hostEnv->webapps, uri, uriLen);
 
     if (ctxEnv == NULL) {
+        if (url_rewrite)
+            *url_rewrite = origChar;
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "uriMap.mapUri() no context %s\n", uri);    
         return NULL;
