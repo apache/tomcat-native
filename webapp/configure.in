@@ -147,7 +147,6 @@ AC_ARG_ENABLE(debug,
   ],[
     AC_MSG_RESULT([no])
     DEBUG="false"
-    DEXEC=""
   ]
 )
 AC_SUBST(DEBUG)

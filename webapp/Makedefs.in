@@ -70,10 +70,11 @@ ECHO = @ECHO@
 GREP = @GREP@
 CAT = @CAT@
 SED = @SED@
+LN = @LN@
 RM = @RM@
 
 # -------------------------------------------------------------------------
-# Compilation settings
+# Compilation settings and Makefile macros
 # -------------------------------------------------------------------------
 
 # The target module to build
@@ -88,6 +89,10 @@ SRCDIR = @SRCDIR@
 TGTDIR = @TGTDIR@
 # The directory of a Tomcat 4.0 binary distribution
 TC4DIR = @TC4DIR@
+# The list of configure-generated files
+CFGFILES = @CFCFILES@ ./config.cache ./config.log ./config.status
+# GNU-Make style echo
+MECHO = $(ECHO) "$(MAKE)[$(MAKELEVEL)]:"
 
 # -------------------------------------------------------------------------
 # APR library values
@@ -147,12 +152,22 @@ JAVACFLAGS = @JAVACFLAGS@
 CLASSPATH = @CLASSPATH@
 
 # -------------------------------------------------------------------------
+# ScanDoc Documentation tool settings
+# -------------------------------------------------------------------------
+
+# PERL interpreter
+PERL = @PERL@
+# ScanDoc documentation tool
+SCANDOC = @SCANDOC@
+# Scandoc flags
+SCANDOCFLAGS = @SCANDOCFLAGS@
+
+# -------------------------------------------------------------------------
 # C-Compilation default setting
 # -------------------------------------------------------------------------
 .c.o:
-	@$(ECHO) "Compiling \"$<\""
-	@$(CC) $(CFLAGS) $(CPPFLAGS) \
-		$(APR_CFLAGS) $(APR_CPPFLAGS) $(APR_INCLUDES) \
-		-I$(APR_INCDIR) -I$(SRCDIR)/include \
-		-c "$<" -o "$@"
+	$(CC) $(CFLAGS) $(CPPFLAGS) \
+	    $(APR_CFLAGS) $(APR_CPPFLAGS) $(APR_INCLUDES) \
+	    -I$(APR_INCDIR) -I$(SRCDIR)/include \
+	    -c "$<" -o "$@"
 
