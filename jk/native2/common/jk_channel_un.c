@@ -58,6 +58,12 @@ typedef struct jk_channel_un_private {
     int listenSocket;
 } jk_channel_un_private_t;
 
+#ifndef SUN_LEN
+/* actual length of an initialized sockaddr_un */
+#define SUN_LEN(su) \
+        (sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
+#endif
+
 static int JK_METHOD jk2_channel_un_close(jk_env_t *env, jk_channel_t *ch,
                                           jk_endpoint_t *endpoint);
 
@@ -162,8 +168,7 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
         
         rc=bind(socketInfo->listenSocket,
                 (struct sockaddr *)& socketInfo->unix_addr,
-                strlen( socketInfo->unix_addr.sun_path ) +
-                sizeof( socketInfo->unix_addr.sun_family) );
+                SUN_LEN(&(socketInfo->unix_addr)) );
         
         umask(omask); /* can't fail, so can't clobber errno */
         
