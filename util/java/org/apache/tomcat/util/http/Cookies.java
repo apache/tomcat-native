@@ -158,7 +158,10 @@ public final class Cookies { // extends MultiMap {
             if( pos<0 ) break;
 
             MessageBytes cookieValue=headers.getValue( pos );
-            if( cookieValue==null || cookieValue.isNull() ) continue;
+            if( cookieValue==null || cookieValue.isNull() ) {
+                pos++;
+                continue;
+            }
 
             // Uncomment to test the new parsing code
             if( cookieValue.getType() == MessageBytes.T_BYTES ) {
