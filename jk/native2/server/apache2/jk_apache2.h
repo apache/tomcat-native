@@ -73,7 +73,7 @@
 #include "jk_requtil.h"
 
 
-int jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s);
+int JK_METHOD jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s);
 
 int JK_METHOD jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
                                          jk_bean_t *result, const char *type, const char *name);

@@ -96,7 +96,7 @@
 
 /* #define USE_APRTABLES  */
 
-#define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
+#define NULL_FOR_EMPTY(x)   ((((x)!=NULL) && (strlen((x))!=0)) ? (x) : NULL ) 
 
 static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s )
 {
@@ -106,8 +106,11 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
     jk_map_t *headers;
     int debug=1;
     
-    if(s==NULL ||  s->ws_private==NULL )
+    if(s==NULL ||  s->ws_private==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "service.head() NullPointerException\n");
         return JK_ERR;
+    }
     
     if( s->uriEnv != NULL )
         debug=s->uriEnv->mbean->debug;
@@ -211,24 +214,27 @@ static int JK_METHOD jk2_service_apache2_read(jk_env_t *env, jk_ws_service_t *s,
                                               void *b, unsigned len,
                                               unsigned *actually_read)
 {
-    if(s && s->ws_private && b && actually_read) {
-        if(!s->read_body_started) {
-           if(ap_should_client_block(s->ws_private)) {
-                s->read_body_started = JK_TRUE;
-            }
-        }
+    if(s==NULL || s->ws_private==NULL ||  b==NULL || actually_read==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "service.read() NullPointerException\n");
+        return JK_ERR;
+    }
 
-        if(s->read_body_started) {
-            long rv;
-            if ((rv = ap_get_client_block(s->ws_private, b, len)) < 0) {
-                *actually_read = 0;
-            } else {
-                *actually_read = (unsigned) rv;
-            }
-            return JK_OK;
+    if(!s->read_body_started) {
+        if(ap_should_client_block(s->ws_private)) {
+            s->read_body_started = JK_TRUE;
         }
     }
-    return JK_ERR;
+
+    if(s->read_body_started) {
+        long rv;
+        if ((rv = ap_get_client_block(s->ws_private, b, len)) < 0) {
+            *actually_read = 0;
+        } else {
+            *actually_read = (unsigned) rv;
+        }
+    }
+    return JK_OK;
 }
 
 /*
@@ -255,8 +261,11 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
     char *bb=(char *)b;
     request_rec *rr;
     int debug=1;
+    int rc;
     
     if(s==NULL  || s->ws_private == NULL ||  b==NULL) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "service.write() NullPointerException\n");
         return JK_ERR;
     }
     if( s->uriEnv != NULL )
@@ -274,8 +283,9 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
         if( debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
                           "service.write() default head\n");
-        if(s->head(env, s) != JK_OK) {
-            return JK_ERR;
+        rc=s->head(env, s);
+        if( rc != JK_OK) {
+            return rc;
         }
         
         {
@@ -306,7 +316,7 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
         
         if(toSend != r) { 
             return JK_ERR; 
-                } 
+        } 
         
     }
     
@@ -345,14 +355,15 @@ static long jk2_get_content_length(jk_env_t *env, request_rec *r)
 }
 
 static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
-                               jk_worker_t *worker, void *serverObj)
+                                         jk_worker_t *worker, void *serverObj)
 {
     apr_port_t port;
     char *ssl_temp      = NULL;
-    jk_workerEnv_t *workerEnv=worker->workerEnv;
+    jk_workerEnv_t *workerEnv;
     request_rec *r=serverObj;
     int need_content_length_header=JK_FALSE;
 
+    workerEnv = worker->workerEnv;
     /* Common initialization */
     /* XXX Probably not needed, we're duplicating */
     jk2_requtil_initRequest(env, s);
@@ -600,9 +611,11 @@ static void JK_METHOD jk2_service_apache2_afterRequest(jk_env_t *env, jk_ws_serv
     }
 }
 
-int jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s)
+int JK_METHOD jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s)
 {
     if(s==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "service.init() NullPointerException\n");
         return JK_ERR;
     }
 
@@ -611,6 +624,6 @@ int jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s)
     s->write  = jk2_service_apache2_write;
     s->init   = jk2_init_ws_service;
     s->afterRequest     = jk2_service_apache2_afterRequest;
-    
+
     return JK_OK;
 }

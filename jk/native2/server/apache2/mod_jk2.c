@@ -194,10 +194,10 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
 
     uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, (char *)name, (void *)val );
     
-    fprintf(stderr, "JkUriSet  %s %s dir=%s args=%s\n",
-            uriEnv->workerName, cmd->path,
-            cmd->directive->directive,
-            cmd->directive->args);
+/*     fprintf(stderr, "JkUriSet  %s %s dir=%s args=%s\n", */
+/*             uriEnv->workerName, cmd->path, */
+/*             cmd->directive->directive, */
+/*             cmd->directive->args); */
 
     return NULL;
 }
@@ -305,6 +305,7 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     /* Create the workerEnv */
     jkb=env->createBean2( env, env->globalPool,"workerEnv", "");
     workerEnv= jkb->object;
+/*     workerEnv->logger_name= "logger.apache2"; */
     env->alias( env, "workerEnv:" , "workerEnv");
     
     if( workerEnv==NULL ) {
@@ -445,7 +446,6 @@ static int jk2_post_config(apr_pool_t *pconf,
     rc=jk2_apache2_isValidating( plog, &gPool );
 
     env->setAprPool(env, gPool);
-    fprintf( stderr, "XXX Gpool %p\n", gPool );
     
     if( rc == JK_OK && gPool != NULL ) {
         /* This is the first step */
@@ -488,9 +488,10 @@ static void jk2_child_init(apr_pool_t *pconf,
         workerEnv->was_initialized = JK_TRUE;        
         
         jk2_init( env, pconf, workerEnv, s );
-    
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init %d %d\n",
-                      workerEnv->was_initialized, workerEnv->childId );
+
+        if( workerEnv->childId <= 0 ) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init %d %d\n",
+                          workerEnv->was_initialized, workerEnv->childId );
     }
     
 }
@@ -511,6 +512,10 @@ static int jk2_handler(request_rec *r)
     jk_uriEnv_t *uriEnv;
     jk_env_t *env;
     jk_workerEnv_t *workerEnv;
+
+    jk_ws_service_t *s=NULL;
+    jk_pool_t *rPool=NULL;
+    int rc1;
 
     uriEnv=ap_get_module_config( r->request_config, &jk2_module );
 
@@ -548,13 +553,13 @@ static int jk2_handler(request_rec *r)
         if( worker==NULL && uriEnv->workerName != NULL ) {
             worker=env->getByName( env, uriEnv->workerName);
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                          "mod_jk.handler() finding worker for %p %p\n",
-                          worker, uriEnv );
+                          "mod_jk.handler() finding worker for %p %p %s\n",
+                          worker, uriEnv, uriEnv->workerName);
             uriEnv->worker=worker;
         }
     }
 
-    if(worker==NULL ) {
+    if(worker==NULL || worker->mbean == NULL || worker->mbean->localName==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "mod_jk.handle() No worker for %s\n", r->uri); 
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
@@ -563,49 +568,53 @@ static int jk2_handler(request_rec *r)
 
     if( uriEnv->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.handler() serving %s with %s\n",
-                      uriEnv->mbean->localName, worker->mbean->localName );
-    {
-        jk_ws_service_t sOnStack;
-        jk_ws_service_t *s=&sOnStack;
-        jk_pool_t *rPool=NULL;
-        int rc1;
+                      "mod_jk.handler() serving %s with %p %p %s\n",
+                      uriEnv->mbean->localName, worker, worker->mbean, worker->mbean->localName );
 
-        /* Get a pool for the request XXX move it in workerEnv to
-           be shared with other server adapters */
-        rPool= worker->rPoolCache->get( env, worker->rPoolCache );
-        if( rPool == NULL ) {
-            rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
-            if( uriEnv->mbean->debug > 0 )
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "mod_jk.handler(): new rpool %p\n", rPool );
-        }
+    fprintf( stderr, "XXX 1 %p %p\n", worker, worker->rPoolCache );
 
-        /* XXX we should reuse the request itself !!! */
-        jk2_service_apache2_init( env, s );
+    /* Get a pool for the request XXX move it in workerEnv to
+       be shared with other server adapters */
+    rPool= worker->rPoolCache->get( env, worker->rPoolCache );
+    if( rPool == NULL ) {
+        rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
+        if( uriEnv->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "mod_jk.handler(): new rpool %p\n", rPool );
+    }
+    
+    fprintf( stderr, "XXX 2 %p\n", worker );
+    
+    s=(jk_ws_service_t *)rPool->calloc( env, rPool, sizeof( jk_ws_service_t ));
+    
+    fprintf( stderr, "XXX 2 %p\n", s );
 
-        s->pool = rPool;
-        s->init( env, s, worker, r );
+    /* XXX we should reuse the request itself !!! */
+    jk2_service_apache2_init( env, s );
+    
+    fprintf( stderr, "XXX 3 %p %p\n", s, worker );
 
-        s->is_recoverable_error = JK_FALSE;
-        s->uriEnv = uriEnv; 
+    s->pool = rPool;
+    s->init( env, s, worker, r );
+    
+    s->is_recoverable_error = JK_FALSE;
+    s->uriEnv = uriEnv; 
 
-        /* env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-        /*              "mod_jk.handler() Calling %s\n", worker->mbean->name); */
-        
-        rc = worker->service(env, worker, s);
-
-        s->afterRequest(env, s);
-
-        rPool->reset(env, rPool);
-        
-        rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
-        if( rc1 == JK_OK ) {
-            rPool=NULL;
-        }
-        if( rPool!=NULL ) {
-            rPool->close(env, rPool);
-        }
+    /* env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+    /*              "mod_jk.handler() Calling %s\n", worker->mbean->name); */
+    
+    rc = worker->service(env, worker, s);
+    
+    s->afterRequest(env, s);
+    
+    rPool->reset(env, rPool);
+    
+    rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
+    if( rc1 == JK_OK ) {
+        rPool=NULL;
+    }
+    if( rPool!=NULL ) {
+        rPool->close(env, rPool);
     }
 
     if(rc==JK_OK) {
@@ -679,8 +688,8 @@ static int jk2_translate(request_rec *r)
 
     if( uriEnv->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.translate(): uriMap %s %s\n",
-                      r->uri, uriEnv->workerName);
+                      "mod_jk.translate(): uriMap %s %s %p\n",
+                      r->uri, uriEnv->workerName, uriEnv->worker);
 
     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     return OK;
