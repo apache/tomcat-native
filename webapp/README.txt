@@ -47,6 +47,11 @@ To build the tomcat-webapp.jar you have to do the following:
 
 * Copy the build/lib/tomcat-webapp.jar in the Tomcat server/lib directory.
 
+* If using cygwin make sure of the following:
+  - cygwin1.dll is in your PATH variable.
+  - grep is installed (GNU grep, egrep and fgrep: Category Base).
+  - sed is installed (sed: GNU sed stream editor: Category Base).
+
 How to build the WebApp module from CVS sources:
 ------------------------------------------------
 
