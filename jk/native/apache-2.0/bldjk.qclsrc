@@ -117,7 +117,8 @@ CRTCMOD MODULE(MOD_JK/JK_CONTEXT) +
 
 CRTCMOD MODULE(MOD_JK/JK_JNI_WOR) +
     SRCSTMF('/home/apache/jk/native/common/jk_jni_worker.c') +
-    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'OS400_JVM_12' 'USE_APACHE_MD5' '_REENTRANT') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' 'OS400_JVM_12' 'USE_APACHE_MD5' +
+    '_REENTRANT') +
     TEXT('jk_jni_worker.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
