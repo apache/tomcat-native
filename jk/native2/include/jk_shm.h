@@ -55,183 +55,86 @@
  *                                                                           *
  * ========================================================================= */
 
-/**
- * Scoreboard - used for communication on multi-process servers.
- *
- * This is an optional component - will be enabled only if APR is used. 
- * The code is cut&pasted from apache and mod_jserv.
- *
- * 
- * 
- * @author Jserv and Apache people
- */
+#ifndef JK_SHM_H
+#define JK_SHM_H
 
 #include "jk_global.h"
-#include "jk_map.h"
+#include "jk_env.h"
+#include "jk_logger.h"
 #include "jk_pool.h"
-#include "jk_shm.h"
+#include "jk_msg.h"
+#include "jk_service.h"
 
-#ifdef HAS_APR
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
-#include "apr.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_lib.h"
-
-#define APR_WANT_STRFUNC
-#include "apr_want.h"
-
-#if APR_HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#if APR_HAS_SHARED_MEMORY
-
-#include "apr_shm.h"
-
-struct jk_shm_buffer {
-    /** Incremented after each modification */
-    int generation;
-    /** 1 if the buffer is in an unstable state.
-     *  XXX Shouldn't happen
-     */
-    int busy;
-
-    /** Pid of the owning process */
-    int owner;
+struct jk_env;
+struct jk_shm;
     
-    int id;
-    char name[64];
-    
-    char *data;
-};
+typedef struct jk_shm jk_shm_t;
 
-struct jk_shm_head {
-    int size;
-    int bufferCount;
-    
-    int objCount;
-    int lastId;
-
-    struct jk_shm_buffer buffers[1];
-};
-
-
-typedef struct jk_shm_private {
-    apr_size_t size;
-    apr_shm_t *aprShm;
-    apr_pool_t *aprPool;
-
-    struct jk_shm_head *image;
-} jk_shm_private_t;
-
-static apr_pool_t *globalShmPool;
-
-static int jk_shm_destroy(jk_env_t *env, jk_shm_t *shm)
-{
-    jk_shm_private_t *shmP=shm->privateData;
-    
-    return apr_shm_destroy(shmP->aprShm);
-}
-
-static int jk_shm_detach(jk_env_t *env, jk_shm_t *shm)
-{
-    jk_shm_private_t *shmP=shm->privateData;
-
-    return apr_shm_detach(shmP->aprShm);
-}
-
-static int jk_shm_attach(jk_env_t *env, jk_shm_t *shm)
-{
-
-}
-
-
-/* Create or reinit an existing scoreboard. The MPM can control whether
- * the scoreboard is shared across multiple processes or not
+/** Each shared memory slot has at least the following components.
  */
-static int jk_shm_createScoreboard(jk_env_t *env, jk_shm_t *shm)
-{
-    apr_status_t rv;
-    jk_shm_private_t *shmP=shm->privateData;
+struct jk_shm_slot {
+    /** Size of the segment */
+    int size;
+    
+    /** Version of the segment. Whoever writes it must change the
+        version after writing. Various components will check the version
+        and refresh if needed
+    */
+    int ver;
 
-    /* We don't want to have to recreate the scoreboard after
-     * restarts, so we'll create a global pool and never clean it.
+    /** Name of the segment. 
      */
-    rv = apr_pool_create(&globalShmPool, NULL);
+    char type[64];
 
-    if (rv != APR_SUCCESS) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "Unable to create global pool for jk_shm\n");
-        return rv;
-    }
-
-    /* The config says to create a name-based shmem */
-    if ( shm->fname == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "No name for jk_shm\n");
-        return JK_FALSE;
-    }
+    char data[1];
+};
     
-    /* make sure it's an absolute pathname */
-    /*  fname = ap_server_root_relative(pconf, ap_scoreboard_fname); */
+/**
+ *  Shared memory support. This is similar with the scoreboard or jserv's worker shm, but
+ *  organized a bit more generic to support use of shm as a channel and to support config
+ *  changes.
+ * 
+ *  The structure is organized as an array of 'slots'. Each slot has a name and data. Slots are long lived -
+ *  they are never destroyed.
+ *  Each slot has it's own rules for content and synchronization - but typically they are 'owned'
+ *  by a process or thread and use various conventions to avoid the need for sync.
+  *
+ * @author Costin Manolache
+ */
+struct jk_shm {
+    struct jk_bean *mbean;
 
-    /* The shared memory file must not exist before we create the
-     * segment. */
-    apr_file_remove(shm->fname, globalShmPool ); /* ignore errors */
+    struct jk_pool *pool;
 
-    rv = apr_shm_create(&shmP->aprShm, shmP->size, shm->fname, globalShmPool);
+    char *fname;
+
+    /** Initialize the shared memory area. It'll map the shared memory 
+     *  segment if it exists, or create and init it if not.
+     */
+    int (*init)(struct jk_env *env, struct jk_shm *shm);
+
+    /** Get a shm slot. Each slot has different rules for synchronization, based on type. 
+     */
+    struct jk_shm_slot *(*getSlot)(struct jk_env *env, struct jk_shm *shm, char *name, int size);
+
+    /** Create a slot. This typically involves inter-process synchronization.
+     */
+    struct jk_shm_slot *(*createSlot)(struct jk_env *env, struct jk_shm *shm, char *name, int size);
+
+    /** Get an ID that is unique across processes.
+     */
+    int (*getId)(struct jk_env *env, struct jk_shm *shm);
     
-    if (rv) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.create(): error creating named scoreboard %s %d\n",
-                      shm->fname, rv);
-        return rv;
-    }
-
-    shmP->image = apr_shm_baseaddr_get( shmP->aprShm);
-    if( shmP->image==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.create(): No memory allocated %s\n",
-                      shm->fname);
-        return JK_FALSE;
-    }
+    /* Private data */
+    void *privateData;
+};
     
-    memset(shmP->image, 0, shmP->size);
-
-    return JK_TRUE;
+#ifdef __cplusplus
 }
+#endif /* __cplusplus */
 
-static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
-
-
-    return JK_TRUE;
-}
-
-
-int jk2_shm_factory( jk_env_t *env, jk_pool_t *pool,
-                     jk_bean_t *result,
-                     const char *type, const char *name)
-{
-    jk_shm_t *_this;
-
-    _this=(jk_shm_t *)pool->alloc(env, pool, sizeof(jk_shm_t));
-
-    if( _this == NULL )
-        return JK_FALSE;
-
-    /* result->setAttribute=jk2_scoreboard_setAttribute; */
-    /* result->getAttribute=jk2_scoreboard_getAttribute; */
-    /*     _this->mbean=result; */
-    result->object=_this;
-
-    _this->init=jk2_shm_init;
-    
-    /* result->aprPool=(apr_pool_t *)p->_private; */
-        
-    return JK_TRUE;
-}
-
-#endif /* APR_HAS_SHARED_MEMORY */
-#endif /* HAS_APR */
-
+#endif 
