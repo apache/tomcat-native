@@ -390,13 +390,13 @@ final class CoyoteProcessor
         else
             request.setServerPort(serverPort);
 
-        parseSessionId(req);
-
         if (!normalize(req.decodedURI())) {
             res.setStatus(400);
             res.setMessage("Invalid URI");
             throw new IOException("Invalid URI");
         }
+
+        parseSessionId(req);
 
         // Additional URI normalization and validation is needed for security 
         // reasons on Tomcat 4.0.x
@@ -640,54 +640,98 @@ final class CoyoteProcessor
      * 
      * @param uri URI to be normalized
      */
-    public boolean normalize(MessageBytes uri) {
+    public boolean normalize(MessageBytes uriMB) {
 
-        // FIXME: Write a GC friendly version of this
+        ByteChunk uriBC = uriMB.getByteChunk();
+        byte[] b = uriBC.getBytes();
+        int start = uriBC.getStart();
+        int end = uriBC.getEnd();
 
-        // Create a place for the normalized path
-        String normalized = uri.toString();
+        int pos = 0;
+        int index = 0;
 
-        // Normalize slashes
-        if (normalized.indexOf('\\') >= 0)
-            normalized = normalized.replace('\\', '/');
-
-        // Resolve occurrences of "//" in the normalized path
-        while (true) {
-            int index = normalized.indexOf("//");
-            if (index < 0)
-                break;
-            normalized = normalized.substring(0, index) +
-                normalized.substring(index + 1);
+        // Replace '\' with '/'
+        for (pos = start; pos < end; pos++) {
+            if (b[pos] == (byte) '\\')
+                b[pos] = (byte) '/';
         }
 
-        if (normalized.endsWith("/.") || normalized.endsWith("/.."))
-            normalized = normalized + "/";
+        // Replace "//" with "/"
+        for (pos = start; pos < (end - 1); pos++) {
+            if ((b[pos] == (byte) '/') && (b[pos + 1] == (byte) '/')) {
+                copyBytes(b, pos, pos + 1, end - pos - 1);
+                end--;
+            }
+        }
+
+        // If the URI ends with "/." or "/..", then we append an extra "/"
+        // Note: It is possible to extend the URI by 1 without any side effect
+        // as the next character in a non-significant WS.
+        if (((end - start) > 2) && (b[end - 1] == (byte) '.')) {
+            if ((b[end - 2] == (byte) '/') 
+                || ((b[end - 2] == (byte) '.') 
+                    && (b[end - 3] == (byte) '/'))) {
+                b[end] = (byte) '/';
+                end++;
+            }
+        }
+
+        uriBC.setEnd(end);
+
+        index = 0;
 
         // Resolve occurrences of "/./" in the normalized path
         while (true) {
-            int index = normalized.indexOf("/./");
+            index = uriBC.indexOf("/./", 0, 3, index);
             if (index < 0)
                 break;
-            normalized = normalized.substring(0, index) +
-                normalized.substring(index + 2);
+            copyBytes(b, start + index, start + index + 2, 
+                      end - start - index - 2);
+            end = end - 2;
+            uriBC.setEnd(end);
         }
+
+        index = 0;
 
         // Resolve occurrences of "/../" in the normalized path
         while (true) {
-            int index = normalized.indexOf("/../");
+            index = uriBC.indexOf("/../", 0, 4, index);
             if (index < 0)
                 break;
+            // Prevent from going outside our context
             if (index == 0)
-                return false;  // Trying to go outside our context
-            int index2 = normalized.lastIndexOf('/', index - 1);
-            normalized = normalized.substring(0, index2) +
-                normalized.substring(index + 3);
+                return false;
+            int index2 = -1;
+            for (pos = start + index - 1; (pos >= 0) && (index2 < 0); pos --) {
+                if (b[pos] == (byte) '/') {
+                    index2 = pos;
+                }
+            }
+            copyBytes(b, start + index2, start + index + 3,
+                      end - start - index - 3);
+            end = end + index2 - index - 3;
+            uriBC.setEnd(end);
+            index = index2;
         }
 
-        uri.setString(normalized);
+        uriBC.setBytes(b, start, end);
 
         return true;
 
+    }
+
+
+    // ------------------------------------------------------ Protected Methods
+
+
+    /**
+     * Copy an array of bytes to a different position. Used during 
+     * normalization.
+     */
+    protected void copyBytes(byte[] b, int dest, int src, int len) {
+        for (int pos = 0; pos < len; pos++) {
+            b[pos + dest] = b[pos + src];
+        }
     }
 
 
