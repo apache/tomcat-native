@@ -70,6 +70,8 @@
 #include "jk_map.h"
 #include "jk_uriMap.h"
 #include "jk_webapp.h"
+#include "jk_handler.h"
+#include "jk_service.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,6 +83,8 @@ struct jk_env;
 struct jk_uriMap;
 struct jk_webapp;
 struct jk_map;
+struct jk_handler;
+struct jk_ws_service;
 
 /*
  * Jk configuration and global methods. 
@@ -187,6 +191,13 @@ struct jk_workerEnv {
     int envvars_in_use;
     jk_map_t * envvars;
 
+    /* Handlers. This is a dispatch table for messages, for
+     * each message id we have an entry containing the jk_handler_t.
+     * lastMessageId is the size of the table.
+     */
+    struct jk_handler **handlerTable;
+    int lastMessageId;
+    
     /** Private data, associated with the 'real' server
      *  server_rec * in apache
      */
@@ -208,6 +219,10 @@ struct jk_workerEnv {
                                       const char *vhost,
                                       const char *name, 
                                       struct jk_map *init_data);
+
+    int (*processCallbacks)(struct jk_workerEnv *_this,
+                            struct jk_endpoint *e,
+                            struct jk_ws_service *r );
 
     /**
      *  Init the workers, prepare the worker environment.
