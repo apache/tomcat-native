@@ -183,13 +183,6 @@
          index="true"
          basedir="${build.home}/classes" 
          includes="**/*.properties" />
-
-    <copy      file="${tomcat-util.jar}" 
-             tofile="${build.home}/lib/tomcat-util.jar" />
-    <copy      file="${tomcat-coyote.jar}" 
-             tofile="${build.home}/lib/tomcat-coyote.jar" />
-    <copy      file="${tomcat33-coyote.jar}" 
-             tofile="${build.home}/lib/tomcat33-coyote.jar" />
   </target>
 
 
