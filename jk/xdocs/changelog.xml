@@ -49,6 +49,10 @@
       child processes. For Apache web server two new directives has been
       added (JkShmFile and JkShmSize). (mturk)
       </update>
+      <update>
+      Added textupdate mode to status worker to handle remote updates
+      from ant tasks.(pero)
+      </update>
       <fix>
       <bug>33562</bug>: Fix Reply_timeout when recovery_options
       is larger than 1. Patch provided by Takashi Satou. (mturk)

@@ -43,6 +43,8 @@
 
 #define JK_STATUS_HEND "</body>\n</html>\n"
 
+#define JK_STATUS_TEXTUPDATE_RESPONCE "OK - jk status worker updated\n"
+
 typedef struct status_worker status_worker_t;
 
 struct status_endpoint
@@ -619,6 +621,8 @@ static int status_cmd_type(const char *req)
         return 1;
     else if (!strncmp(req, "cmd=update", 10))
         return 2;
+    else if (!strncmp(req, "cmd=textupdate", 14))
+        return 3;
     else
         return 0;
 }
@@ -638,21 +642,12 @@ static int JK_METHOD service(jk_endpoint_t *e,
         *is_recoverable_error = JK_FALSE;
 
         s->start_response(s, 200, "OK", headers_names, headers_vals, 3);
-        s->write(s, JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
-
-        jk_puts(s, "<h1>JK Status Manager for ");
-        jk_puts(s, s->server_name);
-        jk_puts(s, "</h1>\n\n");
-        jk_putv(s, "<dl><dt>Server Version: ",
-                s->server_software, "</dt>\n", NULL);
-        jk_putv(s, "<dt>JK Version: ",
-                JK_VERSTRING, "\n</dt></dl>\n", NULL);
 
         /* Step 1: Process GET params and update configuration */
         cmd = status_cmd_type(s->query_string);
         if (cmd > 0 && (status_cmd("w", s->query_string, buf, sizeof(buf)) != NULL))
             worker = strdup(buf);
-        if (cmd == 2 && worker) {
+        if (((cmd == 2) || (cmd == 3)) && worker) {
             /* lock shared memory */
             jk_shm_lock();
             update_worker(s, p->s_worker, worker, l);
@@ -665,11 +660,24 @@ static int JK_METHOD service(jk_endpoint_t *e,
             /* unlock the shared memory */
             jk_shm_unlock();
         }
-        /* Step 2: Display configuration */
-        display_workers(s, p->s_worker, worker, l);
-
-
-        s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
+        if(cmd == 3) {
+	        s->write(s,  JK_STATUS_TEXTUPDATE_RESPONCE, sizeof(JK_STATUS_TEXTUPDATE_RESPONCE) - 1);
+        } else {
+	        s->write(s,  JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
+	
+	        jk_puts(s, "<h1>JK Status Manager for ");
+	        jk_puts(s, s->server_name);
+	        jk_puts(s, "</h1>\n\n");
+	        jk_putv(s, "<dl><dt>Server Version: ",
+	                s->server_software, "</dt>\n", NULL);
+	        jk_putv(s, "<dt>JK Version: ",
+	                JK_VERSTRING, "\n</dt></dl>\n", NULL);
+	        /* Step 2: Display configuration */
+	        display_workers(s, p->s_worker, worker, l);
+	
+	
+	        s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
+        }
         if (worker)
             free(worker);
         JK_TRACE_EXIT(l);
