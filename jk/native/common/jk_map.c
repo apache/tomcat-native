@@ -483,7 +483,7 @@ static size_t trim(char *s)
 {
     size_t i;
     
-    /* check for empry strings */
+    /* check for empty strings */
     if (!(i = strlen(s)))
         return 0;
     for (i = i - 1; (i >= 0) &&
