@@ -16,11 +16,15 @@
     <property name="puretls.lib" location="${puretls.home}/build"/>
     <property name="puretls.jar" location="${puretls.lib}/puretls.jar"/>
     
+    <property name="commons-logging.jar" value="../lib/commons-logging.jar" />
+    
     <target name="detect">
         <available property="jsse.present"
                    file="${jsse.jar}"/>
         <available property="puretls.present"
  	           file="${puretls.jar}"/>
+        <available property="commons-logging.present"
+ 	           file="${commons-logging.jar}"/>
     </target>
 
     <target name="build-prepare" depends="detect">
@@ -44,7 +48,9 @@
             <classpath location="${jnet.jar}" />
             <classpath location="${jcert.jar}" />
             <classpath location="${puretls.jar}" />
+            <classpath location="${commons-logging.jar}" />
             <exclude name="**/util/net/JSSE*" unless="jsse.present"/>
+            <exclude name="**/util/log/CommonLogHandler.java" unless="commons-logging.present"/>
             <exclude name="**/util/net/PureTLS*" unless="puretls.present"/>
 	</javac>
 
