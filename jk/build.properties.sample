@@ -21,7 +21,6 @@ tomcat33.home= ../../jakarta-tomcat/build/tomcat
 apache2.home=/opt/apache2
 apache13.home=/opt/apache13
 iplanet.home=/opt/iplanet6
-# iplanet.home=d:/tools/sdk/netscape
 
 
 # APR location - by default the version included in Apache2 is used.
@@ -37,10 +36,13 @@ so.profile=false
 # Settings for building NetWare binaries.  Uncomment these and modify for your
 # environment to build NetWare binaries.
 #
-# novellndk.dir=d:/tools/nwsdk
+# novellndk.dir=d:/tools/novell/ndk/nwsdk
+# novelllibc.dir=d:/tools/novell/ndk/libc
 # build.compiler.base=d:/tools/mw/6.0
 # build.compiler.cc=${build.compiler.base}/bin/mwccnlm
 # build.compiler.ld=${build.compiler.base}/bin/mwldnlm
+# netscape.home=${iplanet.home}
+# option_no_reuse_worker=true
 
 # Settings for building Windows binaries.  Uncomment these and modify for your
 # environment to build Windows binaries.
