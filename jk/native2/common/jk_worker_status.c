@@ -61,20 +61,20 @@ static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
     apr_ctime( ctimeBuf, stat->connectedTime );
     s->jkprintf(env, s, "<td>%s</td>\n", ctimeBuf );
 
-    s->jkprintf(env, s, "<td>%ld</td>\n", (long)stat->totalTime );
-    s->jkprintf(env, s, "<td>%ld</td>\n", (long)stat->maxTime );
+    s->jkprintf(env, s, "<td>%ld</td>\n", (long)apr_time_as_msec(stat->totalTime));
+    s->jkprintf(env, s, "<td>%ld</td>\n", (long)apr_time_as_msec(stat->maxTime));
 
     if( stat->reqCnt + stat->errCnt > 0 ) 
         s->jkprintf(env, s, "<td>%ld</td>\n",
-                    (long)(stat->totalTime / ( stat->reqCnt + stat->errCnt )) );
+                    (long)apr_time_as_msec((stat->totalTime / ( stat->reqCnt + stat->errCnt ))));
     else
         s->jkprintf(env, s, "<td>-</td>\n");
 
-    s->jkprintf(env, s, "<td>%lu</td>\n", (long)stat->startTime );
+    s->jkprintf(env, s, "<td>%lu</td>\n", (long)apr_time_as_msec(stat->startTime));
     s->jkprintf(env, s, "<td>%ld</td>\n",
-                (long)(stat->jkStartTime - stat->startTime) );
+                (long)apr_time_as_msec(stat->jkStartTime - stat->startTime));
     s->jkprintf(env, s, "<td>%ld</td>\n",
-                (long)(stat->endTime - stat->startTime) );
+                (long)apr_time_as_msec(stat->endTime - stat->startTime));
 
     totalTime += (long)stat->totalTime;
     if( maxTime < stat->maxTime )
@@ -100,10 +100,10 @@ static void jk2_worker_status_displayAggregate(jk_env_t *env, jk_ws_service_t *s
     s->jkprintf(env, s, "<tr><td>%d</td>\n", totalReq );
     s->jkprintf(env, s, "<td>%d</td>\n", totalErr );
 
-    s->jkprintf(env, s, "<td>%ld</td>\n", maxTime );
+    s->jkprintf(env, s, "<td>%ld</td>\n", apr_time_as_msec(maxTime));
 
     if( totalErr + totalReq > 0 ) {
-        unsigned long avg=totalTime / ( totalReq + totalErr );
+        unsigned long avg=apr_time_as_msec(totalTime / ( totalReq + totalErr));
         s->jkprintf(env, s, "<td>%ld</td>\n", avg );
     } else {
         s->jkprintf(env, s, "<td>-</td>\n" );
@@ -479,14 +479,14 @@ static void jk2_worker_status_dmpEndpoints(jk_env_t *env, jk_ws_service_t *s,
                 apr_ctime( ctimeBuf, stat->connectedTime );
                 s->jkprintf(env, s, "lastConnectionTime=%s\n", ctimeBuf);
 
-                s->jkprintf(env, s, "totalTime=%ld\n", (long)stat->totalTime );
-                s->jkprintf(env, s, "maxTime=%ld\n", (long)stat->maxTime ); 
+                s->jkprintf(env, s, "totalTime=%ld\n", (long)apr_time_as_msec(stat->totalTime));
+                s->jkprintf(env, s, "maxTime=%ld\n", (long)apr_time_as_msec(stat->maxTime)); 
 
-                s->jkprintf(env, s, "requestStart=%lu\n", (long)stat->startTime); 
+                s->jkprintf(env, s, "requestStart=%lu\n", (long)apr_time_as_msec(stat->startTime)); 
                 s->jkprintf(env, s, "jkTime=%ld\n", 
-                            (long)(stat->jkStartTime - stat->startTime) );
+                            (long)apr_time_as_msec((stat->jkStartTime - stat->startTime)));
                 s->jkprintf(env, s, "requestEnd=%ld\n", 
-                            (long)(stat->endTime - stat->startTime) );
+                            (long)apr_time_as_msec((stat->endTime - stat->startTime)));
                 s->jkprintf(env, s, "\n"); 
             }
 
