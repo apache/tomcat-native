@@ -85,6 +85,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.Cookies;
+import org.apache.tomcat.util.http.ServerCookie;
 
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.ActionHook;
@@ -415,7 +417,7 @@ final class CoyoteProcessor
         }
 
         parseHost();
-        parseCookies();
+        parseCookies(req);
 
     }
 
@@ -518,33 +520,37 @@ final class CoyoteProcessor
      * but a conversion to Catalina own cookies would then be needed, which 
      * would take away most if not all of the performance benefit.
      */
-    protected void parseCookies() {
+    protected void parseCookies(Request req) {
 
-        Enumeration values = request.getHeaders("cookie");
-        while (values.hasMoreElements()) {
-            String value = values.nextElement().toString();
-            Cookie cookies[] = RequestUtil.parseCookieHeader(value);
-            for (int i = 0; i < cookies.length; i++) {
-                if (cookies[i].getName().equals
-                    (Globals.SESSION_COOKIE_NAME)) {
-                    // Override anything requested in the URL
-                    if (!request.isRequestedSessionIdFromCookie()) {
-                        // Accept only the first session id cookie
-                        request.setRequestedSessionId(cookies[i].getValue());
-                        request.setRequestedSessionCookie(true);
-                        request.setRequestedSessionURL(false);
-                        if (debug >= 1)
-                            log(" Requested cookie session id is " +
-                                ((HttpServletRequest) request.getRequest())
-                                .getRequestedSessionId());
-                    }
+        Cookies serverCookies = req.getCookies();
+        int count = serverCookies.getCookieCount();
+        if (count <= 0)
+            return;
+
+        Cookie[] cookies = new Cookie[count];
+
+        for (int i = 0; i < count; i++) {
+            ServerCookie scookie = serverCookies.getCookie(i);
+            if (scookie.getName().equals(Globals.SESSION_COOKIE_NAME)) {
+                // Override anything requested in the URL
+                if (!request.isRequestedSessionIdFromCookie()) {
+                    // Accept only the first session id cookie
+                    request.setRequestedSessionId
+                        (scookie.getValue().toString());
+                    request.setRequestedSessionCookie(true);
+                    request.setRequestedSessionURL(false);
+                    if (debug >= 1)
+                        log(" Requested cookie session id is " +
+                            ((HttpServletRequest) request.getRequest())
+                            .getRequestedSessionId());
                 }
-                if (debug >= 1)
-                    log(" Adding cookie " + cookies[i].getName() + "=" +
-                        cookies[i].getValue());
-                request.addCookie(cookies[i]);
             }
+            Cookie cookie = new Cookie(scookie.getName().toString(),
+                                       scookie.getValue().toString());
+            cookies[i] = cookie;
         }
+
+        request.setCookies(cookies);
 
     }
 

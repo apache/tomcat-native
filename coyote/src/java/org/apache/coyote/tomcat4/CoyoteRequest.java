@@ -187,7 +187,7 @@ public class CoyoteRequest
     /**
      * The set of cookies associated with this Request.
      */
-    protected ArrayList cookies = new ArrayList();
+    protected Cookie[] cookies = null;
 
 
     /**
@@ -388,7 +388,7 @@ public class CoyoteRequest
 
         attributes.clear();
         notes.clear();
-        cookies.clear();
+        cookies = null;
 
         session = null;
         requestedSessionCookie = false;
@@ -1142,7 +1142,22 @@ public class CoyoteRequest
      * @param cookie The new cookie
      */
     public void addCookie(Cookie cookie) {
-        cookies.add(cookie);
+
+        // For compatibility only
+
+        int size = 0;
+        if (cookies != null) {
+            size = cookies.length;
+        }
+
+        Cookie[] newCookies = new Cookie[size + 1];
+        for (int i = 0; i < size; i++) {
+            newCookies[i] = cookies[i];
+        }
+        newCookies[size] = cookie;
+
+        cookies = newCookies;
+
     }
 
 
@@ -1185,7 +1200,7 @@ public class CoyoteRequest
      * Clear the collection of Cookies associated with this Request.
      */
     public void clearCookies() {
-        cookies.clear();
+        cookies = null;
     }
 
 
@@ -1397,10 +1412,17 @@ public class CoyoteRequest
      */
     public Cookie[] getCookies() {
 
-        if (cookies.size() < 1)
-            return (null);
-        Cookie results[] = new Cookie[cookies.size()];
-        return ((Cookie[]) cookies.toArray(results));
+        return cookies;
+
+    }
+
+
+    /**
+     * Set the set of cookies recieved with this Request.
+     */
+    public void setCookies(Cookie[] cookies) {
+
+        this.cookies = cookies;
 
     }
 
