@@ -147,6 +147,12 @@ public class CoyoteInterceptor extends PoolTcpConnector
 	maxKeepAliveRequests = mkar;
     }
 
+    /** Set the class of the processor to use.
+     */
+    public void setProcessorClassName(String pcn) {
+	processorClassName = pcn;
+    }
+
     public void setSocketCloseDelay( int d ) {
         socketCloseDelay=d;
     }
