@@ -44,7 +44,7 @@ Load balancer will not work properly if this directive is not present.
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
 </a> 
-
+<hr size="1" noshade="noshade" />
 <a name="20041224.1"> 
 <h3>17 December - JK-1.2.8 released</h3>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
