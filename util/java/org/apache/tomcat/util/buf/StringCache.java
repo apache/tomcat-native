@@ -244,7 +244,7 @@ public class StringCache {
                         if (size > cacheSize) {
                             size = cacheSize;
                         }
-                        bcCache = new ByteEntry[size];
+                        ByteEntry[] tempbcCache = new ByteEntry[size];
                         // Fill it up using an alphabetical order
                         // and a dumb insert sort
                         ByteChunk tempChunk = new ByteChunk();
@@ -257,13 +257,13 @@ public class StringCache {
                             for (int i = 0; i < list.size() && n < size; i++) {
                                 ByteEntry entry = (ByteEntry) list.get(i);
                                 tempChunk.setBytes(entry.name, 0, entry.name.length);
-                                int insertPos = findClosest(tempChunk, n);
+                                int insertPos = findClosest(tempChunk, tempbcCache, n);
                                 if (insertPos == n) {
-                                    bcCache[n + 1] = entry;
+                                    tempbcCache[n + 1] = entry;
                                 } else {
-                                    System.arraycopy(bcCache, insertPos + 1, bcCache, 
+                                    System.arraycopy(tempbcCache, insertPos + 1, tempbcCache, 
                                             insertPos + 2, n - insertPos - 1);
-                                    bcCache[insertPos + 1] = entry;
+                                    tempbcCache[insertPos + 1] = entry;
                                 }
                                 n++;
                             }
@@ -271,6 +271,7 @@ public class StringCache {
                         }
                         bcCount = 0;
                         bcStats.clear();
+                        bcCache = tempbcCache;
                         if (log.isDebugEnabled()) {
                             long t2 = System.currentTimeMillis();
                             log.debug("ByteCache generation time: " + (t2 - t1) + "ms");
@@ -357,7 +358,7 @@ public class StringCache {
                         if (size > cacheSize) {
                             size = cacheSize;
                         }
-                        ccCache = new CharEntry[size];
+                        CharEntry[] tempccCache = new CharEntry[size];
                         // Fill it up using an alphabetical order
                         // and a dumb insert sort
                         CharChunk tempChunk = new CharChunk();
@@ -370,13 +371,13 @@ public class StringCache {
                             for (int i = 0; i < list.size() && n < size; i++) {
                                 CharEntry entry = (CharEntry) list.get(i);
                                 tempChunk.setChars(entry.name, 0, entry.name.length);
-                                int insertPos = findClosest(tempChunk, n);
+                                int insertPos = findClosest(tempChunk, tempccCache, n);
                                 if (insertPos == n) {
-                                    ccCache[n + 1] = entry;
+                                    tempccCache[n + 1] = entry;
                                 } else {
-                                    System.arraycopy(ccCache, insertPos + 1, ccCache, 
+                                    System.arraycopy(tempccCache, insertPos + 1, tempccCache, 
                                             insertPos + 2, n - insertPos - 1);
-                                    ccCache[insertPos + 1] = entry;
+                                    tempccCache[insertPos + 1] = entry;
                                 }
                                 n++;
                             }
@@ -384,6 +385,7 @@ public class StringCache {
                         }
                         ccCount = 0;
                         ccStats.clear();
+                        ccCache = tempccCache;
                         if (log.isDebugEnabled()) {
                             long t2 = System.currentTimeMillis();
                             log.debug("CharCache generation time: " + (t2 - t1) + "ms");
@@ -467,7 +469,7 @@ public class StringCache {
      * Find an entry given its name in the cache and return the associated String.
      */
     protected static final String find(ByteChunk name) {
-        int pos = findClosest(name, bcCache.length);
+        int pos = findClosest(name, bcCache, bcCache.length);
         if ((pos < 0) || (compare(name, bcCache[pos].name) != 0)
                 || !(name.getEncoding().equals(bcCache[pos].enc))) {
             return null;
@@ -482,7 +484,7 @@ public class StringCache {
      * This will return the index for the closest inferior or equal item in the
      * given array.
      */
-    protected static final int findClosest(ByteChunk name, int len) {
+    protected static final int findClosest(ByteChunk name, ByteEntry[] array, int len) {
 
         int a = 0;
         int b = len - 1;
@@ -492,7 +494,7 @@ public class StringCache {
             return -1;
         }
         
-        if (compare(name, bcCache[0].name) < 0) {
+        if (compare(name, array[0].name) < 0) {
             return -1;
         }         
         if (b == 0) {
@@ -502,7 +504,7 @@ public class StringCache {
         int i = 0;
         while (true) {
             i = (b + a) / 2;
-            int result = compare(name, bcCache[i].name);
+            int result = compare(name, array[i].name);
             if (result == 1) {
                 a = i;
             } else if (result == 0) {
@@ -511,7 +513,7 @@ public class StringCache {
                 b = i;
             }
             if ((b - a) == 1) {
-                int result2 = compare(name, bcCache[b].name);
+                int result2 = compare(name, array[b].name);
                 if (result2 < 0) {
                     return a;
                 } else {
@@ -560,7 +562,7 @@ public class StringCache {
      * Find an entry given its name in the cache and return the associated String.
      */
     protected static final String find(CharChunk name) {
-        int pos = findClosest(name, ccCache.length);
+        int pos = findClosest(name, ccCache, ccCache.length);
         if ((pos < 0) || (compare(name, ccCache[pos].name) != 0)) {
             return null;
         } else {
@@ -574,7 +576,7 @@ public class StringCache {
      * This will return the index for the closest inferior or equal item in the
      * given array.
      */
-    protected static final int findClosest(CharChunk name, int len) {
+    protected static final int findClosest(CharChunk name, CharEntry[] array, int len) {
 
         int a = 0;
         int b = len - 1;
@@ -584,7 +586,7 @@ public class StringCache {
             return -1;
         }
         
-        if (compare(name, ccCache[0].name) < 0 ) {
+        if (compare(name, array[0].name) < 0 ) {
             return -1;
         }         
         if (b == 0) {
@@ -594,7 +596,7 @@ public class StringCache {
         int i = 0;
         while (true) {
             i = (b + a) / 2;
-            int result = compare(name, ccCache[i].name);
+            int result = compare(name, array[i].name);
             if (result == 1) {
                 a = i;
             } else if (result == 0) {
@@ -603,7 +605,7 @@ public class StringCache {
                 b = i;
             }
             if ((b - a) == 1) {
-                int result2 = compare(name, ccCache[b].name);
+                int result2 = compare(name, array[b].name);
                 if (result2 < 0) {
                     return a;
                 } else {
