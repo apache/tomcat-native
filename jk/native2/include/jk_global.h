@@ -90,7 +90,7 @@ extern char *strdup (const char *str);
 #define JK_VERSTRING    "2.0.3"
 
 /* Beta number */
-#define JK_VERBETA      1
+#define JK_VERBETA      0
 #define JK_BETASTRING   "1"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
 #define JK_VERISRELEASE 0
@@ -100,12 +100,19 @@ extern char *strdup (const char *str);
 /* Build JK_EXPOSED_VERSION and JK_VERSION */
 #define JK_EXPOSED_VERSION_INT PACKAGE JK_VERSTRING
 
+
 #if ( JK_VERISRELEASE == 1 )
-#define JK_EXPOSED_VERSION JK_EXPOSED_VERSION_INT
-#undef JK_VERBETA
-#define JK_VERBETA 255
+  #define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT
 #else
-#define JK_EXPOSED_VERSION JK_EXPOSED_VERSION_INT "-beta-" JK_BETASTRING
+  #define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT "-dev"
+#endif
+
+#if ( JK_VERBETA == 0 )
+    #define JK_EXPOSED_VERSION JK_RELEASE_STR
+    #undef JK_VERBETA
+    #define JK_VERBETA 255
+#else
+    #define JK_EXPOSED_VERSION JK_RELEASE_STR "-beta-" JK_BETASTRING
 #endif
 
 #define JK_MAKEVERSION(major, minor, fix, beta) (((major) << 24) + ((minor) << 16) + ((fix) << 8) + (beta))
@@ -193,7 +200,14 @@ typedef  unsigned int    apr_uint32_t;
 /* Some compileers support 'inline'. How to guess ?
    #define INLINE inline
  */
-#define INLINE 
+ 
+/* For VC the __inline keyword is available in both C and C++.*/
+#if defined(_WIN32) && defined(_MSC_VER)
+#define INLINE __inline
+#else
+/* XXX: Other compilers? */
+#define INLINE
+#endif
 
 #define JK_WORKER_FILE_TAG      ("worker_file")
 #define JK_MOUNT_FILE_TAG       ("worker_mount_file")
@@ -201,7 +215,7 @@ typedef  unsigned int    apr_uint32_t;
 #define JK_LOG_FILE_TAG         ("log_file")
 #define JK_WORKER_NAME_TAG      ("worker")
 
-#define JK_WORKER_FILE_DEF  ("workers.properties")
+#define JK_WORKER_FILE_DEF  ("${serverRoot}/conf/workers2.properties")
 #define JK_LOG_LEVEL_DEF    ("emerg")
 
 #define JK_TRUE  (1)
