@@ -461,7 +461,7 @@ public final class Response {
 
     /*
      * Overrides the name of the character encoding used in the body
-     * of the request. This method must be called prior to writing output
+     * of the response. This method must be called prior to writing output
      * using getWriter().
      *
      * @param charset String containing the name of the chararacter encoding.
