@@ -36,6 +36,8 @@
 
 #define JK_CHECK_NULL( str ) ( ((str)==NULL) ? "null" : (str) )
 
+#define DEFAULT_CSS ("BODY {COLOR: #000000; FONT-STYLE: normal; FONT-FAMILY: \"Times New Roman\", Times, serif; BACKGROUND-COLOR: #ffffff} H1 { COLOR: #0033cc; FONT-FAMILY: Arial, Helvetica, sans-serif} H2 { COLOR: #0033cc; FONT-FAMILY: Arial, Helvetica, sans-serif} H3 {FONT: 110% Arial, Helvetica, sans-serif; COLOR: #0033cc} B {FONT-WEIGHT: bold}" )
+
 /** Display info for one endpoint
  */
 static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
@@ -173,6 +175,7 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
     int needHeader=JK_TRUE;
     
     if( wenv->shm==NULL || wenv->shm->head==NULL) {
+		s->jkprintf(env, s, "<h3>No Scoreboard avaiable</h3>\n"); 
         return;
     }
 
@@ -942,6 +945,8 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
                             "Content-Type", "text/html", NULL);
     }
     s->head(env, s );
+
+	s->jkprintf(env, s, "<style>%s</style>\n", DEFAULT_CSS );
 
     /** Process the query string.
      */
