@@ -346,10 +346,18 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                         <tr>
                             <td>lb_factor</td>
                             <td>1</td>
-                            <td>
-    Load balancing factor to use. At this moment, it'll be set on the worker,
-    but in future it should be possible to use lb on a channel level.
-  </td>
+                            <td>Load balancing factor to use. The lower the lb_factor the more often that tomcat will get requests but see
+                                "level" below.</td>
+                        </tr>
+                        <tr>
+                            <td>level</td>
+                            <td>1</td>
+                            <td>Worker Priority.  Valid values are 0-3.  The functioning workers with the lowest level
+                                will be checked for the lowest lb_value, and if found will be run.  The upper level workers are
+                                only checked upon failure of all workers on ALL of the levels below them.  This is very 
+                                useful for implementing failover withing a cluster.  You could set the tomcat server local 
+                                on the same machine as the apache instance to level 0 and all of the other workers to level 1.
+                                This would cause apache to only use the external tomcats when the local tomcat is down.</td>
                         </tr>
                         <tr>
                             <td>group</td>
@@ -359,8 +367,13 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                         <tr>
                             <td>tomcatId</td>
                             <td>Automatically set to the localname ( host:port )</td>
-                            <td>Must match the JVM route on tomcat Engine, for load balancing</td>
+                            <td>Must match the JVM route on tomcat the server.xml Engine element, for load balancing</td>
                         </tr>
+                        <tr>
+                            <td>route</td>
+                            <td>Automatically set to the localname ( host:port )</td>
+                            <td>Same as tomcatId</td>
+                        </tr>                        
                     </table>
                 </p>
             </subsection>
@@ -409,7 +422,8 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                 </p>
             </subsection>
             <subsection name="ajp13">
-                <p>Default worker</p>
+                <p>Default worker.  If a property is in both the worker and the channel, you only need to define it in one place.
+                    The channel passes down the properties to its worker.  (at least in the ajp13-channel.socket linkage)</p>
                 <p>
                     <table>
                         <tr>
@@ -427,28 +441,39 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                         </tr>
                         <tr>
                             <td>tomcatId</td>
-                            <td/>
-                            <td/>
+                            <td>Automatically set to the localname ( host:port )</td>
+                            <td>Must match the JVM route on the tomcat server.xml Engine element, for load balancing</td>
                         </tr>
                         <tr>
                             <td>route</td>
-                            <td/>
-                            <td/>
+                            <td>Automatically set to the localname ( host:port )</td>
+                            <td>Same as tomcatId</td>
                         </tr>
                         <tr>
                             <td>group</td>
-                            <td/>
-                            <td/>
+                            <td>lb</td>
+                            <td>loadbalanced groups to which this channel and the associated worker will be added, multivalued. You need to set it only if you have an advanced setup with multiple clusters.</td>
+                        </tr>
+                        <tr>
+                            <td>lb_factor</td>
+                            <td>1</td>
+                            <td>Load balancing factor to use. The lower the lb_factor the more often that tomcat will get requests but see
+                                "level" below.</td>
                         </tr>
                         <tr>
                             <td>level</td>
-                            <td/>
-                            <td/>
+                            <td>1</td>
+                            <td>Worker Priority.  Valid values are 0-3.  The functioning workers with the lowest level
+                                will be checked for the lowest lb_value, and if found will be run.  The upper level workers are
+                                only checked upon failure of all workers on ALL of the levels below them.  This is very 
+                                useful for implementing failover withing a cluster.  You could set the tomcat server local 
+                                on the same machine as the apache instance to level 0 and all of the other workers to level 1.
+                                This would cause apache to only use the external tomcats when the local tomcat is down.</td>
                         </tr>
                         <tr>
                             <td>channel</td>
                             <td/>
-                            <td/>
+                            <td>Communication channel used by the worker.  Use the full name of the channel (everything between the []'s).</td>
                         </tr>
                         <tr>
                             <td>max_connections</td>
@@ -574,7 +599,7 @@ not less then 1 second.
                     <tr>
                         <td>level</td>
                         <td>INFO</td>
-                        <td>Log level. Supported: EMERG, ERROR, INFO, DEBUG</td>
+                        <td>Text of the log level. Strings supported: EMERG, ERROR, INFO, DEBUG</td>
                     </tr>
                 </table>
             </p>
@@ -603,5 +628,52 @@ not less then 1 second.
             <subsection name="logger.apache2">
                 <p>Logger used in Apache2 servers, it normally in ends in error.log </p>
             </subsection>
+        </section>
+    <section name="How Load Balancing Works">
+        <p>The lb_factor and level properties combine to deliver a flexible static load balancing solution.
+            The level property is used to create up to four pools over workers in descending priority and lb_factor
+            is used to weight the workers within a pool.  The lower the level the more likely the worker is to be used
+            and the lower the lb_factor the more likely the worker is to be used.  Here is how the algorithm is
+            currently implemented:</p>
+        <p>
+(Assume that every worker's lb_value is set to their lb_factor)<br/>
+<br/><source>
+if (loadbalancer has a route) and (stickysession=1){<br/>
+    worker= loadbanlancer.getWorkerForRoute(route)<br/>
+    if worker.hasRedirect<br/>
+        redirect=worker.redirect<br/>
+    else if !worker.hasError<br/>
+        return worker<br/>
+    }<br/>
+<br/>
+selectedWorker=null<br/>
+foreach lb_level {<br/>
+    foreach worker in the level {<br/>
+        if worker.isNotWorking<br/>
+            continue<br/>
+        if selectedWorker == null<br/>
+            selectedWorker = worker<br/>
+            continue<br/>
+        if worker.lb_value &lt; selectedWorker.lb_value<br/>
+            selectedWorker = worker<br/>
+            continue<br/>
+    }<br/>
+    if selectedWorker !=null<br/>
+        break<br/>
+}<br/>
+<br/>
+Reenable workers in error state if the timeout has passed()<br/>
+<br/>
+if selectedWorker !=null {<br/>
+    selectedWorker.lb_value += selectedWorker.lb_factor<br/>
+    if selectedWorker.lb_value > 255 {<br/>
+        foreach worker in load_balancer.workers[selectedWorker.level]<br/>
+            worker.lb_value=worker.lb_factor<br/>
+        }<br/>
+    }<br/>
+    return selectedWorker<br/>
+}<br/></source>
+</p>
+            
     </section>
 </document>
