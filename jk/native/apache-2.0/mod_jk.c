@@ -89,6 +89,14 @@
 /*
  * Jakarta (jk_) include files
  */
+#ifdef NETWARE
+#define _SYS_TYPES_H_
+#define _NETDB_H_INCLUDED
+#define _IN_
+#define _INET_
+#define _SYS_TIMEVAL_H_
+#define _SYS_SOCKET_H_
+#endif
 #include "jk_global.h"
 #include "jk_util.h"
 #include "jk_map.h"
@@ -101,6 +109,14 @@
 #define JK_HANDLER          ("jakarta-servlet")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
+
+/*
+ * If you are not using SSL, comment out the following line. It will make
+ * apache run faster.  
+ *
+ * Personally, I (DM), think this may be a lie.
+ */
+#define ADD_SSL_INFO    
 
 /* module MODULE_VAR_EXPORT jk_module; */
 AP_DECLARE_DATA module jk_module;
@@ -307,6 +323,8 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             char *bb=(char *)b;
             
             if(!p->response_started) {
+                jk_log(main_log, JK_LOG_DEBUG, 
+                       "Write without start, starting with defaults\n");
                 if(!s->start_response(s, 200, NULL, NULL, NULL, 0)) {
                     return JK_FALSE;
                 }
@@ -316,12 +334,8 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             while( ll > 0 ) {
                 long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
                 r = ap_rwrite((const char *)bb, toSend, p->r );
-                /* DEBUG */
-#ifdef JK_DEBUG
-                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
-                             NULL, "mod_jk: writing %ld (%ld) out of %ld \n",
-                             toSend, r, ll );
-#endif
+                jk_log(main_log, JK_LOG_DEBUG, 
+                       "writing %ld (%ld) out of %ld \n",toSend, r, ll );
                 ll-=CHUNK_SIZE;
                 bb+=CHUNK_SIZE;
                 
@@ -329,15 +343,17 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
                     return JK_FALSE; 
                 } 
                 
-                /*
-                 * To allow server push.
-                 */
-                if(ap_rflush(p->r) != APR_SUCCESS) {
-                    ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
-                                 NULL, "mod_jk: Error flushing \n"  );
-                    return JK_FALSE;
-                }
             }
+
+            /*
+             * To allow server push. After writing full buffers
+             */
+            if(ap_rflush(p->r) != APR_SUCCESS) {
+                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
+                             NULL, "mod_jk: Error flushing \n"  );
+                return JK_FALSE;
+            }
+
         }
         
         return JK_TRUE;
