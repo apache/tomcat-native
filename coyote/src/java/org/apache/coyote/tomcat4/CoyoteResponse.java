@@ -90,6 +90,7 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUtils;
 
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.http.ServerCookie;
 
 import org.apache.coyote.Response;
 
@@ -805,6 +806,16 @@ public class CoyoteResponse
             return;
 
         cookies.add(cookie);
+
+        StringBuffer sb = new StringBuffer();
+        ServerCookie.appendCookieValue
+            (sb, cookie.getVersion(), cookie.getName(), cookie.getValue(),
+             cookie.getPath(), cookie.getDomain(), cookie.getComment(), 
+             cookie.getMaxAge(), cookie.getSecure());
+        // the header name is Set-Cookie for both "old" and v.1 ( RFC2109 )
+        // RFC2965 is not supported by browsers and the Servlet spec
+        // asks for 2109.
+        addHeader("Set-Cookie", sb.toString());
 
     }
 

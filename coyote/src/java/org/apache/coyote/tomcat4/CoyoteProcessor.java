@@ -73,6 +73,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.StringTokenizer;
@@ -372,7 +373,7 @@ final class CoyoteProcessor
         req.scheme().setString(connector.getScheme());
 
         parseHost();
-        // parseSession(req);
+        parseCookies();
 
     }
 
@@ -415,6 +416,43 @@ final class CoyoteProcessor
                     }
                     request.setServerPort(port);
                 }
+            }
+        }
+
+    }
+
+
+    /**
+     * Parse cookies.
+     * Note: Using Coyote native cookie parser to parse cookies would be faster
+     * but a conversion to Catalina own cookies would then be needed, which 
+     * would take away most if not all of theperformance benefit.
+     */
+    protected void parseCookies() {
+
+        Enumeration values = request.getHeaders("cookie");
+        while (values.hasMoreElements()) {
+            String value = values.nextElement().toString();
+            Cookie cookies[] = RequestUtil.parseCookieHeader(value);
+            for (int i = 0; i < cookies.length; i++) {
+                if (cookies[i].getName().equals
+                    (Globals.SESSION_COOKIE_NAME)) {
+                    // Override anything requested in the URL
+                    if (!request.isRequestedSessionIdFromCookie()) {
+                        // Accept only the first session id cookie
+                        request.setRequestedSessionId(cookies[i].getValue());
+                        request.setRequestedSessionCookie(true);
+                        request.setRequestedSessionURL(false);
+                        if (debug >= 1)
+                            log(" Requested cookie session id is " +
+                                ((HttpServletRequest) request.getRequest())
+                                .getRequestedSessionId());
+                    }
+                }
+                if (debug >= 1)
+                    log(" Adding cookie " + cookies[i].getName() + "=" +
+                        cookies[i].getValue());
+                request.addCookie(cookies[i]);
             }
         }
 

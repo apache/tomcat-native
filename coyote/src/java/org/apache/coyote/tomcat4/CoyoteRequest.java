@@ -71,7 +71,9 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.security.AccessController;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -89,6 +91,7 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.tomcat.util.http.Parameters;
@@ -122,6 +125,25 @@ import org.apache.catalina.util.StringManager;
 
 public class CoyoteRequest
     implements HttpRequest, HttpServletRequest {
+
+
+    // --------------------------------------- PrivilegedGetSession Inner Class
+
+
+    protected class PrivilegedGetSession
+        implements PrivilegedAction {
+
+        private boolean create;
+
+        PrivilegedGetSession(boolean create) {
+            this.create = create;
+        }
+
+        public Object run() {
+            return doGetSession(create);
+        }
+
+    }
 
 
     // ------------------------------------------------------------- Properties
@@ -301,6 +323,36 @@ public class CoyoteRequest
     protected ParameterMap parameterMap = new ParameterMap();
 
 
+    /**
+     * The currently active session for this request.
+     */
+    protected Session session = null;
+
+
+    /**
+     * Was the requested session ID received in a cookie?
+     */
+    protected boolean requestedSessionCookie = false;
+
+
+    /**
+     * The requested session ID (if any) for this request.
+     */
+    protected String requestedSessionId = null;
+
+
+    /**
+     * Was the requested session ID received in a URL?
+     */
+    protected boolean requestedSessionURL = false;
+
+
+    /**
+     * The socket through which this Request was received.
+     */
+    protected Socket socket = null;
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -309,6 +361,8 @@ public class CoyoteRequest
      * preparation for reuse of this object.
      */
     public void recycle() {
+
+        socket = null;
 
         context = null;
         wrapper = null;
@@ -330,6 +384,11 @@ public class CoyoteRequest
         attributes.clear();
         notes.clear();
         cookies.clear();
+
+        session = null;
+        requestedSessionCookie = false;
+        requestedSessionId = null;
+        requestedSessionURL = false;
 
         parameterMap.setLocked(false);
         parameterMap.clear();
@@ -475,7 +534,7 @@ public class CoyoteRequest
      * an SSLSocket.
      */
     public Socket getSocket() {
-        return (null); // FIXME: Return a note
+        return (socket);
     }
 
     /**
@@ -484,6 +543,7 @@ public class CoyoteRequest
      * @param socket The socket through which this request was received
      */
     public void setSocket(Socket socket) {
+        this.socket = socket;
     }
 
 
@@ -1084,8 +1144,7 @@ public class CoyoteRequest
      * @param value The new header value
      */
     public void addHeader(String name, String value) {
-        // Not used ?
-        System.out.println("coyoteRequest.addHeader(name, value)");
+        // Not used
     }
 
 
@@ -1216,7 +1275,9 @@ public class CoyoteRequest
      * @param flag The new flag
      */
     public void setRequestedSessionCookie(boolean flag) {
-        // Not used
+
+        this.requestedSessionCookie = flag;
+
     }
 
 
@@ -1227,7 +1288,9 @@ public class CoyoteRequest
      * @param id The new session id
      */
     public void setRequestedSessionId(String id) {
-        // Not used
+
+        this.requestedSessionId = id;
+
     }
 
 
@@ -1239,7 +1302,9 @@ public class CoyoteRequest
      * @param flag The new flag
      */
     public void setRequestedSessionURL(boolean flag) {
-        // Not used
+
+        this.requestedSessionURL = flag;
+
     }
 
 
@@ -1532,7 +1597,13 @@ public class CoyoteRequest
      * @param create Create a new session if one does not exist
      */
     public HttpSession getSession(boolean create) {
-        return null;
+
+        if (System.getSecurityManager() != null) {
+            PrivilegedGetSession dp = new PrivilegedGetSession(create);
+            return (HttpSession) AccessController.doPrivileged(dp);
+        }
+        return doGetSession(create);
+
     }
 
 
@@ -1541,7 +1612,12 @@ public class CoyoteRequest
      * request came from a cookie.
      */
     public boolean isRequestedSessionIdFromCookie() {
-        return false;
+
+        if (requestedSessionId != null)
+            return (requestedSessionCookie);
+        else
+            return (false);
+
     }
 
 
@@ -1550,7 +1626,12 @@ public class CoyoteRequest
      * request came from the request URI.
      */
     public boolean isRequestedSessionIdFromURL() {
-        return false;
+
+        if (requestedSessionId != null)
+            return (requestedSessionURL);
+        else
+            return (false);
+
     }
 
 
@@ -1571,7 +1652,25 @@ public class CoyoteRequest
      * request identifies a valid session.
      */
     public boolean isRequestedSessionIdValid() {
-        return false;
+
+        if (requestedSessionId == null)
+            return (false);
+        if (context == null)
+            return (false);
+        Manager manager = context.getManager();
+        if (manager == null)
+            return (false);
+        Session session = null;
+        try {
+            session = manager.findSession(requestedSessionId);
+        } catch (IOException e) {
+            session = null;
+        }
+        if ((session != null) && session.isValid())
+            return (true);
+        else
+            return (false);
+
     }
 
 
@@ -1617,6 +1716,75 @@ public class CoyoteRequest
 
 
     // ------------------------------------------------------ Protected Methods
+
+
+    protected HttpSession doGetSession(boolean create) {
+
+        // There cannot be a session if no context has been assigned yet
+        if (context == null)
+            return (null);
+
+        // Return the current session if it exists and is valid
+        if ((session != null) && !session.isValid())
+            session = null;
+        if (session != null)
+            return (session.getSession());
+
+        // Return the requested session if it exists and is valid
+        Manager manager = null;
+        if (context != null)
+            manager = context.getManager();
+        if (manager == null)
+            return (null);      // Sessions are not supported
+        if (requestedSessionId != null) {
+            try {
+                session = manager.findSession(requestedSessionId);
+            } catch (IOException e) {
+                session = null;
+            }
+            if ((session != null) && !session.isValid())
+                session = null;
+            if (session != null) {
+                return (session.getSession());
+            }
+        }
+
+        // Create a new session if requested and the response is not committed
+        if (!create)
+            return (null);
+        if ((context != null) && (response != null) &&
+            context.getCookies() &&
+            response.getResponse().isCommitted()) {
+            throw new IllegalStateException
+              (sm.getString("httpRequestBase.createCommitted"));
+        }
+
+        session = manager.createSession();
+
+        // Creating a new session cookie based on that session
+        if ((session != null) && (getContext() != null)
+            && getContext().getCookies()) {
+            Cookie cookie = new Cookie(Globals.SESSION_COOKIE_NAME,
+                                       session.getId());
+            cookie.setMaxAge(-1);
+            String contextPath = null;
+            if (context != null)
+                contextPath = context.getPath();
+            if ((contextPath != null) && (contextPath.length() > 0))
+                cookie.setPath(contextPath);
+            else
+                cookie.setPath("/");
+            if (isSecure())
+                cookie.setSecure(true);
+            ((HttpServletResponse) response).addCookie(cookie);
+        }
+
+        if (session != null)
+            return (session.getSession());
+        else
+            return (null);
+
+    }
 
 
     /**
