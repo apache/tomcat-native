@@ -290,18 +290,18 @@ public class JkCoyoteHandler extends JkHandler implements
         
         MimeHeaders headers=res.getMimeHeaders();
         String contentType = res.getContentType();
-	if( contentType != null ) {
-	    headers.setValue("Content-Type").setString(contentType);
-	}
-	String contentLanguage = res.getContentLanguage();
-	if( contentLanguage != null ) {
-	    headers.setValue("Content-Language").setString(contentLanguage);
-	}
-	int contentLength = res.getContentLength();
-	if( contentLength >= 0 ) {
-	    headers.setValue("Content-Length").setInt(contentLength);
-	}
-	int numHeaders = headers.size();
+        if( contentType != null ) {
+            headers.setValue("Content-Type").setString(contentType);
+        }
+        String contentLanguage = res.getContentLanguage();
+        if( contentLanguage != null ) {
+            headers.setValue("Content-Language").setString(contentLanguage);
+        }
+        int contentLength = res.getContentLength();
+        if( contentLength >= 0 ) {
+            headers.setValue("Content-Length").setInt(contentLength);
+        }
+        int numHeaders = headers.size();
         msg.appendInt(numHeaders);
         for( int i=0; i<numHeaders; i++ ) {
             MessageBytes hN=headers.getName(i);
