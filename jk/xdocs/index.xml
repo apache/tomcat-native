@@ -33,7 +33,7 @@ JK is more than just an apache module, since it could be used with majors WebSer
 <a href="jk/neshowto.html">nsapi</a> is a redirector to be used with <b>Netscape/iPlanet</b>.
 </li>
 <li>
-<a href="jk/domhowto.html">dsapi</a> is a redirector to to be used with <b>Domino</b> but there is less active support on it.
+<a href="jk/domhowto.html">dsapi</a> is a redirector to to be used with <b>Domino</b>.
 </li>
 </ul>
 

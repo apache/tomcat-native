@@ -8,6 +8,10 @@
 </properties>
 
 <section name="Introduction">
+<p><b>Important Note:</b> The JK based connector described here has been superceded by a JK2 based connector
+that works with all current Tomcat versions. Use of this connector has been deprecated. Go
+<a href="jk2/installhowto.html">here</a> to find out how to install the new connector.</p>
+
 <p>
 This document explains how to set up Domino to cooperate with Tomcat. 
 </p>
