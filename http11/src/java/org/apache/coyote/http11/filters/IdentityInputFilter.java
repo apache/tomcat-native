@@ -151,31 +151,30 @@ public class IdentityInputFilter implements InputFilter {
     public int doRead(ByteChunk chunk)
         throws IOException {
 
-        buffer.doRead(chunk);
-
-        int result = chunk.getLength();
-
-        if (result <= 0) {
-            return -1;
-        }
+        int result = 0;
 
         if (contentLength > 0) {
             if (remaining > 0) {
-                if (chunk.getLength() > remaining) {
+                int nRead = buffer.doRead(chunk);
+                if (nRead > remaining) {
                     // The chunk is longer than the number of bytes remaining
                     // in the body; changing the chunk length to the number
                     // of bytes remaining
                     chunk.setBytes(chunk.getBytes(), chunk.getStart(), 
                                    (int) remaining);
                     result = (int) remaining;
+                } else {
+                    result = nRead;
                 }
-                remaining = remaining - chunk.getLength();
+                remaining = remaining - nRead;
             } else {
                 // No more bytes left to be read : return -1 and clear the 
                 // buffer
                 chunk.recycle();
                 result = -1;
             }
+        } else {
+            result = buffer.doRead(chunk);
         }
 
         return result;
