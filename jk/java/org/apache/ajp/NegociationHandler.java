@@ -83,106 +83,112 @@ import org.apache.tomcat.util.buf.*;
  */
 public class NegociationHandler extends AjpHandler
 {
-    public static final byte JK_AJP13_SHUTDOWN          = 7;
+    public static final byte JK_AJP13_SHUTDOWN=7;
 	
     // Initial Login Phase (web server -> servlet engine)
-    public static final byte JK_AJP14_LOGINIT_CMD			= 0x10;
+    public static final byte JK_AJP14_LOGINIT_CMD=0x10;
     
     // Second Login Phase (servlet engine -> web server), md5 seed is received
-    public static final byte JK_AJP14_LOGSEED_CMD			= 0x11;
+    public static final byte JK_AJP14_LOGSEED_CMD=0x11;
     
-    // Third Login Phase (web server -> servlet engine), md5 of seed + secret is sent
-    public static final byte JK_AJP14_LOGCOMP_CMD			= 0x12;
+    // Third Login Phase (web server -> servlet engine),
+    // md5 of seed + secret is sent
+    public static final byte JK_AJP14_LOGCOMP_CMD=0x12;
     
     // Login Accepted (servlet engine -> web server)
-    public static final byte JK_AJP14_LOGOK_CMD         	= 0x13;
+    public static final byte JK_AJP14_LOGOK_CMD=0x13;
 
     // Login Rejected (servlet engine -> web server), will be logged
-    public static final byte JK_AJP14_LOGNOK_CMD        	= 0x14;
+    public static final byte JK_AJP14_LOGNOK_CMD=0x14;
     
-    // Context Query (web server -> servlet engine), which URI are handled by servlet engine ?
-    public static final byte JK_AJP14_CONTEXT_QRY_CMD		= 0x15;
+    // Context Query (web server -> servlet engine),
+    // which URI are handled by servlet engine ?
+    public static final byte JK_AJP14_CONTEXT_QRY_CMD=0x15;
     
     // Context Info (servlet engine -> web server), URI handled response
-    public static final byte JK_AJP14_CONTEXT_INFO_CMD		= 0x16;
+    public static final byte JK_AJP14_CONTEXT_INFO_CMD= 0x16;
     
     // Context Update (servlet engine -> web server), status of context changed
-    public static final byte JK_AJP14_CONTEXT_UPDATE_CMD	= 0x17;
+    public static final byte JK_AJP14_CONTEXT_UPDATE_CMD= 0x17;
     
-    // Servlet Engine Status (web server -> servlet engine), what's the status of the servlet engine ?
-    public static final byte JK_AJP14_STATUS_CMD			= 0x18;
+    // Servlet Engine Status (web server -> servlet engine),
+    // what's the status of the servlet engine ?
+    public static final byte JK_AJP14_STATUS_CMD= 0x18;
     
-    // Secure Shutdown command (web server -> servlet engine), please servlet stop yourself.
-    public static final byte JK_AJP14_SHUTDOWN_CMD			= 0x19;
+    // Secure Shutdown command (web server -> servlet engine),
+    //please servlet stop yourself.
+    public static final byte JK_AJP14_SHUTDOWN_CMD= 0x19;
     
     // Secure Shutdown command Accepted (servlet engine -> web server)
-    public static final byte JK_AJP14_SHUTOK_CMD			= 0x1A;
+    public static final byte JK_AJP14_SHUTOK_CMD= 0x1A;
     
     // Secure Shutdown Rejected (servlet engine -> web server)
-    public static final byte JK_AJP14_SHUTNOK_CMD           = 0x1B;
+    public static final byte JK_AJP14_SHUTNOK_CMD= 0x1B;
     
-    // Context Status (web server -> servlet engine), what's the status of the context ?
-    public static final byte JK_AJP14_CONTEXT_STATE_CMD     = 0x1C;
+    // Context Status (web server -> servlet engine),
+    //what's the status of the context ?
+    public static final byte JK_AJP14_CONTEXT_STATE_CMD= 0x1C;
     
     // Context Status Reply (servlet engine -> web server), status of context
     public static final byte JK_AJP14_CONTEXT_STATE_REP_CMD = 0x1D;
     
-    // Unknown Packet Reply (web server <-> servlet engine), when a packet couldn't be decoded
-    public static final byte JK_AJP14_UNKNOW_PACKET_CMD     = 0x1E;
+    // Unknown Packet Reply (web server <-> servlet engine),
+    //when a packet couldn't be decoded
+    public static final byte JK_AJP14_UNKNOW_PACKET_CMD = 0x1E;
 
 
     // -------------------- Other constants -------------------- 
 
     // Entropy Packet Size
-    public static final int	 AJP14_ENTROPY_SEED_LEN 		= 32;
-    public static final int	 AJP14_COMPUTED_KEY_LEN 		= 32;
+    public static final int AJP14_ENTROPY_SEED_LEN= 32;
+    public static final int AJP14_COMPUTED_KEY_LEN= 32;
     
     // web-server want context info after login
-    public static final int	 AJP14_CONTEXT_INFO_NEG			= 0x80000000;
+    public static final int AJP14_CONTEXT_INFO_NEG= 0x80000000;
     
     // web-server want context updates
-    public static final int	 AJP14_CONTEXT_UPDATE_NEG		= 0x40000000;
+    public static final int AJP14_CONTEXT_UPDATE_NEG= 0x40000000;
     
     // web-server want compressed stream
-    public static final int  AJP14_GZIP_STREAM_NEG			= 0x20000000;
+    public static final int AJP14_GZIP_STREAM_NEG= 0x20000000;
     
     // web-server want crypted DES56 stream with secret key
-    public static final int  AJP14_DES56_STREAM_NEG      	= 0x10000000;
+    public static final int AJP14_DES56_STREAM_NEG= 0x10000000;
     
     // Extended info on server SSL vars
-    public static final int  AJP14_SSL_VSERVER_NEG			= 0x08000000;
+    public static final int AJP14_SSL_VSERVER_NEG= 0x08000000;
     
     // Extended info on client SSL vars
-    public static final int  AJP14_SSL_VCLIENT_NEG			= 0x04000000;
+    public static final int AJP14_SSL_VCLIENT_NEG= 0x04000000;
     
     // Extended info on crypto SSL vars
-    public static final int	 AJP14_SSL_VCRYPTO_NEG			= 0x02000000;
+    public static final int AJP14_SSL_VCRYPTO_NEG= 0x02000000;
     
     // Extended info on misc SSL vars
-    public static final int  AJP14_SSL_VMISC_NEG         	= 0x01000000;
+    public static final int  AJP14_SSL_VMISC_NEG= 0x01000000;
     
     // mask of protocol supported
-    public static final int  AJP14_PROTO_SUPPORT_AJPXX_NEG  = 0x00FF0000;
+    public static final int  AJP14_PROTO_SUPPORT_AJPXX_NEG=0x00FF0000;
     
     // communication could use AJP14
-    public static final int  AJP14_PROTO_SUPPORT_AJP14_NEG  = 0x00010000;
+    public static final int  AJP14_PROTO_SUPPORT_AJP14_NEG=0x00010000;
     
     // communication could use AJP15
-    public static final int  AJP14_PROTO_SUPPORT_AJP15_NEG  = 0x00020000;
+    public static final int  AJP14_PROTO_SUPPORT_AJP15_NEG=0x00020000;
     
     // communication could use AJP16
-    public static final int  AJP14_PROTO_SUPPORT_AJP16_NEG  = 0x00040000;
+    public static final int  AJP14_PROTO_SUPPORT_AJP16_NEG=0x00040000;
     
     // Some failure codes
-    public static final int  AJP14_BAD_KEY_ERR				 = 0xFFFFFFFF;
-    public static final int  AJP14_ENGINE_DOWN_ERR           = 0xFFFFFFFE;
-    public static final int  AJP14_RETRY_LATER_ERR           = 0xFFFFFFFD;
-    public static final int  AJP14_SHUT_AUTHOR_FAILED_ERR    = 0xFFFFFFFC;
+    public static final int AJP14_BAD_KEY_ERR= 0xFFFFFFFF;
+    public static final int AJP14_ENGINE_DOWN_ERR = 0xFFFFFFFE;
+    public static final int AJP14_RETRY_LATER_ERR = 0xFFFFFFFD;
+    public static final int AJP14_SHUT_AUTHOR_FAILED_ERR = 0xFFFFFFFC;
     
     // Some status codes
-    public static final byte AJP14_CONTEXT_DOWN       		 = 0x01;
-    public static final byte AJP14_CONTEXT_UP         		 = 0x02;
-    public static final byte AJP14_CONTEXT_OK         		 = 0x03;
+    public static final byte AJP14_CONTEXT_DOWN= 0x01;
+    public static final byte AJP14_CONTEXT_UP= 0x02;
+    public static final byte AJP14_CONTEXT_OK= 0x03;
 
 
     // -------------------- Parameters --------------------
@@ -190,12 +196,12 @@ public class NegociationHandler extends AjpHandler
     String  seed="seed";// will use random
     String  password;
 
-    boolean logged = false;
-    int	    webserverNegociation	= 0;
-    String  webserverName;
+    int	webserverNegociation=0;
+    //    String  webserverName;
     
-    public NegociationHandler() 
-    {
+    public NegociationHandler() {
+        setSeed("myveryrandomentropy");
+	setPassword("myverysecretkey");
     }
 
     public void setContainerSignature( String s ) {
@@ -204,13 +210,9 @@ public class NegociationHandler extends AjpHandler
 
     // -------------------- State --------------------
 
-    public boolean isLogged() {
-	return logged;
-    }
-
-    public String getWebserverName() {
-	return webserverName;
-    }
+    //     public String getWebserverName() {
+    // 	return webserverName;
+    //     }
     
     // -------------------- Parameters --------------------
     
@@ -248,15 +250,11 @@ public class NegociationHandler extends AjpHandler
 	return password;
     }
 
-    public void setLogged( boolean b ) {
-	logged=b;
-    }
-    
     // -------------------- Initialization --------------------
 
     public void init( Ajp13 ajp14 ) {
+        super.init(ajp14);
 	// register incoming message handlers
-        System.out.println("XXX register ajp 14 hooks");
 	ajp14.registerMessageType( JK_AJP14_LOGINIT_CMD,"JK_AJP14_LOGINIT_CMD",
 				   this, null); //
 	ajp14.registerMessageType( JK_AJP14_LOGCOMP_CMD,"JK_AJP14_LOGCOMP_CMD",
@@ -268,7 +266,8 @@ public class NegociationHandler extends AjpHandler
 				   this, null); //
 	ajp14.registerMessageType( JK_AJP14_STATUS_CMD,"JK_AJP14_STATUS_CMD",
 				   this, null); //
-	ajp14.registerMessageType( JK_AJP14_SHUTDOWN_CMD,"JK_AJP14_SHUTDOWN_CMD",
+	ajp14.registerMessageType( JK_AJP14_SHUTDOWN_CMD,
+                                   "JK_AJP14_SHUTDOWN_CMD",
 				   this, null); //
 	ajp14.registerMessageType( JK_AJP14_CONTEXT_STATE_CMD,
 				   "JK_AJP14_CONTEXT_STATE_CMD",
@@ -288,7 +287,7 @@ public class NegociationHandler extends AjpHandler
     // -------------------- Dispatch --------------------
 
     public int handleAjpMessage( int type, Ajp13 ch, Ajp13Packet hBuf,
-				 AjpRequest req )
+				 BaseRequest req )
 	throws IOException
     {
         System.out.println("handleAjpMessage: " + type );
@@ -318,7 +317,7 @@ public class NegociationHandler extends AjpHandler
 	//return UNKNOWN;
     }
     
-    //-------------------- Implementation for various protocol commands --------------------
+    //----------- Implementation for various protocol commands -----------
 
     /**
      * Handle the Initial Login Message from Web-Server
@@ -333,9 +332,10 @@ public class NegociationHandler extends AjpHandler
 	throws IOException
     {
 	webserverNegociation = msg.getLongInt();
-	webserverName 		 = msg.getString();
+	String webserverName  = msg.getString();
 	log("in handleLogInit with nego " +
-	    decodeNegociation(webserverNegociation) + " from webserver " + webserverName);
+	    decodeNegociation(webserverNegociation) +
+            " from webserver " + webserverName);
 	
 	outBuf.reset();
         outBuf.appendByte(JK_AJP14_LOGSEED_CMD);
@@ -393,7 +393,8 @@ public class NegociationHandler extends AjpHandler
 	    ch.send(outBuf);
 	    return 200;
 	} else {
-	    logged = true;		// logged we can go process requests
+            // logged we can go process requests
+	    channel.setLogged(true);
 	    outBuf.reset();
 	    outBuf.appendByte(JK_AJP14_LOGOK_CMD);
 	    outBuf.appendLongInt(getProtocolFlags(webserverNegociation));
@@ -417,13 +418,15 @@ public class NegociationHandler extends AjpHandler
     outBuf.appendByte(JK_AJP14_CONTEXT_INFO_CMD);
     outBuf.appendString( virtualHost );
 
-    log("in handleContextQuery for virtual " + virtualHost + "examples URI/MIMES");
+    log("in handleContextQuery for virtual " + virtualHost +
+        "examples URI/MIMES");
     outBuf.appendString("examples");    // first context - examples
     outBuf.appendString("servlet/*");   // examples/servlet/*
     outBuf.appendString("*.jsp");       // examples/*.jsp
     outBuf.appendString("");            // no more URI/MIMES
 
-    log("in handleContextQuery for virtual " + virtualHost + "send admin URI/MIMES"); 
+    log("in handleContextQuery for virtual " + virtualHost +
+        "send admin URI/MIMES"); 
     outBuf.appendString("admin");       // second context - admin
     outBuf.appendString("servlet/*");   // /admin//servlet/*
     outBuf.appendString("*.jsp");       // /admin/*.jsp
@@ -436,25 +439,29 @@ public class NegociationHandler extends AjpHandler
 	return (304);
     }
     
-    private int handleStatus( Ajp13Packet msg, Ajp13Packet outBuf ) throws IOException
+    private int handleStatus( Ajp13Packet msg, Ajp13Packet outBuf )
+        throws IOException
     {
 	log("in handleStatus :");
 	return (304);
     }
 
-    private int handleShutdown( Ajp13Packet msg, Ajp13Packet outBuf ) throws IOException
+    private int handleShutdown( Ajp13Packet msg, Ajp13Packet outBuf )
+        throws IOException
     {
 	log("in handleShutdown :");
 	return (304);
     }
     
-    private int handleContextState( Ajp13Packet msg , Ajp13Packet outBuf) throws IOException
+    private int handleContextState( Ajp13Packet msg , Ajp13Packet outBuf)
+        throws IOException
     {
 	log("in handleContextState :");
 	return (304);
     }
     
-    private int handleUnknowPacket( Ajp13Packet msg, Ajp13Packet outBuf ) throws IOException
+    private int handleUnknowPacket( Ajp13Packet msg, Ajp13Packet outBuf )
+        throws IOException
     {
 	log("in handleUnknowPacket :");
 	return (304);
@@ -468,20 +475,29 @@ public class NegociationHandler extends AjpHandler
      * Depending the protocol fatures implemented on servet-engine,
      * we'll drop requested features which could be asked by web-server
      *
-     * Hopefully this functions could be overrided by decendants (AJP15/AJP16...)
+     * Hopefully this functions could be overrided by decendants
      */
     private int getProtocolFlags(int wanted)
     {
-	wanted &= ~(AJP14_CONTEXT_UPDATE_NEG	| // no real-time context update yet 
-		    AJP14_GZIP_STREAM_NEG   	| // no gzip compression yet
-		    AJP14_DES56_STREAM_NEG  	| // no DES56 cyphering yet
-		    AJP14_SSL_VSERVER_NEG	| // no Extended info on server SSL vars yet
-		    AJP14_SSL_VCLIENT_NEG	| // no Extended info on client SSL vars yet
-		    AJP14_SSL_VCRYPTO_NEG	| // no Extended info on crypto SSL vars yet
-		    AJP14_SSL_VMISC_NEG		| // no Extended info on misc SSL vars yet
-		    AJP14_PROTO_SUPPORT_AJPXX_NEG); // Reset AJP protocol mask
-	
-	return (wanted | AJP14_PROTO_SUPPORT_AJP14_NEG);	// Only strict AJP14 supported
+                    // no real-time context update
+	wanted &= ~(AJP14_CONTEXT_UPDATE_NEG |
+                    // no gzip compression yet
+		    AJP14_GZIP_STREAM_NEG    | 
+                     // no DES56 cyphering yet
+		    AJP14_DES56_STREAM_NEG   |
+                    // no Extended info on server SSL vars yet
+		    AJP14_SSL_VSERVER_NEG    |
+                    // no Extended info on client SSL vars yet
+		    AJP14_SSL_VCLIENT_NEG    |
+                    // no Extended info on crypto SSL vars yet
+		    AJP14_SSL_VCRYPTO_NEG    |
+                    // no Extended info on misc SSL vars yet
+		    AJP14_SSL_VMISC_NEG	     |
+                    // Reset AJP protocol mask
+		    AJP14_PROTO_SUPPORT_AJPXX_NEG);
+        
+	// Only strict AJP14 supported
+	return (wanted | AJP14_PROTO_SUPPORT_AJP14_NEG);	
     }
 
     /**
@@ -490,10 +506,12 @@ public class NegociationHandler extends AjpHandler
     public final String digest(String[] credentials, String algorithm) {
         try {
             // Obtain a new message digest with MD5 encryption
-            MessageDigest md = (MessageDigest)MessageDigest.getInstance(algorithm).clone();
+            MessageDigest md =
+                (MessageDigest)MessageDigest.getInstance(algorithm).clone();
             // encode the credentials items
 	    for (int i = 0; i < credentials.length; i++) {
-		if( debug > 0 ) log("Credentials : " + i + " " + credentials[i]);
+		if( debug > 0 )
+                    log("Credentials : " + i + " " + credentials[i]);
 		if( credentials[i] != null  )
 		    md.update(credentials[i].getBytes());
 	    }
