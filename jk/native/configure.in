@@ -1,0 +1,80 @@
+dnl
+dnl Process this file with autoconf to produce a configure script
+dnl
+
+AC_PREREQ(2.13)
+AC_INIT(common/jk_ajp13.h)
+
+AC_PROG_CC
+
+AC_PATH_PROG(TEST,test,$PATH)dnl
+AC_SUBST(TEST)
+
+AC_PATH_PROG(RM,rm,$PATH)dnl
+AC_SUBST(RM)
+
+WEBSERVER=""
+AC_ARG_WITH(apxs,
+[  --with-apxs[=FILE]      Build shared Apache module. FILE is the optional
+                        pathname to the apxs tool; defaults to finding
+			apxs in your PATH.],
+[
+    case "${withval}" in 
+        y | yes | true) find_apxs=true ;;
+        n | no | false) find_apxs=false ;;
+        *) find_apxs=false ;;
+    esac
+
+    if ${TEST} ${find_apxs} ; then    
+        AC_MSG_RESULT([need to check for Perl first, apxs depends on it...])
+        AC_PATH_PROG(PERL,perl,$PATH)dnl
+    
+        if ${TEST} ${find_apxs} ; then
+            APXS=${withval}
+        else
+            AC_PATH_PROG(APXS,apxs,$PATH)dnl
+        fi
+    
+        if ${TEST} -n "${APXS}" ; then
+            dnl Seems that we have it, but have to check if it is OK first        
+            if ${TEST} ! -x "${APXS}" ; then
+                AC_MSG_ERROR(Invalid location for apxs: '${APXS}')
+            fi
+            
+            $APXS -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
+    
+            if ${TEST} "${apxs_support}" = "false" ; then
+                AC_MSG_RESULT(could not find apxs)
+                AC_MSG_ERROR(You must specify a valid --with-apxs path)
+            fi
+
+            dnl test apache version
+            $RM -rf test
+            $APXS -n test -g
+            APA=`grep STANDARD20 test/mod_test.c`
+            $RM -rf test
+            if ${TEST} -z "$APA" ; then
+                WEBSERVER="apache-1.3"
+            else
+                WEBSERVER="apache-2.0"
+            fi
+            AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
+    
+            AC_SUBST(APXS)
+        fi
+    fi
+],
+[
+	AC_MSG_RESULT(no apxs given)
+])
+
+if ${TEST} -z "$WEBSERVER" ; then
+	AC_MSG_ERROR(Cannot find the WebServer)
+fi
+
+AC_SUBST(WEBSERVER)
+
+AC_OUTPUT([
+	Makefile
+	$WEBSERVER/Makefile
+	])
