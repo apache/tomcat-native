@@ -69,6 +69,7 @@ import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.buf.HexUtils;
 
 import org.apache.coyote.ActionHook;
 import org.apache.coyote.ActionCode;
@@ -321,6 +322,8 @@ public class Http11Processor implements Processor, ActionHook {
 
             // Setting up filters, and parse some request headers
             prepareRequest();
+
+            parseHost(request);
 
             if(maxKeepAliveRequests > 0 && --keepAliveLeft == 0)
                 keepAlive=false;
@@ -648,7 +651,60 @@ public class Http11Processor implements Processor, ActionHook {
 
     }
 
+    /**
+     * Parse host.
+     */
+    public static void parseHost(Request req)
+        throws IOException
+    {
+        MessageBytes valueMB = req.getMimeHeaders().getValue("host");
+        // 3.3 version. In 4.0 it is extracted from the host header.
+        // XXX I would rather trust the socket...
+        //serverPort = socket.getLocalPort();
+        ByteChunk valueBC = null;
+        if (valueMB == null) {
+            // That was in the 3.3 connector. 4.0 let it unset.
+            //// InetAddress localAddress = socket.getLocalAddress();
+            ////localHost = localAddress.getHostName();
+            // serverNameMB.setString( getLocalHost() );
+            return;
+        }
+        valueBC = valueMB.getByteChunk();
+        byte[] valueB = valueBC.getBytes();
+        int valueL = valueBC.getLength();
+        int valueS = valueBC.getStart();
+        int colonPos = -1;
 
+        for (int i = 0; i < valueL; i++) {
+            char b = (char) valueB[i + valueS];
+            if (b == ':') {
+                colonPos = i;
+                break;
+            }
+        }
+        
+        if (colonPos < 0) {
+            req.setServerPort(80);
+            req.serverName().setBytes( valueB, valueS, valueL);
+        } else {
+            req.serverName().setBytes( valueB, valueS, colonPos);
+
+            int port = 0;
+            int mult = 1;
+            for (int i = valueL - 1; i > colonPos; i--) {
+                int charValue = HexUtils.DEC[(int) valueB[i + valueS]];
+                if (charValue == -1) {
+                    // Use the default
+                    port=80;
+                    break;
+                }
+                port = port + (charValue * mult);
+                mult = 10 * mult;
+            }
+            req.setServerPort(port);
+        }
+    }
+    
     /**
      * When committing the response, we have to validate the set of headers, as
      * well as setup the response filters.
