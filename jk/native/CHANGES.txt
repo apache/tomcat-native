@@ -1,6 +1,15 @@
 JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
+Changes with JK 1.2.2:
+    * jk set correctly the content-type in Apache 2.0,
+      making it ready to works with mod_deflate and AddOutputFilterByType 
+      [hgomez]
+    * jk will check result of get_endpoint and handle a failure.
+      This call can fail if the allocation for the endpoint fails because of low memory conditions 
+      causing a dereference of NULL when we try and access the endpoint
+      [mmanders]
+      
 Changes with JK 1.2.1:
     * Don't send initial chunk for chunked encoding, fix #14282
       [costin]
