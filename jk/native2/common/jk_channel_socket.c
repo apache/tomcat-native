@@ -83,6 +83,12 @@
     #define closesocket         close
 #endif
 
+#ifdef HAS_APR
+#include "apr_network_io.h"
+#include "apr_errno.h"
+#include "apr_general.h"
+#endif
+
 #define DEFAULT_HOST "127.0.0.1"
 
 /** Information specific for the socket channel
@@ -238,12 +244,11 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, short
                                                struct sockaddr_in *rc)
 {
     int x;
-    u_long laddr;
-    
-#ifdef AS400
-    memset(rc, 0, sizeof(struct sockaddr_in));		
-#endif
 
+    /* TODO: Should be updated for IPV6 support. */
+    /* for now use the correct type, in_addr_t */    
+    in_addr_t laddr;
+    
     rc->sin_port   = htons((short)port);
     rc->sin_family = AF_INET;
 
@@ -254,26 +259,46 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, short
         }
     }
 
+/* If we found also characters we use gethostbyname() */
     if(host[x] != '\0') {
-#ifdef AS400
-       /* If we found also characters we use gethostbyname_r()*/
-       struct hostent hostentry;
-       struct hostent *hoste = &hostentry;
-       struct hostent_data hd;
-       memset( &hd, 0, sizeof(struct hostent_data) );
-       if ( (gethostbyname_r( host, hoste, &hd )) != 0 ) {
-        return JK_ERR;
+
+/* if we're using APR and APR is using THREADS, we should use */
+/* APR function to avoid thread problems with gethostbyname */
+   
+#ifdef HAS_APR
+        apr_pool_t *context;
+        apr_sockaddr_t *remote_sa;
+        char *remote_ipaddr;
+
+         /* May be we could avoid to recreate it each time ? */
+         if (apr_pool_create(&context, NULL) != APR_SUCCESS)
+             return JK_FALSE;
+
+        if (apr_sockaddr_info_get(&remote_sa, host, APR_UNSPEC, (apr_port_t)port, 0, context)
+            != APR_SUCCESS) 
+            return JK_FALSE;
+
+        apr_sockaddr_ip_get(&remote_ipaddr, remote_sa);
+        laddr = inet_addr(remote_ipaddr);
+
+        /* May be we could avoid to delete it each time ? */
+        apr_pool_destroy(context);
+
        }
-#else /* If we found also characters we use gethostbyname()*/
-      /* XXX : WARNING : We should really use gethostbyname_r in multi-threaded env       */
-      /* take a look at APR which handle gethostbyname in apr/network_io/unix/sa_common.c */
+       
+#else /* HAS_APR */
+
+      /* XXX : WARNING : We should really use gethostbyname_r in multi-threaded env */
+      /* When APR is available, ie under Apache 2.0, we use it */
         struct hostent *hoste = gethostbyname(host);
         if(!hoste) {
             return JK_ERR;
         }
-#endif
 
         laddr = ((struct in_addr *)hoste->h_addr_list[0])->s_addr;
+
+#endif /* HAS_APR */
+
     } else {
         /* If we found only digits we use inet_addr() */
         laddr = inet_addr(host);        
