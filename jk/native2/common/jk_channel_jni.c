@@ -113,11 +113,11 @@ typedef struct {
    Duplicate string and convert it to ASCII on EBDIC based systems
    Needed for at least AS/400 and BS2000 but what about other EBDIC systems ?
    Implement as macro cause:   
-   we don't need to duplicate the strings if they are const on non EBDIS systems 
+   we don't need to duplicate the strings if they are const on non EBDIC systems 
 */
 
 #if defined(AS400) || defined(_OSD_POSIX)
-#define SSTRDUP_ASCII(e, s) ((e)->tmpPool->pstrdup2ascii(env, env->tmpPool, s)) 
+#define SSTRDUP_ASCII(e, s) ((e)->tmpPool->pstrdup2ascii(e, (e)->tmpPool, s)) 
 #else
 #define SSTRDUP_ASCII(e, s) (s) 
 #endif
