@@ -142,6 +142,11 @@ typedef struct {
 	char *key_size_indicator;
 
     /*
+     * Jk Options
+     */
+    int options;
+
+    /*
      * Environment variables support
      */
     int envvars_in_use;
@@ -465,18 +470,28 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->no_more_chunks = 0;
     s->query_string = r->args;
 
-	/*
+    if (conf->options & JK_OPT_FWDUNPARSED) {
+    /*
      * The 2.2 servlet spec errata says the uri from
      * HttpServletRequest.getRequestURI() should remain encoded.
      * [http://java.sun.com/products/servlet/errata_042700.html]
-	 */
-	s->req_uri      = r->unparsed_uri;
-	if (s->req_uri != NULL) {
-		char *query_str = strchr(s->req_uri, '?');
-		if (query_str != NULL) {
-			*query_str = 0;
-		}
-	}
+     *
+     * we follow spec in that case but can't use mod_rewrite
+     */
+        s->req_uri      = r->unparsed_uri;
+        if (s->req_uri != NULL) {
+            char *query_str = strchr(s->req_uri, '?');
+            if (query_str != NULL) {
+                *query_str = 0;
+            }
+        }
+    }
+    else {
+    /*
+     * we don't follow spec but we can use mod_rewrite
+     */
+        s->req_uri      = r->uri;
+    }
 
     s->is_ssl       = JK_FALSE;
     s->ssl_cert     = NULL;
@@ -738,7 +753,6 @@ static const char *jk_set_enable_ssl(cmd_parms *cmd,
     
     /* Set up our value */
     conf->ssl_enable = flag ? JK_TRUE : JK_FALSE;
-
     return NULL;
 }
 
@@ -756,8 +770,7 @@ static const char *jk_set_https_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->https_indicator = indicator;
-
+    conf->https_indicator = ap_pstrdup(cmd->pool,indicator);
     return NULL;
 }
 
@@ -775,8 +788,7 @@ static const char *jk_set_certs_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->certs_indicator = indicator;
-
+    conf->certs_indicator = ap_pstrdup(cmd->pool,indicator);
     return NULL;
 }
 
@@ -794,8 +806,7 @@ static const char *jk_set_cipher_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->cipher_indicator = indicator;
-
+    conf->cipher_indicator = ap_pstrdup(cmd->pool,indicator);
     return NULL;
 }
 
@@ -813,8 +824,7 @@ static const char *jk_set_session_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->session_indicator = indicator;
-
+    conf->session_indicator = ap_pstrdup(cmd->pool,indicator);
     return NULL;
 }
 
@@ -832,8 +842,57 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->key_size_indicator = indicator;
+    conf->key_size_indicator = ap_pstrdup(cmd->pool,indicator);
+    return NULL;
+}
 
+/*
+ * JkOptions Directive Handling
+ *
+ *
+ * +ForwardUnparsed   => Forward URI as unparsed, spec compliant but broke mod_rewrite
+ * -ForwardUnparsed   => Forward URI normally, less spec compliant but mod_rewrite compatible
+ * +ForwardSSLKeySize => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
+ * -ForwardSSLKeySize => Don't Forward SSL Key Size, will make mod_jk works with all TC release
+ */
+
+const char *jk_set_options(cmd_parms *cmd,
+                           void *dummy,
+                           const char *line)
+{
+    int  opt = 0; 
+    char action;
+    char *w;
+
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+
+    while (line[0] != 0) {
+        w = ap_getword_conf(cmd->pool, &line);
+        action = 0;
+
+        if (*w == '+' || *w == '-') {
+            action = *(w++);
+        }
+
+        if (!strcasecmp(w, "ForwardUnparsedUri"))
+            opt = JK_OPT_FWDUNPARSED;
+        else if (!strcasecmp(w, "ForwardKeySize"))
+            opt = JK_OPT_FWDKEYSIZE;
+        else
+            return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w, "'", NULL);
+
+        if (action == '-') {
+            conf->options &= ~opt;
+        }
+        else if (action == '+') {
+            conf->options |=  opt;
+        }
+        else {            /* for now +Opt == Opt */
+            conf->options |=  opt;
+        }
+    }
     return NULL;
 }
 
@@ -928,6 +987,17 @@ static const command_rec jk_cmds[] =
      "Name of the Apache environment that contains SSL key size in use"},
     {"JkExtractSSL", jk_set_enable_ssl, NULL, RSRC_CONF, FLAG,
      "Turns on SSL processing and information gathering by mod_jk"},     
+
+    /*
+     * Options to tune mod_jk configuration
+     * for now we understand :
+     * +ForwardUnparsed   => Forward URI as unparsed, spec compliant but broke mod_rewrite
+     * -ForwardUnparsed   => Forward URI normally, less spec compliant but mod_rewrite compatible
+     * +ForwardSSLKeySize => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
+     * -ForwardSSLKeySize => Don't Forward SSL Key Size, will make mod_jk works with all TC release
+     */
+    {"JkOptions", jk_set_options, NULL, RSRC_CONF, RAW_ARGS,
+     "Set one of more options to configure the mod_jk module"},
 
 	/*
 	 * JkEnvVar let user defines envs var passed from WebServer to 
@@ -1103,11 +1173,12 @@ static void *merge_jk_config(ap_pool *p,
     jk_server_conf_t *overrides = (jk_server_conf_t *)overridesv;
 
     if(base->ssl_enable) {
-        overrides->ssl_enable       = base->ssl_enable;
-        overrides->https_indicator  = base->https_indicator;
-        overrides->certs_indicator  = base->certs_indicator;
-        overrides->cipher_indicator = base->cipher_indicator;
-        overrides->session_indicator = base->session_indicator;
+        overrides->ssl_enable         = base->ssl_enable;
+        overrides->https_indicator    = base->https_indicator;
+        overrides->certs_indicator    = base->certs_indicator;
+        overrides->cipher_indicator   = base->cipher_indicator;
+        overrides->session_indicator  = base->session_indicator;
+        overrides->key_size_indicator = base->key_size_indicator;
     }
     
     if(overrides->mountcopy) {
