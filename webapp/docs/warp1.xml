@@ -200,8 +200,10 @@
         to <a href="http://www.rfc-editor.org/rfc/rfc2047.txt">RFC-2047</a>
         (Message Header Extension for Non-ASCII Text). Thus (for example)
         the string "I love Japan" with the word "Japan" translated in Japanese
-        and encoded in Shift_JIS would be represented as: <b>"I love 
-        =?Shift_JIS?q?=e6=97=a5=e6=9c=ac?="</b> (field identifier <b>MIME</b>).
+        ("Nihon") written in Kanji (in Unicode characters this would look like
+        U65E5 + U672C) and encoded in Shift_JIS would be represented
+        as: <b>"I love =?Shift_JIS?q?=93=fa=96=7b?="</b>
+        (field identifier <b>MIME</b>).
       </li>
     </ul>
 
