@@ -61,6 +61,7 @@ extern char *strdup(const char *str);
 #include <windows.h>
 #include <winsock.h>
 #include <sys/timeb.h>
+#include <process.h>
 #else
 #include <unistd.h>
 #if defined(NETWARE) && defined(__NOVELL_LIBC__)
