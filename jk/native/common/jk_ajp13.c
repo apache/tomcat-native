@@ -260,7 +260,7 @@ int sc_for_req_header(const char *header_name,
                'e' ==header_name[3] &&
                'p' ==header_name[4] &&
                't' ==header_name[5]) {
-                if('-' == header_name[6]) {
+                if ('-' == header_name[6]) {
                     if(!strcmp(header_name + 7, "charset")) {
                         *sc = SC_ACCEPT_CHARSET;
                     } else if(!strcmp(header_name + 7, "encoding")) {
@@ -270,12 +270,12 @@ int sc_for_req_header(const char *header_name,
                     } else {
                         return JK_FALSE;
                     }
-                } else if('\0' == header_name[6]) {
+                } else if ('\0' == header_name[6]) {
                     *sc = SC_ACCEPT;
                 } else {
                     return JK_FALSE;
                 }
-            } else if(!strcmp(header_name, "authorization")) {
+            } else if (!strcmp(header_name, "authorization")) {
                 *sc = SC_AUTHORIZATION;
             } else {
                 return JK_FALSE;
@@ -376,142 +376,118 @@ int ajp13_marshal_into_msgb(jk_msg_buf_t *msg,
     unsigned char method;
     unsigned i;
 
-    jk_log(l, JK_LOG_DEBUG, 
-           "Into ajp13_marshal_into_msgb\n");
+    jk_log(l, JK_LOG_DEBUG, "Into ajp13_marshal_into_msgb\n");
 
-    if(!sc_for_req_method(s->method, &method)) { 
-        jk_log(l, JK_LOG_ERROR, 
-               "Error ajp13_marshal_into_msgb - No such method %s\n", s->method);
+    if (!sc_for_req_method(s->method, &method)) { 
+        jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - No such method %s\n", s->method);
         return JK_FALSE;
     }
 
-    if(0 != jk_b_append_byte(msg, JK_AJP13_FORWARD_REQUEST)  ||
-       0 != jk_b_append_byte(msg, method)               ||
-       0 != jk_b_append_string(msg, s->protocol)        ||
-       0 != jk_b_append_string(msg, s->req_uri)         ||
-       0 != jk_b_append_string(msg, s->remote_addr)     ||
-       0 != jk_b_append_string(msg, s->remote_host)     ||
-       0 != jk_b_append_string(msg, s->server_name)     ||
-       0 != jk_b_append_int(msg, (unsigned short)s->server_port) ||
-       0 != jk_b_append_byte(msg, (unsigned char)(s->is_ssl)) ||
-       0 != jk_b_append_int(msg, (unsigned short)(s->num_headers))) {
+    if (jk_b_append_byte(msg, JK_AJP13_FORWARD_REQUEST)  ||
+        jk_b_append_byte(msg, method)               ||
+        jk_b_append_string(msg, s->protocol)        ||
+        jk_b_append_string(msg, s->req_uri)         ||
+        jk_b_append_string(msg, s->remote_addr)     ||
+        jk_b_append_string(msg, s->remote_host)     ||
+        jk_b_append_string(msg, s->server_name)     ||
+        jk_b_append_int(msg, (unsigned short)s->server_port) ||
+        jk_b_append_byte(msg, (unsigned char)(s->is_ssl)) ||
+        jk_b_append_int(msg, (unsigned short)(s->num_headers))) {
 
-        jk_log(l, JK_LOG_ERROR, 
-               "Error ajp13_marshal_into_msgb - Error appending the message begining\n");
-
+        jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the message begining\n");
         return JK_FALSE;
     }
 
-    for(i = 0 ; i < s->num_headers ; i++) {
+    for (i = 0 ; i < s->num_headers ; i++) {
         unsigned short sc;
 
-        if(sc_for_req_header(s->headers_names[i], &sc) ) {
-            if(0 != jk_b_append_int(msg, sc)) {
-                jk_log(l, JK_LOG_ERROR, 
-                       "Error ajp13_marshal_into_msgb - Error appending the header name\n");
+        if (sc_for_req_header(s->headers_names[i], &sc)) {
+            if (jk_b_append_int(msg, sc)) {
+                jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the header name\n");
                 return JK_FALSE;
             }
         } else {
-            if(0 != jk_b_append_string(msg, s->headers_names[i])) {
-                jk_log(l, JK_LOG_ERROR, 
-                       "Error ajp13_marshal_into_msgb - Error appending the header name\n");
+            if (jk_b_append_string(msg, s->headers_names[i])) {
+                jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the header name\n");
                 return JK_FALSE;
             }
         }
         
-        if(0 != jk_b_append_string(msg, s->headers_values[i])) {
-            jk_log(l, JK_LOG_ERROR, 
-                   "Error ajp13_marshal_into_msgb - Error appending the header value\n");
+        if (jk_b_append_string(msg, s->headers_values[i])) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the header value\n");
             return JK_FALSE;
         }
     }
 
-    if(s->remote_user) {
-        if(0 != jk_b_append_byte(msg, SC_A_REMOTE_USER) ||
-           0 != jk_b_append_string(msg, s->remote_user)) {
-            jk_log(l, JK_LOG_ERROR, 
-                   "Error ajp13_marshal_into_msgb - Error appending the remote user\n");
-
+    if (s->remote_user) {
+        if (jk_b_append_byte(msg, SC_A_REMOTE_USER) ||
+            jk_b_append_string(msg, s->remote_user)) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the remote user\n");
             return JK_FALSE;
         }
     }
-    if(s->auth_type) {
-        if(0 != jk_b_append_byte(msg, SC_A_AUTH_TYPE) ||
-           0 != jk_b_append_string(msg, s->auth_type)) {
-            jk_log(l, JK_LOG_ERROR, 
-                   "Error ajp13_marshal_into_msgb - Error appending the auth type\n");
-
+    if (s->auth_type) {
+        if (jk_b_append_byte(msg, SC_A_AUTH_TYPE) ||
+            jk_b_append_string(msg, s->auth_type)) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the auth type\n");
             return JK_FALSE;
         }
     }
-    if(s->query_string) {
-        if(0 != jk_b_append_byte(msg, SC_A_QUERY_STRING) ||
-           0 != jk_b_append_string(msg, s->query_string)) {
-            jk_log(l, JK_LOG_ERROR, 
-                   "Error ajp13_marshal_into_msgb - Error appending the query string\n");
-
+    if (s->query_string) {
+        if (jk_b_append_byte(msg, SC_A_QUERY_STRING) ||
+            jk_b_append_string(msg, s->query_string)) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the query string\n");
             return JK_FALSE;
         }
     }
-    if(s->jvm_route) {
-        if(0 != jk_b_append_byte(msg, SC_A_JVM_ROUTE) ||
-           0 != jk_b_append_string(msg, s->jvm_route)) {
-            jk_log(l, JK_LOG_ERROR, 
-                   "Error ajp13_marshal_into_msgb - Error appending the jvm route\n");
-
+    if (s->jvm_route) {
+        if (jk_b_append_byte(msg, SC_A_JVM_ROUTE) ||
+            jk_b_append_string(msg, s->jvm_route)) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the jvm route\n");
             return JK_FALSE;
         }
     }
-    if(s->ssl_cert_len) {
-        if(0 != jk_b_append_byte(msg, SC_A_SSL_CERT) ||
-           0 != jk_b_append_string(msg, s->ssl_cert)) {
-            jk_log(l, JK_LOG_ERROR, 
-                   "Error ajp13_marshal_into_msgb - Error appending the SSL certificates\n");
-
+    if (s->ssl_cert_len) {
+        if (jk_b_append_byte(msg, SC_A_SSL_CERT) ||
+            jk_b_append_string(msg, s->ssl_cert)) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the SSL certificates\n");
             return JK_FALSE;
         }
     }
 
-    if(s->ssl_cipher) {
-        if(0 != jk_b_append_byte(msg, SC_A_SSL_CIPHER) ||
-           0 != jk_b_append_string(msg, s->ssl_cipher)) {
-            jk_log(l, JK_LOG_ERROR, 
-                   "Error ajp13_marshal_into_msgb - Error appending the SSL ciphers\n");
-
+    if (s->ssl_cipher) {
+        if (jk_b_append_byte(msg, SC_A_SSL_CIPHER) ||
+            jk_b_append_string(msg, s->ssl_cipher)) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the SSL ciphers\n");
             return JK_FALSE;
         }
     }
-    if(s->ssl_session) {
-        if(0 != jk_b_append_byte(msg, SC_A_SSL_SESSION) ||
-           0 != jk_b_append_string(msg, s->ssl_session)) {
-            jk_log(l, JK_LOG_ERROR, 
-                   "Error ajp13_marshal_into_msgb - Error appending the SSL session\n");
-
+    if (s->ssl_session) {
+        if (jk_b_append_byte(msg, SC_A_SSL_SESSION) ||
+            jk_b_append_string(msg, s->ssl_session)) {
+            jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the SSL session\n");
             return JK_FALSE;
         }
     }
 
-    if(s->num_attributes > 0) {
-        for(i = 0 ; i < s->num_attributes ; i++) {
-            if(0 != jk_b_append_byte(msg, SC_A_REQ_ATTRIBUTE)       ||
-               0 != jk_b_append_string(msg, s->attributes_names[i]) ||
-               0 != jk_b_append_string(msg, s->attributes_values[i])) {
-                jk_log(l, JK_LOG_ERROR, 
-                   "Error ajp13_marshal_into_msgb - Error appending attribute %s=%s\n",
-                   s->attributes_names[i], s->attributes_values[i]);
+    if (s->num_attributes > 0) {
+        for (i = 0 ; i < s->num_attributes ; i++) {
+            if (jk_b_append_byte(msg, SC_A_REQ_ATTRIBUTE)       ||
+                jk_b_append_string(msg, s->attributes_names[i]) ||
+                jk_b_append_string(msg, s->attributes_values[i])) {
+                jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending attribute %s=%s\n",
+                      s->attributes_names[i], s->attributes_values[i]);
                 return JK_FALSE;
             }
         }
     }
 
-    if(0 != jk_b_append_byte(msg, SC_A_ARE_DONE)) {
-        jk_log(l, JK_LOG_ERROR, 
-               "Error ajp13_marshal_into_msgb - Error appending the message end\n");
+    if (jk_b_append_byte(msg, SC_A_ARE_DONE)) {
+        jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_into_msgb - Error appending the message end\n");
         return JK_FALSE;
     }
     
-    jk_log(l, JK_LOG_DEBUG, 
-           "ajp13_marshal_into_msgb - Done\n");
+    jk_log(l, JK_LOG_DEBUG, "ajp13_marshal_into_msgb - Done\n");
     return JK_TRUE;
 }
 
@@ -548,70 +524,56 @@ int ajp13_unmarshal_response(jk_msg_buf_t *msg,
 {
     d->status = jk_b_get_int(msg);
 
-    if(!d->status) {
-        jk_log(l, JK_LOG_ERROR, 
-               "Error ajp13_unmarshal_response - Null status\n");
-
+    if (!d->status) {
+        jk_log(l, JK_LOG_ERROR, "Error ajp13_unmarshal_response - Null status\n");
         return JK_FALSE;
     }
 
     d->msg = (char *)jk_b_get_string(msg);
 
-    jk_log(l, JK_LOG_DEBUG, 
-           "ajp13_unmarshal_response: status = %d\n",
-           d->status);
+    jk_log(l, JK_LOG_DEBUG, "ajp13_unmarshal_response: status = %d\n", d->status);
 
     d->num_headers = jk_b_get_int(msg);
     d->header_names = d->header_values = NULL;
 
-    jk_log(l, JK_LOG_DEBUG, 
-           "ajp13_unmarshal_response: Number of headers is = %d\n",
-           d->num_headers);
+    jk_log(l, JK_LOG_DEBUG, "ajp13_unmarshal_response: Number of headers is = %d\n", d->num_headers);
 
-    if(d->num_headers) {
+    if (d->num_headers) {
         d->header_names = jk_pool_alloc(p, sizeof(char *) * d->num_headers);
         d->header_values = jk_pool_alloc(p, sizeof(char *) * d->num_headers);
 
-        if(d->header_names && d->header_values) {
+        if (d->header_names && d->header_values) {
             unsigned i;
             for(i = 0 ; i < d->num_headers ; i++) {
                 unsigned short name = jk_b_pget_int(msg, jk_b_get_pos(msg)) ;
                 
-                if((name & 0XFF00) == 0XA000) {
+                if ((name & 0XFF00) == 0XA000) {
                     jk_b_get_int(msg);
                     name = name & 0X00FF;
-                    if(name <= SC_RES_HEADERS_NUM) {
+                    if (name <= SC_RES_HEADERS_NUM) {
                         d->header_names[i] = (char *)long_res_header_for_sc(name);
                     } else {
-                        jk_log(l, JK_LOG_ERROR, 
-                               "Error ajp13_unmarshal_response - No such sc (%d)\n",
-			       name);
-
+                        jk_log(l, JK_LOG_ERROR, "Error ajp13_unmarshal_response - No such sc (%d)\n", name);
                         return JK_FALSE;
                     }
                 } else {
                     d->header_names[i] = (char *)jk_b_get_string(msg);
-                    if(!d->header_names[i]) {
-                        jk_log(l, JK_LOG_ERROR, 
-                               "Error ajp13_unmarshal_response - Null header name\n");
-
+                    if (!d->header_names[i]) {
+                        jk_log(l, JK_LOG_ERROR, "Error ajp13_unmarshal_response - Null header name\n");
                         return JK_FALSE;
                     }
                 }
 
                 d->header_values[i] = (char *)jk_b_get_string(msg);
-                if(!d->header_values[i]) {
-                    jk_log(l, JK_LOG_ERROR, 
-                           "Error ajp13_unmarshal_response - Null header value\n");
-
+                if (!d->header_values[i]) {
+                    jk_log(l, JK_LOG_ERROR, "Error ajp13_unmarshal_response - Null header value\n");
                     return JK_FALSE;
                 }
 
-                jk_log(l, JK_LOG_DEBUG, 
-                    "ajp13_unmarshal_response: Header[%d] [%s] = [%s]\n",
-                    i,
-                    d->header_names[i],
-                    d->header_values[i]);
+                jk_log(l, JK_LOG_DEBUG, "ajp13_unmarshal_response: Header[%d] [%s] = [%s]\n", 
+                       i,
+                       d->header_names[i],
+                       d->header_values[i]);
             }
         }
     }
@@ -623,8 +585,7 @@ int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
                                      jk_pool_t *p,
                                      jk_logger_t *l)
 {
-    jk_log(l, JK_LOG_DEBUG, 
-           "Into ajp13_marshal_shutdown_into_msgb\n");
+    jk_log(l, JK_LOG_DEBUG, "Into ajp13_marshal_shutdown_into_msgb\n");
     
     /* To be on the safe side */
     jk_b_reset(msg);
@@ -632,7 +593,8 @@ int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
     /*
      * Just a single byte with s/d command.
      */
-    if(0 != jk_b_append_byte(msg, JK_AJP13_SHUTDOWN)) {
+    if (jk_b_append_byte(msg, JK_AJP13_SHUTDOWN)) {
+		jk_log(l, JK_LOG_ERROR, "Error ajp13_marshal_shutdown_into_msgb - Error appending shutdown message\n");
         return JK_FALSE;
     }
 
