@@ -62,7 +62,12 @@
  * @author: Costin Manolache
  * @author: Jean-Frederic Clere <jfrederic.clere@fujitsu-siemens.com>
  */
+#include "apr_network_io.h"
+#include "apr_errno.h"
+#include "apr_general.h"
 
+
+#include "jk_global.h"
 #include "jk_map.h"
 #include "jk_env.h"
 #include "jk_channel.h"
@@ -71,9 +76,6 @@
 #include <string.h>
 #include "jk_registry.h"
 
-#include "apr_network_io.h"
-#include "apr_errno.h"
-#include "apr_general.h"
 
 
 #define DEFAULT_HOST "127.0.0.1"
