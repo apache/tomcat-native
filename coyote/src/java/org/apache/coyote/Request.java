@@ -87,31 +87,31 @@ public final class Request {
 
 
     private int serverPort = -1;
-    private MessageBytes serverNameMB = new MessageBytes();
+    private MessageBytes serverNameMB = MessageBytes.newInstance();
 
     private String localHost;
     
     private int remotePort;
     private int localPort;
 
-    private MessageBytes schemeMB = new MessageBytes();
+    private MessageBytes schemeMB = MessageBytes.newInstance();
 
-    private MessageBytes methodMB = new MessageBytes();
-    private MessageBytes unparsedURIMB = new MessageBytes();
-    private MessageBytes uriMB = new MessageBytes();
-    private MessageBytes decodedUriMB = new MessageBytes();
-    private MessageBytes queryMB = new MessageBytes();
-    private MessageBytes protoMB = new MessageBytes();
+    private MessageBytes methodMB = MessageBytes.newInstance();
+    private MessageBytes unparsedURIMB = MessageBytes.newInstance();
+    private MessageBytes uriMB = MessageBytes.newInstance();
+    private MessageBytes decodedUriMB = MessageBytes.newInstance();
+    private MessageBytes queryMB = MessageBytes.newInstance();
+    private MessageBytes protoMB = MessageBytes.newInstance();
 
     // remote address/host
-    private MessageBytes remoteAddrMB = new MessageBytes();
-    private MessageBytes localNameMB = new MessageBytes();
-    private MessageBytes remoteHostMB = new MessageBytes();
-    private MessageBytes localAddrMB = new MessageBytes();
+    private MessageBytes remoteAddrMB = MessageBytes.newInstance();
+    private MessageBytes localNameMB = MessageBytes.newInstance();
+    private MessageBytes remoteHostMB = MessageBytes.newInstance();
+    private MessageBytes localAddrMB = MessageBytes.newInstance();
      
     private MimeHeaders headers = new MimeHeaders();
 
-    private MessageBytes instanceId = new MessageBytes();
+    private MessageBytes instanceId = MessageBytes.newInstance();
 
     /**
      * Notes.
@@ -143,8 +143,8 @@ public final class Request {
     private Cookies cookies = new Cookies(headers);
     private Parameters parameters = new Parameters();
 
-    private MessageBytes remoteUser=new MessageBytes();
-    private MessageBytes authType=new MessageBytes();
+    private MessageBytes remoteUser=MessageBytes.newInstance();
+    private MessageBytes authType=MessageBytes.newInstance();
     private HashMap attributes=new HashMap();
 
     private Response response;
