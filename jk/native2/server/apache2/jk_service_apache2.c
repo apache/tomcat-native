@@ -92,7 +92,7 @@
 
 #include "jk_apache2.h"
 
-#define USE_APRTABLES
+/* #define USE_APRTABLES */
 
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
 
@@ -115,11 +115,15 @@ static int JK_METHOD jk_service_apache2_head(jk_env_t *env, jk_ws_service_t *s )
 
     headers=s->headers_out;
     /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
+    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                  "service.head() %d %d\n", s->status, headers->size(env, headers ));
     
     for(h = 0 ; h < headers->size( env, headers ) ; h++) {
         char *name=headers->nameAt( env, headers, h );
         char *val=headers->valueAt( env, headers, h );
 
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "service.head() %s: %s\n", name, val);
         /* the cmp can also be avoided in we do this earlier and use
            the header id */
         if(!strcasecmp(name, "Content-type")) {
@@ -212,12 +216,28 @@ static int JK_METHOD jk_service_apache2_write(jk_env_t *env, jk_ws_service_t *s,
             size_t r = 0;
             long ll=len;
             char *bb=(char *)b;
+            request_rec *rr=s->ws_private;
             
             if(!s->response_started) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO, 
                               "service.write() default head\n");
                 if(!s->head(env, s)) {
                     return JK_FALSE;
+                }
+            }
+
+            
+            {
+                const apr_array_header_t *t = apr_table_elts(rr->headers_out);
+                if(t && t->nelts) {
+                    int i;
+                    
+                    apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
+
+                    for(i = 0 ; i < t->nelts ; i++) {
+                        env->l->jkLog(env, env->l, JK_LOG_INFO, "OutHeaders %s: %s\n",
+                                      elts[i].key, elts[i].val);
+                    }
                 }
             }
             
@@ -434,7 +454,7 @@ static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
 
 #ifdef USE_APRTABLES
     jk_map_aprtable_factory( env, s->pool,
-                             &s->headers_in,
+                             (void *)&s->headers_in,
                              "map", "aprtable" );
     s->headers_in->init( env, s->headers_in, 0, r->headers_in);
 #else
@@ -463,7 +483,7 @@ static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     }
 
 #ifdef USE_APRTABLES
-    jk_map_aprtable_factory( env, s->pool, &s->headers_out,
+    jk_map_aprtable_factory( env, s->pool, (void *)&s->headers_out,
                              "map", "aprtable" );
     s->headers_in->init( env, s->headers_out, 0, r->headers_out);
 #else

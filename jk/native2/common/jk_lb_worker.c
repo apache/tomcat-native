@@ -110,7 +110,7 @@ static double get_max_lb(jk_worker_t *p)
     It'll also adjust the load balancing factors.
 */
 static jk_worker_t *get_most_suitable_worker(jk_env_t *env, jk_worker_t *p, 
-                                             jk_ws_service_t *s)
+                                             jk_ws_service_t *s, int attempt)
 {
     jk_worker_t *rc = NULL;
     double lb_min = 0.0;    
@@ -120,7 +120,7 @@ static jk_worker_t *get_most_suitable_worker(jk_env_t *env, jk_worker_t *p,
     if(session_route) {
         for(i = 0 ; i < p->num_of_workers ; i++) {
             if(0 == strcmp(session_route, p->lb_workers[i]->name)) {
-                if(p->lb_workers[i]->in_error_state) {
+                if(attempt > 0 && p->lb_workers[i]->in_error_state) {
                    break;
                 } else {
                     return p->lb_workers[i];
@@ -165,6 +165,7 @@ static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e,
 {
     /* The 'real' endpoint */
     jk_endpoint_t *end = NULL;
+    int attempt=0;
     
     if(e==NULL || s==NULL || is_recoverable_error==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -177,7 +178,7 @@ static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e,
     e->realEndpoint=NULL;
 
     while(1) {
-        jk_worker_t *rec = get_most_suitable_worker(env, e->worker, s);
+        jk_worker_t *rec = get_most_suitable_worker(env, e->worker, s, attempt++);
         int rc;
         int is_recoverable = JK_FALSE;
 

@@ -43,7 +43,7 @@
 
   <!-- ==================== Targets ==================== -->
 
-  <target name="main" depends="init,apache20,jni,apache13,unixsocket">
+  <target name="main" depends="init,apache20,jni,unixsocket">
   </target>
 
   <target name="init" >

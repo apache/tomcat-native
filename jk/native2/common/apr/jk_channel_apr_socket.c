@@ -173,7 +173,7 @@ static int JK_METHOD jk_channel_socket_init(jk_env_t *env,
     host = jk_map_getStrProp( env, props,
                               "worker", worker_name, "host", host);
     tmp = jk_map_getStrProp( env, props,
-                          "worker", worker_name, "port", NULL );
+                             "worker", worker_name, "port", NULL );
     if( tmp != NULL )
         port=jk_map_str2int( env, tmp);
 
@@ -186,7 +186,7 @@ static int JK_METHOD jk_channel_socket_init(jk_env_t *env,
     err=jk_channel_socket_resolve( env, host, port, socketInfo );
     if( err!= JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk_channel_socket_init: "
-               "can't resolve %s:%d errno=%d\n", host, port, errno );
+                      "can't resolve %s:%d errno=%d\n", host, port, errno );
     }
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "channel_socket.init(): %s:%d for %s\n", host,
@@ -198,8 +198,8 @@ static int JK_METHOD jk_channel_socket_init(jk_env_t *env,
 /** private: resolve the address on init
  */
 static int JK_METHOD jk_channel_socket_resolve(jk_env_t *env,
-char *host, short port,
-jk_channel_socket_private_t *rc)
+                                               char *host, short port,
+                                               jk_channel_socket_private_t *rc)
 {
     /*
      * If the hostname is an absolut path, we want a UNIX socket.
@@ -221,15 +221,6 @@ jk_channel_socket_private_t *rc)
         }
     }
     return JK_TRUE;
-
-}
-
-static int jk_close_socket(jk_env_t *env, apr_socket_t *s)
-{
-    if (apr_socket_close(s)==APR_SUCCESS)
-        return(0);
-    else
-        return(-1);
 }
 
 
@@ -354,13 +345,22 @@ static int JK_METHOD jk_channel_socket_close(jk_env_t *env,jk_channel_t *_this,
     if( chD==NULL ) 
         return JK_FALSE;
 
+    if (chD->type==TYPE_UNIX) { 
+        close( chD->unixsock );
+        return 0;
+    }
+
     sd=chD->sock;
     chD->sock=NULL; /* XXX check it. */
     /* nothing else to clean, the socket_data was allocated ouf of
      *  endpoint's pool
      */
-    return jk_close_socket(env, sd);
+    if (apr_socket_close(sd)==APR_SUCCESS)
+        return(0);
+    else
+        return(-1);
 }
+
 
 /** send a long message
  * @param sd  opened socket.
@@ -457,7 +457,7 @@ static int JK_METHOD jk_channel_socket_recv( jk_env_t *env, jk_channel_t *_this,
                                  (char *)b + rdlen, 
                                  len - rdlen, 
                                  0);        
-                   if(-1 == this_time) {
+            if(-1 == this_time) {
                 if(EAGAIN == errno) {
                     continue;
                 } 

@@ -166,9 +166,9 @@ static int jk_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
         
         jk_xlate_from_ascii(valueS, strlen(valueS));
         
-        /* env->l->jkLog(env, env->l, JK_LOG_INFO, */
-        /*               "handler.response() Header[%d] [%s] = [%s]\n",  */
-        /*               i, nameS, valueS); */
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "handler.response() Header[%d] [%s] = [%s]\n", 
+                      i, nameS, valueS);
 
         /* Do we want this ? Preserve the headers, maybe someone will
          need them. Alternative is to use a different buffer every time,

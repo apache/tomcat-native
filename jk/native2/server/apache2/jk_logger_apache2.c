@@ -186,6 +186,8 @@ int jk_logger_apache2_factory(jk_env_t *env,
     l->open =jk_logger_apache2_open;
     l->jkLog = jk_logger_apache2_jkLog;
 
+    l->level=JK_LOG_ERROR_LEVEL;
+    
     *result=(void *)l;
 
     return JK_TRUE;
