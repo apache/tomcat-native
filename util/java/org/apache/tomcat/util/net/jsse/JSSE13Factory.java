@@ -77,10 +77,10 @@ class JSSE13Factory implements JSSEFactory {
     }
 
     public ServerSocketFactory getSocketFactory() {
-	return new JSSESocketFactory();
+        return new JSSE13SocketFactory();
     }
 
     public SSLSupport getSSLSupport(Socket socket) {
-	return new JSSESupport((SSLSocket)socket);
+        return new JSSESupport((SSLSocket)socket);
     }
 }
