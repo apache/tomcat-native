@@ -24,6 +24,9 @@
   <!-- Uncomment if you want to use APR in apache1.3 
   <property name="APACHE13_APR" value="true" />
     -->
+
+  <property name="apache2.include" value="${apache2.home}/include" />
+  <property name="apr.include" location="${apache2.include}" />
  
   <!-- ========== Build options ========== -->
 
@@ -268,8 +271,6 @@
   </target>
   
   <target name="apache20" depends="init" if="apache2.detect">
-    <property name="apache2.include" value="${apache2.home}/include" />
-    <property name="apr.include" location="${apache2.include}" />
     <mkdir dir="${build.dir}/apache2${arch.prefix}" />
     <so sofile="mod_jk2" 
 	buildDir="${build.dir}/apache2${arch.prefix}"
@@ -337,6 +338,7 @@
     <property name="apr.home" location="${apache2.home}" />
     <property name="apr.include" location="${apr.home}/include" />
     <property name="apr.lib" location="${apr.home}/lib" />
+
     <so sofile="libjkjni" 
 	buildDir="${build.dir}/jni${arch.prefix}" 
 	optimize="${so.optimize}"
