@@ -240,7 +240,10 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
             if(!strcasecmp(header_names[h], "Content-type")) {
                 char *tmp = apr_pstrdup(r->pool, header_values[h]);
                 ap_content_type_tolower(tmp);
-                r->content_type = tmp;
+                /* It should be done like this in Apache 2.0 */
+                /* This way, Apache 2.0 will be able to set the output filter */
+                /* and it make jk useable with deflate using AddOutputFilterByType DEFLATE text/html */
+                ap_set_content_type(r, tmp);
             } else if(!strcasecmp(header_names[h], "Location")) {
 #ifdef AS400 
                 /* Fix escapes in Location Header URL*/
