@@ -8,9 +8,7 @@ Changes in JK 1.2.9
 	  in your httpd.conf
     * on Series you should use the latest PTF for Apache 2.0 (which is now 2.0.52) and ad minima
       SI17402/SI17061 or cumulative including them.
-    
- (IBM HTTPD powered by Apache)
- 
+     
 Changes in JK 1.2.8
     * cachesize has changed from unlimited to limited, so it's basically a pool of connections 
       with recycle timeout like in mod_proxy for Apache 2.2.
