@@ -1,5 +1,11 @@
 .DS_Store
 .libs
 Makefile
+mod_webapp.dll
+mod_webapp.exp
+mod_webapp.idb
+mod_webapp.lib
 mod_webapp.lo
 mod_webapp.o
+mod_webapp.obj
+mod_webapp.pdb
