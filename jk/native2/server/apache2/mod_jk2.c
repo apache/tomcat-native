@@ -292,12 +292,14 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     jkb=env->createBean2( env, env->globalPool,"workerEnv", "");
     workerEnv= jkb->object;
     env->alias( env, "workerEnv:" , "workerEnv");
-
+    
     if( workerEnv==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating workerEnv\n");
         return;
     }
 
+    workerEnv->initData->add( env, workerEnv->initData, "serverRoot", ap_server_root);
+    
     /* Local initialization */
     workerEnv->_private = s;
 }
