@@ -426,9 +426,10 @@ static int jk2_workerEnv_dispatch(jk_env_t *env, jk_workerEnv_t *wEnv,
         return JK_ERR;
     }
 
-/*     env->l->jkLog(env, env->l, JK_LOG_INFO, */
-/*                   "workerEnv.dispatch() Calling %d %s\n", handler->messageId, */
-/*                   handler->name); */
+    if( wEnv->mbean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "workerEnv.dispatch() Calling %d %s\n", handler->messageId,
+                      handler->name);
     
     /* Call the message handler */
     rc=handler->callback( env, target, e, msg );
@@ -480,12 +481,16 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
         if( rc!=JK_OK ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "workerEnv.processCallbacks() Error reading reply\n");
-            /* Probably protocol error, we can't recover
+            /* It may be the first receive, let the caller decide if it's ok to retry
              */
-            ep->recoverable=JK_FALSE;
+            /* ep->recoverable=JK_FALSE; */
             return rc;
         }
 
+        /** After I received the first message ( head most likely ), it
+            is impossible to recover */
+        ep->recoverable=JK_FALSE;
+        
         if( ep->worker->mbean->debug > 10 )
             ep->request->dump( env, msg, "Received" );
 
@@ -517,9 +522,9 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
              */
             req->is_recoverable_error = JK_FALSE;
             if( ep->worker->mbean->debug > 10 )
-                ep->request->dump( env, ep->post, "Apache->tomcat" );
+                msg->dump( env, msg, "Apache->tomcat" );
 
-            rc = ep->worker->channel->send(env, ep->worker->channel, ep, ep->post );
+            rc = ep->worker->channel->send(env, ep->worker->channel, ep, msg );
             if (rc < 0) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "ajp14.processCallbacks() error sending response data\n");

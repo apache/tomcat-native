@@ -169,12 +169,15 @@ struct jk_endpoint {
     char *readBuf;
     int bufPos;
     
-    /* JK_TRUE if the endpoint can be reused ( after an error ).
-     * JK_FALSE if we must close the connection - for example we have
-     * packet/marshalling error.
-     * This is different from req->is_recoverable_error, which just
-     * specifies that the request can be sent to another tomcat.
-     * Set by workerEnv if a handler returns JK_HANDLER_ERROR.
+    /* JK_TRUE if we can recover by sending the request to a different
+     * worker. This happens if only the request header and initial body
+     * chunk has been set. 
+     * 
+     * JK_FALSE if we already received data from a tomcat instance. In
+     * this case there is no point in retrying the current request and
+     * we must fail.
+     *
+     * The connection with the current tomcat is closed in any case.
      */
     int     recoverable;        
 

@@ -291,16 +291,17 @@ static int jk2_worker_ajp13_connect(jk_env_t *env, jk_endpoint_t *ae) {
 */
 #define JK_RETRIES 2
 
-/** First message in a stream-based connection. If the first send
-    fails, try to reconnect.
-*/
+
 static int JK_METHOD
-jk2_worker_ajp13_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
-                                  jk_ws_service_t *s,
-                                  jk_endpoint_t   *e )
+jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
+                              jk_ws_service_t *s,
+                              jk_endpoint_t   *e )
 {
-    int attempt;
     int err=JK_OK;
+    int attempt;
+
+    e->recoverable = JK_TRUE;
+    s->is_recoverable_error = JK_TRUE;
     
     /*
      * Try to send the request on a valid endpoint. If one endpoint
@@ -318,7 +319,6 @@ jk2_worker_ajp13_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "ajp13.service() failed to connect endpoint errno=%d %s\n",
                               errno, strerror( errno ));
-
                 e->worker->in_error_state=JK_TRUE;
                 return err;
             }
@@ -330,91 +330,77 @@ jk2_worker_ajp13_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
         if( e->worker->mbean->debug > 10 )
             e->request->dump( env, e->request, "Sent" );
         
-        if (err==JK_OK ) {
-            /* We sent the request, have valid endpoint */
-            break;
+        if (err!=JK_OK ) {
+            /* Can't send - bad endpoint, try again */
+
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "ajp13.service() error sending, reconnect %s %d %d %s\n",
+                          e->worker->channelName, err, errno, strerror(errno));
+            jk2_close_endpoint(env, e );
+            continue;
         }
 
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp13.service() error sending, reconnect %s %d %d %s\n",
-                      e->worker->channelName, err, errno, strerror(errno));
+        /* We should have a channel now, send the post data */
+        
+        /* Prepare to send some post data ( ajp13 proto ). We do that after the
+           request was sent ( we're receiving data from client, can be slow, no
+           need to delay - we can do that in paralel. ( not very sure this is
+           very usefull, and it brakes the protocol ) ! */
+        if (s->is_chunked || s->left_bytes_to_send > 0) {
+            /* We never sent any POST data and we check it we have to send at
+             * least of block of data (max 8k). These data will be kept in reply
+             * for resend if the remote Tomcat is down, a fact we will learn only
+             * doing a read (not yet) 
+             */
+            if( attempt==0 )
+                err=jk2_serialize_postHead( env, e->post, s, e );
+            
+            if( e->worker->mbean->debug > 10 )
+                e->request->dump( env, e->request, "Post head" );
+            
+            if (err != JK_OK ) {
+                /* the browser stop sending data, no need to recover */
+                /* e->recoverable = JK_FALSE; */
+                s->is_recoverable_error = JK_FALSE;
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "ajp13.service() Error receiving initial post \n");
+                return JK_ERR;
+            }
+            err= e->worker->channel->send( env, e->worker->channel, e,
+                                           e->post );
+            if( err != JK_OK ) {
+                /* e->recoverable = JK_FALSE; */
+                s->is_recoverable_error = JK_FALSE;
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "ajp13.service() Error receiving initial post \n");
+                return JK_ERR;
+            }
+        }
 
-        channel->close( env, channel, e );
-        e->sd=-1;
-    }
-    return JK_OK;
-}
-
-
-static int JK_METHOD
-jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
-                              jk_ws_service_t *s,
-                              jk_endpoint_t   *e )
-{
-    int err;
-
-    e->recoverable = JK_TRUE;
-    s->is_recoverable_error = JK_TRUE;
-
-    err=jk2_worker_ajp13_sendAndReconnect( env, worker, s, e );
-    if( err!=JK_OK )
-        return err;
-    
-    /* We should have a channel now, send the post data */
-
-    /* Prepare to send some post data ( ajp13 proto ). We do that after the
-     request was sent ( we're receiving data from client, can be slow, no
-     need to delay - we can do that in paralel. ( not very sure this is
-     very usefull, and it brakes the protocol ) ! */
-    if (s->is_chunked || s->left_bytes_to_send > 0) {
-        /* We never sent any POST data and we check it we have to send at
-	 * least of block of data (max 8k). These data will be kept in reply
-	 * for resend if the remote Tomcat is down, a fact we will learn only
-	 * doing a read (not yet) 
-	 */
-        err=jk2_serialize_postHead( env, e->post, s, e );
-
-        if( e->worker->mbean->debug > 10 )
-            e->request->dump( env, e->request, "Post head" );
-
-        if (err != JK_OK ) {
-            /* the browser stop sending data, no need to recover */
-            e->recoverable = JK_FALSE;
+        
+        err = e->worker->workerEnv->processCallbacks(env, e->worker->workerEnv,
+                                                     e, s);
+        
+        /* if we can't get reply, check if no recover flag was set 
+         * if is_recoverable_error is cleared, we have started received 
+         * upload data and we must consider that operation is no more recoverable
+         */
+        if (err!=JK_OK && ! e->recoverable ) {
             s->is_recoverable_error = JK_FALSE;
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp13.service() Error receiving initial post \n");
+                          "ajp13.service() ajpGetReply unrecoverable error %d\n",
+                          err);
             return JK_ERR;
         }
-        err= e->worker->channel->send( env, e->worker->channel, e,
-                                       e->post );
+        
         if( err != JK_OK ) {
-            e->recoverable = JK_FALSE;
-            s->is_recoverable_error = JK_FALSE;
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp13.service() Error receiving initial post \n");
-            return JK_ERR;
-        }
-    }
-
-    err = e->worker->workerEnv->processCallbacks(env, e->worker->workerEnv,
-                                                 e, s);
-    
-    /* if we can't get reply, check if no recover flag was set 
-     * if is_recoverable_error is cleared, we have started received 
-     * upload data and we must consider that operation is no more recoverable
-     */
-    if (! e->recoverable) {
-        s->is_recoverable_error = JK_FALSE;
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp13.service() ajpGetReply unrecoverable error %d\n",
-                      err);
-        return JK_ERR;
-    }
-
-    if( err != JK_OK ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp13.service() ajpGetReply recoverable error %d\n",
-                      err);
+                          "ajp13.service() ajpGetReply recoverable error %d\n",
+                          err);
+            jk2_close_endpoint(env, e ); 
+       }
+        if( err==JK_OK )
+            return err;
     }
     return err;
 }
@@ -534,7 +520,7 @@ jk2_worker_ajp13_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
         return JK_ERR;
     }
     
-    if( ! e->recoverable ||  w->in_error_state ) {
+    if( w->in_error_state ) {
         jk2_close_endpoint(env, e);
         /*     if( w->mbean->debug > 0 )  */
         env->l->jkLog(env, env->l, JK_LOG_INFO,

@@ -358,7 +358,6 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
     
     while(sent < len) {
         int this_time = write(sd, (char *)b + sent , len - sent);
-        fprintf(stderr, "WRITE: %d %d %d\n", this_time, len, errno);
 	if(0 == this_time) {
 	    return -2;
 	}
