@@ -40,13 +40,12 @@
 #endif
 
 #define TEST_POST_DATA "This document is a proposal of evolution of the current " \
-                       "Apache JServ Protocol version 1.3, also known as ajp13. "
+                       "Apache JServ Protocol version 1.3, also known as ajp13. " \
+                       "I'll not cover here the full protocol but only the add-on from ajp13. " \
+                       "This nth pass include comments from the tomcat-dev list and " \
+                       "misses discovered during developpment."
 
-//"I'll not cover here the full protocol but only the add-on from ajp13. " \
-//                       "This nth pass include comments from the tomcat-dev list and " \
-//                       "misses discovered during developpment."
-
-#define TEST_CASE_URL "http://localhost/servlets-examples/HelloWorldExample"
+#define TEST_CASE_URL "http://localhost/servlets-examples/servlet/RequestHeaderExample"
 
 /* Main process */
 static process_rec *main_process;
@@ -196,7 +195,7 @@ int main(int argc, const char * const * argv, const char * const *env)
     /* 0. Fill in the request data          */
     if (ap_wrap_make_request(r, TEST_CASE_URL,
                              "POST",
-                             "application/x-www-form-urlencoded",
+                             NULL, //"application/x-www-form-urlencoded",
                              NULL,
                              sizeof(TEST_POST_DATA) - 1,
                              TEST_POST_DATA) != APR_SUCCESS) {
@@ -223,6 +222,7 @@ int main(int argc, const char * const * argv, const char * const *env)
         goto finished;
     }
     /* 3. Send AJP message                  */
+
     ajp_alloc_data_msg(r, &buf, &len, &msg);
 
     /* Send the initial POST BODY */
@@ -234,9 +234,11 @@ int main(int argc, const char * const * argv, const char * const *env)
     if (ap_should_client_block(r)) {
         len = ap_get_client_block(r, buf, len);
     }
+    else
+        len = ap_get_client_block(r, buf, len);
+
 
     ajp_send_data_msg(sock, r, msg, len);
-
 
     /* 4. Read AJP response                 */
     if ((rc = ajp_read_header(sock, r, &msg)) != APR_SUCCESS) {
@@ -245,9 +247,23 @@ int main(int argc, const char * const * argv, const char * const *env)
         goto finished;
     }
 
-    /* 5. Display results                   */
+    ajp_msg_create(r->pool, &msg);
+    ajp_msg_reset(msg);
+    ajp_ilink_receive(sock, msg);
 
+    /* 5. Display results                   */
+#if 1
     ajp_msg_dump(msg, "");
+#endif
+    {
+        /* XXX we will need a function for this */
+        apr_byte_t t;
+        /* Get Type */
+        ajp_msg_get_byte(msg, &t);
+        fprintf(stdout, "Message Len Type %d should be (SC_BODY_CHUNK 3)\n", t);
+        ajp_msg_get_string(msg, &buf);
+        fputs(buf, stdout);
+    }
     /* 6. Release the connection            */
 
 
