@@ -192,7 +192,7 @@ public final class Ajp13Connector
      * Timeout value on the incoming connection.
      * Note : a value of 0 means no timeout.
      */
-    private int connectionTimeout = 60000;
+    private int connectionTimeout = -1;
 
 
     /**
