@@ -92,7 +92,7 @@ public class WarpEngine extends ContainerBase implements Engine {
     private String mapper="org.apache.catalina.connector.warp.WarpEngineMapper";
 
     // ------------------------------------------------------------ CONSTRUCTOR
-    
+
     /**
      * Create a new WarpEngine component with the default basic Valve.
      */

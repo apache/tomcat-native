@@ -88,16 +88,16 @@ public class WarpConnection implements Lifecycle, Runnable {
     private String name=null;
     /** Wether we started or not. */
     private boolean started=false;
-    
+
     // -------------------------------------------------------- BEAN PROPERTIES
 
     /** The socket used in this connection. */
     private Socket socket=null;
     /** The connector wich created this connection. */
     private WarpConnector connector=null;
-    
+
     // ------------------------------------------------------------ CONSTRUCTOR
-    
+
     /**
      * Create a new WarpConnection instance.
      */
@@ -131,7 +131,7 @@ public class WarpConnection implements Lifecycle, Runnable {
         try {
             // Open the socket InputStream
             in=this.socket.getInputStream();
-            
+
             // Read packets
             while(this.started) {
                 // RID number
@@ -206,7 +206,7 @@ public class WarpConnection implements Lifecycle, Runnable {
             throw new LifecycleException("Null socket");
         if (this.connector==null)
             throw new LifecycleException("Null connector");
-        
+
         // Register the WarpConnectionHandler for RID=0 (connection)
         WarpHandler h=new WarpConnectionHandler();
         h.setConnection(this);
@@ -265,7 +265,7 @@ public class WarpConnection implements Lifecycle, Runnable {
             this.log(e);
             throw new LifecycleException("Closing connection "+this.name,e);
         }
-        
+
         this.socket=null;
         // Log this step
         this.log("Connection closed");
@@ -374,4 +374,3 @@ public class WarpConnection implements Lifecycle, Runnable {
         if (DEBUG) WarpDebug.debug(this,exc);
     }
 }
-    

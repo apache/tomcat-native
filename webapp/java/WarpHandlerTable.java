@@ -71,13 +71,13 @@ public class WarpHandlerTable {
 
     /** The current size of our arrays. */
     private int size;
-    
+
     /** The number of elements present in our arrays. */
     private int num;
-    
+
     /** The array of handlers. */
     private WarpHandler handlers[];
-    
+
     /** The array of rids. */
     private int rids[];
 
@@ -164,7 +164,7 @@ public class WarpHandlerTable {
         this.handlers[this.num]=handler;
         this.rids[this.num]=rid;
         this.num++;
-        
+
         // Whohoo!
         return(true);
     }
@@ -192,7 +192,7 @@ public class WarpHandlerTable {
                 // Now we want to see if we need to shrink our arrays (we don't
                 // want them to grow indefinitely in case of peak data storage)
                 // We check the number of available positions against the value
-                // of defaultsize*2, so that our free positions are always 
+                // of defaultsize*2, so that our free positions are always
                 // between 0 and defaultsize*2 (this will reduce the number of
                 // System.arraycopy() calls. Even after the shrinking is done
                 // we still have defaultsize positions available.
@@ -210,7 +210,7 @@ public class WarpHandlerTable {
                     this.handlers=newhandlers;
                     this.rids=newrids;
                 }
-                
+
                 // The handler and its rid were removed, and if necessary the
                 // arrays were shrunk. We just need to return the old handler.
                 return(oldhandler);
@@ -220,7 +220,7 @@ public class WarpHandlerTable {
         // Not found.
         return(null);
     }
-    
+
     /**
      * Return the array of WarpHandler objects present in this table.
      *

@@ -99,4 +99,3 @@ public class WarpConstants {
     public static final int TYP_REQINIT_ERR = 0x0001E;
     public static final int TYP_REQINIT_ACK = 0x0001F;
 }
-                                                

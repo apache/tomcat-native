@@ -74,7 +74,7 @@ public class WarpPacket {
 
     /** The current position in the buffer. */
     private int pos;
-    
+
     public WarpPacket() {
         super();
         this.buf=new byte[defaultsize];
@@ -113,14 +113,13 @@ public class WarpPacket {
         System.arraycopy(k,0,this.buf,this.pos,k.length);
         this.pos+=k.length;
     }
-    
+
     public byte[] getBuffer() {
         return(this.buf);
     }
-    
+
     public int getLength() {
         return(this.pos);
     }
-    
+
 }
-    

@@ -78,7 +78,6 @@ public abstract class WarpHandler implements Lifecycle, Runnable {
     /** Our debug flag status (Used to compile out debugging information). */
     protected static final boolean DEBUG=WarpDebug.DEBUG;
 
-
     // -------------------------------------------------------- LOCAL VARIABLES
 
     /** The lifecycle event support for this component. */
@@ -101,9 +100,7 @@ public abstract class WarpHandler implements Lifecycle, Runnable {
     /** The WARP RID associated with this WarpHandler. */
     private int rid=-1;
 
-
     // ------------------------------------------------------------ CONSTRUCTOR
-    
 
     /**
      * Construct a new instance of a WarpHandler.
@@ -152,7 +149,7 @@ public abstract class WarpHandler implements Lifecycle, Runnable {
             // and go back to sleep.
             if (this.processed) continue;
 
-            // The processed flag is set to false, so we need to handle the 
+            // The processed flag is set to false, so we need to handle the
             // type and buffer to the process() method. If this method
             // returns true, we have some more packets to process before
             // terminating this method.
@@ -192,7 +189,7 @@ public abstract class WarpHandler implements Lifecycle, Runnable {
      */
     public final void start()
     throws LifecycleException {
-        if (this.connection==null) 
+        if (this.connection==null)
             throw new LifecycleException("Null connection");
         if (this.rid<0)
             throw new LifecycleException("Invalid handler request ID");
@@ -305,7 +302,7 @@ public abstract class WarpHandler implements Lifecycle, Runnable {
      * <br>
      * This method will return true if another packet is expected for this
      * RID, or it will return false if this was the last packet for this RID.
-     * When we return false this handler is unregistered, and the Thread 
+     * When we return false this handler is unregistered, and the Thread
      * started in the init() method is terminated.
      *
      * @param type The WARP packet type.
@@ -401,6 +398,3 @@ public abstract class WarpHandler implements Lifecycle, Runnable {
         if (DEBUG) WarpDebug.debug(this,exc);
     }
 }
-
-    
-    

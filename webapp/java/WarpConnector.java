@@ -118,7 +118,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     private String appbase="";
 
     // ------------------------------------------------------------ CONSTRUCTOR
-    
+
     public WarpConnector() {
         super();
         this.lifecycle=new LifecycleSupport(this);
@@ -127,7 +127,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
 
     // --------------------------------------------------------- PUBLIC METHODS
 
-    /** 
+    /**
      * Run the acceptor thread, the thread that will wait on the server socket
      * and create new connections.
      */
@@ -181,7 +181,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         // Validate and update our current state
         if (started)
             throw new LifecycleException("Connector already started");
-    
+
         // We're starting
         lifecycle.fireLifecycleEvent(START_EVENT, null);
         this.started=true;
@@ -208,7 +208,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         // We're stopping
         lifecycle.fireLifecycleEvent(STOP_EVENT, null);
         started = false;
-        
+
         // Close the server socket
         try {
             this.socket.close();
@@ -341,23 +341,22 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      * Return the port number on which we listen for HTTP requests.
      */
     public int getPort() {
-    	return(this.port);
+        return(this.port);
     }
-
 
     /**
      * Set the port number on which we listen for HTTP requests.
      */
     public void setPort(int port) {
         if (DEBUG) this.debug("Setting port to "+port);
-    	this.port=port;
+        this.port=port;
     }
 
     /**
      * Return the accept count for this Connector.
      */
     public int getAcceptCount() {
-    	return (this.acceptcount);
+        return (this.acceptcount);
     }
 
     /**
@@ -367,7 +366,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      */
     public void setAcceptCount(int acceptcount) {
         if (DEBUG) this.debug("Setting accept count to "+acceptcount);
-    	this.acceptcount=acceptcount;
+        this.acceptcount=acceptcount;
     }
 
     /**
@@ -375,7 +374,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      * pathname, a relative pathname, or a URL.
      */
     public String getAppBase() {
-    	return (this.appbase);
+        return (this.appbase);
     }
 
     /**
@@ -385,8 +384,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     public void setAppBase(String appbase) {
         if (appbase==null) return;
         if (DEBUG) this.debug("Setting application root to "+appbase);
-    	String old=this.appbase;
-    	this.appbase=appbase;
+        String old=this.appbase;
+        this.appbase=appbase;
     }
 
     // ------------------------------------------ LOGGING AND DEBUGGING METHODS

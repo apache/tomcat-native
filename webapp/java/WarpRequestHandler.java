@@ -82,7 +82,7 @@ public class WarpRequestHandler extends WarpHandler {
      * <br>
      * This method will return true if another packet is expected for this
      * RID, or it will return false if this was the last packet for this RID.
-     * When we return false this handler is unregistered, and the Thread 
+     * When we return false this handler is unregistered, and the Thread
      * started in the init() method is terminated.
      *
      * @param type The WARP packet type.
@@ -143,4 +143,3 @@ public class WarpRequestHandler extends WarpHandler {
         }
     }
 }
-    

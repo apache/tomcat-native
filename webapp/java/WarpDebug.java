@@ -76,14 +76,14 @@ public class WarpDebug {
     private static Object synchronizer=new Object();
 
     // ------------------------------------------------------------ CONSTRUCTOR
-    
+
     /**
      * Deny construction.
      */
     private WarpDebug() {
         super();
     }
-    
+
     // --------------------------------------------------------- PUBLIC METHODS
 
     /**
