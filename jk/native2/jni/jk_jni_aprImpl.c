@@ -100,6 +100,18 @@ static apr_pool_t *jniAprPool;
 static jk_workerEnv_t *workerEnv;
 static int jniDebug=0;
 
+#define JK_GET_REGION 1
+#define JK_GET_BYTE_ARRAY_ELEMENTS 2
+#define JK_DIRECT_BUFFER_NIO 3
+
+static int arrayAccessMethod=JK_GET_REGION;
+
+JNIEXPORT void JNICALL 
+Java_org_apache_jk_apr_AprImpl_setArrayAccessMode(JNIEnv *jniEnv, jobject _jthis, jint mode)
+{
+    arrayAccessMethod=mode;
+}
+
 /* -------------------- Apr initialization and pools -------------------- */
 
 JNIEXPORT jint JNICALL 
@@ -527,26 +539,27 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
         return JK_ERR;
     }
         
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, data, &iscopy);
-
-    if( iscopy )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "aprImpl.jkInvoke() get java bytes iscopy %d\n", iscopy);
-
-    if(nbuf==NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "jkInvoke() NullPointerException 2\n");
-	return -1;
+    if( arrayAccessMethod == JK_GET_BYTE_ARRAY_ELEMENTS ) {
+        nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, data, &iscopy);
+        if( iscopy )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "aprImpl.jkInvoke() get java bytes iscopy %d\n", iscopy);
+        
+        if(nbuf==NULL) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                          "jkInvoke() NullPointerException 2\n");
+            return -1;
+        }
+        if( raw==0 ) {
+            ep->reply->reset(env, ep->reply);
+        }
+        
+        oldBuf=ep->reply->buf;
+        ep->reply->buf = nbuf;
+    } else if ( arrayAccessMethod == JK_GET_REGION ) {
+        (*jniEnv)->GetByteArrayRegion( jniEnv, data, off, len, ep->reply->buf );
     }
-    
-    if( raw==0 ) {
-        ep->reply->reset(env, ep->reply);
-    }
-
-    //    memcpy( ep->reply->buf, nbuf , len );
-    oldBuf=ep->reply->buf;
-    ep->reply->buf = nbuf;
-
+        
     
     if( raw == 0 ) {
         rc=ep->reply->checkHeader( env, ep->reply, ep );
@@ -565,9 +578,10 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
         return JK_ERR;
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                  "jkInvoke() component dispatch %d %d %p\n", rc, code, bean->invoke);
-
+    if( bean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jkInvoke() component dispatch %d %d %p\n", rc, code, bean->invoke);
+    
     if( bean->invoke != NULL ) {
         rc=bean->invoke( env, bean, ep, code, ep->reply, raw );
     } else {
@@ -575,12 +589,35 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
          locate a handler. Deprecated, use the invoke() method  ! */
         rc=workerEnv->dispatch( env, workerEnv, target, ep, code, ep->reply ); 
     }
-    /* XXX Copy back the response, if any */
 
+    /* Copy back the response, if any */
+
+    if( arrayAccessMethod == JK_GET_BYTE_ARRAY_ELEMENTS ) {
+        if( rc == JK_INVOKE_WITH_RESPONSE ) {
+            (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, JNI_ABORT );
+            rc=JK_OK;
+        } else {
+            (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, 0);
+        }
+        ep->reply->buf=oldBuf;
+    } else if ( arrayAccessMethod == JK_GET_REGION ) {
+        if( rc == JK_INVOKE_WITH_RESPONSE ) {
+            /*   env->l->jkLog(env, env->l, JK_LOG_INFO, */
+            /*                "jkInvoke() release %d %d %p\n", */
+            /*                ep->reply->pos, ep->reply->len , ep->reply->buf ); */
+            (*jniEnv)->SetByteArrayRegion( jniEnv, data, 0, ep->reply->len + 4 , ep->reply->buf );
+            rc=JK_OK;
+        }
+    } 
+
+    if( (*jniEnv)->ExceptionCheck( jniEnv ) ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jkInvoke() component dispatch %d %d %p\n", rc, code, bean->invoke);
+        (*jniEnv)->ExceptionDescribe( jniEnv );
+        /* Not needed if Describe is used.
+            (*jniEnv)->ExceptionClear( jniEnv ) */
+    }
     
-    (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, 0);
-    ep->reply->buf=oldBuf;
-
     /*     env->l->jkLog(env, env->l, JK_LOG_INFO, "jkInvoke() done\n"); */
 
     return rc;
