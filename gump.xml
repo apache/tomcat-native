@@ -93,5 +93,10 @@
          from="Craig McClanahan &lt;craigmcc@apache.org&gt;"/>
   </project>
 
+  <project name="jakarta-tomcat-jk2-native">
+    <ant basedir="jk/native2" target="all" >
+    </ant>
+    <depend project="jakarta-ant" />
+  </project>
   
 </module>
