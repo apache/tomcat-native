@@ -70,7 +70,6 @@ import org.apache.tomcat.util.IntrospectionUtils;
 import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.log.*;
-import org.apache.tomcat.util.compat.*;
 import org.apache.tomcat.util.net.*;
 import org.apache.coyote.*;
 

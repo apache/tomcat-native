@@ -72,7 +72,6 @@ import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.net.*;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 import org.apache.tomcat.util.log.*;
-import org.apache.tomcat.util.compat.*;
 import org.apache.tomcat.modules.server.PoolTcpConnector;
 import org.apache.coyote.Adapter;
 import org.apache.coyote.Processor;

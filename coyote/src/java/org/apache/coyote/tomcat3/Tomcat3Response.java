@@ -71,7 +71,6 @@ import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.net.*;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 import org.apache.tomcat.util.log.*;
-import org.apache.tomcat.util.compat.*;
 
 
 /** The Response to connect with Coyote.
