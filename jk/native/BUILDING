@@ -1,0 +1,143 @@
+ 
+  Building from the cvs tree: (for developers only).
+  -----------------------------------
+  When using a cvs tree buildconf.sh must be run before configure.
+  The today version of buildconf.sh build the following files:
+  libtool files in scripts/build/unix (should copy them?).
+  Makefile.in from Makefile.am
+  aclocal.m4 from different m4 files located in the local machine.
+  configure from configure.in and aclocal.m4.
+  If you see error message from automake, don't care about them.
+
+
+  Building using configure
+  ------------------------
+ 
+  It is possible to use autoconf for configuration and installation.
+  To create jakarta-tomcat-connectors's autoconf script, you will need libtool
+  1.3.3 or higher, and autoconf 2.13 or newer.
+  Those tools will not be required if you are just
+  using a package downloaded from apache.org, they are only required for
+  developers.
+ 
+  To configure jakarta-tomcat-connectors run the following commands.
+ 
+  ./buildconf.sh  (not required unless you are a developer)
+  ./configure [autoconf arguments] [jakarta-tomcat-connectors arguments]
+  make
+
+  It is possible to set CFLAGS and LDFLAGS to add some platform specifics:
+  LDFLAGS=-lc \
+  ./configure -with-apxs=/home2/local/apache/bin/apxs
+
+  
+  Build for both Apache 1.3 and 2.0
+  ---------------------------------
+
+  If you want to build mod_jk for Apache 1.3 and 2.0, you should :
+
+  use configure and indicate Apache 1.3 apxs location (--with-apxs)
+  use make
+  copy the mod_jk binary to the apache modules location
+
+  make clean (to remove all previously compiled modules)
+  use configure and indicate Apache 2.0 apxs location,
+  then make.
+
+  ./configure --with-apxs=/usr/sbin/apxs
+  make
+  cp ./apache-1.3/mod_jk.so /usr/lib/apache
+  make clean
+  ./configure --with-apxs=/usr/sbin/apxs2
+  make 
+  cp ./apache-2.0/mod_jk.so /usr/lib/apache2
+   
+
+  Examples
+  --------
+
+  Apache2.0, JNI support:
+
+  ./configure --with-apxs=/opt/apache2/bin/apxs --with-java-home=${JAVA_HOME} --with-java-platform=2 -enable-jni
+
+  Apache 1.3, no JNI support:
+
+  ./configure --with-apxs=/usr/sbin/apxs 
+
+  jakarta-tomcat-connectors arguments
+  -----------------------------------
+  JVM related parameters:
+  --with-java-home=DIR
+  DIR is the  patch to the JDK root directory. Something like: /opt/java/jdk12
+  --with-os-type[=SUBDIR] 
+  SUBDIR is the os-type subdirectory, normaly configure should guess it
+  correctly.
+  --with-arch-type[=SUBDIR]
+  SUBDIR is the arch subdirectory, normaly configure should guess it correctly. 
+  --with-java-platform=VAL
+  VAL is the Java platform 1 is 1.1.x and 2 is 1.2.x. It is guessed correctly.
+  
+  Apache related parameters:
+  --with-apxs[=FILE]
+  FILE is the location of the apxs tool. Default is finding apxs in PATH.
+  It builds a shared Apache module. It detects automaticly the Apache version.
+  (2.0 and 1.3)
+* --with-apache=DIR
+  DIR is the path where apache sources are located.
+  The apache sources should have been configured before configuring mod_jk.
+  DIR is something like: /home/apache/apache_1.3.19
+  It builds a static Apache module.
+  --enable-EAPI
+  This parameter is needed when using Apache-1.3 and mod_ssl, otherwise you
+  will get the error message: "this module might crash under EAPI!" when
+  loading libjk.so in httpd.
+
+  JNI support:
+  --enable-jni
+  Build the jni_connect.so and the JNI worker.
+
+* Static build need more tests, and we strongly recommand dynamic build
+  using DSO/APXS.
+
+
+  Installation
+  ------------
+
+  The mod_jk binary will be in :
+
+  ./apache-1.3/mod_jk.so if you select to build mod_jk for apache 1.3
+
+  ./apache-2.0/mod_jk.so if you select to build mod_jk for apache 2.0
+
+
+
+  Misc notes 
+  ----------
+
+  HP-UX build notes :
+
+  If you plan to use GCC on HP-UX to build mod_jk, be sure to 
+  have -DHPUX11GCC defined (usually by setting CLAGS before configure)
+
+  Reports are that the stripped down cc version that ships with
+  HP-UX won't be able to works, you should habe the HP add-on ANSI C 
+  Compiler package.
+
+  A good repository for HP-UX gnu tools is :
+
+  http://gatekeep.cs.utah.edu/
+
+
+  Solaris build notes :
+
+  the build should works with the GNU gcc compiler, on both
+  SPARC and x86 architecture systems.
+
+  A good repository for Solaris gnu tools is :
+
+  http://www.sunfreeware.com/
+
+  Be carefull when mixing native compiler and gnu compiler, and
+  ensure that apache and mod_jk will be compiled and linked with
+  the same tools (ie full Solaris or full GNU)
+
