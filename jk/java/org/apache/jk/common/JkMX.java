@@ -168,7 +168,7 @@ public class JkMX extends JkHandler
                 // starts the server
                 mserver.invoke(serverName, "start", null, null);
 
-                log.info( "Started MX4J console on " + port);
+                log.info( "Started MX4J console on host " + host + " at port " + port);
                 //return;
 
                 adapterLoaded = true;
@@ -214,7 +214,7 @@ public class JkMX extends JkHandler
                 // Registers the JRMP adaptor in JNDI and starts it
                 mserver.invoke(adaptor, "start", null, null);
                 //   mbean.start();
-                log.info( "Creating " + adaptor );
+                log.info( "Creating " + adaptor + " on host " + jrmphost + " at port " + jrmpport);
 
                 adapterLoaded = true;
 
@@ -229,7 +229,7 @@ public class JkMX extends JkHandler
                 Class c=Class.forName( "com.sun.jdmk.comm.HtmlAdaptorServer" );
                 Object o=c.newInstance();
                 serverName=new ObjectName("Adaptor:name=html,port=" + port);
-                log.info("Registering the JMX_RI html adapter " + serverName);
+                log.info("Registering the JMX_RI html adapter " + serverName + " at port " + port);
                 mserver.registerMBean(o,  serverName);
 
                 mserver.setAttribute(serverName,
