@@ -55,6 +55,7 @@
     <ant basedir="coyote">
       <property name="catalina.home" reference="home" 
         project="jakarta-tomcat-catalina"/> 
+      <property name="tomcat33.home" value=""/>
     </ant>
 
     <depend project="jakarta-ant"/>

@@ -73,6 +73,8 @@ import org.apache.tomcat.util.http.Parameters;
 import org.apache.tomcat.util.http.ContentType;
 import org.apache.tomcat.util.http.Cookies;
 
+import java.net.Socket;
+
 /**
  * This is a low-level, efficient representation of a server request. Most 
  * fields are GC-free, expensive operations are delayed until the  user code 
@@ -184,6 +186,9 @@ public final class Request {
 
     private Response response;
     private ActionHook hook;
+
+    private Socket socket;
+
     // ------------------------------------------------------------- Properties
 
 
@@ -203,10 +208,21 @@ public final class Request {
         return headers;
     }
 
+    /* Used to associate this Request with a socket.  Used later to do
+       SSL related stuff. */
+    public Socket getSocket() {
+        return this.socket;
+    }
+
+    public void setSocket(Socket socket) {
+        this.socket = socket;
+    }
+
 
     public UDecoder getURLDecoder() {
         return urlDecoder;
     }
+
 
     // -------------------- Request data --------------------
 

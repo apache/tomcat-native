@@ -602,8 +602,10 @@ public class Http11Processor implements Processor, ActionHook {
         http11 = true;
         http09 = false;
         contentDelimitation = false;
-        if (sslSupport != null)
+        if (sslSupport != null) {
             request.scheme().setString("https");
+            request.setSocket( socket );
+        }
 
         MessageBytes protocolMB = request.protocol();
         if (protocolMB.equals(Constants.HTTP_11)) {
