@@ -118,6 +118,12 @@ struct jk_uri_worker_map {
     unsigned            capacity;
 };
 
+int uri_worker_map_size(jk_uri_worker_map_t *uw_map ) {
+    if( uw_map == NULL ) 
+	return 0;
+    return uw_map->size;
+} 
+
 
 /*
  * We are now in a security nightmare, it maybe that somebody sent 
@@ -444,6 +450,9 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                         const char *uri,
                         jk_logger_t *l)
 {
+    if( uri_worker_map_size( uw_map ) <= 0 )
+	return NULL;
+
     jk_log(l, JK_LOG_DEBUG, 
            "Into jk_uri_worker_map_t::map_uri_to_worker\n");    
 
