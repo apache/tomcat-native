@@ -68,6 +68,7 @@ import org.apache.jk.common.*;
 
 import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.http.*;
+import org.apache.tomcat.util.IntrospectionUtils;
 
 /** Main class used for testing jk core and common code and tunning.
  *
@@ -78,12 +79,10 @@ public class JkMain
 {
     WorkerEnv wEnv=new WorkerEnv();
     String propFile;
-    Properties props;
+    Properties props=new Properties();
 
     Worker defaultWorker;
     String jkHome;
-
-    Class channelclass;
 
     public JkMain()
     {
@@ -91,7 +90,6 @@ public class JkMain
 
     public void setPropFile( String p  ) {
         propFile=p;
-        props=new Properties();
         try {
             props.load( new FileInputStream(propFile) );
         } catch(IOException ex ){
@@ -99,8 +97,24 @@ public class JkMain
         }
     }
 
-    public void setProperties( Properties p ) {
-        props=p;
+    public void setProperty( String n, String v ) {
+        props.put( n, v );
+    }
+    
+    /**
+     * Set the <code>channelClassName</code> that will used to connect to
+     * httpd.
+     */
+    public void setChannelClassName(String name) {
+        props.put( "channel.default.className",name);
+    }
+
+    /**
+     * Set the <code>channelClassName</code> that will used to connect to
+     * httpd.
+     */
+    public void setWorkerClassName(String name) {
+        props.put( "worker.default.className",name);
     }
 
     public void setDefaultWorker( Worker w ) {
@@ -111,47 +125,98 @@ public class JkMain
         jkHome=s;
     }
 
-    public void setChannelClass( Class c ) {
-        channelclass = c;
-    }
-    
-    public void start() throws IOException {
-        Channel csocket=null;
+    private Object newInstance( String type, String name, String def )
+        throws IOException
+    {
         try {
-            csocket=(Channel)channelclass.newInstance();
+            String classN=props.getProperty( type + "." + name + ".className",
+                                             def );
+            Class channelclass = Class.forName(classN);
+            return channelclass.newInstance();
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new IOException("Cannot create channel class");
         }
+    }
+    
+    public void start() throws IOException
+    {
+        String workers=props.getProperty( "worker.list", "default" );
+        Vector workerNamesV= split( workers, ",");
 
-        // Set file.
-        if( jkHome==null )
-            csocket.setFile(  "/tmp/tomcatUnixSocket" );
-        else
-            csocket.setFile( jkHome + "/WEB-INF/tomcatUnixSocket" );
-        csocket.setJkHome( jkHome );
+        for( int i=0; i<workerNamesV.size(); i++ ) {
+            String name= (String)workerNamesV.elementAt( i );
+            Worker w=(Worker)newInstance( "worker", name,
+                                          "org.apache.jk.common.WorkerDummy");
+            
+            processProperties( w, "worker."+ name + "." );
 
-        // Set port number.
-        csocket.setPort( 8009 );
-
-        wEnv.addChannel( csocket );
-
-        if( defaultWorker == null ) 
-            defaultWorker=new WorkerDummy();
-
-        csocket.setWorker( defaultWorker );
-        wEnv.addWorker( defaultWorker );
+            wEnv.addWorker( name, w );
+        }
         
+        defaultWorker = wEnv.getWorker( "default" );
+
+        // XXX alternatives, setters, etc
+        String channels=props.getProperty( "channel.list", "default" );
+        Vector channelNamesV= split( channels, ",");
+
+        for( int i=0; i<channelNamesV.size(); i++ ) {
+            String name= (String)channelNamesV.elementAt( i );
+            Channel ch=(Channel)newInstance( "channel", name, 
+                                      "org.apache.jk.common.ChannelSocket");
+            processProperties( ch, "channel."+ name + "." );
+
+            if( jkHome != null )
+                this.setProperty( ch, "jkHome", jkHome );
+            
+            wEnv.addChannel( name, ch );
+            ch.setWorker( defaultWorker );
+        }
+
+        // channel and handler should _pull_ the worker from we
+
         HandlerRequest hReq=new HandlerRequest();
-        wEnv.addHandler( hReq );
         hReq.setWorker( defaultWorker );
-        
-        HandlerEcho hEcho=new HandlerEcho();
-        wEnv.addHandler( hEcho );
+        wEnv.addHandler( hReq );
         
         wEnv.start();
     }
 
+    /* A bit of magic to support workers.properties without giving
+       up the clean get/set
+    */
+    public void setProperty( Object target, String name, String val ) {
+        /* XXX we need an improved IntrospectionUtils, to report error
+           without d() */
+        d( "setProperty " + target + " " + name + "=" + val );
+        IntrospectionUtils.setProperty( target, name, val );
+    }
+
+    private void processProperties(Object o, String prefix) {
+        Enumeration keys=props.keys();
+        int plen=prefix.length();
+        
+        while( keys.hasMoreElements() ) {
+            String k=(String)keys.nextElement();
+            if( ! k.startsWith( prefix ) )
+                continue;
+
+            String name= k.substring( plen );
+            String propValue=props.getProperty( k );
+            if( "className".equals( name ) )
+                continue;
+            this.setProperty( o, name, propValue );
+        }
+    }
+
+    private Vector split(String s, String delim ) {
+         Vector v=new Vector();
+        StringTokenizer st=new StringTokenizer(s, delim );
+        while( st.hasMoreTokens() ) {
+            v.addElement( st.nextToken());
+        }
+        return v;
+    }
 
     public static void main(String args[]) {
         try {
