@@ -123,7 +123,9 @@ static int setup_http_headers(nsapi_private_data_t *private_data,
 static void init_workers_on_other_threads(void *init_d) 
 {
     jk_map_t *init_map = (jk_map_t *)init_d;
-    if(wc_open(init_map, logger)) {
+    /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+	/* but where are they here in Netscape ? */
+    if(wc_open(init_map, NULL, logger)) {
         init_on_other_thread_is_ok = JK_TRUE;
     } else {
         jk_log(logger, JK_LOG_EMERG, "In init_workers_on_other_threads, failed\n");

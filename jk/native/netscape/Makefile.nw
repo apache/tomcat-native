@@ -33,7 +33,11 @@ LINK=$(METROWERKSPATH)\bin\mwldnlm
 JK_OBJS=\
 	jk_ajp12_worker.obj \
 	jk_ajp13_worker.obj \
+	jk_ajp14_worker.obj \
 	jk_ajp13.obj \
+	jk_ajp14.obj \
+	jk_ajp_common.obj \
+	jk_md5.obj \
 	jk_connect.obj \
 	jk_jni_worker.obj \
 	jk_lb_worker.obj \
