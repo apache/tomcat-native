@@ -1383,6 +1383,27 @@ static const char *jk_add_env_var(cmd_parms * cmd,
     return NULL;
 }
 
+/*
+ * JkWorkerProperty Directive Handling
+ *
+ * JkWorkerProperty name=value
+ */
+
+static const char *jk_set_worker_property(cmd_parms * cmd,
+                                          void *dummy,
+                                          const char *line)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+    
+    if (jk_map_read_property(conf->worker_properties, line) == JK_FALSE)
+        return ap_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line);
+
+    return NULL;
+}
+
 static const command_rec jk_cmds[] = {
     /*
      * JkWorkersFile specifies a full path to the location of the worker 
@@ -1480,6 +1501,9 @@ static const command_rec jk_cmds[] = {
     {"JkEnvVar", jk_add_env_var, NULL, RSRC_CONF, TAKE2,
      "Adds a name of environment variable that should be sent to servlet-engine"},
 
+    {"JkWorkerProperty", jk_set_worker_property, NULL, RSRC_CONF, RAW_ARGS,
+     "Set worker.properties directive"},
+
     {NULL}
 };
 
@@ -1515,7 +1539,9 @@ static int jk_handler(request_rec * r)
         jk_worker_t *worker = wc_get_worker_for_name(worker_name, l);
 
         if (worker) {
+#ifndef NO_GETTIMEOFDAY
             struct timeval tv_begin, tv_end;
+#endif
             int rc = JK_FALSE;
             apache_private_data_t private_data;
             jk_ws_service_t s;
@@ -1773,21 +1799,28 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
 
     /*if(map_alloc(&init_map)) { */
 
-    if (jk_map_read_properties(init_map, conf->worker_file)) {
+    if (!jk_map_read_properties(init_map, conf->worker_file)) {
 
+        if (jk_map_size(init_map) == 0) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, NULL,
+                         "No worker file and no worker options in httpd.conf \n"
+                         "use JkWorkerFile to set workers\n");
+            return;
+        } 
+
+    }
 #if MODULE_MAGIC_NUMBER >= 19980527
         /* Tell apache we're here */
-        ap_add_version_component(JK_EXPOSED_VERSION);
+    ap_add_version_component(JK_EXPOSED_VERSION);
 #endif
 
-        /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
-        worker_env.uri_to_worker = conf->uw_map;
-        worker_env.virtual = "*";       /* for now */
-        worker_env.server_name = (char *)ap_get_server_version();
-        if (wc_open(init_map, &worker_env, conf->log)) {
-            /* we don't need this any more so free it */
-            return;
-        }
+    /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+    worker_env.uri_to_worker = conf->uw_map;
+    worker_env.virtual = "*";       /* for now */
+    worker_env.server_name = (char *)ap_get_server_version();
+    if (wc_open(init_map, &worker_env, conf->log)) {
+        /* we don't need this any more so free it */
+        return;
     }
 
     ap_log_error(APLOG_MARK, APLOG_ERR, NULL,
