@@ -112,7 +112,7 @@ static iis_thread_pool_t global_thread_pool = {0};
 /* Timeout for threads shutdown 2 minutes */
 #define SHUTDOWN_TIMEOUT     120000
 
-DWORD WINAPI thread_pool_manager(void *p)
+VOID WINAPI thread_pool_manager(void *p)
 {
     ULONG       n1, n2; 
     OVERLAPPED  *pOverLapped;
@@ -137,10 +137,11 @@ DWORD WINAPI thread_pool_manager(void *p)
             work = TRUE;
         }
     }
-    return 0;
+    /* Clean up and die. */
+    ExitThread(0); 
 }
 
-DWORD WINAPI thread_worker(void *p)
+VOID WINAPI thread_worker(void *p)
 {
     ULONG       n1, n2; 
     OVERLAPPED  *pOverLapped;    
@@ -174,7 +175,8 @@ DWORD WINAPI thread_worker(void *p)
             InterlockedDecrement(&thread->busy);
         }
     }
-    return 0;
+    /* Clean up and die. */
+    ExitThread(0); 
 }
 
 int jk2_iis_init_pool(jk_env_t *env)
@@ -211,7 +213,7 @@ int jk2_iis_init_pool(jk_env_t *env)
     /* Create the ThreadPool manager thread */
     global_thread_pool.manager_thread = CreateThread(NULL,
                                         0,
-                                        thread_pool_manager,
+                                        (LPTHREAD_START_ROUTINE)thread_pool_manager,
                                         NULL,
                                         0,
                                         &global_thread_pool.manager_id);
@@ -231,7 +233,7 @@ int jk2_iis_init_pool(jk_env_t *env)
         DWORD id;
         global_thread_pool.handles[i] = CreateThread(NULL,
                                         0,
-                                        thread_worker,
+                                        (LPTHREAD_START_ROUTINE)thread_worker,
                                         global_thread_pool.threads[i],
                                         0,
                                         &id);
