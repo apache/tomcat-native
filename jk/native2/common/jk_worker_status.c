@@ -186,7 +186,7 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
                 
     s->jkprintf(env, s, "<table border>\n");
 
-    for( i=1; i < wenv->shm->head->lastSlot; i++ ) {
+    for( i=0; i < wenv->shm->head->lastSlot; i++ ) {
         jk_shm_slot_t *slot= wenv->shm->getSlot( env, wenv->shm, i );
 
         if( slot==NULL ) continue;
