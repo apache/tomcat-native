@@ -92,7 +92,8 @@ public class MsgAjp extends Msg {
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( MsgAjp.class );
 
-    private byte buf[]=new byte[8300];
+    // that's the original buffer size in ajp13 - otherwise we'll get interoperability problems.
+    private byte buf[]=new byte[8*1024]; 
     // The current read or write position in the buffer
     private int pos;    
     /**
