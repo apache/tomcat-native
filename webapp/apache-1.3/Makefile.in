@@ -80,10 +80,11 @@ all: $(MODULE)
 mod_webapp.lo: mod_webapp.c @SRCDIR@/Makedefs
 	@$(ECHO) Compiling Apache 1.3 WebApp module
 	@$(SHELL) $(LIBTOOL) $(LTFLAGS) --mode=compile \
-		$(CC) $(CFLAGS) $(EXTRA_CFLAGS) \
-		$(APXS_CFLAGS) $(APXS_CFLAGS_SHLIB) \
-		-I$(APXS_INCLUDEDIR) $(CPPFLAGS) $(EXTRA_CPPFLAGS) \
-		-c $< -o $@
+		$(CC) $(CFLAGS) $(APXS_CFLAGS) \
+			$(APXS_CFLAGS_SHLIB) \
+			-I$(APXS_INCLUDEDIR) \
+			$(CPPFLAGS) \
+			-c $< -o $@
 
 mod_webapp.so: mod_webapp.lo @SRCDIR@/lib/libwebapp.la @APRDIR@/libapr.la
 	@$(ECHO) Linking Apache 1.3 WebApp Module
