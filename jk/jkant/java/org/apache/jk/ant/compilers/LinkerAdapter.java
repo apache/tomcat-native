@@ -75,18 +75,28 @@ import java.util.*;
  * reflection).</p>
  *
  * @author Jay Dickon Glanville <a href="mailto:jayglanville@home.com">jayglanville@home.com</a>
+ * @author Costin Manolache
  */
-public interface LinkerAdapter {
+public abstract class LinkerAdapter extends SoTask {
+    protected SoTask so;
 
     /**
      * Sets the compiler attributes, which are stored in the Javac task.
      */
-    void setSoTask( SoTask attributes );
+    public void setSoTask(SoTask so ) {
+	this.so=so;
+    }
+
+    public void execute() throws BuildException {
+	findSourceFiles();
+	link(this.srcList);
+    }
+
 
     /**
      * Executes the task.
      *
      * @return has the compilation been successful
      */
-    boolean link(Vector files) throws BuildException;
+    public abstract boolean link(Vector srcFiles) throws BuildException;
 }
