@@ -82,7 +82,7 @@ typedef struct
      * Virtual Server (if use)
      */
 
-    char *virtual;
+    char *virt;
 
     /*
      * Num of context handled (ie: examples, admin...)
@@ -109,13 +109,13 @@ jk_context_t;
  * functions defined here 
  */
 
-int context_set_virtual(jk_context_t *c, char *virtual);
+int context_set_virtual(jk_context_t *c, char *virt);
 
-int context_open(jk_context_t *c, char *virtual);
+int context_open(jk_context_t *c, char *virt);
 
 int context_close(jk_context_t *c);
 
-int context_alloc(jk_context_t **c, char *virtual);
+int context_alloc(jk_context_t **c, char *virt);
 
 int context_free(jk_context_t **c);
 

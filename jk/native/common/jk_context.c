@@ -29,14 +29,14 @@
  * Set the virtual name of the context 
  */
 
-int context_set_virtual(jk_context_t *c, char *virtual)
+int context_set_virtual(jk_context_t *c, char *virt)
 {
     if (c) {
 
-        if (virtual) {
-            c->virtual = jk_pool_strdup(&c->p, virtual);
+        if (virt) {
+            c->virt = jk_pool_strdup(&c->p, virt);
 
-            if (!c->virtual)
+            if (!c->virt)
                 return JK_FALSE;
         }
 
@@ -50,7 +50,7 @@ int context_set_virtual(jk_context_t *c, char *virtual)
  * Init the context info struct
  */
 
-int context_open(jk_context_t *c, char *virtual)
+int context_open(jk_context_t *c, char *virt)
 {
     if (c) {
         jk_open_pool(&c->p, c->buf, sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
@@ -58,7 +58,7 @@ int context_open(jk_context_t *c, char *virtual)
         c->capacity = 0;
         c->contexts = NULL;
 
-        return context_set_virtual(c, virtual);
+        return context_set_virtual(c, virt);
     }
 
     return JK_FALSE;
@@ -83,12 +83,12 @@ int context_close(jk_context_t *c)
  * Allocate and open context
  */
 
-int context_alloc(jk_context_t **c, char *virtual)
+int context_alloc(jk_context_t **c, char *virt)
 {
     if (c)
         return context_open(*c =
-                            (jk_context_t *)malloc(sizeof(jk_context_t)),
-                            virtual);
+                            (jk_context_t *)calloc(1, sizeof(jk_context_t)),
+                            virt);
 
     return JK_FALSE;
 }
