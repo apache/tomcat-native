@@ -466,9 +466,17 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->remote_host  = NULL_FOR_EMPTY(s->remote_host);
 
     s->remote_addr  = NULL_FOR_EMPTY(r->connection->remote_ip);
-    s->server_name  = (char *)(r->hostname ? r->hostname : r->server->server_hostname);
+
+    /* get server name */
+    /* s->server_name  = (char *)(r->hostname ? r->hostname : r->server->server_hostname); */
+    /* XXX : à la jk2 */
+	s->server_name  = ap_get_server_name(r);
     
-    s->server_port     = htons( r->connection->local_addr.sin_port );
+    /* get the real port (otherwise redirect failed) */
+    /* s->server_port     = htons( r->connection->local_addr.sin_port ); */
+    /* XXX : à la jk2 */
+	s->server_port  = ap_get_server_port(r);
+
     s->server_software = (char *)ap_get_server_version();
 
     s->method         = (char *)r->method;
