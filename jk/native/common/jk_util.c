@@ -567,29 +567,30 @@ int jk_file_exists(const char *f)
     return JK_FALSE;
 }
 
-int jk_is_path_poperty(const char *prp_name)
+static int jk_is_some_property(const char *prp_name, const char *suffix)
 {
-    char *path_suffix = "path";
-    if(prp_name && (strlen(prp_name) >= strlen(path_suffix))) {
-        const char *suffix = prp_name + strlen(prp_name) - strlen(path_suffix);
-        if(0 == strcmp(suffix, path_suffix)) {
-            return JK_TRUE;
+    if (prp_name && suffix) {
+		size_t prp_name_len = strlen(prp_name);
+		size_t suffix_len = strlen(suffix);
+		if (prp_name_len >= suffix_len) {
+			const char *prp_suffix = prp_name + prp_name_len - suffix_len;
+			if(0 == strcmp(suffix, prp_suffix)) {
+		        return JK_TRUE;
+			}
         }
     }
 
     return JK_FALSE;
 }
 
+int jk_is_path_poperty(const char *prp_name)
+{
+	return jk_is_some_property(prp_name, "path");
+}
+
 int jk_is_cmd_line_poperty(const char *prp_name)
 {
-    if(prp_name && (strlen(prp_name) >= strlen(CMD_LINE_OF_WORKER))) {
-        const char *suffix = prp_name + strlen(prp_name) - strlen(CMD_LINE_OF_WORKER);
-        if(0 == strcmp(suffix, CMD_LINE_OF_WORKER)) {
-            return JK_TRUE;
-        }
-    }
-
-    return JK_FALSE;
+	return jk_is_some_property(prp_name, CMD_LINE_OF_WORKER);
 }
 
 int jk_get_worker_stdout(jk_map_t *m, 
