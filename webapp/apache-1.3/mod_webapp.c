@@ -76,7 +76,7 @@
 /* Module declaration */
 module MODULE_VAR_EXPORT webapp_module;
 /* Wether the WebApp Library has been initialized or not */
-static wa_boolean wam_initialized=FALSE;
+static wa_boolean wam_initialized=wa_false;
 /* The list of configured connections */
 static wa_chain *wam_connections=NULL;
 /* The main server using for logging error not related to requests */
@@ -97,7 +97,7 @@ static void wam_startup(server_rec *s, pool *p) {
 static void wam_shutdown(void *nil) {
     if (!wam_initialized) return;
     wa_shutdown();
-    wam_initialized=FALSE;
+    wam_initialized=wa_false;
 }
 
 /* Initialize the module and the WebApp Library */
@@ -107,7 +107,7 @@ static const char *wam_init(pool *p) {
     if(wam_initialized) return(NULL);
     if ((ret=wa_init())!=NULL) return(ret);
     ap_register_cleanup(p,NULL,wam_shutdown,NULL);
-    wam_initialized=TRUE;
+    wam_initialized=wa_true;
     return(NULL);
 }
 
