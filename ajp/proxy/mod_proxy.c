@@ -28,8 +28,6 @@ APR_DECLARE_OPTIONAL_FN(int, ssl_proxy_enable, (conn_rec *));
 APR_DECLARE_OPTIONAL_FN(int, ssl_engine_disable, (conn_rec *));
 #endif
 
-module AP_MODULE_DECLARE_DATA proxy_module;
-
 #ifndef MAX
 #define MAX(x,y) ((x) >= (y) ? (x) : (y))
 #endif
@@ -626,29 +624,10 @@ static const char *
     char *r, *f, *scheme;
     regex_t *reg = NULL;
     int port;
-    char *lb;
-    int lbfactor = 0;
 
     r = apr_pstrdup(cmd->pool, r1);
     scheme = apr_pstrdup(cmd->pool, r1);
     f = apr_pstrdup(cmd->pool, f1);
-    lb = strchr(r, '(');
-    if (lb) {
-        char *rb;
-        if (!(rb = strchr(lb + 1, ')'))) {
-            if (regex)
-                return "ProxyRemoteMatch: Bad syntax for a remote proxy server (missing right brace)";
-            else
-                return "ProxyRemote: Bad syntax for a remote proxy server (missing right brace)";
-        }        
-        if (sscanf(lb + 1, "%d", &lbfactor) != 1 || lbfactor > 100 || lbfactor < 1) {
-            if (regex)
-                return "ProxyRemoteMatch: Bad syntax for a remote proxy server (bad lbfactor number)";
-            else
-                return "ProxyRemote: Bad syntax for a remote proxy server (bad lbfactor number)";
-        }
-        *lb = '\0';
-    }
     p = strchr(r, ':');
     if (p == NULL || p[1] != '/' || p[2] != '/' || p[3] == '\0') {
         if (regex)
@@ -693,7 +672,6 @@ static const char *
     new->port = port;
     new->regexp = reg;
     new->use_regex = regex;
-    new->lbfactor = lbfactor;
     return NULL;
 }
 
