@@ -1147,6 +1147,7 @@ static void jk_child_init(apr_pool_t *pconf,
         if(map_read_properties(init_map, conf->worker_file)) {
         /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
         worker_env.uri_to_worker = conf->uw_map;
+        worker_env.virtual       = "*";     /* for now */
         worker_env.server_name   = (char *)ap_get_server_version();
 	    if(wc_open(init_map, &worker_env, conf->log)) {
 		return;
