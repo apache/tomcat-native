@@ -436,7 +436,7 @@ int jk2_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
 
     while(rdlen < padded_len) {
         unsigned this_time = 0;
-        if(!s->read(env, s, buf + rdlen, len - rdlen, &this_time)) {
+        if(s->read(env, s, buf + rdlen, len - rdlen, &this_time)) {
             return -1;
         }
 
