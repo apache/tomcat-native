@@ -305,7 +305,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
                 if( jniModeSo!= null ) System.load( jniModeSo );
             } catch( Throwable ex ) {
                 // ignore
-                ex.printStackTrace();
+                //ex.printStackTrace();
                 return;
             }
             ok=true;
@@ -339,7 +339,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
             }
         } catch( Throwable ex ) {
             ok=false;
-            ex.printStackTrace();
+            //ex.printStackTrace();
             throw ex;
         }
     } 
