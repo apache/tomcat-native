@@ -96,7 +96,7 @@
 static apr_pool_t *globalShmPool;
 
 #define SHM_SET_ATTRIBUTE 0
-#define SHM_REGISTER_TOMCAT 2
+#define SHM_WRITE_SLOT 2
 #define SHM_ATTACH 3
 #define SHM_DETACH 4
 
@@ -257,10 +257,19 @@ jk_shm_slot_t *jk2_shm_createSlot(struct jk_env *env, struct jk_shm *shm,
 {
     /* For now all slots are equal size
      */
-    /* XXX interprocess sync */
-    int slotId=shm->head->lastSlot++;
+    int slotId;
+    jk_shm_slot_t *slot;
     
-    jk_shm_slot_t *slot= (void *)shm->image + slotId * shm->slotSize;
+    for( i=1; i<shm->head->lastSlot; i++ ) {
+        slot= shm->getSlot( env, shm, i );
+        if( strncmp( slot->name, name ) == 0 ) {
+            return slot;
+        }
+    }
+    /* New slot */
+    /* XXX interprocess sync */
+    slotId=shm->head->lastSlot++;
+    slot=shm->getSlot( env, shm, slotId );
     
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "shm.createSlot() Create %d %p %p\n", slotId, shm->image, slot );
@@ -327,11 +336,31 @@ static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_m
 
         return JK_OK;
     }
-    case SHM_REGISTER_TOMCAT: {
-
+    case SHM_WRITE_SLOT: {
+        char *instanceName=msg->getString( env, msg );
+        jk_shm_slot *slot;
+        
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "shm.registerTomcat() %s %d\n",
+                      instanceName, msg->len );
+        if( msg->len > shm->slotSize ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                          "shm.registerTomcat() Packet too large %d %d\n",
+                          shm->slotSize, msg->len );
+            return JK_ERR;
+        }
+        slot=shm->createSlot( env, shm, instanceName, 0 );
+        
+        /*  Copy the body in the slot */
+        memcpy( slot->data, msg->buf, msg->len );
+        slot->size=msg->len;
+        slot->ver++;
+        /* Update the head lb version number - that would triger
+           reconf on the next request */
+        shm->head->lbVer++;
         return JK_OK;
     }
-    }
+    }/* switch */
     return JK_ERR;
 }
 
