@@ -288,8 +288,8 @@ int jk_tcp_socket_recvfull(int sd,
  */
 char * jk_dump_hinfo(struct sockaddr_in *saddr, char * buf)
 {
-	unsigned long laddr = htonl(saddr->sin_addr.s_addr);
-	unsigned short lport = htons(saddr->sin_port);
+	unsigned long laddr = (unsigned long)htonl(saddr->sin_addr.s_addr);
+	unsigned short lport = (unsigned short)htons(saddr->sin_port);
 
 	sprintf(buf, "%d.%d.%d.%d:%d", 
 	        (int)(laddr >> 24), (int)((laddr >> 16) & 0xff), (int)((laddr >> 8) & 0xff), (int)(laddr & 0xff), (int)lport);
