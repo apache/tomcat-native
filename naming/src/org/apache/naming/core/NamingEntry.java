@@ -60,7 +60,7 @@
 
 package org.apache.naming.core;
 
-import javax.naming.directory.*;
+import javax.naming.directory.Attributes;
 
 /**
  * Represents a binding in a NamingContext. All jtc contexts should

@@ -60,10 +60,17 @@
 
 package org.apache.naming.core;
 
-import java.util.*;
-import javax.naming.*;
-import javax.naming.directory.DirContext;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
+import javax.naming.CompositeName;
+import javax.naming.InvalidNameException;
+import javax.naming.Name;
+import javax.naming.NameParser;
+import javax.naming.NamingException;
+import javax.naming.OperationNotSupportedException;
 import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
 
 import org.apache.tomcat.util.IntrospectionUtils;
 

@@ -60,7 +60,7 @@
 
 package org.apache.naming.core;
 
-import javax.naming.directory.*;
+import javax.naming.directory.BasicAttributes;
 
 /**
  * Extended version for Attribute. All our dirContexts should return objects

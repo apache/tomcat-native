@@ -60,11 +60,16 @@
 
 package org.apache.naming.core;
 
-import java.util.*;
-import javax.naming.*;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.Attributes;
+import java.util.Hashtable;
+
+import javax.naming.Name;
+import javax.naming.NameAlreadyBoundException;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.OperationNotSupportedException;
 import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 

@@ -1,6 +1,8 @@
 package org.apache.naming.core;
 
-import javax.naming.*;
+import javax.naming.Binding;
+import javax.naming.Context;
+import javax.naming.NamingException;
 
 /** This is used for both NameClass and Binding.
  * Lazy eval - so the extra methods in Binding don't affect us.

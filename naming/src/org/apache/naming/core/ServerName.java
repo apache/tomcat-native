@@ -60,7 +60,9 @@
 
 package org.apache.naming.core;
 
-import javax.naming.*;
+import javax.naming.CompositeName;
+import javax.naming.InvalidNameException;
+import javax.naming.Name;
 
 /**
  * Implementation of Name  with support for extra information.

@@ -61,7 +61,6 @@
 package org.apache.naming.core;
 
 import java.util.Hashtable;
-import javax.naming.NamingException;
 
 /**
  * Handles the access control on the JNDI contexts. All

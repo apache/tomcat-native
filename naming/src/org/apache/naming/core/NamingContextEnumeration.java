@@ -62,7 +62,12 @@ package org.apache.naming.core;
 
 
 import java.util.Enumeration;
-import javax.naming.*;
+
+import javax.naming.Binding;
+import javax.naming.Context;
+import javax.naming.NameClassPair;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 
 /**
  * Naming enumeration implementation.

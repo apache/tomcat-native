@@ -60,8 +60,16 @@
 
 package org.apache.naming.core;
 
-import java.util.*;
-import javax.naming.*;
+import java.util.Hashtable;
+
+import javax.naming.CompositeName;
+import javax.naming.Context;
+import javax.naming.Name;
+import javax.naming.NameParser;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.NotContextException;
+import javax.naming.OperationNotSupportedException;
 import javax.naming.directory.SearchControls;
 
 // Based on a merge of various catalina naming contexts

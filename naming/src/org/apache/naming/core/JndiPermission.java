@@ -61,7 +61,6 @@
 package org.apache.naming.core;
 
 import java.security.BasicPermission;
-import java.security.Permission;
 
 /**
  * Java SecurityManager Permission class for JNDI name based file resources
