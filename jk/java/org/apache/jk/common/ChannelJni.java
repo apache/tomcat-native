@@ -121,11 +121,9 @@ public class ChannelJni extends JniHandler {
     public int send( Msg msg, MsgContext ep )
         throws IOException
     {
-        int rc=super.nativeDispatch( msg, ep, JK_HANDLE_JNI_DISPATCH);
+        int rc=super.nativeDispatch( msg, ep, JK_HANDLE_JNI_DISPATCH, 0);
         ep.setNote( receivedNote, msg );
         return rc;
-                
-
     }
 
     /** Receive a packet from the C side. This is called from the C

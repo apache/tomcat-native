@@ -387,6 +387,8 @@ public class HandlerRequest extends JkHandler
             System.exit(0);
             
 	    return OK;
+        default:
+            /*DEBUG*/ try {throw new Exception(); } catch(Exception ex) {ex.printStackTrace();}
 	}
 
         return OK;

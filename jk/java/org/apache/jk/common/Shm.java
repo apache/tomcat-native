@@ -101,13 +101,9 @@ public class Shm extends JniHandler {
     Vector groups=new Vector();
     
     // Will be dynamic ( getMethodId() ) after things are stable 
-    static final int SHM_SET_ATTRIBUTE=0;
     static final int SHM_WRITE_SLOT=2;
-    static final int SHM_ATTACH=3;
-    static final int SHM_DETACH=4;
     static final int SHM_RESET=5;
     static final int SHM_DUMP=6;
-    static final int SHM_DESTROY=7;
     
     public Shm() {
     }
@@ -193,18 +189,8 @@ public class Shm extends JniHandler {
         setNativeAttribute( "file", file );
         if( size > 0 )
             setNativeAttribute( "size", Integer.toString( size ) );
-        attach();
-    }
-
-    public void attach() throws IOException {
-        if( apr==null ) return;
-        MsgContext mCtx=createMsgContext();
-        Msg msg=(Msg)mCtx.getMsg(0);
-        msg.reset();
-
-        msg.appendByte( SHM_ATTACH );
         
-        this.invoke( msg, mCtx );
+        initJkComponent();
     }
 
     public void resetScoreboard() throws IOException {
@@ -228,22 +214,6 @@ public class Shm extends JniHandler {
         msg.appendByte( SHM_DUMP );
 
         appendString( msg, fname, c2b);
-        
-        this.invoke( msg, mCtx );
-    }
-
-    public void setNativeAttribute(String name, String val) throws IOException {
-        if( apr==null ) return;
-        MsgContext mCtx=createMsgContext();
-        Msg msg=(Msg)mCtx.getMsg(0);
-        C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
-        msg.reset();
-
-        msg.appendByte( SHM_SET_ATTRIBUTE );
-
-        appendString( msg, name, c2b);
-        
-        appendString(msg, val, c2b );
         
         this.invoke( msg, mCtx );
     }
@@ -316,15 +286,7 @@ public class Shm extends JniHandler {
     }
 
     public void destroy() throws IOException {
-        if( apr==null ) return;
-        
-        MsgContext mCtx=createMsgContext();
-        Msg msg=(Msg)mCtx.getMsg(0);
-        msg.reset();
-
-        msg.appendByte( SHM_DETACH );
-
-        this.invoke( msg, mCtx );
+        destroyJkComponent();
     }
 
     
@@ -333,7 +295,7 @@ public class Shm extends JniHandler {
     {
         if( apr==null ) return 0;
         log.debug("ChannelShm.invoke: "  + ep );
-        super.nativeDispatch( msg, ep, JK_HANDLE_SHM_DISPATCH );
+        super.nativeDispatch( msg, ep, JK_HANDLE_SHM_DISPATCH, 0 );
         return 0;
     }    
 
