@@ -1,0 +1,29 @@
+JAKARTA TOMCAT CONNECTORS (JK) STATUS:			-*-text-*-
+Last modified at [$Date$]
+
+Release:
+
+    1.2.6   : in progress
+    1.2.5   : released September 30, 2003 
+    1.2.4   : released May 27, 2003
+    1.2.3   : released May 16, 2003
+    1.2.2   : released Dezember 17, 2002
+    
+
+
+RELEASE SHOWSTOPPERS:
+
+    
+    
+ 
+RELEASE NON-SHOWSTOPPERS BUT WOULD BE REAL NICE TO WRAP THESE UP:
+    
+
+
+
+STUFF FOR THE FUTURE:
+
+    * enter mature phase ... ?
+
+
+
