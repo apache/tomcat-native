@@ -9,6 +9,7 @@ APACHE2_LIBDIR=@APACHE2_LIBDIR@
 APR_INCL=@APR_CFLAGS@ 
 EXTRA_CFLAGS=@APXS2_CFLAGS@
 EXTRA_CPPFLAGS=@APXS2_CPPFLAGS@
+CC=@CC@
 
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
@@ -45,7 +46,8 @@ ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
 COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
 
 SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
-MOD_LINK = $(LIBTOOL) --mode=link $(CC) -module -shared $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
+MOD_LINK = $(LIBTOOL) --mode=link $(CC) -avoid-version -module -rpath ${APACHE2_HOME}/modules $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
+MOD_INSTALL = $(LIBTOOL) --mode=install $(CP)
 
 #############################################################################
 
@@ -90,10 +92,15 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache2/%.c
 
 all: prepare ${BUILD_DIR}/mod_jk2.so ${BUILD_DIR}/jkjni.so
 
-${BUILD_DIR}/jkjni.so: ${JNI_LO_FILES} ${COMMON_LO_FILES}
+${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
+	$(MOD_INSTALL) cp $^ `pwd`/${BUILD_DIR}
+${BUILD_DIR}/jkjni.so: ${BUILD_DIR}/jkjni.la
+	$(MOD_INSTALL) cp $^ `pwd`/${BUILD_DIR}
+
+${BUILD_DIR}/jkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
 	$(MOD_LINK) -o $@ $^
 
-${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${JNI_LO_FILES} ${A2_LO_FILES}
+${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${JNI_LO_FILES} ${A2_LO_FILES}
 	${MOD_LINK} -o $@ $^ 
 
 ${COMMON_C_FILES} ${A2_C_FILES}: ${H_FILES}
