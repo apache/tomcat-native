@@ -292,14 +292,23 @@ static int JK_METHOD validate(jk_worker_t *_this,
     char **worker_names;
     unsigned num_of_workers;
     unsigned i = 0;
+    char *tmp;
     
     if(! _this ) {
         l->jkLog(l, JK_LOG_ERROR,"lb_worker.validate(): NullPointerException\n");
         return JK_FALSE;
     }
 
-    worker_names=map_getListProp( props, "worker", _this->name,
-                                  "balanced_workers", &num_of_workers );
+    tmp=jk_map_getStrProp( NULL, props,  "worker", _this->name,
+                           "balanced_workers", NULL );
+    if( tmp==NULL ) {
+        l->jkLog(l, JK_LOG_ERROR,"lb_worker.validate(): no defined workers\n");
+        return JK_FALSE;
+    }
+
+    worker_names=jk_map_split( NULL, props, props->pool,
+                               tmp, &num_of_workers );
+
     if( worker_names==NULL || num_of_workers==0 ) {
         l->jkLog(l, JK_LOG_ERROR,"lb_worker.validate(): no defined workers\n");
         return JK_FALSE;
@@ -327,10 +336,12 @@ static int JK_METHOD validate(jk_worker_t *_this,
             /* Ignore, we may have other workers */
             continue;
         }
-        
-        _this->lb_workers[i]->lb_factor =
-            map_getDoubleProp( props, "worker", name, "lbfactor",
-                               DEFAULT_LB_FACTOR);
+
+        tmp=jk_map_getStrProp( NULL, props, "worker", name, "lbfactor", NULL );
+        if( tmp==NULL ) 
+            _this->lb_workers[i]->lb_factor = DEFAULT_LB_FACTOR;
+        else 
+            _this->lb_workers[i]->lb_factor = atof( tmp );
         
         _this->lb_workers[i]->lb_factor = 1/ _this->lb_workers[i]->lb_factor;
 
@@ -358,8 +369,8 @@ static int JK_METHOD init(jk_worker_t *_this,
                           jk_logger_t *log)
 {
     /* start the connection cache */
-    int cache_sz = map_getIntProp( props, "worker", _this->name, "cachesize",
-                                   JK_OBJCACHE_DEFAULT_SZ );
+    int cache_sz = jk_map_getIntProp( NULL, props, "worker", _this->name, "cachesize",
+                                      JK_OBJCACHE_DEFAULT_SZ );
 
     if (cache_sz > 0) {
         int err;

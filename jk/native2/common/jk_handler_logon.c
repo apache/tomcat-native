@@ -259,26 +259,26 @@ int JK_METHOD jk_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
     jk_map_t *map;
     jk_handler_t *h;
         
-    map_alloc( &map, pool );
+    jk_map_default_create( env, &map, pool );
     *result=map;
     
     h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
     h->name="login";
     h->messageId=AJP14_LOGSEED_CMD;
     h->callback=jk_handler_login;
-    map_put( map, h->name, h, NULL );
+    map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
     h->name="logOk";
     h->messageId=AJP14_LOGOK_CMD;
     h->callback=jk_handler_logok;
-    map_put( map, h->name, h, NULL );
+    map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
     h->name="logNok";
     h->messageId=AJP14_LOGNOK_CMD;
     h->callback=jk_handler_lognok;
-    map_put( map, h->name, h, NULL );
+    map->put( env, map, h->name, h, NULL );
 
     return JK_TRUE;
 }

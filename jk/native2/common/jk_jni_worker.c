@@ -450,17 +450,18 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         return JK_TRUE;
     }
 
-    mem_config= map_getIntProp( props, "worker", p->name, "mx", -1 );
+    mem_config= jk_map_getIntProp( NULL, props, "worker", p->name, "mx", -1 );
     if( mem_config != -1 ) {
         p->tomcat_mx = mem_config;
     }
 
-    mem_config= map_getIntProp( props, "worker", p->name, "ms", -1 );
+    mem_config= jk_map_getIntProp( NULL, props, "worker", p->name, "ms", -1 );
     if(mem_config != -1 ) {
         p->tomcat_ms = mem_config;
     }
 
-    str_config= map_getStrProp( props, "worker", p->name, "class_path", NULL );
+    str_config= jk_map_getStrProp( NULL, props, "worker", p->name,
+                                   "class_path", NULL );
     if(str_config != NULL ) {
         p->tomcat_classpath = p->pool->pstrdup(p->pool, str_config);
     }
@@ -470,7 +471,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         return JK_FALSE;
     }
 
-    str_config= map_getStrProp( props, "worker", p->name, "jvm_lib", NULL );
+    str_config= jk_map_getStrProp( NULL, props, "worker", p->name, "jvm_lib",
+                                   NULL );
     if(str_config != NULL ) {
         p->jvm_dll_path  = p->pool->pstrdup(p->pool, str_config);
     }
@@ -480,39 +482,46 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         return JK_FALSE;
     }
 
-    str_config= map_getStrProp( props, "worker", p->name, "cmd_line", NULL ); 
+    str_config= jk_map_getStrProp( NULL, props, "worker", p->name,
+                                   "cmd_line", NULL ); 
     if(str_config != NULL ) {
         p->tomcat_cmd_line  = p->pool->pstrdup(p->pool, str_config);
     }
 
-    str_config=  map_getStrProp( props, "worker", p->name, "stdout", NULL ); 
+    str_config=  jk_map_getStrProp( NULL, props, "worker", p->name, "stdout",
+                                    NULL ); 
     if(str_config!= NULL ) {
         p->stdout_name  = p->pool->pstrdup(p->pool, str_config);
     }
 
-    str_config=  map_getStrProp( props, "worker", p->name, "stderr", NULL ); 
+    str_config=  jk_map_getStrProp( NULL, props, "worker", p->name, "stderr",
+                                    NULL ); 
     if(str_config!= NULL ) {
         p->stderr_name  = p->pool->pstrdup(p->pool, str_config);
     }
 
-    str_config=  map_getStrProp( props, "worker", p->name, "sysprops", NULL ); 
+    str_config=  jk_map_getStrProp( NULL, props, "worker", p->name,
+                                    "sysprops", NULL ); 
     if(str_config!= NULL ) {
         p->sysprops  = jk_parse_sysprops(p->pool, str_config);
     }
 
 #ifdef JNI_VERSION_1_2
-    str_config= map_getStrProp( props, "worker", p->name, "java2opts", NULL );
+    str_config= jk_map_getStrProp( NULL, props, "worker", p->name, "java2opts",
+                                   NULL );
     if( str_config != NULL ) {
     	/* l->jkLog(l, JK_LOG_DEBUG, "Got opts: %s\n", str_config); */
         p->java2opts = jk_parse_sysprops(p->pool, str_config);
     }
-    mem_config= map_getIntProp( props, "worker", p->name, "java2lax", -1 );
+    mem_config= jk_map_getIntProp( NULL, props, "worker", p->name,
+                                   "java2lax", -1 );
     if(mem_config != -1 ) {
         p->java2lax = mem_config ? JK_TRUE : JK_FALSE;
     }
 #endif
 
-    str_config=  map_getStrProp( props, "worker", p->name, "ld_path", NULL ); 
+    str_config=  jk_map_getStrProp( NULL, props, "worker", p->name,
+                                    "ld_path", NULL ); 
     if(str_config!= NULL ) {
         jk_append_libpath(p->pool, str_config);
     }

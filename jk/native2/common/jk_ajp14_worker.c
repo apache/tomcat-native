@@ -161,7 +161,8 @@ jk_worker_ajp14_validate(jk_worker_t *_this,
     int proto=AJP14_PROTO;
 
     aw = _this;
-    secret_key = map_getStrProp( props, "worker", aw->name, "secretkey", NULL );
+    secret_key = jk_map_getStrProp( we->env, props,
+                                    "worker", aw->name, "secretkey", NULL );
     
     if ((!secret_key) || (!strlen(secret_key))) {
         proto=AJP13_PROTO;
@@ -418,11 +419,17 @@ jk_worker_ajp14_done(jk_endpoint_t **eP,jk_logger_t    *l)
 
     w= e->worker;
 
+    l->jkLog(l, JK_LOG_INFO, "ajp14.done() before reset pool %p\n",
+             e->cPool );
     if( e->cPool != NULL ) 
         e->cPool->reset(e->cPool);
+    l->jkLog(l, JK_LOG_INFO, "ajp14.done() after reset pool %p\n",
+             e->cPool );
 
     if (w->endpointCache != NULL ) {
         int err=0;
+        l->jkLog(l, JK_LOG_INFO, "ajp14.done() before return to pool %s\n",
+                 w->name );
         
         err=w->endpointCache->put( w->endpointCache, e );
         if( err==JK_TRUE ) {
@@ -507,8 +514,8 @@ jk_worker_ajp14_init(jk_worker_t *_this,
     int proto=AJP14_PROTO;
     int cache_sz;
 
-    secret_key = map_getStrProp( props, "worker", _this->name,
-                                 "secretkey", NULL );
+    secret_key = jk_map_getStrProp( we->env, props,
+                                    "worker", _this->name, "secretkey", NULL );
     
     if( secret_key==NULL ) {
         proto=AJP13_PROTO;
@@ -521,9 +528,9 @@ jk_worker_ajp14_init(jk_worker_t *_this,
 
 
     /* start the connection cache */
-    cache_sz = map_getIntProp( props, "worker", _this->name, "cachesize",
+    cache_sz=jk_map_getIntProp(we->env, props,
+                               "worker", _this->name, "cachesize",
                                JK_OBJCACHE_DEFAULT_SZ );
-
     if (cache_sz > 0) {
         int err;
         _this->endpointCache=jk_objCache_create( _this->pool, l );

@@ -276,32 +276,32 @@ int JK_METHOD jk_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
     jk_map_t *map;
     jk_handler_t *h;
     
-    map_alloc( &map, pool );
+    jk_map_default_create( env, &map, pool );
     *result=map;
     
     h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
     h->name="sendHeaders";
     h->messageId=JK_AJP13_SEND_HEADERS;
     h->callback=jk_handler_startResponse;
-    map_put( map, h->name, h, NULL );
+    map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
     h->name="sendChunk";
     h->messageId=JK_AJP13_SEND_BODY_CHUNK;
     h->callback=jk_handler_sendChunk;
-    map_put( map, h->name, h, NULL );
+    map->put( env, map, h->name, h, NULL );
     
     h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
     h->name="endResponse";
     h->messageId=JK_AJP13_END_RESPONSE;
     h->callback=jk_handler_endResponse;
-    map_put( map, h->name, h, NULL );
+    map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
     h->name="getChunk";
     h->messageId=JK_AJP13_GET_BODY_CHUNK;
     h->callback=jk_handler_getChunk;
-    map_put( map, h->name, h, NULL );
+    map->put( env, map, h->name, h, NULL );
 
     return JK_TRUE;
 }

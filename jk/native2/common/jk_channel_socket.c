@@ -156,9 +156,15 @@ static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this,
     char *host=socketInfo->host;
     short port=socketInfo->port;
     struct sockaddr_in *rc=&socketInfo->addr;
-
-    port = map_getIntProp( props, "worker", worker_name, "port", port );
-    host = map_getStrProp( props, "worker", worker_name, "host", host);
+    jk_workerEnv_t *workerEnv=worker->workerEnv;
+    char *tmp;
+    
+    host = jk_map_getStrProp( NULL, props,
+                              "worker", worker_name, "host", host);
+    tmp = jk_map_getStrProp( NULL, props,
+                          "worker", worker_name, "port", NULL );
+    if( tmp != NULL )
+        port=jk_map_str2int( NULL, tmp);
 
     _this->worker=worker;
     _this->properties=props;

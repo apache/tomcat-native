@@ -101,7 +101,8 @@ static jk_env_objectFactory_t JK_METHOD jk_env_getFactory(jk_env_t *env,
   }
 
   /** XXX add check for the type */
-  result=(jk_env_objectFactory_t)map_get( env->_registry, typeName, NULL );
+  result=(jk_env_objectFactory_t)env->_registry->get( env, env->_registry,
+                                                      typeName);
   free( typeName );
   return result;
 }
@@ -146,7 +147,7 @@ static void JK_METHOD jk_env_registerFactory(jk_env_t *env,
   strcpy(typeName, type );
   strcat( typeName, "/" );
   strcat( typeName, name );
-  map_put( env->_registry, typeName, fact, &old );
+  env->_registry->put( env, env->_registry, typeName, fact, &old );
 }
 
 static void jk_env_initEnv( jk_env_t *env, char *id ) {
@@ -155,7 +156,7 @@ static void jk_env_initEnv( jk_env_t *env, char *id ) {
   env->getFactory= jk_env_getFactory; 
   env->registerFactory= jk_env_registerFactory;
   env->getInstance= jk_env_getInstance; 
-  map_alloc( & env->_registry, env->globalPool );
+  jk_map_default_create( env, & env->_registry, env->globalPool );
   jk_registry_init(env);
 }
 

@@ -148,12 +148,12 @@ static int jk_logger_file_parseLogLevel(const char *level)
 static int jk_logger_file_open(jk_logger_t *_this,
                                jk_map_t *properties )
 {
-    char *file=map_getStrProp(properties,"logger","file",
-                              "name","mod_jk.log");
+    char *file=jk_map_getStrProp(NULL, properties,"logger","file",
+                                 "name","mod_jk.log");
     int level;
-    char *levelS=map_getStrProp(properties,"logger","file",
-                                "level", "ERROR");
-    char *logformat=map_getStrProp(properties,"logger","file",
+    char *levelS=jk_map_getStrProp(NULL, properties,"logger","file",
+                                   "level", "ERROR");
+    char *logformat=jk_map_getStrProp(NULL, properties,"logger","file",
                                    "timeFormat", JK_TIME_FORMAT);
     FILE *f;
 

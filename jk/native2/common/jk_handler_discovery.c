@@ -244,20 +244,20 @@ int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
     jk_map_t *map;
     jk_handler_t *h;
     
-    map_alloc( &map, pool );
+    jk_map_default_create( env, &map, pool );
     *result=map;
     
     h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
     h->name="contextInfo";
     h->messageId=AJP14_CONTEXT_INFO_CMD;
     h->callback=jk_handler_contextList;
-    map_put( map, h->name, h, NULL );
+    map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
     h->name="contextState";
     h->messageId=AJP14_CONTEXT_STATE_REP_CMD;
     h->callback=jk_handler_contextState;
-    map_put( map, h->name, h, NULL );
+    map->put( env, map, h->name, h, NULL );
 
     return JK_TRUE;
 }

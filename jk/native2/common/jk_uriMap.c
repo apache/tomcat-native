@@ -326,18 +326,19 @@ static int jk_uriMap_init(jk_uriMap_t *_this,
 
     _this->workerEnv = workerEnv;
                                            
-    sz = map_size(init_data);
+    sz = init_data->size(NULL, init_data);
 
-    _this->debug=map_getIntProp(init_data,"urimap", "default", "debug", 0 );
+    _this->debug=jk_map_getIntProp(NULL,
+                                   init_data,"urimap", "default", "debug", 0 );
     
     for(i = 0; i < sz ; i++) {
-        char *name=map_name_at(init_data, i);
+        char *name=init_data->nameAt(NULL, init_data, i);
         if( name!=NULL && name[0]=='/' ) {
             jk_uriEnv_t *uriEnv=_this->addMapping(_this,NULL,name,
-                                                  map_value_at(init_data, i));
+                                    init_data->valueAt(NULL, init_data, i));
             if ( uriEnv==NULL) {
                 l->jkLog(l, JK_LOG_ERROR, "uriMap.init() error adding %s\n",
-                         map_name_at(init_data, i));
+                         init_data->nameAt(NULL, init_data, i));
                 rc=JK_FALSE;
             }
         }

@@ -86,15 +86,16 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
     jk_logger_t *l=_this->l;
     int i;
     int err;
+    char *tmp;
 
     /*     _this->init_data=init_data; */
 
-    worker_list = map_get_string_list(init_data,
-                                      NULL, 
-                                      "worker.list", 
-                                      &_this->num_of_workers, 
-                                      DEFAULT_WORKER );
-     if(worker_list==NULL || _this->num_of_workers<= 0 ) {
+    tmp = jk_map_getString(NULL, init_data, "worker.list",
+                                   DEFAULT_WORKER );
+    worker_list=jk_map_split( NULL, init_data, init_data->pool,
+                              tmp, &_this->num_of_workers );
+
+    if(worker_list==NULL || _this->num_of_workers<= 0 ) {
         /* assert() - we pass default worker, we should get something back */
         return JK_FALSE;
     }
@@ -132,23 +133,19 @@ static void jk_workerEnv_close(jk_workerEnv_t *_this)
     int sz;
     int i;
     
-    sz = map_size(_this->worker_map);
+    sz = _this->worker_map->size(NULL, _this->worker_map);
 
-    if(sz <= 0) {
-        map_free(&_this->worker_map);
-        return;
-    }
     for(i = 0 ; i < sz ; i++) {
-        jk_worker_t *w = map_value_at(_this->worker_map, i);
+        jk_worker_t *w = _this->worker_map->valueAt(NULL, _this->worker_map, i);
         if(w) {
             l->jkLog(l, JK_LOG_DEBUG,
                    "destroy worker %s\n",
-                   map_name_at(_this->worker_map, i));
+                   _this->worker_map->nameAt(NULL, _this->worker_map, i));
             w->destroy(&w, l);
         }
     }
     l->jkLog(_this->l, JK_LOG_DEBUG, "workerEnv.close() done %d\n", sz); 
-    map_free(&_this->worker_map);
+    _this->worker_map->clear(NULL, _this->worker_map);
 }
 
 static jk_worker_t *jk_workerEnv_getWorkerForName(jk_workerEnv_t *_this,
@@ -163,7 +160,7 @@ static jk_worker_t *jk_workerEnv_getWorkerForName(jk_workerEnv_t *_this,
         return NULL;
     }
 
-    rc = map_get(_this->worker_map, name, NULL);
+    rc = _this->worker_map->get(NULL, _this->worker_map, name);
 
     /*     if( rc==NULL ) { */
     /*         l->jkLog(l, JK_LOG_INFO, */
@@ -229,7 +226,7 @@ static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this)
     /* Find the max message id */
     /* XXX accessing private data... env most provide some method to get this */
     jk_map_t *registry=_this->env->_registry;
-    int size=map_size( registry );
+    int size=registry->size( NULL, registry );
     int i,j;
     
     for( i=0; i<size; i++ ) {
@@ -237,7 +234,7 @@ static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this)
         jk_map_t *localHandlers;
         int rc;
 
-        char *name=map_name_at( registry, i );
+        char *name= registry->nameAt( NULL, registry, i );
         if( strstr( name, "handler" ) == name ) {
             char *type=name+ strlen( "handler" ) +1;
             localHandlers=(jk_map_t *)_this->env->getInstance(_this->env,
@@ -246,8 +243,8 @@ static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this)
                                                               type );
             if( localHandlers==NULL ) continue;
             
-            for( j=0; j< map_size( localHandlers ); j++ ) {
-                handler=(jk_handler_t *)map_value_at( localHandlers, j );
+            for( j=0; j< localHandlers->size( NULL, localHandlers ); j++ ) {
+                handler=(jk_handler_t *)localHandlers->valueAt( NULL, localHandlers, j );
                 jk_workerEnv_checkSpace( _this->pool,
                                          (void ***)&_this->handlerTable,
                                          &_this->lastMessageId,
@@ -397,7 +394,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
 
     workerPool=_this->pool->create(_this->pool, HUGE_POOL_SIZE);
 
-    type=map_getStrProp( init_data,"worker",name,"type",NULL );
+    type=jk_map_getStrProp( NULL, init_data,"worker",name,"type",NULL );
 
     /* Each worker has it's own pool */
     
@@ -438,7 +435,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
     l->jkLog(l, JK_LOG_INFO,
            "workerEnv.createWorker(): validate and init %s:%s\n", type, name);
 
-    map_put(_this->worker_map, name, w, (void *)&oldW);
+    _this->worker_map->put(NULL, _this->worker_map, name, w, (void *)&oldW);
             
     if(oldW!=NULL) {
         l->jkLog(_this->l, JK_LOG_ERROR, "workerEnv.createWorker() duplicated %s worker \n",
@@ -464,7 +461,7 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
     *result=_this;
 
     _this->init_data = NULL;
-    map_alloc(& _this->init_data, pool);
+    jk_map_default_create(env, & _this->init_data, pool);
     
 
     _this->worker_file     = NULL;
@@ -512,14 +509,12 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
     _this->secret_key = NULL; 
 
     _this->envvars_in_use = JK_FALSE;
-    map_alloc(&_this->envvars, pool);
+    jk_map_default_create(NULL, &_this->envvars, pool);
 
     _this->l=l;
     _this->env=env;
     
-    if(!map_alloc(&_this->worker_map, _this->pool)) {
-        return JK_FALSE;
-    }
+    jk_map_default_create(NULL,&_this->worker_map, _this->pool);
 
     uriMapPool = _this->pool->create(_this->pool, HUGE_POOL_SIZE);
     
