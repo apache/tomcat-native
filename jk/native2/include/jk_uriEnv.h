@@ -208,6 +208,11 @@ struct jk_uriEnv {
     struct jk_map *envvars;
 
     int merged;
+    
+    /* Reverse mappings
+     */
+    int reverse;
+
     /** XXX .
      */
 /*     int status; */
