@@ -125,9 +125,9 @@ struct jk_workerEnv;
 struct jk_env;
     
 typedef int (JK_METHOD *jk_handler_callback)(struct jk_env *env,
-                                             struct jk_msg *msg,
-                                             struct jk_ws_service *r,
-                                             struct jk_endpoint *ae);
+                                             void *target,
+                                             struct jk_endpoint *ae,
+                                             struct jk_msg *msg);
 
 struct jk_handler;
 typedef struct jk_handler jk_handler_t;
