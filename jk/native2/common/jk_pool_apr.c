@@ -69,8 +69,6 @@
 #include "apr_errno.h"
 #include "apr_general.h"
 
-/* #include "jk_apache2.h" */
-
 /* 
    JK_APR_POOL_DEBUG will enable verbose messages on allocation.
 
