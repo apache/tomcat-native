@@ -66,6 +66,10 @@
 #endif
 
 #include "apr_strings.h"
+
+#if APR_USE_SYSVSEM_SERIALIZE
+#include "unixd.h"      /* for unixd_set_global_mutex_perms */
+#endif
 /*
  * Jakarta (jk_) include files
  */
@@ -335,7 +339,6 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
 
         if (l) {
             /* BUFF *bf = p->r->connection->client; */
-            size_t w = (size_t) l;
             size_t r = 0;
             long ll = l;
             char *bb = (char *)b;
@@ -1663,7 +1666,7 @@ static int jk_handler(request_rec * r)
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
-    if (rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
+    if ((rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) != APR_SUCCESS) {
         return rc;
     }
 
