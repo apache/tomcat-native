@@ -22,6 +22,8 @@
     <property name="jmx.jar" location="../lib/mx4j.jar" />
     <property name="tomcat-util.lib" value="${tomcat-util.build}/lib" />
     <property name="tomcat-util.jar" value="${tomcat-util.lib}/tomcat-util.jar" />
+    <property name="tomcat-loader.jar" value="${tomcat-util.lib}/tomcat-loader.jar" />
+
 
     <path id="compile.classpath">
         <pathelement location="${jmx.jar}" />
@@ -45,11 +47,14 @@
 
     <target name="build-prepare" depends="detect">
         <mkdir dir="${tomcat-util.build}"/>
-	<mkdir dir="${tomcat-util.build}/classes"/>
+        <mkdir dir="${tomcat-util.build}/classes"/>
+        <mkdir dir="${tomcat-util.build}/loader"/>
 	<mkdir dir="${tomcat-util.lib}"/>
     </target>
 
-    <target name="build-main" depends="build-prepare">
+    <target name="build-main" depends="tomcat-util.jar"/> <!--tomcat-loader.jar -->
+        
+    <target name="tomcat-util.jar" depends="build-prepare">
         <echo message="----- Java-utils -----" />
         <echo message="-- puretls.present = ${puretls.present}" />
         <echo message="-- jsse.present = ${jsse.present} ${jsse.jar}"/>
@@ -57,6 +62,7 @@
         <echo message="-- jmx = ${jmx.present} ${jmx.jar}"/>
         <echo message="-- modeler = ${modeler.present} ${commons-modeler.jar}"/>
         <echo message="-- JDK14 = ${jdk1.4.present}"/>
+
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
 	       deprecation="${compile.deprecation}"
@@ -96,6 +102,24 @@
             <include name="org/apache/tomcat/util/**"/>
         </jar>
 
+    </target>
+
+    <target name="tomcat-loader.jar" depends="build-prepare">
+        <javac srcdir="loader"
+           destdir="${tomcat-util.build}/loader"
+           deprecation="${compile.deprecation}"
+           debug="${compile.debug}"
+           optimize="off"
+           verbose="off"
+           excludes="**/CVS/**">
+            <classpath refid="compile.classpath"/>
+        </javac>
+     	<jar jarfile="${tomcat-loader.jar}"
+             index="true"
+             basedir="${tomcat-util.build}/loader"
+             manifest="loader/tomcat-loader.manifest" >
+            <include name="org/apache/tomcat/util/loader/**"/>
+        </jar>
     </target>
 
     <!-- ================ BUILD: Create Tomcat-Util Javadocs =================== -->
