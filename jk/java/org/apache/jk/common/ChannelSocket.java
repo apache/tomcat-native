@@ -420,7 +420,9 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
             s.close();
             sSocket.close(); // XXX?
         } catch(Exception e) {
-            e.printStackTrace();
+            log.info("Error shutting down the channel " + port + " " +
+                    e.toString());
+            if( log.isDebugEnabled() ) log.debug("Trace", e);
         }
     }
 
