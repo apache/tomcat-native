@@ -574,16 +574,17 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             p->lb_workers = jk_pool_alloc(&p->p,
                                           num_of_workers *
                                           sizeof(worker_record_t));
+            if (!p->lb_workers) {
+                JK_TRACE_EXIT(l);
+                return JK_FALSE;
+            }
+
             for (i = 0; i < num_of_workers; i++) {
                 p->lb_workers[i].s = jk_shm_alloc(&p->p, sizeof(jk_shm_worker_t));
                 if (p->lb_workers[i].s == NULL) {
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }
-            }
-            if (!p->lb_workers) {
-                JK_TRACE_EXIT(l);
-                return JK_FALSE;
             }
 
             for (i = 0; i < num_of_workers; i++) {
