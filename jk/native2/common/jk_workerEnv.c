@@ -188,7 +188,8 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
                               name); 
             } else {
                 /* Add the worker automatically in the 'default' lb and in any group */
-                if( strncmp( "worker.ajp13", w->mbean->name, 12 ) == 0 ) {
+                if( strncmp( "worker.ajp13", w->mbean->name, 12 ) == 0 ||
+                    strncmp( "ajp13", w->mbean->name, 5 ) == 0 ) {
                     /* It's a forwarding worker */
                     lb->mbean->setAttribute(env, lb->mbean, "balanced_workers",
                                             w->mbean->name);
