@@ -510,9 +510,18 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 		
 		try {
  		    if(endpoint.getServerSocketFactory()!=null) {
- 			endpoint.getServerSocketFactory().handshake(s);
+                        endpoint.getServerSocketFactory().handshake(s);
  		    }
- 
+                } catch (Throwable t) {
+                    endpoint.log("Handshake failed", t, Log.DEBUG);
+                    // Try to close the socket
+                    try {
+                        s.close();
+                    } catch (IOException e) {}
+                    continue;
+                }
+
+                try {
 		    if( usePool ) {
 			con=(TcpConnection)connectionCache.get();
 			if( con == null ) 
@@ -526,11 +535,19 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 		    con.setSocket(s);
 		    endpoint.setSocketOptions( s );
 		    endpoint.getConnectionHandler().processConnection(con, perThrData);
- 		} catch (IOException e){
- 		    endpoint.log("Handshake failed",e,Log.ERROR);
+                } catch (Throwable t) {
+                    endpoint.log("Unexpected error", t, Log.ERROR);
+                    // Try to close the socket
+                    try {
+                        s.close();
+                    } catch (IOException e) {}
                 } finally {
-                    con.recycle();
-                    if( usePool && con != null ) connectionCache.put(con);
+                    if (con != null) {
+                        con.recycle();
+                        if (usePool) {
+                            connectionCache.put(con);
+                        }
+                    }
                 }
                 break;
 	    }
