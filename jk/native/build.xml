@@ -100,6 +100,7 @@
 	<include name="${novellndk.home}/include/nlm" if="netware" />
 	<include name="${novellndk.home}/include" if="netware" />
         <include name="${java.home}/../include/netware" if="netware" />
+        <include name="${java.home}/../include/solaris" if="solaris" />
         <include name="${java.home}/../include/hp-ux" if="hpux" />        
         <include name="${java.home}/../include/linux"  if="linux"/>
         <include name="${java.home}/../include/win32" if="win32" unless="netware" />
@@ -182,6 +183,7 @@
         <include name="${java.home}/../include/hp-ux" if="hpux" />        
         <include name="${java.home}/../include/netware" if="netware" />
         <include name="${java.home}/../include/linux"  if="linux"/>
+        <include name="${java.home}/../include/solaris" if="solaris" />
 	<include name="${novelllibc.home}/include" if="netware" />
 	<include name="${novelllibc.home}/include/winsock" if="netware" />
       </includes>
