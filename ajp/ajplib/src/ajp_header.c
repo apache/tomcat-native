@@ -728,3 +728,34 @@ apr_status_t ajp_send_header(apr_socket_t *sock,
 
     return APR_SUCCESS;
 }
+
+/*
+ * Read the ajp message and return the type of the message.
+ */
+apr_status_t ajp_read_header(apr_socket_t *sock,
+                                  request_rec  *r,
+                                  void **data)
+{
+    apr_byte_t result;
+    ajp_msg_t *msg;
+    apr_status_t rc;
+
+    ajp_msg_reset(msg);
+    rc = ajp_msg_create(r->pool, &msg);
+    if (rc != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+               "ajp_read_header: ajp_msg_create failed");
+        return rc;
+    }
+    rc = ajp_ilink_receive(sock, msg);
+    if (rc != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+               "ajp_read_header: ajp_ilink_receive failed");
+        return rc;
+    }
+    rc = ajp_msg_peek_byte(msg,&result);
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+               "ajp_read_header: ajp_ilink_received %02x", result);
+    *data = msg;
+    return APR_SUCCESS;
+}
