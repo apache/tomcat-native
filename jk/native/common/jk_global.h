@@ -65,6 +65,8 @@ extern char *strdup(const char *str);
 #include <unistd.h>
 #if defined(NETWARE) && defined(__NOVELL_LIBC__)
 #include "novsock2.h"
+#include <nks/fsio.h>
+#include <nks/errno.h>
 #define __sys_socket_h__
 #define __netdb_h__
 #define __netinet_in_h__
