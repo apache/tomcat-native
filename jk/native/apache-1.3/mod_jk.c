@@ -1299,6 +1299,7 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
  *  ForwardURICompat         => Forward URI normally, less spec compliant but mod_rewrite compatible (old TC)
  *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)
  *  ForwardURIEscaped        => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
+ *  ForwardDirectories       => Forward all directory requests with no index files to Tomcat
  */
 
 const char *jk_set_options(cmd_parms *cmd,
@@ -1338,6 +1339,9 @@ const char *jk_set_options(cmd_parms *cmd,
         else if (!strcasecmp(w, "ForwardURIEscaped")) {
             opt = JK_OPT_FWDURIESCAPED;
             mask = JK_OPT_FWDURIMASK;
+        }
+        else if (!strcasecmp(w, "ForwardDirectories")) {
+            opt = JK_OPT_FWDDIRS;
         }
         else
             return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w, "'", NULL);
