@@ -32,7 +32,7 @@
 #define JK_VERBETA      0
 #define JK_BETASTRING   "1"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
-#define JK_VERISRELEASE 0
+#define JK_VERISRELEASE 1
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
 
 #if !defined(PACKAGE)
