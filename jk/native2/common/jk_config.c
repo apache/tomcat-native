@@ -96,7 +96,7 @@ static int jk2_config_setConfigFile( jk_env_t *env,
     if (stat(workerFile, &statbuf) == -1) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "config.setConfig(): Can't find config file %s", workerFile );
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     cfg->file=workerFile;
@@ -110,7 +110,7 @@ static int jk2_config_setConfigFile( jk_env_t *env,
     
     err=jk2_config_read(env, cfg, props, workerFile );
     
-    if( err==JK_TRUE ) {
+    if( err==JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "config.setConfig():  Reading properties %s %d\n",
                       workerFile, props->size( env, props ) );
@@ -118,7 +118,7 @@ static int jk2_config_setConfigFile( jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "config.setConfig(): Error reading properties %s\n",
                       workerFile );
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     for( i=0; i<props->size( env, props); i++ ) {
@@ -128,7 +128,7 @@ static int jk2_config_setConfigFile( jk_env_t *env,
         cfg->setPropertyString( env, cfg, name, val );
     }
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /* Experimental. Dangerous. The file param will go away, for security
@@ -146,7 +146,7 @@ static int jk2_config_saveConfig( jk_env_t *env,
     fp= fopen(workerFile, "w");
         
     if(fp==NULL)
-        return JK_FALSE;
+        return JK_ERR;
 
     /* We'll save only the objects/properties that were set
        via config, and to the original 'string'. That keeps the config
@@ -176,7 +176,7 @@ static int jk2_config_saveConfig( jk_env_t *env,
     
     fclose(fp);
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -218,7 +218,7 @@ static int jk2_config_processBeanPropertyString( jk_env_t *env,
     if( lastDot==NULL || lastDot < lastDot1 )
         lastDot=lastDot1;
     
-    if( lastDot==NULL || *lastDot=='\0' ) return JK_FALSE;
+    if( lastDot==NULL || *lastDot=='\0' ) return JK_ERR;
 
     *lastDot='\0';
     lastDot++;
@@ -228,7 +228,7 @@ static int jk2_config_processBeanPropertyString( jk_env_t *env,
 
     /*     fprintf(stderr, "ProcessBeanProperty string %s %s\n", *objName, *propertyName); */
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -240,7 +240,7 @@ static int jk2_config_processBeanPropertyString( jk_env_t *env,
     @param val the value, $(property) will be replaced.
  */
 int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
-                           jk_bean_t *mbean, char *name, void *val)
+                           jk_bean_t *mbean, char *name, char *val)
 {
     char *pname;
     if( mbean == cfg->mbean ) {
@@ -275,12 +275,12 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     /*     env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s / %s / %s=%s\n", */
     /*                    mbean->name, name, pname, val); */
     if( strcmp( name, "name" ) == 0 ) {
-        return JK_TRUE;
+        return JK_OK;
     }
     
     if(mbean->setAttribute)
         return mbean->setAttribute( env, mbean, name, val );
-    return JK_FALSE;
+    return JK_ERR;
 }
 
 int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
@@ -297,7 +297,7 @@ int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
     /* fprintf( stderr, "setPropertyString %s %s \n", name, value ); */
 
     status=jk2_config_processBeanPropertyString(env, cfg, name, &objName, &propName );
-    if( status!=JK_TRUE ) {
+    if( status!=JK_OK ) {
         /* Unknown properties ends up in our config, as 'unclaimed' or global */
         cfg->setProperty( env, cfg, cfg->mbean, name, value );
         return status;
@@ -311,7 +311,7 @@ int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
     if( mbean == NULL ) {
         /* Can't create it, save the value in our map */
         cfg->setProperty( env, cfg, cfg->mbean, name, value );
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     if( mbean->settings == NULL )
@@ -336,14 +336,14 @@ int jk2_config_getBool(jk_env_t *env, jk_config_t *conf,
     char *val=jk2_config_getString( env, conf, prop, (char *)def );
 
     if( val==NULL )
-        return JK_FALSE;
+        return JK_ERR;
 
     if( strcmp( val, "1" ) == 0 ||
         strcasecmp( val, "TRUE" ) == 0 ||
         strcasecmp( val, "ON" ) == 0 ) {
-        return JK_TRUE;
+        return JK_OK;
     }
-    return JK_FALSE;
+    return JK_ERR;
 }
 
 /** Get a string property, using the worker's style
@@ -486,13 +486,13 @@ char **jk2_config_split(jk_env_t *env, jk_pool_t *pool,
 /*  Reading / parsing */
 int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char *prp )
 {
-    int rc = JK_FALSE;
+    int rc = JK_ERR;
     char *v;
         
     jk2_trim_prp_comment(prp);
     
     if( jk2_trim(prp)==0 )
-        return JK_TRUE;
+        return JK_OK;
 
     /* Support windows-style 'sections' - for cleaner config
      */
@@ -509,18 +509,18 @@ int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char 
         strcat( dummyProp, ".name");
         m->add( env, m, dummyProp, cfg->section);
 
-        return JK_TRUE;
+        return JK_OK;
     }
     
     v = strchr(prp, '=');
     if(v==NULL)
-        return JK_TRUE;
+        return JK_OK;
         
     *v = '\0';
     v++;                        
     
     if(strlen(v)==0 || strlen(prp)==0)
-        return JK_TRUE;
+        return JK_OK;
 
     /* [ ] Shortcut */
     if( cfg->section != NULL ) {
@@ -545,7 +545,7 @@ int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char 
     m->add( env, m, cfg->pool->pstrdup(env, cfg->pool, prp),
             cfg->pool->pstrdup(env, cfg->pool, v));
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /** Read a query string into the map
@@ -574,7 +574,7 @@ int jk2_config_queryRead(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const cha
                 cfg->pool->pstrdup( env, cfg->pool, value ));
         qry=sep;
     }
-    return JK_TRUE;
+    return JK_OK;
 }
      
 int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *f)
@@ -585,12 +585,12 @@ int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *f)
 //    char *v;
         
     if(m==NULL || f==NULL )
-        return JK_FALSE;
+        return JK_ERR;
 
     fp= fopen(f, "r");
         
     if(fp==NULL)
-        return JK_FALSE;
+        return JK_ERR;
 
     cfg->section=NULL;
     while(NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
@@ -598,7 +598,7 @@ int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *f)
     }
 
     fclose(fp);
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /** For multi-value properties, return the concatenation
@@ -785,9 +785,9 @@ static int JK_METHOD jk2_config_setAttribute( struct jk_env *env, struct jk_bean
         */
         return jk2_config_saveConfig(env, cfg, cfg->workerEnv, value);
     } else {
-        return JK_FALSE;
+        return JK_ERR;
     }
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -826,7 +826,7 @@ int JK_METHOD jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
 
     _this=(jk_config_t *)pool->alloc(env, pool, sizeof(jk_config_t));
     if( _this == NULL )
-        return JK_FALSE;
+        return JK_ERR;
     _this->pool = pool;
 
     _this->setPropertyString=jk2_config_setPropertyString;
@@ -836,5 +836,5 @@ int JK_METHOD jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
     result->object=_this;
     result->setAttribute=jk2_config_setAttribute;
 
-    return JK_TRUE;
+    return JK_OK;
 }

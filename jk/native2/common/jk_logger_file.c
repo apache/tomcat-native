@@ -107,7 +107,7 @@ static int JK_METHOD jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,
         /* This is usefull to debug what happens before logger is set.
            On apache you need -X option ( no detach, single process ) */
         printf("%s", what );
-        return JK_TRUE;
+        return JK_OK;
     }
     if(l && l->level <= level && l->logger_private && what) {       
         unsigned sz = strlen(what);
@@ -117,10 +117,10 @@ static int JK_METHOD jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,
             fflush(f);
         }
 
-        return JK_TRUE;
+        return JK_OK;
     }
 
-    return JK_FALSE;
+    return JK_ERR;
 }
 
 int jk2_logger_file_parseLogLevel(jk_env_t *env, const char *level)
@@ -160,7 +160,7 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
     if(f==NULL) {
         _this->jkLog(env, _this,JK_LOG_ERROR,
                      "Can't open log file %s\n", _this->name );
-        return JK_FALSE;
+        return JK_ERR;
     }
     _this->jkLog(env, _this,JK_LOG_ERROR,
                  "Initializing log file %s\n", _this->name );
@@ -168,20 +168,20 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
     if( oldF!=NULL ) {
         fclose( oldF );
     }
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int jk2_logger_file_close(jk_env_t *env,jk_logger_t *_this)
 {
     FILE *f = _this->logger_private;
-    if( f==NULL ) return JK_TRUE;
+    if( f==NULL ) return JK_OK;
     
     fflush(f);
     fclose(f);
     _this->logger_private=NULL;
 
     /*     free(_this); */
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD
@@ -307,7 +307,7 @@ int JK_METHOD jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool,
     jk_logger_t *l = (jk_logger_t *)pool->alloc(env, pool, sizeof(jk_logger_t));
 
     if(l==NULL ) {
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     l->log = jk2_logger_file_log;
@@ -323,6 +323,6 @@ int JK_METHOD jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool,
     l->mbean=result;
     result->setAttribute = jk2_logger_file_setProperty;
 
-    return JK_TRUE;
+    return JK_OK;
 }
 

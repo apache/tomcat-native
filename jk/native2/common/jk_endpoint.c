@@ -97,7 +97,7 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     if (e==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "endpoint.factory() OutOfMemoryException\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     e->pool = endpointPool;
@@ -121,5 +121,5 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     result->object = e;
     e->mbean=result;
 
-    return JK_TRUE;
+    return JK_OK;
 }

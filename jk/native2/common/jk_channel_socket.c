@@ -131,9 +131,9 @@ static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
     } else if( strcmp( "port", name ) == 0 ) {
         socketInfo->port=atoi( value );
     } else {
-	return JK_FALSE;
+	return JK_ERR;
     }
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
@@ -180,7 +180,7 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
         socketInfo->host=DEFAULT_HOST;
     
     rc=jk2_channel_socket_resolve( env, socketInfo->host, socketInfo->port, &socketInfo->addr );
-    if( rc!= JK_TRUE ) {
+    if( rc!= JK_OK ) {
 	env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk2_channel_socket_init: "
                       "can't resolve %s:%d errno=%d\n", socketInfo->host, socketInfo->port, errno );
     }
@@ -213,7 +213,7 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, short
         /* If we found also characters we use gethostbyname()*/
         struct hostent *hoste = gethostbyname(host);
         if(!hoste) {
-            return JK_FALSE;
+            return JK_ERR;
         }
 
         laddr = ((struct in_addr *)hoste->h_addr_list[0])->s_addr;
@@ -223,7 +223,7 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, short
     }
     memcpy(&(rc->sin_addr), &laddr , sizeof(laddr));
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int jk2_close_socket(jk_env_t *env, int s)
@@ -268,7 +268,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                  "channelSocket.open(): can't create socket %d %s\n",
                  errno, strerror( errno ) );
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     /* Tries to connect to JServ (continues trying while error is EINTR) */
@@ -292,7 +292,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channelSocket.connect() connect failed %s:%d %d %s \n",
                       socketInfo->host, socketInfo->port, errno, strerror( errno ) );
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     if(ndelay) {
@@ -313,7 +313,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
         }
         sd->sock=sock;
     }
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -325,7 +325,7 @@ static int JK_METHOD jk2_channel_socket_close(jk_env_t *env,jk_channel_t *ch,
     int sd;
     jk_channel_socket_data_t *chD=endpoint->channelData;
     if( chD==NULL ) 
-	return JK_FALSE;
+	return JK_ERR;
 
     sd=chD->sock;
     chD->sock=-1;
@@ -357,7 +357,7 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
     jk_channel_socket_data_t *chD=endpoint->channelData;
 
     if( chD==NULL ) 
-	return JK_FALSE;
+	return JK_ERR;
 
     msg->end( env, msg );
     len=msg->len;
@@ -376,7 +376,7 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
 	sent += this_time;
     }
     /*     return sent; */
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -398,7 +398,7 @@ static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
     int rdlen;
 
     if( chD==NULL ) 
-	return JK_FALSE;
+	return JK_ERR;
     sd=chD->sock;
     rdlen = 0;
     
@@ -451,7 +451,7 @@ static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *ch,
     if( blen < 0 ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channelSocket.receive(): Bad header\n" );
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     rc= jk2_channel_socket_readN( env, ch, endpoint, msg->buf + hlen, blen);
@@ -460,13 +460,13 @@ static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *ch,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                "channelSocket.receive(): Error receiving message body %d %d\n",
                       rc, errno);
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "channelSocket.receive(): Received len=%d type=%d\n",
                   blen, (int)msg->buf[hlen]);
-    return JK_TRUE;
+    return JK_OK;
 
 }
 
@@ -499,5 +499,5 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
     ch->workerEnv=env->getByName( env, "workerEnv" );
     ch->workerEnv->addChannel( env, ch->workerEnv, ch );
 
-    return JK_TRUE;
+    return JK_OK;
 }
