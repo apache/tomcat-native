@@ -92,6 +92,8 @@ typedef struct jk_uriEnv jk_uriEnv_t;
 #define MATCH_TYPE_CONTEXT  (1)
 #define MATCH_TYPE_SUFFIX   (2)
 #define MATCH_TYPE_GENERAL_SUFFIX (3) /* match all URIs of the form *ext */
+/* match all context path URIs with a path component suffix */
+#define MATCH_TYPE_CONTEXT_PATH (4)
 
 
 struct jk_uriEnv {

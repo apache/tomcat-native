@@ -208,7 +208,21 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
      */
     asterisk--;
     if ('/' == asterisk[0]) {
-        if ('.' == asterisk[2]) {
+        if ( 0 == strncmp("/*/",uri,3) ) {
+            /* general context path */
+            asterisk[1] = '\0';
+            uriEnv->suffix  = asterisk + 2;
+            uriEnv->prefix = uri;
+            uriEnv->prefix_len  =strlen( uriEnv->prefix );
+            uriEnv->match_type = MATCH_TYPE_CONTEXT_PATH;
+
+            if( uriEnv->debug > 0 ) {
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "Into jk_uri_worker_map_t::uri_worker_map_open, "
+                              "general context path rule %s * %s -> %s was added\n",
+                              uri, asterisk + 2, uriEnv->workerName);
+
+        } else if ('.' == asterisk[2]) {
             /* suffix rule: /foo/bar/STAR.extension */
             asterisk[1]      = '\0';
             asterisk[2]      = '\0';
