@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<document>
+<properties>
+<title>Quick Start JK Configuration Guide</title>
+<author email="hgomez@apache.org">Henri Gomez</author>
+<date>$Date$</date>
+</properties>
+<section name="Introduction">
+<p>
+  This document describes the configuration files used by JK on the
+  Tomcat and Web Server side for the impatients:
+    <ul>
+    <li>
+    <b>workers.properties</b> is used on the webserver side. For the Apache
+    servers the default path is in the ServerRoot/conf directory.
+    </li>
+    <li>
+    <b>WebServers</b> add-ons to be set on the webserver side. 
+    </li>
+    </ul>
+</p>
+<p>        
+  We'll give here minimum servers configuration and an example <b>workers.properties</b> 
+  to be able to install and check quickly your configuration.
+</p>
+</section>
+
+<section name="Minimum workers.properties">
+<p>
+    Here is the minimun workers.properties, using just ajp12, ajp13 and load-balancing to connect your Apache webserver
+    to the Tomcat engine
+</p>
+<p>
+<screen>
+<note># Define 3 workers, 2 real workers using ajp12, ajp13 and the last one being a loadbalancing worker</note> 
+<read>worker.list=worker1, worker2, worker3</read>
+<note># Set properties for worker1 (ajp12)</note>
+<read>worker.worker1.type=ajp12</read>
+<read>worker.worker1.host=locahost</read>
+<read>worker.worker1.port=8007</read>
+<read>worker.worker1.lbfactor=5</read>
+<note># Set properties for worker2 (ajp13)</note>
+<read>worker.worker2.type=ajp13</read>
+<read>worker.worker2.host=locahost</read>
+<read>worker.worker2.port=8009</read>
+<read>worker.worker2.lbfactor=50</read>
+<read>worker.worker2.cachesize=10</read>
+<read>worker.worker2.cache_timeout=600</read>
+<read>worker.worker2.socket_keepalive=1</read>
+<read>worker.worker2.socket_timeout=300</read>
+<note># Set properties for worker3 (lb) which use worker1 and worker2</note>
+<read>worker.worker3.balanced_workers=worker1,worker2</read>
+</screen>
+</p>
+</section>
+
+<section name="Minimum Apache WebServer configuration">
+<p>
+	You should first have <b>mod_jk.so</b> (unix) or <b>mod_jk.dll</b> (Windows) installed
+	in your Apache module directory (see your Apache documentation to locate it).
+</p>
+<p>
+	Usual locations on Unix:
+	<ul>
+	<li>/usr/lib/apache</li>
+	<li>/usr/lib/apache2</li>
+	<li>/usr/local/apache/libexec</li>
+	</ul>
+</p>
+<p>
+	Usual locations on Windows :
+	<ul>
+	<li>C:\Program Files\Apache Group\Apache\modules\</li>
+	<li>C:\Program Files\Apache Group\Apache2\modules</li>
+	</ul>
+</p>
+<p>
+	You'll find prebuilt binaries <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/">here</a>
+</p>
+<p>
+    Here is the minimum which should be set in <b>httpd.conf</b> directly or 
+    included from another file, the default path is in the ServerRoot/conf directory.
+</p>
+<p>
+<screen>
+<note># Load mod_jk module</note>
+<read>LoadModule    jk_module  libexec/mod_jk.so</read>
+<note># Declare the module for &lt;IfModule directive&gt;</note>
+<read>AddModule     mod_jk.c</read>
+<note># Where to find workers.properties</note>
+<read>JkWorkersFile /etc/httpd/conf/workers.properties</read>
+<note># Where to put jk logs</note>
+<read>JkLogFile     /var/log/httpd/mod_jk.log</read>
+<note># Set the jk log level [debug/error/info]</note>
+<read>JkLogLevel    info</read>
+<note># Select the log format</note>
+<read>JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "</read>
+<note># JkOptions indicate to send SSL KEY SIZE, </note>
+<read>JkOptions     +ForwardKeySize +ForwardURICompat -ForwardDirectories</read>
+<note># JkRequestLogFormat set the request format </note>
+<read>JkRequestLogFormat     "%w %V %T"</read>
+<note># Send servlet for context /examples to worker named worker1</note>
+<read>JkMount  /examples/servlet/* worker2</read>
+<note># Send JSPs  for context /examples to worker named worker1</note>
+<read>JkMount  /examples/*.jsp worker2</read>
+</screen>
+</p>
+</section>
+
+<section name="Minimum IIS WebServer configuration">
+<p>
+Minimum configuration for IIS Web Servers. 
+</p>
+<todo>
+More informations to be added, Nacho ?
+</todo>
+</section>
+
+<section name="Minimum NES/iPlanet WebServer configuration">
+<p>
+Minimum configuration for NES/iPlanet Web Servers. 
+</p>
+<todo>
+More informations to be added, Mike ?
+</todo>
+</section>
+
+
+<section name="Test your configuration">
+<p>
+(Re)start the Web server and browse to the <a>http://localhost/examples/</a>
+</p>
+
+</section>
+
+</document>
