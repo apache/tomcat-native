@@ -262,9 +262,17 @@ static const command_rec wam_directives[] = {
 void wa_log(const char *f, const int l, const char *fmt, ...) {
     va_list ap;
     char buf[1024];
+#ifdef DEBUG
+    char tmp[1024];
+#endif
 
     va_start(ap,fmt);
+#ifdef DEBUG
+    apr_vsnprintf(tmp,1024,fmt,ap);
+    apr_snprintf(buf,1024,"[%s:%d] %s",f,l,tmp);
+#else
     apr_vsnprintf(buf,1024,fmt,ap);
+#endif
     va_end(ap);
 
     ap_log_error(f,l,APLOG_NOERRNO|APLOG_ERR,server,"%s",buf);
