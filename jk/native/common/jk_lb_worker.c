@@ -43,12 +43,12 @@
 #define WORKER_RECOVER_TIME ("recover_time")
 
 static const char *search_types[] = {
-    "none",
+    "any",
     "sticky",
+    "redirect",
     "sticky domain",
     "local",
     "local domain",
-    "any",
     NULL
 };
 
@@ -180,28 +180,33 @@ static int is_worker_candidate(worker_record_t *wr,
                                jk_logger_t *l)
 {
     switch (search_id) {
+        case 0:
+            return JK_TRUE;
         case 1:
             if (strcmp(search_string, wr->s->name) == 0) {
                 return JK_TRUE;
             }
         break;
         case 2:
-            if (strcmp(search_string, wr->s->domain) == 0) {
+            if (strcmp(search_string, wr->s->name) == 0) {
                 return JK_TRUE;
             }
         break;
         case 3:
-            if (wr->s->is_local_worker) {
+            if (strcmp(search_string, wr->s->domain) == 0) {
                 return JK_TRUE;
             }
         break;
         case 4:
-            if (wr->s->is_local_domain) {
+            if (wr->s->is_local_worker) {
                 return JK_TRUE;
             }
         break;
         case 5:
-            return JK_TRUE;
+            if (wr->s->is_local_domain) {
+                return JK_TRUE;
+            }
+        break;
     }
     return JK_FALSE;
 }
@@ -237,12 +242,19 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
               search_type, search_string);
 
     for (i = start; i < stop; i++) {
+        if (search_id < 3 && p->lb_workers[i].s->is_disabled) {
+
+            continue;
+        }
         if (is_worker_candidate(&(p->lb_workers[i]), search_id, search_string, l)) {
             if (JK_IS_DEBUG_LEVEL(l))
                jk_log(l, JK_LOG_DEBUG,
                       "found candidate worker %s (%d) for match with %s (%s)",
                       p->lb_workers[i].s->name, i, search_type, search_string);
-            if (search_id == 1) {
+            if (search_id == 1 && strlen(p->lb_workers[i].s->redirect)) {
+                *domain_id = i;
+            }
+            else if (search_id == 2) {
                 *domain_id = i;
             }
             if (!p->lb_workers[i].s->in_error_state || !p->lb_workers[i].s->in_recovering) {
@@ -353,6 +365,20 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                 JK_TRACE_EXIT(l);
                 return rc;
             }
+            if (domain_id >= 0 && domain_id < (int)p->num_of_workers) {
+                session_domain = p->lb_workers[domain_id].s->domain;
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "found redirect %s in route %s",
+                           session_domain, session_route);
+
+                rc = get_suitable_worker(p, 2, session_domain, 0, p->num_of_workers,
+                                         0, &domain_id, l);
+                if (rc) {
+                    JK_TRACE_EXIT(l);
+                    return rc;
+                }
+            }
 
             if (domain_id >= 0 && domain_id < (int)p->num_of_workers) {
                 session_domain = p->lb_workers[domain_id].s->domain;
@@ -365,7 +391,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                        "found domain %s in route %s",
                        session_domain, session_route);
 
-            rc = get_suitable_worker(p, 2, session_domain, 0, p->num_of_workers,
+            rc = get_suitable_worker(p, 3, session_domain, 0, p->num_of_workers,
                                      1, &domain_id, l);
             if (rc) {
                 JK_TRACE_EXIT(l);
@@ -378,7 +404,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
 
 
     if (p->num_of_local_workers) {
-        rc = get_suitable_worker(p, 3, "any", 0, p->num_of_local_workers,
+        rc = get_suitable_worker(p, 4, "any", 0, p->num_of_local_workers,
                                  1, &domain_id, l);
         if (rc) {
             JK_TRACE_EXIT(l);
@@ -390,14 +416,14 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             return NULL;
         }
 
-        rc = get_suitable_worker(p, 4, "any", p->num_of_local_workers,
+        rc = get_suitable_worker(p, 5, "any", p->num_of_local_workers,
                                  p->num_of_workers, 1, &domain_id, l);
         if (rc) {
             JK_TRACE_EXIT(l);
             return rc;
         }
     }
-    rc = get_suitable_worker(p, 5, "any", p->num_of_local_workers, p->num_of_workers,
+    rc = get_suitable_worker(p, 0, "any", p->num_of_local_workers, p->num_of_workers,
                              1, &domain_id, l);
     JK_TRACE_EXIT(l);
     return rc;
@@ -459,7 +485,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         return JK_TRUE;
                     }
                 }
-
+                rec->s->errors++;
                 /*
                  * Service failed !!!
                  *
@@ -676,7 +702,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
 
     pThis->retries = jk_get_worker_retries(props, p->s->name,
                                            JK_RETRIES);
-
+    p->s->retries = pThis->retries;
     if (jk_get_worker_int_prop(props, p->s->name,
                                WORKER_RECOVER_TIME,
                                &i))
