@@ -437,8 +437,8 @@ function Main(args)
             
         }        
     }
-    
-    if (args.optind <= args.argc) {
+    TRACE("argc " + args.argc + " optind " + args.optind);
+    if (args.optind >= args.argc) {
         /* Case when isapi_redirector2.dll is inside TOMCAT_HOME\bin */
         params.WebPath = WScript.ScriptFullName.substr(0,
                                  WScript.ScriptFullName.lastIndexOf("\\"));
@@ -446,14 +446,15 @@ function Main(args)
     }
     else {
         params.WebPath = args.argv(args.optind);
+        ++args.optind;
     }
     if (!checkFilterExists(params)) {
         ERROR(args, "The specified filter library could not be found...\n" +
               "File " + params.WebPath + "\\" + params.FilterLib + " does not exist.");
         
     }
-    if (args.argc && (args.optind > (args.argc - 1)))
-        tchome = args.argv(args.argc + 1);
+    if (args.optind < args.argc)
+        tchome = args.argv(args.optind);
     else if (!tchome)
         tchome = params.WebPath;                
     workers2 = tchome + _DEFAULT_WORKERS2 ;
