@@ -732,7 +732,8 @@ public class CoyoteResponse
         if (included)
             return;     // Ignore any call from an included servlet
 
-	coyoteResponse.setCharacterEncoding(charset);
+        coyoteResponse.setCharacterEncoding(charset);
+
     }
 
     /**
