@@ -582,11 +582,12 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             for (i = 0; i < num_of_workers; i++) {
                 p->lb_workers[i].s = jk_shm_alloc(&p->p, sizeof(jk_shm_worker_t));
                 if (p->lb_workers[i].s == NULL) {
+                    jk_log(l, JK_LOG_ERROR, 
+                           "allocating worker record from shared memory");
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }
             }
-
             for (i = 0; i < num_of_workers; i++) {
                 strncpy(p->lb_workers[i].s->name, worker_names[i],
                         JK_SHM_STR_SIZ);
