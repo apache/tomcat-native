@@ -70,11 +70,11 @@ CFGS = @CONFIGFILES@ \
 	config.log \
 	config.status
 
-all: apr-all local-all
+all: @APR_BUILD@ local-all
 
 install: local-install
 
-clean: apr-clean local-clean
+clean: @APR_CLEAN@ local-clean
 
 distclean: clean
 	@$(ECHO) ""

@@ -213,15 +213,21 @@ AC_ARG_WITH(apxs,
          AC_MSG_ERROR([${APXS} do not seem a valid apxs)]) 
       fi
       TARGET="${SRCDIR}/apache-1.3"
+      APR_BUILD="apr-all"
+      APR_CLEAN="apr-clean"
       makefile="apache-1.3/Makefile"
     else
       TARGET="${SRCDIR}/apache-2.0"
+      APR_BUILD=""
+      APR_CLEAN=""
       makefile="apache-2.0/Makefile"
     fi
     AC_MSG_RESULT([setting target module to... ${TARGET}])
   ]
 )
 AC_SUBST(TARGET)
+AC_SUBST(APR_BUILD)
+AC_SUBST(APR_CLEAN)
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apr=... command line argument
@@ -229,47 +235,57 @@ dnl --------------------------------------------------------------------------
 AC_MSG_CHECKING([APR directory])
 AC_ARG_WITH(apr,
   [  --with-apr=DIR          where the APR sources can be found.],
-  APRDIR="${withval}",
-  APRDIR="${SRCDIR}/apr"
+  APRDIR="${withval}"
 )
 
-if ${TEST} ! -d "${APRDIR}" ; then
-  AC_MSG_ERROR([Cannot find APR sources directory \"${APRDIR}\"])
+if ${TEST} -z "${APA}" -a -z "${APRDIR}" ; then
+  APRDIR="{SRCDIR}/apr"
+else
+  APRDIR="${APXS_PREFIX}"
 fi
 
-if ${TEST} ! -x "${APRDIR}/buildconf" ; then
-  AC_MSG_ERROR([Cannot find APR buildconf program in \"${APRDIR}\"])
+if ${TEST} -z "${APA}" ; then
+  if ${TEST} ! -d "${APRDIR}" ; then
+    AC_MSG_ERROR([Cannot find APR sources directory \"${APRDIR}\"])
+  fi
+
+  if ${TEST} ! -x "${APRDIR}/buildconf" ; then
+    AC_MSG_ERROR([Cannot find APR buildconf program in \"${APRDIR}\"])
+  fi
+
+  curdir=`pwd`
+  cd ${APRDIR}
+  APRDIR=`pwd`
+  AC_MSG_RESULT([${APRDIR}])
+  cd ${curdir}
+  AC_SUBST(APRDIR)
+
+  dnl --------------------------------------------------------------------------
+  dnl Build the configure script for APR and run it
+  dnl --------------------------------------------------------------------------
+  curdir=`pwd`
+  cd ${APRDIR}
+
+  LOCAL_HEADER([Building APR configure script])
+  LOCAL_FILTEREXEC([./buildconf],[APR buildconf])
+  if ${TEST} "${ret}" -ne "0"
+  then
+    AC_MSG_ERROR([APR buildconf terminated with error code ${ret}])
+  fi
+
+  dnl the --disable-shared prevent building shared libraries.
+  LOCAL_HEADER([Configuring APR])
+  LOCAL_FILTEREXEC(
+    [./configure --enable-static --disable-shared --disable-threads],
+    ["APR configure"])
+  if ${TEST} "${ret}" -ne "0"
+  then
+    AC_MSG_ERROR([APR configure script terminated with error code ${ret}])
+  fi
+  cd ${curdir}
+else
+  AC_MSG_RESULT(Using APR from Apache build)
 fi
-
-curdir=`pwd`
-cd ${APRDIR}
-APRDIR=`pwd`
-AC_MSG_RESULT([${APRDIR}])
-cd ${curdir}
-AC_SUBST(APRDIR)
-
-dnl --------------------------------------------------------------------------
-dnl Build the configure script for APR and run it
-dnl --------------------------------------------------------------------------
-curdir=`pwd`
-cd ${APRDIR}
-
-LOCAL_HEADER([Building APR configure script])
-LOCAL_FILTEREXEC([./buildconf],[APR buildconf])
-if ${TEST} "${ret}" -ne "0"
-then
-  AC_MSG_ERROR([APR buildconf terminated with error code ${ret}])
-fi
-
-LOCAL_HEADER([Configuring APR])
-LOCAL_FILTEREXEC(
-  [./configure --enable-static --disable-threads],
-  ["APR configure"])
-if ${TEST} "${ret}" -ne "0"
-then
-  AC_MSG_ERROR([APR configure script terminated with error code ${ret}])
-fi
-cd ${curdir}
 
 dnl --------------------------------------------------------------------------
 dnl Retrieving APR default values
@@ -278,19 +294,29 @@ AC_MSG_CHECKING([APR configuration])
 
 if ${TEST} ! -f ${APRDIR}/APRVARS
 then
-  AC_MSG_RESULT([error])
-  AC_MSG_ERROR([Cannot find APR defaults in ${APRDIR}/APRVARS])
+  if ${TEST} "${APA}" ; then
+    LIBDIR="/lib"
+  else
+    AC_MSG_RESULT([error])
+    AC_MSG_ERROR([Cannot find APR defaults in ${APRDIR}/APRVARS])
+  fi
+else
+  LIBDIR=""
 fi
 
 if ${TEST} ! -x ${APRDIR}/libtool
 then
-  AC_MSG_RESULT([error])
-  AC_MSG_ERROR([Cannot find APR libtool binary])
+  if ${TEST} "${APA}" ; then
+    LIBTOOL="${APXS_PREFIX}/build/libtool"
+  else
+    AC_MSG_RESULT([error])
+    AC_MSG_ERROR([Cannot find APR libtool binary])
+  fi
 else
   LIBTOOL="${APRDIR}/libtool"
 fi
 
-eval `cat ${APRDIR}/APRVARS`
+eval `cat ${APRDIR}${LIBDIR}/APRVARS`
 AC_SUBST(CC)
 AC_SUBST(CPP)
 AC_SUBST(SHELL)

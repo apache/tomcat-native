@@ -96,7 +96,8 @@ mod_webapp.so: mod_webapp.lo @SRCDIR@/lib/libwebapp.la @APRDIR@/libapr.la
 		-o mod_webapp.so
 
 install: mod_webapp.so
-	$(APXS) -i mod_webapp.so
+	@$(ECHO) Installing Apache 1.3 WebApp Module
+	@$(SHELL) $(LIBTOOL)  --mode=install cp $(MODULE) $(APXS_LIBEXECDIR)
 
 clean:
 	@for ENTRY in *.o *.lo $(MODULE) .libs ; \
