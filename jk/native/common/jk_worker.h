@@ -56,7 +56,8 @@
 /***************************************************************************
  * Description: Workers controller header file                             *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           * 
- * Version:     $Revision$                                               *
+ * Author:      Henri Gomez <hgomez@slib.fr>                               * 
+ * Version:     $Revision$                                           *
  ***************************************************************************/
 
 #ifndef JK_WORKER_H
@@ -71,8 +72,24 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/*
+ * Env Information to be provided to worker at init time
+ * With AJP14 support we need to have access to many informations
+ * about web-server, uri to worker map....
+ */
+
+struct jk_worker_env {
+
+	/* The URI to WORKER map, will be feeded by AJP14 autoconf feature */
+    jk_uri_worker_map_t	*uri_to_worker;
+
+	/* Web-Server we're running on (Apache/IIS/NES) */
+	const char 			*server_name;
+};
+typedef struct jk_worker_env jk_worker_env_t;
+
 int wc_open(jk_map_t *init_data,
-			jk_uri_worker_map_t *uw,
+			jk_worker_env_t *we,
             jk_logger_t *l);
 
 void wc_close(jk_logger_t *l);

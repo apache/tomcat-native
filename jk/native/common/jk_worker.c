@@ -56,6 +56,7 @@
 /***************************************************************************
  * Description: Workers controller                                         *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
+ * Author:      Henri Gomez <hgomez@slib.fr>                               *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
@@ -74,7 +75,7 @@ static int build_worker_map(jk_map_t *init_data,
                             jk_logger_t *l);
 
 int wc_open(jk_map_t *init_data,
-		    jk_uri_worker_map_t *uw,
+		    jk_worker_env_t *we,
             jk_logger_t *l)
 {
     char **worker_list  = NULL;
