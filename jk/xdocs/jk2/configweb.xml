@@ -133,8 +133,25 @@ and  provides access to all other objects</p>
         <subsection name="uri">
             <p>A uri stores a pattern that is used
  to match requests to workers, and asociated properties</p>
+            <p>If the uri name doesn't have a slash then it is considered as a virtual host
+            directive. Uri name can have a virtual host name and(or) port associated with. Format
+            of such a name is <b>hostname</b> or <b>hostname:port</b> where hostname
+            is virtual server name and the port is vitual server port number. The port number
+            is used only for the non default server ports.</p>
             <p>
-                <table>
+            Special case is a default server named as <b>[uri:*]</b> that is used when the virtual
+            host cannot be found inside the configuration. All the uri directives not containing
+            host name belongs to this default server making global mappings.<br />
+            The order how the host names are resolved is :
+            <ul>
+                <li>Exact host name and optional non default port number</li>
+                <li>Alias matching host name and port number</li>
+                <li>*:port if the port is other then default</li>
+                <li>Default server</li>
+            </ul>
+            </p>
+            <p>
+                <table>                
                     <tr>
                         <th>Property name</th>
                         <th>Default</th>
@@ -151,11 +168,9 @@ and  provides access to all other objects</p>
                         <td>the context that will be served by this uri component (webapp style)</td>
                     </tr>
                     <tr>
-                        <td>reverse</td>
-                        <td>0</td>
-                        <td>If set to 1 all satisfied matches will be rejected.
-This is usefull for the situations when you wish to map the entire application, but still wish that
-paticular context is not served through Tomcat.</td>
+                        <td>alias</td>
+                        <td/>
+                        <td>server name alias</td>
                     </tr>
                 </table>
             </p>
@@ -272,6 +287,10 @@ Other  important  channels are unix socket and jni</p>
             </p>
             <subsection name="worker.jni">
                 <p>worker used in inprocess, holds the details of the Tomcat class to startup, and paramters to pass</p>
+                <p>There are two predefined jni workers <b>onStartup</b> and <b>onShutdown</b>. Those two workers are executed
+                during sturtup and shutdown phase of the connector. Both must exsist in the configuration to be able to start
+                and shutdown Tomcat.
+                </p>
                 <p>
                     <table>
                         <tr>
