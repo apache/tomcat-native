@@ -291,7 +291,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t *p,
         }            
     }
 
-    if(rc) {
+    if(rc && rc->lb_value != 0 ) {
         rc->lb_value += rc->lb_factor;                
     }
 
@@ -328,8 +328,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if(rc && end) {
                     int src = end->service(end, s, l, &is_recoverable);
                     end->done(&end, l);
-                    if(src) {                        
-                        if(rec->in_recovering) {
+                    if(src ) {                        
+                        if(rec->in_recovering && rec->lb_value != 0) {
                             rec->lb_value = get_max_lb(p->worker) + ADDITINAL_WAIT_LOAD;
                         }
                         rec->in_error_state = JK_FALSE;
@@ -433,12 +433,17 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].name = jk_pool_strdup(&p->p, worker_names[i]);
                 p->lb_workers[i].lb_factor = jk_get_lb_factor(props, 
                                                                worker_names[i]);
-                p->lb_workers[i].lb_factor = 1/p->lb_workers[i].lb_factor;
+                if(p->lb_workers[i].lb_factor < 0) {
+                    p->lb_workers[i].lb_factor = -1 * p->lb_workers[i].lb_factor;
+                }
+                if (0 < p->lb_workers[i].lb_factor) {
+                    p->lb_workers[i].lb_factor = 1/p->lb_workers[i].lb_factor;
+                }
+
                 /* 
                  * Allow using lb in fault-tolerant mode.
-                 * Just set lbfactor in worker.properties to 0 to have 
-                 * a worker used only when principal is down or session route
-                 * point to it. Provided by Paul Frieden <pfrieden@dchain.com>
+                 * A value of 0 means the worker will be used for all requests without
+                 * sessions
                  */
                 p->lb_workers[i].lb_value = p->lb_workers[i].lb_factor;
                 p->lb_workers[i].in_error_state = JK_FALSE;
