@@ -23,66 +23,72 @@
 #include "jk_pool.h"
 #include "jk_shm.h"
 
-const char shm_signature[] = { JK_SHM_MAGIC };
+/** jk shm header record structure */
+struct jk_shm_h_rec
+{
+    /* Shared memory magic JK_SHM_MAGIC */
+    char            magic[8];
+    int             workers;
+    int             allocated;
+    jk_shm_w_rec_t  *pr[1];
+    jk_shm_w_rec_t  rr[1];
+};
+typedef struct jk_shm_h_rec jk_shm_h_rec_t;
+
+/** jk shm structure */
+struct jk_shm
+{
+    size_t     size;
+    const char *filename;
+    int        fd;
+    int        attached;
+    jk_shm_h_rec_t  *hdr;
+};
+
+typedef struct jk_shm jk_shm_t;
+
+static const char shm_signature[] = { JK_SHM_MAGIC };
+static jk_shm_t jk_shmem = { 0, NULL, -1, 0, NULL};;
 
 #if defined (WIN32) || defined(NETWARE)
 
-/* Simulate file */
-static jk_shm_t *jk_global_shm = NULL;
-
 /* Use plain memory */
-int jk_shm_open(const char *fname, int workers, int dynamic, jk_shm_t *shm)
+int jk_shm_open(const char *fname)
 {
-    jk_shm_h_rec_t *hdr;
-
-    if (jk_global_shm) {
-        shm->attached = jk_global_shm->attached;
-        shm->size = jk_global_shm->size;
-        shm->base = jk_global_shm->base;
-        shm->filename = jk_global_shm->filename;
+    if (jk_shmem.hdr) {
         return 0;
     }
-    if (workers < 1 || workers > JK_SHM_MAX_WORKERS)
-        workers = JK_SHM_MAX_WORKERS;
-    if (dynamic < 1 || dynamic > JK_SHM_MAX_WORKERS)
-        dynamic = JK_SHM_MAX_WORKERS;
 
-    shm->size = sizeof(jk_shm_h_rec_t) + (workers + dynamic) * sizeof(jk_shm_w_rec_t);
+    jk_shmem.size =  JK_SHM_ALIGN(sizeof(jk_shm_h_rec_t) + JK_SHM_MAX_WORKERS * sizeof(jk_shm_w_rec_t));
 
-    shm->base = calloc(1, shm->size);
-    if (!shm->base)
+    jk_shmem.hdr = (jk_shm_h_rec_t *)calloc(1, jk_shmem.size);
+    if (!jk_shmem.hdr)
         return -1;
-    shm->filename = "memory";
-    shm->fd = -1;
-    shm->attached = 0;
+    jk_shmem.filename = "memory";
+    jk_shmem.fd       = 0;
+    jk_shmem.attached = 0;
 
-    hdr = (jk_shm_h_rec_t *)shm->base;
-
-    memcpy(hdr->magic, shm_signature, 8);
-    hdr->workers = workers;
-    hdr->dynamic = dynamic;
-
-    jk_global_shm = shm;
+    memcpy(jk_shmem.hdr->magic, shm_signature, 8);
+    jk_shmem.hdr->workers = JK_SHM_MAX_WORKERS;
     return 0;
 }
 
-int jk_shm_attach(const char *fname, int workers, int dynamic, jk_shm_t *shm)
+int jk_shm_attach(const char *fname)
 {
-    if (!jk_shm_open(fname, workers, dynamic, shm)) {
-        shm->attached = 1;
+    if (!jk_shm_open(fname)) {
+        jk_shmem.attached = 1;
         return 0;
     }
     else
         return -1;
 }
 
-void jk_shm_close(jk_shm_t *shm)
+void jk_shm_close()
 {
-    if (shm) {
-        if (shm->base)
-            free(shm->base);
-        shm->base = NULL;
+    if (jk_shmem.hdr) {
+        free(jk_shmem.hdr);
     }
+    jk_shmem.hdr = NULL;
 }
 
 #else
@@ -102,147 +108,154 @@ void jk_shm_close(jk_shm_t *shm)
 #define MAP_FILE    (0)
 #endif
 
-static int do_shm_open(const char *fname, int workers, int dynamic,
-                       jk_shm_t *shm, int attached)
+static int do_shm_open(const char *fname, int attached)
 {
+    int rc;
     int fd;
     int flags = O_RDWR;
+    void *base;
 
-    shm->size = 0;
-    shm->base = NULL;
-
-    if (workers < 1 || workers > JK_SHM_MAX_WORKERS)
-        workers = JK_SHM_MAX_WORKERS;
-    if (dynamic < 1 || dynamic > JK_SHM_MAX_WORKERS)
-        dynamic = JK_SHM_MAX_WORKERS;
-
-    shm->filename = fname;
-    shm->attached = attached;
-    shm->size = sizeof(jk_shm_h_rec_t) + (workers + dynamic) * sizeof(jk_shm_w_rec_t);
+    if (jk_shmem.hdr)
+        jk_shm_close();
+    jk_shmem.filename = fname;
+    jk_shmem.attached = attached;
 
     /* Use plain memory in case there is no file name */
     if (!fname) {
-        jk_shm_h_rec_t *hdr;
-        shm->base = calloc(1, shm->size);
-        if (!shm->base)
+        jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_h_rec_t) + JK_SHM_MAX_WORKERS * sizeof(jk_shm_w_rec_t *));
+        jk_shmem.hdr  = calloc(1, jk_shmem.size);
+        if (!jk_shmem.hdr)
             return -1;
-        hdr = (jk_shm_h_rec_t *)shm->base;
-
-        memcpy(hdr->magic, shm_signature, 8);
-        hdr->workers = workers;
-        hdr->dynamic = dynamic;
-        shm->filename = "memory";
+        memcpy(jk_shmem.hdr->magic, shm_signature, 8);
+        jk_shmem.hdr->workers   = JK_SHM_MAX_WORKERS;
+        jk_shmem.hdr->allocated = 0;
+        jk_shmem.filename       = "memory";
         return 0;
     }
+    
+    jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_h_rec_t) + JK_SHM_MAX_WORKERS * sizeof(jk_shm_w_rec_t));
+    
     if (!attached)
         flags |= (O_CREAT|O_TRUNC);
     fd = open(fname, flags, 0666);
     if (fd == -1) {
-        shm->size = 0;
-        return -1;
+        jk_shmem.size = 0;
+        return errno;
     }
 
     if (!attached) {
         size_t size = lseek(fd, 0, SEEK_END);
-        if (size < shm->size) {
-            size = shm->size;
-            if (ftruncate(fd, shm->size)) {
+        if (size < jk_shmem.size) {
+            size = jk_shmem.size;
+            if (ftruncate(fd, jk_shmem.size)) {
+                rc = errno;
                 close(fd);
-                shm->size = 0;
-                return -1;
+                jk_shmem.size = 0;
+                return rc;
             }
         }
     }
     if (lseek(fd, 0, SEEK_SET) != 0) {
+        rc = errno;
         close(fd);
-        shm->size = 0;
-        return -1;
+        jk_shmem.size = 0;
+        return rc;
     }
 
-    shm->base = mmap(NULL, shm->size,
-                     PROT_READ | PROT_WRITE,
-                     MAP_FILE | MAP_SHARED,
-                     fd, 0);
-    if (shm->base == (void *)MAP_FAILED) {
-        shm->base = NULL;
-    }
-    if (!shm->base) {
+    base = mmap(NULL, jk_shmem.size,
+                PROT_READ | PROT_WRITE,
+                MAP_FILE | MAP_SHARED,
+                fd, 0);
+    if (base == (void *)MAP_FAILED || base == NULL) {
+        rc = errno;
         close(fd);
-        shm->size = 0;
-        return -1;
+        jk_shmem.size = 0;
+        return rc;
     }
-    shm->fd = fd;
+    jk_shmem.hdr = base;
+    jk_shmem.fd  = fd;
 
     /* Clear shared memory */
     if (!attached) {
-        jk_shm_h_rec_t *hdr;
-
-        memset(shm->base, 0, shm->size);
-        hdr = (jk_shm_h_rec_t *)shm->base;
-
-        memcpy(hdr->magic, shm_signature, 8);
-        hdr->workers = workers;
-        hdr->dynamic = dynamic;
+        memset(jk_shmem.hdr, 0, jk_shmem.size);
+        memcpy(jk_shmem.hdr->magic, shm_signature, 8);
+        jk_shmem.hdr->workers = JK_SHM_MAX_WORKERS;
     }
     else {
         /* TODO: check header magic */
     }
-
     return 0;
 }
 
-int jk_shm_open(const char *fname, int workers, int dynamic, jk_shm_t *shm)
+int jk_shm_open(const char *fname)
 {
-    return do_shm_open(fname, workers, dynamic, shm, 0);
+    return do_shm_open(fname, 0);
 }
 
-int jk_shm_attach(const char *fname, int workers, int dynamic, jk_shm_t *shm)
+int jk_shm_attach(const char *fname)
 {
-    return do_shm_open(fname, workers, dynamic, shm, 1);
+    return do_shm_open(fname, 1);
 }
 
-void jk_shm_close(jk_shm_t *shm)
+void jk_shm_close()
 {
-    if (shm) {
-        if (shm->base) {
-            if (shm->fd >= 0) {
-                munmap(shm->base, shm->size);
-                close(shm->fd);
-            }
-            else
-                free(shm->base);
+    if (jk_shmem.hdr) {
+        if (jk_shmem.fd >= 0) {
+            munmap((void *)jk_shmem.hdr, jk_shmem.size);
+            close(jk_shmem.fd);
         }
-        shm->base = NULL;
-        shm->fd = -1;
+        else {
+            int i;
+            for (i = 0; i < jk_shmem.hdr->allocated; i++) {
+                if (jk_shmem.hdr->pr[i])
+                    free(jk_shmem.hdr->pr[i]);
+            }
+            free(jk_shmem.hdr);
+        }
     }
+    jk_shmem.hdr = NULL;
+    jk_shmem.fd  = -1;
 }
 
 
 #endif
 
-jk_shm_h_rec_t *jk_shm_header(jk_shm_t *shm)
-{
-    if (shm && shm->base) {
-        return (jk_shm_h_rec_t *)shm->base;
-    }
-    else
-        return NULL;
-}
-
-jk_shm_w_rec_t *jk_shm_worker(jk_shm_t *shm, int id)
+jk_shm_w_rec_t *jk_shm_worker(int id)
 {
     jk_shm_w_rec_t *w = NULL;
-    if (shm && shm->base && id >= 0) {
-        jk_shm_h_rec_t *hdr = (jk_shm_h_rec_t *)shm->base;
-        if (id < (hdr->workers + hdr->dynamic)) {
-            unsigned char *base = (unsigned char *)shm->base;
-            base += (sizeof(jk_shm_h_rec_t) + id * sizeof(jk_shm_w_rec_t));
-            w = (jk_shm_w_rec_t *)base;
-            /* Check worker id */
-            if (id < hdr->workers && id != w->id)
-                w = NULL;
+    if (jk_shmem.hdr && id >= 0) {
+        if (id < jk_shmem.hdr->allocated) {
+            if (jk_shmem.fd >= 0)
+                w = &(jk_shmem.hdr->rr[id]);
+            else
+                w = jk_shmem.hdr->pr[id];
+            if (id != w->id)
+                w = NULL;            
         }
-
     }
     return w;
+}
+
+jk_shm_w_rec_t *jk_shm_worker_alloc()
+{
+    jk_shm_w_rec_t *w = NULL;
+    if (jk_shmem.hdr) {
+        if (jk_shmem.hdr->allocated < jk_shmem.hdr->workers) {
+            jk_shmem.hdr->allocated++;
+            if (jk_shmem.fd >= 0) {
+                w = &(jk_shmem.hdr->rr[jk_shmem.hdr->allocated]);
+            }
+            else {
+                jk_shmem.hdr->pr[jk_shmem.hdr->allocated] = calloc(1, sizeof(jk_shm_w_rec_t));
+                w = jk_shmem.hdr->pr[jk_shmem.hdr->allocated];
+            }
+            w->id = jk_shmem.hdr->allocated;
+        }
+    }
+    return w;
+}
+
+const char *jk_shm_name()
+{
+    return jk_shmem.filename;
 }

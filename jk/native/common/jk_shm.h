@@ -23,6 +23,7 @@
 #define _JK_SHM_H
 
 #include "jk_global.h"
+#include "jk_pool.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -42,41 +43,10 @@ extern "C"
 #define JK_SHM_DYNAMIC  16
 #define JK_SHM_MAGIC    '!', 'J', 'K', 'S', 'H', 'M', JK_SHM_MAJOR, JK_SHM_MINOR
 
-/* Really huge numbers, but 1024 workers should be enough */
-#define JK_SHM_MAX_WORKERS  768
-#define JK_SHM_MAX_DYNAMIC  256
+/* Really huge numbers, but 512 workers should be enough */
+#define JK_SHM_MAX_WORKERS  512
 
-/** jk shm structure */
-struct jk_shm
-{
-    size_t     size;
-    const char *filename;
-    int        fd;
-    void       *base;
-    int        attached;
-};
-
-typedef struct jk_shm jk_shm_t;
-
-/** jk shm header record structure */
-struct jk_shm_h_rec
-{
-    /* Shared memory magic JK_SHM_MAGIC */
-    char    magic[8];
-    int     workers;
-    int     dynamic;
-
-    /* Align to 128 bytes */
-
-    /* XXX:  the following should be #if sizeof(int) == 4 */
-#if 1
-    char    reserved[112];
-#else
-    char    reserved[104];
-#endif
-};
-
-typedef struct jk_shm_h_rec jk_shm_h_rec_t;
+#define JK_SHM_ALIGN(x)  JK_ALIGN(x, 1024)
 
 /** jk shm worker record structure */
 struct jk_shm_w_rec
@@ -117,40 +87,32 @@ struct jk_shm_w_rec
     int     elected;
     /* Number of non 200 responses */
     int     errors;
-    /* Align to 512 bytes */
-
-    /* XXX:  the following should be #if sizeof(int) == 4 */
-#if 1
-    char    reserved[244];
-#else
-    char    reserved[168];
-#endif
-
 };
-
 typedef struct jk_shm_w_rec jk_shm_w_rec_t;
+
+const char *jk_shm_name();
 
 /* Open the shared memory creating file if needed
  */
-int jk_shm_open(const char *fname, int workers, int dynamic, jk_shm_t *shm);
+int jk_shm_open(const char *fname);
 
 /* Close the shared memory
  */
-void jk_shm_close(jk_shm_t *shm);
+void jk_shm_close();
 
 /* Attach the shared memory in child process.
  * File has to be opened in parent.
  */
-int jk_shm_attach(const char *fname, int workers, int dynamic, jk_shm_t *shm);
+int jk_shm_attach(const char *fname);
 
-
-/* Return shm header record
- */
-jk_shm_h_rec_t *jk_shm_header(jk_shm_t *shm);
 
 /* Return shm worker record
  */
-jk_shm_w_rec_t *jk_shm_worker(jk_shm_t *shm, int id);
+jk_shm_w_rec_t *jk_shm_worker(int id);
+
+/* allocate shm worker record
+ */
+jk_shm_w_rec_t *jk_shm_alloc();
 
 
 #ifdef __cplusplus
