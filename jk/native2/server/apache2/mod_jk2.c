@@ -298,7 +298,9 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
         return;
     }
 
-    workerEnv->initData->add( env, workerEnv->initData, "serverRoot", ap_server_root);
+    workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
+                              workerEnv->pool->pstrdup( env, workerEnv->pool, ap_server_root));
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", ap_server_root);
     
     /* Local initialization */
     workerEnv->_private = s;
@@ -623,9 +625,10 @@ static int jk2_translate(request_rec *r)
        to support SetHandler, we can add it back easily */
 
     /* Check JkMount directives, if any */
-    if( workerEnv->uriMap->size == 0 )
+    if( workerEnv->uriMap->size == 0 ) {
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return DECLINED;
+    }
     
     /* XXX TODO: Split mapping, similar with tomcat. First step will
        be a quick test ( the context mapper ), with no allocations.
