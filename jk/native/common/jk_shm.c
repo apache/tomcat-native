@@ -52,7 +52,7 @@ int jk_shm_open(const char *fname, int workers, int dynamic, jk_shm_t *shm)
     shm->base = calloc(1, shm->size);
     if (!shm->base)
         return -1;
-    shm->filename = fname;
+    shm->filename = "memory";
     shm->fd = -1;
     shm->attached = 0;
 
@@ -131,6 +131,7 @@ static int do_shm_open(const char *fname, int workers, int dynamic,
         memcpy(hdr->magic, shm_signature, 8);
         hdr->workers = workers;
         hdr->dynamic = dynamic;
+        shm->filename = "memory";
         return 0;
     }
     if (!attached)
