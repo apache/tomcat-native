@@ -286,13 +286,13 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             int selected = -1;
             jk_puts(s, "<table border=\"0\"><tr>"
                     "<th>Type</th><th>Sticky session</th>"
-                    "<th>Local worker only</th>"
+                    "<th>Force Sticky session</th>"
                     "<th>Retries</th>"
                     "</tr>\n<tr>");        
             jk_putv(s, "<td>", status_worker_type(w->type), "</td>", NULL);
             jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session),
                     "</td>", NULL);
-            jk_putv(s, "<td>", status_val_bool(lb->s->local_worker_only),
+            jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session_force),
                     "</td>", NULL);
             jk_printf(s, "<td>%d</td>", lb->s->retries);
             jk_puts(s, "</tr>\n</table>\n");
