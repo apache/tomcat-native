@@ -315,7 +315,7 @@ public class CoyoteResponse
         error = false;
         cookies.clear();
 
-        if (facade != null) {
+        if ((Constants.SECURITY) && (facade != null)) {
             facade.clear();
             facade = null;
         }

@@ -87,4 +87,10 @@ public final class Constants {
      */
     public static final String SSL_CERTIFICATE_ATTR = "org.apache.coyote.request.X509Certificate";
 
+    /**
+     * Security flag.
+     */
+    protected static final boolean SECURITY = 
+        (System.getSecurityManager() != null);
+
 }

@@ -422,7 +422,7 @@ public class CoyoteRequest
         parameterMap.setLocked(false);
         parameterMap.clear();
 
-        if (facade != null) {
+        if ((Constants.SECURITY) && (facade != null)) {
             facade.clear();
             facade = null;
         }
