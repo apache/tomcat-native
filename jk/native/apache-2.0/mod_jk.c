@@ -1696,7 +1696,8 @@ static int jk_handler(request_rec *r)
                  "Manual configuration for %s %s %d\n",
                  r->uri, worker_env.first_worker, worker_env.num_of_workers); 
       } else {
-          worker_name = map_uri_to_worker(xconf->uw_map, r->uri, xconf->log);
+          char *uri = apr_pstrdup(r->pool, r->uri);
+          worker_name = map_uri_to_worker(xconf->uw_map, uri, xconf->log);
           if( worker_name == NULL ) 
               worker_name=  worker_env.first_worker;
           jk_log(xconf->log, JK_LOG_DEBUG, 
@@ -1719,7 +1720,8 @@ static int jk_handler(request_rec *r)
 
     if(conf && ! worker_name ) {
         /* Direct mapping ( via setHandler ). Try overrides */
-        worker_name = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
+        char *uri = apr_strdup(r->pool, r->uri);
+        worker_name = map_uri_to_worker(conf->uw_map, uri, conf->log);
         if( ! worker_name ) {
             /* Since we are here, an explicit (native) mapping has been used */
             /* Use default worker */
@@ -2256,6 +2258,7 @@ static int jk_translate(request_rec *r)
 
         if(conf) {
             char *worker;
+            char *uri;
             if( (r->handler != NULL ) && 
                 (! strcmp( r->handler, JK_HANDLER ) )) {
                 /* Somebody already set the handler, probably manual config
@@ -2265,7 +2268,8 @@ static int jk_translate(request_rec *r)
                        "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
-            worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
+            uri = apr_pstrdup(r->pool, r->uri);
+            worker = map_uri_to_worker(conf->uw_map, uri, conf->log);
 
             if(worker) {
                 r->handler=apr_pstrdup(r->pool,JK_HANDLER);
@@ -2370,6 +2374,7 @@ static int jk_map_to_storage(request_rec *r)
 
         if(conf) {
             char *worker;
+            char *uri;
             if( (r->handler != NULL ) &&
                 (! strcmp( r->handler, JK_HANDLER ) )) {
                 /* Somebody already set the handler, probably manual config
@@ -2379,7 +2384,8 @@ static int jk_map_to_storage(request_rec *r)
                        "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
-            worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
+            uri = apr_strdup(r->pool, r->uri);
+            worker = map_uri_to_worker(conf->uw_map, uri, conf->log);
 
             if(worker) {
                 r->handler=apr_pstrdup(r->pool,JK_HANDLER);
