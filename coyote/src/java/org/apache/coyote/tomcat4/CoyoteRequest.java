@@ -66,6 +66,7 @@ package org.apache.coyote.tomcat4;
 
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.UnsupportedEncodingException;
@@ -104,6 +105,7 @@ import org.apache.catalina.Wrapper;
 import org.apache.catalina.connector.HttpRequestFacade;
 
 import org.apache.catalina.util.Enumerator;
+import org.apache.catalina.util.ParameterMap;
 import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringManager;
 
@@ -112,6 +114,7 @@ import org.apache.catalina.util.StringManager;
  * Wrapper object for the Coyote request.
  *
  * @author Remy Maucherat
+ * @author Craig R. McClanahan
  * @version $Revision$ $Date$
  */
 
@@ -134,6 +137,7 @@ public class CoyoteRequest
      */
     public void setCoyoteRequest(Request coyoteRequest) {
         this.coyoteRequest = coyoteRequest;
+        inputStream.setRequest(coyoteRequest);
     }
 
     /**
@@ -196,7 +200,31 @@ public class CoyoteRequest
 
 
     /**
+     * The parsed parameters for this request.  This is populated only if
+     * parameter information is requested via one of the
+     * <code>getParameter()</code> family of method calls.  The key is the
+     * parameter name, while the value is a String array of values for this
+     * parameter.
+     * <p>
+     * <strong>IMPLEMENTATION NOTE</strong> - Once the parameters for a
+     * particular request are parsed and stored here, they are not modified.
+     * Therefore, application level access to the parameters need not be
+     * synchronized.
+     */
+    protected ParameterMap parameters = null;
+
+
+    /**
+     * Authentication type.
+     */
+    protected String authType = null;
+
+
+    /**
      * Reader.
+     * Note: At the moment, no attempt is being made at recycling the reader,
+     * but this could be implemented in the future, using a design like the one
+     * used for the output buffer.
      */
     protected BufferedReader reader = null;
 
@@ -204,7 +232,55 @@ public class CoyoteRequest
     /**
      * ServletInputStream.
      */
-    protected ServletInputStream stream = null;
+    protected CoyoteInputStream inputStream = new CoyoteInputStream();
+
+
+    /**
+     * Using stream flag.
+     */
+    protected boolean usingInputStream = false;
+
+
+    /**
+     * Context path.
+     */
+    protected String contextPath = "";
+
+
+    /**
+     * Path info.
+     */
+    protected String pathInfo = null;
+
+
+    /**
+     * Servlet path.
+     */
+    protected String servletPath = null;
+
+
+    /**
+     * Query string.
+     */
+    protected String queryString = null;
+
+
+    /**
+     * User principal.
+     */
+    protected Principal userPrincipal = null;
+
+
+    /**
+     * Session parsed flag.
+     */
+    protected boolean sessionParsed = false;
+
+
+    /**
+     * Request parameters parsed flag.
+     */
+    protected boolean requestParametersParsed = false;
 
 
     // --------------------------------------------------------- Public Methods
@@ -215,6 +291,29 @@ public class CoyoteRequest
      * preparation for reuse of this object.
      */
     public void recycle() {
+
+        context = null;
+        wrapper = null;
+
+        authType = null;
+        usingInputStream = false;
+        contextPath = "";
+        pathInfo = null;
+        servletPath = null;
+        queryString = null;
+        reader = null;
+        userPrincipal = null;
+        sessionParsed = false;
+        requestParametersParsed = false;
+
+        attributes.clear();
+        notes.clear();
+        cookies.clear();
+        if (parameters != null) {
+            parameters.setLocked(false);
+            parameters.clear();
+        }
+
     }
 
 
@@ -269,7 +368,6 @@ public class CoyoteRequest
     public void setConnector(Connector connector) {
         this.connector = connector;
     }
-
 
     /**
      * The Context within which this Request is being processed.
@@ -371,7 +469,7 @@ public class CoyoteRequest
      * Return the input stream associated with this Request.
      */
     public InputStream getStream() {
-        return null; // This call shouldn't exist in the first place
+        return inputStream;
     }
 
     /**
@@ -380,6 +478,7 @@ public class CoyoteRequest
      * @param stream The new input stream
      */
     public void setStream(InputStream stream) {
+        // Ignore
     }
 
 
@@ -418,7 +517,7 @@ public class CoyoteRequest
      */
     public ServletInputStream createInputStream() 
         throws IOException {
-        return null;
+        return inputStream;
     }
 
 
@@ -429,7 +528,7 @@ public class CoyoteRequest
      * @exception IOException if an input/output error occurs
      */
     public void finishRequest() throws IOException {
-        // Close reader and input stream
+        // The reader and input stream don't need to be closed
     }
 
 
@@ -504,6 +603,7 @@ public class CoyoteRequest
      * @param protocol Protocol name and version
      */
     public void setProtocol(String protocol) {
+        // Not used
     }
 
 
@@ -513,6 +613,7 @@ public class CoyoteRequest
      * @param remoteAddr The remote IP address
      */
     public void setRemoteAddr(String remoteAddr) {
+        // Not used
     }
 
 
@@ -523,6 +624,7 @@ public class CoyoteRequest
      * @param remoteHost The remote host name
      */
     public void setRemoteHost(String remoteHost) {
+        // Not used
     }
 
 
@@ -533,6 +635,7 @@ public class CoyoteRequest
      * @param scheme The scheme
      */
     public void setScheme(String scheme) {
+        // Not used
     }
 
 
@@ -543,6 +646,7 @@ public class CoyoteRequest
      * @param secure The new isSecure value
      */
     public void setSecure(boolean secure) {
+        // Not used
     }
 
 
@@ -552,6 +656,7 @@ public class CoyoteRequest
      * @param name The server name
      */
     public void setServerName(String name) {
+        coyoteRequest.serverName().setString(name);
     }
 
 
@@ -561,6 +666,7 @@ public class CoyoteRequest
      * @param port The server port
      */
     public void setServerPort(int port) {
+        coyoteRequest.setServerPort(port);
     }
 
 
@@ -626,9 +732,8 @@ public class CoyoteRequest
             throw new IllegalStateException
                 (sm.getString("requestBase.getInputStream.ise"));
 
-        if (stream == null)
-            stream = createInputStream();
-        return (stream);
+        usingInputStream = true;
+        return inputStream;
 
     }
 
@@ -640,10 +745,13 @@ public class CoyoteRequest
      * language, the server's default Locale is returned.
      */
     public Locale getLocale() {
-        if (locales.size() > 0)
+
+        if (locales.size() > 0) {
             return ((Locale) locales.get(0));
-        else
+        } else {
             return (defaultLocale);
+        }
+
     }
 
 
@@ -654,11 +762,13 @@ public class CoyoteRequest
      * preferred language, the server's default Locale is returned.
      */
     public Enumeration getLocales() {
+
         if (locales.size() > 0)
             return (new Enumerator(locales));
         ArrayList results = new ArrayList();
         results.add(defaultLocale);
         return (new Enumerator(results));
+
     }
 
 
@@ -727,12 +837,14 @@ public class CoyoteRequest
      */
     public BufferedReader getReader() throws IOException {
 
-        if (stream != null)
+        if (usingInputStream)
             throw new IllegalStateException
                 (sm.getString("requestBase.getReader.ise"));
 
         if (reader == null) {
-            // FIXME
+            String encoding = getCharacterEncoding();
+            InputStreamReader r = new InputStreamReader(inputStream, encoding);
+            reader = new BufferedReader(r);
         }
         return (reader);
 
@@ -769,7 +881,7 @@ public class CoyoteRequest
      * Return the remote IP address making this Request.
      */
     public String getRemoteAddr() {
-        return (null);
+        return coyoteRequest.remoteAddr().toString();
     }
 
 
@@ -777,7 +889,7 @@ public class CoyoteRequest
      * Return the remote host name making this Request.
      */
     public String getRemoteHost() {
-        return (null);
+        return coyoteRequest.remoteHost().toString();
     }
 
 
@@ -836,7 +948,7 @@ public class CoyoteRequest
      * Was this request received on a secure connection?
      */
     public boolean isSecure() {
-        return (false);
+        return (coyoteRequest.isSecure());
     }
 
 
@@ -909,6 +1021,7 @@ public class CoyoteRequest
      * @param cookie The new cookie
      */
     public void addCookie(Cookie cookie) {
+        cookies.add(cookie);
     }
 
 
@@ -919,6 +1032,8 @@ public class CoyoteRequest
      * @param value The new header value
      */
     public void addHeader(String name, String value) {
+        // Not used ?
+        System.out.println("coyoteRequest.addHeader(name, value)");
     }
 
 
@@ -929,6 +1044,7 @@ public class CoyoteRequest
      * @param locale The new preferred Locale
      */
     public void addLocale(Locale locale) {
+        locales.add(locale);
     }
 
 
@@ -941,6 +1057,7 @@ public class CoyoteRequest
      * @param values Corresponding values for this request parameter
      */
     public void addParameter(String name, String values[]) {
+        parameters.put(name, values);
     }
 
 
@@ -948,6 +1065,7 @@ public class CoyoteRequest
      * Clear the collection of Cookies associated with this Request.
      */
     public void clearCookies() {
+        cookies.clear();
     }
 
 
@@ -955,6 +1073,7 @@ public class CoyoteRequest
      * Clear the collection of Headers associated with this Request.
      */
     public void clearHeaders() {
+        // Not used
     }
 
 
@@ -962,6 +1081,7 @@ public class CoyoteRequest
      * Clear the collection of Locales associated with this Request.
      */
     public void clearLocales() {
+        locales.clear();
     }
 
 
@@ -969,6 +1089,7 @@ public class CoyoteRequest
      * Clear the collection of parameters associated with this Request.
      */
     public void clearParameters() {
+        parameters.clear();
     }
 
 
@@ -980,6 +1101,7 @@ public class CoyoteRequest
      * @param type The authentication type used
      */
     public void setAuthType(String type) {
+        this.authType = type;
     }
 
 
@@ -991,6 +1113,13 @@ public class CoyoteRequest
      * @param path The context path
      */
     public void setContextPath(String path) {
+
+        if (path == null) {
+            this.contextPath = "";
+        } else {
+            this.contextPath = path;
+        }
+
     }
 
 
@@ -1000,6 +1129,7 @@ public class CoyoteRequest
      * @param method The request method
      */
     public void setMethod(String method) {
+        // Not used
     }
 
 
@@ -1010,6 +1140,7 @@ public class CoyoteRequest
      * @param query The query string
      */
     public void setQueryString(String query) {
+        // Not used
     }
 
 
@@ -1021,6 +1152,7 @@ public class CoyoteRequest
      * @param path The path information
      */
     public void setPathInfo(String path) {
+        this.pathInfo = path;
     }
 
 
@@ -1032,6 +1164,7 @@ public class CoyoteRequest
      * @param flag The new flag
      */
     public void setRequestedSessionCookie(boolean flag) {
+        // Not used
     }
 
 
@@ -1042,6 +1175,7 @@ public class CoyoteRequest
      * @param id The new session id
      */
     public void setRequestedSessionId(String id) {
+        // Not used
     }
 
 
@@ -1053,6 +1187,7 @@ public class CoyoteRequest
      * @param flag The new flag
      */
     public void setRequestedSessionURL(boolean flag) {
+        // Not used
     }
 
 
@@ -1063,6 +1198,7 @@ public class CoyoteRequest
      * @param uri The request URI
      */
     public void setRequestURI(String uri) {
+        // Not used
     }
 
 
@@ -1074,6 +1210,7 @@ public class CoyoteRequest
      * @param path The servlet path
      */
     public void setServletPath(String path) {
+        this.servletPath = path;
     }
 
 
@@ -1085,6 +1222,7 @@ public class CoyoteRequest
      * @param principal The user Principal
      */
     public void setUserPrincipal(Principal principal) {
+        this.userPrincipal = principal;
     }
 
 
@@ -1095,7 +1233,7 @@ public class CoyoteRequest
      * Return the authentication type used for this Request.
      */
     public String getAuthType() {
-        return (null);
+        return (authType);
     }
 
 
@@ -1104,7 +1242,7 @@ public class CoyoteRequest
      * of the Request.
      */
     public String getContextPath() {
-        return (null);
+        return (contextPath);
     }
 
 
@@ -1161,7 +1299,7 @@ public class CoyoteRequest
      * @param name Name of the requested header
      */
     public String getHeader(String name) {
-        return null;
+        return coyoteRequest.getHeader(name);
     }
 
 
@@ -1172,7 +1310,7 @@ public class CoyoteRequest
      * @param name Name of the requested header
      */
     public Enumeration getHeaders(String name) {
-        return null;
+        return coyoteRequest.getMimeHeaders().values(name);
     }
 
 
@@ -1180,7 +1318,7 @@ public class CoyoteRequest
      * Return the names of all headers received with this request.
      */
     public Enumeration getHeaderNames() {
-        return null;
+        return coyoteRequest.getMimeHeaders().names();
     }
 
 
@@ -1196,10 +1334,11 @@ public class CoyoteRequest
     public int getIntHeader(String name) {
 
         String value = getHeader(name);
-        if (value == null)
+        if (value == null) {
             return (-1);
-        else
+        } else {
             return (Integer.parseInt(value));
+        }
 
     }
 
@@ -1208,7 +1347,7 @@ public class CoyoteRequest
      * Return the HTTP request method used in this Request.
      */
     public String getMethod() {
-        return null;
+        return coyoteRequest.method().toString();
     }
 
 
@@ -1216,7 +1355,7 @@ public class CoyoteRequest
      * Return the path information associated with this Request.
      */
     public String getPathInfo() {
-        return null;
+        return (pathInfo);
     }
 
 
@@ -1225,7 +1364,16 @@ public class CoyoteRequest
      * to a real path.
      */
     public String getPathTranslated() {
-        return null;
+
+        if (context == null)
+            return (null);
+
+        if (pathInfo == null) {
+            return (null);
+        } else {
+            return (context.getServletContext().getRealPath(pathInfo));
+        }
+
     }
 
 
@@ -1234,7 +1382,7 @@ public class CoyoteRequest
      * Return the query string associated with this request.
      */
     public String getQueryString() {
-        return null;
+        return (queryString);
     }
 
 
@@ -1243,7 +1391,13 @@ public class CoyoteRequest
      * for this Request.
      */
     public String getRemoteUser() {
-        return null;
+
+        if (userPrincipal != null) {
+            return (userPrincipal.getName());
+        } else {
+            return (null);
+        }
+
     }
 
 
@@ -1259,7 +1413,7 @@ public class CoyoteRequest
      * Return the request URI for this request.
      */
     public String getRequestURI() {
-        return null;
+        return coyoteRequest.requestURI().toString();
     }
 
 
@@ -1280,7 +1434,25 @@ public class CoyoteRequest
      *  reconstructed URL
      */
     public StringBuffer getRequestURL() {
-        return null;
+
+        StringBuffer url = new StringBuffer();
+        String scheme = getScheme();
+        int port = getServerPort();
+        if (port < 0)
+            port = 80; // Work around java.net.URL bug
+
+        url.append(scheme);
+        url.append("://");
+        url.append(getServerName());
+        if ((scheme.equals("http") && (port != 80))
+            || (scheme.equals("https") && (port != 443))) {
+            url.append(':');
+            url.append(port);
+        }
+        url.append(getRequestURI());
+
+        return (url);
+
     }
 
 
@@ -1289,7 +1461,7 @@ public class CoyoteRequest
      * that will process this request.
      */
     public String getServletPath() {
-        return null;
+        return (servletPath);
     }
 
 
@@ -1339,7 +1511,7 @@ public class CoyoteRequest
      *  <code>isRequestedSessionIdFromURL()</code> instead.
      */
     public boolean isRequestedSessionIdFromUrl() {
-        return false;
+        return (isRequestedSessionIdFromURL());
     }
 
 
@@ -1359,7 +1531,29 @@ public class CoyoteRequest
      * @param role Role name to be validated
      */
     public boolean isUserInRole(String role) {
-        return false;
+
+        // Have we got an authenticated principal at all?
+        if (userPrincipal == null)
+            return (false);
+
+        // Identify the Realm we will use for checking role assignmenets
+        if (context == null)
+            return (false);
+        Realm realm = context.getRealm();
+        if (realm == null)
+            return (false);
+
+        // Check for a role alias defined in a <security-role-ref> element
+        if (wrapper != null) {
+            String realRole = wrapper.findSecurityReference(role);
+            if ((realRole != null) &&
+                realm.hasRole(userPrincipal, realRole))
+                return (true);
+        }
+
+        // Check for a role defined directly as a <security-role>
+        return (realm.hasRole(userPrincipal, role));
+
     }
 
 
@@ -1367,7 +1561,7 @@ public class CoyoteRequest
      * Return the principal that has been authenticated for this Request.
      */
     public Principal getUserPrincipal() {
-        return null;
+        return (userPrincipal);
     }
 
 
