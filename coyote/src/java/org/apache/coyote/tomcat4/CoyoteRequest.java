@@ -397,6 +397,8 @@ public class CoyoteRequest
         locales.clear();
         localesParsed = false;
         secure = false;
+        remoteAddr = null;
+        remoteHost = null;
 
         attributes.clear();
         notes.clear();
