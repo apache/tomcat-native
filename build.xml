@@ -153,6 +153,11 @@
     </antcall>
 
     <antcall target="downloadgz">
+      <param name="sourcefile" value="${commons-modeler.loc}"/>
+      <param name="destfile" value="${commons-modeler.jar}"/>
+    </antcall>
+
+    <antcall target="downloadgz">
       <param name="sourcefile" value="${jmx.loc}"/>
       <param name="destfile" value="${jmx.jar}"/>
     </antcall>
