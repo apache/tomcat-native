@@ -1,3 +1,73 @@
+dnl  =========================================================================
+dnl
+dnl                  The Apache Software License,  Version 1.1
+dnl
+dnl           Copyright (c) 1   -2001 The Apache Software Foundation.
+dnl                            All rights reserved.
+dnl
+dnl  =========================================================================
+dnl
+dnl  Redistribution and use in source and binary forms,  with or without modi-
+dnl  fication, are permitted provided that the following conditions are met:
+dnl
+dnl  1. Redistributions of source code  must retain the above copyright notice
+dnl     notice, this list of conditions and the following disclaimer.
+dnl
+dnl  2. Redistributions  in binary  form  must  reproduce the  above copyright
+dnl     notice,  this list of conditions  and the following  disclaimer in the
+dnl     documentation and/or other materials provided with the distribution.
+dnl
+dnl  3. The end-user documentation  included with the redistribution,  if any,
+dnl     must include the following acknowlegement:
+dnl
+dnl        "This product includes  software developed  by the Apache  Software
+dnl         Foundation <http://www.apache.org/>."
+dnl
+dnl     Alternately, this acknowlegement may appear in the software itself, if
+dnl     and wherever such third-party acknowlegements normally appear.
+dnl
+dnl  4. The names "The Jakarta Project",  "Apache WebApp Module",  and "Apache
+dnl     Software Foundation"  must not be used to endorse or promote  products
+dnl     derived  from this  software  without  prior  written  permission. For
+dnl     written permission, please contact <apache@apache.org>.
+dnl
+dnl  5. Products derived from this software may not be called "Apache" nor may
+dnl     "Apache" appear in their names without prior written permission of the
+dnl     Apache Software Foundation.
+dnl
+dnl  THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES
+dnl  INCLUDING, BUT NOT LIMITED TO,  THE IMPLIED WARRANTIES OF MERCHANTABILITY
+dnl  AND FITNESS FOR  A PARTICULAR PURPOSE  ARE DISCLAIMED.  IN NO EVENT SHALL
+dnl  THE APACHE  SOFTWARE  FOUNDATION OR  ITS CONTRIBUTORS  BE LIABLE  FOR ANY
+dnl  DIRECT,  INDIRECT,   INCIDENTAL,  SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL
+dnl  DAMAGES (INCLUDING,  BUT NOT LIMITED TO,  PROCUREMENT OF SUBSTITUTE GOODS
+dnl  OR SERVICES;  LOSS OF USE,  DATA,  OR PROFITS;  OR BUSINESS INTERRUPTION)
+dnl  HOWEVER CAUSED AND  ON ANY  THEORY  OF  LIABILITY,  WHETHER IN  CONTRACT,
+dnl  STRICT LIABILITY, OR TORT  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+dnl  ANY  WAY  OUT OF  THE  USE OF  THIS  SOFTWARE,  EVEN  IF  ADVISED  OF THE
+dnl  POSSIBILITY OF SUCH DAMAGE.
+dnl  
+dnl  =========================================================================
+dnl  
+dnl  This software  consists of voluntary  contributions made  by many indivi-
+dnl  duals on behalf of the  Apache Software Foundation.  For more information
+dnl  on the Apache Software Foundation, please see <http://www.apache.org/>.
+dnl  
+dnl  =========================================================================
+
+dnl --------------------------------------------------------------------------
+dnl Author Henri Gomez <hgomez@slib.fr>
+dnl 
+dnl Version $Id$
+dnl --------------------------------------------------------------------------
+
+dnl sinclude(../support/jk_apache_static.m4)
+sinclude(../support/jk_apxs.m4)
+sinclude(../support/jk_ws.m4)
+sinclude(../support/jk_apr.m4)
+sinclude(../support/jk_tchome.m4)
+sinclude(../support/jk_java.m4)
+
 dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
@@ -44,474 +114,88 @@ AC_SUBST(CP)
 AC_PATH_PROG(MKDIR,mkdir,$PATH)dnl
 AC_SUBST(MKDIR)
 
-JK_POOL_APR=""
-JK_CHANNEL_APR_SOCKET=""
-HAS_APR=""
+dnl APXS settings
 
-APACHE_CONFIG_VARS=`pwd`/scripts/build/config_vars.mk
-WEBSERVER=""
-APACHE_DIR=""
-APACHE_HOME=""
-APACHE_INCL=""
-APR_DIR=""
-APR_INCL=""
-APR_LDFLAGS=""
-APR_INCDIR=""
-APR_LIBDIR=""
-APR_BUILD=""
-APR_CLEAN=""
-APR_LIB_STATIC=""
-EXTRA_CFLAGS=""
-EXTRA_CPPFLAGS=""
-APXS="apxs"
-AC_ARG_WITH(apxs,
-[  --with-apxs[=FILE]      Build shared Apache module. FILE is the optional
-                        pathname to the apxs tool; defaults to finding
-			apxs in your PATH.],
-[
-    case "${withval}" in 
-        y | yes | true) find_apxs=true ;;
-        n | no | false) find_apxs=false ;;
-        *) find_apxs=false ;;
-    esac
+JK_APXS([], [location of apxs for Apache 1.3])
+JK_APXS([2], [location of apxs for Apache 2.0])
 
-    if ${TEST} ${find_apxs} ; then    
-        AC_MSG_RESULT([need to check for Perl first, apxs depends on it...])
-        AC_PATH_PROG(PERL,perl,$PATH)dnl
-    
-        if ${TEST} ${find_apxs} ; then
-            APXS=${withval}
-        else
-            AC_PATH_PROG(APXS,apxs,$PATH)dnl
-        fi
-    
-        if ${TEST} -n "${APXS}" ; then
-            dnl Seems that we have it, but have to check if it is OK first        
-            if ${TEST} ! -x "${APXS}" ; then
-                AC_MSG_ERROR(Invalid location for apxs: '${APXS}')
-            fi
-            
-            ${APXS} -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
-    
-            if ${TEST} "${apxs_support}" = "false" ; then
-                AC_MSG_RESULT(could not find ${APXS})
-                AC_MSG_ERROR(You must specify a valid --with-apxs path)
-            fi
+dnl APACHE13 settings
+JK_WS_DIR([apache13], [src/include/httpd.h])
+JK_WS_INCDIR([apache13], [httpd.h])
+JK_WS_LIBDIR([apache13])
 
-            dnl apache_dir and apache_include are also needed.
-            APACHE_HOME=`$APXS -q PREFIX`
-            APACHE_INCL="-I`$APXS -q INCLUDEDIR`"
 
-            dnl test apache version
-            APA=`${GREP} STANDARD20 ${APXS}`
-            if ${TEST} -z "$APA" ; then
-                WEBSERVER="server/apache13"
-                RWEBSERVER="apache-1.3"
-				EXTRA_CFLAGS="`$APXS -q CFLAGS`"
-            else
-                WEBSERVER="server/apache2"
-                RWEBSERVER="apache-2.0"
-                APACHE_CONFIG_VARS=${apache_dir}/build/config_vars.mk
-                JK_CHANNEL_APR_SOCKET="\${JK}jk_channel_apr_socket\${OEXT}"
-                JK_POOL_APR="\${JK}jk_pool_apr\${OEXT}"
-                HAS_APR="-DHAS_APR"
-				EXTRA_CFLAGS="`$APXS -q EXTRA_CFLAGS`"
-				EXTRA_CPPFLAGS="`$APXS -q EXTRA_CPPFLAGS`"
-				APR_LDFLAGS="-lapr"
-            fi
-            AC_MSG_RESULT([building connector for \"$RWEBSERVER\"])
-    
-            AC_SUBST(APXS)
-        fi
-    fi
-],
-[
-	AC_MSG_RESULT(no apxs given)
-])
-AC_SUBST(APACHE_CONFIG_VARS)
+dnl APACHE2 settings
+JK_WS_DIR([apache2], [include/httpd.h])
+JK_WS_INCDIR([apache2], [httpd.h])
+JK_WS_LIBDIR([apache2])
 
-dnl Apache-2.0 needs the os subdirectory to include os.h
-dnl this include is copy from os/config.m4
-sinclude(../../common/build/os_apache.m4)
 
-dnl it is copied from the configure of JServ ;=)
-dnl and adapted. 
+dnl IIS settings
+JK_WS_DIR([iis], [.])
+JK_WS_INCDIR([iis], [.])
+JK_WS_LIBDIR([iis])
 
-apache_dir_is_src="false"
-AC_ARG_WITH(apache,
-[  --with-apache=DIR      Build static Apache module. DIR is the pathname 
-                        to the Apache source directory.],
-[
-    if ${TEST} ! -z "$WEBSERVER" ; then
-        AC_MSG_ERROR([Sorry cannot use --with-apxs=${APXS} and --with-apache=${withval} togother, please choose one of both])
-    fi
+AC_SUBST(IIS_CFLAGS)
+AC_SUBST(IIS_DIR)
+AC_SUBST(IIS_HOME)
+AC_SUBST(IIS_INCDIR)
+AC_SUBST(IIS_LDFLAGS)
+AC_SUBST(IIS_LIBDIR)
 
-    AC_MSG_CHECKING([for Apache source directory (assume static build)])
 
-    if ${TEST} -n "${withval}" && ${TEST} -d "${withval}" ; then
-        if ${TEST} -d "${withval}/src" ; then
-           # handle the case where people use relative paths to 
-           # the apache source directory by pre-pending the current
-           # build directory to the path. there are probably 
-           # errors with this if configure is run while in a 
-           # different directory than what you are in at the time
-           if ${TEST} -n "`${ECHO} ${withval}|${GREP} \"^\.\.\"`" ; then
-               withval=`pwd`/${withval}
-           fi
+dnl iPlanet settings
+JK_WS_DIR([iplanet], [.])
+JK_WS_INCDIR([iplanet], [.])
+JK_WS_LIBDIR([iplanet])
 
-           apache_dir=${withval}
-           apache_dir_is_src="true"
-           AC_MSG_RESULT(${apache_dir})
-        
-           AC_MSG_CHECKING(for Apache include directory)
+AC_SUBST(IPLANET_CFLAGS)
+AC_SUBST(IPLANET_DIR)
+AC_SUBST(IPLANET_HOME)
+AC_SUBST(IPLANET_INCDIR)
+AC_SUBST(IPLANET_LDFLAGS)
+AC_SUBST(IPLANET_LIBDIR)
 
-           if ${TEST} -d "${withval}/src/include" ; then
-               # read osdir from the existing apache.
-               osdir=`${GREP} '^OSDIR=' ${withval}/src/Makefile.config | ${SED} -e 's:^OSDIR=.*/os:os:'`
-               if ${TEST} -z "${osdir}" ; then
-                   osdir=os/unix
-               fi
-                APACHE_DIR=${withval}
-                APACHE_HOME=${withval}
-                APACHE_INCL="-I${withval}/src/include -I${withval}/src/${osdir}"
-                EXTRA_CFLAGS=""
-                EXTRA_CPPFLAGS=""
-                WEBSERVER="server/apache13"
-                RWEBSERVER="apache-1.3"
-               AC_MSG_RESULT([${APACHE_INCL}, version 1.3])
-           else
-               AC_MSG_ERROR([Sorry Apache 1.2.x is no longer supported.])
-           fi
-        else
-           if ${TEST} -d "${withval}/include" ; then
-              # osdir for Apache20.
-              WEBSERVER="server/apache2"
-              RWEBSERVER="apache-2.0"
-              APACHE_DIR=${withval}
-              APACHE_HOME=${withval}
-              apache_dir_is_src="true"
-              APACHE_INCL="-I${withval}/include -I${withval}/srclib/apr/include -I${withval}/os/${OS_APACHE_DIR} -I${withval}/srclib/apr-util/include"
-              AC_MSG_RESULT(${apache_dir})
-              JK_CHANNEL_APR_SOCKET="\${JK}jk_channel_apr_socket\${OEXT}"
-              JK_POOL_APR="\${JK}jk_pool_apr\${OEXT}"
-              HAS_APR="-DHAS_APR"
-           fi
-        fi
-    fi
 
-    dnl Make sure we have a result.
-    if ${TEST} -z "$WEBSERVER" ; then
-        AC_MSG_ERROR([Directory $apache_dir is not a valid Apache source distribution])
-    fi
+dnl TOMCATs settings
 
-# VT: Now, which one I'm supposed to use? Let's figure it out later
+JK_TCHOME([tomcat33], [TOMCAT33_HOME], [lib/tomcat.jar])
+JK_TCHOME([tomcat40], [TOMCAT40_HOME], [server/lib/catalina.jar])
+JK_TCHOME([tomcat41], [TOMCAT41_HOME], [server/lib/catalina.jar])
 
-    configure_apache=true
-    configure_src=true
-    
-    AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
-],
-[
-	AC_MSG_RESULT(no apache dir given)
-])
-AC_SUBST(APACHE_HOME)
-AC_SUBST(APACHE_DIR)
-AC_SUBST(APACHE_INCL)
-AC_SUBST(EXTRA_CFLAGS)
-AC_SUBST(EXTRA_CPPFLAGS)
+AC_SUBST(TOMCAT33_HOME)
+AC_SUBST(TOMCAT40_HOME)
+AC_SUBST(TOMCAT41_HOME)
 
-dnl Check for enable-jni
-JK_JNI_WORKER=""
-AC_ARG_ENABLE(jni,
-[  --enable-jni     Build jni_connect.so and enable jni_worker.],
-[
-    AC_MSG_RESULT(jni enable (need JDK))
-    CFLAGS="${CFLAGS} -DHAVE_JNI"
-    JK_JNI_WORKER="\${JK}jk_jni_worker\${OEXT}"
-])dnl
-AC_SUBST(JK_JNI_WORKER)
 
-dnl CFLAGS for EAPI mod_ssl (Apache 1.3)
-dnl it also allows the CFLAGS environment variable.
-CFLAGS="${CFLAGS}"
-AC_ARG_ENABLE(
-EAPI,
-[  --enable-EAPI           Enable EAPI support (mod_ssl, Apache 1.3)],
-[
-case "${enableval}" in
-    y | Y | YES | yes | TRUE | true )
-        CFLAGS="${CFLAGS} -DEAPI"
-        AC_MSG_RESULT([...Enabling EAPI Support...])
-        ;;
-esac
-])
-AC_SUBST(CFLAGS)
+dnl APR settings
 
-dnl the APXSCFLAGS is given by apxs to the C compiler
-dnl the APXSLDFLAGS is given to the linker (for APRVARS).
-APXSLDFLAGS=""
-APXSCFLAGS=""
-if ${TEST} -n "${CFLAGS}" ; then
-	APXSCFLAGS="${CFLAGS}"
-fi
-dnl the APXSLDFLAGS is normaly empty but APXSCFLAGS is not.
-if ${TEST} -n "${LDFLAGS}" ; then
-	APXSLDFLAGS="-Wl,${LDFLAGS}"
-fi
-AC_SUBST(APXSCFLAGS)
-AC_SUBST(APXSLDFLAGS)
+JK_APR([include/apr.h.in])
+JK_APR_INCDIR([apr.h])
+JK_APR_LIBDIR()
 
-if ${TEST} -n "${JK_JNI_WORKER}" ; then
-                       
-dnl Find the JDK
-dnl Results go in JAVA_HOME
-dnl Also sets JAVA_PLATFORM to 1 for 1.1 and to 2 for 1.2
+dnl Set these to empty until we know what to do with them
 
-AC_MSG_CHECKING([for JDK location (please wait)])
+AC_SUBST(APR_UTIL_INCL)
+AC_SUBST(APR_UTIL_LIB)
 
-dnl The order is: --with-java-home first, environment second, guessed value third.
-    
-dnl This is a safe default. Could screw up on the security features, but
-dnl oh well, this is what --with-java2 is for.
-    
-if ${TEST} -n "${JAVA_HOME}" ; then
-	JAVA_HOME_ENV="${JAVA_HOME}"
-else
-	JAVA_HOME_ENV=""
-fi
-JAVA_HOME=""
-JAVA_PLATFORM="1"
 
-AC_ARG_WITH(java-home,
-[  --with-java-home=DIR     Where is your JDK root directory.],
-[
-    
-    # This stuff works if the command line parameter --with-java-home was
-    # specified, so it takes priority rightfully.
-    
-    JAVA_HOME=${withval}
-	
-    if ${TEST} ! -d "${JAVA_HOME}" ; then
-        AC_MSG_ERROR(Not a directory: ${JAVA_HOME})
-    fi
-	
-    AC_MSG_RESULT(${JAVA_HOME})
-	
-],
-[
-    # This works if the parameter was NOT specified, so it's a good time
-    # to see what the enviroment says.
-        
-    # Since Sun uses JAVA_HOME a lot, we check it first and ignore the
-    # JAVA_HOME, otherwise just use whatever JAVA_HOME was specified.
-        
-    if ${TEST} -n "${JAVA_HOME_ENV}" ; then
-            
-        JAVA_HOME=${JAVA_HOME_ENV}
-        AC_MSG_RESULT(${JAVA_HOME_ENV} from environment)
-    fi
-])
+dnl Java settings
 
-if ${TEST} -z "${JAVA_HOME}" ; then
-    
-    # Oh well, nobody set neither JAVA_HOME nor JAVA_HOME, have to guess
-        
-    # The following code is based on the code submitted by Henner Zeller
-    # for ${srcdir}/src/scripts/package/rpm/ApacheJServ.spec
-        
-    # Two variables will be set as a result:
-    #
-    # JAVA_HOME
-    # JAVA_PLATFORM
-    AC_MSG_CHECKING([Try to guess JDK location])
-        
-        
-    for JAVA_PREFIX in \
-	    /usr/local \
-	    /usr/local/lib \
-    	    /usr \
-    	    /usr/lib \
-            /opt  \
-    	    / 
-    do
-        for JAVA_PLATFORM in 3 2 1 ;
-        do
-            
-            for subversion in .9 .8 .7 .6 .5 .4 .3 .2 .1 "" ;
-                do
-                    for VARIANT in IBMJava2- java java- jdk jdk-;
-                    do
-                        GUESS="${JAVA_PREFIX}/${VARIANT}1.${JAVA_PLATFORM}${subversion}"
-dnl                        AC_MSG_CHECKING([${GUESS}])
-                        if ${TEST} -d "${GUESS}/bin" \
-                        && ${TEST} -d "${GUESS}/include" ; then
-                        
-                            JAVA_HOME="${GUESS}"
-                            AC_MSG_RESULT([${GUESS}])
-                            break
-                        fi
+JK_JDK()
+JK_JNI()
 
-                    done
-
-                    if ${TEST} -n "${JAVA_HOME}" ; then
-                        break;
-                    fi
-
-                done
-
-                if ${TEST} -n "${JAVA_HOME}" ; then
-                    break;
-                fi
-
-            done
-
-            if ${TEST} -n "${JAVA_HOME}" ; then
-                break;
-            fi
-
-        done
-
-        if ${TEST} -n "${JAVA_HOME}" ; then
-
-            dnl Just to have the messages looking uniformly
-
-            AC_MSG_CHECKING(Java platform)
-            AC_MSG_RESULT([guess ${JAVA_PLATFORM}])
-        fi                                                                      
-
-        
-else
-    
-        AC_MSG_CHECKING(Java platform)
-
-        AC_ARG_WITH(java-platform,
-        [  --with-java-platform=VAL Force the Java platorm
-                          (value is 1 for 1.1.x or 2 for 1.2.x or greater)],
-        [
-            dnl This requires a bit of tweaking to be handled properly, but
-            dnl the default is good enough
-            
-            JAVA_PLATFORM="2"
-        ])
-
-        AC_MSG_RESULT(forced Java ${JAVA_PLATFORM})
-
-fi
-dnl end of JServ ;=)
-
-dnl test if --enable-jni give but not valid JAVA_HOME
-if ${TEST} -z "${JAVA_HOME}" ; then
-    AC_MSG_ERROR([JDK home not found, please specify one with --with-java-home option (run ./configure --help for more options)])
-fi
-
-dnl guess OS = OS_TYPE for jni_md.h
-OS=""
-AC_ARG_WITH(os-type,
-[  --with-os-type[=SUBDIR]     Where is your JDK os-type subdirectory.],
-[
-    OS=${withval}
-	
-    if ${TEST} ! -d "${JAVA_HOME}/${OS}" ; then
-        AC_MSG_ERROR(Not a directory: ${JAVA_HOME}/${OS})
-    fi
-],
-[
-    AC_MSG_CHECKING(os_type directory)
-    if ${TEST} -f ${JAVA_HOME}/include/jni_md.h; then
-    	OS=""
-    else
-        for f in ${JAVA_HOME}/include/*/jni_md.h; do
-            if ${TEST} -f $f; then
-                OS=`dirname ${f}`
-                OS=`basename ${OS}`
-                echo " ${OS}"
-            fi
-        done
-        if ${TEST} -z "${OS}"; then
-            AC_MSG_RESULT(Cannot find jni_md.h in ${JAVA_HOME}/${OS})
-            AC_MSG_ERROR(You should retry --with-os-type=SUBDIR)
-        fi
-    fi
-])
-fi
 AC_SUBST(JAVA_HOME)
+AC_SUBST(JAVA_PLATFORM)
 AC_SUBST(OS)
 
-AC_ARG_WITH(apr,
-[  --with-apr=DIR     Where is your APR source dir.],
-[
 
-    # This stuff works if the command line parameter --with-apr was
-    # specified, so it takes priority rightfully.
-
-    APR_DIR=${withval}
-
-    if ${TEST} ! -d "${APR_DIR}" ; then
-        AC_MSG_ERROR(Not a directory: ${APR_DIR})
-    fi
-
-    HAS_APR="-DHAS_APR"
-    APR_BUILD="apr-build"
-	APR_INCL="-I ${APR_DIR}/include"
-    APR_CLEAN="apr-clean"
-	APR_LIB_STATIC="${APR_DIR}/.libs/libapr.a"
-    AC_MSG_RESULT(${APR_DIR})
-])
-
-AC_ARG_WITH(apr-include,
-[  --with-apr-include=DIR     Where is your APR include dir.],
-[   
-    
-    # This stuff works if the command line parameter --with-apr-include was
-    # specified, so it takes priority rightfully.
-    
-    APR_INCDIR=${withval}
-
-    if ${TEST} ! -d "${APR_INCDIR}" ; then
-        AC_MSG_ERROR(Not a directory: ${APR_INCDIR})
-    fi
-
-    HAS_APR="-DHAS_APR"
-    APR_INCL="-I ${APR_INCDIR}"
-	APR_LDFLAGS="-lapr"
-    AC_MSG_RESULT(${APR_INCDIR})
-])
-
-AC_ARG_WITH(apr-lib,
-[  --with-apr-lib=DIR     Where is your APR library dir.],
-[   
-    
-    # This stuff works if the command line parameter --with-apr-lib was
-    # specified, so it takes priority rightfully.
-    
-    APR_LIBDIR=${withval}
-
-    if ${TEST} ! -d "${APR_LIBDIR}" ; then
-        AC_MSG_ERROR(Not a directory: ${APR_LIBDIR})
-    fi
-
-    HAS_APR="-DHAS_APR"
-    APR_LIBS="-L ${APR_LIBDIR}"
-	APR_LDFLAGS="-lapr -L${APR_LIBDIR}"
-    AC_MSG_RESULT(${APR_LIBDIR})
-])
-
-AC_SUBST(APR_DIR)
-AC_SUBST(APR_INCDIR)
-AC_SUBST(APR_INCL)
-AC_SUBST(APR_LDFLAGS)
-AC_SUBST(APR_LIBDIR)
-AC_SUBST(APR_LIBS)
-AC_SUBST(APR_BUILD)
-AC_SUBST(APR_CLEAN)
-AC_SUBST(APR_LIB_STATIC)
-
-dnl Check that  a WEBSERVER has been given
-if ${TEST} -z "$WEBSERVER" ; then
-	AC_MSG_ERROR(Cannot find the WebServer)
+dnl Check that at least one WEBSERVER has been given
+if ${TEST} -z "$WEBSERVERS" ; then
+	AC_MSG_ERROR(Cannot find any WebServer)
 fi
 
-AC_SUBST(WEBSERVER)
+AC_SUBST(WEBSERVERS)
 
 AM_CONDITIONAL(MAKE_DYNAMIC_APACHE, ${TEST} "${apache_dir_is_src}" = "false")
 
@@ -525,14 +209,21 @@ else
 	LIB_JK_TYPE=lib_jk.la
 	INSTALL_TYPE=install_static
 fi
+
 AC_SUBST(APACHE20_OEXT)
 AC_SUBST(LIB_JK_TYPE)
 AC_SUBST(INSTALL_TYPE)
 
-AC_SUBST(JK_CHANNEL_APR_SOCKET)
-AC_SUBST(JK_POOL_APR)
-AC_SUBST(HAS_APR)
+dnl set APR defs
 AC_SUBST(APR_BUILD)
+AC_SUBST(APR_CFLAGS)
+AC_SUBST(APR_CLEAN)
+AC_SUBST(APR_DIR)
+AC_SUBST(APR_HOME)
+AC_SUBST(APR_INCDIR)
+AC_SUBST(APR_LIBDIR)
+AC_SUBST(APR_LDFLAGS)
+AC_SUBST(COMMON_APR_OBJECTS)
 
 dnl automake needs the path it does not work with $WEBSERVER
 dnl that why useless Makefiles are build.
@@ -542,5 +233,5 @@ AC_OUTPUT([
 	server/apache13/Makefile.apxs
 	server/apache2/Makefile
 	server/apache2/Makefile.apxs
-	common/list.mk
+	../build.properties:../build.properties.autoconf
 	])
