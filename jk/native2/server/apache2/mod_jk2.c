@@ -404,9 +404,6 @@ static apr_status_t jk2_shutdown(void *data)
 static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
                        jk_workerEnv_t *workerEnv, server_rec *s )
 {
-    /* Ugly hack to get the childId - the index used in the scoreboard,
-       which we'll use in the jk scoreboard
-    */
 
     workerEnv->init(env, workerEnv );
     workerEnv->server_name   = (char *)ap_get_server_version();
@@ -458,7 +455,6 @@ static int jk2_post_config(apr_pool_t *pconf,
                            server_rec *s)
 {
     apr_pool_t *gPool=NULL;
-    void *data=NULL;
     int rc;
     jk_env_t *env;
     
@@ -474,11 +470,6 @@ static int jk2_post_config(apr_pool_t *pconf,
 
     env->setAprPool(env, gPool);
 
-    if (!ap_exists_scoreboard_image()) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-            "jk2_postconfig() No scoreboard image %d\n", getpid());
-    }
-
     if( rc == JK_OK && gPool != NULL ) {
         /* This is the first step */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -490,16 +481,8 @@ static int jk2_post_config(apr_pool_t *pconf,
         
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "mod_jk.post_config() second invocation\n" ); 
-
-
     workerEnv->parentInit( env, workerEnv);
 
-
-/*     if(!workerEnv->was_initialized) { */
-/*         workerEnv->was_initialized = JK_OK;         */
-        
-/*         jk2_init( env, pconf, workerEnv, s ); */
-/*     } */
     return OK;
 }
 
@@ -565,7 +548,7 @@ static void jk2_child_init(apr_pool_t *pconf,
         ++ap_scoreboard_image->parent[workerEnv->childId].generation;
     }
 
-    if(!workerEnv->was_initialized && !workerEnv->childGeneration) {
+    if(!workerEnv->was_initialized) {
         workerEnv->was_initialized = JK_TRUE;        
         
         jk2_init( env, pconf, workerEnv, s );
