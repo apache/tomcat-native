@@ -102,6 +102,12 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
                                  jk_logger_t *l);
 #endif
 
+#ifdef AJP12
+int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
+                                   const char *name,
+                                   jk_logger_t *l);
+#endif
+
 /* Factories for 'new' types. We use the new factory interface,
  *  workers will be updated later 
  */
@@ -123,6 +129,9 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
     printf("jk_registry_init: Assertion failed, env==NULL\n" );
     return;
   }
+#ifdef AJP12
+  env->registerFactory( env, "worker", "ajp12", &ajp12_worker_factory );
+#endif
   env->registerFactory( env, "worker", "ajp13", &ajp13_worker_factory );
   env->registerFactory( env, "worker", "ajp14", &ajp14_worker_factory );
   env->registerFactory( env, "worker", "lb",    &lb_worker_factory );
