@@ -350,12 +350,10 @@ static int warp_handle(wa_request *r, wa_application *appl) {
         }
         switch (pack->type) {
             case TYPE_RES_STATUS: {
-                char *prot=NULL;
                 char *mesg=NULL;
-                p_read_string(pack,&prot);
                 p_read_ushort(pack,&status);
                 p_read_string(pack,&mesg);
-                wa_debug(WA_MARK,"=== %s %d %s",prot,status,mesg);
+                wa_debug(WA_MARK,"=== %d %s",status,mesg);
                 wa_rsetstatus(r,status);
                 break;
             }
