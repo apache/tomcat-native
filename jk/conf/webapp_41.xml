@@ -1,9 +1,0 @@
-<!--
-    Context configuration file for the Tomcat Jk connector
--->
-
-
-<Context path="/_jk" docBase="../server/webapps/jk"
-         debug="0" privileged="true">
- <!-- Config options will be in jk's web.xml -->
-</Context>
