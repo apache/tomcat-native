@@ -1045,7 +1045,18 @@ static int get_bridge_object(jni_worker_t *p,
     jk_log(l, JK_LOG_DEBUG, 
            "Into get_bridge_object\n");
 
+/* OS400 need conversion from EBCDIC to ASCII before passing to JNI*/
+
+#ifdef AS400
+#pragma convert(819)
+#endif
+
     p->jk_java_bridge_class = (*env)->FindClass(env, JAVA_BRIDGE_CLASS_NAME);
+
+#ifdef AS400
+#pragma convert(0)
+#endif
+
     if(!p->jk_java_bridge_class) {
 	    jk_log(l, JK_LOG_EMERG, "Can't find class %s\n", JAVA_BRIDGE_CLASS_NAME);
 	    return JK_FALSE;
@@ -1053,10 +1064,18 @@ static int get_bridge_object(jni_worker_t *p,
     jk_log(l, JK_LOG_DEBUG, 
            "In get_bridge_object, loaded %s bridge class\n", JAVA_BRIDGE_CLASS_NAME);
 
+#ifdef AS400
+#pragma convert(819)
+#endif
+
     constructor_method_id = (*env)->GetMethodID(env,
                                                 p->jk_java_bridge_class,
                                                 "<init>", /* method name */
                                                 "()V");   /* method sign */
+#ifdef AS400
+#pragma convert(0)
+#endif
+
     if(!constructor_method_id) {
 	    p->jk_java_bridge_class = NULL;
 	    jk_log(l, JK_LOG_EMERG, 
@@ -1091,28 +1110,54 @@ static int get_method_ids(jni_worker_t *p,
                           JNIEnv *env,
                           jk_logger_t *l)
 {
+
+#ifdef AS400
+#pragma convert(819)
+#endif
+
     p->jk_startup_method = (*env)->GetMethodID(env,
                                                p->jk_java_bridge_class, 
                                                "startup", 
                                                "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");  
+
+#ifdef AS400
+#pragma convert(0)
+#endif
+
     if(!p->jk_startup_method) {
 	jk_log(l, JK_LOG_EMERG, "Can't find startup()\n"); 
 	return JK_FALSE;
     }
 
+#ifdef AS400
+#pragma convert(819)
+#endif
+
     p->jk_service_method = (*env)->GetMethodID(env,
                                                p->jk_java_bridge_class, 
                                                "service", 
                                                "(JJ)I");   
+#ifdef AS400
+#pragma convert(0)
+#endif
+
     if(!p->jk_service_method) {
 	jk_log(l, JK_LOG_EMERG, "Can't find service()\n"); 
         return JK_FALSE;
     }
 
+#ifdef AS400
+#pragma convert(819)
+#endif
+
     p->jk_shutdown_method = (*env)->GetMethodID(env,
                                                 p->jk_java_bridge_class, 
                                                 "shutdown", 
                                                 "()V");   
+#ifdef AS400
+#pragma convert(0)
+#endif
+
     if(!p->jk_shutdown_method) {
 	jk_log(l, JK_LOG_EMERG, "Can't find shutdown()\n"); 
         return JK_FALSE;
