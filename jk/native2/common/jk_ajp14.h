@@ -63,12 +63,88 @@
 #ifndef JK_AJP14_H
 #define JK_AJP14_H
 
-#include "jk_ajp_common.h"
-#include "jk_context.h"
+#include "jk_global.h"
+#include "jk_mt.h"
+#include "jk_msg_buff.h"
+#include "jk_pool.h"
+#include "jk_logger.h"
+#include "jk_service.h"
+#include "jk_worker.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+    
+#define AJP_DEF_RETRY_ATTEMPTS    (1)
+
+#define AJP_HEADER_LEN            (4)
+#define AJP_HEADER_SZ_LEN         (2)
+#define CHUNK_BUFFER_PAD          (12)
+
+#define AJP13_PROTO					13
+#define AJP13_WS_HEADER				0x1234
+#define AJP13_SW_HEADER				0x4142	/* 'AB' */
+
+#define AJP13_DEF_HOST            	("localhost")
+#define AJP13_DEF_PORT            	(8009)
+#define AJP13_READ_BUF_SIZE         (8*1024)
+#define AJP13_DEF_CACHE_SZ          (1)
+#define JK_INTERNAL_ERROR       	(-2)
+#define JK_FATAL_ERROR              (-3)
+#define JK_CLIENT_ERROR             (-4)
+#define AJP13_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
+
+/*
+ * Message does not have a response (for example, JK_AJP13_END_RESPONSE)
+ */
+#define JK_AJP13_ERROR              -1
+/*
+ * Message does not have a response (for example, JK_AJP13_END_RESPONSE)
+ */
+#define JK_AJP13_NO_RESPONSE        0
+/*
+ * Message have a response.
+ */
+#define JK_AJP13_HAS_RESPONSE       1
+
+/*
+ * Forward a request from the web server to the servlet container.
+ */
+#define JK_AJP13_FORWARD_REQUEST    (unsigned char)2
+
+/*
+ * Write a body chunk from the servlet container to the web server
+ */
+#define JK_AJP13_SEND_BODY_CHUNK    (unsigned char)3
+
+/*
+ * Send response headers from the servlet container to the web server.
+ */
+#define JK_AJP13_SEND_HEADERS       (unsigned char)4
+
+/*
+ * Marks the end of response.
+ */
+#define JK_AJP13_END_RESPONSE       (unsigned char)5
+
+/*
+ * Marks the end of response.
+ */
+#define JK_AJP13_GET_BODY_CHUNK     (unsigned char)6
+
+/*
+ * Asks the container to shutdown
+ */
+#define JK_AJP13_SHUTDOWN           (unsigned char)7
+
+/*
+ * Functions
+ */
+int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
+                                     jk_pool_t *p,
+                                     jk_logger_t *l);
 
 #define AJP14_PROTO					14
 
@@ -82,51 +158,9 @@ extern "C" {
 #define AJP14_HEADER_SZ_LEN 	(2)
 
 /*
- * Context Query (web server -> servlet engine), which URI are handled by servlet engine ?
- */
-#define AJP14_CONTEXT_QRY_CMD	(unsigned char)0x15
-
-/*
- * Context Info (servlet engine -> web server), URI handled response
- */
-#define AJP14_CONTEXT_INFO_CMD	(unsigned char)0x16
-
-/* 
- * Context Update (servlet engine -> web server), status of context changed
- */
-#define AJP14_CONTEXT_UPDATE_CMD (unsigned char)0x17
-
-/*
  * Servlet Engine Status (web server -> servlet engine), what's the status of the servlet engine ?
  */
 #define AJP14_STATUS_CMD	(unsigned char)0x18
-
-/*
- * Secure Shutdown command (web server -> servlet engine),
- * please servlet stop yourself.
- */
-#define AJP14_SHUTDOWN_CMD	(unsigned char)0x19
-
-/*
- * Secure Shutdown command Accepted (servlet engine -> web server)
- */
-#define AJP14_SHUTOK_CMD	(unsigned char)0x1A
-
-/*
- * Secure Shutdown Rejected (servlet engine -> web server)
- */
-#define AJP14_SHUTNOK_CMD	(unsigned char)0x1B
-
-/*
- * Context Status (web server -> servlet engine), what's
- * the status of the context ?
- */
-#define AJP14_CONTEXT_STATE_CMD		(unsigned char)0x1C
-
-/*
- * Context Status Reply (servlet engine -> web server), status of context
- */
-#define AJP14_CONTEXT_STATE_REP_CMD	(unsigned char)0x1D
 
 /*
  * Unknown Packet Reply (web server <-> servlet engine),
@@ -203,55 +237,6 @@ extern "C" {
 #define AJP14_CONTEXT_DOWN       0x01
 #define AJP14_CONTEXT_UP         0x02
 #define AJP14_CONTEXT_OK         0x03
-
-/* 
- * Misc defines
- */
-#define AJP14_ENTROPY_SEED_LEN		32	/* we're using MD5 => 32 chars */
-#define AJP14_COMPUTED_KEY_LEN		32  /* we're using MD5 also */
-
-/*
- * The login structure
- */
-typedef struct jk_login_service jk_login_service_t;
-
-struct jk_login_service {
-
-    /*
-     *  Pointer to web-server name
-     */
-    char * web_server_name;
-    
-    /*
-     * Pointer to servlet-engine name
-     */
-    char * servlet_engine_name;
-    
-    /*
-     * Pointer to secret key
-     */
-    char * secret_key;
-    
-    /*
-     * Received entropy seed
-     */
-    char entropy[AJP14_ENTROPY_SEED_LEN + 1];
-    
-    /*
-     * Computed key
-     */
-    char computed_key[AJP14_COMPUTED_KEY_LEN + 1];
-    
-    /*
-     *  What we want to negociate
-     */
-    unsigned long negociation;
-    
-    /*
-     * What we received from servlet engine 
-     */
-    unsigned long negociated;
-};                                
     
 /*
  * functions defined here 
@@ -270,23 +255,6 @@ int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t *msg,
 int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg, 
                                           char *virtual, 
                                           jk_logger_t *l);
-
-int ajp14_unmarshal_context_info(jk_msg_buf_t *msg, 
-                                 jk_context_t *context, 
-                                 jk_logger_t *l);
-
-int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg, 
-                                          jk_context_t *context, 
-                                          char         *cname,
-                                          jk_logger_t *l);
-    
-int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg, 
-                                        jk_context_t *context, 
-                                        jk_logger_t *l);
-
-int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg, 
-                                       jk_context_t *context, 
-                                       jk_logger_t *l);
 
 #ifdef __cplusplus
 }
