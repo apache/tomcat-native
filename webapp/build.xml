@@ -203,7 +203,7 @@
     </javadoc>
   </target>
 
-  <target name="docs" depends="javadoc"
+  <target name="docs" depends="prepare"
    description="Create Documentation">
     <copy todir="${build.home}/docs" >
       <fileset dir="./docs">

@@ -239,7 +239,7 @@
   </xsl:template>
 
   <xsl:template match="p">
-    <p class="section"><xsl:apply-templates select="b|text()"/></p>
+    <p class="section"><xsl:apply-templates select="b|a|text()"/></p>
   </xsl:template>
 
   <xsl:template match="b">

@@ -10,7 +10,29 @@
       What is the WebApp Module
     </description>
 
-    <todo/>
+    <p>
+      Do you remember the old times of <b>mod_jserv</b>? Maybe you're too
+      young, but I do pretty well. At that time, the amazing <b>Apache
+      JServ</b> servlet container didn't have an HTTP stack per se, but
+      rather relied on the Apache 1.2 and 1.3 web server to have clients
+      accessing it.
+    </p>
+
+    <p>
+      And this is when a "module" came into the picture: a module such
+      as <b>mod_jserv</b> or the <b>WebApp</b> module connects the HTTP
+      stack of the front end web-server(s) with one or more instances of
+      a servlet container in the back end.
+    </p>
+
+    <p>
+      The WebApp module does exactly that, it's not finished (it might
+      never will), but it works, and it works pretty damn good. Plus (this
+      comes for free), we tried very hard to keep the internals clean and
+      well-designed, so that it will be so easy for anyone to simply provide
+      patches in case of bugs (yes, there are some!).
+    </p>
+
   </section>
 
   <section title="Purpose">
@@ -18,7 +40,24 @@
       Why should I use the WebApp Module?
     </description>
 
-    <todo/>
+    <p>
+      Because we say so? Not kidding, but it's really up to you, there are
+      several alternatives to "do the job", when we started this project
+      all of them were (in our not-so-humble-opinion), a pile of crap.
+    </p>
+
+    <p>
+      Lately there have been some improvements on those alternatives, and
+      probably, if you're wondering why you want to try out WebApp, you should
+      really stop reading now, and go and download something else.
+    </p>
+
+    <p>
+      If instead you're an adventurous geek who's up for a challenge, skip
+      the rest of this document and go to the <a href="building.xml"/>
+      section, there's where the fun starts.
+    </p>
+
   </section>
 
 
@@ -27,7 +66,27 @@
       Are there alternative ways to connect Apache and Tomcat?
     </description>
 
-    <todo/>
+    <p>
+      It would NOT be fair not to talk about our lovely (???) competitors,
+      of course, otherwise someone might even start calling us names, so,
+      in brief, you can use the following alternatives:
+    </p>
+    
+    <p>
+      <b>Tomcat's internal HTTP stack and mod_proxy</b>, which is not that
+      bad, but slow, well, of course Tomcat didn't have 8/9 years of C
+      routine optimization like the Apache Web Server, but it's quite good.
+      The only disadvantage I see is that it looks pretty ridiculous to
+      parse an HTTP request to generate it again (exactly the same), and
+      to parse again the response to send it back unchanged... Anyway.
+    </p>
+
+    <p>
+      <b>mod_jk</b>, is the same of the WebApp module, if you're wondering
+      why you should be using the latter instead of the former, well, I
+      believe I already answered this question (forget about WebApp).
+    </p>
+
   </section>
 
 </document>

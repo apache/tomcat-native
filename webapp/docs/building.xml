@@ -28,8 +28,9 @@
       Multi-threaded support has now been added since the multi threaded 
       environment is now available also under UNIX based operating systems via 
       Apache 2.0, therefore the only things left to do are a little bit of 
-      porting (not much, since the WebApp module is based on the , which does 
-      most of the job for you) and a lot of testing.
+      porting (not much, since the WebApp module is based on the 
+      <a href="http://apr.apache.org/">Apache Portable Runtime</a>
+      library, which does most of the job for you) and a lot of testing.
     </p>
 
     <p>
