@@ -127,6 +127,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
 
     ThreadPoolRunnable listener;
     private volatile boolean running = false;
+    private volatile boolean paused = false;
     private boolean initialized = false;
     private boolean reinitializing = false;
     static final int debug=0;
@@ -227,6 +228,10 @@ public class PoolTcpEndpoint { // implements Endpoint {
 	return running;
     }
     
+    public boolean isPaused() {
+	return paused;
+    }
+    
     /**
      * Allows the server developer to specify the backlog that
      * should be used for server sockets. By default, this value
@@ -322,12 +327,26 @@ public class PoolTcpEndpoint { // implements Endpoint {
 	    tp.start();
 	}
 	running = true;
+        paused = false;
         if(isPool) {
     	    listener = new TcpWorkerThread(this);
             tp.runIt(listener);
         } else {
 	    log.error("XXX Error - need pool !");
 	}
+    }
+
+    public void pauseEndpoint() {
+        if (running && !paused) {
+            paused = true;
+            unlockAccept();
+        }
+    }
+
+    public void resumeEndpoint() {
+        if (running) {
+            paused = false;
+        }
     }
 
     public void stopEndpoint() {
@@ -341,6 +360,18 @@ public class PoolTcpEndpoint { // implements Endpoint {
     }
 
     protected void closeServerSocket() {
+        if (!paused)
+            unlockAccept();
+        try {
+            if( serverSocket!=null)
+                serverSocket.close();
+        } catch(Exception e) {
+            log.error("Caught exception trying to close socket.", e);
+        }
+        serverSocket = null;
+    }
+
+    protected void unlockAccept() {
         Socket s = null;
         try {
             // Need to create a connection to unlock the accept();
@@ -353,8 +384,8 @@ public class PoolTcpEndpoint { // implements Endpoint {
                 s.setSoLinger(true, 0);
             }
         } catch(Exception e) {
-            log.error("Caught exception trying to unlock accept on " + port
-                    + " " + e.toString());
+            log.debug("Caught exception trying to unlock accept on " + port
+                      + " " + e.toString());
         } finally {
             if (s != null) {
                 try {
@@ -364,13 +395,6 @@ public class PoolTcpEndpoint { // implements Endpoint {
                 }
             }
         }
-        try {
-            if( serverSocket!=null)
-                serverSocket.close();
-        } catch(Exception e) {
-            log.error("Caught exception trying to close socket.", e);
-        }
-        serverSocket = null;
     }
 
     // -------------------- Private methods
@@ -552,6 +576,17 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 
 	// Create per-thread cache
 	if (endpoint.isRunning()) {
+
+            // Loop if endpoint is paused
+            while (endpoint.isPaused()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+            }
+
+            // Accept a new connection
 	    Socket s = null;
 	    try {
                 s = endpoint.acceptSocket();
@@ -561,6 +596,8 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                     endpoint.tp.runIt(this);
                 }
             }
+
+            // Process the connection
 	    if (null != s) {
 
                 TcpConnection con = null;
@@ -608,6 +645,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                     }
                 }
 	    }
+
 	}
     }
 
