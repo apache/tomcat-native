@@ -56,75 +56,101 @@
  */ 
 package org.apache.tomcat.util.log;
 
-import java.io.*;
-import java.lang.reflect.*;
+import org.apache.tomcat.util.log.*;
+import java.io.Writer;
+import java.io.PrintWriter;
+import java.io.FileWriter;
+import java.io.File;
+import java.io.OutputStreamWriter;
+import java.io.IOException;
+import java.io.StringWriter;
+
 import java.util.*;
 
+import org.apache.commons.logging.*;
 
 /**
- * Allows the control the log properties at runtime.
- * Normal applications will just use Log, without having to
- * deal with the way the log is configured or managed.
+ *  Log using common-logging.
  *
- *
- * @author Alex Chaffee [alex@jguru.com]
  * @author Costin Manolache
- **/
-public class LogManager {
+ */
+public  class CommonLogHandler extends LogHandler {
 
-    static LogHandler defaultChannel=new LogHandler();
-    // static LogHandler defaultChannel=new CommonLogHandler();
+    private Hashtable loggers=new Hashtable();
     
-    protected Hashtable loggers=new Hashtable();
-    protected Hashtable channels=new Hashtable();
-
-    public  Hashtable getLoggers() {
-	return loggers;
-    }
-
-    public Hashtable getChannels() {
-	return channels;
-    }
-    
-    public static void setDefault( LogHandler l ) {
-	if( defaultChannel==null)
-	    defaultChannel=l;
-    }
-
-    public void addChannel( String name, LogHandler logH ) {
-	if(name==null) name="";
-
-	channels.put( name, logH );
-	Enumeration enum=loggers.keys();
-	while( enum.hasMoreElements() ) {
-	    String k=(String)enum.nextElement();
-	    Log l=(Log)loggers.get( k );
-	    if( name.equals( l.getChannel( this ) )) {
-		l.setProxy( this, logH );
-	    }
-	}
-    }
-    
-    /** Default method to create a log facade.
+    /**
+     * Prints log message and stack trace.
+     * This method should be overriden by real logger implementations
+     *
+     * @param	prefix		optional prefix. 
+     * @param	message		the message to log. 
+     * @param	t		the exception that was thrown.
+     * @param	verbosityLevel	what type of message is this?
+     * 				(WARNING/DEBUG/INFO etc)
      */
-    public Log getLog( String channel, String prefix,
-		       Object owner ) {
-	if( prefix==null && owner!=null ) {
-	    String cname = owner.getClass().getName();
-	    prefix = cname.substring( cname.lastIndexOf(".") +1);
-	}
+    public void log(String prefix, String msg, Throwable t,
+		    int verbosityLevel)
+    {
+        if( prefix==null ) prefix="tomcat";
+        org.apache.commons.logging.Log l=(org.apache.commons.logging.Log)loggers.get( prefix );
+        if( l==null ) {
+            l=LogFactory.getLog( prefix );
+            loggers.put( prefix, l );
+        }
+        
+	if( verbosityLevel > this.level ) return;
 
-	LogHandler proxy=(LogHandler)channels.get(channel);
-	if( proxy==null ) proxy=defaultChannel;
-	
-	// user-level loggers
-	Log log=new Log( channel, prefix, proxy, owner );
-	loggers.put( channel + ":" + prefix, log );
-	if( dL > 0 )
-	    System.out.println("getLog facade " + channel + ":" + prefix);
-	return log;
+        if( t==null ) {
+            switch( verbosityLevel ) {
+            case Log.FATAL:
+                l.fatal( msg );
+                break;
+            case Log.ERROR:
+                l.error( msg );
+                break;
+            case Log.WARNING:
+                l.warn( msg );
+                break;
+            case Log.INFORMATION:
+                l.info( msg );
+                break;
+            case Log.DEBUG:
+                l.debug( msg );
+                break;
+            }
+        } else {
+            switch( verbosityLevel ) {
+            case Log.FATAL:
+                l.fatal( msg, t );
+                break;
+            case Log.ERROR:
+                l.error( msg, t );
+                break;
+            case Log.WARNING:
+                l.warn( msg, t );
+                break;
+            case Log.INFORMATION:
+                l.info( msg, t );
+                break;
+            case Log.DEBUG:
+                l.debug( msg, t );
+                break;
+            }
+        }
     }
 
-    private static int dL=0;
+    /**
+     * Flush the log. 
+     */
+    public void flush() {
+	// Nothing - commons logging doesn't have the notion
+    }
 
-}    
+    /**
+     * Close the log. 
+     */
+    public synchronized void close() {
+	// Nothing - commons logging doesn't have the notion
+    }
+    
+}
