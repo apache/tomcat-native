@@ -149,7 +149,7 @@ public final class Request {
 
     // remote address/host
     private MessageBytes remoteAddrMB = new MessageBytes();
-    private MessageBytes localAddr = new MessageBytes();
+    private MessageBytes localNameMB = new MessageBytes();
     private MessageBytes remoteHostMB = new MessageBytes();
     private MessageBytes localAddrMB = new MessageBytes();
      
@@ -284,6 +284,10 @@ public final class Request {
     public MessageBytes remoteHost() {
 	return remoteHostMB;
     }
+
+    public MessageBytes localName() {
+	return localNameMB;
+    }    
 
     public MessageBytes localAddr() {
 	return localAddrMB;

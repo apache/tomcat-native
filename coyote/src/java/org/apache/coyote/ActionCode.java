@@ -153,6 +153,12 @@ public final class ActionCode {
      * Callback for lazy evaluation - local address.
      **/
     public static final ActionCode ACTION_REQ_LOCAL_ADDR_ATTRIBUTE = new ActionCode(18);
+    
+    
+    /**
+     * Callback for lazy evaluation - local address.
+     **/
+    public static final ActionCode ACTION_REQ_LOCAL_NAME_ATTRIBUTE = new ActionCode(19);
 
     // ----------------------------------------------------------- Constructors
     int code;

@@ -239,9 +239,17 @@ public class Http11Processor implements Processor, ActionHook {
      * Remote Host associated with the current connection.
      */
     protected String remoteHost = null;
-
+    
+    
     /**
-     * Remote port to which the socket is connected
+     * Local Host associated with the current connection.
+     */
+    protected String localName = null;
+    
+    
+    
+    /**
+     * Local port to which the socket is connected
      */
     protected int localPort = -1;
     
@@ -1008,7 +1016,18 @@ public class Http11Processor implements Processor, ActionHook {
             }
             request.remoteAddr().setString(remoteAddr);
 
+        } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_NAME_ATTRIBUTE) {
+            
+            if ((localName == null) && (socket != null)) {
+                InetAddress inetAddr = socket.getLocalAddress();
+                if (inetAddr != null) {
+                    localName = inetAddr.getHostName();
+                }
+            }
+            request.localName().setString(localName);
+
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
+            
             if ((remoteHost == null) && (socket != null)) {
                 InetAddress inetAddr = socket.getInetAddress();
                 if (inetAddr != null) {
