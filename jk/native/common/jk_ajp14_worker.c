@@ -64,109 +64,97 @@
 #include "jk_context.h"
 #include "jk_ajp14_worker.h"
 
-/* -------------------- Method -------------------- */
-static int JK_METHOD validate(jk_worker_t *pThis,
-                              jk_map_t    *props,
-                              jk_worker_env_t *we,
-                              jk_logger_t *l)
-{   
-	ajp_worker_t *aw;
-	char * secret_key;
 
-    if (ajp_validate(pThis, props, we, l, AJP14_PROTO) == JK_FALSE)
-		return JK_FALSE;
+/*
+ * AJP14 Autoconf Phase
+ *
+ * CONTEXT QUERY / REPLY
+ */
 
-   aw = pThis->worker_private;
+#define MAX_URI_SIZE    512
 
-   secret_key = jk_get_worker_secret_key(props, aw->name);
-
-   if ((!secret_key) || (!strlen(secret_key))) {
-		jk_log(l, JK_LOG_ERROR, "validate error, empty or missing secretkey\n");
-		return JK_FALSE;
-	}
-
-	/* jk_log(l, JK_LOG_DEBUG, "Into ajp14:validate - secret_key=%s\n", secret_key); */
-	return JK_TRUE;
-}
-
-static int JK_METHOD get_endpoint(jk_worker_t    *pThis,
-                                  jk_endpoint_t **pend,
-                                  jk_logger_t    *l)
+static int handle_discovery(ajp_endpoint_t  *ae,
+                            jk_worker_env_t *we,
+                            jk_msg_buf_t    *msg,
+                            jk_logger_t     *l)
 {
-    return (ajp_get_endpoint(pThis, pend, l, AJP14_PROTO));
-}
+    int                 cmd;
+    int                 i,j;
+    jk_login_service_t  *jl = ae->worker->login;
+    jk_context_item_t   *ci;
+    jk_context_t        *c;  
+    char                *old;
+    char                *buf;
 
-static int JK_METHOD init(jk_worker_t *pThis,
-                          jk_map_t    *props, 
-                          jk_worker_env_t *we,
-                          jk_logger_t *l)
-{
-	ajp_worker_t   *aw;
-	ajp_endpoint_t *ae;
-	jk_endpoint_t  *je;
-	/*char           *secret_key; unused */
+#ifndef TESTME
 
-   	if (ajp_init(pThis, props, we, l, AJP14_PROTO) == JK_FALSE)
-		return JK_FALSE;
+    ajp14_marshal_context_query_into_msgb(msg, we->virtual, l);
 
-   	aw = pThis->worker_private;
+    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery - send query\n");
 
-	/* Set Secret Key (used at logon time) */	
-	aw->login->secret_key = strdup(jk_get_worker_secret_key(props, aw->name));
+    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
+        return JK_FALSE;
 
-	if (aw->login->secret_key == NULL) {
-		jk_log(l, JK_LOG_ERROR, "can't malloc secret_key\n");
-		return JK_FALSE;
-	}
+    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery - wait context reply\n");
 
-	/* Set WebServerName (used at logon time) */
-	aw->login->web_server_name = strdup(we->server_name);
+    jk_b_reset(msg);
 
-	if (aw->login->web_server_name == NULL) {
-		jk_log(l, JK_LOG_ERROR, "can't malloc web_server_name\n");
-		return JK_FALSE;
-	}
+    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
+        return JK_FALSE;
 
-	if (get_endpoint(pThis, &je, l) == JK_FALSE)
-		return JK_FALSE;
-	
-	ae = je->endpoint_private;
+    if ((cmd = jk_b_get_byte(msg)) != AJP14_CONTEXT_INFO_CMD) {
+        jk_log(l, JK_LOG_ERROR, "Error ajp14:discovery - awaited command %d, received %d\n", AJP14_CONTEXT_INFO_CMD, cmd);
+        return JK_FALSE;
+    }
 
-	if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
+    if (context_alloc(&c, we->virtual) != JK_TRUE) {
+        jk_log(l, JK_LOG_ERROR, "Error ajp14:discovery - can't allocate context room\n");
+        return JK_FALSE;
+    }
+ 
+    if (ajp14_unmarshal_context_info(msg, c, l) != JK_TRUE) {
+        jk_log(l, JK_LOG_ERROR, "Error ajp14:discovery - can't get context reply\n");
+        return JK_FALSE;
+    }
 
-	/* connection stage passed - try to get context info
-	 * this is the long awaited autoconf feature :)
-	 */
+    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery - received context\n");
 
-		ajp_close_endpoint(ae, l);
-	}
+    buf = malloc(MAX_URI_SIZE);      /* Really a very long URI */
 
-	return JK_TRUE;
-}
-    
+    if (! buf) {
+        jk_log(l, JK_LOG_ERROR, "Error ajp14:discovery - can't alloc buf\n");
+        return JK_FALSE;
+    }
 
-static int JK_METHOD destroy(jk_worker_t **pThis,
-                             jk_logger_t *l)
-{
-	ajp_worker_t *aw = (*pThis)->worker_private;
+    for (i = 0; i < c->size; i++) {
+        ci = c->contexts[i];
+        for (j = 0; j < ci->size; j++) {
 
-	if (aw->login) {
+#ifndef USE_SPRINTF
+            snprintf(buf, MAX_URI_SIZE - 1, "/%s/%s", ci->cbase, ci->uris[j]);
+#else
+            sprintf(buf, "/%s/%s", ci->cbase, ci->uris[j]);
+#endif
 
-		if (aw->login->web_server_name) {
-			free(aw->login->web_server_name);
-			aw->login->web_server_name = NULL;
-		}
+            jk_log(l, JK_LOG_INFO, "Into ajp14:discovery - worker %s will handle uri %s in context %s [%s]\n",
+                    ae->worker->name, ci->uris[j], ci->cbase, buf);
 
-		if (aw->login->secret_key) {
-			free(aw->login->secret_key);
-			aw->login->secret_key = NULL;
-		}
+            uri_worker_map_add(we->uri_to_worker, buf, ae->worker->name, l);
+        }
+    }
 
-		free(aw->login);
-		aw->login = NULL;
-	}
+    free(buf);
+    context_free(&c);
 
-    return (ajp_destroy(pThis, l, AJP14_PROTO));
+#else 
+
+    uri_worker_map_add(we->uri_to_worker, "/examples/servlet/*", ae->worker->name, l);
+    uri_worker_map_add(we->uri_to_worker, "/examples/*.jsp", ae->worker->name, l);
+    uri_worker_map_add(we->uri_to_worker, "/examples/*.gif", ae->worker->name, l);
+
+#endif 
+
+    return JK_TRUE;
 }
 
 /* 
@@ -237,11 +225,6 @@ static int handle_logon(ajp_endpoint_t *ae,
 	return JK_FALSE;
 }
 
-/*
- * AJP14 - Login Handler - we'll have a more secure 
- *         login support in AJP14
- */
-
 static int logon(ajp_endpoint_t *ae,
                 jk_logger_t    *l)
 {
@@ -260,6 +243,130 @@ static int logon(ajp_endpoint_t *ae,
 	return rc;
 }
 
+static int discovery(ajp_endpoint_t *ae,
+                     jk_worker_env_t *we,
+                     jk_logger_t    *l)
+{
+    jk_pool_t          *p = &ae->pool;
+    jk_msg_buf_t       *msg;
+    int                 rc;
+
+    jk_log(l, JK_LOG_DEBUG, "Into ajp14:discovery\n");
+
+    msg = jk_b_new(p);
+    jk_b_set_buffer_size(msg, DEF_BUFFER_SZ);
+
+    if ((rc = handle_discovery(ae, we, msg, l)) == JK_FALSE)
+        ajp_close_endpoint(ae, l);
+
+    return rc;
+}
+
+/* -------------------- Method -------------------- */
+static int JK_METHOD validate(jk_worker_t *pThis,
+                              jk_map_t    *props,
+                              jk_worker_env_t *we,
+                              jk_logger_t *l)
+{   
+	ajp_worker_t *aw;
+	char * secret_key;
+
+    if (ajp_validate(pThis, props, we, l, AJP14_PROTO) == JK_FALSE)
+		return JK_FALSE;
+
+   aw = pThis->worker_private;
+
+   secret_key = jk_get_worker_secret_key(props, aw->name);
+
+   if ((!secret_key) || (!strlen(secret_key))) {
+		jk_log(l, JK_LOG_ERROR, "validate error, empty or missing secretkey\n");
+		return JK_FALSE;
+	}
+
+	/* jk_log(l, JK_LOG_DEBUG, "Into ajp14:validate - secret_key=%s\n", secret_key); */
+	return JK_TRUE;
+}
+
+static int JK_METHOD get_endpoint(jk_worker_t    *pThis,
+                                  jk_endpoint_t **pend,
+                                  jk_logger_t    *l)
+{
+    return (ajp_get_endpoint(pThis, pend, l, AJP14_PROTO));
+}
+
+static int JK_METHOD init(jk_worker_t *pThis,
+                          jk_map_t    *props, 
+                          jk_worker_env_t *we,
+                          jk_logger_t *l)
+{
+	ajp_worker_t   *aw;
+	ajp_endpoint_t *ae;
+	jk_endpoint_t  *je;
+    int             rc;
+
+   	if (ajp_init(pThis, props, we, l, AJP14_PROTO) == JK_FALSE)
+		return JK_FALSE;
+
+   	aw = pThis->worker_private;
+
+	/* Set Secret Key (used at logon time) */	
+	aw->login->secret_key = strdup(jk_get_worker_secret_key(props, aw->name));
+
+	if (aw->login->secret_key == NULL) {
+		jk_log(l, JK_LOG_ERROR, "can't malloc secret_key\n");
+		return JK_FALSE;
+	}
+
+	/* Set WebServerName (used at logon time) */
+	aw->login->web_server_name = strdup(we->server_name);
+
+	if (aw->login->web_server_name == NULL) {
+		jk_log(l, JK_LOG_ERROR, "can't malloc web_server_name\n");
+		return JK_FALSE;
+	}
+
+	if (get_endpoint(pThis, &je, l) == JK_FALSE)
+		return JK_FALSE;
+	
+	ae = je->endpoint_private;
+
+	if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
+
+	/* connection stage passed - try to get context info
+	 * this is the long awaited autoconf feature :)
+	 */
+        rc = discovery(ae, we, l);
+		ajp_close_endpoint(ae, l);
+        return rc;
+	}
+
+	return JK_TRUE;
+}
+    
+
+static int JK_METHOD destroy(jk_worker_t **pThis,
+                             jk_logger_t *l)
+{
+	ajp_worker_t *aw = (*pThis)->worker_private;
+
+	if (aw->login) {
+
+		if (aw->login->web_server_name) {
+			free(aw->login->web_server_name);
+			aw->login->web_server_name = NULL;
+		}
+
+		if (aw->login->secret_key) {
+			free(aw->login->secret_key);
+			aw->login->secret_key = NULL;
+		}
+
+		free(aw->login);
+		aw->login = NULL;
+	}
+
+    return (ajp_destroy(pThis, l, AJP14_PROTO));
+}
 
 int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
                                    const char   *name,
