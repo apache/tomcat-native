@@ -60,69 +60,104 @@ dnl Author Pier Fumagalli <pier.fumagalli@sun.com>
 dnl Version $Id$
 dnl --------------------------------------------------------------------------
 
-AC_DEFUN([JAVA_JAVAC_WORKS],[
-  AC_CACHE_CHECK([wether the Java compiler (${JAVAC}) works],
-    ap_cv_prog_javac_works,[
-    echo "public class Test {}" > Test.java
-    ${JAVAC} ${JAVACFLAGS} Test.java > /dev/null 2>&1
-    if ${TEST} $? -eq 0
-    then
-      rm -f Test.java Test.class
-      ap_cv_prog_javac_works=yes
-    else
-      rm -f Test.java Test.class
-      AC_MSG_RESULT(no)
-      AC_MSG_ERROR([${JAVAC} cannot compile])
-    fi
-  ])
-])
-
-AC_DEFUN([JAVA_JAVAC],[
-  AC_PATH_PROG(JAVAC,javac,
-    AC_MSG_ERROR([javac not found]),
-    ${JAVA_HOME}/bin:${PATH}
-  )
-  JAVA_JAVAC_WORKS()
-  AC_PROVIDE([$0])
-  AC_SUBST(JAVAC)
-  AC_SUBST(JAVACFLAGS)
-])
-
-AC_DEFUN([JAVA_JAR],[
-  AC_PATH_PROG(JAR,jar,
-    AC_MSG_ERROR([jar not found]),
-    ${JAVA_HOME}/bin:${PATH})
-  AC_PROVIDE([$0])
-  AC_SUBST(JAR)
-])
-
-AC_DEFUN([JAVA_CHECK],[
-  AC_MSG_CHECKING([Java support])
+dnl --------------------------------------------------------------------------
+dnl JAVA_INIT
+dnl   Check if --enable-java was specified and discovers JAVA_HOME.
+dnl --------------------------------------------------------------------------
+AC_DEFUN([JAVA_INIT],[
+  AC_MSG_CHECKING([for java support])
   AC_ARG_ENABLE(java,
-  [  --enable-java[=JAVA_HOME]
-                          enable Java compilation (if JAVA_HOME is not
+  [  --enable-java[=JAVA_HOME]  enable Java compilation (if JAVA_HOME is not
                           specified its value will be inherited from the
                           JAVA_HOME environment variable).],
   [
     case "${withval}" in
     yes|YES|true|TRUE)
-        AC_MSG_RESULT([${JAVA_HOME}])
-        ;;
+      JAVA_ENABLE="TRUE"
+      ;;
     *)
-        JAVA_HOME="${withval}"
-        AC_MSG_RESULT([${JAVA_HOME}])
-        ;;
+      JAVA_ENABLE="TRUE"
+      JAVA_HOME="${withval}"
+      ;;
     esac
-    if ${TEST} ! -d "${JAVA_HOME}"
+
+    AC_MSG_RESULT([yes])
+
+    if ${TEST} ! -z "${JAVA_HOME}"
     then
-      AC_MSG_ERROR([${JAVA_HOME} is not a directory])
+      LOCAL_RESOLVEDIR(JAVA_HOME,${JAVA_HOME},[java home directory])
+      AC_MSG_RESULT([error])
+      AC_MSG_ERROR([java home not specified and not found in environment])
     fi
-    JAVA_ENABLE="true"
-    AC_SUBST(JAVA_HOME)
-    AC_SUBST(JAVA_ENABLE)
+
   ],[
-    AC_MSG_RESULT([disabled])
-    JAVA_ENABLE="false"
-    AC_SUBST(JAVA_ENABLE)
+    JAVA_ENABLE="FALSE"
+    AC_MSG_RESULT([no])
   ])
+  AC_SUBST(JAVA_ENABLE)
+  AC_SUBST(JAVA_HOME)
 ])
+
+dnl --------------------------------------------------------------------------
+dnl JAVA_JAVAC
+dnl   Checks wether we can find and use a Java Compiler or not. Exports the
+dnl   binary name in the JAVAC environment variable. Compilation flags are
+dnl   retrieved from the JAVACFLAGS environment variable and checked.
+dnl --------------------------------------------------------------------------
+AC_DEFUN([JAVA_JAVAC],[
+  if ${TEST} -z "${JAVA_HOME}"
+  then
+    JAVAC=""
+    JAVACFLAGS=""
+  else
+    LOCAL_CHECK_PROG(JAVAC,javac,"${JAVA_HOME}/bin")
+
+    AC_CACHE_CHECK([wether the Java compiler (${JAVAC}) works],
+      ap_cv_prog_javac_works,[
+      echo "public class Test {}" > Test.java
+      ${JAVAC} ${JAVACFLAGS} Test.java > /dev/null 2>&1
+      if ${TEST} $? -eq 0
+      then
+        rm -f Test.java Test.class
+        ap_cv_prog_javac_works=yes
+      else
+        rm -f Test.java Test.class
+        AC_MSG_RESULT(no)
+        AC_MSG_ERROR([${JAVAC} cannot compile])
+      fi
+    ])
+  fi
+  AC_SUBST(JAVAC)
+  AC_SUBST(JAVACFLAGS)
+])
+
+dnl --------------------------------------------------------------------------
+dnl JAVA_JAR
+dnl   Checks wether we can find and use a Java Archieve Tool (JAR). Exports
+dnl   the binary name in the JAR environment variable.
+dnl --------------------------------------------------------------------------
+AC_DEFUN([JAVA_JAR],[
+  if ${TEST} -z "${JAVA_HOME}"
+  then
+    JAR=""
+  else
+    LOCAL_CHECK_PROG(JAR,jar,"${JAVA_HOME}/bin")
+  fi
+  AC_SUBST(JAR)
+])
+
+dnl --------------------------------------------------------------------------
+dnl JAVA_JAVADOC
+dnl   Checks wether we can find and use a Java Documentation Tool (JAVADOC).
+dnl   Exports the binary name in the JAR environment variable.
+dnl --------------------------------------------------------------------------
+AC_DEFUN([JAVA_JAVADOC],[
+  if ${TEST} -z "${JAVA_HOME}"
+  then
+    JAVADOC=""
+  else
+    LOCAL_CHECK_PROG(JAVADOC,javadoc,"${JAVA_HOME}/bin")
+  fi
+  AC_SUBST(JAVADOC)
+])
+
