@@ -1,0 +1,7 @@
+GET /foo HTTP/1.1
+Host: localhost
+
+
+GET /bar HTTP/1.1
+Host:foobar
+

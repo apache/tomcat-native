@@ -158,12 +158,16 @@
     <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
             basedir="${build.home}/classes"
            manifest="${build.home}/conf/MANIFEST.MF"/>
+    <copy      file="${tomcat-util.jar}" 
+             tofile="${build.home}/lib/tomcat-util.jar" />
+    <copy      file="${tomcat-coyote.jar}" 
+             tofile="${build.home}/lib/tomcat-coyote.jar" />
   </target>
 
 
   <target name="compile.tests" depends="compile"
    description="Compile unit test cases">
-    <javac  srcdir="${test.home}"
+    <javac  srcdir="${test.home}/java"
            destdir="${build.home}/tests"
              debug="${compile.debug}"
        deprecation="${compile.deprecation}"
@@ -183,7 +187,7 @@
   </target>
 
 
-  <target name="all" depends="clean,compile"
+  <target name="all" depends="clean,compile,compile.tests"
    description="Clean and compile all components"/>
 
 
