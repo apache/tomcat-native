@@ -191,14 +191,20 @@ public class JSSESocketFactory
 		com.sun.net.ssl.KeyManagerFactory.getInstance(algorithm);
 	    kmf.init( kstore, keyPass.toCharArray());
 
-	    // If client authentication is needed, set up TrustManager
+	    //  set up TrustManager
 	    com.sun.net.ssl.TrustManager[] tm = null;
-	    if( clientAuth) {
-		com.sun.net.ssl.TrustManagerFactory tmf =
-                    com.sun.net.ssl.TrustManagerFactory.getInstance("SunX509");
-		tmf.init(kstore);
-		tm = tmf.getTrustManagers();
-	    }
+	    String trustStoreFile = System.getProperty("javax.net.ssl.trustStore");
+	    String trustStorePassword =
+	        System.getProperty("javax.net.ssl.trustStorePassword");
+	    if ( trustStoreFile != null && trustStorePassword != null ){
+            KeyStore trustStore = initKeyStore( trustStoreFile, trustStorePassword);
+            
+            com.sun.net.ssl.TrustManagerFactory tmf =
+                com.sun.net.ssl.TrustManagerFactory.getInstance("SunX509");
+
+            tmf.init(trustStore);
+            tm = tmf.getTrustManagers();
+        }
 
 	    // init context with the key managers
 	    context.init(kmf.getKeyManagers(), tm, 
