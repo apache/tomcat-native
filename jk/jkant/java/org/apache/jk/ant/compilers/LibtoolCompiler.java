@@ -177,6 +177,9 @@ public class LibtoolCompiler extends SoTask implements CompilerAdapter {
 	if( optimize )
 	    cmd.createArgument().setValue("-O2" );
 	
+	if( profile )
+	    cmd.createArgument().setValue("-pg" );
+	
 	if( localCflags != null )
 	    cmd.createArgument().setLine( localCflags );
 

@@ -111,6 +111,7 @@ public class SoTask extends Task {
 
     protected boolean optG=true;
     protected boolean optimize=false;
+    protected boolean profile=false;
     protected Vector defines = new Vector();
 
     // Computed fields 
@@ -141,11 +142,14 @@ public class SoTask extends Task {
 	so.debug=debug;
 	so.optG=optG;
 	so.optimize=optimize;
+	so.profile=profile;
 	so.defines=defines;
 	so.srcList=srcList;
 	so.compileList=compileList;
     }
-    
+
+    /**  @deprecated use setTarget
+     */
     public void setSoFile(String s ) {
 	soFile=s;
     }
@@ -162,17 +166,30 @@ public class SoTask extends Task {
 	optimize=b;
     }
 
+    /** Add profiling information
+     */
+    public void setProfile(boolean b) {
+	profile=b;
+    }
+
     /** Debug the <so> task
      */
     public void setTaskDebug(int i) {
 	debug=i;
     }
 
+    /** Add a -D option. Note that each define has
+     *  an if/unless attribute
+     */ 
     public void addDef(Def var ) {
 	var.setProject( project );
 	defines.addElement(var);
     }
-    
+
+    /** Set the target for this compilation. Don't include any
+     *  directory or suffix ( not sure about prefix - we may want
+     *  to add lib automatically for unix, and nothing on win/etc ?  ).
+     */
     public void setTarget(String s ) {
 	soFile=s;
     }

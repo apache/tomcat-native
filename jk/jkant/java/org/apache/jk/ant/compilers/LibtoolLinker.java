@@ -111,6 +111,9 @@ public class LibtoolLinker extends SoTask implements LinkerAdapter {
 	cmd.createArgument().setValue( "-o" );
 	cmd.createArgument().setValue( soFile + ".la" );
 
+	if( profile )
+	    cmd.createArgument().setValue("-pg" );
+
 	// All .o files must be included
 	project.log( "Linking " + buildDir + "/" + soFile + ".so");
 

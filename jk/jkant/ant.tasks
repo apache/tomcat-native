@@ -1,2 +1,3 @@
-apxs=org.apache.jk.ant.ApxsTask
 so=org.apache.jk.ant.SoTask
+libtoolCompile=org.apache.jk.ant.compilers.LibtoolCompiler
+ccCompile=org.apache.jk.ant.compilers.CcCompiler
