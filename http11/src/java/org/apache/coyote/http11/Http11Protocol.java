@@ -154,8 +154,13 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                 // XXX It should be possible to use a single TP
                 tpOname=new ObjectName
                     (domain + ":" + "type=ThreadPool,name=" + getName());
-                Registry.getRegistry(null, null)
-                    .registerComponent(tp, tpOname, null );
+                if ("ms".equals(getStrategy())) {
+                    Registry.getRegistry(null, null)
+                        .registerComponent(ep, tpOname, null );
+                } else {
+                    Registry.getRegistry(null, null)
+                        .registerComponent(tp, tpOname, null );
+                }
                 tp.setName(getName());
                 tp.setDaemon(false);
                 tp.addThreadPoolListener(new MXPoolListener(this, tp));
@@ -242,15 +247,6 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 
     // -------------------- Pool setup --------------------
 
-    public boolean getPools(){
-        return ep.isPoolOn();
-    }
-
-    public void setPools( boolean t ) {
-        ep.setPoolOn(t);
-        setAttribute("pools", "" + t);
-    }
-
     public int getMaxThreads() {
         return ep.getMaxThreads();
     }
@@ -286,6 +282,15 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public int getThreadPriority() {
       return ep.getThreadPriority();
     }
+
+    public void setStrategy(String strategy) {
+        ep.setStrategy(strategy);
+        setAttribute("strategy", strategy);
+      }
+
+      public String getStrategy() {
+        return ep.getStrategy();
+      }
 
     // -------------------- Tcp setup --------------------
 

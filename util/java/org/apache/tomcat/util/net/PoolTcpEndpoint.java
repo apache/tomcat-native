@@ -24,6 +24,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.AccessControlException;
+import java.util.Stack;
+import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -54,7 +56,9 @@ import org.apache.tomcat.util.threads.ThreadPoolRunnable;
  * @author Gal Shachor [shachor@il.ibm.com]
  * @author Yoav Shapira <yoavs@apache.org>
  */
-public class PoolTcpEndpoint { // implements Endpoint {
+public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
+
+    static Log log=LogFactory.getLog(PoolTcpEndpoint.class );
 
     private StringManager sm = 
         StringManager.getManager("org.apache.tomcat.util.net.res");
@@ -64,12 +68,8 @@ public class PoolTcpEndpoint { // implements Endpoint {
 
     private final Object threadSync = new Object();
 
-    private boolean isPool = true;
-
     private int backlog = BACKLOG;
     private int serverTimeout = TIMEOUT;
-
-    TcpConnectionHandler handler;
 
     private InetAddress inet;
     private int port;
@@ -77,20 +77,37 @@ public class PoolTcpEndpoint { // implements Endpoint {
     private ServerSocketFactory factory;
     private ServerSocket serverSocket;
 
-    ThreadPoolRunnable listener;
     private volatile boolean running = false;
     private volatile boolean paused = false;
     private boolean initialized = false;
     private boolean reinitializing = false;
     static final int debug=0;
 
-    ThreadPool tp;
-
-    static Log log=LogFactory.getLog(PoolTcpEndpoint.class );
-
     protected boolean tcpNoDelay=false;
     protected int linger=100;
     protected int socketTimeout=-1;
+    private boolean lf = false;
+
+    
+    // ------ Leader follower fields
+
+    
+    TcpConnectionHandler handler;
+    ThreadPoolRunnable listener;
+    ThreadPool tp;
+
+    
+    // ------ Master slave fields
+
+    /* The background thread. */
+    private Thread thread = null;
+    /* Available processors. */
+    private Stack workerThreads = new Stack();
+    private int curThreads = 0;
+    private int maxThreads = 20;
+    /* All processors which have been created. */
+    private Vector created = new Vector();
+
     
     public PoolTcpEndpoint() {
 	tp = new ThreadPool();
@@ -101,14 +118,6 @@ public class PoolTcpEndpoint { // implements Endpoint {
     }
 
     // -------------------- Configuration --------------------
-
-    public void setPoolOn(boolean isPool) {
-        this.isPool = isPool;
-    }
-
-    public boolean isPoolOn() {
-        return isPool;
-    }
 
     public void setMaxThreads(int maxThreads) {
 	if( maxThreads > 0)
@@ -247,13 +256,37 @@ public class PoolTcpEndpoint { // implements Endpoint {
 	serverTimeout=i;
     }
 
+    public String getStrategy() {
+        if (lf) {
+            return "lf";
+        } else {
+            return "ms";
+        }
+    }
+    
+    public void setStrategy(String strategy) {
+        if ("ms".equals(strategy)) {
+            lf = false;
+        } else {
+            lf = true;
+        }
+    }
+
+    public int getCurrentThreadCount() {
+        return curThreads;
+    }
+    
+    public int getCurrentThreadsBusy() {
+        return curThreads - workerThreads.size();
+    }
+    
     // -------------------- Public methods --------------------
 
     public void initEndpoint() throws IOException, InstantiationException {
-	try {
-	    if(factory==null)
-		factory=ServerSocketFactory.getDefault();
-	    if(serverSocket==null) {
+        try {
+            if(factory==null)
+                factory=ServerSocketFactory.getDefault();
+            if(serverSocket==null) {
                 try {
                     if (inet == null) {
                         serverSocket = factory.createSocket(port, backlog);
@@ -263,34 +296,33 @@ public class PoolTcpEndpoint { // implements Endpoint {
                 } catch ( BindException be ) {
                     throw new BindException(be.getMessage() + ":" + port);
                 }
-	    }
+            }
             if( serverTimeout >= 0 )
-		serverSocket.setSoTimeout( serverTimeout );
-	} catch( IOException ex ) {
-	    //	    log("couldn't start endpoint", ex, Logger.DEBUG);
+                serverSocket.setSoTimeout( serverTimeout );
+        } catch( IOException ex ) {
             throw ex;
-	} catch( InstantiationException ex1 ) {
-	    //	    log("couldn't start endpoint", ex1, Logger.DEBUG);
+        } catch( InstantiationException ex1 ) {
             throw ex1;
-	}
+        }
         initialized = true;
     }
-
+    
     public void startEndpoint() throws IOException, InstantiationException {
         if (!initialized) {
             initEndpoint();
         }
-	if(isPool) {
-	    tp.start();
-	}
-	running = true;
+        if (lf) {
+            tp.start();
+        }
+        running = true;
         paused = false;
-        if(isPool) {
-    	    listener = new TcpWorkerThread(this);
+        if (lf) {
+            listener = new LeaderFollowerWorkerThread(this);
             tp.runIt(listener);
         } else {
-	    log.error("XXX Error - need pool !");
-	}
+            maxThreads = getMaxThreads();
+            threadStart();
+        }
     }
 
     public void pauseEndpoint() {
@@ -307,13 +339,17 @@ public class PoolTcpEndpoint { // implements Endpoint {
     }
 
     public void stopEndpoint() {
-	if (running) {
-	    tp.shutdown();
-	    running = false;
+        if (running) {
+            if (lf) {
+                tp.shutdown();
+            } else {
+                threadStop();
+            }
+            running = false;
             if (serverSocket != null) {
                 closeServerSocket();
             }
-	}
+        }
     }
 
     protected void closeServerSocket() {
@@ -456,33 +492,6 @@ public class PoolTcpEndpoint { // implements Endpoint {
         return accepted;
     }
 
-    /** @deprecated
-     */
-    public void log(String msg)
-    {
-	log.info(msg);
-    }
-
-    /** @deprecated
-     */
-    public void log(String msg, Throwable t)
-    {
-	log.error( msg, t );
-    }
-
-    /** @deprecated
-     */
-    public void log(String msg, int level)
-    {
-	log.info( msg );
-    }
-
-    /** @deprecated
-     */
-    public void log(String msg, Throwable t, int level) {
-    	log.error( msg, t );
-    }
-
     void setSocketOptions(Socket socket)
         throws SocketException {
         if(linger >= 0 ) 
@@ -493,120 +502,179 @@ public class PoolTcpEndpoint { // implements Endpoint {
             socket.setSoTimeout( socketTimeout );
     }
 
-}
-
-// -------------------- Threads --------------------
-
-/*
- * I switched the threading model here.
- *
- * We used to have a "listener" thread and a "connection"
- * thread, this results in code simplicity but also a needless
- * thread switch.
- *
- * Instead I am now using a pool of threads, all the threads are
- * simmetric in their execution and no thread switch is needed.
- */
-class TcpWorkerThread implements ThreadPoolRunnable {
-    /* This is not a normal Runnable - it gets attached to an existing
-       thread, runs and when run() ends - the thread keeps running.
-
-       It's better to keep the name ThreadPoolRunnable - avoid confusion.
-       We also want to use per/thread data and avoid sync wherever possible.
-    */
-    PoolTcpEndpoint endpoint;
     
-    public TcpWorkerThread(PoolTcpEndpoint endpoint) {
-        this.endpoint = endpoint;
+    void processSocket(Socket s, TcpConnection con, Object[] threadData) {
+        // Process the connection
+        int step = 1;
+        try {
+            
+            // 1: Set socket options: timeout, linger, etc
+            setSocketOptions(s);
+            
+            // 2: SSL handshake
+            step = 2;
+            if (getServerSocketFactory() != null) {
+                getServerSocketFactory().handshake(s);
+            }
+            
+            // 3: Process the connection
+            step = 3;
+            con.setEndpoint(this);
+            con.setSocket(s);
+            getConnectionHandler().processConnection(con, threadData);
+            
+        } catch (SocketException se) {
+            PoolTcpEndpoint.log.error(
+                    "Remote Host "
+                    + s.getInetAddress()
+                    + " SocketException: "
+                    + se.getMessage());
+            // Try to close the socket
+            try {
+                s.close();
+            } catch (IOException e) {
+            }
+        } catch (Throwable t) {
+            if (step == 2) {
+                PoolTcpEndpoint.log.debug("Handshake failed", t);
+            } else {
+                PoolTcpEndpoint.log.error("Unexpected error", t);
+            }
+            // Try to close the socket
+            try {
+                s.close();
+            } catch (IOException e) {
+            }
+        } finally {
+            if (con != null) {
+                con.recycle();
+            }
+        }
+    }
+    
+
+    // -------------------------------------------------- Master Slave Methods
+
+
+    /**
+     * Create (or allocate) and return an available processor for use in
+     * processing a specific HTTP request, if possible.  If the maximum
+     * allowed processors have already been created and are in use, return
+     * <code>null</code> instead.
+     */
+    private MasterSlaveWorkerThread createWorkerThread() {
+
+        synchronized (workerThreads) {
+            if (workerThreads.size() > 0) {
+                return ((MasterSlaveWorkerThread) workerThreads.pop());
+            }
+            if ((maxThreads > 0) && (curThreads < maxThreads)) {
+                return (newWorkerThread());
+            } else {
+                if (maxThreads < 0) {
+                    return (newWorkerThread());
+                } else {
+                    return (null);
+                }
+            }
+        }
+
     }
 
-    public Object[] getInitData() {
-        // no synchronization overhead, but 2 array access 
-        Object obj[]=new Object[2];
-        obj[1]= endpoint.getConnectionHandler().init();
-        obj[0]=new TcpConnection();
-        return obj;
-    }
     
-    public void runIt(Object perThrData[]) {
+    /**
+     * Create and return a new processor suitable for processing HTTP
+     * requests and returning the corresponding responses.
+     */
+    private MasterSlaveWorkerThread newWorkerThread() {
 
-        // Create per-thread cache
-        if (endpoint.isRunning()) {
+        MasterSlaveWorkerThread workerThread = 
+            new MasterSlaveWorkerThread(this, tp.getName() + "-" + (++curThreads));
+        workerThread.start();
+        created.addElement(workerThread);
+        return (workerThread);
+
+    }
+
+
+    /**
+     * Recycle the specified Processor so that it can be used again.
+     *
+     * @param processor The processor to be recycled
+     */
+    void recycleWorkerThread(MasterSlaveWorkerThread workerThread) {
+        workerThreads.push(workerThread);
+    }
+
+    
+    /**
+     * The background thread that listens for incoming TCP/IP connections and
+     * hands them off to an appropriate processor.
+     */
+    public void run() {
+
+        // Loop until we receive a shutdown command
+        while (running) {
 
             // Loop if endpoint is paused
-            while (endpoint.isPaused()) {
+            while (paused) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     // Ignore
                 }
             }
+            
+            // Accept the next incoming connection from the server socket
+            Socket socket = acceptSocket();
 
-            // Accept a new connection
-            Socket s = null;
-            try {
-                s = endpoint.acceptSocket();
-            } finally {
-                // Continue accepting on another thread...
-                if (endpoint.isRunning()) {
-                    endpoint.tp.runIt(this);
-                }
-            }
-
-            // Process the connection
-            if (null != s) {
-                TcpConnection con = null;
-                int step = 1;
+            // Hand this socket off to an appropriate processor
+            MasterSlaveWorkerThread workerThread = createWorkerThread();
+            if (workerThread == null) {
                 try {
-
-                    // 1: Set socket options: timeout, linger, etc
-                    endpoint.setSocketOptions(s);
-
-                    // 2: SSL handshake
-                    step = 2;
-                    if (endpoint.getServerSocketFactory() != null) {
-                        endpoint.getServerSocketFactory().handshake(s);
-                    }
-
-                    // 3: Process the connection
-                    step = 3;
-                    con = (TcpConnection) perThrData[0];
-                    con.setEndpoint(endpoint);
-                    con.setSocket(s);
-                    endpoint.getConnectionHandler().processConnection(
-                        con,
-                        (Object[]) perThrData[1]);
-
-                } catch (SocketException se) {
-                    PoolTcpEndpoint.log.error(
-                        "Remote Host "
-                            + s.getInetAddress()
-                            + " SocketException: "
-                            + se.getMessage());
-                    // Try to close the socket
-                    try {
-                        s.close();
-                    } catch (IOException e) {
-                    }
-                } catch (Throwable t) {
-                    if (step == 2) {
-                        PoolTcpEndpoint.log.debug("Handshake failed", t);
-                    } else {
-                        PoolTcpEndpoint.log.error("Unexpected error", t);
-                    }
-                    // Try to close the socket
-                    try {
-                        s.close();
-                    } catch (IOException e) {
-                    }
-                } finally {
-                    if (con != null) {
-                        con.recycle();
-                    }
+                    log.warn(sm.getString("endpoint.noProcessor"));
+                    socket.close();
+                } catch (IOException e) {
+                    ;
                 }
+                continue;
             }
+            workerThread.assign(socket);
+
+            // The processor will recycle itself when it finishes
 
         }
+
+        // Notify the threadStop() method that we have shut ourselves down
+        synchronized (threadSync) {
+            threadSync.notifyAll();
+        }
+
     }
-    
+
+
+    /**
+     * Start the background processing thread.
+     */
+    private void threadStart() {
+        thread = new Thread(this, tp.getName());
+        thread.setPriority(getThreadPriority());
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+
+    /**
+     * Stop the background processing thread.
+     */
+    private void threadStop() {
+        try {
+            threadSync.wait(5000);
+        } catch (InterruptedException e) {
+            ;
+        }
+        thread = null;
+    }
+
+
 }
