@@ -460,19 +460,26 @@ static void jk2_child_init(apr_pool_t *pconf,
     jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
         ap_get_module_config(s->module_config, &jk2_module);
     jk_env_t *env;
+    apr_proc_t proc;
+
         
     if( workerEnv==NULL )
         workerEnv = serverEnv->workerEnv;
 
     env=workerEnv->globalEnv;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init %d\n", workerEnv->was_initialized );
-    
     if(!workerEnv->was_initialized) {
         workerEnv->was_initialized = JK_TRUE;        
         
         jk2_init( env, pconf, workerEnv, s );
+    
+        proc.pid=getpid();
+        workerEnv->chId=find_child_by_pid( & proc );
+        
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init %d %d\n",
+                      workerEnv->was_initialized, workerEnv->chId );
     }
+    
 }
 
 

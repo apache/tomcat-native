@@ -152,6 +152,13 @@ struct jk_workerEnv {
     char **worker_list;
     int declared_workers;
 
+    /* In a multi-process server, like Apache, stores the child
+       id in the scoreboard ( if the scoreboard is used ).
+       This in turn is used in the jk scoreboard to store informations
+       about each instance.
+       If -1 - shm is disabled.
+    */
+    int childId;
 
     struct jk_env *globalEnv;
 

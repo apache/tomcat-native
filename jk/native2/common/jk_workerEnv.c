@@ -136,8 +136,8 @@ static void jk2_workerEnv_close(jk_env_t *env, jk_workerEnv_t *wEnv)
             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "destroy worker %s\n",
                           wEnv->worker_map->nameAt(env, wEnv->worker_map, i));
-            if( w->destroy !=NULL ) 
-                w->destroy(env,w);
+            if( w->mbean->destroy !=NULL ) 
+                w->mbean->destroy(env,w->mbean);
         }
     }
     env->l->jkLog(env, env->l, JK_LOG_DEBUG,
@@ -176,10 +176,10 @@ static int jk2_workerEnv_initWorker(jk_env_t *env,
 
     if( w->mbean->state >= JK_STATE_INIT ) return JK_OK;
 
-    if( w->init == NULL )
+    if( w->mbean->init == NULL )
         return JK_OK;
 
-    rc=w->init(env, w);
+    rc=w->mbean->init(env, w->mbean );
         
     if( rc == JK_OK ) {
         w->mbean->state=JK_STATE_INIT;
@@ -413,7 +413,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
 
         if( ep->worker->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "ajp14.processCallbacks() Waiting reply %s\n",
+                          "workerEnv.callbacks() %s\n",
                           ep->worker->channel->mbean->name);
         
         msg->reset(env, msg);
@@ -422,10 +422,13 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
                                        msg);
         if( rc!=JK_OK ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp14.service() Error reading reply\n");
-            /* we just can't recover, unset recover flag */
+                          "workerEnv.processCallbacks() Error reading reply\n");
+            /* We can recover */
             return JK_ERR;
         }
+
+        if( ep->worker->mbean->debug > 10 )
+            ep->request->dump( env, msg, "Received" );
 
         /*  ep->reply->dump(env, ep->reply, "Received ");   */
         code = (int)msg->getByte(env, msg);
@@ -449,7 +452,10 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
              * A possible work-around could be to store the uploaded
              * data to file and replay for it
              */
-            ep->recoverable = JK_FALSE; 
+            ep->recoverable = JK_FALSE;
+            if( ep->worker->mbean->debug > 10 )
+                ep->request->dump( env, ep->post, "Apache->tomcat" );
+
             rc = ep->worker->channel->send(env, ep->worker->channel, ep, ep->post );
             if (rc < 0) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -535,8 +541,8 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerEnv.addWorker() duplicated %s worker \n",
                       w->mbean->name);
-        if( w->destroy != NULL )
-            oldW->destroy(env, oldW);
+        if( w->mbean->destroy != NULL )
+            oldW->mbean->destroy(env, oldW->mbean);
     }
     
     return JK_OK;
@@ -694,7 +700,8 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     wEnv->config->workerEnv = wEnv;
     wEnv->config->map = wEnv->initData;
 
-
+    wEnv->childId=-1;
+    
     jkb=env->createBean2(env, wEnv->pool,"shm", "");
     if( jkb==NULL ) {
         wEnv->shm=NULL;
