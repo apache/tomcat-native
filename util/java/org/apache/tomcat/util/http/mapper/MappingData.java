@@ -73,6 +73,7 @@ public class MappingData {
     public Object wrapper = null;
 
     public MessageBytes contextPath = MessageBytes.newInstance();
+    public MessageBytes requestPath = MessageBytes.newInstance();
     public MessageBytes wrapperPath = MessageBytes.newInstance();
     public MessageBytes pathInfo = MessageBytes.newInstance();
 
@@ -83,6 +84,7 @@ public class MappingData {
         context = null;
         wrapper = null;
         pathInfo.recycle();
+        requestPath.recycle();
         wrapperPath.recycle();
         contextPath.recycle();
         redirectPath.recycle();

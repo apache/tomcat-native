@@ -494,6 +494,8 @@ public final class Mapper {
                         && (path.equals(extensionWrappers[pos].name))) {
                         mappingData.wrapperPath.setChars
                             (buf, servletPath, pathEnd - servletPath);
+                        mappingData.requestPath.setChars
+                            (buf, servletPath, pathEnd - servletPath);
                         mappingData.wrapper = extensionWrappers[pos].object;
                     }
                     path.setOffset(servletPath);
@@ -538,6 +540,8 @@ public final class Mapper {
         if (mappingData.wrapper == null) {
             if (context.defaultWrapper != null) {
                 mappingData.wrapper = context.defaultWrapper.object;
+                mappingData.requestPath.setChars
+                    (path.getBuffer(), path.getStart(), path.getLength());
                 mappingData.wrapperPath.setChars
                     (path.getBuffer(), path.getStart(), path.getLength());
             }
@@ -556,6 +560,7 @@ public final class Mapper {
         (Wrapper[] wrappers, CharChunk path, MappingData mappingData) {
         int pos = find(wrappers, path);
         if ((pos != -1) && (path.equals(wrappers[pos].name))) {
+            mappingData.requestPath.setString(wrappers[pos].name);
             mappingData.wrapperPath.setString(wrappers[pos].name);
             mappingData.wrapper = wrappers[pos].object;
         }
@@ -590,6 +595,8 @@ public final class Mapper {
                          path.getOffset() + length, 
                          path.getLength() - length);
                 }
+                mappingData.requestPath.setChars
+                    (path.getBuffer(), path.getOffset(), path.getLength());
                 mappingData.wrapper = wrappers[pos].object;
             }
         }
@@ -865,7 +872,7 @@ public final class Mapper {
         MessageBytes host = MessageBytes.newInstance();
         host.setString("iowejoiejfoiew");
         MessageBytes uri = MessageBytes.newInstance();
-        uri.setString("/foo/bar/blah/");
+        uri.setString("/foo/bar/blah/bobou/foo");
         uri.toChars();
         uri.getCharChunk().setLimit(-1);
 
@@ -908,6 +915,7 @@ public final class Mapper {
 
         System.out.println("contextPath:" + mappingData.contextPath);
         System.out.println("wrapperPath:" + mappingData.wrapperPath);
+        System.out.println("requestPath:" + mappingData.requestPath);
         System.out.println("pathInfo:" + mappingData.pathInfo);
         System.out.println("redirectPath:" + mappingData.redirectPath);
 
