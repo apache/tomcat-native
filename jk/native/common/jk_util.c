@@ -24,6 +24,8 @@
 
 #include "jk_util.h"
 #include "jk_ajp12_worker.h"
+#include "jk_ajp13_worker.h"
+#include "jk_ajp14_worker.h"
 #include "jk_mt.h"
 
 #define SYSPROPS_OF_WORKER          ("sysprops")
@@ -57,12 +59,12 @@
 #define STICKY_SESSION              ("sticky_session")
 #define LOCAL_WORKER_ONLY_FLAG      ("local_worker_only")
 #define LOCAL_WORKER_FLAG           ("local_worker")
-#define WORKER_AJP12                ("ajp12")
-#define DEFAULT_WORKER_TYPE         JK_AJP12_WORKER_NAME
+
+#define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
 #define RETRIES_OF_WORKER           ("retries")
 
-#define DEFAULT_WORKER              JK_AJP12_WORKER_NAME
+#define DEFAULT_WORKER              JK_AJP13_WORKER_NAME
 #define WORKER_LIST_PROPERTY_NAME   ("worker.list")
 #define DEFAULT_LB_FACTOR           (1)
 #define LOG_FORMAT                  ("log_format")
@@ -450,7 +452,7 @@ int jk_get_worker_socket_keepalive(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             SOCKET_KEEPALIVE_OF_WORKER);
 
-    return jk_map_get_int(m, buf, def);
+    return jk_map_get_bool(m, buf, def);
 }
 
 int jk_get_worker_cache_timeout(jk_map_t *m, const char *wname, int def)
@@ -610,7 +612,7 @@ int jk_get_is_sticky_session(jk_map_t *m, const char *wname)
     if (m && wname) {
         int value;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, STICKY_SESSION);
-        value = jk_map_get_int(m, buf, 1);
+        value = jk_map_get_bool(m, buf, 1);
         if (!value)
             rc = JK_FALSE;
     }
@@ -624,7 +626,7 @@ int jk_get_is_local_worker(jk_map_t *m, const char *wname)
     if (m && wname) {
         int value;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, LOCAL_WORKER_FLAG);
-        value = jk_map_get_int(m, buf, 0);
+        value = jk_map_get_bool(m, buf, 0);
         if (value)
             rc = JK_TRUE;
     }
@@ -639,7 +641,7 @@ int jk_get_local_worker_only_flag(jk_map_t *m, const char *lb_wname)
         int value;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, lb_wname,
                 LOCAL_WORKER_ONLY_FLAG);
-        value = jk_map_get_int(m, buf, 0);
+        value = jk_map_get_bool(m, buf, 0);
         if (value)
             rc = JK_TRUE;
     }
