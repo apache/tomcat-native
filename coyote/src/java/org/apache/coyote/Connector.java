@@ -58,6 +58,10 @@
  */ 
 package org.apache.coyote;
 
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
 
 /**
  * Connector.
@@ -71,6 +75,10 @@ public interface Connector {
 
 
     public Adapter getAdapter();
+
+
+    public void process(InputStream input, OutputStream output)
+        throws IOException;
 
 
 }
