@@ -306,6 +306,7 @@ public class JkCoyoteHandler extends JkHandler implements
         ep.setStatus( JK_STATUS_NEW );
 
         req.recycle();
+        req.updateCounters();
         res.recycle();
         return OK;
     }

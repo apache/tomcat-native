@@ -195,7 +195,7 @@ public final class Request {
 
     private int bytesRead=0;
     // Time of the request - usefull to avoid repeated calls to System.currentTime
-    private long startTime;
+    private long startTime = 0L;
 
     private RequestInfo reqProcessorMX=new RequestInfo(this);
     // ------------------------------------------------------------- Properties
@@ -494,8 +494,6 @@ public final class Request {
 
 
     public void recycle() {
-        // Call RequestProcessorMX
-        reqProcessorMX.updateCounters();
         bytesRead=0;
 
 	contentLength = -1;
@@ -533,6 +531,10 @@ public final class Request {
     }
 
     // -------------------- Info  --------------------
+    public void updateCounters() {
+        reqProcessorMX.updateCounters();
+    }
+
     public RequestInfo getRequestProcessor() {
         return reqProcessorMX;
     }
