@@ -2189,8 +2189,15 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 {
     jk_server_conf_t *conf;
     int mpm_threads = 1;
+    apr_status_t rv;
 
     conf = ap_get_module_config(s->module_config, &jk_module);
+
+    rv = apr_global_mutex_child_init(&jk_log_lock, NULL, pconf);
+    if (rv != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+                     "mod_jk: could not init JK log lock in child");
+    }
 
     JK_TRACE_ENTER(conf->log);
 
