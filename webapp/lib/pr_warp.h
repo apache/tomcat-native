@@ -90,6 +90,13 @@ typedef struct warp_packet {
     char buff[65536];
 } warp_packet;
 
+/* Structure for processin headers in WARP */
+typedef struct warp_header {
+    wa_connection *conn;
+    warp_packet *pack;
+    wa_boolean fail;
+} warp_header;
+
 /* ************************************************************************* */
 /* DEFINITIONS                                                               */
 /* ************************************************************************* */
@@ -108,6 +115,20 @@ typedef struct warp_packet {
 #define TYPE_CONF_APPLIC  0x03
 #define TYPE_CONF_DONE    0x04
 #define TYPE_CONF_PROCEED 0x05
+
+#define TYPE_REQ_INIT     0x10
+#define TYPE_REQ_CONTENT  0x11
+#define TYPE_REQ_SCHEME   0x12
+#define TYPE_REQ_AUTH     0x13
+#define TYPE_REQ_HEADER   0x14
+#define TYPE_REQ_PROCEED  0x1f
+
+#define TYPE_RES_STATUS   0x20
+#define TYPE_RES_HEADER   0x21
+#define TYPE_RES_COMMIT   0x2f
+#define TYPE_RES_BODY     0x30
+#define TYPE_RES_DONE     0x3f
+
 
 /* ************************************************************************* */
 /* PACKET FUNCTIONS FROM PR_WARP_PACKET.C                                    */
@@ -132,7 +153,7 @@ void n_disconnect(wa_connection *conn);
 /* ************************************************************************* */
 /* CONFIGURATION FUNCTIONS FROM PR_WARP_CONFIG.C                             */
 /* ************************************************************************* */
-wa_boolean n_check(wa_connection *conn, warp_packet *pack);
-wa_boolean n_configure(wa_connection *conn);
+wa_boolean c_check(wa_connection *conn, warp_packet *pack);
+wa_boolean c_configure(wa_connection *conn);
 
 #endif /* ifndef _PR_WARP_H_ */
