@@ -91,7 +91,8 @@ static char  file_name[_MAX_PATH];
 static char  ini_file_name[MAX_PATH];
 static int   using_ini_file = JK_FALSE;
 static int   is_inited = JK_FALSE;
-static int	 is_mapread	= JK_FALSE;
+static int   is_mapread = JK_FALSE;
+static int   was_inited = JK_FALSE;
 static int   iis5 = -1;
 
 static jk_workerEnv_t *workerEnv;
@@ -107,6 +108,7 @@ static int init_jk(char *serverName);
 static int initialize_extension();
 
 static int read_registry_init_data(jk_env_t *env);
+extern int jk_jni_status_code;
 
 static int get_registry_config_parameter(HKEY hkey,
                                          const char *tag, 
@@ -158,7 +160,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
                     SF_NOTIFY_PREPROC_HEADERS   |
                     SF_NOTIFY_AUTH_COMPLETE;
 #else
-	    pVer->dwFlags = SF_NOTIFY_ORDER_HIGH    | 
+        pVer->dwFlags = SF_NOTIFY_ORDER_HIGH    | 
                     SF_NOTIFY_SECURE_PORT       | 
                     SF_NOTIFY_NONSECURE_PORT    |
                     SF_NOTIFY_PREPROC_HEADERS;   
@@ -202,55 +204,55 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         if (is_inited && (iis5 < 0) ) {
             char serverSoftware[256];
             DWORD dwLen = sizeof(serverSoftware);
-		    iis5=0;
+            iis5=0;
             if (pfc->GetServerVariable(pfc,SERVER_SOFTWARE, serverSoftware, &dwLen)){
-			    iis5=(atof(serverSoftware + 14) >= 5.0);
-			    if (iis5) {
-				    env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS >= 5.0\n");
-			    } else {
-				    env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS < 5.0\n");
-			    }
+                iis5=(atof(serverSoftware + 14) >= 5.0);
+                if (iis5) {
+                    env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS >= 5.0\n");
+                } else {
+                    env->l->jkLog(env, env->l,  JK_LOG_INFO,"Detected IIS < 5.0\n");
+                }
             }
         }
 #ifdef SF_NOTIFY_AUTH_COMPLETE
         if (is_inited &&
              (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) ||
-		      ((SF_NOTIFY_AUTH_COMPLETE   == dwNotificationType) &&  iis5)
-		      )
-		    )
+              ((SF_NOTIFY_AUTH_COMPLETE   == dwNotificationType) &&  iis5)
+              )
+            )
 #else
-	    if (is_inited && (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType))
+        if (is_inited && (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType))
 #endif
-	    { 
+        { 
             char uri[INTERNET_MAX_URL_LENGTH]; 
             char snuri[INTERNET_MAX_URL_LENGTH]="/";
             char Host[INTERNET_MAX_URL_LENGTH];
             char Translate[INTERNET_MAX_URL_LENGTH];
-		    BOOL (WINAPI * GetHeader) 
-			    (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPVOID lpvBuffer, LPDWORD lpdwSize );
-		    BOOL (WINAPI * SetHeader) 
-			    (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPSTR lpszValue );
-		    BOOL (WINAPI * AddHeader) 
-			    (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName,LPSTR lpszValue );
+            BOOL (WINAPI * GetHeader) 
+                (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPVOID lpvBuffer, LPDWORD lpdwSize );
+            BOOL (WINAPI * SetHeader) 
+                (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPSTR lpszValue );
+            BOOL (WINAPI * AddHeader) 
+                (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName,LPSTR lpszValue );
             char *query;
             DWORD sz = sizeof(uri);
             DWORD szHost = sizeof(Host);
             DWORD szTranslate = sizeof(Translate);
 
 #ifdef SF_NOTIFY_AUTH_COMPLETE
-		    if (iis5) {
-			    GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
-			    SetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->SetHeader;
-			    AddHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->AddHeader;
-		    } else {
-			    GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
-			    SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
-			    AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
-		    }
+            if (iis5) {
+                GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
+                SetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->SetHeader;
+                AddHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->AddHeader;
+            } else {
+                GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
+                SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
+                AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
+            }
 #else
-			    GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
-			    SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
-			    AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
+                GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
+                SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
+                AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
 #endif
 
 
@@ -364,7 +366,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                         return SF_STATUS_REQ_ERROR;
                     }
-				    
+                    
                     /* Move Translate: header to a temporary header so
                      * that the extension proc will be called.
                      * This allows the servlet to handle 'Translate: f'.
@@ -431,21 +433,21 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         initialize_extension();
     }
 
-	/* Initialise jk */
-	if (is_inited && !is_mapread) {
-		char serverName[MAX_SERVERNAME];
-		DWORD dwLen = sizeof(serverName);
-		if (lpEcb->GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName, &dwLen)){
-			if (dwLen > 0) serverName[dwLen-1] = '\0';
-			if (init_jk(serverName))
-				is_mapread = JK_TRUE;
-		}
-		if (!is_mapread)
-			is_inited = JK_FALSE;
-	}
+    /* Initialise jk */
+    if (is_inited && !is_mapread) {
+        char serverName[MAX_SERVERNAME];
+        DWORD dwLen = sizeof(serverName);
+        if (lpEcb->GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName, &dwLen)){
+            if (dwLen > 0) serverName[dwLen-1] = '\0';
+            if (init_jk(serverName))
+                is_mapread = JK_TRUE;
+        }
+        if (!is_mapread)
+            is_inited = JK_FALSE;
+    }
 
 
-	if (is_inited) {
+    if (is_inited) {
         jk_ws_service_t sOnStack;
         jk_ws_service_t *s=&sOnStack;
         char *worker_name;
@@ -533,9 +535,11 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
 
 
 DWORD WINAPI jk2_isapi_starter( LPVOID lpParam ) 
-{ 
+{
     Sleep(1000);
     
+    apr_initialize();
+    apr_pool_create( &jk_globalPool, NULL );
     initialize_extension();
     if (is_inited) {
         if (init_jk(NULL))
@@ -545,6 +549,7 @@ DWORD WINAPI jk2_isapi_starter( LPVOID lpParam )
     WaitForSingleObject(jk2_starter_event, INFINITE);
 
     if (is_inited) {
+        was_inited = JK_TRUE;
         is_inited = JK_FALSE;
         if (workerEnv) {
             jk_env_t *env = workerEnv->globalEnv;
@@ -552,6 +557,9 @@ DWORD WINAPI jk2_isapi_starter( LPVOID lpParam )
         }
         is_mapread = JK_FALSE;
     }
+    apr_pool_destroy(jk_globalPool);
+    apr_terminate();
+    ExitThread(0);
     return 0; 
 } 
 
@@ -570,12 +578,12 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
         case DLL_PROCESS_DETACH:
             WaitForSingleObject(jk2_starter_thread, INFINITE);
             CloseHandle(jk2_starter_thread);
-            apr_terminate();
-        break;
+            /* Dirty hack to unload the jvm */
+            if (was_inited && jk_jni_status_code)
+                ExitProcess(0);
+      break;
 
         case DLL_PROCESS_ATTACH:
-            apr_initialize();
-            apr_pool_create( &jk_globalPool, NULL );
             if (GetModuleFileName( hInst, file_name, sizeof(file_name))) {
                 _splitpath( file_name, drive, dir, fname, NULL );
                 _makepath( ini_file_name, drive, dir, fname, ".properties" );
@@ -784,8 +792,8 @@ static  jk_env_t*  jk2_create_workerEnv (void) {
     }
 
 /* XXX 
-	
-	Detect install dir, be means of service configs, */
+    
+    Detect install dir, be means of service configs, */
 
     
     return env;
