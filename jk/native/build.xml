@@ -25,7 +25,7 @@
   <property name="apache13.home" location="/usr" />
   
   <property name="apache2.include" location="${apache2.home}/include" />
-  <property name="apache13.include" location="${apache13.home}/include/apache" />
+  <property name="apache13.include" location="${apache13.home}/include" />
 
   <property name="so.debug" value="true" />
   <property name="so.optimize" value="false" />
@@ -289,6 +289,7 @@
       <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apache13.home}/CoreR&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apache13.home}/Release&quot;" if="win32" />
+      <linkOpt value="/libpath:&quot;${apache13.home}/libexec&quot;" if="win32" />
     </so>
   </target>
 
