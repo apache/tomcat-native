@@ -446,6 +446,10 @@ public class Http11Connector implements Connector, ActionHook {
         } else if (protocolMB.equals(Constants.HTTP_10)) {
             http11 = false;
             keepAlive = false;
+        } else if (protocolMB.equals("")) {
+            // HTTP/0.9
+            http11 = false;
+            keepAlive = false;
         } else {
             // Unsupported protocol
             http11 = false;
@@ -493,15 +497,6 @@ public class Http11Connector implements Connector, ActionHook {
             inputBuffer.addActiveFilter
                 (inputFilters[Constants.IDENTITY_FILTER]);
             contentDelimitation = true;
-        } else {
-            // If method is GET or HEAD, prevent from reading any content
-            if ((methodMB.equals("GET"))
-                || (methodMB.equals("HEAD"))
-                || (methodMB.equals("TRACE"))) {
-                inputBuffer.addActiveFilter
-                    (inputFilters[Constants.VOID_FILTER]);
-                contentDelimitation = true;
-            }
         }
 
         // Parse transfer-encoding header
@@ -544,6 +539,17 @@ public class Http11Connector implements Connector, ActionHook {
             response.setStatus(400);
         }
 
+        if (!contentDelimitation) {
+            // If method is GET or HEAD, prevent from reading any content
+            if ((methodMB.equals("GET"))
+                || (methodMB.equals("HEAD"))
+                || (methodMB.equals("TRACE"))) {
+                inputBuffer.addActiveFilter
+                    (inputFilters[Constants.VOID_FILTER]);
+                contentDelimitation = true;
+            }
+        }
+
         if (!contentDelimitation)
             keepAlive = false;
 
@@ -557,18 +563,38 @@ public class Http11Connector implements Connector, ActionHook {
     protected void prepareResponse() {
 
         boolean http09 = false;
+        boolean entityBody = true;
         contentDelimitation = false;
+
+        OutputFilter[] outputFilters = outputBuffer.getFilters();
 
         MessageBytes protocolMB = request.protocol();
         if (protocolMB.equals(Constants.HTTP_11)) {
             http11 = true;
         } else if (protocolMB.equals(Constants.HTTP_10)) {
             http11 = false;
-        } else {
-            // FIXME: Check for HTTP/0.9
+        } else if (protocolMB.equals("")) {
+            // HTTP/0.9
+            outputBuffer.addActiveFilter
+                (outputFilters[Constants.IDENTITY_FILTER]);
+            return;
         }
 
-        OutputFilter[] outputFilters = outputBuffer.getFilters();
+        int statusCode = response.getStatus();
+        if ((statusCode == 204) || (statusCode == 205) 
+            || (statusCode == 304)) {
+            // No entity body
+            outputBuffer.addActiveFilter
+                (outputFilters[Constants.VOID_FILTER]);
+            entityBody = false;
+        }
+
+        MessageBytes methodMB = request.method();
+        if (methodMB.equals("HEAD")) {
+            // No entity body
+            outputBuffer.addActiveFilter
+                (outputFilters[Constants.VOID_FILTER]);
+        }
 
         int contentLength = response.getContentLength();
         if (contentLength != -1) {
@@ -576,7 +602,7 @@ public class Http11Connector implements Connector, ActionHook {
                 (outputFilters[Constants.IDENTITY_FILTER]);
             contentDelimitation = true;
         } else {
-            if (http11) {
+            if (entityBody && http11) {
                 outputBuffer.addActiveFilter
                     (outputFilters[Constants.CHUNKED_FILTER]);
                 contentDelimitation = true;
@@ -593,10 +619,13 @@ public class Http11Connector implements Connector, ActionHook {
         // Add transfer encoding header
         // FIXME
 
-        if (!contentDelimitation) {
+        if ((entityBody) && (!contentDelimitation)) {
             // Mark as close the connection after the request, and add the 
             // connection: close header
             keepAlive = false;
+        }
+
+        if (!keepAlive) {
             response.addHeader("Connection", "close");
         }
 

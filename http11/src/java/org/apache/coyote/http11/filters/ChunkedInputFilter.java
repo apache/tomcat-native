@@ -62,9 +62,11 @@ package org.apache.coyote.http11.filters;
 import java.io.IOException;
 
 import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.HexUtils;
 
 import org.apache.coyote.InputBuffer;
 import org.apache.coyote.Request;
+import org.apache.coyote.http11.Constants;
 import org.apache.coyote.http11.InputFilter;
 
 /**
@@ -94,15 +96,45 @@ public class ChunkedInputFilter implements InputFilter {
 
 
     /**
-     * Remaining bytes in the current chunk.
-     */
-    protected long remaining = -1;
-
-
-    /**
      * Next buffer in the pipeline.
      */
     protected InputBuffer buffer;
+
+
+    /**
+     * Number of bytes remaining in the current chunk.
+     */
+    protected int remaining = 0;
+
+
+    /**
+     * Position in the buffer.
+     */
+    protected int pos = 0;
+
+
+    /**
+     * Last valid byte in the buffer.
+     */
+    protected int lastValid = 0;
+
+
+    /**
+     * Read bytes buffer.
+     */
+    protected byte[] buf = null;
+
+
+    /**
+     * Byte chunk used to read bytes.
+     */
+    protected ByteChunk readChunk = new ByteChunk();
+
+
+    /**
+     * Flag set to true when the end chunk has been read.
+     */
+    protected boolean endChunk = false;
 
 
     // ------------------------------------------------------------- Properties
@@ -123,12 +155,35 @@ public class ChunkedInputFilter implements InputFilter {
     public int doRead(ByteChunk chunk)
         throws IOException {
 
-        buffer.doRead(chunk);
-
-        int result = chunk.getLength();
-
-        if (result <= 0) {
+        if (endChunk)
             return -1;
+
+        if (remaining <= 0) {
+            if (!parseChunkHeader()) {
+                throw new IOException("Invalid chunk");
+            }
+            if (endChunk) {
+                parseEndChunk();
+                return -1;
+            }
+        }
+
+        int result = 0;
+
+        if (pos >= lastValid) {
+            readBytes();
+        }
+
+        if (remaining > (lastValid - pos)) {
+            result = lastValid - pos;
+            remaining = remaining - result;
+            chunk.setBytes(buf, pos, result);
+        } else {
+            result = remaining;
+            chunk.setBytes(buf, pos, remaining);
+            pos = pos + remaining;
+            remaining = 0;
+            parseCRLF();
         }
 
         return result;
@@ -152,9 +207,12 @@ public class ChunkedInputFilter implements InputFilter {
     public long end()
         throws IOException {
 
-        // FIXME: Consume extra bytes.
-        // FIXME: If too many bytes were read, return the amount.
-        return remaining;
+        // Consume extra bytes : parse the stream until the end chunk is found
+        while (doRead(readChunk) >= 0) {
+        }
+
+        // Return the number of extra bytes which were consumed
+        return (lastValid - pos);
 
     }
 
@@ -172,6 +230,9 @@ public class ChunkedInputFilter implements InputFilter {
      */
     public void recycle() {
         remaining = 0;
+        pos = 0;
+        lastValid = 0;
+        endChunk = false;
     }
 
 
@@ -181,6 +242,126 @@ public class ChunkedInputFilter implements InputFilter {
      */
     public ByteChunk getEncodingName() {
         return ENCODING;
+    }
+
+
+    // ------------------------------------------------------ Protected Methods
+
+
+    /**
+     * Read bytes from the previous buffer.
+     */
+    protected int readBytes()
+        throws IOException {
+
+        int nRead = buffer.doRead(readChunk);
+        pos = readChunk.getStart();
+        lastValid = readChunk.getEnd();
+        buf = readChunk.getBytes();
+
+        return nRead;
+
+    }
+
+
+    /**
+     * Parse the header of a chunk.
+     */
+    protected boolean parseChunkHeader()
+        throws IOException {
+
+        int result = 0;
+        boolean eol = false;
+        int begin = pos;
+        int end = begin;
+        boolean readDigit = false;
+
+        while (!eol) {
+
+            if (pos >= lastValid) {
+                if (readBytes() <= 0)
+                    return false;
+            }
+
+            if (buf[pos] == Constants.CR) {
+            } else if (buf[pos] == Constants.LF) {
+                eol = true;
+            } else {
+                if (HexUtils.DEC[buf[pos]] != -1) {
+                    if (!readDigit) {
+                        readDigit = true;
+                        begin = pos;
+                    }
+                    end = pos;
+                }
+            }
+
+            pos++;
+
+        }
+
+        if (!readDigit)
+            return false;
+
+        int offset = 1;
+        for (int i = end; i >= begin; i--) {
+            int val = HexUtils.DEC[buf[i]];
+            if (val == -1)
+                return false;
+            result = result + val * offset;
+            offset = offset * 16;
+        }
+
+        if (result == 0)
+            endChunk = true;
+
+        remaining = result;
+
+        return true;
+
+    }
+
+
+    /**
+     * Parse CRLF at end of chunk.
+     */
+    protected boolean parseCRLF()
+        throws IOException {
+
+        boolean eol = false;
+
+        while (!eol) {
+
+            if (pos >= lastValid) {
+                if (readBytes() <= 0)
+                    return false;
+            }
+
+            if (buf[pos] == Constants.CR) {
+            } else if (buf[pos] == Constants.LF) {
+                eol = true;
+            } else {
+                return false;
+            }
+
+            pos++;
+
+        }
+
+        return true;
+
+    }
+
+
+    /**
+     * Parse end chunk data.
+     * FIXME: Handle trailers
+     */
+    protected boolean parseEndChunk()
+        throws IOException {
+
+        return parseCRLF(); // FIXME
+
     }
 
 
