@@ -384,14 +384,6 @@
       </not>
     </condition>
    
-    <condition property="jkmenu.present">
-      <equals arg1="${jkmenu}" arg2="&amp;JK;" />
-    </condition>
-   
-    <condition property="jk2menu.present">
-      <equals arg1="${jk2menu}" arg2="&amp;JK2;" />
-    </condition>
-   
     <copy file="${source.docs}/menu.idx.in" tofile="${source.docs}/menu.idx"/>
     <replace file="${source.docs}/menu.idx" token="@JK@"  value="${jkmenu}"/>
     <replace file="${source.docs}/menu.idx" token="@JK2@"  value="${jk2menu}"/>
