@@ -74,7 +74,8 @@ int context_open(jk_context_t *c)
 		c->virtual  = NULL;
 		c->cbase  	= NULL,
         c->status   = AJP14_CONTEXT_DOWN;
-        c->nuri  	= 0;
+        c->size  	= 0;
+        c->capacity = 0;
         c->uris     = NULL;
         return JK_TRUE;
     }
@@ -154,6 +155,30 @@ jk_context_t * context_find(jk_context_list_t *l, char * virtual, char * cbase)
 	return NULL;
 }
 
+/*
+ * Context Memory Managment
+ */
+
+static int context_realloc(jk_context_t *c)
+{
+    if (c->size == c->capacity) {
+        char **uris;
+        int  capacity = c->capacity + CONTEXT_INC_SIZE;
+
+        uris = (char **)jk_pool_alloc(&c->p, sizeof(char *) * capacity);
+
+        if (! uris)
+			return JK_FALSE;
+
+		memcpy(uris, c->uris, sizeof(char *) * c->capacity);
+
+        c->uris = uris;
+        c->capacity = capacity;
+    }
+
+    return JK_TRUE;
+}
+
 
 /*
  * Add an URI to context
@@ -163,10 +188,23 @@ int  context_add_uri(jk_context_t *c, char * uri)
 {
     int i;
 
-    if (! c)
+    if (! c || ! uri)
         return JK_FALSE;
 
-    return NULL;
+	for (i = 0 ; i < c->size ; i++) {
+		if (! strcmp(c->uris[i], uri)) {
+                return JK_TRUE;
+            }
+        }
+
+	context_realloc(c);
+
+	if (c->size >= c->capacity) 
+		return JK_FALSE;
+
+	c->uris[c->size] = jk_pool_strdup(&c->p, uri);
+	c->size++;
+	return JK_TRUE;
 }
 
 

@@ -67,6 +67,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#define CONTEXT_INC_SIZE (50)
+
 typedef struct {
 
 	/*
@@ -98,7 +100,13 @@ typedef struct {
 	 * Num of URI handled 
 	 */
 	
-	int			nuri;
+	int			size;
+
+	/*
+	 * Capacity
+	 */
+	
+	int			capacity;
 
 	/*
 	 * URL/URIs (autoconf)
