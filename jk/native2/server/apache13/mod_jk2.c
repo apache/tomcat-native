@@ -438,7 +438,7 @@ static int jk2_translate(request_rec *r)
     /* get_env() */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
         
-    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri );
+    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL, 0,r->uri );
     
     if(uriEnv==NULL || uriEnv->workerName==NULL) {
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
