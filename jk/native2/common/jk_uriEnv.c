@@ -157,6 +157,8 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
         uriEnv->servlet=val;
     } else if( strcmp("timing", name) == 0 ) {
         uriEnv->timing=atoi( val );
+    } else if( strcmp("reverse", name) == 0 ) {
+        uriEnv->reverse=atoi( val );
     } else if( strcmp("alias", name) == 0 ) {
         if( uriEnv->match_type == MATCH_TYPE_HOST ) {
             if( uriEnv->aliases==NULL ) {
