@@ -65,14 +65,14 @@ package org.apache.catalina.connector.warp;
  */
 public class WarpTable {
 
-    /** The default size of our tables. */
-    private static int defaultsize=32;
+    /** The default capacity of our tables. */
+    private static int defaultcapacity=32;
 
-    /** The current size of our arrays. */
-    private int size;
+    /** The current capacity of our arrays. */
+    private int capacity;
 
     /** The number of elements present in our arrays. */
-    private int num;
+    protected int size;
 
     /** The array of objects. */
     protected Object objects[];
@@ -81,31 +81,31 @@ public class WarpTable {
     protected int ids[];
 
     /**
-     * Construct a new WarpTable instance with the default size.
+     * Construct a new WarpTable instance with the default capacity.
      */
     public WarpTable() {
-        this(defaultsize);
+        this(defaultcapacity);
     }
 
     /**
-     * Construct a new WarpTable instance with a specified size.
+     * Construct a new WarpTable instance with a specified capacity.
      *
-     * @param size The initial size of the table.
+     * @param capacity The initial capacity of the table.
      */
-    public WarpTable(int size) {
+    public WarpTable(int capacity) {
         super();
-        // Paranoid, it's pointless to build a smaller than minimum size.
-        if (size<defaultsize) size=defaultsize;
+        // Paranoid, it's pointless to build a smaller than minimum capacity.
+        if (capacity<defaultcapacity) capacity=defaultcapacity;
 
-        // Set the current and default sizes (in Hashtable terms the load
+        // Set the current and default capacitys (in Hashtable terms the load
         // factor is always 1.0)
-        this.defaultsize=size;
-        this.size=size;
+        this.defaultcapacity=capacity;
+        this.capacity=capacity;
 
         // Set the initial values.
-        this.num=0;
-        this.ids=new int[size];
-        this.objects=new Object[size];
+        this.size=0;
+        this.ids=new int[capacity];
+        this.objects=new Object[capacity];
     }
 
     /**
@@ -117,7 +117,7 @@ public class WarpTable {
      */
     public Object get(int id) {
         // Iterate thru the array of ids
-        for (int x=0; x<this.num; x++) {
+        for (int x=0; x<this.size; x++) {
 
             // We got our id, return the object at the same position
             if (this.ids[x]==id) return(this.objects[x]);
@@ -138,31 +138,32 @@ public class WarpTable {
     public boolean add(Object object, int id)
     throws NullPointerException {
         // Check if we were given a valid object
-        if (object==null) throw new NullPointerException("Null Handler");
+        if (object==null) throw new IllegalArgumentException("Null Object");
+        if (id<0) throw new IllegalArgumentException("ID is less than 0");
 
         // Check if another object was registered for the specified id.
         if (this.get(id)!=null) return(false);
 
         // Check if we reached the capacity limit
-        if(this.size==this.num) {
+        if(this.capacity==this.size) {
 
             // Allocate some space for the new arrays
-            int newsize=this.size+defaultsize;
-            Object newobjects[]=new Object[newsize];
-            int newids[]=new int[newsize];
+            int newcapacity=this.capacity+defaultcapacity;
+            Object newobjects[]=new Object[newcapacity];
+            int newids[]=new int[newcapacity];
             // Copy the original arrays into the new arrays
-            System.arraycopy(this.objects,0,newobjects,0,this.num);
-            System.arraycopy(this.ids,0,newids,0,this.num);
+            System.arraycopy(this.objects,0,newobjects,0,this.size);
+            System.arraycopy(this.ids,0,newids,0,this.size);
             // Update our variables
-            this.size=newsize;
+            this.capacity=newcapacity;
             this.objects=newobjects;
             this.ids=newids;
         }
 
         // Add the object and its id to the arrays
-        this.objects[this.num]=object;
-        this.ids[this.num]=id;
-        this.num++;
+        this.objects[this.size]=object;
+        this.ids[this.size]=id;
+        this.size++;
 
         // Whohoo!
         return(true);
@@ -176,36 +177,36 @@ public class WarpTable {
      */
     public Object remove(int id) {
         // Iterate thru the array of ids
-        for (int x=0; x<this.num; x++) {
+        for (int x=0; x<this.size; x++) {
 
             // We got our id, and we need to get rid of its object
             if (this.ids[x]==id) {
                 Object oldobject=this.objects[x];
                 // Decrease the number of objects stored in this table
-                this.num--;
+                this.size--;
                 // Move the last record in our arrays in the current position
                 // (dirty way to compact a table)
-                this.objects[x]=this.objects[this.num];
-                this.ids[x]=this.ids[this.num];
+                this.objects[x]=this.objects[this.size];
+                this.ids[x]=this.ids[this.size];
 
                 // Now we want to see if we need to shrink our arrays (we don't
                 // want them to grow indefinitely in case of peak data storage)
                 // We check the number of available positions against the value
-                // of defaultsize*2, so that our free positions are always
-                // between 0 and defaultsize*2 (this will reduce the number of
-                // System.arraycopy() calls. Even after the shrinking is done
-                // we still have defaultsize positions available.
-                if ((this.size-this.num)>(this.defaultsize<<1)) {
+                // of defaultcapacity*2, so that our free positions are always
+                // between 0 and defaultcapacity*2 (this will reduce the number
+                // of System.arraycopy() calls. Even after the shrinking is done
+                // we still have defaultcapacity positions available.
+                if ((this.capacity-this.size)>(this.defaultcapacity<<1)) {
 
                     // Allocate some space for the new arrays
-                    int newsize=this.size-defaultsize;
-                    Object newobjects[]=new Object[newsize];
-                    int newids[]=new int[newsize];
+                    int newcapacity=this.capacity-defaultcapacity;
+                    Object newobjects[]=new Object[newcapacity];
+                    int newids[]=new int[newcapacity];
                     // Copy the original arrays into the new arrays
-                    System.arraycopy(this.objects,0,newobjects,0,this.num);
-                    System.arraycopy(this.ids,0,newids,0,this.num);
+                    System.arraycopy(this.objects,0,newobjects,0,this.size);
+                    System.arraycopy(this.ids,0,newids,0,this.size);
                     // Update our variables
-                    this.size=newsize;
+                    this.capacity=newcapacity;
                     this.objects=newobjects;
                     this.ids=newids;
                 }
@@ -226,6 +227,6 @@ public class WarpTable {
      * @return The number of objects present in this table.
      */
     public int count() {
-        return(this.num);
+        return(this.size);
     }
 }
