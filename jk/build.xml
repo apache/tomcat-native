@@ -1,13 +1,8 @@
 <project name="jk" default="build-main" basedir=".">
 
     <!-- ===================== Initialize Property Values =================== -->
-    <property name="tomcat4.home" value="../../jakarta-tomcat-4.0/build"/>
-    <property name="servletapi.home"   value="../../jakarta-servletapi-4/dist"/>
-    <property name="tomcat-util.home" value="../util/build"/>
-    
-    <property name="catalina.jar" value="${tomcat4.home}/server/lib/catalina.jar"/>
-    <property name="servlet.jar" value="${servletapi.home}/lib/servlet.jar"/>
-    <property name="tomcat-util.jar" value="${tomcat-util.home}/lib/tomcat-util.jar"/>
+    <property file="build.properties"/>
+    <property file="${user.home}/build.properties"/>
 
     <property name="jk.build" value="${basedir}/build"/>
 
