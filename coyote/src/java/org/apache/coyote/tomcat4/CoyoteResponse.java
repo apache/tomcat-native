@@ -1290,8 +1290,6 @@ public class CoyoteResponse
             String scheme = request.getScheme();
             String name = request.getServerName();
             int port = request.getServerPort();
-            String encodedURI = 
-                urlEncoder.encodeURL(request.getDecodedRequestURI());
 
             try {
                 redirectURLCC.append(scheme, 0, scheme.length());
@@ -1304,6 +1302,10 @@ public class CoyoteResponse
                     redirectURLCC.append(portS, 0, portS.length());
                 }
                 if (!leadingSlash) {
+                    String relativePath = request.getDecodedRequestURI();
+                    int pos = relativePath.lastIndexOf('/');
+                    relativePath = relativePath.substring(0, pos);
+                    String encodedURI = urlEncoder.encodeURL(relativePath);
                     redirectURLCC.append(encodedURI, 0, encodedURI.length());
                     redirectURLCC.append('/');
                 }
