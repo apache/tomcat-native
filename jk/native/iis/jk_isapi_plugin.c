@@ -1273,6 +1273,9 @@ static int init_ws_service(isapi_private_data_t *private_data,
     s->read = read;
     s->write = write;
 
+    /* Clear RECO status */
+    s->reco_status  = RECO_NONE;
+
     GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, (*worker_name));           
     GET_SERVER_VARIABLE_VALUE(HTTP_URI_HEADER_NAME, s->req_uri);     
     GET_SERVER_VARIABLE_VALUE(HTTP_QUERY_HEADER_NAME, s->query_string);     
