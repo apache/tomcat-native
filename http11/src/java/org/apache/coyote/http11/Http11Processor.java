@@ -1154,12 +1154,14 @@ public class Http11Processor implements Processor, ActionHook {
                 request.getMimeHeaders().getValue("user-agent");
             // Check in the restricted list, and adjust the http11 
             // and keepAlive flags accordingly
-            String userAgentValue = userAgentValueMB.toString();
-            for (int i = 0; i < restrictedUserAgents.length; i++) {
-                if (restrictedUserAgents[i].match(userAgentValue)) {
-                    http11 = false;
-                    keepAlive = false;
-                    break;
+            if(userAgentValueMB != null) {
+                String userAgentValue = userAgentValueMB.toString();
+                for (int i = 0; i < restrictedUserAgents.length; i++) {
+                    if (restrictedUserAgents[i].match(userAgentValue)) {
+                        http11 = false;
+                        keepAlive = false;
+                        break;
+                    }
                 }
             }
         }
@@ -1376,12 +1378,14 @@ public class Http11Processor implements Processor, ActionHook {
         if (noCompressionUserAgents != null) {
             MessageBytes userAgentValueMB =  
                 request.getMimeHeaders().getValue("user-agent");
-            String userAgentValue = userAgentValueMB.toString();
+            if(userAgentValueMB != null) {
+                String userAgentValue = userAgentValueMB.toString();
 
-            // If one Regexp rule match, disable compression
-            for (int i = 0; i < noCompressionUserAgents.length; i++)
-                if (noCompressionUserAgents[i].match(userAgentValue))
-                    return false;
+                // If one Regexp rule match, disable compression
+                for (int i = 0; i < noCompressionUserAgents.length; i++)
+                    if (noCompressionUserAgents[i].match(userAgentValue))
+                        return false;
+            }
         }
 
         // Check if suffisant len to trig the compression        
