@@ -115,7 +115,7 @@ public class JkMain implements MBeanRegistration
             }
             System.setProperty("java.protocol.handler.pkgs", value);
         } catch(Exception ex ) {
-            ex.printStackTrace();
+            log.info("Error adding SSL Protocol Handler",ex);
         }
     }
 
@@ -126,10 +126,8 @@ public class JkMain implements MBeanRegistration
      */
     public void setPropertiesFile( String p  ) {
         propFile=p;
-        try {
-            props.load( new FileInputStream(propFile) );
-        } catch(IOException ex ){
-            ex.printStackTrace();
+        if( started ) {
+            loadPropertiesFile();
         }
     }
 
@@ -147,6 +145,9 @@ public class JkMain implements MBeanRegistration
         if( "jkHome".equals( n ) ) {
             setJkHome( v );
         } 
+        if( "propertiesFile".equals( n ) ) {
+            setPropertiesFile( v );
+        }
         props.put( n, v );
         if( started ) {
             processProperty( n, v );
@@ -248,23 +249,10 @@ public class JkMain implements MBeanRegistration
         if( home==null ) {
             log.info( "Can't find home, jk2.properties not loaded");
         }
-        if( home != null ) {
-            File hF=new File(home);
-            File conf=new File( home, "conf" );
-            if( ! conf.exists() )
-                conf=new File( home, "etc" );
+        if(log.isDebugEnabled())
+            log.debug("Starting Jk2, base dir= " + home  );
+        loadPropertiesFile();
 
-            propsF=new File( conf, "jk2.properties" );
-            
-            if( propsF.exists() ) {
-                log.debug("Starting Jk2, base dir= " + home + " conf=" + propsF );
-                setPropertiesFile( propsF.getAbsolutePath());
-            } else {
-                log.debug("Starting Jk2, base dir= " + home );
-                if( log.isDebugEnabled() )
-                    log.debug( "No properties file found " + propsF );
-            }
-        }
         String initHTTPS = (String)props.get("class.initHTTPS");
         if("true".equalsIgnoreCase(initHTTPS)) {
             initHTTPSUrls();
@@ -435,22 +423,54 @@ public class JkMain implements MBeanRegistration
             jkMain.init();
             jkMain.start();
         } catch( Exception ex ) {
-            ex.printStackTrace();
+            log.warn("Error running",ex);
         }
     }
 
     // -------------------- Private methods --------------------
 
+
+    private boolean checkPropertiesFile() {
+        if(propFile == null) {
+            return false;
+        }
+        propsF = new File(propFile);
+        if(!propsF.isAbsolute()) {
+            String home = getWorkerEnv().getJkHome();
+            if( home == null ) {
+                return false;
+            }
+            propsF = new File(home, propFile);
+        }
+        return propsF.exists();
+    }
+            
+    private void loadPropertiesFile() {
+        if(!checkPropertiesFile()) {
+            return;
+        }
+
+        try {
+            props.load( new FileInputStream(propsF) );
+        } catch(IOException ex ){
+            log.warn("Unable to load properties from "+propsF,ex);
+        }
+    }
+
     public  void saveProperties() {
         if( !saveProperties) return;
         
+        if(propsF == null) {
+            log.warn("No properties file specified. Unable to save");
+            return;
+        }
         // Temp - to check if it works
-        String outFile=propFile + ".save";
+        File outFile= new File(propsF.getParentFile(), propsF.getName()+".save");
         log.debug("Saving properties " + outFile );
         try {
             props.save( new FileOutputStream(outFile), "AUTOMATICALLY GENERATED" );
         } catch(IOException ex ){
-            ex.printStackTrace();
+            log.warn("Unable to save to "+outFile,ex);
         }
     }
 
