@@ -56,17 +56,7 @@
  * ========================================================================= */
 
 /**
- * Channel using 'plain' TCP sockets or UNIX sockets.
- * Based on jk_sockbuf. It uses a an APR-based mechanism.
- * The UNIX sockets are not yet in APR (the code has to been written).
- * 
- * Properties:
- *  - host/filename
- *  - port
- *  - ndelay (Where the hell we set it?)
- *
- * This channel should 'live' as much as the workerenv. It is stateless.
- * It allocates memory for endpoint private data ( using endpoint's pool ).
+ * Channel using APR sockets.
  *
  * @author:  Gal Shachor <shachor@il.ibm.com>                           
  * @author: Costin Manolache
@@ -87,18 +77,12 @@
 
 
 #define DEFAULT_HOST "127.0.0.1"
-#define TYPE_UNIX 1 /* to be move in APR. */
-#define TYPE_NET  2 /* to be move in APR. */
 
 /** Information specific for the socket channel
  */
 struct jk_channel_apr_private {
     int ndelay;
     apr_sockaddr_t *addr;
-#ifdef HAVE_UNIXSOCKETS    
-    struct sockaddr_un unix_addr;
-#endif    
-    int type; /* AF_INET or AF_UNIX */
     char *host;
     short port;
 };
@@ -106,11 +90,7 @@ struct jk_channel_apr_private {
 /** Informations for each connection
  */
 typedef struct jk_channel_apr_data {
-    int type; /* AF_INET or AF_UNIX */
     apr_socket_t *sock;
-#ifdef HAVE_UNIXSOCKETS    
-    int unixsock;
-#endif
 } jk_channel_apr_data_t;
 
 typedef struct jk_channel_apr_private jk_channel_apr_private_t;
@@ -144,9 +124,6 @@ static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
         socketInfo->host=value;
     } else if( strcmp( "port", name ) == 0 ) {
         socketInfo->port=atoi( value );
-    } else if( strcmp( "file", name ) == 0 ) {
-        socketInfo->host=value;
-        socketInfo->type=AF_UNIX;
     } else {
 	if( ch->worker!=NULL ) {
             return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );
@@ -159,28 +136,33 @@ static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
 static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
-                                          jk_channel_t *_this)
+                                          jk_channel_t *ch)
 {
     jk_channel_apr_private_t *socketInfo=
-        (jk_channel_apr_private_t *)(_this->_privatePtr);
+        (jk_channel_apr_private_t *)(ch->_privatePtr);
     int rc;
     short port=socketInfo->port;
 
     if( socketInfo->host==NULL ) {
-        char *localName=_this->mbean->localName;
-        jk_config_t *cfg=_this->workerEnv->config;
+        char *localName=ch->mbean->localName;
+        jk_config_t *cfg=ch->workerEnv->config;
         
-        /* Set the 'name' property
-         */
-        localName = jk2_config_replaceProperties(env, cfg->map, cfg->map->pool, localName);
+        char *portIdx=strchr( localName, ':' );
 
-        /*   env->l->jkLog(env, env->l, JK_LOG_INFO, */
-        /*                 "channelApr.init(): use name %s\n", localName ); */
-        
-        if (localName[0]=='/') {
-            _this->mbean->setAttribute( env, _this->mbean, "file", localName );
+        if( portIdx==NULL || portIdx[1]=='\0' ) {
+            socketInfo->port=8009;
         } else {
-            _this->mbean->setAttribute( env, _this->mbean, "host", localName );
+            portIdx++;
+            socketInfo->port=atoi( portIdx );
+        }
+
+        if( socketInfo->host==NULL ) {
+            socketInfo->host=ch->mbean->pool->calloc( env, ch->mbean->pool, strlen( localName ) + 1 );
+            if( portIdx==NULL ) {
+                strcpy( socketInfo->host, localName );
+            } else {
+                strncpy( socketInfo->host, localName, portIdx-localName-1 );
+            }
         }
     }
     
@@ -205,34 +187,14 @@ static int JK_METHOD jk2_channel_apr_resolve(jk_env_t *env,
                                              char *host, short port,
                                              jk_channel_apr_private_t *rc)
 {
-    /*
-     * If the hostname is an absolut path, we want a UNIX socket.
-     * otherwise it is a TCP/IP socket.
-     */ 
-    /*    env->l->jkLog(env, env->l, JK_LOG_ERROR, */
-    /*                           "jk2_channel_apr_resolve: %s %d\n", */
-    /*                           host, port); */
-#ifdef HAVE_UNIXSOCKETS
-    if (host[0]=='/') {
-        rc->type = TYPE_UNIX;
-        memset(&rc->unix_addr, 0, sizeof(struct sockaddr_un));
-        rc->unix_addr.sun_family = AF_UNIX;
-        strcpy(rc->unix_addr.sun_path, host);
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.resolve(): create AF_UNIX  %s\n", host );
-    } else 
-#endif
-    {
-        int err;
-        
-        rc->type = TYPE_NET;
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.resolve(): create AF_NET  %s %d\n", host, port );
-        err=apr_sockaddr_info_get(&rc->addr, host, APR_UNSPEC, port, 0,
-                                  (apr_pool_t *)env->globalPool->_private);
-        if ( err != APR_SUCCESS) {
-            return err;
-        }
+    int err;
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "channelApr.resolve(): create AF_NET  %s %d\n", host, port );
+    err=apr_sockaddr_info_get(&rc->addr, host, APR_UNSPEC, port, 0,
+                              (apr_pool_t *)env->globalPool->_private);
+    if ( err != APR_SUCCESS) {
+        return err;
     }
     return JK_OK;
 }
@@ -241,12 +203,12 @@ static int JK_METHOD jk2_channel_apr_resolve(jk_env_t *env,
 /** connect to Tomcat (jk_open_socket)
  */
 static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
-                                            jk_channel_t *_this,
+                                            jk_channel_t *ch,
                                             jk_endpoint_t *endpoint)
 {
     int err;
     jk_channel_apr_private_t *socketInfo=
-        (jk_channel_apr_private_t *)(_this->_privatePtr);
+        (jk_channel_apr_private_t *)(ch->_privatePtr);
 
     apr_sockaddr_t *remote_sa=socketInfo->addr;
     int ndelay=socketInfo->ndelay;
@@ -256,46 +218,6 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     apr_status_t ret;
     apr_interval_time_t timeout = 2 * APR_USEC_PER_SEC;
     char msg[128];
-
-#ifdef HAVE_UNIXSOCKETS
-
-    int unixsock;
-
-    /* UNIX socket (to be moved in APR) */
-    if (socketInfo->type==TYPE_UNIX) {
-        unixsock = socket(AF_UNIX, SOCK_STREAM, 0);
-        if (unixsock<0) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "channelApr.open(): can't create socket %d %s\n",
-                          errno, strerror( errno ) );
-            return JK_ERR;
-        }
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.open(): create unix socket %s %d\n", socketInfo->host, unixsock );
-        if (connect(unixsock,(struct sockaddr *)&(socketInfo->unix_addr),
-                    sizeof(struct sockaddr_un))<0) {
-            close(unixsock);
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "channelApr.connect() connect failed %d %s\n",
-                          errno, strerror( errno ) );
-            return JK_ERR;
-        }
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.open(): connect unix socket %d %s\n", unixsock, socketInfo->host );
-        /* store the channel information */
-        if( sd==NULL ) {
-            sd=(jk_channel_apr_data_t *)
-                endpoint->pool->calloc( env, endpoint->pool,
-                                        sizeof( jk_channel_apr_data_t ));
-            endpoint->channelData=sd;
-        }
-
-        sd->unixsock = unixsock;
-        sd->type = socketInfo->type;
-        return JK_OK;
-    }
-#endif
-
 
     if (apr_socket_create(&sock, remote_sa->family, SOCK_STREAM,
                           (apr_pool_t *)env->globalPool->_private)
@@ -353,7 +275,6 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
         endpoint->channelData=sd;
     }
     sd->sock = sock;
-    sd->type = socketInfo->type; /* APR should handle it. */
 
     return JK_OK;
 }
@@ -361,7 +282,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
 
 /** close the socket  ( was: jk2_close_socket )
 */
-static int JK_METHOD jk2_channel_apr_close(jk_env_t *env,jk_channel_t *_this,
+static int JK_METHOD jk2_channel_apr_close(jk_env_t *env,jk_channel_t *ch,
                                              jk_endpoint_t *endpoint)
 {
     apr_socket_t *sd;
@@ -371,12 +292,6 @@ static int JK_METHOD jk2_channel_apr_close(jk_env_t *env,jk_channel_t *_this,
     if( chD==NULL ) 
         return JK_ERR;
 
-#ifdef HAVE_UNIXSOCKETS
-    if (chD->type==TYPE_UNIX) { 
-        close( chD->unixsock );
-        return 0;
-    }
-#endif
     sd=chD->sock;
     chD->sock=NULL; /* XXX check it. */
     /* nothing else to clean, the socket_data was allocated ouf of
@@ -398,7 +313,7 @@ static int JK_METHOD jk2_channel_apr_close(jk_env_t *env,jk_channel_t *_this,
  *             protocol.
  * @was: jk_tcp_socket_sendfull
  */
-static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
+static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *ch,
                                             jk_endpoint_t *endpoint,
                                             jk_msg_t *msg) 
 {
@@ -423,47 +338,16 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
     b=msg->buf;
 
     sock=chD->sock;
-#ifdef HAVE_UNIXSOCKETS
-    unixsock=chD->unixsock;
-#endif
 
-    if (chD->type==TYPE_NET) {
-        length = (apr_size_t) len;
-        stat = apr_send(sock, b, &length);
-        if (stat!= APR_SUCCESS) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "jk2_channel_apr_send send failed %d %s\n",
-                          stat, apr_strerror( stat, data, sizeof(data) ) );
-            return -3; /* -2 is not possible... */
-        }
-        return JK_OK;
+    length = (apr_size_t) len;
+    stat = apr_send(sock, b, &length);
+    if (stat!= APR_SUCCESS) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "jk2_channel_apr_send send failed %d %s\n",
+                      stat, apr_strerror( stat, data, sizeof(data) ) );
+        return -3; /* -2 is not possible... */
     }
-#ifdef HAVE_UNIXSOCKETS
-    while(sent < len) {
-/*         this_time = send(unixsock, (char *)b + sent , len - sent,  0); */
-        errno=0;
-        this_time = write(unixsock, (char *)b + sent , len - sent);
-            
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel.apr:send() write() %d %d %s\n", this_time, errno,
-                      strerror( errno));
-/*         if( errno != 0 ) { */
-/*             env->l->jkLog(env, env->l, JK_LOG_ERROR, */
-/*                           "channel.apr:send() send() %d %d %s\n", this_time, errno, */
-/*                           strerror( errno)); */
-/*             return -2; */
-/*         } */
-        if(0 == this_time) {
-            return -2;
-        }
-        if(this_time < 0) {
-            return -3;
-        }
-        sent += this_time;
-    }
-    /*     return sent; */
     return JK_OK;
-#endif
 }
 
 
@@ -476,7 +360,7 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
  * Was: tcp_socket_recvfull
  */
 static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
-                                            jk_channel_t *_this,
+                                            jk_channel_t *ch,
                                             jk_endpoint_t *endpoint,
                                             char *b, int len ) 
 {
@@ -493,29 +377,7 @@ static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
         return JK_ERR;
     sock=chD->sock;
     rdlen = 0;
-#ifdef HAVE_UNIXSOCKETS 
-    sd=chD->unixsock;
-    /* this should be moved in APR */ 
-    if (chD->type==TYPE_UNIX) { 
-        while(rdlen < len) {
-            int this_time = recv(sd, 
-                                 (char *)b + rdlen, 
-                                 len - rdlen, 
-                                 0);        
-            if(-1 == this_time) {
-                if(EAGAIN == errno) {
-                    continue;
-                } 
-                return -1;
-            }
-            if(0 == this_time) {
-                return -1; 
-            }
-            rdlen += this_time;
-        }
-        return rdlen; 
-    }
-#endif
+
     length = (apr_size_t) len;
     stat =  apr_recv(sock, b, &length);
 
@@ -536,7 +398,7 @@ static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
  *            >0: length of the received data.
  * Was: tcp_socket_recvfull
  */
-static int JK_METHOD jk2_channel_apr_recv( jk_env_t *env, jk_channel_t *_this,
+static int JK_METHOD jk2_channel_apr_recv( jk_env_t *env, jk_channel_t *ch,
                                              jk_endpoint_t *endpoint,
                                              jk_msg_t *msg )
 {
@@ -545,7 +407,7 @@ static int JK_METHOD jk2_channel_apr_recv( jk_env_t *env, jk_channel_t *_this,
     int rc;
     
 
-    jk2_channel_apr_readN( env, _this, endpoint, msg->buf, hlen );
+    jk2_channel_apr_readN( env, ch, endpoint, msg->buf, hlen );
 
     blen=msg->checkHeader( env, msg, endpoint );
     if( blen < 0 ) {
@@ -554,7 +416,7 @@ static int JK_METHOD jk2_channel_apr_recv( jk_env_t *env, jk_channel_t *_this,
         return JK_ERR;
     }
     
-    rc= jk2_channel_apr_readN( env, _this, endpoint, msg->buf + hlen, blen);
+    rc= jk2_channel_apr_readN( env, ch, endpoint, msg->buf + hlen, blen);
 
     if(rc < 0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
