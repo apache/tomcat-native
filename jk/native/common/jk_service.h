@@ -290,12 +290,13 @@ struct jk_endpoint
 
     /*
      * Forward a request to the servlet engine.  The request is described
-     * by the jk_ws_service_t object.  I'm not sure exactly how
-     * is_recoverable_error is being used.  
+     * by the jk_ws_service_t object.
+     * is_error is either 0 meaning recoverable or set to
+     * the HTTP error code.
      */
     int (JK_METHOD * service) (jk_endpoint_t *e,
                                jk_ws_service_t *s,
-                               jk_logger_t *l, int *is_recoverable_error);
+                               jk_logger_t *l, int *is_error);
 
     /*
      * Called when this particular endpoint has finished processing a

@@ -1562,7 +1562,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
  */
 int JK_METHOD ajp_service(jk_endpoint_t *e,
                           jk_ws_service_t *s,
-                          jk_logger_t *l, int *is_recoverable_error)
+                          jk_logger_t *l, int *is_error)
 {
     int i, err;
     ajp_operation_t oper;
@@ -1570,9 +1570,12 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
 
     JK_TRACE_ENTER(l);
 
-    if (e && e->endpoint_private && s && is_recoverable_error) {
+    if (e && e->endpoint_private && s && is_error) {
         ajp_endpoint_t *p = e->endpoint_private;
         op->request = jk_b_new(&(p->pool));
+        /* Presume there will be no errors */
+        *is_error = JK_HTTP_OK;
+
         jk_b_set_buffer_size(op->request, DEF_BUFFER_SZ);
         jk_b_reset(op->request);
 
@@ -1589,7 +1592,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
 
         p->left_bytes_to_send = s->content_length;
         p->reuse = JK_FALSE;
-        *is_recoverable_error = JK_TRUE;
+        *is_error = 0;
 
         s->secret = p->worker->secret;
 
@@ -1597,7 +1600,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
          * We get here initial request (in reqmsg)
          */
         if (!ajp_marshal_into_msgb(op->request, s, l, p)) {
-            *is_recoverable_error = JK_FALSE;
+            *is_error = JK_HTTP_SERVER_ERROR;
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -1622,7 +1625,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                  * (certainly in a big post)
                  */
                 if (!op->recoverable) {
-                    *is_recoverable_error = JK_FALSE;
+                    *is_error = JK_HTTP_SERVER_ERROR;
                     jk_log(l, JK_LOG_ERROR,
                            "sending request to tomcat failed "
                            "without recovery in send loop %d", i);
@@ -1631,7 +1634,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                 }
 
                 /* Up to there we can recover */
-                *is_recoverable_error = JK_TRUE;
+                *is_error = 0;
 
                 err = ajp_get_reply(e, s, l, p, op);
                 if (err > 0) {
@@ -1646,7 +1649,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                      * operation is no more recoverable
                      */
                     if (!op->recoverable) {
-                        *is_recoverable_error = JK_FALSE;
+                        *is_error = JK_HTTP_SERVER_ERROR;
                         jk_log(l, JK_LOG_ERROR,
                                "receiving reply from tomcat failed "
                                "without recovery in send loop %d", i);
@@ -1662,11 +1665,8 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                     }
                 }
             }
-            /* Get another connection from the pool */
-            ajp_next_connection(&p, l);
-
             if (err == JK_CLIENT_ERROR) {
-                *is_recoverable_error = JK_FALSE;
+                *is_error = JK_HTTP_SERVER_ERROR;
                 jk_log(l, JK_LOG_ERROR,
                        "Client connection aborted or network problems");
                 JK_TRACE_EXIT(l);
@@ -1677,7 +1677,8 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                        "Sending request to tomcat failed,  "
                        "recoverable operation attempt=%d", i);
             }
-
+            /* Get another connection from the pool and try again */
+            ajp_next_connection(&p, l);
         }
 
         /* Log the error only once per failed request. */

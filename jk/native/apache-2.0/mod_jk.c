@@ -86,8 +86,8 @@
 #define __sys_timeval_h__
 #endif
 
-#include "jk_ajp13.h"
 #include "jk_global.h"
+#include "jk_ajp13.h"
 #include "jk_logger.h"
 #include "jk_map.h"
 #include "jk_pool.h"
@@ -1797,6 +1797,7 @@ static int jk_handler(request_rec * r)
 #ifndef NO_GETTIMEOFDAY
             struct timeval tv_begin, tv_end;
 #endif
+            int is_error = HTTP_INTERNAL_SERVER_ERROR;
             int rc = JK_FALSE;
             apache_private_data_t private_data;
             jk_ws_service_t s;
@@ -1829,9 +1830,8 @@ static int jk_handler(request_rec * r)
                 /* worker->get_endpoint might fail if we are out of memory so check */
                 /* and handle it */
                 if (worker->get_endpoint(worker, &end, xconf->log)) {
-                    int is_recoverable_error = JK_FALSE;
                     rc = end->service(end, &s, xconf->log,
-                                      &is_recoverable_error);
+                                      &is_error);
 
                     if (s.content_read < s.content_length ||
                         (s.is_chunked && !s.no_more_chunks)) {
@@ -1915,7 +1915,7 @@ static int jk_handler(request_rec * r)
                        " for worker=%s",
                        rc, worker_name);
                 JK_TRACE_EXIT(xconf->log);
-                return HTTP_INTERNAL_SERVER_ERROR;
+                return is_error;
             }
         }
         else {

@@ -1637,6 +1637,7 @@ static int jk_handler(request_rec * r)
             struct timeval tv_begin, tv_end;
 #endif
             int rc = JK_FALSE;
+            int is_error = JK_HTTP_SERVER_ERROR;
             apache_private_data_t private_data;
             jk_ws_service_t s;
             jk_pool_atom_t buf[SMALL_POOL_SIZE];
@@ -1661,8 +1662,7 @@ static int jk_handler(request_rec * r)
             if (init_ws_service(&private_data, &s, conf)) {
                 jk_endpoint_t *end = NULL;
                 if (worker->get_endpoint(worker, &end, l)) {
-                    int is_recoverable_error = JK_FALSE;
-                    rc = end->service(end, &s, l, &is_recoverable_error);
+                    rc = end->service(end, &s, l, &is_error);
 
                     if (s.content_read < s.content_length ||
                         (s.is_chunked && !s.no_more_chunks)) {
@@ -1705,7 +1705,7 @@ static int jk_handler(request_rec * r)
                        " for worker=%s",
                        worker_name);
                 JK_TRACE_EXIT(l);
-                return HTTP_INTERNAL_SERVER_ERROR;
+                return is_error;
             }
             jk_close_pool(&private_data.p);
 
@@ -1739,7 +1739,7 @@ static int jk_handler(request_rec * r)
                        " for worker=%s",
                        rc, worker_name);
                 JK_TRACE_EXIT(l);
-                return HTTP_INTERNAL_SERVER_ERROR;
+                return is_error;
             }
         }
         else {

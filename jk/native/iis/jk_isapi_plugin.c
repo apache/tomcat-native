@@ -927,14 +927,15 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                 /* Update retries for this worker */
                 s.retries = worker->retries;
                 if (worker->get_endpoint(worker, &e, logger)) {
-                    int recover = JK_FALSE;
-                    if (e->service(e, &s, logger, &recover)) {
+                    int is_error = JK_HTTP_SERVER_ERROR;
+                    if (e->service(e, &s, logger, &is_error)) {
                         rc = HSE_STATUS_SUCCESS;
                         lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
                         jk_log(logger, JK_LOG_DEBUG,
                                "service() returned OK");
                     }
                     else {
+                        lpEcb->dwHttpStatusCode = is_error;
                         jk_log(logger, JK_LOG_ERROR,
                                "service() failed");
                     }

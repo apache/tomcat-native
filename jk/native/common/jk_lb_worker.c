@@ -477,16 +477,16 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
 
 static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
-                             jk_logger_t *l, int *is_recoverable_error)
+                             jk_logger_t *l, int *is_error)
 {
     JK_TRACE_ENTER(l);
 
-    if (e && e->endpoint_private && s && is_recoverable_error) {
+    if (e && e->endpoint_private && s && is_error) {
         lb_endpoint_t *p = e->endpoint_private;
         int attempt = 0;
-
+        int num_of_workers = p->worker->num_of_workers;
         /* you can not recover on another load balancer */
-        *is_recoverable_error = JK_FALSE;
+        *is_error = JK_HTTP_OK;
 
         /* set the recovery post, for LB mode */
         s->reco_buf = jk_b_new(s->pool);
@@ -498,13 +498,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
                    "service sticky_session=%d",
                    p->worker->s->sticky_session);
 
-        while (1) {
+        while (num_of_workers) {
             worker_record_t *rec =
                 get_most_suitable_worker(p->worker, s, attempt++, l);
             int rc;
 
             if (rec) {
-                int is_recoverable = JK_FALSE;
+                int is_service_error = JK_HTTP_OK;
                 jk_endpoint_t *end = NULL;
 
                 s->jvm_route = jk_pool_strdup(s->pool, rec->s->name);
@@ -518,8 +518,12 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 rec->s->elected++;
                 if (rc && end) {
                     int src;
-                    end->rd = end->wr = 0;
-                    src = end->service(end, s, l, &is_recoverable);
+                    /* Reset endpoint read and write sizes for
+                     * this request.
+                     */
+                    end->rd = end->wr = 0;                    
+                    src = end->service(end, s, l, &is_service_error);
+                    /* Update partial reads and writes if any */
                     rec->s->readed += end->rd;
                     rec->s->transferred += end->wr;
                     end->done(&end, l);
@@ -531,46 +535,68 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         return JK_TRUE;
                     }
                 }
-                rec->s->errors++;
-                /*
-                 * Service failed !!!
-                 *
-                 * Time for fault tolerance (if possible)...
-                 */
-
-                rec->s->in_error_state = JK_TRUE;
-                rec->s->in_recovering = JK_FALSE;
-                rec->s->error_time = time(0);
-
-                if (end && !is_recoverable) {
+                if (end) {
                     /*
-                     * Error is not recoverable - break with an error.
-                     */
-                    jk_log(l, JK_LOG_ERROR,
-                           "unrecoverable error, request failed."
-                           " Tomcat failed in the middle of request,"
-                           " we can't recover to another instance.");
-                    JK_TRACE_EXIT(l);
-                    return JK_FALSE;
-                }
+                    * Service failed !!!
+                    *
+                    * Time for fault tolerance (if possible)...
+                    */
 
+                    rec->s->errors++;
+                    rec->s->in_error_state = JK_TRUE;
+                    rec->s->in_recovering = JK_FALSE;
+                    rec->s->error_time = time(0);
+
+                    if (is_service_error > JK_HTTP_OK) {
+                        /*
+                        * Error is not recoverable - break with an error.
+                        */
+                        jk_log(l, JK_LOG_ERROR,
+                            "unrecoverable error %d, request failed."
+                            " Tomcat failed in the middle of request,"
+                            " we can't recover to another instance.",
+                            is_service_error);
+                        *is_error = is_service_error;
+                        JK_TRACE_EXIT(l);
+                        return JK_FALSE;
+                    }
+                }
+                else {
+                    /* If we can not get the endpoint from the worker
+                     * that does not mean that the worker is in error
+                     * state. It means that the worker is busy.
+                     * We will try another worker.
+                     * To prevent infinite loop decrement worker count;
+                     */
+                    --num_of_workers;
+                }
                 /* 
                  * Error is recoverable by submitting the request to
                  * another worker... Lets try to do that.
                  */
-                jk_log(l, JK_LOG_DEBUG,
-                       "recoverable error... will try to recover on other host");
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "recoverable error... will try to recover on other host");
             }
             else {
                 /* NULL record, no more workers left ... */
                 jk_log(l, JK_LOG_ERROR,
-                       "lb: All tomcat instances failed, no more workers left.");
+                       "All tomcat instances failed, no more workers left");
                 JK_TRACE_EXIT(l);
+                *is_error = JK_HTTP_SERVER_ERROR;
                 return JK_FALSE;
             }
         }
+        jk_log(l, JK_LOG_INFO,
+               "All tomcat instances are busy, no more endpoints left. "
+               "Rise cache_size to match the load");
+        JK_TRACE_EXIT(l);
+        /* Set error to Server busy */
+        *is_error = JK_HTTP_SERVER_BUSY;
+        return JK_FALSE;
     }
-
+    if (is_error)
+        *is_error = JK_HTTP_SERVER_ERROR;
     JK_LOG_NULL_PARAMS(l);
     JK_TRACE_EXIT(l);
     return JK_FALSE;

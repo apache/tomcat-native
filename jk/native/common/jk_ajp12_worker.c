@@ -85,15 +85,15 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
 
 static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
-                             jk_logger_t *l, int *is_recoverable_error)
+                             jk_logger_t *l, int *is_error)
 {
     jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::service");
 
-    if (e && e->endpoint_private && s && is_recoverable_error) {
+    if (e && e->endpoint_private && s && is_error) {
         ajp12_endpoint_t *p = e->endpoint_private;
         unsigned attempt;
 
-        *is_recoverable_error = JK_TRUE;
+        *is_error = 0;
 
         for (attempt = 0; attempt < p->worker->connect_retry_attempts;
              attempt++) {
@@ -113,7 +113,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
              * After we are connected, each error that we are going to
              * have is probably unrecoverable
              */
-            *is_recoverable_error = JK_FALSE;
+            *is_error = JK_HTTP_SERVER_ERROR;
             jk_sb_open(&p->sb, p->sd);
             if (ajpv12_handle_request(p, s, l)) {
                 jk_log(l, JK_LOG_DEBUG,

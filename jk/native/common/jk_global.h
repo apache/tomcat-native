@@ -171,6 +171,14 @@ extern "C"
 #define PATH_ENV_VARIABLE       ("LD_LIBRARY_PATH")
 #endif
 
+/* HTTP Error codes
+ */
+
+#define JK_HTTP_SERVER_ERROR    500
+#define JK_HTTP_SERVER_BUSY     503
+#define JK_HTTP_OK              200
+
+
 /*
  * RECO STATUS
  */
