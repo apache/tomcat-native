@@ -276,8 +276,8 @@ public class CoyoteInterceptor extends PoolTcpConnector
 	if(response instanceof CoyoteResponse) {
 	    try {
 		((CoyoteResponse)response).sendAcknowledgement();
-	    } catch(IOException iex) {
-		log("Can't send ACK",iex);
+	    } catch(Exception ex) {
+		log("Can't send ACK", ex);
 	    }
 	}
 	return 0;
