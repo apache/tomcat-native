@@ -866,7 +866,7 @@ static int ajp_send_request(jk_endpoint_t *e,
 				return JK_FALSE;
 			}
 			s->content_read = len;
-			if (!ajp_connection_tcp_send_message(ae, op->reply, l)) {
+			if (!ajp_connection_tcp_send_message(ae, op->post, l)) {
 				jk_log(l, JK_LOG_ERROR, "Error sending request body\n");
 				return JK_FALSE;
 			}  
