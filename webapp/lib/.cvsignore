@@ -1,4 +1,5 @@
 .libs
+.DS_Store
 Makefile
 libwebapp.la
 libwebapp.a
