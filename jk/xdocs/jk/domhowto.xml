@@ -12,6 +12,11 @@ This document explains how to set up Domino to cooperate with Tomcat.
 </p>
 
 <p>
+We recommand you to read also the <a href="jk/workershowto.html">Workers HowTo</a> document
+to learn how to setup the working entities between your WebServer and Tomcat Engines.
+</p>
+
+<p>
 Recent version of the Lotus Domino web server have had the ability to host Java servlets, 
 but at the time of writing the Domino servlet container uses JDK 1.2.2 and it is not (apparently) 
 possible to replace this with JDK 1.3. 

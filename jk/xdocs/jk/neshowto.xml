@@ -10,11 +10,18 @@
 <p>
 This document explains how to set up Netscape web servers to cooperate with Tomcat. 
 </p>
+
 <p>
 Normally the Netscape web servers come with their own Servlet engine, 
 but you can also configure them to send servlet and JSP requests to Tomcat 
 using the Tomcat redirector plugin.
 </p>
+
+<p>
+We recommand you to read also the <a href="jk/workershowto.html">Workers HowTo</a> document
+to learn how to setup the working entities between your WebServer and Tomcat Engines.
+</p>
+
 
 <subsection name="Document Conventions and Assumptions">
 <p>

@@ -10,8 +10,14 @@
 <p>
 This document explains how to connect Tomcat to the popular open source web server, Apache. 
 There is actually to version of Apache, 1.3 and 2.0 and both could used mod_jk, the Tomcat redirector
-module
+module.
 </p>
+
+<p>
+We recommand you to read also the <a href="jk/workershowto.html">Workers HowTo</a> document
+to learn how to setup the working entities between your WebServer and Tomcat Engines.
+</p>
+
 <p>
 This document was originally part of <b>Tomcat: A Minimalistic User's Guide</b> written by Gal Shachor, 
 but has been split off for organizational reasons. 
@@ -36,7 +42,7 @@ ${tomcat_home}\bin - Where you place web server plugins
 </p>
 <p>
 In all the examples in this document ${tomcat_home} will be <b>/var/tomcat3</b>.
-A worker is defined to be a tomcat process that accepts work from the IIS server.
+A <a href="jk/workershowto.html">worker</a> is defined to be a tomcat process that accepts work from the IIS server.
 </p>
 </subsection>
 
