@@ -73,6 +73,7 @@ import org.apache.tomcat.util.net.ServerSocketFactory;
 import org.apache.tomcat.util.log.*;
 import org.apache.tomcat.util.compat.*;
 import org.apache.coyote.Adapter;
+import org.apache.coyote.ActionCode;
 import org.apache.coyote.Processor;
 
 /** The Request to connect with Coyote.
@@ -196,24 +197,20 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
     // -------------------- override special methods
 
     public MessageBytes remoteAddr() {
-
-// XXX Call back the protocol layer - lazy evaluation.
-// 	if( remoteAddrMB.isNull() ) {
-// 	    remoteAddrMB.setString(socket.getInetAddress().getHostAddress());
-// 	}
+	if( remoteAddrMB.isNull() ) {
+	    coyoteRequest.action( ActionCode.ACTION_REQ_HOST_ATTRIBUTE, coyoteRequest );
+	}
 	return remoteAddrMB;
     }
 
     public MessageBytes remoteHost() {
-// 	if( remoteHostMB.isNull() ) {
-// 	    remoteHostMB.setString( socket.getInetAddress().getHostName() );
-// 	}
+	if( remoteAddrMB.isNull() ) {
+	    coyoteRequest.action( ActionCode.ACTION_REQ_HOST_ATTRIBUTE, coyoteRequest );
+	}
 	return remoteHostMB;
     }
 
     public String getLocalHost() {
-// 	InetAddress localAddress = socket.getLocalAddress();
-// 	localHost = localAddress.getHostName();
 	return localHost;
     }
 
