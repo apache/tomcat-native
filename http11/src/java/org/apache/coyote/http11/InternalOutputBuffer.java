@@ -545,12 +545,11 @@ public class InternalOutputBuffer implements OutputBuffer {
     protected void write(MessageBytes mb) {
 
         mb.toBytes();
-        ByteChunk bc = mb.getByteChunk();
-        if (!bc.isNull()) {
-            // Writing the byte chunk to the output buffer
+
+        if (mb.getType() == MessageBytes.T_BYTES) {
+            ByteChunk bc = mb.getByteChunk();
             write(bc);
         } else {
-            // Using toString
             write(mb.toString());
         }
 
@@ -582,6 +581,9 @@ public class InternalOutputBuffer implements OutputBuffer {
      * @param s data to be written
      */
     protected void write(String s) {
+
+        if (s == null)
+            return;
 
         // From the Tomcat 3.3 HTTP/1.0 connector
         int len = s.length();
