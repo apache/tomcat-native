@@ -149,6 +149,13 @@ and  provides access to all other objects</p>
                         <td/>
                         <td>the context that will be served by this uri component (webapp style)</td>
                     </tr>
+                    <tr>
+                        <td>reverse</td>
+                        <td>0</td>
+                        <td>If set to 1 all satisfied matches will be rejected.
+This is usefull for the situations when you wish to map the entire application, but still wish that
+paticular context is not served through Tomcat.</td>
+                    </tr>
                 </table>
             </p>
         </subsection>
