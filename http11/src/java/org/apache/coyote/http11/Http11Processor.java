@@ -1499,6 +1499,9 @@ public class Http11Processor implements Processor, ActionHook {
                     (outputFilters[Constants.CHUNKED_FILTER]);
                 contentDelimitation = true;
                 response.addHeader("Transfer-Encoding", "chunked");
+            } else {
+                outputBuffer.addActiveFilter
+                    (outputFilters[Constants.IDENTITY_FILTER]);
             }
         }
 
