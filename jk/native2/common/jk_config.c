@@ -80,9 +80,8 @@ static char **jk2_config_getValues(jk_env_t *env, jk_config_t *m,
 
 /* ==================== ==================== */
 
-/* Set the file where the config will be read and
- * ( in future ) stored.
- *
+/* Set the config file, read it. The property will also be
+   used for storing modified properties.
  */
 static int jk2_config_setConfigFile( jk_env_t *env,
                                      jk_config_t *cfg,
@@ -130,6 +129,55 @@ static int jk2_config_setConfigFile( jk_env_t *env,
     return JK_TRUE;
 }
 
+/* Experimental. Dangerous. The file param will go away, for security
+   reasons - it can save only in the original file.
+ */
+static int jk2_config_saveConfig( jk_env_t *env,
+                                  jk_config_t *cfg,
+                                  jk_workerEnv_t *wEnv,
+                                  char *workerFile)
+{
+    FILE *fp;
+    char buf[LENGTH_OF_LINE + 1];            
+    int i,j;
+        
+    fp= fopen(workerFile, "w");
+        
+    if(fp==NULL)
+        return JK_FALSE;
+
+    /* We'll save only the objects/properties that were set
+       via config, and to the original 'string'. That keeps the config
+       small ( withou redundant ) and close to the original. Comments
+       will be saved/loaded later.
+    */
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+
+        if( mbean==NULL || mbean->settings==NULL ) 
+            continue;
+        
+        fprintf( fp, "[%s]\n", mbean->name );
+
+        for( j=0; j < mbean->settings->size( env, mbean->settings ); j++ ) {
+            char *pname=mbean->settings->nameAt( env, mbean->settings, j);
+            /* Don't save redundant information */
+            if( strcmp( pname, "name" ) != NULL ) {
+                fprintf( fp, "%s=%s\n",
+                         pname,
+                         mbean->settings->valueAt( env, mbean->settings, j));
+            }
+        }
+        fprintf( fp, "\n" );
+    }
+    
+    fclose(fp);
+
+    return JK_TRUE;
+}
+
+
 /** Interpret the 'name' as [OBJECT].[PROPERTY].
     If the [OBJECT] is not found, construct it using
     the prefix ( i.e. we'll search for a factory that matches
@@ -137,115 +185,147 @@ static int jk2_config_setConfigFile( jk_env_t *env,
 
     Then set the property on the object that is found or
     constructed.
+
+    No replacement or saving is done on the val - this is
+    a private method
 */
-static int jk2_config_setBeanPropertyString( jk_env_t *env,
-                                             jk_config_t *cfg,
-                                             char *name, char *val)
+
+
+static int jk2_config_processBeanPropertyString( jk_env_t *env,
+                                                 jk_config_t *cfg,
+                                                 char *propertyString,
+                                                 char **objName, char **propertyName )
 {
     jk_bean_t *w = NULL;
     char *type=NULL;
-    char *objName= cfg->pool->pstrdup( env, cfg->pool, name );
-    char *propName=NULL;
     char *dot=0;
     int i;
     char **comp;
     int nrComp;
+    char *lastDot;
+    char *lastDot1;
+    
+    propertyString=cfg->pool->pstrdup( env, cfg->pool, propertyString );
+    
+    lastDot= rindex( propertyString, (int)'.' );
+    lastDot1= rindex( propertyString, (int)':' );
 
-    char *lastDot= rindex( objName, (int)'.' );
-
+    if( lastDot1==NULL )
+        lastDot1=lastDot;
+    
+    if( lastDot==NULL || lastDot < lastDot1 )
+        lastDot=lastDot1;
+    
     if( lastDot==NULL || *lastDot=='\0' ) return JK_FALSE;
 
     *lastDot='\0';
     lastDot++;
-    propName=lastDot;
-    /* fprintf(stderr, "%d %s %s\n", *lastDot, lastDot, propName); */
 
-    w=env->getMBean( env, objName );
+    *objName=propertyString;
+    *propertyName=lastDot;
 
-    if( w==NULL ) {
-        jk_pool_t *workerPool;
-        
-        /** New object. Create it using the prefix
-         */
-        for( i=0; i< env->_registry->size( env, env->_registry ) ; i++ ) {
-            char *factName=env->_registry->nameAt( env, env->_registry, i );
-            int len=strlen(factName );
-
-            if( (strncmp( objName, factName, len) == 0) &&
-                ( (objName[len] == '.') ||
-                  (objName[len] == '_') ||
-                  (objName[len] == '\0') )  ) {
-                /* We found the factory. */
-                type=factName;
-                env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "Found %s  %s %s %d %d\n", type, objName,
-                              factName, len, strncmp( objName, factName, len));
-                break;
-            }
-        }
-        if( type==NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "Can't find type for %s \n", objName);
-            return JK_FALSE;
-        } 
-        
-        workerPool=cfg->pool->create(env, cfg->pool, HUGE_POOL_SIZE);
-        
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "Create %s  %s\n", type, objName);
-        env->createInstance( env, workerPool, type, objName );
-        w=env->getMBean( env, objName );
-        if( w==NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "Error creating  %s %s\n", objName, type);
-        }
-    }
-
-    if( w != NULL ) {
-        /* If we have an object with that name, set the prop */
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "Setting %s %s=%s\n", objName, propName, val);
-
-        if( w->setAttribute != NULL )
-            return w->setAttribute( env, w, propName, val );
-    }
-
-    return JK_FALSE;
-}
-
-/** Set a property for this config object
- */
-static int jk2_config_setAttribute( struct jk_env *env, struct jk_bean *mbean,
-                                    char *name, void *valueP)
-{
-    jk_config_t *cfg=mbean->object;
-    char *value=valueP;
+    /*     fprintf(stderr, "ProcessBeanProperty string %s %s\n", *objName, *propertyName); */
     
-    if( strcmp( name, "file" )==0 ) {
-        return jk2_config_setConfigFile(env, cfg, cfg->workerEnv, value);
-    } else {
-        return JK_FALSE;
-    }
-
     return JK_TRUE;
 }
 
-/** Set a property on a bean
+/** Create a jk component using the name prefix
+ */
+static jk_bean_t *jk2_config_createInstance( jk_env_t *env, jk_config_t *cfg,
+                                             char *objName )
+{
+    jk_pool_t *workerPool;
+    jk_bean_t *w=NULL;
+    int i;
+    char *type=NULL;
+        
+    /** New object. Create it using the prefix
+     */
+    for( i=0; i< env->_registry->size( env, env->_registry ) ; i++ ) {
+        char *factName=env->_registry->nameAt( env, env->_registry, i );
+        int len=strlen(factName );
+        
+        if( (strncmp( objName, factName, len) == 0) &&
+            ( (objName[len] == '.') ||
+              (objName[len] == ':') ||
+              (objName[len] == '_') ||
+              (objName[len] == '\0') )  ) {
+            /* We found the factory. */
+            type=factName;
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "Found %s  %s %s %d %d\n", type, objName,
+                          factName, len, strncmp( objName, factName, len));
+            break;
+        }
+    }
+    if( type==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Can't find type for %s \n", objName);
+        return NULL;
+    } 
+    
+    workerPool=cfg->pool->create(env, cfg->pool, HUGE_POOL_SIZE);
+    
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                  "Create %s name=%s\n", type, objName);
+    env->createInstance( env, workerPool, type, objName );
+    w=env->getMBean( env, objName );
+    if( w==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Error creating  %s %s\n", objName, type);
+        return NULL;
+    }
+    if( w->settings == NULL )
+        jk2_map_default_create(env, &w->settings, cfg->pool);
+
+    return w;
+}
+
+
+/** Set a property on a bean. Call this when you know the bean.
+    The name and values will be saved in the config tables.
+    
+    @param mbean coresponds to the object beeing configured
+    @param name the property to be set ( can't have '.' or ':' in it )
+    @param val the value, $(property) will be replaced.
  */
 static int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
                                   jk_bean_t *mbean, char *name, void *val)
 {
-    char *pname=cfg->pool->calloc( env, cfg->pool,
-                                   strlen( name ) + strlen( mbean->name ) + 4 );
-    strcpy( pname, mbean->name );
-    strcat( pname, "." );
-    strcat( pname, name );
+    char *pname;
+    if( mbean == cfg->mbean ) {
+        pname=name;
+    } else {
+        pname=cfg->pool->calloc( env, cfg->pool,
+                                 strlen( name ) + strlen( mbean->name ) + 4 );
+        strcpy( pname, mbean->name );
+        strcat( pname, "." );
+        strcat( pname, name );
+    }
+
+    fprintf( stderr, "config.setProperty %s %s %s \n", mbean->name, name, val );
+
+    /** Save it on the config. XXX no support for deleting yet */
+    /* The _original_ value. Will be saved with $() in it */
+    if( mbean->settings == NULL )
+        jk2_map_default_create(env, &mbean->settings, cfg->pool);
     
+    mbean->settings->add( env, mbean->settings, name, val );
+
+    /* Call the 'active' setter
+     */
+    val = jk2_config_replaceProperties(env, cfg->map, cfg->map->pool, val);
+
+    /** Used for future replacements
+     */
     cfg->map->add( env, cfg->map, pname, val );
-    env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s %s %s\n",
-                   mbean->name, name, pname);
-    
-    return mbean->setAttribute( env, mbean, name, val );
+
+    env->l->jkLog( env, env->l, JK_LOG_ERROR, "config: set %s / %s / %s=%s\n",
+                   mbean->name, name, pname, val);
+ 
+    if(mbean->setAttribute)
+        return mbean->setAttribute( env, mbean, name, val );
+    return JK_FALSE;
 }
 
 static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
@@ -256,16 +336,29 @@ static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
     jk_workerEnv_t *wEnv=cfg->workerEnv;
     jk_map_t *initData=cfg->map;
     int status;
+    char *objName=NULL;
+    char *propName=NULL;
 
-    value = jk2_config_replaceProperties(env, initData, initData->pool, value);
+    fprintf( stderr, "setPropertyString %s %s \n", name, value );
 
-    /* Default format */
-    status=jk2_config_setBeanPropertyString(env, cfg, name, value );
-    if( status==JK_TRUE ) return status;
+    status=jk2_config_processBeanPropertyString(env, cfg, name, &objName, &propName );
+    if( status!=JK_TRUE ) {
+        /* Unknown properties ends up in our config, as 'unclaimed' or global */
+        jk2_config_setProperty( env, cfg, cfg->mbean, name, value );
+        return status;
+    }
+    
+    mbean=env->getMBean( env, objName );
+    if( mbean==NULL ) {
+        mbean=jk2_config_createInstance( env, cfg, objName );
+    }
+    if( mbean == NULL ) {
+        /* Can't create it, save the value in our map */
+        jk2_config_setProperty( env, cfg, cfg->mbean, name, value );
+        return JK_FALSE;
+    }
 
-    /* It may be a 'normal' property */
-    cfg->map->add( env, cfg->map, name, value );
-    return JK_TRUE;
+    return jk2_config_setProperty( env, cfg, mbean, propName, value );
 }
 
 
@@ -432,10 +525,101 @@ char **jk2_config_split(jk_env_t *env, jk_pool_t *pool,
 
 /* ==================== */
 /*  Reading / parsing */
-
-int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *f)
+int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char *prp )
 {
     int rc = JK_FALSE;
+    char *v;
+        
+    jk2_trim_prp_comment(prp);
+    
+    if( jk2_trim(prp)==0 )
+        return JK_TRUE;
+
+    /* Support windows-style 'sections' - for cleaner config
+     */
+    if( prp[0] == '[' ) {
+        char *dummyProp;
+        v=strchr(prp, ']' );
+        *v='\0';
+        jk2_trim( v );
+        prp++;
+        cfg->section=cfg->pool->pstrdup(env, cfg->pool, prp);
+        /* Add a dummy property, so the object will be created */
+        dummyProp=cfg->pool->calloc( env, cfg->pool, strlen( prp ) + 7 );
+        strcpy(dummyProp, prp );
+        strcat( dummyProp, ".name");
+        m->add( env, m, dummyProp, cfg->section);
+
+        return JK_TRUE;
+    }
+    
+    v = strchr(prp, '=');
+    if(v==NULL)
+        return JK_TRUE;
+        
+    *v = '\0';
+    v++;                        
+    
+    if(strlen(v)==0 || strlen(prp)==0)
+        return JK_TRUE;
+
+    /* [ ] Shortcut */
+    if( cfg->section != NULL ) {
+        char *newN=cfg->pool->calloc( env, cfg->pool, strlen( prp ) + strlen( cfg->section ) + 4 );
+        strcpy( newN, cfg->section );
+        strcat( newN, "." );
+        strcat( newN, prp );
+        prp=newN;
+    }
+
+    /* Don't replace now - the caller may want to
+       save the file, and it'll replace them anyway for runtime changes
+       v = jk2_config_replaceProperties(env, cfg->map, cfg->pool, v); */
+
+    /* We don't contatenate the values - but use multi-value
+       fields. This eliminates the ugly hack where readProperties
+       tried to 'guess' the separator, and the code is much
+       cleaner. If we have multi-valued props, it's better
+       to deal with that instead of forcing a single-valued
+       model.
+    */
+    m->add( env, m, cfg->pool->pstrdup(env, cfg->pool, prp),
+            cfg->pool->pstrdup(env, cfg->pool, v));
+
+    return JK_TRUE;
+}
+
+/** Read a query string into the map
+ */
+int jk2_config_queryRead(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *query)
+{
+    char *sep;
+    char *value;
+    char *qry=cfg->pool->pstrdup( env, cfg->pool, query );
+
+    while( qry != NULL ) {
+        sep=strchr( qry, '&');
+        if( sep !=NULL ) { 
+            *sep='\0';
+            sep++;
+        }
+
+        value = strchr(qry, '=');
+        if(value==NULL) {
+            value="";
+        } else {
+            *value = '\0';
+            value++;
+        }
+        m->add( env, m, cfg->pool->pstrdup( env, cfg->pool, qry ),
+                cfg->pool->pstrdup( env, cfg->pool, value ));
+        qry=sep;
+    }
+    return JK_TRUE;
+}
+     
+int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *f)
+{
     FILE *fp;
     char buf[LENGTH_OF_LINE + 1];            
     char *prp;
@@ -449,41 +633,13 @@ int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *f)
     if(fp==NULL)
         return JK_FALSE;
 
-    rc = JK_TRUE;
-
+    cfg->section=NULL;
     while(NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
-        char *oldv;
-        
-        jk2_trim_prp_comment(prp);
-
-        if( jk2_trim(prp)==0 )
-            continue;
-
-        v = strchr(prp, '=');
-        if(v==NULL)
-            continue;
-        
-        *v = '\0';
-        v++;                        
-
-        if(strlen(v)==0 || strlen(prp)==0)
-            continue;
-
-        v = jk2_config_replaceProperties(env, cfg->map, cfg->pool, v);
-
-        /* We don't contatenate the values - but use multi-value
-           fields. This eliminates the ugly hack where readProperties
-           tried to 'guess' the separator, and the code is much
-           cleaner. If we have multi-valued props, it's better
-           to deal with that instead of forcing a single-valued
-           model.
-        */
-        m->add( env, m, cfg->pool->pstrdup(env, cfg->pool, prp),
-                cfg->pool->pstrdup(env, cfg->pool, v));
+        jk2_config_parseProperty( env, cfg, m, prp );
     }
 
     fclose(fp);
-    return rc;
+    return JK_TRUE;
 }
 
 /** For multi-value properties, return the concatenation
@@ -648,6 +804,27 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
 }
 
 
+/** Set a property for this config object
+ */
+static int jk2_config_setAttribute( struct jk_env *env, struct jk_bean *mbean,
+                                    char *name, void *valueP)
+{
+    jk_config_t *cfg=mbean->object;
+    char *value=valueP;
+    
+    if( strcmp( name, "file" )==0 ) {
+        return jk2_config_setConfigFile(env, cfg, cfg->workerEnv, value);
+    } else if( strcmp( name, "save" )==0 ) {
+        /* Experimental. Setting save='foo' will save the current config in
+           foo
+        */
+        return jk2_config_saveConfig(env, cfg, cfg->workerEnv, value);
+    } else {
+        return JK_FALSE;
+    }
+    return JK_TRUE;
+}
+
 
 static void jk2_trim_prp_comment(char *prp)
 {
@@ -689,10 +866,10 @@ int jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
 
     _this->setPropertyString=jk2_config_setPropertyString;
     _this->setProperty=jk2_config_setProperty;
+    _this->mbean=result;
     
     result->object=_this;
     result->setAttribute=jk2_config_setAttribute;
 
-    
     return JK_TRUE;
 }
