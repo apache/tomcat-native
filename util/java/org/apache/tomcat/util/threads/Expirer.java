@@ -82,8 +82,9 @@ public final class Expirer  implements ThreadPoolRunnable
 	for( int i=0; i< managedCount; i++ ) {
 	    if( ts == managedObjs[i] ) {
 		synchronized( managedObjs ) {
-		    managedObjs[ i ] = managedObjs[managedCount-1];
 		    managedCount--;
+		    managedObjs[ i ] = managedObjs[managedCount];
+                    managedObjs[managedCount] = null;
 		}
 		return;
 	    }
@@ -117,7 +118,7 @@ public final class Expirer  implements ThreadPoolRunnable
 
     public void runIt( Object td[] ) {
 	long timeNow = System.currentTimeMillis();
-	if( dL > 2 ) debug( "Checking " + timeNow );
+	if( log.isTraceEnabled() ) log.trace( "Checking " + timeNow );
 	int checkedCount;
 	synchronized( managedObjs ) {
 	    checkedCount=managedCount;
@@ -133,7 +134,7 @@ public final class Expirer  implements ThreadPoolRunnable
 		continue;
 	    
 	    long maxInactiveInterval = ts.getMaxInactiveInterval();
-	    if( dL > 3 ) debug( "TS: " + maxInactiveInterval + " " +
+	    if( log.isTraceEnabled() ) log.trace( "TS: " + maxInactiveInterval + " " +
 				ts.getLastAccessedTime());
 	    if (maxInactiveInterval < 0)
 		continue;
@@ -142,8 +143,8 @@ public final class Expirer  implements ThreadPoolRunnable
 	    
 	    if (timeIdle >= maxInactiveInterval) {
 		if( expireCallback != null ) {
-		    if( dL > 0 )
-			debug( ts + " " + timeIdle + " " +
+		    if( log.isDebugEnabled() )
+			log.debug( ts + " " + timeIdle + " " +
 			       maxInactiveInterval );
 		    expireCallback.expired( ts );
 		}
@@ -151,9 +152,4 @@ public final class Expirer  implements ThreadPoolRunnable
 	}
     }
 
-    private static final int dL=0;
-    private void debug( String s ) {
-        if (log.isDebugEnabled())
-            log.debug("Expirer: " + s );
-    }
 }
