@@ -72,6 +72,7 @@ import org.apache.tomcat.util.net.*;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 import org.apache.tomcat.util.log.*;
 
+import org.apache.coyote.ActionCode;
 
 /** The Response to connect with Coyote.
  *  This class mostly handles the I/O between Tomcat and Coyte.
@@ -129,6 +130,10 @@ class Tomcat3Response extends  Response {
 	coyoteResponse.sendHeaders();
     }
 
+    public void clientFlush() throws IOException {
+        coyoteResponse.action( ActionCode.ACTION_CLIENT_FLUSH, coyoteResponse );
+    }
+    
     public void doWrite( byte buffer[], int pos, int count)
 	throws IOException
     {

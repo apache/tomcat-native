@@ -79,6 +79,11 @@ public final class ActionCode {
     public static final ActionCode ACTION_COMMIT = new ActionCode();
 
 
+    /* A flush() operation originated by the client
+     */
+    public static final ActionCode ACTION_CLIENT_FLUSH = new ActionCode();
+
+    
     public static final ActionCode ACTION_CUSTOM = new ActionCode();
 
 
@@ -90,6 +95,8 @@ public final class ActionCode {
 
     public static final ActionCode ACTION_STOP = new ActionCode();
 
+
+    public static final ActionCode ACTION_WEBAPP = new ActionCode();
 
     /**
      * Callback for lazy evaluation - extract the remote host address.
