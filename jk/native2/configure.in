@@ -123,45 +123,31 @@ JK_APXS([], [location of apxs for Apache 1.3])
 JK_APXS([2], [location of apxs for Apache 2.0])
 
 dnl APACHE13 settings
-AC_MSG_RESULT([Checking for apache13...])
+AC_MSG_CHECKING([checking for apache13...])
 JK_WS_DIR([apache13], [APACHE], [src/include/httpd.h], [server/apache13])
-JK_WS_INCDIR([apache13], [httpd.h])
-JK_WS_LIBDIR([apache13])
+JK_WS_INCDIR([apache13], [APACHE], [httpd.h])
+JK_WS_LIBDIR([apache13], [APACHE])
 
 
 dnl APACHE2 settings
-AC_MSG_RESULT([Checking for apache20...])
+AC_MSG_CHECKING([checking for apache20...])
 JK_WS_DIR([apache2], [APACHE2], [include/httpd.h], [server/apache2])
-JK_WS_INCDIR([apache2], [httpd.h])
-JK_WS_LIBDIR([apache2])
+JK_WS_INCDIR([apache2], [APACHE2], [httpd.h])
+JK_WS_LIBDIR([apache2], [APACHE2])
 
 
 dnl IIS settings
-AC_MSG_RESULT([Checking for iis...])
+AC_MSG_CHECKING([checking for iis...])
 JK_WS_DIR([iis], [IIS], [.], [server/isapi])
-JK_WS_INCDIR([iis], [.])
-JK_WS_LIBDIR([iis])
-
-AC_SUBST(IIS_CFLAGS)
-AC_SUBST(IIS_DIR)
-AC_SUBST(IIS_HOME)
-AC_SUBST(IIS_INCDIR)
-AC_SUBST(IIS_LDFLAGS)
-AC_SUBST(IIS_LIBDIR)
+JK_WS_INCDIR([iis], [IIS], [.])
+JK_WS_LIBDIR([iis], [IIS])
 
 
 dnl iPlanet settings
-AC_MSG_RESULT([Checking for iPlanet...])
+AC_MSG_CHECKING([checking for iPlanet...])
 JK_WS_DIR([iplanet], [IPLANET], [.], [server/aolserver])
-JK_WS_INCDIR([iplanet], [.])
-JK_WS_LIBDIR([iplanet])
-
-AC_SUBST(IPLANET_CFLAGS)
-AC_SUBST(IPLANET_DIR)
-AC_SUBST(IPLANET_HOME)
-AC_SUBST(IPLANET_INCDIR)
-AC_SUBST(IPLANET_LDFLAGS)
-AC_SUBST(IPLANET_LIBDIR)
+JK_WS_INCDIR([iplanet], [IPLANET], [.])
+JK_WS_LIBDIR([iplanet], [IPLANET])
 
 
 dnl TOMCATs settings

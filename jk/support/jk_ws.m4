@@ -83,7 +83,7 @@ AC_DEFUN(
           ""|"yes"|"YES"|"true"|"TRUE")
           ;;
           "no"|"NO"|"false"|"FALSE")
-          AC_MSG_ERROR(valid apr source dir location required)
+          AC_MSG_ERROR(valid $1 source dir location required)
           ;;
           *)
           tempval="${withval}"
@@ -101,15 +101,42 @@ AC_DEFUN(
             $2_CFLAGS="-I ${tempval}/include"
             $2_DIR=${tempval}
             $2_HOME="${tempval}"
-            $2_INCDIR="${tempval}/include"
+	    if ${TEST} -d ${withval}/include ; then
+	      $2_INCL="-I${tempval}/include"
+              $2_INCDIR="${tempval}/include"
+	    fi
+	    if ${TEST} -d ${withval}/src/include ; then
+	      # read osdir from the existing apache.
+	      osdir=`${GREP} '^OSDIR=' ${withval}/src/Makefile.config | ${SED} -e 's:^OSDIR=.*/os:os:'`
+	      if ${TEST} -z "${osdir}" ; then
+	        osdir=os/unix
+	      fi
+	      $2_INCL="-I${tempval}/src/include -I${withval}/src/${osdir}"
+              $2_INCDIR="${tempval}/src/include"
+	    fi
             $2_LDFLAGS=""
             $2_LIBDIR=""
 	    WEBSERVERS="${WEBSERVERS} $4"
-            AC_MSG_RESULT($1_DIR)
+
+	    AC_SUBST($2_BUILD)
+	    AC_SUBST($2_CFLAGS)
+	    AC_SUBST($2_DIR)
+	    AC_SUBST($2_HOME)
+	    AC_SUBST($2_INCL)
+	    AC_SUBST($2_INCDIR)
+	    AC_SUBST($2_LDFLAGS)
+	    AC_SUBST($2_LIBDIR)
+
           fi
           ;;
         esac
       ])
+
+      if ${TEST} -z "$tempval" ; then
+        AC_MSG_RESULT(not provided)
+      else	
+        AC_MSG_RESULT(${tempval})
+      fi
 
       unset tempval
   ])
@@ -134,7 +161,7 @@ AC_DEFUN(
           ""|"yes"|"YES"|"true"|"TRUE")
           ;;
           "no"|"NO"|"false"|"FALSE")
-          AC_MSG_ERROR(valid apr include dir location required)
+          AC_MSG_ERROR(valid $1 include dir location required)
           ;;
           *)
           tempval="${withval}"
@@ -147,12 +174,18 @@ AC_DEFUN(
           fi
 
           if ${TEST} ! -z "$tempval" ; then
-            $1_BUILD=""
-            $1_CFLAGS="-I${tempval}"
-            $1_CLEAN=""
-            $1_DIR=""
-            $1_INCDIR=${tempval}
-            AC_MSG_RESULT($1_INCL)
+            $2_BUILD=""
+            $2_CFLAGS="-I${tempval}"
+            $2_CLEAN=""
+            $2_DIR=""
+            $2_INCDIR=${tempval}
+            AC_MSG_RESULT($2_INCDIR)
+	    
+	    AC_SUBST($2_BUILD)
+	    AC_SUBST($2_CFLAGS)
+	    AC_SUBST($2_CLEAN)
+	    AC_SUBST($2_DIR)
+	    AC_SUBST($2_INCDIR)
           fi
           ;;
         esac
@@ -180,7 +213,7 @@ AC_DEFUN(
           ""|"yes"|"YES"|"true"|"TRUE")
           ;;
           "no"|"NO"|"false"|"FALSE")
-          AC_MSG_ERROR(valid apr lib dir location required)
+          AC_MSG_ERROR(valid $1 lib directory location required)
           ;;
         *)
           tempval="${withval}"
@@ -195,7 +228,13 @@ AC_DEFUN(
             $2_DIR=""
             $2_LIBDIR=${tempval}
             $2_LDFLAGS=""
-            AC_MSG_RESULT($1_LIB)
+            AC_MSG_RESULT($2_LIBDIR)
+
+	    AC_SUBST($2_BUILD)
+	    AC_SUBST($2_CLEAN)
+	    AC_SUBST($2_DIR)
+	    AC_SUBST($2_LIBDIR)
+	    AC_SUBST($2_LDFLAGS)
           fi
 
           ;;
