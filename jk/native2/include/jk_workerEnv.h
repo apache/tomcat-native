@@ -234,6 +234,9 @@ struct jk_workerEnv {
 
     struct jk_config *config;
     struct jk_shm *shm;
+    /* Slot for endpoint stats
+     */
+    struct jk_shm_slot *epStat;
     
     /* Handlers. This is a dispatch table for messages, for
      * each message id we have an entry containing the jk_handler_t.

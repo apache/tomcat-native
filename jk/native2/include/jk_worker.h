@@ -94,6 +94,10 @@ typedef struct jk_worker jk_worker_t;
 #define JK_LB_LEVELS 4
 #define JK_LB_MAX_WORKERS 256
 
+/* XXX Separate this in 2 structures: jk_lb.h and jk_ajp.h.
+   Using 'worker' as a generic term is confusing, the objects are very different.
+ */
+    
 /*
  * The worker 'class', which represents something to which the web server
  * can delegate requests. 
@@ -147,11 +151,22 @@ struct jk_worker {
     struct jk_channel *channel;
     char *channelName;
 
-    /** Reuse the endpoint and it's connection
+    /** Reuse the endpoint and it's connection. The cache will contain
+        the 'unused' workers. It's size may be used to select
+        an worker by the lb.
      */
     struct jk_objCache *endpointCache;
-    int cache_sz;
+    
+    /* All endpoints for this worker. Each endpoint is long-lived,
+       the size of the map will represent the maximum number of connections
+       active so far.
+     */
+    struct jk_map *endpointMap;
 
+    /* Critical section used for creation of the endpoints
+     */
+    JK_CRIT_SEC cs;
+    
     /** Request pool cache. XXX We may use a pool of requests.
      */
     struct jk_objCache *rPoolCache;
@@ -211,6 +226,12 @@ struct jk_worker {
         will know this server shouldn't be used for new requests.
     */
     int hwBalanceErr;
+
+    /* Message to display when no tomcat instance is available
+     * if status=302, this is a redirect location.
+     */
+    char *noWorkerMsg;
+    int  noWorkerCode;
     
     int workerCnt[JK_LB_LEVELS];
     jk_worker_t *workerTables[JK_LB_LEVELS][JK_LB_MAX_WORKERS];

@@ -99,6 +99,9 @@ struct jk_shm_slot {
     /** Size of the segment */
     int size;
 
+    int structSize;
+    int structCnt;
+    
     /** Full name of the segment. type:localName convention.
      */
     char name[64];
