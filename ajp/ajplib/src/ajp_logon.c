@@ -86,7 +86,7 @@ apr_status_t ajp_handle_login(ajp_msg_t *msg, char *secret, char *servername)
     status = ajp_msg_get_string(msg, &entropy);
     
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_handle_login(): can't get seed");
 
         return AJP_ELOGFAIL;
@@ -108,7 +108,7 @@ apr_status_t ajp_handle_login(ajp_msg_t *msg, char *secret, char *servername)
     status = ajp_msg_append_uint8(msg, AJP14_LOGCOMP_CMD);
     
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_handle_login(): can't log command");
 
         return AJP_ELOGFAIL;
@@ -118,7 +118,7 @@ apr_status_t ajp_handle_login(ajp_msg_t *msg, char *secret, char *servername)
     status = ajp_msg_append_string(msg, computedKey);
 
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_handle_login(): can't serialize computed secret");
 
         return AJP_ELOGFAIL;
@@ -128,7 +128,7 @@ apr_status_t ajp_handle_login(ajp_msg_t *msg, char *secret, char *servername)
     status = ajp_msg_append_uint32(msg, AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
 
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_handle_login(): can't append negociation header");
 
         return AJP_ELOGFAIL;
@@ -138,7 +138,7 @@ apr_status_t ajp_handle_login(ajp_msg_t *msg, char *secret, char *servername)
     status = ajp_msg_append_string(msg, servername);
 
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_handle_login(): can't serialize server name");
 
         return AJP_ELOGFAIL;
@@ -164,7 +164,7 @@ apr_status_t ajp_handle_logok(ajp_msg_t *msg)
     status = ajp_msg_get_uint32(msg, &negociation);
     
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_handle_logok(): can't get negociation header");
 
         return AJP_ELOGFAIL;
@@ -173,7 +173,7 @@ apr_status_t ajp_handle_logok(ajp_msg_t *msg)
     status = ajp_msg_get_string(msg, &server_name);
 
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_handle_logok(): can't get servlet engine name");
 
         return AJP_ELOGFAIL;
@@ -200,7 +200,7 @@ apr_status_t ajp_handle_lognok(ajp_msg_t *msg)
     status = ajp_msg_get_uint32(msg, &failurecode);
 
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_handle_lognok(): can't get failure code");
 
         return AJP_ELOGFAIL;
