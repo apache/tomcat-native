@@ -165,6 +165,8 @@ extern "C" {
 
 #define JK_OPT_FWDKEYSIZE           0x0004
 
+#define JK_OPT_FWDDIRS              0x0008
+
 /* Check for EBCDIC systems */
 
 /* Check for Apache 2.0 running on an EBCDIC system */
