@@ -751,13 +751,6 @@ public final class Mapper {
                             }
                         }
                     }
-                
-                    // Rule 4d -- Welcome resources that 
-                    //            are mapped to an extension.
-                    if (mappingData.wrapper == null) {
-                        internalMapExtensionWrapper(extensionWrappers, 
-                                                    path, mappingData);
-                    } 
                 }
 
                 path.setOffset(servletPath);
