@@ -189,6 +189,9 @@ const char *wa_deploy(wa_application *a, wa_virtualhost *h, wa_connection *c) {
 /* Dump some debugging information. */
 void wa_debug(const char *f, const int l, const char *fmt, ...) {
 #ifdef DEBUG
+    char hdr[128];
+    char dta[640];
+    char buf[768];
     apr_time_t at;
     char st[128];
     va_list ap;
@@ -196,9 +199,10 @@ void wa_debug(const char *f, const int l, const char *fmt, ...) {
     at=apr_time_now();
     apr_ctime(st, at);
     va_start(ap,fmt);
-    fprintf(stderr,"[%s] %d (%s:%d) ",st,getpid(),f,l);
-    vfprintf(stderr,fmt,ap);
-    fprintf(stderr,"\n");
+    apr_snprintf(hdr,128,"[%s] %d (%s:%d)",st,getpid(),f,l);
+    apr_vsnprintf(dta,640,fmt,ap);
+    apr_snprintf(buf,728,"%s %s\n",hdr,dta);
+    fprintf(stderr,"%s",buf);
     fflush(stderr);
     va_end(ap);
 #endif /* ifdef DEBUG */
