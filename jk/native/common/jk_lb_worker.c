@@ -52,14 +52,13 @@ struct lb_endpoint
 typedef struct lb_endpoint lb_endpoint_t;
 
 
-/* ========================================================================= */
 /* Retrieve the parameter with the given name                                */
 static char *get_path_param(jk_ws_service_t *s, const char *name)
 {
     char *id_start = NULL;
     for (id_start = strstr(s->req_uri, name);
          id_start; id_start = strstr(id_start + 1, name)) {
-        if ('=' == id_start[strlen(name)]) {
+        if (id_start[strlen(name)] == '=') {
             /*
              * Session path-cookie was found, get it's value
              */
@@ -89,7 +88,6 @@ static char *get_path_param(jk_ws_service_t *s, const char *name)
     return NULL;
 }
 
-/* ========================================================================= */
 /* Retrieve the cookie with the given name                                   */
 static char *get_cookie(jk_ws_service_t *s, const char *name)
 {
@@ -97,7 +95,7 @@ static char *get_cookie(jk_ws_service_t *s, const char *name)
     char *result = NULL;
 
     for (i = 0; i < s->num_headers; i++) {
-        if (0 == strcasecmp(s->headers_names[i], "cookie")) {
+        if (strcasecmp(s->headers_names[i], "cookie") == 0) {
 
             char *id_start;
             for (id_start = strstr(s->headers_values[i], name);
@@ -142,7 +140,6 @@ static char *get_cookie(jk_ws_service_t *s, const char *name)
 }
 
 
-/* ========================================================================= */
 /* Retrieve session id from the cookie or the parameter                      */
 /* (parameter first)                                                         */
 static char *get_sessionid(jk_ws_service_t *s)
