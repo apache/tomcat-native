@@ -143,7 +143,7 @@ static BOOL ReportStatusToSCMgr(DWORD dwCurrentState,
                                 DWORD dwWaitHint);
 static void start_jk_service(char *name);
 static void stop_jk_service(void);
-static int set_registry_values(char *name, 
+static int set_registry_values(SC_HANDLE   schService, char *name, 
                                char *prp_file);
 static int create_registry_key(const char *tag, 
                                HKEY *key);
@@ -388,6 +388,10 @@ BOOL ReportStatusToSCMgr(DWORD dwCurrentState,
     return fResult;
 }
 
+typedef WINADVAPI BOOL (WINAPI * pfnChangeServiceConfig2_t)
+                       (SC_HANDLE hService, DWORD dwInfoLevel, LPVOID lpInfo);
+
+
 void install_service(char *name, 
                      char *user, 
                      char *password, 
@@ -399,11 +403,26 @@ void install_service(char *name,
     SC_HANDLE   schSCManager;
     char        szExecPath[2048];
     char        szPropPath[2048];
+    char        szTrueName[256];
     char        *dummy;
+    char        *src, *dst;
+
+    dst = szTrueName;
+    for (src = name; *src; ++src) {
+        if (dst >= szTrueName + sizeof(szTrueName) - 1) {
+            break;
+        }
+        if (!isspace(*src) && *src != '/' && *src != '\\') {
+            *(dst++) = *src;
+        }
+    }
+    *dst = '\0';
 
     if (0 == stricmp("", deps))
         deps = NULL;
 
+    /* XXX strcat( deps, "Tcpip\0Afd\0" ); */
+    
     if(!GetFullPathName(rel_prp_file, sizeof(szPropPath) - 1, szPropPath, &dummy)) {
         printf("Unable to install %s - %s\n", 
                name, 
@@ -418,19 +437,25 @@ void install_service(char *name,
         return;
     }
 
-    if(GetModuleFileName( NULL, szExecPath, sizeof(szExecPath) - 1) == 0) {
+    szExecPath[0] = '\"';
+    if(GetModuleFileName( NULL, szExecPath + 1, sizeof(szExecPath) - 2) == 0) {
+        /* Was: if(GetModuleFileName( NULL, szExecPath, sizeof(szExecPath) - 1) == 0) { */
         printf("Unable to install %s - %s\n", 
                name, 
                GetLastErrorText(szErr, sizeof(szErr)));
         return;
     }
+    strcat(szExecPath, "\" ");
+    strcat(szExecPath, szTrueName);
+
 
     schSCManager = OpenSCManager(NULL,     // machine (NULL == local)
                                  NULL,     // database (NULL == default)
                                  SC_MANAGER_ALL_ACCESS);   // access required                       
     if(schSCManager) {
+
         schService = CreateService(schSCManager, // SCManager database
-                                   name,         // name of service
+                                   szTrueName,   // name of service
                                    name,         // name to display
                                    SERVICE_ALL_ACCESS, // desired access
                                    SERVICE_WIN32_OWN_PROCESS,  // service type
@@ -444,9 +469,10 @@ void install_service(char *name,
                                    password);                  // password
 
         if(schService) {
+            
             printf("The service named %s was created. Now adding registry entries\n", name);
             
-            if(set_registry_values(name, szPropPath)) {
+            if(set_registry_values(schService, szTrueName, szPropPath)) {
                 CloseServiceHandle(schService);
             } else {
                 printf("CreateService failed setting the private registry - %s\n", GetLastErrorText(szErr, sizeof(szErr)));
@@ -467,13 +493,19 @@ void remove_service(char *name)
 {
     SC_HANDLE   schService;
     SC_HANDLE   schSCManager;
+    char        szNameBuff[256];
+    DWORD       lenNameBuff = 256;
+    char        *szTrueName = name;
 
     schSCManager = OpenSCManager(NULL,          // machine (NULL == local)
                                  NULL,          // database (NULL == default)
                                  SC_MANAGER_ALL_ACCESS );  // access required
                         
     if(schSCManager) {
-        schService = OpenService(schSCManager, name, SERVICE_ALL_ACCESS);
+        if (GetServiceKeyName(schSCManager, name, szNameBuff, &lenNameBuff)) {
+            szTrueName = szNameBuff;
+        }
+        schService = OpenService(schSCManager, szTrueName, SERVICE_ALL_ACCESS);
 
         if(schService) {
             // try to stop the service
@@ -526,8 +558,8 @@ void start_service(char *name, char *machine)
 
     if(schSCManager) {
         schService = OpenService(schSCManager, name, SERVICE_ALL_ACCESS);
-
-        if(schService) {
+ 
+       if(schService) {
             // try to start the service
             if(StartService(schService, 0, NULL)) {
                 printf("Starting %s.", name);
@@ -609,35 +641,24 @@ void stop_service(char *name, char *machine)
     }
 }
 
-static int set_registry_values(char *name, 
+static int set_registry_values(SC_HANDLE   schService, char *name, 
                                char *prp_file)
 {
     char  tag[1024];
     HKEY  hk;
     int rc;
-
-    strcpy(tag, BASE_REGISTRY_LOCATION);
-    strcat(tag, name);
-    strcat(tag, "\\");
-    strcat(tag, PARAMS_LOCATION);
-
-    rc = create_registry_key(tag, &hk);
-
-    if(rc) {
-        rc = set_registry_config_parameter(hk, PRP_LOCATION, prp_file);
-        if(!rc) {
-            printf("Error: Can not create value [%s] - %s\n", 
-                    PRP_LOCATION, 
-                    GetLastErrorText(szErr, sizeof(szErr)));                
-        }
-        RegCloseKey(hk);
+    /* Api based */
+    HANDLE hAdvApi32;
+    char *szDescription = "Jakarta Tomcat Server";
+    pfnChangeServiceConfig2_t pfnChangeServiceConfig2;
+            
+    if((hAdvApi32 = GetModuleHandle("advapi32.dll"))
+       && ((pfnChangeServiceConfig2 = (pfnChangeServiceConfig2_t)
+            GetProcAddress(hAdvApi32, "ChangeServiceConfig2A")))) {
+        (void) pfnChangeServiceConfig2(schService, // Service Handle
+                                       1,          // SERVICE_CONFIG_DESCRIPTION
+                                       &szDescription);
     } else {
-        printf("Error: Can not create key [%s] - %s\n", 
-                tag, 
-                GetLastErrorText(szErr, sizeof(szErr)));                
-    }
-
-    if(rc) {
         char value[2024];
 
         rc = JK_FALSE;
@@ -662,7 +683,8 @@ static int set_registry_values(char *name,
                                                    value);
                 if(rc) {
                     printf("Registry values were added\n");
-                    printf("If you have already updated wrapper.properties you may start the %s service by executing \"jk_nt_service -s %s\" from the command prompt\n",
+                    printf("If you have already updated wrapper.properties you may start the %s"
+                           "service by executing \"jk_nt_service -s %s\" from the command prompt\n",
                            name,
                            name);                    
                 }
@@ -671,10 +693,30 @@ static int set_registry_values(char *name,
         }
         if(!rc) {
             printf("Error: Failed to update the service command line - %s\n", 
-                    GetLastErrorText(szErr, sizeof(szErr)));                
+                   GetLastErrorText(szErr, sizeof(szErr)));                
         }
     }
+    
+    strcpy(tag, BASE_REGISTRY_LOCATION);
+    strcat(tag, name);
+    strcat(tag, "\\");
+    strcat(tag, PARAMS_LOCATION);
 
+    rc = create_registry_key(tag, &hk);
+
+    if(rc) {
+        rc = set_registry_config_parameter(hk, PRP_LOCATION, prp_file);
+        if(!rc) {
+            printf("Error: Can not create value [%s] - %s\n", 
+                    PRP_LOCATION, 
+                    GetLastErrorText(szErr, sizeof(szErr)));                
+        }
+        RegCloseKey(hk);
+    } else {
+        printf("Error: Can not create key [%s] - %s\n", 
+                tag, 
+                GetLastErrorText(szErr, sizeof(szErr)));                
+    }
     return rc;
 }
 
@@ -701,7 +743,21 @@ static void start_jk_service(char *name)
                                    NO_ERROR,              // exit code
                                    20000)) {              // wait hint
                 HANDLE hTomcat = NULL;
-                int rc = start_tomcat(name, &hTomcat);
+                char   szNameBuff[256];
+                DWORD  lenNameBuff = 256;
+                char   *szTrueName = name;
+                SC_HANDLE   schSCManager;
+                int rc;
+
+                schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS );
+                if(schSCManager) {
+                    if (GetServiceKeyName(schSCManager, name, szNameBuff, &lenNameBuff)) {
+                        szTrueName = szNameBuff;
+                    }
+                    CloseServiceHandle(schSCManager);
+                }
+
+                rc = start_tomcat(szTrueName, &hTomcat);
 
                 if(rc && ReportStatusToSCMgr(SERVICE_RUNNING, // service state
                                              NO_ERROR,        // exit code
