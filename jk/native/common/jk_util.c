@@ -232,7 +232,7 @@ int jk_log(jk_logger_t *l,
 	set_time_str(buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
         used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
-#elif defined(NETWARE) // until we get a snprintf function
+#elif defined(NETWARE) /* until we get a snprintf function */
         buf = (char *) malloc(HUGE_BUFFER_SIZE);
         if (NULL == buf)
            return -1;
@@ -252,7 +252,7 @@ int jk_log(jk_logger_t *l,
         va_start(args, fmt);
 #ifdef WIN32
         rc = _vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
-#elif defined(NETWARE) // until we get a vsnprintf function
+#elif defined(NETWARE) /* until we get a vsnprintf function */
         rc = vsprintf(buf + used, fmt, args);
 #else 
         rc = vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);

@@ -224,7 +224,7 @@ static int fill_buffer(jk_sockbuf_t *sb)
 		   sb->buf + sb->end, 
 		   SOCKBUF_SIZE - sb->end, 0);   
 	
-	// 0 is EOF/SHUTDOWN, -1 is SOCK_ERROR
+	/* 0 is EOF/SHUTDOWN, -1 is SOCK_ERROR */
 	if (ret <= 0) {
 	    return ret;
 	} 
