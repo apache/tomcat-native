@@ -111,7 +111,7 @@ body_chunk :=
     body    length*(var binary)
 
  */
-static int jk_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
+static int jk2_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
                                     jk_ws_service_t  *s, jk_endpoint_t *ae )
 {
     int err=JK_FALSE;
@@ -140,7 +140,7 @@ static int jk_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
             msg->getInt(env, msg);
             name = name & 0X00FF;
             if (name <= SC_RES_HEADERS_NUM) {
-                nameS = (char *)jk_requtil_getHeaderById(env, name);
+                nameS = (char *)jk2_requtil_getHeaderById(env, name);
             } else {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "handler.response() Invalid header id (%d)\n",
@@ -197,7 +197,7 @@ static int jk_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
 
 /** SEND_BODY_CHUNK handler
  */
-static int jk_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
+static int jk2_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
                                 jk_ws_service_t  *r, jk_endpoint_t *ae)
 {
     int err;
@@ -215,7 +215,7 @@ static int jk_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
     return JK_HANDLER_OK;
 }
 
-static int jk_handler_endResponse(jk_env_t *env, jk_msg_t   *msg,
+static int jk2_handler_endResponse(jk_env_t *env, jk_msg_t   *msg,
                                   jk_ws_service_t  *r,jk_endpoint_t *ae)
 {
     ae->reuse = (int)msg->getByte(env, msg);
@@ -231,7 +231,7 @@ static int jk_handler_endResponse(jk_env_t *env, jk_msg_t   *msg,
 
 /** SEND_BODY_CHUNK handler
  */
-static int jk_handler_getChunk(jk_env_t *env, jk_msg_t   *msg,
+static int jk2_handler_getChunk(jk_env_t *env, jk_msg_t   *msg,
                                jk_ws_service_t  *r, jk_endpoint_t *ae)
 {
     int len = msg->getInt(env, msg);
@@ -258,38 +258,38 @@ static int jk_handler_getChunk(jk_env_t *env, jk_msg_t   *msg,
     return JK_HANDLER_FATAL;	    
 }
 
-int JK_METHOD jk_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
                                            void **result,
                                            const char *type, const char *name)
 {
     jk_map_t *map;
     jk_handler_t *h;
     
-    jk_map_default_create( env, &map, pool );
+    jk2_map_default_create( env, &map, pool );
     *result=map;
     
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="sendHeaders";
     h->messageId=JK_AJP13_SEND_HEADERS;
-    h->callback=jk_handler_startResponse;
+    h->callback=jk2_handler_startResponse;
     map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="sendChunk";
     h->messageId=JK_AJP13_SEND_BODY_CHUNK;
-    h->callback=jk_handler_sendChunk;
+    h->callback=jk2_handler_sendChunk;
     map->put( env, map, h->name, h, NULL );
     
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="endResponse";
     h->messageId=JK_AJP13_END_RESPONSE;
-    h->callback=jk_handler_endResponse;
+    h->callback=jk2_handler_endResponse;
     map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="getChunk";
     h->messageId=JK_AJP13_GET_BODY_CHUNK;
-    h->callback=jk_handler_getChunk;
+    h->callback=jk2_handler_getChunk;
     map->put( env, map, h->name, h, NULL );
 
     return JK_TRUE;

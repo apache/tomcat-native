@@ -62,37 +62,37 @@ jk_env_t *jk_env_globalEnv;
 
 /* Private methods 
 */
-static void jk_env_initEnv( jk_env_t *env, char *id );
+static void jk2_env_initEnv( jk_env_t *env, char *id );
 
 /* XXX We should have one env per thread to avoid sync problems. 
    The env will provide access to pools, etc 
 */
 
-jk_env_t* JK_METHOD jk_env_getEnv( char *id, jk_pool_t *pool ) {
+jk_env_t* JK_METHOD jk2_env_getEnv( char *id, jk_pool_t *pool ) {
   if( jk_env_globalEnv == NULL ) {
       jk_env_globalEnv=(jk_env_t *)pool->calloc( NULL, pool, sizeof( jk_env_t ));
       jk_env_globalEnv->globalPool = pool;
-      jk_env_initEnv( (jk_env_t *)jk_env_globalEnv, id );
+      jk2_env_initEnv( (jk_env_t *)jk_env_globalEnv, id );
   }
   return jk_env_globalEnv;
 }
 
 /* ==================== Implementation ==================== */
 
-static jk_env_t * JK_METHOD jk_env_get( jk_env_t *env )
+static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *env )
 {
     return NULL;
 }
 
-static int JK_METHOD jk_env_put( jk_env_t *parent, jk_env_t *chld )
+static int JK_METHOD jk2_env_put( jk_env_t *parent, jk_env_t *chld )
 {
 
     return JK_TRUE;
 }
 
-static jk_env_objectFactory_t JK_METHOD jk_env_getFactory(jk_env_t *env, 
-                                                          const char *type,
-                                                          const char *name )
+static jk_env_objectFactory_t JK_METHOD jk2_env_getFactory(jk_env_t *env, 
+                                                           const char *type,
+                                                           const char *name)
 {
   jk_env_objectFactory_t result;
   /* malloc/free: this is really temporary, and is executed only at setup
@@ -117,8 +117,8 @@ static jk_env_objectFactory_t JK_METHOD jk_env_getFactory(jk_env_t *env,
   return result;
 }
 
-static void *jk_env_getInstance( jk_env_t *_this, jk_pool_t *pool,
-                                 const char *type, const char *name )
+static void *jk2_env_getInstance(jk_env_t *_this, jk_pool_t *pool,
+                                 const char *type, const char *name)
 {
     jk_env_objectFactory_t fac;
     void *result;
@@ -147,7 +147,7 @@ static void *jk_env_getInstance( jk_env_t *_this, jk_pool_t *pool,
 }
 
 
-static void JK_METHOD jk_env_registerFactory(jk_env_t *env, 
+static void JK_METHOD jk2_env_registerFactory(jk_env_t *env, 
                                              const char *type,
                                              const char *name, 
                                              jk_env_objectFactory_t fact)
@@ -165,14 +165,14 @@ static void JK_METHOD jk_env_registerFactory(jk_env_t *env,
   env->_registry->put( env, env->_registry, typeName, fact, &old );
 }
 
-static void jk_env_initEnv( jk_env_t *env, char *id ) {
+static void jk2_env_initEnv( jk_env_t *env, char *id ) {
   /*   env->logger=NULL; */
   /*   map_alloc( & env->properties ); */
-  env->getFactory= jk_env_getFactory; 
-  env->registerFactory= jk_env_registerFactory;
-  env->getInstance= jk_env_getInstance; 
-  jk_map_default_create( env, & env->_registry, env->globalPool );
-  jk_registry_init(env);
+  env->getFactory= jk2_env_getFactory; 
+  env->registerFactory= jk2_env_registerFactory;
+  env->getInstance= jk2_env_getInstance; 
+  jk2_map_default_create( env, & env->_registry, env->globalPool );
+  jk2_registry_init(env);
 }
 
 

@@ -119,7 +119,7 @@
  *   String  serverName
  *
  */
-static int jk_handler_login(jk_env_t *env, jk_msg_t *msg,
+static int jk2_handler_login(jk_env_t *env, jk_msg_t *msg,
                             jk_ws_service_t *s, jk_endpoint_t *ae)
 {
     int rc;
@@ -137,7 +137,7 @@ static int jk_handler_login(jk_env_t *env, jk_msg_t *msg,
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "handle.logseed() received entropy %s\n", entropy);
     
-    jk_md5((const unsigned char *)entropy,
+    jk2_md5((const unsigned char *)entropy,
            (const unsigned char *)secret, computedKey);
 
     env->l->jkLog(env, env->l, JK_LOG_DEBUG,
@@ -182,7 +182,7 @@ static int jk_handler_login(jk_env_t *env, jk_msg_t *msg,
  * +--------------------+------------------------+---------------------------
  *
  */
-static int jk_handler_logok(jk_env_t *env, jk_msg_t *msg,
+static int jk2_handler_logok(jk_env_t *env, jk_msg_t *msg,
                             jk_ws_service_t *s, jk_endpoint_t *ae )
 {
     unsigned long nego;
@@ -229,7 +229,7 @@ static int jk_handler_logok(jk_env_t *env, jk_msg_t *msg,
  * +---------------------+-----------------------+
  *
  */
-static int jk_handler_lognok(jk_env_t *env, jk_msg_t *msg,
+static int jk2_handler_lognok(jk_env_t *env, jk_msg_t *msg,
                              jk_ws_service_t *s, jk_endpoint_t *ae )
 {
     unsigned long   status;
@@ -246,32 +246,32 @@ static int jk_handler_lognok(jk_env_t *env, jk_msg_t *msg,
 
 /** Register handlers
  */
-int JK_METHOD jk_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
                                         void **result,
                                         const char *type, const char *name)
 {
     jk_map_t *map;
     jk_handler_t *h;
         
-    jk_map_default_create( env, &map, pool );
+    jk2_map_default_create( env, &map, pool );
     *result=map;
     
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="login";
     h->messageId=AJP14_LOGSEED_CMD;
-    h->callback=jk_handler_login;
+    h->callback=jk2_handler_login;
     map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="logOk";
     h->messageId=AJP14_LOGOK_CMD;
-    h->callback=jk_handler_logok;
+    h->callback=jk2_handler_logok;
     map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="logNok";
     h->messageId=AJP14_LOGNOK_CMD;
-    h->callback=jk_handler_lognok;
+    h->callback=jk2_handler_lognok;
     map->put( env, map, h->name, h, NULL );
 
     return JK_TRUE;

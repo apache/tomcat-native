@@ -72,7 +72,7 @@
 #include "jk_workerEnv.h"
 #include "jk_registry.h"
 
-int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
                                             void **result,
                                             const char *type, const char *name);
 
@@ -119,7 +119,7 @@ int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
  *CONTEXT NAME (CString (*)) | URL1 [\n] URL2 [\n] URL3 [\n] | NEXT CTX. |
  *-------------------+-------------------------------+-----------+
  */
-static int jk_handler_contextList(jk_env_t *env, jk_msg_t *msg,
+static int jk2_handler_contextList(jk_env_t *env, jk_msg_t *msg,
                                   jk_ws_service_t *s,
                                   jk_endpoint_t *ae )
 {
@@ -202,7 +202,7 @@ static int jk_handler_contextList(jk_env_t *env, jk_msg_t *msg,
  *CONTEXT NAME (CString (*)) | UP/DOWN (1 byte) | .. |
  * ------------------------+------------------+----+
  */
-static int jk_handler_contextState(jk_env_t *env, jk_msg_t *msg,
+static int jk2_handler_contextState(jk_env_t *env, jk_msg_t *msg,
                                    jk_ws_service_t *s,
                                    jk_endpoint_t *ae)
 {
@@ -239,26 +239,26 @@ static int jk_handler_contextState(jk_env_t *env, jk_msg_t *msg,
 }
 
 
-int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
                                             void **result,
                                             const char *type, const char *name)
 {
     jk_map_t *map;
     jk_handler_t *h;
     
-    jk_map_default_create( env, &map, pool );
+    jk2_map_default_create( env, &map, pool );
     *result=map;
     
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="contextInfo";
     h->messageId=AJP14_CONTEXT_INFO_CMD;
-    h->callback=jk_handler_contextList;
+    h->callback=jk2_handler_contextList;
     map->put( env, map, h->name, h, NULL );
 
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="contextState";
     h->messageId=AJP14_CONTEXT_STATE_REP_CMD;
-    h->callback=jk_handler_contextState;
+    h->callback=jk2_handler_contextState;
     map->put( env, map, h->name, h, NULL );
 
     return JK_TRUE;
