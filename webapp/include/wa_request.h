@@ -144,8 +144,6 @@ struct wa_request {
     wa_ssldata *ssld;
     /** The current headers table. */
     apr_table_t *hdrs;
-    /** The client certificate string */
-    char *ssl_cert;
 };
 
 /**
