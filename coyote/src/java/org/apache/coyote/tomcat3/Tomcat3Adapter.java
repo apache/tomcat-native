@@ -112,10 +112,11 @@ public class Tomcat3Adapter implements Adapter {
             resA=(Tomcat3Response)reqA.getResponse();
         }
         
-	    
-	cm.service( reqA, resA );
-
-        reqA.recycle();
-        resA.recycle();
+	try {
+	    cm.service( reqA, resA );
+	} finally {
+	    reqA.recycle();
+	    resA.recycle();
+	}
     }
 }
