@@ -24,6 +24,7 @@
 
 #include "jk_util.h"
 #include "jk_ajp12_worker.h"
+#include "jk_mt.h"
 
 #define SYSPROPS_OF_WORKER          ("sysprops")
 #define STDERR_OF_WORKER            ("stderr")
@@ -83,6 +84,17 @@
 #ifndef JK_TIME_FORMAT
 #define JK_TIME_FORMAT "[%a %b %d %H:%M:%S %Y] "
 #endif
+
+
+static const char *jk_level_werbs[] = {
+    "[" JK_LOG_TRACE_WERB "] ",
+    "[" JK_LOG_DEBUG_VERB "] ",
+    "[" JK_LOG_INFO_VERB  "]  ",
+    "[" JK_LOG_WARNING_VERB  "]  ",
+    "[" JK_LOG_ERROR_VERB "] ",
+    "[" JK_LOG_EMERG_VERB "] ",
+    NULL
+};
 
 const char *jk_log_fmt = JK_TIME_FORMAT;
 
@@ -168,7 +180,11 @@ int jk_parse_log_level(const char *level)
         return JK_LOG_EMERG_LEVEL;
     }
 
-    return JK_LOG_DEBUG_LEVEL;
+    if (0 == strcasecmp(level, JK_LOG_DEBUG_VERB)) {
+        return JK_LOG_DEBUG_LEVEL;
+    }
+
+    return JK_LOG_TRACE_LEVEL;
 }
 
 int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
@@ -245,7 +261,6 @@ int jk_log(jk_logger_t *l,
             f++;
         }
 
-#ifdef USE_SPRINTF              /* until we get a snprintf function */
 #ifdef NETWARE
         buf = (char *)malloc(HUGE_BUFFER_SIZE);
         if (NULL == buf)
@@ -253,15 +268,37 @@ int jk_log(jk_logger_t *l,
 #endif
         set_time_str(buf, HUGE_BUFFER_SIZE);
         used = strlen(buf);
+
+#ifdef USE_SPRINTF              /* until we get a snprintf function */        
         if (line)
-            used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
+            used += sprintf(&buf[used], "[%d:%d] ", getpid(),
+                            JK_THREADID());
 #else
-        set_time_str(buf, HUGE_BUFFER_SIZE);
-        used = strlen(buf);
         if (line)
-            used +=
-                snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f,
-                         line);
+            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, "[%d:%d] ",
+                             getpid(), JK_THREADID());
+#endif
+        if (used < 0) {
+            return 0;           /* [V] not sure what to return... */
+        }
+        if (line) {
+            strcat(buf, jk_level_werbs[level]);
+            used += 8;
+        
+            if (funcname) {
+                strcat(buf, funcname);
+                strcat(buf, "::");
+                used += strlen(funcname) + 2;
+            }
+        }
+
+#ifdef USE_SPRINTF              /* until we get a snprintf function */        
+        if (line)
+            used += sprintf(&buf[used], "%s (%d): ", f, line);
+#else
+        if (line)
+            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, "%s (%d): ",
+                             f, line);
 #endif
         if (used < 0) {
             return 0;           /* [V] not sure what to return... */
