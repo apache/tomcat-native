@@ -18,8 +18,9 @@
  * Description: Load balancer worker, knows how to load balance among      *
  *              several workers.                                           *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
+ * Author:      Mladen Turk <mturk@apache.org>                             *
  * Based on:                                                               *
- * Version:     $Revision$                                           *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 #include "jk_pool.h"
@@ -39,11 +40,17 @@
 #define WAIT_BEFORE_RECOVER (60*1)
 #define ADDITINAL_WAIT_LOAD (20)
 
+/** 
+ * Worker record should be inside shared
+ * memory for correct behavior.
+ * Right now it operates on 'equal-load'
+ * presumption.
+ */
 struct worker_record
 {
     char *name;
-    double lb_factor;
-    double lb_value;
+    int lb_factor;
+    int lb_value;
     int is_local_worker;
     int in_error_state;
     int in_recovering;
@@ -98,7 +105,7 @@ static char *get_path_param(jk_ws_service_t *s, const char *name)
                  * to be on the safe side lets remove the trailing query 
                  * string if appended...
                  */
-                if (id_end = strchr(id_start, '?')) {
+                if ((id_end = strchr(id_start, '?')) != NULL) {
                     *id_end = '\0';
                 }
                 /*
@@ -189,31 +196,14 @@ static void close_workers(lb_worker_t * p, int num_of_workers, jk_logger_t *l)
     }
 }
 
-static double get_max_lb(lb_worker_t * p)
-{
-    unsigned i;
-    double rc = 0.0;
-
-    for (i = 0; i < p->num_of_workers; i++) {
-        if (!p->lb_workers[i].in_error_state) {
-            if (p->lb_workers[i].lb_value > rc) {
-                rc = p->lb_workers[i].lb_value;
-            }
-        }
-    }
-
-    return rc;
-
-}
-
 static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                                                  jk_ws_service_t *s,
                                                  int attempt)
 {
     worker_record_t *rc = NULL;
-    double lb_min = 0.0;
     unsigned i;
     char *sessionid = NULL;
+    int total_factor = 0;
 
     if (p->sticky_session) {
         sessionid = get_sessionid(s);
@@ -264,20 +254,19 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                 }
             }
             else {
-                if (p->lb_workers[i].lb_value < lb_min || !rc) {
-                    lb_min = p->lb_workers[i].lb_value;
+                p->lb_workers[i].lb_value += p->lb_workers[i].lb_factor;
+                total_factor += p->lb_workers[i].lb_factor;
+                if (!rc || p->lb_workers[i].lb_value > rc->lb_value)
                     rc = &(p->lb_workers[i]);
-                    if (rc->is_local_worker)
-                        break;
-                }
             }
         }
     }
 
-    if (rc && !rc->is_local_worker) {
-        rc->lb_value += rc->lb_factor;
+    if (rc) {
+        rc->lb_value -= total_factor;
     }
 
+    
     return rc;
 }
 
@@ -316,7 +305,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
                 rc = rec->w->get_endpoint(rec->w, &end, l);
 
-                jk_log(l, JK_LOG_DEBUG,
+                jk_log(l, JK_LOG_INFO,
                        "Into jk_endpoint_t::service worker=%s jvm_route=%s rc=%d\n",
                        rec->name, s->jvm_route, rc);
 
@@ -324,10 +313,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     int src = end->service(end, s, l, &is_recoverable);
                     end->done(&end, l);
                     if (src) {
-                        if (rec->in_recovering && rec->lb_value != 0) {
-                            rec->lb_value =
-                                get_max_lb(p->worker) + ADDITINAL_WAIT_LOAD;
-                        }
                         rec->in_error_state = JK_FALSE;
                         rec->in_recovering = JK_FALSE;
                         rec->error_time = 0;
@@ -431,13 +416,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                     jk_pool_strdup(&p->p, worker_names[i]);
                 p->lb_workers[i].lb_factor =
                     jk_get_lb_factor(props, worker_names[i]);
-                if (p->lb_workers[i].lb_factor < 0) {
-                    p->lb_workers[i].lb_factor =
-                        -1 * p->lb_workers[i].lb_factor;
-                }
-                if (0 < p->lb_workers[i].lb_factor) {
-                    p->lb_workers[i].lb_factor =
-                        1 / p->lb_workers[i].lb_factor;
+                if (p->lb_workers[i].lb_factor < 1) {
+                    p->lb_workers[i].lb_factor = 1;
                 }
 
                 p->lb_workers[i].is_local_worker =
