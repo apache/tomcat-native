@@ -115,6 +115,7 @@ public final class Parameters extends MultiMap {
 
     public void setEncoding( String s ) {
 	encoding=s;
+	if(debug>0) log( "Set encoding to " + s );
     }
 
     public void recycle() {
@@ -168,6 +169,7 @@ public final class Parameters extends MultiMap {
 
 	// the head will be the new element.
 	currentChild=currentChild.child;
+	currentChild.setEncoding( encoding );
     }
 
     /** Discard the last child. This happens when we return from a
@@ -255,7 +257,8 @@ public final class Parameters extends MultiMap {
      */
     public void handleQueryParameters() {
 	if( didQueryParameters ) return;
-	
+
+	queryMB.setEncoding( encoding );
 	didQueryParameters=true;
 	if( debug > 0  )
 	    log( "Decoding query " + queryMB + " " + encoding);
@@ -265,6 +268,7 @@ public final class Parameters extends MultiMap {
 	
 	try {
 	    decodedQuery.duplicate( queryMB );
+	    decodedQuery.setEncoding(encoding);
 	} catch( IOException ex ) {
 	}
 	if( debug > 0  )

@@ -100,7 +100,13 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     // --------------------
-    
+
+    /** Default encoding used to convert to strings. It should be UTF8,
+	as most standards seem to converge, but the servlet API requires
+	8859_1, and this object is used mostly for servlets. 
+    */
+    public static final String DEFAULT_CHARACTER_ENCODING="ISO-8859-1";
+        
     // byte[]
     private byte[] buff;
 
@@ -409,7 +415,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	}
 	String strValue=null;
 	try {
-	    if( enc==null ) enc="UTF8";
+	    if( enc==null ) enc=DEFAULT_CHARACTER_ENCODING;
 	    return new String( buff, start, end-start, enc );
 	    /*
 	      Does not improve the speed too much on most systems,

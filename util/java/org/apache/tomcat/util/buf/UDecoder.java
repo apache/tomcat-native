@@ -119,7 +119,7 @@ public final class UDecoder {
 	}
 
 	mb.setEnd( idx );
-
+	
 	return;
     }
 
@@ -131,7 +131,7 @@ public final class UDecoder {
     public void convert( CharChunk mb )
 	throws IOException
     {
-	log( "Converting a char chunk ");
+	//	log( "Converting a char chunk ");
 	int start=mb.getOffset();
 	char buff[]=mb.getBuffer();
 	int cend=mb.getEnd();
