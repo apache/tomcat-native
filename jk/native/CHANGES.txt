@@ -1,6 +1,15 @@
 JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
+Changes with JK 1.2.4
+    * Fix use of libtool for Apache mod_jk builds with more recent
+      versions of Apache 2.
+      [jfclere]
+    * Use reentrant version of strtok() for web server's which use
+      threads. This fixes a thread safe bug under Apache 2 and the
+      worker MPM.
+      [glenn]
+
 Changes with JK 1.2.3:
     * Add the ability to configure JkLog to pipe its log output to an
       executable such as Apache rotatelogs or cronolog.  Apache 2.0 only.
@@ -11,13 +20,16 @@ Changes with JK 1.2.3:
       let Apache handle processing the error returned by Tomcat.
     * Added the load balancer sticky_session property. If set to 0
       requests with servlet SESSION ID's can be routed to any Tomcat
-      worker. Default is 1, sessions are sticky. [glenn]
+      worker. Default is 1, sessions are sticky.
+      [glenn]
     * Cleaned up detection and reporting of aborted client connections.
       This cleanup also makes sure that mod_jk does not pass any requests
-      on to Tomcat if the remote client aborted its connection. [glenn]
+      on to Tomcat if the remote client aborted its connection.
+      [glenn]
     * Fixed a bug in Apache 2.0 which caused a POST request forwarded to
       Tomcat to fail if it generated SSI directives which were post
-      processed by mod_include. [glenn]
+      processed by mod_include.
+      [glenn]
     * Fixed a bug in JkRequestLogFormat when printing the request URI that
       could cause a URI with hex escapes sequences to be formatted wrong.
       [glenn]
