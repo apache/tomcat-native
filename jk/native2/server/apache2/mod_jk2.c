@@ -891,16 +891,13 @@ static int jk2_map_to_storage(request_rec *r)
 
 static void jk2_register_hooks(apr_pool_t *p)
 {
-    static const char * const aszPre[] = { "mod_rewrite.c", NULL };
-
     ap_hook_handler(jk2_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(jk2_post_config, NULL, NULL, APR_HOOK_MIDDLE);
 
     /* Force the mpm to run before us and set the scoreboard image */
     ap_hook_child_init(jk2_child_init, NULL, NULL, APR_HOOK_LAST);
     
-    /* jk2 is in FIRST pos but came after mod_rewrite */
-    ap_hook_translate_name(jk2_translate, aszPre, NULL, APR_HOOK_FIRST);
+    ap_hook_translate_name(jk2_translate, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_map_to_storage(jk2_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
