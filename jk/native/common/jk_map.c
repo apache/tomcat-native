@@ -416,8 +416,11 @@ static int map_realloc(jk_map_t *m)
         values = (void **)jk_pool_alloc(&m->p, sizeof(void *) * capacity);
         
         if(values && names) {
-            memcpy(names, m->names, sizeof(char *) * m->capacity);
-            memcpy(values, m->values, sizeof(void *) * m->capacity);
+            if (m->capacity && m->names) 
+                memcpy(names, m->names, sizeof(char *) * m->capacity);
+
+            if (m->capacity && m->values)
+                memcpy(values, m->values, sizeof(void *) * m->capacity);
 
             m->names = names;
             m->values = values;
