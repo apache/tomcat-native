@@ -1,0 +1,45 @@
+<project name="jk" default="build-main" basedir=".">
+
+    <!-- ===================== Initialize Property Values =================== -->
+    <property name="tomcat4.home" value="../../jakarta-tomcat-4.0/build"/>
+    <property name="servletapi.home"   value="../../jakarta-servletapi-4/dist"/>
+    
+    <property name="catalina.jar" value="${tomcat4.home}/server/lib/catalina.jar"/>
+    <property name="servlet.jar" value="${servletapi.home}/lib/servlet.jar"/>
+
+    <property name="jk.build" value="${basedir}/build"/>
+
+    <target name="build-prepare">
+        <mkdir dir="${jk.build}"/>
+	<mkdir dir="${jk.build}/classes"/>
+	<mkdir dir="${jk.build}/lib"/>
+    </target>
+
+    <target name="build-main" depends="build-prepare">
+    
+        <javac srcdir="src/java"
+	       destdir="${jk.build}/classes"
+	       classpath="${catalina.jar}:${servlet.jar}"
+	       deprecation="on"
+	       debug="on"
+	       optimize="off"
+	       verbose="off"
+	       excludes="**/CVS/**">
+	</javac>
+
+	<!-- Copy static resource files -->
+	<copy todir="${jk.build}/classes">
+	    <fileset dir="src/java">
+	    	<include name="**/*.properties"/>
+	    </fileset>
+        </copy>
+
+	<jar jarfile="${jk.build}/lib/ajp.jar"
+	     basedir="${jk.build}/classes"
+	     />
+    </target>
+
+    <target name="clean">
+        <delete dir="${jk.build}"/>
+    </target>
+</project>
