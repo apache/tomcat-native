@@ -214,6 +214,8 @@ struct jk_uriEnv {
     struct jk_map *envvars;
 
     int merged;
+
+    int inherit_globals;
     
     /** XXX .
      */
