@@ -717,7 +717,7 @@ static int JK_METHOD jk2_worker_status_qry(jk_env_t *env,
         }
     }
     /* Create a top section - not used currently */
-    s->jkprintf(env, s, "MXAgent: mod_jk\n" );
+    s->jkprintf(env, s, "MXAgent: mod_jk2\n" );
     s->jkprintf(env, s, "\n" );
     
     for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
@@ -1004,9 +1004,12 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
         /* Update the scoreboard's version - all other
            jk2 processes will see this and update
         */
-        if( shm!=NULL && shm->head!=NULL )
+        if( shm!=NULL && shm->head!=NULL ) {
             shm->head->lbVer++;
-        s->jkprintf(env, s, "Updated config %d", shm->head->lbVer  );
+            s->jkprintf(env, s, "Updated config version to %d\n", shm->head->lbVer  );
+        } else {
+            s->jkprintf(env, s, "Update detected. No scoreboard.\n" );
+        }
     }
     
 
@@ -1017,9 +1020,12 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
         /* Update the scoreboard's version - all other
            jk2 processes will see this and update
         */
-        if( shm!=NULL && shm->head!=NULL )
+        if( shm!=NULL && shm->head!=NULL ) {
             shm->head->lbVer++;
-        s->jkprintf(env, s, "Updated config version to %d\n", shm->head->lbVer  );
+            s->jkprintf(env, s, "Updated config version to %d\n", shm->head->lbVer  );
+        } else {
+            s->jkprintf(env, s, "Reload requested. No scoreboard.\n" );
+        }
         return JK_OK;
     }
 
