@@ -82,10 +82,10 @@
 #include "jk_iis.h"
 //#include "jk_uri_worker_map.h"
 
-#define WORKERS_FILE_TAG       ("worker_file")
-#define SERVER_ROOT_TAG          ("server_root")
-#define URI_SELECT_TAG          ("uri_select")
-#define EXTENSION_URI_TAG       ("extension_uri")
+#define SERVER_ROOT_TAG          ("serverRoot")
+#define URI_SELECT_TAG          ("uriSelect")
+#define EXTENSION_URI_TAG       ("extensionUri")
+#define WORKERS_FILE_TAG       ("workersFile")
 
 #define URI_SELECT_PARSED_VERB      ("parsed")
 #define URI_SELECT_UNPARSED_VERB    ("unparsed")
@@ -116,9 +116,9 @@ static int uri_select_option = URI_SELECT_OPT_PARSED;
 
 static int init_jk(char *serverName);
 
-static int initialize_extension(void);
+static int initialize_extension();
 
-static int read_registry_init_data(void);
+static int read_registry_init_data(jk_env_t *env);
 
 static int get_registry_config_parameter(HKEY hkey,
                                          const char *tag, 
@@ -556,12 +556,11 @@ static int init_jk(char *serverName)
 {
     int rc = JK_FALSE;  
        
-    jk_env_t *env=jk2_create_config();   
-
-    rc=(JK_OK == workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file ));
-
+    jk_env_t *env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
     /* Logging the initialization type: registry or properties file in virtual dir
     */
+//    rc=(JK_OK == workerEnv->config->update( env, workerEnv->config, NULL));
+    rc=(JK_OK == workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file ));
     if (using_ini_file) {
         env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using ini file %s.\n", ini_file_name);
     } else {
@@ -577,9 +576,13 @@ static int init_jk(char *serverName)
     return rc;
 }
 
-static int initialize_extension(void)
+static int initialize_extension()
 {
-    if (read_registry_init_data()) {
+    jk_env_t *env=jk2_create_config();   
+    if (read_registry_init_data(env)) {
+        workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
+                                  workerEnv->pool->pstrdup( env, workerEnv->pool, server_root));
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", server_root);
         is_inited = JK_TRUE;
     }
     return is_inited;
@@ -602,106 +605,99 @@ int parse_uri_select(const char *uri_select)
     return -1;
 }
 
-static int read_registry_init_data(void)
+static int read_registry_init_data(jk_env_t *env)
 {
     char tmpbuf[INTERNET_MAX_URL_LENGTH];
     HKEY hkey;
     long rc;
     int  ok = JK_TRUE; 
-/*  
     char *tmp;
     jk_map_t *map;
-
-    if (map_alloc(&map)) {
-        if (map_read_properties(map, ini_file_name)) {
-            using_ini_file = JK_TRUE;
-		}
-    }
-    if (using_ini_file) {
-        tmp = map_get_string(map, JK_LOG_FILE_TAG, NULL);
-        if (tmp) {
-            strcpy(log_file, tmp);
-        } else {
-            ok = JK_FALSE;
-        }
-        tmp = map_get_string(map, JK_LOG_LEVEL_TAG, NULL);
-        if (tmp) {
-            log_level = jk2_logger_file_parseLogLevel(tmp);
-        } else {
-            ok = JK_FALSE;
-        }
-        tmp = map_get_string(map, EXTENSION_URI_TAG, NULL);
-        if (tmp) {
-            strcpy(extension_uri, tmp);
-        } else {
-            ok = JK_FALSE;
-        }
-        tmp = map_get_string(map, SERVER_ROOT_TAG, NULL);
-        if (tmp) {
-            strcpy(server_root, tmp);
-        } else {
-            ok = JK_FALSE;
-        }
-        tmp = map_get_string(map, URI_SELECT_TAG, NULL);
-        if (tmp) {
-            int opt = parse_uri_select(tmp);
-            if (opt >= 0) {
-                uri_select_option = opt;
+   
+    if (JK_OK==jk2_map_default_create(env, &map, workerEnv->pool )) {
+        if (JK_OK==jk2_map_read(env,map, ini_file_name)) {
+            tmp = map->get(env,map,EXTENSION_URI_TAG);
+            if (tmp) {
+                strcpy(extension_uri, tmp);
             } else {
                 ok = JK_FALSE;
             }
-        }
-    
-    } else  */{
-        rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-                          REGISTRY_LOCATION,
-                          (DWORD)0,
-                          KEY_READ,
-                          &hkey);
-        if(ERROR_SUCCESS != rc) {
-            return JK_FALSE;
-        } 
-
-        if(get_registry_config_parameter(hkey,
-                                         EXTENSION_URI_TAG,
-                                         tmpbuf,
-                                         sizeof(extension_uri))) {
-            strcpy(extension_uri, tmpbuf);
-        } else {
-            ok = JK_FALSE;
-        }
-
-        if(get_registry_config_parameter(hkey,
-                                         SERVER_ROOT_TAG,
-                                         tmpbuf,
-                                         sizeof(server_root))) {
-            strcpy(server_root, tmpbuf);
-        } else {
-            ok = JK_FALSE;
-        }
-        if(get_registry_config_parameter(hkey,
-                                         JK_WORKER_FILE_TAG,
-                                         tmpbuf,
-                                         sizeof(worker_file))) {
-            strcpy(worker_file, tmpbuf);
-        } else {
-            ok = JK_FALSE;
-        }
-
-        if(get_registry_config_parameter(hkey,
-                                         URI_SELECT_TAG, 
-                                         tmpbuf,
-                                         sizeof(tmpbuf))) {
-            int opt = parse_uri_select(tmpbuf);
-            if (opt >= 0) {
-                uri_select_option = opt;
+            tmp = map->get(env,map,SERVER_ROOT_TAG);
+            if (tmp) {
+                strcpy(server_root, tmp);
             } else {
                 ok = JK_FALSE;
             }
-        }
-
-        RegCloseKey(hkey);
+            tmp = map->get(env,map,WORKERS_FILE_TAG);
+            if (tmp) {
+                strcpy(worker_file, tmp);
+            } else {
+                ok = JK_FALSE;
+            }
+            tmp = map->get(env,map,URI_SELECT_TAG);
+            if (tmp) {
+                int opt = parse_uri_select(tmp);
+                if (opt >= 0) {
+                    uri_select_option = opt;
+                } else {
+                    ok = JK_FALSE;
+                }
+            }
+            using_ini_file=JK_TRUE;            
+            return ok;
+        }     
+    } else {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+               "read_registry_init_data, Failed to create map \n");
     }
+    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+                      REGISTRY_LOCATION,
+                      (DWORD)0,
+                      KEY_READ,
+                      &hkey);
+    if(ERROR_SUCCESS != rc) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+               "read_registry_init_data, Failed Registry OpenKey %s\n",REGISTRY_LOCATION);
+        return JK_FALSE;
+    } 
+
+    if(get_registry_config_parameter(hkey,
+                                     EXTENSION_URI_TAG,
+                                     tmpbuf,
+                                     sizeof(extension_uri))) {
+        strcpy(extension_uri, tmpbuf);
+    } else {
+        ok = JK_FALSE;
+    }
+
+    if(get_registry_config_parameter(hkey,
+                                     SERVER_ROOT_TAG,
+                                     tmpbuf,
+                                     sizeof(server_root))) {
+        strcpy(server_root, tmpbuf);
+    } else {
+        ok = JK_FALSE;
+    }
+    if(get_registry_config_parameter(hkey,
+                                     WORKERS_FILE_TAG,
+                                     tmpbuf,
+                                     sizeof(server_root))) {
+        strcpy(worker_file, tmpbuf);
+    } else {
+        ok = JK_FALSE;
+    }
+    if(get_registry_config_parameter(hkey,
+                                     URI_SELECT_TAG, 
+                                     tmpbuf,
+                                     sizeof(tmpbuf))) {
+        int opt = parse_uri_select(tmpbuf);
+        if (opt >= 0) {
+            uri_select_option = opt;
+        } else {
+            ok = JK_FALSE;
+        }
+    }
+    RegCloseKey(hkey);
     return ok;
 } 
 
@@ -777,17 +773,11 @@ static  jk_env_t*  jk2_create_workerEnv (void) {
 	Detect install dir, be means of service configs, */
 
     
-    workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
-                              workerEnv->pool->pstrdup( env, workerEnv->pool, server_root));
-    env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", server_root);
-
     return env;
 }
 
 static jk_env_t * jk2_create_config()
 {
-    jk_uriEnv_t *newUri;
-    jk_bean_t *jkb;
     jk_env_t *env;
     if(  workerEnv==NULL ) {
         env=jk2_create_workerEnv();
