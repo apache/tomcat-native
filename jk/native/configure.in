@@ -159,6 +159,7 @@ AC_ARG_WITH(apache,
                apache_include="-I${withval}/src/include \
                    -I${withval}/src/${osdir}"
                WEBSERVER="apache-1.3"
+               LIB_JK_TYPE=mod_jk.a
                AC_MSG_RESULT([${apache_include}, version 1.3])
            else
                AC_MSG_ERROR([Sorry Apache 1.2.x is no longer supported.])
@@ -169,6 +170,7 @@ AC_ARG_WITH(apache,
               WEBSERVER="apache-2.0"
               apache_dir=${withval}
               apache_dir_is_src="true"
+              LIB_JK_TYPE=lib_jk.la
               apache_include="-I${withval}/include -I${withval}/srclib/apr/include -I${withval}/os/${OS_APACHE_DIR} -I${withval}/srclib/apr-util/include"
               AC_MSG_RESULT(${apache_dir})
            fi
@@ -435,7 +437,6 @@ dnl normal apxs handling
 else
 dnl install static library in apache sources.
 	APACHE20_OEXT=.lo
-	LIB_JK_TYPE=mod_jk.a
 	INSTALL_TYPE=install_static
 fi
 AC_SUBST(APACHE20_OEXT)

@@ -41,7 +41,7 @@ Makefile: Makefile.in
 	( cd ..; ./config.status )
 
 lib_jk.la: mod_jk.lo ${APACHE_OBJECTS}
-	$(LIBTOOL) --mode=link $(CC) -o lib_jk.la -static -rpath ${libexecdir} mod_jk.lo $(APACHE_OBJECTS)
+	$(LIBTOOL) --mode=link $(CC) -o lib_jk.la -static -rpath ${libexecdir}/jk mod_jk.lo $(APACHE_OBJECTS)
 
 install_static:
 	@echo ""
@@ -54,7 +54,7 @@ install_static:
 	@echo ""
 	@echo "cd ${APACHE_DIR}"
 	@echo "./buildconf"
-	@echo "./configure --with-mod_jk=static"
+	@echo "./configure --with-mod_jk"
 	@echo "make"
 	@echo ""
 
