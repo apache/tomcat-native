@@ -119,7 +119,10 @@ AC_DEFUN(
     if test -n "${wa_ant_tempval}" ; then
       AC_MSG_CHECKING([if ant (${wa_ant_tempval}) is working])
 
-      wa_ant_enabled=`${wa_ant_tempval} -version | grep "^Ant version" | cut -d\  -f1,3`
+      wa_ant_enabled=`${wa_ant_tempval} -version`
+      wa_ant_enabled=`echo ${wa_ant_enabled} | sed 's/^Apache Ant/Ant/g'`
+      wa_ant_enabled=`echo ${wa_ant_enabled} | grep "^Ant version"`
+      wa_ant_enabled=`echo ${wa_ant_enabled} | cut -d\  -f3`
       if test -z "${wa_ant_enabled}" ; then
         WA_ERROR([ant misconfigured, reconfigure with --without-ant])
       else
