@@ -79,7 +79,7 @@
 	     />
 
 	<!-- Include a copy of the commons-logging.jar that we built with -->
-	<copy tofile="${tomcat-util.build}/lib/commons-logging.jar"
+	<copy todir="${tomcat-util.build}/lib"
 	      file="${commons-logging.jar}"/>
     </target>
 
