@@ -126,14 +126,23 @@ class PureTLSSupport implements SSLSupport {
         return chain;
     }
 
-    public Integer getKeySize()
+    /**
+     * Lookup the symmetric key size.
+     */
+    public Integer getKeySize() 
         throws IOException {
-        /*
-        int cs = ssl.getCipherSuite();
-        int  ks = SSLCipherSuite.findCipherSuite(cs).getCipherKeyLength();
-        return new Integer(ks);
-        */
-        return null;
+
+        int cs=ssl.getCipherSuite();
+        String cipherSuite = SSLPolicyInt.getCipherSuiteName(cs);
+        int size = 0;
+        for (int i = 0; i < ciphers.length; i++) {
+            if (cipherSuite.indexOf(ciphers[i].phrase) >= 0) {
+                size = ciphers[i].keySize;
+                break;
+            }
+        }
+        Integer keySize = new Integer(size);
+        return keySize;
     }
 
     public String getSessionId()

@@ -92,6 +92,22 @@ public interface SSLSupport {
     public static final String SESSION_ID_KEY = "javax.servlet.request.ssl_session";
 
     /**
+     * A mapping table to determine the number of effective bits in the key
+     * when using a cipher suite containing the specified cipher name.  The
+     * underlying data came from the TLS Specification (RFC 2246), Appendix C.
+     */
+     static final CipherData ciphers[] = {
+        new CipherData("_WITH_NULL_", 0),
+        new CipherData("_WITH_IDEA_CBC_", 128),
+        new CipherData("_WITH_RC2_CBC_40_", 40),
+        new CipherData("_WITH_RC4_40_", 40),
+        new CipherData("_WITH_RC4_128_", 128),
+        new CipherData("_WITH_DES40_CBC_", 40),
+        new CipherData("_WITH_DES_CBC_", 56),
+        new CipherData("_WITH_3DES_EDE_CBC_", 168)
+    };
+
+    /**
      * The cipher suite being used on this connection.
      */
     public String getCipherSuite() throws IOException;
@@ -124,4 +140,25 @@ public interface SSLSupport {
      */
     public String getSessionId()
         throws IOException;
+}
+// ------------------------------------------------------------ Private Classes
+
+
+/**
+ * Simple data class that represents the cipher being used, along with the
+ * corresponding effective key size.  The specified phrase must appear in the
+ * name of the cipher suite to be recognized.
+ */
+
+final class CipherData {
+
+    String phrase = null;
+
+    int keySize = 0;
+
+    public CipherData(String phrase, int keySize) {
+        this.phrase = phrase;
+        this.keySize = keySize;
+    }
+
 }
