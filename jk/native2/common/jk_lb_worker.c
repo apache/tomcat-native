@@ -236,38 +236,43 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
     return JK_FALSE;
 }
 
-static int JK_METHOD jk2_lb_validate(jk_env_t *env, jk_worker_t *_this,
-                                     jk_map_t *props, jk_workerEnv_t *we)
+static int JK_METHOD jk2_lb_setProperty(jk_env_t *env, jk_worker_t *_this,
+                                        char *name, char *value)
 {
     int err;
     char **worker_names;
     unsigned num_of_workers;
     unsigned i = 0;
     char *tmp;
+
+    /* XXX Add one-by-one */
     
-    if( _this == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "lb_worker.validate(): NullPointerException\n");
-        return JK_FALSE;
+    if( strcmp( name, "balanced_workers") == 0 ) {
+        worker_names=jk2_map_split( env, NULL, _this->pool,
+                                    value, NULL, &num_of_workers );
+        if( worker_names==NULL || num_of_workers==0 ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "lb_worker.validate(): no defined workers\n");
+            return JK_FALSE;
+        }
+        for(i = 0 ; i < num_of_workers ; i++) {
+            char *name = _this->pool->pstrdup(env, _this->pool, worker_names[i]);
+            _this->lbWorkerMap->add(env, _this->lbWorkerMap, name, "");
+        }
+        return JK_TRUE;
     }
+    return JK_FALSE;
+}
+    
+static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_worker_t *_this)
+{
+    int err;
+    char **worker_names;
+    int i = 0;
+    int currentWorker=0;
+    char *tmp;
 
-    tmp=jk2_map_getStrProp( env, props,  "worker", _this->name,
-                           "balanced_workers", NULL );
-    if( tmp==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "lb_worker.validate(): no defined workers\n");
-        return JK_FALSE;
-    }
-
-    worker_names=jk2_map_split( env, props, props->pool,
-                               tmp, NULL, &num_of_workers );
-
-    if( worker_names==NULL || num_of_workers==0 ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "lb_worker.validate(): no defined workers\n");
-        return JK_FALSE;
-    }
-
+    int num_of_workers=_this->lbWorkerMap->size( env, _this->lbWorkerMap);
     _this->lb_workers =
         _this->pool->alloc(env, _this->pool, 
                            num_of_workers * sizeof(jk_worker_t *));
@@ -278,28 +283,23 @@ static int JK_METHOD jk2_lb_validate(jk_env_t *env, jk_worker_t *_this,
         return JK_FALSE;
     }
 
-    _this->num_of_workers=0;
     for(i = 0 ; i < num_of_workers ; i++) {
-        char *name = _this->pool->pstrdup(env, _this->pool, worker_names[i]);
-
-        _this->lb_workers[i]=
-            _this->workerEnv->createWorker( env, _this->workerEnv,  name,
-                                            props );
-        if( _this->lb_workers[i] == NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "lb.validate(): Error creating %s %s\n",
-                          _this->name, name);
-            /* Ignore, we may have other workers */
+        char *name = _this->lbWorkerMap->nameAt( env, _this->lbWorkerMap, i);
+        jk_worker_t *w= _this->workerEnv->getWorkerForName( env, _this->workerEnv, name );
+        if( w== NULL )
             continue;
-        }
-
-        tmp=jk2_map_getStrProp( env, props, "worker", name, "lbfactor", NULL );
-        if( tmp==NULL ) 
-            _this->lb_workers[i]->lb_factor = DEFAULT_LB_FACTOR;
-        else 
-            _this->lb_workers[i]->lb_factor = atof( tmp );
         
-        _this->lb_workers[i]->lb_factor = 1/ _this->lb_workers[i]->lb_factor;
+        _this->lb_workers[currentWorker]=w;
+        
+        tmp=jk2_map_getStrProp( env, _this->workerEnv->initData, "worker", name, "lbfactor", NULL );
+
+        if( tmp==NULL ) 
+            _this->lb_workers[currentWorker]->lb_factor = DEFAULT_LB_FACTOR;
+        else 
+            _this->lb_workers[currentWorker]->lb_factor = atof( tmp );
+        
+        _this->lb_workers[currentWorker]->lb_factor =
+            1/ _this->lb_workers[currentWorker]->lb_factor;
 
         /* 
          * Allow using lb in fault-tolerant mode.
@@ -307,11 +307,14 @@ static int JK_METHOD jk2_lb_validate(jk_env_t *env, jk_worker_t *_this,
          * a worker used only when principal is down or session route
          * point to it. Provided by Paul Frieden <pfrieden@dchain.com>
          */
-        _this->lb_workers[i]->lb_value = _this->lb_workers[i]->lb_factor;
-        _this->lb_workers[i]->in_error_state = JK_FALSE;
-        _this->lb_workers[i]->in_recovering  = JK_FALSE;
-        _this->num_of_workers++;
+        _this->lb_workers[currentWorker]->lb_value =
+            _this->lb_workers[currentWorker]->lb_factor;
+        _this->lb_workers[currentWorker]->in_error_state = JK_FALSE;
+        _this->lb_workers[currentWorker]->in_recovering  = JK_FALSE;
+        currentWorker++;
     }
+    
+    _this->num_of_workers=currentWorker;
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "lb.validate() %s %d workers\n",
@@ -370,11 +373,13 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
     _this->lb_workers = NULL;
     _this->num_of_workers = 0;
     _this->worker_private = NULL;
-    _this->validate       = jk2_lb_validate;
-    _this->init           = NULL;
+    _this->setProperty    = jk2_lb_setProperty;
+    _this->init           = jk2_lb_init;
     _this->destroy        = jk2_lb_destroy;
     _this->service        = jk2_lb_service;
-    
+   
+    jk2_map_default_create(env,&_this->lbWorkerMap, _this->pool);
+
     *result=_this;
 
     /*     env->l->jkLog(env, env->l, JK_LOG_INFO, */
