@@ -62,6 +62,8 @@
 #ifndef JK_CONFIG_H
 #define JK_CONFIG_H
 
+#include "jk_global.h"
+#include "jk_mt.h"
 #include "jk_pool.h"
 #include "jk_env.h"
 #include "jk_logger.h"
@@ -81,6 +83,7 @@ typedef struct jk_config jk_config_t;
  */
 struct jk_config {
     struct jk_bean *mbean;
+    int ver;
     
     /* Parse and process a property. It'll locate the object and call the
      * setAttribute on it.
@@ -102,7 +105,10 @@ struct jk_config {
     */
     int (*save)( struct jk_env *env, struct jk_config *cfg,
                  char *targetFile);
-    
+
+    /** Check if the config changed, and update the workers.
+     */
+    int (*update)( struct jk_env *env, struct jk_config *cfg, int *didReload);
 
     /* Private data */
     struct jk_pool *pool;
@@ -113,14 +119,17 @@ struct jk_config {
     char *file;
     
     char *section;
+
+    /* Only one thread can update the config
+     */
+    JK_CRIT_SEC cs;
+    time_t mtime;
 };
 
 char *jk2_config_replaceProperties(struct jk_env *env, struct jk_map *m,
                                    struct jk_pool *resultPool, 
                                    char *value);
 
-int jk2_config_read(struct jk_env *env, struct jk_config *cfg,
-                    struct jk_map *map, const char *f);
 
 #ifdef __cplusplus
 }
