@@ -88,7 +88,8 @@ public class OutputBuffer extends Writer
     // -------------------------------------------------------------- Constants
 
 
-    public static final String DEFAULT_ENCODING="ISO-8859-1";
+    public static final String DEFAULT_ENCODING = 
+        org.apache.coyote.Constants.DEFAULT_CHARACTER_ENCODING;
     public static final int DEFAULT_BUFFER_SIZE = 8*1024;
     static final int debug = 0;
 
@@ -104,40 +105,95 @@ public class OutputBuffer extends Writer
     // ----------------------------------------------------- Instance Variables
 
 
-    private int defaultBufferSize = DEFAULT_BUFFER_SIZE;
-    private int defaultCharBufferSize = DEFAULT_BUFFER_SIZE / 2 ;
-
-    private int state = 0;
-
-    // statistics
-    private int bytesWritten = 0;
-    private int charsWritten;
-
-    private boolean closed = false;
-    private boolean doFlush = false;
-
     /**
-     * The buffer
+     * The byte buffer.
      */
     private ByteChunk bb;
+
+
+    /**
+     * The chunk buffer.
+     */
     private CharChunk cb;
+
+
+    /**
+     * State of the output buffer.
+     */
+    private int state = 0;
+
+
+    /**
+     * Number of bytes written.
+     */
+    private int bytesWritten = 0;
+
+
+    /**
+     * Number of chars written.
+     */
+    private int charsWritten = 0;
+
+
+    /**
+     * Flag which indicates if the output buffer is closed.
+     */
+    private boolean closed = false;
+
+
+    /**
+     * Do a flush on the next operation.
+     */
+    private boolean doFlush = false;
+
 
     /**
      * Byte chunk used to output bytes.
      */
     private ByteChunk outputChunk = new ByteChunk();
 
+
+    /**
+     * Encoding to use.
+     */
     private String enc;
+
+
+    /**
+     * Encoder is set.
+     */
     private boolean gotEnc = false;
 
+
+    /**
+     * List of encoders.
+     */
     protected Hashtable encoders = new Hashtable();
+
+
+    /**
+     * Current char to byte converter.
+     */
     protected C2BConverter conv;
 
+
+    /**
+     * Associated Coyote response.
+     */
     private Response coyoteResponse;
 
+
+    /**
+     * Suspended flag. All output bytes will be swallowed if this is true.
+     */
     private boolean suspended = false;
 
+
+    /**
+     * True if the total response size can be computed.
+     */
     private boolean knownResponseSize = false;
+
 
     // ----------------------------------------------------------- Constructors
 
@@ -152,6 +208,11 @@ public class OutputBuffer extends Writer
     }
 
 
+    /**
+     * Alternate constructor which allows specifying the initial buffer size.
+     * 
+     * @param size Buffer size to use
+     */
     public OutputBuffer(int size) {
 
         bb = new ByteChunk(size);
@@ -169,6 +230,8 @@ public class OutputBuffer extends Writer
 
     /**
      * Associated Coyote response.
+     * 
+     * @param coyoteResponse Associated Coyote response
      */
     public void setResponse(Response coyoteResponse) {
 	this.coyoteResponse = coyoteResponse;
@@ -177,6 +240,8 @@ public class OutputBuffer extends Writer
 
     /**
      * Get associated Coyote response.
+     * 
+     * @return the associated Coyote response
      */
     public Response getResponse() {
         return this.coyoteResponse;
@@ -185,6 +250,8 @@ public class OutputBuffer extends Writer
 
     /**
      * Is the response output suspended ?
+     * 
+     * @return suspended flag value
      */
     public boolean isSuspended() {
         return this.suspended;
@@ -193,6 +260,8 @@ public class OutputBuffer extends Writer
 
     /**
      * Set the suspended flag.
+     * 
+     * @param suspended New suspended flag value
      */
     public void setSuspended(boolean suspended) {
         this.suspended = suspended;
@@ -231,8 +300,17 @@ public class OutputBuffer extends Writer
     }
 
 
+    /**
+     * Close the output buffer. This tries to calculate the response size if 
+     * the response has not been committed yet.
+     * 
+     * @throws IOException An underlying IOException occurred
+     */
     public void close()
         throws IOException {
+
+        if (suspended)
+            return;
 
         if (!coyoteResponse.isCommitted()) {
             knownResponseSize = true;
@@ -244,8 +322,16 @@ public class OutputBuffer extends Writer
     }
 
 
+    /**
+     * Flush bytes or chars contained in the buffer.
+     * 
+     * @throws IOException An underlying IOException occurred
+     */
     public void flush()
         throws IOException {
+
+        if (suspended)
+            return;
 
         doFlush = true;
         if (state == CHAR_STATE) {
@@ -261,12 +347,18 @@ public class OutputBuffer extends Writer
     }
 
 
-    // ------------------------------------------------------------- Properties
+    // ------------------------------------------------- Bytes Handling Methods
 
 
     /** 
      * Sends the buffer data to the client output, checking the
      * state of Response and calling the right interceptors.
+     * 
+     * @param buf Byte buffer to be written to the response
+     * @param off Offset
+     * @param cnt Length
+     * 
+     * @throws IOException An underlying IOException occurred
      */
     public void realWriteBytes(byte buf[], int off, int cnt)
 	throws IOException {
@@ -274,8 +366,6 @@ public class OutputBuffer extends Writer
         if (debug > 2)
             log("realWrite(b, " + off + ", " + cnt + ") " + coyoteResponse);
 
-        if (suspended)
-            return;
         if (closed)
             return;
         if (coyoteResponse == null)
@@ -294,11 +384,10 @@ public class OutputBuffer extends Writer
     }
 
 
-    // -------------------- Adding bytes to the buffer -------------------- 
-    // Like BufferedOutputStream, without sync
-
-
     public void write(byte b[], int off, int len) throws IOException {
+
+        if (suspended)
+            return;
 
         if (state == CHAR_STATE)
             cb.flushBuffer();
@@ -332,6 +421,9 @@ public class OutputBuffer extends Writer
     public void writeByte(int b)
         throws IOException {
 
+        if (suspended)
+            return;
+
         if (state == CHAR_STATE)
             cb.flushBuffer();
         state = BYTE_STATE;
@@ -345,11 +437,14 @@ public class OutputBuffer extends Writer
     }
 
 
-    // -------------------- Adding chars to the buffer
+    // ------------------------------------------------- Chars Handling Methods
 
 
     public void write(int c)
         throws IOException {
+
+        if (suspended)
+            return;
 
         state = CHAR_STATE;
 
@@ -365,6 +460,9 @@ public class OutputBuffer extends Writer
     public void write(char c[])
         throws IOException {
 
+        if (suspended)
+            return;
+
         write(c, 0, c.length);
 
     }
@@ -372,6 +470,9 @@ public class OutputBuffer extends Writer
 
     public void write(char c[], int off, int len)
         throws IOException {
+
+        if (suspended)
+            return;
 
         state = CHAR_STATE;
 
@@ -386,6 +487,9 @@ public class OutputBuffer extends Writer
 
     public void write(StringBuffer sb)
         throws IOException {
+
+        if (suspended)
+            return;
 
         state = CHAR_STATE;
 
@@ -405,6 +509,9 @@ public class OutputBuffer extends Writer
     public void write(String s, int off, int len)
         throws IOException {
 
+        if (suspended)
+            return;
+
         state=CHAR_STATE;
 
         if (debug > 1)
@@ -420,6 +527,9 @@ public class OutputBuffer extends Writer
 
     public void write(String s)
         throws IOException {
+
+        if (suspended)
+            return;
 
         state = CHAR_STATE;
         if (s==null)
