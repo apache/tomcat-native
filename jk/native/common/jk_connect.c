@@ -45,6 +45,169 @@ static apr_pool_t *jk_apr_pool = NULL;
 #define JK_GET_SOCKET_ERRNO() ((void)0)
 #endif /* WIN32 */
 
+static int soblock(int sd)
+{
+/* BeOS uses setsockopt at present for non blocking... */
+#ifndef WIN32
+    int fd_flags;
+
+    fd_flags = fcntl(sd, F_GETFL, 0);
+#if defined(O_NONBLOCK)
+    fd_flags &= ~O_NONBLOCK;
+#elif defined(O_NDELAY)
+    fd_flags &= ~O_NDELAY;
+#elif defined(FNDELAY)
+    fd_flags &= ~FNDELAY;
+#else
+#error Please teach JK how to make sockets blocking on your platform.
+#endif
+    if (fcntl(sd, F_SETFL, fd_flags) == -1) {
+        return errno;
+    }
+#else
+    u_long on = 0;
+    if (ioctlsocket(sd, FIONBIO, &on) == SOCKET_ERROR) {
+        errno = WSAGetLastError() - WSABASEERR;
+        return errno;
+    }
+#endif /* WIN32 */
+    return 0;
+}
+
+static int sononblock(int sd)
+{
+#ifndef WIN32
+    int fd_flags;
+
+    fd_flags = fcntl(sd, F_GETFL, 0);
+#if defined(O_NONBLOCK)
+    fd_flags |= O_NONBLOCK;
+#elif defined(O_NDELAY)
+    fd_flags |= O_NDELAY;
+#elif defined(FNDELAY)
+    fd_flags |= FNDELAY;
+#else
+#error Please teach JK how to make sockets non-blocking on your platform.
+#endif
+    if (fcntl(sd, F_SETFL, fd_flags) == -1) {
+        return errno;
+    }
+#else
+    u_long on = 1;
+    if (ioctlsocket(sd, FIONBIO, &on) == SOCKET_ERROR) {
+        errno = WSAGetLastError() - WSABASEERR;
+        return errno;
+    }
+#endif /* WIN32 */
+    return 0;
+}
+
+#if defined (WIN32)
+/* WIN32 implementation */
+static int nb_connect(int sock, struct sockaddr *addr, int timeout)
+{
+    int rc;
+    if (timeout < 1)
+        return connect(sock, addr, sizeof(struct sockaddr_in));
+
+    if ((rc = sononblock(sock)))
+        return -1;
+    if (connect(sock, addr, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
+        struct timeval tv;
+        fd_set wfdset, efdset;
+
+        if ((rc = WSAGetLastError()) != WSAEWOULDBLOCK) {
+            soblock(sock);
+            WSASetLastError(rc);
+            return -1;
+        }
+        /* wait for the connect to complete or timeout */
+        FD_ZERO(&wfdset);
+        FD_SET(sock, &wfdset);
+        FD_ZERO(&efdset);
+        FD_SET(sock, &efdset);
+
+        tv.tv_sec  = timeout;
+        tv.tv_usec = 0;
+        rc = select(FD_SETSIZE+1, NULL, &wfdset, &efdset, &tv);
+        if (rc == SOCKET_ERROR || rc == 0) {
+            rc = WSAGetLastError();
+            soblock(sock);
+            WSASetLastError(rc);
+            return -1;
+        }
+        /* Evaluate the efdset */
+        if (FD_ISSET(sock, &efdset)) {
+            /* The connect failed. */
+            int rclen = sizeof(rc);
+            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*) &rc, &rclen))
+                rc = 0;
+            soblock(sock);
+            if (rc)
+                WSASetLastError(rc);
+            return -1;
+        }
+    }
+    soblock(sock);
+    return 0;
+}
+
+#elif !defined(NETWARE)
+/* POSIX implementation */
+static int nb_connect(int sock, struct sockaddr *addr, int timeout)
+{
+    int rc = 0;
+
+    if (timeout > 0) {
+        if (sononblock(sock))
+            return -1;
+    }
+    do {
+        rc = connect(sock, addr, sizeof(struct sockaddr_in));
+    } while (rc == -1 && errno == EINTR);
+
+    if ((rc == -1) && (errno == EINPROGRESS || errno == EALREADY)
+                   && (timeout > 0)) {
+        fd_set wfdset;
+        struct timeval tv;
+        int rclen = sizeof(rc);
+
+        FD_ZERO(&wfdset);
+        FD_SET(sock, &wfdset);
+        tv.tv_sec  = timeout;
+        tv.tv_usec = 0;
+        rc = select(sock+1, NULL, &wfdset, NULL, &tv);
+        if (rc <= 0) {
+            /* Save errno */
+            int err = errno;
+            soblock(sock);
+            errno = err;
+            return -1;
+        }
+        rc = 0;
+#ifdef SO_ERROR
+        if (!FD_ISSET(sock, &wfdset) ||
+            (getsockopt(sock, SOL_SOCKET, SO_ERROR,
+                        (char *)&rc, &rclen) < 0) || rc) {
+            if (rc)
+                errno = rc;
+            rc = -1;
+        }
+#endif /* SO_ERROR */
+    }
+    /* Not sure we can be already connected */
+    if (rc == -1 && errno == EISCONN)
+        rc = 0;
+    soblock(sock);
+    return rc;
+}
+#else
+/* NETWARE implementation - blocking for now */
+static int nb_connect(int sock, struct sockaddr *addr, int timeout)
+{
+    return connect(sock, addr, sizeof(struct sockaddr_in));
+}
+#endif
 
 /** resolve the host IP */
 
@@ -204,7 +367,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                    (const char *) &timeout, sizeof(int));
         setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
                    (const char *) &timeout, sizeof(int));
-#elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO) && defined(SO_SNDTIMEO) && defined(USE_SO_SNDTIMEO) 
+#elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO) && defined(SO_SNDTIMEO) && defined(USE_SO_SNDTIMEO)
         struct timeval tv;
         tv.tv_sec  = timeout;
         tv.tv_usec = 0;
@@ -248,31 +411,28 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
     }
 #endif
     /* Tries to connect to Tomcat (continues trying while error is EINTR) */
-    do {
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG,
-                   "trying to connect socket %d to %s", sock,
-                   jk_dump_hinfo(addr, buf));
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+                "trying to connect socket %d to %s", sock,
+                jk_dump_hinfo(addr, buf));
 
 /* Need more infos for BSD 4.4 and Unix 98 defines, for now only
 iSeries when Unix98 is required at compil time */
 #if (_XOPEN_SOURCE >= 520) && defined(AS400)
-        ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in);
+    ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in);
 #endif
-        ret = connect(sock, (struct sockaddr *)addr,
-                      sizeof(struct sockaddr_in));
+    ret = nb_connect(sock, (struct sockaddr *)addr, timeout);
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-        if (ret == SOCKET_ERROR) {
-            errno = WSAGetLastError() - WSABASEERR;
-        }
+    if (ret == SOCKET_ERROR) {
+        errno = WSAGetLastError() - WSABASEERR;
+    }
 #endif /* WIN32 */
-    } while (ret == -1 && errno == EINTR);
 
     /* Check if we are connected */
-    if (ret == -1) {
+    if (ret) {
         jk_log(l, JK_LOG_INFO,
-                "connect to %s failed with errno=%d",
-                jk_dump_hinfo(addr, buf), errno);
+               "connect to %s failed with errno=%d",
+               jk_dump_hinfo(addr, buf), errno);
         jk_close_socket(sock);
         sock = -1;
     }
@@ -387,66 +547,6 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
 
     return buf;
 }
-
-#if 0
-static int soblock(int sd)
-{
-/* BeOS uses setsockopt at present for non blocking... */
-#ifndef WIN32
-    int fd_flags;
-
-    fd_flags = fcntl(sd, F_GETFL, 0);
-#if defined(O_NONBLOCK)
-    fd_flags &= ~O_NONBLOCK;
-#elif defined(O_NDELAY)
-    fd_flags &= ~O_NDELAY;
-#elif defined(FNDELAY)
-    fd_flags &= ~FNDELAY;
-#else
-#error Please teach JK how to make sockets blocking on your platform.
-#endif
-    if (fcntl(sd, F_SETFL, fd_flags) == -1) {
-        return errno;
-    }
-#else
-    u_long on = 0;
-    if (ioctlsocket(sd, FIONBIO, &on) == SOCKET_ERROR) {
-        errno = WSAGetLastError() - WSABASEERR;
-        return errno;
-    }
-#endif /* WIN32 */
-    return 0;
-}
-
-static int sononblock(int sd)
-{
-#ifndef WIN32
-    int fd_flags;
-
-    fd_flags = fcntl(sd, F_GETFL, 0);
-#if defined(O_NONBLOCK)
-    fd_flags |= O_NONBLOCK;
-#elif defined(O_NDELAY)
-    fd_flags |= O_NDELAY;
-#elif defined(FNDELAY)
-    fd_flags |= FNDELAY;
-#else
-#error Please teach JK how to make sockets non-blocking on your platform.
-#endif
-    if (fcntl(sd, F_SETFL, fd_flags) == -1) {
-        return errno;
-    }
-#else
-    u_long on = 1;
-    if (ioctlsocket(sd, FIONBIO, &on) == SOCKET_ERROR) {
-        errno = WSAGetLastError() - WSABASEERR;
-        return errno;
-    }
-#endif /* WIN32 */
-    return 0;
-}
-
-#endif
 
 int jk_is_socket_connected(int sd, int timeout)
 {
