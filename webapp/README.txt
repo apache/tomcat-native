@@ -49,10 +49,14 @@ Apache 1.3. The available options for the configure script are:
         want to use them instead of checking them out from CVS, you can
         specify where these can be found.
 
-    --with-jdk=DIR
-        If the JAVA_HOME environment variable has not been set, you will
-        need to specify this option on the command line for the configure
-        script in order to compile the Java portion of WebApp.
+    --with-java[=JAVA_HOME]
+        Compile also the Java portion of WebApp. If the JAVA_HOME variable
+        is not set in your environment, you'll have to specify the root
+        path of your JDK installation on this command line. To compile
+        the Java classes, you will need to set your CLASSPATH variable to
+        include the "catalina.jar" distributed with Tomcat 4.0. Example:
+          # CLASSPATH=$CATALINA_HOME/server/lib/catalina.jar
+          # export CLASSPATH
 
     --enable-debug
         Enable compiled-in debugging output. Using this option the WebApp
@@ -60,13 +64,6 @@ Apache 1.3. The available options for the configure script are:
         information. This will create a lot of output in your log files,
         and will kill performances, but it's a good starting poing when
         something goes wrong.
-
-To build the mod_webapp DSO module set the CLASSPATH to the catalina.jar
-of your TOMCAT4.0 installation. (You need a GNU Make)
-That something like the following:
-CLASSPATH=$HOME/jakarta-tomcat-4.0/build/server/lib/catalina.jar
-export CLASSPATH
-make
 
 Once built, the DSO module will be found in the webapp/apache-1.3 directory.
 
