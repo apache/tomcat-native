@@ -89,6 +89,9 @@ public class WorkerEnv {
     private Object notes[]=new Object[32];
 
     Hashtable handlersMap=new Hashtable();
+    JkHandler handlersTable[]=new JkHandler[20];
+    int handlerCount=0;
+    
     // base dir for the jk webapp
     String home;
     
@@ -147,18 +150,32 @@ public class WorkerEnv {
         w.setWorkerEnv( this );
         w.setName( name );
         handlersMap.put( name, w );
+        if( handlerCount > handlersTable.length ) {
+            JkHandler newT[]=new JkHandler[ 2 * handlersTable.length ];
+            System.arraycopy( handlersTable, 0, newT, 0, handlersTable.length );
+            handlersTable=newT;
+        }
+        handlersTable[handlerCount]=w;
+        w.setId( handlerCount );
+        handlerCount++;
     }
 
-    public JkHandler getHandler( String name ) {
+    public final JkHandler getHandler( String name ) {
         return (JkHandler)handlersMap.get(name);
     }
 
+    public final JkHandler getHandler( int id ) {
+        return handlersTable[id];
+    }
+
     public void start() throws IOException {
-        Enumeration en=handlersMap.keys();
-        while( en.hasMoreElements() ) {
-            String n=(String)en.nextElement();
-            JkHandler w=(JkHandler)handlersMap.get(n);
-            w.init();
+        for( int i=0; i<handlerCount; i++ ) {
+            //Enumeration en=handlersMap.keys();
+            // while( en.hasMoreElements() ) {
+            //      String n=(String)en.nextElement();
+            // JkHandler w=(JkHandler)handlersMap.get(n);
+            if( handlersTable[i] != null ) 
+                handlersTable[i].init();
         }
     }
     

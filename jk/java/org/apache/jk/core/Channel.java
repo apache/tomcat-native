@@ -82,6 +82,8 @@ import org.apache.tomcat.util.buf.HexUtils;
  * @author Costin Manolache
  */
 public abstract class Channel extends JkHandler {
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( Channel.class );
 
     /** This method is used to receive messages. It shouldn't
      *  be exposed, as most processing is driven by sending
@@ -109,12 +111,13 @@ public abstract class Channel extends JkHandler {
                 next=wEnv.getHandler( "dispatch" );
             if( next==null )
                 next=wEnv.getHandler( "request" );
-            log("Setting default next " + next.getClass().getName());
+            if( log.isDebugEnabled() )
+                log.debug("Setting default next " + next.getClass().getName());
         }
 
-        if(logL >0 )
-            log("Calling next " + next.getName() + " " +
-                next.getClass().getName());
+        if( log.isDebugEnabled() )
+            log.debug("Calling next " + next.getName() + " " +
+                      next.getClass().getName());
         return next.invoke(msg, mc );
     }
 }

@@ -71,10 +71,14 @@ public abstract class JkHandler {
     public static final int LAST=1;
     public static final int ERROR=2;
 
+    private Properties properties=new Properties();
     protected WorkerEnv wEnv;
     protected JkHandler next;
     protected String name;
     protected int id;
+
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( JkHandler.class );
     
     public void setWorkerEnv( WorkerEnv we ) {
         this.wEnv=we;
@@ -101,11 +105,13 @@ public abstract class JkHandler {
     }
 
     String nextName=null;
+    
     /** Catalina-style "recursive" invocation.
      *  A chain is used for Apache/3.3 style iterative invocation.
      */
     public void setNext( JkHandler h ) {
-        if( logL>0 ) log("setNext " + h.getClass().getName());
+        if( log.isDebugEnabled() )
+            log.debug("setNext " + h.getClass().getName());
         next=h;
     }
 
@@ -127,20 +133,11 @@ public abstract class JkHandler {
     public abstract int invoke(Msg msg, MsgContext mc )  throws IOException;
 
     
-    // This will use commons-logging to plug in a real logger
-
-    protected int logL=10;
-    private String prefix=null;
-
-    public void setDebug( int i ) {
-        logL=i;
+    public void setProperty( String name, String value ) {
+        properties.put( name, value );
     }
-    
-    protected void log( String s ) {
-	if( prefix==null ) {
-	    String cname = this.getClass().getName();
-	    prefix = cname.substring( cname.lastIndexOf(".") +1) + ":";
-	}
-        System.out.println( prefix + s );
+
+    public String getProperty( String name ) {
+        return properties.getProperty(name) ;
     }
 }
