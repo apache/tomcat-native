@@ -459,9 +459,9 @@ static int wam_invoke(request_rec *r) {
     req->serv->addr=apr_pstrdup(req->pool,con->local_ip);
     req->clnt->addr=apr_pstrdup(req->pool,con->remote_ip);
     apr_sockaddr_port_get(&port, con->local_addr);
-    req->serv->port=ntohs(port);
+    req->serv->port= (int) port;
     apr_sockaddr_port_get(&port, con->remote_addr);
-    req->clnt->port=ntohs(port);
+    req->clnt->port= (int) port;
 
     /* Set up all other members of the request structure */
     req->meth=apr_pstrdup(req->pool,(char *)r->method);
