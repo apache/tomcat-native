@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<index>
+  <document href="index.xml"/>
+  <document href="building.xml"/>
+  <document href="cvs.xml"/>
+</index>

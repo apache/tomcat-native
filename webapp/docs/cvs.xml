@@ -1,0 +1,184 @@
+<?xml version="1.0"?>
+
+<document title="CVS Access">
+  <description>
+    How to download the WebApp sources from CVS
+  </description>
+
+  <section title="Environment">
+    <description>
+      Setting up your CVS work environment
+    </description>
+
+    <p>
+      First of all set up your CVSROOT environment variable and log in onto 
+      our CVS server. When prompted for a password, you can enter <b>anoncvs</b>:
+    </p>
+
+    <screen>
+      <note>if you're using CSH/TCSH</note>
+      <type>setenv CVSROOT :pserver:anoncvs@apache.org:/home/cvspublic</type>
+      <type/>
+
+      <note>if you're using SH/BASH</note>
+      <type>CVSROOT=":pserver:anoncvs@apache.org:/home/cvspublic</type>
+      <type>export CVSROOT</type>
+      <type/>
+
+      <note>and then log in on the CVS server</note>
+      <type>cvs login</type>
+      <read>(Logging in to anoncvs@cvs.apache.org)</read>
+      <read>CVS password: <enter>anoncvs</enter></read>
+      <type/>
+    </screen>
+
+  <p>
+    You then have to check out the sources of the WebApp module, those 
+    reside in the <b>jakarta-tomcat-connectors</b> repository, under the 
+    <b>webapp</b> directory. To check the sources out, do:
+  </p>
+
+  <screen>
+    <type>cvs checkout jakarta-tomcat-connectors/webapp</type>
+    <read>cvs server: Updating jakarta-tomcat-connectors/webapp</read>
+    <read>U jakarta-tomcat-connectors/webapp/.cvsignore</read>
+    <wait/>
+    <read>U jakarta-tomcat-connectors/webapp/support/wa_version.m4</read>
+    <read>cvs server: Updating webapplib</read>
+    <type/>
+
+    <note>and let's move them into a more accessible location</note>
+    <type>mv jakarta-tomcat-connectors/webapp webapp</type>
+    <type>rm -rf jakarta-tomcat-connectors</type>
+    <type/>
+
+    <note>then it's always better to clean up the checked out structure</note>
+    <type>cd webapp</type>
+    <type dir="webapp">cvs update -APd</type>
+    <read>cvs server: Updating .</read>
+    <read>cvs server: Updating apache-1.3</read>
+    <wait/>
+    <read>cvs server: Updating support</read>
+    <read>cvs server: Updating webapplib</read>
+    <type dir="webapp">cd ..</type>
+    <type/>
+  </screen>
+
+  </section>
+
+  <section title="APR sources">
+    <description>
+      Dealing with the Apache Portable Runtime sources
+    </description>
+
+    <p>
+      Perfect. Now, if you're building the WebApp module for Apache 2.0, you 
+      won't need to check out the Apache Portable Runtime library, since it is 
+      already included into the web server distribution. If, instead, you are 
+      building the WebApp module for Apache 1.3, you <b>need</b> to obtain a 
+      copy of APR, and you can do that checking out a copy of their CVS 
+      repository (namedly, <b>apr</b>):
+    </p>
+
+    <screen>
+      <type>cvs checkout apr</type>
+      <read>cvs server: Updating apr</read>
+      <read>U apr/.cvsignore</read>
+      <wait/>
+      <read>U apr/user/win32/groupinfo.c</read>
+      <read>U apr/user/win32/userinfo.c</read>
+      <type>mv apr jakarta-tomcat-connectors/webapp</type>
+      <note>and let's clean up this directory structure as well</note>
+      <type>cd apr</type>
+      <type dir="apr">cvs update -APd</type>
+      <read>cvs server: Updating .</read>
+      <read>cvs server: Updating atomic</read>
+      <wait/>
+      <read>cvs server: Updating user/unix</read>
+      <read>cvs server: Updating user/win32</read>
+      <type dir="apr">cd ..</type>
+      <type/>
+    </screen>
+
+  </section>
+
+  <section title="AutoConf">
+    <description>
+      All that AutoConf magic
+    </description>
+
+    <p>
+      Great, now, for semplicity's sake we can move the APR directory in the 
+      WebApp module directory, as it is in all pre-rolled source distribution 
+      tarballs, and create the <b>configure</b> script. Please note that 
+      WebApp <b>requires</b> GNU AutoConf version 2.52 or greater to build the 
+      <b>configure</b> script from its M4 sources, if you don't have this 
+      version, you can easily download a nigtly source distribution, which 
+      includes a pre-built <b>configure</b> script.
+    </p>
+
+    <screen>
+      <note>let's move APR within the WebApp module directory</note>
+      <type>mv apr webapp</type>
+      <type/>
+      <note>and create the configure script for both of them</note>
+      <type>cd webapp</type>
+      <type dir="webapp">./support/buildconf.sh</type>
+      <read>--- Checking "autoconf" version</read>
+      <read>autoconf version 2.52 detected.</read>
+      <wait/>
+      <read>Creating configure ...</read>
+      <read>--- All done</read>
+      <type dir="webapp">cd ..</type>
+      <type/>
+    </screen>
+
+    <p>
+      Please note that if you didn't move the APR directory inside the WebApp 
+      module directory, the <b>buildconf.sh</b> script will nag about not 
+      finding the APR sources, you just have to generate APR's configure as 
+      well, and then, when you're going to run the configure script for the 
+      WebApp module, you'll have to specify the <b>--with-apr=directory</b> 
+      parameter on the command line, of course replacing <b>directory</b> with 
+      the path of where you checked out the APR sources, right?
+    </p>
+
+    <screen>
+      <type dir="webapp">./support/buildconf.sh</type>
+      <wait/>
+      <read>--- Cannot run APR "buildconf" script</read>
+      <read>If you need to build the WebApp module for Apache 1.3</read>
+      <read>you will have to download the APR library sources from</read>
+      <read>http://apr.apache.org/ and run its "buildconf" script</read>
+      <wait/>
+      <read>Creating configure ...</read>
+      <read>--- All done</read>
+      <type dir="webapp">cd ..</type>
+      <type>cd apr</type>
+      <type dir="apr">./buildconf</type>
+      <read>buildconf: checking installation...</read>
+      <read>buildconf: autoconf version 2.52 (ok)</read>
+      <wait/>
+      <read>Creating include/arch/unix/apr_private.h.in ...</read>
+      <read>Creating configure ...</read>
+      <type dir="apr">cd ..</type>
+      <type/> 
+    </screen>
+
+  </section>
+
+  <section title="Conclusion">
+    <description>
+      Whoha, that's IT?
+    </description>
+
+    <p>
+      That's it, now you basically have a full WebApp module source 
+      distribution (well, apart from this documentation, which gets generated 
+      when we roll the sources tarballs). Now you're ready to go and try out 
+      the incredible wonders (and bugs) of the very latest sources of the 
+      WebApp module.
+    </p>
+  </section>
+
+</document>

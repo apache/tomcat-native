@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+
+<document title="Building WebApp">
+  <description>
+    Building the WebApp Module
+  </description>
+
+  <section title="Windows Users">
+    <description>
+      Note for Microsoft Windows operating system users
+    </description>
+
+    <p>
+      <b>Nope, the WebApp module still doesn't run under Windows and currently 
+      any Microsoft operating system is not supported.</b> Since the past 
+      release, though, many improvements were made, and we had positive repors 
+      that the WebApp module actually tries to work also in that environment.
+    </p>
+
+    <p>
+      The effort to bring WebApp under Microsoft Windows lacks of active 
+      developers, people (<b>like you</b>) who have access to this set of 
+      operating systems (from Windows 98 to XP), have access to their 
+      development tools and can make the difference.
+    </p>
+
+    <p>
+      Multi-threaded support has now been added since the multi threaded 
+      environment is now available also under UNIX based operating systems via 
+      Apache 2.0, therefore the only things left to do are a little bit of 
+      porting (not much, since the WebApp module is based on the , which does 
+      most of the job for you) and a lot of testing.
+    </p>
+
+    <p>
+      <b>You</b> will be more than welcome to join the effort.
+    </p>
+  </section>
+
+  <section title="Sources or CVS">
+    <description>
+      Getting a hold on the sources: tarball or CVS?
+    </description>
+
+    <todo/>
+  </section>
+
+  <section title="Prerequisites">
+    <description>
+      What other software you need to have to build the module
+    </description>
+
+    <todo/>
+  </section>
+
+</document>
