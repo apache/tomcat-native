@@ -250,6 +250,16 @@ apr_status_t ajp_msg_peek_uint16(ajp_msg_t *msg, apr_uint16_t *rvalue);
 apr_status_t ajp_msg_get_byte(ajp_msg_t *msg, apr_byte_t *rvalue);
 
 /**
+ * Peek a 8bits unsigned value from AJP Message, position in message
+ * is not updated
+ *
+ * @param msg       AJP Message to get value from
+ * @param rvalue    Pointer where value will be returned
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_peek_byte(ajp_msg_t *msg, apr_byte_t *rvalue);
+
+/**
  * Get a String value from AJP Message
  *
  * @param msg       AJP Message to get value from
@@ -330,7 +340,7 @@ apr_status_t ajp_ilink_send(apr_socket_t *sock, ajp_msg_t *msg);
  */
 apr_status_t ajp_ilink_receive(apr_socket_t *sock, ajp_msg_t *msg);
 
-/*&
+/**
  * Build the ajp header message and send it
  * @param sock      backend socket
  * @param r         current request
@@ -338,6 +348,16 @@ apr_status_t ajp_ilink_receive(apr_socket_t *sock, ajp_msg_t *msg);
  */
 apr_status_t ajp_send_header(apr_socket_t *sock, request_rec  *r);
 
+/**
+ * Read the ajp message and return the type of the message.
+ * @param sock      backend socket
+ * @param r         current request
+ * @param data      return data
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_read_header(apr_socket_t *sock,
+                             request_rec  *r,
+                             void **data);
 
 #endif /* AJP_H */
 
