@@ -2,6 +2,9 @@ JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
 Changes with JK 1.2.2:
+    * tomcat_trend.pl updated script to support changed logging of 
+      aborted requests
+      [glenn]
     * jk set correctly the content-type in Apache 2.0,
       making it ready to works with mod_deflate and AddOutputFilterByType 
       [hgomez]
