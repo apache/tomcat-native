@@ -794,6 +794,8 @@ obtain the source for mod_jk, which is how it was obtained in versions prior to
 Tomcat 3.3. The Binary Distributions of mod_jk are available at the same
 location as the Binary Distribution of Tomcat.&nbsp; The mod_jk binaries are
 located in subdirectories by platform.
+But in May 2001, the jakarta-tomcat-connectors was started and you'll find here
+up to date featured mod_jk (ie: new protocols AJP14/WARP) 
 
 <h3>Q. Which protocol should I use? Ajp12 or Ajp13?</h3>
 A. Ajp13 is a newer protocol, it's faster, and it works better with SSL. You almost
@@ -801,8 +803,28 @@ certainly want to use it. There is more information in the
 <a href="Tomcat-Workers-HowTo.html">workers.properties howto</a> document.
 
 <h3>Q. Whenever I restart Tomcat, Apache locks up!</h3>
-A. The Ajp13 protocol keeps an open socket between Tomcat and Apache. When you restart
-Tomcat, you need to restart Apache as well.
+A. The Ajp13 protocol keeps an open socket between Tomcat and Apache. The latest
+release of mod_jk (the one found since Tomcat 3.3-m2 and J-T-C) handle the network failure.
+But with previous release of mod_jk, you may have to restart Apache as well.
+
+<h3>Q. Why did exist two files mod_jk.so (-eapi ad -noeapi) in download dir for Linux ?</h3>
+A. Many versions of Apache use of modified API, known at Extended API. For example,
+Apache using mod_ssl or Apache present in certains recent Linux distributions.
+So if you got such 'Extended Apache', you need to use mod_jk.so-eapi, or use
+mod_jk.so-noeapi for standard Apache. It's wise to avoid using EAPI modules on STD API Apache or to use standard
+API modules on EAPI Apache. Allways be sure to have the mod_jk.so for your version of Apache  
+
+
+<h3>Q. What's that message about 'garbled DSO ?'</h3>
+A. It's related to Apache EAPI, the message 'mod_jk.so is garbled - perhaps this is not an Apache module DSO ?'
+just told you are trying to install a mod_jk.so DSO module that was compiled on an Apache using EAPI, 
+like apache-mod_ssl or apache from Redhat distro 6.2/7.0 but your system use the standard apache 
+with normal API.
+
+<h3>Q. And the message about 'module might crash under EAPI! '</h3>
+A. Also related to EAPI, the message '[warn] Loaded DSO /usr/lib/apache/mod_jk.so uses plain Apache 1.3 API, 
+this module might crash under EAPI! (please recompile it with -DEAPI)', the mod_jk.so was compiled under normal 
+Apache with standard API and you try to install the module on an Apache using EAPI. 
 
 <h3>Q. Where can I get more information?</h3>
 A. The <a href="Tomcat-Workers-HowTo.html">workers.properties howto</a> document has
