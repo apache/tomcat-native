@@ -2,7 +2,13 @@ JAKARTA TOMCAT CONNECTORS 2 (JK2) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
 Changes in JK2 HEAD:
-	* Port from jk of connect_timeout, reply_timeout, prepost_timeout (AJP13 PING/PONG)
+    * APR is now mandatory, so channel.socket is now using APR and as such
+      channel.apr has been removed.
+    * Added the load balancer stickySession property. If set to 0
+      requests with servlet SESSION ID's can be routed to any Tomcat
+      worker. Default is 1, sessions are sticky.
+	* Port from jk of connect_timeout, reply_timeout, prepost_timeout (AJP13 PING/PONG).
+	  You could set connectTimeout, replyTimeout and prepostTimeout for such purpose in ajp properties.
 	  [Henri Gomez]
 	* Add hasinput method for channel, which will check if datas are
 	  available on input channel (TC->WEBSERVER).
@@ -10,12 +16,7 @@ Changes in JK2 HEAD:
     * Make use apr_port_t instead of short to fix problem to have port higher than 32K.
     * Make default port configurable (9009 on Netware, 8009 elsewhere)
     * Fix problem when in Load-Balancing and POST [Henri Gomez].
-    * Add recovery_opts (recovery strategy) which help make POST recovery configurable [Henri Gomez].
-    
-Changes with JK2 2.0.4:
-    * Added the load balancer stickySession property. If set to 0
-      requests with servlet SESSION ID's can be routed to any Tomcat
-      worker. Default is 1, sessions are sticky.
+    * Add recovery strategy in LB mode, via noRecoveryIfRequestSent and noRecoveryIfHeaderSent options [Henri Gomez].
 
 Changes with JK2 2.0.3:
     * jk2 set correctly the content-type in Apache 2.0,
