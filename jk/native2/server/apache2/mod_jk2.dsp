@@ -141,6 +141,10 @@ SOURCE=..\..\common\jk_handler_response.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\jni\jk_jni_aprImpl.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\jk_logger_apache2.c
 # End Source File
 # Begin Source File
@@ -213,11 +217,19 @@ SOURCE=..\..\common\jk_shm.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\common\jk_signal.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\common\jk_uriEnv.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\common\jk_uriMap.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_user.c
 # End Source File
 # Begin Source File
 

@@ -200,11 +200,19 @@ SOURCE=..\common\jk_shm.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_signal.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_uriEnv.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\common\jk_uriMap.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_user.c
 # End Source File
 # Begin Source File
 

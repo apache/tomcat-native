@@ -157,10 +157,6 @@ SOURCE=..\..\common\jk_logger_win32.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\common\jk_logger_win32_message.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\common\jk_map.c
 # End Source File
 # Begin Source File
@@ -205,10 +201,6 @@ SOURCE=..\..\common\jk_registry.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\common\jk_registry.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\common\jk_requtil.c
 # End Source File
 # Begin Source File
@@ -221,11 +213,19 @@ SOURCE=..\..\common\jk_shm.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\common\jk_signal.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\common\jk_uriEnv.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\common\jk_uriMap.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_user.c
 # End Source File
 # Begin Source File
 
@@ -254,10 +254,6 @@ SOURCE=..\..\common\jk_worker_status.c
 # Begin Source File
 
 SOURCE=..\..\common\jk_workerEnv.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\jni\org_apache_jk_apr_AprImpl.h
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -297,6 +293,10 @@ SOURCE=..\..\include\jk_logger.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\common\jk_logger_win32_message.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\jk_map.h
 # End Source File
 # Begin Source File
@@ -318,6 +318,10 @@ SOURCE=..\..\include\jk_objCache.h
 # Begin Source File
 
 SOURCE=..\..\include\jk_pool.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_registry.h
 # End Source File
 # Begin Source File
 
@@ -350,6 +354,10 @@ SOURCE=..\..\include\jk_worker.h
 # Begin Source File
 
 SOURCE=..\..\include\jk_workerEnv.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\jni\org_apache_jk_apr_AprImpl.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
