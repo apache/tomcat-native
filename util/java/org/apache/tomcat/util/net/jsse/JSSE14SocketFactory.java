@@ -72,6 +72,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 
+import org.apache.tomcat.util.res.StringManager;
+
 /*
   1. Make the JSSE's jars available, either as an installed
      extension (copy them into jre/lib/ext) or by adding
@@ -91,6 +93,9 @@ import javax.net.ssl.X509KeyManager;
  * @author Jan Luehe
  */
 public class JSSE14SocketFactory  extends JSSESocketFactory {
+
+    private static StringManager sm =
+        StringManager.getManager("org.apache.tomcat.util.net.jsse.res");
 
     public JSSE14SocketFactory () {
         super();
@@ -165,8 +170,12 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
         String keystorePass = getKeystorePassword();
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
-        kmf.init(getKeystore(keystoreType, keystorePass),
-                 keystorePass.toCharArray());
+        KeyStore ks = getKeystore(keystoreType, keystorePass);
+        if (!ks.isKeyEntry(keyAlias)) {
+            throw new Exception(sm.getString("jsse.alias_no_key_entry", keyAlias));
+        }
+
+        kmf.init(ks, keystorePass.toCharArray());
 
         kms = kmf.getKeyManagers();
         if (keyAlias != null) {
