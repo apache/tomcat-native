@@ -60,8 +60,8 @@
  ***************************************************************************/
 
 #include "jk_global.h"
-#include "jk_ajp14.h"
 #include "jk_context.h"
+#include "jk_ajp_common.h"
 
 /*
  * Init the context info struct
