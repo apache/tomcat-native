@@ -131,6 +131,10 @@ void jk_append_libpath(jk_pool_t *p, const char *libpath);
 
 void jk_init_ws_service(jk_ws_service_t *s);
 
+void jk_set_worker_def_cache_size(int sz);
+
+int jk_get_worker_def_cache_size(int protocol);
+
 
 #define TC32_BRIDGE_TYPE    32
 #define TC33_BRIDGE_TYPE    33

@@ -438,6 +438,23 @@ int jk_get_worker_port(jk_map_t *m, const char *wname, int def)
     return jk_map_get_int(m, buf, def);
 }
 
+static int def_cache_size = -1;
+int jk_get_worker_def_cache_size(int protocol)
+{
+    if (def_cache_size < 0) {
+        if (protocol == AJP14_PROTO)
+            def_cache_size = AJP14_DEF_CACHE_SZ;
+        else 
+            def_cache_size = AJP13_DEF_CACHE_SZ;
+    }
+    return def_cache_size;
+}
+
+void jk_set_worker_def_cache_size(int sz)
+{
+    def_cache_size = sz;
+}
+
 int jk_get_worker_cache_size(jk_map_t *m, const char *wname, int def)
 {
     char buf[1024];
