@@ -75,6 +75,8 @@
 #include "jk_registry.h"
 #include "jk_endpoint.h"
 
+#define JK_CHECK_NULL( str ) ( ((str)==NULL) ? "null" : (str) )
+
 static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
                                           jk_stat_t *stat,
                                           int *totalReqP, int *totalErrP,
@@ -87,7 +89,7 @@ static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
     
     s->jkprintf(env, s, "<tr><td>%d</td><td>%d</td><td>%d</td>\n",
                 stat->workerId, stat->reqCnt, stat->errCnt );
-    s->jkprintf(env, s, "<td>%s</td>\n",  stat->active );
+    s->jkprintf(env, s, "<td>%s</td>\n",  JK_CHECK_NULL(stat->active) );
 
     totalReq+=stat->reqCnt;
     totalErr+=stat->errCnt;
@@ -223,7 +225,7 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
             /* This is an endpoint slot */
             void *data=slot->data;
 
-            s->jkprintf(env, s, "<tr><th colspan='4'>%s</th>\n", slot->name );
+            s->jkprintf(env, s, "<tr><th colspan='4'>%s</th>\n", JK_CHECK_NULL(slot->name) );
             s->jkprintf(env, s, "<th>Cnt=%d</th><th>size=%d</th>\n",
                         slot->structCnt, slot->structSize );
             
@@ -281,8 +283,8 @@ static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t 
             continue;
 
         if( needHeader ) {
-            s->jkprintf(env, s, "<H3>%s runtime info</H3>\n", type);
-            s->jkprintf(env, s, "<p>%s information, using getAttribute() </p>\n", type);
+            s->jkprintf(env, s, "<H3>%s runtime info</H3>\n", JK_CHECK_NULL(type) );
+            s->jkprintf(env, s, "<p>%s information, using getAttribute() </p>\n", JK_CHECK_NULL(type) );
             
             s->jkprintf(env, s, "<table border>\n");
             s->jkprintf(env, s, "<tr><th>id</th>\n");
@@ -290,17 +292,18 @@ static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t 
             for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
                 char *pname=mbean->getAttributeInfo[j];
                 
-                s->jkprintf(env, s, "<th>%s</th>", pname );
+                s->jkprintf(env, s, "<th>%s</th>", JK_CHECK_NULL(pname) );
             }
             needHeader = JK_FALSE;
         } 
         
-        s->jkprintf(env, s, "</tr><tr><td>%d</td><td>%s</td>\n", mbean->id, mbean->localName);
+        s->jkprintf(env, s, "</tr><tr><td>%d</td><td>%s</td>\n", mbean->id,
+                    JK_CHECK_NULL(mbean->localName));
         for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
             char *pname=mbean->getAttributeInfo[j];
 
             s->jkprintf(env, s, "<td>%s</td>",
-                        mbean->getAttribute( env, mbean, pname));
+                        JK_CHECK_NULL(mbean->getAttribute( env, mbean, pname)));
         }
     }
     if( ! needHeader ) {
@@ -337,7 +340,7 @@ static void jk2_worker_status_resetScoreboard(jk_env_t *env, jk_ws_service_t *s,
                 stat->maxTime=0;
 #endif
                 env->l->jkLog(env, env->l, JK_LOG_INFO, "reset() %s %p %p %p %d %d %d %d\n",
-                              slot->name, data, statArray, stat, i, j, stat->reqCnt, stat->errCnt );
+                              JK_CHECK_NULL(slot->name), data, statArray, stat, i, j, stat->reqCnt, stat->errCnt );
             }
         }
     }
@@ -360,8 +363,8 @@ static void jk2_worker_status_displayActiveProperties(jk_env_t *env, jk_ws_servi
     for( i=0; i< map->size( env, map ) ; i++ ) {
         char *name=map->nameAt( env, map, i );
         char *value=(char *)map->valueAt( env, map,i );
-        s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td></tr>", name,
-                    value);
+        s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td></tr>", JK_CHECK_NULL(name),
+                    JK_CHECK_NULL(value));
     }
     s->jkprintf(env, s, "</table>\n");
 }
@@ -394,18 +397,19 @@ static void jk2_worker_status_displayConfigProperties(jk_env_t *env, jk_ws_servi
         propCount=mbean->settings->size( env, mbean->settings );
 
         if( propCount==0 ) {
-            s->jkprintf(env, s, "<tr><th>%s</th><td></td></tr>", mbean->name );
+            s->jkprintf(env, s, "<tr><th>%s</th><td></td></tr>", JK_CHECK_NULL(mbean->name) );
         } else {
             s->jkprintf(env, s, "<tr><th rowspan='%d'>%s</th><td>%s</td><td>%s</td></tr>",
-                        propCount, mbean->name,
-                        mbean->settings->nameAt( env, mbean->settings, 0),
-                        mbean->settings->valueAt( env, mbean->settings, 0));
+                        propCount, JK_CHECK_NULL(mbean->name),
+                        JK_CHECK_NULL(mbean->settings->nameAt( env, mbean->settings, 0)),
+                        JK_CHECK_NULL(mbean->settings->valueAt( env, mbean->settings, 0)));
             for( j=1; j < propCount ; j++ ) {
                 char *pname=mbean->settings->nameAt( env, mbean->settings, j);
                 /* Don't save redundant information */
                 if( strcmp( pname, "name" ) != 0 ) {
                     s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td></tr>",
-                                pname, mbean->settings->valueAt( env, mbean->settings, j));
+                                JK_CHECK_NULL(pname),
+                                JK_CHECK_NULL(mbean->settings->valueAt( env, mbean->settings, j)));
                 }
             }
         }
@@ -422,7 +426,7 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
 
     if( w->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO, "status.service() %s %s\n",
-                      uri, s->query_string);
+                      JK_CHECK_NULL(uri), JK_CHECK_NULL(s->query_string));
 
     /* Generate the header */
     s->status=200;
