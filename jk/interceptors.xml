@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Server>
+
+    <ContextManager>
+
+      <module name="Ajp14" 
+	      javaClass="org.apache.ajp.tomcat33.Ajp14Interceptor" />
+
+      <Ajp14 debug="10" port="8010" password="secret"/>
+
+    </ContextManager>
+
+</Server>

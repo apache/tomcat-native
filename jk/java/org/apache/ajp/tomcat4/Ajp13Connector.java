@@ -739,7 +739,12 @@ public final class Ajp13Connector
 	// If no address is specified, open a connection on all addresses
         if (address == null) {
 	    logger.log(sm.getString("ajp13Connector.allAddresses"));
-            return (factory.createSocket(port, acceptCount));
+            try {
+		return (factory.createSocket(port, acceptCount));
+	    } catch(Exception ex ) {
+		ex.printStackTrace();
+		return null;
+	    }
 	}
 
 	// Open a server socket on the specified address
@@ -748,8 +753,13 @@ public final class Ajp13Connector
 	    logger.log(sm.getString("ajp13Connector.anAddress", address));
             return (factory.createSocket(port, acceptCount, is));
 	} catch (Exception e) {
-	    logger.log(sm.getString("ajp13Connector.noAddress", address));
-            return (factory.createSocket(port, acceptCount));
+	    try {
+		logger.log(sm.getString("ajp13Connector.noAddress", address));
+		return (factory.createSocket(port, acceptCount));
+	    } catch( Exception e1 ) {
+		e1.printStackTrace();
+		return null;
+	    }
 	}
 
     }

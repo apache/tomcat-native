@@ -10,7 +10,18 @@
   <taskdef resource="META-INF/ant.tasks" 
 	   classpathref="jkant" />
 
+  <property name="apxs13" value="/usr/sbin/apxs" />
+  <property name="apxs20" value="/opt/apache2/bin/apxs" />
+
   <target name="main" >
+    <!-- Guess/extract configuration informations
+    -->
+    <configJni id="jni" />
+    <configApache13 id="apache13" />
+    <configApache2 id="apache2" />
+    <!-- configIIS id="iis" />
+    <!-- configNES id="nes" />
+
     <so sofile="jni_connect" >
       <src dir=".">
 	<include name="jni/jk_jnicb.c" />
@@ -23,6 +34,7 @@
 	<pathelement path="${java.home}/include/${os.name}" />
 	<pathelement location="../common" />
       </includes>
+      <cfg refid="jni" />
     </so>
     
   </target>

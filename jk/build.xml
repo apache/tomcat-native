@@ -1,45 +1,36 @@
 <project name="jk" default="build-main" basedir=".">
-
+  
+    <!-- We'll build jk for 3.3 or 4.0 ( depending on what you have installed ).
+    You need to set catalina.home and/or tomcat33.home in build.properties
+    ( either the path to 'official' distribution or the development dirs )
+    -->
+  
     <!-- ===================== Initialize Property Values ================ -->
     <property file="build.properties"/>
     <property file="${user.home}/build.properties"/>
+    <property file="${user.home}/.build.properties"/>
 
     <property name="jk.build" value="${basedir}/build"/>
 
-    <!-- Should all tests fail if one does? -->
-    <property name="test.failonerror" value="true"/>
-
-    <!-- The test runner to execute -->
-    <property name="test.runner" value="junit.textui.TestRunner"/>
-    <property name="test.entry" value="org.apache.ajp.test.TestAll"/>
-
+    <!-- Compile options -->
     <property name="optimize" value="off" />
     <property name="debug" value="on" />
 
     <!-- default locations -->
+    <property name="tomcat33.home" 
+	      location="../../jakarta-tomcat/build/tomcat" />
+    <property name="catalina.home" 
+	      location="../../jakarta-tomcat-4.0/build" />
+
+    <!-- Need to build tomcat-util before jk, XXX automate -->
     <property name="tomcat-util.jar" 
 	      location="../util/build/lib/tomcat-util.jar" />
-    <property name="tomcat33.src" 
-	      location="../../jakarta-tomcat" />
-    <property name="tomcat33.home" 
-	      location="${tomcat33.src}/build/tomcat" />
-
-    <path id="test.classpath">
-        <pathelement location="${jk.build}/classes"/>
-	<pathelement location="${tomcat-util.jar}"/>
-	<pathelement location="${junit.jar}"/>
-    </path>
 
     <path id="build-main.classpath">
 	<pathelement location="${tomcat-util.jar}"/>
-        <pathelement location="${catalina.jar}"/>
-        <pathelement location="${servlet.jar}"/>
+        <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
+        <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
 	<pathelement location="${junit.jar}"/>
-    </path>
-
-    <path id="build-tomcat33.classpath">
-	<pathelement location="${tomcat-util.jar}"/>
-        <pathelement location="${tomcat33.home}/lib/common/servlet.jar"/>
         <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
         <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
         <pathelement 
@@ -48,38 +39,95 @@
            location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
     </path>
 
-    <target name="build-prepare">
-        <mkdir dir="${jk.build}"/>
-	<mkdir dir="${jk.build}/classes"/>
-	<mkdir dir="${jk.build}/lib"/>
+    <path id="build-tomcat33.classpath">
+	<pathelement location="${tomcat-util.jar}"/>
+        <pathelement location="${tomcat33.home}/lib/common/servlet.jar"/>
+        <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
+        <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
+        <pathelement 
+           location="${tomcat33.home}/lib/container/tomcat_modules.jar"/> 
+        <pathelement 
+           location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+   </path>
+ 
+    <!-- ==================== Detection and reports ==================== -->
+
+    <target name="report-tc3" if="tomcat33.detect" >
+	<echo message="Tomcat.33 detected " />
     </target>
 
-    <target name="build-main" depends="build-prepare">
+    <target name="report-tc4" if="tomcat4.detect" >
+	<echo message="Tomcat4 detected "  />
+    </target>
+
+    <target name="report" depends="report-tc3,report-tc4" />
+
+    <target name="build-prepare">
+        <mkdir dir="${jk.build}"/>
+        <mkdir dir="${jk.build}/logs"/>
+        <mkdir dir="${jk.build}/WEB-INF"/>
+        <mkdir dir="${jk.build}/WEB-INF/conf"/>
+	<mkdir dir="${jk.build}/WEB-INF/classes"/>
+	<mkdir dir="${jk.build}/WEB-INF/lib"/>
+        <copy file="conf/web.xml" tofile="${jk.build}/WEB-INF/web.xml" />
+	<copy file="${tomcat-util.jar}" todir="${jk.build}/WEB-INF/lib" />
+	<copy todir="${jk.build}/WEB-INF" file="interceptors.xml"/>
+	<copy todir="${jk.build}/WEB-INF/conf" >
+	    <fileset dir="conf" includes="*" />
+	</copy>
+
+        <available property="tomcat33.detect" file="${tomcat33.home}/lib/common/tomcat_core.jar" />
+        <available property="tomcat4.detect" file="${catalina.home}/server/lib/catalina.jar" />
+	<echo message="${tomcat4.detect} file=${catalina.home}/server/lib/catalina.jar" />
+    </target>
+
+    <target name="build-main" depends="build-prepare,report">
+	<ant dir="../util" antfile="../util/build.xml"/>
     
         <javac srcdir="java"
-	       destdir="${jk.build}/classes"
+	       destdir="${jk.build}/WEB-INF/classes"
 	       deprecation="on"
 	       debug="${debug}"
 	       optimize="${optimize}"
 	       verbose="off"
 	       excludes="**/CVS/**">
-	    <exclude name="org/apache/ajp/tomcat4/**" if="tomcat4.skip"/>
-        <exclude name="org/apache/ajp/tomcat33/**" if="tomcat3.skip"/>
+	    <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat4.detect"/>
+            <exclude name="org/apache/ajp/tomcat33/**" unless="tomcat33.detect"/>
 	    <classpath refid="build-main.classpath"/>
 	</javac>
 
 	<!-- Copy static resource files -->
-	<copy todir="${jk.build}/classes">
+	<copy todir="${jk.build}/WEB-INF/classes">
 	    <fileset dir="java">
 	    	<include name="**/*.properties"/>
 	    </fileset>
         </copy>
 
-	<jar jarfile="${jk.build}/lib/ajp.jar"
-	     basedir="${jk.build}/classes"
+	<jar jarfile="${jk.build}/WEB-INF/lib/ajp.jar"
+	     basedir="${jk.build}/WEB-INF/classes"
 	     excludes="org/apache/ajp/test"
 	     />
+	
+	<!-- Old behavior -->
+	<copy todir="${jk.build}" 
+	      file="${jk.build}/WEB-INF/lib/ajp.jar"/>
     </target>
+
+    <!-- ==================== Tests ==================== -->
+    <!-- XXX move test to it's own dir -->
+
+    <!-- Should all tests fail if one does? -->
+    <property name="test.failonerror" value="true"/>
+    <!-- The test runner to execute -->
+    <property name="test.runner" value="junit.textui.TestRunner"/>
+    <property name="test.entry" value="org.apache.ajp.test.TestAll"/>
+
+    <path id="test.classpath">
+        <pathelement location="${jk.build}/WEB-INF/classes"/>
+	<pathelement location="${tomcat-util.jar}"/>
+	<pathelement location="${junit.jar}"/>
+    </path>
+
 
     <target name="test" if="test.entry" depends="build-main"
             description="Run all unit test cases">
@@ -88,6 +136,25 @@
 	      <arg value="${test.entry}"/>
 	      <classpath refid="test.classpath"/>
 	</java>
+    </target>
+
+    <!-- ================ Create the helper ant tasks =================== -->
+    
+    <target name="jkant" >
+	<property name="jkant.build" location="jkant/build" />
+	<mkdir dir="${jkant.build}" />
+	<mkdir dir="${jkant.build}/classes" />
+	<javac srcdir="jkant/java" 
+	       destdir="${jkant.build}/classes" 
+	       debug="${debug}"
+	       optimize="${optimize}"
+	       verbose="off" >
+	</javac>
+        <mkdir dir="${jkant.build}/classes/META-INF" />
+	<copy todir="${jkant.build}/classes/META-INF" file="jkant/ant.tasks"/>
+	<jar jarfile="${jkant.build}/jkant.jar"
+	     basedir="${jkant.build}/classes" />
+	<ant  antfile="build.xml" dir="native"  />
     </target>
 
 
@@ -111,36 +178,5 @@
     <target name="clean">
         <delete dir="${jk.build}"/>
     </target>
-
-  <!-- ==================== Experimental tomcat33 build ================= -->
-
-  <target name="build-tomcat33" depends="build-prepare" >
-    <ant dir="../util" antfile="../util/build.xml"/>
-    <javac srcdir="java"
-	   destdir="${jk.build}/classes"
-	   deprecation="on"
-	   debug="${debug}"
-	   optimize="${optimize}"
-	   verbose="off"
-	   excludes="**/CVS/**">
-      <exclude name="org/apache/ajp/tomcat4/**" />
-      <exclude name="org/apache/ajp/test/**" />
-      <classpath refid="build-tomcat33.classpath"/>
-    </javac>
-    <!-- Copy static resource files -->
-    <copy todir="${jk.build}/classes">
-      <fileset dir="java">
-	<include name="**/*.properties"/>
-      </fileset>
-    </copy>
-    
-    <jar jarfile="${jk.build}/lib/tc33_ajp.jar"
-	 basedir="${jk.build}/classes"
-	 excludes="org/apache/ajp/test" />
-    
-    <copy todir="${tomcat33.home}/lib/container" 
-	  file="build/lib/tc33_ajp.jar" />
-  </target>
-
 
 </project>

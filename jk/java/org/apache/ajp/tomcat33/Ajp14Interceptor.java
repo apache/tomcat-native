@@ -97,18 +97,25 @@ public class Ajp14Interceptor extends PoolTcpConnector
     public Ajp14Interceptor()
     {
         super();
+ 	super.setSoLinger( 100 );
+	super.setTcpNoDelay( true );
     }
 
     // initialization
     public void engineInit(ContextManager cm) throws TomcatException {
-	super.engineInit( cm );
-	ajp14_note=cm.getNoteId( ContextManager.REQUEST_NOTE, "ajp14" );
+	log("engineInit");
     }
 
+    public void engineStart(ContextManager cm) throws TomcatException {
+	super.engineInit( cm );
+	ajp14_note=cm.getNoteId( ContextManager.REQUEST_NOTE, "ajp14" );
+	super.engineStart(cm);
+   }
+
+    
     // -------------------- Ajp14 specific parameters --------------------
 
     public void setPassword( String s ) {
-	log( "Password=" + s);
 	this.password=s;
     }
 
@@ -136,6 +143,7 @@ public class Ajp14Interceptor extends PoolTcpConnector
     */
     public Object[] init()
     {
+	if( debug > 0 ) log("Init ");
         Object thData[]=new Object[1];
 	thData[0]=initRequest( null );
 	return thData;
@@ -164,7 +172,6 @@ public class Ajp14Interceptor extends PoolTcpConnector
 	ajp14.setContainerSignature( ContextManager.TOMCAT_NAME +
 				     " v" + ContextManager.TOMCAT_VERSION);
 	BaseRequest ajpreq=new BaseRequest();
-	log( "Setting pass " + password );
 	ajp14.setPassword( password );
 	req=new Ajp14Request(ajp14, ajpreq);
 	Ajp14Response res=new Ajp14Response(ajp14);
@@ -178,6 +185,8 @@ public class Ajp14Interceptor extends PoolTcpConnector
     public void processConnection(TcpConnection connection, Object thData[])
     {
         try {
+	    if( debug>0)
+		log( "Received ajp14 connection ");
             Socket socket = connection.getSocket();
 	    // assert: socket!=null, connection!=null ( checked by PoolTcpEndpoint )
 	    
@@ -189,9 +198,6 @@ public class Ajp14Interceptor extends PoolTcpConnector
 	    BaseRequest ajpReq=req.ajpReq;
 
             ajp14.setSocket(socket);
-
-	    if( debug>0)
-		log( "Received ajp14 connection ");
 
 	    // first request should be the loginit.
 	    int status=ajp14.receiveNextRequest( ajpReq );

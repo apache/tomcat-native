@@ -5,6 +5,12 @@
 # $Id$
 #
 
+# Directory where catalina is installed
+catalina.home=../../jakarta-tomcat-4.0/build
+
+# Directory where tomcat3.3 is installed
+tomcat33.home= ../../jakarta-tomcat/build/tomcat
+
 #
 # tomcat 4 internals
 #
