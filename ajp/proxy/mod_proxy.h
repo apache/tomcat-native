@@ -97,21 +97,11 @@ struct proxy_remote {
     apr_port_t  port;		/* the port for this proxy */
     regex_t *regexp;		/* compiled regex (if any) for the remote */
     int use_regex;		/* simple boolean. True if we have a regex pattern */
-
-    const char *name;       /* name of the remote.
-                             * used for grouping remotes in loadbalancer.
-                             */
-    const char *sticky;     /* sticky session identifier */
-    int         sticky_force; /* Disable failover for sticky sessions */
-    int         lbfactor;   /* load balancing factor */
-    int         mmin;  /* Desired minimum number of available connections */
-    int         smax;  /* Soft maximum on the total number of connections */
-    int         hmax;  /* Hard maximum on the total number of connections */
 };
 
 struct proxy_alias {
-    const char *real;
-    const char *fake;
+    const char  *real;
+    const char  *fake;
 };
 
 struct dirconn_entry {
@@ -134,6 +124,8 @@ typedef struct {
     apr_array_header_t *noproxies;
     apr_array_header_t *dirconn;
     apr_array_header_t *allowed_connect_ports;
+    apr_array_header_t *workers;
+    apr_array_header_t *balancers;
     const char *domain;		/* domain name to use in absence of a domain name in the request */
     int req;			/* true if proxy requests are enabled */
     char req_set;
@@ -199,24 +191,60 @@ typedef struct {
         int content_length; /* length of the content */
 } proxy_completion;
 
-/* Connection to the backend server */
+/* Physical connection to the backend server */
 typedef struct {
     apr_pool_t   *pool; /* Subpool used for creating socket */
     apr_socket_t *sock;
-    int          close;
+    int          close; /* Close 'this' connection */
 } proxy_conn;
 
 /* Connection pool */
 typedef struct {
     apr_pool_t     *pool;   /* The pool used in constructor and destructor calls */
-    struct proxy_remote *remote; /* Informations about remote backend */
     apr_sockaddr_t *addr;   /* Preparsed remote address info */
+    int            min;     /* Desired minimum number of available connections */
+    int            smax;    /* Soft maximum on the total number of connections */
+    int            hmax;    /* Hard maximum on the total number of connections */
 #if APR_HAS_THREADS
     apr_reslist_t  *res;    /* Connection resource list */
 #else
-    proxy_conn     *con;    /* Single connection for prefork mpm's */
+    proxy_conn     *conn;   /* Single connection for prefork mpm's */
 #endif
 } proxy_conn_pool;
+
+/* Worker configuration */
+typedef struct {
+    int             status;
+    apr_time_t      error_time; /* time of the last error */
+    apr_interval_time_t retry;  /* retry interval */
+    int             retries;    /* number of retries on this worker */
+    int             lbfactor;   /* initial load balancing factor */
+    const char      *scheme;    /* scheme to use ajp|http|https */
+    const char      *hostname;  /* remote backend address */
+    apr_port_t      port;
+    proxy_conn_pool *cp;        /* Connection pool to use */
+    void            *opaque;    /* per scheme worker data */
+} proxy_worker;
+
+/* Runtime worker status informations. Shared in scoreboard */
+typedef struct {
+    proxy_worker    *w;
+    double          lbfactor;   /* dynamic lbfactor */
+    double          lbsatus;    /* Current lbstatus */
+    apr_size_t      transfered; /* Number of bytes transfered to remote */
+    apr_size_t      readed;     /* Number of bytes readed from remote */
+} proxy_runtime_worker;
+
+struct proxy_balancer {
+    apr_array_header_t *workers; /* array of proxy_runtime_workers */
+    const char *name;            /* name of the load balancer */
+    const char *sticky;          /* sticky session identifier */
+    int         sticky_force;    /* Disable failover for sticky sessions */
+    apr_interval_time_t timeout; /* Timeout for waiting on free connection */
+#if APR_HAS_THREADS
+    apr_thread_mutex_t  *mutex;  /* Thread lock for updating lb params */
+#endif
+};
 
 /* hooks */
 
