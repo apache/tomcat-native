@@ -69,6 +69,9 @@ import java.net.*;
    @author EKR
 */
 abstract public class SSLImplementation {
+    private static org.apache.commons.logging.Log logger =
+        org.apache.commons.logging.LogFactory.getLog(SSLImplementation.class);
+
     // The default implementations in our search path
     private static final String PureTLSImplementationClass=
 	"org.apache.tomcat.util.net.puretls.PureTLSImplementation";
@@ -77,28 +80,20 @@ abstract public class SSLImplementation {
     
     private static final String[] implementations=
     {
-        JSSEImplementationClass,
-        PureTLSImplementationClass
+        PureTLSImplementationClass,
+        JSSEImplementationClass
     };
 
     public static SSLImplementation getInstance() throws ClassNotFoundException
     {
 	for(int i=0;i<implementations.length;i++){
-        // Workaround for the J2SE 1.4.x classloading problem (under Solaris).
-        // Class.forName(..) fails without creating class using new.
-        // This is an ugly workaround. 
-        try{
-            new org.apache.tomcat.util.net.jsse.JSSEImplementation();
-        }catch (Exception e){
-            //e.printStackTrace();
-        }    
-
 	    try {
                SSLImplementation impl=
 		    getInstance(implementations[i]);
 		return impl;
 	    } catch (Exception e) {
-            //e.printStackTrace();
+		if(logger.isTraceEnabled()) 
+		    logger.trace("Error creating " + implementations[i],e);
 	    }
 	}
 
@@ -112,9 +107,18 @@ abstract public class SSLImplementation {
 	if(className==null) return getInstance();
 
 	try {
+	    // Workaround for the J2SE 1.4.x classloading problem (under Solaris).
+	    // Class.forName(..) fails without creating class using new.
+	    // This is an ugly workaround. 
+	    if( JSSEImplementationClass.equals(className) ) {
+		return new org.apache.tomcat.util.net.jsse.JSSEImplementation();
+	    }
 	    Class clazz=Class.forName(className);
 	    return (SSLImplementation)clazz.newInstance();
 	} catch (Exception e){
+	    if(logger.isDebugEnabled())
+		logger.debug("Error loading SSL Implementation "
+			     +className, e);
 	    throw new ClassNotFoundException("Error loading SSL Implementation "
 				      +className+ " :" +e.toString());
 	}
