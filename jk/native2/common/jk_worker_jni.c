@@ -419,6 +419,12 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
                        "jni.destroy(), done...worker is not hooked for close\n");
         return JK_OK;
     }
+    if (jniWorker->jk_java_bridge_class == NULL ||
+        jniWorker->jk_main_method == NULL) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                       "jni.destroy(), done...worker does not have java methods\n");
+        return JK_OK;
+    }
     if((jniEnv = vm->attach(env, vm))) {
         int i;
         env->l->jkLog(env, env->l, JK_LOG_INFO,
