@@ -106,17 +106,17 @@
     <target name="detect" >
         <echo message="-------- jakarta-tomcat-connectors --------" /> 
         <available property="tomcat33.detect" 
-                   file="${tomcat33.home}/lib/common/tomcat_core.jar" />
+                   file="${tc3-core.jar}" />
         <available property="tomcat40.detect" 
-                   file="${tomcat40.home}/server/lib/catalina.jar" />
+                   file="${tc4-catalina.jar}" />
         <available property="tomcat41.detect" 
                    file="${tomcat41.home}/server/webapps" />
         <condition property="tomcat5.detect">
           <and>
             <available
               classname="javax.servlet.ServletRequestEvent"
-              classpath="${tomcat5.home}/common/lib/servlet-api.jar"
-            />
+              classpath="${servlet-api.jar}" />
+            <available file="${tc5-catalina.jar}" />
           </and>
         </condition>
         <available property="apache13.detect" 
