@@ -77,19 +77,28 @@ abstract public class SSLImplementation {
     
     private static final String[] implementations=
     {
-	PureTLSImplementationClass,
-	JSSEImplementationClass
+        JSSEImplementationClass,
+        PureTLSImplementationClass
     };
 
     public static SSLImplementation getInstance() throws ClassNotFoundException
     {
 	for(int i=0;i<implementations.length;i++){
+        // Workaround for the J2SE 1.4.x classloading problem (under Solaris).
+        // Class.forName(..) fails without creating class using new.
+        // This is an ugly workaround. 
+        try{
+            new org.apache.tomcat.util.net.jsse.JSSEImplementation();
+        }catch (Exception e){
+            //e.printStackTrace();
+        }    
+
 	    try {
-		SSLImplementation impl=
+               SSLImplementation impl=
 		    getInstance(implementations[i]);
 		return impl;
 	    } catch (Exception e) {
-		//e.printStackTrace();
+            //e.printStackTrace();
 	    }
 	}
 
