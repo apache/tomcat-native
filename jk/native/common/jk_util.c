@@ -504,7 +504,7 @@ int jk_get_is_sticky_session(jk_map_t *m,
     if (m && wname) {
         int value;
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, STICKY_SESSION);
-        value = map_get_int(m, buf, 0);
+        value = map_get_int(m, buf, 1);
         if (!value) rc = JK_FALSE;
     }
     return rc;
