@@ -467,6 +467,11 @@ final class CoyoteAdapter
                 return false;
         }
 
+        // The URL must start with '/'
+        if (b[start] != (byte) '/') {
+            return false;
+        }
+
         // Replace "//" with "/"
         for (pos = start; pos < (end - 1); pos++) {
             if ((b[pos] == (byte) '/') && (b[pos + 1] == (byte) '/')) {
