@@ -803,6 +803,7 @@ static  jk_env_t*  jk2_create_workerEnv (void) {
         return env;
     }
 
+    workerEnv->childId = 0;
 /* XXX 
     
     Detect install dir, be means of service configs, */
