@@ -3,6 +3,10 @@
 <index>
   <document href="index.xml"/>
   <document href="common/AJPv13.xml"/>
+  <document href="common/AJPv14-proposal.xml"/>
+  <document href="jk/buildjk.xml"/>
+  <document href="jk/configjk.xml"/>
   <document href="jk2/configtc.xml"/>
   <document href="jk2/configweb.xml"/>
+  <document href="faq.xml"/>
 </index>
