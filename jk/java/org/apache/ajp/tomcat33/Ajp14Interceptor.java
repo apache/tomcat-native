@@ -171,7 +171,7 @@ public class Ajp14Interceptor extends PoolTcpConnector
 	Ajp14 ajp14=new Ajp14();
 	ajp14.setContainerSignature( ContextManager.TOMCAT_NAME +
 				     " v" + ContextManager.TOMCAT_VERSION);
-	BaseRequest ajpreq=new BaseRequest();
+	AjpRequest ajpreq=new AjpRequest();
 	ajp14.setPassword( password );
 	req=new Ajp14Request(ajp14, ajpreq);
 	Ajp14Response res=new Ajp14Response(ajp14);
@@ -195,7 +195,7 @@ public class Ajp14Interceptor extends PoolTcpConnector
             Ajp14Request req=initRequest( thData );
             Ajp14Response res= (Ajp14Response)req.getResponse();
             Ajp14 ajp14=req.ajp14;
-	    BaseRequest ajpReq=req.ajpReq;
+	    AjpRequest ajpReq=req.ajpReq;
 
             ajp14.setSocket(socket);
 
@@ -285,9 +285,9 @@ public class Ajp14Interceptor extends PoolTcpConnector
 class Ajp14Request extends Request 
 {
     Ajp14 ajp14;
-    BaseRequest ajpReq;
+    AjpRequest ajpReq;
     
-    public Ajp14Request(Ajp14 ajp14, BaseRequest ajpReq) 
+    public Ajp14Request(Ajp14 ajp14, AjpRequest ajpReq) 
     {
 	headers = ajpReq.headers();
 	methodMB=ajpReq.method();
@@ -314,7 +314,7 @@ class Ajp14Request extends Request
     }
 
     // -------------------- Wrappers for changed method names, and to use the buffers
-    // XXX Move BaseRequest into util !!! ( it's just a stuct with some MessageBytes )
+    // XXX Move AjpRequest into util !!! ( it's just a stuct with some MessageBytes )
 
     public int getServerPort() {
         return ajpReq.getServerPort();

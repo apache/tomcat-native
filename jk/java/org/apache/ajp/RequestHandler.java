@@ -59,13 +59,11 @@
 
 package org.apache.ajp;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.Enumeration;
 import java.security.*;
+import java.security.cert.*;
 
 import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.buf.*;
@@ -125,6 +123,7 @@ public class RequestHandler extends AjpHandler
     public static final byte SC_A_SSL_CERT      = 7;
     public static final byte SC_A_SSL_CIPHER    = 8;
     public static final byte SC_A_SSL_SESSION   = 9;
+    public static final byte SC_A_SSL_KEYSIZE   = 11;
 
     // Used for attributes which are not in the list above
     public static final byte SC_A_REQ_ATTRIBUTE = 10; 
@@ -197,7 +196,7 @@ public class RequestHandler extends AjpHandler
     {
     }
 
-    public void init( Ajp14 ajp14 ) {
+    public void init( Ajp13 ajp14 ) {
 	// register incoming message handlers
 	ajp14.registerMessageType( JK_AJP13_FORWARD_REQUEST,
 				   "JK_AJP13_FORWARD_REQUEST",
@@ -218,8 +217,8 @@ public class RequestHandler extends AjpHandler
     }
     
     // -------------------- Incoming message --------------------
-    public int handleAjpMessage( int type, Ajp14 channel,
-				 Ajp13Packet ajp, BaseRequest req )
+    public int handleAjpMessage( int type, Ajp13 channel,
+				 Ajp13Packet ajp, AjpRequest req )
 	throws IOException
     {
 	switch( type ) {
@@ -241,7 +240,7 @@ public class RequestHandler extends AjpHandler
      *
      * @return 200 in case of a successful decoduing, 500 in case of error.  
      */
-    protected int decodeRequest(Ajp14 ch, Ajp13Packet msg, BaseRequest req)
+    protected int decodeRequest(Ajp13 ch, Ajp13Packet msg, BaseRequest req)
         throws IOException
     {
         
@@ -336,8 +335,26 @@ public class RequestHandler extends AjpHandler
 		
 	    case SC_A_SSL_CERT     :
 		isSSL = true;
-		req.setAttribute("javax.servlet.request.X509Certificate",
-				 msg.getString());
+                // Transform the string into certificate.
+                String certString = msg.getString();
+                byte[] certData = certString.getBytes();
+                ByteArrayInputStream bais = new ByteArrayInputStream(certData);
+ 
+                // Fill the first element.
+                X509Certificate jsseCerts[] = null;
+                try {
+                    CertificateFactory cf =
+                        CertificateFactory.getInstance("X.509");
+                    X509Certificate cert = (X509Certificate)
+                        cf.generateCertificate(bais);
+                    jsseCerts =  new X509Certificate[1];
+                    jsseCerts[0] = cert;
+                } catch(java.security.cert.CertificateException e) {
+                    log("Certificate convertion failed" + e );
+                }
+ 
+                req.setAttribute("javax.servlet.request.X509Certificate",
+                                 jsseCerts);
                 break;
 		
 	    case SC_A_SSL_CIPHER   :
@@ -357,7 +374,7 @@ public class RequestHandler extends AjpHandler
 				 msg.getString());
                 break;
 
-	    case SC_A_SSL_KEY_SIZE: // Ajp14 !
+	    case SC_A_SSL_KEY_SIZE: // Ajp13 !
 		req.setAttribute("javax.servlet.request.key_size",
 				 Integer.toString(msg.getInt()));
 		return 200;
@@ -397,7 +414,7 @@ public class RequestHandler extends AjpHandler
     }
     
 
-    // -------------------- Messages from container to server --------------------
+    // -------------------- Messages from container to server ------------------
     
     /**
      * Send the HTTP headers back to the web server and on to the browser.
@@ -406,8 +423,9 @@ public class RequestHandler extends AjpHandler
      * @param statusMessage the HTTP status message to send.
      * @param headers The set of all headers.
      */
-    public void sendHeaders(Ajp14 ch, Ajp13Packet outBuf,
-			    int status, String statusMessage, MimeHeaders headers)
+    public void sendHeaders(Ajp13 ch, Ajp13Packet outBuf,
+			    int status, String statusMessage,
+                            MimeHeaders headers)
         throws IOException
     {
 	// XXX if more headers that MAX_SIZE, send 2 packets!
@@ -441,7 +459,7 @@ public class RequestHandler extends AjpHandler
      * Signal the web server that the servlet has finished handling this
      * request, and that the connection can be reused.
      */
-    public void finish(Ajp14 ch, Ajp13Packet outBuf) throws IOException {
+    public void finish(Ajp13 ch, Ajp13Packet outBuf) throws IOException {
         if (debug > 0)  log("finish()");
 
 	outBuf.reset();
@@ -459,7 +477,7 @@ public class RequestHandler extends AjpHandler
      * @param off The offset into the buffer from which to start sending.
      * @param len The number of bytes to send.
      */    
-    public void doWrite(Ajp14 ch, Ajp13Packet outBuf,
+    public void doWrite(Ajp13 ch, Ajp13Packet outBuf,
 			byte b[], int off, int len)
 	throws IOException
     {
@@ -468,7 +486,7 @@ public class RequestHandler extends AjpHandler
 	int sent = 0;
 	while(sent < len) {
 	    int to_send = len - sent;
-	    to_send = to_send > Ajp14.MAX_SEND_SIZE ? Ajp14.MAX_SEND_SIZE : to_send;
+	    to_send = to_send > Ajp13.MAX_SEND_SIZE ? Ajp13.MAX_SEND_SIZE : to_send;
 
 	    outBuf.reset();
 	    outBuf.appendByte(JK_AJP13_SEND_BODY_CHUNK);	        	
@@ -538,15 +556,15 @@ public class RequestHandler extends AjpHandler
         return -1;
     }
    
-    private static int debug=10;
+    private static int debug=0;
     void log(String s) {
-	System.out.println("Ajp14RequestHandler: " + s );
+	System.out.println("RequestHandler: " + s );
     }
 
     // ==================== Servlet Input Support =================
     // XXX DEPRECATED
     
-    public int available(Ajp14 ch) throws IOException {
+    public int available(Ajp13 ch) throws IOException {
         if (debug > 0) {
             log("available()");
         }
@@ -564,7 +582,7 @@ public class RequestHandler extends AjpHandler
      *
      * @see Request#doRead
      */
-    public int doRead(Ajp14 ch) throws IOException 
+    public int doRead(Ajp13 ch) throws IOException 
     {
         if (debug > 0) {
             log("doRead()");
@@ -590,7 +608,7 @@ public class RequestHandler extends AjpHandler
      *
      * @see Request#doRead
      */
-    public int doRead(Ajp14 ch, byte[] b, int off, int len) throws IOException 
+    public int doRead(Ajp13 ch, byte[] b, int off, int len) throws IOException 
     {
         if (debug > 0) {
             log("doRead(byte[], int, int)");
@@ -616,7 +634,7 @@ public class RequestHandler extends AjpHandler
 	    if(bytesRemaining < 0) 
 		bytesRemaining = 0;
 	    int c = bytesRemaining < toCopy ? bytesRemaining : toCopy;
-
+            
 	    System.arraycopy(ch.bodyBuff, ch.pos, b, off, c);
 
 	    toCopy    -= c;
@@ -639,7 +657,7 @@ public class RequestHandler extends AjpHandler
      *
      * @return true if there is more data, false if not.    
      */
-    private boolean refillReadBuffer(Ajp14 ch) throws IOException 
+    public boolean refillReadBuffer(Ajp13 ch) throws IOException 
     {
         if (debug > 0) {
             log("refillReadBuffer()");
@@ -651,7 +669,7 @@ public class RequestHandler extends AjpHandler
 	// Why not use outBuf??
 	ch.inBuf.reset();
 	ch.inBuf.appendByte(JK_AJP13_GET_BODY_CHUNK);
-	ch.inBuf.appendInt(Ajp14.MAX_READ_SIZE);
+	ch.inBuf.appendInt(Ajp13.MAX_READ_SIZE);
 	ch.send(ch.inBuf);
 	
 	int err = ch.receive(ch.inBuf);
@@ -670,7 +688,7 @@ public class RequestHandler extends AjpHandler
     
     /**
      */
-    public void beginSendHeaders(Ajp14 ch, Ajp13Packet outBuf,
+    public void beginSendHeaders(Ajp13 ch, Ajp13Packet outBuf,
 				 int status,
                                  String statusMessage,
                                  int numHeaders) throws IOException {
@@ -710,7 +728,7 @@ public class RequestHandler extends AjpHandler
         outBuf.appendString(value);
     }
 
-    public void endSendHeaders(Ajp14 ch, Ajp13Packet outBuf)
+    public void endSendHeaders(Ajp13 ch, Ajp13Packet outBuf)
 	throws IOException
     {
         outBuf.end();
@@ -723,10 +741,12 @@ public class RequestHandler extends AjpHandler
      * @param status The HTTP status code to send.
      * @param headers The set of all headers.
      */
-    public void sendHeaders(Ajp14 ch, Ajp13Packet outBuf,
+    public void sendHeaders(Ajp13 ch, Ajp13Packet outBuf,
 			    int status, MimeHeaders headers)
-        throws IOException {
-        sendHeaders(ch, outBuf, status, HttpMessages.getMessage(status), headers);
+        throws IOException
+    {
+        sendHeaders(ch, outBuf, status, HttpMessages.getMessage(status),
+                    headers);
     }
     
 

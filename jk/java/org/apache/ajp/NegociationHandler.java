@@ -254,8 +254,9 @@ public class NegociationHandler extends AjpHandler
     
     // -------------------- Initialization --------------------
 
-    public void init( Ajp14 ajp14 ) {
+    public void init( Ajp13 ajp14 ) {
 	// register incoming message handlers
+        System.out.println("XXX register ajp 14 hooks");
 	ajp14.registerMessageType( JK_AJP14_LOGINIT_CMD,"JK_AJP14_LOGINIT_CMD",
 				   this, null); //
 	ajp14.registerMessageType( JK_AJP14_LOGCOMP_CMD,"JK_AJP14_LOGCOMP_CMD",
@@ -286,10 +287,11 @@ public class NegociationHandler extends AjpHandler
     
     // -------------------- Dispatch --------------------
 
-    public int handleAjpMessage( int type, Ajp14 ch, Ajp13Packet hBuf,
-				 BaseRequest req )
+    public int handleAjpMessage( int type, Ajp13 ch, Ajp13Packet hBuf,
+				 AjpRequest req )
 	throws IOException
     {
+        System.out.println("handleAjpMessage: " + type );
 	Ajp13Packet outBuf=ch.outBuf;
 	// Valid requests when not logged:
 	switch( type ) {
@@ -326,7 +328,7 @@ public class NegociationHandler extends AjpHandler
      * 
      * Send Login Seed (MD5 of seed)
      */
-    private int handleLogInit( Ajp14 ch, Ajp13Packet msg,
+    private int handleLogInit( Ajp13 ch, Ajp13Packet msg,
 			       Ajp13Packet outBuf )
 	throws IOException
     {
@@ -353,7 +355,7 @@ public class NegociationHandler extends AjpHandler
      * If the authentification is valid send back LogOk
      * If the authentification failed send back LogNok
      */
-    private int handleLogComp( Ajp14 ch, Ajp13Packet msg,
+    private int handleLogComp( Ajp13 ch, Ajp13Packet msg,
 			       Ajp13Packet outBuf )
 	throws IOException
     {
@@ -403,7 +405,7 @@ public class NegociationHandler extends AjpHandler
 	return (304);
     }
 
-    private int handleContextQuery( Ajp14 ch, Ajp13Packet msg,
+    private int handleContextQuery( Ajp13 ch, Ajp13Packet msg,
 				    Ajp13Packet outBuf )
 	throws IOException
     {

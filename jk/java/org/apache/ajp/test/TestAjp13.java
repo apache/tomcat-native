@@ -44,7 +44,7 @@ public class TestAjp13 extends TestCase {
         p.appendInt(0x1234);
         p.appendInt(0);
         p.setByteOff(4);
-        p.appendByte(Ajp13.JK_AJP13_FORWARD_REQUEST);
+        p.appendByte(RequestHandler.JK_AJP13_FORWARD_REQUEST);
         p.appendByte((byte)2);
         p.appendString("http");
         p.appendString("/test_uri");
@@ -56,11 +56,11 @@ public class TestAjp13 extends TestCase {
         p.appendInt(3);
         p.appendString("my header");
         p.appendString("my header value");
-        p.appendInt((0xA0 << 8) + Ajp13.SC_REQ_AUTHORIZATION);
+        p.appendInt((0xA0 << 8) + RequestHandler.SC_REQ_AUTHORIZATION);
         p.appendString("some auth string");
-        p.appendInt((0xA0 << 8) + Ajp13.SC_REQ_USER_AGENT);
+        p.appendInt((0xA0 << 8) + RequestHandler.SC_REQ_USER_AGENT);
         p.appendString("TestAjp13 User Agent");
-        p.appendByte(Ajp13.SC_A_ARE_DONE);
+        p.appendByte(RequestHandler.SC_A_ARE_DONE);
 
         int len = p.getByteOff() - 4;
         p.setByteOff(2);
