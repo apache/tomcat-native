@@ -43,7 +43,7 @@
 
   <!-- ==================== Targets ==================== -->
 
-  <target name="main" depends="init,apache20,jni,apache13">
+  <target name="main" depends="init,apache20,jni,apache13,unixsocket">
   </target>
 
   <target name="init" >
@@ -406,4 +406,33 @@
     </delete>
   </target>
 
+  <target name="unixsocket" depends="init" if="useunixsocket">
+    <mkdir dir="${jk.build}/WEB-INF/jk2/unixsocket" />
+    <so sofile="libunixsocket" 
+	buildDir="${jk.build}/WEB-INF/jk2/unixsocket"
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	profile="${so.profile}">
+
+      <src dir=".">
+	<include name="tomcat/UnixSocket.c" />
+        <!-- When APR will provide the AF_UNIX socket support -->
+        <!--
+        <include name="common/apr/*.c" if="HAVE_APR" />
+         -->
+      </src>
+      <includes>
+	<include name="${java.home}/../include" />
+
+        <!-- Platform specific includes -->
+        <include name="${java.home}/../include/netware" if="netware" />
+        <include name="${java.home}/../include/win32" if="win32" />
+        <include name="${java.home}/../include/linux" if="linux" />
+      </includes>
+      <depends>
+	<fileset dir="${native.dir}/common" includes="*.h" />
+      </depends>
+
+    </so>
+  </target>
 </project>

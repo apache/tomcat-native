@@ -87,7 +87,10 @@ public class JkMain
     public void start() throws IOException {
         ChannelSocket csocket=new ChannelSocket();
         csocket.setPort( 8009 );
+        /*
+        ChannelUnixSocket csocket=new ChannelUnixSocket(); // JFC tests
         wEnv.addChannel( csocket );
+         */
 
         WorkerDummy wdummy=new WorkerDummy();
         csocket.setWorker( wdummy );
