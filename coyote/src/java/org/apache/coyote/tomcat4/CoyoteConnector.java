@@ -958,6 +958,8 @@ public final class CoyoteConnector
                                        "" + tcpNoDelay);
         IntrospectionUtils.setProperty(protocolHandler, "soTimeout", 
                                        "" + connectionTimeout);
+        IntrospectionUtils.setProperty(protocolHandler, "timeout", 
+                                       "" + connectionTimeout);
 
         // Configure secure socket factory
         if (factory instanceof CoyoteServerSocketFactory) {

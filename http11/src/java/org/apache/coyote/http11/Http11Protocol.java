@@ -291,7 +291,9 @@ public class Http11Protocol implements ProtocolHandler
 
     public void setTimeout( int timeouts ) {
 	timeout = timeouts * 1000;
+        setAttribute("timeout", "" + timeouts);
     }
+
     public void setReportedname( String reportedName) {
 	reportedname = reportedName;
     }
