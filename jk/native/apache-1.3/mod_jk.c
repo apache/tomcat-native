@@ -118,15 +118,22 @@ module MODULE_VAR_EXPORT jk_module;
  * Configuration object for the mod_jk module.
  */
 typedef struct {
-    char *log_file;
-    int  log_level;
+
+    /*
+     * Log stuff
+     */
+    char        *log_file;
+    int         log_level;
     jk_logger_t *log;
 
-    char *worker_file;
-    int  mountcopy;
+    /*
+     * Worker stuff
+     */
+    char     *worker_file;
     jk_map_t *uri_to_context;
 
-	char * secret_key;
+    int      mountcopy;
+	char     *secret_key;
     jk_map_t *automount;
 
     jk_uri_worker_map_t *uw_map;
@@ -440,35 +447,16 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->remote_host  = NULL_FOR_EMPTY(s->remote_host);
 
     s->remote_addr  = NULL_FOR_EMPTY(r->connection->remote_ip);
-    /* Wrong:    s->server_name  = (char *)ap_get_server_name( r ); */
-    s->server_name= (char *)(r->hostname ? r->hostname : r->server->server_hostname);
+    s->server_name  = (char *)(r->hostname ? r->hostname : r->server->server_hostname);
     
-    s->server_port= htons( r->connection->local_addr.sin_port );
-    /* Wrong: s->server_port  = r->server->port; */
-
-    
-    /*    Winners:  htons( r->connection->local_addr.sin_port )
-                      (r->hostname ? r->hostname : 
-                             r->server->server_hostname),
-    */
-    /* printf( "Port %u %u %u %s %s %s %d %d \n", 
-        ap_get_server_port( r ), 
-        htons( r->connection->local_addr.sin_port ),
-        ntohs( r->connection->local_addr.sin_port ),
-        ap_get_server_name( r ),
-        (r->hostname ? r->hostname : r->server->server_hostname),
-        r->hostname,
-        r->connection->base_server->port,
-        r->server->port
-        );
-    */
+    s->server_port     = htons( r->connection->local_addr.sin_port );
     s->server_software = (char *)ap_get_server_version();
 
-    s->method       = (char *)r->method;
+    s->method         = (char *)r->method;
     s->content_length = get_content_length(r);
-    s->is_chunked   = r->read_chunked;
+    s->is_chunked     = r->read_chunked;
     s->no_more_chunks = 0;
-    s->query_string = r->args;
+    s->query_string   = r->args;
 
     if (conf->options & JK_OPT_FWDUNPARSED) {
     /*
@@ -515,10 +503,12 @@ static int init_ws_service(apache_private_data_t *private_data,
                 s->ssl_cipher   = (char *)ap_table_get(r->subprocess_env, conf->cipher_indicator);
                 s->ssl_session  = (char *)ap_table_get(r->subprocess_env, conf->session_indicator);
 
-				/* Servlet 2.3 API */
-                ssl_temp = (char *)ap_table_get(r->subprocess_env, conf->key_size_indicator);
-				if (ssl_temp) 
-            		s->ssl_key_size = atoi(ssl_temp);
+                if (conf->options & JK_OPT_FWDKEYSIZE) {
+				    /* Servlet 2.3 API */
+                    ssl_temp = (char *)ap_table_get(r->subprocess_env, conf->key_size_indicator);
+				    if (ssl_temp) 
+            		    s->ssl_key_size = atoi(ssl_temp);
+                }
             }
         }
 
@@ -547,13 +537,17 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->headers_values   = NULL;
     s->num_headers      = 0;
     if(r->headers_in && ap_table_elts(r->headers_in)) {
+        int need_content_length_header = (!s->is_chunked && s->content_length == 0) ? JK_TRUE : JK_FALSE;
         array_header *t = ap_table_elts(r->headers_in);        
         if(t && t->nelts) {
             int i;
             table_entry *elts = (table_entry *)t->elts;
             s->num_headers = t->nelts;
-            s->headers_names  = ap_palloc(r->pool, sizeof(char *) * t->nelts);
-            s->headers_values = ap_palloc(r->pool, sizeof(char *) * t->nelts);
+            /* allocate an extra header slot in case we need to add a content-length header */
+            s->headers_names  = ap_palloc(r->pool, sizeof(char *) * (t->nelts + 1));
+            s->headers_values = ap_palloc(r->pool, sizeof(char *) * (t->nelts + 1));
+            if(!s->headers_names || !s->headers_values)
+                return JK_FALSE;
             for(i = 0 ; i < t->nelts ; i++) {
                 char *hname = ap_pstrdup(r->pool, elts[i].key);
                 s->headers_values[i] = ap_pstrdup(r->pool, elts[i].val);
@@ -562,7 +556,30 @@ static int init_ws_service(apache_private_data_t *private_data,
                     *hname = tolower(*hname);
                     hname++;
                 }
+                if(need_content_length_header &&
+                        !strncmp(s->headers_values[i],"content-length",14)) {
+                    need_content_length_header = JK_FALSE;
+                }
             }
+            /* Add a content-length = 0 header if needed.
+             * Ajp13 assumes an absent content-length header means an unknown,
+             * but non-zero length body.
+             */
+            if(need_content_length_header) {
+                s->headers_names[s->num_headers] = "content-length";
+                s->headers_values[s->num_headers] = "0";
+                s->num_headers++;
+            }
+        }
+        /* Add a content-length = 0 header if needed.*/
+        else if (need_content_length_header) {
+            s->headers_names  = ap_palloc(r->pool, sizeof(char *));
+            s->headers_values = ap_palloc(r->pool, sizeof(char *));
+            if(!s->headers_names || !s->headers_values)
+                return JK_FALSE;
+            s->headers_names[0] = "content-length";
+            s->headers_values[0] = "0";
+            s->num_headers++;
         }
     }
 
@@ -1051,6 +1068,7 @@ static int jk_handler(request_rec *r)
             private_data.r = r;
 
             jk_init_ws_service(&s);
+
             s.ws_private = &private_data;
             s.pool = &private_data.p;            
             
@@ -1101,6 +1119,7 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
     c->log_level   = -1;
     c->log         = NULL;
     c->mountcopy   = JK_FALSE;
+    c->options     = 0;
 
     /*
      * By default we will try to gather SSL info. 
@@ -1181,6 +1200,8 @@ static void *merge_jk_config(ap_pool *p,
         overrides->key_size_indicator = base->key_size_indicator;
     }
     
+    overrides->options = base->options;
+
     if(overrides->mountcopy) {
 		copy_jk_map(p, overrides->s, base->uri_to_context, overrides->uri_to_context);
 		copy_jk_map(p, overrides->s, base->automount, overrides->automount);

@@ -105,15 +105,22 @@ AP_DECLARE_DATA module jk_module;
 
 
 typedef struct {
+
+    /*
+     * Log stuff
+     */
     char *log_file;
     int  log_level;
     jk_logger_t *log;
 
-    char *worker_file;
-    int  mountcopy;
+    /*
+     * Worker stuff
+     */
+    char     *worker_file;
     jk_map_t *uri_to_context;
 
-    char * secret_key;
+    int      mountcopy;
+    char     *secret_key;
     jk_map_t *automount;
 
     jk_uri_worker_map_t *uw_map;
@@ -129,6 +136,11 @@ typedef struct {
     char *cipher_indicator;
     char *session_indicator;  /* Servlet API 2.3 requirement */
     char *key_size_indicator; /* Servlet API 2.3 requirement */
+
+    /*
+     * Jk Options
+     */
+    int options;
 
     /*
      * Environment variables support
@@ -161,8 +173,8 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
 
 static int JK_METHOD ws_read(jk_ws_service_t *s,
                              void *b,
-                             unsigned l,
-                             unsigned *a);
+                             unsigned len,
+                             unsigned *actually_read);
 
 static void init_jk( apr_pool_t *pconf,jk_server_conf_t *conf, server_rec *s );
 
@@ -240,21 +252,24 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
  */
 static int JK_METHOD ws_read(jk_ws_service_t *s,
                              void *b,
-                             unsigned l,
-                             unsigned *a)
+                             unsigned len,
+                             unsigned *actually_read)
 {
-    if(s && s->ws_private && b && a) {
+    if(s && s->ws_private && b && actually_read) {
         apache_private_data_t *p = s->ws_private;
         if(!p->read_body_started) {
-            if(!ap_setup_client_block(p->r, REQUEST_CHUNKED_DECHUNK)) {
-                if(ap_should_client_block(p->r)) { 
-                    p->read_body_started = JK_TRUE; 
-                }
+           if(ap_should_client_block(p->r)) {
+                p->read_body_started = JK_TRUE;
             }
         }
 
         if(p->read_body_started) {
-            *a = ap_get_client_block(p->r, b, l);
+            long rv;
+            if ((rv = ap_get_client_block(p->r, b, len)) < 0) {
+                *actually_read = 0;
+            } else {
+                *actually_read = (unsigned) rv;
+            }
             return JK_TRUE;
         }
     }
@@ -419,21 +434,33 @@ static int init_ws_service(apache_private_data_t *private_data,
 
     s->server_software = (char *)ap_get_server_version();
 
-    s->method       = (char *)r->method;
+    s->method         = (char *)r->method;
     s->content_length = get_content_length(r);
-    s->query_string = r->args;
+    s->is_chunked     = r->read_chunked;
+    s->no_more_chunks = 0;
+    s->query_string   = r->args;
 
+    if (conf->options & JK_OPT_FWDUNPARSED) {
     /*
      * The 2.2 servlet spec errata says the uri from
      * HttpServletRequest.getRequestURI() should remain encoded.
      * [http://java.sun.com/products/servlet/errata_042700.html]
+     *
+     * we follow spec in that case but can't use mod_rewrite
      */
-    s->req_uri      = r->unparsed_uri;
-    if (s->req_uri != NULL) {
-        char *query_str = strchr(s->req_uri, '?');
-        if (query_str != NULL) {
-            *query_str = 0;
+        s->req_uri      = r->unparsed_uri;
+        if (s->req_uri != NULL) {
+            char *query_str = strchr(s->req_uri, '?');
+            if (query_str != NULL) {
+                *query_str = 0;
+            }
         }
+    }
+    else {
+    /*
+     * we don't follow spec but we can use mod_rewrite
+     */
+        s->req_uri      = r->uri;
     }
 
     s->is_ssl       = JK_FALSE;
@@ -467,12 +494,13 @@ static int init_ws_service(apache_private_data_t *private_data,
                     (char *)apr_table_get(r->subprocess_env, 
                                           conf->session_indicator);
 
-                /* Servlet 2.3 API */
-                ssl_temp = (char *)apr_table_get(r->subprocess_env, 
+                if (conf->options & JK_OPT_FWDKEYSIZE) {
+                    /* Servlet 2.3 API */
+                    ssl_temp = (char *)apr_table_get(r->subprocess_env, 
                                                  conf->key_size_indicator);
-                if (ssl_temp)
-                    s->ssl_key_size = atoi(ssl_temp);
-
+                    if (ssl_temp)
+                        s->ssl_key_size = atoi(ssl_temp);
+                }
             }
         }
 
@@ -504,13 +532,17 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->headers_values   = NULL;
     s->num_headers      = 0;
     if(r->headers_in && apr_table_elts(r->headers_in)) {
-        apr_array_header_t *t = apr_table_elts(r->headers_in);        
+        int need_content_length_header = (!s->is_chunked && s->content_length == 0) ? JK_TRUE : JK_FALSE;
+        apr_array_header_t *t = apr_table_elts(r->headers_in);
         if(t && t->nelts) {
             int i;
             apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
             s->num_headers = t->nelts;
-            s->headers_names  = apr_palloc(r->pool, sizeof(char *) * t->nelts);
-            s->headers_values = apr_palloc(r->pool, sizeof(char *) * t->nelts);
+            /* allocate an extra header slot in case we need to add a content-length header */
+            s->headers_names  = apr_palloc(r->pool, sizeof(char *) * (t->nelts + 1));
+            s->headers_values = apr_palloc(r->pool, sizeof(char *) * (t->nelts + 1));
+            if(!s->headers_names || !s->headers_values)
+                return JK_FALSE;
             for(i = 0 ; i < t->nelts ; i++) {
                 char *hname = apr_pstrdup(r->pool, elts[i].key);
                 s->headers_values[i] = apr_pstrdup(r->pool, elts[i].val);
@@ -519,9 +551,34 @@ static int init_ws_service(apache_private_data_t *private_data,
                     *hname = tolower(*hname);
                     hname++;
                 }
+                if(need_content_length_header &&
+                        !strncmp(s->headers_values[i],"content-length",14)) {
+                    need_content_length_header = JK_FALSE;
+                }
+            }
+            /* Add a content-length = 0 header if needed.
+             * Ajp13 assumes an absent content-length header means an unknown,
+             * but non-zero length body.
+             */
+            if(need_content_length_header) {
+                s->headers_names[s->num_headers] = "content-length";
+                s->headers_values[s->num_headers] = "0";
+                s->num_headers++;
             }
         }
+        /* Add a content-length = 0 header if needed.*/
+        else if (need_content_length_header) {
+            s->headers_names  = apr_palloc(r->pool, sizeof(char *));
+            s->headers_values = apr_palloc(r->pool, sizeof(char *));
+            if(!s->headers_names || !s->headers_values)
+                return JK_FALSE;
+            s->headers_names[0] = "content-length";
+            s->headers_values[0] = "0";
+            s->num_headers++;
+        }
     }
+
+    return JK_TRUE;
 
     return JK_TRUE;
 }
@@ -806,6 +863,56 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
 }
 
 /*
+ * JkOptions Directive Handling
+ *
+ *
+ * +ForwardUnparsed   => Forward URI as unparsed, spec compliant but broke mod_rewrite
+ * -ForwardUnparsed   => Forward URI normally, less spec compliant but mod_rewrite compatible
+ * +ForwardSSLKeySize => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
+ * -ForwardSSLKeySize => Don't Forward SSL Key Size, will make mod_jk works with all TC release
+ */
+
+const char *jk_set_options(cmd_parms *cmd,
+                           void *dummy,
+                           const char *line)
+{
+    int  opt = 0;
+    char action;
+    char *w;
+
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+
+    while (line[0] != 0) {
+        w = ap_getword_conf(cmd->pool, &line);
+        action = 0;
+
+        if (*w == '+' || *w == '-') {
+            action = *(w++);
+        }
+
+        if (!strcasecmp(w, "ForwardUnparsedUri"))
+            opt = JK_OPT_FWDUNPARSED;
+        else if (!strcasecmp(w, "ForwardKeySize"))
+            opt = JK_OPT_FWDKEYSIZE;
+        else
+            return apr_pstrcat(cmd->pool, "JkOptions: Illegal option '", w, "'", NULL);
+
+        if (action == '-') {
+            conf->options &= ~opt;
+        }
+        else if (action == '+') {
+            conf->options |=  opt;
+        }
+        else {            /* for now +Opt == Opt */
+            conf->options |=  opt;
+        }
+    }
+    return NULL;
+}
+
+/*
  * JkEnvVar Directive Handling
  *
  * JkEnvVar MYOWNDIR
@@ -912,6 +1019,18 @@ static const command_rec jk_cmds[] =
         "Turns on SSL processing and information gathering by mod_jk"),
 
     /*
+     * Options to tune mod_jk configuration
+     * for now we understand :
+     * +ForwardUnparsed   => Forward URI as unparsed, spec compliant but broke mod_rewrite
+     * -ForwardUnparsed   => Forward URI normally, less spec compliant but mod_rewrite compatible
+     * +ForwardSSLKeySize => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
+     * -ForwardSSLKeySize => Don't Forward SSL Key Size, will make mod_jk works with all TC release
+     */
+    AP_INIT_RAW_ARGS(
+        "JkOptions", jk_set_options, NULL, RSRC_CONF, 
+        "Set one of more options to configure the mod_jk module"),
+
+    /*
      * JkEnvVar let user defines envs var passed from WebServer to
      * Servlet Engine
      */
@@ -940,10 +1059,11 @@ apr_status_t jk_cleanup_endpoint( void *data ) {
  */
 static int jk_handler(request_rec *r)
 {   
-    const char *worker_name;
+    const char       *worker_name;
     jk_server_conf_t *xconf;
-    jk_logger_t *xl;
+    jk_logger_t      *xl;
     jk_server_conf_t *conf;
+    int              rc;
 
     if(strcmp(r->handler,JK_HANDLER))    /* not for me, try next handler */
       return DECLINED;
@@ -952,6 +1072,11 @@ static int jk_handler(request_rec *r)
                                                      &jk_module);
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
     xl = xconf->log ? xconf->log : main_log;
+
+    /* Set up r->read_chunked flags for chunked encoding, if present */
+    if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
+    return rc;
+    }
 
     if( worker_name == NULL ) {
       /* we may be here because of a manual directive ( that overrides 
@@ -1050,20 +1175,23 @@ static int jk_handler(request_rec *r)
 #endif
         {   
             int is_recoverable_error = JK_FALSE;
-                    rc = end->service(end, 
-                                      &s, 
-                                      l, 
-                                      &is_recoverable_error);
+                rc = end->service(end, &s, l, &is_recoverable_error);
 
-            if (s.content_read < s.content_length) {
-            /* Toss all further characters left to read fm client */
-                char *buff = apr_palloc(r->pool, 2048);
-                if (buff != NULL) {
+            if (s.content_read < s.content_length ||
+                (s.is_chunked && ! s.no_more_chunks)) {
+
+                /*
+                * If the servlet engine didn't consume all of the
+                * request data, consume and discard all further
+                * characters left to read from client
+                */
+                    char *buff = apr_palloc(r->pool, 2048);
+                    if (buff != NULL) {
                     int rd;
                     while ((rd = ap_get_client_block(r, buff, 2048)) > 0) {
                         s.content_read += rd;
                     }
-                 }
+                }
             }
                                                                             
 #ifndef REUSE_WORKER            
@@ -1089,12 +1217,13 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
     jk_server_conf_t *c =
         (jk_server_conf_t *) apr_pcalloc(p, sizeof(jk_server_conf_t));
 
-    c->worker_file = NULL;
-    c->log_file    = NULL;
-    c->log_level   = -1;
-    c->log         = NULL;
-    c->mountcopy   = JK_FALSE;
+    c->worker_file     = NULL;
+    c->log_file        = NULL;
+    c->log_level       = -1;
+    c->log             = NULL;
+    c->mountcopy       = JK_FALSE;
     c->was_initialized = JK_FALSE;
+    c->options         = 0;
 
     /*
      * By default we will try to gather SSL info.
@@ -1176,12 +1305,14 @@ static void *merge_jk_config(apr_pool_t *p,
     jk_server_conf_t *overrides = (jk_server_conf_t *)overridesv;
  
     if(base->ssl_enable) {
-        overrides->ssl_enable       = base->ssl_enable;
-        overrides->https_indicator  = base->https_indicator;
-        overrides->certs_indicator  = base->certs_indicator;
-        overrides->cipher_indicator = base->cipher_indicator;
+        overrides->ssl_enable        = base->ssl_enable;
+        overrides->https_indicator   = base->https_indicator;
+        overrides->certs_indicator   = base->certs_indicator;
+        overrides->cipher_indicator  = base->cipher_indicator;
         overrides->session_indicator = base->session_indicator;
     }
+
+    overrides->options = base->options;
 
     if(overrides->mountcopy) {
         copy_jk_map(p, overrides->s, base->uri_to_context, 
