@@ -7,12 +7,16 @@
 <web-app>
     <servlet>
         <servlet-name>JkServlet</servlet-name>
+        <description>Servlet implementing the jk connector. Make sure 'load-on-startup' is set if you
+are using tomcat3.3 or 4.1. For 4.0 you must use JkServlet40.</description>
         <servlet-class>org.apache.jk.server.JkServlet</servlet-class>
+
         <init-param>
             <param-name>listenAddress</param-name>
             <param-value></param-value>
-            <description>Address to listen on. Default to WEB-INF/work/tomcatSocket 
-for unix domain sockets and pipes and 8089 for TCP</description>
+            <description>Address to listen on. Default to 
+WEB-INF/work/tomcatSocket for unix domain sockets and pipes and 8089 for
+ TCP</description>
         </init-param>
 
         <init-param>
@@ -22,22 +26,13 @@ for unix domain sockets and pipes and 8089 for TCP</description>
 for unix sockets, org.apache.jk.common.ChannelSocket for TCP. XXX multi-value, multiple
 channels ?</description>
         </init-param>
-
         <load-on-startup>1</load-on-startup>
     </servlet>
 
-    <!-- Hack - this will be loaded if 4.0 is detected. It'll not be loaded at
-         startup, and 3.3 will just ignore it. We need JkServlet to be a 'plain'
-         servlet, with no dependencies ( so it loads and log messages in any 
-         condition ). It'll use Class.forName or other means to load container
-         specific classes. In particular, for 4.0 the only way for a trusted 
-         app to gain access to the container is by a servlet starting with 'o.a.catalina'
-         and implementing a specific interface. The servlet seem to need to be
-         declared here, so we can play our init tricks. In future we hope for 
-         a cleaner mechanism. -->
+    <!-- 
     <servlet>
         <servlet-name>JkServlet40</servlet-name>
         <servlet-class>org.apache.catalina.jk.JkServlet40</servlet-class>
     </servlet>
-
+    -->
 </web-app>
