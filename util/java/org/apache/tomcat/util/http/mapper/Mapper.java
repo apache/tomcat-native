@@ -415,6 +415,9 @@ public final class Mapper {
                     break;
                 }
                 pos--;
+                if (pos < 0) {
+                    break;
+                }
             }
             if (!found) {
                 if (contexts[0].name.equals("")) {
@@ -589,6 +592,9 @@ public final class Mapper {
                     break;
                 }
                 pos--;
+                if (pos < 0) {
+                    break;
+                }
             }
             if (found) {
                 mappingData.wrapperPath.setString(wrappers[pos].name);
