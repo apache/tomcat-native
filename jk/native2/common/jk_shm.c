@@ -319,7 +319,7 @@ static void jk2_shm_resetEndpointStats(jk_env_t *env, struct jk_shm *shm)
 
 static char *jk2_shm_setAttributeInfo[] = {"resetEndpointStats",
                                            "file", "size",
-                                           "slots", "memory",
+                                           "slots", "useMemory",
                                            NULL};
 
 static int JK_METHOD jk2_shm_setAttribute(jk_env_t *env, jk_bean_t *mbean,
@@ -334,7 +334,7 @@ static int JK_METHOD jk2_shm_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         shm->size=atoi(value);
     } else if( strcmp( "slots", name ) == 0 ) {
         shm->slotMaxCount=atoi(value);
-    } else if( strcmp( "memory", name ) == 0 ) {
+    } else if( strcmp( "useMemory", name ) == 0 ) {
         shm->inmem=atoi(value);
     } else if( strcmp( "resetEndpointStats", name ) == 0 ) {
         if( strcmp( value, "1" )==0 )
