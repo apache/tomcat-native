@@ -125,6 +125,7 @@
             <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
             <pathelement location="${tomcat-util.jar}" />
             <pathelement location="${commons-logging.jar}"/>
+            <pathelement location="${commons-modeler.jar}"/>
             <pathelement location="${jmx.jar}"/>
             <pathelement 
                  location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
