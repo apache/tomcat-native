@@ -95,7 +95,7 @@ static int check_security_fraud(jk_uri_worker_map_t *uw_map, const char *uri)
     unsigned i;
 
     for (i = 0; i < uw_map->size; i++) {
-        if (MATCH_TYPE_SUFFIX == uw_map->maps[i]->s->match_type) {
+        if (uw_map->maps[i]->s->match_type == MATCH_TYPE_SUFFIX) {
             char *suffix_start;
             for (suffix_start = strstr(uri, uw_map->maps[i]->suffix);
                  suffix_start;
@@ -217,19 +217,46 @@ static int uri_worker_map_realloc(jk_uri_worker_map_t *uw_map)
 int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                        const char *puri, const char *worker, jk_logger_t *l)
 {
-    uri_worker_record_t *uwr;
+    uri_worker_record_t *uwr = NULL;
     char *uri;
     unsigned int match_type = 0;
+    unsigned int i;
+    int allocated = 0;
 
     JK_TRACE_ENTER(l);
+
+    if (*puri == '!') {
+        match_type = MATCH_TYPE_NO_MATCH;
+        puri++;
+    }
+    
+    /* Find if duplicate entry */    
+    for (i = 0; i < uw_map->size; i++) {
+        uwr = uw_map->maps[i];
+        if (strcmp(uwr->uri, puri) == 0) {
+            if (strcmp(uwr->worker_name, worker) == 0) {
+                jk_log(l, JK_LOG_DEBUG,
+                       "map rule %s=%s already exists",
+                       puri, worker);
+                JK_TRACE_EXIT(l);
+                return JK_TRUE;
+            }
+            else {
+                jk_log(l, JK_LOG_DEBUG,
+                       "changing map rule %s=%s ",
+                       puri, worker);
+                uwr->worker_name = worker;
+                JK_TRACE_EXIT(l);
+                return JK_TRUE;
+            }
+        }
+    }
     if (uri_worker_map_realloc(uw_map) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    uwr =
-        (uri_worker_record_t *) jk_pool_alloc(&uw_map->p,
-                                              sizeof(uri_worker_record_t));
-
+    uwr = (uri_worker_record_t *)jk_pool_alloc(&uw_map->p,
+                                    sizeof(uri_worker_record_t));
     if (!uwr) {
         jk_log(l, JK_LOG_ERROR,
                "can't alloc map entry");
@@ -238,11 +265,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     }
     uwr->suffix = NULL;
     
-    if (*puri == '!') {
-        match_type = MATCH_TYPE_NO_MATCH;
-        puri++;
-    }
-
     uri = jk_pool_strdup(&uw_map->p, puri);
     if (!uri || !worker) {
         jk_log(l, JK_LOG_ERROR,
