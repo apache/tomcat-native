@@ -237,7 +237,7 @@ static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
     }
 
     if( jkvm->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,  
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,  
                       "jni.loadJvm() %s symbols resolved\n",
                       jkvm->jvm_dll_path); 
     
@@ -273,8 +273,8 @@ static void *jk2_vm_attach(jk_env_t *env, jk_vm_t *jkvm)
        appropriate interface. There is no need to call the AttachCurrentThread.
     */
     if( err == 0) {
-        if( jkvm->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "vm.attach() allready attached\n");
+        if( jkvm->mbean->debug >= 0 )
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "vm.attach() allready attached\n");
         return (void *)rc;        
     }
     /* The error code is either JNI_OK (allready attached) or JNI_EDETACHED.
@@ -295,8 +295,8 @@ static void *jk2_vm_attach(jk_env_t *env, jk_vm_t *jkvm)
                       "vm.attach() error %d\n", err);
         return NULL;
     }
-    if( jkvm->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "vm.attach() ok\n");
+    if( jkvm->mbean->debug >= 0 )
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "vm.attach() ok\n");
     return (void *)rc;
 }
 

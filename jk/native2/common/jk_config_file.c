@@ -265,7 +265,7 @@ static int jk2_config_file_readFile(jk_env_t *env,
     
     if( !firstTime && statbuf.st_mtime < cfg->mtime ) {
         if( cfg->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "config.update(): No reload needed %s %ld %ld\n", cfg->file,
                           cfg->mtime, statbuf.st_mtime );
         return JK_OK;

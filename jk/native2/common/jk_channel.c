@@ -108,27 +108,27 @@ int JK_METHOD jk2_channel_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *
     int rc=JK_OK;
 
     if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "ch.%d() \n", code);
     
     switch( code ) {
     case CH_OPEN: {
         if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "ch.open()\n");
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.open()\n");
         if( ch->open != NULL )
             rc=ch->open(env, ch, ep);
         return rc;
     }
     case CH_CLOSE: {
         if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "ch.close()\n");
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.close()\n");
         if( ch->close != NULL )
             rc=ch->close(env, ch, ep);
         return rc;
     }
     case CH_READ: {
         if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "ch.recv()\n");
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.recv()\n");
         if( ch->recv != NULL )
             rc=ch->recv(env, ch, ep, msg);
         if( rc==JK_OK )
@@ -137,7 +137,7 @@ int JK_METHOD jk2_channel_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *
     }
     case CH_WRITE: {
         if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, "ch.send()\n");
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "ch.send()\n");
         if( ch->serverSide )
             msg->serverSide=JK_TRUE;
         if( ch->send != NULL )

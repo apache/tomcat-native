@@ -367,7 +367,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
         (jk_ch_jni_ep_private_t *)endpoint->channelData;
 
     if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() %#lx\n", epData ); 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,"channel_jni.send() %#lx\n", epData ); 
 
     if( epData == NULL ) {
         jk2_channel_jni_open( env, _this, endpoint );
@@ -388,7 +388,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     b=msg->buf;
 
     if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() (1) %#lx\n", epData ); 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,"channel_jni.send() (1) %#lx\n", epData ); 
 
     jniEnv=NULL; /* epData->jniEnv; */
     jbuf=epData->jarray;
@@ -409,7 +409,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     }
 
     if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channel_jni.send() getting byte array \n" );
     
     /* Copy the data in the ( recycled ) jbuf, then call the
@@ -439,7 +439,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
 #endif    
     if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channel_jni.send() before send %#lx\n",
                       (void *)(long)epData->jniJavaContext); 
     
@@ -449,7 +449,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
                                          (jlong)(long)(void *)env,
                                          epData->jniJavaContext );
     if( _this->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() result %d\n",
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,"channel_jni.send() result %d\n",
                       sent); 
     return JK_OK;
 }
@@ -507,7 +507,7 @@ int JK_METHOD jk2_channel_jni_beforeRequest(struct jk_env *env,
     jk_workerEnv_t *we=worker->workerEnv;
 
     if( worker->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "service() attaching to vm\n");
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "service() attaching to vm\n");
 
     return JK_OK;
 }
@@ -527,9 +527,8 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
         return JK_OK;
     }
     we->vm->detach( env, we->vm );
-    
     if( worker->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "channelJni.afterRequest() ok\n");
     return JK_OK;
 }
@@ -567,13 +566,13 @@ int JK_METHOD jk2_channel_jni_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint
     int rc=JK_OK;
 
     if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "ch.%d() \n", code);
     
     code = (int)msg->getByte(env, msg);
 
     if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,"channelJni.java2cInvoke() %d\n", code);
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,"channelJni.java2cInvoke() %d\n", code);
 
     return ep->worker->workerEnv->dispatch( env, ep->worker->workerEnv,
                                             ep->currentRequest, ep, code, ep->reply );

@@ -128,12 +128,12 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
         shm->head = (jk_shm_head_t *)shm->image;
 
         if( shm->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                           "shm.create(): GLOBAL_SHM  %#lx\n", shm->image );
         return JK_OK;
     } else {
         if( shm->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                           "shm.create(): NO GLOBAL_SHM  %#lx\n", shm->image );
     }
     
@@ -157,7 +157,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     rc=apr_file_info_get(&finfo, APR_FINFO_SIZE, file);
 
     if( shm->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "shm.create(): file open %s %d %d\n", shm->fname, shm->size, finfo.size );
 
     if( finfo.size < shm->size ) {
@@ -254,7 +254,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     }
 
     if( shm->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "shm.create(): file open %s %d %d\n", shm->fname, shm->size, filestat.st_size );
 
     if (filestat.st_size < shm->size ) {
@@ -342,7 +342,7 @@ static int JK_METHOD jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
     }
 
     if( shm->mbean->debug > 0 ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.init(): file=%s size=%d\n",
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "shm.init(): file=%s size=%d\n",
                       shm->fname, shm->size);
     }
 
@@ -362,7 +362,7 @@ static int JK_METHOD jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
     }
 
     if( shm->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "shm.create(): shm created %#lx\n", shm->head );
 
     return JK_OK;
@@ -383,7 +383,7 @@ static int JK_METHOD jk2_shm_reset(jk_env_t *env, jk_shm_t *shm)
     shm->head->lastSlot = 1;
 
     if( shm->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.init() Reset %s %#lx\n",
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "shm.init() Reset %s %#lx\n",
                       shm->fname, shm->image);
 
     return JK_OK;
@@ -538,7 +538,7 @@ static int JK_METHOD jk2_shm_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_
     jk_shm_t *shm=(jk_shm_t *)bean->object;
 
     if( shm->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "shm.%d() \n", code);
     
     switch( code ) {

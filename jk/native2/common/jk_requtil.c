@@ -575,7 +575,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
             }
         } else {
             if( debug > 0 )
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                               "serialize.request() Add headerName %s\n", name);
             if (msg->appendString(env, msg, name)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -700,7 +700,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
 
     
     if( debug > 0  )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "serialize.request() serialized %s\n", s->req_uri);
 
     /*  msg->dump( env, msg, "Dump: " ); */

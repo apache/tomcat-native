@@ -202,7 +202,7 @@ int jk2_serialize_ping(jk_env_t *env, jk_msg_t *msg,
 static void jk2_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
 {
     if( ae->worker->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.close() %s\n",
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "endpoint.close() %s\n",
                       ae->worker->mbean->name);
 
     /*     ae->reuse = JK_FALSE; */
@@ -236,7 +236,7 @@ static int jk2_worker_ajp13_connect(jk_env_t *env, jk_endpoint_t *ae) {
     }
 
     if( ae->worker->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.connect() %s %s\n", ae->worker->channelName, channel->mbean->name );
     
     err=channel->open( env, channel, ae );
@@ -324,7 +324,7 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
                 return err;
             }
             if( worker->mbean->debug > 0 )
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                               "ajp13.service() connecting to endpoint \n");
         }
 
@@ -422,16 +422,16 @@ jk2_worker_ajp13_forwardSingleThread(jk_env_t *env, jk_worker_t *worker,
     int err;
 
     if( e->worker->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.forwardST() Before calling native channel %s\n",
                       e->worker->channel->mbean->name);
     err=e->worker->channel->send( env, e->worker->channel, e,
                                   e->request );
     if( e->worker->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.forwardST() After %d\n",err);
     
-    
+        
     return err;
 }
      
@@ -483,7 +483,7 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
     }
 
     if( w->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.service() %s\n", w->channelName);
 
     if( w->channel->beforeRequest != NULL ) {
@@ -502,7 +502,7 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
     }
 
     if( w->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.service() done %s\n", e->worker->mbean->name);
 
     if( w->channel->afterRequest != NULL ) {
@@ -547,7 +547,7 @@ jk2_worker_ajp13_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
         return rc;        
     }
     if( w->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.done() return to pool %s\n",
                       w->mbean->name );
     return JK_OK;
@@ -603,11 +603,11 @@ jk2_worker_ajp13_getEndpoint(jk_env_t *env,
         
     if( ajp13->mbean->debug > 0 ) {
         if (ret==JK_OK)
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.getEndpoint(): Created endpoint %s %s \n",
                       ajp13->mbean->name, jkb->name);
         else
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.getEndpoint(): endpoint creation %s %s failed\n",
                       ajp13->mbean->name, jkb->name);
     }
@@ -725,7 +725,7 @@ jk2_worker_ajp13_init(jk_env_t *env, jk_bean_t *bean )
         lb->mbean->setAttribute(env, lb->mbean, "worker",
                                 ajp13->mbean->name);
         if( ajp13->mbean->debug > 0 ) 
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "ajp13.init(): Adding %s to default lb\n", ajp13->mbean->localName);
     } else {
         for( i=0; i<size; i++ ) {
@@ -733,14 +733,14 @@ jk2_worker_ajp13_init(jk_env_t *env, jk_bean_t *bean )
             jk_worker_t *lb;
 
             if( ajp13->mbean->debug > 0 )
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                               "ajp13.init(): Adding %s to %s\n",
                               ajp13->mbean->localName, name);
             lb= env->getByName2( env, "lb", name );
             if( lb==NULL ) {
                 /* Create the lb group */
                 if( ajp13->mbean->debug > 0 ) 
-                    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                                   "ajp13.init(): Automatically creating the group %s\n",
                                   name);
                 env->createBean2( env, ajp13->workerEnv->mbean->pool, "lb", name );
@@ -771,7 +771,7 @@ jk2_worker_ajp13_destroy(jk_env_t *env, jk_bean_t *bean)
     int i;
 
     if( ajp13->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.destroy()\n");
     
     if( ajp13->endpointCache != NULL ) {

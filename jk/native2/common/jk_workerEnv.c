@@ -326,7 +326,7 @@ static int jk2_workerEnv_parentInit(jk_env_t *env, jk_workerEnv_t *wEnv)
     if( wEnv->shm != NULL && wEnv->shm->head != NULL ) {
         wEnv->shm->reset( env, wEnv->shm);
         if( wEnv->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() Reset shm\n" );
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, "workerEnv.init() Reset shm\n" );
     }
 	return JK_OK;
 }
@@ -378,7 +378,7 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
             jk_bean_t *jkb=env->createBean2(env, wEnv->pool, "lb", "lb" );
             w=jkb->object;
             if( wEnv->mbean->debug > 0 )
-                env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create default worker %s\n",  jkb->name );
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG, "workerEnv.init() create default worker %s\n",  jkb->name );
         }
         wEnv->defaultWorker= w;
     }
@@ -427,7 +427,7 @@ static int jk2_workerEnv_dispatch(jk_env_t *env, jk_workerEnv_t *wEnv,
     }
 
     if( wEnv->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "workerEnv.dispatch() Calling %d %s\n", handler->messageId,
                       handler->name);
     
@@ -470,7 +470,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
         handler=NULL;
 
         if( ep->worker->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "workerEnv.callbacks() %s\n",
                           ep->worker->channel->mbean->name);
         

@@ -423,7 +423,7 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     int didUpdate;
 
     if( w->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "status.service() %s %s\n",
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "status.service() %s %s\n",
                       JK_CHECK_NULL(uri), JK_CHECK_NULL(s->query_string));
 
     /* Generate the header */

@@ -103,14 +103,14 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
         ep->workerEnv->epStat->structSize=sizeof( jk_stat_t );
         ep->workerEnv->epStat->structCnt=ep->mbean->id + 1;
         if( ep->worker != NULL && ep->worker->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "SHM stats %d %#lx %#lx %s %s childId=%d\n", ep->mbean->id,
                           ep->workerEnv->epStat->data, stats,
                           ep->mbean->localName, ep->mbean->name, ep->workerEnv->childId);
     } else {
         stats = (jk_stat_t *)ep->mbean->pool->calloc( env, ep->mbean->pool, sizeof( jk_stat_t ) );
         if( ep->worker != NULL && ep->worker->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "Local stats %d %#lx %d\n", ep->mbean->id, ep->workerEnv->epStat, ep->workerEnv->childId );
     }
     

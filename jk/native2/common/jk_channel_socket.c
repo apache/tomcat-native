@@ -193,7 +193,7 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
     }
 
     if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channel_socket.init(): %s:%d \n", socketInfo->host, socketInfo->port );
     
     return rc;
@@ -304,7 +304,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
     /* Tries to connect to JServ (continues trying while error is EINTR) */
     do {
         if( ch->mbean->debug > 0 ) 
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "channelSocket.open() connect on %d\n",sock);
         
         ret = connect(sock,(struct sockaddr *)addr,
@@ -340,7 +340,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
     }   
 
     if( ch->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelSocket.connect(), sock = %d\n", sock);
 
     endpoint->sd=sock;
@@ -545,7 +545,7 @@ static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *ch,
     }
 
     if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelSocket.receive(): Received len=%d type=%d\n",
                       blen, (int)msg->buf[hlen]);
     return JK_OK;
@@ -608,7 +608,7 @@ static int JK_METHOD jk2_channel_socket_recvNew( jk_env_t *env, jk_channel_t *ch
     }
     
     if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelSocket.receive(): Received len=%d type=%d total=%d\n",
                       blen, (int)msg->buf[hlen], inBuf );
     return JK_OK;

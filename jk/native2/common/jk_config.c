@@ -199,7 +199,7 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     }
     
     if( cfg->mbean->debug > 0 )
-        env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s / %s / %#lx / %s = %s\n",
+        env->l->jkLog( env, env->l, JK_LOG_DEBUG, "config: set %s / %s / %#lx / %s = %s\n",
                        mbean->name, name, mbean, pname, val);
     
     if( strcmp( name, "name" ) == 0 ) {
@@ -234,7 +234,7 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
         /* 'file' property on ourself, avoid rec.
          */
         if( cfg->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "config.setAttribute() ignore %s %s %s\n", mbean->name, name, val );
         
         return JK_OK;
@@ -247,7 +247,7 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
                           "config.setAttribute() Error setting %s %s %s\n", mbean->name, name, val );
         }
         if( cfg->mbean->debug > 0 ) 
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "config.setAttribute() %d setting %s %s %s\n",
                           cfg->mbean->debug, mbean->name, name, val );
         return rc;
@@ -401,13 +401,13 @@ int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firs
     char *verString;
 
     if( cfg->mbean->debug > 5 ) 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                   "config.setConfig():  process %s\n", name );
     
     bean=env->getBean( env, name );
     if( bean==NULL ) {
         if( cfg->mbean->debug > 0 ) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                           "config.setConfig():  Creating %s\n", name );
         }
         bean=env->createBean( env, cfg->pool, name );

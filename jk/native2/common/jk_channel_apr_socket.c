@@ -289,7 +289,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     }
         
     if( ch->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelApr.open(), sock = %d\n", sock);
 
     /* store the channel information */

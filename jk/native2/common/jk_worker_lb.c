@@ -374,7 +374,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         }
 
         if( lb->mbean->debug > 0 ) 
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "lb.service() try %s\n", rec->mbean->name );
         
         if( rec->route==NULL ) {
@@ -446,7 +446,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
          * another worker... Lets try to do that.
          */
         if( lb->mbean->debug > 0 ) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                           "lb_worker.service() try other hosts\n");
         }
     }
@@ -512,7 +512,7 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         lb->lbWorkerMap->add(env, lb->lbWorkerMap, value, "");
 
         if( lb->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "lb_worker.setAttribute(): Adding to %s: %s\n", lb->mbean->localName, value);
 
         jk2_lb_refresh( env, lb );
@@ -542,7 +542,7 @@ static int JK_METHOD jk2_lb_init(jk_env_t *env, jk_bean_t *bean)
     /*     if( lb->workerEnv->shm != NULL && lb->workerEnv->shm->head != NULL)  */
     /*         jk2_lb_updateWorkers(env, lb, lb->workerEnv->shm); */
     if( lb->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, "lb.init() %s %d workers\n",
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "lb.init() %s %d workers\n",
                       lb->mbean->name, num_of_workers );
     
     return JK_OK;

@@ -126,7 +126,7 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
     numheaders = headers->size(env, headers);
     /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
     if( debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "service.head() %d %d %#lx\n", s->status,
                       numheaders, s->uriEnv);
     
@@ -137,7 +137,7 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
         val=s->pool->pstrdup( env, s->pool, val );
 
         if( debug > 0 ) 
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                           "service.head() %s: %s %d %d\n", name, val, h, headers->size( env, headers ));
 
         /* the cmp can also be avoided in we do this earlier and use
@@ -257,7 +257,7 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
     
     if(!s->response_started) {
         if( debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                           "service.write() default head\n");
         rc=s->head(env, s);
         if( rc != JK_OK) {
@@ -273,7 +273,7 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
                 
                 if( debug > 0 ) {
                     for(i = 0 ; i < t->nelts ; i++) {
-                        env->l->jkLog(env, env->l, JK_LOG_INFO, "OutHeaders %s: %s\n",
+                        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "OutHeaders %s: %s\n",
                                       elts[i].key, elts[i].val);
                     }
                 }

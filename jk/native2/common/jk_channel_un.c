@@ -160,7 +160,7 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
         strcpy(socketInfo->unix_addr.sun_path,  socketInfo->file );
 
         if( ch->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "channelUn.init(): create AF_UNIX  %s\n", socketInfo->file );
     } else {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "channelUn.init(): "
@@ -263,7 +263,7 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
         }
         
         if( ch->mbean->debug > 0 ) 
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "channelUn.open(): create unix socket %s %d\n", socketInfo->file, unixsock );
         
         if (connect(unixsock,(struct sockaddr *)&(socketInfo->unix_addr),
@@ -277,7 +277,7 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
     }
 
     if( ch->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelUn.open(): connect unix socket %d %s\n", unixsock, socketInfo->file );
     /* store the channel information */
     endpoint->sd=unixsock;
@@ -334,7 +334,7 @@ static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *ch,
         this_time = write(unixsock, (char *)b + sent , len - sent);
 
         if( ch->mbean->debug > 0 ) 
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "channel.apr:send() write() %d %d %s\n", this_time, errno,
                           strerror( errno));
         if(0 == this_time) {
@@ -436,7 +436,7 @@ static int JK_METHOD jk2_channel_un_recv( jk_env_t *env, jk_channel_t *ch,
     }
 
     if( ch->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "channelUn.receive(): Received len=%d type=%d\n",
                       blen, (int)msg->buf[hlen]);
     return JK_OK;

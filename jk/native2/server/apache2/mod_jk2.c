@@ -580,7 +580,7 @@ static int jk2_handler(request_rec *r)
     }
 
     if( uriEnv->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "mod_jk.handler() serving %s with %#lx %#lx %s\n",
                       uriEnv->mbean->localName, worker, worker->mbean, worker->mbean->localName );
 
@@ -590,7 +590,7 @@ static int jk2_handler(request_rec *r)
     if( rPool == NULL ) {
         rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
         if( uriEnv->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "mod_jk.handler(): new rpool %#lx\n", rPool );
     }
     
@@ -656,7 +656,7 @@ static int jk2_translate(request_rec *r)
      */
     if( uriEnv!= NULL && uriEnv->workerName != NULL) {
         if( uriEnv->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                           "PerDir mapping  %s=%s\n",r->uri, uriEnv->workerName);
         
         ap_set_module_config( r->request_config, &jk2_module, uriEnv );        
@@ -692,7 +692,7 @@ static int jk2_translate(request_rec *r)
     r->handler=JK_HANDLER;
 
     if( uriEnv->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "mod_jk.translate(): uriMap %s %s %#lx\n",
                       r->uri, uriEnv->workerName, uriEnv->worker);
 

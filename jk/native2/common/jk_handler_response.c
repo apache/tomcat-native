@@ -152,7 +152,7 @@ static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, void *target,
         jk_xlate_from_ascii(valueS, strlen(valueS));
         
         if(debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "handler.response() Header[%d] [%s] = [%s]\n", 
                           i, nameS, valueS);
 
@@ -169,7 +169,7 @@ static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, void *target,
 
     
     if(debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "handler.response(): status=%d headers=%d\n",
                       s->status, headerCount);
 
