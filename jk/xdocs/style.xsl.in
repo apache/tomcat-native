@@ -172,7 +172,7 @@
                       <tr>
                         <td bgcolor="#cccccc" width="10"/>
                         <td bgcolor="#cccccc" width="140">
-                          <a class="menu" href="#section_{generate-id(.)}">
+                          <a class="menu" href="#{@name}">
                             <xsl:value-of select="@name"/>
                           </a>
                         </td>
@@ -231,7 +231,7 @@
   </xsl:template>
 
   <xsl:template match="section">
-    <a name="section_{generate-id(.)}">
+    <a name="{@name}">
       <table border="0" cellspacing="0" cellpadding="0" width="100%">
         <tr>
           <td bgcolor="{$banner-bg}" class="section" valign="top" align="left">
@@ -249,7 +249,7 @@
   </xsl:template>
 
   <xsl:template match="subsection">
-    <a name="subsection_{generate-id(.)}">
+    <a name="sub_{@name}">
       <table border="0" cellspacing="0" cellpadding="0" width="100%">
         <tr>
           <td bgcolor="{$sub-banner-bg}" class="subsection" valign="top" align="left">
