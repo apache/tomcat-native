@@ -953,7 +953,10 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
                         
     s->head(env, s );
 
-    s->jkprintf(env, s, "<style>%s</style>\n", DEFAULT_CSS );
+    if( !(s->query_string != NULL &&
+        strncmp( s->query_string, "qry=", 4) == 0 ) ) {
+        s->jkprintf(env, s, "<style>%s</style>\n", DEFAULT_CSS );
+    }
 
     /** Process the query string.
      */
