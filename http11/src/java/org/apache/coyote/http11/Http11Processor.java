@@ -595,13 +595,15 @@ public class Http11Processor implements Processor, ActionHook {
         if ((threadRatio > 0.33) && (threadRatio <= 0.66)) {
             soTimeout = soTimeout / 2;
         } else if (threadRatio > 0.66) {
-            soTimeout = soTimeout / 5;
+            soTimeout = soTimeout / 3;
             keepAliveLeft = 1;
         }
 
         boolean keptAlive = false;
 
         while (started && !error && keepAlive) {
+
+            // Parsing the request header
             try {
                 if( !disableUploadTimeout && keptAlive && soTimeout > 0 ) {
                     socket.setSoTimeout(soTimeout);
@@ -617,8 +619,8 @@ public class Http11Processor implements Processor, ActionHook {
             } catch (IOException e) {
                 error = true;
                 break;
-            } catch (Exception e) {
-                log.debug("Error parsing HTTP request", e);
+            } catch (Throwable t) {
+                log.debug("Error parsing HTTP request", t);
                 // 400 - Bad Request
                 response.setStatus(400);
                 error = true;
@@ -688,6 +690,13 @@ public class Http11Processor implements Processor, ActionHook {
                 log.error("Error finishing response", t);
                 error = true;
             }
+
+            // If there was an error, make sure the request is counted as
+            // and error, and update the statistics counter
+            if (error) {
+                response.setStatus(500);
+            }
+            request.updateCounters();
 
             thrA.setCurrentStage(threadPool, "ended");
             rp.setStage(org.apache.coyote.Constants.STAGE_KEEPALIVE);
