@@ -1,8 +1,13 @@
 README for WebApp Library and Related Modules
 ---------------------------------------------
 
-How to build the WebApp module from CVS sources:
-------------------------------------------------
+How to obtain the WebApp and Apache Portable Runtime sources:
+-------------------------------------------------------------
+
+NOTE: If you downloaded a source distribution from our website or a
+mirror (the file is called webapp-module...src.tar.gz) you don't need
+to obtain any other file. Please follow this chapter only if you want
+to obtain the latest CVS version of the sources.
 
 Check out the module sources from CVS using the following commands:
 
@@ -23,6 +28,16 @@ When the APR sources are in place, we need to create the configure
 script, configure both APR and the WebApp module and compile:
 
     ./support/buildconf.sh
+
+To build the sources, now follow the steps in the next chapter.
+
+How to build the WebApp module from CVS sources:
+------------------------------------------------
+
+If you downloaded the CVS sources (as described above) or downloaded a
+source distribution of the WebApp module, now all you need to do is build
+the binary module for your platform. To do so, start by doing a:
+
     ./configure --with-apxs
     make
 
