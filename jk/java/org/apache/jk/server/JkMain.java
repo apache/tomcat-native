@@ -482,6 +482,7 @@ public class JkMain implements MBeanRegistration
         replacements.put("soTimeout", "channelSocket.soTimeout");
         replacements.put("timeout", "channelSocket.timeout");
         replacements.put("address", "channelSocket.address");            
+        replacements.put("tomcatAuthentication", "request.tomcatAuthentication");            
     }
 
     private void preProcessProperties() {
