@@ -11,6 +11,8 @@
     <property file="${user.home}/.build.properties"/>
 
     <property name="jk.build" location="${basedir}/build"/>
+    <property name="build.docs" location="${basedir}/build/docs"/>
+    <property name="source.docs" location="./xdocs"/>
 
     <!-- Compile options -->
     <property name="optimize" value="off" />
@@ -64,6 +66,14 @@
                    file="${jmx.jar}" />
         <available property="jdk14.detect" 
                    classname="java.nio.MappedByteBuffer" />
+        <!-- Check if we can find the XSLTProcessor class in the classpath -->
+        <available
+                   property="avail.xalan"
+                   classname="org.apache.xalan.xslt.Process">
+                   <!--
+                   <classpath refid="classpath"/>
+                    -->
+        </available>
     </target>
 
     <target name="cpath" depends="guess_catalina40,guess_catalina41" />
@@ -265,5 +275,51 @@
 
     <target name="clean-native">
     </target>
+
+  <!--
+    Check if we found Xalan in our classpath. We require Xalan because it has
+    some nifty functions that we use throughout the XSLT (and also because
+    we want people to eat our own food, right?)
+  -->
+  <target
+      name="docs.check"
+      depends="prepare"
+      description="Fail if we don't find Xalan"
+      unless="avail.xalan">
+ 
+    <!-- Just jump out -->
+    <fail message="Cannot find the Apache Xalan XSLT processor"/>
+  </target>                                                                     
+
+  <!--
+    Generate documentation from the XML sources.
+  -->
+  <target
+      name="docs"
+      depends="docs.check"
+      description="Create Documentation">
+ 
+    <!-- Create the directory where we're going to store the docs -->
+    <mkdir dir="${build.docs}"/>
+ 
+    <!-- Add some style to our otherwise  utterly ugly XML files -->
+    <style
+        basedir="${source.docs}"
+        destdir="${build.docs}"
+        style="${source.docs}/style.xsl"
+        includes="**.xml"/>
+ 
+    <!-- Copy all relevant (non processed) files from the sources -->
+    <copy
+        todir="${build.docs}" >
+      <fileset dir="${source.docs}">
+        <exclude name="**.xml"/>
+        <exclude name="**.xsl"/>
+        <exclude name="**.idx"/>
+        <exclude name="**/images/originals/**"/>
+      </fileset>
+    </copy>
+  </target>                                                                     
+
 
 </project>
