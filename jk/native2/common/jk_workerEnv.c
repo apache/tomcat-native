@@ -316,11 +316,14 @@ static int jk2_workerEnv_parentInit(jk_env_t *env, jk_workerEnv_t *wEnv)
         configFile=wEnv->config->file;
     }
 
-    if( wEnv->shm->mbean->disabled )
-        wEnv->shm=NULL;
-    
-    if( wEnv->shm != NULL && ! wEnv->shm->mbean->disabled ) {
-        wEnv->shm->init( env, wEnv->shm );
+    if (wEnv->shm != NULL && wEnv->shm->mbean->disabled)
+        wEnv->shm = NULL;
+
+    if (wEnv->shm != NULL) {
+        /* Disable the shm if the initialization fails
+        */
+        if (wEnv->shm->init(env, wEnv->shm) == JK_ERR)
+            wEnv->shm = NULL;
     }
     
     if( wEnv->shm != NULL && wEnv->shm->head != NULL ) {
@@ -328,7 +331,7 @@ static int jk2_workerEnv_parentInit(jk_env_t *env, jk_workerEnv_t *wEnv)
         if( wEnv->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_DEBUG, "workerEnv.init() Reset shm\n" );
     }
-	return JK_OK;
+    return JK_OK;
 }
 
 /** Normal child init
@@ -391,9 +394,15 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
 
     jk2_workerEnv_initWorkers( env, wEnv );
     jk2_workerEnv_initHandlers( env, wEnv );
+    
+    if (wEnv->shm != NULL && wEnv->shm->mbean->disabled)
+        wEnv->shm = NULL;
 
-    if( wEnv->shm != NULL && ! wEnv->shm->mbean->disabled ) {
-        wEnv->shm->init( env, wEnv->shm );
+    if (wEnv->shm != NULL) {
+        /* Disable the shm if the initialization fails
+        */
+        if (wEnv->shm->init(env, wEnv->shm) == JK_ERR)
+            wEnv->shm = NULL;
     }
 
     wEnv->epStat=NULL;
