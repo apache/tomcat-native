@@ -203,6 +203,9 @@ struct jk_msg {
     int len;
     int maxlen;
 
+    /* JK_TRUE if the message is sent/received by the server ( tomcat ).
+     */
+    int serverSide;
 };
 
 /* Temp */

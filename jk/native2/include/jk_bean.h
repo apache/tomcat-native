@@ -214,6 +214,13 @@ struct jk_bean {
 
     int (JK_METHOD *destroy)(struct jk_env *env, struct jk_bean *bean );
 
+    /** Called by the RPC-like protocol or the JNI bridge. Will unmarshal the arguments 
+     *  and dispatch to the real method. This is similar with 'dynamic invocation'/introspection/
+     *  'scripting support', etc. 
+     */
+    int (JK_METHOD *invoke)(struct jk_env *env, struct jk_bean *target,
+                            struct jk_endpoint *ae, int code, struct jk_msg *msg, int raw);
+
 };
     
 

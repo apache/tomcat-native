@@ -74,6 +74,11 @@ struct jk_worker;
 struct jk_endpoint;
 struct jk_channel;
 
+#define CH_OPEN 4
+#define CH_CLOSE 5
+#define CH_READ 6
+#define CH_WRITE 7
+    
 typedef struct jk_channel jk_channel_t;
 
 /**
@@ -116,8 +121,10 @@ struct jk_channel {
     
     struct jk_workerEnv *workerEnv;
     struct jk_worker *worker; 
-    char *workerName; 
+    char *workerName;
     
+    int serverSide;    
+
     /** Open the communication channel
      */
     int (JK_METHOD *open)(struct jk_env *env, jk_channel_t *_this, 
@@ -157,6 +164,10 @@ struct jk_channel {
    
     void *_privatePtr;
 };
+
+int JK_METHOD jk2_channel_invoke(struct jk_env *env, struct jk_bean *bean, struct jk_endpoint *ep, int code,
+                                 struct jk_msg *msg, int raw);
+
     
 #ifdef __cplusplus
 }
