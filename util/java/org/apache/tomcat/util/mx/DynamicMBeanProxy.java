@@ -79,7 +79,7 @@ public class DynamicMBeanProxy implements DynamicMBean {
     Object real;
     String name;
     
-    Method methods[];
+    Method methods[]=null;
 
     Hashtable attMap=new Hashtable();
 
@@ -166,7 +166,10 @@ public class DynamicMBeanProxy implements DynamicMBean {
      */
     public void setReal( Object realBean ) {
         real=realBean;
+    }
 
+    private void init() {
+        if( methods!=null ) return;
         methods = real.getClass().getMethods();
         for (int j = 0; j < methods.length; ++j) {
             String name=methods[j].getName();
@@ -213,7 +216,6 @@ public class DynamicMBeanProxy implements DynamicMBean {
                     continue;
                 invokeAttMap.put( name, methods[j]);
             }
-            
         }
     }
 
@@ -226,6 +228,9 @@ public class DynamicMBeanProxy implements DynamicMBean {
      *       
      */
     public MBeanInfo getMBeanInfo() {
+        if( methods==null ) {
+            init();
+        }
         try {
             MBeanAttributeInfo attributes[]=new MBeanAttributeInfo[attMap.size()];
 
@@ -272,6 +277,7 @@ public class DynamicMBeanProxy implements DynamicMBean {
     public Object getAttribute(String attribute)
         throws AttributeNotFoundException, MBeanException, ReflectionException
     {
+        if( methods==null ) init();
         Method m=(Method)getAttMap.get( attribute );
         if( m==null ) throw new AttributeNotFoundException(attribute);
 
@@ -291,6 +297,7 @@ public class DynamicMBeanProxy implements DynamicMBean {
     public void setAttribute(Attribute attribute)
         throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException
     {
+        if( methods==null ) init();
         Method m=(Method)setAttMap.get( attribute.getName() );
         if( m==null ) throw new AttributeNotFoundException(attribute.getName());
 
@@ -316,6 +323,7 @@ public class DynamicMBeanProxy implements DynamicMBean {
     public Object invoke(String method, Object[] arguments, String[] params)
         throws MBeanException, ReflectionException
     {
+        if( methods==null ) init();
         Method m=(Method)invokeAttMap.get( method );
         if( m==null ) return null;
 
