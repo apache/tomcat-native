@@ -199,9 +199,28 @@ Java_org_apache_jk_apr_AprImpl_shmAttach(JNIEnv *jniEnv, jobject _jthis, jlong p
     apr_status_t rv;
     apr_shm_t *aprShm;
     
+    rv = apr_shm_attach(&aprShm, fname, pool);
+
+    (*jniEnv)->ReleaseStringUTFChars(jniEnv, fileJ, fname);
+    
+    if (rv != APR_SUCCESS) {
+        return (jlong)NULL;
+    }
+    return (jlong)(long)(void *)aprShm;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmCreate(JNIEnv *jniEnv, jobject _jthis, jlong poolJ,
+                                         jlong size, jstring fileJ)
+{
+    char *fname=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, fileJ, 0);
+    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
+    apr_status_t rv;
+    apr_shm_t *aprShm;
+    
     apr_file_remove(fname, pool); /* ignore errors */
     
-    rv = apr_shm_attach(&aprShm, fname, pool);
+    rv = apr_shm_create(&aprShm, size, fname, pool);
 
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, fileJ, fname);
     
@@ -218,8 +237,10 @@ Java_org_apache_jk_apr_AprImpl_shmBaseaddrGet(JNIEnv *jniEnv, jobject _jthis, jl
 {
     apr_shm_t *shm=(apr_shm_t *)(void *)(long)shmP;
     void *sb_shared;
-    
+
+    fprintf(stderr, "GET BASE ADDR %p", shmP ); 
     sb_shared = apr_shm_baseaddr_get(shm);
+    fprintf(stderr, "GOt BASE ADDR %p", sb_shared ); 
     return (jlong)(long)(void *)sb_shared;
 }
      
@@ -251,6 +272,56 @@ Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *jniEnv, jobject _jthis, jlong 
     return apr_shm_destroy(shm);
 }
 
+
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmRead(JNIEnv *jniEnv, jobject _jthis, 
+                                       jlong poolJ, jlong mP, 
+                                       jbyteArray bufJ, jint from, jint cnt)
+{
+    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
+    char *mem=(char *)(void *)(long)mP;
+    jbyte *nbuf;
+    int rd;
+    jboolean iscommit;
+
+    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, bufJ, &iscommit);
+    if( ! nbuf ) {
+        return -1;
+    }
+
+    memcpy( nbuf + from, mem, cnt ); 
+    
+    (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
+    return (jint)cnt;
+}
+
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmWrite(JNIEnv *jniEnv, jobject _jthis, 
+                                       jlong poolJ, jlong mP, 
+                                       jbyteArray bufJ, jint from, jint cnt)
+{
+    apr_status_t status;
+    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
+    jbyte *nbuf;
+    char *mem=(char *)(void *)(long)mP;
+    int rd;
+    jboolean iscommit;
+
+    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, bufJ, &iscommit);
+    if( ! nbuf ) {
+        return -1;
+    }
+
+    /* write */
+    memcpy( mem, nbuf + from,  cnt ); 
+    
+    (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
+    return (jint)rd;
+}
+
+
+
+
 #else
 
 
@@ -261,6 +332,12 @@ Java_org_apache_jk_apr_AprImpl_shmAttach(JNIEnv *jniEnv, jobject _jthis, jlong p
     return (jlong)0;
 }
 
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmCreate(JNIEnv *jniEnv, jobject _jthis, jlong poolJ,
+                                         jstring fileJ)
+{
+        return (jlong)0;
+}
 
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_shmBaseaddrGet(JNIEnv *jniEnv, jobject _jthis, jlong pool,
@@ -296,7 +373,7 @@ Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *jniEnv, jobject _jthis, jlong 
 /* -------------------- interprocess mutexes -------------------- */
 
 JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_mutexCreate(JNIEnv *jniEnv, jobject _jthis, jlong pool,
+Java_org_apache_jk_apr_AprImpl_mutexCreate(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
                                            jstring fileJ,
                                            jint mechJ )
 {
@@ -309,6 +386,54 @@ Java_org_apache_jk_apr_AprImpl_mutexCreate(JNIEnv *jniEnv, jobject _jthis, jlong
     st=apr_proc_mutex_create( &mutex, fname, mech, pool );
     
     return (jlong)(long)(void *)mutex;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_mutexLock(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
+                                         jlong mutexP )
+{
+    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)(void *)(long)mutexP;
+    apr_status_t  st;
+    
+    st=apr_proc_mutex_lock( mutex );
+    
+    return (jlong)(long)st;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_mutexTryLock(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
+                                         jlong mutexP )
+{
+    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)(void *)(long)mutexP;
+    apr_status_t  st;
+    
+    st=apr_proc_mutex_trylock( mutex );
+    
+    return (jlong)(long)st;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_mutexUnLock(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
+                                         jlong mutexP )
+{
+    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)(void *)(long)mutexP;
+    apr_status_t  st;
+    
+    st=apr_proc_mutex_unlock( mutex );
+    
+    return (jlong)(long)st;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_mutexDestroy(JNIEnv *jniEnv, jobject _jthis, jlong poolP,
+                                            jlong mutexP )
+{
+    apr_proc_mutex_t *mutex=(apr_proc_mutex_t *)(void *)(long)mutexP;
+    apr_status_t  st;
+    
+    st=apr_proc_mutex_destroy( mutex );
+    
+    return (jlong)(long)st;
 }
 
 
