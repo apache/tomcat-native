@@ -72,7 +72,7 @@ extern "C" {
 struct jk_env;
 struct jk_mutex;
 
-#ifdef HAS_APR
+#if APR_HAS_THREADS
 #include "apr_thread_mutex.h"
 #elif defined( WIN32 )
 #include <windows.h>
@@ -118,7 +118,7 @@ struct jk_mutex {
     /* Private data */
     void *privateData;
 
-#ifdef APR_HAS_THREADS
+#if APR_HAS_THREADS
     apr_thread_mutex_t *threadMutex;
 #elif defined( WIN32 )
     CRITICAL_SECTION threadMutex;
