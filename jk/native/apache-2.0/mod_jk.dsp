@@ -43,8 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "APACHE_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\src\include" /I "$(APACHE2_HOME)\src\lib\apr\include" /I "$(APACHE2_HOME)\src\os\win32" /D "_WIN32" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "WIN32_LEAN_AND_MEAN" /D "_MBCS" /D "_USRDLL" /D "SHARED_MODULE" /FD /c
-# SUBTRACT CPP /Fr /YX
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\srclib\apr\include" /I "$(APACHE2_HOME)\srclib\apr-util\include" /I "$(APACHE2_HOME)\os\win32" /D "_WIN32" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "WIN32_LEAN_AND_MEAN" /D "_MBCS" /D "_USRDLL" /D "SHARED_MODULE" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -54,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 ApacheCore.lib aprlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /machine:I386 /libpath:"$(APACHE2_HOME)\src\lib\apr\Release" /libpath:"$(APACHE2_HOME)\src\CoreR"
+# ADD LINK32 libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /machine:I386 /libpath:"$(APACHE2_HOME)\Release" /libpath:"$(APACHE2_HOME)\srclib\apr\Release" /libpath:"$(APACHE2_HOME)\srclib\apr-util\Release"
 
 !ELSEIF  "$(CFG)" == "apache - Win32 Debug"
 
@@ -70,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "APACHE_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /ZI /Od /I "../common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\src\include" /I "$(APACHE2_HOME)\src\lib\apr\include" /I "$(APACHE2_HOME)\src\os\win32" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SHARED_MODULE" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\srclib\apr\include" /I "$(APACHE2_HOME)\srclib\apr-util\include" /I "$(APACHE2_HOME)\os\win32" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SHARED_MODULE" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -80,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 ApacheCore.lib aprlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept /libpath:"$(APACHE2_HOME)\src\lib\apr\Debug" /libpath:"$(APACHE2_HOME)\src\CoreD"
+# ADD LINK32 libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept /libpath:"$(APACHE2_HOME)/Debug" /libpath:"$(APACHE2_HOME)\srclib\apr\Debug" /libpath:"$(APACHE2_HOME)\srclib\apr-util\Debug"
 
 !ENDIF 
 
@@ -105,7 +104,23 @@ SOURCE=..\common\jk_ajp13_worker.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_ajp14.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_ajp14_worker.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_ajp_common.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_connect.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_context.c
 # End Source File
 # Begin Source File
 
@@ -118,6 +133,10 @@ SOURCE=..\common\jk_lb_worker.c
 # Begin Source File
 
 SOURCE=..\common\jk_map.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_md5.c
 # End Source File
 # Begin Source File
 
@@ -148,27 +167,6 @@ SOURCE=..\common\jk_worker.c
 SOURCE=.\mod_jk.c
 # End Source File
 # End Group
-
-SOURCE=..\common\jk_ajp14.c
-# End Source File
-# End Group
-
-SOURCE=..\common\jk_ajp14_worker.c
-# End Source File
-# End Group
-
-SOURCE=..\common\jk_md5.c
-# End Source File
-# End Group
-
-SOURCE=..\common\jk_context.c
-# End Source File
-# End Group
-
-SOURCE=..\common\jk_ajp_common.c
-# End Source File
-# End Group
-
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
@@ -186,11 +184,27 @@ SOURCE=..\common\jk_ajp13_worker.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_ajp14.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_ajp14_worker.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_ajp23_worker.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_ajp_common.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_connect.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_context.h
 # End Source File
 # Begin Source File
 
@@ -211,6 +225,10 @@ SOURCE=..\common\jk_logger.h
 # Begin Source File
 
 SOURCE=..\common\jk_map.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_md5.h
 # End Source File
 # Begin Source File
 
@@ -245,27 +263,6 @@ SOURCE=..\common\jk_util.h
 SOURCE=..\common\jk_worker.h
 # End Source File
 # End Group
-
-SOURCE=..\common\jk_ajp14.h
-# End Source File
-# End Group
-
-SOURCE=..\common\jk_ajp14_worker.h
-# End Source File
-# End Group
-
-SOURCE=..\common\jk_md5.h
-# End Source File
-# End Group
-
-SOURCE=..\common\jk_context.h
-# End Source File
-# End Group
-
-SOURCE=..\common\jk_ajp_common.h
-# End Source File
-# End Group
-
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
