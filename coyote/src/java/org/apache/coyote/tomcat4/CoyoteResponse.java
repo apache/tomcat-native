@@ -320,6 +320,8 @@ public class CoyoteResponse
             facade = null;
         }
 
+        writer.recycle();
+
     }
 
 

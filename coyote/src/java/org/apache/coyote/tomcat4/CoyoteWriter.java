@@ -96,6 +96,17 @@ final class CoyoteWriter
     }
 
 
+    // -------------------------------------------------------- Package Methods
+
+
+    /**
+     * Recycle.
+     */
+    void recycle() {
+        error = false;
+    }
+
+
     // --------------------------------------------------------- Writer Methods
 
 
