@@ -149,12 +149,12 @@ static void jk2_map_aprtable_clear(jk_env_t *env, jk_map_t *m)
 
 /* Not used yet */
 int  jk2_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
-                             void **result,
-                             char *type, char *name)
+                              jk_bean_t *result,
+                              char *type, char *name)
 {
     jk_map_t *_this=(jk_map_t *)pool->calloc( env, pool, sizeof(jk_map_t));
 
-    *result=_this;
+    result->object=_this;
     
     _this->get=jk2_map_aprtable_get;
     _this->put=jk2_map_aprtable_put;

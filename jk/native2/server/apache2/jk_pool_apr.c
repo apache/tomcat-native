@@ -80,12 +80,6 @@
 
 int jk2_pool_apr_create( jk_env_t *env, jk_pool_t **newPool, jk_pool_t *parent,
                         apr_pool_t *aprPool );
-
-int JK_METHOD jk2_pool_apr_factory(jk_env_t *env,
-                                  jk_pool_t *pool,
-                                  void **result,
-                                  char *type, char *name);
-
 /** Nothing - apache will take care ??
  */
 static void jk2_pool_apr_close(jk_env_t *env, jk_pool_t *p)
@@ -205,12 +199,12 @@ static void jk2_pool_apr_initMethods(jk_env_t *env,  jk_pool_t *_this )
 
 /* Not used yet */
 int  jk2_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,
-                         void **result,
-                         char *type, char *name)
+                          jk_bean_t *result,
+                          char *type, char *name)
 {
     jk_pool_t *_this=(jk_pool_t *)calloc( 1, sizeof(jk_pool_t));
 
-    *result=_this;
+    result->object=_this;
     
     return JK_TRUE;
 }

@@ -73,22 +73,21 @@
 #include "jk_requtil.h"
 
 
-int jk2_service_apache2_factory(jk_env_t *env, jk_pool_t *pool,
-                               void **result, char *type, char *name);
+int jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s);
 
 int jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
-                              void **result, char *type, char *name);
+                              jk_bean_t *result, char *type, char *name);
 
 int  jk2_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,
-                         void **result, char *type, char *name);
+                          jk_bean_t *result, char *type, char *name);
 
 int  jk2_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
-                             void **result,
+                             jk_bean_t *result,
                              char *type, char *name);
 
 /* Temp. - we should use the factory ( we may need few changes ) */
 int jk2_pool_apr_create( jk_env_t *env, jk_pool_t **newPool, jk_pool_t *parent,
-                        apr_pool_t *aprPool);
+                         apr_pool_t *aprPool);
 
 
 

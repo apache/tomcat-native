@@ -87,10 +87,6 @@
 
 #define HUGE_BUFFER_SIZE (8*1024)
 
-int JK_METHOD jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
-                                        void **result,
-                                        char *type, char *name);
-
 
 static int jk2_logger_apache2_log(jk_env_t *env, jk_logger_t *l,                                 
                                  int level,
@@ -100,8 +96,7 @@ static int jk2_logger_apache2_log(jk_env_t *env, jk_logger_t *l,
 }
 
 
-static int jk2_logger_apache2_open(jk_env_t *env, jk_logger_t *_this,
-                                  jk_map_t *properties )
+static int jk2_logger_apache2_init(jk_env_t *env, jk_logger_t *_this)
 {
     return JK_TRUE;
 }
@@ -168,11 +163,8 @@ static int jk2_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
 }
 
 
-int jk2_logger_apache2_factory(jk_env_t *env,
-                              jk_pool_t *pool,
-                              void **result,
-                              char *type,
-                              char *name)
+int jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
+                              char *type, char *name)
 {
     jk_logger_t *l = (jk_logger_t *)pool->calloc(env, pool,
                                                  sizeof(jk_logger_t));
@@ -183,12 +175,13 @@ int jk2_logger_apache2_factory(jk_env_t *env,
     
     l->log = jk2_logger_apache2_log;
     l->logger_private = NULL;
-    l->open =jk2_logger_apache2_open;
+    l->init =jk2_logger_apache2_init;
     l->jkLog = jk2_logger_apache2_jkLog;
 
     l->level=JK_LOG_ERROR_LEVEL;
     
-    *result=(void *)l;
+    result->object=(void *)l;
+    l->mbean=result;
 
     return JK_TRUE;
 }
