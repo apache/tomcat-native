@@ -6,7 +6,7 @@ CRTCMOD MODULE(MOD_JK/MOD_JK)                                 +
         OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -20,7 +20,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP_COM)                                +
         SYSIFCOPT(*IFSIO)                   	     +
         LANGLVL(*ANSI)                               +
         TGTCCSID(*JOB)                               +
-        OPTION(*LOGMSG )                             +
+        OPTION(*LOGMSG)                              +
         TERASPACE(*YES) 							 +
         STGMDL(*TERASPACE)							 +
         INCDIR('/home/apache/jk/native/common'       +
@@ -34,7 +34,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP12_W)                                  +
         SYSIFCOPT(*IFSIO)                              +
         LANGLVL(*ANSI)                                 +
         TGTCCSID(*JOB)                                 +
-        OPTION(*LOGMSG )                               +
+        OPTION(*LOGMSG)                                +
         TERASPACE(*YES) 							   +
         STGMDL(*TERASPACE)							   +
         INCDIR('/home/apache/jk/native/common'         +
@@ -48,7 +48,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13)                                 +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -62,7 +62,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13_W)                                  +
         SYSIFCOPT(*IFSIO)                              +
         LANGLVL(*ANSI)                                 +
         TGTCCSID(*JOB)                                 +
-        OPTION(*LOGMSG )                               +
+        OPTION(*LOGMSG)                                +
         TERASPACE(*YES) 							   +
         STGMDL(*TERASPACE)							   +
         INCDIR('/home/apache/jk/native/common'         +
@@ -76,7 +76,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14)                     +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -90,7 +90,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14_W)                                  +
         SYSIFCOPT(*IFSIO)                              +
         LANGLVL(*ANSI)                                 +
         TGTCCSID(*JOB)                                 +
-        OPTION(*LOGMSG )                               +
+        OPTION(*LOGMSG)                                +
         TERASPACE(*YES) 							   +
         STGMDL(*TERASPACE)							   +
         INCDIR('/home/apache/jk/native/common'         +
@@ -104,7 +104,7 @@ CRTCMOD MODULE(MOD_JK/JK_CONNECT)                               +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -118,7 +118,7 @@ CRTCMOD MODULE(MOD_JK/JK_CONTEXT)                               +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -146,7 +146,7 @@ CRTCMOD MODULE(MOD_JK/JK_LB_WORK)                               +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -160,7 +160,7 @@ CRTCMOD MODULE(MOD_JK/JK_MAP)                       +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -174,7 +174,7 @@ CRTCMOD MODULE(MOD_JK/JK_MD5)                             +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -188,7 +188,7 @@ CRTCMOD MODULE(MOD_JK/JK_MSG_BUF)                              +
         SYSIFCOPT(*IFSIO)                          +
         LANGLVL(*ANSI)                             +
         TGTCCSID(*JOB)                             +
-        OPTION(*LOGMSG )                           +
+        OPTION(*LOGMSG)                            +
         TERASPACE(*YES) 						   +
         STGMDL(*TERASPACE)						   +
         INCDIR('/home/apache/jk/native/common'     +
@@ -202,7 +202,7 @@ CRTCMOD MODULE(MOD_JK/JK_POOL)                             +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -216,7 +216,7 @@ CRTCMOD MODULE(MOD_JK/JK_SOCKBUF)                             +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -230,7 +230,7 @@ CRTCMOD MODULE(MOD_JK/JK_URI_W_M)                                    +
         SYSIFCOPT(*IFSIO)                                +
         LANGLVL(*ANSI)                                   +
         TGTCCSID(*JOB)                                   +
-        OPTION(*LOGMSG )                                 +
+        OPTION(*LOGMSG)                                  +
         TERASPACE(*YES) 							     +
         STGMDL(*TERASPACE)							     +
         INCDIR('/home/apache/jk/native/common'           +
@@ -244,7 +244,7 @@ CRTCMOD MODULE(MOD_JK/JK_UTIL)                             +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
@@ -258,7 +258,7 @@ CRTCMOD MODULE(MOD_JK/JK_WORKER)                    +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
-        OPTION(*LOGMSG )                            +
+        OPTION(*LOGMSG)                             +
         TERASPACE(*YES) 							+
         STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
