@@ -1,0 +1,10 @@
+#
+# sample build.properties for ajp connector.
+# edit to taste...
+#
+# $Id$
+#
+
+catalina.jar = ../../jakarta-tomcat-4.0/build/server/lib/catalina.jar
+servlet.jar = ../../jakarta-servletapi-4/dist/lib/servlet.jar
+tomcat-util.jar = ../util/build/lib/tomcat-util.jar
