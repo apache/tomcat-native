@@ -220,7 +220,7 @@ Note: The above steps assume that you downloaded the Apache source and placed it
 <subsection name="Apache 2.0 complains about incorrect module version">
 <p>
 Since Apache 2.0 API still change often, the Apache 2.0 teams decide to put in headers of compiled modules the 
-Apache 2.0 version used to compile the module. 
+Apache 2.0 version used to compile the module. This check is called Magic Module Number bump.
 </p>
 <p>
 At start time Apache 2.0 check that version in modules headers and stop if it detect that a module was compiled 
