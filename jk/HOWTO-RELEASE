@@ -15,7 +15,6 @@ and replace it with the new version.  These are the docs I found which
 had to be updated:
 
 xdocs/jk/aphowto.xml
-xdocs/jk/domhowto.xml
 xdocs/jk/quickhowto.xml
 xdocs/jk/workershowto.xml
 
