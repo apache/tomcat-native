@@ -223,6 +223,7 @@
         <includepath location="${native.dir}/include" />
 
         <sysincludepath location="${apache2.home}/include" />
+        <sysincludepath location="${apache2.home}/include/httpd" />
 	<sysincludepath location="${apr.include}" />
 	<sysincludepath location="${apr-util.include}" />
 
@@ -267,7 +268,8 @@
   </target>
   
   <target name="apache20" depends="init" if="apache2.detect">
-    <property name="apr.include" location="${apache2.home}/include" />
+    <property name="apache2.include" value="${apache2.home}/include" />
+    <property name="apr.include" location="${apache2.include}" />
     <mkdir dir="${build.dir}/apache2${arch.prefix}" />
     <so sofile="mod_jk2" 
 	buildDir="${build.dir}/apache2${arch.prefix}"
@@ -297,7 +299,7 @@
       </src>
       <includes>
 	<include name="${native.dir}/common" />
-	<include name="${apache2.home}/include" />
+	<include name="${apache2.include}" />
 	<include name="${apr.include}" />
 	<include name="${apr-util.include}" />
 	<include name="${native.dir}/include" />
@@ -352,6 +354,7 @@
 	<include name="${java.home}/../include" />
 	<include name="${build.compiler.base}/include" />
 	<include name="${apr.include}" />
+	<include name="${apr.include}/httpd" />
         
         <!-- Platform specific includes -->
 	<include name="${novellndk.home}/include/nlm" if="netware" />
