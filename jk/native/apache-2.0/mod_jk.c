@@ -56,7 +56,7 @@
 
 /* deprecated with apr 0.9.3 */
 
-/* 
+/*
    The latest Apache 2.0.47 for iSeries didn't export apr_filepath_name_get
    but apr_filename_of_pathname, even if includes seems right and the APR
    in use is 0.9.4
@@ -104,7 +104,7 @@
 
 /*
  * If you are not using SSL, comment out the following line. It will make
- * apache run faster.  
+ * apache run faster.
  *
  * Personally, I (DM), think this may be a lie.
  */
@@ -296,7 +296,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
             if (rv = ap_change_request_body_xlate(p->r, 65535, 65535)) {        /* turn off request body translation */
                 ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
                              NULL,
-                             "mod_jk: Error on ap_change_request_body_xlate, rc=%d \n",
+                             "mod_jk: Error on ap_change_request_body_xlate, rc=%d",
                              rv);
                 return JK_FALSE;
             }
@@ -350,7 +350,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
             if (!p->response_started) {
                 if (JK_IS_DEBUG_LEVEL(main_log))
                     jk_log(main_log, JK_LOG_DEBUG,
-                           "Write without start, starting with defaults\n");
+                           "Write without start, starting with defaults");
                 if (!s->start_response(s, 200, NULL, NULL, NULL, 0)) {
                     return JK_FALSE;
                 }
@@ -366,7 +366,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
             if (rc) {
                 ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
                              NULL,
-                             "mod_jk: Error on ap_change_response_body_xlate, rc=%d \n",
+                             "mod_jk: Error on ap_change_response_body_xlate, rc=%d",
                              rc);
                 return JK_FALSE;
             }
@@ -377,7 +377,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
                 size_t toSend = (ll > CHUNK_SIZE) ? CHUNK_SIZE : ll;
                 r = ap_rwrite((const char *)bb, toSend, p->r);
                 jk_log(main_log, JK_LOG_DEBUG,
-                       "writing %ld (%ld) out of %ld \n", toSend, r, ll);
+                       "writing %ld (%ld) out of %ld", toSend, r, ll);
                 ll -= CHUNK_SIZE;
                 bb += CHUNK_SIZE;
 
@@ -393,7 +393,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
 #ifndef AS400
             if (ap_rflush(p->r) != APR_SUCCESS) {
                 ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
-                             NULL, "mod_jk: Error flushing \n");
+                             NULL, "mod_jk: Error flushing");
                 return JK_FALSE;
             }
 #endif
@@ -480,7 +480,7 @@ static int init_ws_service(apache_private_data_t * private_data,
      */
     if (JK_IS_DEBUG_LEVEL(conf->log))
         jk_log(conf->log, JK_LOG_DEBUG,
-               "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d claport=%d\n",
+               "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d claport=%d",
                ap_get_server_port(r),
                ap_get_server_name(r) != NULL ? ap_get_server_name(r) : "",
                r->hostname != NULL ? r->hostname : "",
@@ -556,7 +556,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->is_ssl = JK_FALSE;
     s->ssl_cert = NULL;
     s->ssl_cert_len = 0;
-    s->ssl_cipher = NULL;       /* required by Servlet 2.3 Api, 
+    s->ssl_cipher = NULL;       /* required by Servlet 2.3 Api,
                                    allready in original ajp13 */
     s->ssl_session = NULL;
     s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
@@ -730,7 +730,7 @@ static const char *jk_mount_context(cmd_parms * cmd,
     else {
         if (worker == NULL)
             return "JkMount needs a path when not defined in a location";
-        else 
+        else
             return "JkMount can not have a path when defined in a location";
     }
 
@@ -773,7 +773,7 @@ static const char *jk_unmount_context(cmd_parms * cmd,
     else {
         if (worker == NULL)
             return "JkUnMount needs a path when not defined in a location";
-        else 
+        else
             return "JkUnMount can not have a path when defined in a location";
     }
 
@@ -1244,8 +1244,8 @@ static apr_array_header_t *parse_request_log_string(apr_pool_t * p,
  * JkRequestLogFormat format string
  *
  * %b - Bytes sent, excluding HTTP headers. In CLF format
- * %B - Bytes sent, excluding HTTP headers.             
- * %H - The request protocol              
+ * %B - Bytes sent, excluding HTTP headers.
+ * %H - The request protocol
  * %m - The request method
  * %p - The canonical Port of the server serving the request
  * %q - The query string (prepended with a ? if a query string exists,
@@ -1405,7 +1405,7 @@ static const char *jk_set_key_size_indicator(cmd_parms * cmd,
  *  ForwardURICompat         => Forward URI normally, less spec compliant but mod_rewrite compatible (old TC)
  *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)
  *  ForwardURIEscaped        => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
- *  ForwardDirectories       => Forward all directory requests with no index files to Tomcat 
+ *  ForwardDirectories       => Forward all directory requests with no index files to Tomcat
  */
 
 const char *jk_set_options(cmd_parms * cmd, void *dummy, const char *line)
@@ -1504,7 +1504,7 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
-    
+
     if (jk_map_read_property(conf->worker_properties, line) == JK_FALSE)
         return apr_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line);
 
@@ -1666,7 +1666,7 @@ static int jk_handler(request_rec * r)
     JK_TRACE_ENTER(xconf->log);
     if (apr_table_get(r->subprocess_env, "no-jk")) {
         jk_log(xconf->log, JK_LOG_DEBUG,
-               "Into handler no-jk env var detected for uri=%s, declined\n",
+               "Into handler no-jk env var detected for uri=%s, declined",
                r->uri);
 
         JK_TRACE_EXIT(xconf->log);
@@ -1687,19 +1687,19 @@ static int jk_handler(request_rec * r)
     }
 
     if (worker_name == NULL) {
-        /* we may be here because of a manual directive ( that overrides 
+        /* we may be here because of a manual directive ( that overrides
            translate and
            sets the handler directly ). We still need to know the worker.
          */
         if (worker_env.num_of_workers == 1) {
-          /** We have a single worker ( the common case ). 
-              ( lb is a bit special, it should count as a single worker but 
+          /** We have a single worker ( the common case ).
+              ( lb is a bit special, it should count as a single worker but
               I'm not sure how ). We also have a manual config directive that
               explicitely give control to us. */
             worker_name = worker_env.first_worker;
             if (JK_IS_DEBUG_LEVEL(xconf->log))
                 jk_log(xconf->log, JK_LOG_DEBUG,
-                       "Manual configuration for %s %s %d\n",
+                       "Manual configuration for %s %s %d",
                        r->uri, worker_env.first_worker,
                        worker_env.num_of_workers);
         }
@@ -1709,14 +1709,14 @@ static int jk_handler(request_rec * r)
                 worker_name = worker_env.first_worker;
             if (JK_IS_DEBUG_LEVEL(xconf->log))
                 jk_log(xconf->log, JK_LOG_DEBUG,
-                       "Manual configuration for %s %d\n",
+                       "Manual configuration for %s %d",
                        r->uri, worker_env.first_worker);
         }
     }
 
     if (JK_IS_DEBUG_LEVEL(xconf->log))
        jk_log(xconf->log, JK_LOG_DEBUG, "Into handler %s worker=%s"
-              " r->proxyreq=%d\n",
+              " r->proxyreq=%d",
               r->handler, worker_name, r->proxyreq);
 
     conf = (jk_server_conf_t *) ap_get_module_config(r->server->module_config,
@@ -1725,7 +1725,7 @@ static int jk_handler(request_rec * r)
     /* If this is a proxy request, we'll notify an error */
     if (r->proxyreq) {
         jk_log(xconf->log, JK_LOG_INFO, "Proxy request for worker=%s"
-              " is not allowed\n",
+              " is not allowed",
               worker_name);
         JK_TRACE_EXIT(xconf->log);
         return HTTP_INTERNAL_SERVER_ERROR;
@@ -1751,7 +1751,7 @@ static int jk_handler(request_rec * r)
         /* If the remote client has aborted, just ignore the request */
         if (r->connection->aborted) {
             jk_log(xconf->log, JK_LOG_INFO, "Client connection aborted for"
-                   " worker=%s\n",
+                   " worker=%s",
                    worker_name);
             JK_TRACE_EXIT(xconf->log);
             return OK;
@@ -1785,8 +1785,8 @@ static int jk_handler(request_rec * r)
             if (init_ws_service(&private_data, &s, conf)) {
                 jk_endpoint_t *end = NULL;
 
-                /* Use per/thread pool ( or "context" ) to reuse the 
-                   endpoint. It's a bit faster, but I don't know 
+                /* Use per/thread pool ( or "context" ) to reuse the
+                   endpoint. It's a bit faster, but I don't know
                    how to deal with load balancing - but it's usefull for JNI
                  */
 
@@ -1818,17 +1818,17 @@ static int jk_handler(request_rec * r)
                 }
                 else {            /* this means we couldn't get an endpoint */
                     jk_log(xconf->log, JK_LOG_ERROR, "Could not get endpoint"
-                           " for worker=%s\n",
+                           " for worker=%s",
                            worker_name);
                     rc = 0;       /* just to make sure that we know we've failed */
                 }
             }
             else {
                 jk_log(xconf->log, JK_LOG_ERROR, "Could not init service"
-                       " for worker=%s\n",
+                       " for worker=%s",
                        worker_name);
                 JK_TRACE_EXIT(xconf->log);
-                return HTTP_INTERNAL_SERVER_ERROR;                
+                return HTTP_INTERNAL_SERVER_ERROR;
             }
 #ifndef NO_GETTIMEOFDAY
             if (conf->format != NULL) {
@@ -1854,14 +1854,14 @@ static int jk_handler(request_rec * r)
                    let apache handle the error code */
                 if (!r->sent_bodyct && r->status >= HTTP_BAD_REQUEST) {
                     jk_log(xconf->log, JK_LOG_INFO, "No body with status=%d"
-                           " for worker=%s\n",
+                           " for worker=%s",
                            r->status, worker_name);
                     JK_TRACE_EXIT(xconf->log);
                     return r->status;
                 }
                 if (JK_IS_DEBUG_LEVEL(xconf->log))
                     jk_log(xconf->log, JK_LOG_DEBUG, "Service finished"
-                           " with status=%d for worker=%s\n",
+                           " with status=%d for worker=%s",
                            r->status, worker_name);
                 JK_TRACE_EXIT(xconf->log);
                 return OK;      /* NOT r->status, even if it has changed. */
@@ -1869,14 +1869,14 @@ static int jk_handler(request_rec * r)
             else if (rc == JK_CLIENT_ERROR) {
                 r->connection->aborted = 1;
                 jk_log(xconf->log, JK_LOG_INFO, "Aborting connection"
-                       " for worker=%s\n",
+                       " for worker=%s",
                        worker_name);
                 JK_TRACE_EXIT(xconf->log);
                 return OK;
             }
             else {
                 jk_log(xconf->log, JK_LOG_INFO, "Service error=%d"
-                       " for worker=%s\n",
+                       " for worker=%s",
                        rc, worker_name);
                 JK_TRACE_EXIT(xconf->log);
                 return HTTP_INTERNAL_SERVER_ERROR;
@@ -1884,7 +1884,7 @@ static int jk_handler(request_rec * r)
         }
         else {
             jk_log(xconf->log, JK_LOG_INFO, "Could not find a worker"
-                   " for worker name=%s\n",
+                   " for worker name=%s",
                    worker_name);
             JK_TRACE_EXIT(xconf->log);
             return HTTP_INTERNAL_SERVER_ERROR;
@@ -2082,9 +2082,11 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
                     apr_strerror(status, error, 254);
                     ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
                                  NULL,
-                                 "mod_jk: jk_log_to_file %s failed: %s\n",
+                                 "mod_jk: jk_log_to_file %s failed: %s",
                                  what, error);
                 }
+                else
+                    apr_file_putc('\n', p->jklogfp);
                 rv = apr_global_mutex_unlock(jk_log_lock);
                 if (rv != APR_SUCCESS) {
                     ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, NULL,
@@ -2205,21 +2207,21 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 #if APR_HAS_THREADS
 #ifndef AS400
     ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads);
-#endif    
+#endif
 #endif
     if (mpm_threads > 0)
         jk_set_worker_def_cache_size(mpm_threads);
     if (JK_IS_DEBUG_LEVEL(conf->log))
-        jk_log(conf->log, JK_LOG_DEBUG, "Initialized %s\n", JK_EXPOSED_VERSION);
+        jk_log(conf->log, JK_LOG_DEBUG, "Initialized %s", JK_EXPOSED_VERSION);
     JK_TRACE_EXIT(conf->log);
 }
 
-/** Initialize jk, using worker.properties. 
-    We also use apache commands ( JkWorker, etc), but this use is 
+/** Initialize jk, using worker.properties.
+    We also use apache commands ( JkWorker, etc), but this use is
     deprecated, as we'll try to concentrate all config in
     workers.properties, urimap.properties, and ajp14 autoconf.
-    
-    Apache config will only be used for manual override, using 
+
+    Apache config will only be used for manual override, using
     SetHandler and normal apache directives ( but minimal jk-specific
     stuff )
 */
@@ -2230,7 +2232,8 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     jk_map_t *init_map = conf->worker_properties;
 
     if (!uri_worker_map_alloc(&(conf->uw_map),
-                              conf->uri_to_context, conf->log)) {
+                              conf->uri_to_context,
+                              conf->log)) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, pconf, "Memory error");
     }
 
@@ -2239,8 +2242,8 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
         if (jk_map_size(init_map) == 0) {
             ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO,
                          APLOG_EMERG, NULL,
-                         "No worker file and no worker options in httpd.conf \n"
-                         "use JkWorkerFile to set workers\n");
+                         "No worker file and no worker options in httpd.conf"
+                         "use JkWorkerFile to set workers");
             return;
         }
     }
@@ -2261,16 +2264,6 @@ static int jk_post_config(apr_pool_t * pconf,
 {
     apr_status_t rv;
 
-    if (!s->is_virtual) {
-        jk_server_conf_t *conf =
-            (jk_server_conf_t *) ap_get_module_config(s->module_config,
-                                                      &jk_module);
-        if (!conf->was_initialized) {
-            conf->was_initialized = JK_TRUE;
-            init_jk(pconf, conf, s);
-        }
-    }
-
     /* create the jk log lockfiles in the parent */
     if ((rv = apr_global_mutex_create(&jk_log_lock, NULL,
                                       APR_LOCK_DEFAULT,
@@ -2290,20 +2283,28 @@ static int jk_post_config(apr_pool_t * pconf,
     }
 #endif
 
-    /* step through the servers and
-     * - open each jk logfile
-     */
-    for (; s; s = s->next) {
-        if (open_jklog(s, pconf))
-            return HTTP_INTERNAL_SERVER_ERROR;
-
+    if (!s->is_virtual) {
+        jk_server_conf_t *conf =
+            (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                      &jk_module);
+        if (!conf->was_initialized) {
+            server_rec *srv = s;
+            conf->was_initialized = JK_TRUE;
+            /* step through the servers and open each jk logfile.
+             */
+            for (; srv; srv = srv->next) {
+                if (open_jklog(srv, pconf))
+                    return HTTP_INTERNAL_SERVER_ERROR;
+            }
+            init_jk(pconf, conf, s);
+        }
     }
 
     return OK;
 }
 
 /** Use the internal mod_jk mappings to find if this is a request for
- *    tomcat and what worker to use. 
+ *    tomcat and what worker to use.
  */
 static int jk_translate(request_rec * r)
 {
@@ -2322,14 +2323,14 @@ static int jk_translate(request_rec * r)
                  */
                 if (JK_IS_DEBUG_LEVEL(conf->log))
                     jk_log(conf->log, JK_LOG_DEBUG,
-                           "Manually mapped, no need to call uri_to_worker\n");
+                           "Manually mapped, no need to call uri_to_worker");
                 return DECLINED;
             }
 
             if (apr_table_get(r->subprocess_env, "no-jk")) {
                 if (JK_IS_DEBUG_LEVEL(conf->log))
                     jk_log(conf->log, JK_LOG_DEBUG,
-                           "Into translate no-jk env var detected for uri=%s, declined\n",
+                           "Into translate no-jk env var detected for uri=%s, declined",
                            r->uri);
 
                 return DECLINED;
@@ -2364,7 +2365,7 @@ static int jk_translate(request_rec * r)
                 if (finfo.filetype != APR_REG) {
                     if (JK_IS_DEBUG_LEVEL(conf->log))
                         jk_log(conf->log, JK_LOG_DEBUG,
-                               "JkAutoAlias, no DirectoryIndex file for URI %s\n",
+                               "JkAutoAlias, no DirectoryIndex file for URI %s",
                                r->uri);
                     return DECLINED;
                 }
@@ -2393,7 +2394,7 @@ static int jk_translate(request_rec * r)
                 /* Automatically map uri to a context static file */
                 if (JK_IS_DEBUG_LEVEL(conf->log))
                     jk_log(conf->log, JK_LOG_DEBUG,
-                           "mod_jk::jk_translate, check alias_dir: %s\n",
+                           "mod_jk::jk_translate, check alias_dir: %s",
                            conf->alias_dir);
                 if (strlen(clean_uri) > 1) {
                     /* Get the context directory name */
@@ -2419,13 +2420,13 @@ static int jk_translate(request_rec * r)
                         if (child_dir != NULL) {
                             if (JK_IS_DEBUG_LEVEL(conf->log))
                                 jk_log(conf->log, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias child_dir: %s\n",
+                                       "mod_jk::jk_translate, AutoAlias child_dir: %s",
                                        child_dir);
                             if (!strcasecmp(child_dir, "WEB-INF")
                                 || !strcasecmp(child_dir, "META-INF")) {
                                 if (JK_IS_DEBUG_LEVEL(conf->log))
                                     jk_log(conf->log, JK_LOG_DEBUG,
-                                           "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s\n",
+                                           "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s",
                                            r->uri);
                                 return HTTP_FORBIDDEN;
                             }
@@ -2454,7 +2455,7 @@ static int jk_translate(request_rec * r)
                             if (ret != NULL) {
                                 if (JK_IS_DEBUG_LEVEL(conf->log))
                                     jk_log(conf->log, JK_LOG_DEBUG,
-                                           "mod_jk::jk_translate, AutoAlias OK for file: %s\n",
+                                           "mod_jk::jk_translate, AutoAlias OK for file: %s",
                                            ret);
                                 r->filename = ret;
                                 return OK;
@@ -2468,7 +2469,7 @@ static int jk_translate(request_rec * r)
                                                ".war")) {
                                 if (JK_IS_DEBUG_LEVEL(conf->log))
                                     jk_log(conf->log, JK_LOG_DEBUG,
-                                           "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s\n",
+                                           "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s",
                                            r->uri);
                                 return HTTP_FORBIDDEN;
                             }
@@ -2502,14 +2503,14 @@ static int jk_map_to_storage(request_rec * r)
                  */
                 if (JK_IS_DEBUG_LEVEL(conf->log))
                     jk_log(conf->log, JK_LOG_DEBUG,
-                           "Manually mapped, no need to call uri_to_worker\n");
+                           "Manually mapped, no need to call uri_to_worker");
                 return DECLINED;
             }
 
             if (apr_table_get(r->subprocess_env, "no-jk")) {
                 if (JK_IS_DEBUG_LEVEL(conf->log))
                     jk_log(conf->log, JK_LOG_DEBUG,
-                           "Into map_to_storage no-jk env var detected for uri=%s, declined\n",
+                           "Into map_to_storage no-jk env var detected for uri=%s, declined",
                            r->uri);
 
                 return DECLINED;
