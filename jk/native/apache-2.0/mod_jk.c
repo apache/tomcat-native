@@ -1133,8 +1133,8 @@ static void jk_child_init(apr_pool_t *pconf,
     if(map_alloc(&init_map)) {
         if(map_read_properties(init_map, conf->worker_file)) {
         /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
-        /* worker_env.uri_to_worker = conf->uw_map;
-        worker_env.server_name   = (char *)ap_get_server_version(); */
+        worker_env.uri_to_worker = conf->uw_map;
+        worker_env.server_name   = (char *)ap_get_server_version();
 	    if(wc_open(init_map, &worker_env, conf->log)) {
 		return;
         }            
@@ -1171,8 +1171,8 @@ static void jk_post_config(apr_pool_t *pconf,
                 if(map_read_properties(init_map, conf->worker_file)) {
 					ap_add_version_component(pconf, JK_EXPOSED_VERSION);
 						/* May be allready done in init ??? */
-        				/* worker_env.uri_to_worker = conf->uw_map;
-        				worker_env.server_name   = (char *)ap_get_server_version(); */
+        				worker_env.uri_to_worker = conf->uw_map;
+        				worker_env.server_name   = (char *)ap_get_server_version();
                         if(wc_open(init_map, &worker_env, conf->log)) {
                             return;
                         }            
