@@ -483,7 +483,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     if (e && e->endpoint_private && s && is_recoverable_error) {
         lb_endpoint_t *p = e->endpoint_private;
-        jk_endpoint_t *end = NULL;
         int attempt = 0;
 
         /* you can not recover on another load balancer */
@@ -506,6 +505,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
             if (rec) {
                 int is_recoverable = JK_FALSE;
+                jk_endpoint_t *end = NULL;
 
                 s->jvm_route = jk_pool_strdup(s->pool, rec->s->name);
 
@@ -542,7 +542,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 rec->s->in_recovering = JK_FALSE;
                 rec->s->error_time = time(0);
 
-                if (!is_recoverable) {
+                if (end && !is_recoverable) {
                     /*
                      * Error is not recoverable - break with an error.
                      */
