@@ -78,9 +78,11 @@ AC_INIT(common/jk_config.c)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
 
 dnl package and version. (synchronization with common/jk_version.h ?)
-AM_INIT_AUTOMAKE(mod_jk2, 2.0.0)
 PACKAGE=mod_jk2
 VERSION=2.0.0
+
+AC_PROG_CC
+AC_PROG_LD
 
 dnl Not sure what it does, but the libtool manual seems to require this
 dnl It should use the native platform dlopen ( if available )
@@ -89,10 +91,6 @@ AC_LIBTOOL_DLOPEN
 dnl AM_PROG_LIBTOOL often causes problems.
 dnl I have solved them once using aclocal --acdir=/usr/local/share/aclocal/
 AM_PROG_LIBTOOL
-
-AC_PROG_CC
-
-AC_PROG_LD
 
 AC_PATH_PROG(TEST,test,$PATH)dnl
 AC_SUBST(TEST)
@@ -184,11 +182,13 @@ AC_SUBST(APR_UTIL_LIB)
 dnl Java settings
 
 JK_JDK()
+JK_JDK_OS()
 JK_JNI()
 
 AC_SUBST(JAVA_HOME)
 AC_SUBST(JAVA_PLATFORM)
 AC_SUBST(OS)
+AC_SUBST(HAVE_JNI)
 
 
 dnl Check that at least one WEBSERVER has been given
@@ -235,5 +235,4 @@ AC_OUTPUT([
 	server/apache2/Makefile
 	server/apache2/Makefile.apxs
 	../build.properties:../build.properties.autoconf
-        scripts/build/unix/dummy
 	])

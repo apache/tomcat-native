@@ -198,7 +198,7 @@ dnl           AC_MSG_CHECKING([${GUESS}])
 
 
 AC_DEFUN(
-  [JK_JNI],
+  [JK_JDK_OS],
   [
     tempval=""
     OS=""
@@ -230,6 +230,24 @@ AC_DEFUN(
             AC_MSG_ERROR(You should retry --with-os-type=SUBDIR)
           fi
         fi
+      ])
+  ])
+
+AC_DEFUN(
+  [JK_JNI],
+  [
+    AC_ARG_WITH(jni,
+      [  --with-jni               Build jni support],
+      [
+		case "${withval}" in
+		  y | yes | true) use_jni=true ;;
+		  n | no | false) use_jni=false ;;
+	    *) use_jni=true ;;
+	      esac
+
+		if ${TEST} ${use_jni} ; then
+		  HAVE_JNI="-DHAVE_JNI"
+		fi
       ])
   ])
 
