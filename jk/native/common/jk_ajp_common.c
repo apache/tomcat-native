@@ -661,6 +661,7 @@ int ajp_is_input_event(ajp_endpoint_t *ae,
 	int		rc;
 	
 	FD_ZERO(&rset);
+	FD_ZERO(&eset);
 	FD_SET(ae->sd, &rset);
 	FD_SET(ae->sd, &eset);
 
@@ -1521,55 +1522,48 @@ int ajp_init(jk_worker_t *pThis,
     if (pThis && pThis->worker_private) {
         ajp_worker_t *p = pThis->worker_private;
         int cache_sz = jk_get_worker_cache_size(props, p->name, cache);
-        int socket_timeout =
+        p->socket_timeout =
            jk_get_worker_socket_timeout(props, p->name, AJP13_DEF_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
                "In jk_worker_t::init, setting socket timeout to %d\n",
-               socket_timeout);
+               p->socket_timeout);
 
-        int socket_keepalive =
+        p->keepalive =
             jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
 
         jk_log(l, JK_LOG_DEBUG,
                "In jk_worker_t::init, setting socket keepalive to %d\n",
-               socket_keepalive);
+               p->keepalive);
 
-        int cache_timeout =
+        p->cache_timeout =
             jk_get_worker_cache_timeout(props, p->name, AJP_DEF_CACHE_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
                "In jk_worker_t::init, setting cache timeout to %d\n",
-               cache_timeout);
+               p->cache_timeout);
 
-        int connect_timeout =
+        p->connect_timeout =
             jk_get_worker_connect_timeout(props, p->name, AJP_DEF_CONNECT_TIMEOUT);
 
     	jk_log(l, JK_LOG_DEBUG,
         	   "In jk_worker_t::init, setting connect timeout to %d\n",
-           		connect_timeout);
+           		p->connect_timeout);
 
-        int reply_timeout =
+        p->reply_timeout =
             jk_get_worker_reply_timeout(props, p->name, AJP_DEF_REPLY_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
 	           "In jk_worker_t::init, setting reply timeout to %d\n",
-    	       reply_timeout);
+    	       p->reply_timeout);
 
-        int prepost_timeout =
+        p->prepost_timeout =
             jk_get_worker_reply_timeout(props, p->name, AJP_DEF_PREPOST_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
 	           "In jk_worker_t::init, setting prepost timeout to %d\n",
-    	       prepost_timeout);
+    	       p->prepost_timeout);
 
-        p->socket_timeout = socket_timeout;
-        p->keepalive = socket_keepalive;
-        p->cache_timeout = cache_timeout;
-        p->connect_timeout = connect_timeout;
-        p->reply_timeout = reply_timeout;
-        p->prepost_timeout = prepost_timeout;
-        
         /* 
          *  Need to initialize secret here since we could return from inside
          *  of the following loop
