@@ -109,7 +109,7 @@ public class ChannelUn extends JniHandler {
     
     public void init() throws IOException {
         if( file==null ) {
-            log.info("No file, disabling unix channel");
+            log.debug("No file, disabling unix channel");
             return;
             //throw new IOException( "No file for the unix socket channel");
         }
@@ -120,6 +120,35 @@ public class ChannelUn extends JniHandler {
         if( localId != 0 ) {
             file=file+ localId;
         }
+        File socketFile=new File( file );
+        if( !socketFile.isAbsolute() ) {
+            String home=wEnv.getJkHome();
+            if( home==null ) {
+                log.debug("No jkhome");
+            } else {
+                File homef=new File( home );
+                socketFile=new File( homef, file );
+                log.debug( "Making the file absolute " +socketFile);
+            }
+        }
+        
+        if( ! socketFile.exists() ) {
+            try {
+                FileOutputStream fos=new FileOutputStream(socketFile);
+                fos.write( 1 );
+                fos.close();
+            } catch( Throwable t ) {
+                log.error("Attempting to create the file failed, disabling channel" 
+                        + socketFile);
+                return;
+            }
+        }
+        // The socket file cannot be removed ...
+        if (!socketFile.delete()) {
+            log.error( "Can't remove socket file " + socketFile);
+            return;
+        }
+        
 
         super.initNative( "channel.un:" + file );
 
@@ -147,16 +176,9 @@ public class ChannelUn extends JniHandler {
         }
 
         tp=new ThreadPool();
-
-        File socketFile=new File( file );
-        if( socketFile.exists() ) {
-            // The socket file cannot be removed ...
-            if (!socketFile.delete())
-                  throw(new IOException("Cannot remove " + file));
-        }
-
+                
         super.initJkComponent();
-
+        
         log.info("JK: listening on unix socket: " + file );
         
         // Run a thread that will accept connections.
@@ -164,7 +186,7 @@ public class ChannelUn extends JniHandler {
         AprAcceptor acceptAjp=new AprAcceptor(  this );
         tp.runIt( acceptAjp);
     }
-
+    
     public void destroy() throws IOException {
         if( apr==null ) return;
         try {
@@ -182,11 +204,11 @@ public class ChannelUn extends JniHandler {
     /** Open a connection - since we're listening that will block in
         accept
     */
-    public void open(MsgContext ep) throws IOException {
+    public int open(MsgContext ep) throws IOException {
         // Will associate a jk_endpoint with ep and call open() on it.
         // jk_channel_un will accept a connection and set the socket info
         // in the endpoint. MsgContext will represent an active connection.
-        super.nativeDispatch( ep.getMsg(0), ep, CH_OPEN, 1 );
+        return super.nativeDispatch( ep.getMsg(0), ep, CH_OPEN, 1 );
     }
     
     public void close(MsgContext ep) throws IOException {
@@ -205,7 +227,7 @@ public class ChannelUn extends JniHandler {
         int rc=super.nativeDispatch( msg, ep, CH_READ, 1 );
 
         if( rc!=0 ) {
-            log.error("receive error:   " + rc);
+            log.error("receive error:   " + rc, new Throwable());
             return -1;
         }
         
@@ -232,7 +254,11 @@ public class ChannelUn extends JniHandler {
                 MsgContext ep=this.createMsgContext();
 
                 // blocking - opening a server connection.
-                this.open(ep);
+                int status=this.open(ep);
+                if( status != 0 && status != 2 ) {
+                    log.error( "Error acceptin connection on " + file );
+                    break;
+                }
 
                 //    if( log.isDebugEnabled() )
                 //     log.debug("Accepted ajp connections ");
