@@ -92,6 +92,8 @@
 #include "apr_shm.h"
 #endif
 
+#include "signal.h"
+
 #include "apr_proc_mutex.h"
 
 static apr_pool_t *jniAprPool;
@@ -142,7 +144,7 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 
         workerEnv=jkb->object;
     }
-    fprintf( stderr, "XXX aprImpl: %p %p\n", env, workerEnv);
+    /* fprintf( stderr, "XXX aprImpl: %p %p\n", env, workerEnv); */
     return 0;
 }
 
@@ -177,11 +179,13 @@ Java_org_apache_jk_apr_AprImpl_poolClear(JNIEnv *jniEnv, jobject _jthis,
 
 /* -------------------- Signals -------------------- */
 
-static void jk2_SigAction(int signal) {
+static struct sigaction jkAction;
 
+static void jk2_SigAction(int sig) {
+    fprintf(stderr, "Signal %d\n", sig );
+    signal( sig, jk2_SigAction );
 }
 
-static struct sigaction jkAction;
 
 /* XXX We need to: - preserve the old signal ( or get them ) - either
      implement "waitSignal" or use invocation in jk2_SigAction
@@ -215,227 +219,6 @@ Java_org_apache_jk_apr_AprImpl_userId(JNIEnv *jniEnv, jobject _jthis, jlong pool
     
     return 0;
 }
-
-
-/* -------------------- Shared memory -------------------- */
-/* Use it to access the scoreboard or for shmem channel */
-
-#if APR_HAS_SHARED_MEMORY
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmAttach(JNIEnv *jniEnv, jobject _jthis, jlong poolJ,
-                                         jstring fileJ)
-{
-    char *fname=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, fileJ, 0);
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
-    apr_status_t rv;
-    apr_shm_t *aprShm;
-    
-    rv = apr_shm_attach(&aprShm, fname, pool);
-
-    (*jniEnv)->ReleaseStringUTFChars(jniEnv, fileJ, fname);
-    
-    if (rv != APR_SUCCESS) {
-        return (jlong)NULL;
-    }
-    return (jlong)(long)(void *)aprShm;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmCreate(JNIEnv *jniEnv, jobject _jthis, jlong poolJ,
-                                         jlong size, jstring fileJ)
-{
-    char *fname=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, fileJ, 0);
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
-    apr_status_t rv;
-    apr_shm_t *aprShm;
-    
-    apr_file_remove(fname, pool); /* ignore errors */
-    
-    rv = apr_shm_create(&aprShm, size, fname, pool);
-
-    (*jniEnv)->ReleaseStringUTFChars(jniEnv, fileJ, fname);
-    
-    if (rv != APR_SUCCESS) {
-        return (jlong)NULL;
-    }
-    return (jlong)(long)(void *)aprShm;
-}
-
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmBaseaddrGet(JNIEnv *jniEnv, jobject _jthis, jlong pool,
-                                          jlong shmP)
-{
-    apr_shm_t *shm=(apr_shm_t *)(void *)(long)shmP;
-    void *sb_shared;
-
-    fprintf(stderr, "GET BASE ADDR %p", shmP ); 
-    sb_shared = apr_shm_baseaddr_get(shm);
-    fprintf(stderr, "GOt BASE ADDR %p", sb_shared ); 
-    return (jlong)(long)(void *)sb_shared;
-}
-     
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmSizeGet(JNIEnv *jniEnv, jobject _jthis, jlong pool,
-                                          jlong shmP)
-{
-    apr_shm_t *shm=(apr_shm_t *)(void *)(long)shmP;
-    
-    return (jlong)(long)(void *)apr_shm_size_get(shm);
-}
-        
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmDetach(JNIEnv *jniEnv, jobject _jthis, jlong pool,
-                                          jlong shmP)
-{
-    apr_shm_t *shm=(apr_shm_t *)(void *)(long)shmP;
-
-    return apr_shm_detach(shm);
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *jniEnv, jobject _jthis, jlong pool,
-                                          jlong shmP)
-{
-    apr_shm_t *shm=(apr_shm_t *)(void *)(long)shmP;
-
-    return apr_shm_destroy(shm);
-}
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmGetInt(JNIEnv *jniEnv, jobject _jthis, 
-                                         jlong poolJ, jlong mP )
-{
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
-    int *mem=(int *)(void *)(long)mP;
-    jbyte *nbuf;
-    int rd;
-
-    /* XXX use atomic */
-    return (jint)*mem;
-}
-
-JNIEXPORT void JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmSetInt(JNIEnv *jniEnv, jobject _jthis, 
-                                         jlong poolJ, jlong mP, jint value )
-{
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
-    int *mem=(int *)(void *)(long)mP;
-
-    /* XXX use atomic */
-    *mem=(int)value;
-}
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmIncrement(JNIEnv *jniEnv, jobject _jthis, 
-                                            jlong poolJ, jlong mP )
-{
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
-    int *mem=(int  *)(void *)(long)mP;
-
-    /* XXX use atomic */
-    *mem++;
-}
-
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmRead(JNIEnv *jniEnv, jobject _jthis, 
-                                       jlong poolJ, jlong mP, 
-                                       jbyteArray bufJ, jint from, jint cnt)
-{
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
-    char *mem=(char *)(void *)(long)mP;
-    jbyte *nbuf;
-    int rd;
-    jboolean iscommit;
-
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, bufJ, &iscommit);
-    if( ! nbuf ) {
-        return -1;
-    }
-
-    memcpy( nbuf + from, mem, cnt ); 
-    
-    (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
-    return (jint)cnt;
-}
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmWrite(JNIEnv *jniEnv, jobject _jthis, 
-                                       jlong poolJ, jlong mP, 
-                                       jbyteArray bufJ, jint from, jint cnt)
-{
-    apr_status_t status;
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
-    jbyte *nbuf;
-    char *mem=(char *)(void *)(long)mP;
-    int rd;
-    jboolean iscommit;
-
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, bufJ, &iscommit);
-    if( ! nbuf ) {
-        return -1;
-    }
-
-    /* write */
-    memcpy( mem, nbuf + from,  cnt ); 
-    
-    (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
-    return (jint)rd;
-}
-
-
-
-
-#else
-
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmAttach(JNIEnv *jniEnv, jobject _jthis, jlong poolJ,
-                                       jlong size, jstring fileJ)
-{
-    return (jlong)0;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmCreate(JNIEnv *jniEnv, jobject _jthis, jlong poolJ,
-                                         jstring fileJ)
-{
-        return (jlong)0;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmBaseaddrGet(JNIEnv *jniEnv, jobject _jthis, jlong pool,
-                                          jlong shmP)
-{
-    return (jlong)0;
-}
-     
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmSizeGet(JNIEnv *jniEnv, jobject _jthis, jlong pool,
-                                          jlong shmP)
-{
-    return (jlong)0;
-}
-        
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmDetach(JNIEnv *jniEnv, jobject _jthis, jlong pool,
-                                          jlong shmP)
-{
-    return (jlong)0;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *jniEnv, jobject _jthis, jlong pool,
-                                          jlong size, jstring file)
-{
-    return (jlong)0;
-}
-
-#endif 
 
 /* -------------------- interprocess mutexes -------------------- */
 
@@ -563,8 +346,8 @@ Java_org_apache_jk_apr_AprImpl_unSocketListen(JNIEnv *jniEnv, jobject _jthis,
 
     listen( unixSocket, (int)backlog );
     
-/*     fprintf(stderr, "Listening on %d \n", */
-/*             unixSocket); */
+    fprintf(stderr, "Listening on %d \n",
+            unixSocket);
     return (jlong)unixSocket;
 }
 
@@ -581,7 +364,10 @@ Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis,
     memset(& unixAddr, 0, sizeof(struct sockaddr_un));
     unixAddr.sun_family=AF_UNIX;
 
-    host==(*jniEnv)->GetStringUTFChars(jniEnv, hostJ, 0);
+    host=(*jniEnv)->GetStringUTFChars(jniEnv, hostJ, 0);
+    if( host==NULL )
+        return -1;
+    
     strcpy(unixAddr.sun_path, host);
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, hostJ, host);
     
@@ -604,7 +390,6 @@ Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis,
     return (jlong)(long)(void *)unixSocket;
 }
 
-
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis, 
                                       jlong poolJ, jlong unSocketJ)
@@ -619,20 +404,26 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
     while( 1 ) {
         int connfd;
 
-        fprintf(stderr, "unAccept\n");
+        fprintf(stderr, "unAccept %d\n", listenUnSocket );
 
+        signal( SIGCHLD, SIG_IGN );
+        signal( SIGPIPE, SIG_IGN );
+        signal( SIGIO, jk2_SigAction );
+        
         clientlen=sizeof( client );
+        
         connfd=accept( listenUnSocket, (struct sockaddr *)&client, &clientlen );
         /* XXX Should we return EINTR ? This would allow us to stop
          */
         if( connfd < 0 ) {
+            fprintf(stderr, "unAccept: error %d\n", connfd);
             if( errno==EINTR ) {
                 fprintf(stderr, "EINTR\n");
                 continue;
             } else {
                 fprintf(stderr, "Error accepting %d %d %s\n",
                         listenUnSocket, errno, strerror(errno));
-                return -errno;
+                return (jlong)-errno;
             }
         }
         fprintf(stderr, "unAccept: accepted %d\n", connfd);
@@ -743,11 +534,11 @@ Java_org_apache_jk_apr_AprImpl_getJkEnv
     if( jk_env_globalEnv == NULL )
         return 0;
 
-    fprintf(stderr, "Get env %p\n", jk_env_globalEnv);
+    /* fprintf(stderr, "Get env %p\n", jk_env_globalEnv); */
     env=jk_env_globalEnv->getEnv( jk_env_globalEnv );
-    if( env!=NULL)
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "aprImpl.getJkEnv()  %p\n", env);
+    /*     if( env!=NULL) */
+    /*         env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+    /*                       "aprImpl.getJkEnv()  %p\n", env); */
     return (jlong)(long)(void *)env;
 }
 
@@ -788,8 +579,8 @@ Java_org_apache_jk_apr_AprImpl_jkRecycle
 
     env->recycleEnv( env );
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "aprImpl.releaseJkEnv()  %p\n", env);
+    /*     env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+    /*                   "aprImpl.releaseJkEnv()  %p\n", env); */
 }
 
 
@@ -807,8 +598,8 @@ Java_org_apache_jk_apr_AprImpl_getJkHandler
 
     component=env->getBean( env, cname );
     
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "aprImpl.getJkHandler()  %p %s\n", component, cname );
+    /*     env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+    /*                   "aprImpl.getJkHandler()  %p %s\n", component, cname ); */
     
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, compNameJ, cname);
 
@@ -942,7 +733,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     memcpy( ep->reply->buf, nbuf , len );
     
     rc=ep->reply->checkHeader( env, ep->reply, ep );
-    ep->reply->dump( env, ep->reply ,"MESSAGE");
+    /* ep->reply->dump( env, ep->reply ,"MESSAGE"); */
     if( rc < 0  ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "jkInvoke() invalid data\n");
@@ -951,14 +742,14 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
         return JK_ERR;
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "jkInvoke() component dispatch %d %d\n", rc, code);
+    /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
+    /*               "jkInvoke() component dispatch %d %d\n", rc, code); */
 
     rc=workerEnv->dispatch( env, workerEnv, target, ep, code, ep->reply );
     
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, 0);
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "jkInvoke() done\n");
+    /*     env->l->jkLog(env, env->l, JK_LOG_INFO, "jkInvoke() done\n"); */
 
     return rc;
 }
