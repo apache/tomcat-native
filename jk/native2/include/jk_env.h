@@ -68,6 +68,9 @@ extern "C" {
 #include "jk_map.h"
 #include "jk_worker.h"
 
+#define JK_LINE __FILE__,__LINE__
+
+
 /** 
  *  Common environment for all jk functions. Provide uniform
  *  access to pools, logging, factories and other 'system' services.
@@ -84,28 +87,23 @@ struct jk_pool;
 struct jk_env;
 struct jk_logger;
 struct jk_map;
+struct jk_bean;
+typedef struct jk_bean jk_bean_t;
 typedef struct jk_env jk_env_t;
 
 /**
  * Factory used to create all jk objects. Factories are registered with 
- * jk2_env_registerFactory ( or automatically - LATER ), and created
- * with jk2_env_getFactory.
- * 
- * Essentially, an abstract base class (or factory class) with a single
- * method -- think of it as createWorker() or the Factory Method Design
- * Pattern.  There is a different worker_factory function for each of the
- * different types of workers.  The set of all these functions is created
- * at startup from the list in jk_worker_list.h, and then the correct one
- * is chosen in jk_worker.c->wc_create_worker().  See jk_worker.c and
- * jk_ajp13_worker.c/jk_ajp14_worker.c for examples.
+ * jk2_env_registerFactory. The 'core' components are registered in
+ * jk_registry.c
  *
- * This allows new workers to be written without modifing the plugin code
- * for the various web servers (since the only link is through
- * jk_worker_list.h).  
+ * Each jk component must be configurable using the setAttribute methods
+ * in jk_bean. The factory is responsible to set up the config methods.
+ *
+ * The mechanism provide modularity and manageability to jk.
  */
 typedef int (JK_METHOD *jk_env_objectFactory_t)(jk_env_t *env,
                                                 struct jk_pool *pool,
-                                                void **result, 
+                                                struct jk_bean *mbean, 
                                                 const char *type,
                                                 const char *name);
 
@@ -113,8 +111,6 @@ typedef int (JK_METHOD *jk_env_objectFactory_t)(jk_env_t *env,
  *  env 'instances' in future - for now it's a singleton.
  */
 jk_env_t* JK_METHOD jk2_env_getEnv( char *id, struct jk_pool *pool );
-
-#define JK_LINE __FILE__,__LINE__
 
 struct jk_exception {
     char *file;
@@ -128,6 +124,46 @@ struct jk_exception {
 
 typedef struct jk_exception jk_exception_t;
 
+
+/** Each jk object will use this mechanism for configuration
+ *  XXX Should it be named mbean ?
+ */
+struct jk_bean {
+    /* Type of this object
+     */
+    const char *type;
+    /* Name of the object
+     */
+    const char *name;
+
+    /* The wrapped object
+     */
+    void *object;
+
+    /** Set a jk property. This is similar with the mechanism
+     *  used by java side ( with individual setters for
+     *  various properties ), except we use a single method
+     *  and a big switch
+     *
+     *  As in java beans, setting a property may have side effects
+     *  like changing the log level or reading a secondary
+     *  properties file.
+     *
+     *  Changing a property at runtime will also be supported for
+     *  some properties.
+     *  XXX Document supported properties as part of
+     *  workers.properties doc.
+     *  XXX Implement run-time change in the status/ctl workers.
+     */
+    int (*setAttribute)(struct jk_env *env, struct jk_bean *bean,
+                         char *name, void *value );
+
+    void *(*getAttribute)(struct jk_env *env, struct jk_bean *bean, char *name );
+
+    /* getBeanInfo() */
+
+    /* invoke() */
+};
     
 /**
  *  The env will be used in a similar way with the JniEnv, to provide 
@@ -146,7 +182,8 @@ struct jk_env {
     */
     struct jk_pool *localPool;
 
-    /* Exceptions
+    /* Exceptions.
+     *  XXX Not implemented/not used
      */
     void (JK_METHOD *jkThrow)( jk_env_t *env,
                                const char *file, int line,
@@ -155,37 +192,36 @@ struct jk_env {
 
     /** re-throw the exception and record the current pos.
      *  in the stack trace
+     *  XXX Not implemented/not used
      */
     void (JK_METHOD *jkReThrow)( jk_env_t *env,
                                  const char *file, int line );
 
     /* Last exception that occured
+     *  XXX Not implemented/not used
      */
     struct jk_exception *(JK_METHOD *jkException)( jk_env_t *env );
 
     /** Clear the exception state
+     *  XXX Not implemented/not used
      */
     void (JK_METHOD *jkClearException)( jk_env_t *env );
     
-    
-    /** Global properties ( similar with System properties in java)
-     */
-    /*   jk_map_t *properties; */
-    /** Factory to create an instance of a particular type.
-     * 
-     */
-    jk_env_objectFactory_t 
-    (JK_METHOD *getFactory)( jk_env_t *env, const char *type,
-                             const char *name );
-
     /** Create an object instance. It'll first get the factory, then
         call it. This is a very frequent operation.
     */
     void *
-    (JK_METHOD *getInstance)( jk_env_t *env, struct jk_pool *pool,
-                              const char *type,
-                              const char *name );
+    (JK_METHOD *createInstance)( jk_env_t *env, struct jk_pool *pool,
+                                 const char *type, const char *name );
 
+    void *
+    (JK_METHOD *getByName)( jk_env_t *env, const char *name );
+
+    /** Return the configuration object
+     */
+    struct jk_bean *
+    (JK_METHOD *getMBean)( jk_env_t *env, const char *name );
+    
     /** Report an error. 
      *   TODO: create a 'stack trace' (i.e. a stack of errors )
      *   TODO: set 'error state'
@@ -199,7 +235,6 @@ struct jk_env {
     /** Register a factory for a type ( channel, worker ).
      */
     void (JK_METHOD *registerFactory)( jk_env_t *env, const char *type,
-                                       const char *name, 
                                        jk_env_objectFactory_t factory);
     
     
@@ -213,7 +248,9 @@ struct jk_env {
     
     /* private */
     struct jk_map *_registry;
+    struct jk_map *_objects;
     struct jk_exception *lastException;
+    int id;
 };
 
 void JK_METHOD jk2_registry_init(jk_env_t *env);
