@@ -27,6 +27,7 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
@@ -58,7 +59,11 @@ class JSSE14Support extends JSSESupport {
     }
 
     protected void handShake() throws IOException {
-        ssl.setNeedClientAuth(true);
+        if( ssl.getWantClientAuth() ) {
+            logger.debug("No client cert sent for want");
+        } else {
+            ssl.setNeedClientAuth(true);
+        }
         synchronousHandshake(ssl);
     }
 
