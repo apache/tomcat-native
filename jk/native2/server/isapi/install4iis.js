@@ -487,8 +487,8 @@ function Main(args)
     if (!createVirtualExecDir(IIsROOT, params)) {
         ERROR(args, "Unable to create virual directory /" + params.WebName);        
     }
-    
-    if (!createISAPIFilter(IIsWebServer, params)) {
+
+    if (!createISAPIFilter(IIsWebService, params)) {
         /* TODO: roll-back virtual dir */
         ERROR(args, "Unable to create the '" + params.FilterName + "' filter.");        
     }
