@@ -69,90 +69,104 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define CONTEXT_INC_SIZE (50)
+#define CBASE_INC_SIZE   (8)    /* Allocate memory by step of 8 URIs : ie 8 URI by context */
+#define URI_INC_SIZE (8)        /* Allocate memory by step of 8 CONTEXTs : ie 8 contexts by worker */
 
 typedef struct {
 
-	/*
-	 * Memory Pool
-	 */
+    /*
+     * Context base (ie examples) 
+     */
+ 
+    char *      cbase;
+ 
+    /*
+     * Status (Up/Down)
+     */
+ 
+    int         status;
 
-	jk_pool_t 		p;
-	jk_pool_atom_t	buf[SMALL_POOL_SIZE];
+    /*
+     * Num of URI handled 
+     */
+    
+    int         size;
+
+    /*
+     * Capacity
+     */
+   
+    int         capacity;
+
+    /*
+     * URL/URIs (autoconf)
+     */
+
+    char **     uris;
+}
+jk_context_item_t;
+
+
+typedef struct {
+
+    /*
+     * Memory Pool
+     */
+
+    jk_pool_t       p;
+    jk_pool_atom_t  buf[SMALL_POOL_SIZE];
 
 	/*
 	 * Virtual Server (if use)
 	 */
 
-	char *		virtual;
+	char *		            virtual;
 
-	/*
-	 * Context base (ie examples)
-	 */
+    /*
+     * Num of context handled (ie: examples, admin...)
+     */
 
-	char *		cbase;
+    int                     size;
 
-	/*
-	 * Status (Up/Down)
-	 */
+    /*
+     * Capacity
+     */
 
-	int			status;
+    int                     capacity; 
 
-	/*
-	 * Num of URI handled 
-	 */
-	
-	int			size;
+    /*
+     * Context list, context / URIs
+     */
 
-	/*
-	 * Capacity
-	 */
-	
-	int			capacity;
-
-	/*
-	 * URL/URIs (autoconf)
-	 */
-
-	char ** 	uris;
+    jk_context_item_t **    contexts;
 } 
 jk_context_t;
 
-
-typedef struct {
-
-	/*
-	 * Context List 
-	 */
-
-	jk_context_t	**contexts;
-
-	/*
-	 * Num of Contextes
-	 */
-	
-	int				ncontext;
-}
-jk_context_list_t;
 
 /*
  * functions defined here 
  */
 
-int 			context_open(jk_context_t *c);
+int context_set_virtual(jk_context_t *c, char *virtual);
 
-int 			context_alloc(jk_context_t **c);
+int context_open(jk_context_t *c, char *virtual);
 
-int 			context_close(jk_context_t *c);
+int context_close(jk_context_t *c);
 
-int 			context_free(jk_context_t **c);
+int context_alloc(jk_context_t **c, char *virtual);
 
-jk_context_t *	context_find(jk_context_list_t *l,
-							 char * virtual,
-							 char * cbase);
+int context_free(jk_context_t **c);
 
-int				context_add_uri(jk_context_t *c, 
-								char * uri);
+jk_context_item_t *context_find_base(jk_context_t *c, char *cbase);
+
+char *context_item_find_uri(jk_context_item_t *ci, char *uri);
+
+void context_dump_uris(jk_context_t *c, char *cbase, FILE *f);
+
+jk_context_item_t *context_add_base(jk_context_t *c, char *cbase);
+
+int context_add_uri(jk_context_t *c, char *cbase, char *uri);
+
 
 #ifdef __cplusplus
 }
