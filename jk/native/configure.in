@@ -73,10 +73,10 @@ AC_ARG_WITH(apxs,
                 AC_MSG_ERROR(Invalid location for apxs: '${APXS}')
             fi
             
-            $APXS -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
+            ${APXS} -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
     
             if ${TEST} "${apxs_support}" = "false" ; then
-                AC_MSG_RESULT(could not find apxs)
+                AC_MSG_RESULT(could not find ${APXS})
                 AC_MSG_ERROR(You must specify a valid --with-apxs path)
             fi
 
