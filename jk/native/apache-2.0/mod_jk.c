@@ -1622,8 +1622,9 @@ static int jk_map_to_storage(request_rec *r)
         /* First find just the name of the file, no directory */
         r->filename = (char *)apr_filename_of_pathname(r->uri);
 
-        /* Ony if valid sub-request, most likely from mod_dir */
-        if (r->main && r->main->filename && *r->main->filename){
+        /* Ony if sub-request for a directory, most likely from mod_dir */
+        if (r->main && r->main->filename &&
+            ap_is_directory(r->pool, r->main->filename)){
 	
             /* The filename from the main request will be set to what should
              * be picked up, aliases included. Tomcat will need to know about
@@ -1631,17 +1632,13 @@ static int jk_map_to_storage(request_rec *r)
              * be fine. */
 
             /* Need absolute path to stat */
-            if (r->main->filename[strlen(r->main->filename)-1] == '/'){
-                if (apr_filepath_merge(&r->filename,
-                                       r->main->filename, r->filename,
-                                       APR_FILEPATH_SECUREROOT |
-                                       APR_FILEPATH_TRUENAME,
-                                       r->pool)
-                    != APR_SUCCESS){
-                  return DECLINED;
-                }
-            } else {
-                r->filename = apr_pstrdup(r->pool, r->main->filename);
+            if (apr_filepath_merge(&r->filename,
+                                   r->main->filename, r->filename,
+                                   APR_FILEPATH_SECUREROOT |
+                                   APR_FILEPATH_TRUENAME,
+                                   r->pool)
+                != APR_SUCCESS){
+              return DECLINED;
             }
 
             /* Stat the file so that mod_dir knows it's there */
