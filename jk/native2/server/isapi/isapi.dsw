@@ -23,6 +23,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name pcre
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -37,12 +40,6 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name gen_uri_delims
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name apr
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name apriconv
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name xml
@@ -94,6 +91,9 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name pcreposix
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name apriconv
     End Project Dependency
 }}}
 
