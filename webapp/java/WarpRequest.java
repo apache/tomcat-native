@@ -62,7 +62,6 @@ import org.apache.catalina.connector.HttpRequestBase;
 
 public class WarpRequest extends HttpRequestBase {
     private Host host=null;
-    private Context context=null;
     
     public WarpRequest() {
         super();
