@@ -1027,6 +1027,130 @@ static const char*
     return NULL;    
 }
 
+static const char *add_member(cmd_parms *cmd, void *dummy, const char *arg)
+{
+    server_rec *s = cmd->server;
+    proxy_server_conf *conf =
+    ap_get_module_config(s->module_config, &proxy_module);
+    struct proxy_balancer *balancer, *balancers;
+    proxy_worker *worker, *workers;
+    proxy_runtime_worker *runtime;
+    char *path = NULL;
+    char *name = NULL;
+    char *args = apr_pstrdup(cmd->pool, arg);
+    char *word;
+    apr_table_t *params = apr_table_make(cmd->pool, 5);
+    const apr_array_header_t *arr;
+    const apr_table_entry_t *elts;
+    int i;
+    
+    if (cmd->path)
+        path = apr_pstrdup(cmd->pool, cmd->path);
+    while (*args) {
+        word = ap_getword_conf(cmd->pool, &args);
+        if (!path)
+            path = word;
+        else if (!name)
+            name = word;
+        else {
+            char *val = strchr(word, '=');
+            if (!val)
+                return "Invalid BalancerMember parameter. Paramet must be in the form key=value";
+            else
+                *val++ = '\0';
+            apr_table_setn(params, word, val);
+        }
+    }
+    if (!path)
+        return "BalanceMember must define balancer name when outside <Proxy > section";
+    if (!name)
+        return "BalanceMember must define remote proxy server";
+    
+    ap_str_tolower(path);	/* lowercase scheme://hostname */
+    ap_str_tolower(name);	/* lowercase scheme://hostname */
+
+    /* Try to find existing worker */
+    workers = (proxy_worker *)conf->workers->elts;
+    for (i = 0; i < conf->workers->nelts; i++) {
+        if (!strcmp(name, workers[i].name)) {
+            worker = &workers[i];
+            break;
+        }
+    }
+    if (!worker) {
+        char *p, *q;
+        int port;
+        worker = apr_array_push(conf->workers);
+        worker->name = apr_pstrdup(cmd->pool, name);
+        worker->scheme = name;
+        p = strchr(name, ':');
+        if (p == NULL || p[1] != '/' || p[2] != '/' || p[3] == '\0') {
+            return "BalanceMember: Bad syntax for a remote proxy server";
+        }
+        *p = '\0';
+        q = strchr(p + 3, ':');
+        if (q != NULL) {
+            if (sscanf(q + 1, "%u", &port) != 1 || port > 65535) {
+                return "BalanceMember: Bad syntax for a remote proxy server (bad port number)";
+            }
+            *q = '\0';
+        }
+        else
+            port = -1;
+        if (port == -1)
+            port = apr_uri_port_of_scheme(worker->scheme);
+        worker->port = port;
+    }
+
+    arr = apr_table_elts(params);
+    elts = (const apr_table_entry_t *)arr->elts;
+    for (i = 0; i < arr->nelts; i++) {
+        if (!strcasecmp(elts[i].key, "loadfactor")) {
+            worker->lbfactor = atoi(elts[i].val);
+            if (worker->lbfactor < 1 || worker->lbfactor > 100)
+                return "BalanceMember: loadfactor must be number between 1..100";
+        }
+        else if (!strcasecmp(elts[i].key, "retry")) {
+            int sec = atoi(elts[i].val);
+            if (sec < 0)
+                return "BalanceMember: retry must be positive number";
+            worker->retry = apr_time_from_sec(sec);
+        }
+    }
+    /* Try to find the balancer */
+    balancers = (struct proxy_balancer *)conf->balancers->elts;
+    for (i = 0; i < conf->balancers->nelts; i++) {
+        if (!strcmp(name, balancers[i].name)) {
+            balancer = &balancers[i];
+            break;
+        }
+    }
+
+    if (!balancer) {
+        apr_status_t rc = 0;
+#if DEBUGGING
+        ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+                     "Creating new balancer %s", path);
+#endif
+        balancer = (struct proxy_balancer *)apr_pcalloc(cmd->pool, sizeof(struct proxy_balancer));
+        balancer->name = path;
+        balancer->workers = apr_array_make(cmd->pool, 5, sizeof(proxy_runtime_worker));
+        /* XXX Is this a right place to create mutex */
+#if APR_HAS_THREADS
+        if ((rc = apr_thread_mutex_create(&(balancer->mutex),
+            APR_THREAD_MUTEX_DEFAULT, cmd->pool)) != APR_SUCCESS) {
+            /* XXX: Do we need to log something here */
+            return "BalanceMember: system error. Can not create thread mutex";
+        }
+#endif
+    }
+    /* Add the worker to the load balancer */
+    runtime = apr_array_push(balancer->workers);
+    runtime->w = worker;
+    
+    return NULL;
+}
+
 static void ap_add_per_proxy_conf(server_rec *s, ap_conf_vector_t *dir_config)
 {
     proxy_server_conf *sconf = ap_get_module_config(s->module_config,
@@ -1167,7 +1291,8 @@ static const command_rec proxy_cmds[] =
      "This overrides the server timeout"),
     AP_INIT_TAKE1("ProxyBadHeader", set_bad_opt, NULL, RSRC_CONF,
      "How to handle bad header line in response: IsError | Ignore | StartBody"),
- 
+    AP_INIT_ITERATE("BalancerMember", add_member, NULL, RSRC_CONF|ACCESS_CONF,
+     "A balancer name and scheme with list of params"), 
     {NULL}
 };
 
