@@ -2273,8 +2273,8 @@ static int jk_translate(request_rec *r)
                 /* This could be a sub-request, possibly from mod_dir */
                 /* Also set the HANDLER and uri for subrequest */ 
                 if(r->main) {
-                    r->main->handler=apr_pstrdup(r->pool,JK_HANDLER);
-                    r->main->uri=apr_pstrdup(r->pool,r->uri);
+                    r->main->handler=apr_pstrdup(r->main->pool,JK_HANDLER);
+                    r->main->uri=apr_pstrdup(r->main->pool,r->uri);
                     apr_table_setn(r->main->notes, JK_WORKER_ID, worker);
                 }
 
