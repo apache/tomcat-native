@@ -93,9 +93,8 @@ extern "C"
 #define BIG_POOL_SIZE   2*SMALL_POOL_SIZE       /* Bigger 1K atom pool. */
 #define HUGE_POOL_SIZE  2*BIG_POOL_SIZE /* Huge 2K atom pool. */
 
-    typedef struct jk_pool_t jk_pool_t;
 /** jk pool structure */
-struct jk_pool_t
+struct jk_pool
 {
     size_t size;
     size_t pos;
@@ -104,6 +103,8 @@ struct jk_pool_t
     size_t dyn_pos;
     void **dynamic;
 };
+
+typedef struct jk_pool jk_pool_t;
 
 void jk_open_pool(jk_pool_t *p, jk_pool_atom_t *buf, size_t size);
 
