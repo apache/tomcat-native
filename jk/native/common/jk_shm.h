@@ -55,7 +55,7 @@ struct jk_shm_worker
 {
     int     id;
     /* Number of currently busy channels */
-    int     busy;
+    volatile int busy;
     /* worker name */
     char    name[JK_SHM_STR_SIZ+1];
     /* worker domain */
@@ -63,28 +63,28 @@ struct jk_shm_worker
     /* worker redirect route */
     char    redirect[JK_SHM_STR_SIZ+1];
     /* current status of the worker */
-    int     is_disabled;
-    int     is_busy;
+    volatile int is_disabled;
+    volatile int is_busy;
     /* Current lb factor */
-    int     lb_factor;
+    volatile int lb_factor;
     /* Current lb value  */
-    int     lb_value;
-    int     in_error_state;
-    int     in_recovering;
+    volatile int lb_value;
+    volatile int in_error_state;
+    volatile int in_recovering;
     int     sticky_session;
     int     sticky_session_force;
     int     recover_wait_time;
     int     retries;
     /* Statistical data */
-    time_t  error_time;
+    volatile time_t  error_time;
     /* Number of bytes read from remote */
-    size_t  readed;
+    volatile size_t  readed;
     /* Number of bytes transferred to remote */
-    size_t  transferred;
+    volatile size_t  transferred;
     /* Number of times the worker was elected */
-    size_t  elected;
+    volatile size_t  elected;
     /* Number of non 200 responses */
-    size_t  errors;
+    volatile size_t  errors;
 };
 typedef struct jk_shm_worker jk_shm_worker_t;
 
