@@ -149,6 +149,8 @@ struct jk_config {
     void *_private;
     struct jk_workerEnv *workerEnv;
     struct jk_map *map;
+
+    char *section;
 };
 
 /** Util: Split a string in components. */

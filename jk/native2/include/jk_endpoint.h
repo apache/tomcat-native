@@ -116,7 +116,7 @@ typedef struct jk_endpoint   jk_endpoint_t;
  * See jk_ajp13_worker.c/jk_ajp14_worker.c and jk_ajp12_worker.c for examples.  
  */
 struct jk_endpoint {
-  
+    struct jk_bean *mbean;
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol 

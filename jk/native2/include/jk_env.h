@@ -140,6 +140,14 @@ struct jk_bean {
      */
     void *object;
 
+    /** Unprocessed settings that are set on this bean by the config
+        apis ( i.e. with $() in it ).
+
+        It'll be != NULL for each component that was created or set using
+        jk_config.
+    */
+    struct jk_map *settings;
+
     /** Set a jk property. This is similar with the mechanism
      *  used by java side ( with individual setters for
      *  various properties ), except we use a single method
