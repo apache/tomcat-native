@@ -88,6 +88,8 @@ public class WarpHost extends StandardHost {
 
     /** The Warp Host ID of this Host. */
     private int id=-1;
+    /** The port of this Host. */
+    private int port=-1;
     /** The ID to use for the next dynamically configured application. */
     private int applid=0;
 
@@ -108,6 +110,23 @@ public class WarpHost extends StandardHost {
     public void invoke(Request req, Response res)
     throws ServletException, IOException {
         if (DEBUG) this.debug("Invoked");
+        String host=this.getName();
+        int port=this.getPort();
+        String hp=((WarpRequest)req).getHeader("Host");
+        if (hp!=null) {
+            int ptr=hp.lastIndexOf(':');
+            if (ptr==-1) host=hp;
+            else {
+                host=hp.substring(0,ptr);
+                try {
+                    port=Integer.parseInt(hp.substring(ptr+1));
+                } catch (NumberFormatException e) {
+                    this.debug(e);
+                }
+            }
+        }
+        req.setServerName(host);
+        req.setServerPort(port);
         super.invoke(req,res);
     }
 
@@ -169,6 +188,20 @@ public class WarpHost extends StandardHost {
      */
     public boolean isStarted() {
         return(super.started);
+    }
+
+    /**
+     * Set the port number of this host.
+     */
+    public void setPort(int port) {
+        this.port=port;
+    }
+    
+    /**
+     * Return the port associated with this host.
+     */
+    public int getPort() {
+        return(this.port);
     }
 
     // ------------------------------------------------------ DEBUGGING METHODS
