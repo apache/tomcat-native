@@ -680,7 +680,6 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
 
 static void ajp_reset_endpoint(ajp_endpoint_t * ae)
 {
-    ae->reuse = JK_FALSE;
     jk_reset_pool(&(ae->pool));
 }
 
@@ -692,15 +691,13 @@ void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
 
-    jk_close_pool(&(ae->pool));
-
     if (ae->sd > 0) {
         jk_close_socket(ae->sd);
         jk_log(l, JK_LOG_DEBUG,
                "closed sd = %d\n", ae->sd);
-        ae->sd = -1;            /* just to avoid twice close */
     }
 
+    jk_close_pool(&(ae->pool));
     free(ae);
     JK_TRACE_EXIT(l);
 }
@@ -714,6 +711,10 @@ static void ajp_reuse_connection(ajp_endpoint_t * ae, jk_logger_t *l)
 {
     ajp_worker_t *aw = ae->worker;
 
+    /* Close existing endpoint socket */
+    jk_close_socket(ae->sd);
+    ae->sd = -1;
+
     if (aw->ep_cache_sz) {
         int rc;
         JK_ENTER_CS(&aw->cs, rc);
@@ -721,7 +722,8 @@ static void ajp_reuse_connection(ajp_endpoint_t * ae, jk_logger_t *l)
             unsigned i;
 
             for (i = 0; i < aw->ep_cache_sz; i++) {
-                if (aw->ep_cache[i]) {
+                /* Find cache slot with usable socket */
+                if (aw->ep_cache[i] && aw->ep_cache[i]->sd > 0) {
                     ae->sd = aw->ep_cache[i]->sd;
                     aw->ep_cache[i]->sd = -1;
                     ajp_close_endpoint(aw->ep_cache[i], l);
@@ -867,6 +869,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
                                     jk_msg_buf_t *msg, jk_logger_t *l)
 {
+    int rc;
 
     JK_TRACE_ENTER(l); 
     if (ae->proto == AJP13_PROTO) {
@@ -884,15 +887,16 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
         return JK_FALSE;
     }
 
-    if (0 >
-        jk_tcp_socket_sendfull(ae->sd, jk_b_get_buff(msg),
-                               jk_b_get_len(msg))) {
+    if ((rc = jk_tcp_socket_sendfull(ae->sd, jk_b_get_buff(msg),
+                               jk_b_get_len(msg))) > 0) {
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return JK_TRUE;
     }
+    jk_log(l, JK_LOG_ERROR,
+           "sendfull returned %d with errno=%d \n", rc, errno);
 
     JK_TRACE_EXIT(l);
-    return JK_TRUE;
+    return JK_FALSE;
 }
 
 /*
@@ -1140,13 +1144,10 @@ static int ajp_send_request(jk_endpoint_t *e,
         /* If we got an error or can't send data, then try to get a pooled
          * connection and try again.  If we are succesful, break out of this
          * loop. */
-        if (err
-            || ajp_connection_tcp_send_message(ae, op->request,
-                                               l) == JK_FALSE) {
-            jk_log(l, JK_LOG_INFO,
+        if (err ||
+            (ajp_connection_tcp_send_message(ae, op->request, l) == JK_FALSE)) {
+            jk_log(l, JK_LOG_ERROR,
                    "Error sending request try another pooled connection\n");
-            jk_close_socket(ae->sd);
-            ae->sd = -1;
             ajp_reuse_connection(ae, l);
         }
         else
@@ -1165,7 +1166,7 @@ static int ajp_send_request(jk_endpoint_t *e,
              * After we are connected, each error that we are going to
              * have is probably unrecoverable
              */
-            if (!ajp_connection_tcp_send_message(ae, op->request, l)) {
+            if (ajp_connection_tcp_send_message(ae, op->request, l) == JK_FALSE) {
                 jk_log(l, JK_LOG_INFO,
                        "Error sending request on a fresh connection\n");
                 JK_TRACE_EXIT(l);
@@ -1200,7 +1201,7 @@ static int ajp_send_request(jk_endpoint_t *e,
 
     postlen = jk_b_get_len(op->post);
     if (postlen > AJP_HEADER_LEN) {
-        if (!ajp_connection_tcp_send_message(ae, op->post, l)) {
+        if (ajp_connection_tcp_send_message(ae, op->post, l) == JK_FALSE) {
             jk_log(l, JK_LOG_ERROR, "Error resending request body (%d)\n",
                    postlen);
             JK_TRACE_EXIT(l);
@@ -1215,7 +1216,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         postlen = jk_b_get_len(s->reco_buf);
 
         if (postlen > AJP_HEADER_LEN) {
-            if (!ajp_connection_tcp_send_message(ae, s->reco_buf, l)) {
+            if (ajp_connection_tcp_send_message(ae, s->reco_buf, l) == JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR,
                        "Error resending request body (lb mode) (%d)\n",
                        postlen);
@@ -1260,7 +1261,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             }
 
             s->content_read = len;
-            if (!ajp_connection_tcp_send_message(ae, op->post, l)) {
+            if (ajp_connection_tcp_send_message(ae, op->post, l) == JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR, "Error sending request body\n");
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -1634,9 +1635,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                     }
                 }
             }
-
-            jk_close_socket(p->sd);
-            p->sd = -1;
+            /* Get another connection from the pool */
             ajp_reuse_connection(p, l);
 
             if (err == JK_CLIENT_ERROR) {
@@ -1737,18 +1736,7 @@ int ajp_init(jk_worker_t *pThis,
      */
     JK_TRACE_ENTER(l);
 
-    if (proto == AJP13_PROTO) {
-        cache = AJP13_DEF_CACHE_SZ;
-    }
-    else if (proto == AJP14_PROTO) {
-        cache = AJP13_DEF_CACHE_SZ;
-    }
-    else {
-        jk_log(l, JK_LOG_ERROR,
-               "unknown protocol %d\n", proto);
-        JK_TRACE_EXIT(l);
-        return rc;
-    }
+    cache = jk_get_worker_def_cache_size(proto);
 
     if (pThis && pThis->worker_private) {
         ajp_worker_t *p = pThis->worker_private;
@@ -1843,6 +1831,10 @@ int ajp_init(jk_worker_t *pThis,
             if (p->ep_cache) {
                 int i;
                 p->ep_cache_sz = cache_sz;
+                jk_log(l, JK_LOG_DEBUG,
+                       "setting connection cache size to %d\n",
+                       p->ep_cache_sz);
+                /* Initialize cache slots */
                 for (i = 0; i < cache_sz; i++) {
                     p->ep_cache[i] = NULL;
                 }
@@ -1877,7 +1869,7 @@ int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto)
                aw->ep_cache_sz);
 
         if (aw->ep_cache_sz) {
-            unsigned i;
+            unsigned int i;
             for (i = 0; i < aw->ep_cache_sz; i++) {
                 if (aw->ep_cache[i]) {
                     ajp_close_endpoint(aw->ep_cache[i], l);
@@ -1907,36 +1899,39 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
     JK_TRACE_ENTER(l);
     if (e && *e && (*e)->endpoint_private) {
         ajp_endpoint_t *p = (*e)->endpoint_private;
-        int reuse_ep = p->reuse;
 
-        ajp_reset_endpoint(p);
-
-        if (reuse_ep) {
+        if (p->reuse) {
             ajp_worker_t *w = p->worker;
             if (w->ep_cache_sz) {
                 int rc;
                 JK_ENTER_CS(&w->cs, rc);
                 if (rc) {
-                    unsigned i;
+                    unsigned int i;
 
                     for (i = 0; i < w->ep_cache_sz; i++) {
                         if (!w->ep_cache[i]) {
                             w->ep_cache[i] = p;
+                            ajp_reset_endpoint(p);
                             break;
                         }
                     }
                     JK_LEAVE_CS(&w->cs, rc);
                     if (i < w->ep_cache_sz) {
                         jk_log(l, JK_LOG_DEBUG,
-                               "recycling connection\n");
+                               "recycling connection cache slot=%d\n", i);
                         JK_TRACE_EXIT(l);
                         return JK_TRUE;
                     }
+                    jk_log(l, JK_LOG_INFO,
+                           "could not find empty cache slot from %d for worker %s"
+                           ". Rise worker cachesize\n",
+                           w->ep_cache_sz, w->name);
                 }
             }
         }
         jk_log(l, JK_LOG_DEBUG,
-               "closing connection %d\n", reuse_ep);
+               "done with connection %d for worker %s\n",
+               p->sd, p->worker->name);
         ajp_close_endpoint(p, l);
         *e = NULL;
 
@@ -2025,6 +2020,8 @@ int ajp_get_endpoint(jk_worker_t *pThis,
             ae->endpoint.service = ajp_service;
             ae->endpoint.done = ajp_done;
             *je = &ae->endpoint;
+            jk_log(l, JK_LOG_DEBUG,
+                   "created new endpoint for worker %s\n", aw->name);
             JK_TRACE_EXIT(l);
             return JK_TRUE;
         }
