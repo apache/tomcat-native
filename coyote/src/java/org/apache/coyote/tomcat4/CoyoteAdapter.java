@@ -237,7 +237,13 @@ final class CoyoteAdapter
             request.setSecure(connector.getSecure());
         }
  
-
+        // Filter trace method
+        if (!connector.getAllowTrace() 
+            && req.method().equalsIgnoreCase("TRACE")) {
+            res.setStatus(403);
+            res.setMessage("TRACE method is not allowed");
+            throw new IOException("TRACE method is not allowed");
+        }
 
         request.setAuthorization
             (req.getHeader(Constants.AUTHORIZATION_HEADER));
