@@ -84,9 +84,9 @@ public final class ClassLoaderLogManager extends LogManager {
             }
             return unset;
         }
-        final ClassLoader classLoader = Thread.currentThread()
-                .getContextClassLoader();
-        final ClassLoaderLogInfo info = getClassLoaderInfo(classLoader);
+        ClassLoader classLoader = 
+            Thread.currentThread().getContextClassLoader();
+        ClassLoaderLogInfo info = getClassLoaderInfo(classLoader);
         if (info.loggers.containsKey(loggerName)) {
             return false;
         }
@@ -94,7 +94,7 @@ public final class ClassLoaderLogManager extends LogManager {
         info.loggers.put(loggerName, logger);
 
         // apply initial level for new logger
-        final String levelString = getProperty(loggerName + ".level");
+        String levelString = getProperty(loggerName + ".level");
         final Level level;
         if (levelString != null) {
             Level parsedLevel = null;
@@ -133,11 +133,11 @@ public final class ClassLoaderLogManager extends LogManager {
         }
 
         // find node
-        final LogNode node = info.rootNode.findNode(loggerName);
+        LogNode node = info.rootNode.findNode(loggerName);
         node.logger = logger;
 
         // set parent logger
-        final Logger parentLogger = node.findParentLogger();
+        Logger parentLogger = node.findParentLogger();
         if (parentLogger != null) {
             doSetParentLogger(logger, parentLogger);
         }
@@ -147,13 +147,24 @@ public final class ClassLoaderLogManager extends LogManager {
 
         // Add associated handlers, if any are defined using the .handlers property.
         // In this case, handlers of the parent logger(s) will not be used
-        final String handlers = getProperty(loggerName + ".handlers");
+        String handlers = getProperty(loggerName + ".handlers");
         if (handlers != null) {
             logger.setUseParentHandlers(false);
             StringTokenizer tok = new StringTokenizer(handlers, ",");
             while (tok.hasMoreTokens()) {
                 String handlerName = (tok.nextToken().trim());
-                Handler handler = (Handler) info.handlers.get(handlerName);
+                Handler handler = null;
+                ClassLoader current = classLoader;
+                while (current != null) {
+                    info = (ClassLoaderLogInfo) classLoaderLoggers.get(current);
+                    if (info != null) {
+                        handler = (Handler) info.handlers.get(handlerName);
+                        if (handler != null) {
+                            break;
+                        }
+                    }
+                    current = current.getParent();
+                }
                 if (handler != null) {
                     logger.addHandler(handler);
                 }
@@ -164,10 +175,7 @@ public final class ClassLoaderLogManager extends LogManager {
         // Unlike java.util.logging, the default is to not delegate if a list of handlers
         // has been specified for the logger.
         String useParentHandlersString = getProperty(loggerName + ".useParentHandlers");
-        if ((useParentHandlersString != null) 
-                && (!Boolean.valueOf(useParentHandlersString).booleanValue())) {
-            logger.setUseParentHandlers(false);
-        } else {
+        if (Boolean.valueOf(useParentHandlersString).booleanValue()) {
             logger.setUseParentHandlers(true);
         }
         
@@ -189,17 +197,6 @@ public final class ClassLoaderLogManager extends LogManager {
         final ClassLoader classLoader = Thread.currentThread()
                 .getContextClassLoader();
         final Map loggers = getClassLoaderInfo(classLoader).loggers;
-        /*
-         * Debug: display handler list
-        Logger logger = (Logger) loggers.get(name);
-        System.out.println(name);
-        if (logger != null) {
-            Handler[] handlers =  logger.getHandlers();
-            for (int i = 0; i < handlers.length; i++) {
-                System.out.println("H" + i + ":" + handlers[i]);
-            }
-        }
-        */
         return (Logger) loggers.get(name);
     }
     
@@ -266,6 +263,11 @@ public final class ClassLoaderLogManager extends LogManager {
     }
     
     private ClassLoaderLogInfo getClassLoaderInfo(final ClassLoader classLoader) {
+        
+        if (classLoader == null) {
+            return null;
+        }
+        
         ClassLoaderLogInfo info = (ClassLoaderLogInfo) classLoaderLoggers
                 .get(classLoader);
         if (info == null) {
@@ -330,28 +332,9 @@ public final class ClassLoaderLogManager extends LogManager {
                             this.prefix.set(prefix);
                             Handler handler = 
                                 (Handler) classLoader.loadClass(handlerClassName).newInstance();
-                            // FIXME: The specification strongly implies this should be done in the
-                            // handler configuration
-                            /*
-                            // Initialize handler's level
-                            String handlerLevel = 
-                                info.props.getProperty(handlerName + ".level");
-                            if (handlerLevel != null) {
-                                handler.setLevel(Level.parse(handlerLevel.trim()));
-                            }
-                            // Initialize filter
-                            String filterName =
-                                info.props.getProperty(handlerName + ".filter");
-                            if (filterName != null) {
-                                try {
-                                    handler.setFilter
-                                        ((Filter) classLoader.loadClass(filterName).newInstance());
-                                } catch (Exception e) {
-                                    // FIXME: Report this using the main logger ?
-                                    // Ignore
-                                }
-                            }
-                            */
+                            // The specification strongly implies all configuration should be done 
+                            // during the creation of the handler object.
+                            // This includes setting level, filter, formatter and encoding.
                             this.prefix.set(null);
                             info.handlers.put(handlerName, handler);
                             if (rootHandlers == null) {
@@ -365,9 +348,9 @@ public final class ClassLoaderLogManager extends LogManager {
                     
                     // Add handlers to the root logger, if any are defined using the .handlers property.
                     if (rootHandlers != null) {
-                        StringTokenizer tok2 = new StringTokenizer(rootHandlers);
+                        StringTokenizer tok2 = new StringTokenizer(rootHandlers, ",");
                         while (tok2.hasMoreTokens()) {
-                            String handlerName = (tok2.nextToken());
+                            String handlerName = (tok2.nextToken().trim());
                             Handler handler = (Handler) info.handlers.get(handlerName);
                             if (handler != null) {
                                 localRootLogger.addHandler(handler);
