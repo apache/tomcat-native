@@ -106,12 +106,13 @@ struct jk_uriMap {
     
     /* ---------- Methods ---------- */
 
+    int (*setProperty)( struct jk_env *env, jk_uriMap_t *_this,
+                        char *name, char *value );
+    
     /** Initialize the map. This should be called after all workers
         were added. It'll check if mappings have valid workers.
     */
-    int (*init)( struct jk_env *env, jk_uriMap_t *_this,
-                 struct jk_workerEnv *workerEnv,
-                 struct jk_map *init_data );
+    int (*init)( struct jk_env *env, jk_uriMap_t *_this);
 
     void (*destroy)( struct jk_env *env, jk_uriMap_t *_this );
 
