@@ -70,6 +70,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.security.AccessController;
 import java.security.Principal;
@@ -355,6 +356,18 @@ public class CoyoteRequest
     private StringParser parser = new StringParser();
 
 
+    /**
+     * Remote address.
+     */
+    protected String remoteAddr = null;
+
+
+    /**
+     * Remote host.
+     */
+    protected String remoteHost = null;
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -363,8 +376,6 @@ public class CoyoteRequest
      * preparation for reuse of this object.
      */
     public void recycle() {
-
-        socket = null;
 
         context = null;
         wrapper = null;
@@ -543,6 +554,8 @@ public class CoyoteRequest
      */
     public void setSocket(Socket socket) {
         this.socket = socket;
+        remoteHost = null;
+        remoteAddr = null;
     }
 
 
@@ -1002,7 +1015,11 @@ public class CoyoteRequest
      * Return the remote IP address making this Request.
      */
     public String getRemoteAddr() {
-        return coyoteRequest.remoteAddr().toString();
+        if (remoteAddr == null) {
+            InetAddress inet = socket.getInetAddress();
+            remoteAddr = inet.getHostAddress();
+        }
+        return remoteAddr;
     }
 
 
@@ -1010,7 +1027,15 @@ public class CoyoteRequest
      * Return the remote host name making this Request.
      */
     public String getRemoteHost() {
-        return coyoteRequest.remoteHost().toString();
+        if (remoteHost == null) {
+            if (connector.getEnableLookups()) {
+                InetAddress inet = socket.getInetAddress();
+                remoteHost = inet.getHostName();
+            } else {
+                remoteHost = getRemoteAddr();
+            }
+        }
+        return remoteHost;
     }
 
 

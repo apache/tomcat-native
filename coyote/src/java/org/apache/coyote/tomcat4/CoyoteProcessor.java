@@ -387,7 +387,6 @@ final class CoyoteProcessor
     protected void postParseRequest(Request req, Response res)
         throws IOException {
 
-        request.setSocket(socket);
         request.setSecure(connector.getSecure());
         req.scheme().setString(connector.getScheme());
 
@@ -805,6 +804,9 @@ final class CoyoteProcessor
      * @param socket The socket on which we are connected to the client
      */
     private void process(Socket socket) {
+
+        // Set socket
+        request.setSocket(socket);
 
         InputStream input = null;
         OutputStream output = null;
