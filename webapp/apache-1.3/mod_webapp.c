@@ -68,7 +68,6 @@
 #include <http_protocol.h>
 #include <util_script.h>
 #include <wa.h>
-#include <wa_version.h>
 
 /* ************************************************************************* */
 /* GENERIC DECLARATIONS                                                      */
@@ -83,27 +82,27 @@ static wa_chain *wam_connections=NULL;
 /* The main server using for logging error not related to requests */
 static server_rec *server=NULL;
 
-static void wam_init_handler(server_rec *s, ap_pool *p)
-{
-    ap_add_version_component(WA_EXPOSED_VERSION);
-}
-
 /* ************************************************************************* */
 /* MODULE AND LIBRARY INITIALIZATION AND DESTRUCTION                         */
 /* ************************************************************************* */
 
 /* Destroy the module and the WebApp Library */
-static void wam_shutdown(server_rec *s, pool *p) {/*void *nil) { */
+static void wam_child_destroy(server_rec *s, pool *p) {
     if (!wam_initialized) return;
     wa_shutdown();
     wam_initialized=wa_false;
 }
 
 /* Startup the module and the WebApp Library */
-static void wam_startup(server_rec *s, pool *p) {
+static void wam_child_init(server_rec *s, pool *p) {
     if (!wam_initialized) return;
     server=s;
     wa_startup();
+}
+
+/* Initialize the module, by adding our version info in Apache. */
+static void wam_module_init(server_rec *s, ap_pool *p) {
+    ap_add_version_component(WA_VERSION);
 }
 
 /* Initialize the module and the WebApp Library */
@@ -538,7 +537,7 @@ static const handler_rec wam_handlers[] = {
 /* Apache module declaration */
 module MODULE_VAR_EXPORT webapp_module = {
     STANDARD_MODULE_STUFF,
-    wam_init_handler,                   /* module initializer */
+    wam_module_init,                    /* module initializer */
     NULL,                               /* per-directory config creator */
     NULL,                               /* dir config merger */
     NULL,                               /* server config creator */
@@ -553,7 +552,7 @@ module MODULE_VAR_EXPORT webapp_module = {
     NULL,                               /* [8] fixups */
     NULL,                               /* [10] logger */
     NULL,                               /* [3] header parser */
-    wam_startup,                        /* child initializer */
-    wam_shutdown,                       /* child exit/cleanup */
+    wam_child_init,                     /* child initializer */
+    wam_child_destroy,                  /* child exit/cleanup */
     NULL                                /* [1] post read_request handling */
 };

@@ -115,6 +115,7 @@ extern wa_provider wa_provider_warp;
 #include <wa_main.h>
 #include <wa_config.h>
 #include <wa_request.h>
+#include <wa_version.h>
 
 /* Debugging mark */
 #define WA_MARK __FILE__,__LINE__

@@ -65,6 +65,7 @@ dnl --------------------------------------------------------------------------
 
 sinclude(./support/wa_util.m4)
 sinclude(./support/wa_exec.m4)
+sinclude(./support/wa_version.m4)
 sinclude(./support/wa_apr.m4)
 sinclude(./support/wa_apxs.m4)
 
@@ -236,6 +237,9 @@ else
 
     MODULE="apache-2.0"
 fi
+
+WA_APXS_SERVER([APACHE_VERSION],[${APXS}])
+WA_VERSION([WEBAPP_VERSION],[${CC}])
 
 dnl --------------------------------------------------------------------------
 dnl All done

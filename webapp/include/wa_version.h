@@ -58,34 +58,10 @@
 #ifndef _WA_VERSION_H_
 #define _WA_VERSION_H_
 
-
-/************** START OF AREA TO MODIFY BEFORE RELEASING *************/
-#define WA_VERMAJOR     1
-#define WA_VERMINOR     2
-#define WA_VERFIX       0
-#define WA_VERSTRING    "1.2.0-dev"
-
-/* Beta number */
-#define WA_VERBETA      1
-#define WA_BETASTRING   "1"
-/* set WA_VERISRELEASE to 1 when release (do not forget to commit!) */
-#define WA_VERISRELEASE 1
-/************** END OF AREA TO MODIFY BEFORE RELEASING *************/
-
-#define PACKAGE "mod_webapp/"
-/* Build WA_EXPOSED_VERSION and WA_VERSION */
-#define WA_EXPOSED_VERSION_INT PACKAGE WA_VERSTRING
-
-#if ( WA_VERISRELEASE == 1 )
-#define WA_EXPOSED_VERSION WA_EXPOSED_VERSION_INT
-#undef WA_VERBETA
-#define WA_VERBETA 255
-#else
-#define WA_EXPOSED_VERSION WA_EXPOSED_VERSION_INT "-beta-" WA_BETASTRING
-#endif
-
-#define WA_MAKEVERSION(major, minor, fix, beta) (((major) << 24) + ((minor) << 16) + ((fix) << 8) + (beta))
-
-#define WA_VERSION WA_MAKEVERSION(WA_VERMAJOR, WA_VERMINOR, WA_VERFIX, WA_VERBETA)
+#define WA_VENDOR   "Apache Software Foundation"
+#define WA_PRODUCT  "WebApp Module"
+#define WA_NAME     "mod_webapp"
+#define WA_REVISION "1.2.0-dev"
+#define WA_VERSION  WA_NAME "/" WA_REVISION
 
 #endif /* _WA_VERSION_H_ */

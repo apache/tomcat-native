@@ -69,7 +69,6 @@
 #include <http_protocol.h>
 #include <util_script.h>
 #include <wa.h>
-#include <wa_version.h>
 #include <apr_tables.h>
 
 /* ************************************************************************* */
@@ -89,15 +88,14 @@ static server_rec *server=NULL;
 /* MODULE AND LIBRARY INITIALIZATION AND DESTRUCTION                         */
 /* ************************************************************************* */
 
-static int wam_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp,
-                             server_rec *s)
-{
-    ap_add_version_component(p, WA_EXPOSED_VERSION);
+static int wam_module_init(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp,
+                            server_rec *s) {
+    ap_add_version_component(p, WA_VERSION);
     return OK;
 }
 
 /* Destroy the module and the WebApp Library */
-static apr_status_t wam_shutdown(void *data) {/*void *nil) { */
+static apr_status_t wam_child_destroy(void *data) {/*void *nil) { */
     if (!wam_initialized) return APR_SUCCESS;
     wa_shutdown();
     wam_initialized=wa_false;
@@ -105,11 +103,11 @@ static apr_status_t wam_shutdown(void *data) {/*void *nil) { */
 }
 
 /* Startup the module and the WebApp Library */
-static void wam_startup(apr_pool_t *p, server_rec *s) {
+static void wam_child_init(apr_pool_t *p, server_rec *s) {
     if (!wam_initialized) return;
     server=s;
     wa_startup();
-    apr_pool_cleanup_register(p, NULL, wam_shutdown, apr_pool_cleanup_null);
+    apr_pool_cleanup_register(p, NULL, wam_child_destroy, apr_pool_cleanup_null);
 }
 
 /* Initialize the module and the WebApp Library */
@@ -528,13 +526,13 @@ static int wam_map_to_storage(request_rec *r)
     return DECLINED;
 }
 
-static void register_hooks(apr_pool_t *p)
+static void wam_hooks(apr_pool_t *p)
 {
+    ap_hook_post_config(wam_module_init, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_child_init(wam_child_init, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_map_to_storage(wam_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_handler(wam_invoke, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_translate_name(wam_match, NULL, NULL, APR_HOOK_MIDDLE);
-    ap_hook_child_init(wam_startup, NULL, NULL, APR_HOOK_MIDDLE);
-    ap_hook_map_to_storage(wam_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
-    ap_hook_post_config(wam_init_handler, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
 /* Apache module declaration */
@@ -545,5 +543,5 @@ module AP_MODULE_DECLARE_DATA webapp_module = {
     NULL,                               /* server config creator */
     NULL,                               /* server config merger */
     wam_directives,                     /* command table */
-    register_hooks
+    wam_hooks,
 };
