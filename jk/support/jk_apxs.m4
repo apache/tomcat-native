@@ -121,7 +121,7 @@ AC_DEFUN(
             if ${TEST} -z "$APA" ; then
               WEBSERVERS="${WEBSERVERS} server/apache13"
               RWEBSERVER="apache-1.3"
-		      APXS$1_CFLAGS="`${APXS$1} -q CFLAGS`"
+              APXS$1_CFLAGS="`${APXS$1} -q CFLAGS`"
               APXS$1_CPPFLAGS=""
             else
               WEBSERVERS="${WEBSERVERS} server/apache2"
@@ -130,8 +130,8 @@ AC_DEFUN(
               JK_CHANNEL_APR_SOCKET="\${JK}jk_channel_apr_socket\${OEXT}"
               JK_POOL_APR="\${JK}jk_pool_apr\${OEXT}"
               HAS_APR="-DHAS_APR"
-		      APXS$1_CFLAGS="`${APXS$1} -q EXTRA_CFLAGS`"
-		      APXS$1_CPPFLAGS="`${APXS$1} -q EXTRA_CPPFLAGS`"
+              APXS$1_CFLAGS="`${APXS$1} -q CFLAGS` `${APXS$1} -q EXTRA_CFLAGS`"
+              APXS$1_CPPFLAGS="`${APXS$1} -q EXTRA_CPPFLAGS`"
             fi
             
             AC_MSG_RESULT([building connector for \"$RWEBSERVER\"])
