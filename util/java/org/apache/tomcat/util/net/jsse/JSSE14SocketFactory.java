@@ -124,7 +124,7 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
                 keystoreType = defaultKeystoreType;
             }
 
-	    String trustAlgorithm = (String)attributes.get("truststoreAlgorithme");
+	    String trustAlgorithm = (String)attributes.get("truststoreAlgorithm");
 	    if( trustAlgorithm == null ) {
 		trustAlgorithm = algorithm;
 	    }
