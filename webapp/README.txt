@@ -23,3 +23,10 @@ Prerequisites:
       Currently, for Apache 1.3, you will need a fully installed version of
       the web server with DSO (loadable modules) support and APXS, the Apache
       modules compilation utility.
+
+Configuration:
+--------------
+
+Simply issue a "./configure --help" to see all the supported AutoConf parameters.
+APR is required and must be compiled and installed before trying to compile the
+library. APR can be found at http://apr.apache.org/
