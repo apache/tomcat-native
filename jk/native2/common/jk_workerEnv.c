@@ -70,7 +70,7 @@
 #include "jk_channel.h"
 #include "jk_registry.h"
 
-#define DEFAULT_WORKER              ("ajp13")
+#define DEFAULT_WORKER              ("lb")
 
 static void jk2_workerEnv_close(jk_env_t *env, jk_workerEnv_t *wEnv);
 static void jk2_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *wEnv);
@@ -181,24 +181,10 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
             err=w->init(env, w);
     
             if(err!=JK_OK) {
-                if( w->destroy != NULL ) 
-                    w->destroy(env, w);
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "workerEnv.initWorkers() init failed for %s\n", 
                               name); 
-            } else {
-                /* Add the worker automatically in the 'default' lb and in any group */
-                if( strncmp( "worker.ajp13", w->mbean->name, 12 ) == 0 ||
-                    strncmp( "ajp13", w->mbean->name, 5 ) == 0 ) {
-                    /* It's a forwarding worker */
-                    lb->mbean->setAttribute(env, lb->mbean, "balanced_workers",
-                                            w->mbean->name);
-                }
-
-                /* XXX Find any 'group' property - find or create an lb for that
-                   and register it
-                */
-            }
+            } 
         }
     }
     return JK_OK;
@@ -213,38 +199,16 @@ static int jk2_workerEnv_initChannel(jk_env_t *env,
     
     if( ch->init != NULL ) {
         rc=ch->init(env, ch);
-        
         if(rc!=JK_OK) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "workerEnv.initChannel() init failed for %s\n", 
-                          ch->mbean->name); 
+                          ch->mbean->name);
+            /* Disable the associated worker */
+            ch->worker->channel=NULL;
+            ch->worker->channelName=NULL;
         }
     }
     
-    if( ch->workerName != NULL ) {
-        jk_worker_t *w=wEnv->worker_map->get( env, wEnv->worker_map, ch->workerName );
-        ch->worker=w;
-    }
-
-    /* If a worker is not defined ( yet ) for the channel, define a default one ( ajp13 )*/
-    if( ch->worker == NULL ) {
-        jk_bean_t *jkb;
-        
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "workerEnv.initChannel(): default worker ajp13:%s\n", ch->mbean->localName );
-        
-        jkb=env->createBean2(env, ch->mbean->pool, "ajp13", ch->mbean->localName );
-        if( jkb == NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "workerEnv.initChannel(): Can't find ajp13\n" );
-            return JK_ERR;
-        }
-        ch->worker=jkb->object;
-        ch->worker->channelName=ch->mbean->name;
-        ch->worker->channel=ch;
-            
-        /* XXX Set additional parameters - use defaults otherwise */
-    }
     return rc;
 }
 
@@ -330,10 +294,10 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     /* Set default worker. It'll be used for all uris that have no worker
      */
     if( wEnv->defaultWorker == NULL ) {
-        jk_worker_t *w=wEnv->worker_map->get( env, wEnv->worker_map, "worker.lb" );
+        jk_worker_t *w=wEnv->worker_map->get( env, wEnv->worker_map, "worker.lb:lb" );
         
         if( w==NULL ) {
-            jk_bean_t *jkb=env->createBean2(env, wEnv->pool, "worker.lb", "" );
+            jk_bean_t *jkb=env->createBean2(env, wEnv->pool, "worker.lb", "lb" );
             w=jkb->object;
             env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create default worker %s\n",  jkb->name );
         }
@@ -498,12 +462,28 @@ static jk_worker_t *jk2_workerEnv_releasePool(jk_env_t *env,
 }
 
 static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
-                                    jk_channel_t *w) 
+                                    jk_channel_t *ch) 
 {
     int err=JK_OK;
+    jk_bean_t *jkb;
 
-    wEnv->channel_map->put(env, wEnv->channel_map, w->mbean->name, w, NULL);
+    wEnv->channel_map->put(env, wEnv->channel_map, ch->mbean->name, ch, NULL);
+
+    /* Automatically create the ajp13 worker to be used with this channel.
+     */
+        
+    jkb=env->createBean2(env, ch->mbean->pool, "ajp13", ch->mbean->localName );
+    if( jkb == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "workerEnv.addChannel(): Can't find ajp13 worker\n" );
+        return JK_ERR;
+    }
+    ch->worker=jkb->object;
+    ch->worker->channelName=ch->mbean->name;
+    ch->worker->channel=ch;
             
+    /* XXX Set additional parameters - use defaults otherwise */
+
     return JK_OK;
 }
 
@@ -516,7 +496,7 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
 
     w->workerEnv=wEnv;
 
-    w->rPoolCache= jk2_objCache_create( env, w->pool  );
+    w->rPoolCache= jk2_objCache_create( env, w->mbean->pool  );
 
     err=w->rPoolCache->init( env, w->rPoolCache,
                              1024 ); /* XXX make it unbound */
