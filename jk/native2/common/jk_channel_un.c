@@ -170,26 +170,26 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
     unixsock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (unixsock<0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelApr.open(): can't create socket %d %s\n",
+                      "channelUn.open(): can't create socket %d %s\n",
                       errno, strerror( errno ) );
             return JK_ERR;
     }
 
     if( _this->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.open(): create unix socket %s %d\n", socketInfo->file, unixsock );
+                      "channelUn.open(): create unix socket %s %d\n", socketInfo->file, unixsock );
     
     if (connect(unixsock,(struct sockaddr *)&(socketInfo->unix_addr),
                 sizeof(struct sockaddr_un))<0) {
         close(unixsock);
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelApr.connect() connect failed %d %s\n",
+                      "channelUn.connect() connect failed %d %s\n",
                       errno, strerror( errno ) );
         return JK_ERR;
     }
     if( _this->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.open(): connect unix socket %d %s\n", unixsock, socketInfo->file );
+                      "channelUn.open(): connect unix socket %d %s\n", unixsock, socketInfo->file );
     /* store the channel information */
 
     endpoint->sd=unixsock;
@@ -202,6 +202,7 @@ static int JK_METHOD jk2_channel_un_close(jk_env_t *env,jk_channel_t *_this,
                                              jk_endpoint_t *endpoint)
 {
     close( endpoint->sd );
+    endpoint->sd=-1;
 }
 
 
@@ -231,6 +232,11 @@ static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *_this,
     b=msg->buf;
 
     unixsock=endpoint->sd;
+    if( unixsock < 0 ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel.apr:send() not connected %d\n", unixsock );
+        return JK_ERR;
+    }
 
     while(sent < len) {
 /*         this_time = send(unixsock, (char *)b + sent , len - sent,  0); */
@@ -263,7 +269,7 @@ static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *_this,
 /** receive len bytes.
  * @param sd  opened socket.
  * @param b   buffer to store the data.
- * @param len length to receive.
+ * @param len length to receive
  * @return    -1: receive failed or connection closed.
  *            >0: length of the received data.
  * Was: tcp_socket_recvfull
@@ -278,16 +284,22 @@ static int JK_METHOD jk2_channel_un_readN( jk_env_t *env,
 
     sd=endpoint->sd;
     
+    if( sd < 0 ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel.apr:readN() not connected %d\n", sd );
+        return -3;
+    }
+
     rdlen = 0;
 
     while(rdlen < len) {
         int this_time = recv(sd, (char *)b + rdlen, 
                              len - rdlen, 0);        
-        if(-1 == this_time) {
+        if( this_time < 0 ) {
             if(EAGAIN == errno) {
                 continue;
             } 
-            return -1;
+            return -2;
         }
         if(0 == this_time) {
             return -1; 
@@ -312,15 +324,21 @@ static int JK_METHOD jk2_channel_un_recv( jk_env_t *env, jk_channel_t *_this,
 {
     int hlen=msg->headerLength;
     int blen;
-    int rc;
+    int rc=JK_OK;
     
 
-    jk2_channel_un_readN( env, _this, endpoint, msg->buf, hlen );
+    blen=jk2_channel_un_readN( env, _this, endpoint, msg->buf, hlen );
+    if( blen <= 0 ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "channelUn.receive(): error receiving %d %d %s %p %d\n",
+                      blen, errno, strerror( errno ), endpoint, endpoint->sd);
+        return JK_ERR;
+    }
 
     blen=msg->checkHeader( env, msg, endpoint );
     if( blen < 0 ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelApr.receive(): Bad header\n" );
+                      "channelUn.receive(): Bad header\n" );
         return JK_ERR;
     }
     
@@ -328,14 +346,14 @@ static int JK_METHOD jk2_channel_un_recv( jk_env_t *env, jk_channel_t *_this,
 
     if(rc < 0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-               "channelApr.receive(): Error receiving message body %d %d\n",
+               "channelUn.receive(): Error receiving message body %d %d\n",
                       rc, errno);
         return JK_ERR;
     }
 
     if( _this->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.receive(): Received len=%d type=%d\n",
+                      "channelUn.receive(): Received len=%d type=%d\n",
                       blen, (int)msg->buf[hlen]);
     return JK_OK;
 
