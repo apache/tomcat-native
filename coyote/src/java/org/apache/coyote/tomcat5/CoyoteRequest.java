@@ -371,7 +371,6 @@ public class CoyoteRequest
         context = null;
         wrapper = null;
 
-        authorization = null;
         authType = null;
         usingInputStream = false;
         usingReader = false;
@@ -382,7 +381,6 @@ public class CoyoteRequest
         inputStream.recycle();
         userPrincipal = null;
         sessionParsed = false;
-        authorization = null;
         requestParametersParsed = false;
         locales.clear();
         localesParsed = false;
@@ -414,17 +412,10 @@ public class CoyoteRequest
 
 
     /**
-     * The authorization credentials sent with this Request.
-     */
-    protected String authorization = null;
-
-    /**
      * Return the authorization credentials sent with this request.
      */
     public String getAuthorization() {
-
-        return (this.authorization);
-
+        return (coyoteRequest.getHeader(Constants.AUTHORIZATION_HEADER));
     }
 
     /**
@@ -433,7 +424,8 @@ public class CoyoteRequest
      * @param authorization The new authorization credentials
      */
     public void setAuthorization(String authorization) {
-        this.authorization = authorization;
+        System.out.println("SA");
+        //this.authorization = authorization;
     }
 
 

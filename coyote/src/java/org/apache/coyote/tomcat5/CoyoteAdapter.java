@@ -250,8 +250,6 @@ final class CoyoteAdapter
         // in ajp13 protocols dont make sense to get the port from the connector..
         request.setSecure(req.scheme().equals("https"));
 
-        request.setAuthorization
-            (req.getHeader(Constants.AUTHORIZATION_HEADER));
         // FIXME: the code below doesnt belongs to here, this is only  have sense 
         // in Http11, not in ajp13..
         // At this point the Host header has been processed.
@@ -259,16 +257,10 @@ final class CoyoteAdapter
         String proxyName = connector.getProxyName();
         int proxyPort = connector.getProxyPort();
         if (proxyPort != 0) {
-            request.setServerPort(proxyPort);
             req.setServerPort(proxyPort);
-        } else {
-            request.setServerPort(req.getServerPort());
         }
         if (proxyName != null) {
-            request.setServerName(proxyName);
             req.serverName().setString(proxyName);
-        } else {
-            request.setServerName(req.serverName().toString());
         }
 
         // URI decoding
@@ -292,6 +284,7 @@ final class CoyoteAdapter
 	// Set the SSL properties
 	res.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,request.getRequest());
     }
+
 
     /**
      * Parse session id in URL.
