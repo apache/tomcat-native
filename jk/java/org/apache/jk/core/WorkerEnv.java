@@ -58,12 +58,8 @@
  */
 package org.apache.jk.core;
 
-import java.io.*;
-import java.util.*;
-import java.security.*;
-
-import org.apache.jk.common.*;
-import org.apache.jk.apr.*;
+import java.util.Hashtable;
+import javax.management.ObjectName;
 
 /**
  * The controller object. It manages all other jk objects, acting as the root of
@@ -166,6 +162,15 @@ public class WorkerEnv {
 
     public final int getHandlerCount() {
         return handlerCount;
+    }
+    
+    public ObjectName[] getHandlersObjectName() {
+        
+        ObjectName onames[]=new ObjectName[ handlerCount ];
+        for( int i=0; i<handlerCount; i++ ) {
+            onames[i]=handlersTable[i].getObjectName();
+        }
+        return onames;
     }
 
 }
