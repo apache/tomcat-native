@@ -162,6 +162,16 @@ struct jk_worker {
      */
     struct jk_map *endpointMap;
 
+    /* Maximum number of endpoints per worker.
+       The default value is 0, meaning unlimited.
+     */
+    int maxEndpoints;
+
+    /* Indicates that worker has reached maximum number of 'used'
+       connections.  
+     */
+    int in_max_epcount;
+
     /** Request pool cache. XXX We may use a pool of requests.
      */
     struct jk_objCache *rPoolCache;
