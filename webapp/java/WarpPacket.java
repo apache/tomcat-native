@@ -42,7 +42,7 @@ public class WarpPacket {
     public void setType(int type) {
         this.type=type;
     }
-    
+
     /**
      * Return the type of this packet.
      *
@@ -105,7 +105,7 @@ public class WarpPacket {
             byte temp[]=string.getBytes("UTF-8");
             if ((this.size+temp.length+2)>MAX_LENGTH)
                 throw new ArrayIndexOutOfBoundsException("Too much data");
-            
+
             this.writeUnsignedShort(temp.length);
             System.arraycopy(temp,0,this.buffer,this.size,temp.length);
             this.size+=temp.length;
@@ -124,7 +124,7 @@ public class WarpPacket {
     public int readUnsignedShort() {
         if ((this.pointer+2)>this.size)
             throw new ArrayIndexOutOfBoundsException("No data available");
-            
+
         int k=0;
         k=(k<<8)|(this.buffer[this.pointer++]);
         k=(k<<8)|(this.buffer[this.pointer++]);
@@ -142,7 +142,7 @@ public class WarpPacket {
     public int readInteger() {
         if ((this.pointer+4)>this.size)
             throw new ArrayIndexOutOfBoundsException("No data available");
-            
+
         int k=0;
         k=(k<<8)|(this.buffer[this.pointer++]);
         k=(k<<8)|(this.buffer[this.pointer++]);

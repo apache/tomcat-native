@@ -96,7 +96,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      */
     public void setContainer(Container container) {
         this.container=container;
-        
+
         if (Constants.DEBUG) {
             if (container==null) this.debug(this,"Setting null container");
             else this.debug(this,"Setting container "+container.getClass());
@@ -326,7 +326,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         if (started) throw new LifecycleException("Already started");
 
         lifecycle.fireLifecycleEvent(START_EVENT, null);
-    
+
         this.started = true;
 
         this.thread=new Thread(this);
@@ -342,7 +342,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         lifecycle.fireLifecycleEvent(STOP_EVENT, null);
 
         this.started = false;
-        
+
         if (this.server!=null) try {
             this.server.close();
         } catch (IOException e) {
@@ -396,7 +396,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         } catch (IOException e) {
             this.log(this,"Error creating server socket",e);
         }
-        
+
         // Can't get a hold of a server socket
         if (this.server==null) {
             this.log(this,"Unable to create server socket");
@@ -427,7 +427,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     /* ==================================================================== */
     /* Logging and debugging methods                                        */
     /* ==================================================================== */
-    
+
     /** Log to the container logger with the specified level or to stderr */
     private void log(Object src, String msg, Exception exc, int lev) {
         Container cont=this.getContainer();
@@ -449,7 +449,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         if (exc==null) logg.log(msg,lev);
         else logg.log(msg,exc,lev);
     }
-    
+
     /** Invoked when we can't get a hold on the logger, dump to stderr */
     private void dump(Object src, String message, Exception exception) {
         String cls="["+src.getClass().getName()+"] ";
@@ -462,7 +462,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
             System.err.print(cls);
             exception.printStackTrace(System.err);
         }
-    }            
+    }
 
     /**
      * If Constants.DEBUG was set true at compilation time, dump a debug

@@ -10,7 +10,7 @@ import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
 
 public class WarpConnection implements LifecycleListener, Runnable {
-    
+
     /* ==================================================================== */
     /* Instance variables                                                   */
     /* ==================================================================== */
@@ -34,7 +34,7 @@ public class WarpConnection implements LifecycleListener, Runnable {
     private Socket socket=null;
     /** The connector instance. */
     private WarpConnector connector=null;
-    
+
     /* ==================================================================== */
     /* Constructor                                                          */
     /* ==================================================================== */
@@ -126,7 +126,7 @@ public class WarpConnection implements LifecycleListener, Runnable {
             this.input=this.socket.getInputStream();
             this.output=this.socket.getOutputStream();
             boolean success=new WarpConfigurationHandler().handle(this);
-            
+
             this.stop();
         } catch (IOException e) {
             this.getConnector().log(this,"Exception on socket",e);
@@ -142,7 +142,7 @@ public class WarpConnection implements LifecycleListener, Runnable {
 
     /**
      * Send a WARP packet over this connection.
-     */    
+     */
     public void send(WarpPacket packet)
     throws IOException {
         if (Constants.DEBUG)
@@ -157,9 +157,9 @@ public class WarpConnection implements LifecycleListener, Runnable {
         this.output.flush();
         packet.reset();
     }
- 
+
     /**
      * Receive a WARP packet over this connection.
-     */    
+     */
 
 }
