@@ -204,6 +204,7 @@ extern "C" {
 
 #define AJP_HEADER_LEN            (4)
 #define AJP_HEADER_SZ_LEN         (2)
+#define CHUNK_BUFFER_PAD          (12)
 
 
 struct jk_res_data {
