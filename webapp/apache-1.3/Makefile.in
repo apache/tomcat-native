@@ -58,53 +58,28 @@
 # @author  Pier Fumagalli <mailto:pier@betaversion.org>
 # @version $Id$
 
-include @TGTDIR@/Makedefs
+LOCAL_INCLUDES = -I$(SRC_DIR)/include
+LOCAL_TGT_DIR = $(TGT_DIR)/apache-1.3
+LOCAL_SRC_DIR = $(SRC_DIR)/apache-1.3
+include @TGT_DIR@/Makedefs
 
-SRCS =   mod_webapp.c
+OBJ =	mod_webapp.o
+LIB =	mod_webapp.so
 
-OBJS =   mod_webapp.lo
+.PHONY: build clean
 
-MODULE = mod_webapp.so
-
-APXS =  @APXS@
-
-build: $(MODULE)
-
+build: $(LIB)
 
 clean:
-	@for ENTRY in *.o *.lo $(MODULE) .libs ; \
-	do \
-		if $(TEST) -f $${ENTRY} ; \
-		then \
-			$(ECHO) Removing file $${ENTRY} ; \
-			$(RM) -f $${ENTRY} ; \
-		fi ; \
-		if $(TEST) -d $${ENTRY} ; \
-		then \
-			$(ECHO) Removing directory $${ENTRY} ; \
-			$(RM) -rf $${ENTRY} ; \
-		fi ; \
-	done
+	rm -f $(OBJ)
+	rm -f $(LIB)
 
-$(MODULE): $(SRCS) $(TGTDIR)/lib/libapr.a $(TGTDIR)/lib/libwebapp.a
-	{ APXS_LDFLAGS_SHLIB="`$(APXS) -q LDFLAGS_SHLIB` \
-	        $(APR_LDFLAGS) \
-	        $(APR_LIBS)" ; \
-	    APXS_LDFLAGS_SHLIB=`$(ECHO) $${APXS_LDFLAGS_SHLIB}` ; \
-	    APXS_CFLAGS="`$(APXS) -q CFLAGS` \
-	        $(CFLAGS) \
-	        $(APR_CFLAGS) \
-	        $(CPPFLAGS) \
-	        $(APR_CPPFLAGS) \
-	        -I$(APR_INCDIR) \
-	        -I$(SRCDIR)/include \
-	        $(APR_INCLUDES)" ; \
-	    APXS_CFLAGS=`$(ECHO) $${APXS_CFLAGS}` ; \
-	    $(APXS) \
-	        -S CFLAGS="$${APXS_CFLAGS}" \
-	        -S LDFLAGS_SHLIB="$${APXS_LDFLAGS_SHLIB}" \
-	        -o "$@" \
-	        -c "mod_webapp.c" \
-	        "$(TGTDIR)/lib/libwebapp.a" \
-	        "$(TGTDIR)/lib/libapr.a" ; \
-	}
+$(LIB): $(LOCAL_SRC_DIR)/mod_webapp.c
+	$(APXS) -c -o $@ \
+	  $(INCLUDES) $(LOCAL_INCLUDES) \
+	  -Wc,"$(CPPFLAGS) $(CFLAGS)" \
+	  -Wl,"$(LDFLAGS) $(LIBS)" \
+	  $(TGT_DIR)/libwebapp.a \
+	  $(TGT_DIR)/libapr.a \
+	  $<
+

@@ -60,122 +60,32 @@
 
 .SUFFIXES: .c .o .lo
 
-# -------------------------------------------------------------------------
-# Programs discovered by "configure" during initialization
-# -------------------------------------------------------------------------
+# Building tools
+CC       = @CC@
+CPP      = @CPP@
+SHELL    = @SHELL@
+LIBTOOL  = @LIBTOOL@
+APXS     = @APXS@
 
-TEST = @TEST@
-TRUE = @TRUE@
-ECHO = @ECHO@
-GREP = @GREP@
-CAT = @CAT@
-SED = @SED@
-LN = @LN@
-RM = @RM@
-
-# -------------------------------------------------------------------------
-# Compilation settings and Makefile macros
-# -------------------------------------------------------------------------
-
-# The target module to build
-MODULE = @MODULE@
-# The system which built this binary
-SYSTEM = @SYSTEM@
-# Wether to build debug information or not
-DEBUG = @DEBUG@
-# The WebApp sources directory
-SRCDIR = @SRCDIR@
-# The compilation (this) directory
-TGTDIR = @TGTDIR@
-# The directory of a Tomcat 4.0 binary distribution
-TC4DIR = @TC4DIR@
-# The list of configure-generated files
-CFGFILES = @CFGFILES@ ./config.cache ./config.log ./config.status
-# The file holding the list of makefile-generated files
-LSTFILE = $(TGTDIR)/config.list
-# GNU-Make style echo
-MECHO = $(ECHO) "$(MAKE)[$(MAKELEVEL)]:"
-
-# -------------------------------------------------------------------------
-# APR library values
-# -------------------------------------------------------------------------
-
-# The APR source directory (if needed)
-APR_SRCDIR = @APR_SRCDIR@
-# Where libapr.a resides
-APR_LIBDIR = @APR_LIBDIR@
-# Where APR include files are located
-APR_INCDIR = @APR_INCDIR@
-# Location of APRVARS
-APR_VARFIL = @APR_VARFIL@
-# Extra APR C compilation flags
-APR_CFLAGS = @APR_CFLAGS@
-# Extra APR C macro pre-processor flags
-APR_CPPFLAGS = @APR_CPPFLAGS@
-# Extra APR inclusion flags
-APR_INCLUDES = @APR_INCLUDES@
-# Extra APR linker flags
-APR_LDFLAGS = @APR_LDFLAGS@
-# Extra APR libraries required for linking
-APR_LIBS = @APR_LIBS@
-# Libtool location
-LIBTOOL = @LIBTOOL@
-
-# -------------------------------------------------------------------------
-# C Compiler settings
-# -------------------------------------------------------------------------
-
-# Library archiver
-AR = @AR@
-# C compiler
-CC = @CC@
-# C macro pre-processor
-CPP = @CPP@
-# Library updater
-RANLIB = @RANLIB@
-# C compilation flags
-CFLAGS = @CFLAGS@
-# C macro pre-processor flags
+# Build flags
 CPPFLAGS = @CPPFLAGS@
+CFLAGS   = @CFLAGS@
+LDFLAGS  = @LDFLAGS@
+LIBS     = @LIBS@
+INCLUDES = @INCLUDES@
 
-# -------------------------------------------------------------------------
-# Java Compiler settings
-# -------------------------------------------------------------------------
+# Module to build
+MODULE   = @MODULE@
 
-# The JVM home directory
-JAVA_HOME = @JAVA_HOME@
-# Jar archiver
-JAR = @JAR@
-# Java compiler
-JAVAC = @JAVAC@
-# JavaDoc documentation tool
-JAVADOC = @JAVADOC@
-# Java compilation flags
-JAVACFLAGS = @JAVACFLAGS@
-# Java Class Path
-CLASSPATH = @CLASSPATH@
+# Directories location
+APR_DIR  = @APR_DIR@
+SRC_DIR  = @SRC_DIR@
+TGT_DIR  = @TGT_DIR@
 
-# -------------------------------------------------------------------------
-# ScanDoc Documentation tool settings
-# -------------------------------------------------------------------------
-
-# PERL interpreter
-PERL = @PERL@
-# ScanDoc documentation tool
-SCANDOC = @SCANDOC@
-# Scandoc flags
-SCANDOCFLAGS = @SCANDOCFLAGS@
-
-# -------------------------------------------------------------------------
-# C-Compilation default setting
-# -------------------------------------------------------------------------
-
-ALL_CFLAGS = $(CFLAGS) $(CPPFLAGS) \
-	$(APR_CFLAGS) $(APR_CPPFLAGS) $(APR_INCLUDES) \
-	-I$(APR_INCDIR) -I$(SRCDIR)/include
-
-.c.o:
-	$(CC) $(ALL_CFLAGS) -c "$<" -o "$@"
-
-.c.lo:
-	$(LIBTOOL) $(CC) -static $(ALL_CFLAGS) -c "$<"
+# Compilation template
+%.lo: $(LOCAL_SRC_DIR)/%.c
+	$(LIBTOOL) --mode=compile \
+	  $(CC) -c $< -o $@ \
+	    $(INCLUDES) \
+	    $(LOCAL_INCLUDES) \
+	    $(CPPFLAGS) $(CFLAGS)

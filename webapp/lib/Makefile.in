@@ -58,69 +58,52 @@
 # @author  Pier Fumagalli <mailto:pier@betaversion.org>
 # @version $Id$
 
-include @TGTDIR@/Makedefs
+LOCAL_INCLUDES = -I$(SRC_DIR)/include -I$(SRC_DIR)/lib
+LOCAL_TGT_DIR = $(TGT_DIR)/lib
+LOCAL_SRC_DIR = $(SRC_DIR)/lib
+include @TGT_DIR@/Makedefs
 
-SRCS =  pr_info.c \
-	pr_warp.c \
-	pr_warp.h \
-	pr_warp_config.c \
-	pr_warp_network.c \
-	pr_warp_packet.c \
-	wa_config.c \
-	wa_main.c \
-	wa_request.c \
-	pr_warp_socketpool.c
-
-OBJS =  wa_main.lo \
+OBJS =	wa_main.lo \
 	wa_config.lo \
-	wa_request.lo
-
-PROVS = pr_info.lo \
+	wa_request.lo \
+	pr_info.lo \
 	pr_warp.lo \
 	pr_warp_packet.lo \
 	pr_warp_network.lo \
 	pr_warp_config.lo \
 	pr_warp_socketpool.lo
+LIB =	libwebapp.la
+DEFH =	pr_warp_defs.h
 
-LIB =	$(TGTDIR)/lib/libwebapp.a
+.PHONY: build clean
 
-WARPH = pr_warp_defs.h
-
-build: $(LIB)
+build: $(DEFH) $(LIB)
 
 clean:
-	@for ENTRY in *.o *.lo $(LIB) $(WARPH) .libs ; \
-	do \
-		if $(TEST) -d $${ENTRY} ; \
-		then \
-			$(ECHO) Removing directory $${ENTRY} ; \
-			$(RM) -rf $${ENTRY} ; \
-		else \
-			$(ECHO) Removing file $${ENTRY} ; \
-			$(RM) -f $${ENTRY} ; \
-		fi ; \
+	@for FILE in $(OBJS) ; do \
+	  FILE="`basename $$FILE .lo`" ; \
+	  echo rm -f $$FILE.lo ; \
+	  rm -f $$FILE.lo ; \
+	  echo rm -f $$FILE.o ; \
+	  rm -f $$FILE.o ; \
 	done
+	rm -f $(DEFH)
+	rm -f libwebapp.la
+	rm -f libwebapp.a
+	rm -rf .libs
 
-$(LIB): libwebapp.la
-	$(LIBTOOL) --silent --mode=install \
-	$(SRCDIR)/support/install.sh -c \
-	libwebapp.la \
-	$(TGTDIR)/lib
-	$(LIBTOOL) --silent --mode=finish \
-	$(TGTDIR)/lib
+$(LIB): $(WARPH) $(OBJS) $(PROVS)
+	$(LIBTOOL) --mode=link \
+	  $(CC) -static -o $@ \
+	    -rpath $(TGT_DIR) \
+	    $(OBJS)
 
-libwebapp.la: $(SRCS) $(WARPH) $(OBJS) $(PROVS)
-	@$(MECHO) "Creating library \"$@\""
-	$(LIBTOOL) $(CC) -rpath $(TGTDIR)/lib -static -o $@ $(OBJS) $(PROVS)
-
-pr_warp_defs.h: $(TGTDIR)/java/org/apache/catalina/connector/warp/Constants.java
-	@$(MECHO) "Generating \"$@\" from \"$?\""
-	@$(CAT) "$?" | \
-	    $(GREP) "TYPE_" | \
-	    $(SED) "s/public static final int/#define/g" | \
-	    $(SED) "y/=;/  /" > $@
-
-$(SRCS):
-	$(LN) -s $(SRCDIR)/lib/$@ ./$@
-	@$(ECHO) $(TGTDIR)/lib/$@ >> $(LSTFILE)
-
+$(DEFH): $(SRC_DIR)/java/org/apache/catalina/connector/warp/Constants.java
+	cat "$<" | \
+	    grep 'VERS_' | \
+	    sed 's/.*public static final int/#define/g' | \
+	    sed 'y/=;/  /' > $@
+	cat "$<" | \
+	    grep 'TYPE_' | \
+	    sed 's/.*public static final int/#define/g' | \
+	    sed 'y/=;/  /' > $@

@@ -57,508 +57,128 @@ dnl =========================================================================
 
 dnl --------------------------------------------------------------------------
 dnl Author Pier Fumagalli <mailto:pier@betaversion.org>
-dnl Author Jon S. Stevens <mailto:jon@latchkey.com>
 dnl Version $Id$
 dnl --------------------------------------------------------------------------
 
-dnl --------------------------------------------------------------------------
-dnl Initialize
-dnl New vars: TEST TRUE ECHO GREP CAT SED RM SYSTEM
-dnl Upd vars: N/A
-dnl --------------------------------------------------------------------------
-sinclude(./support/aplocal.m4)
-AC_INIT([Makefile.in])
-AC_CONFIG_AUX_DIR([support])
-LOCAL_INIT()
-AC_CANONICAL_HOST()
-SYSTEM="${host_os}-${host_cpu}"
-AC_SUBST(SYSTEM)
+sinclude(./support/wa_util.m4)
+sinclude(./support/wa_exec.m4)
+sinclude(./support/wa_apr.m4)
+sinclude(./support/wa_apxs.m4)
 
 dnl --------------------------------------------------------------------------
-dnl Setup initial variable value
-dnl
-dnl New vars: MODULE TARGET CFGFILES
-dnl           APR_CFGFLG APR_SRCDIR APR_LIBDIR APR_INCDIR APR_VARFIL
-dnl Upd vars: N/A
+dnl Initialize GNU Autoconf (note, this requires autoconf vers. >= 2.52)
 dnl --------------------------------------------------------------------------
-MODULE=""
-TARGET="lib"
-CFGFILES="./Makefile ./Makedefs ./lib/Makefile"
-APR_CFGFLG=""
-APR_SRCDIR=""
-APR_LIBDIR=""
-APR_INCDIR=""
-APR_VARFIL=""
-
-AC_SUBST(MODULE)
-AC_SUBST(TARGET)
-AC_SUBST(CFGFILES)
-AC_SUBST(APR_CFGFLG)
-AC_SUBST(APR_SRCDIR)
-AC_SUBST(APR_LIBDIR)
-AC_SUBST(APR_INCDIR)
-AC_SUBST(APR_VARFIL)
+AC_INIT([WebApp Module],[2.0],[http://nagoya.apache.org/bugzilla])
+AC_CONFIG_SRCDIR([configure.in])
 
 dnl --------------------------------------------------------------------------
-dnl Check where sources are
-dnl
-dnl New vars: SRCDIR
-dnl Upd vars: N/A
+dnl Get rid of all that "--prefix" ... "--xxxdir" in the help message
 dnl --------------------------------------------------------------------------
-LOCAL_RESOLVEDIR(SRCDIR,[${srcdir}],[sources directory])
-LOCAL_RESOLVEDIR(TGTDIR,[.],[targets directory])
-AC_SUBST(SRCDIR)
-
-dnl -------------------------------------------------------------------------
-dnl Check C environment
-dnl
-dnl   We need to check local compilation in case the user got an APR
-dnl   distribution from a binary tarball (such as in Apache 2.0) and the
-dnl   compiler is not available.
-dnl
-dnl New vars: AR RANLIB CC CFLAGS CPP CPPFLAGS
-dnl Upd vars: N/A
-dnl -------------------------------------------------------------------------
-LOCAL_HEADER([C-Language compilation tools])
-LOCAL_CHECK_PROG(AR,ar)
-AC_CHECK_TOOL(RANLIB, ranlib, true)
-AC_SUBST(AR)
-AC_SUBST(RANLIB)
-AC_PROG_CC()
-local_cc="${CC}"
-LOCAL_CHECK_PROG(CC,"${local_cc}")
-unset local_cc
-AC_PROG_CC_C_O()
-AC_PROG_CPP()
-AC_SUBST(CPPFLAGS)
-
-dnl -------------------------------------------------------------------------
-dnl Optional compilation flags
-dnl
-dnl New vars: DEBUG
-dnl Upd vars: CPPFLAGS
-dnl -------------------------------------------------------------------------
-LOCAL_HELP([External libraries and compilation flags])
-AC_MSG_CHECKING([for debug build])
-AC_ARG_ENABLE(debug,
-  [  --enable-debug          enable compilation of  debug information messages
-                          within C code (this will slow down
-                          execution and create huge log files).],
-  [
-    AC_MSG_RESULT([yes])
-    DEBUG="true"
-    CPPFLAGS="${CPPFLAGS} -DDEBUG"
-  ],[
-    AC_MSG_RESULT([no])
-    DEBUG="false"
-  ]
-)
-AC_SUBST(DEBUG)
-
-dnl -------------------------------------------------------------------------
-dnl Check wether we have to build the C API documentation or not
-dnl
-dnl New vars: PERL SCANDOC SCANDOCFLAGS
-dnl Upd vars: TARGET
-dnl -------------------------------------------------------------------------
-LOCAL_HEADER([API documentation generation])
-AC_MSG_CHECKING([for C API documentation])
-AC_ARG_ENABLE(apidocs-c,
-  [  --enable-apidocs-c[=PERL]
-                          enable generation of C API documentation using
-                          ScanDoc (PERL is the name of the Perl interpreter
-                          used to run ScanDoc. If not specified this is
-                          looked up in your current path).],
-  [
-    AC_MSG_RESULT([yes])
-
-    AC_MSG_CHECKING([for Perl interpreter])
-    case "${enableval}" in
-    ""|"yes"|"YES"|"true"|"TRUE")
-      LOCAL_CHECK_PROG(PERL,perl)
-      ;;
-    *)
-      PERL="${enableval}"
-      ;;
-    esac
-
-    if ${TEST} ! -x "${PERL}"
-    then
-      AC_MSG_RESULT([error])
-      AC_MSG_ERROR([cannot execute perl \"${PERL}\"])
-    fi
-    AC_MSG_RESULT([${PERL}])
-
-    AC_MSG_CHECKING([for ScanDoc to use])
-    SCANDOC="${SRCDIR}/support/scandoc.pl"
-    if ${TEST} ! -f "${SCANDOC}"
-    then
-      AC_MSG_RESULT([error])
-      AC_MSG_ERROR([cannof find ScanDoc \"${SCANDOC}\"])
-    fi
-    AC_MSG_RESULT([${SCANDOC}])
-
-    AC_MSG_CHECKING([for ScanDoc template])
-    if ${TEST} ! -f "${SRCDIR}/support/template.pl"
-    then
-      AC_MSG_RESULT([error])
-      AC_MSG_ERROR([cannof find ScanDoc \"${SRCDIR}/support/template.pl\"])
-    fi
-    AC_MSG_RESULT([${SRCDIR}/support/template.pl])
-    SCANDOCFLAGS="-i ${SRCDIR}/support/template.pl"
-
-    TARGET="${TARGET} apidocs-c"
-  ],[
-    AC_MSG_RESULT([no])
-    PERL=""
-  ]
-)
-AC_SUBST(PERL)
-AC_SUBST(SCANDOC)
-AC_SUBST(SCANDOCFLAGS)
+WA_HELP()
 
 dnl --------------------------------------------------------------------------
-dnl Process the --with-apr=... command line argument
-dnl
-dnl   This is always processed, and sets the APR_SRCDIR variable. After this
-dnl   is executed, for each module the APR_SRCDIR variable should be over
-dnl   written if the web server already knows the location of APR's include
-dnl   header and library directories. (As in Apache 2.0)
-dnl
-dnl New vars: N/A
-dnl Upd vars: APR_SRCDIR
+dnl Define and zero the variables we need in Makedefs.in
 dnl --------------------------------------------------------------------------
-LOCAL_HEADER([APR location])
-AC_MSG_CHECKING([for APR sources])
-AC_ARG_WITH(apr,
-  [  --with-apr[=DIR]          path of an APR (Apache Portable Runtime) source
-                          distribution or CVS snapshot. (DIR defaults to
-                          \"./apr\"). Not required and ignored when an
-                          Apache 2.0 apxs is specified (--with-apxs).],
-  [
-    case "${withval}" in
-    ""|"yes"|"YES"|"true"|"TRUE")
-      APR_SRCDIR="${SRCDIR}/apr"
-      ;;
-    *)
-      APR_SRCDIR="${withval}"
-      ;;
-    esac
-    AC_MSG_RESULT([${APR_SRCDIR}])
-  ],[
-    APR_SRCDIR="${SRCDIR}/apr"
-    AC_MSG_RESULT([${APR_SRCDIR}])
-  ]
-)
-dnl --------------------------------------------------------------------------
-dnl Process the --with-apr-lib=... command line argument
-dnl FHS System does not have apr library installed local_prefix/lib
-dnl but somewhere else.
-dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([for APR libraries])
-AC_ARG_WITH(apr-lib,
-  [  --with-apr-lib=DIR          path where the APR libraries are installed.],
-  [
-    case "${withval}" in
-    ""|"yes"|"YES"|"true"|"TRUE")
-      AC_MSG_ERROR([--with-apr-lib need a directory])
-      ;;
-    *)
-      APR_LIBDIR="${withval}"
-      ;;
-    esac
-    AC_MSG_RESULT([${APR_LIBDIR}])
-  ],
-  [
-    AC_MSG_RESULT([no])
-  ]
-)
+WA_VARIABLE([CC])
+WA_VARIABLE([CPP])
+WA_VARIABLE([SHELL])
+WA_VARIABLE([LIBTOOL])
+WA_VARIABLE([APXS])
+
+WA_VARIABLE([CPPFLAGS])
+WA_VARIABLE([CFLAGS])
+WA_VARIABLE([LDFLAGS])
+WA_VARIABLE([LIBS])
+WA_VARIABLE([INCLUDES])
+
+WA_VARIABLE([MODULE])
+
+WA_VARIABLE([APR_DIR])
+WA_VARIABLE([SRC_DIR])
+WA_VARIABLE([TGT_DIR])
+
+WA_VARIABLE([EXTRA_BUILD])
+WA_VARIABLE([EXTRA_CLEAN])
+
+WA_PATH_DIR([SRC_DIR],[${srcdir}],[sources])
+WA_PATH_DIR([TGT_DIR],[.],[build])
 
 dnl --------------------------------------------------------------------------
-dnl Process the --with-apr-include=... command line argument
-dnl FHS System does not have apr include installed local_prefix/include
-dnl but somewhere else.
+dnl Figure out if we have APXS, where it's located, and what version it is
 dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([for APR includes])
-AC_ARG_WITH(apr-include,
-  [  --with-apr-include=DIR          path where the APR includes are
-                                     installed.],
-  [
-    case "${withval}" in
-    ""|"yes"|"YES"|"true"|"TRUE")
-      AC_MSG_ERROR([--with-apr-include need a directory])
-      ;;
-    *)
-      APR_INCDIR="${withval}"
-      ;;
-    esac
-    AC_MSG_RESULT([${APR_INCDIR}])
-  ],
-  [
-    AC_MSG_RESULT([no])
-  ]
-)
+WA_APXS([APXS])
+WA_APXS_CHECK([APXS_VERSION],[${APXS}])
 
 dnl --------------------------------------------------------------------------
-dnl Target module to build
+dnl Decide based on what version of APXS we found
 dnl --------------------------------------------------------------------------
-LOCAL_HEADER([Target web-server])
-LOCAL_HELP([Available Web-Server modules])
-
-dnl --------------------------------------------------------------------------
-dnl Process the --with-apxs[=FILE] command line argument
-dnl
-dnl   Use Apache's APXS utility to compile the Apache module (1.3/2.0 is
-dnl   detected and APR variables are set accordingly).
-dnl
-dnl New vars: APXS
-dnl Upd vars: N/A
-dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([for Apache apxs])
-AC_ARG_WITH(apxs,
-  [  --with-apxs[=FILE]        build a shared Apache module. If FILE was not
-                          specified, then APXS will be searched within the
-                          current PATH. The Apache server version (1.3 or 2.0)
-                          will be automatically detected.],
-  [
-    AC_MSG_RESULT([yes])
-
-    if ${TEST} -n "${MODULE}"
-    then
-      AC_MSG_ERROR([target module already defined as ${MODULE}])
-    fi
-
-    case "${withval}" in
-    ""|"yes"|"YES"|"true"|"TRUE")
-      LOCAL_CHECK_PROG(APXS,apxs)
-      ;;
-    *)
-      APXS="${withval}"
-      ;;
-    esac
-
-    if ${TEST} ! -x ${APXS}
-    then
-      AC_MSG_ERROR([cannot execute apxs \"${APXS}\"])
-    fi
+AC_MSG_CHECKING([for apr location])
+if test "${APXS_VERSION}" = "1.3" ; then
 
     dnl ----------------------------------------------------------------------
-    dnl Detect APXS 1.3/2.0
+    dnl APXS version 1.3, meaning Apache 1.3. We _require_ APR sources
     dnl ----------------------------------------------------------------------
-    local_apache=`${GREP} STANDARD20 ${APXS}`
-    if  ${TEST} -n "${local_apache}"
-    then
+    AC_MSG_RESULT([local sources])
 
-      dnl -----------------------------------------------------
-      dnl APXS 2.0
-      dnl   Note: APXS for 2.0 is broken, so we need to
-      dnl   "discover" some of the values manually hoping
-      dnl   to get the right layout.
-      dnl
-      dnl New vars: N/A
-      dnl Upd vars: APR_CFGFLG APR_VARFIL APR_LIBDIR APR_INCDIR
-      dnl -----------------------------------------------------
-      MODULE="apache-2.0"
-      local_prefix="`${APXS} -q PREFIX`"
-      LIBTOOL="$local_prefix/build/libtool"
-      APR_CFGFLG=""
+    dnl ----------------------------------------------------------------------
+    dnl Check where the APR sources are and issue "configure"
+    dnl ----------------------------------------------------------------------
+    WA_APR([APR_DIR])
+    tempval="--enable-static --disable-shared --disable-threads"
+    tempval="${tempval} --libdir=${TGT_DIR}"
+    WA_EXEC(
+        [tempval],
+        [./configure ${tempval}],
+        [apr],
+        [${APR_DIR}])
+    unset tempval
+    
+    dnl TODO: CHECK FOR RETURN VALUE HERE
 
-      dnl check APR_LIBDIR
-      if ${TEST} -z "${APR_LIBDIR}"
-      then
-        APR_VARFIL="${local_prefix}/lib/APRVARS"
-        APR_LIBDIR="${local_prefix}/lib"
-      else
-        APR_VARFIL="${APR_LIBDIR}/APRVARS"
-      fi
+    dnl ----------------------------------------------------------------------
+    dnl Retrieve APR variables
+    dnl ----------------------------------------------------------------------
+    WA_APR_GET([CC],[${APR_DIR}],[CC])
+    WA_APR_GET([CPP],[${APR_DIR}],[CPP])
+    WA_APR_GET([SHELL],[${APR_DIR}],[SHELL])
+    WA_APR_GET([CPPFLAGS],[${APR_DIR}],[EXTRA_CPPFLAGS])
+    WA_APR_GET([LDFLAGS],[${APR_DIR}],[EXTRA_LDFLAGS])
+    WA_APR_GET([CFLAGS],[${APR_DIR}],[EXTRA_CFLAGS])
+    WA_APR_GET([LIBS],[${APR_DIR}],[EXTRA_LIBS])
+    WA_APR_GET([INCLUDES],[${APR_DIR}],[EXTRA_INCLUDES])
 
-      dnl check APR_INCDIR
-      if ${TEST} -z "${APR_INCDIR}"
-      then
-        APR_INCDIR="${local_prefix}/include"
-      fi
-      if ${TEST} ! -d "${APR_LIBDIR}"
-      then
-        AC_MSG_ERROR([\"${APR_LIBDIR}\" not found. Use --with-apr-lib=DIR.])
-      fi
-      if ${TEST} ! -d "${APR_INCDIR}"
-      then
-        AC_MSG_ERROR([\"${APR_INCDIR}\" not found. Use --with-apr-include=DIR.])
-      fi
-      unset local_prefix
-    else
+    AC_MSG_CHECKING([for apr INCLUDES variable])
+    INCLUDES="-I${APR_DIR}/include ${INCLUDES}"
+    AC_SUBST([INCLUDES])
+    AC_MSG_RESULT([-I${APR_DIR}/include])
 
-      dnl Upd vars: APR_CFGFLG APR_VARFIL APR_LIBDIR APR_INCDIR
-      dnl -----------------------------------------------------
-      dnl APXS 1.3
-      dnl
-      dnl New vars: N/A
-      dnl Upd vars: APR_CFGFLG APR_VARFIL APR_LIBDIR APR_INCDIR
-      dnl -----------------------------------------------------
-      MODULE="apache-1.3"
-      APR_CFGFLG="--enable-static --disable-shared --disable-threads"
-      APR_VARFIL=""
-      APR_LIBDIR=""
-      APR_INCDIR=""
+    AC_MSG_CHECKING([for apr LIBTOOL variable])
+    LIBTOOL="${SHELL} ${APR_DIR}/libtool --silent"
+    AC_SUBST([LIBTOOL])
+    AC_MSG_RESULT([${LIBTOOL}])
 
-      dnl -----------------------------------------------------
-      dnl check for broken APXS (Apachetoolbox brokes it)
-      dnl -----------------------------------------------------
-      local_ldflags_shlib="`${APXS} -q LDFLAGS_SHLIB 2>&1 | grep Error`"
-      if  ${TEST} -n "${local_ldflags_shlib}"
-      then
-        AC_MSG_ERROR([${APXS} is broken (LDFLAGS_SHLIB not found)])
-      fi
-
-      local_cflags="`${APXS} -q CFLAGS 2>&1 | grep Error`"
-      if  ${TEST} -n "${local_cflags}"
-      then
-        AC_MSG_ERROR([${APXS} is broken (CFLAGS not found)])
-      fi
-
+    dnl ----------------------------------------------------------------------
+    dnl Do a check on the C compiler to see if apxs reports the same one
+    dnl ----------------------------------------------------------------------
+    AC_MSG_CHECKING([for apr compiler coherency])
+    if test "`${APXS} -q CC`" != "${CC}" ; then
+      WA_ERROR([you have to use the same compiler for both Apache and WebApp])
     fi
-    unset local_apache
-  ],[
-    AC_MSG_RESULT([no])
-  ]
-)
+    AC_MSG_RESULT([ok])
 
-dnl --------------------------------------------------------------------------
-dnl Was a module specified?
-dnl
-dnl New vars: N/A
-dnl Upd vars: CFGFILES
-dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([target module])
+    dnl ----------------------------------------------------------------------
+    dnl Apache 1.3 configuration complete
+    dnl ----------------------------------------------------------------------
+    MODULE="apache-1.3"
+    EXTRA_BUILD="apr-build"
+    EXTRA_CLEAN="apr-clean"
 
-if ${TEST} -z "${MODULE}"
-then
-  AC_MSG_RESULT([error])
-  AC_MSG_ERROR([No target module specified])
-fi
-AC_MSG_RESULT([${MODULE}])
-CFGFILES="${CFGFILES} ./${MODULE}/Makefile"
-
-dnl --------------------------------------------------------------------------
-dnl Configure the APR source distribution
-dnl 
-dnl   This step gets executed ONLY if APR_VARFIL's length zero. Basically, if
-dnl   the module doesn't provide us with a name for the APRVARS file.
-dnl
-dnl New vars: N/A
-dnl Upd vars: APR_VARFIL APR_LIBDIR APR_INCDIR TARGET
-dnl --------------------------------------------------------------------------
-if ${TEST} -z "${APR_VARFIL}"
-then
-
-  dnl -----------------------------------------------
-  dnl Check if we were supplied a valid APR directory
-  dnl -----------------------------------------------
-  if ${TEST} ! -d "${APR_SRCDIR}"
-  then
-    AC_MSG_ERROR([APR sources not found. Use --with-apr=DIR.])
-  fi
-  LOCAL_RESOLVEDIR(APR_SRCDIR,[${APR_SRCDIR}],[full APR directory path])
-  
-  dnl ----------------------------
-  dnl Run the APR configure script
-  dnl ----------------------------
-  LOCAL_HEADER([Configuring APR])
-  LOCAL_FILTEREXEC(local_return,
-    [./configure ${APR_CFGFLG}],
-    ["APR configure"],
-    [${APR_SRCDIR}])
-
-  if ${TEST} "${local_return}" -ne "0"
-  then
-    AC_MSG_ERROR([APR configure script terminated with error code ${local_return}])
-  fi
-
-  APR_INCDIR="${APR_SRCDIR}/include"
-  APR_VARFIL="${APR_SRCDIR}/APRVARS"
-  APR_LIBDIR="${TGTDIR}/lib"
-  TARGET="${TARGET} apr"
-  LIBTOOL="${APR_SRCDIR}/libtool"
-  eval `${GREP} "^CC=" ${APR_VARFIL} | ${SED} "s/^CC=/APR_CC=/"`
 else
-  APR_CC="${CC}"  
+
+    AC_MSG_RESULT([apache 2 distribution])
+    AC_MSG_ERROR([using Apache 2.0 apxs will be supported shortly])
+    MODULE="apache-2.0"
 fi
 
-dnl --------------------------------------------------------------------------
-dnl Parse APRVARS and discover what values we need
-dnl
-dnl New vars: APR_CFLAGS APR_CPPFLAGS APR_LDFLAGS APR_LIBS APR_INCLUDES
-dnl Upd vars: N/A
-dnl --------------------------------------------------------------------------
-LOCAL_HEADER([Finishing up])
-AC_MSG_CHECKING([for APR compilation flags])
-if ${TEST} ! -f "${APR_VARFIL}"
-then
-  AC_MSG_RESULT([error])
-  AC_MSG_ERROR([Cannot find required APRVARS file])
-fi
-
-dnl Check that we are not mixing native and gnu compilers
-dnl on the platfroms that do not support it.
-
-eval `${GREP} "^NM=" ${LIBTOOL}`
-gnu_cc=`${APR_CC} --help | ${GREP} gnu`
-if ${TEST} ! -z "${gnu_cc}"
-then
-  APACHE_DIR=`${APXS} -q SBINDIR`
-  is_apache_gcc="Yes"
-  case $host in
-    sparc-sun-solaris2.8)
-      is_apache_gcc=`${NM} ${APACHE_DIR}/httpd | ${GREP} __lshrdi3`
-      ;;
-  esac
-  if ${TEST} -z "${is_apache_gcc}"
-  then
-    AC_MSG_ERROR([Cannot mix gcc and native cc])
-  fi
-fi
-
-AC_MSG_RESULT([ok])
-eval `${CAT} ${APR_VARFIL} | ${GREP} "EXTRA_" | ${SED} "s/EXTRA_/APR_/g"`
-AC_SUBST(APR_CFLAGS)
-AC_SUBST(APR_CPPFLAGS)
-AC_SUBST(APR_INCLUDES)
-AC_SUBST(APR_LDFLAGS)
-AC_SUBST(APR_LIBS)
-AC_SUBST(LIBTOOL)
-
-dnl --------------------------------------------------------------------------
-dnl Set up targets for building and cleaning
-dnl
-dnl New vars: TARGET_BUILD TARGET_CLEAN TARGET_LBUILD TARGET_LCLEAN
-dnl Upd vars: N/A
-dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([for Makefile targets])
-TARGET_BUILD=""
-TARGET_CLEAN=""
-for local_target in ${TARGET}
-do
-  TARGET_BUILD="${TARGET_BUILD} ${local_target}-build"
-  TARGET_CLEAN="${TARGET_CLEAN} ${local_target}-clean"
-  if ${TEST} ! "${local_target}" = "apr"
-  then
-    TARGET_LBUILD="${TARGET_LBUILD} ${local_target}-build"
-    TARGET_LCLEAN="${TARGET_LCLEAN} ${local_target}-clean"
-  fi
-done
-unset local_target
-TARGET_BUILD="${TARGET_BUILD} ${MODULE}-build"
-TARGET_CLEAN="${TARGET_CLEAN} ${MODULE}-clean"
-TARGET_LBUILD="${TARGET_LBUILD} ${MODULE}-build"
-TARGET_LCLEAN="${TARGET_LCLEAN} ${MODULE}-clean"
-AC_MSG_RESULT([${TARGET} ${MODULE}])
-AC_SUBST(TARGET_BUILD)
-AC_SUBST(TARGET_CLEAN)
-AC_SUBST(TARGET_LBUILD)
-AC_SUBST(TARGET_LCLEAN)
-
-dnl --------------------------------------------------------------------------
-dnl Finish up
-dnl --------------------------------------------------------------------------
-AC_OUTPUT(${CFGFILES})
-LOCAL_HEADER([All done. Now you can issue \"make\". Good luck.])
+AC_SUBST([MODULE])
+AC_OUTPUT([Makedefs Makefile lib/Makefile ${MODULE}/Makefile])

@@ -58,72 +58,53 @@
 # @author  Pier Fumagalli <mailto:pier@betaversion.org>
 # @version $Id$
 
-include @TGTDIR@/Makedefs
+include @TGT_DIR@/Makedefs
 
-all: build
-build: @TARGET_BUILD@
-clean: @TARGET_CLEAN@
-lbuild: @TARGET_LBUILD@
-lclean: @TARGET_LCLEAN@
+all: extra-build
 
-distclean: clean
-	@$(ECHO) "" >> $(LSTFILE)
-	@$(MECHO) "Removing makefile generated files"
-	$(RM) -f `$(CAT) $(LSTFILE)`
-	$(RM) -f $(LSTFILE)
-	@$(MECHO) "Removing configure generated files"
-	$(RM) -f $(CFGFILES)
+distclean: extra-clean
+	rm -f $(MODULE)/Makefile
+	rm -f lib/Makefile
+	rm -f Makedefs
+	rm -f Makefile
 
-apr-build:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="$(APR_SRCDIR)" MTGT="all"
-	@$(MECHO) "Installing APR library in \"$(APR_LIBDIR)\""
-	@$(APR_SRCDIR)/libtool --silent --mode=install \
-	    $(SRCDIR)/support/install.sh -c \
-	    $(APR_SRCDIR)/libapr.la \
-	    $(APR_LIBDIR) 2>/dev/null
-	@$(APR_SRCDIR)/libtool --silent --mode=finish \
-	    $(APR_LIBDIR)
+extra-build: @EXTRA_BUILD@ build
+extra-clean: @EXTRA_BUILD@ clean
+build: lib-build $(MODULE)-build
+clean: lib-clean $(MODULE)-clean
 
-apr-clean:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="$(APR_SRCDIR)" MTGT="clean"
-	@$(MECHO) "Cleaning up APR library in \"$(APR_LIBDIR)\""
-	@$(RM) -f $(APR_LIBDIR)/libapr.*
+$(MODULE)-build: libapr.la
+	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/$(MODULE)" SUBT="build" subdir
+
+$(MODULE)-clean:
+	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/$(MODULE)" SUBT="clean" subdir
 
 lib-build:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="lib" MTGT="build"
+	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/lib" SUBT="build" subdir
+	@echo "$(MAKE): Installing library libwebapp.la"
+	$(LIBTOOL) --mode=install cp \
+	  $(TGT_DIR)/lib/libwebapp.la \
+	  $(TGT_DIR)/libwebapp.la > /dev/null
 
 lib-clean:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="lib" MTGT="clean"
+	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/lib" SUBT="clean" subdir
+	rm -f libwebapp.la
+	rm -f libwebapp.a
 
-apache-1.3-build:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-1.3" MTGT="build"
+apr-build:
+	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="all" subdir
+	@echo "$(MAKE): Installing library libapr.la"
+	$(LIBTOOL) --mode=install cp \
+	  $(APR_DIR)/libapr.la \
+	  $(TGT_DIR)/libapr.la > /dev/null
 
-apache-1.3-clean:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-1.3" MTGT="clean"
+apr-clean:
+	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="clean" subdir
+	rm -f libapr.la
+	rm -f libapr.a
 
-apache-2.0-build:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-2.0" MTGT="build"
-
-apache-2.0-clean:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-2.0" MTGT="clean"
-
-apidocs-c-build:
-	mkdir docs/api-c
-	support/scandoc.pl -i support/template.pl -p docs/api-c/ */*.h
-apidocs-c-clean:
-	$(RM) -rf docs/api-c
-
-template:
-	@ { \
-	    $(ECHO) "" ; \
-	    $(MECHO) "Entering directory \"$(MDIR)\"" ; \
-	    cd $(MDIR) ; \
-	    $(MECHO) "Invoking \"$(MAKE) $(MFLG) $(MTGT)\"" ; \
-	    $(MAKE) $(MFLG) $(MTGT); \
-	    RET=$$? ; \
-	    $(MECHO) "Exiting directory \"$(MDIR)\"" ; \
-	    cd $(SRCDIR) ; \
-	    if test "$${RET}" != "0" ; then \
-	        exit $${RET} ; \
-	    fi ; \
-	}
+subdir:
+	@echo ""
+	@echo "$(MAKE)[$(MAKELEVEL)]: Entering directory \"$(SUBD)\""
+	@$(MAKE) -C "$(SUBD)" $(SUBF) "$(SUBT)"
+	@echo "$(MAKE)[$(MAKELEVEL)]: Exiting directory \"$(SUBD)\""
