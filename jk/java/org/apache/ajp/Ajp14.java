@@ -79,7 +79,7 @@ import org.apache.tomcat.util.buf.*;
  * at a time.<P>
  *
  * This class contains knowledge about how an individual packet is laid out
- * (via the internal <CODE>Ajp14Packet</CODE> class), and also about the
+ * (via the internal <CODE>Ajp13Packet</CODE> class), and also about the
  * stages of communicaton between the server and the servlet container.  It
  * translates from Tomcat's internal servlet support methods
  * (e.g. doWrite) to the correct packets to send to the web server.
@@ -111,11 +111,11 @@ public class Ajp14
 
     // XXX public fields are temp. solutions until the API stabilizes
     // Buffer used of output body and headers
-    public Ajp14Packet outBuf = new Ajp14Packet( MAX_PACKET_SIZE );
+    public Ajp13Packet outBuf = new Ajp13Packet( MAX_PACKET_SIZE );
     // Buffer used for input body
-    Ajp14Packet inBuf  = new Ajp14Packet( MAX_PACKET_SIZE );
+    Ajp13Packet inBuf  = new Ajp13Packet( MAX_PACKET_SIZE );
     // Buffer used for request head ( and headers )
-    Ajp14Packet hBuf=new Ajp14Packet( MAX_PACKET_SIZE );
+    Ajp13Packet hBuf=new Ajp13Packet( MAX_PACKET_SIZE );
     
     // Holds incoming reads of request body data (*not* header data)
     byte []bodyBuff = new byte[MAX_READ_SIZE];
@@ -142,9 +142,9 @@ public class Ajp14
 
     public void initBuf()
     {	
-	outBuf = new Ajp14Packet( MAX_PACKET_SIZE );
-	inBuf  = new Ajp14Packet( MAX_PACKET_SIZE );
-	hBuf   = new Ajp14Packet( MAX_PACKET_SIZE );
+	outBuf = new Ajp13Packet( MAX_PACKET_SIZE );
+	inBuf  = new Ajp13Packet( MAX_PACKET_SIZE );
+	hBuf   = new Ajp13Packet( MAX_PACKET_SIZE );
     }
 
     public void recycle() {
@@ -276,7 +276,7 @@ public class Ajp14
 
     /**
      * Read in a packet from the web server and store it in the passed-in
-     * <CODE>Ajp14Packet</CODE> object.
+     * <CODE>Ajp13Packet</CODE> object.
      *
      * @param msg The object into which to store the incoming packet -- any
      * current contents will be overwritten.
@@ -284,7 +284,7 @@ public class Ajp14
      * @return The number of bytes read on a successful read or -1 if there 
      * was an error.
      **/
-    public int receive(Ajp14Packet msg) throws IOException {
+    public int receive(Ajp13Packet msg) throws IOException {
 	// XXX If the length in the packet header doesn't agree with the
 	// actual number of bytes read, it should probably return an error
 	// value.  Also, callers of this method never use the length
@@ -325,7 +325,7 @@ public class Ajp14
      * @param msg A packet with accumulated data to send to the server --
      * this method will write out the length in the header.  
      */
-    public void send( Ajp14Packet msg ) throws IOException {
+    public void send( Ajp13Packet msg ) throws IOException {
 	msg.end(); // Write the packet header
 	byte b[] = msg.getBuff();
 	int len  = msg.getLen();

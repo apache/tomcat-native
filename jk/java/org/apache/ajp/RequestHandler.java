@@ -219,7 +219,7 @@ public class RequestHandler extends AjpHandler
     
     // -------------------- Incoming message --------------------
     public int handleAjpMessage( int type, Ajp14 channel,
-				 Ajp14Packet ajp, BaseRequest req )
+				 Ajp13Packet ajp, BaseRequest req )
 	throws IOException
     {
 	switch( type ) {
@@ -241,7 +241,7 @@ public class RequestHandler extends AjpHandler
      *
      * @return 200 in case of a successful decoduing, 500 in case of error.  
      */
-    protected int decodeRequest(Ajp14 ch, Ajp14Packet msg, BaseRequest req)
+    protected int decodeRequest(Ajp14 ch, Ajp13Packet msg, BaseRequest req)
         throws IOException
     {
         
@@ -406,7 +406,7 @@ public class RequestHandler extends AjpHandler
      * @param statusMessage the HTTP status message to send.
      * @param headers The set of all headers.
      */
-    public void sendHeaders(Ajp14 ch, Ajp14Packet outBuf,
+    public void sendHeaders(Ajp14 ch, Ajp13Packet outBuf,
 			    int status, String statusMessage, MimeHeaders headers)
         throws IOException
     {
@@ -441,7 +441,7 @@ public class RequestHandler extends AjpHandler
      * Signal the web server that the servlet has finished handling this
      * request, and that the connection can be reused.
      */
-    public void finish(Ajp14 ch, Ajp14Packet outBuf) throws IOException {
+    public void finish(Ajp14 ch, Ajp13Packet outBuf) throws IOException {
         if (debug > 0)  log("finish()");
 
 	outBuf.reset();
@@ -459,7 +459,7 @@ public class RequestHandler extends AjpHandler
      * @param off The offset into the buffer from which to start sending.
      * @param len The number of bytes to send.
      */    
-    public void doWrite(Ajp14 ch, Ajp14Packet outBuf,
+    public void doWrite(Ajp14 ch, Ajp13Packet outBuf,
 			byte b[], int off, int len)
 	throws IOException
     {
@@ -670,7 +670,7 @@ public class RequestHandler extends AjpHandler
     
     /**
      */
-    public void beginSendHeaders(Ajp14 ch, Ajp14Packet outBuf,
+    public void beginSendHeaders(Ajp14 ch, Ajp13Packet outBuf,
 				 int status,
                                  String statusMessage,
                                  int numHeaders) throws IOException {
@@ -697,7 +697,7 @@ public class RequestHandler extends AjpHandler
         outBuf.appendInt(numHeaders);
     }
 
-    public void sendHeader(Ajp14Packet outBuf,
+    public void sendHeader(Ajp13Packet outBuf,
 			   String name, String value)
 	throws IOException
     {
@@ -710,7 +710,7 @@ public class RequestHandler extends AjpHandler
         outBuf.appendString(value);
     }
 
-    public void endSendHeaders(Ajp14 ch, Ajp14Packet outBuf)
+    public void endSendHeaders(Ajp14 ch, Ajp13Packet outBuf)
 	throws IOException
     {
         outBuf.end();
@@ -723,7 +723,7 @@ public class RequestHandler extends AjpHandler
      * @param status The HTTP status code to send.
      * @param headers The set of all headers.
      */
-    public void sendHeaders(Ajp14 ch, Ajp14Packet outBuf,
+    public void sendHeaders(Ajp14 ch, Ajp13Packet outBuf,
 			    int status, MimeHeaders headers)
         throws IOException {
         sendHeaders(ch, outBuf, status, HttpMessages.getMessage(status), headers);

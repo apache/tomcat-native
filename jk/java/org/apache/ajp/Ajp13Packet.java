@@ -60,9 +60,17 @@ package org.apache.ajp;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.Enumeration;
+import java.security.*;
 
-import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.HttpMessages;
+import org.apache.tomcat.util.buf.HexUtils;
+
 
 /**
  * A single packet for communication between the web server and the
@@ -71,6 +79,9 @@ import org.apache.tomcat.util.http.MimeHeaders;
  * Can be used (somewhat confusingly) for both incoming and outgoing
  * packets.  
  *
+ * @see Ajp14/Ajp13Packet 
+ *
+ * @author Henri Gomez [hgomez@slib.fr]
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Kevin Seguin
@@ -195,7 +206,7 @@ public class Ajp13Packet {
         }
         return len;
     }
-	
+    
     /**
      * Prepare this packet for accumulating a message from the container to
      * the web server.  Set the write position to just after the header

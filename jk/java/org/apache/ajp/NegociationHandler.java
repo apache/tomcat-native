@@ -286,11 +286,11 @@ public class NegociationHandler extends AjpHandler
     
     // -------------------- Dispatch --------------------
 
-    public int handleAjpMessage( int type, Ajp14 ch, Ajp14Packet hBuf,
+    public int handleAjpMessage( int type, Ajp14 ch, Ajp13Packet hBuf,
 				 BaseRequest req )
 	throws IOException
     {
-	Ajp14Packet outBuf=ch.outBuf;
+	Ajp13Packet outBuf=ch.outBuf;
 	// Valid requests when not logged:
 	switch( type ) {
 	case JK_AJP14_LOGINIT_CMD :
@@ -326,8 +326,8 @@ public class NegociationHandler extends AjpHandler
      * 
      * Send Login Seed (MD5 of seed)
      */
-    private int handleLogInit( Ajp14 ch, Ajp14Packet msg,
-			       Ajp14Packet outBuf )
+    private int handleLogInit( Ajp14 ch, Ajp13Packet msg,
+			       Ajp13Packet outBuf )
 	throws IOException
     {
 	webserverNegociation = msg.getLongInt();
@@ -353,8 +353,8 @@ public class NegociationHandler extends AjpHandler
      * If the authentification is valid send back LogOk
      * If the authentification failed send back LogNok
      */
-    private int handleLogComp( Ajp14 ch, Ajp14Packet msg,
-			       Ajp14Packet outBuf )
+    private int handleLogComp( Ajp14 ch, Ajp13Packet msg,
+			       Ajp13Packet outBuf )
 	throws IOException
     {
 	// log("in handleLogComp :");
@@ -403,8 +403,8 @@ public class NegociationHandler extends AjpHandler
 	return (304);
     }
 
-    private int handleContextQuery( Ajp14 ch, Ajp14Packet msg,
-				    Ajp14Packet outBuf )
+    private int handleContextQuery( Ajp14 ch, Ajp13Packet msg,
+				    Ajp13Packet outBuf )
 	throws IOException
     {
 	log("in handleContextQuery :");
@@ -434,25 +434,25 @@ public class NegociationHandler extends AjpHandler
 	return (304);
     }
     
-    private int handleStatus( Ajp14Packet msg, Ajp14Packet outBuf ) throws IOException
+    private int handleStatus( Ajp13Packet msg, Ajp13Packet outBuf ) throws IOException
     {
 	log("in handleStatus :");
 	return (304);
     }
 
-    private int handleShutdown( Ajp14Packet msg, Ajp14Packet outBuf ) throws IOException
+    private int handleShutdown( Ajp13Packet msg, Ajp13Packet outBuf ) throws IOException
     {
 	log("in handleShutdown :");
 	return (304);
     }
     
-    private int handleContextState( Ajp14Packet msg , Ajp14Packet outBuf) throws IOException
+    private int handleContextState( Ajp13Packet msg , Ajp13Packet outBuf) throws IOException
     {
 	log("in handleContextState :");
 	return (304);
     }
     
-    private int handleUnknowPacket( Ajp14Packet msg, Ajp14Packet outBuf ) throws IOException
+    private int handleUnknowPacket( Ajp13Packet msg, Ajp13Packet outBuf ) throws IOException
     {
 	log("in handleUnknowPacket :");
 	return (304);

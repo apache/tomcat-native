@@ -94,7 +94,7 @@ public class AjpHandler
     /** Execute the callback 
      */
     public int handleAjpMessage( int type, Ajp14 channel,
-				 Ajp14Packet ajp, BaseRequest req )
+				 Ajp13Packet ajp, BaseRequest req )
 	throws IOException
     {
 	return UNKNOWN;
