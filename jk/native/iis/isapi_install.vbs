@@ -73,7 +73,7 @@ if args.count <> 6 then
 	info ""
 	info "Tomcat ISAPI Redirector Installation Utility"
 	info "usage: isapi_install <server> <fdir> <worker> <mount> <log> <level>"
-	info "	server:	The Web Server Name"
+	info "	server:	The Web Server Name (for example 'Default Web Site')"
 	info "	fdir:	the full path to the directory that contains the isapi filter"
 	info "	worker:	Full path and file name of the worker properties file"
 	info "	mount:	Full path and file name of the worker mount properties file"
@@ -88,7 +88,7 @@ end if
 serverName = args(0)
 filterDir = args(1)
 filterName = "jakarta"
-filterLib = "\isapi_redirect.dll"
+filterLib = "\isapi_redirector.dll"
 workerFile = args(2)
 mountFile = args(3)
 logFile = args(4)
@@ -202,7 +202,7 @@ end if
 
 on error goto 0
 info "Updating Registry"
-shell.RegWrite regRoot + "extension_uri", "/jakarta/isapi_redirect.dll"
+shell.RegWrite regRoot + "extension_uri", "/jakarta/isapi_redirector.dll"
 shell.RegWrite regRoot + "log_file", logFile
 shell.RegWrite regRoot + "log_level", logLevel
 shell.RegWrite regRoot + "worker_file", workerFile
