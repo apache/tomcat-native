@@ -231,17 +231,13 @@ static const char *jk2_set1(cmd_parms *cmd, void *per_dir,
         ap_get_module_config(s->module_config, &jk2_module);
     jk_workerEnv_t *workerEnv = serverEnv->workerEnv;
     
-    jk_map_t *m=workerEnv->init_data;
-    
     env=workerEnv->globalEnv;
 
-    value = jk2_map_replaceProperties(env, m, m->pool, value);
-
     if( cmd->info != NULL ) {
-        m->add(env, m, (char *)cmd->info, (char *)value );
+        workerEnv->setProperty( env, workerEnv, (char *)cmd->info, (char *)value );
     } else {
         /* ??? Maybe this is a single-option */
-        m->add(env, m, value, "On" );
+        workerEnv->setProperty( env, workerEnv, value, "On" );
     }
 
     return NULL;
@@ -268,20 +264,11 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
         ap_get_module_config(s->module_config, &jk2_module);
     jk_workerEnv_t *workerEnv = serverEnv->workerEnv;
     
-    jk_map_t *initData=workerEnv->init_data;
-    
     env=workerEnv->globalEnv;
-
-    value = jk2_map_replaceProperties(env, initData, initData->pool, value);
-
-    if(value==NULL)
-        return NULL;
 
     if( type==NULL || type[0]=='\0') {
         /* Generic Jk2Set foo bar */
-        initData->add(env, initData, ap_pstrdup( cmd->pool, name),
-                      ap_pstrdup( cmd->pool, value));
-        /* fprintf( stderr, "set2.init_data: %s %s\n", name, value ); */
+        workerEnv->setProperty(env, workerEnv, name, value);
     } else if( strcmp(type, "env")==0) {
         workerEnv->envvars_in_use = JK_TRUE;
         workerEnv->envvars->put(env, workerEnv->envvars,
@@ -291,10 +278,7 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
         fprintf( stderr, "set2.env %s %s\n", name, value );
     } else if( strcmp(type, "mount")==0) {
         if (name[0] !='/') return "Context must start with /";
-        initData->put(  env, initData,ap_pstrdup(cmd->pool,name),
-                        ap_pstrdup(cmd->pool,value), NULL );
-        
-        fprintf( stderr, "set2.mount %s %s\n", name, value );
+        workerEnv->setProperty(  env, workerEnv, name, value );
     } else {
         fprintf( stderr, "set2 error %s %s %s ", type, name, value );
     }
@@ -368,7 +352,7 @@ static const command_rec jk2_cmds[] =
 static void *jk2_create_dir_config(ap_pool *p, char *path)
 {
     jk_uriEnv_t *new =
-        (jk_uriEnv_t *)apr_pcalloc(p, sizeof(jk_uriEnv_t));
+        (jk_uriEnv_t *)ap_pcalloc(p, sizeof(jk_uriEnv_t));
 
     fprintf(stderr, "XXX Create dir config %s %p\n", path, new);
     new->uri = path;
@@ -382,7 +366,7 @@ static void *jk2_merge_dir_config(ap_pool *p, void *basev, void *addv)
 {
     jk_uriEnv_t *base =(jk_uriEnv_t *)basev;
     jk_uriEnv_t *add = (jk_uriEnv_t *)addv; 
-    jk_uriEnv_t *new = (jk_uriEnv_t *)apr_pcalloc(p,sizeof(jk_uriEnv_t));
+    jk_uriEnv_t *new = (jk_uriEnv_t *)ap_pcalloc(p,sizeof(jk_uriEnv_t));
     
     if( add->webapp == NULL ) {
         add->webapp=base->webapp;
@@ -449,7 +433,7 @@ static void *jk2_create_config(ap_pool *p, server_rec *s)
         
     }
 
-    newUri=(jk_uriEnv_t *)apr_pcalloc(p, sizeof(jk_uriEnv_t));
+    newUri=(jk_uriEnv_t *)ap_pcalloc(p, sizeof(jk_uriEnv_t));
 
     newUri->workerEnv=workerEnv;
     
@@ -526,6 +510,7 @@ static int jk2_post_config(ap_pool *pconf,
     int rc;
     jk_env_t *env;
     
+
     if(s->is_virtual) 
         return OK;
 
@@ -537,7 +522,7 @@ static int jk2_post_config(ap_pool *pconf,
         /* This is the first step */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "mod_jk.post_config() first invocation\n");
-        apr_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool );
+        /*         ap_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool ); */
         return OK;
     }
         
@@ -636,7 +621,7 @@ static int jk2_handler(request_rec *r)
         }
 
         /* XXX we should reuse the request itself !!! */
-        jk2_service_apache2_factory( env, rPool, (void *)&s,
+        jk2_service_apache13_factory( env, rPool, (void *)&s,
                                     "service", "apache2");
 
         s->pool = rPool;
@@ -751,24 +736,6 @@ static int jk2_translate(request_rec *r)
     return OK;
 }
 
-/* XXX Can we use type checker step to set our stuff ? */
-
-/* bypass the directory_walk and file_walk for non-file requests */
-static int jk2_map_to_storage(request_rec *r)
-{
-    jk_uriEnv_t *uriEnv=ap_get_module_config( r->request_config, &jk2_module );
-    
-    if( uriEnv != NULL ) {
-        r->filename = (char *)apr_filename_of_pathname(r->uri);
-        if( uriEnv->debug > 0 ) {
-            /*   env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-            /*     "mod_jk.map_to_storage(): map %s %s\n", */
-            /*                  r->uri, r->filename); */
-        }
-        return OK;
-    }
-    return DECLINED;
-}
 
 static const handler_rec jk2_handlers[] =
 {
@@ -777,7 +744,7 @@ static const handler_rec jk2_handlers[] =
     { NULL }
 };
 
-module MODULE_VAR_EXPORT jk_module = {
+module MODULE_VAR_EXPORT jk2_module = {
     STANDARD_MODULE_STUFF,
     jk_init,                    /* module initializer */
     NULL,                       /* per-directory config creator */
