@@ -1527,9 +1527,6 @@ static int ajp_get_reply(jk_endpoint_t *e,
 
         /* no more data to be sent, fine we have finish here */
         if (JK_AJP13_END_RESPONSE == rc) {
-            /* XXX: Set all readed */
-            s->content_read = s->content_length;
-            s->no_more_chunks = 1;
             JK_TRACE_EXIT(l);
             return JK_TRUE;
         }
