@@ -83,13 +83,8 @@
 //#include "jk_uri_worker_map.h"
 
 #define SERVER_ROOT_TAG         ("serverRoot")
-#define URI_SELECT_TAG          ("uriSelect")
 #define EXTENSION_URI_TAG       ("extensionUri")
 #define WORKERS_FILE_TAG        ("workersFile")
-
-#define URI_SELECT_PARSED_VERB      ("parsed")
-#define URI_SELECT_UNPARSED_VERB    ("unparsed")
-#define URI_SELECT_ESCAPED_VERB     ("escaped")
 
 
 static char  file_name[_MAX_PATH];
