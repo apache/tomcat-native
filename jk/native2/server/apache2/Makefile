@@ -37,7 +37,7 @@ ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
 # Compile commands
 COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
 
-SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) -prefer-pic 
+SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
 MOD_LINK = $(LIBTOOL) --mode=link $(CC) -module -shared $(LT_LDFLAGS) $(ALL_LDFLAGS) 
 
 #############################################################################
