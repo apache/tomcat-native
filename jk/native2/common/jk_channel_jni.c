@@ -309,8 +309,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
         jk2_channel_jni_open( env, _this, endpoint );
         epData=(jk_ch_jni_ep_private_t *)endpoint->channelData;
     }
-
-    if( epData->jniJavaContext == NULL ) {
+    if( epData == NULL || epData->jniJavaContext == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,"channel_jni.send() no java context\n" ); 
         
         return JK_ERR;

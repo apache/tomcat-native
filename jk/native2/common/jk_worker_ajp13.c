@@ -401,7 +401,7 @@ jk2_worker_ajp14_forwardSingleThread(jk_env_t *env, jk_worker_t *worker,
                   "ajp14.forwardST() After %d\n",err);
     
     
-    return JK_OK;
+    return err;
 }
      
 static int JK_METHOD

@@ -85,11 +85,13 @@ struct jk_map {
 
     void *(*get)(struct jk_env *env, struct jk_map *_this,
                  const char *name);
-    
+
+    /** Set the value, overriding previous values */
     int (*put)(struct jk_env *env, struct jk_map *_this,
                const char *name, void *value,
                void **oldValue);
 
+    /** Multi-value support */
     int (*add)(struct jk_env *env, struct jk_map *_this,
                const char *name, void *value );
 

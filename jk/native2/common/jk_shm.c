@@ -175,6 +175,11 @@ static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
         return JK_OK;
     }
 
+    if( shm->size <= 0 ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                      "shm.create(): No size %s\n", shm->fname);
+        return JK_ERR;
+    }
     /* make sure it's an absolute pathname */
     /*  fname = ap_server_root_relative(pconf, ap_scoreboard_fname); */
 
@@ -189,12 +194,10 @@ static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
                       "shm.create(): error removing shm %s %d %s\n",
                       shm->fname, rv, error );
         shm->privateData=NULL;
-        return rv;
     } else {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "shm.create(): file removed ok\n");
     }
-
 
     rv = apr_shm_create((apr_shm_t **)&shm->privateData,(apr_size_t)shm->size,
                         shm->fname, globalShmPool);
@@ -232,7 +235,7 @@ static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
 
     shm->head->slotSize = shm->slotSize;
     shm->head->slotMaxCount = shm->slotMaxCount;
-    shm->head->lastSlot = 0;
+    shm->head->lastSlot = 1;
     
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "shm.init() Initalized %s %p\n",
@@ -312,6 +315,7 @@ static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_m
 {
     jk_bean_t *bean=(jk_bean_t *)target;
     jk_shm_t *shm=(jk_shm_t *)bean->object;
+    int rc;
 
     int code=msg->getByte(env, msg );
     
@@ -330,8 +334,8 @@ static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_m
     case SHM_ATTACH: {
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "shm.init()\n");
-        shm->init(env, shm);
-        return JK_OK;
+        rc=shm->init(env, shm);
+        return rc;
     }
     case SHM_DETACH: {
 
@@ -342,12 +346,17 @@ static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_m
         jk_shm_slot_t *slot;
         
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "shm.registerTomcat() %s %d\n",
+                      "shm.writeSlot() %s %d\n",
                       instanceName, msg->len );
         if( msg->len > shm->slotSize ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                          "shm.registerTomcat() Packet too large %d %d\n",
+                          "shm.writeSlot() Packet too large %d %d\n",
                           shm->slotSize, msg->len );
+            return JK_ERR;
+        }
+        if( shm->head == NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                          "shm.writeSlot() No head - shm was not initalized\n");
             return JK_ERR;
         }
         slot=shm->createSlot( env, shm, instanceName, 0 );
