@@ -51,7 +51,7 @@ You could set <b>CFLAGS</b> and <b>LDFLAGS</b> to add some platform specifics:
 
 <screen>
 <read />
-<type>LDFLAGS=-lc ./configure -with-apxs=/home2/local/apache/bin/apxs</type>
+<type>LDFLAGS=-lc ./configure -with-apxs=/path-to-the-apache2-nstallation/bin/apxs</type>
 </screen>
 
 <p>
@@ -81,6 +81,9 @@ It builds a shared Apache module. It detects automaticly the Apache version.
 The apache sources should have been configured before configuring mod_jk.
 DIR is something like: /home/apache/apache_1.3.33
 It builds a static Apache module.</p>
+  </attribute>
+  <attribute name="--enable-maitainer-mode" required="false">
+  <p>Build mod_jk enabling maintainer or DEBUG mode.</p>
   </attribute>
 </attributes>
 
@@ -113,9 +116,9 @@ autodetected.</p>
 
 <screen>
 <note>Apache 2.0 build</note>
-<type>./configure --with-apxs=/usr/sbin/apxs2</type><br/>
+<type>./configure --with-apxs=/opt/apache2/bin/apxs</type><br/>
 <type>make</type><br/>
-<type>cp ./apache-2.0/mod_jk.so /usr/lib/apache2</type><br/>
+<type>make install</type><br/>
 </screen>
 
 <screen>
@@ -260,6 +263,7 @@ Assuming that you are root :
 <type>./configure --with-apxs=/usr/local/apache2/bin/apxs</type>
 <note>(you should point to the directory where you installed Apache 2.0)</note>
 <type>cd apache-2.0</type>
+<type>make -f Makefile.apxs</type>
 <type>make -f Makefile.apxs install</type>
 </screen>
 </section>
