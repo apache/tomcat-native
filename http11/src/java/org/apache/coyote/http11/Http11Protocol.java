@@ -200,6 +200,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                 tpOname=new ObjectName(domain + ":" + "type=ThreadPool,name=http" + ep.getPort());
                 Registry.getRegistry().registerComponent(tp, tpOname, null );
                 tp.setName("http" + ep.getPort());
+                tp.setDaemon(false);
                 tp.addThreadPoolListener(new MXPoolListener(this, tp));
             } catch (Exception e) {
                 log.error("Can't register threadpool" );
