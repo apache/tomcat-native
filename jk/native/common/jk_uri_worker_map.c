@@ -309,7 +309,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         /*
          * JFC: please check...
          * Not sure what to do, but I try to prevent problems.
-         * I have fixed jk_mount_context() in apache*/mod_jk.c so we should
+         * I have fixed jk_mount_context() in apaches/mod_jk.c so we should
          * not arrive here when using Apache.
          */
         jk_log(l, JK_LOG_ERROR,
