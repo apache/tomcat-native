@@ -137,6 +137,7 @@ public final class Request {
     protected MessageBytes methodMB = new MessageBytes();
     protected MessageBytes unparsedURIMB = new MessageBytes();
     protected MessageBytes uriMB = new MessageBytes();
+    protected MessageBytes decodedUriMB = new MessageBytes();
     protected MessageBytes queryMB = new MessageBytes();
     protected MessageBytes protoMB = new MessageBytes();
 
@@ -218,6 +219,10 @@ public final class Request {
 
     public MessageBytes requestURI() {
         return uriMB;
+    }
+
+    public MessageBytes decodedURI() {
+        return decodedUriMB;
     }
 
     public MessageBytes query() {
@@ -416,6 +421,7 @@ public final class Request {
 
         unparsedURIMB.recycle();
         uriMB.recycle();
+        decodedUriMB.recycle();
 	queryMB.recycle();
 	methodMB.recycle();
 	protoMB.recycle();
