@@ -14,7 +14,9 @@ APU_INCLUDE=$(APU_DIR)/include
 
 SRC_DIR=.
 INCLUDE=.
-AJP_OBJECTS = httpd_wrap.lo testajp.lo
+AJP_OBJECTS = ajp_link.lo  ajp_msg.lo  httpd_wrap.lo
+AJP_PROGRAM = testajp.lo
+AJP_LIB     = lib_ajp.la
 
 INCLUDES = -I $(INCLUDE) -I $(APR_INCLUDE) -I $(APU_INCLUDE)
 
@@ -23,8 +25,11 @@ include $(APR_DIR)/build/config_vars.mk
 
 all: testajp
 
-testajp: $(AJP_OBJECTS)
-	$(LINK) $(AJP_OBJECTS) $(AP_LIBS)
+testajp: $(AJP_PROGRAM) $(AJP_LIB)
+	$(LINK) $(AJP_PROGRAM) $(AJP_LIB) $(AP_LIBS)
+
+$(AJP_LIB): $(AJP_OBJECTS)
+	$(LINK) $(AJP_OBJECTS)
 
 clean:
 	rm -f *.o *.so *.lo *.la *.slo
