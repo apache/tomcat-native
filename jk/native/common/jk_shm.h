@@ -80,13 +80,13 @@ struct jk_shm_w_rec
     int     recover_wait_time;
     time_t  error_time;
     /* Number of bytes read from remote */
-    int     readed;
+    size_t   readed;
     /* Number of bytes transferred to remote */
-    int     transferred;
+    size_t   transferred;
     /* Number of times the worker was elected */
-    int     elected;
+    size_t   elected;
     /* Number of non 200 responses */
-    int     errors;
+    size_t   errors;
 };
 typedef struct jk_shm_w_rec jk_shm_w_rec_t;
 
