@@ -22,6 +22,15 @@
     <property name="tomcat-util.lib" value="${tomcat-util.build}/lib" />
     <property name="tomcat-util.jar" value="${tomcat-util.lib}/tomcat-util.jar" />
 
+    <path id="compile.classpath">
+        <pathelement location="${jmx.jar}" />
+        <pathelement location="${jsse.jar}" />
+        <pathelement location="${jnet.jar}" />
+        <pathelement location="${jcert.jar}" />
+        <pathelement location="${puretls.jar}" />
+        <pathelement location="${commons-logging.jar}" />
+    </path>
+
     <target name="detect">
         <available property="jsse.present" file="${jsse.jar}"/>
         <available property="jmx.present" file="${jmx.jar}"/>
@@ -49,12 +58,7 @@
 	       optimize="off"
 	       verbose="off"
 	       excludes="**/CVS/**">
-            <classpath location="${jmx.jar}" />
-            <classpath location="${jsse.jar}" />
-            <classpath location="${jnet.jar}" />
-            <classpath location="${jcert.jar}" />
-            <classpath location="${puretls.jar}" />
-            <classpath location="${commons-logging.jar}" />
+            <classpath refid="compile.classpath"/>
             <exclude name="**/util/net/jsse/*" unless="jsse.present"/>
             <exclude name="**/util/log/CommonLogHandler.java" unless="commons-logging.present"/>
             <exclude name="**/util/net/puretls/*" unless="puretls.present"/>
@@ -97,8 +101,9 @@
                   version="true"
               windowtitle="Tomcat Utilities Documentation"
                  doctitle="Tomcat Utilities"
-                   bottom="Copyright &#169; 2001 Apache Software Foundation.  All Rights Reserved."
-	/>
+                   bottom="Copyright &#169; 2001 Apache Software Foundation.  All Rights Reserved.">
+            <classpath refid="compile.classpath"/>
+        </javadoc>
     </target>
 
 
