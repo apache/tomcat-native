@@ -56,6 +56,7 @@
  * [Additional notices, if required by prior licensing conditions]
  *
  */ 
+
 package org.apache.tomcat.util.net.jsse;
 
 import java.io.*;
@@ -64,6 +65,7 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -84,6 +86,7 @@ import javax.net.ssl.TrustManagerFactory;
  * @author Costin Manolache
  * @author Stefan Freyr Stefansson
  * @author EKR -- renamed to JSSESocketFactory
+ * @author Jan Luehe
  */
 public class JSSE14SocketFactory  extends JSSESocketFactory {
 
@@ -97,27 +100,32 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
     void init() throws IOException {
         try {
 
-            String clientAuthStr = (String)attributes.get("clientauth");
+            String clientAuthStr = (String) attributes.get("clientauth");
             if (clientAuthStr != null){
                 clientAuth = Boolean.valueOf(clientAuthStr).booleanValue();
             }
 
             // SSL protocol variant (e.g., TLS, SSL v3, etc.)
-            String protocol = (String)attributes.get("protocol");
-            if (protocol == null) protocol = defaultProtocol;
+            String protocol = (String) attributes.get("protocol");
+            if (protocol == null) {
+                protocol = defaultProtocol;
+            }
 
             // Certificate encoding algorithm (e.g., SunX509)
-            String algorithm = (String)attributes.get("algorithm");
-            if (algorithm == null) algorithm = defaultAlgorithm;
+            String algorithm = (String) attributes.get("algorithm");
+            if (algorithm == null) {
+                algorithm = defaultAlgorithm;
+            }
 
-            String keystoreType = (String)attributes.get("keystoreType");
+            String keystoreType = (String) attributes.get("keystoreType");
             if (keystoreType == null) {
                 keystoreType = defaultKeystoreType;
             }
 
             // Create and init SSLContext
             SSLContext context = SSLContext.getInstance(protocol); 
-            context.init(getKeyManagers(keystoreType, algorithm),
+            context.init(getKeyManagers(keystoreType, algorithm,
+                                        (String) attributes.get("keyAlias")),
                          getTrustManagers(keystoreType),
                          new SecureRandom());
 
@@ -138,8 +146,11 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
      * Gets the initialized key managers.
      */
     protected KeyManager[] getKeyManagers(String keystoreType,
-                                          String algorithm)
+                                          String algorithm,
+                                          String keyAlias)
                 throws Exception {
+
+        KeyManager[] kms = null;
 
         String keystorePass = getKeystorePassword();
 
@@ -147,7 +158,14 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
         kmf.init(getKeystore(keystoreType, keystorePass),
                  keystorePass.toCharArray());
 
-        return kmf.getKeyManagers();
+        kms = kmf.getKeyManagers();
+        if (keyAlias != null) {
+            for(int i=0; i<kms.length; i++) {
+                kms[i] = new JSSEKeyManager((X509KeyManager)kms[i], keyAlias);
+            }
+        }
+
+        return kms;
     }
 
     /**
@@ -156,15 +174,15 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
     protected TrustManager[] getTrustManagers(String keystoreType)
                 throws Exception {
 
-        TrustManager[] tm = null;
+        TrustManager[] tms = null;
 
         KeyStore trustStore = getTrustStore(keystoreType);
         if (trustStore != null) {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
             tmf.init(trustStore);
-            tm = tmf.getTrustManagers();
+            tms = tmf.getTrustManagers();
         }
 
-        return tm;
+        return tms;
     }
 }
