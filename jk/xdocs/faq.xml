@@ -7,11 +7,11 @@
 
 <section name="General">
 <p>
-General Informations and FAQ about mod_jk
+General Informations and FAQ about JK
 </p>
-<subsection name="Where can I get help/support for mod_jk?">
+<subsection name="Where can I get help/support for JK ?">
 <p>
-The primary mechanism for support is through the mod_jk 
+The primary mechanism for support is through the JK 
 documentation included in the doc directory.
 Documentation is also available on the Apache Jakarta web site devoted to the
 <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/doc/index.html">
@@ -22,7 +22,7 @@ You should start by searching
 the mail list archive</a>
 before you post questions to the list.  
 If you are unable to locate the answer to your question in the archive, 
-you can post questions about mod_jk to the user list for assistance.  
+you can post questions about JK to the user list for assistance.  
 Make sure that you include the version of your Webserver, 
 that you are using as well as the platform you are running on
 and go 
@@ -32,33 +32,85 @@ to determine how to subscribe to tomcat mailing list.
 </p>
 </subsection>
 
-<subsection name="I can't find mod_jk anywhere. Where is it?">
+<subsection name="I can't find JK anywhere. Where is it?">
 <p>
-Now that mod_jk moved to the jakarta-tomcat-connectors repository, 
-the source and binaries for mod_jk are present 
+Now that JK moved to the <b>jakarta-tomcat-connectors</b> repository, 
+the source and binaries for JK are present 
 in the <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/">
 jakarta-tomcat-connectors directory</a>
 </p>
 </subsection>
 
+<subsection name="What's the difference between JK and mod_jk ?">
+<p>
+<b>JK</b> is a project covering web-servers to Tomcat connectors,
+whereas <b>mod_jk</b> is the <a href="jk/aphowto.html">Apache module</a> developped in JK.
+</p>
+
+<p>
+<a href="jk/domhowto.html">Domino webserver</a> support is implemented on JK, using a redirector
+called <b>dsapi redirector</b>.
+</p>
+
+<p>
+<a href="jk/iishowto.html">IIS webserver</a>support is implemented on JK, using a redirector
+called <b>isapi redirector</b>.
+</p>
+
+<p>
+<a href="jk/neshowto.html">Netscape/iPlanet webserver</a>webserver support is implemented on JK, using a redirector
+called <b>nsapi redirector</b>.
+</p>
+
+</subsection>
+
 <subsection name="Where can I get more information ?">
 <p>
-For mod_jk 1.2.x the <a href="jk/config-howto.html">
-mod_jk-config howto document</a> has considerably more in-depth information.
-For mod_jk 2.0.x the <a href="jk2/configtc.html">
+For <b>JK 1.2.x</b>, you should read :
+</p>
+
+<ul>
+<li>
+<a href="jk/aphowto.html">Apache and JK</a>
+</li>
+
+<li>
+<a href="jk/domhowto.html">Domino and JK</a>
+</li>
+
+<li>
+<a href="jk/iishowto.html">IIS and JK</a>
+</li>
+
+<li>
+<a href="jk/neshowto.html">Netscape/iPlanet and JK</a>
+</li>
+
+<li>
+<a href="jk/workershowto.html">Workers configuration</a>
+</li>
+</ul>
+
+<p>
+For <b>JK 2.0.x</b> the <a href="jk2/configtc.html">
 config tomcat</a> and <a href="jk2/configweb.html">config webserver</a>
 documents have considerably more in-depth information.
 It's worth a look. 
-You could also try searching the mailing list archives for "mod_jk" or look at the source.
+You could also try searching the mailing list archives for "JK" or look at the source.
 </p>
 </subsection>
 
 <subsection name="Which protocol should I use? Ajp12 or Ajp13?">
 <p>
-<a href="common/AJPv13.html">Ajp13</a> is a newer protocol, it's faster, and it works better with SSL. You almost certainly want to use it. 
-There is more information in the workers.properties howto document, ajp12 is now deprecated. 
-Also ajp13 is supported by all Apache Tomcat  including 3.2.x , 3.3.x, 4.0.x, 4.1.x and the new tomcat 5. 
-Others Servlet engine like jetty have support for Ajp13.
+<a href="common/AJPv13.html">Ajp13</a> is a newer protocol, it's faster, and it works better with SSL. 
+You almost certainly want to use it now that ajp12 is deprecated.
+</p>
+<p> 
+Also ajp13 is supported by all Apache Tomcat including 3.2.x , 3.3.x, 4.0.x, 4.1.x and the new tomcat 5. 
+</p>
+
+<p>
+Others Servlet engines like <b>jetty</b> have support for Ajp13.
 </p>
 </subsection>
 
@@ -66,8 +118,10 @@ Others Servlet engine like jetty have support for Ajp13.
 <p>
 Ajp13 use persistant connections where the traffic could be null if there is no request to be sent to Tomcat. 
 Firewall used to drop inactive connections and will make your WebServer and Tomcat think the connection is valid. 
-Since mod_jk 1.2.0 a socket_keepalive property as been added to ajp13 settings, and you should take a look at 
-it in workers.properties howto
+</p>
+<p>
+Starting with JK 1.2.0, a <b>socket_keepalive</b> property as been added to ajp13 settings, and you should take a look at 
+it in <a href="jk/workershowto.html">Workers HowTo</a>.
 </p>
 </subsection>
 
@@ -78,8 +132,10 @@ to Tomcat to forward the requests they should handle.
 Apache WebServer will normally kill the childs/threads when the load decrease. But if the load is still there and 
 even if only Apache handle the requests, ie static contents, the childs are kept and with them the ajp13 connections, 
 even if they are no more used. 
-Since mod_jk 1.2.0 cache_timeout and socket_timeout properties as been added to close connections after some time, 
-for more informations refer to workers.properties howto
+</p>
+<p>
+Since JK 1.2.0, <b>cache_timeout</b> and <b>socket_timeout</b> properties as been added to close 
+connections after some time of inactivity, for more informations refer to <a href="jk/workershowto.html">Workers HowTo</a>.
 </p>
 </subsection>
 
@@ -98,26 +154,41 @@ But with previous release of mod_jk, you may have to restart Apache as well.
 
 <subsection name="Why did exist two files mod_jk.so (-eapi ad -noeapi) in download dir for Linux ?">
 <p>
-Many versions of Apache use of modified API, known at Extended API. For example, Apache using mod_ssl or 
-Apache present in certains recent Linux distributions. So if you got such 'Extended Apache', 
-you need to use mod_jk.so-eapi, or use mod_jk.so-noeapi for standard Apache. 
+Many versions of Apache use of modified API, known at Extended API, developped for use with the
+<a href="http://www.modssl.org">mod_ssl module</a>.
+</p>
+
+<p>
+For example, Apache present in certains recent Linux distributions include the
+<b>mod_ssl</b> module.
+</p>
+
+<p>
+So if you got such 'Extended Apache', you need to use <b>mod_jk.so-eapi</b>.
+</p>
+
+<p> 
+You should use <b>mod_jk.so-noeapi</b> only for 'Standard Apache' (ie without mod_ssl).
+</p>
+
+<p>
 It's wise to avoid using EAPI modules on STD API Apache or to use standard API modules on EAPI Apache. 
-Allways be sure to have the mod_jk.so for your version of Apache
+Allways be sure to have the <b>mod_jk.so</b> witch match your version of Apache
 </p>
 </subsection>
 
 <subsection name="What's that message about 'garbled DSO ?'">
 <p>
-It's related to Apache EAPI, the message 'mod_jk.so is garbled - perhaps this is not an Apache module DSO ?' 
-just told you are trying to install a mod_jk.so DSO module that was compiled on an Apache using EAPI, 
+It's related to Apache EAPI, the message <code>'mod_jk.so is garbled - perhaps this is not an Apache module DSO ?'</code> 
+just told you, that your're trying to install a mod_jk.so DSO module that was compiled on an Apache using EAPI, 
 like apache-mod_ssl or apache from Redhat distro 6.2/7.0 but your system use the standard apache with normal API.
 </p>
 </subsection>
 
 <subsection name="And the message about 'module might crash under EAPI!">
 <p>
-Also related to EAPI, the message '[warn] Loaded DSO /usr/lib/apache/mod_jk.so uses plain Apache 1.3 API, 
-this module might crash under EAPI! (please recompile it with -DEAPI)', the mod_jk.so was compiled under normal 
+Also related to EAPI, the message <code>'[warn] Loaded DSO /usr/lib/apache/mod_jk.so uses plain Apache 1.3 API, 
+this module might crash under EAPI! (please recompile it with -DEAPI)'</code>, the mod_jk.so was compiled under normal 
 Apache with standard API and you try to install the module on an Apache using EAPI.
 </p>
 </subsection>
@@ -149,6 +220,8 @@ Note: The above steps assume that you downloaded the Apache source and placed it
 <p>
 Since Apache 2.0 API still change often, the Apache 2.0 teams decide to put in headers of compiled modules the 
 Apache 2.0 version used to compile the module. 
+</p>
+<p>
 At start time Apache 2.0 check that version in modules headers and stop if it detect that a module was compiled 
 for another Apache 2.0 version. As such you should allways use modules compiled for the same Apache 2.0 version. 
 This check may be removed if the future.
@@ -159,7 +232,15 @@ This check may be removed if the future.
 <p>
 JNI support require a multi-threaded environment which is not the general case for Apache 1.3. 
 You should verify if Apache 1.3 has been build with thread support and if not you could add the 
-LoadModule "/usr/lib/libpthreads.so" in your httpd.conf. 
+the pthreads library to your <b>httpd.conf</b> file. 
+</p>
+
+<screen>
+<note># Add pthread to Apache in httpd.conf</note>
+<read>LoadModule "/usr/lib/libpthreads.so"</read>
+</screen>
+
+<p>
 Also keep in mind that JNI is suited for multi-threaded servers and you should consider upgrading 
 to Apache 2.0 to support JNI.
 </p>
@@ -168,15 +249,24 @@ to Apache 2.0 to support JNI.
 <subsection name="JNI report that JVM couldn't be started under Linux">
 <p>
 Under Linux, you should set some environment variables BEFORE launching your Apache server :
-<source>
-export LD_LIBRARY_PATH=$jre/bin:$jre/bin/classic:$LD_LIBRARY_PATH
-</source>
+</p>
+
+<screen>
+<read>export LD_LIBRARY_PATH=$jre/bin:$jre/bin/classic:$LD_LIBRARY_PATH</read>
+</screen>
+
+<p>
 Also some Linux distributions have enabled a GLIBC feature called 'floating stacks' which may not works with kernel 
 less than 2.4.10 on SMP machines. You should disable floating stacks by exporting an environment variable :
-<source>
-export LD_ASSUME_KERNEL=2.2.5
-</source>
-You could have to update your service scripts, ie /etc/rc.d/init.d/httpd, to set these env vars before your httpd server starts.
+</p>
+
+<screen>
+<read>export LD_ASSUME_KERNEL=2.2.5</read>
+</screen>
+
+<p>
+You could have to update your service scripts, ie <b>/etc/rc.d/init.d/httpd</b>, to set these env vars 
+before your httpd server starts.
 </p>
 </subsection>
 
@@ -184,7 +274,7 @@ You could have to update your service scripts, ie /etc/rc.d/init.d/httpd, to set
 
 <section name="IIS">
 <p>
-Informations and FAQ about mod_jk and IIS Web Servers. 
+Informations and FAQ about JK and IIS Web Servers. 
 </p>
 <todo>
 More informations to be added, Nacho ?
@@ -193,7 +283,7 @@ More informations to be added, Nacho ?
 
 <section name="NES/iPlanet">
 <p>
-Informations and FAQ about mod_jk and NES/iPlanet Web Servers. 
+Informations and FAQ about JK and NES/iPlanet Web Servers. 
 </p>
 <todo>
 More informations to be added, Mike ?

@@ -6,19 +6,19 @@
 <author email="hgomez@apache.org">Henri Gomez</author>
 </properties>
 
-<section name="What's jk ?">
+<section name="What's JK ?">
 <p>
-<b>jk</b> is a replacement to the elderly mod_jserv. 
+<b>JK</b> is a replacement to the elderly mod_jserv. 
 It was a completely new Tomcat-Apache plug-in that handles the communication between Tomcat and Apache.
 </p>
 <p>
-The newest <b>jk2</b> is a rewrite of <b>jk</b>.
+The newest <b>JK2</b> is a rewrite of <b>JK</b>.
 The native part has been completly
 restructured and the configuration has been simplified a lot.
 </p>
 
 <p>
-jk is more than just an apache module, since it could be used with majors WebServer :
+JK is more than just an apache module, since it could be used with majors WebServer :
 </p>
 
 <ul>
@@ -38,9 +38,9 @@ jk is more than just an apache module, since it could be used with majors WebSer
 
 </section>
 
-<section name="Why should I use the jk ?">
+<section name="Why should I use the JK ?">
 <p>
-jk was develop to overcome many limitations of its ancestor, <b>mod_jserv</b>.
+JK was develop to overcome many limitations of its ancestor, <b>mod_jserv</b>.
 </p>
 
 <p>
@@ -50,43 +50,43 @@ it brought with it lots of JServ specific bits that aren't needed by Apache.
 
 <p>
 Where <b>mod_jserv</b> supported only Apache webservers on Unix OS, 
-<b>jk</b> supports much more web servers and operating systems through 
-via a compatibility layer named the <b>jk library</b>. 
-The layered approach provided by the jk library makes it easier to 
+<b>JK</b> supports much more web servers and operating systems through 
+via a compatibility layer named the <b>JK library</b>. 
+The layered approach provided by the JK library makes it easier to 
 support many different webservers and OS.
 </p>
 
 <p>
-jk offer better support for SSL, that's was a problem with mod_jserv which couldn't 
+JK offer better support for SSL, that's was a problem with mod_jserv which couldn't 
 reliably identify whether a request was made via HTTP or HTTPS. 
 </p>
 <p>
-jk can, using the newer Ajpv13 protocol which relay many SSL informations required by servlet 2.2 and 2.3 specs.
+JK can, using the newer Ajpv13 protocol which relay many SSL informations required by servlet 2.2 and 2.3 specs.
 </p>
 
 <p>
-jk offers a lot of different and flexible communications between a Web Server 
+JK offers a lot of different and flexible communications between a Web Server 
 and the Tomcat Servlet Engine and could be used today with all of the ASF Tomcat Engines, 
 <b>3.2.x</b>, <b>3.3.x</b>, <b>4.0.x</b>, <b>4.1.x</b> and <b>5.x</b>
 </p>
 
 </section>
 
-<section name="What's the difference between jk and jk2 ?">
+<section name="What's the difference between JK and JK2 ?">
 <p>
-jk2 is a full rewrite of jk and is much more powerfull.
+JK2 is a full rewrite of JK and is much more powerfull.
 </p>
 <p>
-Even if it works with Apache 1.3, jk2 has been developed with Apache 2.0 in mind,
+Even if it works with Apache 1.3, JK2 has been developed with Apache 2.0 in mind,
 and sus is better suited for multi-threaded servers like IIS, NES/iPlanet.
 </p>
 <p>
-jk2 has a better separation between protocol and physical layer.
-As such jk2 support fast unix-socket, and could be extended to support others communications
+JK2 has a better separation between protocol and physical layer.
+As such JK2 support fast unix-socket, and could be extended to support others communications
 channels. Better it's suited for JNI and JDK 1.4 fast IO APIs
 </p>
 <p>
-jk2 could be monitored via special URLs (like mod_status)
+JK2 could be monitored via special URLs (like mod_status)
 </p>
 </section>
 
@@ -104,12 +104,12 @@ The big advantage of <b>mod_webapp</b> is that is very easy to configure,
 has a well defined protocol named <b>WARP</b>, does not care about the old
 crappy protocols used in Tomcat-3.x and so.
 But it would be possible to implement the <b>WARP</b> protocol in
-<b>jk2</b> ;-))
+<b>JK2</b> ;-))
 </p>
 <p>
 The disadvantage is that it requires the <b>Apache Portable Library</b>
 which is still only easily available via Apache 2.0 and that it didn't support
-WebServers like IIS, NES/iPlanet or Domino.
+webservers like IIS, NES/iPlanet or Domino.
 </p>
 </section>
 </document>

@@ -13,7 +13,7 @@ This document explains how to set up IIS to cooperate with Tomcat.
 
 <p>
 Normally IIS can not execute Servlets and Java Server Pages (JSPs), 
-configuring IIS to use the mod_jk redirector plugin will let IIS send servlet and 
+configuring IIS to use the JK ISAPI redirector plugin will let IIS send servlet and 
 JSP requests to Tomcat (and this way, serve them to clients).
 </p>
 

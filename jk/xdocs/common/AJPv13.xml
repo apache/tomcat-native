@@ -1,7 +1,7 @@
 <?xml version="1.0"?> 
 <document>
   <properties>
-    <title>Apache JServ Protocol version 1.3</title>
+    <title>AJPv13</title>
     <author email="danmil@shore.net">danmil@shore.net</author>
     <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
   </properties>
@@ -20,7 +20,7 @@ to allow a more easy integration in the Tomcat documentation.
 This describes the Apache JServ Protocol version 1.3 (hereafter
 <b>ajp13</b>).  There is, apparently, no current documentation of how the
 protocol works.  This document is an attempt to remedy that, in order to
-make life easier for maintainers of mod_jk, and for anyone who wants to
+make life easier for maintainers of JK, and for anyone who wants to
 port the protocol somewhere (into jakarta 4.x, for example).
 </p>
 
@@ -45,7 +45,7 @@ Java code, and I think it's reasonably readable.
 
 <p>
 According to email from Gal Shachor to the jakarta-dev mailing list,
-the original goals of <b>mod_jk</b> (and thus <b>ajp13</b>) were to extend
+the original goals of <b>JK</b> (and thus <b>ajp13</b>) were to extend
 <b>mod_jserv</b> and <b>ajp12</b> by (I am only including the goals which
 relate to communication between the web server and the servlet container):
 
@@ -352,31 +352,41 @@ See above for details on other <A HREF="#prefix-codes">prefix codes</A>.
 <subsection name="method">
 <p>
 The HTTP method, encoded as a single byte:
-
-<source>
-OPTIONS      1
-GET          2
-HEAD         3
-POST         4
-PUT          5
-DELETE       6
-TRACE        7
-PROPFIND     8
-PROPPATCH    9
-MKCOL       10
-COPY        11
-MOVE        12
-LOCK        13
-UNLOCK      14
-ACL         15
-REPORT      16
-VERSION-CONTROL 17
-CHECKIN     18
-CHECKOUT    19
-UNCHECKOUT  20
-SEARCH      21
-</source>
 </p>
+
+<p>
+<table>
+  <tr><th>Command Name</th><th>Code</th></tr>
+  <tr><td>OPTIONS</td><td>1</td></tr>
+  <tr><td>GET</td><td>2</td></tr>
+  <tr><td>HEAD</td><td>3</td></tr>
+  <tr><td>POST</td><td>4</td></tr>
+  <tr><td>PUT</td><td>5</td></tr>
+  <tr><td>DELETE</td><td>6</td></tr>
+  <tr><td>TRACE</td><td>7</td></tr>
+  <tr><td>PROPFIND</td><td>8</td></tr>
+  <tr><td>PROPPATCH</td><td>9</td></tr>
+  <tr><td>MKCOL</td><td>10</td></tr>
+  <tr><td>COPY</td><td>11</td></tr>
+  <tr><td>MOVE</td><td>12</td></tr>
+  <tr><td>LOCK</td><td>13</td></tr>
+  <tr><td>UNLOCK</td><td>14</td></tr>
+  <tr><td>ACL</td><td>15</td></tr>
+  <tr><td>REPORT</td><td>16</td></tr>
+  <tr><td>VERSION-CONTROL</td><td>17</td></tr>
+  <tr><td>CHECKIN</td><td>18</td></tr>
+  <tr><td>CHECKOUT</td><td>19</td></tr>
+  <tr><td>UNCHECKOUT</td><td>20</td></tr>
+  <tr><td>SEARCH</td><td>21</td></tr>
+  <tr><td>MKWORKSPACE</td><td>22</td></tr>
+  <tr><td>UPDATE</td><td>23</td></tr>
+  <tr><td>LABEL</td><td>24</td></tr>
+  <tr><td>MERGE</td><td>25</td></tr>
+  <tr><td>BASELINE_CONTROL</td><td>26</td></tr>
+  <tr><td>MKACTIVITY</td><td>27</td></tr>
+</table>
+</p>
+
 </subsection>
 
 <subsection  name="protocol, req_uri, remote_addr, remote_host, server_name, server_port, is_ssl">
@@ -399,37 +409,21 @@ SEARCH      21
   is as follows (all are case-sensitive):
 </p><p>
 <table>
-  <tr><th>
-    Name</th><th>Code value</th><th>Code name</th>
-  </tr><tr><td>
-    accept</td><td>0xA001</td><td>SC_REQ_ACCEPT</td>
-  </tr><tr><td>
-    accept-charset</td><td>0xA002</td><td>SC_REQ_ACCEPT_CHARSET</td>
-  </tr><tr><td>
-    accept-encoding</td><td>0xA003</td><td>SC_REQ_ACCEPT_ENCODING</td>
-  </tr><tr><td>
-    accept-language</td><td>0xA004</td><td>SC_REQ_ACCEPT_LANGUAGE</td>
-  </tr><tr><td>
-    authorization</td><td>0xA005</td><td>SC_REQ_AUTHORIZATION</td>
-  </tr><tr><td>
-    connection</td><td>0xA006</td><td>SC_REQ_CONNECTION</td>
-  </tr><tr><td>
-    content-type</td><td>0xA007</td><td>SC_REQ_CONTENT_TYPE</td>
-  </tr><tr><td>
-    content-length</td><td>0xA008</td><td>SC_REQ_CONTENT_LENGTH</td>
-  </tr><tr><td>
-    cookie</td><td>0xA009</td><td>SC_REQ_COOKIE</td>
-  </tr><tr><td>
-    cookie2</td><td>0xA00A</td><td>SC_REQ_COOKIE2</td>
-  </tr><tr><td>
-    host</td><td>0xA00B</td><td>SC_REQ_HOST</td>
-  </tr><tr><td>
-    pragma</td><td>0xA00C</td><td>SC_REQ_PRAGMA</td>
-  </tr><tr><td>
-    referer</td><td>0xA00D</td><td>SC_REQ_REFERER</td>
-  </tr><tr><td>
-    user-agent</td><td>0xA00E</td><td>SC_REQ_USER_AGENT</td>
-  </tr>
+  <tr><th>Name</th><th>Code value</th><th>Code name</th></tr>
+  <tr><td>accept</td><td>0xA001</td><td>SC_REQ_ACCEPT</td></tr>
+  <tr><td>accept-charset</td><td>0xA002</td><td>SC_REQ_ACCEPT_CHARSET</td></tr>
+  <tr><td>accept-encoding</td><td>0xA003</td><td>SC_REQ_ACCEPT_ENCODING</td></tr>
+  <tr><td>accept-language</td><td>0xA004</td><td>SC_REQ_ACCEPT_LANGUAGE</td></tr>
+  <tr><td>authorization</td><td>0xA005</td><td>SC_REQ_AUTHORIZATION</td></tr>
+  <tr><td>connection</td><td>0xA006</td><td>SC_REQ_CONNECTION</td></tr>
+  <tr><td>content-type</td><td>0xA007</td><td>SC_REQ_CONTENT_TYPE</td></tr>
+  <tr><td>content-length</td><td>0xA008</td><td>SC_REQ_CONTENT_LENGTH</td></tr>
+  <tr><td>cookie</td><td>0xA009</td><td>SC_REQ_COOKIE</td></tr>
+  <tr><td>cookie2</td><td>0xA00A</td><td>SC_REQ_COOKIE2</td></tr>
+  <tr><td>host</td><td>0xA00B</td><td>SC_REQ_HOST</td></tr>
+  <tr><td>pragma</td><td>0xA00C</td><td>SC_REQ_PRAGMA</td></tr>
+  <tr><td>referer</td><td>0xA00D</td><td>SC_REQ_REFERER</td></tr>
+  <tr><td>user-agent</td><td>0xA00E</td><td>SC_REQ_USER_AGENT</td></tr>
 </table>
 </p><p>
   The Java code that reads this grabs the first two-byte integer and if
@@ -464,21 +458,22 @@ SEARCH      21
   sent to signal the end of the list of optional attributes. The list of
   byte codes is:
 </p><p>
-<source>
-context            1 [Not currently implemented]
-servlet_path       2 [Not currently implemented]
-remote_user        3
-auth_type          4
-query_string       5
-jvm_route          6
-ssl_cert           7
-ssl_cipher         8
-ssl_session        9
 
-req_attribute      10 
+<table>
+  <tr><th>Information</th><th>Code Value</th><th>Note</th></tr>
+  <tr><td>context</td><td>0x01</td><td>Not currently implemented</td></tr>
+  <tr><td>servlet_path</td><td>0x02</td><td>Not currently implemented</td></tr>
+  <tr><td>remote_user</td><td>0x03</td><td></td></tr>
+  <tr><td>auth_type</td><td>0x04</td><td></td></tr>
+  <tr><td>query_string</td><td>0x05</td><td></td></tr>
+  <tr><td>jvm_route</td><td>0x06</td><td></td></tr>
+  <tr><td>ssl_cert</td><td>0x07</td><td></td></tr>
+  <tr><td>ssl_cipher</td><td>0x08</td><td></td></tr>
+  <tr><td>ssl_session</td><td>0x09</td><td></td></tr>
+  <tr><td>req_attribute</td><td>0x0A</td><td></td></tr>
+  <tr><td>terminator</td><td>0xFF</td><td></td></tr>
+</table>
 
-terminator         0xFF
-</source>
 </p><p>
 
   The <code>context</code> and <code>servlet_path</code> are not currently
@@ -504,7 +499,7 @@ terminator         0xFF
   details.
 </p><p>
   Beyond this list of basic attributes, any number of other attributes can
-  be sent via the <code>req_attribute</code> code (10).  A pair of strings
+  be sent via the <code>req_attribute</code> code (0x0A).  A pair of strings
   to represent the attribute name and value are sent immediately after each
   instance of that code.  Environment values are passed in via this method.
 </p><p>
@@ -574,24 +569,31 @@ Details:
   The response header names are encoded the same way the request header names are.
   See <A HREF="#header_encoding">above</A> for details about how the the
   codes are distinguished from the strings.  The codes for common headers are:
-</p><p>
-<source>
-Content-Type         0xA001
-Content-Language     0xA002
-Content-Length       0xA003 
-Date                 0xA004
-Last-Modified        0xA005
-Location             0xA006
-Set-Cookie           0xA007
-Set-Cookie2          0xA008
-Servlet-Engine       0xA009
-Status               0xA00A
-WWW-Authenticate     0xA00B
-</source>
-</p><p> 
+</p>
+
+<p>
+<table>
+  <tr><th>Name</th><th>Code value</th></tr>
+  <tr><td>Content-Type</td><td>0xA001</td></tr>
+  <tr><td>Content-Language</td><td>0xA002</td></tr>
+  <tr><td>Content-Length</td><td>0xA003</td></tr>
+  <tr><td>Date</td><td>0xA004</td></tr>
+  <tr><td>Last-Modified</td><td>0xA005</td></tr>
+  <tr><td>Location</td><td>0xA006</td></tr>
+  <tr><td>Set-Cookie</td><td>0xA007</td></tr>
+  <tr><td>Set-Cookie2</td><td>0xA008</td></tr>
+  <tr><td>Servlet-Engine</td><td>0xA009</td></tr>
+  <tr><td>Status</td><td>0xA00A</td></tr>
+  <tr><td>WWW-Authenticate</td><td>0xA00B</td></tr>
+</table>
+
+</p>
+
+<p> 
   After the code or the string header name, the header value is immediately
   encoded.
 </p>
+
 </subsection>
 
 <subsection name="End Response">

@@ -73,7 +73,7 @@ When starting up, the web server plugin will instantiate the workers whose name 
 <p>
 Each named worker should also have a few entries to provide additional information on his behalf.
 This information includes the worker's type and other related worker information. 
-Currently the following worker types that exists are (jk 1.2.0):
+Currently the following worker types that exists are (JK 1.2.0):
 </p>
 
 <table>
@@ -203,13 +203,13 @@ We'll see more on this in the lb worker section.
 </p>
 
 <p>
-<b>cachesize</b> property is usefull when you're using jk in multithreaded 
+<b>cachesize</b> property is usefull when you're using JK in multithreaded 
 web servers such as Apache 2.0, IIS and Netscape. They will benefit the most by 
 setting this value to a higher level (such as the estimated average concurrent users for Tomcat).
 </p>
 
 <p>
-<b>cache_timeout</b> property should be used with <b>cachesize</b> to specify how to time jk should keep
+<b>cache_timeout</b> property should be used with <b>cachesize</b> to specify how to time JK should keep
 an open socket in cache before closing it. This property should be used to reduce the number of threads 
 on the Tomcat WebServer.
 </p>
@@ -244,9 +244,11 @@ have informations about the cut and couldn't handle it.
 </p>
 
 <p>
-<b>socket_timeout</b> property told webserver to cut an ajp13 connection after some time of use.
-It's a good way to ensure that there won't be any unused threads living on Tomcat side, with the
-extra cost of reopening sockets next time a request be forwarded.
+<b>socket_timeout</b> property told webserver to cut an ajp13 connection after some time of 
+inactivity. When choosing an endpoint for a request and the assigned socket is open, it will be
+closed if it was not used for the configured time.
+It's a good way to ensure that there won't too old threads living on Tomcat side, 
+with the extra cost you need to reopen the socket next time a request be forwarded.
 This property is very similar to <b>cache_timeout</b> but works also in non-cache mode.
 </p>
 
@@ -323,7 +325,7 @@ TCP/IP sockets.
 Note: Since the JVM is multithreaded; the jni worker should be used only within multithreaded servers 
 such as AOLServer, IIS, Netscape and Apache 2.0.<br/> 
 You should also make sure that the threading scheme used by the web servers match the one 
-used to build the jk web server plugin.
+used to build the JK web server plugin.
 </p>
 
 <p>
@@ -344,7 +346,7 @@ In JDK1.xx you should just add classes.zip.
 
 <p>
 The <b>class_path</b> property can be given in multiple lines. 
-In this case the jk environment will concatenate all the classpath entries together 
+In this case the JK environment will concatenate all the classpath entries together 
 by putting path delimiter (":"/";") between the entries.
 </p>
 
@@ -361,7 +363,7 @@ by putting path delimiter (":"/";") between the entries.
 
 <p>
 The cmd_line property can be given in multiple lines. 
-In this case the jk environment will concatenate all the cmd_line entries together by putting spaces 
+In this case the JK environment will concatenate all the cmd_line entries together by putting spaces 
 between the entries.
 </p>
 
@@ -458,7 +460,7 @@ ps=\
 <section name="A sample worker.properties">
 <p>
 Since coping with worker.properties on your own is not an easy thing to do, 
-a sample worker.properties file is bundled along jk. 
+a sample worker.properties file is bundled along JK. 
 </p>
 
 <p>

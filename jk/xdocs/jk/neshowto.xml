@@ -42,7 +42,7 @@ ${tomcat_home}\bin - Where you place web server plugins
 </p>
 <p>
 In all the examples in this document ${tomcat_home} will be <b>c:\jakarta-tomcat</b>.
-A worker is defined to be a tomcat process that accepts work from the IIS server.
+A worker is defined to be a tomcat process that accepts work from the Netscape/iPlanet server.
 </p>
 </subsection>
 

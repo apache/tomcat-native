@@ -46,7 +46,7 @@ ${tomcat_home}\bin - Where you place web server plugins
 </p>
 <p>
 In all the examples in this document ${tomcat_home} will be <b>c:\jakarta-tomcat</b>.
-A worker is defined to be a tomcat process that accepts work from the IIS server.
+A worker is defined to be a tomcat process that accepts work from the Domino server.
 </p>
 </subsection>
 
@@ -415,7 +415,7 @@ may be available, depending on how Tomcat is configured.
 
 <section name="Building for Windows">
 <p>
-To compile it you'll need the jk domino source and Microsoft Visual C++ 6.0. 
+To compile it you'll need the JK Domino sources and Microsoft Visual C++ 6.0. 
 </p>
 
 <p>

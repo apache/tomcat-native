@@ -42,7 +42,7 @@ ${tomcat_home}\bin - Where you place web server plugins
 </p>
 <p>
 In all the examples in this document ${tomcat_home} will be <b>/var/tomcat3</b>.
-A <a href="jk/workershowto.html">worker</a> is defined to be a tomcat process that accepts work from the IIS server.
+A <a href="jk/workershowto.html">worker</a> is defined to be a tomcat process that accepts work from the Apache server.
 </p>
 </subsection>
 
@@ -161,7 +161,7 @@ For others, the binary distribution of mod_jk offers simpler installation.
 </p>
 
 <p>
-For example mod_jk 1.2.0 could be find <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/">
+For example JK 1.2.0 could be find <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/">
 here</a> and contains the following:
 </p>
 
@@ -220,7 +220,7 @@ they are specific to <b>mod_jserv</b>.
 </p>
 
 <p>
-The mod_jserv configuration directives are not compatible with mod_jk!
+The mod_jserv configuration directives are not compatible with mod_jk !
 </p>
 </subsection>
 
@@ -793,7 +793,7 @@ An alternative will be to open mod_jk.dsp in msdev and build it using the build 
 
 <section name="Building mod_jk for Apache on iSeries/OS400">
 <p>
-Since OS400 V4R5, iSeries (AS/400) used Apache 2.0 as their primary web server, replacing the old IBM webserver.
+Since OS400 V4R5, iSeries (AS/400) use Apache 2.0 as their primary web server, replacing the old IBM webserver.
 It's now possible to build mod_jk on iSeries thanks to the help of IBM Rochester Labs who provided informations and patches
 to adapt mod_jk to their Operating System.
 </p>

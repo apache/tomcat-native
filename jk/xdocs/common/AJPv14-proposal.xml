@@ -41,12 +41,12 @@ But ajp13 lacks support for :
 </li>
 <li>
   context information passed from servlet engine to web server.
-  Part of the configuration of mod_jk, the web server connector, is to
+  Part of the configuration of JK, the web server connector, is to
   indicate to the web server which URI to handle. 
   The mod_jk JkMount directive, told to web server which URI must be 
   forwarded to servlet engine.
   A servlet engine allready knows which URI it handle and TC 3.3 is
-  allready capable to generate a config file for mod_jk from the list
+  allready capable to generate a config file for JK from the list
   of available contexts.
 </li>
 <li>
@@ -58,7 +58,7 @@ But ajp13 lacks support for :
 </li>
 <li>
   verify state of connection before sending request.
-  Actually mod_jk send the request to the servlet engine and next wait 
+  Actually JK send the request to the servlet engine and next wait 
   for the answer. But one of the beauty of the socket API, is you that 
   you could write() to a closed connection without any error reporting, 
   but a read() to a closed connection return you the error code. 
@@ -141,7 +141,7 @@ run-time (up/down), level of SSL env vars, AJP protocol
 supported (AJP14/AJP15/AJP16...)
 
 The Web server info will contain web server info and
-connector name (ie Apache 1.3.20 + mod_ssl 2.8.4 + mod_jk 1.2a1 + mod_perl 1.25).
+connector name (ie Apache 1.3.26 + mod_ssl 2.8.8 + mod_jk 1.2.0 + mod_perl 1.25).
 
 The servlet engine will mask the negociation mask with it's own
 mask (what it can do) and return it when loggin is accepted.
@@ -247,7 +247,7 @@ FAILURE CODE is 32 bits long.
 <p>
 NOTA:
 
-While working on AJP14 in mod_jk, I really discovered "JkEnvVar". 
+While working on AJP14 in JK, I really discovered "JkEnvVar". 
 The following "Extended Env Vars feature" description may not
 be implemented in AJP14 since allready available in AJP13.
 
@@ -572,7 +572,7 @@ The goal of the AJP14 protocol is to overcome some of the AJP13 limitation.
 An easier configuration, a better support for large site and farm of Tomcat, 
 a simple authentification system and provision for protocol updates.
 
-Using the stable ajp13 implementation in mod_jk (native) and in servlet 
+Using the stable ajp13 implementation in JK (native) and in servlet 
 engine (java), it's a reasonable evolution of the well known ajp13.
 </p>
 </section>
