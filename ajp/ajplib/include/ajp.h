@@ -322,6 +322,15 @@ apr_status_t ajp_msg_serialize_ping(ajp_msg_t *msg);
  */
 apr_status_t ajp_msg_serialize_cping(ajp_msg_t *msg);
 
+/**
+ * Dump up to the first 1024 bytes on an AJP Message
+ *
+ * @param msg       AJP Message to dump
+ * @param err       error string to display
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_dump(ajp_msg_t *msg, char *err);
+
 /** 
  * Send an AJP message to backend
  *
