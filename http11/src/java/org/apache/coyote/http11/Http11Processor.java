@@ -59,39 +59,37 @@
 
 package org.apache.coyote.http11;
 
-import java.io.InterruptedIOException;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
-import java.net.Socket;
 import java.net.InetAddress;
+import java.net.Socket;
+import java.util.StringTokenizer;
 
-import org.apache.tomcat.util.buf.ByteChunk;
-import org.apache.tomcat.util.buf.MessageBytes;
-import org.apache.tomcat.util.http.FastHttpDateFormat;
-import org.apache.tomcat.util.http.MimeHeaders;
-import org.apache.tomcat.util.buf.Ascii;
-import org.apache.tomcat.util.buf.HexUtils;
-import org.apache.tomcat.util.net.SSLSupport;
-import org.apache.tomcat.util.threads.ThreadPool;
-import org.apache.tomcat.util.threads.ThreadWithAttributes;
-
-import org.apache.coyote.ActionHook;
 import org.apache.coyote.ActionCode;
+import org.apache.coyote.ActionHook;
 import org.apache.coyote.Adapter;
 import org.apache.coyote.Processor;
 import org.apache.coyote.Request;
 import org.apache.coyote.RequestInfo;
 import org.apache.coyote.Response;
-
 import org.apache.coyote.http11.filters.ChunkedInputFilter;
 import org.apache.coyote.http11.filters.ChunkedOutputFilter;
-//import org.apache.coyote.http11.filters.GzipInputFilter;
 import org.apache.coyote.http11.filters.GzipOutputFilter;
 import org.apache.coyote.http11.filters.IdentityInputFilter;
 import org.apache.coyote.http11.filters.IdentityOutputFilter;
 import org.apache.coyote.http11.filters.VoidInputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
+import org.apache.tomcat.util.buf.Ascii;
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.HexUtils;
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.FastHttpDateFormat;
+import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.net.SSLSupport;
+import org.apache.tomcat.util.threads.ThreadPool;
+import org.apache.tomcat.util.threads.ThreadWithAttributes;
 
 
 /**
@@ -324,27 +322,35 @@ public class Http11Processor implements Processor, ActionHook {
     }
 
 
-    /**
-     * Set compression level.
-     */
-    public void setCompression(String compression) {
-        if (compression.equals("on")) {
-            this.compressionLevel = 1;
-        } else if (compression.equals("force")) {
-            this.compressionLevel = 2;
-        } else if (compression.equals("off")) {
-            this.compressionLevel = 0;
-        } else {
-            try {
-                // Try to parse compression as an int, which would give the
-                // minimum compression size
-                compressionMinSize = Integer.parseInt(compression);
-                this.compressionLevel = 1;
-            } catch (Exception e) {
-                this.compressionLevel = 0;
-            }
-        }
-    }
+	/**
+	 * Set compression level.
+	 */
+	public void setCompression(String compression) {
+		if (compression.equals("on")) {
+			this.compressionLevel = 1;
+		} else if (compression.equals("force")) {
+			this.compressionLevel = 2;
+		} else if (compression.equals("off")) {
+			this.compressionLevel = 0;
+		} else {
+			try {
+				// Try to parse compression as an int, which would give the
+				// minimum compression size
+				compressionMinSize = Integer.parseInt(compression);
+				this.compressionLevel = 1;
+			} catch (Exception e) {
+				this.compressionLevel = 0;
+			}
+		}
+	}
+
+	/**
+	 * Set Minimum size to trigger compression.
+	 */
+	public void setCompressionMinSize(int compressionMinSize) {
+		this.compressionMinSize = compressionMinSize;
+	}
+	
 
     public void setThreadPool(ThreadPool threadPool) {
         this.threadPool = threadPool;
@@ -362,14 +368,31 @@ public class Http11Processor implements Processor, ActionHook {
     }
 
 
-    /**
-     * Set no compression user agent list (this method is best when used with 
-     * a large number of connectors, where it would be better to have all of 
-     * them referenced a single array).
-     */
-    public void setNoCompressionUserAgents(String[] noCompressionUserAgents) {
-        this.noCompressionUserAgents = noCompressionUserAgents;
-    }
+	/**
+	 * Set no compression user agent list (this method is best when used with 
+	 * a large number of connectors, where it would be better to have all of 
+	 * them referenced a single array).
+	 */
+	public void setNoCompressionUserAgents(String[] noCompressionUserAgents) {
+		this.noCompressionUserAgents = noCompressionUserAgents;
+	}
+
+
+	/**
+	 * Set no compression user agent list.
+	 * List contains users agents separated by ',' :
+	 * 
+	 * ie: "gorilla,desesplorer,tigrus"
+	 */
+	public void setNoCompressionUserAgents(String noCompressionUserAgents) {
+		if (noCompressionUserAgents != null) {
+			StringTokenizer st = new StringTokenizer(noCompressionUserAgents, ",");
+		
+			while (st.hasMoreTokens()) {
+				addNoCompressionUserAgent(st.nextToken().trim());
+			}
+		}
+	}
 
 
     /**
@@ -392,14 +415,31 @@ public class Http11Processor implements Processor, ActionHook {
     }
 
 
-    /**
-     * Set compressable mime-type list (this method is best when used with 
-     * a large number of connectors, where it would be better to have all of 
-     * them referenced a single array).
-     */
-    public void setCompressableMimeType(String[] compressableMimeTypes) {
-        this.compressableMimeTypes = compressableMimeTypes;
-    }
+	/**
+	 * Set compressable mime-type list (this method is best when used with 
+	 * a large number of connectors, where it would be better to have all of 
+	 * them referenced a single array).
+	 */
+	public void setCompressableMimeTypes(String[] compressableMimeTypes) {
+		this.compressableMimeTypes = compressableMimeTypes;
+	}
+
+
+	/**
+	 * Set compressable mime-type list
+	 * List contains users agents separated by ',' :
+	 * 
+	 * ie: "text/html,text/xml,text/plain"
+	 */
+	public void setCompressableMimeTypes(String compressableMimeTypes) {
+		if (compressableMimeTypes != null) {
+			StringTokenizer st = new StringTokenizer(compressableMimeTypes, ",");
+
+			while (st.hasMoreTokens()) {
+				addCompressableMimeType(st.nextToken().trim());
+			}
+		}
+	}
 
 
     /**
@@ -885,29 +925,32 @@ public class Http11Processor implements Processor, ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
 
-            if ((remoteAddr == null) && (socket != null)) {
+            if ((remoteAddr == null) && (socket != null))
                 remoteAddr = socket.getInetAddress().getHostAddress();
-                request.remoteAddr().setString(remoteAddr);
-            }
+
+            request.remoteAddr().setString(remoteAddr);
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
 
-            if (remoteAddr == null) {
+            if (remoteAddr == null)
                 remoteAddr = socket.getInetAddress().getHostAddress();
-                request.remoteAddr().setString(remoteAddr);
-            }
-            if (remoteHost == null) {
+            
+			request.remoteAddr().setString(remoteAddr);
+            
+            if (remoteHost == null)
                 remoteHost = socket.getInetAddress().getHostName();
-                request.remoteHost().setString(remoteHost);
-            }           
-            if (remotePort == -1){
+
+			request.remoteHost().setString(remoteHost);
+                       
+            if (remotePort == -1)
                 remotePort = socket.getPort();
-                request.setRemotePort(remotePort);
-            }            
-            if (localAddr == null){
+                
+            request.setRemotePort(remotePort);
+                        
+            if (localAddr == null)
                localAddr = socket.getLocalAddress().getHostAddress();
-               request.localAddr().setString(localAddr);
-            }
+
+			request.localAddr().setString(localAddr);
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
             if( sslSupport != null) { 
@@ -1230,6 +1273,7 @@ public class Http11Processor implements Processor, ActionHook {
                 request.getMimeHeaders().getValue("user-agent");
             String userAgentValue = userAgentValueMB.toString();
 
+			// TODO: Use regexp instead of simple string compare (cf: Apache 2.x)
         	if (inStringArray(noCompressionUserAgents, userAgentValue))
         		return false;
         }
