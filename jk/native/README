@@ -1,0 +1,90 @@
+README for jakarta-tomcat-connector
+
+$Id$
+
+Please see doc/mod_jk-howto.html for more verbose instructions
+
+* What is jakarta-tomcat-connector ?
+
+jakarta-tomcat-connector is a new project to release web-servers connector
+for the jakarta Tomcat servlet engine.
+
+This project didn't start from null since it reuse the latest code from
+mod_jk for the native parts and tomcat 3.3 for the java side of the 
+force.
+
+From mod_jk we gain :
+
+* A connector (plugin) for many Web Server, including
+  Apache HTTP Server, Netscape/IPLanet NES and Microsoft IIS
+  It also support JNI (and seems to used at least by IBM under 
+  AS/400 for Apache/WebSphere connectivity).
+  
+* Fault-tolerance and load-balancing. mod_jk use the concept of 
+  workers which handle a particular request, and a special worker
+  , the lb worker, is a group (cluster ?) of physical workers.
+
+* Direct access to Tomcat 3.2/3.3 servlet engine via ajp12/ajp13
+  protocol. 
+
+* OK, then how do I build web-connector ?
+
+For Unix:
+
+Change to the apache1.3 or apache2.0 directory,
+depending on which version of Apache you are running.
+
+Execute "./build-unix.sh"  This script sets some environment variables
+and then calls Apache's apxs script to do the actual compile.
+
+If this doesn't work, please check the source for build-unix.sh.  You
+may have to edit some variables.
+
+Alternately, you may have more luck with the makefiles.  Execute them
+with e.g. "make -f Makefile.linux mod_jtc.so"
+
+For Windows:
+
+[need more info feel free to contact me]
+
+* How do I install mod_jtc.so?
+
+Copy mod_jtc.so into your APACHE_HOME/libexec
+
+Add the following line to APACHE_HOME/conf/httpd.conf.  Replace
+"TOMCAT_HOME" with the actual directory name.
+
+   Include TOMCAT_HOME/conf/mod_jtc.conf-auto
+
+That's it!
+
+When Tomcat starts, it automatically writes out mod_jtc.conf-auto based
+on your server.xml settings.  If this is inadequate for your needs,
+you can copy mod_jtc.conf-auto to a new file called "mod_jtc.conf" and
+then change httpd.conf to read
+
+   Include TOMCAT_HOME/conf/mod_jtc.conf
+
+Note that Tomcat must be started *before* Apache for mod_jtc to
+initialize correctly.  Since "tomcat.sh start" launches Tomcat in the
+background, you may have to do something like the following in your
+startup script:
+
+	cd $TOMCAT_HOME/bin
+	./tomcat.sh start
+	sleep 4
+	$APACHE_HOME/bin/apachectl start
+
+[Note: apachectl should be run as root, but Tomcat should be run as a
+local user; this means that the above script would lead to a security
+problem. Any suggestions to fix?]
+
+* Where do I report bugs/errors?
+ 
+See http://jakarta.apache.org/getinvolved/mail.html and
+http://jakarta.apache.org/bugs/index.html for information.
+
+---
+Credits:
+mod_jk written by Gal Shachor and many others
+README and .sh scripts written by Alex Chaffee
