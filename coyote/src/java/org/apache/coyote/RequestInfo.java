@@ -60,18 +60,7 @@
 
 package org.apache.coyote;
 
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Hashtable;
-
-import org.apache.tomcat.util.buf.ByteChunk;
-import org.apache.tomcat.util.buf.MessageBytes;
-import org.apache.tomcat.util.buf.UDecoder;
-
-import org.apache.tomcat.util.http.MimeHeaders;
-import org.apache.tomcat.util.http.Parameters;
-import org.apache.tomcat.util.http.ContentType;
-import org.apache.tomcat.util.http.Cookies;
+import java.util.ArrayList;
 
 /**
  * Structure holding the Request and Response objects. It also holds statistical
@@ -87,13 +76,20 @@ import org.apache.tomcat.util.http.Cookies;
  *
  * @author Costin Manolache
  */
-public class RequestProcessor  {
-
+public class RequestInfo  {
+    RequestGroupInfo global=null;
 
     // ----------------------------------------------------------- Constructors
 
-    public RequestProcessor(Request req) {
+    public RequestInfo( Request req) {
         this.req=req;
+    }
+
+    public void setGlobalProcessor(RequestGroupInfo global) {
+        if( global != null) {
+            this.global=global;
+            global.addRequestProcessor( this );
+        }
     }
 
 
@@ -152,9 +148,21 @@ public class RequestProcessor  {
     /** Called by the processor before recycling the request. It'll collect
      * statistic information.
      */
-    public void updateCounters() {
+    void updateCounters() {
         bytesReceived+=req.getBytesRead();
         bytesSent+=req.getResponse().getBytesWritten();
+
+        requestCount++;
+        if( req.getResponse().getStatus() >=400 )
+            errorCount++;
+        long t0=req.getStartTime();
+        long t1=System.currentTimeMillis();
+        long time=t1-t0;
+        processingTime+=time;
+        if( maxTime < time ) {
+            maxTime=time;
+            maxRequestUri=req.requestURI().toString();
+        }
     }
 
     public long getBytesSent() {
@@ -212,4 +220,6 @@ public class RequestProcessor  {
     public void setErrorCount(int errorCount) {
         this.errorCount = errorCount;
     }
+
+
 }
