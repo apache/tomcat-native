@@ -635,13 +635,21 @@ static jk_uriEnv_t *jk2_uriMap_map(jk_env_t *env, jk_uriMap_t *uriMap,
     /* Then prefix match */
     match=jk2_uriMap_prefixMap( env, uriMap, ctxEnv->prefixMatch, uri, uriLen, reverse );
     if( match != NULL ) {
-        /* restore */
-        if( url_rewrite ) *url_rewrite=origChar;
-        if( uriMap->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "uriMap.mapUri() prefix match %s %s\n",
-                          uri, match->workerName ); 
-        return match;
+        char c=uri[match->prefix_len];
+        /* XXX Filter prefix matches to allow only exact 
+               matches with an optional path_info or query string at end.
+               Fixes Bugzilla#12141, needs review..
+        */
+        if (( uriLen > match->prefix_len && ( c=='/' || c=='?' ) ) ||
+              uriLen == match->prefix_len ) {
+            /* restore */
+            if( url_rewrite ) *url_rewrite=origChar;
+            if( uriMap->mbean->debug > 0 )
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "uriMap.mapUri() prefix match %s %s\n",
+                              uri, match->workerName ); 
+            return match;
+        }
     }
 
     /* And extension match at the end */
