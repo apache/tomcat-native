@@ -332,7 +332,7 @@ couldn't understand. In that case the receiver will send an
 'UNKNOW PACKET CMD' with attached the unhandled message.
 
 +-----------------------------+---------------------------------+------------------------------+
-| UNKNOWN PACKET CMD (1 byte) | UNHANDLED MESSAGE SIZE (32bits) | UNHANDLED MESSAGE (bytes...) |
+| UNKNOWN PACKET CMD (1 byte) | UNHANDLED MESSAGE SIZE (16bits) | UNHANDLED MESSAGE (bytes...) |
 +-----------------------------+---------------------------------+------------------------------+
 
 Depending on the message, the sender will report an error and if 
