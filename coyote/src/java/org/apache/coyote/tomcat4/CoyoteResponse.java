@@ -790,10 +790,10 @@ public class CoyoteResponse
     public String[] getHeaderValues(String name) {
 
         MimeHeaders headers = coyoteResponse.getMimeHeaders();
-	Vector result = new Vector();
+        Vector result = new Vector();
         for (int i = 0; i < headers.size(); i++) {
-	    if (name.equals( headers.getName(i).toString() ))
-		result.addElement( headers.getValue(i).toString() );
+            if (name.equals( headers.getName(i).toString() ))
+                result.addElement( headers.getValue(i).toString() );
         }
         String[] resultArray = new String[result.size()];
         result.copyInto(resultArray);
