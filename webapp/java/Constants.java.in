@@ -149,4 +149,12 @@ public class Constants {
      * No payload:<br>
      */
     public static final int TYPE_CONF_DONE=0x06;
+
+    /*
+     * Added by JFC (please check)
+     */
+    public static final int TYPE_DISCONNECT=0x07;
+    public static final int TYPE_CONF_DEPLOY=0x08;
+    public static final int TYPE_CONF_APPLIC=0x09;
+    public static final int TYPE_CONF_PROCEED=0x10;
 }
