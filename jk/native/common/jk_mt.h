@@ -32,53 +32,60 @@
 #define getpid()       ((int)GetThreadGroupID())
 #endif
 
-
 /*
  * All WIN32 code is MT, UNIX code that uses pthreads is marked by the POSIX
  * _REENTRANT define.
  */
 #if defined (WIN32) || defined(_REENTRANT) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 
-    /*
-     * Marks execution under MT compilation
-     */
+/*
+ * Marks execution under MT compilation
+ */
 #define _MT_CODE
-
 #ifdef WIN32
-
 #include <windows.h>
 
 typedef CRITICAL_SECTION JK_CRIT_SEC;
+#define JK_INIT_CS(x, rc) InitializeCriticalSection(x); rc = JK_TRUE
+#define JK_DELETE_CS(x, rc) DeleteCriticalSection(x);   rc = JK_TRUE
+#define JK_ENTER_CS(x, rc) EnterCriticalSection(x);     rc = JK_TRUE
+#define JK_LEAVE_CS(x, rc) LeaveCriticalSection(x);     rc = JK_TRUE
 
-#define JK_INIT_CS(x, rc) InitializeCriticalSection(x); rc = JK_TRUE;
-#define JK_DELETE_CS(x, rc) DeleteCriticalSection(x); rc = JK_TRUE;
-#define JK_ENTER_CS(x, rc) EnterCriticalSection(x); rc = JK_TRUE;
-#define JK_LEAVE_CS(x, rc) LeaveCriticalSection(x); rc = JK_TRUE;
-#define JK_ENTER_LOCK(x, rc) rc = JK_TRUE;
-#define JK_LEAVE_LOCK(x, rc) rc = JK_TRUE;
-
-#else /* Unix pthreads */
-
+#else /* !WIN32 */
 #define _MT_CODE_PTHREAD
 #include <pthread.h>
 #include <unistd.h>
 #include <fcntl.h>
 
 typedef pthread_mutex_t JK_CRIT_SEC;
-
 #define JK_INIT_CS(x, rc)\
-            if(pthread_mutex_init(x, NULL)) rc = JK_FALSE; else rc = JK_TRUE;
+            if(pthread_mutex_init(x, NULL)) rc = JK_FALSE; else rc = JK_TRUE
 
 #define JK_DELETE_CS(x, rc)\
-            if(pthread_mutex_destroy(x)) rc = JK_FALSE; else rc = JK_TRUE;
+            if(pthread_mutex_destroy(x))    rc = JK_FALSE; else rc = JK_TRUE
 
 #define JK_ENTER_CS(x, rc)\
-            if(pthread_mutex_lock(x)) rc = JK_FALSE; else rc = JK_TRUE;
+            if(pthread_mutex_lock(x))       rc = JK_FALSE; else rc = JK_TRUE
 
 #define JK_LEAVE_CS(x, rc)\
-            if(pthread_mutex_unlock(x)) rc = JK_FALSE; else rc = JK_TRUE;
+            if(pthread_mutex_unlock(x))     rc = JK_FALSE; else rc = JK_TRUE
 
 int jk_gettid();
+#endif /* WIN32 */
+
+#else /* !_MT_CODE */
+
+typedef void *JK_CRIT_SEC;
+#define JK_INIT_CS(x, rc)   rc = JK_TRUE
+#define JK_DELETE_CS(x, rc) rc = JK_TRUE
+#define JK_ENTER_CS(x, rc)  rc = JK_TRUE
+#define JK_LEAVE_CS(x, rc)  rc = JK_TRUE
+#define jk_gettid()         0
+#endif /* MT_CODE */
+
+#if !defined(WIN32) && !defined(NETWARE)
+#include <unistd.h>
+#include <fcntl.h>
 
 #if HAVE_FLOCK
 #include <sys/file.h>
@@ -116,18 +123,9 @@ int jk_gettid();
     } while (0)
 #endif /* HAVE_FLOCK */
 
-#endif /* Unix pthreads */
-
-#else /* Not an MT code */
-
-typedef void *JK_CRIT_SEC;
-
-#define JK_INIT_CS(x, rc) rc = JK_TRUE;
-#define JK_DELETE_CS(x, rc) rc = JK_TRUE;
-#define JK_ENTER_CS(x, rc) rc = JK_TRUE;
-#define JK_LEAVE_CS(x, rc) rc = JK_TRUE;
-#define jk_gettid() 0
-
-#endif /* Not an MT code */
+#else  /* WIN32 || NETWARE */
+#define JK_ENTER_LOCK(x, rc) rc = JK_TRUE
+#define JK_LEAVE_LOCK(x, rc) rc = JK_TRUE
+#endif
 
 #endif /* _JK_MT_H */
