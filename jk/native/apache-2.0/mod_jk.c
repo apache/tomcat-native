@@ -2348,6 +2348,13 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     else
         jk_log(conf->log, JK_LOG_ERROR, "Initializing shm:%s errno=%d",
                jk_shm_name(), rc);
+#if !defined (WIN32) || !defined(NETWARE)
+    if (!jk_shm_file)
+        ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_NOERRNO,
+                     0, NULL,
+                     "No JkShmFile defined in httpd.conf. "
+                     "LoadBalancer will not function properly!");
+#endif
 
     /* Set default connection cache size for worker mpm */
 #if APR_HAS_THREADS
@@ -2392,7 +2399,7 @@ static int jk_post_config(apr_pool_t * pconf,
     apr_status_t rv;
     jk_server_conf_t *conf;
     server_rec *srv = s;
-
+    
     /* create the jk log lockfiles in the parent */
     if ((rv = apr_global_mutex_create(&jk_log_lock, NULL,
                                       APR_LOCK_DEFAULT,

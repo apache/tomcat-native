@@ -1985,6 +1985,12 @@ static void jk_init(server_rec * s, ap_pool * p)
     else
         jk_log(conf->log, JK_LOG_ERROR, "Initializing shm:%s errno=%d",
                jk_shm_name(), rc);
+#if !defined (WIN32) || !defined(NETWARE)
+    if (!jk_shm_file)
+        ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_NOERRNO, NULL,
+                     "No JkShmFile defined in httpd.conf. "
+                     "LoadBalancer will not function properly!");
+#endif
  
     /* SREVILAK -- register cleanup handler to clear resources on restart,
      * to make sure log file gets closed in the parent process  */
