@@ -69,6 +69,7 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
+#include "apr_uri.h"
 /** Parse the name:
        VHOST/PATH
 
@@ -80,35 +81,41 @@
 static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
                                  char *name)
 {
-    char *n=name;
-    char *slash=strchr( name, '/' );
+
+    apr_uri_t uri;
+    char s[1024];
+
+    /* If it uri starts with / then it is simple 
+     * default host uri
+     */
+    if (*name == '/')
+        strcpy(s, name);
+    else {
+        strcpy(s, "http://");
+        strcat(s, name);
+    }
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                  "uriEnv.parseName() uri %s name %s real %s\n", 
+                  uriEnv->name, name, s);
     
-    /* fprintf( stderr, "XXX parseURI %s\n", name ); */
-    
-    if( slash==NULL ) {
-        /* That's a virtual host definition ( no actual mapping, just global
-         * settings like aliases, etc
-         */
-        uriEnv->match_type= MATCH_TYPE_HOST;
-        if( name[0]=='\0' ) {
-            uriEnv->virtual=NULL; /* "" for the default host */
-        } else {
-            uriEnv->virtual=name;
+    if (apr_uri_parse(uriEnv->pool->_private, s, &uri) == APR_SUCCESS) {
+        
+        uriEnv->port = uri.port;
+        if (uri.hostname) {
+            if (!uriEnv->port)
+                uriEnv->virtual = uri.hostname;
+            else
+                uriEnv->virtual = apr_pstrcat(uriEnv->pool->_private,
+                                    uri.hostname, ":", uri.port_str, NULL);
         }
+        else
+            uriEnv->virtual = "*";
+        uriEnv->uri = uri.path;
+        if (!uri.path)
+            uriEnv->match_type = MATCH_TYPE_HOST;
         return JK_OK;
     }
-    
-    /* If it doesn't start with /, it must have a vhost */
-    if( *name != '/' ) {
-        uriEnv->virtual=uriEnv->pool->calloc( env, uriEnv->pool, slash - name + 2 );
-        strncpy( uriEnv->virtual, name, slash-name );
-    }
-    
-    n=slash;
-    
-    uriEnv->uri=uriEnv->pool->pstrdup(env, uriEnv->pool, n);
-
-    return JK_OK;
+    return JK_ERR;
 }
 
 static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
@@ -134,59 +141,71 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
     jk_uriEnv_t *uriEnv=mbean->object;
     char *valueParam=valueP;
     
-    char *name=uriEnv->pool->pstrdup(env,uriEnv->pool, nameParam);
-    char *val=uriEnv->pool->pstrdup(env,uriEnv->pool, valueParam);
+    char *name = uriEnv->pool->pstrdup(env,uriEnv->pool, nameParam);
+    char *val = uriEnv->pool->pstrdup(env,uriEnv->pool, valueParam);
 
-    uriEnv->properties->add( env ,uriEnv->properties,
-                             name, val );
+    uriEnv->properties->add(env ,uriEnv->properties,
+                            name, val);
 
-    if( strcmp("group", name) == 0 ) {
-        uriEnv->workerName=val;
+    if (strcmp("group", name) == 0) {
+        uriEnv->workerName = val;
         return JK_OK;
-    } else if( strcmp("context", name) == 0 ) {
-        
+    } 
+    else if (strcmp("context", name) == 0) {        
         uriEnv->contextPath=val;
-        uriEnv->ctxt_len=strlen( val );
+        uriEnv->ctxt_len = strlen(val);
 
-        if( strcmp( val, uriEnv->uri ) == 0 ) {
-            uriEnv->match_type= MATCH_TYPE_CONTEXT;
+        if (strcmp(val, uriEnv->uri) == 0) {
+            uriEnv->match_type = MATCH_TYPE_CONTEXT;
         }
         return JK_OK;
-    } else if( strcmp("servlet", name) == 0 ) {
+    } 
+    else if (strcmp("servlet", name) == 0) {
         uriEnv->servlet=val;
-    } else if( strcmp("timing", name) == 0 ) {
-        uriEnv->timing=atoi( val );
-    } else if( strcmp("reverse", name) == 0 ) {
-        uriEnv->reverse=atoi( val );
-    } else if( strcmp("alias", name) == 0 ) {
-        if( uriEnv->match_type == MATCH_TYPE_HOST ) {
-            if( uriEnv->aliases==NULL ) {
-                jk2_map_default_create( env, &uriEnv->aliases, mbean->pool );
+    } 
+    else if (strcmp("timing", name) == 0) {
+        uriEnv->timing = atoi(val);
+    }
+    else if (strcmp("alias", name) == 0) {
+        if (uriEnv->match_type == MATCH_TYPE_HOST) {
+            if (uriEnv->aliases == NULL) {
+                jk2_map_default_create(env, &uriEnv->aliases, mbean->pool);
             }
-            uriEnv->aliases->put( env, uriEnv->aliases, val, uriEnv, NULL );
+            uriEnv->aliases->put(env, uriEnv->aliases, val, uriEnv, NULL);
         }
     }
-    
-    /* OLD - DEPRECATED */
-    if( strcmp("worker", name) == 0 ) {
-        uriEnv->workerName=val;
-    } else if( strcmp("path", name) == 0 ) {
-        if( val==NULL )
-            uriEnv->uri=NULL;
+    else {
+        /* OLD - DEPRECATED */
+        int d = 1;
+        if (strcmp("worker", name) == 0) {
+            d = 1;
+            uriEnv->workerName = val;
+        } 
+        else if (strcmp("path", name) == 0) {
+            if (val == NULL)
+                uriEnv->uri = NULL;
+            else
+                uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, val);
+        }
+        else if (strcmp("uri", name) == 0) {
+            jk2_uriEnv_parseName(env, uriEnv, val);
+        } 
+        else if (strcmp("name", name) == 0) {
+            jk2_uriEnv_parseName(env, uriEnv, val);
+        }
+        else if (strcmp("vhost", name) == 0) {
+            if (val == NULL)
+                uriEnv->virtual = NULL;
+            else
+                uriEnv->virtual = uriEnv->pool->pstrdup(env, uriEnv->pool, val);
+        }
         else
-            uriEnv->uri=uriEnv->pool->pstrdup(env, uriEnv->pool, val);
-    }
-    if( strcmp("uri", name) == 0 ) {
-        jk2_uriEnv_parseName( env, uriEnv, val);
-    }
-    if( strcmp("name", name) == 0 ) {
-        jk2_uriEnv_parseName( env, uriEnv, val);
-    }
-    if( strcmp("vhost", name) == 0 ) {
-        if( val==NULL )
-            uriEnv->virtual=NULL;
-        else
-            uriEnv->virtual=uriEnv->pool->pstrdup(env, uriEnv->pool, val);
+            d = 0;
+        if (d)
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                    "uriEnv.setAttribute() the %s directive is depriciated\n",
+                    name);
+        
     }
     return JK_OK;
 }
@@ -379,26 +398,29 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     uriEnv=(jk_uriEnv_t *)pool->calloc(env, uriPool,
                                        sizeof(jk_uriEnv_t));
     
-    uriEnv->pool=uriPool;
+    uriEnv->pool = uriPool;
     
-    jk2_map_default_create( env, &uriEnv->properties, uriPool );
+    jk2_map_default_create(env, &uriEnv->properties, uriPool);
 
-    uriEnv->init=jk2_uriEnv_init;
+    uriEnv->init = jk2_uriEnv_init;
 
-    result->setAttribute=jk2_uriEnv_setAttribute;
-    result->getAttribute=jk2_uriEnv_getAttribute;
-    uriEnv->mbean=result;
-    result->object=uriEnv;
-    result->getAttributeInfo=myAttInfo;
+    result->setAttribute = jk2_uriEnv_setAttribute;
+    result->getAttribute = jk2_uriEnv_getAttribute;
+    uriEnv->mbean = result;
+    result->object = uriEnv;
+    result->getAttributeInfo = myAttInfo;
 
-    uriEnv->name=result->localName;
-    jk2_uriEnv_parseName( env, uriEnv, result->localName);
-
-    uriEnv->workerEnv=env->getByName( env, "workerEnv" );
-    uriEnv->workerEnv->uriMap->addUriEnv( env, uriEnv->workerEnv->uriMap,
-                                          uriEnv );
-    uriEnv->uriMap=uriEnv->workerEnv->uriMap;
+    uriEnv->name = result->localName;
+    if (jk2_uriEnv_parseName(env, uriEnv, result->localName) != JK_OK) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "uriEnv.factory() error parsing %s\n",
+                      uriEnv->name);
+        return JK_ERR;
+    }
+    uriEnv->workerEnv = env->getByName(env, "workerEnv");
+    uriEnv->workerEnv->uriMap->addUriEnv(env, uriEnv->workerEnv->uriMap,
+                                         uriEnv);
+    uriEnv->uriMap = uriEnv->workerEnv->uriMap;
 
     return JK_OK;
 }
-
