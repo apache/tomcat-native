@@ -593,9 +593,9 @@ public class Http11Processor implements Processor, ActionHook {
             (float) threadPool.getCurrentThreadsBusy() 
             / (float) threadPool.getMaxThreads();
         if ((threadRatio > 0.33) && (threadRatio <= 0.66)) {
-            soTimeout = soTimeout / 5;
+            soTimeout = soTimeout / 2;
         } else if (threadRatio > 0.66) {
-            soTimeout = soTimeout / 10;
+            soTimeout = soTimeout / 5;
             keepAliveLeft = 1;
         }
 
@@ -603,11 +603,11 @@ public class Http11Processor implements Processor, ActionHook {
 
         while (started && !error && keepAlive) {
             try {
-                request.setStartTime(System.currentTimeMillis());
                 if( !disableUploadTimeout && keptAlive && soTimeout > 0 ) {
                     socket.setSoTimeout(soTimeout);
                 }
                 inputBuffer.parseRequestLine();
+                request.setStartTime(System.currentTimeMillis());
                 thrA.setParam( threadPool, request.requestURI() );
                 keptAlive = true;
                 if (!disableUploadTimeout) {
