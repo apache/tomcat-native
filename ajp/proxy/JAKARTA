@@ -2,6 +2,15 @@ JAKARTA TOMCAT CONNECTORS AJP CHANGELOG FOR MOD_PROXY:  -*-text-*-
 Last modified at [$Date$]
 
 Changes in AJP HEAD:
+    * proxy_util.c: Enable compiling on 2.0-HEAD
+      Use apr_socket_create_ex for 0.9.x
+      [Mladen Turk]
+    * mod_proxy.c: Enable compiling on 2.0-HEAD
+      mod_ssl is not included in 2.0-HEAD
+      [Mladen Turk]
+    * mod_proxy.h: Change the proxy_module declaration so that we
+      can compile on WIN32
+      [Mladen Turk]      
     * Imported proxy sources from 2.1-HEAD
       Date: 2004/08/03 10:05:52
       [Mladen Turk] 
