@@ -126,7 +126,6 @@ typedef struct {
 
 	char * secret_key;
     jk_map_t *automount;
-    jk_map_t *secretkeys;
 
     jk_uri_worker_map_t *uw_map;
 
@@ -603,24 +602,6 @@ static const char *jk_mount_context(cmd_parms *cmd,
 }
 
 /*
- * JkSecretKey directive handling
- *  
- * JkSecretKey defaultsecretkey 
- */ 
-
-static const char *jk_secret_key(cmd_parms *cmd,
-										void *dummy,
-                                        char *secret_key)
-{
-    server_rec *s = cmd->server;
-    jk_server_conf_t *conf = 
-        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    conf->secret_key = secret_key;
-    return NULL;
-}   
-
-/*
  * JkAutoMount directive handling 
  *
  * JkAutoMount worker [virtualhost]
@@ -642,32 +623,6 @@ static const char *jk_automount_context(cmd_parms *cmd,
 	map_put(conf->automount, worker, virtualhost, (void **)&old);
 	return NULL;
 }
-	
-
-/*
- * JkWorkerSecretKey directive handling
- *
- * JkWorkerSecretKey worker secretkey
- */
-
-static const char *jk_worker_secret_key(cmd_parms *cmd,
-                                       void *dummy,
-                                       char *worker,
-                                       char *secretkey)
-{
-    server_rec *s = cmd->server;
-    jk_server_conf_t *conf =
-        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    /*
-     * Add the new automount to the auto map.
-     */
-    char * old;
-    map_put(conf->secretkeys, worker, secretkey, (void **)&old);
-    return NULL;
-}
-   
-
 
 /*
  * JkWorkersFile Directive Handling
@@ -895,26 +850,12 @@ static const command_rec jk_cmds[] =
      "the name of a worker file for the Jakarta servlet containers"},
 
 	/*
-	 * JkSecretKey specifies the default (common) secret key to works with
-     * workers in AJP14 protocol
-	 */
-	{"JkSecretKey", jk_secret_key, NULL, RSRC_CONF, TAKE1,
-     "the default secret key to works with workers"},
-
-	/*
 	 * JkAutoMount specifies that the list of handled URLs must be 	
 	 * asked to the servlet engine (autoconf feature)
 	 */
 	{"JkAutoMount", jk_automount_context, NULL, RSRC_CONF, TAKE12,
      "automatic mount points to a servlet-engine worker"},
 
-    /*
-     * JkWorkerSecretKey specifies that the secret key associated to a
-     * worker
-     */
-    {"JkWorkerSecretKey", jk_worker_secret_key, NULL, RSRC_CONF, TAKE2,
-     "Secret key for a worker"},
-	
     /*
      * JkMount mounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
@@ -951,6 +892,7 @@ static const command_rec jk_cmds[] =
      * CERTS - Base64-Der-encoded client certificates.
      * CIPHER - A string specifing the ciphers suite in use.
      * SESSION - A string specifing the current SSL session.
+     * KEYSIZE - Size of Key used in dialogue (#bits are secure)
      */
     {"JkHTTPSIndicator", jk_set_https_indicator, NULL, RSRC_CONF, TAKE1,
      "Name of the Apache environment that contains SSL indication"},
@@ -1079,6 +1021,7 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
      *
     c->cipher_indicator = "HTTPS_CIPHER";
     c->session_indicator = NULL;
+	c->key_size_indicator = NULL;	
      */
 
     /*
@@ -1095,9 +1038,6 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
     if(!map_alloc(&(c->automount))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
-	if(!map_alloc(&(c->secretkeys))) {
-		jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
-	}
     c->uw_map = NULL;
 	c->secret_key = NULL;
 
@@ -1143,7 +1083,6 @@ static void *merge_jk_config(ap_pool *p,
     if(overrides->mountcopy) {
 		copy_jk_map(p, overrides->s, base->uri_to_context, overrides->uri_to_context);
 		copy_jk_map(p, overrides->s, base->automount, overrides->automount);
-		copy_jk_map(p, overrides->s, base->secretkeys, overrides->secretkeys);
     }
 
     if(base->envvars_in_use) {
@@ -1192,17 +1131,6 @@ for (i = 0; i < map_size(conf->automount); i++)
 }
 */
 
-/*
-{ int i;
-jk_log(conf->log, JK_LOG_DEBUG, "secret = %s\n", conf->secret_key);
-for (i = 0; i < map_size(conf->secretkeys); i++)
-{
-            char *name = map_name_at(conf->secretkeys, i);
-            jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and secretkey = %s\n", name, map_get_string(conf->secretkeys, name, NULL));
-}
-}
-*/
-
     /* Create mapping from uri's to workers, and start up all the workers */
     if(!uri_worker_map_alloc(&(conf->uw_map), conf->uri_to_context, conf->log)) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
@@ -1216,7 +1144,8 @@ for (i = 0; i < map_size(conf->secretkeys); i++)
             ap_add_version_component(JK_EXPOSED_VERSION);
 #endif
             
-            if(wc_open(init_map, conf->log)) {
+			/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+            if(wc_open(init_map, conf->uw_map, conf->log)) {
                 /* we don't need this any more so free it */
                 map_free(&init_map);
                 return;
