@@ -79,18 +79,18 @@ int main(void) [ {
 } ]
 EOF
     AC_MSG_CHECKING([for webapp version])
-    $2 ${TGT_DIR}/wa_version.c -o ${TGT_DIR}/wa_version.o
+    $2 ${TGT_DIR}/wa_version.c -o ${TGT_DIR}/wa_version
     if test "$?" != "0" ; then
       AC_MSG_ERROR([compiler didn't run successfully])
     fi
-    $1=`${TGT_DIR}/wa_version.o`
+    $1=`${TGT_DIR}/wa_version`
     if test "$?" != "0" ; then
       AC_MSG_ERROR([cannot execute wa_version.o])
     fi
     if test -z "${$1}" ; then
       AC_MSG_ERROR([empty version number])
     fi
-    rm -f "${TGT_DIR}/wa_version.o"
+    rm -f "${TGT_DIR}/wa_version"
     rm -f "${TGT_DIR}/wa_version.c"
     AC_MSG_RESULT([${$1}])
     
