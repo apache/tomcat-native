@@ -536,7 +536,7 @@ static int JK_METHOD jk2_worker_status_get(jk_env_t *env,
                                            jk_ws_service_t *s)
 {
     char *cName=s->query_string + 4;
-    char *attName=rindex(cName, ':' );
+    char *attName=rindex(cName, '|' );
     int i;
     
     if( attName == NULL ) {
@@ -561,7 +561,7 @@ static int JK_METHOD jk2_worker_status_get(jk_env_t *env,
             return JK_OK;
         }
     }
-    s->jkprintf( env, s, "ERROR: mbean not found %s\n", cName );
+    s->jkprintf( env, s, "ERROR|mbean not found|%s\n", cName );
     return JK_OK;
 }
 
@@ -570,7 +570,7 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
                                            jk_ws_service_t *s)
 {
     char *cName=s->query_string + 4;
-    char *attVal=rindex(cName, ':' );
+    char *attVal=rindex(cName, '|' );
     char *attName;
     int i;
     
@@ -581,7 +581,7 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
     *attVal='\0';
     attVal++;
     
-    attName=rindex( cName, ':' );
+    attName=rindex( cName, '|' );
     if( attName == NULL ) {
         s->jkprintf( env, s, "ERROR: attribute name not found\n", cName);
         return JK_OK;
@@ -602,7 +602,7 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
             return JK_OK;
         }
     }
-    s->jkprintf( env, s, "ERROR: mbean not found %s\n", cName );
+    s->jkprintf( env, s, "ERROR|not found|%s|%s|%s\n", cName, attName, attVal );
     return JK_OK;
 }
 
