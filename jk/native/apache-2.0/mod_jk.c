@@ -1653,7 +1653,6 @@ static int jk_handler(request_rec * r)
      * if they are directory requests, in case there are no static files
      * visible to Apache and/or DirectoryIndex was not used. This is only
      * used when JkOptions has ForwardDirectories set. */
-
     /* Not for me, try next handler */
     if (strcmp(r->handler, JK_HANDLER)
         && (dmt = strcmp(r->handler, DIR_MAGIC_TYPE)))
@@ -1662,22 +1661,26 @@ static int jk_handler(request_rec * r)
     xconf =
         (jk_server_conf_t *) ap_get_module_config(r->server->module_config,
                                                   &jk_module);
+    JK_TRACE_ENTER(xconf->log);
     if (apr_table_get(r->subprocess_env, "no-jk")) {
         jk_log(xconf->log, JK_LOG_DEBUG,
                "Into handler no-jk env var detected for uri=%s, declined\n",
                r->uri);
 
+        JK_TRACE_EXIT(xconf->log);
         return DECLINED;
     }
 
     /* Was the option to forward directories to Tomcat set? */
-    if (!dmt && !(xconf->options & JK_OPT_FWDDIRS))
+    if (!dmt && !(xconf->options & JK_OPT_FWDDIRS)) {
+        JK_TRACE_EXIT(xconf->log);
         return DECLINED;
-
+    }
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if ((rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) != APR_SUCCESS) {
+        JK_TRACE_EXIT(xconf->log);
         return rc;
     }
 
@@ -1708,15 +1711,19 @@ static int jk_handler(request_rec * r)
         }
     }
 
-    jk_log(xconf->log, JK_LOG_DEBUG, "Into handler r->proxyreq=%d "
-           "r->handler=%s r->notes=%d worker=%s\n",
-           r->proxyreq, r->handler, r->notes, worker_name);
+    jk_log(xconf->log, JK_LOG_DEBUG, "Into handler %s worker=%s"
+           " r->proxyreq=%d\n",
+           r->handler, worker_name, r->proxyreq);
 
     conf = (jk_server_conf_t *) ap_get_module_config(r->server->module_config,
                                                      &jk_module);
 
     /* If this is a proxy request, we'll notify an error */
     if (r->proxyreq) {
+        jk_log(xconf->log, JK_LOG_INFO, "Proxy request for worker=%s"
+              " is not allowed\n",
+              worker_name);
+        JK_TRACE_EXIT(xconf->log);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -1739,6 +1746,10 @@ static int jk_handler(request_rec * r)
 
         /* If the remote client has aborted, just ignore the request */
         if (r->connection->aborted) {
+            jk_log(xconf->log, JK_LOG_INFO, "Client connection aborted for"
+                   " worker=%s\n",
+                   worker_name);
+            JK_TRACE_EXIT(xconf->log);
             return OK;
         }
 
@@ -1775,24 +1786,9 @@ static int jk_handler(request_rec * r)
                    how to deal with load balancing - but it's usefull for JNI
                  */
 
-/* Disable "re-use" for now since the following code is currently platform specific */
-/* #ifdef REUSE_WORKER
-        apr_pool_t *rpool=r->pool;
-        apr_pool_t *parent_pool= apr_pool_get_parent( rpool );
-        apr_pool_t *tpool= apr_pool_get_parent( parent_pool );
-        
-        apr_pool_userdata_get( (void **)&end, "jk_thread_endpoint", tpool );
-        if(end==NULL ) {
-            worker->get_endpoint(worker, &end, xconf->log);
-            apr_pool_userdata_set( end , "jk_thread_endpoint", 
-                                   &jk_cleanup_endpoint,  tpool );
-        }
-#else */
                 /* worker->get_endpoint might fail if we are out of memory so check */
                 /* and handle it */
-                if (worker->get_endpoint(worker, &end, xconf->log))
-/* #endif */
-                {
+                if (worker->get_endpoint(worker, &end, xconf->log)) {
                     int is_recoverable_error = JK_FALSE;
                     rc = end->service(end, &s, xconf->log,
                                       &is_recoverable_error);
@@ -1814,15 +1810,22 @@ static int jk_handler(request_rec * r)
                             }
                         }
                     }
-
-/* #ifndef REUSE_WORKER */
                     end->done(&end, xconf->log);
-/* #endif */
                 }
-                else            /* this means we couldn't get an endpoint */
-                    rc = 0;     /* just to make sure that we know we've failed */
+                else {            /* this means we couldn't get an endpoint */
+                    jk_log(xconf->log, JK_LOG_ERROR, "Could not get endpoint"
+                           " for worker=%s\n",
+                           worker_name);
+                    rc = 0;       /* just to make sure that we know we've failed */
+                }
             }
-
+            else {
+                jk_log(xconf->log, JK_LOG_ERROR, "Could not init service"
+                       " for worker=%s\n",
+                       worker_name);
+                JK_TRACE_EXIT(xconf->log);
+                return HTTP_INTERNAL_SERVER_ERROR;                
+            }
 #ifndef NO_GETTIMEOFDAY
             if (conf->format != NULL) {
                 char *duration = NULL;
@@ -1846,24 +1849,44 @@ static int jk_handler(request_rec * r)
                 /* If tomcat returned no body and the status is not OK,
                    let apache handle the error code */
                 if (!r->sent_bodyct && r->status >= HTTP_BAD_REQUEST) {
+                    jk_log(xconf->log, JK_LOG_INFO, "No body with status=%d"
+                           " for worker=%s\n",
+                           r->status, worker_name);
+                    JK_TRACE_EXIT(xconf->log);
                     return r->status;
                 }
+                jk_log(xconf->log, JK_LOG_INFO, "Service returned error=%d"
+                       " with status=%d for worker=%s\n",
+                       rc, r->status, worker_name);
+                JK_TRACE_EXIT(xconf->log);
                 return OK;      /* NOT r->status, even if it has changed. */
             }
             else if (rc == JK_CLIENT_ERROR) {
                 r->connection->aborted = 1;
+                jk_log(xconf->log, JK_LOG_INFO, "Aborting connection"
+                       " for worker=%s\n",
+                       worker_name);
+                JK_TRACE_EXIT(xconf->log);
                 return OK;
             }
             else {
+                jk_log(xconf->log, JK_LOG_INFO, "Service error=%d"
+                       " for worker=%s\n",
+                       rc, worker_name);
+                JK_TRACE_EXIT(xconf->log);
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
         }
         else {
+            jk_log(xconf->log, JK_LOG_INFO, "Could not find a worker"
+                   " for worker name=%s\n",
+                   worker_name);
+            JK_TRACE_EXIT(xconf->log);
             return HTTP_INTERNAL_SERVER_ERROR;
         }
-
     }
 
+    JK_TRACE_EXIT(xconf->log);
     return DECLINED;
 }
 
@@ -2159,6 +2182,12 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
  */
 static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 {
+    jk_server_conf_t *conf;
+    conf = ap_get_module_config(s->module_config, &jk_module);
+    JK_TRACE_ENTER(conf->log);
+
+    jk_log(conf->log, JK_LOG_DEBUG, "Initialized %s\n", JK_EXPOSED_VERSION);
+    JK_TRACE_EXIT(conf->log);
 }
 
 /** Initialize jk, using worker.properties. 

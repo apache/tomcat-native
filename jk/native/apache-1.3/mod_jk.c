@@ -1599,8 +1599,11 @@ static int jk_handler(request_rec * r)
                                                       module_config,
                                                       &jk_module);
         jk_logger_t *l = conf->log ? conf->log : main_log;
+        jk_worker_t *worker;
 
-        jk_worker_t *worker = wc_get_worker_for_name(worker_name, l);
+        JK_TRACE_ENTER(l);
+
+        worker = wc_get_worker_for_name(worker_name, l);
 
         if (worker) {
 #ifndef NO_GETTIMEOFDAY
@@ -1670,17 +1673,38 @@ static int jk_handler(request_rec * r)
                 }
 #endif
             }
-
+            else {
+                jk_log(l, JK_LOG_ERROR, "Could not init service"
+                       " for worker=%s\n",
+                       worker_name);
+                JK_TRACE_EXIT(l);
+                return HTTP_INTERNAL_SERVER_ERROR;                
+            }
             jk_close_pool(&private_data.p);
 
             if (rc) {
                 /* If tomcat returned no body and the status is not OK,
                    let apache handle the error code */
                 if (!r->sent_bodyct && r->status >= HTTP_BAD_REQUEST) {
+                    jk_log(l, JK_LOG_INFO, "No body with status=%d"
+                           " for worker=%s\n",
+                           r->status, worker_name);
+                    JK_TRACE_EXIT(l);
                     return r->status;
                 }
+                jk_log(l, JK_LOG_INFO, "Service returned error=%d"
+                       " with status=%d for worker=%s\n",
+                       rc, r->status, worker_name);
+                JK_TRACE_EXIT(l);
                 return OK;      /* NOT r->status, even if it has changed. */
             }
+        }
+        else {
+            jk_log(l, JK_LOG_ERROR, "Could not init service"
+                   " for worker=%s\n",
+                   worker_name);
+            JK_TRACE_EXIT(l);
+            return HTTP_INTERNAL_SERVER_ERROR;                
         }
     }
 
