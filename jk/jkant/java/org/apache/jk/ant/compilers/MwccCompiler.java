@@ -104,7 +104,7 @@ public class MwccCompiler extends SoTask implements CompilerAdapter {
      */
     public void executeMwccCompile(String source) throws BuildException {
         String [] includeList = ( includes==null ) ?
-            new String[] {} : includes.list();
+            new String[] {} : includes.getIncludePatterns(project);
 
         Commandline cmd = new Commandline();
 

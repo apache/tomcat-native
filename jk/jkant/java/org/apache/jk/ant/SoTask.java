@@ -101,7 +101,7 @@ public class SoTask extends Task {
     protected String apxs;
     // or FileSet ?
     protected FileSet src;
-    protected Path includes;
+    protected PatternSet includes;
     protected Path depends;
     protected Path libs;
     protected String module;
@@ -278,8 +278,8 @@ public class SoTask extends Task {
     /**
      * Include files
      */
-    public Path createIncludes() {
-	includes=new Path(project);
+    public PatternSet createIncludes() {
+	includes=new PatternSet(); //Path(project);
 	return includes;
     }
 

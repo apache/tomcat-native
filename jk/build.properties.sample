@@ -14,12 +14,12 @@ tomcat33.home= ../../jakarta-tomcat/build/tomcat
 #
 # tomcat 4 internals
 #
-catalina.jar = ../../jakarta-tomcat-4.0/build/server/lib/catalina.jar
+catalina.jar = ${catalina.home}/server/lib/catalina.jar
 
 #
 # servlet api 2.3
 #
-servlet.jar = ../../jakarta-servletapi-4/dist/lib/servlet.jar
+servlet.jar = ${catalina.home}/common/lib/servlet.jar
 
 #
 # utils.

@@ -102,7 +102,7 @@ public class LibtoolCompiler extends SoTask implements CompilerAdapter {
      */
     public void executeLibtoolCompile(String source) throws BuildException {
 	String [] includeList = ( includes==null ) ?
-	    new String[] {} : includes.list(); 
+	    new String[] {} : includes.getIncludePatterns(project); 
 
 	Commandline cmd = new Commandline();
 
@@ -171,15 +171,31 @@ public class LibtoolCompiler extends SoTask implements CompilerAdapter {
 
 	cmd.createArgument().setValue( "-c" );
 
-	if( optG )
+	if( optG ) {
 	    cmd.createArgument().setValue("-g" );
+	    cmd.createArgument().setValue("-W");
+	    cmd.createArgument().setValue("-Wall");
+	    
+	    cmd.createArgument().setValue("-Wtraditional");
+	    cmd.createArgument().setValue("-Wredundant-decls");
+	    cmd.createArgument().setValue("-Wmissing-declarations");
+	    cmd.createArgument().setValue("-Wmissing-prototypes");
+	    cmd.createArgument().setValue("-Wconversions");
+	    cmd.createArgument().setValue("-Wcast-align");
+
+	    cmd.createArgument().setValue("-pedantic" );
+	}
+	
 	
 	if( optimize )
-	    cmd.createArgument().setValue("-O2" );
+	    cmd.createArgument().setValue("-O3" );
 	
-	if( profile )
+	if( profile ) {
 	    cmd.createArgument().setValue("-pg" );
-	
+	    // bb.in 
+	    // cmd.createArgument().setValue("-ax" );
+	}
+
 	if( localCflags != null )
 	    cmd.createArgument().setLine( localCflags );
 
