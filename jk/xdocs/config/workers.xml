@@ -178,14 +178,19 @@ other worker, then it will receive five times more requests.
 </subsection>
 
 <subsection name="Load balancing directives">
+<br/>
+<p>Load balancer is a virtual worker that does not really communicate with Tomcat workers.
+Instead it is responsible for the management of several "real" workers.
+The worker is supposed to be a load balancer if it's worker type is <b>lb</b>.
+See worker's <b>type</b> directive. The workers that
+are member of load balancer must not appear in the <b>worker.list</b> directive.
+</p>
 <p>Loadbalancer directives defines the parameters needed to create a workers that are
 connectiong to a remote cluster of backend Tomcat servers. Each cluster node has to
 have a worker defined.
 </p>
 <p>
-The load-balancing worker does not really communicate with Tomcat workers.
-Instead it is responsible for the management of several "real" workers. 
-This management includes:
+Load balancer management includes:
 </p>
 
 <ul>
@@ -213,9 +218,13 @@ The following table specifies properties that the lb worker can accept:
 </p>
 
 <directives>
-<directive name="balanced_workers" required="true">
+<directive name="balance_workers" required="true">
 A comma separated list of workers that the load balancer
-need to manage. 
+need to manage.
+<p>
+This directive replaces old <b>balanced_workers</b> directive and
+can be used only with mod_jk versions 1.2.7 and up.
+</p>
 <warn>These workers should <b>not</b> appear in the worker.list property!</warn>
 </directive>
 
