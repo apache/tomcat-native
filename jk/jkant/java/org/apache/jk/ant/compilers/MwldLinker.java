@@ -78,18 +78,14 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
 
     public void setSoTask(SoTask so ) {
         this.so=so;
+        so.setExtension(".nlm");
         so.duplicateTo( this );
+        project.setProperty("netware", "true");
     }
 
     public void execute() throws BuildException {
         findSourceFiles();
         link(this.srcList);
-    }
-
-    protected static GlobPatternMapper cobj_mapper=new GlobPatternMapper();
-    static {
-	cobj_mapper.setFrom("*.c");
-	cobj_mapper.setTo("*.obj");
     }
 
     /** Link using libtool.
@@ -128,6 +124,15 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
             linkOptPw.println("-map " + soFile + ".map");
             linkOptPw.println("-threadname \"Tomcat JKThread\"");
             linkOptPw.println("-stacksize 64000");
+
+            // add debug information in if requested
+            if (optG)
+            {
+                linkOptPw.println("-g");
+                linkOptPw.println("-sym internal");
+                linkOptPw.println("-sym codeview4");
+                linkOptPw.println("-osym " + soFile + ".NCV");
+            }
             // add the default startup code to the list of objects
             linkOptPw.println(libBase + "\\lib\\nwpre.obj");
 
@@ -144,16 +149,18 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
             // write the dependant modules to the .def file
             Enumeration mods = modules.elements();
             while( mods.hasMoreElements() ) {
-                NLMData mod = (NLMData) mods.nextElement();
+                JkData mod = (JkData) mods.nextElement();
                 String name = mod.getValue();
+                if( name==null ) continue;
                 linkDefPw.println("module " + name);
             }
 
             // write the imports to link with to the .def file
             Enumeration imps = imports.elements();
             while( imps.hasMoreElements() ) {
-                NLMData imp = (NLMData) imps.nextElement();
+                JkData imp = (JkData) imps.nextElement();
                 String name = imp.getValue();
+                if( name==null ) continue;
                 if (imp.isFile())
                     linkDefPw.println("Import @" + name);
                 else
@@ -163,8 +170,9 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
             // write the exports to link with to the .def file
             Enumeration exps = exports.elements();
             while( exps.hasMoreElements() ) {
-                NLMData exp = (NLMData) exps.nextElement();
+                JkData exp = (JkData) exps.nextElement();
                 String name = exp.getValue();
+                if( name==null ) continue;
                 if (exp.isFile())
                     linkDefPw.println("Export @" + name);
                 else

@@ -64,7 +64,7 @@ import java.io.*;
 import java.util.*;
 
 /**
- *  Compile using libtool.
+ *  Compile using MetroWerks.
  * 
  *  It extends SoTask so we can debug it or use it independently of <so>.
  *  For normal use you should use the generic task, and system-specific
@@ -82,7 +82,9 @@ public class MwccCompiler extends SoTask implements CompilerAdapter {
 
     public void setSoTask(SoTask so ) {
         this.so=so;
+        so.setExtension(".nlm");
         so.duplicateTo( this );
+        project.setProperty("netware", "true");
     }
 
     public void execute() throws BuildException {
@@ -142,6 +144,9 @@ public class MwccCompiler extends SoTask implements CompilerAdapter {
                 localCflags+=" " + extra_cflags;
             }
         }
+
+        if (optG)
+            localCflags += " -g";
 
         // create a cc.opt file 
         PrintWriter ccpw = null;
