@@ -980,7 +980,7 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 	if (fr.URL && strlen(fr.URL))
 	{
 		char *uri = fr.URL;
-		char *workerName, *qp;
+		char *workerName, *qp, *turi;
 
 		if (!initDone)
 		{
@@ -1038,11 +1038,12 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 
 			if (!ok) return kFilterError;
 			initDone = JK_TRUE;
-		}
+                }
 
-		if (qp = strchr(uri, '?'), qp != NULL) *qp = '\0';
-		workerName = map_uri_to_worker(uw_map, uri, logger);
-		if (qp) *qp = '?';
+                turi = strdup(uri);
+                if (qp = strchr(turi, '?'), tqp != NULL) *qp = '\0';
+                workerName = map_uri_to_worker(uw_map, turi, logger);
+                free(turi);
 
 		DEBUG(("Worker for this URL is %s\n", workerName));
 
