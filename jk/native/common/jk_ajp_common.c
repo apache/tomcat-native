@@ -895,7 +895,8 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     }
 
     if ((rc = jk_tcp_socket_sendfull(ae->sd, jk_b_get_buff(msg),
-                               jk_b_get_len(msg))) > 0) {
+                                     jk_b_get_len(msg))) > 0) {
+        ae->endpoint.wr += jk_b_get_len(msg);
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
@@ -937,7 +938,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-
+    ae->endpoint.rd += rc;
     header = ((unsigned int)head[0] << 8) | head[1];
 
     if (ae->proto == AJP13_PROTO) {
@@ -1001,6 +1002,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
+    ae->endpoint.rd += rc;
 
     if (ae->proto == AJP13_PROTO) {
         if (JK_IS_DEBUG_LEVEL(l))
@@ -1714,16 +1716,16 @@ int ajp_validate(jk_worker_t *pThis,
 
     if (pThis && pThis->worker_private) {
         ajp_worker_t *p = pThis->worker_private;
-        port = jk_get_worker_port(props, p->name, port);
-        host = jk_get_worker_host(props, p->name, host);
+        p->port = jk_get_worker_port(props, p->name, port);
+        p->host = jk_get_worker_host(props, p->name, host);
 
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "worker %s contact is %s:%d",
-                   p->name, host, port);
+                   "worker %s contact is '%s:%d'",
+                   p->name, p->host, p->port);
 
-        if (port > 1024 && host) {
-            if (jk_resolve(host, port, &p->worker_inet_addr)) {
+        if (p->port > 1024) {
+            if (jk_resolve(p->host, p->port, &p->worker_inet_addr)) {
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
@@ -1732,7 +1734,7 @@ int ajp_validate(jk_worker_t *pThis,
         }
         jk_log(l, JK_LOG_ERROR,
                "invalid host and port %s %d",
-               ((host == NULL) ? "NULL" : host), port);
+               ((p->host == NULL) ? "NULL" : p->host), p->port);
     }
     else {
         JK_LOG_NULL_PARAMS(l);
