@@ -113,8 +113,10 @@ public class Ajp13Request extends HttpRequestBase {
         setServerPort(ajp.getServerPort());
 
         String remoteUser = ajp.remoteUser().toString();
-        if (remoteUser != null) {
+        if ((remoteUser != null) && (!(remoteUser.equals("")))) {
             setUserPrincipal(new Ajp13Principal(remoteUser));
+        } else {
+            setUserPrincipal(null);
         }
 
         setAuthType(ajp.authType().toString());
