@@ -96,6 +96,7 @@ public class JkCoyoteHandler extends JkHandler implements
     public final int JK_STATUS_NEW=0;
     public final int JK_STATUS_HEAD=1;
     public final int JK_STATUS_CLOSED=2;
+    public final int JK_STATUS_ERROR=3;
 
     /** Set a property. Name is a "component.property". JMX should
      * be used instead.
@@ -311,11 +312,13 @@ public class JkCoyoteHandler extends JkHandler implements
             res.finish();
         }
 
-        ep.setStatus( JK_STATUS_NEW );
-
         req.recycle();
         req.updateCounters();
         res.recycle();
+        if( ep.getStatus() == JK_STATUS_ERROR ) {
+            return ERROR;
+        }
+        ep.setStatus( JK_STATUS_NEW );
 	rp.setStage(Constants.STAGE_KEEPALIVE);
         return OK;
     }
@@ -410,106 +413,125 @@ public class JkCoyoteHandler extends JkHandler implements
     // -------------------- Coyote Action implementation --------------------
     
     public void action(ActionCode actionCode, Object param) {
-        try {
-            if( actionCode==ActionCode.ACTION_COMMIT ) {
-                if( log.isDebugEnabled() ) log.debug("COMMIT " );
-                org.apache.coyote.Response res=(org.apache.coyote.Response)param;
+        if( actionCode==ActionCode.ACTION_COMMIT ) {
+            if( log.isDebugEnabled() ) log.debug("COMMIT " );
+            org.apache.coyote.Response res=(org.apache.coyote.Response)param;
 
-                if(  res.isCommitted() ) {
-                    if( log.isInfoEnabled() )
-                        log.info("Response already commited " );
-                } else {
+            if(  res.isCommitted() ) {
+                if( log.isInfoEnabled() )
+                    log.info("Response already commited " );
+            } else {
+                try {
                     appendHead( res );
+                } catch(IOException iex) {
+                    log.warn("Unable to send headers",iex);
+                    MsgContext ep=(MsgContext)res.getNote( epNote );
+                    ep.setStatus(JK_STATUS_ERROR);
                 }
-            } else if( actionCode==ActionCode.ACTION_RESET ) {
-                if( log.isDebugEnabled() )
-                    log.debug("RESET " );
-
-            } else if( actionCode==ActionCode.ACTION_CLIENT_FLUSH ) {
-                if( log.isDebugEnabled() ) log.debug("CLIENT_FLUSH " );
-                org.apache.coyote.Response res=(org.apache.coyote.Response)param;
-                MsgContext ep=(MsgContext)res.getNote( epNote );
-                ep.setType( JkHandler.HANDLE_FLUSH );
+            }
+        } else if( actionCode==ActionCode.ACTION_RESET ) {
+            if( log.isDebugEnabled() )
+                log.debug("RESET " );
+            
+        } else if( actionCode==ActionCode.ACTION_CLIENT_FLUSH ) {
+            if( log.isDebugEnabled() ) log.debug("CLIENT_FLUSH " );
+            org.apache.coyote.Response res=(org.apache.coyote.Response)param;
+            MsgContext ep=(MsgContext)res.getNote( epNote );
+            ep.setType( JkHandler.HANDLE_FLUSH );
+            try {
                 ep.getSource().flush( null, ep );
-                
-            } else if( actionCode==ActionCode.ACTION_CLOSE ) {
-                if( log.isDebugEnabled() ) log.debug("CLOSE " );
+            } catch(IOException iex) {
+                // This is logged elsewhere, so debug only here
+                log.debug("Error during flush",iex);
+                res.setErrorException(iex);
+                ep.setStatus(JK_STATUS_ERROR);
+            }
+            
+        } else if( actionCode==ActionCode.ACTION_CLOSE ) {
+            if( log.isDebugEnabled() ) log.debug("CLOSE " );
+            
+            org.apache.coyote.Response res=(org.apache.coyote.Response)param;
+            MsgContext ep=(MsgContext)res.getNote( epNote );
+            if( ep.getStatus()== JK_STATUS_CLOSED ) {
+                // Double close - it may happen with forward 
+                if( log.isDebugEnabled() ) log.debug("Double CLOSE - forward ? " + res.getRequest().requestURI() );
+                return;
+            }
+                 
+            if( !res.isCommitted() )
+                this.action( ActionCode.ACTION_COMMIT, param );
+            
+            MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
+            msg.reset();
+            msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
+            msg.appendByte( 1 );
 
-                org.apache.coyote.Response res=(org.apache.coyote.Response)param;
-                MsgContext ep=(MsgContext)res.getNote( epNote );
-                if( ep.getStatus()== JK_STATUS_CLOSED ) {
-                    // Double close - it may happen with forward 
-                    if( log.isDebugEnabled() ) log.debug("Double CLOSE - forward ? " + res.getRequest().requestURI() );
+            try {                
+                ep.setType( JkHandler.HANDLE_SEND_PACKET );
+                ep.getSource().send( msg, ep );
+                
+                ep.setType( JkHandler.HANDLE_FLUSH );
+                ep.getSource().flush( msg, ep );
+            } catch(IOException iex) {
+                log.debug("Connection error ending request.",iex);
+                ep.setStatus(JK_STATUS_ERROR);
+            }
+            if(ep.getStatus() != JK_STATUS_ERROR) {
+                ep.setStatus(JK_STATUS_CLOSED );
+            }
+
+            if( logTime.isDebugEnabled() ) 
+                logTime(res.getRequest(), res);
+        } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
+            org.apache.coyote.Request req=(org.apache.coyote.Request)param;
+
+            // Extract SSL certificate information (if requested)
+            MessageBytes certString = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
+            if( certString != null && !certString.isNull() ) {
+                ByteChunk certData = certString.getByteChunk();
+                ByteArrayInputStream bais = 
+                    new ByteArrayInputStream(certData.getBytes(),
+                                             certData.getStart(),
+                                             certData.getLength());
+ 
+                // Fill the first element.
+                X509Certificate jsseCerts[] = null;
+                try {
+                    CertificateFactory cf =
+                        CertificateFactory.getInstance("X.509");
+                    X509Certificate cert = (X509Certificate)
+                        cf.generateCertificate(bais);
+                    jsseCerts =  new X509Certificate[1];
+                    jsseCerts[0] = cert;
+                } catch(java.security.cert.CertificateException e) {
+                    log.error("Certificate convertion failed" , e );
                     return;
                 }
-                 
-                if( !res.isCommitted() )
-                    this.action( ActionCode.ACTION_COMMIT, param );
-                
-                MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
-                msg.reset();
-                msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
-                msg.appendByte( 1 );
-
-                try {                
-                    ep.setType( JkHandler.HANDLE_SEND_PACKET );
-                    ep.getSource().send( msg, ep );
-
-                    ep.setType( JkHandler.HANDLE_FLUSH );
-                    ep.getSource().flush( msg, ep );
-                } catch(IOException iex) {
-                    log.debug("Connection error ending request.",iex);
-                }
-                ep.setStatus(JK_STATUS_CLOSED );
-
-                if( logTime.isDebugEnabled() ) 
-                    logTime(res.getRequest(), res);
-            } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
-                org.apache.coyote.Request req=(org.apache.coyote.Request)param;
-
-                // Extract SSL certificate information (if requested)
-                MessageBytes certString = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
-                if( certString != null && !certString.isNull() ) {
-                    ByteChunk certData = certString.getByteChunk();
-                    ByteArrayInputStream bais = 
-                        new ByteArrayInputStream(certData.getBytes(),
-                                                 certData.getStart(),
-                                                 certData.getLength());
  
-                    // Fill the first element.
-                    X509Certificate jsseCerts[] = null;
-                    try {
-                        CertificateFactory cf =
-                            CertificateFactory.getInstance("X.509");
-                        X509Certificate cert = (X509Certificate)
-                            cf.generateCertificate(bais);
-                        jsseCerts =  new X509Certificate[1];
-                        jsseCerts[0] = cert;
-                    } catch(java.security.cert.CertificateException e) {
-                        log.error("Certificate convertion failed" , e );
-                        return;
-                    }
- 
-                    req.setAttribute(SSLSupport.CERTIFICATE_KEY, 
-                                     jsseCerts);
-                }
-                
-            } else if( actionCode==ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
-                org.apache.coyote.Request req=(org.apache.coyote.Request)param;
-
-				// If remoteHost not set by JK, get it's name from it's remoteAddr
-            	if( req.remoteHost().isNull())
-                	req.remoteHost().setString(InetAddress.getByName(req.remoteAddr().toString()).getHostName());
-
-            // } else if( actionCode==ActionCode.ACTION_POST_REQUEST ) {
-
-            } else if( actionCode==ActionCode.ACTION_ACK ) {
-                if( log.isDebugEnabled() )
-                    log.debug("ACK " );
-                // What should we do here ? Who calls it ? 
+                req.setAttribute(SSLSupport.CERTIFICATE_KEY, 
+                                 jsseCerts);
             }
-        } catch( Exception ex ) {
-            log.error( "Error in action code ", ex );
+                
+        } else if( actionCode==ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
+            org.apache.coyote.Request req=(org.apache.coyote.Request)param;
+
+            // If remoteHost not set by JK, get it's name from it's remoteAddr
+            if( req.remoteHost().isNull()) {
+                try {
+                    req.remoteHost().setString(InetAddress.getByName(
+                                               req.remoteAddr().toString()).
+                                               getHostName());
+                } catch(IOException iex) {
+                    if(log.isDebugEnabled())
+                        log.debug("Unable to resolve "+req.remoteAddr());
+                }
+            }
+        // } else if( actionCode==ActionCode.ACTION_POST_REQUEST ) {
+
+        } else if( actionCode==ActionCode.ACTION_ACK ) {
+            if( log.isDebugEnabled() )
+                log.debug("ACK " );
+            // What should we do here ? Who calls it ? 
         }
     }
 
