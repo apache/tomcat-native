@@ -70,16 +70,19 @@ public final class ActionCode {
     // -------------------------------------------------------------- Constants
 
 
-    public static final ActionCode ACTION_CUSTOM = new ActionCode();
+    public static final ActionCode ACTION_ACK = new ActionCode();
 
 
     public static final ActionCode ACTION_CLOSE = new ActionCode();
 
 
+    public static final ActionCode ACTION_COMMIT = new ActionCode();
+
+
+    public static final ActionCode ACTION_CUSTOM = new ActionCode();
+
+
     public static final ActionCode ACTION_RESET = new ActionCode();
-
-
-    public static final ActionCode ACTION_ACK = new ActionCode();
 
 
     // ----------------------------------------------------------- Constructors
