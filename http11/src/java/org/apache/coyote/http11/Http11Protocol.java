@@ -63,6 +63,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.URLEncoder;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -186,7 +187,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             log.error(sm.getString("http11protocol.endpoint.initerror"), ex);
             throw ex;
         }
-        log.info(sm.getString("http11protocol.init", "" + ep.getPort()));
+        log.info(sm.getString("http11protocol.init", getName()));
 
     }
     
@@ -198,18 +199,18 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             try {
                 // XXX We should be able to configure it separately
                 // XXX It should be possible to use a single TP
-                tpOname=new ObjectName(domain + ":" + "type=ThreadPool,name=http" + ep.getPort());
+                tpOname=new ObjectName
+                    (domain + ":" + "type=ThreadPool,name=" + getName());
                 Registry.getRegistry(null, null)
                     .registerComponent(tp, tpOname, null );
-                tp.setName("http" + ep.getPort());
+                tp.setName(getName());
                 tp.setDaemon(false);
                 tp.addThreadPoolListener(new MXPoolListener(this, tp));
             } catch (Exception e) {
                 log.error("Can't register threadpool" );
             }
-            rgOname=new ObjectName( domain + 
-                    ":type=GlobalRequestProcessor,name=http" +
-                    ep.getPort());
+            rgOname=new ObjectName
+                (domain + ":type=GlobalRequestProcessor,name=" + getName());
             Registry.getRegistry(null, null).registerComponent
                 ( cHandler.global, rgOname, null );
         }
@@ -220,7 +221,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             log.error(sm.getString("http11protocol.endpoint.starterror"), ex);
             throw ex;
         }
-        log.info(sm.getString("http11protocol.start", "" + ep.getPort()));
+        log.info(sm.getString("http11protocol.start", getName()));
     }
 
     public void pause() throws Exception {
@@ -230,7 +231,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             log.error(sm.getString("http11protocol.endpoint.pauseerror"), ex);
             throw ex;
         }
-        log.info(sm.getString("http11protocol.pause", "" + ep.getPort()));
+        log.info(sm.getString("http11protocol.pause", getName()));
     }
 
     public void resume() throws Exception {
@@ -240,11 +241,11 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             log.error(sm.getString("http11protocol.endpoint.resumeerror"), ex);
             throw ex;
         }
-        log.info(sm.getString("http11protocol.resume", "" + ep.getPort()));
+        log.info(sm.getString("http11protocol.resume", getName()));
     }
 
     public void destroy() throws Exception {
-        log.info("Stoping http11 protocol on " + ep.getPort() + " " + tpOname);
+        log.info(sm.getString("http11protocol.stop", getName()));
         ep.stopEndpoint();
         if( tpOname!=null ) 
             Registry.getRegistry(null, null).unregisterComponent(tpOname);
@@ -350,6 +351,17 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public void setAddress(InetAddress ia) {
         ep.setAddress( ia );
         setAttribute("address", "" + ia);
+    }
+    
+    public String getName() {
+        String encodedAddr = "";
+        if (getAddress() != null) {
+            encodedAddr = "" + getAddress();
+            if (encodedAddr.startsWith("/"))
+                encodedAddr = encodedAddr.substring(1);
+            encodedAddr = URLEncoder.encode(encodedAddr) + "-";
+        }
+        return ("http-" + encodedAddr + ep.getPort());
     }
     
     // commenting out for now since it's not doing anything
@@ -691,9 +703,9 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                 try {
                     RequestInfo rp=processor.getRequest().getRequestProcessor();
                     rp.setGlobalProcessor(global);
-                    ObjectName rpName=new ObjectName(proto.getDomain() + 
-                            ":type=RequestProcessor,worker=http" +
-                            proto.ep.getPort() +",name=HttpRequest" + count++ );
+                    ObjectName rpName=new ObjectName
+                        (proto.getDomain() + ":type=RequestProcessor,worker=" 
+                         + proto.getName() +",name=HttpRequest" + count++ );
                     Registry.getRegistry(null, null).registerComponent( rp, rpName, null);
                     thData[Http11Protocol.THREAD_DATA_OBJECT_NAME]=rpName;
                 } catch( Exception ex ) {
