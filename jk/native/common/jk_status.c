@@ -38,10 +38,10 @@
 
 #define JK_STATUS_HEAD "<!DOCTYPE HTML PUBLIC \"-//W3C//" \
                        "DTD HTML 3.2 Final//EN\">\n"      \
-                       "<html><head><title>JK Status Manager</title></head>\n"  \
-                       "<body>\n"
+                       "<html><head><title>JK Status Manager</title>"
 
-#define JK_STATUS_HEND "</body>\n</html>\n"
+#define JK_STATUS_HEND "</head>\n<body>\n"
+#define JK_STATUS_BEND "</body>\n</html>\n"
 
 #define JK_STATUS_XMLH "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"          \
                        "<jk:status xmlns:jk=\"http://jakarta.apache.org\">\n"
@@ -66,6 +66,7 @@ struct status_worker
     jk_pool_t         p;
     jk_pool_atom_t    buf[TINY_POOL_SIZE];
     const char        *name;
+    const char        *css;
     jk_worker_t       worker;
     status_endpoint_t ep;
     jk_worker_env_t   *we;
@@ -807,7 +808,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
         if(mime == 0) {
             s->start_response(s, 200, "OK", headers_names, headers_vhtml, 3);
             s->write(s, JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
-
+            if (p->s_worker->css) {
+                jk_putv(s, "\n<link rel=\"stylesheet\" type=\"text/css\" href=\"",
+                        p->s_worker->css, "\" />\n", NULL);
+            }
+            s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
             jk_puts(s, "<h1>JK Status Manager for ");
             jk_puts(s, s->server_name);
             jk_puts(s, "</h1>\n\n");
@@ -819,7 +824,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             display_workers(s, p->s_worker, worker, l);
 
 
-            s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
+            s->write(s, JK_STATUS_BEND, sizeof(JK_STATUS_BEND) - 1);
 
         }
         else if (mime == 1) {
@@ -883,6 +888,8 @@ static int JK_METHOD init(jk_worker_t *pThis,
     if (pThis && pThis->worker_private) {
         status_worker_t *p = pThis->worker_private;
         p->we = we;
+        if (!jk_get_worker_str_prop(props, p->name, "css", &(p->css)))
+            p->css = NULL;
     }
     JK_TRACE_EXIT(log);
     return JK_TRUE;
