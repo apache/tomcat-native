@@ -106,6 +106,8 @@ int wc_create_worker(const char *name,
         const char *type = jk_get_worker_type(init_data, name);
         worker_factory fac = get_factory_for(type);
         jk_worker_t *w = NULL;
+        unsigned int i, num_of_maps;
+        char **map_names;
 
         *rc = NULL;
 
@@ -146,6 +148,24 @@ int wc_create_worker(const char *name,
                    name);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
+        }
+        if (jk_get_worker_mount_list(init_data, name,
+                                     &map_names,
+                                     &num_of_maps) && num_of_maps) {
+            for (i = 0; i < num_of_maps; i++) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                            "mounting %s to worker %s",
+                            map_names[i], name);
+                if (uri_worker_map_add(we->uri_to_worker, map_names[i],
+                                       name, l) == JK_FALSE) {
+                    w->destroy(&w, l);
+                    jk_log(l, JK_LOG_ERROR,
+                           "validate failed for %s", name);
+                    JK_TRACE_EXIT(l);
+                    return JK_FALSE;
+                }
+            }
         }
 
         *rc = w;
