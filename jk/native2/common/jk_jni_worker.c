@@ -836,8 +836,10 @@ static int load_jvm_dll(jni_worker_t *p,
     } else {
         jni_create_java_vm = dlsym(handle, "JNI_CreateJavaVM");
         jni_get_default_java_vm_init_args = dlsym(handle, "JNI_GetDefaultJavaVMInitArgs");
-
-        if(jni_create_java_vm && jni_get_default_java_vm_init_args) {
+        jni_get_created_java_vms =  dlsym(hInst, "JNI_GetCreatedJavaVMs");
+        
+        if(jni_create_java_vm && jni_get_default_java_vm_init_args
+           && jni_get_created_java_vms) {
     	    l->jkLog(l, JK_LOG_DEBUG, 
                    "In load_jvm_dll, symbols resolved, done\n");
             return JK_TRUE;
@@ -879,7 +881,7 @@ static int open_jvm1(jni_worker_t *p,
                     jk_logger_t *l)
 {
     JDK1_1InitArgs vm_args;  
-    JNIEnv *penv;
+    JNIEnv *penv = NULL;
     int err;
     *env = NULL;
 
@@ -927,9 +929,22 @@ static int open_jvm1(jni_worker_t *p,
     }
 
     l->jkLog(l, JK_LOG_DEBUG, "In open_jvm1, about to create JVM...\n");
-    if((err=jni_create_java_vm(&(p->jvm), 
-                               &penv, 
-                               &vm_args)) != 0) {
+        err=jni_create_java_vm(&(p->jvm), &penv, &vm_args);
+
+    if (JNI_EEXIST == err) {
+        int vmCount;
+       jk_log(l, JK_LOG_DEBUG, "JVM alread instantiated."
+              "Trying to attach instead.\n");
+
+        jni_get_created_java_vms(&(p->jvm), 1, &vmCount);
+        if (NULL != p->jvm)
+            penv = attach_to_jvm(p, l);
+
+        if (NULL != penv)
+            err = 0;
+    }
+
+    if(err != 0) {
 	    l->jkLog(l, JK_LOG_EMERG, 
                "Fail-> could not create JVM, code: %d \n", err); 
         return JK_FALSE;
