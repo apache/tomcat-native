@@ -99,7 +99,7 @@ public class Http11Protocol implements ProtocolHandler
      */
     public void setAttribute( String name, Object value ) {
 
-        log.info(sm.getString("http11protocol.setattribute", name, value));
+        log.debug(sm.getString("http11protocol.setattribute", name, value));
         attributes.put(name, value);
 /*
         if ("maxKeepAliveRequests".equals(name)) {
