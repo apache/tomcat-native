@@ -79,8 +79,8 @@ import org.apache.coyote.Request;
 class JkRequest33 extends org.apache.tomcat.core.Request 
 {
     org.apache.coyote.Request ajpReq;
-    MsgContext ep;
 
+    MsgContext ep;
     JkInputStream jkIS;
     
     public JkRequest33(org.apache.coyote.Request ajpReq) 
@@ -146,11 +146,11 @@ class JkRequest33 extends org.apache.tomcat.core.Request
     }
 
     public String getJvmRoute() {
-	return ajpReq.getWorkerId().toString();
+	return ajpReq.instanceId().toString();
     }
     
     public void setJvmRoute(String s ) {
-	ajpReq.getWorkerId().setString(s);
+	ajpReq.instanceId().setString(s);
     }
 
     // XXX scheme

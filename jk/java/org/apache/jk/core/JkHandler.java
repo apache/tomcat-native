@@ -74,6 +74,7 @@ public abstract class JkHandler {
     private Properties properties=new Properties();
     protected WorkerEnv wEnv;
     protected JkHandler next;
+    protected String nextName=null;
     protected String name;
     protected int id;
 
@@ -104,8 +105,6 @@ public abstract class JkHandler {
         this.id=id;
     }
 
-    String nextName=null;
-    
     /** Catalina-style "recursive" invocation.
      *  A chain is used for Apache/3.3 style iterative invocation.
      */

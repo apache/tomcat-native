@@ -512,7 +512,7 @@ public class HandlerRequest extends JkHandler
                 break;
 		
 	    case SC_A_JVM_ROUTE    :
-                msg.getBytes(req.getWorkerId());
+                msg.getBytes(req.instanceId());
                 break;
 		
 	    case SC_A_SSL_CERT     :
