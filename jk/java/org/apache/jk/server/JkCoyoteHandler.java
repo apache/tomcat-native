@@ -36,6 +36,8 @@ import org.apache.coyote.Adapter;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.Request;
 import org.apache.coyote.Response;
+import org.apache.coyote.RequestInfo;
+import org.apache.coyote.Constants;
 import org.apache.jk.common.HandlerRequest;
 import org.apache.jk.common.JkInputStream;
 import org.apache.jk.common.MsgAjp;
@@ -292,7 +294,8 @@ public class JkCoyoteHandler extends JkHandler implements
         
         res.setNote( epNote, ep );
         ep.setStatus( JK_STATUS_HEAD );
-
+	RequestInfo rp = req.getRequestProcessor();
+	rp.setStage(Constants.STAGE_SERVICE);
         try {
             adapter.service( req, res );
         } catch( Exception ex ) {
@@ -307,6 +310,7 @@ public class JkCoyoteHandler extends JkHandler implements
         req.recycle();
         req.updateCounters();
         res.recycle();
+	rp.setStage(Constants.STAGE_KEEPALIVE);
         return OK;
     }
 

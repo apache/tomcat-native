@@ -29,6 +29,7 @@ import org.apache.coyote.Request;
 import org.apache.coyote.RequestGroupInfo;
 import org.apache.coyote.RequestInfo;
 import org.apache.coyote.Response;
+import org.apache.coyote.Constants;
 import org.apache.jk.core.JkHandler;
 import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
@@ -441,6 +442,8 @@ public class HandlerRequest extends JkHandler
             }
         }
 
+	RequestInfo rp = req.getRequestProcessor();
+	rp.setStage(Constants.STAGE_PARSE);
         MessageBytes tmpMB2 = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
         if(tmpMB2 != null) {
             tmpMB2.recycle();
@@ -480,9 +483,7 @@ public class HandlerRequest extends JkHandler
 
         decodeAttributes( ep, msg, req, tmpMB );
 
-//         if(req.getSecure() ) {
-//             req.setScheme(req.SCHEME_HTTPS);
-//         }
+	rp.setStage(Constants.STAGE_PREPARE);
         MessageBytes valueMB = req.getMimeHeaders().getValue("host");
         parseHost(valueMB, req);
         // set cookies on request now that we have all headers
