@@ -423,13 +423,13 @@ public class Ajp13 {
                 logger.log("read got # " + got);
             }
 
-            // connection just closed by remote
-            if (got == 0)
-                return JK_AJP13_COMM_CLOSED;
-
-            // connection dropped by remote
-            if (got < 0)
+            // connection just closed by remote. 
+            if (got <= 0) {
+                // This happens periodically, as apache restarts
+                // periodically.
+                // It should be more gracefull ! - another feature for Ajp14 
                 return JK_AJP13_COMM_BROKEN;
+            }
 
             pos += got;
         }
@@ -463,7 +463,7 @@ public class Ajp13 {
         //     - connection broken (JK_AJP13_COMM_BROKEN)
         //
         if(rd < 0) {
-            logger.log("bad read: " + rd);
+            // Most likely normal apache restart.
             return rd;
         }
         
@@ -477,7 +477,7 @@ public class Ajp13 {
         
         total_read = readN(in, b, H_SIZE, len);
         
-        if (total_read < 0) {
+        if (total_read <= 0) {
             logger.log("can't read body, waited #" + len);
             return JK_AJP13_BAD_BODY;
         }
