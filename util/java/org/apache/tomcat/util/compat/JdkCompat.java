@@ -141,7 +141,7 @@ public class JdkCompat {
             javaVersion = JAVA_1_3;
             Class.forName("java.lang.CharSequence");
             javaVersion = JAVA_1_4;
-            //java14=true;
+            java14=true;
         } catch (ClassNotFoundException cnfe) {
             // swallow as we've hit the max class version that we have
         }
