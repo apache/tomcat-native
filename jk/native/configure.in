@@ -5,6 +5,7 @@ AC_REVISION($Id$)dnl
 
 AC_PREREQ(2.13)
 AC_INIT(common/jk_worker.h)
+AC_CONFIG_HEADER(common/portable.h)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
 AC_CANONICAL_SYSTEM
 
@@ -48,6 +49,11 @@ AC_SUBST(MKDIR)
 
 AC_PATH_PROG(LIBTOOL,libtool,$PATH)dnl
 AC_SUBST(LIBTOOL)
+
+dnl check for snprintf and vsnprintf.
+AC_CHECK_FUNC(snprintf, AC_DEFINE(HAVE_SNPRINTF,1,[Have snprintf()]))
+
+AC_CHECK_FUNC(vsnprintf, AC_DEFINE(HAVE_VSNPRINTF,1,[Have vsnprintf()]))
 
 APACHE_CONFIG_VARS=`pwd`/scripts/build/config_vars.mk
 WEBSERVER=""
