@@ -423,6 +423,15 @@ Other  important  channels are unix socket and jni</p>
                             <td/>
                             <td/>
                         </tr>
+                        <tr>
+                            <td>max_connections</td>
+                            <td>0 (unlimited)</td>
+                            <td>Maximum number of currently used endpoints.
+                                If the specified number is reached then the load balancer has the chance
+                                to try another worker. This is very useful in situations when having multiple
+                                servers and you wish to finer grade the lb_factor.
+                            </td>
+                        </tr>
                     </table>
                 </p>
             </subsection>
