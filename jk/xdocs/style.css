@@ -1,0 +1,148 @@
+body {
+  margin: 0;
+  font-family: "verdana", "tahoma", "arial", "helvetica", sans-serif;
+}
+
+td.logo {
+  background-color: #666666;
+  border-style: none;
+}
+
+td.nil {
+  font-size: 1px;
+}
+
+
+td.head {
+  background-color: #999999;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #cccccc #666666 #666666 #cccccc;
+  font-weight: bold;
+  font-size: smaller;
+  color: #cccccc;
+  padding: 2px;
+  text-align: right;
+}
+
+a.head:link {
+  text-decoration: none;
+  color: #cccccc;
+}
+
+a.head:visited {
+  text-decoration: none;
+  color: #cccccc;
+}
+
+a.head:active {
+  text-decoration: underline;
+  color: #ffffff;
+}
+
+a.head:hover {
+  text-decoration: underline;
+  color: #ffffff;
+}
+
+table.menu {
+  background-color: #cccccc;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #cccccc #999999 #999999 #999999;
+  font-weight: bold;
+  font-size: smaller;
+  color: #000000;
+  padding: 2px;
+  text-align: left;
+  margin-left: 5px;
+}
+
+a.menu:link {
+  text-decoration: none;
+  color: #333333;
+}
+
+a.menu:visited {
+  text-decoration: none;
+  color: #333333;
+}
+
+a.menu:active {
+  text-decoration: underline;
+  color: #000000;
+}
+
+a.menu:hover {
+  text-decoration: underline;
+  color: #000000;
+}
+
+td.body {
+  background-color: #ffffff;
+  border-style: none;
+  padding: 4px;
+  text-align: justify;
+}
+
+td.section {
+  background-color: #666666;
+  border-style: none;
+  font-weight: bold;
+  font-size: bigger;
+  color: #ffffff;
+  padding: 0px;
+  text-align: left;
+}
+
+p.section {
+  background-color: #ffffff;
+  border-style: none;
+  color: #000000;
+  margin-left: 20px;
+  margin-right: 10px;
+  text-align: justify;
+}
+
+p.todo {
+  background-color: #ffffff;
+  border-style: none;
+  color: #000000;
+  margin-left: 20px;
+  margin-right: 10px;
+  text-align: justify;
+  font-size: smaller;
+}
+
+p.screen {
+  background-color: #ffffff;
+  border-style: none;
+  color: #000000;
+  margin-left: 10px;
+  margin-right: 0px;
+  text-align: left;
+}
+
+div.screen {
+  margin: 10px 0px 10px 20px;
+  font-size: smaller;
+  color: #666666;
+}
+
+em.screen {
+  font-weight: normal;
+  font-style: normal;
+  color: #666666;
+}
+
+b.screen {
+  font-weight: normal;
+  font-style: normal;
+  color: #0000ff;
+}
+
+b.code {
+  font-weight: normal;
+  font-style: normal;
+  color: #808000;
+}
