@@ -287,9 +287,10 @@ public class NSConfig  extends BaseJkConfig {
             log("Ignoring root context in forward-all mode  ");
             return;
         } 
-
+	objfile.println("<Object name=" + context.getName() + ">");
         objfile.println("NameTrans fn=\"assign-name\" from=\"" + ctxPath + "\" name=\"" + objectName + "\""); 
         objfile.println("NameTrans fn=\"assign-name\" from=\"" + ctxPath + "/*\" name=\"" + objectName + "\""); 
+	objfile.println("</Object>");
     }
 
 
@@ -305,7 +306,7 @@ public class NSConfig  extends BaseJkConfig {
             log("Ignoring root context in non-forward-all mode  ");
             return;
         } 
-
+	objfile.println("<Object name=" + context.getName() + ">");
         // Static files will be served by Netscape
         objfile.println("#########################################################");		    
         objfile.println("# Auto configuration for the " + nPath + " context starts.");
@@ -331,6 +332,7 @@ public class NSConfig  extends BaseJkConfig {
 	for(int ii=0; ii < servletMaps.length; ii++) {
 	    addMapping( ctxPath , servletMaps[ii] , objfile );
 	}
+	objfile.println("</Object>");
     }
 
     /** Add a Netscape extension mapping.
