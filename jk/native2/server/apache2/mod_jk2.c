@@ -141,6 +141,53 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
     return NULL;
 }
 
+/*
+ * JkSet2 oname property value
+ *
+ * Set jk options. 
+ */
+static const char *jk2_set3(cmd_parms *cmd,void *per_dir,
+                            const char *name, char *property, char *value)
+{
+    server_rec *s = cmd->server;
+    jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
+        ap_get_module_config(s->module_config, &jk2_module);
+    jk_env_t *env=workerEnv->globalEnv;
+    int rc;
+    jk_bean_t *mbean;
+
+    if( name == NULL || property==NULL || value==NULL ) {
+        ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
+                      "mod_jk2: Null option in JkSet2\n");
+        return NULL;
+    }
+    
+    mbean=env->getBean( env, name );
+    if( mbean==NULL ) {
+        ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
+                      "mod_jk2: Creating object %s\n", name );
+        mbean=env->createBean( env, workerEnv->config->pool, name );
+    }
+
+    if( mbean == NULL ) {
+        /* Can't create it, save the value in our map */
+        workerEnv->config->setProperty( env, workerEnv->config, workerEnv->config->mbean, name, value );
+        return NULL;
+    }
+
+    if( mbean->settings == NULL )
+        jk2_map_default_create(env, &mbean->settings, workerEnv->config->pool);
+    
+    rc=workerEnv->config->setProperty( env, workerEnv->config, mbean, property, value );
+
+    if (rc!=JK_OK) {
+        ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
+                      "mod_jk2: Unrecognized option %s %s %s\n", name, property, value);
+    }
+
+    return NULL;
+}
+
 /**
  * Set a property associated with a URI, using native <Location> 
  * directives.
@@ -189,7 +236,10 @@ static const command_rec jk2_cmds[] =
         */
     AP_INIT_TAKE2(
         "JkSet", jk2_set2, NULL, RSRC_CONF,
-        "Set a jk property, same syntax and rules as in JkWorkersFile"),
+        "Set a jk property, 2 parameters - objectName.property value"),
+    AP_INIT_TAKE3(
+        "JkSet2", jk2_set3, NULL, RSRC_CONF,
+        "Set a jk property, 3 parameters - objectName property value"),
     AP_INIT_TAKE2(
         "JkUriSet", jk2_uriSet, NULL, ACCESS_CONF,
         "Defines a jk property associated with a Location"),
