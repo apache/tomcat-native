@@ -200,11 +200,6 @@
     <copy    todir="${build.home}/classes" filtering="on">
       <fileset dir="${source.home}" excludes="**/*.java"/>
     </copy>
-    <jar    jarfile="${build.home}/lib/tomcat33-${component.name}.jar"
-            basedir="${build.home}/classes"
-           manifest="${build.home}/conf/MANIFEST.MF"
-           includes="org/apache/coyote/**" 
-	   excludes="**/tomcat4/*" />
   </target>
 
   <target name="compile" 
@@ -215,6 +210,11 @@
            manifest="${build.home}/conf/MANIFEST.MF"
            includes="org/apache/coyote/**" 
 	   excludes="**/tomcat3/*" />
+    <jar    jarfile="${build.home}/lib/tomcat33-${component.name}.jar"
+            basedir="${build.home}/classes"
+           manifest="${build.home}/conf/MANIFEST.MF"
+           includes="org/apache/coyote/**" 
+	   excludes="**/tomcat4/*" />
   </target>
 
   <target name="compile.tests" depends="compile"
