@@ -171,24 +171,28 @@ public class GeneratorApache2 implements WebXml2Jk.MappingGenerator {
     
     public void generateServletMapping( String servlet, String url ) {
         out.println( "<Location \"" + cpath + url + "\" >");
-        out.println( "SetHandler jakarta-servlet2" );
-        out.println( "JkSet worker " + worker );
-        out.println( "JkSet servlet " +  servlet);
+        out.println( "  SetHandler jakarta-servlet2" );
+        out.println( "  JkUriSet group " + worker );
+        out.println( "  JkUriSet servlet " +  servlet);
         out.println( "</Location>");
         out.println();
     }
 
     public void generateFilterMapping( String servlet, String url ) {
         out.println( "<Location \"" + cpath + url + "\" >");
-        out.println( "SetHandler jakarta-servlet2" );
-        out.println( "JkSet worker " + worker );
-        out.println( "JkSet servlet " +  servlet);
+        out.println( "  SetHandler jakarta-servlet2" );
+        out.println( "  JkUriSet group " + worker );
+        out.println( "  JkUriSet servlet " +  servlet);
         out.println( "</Location>");
         out.println();
     }
 
     public void generateLoginConfig( String loginPage,
-                                        String errPage, String authM ) {
+                                     String errPage, String authM ) {
+        out.println( "<Location \"" + cpath + loginPage + "\" >");
+        out.println( "  SetHandler jakarta-servlet2" );
+        out.println( "  JkUriSet group " + worker );
+        out.println( "</Location>");
         out.println();
     }
 
