@@ -73,7 +73,7 @@ import org.apache.tomcat.util.threads.*;
 /** A dummy worker, will just send back a dummy response.
  *  Used for testing and tunning.
  */
-public class WorkerDummy extends Worker
+public class WorkerDummy extends JkHandler
 {
     public WorkerDummy()
     {
@@ -88,18 +88,13 @@ public class WorkerDummy extends Worker
      *  ready to accept new requests.
      */
     public void init() throws IOException {
-        headersMsgNote=we.getNoteId( WorkerEnv.ENDPOINT_NOTE, "headerMsg" );
+        headersMsgNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "headerMsg" );
     }
  
-    /** Clean up and stop the worker
-     */
-    public void destroy() throws IOException {
-    }
-
     MessageBytes body=new MessageBytes();
     private int headersMsgNote;
     
-    public void service( BaseRequest req, Channel ch, Endpoint ep )
+    public int invoke( Msg in, MsgContext ep ) // BaseRequest req, Channel ch, Endpoint ep )
         throws IOException
     {
         MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
@@ -115,25 +110,26 @@ public class WorkerDummy extends Worker
 
         msg.appendInt(0);
         
-        ch.send( msg, ep );
+        ep.getChannel().send( msg, ep );
         //         msg.dump("out:" );
 
         msg.reset();
         msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
-        msg.appendInt( 10 );
+        msg.appendInt( body.getLength() );
         msg.appendBytes( body );
 
         
-        ch.send(msg, ep);
+        ep.getChannel().send(msg, ep);
 
         msg.reset();
         msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
         msg.appendInt( 1 );
         
-        ch.send(msg, ep );
+        ep.getChannel().send(msg, ep );
+        return OK;
     }
     
-    private static final int dL=10;
+    private static final int dL=0;
     private static void d(String s ) {
         System.err.println( "WorkerDummy: " + s );
     }

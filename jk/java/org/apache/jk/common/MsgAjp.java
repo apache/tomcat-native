@@ -257,6 +257,11 @@ public class MsgAjp extends Msg {
         return res;
     }
 
+    public byte peekByte() {
+        byte res = buf[pos];
+        return res;
+    }
+
     public void getBytes(MessageBytes mb) {
         int length = getInt();
         if( (length == 0xFFFF) || (length == -1) ) {
@@ -370,7 +375,7 @@ public class MsgAjp extends Msg {
     }
 
 
-    private static final int dL=10;
+    private static final int dL=0;
     private static void d(String s ) {
         System.err.println( "MsgAjp: " + s );
     }
