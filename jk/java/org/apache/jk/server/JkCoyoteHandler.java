@@ -78,7 +78,7 @@ import org.apache.commons.modeler.Registry;
 import javax.management.ObjectName;
 import javax.management.MBeanServer;
 
-/** Plugs Jk2 into Coyote
+/** Plugs Jk2 into Coyote. Must be named "type=JkHandler,name=container"
  *
  * @jmx:notification-handler name="org.apache.jk.SEND_PACKET
  * @jmx:notification-handler name="org.apache.coyote.ACTION_COMMIT
@@ -104,7 +104,7 @@ public class JkCoyoteHandler extends JkHandler implements
     int inputStreamNote;
     
     Adapter adapter;
-    protected JkMain jkMain=new JkMain();
+    protected JkMain jkMain=null;
 
     public final int JK_STATUS_NEW=0;
     public final int JK_STATUS_HEAD=1;
@@ -116,7 +116,7 @@ public class JkCoyoteHandler extends JkHandler implements
     public void setProperty( String name, String value ) {
         if( log.isTraceEnabled())
             log.trace("setProperty " + name + " " + value );
-        jkMain.setProperty( name, value );
+        getJkMain().setProperty( name, value );
         properties.put( name, value );
     }
 
@@ -147,6 +147,23 @@ public class JkCoyoteHandler extends JkHandler implements
         return adapter;
     }
 
+    public JkMain getJkMain() {
+        if( jkMain == null ) {
+            jkMain=new JkMain();
+            jkMain.setWorkerEnv(wEnv);
+            
+            if( oname != null ) {
+                try {
+                    Registry.getRegistry().registerComponent(jkMain, oname.getDomain(),
+                            "JkMain", "type=JkMain");
+                } catch (Exception e) {
+                    log.error( "Error registering jkmain " + e );
+                }
+            }
+        }
+        return jkMain;
+    }
+    
     boolean started=false;
     
     /** Start the protocol
@@ -155,12 +172,17 @@ public class JkCoyoteHandler extends JkHandler implements
         if( started ) return;
 
         started=true;
-        jkMain.getWorkerEnv().addHandler("container", this );
+        
+        if( wEnv==null ) {
+            // we are probably not registered - not very good.
+            wEnv=getJkMain().getWorkerEnv();
+            wEnv.addHandler("container", this );
+        }
 
         try {
             // jkMain.setJkHome() XXX;
             
-            jkMain.init();
+            getJkMain().init();
 
             headersMsgNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "headerMsg" );
             tmpMessageBytesNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "tmpMessageBytes" );
@@ -177,7 +199,7 @@ public class JkCoyoteHandler extends JkHandler implements
 
     public void start() {
         try {
-            jkMain.start();
+            getJkMain().start();
         } catch( Exception ex ) {
             ex.printStackTrace();
         }
@@ -187,7 +209,7 @@ public class JkCoyoteHandler extends JkHandler implements
         if( !started ) return;
 
         started = false;
-        jkMain.stop();
+        getJkMain().stop();
     }
 
     // -------------------- OutputBuffer implementation --------------------
@@ -465,11 +487,10 @@ public class JkCoyoteHandler extends JkHandler implements
     }
 
     public ObjectName preRegister(MBeanServer server,
-                                  ObjectName name) throws Exception
+                                  ObjectName oname) throws Exception
     {
-        // XXX Can we have multiple JkMain ?
-        Registry.getRegistry().registerComponent(jkMain, name.getDomain(),
-                "JkMain", "type=JkHandler,name=JkMain");
-        return super.preRegister(server, name);
+        // override - we must be registered as "container"
+        this.name="container";        
+        return super.preRegister(server, oname);
     }
 }
