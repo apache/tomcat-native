@@ -80,6 +80,11 @@ extern "C" {
 
 #define JK_AJP14_WORKER_NAME ("ajp14")
 
+#ifdef WIN32
+/* define snprint to match windows version */
+#define snprintf _snprintf
+#endif
+
 int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
                                    const char *name,
                                    jk_logger_t *l);
