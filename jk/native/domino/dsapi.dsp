@@ -170,6 +170,10 @@ SOURCE=..\jk\jk_ajp14.c
 # End Source File
 # End Group
 
+SOURCE=..\jk\jk_context.c
+# End Source File
+# End Group
+
 SOURCE=..\jk\jk_ajp_common.c
 # End Source File
 # End Group
@@ -274,6 +278,10 @@ SOURCE=..\jk\jk_worker_ajp14.h
 # End Group
 
 SOURCE=..\jk\jk_ajp14.h
+# End Source File
+# End Group
+
+SOURCE=..\jk\jk_context.h
 # End Source File
 # End Group
 

@@ -50,7 +50,8 @@ DEFS=-DLINUX -DUNIX
 JKOBJ = ../jk/jk_ajp12_worker.o ../jk/jk_ajp13.o ../jk/jk_ajp13_worker.o ../jk/jk_connect.o \
 	../jk/jk_jni_worker.o ../jk/jk_lb_worker.o ../jk/jk_map.o ../jk/jk_msg_buff.o \
 	../jk/jk_nwmain.o ../jk/jk_pool.o ../jk/jk_sockbuf.o ../jk/jk_uri_worker_map.o \
-	../jk/jk_util.o ../jk/jk_worker.o
+	../jk/jk_util.o ../jk/jk_worker.o ../jk/jk_ajp14.o ../jk/jk_ajp14_worker.o \
+	../jk/jk_context.o ../jk/jk_md5.o ../jk/jk_ajp_common.o
 
 LOBJ  =	jk_dsapi_plugin.o inifile.o
 OBJ   = $(JKOBJ) $(LOBJ)
