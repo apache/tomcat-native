@@ -119,7 +119,7 @@
 #define ADD_SSL_INFO    
 
 /* module MODULE_VAR_EXPORT jk_module; */
-AP_DECLARE_DATA module jk_module;
+AP_MODULE_DECLARE_DATA module jk_module;
 
 
 typedef struct {
@@ -335,7 +335,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             
             /* Debug - try to get around rwrite */
             while( ll > 0 ) {
-                long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
+                size_t toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
                 r = ap_rwrite((const char *)bb, toSend, p->r );
                 jk_log(main_log, JK_LOG_DEBUG, 
                        "writing %ld (%ld) out of %ld \n",toSend, r, ll );
@@ -544,7 +544,7 @@ static int init_ws_service(apache_private_data_t *private_data,
         }
 
         if(conf->envvars_in_use) {
-            apr_array_header_t *t = apr_table_elts(conf->envvars);
+            const apr_array_header_t *t = apr_table_elts(conf->envvars);
             if(t && t->nelts) {
                 int i;
                 apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
@@ -572,7 +572,7 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->num_headers      = 0;
     if(r->headers_in && apr_table_elts(r->headers_in)) {
         int need_content_length_header = (!s->is_chunked && s->content_length == 0) ? JK_TRUE : JK_FALSE;
-        apr_array_header_t *t = apr_table_elts(r->headers_in);
+        const apr_array_header_t *t = apr_table_elts(r->headers_in);
         if(t && t->nelts) {
             int i;
             apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
@@ -1525,10 +1525,10 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
     return;
 }
 
-static void jk_post_config(apr_pool_t *pconf, 
-                           apr_pool_t *plog, 
-                           apr_pool_t *ptemp, 
-                           server_rec *s)
+static int jk_post_config(apr_pool_t *pconf, 
+                          apr_pool_t *plog, 
+                          apr_pool_t *ptemp, 
+                          server_rec *s)
 {
     if(!s->is_virtual) {
         jk_server_conf_t *conf =
@@ -1539,6 +1539,7 @@ static void jk_post_config(apr_pool_t *pconf,
             init_jk( pconf, conf, s );
         }
     }
+    return OK;
 }
 
 /** Use the internal mod_jk mappings to find if this is a request for
