@@ -137,3 +137,23 @@ AC_DEFUN(
 
     AC_SUBST($1)
   ])
+
+dnl --------------------------------------------------------------------------
+dnl WA_APXS_GET
+dnl   Retrieve a value from APXS
+dnl   $1 => Environment variable where the APXS value will be stored
+dnl   $2 => Name of the APXS script (as returned by WA_APXS)
+dnl   $3 => Name of the APXS value to retrieve
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [WA_APXS_GET],
+  [
+    AC_MSG_CHECKING([for apxs $3 variable])
+    tempval=`"$2" -q "$3" 2> /dev/null`;
+    if test "$?" != "0" ; then
+        WA_ERROR([cannot execute $2])
+    fi
+    AC_MSG_RESULT([${tempval}])
+    $1="${$1} ${tempval}"
+    unset tempval
+  ])
