@@ -89,7 +89,7 @@
 #define JK_VERISRELEASE 1
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
 
-#define PACKAGE "mod_jk/"
+#define PACKAGE "mod_jk2/"
 /* Build JK_EXPOSED_VERSION and JK_VERSION */
 #define JK_EXPOSED_VERSION_INT PACKAGE JK_VERSTRING
 
