@@ -266,13 +266,13 @@ public abstract class JSSESocketFactory
         KeyStore trustStore = null;
 
         String trustStoreFile = (String)attributes.get("truststoreFile");
-	if(trustStoreFile == null) {
-	    trustStoreFile = System.getProperty("javax.net.ssl.trustStore");
-	}
+        if(trustStoreFile == null) {
+            trustStoreFile = System.getProperty("javax.net.ssl.trustStore");
+        }
         String trustStorePassword = (String)attributes.get("truststorePass");
-	if( trustStorePassword == null) {
+        if( trustStorePassword == null) {
             trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
-	}
+        }
         if (trustStoreFile != null && trustStorePassword != null){
             trustStore = getStore(keystoreType, trustStoreFile,
                                   trustStorePassword);
