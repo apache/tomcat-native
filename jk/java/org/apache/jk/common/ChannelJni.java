@@ -91,7 +91,9 @@ public class ChannelJni extends JniHandler {
         if( apr==null ) return;
         
         // We'll be called from C. This deals with that.
-        apr.addJkHandler( "channelJni", this );
+        apr.addJkHandler( "channelJni", this );        
+        log.info("JK2: listening on channel.jni:jni" );
+        
         if( next==null ) {
             if( nextName!=null ) 
                 setNext( wEnv.getHandler( nextName ) );
