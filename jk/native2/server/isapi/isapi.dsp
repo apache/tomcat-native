@@ -97,6 +97,10 @@ SOURCE=.\isapi.def
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\common\jk_channel.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\common\jk_channel_apr_socket.c
 # End Source File
 # Begin Source File
@@ -114,6 +118,10 @@ SOURCE=..\..\common\jk_channel_un.c
 # Begin Source File
 
 SOURCE=..\..\common\jk_config.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_config_file.c
 # End Source File
 # Begin Source File
 
@@ -149,6 +157,10 @@ SOURCE=..\..\common\jk_logger_win32.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\common\jk_logger_win32_message.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\common\jk_map.c
 # End Source File
 # Begin Source File
@@ -158,6 +170,22 @@ SOURCE=..\..\common\jk_md5.c
 # Begin Source File
 
 SOURCE=..\..\common\jk_msg_ajp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_mutex.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_mutex_proc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_mutex_thread.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\common\jk_nwmain.c
 # End Source File
 # Begin Source File
 
