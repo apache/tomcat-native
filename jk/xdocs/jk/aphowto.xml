@@ -857,9 +857,9 @@ Next, you should restart your Apache 2.0 server and enjoy this piece of OpenSour
 </p>
 </section>
 
-<section name="Getting mod_jk linked staticly with Apache">
+<section name="Getting mod_jk linked statically with Apache">
 <p>
-mod_jk allows to install mod_jk in the Apache source tree to get a staticly
+mod_jk allows to install mod_jk in the Apache source tree to get a statically
 linked mod_jk. Having mod_jk in the httpd executable brings some performance
 improvements. The configure option --with-apache prepare mod_jk to install it
 in the Apache source tree.
