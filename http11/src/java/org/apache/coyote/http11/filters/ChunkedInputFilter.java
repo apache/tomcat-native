@@ -178,6 +178,7 @@ public class ChunkedInputFilter implements InputFilter {
             result = lastValid - pos;
             remaining = remaining - result;
             chunk.setBytes(buf, pos, result);
+            pos = lastValid;
         } else {
             result = remaining;
             chunk.setBytes(buf, pos, remaining);
@@ -256,7 +257,7 @@ public class ChunkedInputFilter implements InputFilter {
 
         int nRead = buffer.doRead(readChunk, null);
         pos = readChunk.getStart();
-        lastValid = readChunk.getEnd();
+        lastValid = pos + nRead;
         buf = readChunk.getBytes();
 
         return nRead;
