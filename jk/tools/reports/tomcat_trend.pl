@@ -110,7 +110,6 @@ die "Archive Directory $archivedir doesn't exist"
 
 if( -e "$archivedir/global.data" ) {
    # Get the start date from the last entry in global.data
-   # print "Checking global.data for startdate\n";
    @tail = `tail -1 $archivedir/global.data`;
    $startdate = (split /\s+/,$tail[0])[0];
    ($day, $mon, $year) = (localtime($startdate))[3..5];
@@ -132,10 +131,7 @@ foreach( @logs ) {
    ($mon, $day, $time, $year) = (split /\s+/,$head[0])[1..4];
    ($hour, $min, $sec) = split /:/,$time;
    $year =~ s/\]$//;
-   # print "$head[0]\n";
-   # print "$mon $day $time $year $hour $min $sec\n";
    $logtime = timelocal($sec,$min,$hour,$day,$MON{$mon},$year-1900);
-   # print "$logfile $logtime " . scalar(localtime($logtime)) . "\n";
    $modjklog{$logtime} = $logfile;
 }
 
@@ -166,14 +162,16 @@ if( defined $prevlogtime ) {
 }
 
 print "StartDate: " . scalar(localtime($startdate)) . "\n";
+$processdate = $startdate;
 
 foreach $key ( sort {$a <=> $b} keys %modjklog ) {
-   last if( $key >= $curdate );
+   $logtime = $processdate;
    $logfile = $modjklog{$key};
+   print "Processing log: $logfile\n";
+   last if( $key >= $curdate );
    $fh = new FileHandle "<$logfile";  
    die "Open of logfile $logfile failed: $!"
       unless defined $fh;
-   print "Processing log: $logfile\n";
    while( $line = $fh->getline) {
       chomp($line);
       ($mon, $day, $time, $year) = (split /\s+/,$line)[1..4];
@@ -183,15 +181,12 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
          print "Unknown log entry: $origline\n" unless $origline =~ /\.c /;
          next;
       }
-      # print "$mon $day $time $year $hour $min $sec\n";
       $logtime = timelocal($sec,$min,$hour,$day,$MON{$mon},$year-1900);
 
-      if( $logtime > $startdate ) {
+      if( $logtime > $processdate ) {
          $origline = $line;
          # Strip off the leading date and time
-         # print "$line\n";
          $line =~ s/^\[.*\] //;
-         # print "$line\n";
 
          # See if this is a new 5 minute period
          $interval = int($logtime/300);
@@ -212,7 +207,7 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
          # See if this is a new day
          if( $day != $prevday ) {
             if( defined $prevday ) {
-               &DailyStats($startdate,\%Global);
+               &DailyStats($processdate,\%Global);
             }
             undef %Global;
             undef %GlobalWorkers;
@@ -224,7 +219,7 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
             $Global{workers} = \%GlobalWorkers;
             $Global{errors} = "";
             $prevday = $day;
-            $startdate = $logtime;
+            $processdate = $logtime;
          }
 
          # Stop processing if logtime is today
@@ -232,7 +227,6 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
 
          if( $line =~ /\d\)\]: / ) {
             # Handle a mod_jk error
-            # print "mod_jk error! " . scalar(localtime($logtime)) . " $line\n";
             if( $line =~ /(jk_tcp_socket_recvfull failed|ERROR: Receiving from tomcat failed)/ ) {
                $Global{tomcat_full}++;
                $Interval{tomcat_full}++;
@@ -243,19 +237,13 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
             next;
          } else {
             # Handle a mod_jk request log entry
-            # print "$line\n";
             $line =~ s/^\[.*\] //;
-            # print "$line\n";
             $line =~ s/\"(GET|POST|OPTIONS|HEAD)[^\"]*\" //;
-            # print "$line\n";
             $line =~ s/[\?\;].*\"//;
-            # print "$line\n";
             $line =~ s/\"//g;
-            # print "$line\n";
             ($work, $host, $page, $status, $latency) = split /\s+/,$line;
             $page =~ s/\/\//\//g;
             $page =~ s/\.\//\//g;
-            # print scalar(localtime($logtime)) . " $work $host $page $status $latency\n";
             if( length($work) <= 0 || length($host) <= 0 ||
                 length($page) <= 0 || $status !~ /^\d+$/ || $latency !~ /^\d+\.\d+$/ ) {
                print "Unknown log entry: $origline\n" unless $origline =~ /\.c /;
@@ -324,7 +312,6 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
             }
             $hoster = $$worker{hosts}{$host};
             push @{$$hoster{latency}},$latency;
-
          }
       }
    }
@@ -335,7 +322,7 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
 # output the last days data
 if( $logtime < $curdate ) {
    &IntervalStats(\%Global,\%Interval,$previnterval*300);
-   &DailyStats($startdate,\%Global);
+   &DailyStats($processdate,\%Global);
 }
 
 exit;
