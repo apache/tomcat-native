@@ -1824,6 +1824,16 @@ public class CoyoteRequest
 
 
     /**
+     * Get the request path.
+     * 
+     * @return the request path
+     */
+    public MessageBytes getRequestPathMB() {
+        return (mappingData.requestPath);
+    }
+
+
+    /**
      * Return the session identifier included in this request, if any.
      */
     public String getRequestedSessionId() {
