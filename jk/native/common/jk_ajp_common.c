@@ -720,24 +720,22 @@ void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
  * Try another connection from cache
  */
 
-static void ajp_next_connection(ajp_endpoint_t **ae, jk_logger_t *l)
+static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
 {
     int rc;
-    ajp_worker_t *aw = (*ae)->worker;
-
-    /* Close existing endpoint socket */
-    jk_close_socket((*ae)->sd);
-    (*ae)->sd = -1;
+    ajp_worker_t *aw = ae->worker;
 
     JK_ENTER_CS(&aw->cs, rc);
     if (rc) {
         unsigned int i;
+        /* Close existing endpoint socket */
+        jk_close_socket(ae->sd);
+        ae->sd = -1;
         for (i = 0; i < aw->ep_cache_sz; i++) {
             /* Find cache slot with usable socket */
             if (aw->ep_cache[i] && aw->ep_cache[i]->sd > 0) {
-                ajp_endpoint_t *e = aw->ep_cache[i];
-                aw->ep_cache[i] = *ae;
-                *ae = e;
+                ae->sd = aw->ep_cache[i]->sd;
+                 aw->ep_cache[i]->sd = -1;
                 break;
             }
         }
@@ -837,7 +835,8 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
     for (attempt = 0; attempt < ae->worker->connect_retry_attempts; attempt++) {
         ae->sd = jk_open_socket(&ae->worker->worker_inet_addr,
                                 ae->worker->keepalive,
-                                ae->worker->socket_timeout, l);
+                                ae->worker->socket_timeout,
+                                ae->worker->socket_buf, l);
         if (ae->sd >= 0) {
             jk_log(l, JK_LOG_DEBUG,
                    "connected sd = %d to %s",
@@ -845,6 +844,17 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 
             /* set last_access */
             ae->last_access = time(NULL);
+            if (ae->worker->socket_timeout) {
+                int rc = 0;
+                if ((rc = jk_is_socket_connected(ae->sd, ae->worker->socket_timeout)) != 1) {
+                        jk_log(l, JK_LOG_INFO,
+                            "Socket is not connected any more (status=%d)", rc);
+                    jk_close_socket(ae->sd);
+                    ae->sd = -1;
+                    JK_TRACE_EXIT(l);
+                    return JK_FALSE;
+                }
+            }
             /* Check if we must execute a logon after the physical connect */
             if (ae->worker->logon != NULL) {
                 rc = ae->worker->logon(ae, l);
@@ -1148,12 +1158,21 @@ static int ajp_send_request(jk_endpoint_t *e,
      */
     while ((ae->sd > 0)) {
         err = 0;
-
         /* handle cping/cpong before request if timeout is set */
         if (ae->worker->prepost_timeout != 0) {
             if (ajp_handle_cping_cpong(ae, ae->worker->prepost_timeout, l) ==
                 JK_FALSE)
                 err++;
+        }
+        else if (ae->worker->socket_timeout) {
+            int rc = 0;
+            if ((rc = jk_is_socket_connected(ae->sd, ae->worker->socket_timeout)) != 1) {
+                    jk_log(l, JK_LOG_INFO,
+                           "Socket is not connected any more (status=%d)", rc);
+                jk_close_socket(ae->sd);
+                ae->sd = -1;
+                err++;
+            }
         }
 
         /* If we got an error or can't send data, then try to get a pooled
@@ -1163,7 +1182,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             (ajp_connection_tcp_send_message(ae, op->request, l) == JK_FALSE)) {
             jk_log(l, JK_LOG_INFO,
                    "Error sending request. Will try another pooled connection");
-            ajp_next_connection(&ae, l);
+            ajp_next_connection(ae, l);
         }
         else
             break;
@@ -1173,7 +1192,14 @@ static int ajp_send_request(jk_endpoint_t *e,
      * If we failed to reuse a connection, try to reconnect.
      */
     if (ae->sd < 0) {
-
+        
+        if (err) {
+            /* XXX: If err is set, the tomcat is either dead or disconnected */
+            jk_log(l, JK_LOG_INFO,
+                   "All endpoints are disconnected or dead");
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
         /* no need to handle cping/cpong here since it should be at connection time */
 
         if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
@@ -1639,7 +1665,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                 err = ajp_get_reply(e, s, l, p, op);
                 if (err > 0) {
                     JK_TRACE_EXIT(l);
-                    return (JK_TRUE);
+                    return JK_TRUE;
                 }
 
                 if (err != JK_CLIENT_ERROR) {
@@ -1675,17 +1701,17 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
             else {
                 jk_log(l, JK_LOG_INFO,
                        "Sending request to tomcat failed,  "
-                       "recoverable operation attempt=%d", i);
+                       "recoverable operation attempt=%d", i + 1);
             }
             /* Get another connection from the pool and try again */
-            ajp_next_connection(&p, l);
+            ajp_next_connection(p, l);
         }
 
         /* Log the error only once per failed request. */
         jk_log(l, JK_LOG_ERROR,
                "Error connecting to tomcat. Tomcat is probably not started "
-               "or is listening on the wrong port. worker=%s failed errno = %d",
-               p->worker->name, errno);
+               "or is listening on the wrong port. worker=%s failed",
+               p->worker->name);
 
     }
     else {
@@ -1789,6 +1815,9 @@ int ajp_init(jk_worker_t *pThis,
         p->socket_timeout =
             jk_get_worker_socket_timeout(props, p->name, AJP_DEF_SOCKET_TIMEOUT);
 
+        p->socket_buf =
+            jk_get_worker_socket_buffer(props, p->name, 512);
+
         p->keepalive =
             jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
 
@@ -1834,6 +1863,10 @@ int ajp_init(jk_worker_t *pThis,
             jk_log(l, JK_LOG_DEBUG,
                    "setting socket timeout to %d",
                    p->socket_timeout);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "setting socket buffer size to %d",
+                   p->socket_buf);
 
             jk_log(l, JK_LOG_DEBUG,
                    "setting connection recycle timeout to %d",
@@ -1890,6 +1923,9 @@ int ajp_init(jk_worker_t *pThis,
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }
+                jk_log(l, JK_LOG_DEBUG,
+                    "Initialized endpont cache slot %d %#lx:%#lx",
+                    i, p->ep_cache[i], &(p->ep_cache[i]->pool));
             }
             JK_INIT_CS(&(p->cs), i);
             if (i == JK_FALSE) {
@@ -1922,23 +1958,20 @@ int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto)
     JK_TRACE_ENTER(l);
 
     if (pThis && *pThis && (*pThis)->worker_private) {
+        unsigned int i;
         ajp_worker_t *aw = (*pThis)->worker_private;
 
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "up to %d endpoint to close",
+                   "up to %d endpoints to close",
                    aw->ep_cache_sz);
 
-        if (aw->ep_cache_sz) {
-            unsigned int i;
-            for (i = 0; i < aw->ep_cache_sz; i++) {
-                if (aw->ep_cache[i]) {
-                    ajp_close_endpoint(aw->ep_cache[i], l);
-                }
-            }
-            free(aw->ep_cache);
-            JK_DELETE_CS(&(aw->cs), i);
+        for (i = 0; i < aw->ep_cache_sz; i++) {
+            if (aw->ep_cache[i])
+                ajp_close_endpoint(aw->ep_cache[i], l);
         }
+        free(aw->ep_cache);
+        JK_DELETE_CS(&(aw->cs), i);
 
         if (aw->login) {
              /* take care of removing previously allocated data */
@@ -1978,6 +2011,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
                     break;
                 }
             }
+            *e = NULL;
             JK_LEAVE_CS(&w->cs, rc);
             if (i >= 0) {
                 if (JK_IS_DEBUG_LEVEL(l))
@@ -1985,7 +2019,6 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
                             "recycling connection cache slot=%d for worker %s",
                             i, p->worker->name);
                 JK_TRACE_EXIT(l);
-                *e = NULL;
                 return JK_TRUE;
             }
             jk_log(l, JK_LOG_INFO,
@@ -2018,27 +2051,26 @@ int ajp_get_endpoint(jk_worker_t *pThis,
 
         JK_ENTER_CS(&aw->cs, rc);
         if (rc) {
-            unsigned int i;
-            for (i = 0; i < aw->ep_cache_sz; i++) {
-                if (aw->ep_cache[i]) {
-                    ae = aw->ep_cache[i];
-                    aw->ep_cache[i] = NULL;
+            unsigned int i, slot;
+            for (slot = 0; slot < aw->ep_cache_sz; slot++) {
+                if (aw->ep_cache[slot]) {
+                    ae = aw->ep_cache[slot];
+                    aw->ep_cache[slot] = NULL;
                     break;
                 }
             }
             /* Handle enpoint cache timeouts */
-            if (ae && aw->cache_timeout) {
+            if (aw->cache_timeout) {
                 for (i = 0; i < aw->ep_cache_sz; i++) {
                     /* Skip the cached enty */
-                    if (aw->ep_cache[i] && (ae != aw->ep_cache[i])) {
-                        int elapsed =
-                            (int)(now - ae->last_access);
+                    if (aw->ep_cache[i]) {
+                        int elapsed = (int)(now - aw->ep_cache[i]->last_access);
                         if (elapsed > aw->cache_timeout) {
                             aw->ep_cache[i]->reuse = JK_FALSE;
                             ajp_reset_endpoint(aw->ep_cache[i], l);
                             if (JK_IS_DEBUG_LEVEL(l))
                                 jk_log(l, JK_LOG_DEBUG,
-                                        "cleaning cache slot = %d elapsed %u",
+                                        "cleaning cache slot=%d elapsed %u",
                                         i, elapsed);
                         }
                     }
@@ -2046,25 +2078,28 @@ int ajp_get_endpoint(jk_worker_t *pThis,
             }
             JK_LEAVE_CS(&aw->cs, rc);
             if (ae) {
-                if (ae->sd > 0) {
+                if (ae->sd > 0 && aw->recycle_timeout > 0) {
                     /* Handle timeouts for open sockets */
                     int elapsed = (int)(now - ae->last_access);
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
-                                "time elapsed since last request = %u seconds",
-                                elapsed);
-                    if (aw->recycle_timeout > 0 &&
-                        elapsed > aw->recycle_timeout) {
+                               "time elapsed since last request = %u seconds",
+                               elapsed);
+                    if (elapsed > aw->recycle_timeout) {
                         ae->reuse = JK_FALSE;
                         ajp_reset_endpoint(ae, l);
                         if (JK_IS_DEBUG_LEVEL(l))
                             jk_log(l, JK_LOG_DEBUG,
-                                    "reached connection recycle timeout, closed sd = %d",
-                                    ae->sd);
+                                    "reached connection recycle timeout, closed cache slot=%d",
+                                    slot);
                     }
                 }
                 ae->last_access = now;
                 *je = &ae->endpoint;
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "acquired connection cache slot=%d",
+                           slot);
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
