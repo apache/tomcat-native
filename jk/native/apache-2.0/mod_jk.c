@@ -190,7 +190,6 @@ static jk_logger_t *main_log = NULL;
 static jk_worker_env_t worker_env;
 static apr_global_mutex_t *jk_log_lock = NULL;
 static char *jk_shm_file = NULL;
-static jk_shm_t jk_shmem = { 0, NULL, -1, NULL, 0};
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -1670,10 +1669,11 @@ apr_status_t jk_cleanup_endpoint(void *data)
  */
 apr_status_t jk_cleanup_shmem(void *data)
 {
-    if (jk_shmem.base) {
-    jk_shm_close(&jk_shmem);
-    jk_shmem.base = NULL;
-    }
+    jk_logger_t *l = data;
+    jk_shm_close();
+    if (l && JK_IS_DEBUG_LEVEL(l))
+       jk_log(l, JK_LOG_DEBUG, "Shmem cleanup");
+
     return 0;
 }
 
@@ -2248,14 +2248,16 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
     if (mpm_threads > 0)
         jk_set_worker_def_cache_size(mpm_threads);
 
-    rc = jk_shm_attach(jk_shm_file, 0, 0, &jk_shmem);
-    if (JK_IS_DEBUG_LEVEL(conf->log))
-        jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s with status %d",
-               jk_shmem.filename, rc);
-    if (!rc) {
-            apr_pool_cleanup_register(pconf, s, jk_cleanup_shmem,
+    if ((rc = jk_shm_attach(jk_shm_file)) == 0) {
+        if (JK_IS_DEBUG_LEVEL(conf->log))
+            jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s",
+                   jk_shm_name());
+            apr_pool_cleanup_register(pconf, conf->log, jk_cleanup_shmem,
                                      jk_cleanup_shmem);
     }
+    else
+        jk_log(conf->log, JK_LOG_ERROR, "Attachning shm:%s errno=%d",
+               jk_shm_name(), rc);
 
     if (JK_IS_DEBUG_LEVEL(conf->log))
         jk_log(conf->log, JK_LOG_DEBUG, "Initialized %s", JK_EXPOSED_VERSION);
@@ -2278,14 +2280,17 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     /*     jk_map_t *init_map = NULL; */
     jk_map_t *init_map = conf->worker_properties;
 
-    rc = jk_shm_open(jk_shm_file, 0, 0, &jk_shmem);
-    if (JK_IS_DEBUG_LEVEL(conf->log))
-        jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s with status %d",
-               jk_shmem.filename, rc);
-    if (!rc) {
-            apr_pool_cleanup_register(pconf, s, jk_cleanup_shmem,
+    ;
+    if ((rc = jk_shm_open(jk_shm_file)) == 0) {
+        if (JK_IS_DEBUG_LEVEL(conf->log))
+            jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s",
+                   jk_shm_name(), rc);
+            apr_pool_cleanup_register(pconf, conf->log, jk_cleanup_shmem,
                                       jk_cleanup_shmem);
     }
+    else
+        jk_log(conf->log, JK_LOG_ERROR, "Initializing shm:%s errno=%d",
+               jk_shm_name(), rc);
 
     if (!uri_worker_map_alloc(&(conf->uw_map),
                               conf->uri_to_context,
