@@ -230,8 +230,7 @@ public class ServerCookie implements Serializable {
         }
     }
 
-    private static final String ancientDate=DateTool.oldCookieFormat
-	.format(new Date(10000));
+    private static final String ancientDate=DateTool.formatOldCookie(new Date(10000));
 
     public static void appendCookieValue( StringBuffer buf,
 					  int version,
@@ -280,7 +279,7 @@ public class ServerCookie implements Serializable {
                 if (maxAge == 0)
 		    buf.append( ancientDate );
 		else
-                    DateTool.oldCookieFormat.format
+                    DateTool.formatOldCookie
                         (new Date( System.currentTimeMillis() +
                                    maxAge *1000L), buf,
                          new FieldPosition(0));

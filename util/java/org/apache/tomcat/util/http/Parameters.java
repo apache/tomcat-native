@@ -59,9 +59,7 @@
 
 package org.apache.tomcat.util.http;
 
-import  org.apache.tomcat.util.buf.MessageBytes;
-import  org.apache.tomcat.util.buf.CharChunk;
-import  org.apache.tomcat.util.buf.ByteChunk;
+import  org.apache.tomcat.util.buf.*;
 import  org.apache.tomcat.util.collections.MultiMap;
 import java.io.*;
 import java.util.*;
@@ -72,6 +70,7 @@ import java.text.*;
  * @author Costin Manolache
  */
 public final class Parameters extends MultiMap {
+
     // Transition: we'll use the same Hashtable( String->String[] )
     // for the beginning. When we are sure all accesses happen through
     // this class - we can switch to MultiMap
@@ -81,6 +80,9 @@ public final class Parameters extends MultiMap {
     
     MessageBytes queryMB;
     MimeHeaders  headers;
+
+    UDecoder urlDec;
+    MessageBytes decodedQuery=new MessageBytes();
     
     public static final int INITIAL_SIZE=4;
 
@@ -94,6 +96,8 @@ public final class Parameters extends MultiMap {
     private Parameters parent=null;
     private Parameters currentChild=null;
 
+    String encoding=null;
+    
     /**
      * 
      */
@@ -109,12 +113,18 @@ public final class Parameters extends MultiMap {
 	this.headers=headers;
     }
 
+    public void setEncoding( String s ) {
+	encoding=s;
+    }
+
     public void recycle() {
 	super.recycle();
 	paramHashStringArray.clear();
 	didQueryParameters=false;
 	currentChild=null;
 	didMerge=false;
+	encoding=null;
+	decodedQuery.recycle();
     }
     
     // -------------------- Sub-request support --------------------
@@ -145,11 +155,13 @@ public final class Parameters extends MultiMap {
 	// set child to null !
 	if( currentChild==null ) {
 	    currentChild=new Parameters();
+	    currentChild.setURLDecoder( urlDec );
 	    currentChild.parent=this;
 	    return;
 	}
 	if( currentChild.child==null ) {
 	    currentChild.child=new Parameters();
+	    currentChild.setURLDecoder( urlDec );
 	    currentChild.child.parent=currentChild;
 	} // it is not null if this object already had a child
 	// i.e. a deeper include() ( we keep it )
@@ -205,9 +217,10 @@ public final class Parameters extends MultiMap {
      */
     private void merge() {
 	// recursive
-	//	System.out.println("Merging " + this + " with " +
-	// parent + " " + didMerge);
-	//System.out.println( "Before " + paramsAsString());
+	if( debug > 0 ) {
+	    log("Before merging " + this + " " + parent + " " + didMerge );
+	    log(  paramsAsString());
+	}
 	// Local parameters first - they take precedence as in spec.
 	handleQueryParameters();
 
@@ -222,7 +235,8 @@ public final class Parameters extends MultiMap {
 	Hashtable parentProps=parent.paramHashStringArray;
 	merge2( paramHashStringArray , parentProps);
 	didMerge=true;
-	//System.out.println( "After " + paramsAsString());
+	if(debug > 0 )
+	    log("After " + paramsAsString());
     }
 
 
@@ -231,54 +245,34 @@ public final class Parameters extends MultiMap {
 	String[] values = getParameterValues(name);
         if (values != null) {
 	    if( values.length==0 ) return "";
-	    //System.out.println("XXX " + name + "=" + values[0] );
             return values[0];
         } else {
-	    //	    System.out.println("XXX " + name + "=null" );
 	    return null;
         }
     }
     // -------------------- Processing --------------------
-
     /** Process the query string into parameters
      */
     public void handleQueryParameters() {
 	if( didQueryParameters ) return;
 	
 	didQueryParameters=true;
-	if( queryMB==null )
+	if( debug > 0  )
+	    log( "Decoding query " + queryMB + " " + encoding);
+	    
+	if( queryMB==null || queryMB.isNull() )
 	    return;
-	String qString=queryMB.toString();
-	if(qString!=null) {
-	    processFormData( qString );
-	}
-    }
-
-    public void processParameters(String data) {
-	processFormData( data );
-    }
-    
-    // XXX ENCODING !!
-    public void processData(byte data[]) {
-	// make sure the request line query is processed
-	handleQueryParameters();
 	
 	try {
-	    String postedBody = new String(data, 0, data.length,
-					   "8859_1");
-	    // XXX encoding !!!
-
-	    processFormData( postedBody );
-	    
-	    //Hashtable postParameters=new Hashtable();
-	    //Parameters.processFormData( postedBody, postParameters);
-	    //	    Parameters.merge2(paramHashStringArray,  postParameters);
-
-	} catch( UnsupportedEncodingException ex ) {
-	    //	    return postParameters;
+	    decodedQuery.duplicate( queryMB );
+	} catch( IOException ex ) {
 	}
+	if( debug > 0  )
+	    log( "Decoding query " + decodedQuery + " " + encoding);
+
+	processParameters( decodedQuery );
     }
-    
+
     // --------------------
     
     /** Combine 2 hashtables into a new one.
@@ -315,51 +309,50 @@ public final class Parameters extends MultiMap {
 	}
     }
 
-    // XXX XXX Optimize
-    private void processFormData(String data) {
-        // there's got to be a faster way of doing this.
-	if( data==null ) return; // no parameters
-	
-        StringTokenizer tok = new StringTokenizer(data, "&", false);
-        while (tok.hasMoreTokens()) {
-            String pair = tok.nextToken();
-	    int pos = pair.indexOf('=');
-	    if (pos != -1) {
-		String key = CharChunk.unescapeURL(pair.substring(0, pos));
-		String value = CharChunk.unescapeURL(pair.substring(pos+1,
-							     pair.length()));
-		String values[];
-		if (paramHashStringArray.containsKey(key)) {
-		    String oldValues[] = (String[])paramHashStringArray.
-			get(key);
-		    values = new String[oldValues.length + 1];
-		    for (int i = 0; i < oldValues.length; i++) {
-			values[i] = oldValues[i];
-		    }
-		    values[oldValues.length] = value;
-		} else {
-		    values = new String[1];
-		    values[0] = value;
-		}
-		paramHashStringArray.put(key, values);
-	    } else {
-		// we don't have a valid chunk of form data, ignore
+    // incredibly inefficient data representation for parameters,
+    // until we test the new one
+    private void addParam( String key, String value ) {
+	String values[];
+	if (paramHashStringArray.containsKey(key)) {
+	    String oldValues[] = (String[])paramHashStringArray.
+		get(key);
+	    values = new String[oldValues.length + 1];
+	    for (int i = 0; i < oldValues.length; i++) {
+		values[i] = oldValues[i];
 	    }
-        }
+	    values[oldValues.length] = value;
+	} else {
+	    values = new String[1];
+	    values[0] = value;
+	}
+	
+	
+	paramHashStringArray.put(key, values);
+    }
+
+    public void setURLDecoder( UDecoder u ) {
+	urlDec=u;
     }
 
     // -------------------- Parameter parsing --------------------
 
     // This code is not used right now - it's the optimized version
-    // of the above. 
+    // of the above.
+
+    // we are called from a single thread - we can do it the hard way
+    // if needed
+    ByteChunk tmpName=new ByteChunk();
+    ByteChunk tmpValue=new ByteChunk();
+    CharChunk tmpNameC=new CharChunk(1024);
+    CharChunk tmpValueC=new CharChunk(1024);
     
-    /**
-     * 
-     */
     public void processParameters( byte bytes[], int start, int len ) {
 	int end=start+len;
 	int pos=start;
 	
+	if( debug>0 ) 
+	    log( "Bytes: " + new String( bytes, start, len ));
+
         do {
 	    int nameStart=pos;
 	    int nameEnd=ByteChunk.indexOf(bytes, nameStart, end, '=' );
@@ -376,12 +369,32 @@ public final class Parameters extends MultiMap {
 		// invalid chunk - it's better to ignore
 		// XXX log it ?
 	    }
+	    tmpName.setBytes( bytes, nameStart, nameEnd-nameStart );
+	    tmpValue.setBytes( bytes, valStart, valEnd-valStart );
+	    tmpName.setEncoding( encoding );
+	    tmpValue.setEncoding( encoding );
 	    
-	    int field=this.addField();
-	    this.getName( field ).setBytes( bytes,
-					    nameStart, nameEnd );
-	    this.getValue( field ).setBytes( bytes,
-					     valStart, valEnd );
+	    try {
+		if( debug > 0 )
+		    log( tmpName + "= " + tmpValue);
+
+		if( urlDec==null ) {
+		    urlDec=new UDecoder();   
+		}
+		urlDec.convert( tmpName );
+		urlDec.convert( tmpValue );
+
+		if( debug > 0 )
+		    log( tmpName + "= " + tmpValue);
+		
+		addParam( tmpName.toString(), tmpValue.toString() );
+	    } catch( IOException ex ) {
+		ex.printStackTrace();
+	    }
+
+	    tmpName.recycle();
+	    tmpValue.recycle();
+
 	} while( pos<end );
     }
 
@@ -389,6 +402,8 @@ public final class Parameters extends MultiMap {
 	int end=start+len;
 	int pos=start;
 	
+	if( debug>0 ) 
+	    log( "Chars: " + new String( chars, start, len ));
         do {
 	    int nameStart=pos;
 	    int nameEnd=CharChunk.indexOf(chars, nameStart, end, '=' );
@@ -405,17 +420,36 @@ public final class Parameters extends MultiMap {
 		// XXX log it ?
 	    }
 	    
-	    int field=this.addField();
-	    this.getName( field ).setChars( chars,
-					    nameStart, nameEnd );
-	    this.getValue( field ).setChars( chars,
-					     valStart, valEnd );
+	    try {
+		tmpNameC.append( chars, nameStart, nameEnd-nameStart );
+		tmpValueC.append( chars, valStart, valEnd-valStart );
+
+		if( debug > 0 )
+		    log( tmpNameC + "= " + tmpValueC);
+
+		if( urlDec==null ) {
+		    urlDec=new UDecoder();   
+		}
+
+		urlDec.convert( tmpNameC );
+		urlDec.convert( tmpValueC );
+
+		if( debug > 0 )
+		    log( tmpNameC + "= " + tmpValueC);
+		
+		addParam( tmpNameC.toString(), tmpValueC.toString() );
+	    } catch( IOException ex ) {
+		ex.printStackTrace();
+	    }
+
+	    tmpNameC.recycle();
+	    tmpValueC.recycle();
+
 	} while( pos<end );
     }
-
     
     public void processParameters( MessageBytes data ) {
-	if( data==null || data.getLength() <= 0 ) return;
+	if( data==null || data.isNull() || data.getLength() <= 0 ) return;
 
 	if( data.getType() == MessageBytes.T_BYTES ) {
 	    ByteChunk bc=data.getByteChunk();
@@ -430,6 +464,8 @@ public final class Parameters extends MultiMap {
 	}
     }
 
+    /** Debug purpose
+     */
     public String paramsAsString() {
 	StringBuffer sb=new StringBuffer();
 	Enumeration en= paramHashStringArray.keys();
@@ -443,4 +479,66 @@ public final class Parameters extends MultiMap {
 	}
 	return sb.toString();
     }
+
+    private static int debug=0;
+    private void log(String s ) {
+	System.out.println("Parameters: " + s );
+    }
+   
+    // -------------------- Old code, needs rewrite --------------------
+    
+    /** Used by RequestDispatcher
+     */
+    public void processParameters( String str ) {
+	int end=str.length();
+	int pos=0;
+	if( debug > 0)
+	    log("String: " + str );
+	
+        do {
+	    int nameStart=pos;
+	    int nameEnd=str.indexOf('=', nameStart );
+	    if( nameEnd== -1 ) nameEnd=end;
+
+	    int valStart=nameEnd+1;
+	    int valEnd=str.indexOf('&', valStart);
+	    if( valEnd== -1 ) valEnd=end;
+	    pos=valEnd+1;
+	    
+	    if( nameEnd<=nameStart ) {
+		continue;
+	    }
+	    if( debug>0)
+		log( "XXX " + nameStart + " " + nameEnd + " "
+		     + valStart + " " + valEnd );
+	    
+	    try {
+		tmpNameC.append(str, nameStart, nameEnd-nameStart );
+		tmpValueC.append(str, valStart, valEnd-valStart );
+	    
+		if( debug > 0 )
+		    log( tmpNameC + "= " + tmpValueC);
+
+		if( urlDec==null ) {
+		    urlDec=new UDecoder();   
+		}
+
+		urlDec.convert( tmpNameC );
+		urlDec.convert( tmpValueC );
+
+		if( debug > 0 )
+		    log( tmpNameC + "= " + tmpValueC);
+		
+		addParam( tmpNameC.toString(), tmpValueC.toString() );
+	    } catch( IOException ex ) {
+		ex.printStackTrace();
+	    }
+
+	    tmpNameC.recycle();
+	    tmpValueC.recycle();
+
+	} while( pos<end );
+    }
+
+
 }

@@ -67,6 +67,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+// XXX Shouldn't be here - has nothing to do with buffers.
 
 /**
  * Main tool for object expiry. 

@@ -89,7 +89,7 @@ public class ContentType {
         if (charsetLocation == -1) {
             return null;
         }
-        String afterCharset = type.substring(charsetLocation + 8);
+	String afterCharset = type.substring(charsetLocation + 8);
         // The charset value in a Content-Type header is allowed to be quoted
         // and charset values can't contain quotes.  Just convert any quote
         // chars into spaces and let trim clean things up.
@@ -98,25 +98,28 @@ public class ContentType {
         return encoding;
     }
 
-    /** Utility method for parsing the mime type and setting
-     *  the encoding to locale. Also, convert from java Locale to mime
-     * encodings
-     */
-    public static String constructLocalizedContentType(String type,
-							Locale loc) {
-        // Cut off everything after the semicolon
-        int semi = type.indexOf(";");
-        if (semi != -1) {
-            type = type.substring(0, semi);
-        }
 
-        // Append the appropriate charset, based on the locale
-        String charset = LocaleToCharsetMap.getCharset(loc);
-        if (charset != null) {
-            type = type + "; charset=" + charset;
-        }
+    // Bad method: the user may set the charset explicitely
+    
+//     /** Utility method for parsing the mime type and setting
+//      *  the encoding to locale. Also, convert from java Locale to mime
+//      *  encodings
+//      */
+//     public static String constructLocalizedContentType(String type,
+// 							Locale loc) {
+//         // Cut off everything after the semicolon
+//         int semi = type.indexOf(";");
+//         if (semi != -1) {
+//             type = type.substring(0, semi);
+//         }
 
-        return type;
-    }
+//         // Append the appropriate charset, based on the locale
+//         String charset = LocaleToCharsetMap.getCharset(loc);
+//         if (charset != null) {
+//             type = type + "; charset=" + charset;
+//         }
+
+//         return type;
+//     }
 
 }

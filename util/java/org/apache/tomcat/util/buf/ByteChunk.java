@@ -62,11 +62,9 @@ package org.apache.tomcat.util.buf;
 import java.text.*;
 import java.util.*;
 import java.io.Serializable;
+import java.io.IOException;
 
-/**
- * This class is used to represent a chunk of bytes, and
- * utilities to manipulate byte[].
- *
+/*
  * In a server it is very important to be able to operate on
  * the original byte[] without converting everything to chars.
  * Some protocols are ASCII only, and some allow different
@@ -78,18 +76,47 @@ import java.io.Serializable;
  * For HTTP it is not very clear how the encoding of RequestURI
  * and mime values can be determined, but it is a great advantage
  * to be able to parse the request without converting to string.
+ */
+
+
+/**
+ * This class is used to represent a chunk of bytes, and
+ * utilities to manipulate byte[].
+ *
+ * The buffer can be modified and used for both input and output.
  *
  * @author dac@eng.sun.com
  * @author James Todd [gonzo@eng.sun.com]
  * @author Costin Manolache
  */
 public final class ByteChunk implements Cloneable, Serializable {
+    // Output interface, used when the buffer is filled.
+    public static interface ByteOutputChannel {
+	/** Send the bytes ( usually the internal conversion buffer ).
+	 *  Expect 8k output if the buffer is full.
+	 */
+	public void realWriteBytes( byte cbuf[], int off, int len)
+	    throws IOException;
+    }
+
+    // --------------------
+    
     // byte[]
-    private byte[] bytes;
-    private int bytesOff;
-    private int bytesLen;
+    private byte[] buff;
+
+    private int start=0;
+    private int end;
+
     private String enc;
-    private boolean isSet=false;
+
+    private boolean isSet=false; // XXX
+
+    // How much can it grow, when data is added
+    private int limit=-1;
+
+    private ByteOutputChannel out=null;
+
+    private boolean isOutput=false;
     
     /**
      * Creates a new, uninitialized ByteChunk object.
@@ -97,7 +124,12 @@ public final class ByteChunk implements Cloneable, Serializable {
     public ByteChunk() {
     }
 
-    public ByteChunk getClone() {
+    public ByteChunk( int initial ) {
+	allocate( initial, -1 );
+    }
+
+    //--------------------
+        public ByteChunk getClone() {
 	try {
 	    return (ByteChunk)this.clone();
 	} catch( Exception ex) {
@@ -106,16 +138,35 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     public boolean isNull() {
-	return ! isSet; // bytes==null;
+	return ! isSet; // buff==null;
     }
     
     /**
-     * Resets the message bytes to an uninitialized state.
+     * Resets the message buff to an uninitialized state.
      */
     public void recycle() {
-	bytes = null;
+	//	buff = null;
 	enc=null;
+	start=0;
+	end=0;
 	isSet=false;
+    }
+
+    public void reset() {
+	buff=null;
+    }
+
+    // -------------------- Setup --------------------
+
+    public void allocate( int initial, int limit  ) {
+	isOutput=true;
+	if( buff==null || buff.length < initial ) {
+	    buff=new byte[initial];
+	}    
+	this.limit=limit;
+	start=0;
+	end=0;
+	isSet=true;
     }
 
     /**
@@ -126,9 +177,9 @@ public final class ByteChunk implements Cloneable, Serializable {
      * @param len the length of the bytes
      */
     public void setBytes(byte[] b, int off, int len) {
-	bytes = b;
-	bytesOff = off;
-	bytesLen = len;
+	buff = b;
+	start = off;
+	end = start+ len;
 	isSet=true;
     }
 
@@ -136,158 +187,249 @@ public final class ByteChunk implements Cloneable, Serializable {
 	this.enc=enc;
     }
 
-    // convert an int to byte[]
-    public void setInt(int i) {
-	// XXX TODO
-    }
-    // -------------------- Conversion and getters --------------------
-    public static boolean isUTF8Compatible(String enc) {
-	if( enc==null ) return true;
-	// add known encodings
-	return false;
-    }
-    
-    public String toString() {
-	if (null == bytes) {
-	    return null;
-	}
-	String strValue=null;
-	try {
-	    if( enc==null )
-		strValue=toStringUTF8();
-	    else {
-		strValue=new String(bytes, bytesOff, bytesLen, enc);
-		// this will display when we implement I18N
-		System.out.println("Converting from bytes to string using " +
-				   enc + ":" + strValue  );
-	    }
-	    return strValue;
-	} catch (java.io.UnsupportedEncodingException e) {
-	    return null;  // can't happen
-	}
-    }
-
-    private char[] conversionBuff;
-    
-    private String toStringUTF8() {
-	if( conversionBuff==null || bytesLen > conversionBuff.length ) {
-	    conversionBuff=new char[bytesLen];
-	}
-
-	// 	int j=bytesOff;
-	// 	for( int i=0; i< bytesLen; i++ ) {
-	// 	    conversionBuff[i]=(char)bytes[j++];
-	// 	}
-	int charsLen=byte2charUTF8();
-	if( charsLen==-1) return null; // or throw exception
-	
-	return new String( conversionBuff, 0, charsLen);
-    }
-
-
-    private int byte2charUTF8() {
-	if( conversionBuff==null || bytesLen > conversionBuff.length ) {
-	    conversionBuff=new char[bytesLen];
-	}
-	// source: xerces' UTF8Reader.copyMultiByteCharData() 
-	int j=bytesOff;
-	int charOff=0;
-	int end=j+bytesLen;
-	while( j< end ) {
-	    int b0=(int)bytes[j];
-	    
-	    if( b0 < 0x80 ) { 
-		conversionBuff[charOff]=(char)b0;
-		charOff++;
-		j++;
-		continue;
-	    }
-	    // 2 byte ?
-	    if( j++ >= end ) {
-		// ok, just ignore - we could throw exception
-		return -1;
-	    }
-	    int b1=(int)bytes[j];
-	    
-	    // ok, let's the fun begin - we're handling UTF8
-	    if ((0xe0 & b0) == 0xc0) { // 110yyyyy 10xxxxxx (0x80 to 0x7ff)
-		int ch = ((0x1f & b0)<<6) + (0x3f & b1);
-		conversionBuff[charOff]=(char)ch;
-		charOff++;
-		continue;
-	    }
-	    
-	    if( j++ >= end ) 
-		return -1;
-	    int b2=(int)bytes[j];
-	    
-	    if( (b0 & 0xf0 ) == 0xe0 ) {
-		if ((b0 == 0xED && b1 >= 0xA0) ||
-		    (b0 == 0xEF && b1 == 0xBF && b2 >= 0xBE)) {
-		    return -1;
-		}
-
-		int ch = ((0x0f & b0)<<12) + ((0x3f & b1)<<6) + (0x3f & b2);
-		conversionBuff[charOff]=(char)ch;
-		charOff++;
-		continue;
-	    }
-
-	    if( j++ >= end ) 
-		return -1;
-	    int b3=(int)bytes[j];
-
-	    if (( 0xf8 & b0 ) == 0xf0 ) {
-		if (b0 > 0xF4 || (b0 == 0xF4 && b1 >= 0x90))
-		    return -1;
-		int ch = ((0x0f & b0)<<18) + ((0x3f & b1)<<12) +
-		    ((0x3f & b2)<<6) + (0x3f & b3);
-
-		if (ch < 0x10000) {
-		    conversionBuff[charOff]=(char)ch;
-		    charOff++;
-		} else {
-		    conversionBuff[charOff]=(char)(((ch-0x00010000)>>10)+
-						   0xd800);
-		    charOff++;
-		    conversionBuff[charOff]=(char)(((ch-0x00010000)&0x3ff)+
-						   0xdc00);
-		    charOff++;
-		}
-		continue;
-	    } else {
-		return -1;
-	    }
-	}
-	return charOff;
-    }
-    
-    public int getInt()
-    {
-	return Ascii.parseInt(bytes, bytesOff,bytesLen);
-    }
-
-    // --------------------
-    
     /**
      * Returns the message bytes.
      */
     public byte[] getBytes() {
-	return bytes;
+	return getBuffer();
+    }
+
+    /**
+     * Returns the message bytes.
+     */
+    public byte[] getBuffer() {
+	return buff;
     }
 
     /**
      * Returns the start offset of the bytes.
+     * For output this is the end of the buffer.
      */
+    public int getStart() {
+	return start;
+    }
+    
     public int getOffset() {
-	return bytesOff;
+	return getStart();
+    }
+
+    public void setOffset(int off) {
+	start=off;
     }
 
     /**
      * Returns the length of the bytes.
+     * XXX need to clean this up
      */
     public int getLength() {
-	return bytesLen;
+	return end-start;
+    }
+
+    /** Maximum amount of data in this buffer.
+     *
+     *  If -1 or not set, the buffer will grow undefinitely.
+     *  Can be smaller than the current buffer size ( which will not shrink ).
+     *  When the limit is reached, the buffer will be flushed ( if out is set )
+     *  or throw exception.
+     */
+    public void setLimit(int limit) {
+	this.limit=limit;
+    }
+    
+    public int getLimit() {
+	return limit;
+    }
+
+    /** When the buffer is full, write the data to the output channel.
+     * 	Also used when large amount of data is appended.
+     *
+     *  If not set, the buffer will grow to the limit.
+     */
+    public void setByteOutputChannel(ByteOutputChannel out) {
+	this.out=out;
+    }
+
+    public int getEnd() {
+	return end;
+    }
+
+    public void setEnd( int i ) {
+	end=i;
+    }
+
+    // -------------------- Adding data to the buffer --------------------
+    public void append( char c )
+	throws IOException
+    {
+	append( (byte)c);
+    }
+    
+    public void append( byte b )
+	throws IOException
+    {
+	makeSpace( 1 );
+
+	// couldn't make space
+	if( limit >0 && end >= limit ) {
+	    flushBuffer();
+	}
+	buff[end++]=b;
+    }
+    
+    public void append( ByteChunk src )
+	throws IOException
+    {
+	append( src.getBytes(), src.getOffset(), src.getLength());
+    }
+    
+    /** Add data to the buffer
+     */
+    public void append( byte src[], int off, int len )
+	throws IOException
+    {
+	// will grow, up to limit
+	makeSpace( len );
+
+	// if we don't have limit: makeSpace can grow as it wants
+	if( limit < 0 ) {
+	    // assert: makeSpace made enough space
+	    System.arraycopy( src, off, buff, end, len );
+	    end+=len;
+	    return;
+	}
+	
+	// if we have limit and we're below
+	if( len <= limit - end ) {
+	    // makeSpace will grow the buffer to the limit,
+	    // so we have space
+	    System.arraycopy( src, off, buff, end, len );
+	    end+=len;
+	    return;
+	}
+
+	// need more space than we can afford, need to flush
+	// buffer
+
+	// the buffer is already at ( or bigger than ) limit
+	
+	// Optimization:
+	// If len-avail < length ( i.e. after we fill the buffer with
+	// what we can, the remaining will fit in the buffer ) we'll just
+	// copy the first part, flush, then copy the second part - 1 write
+	// and still have some space for more. We'll still have 2 writes, but
+	// we write more on the first.
+
+	if( len + end < 2 * limit ) {
+	    /* If the request length exceeds the size of the output buffer,
+	       flush the output buffer and then write the data directly.
+	       We can't avoid 2 writes, but we can write more on the second
+	    */
+	    int avail=limit-end;
+	    System.arraycopy(src, off, buff, end, avail);
+	    end += avail;
+	    
+	    flushBuffer();
+	    
+	    System.arraycopy(src, off+avail, buff, end, len - avail);
+	    end+= len - avail;
+	    
+	} else {	// len > buf.length + avail
+	    // long write - flush the buffer and write the rest
+	    // directly from source
+	    flushBuffer();
+	    
+	    out.realWriteBytes( src, off, len );
+	}
+    }
+
+    public void flushBuffer()
+	throws IOException
+    {
+	//assert out!=null
+	if( out==null ) {
+	    throw new IOException( "Buffer overflow, no sink " + limit + " " +
+				   buff.length  );
+	}
+	out.realWriteBytes( buff, start, end-start );
+	end=start;
+    }
+
+    /** Make space for len chars. If len is small, allocate
+     *	a reserve space too. Never grow bigger than limit.
+     */
+    private void makeSpace(int count)
+    {
+	byte[] tmp = null;
+
+	int newSize;
+	int desiredSize=end + count;
+
+	// Can't grow above the limit
+	if( limit > 0 &&
+	    desiredSize > limit -start  ) {
+	    desiredSize=limit -start;
+	}
+
+	if( buff==null ) {
+	    if( desiredSize < 256 ) desiredSize=256; // take a minimum
+	    buff=new byte[desiredSize];
+	}
+	
+	// limit < buf.length ( the buffer is already big )
+	// or we already have space XXX
+	if( desiredSize < buff.length ) {
+	    return;
+	}
+	// grow in larger chunks
+	if( desiredSize < 2 * buff.length ) {
+	    newSize= buff.length * 2;
+	    if( limit >0 &&
+		newSize > limit ) newSize=limit;
+	    tmp=new byte[newSize];
+	} else {
+	    newSize= buff.length * 2 + count ;
+	    if( limit > 0 &&
+		newSize > limit ) newSize=limit;
+	    tmp=new byte[newSize];
+	}
+	
+	System.arraycopy(buff, start, tmp, 0, end-start);
+	buff = tmp;
+	tmp = null;
+	start=0;
+	end=end-start;
+    }
+    
+    // -------------------- Conversion and getters --------------------
+
+    public String toString() {
+	if (null == buff) {
+	    return null;
+	}
+	String strValue=null;
+	try {
+	    if( enc==null ) enc="UTF8";
+	    return new String( buff, start, end-start, enc );
+	    /*
+	      Does not improve the speed too much on most systems,
+	      it's safer to use the "clasical" new String().
+
+	      Most overhead is in creating char[] and copying,
+	      the internal implementation of new String() is very close to
+	      what we do. The decoder is nice for large buffers and if
+	      we don't go to String ( so we can take advantage of reduced GC)
+
+	      // Method is commented out, in:
+	      return B2CConverter.decodeString( enc );
+	    */
+	} catch (java.io.IOException e) {
+	    return null;  // XXX 
+	}
+    }
+
+    public int getInt()
+    {
+	return Ascii.parseInt(buff, start,end-start);
     }
 
     // -------------------- equals --------------------
@@ -301,12 +443,12 @@ public final class ByteChunk implements Cloneable, Serializable {
 	// XXX ENCODING - this only works if encoding is UTF8-compat
 	// ( ok for tomcat, where we compare ascii - header names, etc )!!!
 	
-	byte[] b = bytes;
-	int blen = bytesLen;
+	byte[] b = buff;
+	int blen = end-start;
 	if (b == null || blen != s.length()) {
 	    return false;
 	}
-	int boff = bytesOff;
+	int boff = start;
 	for (int i = 0; i < blen; i++) {
 	    if (b[boff++] != s.charAt(i)) {
 		return false;
@@ -321,12 +463,12 @@ public final class ByteChunk implements Cloneable, Serializable {
      * @return true if the comparison succeeded, false otherwise
      */
     public boolean equalsIgnoreCase(String s) {
-	byte[] b = bytes;
-	int blen = bytesLen;
+	byte[] b = buff;
+	int blen = end-start;
 	if (b == null || blen != s.length()) {
 	    return false;
 	}
-	int boff = bytesOff;
+	int boff = start;
 	for (int i = 0; i < blen; i++) {
 	    if (Ascii.toLower(b[boff++]) != Ascii.toLower(s.charAt(i))) {
 		return false;
@@ -340,14 +482,14 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
     
     public boolean equals( byte b2[], int off2, int len2) {
-	byte b1[]=bytes;
+	byte b1[]=buff;
 	if( b1==null && b2==null ) return true;
 
-	int len=bytesLen;
+	int len=end-start;
 	if ( len2 != len || b1==null || b2==null ) 
 	    return false;
 		
-	int off1 = bytesOff;
+	int off1 = start;
 
 	while ( len-- > 0) {
 	    if (b1[off1++] != b2[off2++]) {
@@ -363,14 +505,14 @@ public final class ByteChunk implements Cloneable, Serializable {
     
     public boolean equals( char c2[], int off2, int len2) {
 	// XXX works only for enc compatible with ASCII/UTF !!!
-	byte b1[]=bytes;
+	byte b1[]=buff;
 	if( c2==null && b1==null ) return true;
 	
-	if (b1== null || c2==null || bytesLen != len2 ) {
+	if (b1== null || c2==null || end-start != len2 ) {
 	    return false;
 	}
-	int off1 = bytesOff;
-	int len=bytesLen;
+	int off1 = start;
+	int len=end-start;
 	
 	while ( len-- > 0) {
 	    if ( (char)b1[off1++] != c2[off2++]) {
@@ -386,12 +528,12 @@ public final class ByteChunk implements Cloneable, Serializable {
      */
     public boolean startsWith(String s) {
 	// Works only if enc==UTF
-	byte[] b = bytes;
+	byte[] b = buff;
 	int blen = s.length();
-	if (b == null || blen > bytesLen) {
+	if (b == null || blen > end-start) {
 	    return false;
 	}
-	int boff = bytesOff;
+	int boff = start;
 	for (int i = 0; i < blen; i++) {
 	    if (b[boff++] != s.charAt(i)) {
 		return false;
@@ -405,12 +547,12 @@ public final class ByteChunk implements Cloneable, Serializable {
      * @param s the string
      */
     public boolean startsWithIgnoreCase(String s, int pos) {
-	byte[] b = bytes;
+	byte[] b = buff;
 	int len = s.length();
-	if (b == null || len+pos > bytesLen) {
+	if (b == null || len+pos > end-start) {
 	    return false;
 	}
-	int off = bytesOff+pos;
+	int off = start+pos;
 	for (int i = 0; i < len; i++) {
 	    if (Ascii.toLower( b[off++] ) != Ascii.toLower( s.charAt(i))) {
 		return false;
@@ -418,85 +560,55 @@ public final class ByteChunk implements Cloneable, Serializable {
 	}
 	return true;
     }
-    
 
+    public int indexOf( String src, int srcOff, int srcLen, int myOff ) {
+	char first=src.charAt( srcOff );
 
-    // based on ap_unescape_url ( util.c, Apache2.0 )
-    public int unescapeURL()
-    {
-	int end=bytesOff+ bytesLen;
-	int idx= indexOf( bytes, bytesOff, end, '%' );
-	if( idx<0) return 0;
-
-	for( int j=idx; j<end; j++, idx++ ) {
-	    if( bytes[ j ] != '%' ) {
-		bytes[idx]=bytes[j];
-	    } else {
-		// read next 2 digits
-		if( j+2 >= end ) {
-		    // invalid
-		    return 400; // BAD_REQUEST
-		}
-		byte b1= bytes[j+1];
-		byte b2=bytes[j+2];
-		if( !isHexDigit( b1 ) || ! isHexDigit(b2 ))
-		    return 400;
-		
-		j+=2;
-		int res=x2c( b1, b2 );
-		if( res=='/' || res=='\0' )
-		    return 400;
-		bytes[idx]=(byte)res;
-		bytesLen-=2;
+	// Look for first char 
+	int srcEnd=srcOff + srcLen;
+	
+	for( int i=myOff; i< end - srcLen ; i++ ) {
+	    if( buff[i] != first ) continue;
+	    // found first char, now look for a match
+	    int myPos=i+1;
+	    for( int srcPos=srcOff; srcPos< srcEnd; ) {
+		if( buff[myPos++] != src.charAt( srcPos++ ))
+		    break;
+		if( srcPos==srcEnd ) return i; // found it
 	    }
 	}
-	return 0;
-    }
-
-    public static boolean isHexDigit( int c ) {
-	return ( ( c>='0' && c<='9' ) ||
-		 ( c>='a' && c<='f' ) ||
-		 ( c>='A' && c<='F' ));
+	return -1;
     }
     
-    public static int x2c( byte b1, byte b2 ) {
-	int digit= (b1>='A') ? ( (b1 & 0xDF)-'A') + 10 :
-	    (b1 -'0');
-	digit*=16;
-	digit +=(b2>='A') ? ( (b2 & 0xDF)-'A') + 10 :
-	    (b2 -'0');
-	return digit;
-    }
-
     // -------------------- Hash code  --------------------
 
     // normal hash. 
     public int hash() {
-	return hashBytes( bytes, bytesOff, bytesLen);
+	return hashBytes( buff, start, end-start);
     }
 
     // hash ignoring case
     public int hashIgnoreCase() {
-	return hashBytesIC( bytes, bytesOff, bytesLen );
+	return hashBytesIC( buff, start, end-start );
     }
 
-    private static int hashBytes( byte bytes[], int bytesOff, int bytesLen ) {
-	int max=bytesOff+bytesLen;
-	byte bb[]=bytes;
+    private static int hashBytes( byte buff[], int start, int bytesLen ) {
+	int max=start+bytesLen;
+	byte bb[]=buff;
 	int code=0;
-	for (int i = bytesOff; i < max ; i++) {
+	for (int i = start; i < max ; i++) {
 	    code = code * 37 + bb[i];
 	}
 	return code;
     }
 
-    private static int hashBytesIC( byte bytes[], int bytesOff,
+    private static int hashBytesIC( byte bytes[], int start,
 				    int bytesLen )
     {
-	int max=bytesOff+bytesLen;
+	int max=start+bytesLen;
 	byte bb[]=bytes;
 	int code=0;
-	for (int i = bytesOff; i < max ; i++) {
+	for (int i = start; i < max ; i++) {
 	    code = code * 37 + Ascii.toLower(bb[i]);
 	}
 	return code;
@@ -507,7 +619,7 @@ public final class ByteChunk implements Cloneable, Serializable {
      * @param s the string
      */
     public int indexOf(char c, int starting) {
-	return indexOf( bytes, bytesOff+starting, bytesOff+bytesLen, c);
+	return indexOf( buff, start+starting, end, c);
     }
 
     public static int  indexOf( byte bytes[], int off, int end, char qq )
@@ -522,7 +634,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	return -1;
     }
 
-        /** Find a character, no side effects.
+    /** Find a character, no side effects.
      *  @returns index of char if found, -1 if not
      */
     public static int findChar( byte buf[], int start, int end, char c ) {

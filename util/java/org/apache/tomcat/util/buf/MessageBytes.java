@@ -62,9 +62,7 @@ package org.apache.tomcat.util.buf;
 import java.text.*;
 import java.util.*;
 import java.io.Serializable;
-
-// XXX XXX Need StringBuffer support !
-
+import java.io.IOException;
 
 /**
  * This class is used to represent a subarray of bytes in an HTTP message.
@@ -74,8 +72,6 @@ import java.io.Serializable;
  * @author Costin Manolache
  */
 public final class MessageBytes implements Cloneable, Serializable {
-    public static final String DEFAULT_CHAR_ENCODING="8859_1";
-    
     // primary type ( whatever is set as original value )
     private int type = T_NULL;
     
@@ -97,14 +93,6 @@ public final class MessageBytes implements Cloneable, Serializable {
     private String strValue;
     private boolean hasStrValue=false;
 
-    // efficient int and date
-    // XXX used only for headers - shouldn't be
-    // stored here.
-    private int intValue;
-    private boolean hasIntValue=false;
-    private Date dateValue;
-    private boolean hasDateValue=false;
-    
     /**
      * Creates a new, uninitialized MessageBytes object.
      */
@@ -180,31 +168,6 @@ public final class MessageBytes implements Cloneable, Serializable {
 	type=T_STR;
     }
 
-    public void setTime(long t) {
-	// XXX replace it with a byte[] tool
-	recycle();
-	if( dateValue==null)
-	    dateValue=new Date(t);
-	else
-	    dateValue.setTime(t);
-	strValue=DateTool.rfc1123Format.format(dateValue);
-	hasStrValue=true;
-	hasDateValue=true;
-	type=T_STR;   
-    }
-
-    /** Set the buffer to the representation of an int 
-     */
-    public void setInt(int i) {
-	// XXX replace it with a byte[] tool
-	recycle();
-	strValue=String.valueOf( i );
-	intValue=i;
-	hasIntValue=true;
-	hasStrValue=true;
-    	type=T_STR;
-    }
-
     // -------------------- Conversion and getters --------------------
     public String toString() {
 	if( hasStrValue ) return strValue;
@@ -220,42 +183,7 @@ public final class MessageBytes implements Cloneable, Serializable {
 	}
 	return null;
     }
-    
-    public long getTime()
-    {
-     	if( hasDateValue ) {
-	    if( dateValue==null) return -1;
-	    return dateValue.getTime();
-     	}
-	
-     	long l=DateTool.parseDate( this );
-     	if( dateValue==null)
-     	    dateValue=new Date(l);
-     	else
-     	    dateValue.setTime(l);
-     	hasDateValue=true;
-     	return l;
-    }
-    
 
-    /** Convert the buffer to an int, cache the value
-     */ 
-    public int getInt() 
-    {
-	if( hasIntValue )
-	    return intValue;
-	
-	switch (type) {
-	case T_BYTES:
-	    intValue=byteC.getInt();
-	    break;
-	default:
-	    intValue=Integer.parseInt(toString());
-	}
-	hasIntValue=true;
-	return intValue;
-    }
-    
     //----------------------------------------
     public int getType() {
 	return type;
@@ -270,6 +198,10 @@ public final class MessageBytes implements Cloneable, Serializable {
 
     public CharChunk getCharChunk() {
 	return charC;
+    }
+
+    public String getString() {
+	return strValue;
     }
 
     // Convert to bytes !!!
@@ -300,6 +232,7 @@ public final class MessageBytes implements Cloneable, Serializable {
 	if(type==T_STR)
 	    return strValue.length();
 	toString();
+	if( strValue==null ) return 0;
 	return strValue.length();
     }
 
@@ -345,19 +278,6 @@ public final class MessageBytes implements Cloneable, Serializable {
 	}
     }
 
-    public int unescapeURL() {
-	switch (type) {
-	case T_STR:
-	    if( strValue==null ) return 0;
-	    strValue=CharChunk.unescapeURL( strValue );
-	case T_CHARS:
-	    return charC.unescapeURL();
-	case T_BYTES:
-	    return byteC.unescapeURL();
-	}
-	return 0;
-    }
-    
     public boolean equals(MessageBytes mb) {
 	switch (type) {
 	case T_STR:
@@ -498,6 +418,12 @@ public final class MessageBytes implements Cloneable, Serializable {
 	return strValue.indexOf( s, starting );
     }
     
+    // Inefficient initial implementation. Will be replaced on the next
+    // round of tune-up
+    public int indexOf(String s) {
+	return indexOf( s, 0 );
+    }
+    
     public int indexOfIgnoreCase(String s, int starting) {
 	toString();
 	String upper=strValue.toUpperCase();
@@ -522,5 +448,113 @@ public final class MessageBytes implements Cloneable, Serializable {
 	}
     }
 
+    /** Copy the src into this MessageBytes, allocating more space if
+     *  needed
+     */
+    public void duplicate( MessageBytes src ) throws IOException
+    {
+	switch( src.getType() ) {
+	case MessageBytes.T_BYTES:
+	    type=T_BYTES;
+	    ByteChunk bc=src.getByteChunk();
+	    byteC.allocate( bc.getLength(), -1 );
+	    byteC.append( bc );
+	    break;
+	case MessageBytes.T_CHARS:
+	    type=T_CHARS;
+	    CharChunk cc=src.getCharChunk();
+	    charC.allocate( cc.getLength(), -1 );
+	    charC.append( cc );
+	    break;
+	case MessageBytes.T_STR:
+	    type=T_STR;
+	    String sc=src.getString();
+	    this.setString( sc );
+	    break;
+	}
+    }
 
+    // -------------------- Deprecated code --------------------
+    // efficient int and date
+    // XXX used only for headers - shouldn't be
+    // stored here.
+    private int intValue;
+    private boolean hasIntValue=false;
+    private Date dateValue;
+    private boolean hasDateValue=false;
+    
+    /**
+     *  @deprecated The buffer are general purpose, caching for headers should
+     *  be done in headers
+     */
+    public void setTime(long t) {
+	// XXX replace it with a byte[] tool
+	recycle();
+	if( dateValue==null)
+	    dateValue=new Date(t);
+	else
+	    dateValue.setTime(t);
+	strValue=DateTool.format1123(dateValue);
+	hasStrValue=true;
+	hasDateValue=true;
+	type=T_STR;   
+    }
+
+    /** Set the buffer to the representation of an int
+     *  @deprecated The buffer are general purpose, caching for headers should
+     *  be done in headers
+     */
+    public void setInt(int i) {
+	// XXX replace it with a byte[] tool
+	recycle();
+	strValue=String.valueOf( i );
+	intValue=i;
+	hasIntValue=true;
+	hasStrValue=true;
+    	type=T_STR;
+    }
+
+
+    /**
+     *  @deprecated The buffer are general purpose, caching for headers should
+     *  be done in headers
+     */
+    public  long getTime()
+    {
+     	if( hasDateValue ) {
+	    if( dateValue==null) return -1;
+	    return dateValue.getTime();
+     	}
+	
+     	long l=DateTool.parseDate( this );
+     	if( dateValue==null)
+     	    dateValue=new Date(l);
+     	else
+     	    dateValue.setTime(l);
+     	hasDateValue=true;
+     	return l;
+    }
+    
+
+    // Used for headers conversion
+    /** Convert the buffer to an int, cache the value
+     *  @deprecated The buffer are general purpose, caching for headers should
+     *  be done in headers
+     */ 
+    public int getInt() 
+    {
+	if( hasIntValue )
+	    return intValue;
+	
+	switch (type) {
+	case T_BYTES:
+	    intValue=byteC.getInt();
+	    break;
+	default:
+	    intValue=Integer.parseInt(toString());
+	}
+	hasIntValue=true;
+	return intValue;
+    }
+    
 }

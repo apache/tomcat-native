@@ -65,7 +65,10 @@ import java.util.*;
 import java.text.*;
 
 /**
- * 
+ * Util to process the "Accept-Language" header. Used by facade to implement
+ * getLocale() and by StaticInterceptor.
+ *
+ * Not optimized - it's very slow.
  * 
  * @author James Duncan Davidson [duncan@eng.sun.com]
  * @author James Todd [gonzo@eng.sun.com]
