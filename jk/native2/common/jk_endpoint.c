@@ -112,7 +112,7 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
 
     ep->stats->reqCnt=0;
     ep->stats->errCnt=0;
-#ifdef HAVE_APR
+#ifdef HAS_APR
     ep->stats->maxTime=0;
     ep->stats->totalTime=0;
 #endif
@@ -149,7 +149,7 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     e->sd=-1;
     e->recoverable=JK_TRUE;
     e->cPool=pool->create(env, pool, HUGE_POOL_SIZE );
-
+    e->stats = NULL;
     e->channelData = NULL;
     e->currentRequest = NULL;
     epId=atoi( result->localName );
