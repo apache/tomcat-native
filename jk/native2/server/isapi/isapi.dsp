@@ -145,6 +145,10 @@ SOURCE=..\..\common\jk_logger_file.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\jk_logger_win32.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\common\jk_map.c
 # End Source File
 # Begin Source File
@@ -323,6 +327,39 @@ SOURCE=..\..\include\jk_workerEnv.h
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+# Begin Source File
+
+SOURCE=.\jk_logger_win32_message.mc
+
+!IF  "$(CFG)" == "isapi - Win32 Release"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Creating resources from $(InputPath)
+InputPath=.\jk_logger_win32_message.mc
+
+"jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	mc $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "isapi - Win32 Debug"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Creating resources from $(InputPath)
+InputPath=.\jk_logger_win32_message.mc
+
+"jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	mc $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\jk_logger_win32_message.rc
+# End Source File
 # End Group
 # End Target
 # End Project
