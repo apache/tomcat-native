@@ -31,7 +31,7 @@ static void *jk_pool_dyn_alloc(jk_pool_t *p,
 
 void jk_open_pool(jk_pool_t *p,
                   jk_pool_atom_t *buf,
-                  unsigned size)
+                  size_t size)
 {
     p->pos  = 0;
     p->size = size;
@@ -44,20 +44,18 @@ void jk_open_pool(jk_pool_t *p,
 
 void jk_close_pool(jk_pool_t *p)
 {
-    if(p) {
-        jk_reset_pool(p);
-        if(p->dynamic) {
-            free(p->dynamic);
-        }
+    jk_reset_pool(p);
+    if (p->dynamic) {
+        free(p->dynamic);
     }
 }
 
 void jk_reset_pool(jk_pool_t *p)
 {
-    if(p && p->dyn_pos && p->dynamic) {
-        unsigned i;
-        for(i = 0 ; i < p->dyn_pos ; i++) {
-            if(p->dynamic[i]) {
+    if (p->dyn_pos && p->dynamic) {
+        size_t i;
+        for (i = 0 ; i < p->dyn_pos ; i++) {
+            if (p->dynamic[i]) {
                 free(p->dynamic[i]);
             }
         }
@@ -67,27 +65,17 @@ void jk_reset_pool(jk_pool_t *p)
     p->pos      = 0;
 }
 
-void *jk_pool_alloc(jk_pool_t *p, 
-                    size_t size)
+void *jk_pool_alloc(jk_pool_t *p,  size_t size)
 {
     void *rc = NULL;
 
-    if(p && size > 0) {
-        /* Round size to the upper mult of 8 (or 16 on iSeries) */
-	size--;
-#ifdef AS400
-        size /= 16;
-        size = (size + 1) * 16;
-#else
-        size /= 8;
-        size = (size + 1) * 8;
-#endif
-        if((p->size - p->pos) >= size) {
-            rc = &(p->buf[p->pos]);
-            p->pos += size;
-        } else {
-            rc = jk_pool_dyn_alloc(p, size);
-        }
+    size = JK_ALIGN_DEFAULT(size);
+    if ((p->size - p->pos) >= size) {
+        rc = &(p->buf[p->pos]);
+        p->pos += size;
+    }
+    else {
+        rc = jk_pool_dyn_alloc(p, size);
     }
 
     return rc;
@@ -115,7 +103,7 @@ void *jk_pool_realloc(jk_pool_t *p,
 void *jk_pool_strdup(jk_pool_t *p, 
                      const char *s)
 {
-    char *rc = NULL;
+    void *rc = NULL;
     if(s && p) {
         size_t size = strlen(s);
     
@@ -136,13 +124,13 @@ void *jk_pool_strdup(jk_pool_t *p,
 void jk_dump_pool(jk_pool_t *p, 
                   FILE *f)
 {
-    fprintf(f, "Dumping for pool [%x]\n", p);
+    fprintf(f, "Dumping for pool [%p]\n", p);
     fprintf(f, "size             [%d]\n", p->size);
     fprintf(f, "pos              [%d]\n", p->pos);
-    fprintf(f, "buf              [%x]\n", p->buf);  
+    fprintf(f, "buf              [%p]\n", p->buf);  
     fprintf(f, "dyn_size         [%d]\n", p->dyn_size);
     fprintf(f, "dyn_pos          [%d]\n", p->dyn_pos);
-    fprintf(f, "dynamic          [%x]\n", p->dynamic);
+    fprintf(f, "dynamic          [%p]\n", p->dynamic);
 
     fflush(f);
 }
@@ -150,13 +138,14 @@ void jk_dump_pool(jk_pool_t *p,
 static void *jk_pool_dyn_alloc(jk_pool_t *p, 
                                size_t size)
 {
-    void *rc = NULL;
+    void *rc;
 
-    if(p->dyn_size == p->dyn_pos) {
-        unsigned new_dyn_size = p->dyn_size + DEFAULT_DYNAMIC;
+    if (p->dyn_size == p->dyn_pos) {
+        size_t new_dyn_size = p->dyn_size * 2 + DEFAULT_DYNAMIC;
         void **new_dynamic = (void **)malloc(new_dyn_size * sizeof(void *));
-        if(new_dynamic) {
-            if(p->dynamic) {
+        if (new_dynamic) {
+            if (p->dynamic) {
+                /* Copy old dynamic slots */
                 memcpy(new_dynamic, 
                        p->dynamic, 
                        p->dyn_size * sizeof(void *));
@@ -166,14 +155,15 @@ static void *jk_pool_dyn_alloc(jk_pool_t *p,
 
             p->dynamic = new_dynamic;
             p->dyn_size = new_dyn_size;
-        } else {
+        } 
+        else {
             return NULL;
         }
     } 
 
     rc = p->dynamic[p->dyn_pos] = malloc(size);
-    if(p->dynamic[p->dyn_pos]) {
-        p->dyn_pos ++;
+    if (p->dynamic[p->dyn_pos]) {
+        p->dyn_pos++;
     }
 
     return rc;

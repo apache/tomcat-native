@@ -64,11 +64,26 @@ extern "C" {
 #elif defined(IRIX)
     typedef long long   jk_pool_atom_t;
 #elif defined(AS400)
-    typedef void *	jk_pool_atom_t;
+    typedef void *  jk_pool_atom_t;
 #else
     typedef long long   jk_pool_atom_t;
 #endif
 
+/**
+ * Alignment macros
+ */
+
+/* JK_ALIGN() is only to be used to align on a power of 2 boundary */
+#define JK_ALIGN(size, boundary) \
+    (((size) + ((boundary) - 1)) & ~((boundary) - 1))
+
+/** Default alignment */
+#ifdef AS400
+#define JK_ALIGN_DEFAULT(size) JK_ALIGN(size, 16)
+#else
+#define JK_ALIGN_DEFAULT(size) JK_ALIGN(size, 8)
+#endif
+ 
 /* 
  * Pool size in number of pool atoms.
  */
@@ -77,22 +92,20 @@ extern "C" {
 #define BIG_POOL_SIZE   2*SMALL_POOL_SIZE   /* Bigger 1K atom pool. */
 #define HUGE_POOL_SIZE  2*BIG_POOL_SIZE     /* Huge 2K atom pool. */
 
-  /** XXX Move it to impl, make it incomplete 
-   */
-struct jk_pool {
-    unsigned size;      
-    unsigned pos;       
-    char     *buf;      
-    unsigned dyn_size;  
-    unsigned dyn_pos;   
-    void     **dynamic; 
+typedef struct jk_pool_t jk_pool_t;
+/** jk pool structure */
+struct jk_pool_t {
+    size_t  size;      
+    size_t  pos;       
+    char    *buf;      
+    size_t  dyn_size;  
+    size_t  dyn_pos;   
+    void    **dynamic; 
 };
-
-typedef struct jk_pool jk_pool_t;
 
 void jk_open_pool(jk_pool_t *p,
                   jk_pool_atom_t *buf,
-                  unsigned size);
+                  size_t size);
 
 void jk_close_pool(jk_pool_t *p);
 
