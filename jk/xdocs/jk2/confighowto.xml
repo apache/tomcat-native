@@ -58,4 +58,60 @@ Start the Tomcat and Web server and browse to the <a>http://localhost/examples/<
 </p>
 </section>
 
+<section name="Minimum JNI Configuration">
+<p>
+    Minimum JNI configuration is the simplest one to make the Tomcat working
+    from inside the web server as inprocess. The only comunication channel used
+    is JNI. The JK2 will register all the native calls by itself, so there is
+    no need to specify the native library on Java side.
+</p>
+<p>
+jk2.properties:
+<source>
+# Add the apr and channelJni to the list of handlers
+handler.list=apr,request,container,channelJni
+# The native libraries will be registered by JK2
+apr.jniModeSo=inprocess
+</source>
+</p>
+<p>
+workers2.properties:
+<source>
+# Define the comunication channel 
+[channel.jni:jni]
+info=The jni channel, used if tomcat is started inprocess
+
+# Define the parameters for the Java Virtual Machine
+[vm:]
+info=Parameters used to load a JVM in the server process
+OPT=-Djava.class.path=${TOMCAT_HOME}/lib/tomcat-jni.jar;${TOMCAT_HOME}/lib/tomcat.jar
+OPT=-Dtomcat.home=${TOMCAT_HOME}
+OPT=-Dcatalina.home=${TOMCAT_HOME}
+OPT=-Xmx128M
+
+# JNI worker startup handler
+[worker.jni:onStartup]
+info=Command to be executed by the VM on startup. This one will start tomcat.
+class=org/apache/jk/apr/TomcatStarter
+ARG=start
+stdout=${serverRoot}/logs/stdout.log
+stderr=${serverRoot}/logs/stderr.log
+
+# JNI worker shutdown handler
+[worker.jni:onShutdown]
+info=Command to be executed by the VM on shutdown. This one will stop tomcat.
+class=org/apache/jk/apr/TomcatStarter
+ARG=stop
+
+# Map the Tomcat examples webapp to the Web server uri space
+[uri:/examples/*]
+info=Map the whole webapp
+</source>
+</p>
+<p>
+Start the Web server and browse to the <a>http://localhost/examples/</a>
+</p>
+
+</section>
+
 </document>
