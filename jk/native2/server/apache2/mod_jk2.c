@@ -236,14 +236,11 @@ static void *jk2_merge_dir_config(apr_pool_t *p, void *basev, void *addv)
     jk_uriEnv_t *new = (jk_uriEnv_t *)apr_pcalloc(p,sizeof(jk_uriEnv_t));
     
     
-    /* XXX */
-    fprintf(stderr, "XXX Merged dir config %p %p %s %s\n",
-            base, new, base->uri, add->uri);
+    if( base->mbean->debug > 0 ) {
+        fprintf(stderr, "mod_jk2:mergeDirConfig() Merged dir config %p %p %s %s\n",
+                base, new, base->uri, add->uri);
+    }
 
-/*     if( add->webapp == NULL ) { */
-/*         add->webapp=base->webapp; */
-/*     } */
-    
     return add;
 }
 
@@ -627,9 +624,9 @@ static int jk2_translate(request_rec *r)
      * but that's too complex for now.
      */
     if( uriEnv!= NULL && uriEnv->workerName != NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "PerDir mapping  %s=%s\n",
-                      r->uri, uriEnv->workerName);
+        if( uriEnv->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "PerDir mapping  %s=%s\n",r->uri, uriEnv->workerName);
         
         ap_set_module_config( r->request_config, &jk2_module, uriEnv );        
         r->handler=JK_HANDLER;
