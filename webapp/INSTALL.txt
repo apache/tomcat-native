@@ -1,0 +1,115 @@
+Installing mod_webapp and using it with Apache 1.3
+--------------------------------------------------
+
+Once you have successfully built the mod_webapp DSO as described in the
+README.txt file coming with the sources, installing the module is pretty
+easy.
+
+First of all, copy the resulting mod_webapp.so file you will find in this
+directory into your Apache 1.3 "libexec" directory (that directory where
+all DSO modules for Apache reside).
+
+Once you have done that, edit your "httpd.conf" configuration file and
+add a few lines to load that module at startup:
+
+    LoadModule webapp_module libexec/mod_webapp.so
+and
+    AddModule mod_webapp.c
+
+Looking at the default "httpd.conf" file coming with Apache 1.3, I usually
+add the "LoadModule ..." line at the end of all pre-written and commented out
+"LoadModule" directives, and my "AddModule ..." directive at the end of all
+commented out "AddModule" directives. My "httpd.conf" file looks something
+like this:
+
+    [...]
+    #LoadModule unique_id_module  libexec/mod_unique_id.so
+    #LoadModule dav_module        libexec/libdav.so
+    #LoadModule ssl_module        libexec/libssl.so
+    LoadModule webapp_module      libexec/mod_webapp.so
+    [...]
+    ClearModuleList
+    [...]
+    #AddModule  mod_unique_id.c
+    #AddModule  mod_dav.c
+    #AddModule  mod_ssl.c
+    AddModule   mod_webapp.c
+    [...]
+
+Once you've edited your "httpd.conf" in such fashion, it's better to check
+if everything still works within the Apache core. You can test your newly
+constructed configuration by issuing:
+
+    apachectl configtest
+
+The apachectl script comes with your Apache 1.3 distribution. It usually
+lies in /usr/local/apache/bin, but depending on _YOUR_ apache distribution,
+that might change.
+
+Once you verified that "apachectl" reports "Syntax OK" (meaning that all
+modules have been successfully loaded and started), you can start adding your
+web application connections and context into the Apache configurations.
+Back to the "httpd.conf" file, you need to add something like:
+
+    WebAppConnection conn      warp  localhost:8008
+    WebAppDeploy     examples  conn  /examples
+
+In this example, I'm instructing the WebApp connector to connect to the
+servlet container waiting for requests on the current "localhost" host and
+bound to port 8008 (note, this port is the one you specified in your
+"server.xml" file for the "org.apache.catalina.connectors.warp.WarpConnector"
+connector, not your HTTP one).
+
+A brief detailed description of the above-mentioned directives is:
+
+    WebAppConnection [connection name] [provider] [host:port]
+
+        [connection name]
+            A unique name for the connection to be created between Apache
+            and Tomcat.
+
+        [provider]
+            The name of the provider used to connect to the servlet container.
+            Currently only the "warp" provider is available.
+
+        [host:port]
+            The host name and port number to which the WARP connection must
+            attempt to connect. The port is the one you specified in your
+            "server.xml" file for the "...WarpConnector" connector, not your
+            HTTP one.
+
+    WebAppDeploy [application name] [connection name] [url path]
+
+        [application name]
+            The application name as present in your "webapps" directory in
+            Tomcat. For example, if you want to deploy a WAR-based web
+            application, your application name will look something like
+            "myApplication.war".
+
+        [connection name]
+            The name of a previously declared WebAppConnection directive.
+
+        [url path]
+            The URL path where this application will be deployed.
+
+The "WebAppDeploy" directive is scoped around the current host, meaning that
+if you insert it into a "<VirtualHost ...>" tag, your application will be
+deployed only for that particular virtual host. To deploy the same application
+on several virtual hosts, you will have to declare it once inside each
+"<VirtualHost ...>" tag. This, in accordance with the Servlet specification,
+will create a new instance of the web-application per virtual host.
+
+Another directive is available for the WebApp connector. The "WebAppInfo"
+directive will allow you to see the current status of all configured
+connections and deployed applications. To use it, simply add something like:
+
+    WebAppInfo /webapp-info
+
+You can then access the information page hitting your web server for the
+following URL:
+
+    http://server.name:port/webapp-info/
+
+Have fun...
+
+    Pier <pier.fumagalli@sun.com>
