@@ -875,16 +875,16 @@ The examples below show how to get mod_jk in the httpd process.
 
 <subsection name="Installation in Apache-2.0">
 <screen>
-<note> /home/apache20/httpd-2.0.40 is the directory where the httpd-2.0 sources
+<note> /home/apache20/httpd-2.0.43 is the directory where the httpd-2.0 sources
 are located. </note>
-<type>./configure --with-apache=/home/apache20/httpd-2.0.40</type><br/>
+<type>./configure --with-apache=/home/apache20/httpd-2.0.43</type><br/>
 <type>make</type><br/>
 <note>Install the mod_jk library and other files in
-/home/apache20/httpd-2.0.40/modules: </note>
+/home/apache20/httpd-2.0.43/modules: </note>
 <type>make install</type><br/>
 <note> It is not possible to configure Apache directly because the config.m4 of mod_jk must
 be added to the configure of httpd-2.0. </note>
-<type>cd /home/apache20/httpd-2.0.40</type>
+<type>cd /home/apache20/httpd-2.0.43</type>
 <type>sh buildconf</type>
 <type>configure ... --with-mod_jk</type>
 <type>make</type>
@@ -898,15 +898,15 @@ allow static linking of mod_jk.
 
 <subsection name="Installation in Apache-1.3">
 <screen>
-<note> /home/apache/apache_1.3.26 is the directory where the apache-1.3 sources
+<note> /home/apache/apache_1.3.27 is the directory where the apache-1.3 sources
 are located. </note>
-<type>./configure --with-apache=/home/apache/apache_1.3.26</type><br/>
+<type>./configure --with-apache=/home/apache/apache_1.3.27</type><br/>
 <type>make</type><br/>
 <note>Install the libjk library, mod_jk.c, includes and other files in
-/home/apache/apache_1.3.26/src/modules/jk: </note>
+/home/apache/apache_1.3.27/src/modules/jk: </note>
 <type>make install</type><br/>
 <note> Configure in the Apache sources: </note>
-<type>cd /home/apache/apache_1.3.26</type>
+<type>cd /home/apache/apache_1.3.27</type>
 <type>configure ... --enable-module=dir --disable-shared=dir \</type>
 <typenext>              --activate-module=src/modules/jk/libjk.a \</typenext>
 <typenext>              --disable-shared=jk</typenext>
