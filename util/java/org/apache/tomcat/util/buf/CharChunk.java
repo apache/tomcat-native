@@ -261,6 +261,7 @@ public final class CharChunk implements Cloneable, Serializable {
 	    // makeSpace will grow the buffer to the limit,
 	    // so we have space
 	    System.arraycopy( src, off, buff, end, len );
+            
 	    end+=len;
 	    return;
 	}
@@ -368,7 +369,7 @@ public final class CharChunk implements Cloneable, Serializable {
         if ((end - start) == 0) {
             if (in == null)
                 return -1;
-            int n = in.realReadChars(buff, 0, buff.length);
+            int n = in.realReadChars(buff, end, buff.length - end);
             if (n < 0)
                 return -1;
         }
@@ -383,7 +384,7 @@ public final class CharChunk implements Cloneable, Serializable {
         if ((end - start) == 0) {
             if (in == null)
                 return -1;
-            int n = in.realReadChars( buff, 0, buff.length );
+            int n = in.realReadChars( buff, end, buff.length - end);
             if (n < 0)
                 return -1;
         }
@@ -401,7 +402,7 @@ public final class CharChunk implements Cloneable, Serializable {
         if ((end - start) == 0) {
             if (in == null)
                 return -1;
-            int n = in.realReadChars( buff, 0, buff.length );
+            int n = in.realReadChars( buff, end, buff.length - end);
             if (n < 0)
                 return -1;
         }
@@ -441,8 +442,8 @@ public final class CharChunk implements Cloneable, Serializable {
 
 	// Can't grow above the limit
 	if( limit > 0 &&
-	    desiredSize > limit -start  ) {
-	    desiredSize=limit-start;
+	    desiredSize > limit) {
+	    desiredSize=limit;
 	}
 
 	if( buff==null ) {
@@ -452,7 +453,7 @@ public final class CharChunk implements Cloneable, Serializable {
 
 	// limit < buf.length ( the buffer is already big )
 	// or we already have space XXX
-	if( desiredSize <= buff.length ) {
+	if( desiredSize <= buff.length) {
 	    return;
 	}
 	// grow in larger chunks
@@ -468,11 +469,9 @@ public final class CharChunk implements Cloneable, Serializable {
 	    tmp=new char[newSize];
 	}
 	
-	System.arraycopy(buff, start, tmp, 0, end-start);
+	System.arraycopy(buff, start, tmp, start, end-start);
 	buff = tmp;
 	tmp = null;
-	end=end-start;
-	start=0;
     }
     
     // -------------------- Conversion and getters --------------------
