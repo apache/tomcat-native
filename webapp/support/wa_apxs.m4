@@ -86,7 +86,14 @@ AC_DEFUN(
         esac
       ])
     AC_MSG_RESULT([${tempval}])
-    AC_PATH_PROG($1,[${tempval}])
+    if test -x "${tempval}" ; then
+      tempdir=`dirname "${tempval}"`
+      tempfil=`basename "${tempval}"`
+      WA_PATH_DIR([tempdir],[${tempdir}],[apxs])
+      $1="${tempdir}/${tempfil}"
+    else
+      AC_PATH_PROG($1,[${tempval}])
+    fi
     
     if test -z "${$1}" ; then
       AC_MSG_ERROR([cannot find apxs utility "${tempval}"])
