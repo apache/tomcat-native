@@ -127,10 +127,14 @@ public class MwccCompiler extends CcCompiler {
         String localCflags=cflags;
         File ccOpt = new File(buildDir, "cc.opt");
         if( localCflags==null ) {
-            localCflags=new String("-nosyspath -c -align 1 -w nocmdline -bool on");
-            if( extra_cflags!=null ) {
+            localCflags=new String("-nosyspath -c -w nocmdline -bool on");
+            if (null == project.getProperty("use.novelllibc"))
+                localCflags += " -align 1";
+            else
+                localCflags += " -align 4";
+
+            if( extra_cflags!=null )
                 localCflags+=" " + extra_cflags;
-            }
         }
 
         if (optG)

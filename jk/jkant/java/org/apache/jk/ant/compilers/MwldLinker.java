@@ -156,7 +156,10 @@ public class MwldLinker extends LinkerAdapter {
             }
 
             // add the default startup code to the list of objects
-            linkOptPw.println(libBase + "\\lib\\nwpre.obj");
+            if (null == project.getProperty("use.novelllibc"))
+                linkOptPw.println(libBase + "\\lib\\nwpre.obj");
+            else
+                linkOptPw.println("-llibcpre.o");
 
             // write the objects to link with to the .opt file
             for( int i=0; i<srcList.size(); i++ ) {
