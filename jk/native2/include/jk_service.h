@@ -111,7 +111,7 @@ typedef struct jk_ws_service jk_ws_service_t;
 #define SC_M_MOVE               (unsigned char)12
 #define SC_M_LOCK               (unsigned char)13
 #define SC_M_UNLOCK             (unsigned char)14
-#define SC_M_ACL		        (unsigned char)15
+#define SC_M_ACL                (unsigned char)15
 #define SC_M_REPORT             (unsigned char)16
 #define SC_M_VERSION_CONTROL    (unsigned char)17
 #define SC_M_CHECKIN            (unsigned char)18
@@ -230,13 +230,13 @@ struct jk_ws_service {
     char     *ssl_cipher;
     char     *ssl_session;
 
-	/*
-	 * SSL extra information for Servlet 2.3 API
-	 * 
-	 * ssl_key_size - ssl key size in use
-	 */
-	int		ssl_key_size;
-	
+    /*
+     * SSL extra information for Servlet 2.3 API
+     * 
+     * ssl_key_size - ssl key size in use
+     */
+    int     ssl_key_size;
+    
     /** Incoming headers */
     struct jk_map *headers_in;
 
@@ -275,9 +275,7 @@ struct jk_ws_service {
     int outPos;
     int outSize;
     char *outBuf;
-#ifdef HAS_APR
     apr_time_t startTime;
-#endif
     
     /** printf style output. Formats in the tmp buf, then calls write
      */

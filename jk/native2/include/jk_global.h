@@ -65,6 +65,15 @@
 #ifndef JK_GLOBAL_H
 #define JK_GLOBAL_H
 
+#include "apr.h"
+#include "apr_lib.h"
+#include "apr_general.h"
+#include "apr_strings.h"
+#include "apr_network_io.h"
+#include "apr_errno.h"
+#include "apr_version.h"
+#include "apr_time.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,9 +83,8 @@
 #include <ctype.h>
 
 #ifdef AS400
+/*XXX: why is this include here in common? */
 #include "ap_config.h"
-#include "apr_strings.h"
-#include "apr_lib.h"
 extern char *strdup (const char *str);
 #endif
 
@@ -86,8 +94,8 @@ extern char *strdup (const char *str);
 /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
 #define JK_VERMAJOR     2
 #define JK_VERMINOR     0
-#define JK_VERFIX       3
-#define JK_VERSTRING    "2.0.3"
+#define JK_VERFIX       4
+#define JK_VERSTRING    "2.0.4"
 
 /* Beta number */
 #define JK_VERBETA      0
@@ -159,37 +167,6 @@ extern "C" {
 /* We'll use APR whenever it's possible. However for a transition period and
    for essential components we can build a minimal mod_jk without APR.
 */
-   
-#ifdef HAS_APR
-
-#include "apr.h"
-#include "apr_errno.h"
-#include "apr_time.h"
-#include "apr_strings.h"
-
-#else
-
-/* No APR - define for forward/backward compatibility
- */
-
-/* cut&paste from apr_errno.h */
-typedef int apr_status_t;
-#ifndef APR_SUCCESS
-#define APR_SUCCESS (0)
-#endif
-
-#ifndef APR_OS_START_USEERR
-#define APR_OS_START_USEERR 21000
-#endif
-
-
-typedef  unsigned char   apr_byte_t;
-typedef  short           apr_int16_t;
-typedef  unsigned short  apr_uint16_t;
-typedef  int             apr_int32_t;
-typedef  unsigned int    apr_uint32_t;
-
-#endif
     
 #define JK_OK APR_SUCCESS
 #define JK_ERR APR_OS_START_USEERR
@@ -252,18 +229,18 @@ typedef  unsigned int    apr_uint32_t;
     #define FILE_SEPERATOR          ('\\')
     #define FILE_SEPARATOR_STR      ("\\")
     #define PATH_ENV_VARIABLE       ("PATH")
-	
+    
     /* incompatible names... */
     #ifndef strcasecmp 
         #define strcasecmp stricmp
     #endif
     #ifndef strncasecmp 
         #define strncasecmp strnicmp
-	#endif
+    #endif
 
-	#ifndef vsnprintf
-		#define vsnprintf _vsnprintf
-	#endif
+    #ifndef vsnprintf
+        #define vsnprintf _vsnprintf
+    #endif
 #else
     #define JK_METHOD
     #define C_LEVEL_TRY_START       

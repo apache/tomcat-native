@@ -200,7 +200,6 @@ struct jk_stat {
      */
     char active[64];
 
-#ifdef HAS_APR
     /* Time when this endpoint has opened a connection to
        tomcat
     */
@@ -215,7 +214,6 @@ struct jk_stat {
     apr_time_t startTime;
     apr_time_t jkStartTime;
     apr_time_t endTime;
-#endif
 };
 
     
