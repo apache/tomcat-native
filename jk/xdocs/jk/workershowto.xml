@@ -207,6 +207,7 @@ We'll see more on this in the lb worker section.
 <b>cachesize</b> property is usefull when you're using JK in multithreaded 
 web servers such as Apache 2.0, IIS and Netscape. They will benefit the most by 
 setting this value to a higher level (such as the estimated average concurrent users for Tomcat).
+If cachesize is not set, the connection cache support is disabled.
 </p>
 
 <p>
