@@ -200,23 +200,30 @@
         <property name="tomcat-jni.jar" value="${jk.build}/lib/tomcat-jni.jar" />
 
 	<jar jarfile="${tomcat-jk.jar}"
+             index="true"
 	     basedir="${jk.build}/classes">
             <include name="org/apache/ajp/**" />
         </jar>
 	
 	<jar jarfile="${tomcat-jkconfig.jar}"
+             index="true"
 	     basedir="${jk.build}/classes" 
              manifest="conf/jkconfig.manifest">
             <include name="org/apache/ajp/config/**" />
         </jar>
 	
 	<jar jarfile="${tomcat-jkshm.jar}"
+             index="true"
 	     basedir="${jk.build}/classes" 
              manifest="conf/shm.manifest">
             <include name="org/apache/ajp/common/Shm.class" />
         </jar>
-	
+
+        <copy todir="${jk.build}/classes" >
+          <fileset dir="java" includes="**/*.xml" />
+        </copy>
 	<jar jarfile="${tomcat-jk2.jar}"
+             index="true"
              manifest="conf/tomcat-jk2.manifest"
 	     basedir="${jk.build}/classes" >
             <include name="org/apache/jk/**" />
@@ -224,6 +231,7 @@
         </jar>
 	
 	<jar jarfile="${tomcat-jni.jar}"
+             index="true"
 	     basedir="${jk.build}/classes" 
              manifest="conf/jk2.manifest" >
             <include name="org/apache/jk/apr/**" />
@@ -245,6 +253,7 @@
 	<copy todir="${jk.build}/classes/META-INF" 
               file="jkant/ant.tasks"/>
 	<jar jarfile="${jk.build}/lib/jkant.jar"
+             index="true"
 	     basedir="${jk.build}/classes" >
             <include name="org/apache/jk/ant/**" />
             <include name="META-INF/ant.tasks" />
@@ -317,7 +326,7 @@
     </target>
 
     <!-- ================ javadocs =================== -->
-    <target name="javadoc">
+    <target name="javadoc" unless="docs-uptodate">
         <delete dir="${jk.build}/javadoc"/>
 	<mkdir dir="${jk.build}/javadoc"/>
 	<javadoc packagenames="org.apache.ajp,org.apache.ajp.tomcat4,org.apache.ajp,org.apache.ajp.tomcat5"
@@ -426,7 +435,7 @@
     Generate documentation from the XML sources.
   -->
   <target
-      name="docs"
+      name="docs" unless="docs-uptodate"
       depends="docs.check,docs.init"
       description="Create Documentation">
  
