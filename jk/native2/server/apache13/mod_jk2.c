@@ -197,7 +197,7 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
 
     /* Local initialization.
      */
-    workerEnv->_private = s;
+    workerEnv->_private = (void *)s;
 
     /* serverRoot via ap_server_root_relative()
      */
@@ -316,7 +316,6 @@ static int jk2_init(server_rec *s, ap_pool *pconf)
  */
 static int jk2_handler(request_rec *r)
 {   
-    const char       *worker_name;
     jk_logger_t      *l=NULL;
     int              rc;
     jk_worker_t *worker=NULL;
