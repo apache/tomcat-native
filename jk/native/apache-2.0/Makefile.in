@@ -63,7 +63,7 @@ install_static:
 # APXS will compile every file, this is derived from apxs
 
 mod_jk.la: mod_jk.lo $(APACHE_OBJECTS)
-	$(LIBTOOL) --mode=link ${COMPILE} -o $@ -module -rpath ${libexecdir} -avoid-version mod_jk.lo $(APACHE_OBJECTS)
+	$(LIBTOOL) --mode=link ${COMPILE} `${APXS} -q LDFLAGS` -o $@ -module -rpath ${libexecdir} -avoid-version mod_jk.lo $(APACHE_OBJECTS)
 
 mod_jk.so: mod_jk.la
 	$(LIBTOOL) --mode=install cp $< `pwd`/$@
