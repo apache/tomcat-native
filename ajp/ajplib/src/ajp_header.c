@@ -42,8 +42,8 @@ static const char *long_res_header_for_sc(int sc)
 }
 
 
-static apr_status_t sc_for_req_method(const char    *method,
-                             unsigned char *sc) 
+static apr_status_t sc_for_req_method(const char *method,
+                                      unsigned char *sc) 
 {
     apr_status_t rc = APR_SUCCESS;
     if(0 == strcmp(method, "GET")) {
@@ -107,8 +107,8 @@ static apr_status_t sc_for_req_method(const char    *method,
     return rc;
 }
 
-static apr_status_t sc_for_req_header(const char     *header_name,
-                             unsigned short *sc) 
+static apr_status_t sc_for_req_header(const char *header_name,
+                                      apr_uint16_t *sc) 
 {
     switch((tolower(header_name[0]))) {
         case 'a':
@@ -231,9 +231,8 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
                                  request_rec *r)
 {
     unsigned char method;
-    unsigned i;
+    apr_uint32_t i, num_headers = 0;
     apr_byte_t is_ssl;
-    short num_headers=0;
     char *remote_host;
     
 
@@ -274,7 +273,7 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
     }
 
     for (i = 0 ; i < num_headers ; i++) {
-        unsigned short sc;
+        apr_uint16_t sc;
         const apr_array_header_t *t = apr_table_elts(r->headers_in);
         const apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
 
@@ -500,13 +499,13 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
         apr_uint16_t name;
         char *stringname;
         char *value;
-        rc  = ajp_msg_peek_int(msg,&value);
+        rc  = ajp_msg_peek_uint16(msg, &name);
         if (rc != APR_SUCCESS) {
             return APR_EGENERAL;
         }
                 
         if ((name & 0XFF00) == 0XA000) {
-            ajp_msg_peek_int(msg,&value);
+            ajp_msg_peek_uint16(msg, &name);
             name = name & 0X00FF;
             if (name <= SC_RES_HEADERS_NUM) {
                 stringname = (char *)long_res_header_for_sc(name);
@@ -543,8 +542,8 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
 #endif
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
-                       i, name, value);
-        ap_table_add(r->headers_out, name, value);
+                       i, stringname, value);
+        apr_table_add(r->headers_out, stringname, value);
     }
 
     return APR_SUCCESS;
