@@ -95,6 +95,8 @@ import org.apache.jk.core.*;
  * @author Costin Manolache
  */
 public class ChannelSocket extends Channel {
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( ChannelSocket.class );
 
     int port=8009;
     InetAddress inet;
@@ -160,8 +162,8 @@ public class ChannelSocket extends Channel {
     public void accept( MsgContext ep ) throws IOException {
         Socket s=sSocket.accept();
         ep.setNote( socketNote, s );
-        if(dL>0 )
-            d("Accepted socket " + s );
+        if(log.isDebugEnabled() )
+            log.debug("Accepted socket " + s );
         if( linger > 0 )
             s.setSoLinger( true, linger);
         if( socketTimeout > 0 ) 
@@ -221,8 +223,8 @@ public class ChannelSocket extends Channel {
         byte buf[]=msg.getBuffer();
         int len=msg.getLen();
         
-        if(dL > 5 )
-            d("send() " + len + " " + buf[4] );
+        if(log.isTraceEnabled() )
+            log.trace("send() " + len + " " + buf[4] );
 
         OutputStream os=(OutputStream)ep.getNote( osNote );
         os.write( buf, 0, len );
@@ -232,8 +234,8 @@ public class ChannelSocket extends Channel {
     public int receive( Msg msg, MsgContext ep )
         throws IOException
     {
-        if (dL > 0) {
-            d("receive()");
+        if (log.isDebugEnabled()) {
+            log.debug("receive()");
         }
 
         byte buf[]=msg.getBuffer();
@@ -248,6 +250,7 @@ public class ChannelSocket extends Channel {
         
         if(rd < 0) {
             // Most likely normal apache restart.
+            log.warn("Wrong message " + rd );
             return rd;
         }
 
@@ -265,18 +268,18 @@ public class ChannelSocket extends Channel {
         total_read = this.read(ep, buf, hlen, blen);
         
         if (total_read <= 0) {
-            d("can't read body, waited #" + blen);
+            log.warn("can't read body, waited #" + blen);
             return  -1;
         }
         
         if (total_read != blen) {
-             d( "incomplete read, waited #" + blen +
+             log.warn( "incomplete read, waited #" + blen +
                         " got only " + total_read);
             return -2;
         }
         
-        if (dL > 0)
-             d("receive:  total read = " + total_read);
+        if (log.isDebugEnabled())
+             log.debug("receive:  total read = " + total_read);
 	return total_read;
     }
     
@@ -306,22 +309,23 @@ public class ChannelSocket extends Channel {
         int pos = 0;
         int got;
 
-        if (dL > 5) {
-            d("reading  # " + b + " " + (b==null ? 0: b.length) + " " +
+        if (log.isTraceEnabled()) {
+            log.trace("reading  # " + b + " " + (b==null ? 0: b.length) + " " +
               offset + " " + len);
         }
         while(pos < len) {
             got = is.read(b, pos + offset, len - pos);
 
-            if (dL > 5) {
-                d("read got # " + got);
+            if (log.isTraceEnabled()) {
+                log.trace("read got # " + got);
             }
 
             // connection just closed by remote. 
             if (got <= 0) {
                 // This happens periodically, as apache restarts
                 // periodically.
-                // It should be more gracefull ! - another feature for Ajp14 
+                // It should be more gracefull ! - another feature for Ajp14
+                log.warn( "Returning " );
                 return -3;
             }
 
@@ -342,8 +346,8 @@ public class ChannelSocket extends Channel {
     /** Accept incoming connections, dispatch to the thread pool
      */
     void acceptConnections() {
-        if( dL>0 )
-            d("Accepting ajp connections on " + port);
+        if( log.isDebugEnabled() )
+            log.debug("Accepting ajp connections on " + port);
         while( running ) {
             try {
                 MsgContext ep=this.createEndpoint();
@@ -360,15 +364,22 @@ public class ChannelSocket extends Channel {
     /** Process a single ajp connection.
      */
     void processConnection(MsgContext ep) {
-        if( dL > 0 )
-            d( "New ajp connection ");
+        if( log.isDebugEnabled() )
+            log.debug( "New ajp connection ");
         try {
             MsgAjp recv=new MsgAjp();
             while( running ) {
-                this.receive( recv, ep );
-                int status= this.invoke( recv, ep );
+                if( log.isDebugEnabled() )
+                    log.debug("Receiving " );
+                int status= this.receive( recv, ep );
+                if( status <= 0 ) {
+                    log.warn("Invalid packet, closing connection" );
+                    break;
+                }
+                
+                status= this.invoke( recv, ep );
                 if( status!= JkHandler.OK ) {
-                    d("processCallbacks status " + status );
+                    log.warn("processCallbacks status " + status );
                     break;
                 }
             }
@@ -419,11 +430,6 @@ public class ChannelSocket extends Channel {
     }
 
     
-    private static final int dL=0;
-    private static void d(String s ) {
-        System.err.println( "ChannelSocket: " + s );
-    }
-
 }
 
 class SocketAcceptor implements ThreadPoolRunnable {

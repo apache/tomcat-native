@@ -81,6 +81,8 @@ import org.apache.jk.util.*;
 /** Generic input stream impl on top of ajp
  */
 public class JkInputStream extends InputStream {
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( JkInputStream.class );
 
     public JkInputStream() {
     }
@@ -109,7 +111,8 @@ public class JkInputStream extends InputStream {
             return doRead1();
 	}
 	if( available <= 0 ) {
-            if( dL>0 ) d("doRead() nothing available" );
+            if( log.isDebugEnabled() )
+                log.debug("doRead() nothing available" );
             return -1;
         }
 	available--;
@@ -124,13 +127,14 @@ public class JkInputStream extends InputStream {
 	    return rd;
 	}
 	if( available <= 0 ) {
-            if( dL>0 ) d("doRead() nothing available" );
+            if( log.isDebugEnabled() ) log.debug("doRead() nothing available" );
 	    return -1;
         }
         
 	rd=doRead1( b,off, len );
 	available -= rd;
-	if( dL > 0 ) d("Read: " + new String( b,off, len ));
+	if( log.isDebugEnabled() )
+            log.debug("Read: " + new String( b,off, len ));
 	return rd;
     }
 
@@ -173,7 +177,7 @@ public class JkInputStream extends InputStream {
     boolean end_of_stream; // true if we've received an empty packet
     
     private int doRead1() throws IOException {
-        if( dL>0 ) d("doRead1 " );
+        if( log.isDebugEnabled() ) log.debug("doRead1 " );
         if(pos >= blen) {
             if( ! refillReadBuffer()) {
 		return -1;
@@ -184,7 +188,7 @@ public class JkInputStream extends InputStream {
 
     public int doRead1(byte[] b, int off, int len) throws IOException 
     {
-        if( dL>0 ) d("doRead1 " );
+        if( log.isDebugEnabled() ) log.debug("doRead1 " );
 	if(pos >= blen) {
 	    if( ! refillReadBuffer()) {
 		return -1;
@@ -194,8 +198,8 @@ public class JkInputStream extends InputStream {
 	if(pos + len <= blen) { // Fear the off by one error
 	    // Sanity check b.length > off + len?
 	    System.arraycopy(bodyBuff, pos, b, off, len);
-	    if( dL > 0 )
-		d("doRead1: " + pos + " " + len + " " + blen + " " +
+	    if( log.isDebugEnabled() )
+		log.debug("doRead1: " + pos + " " + len + " " + blen + " " +
 		  new String( b, off, len ) + " " + Thread.currentThread());
 	    pos += len;
 	    return len;
@@ -210,9 +214,10 @@ public class JkInputStream extends InputStream {
 	    int c = bytesRemaining < toCopy ? bytesRemaining : toCopy;
 
 	    System.arraycopy(bodyBuff, pos, b, off, c);
-	    if( dL > 0 ) d("doRead2: " + pos + " " + len + " " + blen + " " +
-                           c + " " + new String( b, off, c ) + " " +
-			   new String( bodyBuff, pos, c ));
+	    if( log.isDebugEnabled() )
+                log.debug("doRead2: " + pos + " " + len + " " + blen + " " +
+                          c + " " + new String( b, off, c ) + " " +
+                          new String( bodyBuff, pos, c ));
 
 	    toCopy    -= c;
 
@@ -274,8 +279,8 @@ public class JkInputStream extends InputStream {
     	blen = bodyMsg.peekInt();
     	pos = 0;
     	int cpl=bodyMsg.getBytes(bodyBuff);
-	if( dL > 0 )
-            d( "Copy into body buffer2 " + bodyBuff + " " +
+	if( log.isDebugEnabled() )
+            log.debug( "Copy into body buffer2 " + bodyBuff + " " +
                cpl + " " + blen + " "  +
                new String( bodyBuff, 0, cpl ));
 
@@ -293,7 +298,7 @@ public class JkInputStream extends InputStream {
 	// If the server returns an empty packet, assume that that end of
 	// the stream has been reached (yuck -- fix protocol??).
         if (end_of_stream) {
-            if( dL>0 ) d("refillReadBuffer: end of stream " );
+            if( log.isDebugEnabled() ) log.debug("refillReadBuffer: end of stream " );
           return false;
         }
 
@@ -302,16 +307,12 @@ public class JkInputStream extends InputStream {
 	bodyMsg.appendByte(JK_AJP13_GET_BODY_CHUNK);
 	bodyMsg.appendInt(MAX_READ_SIZE);
         
-	if( dL>0 ) d("refillReadBuffer " + Thread.currentThread());
+	if( log.isDebugEnabled() )
+            log.debug("refillReadBuffer " + Thread.currentThread());
 
 	mc.getChannel().send(bodyMsg, mc);
 	
         return receive();
-    }
-
-    private static final int dL=10;
-    private static void d(String s ) {
-        System.err.println( "JkInputStream: " + s );
     }
 
 }

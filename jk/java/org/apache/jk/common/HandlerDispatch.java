@@ -79,6 +79,8 @@ import org.apache.tomcat.util.buf.*;
  */
 public class HandlerDispatch extends JkHandler
 {
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( HandlerDispatch.class );
 
     public HandlerDispatch() 
     {
@@ -97,8 +99,8 @@ public class HandlerDispatch extends JkHandler
     public int registerMessageType( int id, String name, JkHandler h,
                                     String sig[] )
     {
-        if( logL > 0 )
-            log( "Register message " + id + " " + h.getName() +
+        if( log.isDebugEnabled() )
+            log.debug( "Register message " + id + " " + h.getName() +
                  " " + h.getClass().getName());
 	if( id < 0 ) {
 	    // try to find it by name
@@ -128,12 +130,13 @@ public class HandlerDispatch extends JkHandler
         
         if( type > handlers.length ||
             handlers[type]==null ) {
-	    log( "Invalid handler " + type );
+	    if( log.isDebugEnabled() )
+                log.debug( "Invalid handler " + type );
 	    return ERROR;
 	}
 
-        if( logL > 0 )
-            log( "Received " + type + " " + handlers[type].getName());
+        if( log.isDebugEnabled() )
+            log.debug( "Received " + type + " " + handlers[type].getName());
         
 	JkHandler handler=handlers[type];
         

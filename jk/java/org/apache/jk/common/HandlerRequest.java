@@ -93,6 +93,9 @@ import org.apache.tomcat.util.buf.*;
  */
 public class HandlerRequest extends JkHandler
 {
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( HandlerRequest.class );
+
     // XXX Will move to a registry system.
     
     // Prefix codes for message types from server to container
@@ -199,11 +202,13 @@ public class HandlerRequest extends JkHandler
         "user-agent"
     };
 
+    HandlerDispatch dispatch;
+    String ajpidDir="conf";
+    
+
     public HandlerRequest() 
     {
     }
-
-    HandlerDispatch dispatch;
 
     public void init() {
         dispatch=(HandlerDispatch)wEnv.getHandler( "dispatch" );
@@ -226,9 +231,12 @@ public class HandlerRequest extends JkHandler
         bodyNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "jkInputStream" );
         tmpBufNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "tmpBuf" );
         secretNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "secret" );
-        
+
         if( next==null )
             next=wEnv.getHandler( "container" );
+        if( log.isDebugEnabled() )
+            log.debug( "Container handler " + next + " " + next.getName() +
+                       " " + next.getClass().getName());
 
         // should happen on start()
         generateAjp13Id();
@@ -253,7 +261,12 @@ public class HandlerRequest extends JkHandler
     public void setTomcatAuthentication(boolean newTomcatAuthentication) {
         tomcatAuthentication = newTomcatAuthentication;
     }
-
+    
+    public void setAjpidDir( String path ) {
+        if( "".equals( path ) ) path=null;
+        ajpidDir=path;
+    }
+    
     // -------------------- Ajp13.id --------------------
 
     private void generateAjp13Id() {
@@ -265,14 +278,16 @@ public class HandlerRequest extends JkHandler
         
         File f1=new File( wEnv.getJkHome() );
         File f2=new File( f1, "conf" );
+        
         if( ! f2.exists() ) {
-            log( "No conf dir for ajp13.id " + f2 );
+            log.error( "No conf dir for ajp13.id " + f2 );
             return;
         }
         
         File sf=new File( f2, "ajp13.id");
         
-        if( dL > 0) d( "Using stop file: "+sf);
+        if( log.isDebugEnabled())
+            log.debug( "Using stop file: "+sf);
 
         try {
             Properties props=new Properties();
@@ -288,7 +303,7 @@ public class HandlerRequest extends JkHandler
             FileOutputStream stopF=new FileOutputStream( sf );
             props.save( stopF, "Automatically generated, don't edit" );
         } catch( IOException ex ) {
-            d( "Can't create stop file: "+sf );
+            log.debug( "Can't create stop file: "+sf );
             ex.printStackTrace();
         }
     }
@@ -312,7 +327,8 @@ public class HandlerRequest extends JkHandler
             tmpMB=new MessageBytes();
             ep.setNote( tmpBufNote, tmpMB);
         }
-
+        log.debug( "Handling " + type );
+        
         switch( type ) {
         case JK_AJP13_FORWARD_REQUEST:
             decodeRequest( msg, ep, tmpMB );
@@ -323,12 +339,13 @@ public class HandlerRequest extends JkHandler
                     return ERROR;
             }
             /* XXX it should be computed from request, by workerEnv */
-            if(dL >0 )
-                d("Calling next " + next.getName() + " " +
+            if(log.isDebugEnabled() )
+                log.debug("Calling next " + next.getName() + " " +
                   next.getClass().getName());
             
-            return next.invoke( msg, ep );
-            
+            int err= next.invoke( msg, ep );
+            log.debug( "Invoke returned " + err );
+            return err;
         case JK_AJP13_SHUTDOWN:
             String epSecret=null;
             if( msg.getLen() > 3 ) {
@@ -339,7 +356,7 @@ public class HandlerRequest extends JkHandler
             
             if( requiredSecret != null &&
                 requiredSecret.equals( epSecret ) ) {
-                d("Received wrong secret, no shutdown ");
+                log.debug("Received wrong secret, no shutdown ");
                 return ERROR;
             }
 
@@ -347,7 +364,7 @@ public class HandlerRequest extends JkHandler
             Channel ch=ep.getChannel();
             if( ch instanceof ChannelSocket ) {
                 if( ! ((ChannelSocket)ch).isSameAddress(ep) ) {
-                    d("Shutdown request not from 'same address' ");
+                    log.error("Shutdown request not from 'same address' ");
                     return ERROR;
                 }
             }
@@ -355,7 +372,7 @@ public class HandlerRequest extends JkHandler
             // forward to the default handler - it'll do the shutdown
             next.invoke( msg, ep );
 
-            d("Exiting");
+            log.info("Exiting");
             System.exit(0);
             
 	    return OK;
@@ -420,8 +437,8 @@ public class HandlerRequest extends JkHandler
             jkBody.receive();
     	}
     
-        if (dL > 5) {
-            d(req.toString());
+        if (log.isTraceEnabled()) {
+            log.trace(req.toString());
          }
 
         return OK;
@@ -505,7 +522,7 @@ public class HandlerRequest extends JkHandler
                     jsseCerts =  new X509Certificate[1];
                     jsseCerts[0] = cert;
                 } catch(java.security.cert.CertificateException e) {
-                    d("Certificate convertion failed" + e );
+                    log.error("Certificate convertion failed" + e );
                     e.printStackTrace();
                 }
  
@@ -530,7 +547,7 @@ public class HandlerRequest extends JkHandler
 	    case SC_A_SECRET  :
                 msg.getBytes(tmpMB);
                 String secret=tmpMB.toString();
-                d("Secret: " + secret );
+                log.info("Secret: " + secret );
                 // endpoint note
                 ep.setNote( secretNote, secret );
                 break;
@@ -590,10 +607,4 @@ public class HandlerRequest extends JkHandler
         }
     }
 
-    private static final int dL=4;
-    private static void d(String s ) {
-        System.err.println( "HandlerRequest: " + s );
-    }
-
-
- }
+}
