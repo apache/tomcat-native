@@ -759,30 +759,26 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
      *  @exception TomcatException Unable to resolve classes
      */
     private void checkSocketFactory() throws Exception {
-    if(secure) {
-        try {
-        // The SSL setup code has been moved into
-        // SSLImplementation since SocketFactory doesn't
-        // provide a wide enough interface
-        sslImplementation=SSLImplementation.getInstance
-            (sslImplementationName);
-                socketFactory = 
-                        sslImplementation.getServerSocketFactory();
-        ep.setServerSocketFactory(socketFactory);
-        } catch (ClassNotFoundException e){
-        throw e;
+        if (secure) {
+            try {
+                // The SSL setup code has been moved into
+                // SSLImplementation since SocketFactory doesn't
+                // provide a wide enough interface
+                sslImplementation =
+                    SSLImplementation.getInstance(sslImplementationName);
+                socketFactory = sslImplementation.getServerSocketFactory();
+                ep.setServerSocketFactory(socketFactory);
+            } catch (ClassNotFoundException e){
+                throw e;
+            }
+        } else if (socketFactoryName != null) {
+            try {
+                socketFactory = string2SocketFactory(socketFactoryName);
+                ep.setServerSocketFactory(socketFactory);
+            } catch(Exception sfex) {
+                throw sfex;
+            }
         }
-    }
-    else {
-        if (socketFactoryName != null) {
-        try {
-            socketFactory = string2SocketFactory(socketFactoryName);
-            ep.setServerSocketFactory(socketFactory);
-        } catch(Exception sfex) {
-            throw sfex;
-        }
-        }
-    }
     }
 
     /*
