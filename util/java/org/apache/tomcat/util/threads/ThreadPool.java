@@ -699,8 +699,8 @@ public class ThreadPool  {
                             * The meaning is that we should release the thread from
                             * the pool.
                             */
-                            shouldTerminate = true;
-                            shouldRun = false;
+                            _shouldTerminate = true;
+                            _shouldRun = false;
                             p.notifyThreadEnd(this);
                         } finally {
                             if (_shouldRun) {
