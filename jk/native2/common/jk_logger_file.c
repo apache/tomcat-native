@@ -106,7 +106,7 @@ static int JK_METHOD jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,
     if( f==NULL ) {
         /* This is usefull to debug what happens before logger is set.
            On apache you need -X option ( no detach, single process ) */
-        printf("%s", what );
+        fprintf(stderr, "JK_LOG: %s", what );
         return JK_OK;
     }
     if(l && l->level <= level && l->logger_private && what) {       
@@ -125,7 +125,7 @@ static int JK_METHOD jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,
 
 int jk2_logger_file_parseLogLevel(jk_env_t *env, const char *level)
 {
-    if( level == NULL ) return JK_LOG_ERROR_LEVEL;
+    if( level == NULL ) return JK_LOG_INFO_LEVEL;
     
     if(0 == strcasecmp(level, JK_LOG_INFO_VERB)) {
         return JK_LOG_INFO_LEVEL;
@@ -153,15 +153,19 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
     }
     jk2_config_replaceProperties( env, workerEnv->initData,
                                                   _this->mbean->pool,_this->name);
-    f = fopen(_this->name, "a+");
-    if(f==NULL) {
-        _this->jkLog(env, _this,JK_LOG_ERROR,
-                     "Can't open log file %s\n", _this->name );
-        return JK_ERR;
-    }
+    if( strcmp( "stderr", _this->name )==0 ) {
+        _this->logger_private = stderr;
+    } else {
+        f = fopen(_this->name, "a+");
+        if(f==NULL) {
+            _this->jkLog(env, _this,JK_LOG_ERROR,
+                         "Can't open log file %s\n", _this->name );
+            return JK_ERR;
+        }
+        _this->logger_private = f;
+    } 
     _this->jkLog(env, _this,JK_LOG_ERROR,
                  "Initializing log file %s\n", _this->name );
-    _this->logger_private = f;
     if( oldF!=NULL ) {
         fclose( oldF );
     }
