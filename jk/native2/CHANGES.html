@@ -18,6 +18,17 @@ virtual hosts / webapps where the Location-based and native vhost  mapping is mo
 efficient.</li>
     <li> 
   </ul>
+
+<li>JNI worker. Most options on the jni worker are now optional, jk can detect
+and set them automcatically. This reduce the effort needed to configure jni.
+It is _required_ that LD_LIBRARY_PATH or equivalent is set coreclty, otherwise
+java will not start and apache will crash. ( on windows this may not be needed ).
+The user must set either as environment variables or in httpd.conf ( using JkSet )
+or in workers.properties: JAVA_HOME, TOMCAT_HOME ( or CATALINA_HOME ). Jk must
+be installed in the standard location ( modules/ or webapps/. The output from
+the vm will go in apache's error.log ( like all other jk output ) unless
+a special file is requested.
+
 </ul>
 
 <h4>Developer specific</h4>
@@ -54,6 +65,21 @@ true for apache2 request processing )
 <li>Method signatures. Jk2 uses the same 'patterns' as jni, with a jk_env as 
 first parameter, then 'this' (the pointer to the object ), then regular parameters.
 The same pattern is used no consistently in all methods.
+
+<li>JNI has been refactored. On file, jk_vmutil deals with the creation of the
+vm and guessing of all properties needed to create a java vm. It could be possible
+to create specialized instances of jk_vmutil for different vms ( the default 
+works for most ).
+
+<li>JNI now uses the channel abstraction to send/receive messages. In future we 
+could refine this to use a special 'marshalling' that will map 'messages' into
+method invocations. One big benefit is that we can now reuse all objects, no
+longer need to use strings ( and thus enable the solving of most i18n problems ).
+The code is also more 'uniform' and easier to extend.
+
+<li>JNI worker is no longer singleton and can be used to start multiple java 
+programms in the same process. Probably not very usefull for jk in particular, 
+but the restriction was not needed. 
 
 <li>(not completed) Error handling. The env parameter will provide a mechanism to
 pass error information up the stack ( eventually a stack trace ). It'll also   

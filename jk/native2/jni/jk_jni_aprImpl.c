@@ -179,7 +179,8 @@ Java_org_apache_jk_apr_AprImpl_unSocketClose(JNIEnv *jniEnv, jobject _jthis,
 {
     int socket=(int)socketJ;
     int type=(int)typeJ;
-    shutdown( socket, type );
+    /*     shutdown( socket, type ); */
+    close(socket);
     return 0L;
 }
 
@@ -188,29 +189,39 @@ Java_org_apache_jk_apr_AprImpl_unSocketListen(JNIEnv *jniEnv, jobject _jthis,
                                               jlong poolJ, jstring hostJ, jint backlog )
 {
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
-    char *host;
+    const char *host;
     int status;
     int unixSocket;
     struct sockaddr_un unixAddr;
+    mode_t omask;
 
     memset(& unixAddr, 0, sizeof(struct sockaddr_un));
     unixAddr.sun_family=AF_UNIX;
 
     host=(*jniEnv)->GetStringUTFChars(jniEnv, hostJ, 0);
     strcpy(unixAddr.sun_path, host);
-    
-    unixSocket = socket(AF_UNIX, SOCK_STREAM, 0);
-
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, hostJ, host);
 
+    // remove the exist socket.
+    if (unlink(unixAddr.sun_path) < 0 && errno != ENOENT) {
+        // The socket cannot be remove... Well I hope that no problems ;-)
+    }
+
+    unixSocket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (unixSocket<0) {
         return 0L;
     }
 
-    bind(unixSocket,
-         (struct sockaddr *)& unixAddr,
-         strlen( unixAddr.sun_path ) +
-         sizeof( unixAddr.sun_family) );
+    omask = umask(0117); /* so that only Apache can use socket */
+        
+    status=bind(unixSocket,
+                (struct sockaddr *)& unixAddr,
+                strlen( unixAddr.sun_path ) +
+                sizeof( unixAddr.sun_family) );
+
+    umask(omask); /* can't fail, so can't clobber errno */
+    if (status<0)
+        return -errno;
 
     listen( unixSocket, (int)backlog );
     
@@ -272,6 +283,8 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
 
         clientlen=sizeof( client );
         connfd=accept( listenUnSocket, (struct sockaddr *)&client, &clientlen );
+        /* XXX Should we return EINTR ? This would allow us to stop
+         */
         if( connfd < 0 ) {
             if( errno==EINTR ) {
                 fprintf(stderr, "EINTR\n");
@@ -279,7 +292,7 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
             } else {
                 fprintf(stderr, "Error accepting %d %d %s\n",
                         listenUnSocket, errno, strerror(errno));
-                return -1;
+                return -errno;
             }
         }
         return (jlong)connfd;
@@ -289,7 +302,8 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
 
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_unRead(JNIEnv *jniEnv, jobject _jthis, 
-                                      jlong poolJ, jlong unSocketJ, jbyteArray bufJ, jint from, jint cnt)
+                                      jlong poolJ, jlong unSocketJ,
+                                      jbyteArray bufJ, jint from, jint cnt)
 {
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     jbyte *nbuf;
@@ -344,5 +358,32 @@ Java_org_apache_jk_apr_AprImpl_unWrite(JNIEnv *jniEnv, jobject _jthis,
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
     return (jint)rd;
 }
+
+/**
+ * setSoLinger
+ */
+JNIEXPORT jint JNICALL
+Java_org_apache_jk_apr_AprImpl_unSetSoLingerNative (
+    JNIEnv      *env,
+    jobject     ignored,
+    jint        sd,
+    jint        l_onoff,
+    jint        l_linger)
+{
+    struct linger {
+        int   l_onoff;    /* linger active */
+        int   l_linger;   /* how many seconds to linger for */
+    } lin;
+    int rc;
+
+    lin.l_onoff = l_onoff;
+    lin.l_linger = l_linger;
+    rc=setsockopt(sd, SOL_SOCKET, SO_LINGER, &lin, sizeof(lin));
+    if( rc < 0) {
+        return -errno;
+    }
+    return 0;
+}
+
 
 

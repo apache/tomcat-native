@@ -43,7 +43,7 @@
 
   <!-- ==================== Targets ==================== -->
 
-  <target name="main" depends="init,apache20,jni,unixsocket">
+  <target name="main" depends="init,apache20,jni">
   </target>
 
   <target name="init" >
@@ -77,6 +77,9 @@
 	   info="Use the MD5 implementation that is part of apache2" />
       <def name="HAS_APR" 
 	   info="Allow APR specific extensions" />
+      <def name="HAVE_JNI" 
+	   info="Jni worker" />
+      <def name="HPUX11" if="hpux" />
       <src dir=".">
 	<include name="server/apache2/*.c" />
 	<include name="common/*.c" />
@@ -89,6 +92,7 @@
 	<include name="${native.dir}/include" />
 	<include name="${java.home}/../include" />
         <include name="${java.home}/../include/linux" if="linux" />
+        <include name="${java.home}/../include/hp-ux" if="hpux" />        
       </includes>
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
@@ -128,6 +132,7 @@
         
         <include name="${java.home}/../include/win32" if="win32" />
         <include name="${java.home}/../include/linux" if="linux" />
+        <include name="${java.home}/../include/linux" if="linux" />
       </includes>
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
@@ -156,6 +161,7 @@
       <linkOpt value="-threadname &quot;JK_JNI Thread&quot;" if="netware" />
       <linkOpt value="-stacksize 64000" if="netware" />
       
+      <def name="HPUX11" if="hpux" />
       <def name="WIN32" if="win32" />
       <def name="NDEBUG" if="win32"  />
       <def name="_WINDOWS" if="win32" />
@@ -406,33 +412,4 @@
     </delete>
   </target>
 
-  <target name="unixsocket" depends="init" if="useunixsocket">
-    <mkdir dir="${jk.build}/WEB-INF/jk2/unixsocket" />
-    <so sofile="libunixsocket" 
-	buildDir="${jk.build}/WEB-INF/jk2/unixsocket"
-	optimize="${so.optimize}"
-	debug="${so.debug}"
-	profile="${so.profile}">
-
-      <src dir=".">
-	<include name="tomcat/UnixSocket.c" />
-        <!-- When APR will provide the AF_UNIX socket support -->
-        <!--
-        <include name="common/apr/*.c" if="HAVE_APR" />
-         -->
-      </src>
-      <includes>
-	<include name="${java.home}/../include" />
-
-        <!-- Platform specific includes -->
-        <include name="${java.home}/../include/netware" if="netware" />
-        <include name="${java.home}/../include/win32" if="win32" />
-        <include name="${java.home}/../include/linux" if="linux" />
-      </includes>
-      <depends>
-	<fileset dir="${native.dir}/common" includes="*.h" />
-      </depends>
-
-    </so>
-  </target>
 </project>
