@@ -35,6 +35,11 @@
 #include <errno.h>
 #include <time.h>
 #include <ctype.h>
+
+#ifdef _OSD_POSIX
+#include "ap_config.h"
+#endif
+
 #ifdef AS400
 #include "ap_config.h"
 #include "apr_strings.h"
