@@ -1081,12 +1081,18 @@ public class Http11Processor implements Processor, ActionHook {
             hostNameC = new char[valueL];
         }
 
+        boolean ipv6 = (valueB[valueS] == '[');
+        boolean bracketClosed = false;
         for (int i = 0; i < valueL; i++) {
             char b = (char) valueB[i + valueS];
             hostNameC[i] = b;
-            if (b == ':') {
-                colonPos = i;
-                break;
+            if (b == ']') {
+                bracketClosed = true;
+            } else if (b == ':') {
+                if (!ipv6 || bracketClosed) {
+                    colonPos = i;
+                    break;
+                }
             }
         }
 
