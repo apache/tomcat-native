@@ -73,6 +73,22 @@
 #include "pcre.h"
 #include "pcreposix.h"
 #endif
+
+/* return non-zero if pattern has any glob chars in it */
+
+static int jk2_is_wildmatch(const char *pattern)
+{
+    while (*pattern) {
+        switch (*pattern) {
+            case '?':
+            case '*':
+            return 1;
+        }
+        ++pattern;
+    }
+    return 0;
+}
+
 /** Parse the name:
        VHOST/PATH
 
