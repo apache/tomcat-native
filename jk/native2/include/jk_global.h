@@ -133,24 +133,28 @@ extern char *strdup (const char *str);
     #include <winsock.h>
 #else
     #include <unistd.h>
-    #include <netdb.h>
-
-    #include <netinet/in.h>
-    #include <sys/socket.h>
-    #ifndef NETWARE
-        #include <netinet/tcp.h>
-        #include <arpa/inet.h>
-        #include <sys/un.h>
-        #if !defined(_OSD_POSIX) && !defined(AS400) && !defined(CYGWIN)
-            #include <sys/socketvar.h>
+    #ifdef __NOVELL_LIBC__
+        #include <novsock2.h>
+    #else
+        #include <netdb.h>
+    
+        #include <netinet/in.h>
+        #include <sys/socket.h>
+        #ifndef NETWARE
+            #include <netinet/tcp.h>
+            #include <arpa/inet.h>
+            #include <sys/un.h>
+            #if !defined(_OSD_POSIX) && !defined(AS400) && !defined(CYGWIN)
+                #include <sys/socketvar.h>
+            #endif
+            #if !defined(HPUX11) && !defined(AS400)
+                #include <sys/select.h>
+            #endif
         #endif
-        #if !defined(HPUX11) && !defined(AS400)
-            #include <sys/select.h>
-        #endif
+            
+        #include <sys/time.h>
+        #include <sys/ioctl.h>
     #endif
-        
-    #include <sys/time.h>
-    #include <sys/ioctl.h>
 #endif
 
 #ifdef WIN32
@@ -219,11 +223,19 @@ extern "C" {
 #endif
     
 #if defined(WIN32) || defined(NETWARE)
-    #define JK_METHOD __stdcall
-    #define C_LEVEL_TRY_START       __try {
-    #define C_LEVEL_TRY_END         }
-    #define C_LEVEL_FINALLY_START   __finally {
-    #define C_LEVEL_FINALLY_END     }
+    #ifdef __GNUC__
+        #define JK_METHOD
+        #define C_LEVEL_TRY_START
+        #define C_LEVEL_TRY_END
+        #define C_LEVEL_FINALLY_START
+        #define C_LEVEL_FINALLY_END
+    #else
+        #define JK_METHOD __stdcall
+        #define C_LEVEL_TRY_START       __try {
+        #define C_LEVEL_TRY_END         }
+        #define C_LEVEL_FINALLY_START   __finally {
+        #define C_LEVEL_FINALLY_END     }
+    #endif
     #define PATH_SEPERATOR          (';')
     #define PATH_SEPARATOR_STR      (";")
     #define FILE_SEPERATOR          ('\\')
@@ -238,8 +250,10 @@ extern "C" {
         #define strncasecmp strnicmp
     #endif
 
-    #ifndef vsnprintf
-        #define vsnprintf _vsnprintf
+    #ifndef __NOVELL_LIBC__
+        #ifndef vsnprintf
+            #define vsnprintf _vsnprintf
+        #endif
     #endif
 #else
     #define JK_METHOD
