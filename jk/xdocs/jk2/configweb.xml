@@ -111,8 +111,9 @@ new channel displayed in the status page, and requests should start going to the
         <p>This is very experimental. On tomcat side, you must enable the JMX proxy. This is done by
 setting "modjk.webServerHost" and "modjk.webServerPort" in jk2.properties to point to the web server 
 port that contains /jkstatus. ( recent versions of jk and mod_jk are required ). You can also add mx4j-tools.jar to 
-server/lib and set "mx.port=PORT" in jk2.properties to enable the console, or use your favorite JMX
-console or tools.</p>
+server/lib and set "mx.enable=true" in jk2.properties to enable the console, or use your favorite JMX
+console or tools. You could also select http and/or jrmp protocol, with mx.httpPort, mx.httpHost, mxjrmpPort
+and mx.jrmpPort</p>
    
          <p>When tomcat starts up, it'll connect to the web server and create JMX mbean proxies for each
 mod_jk component. The data will be refreshed when JMX operations are performed - a set or invoke will

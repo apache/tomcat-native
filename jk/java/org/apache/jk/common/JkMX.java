@@ -70,7 +70,9 @@ import java.io.IOException;
 /**
  * Load the HTTP or RMI adapters for MX4J and JMXRI.
  *
- * Add "mx.port=PORT" in jk2.properties to enable it.
+ * Add "mx.enabled=true" in jk2.properties to enable it.
+ * You could also select http and/or jrmp protocol, 
+ * with mx.httpPort, mx.httpHost, mxjrmpPort and mx.jrmpPort
  *
  */
 public class JkMX extends JkHandler
@@ -110,37 +112,37 @@ public class JkMX extends JkHandler
 
 	/** Enable the MX4J HTTP internal adapter
 	 */	
-	public void setHTTPPort( int i ) {
+	public void setHttpPort( int i ) {
 		httpport=i;
 	}
 
-	public int getHTTPPort() {
+	public int getHttpPort() {
 		return httpport;
 	}
 
-	public void setHTTPHost(String host ) {
+	public void setHttpHost(String host ) {
 		this.httphost=host;
 	}
 
-	public String getHTTPHost() {
+	public String getHttpHost() {
 		return httphost;
 	}
 
 	/** Enable the MX4J JRMP internal adapter
 	 */
-	public void setJRMPPort( int i ) {
+	public void setJrmpPort( int i ) {
 		jrmpport=i;
 	}
 
-	public int getJRMPPort() {
+	public int getJrmpPort() {
 		return jrmpport;
 	}
 
-	public void setJRMPHost(String host ) {
+	public void setJrmpHost(String host ) {
 		this.jrmphost=host;
 	}
 
-	public String getJRMPHost() {
+	public String getJrmpHost() {
 		return jrmphost;
 	}
 
