@@ -155,7 +155,12 @@ public class JSSE13SocketFactory extends JSSESocketFactory
             sslProxy = context.getServerSocketFactory();
 
             // Determine which cipher suites to enable
-            enabledCiphers = getEnabledCiphers(sslProxy.getSupportedCipherSuites());
+            String requestedCiphers = (String)attributes.get("ciphers");
+            if (requestedCiphers != null) {
+                enabledCiphers = getEnabledCiphers
+                    (requestedCiphers,
+                     sslProxy.getSupportedCipherSuites());
+            }
 
         } catch(Exception e) {
             if( e instanceof IOException )
