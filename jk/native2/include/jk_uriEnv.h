@@ -153,10 +153,6 @@ struct jk_uriEnv {
     char *workerName; 
     struct jk_worker *worker;
 
-    /** Debug for that location. Set with 'debug'
-     */
-    int debug;
-
     /** For MATCH_TYPE_HOST, the list of aliases for the virtual host.
      *  Set using (multi-value ) 'alias' attribute on vhost uris.
     */

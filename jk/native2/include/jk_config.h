@@ -90,7 +90,7 @@ struct jk_config {
 
     /* Set an attribute for a jk object. This should be the
      * only method called to configure objects. The implementation
-     * should update the underlying repository in addition to setting
+     * will update the underlying repository in addition to setting
      * the runtime value. Calling setAttribute on the object directly
      * will only set the runtime value.
      */
@@ -104,51 +104,6 @@ struct jk_config {
                  char *targetFile);
     
 
-    /** Read the properties from the file, doing $(prop) substitution
-     *  The source can be a file ( or uri ).
-     */
-    /*     int (*read)(struct jk_env *env, jk_config_t *m, const char *source); */
-
-    /** Write the properties, preserving the original format. Is it possible ?
-     */
-    /* int (*write)(struct jk_env *env, jk_config_t *m, const char *dest); */
-
-    
-    /* ========== Utilities and 'pull' access   ========== */
-    
-    /** For multi-value properties, return the concatenation
-     *  of all values.
-     *
-     * @param sep Separators used to separate multi-values and
-     *       when concatenating the values, NULL for none. The first
-     *       char will be used on the result, the other will be
-     *       used to split. ( i.e. the map may either have multiple
-     *       values or values separated by one of the sep's chars )
-     *    
-     */
-    /*     char *(*getValuesString)(struct jk_env *env, struct jk_map *m, */
-    /*                              struct jk_pool *resultPool, */
-    /*                              char *name, char *sep ); */
-    
-    
-    /** For multi-value properties, return the array containing
-     * all values.
-     *
-     * @param sep Optional separator, it'll be used to split existing values.
-     *            Curently only single-char separators are supported. 
-     */
-    /*     char **(*getValues)(struct jk_env *env, struct jk_map *m, */
-    /*                         struct jk_pool *resultPool, */
-    /*                         char *name, char *sep, int *count); */
-    
-    /**
-     *  Replace $(property) and ${property} in value.
-     */
-    /*     char *(*replaceProperties)(struct jk_env *env, jk_config_t *m, */
-    /*                                char *value, struct jk_pool *resultPool ); */
-    
-    
-    
     /* Private data */
     struct jk_pool *pool;
     void *_private;
@@ -159,13 +114,6 @@ struct jk_config {
     
     char *section;
 };
-
-/** Util: Split a string in components. */
-char **jk2_config_split(struct jk_env *env, struct jk_pool *pool,
-                        const char *listStr, const char *sep,
-                        unsigned *list_len );
-
-int jk2_config_str2int(struct jk_env *env, char *val );
 
 char *jk2_config_replaceProperties(struct jk_env *env, struct jk_map *m,
                                    struct jk_pool *resultPool, 

@@ -103,7 +103,6 @@ struct jk_uriMap {
     struct jk_map *maps;
 
     struct jk_workerEnv *workerEnv;
-    int debug;
 
     /* Virtual host map. For each host and alias there is one
      * entry, the value is a uriEnv that corresponds to the vhost top
