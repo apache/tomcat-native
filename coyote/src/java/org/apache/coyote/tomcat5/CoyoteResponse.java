@@ -92,6 +92,7 @@ import javax.servlet.http.HttpUtils;
 
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.UEncoder;
+import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.http.ServerCookie;
 import org.apache.tomcat.util.net.URL;
@@ -941,7 +942,7 @@ public class CoyoteResponse
         if (included)
             return;
 
-        addHeader(name, format.format(new Date(value)));
+        addHeader(name, FastHttpDateFormat.formatDate(value, format));
 
     }
 
@@ -1192,7 +1193,7 @@ public class CoyoteResponse
         if (included)
             return;
 
-        setHeader(name, format.format(new Date(value)));
+        setHeader(name, FastHttpDateFormat.formatDate(value, format));
 
     }
 

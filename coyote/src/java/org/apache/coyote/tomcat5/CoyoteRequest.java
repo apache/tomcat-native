@@ -82,6 +82,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeMap;
 
 import javax.servlet.FilterChain;
@@ -99,6 +100,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.http.Parameters;
 
 import org.apache.coyote.ActionCode;
@@ -133,6 +135,19 @@ import org.apache.tomcat.util.net.SSLSupport;
 
 public class CoyoteRequest
     implements HttpRequest, HttpServletRequest {
+
+
+    // ----------------------------------------------------------- Constructors
+
+
+    public CoyoteRequest() {
+
+        formats[0].setTimeZone(TimeZone.getTimeZone("GMT"));
+        formats[1].setTimeZone(TimeZone.getTimeZone("GMT"));
+        formats[2].setTimeZone(TimeZone.getTimeZone("GMT"));
+
+    }
+
 
     // ------------------------------------------------------------- Properties
 
@@ -1618,18 +1633,10 @@ public class CoyoteRequest
         if (value == null)
             return (-1L);
 
-        // Work around a bug in SimpleDateFormat in pre-JDK1.2b4
-        // (Bug Parade bug #4106807)
-        value += " ";
-
         // Attempt to convert the date header in a variety of formats
-        for (int i = 0; i < formats.length; i++) {
-            try {
-                Date date = formats[i].parse(value);
-                return (date.getTime());
-            } catch (ParseException e) {
-                ;
-            }
+        long result = FastHttpDateFormat.parseDate(value, formats);
+        if (result != (-1L)) {
+            return result;
         }
         throw new IllegalArgumentException(value);
 
