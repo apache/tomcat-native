@@ -66,73 +66,15 @@
 #include "jk_connect.h"
 #include "jk_util.h"
 #include "jk_msg_buff.h"
+#include "jk_ajp_common.h"
 #include "jk_ajp13.h"
 #include "jk_logger.h"
-#include "jk_service.h"
-#include "jk_mt.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 #define JK_AJP13_WORKER_NAME ("ajp13")
-
-struct ajp13_operation;
-typedef struct ajp13_operation ajp13_operation_t;
-
-struct ajp13_endpoint;
-typedef struct ajp13_endpoint ajp13_endpoint_t;
-
-struct ajp13_worker;
-typedef struct ajp13_worker ajp13_worker_t;
-
-struct ajp13_worker {
-    struct sockaddr_in worker_inet_addr; /* Contains host and port */
-    unsigned connect_retry_attempts;
-    char *name;
-
-    /* 
-     * Open connections cache...
-     * 
-     * 1. Critical section object to protect the cache.
-     * 2. Cache size. 
-     * 3. An array of "open" endpoints.
-     */
-    JK_CRIT_SEC cs;
-    unsigned ep_cache_sz;
-    ajp13_endpoint_t **ep_cache;
-
-    jk_worker_t worker;
-};
-
-/* 
- * endpoint, the remote which will does the work
- */
-struct ajp13_endpoint {
-    ajp13_worker_t *worker;
-
-    jk_pool_t pool;
-    jk_pool_atom_t buf[BIG_POOL_SIZE];
-
-    int sd;
-    int reuse;
-    jk_endpoint_t endpoint;
-
-    unsigned left_bytes_to_send;
-};
-
-/*
- * little struct to avoid multiples ptr passing
- * this struct is ready to hold upload file fd
- * to add upload persistant storage
- */
-struct ajp13_operation {
-    jk_msg_buf_t    *request;   /* original request storage */
-    jk_msg_buf_t    *reply;     /* reply storage (chuncked by ajp13 */
-    int     uploadfd;   /* future persistant storage id */
-    int     recoverable;    /* if exchange could be conducted on another TC */
-};
-
 
 int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
                                    const char *name,
