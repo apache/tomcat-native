@@ -96,15 +96,21 @@ struct jk_uriMap {
     unsigned int size;
     unsigned int capacity;
     struct jk_workerEnv *workerEnv;
+    int debug;
     
     /* ---------- Methods ---------- */
 
+    /** Initialize the map. This should be called after all workers
+        were added. It'll check if mappings have valid workers.
+    */
     int (*init)( jk_uriMap_t *_this,
                  struct jk_workerEnv *workerEnv,
                  jk_map_t *init_data );
 
     void (*destroy)( jk_uriMap_t *_this );
 
+    /** Add a servlet mapping. Can be done before init()
+     */
     jk_uriEnv_t *(*addMapping)( jk_uriMap_t *_this,
                                 const char *vhost,
                                 const char *uri,
