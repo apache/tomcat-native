@@ -303,6 +303,8 @@ public class InternalInputBuffer implements InputBuffer {
 
         activeFilters[++lastActiveFilter] = filter;
 
+        filter.setRequest(request);
+
     }
 
 
@@ -376,8 +378,9 @@ public class InternalInputBuffer implements InputBuffer {
     public void endRequest()
         throws IOException {
 
-        for (int i = 0; i <= lastActiveFilter; i++) {
-            pos -= activeFilters[i].end();
+        if (lastActiveFilter != -1) {
+            int extraBytes = (int) activeFilters[lastActiveFilter].end();
+            pos = pos - extraBytes;
         }
 
     }
@@ -761,9 +764,11 @@ public class InternalInputBuffer implements InputBuffer {
                     return -1;
             }
 
-            chunk.setBytes(buf, pos, lastValid - pos);
+            int length = lastValid - pos;
+            chunk.setBytes(buf, pos, length);
+            pos = lastValid;
 
-            return (lastValid - pos);
+            return (length);
 
         }
 

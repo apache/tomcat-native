@@ -102,13 +102,19 @@ public class IdentityInputFilter implements InputFilter {
     /**
      * Remaining bytes.
      */
-    protected long remaining = -1;
+    protected long remaining = 0;
 
 
     /**
      * Next buffer in the pipeline.
      */
     protected InputBuffer buffer;
+
+
+    /**
+     * Chunk used to read leftover bytes.
+     */
+    protected ByteChunk endChunk = new ByteChunk();
 
 
     // ------------------------------------------------------------- Properties
@@ -163,7 +169,7 @@ public class IdentityInputFilter implements InputFilter {
                                    (int) remaining);
                     result = (int) remaining;
                 }
-                remaining = remaining - result;
+                remaining = remaining - chunk.getLength();
             } else {
                 // No more bytes left to be read : return -1 and clear the 
                 // buffer
@@ -195,9 +201,13 @@ public class IdentityInputFilter implements InputFilter {
     public long end()
         throws IOException {
 
-        // FIXME: Consume extra bytes.
-        // FIXME: If too many bytes were read, return the amount.
-        return 0;
+        // Consume extra bytes.
+        while (remaining > 0) {
+            remaining = remaining - buffer.doRead(endChunk);
+        }
+
+        // If too many bytes were read, return the amount.
+        return -remaining;
 
     }
 
@@ -215,7 +225,8 @@ public class IdentityInputFilter implements InputFilter {
      */
     public void recycle() {
         contentLength = -1;
-        remaining = -1;
+        remaining = 0;
+        endChunk.recycle();
     }
 
 

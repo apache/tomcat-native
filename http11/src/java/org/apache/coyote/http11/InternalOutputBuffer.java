@@ -278,6 +278,8 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         activeFilters[++lastActiveFilter] = filter;
 
+        filter.setResponse(response);
+
     }
 
 

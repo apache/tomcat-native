@@ -295,6 +295,16 @@ public class Http11Connector implements Connector, ActionHook {
 
             // Finish the handling of the request
             try {
+                inputBuffer.endRequest();
+            } catch (IOException e) {
+                e.printStackTrace();
+                error = true;
+            } catch (Throwable t) {
+                // Problem ...
+                t.printStackTrace();
+                error = true;
+            }
+            try {
                 outputBuffer.endRequest();
             } catch (IOException e) {
                 e.printStackTrace();
