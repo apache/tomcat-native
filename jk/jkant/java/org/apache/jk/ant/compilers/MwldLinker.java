@@ -116,14 +116,9 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
             // write the link flags out
             linkOptPw.println("-warnings off");
             linkOptPw.println("-zerobss");
-            linkOptPw.println("-desc \"Tomcat Connector\"");
             linkOptPw.println("-o " + soFile + ".nlm");
-            linkOptPw.println("-screenname \"System Console\"");
-            linkOptPw.println("-nlmversion 1,20,2");
-            linkOptPw.println("-nodefaults");
             linkOptPw.println("-map " + soFile + ".map");
-            linkOptPw.println("-threadname \"Tomcat JKThread\"");
-            linkOptPw.println("-stacksize 64000");
+            linkOptPw.println("-nodefaults");
 
             // add debug information in if requested
             if (optG)
@@ -133,12 +128,22 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
                 linkOptPw.println("-sym codeview4");
                 linkOptPw.println("-osym " + soFile + ".NCV");
             }
+
+            // write out any additional link options
+            Enumeration opts = linkOpts.elements();
+            while( opts.hasMoreElements() ) {
+                JkData opt = (JkData) opts.nextElement();
+                String option = opt.getValue();
+                if( option == null ) continue;
+                linkOptPw.println( option );
+            }
+
             // add the default startup code to the list of objects
             linkOptPw.println(libBase + "\\lib\\nwpre.obj");
 
             // write the objects to link with to the .opt file
             for( int i=0; i<srcList.size(); i++ ) {
-		Source source=(Source)srcList.elementAt(i);
+                Source source=(Source)srcList.elementAt(i);
                 File srcF = source.getFile();
                 String name=srcF.getName();
                 String targetNA[]=co_mapper.mapFileName( name );
