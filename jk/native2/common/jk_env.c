@@ -107,7 +107,7 @@ static void *jk2_env_createInstance(jk_env_t *env, jk_pool_t *pool,
 {
     jk_env_objectFactory_t fac;
     jk_bean_t *result;
-    
+
     if( type==NULL  ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                         "env.createInstance(): NullPointerException\n");
@@ -133,6 +133,7 @@ static void *jk2_env_createInstance(jk_env_t *env, jk_pool_t *pool,
     result=(jk_bean_t *)pool->calloc( NULL, pool, sizeof( jk_bean_t ));
     result->type=type;
     result->name=name;
+    result->settings=NULL;
     
     fac( env, pool, result, type, name );
     if( result->object==NULL ) {

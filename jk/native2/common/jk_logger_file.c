@@ -123,7 +123,7 @@ static int jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,
     return JK_FALSE;
 }
 
-static int jk2_logger_file_parseLogLevel(jk_env_t *env, const char *level)
+int jk2_logger_file_parseLogLevel(jk_env_t *env, const char *level)
 {
     if( level == NULL ) return JK_LOG_ERROR_LEVEL;
     
