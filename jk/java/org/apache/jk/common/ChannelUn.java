@@ -113,10 +113,9 @@ public class ChannelUn extends JkHandler {
     int isNote=2;
     int osNote=3;
     AprImpl apr;
-    long gPool;
     
     public void accept( MsgContext ep ) throws IOException {
-        long l= apr.unAccept(gPool, unixListenSocket);
+        long l= apr.unAccept(unixListenSocket);
         /* We could create a real java.net.Socket, or a UnixSocket, etc
          */
         ep.setNote( socketNote, new Long( l ) );
@@ -150,8 +149,6 @@ public class ChannelUn extends JkHandler {
         }
 
         tp=new ThreadPool();
-        if( log.isDebugEnabled() ) log.debug( "Creating pool " + gPool );
-        gPool=apr.poolCreate( 0 );
 
         File socketFile=new File( file );
         if( socketFile.exists() ) {
@@ -159,7 +156,7 @@ public class ChannelUn extends JkHandler {
             if (!socketFile.delete())
                   throw(new IOException("Cannot remove " + file));
         }
-        unixListenSocket=apr.unSocketListen( gPool, file, 10 );
+        unixListenSocket=apr.unSocketListen( file, 10 );
         if (unixListenSocket<0)
             throw(new IOException("Cannot create listening socket " + file));
 
@@ -178,7 +175,7 @@ public class ChannelUn extends JkHandler {
     public void close(MsgContext ep) throws IOException {
         if( apr==null ) return;
         Long s=(Long)ep.getNote( socketNote );
-        apr.unSocketClose(gPool, s.longValue(),3);
+        apr.unSocketClose(s.longValue(),3);
     }
 
     public void destroy() throws IOException {
@@ -188,7 +185,7 @@ public class ChannelUn extends JkHandler {
                 tp.shutdown();
             
             if(apr !=null ) 
-                apr.unSocketClose(gPool, unixListenSocket,3);
+                apr.unSocketClose( unixListenSocket,3);
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -205,7 +202,7 @@ public class ChannelUn extends JkHandler {
 
         Long s=(Long)ep.getNote( socketNote );
 
-        apr.unWrite( gPool, s.longValue(), buf, 0, len );
+        apr.unWrite(  s.longValue(), buf, 0, len );
         return len;
     }
 
@@ -285,7 +282,7 @@ public class ChannelUn extends JkHandler {
         int got;
 
         while(pos < len) {
-            got=apr.unRead( gPool, s.longValue(),
+            got=apr.unRead( s.longValue(),
                             b, pos + offset, len - pos);
 
             if (log.isDebugEnabled()) {

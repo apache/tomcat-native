@@ -173,6 +173,7 @@ public class JniHandler extends JkHandler {
         msgCtx.setJniEnv( xEnv );
 
         long epP=apr.createJkHandler(xEnv, "endpoint");
+        apr.jkInit( xEnv, epP );
         msgCtx.setJniContext( epP );
 
     }
