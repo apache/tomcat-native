@@ -142,7 +142,7 @@ public final class Response {
     protected String contentLanguage = null;
     protected String characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
     protected int contentLength = -1;
-    private Locale locale = Constants.DEFAULT_LOCALE;
+    private Locale locale = null;//Constants.DEFAULT_LOCALE;
 
     /**
      * Holds request error exception.
@@ -311,7 +311,8 @@ public final class Response {
         // Reset the headers only if this is the main request,
         // not for included
         contentType = Constants.DEFAULT_CONTENT_TYPE;
-        locale = Constants.DEFAULT_LOCALE;
+        locale = null;//Constants.DEFAULT_LOCALE;
+        contentLanguage = null;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         contentLength = -1;
 
@@ -386,9 +387,9 @@ public final class Response {
                 setContentLength( cL );
                 return true;
             } catch( NumberFormatException ex ) {
-            // Do nothing - the spec doesn't have any "throws" 
-            // and the user might know what he's doing
-            return false;
+                // Do nothing - the spec doesn't have any "throws" 
+                // and the user might know what he's doing
+                return false;
             }
         }
         if( name.equalsIgnoreCase( "Content-Language" ) ) {
@@ -437,10 +438,16 @@ public final class Response {
                 value.append('-');
                 value.append(country);
             }
-            // only one header !
-            headers.setValue("Content-Language").setString(value.toString());
+            contentLanguage = value.toString();
         }
 
+    }
+
+    /**
+     * Return the content language.
+     */
+    public String getContentLanguage() {
+        return contentLanguage;
     }
 
     /*
@@ -488,7 +495,6 @@ public final class Response {
         if (encoding != null) {
             characterEncoding = encoding;
         }
-        headers.setValue("Content-Type").setString(contentType);
     }
 
     public String getContentType() {
@@ -497,7 +503,6 @@ public final class Response {
     
     public void setContentLength(int contentLength) {
         this.contentLength = contentLength;
-        headers.setValue("Content-Length").setInt(contentLength);
     }
 
     public int getContentLength() {
@@ -520,7 +525,7 @@ public final class Response {
         
         contentType = Constants.DEFAULT_CONTENT_TYPE;
         contentLanguage = null;
-        locale = Constants.DEFAULT_LOCALE;
+        locale = null;//Constants.DEFAULT_LOCALE;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         contentLength = -1;
         status = 200;

@@ -866,6 +866,7 @@ public class Http11Processor implements Processor, ActionHook {
             outputBuffer.addActiveFilter
                 (outputFilters[Constants.VOID_FILTER]);
             entityBody = false;
+            contentDelimitation = true;
         }
 
         MessageBytes methodMB = request.method();
@@ -873,10 +874,28 @@ public class Http11Processor implements Processor, ActionHook {
             // No entity body
             outputBuffer.addActiveFilter
                 (outputFilters[Constants.VOID_FILTER]);
+            contentDelimitation = true;
+        }
+
+        MimeHeaders headers = response.getMimeHeaders();
+        if (!entityBody) {
+            response.setContentLength(-1);
+        } else {
+            String contentType = response.getContentType();
+            if (contentType != null) {
+                headers.setValue("Content-Type").setString(contentType);
+            }
+            String contentLanguage = response.getContentLanguage();
+            if (contentLanguage != null) {
+                headers.setValue("Content-Language")
+                    .setString(contentLanguage);
+            }
         }
 
         int contentLength = response.getContentLength();
         if (contentLength != -1) {
+            response.getMimeHeaders().setValue("Content-Length")
+                .setInt(contentLength);
             outputBuffer.addActiveFilter
                 (outputFilters[Constants.IDENTITY_FILTER]);
             contentDelimitation = true;
@@ -907,14 +926,13 @@ public class Http11Processor implements Processor, ActionHook {
 
         if (!keepAlive) {
             response.addHeader("Connection", "close");
-        } else if(!http11) {
+        } else if (!http11) {
             response.addHeader("Connection", "Keep-Alive");
         }
 
         // Build the response header
         outputBuffer.sendStatus();
 
-        MimeHeaders headers = response.getMimeHeaders();
         int size = headers.size();
         for (int i = 0; i < size; i++) {
             outputBuffer.sendHeader(headers.getName(i), headers.getValue(i));
