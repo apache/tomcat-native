@@ -13,21 +13,6 @@
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer. 
  *
- * 2. Re/*
- * ====================================================================
- *
- * The Apache Software License, Version 1.1
- *
- * Copyright (c) 1999 The Apache Software Foundation.  All rights 
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
  * 2. Rey appear in the software itself,
  *    if and wherever such third-party acknowlegements normally appear.
  *
@@ -257,7 +242,7 @@ public class FileDirContext extends BaseDirContext {
      * @return the object bound to name
      * @exception NamingException if a naming exception is encountered
      */
-    public Object lookup(Name nameObj, boolean resolveLinkx, Object o)
+    public Object lookup(Name nameObj, boolean resolveLinkx)
         throws NamingException
     {
         if( log.isDebugEnabled() ) log.debug( "lookup " + nameObj );
