@@ -535,6 +535,8 @@ static void * create_proxy_config(apr_pool_t *p, server_rec *s)
     ps->noproxies = apr_array_make(p, 10, sizeof(struct noproxy_entry));
     ps->dirconn = apr_array_make(p, 10, sizeof(struct dirconn_entry));
     ps->allowed_connect_ports = apr_array_make(p, 10, sizeof(int));
+    ps->workers = apr_array_make(p, 10, sizeof(proxy_worker));
+    ps->balancers = apr_array_make(p, 10, sizeof(struct proxy_balancer));
     ps->domain = NULL;
     ps->viaopt = via_off; /* initially backward compatible with 1.3.1 */
     ps->viaopt_set = 0; /* 0 means default */
@@ -576,6 +578,8 @@ static void * merge_proxy_config(apr_pool_t *p, void *basev, void *overridesv)
     ps->noproxies = apr_array_append(p, base->noproxies, overrides->noproxies);
     ps->dirconn = apr_array_append(p, base->dirconn, overrides->dirconn);
     ps->allowed_connect_ports = apr_array_append(p, base->allowed_connect_ports, overrides->allowed_connect_ports);
+    ps->workers = apr_array_append(p, base->workers, overrides->workers);
+    ps->balancers = apr_array_append(p, base->balancers, overrides->balancers);
 
     ps->domain = (overrides->domain == NULL) ? base->domain : overrides->domain;
     ps->viaopt = (overrides->viaopt_set == 0) ? base->viaopt : overrides->viaopt;
