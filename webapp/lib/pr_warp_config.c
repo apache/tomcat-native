@@ -168,6 +168,35 @@ wa_boolean c_configure(wa_connection *conn) {
                 appl->lpth=NULL;
             }
         }
+        
+        /* If this application is local, we want to retrieve the allowed and
+           denied mapping list. */
+        if (appl->lpth!=NULL) {
+            p_reset(pack);
+            pack->type=TYPE_CONF_MAP;
+            p_write_int(pack,(int)appl->conf);
+            n_send(conf->sock,pack);
+            
+            while(1) {
+                if (n_recv(conf->sock,pack)!=wa_true) {
+                    wa_log(WA_MARK,"Cannot read packet (%s:%d)",WA_MARK);
+                    n_disconnect(conn);
+                    return(wa_false);
+                }
+                if (pack->type==TYPE_CONF_MAP_DONE) {
+                    wa_debug(WA_MARK,"Done mapping URLs");
+                    break;
+                } else if (pack->type==TYPE_CONF_MAP_ALLOW) {
+                    char *map=NULL;
+                    p_read_string(pack,&map);
+                    wa_debug(WA_MARK,"Allow URL mapping \"%s\"",map);
+                } else if (pack->type==TYPE_CONF_MAP_DENY) {
+                    char *map=NULL;
+                    p_read_string(pack,&map);
+                    wa_debug(WA_MARK,"Deny URL mapping \"%s\"",map);
+                }
+            }
+        }
 
         if (appl->lpth==NULL) {
             wa_debug(WA_MARK,"Application \"%s\" deployed with id=%d (%s)",
