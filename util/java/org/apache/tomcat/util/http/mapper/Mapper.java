@@ -91,23 +91,6 @@ public final class Mapper {
      */
     protected String defaultHostName = null;
 
-
-    /**
-     * Flag indicating if physical welcome files are to be processed by this
-     * mapper. Some default servlets may not want this, so this may be disabled
-     * here.
-     */
-    protected boolean processWelcomeResources = true;
-
-
-    /**
-     * Flag indicating that we should redirect to a directory when the URL
-     * doesn't end in a '/'.  It overrided the Authenticator, so the redirect 
-     * done before authentication.
-     */
-    protected boolean redirectDirectories = false;
-
-
     /**
      * Context associated with this wrapper, used for wrapper mapping.
      */
@@ -134,45 +117,6 @@ public final class Mapper {
      */
     public void setDefaultHostName(String defaultHostName) {
         this.defaultHostName = defaultHostName;
-    }
-
-
-    /**
-     * Get flag value indicating whether or not welcome files are processed by 
-     * the mapper.
-     * 
-     * @return Value of the processWelcomeResources flag
-     */
-    public boolean getProcessWelcomeResources() {
-        return processWelcomeResources;
-    }
-
-
-    /**
-     * Set the process flag indicating if welcome resources should be processed
-     * by the mapper. The default is true.
-     * 
-     * @param processWelcomeResources True if welcome files should be 
-     *        fully processed by this mapper.
-     */
-    public void setProcessWelcomeResources(boolean processWelcomeResources) {
-        this.processWelcomeResources = processWelcomeResources;
-    }
-
-    /**
-     * Get the flag that indicates if we redirect to directories that don't
-     * end a '/'.
-     */
-    public boolean getRedirectDirectories() {
-        return redirectDirectories;
-    }
-
-    /**
-     * Set the flag that indicates if we redirect to directories that don't
-     * end in a '/'.
-     */
-    public void setRedirectDirectories(boolean rd) {
-        redirectDirectories = rd;
     }
 
     /**
@@ -716,7 +660,7 @@ public final class Mapper {
         }
 
         // Rule 6 -- Welcome resources processing for physical folder
-        if (processWelcomeResources && mappingData.wrapper == null) {
+        if (mappingData.wrapper == null) {
             char[] buf = path.getBuffer();
             if( context.resources != null  && buf[pathEnd - 1] == '/') {
                 for (int i = 0; (i < context.welcomeResources.length)
@@ -760,22 +704,20 @@ public final class Mapper {
                 mappingData.wrapperPath.setChars
                     (path.getBuffer(), path.getStart(), path.getLength());
             }
-            if( redirectDirectories ) {
-                char[] buf = path.getBuffer();
-                if( context.resources != null && buf[pathEnd -1 ] != '/') {
-                    Object file = null;
-                    try {
-                        file = context.resources.lookup(path.toString());
-                    } catch(NamingException nex) {
-                        // Swallow, since someone else handles the 404
-                    }
-                    if(file != null && file instanceof DirContext ) {
-                        CharChunk dirPath = path.getClone();
-                        dirPath.append('/');
-                        mappingData.redirectPath.setChars
-                            (dirPath.getBuffer(), dirPath.getStart(), 
-                             dirPath.getLength());
-                    }
+            char[] buf = path.getBuffer();
+            if( context.resources != null && buf[pathEnd -1 ] != '/') {
+                Object file = null;
+                try {
+                    file = context.resources.lookup(path.toString());
+                } catch(NamingException nex) {
+                    // Swallow, since someone else handles the 404
+                }
+                if(file != null && file instanceof DirContext ) {
+                    CharChunk dirPath = path.getClone();
+                    dirPath.append('/');
+                    mappingData.redirectPath.setChars
+                        (dirPath.getBuffer(), dirPath.getStart(), 
+                         dirPath.getLength());
                 }
             }
         }
