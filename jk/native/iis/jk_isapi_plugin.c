@@ -82,15 +82,17 @@
 #define VERSION_STRING "Jakarta/ISAPI/1.0b1"
 
 /*
- * We use special two headers to pass values from the filter to the 
+ * We use special headers to pass values from the filter to the 
  * extension. These values are:
  *
  * 1. The real URI before redirection took place
  * 2. The name of the worker to be used.
+ * 3. The contents of the Translate header, if any
  *
  */
 #define URI_HEADER_NAME         ("TOMCATURI:")
 #define WORKER_HEADER_NAME      ("TOMCATWORKER:")
+#define TOMCAT_TRANSLATE_HEADER_NAME ("TOMCATTRANSLATE:")
 #define CONTENT_LENGTH          ("CONTENT_LENGTH:")
 
 #define HTTP_URI_HEADER_NAME     ("HTTP_TOMCATURI")
@@ -574,10 +576,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         char uri[INTERNET_MAX_URL_LENGTH]; 
 		char snuri[INTERNET_MAX_URL_LENGTH]="/";
 		char Host[INTERNET_MAX_URL_LENGTH];
+		char Translate[INTERNET_MAX_URL_LENGTH];
 
         char *query;
         DWORD sz = sizeof(uri);
         DWORD szHost = sizeof(Host);
+        DWORD szTranslate = sizeof(Translate);
 
         jk_log(logger, JK_LOG_DEBUG, 
                "HttpFilterProc started\n");
@@ -587,7 +591,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
          * Just in case somebody set these headers in the request!
          */
         p->SetHeader(pfc, URI_HEADER_NAME, NULL);
-	    p->SetHeader(pfc, WORKER_HEADER_NAME, NULL);
+        p->SetHeader(pfc, WORKER_HEADER_NAME, NULL);
+        p->SetHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, NULL);
         
         if (!p->GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz)) {
             jk_log(logger, JK_LOG_ERROR, 
@@ -653,6 +658,20 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     jk_log(logger, JK_LOG_ERROR, 
                            "HttpFilterProc error while adding request headers\n");
                     return SF_STATUS_REQ_ERROR;
+                }
+				
+                /* Move Translate: header to a temporary header so
+                 * that the extension proc will be called.
+                 * This allows the servlet to handle 'Translate: f'.
+                 */
+                if(p->GetHeader(pfc, "Translate:", (LPVOID)Translate, (LPDWORD)&szTranslate) &&
+                    Translate != NULL && szTranslate > 0) {
+                    if (!p->AddHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, Translate)) {
+                        jk_log(logger, JK_LOG_ERROR, 
+                          "HttpFilterProc error while adding Tomcat-Translate headers\n");
+                        return SF_STATUS_REQ_ERROR;
+                    }
+                p->SetHeader(pfc, "Translate:", NULL);
                 }
             } else {
                 jk_log(logger, JK_LOG_DEBUG, 
@@ -1199,6 +1218,10 @@ static int init_ws_service(isapi_private_data_t *private_data,
                    !strnicmp(tmp, CONTENT_LENGTH, strlen(CONTENT_LENGTH))) {
                     need_content_length_header = FALSE;
                     s->headers_names[i]  = tmp;
+                } else if (!strnicmp(tmp, TOMCAT_TRANSLATE_HEADER_NAME,
+                                          strlen(TOMCAT_TRANSLATE_HEADER_NAME))) {
+                    tmp += 6; /* TOMCAT */
+                    s->headers_names[i]  = tmp;
                 } else {
                     s->headers_names[i]  = tmp;
                 }
@@ -1214,7 +1237,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
                 *tmp = '\0';
                 tmp++;
 
-                /* Skipp all the WS chars after the ':' to the beginning of th header value */
+                /* Skip all the WS chars after the ':' to the beginning of th header value */
                 while(' ' == *tmp || '\t' == *tmp || '\v' == *tmp) {
                     tmp++;
                 }
