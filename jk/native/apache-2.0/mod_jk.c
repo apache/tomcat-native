@@ -111,6 +111,7 @@
 
 #define JK_WORKER_ID        ("jakarta.worker")
 #define JK_HANDLER          ("jakarta-servlet")
+#define JK_DURATION         ("jakarta.worker.duration")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
 
@@ -149,6 +150,13 @@ typedef struct {
     jk_uri_worker_map_t *uw_map;
 
     int was_initialized;
+
+    /*
+     * Request Logging
+     */
+
+    char *format_string;
+    apr_array_header_t *format;
 
     /*
      * SSL Support
@@ -877,6 +885,378 @@ static const char * jk_set_log_fmt(cmd_parms *cmd,
     return NULL;
 }
 
+/*****************************************************************
+ *
+ * Actually logging.
+ */
+
+typedef const char *(*item_key_func) (request_rec *, char *);
+                                                             
+typedef struct {                                             
+    item_key_func func;
+    char *arg;         
+} request_log_format_item;
+
+static const char *process_item(request_rec *r,
+                          request_log_format_item *item)
+{
+    const char *cp;
+
+    cp = (*item->func) (r,item->arg);
+    return cp ? cp : "-";
+}
+
+static int request_log_transaction(request_rec *r,
+                                  jk_server_conf_t *conf)
+{
+    request_log_format_item *items;
+    char *str, *s;
+    int i;
+    int len = 0;
+    const char **strs;
+    int *strl;
+    apr_array_header_t *format = conf->format;
+
+    strs = ap_palloc(r->pool, sizeof(char *) * (format->nelts));
+    strl = ap_palloc(r->pool, sizeof(int) * (format->nelts));
+    items = (request_log_format_item *) format->elts;
+    for (i = 0; i < format->nelts; ++i) {
+        strs[i] = process_item(r, &items[i]);
+    }
+    for (i = 0; i < format->nelts; ++i) {
+        len += strl[i] = strlen(strs[i]);
+    }
+    str = ap_palloc(r->pool, len + 1);
+    for (i = 0, s = str; i < format->nelts; ++i) {
+        memcpy(s, strs[i], strl[i]);
+        s += strl[i];
+    }
+    *s = 0;
+    
+    jk_log(conf->log ? conf->log : main_log, JK_LOG_REQUEST, str);
+}
+
+/*****************************************************************
+ *
+ * Parsing the log format string
+ */
+
+static char *format_integer(apr_pool_t *p, int i)
+{
+    return apr_psprintf(p, "%d", i);
+}
+ 
+static char *pfmt(apr_pool_t *p, int i)
+{
+    if (i <= 0) {
+        return "-";
+    }
+    else {
+        return format_integer(p, i);
+    }
+}
+
+static const char *constant_item(request_rec *dummy, char *stuff)
+{
+    return stuff;
+}
+
+static const char *log_worker_name(request_rec *r, char *a)
+{
+    return ap_table_get(r->notes, JK_WORKER_ID);
+}
+
+
+static const char *log_request_duration(request_rec *r, char *a)
+{
+    return ap_table_get(r->notes, JK_DURATION);
+}
+ 
+static const char *log_request_line(request_rec *r, char *a)
+{
+            /* NOTE: If the original request contained a password, we
+             * re-write the request line here to contain XXXXXX instead:
+             * (note the truncation before the protocol string for HTTP/0.9 requests)
+             * (note also that r->the_request contains the unmodified request)
+             */
+    return (r->parsed_uri.password) ? ap_pstrcat(r->pool, r->method, " ",
+                                         apr_uri_unparse(r->pool, &r->parsed_uri, 0),
+                                         r->assbackwards ? NULL : " ", r->protocol, NULL)
+                                        : r->the_request;
+}
+
+/* These next two routines use the canonical name:port so that log
+ * parsers don't need to duplicate all the vhost parsing crud.
+ */
+static const char *log_virtual_host(request_rec *r, char *a)
+{
+    return r->server->server_hostname;
+}
+ 
+static const char *log_server_port(request_rec *r, char *a)
+{
+    return apr_psprintf(r->pool, "%u",
+        r->server->port ? r->server->port : ap_default_port(r));
+}
+ 
+/* This respects the setting of UseCanonicalName so that
+ * the dynamic mass virtual hosting trick works better.
+ */
+static const char *log_server_name(request_rec *r, char *a)
+{
+    return ap_get_server_name(r);
+}
+
+static const char *log_request_uri(request_rec *r, char *a)
+{
+    return r->uri;
+}
+static const char *log_request_method(request_rec *r, char *a)
+{
+    return r->method;
+}
+
+static const char *log_request_protocol(request_rec *r, char *a)
+{
+    return r->protocol;
+}
+static const char *log_request_query(request_rec *r, char *a)
+{
+    return (r->args != NULL) ? ap_pstrcat(r->pool, "?", r->args, NULL)
+                             : "";
+}                  
+static const char *log_status(request_rec *r, char *a)
+{                  
+    return pfmt(r->pool,r->status);
+}                  
+                   
+static const char *clf_log_bytes_sent(request_rec *r, char *a)
+{                  
+    if (!r->sent_bodyct) {
+        return "-";
+    }              
+    else {        
+	return apr_off_t_toa(r->pool, r->bytes_sent);
+    }              
+}                  
+    
+static const char *log_bytes_sent(request_rec *r, char *a)
+{                  
+    if (!r->sent_bodyct) {
+        return "0";
+    }              
+    else {        
+	return apr_psprintf(r->pool, "%" APR_OFF_T_FMT, r->bytes_sent);
+    }              
+}
+
+static struct log_item_list {
+    char ch;
+    item_key_func func;
+} log_item_keys[] = {
+
+    {
+        'T', log_request_duration
+    },
+    {
+        'r', log_request_line
+    },
+    {
+        'U', log_request_uri
+    },
+    {
+        's', log_status
+    },
+    {
+        'b', clf_log_bytes_sent
+    },
+    {
+        'B', log_bytes_sent
+    },
+    {
+        'V', log_server_name
+    },
+    {
+        'v', log_virtual_host
+    },
+    {
+        'p', log_server_port
+    },
+    {
+        'H', log_request_protocol
+    },
+    {
+        'm', log_request_method
+    },
+    {
+        'q', log_request_query
+    },
+    {
+        'w', log_worker_name
+    },
+    {
+        '\0'
+    }
+};
+
+static struct log_item_list *find_log_func(char k)
+{
+    int i;
+
+    for (i = 0; log_item_keys[i].ch; ++i)
+        if (k == log_item_keys[i].ch) {
+            return &log_item_keys[i];
+        }
+
+    return NULL;
+}
+
+static char *parse_request_log_misc_string(apr_pool_t *p,
+                                           request_log_format_item *it,
+                                           const char **sa)
+{
+    const char *s;
+    char *d;
+
+    it->func = constant_item;
+
+    s = *sa;
+    while (*s && *s != '%') {
+        s++;
+    }
+    /*
+     * This might allocate a few chars extra if there's a backslash
+     * escape in the format string.
+     */
+    it->arg = ap_palloc(p, s - *sa + 1);
+
+    d = it->arg;
+    s = *sa;
+    while (*s && *s != '%') {
+        if (*s != '\\') {
+            *d++ = *s++;
+        }
+        else {
+            s++;
+            switch (*s) {
+            case '\\':
+                *d++ = '\\';
+                s++;
+                break;
+            case 'n':
+                *d++ = '\n';
+                s++;
+                break;
+            case 't':
+                *d++ = '\t';
+                s++;
+                break;
+            default:
+                /* copy verbatim */
+                *d++ = '\\';
+                /*
+                 * Allow the loop to deal with this *s in the normal
+                 * fashion so that it handles end of string etc.
+                 * properly.
+                 */
+                break;
+            }
+        }
+    }
+    *d = '\0';
+
+    *sa = s;
+    return NULL;
+}
+
+static char *parse_request_log_item(apr_pool_t *p,
+                                    request_log_format_item *it,
+                                    const char **sa)
+{
+    const char *s = *sa;
+    int i;
+    struct log_item_list *l;
+
+    if (*s != '%') {
+        return parse_request_log_misc_string(p, it, sa);
+    }
+    
+    ++s;
+    it->arg = "";               /* For safety's sake... */
+    
+    l = find_log_func(*s++);
+    if (!l) {
+        char dummy[2];
+
+        dummy[0] = s[-1];
+        dummy[1] = '\0';
+        return ap_pstrcat(p, "Unrecognized JkRequestLogFormat directive %",
+                          dummy, NULL);
+    }
+    it->func = l->func;
+    *sa = s;
+    return NULL;
+}
+
+static apr_array_header_t *parse_request_log_string(apr_pool_t *p, const char *s,
+                                              const char **err)
+{
+    apr_array_header_t *a = ap_make_array(p, 15, sizeof(request_log_format_item));
+    char *res;
+
+    while (*s) {
+        if ((res = parse_request_log_item(p, (request_log_format_item *) ap_push_array(a), &s))) {
+            *err = res;
+            return NULL;
+        }
+    }    
+     
+    s = "\n";
+    parse_request_log_item(p, (request_log_format_item *) ap_push_array(a), &s);
+    return a;
+}
+
+/*
+ * JkRequestLogFormat Directive Handling
+ *
+ * JkRequestLogFormat format string
+ *
+ * %b - Bytes sent, excluding HTTP headers. In CLF format
+ * %B - Bytes sent, excluding HTTP headers.             
+ * %H - The request protocol              
+ * %m - The request method
+ * %p - The canonical Port of the server serving the request
+ * %q - The query string (prepended with a ? if a query string exists,
+ *      otherwise an empty string)
+ * %r - First line of request
+ * %s - request HTTP status code
+ * %T - Requset duration, elapsed time to handle request in seconds '.' micro seconds
+ * %U - The URL path requested, not including any query string.
+ * %v - The canonical ServerName of the server serving the request.
+ * %V - The server name according to the UseCanonicalName setting.
+ * %w - Tomcat worker name
+ */
+
+static const char *jk_set_request_log_format(cmd_parms *cmd,
+                                             void *dummy,    
+                                             char *format)
+{
+    const char *err_string = NULL;
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+
+    conf->format_string = ap_pstrdup(cmd->pool,format);
+    if( format != NULL ) {
+        conf->format = parse_request_log_string(cmd->pool, format, &err_string);
+    }
+    if( conf->format == NULL )
+        return "JkRequestLogFormat format array NULL";
+
+    return err_string;
+}
+
+
 /*
  * JkExtractSSL Directive Handling
  *
@@ -1146,6 +1526,9 @@ static const command_rec jk_cmds[] =
     AP_INIT_TAKE1(
         "JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF,
         "The Jakarta Tomcat module log format, follow strftime synthax"),
+    AP_INIT_TAKE1(
+    	"JkRequestLogFormat", jk_set_request_log_format, NULL, RSRC_CONF,
+     	"The Jakarta mod_jk module request log format string"),
 
     /*
      * Apache has multiple SSL modules (for example apache_ssl, stronghold
@@ -1309,6 +1692,7 @@ static int jk_handler(request_rec *r)
         jk_worker_t *worker = wc_get_worker_for_name(worker_name, l);
 
         if(worker) {
+        	struct timeval tv_begin,tv_end;
             int rc = JK_FALSE;
             apache_private_data_t private_data;
             jk_ws_service_t s;
@@ -1323,6 +1707,11 @@ static int jk_handler(request_rec *r)
 
             s.ws_private = &private_data;
             s.pool = &private_data.p;            
+#ifndef NO_GETTIMEOFDAY
+            if(conf->format != NULL) {
+                gettimeofday(&tv_begin, NULL);
+            }
+#endif
             
             if(init_ws_service(&private_data, &s, conf)) {
                 jk_endpoint_t *end = NULL;
@@ -1373,6 +1762,24 @@ static int jk_handler(request_rec *r)
 /* #endif */
                 }
             }
+
+#ifndef NO_GETTIMEOFDAY
+            if(conf->format != NULL) {
+                char *duration = NULL;
+                char *status = NULL;
+                long micro,seconds;
+                gettimeofday(&tv_end, NULL);
+                if( tv_end.tv_usec < tv_begin.tv_usec ) {
+                    tv_end.tv_usec += 1000000;
+                    tv_end.tv_sec--;
+                }
+                micro = tv_end.tv_usec - tv_begin.tv_usec;
+                seconds = tv_end.tv_sec - tv_begin.tv_sec;
+                duration = apr_psprintf(r->pool,"%.1d.%.6d",seconds,micro);
+                ap_table_setn(r->notes, JK_DURATION, duration);
+                request_log_transaction(r,conf);
+            }
+#endif
 
             jk_close_pool(&private_data.p);
 
