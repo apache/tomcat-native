@@ -474,9 +474,22 @@ char * JK_METHOD jk_md5(const unsigned char *org, const unsigned char *org2, cha
 
 #else /* USE_APACHE_MD5 */
 
-#include "ap_config.h"
 #include "httpd.h"
+#include "http_config.h"
+
+#ifdef STANDARD20_MODULE_STUFF
+
+#include "apr_md5.h"
+#define  AP_MD5_CTX 	apr_md5_ctx_t
+#define  ap_MD5Init 	apr_md5_init
+#define  ap_MD5Update 	apr_md5_update
+#define  ap_MD5Final 	apr_md5_final
+
+#else /* STANDARD20_MODULE_STUFF */
+
 #include "ap_md5.h"
+
+#endif /* STANDARD20_MODULE_STUFF */
 
 char * JK_METHOD jk_md5(const unsigned char *org, const unsigned char *org2, char *dst)
 {

@@ -156,7 +156,7 @@ int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t       *msg,
  * Build the Unknown Packet
  *
  * +-----------------------------+---------------------------------+------------------------------+
- * | UNKNOWN PACKET CMD (1 byte) | UNHANDLED MESSAGE SIZE (32bits) | UNHANDLED MESSAGE (bytes...) |
+ * | UNKNOWN PACKET CMD (1 byte) | UNHANDLED MESSAGE SIZE (16bits) | UNHANDLED MESSAGE (bytes...) |
  * +-----------------------------+---------------------------------+------------------------------+
  *
  */
@@ -179,7 +179,7 @@ int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t		*msg,
 	/*
 	 * UNHANDLED MESSAGE SIZE
 	 */
-	if (jk_b_append_long(msg, jk_b_get_len(unk)))
+	if (jk_b_append_int(msg, jk_b_get_len(unk)))
 		return JK_FALSE;
 
 	/*
