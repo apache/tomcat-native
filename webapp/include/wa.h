@@ -75,14 +75,16 @@
 
 /* WebApp Library type definitions. */
 typedef int boolean;
-typedef struct wa_connection wa_connection;
 typedef struct wa_application wa_application;
-typedef struct wa_deployer wa_deployer;
+typedef struct wa_connection wa_connection;
+typedef struct wa_provider wa_provider;
 typedef struct wa_request wa_request;
-typedef void wa_provider;
+typedef struct wa_webserver wa_webserver;
 
 /* WebApp Library includes */
 #include <wa_general.h>
+#include <wa_provider.h>
 #include <wa_request.h>
+#include <wa_webserver.h>
 
 #endif /* ifndef _WA_H_ */

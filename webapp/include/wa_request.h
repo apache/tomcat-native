@@ -56,7 +56,7 @@
  * ========================================================================= */
 
 /**
- * @package WebApp Request Package
+ * @package Request
  * @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
  * @version $Id$
  */
@@ -153,19 +153,23 @@ struct wa_request {
 	apr_table_t *hdrs;
 };
 
- 
 /**
- * Attempt to match an URL against a web application.
- * <br>
- * This function will return <b>TRUE</b> only if the root URL path of the
- * application matches the beginning of the specified URL.
+ * Allocate a new request structure.
  *
- * @param u The request URL to be matched against the web application.
- * @param a The application against which the URL must be matched.
- * @return <b>TRUE</b> if the URL can be handled by the web application without
- *         raising a &quot;404 Not Found&quot; error, <b>FALSE</b> otherwise.
+ * @param r A pointer to where the newly allocated <code>wa_request</code>
+ *          structure must be allocated.
+ * @param d The web-server specific data for this request.
+ * @return An error message on faliure or <b>NULL</b>.
  */
-boolean wa_match(const char *u, wa_application *a);
+const char *wa_request_alloc(wa_request **r, void *d);
+
+/**
+ * Clean up and free the memory used by a request structure.
+ *
+ * @param r The request structure to destroy.
+ * @return An error message on faliure or <b>NULL</b>.
+ */
+const char *wa_request_free(wa_request *r);
 
 /**
  * Invoke a request in a web application.
@@ -173,6 +177,6 @@ boolean wa_match(const char *u, wa_application *a);
  * @param r The WebApp Library request structure.
  * @return The HTTP result code of this operation.
  */
-int wa_invoke(wa_request *r, wa_application *a);
+int wa_request_invoke(wa_request *r, wa_application *a);
 
 #endif /* ifndef _WA_REQUEST_H_ */

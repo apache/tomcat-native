@@ -56,12 +56,12 @@
  * ========================================================================= */
 
 /**
- * @package WebApp General Package
+ * @package Connection Provider
  * @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
  * @version $Id$
  */
-#ifndef _WA_GENERAL_H_
-#define _WA_GENERAL_H_
+#ifndef _WA_PROVIDER_H_
+#define _WA_PROVIDER_H_
 
 /**
  * The WebApp Library connection provider structure.
@@ -138,4 +138,12 @@ struct wa_provider {
     void (*handle) (wa_request *req);
 };
 
-#endif /* ifndef _WA_GENERAL_H_ */
+/**
+ * Retrieve a provider by its name.
+ *
+ * @param n The provider name.
+ * @return A pointer to a <code>wa_provider</code> structure or <b>NULL</b>.
+ */
+wa_provider *wa_getprovider(const char *n);
+
+#endif /* ifndef _WA_PROVIDER_H_ */

@@ -56,12 +56,17 @@
  * ========================================================================= */
 
 /**
- * @package WebApp General Package
+ * @package General
  * @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
  * @version $Id$
  */
 #ifndef _WA_GENERAL_H_
 #define _WA_GENERAL_H_
+
+/**
+ * A freakin' int.
+ */
+extern int errno;
 
 /**
  * The WebApp Library connection structure.
@@ -110,9 +115,10 @@ struct wa_application {
  * function is called before this function has been invoked will result in
  * impredictable results.
  *
+ * @param w The Web Server structure used for callbacks.
  * @return <b>NULL</b> on success or an error message on faliure.
  */
-const char *wa_init(void);
+const char *wa_init(wa_webserver *w);
 
 /**
  * Clean up the WebApp Library.
@@ -151,5 +157,18 @@ const char *wa_connect(wa_connection **c, const char *p, const char *a);
  */
 const char *wa_deploy(wa_application **a, wa_connection *c, const char *n,
                       const char *p);
+
+/**
+ * Attempt to match an URL against a web application.
+ * <br>
+ * This function will return <b>TRUE</b> only if the root URL path of the
+ * application matches the beginning of the specified URL.
+ *
+ * @param u The request URL to be matched against the web application.
+ * @param a The application against which the URL must be matched.
+ * @return <b>TRUE</b> if the URL can be handled by the web application without
+ *         raising a &quot;404 Not Found&quot; error, <b>FALSE</b> otherwise.
+ */
+boolean wa_match(const char *u, wa_application *a);
 
 #endif /* ifndef _WA_GENERAL_H_ */
