@@ -6,12 +6,16 @@ AC_REVISION($Id$)dnl
 AC_PREREQ(2.13)
 AC_INIT(common/jk_worker.h)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
+AC_CANONICAL_SYSTEM
 
 dnl package and version. (synchronization with common/jk_version.h ?)
 PACKAGE=mod_jk
 VERSION=1.2.4
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
+
+AC_PROG_CC
+AC_PROG_LD
 
 dnl Not sure what it does, but the libtool manual seems to require this
 dnl It should use the native platform dlopen ( if available )
@@ -20,10 +24,6 @@ AC_LIBTOOL_DLOPEN
 dnl AM_PROG_LIBTOOL often causes problems.
 dnl I have solved them once using aclocal --acdir=/usr/local/share/aclocal/
 AM_PROG_LIBTOOL
-
-AC_PROG_CC
-
-AC_PROG_LD
 
 AC_PATH_PROG(TEST,test,$PATH)dnl
 AC_SUBST(TEST)
