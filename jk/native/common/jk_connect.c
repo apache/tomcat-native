@@ -110,8 +110,7 @@ int jk_resolve(char *host,
     int x;
 
     /* TODO: Should be updated for IPV6 support. */
-    /* for now use the correct type, in_addr_t */
-    in_addr_t laddr;
+    u_long laddr;
 
     rc->sin_port   = htons((short)port);
     rc->sin_family = AF_INET;
