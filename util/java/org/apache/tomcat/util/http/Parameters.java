@@ -101,6 +101,7 @@ public final class Parameters extends MultiMap {
     private Parameters currentChild=null;
 
     String encoding=null;
+    String queryStringEncoding=null;
     
     /**
      * 
@@ -120,6 +121,11 @@ public final class Parameters extends MultiMap {
     public void setEncoding( String s ) {
 	encoding=s;
 	if(debug>0) log( "Set encoding to " + s );
+    }
+
+    public void setQueryStringEncoding( String s ) {
+	queryStringEncoding=s;
+	if(debug>0) log( "Set query string encoding to " + s );
     }
 
     public void recycle() {
@@ -281,22 +287,33 @@ public final class Parameters extends MultiMap {
     public void handleQueryParameters() {
 	if( didQueryParameters ) return;
 
-        if( queryMB != null)
-            queryMB.setEncoding( encoding );
 	didQueryParameters=true;
-	if( debug > 0  )
-	    log( "Decoding query " + queryMB + " " + encoding);
-	    
+
 	if( queryMB==null || queryMB.isNull() )
 	    return;
 	
 	try {
-	    decodedQuery.duplicate( queryMB );
-	    decodedQuery.setEncoding(encoding);
+            decodedQuery.duplicate( queryMB );
+            if (queryStringEncoding == null) {
+                ByteChunk bc = decodedQuery.getByteChunk();
+                CharChunk cc = decodedQuery.getCharChunk();
+                cc.allocate(bc.getLength(), -1);
+                // Default encoding: fast conversion
+                byte[] bbuf = bc.getBuffer();
+                char[] cbuf = cc.getBuffer();
+                int start = bc.getStart();
+                for (int i = 0; i < bc.getLength(); i++) {
+                    cbuf[i] = (char) (bbuf[i + start] & 0xff);
+                }
+                decodedQuery.setChars(cbuf, 0, bc.getLength());
+            } else {
+                decodedQuery.setEncoding(queryStringEncoding);
+                decodedQuery.toChars();
+            }
 	} catch( IOException ex ) {
 	}
 	if( debug > 0  )
-	    log( "Decoding query " + decodedQuery + " " + encoding);
+	    log( "Decoding query " + decodedQuery + " " + queryStringEncoding);
 
 	processParameters( decodedQuery );
     }
