@@ -127,13 +127,14 @@ static char *get_cookie(jk_ws_service_t *s,
                    id_start[-1] == ',' ||
                    isspace(is_start[-1]) ) {
                     id_start += strlen(name);
-                    while(*id_start && !isspace(*id_start))
+                    while(*id_start && isspace(*id_start))
                         ++id_start;
                     if(*id_start == '=' && id_start[1]) {
                         /*
                          * Session cookie was found, get it's value
                          */
                         char *id_end;
+                        ++id_start;
                         id_start = jk_pool_strdup(s->pool, id_start);
                         if((id_end = strchr(id_start, ';')) != NULL) {
                             *id_end = '\0';
