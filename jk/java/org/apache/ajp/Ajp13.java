@@ -403,6 +403,8 @@ public class Ajp13 {
 		isSSL = true;
 		req.setAttribute("javax.servlet.request.X509Certificate",
 				 msg.getString());
+                req.setAttribute("javax.servlet.request.key_size",
+                                 new Integer (msg.getLen()));
                 break;
 		
 	    case SC_A_SSL_CIPHER   :
