@@ -760,14 +760,21 @@ static int status_mime_type(const char *req)
 {
     if (!req)
         return 0;
-    else if (!strncmp(req, "mime=html", 9))
-        return 0;
-    else if (!strncmp(req, "mime=xml", 8))
-        return 1;
-    else if (!strncmp(req, "mime=txt", 8))
-        return 2;
-    else
-        return 0;
+    else {
+        char buf[32];
+        char *mimetype = NULL;
+        int ret = 0 ;
+        if(status_cmd("mime", req, buf, sizeof(buf)) != NULL) {
+            mimetype = strdup(buf) ;
+		    if (!strncmp(mimetype, "xml", 3))
+		        ret = 1;
+		    else if (!strncmp(mimetype, "txt", 3))
+		        ret = 2;
+        }
+        if (mimetype)
+            free(mimetype);
+        return ret ;
+    }
 }
 
 static int JK_METHOD service(jk_endpoint_t *e,
