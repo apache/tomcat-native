@@ -341,8 +341,6 @@ public class InternalOutputBuffer implements OutputBuffer {
             // set the filters accordingly.
             response.action(ActionCode.ACTION_COMMIT, null);
 
-            commit();
-
         }
 
         for (int i = lastActiveFilter; i >= 0; i--) {
@@ -465,8 +463,6 @@ public class InternalOutputBuffer implements OutputBuffer {
             // then validate the headers, send them (using sendHeaders) and 
             // set the filters accordingly.
             response.action(ActionCode.ACTION_COMMIT, null);
-
-            commit();
 
         }
 

@@ -72,7 +72,7 @@ import org.apache.coyote.http11.InputFilter;
  * 
  * @author Remy Maucherat
  */
-public class IdentityInputFilter implements InputBuffer {
+public class IdentityInputFilter implements InputFilter {
 
 
     // -------------------------------------------------------------- Constants

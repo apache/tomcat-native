@@ -143,4 +143,28 @@ public final class Constants {
     public static final String CRLF = "\r\n";
 
 
+    /**
+     * Indetity filters (input and output).
+     */
+    public static final int IDENTITY_FILTER = 0;
+
+
+    /**
+     * Chunked filters (input and output).
+     */
+    public static final int CHUNKED_FILTER = 1;
+
+
+    /**
+     * HTTP/1.0.
+     */
+    public static final String HTTP_10 = "HTTP/1.0";
+
+
+    /**
+     * HTTP/1.1.
+     */
+    public static final String HTTP_11 = "HTTP/1.1";
+
+
 }
