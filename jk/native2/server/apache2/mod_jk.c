@@ -288,28 +288,6 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
 /* Utility functions                                                         */
 /* ========================================================================= */
 
-/* ========================================================================= */
-/* Log something to Jk log file then exit */
-static void jk_error_exit(const char *file, 
-                          int line, 
-                          int level, 
-                          const server_rec *s, 
-                          apr_pool_t *p, 
-                          const char *fmt, ...)
-{
-    va_list ap;
-    char *res;
-
-    va_start(ap, fmt);
-    res = apr_pvsprintf(s->process->pool, fmt, ap);
-    va_end(ap);
-
-    ap_log_error(file, line, level, 0, s, res);
-
-    /* Exit process */
-    exit(1);
-}
-
 static int get_content_length(request_rec *r)
 {
     if(r->clength > 0) {
@@ -713,7 +691,6 @@ static const char *jk_worker_property(cmd_parms *cmd,
  *
  * JkLogFile file
  */
-
 static const char *jk_set_log_file(cmd_parms *cmd, 
                                    void *dummy, 
                                    const char *log_file)
@@ -894,7 +871,6 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
  *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)
  *  ForwardURIEscaped       => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
  */
-
 static const char *jk_set_options(cmd_parms *cmd,
                                   void *dummy,
                                   const char *line)
@@ -944,7 +920,8 @@ static const char *jk_set_options(cmd_parms *cmd,
         else if (action == '+') {
             workerEnv->options |=  opt;
         }
-        else {            /* for now +Opt == Opt */
+        else {
+            /* for now +Opt == Opt */
             workerEnv->options |=  opt;
         }
     }
@@ -956,7 +933,6 @@ static const char *jk_set_options(cmd_parms *cmd,
  *
  * JkEnvVar MYOWNDIR
  */
-
 static const char *jk_add_env_var(cmd_parms *cmd,
                                   void *dummy,
                                   const char *env_name,
@@ -1100,7 +1076,7 @@ static void *create_jk_dir_config(apr_pool_t *p, char *dummy)
     jk_uriEnv_t *new =
         (jk_uriEnv_t *)apr_pcalloc(p, sizeof(jk_uriEnv_t));
 
-    printf("XXX Create dir config \n");
+    printf("XXX Create dir config %s\n", dummy);
     return new;
 }
 
@@ -1182,7 +1158,7 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
     /* Local initialization */
     workerEnv->_private = s;
 
-    printf("XXX Create jk config\n");
+    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO, "mod_jk.create_jk_config()\n" ); 
     return workerEnv;
 }
 
@@ -1230,8 +1206,6 @@ static void *merge_jk_config(apr_pool_t *p,
     if(!uri_worker_map_alloc(&(overrides->uw_map), 
                              overrides->uri_to_context, 
                              overrides->log)) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, overrides->s, 
-                      overrides->s->process->pool, "Memory error");
     }
     
     if (base->secret_key)
@@ -1249,9 +1223,11 @@ static void jk_child_init(apr_pool_t *pconf,
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    printf("XXX Child init ");
-    /* init_jk( pconf, conf, s );  do we need jk_child_init? For ajp14? */
-  }
+    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO, "mod_jk child init\n" );
+    
+    /* init_jk( pconf, conf, s );
+       do we need jk_child_init? For ajp14? */
+}
 
 /** Initialize jk, using worker.properties. 
     We also use apache commands ( JkWorker, etc), but this use is 
@@ -1265,7 +1241,9 @@ static void jk_child_init(apr_pool_t *pconf,
 static void init_jk( apr_pool_t *pconf, jk_workerEnv_t *workerEnv, server_rec *s ) {
     int err;
     jk_logger_t *l=workerEnv->l;
-    
+
+    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO, "mod_jk.init_jk()\n" ); 
+
     l->open( l, workerEnv->init_data );
 
     /* local initialization */
@@ -1288,15 +1266,50 @@ static int jk_post_config(apr_pool_t *pconf,
                            apr_pool_t *ptemp, 
                            server_rec *s)
 {
-    printf("XXX postConfig");
-    if(!s->is_virtual) {
-        jk_workerEnv_t *workerEnv =
-            (jk_workerEnv_t *)ap_get_module_config(s->module_config, 
-                                                     &jk_module);
-        if(!workerEnv->was_initialized) {
-            workerEnv->was_initialized = JK_TRUE;        
-            init_jk( pconf, workerEnv, s );
+    jk_workerEnv_t *workerEnv;
+    apr_pool_t *gPool=plog;
+    apr_pool_t *tmpPool=plog;
+    void *data=NULL;
+    int i;
+
+    if(s->is_virtual) 
+        return OK;
+
+    workerEnv =
+        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
+    
+    /* Apache will first validate the config then restart.
+       That will unload all .so modules - including ourself.
+       Keeping 'was_initialized' in workerEnv is pointless, since both
+       will disapear.
+    */
+    for( i=0; i<10; i++ ) {
+        tmpPool=apr_pool_get_parent( gPool );
+        if( tmpPool == NULL ) {
+            workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO,
+                                "mod_jk.post_config() found global at %d\n",i);
+            printf("XXX found global at %d\n", i );
+            break;
         }
+        gPool=tmpPool;
+    }
+
+    if( tmpPool == NULL ) {
+        /* We have a global pool ! */
+        apr_pool_userdata_get( &data, "mod_jk_init", gPool );
+        if( data==NULL ) {
+            workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO,
+                                "mod_jk.post_config() validation, no key %d\n",i);
+            printf("XXX No key\n");
+            apr_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool );
+            return OK;
+        }
+    }
+        
+    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO, "mod_jk.post_config()\n" ); 
+    if(!workerEnv->was_initialized) {
+        workerEnv->was_initialized = JK_TRUE;        
+        init_jk( pconf, workerEnv, s );
     }
     return OK;
 }
@@ -1324,73 +1337,45 @@ static int jk_handler(request_rec *r)
     int              rc;
     jk_worker_t *worker=NULL;
     jk_endpoint_t *end = NULL;
+    jk_uriEnv_t *uriEnv;
 
-    if(strcmp(r->handler,JK_HANDLER))    /* not for me, try next handler */
+    uriEnv=ap_get_module_config( r->request_config, &jk_module );
+
+    /* not for me, try next handler */
+    if(uriEnv==NULL && strcmp(r->handler,JK_HANDLER))
       return DECLINED;
-
-    workerEnv = (jk_workerEnv_t *)ap_get_module_config(r->server->module_config, 
-                                                       &jk_module);
-    l = workerEnv->l;
-
-    worker_name = apr_table_get(r->notes, JK_WORKER_ID);
-
-    /* Set up r->read_chunked flags for chunked encoding, if present */
-    if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
-        return rc;
-    }
-
-    if( worker_name == NULL ) {
-        /* SetHandler case - per_dir config should have the worker*/
-        worker =  workerEnv->defaultWorker;
-        worker_name=worker->name;
-        l->jkLog(l, JK_LOG_DEBUG, 
-                 "Default worker for %s %s\n", r->uri, worker->name); 
-    }
-
-    if (1) {
-        l->jkLog(l, JK_LOG_DEBUG, "Into handler r->proxyreq=%d "
-               "r->handler=%s r->notes=%d worker=%s\n", 
-               r->proxyreq, r->handler, r->notes, worker_name); 
-    }
 
     /* If this is a proxy request, we'll notify an error */
     if(r->proxyreq) {
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    if(worker_name==NULL && worker==NULL )
-        return DECLINED;
+    workerEnv = (jk_workerEnv_t *)ap_get_module_config(r->server->module_config, 
+                                                       &jk_module);
+    l = workerEnv->l;
 
-    if( worker==NULL ) {
-        worker = workerEnv->getWorkerForName(workerEnv,
-                                             worker_name );
+    /* Set up r->read_chunked flags for chunked encoding, if present */
+    if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
+        return rc;
     }
 
-    if(worker==NULL)
-        return DECLINED;
-
-    /* Find the endpoint */
-    
-    /* Use per/thread pool ( or "context" ) to reuse the 
-       endpoint. It's a bit faster, but I don't know 
-       how to deal with load balancing - but it's usefull for JNI
-    */
-    
-    if( workerEnv->perThreadWorker ) {
-        apr_pool_t *rpool=r->pool;
-        apr_pool_t *parent_pool= apr_pool_get_parent( rpool );
-        apr_pool_t *tpool= apr_pool_get_parent( parent_pool );
-        
-        apr_pool_userdata_get( (void *)&end, "jk_thread_endpoint", tpool );
-        l->jkLog(l, JK_LOG_DEBUG, "Using per-thread worker %lx\n ", end );
-        if(end==NULL ) {
-            worker->get_endpoint(worker, &end, l);
-            apr_pool_userdata_set( end , "jk_thread_endpoint", 
-                                   &jk_cleanup_endpoint,  tpool );
-        }
+    if( uriEnv == NULL ) {
+        /* SetHandler case - per_dir config should have the worker*/
+        worker =  workerEnv->defaultWorker;
+        l->jkLog(l, JK_LOG_INFO, 
+                 "mod_jk.handler() Default worker for %s %s\n",
+                 r->uri, worker->name); 
     } else {
-        worker->get_endpoint(worker, &end, l);
+        worker=uriEnv->webapp->worker;
     }
+
+    if(worker==NULL ) {
+        l->jkLog(l, JK_LOG_ERROR, 
+                 "No worker for %s\n", r->uri); 
+        return 500;
+    }
+
+    worker->get_endpoint(worker, &end, l);
 
     {
         int rc = JK_FALSE;
@@ -1428,17 +1413,13 @@ static int jk_handler(request_rec *r)
         }
     }
 
-    end->pool->reset(end->pool);
-    
-    if( ! workerEnv->perThreadWorker ) {
-        end->done(&end, l); 
-    }
+    end->done(&end, l); 
 
     if(rc) {
         return OK;    /* NOT r->status, even if it has changed. */
     }
 
-    return DECLINED;
+    return 500;
 }
 
 /** Use the internal mod_jk mappings to find if this is a request for
@@ -1491,15 +1472,11 @@ static int jk_translate(request_rec *r)
     /* Why do we need to duplicate a constant ??? */
     r->handler=apr_pstrdup(r->pool,JK_HANDLER);
 
-    apr_table_setn(r->notes, JK_WORKER_ID, uriEnv->webapp->worker->name);
-    l->jkLog(l, JK_LOG_DEBUG, 
-             "mod_jk: map %s %s\n", r->uri, uriEnv->webapp->worker->name);
+    ap_set_module_config( r->request_config, &jk_module, uriEnv );
+    
+    l->jkLog(l, JK_LOG_INFO, 
+             "mod_jk.translate(): map %s %s\n", r->uri, uriEnv->webapp->worker->name);
 
-    /* XXXX XXXX
-       Use request_config -> it's much cheaper then notes !!!
-       
-       ap_set_module_config(r->request_config, &jk_module, XXX);
-    */
     return OK;
 }
 
@@ -1509,23 +1486,12 @@ static int jk_translate(request_rec *r)
 /* bypass the directory_walk and file_walk for non-file requests */
 static int jk_map_to_storage(request_rec *r)
 {
-    if( (r->handler != NULL ) && 
-        ( strcmp( r->handler, JK_HANDLER ) == 0 )) {
+    jk_uriEnv_t *env=ap_get_module_config( r->request_config, &jk_module );
 
+    if( env != NULL ) {
         r->filename = (char *)apr_filename_of_pathname(r->uri);
-        printf( "XXX (httpd -X): manual mapping, map to storage OK \n" );
-    }
-    if (apr_table_get(r->notes, JK_WORKER_ID) != NULL ) {
-        /* XXX Does this ever happens ? I doubt, it seems to be
-           run too early - and even if it would be, what happens
-           with the headers ? They seem to be parsed _after_
-           and only if this returns 0
-
-           Authentication: if this succeed, apache auth is
-           not used.
-        */
-        r->filename = (char *)apr_filename_of_pathname(r->uri);
-        printf( "XXX (httpd -X): map to storage OK \n" );
+        printf( "XXX (httpd -X): map to storage %s %s \n",
+                r->handler, r->filename);
         return OK;
     }
     return DECLINED;
@@ -1546,8 +1512,8 @@ static void jk_register_hooks(apr_pool_t *p)
 module AP_MODULE_DECLARE_DATA jk_module =
 {
     STANDARD20_MODULE_STUFF,
-    NULL ,/*     create_jk_dir_config dir config creater */
-    NULL, /* merge_jk_dir_config dir merger --- default is to override */
+    create_jk_dir_config,/*  dir config creater */
+    merge_jk_dir_config, /*  dir merger --- default is to override */
     create_jk_config,    /* server config */
     merge_jk_config,     /* merge server config */
     jk_cmds,             /* command ap_table_t */
