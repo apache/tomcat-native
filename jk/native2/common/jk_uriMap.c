@@ -355,7 +355,8 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
     
     if( uriMap->mbean->debug > 5 ) 
         env->l->jkLog(env, env->l, JK_LOG_DEBUG, "uriMap.init() set default host\n"); 
-
+    /* XXX Initializes vhosts from uris */
+    jk2_uriMap_correctHosts(env,uriMap);
     /* Initialize the vhosts table */
     for(i = 0 ; i < uriMap->maps->size( env, uriMap->maps ) ; i++) {
         uriEnv=uriMap->maps->valueAt( env, uriMap->maps, i );
@@ -622,7 +623,10 @@ static jk_uriEnv_t *jk2_uriMap_map(jk_env_t *env, jk_uriMap_t *uriMap,
 
     /* As per Servlet spec, do exact match first */
     match=jk2_uriMap_exactMap( env, uriMap, ctxEnv->exactMatch, uri, uriLen, reverse );
-    if( match != NULL ) {
+    if( match != NULL && 
+            (( match->virtual==NULL && hostEnv->virtual==NULL ) || 
+             ( hostEnv->virtual!=NULL && strcasecmp(match->virtual,hostEnv->virtual)==0 ))
+       ) {
         /* restore */
         if( url_rewrite ) *url_rewrite=origChar;
         if( uriMap->mbean->debug > 0 )
@@ -634,7 +638,10 @@ static jk_uriEnv_t *jk2_uriMap_map(jk_env_t *env, jk_uriMap_t *uriMap,
     
     /* Then prefix match */
     match=jk2_uriMap_prefixMap( env, uriMap, ctxEnv->prefixMatch, uri, uriLen, reverse );
-    if( match != NULL ) {
+    if( match != NULL && 
+            (( match->virtual==NULL && hostEnv->virtual==NULL ) || 
+             ( hostEnv->virtual!=NULL && strcasecmp(match->virtual,hostEnv->virtual)==0 ))
+       ) {
         char c=uri[match->prefix_len];
         /* XXX Filter prefix matches to allow only exact 
                matches with an optional path_info or query string at end.
@@ -658,7 +665,10 @@ static jk_uriEnv_t *jk2_uriMap_map(jk_env_t *env, jk_uriMap_t *uriMap,
     if( suffix!=NULL ) {
         match=jk2_uriMap_suffixMap( env, uriMap, ctxEnv->suffixMatch,
                                     suffix, strlen( suffix ), reverse);
-        if( match != NULL ) {
+        if( match != NULL && 
+                (( match->virtual==NULL && hostEnv->virtual==NULL ) || 
+                 ( hostEnv->virtual!=NULL && strcasecmp(match->virtual,hostEnv->virtual)==0 ))
+           ) {
             /* restore */
             if( url_rewrite ) *url_rewrite=origChar;
             if( uriMap->mbean->debug > 0 )

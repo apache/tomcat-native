@@ -100,7 +100,6 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     
     /* If it doesn't start with /, it must have a vhost */
     if( *name != '/' ) {
-        /* char *portIdx=strchr( n, ':' ); */
         uriEnv->virtual=uriEnv->pool->calloc( env, uriEnv->pool, slash - name + 2 );
         strncpy( uriEnv->virtual, name, slash-name );
     }

@@ -629,7 +629,7 @@ static int jk2_translate(request_rec *r)
 {
     jk_uriEnv_t *uriEnv;
     jk_env_t *env;
-            
+    
     if(r->proxyreq || workerEnv==NULL) {
         return DECLINED;
     }
@@ -677,8 +677,9 @@ static int jk2_translate(request_rec *r)
        If positive, we'll fill a ws_service_t and do the rewrite and
        the real mapping. 
     */
+    
     uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,
-                r->server->is_virtual ? r->server->server_hostname : NULL,
+                apr_psprintf(r->pool,"%s:%d",r->hostname,r->server->port),
                 r->uri );
 
     if( uriEnv== NULL || uriEnv->workerName == NULL) {
