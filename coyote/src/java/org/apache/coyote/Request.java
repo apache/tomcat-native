@@ -114,11 +114,15 @@ public final class Request {
 
     public Request() {
 
-	recycle();
-
         parameters.setQuery(queryMB);
         parameters.setURLDecoder(urlDecoder);
         parameters.setHeaders(headers);
+
+        schemeMB.setString("http");
+        methodMB.setString("GET");
+        uriMB.setString("/");
+        queryMB.setString("");
+        protoMB.setString("HTTP/1.0");
 
     }
 
