@@ -629,7 +629,7 @@ public class RequestHandler extends AjpHandler
 		return -1;
 	    }
         }
-        return (char) ch.bodyBuff[ch.pos++];
+        return ch.bodyBuff[ch.pos++] & 0xFF;
     }
     
     /**
