@@ -1221,7 +1221,7 @@ public class CoyoteResponse
             return (false);
 
         String contextPath = getContext().getPath();
-        if ((contextPath != null) && (contextPath.length() > 0)) {
+        if (contextPath != null) {
             String file = url.getFile();
             if ((file == null) || !file.startsWith(contextPath))
                 return (false);
