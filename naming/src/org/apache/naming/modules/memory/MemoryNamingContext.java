@@ -188,7 +188,7 @@ public class MemoryNamingContext extends BaseDirContext {
             name = name.getSuffix(1);
 
         if (name.isEmpty()) {
-            return new NamingContextEnumeration(bindings.elements());
+            return new NamingContextEnumeration(bindings.elements(), this, false);
         }
         
         NamingEntry entry = (NamingEntry) bindings.get(name.get(0));
@@ -231,7 +231,7 @@ public class MemoryNamingContext extends BaseDirContext {
             name = name.getSuffix(1);
         
         if (name.isEmpty()) {
-            return new NamingContextBindingsEnumeration(bindings.elements());
+            return new NamingContextEnumeration(bindings.elements(), this, true);
         }
         
         NamingEntry entry = (NamingEntry) bindings.get(name.get(0));
@@ -313,7 +313,7 @@ public class MemoryNamingContext extends BaseDirContext {
         NamingEntry entry=findNamingEntry( name, resolveLinks );
 
         if( entry.type == NamingEntry.CONTEXT ) {
-            return ((BaseDirContext) entry.value).lookup(name.getSuffix(1), resolveLinks, o);
+            return ((BaseDirContext) entry.value).lookup(name.getSuffix(1), resolveLinks);
         }
         
         if ((resolveLinks) && (entry.type == NamingEntry.LINK_REF)) {

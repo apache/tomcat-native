@@ -69,6 +69,7 @@ import javax.naming.NamingException;
 
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.naming.modules.memory.*;
+import org.apache.naming.core.*;
 
 /* This delegates to another context, removing a prefix.
    XXX make it generic, move to core. The context thread can be
@@ -80,7 +81,7 @@ import org.apache.naming.modules.memory.*;
  *
  * @author Remy Maucherat
  */
-public class SelectorContext implements Context {
+public class SelectorContext extends BaseContext {
 
     // -------------------------------------------------------------- Constants
 
@@ -110,7 +111,7 @@ public class SelectorContext implements Context {
      * Builds a Catalina selector context using the given environment.
      */
     public SelectorContext(Hashtable env) {
-        this.env = env;
+        super( env );
     }
 
 
@@ -150,16 +151,6 @@ public class SelectorContext implements Context {
     // -------------------------------------------------------- Context Methods
 
 
-    /**
-     * Retrieves the named object. If name is empty, returns a new instance 
-     * of this context (which represents the same naming context as this 
-     * context, but its environment may be modified independently and it may 
-     * be accessed concurrently).
-     * 
-     * @param name the name of the object to look up
-     * @return the object bound to name
-     * @exception NamingException if a naming exception is encountered
-     */
     public Object lookup(Name name)
         throws NamingException {
         // Strip the URL header

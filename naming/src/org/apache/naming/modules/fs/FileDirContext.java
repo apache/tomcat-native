@@ -362,7 +362,7 @@ public class FileDirContext extends BaseDirContext {
 
         Vector entries = list(file);
 
-        return new NamingContextEnumeration(entries);
+        return new NamingContextEnumeration(entries.elements(), this, false);
 
     }
 
@@ -393,7 +393,7 @@ public class FileDirContext extends BaseDirContext {
 
         Vector entries = list(file);
 
-        return new NamingContextBindingsEnumeration(entries);
+        return new NamingContextEnumeration(entries.elements(), this, true);
 
     }
 
