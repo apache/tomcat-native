@@ -74,9 +74,11 @@ static void jk2_env_initEnv( jk_env_t *env, char *id );
  */
 jk_env_t* JK_METHOD jk2_env_getEnv( char *id, jk_pool_t *pool ) {
   if( jk_env_globalEnv == NULL ) {
+      if( pool == NULL ) return NULL;
       jk_env_globalEnv=(jk_env_t *)pool->calloc( NULL, pool, sizeof( jk_env_t ));
       jk_env_globalEnv->globalPool = pool;
       jk2_env_initEnv( (jk_env_t *)jk_env_globalEnv, id );
+      fprintf( stderr, "env: top level env %p\n", jk_env_globalEnv);
   }
   return jk_env_globalEnv;
 }
@@ -113,17 +115,25 @@ static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *parentEnv )
         env->globalPool=parentEnv->globalPool;
         env->envCache=parentEnv->envCache;
 
-        fprintf( stderr, "Create env %d\n", env->id);
+        fprintf( stderr, "env:Create child env %p %p\n", parentEnv, env);
     }
     return env;
 }
 
 /** Release the env ( clean and recycle )
  */
+static int JK_METHOD jk2_env_recycleEnv( jk_env_t *env )
+{
+    env->tmpPool->reset(env, env->tmpPool);
+    env->jkClearException(env);
+    return JK_OK;
+}
+
+/** Release the env ( clean and recycle )
+ */
 static int JK_METHOD jk2_env_put( jk_env_t *parent, jk_env_t *chld )
 {
-    chld->tmpPool->reset(parent, chld->tmpPool);
-    chld->jkClearException(chld);
+    jk2_env_recycleEnv( chld );
     return parent->envCache->put( parent, parent->envCache, chld);
 }
 
@@ -225,12 +235,18 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
     fac( env, workerPool, result, result->type, result->name );
 
     if( result->object==NULL ) {
-        if( env->l )
+        if( env->l ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "env.createBean2(): Factory error creating %s ( %s, %s)\n", name,
                           type, localName);
+        } else {
+            fprintf(stderr, "env.createBean2(): Factory error creating %s ( %s, %s)\n", name,
+                    type, localName);
+        }
         return NULL;
     }
+
+    fprintf(stderr,"env.createBean2(): register %s %p\n", result->name, result->object);
 
     jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, result->name, result, NULL );
 
@@ -259,6 +275,7 @@ static void JK_METHOD jk2_env_alias(jk_env_t *env, const char *name, const char 
         return ;
     }
     
+    fprintf(stderr,"env.alias(): alias %s %s\n", name, alias);
     jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, alias, jkb, NULL );
 }
 
@@ -268,8 +285,12 @@ static void * JK_METHOD jk2_env_getByName(jk_env_t *env, const char *name)
 {
     jk_bean_t *result=env->getBean( env, name );
         
-    if( result==NULL ) return NULL;
+    if( result==NULL ) {
+        fprintf(stderr,"env.alias(): Can't find %p %s\n", env, name);
+        return NULL;
+    }
     
+    fprintf(stderr,"env.alias(): Get by name %s %p\n", name, result->object);
     return result->object;
 }    
 
@@ -380,6 +401,7 @@ static void jk2_env_initEnv( jk_env_t *env, char *id ) {
     env->createBean= jk2_env_createBean;
     env->alias= jk2_env_alias;
     env->getEnv= jk2_env_get; 
+    env->recycleEnv= jk2_env_recycleEnv; 
     env->releaseEnv= jk2_env_put; 
 
     env->jkClearException=jk_env_jkClearException;
