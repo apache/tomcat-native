@@ -3,10 +3,18 @@ ajp connectors.
 
 Building
 ========
-Build tomcat-util.jar in jakarta-tomcat-connectors/util.
-Copy build.properties.sample to build.properties.
-Edit build.properties to taste.
-Build ajp.jar by running ant.  The default target creates ./build/lib/ajp.jar.
+
+* Download junit from http://www.junit.org (version 3.7 or greater is required).
+
+* Build tomcat-util.jar in jakarta-tomcat-connectors/util.
+
+* Copy build.properties.sample to build.properties.
+
+* Edit build.properties to taste.
+
+* Build ajp.jar by running ant.  The default target creates ./build/lib/ajp.jar.
+
+* Tests can be run by running ant test.
 
 Tomcat 4
 ========
