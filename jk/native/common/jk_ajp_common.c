@@ -684,7 +684,8 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     msglen += (head[3] & 0xFF);
 
     if(msglen > jk_b_get_size(msg)) {
-        jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - Wrong message size\n");
+        jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - Wrong message size %d %d\n",
+               msglen, jk_b_get_size(msg));
         return JK_FALSE;
     }
 
