@@ -15,11 +15,6 @@
   where ${serverRoot} is something like /opt/apache.
 </p>
     </section>
-    <section name="Installation">
-        <subsection name="Apache 1"/>
-        <subsection name="Apache 2"/>
-        <subsection name="IIS"/>
-    </section>
     <section name="Config file">
         <p> The default config file is user editable, but mod_jk will persist the 
 changes requested by protocol( not implemented). If you manually change the file while jk2 is 

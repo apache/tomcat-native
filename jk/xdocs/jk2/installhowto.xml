@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<document>
+  <properties>
+    <title>Installation of mod_jk2 in the Web Server</title>
+    <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+  </properties>
+  <section name="Installation">
+    <p>
+      The actual build mechanism creates the dso files in the
+      build/jk2/${servername} subdirectory of the jakarta-tomcat-connectors/jk.
+      When configure --with-jni is used 2 dso files are created.
+      These files have to be copied in the right location of the web server
+      installation.
+    </p>
+    <subsection name="Apache 1"/>
+    <subsection name="Apache 2">
+      <p>
+        In the following example Apache-2.0 is installed in
+        /home/apache20/apache40 and the commands are excuted in
+        the jakarta-tomcat-connectors directory.
+      </p>
+      <screen>
+        <note>Copy the dso files in the modules location:</note>
+        <type>cp jk/build/jk2/apache2/mod_jk2.so /home/apache20/apache40/modules</type>
+        <type>cp jk/build/jk2/apache2/jkjni.so /home/apache20/apache40/modules</type>
+        <note>Add mod_jk2 loading in the httpd.conf:</note>
+        <read>LoadModule jk2_module modules/mod_jk2.so</read>
+      </screen>
+    </subsection>
+    <subsection name="IIS"/>
+  </section>
+</document>
