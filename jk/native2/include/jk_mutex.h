@@ -118,7 +118,7 @@ struct jk_mutex {
     /* Private data */
     void *privateData;
 
-#ifdef HAS_APR
+#ifdef APR_HAS_THREADS
     apr_thread_mutex_t *threadMutex;
 #elif defined( WIN32 )
     CRITICAL_SECTION threadMutex;
