@@ -1869,8 +1869,8 @@ int ajp_init(jk_worker_t *pThis,
 
         p->secret = jk_get_worker_secret(props, p->name);
         p->ep_mincache_sz = 1;
-        p->ep_cache = (ajp_endpoint_t **) malloc(sizeof(ajp_endpoint_t *) *
-                                                 p->ep_cache_sz);
+        p->ep_cache = (ajp_endpoint_t **)calloc(1, sizeof(ajp_endpoint_t *) *
+                                                p->ep_cache_sz);
         if (p->ep_cache) {
             unsigned int i;
             time_t now = time(NULL);
