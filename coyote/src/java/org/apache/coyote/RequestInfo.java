@@ -50,8 +50,8 @@ public class RequestInfo  {
             global.addRequestProcessor( this );
         } else {
         	if (this.global != null) {
-            	this.global.removeRequestProcessor( this ); 
-	            this.global = null;
+                this.global.removeRequestProcessor( this ); 
+                this.global = null;
             }
         }
     }
