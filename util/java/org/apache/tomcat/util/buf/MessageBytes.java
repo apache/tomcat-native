@@ -66,6 +66,11 @@ import java.io.IOException;
 
 /**
  * This class is used to represent a subarray of bytes in an HTTP message.
+ * It represents all request/response elements. The byte/char conversions are
+ * delayed and cached. Everything is recyclable.
+ *
+ * The object can represent a byte[], a char[], or a (sub) String. All
+ * operations can be made in case sensitive mode or not.
  *
  * @author dac@eng.sun.com
  * @author James Todd [gonzo@eng.sun.com]
@@ -74,35 +79,51 @@ import java.io.IOException;
 public final class MessageBytes implements Cloneable, Serializable {
     // primary type ( whatever is set as original value )
     private int type = T_NULL;
-    
+
     public static final int T_NULL = 0;
+    /** getType() is T_STR if the the object used to create the MessageBytes
+        was a String */
     public static final int T_STR  = 1;
+    /** getType() is T_STR if the the object used to create the MessageBytes
+        was a byte[] */ 
     public static final int T_BYTES = 2;
+    /** getType() is T_STR if the the object used to create the MessageBytes
+        was a char[] */ 
     public static final int T_CHARS = 3;
 
     private int hashCode=0;
+    // did we computed the hashcode ? 
     private boolean hasHashCode=false;
 
+    // Is the represented object case sensitive ?
     private boolean caseSensitive=true;
-    
-    ByteChunk byteC=new ByteChunk();
 
-    CharChunk charC=new CharChunk();
+    // Internal objects to represent array + offset, and specific methods
+    private ByteChunk byteC=new ByteChunk();
+    private CharChunk charC=new CharChunk();
     
     // String
     private String strValue;
+    // true if a String value was computed. Probably not needed,
+    // strValue!=null is the same
     private boolean hasStrValue=false;
 
     /**
      * Creates a new, uninitialized MessageBytes object.
+     * @deprecated. Use static newInstance() in order to allow
+     * future hooks.
      */
     public MessageBytes() {
     }
 
+    /** Construct a new MessageBytes instance
+     */
     public static MessageBytes newInstance() {
 	return factory.newInstance();
     }
-    
+
+    /** Configure the case sensitivity
+     */
     public void setCaseSenitive( boolean b ) {
 	caseSensitive=b;
     }
@@ -121,7 +142,7 @@ public final class MessageBytes implements Cloneable, Serializable {
     }
     
     /**
-     * Resets the message bytes to an uninitialized state.
+     * Resets the message bytes to an uninitialized (NULL) state.
      */
     public void recycle() {
 	type=T_NULL;
@@ -139,7 +160,8 @@ public final class MessageBytes implements Cloneable, Serializable {
 
 
     /**
-     * Sets the message bytes to the specified subarray of bytes.
+     * Sets the content to the specified subarray of bytes.
+     *
      * @param b the ascii bytes
      * @param off the start offset of the bytes
      * @param len the length of the bytes
@@ -150,6 +172,10 @@ public final class MessageBytes implements Cloneable, Serializable {
 	type=T_BYTES;
     }
 
+    /** Set the encoding. If the object was constructed from bytes[]. any
+     *  previous conversion is reset.
+     *  If no encoding is set, we'll use 8859-1.
+     */
     public void setEncoding( String enc ) {
 	if( !byteC.isNull() ) {
 	    // if the encoding changes we need to reset the converion results
@@ -158,7 +184,9 @@ public final class MessageBytes implements Cloneable, Serializable {
 	}
 	byteC.setEncoding(enc);
     }
-    
+
+    /** Sets the content to be a char[]
+     */
     public void setChars( char[] c, int off, int len ) {
 	recycle();
 	charC.setChars( c, off, len );
@@ -166,8 +194,9 @@ public final class MessageBytes implements Cloneable, Serializable {
     }
 
     /** Remove the cached string value. Use it after a conversion on the
-	byte[] or after the encoding is changed
-    */
+     *	byte[] or after the encoding is changed
+     *  XXX Is this needed ?
+     */
     public void resetStringValue() {
 	if( type != T_STR ) {
 	    // If this was cread as a byte[] or char[], we remove
@@ -177,6 +206,8 @@ public final class MessageBytes implements Cloneable, Serializable {
 	}
     }
 
+    /** Set the content to be a string
+     */
     public void setString( String s ) {
 	recycle();
         if (s == null)
@@ -187,6 +218,9 @@ public final class MessageBytes implements Cloneable, Serializable {
     }
 
     // -------------------- Conversion and getters --------------------
+
+    /** Compute the string value
+     */
     public String toString() {
 	if( hasStrValue ) return strValue;
 	hasStrValue=true;
@@ -203,30 +237,46 @@ public final class MessageBytes implements Cloneable, Serializable {
     }
 
     //----------------------------------------
+    /** Return the type of the original content. Can be
+     *  T_STR, T_BYTES, T_CHARS or T_NULL
+     */
     public int getType() {
 	return type;
     }
     
     /**
-     * Returns the message bytes.
+     * Returns the byte chunk, representing the byte[] and offset/length.
+     * Valid only if T_BYTES or after a conversion was made.
      */
     public ByteChunk getByteChunk() {
 	return byteC;
     }
 
+    /**
+     * Returns the char chunk, representing the char[] and offset/length.
+     * Valid only if T_CHARS or after a conversion was made.
+     */
     public CharChunk getCharChunk() {
 	return charC;
     }
 
+    /**
+     * Returns the string value.
+     * Valid only if T_STR or after a conversion was made.
+     */
     public String getString() {
 	return strValue;
     }
 
-    // Convert to bytes !!!
+    /** Unimplemented yet. Do a char->byte conversion.
+     */
     public void toBytes() {
-	// XXX todo - not used 
+	// XXX todo - not used yet
     }
 
+    /** Convert to char[] and fill the CharChunk.
+     *  XXX Not optimized - it converts to String first.
+     */
     public void toChars() {
 	if( ! charC.isNull() ) {
 	    return;
@@ -239,7 +289,9 @@ public final class MessageBytes implements Cloneable, Serializable {
     
 
     /**
-     * Returns the length of the buffer.
+     * Returns the length of the original buffer.
+     * Note that the length in bytes may be different from the length
+     * in chars.
      */
     public int getLength() {
 	if(type==T_BYTES)
