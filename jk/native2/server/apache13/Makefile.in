@@ -84,7 +84,7 @@ ${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
 	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}
 
 ${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${A_LO_FILES}
-	${MOD_LINK} -o $@ $^ @APR_LDFLAGS@
+	${MOD_LINK} -o $@ $^ @APR_LDFLAGS@ `@APR_DIR@/apr-config --libs`
 
 ${COMMON_C_FILES} ${A_C_FILES}: ${H_FILES}
 
