@@ -29,6 +29,10 @@
   <property name="tomcat-util.jar"  value="../util/build/lib/tomcat-util.jar"/>
   <property name="junit.jar"        value="${junit.home}/junit.jar"/>
 
+  <property name="commons-modeler.jar" location="../../jakarta-commons/modeler/dist/commons-modeler.jar" />
+
+  <property name="jmx.jar" location="../lib/mx4j.jar" />
+
 
 <!-- ========== Component Declarations ==================================== -->
 
