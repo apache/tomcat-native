@@ -78,6 +78,7 @@ AC_DEFUN(LOCAL_HEADER,[
 
 AC_DEFUN(LOCAL_FILTEREXEC,[
   ${echo} "  Invoking: $1"
+  ${echo} "-1" > retvalue.tmp
   {
     $1
     echo retvalue $?
