@@ -369,12 +369,16 @@ public class PoolTcpEndpoint { // implements Endpoint {
             } else {
                 accepted = factory.acceptSocket(serverSocket);
             }
-            if(!running && (null != accepted)) {
+            if (null == accepted) {
+                log.warn("Null socket returned by accept");
+            } else {
+                if (!running) {
                     accepted.close();  // rude, but unlikely!
                     accepted = null;
+                } else if (factory != null) {
+                    factory.initSocket( accepted );
+                }
             }
-            if( factory != null && accepted != null)
-                factory.initSocket( accepted );
         }
         catch(InterruptedIOException iioe) {
             // normal part -- should happen regularly so
@@ -533,20 +537,17 @@ class TcpWorkerThread implements ThreadPoolRunnable {
     public void runIt(Object perThrData[]) {
 
 	// Create per-thread cache
-	while(endpoint.isRunning()) {
+	if (endpoint.isRunning()) {
 	    Socket s = null;
 	    try {
                 s = endpoint.acceptSocket();
-	    } catch (ThreadDeath t) {
-		endpoint.log.error("Shutdown thread: " 
-                                   + Thread.currentThread().getName());
-                throw t;
-	    } catch (Throwable t) {
-		endpoint.log.error("Exception in acceptSocket", t);
-	    }
-	    if(null != s) {
+	    } finally {
 		// Continue accepting on another thread...
-		endpoint.tp.runIt(this);
+                if (endpoint.isRunning()) {
+                    endpoint.tp.runIt(this);
+                }
+            }
+	    if (null != s) {
 		
 		try {
  		    if(endpoint.getServerSocketFactory()!=null) {
@@ -558,7 +559,6 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                     try {
                         s.close();
                     } catch (IOException e) {}
-                    break;
                 }
 
                 TcpConnection con = null;
@@ -590,7 +590,6 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                         }
                     }
                 }
-                break;
 	    }
 	}
     }
