@@ -63,7 +63,6 @@
 
 #include "jk_jnicb.h"
 #include "jk_service.h"
-#include "jk_util.h"
 #include "jk_pool.h"
 
 /*
