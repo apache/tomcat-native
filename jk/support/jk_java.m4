@@ -41,7 +41,7 @@ AC_DEFUN(
 	    *) use_jni=true ;;
 	      esac
 
-		if ${TEST} ${use_jni} ; then
+		if ${TEST} "${use_jni}" = "true"; then
 		  HAVE_JNI="-DHAVE_JNI"
 		  JNI_BUILD="jni-build"
 		fi
