@@ -105,6 +105,34 @@ AC_DEFUN(
   ])
 
 dnl --------------------------------------------------------------------------
+dnl WA_PATH_PROG
+dnl   Resolve the FULL path name of an executable.
+dnl   $1 => The variable where the full path name will be stored.
+dnl   $2 => The executable to resolve.
+dnl   $3 => The description of what we're trying to locate.
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [WA_PATH_PROG],
+  [
+    wa_path_prog_tempval="`echo $2`"
+    if test -x "${wa_path_prog_tempval}" ; then
+      wa_path_prog_tempdir=`dirname "${wa_path_prog_tempval}"`
+      wa_path_prog_tempfil=`basename "${wa_path_prog_tempval}"`
+      WA_PATH_DIR([wa_path_prog_tempdir],[${wa_path_prog_tempdir}],[$3])
+      $1="${wa_path_prog_tempdir}/${wa_path_prog_tempfil}"
+    else
+      AC_PATH_PROG($1,[${wa_path_prog_tempval}])
+    fi
+    AC_MSG_CHECKING([for $3 binary path])
+    if test -z "${$1}" ; then
+      AC_MSG_ERROR([cannot find $3 "${wa_apxs_tempval}"])
+      exit 1
+    fi
+    AC_MSG_RESULT([${$1}])
+  ])
+
+
+dnl --------------------------------------------------------------------------
 dnl WA_PATH_DIR
 dnl   Resolve the FULL path name of a directory.
 dnl   $1 => The variable where the full path name will be stored.
@@ -114,7 +142,7 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_PATH_DIR],
   [
-    AC_MSG_CHECKING([for $3 path])
+    AC_MSG_CHECKING([for $3 directory path])
     wa_path_dir_tempval="`echo $2`"
     if test -d "${wa_path_dir_tempval}" ; then
       wa_path_dir_curdir="`pwd`"

@@ -86,19 +86,7 @@ AC_DEFUN(
         esac
       ])
     AC_MSG_RESULT([${wa_apxs_tempval}])
-    if test -x "${wa_apxs_tempval}" ; then
-      wa_apxs_tempdir=`dirname "${wa_apxs_tempval}"`
-      wa_apxs_tempfil=`basename "${wa_apxs_tempval}"`
-      WA_PATH_DIR([wa_apxs_tempdir],[${wa_apxs_tempdir}],[apxs])
-      $1="${wa_apxs_tempdir}/${wa_apxs_tempfil}"
-    else
-      AC_PATH_PROG($1,[${wa_apxs_tempval}])
-    fi
-    
-    if test -z "${$1}" ; then
-      AC_MSG_ERROR([cannot find apxs utility "${wa_apxs_tempval}"])
-      exit 1
-    fi
+    WA_PATH_PROG([$1],[${wa_apxs_tempval}],[apxs])
     unset wa_apxs_tempval
   ])
 
@@ -153,4 +141,29 @@ AC_DEFUN(
     AC_MSG_RESULT([${wa_apxs_get_tempval}])
     WA_APPEND([$1],[${wa_apxs_get_tempval}])
     unset wa_apxs_get_tempval
+  ])
+
+dnl --------------------------------------------------------------------------
+dnl WA_APXS_SERVER
+dnl   Retrieve the HTTP server version via APXS
+dnl   $1 => Environment variable where the info string will be stored
+dnl   $2 => Name of the APXS script (as returned by WA_APXS)
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [WA_APXS_SERVER],
+  [
+    WA_APXS_GET([wa_apxs_server_sbindir],[$2],[SBINDIR])
+    WA_APXS_GET([wa_apxs_server_target],[$2],[TARGET])
+    wa_apxs_server_daemon="${wa_apxs_server_sbindir}/${wa_apxs_server_target}"
+    WA_PATH_PROG([wa_apxs_server_daemon],[${wa_apxs_server_daemon}],[httpd])
+    AC_MSG_CHECKING([httpd version])
+    wa_apxs_server_info="`${wa_apxs_server_daemon} -v | head -1`"
+    wa_apxs_server_info="`echo ${wa_apxs_server_info} | cut -d: -f2`"
+    wa_apxs_server_info="`echo ${wa_apxs_server_info}`"
+    AC_MSG_RESULT([${wa_apxs_server_info}])
+    $1="${wa_apxs_server_info}"
+    unset wa_apxs_server_sbindir
+    unset wa_apxs_server_target
+    unset wa_apxs_server_daemon
+    unset wa_apxs_server_info
   ])
