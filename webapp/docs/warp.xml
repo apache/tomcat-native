@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 
-<document title="The WARP Protocol Version 1.0.2">
+<document title="WARP 0.10">
   <description>
-    The WARP protocol element description. (1.0.2)
+    The WARP protocol version 0.10
   </description>
 
   <section title="Data Packet Structure">
@@ -40,69 +40,9 @@ If the length of the data payload is more than zero, octets from 3 to (length
 + 3) contain the payload data or content.</li>
 </ul>
 
-</p><p>
-
-<table>
-
-<tr>
-<td15>
-WARP packet
-</td15>
-</tr>
-<tr>
-<td>Octet</td>
-
-<td5>1</td5>
-
-<td3>2</td3>
-
-<td3>3</td3>
-
-<td3>4 .. (length+3)</td3>
-</tr>
-
-<tr>
-<td>Bits</td>
-
-<td>0</td>
-
-<td>1</td>
-
-<td>..</td>
-
-<td>6</td>
-
-<td>7</td>
-
-<td>0</td>
-
-<td>1</td>
-
-<td2>..</td2>
-
-<td>14</td>
-
-<td>15</td>
-
-<td>0</td>
-
-<td>1</td>
-
-<td>..</td>
-</tr>
-
-<tr>
-<td>Description</td>
-
-<td5>Packet Type</td5>
-
-<td6>Payload Length</td6>
-
-<td3>Payload Data
-(Content)</td3>
-</tr>
-</table>
 </p>
+<img src="images/packet.gif" alt="The WARP Packet Structure"/>
+
 
 </section>
 
