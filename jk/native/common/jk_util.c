@@ -33,7 +33,7 @@
 #define MX_OF_WORKER                ("mx")
 #define MS_OF_WORKER                ("ms")
 #define CP_OF_WORKER                ("class_path")
-#define BRIDGE_OF_WORKER			("bridge")
+#define BRIDGE_OF_WORKER            ("bridge")
 #define JVM_OF_WORKER               ("jvm_lib")
 #define LIBPATH_OF_WORKER           ("ld_path")
 #define CMD_LINE_OF_WORKER          ("cmd_line")
@@ -45,9 +45,9 @@
 #define CACHE_OF_WORKER             ("cachesize")
 #define CACHE_TIMEOUT_OF_WORKER     ("cache_timeout")
 #define RECOVERY_OPTS_OF_WORKER     ("recovery_options")
-#define CONNECT_TIMEOUT_OF_WORKER 	("connect_timeout")
-#define PREPOST_TIMEOUT_OF_WORKER 	("prepost_timeout")
-#define REPLY_TIMEOUT_OF_WORKER 	("reply_timeout")
+#define CONNECT_TIMEOUT_OF_WORKER   ("connect_timeout")
+#define PREPOST_TIMEOUT_OF_WORKER   ("prepost_timeout")
+#define REPLY_TIMEOUT_OF_WORKER     ("reply_timeout")
 #define SOCKET_TIMEOUT_OF_WORKER    ("socket_timeout")
 #define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
@@ -62,13 +62,13 @@
 #define DEFAULT_WORKER              JK_AJP12_WORKER_NAME
 #define WORKER_LIST_PROPERTY_NAME   ("worker.list")
 #define DEFAULT_LB_FACTOR           (1.0)
-#define LOG_FORMAT          		("log_format")
+#define LOG_FORMAT                  ("log_format")
 
-#define TOMCAT32_BRIDGE_NAME   		("tomcat32")
-#define TOMCAT33_BRIDGE_NAME   		("tomcat33")
-#define TOMCAT40_BRIDGE_NAME   		("tomcat40")
-#define TOMCAT41_BRIDGE_NAME   		("tomcat41")
-#define TOMCAT50_BRIDGE_NAME   		("tomcat5")
+#define TOMCAT32_BRIDGE_NAME        ("tomcat32")
+#define TOMCAT33_BRIDGE_NAME        ("tomcat33")
+#define TOMCAT40_BRIDGE_NAME        ("tomcat40")
+#define TOMCAT41_BRIDGE_NAME        ("tomcat41")
+#define TOMCAT50_BRIDGE_NAME        ("tomcat5")
 
 #define HUGE_BUFFER_SIZE (8*1024)
 #define LOG_LINE_SIZE    (1024)
@@ -141,7 +141,7 @@ static int JK_METHOD log_to_file(jk_logger_t *l,
     if( l &&
         (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
         l->logger_private && what) {
-        unsigned sz = strlen(what);
+        size_t sz = strlen(what);
         if(sz) {
             file_logger_t *p = l->logger_private;
             fwrite(what, 1, sz, p->logfile);
@@ -241,7 +241,7 @@ int jk_log(jk_logger_t *l,
 #endif
         char *f = (char *)(file + strlen(file) - 1);
         va_list args;
-        int used = 0;
+        size_t used = 0;
 
         while(f != file && '\\' != *f && '/' != *f) {
             f--;
@@ -685,25 +685,25 @@ int jk_get_worker_bridge_type(jk_map_t *m,
                               unsigned *bt)
 {
     char buf[1024];
-	char *type;
-	    
+    char *type;
+        
     if(m && bt && wname) {
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, BRIDGE_OF_WORKER);
 
         type = map_get_string(m, buf, NULL);
         
         if(type) {
-        	if (! strcasecmp(type, TOMCAT32_BRIDGE_NAME))
-        		*bt = TC32_BRIDGE_TYPE;
-        	else if (! strcasecmp(type, TOMCAT33_BRIDGE_NAME))
-        		*bt = TC33_BRIDGE_TYPE;
-        	else if (! strcasecmp(type, TOMCAT40_BRIDGE_NAME))
-        		*bt = TC40_BRIDGE_TYPE;
-        	else if (! strcasecmp(type, TOMCAT41_BRIDGE_NAME))
-        		*bt = TC41_BRIDGE_TYPE;
-        	else if (! strcasecmp(type, TOMCAT50_BRIDGE_NAME))
-        		*bt = TC50_BRIDGE_TYPE;
-        		
+            if (! strcasecmp(type, TOMCAT32_BRIDGE_NAME))
+                *bt = TC32_BRIDGE_TYPE;
+            else if (! strcasecmp(type, TOMCAT33_BRIDGE_NAME))
+                *bt = TC33_BRIDGE_TYPE;
+            else if (! strcasecmp(type, TOMCAT40_BRIDGE_NAME))
+                *bt = TC40_BRIDGE_TYPE;
+            else if (! strcasecmp(type, TOMCAT41_BRIDGE_NAME))
+                *bt = TC41_BRIDGE_TYPE;
+            else if (! strcasecmp(type, TOMCAT50_BRIDGE_NAME))
+                *bt = TC50_BRIDGE_TYPE;
+                
             return JK_TRUE;
         }
     }
