@@ -659,7 +659,9 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     unsigned int i;
     int best_match = -1;
     unsigned int longest_match = 0;
-    char *url_rewrite;
+    char *url_rewrite = NULL;
+    char rewrite_char;
+    char *rv = NULL;
 
     JK_TRACE_ENTER(l);
     if (!uw_map || !uri) {
@@ -675,6 +677,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     }
     url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
     if (url_rewrite) {
+        rewrite_char = *url_rewrite;
         *url_rewrite = '\0'; 
     }
     jk_no2slash(uri);
@@ -686,7 +689,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     if (uw_map->no_size && is_nomap_match(uw_map, uri, l)) {
         /* Found a no match */        
         JK_TRACE_EXIT(l);
-        return NULL;
+        goto cleanup;;
     }
     for (i = 0; i < uw_map->size; i++) {
         uri_worker_record_t *uwr = uw_map->maps[i];
@@ -713,7 +716,8 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                            "Found a wildchar match %s -> %s\n",
                            uwr->worker_name, uwr->context);
                     JK_TRACE_EXIT(l);
-                    return wname;
+                    rv = wname;
+                    goto cleanup;
              }
         }
         else if (JK_STRNCMP(uwr->context, uri, uwr->ctxt_len) == 0) {
@@ -723,7 +727,8 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                             "Found an exact match %s -> %s\n",
                             uwr->worker_name, uwr->context);
                     JK_TRACE_EXIT(l);
-                    return uwr->worker_name;
+                    rv = uwr->worker_name;
+                    goto cleanup;
                 }
             }
             else if (uwr->match_type == MATCH_TYPE_CONTEXT) {
@@ -792,7 +797,8 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 
     if (best_match != -1) {
         JK_TRACE_EXIT(l);
-        return uw_map->maps[best_match]->worker_name;
+        rv = uw_map->maps[best_match]->worker_name;
+        goto cleanup;
     }
     else {
         /*
@@ -810,9 +816,14 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     "Found a security fraud in '%s'\n",
                     uri);
             JK_TRACE_EXIT(l);
-            return uw_map->maps[fraud]->worker_name;
+            rv = uw_map->maps[fraud]->worker_name;
+            goto cleanup;
         }
     }
     JK_TRACE_EXIT(l);
-    return NULL;
+
+cleanup:
+    if (url_rewrite)
+        *url_rewrite = rewrite_char;
+    return rv;
 }
