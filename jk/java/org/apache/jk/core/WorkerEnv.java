@@ -79,26 +79,19 @@ public class WorkerEnv {
 
     Hashtable properties;
 
-    Webapp webapps[]=new Webapp[20];
+    Object webapps[]=new Object[20];
     int webappCnt=0;
 
     public static final int ENDPOINT_NOTE=0;
     public static final int REQUEST_NOTE=1;
     int noteId[]=new int[4];
     String noteName[][]=new String[4][];
+    private Object notes[]=new Object[32];
 
-    static final int MAX_HANDLERS=32;
-    static final int RESERVED=16;  // reserved names, backward compat
-
-    // Note that we don't make distinction between in and out
-    // messages ( i.e. one id is used only in one direction )
-    Handler handlers[]=new Handler[MAX_HANDLERS];
-    String handlerNames[]=new String[MAX_HANDLERS];
-    int currentId=RESERVED;
-
-    Hashtable workers=new Hashtable();
-    Hashtable channels=new Hashtable();
-
+    Hashtable handlersMap=new Hashtable();
+    // base dir for the jk webapp
+    String home;
+    
     public WorkerEnv() {
         for( int i=0; i<noteId.length; i++ ) {
             noteId[i]=7;
@@ -106,9 +99,9 @@ public class WorkerEnv {
         }
     }
     
-    public int addWebapp( Webapp wa ) {
+    public int addWebapp( Object wa ) {
         if( webappCnt >= webapps.length ) {
-            Webapp newWebapps[]=new Webapp[ webapps.length + 20 ];
+            Object newWebapps[]=new Object[ webapps.length + 20 ];
             System.arraycopy( webapps, 0, newWebapps, 0, webapps.length);
             webapps=newWebapps;
         }
@@ -116,94 +109,60 @@ public class WorkerEnv {
         return webappCnt++;
     }
 
-    public Webapp getWebapp( int i ) {
+    public void setJkHome( String s ) {
+        home=s;
+    }
+
+    public String getJkHome() {
+        return home;
+    }
+    
+    public Object getWebapp( int i ) {
         return webapps[i];
     }
 
     public int getWebappCount() {
         return webappCnt;
     }
+    
+    public final Object getNote(int i ) {
+        return notes[i];
+    }
 
-    public void addHandler( Handler h ) {
-        h.setWorkerEnv( this );
-        h.init();
+    public final void setNote(int i, Object o ) {
+        notes[i]=o;
     }
 
     public int getNoteId( int type, String name ) {
+        for( int i=0; i<noteId[type]; i++ ) {
+            if( name.equals( noteName[type][i] ))
+                return i;
+        }
         int id=noteId[type]++;
         noteName[type][id]=name;
         return id;
     }
 
-    public int registerMessageType( int id, String name, Handler h,
-				    String sig[] )
-    {
-	if( id < 0 ) {
-	    // try to find it by name
-	    for( int i=0; i< handlerNames.length; i++ )
-		if( name.equals( handlerNames[i] ) ) return i;
-	    handlerNames[currentId]=name;
-	    handlers[currentId]=h;
-	    currentId++;
-	    return currentId;
-	}
-	// fixed id
-	handlerNames[id]=name;
-	handlers[id]=h;
-	return id;
-    }
-
-    public int processCallbacks( Channel ch, Endpoint ep, Msg hBuf )
-        throws IOException
-    {
-        int type=hBuf.getByte();
-        
-        if( type > handlers.length ||
-            handlers[type]==null ) {
-	    d( "Invalid handler " + type );
-	    return 500;
-	}
-
-        if( dL > 0 )
-            d( "Received " + type + " " + handlerNames[type]);
-        
-	Handler handler=handlers[type];
-
-        return handler.callback( type, ch, ep, hBuf );
-    }
-
-    public void addWorker( String name, Worker w ) {
+    public void addHandler( String name, JkHandler w ) {
         w.setWorkerEnv( this );
-        workers.put( name, w );
+        w.setName( name );
+        handlersMap.put( name, w );
     }
 
-    public Worker getWorker( String name ) {
-        return (Worker)workers.get(name);
-    }
-
-    public void addChannel( String name, Channel c ) {
-        c.setWorkerEnv( this );
-        channels.put( name, c );
+    public JkHandler getHandler( String name ) {
+        return (JkHandler)handlersMap.get(name);
     }
 
     public void start() throws IOException {
-        Enumeration en=workers.keys();
+        Enumeration en=handlersMap.keys();
         while( en.hasMoreElements() ) {
             String n=(String)en.nextElement();
-            Worker w=(Worker)workers.get(n);
+            JkHandler w=(JkHandler)handlersMap.get(n);
             w.init();
-        }
-
-        en=channels.keys();
-        while( en.hasMoreElements() ) {
-            String n=(String)en.nextElement();
-            Channel ch=(Channel)channels.get(n);
-            ch.init();
         }
     }
     
-
-    private static final int dL=10;
+    private static final int dL=0;
     private static void d(String s ) {
         System.err.println( "WorkerEnv: " + s );
     }
