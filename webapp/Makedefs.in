@@ -65,6 +65,7 @@ CC      = @CC@
 CPP     = @CPP@
 SHELL   = @SHELL@
 LIBTOOL = @LIBTOOL@
+INSTALL = $(SHELL) $(SRC_DIR)/support/install.sh -c
 APXS    = @APXS@
 
 # Build flags
@@ -87,6 +88,14 @@ APR_DIR = @APR_DIR@
 SRC_DIR = @SRC_DIR@
 TGT_DIR = @TGT_DIR@
 OBJ_DIR = @TGT_DIR@/objects
+DST_DIR = @TGT_DIR@/distrib
+TARBALL = webapp-module-$(WEBAPP_VERSION)
+
+# Versions
+APACHE_VERSION = @APACHE_VERSION@
+WEBAPP_VERSION = @WEBAPP_VERSION@
+HOST           = @HOST@
+DATE           = @DATE@
 
 # Compilation template
 %.lo: $(LOCAL_SRC_DIR)/%.c 
@@ -96,4 +105,6 @@ OBJ_DIR = @TGT_DIR@/objects
 	    $(CPPFLAGS) \
 	    $(CFLAGS) 
 	$(LIBTOOL) --mode=install \
-	  cp $@ $(OBJ_DIR)
+	  $(INSTALL) \
+	    $@ \
+	    $(OBJ_DIR)

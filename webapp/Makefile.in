@@ -60,13 +60,15 @@
 
 include @TGT_DIR@/Makedefs
 
-all: extra-build
+all: dist
 
 distclean: extra-clean
 	rm -f $(MODULE)/Makefile
 	rm -f lib/Makefile
 	rm -f Makedefs
 	rm -f Makefile
+	rm -f DETAILS.txt
+	rm -fr $(DST_DIR)
 
 extra-build: $(OBJ_DIR) @EXTRA_BUILD@ build
 
@@ -75,10 +77,29 @@ extra-clean: @EXTRA_CLEAN@ clean
 build: $(OBJ_DIR) lib-build $(MODULE)-build
 
 clean: lib-clean $(MODULE)-clean
-	rm -rf $(OBJ_DIR)/*
+	rm -rf $(OBJ_DIR)
+
+dist: $(DST_DIR) extra-build
+	cp $(SRC_DIR)/LICENSE.txt $(DST_DIR)
+	cp $(SRC_DIR)/README.txt $(DST_DIR)
+	cp $(SRC_DIR)/INSTALL.txt $(DST_DIR)
+	cp $(TGT_DIR)/DETAILS.txt $(DST_DIR)
+	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/$(MODULE)" SUBT="dist" subdir
+
+tarball: dist
+	cd $(TGT_DIR)
+	rm -rf $(TARBALL)
+	mkdir $(TARBALL)
+	cp -R $(DST_DIR)/. $(TARBALL)
+	tar -cf $(TARBALL).tar $(TARBALL)
+	gzip -9f $(TARBALL).tar
+	rm -rf $(TARBALL)
 
 $(OBJ_DIR):
 	mkdir $(OBJ_DIR)
+
+$(DST_DIR):
+	mkdir $(DST_DIR)
 
 $(MODULE)-build:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/$(MODULE)" SUBT="build" subdir
