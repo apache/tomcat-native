@@ -114,6 +114,7 @@ void *jk_pool_strdup(jk_pool_t *p, const char *s)
     return rc;
 }
 
+#if defined (DEBUG) || (_DEBUG)
 void jk_dump_pool(jk_pool_t *p, FILE * f)
 {
     fprintf(f, "Dumping for pool [%p]\n", p);
@@ -126,6 +127,7 @@ void jk_dump_pool(jk_pool_t *p, FILE * f)
 
     fflush(f);
 }
+#endif
 
 static void *jk_pool_dyn_alloc(jk_pool_t *p, size_t size)
 {

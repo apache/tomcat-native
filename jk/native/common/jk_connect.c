@@ -140,7 +140,7 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
     char buf[32];
     int sock;
 
-    jk_log(l, JK_LOG_DEBUG, "Into jk_open_socket\n");
+	JK_TRACE_ENTER(l);
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock >= 0) {
@@ -234,6 +234,7 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
                "jk_open_socket, socket() failed errno = %d\n", errno);
     }
 
+	JK_TRACE_EXIT(l);
     return sock;
 }
 

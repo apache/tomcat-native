@@ -86,6 +86,8 @@ struct file_logger_t
 #define JK_TRACE_EXIT(l)
 #endif
 
+#define JK_LOG_NULL_PARAMS(l) jk_log((l), JK_LOG_ERROR, __FUNCTION__ " NULL parameters\n")
+
 
 
 #ifdef __cplusplus

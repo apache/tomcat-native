@@ -44,7 +44,7 @@ struct jk_msg_buf_t
  * Simple marshaling code.
  */
 
-#ifdef DEBUG
+#if defined (DEBUG) || (_DEBUG)
 static void jk_b_dump(jk_msg_buf_t *msg, char *err)
 {
     int i = 0;
@@ -278,7 +278,7 @@ unsigned long jk_b_get_long(jk_msg_buf_t *msg)
 {
     unsigned long i;
     if (msg->pos + 3 > msg->len) {
-#ifdef DEBUG
+#if defined (DEBUG) || (_DEBUG)
         fprintf(stderr, "jk_b_get_long::Read after end \n");
 #endif
         return 0xFFFFFFFF;
@@ -305,7 +305,7 @@ unsigned short jk_b_get_int(jk_msg_buf_t *msg)
 {
     unsigned short i;
     if (msg->pos + 1 > msg->len) {
-#ifdef DEBUG
+#if defined (DEBUG) || (_DEBUG)
         fprintf(stderr, "jk_b_get_int::Read after end \n");
 #endif
         return 0xFFFF;
@@ -327,7 +327,7 @@ unsigned char jk_b_get_byte(jk_msg_buf_t *msg)
 {
     unsigned char rc;
     if (msg->pos > msg->len) {
-#ifdef DEBUG
+#if defined (DEBUG) || (_DEBUG)
         fprintf(stderr, "jk_b_get_byte::Read after end \n");
 #endif
         return 0xFF;
@@ -349,7 +349,7 @@ unsigned char *jk_b_get_string(jk_msg_buf_t *msg)
     int start = msg->pos;
 
     if ((size == 0xFFFF) || (size + start > msg->maxlen)) {
-#ifdef DEBUG
+#if defined (DEBUG) || (_DEBUG)
         jk_b_dump(msg, "After get int");
         fprintf(stderr, "ERROR\n");
 #endif
@@ -367,7 +367,7 @@ int jk_b_get_bytes(jk_msg_buf_t *msg, unsigned char *buf, int len)
     int start = msg->pos;
 
     if ((len < 0) || (len + start > msg->maxlen)) {
-#ifdef DEBUG
+#if defined (DEBUG) || (_DEBUG)
         jk_b_dump(msg, "After get bytes");
         fprintf(stderr, "ERROR\n");
 #endif
