@@ -292,7 +292,7 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
 {
     int rc = JK_FALSE;
 
-    if (m && name && old) {
+    if (m && name) {
         unsigned int i;
         unsigned int key;
         COMPUTE_KEY_CHECKSUM(name, key)
