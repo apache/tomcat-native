@@ -124,21 +124,21 @@ JK_APXS([2], [location of apxs for Apache 2.0])
 
 dnl APACHE13 settings
 AC_MSG_RESULT([Checking for apache13...])
-JK_WS_DIR([apache13], [APACHE], [src/include/httpd.h])
+JK_WS_DIR([apache13], [APACHE], [src/include/httpd.h], [server/apache13])
 JK_WS_INCDIR([apache13], [httpd.h])
 JK_WS_LIBDIR([apache13])
 
 
 dnl APACHE2 settings
 AC_MSG_RESULT([Checking for apache20...])
-JK_WS_DIR([apache2], [APACHE2], [include/httpd.h])
+JK_WS_DIR([apache2], [APACHE2], [include/httpd.h], [server/apache2])
 JK_WS_INCDIR([apache2], [httpd.h])
 JK_WS_LIBDIR([apache2])
 
 
 dnl IIS settings
 AC_MSG_RESULT([Checking for iis...])
-JK_WS_DIR([iis], [IIS], [.])
+JK_WS_DIR([iis], [IIS], [.], [server/isapi])
 JK_WS_INCDIR([iis], [.])
 JK_WS_LIBDIR([iis])
 
@@ -152,7 +152,7 @@ AC_SUBST(IIS_LIBDIR)
 
 dnl iPlanet settings
 AC_MSG_RESULT([Checking for iPlanet...])
-JK_WS_DIR([iplanet], [IPLANET], [.])
+JK_WS_DIR([iplanet], [IPLANET], [.], [server/aolserver])
 JK_WS_INCDIR([iplanet], [.])
 JK_WS_LIBDIR([iplanet])
 
@@ -216,7 +216,7 @@ dnl check if apache 1.3 was selected without apr sources
                 AC_MSG_ERROR([Apache 1.3 requires apr to built from source, use --with-apr and --with-apr-util])
         fi
 dnl make sure compiler matchs apxs
-        if ${TEST} "$APACHE_CC" != "$CC"; then
+        if ${TEST} -n "$APACHE_CC" -a "$APACHE_CC" != "$CC"; then
                 AC_MSG_RESULT([error])
                 AC_MSG_RESULT([compiler discovered by configure: ${CC}])
                 AC_MSG_RESULT([compiler used by apache: ${APACHE_CC}])
@@ -232,7 +232,7 @@ dnl check if apache 2 was selected with apr sources
                 AC_MSG_ERROR([Use apr that comes with Apache 2, remove --with-apr])
         fi
 dnl make sure compiler matchs apxs
-        if ${TEST} "$APACHE2_CC" != "$CC"; then
+        if ${TEST} -n "$APACHE2_CC" -a "$APACHE2_CC" != "$CC"; then
                 AC_MSG_RESULT([error])
                 AC_MSG_RESULT([compiler discovered by configure: ${CC}])
                 AC_MSG_RESULT([compiler used by apache: ${APACHE2_CC}])

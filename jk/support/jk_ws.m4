@@ -69,6 +69,7 @@ dnl   Set the WebServer source dir.
 dnl   $1 => Webserver name
 dnl   $2 => Webserver vars prefix name
 dnl   $3 => File which should be present
+dnl   $4 => Server specific source directory 
 dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [JK_WS_DIR],
@@ -103,6 +104,7 @@ AC_DEFUN(
             $2_INCDIR="${tempval}/include"
             $2_LDFLAGS=""
             $2_LIBDIR=""
+	    WEBSERVERS="${WEBSERVERS} $4"
             AC_MSG_RESULT($1_DIR)
           fi
           ;;
