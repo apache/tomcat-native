@@ -258,39 +258,56 @@ static int jk2_handler_getChunk(jk_env_t *env, jk_msg_t   *msg,
     return JK_HANDLER_FATAL;	    
 }
 
-int JK_METHOD jk2_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
-                                           void **result,
-                                           const char *type, const char *name)
+int JK_METHOD jk2_handler_response_init( jk_env_t *env, jk_handler_t *_this,
+                                         jk_workerEnv_t *wEnv) 
 {
-    jk_map_t *map;
+    jk_pool_t *pool=wEnv->pool;
     jk_handler_t *h;
-    
-    jk2_map_default_create( env, &map, pool );
-    *result=map;
     
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="sendHeaders";
     h->messageId=JK_AJP13_SEND_HEADERS;
     h->callback=jk2_handler_startResponse;
-    map->put( env, map, h->name, h, NULL );
+    h->workerEnv=wEnv;
+    wEnv->registerHandler( env, wEnv, h );
 
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="sendChunk";
     h->messageId=JK_AJP13_SEND_BODY_CHUNK;
     h->callback=jk2_handler_sendChunk;
-    map->put( env, map, h->name, h, NULL );
+    h->workerEnv=wEnv;
+    wEnv->registerHandler( env, wEnv, h );
     
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="endResponse";
     h->messageId=JK_AJP13_END_RESPONSE;
     h->callback=jk2_handler_endResponse;
-    map->put( env, map, h->name, h, NULL );
+    h->workerEnv=wEnv;
+    wEnv->registerHandler( env, wEnv, h );
 
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="getChunk";
     h->messageId=JK_AJP13_GET_BODY_CHUNK;
     h->callback=jk2_handler_getChunk;
-    map->put( env, map, h->name, h, NULL );
+    h->workerEnv=wEnv;
+    wEnv->registerHandler( env, wEnv, h );
 
     return JK_TRUE;
 }
+
+int JK_METHOD jk2_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
+                                            jk_bean_t *result,
+                                            const char *type, const char *name)
+{
+    jk_map_t *map;
+    jk_handler_t *h;
+    
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
+
+    h->init=jk2_handler_response_init;
+
+    result->object=h;
+    
+    return JK_TRUE;
+}
+

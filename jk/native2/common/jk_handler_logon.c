@@ -242,37 +242,50 @@ static int jk2_handler_lognok(jk_env_t *env, jk_msg_t *msg,
     return JK_HANDLER_FATAL;
 }
 
-
-
-/** Register handlers
- */
-int JK_METHOD jk2_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
-                                        void **result,
-                                        const char *type, const char *name)
+int JK_METHOD jk2_handler_logon_init( jk_env_t *env, jk_handler_t *_this,
+                                      jk_workerEnv_t *wEnv) 
 {
-    jk_map_t *map;
+    jk_pool_t *pool=wEnv->pool;
     jk_handler_t *h;
-        
-    jk2_map_default_create( env, &map, pool );
-    *result=map;
     
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="login";
     h->messageId=AJP14_LOGSEED_CMD;
     h->callback=jk2_handler_login;
-    map->put( env, map, h->name, h, NULL );
+    h->workerEnv=wEnv;
+    wEnv->registerHandler( env, wEnv, h );
 
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="logOk";
     h->messageId=AJP14_LOGOK_CMD;
     h->callback=jk2_handler_logok;
-    map->put( env, map, h->name, h, NULL );
+    h->workerEnv=wEnv;
+    wEnv->registerHandler( env, wEnv, h );
 
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
     h->name="logNok";
     h->messageId=AJP14_LOGNOK_CMD;
     h->callback=jk2_handler_lognok;
-    map->put( env, map, h->name, h, NULL );
+    h->workerEnv=wEnv;
+    wEnv->registerHandler( env, wEnv, h );
+    
+    return JK_TRUE;
+}
 
+
+/** Register handlers
+ */
+int JK_METHOD jk2_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
+                                         jk_bean_t *result,
+                                         const char *type, const char *name)
+{
+    jk_handler_t *h;
+
+    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
+
+    h->init=jk2_handler_logon_init;
+
+    result->object=h;
+    
     return JK_TRUE;
 }
