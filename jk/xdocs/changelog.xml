@@ -75,6 +75,9 @@
       On Series you should use the latest PTF for Apache 2.0 (which is now 2.0.52) and ad minima
       SI17402/SI17061 or cumulative including them. (hgomez)
       </update>
+      <update>
+      Change the xml status format to xml attribute syntax (pero)
+      </update>
     </changelog>
   </subsection>
 </section>

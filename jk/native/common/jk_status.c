@@ -375,22 +375,16 @@ static void dump_maps(jk_ws_service_t *s, status_worker_t *sw,
         if (strcmp(uwr->worker_name, worker)) {
             continue;
         }
-        jk_puts(s, "    <jk:map>\n");
-        jk_putv(s, "      <jk:type>",
-                status_val_match(uwr->match_type),
-                "</jk:type>\n", NULL);
-        jk_putv(s, "      <jk:uri>",
-                uwr->uri,
-                "</jk:uri>\n", NULL);
-        jk_putv(s, "      <jk:context>",
-                uwr->context,
-                "</jk:context>\n", NULL);
-
+        jk_printf(s, "    <jk:map type=\"%s\" uri=\"%s\" context=\"%s\"",
+              status_val_match(uwr->match_type),
+              uwr->uri,
+              uwr->context) ;
+        
         if (uwr->suffix)
-            jk_putv(s, "      <jk:suffix>",
+            jk_putv(s, " suffix=\"",
                     uwr->suffix,
-                    "</jk:suffix>\n", NULL);
-        jk_puts(s, "    </jk:map>\n");
+                    "\"", NULL);
+        jk_puts(s, " />\n");
     }
 }
 
@@ -628,47 +622,42 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             /* Skip non lb workers */
             continue;
         }
-        jk_printf(s, "  <jk:balancer>\n    <jk:id>%d</jk:id>\n", i);
-        jk_putv(s, "    <jk:name>", lb->s->name, "</jk:name>\n", NULL);
-        jk_putv(s, "    <jk:type>", status_worker_type(w->type), "</jk:type>\n", NULL);
-        jk_putv(s, "    <jk:sticky>", status_val_bool(lb->s->sticky_session),
-                   "</jk:sticky>\n", NULL);
-        jk_putv(s, "    <jk:stickyforce>", status_val_bool(lb->s->sticky_session_force),
-                   "</jk:stickyforce>\n", NULL);
-        jk_printf(s, "    <jk:retries>%d</jk:retries>\n", lb->s->retries);
-        jk_printf(s, "    <jk:recover>%d</jk:recover>\n", lb->s->recover_wait_time);
+        jk_printf(s, "  <jk:balancer id=\"%d\" name=\"%s\" type=\"%s\" sticky=\"$s\" stickyforce=\"%s\" retries=\"%d\" recover=\"%d\" >\n", 
+             i,
+             lb->s->name,
+             status_worker_type(w->type), 
+             status_val_bool(lb->s->sticky_session),
+             status_val_bool(lb->s->sticky_session_force),
+             lb->s->retries,
+             lb->s->recover_wait_time);
         for (j = 0; j < lb->num_of_workers; j++) {
             worker_record_t *wr = &(lb->lb_workers[j]);
             ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
-            jk_puts(s, "    <jk:member>\n");
-            jk_printf(s, "      <jk:id>%d</jk:id>\n", j);
-            jk_putv(s, "      <jk:name>", wr->s->name, "</jk:name>\n", NULL);
-            jk_putv(s, "      <jk:type>", status_worker_type(wr->w->type),
-                       "</jk:type>\n", NULL);
-
-            jk_putv(s, "      <jk:host>", a->host, "</jk:host>\n", NULL);
-            jk_printf(s, "      <jk:port>%d</jk:port>\n", a->port);
-            jk_putv(s, "      <jk:address>", jk_dump_hinfo(&a->worker_inet_addr, buf),
-                       "</jk:address>\n", NULL);
             /* TODO: descriptive status */
-            jk_putv(s, "      <jk:status>",
-                        status_val_status(wr->s->is_disabled,
-                                          wr->s->in_error_state,
-                                          wr->s->in_recovering,
-                                          wr->s->is_busy),
-                        "</jk:status>\n", NULL);
-            jk_printf(s, "      <jk:lbfactor>%d</jk:lbfactor>\n", wr->s->lb_factor);
-            jk_printf(s, "      <jk:lbvalue>%d</jk:lbvalue>\n", wr->s->lb_value);
-            jk_printf(s, "      <jk:elected>%u</jk:elected>\n", wr->s->elected);
-            jk_printf(s, "      <jk:readed>%u</jk:readed>\n", wr->s->readed);
-            jk_printf(s, "      <jk:transferred>%u</jk:transferred>\n", wr->s->transferred);
-            jk_printf(s, "      <jk:errors>%u</jk:errors>\n", wr->s->errors);
-            jk_printf(s, "      <jk:busy>%u</jk:busy>\n", wr->s->busy);
+            jk_printf(s, "      <jk:member id=\"%d\" name=\"%s\" type=\"%s\" host=\"%s\" port=\"%d\" address=\"%s\" status=\"%s\"", 
+                j,
+                wr->s->name,
+                status_worker_type(wr->w->type),
+                a->host,
+                a->port,
+                jk_dump_hinfo(&a->worker_inet_addr, buf),
+                status_val_status(wr->s->is_disabled,
+                                  wr->s->in_error_state,
+                                  wr->s->in_recovering,
+                                  wr->s->is_busy) );
+                                      
+            jk_printf(s, " lbfactor=\"%d\"", wr->s->lb_factor);
+            jk_printf(s, " lbvalue=\"%d\"", wr->s->lb_value);
+            jk_printf(s, " elected=\"%u\"", wr->s->elected);
+            jk_printf(s, " readed=\"%u\"", wr->s->readed);
+            jk_printf(s, " transferred=\"%u\"", wr->s->transferred);
+            jk_printf(s, " errors=\"%u\"", wr->s->errors);
+            jk_printf(s, " busy=\"%u\"", wr->s->busy);
             if (wr->s->redirect && *wr->s->redirect)
-                jk_putv(s, "      <jk:redirect>", wr->s->redirect, "</jk:redirect>\n", NULL);
+                jk_printf(s, " redirect=\"%s\"", wr->s->redirect);
             if (wr->s->domain && *wr->s->domain)
-                jk_putv(s, "      <jk:domain>", wr->s->domain, "</jk:domain>\n", NULL);
-            jk_puts(s, "    </jk:member>\n");
+                jk_printf(s, " domain=\"%s\"", wr->s->domain);
+            jk_puts(s, " />\n");
         }
         dump_maps(s, sw, s->uw_map, lb->s->name, l);
         jk_puts(s, "  </jk:balancer>\n");
