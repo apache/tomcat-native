@@ -1565,7 +1565,7 @@ int ajp_init(jk_worker_t *pThis,
     	       p->reply_timeout);
 
         p->prepost_timeout =
-            jk_get_worker_reply_timeout(props, p->name, AJP_DEF_PREPOST_TIMEOUT);
+            jk_get_worker_prepost_timeout(props, p->name, AJP_DEF_PREPOST_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
 	           "In jk_worker_t::init, setting prepost timeout to %d\n",
