@@ -323,7 +323,7 @@ public class HandlerRequest extends JkHandler
     int secretNote;
 
     boolean decoded=true;
-    boolean tomcatAuthentication;
+    boolean tomcatAuthentication=true;
     
     public int invoke(Msg msg, MsgContext ep ) 
         throws IOException
