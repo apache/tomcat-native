@@ -443,7 +443,8 @@
         basedir="${source.docs}"
         destdir="${build.docs}"
         style="${source.docs}/style.xsl" >
-        <include name="index.xml, faq.xml" />
+        <include name="index.xml" />
+        <include name="faq.xml" />
         <param name="images" expression="images"/>
         <param name="styles" expression="."/>
         <param name="homedoc" expression=""/>
