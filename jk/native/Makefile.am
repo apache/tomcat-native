@@ -15,3 +15,7 @@ all:
 	       (cd $$i && $(MAKE) $$target) || exit 1; \
 	    fi; \
 	done;
+
+apidocs: common/*.h
+	../../scandoc/scandoc.pl -i ../../scandoc/template.pl -p \
+	./docs/api/ -dproject="mod_jk Library" common/*.h common/*.c

@@ -55,17 +55,22 @@
  *                                                                           *
  * ========================================================================= */
 
-/***************************************************************************
- * Description: Socket/Naming manipulation functions                       *
- * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Based on:    Various Jserv files                                        *
- * Version:     $Revision$                                               *
- ***************************************************************************/
+/*
+ * Description: Socket/Naming manipulation functions
+ * Based on:    Various Jserv files
+ */
+/**
+ * @package	jk_connect
+ * @author      Gal Shachor <shachor@il.ibm.com>
+ * @version     $Revision$
+ */
 
 
 #include "jk_connect.h"
 #include "jk_util.h"
 
+/** resolve the host IP */
+ 
 int jk_resolve(char *host,
                short port,
                struct sockaddr_in *rc) 
@@ -100,6 +105,7 @@ int jk_resolve(char *host,
     return JK_TRUE;
 }
 
+/** connect to Tomcat */
 
 int jk_open_socket(struct sockaddr_in *addr, 
                    int ndelay,
@@ -154,6 +160,8 @@ int jk_open_socket(struct sockaddr_in *addr,
     return -1;
 }
 
+/** close the socket */
+
 int jk_close_socket(int s)
 {
 #ifdef WIN32
@@ -169,6 +177,16 @@ int jk_close_socket(int s)
     return -1;
 }
 
+/** send a long message
+ * @param sd  opened socket.
+ * @param b   buffer containing the data.
+ * @param len length to send.
+ * @return    -2: send returned 0 ? what this that ?
+ *            -3: send failed.
+ *            >0: total size send.
+ * @bug       this fails on Unixes if len is too big for the underlying
+ *             protocol.
+ */
 int jk_tcp_socket_sendfull(int sd, 
                            const unsigned char *b,
                            int len)
@@ -193,6 +211,13 @@ int jk_tcp_socket_sendfull(int sd,
     return sent;
 }
 
+/** receive len bytes.
+ * @param sd  opened socket.
+ * @param b   buffer to store the data.
+ * @param len length to receive.
+ * @return    -1: receive failed or connection closed.
+ *            >0: length of the received data.
+ */
 int jk_tcp_socket_recvfull(int sd, 
                            unsigned char *b, 
                            int len) 
