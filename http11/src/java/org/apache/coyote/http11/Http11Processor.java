@@ -540,7 +540,7 @@ public class Http11Processor implements Processor, ActionHook {
                     if (sslO != null)
                         request.setAttribute
                             (SSLSupport.CIPHER_SUITE_KEY, sslO);
-                    sslO = sslSupport.getPeerCertificateChain();
+                    sslO = sslSupport.getPeerCertificateChain(false);
                     if (sslO != null)
                         request.setAttribute
                             (SSLSupport.CERTIFICATE_KEY, sslO);
@@ -554,18 +554,27 @@ public class Http11Processor implements Processor, ActionHook {
                             (SSLSupport.SESSION_ID_KEY, sslO);
                 }
             } catch (Exception e) {
-                //log("Exception getting SSL attribute " + key,e,Log.WARNING);
+                log.warn("Exception getting SSL attributes " ,e);
             }
-
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
             request.remoteAddr().setString(remoteAddr);
             if( remoteHost == null )
                 remoteHost = socket.getInetAddress().getHostName();
             request.remoteHost().setString(remoteHost);
 
+        } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE ) {
+            try {
+                Object sslO = sslSupport.getPeerCertificateChain(true);
+                if( sslO != null) {
+                    request.setAttribute
+                        (SSLSupport.CERTIFICATE_KEY, sslO);
+                }
+            } catch (Exception e) {
+                log.warn("Exception getting SSL Cert",e);
+            }
         }
-
     }
+            
 
 
     // ------------------------------------------------------ Connector Methods
@@ -602,9 +611,9 @@ public class Http11Processor implements Processor, ActionHook {
         http11 = true;
         http09 = false;
         contentDelimitation = false;
-        if (sslSupport != null)
+        if (sslSupport != null) {
             request.scheme().setString("https");
-
+        }
         MessageBytes protocolMB = request.protocol();
         if (protocolMB.equals(Constants.HTTP_11)) {
             http11 = true;
