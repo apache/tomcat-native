@@ -309,9 +309,16 @@ final class CoyoteAdapter
 
         // Parse cookies
         parseCookies(req, request);
-	
-	// Set the SSL properties
+
+        // Set the SSL properties
 	res.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,request.getRequest());
+
+        // Set the remote principal
+        String principal = req.getRemoteUser().toString();
+        if (principal != null) {
+            request.setUserPrincipal(new CoyotePrincipal(principal));
+        }
+
     }
 
     /**
