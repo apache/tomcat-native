@@ -470,30 +470,32 @@ public final class Response {
 
         if (isCommitted())
             return;
-        if (contentType == null)
+        if (charset == null)
             return;
 
+	characterEncoding = charset;
+
         String type = this.contentType;
-        int start = type.indexOf("charset=");
-        if ( start != -1 ) {
-            int end = type.indexOf(';', start+8);
-            if (end >= 0) 
-                type = type.substring(0,start+8)
-                    +charset+type.substring(end-1);
-            else 
-                type = type.substring(0,start+8)
-                    +charset;
-            this.contentType = type;
-        } else {
-            int end = type.indexOf(';');
-            if (end >= 0) {
-                type = type.substring(0, end) + ";charset=" + charset;
-            } else {
-                type = type + ";charset=" + charset;
-            }            
+	if (type != null) {
+	    int start = type.indexOf("charset=");
+	    if ( start != -1 ) {
+		int end = type.indexOf(';', start+8);
+		if (end >= 0) 
+		    type = type.substring(0,start+8)
+			+ charset + type.substring(end-1);
+		else 
+		    type = type.substring(0,start+8) + charset;
+		this.contentType = type;
+	    } else {
+		int end = type.indexOf(';');
+		if (end >= 0) {
+		    type = type.substring(0, end) + ";charset=" + charset;
+		} else {
+		    type = type + ";charset=" + charset;
+		}            
+	    }
+	    setContentType( type );
         }
-        setContentType( type );
-        
     }
 
     public String getCharacterEncoding() {
