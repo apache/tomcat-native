@@ -80,16 +80,16 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_getNumberOfHeaders
     jk_ws_service_t *ps = (jk_ws_service_t *)(int)s;
     jk_logger_t *pl = (jk_logger_t *)(int)l;
 
-    jk_log(pl, JK_LOG_DEBUG, "Into JNIConnectionHandler::getNumberOfHeaders\n");
+    pl->jkLog(pl, JK_LOG_DEBUG, "Into JNIConnectionHandler::getNumberOfHeaders\n");
 
     if(!ps) {
-	jk_log(pl, JK_LOG_ERROR, 
+	pl->jkLog(pl, JK_LOG_ERROR, 
                "In JNIConnectionHandler::getNumberOfHeaders, NULL ws service object\n");
 	/* [V] JNIConnectionHandler doesn't handle this */
 	return -1;
     }
 
-    jk_log(pl, JK_LOG_DEBUG,
+    pl->jkLog(pl, JK_LOG_DEBUG,
 	   "Done JNIConnectionHandler::getNumberOfHeaders, found %d headers\n",
 	   ps->num_headers);
     return (jint)ps->num_headers;
@@ -113,10 +113,10 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_read
     unsigned ncnt = (unsigned)cnt;
     unsigned acc = 0;
 
-    jk_log(pl, JK_LOG_DEBUG, "Into JNIConnectionHandler::read\n");
+    pl->jkLog(pl, JK_LOG_DEBUG, "Into JNIConnectionHandler::read\n");
 
     if(!ps) {
-        jk_log(pl, JK_LOG_ERROR, 
+        pl->jkLog(pl, JK_LOG_ERROR, 
                "In JNIConnectionHandler::read, NULL ws service object\n");
 	return -1;
     }
@@ -124,13 +124,13 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_read
     nbuf = (*env)->GetByteArrayElements(env, buf, &iscommit);
 
     if(!nbuf) {
-        jk_log(pl, JK_LOG_ERROR, 
+        pl->jkLog(pl, JK_LOG_ERROR, 
                "In JNIConnectionHandler::read, GetByteArrayElements error\n");
 	return -1;
     }
     
     if(!ps->read(ps, nbuf + nfrom, ncnt, &acc)) {
-        jk_log(pl, JK_LOG_ERROR, 
+        pl->jkLog(pl, JK_LOG_ERROR, 
                "In JNIConnectionHandler::read, failed to read from web server\n");
     } else {
         rc = (jint)acc;
@@ -138,7 +138,7 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_read
 
     (*env)->ReleaseByteArrayElements(env, buf, nbuf, 0);
 
-    jk_log(pl, JK_LOG_DEBUG, "Done JNIConnectionHandler::read\n");
+    pl->jkLog(pl, JK_LOG_DEBUG, "Done JNIConnectionHandler::read\n");
     return rc;
 }
 
@@ -155,11 +155,11 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readEnvironment
     jk_logger_t *pl = (jk_logger_t *)(int)l;
     char port[10];
 
-    jk_log(pl, JK_LOG_DEBUG, 
+    pl->jkLog(pl, JK_LOG_DEBUG, 
            "Into JNIConnectionHandler::readEnvironment. Environment follows --->\n");
 
     if(!ps) {
-        jk_log(pl, JK_LOG_ERROR, 
+        pl->jkLog(pl, JK_LOG_ERROR, 
                "In JNIConnectionHandler::readEnvironment, NULL ws service object\n");
 	return JK_FALSE;
     }
@@ -171,63 +171,63 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readEnvironment
                                       envbuf, 
                                       0, 
                                       (*env)->NewStringUTF(env, ps->method));
-	jk_log(pl, JK_LOG_DEBUG, "---> method: %s\n", ps->method);
+	pl->jkLog(pl, JK_LOG_DEBUG, "---> method: %s\n", ps->method);
     }
     if(ps->req_uri) {
         (*env)->SetObjectArrayElement(env, 
                                       envbuf, 
                                       1, 
                                       (*env)->NewStringUTF(env, ps->req_uri));
-	jk_log(pl, JK_LOG_DEBUG, "---> req_uri: %s\n", ps->req_uri);
+	pl->jkLog(pl, JK_LOG_DEBUG, "---> req_uri: %s\n", ps->req_uri);
     }
     if(ps->query_string) {
         (*env)->SetObjectArrayElement(env, 
                                       envbuf, 
                                       2, 
                                       (*env)->NewStringUTF(env, ps->query_string));
-        jk_log(pl, JK_LOG_DEBUG, "---> query_string: %s\n", ps->query_string);
+        pl->jkLog(pl, JK_LOG_DEBUG, "---> query_string: %s\n", ps->query_string);
     }
     if(ps->remote_addr) {
         (*env)->SetObjectArrayElement(env, 
                                       envbuf, 
                                       3, 
                                       (*env)->NewStringUTF(env, ps->remote_addr));
-	jk_log(pl, JK_LOG_DEBUG, "---> remote_addr: %s\n", ps->remote_addr);
+	pl->jkLog(pl, JK_LOG_DEBUG, "---> remote_addr: %s\n", ps->remote_addr);
     }
     if(ps->remote_host) {
         (*env)->SetObjectArrayElement(env, 
                                       envbuf, 
                                       4, 
                                       (*env)->NewStringUTF(env, ps->remote_host));
-	jk_log(pl, JK_LOG_DEBUG, "---> remote_host: %s\n", ps->remote_host);
+	pl->jkLog(pl, JK_LOG_DEBUG, "---> remote_host: %s\n", ps->remote_host);
     }
     if(ps->server_name) {
         (*env)->SetObjectArrayElement(env, 
                                       envbuf, 
                                       5, 
                                       (*env)->NewStringUTF(env, ps->server_name));
-	jk_log(pl, JK_LOG_DEBUG, "---> server_name: %s\n", ps->server_name);
+	pl->jkLog(pl, JK_LOG_DEBUG, "---> server_name: %s\n", ps->server_name);
     }
 
     (*env)->SetObjectArrayElement(env, 
                                   envbuf, 
                                   6, 
                                   (*env)->NewStringUTF(env, port));
-    jk_log(pl, JK_LOG_DEBUG, "---> server_port: %s\n", port);
+    pl->jkLog(pl, JK_LOG_DEBUG, "---> server_port: %s\n", port);
 
     if(ps->auth_type) {
         (*env)->SetObjectArrayElement(env, 
                                       envbuf, 
                                       7, 
                                       (*env)->NewStringUTF(env, ps->auth_type));
-	jk_log(pl, JK_LOG_DEBUG, "---> auth_type: %s\n", ps->auth_type);
+	pl->jkLog(pl, JK_LOG_DEBUG, "---> auth_type: %s\n", ps->auth_type);
     }
     if(ps->remote_user) {
         (*env)->SetObjectArrayElement(env, 
                                       envbuf, 
                                       8, 
                                       (*env)->NewStringUTF(env, ps->remote_user));
-	jk_log(pl, JK_LOG_DEBUG, "---> remote_user: %s\n", ps->remote_user);
+	pl->jkLog(pl, JK_LOG_DEBUG, "---> remote_user: %s\n", ps->remote_user);
     }
     if(ps->is_ssl) {
         (*env)->SetObjectArrayElement(env, 
@@ -240,21 +240,21 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readEnvironment
                                       9, 
                                       (*env)->NewStringUTF(env, "http"));
     }
-    jk_log(pl, JK_LOG_DEBUG, "---> is_ssl: %s\n", ps->is_ssl ? "yes" : "no");
+    pl->jkLog(pl, JK_LOG_DEBUG, "---> is_ssl: %s\n", ps->is_ssl ? "yes" : "no");
 
     if(ps->protocol) {
         (*env)->SetObjectArrayElement(env, 
                                       envbuf, 
                                       10, 
                                       (*env)->NewStringUTF(env, ps->protocol));
-        jk_log(pl, JK_LOG_DEBUG, "---> protocol: %s\n", ps->protocol);
+        pl->jkLog(pl, JK_LOG_DEBUG, "---> protocol: %s\n", ps->protocol);
     }
     if(ps->server_software) {
         (*env)->SetObjectArrayElement(env, 
                                       envbuf, 
                                       11, 
                                       (*env)->NewStringUTF(env, ps->server_software));
-        jk_log(pl, JK_LOG_DEBUG, "---> server_software: %s\n", ps->server_software);
+        pl->jkLog(pl, JK_LOG_DEBUG, "---> server_software: %s\n", ps->server_software);
     }
     if(ps->is_ssl) {
         if(ps->ssl_cert) {
@@ -262,7 +262,7 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readEnvironment
                                           envbuf, 
                                           12, 
                                           (*env)->NewStringUTF(env, ps->ssl_cert));
-            jk_log(pl, JK_LOG_DEBUG, "---> ssl_cert: %s\n", ps->ssl_cert);
+            pl->jkLog(pl, JK_LOG_DEBUG, "---> ssl_cert: %s\n", ps->ssl_cert);
         }
         
         if(ps->ssl_cipher) {
@@ -270,7 +270,7 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readEnvironment
                                           envbuf, 
                                           13, 
                                           (*env)->NewStringUTF(env, ps->ssl_cipher));
-            jk_log(pl, JK_LOG_DEBUG, "---> ssl_cipher: %s\n", ps->ssl_cipher);
+            pl->jkLog(pl, JK_LOG_DEBUG, "---> ssl_cipher: %s\n", ps->ssl_cipher);
         }
 
         if(ps->ssl_session) {
@@ -278,11 +278,11 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readEnvironment
                                           envbuf, 
                                           14, 
                                           (*env)->NewStringUTF(env, ps->ssl_session));
-            jk_log(pl, JK_LOG_DEBUG, "---> ssl_session: %s\n", ps->ssl_session);
+            pl->jkLog(pl, JK_LOG_DEBUG, "---> ssl_session: %s\n", ps->ssl_session);
         }
     }
 
-    jk_log(pl, JK_LOG_DEBUG, 
+    pl->jkLog(pl, JK_LOG_DEBUG, 
            "Done JNIConnectionHandler::readEnvironment\n");
 
 
@@ -302,15 +302,15 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readHeaders
     jk_logger_t *pl = (jk_logger_t *)(int)l;
     unsigned i;
 
-    jk_log(pl, JK_LOG_DEBUG, "Into JNIConnectionHandler::readHeaders\n");
+    pl->jkLog(pl, JK_LOG_DEBUG, "Into JNIConnectionHandler::readHeaders\n");
 
     if(!ps) {
-        jk_log(pl, JK_LOG_ERROR, 
+        pl->jkLog(pl, JK_LOG_ERROR, 
            "In JNIConnectionHandler::readHeaders, NULL ws service object\n");
 	   return JK_FALSE;
     }
 
-    jk_log(pl, JK_LOG_DEBUG, "In JNIConnectionHandler::readHeaders, %d headers follow --->\n",
+    pl->jkLog(pl, JK_LOG_DEBUG, "In JNIConnectionHandler::readHeaders, %d headers follow --->\n",
 	   ps->num_headers);
 
     for(i = 0 ; i < ps->num_headers ; i++) {
@@ -322,10 +322,10 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readHeaders
                                       hvalues, 
                                       i, 
                                       (*env)->NewStringUTF(env, ps->headers_values[i]));
-	jk_log(pl, JK_LOG_DEBUG, "---> %s = %s\n",
+	pl->jkLog(pl, JK_LOG_DEBUG, "---> %s = %s\n",
 	       ps->headers_names[i], ps->headers_values[i]);
     }
-    jk_log(pl, JK_LOG_DEBUG, 
+    pl->jkLog(pl, JK_LOG_DEBUG, 
 	   "Done JNIConnectionHandler::readHeaders\n");
 
     return JK_TRUE;
@@ -351,15 +351,15 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_startReasponse
     int i = 0;
     int ok = JK_TRUE;
 
-    jk_log(pl, JK_LOG_DEBUG, "Into JNIConnectionHandler::startReasponse\n");
+    pl->jkLog(pl, JK_LOG_DEBUG, "Into JNIConnectionHandler::startReasponse\n");
 
     if(!ps) {
-        jk_log(pl, JK_LOG_ERROR, 
+        pl->jkLog(pl, JK_LOG_ERROR, 
 	       "In JNIConnectionHandler::startReasponse, NULL ws service object\n");
 	return JK_FALSE;
     }
 
-    jk_log(pl, JK_LOG_DEBUG, "In JNIConnectionHandler::startReasponse, %d headers follow --->\n",
+    pl->jkLog(pl, JK_LOG_DEBUG, "In JNIConnectionHandler::startReasponse, %d headers follow --->\n",
 	   hcnt);
 
     if(hcnt) {
@@ -381,7 +381,7 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_startReasponse
                 shvalues[i] = (*env)->GetObjectArrayElement(env, hvalues, i);
 
                 if(!shvalues[i] || !shnames[i]) {
-                    jk_log(pl, JK_LOG_ERROR, 
+                    pl->jkLog(pl, JK_LOG_ERROR, 
                            "In JNIConnectionHandler::startReasponse, GetObjectArrayElement error\n");
                     break;
                 }
@@ -390,20 +390,20 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_startReasponse
                 nhvalues[i] = (char *)(*env)->GetStringUTFChars(env, shvalues[i], &iscommit);
 
                 if(!nhvalues[i] || !nhnames[i]) {
-                    jk_log(pl, JK_LOG_ERROR, 
+                    pl->jkLog(pl, JK_LOG_ERROR, 
                            "In JNIConnectionHandler::startReasponse, GetStringUTFChars error\n");
                     break;
                 }
 		
-		jk_log(pl, JK_LOG_DEBUG, "---> %s=%s\n", nhnames[i], nhvalues[i]);	
+		pl->jkLog(pl, JK_LOG_DEBUG, "---> %s=%s\n", nhnames[i], nhvalues[i]);	
             }
             if(i == hcnt) {
                 ok = JK_TRUE;
-		jk_log(pl, JK_LOG_DEBUG, 
+		pl->jkLog(pl, JK_LOG_DEBUG, 
                        "In JNIConnectionHandler::startReasponse. ----- End headers.\n", hcnt);
             }
 	} else {
-	    jk_log(pl, JK_LOG_ERROR,
+	    pl->jkLog(pl, JK_LOG_ERROR,
 	           "In JNIConnectionHandler::startReasponse, memory allocation error\n");
 	}
     }			        
@@ -419,7 +419,7 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_startReasponse
     if(ok) {
         if(!ps->start_response(ps, sc, nmsg, (const char**)nhnames, (const char**)nhvalues, hcnt)) {
             ok = JK_FALSE;
-            jk_log(pl, JK_LOG_ERROR, 
+            pl->jkLog(pl, JK_LOG_ERROR, 
                    "In JNIConnectionHandler::startReasponse, servers startReasponse failed\n");
         }
     }
@@ -451,7 +451,7 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_startReasponse
             }
         }
     }
-    jk_log(pl, JK_LOG_DEBUG, "Done JNIConnectionHandler::startReasponse.\n");
+    pl->jkLog(pl, JK_LOG_DEBUG, "Done JNIConnectionHandler::startReasponse.\n");
 
     return ok;
 }
@@ -473,11 +473,11 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_write
     unsigned nfrom = (unsigned)from;
     unsigned ncnt = (unsigned)cnt;
 
-    jk_log(pl, JK_LOG_DEBUG, 
+    pl->jkLog(pl, JK_LOG_DEBUG, 
            "In JNIConnectionHandler::write\n");
 
     if(!ps) {
-    	jk_log(pl, JK_LOG_ERROR, 
+    	pl->jkLog(pl, JK_LOG_ERROR, 
 	    "In JNIConnectionHandler::write, NULL ws service object\n");
 	return JK_FALSE;
     }
@@ -485,13 +485,13 @@ Java_org_apache_tomcat_modules_server_JNIConnectionHandler_write
     nbuf = (*env)->GetByteArrayElements(env, buf, &iscommit);
 
     if(!nbuf) {
-        jk_log(pl, JK_LOG_ERROR, 
+        pl->jkLog(pl, JK_LOG_ERROR, 
                "In JNIConnectionHandler::write, GetByteArrayElements error\n");
 	return JK_FALSE;
     }
 
     if(!ps->write(ps, nbuf + nfrom, ncnt)) {
-        jk_log(pl, JK_LOG_ERROR, 
+        pl->jkLog(pl, JK_LOG_ERROR, 
                    "In JNIConnectionHandler::write, failed to write to the web server\n");
     } else {
         rc = (jint)JK_TRUE;

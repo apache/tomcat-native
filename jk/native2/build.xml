@@ -76,7 +76,7 @@
       <def name="USE_APACHE_MD5" 
 	   info="Use the MD5 implementation that is part of apache2" />
       <src dir=".">
-	<include name="server/apache-2.0/mod_jk.c" />
+	<include name="server/apache2/mod_jk.c" />
 	<include name="common/*.c" />
 	<include name="apr/*.c" />
       </src>
