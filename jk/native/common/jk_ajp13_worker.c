@@ -61,73 +61,8 @@
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
-#include "jk_pool.h"
-#include "jk_connect.h"
-#include "jk_util.h"
-#include "jk_msg_buff.h"
-#include "jk_ajp13.h"
-#include "jk_mt.h"
+#include "jk_ajp13_worker.h"
 
-#define AJP_DEF_HOST            ("localhost")
-#define AJP_DEF_PORT            (8008)
-#define READ_BUF_SIZE           (8*1024)
-#define DEF_RETRY_ATTEMPTS      (1)
-#define DEF_CACHE_SZ            (1)
-#define JK_INTERNAL_ERROR       (-2)
-#define MAX_SEND_BODY_SZ        (DEF_BUFFER_SZ - 6)
-#define AJP13_HEADER_LEN	(4)
-#define AJP13_HEADER_SZ_LEN	(2)
-
-struct ajp13_operation;
-typedef struct ajp13_operation ajp13_operation_t;
-
-struct ajp13_endpoint;
-typedef struct ajp13_endpoint ajp13_endpoint_t;
-
-struct ajp13_worker {
-    struct sockaddr_in worker_inet_addr; /* Contains host and port */
-    unsigned connect_retry_attempts;
-    char *name; 
-
-    /*
-     * Open connections cache...
-     *
-     * 1. Critical section object to protect the cache.
-     * 2. Cache size.
-     * 3. An array of "open" endpoints.
-     */
-    JK_CRIT_SEC cs;
-    unsigned ep_cache_sz;
-    ajp13_endpoint_t **ep_cache;
-
-    jk_worker_t worker; 
-};
-typedef struct ajp13_worker ajp13_worker_t;
-
-struct ajp13_endpoint { 
-    ajp13_worker_t *worker;
-
-    jk_pool_t pool;
-    jk_pool_atom_t buf[BIG_POOL_SIZE];
-
-    int sd;
-    int reuse;
-    jk_endpoint_t endpoint;
-
-    unsigned left_bytes_to_send;
-};
-
-/* 
- * little struct to avoid multiples ptr passing
- * this struct is ready to hold upload file fd
- * to add upload persistant storage
- */
-struct ajp13_operation {
-	jk_msg_buf_t 	*request;	/* original request storage */
-	jk_msg_buf_t	*reply;		/* reply storage (chuncked by ajp13 */
-	int		uploadfd;	/* future persistant storage id */
-	int		recoverable;	/* if exchange could be conducted on another TC */
-};
 
 static void reset_endpoint(ajp13_endpoint_t *ep)
 {
@@ -354,8 +289,8 @@ static int ajp13_process_callback(jk_msg_buf_t *msg,
             {
 		unsigned len = (unsigned)jk_b_get_int(msg);
 
-                if(len > MAX_SEND_BODY_SZ) {
-                    len = MAX_SEND_BODY_SZ;
+                if(len > AJP13_MAX_SEND_BODY_SZ) {
+                    len = AJP13_MAX_SEND_BODY_SZ;
                 }
                 if(len > ep->left_bytes_to_send) {
                     len = ep->left_bytes_to_send;
@@ -411,11 +346,11 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         ajp13_worker_t *p = pThis->worker_private;
         int port = jk_get_worker_port(props, 
                                       p->name,
-                                      AJP_DEF_PORT);
+                                      AJP13_DEF_PORT);
 
         char *host = jk_get_worker_host(props, 
                                         p->name,
-                                        AJP_DEF_HOST);
+                                        AJP13_DEF_HOST);
 
         jk_log(l, 
                JK_LOG_DEBUG, 
@@ -450,7 +385,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
         ajp13_worker_t *p = pThis->worker_private;
         int cache_sz = jk_get_worker_cache_size(props, 
                                                 p->name,
-                                                DEF_CACHE_SZ);
+                                                AJP13_DEF_CACHE_SZ);
 
         if(cache_sz > 0) {
             p->ep_cache = 
@@ -633,8 +568,8 @@ static int send_request(jk_endpoint_t *e,
 	 	 */
 		if(p->left_bytes_to_send > 0) {
 			unsigned len = p->left_bytes_to_send;
-			if(len > MAX_SEND_BODY_SZ) 
-				len = MAX_SEND_BODY_SZ;
+			if(len > AJP13_MAX_SEND_BODY_SZ) 
+				len = AJP13_MAX_SEND_BODY_SZ;
             		if(!read_into_msg_buff(p, s, op->reply, l, len)) {
 				/* the browser stop sending data, no need to recover */
 				op->recoverable = JK_FALSE;
@@ -863,33 +798,29 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
     ajp13_worker_t *private_data = 
             (ajp13_worker_t *)malloc(sizeof(ajp13_worker_t));
     
-    jk_log(l, 
-           JK_LOG_DEBUG, 
-           "Into ajp13_worker_factory\n");
-    if(NULL == name || NULL == w) {
-        jk_log(l, 
-               JK_LOG_ERROR, 
-               "In ajp13_worker_factory, NULL parameters\n");
+    jk_log(l, JK_LOG_DEBUG, "Into ajp13_worker_factory\n");
+
+    if (name == NULL || w == NULL) {
+        jk_log(l, JK_LOG_ERROR, "In ajp13_worker_factory, NULL parameters\n");
 	    return JK_FALSE;
     }
         
-    if(!private_data) {
-        jk_log(l, JK_LOG_ERROR, "In ajp13_worker_factory, NULL parameters\n");
+    if (! private_data) {
+        jk_log(l, JK_LOG_ERROR, "In ajp13_worker_factory, malloc of private_data failed\n");
 	    return JK_FALSE;
     }
 
     private_data->name = strdup(name);          
     
-    if(!private_data->name) {
+    if (! private_data->name) {
 	    free(private_data);
 	    jk_log(l, JK_LOG_ERROR, "In ajp13_worker_factory, malloc failed\n");
 	    return JK_FALSE;
     } 
 
-
     private_data->ep_cache_sz            = 0;
     private_data->ep_cache               = NULL;
-    private_data->connect_retry_attempts = DEF_RETRY_ATTEMPTS;
+    private_data->connect_retry_attempts = AJP13_DEF_RETRY_ATTEMPTS;
     private_data->worker.worker_private  = private_data;
     
     private_data->worker.validate        = validate;

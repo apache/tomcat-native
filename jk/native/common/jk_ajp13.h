@@ -64,10 +64,21 @@
 
 #include "jk_service.h"
 #include "jk_msg_buff.h"
+#include "jk_mt.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+#define AJP13_DEF_HOST            	("localhost")
+#define AJP13_DEF_PORT            	(8008)
+#define AJP13_READ_BUF_SIZE         (8*1024)
+#define AJP13_DEF_RETRY_ATTEMPTS    (1)
+#define AJP13_DEF_CACHE_SZ          (1)
+#define JK_INTERNAL_ERROR       	(-2)
+#define AJP13_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
+#define AJP13_HEADER_LEN    		(4)
+#define AJP13_HEADER_SZ_LEN 		(2)
 
 /*
  * Message does not have a response (for example, JK_AJP13_END_RESPONSE)
@@ -121,6 +132,9 @@ struct jk_res_data {
 };
 typedef struct jk_res_data jk_res_data_t;
 
+/*
+ * Functions
+ */
 int ajp13_marshal_into_msgb(jk_msg_buf_t *msg,
                             jk_ws_service_t *s,
                             jk_logger_t *l);
