@@ -158,7 +158,7 @@
     <copy    todir="${build.home}/classes" filtering="on">
       <fileset dir="${source.home}" excludes="**/*.java"/>
     </copy>
-    <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
+    <jar    jarfile="${build.home}/lib/tomcat-warp.jar"
             basedir="${build.home}/classes" />
   </target>
 
