@@ -54,13 +54,10 @@
 
 package org.apache.naming.ant;
 
-import org.apache.tools.ant.*;
-import org.apache.tools.ant.types.*;
+import javax.naming.InitialContext;
 
-import java.io.*;
-import java.util.*;
-
-import javax.naming.*;
+import org.apache.tools.ant.PropertyHelper;
+import org.apache.tools.ant.Task;
 
 
 /**

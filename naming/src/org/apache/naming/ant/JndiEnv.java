@@ -57,12 +57,12 @@
 
 package org.apache.naming.ant;
 
-import java.io.*;
-import java.util.*;
+import java.util.Hashtable;
+import java.util.Vector;
 
-import org.apache.tools.ant.*;
+import javax.naming.Context;
 
-import javax.naming.*;
+import org.apache.tools.ant.Task;
 
 /**
  *  Task to set up JNDI properties ( the hashtable that is passed to InitialContext )
