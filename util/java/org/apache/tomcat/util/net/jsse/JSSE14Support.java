@@ -174,6 +174,8 @@ class JSSE14Support extends JSSESupport {
 		    return null;
 		}
 	    }
+	    if(logger.isTraceEnabled())
+		logger.trace("Cert #" + i + " = " + x509Certs[i]);
 	}
 	if(x509Certs.length < 1)
 	    return null;
