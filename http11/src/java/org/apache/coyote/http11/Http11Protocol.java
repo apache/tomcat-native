@@ -351,6 +351,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 
     public void setSSLImplementation( String valueS) {
         sslImplementationName = valueS;
+        setSecure(true);
         setAttribute("sslImplementation", valueS);
     }
 
@@ -507,6 +508,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     }
 
     public void setProtocol( String k ) {
+        setSecure(true);
         setAttribute("protocol", k);
     }
 
