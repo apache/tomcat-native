@@ -284,6 +284,7 @@ public class Http11Processor implements Processor, ActionHook {
         maxKeepAliveRequests = mkar;
     }
 
+
     /**
      * Return the number of Keep-Alive requests that we will honor.
      */
@@ -291,15 +292,23 @@ public class Http11Processor implements Processor, ActionHook {
         return maxKeepAliveRequests;
     }
 
-    public void setSSLSupport(  SSLSupport sslSupport ) {
-        this.sslSupport=sslSupport;
+
+    /**
+     * Set the SSL information for this HTTP connection.
+     */
+    public void setSSLSupport(SSLSupport sslSupport) {
+        this.sslSupport = sslSupport;
     }
-    
-    public void setSocket( Socket socket )
-        throws IOException
-    {
+
+
+    /**
+     * Set the socket associated with this HTTP connection.
+     */
+    public void setSocket(Socket socket)
+        throws IOException {
         this.socket=socket;
     }
+
 
     /**
      * Process pipelined HTTP requests using the specified input and output
@@ -476,29 +485,30 @@ public class Http11Processor implements Processor, ActionHook {
             started = false;
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
-            Request req=(Request)param;
+
             try {
-                if( sslSupport != null ) {
-		    Object sslO = sslSupport.getCipherSuite();
-		    if(sslO != null)
-			req.setAttribute("javax.servlet.request.cipher_suite",
-					 sslO);
-		    sslO = sslSupport.getPeerCertificateChain();
-		    if(sslO != null)
-			req.setAttribute("javax.servlet.request.X509Certificate",
-					 sslO);
-		    //XXX We still need KeySize for 4.x
+                if (sslSupport != null) {
+                    Object sslO = sslSupport.getCipherSuite();
+                    if (sslO != null)
+                        request.setAttribute
+                            ("javax.servlet.request.cipher_suite", sslO);
+                    sslO = sslSupport.getPeerCertificateChain();
+                    if (sslO != null)
+                        request.setAttribute
+                            ("javax.servlet.request.X509Certificate", sslO);
+                    //XXX We still need KeySize for 4.x
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 //log("Exception getting SSL attribute " + key,e,Log.WARNING);
             }
-        } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
-            Request req=(Request)param;
-	    String remoteAddr = socket.getInetAddress().getHostAddress();
-	    String remoteHost = socket.getInetAddress().getHostName();
-	    req.remoteAddr().setString(remoteAddr);
-	    req.remoteHost().setString(remoteHost);
-            
+
+        } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
+
+            String remoteAddr = socket.getInetAddress().getHostAddress();
+            String remoteHost = socket.getInetAddress().getHostName();
+            request.remoteAddr().setString(remoteAddr);
+            request.remoteHost().setString(remoteHost);
+
         }
 
     }
