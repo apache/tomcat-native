@@ -99,7 +99,7 @@
               <table border="0" cellspacing="0" cellpadding="0" width="100%">
                 <tr>
                   <td align="left">
-                    <img src="{$images}/jakarta.gif" border="0" width="270" height="75" align="left"/>
+                    <img src="{$images}/jakarta.gif" border="0" width="505" height="48" align="left"/>
                   </td>
                   <td align="right">
                     <img src="{$images}/mod_jk.jpg" border="0" align="right"/>
