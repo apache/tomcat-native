@@ -1,7 +1,8 @@
 OEXT=.lo
 
-JNI_OBJECTS=jk_jnicb${OEXT} ../common/jk_map${OEXT} ../common/jk_util${OEXT} \
-	 ../common/jk_pool${OEXT}
+COMMON_OBJECTS=jk_map${OEXT} jk_util${OEXT} jk_pool${OEXT}
+JNI_OBJECTS=jk_jnicb${OEXT} ${COMMON_OBJECTS}
+
 
 JAVA_INCL=-I @JAVA_HOME@/include -I @JAVA_HOME@/include/@OS@ -I../common
 CFLAGS=@apache_include@ @CFLAGS@ ${JAVA_INCL} -D_REENTRANT -Wall
@@ -10,10 +11,13 @@ include ../scripts/build/rules.mk
 
 JK=.
 
-all: jni_connect.so
+all: Makefile jni_connect.so 
+
+Makefile: Makefile.in
+	echo Regenerating Makefile
+	( cd ..; ./config.status )
 
 jk_jnicb.la: ${JNI_OBJECTS}
-	touch jk_jnicb.slo
 	$(LIBTOOL) --mode=link $(COMPILE) -module -o $@ -rpath `pwd` -g -O2 -avoid-version ${JNI_OBJECTS} 
 
 jni_connect.so: jk_jnicb.la
@@ -22,4 +26,4 @@ jni_connect.so: jk_jnicb.la
 install:
 
 clean:
-	rm -f *.o *.slo *.lo *.so *.la
+	rm -f *.o *.slo *.lo *.so *.la .libs/*

@@ -19,11 +19,17 @@ include ../common/list.mk
 include ../scripts/build/rules.mk
 #include ${APACHE_DIR}/build/config_vars.mk
 
+LOCAL_OBJECTS=$(subst ../common/,,$(APACHE_OBJECTS))
+
 # OEXT=@APACHE20_OEXT@
 OEXT=.lo
 
-all: @LIB_JK_TYPE@
+all: Makefile @LIB_JK_TYPE@ 
 install: @INSTALL_TYPE@
+
+Makefile: Makefile.in
+	echo Regenerating Makefile
+	( cd ..; ./config.status )
 
 lib_jk.la: mod_jk.lo
 	$(LIBTOOL) --mode=link $(CC) -o lib_jk.la -static -rpath ${APACHE_DIR}/modules/jk mod_jk.lo $(APACHE_OBJECTS)
@@ -46,13 +52,13 @@ install_static:
 #################### Dynamic .so file ####################
 # APXS will compile every file, this is derived from apxs
 
-mod_jk.la: mod_jk.lo $(APACHE_OBJECTS)
-	$(LIBTOOL) --mode=link ${COMPILE} -o $@ -module -avoid-version $< 
+mod_jk.la: mod_jk.lo $(LOCAL_OBJECTS)
+	$(LIBTOOL) --mode=link ${COMPILE} -o $@ -module -rpath `pwd` -avoid-version mod_jk.lo $(LOCAL_OBJECTS)
 
 #$(APXS) ${JK_INCL} ${JAVA_INCL} -c -o mod_jk.la mod_jk.c $(APACHE_OBJECTS)
 
 mod_jk.so: mod_jk.la
-	cp $< $@
+	$(LIBTOOL) --mode=install cp $< `pwd`/$@
 
 install_dynamic:
 	@echo ""
@@ -63,6 +69,6 @@ install_dynamic:
 	@echo ""
 
 clean:
-	(cd ../common && $(MAKE) clean)
+#	(cd ../common && $(MAKE) clean)
 	rm -f *.o *.so *.lo *.la *.slo
 	rm -rf .libs
