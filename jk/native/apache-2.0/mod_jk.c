@@ -1183,7 +1183,7 @@ static int jk_handler(request_rec *r)
     jk_server_conf_t *xconf;
     jk_logger_t      *xl;
     jk_server_conf_t *conf;
-    int              rc;
+    int              rc,dmt=1;
 
     /* We do DIR_MAGIC_TYPE here to make sure TC gets all requests, even
      * if they are directory requests, in case there are no static files
@@ -1191,14 +1191,14 @@ static int jk_handler(request_rec *r)
      * used when JkOptions has ForwardDirectories set. */
 
     /* Not for me, try next handler */
-    if(strcmp(r->handler,JK_HANDLER) && strcmp(r->handler,DIR_MAGIC_TYPE))
+    if(strcmp(r->handler,JK_HANDLER) && (dmt=strcmp(r->handler,DIR_MAGIC_TYPE)))
         return DECLINED;
 
     xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
                                                      &jk_module);
 
     /* Was the option to forward directories to Tomcat set? */
-    if(!strcmp(r->handler,DIR_MAGIC_TYPE) && !(xconf->options & JK_OPT_FWDDIRS))
+    if(!dmt && !(xconf->options & JK_OPT_FWDDIRS))
         return DECLINED;
 
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
