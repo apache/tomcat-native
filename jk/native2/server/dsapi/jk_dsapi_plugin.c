@@ -516,7 +516,7 @@ static const char *readRegistry(jk_env_t *env, HKEY hkey, const char *key, const
     LONG rc;
     char *val;
 
-    rc = RegQueryValueEx(hkey, key, (LPunsigned int) 0, &type, NULL, &sz);
+    rc = RegQueryValueEx(hkey, key, (unsigned int) 0, &type, NULL, &sz);
     if (rc != ERROR_SUCCESS || type != REG_SZ) {
         return NULL;
     }
@@ -525,7 +525,7 @@ static const char *readRegistry(jk_env_t *env, HKEY hkey, const char *key, const
         return NULL;
     }
 
-    rc = RegQueryValueEx(hkey, key, (LPunsigned int) 0, &type, val, &sz);
+    rc = RegQueryValueEx(hkey, key, (unsigned int) 0, &type, val, &sz);
     if (rc == ERROR_SUCCESS) {
         return makeAbsolutePath(env, base, val);
     }
