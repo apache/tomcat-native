@@ -74,6 +74,64 @@
 #include "jk_requtil.h"
 #include "jk_registry.h"
 
+/** Use 'introspection' data to find what getters an type support,
+ *  and display the information in a table
+ */
+static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t *s,
+                                                 jk_workerEnv_t *wenv, char *type)
+{
+    jk_map_t *map=wenv->initData;
+    int i;
+    int needHeader=JK_TRUE;
+
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        int j;
+        int propCount;
+
+        /* Don't display aliases */
+        if( strchr(name, ':')==NULL )
+            continue;
+        
+        if( mbean==NULL || mbean->getAttributeInfo==NULL ) 
+            continue;
+
+        if( mbean->getAttribute == NULL )
+            continue;
+
+        if( strncmp( type, mbean->type, 5 ) != 0 )
+            continue;
+
+        if( needHeader ) {
+            s->jkprintf(env, s, "<H3>%s runtime info</H3>\n", type);
+            s->jkprintf(env, s, "<p>%s information, using getAttribute() </p>\n", type);
+            
+            s->jkprintf(env, s, "<table border>\n");
+            s->jkprintf(env, s, "<tr><th>name</th>\n");
+            for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
+                char *pname=mbean->getAttributeInfo[j];
+                
+                s->jkprintf(env, s, "<th>%s</th>", pname );
+            }
+            needHeader = JK_FALSE;
+        } 
+        
+        s->jkprintf(env, s, "</tr><tr><td>%s</td>\n", mbean->localName);
+        for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
+            char *pname=mbean->getAttributeInfo[j];
+
+            s->jkprintf(env, s, "<td>%s</td>",
+                        mbean->getAttribute( env, mbean, pname));
+        }
+    }
+    if( ! needHeader ) {
+        s->jkprintf( env,s , "</table>\n" );
+    }
+}
+
+/** That's the 'bulk' data - everything that was configured, after substitution
+ */
 static void jk2_worker_status_displayActiveProperties(jk_env_t *env, jk_ws_service_t *s,
                                                       jk_workerEnv_t *wenv)
 {
@@ -92,146 +150,10 @@ static void jk2_worker_status_displayActiveProperties(jk_env_t *env, jk_ws_servi
                     value);
     }
     s->jkprintf(env, s, "</table>\n");
-
 }
 
-static void jk2_worker_status_displayRuntimeWorkers(jk_env_t *env, jk_ws_service_t *s,
-                                                       jk_workerEnv_t *wenv)
-{
-    jk_map_t *map=wenv->initData;
-    int i;
-    int needHeader=JK_TRUE;
-
-    s->jkprintf(env, s, "<H3>Worker runtime info</H3>\n");
-    s->jkprintf(env, s, "<p>Worker information, using getAttribute() </p>\n");
-
-    s->jkprintf(env, s, "<table border>\n");
-    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-        char *name=env->_objects->nameAt( env, env->_objects, i );
-        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
-        int j;
-        int propCount;
-
-        /* Don't display aliases */
-        if( strchr(name, ':')==NULL )
-            continue;
-        
-        if( mbean==NULL || mbean->getAttributeInfo==NULL ) 
-            continue;
-
-        if( mbean->getAttribute == NULL )
-            continue;
-
-        if( strncmp( "ajp13", mbean->type, 5 ) != 0 )
-            continue;
-
-        if( needHeader ) {
-            s->jkprintf(env, s, "<tr><th>name</th>\n");
-            for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
-                char *pname=mbean->getAttributeInfo[j];
-                
-                s->jkprintf(env, s, "<th>%s</th>", pname );
-            }
-            needHeader = JK_FALSE;
-        } 
-        
-        s->jkprintf(env, s, "</tr><tr><td>%s</td>\n", mbean->localName);
-        for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
-            char *pname=mbean->getAttributeInfo[j];
-
-            s->jkprintf(env, s, "<td>%s</td>",
-                        mbean->getAttribute( env, mbean, pname));
-        }
-    }
-    s->jkprintf( env,s , "</table>\n" );
-}
-
-static void jk2_worker_status_displayRuntimeUris(jk_env_t *env, jk_ws_service_t *s,
-                                                       jk_workerEnv_t *wenv)
-{
-    jk_map_t *map=wenv->initData;
-    int i;
-
-    s->jkprintf(env, s, "<H3>URI info</H3>\n");
-    s->jkprintf(env, s, "<p>Information about uri mappings. "
-                "Will include some statistics ( for the active process )</p>\n");
-    s->jkprintf(env, s, "<table border>\n");
-    s->jkprintf(env, s, "<tr><th>Name</th><th>Value</td></tr>\n");
-    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-        char *name=env->_objects->nameAt( env, env->_objects, i );
-        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
-        int j;
-        int propCount;
-
-        /* Don't display aliases */
-        if( strchr(name, ':')==NULL )
-            continue;
-        
-        if( mbean==NULL || mbean->getAttributeInfo==NULL ) 
-            continue;
-
-        if( mbean->getAttribute == NULL )
-            continue;
-
-        if( strncmp( "uri", mbean->type, 3 ) != 0 )
-            continue;
-        
-        for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
-            char *pname=mbean->getAttributeInfo[j];
-            
-            
-            s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td><td>%s</td></tr>",
-                        mbean->localName, pname,
-                        mbean->getAttribute( env, mbean, pname));
-        }
-    }
-    s->jkprintf( env,s , "</table>\n" );
-}
-
-static void jk2_worker_status_displayRuntimeProperties(jk_env_t *env, jk_ws_service_t *s,
-                                                       jk_workerEnv_t *wenv)
-{
-    jk_map_t *map=wenv->initData;
-    int i;
-
-    s->jkprintf(env, s, "<H3>getAttribute() info</H3>\n");
-    s->jkprintf(env, s, "<p>Information extracted at runtime, using getAttribute() </p>\n");
-
-    s->jkprintf(env, s, "<table border>\n");
-    s->jkprintf(env, s, "<tr><th>Name</th><th>Value</td></tr>\n");
-    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-        char *name=env->_objects->nameAt( env, env->_objects, i );
-        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
-        int j;
-        int propCount;
-
-        /* Don't display aliases */
-        if( strchr(name, ':')==NULL )
-            continue;
-        
-        if( mbean==NULL || mbean->getAttributeInfo==NULL ) 
-            continue;
-
-        if( mbean->getAttribute == NULL )
-            continue;
-
-        if( strncmp( "uri", mbean->type, 3 ) == 0  ||
-            strncmp( "ajp13", mbean->type, 5 ) == 0 ) {
-            continue;
-        }
-        
-        for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
-            char *pname=mbean->getAttributeInfo[j];
-            
-            
-            s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td><td>%s</td></tr>",
-                        name, pname,
-                        mbean->getAttribute( env, mbean, pname));
-        }
-    }
-    s->jkprintf( env,s , "</table>\n" );
-}
-
+/** persistent configuration
+ */
 static void jk2_worker_status_displayConfigProperties(jk_env_t *env, jk_ws_service_t *s,
                                             jk_workerEnv_t *wenv)
 {
@@ -258,15 +180,15 @@ static void jk2_worker_status_displayConfigProperties(jk_env_t *env, jk_ws_servi
         propCount=mbean->settings->size( env, mbean->settings );
 
         if( propCount==0 ) {
-            s->jkprintf(env, s, "<tr><td>%s</td></tr>", mbean->name );
+            s->jkprintf(env, s, "<tr><th>%s</th><td></td></tr>", mbean->name );
         } else {
+            s->jkprintf(env, s, "<tr><th rowspan='%d'>%s</th></tr>", propCount, mbean->name );
             for( j=0; j < propCount ; j++ ) {
                 char *pname=mbean->settings->nameAt( env, mbean->settings, j);
                 /* Don't save redundant information */
                 if( strcmp( pname, "name" ) != 0 ) {
-                    s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td><td>%s</td></tr>",
-                                name, pname,
-                                mbean->settings->valueAt( env, mbean->settings, j));
+                    s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td></tr>",
+                                pname, mbean->settings->valueAt( env, mbean->settings, j));
                 }
             }
         }
@@ -280,9 +202,10 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
 {
     char *uri=s->req_uri;
     jk_map_t *queryMap;
-    
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "status.service() %s %s\n",
-                  uri, s->query_string);
+
+    if( w->mbean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "status.service() %s %s\n",
+                      uri, s->query_string);
 
     /* Generate the header */
     s->status=200;
@@ -298,10 +221,10 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     }
     
     /* Body */
-    jk2_worker_status_displayRuntimeWorkers(env, s, s->workerEnv );
-    jk2_worker_status_displayRuntimeUris(env, s, s->workerEnv );
+    jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "ajp13" );
+    jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "endpoint" );
+    jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "uri" );
     jk2_worker_status_displayConfigProperties(env, s, s->workerEnv );
-    jk2_worker_status_displayRuntimeProperties(env, s, s->workerEnv );
     jk2_worker_status_displayActiveProperties(env, s, s->workerEnv );
     
     s->afterRequest( env, s);
