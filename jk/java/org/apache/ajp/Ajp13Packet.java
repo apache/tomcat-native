@@ -74,38 +74,94 @@ public class Ajp13Packet {
 
     public static final String DEFAULT_CHAR_ENCODING = "8859_1";
 
-    byte buff[]; // Holds the bytes of the packet
-    int pos;     // The current read or write position in the buffer
+    /**
+     * encoding to use when converting byte[] <-> string
+     */
+    String encoding = DEFAULT_CHAR_ENCODING;
 
+    /**
+     * Holds the bytes of the packet
+     */
+    byte buff[];
+
+    /**
+     * The current read or write position in the buffer
+     */
+    int pos;    
+
+    /**
+     * This actually means different things depending on whether the
+     * packet is read or write.  For read, it's the length of the
+     * payload (excluding the header).  For write, it's the length of
+     * the packet as a whole (counting the header).  Oh, well.
+     */
     int len; 
-    // This actually means different things depending on whether the
-    // packet is read or write.  For read, it's the length of the
-    // payload (excluding the header).  For write, it's the length of
-    // the packet as a whole (counting the header).  Oh, well.
 
     /**
      * Create a new packet with an internal buffer of given size.
+     * @param size packet size
      */
     public Ajp13Packet( int size ) {
         buff = new byte[size];
     }
 
+    /**
+     * Create a new packet with given bytes
+     * @param b this packet's bytes.
+     */
     public Ajp13Packet( byte b[] ) {
         buff = b;
     }
 
+    /**
+     * Set the encoding to use for byte[] <-> string
+     * conversions.
+     * @param encoding the encoding to use.
+     */
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
+
+    /**
+     * Get the encoding used for byte[] <-> string
+     * conversions.
+     * @return the encoding used.
+     */
+    public String getEncoding() {
+        return encoding;
+    }
+
+    /**
+     * Get the internal buffer
+     * @return internal buffer
+     */
     public byte[] getBuff() {
         return buff;
     }
-	
+
+    /**
+     * Get length.
+     * @return length -- This actually means different things depending on whether the
+     *                   packet is read or write.  For read, it's the length of the
+     *                   payload (excluding the header).  For write, it's the length of
+     *                   the packet as a whole (counting the header).  Oh, well.
+     */
     public int getLen() {
         return len;
     }
-	
+
+    /**
+     * Get offset into internal buffer.
+     * @return offset
+     */
     public int getByteOff() {
         return pos;
     }
 
+    /**
+     * Set offset into internal buffer.
+     * @param c new offset
+     */
     public void setByteOff(int c) {
         pos=c;
     }
@@ -190,7 +246,7 @@ public class Ajp13Packet {
      * code, where it saves a round of copying.  A null string is
      * encoded as a string with length 0.  
      */
-    public void appendString( String str ) {
+    public void appendString(String str) throws UnsupportedEncodingException {
         // Dual use of the buffer - as Ajp13Packet and as OutputBuffer
         // The idea is simple - fewer buffers, smaller footprint and less
         // memcpy. The code is a bit tricky, but only local to this
@@ -206,7 +262,7 @@ public class Ajp13Packet {
         // XXX i don't have OutputBuffer in tc4... ks.
         // fix this later...
         //
-        byte[] bytes = str.getBytes();
+        byte[] bytes = str.getBytes(encoding);
         appendBytes(bytes, 0, bytes.length);
         
         /*
@@ -328,7 +384,7 @@ public class Ajp13Packet {
             //	    System.out.println("null string " + length);
             return null;
         }
-        String s = new String( buff, pos, length, DEFAULT_CHAR_ENCODING );
+        String s = new String(buff, pos, length, encoding);
 
         pos += length;
         pos++; // Skip the terminating \0
