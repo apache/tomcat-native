@@ -95,9 +95,18 @@ and  provides access to all other objects</p>
             <p>
                 <table>
                     <tr>
-                        <th>Property name</th>
-                        <th>Default</th>
-                        <th>Description</th>
+                       <th>Property name</th>
+                       <th>Default</th>
+                       <th>Description</th>
+                   </tr>
+                        <td>file</td>
+                        <td>${serverRoot}/conf/workers2.properties</td>
+                        <td>Location of the workers2.properties file</td>
+                    </tr>
+                    <tr>
+                        <td>debug</td>
+                        <td>0</td>
+                        <td>Set the debug level of the config component</td>
                     </tr>
                     <tr>
                         <td>debugEnv</td>
