@@ -30,7 +30,6 @@
 #include "apr_optional_hooks.h"
 #include "apr_buckets.h"
 
-#include "httpd_wrap.h"
 #include "ajp.h"
 
 #if APR_HAVE_NETINET_IN_H
@@ -61,6 +60,9 @@ static apr_status_t connect_to_backend(apr_socket_t **socket, conn_rec **con,
                                     port, 0, pool)) != APR_SUCCESS)
         return rv;
     if ((rv = apr_socket_create(socket, remote_sa->family, SOCK_STREAM,
+#if (APR_MAJOR_VERSION > 0)
+                                APR_PROTO_TCP,
+#endif
                                 pool)) != APR_SUCCESS)
         return rv;
     if ((rv = apr_socket_timeout_set(*socket,
