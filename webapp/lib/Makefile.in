@@ -67,10 +67,10 @@ LIB = libwebapp.la
 all: $(LIB)
 
 $(LIB): $(OBJS)
-    @echo - Linking library $(LIB)
-    @$(AR) -cr $(LIB) $(OBJS)
-    @$(RANLIB) $(LIB)
+	@echo - Linking library $(LIB)
+	@$(AR) -cr $(LIB) $(OBJS)
+	@$(RANLIB) $(LIB)
 
 clean:
-    @echo Removing object files $(OBJS) $(LIB)
-    @rm -f $(OBJS) $(LIB)
+	@echo Removing object files $(OBJS) $(LIB)
+	@rm -f $(OBJS) $(LIB)
