@@ -1,155 +1,108 @@
 <?xml version="1.0"?>
-<document>
-<copyright>
-   Copyright 1999-2004 The Apache Software Foundation
- 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
- 
-       http://www.apache.org/licenses/LICENSE-2.0
- 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-</copyright>
-<properties>
-<title>Overview</title>
-<author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
-<author email="hgomez@apache.org">Henri Gomez</author>
-<author email="yoavs@apache.org">Yoav Shapira</author>
-<date>$Date$</date>
-</properties>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="index.html">
 
-<section name="What's JK&#63;">
-<p>
-<b>JK</b> is a replacement to the elderly mod_jserv. 
-It was a completely new Tomcat-Apache plug-in that handles the communication between Tomcat and Apache.
-</p>
-<p>
-The newest <b>JK2</b> is a refactoring of <b>JK</b>.
-The native part has been completly
-restructured and the configuration has been simplified a lot.
-</p>
+  &project;
 
-<p>
-JK is more than just an apache module, since it could be used with majors WebServer :
-</p>
+  <properties>
+    <author email="mturk@apache.org">Mladen Turk</author>
+    <title>Documentation Index</title>
+  </properties>
 
+<body>
+
+<section name="Introduction">
+
+<p>This is the top-level entry point of the documentation bundle for the
+<strong>Apache Jakarta Tomcat Connectors</strong> 
+
+</p>
+<p>Select one of the links from the navigation menu (to the left) to drill
+down to the more detailed documenation that is available.  Each available
+manual is described in more detail below.</p>
+
+</section>
+
+<section name="Headlines">
+<br />
 <ul>
-<li>
-<a href="jk/aphowto.html">mod_jk</a> is an Apache module to be used with <b>Apache 1.3</b> and <b>2.0</b> Webservers.
+<li><a href="news/20041100.html#20041115.1">15 November 2004 - <b>JK2 is officially unsupported!</b></a>
+<p>JK2 has been put in maintainer mode and no further development will take place.
+The reason for shutting down JK2 development was the lack of developers interest.
+Other reason was lack of users interest in adopting JK2, caused by configuration
+complexity when compared to JK.
+</p>
+<p>JK2 will have it's successor within core Apache2.1/2.2 distribution.
+We have developed new <b>proxy_ajp</b> that is an addition to
+the mod_proxy and uses Tomcat's AJP protocol stack. It is developped in httpd-2.1
+and integrated in it. We have also developed a new <b>proxy_balancer</b> module
+for load balancing http and ajp protocol stacks.
+</p>
+<p>JK will be fully supported for all other web servers. The next JK release is
+planned for the end of November. Lots of code from JK2 has been ported to JK
+</p>
 </li>
-<li>
-<a href="jk/iishowto.html">isapi</a> is a redirector to be used with <b>IIS</b>.
+</ul>
+</section>
+
+<section name="Configuration">
+<br />
+<ul>
+<li><a href="config/workers.html"><b>Workers.properties Documentation</b></a>
+<p>To be done! This section contains detail description of all workers.properties
+directives.
+</p>
 </li>
-<li>
-<a href="jk/neshowto.html">nsapi</a> is a redirector to be used with <b>Netscape/iPlanet</b>.
+
+<li><a href="config/apache1.html"><b>Apache Documentation</b></a>
+<p>To be done! This section contains detail description of all Aapache directives.
+</p>
 </li>
-<li>
-<a href="jk/domhowto.html">dsapi</a> is a redirector to to be used with <b>Domino</b>.
+<li><a href="config/apache1.html"><b>IIS Documentation</b></a>
+<p>To be done! This section contains detail description of all IIS directives.
+</p>
+</li>
+
+</ul>
+</section>
+
+<section name="Installation">
+<br />
+<ul>
+<li><a href="install/apache1.html"><b>Apache 1.3.x installation documentation</b></a>
+<p>To be done! This section contains detail description of how to build and
+install mod_jk for Apache 1.3.x web server.
+</p>
+</li>
+<li><a href="install/apache2.html"><b>Apache 2.0.x installation documentation</b></a>
+<p>To be done! This section contains detail description of how to build and
+install mod_jk for Apache 2.0.x web server.
+</p>
+</li>
+
+<li><a href="install/iis.html"><b>IIS installation documentation</b></a>
+<p>To be done! This section contains detail description of how to build and
+install isapi_redirector for IIS web server.
+</p>
+</li>
+
+</ul>
+</section>
+
+
+<section name="Documentation">
+<br />
+<ul>
+<li><a href="howto/index.html"><b>HowTo Documentation</b></a>
+<p>This section contains various howto documents
+</p>
 </li>
 </ul>
 
 </section>
 
-<section name="Why should I use the JK&#63;">
-<p>
-JK was develop to overcome many limitations of its ancestor, <b>mod_jserv</b>.
-</p>
 
-<p>
-<b>mod_jserv</b> was too complex and because it was ported from Apache/JServ, 
-it brought with it lots of JServ specific bits that aren't needed by Apache.
-</p>
-
-<p>
-Where <b>mod_jserv</b> supported only Apache webservers on Unix OS, 
-<b>JK</b> supports much more web servers and operating systems through 
-via a compatibility layer named the <b>JK library</b>. 
-The layered approach provided by the JK library makes it easier to 
-support many different webservers and OS.
-</p>
-
-<p>
-JK offer better support for SSL, that's was a problem with mod_jserv which couldn't 
-reliably identify whether a request was made via HTTP or HTTPS. 
-</p>
-<p>
-JK can, using the newer Ajpv13 protocol which relay many SSL informations required by servlet 2.2 and 2.3 specs.
-</p>
-
-<p>
-JK offers a lot of different and flexible communications between a Web Server 
-and the Tomcat Servlet Engine and could be used today with all of the ASF Tomcat Engines, 
-<b>3.2.x</b>, <b>3.3.x</b>, <b>4.0.x</b>, <b>4.1.x</b> and <b>5.x</b>
-</p>
-
-</section>
-
-<section name="What's the difference between JK and JK2&#63;">
-<p>
-JK2 is a refactoring of JK and is much more powerfull.
-</p>
-<p>
-Even if it works with Apache 1.3, JK2 has been developed with Apache 2.0 in mind,
-and is better suited for multi-threaded servers like IIS, NES/iPlanet. It can also
-be embeded in other applications and used from java.
-</p>
-<p>
-JK2 improves the modularity and has a better separation between protocol and physical layer.
-As such JK2 support fast unix-socket, and could be extended to support others communications
-channels. It is better suited for JNI and may use (in a future version) JDK 1.4 NIO.
-</p>
-<p>
-There is additional support for monitoring, similar with JMX in java. A module similar
-with mod_status is provided, and additional adapters can be used to interface and 
-provide status and runtime configuration. .
-</p>
-<p>
-The configuration has been changed to follow the component models. Multiple configuration
-sources can be supported ( in additon to file ) providing better integration with
-the embeding application. The config layer uses the management layer APIs and it can
-support persistence for changes done via runtime configuration.
-</p>
-<p>
-Another feature is the JNI mode. Jk2 can be used as a JNI library and provide access to
-native features to java. For example it provides access to shared memory ( used for 
-config and monitoring in a multiprocess environment ), unix domain sockets. It can
-also provide access to signals, chuid, win registry. All using the same communication
-mechansim, and supporting both in-process and out-of process modes.
-</p>
-</section>
-
-
-<section name="Are there alternative ways to connect Apache and Tomcat&#63;">
-<p>
-<b>Tomcat's AJP stack and httpd-2.1 AJP proxy</b> that is an addition to the mod_proxy of http. It is developped in httpd-2.1 and integrated in it.
-(See <a href="proxy.xml">AJP proxy</a>).
-</p>
-<p>
-<b>Tomcat's internal HTTP stack and mod_proxy</b> which is not that bad, but slow,
-well, of course Tomcat didn't have 10/11 years of C routine optimization like
-the Apache Web Server, but it's quite good. The only disadvantage is that it
-looks pretty ridiculous to parse an HTTP request to generate it again
-(exactly the same), and to parse again the response to send it back unchanged...
-</p>
-<p>
-<a href="http://jakarta.apache.org/~jfclere/webapp_docs/">mod_webapp</a> which is very easy to configure, has a well defined protocol named
-<a href="http://jakarta.apache.org/~jfclere/webapp_docs/warp.html">WARP</a> but it is no longer developped.
-BTW: It would be possible to implement the <b>WARP</b> protocol in
-<b>JK2</b> ;-))
-</p>
-</section>
-
-<section name="Additional References">
-<p>
-Please note that we maintain a list of references to external documentation
-on connector usage and configuration in various environments as part of
-the Tomcat wiki <a href="http://wiki.apache.org/jakarta-tomcat/Tomcat_2fLinks">Useful Links</a> page.
-</p>
-</section>
-
+</body>
 </document>

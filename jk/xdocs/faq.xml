@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
-<document>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="faq.html">
+
+  &project;
 <copyright>
    Copyright 1999-2004 The Apache Software Foundation
  
@@ -20,7 +25,7 @@
 <author email="hgomez@apache.org">Henri Gomez</author>
 <date>$Date$</date>
 </properties>
-
+<body>
 <section name="General">
 <p>
 General Informations and FAQ about JK
@@ -67,17 +72,17 @@ whereas <b>mod_jk</b> is the <a href="jk/aphowto.html">Apache module</a> develop
 </p>
 
 <p>
-<a href="jk/domhowto.html">Domino webserver</a> support is implemented on JK, using a redirector
+<a href="howto/domino.html">Domino webserver</a> support is implemented on JK, using a redirector
 called <b>dsapi redirector</b>.
 </p>
 
 <p>
-<a href="jk/iishowto.html">IIS webserver</a>support is implemented on JK, using a redirector
+<a href="howto/iis.html">IIS webserver</a>support is implemented on JK, using a redirector
 called <b>isapi redirector</b>.
 </p>
 
 <p>
-<a href="jk/neshowto.html">Netscape/iPlanet webserver</a>webserver support is implemented on JK, using a redirector
+<a href="howto/nes.html">Netscape/iPlanet webserver</a>webserver support is implemented on JK, using a redirector
 called <b>nsapi redirector</b>.
 </p>
 
@@ -91,43 +96,39 @@ For <b>JK 1.2.x</b>, you should read :
 <ul>
 
 <li>
-<a href="jk/quickhowto.html">For the impatients</a>
+<a href="howto/quick.html">For the impatients</a>
 </li>
 
 <li>
-<a href="jk/aphowto.html">Apache and JK</a>
+<a href="howto/apache.html">Apache and JK</a>
 </li>
 
 <li>
-<a href="jk/domhowto.html">Domino and JK</a>
+<a href="howto/domino.html">Domino and JK</a>
 </li>
 
 <li>
-<a href="jk/iishowto.html">IIS and JK</a>
+<a href="howto/iis.html">IIS and JK</a>
 </li>
 
 <li>
-<a href="jk/neshowto.html">Netscape/iPlanet and JK</a>
+<a href="howto/nes.html">Netscape/iPlanet and JK</a>
 </li>
 
 <li>
-<a href="jk/workershowto.html">Workers configuration</a>
+<a href="howto/workers.html">Workers configuration</a>
 </li>
 </ul>
 
-<p>
-For <b>JK 2.0.x</b> the <a href="jk2/configtc.html">
-config tomcat</a> and <a href="jk2/configweb.html">config webserver</a>
-documents have considerably more in-depth information.
-It's worth a look. 
+<p> 
 You could also try searching the mailing list archives for "JK" or look at the source.
 </p>
 </subsection>
 
 <subsection name="Which protocol should I use? Ajp12 or Ajp13?">
 <p>
-<a href="common/AJPv13.html">Ajp13</a> is a newer protocol, it's faster, and it works better with SSL. 
-You almost certainly want to use it now that ajp12 is deprecated.
+<a href="common/ajpv13.html">Ajp13</a> is a newer protocol, it's faster, and it works better with SSL. 
+You almost certainly want to use it now that <strong>ajp12 is deprecated</strong>.
 </p>
 <p> 
 Also ajp13 is supported by all Apache Tomcat including 3.2.x , 3.3.x, 4.0.x, 4.1.x and the new tomcat 5. 
@@ -145,7 +146,7 @@ Firewall used to drop inactive connections and will make your WebServer and Tomc
 </p>
 <p>
 Starting with JK 1.2.0, a <b>socket_keepalive</b> property as been added to ajp13 settings, and you should take a look at 
-it in <a href="jk/workershowto.html">Workers HowTo</a>.
+it in <a href="howto/workers.html">Workers HowTo</a>.
 </p>
 </subsection>
 
@@ -158,8 +159,8 @@ even if only Apache handle the requests, ie static contents, the childs are kept
 even if they are no more used. 
 </p>
 <p>
-Since JK 1.2.0, <b>cache_timeout</b> and <b>socket_timeout</b> properties as been added to close 
-connections after some time of inactivity, for more informations refer to <a href="jk/workershowto.html">Workers HowTo</a>.
+Since JK 1.2.0, <b>cache_timeout</b> and <b>recycle_timeout</b> properties as been added to close 
+connections after some time of inactivity, for more informations refer to <a href="howto/workers.html">Workers HowTo</a>.
 </p>
 </subsection>
 
@@ -259,10 +260,10 @@ You should verify if Apache 1.3 has been build with thread support and if not yo
 the pthreads library to your <b>httpd.conf</b> file. 
 </p>
 
-<screen>
-<note># Add pthread to Apache in httpd.conf</note>
-<read>LoadModule "/usr/lib/libpthreads.so"</read>
-</screen>
+<source>
+  # Add pthread to Apache in httpd.conf
+  LoadModule "/usr/lib/libpthreads.so"
+</source>
 
 <p>
 Also keep in mind that JNI is suited for multi-threaded servers and you should consider upgrading 
@@ -322,7 +323,7 @@ of jk/native2/common/jk_channel_socket.c to have Solaris build succeed.
 Informations and FAQ about JK and IIS Web Servers. 
 </p>
 <todo>
-More informations to be added, Nacho ?
+More informations to be added.
 </todo>
 </section>
 
@@ -331,9 +332,9 @@ More informations to be added, Nacho ?
 Informations and FAQ about JK and NES/iPlanet Web Servers. 
 </p>
 <todo>
-More informations to be added, Mike ?
+More informations to be added.
 </todo>
 </section>
 
-
+</body>
 </document>

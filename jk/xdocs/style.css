@@ -1,0 +1,45 @@
+div.screen {
+    margin: 10px 0px 10px 20px;
+    font-size: smaller;
+    color: #ffffff; 
+}
+em.screen {
+    font-weight: normal;
+    font-style: normal;
+    color: #c0c0c0;
+}
+p.screen {
+    background-color: #000000;
+    border-style: none;
+    color: #c0c0c0;
+    margin-left: 10px;
+    margin-right: 0px;
+    text-align: left;         
+}
+b.screen {
+    font-weight: normal;
+    font-style: normal;
+    color: #c0c0c0;
+}   
+code.screen {
+    background-color: #000000;
+    border-style: none;
+    color: #c0c0c0;
+    margin-left: 10px;
+    margin-right: 0px;
+    text-align: left; 
+}
+b.code {
+    font-weight: normal;
+    font-style: normal;
+    color: @source-color@;
+}
+p.todo {
+    background-color: #ffffff;
+    border-style: none;
+    color: #000000;
+    margin-left: 20px;
+    margin-right: 10px;
+    text-align: justify;
+    font-size: smaller;
+}                                  
