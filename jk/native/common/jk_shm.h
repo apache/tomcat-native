@@ -67,7 +67,7 @@ struct jk_shm_worker
     /* worker redirect route */
     char    redirect[JK_SHM_STR_SIZ+1];
     /* current status of the worker */
-    int     status;
+    int     is_disabled;
     /* Current lb factor */
     int     lb_factor;
     /* Current lb value  */
@@ -80,6 +80,7 @@ struct jk_shm_worker
     int     local_worker_only;
     int     sticky_session;
     int     recover_wait_time;
+    int     retries;
     time_t  error_time;
     /* Number of bytes read from remote */
     size_t   readed;
