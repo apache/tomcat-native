@@ -74,7 +74,7 @@ When starting up, the web server plugin will instantiate the workers whose name 
 <p>
 Each named worker should also have a few entries to provide additional information on his behalf.
 This information includes the worker's type and other related worker information. 
-Currently the following worker types that exists are (JK 1.2.4):
+Currently the following worker types that exists are (JK 1.2.5):
 </p>
 
 <table>
