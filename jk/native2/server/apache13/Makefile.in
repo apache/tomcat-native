@@ -15,6 +15,7 @@ JK_DIR := ../..
 BUILD_DIR = ${JK_DIR}/../build/jk2/apache13
 APACHE_LIBEXEC=${APACHE_HOME}/libexec
 
+top_builddir=../..
 LIBTOOL=@LIBTOOL@
 
 # It doesn't hurt if we include all
