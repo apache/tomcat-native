@@ -69,12 +69,19 @@ public class WarpEngine extends StandardEngine {
     public Container map(Request request, boolean update) {
         this.log("Mapping request");
         if (request instanceof WarpRequest) {
-            WarpRequest wreq=(WarpRequest)request;
-            Host host=wreq.getHost();
+            WarpRequest wreq = (WarpRequest)request;
+            Host host = wreq.getHost();
             if (update) {
-                request.setServerName(host.getName());
+                if (request.getRequest().getServerName() == null) {
+                    request.setServerName(host.getName());
+                } else {
+                    request.setServerName
+                        (request.getRequest().getServerName());
+                }
             }
-            return(host);
-        } else return(super.map(request,update));
+            return (host);
+        } else {
+            return (super.map(request,update));
+        }
     }
 }
