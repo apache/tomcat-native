@@ -475,14 +475,14 @@ public final class Response {
      */
     public void doWrite(ByteChunk chunk/*byte buffer[], int pos, int count*/)
         throws IOException {
-        outputBuffer.doWrite(chunk);
+        outputBuffer.doWrite(chunk, this);
     }
 
 
     // --------------------
     
     public void recycle() {
-
+        
 	contentType = Constants.DEFAULT_CONTENT_TYPE;
 	contentLanguage = null;
         locale = Constants.DEFAULT_LOCALE;
@@ -494,7 +494,7 @@ public final class Response {
 	errorException = null;
 	errorURI = null;
 	headers.clear();
-
+        
     }
 
 }

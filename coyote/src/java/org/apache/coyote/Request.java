@@ -428,7 +428,7 @@ public final class Request {
      */
     public int doRead(ByteChunk chunk) 
         throws IOException {
-        int n = inputBuffer.doRead(chunk);
+        int n = inputBuffer.doRead(chunk, this);
         if (n > 0)
             available -= n;
         return n;
