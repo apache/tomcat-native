@@ -672,6 +672,11 @@ public final class Mapper {
                      */ 
                     mappingData.wrapper = null;
                     checkJspWelcomeFiles = true;
+                } else {
+                    // See Bugzilla 27704
+                    mappingData.wrapperPath.setChars(buf, path.getStart(),
+                                                     path.getLength());
+                    mappingData.pathInfo.recycle();
                 }
             }
         }
