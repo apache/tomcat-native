@@ -21,7 +21,18 @@
   new documentation project for JK has been started.
   </p>
 </section>
-<section name="Changes from JK 1.2.7">
+<section name="Changes with JK 1.2.9">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <fix>
+      <bug>33308</bug>: Fix segfaults when ForwardDirectories is enabled
+        with Apache 1.3
+      </fix>
+    </changelog>
+  </subsection>
+</section>
+<section name="Changes with JK 1.2.8">
   <br />
   <subsection name="Native">
     <changelog>
