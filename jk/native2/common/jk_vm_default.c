@@ -96,6 +96,18 @@
 #define JNI_VERSION_1_1 0x00010001
 #endif
 
+/* probably on an older system that doesn't support RTLD_NOW or RTLD_LAZY.
+ * The below define is a lie since we are really doing RTLD_LAZY since the
+ * system doesn't support RTLD_NOW.
+ */
+#ifndef RTLD_NOW
+#define RTLD_NOW 1
+#endif
+
+#ifndef RTLD_GLOBAL
+#define RTLD_GLOBAL 0
+#endif
+
 #define null_check(e) if ((e) == 0) return JK_FALSE
 
 
