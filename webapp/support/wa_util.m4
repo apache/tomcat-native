@@ -96,21 +96,20 @@ AC_DEFUN(
   [WA_PATH_DIR],
   [
     AC_MSG_CHECKING([for $3 path])
-    tempval="`echo $2`"
-    if test -d "${tempval}" ; then
-      curdir="`pwd`"
-      cd "${tempval}"
-      newdir="`pwd`"
-      $1="${newdir}"
-      AC_SUBST($1)
-      AC_MSG_RESULT([${newdir}])
-      cd "${curdir}"
-      unset curdir
-      unset newdir
+    wa_path_dir_tempval="`echo $2`"
+    if test -d "${wa_path_dir_tempval}" ; then
+      wa_path_dir_curdir="`pwd`"
+      cd "${wa_path_dir_tempval}"
+      wa_path_dir_newdir="`pwd`"
+      $1="${wa_path_dir_newdir}"
+      AC_MSG_RESULT([${wa_path_dir_newdir}])
+      cd "${wa_path_dir_curdir}"
+      unset wa_path_dir_curdir
+      unset wa_path_dir_newdir
     else
-      WA_ERROR([directory ${tempval} not found])
+      WA_ERROR([directory ${wa_path_dir_tempval} not found])
     fi
-    unset tempval
+    unset wa_path_dir_tempval
   ])
 
 dnl --------------------------------------------------------------------------
