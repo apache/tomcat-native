@@ -95,7 +95,9 @@
 struct jk_channel_apr_private {
     int ndelay;
     apr_sockaddr_t *addr;
+#ifdef HAVE_UNIXSOCKETS    
     struct sockaddr_un unix_addr;
+#endif    
     int type; /* AF_INET or AF_UNIX */
     char *host;
     short port;
@@ -106,7 +108,9 @@ struct jk_channel_apr_private {
 typedef struct jk_channel_apr_data {
     int type; /* AF_INET or AF_UNIX */
     apr_socket_t *sock;
+#ifdef HAVE_UNIXSOCKETS    
     int unixsock;
+#endif
 } jk_channel_apr_data_t;
 
 typedef struct jk_channel_apr_private jk_channel_apr_private_t;
@@ -205,6 +209,7 @@ static int JK_METHOD jk2_channel_apr_resolve(jk_env_t *env,
     /*    env->l->jkLog(env, env->l, JK_LOG_ERROR, */
     /*                           "jk2_channel_apr_resolve: %s %d\n", */
     /*                           host, port); */
+#ifdef HAVE_UNIXSOCKETS
     if (host[0]=='/') {
         rc->type = TYPE_UNIX;
         memset(&rc->unix_addr, 0, sizeof(struct sockaddr_un));
@@ -212,7 +217,9 @@ static int JK_METHOD jk2_channel_apr_resolve(jk_env_t *env,
         strcpy(rc->unix_addr.sun_path, host);
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channelApr.resolve(): create AF_UNIX  %s\n", host );
-    } else {
+    } else 
+#endif
+    {
         rc->type = TYPE_NET;
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channelApr.resolve(): create AF_NET  %s %d\n", host, port );
@@ -243,6 +250,8 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     apr_status_t ret;
     apr_interval_time_t timeout = 2 * APR_USEC_PER_SEC;
     char msg[128];
+
+#ifdef HAVE_UNIXSOCKETS
 
     int unixsock;
 
@@ -279,6 +288,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
         sd->type = socketInfo->type;
         return JK_TRUE;
     }
+#endif
 
 
     if (apr_socket_create(&sock, remote_sa->family, SOCK_STREAM,
@@ -353,11 +363,12 @@ static int JK_METHOD jk2_channel_apr_close(jk_env_t *env,jk_channel_t *_this,
     if( chD==NULL ) 
         return JK_FALSE;
 
+#ifdef HAVE_UNIXSOCKETS
     if (chD->type==TYPE_UNIX) { 
         close( chD->unixsock );
         return 0;
     }
-
+#endif
     sd=chD->sock;
     chD->sock=NULL; /* XXX check it. */
     /* nothing else to clean, the socket_data was allocated ouf of
@@ -406,8 +417,9 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *_this,
     b=msg->buf;
 
     sock=chD->sock;
+#ifdef HAVE_UNIXSOCKETS
     unixsock=chD->unixsock;
-
+#endif
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
                   "jk2_channel_apr_send %d\n",chD->type);
 
@@ -463,10 +475,10 @@ static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
 
     if( chD==NULL ) 
         return JK_FALSE;
-    sd=chD->unixsock;
     sock=chD->sock;
     rdlen = 0;
-  
+#ifdef HAVE_UNIXSOCKETS 
+    sd=chD->unixsock;
     /* this should be moved in APR */ 
     if (chD->type==TYPE_UNIX) { 
         while(rdlen < len) {
@@ -487,7 +499,7 @@ static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
         }
         return rdlen; 
     }
-
+#endif
     length = (apr_size_t) len;
     stat =  apr_recv(sock, b, &length);
 

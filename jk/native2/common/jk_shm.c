@@ -209,7 +209,7 @@ static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
 }
 
 
-int jk2_shm_factory( jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_shm_factory( jk_env_t *env, jk_pool_t *pool,
                      jk_bean_t *result,
                      const char *type, const char *name)
 {
