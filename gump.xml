@@ -25,6 +25,8 @@
 
     <home nested="util/build"/>
     <jar name="lib/tomcat-util.jar"/>
+    <nag to="tomcat-dev@jakarta.apache.org"
+         from="Craig McClanahan &lt;craigmcc@apache.org&gt;"/>
   </project>
 
   <project name="jakarta-tomcat-coyote">
@@ -58,6 +60,7 @@
     <depend project="jakarta-ant"/>
     <depend project="commons-logging"/>
     <depend project="jakarta-tomcat-util"/>
+    <depend project="xml-xerces"/>
     <depend project="jakarta-tomcat-coyote"/>
 
     <home nested="jk/build"/>
@@ -65,6 +68,8 @@
     <jar name="lib/jkconfig.jar"/>
     <jar name="lib/tomcat-jk2.jar"/>
     <jar name="lib/tomcat-jni.jar"/>
+    <nag to="tomcat-dev@jakarta.apache.org"
+         from="Craig McClanahan &lt;craigmcc@apache.org&gt;"/>
   </project>
 
   
