@@ -1236,6 +1236,8 @@ static int jk_handler(request_rec *r)
                 }
             }
 
+            jk_close_pool(&private_data.p);
+
             if(rc) {
                 return OK;    /* NOT r->status, even if it has changed. */
             }
