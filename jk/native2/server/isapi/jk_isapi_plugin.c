@@ -698,21 +698,21 @@ static int get_registry_config_parameter(HKEY hkey,
     return JK_TRUE;     
 }
 
+apr_pool_t *jk_globalPool;
 
 
 /** Basic initialization for jk2.
  */
-
-
 static  jk_env_t*  jk2_create_workerEnv (void) {
 
     jk_logger_t *l;
     jk_pool_t *globalPool;
     jk_bean_t *jkb;
     jk_env_t *env;
-    /** First create a pool. Compile time option
-     */
-    jk2_pool_create( NULL, &globalPool, NULL, 2048 );
+    
+    apr_pool_create( &jk_globalPool, NULL );
+
+    jk2_pool_apr_create( NULL, &globalPool, NULL, jk_globalPool );
 
     /** Create the global environment. This will register the default
         factories

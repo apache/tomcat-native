@@ -108,17 +108,16 @@ static int JK_METHOD jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
 {
     /* XXX map jk level to apache level */
     server_rec *s=(server_rec *)l->logger_private;
+    /* If we use apache2 logger, we should also use APR pools.
+       It is possible to do some workarounds, but it would be stupid, especially
+       since the idea is to use apr pools long term, with the old jk_pool as
+       a workaround for apache13 and where apr is not available */
+    apr_pool_t *aprPool=env->tmpPool->_private;
     int rc;
+    char *buf;
 
     /* XXX XXX Change this to "SMALLSTACK" or something, I don't think it's
        netware specific */
-#ifdef NETWARE
-/* On NetWare, this can get called on a thread that has a limited stack so */
-/* we will allocate and free the temporary buffer in this function         */
-    char *buf;
-#else
-    char buf[HUGE_BUFFER_SIZE];
-#endif
 
     if( level < l->level )
         return JK_OK;
@@ -126,15 +125,9 @@ static int JK_METHOD jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
     if( s==NULL ) {
         return JK_ERR;
     }
+
+    buf=apr_pvsprintf( aprPool, fmt, args );
     
-#if defined(NETWARE) /* until we get a vsnprintf function */
-    /* XXX Can we use a pool ? */
-    /* XXX It'll go away with env and per thread data !! */
-    buf = (char *) malloc(HUGE_BUFFER_SIZE);
-    rc = vsprintf(buf, fmt, args);
-#else 
-    rc = vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
-#endif
     rc=strlen( buf );
     /* Remove trailing \n. XXX need to change the log() to not include \n */
     if( buf[rc-1] == '\n' )
@@ -148,9 +141,6 @@ static int JK_METHOD jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
         ap_log_error( file, line, APLOG_ERR | APLOG_NOERRNO, 0, s, buf);
     }
 
-#ifdef NETWARE
-    free(buf);
-#endif
     return rc ;
 }
 

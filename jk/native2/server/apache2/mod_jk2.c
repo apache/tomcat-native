@@ -259,13 +259,7 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     jk_pool_t *globalPool;
     jk_bean_t *jkb;
     
-    /** First create a pool. Compile time option
-     */
-#ifdef NO_APACHE_POOL
-    jk2_pool_create( NULL, &globalPool, NULL, 2048 );
-#else
     jk2_pool_apr_create( NULL, &globalPool, NULL, p );
-#endif
 
     /** Create the global environment. This will register the default
         factories

@@ -210,6 +210,51 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
 	return JK_OK;
 }
 
+#ifdef HAS_APR
+
+static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
+                                  const char *file,
+                                  int line,
+                                  int level,
+                                  const char *fmt,
+                                  va_list args)
+{
+    int rc = 0;
+    char *buf;
+    char *fmt1;
+    apr_pool_t *aprPool=env->tmpPool->_private;
+    char rfctime[APR_RFC822_DATE_LEN];
+    apr_time_t time = apr_time_now();
+    
+    if( !file || !args) {
+        return -1;
+    }
+
+    if(l->logger_private==NULL ||
+       l->level <= level) {
+        char *f = (char *)(file + strlen(file) - 1);
+
+        while(f != file && '\\' != *f && '/' != *f) {
+            f--;
+        }
+        if(f != file) {
+            f++;
+        }
+        
+        /* XXX or apr_ctime ? */
+        apr_rfc822_date( rfctime, time );
+        fmt1=apr_pvsprintf( aprPool, "[%s] [%s:%d] %s", rfctime, file, line, fmt );
+        buf=apr_pvsprintf( aprPool, fmt, args );
+
+        l->log(env, l, level, buf);
+        
+    }
+    
+    return rc;
+}
+
+
+#else
 
 static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
                                   const char *file,
@@ -284,6 +329,7 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
     return rc;
 }
 
+#endif
 
 
 static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
