@@ -1328,6 +1328,35 @@ static int jk_handler(request_rec *r)
     return DECLINED;
 }
 
+/** Standard apache hook, cleanup jk
+ */
+static apr_status_t jk_apr_pool_cleanup(void *data)
+{
+    server_rec *s = data;
+    
+    while (NULL != s)
+    {
+        jk_server_conf_t *conf =
+            (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+    
+    
+        if (conf)
+        {
+            wc_close(conf->log);
+            if (conf->worker_properties)
+                map_free(&conf->worker_properties);
+            if (conf->uri_to_context)
+                map_free(&conf->uri_to_context);
+            if (conf->automount)
+                map_free(&conf->automount);
+            if (conf->uw_map)
+                uri_worker_map_free(&conf->uw_map, conf->log);
+            jk_close_file_logger(&conf->log);
+        }
+        s = s->next;
+    }
+}
+
 /** Create default jk_config. XXX This is mostly server-independent,
     all servers are using something similar - should go to common.
  */
@@ -1390,6 +1419,7 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
 
     c->s = s;
 
+    apr_pool_cleanup_register(p, s, jk_apr_pool_cleanup, jk_apr_pool_cleanup);
     return c;
 }
 
@@ -1466,35 +1496,6 @@ static void *merge_jk_config(apr_pool_t *p,
     return overrides;
 }
 
-/** Standard apache hook, cleanup jk
- */
-static apr_status_t jk_child_exit(void *data)
-{
-    server_rec *s = data;
-    
-    while (NULL != s)
-    {
-        jk_server_conf_t *conf =
-            (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
-    
-    
-        if (conf)
-        {
-            wc_close(conf->log);
-            if (conf->worker_properties)
-                map_free(&conf->worker_properties);
-            if (conf->uri_to_context)
-                map_free(&conf->uri_to_context);
-            if (conf->automount)
-                map_free(&conf->automount);
-            if (conf->uw_map)
-                uri_worker_map_free(&conf->uw_map, conf->log);
-            jk_close_file_logger(&conf->log);
-        }
-        s = s->next;
-    }
-}
-
 /** Standard apache callback, initialize jk.
  */
 static void jk_child_init(apr_pool_t *pconf, 
@@ -1503,7 +1504,6 @@ static void jk_child_init(apr_pool_t *pconf,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    apr_pool_cleanup_register(pconf, s, jk_child_exit, jk_child_exit);
 /*     init_jk( pconf, conf, s ); */
 }
 
