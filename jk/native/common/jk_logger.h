@@ -84,17 +84,28 @@ struct file_logger_t
 
 #define JK_LOG_REQUEST __FILE__,0,NULL,JK_LOG_REQUEST_LEVEL
 
-/* Debug level is compile time only 
+#if defined(JK_PRODUCTION)
+/* TODO: all DEBUG messages should be compiled out
+ * when this define is in place.
  */
-#if defined (DEBUG) || defined(_DEBUG)
-#define JK_TRACE    1
-#define JK_TRACE_ENTER(l) jk_log((l), JK_LOG_TRACE, "enter\n")
-#define JK_TRACE_EXIT(l)  jk_log((l), JK_LOG_TRACE, "exit\n")
-#else
-#define JK_TRACE    0
+#define JK_IS_PRODUCTION    1
 #define JK_TRACE_ENTER(l)
 #define JK_TRACE_EXIT(l)
-#endif
+#else
+#define JK_IS_PRODUCTION    0
+#define JK_TRACE_ENTER(l)                               \
+    do {                                                \
+        if ((l) && (l)->level == JK_LOG_TRACE_LEVEL) {  \
+            jk_log((l), JK_LOG_TRACE, "enter\n");       \
+    } } while (0)
+
+#define JK_TRACE_EXIT(l)                                \
+    do {                                                \
+        if ((l) && (l)->level == JK_LOG_TRACE_LEVEL) {  \
+            jk_log((l), JK_LOG_TRACE, "exit\n");        \
+    } } while (0)
+
+#endif  /* JK_PRODUCTION */
 
 #define JK_LOG_NULL_PARAMS(l) jk_log((l), JK_LOG_ERROR, "NULL parameters\n")
 
