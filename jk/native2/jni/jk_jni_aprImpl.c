@@ -140,7 +140,7 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
         jk2_pool_apr_create( NULL, &globalPool, NULL, jniAprPool );
         /* Create the global env */
         env=jk2_env_getEnv( NULL, globalPool );
-        env->setAprPool(env, gPool);
+        env->setAprPool(env, globalPool);
     }
     
     env=jk_env_globalEnv;

@@ -77,6 +77,7 @@ extern jint jk_jni_aprImpl_registerNatives(JNIEnv *, jclass);
 
 /* default only, will be  configurable  */
 #define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/apr/TomcatStarter")
+#define JAVA_BRIDGE_CLASS_APRI ("org/apache/jk/apr/AprImpl")
 
 struct jni_worker_data {
     jclass      jk_java_bridge_class;
