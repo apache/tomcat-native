@@ -1526,9 +1526,11 @@ static int jk_handler(request_rec *r)
 
             s.ws_private = &private_data;
             s.pool = &private_data.p;            
+#ifndef NO_GETTIMEOFDAY
             if(conf->format != NULL) {
                 gettimeofday(&tv_begin, NULL);
             }
+#endif
 
             if(init_ws_service(&private_data, &s, conf)) {
                 jk_endpoint_t *end = NULL;
@@ -1553,6 +1555,7 @@ static int jk_handler(request_rec *r)
                     }
                     end->done(&end, l);
                 }
+#ifndef NO_GETTIMEOFDAY
                 if(conf->format != NULL) {
                     char *duration = NULL;
                     char *status = NULL;
@@ -1568,6 +1571,7 @@ static int jk_handler(request_rec *r)
                     ap_table_setn(r->notes, JK_DURATION, duration);
                     request_log_transaction(r,conf);
                 }
+#endif
             }
 
             jk_close_pool(&private_data.p);
