@@ -773,7 +773,7 @@ static const char *jk_worker_property(cmd_parms *cmd,
     if(value) {
         void *old = NULL;
         map_put(m, name, value, &old);
-        printf("Setting %s %s\n", name, value);
+        /*printf("Setting %s %s\n", name, value);*/
     } 
     return NULL;
 }
@@ -1280,11 +1280,11 @@ static int jk_handler(request_rec *r)
         apr_pool_t *parent_pool= apr_pool_get_parent( rpool );
         apr_pool_t *tpool= apr_pool_get_parent( parent_pool );
         
-        ap_get_userdata( &end, "jk_thread_endpoint", tpool );
-                if(end==NULL ) {
+        apr_pool_userdata_get( &end, "jk_thread_endpoint", tpool );
+        if(end==NULL ) {
             worker->get_endpoint(worker, &end, l);
-            ap_set_userdata( end , "jk_thread_endpoint", 
-                             &jk_cleanup_endpoint,  tpool );
+            apr_pool_userdata_set( end , "jk_thread_endpoint", 
+                                   &jk_cleanup_endpoint,  tpool );
         }
 #else
         worker->get_endpoint(worker, &end, l);
@@ -1504,26 +1504,24 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
     }
 
     /*     if(map_alloc(&init_map)) { */
-    if(map_read_properties(init_map, conf->worker_file)) {
-        /* workers.properties can be used to set all jk
-           properties in a consistent way, independent of server */
-        /* Read and set log file, log level */
-        
-        /* May be allready done in init ??? */
-        /* we add the URI->WORKER MAP since workers using AJP14
-           will feed it */
-        worker_env.uri_to_worker = conf->uw_map;
-        worker_env.virtual       = "*";     /* for now */
-        worker_env.server_name   = (char *)ap_get_server_version();
-        if(wc_open(init_map, &worker_env, conf->log)) {
-            ap_add_version_component(pconf, JK_EXPOSED_VERSION);
+    if( ! map_read_properties(init_map, conf->worker_file)) {
+        if( map_size( init_map ) == 0 ) {
+            jk_error_exit(APLOG_MARK, APLOG_EMERG, s, 
+                          pconf, "No worker file and no worker options in httpd.conf \n"
+                          "use JkWorkerFile or JkWorker to set workers");
             return;
-        }            
+        }
     }
-/*     } */
-
-/*     jk_error_exit(APLOG_MARK, APLOG_EMERG, s,  */
-/*                   pconf, "Error while opening the workers"); */
+    
+    /* we add the URI->WORKER MAP since workers using AJP14
+       will feed it */
+    worker_env.uri_to_worker = conf->uw_map;
+    worker_env.virtual       = "*";     /* for now */
+    worker_env.server_name   = (char *)ap_get_server_version();
+    if(wc_open(init_map, &worker_env, conf->log)) {
+        ap_add_version_component(pconf, JK_EXPOSED_VERSION);
+        return;
+    }            
     return;
 }
 
