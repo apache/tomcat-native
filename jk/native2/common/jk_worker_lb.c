@@ -85,7 +85,6 @@
 
 typedef struct {
     struct jk_mutex *cs;
-    int    init_timeout;
     int    initializing;
 } jk_worker_lb_private_t;
 
@@ -385,7 +384,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         s->jvm_route = rec->route;
 
         s->realWorker = rec;
-        if (!rec->initialized && !lb_priv->initializing && lb->cs != NULL) {
+        if (rec->mbean->initialize && !lb_priv->initializing && lb->cs != NULL) {
             /* If the worker has not been called yet serialize the call */
             lb->cs->lock(env, lb->cs);
             lb_priv->initializing = JK_TRUE;
@@ -397,18 +396,18 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
             rec->in_error_state = JK_FALSE;
             rec->error_time     = 0;
             /* Set the initialized flag to TRUE if that was the first call */
-            if (!rec->initialized && lb->cs != NULL) {
-                rec->initialized = JK_TRUE;
+            if (rec->mbean->initialize && lb->cs != NULL) {
+                rec->mbean->initialize = 0;
                 lb_priv->initializing = JK_FALSE;
                 lb->cs->unLock(env, lb->cs);
             }
             return JK_OK;
         }
         
-        if (!rec->initialized && lb->cs != NULL) {
+        if (rec->mbean->initialize && lb->cs != NULL) {
             time_t now = time(NULL);
             /* In the case of initialization timeout disable the worker */
-            if ((int)(now - rec->error_time) > lb_priv->init_timeout) {
+            if ((int)(now - rec->error_time) > rec->mbean->initialize) {
                 rec->mbean->disabled = JK_TRUE;
                 lb_priv->initializing = JK_FALSE;
                 s->is_recoverable_error = JK_FALSE;
@@ -524,11 +523,7 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         lb->noWorkerCode=atoi( value );
     } else if( strcmp( name, "hwBalanceErr") == 0 ) {
         lb->hwBalanceErr=atoi( value );
-    } else if( strcmp( name, "initTimeout") == 0 ) {
-        jk_worker_lb_private_t *priv = lb->worker_private;
-        priv->init_timeout=atoi( value );
     }
-
     return JK_ERR;
 }
 
@@ -595,8 +590,6 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
     worker_private = (jk_worker_lb_private_t *)pool->calloc(env,
                           pool, sizeof(jk_worker_lb_private_t));
     
-    /* one minute service startup */
-    worker_private->init_timeout = 60;
     jkb=env->createBean2(env, pool,"threadMutex", NULL);
     if( jkb != NULL ) {
         worker_private->cs=jkb->object;
@@ -625,7 +618,7 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
 
     w->workerEnv=env->getByName( env, "workerEnv" );
     w->workerEnv->addWorker( env, w->workerEnv, w );
-    
+
     return JK_OK;
 }
 
