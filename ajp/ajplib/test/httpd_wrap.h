@@ -39,6 +39,150 @@ extern "C" {
 /** The size of the server's internal read-write buffers */
 #define AP_IOBUFSIZE 8192
 
+#define DECLINED -1     /**< Module declines to handle */
+#define DONE -2         /**< Module has served the response completely 
+                 *  - it's safe to die() with no more output
+                 */
+#define OK 0            /**< Module has handled this stage. */
+
+
+/**
+ * @defgroup HTTP_Status HTTP Status Codes
+ * @{
+ */
+/**
+ * The size of the static array in http_protocol.c for storing
+ * all of the potential response status-lines (a sparse table).
+ * A future version should dynamically generate the apr_table_t at startup.
+ */
+#define RESPONSE_CODES 57
+
+#define HTTP_CONTINUE                      100
+#define HTTP_SWITCHING_PROTOCOLS           101
+#define HTTP_PROCESSING                    102
+#define HTTP_OK                            200
+#define HTTP_CREATED                       201
+#define HTTP_ACCEPTED                      202
+#define HTTP_NON_AUTHORITATIVE             203
+#define HTTP_NO_CONTENT                    204
+#define HTTP_RESET_CONTENT                 205
+#define HTTP_PARTIAL_CONTENT               206
+#define HTTP_MULTI_STATUS                  207
+#define HTTP_MULTIPLE_CHOICES              300
+#define HTTP_MOVED_PERMANENTLY             301
+#define HTTP_MOVED_TEMPORARILY             302
+#define HTTP_SEE_OTHER                     303
+#define HTTP_NOT_MODIFIED                  304
+#define HTTP_USE_PROXY                     305
+#define HTTP_TEMPORARY_REDIRECT            307
+#define HTTP_BAD_REQUEST                   400
+#define HTTP_UNAUTHORIZED                  401
+#define HTTP_PAYMENT_REQUIRED              402
+#define HTTP_FORBIDDEN                     403
+#define HTTP_NOT_FOUND                     404
+#define HTTP_METHOD_NOT_ALLOWED            405
+#define HTTP_NOT_ACCEPTABLE                406
+#define HTTP_PROXY_AUTHENTICATION_REQUIRED 407
+#define HTTP_REQUEST_TIME_OUT              408
+#define HTTP_CONFLICT                      409
+#define HTTP_GONE                          410
+#define HTTP_LENGTH_REQUIRED               411
+#define HTTP_PRECONDITION_FAILED           412
+#define HTTP_REQUEST_ENTITY_TOO_LARGE      413
+#define HTTP_REQUEST_URI_TOO_LARGE         414
+#define HTTP_UNSUPPORTED_MEDIA_TYPE        415
+#define HTTP_RANGE_NOT_SATISFIABLE         416
+#define HTTP_EXPECTATION_FAILED            417
+#define HTTP_UNPROCESSABLE_ENTITY          422
+#define HTTP_LOCKED                        423
+#define HTTP_FAILED_DEPENDENCY             424
+#define HTTP_UPGRADE_REQUIRED              426
+#define HTTP_INTERNAL_SERVER_ERROR         500
+#define HTTP_NOT_IMPLEMENTED               501
+#define HTTP_BAD_GATEWAY                   502
+#define HTTP_SERVICE_UNAVAILABLE           503
+#define HTTP_GATEWAY_TIME_OUT              504
+#define HTTP_VERSION_NOT_SUPPORTED         505
+#define HTTP_VARIANT_ALSO_VARIES           506
+#define HTTP_INSUFFICIENT_STORAGE          507
+#define HTTP_NOT_EXTENDED                  510
+
+/** is the status code informational */
+#define ap_is_HTTP_INFO(x)         (((x) >= 100)&&((x) < 200))
+/** is the status code OK ?*/
+#define ap_is_HTTP_SUCCESS(x)      (((x) >= 200)&&((x) < 300))
+/** is the status code a redirect */
+#define ap_is_HTTP_REDIRECT(x)     (((x) >= 300)&&((x) < 400))
+/** is the status code a error (client or server) */
+#define ap_is_HTTP_ERROR(x)        (((x) >= 400)&&((x) < 600))
+/** is the status code a client error  */
+#define ap_is_HTTP_CLIENT_ERROR(x) (((x) >= 400)&&((x) < 500))
+/** is the status code a server error  */
+#define ap_is_HTTP_SERVER_ERROR(x) (((x) >= 500)&&((x) < 600))
+
+/** should the status code drop the connection */
+#define ap_status_drops_connection(x) \
+                                   (((x) == HTTP_BAD_REQUEST)           || \
+                                    ((x) == HTTP_REQUEST_TIME_OUT)      || \
+                                    ((x) == HTTP_LENGTH_REQUIRED)       || \
+                                    ((x) == HTTP_REQUEST_ENTITY_TOO_LARGE) || \
+                                    ((x) == HTTP_REQUEST_URI_TOO_LARGE) || \
+                                    ((x) == HTTP_INTERNAL_SERVER_ERROR) || \
+                                    ((x) == HTTP_SERVICE_UNAVAILABLE) || \
+                    ((x) == HTTP_NOT_IMPLEMENTED))
+/** @} */
+/**
+ * @defgroup Methods List of Methods recognized by the server
+ * @{
+ */
+/**
+ * Methods recognized (but not necessarily handled) by the server.
+ * These constants are used in bit shifting masks of size int, so it is
+ * unsafe to have more methods than bits in an int.  HEAD == M_GET.
+ * This list must be tracked by the list in http_protocol.c in routine
+ * ap_method_name_of().
+ */
+#define M_GET                   0       /* RFC 2616: HTTP */
+#define M_PUT                   1       /*  :             */
+#define M_POST                  2
+#define M_DELETE                3
+#define M_CONNECT               4
+#define M_OPTIONS               5
+#define M_TRACE                 6       /* RFC 2616: HTTP */
+#define M_PATCH                 7       /* no rfc(!)  ### remove this one? */
+#define M_PROPFIND              8       /* RFC 2518: WebDAV */
+#define M_PROPPATCH             9       /*  :               */
+#define M_MKCOL                 10
+#define M_COPY                  11
+#define M_MOVE                  12
+#define M_LOCK                  13
+#define M_UNLOCK                14      /* RFC 2518: WebDAV */
+#define M_VERSION_CONTROL       15      /* RFC 3253: WebDAV Versioning */
+#define M_CHECKOUT              16      /*  :                          */
+#define M_UNCHECKOUT            17
+#define M_CHECKIN               18
+#define M_UPDATE                19
+#define M_LABEL                 20
+#define M_REPORT                21
+#define M_MKWORKSPACE           22
+#define M_MKACTIVITY            23
+#define M_BASELINE_CONTROL      24
+#define M_MERGE                 25
+#define M_INVALID               26      /* RFC 3253: WebDAV Versioning */
+
+/**
+ * METHODS needs to be equal to the number of bits
+ * we are using for limit masks.
+ */
+#define METHODS     64
+
+/**
+ * The method mask bit to shift for anding with a bitmask.
+ */
+#define AP_METHOD_BIT ((apr_int64_t)1)
+/** @} */
+
+
 /* fake structure declarations */
 typedef struct process_rec  process_rec;
 typedef struct request_rec  request_rec;
@@ -57,6 +201,91 @@ struct process_rec {
 struct request_rec {
     /** The pool associated with the request */
     apr_pool_t *pool;
+    /** The connection to the client */
+    conn_rec *connection;
+    /** The virtual host for this request */
+    server_rec *server;
+    /** First line of request */
+    char *the_request;
+    /** HTTP/0.9, "simple" request (e.g. GET /foo\n w/no headers) */
+    int assbackwards;
+    /** A proxy request (calculated during post_read_request/translate_name)
+     *  possible values PROXYREQ_NONE, PROXYREQ_PROXY, PROXYREQ_REVERSE,
+     *                  PROXYREQ_RESPONSE
+     */
+    int proxyreq;
+    /** HEAD request, as opposed to GET */
+    int header_only;
+    /** Protocol string, as given to us, or HTTP/0.9 */
+    char *protocol;
+    /** Protocol version number of protocol; 1.1 = 1001 */
+    int proto_num;
+    /** Host, as set by full URI or Host: */
+    const char *hostname;
+
+    /** Time when the request started */
+    apr_time_t request_time;
+
+    /** Status line, if set by script */
+    const char *status_line;
+    /** Status line */
+    int status;
+
+    /* Request method, two ways; also, protocol, etc..  Outside of protocol.c,
+     * look, but don't touch.
+     */
+
+    /** Request method (eg. GET, HEAD, POST, etc.) */
+    const char *method;
+    /** M_GET, M_POST, etc. */
+    int method_number;
+ 
+    /** MIME header environment from the request */
+    apr_table_t *headers_in;
+    /** MIME header environment for the response */
+    apr_table_t *headers_out;
+    /** MIME header environment for the response, printed even on errors and
+     * persist across internal redirects */
+    apr_table_t *err_headers_out;
+    /** Array of environment variables to be used for sub processes */
+    apr_table_t *subprocess_env;
+    /** Notes from one module to another */
+    apr_table_t *notes;
+
+    /* content_type, handler, content_encoding, and all content_languages 
+     * MUST be lowercased strings.  They may be pointers to static strings;
+     * they should not be modified in place.
+     */
+    /** The content-type for the current request */
+    const char *content_type;   /* Break these out --- we dispatch on 'em */
+    /** The handler string that we use to call a handler function */
+    const char *handler;    /* What we *really* dispatch on */
+
+    /** How to encode the data */
+    const char *content_encoding;
+    /** Array of strings representing the content languages */
+    apr_array_header_t *content_languages;
+    /** If an authentication check was made, this gets set to the user name. */
+    char *user; 
+    /** If an authentication check was made, this gets set to the auth type. */
+    char *ap_auth_type;
+     /** The URI without any parsing performed */
+    char *unparsed_uri; 
+    /** The path portion of the URI */
+    char *uri;
+    /** The filename on disk corresponding to this response */
+    char *filename;
+    /* XXX: What does this mean? Please define "canonicalize" -aaron */
+    /** The true filename, we canonicalize r->filename if these don't match */
+    char *canonical_filename;
+    /** The PATH_INFO extracted from this request */
+    char *path_info;
+    /** The QUERY_ARGS extracted from this request */
+    char *args; 
+    /** ST_MODE set to zero if no such file */
+    apr_finfo_t finfo;
+    /** A struct containing the components of URI */
+    apr_uri_t parsed_uri;
 };
 
 /** Structure to store things which are per connection */
@@ -98,6 +327,10 @@ struct conn_rec {
 struct server_rec {
     /** The process this server is running in */
     process_rec *process;
+    /** The server hostname */
+    char *server_hostname;
+    /** for redirects, etc. */
+    apr_port_t port;
 };
 
 /* Apache logging support */
@@ -236,7 +469,10 @@ AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
                                   apr_bucket_alloc_t *alloc);
 
 
-
+/**
+ * create the request_rec structure from fake client connection 
+ */
+AP_DECLARE(request_rec *) ap_wrap_create_request(conn_rec *conn);
 
 
 

@@ -133,6 +133,35 @@ AP_DECLARE(void) ap_log_rerror(const char *file, int line, int level,
     va_end(args);
 }
 
+AP_DECLARE(request_rec *) ap_wrap_create_request(conn_rec *conn)
+{
+    request_rec *r;
+    apr_pool_t *p;
+
+    apr_pool_create(&p, conn->pool);
+    apr_pool_tag(p, "request");
+    r = apr_pcalloc(p, sizeof(request_rec));
+    r->pool            = p;
+    r->connection      = conn;
+    r->server          = conn->base_server;
+
+    r->user            = NULL;
+    r->ap_auth_type    = NULL;
+
+    r->headers_in      = apr_table_make(r->pool, 25);
+    r->subprocess_env  = apr_table_make(r->pool, 25);
+    r->headers_out     = apr_table_make(r->pool, 12);
+    r->err_headers_out = apr_table_make(r->pool, 5);
+    r->notes           = apr_table_make(r->pool, 5);
+
+
+    r->status          = HTTP_REQUEST_TIME_OUT;  /* Until we get a request */
+    r->the_request     = NULL;
+
+    r->status = HTTP_OK;                         /* Until further notice. */
+    return r;
+}
+
 
 AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
                                   server_rec *server,
