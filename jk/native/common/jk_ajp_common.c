@@ -68,10 +68,11 @@ const char *response_trans_headers[] = {
     "WWW-Authenticate"
 };
 
-static const char *long_res_header_for_sc(int sc)
+static const char *long_res_header_for_sc(int sc) 
 {
     const char *rc = NULL;
-    if (sc <= SC_RES_HEADERS_NUM && sc > 0) {
+    sc = sc & 0X00FF;
+    if(sc <= SC_RES_HEADERS_NUM && sc > 0) {
         rc = response_trans_headers[sc - 1];
     }
 
@@ -170,105 +171,92 @@ static int sc_for_req_method(const char *method, unsigned char *sc)
     return rc;
 }
 
-static int sc_for_req_header(const char *header_name, unsigned short *sc)
+#define UNKNOWN_METHOD (-1)
+
+static int sc_for_req_header(const char *header_name)
 {
-    switch (header_name[0]) {
-    case 'a':
-        if ('c' == header_name[1] &&
-            'c' == header_name[2] &&
-            'e' == header_name[3] &&
-            'p' == header_name[4] && 't' == header_name[5]) {
-            if ('-' == header_name[6]) {
-                if (!strcmp(header_name + 7, "charset")) {
-                    *sc = SC_ACCEPT_CHARSET;
+    char header[16];
+    size_t len = strlen(header_name);
+    const char *p = header_name;
+    int i = 0;
+
+    /* ACCEPT-LANGUAGE is the longest headeer
+     * that is of interest.
+     */
+    if (len < 4 || len > 15)
+        return UNKNOWN_METHOD;
+    
+    while (*p)
+        header[i++] = toupper((unsigned char)*p++);
+    header[i] = '\0';
+    p = &header[1];
+
+    switch (header[0]) {
+        case 'A':
+            if (memcmp(p, "CCEPT", 5) == 0) {
+                if (!header[6])
+                    return SC_ACCEPT;
+                else if (header[6] == '-') {
+                    p += 6;
+                    if (memcmp(p, "CHARSET", 7) == 0)
+                        return SC_ACCEPT_CHARSET;
+                    else if (memcmp(p,  "ENCODING", 8) == 0)
+                        return SC_ACCEPT_ENCODING;
+                    else if (memcmp(p, "LANGUAGE", 8) == 0)
+                        return SC_ACCEPT_LANGUAGE;
+                    else
+                        return UNKNOWN_METHOD;
                 }
-                else if (!strcmp(header_name + 7, "encoding")) {
-                    *sc = SC_ACCEPT_ENCODING;
-                }
-                else if (!strcmp(header_name + 7, "language")) {
-                    *sc = SC_ACCEPT_LANGUAGE;
-                }
-                else {
-                    return JK_FALSE;
-                }
+                else
+                    return UNKNOWN_METHOD;
             }
-            else if ('\0' == header_name[6]) {
-                *sc = SC_ACCEPT;
-            }
-            else {
-                return JK_FALSE;
-            }
-        }
-        else if (!strcmp(header_name, "authorization")) {
-            *sc = SC_AUTHORIZATION;
-        }
-        else {
-            return JK_FALSE;
-        }
+            else if (memcmp(p, "UTHORIZATION", 12) == 0)
+                return SC_AUTHORIZATION;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-    case 'c':
-        if (!strcmp(header_name, "cookie")) {
-            *sc = SC_COOKIE;
-        }
-        else if (!strcmp(header_name, "connection")) {
-            *sc = SC_CONNECTION;
-        }
-        else if (!strcmp(header_name, "content-type")) {
-            *sc = SC_CONTENT_TYPE;
-        }
-        else if (!strcmp(header_name, "content-length")) {
-            *sc = SC_CONTENT_LENGTH;
-        }
-        else if (!strcmp(header_name, "cookie2")) {
-            *sc = SC_COOKIE2;
-        }
-        else {
-            return JK_FALSE;
-        }
+        case 'C':
+            if (memcmp(p, "OOKIE", 5) == 0)
+                return SC_COOKIE;
+            else if(memcmp(p, "ONNECTION", 9) == 0)
+                return SC_CONNECTION;
+            else if(memcmp(p, "ONTENT-TYPE", 11) == 0)
+                return SC_CONTENT_TYPE;
+            else if(memcmp(p, "ONTENT-LENGTH", 13) == 0)
+                return SC_CONTENT_LENGTH;
+            else if(memcmp(p, "OOKIE2", 6) == 0)
+                return SC_COOKIE2;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-    case 'h':
-        if (!strcmp(header_name, "host")) {
-            *sc = SC_HOST;
-        }
-        else {
-            return JK_FALSE;
-        }
+        case 'H':
+            if(memcmp(p, "OST", 3) == 0)
+                return SC_HOST;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-    case 'p':
-        if (!strcmp(header_name, "pragma")) {
-            *sc = SC_PRAGMA;
-        }
-        else {
-            return JK_FALSE;
-        }
+        case 'P':
+            if(memcmp(p, "RAGMA", 5) == 0)
+                return SC_PRAGMA;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-    case 'r':
-        if (!strcmp(header_name, "referer")) {
-            *sc = SC_REFERER;
-        }
-        else {
-            return JK_FALSE;
-        }
+        case 'R':
+            if(memcmp(p, "EFERER", 6) == 0)
+                return SC_REFERER;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-    case 'u':
-        if (!strcmp(header_name, "user-agent")) {
-            *sc = SC_USER_AGENT;
-        }
-        else {
-            return JK_FALSE;
-        }
+        case 'U':
+            if(memcmp(p, "SER-AGENT", 9) == 0)
+                return SC_USER_AGENT;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-    default:
-        return JK_FALSE;
+        default:
+            return UNKNOWN_METHOD;
     }
-
-    return JK_TRUE;
+    /* NOTREACHED */
 }
 
 
@@ -339,10 +327,10 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t *msg,
     }
 
     for (i = 0; i < s->num_headers; i++) {
-        unsigned short sc;
+        int sc;
 
-        if (sc_for_req_header(s->headers_names[i], &sc)) {
-            if (jk_b_append_int(msg, sc)) {
+        if ((sc = sc_for_req_header(s->headers_names[i])) != UNKNOWN_METHOD) {
+            if (jk_b_append_int(msg, (unsigned short)sc)) {
                 jk_log(l, JK_LOG_ERROR,
                        "failed appending the header name\n");
                 JK_TRACE_EXIT(l);
