@@ -1,249 +1,221 @@
-<project name="Webapp" default="compile" basedir=".">
+<?xml version="1.0"?>
 
+<project name="Webapp Module" default="all" basedir=".">
 
-<!--
-        "Coyote" connector framework for Jakarta Tomcat
-        $Id$
--->
+<!-- === BUILD ENVIRONMENT =============================================== -->
 
+  <!-- ANT FIX: basedir is alwats relative to build.xml -->
+  <property name="basedir"        value="${basedir}"/>
+  <property name="targdir"        value="${user.dir}"/>
 
-<!-- ========== Initialize Properties ===================================== -->
+  <!-- The properties file which will override what's written below -->
+  <property file="${targdir}/build.properties"/>
 
+  <!-- The WebApp version string -->
+  <property name="version"        value="unknown"/>
 
-  <property file="build.properties"/>                <!-- Component local   -->
-  <property file="../build.properties"/>             <!-- Commons local     -->
-  <property file="${user.home}/build.properties"/>   <!-- User local        -->
+  <!-- The layout of the build directory (shared with Makefile(s) -->
+  <property name="build.home"     value="${targdir}/build"/>
+  <property name="build.jar"      value="${build.home}/tomcat-warp.jar"/>
+  <property name="build.classes"  value="${build.home}/classes"/>
+  <property name="build.docs"     value="${build.home}/docs"/>
+  <property name="build.javadoc"  value="${build.home}/api-java"/>
 
+  <!-- The layout of the sources directory -->
+  <property name="source.home"    value="${basedir}"/>
+  <property name="source.java"    value="${source.home}/java"/>
+  <property name="source.docs"    value="${source.home}/docs"/>
 
-<!-- ========== External Dependencies ===================================== -->
-
-
-  <!-- The directories corresponding to your necessary dependencies -->
-  <property name="junit.home"              value="/usr/local/junit3.5"/>
-
-
-<!-- ========== Derived Values ============================================ -->
-
-
-  <!-- The locations of necessary jar files -->
-  <property name="tomcat-util.jar"  value="../util/build/lib/tomcat-util.jar"/>
-  <property name="junit.jar"        value="${junit.home}/junit.jar"/>
-
-
-<!-- ========== Component Declarations ==================================== -->
-
-
-  <!-- The name of this component -->
-  <property name="component.name"          value="webapp"/>
-
-  <!-- The title of this component -->
-  <property name="component.title"         value="Webapp"/>
-
-  <!-- The current version number of this component -->
-  <property name="component.version"       value="1.0"/>
-
-  <!-- The base directory for compilation targets -->
-  <property name="build.home"              value="build"/>
-
-  <!-- The base directory for component configuration files -->
-  <property name="conf.home"               value="conf"/>
-
-  <!-- The base directory for component sources -->
-  <property name="source.home"             value="java"/>
-
-  <!-- The base directory for unit test sources -->
-  <property name="test.home"               value="test"/>
-
-<!-- ========== Compiler Defaults ========================================= -->
-
-
-  <!-- Should Java compilations set the 'debug' compiler option? -->
-  <property name="compile.debug"           value="true"/>
-
-  <!-- Should Java compilations set the 'deprecation' compiler option? -->
-  <property name="compile.deprecation"     value="false"/>
-
-  <!-- Should Java compilations set the 'optimize' compiler option? -->
-  <property name="compile.optimize"        value="true"/>
-
-    <!-- default locations -->
-    <property name="tomcat33.home" 
-	      location="../../jakarta-tomcat/build/tomcat" />
-    <property name="catalina.home" 
-	      location="../../jakarta-tomcat-4.0/build" />
-
-  <!-- Construct compile classpath -->
-  <path id="compile.classpath">
-    <pathelement location="${build.home}/classes"/>
-    <pathelement location="${tomcat-util.jar}"/>
+  <!-- Classpath where we need to find stuff (no matter what) -->
+  <path id="classpath">
+    <pathelement location="${build.classes.dir}"/>
     <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
     <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
   </path>
 
 
-<!-- ========== Test Execution Defaults =================================== -->
+<!-- === PREPARATION AND GLOBAL TASKS ==================================== -->
 
+  <!--
+    Prepare the build directory creating all its subdirectories
+    and check for Tomcat 4 and Xalan in the classpath
+  -->
+  <target
+      name="prepare"
+      description="Prepare the build tree and check classes">
+    
+    <!-- Dump some messages about what we're going to do -->
+    <echo message="Building ${ant.project.name} (version ${version})"/>
+    <echo message="- source path: ${basedir}"/>
+    <echo message="- target path: ${targdir}"/>
 
-  <!-- Construct unit test classpath -->
-  <path id="test.classpath">
-    <pathelement location="${build.home}/classes"/>
-    <pathelement location="${build.home}/tests"/>
-    <pathelement location="${tomcat-util.jar}"/>
-    <pathelement location="${junit.jar}"/>
-  </path>
-
-  <!-- Should all tests fail if one does? -->
-  <property name="test.failonerror"        value="true"/>
-
-  <!-- The test runner to execute -->
-  <property name="test.runner"             value="junit.textui.TestRunner"/>
-  <property name="test.entry" value="org.apache.coyote.TestAll"/>
-
-
-<!-- ========== Detection and Reports ===================================== -->
-
-
-    <target name="report-tc4" if="tomcat4.detect" >
-	<echo message="Tomcat4 detected "  />
-    </target>
-
-    <target name="report" depends="report-tc4" />
-
-
-<!-- ========== Executable Targets ======================================== -->
-
-
-  <target name="init"
-   description="Initialize and evaluate conditionals">
-    <echo message="-------- ${component.title} ${component.version} --------"/>
-    <filter  token="name"                  value="${component.name}"/>
-    <filter  token="version"               value="${component.version}"/>
-  </target>
-
-
-  <target name="prepare" depends="init"
-   description="Prepare build directory">
+    <!-- Create some directories -->
     <mkdir dir="${build.home}"/>
-    <mkdir dir="${build.home}/classes"/>
-    <mkdir dir="${build.home}/conf"/>
-    <mkdir dir="${build.home}/docs"/>
-    <mkdir dir="${build.home}/docs/api-java"/>
-    <mkdir dir="${build.home}/lib"/>
-    <mkdir dir="${build.home}/tests"/>
-    <available property="tomcat4.detect" file="${catalina.home}/server/lib/catalina.jar" />
+
+    <!-- Check if we can find Container class in the classpath -->
+    <available
+        property="avail.tomcat"
+        classname="org.apache.catalina.Container">
+      <classpath refid="classpath"/>
+    </available>
+
+    <!-- Check if we can find the XSLTProcessor class in the classpath -->
+    <available
+        property="avail.xalan"
+        classname="org.apache.xalan.xslt.Process">
+      <classpath refid="classpath"/>
+    </available>
   </target>
 
+  <!--
+    Do-everything target: We want to build docs, javadocs, and compile
+    our sources all in one step...
+  -->
+  <target
+      name="all"
+      description="Build everything"
+      depends="compile,docs,javadoc"/>
 
-  <target name="static" depends="prepare"
-   description="Copy static files to build directory">
-    <tstamp/>
-    <!--
-    <copy  todir="${build.home}/conf" filtering="on">
-      <fileset dir="${conf.home}" includes="*.MF"/>
-    </copy>
-    -->
+
+<!-- === COMPILATION TASKS =============================================== -->
+
+  <!--
+    Check if we found the Tomcat 4.0 classes in our classpath and fail
+    miserably (don't even try to compile) if we didn't.
+  -->
+  <target
+      name="compile.check"
+      depends="prepare"
+      description="Fail build if we don't find Tomcat 4.0"
+      unless="avail.tomcat">
+    
+    <!-- Just jump out -->
+    <fail message="Cannot find Tomcat 4.0 classes"/>
   </target>
 
+  <!--
+    Create the directory where classes will be compiled into, then compile
+    our sources, copy over all non-java files, and build up the final JAR.
+  -->
+  <target
+      name="compile"
+      depends="compile.check"
+      description="Compile the WARP connector"
+      if="avail.tomcat">
 
-  <target name="compile"
-   depends="static,report"
-   description="Compile Webapp components">
-    <javac  srcdir="${source.home}"
-           destdir="${build.home}/classes"
-             debug="${compile.debug}"
-       deprecation="${compile.deprecation}"
-          optimize="${compile.optimize}">
-      <classpath refid="compile.classpath"/>
+    <!-- Create the directory where we're going to store the classes -->
+    <mkdir dir="${build.classes}"/>
+
+    <!-- Compile our sources -->
+    <javac
+        srcdir="${source.java}"
+        destdir="${build.classes}">
+      <classpath refid="classpath"/>
     </javac>
-    <copy    todir="${build.home}/classes" filtering="on">
-      <fileset dir="${source.home}" excludes="**/*.java"/>
+
+    <!-- Copy all non-java files into the target directory -->
+    <copy
+        todir="${build.classes}">
+      <fileset
+          dir="${source.java}">
+        <exclude name="**/*.java"/>
+      </fileset>
     </copy>
-    <jar    jarfile="${build.home}/lib/tomcat-warp.jar"
-            basedir="${build.home}/classes" />
+
+    <!-- Build up our JAR file -->
+    <jar
+        jarfile="${build.jar}"
+        basedir="${build.classes}" />
   </target>
 
 
-  <target name="compile.tests" depends="compile"
-   description="Compile unit test cases">
-    <javac  srcdir="${test.home}"
-           destdir="${build.home}/tests"
-             debug="${compile.debug}"
-       deprecation="${compile.deprecation}"
-          optimize="${compile.optimize}">
-      <classpath refid="test.classpath"/>
-    </javac>
-    <copy    todir="${build.home}/tests" filtering="on">
-      <fileset dir="${test.home}" excludes="**/*.java"/>
-    </copy>
+<!-- === DOCUMENT GENERATION TASKS ======================================= -->
+
+  <!--
+    Check if we found Xalan in our classpath. We require Xalan because it has
+    some nifty functions that we use throughout the XSLT (and also because
+    we want people to eat our own food, right?)
+  -->
+  <target
+      name="docs.check"
+      depends="prepare"
+      description="Fail if we don't find Xalan"
+      unless="avail.xalan">
+    
+    <!-- Just jump out -->
+    <fail message="Cannot find the Apache Xalan XSLT processor"/>
   </target>
 
+  <target
+      name="docs"
+      depends="docs.check"
+      description="Create Documentation">
 
-  <target name="clean"
-   description="Clean build and distribution directories">
-    <delete    dir="${build.home}"/>
-  </target>
+    <!-- Create the directory where we're going to store the docs -->
+    <mkdir dir="${build.docs}"/>
 
+    <!-- Add some style to our otherwise  utterly ugly XML files -->
+    <style
+        basedir="${source.docs}"
+        destdir="${build.docs}"
+        style="${source.docs}/style.xsl"
+        includes="**.xml"/>
 
-  <target name="all" depends="clean,compile"
-   description="Clean and compile all components"/>
-
-
-  <target name="javadoc" depends="prepare"
-   description="Create Java API documentation">
-    <javadoc sourcepath="${source.home}"
-                destdir="${build.home}/docs/api-java"
-           packagenames="org.apache.*"
-                 author="true"
-                private="true"
-                version="true"
-               doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;"
-            windowtitle="${component.title} (Version ${component.version})"
-                 bottom="Copyright (c) 2001-2002 - Apache Software Foundation">
-      <classpath refid="compile.classpath"/>
-    </javadoc>
-  </target>
-
-  <target name="docs" depends="prepare"
-   description="Create Documentation">
-    <copy todir="${build.home}/docs" >
-      <fileset dir="./docs">
+    <!-- Copy all relevant (non processed) files from the sources -->
+    <copy
+        todir="${build.docs}" >
+      <fileset dir="${source.docs}">
         <exclude name="**.xml"/>
         <exclude name="**.xsl"/>
         <exclude name="**.idx"/>
         <exclude name="**/images/originals/**"/>
       </fileset>
     </copy>
-
-    <style
-      basedir="./docs"
-      destdir="${build.home}/docs"
-      style="./docs/style.xsl"
-      includes="**.xml"
-    />
   </target>
 
 
+<!-- === JAVADOC TASKS =================================================== -->
 
-<!-- ========== Unit Test Targets ========================================= -->
-
-
-  <target name="test"  depends="compile.tests" if="test.entry"
-   description="Run all unit test cases">
-      <!--
-      <junit printsummary="yes" fork="on" haltonfailure="yes">
-      	<formatter type="plain" usefile="false"/>
-      	<test name="${test.entry}"/>
-        <classpath refid="test.classpath"/>
-      </junit>
-      -->
-
-      <java classname="${test.runner}" fork="yes"
-       failonerror="${test.failonerror}">
-        <jvmarg value="${java.protocol.handler.pkgs}"/>
-        <arg value="${test.entry}"/>
-        <classpath refid="test.classpath"/>
-      </java>
+  <!--
+    Check if we found the Tomcat 4.0 classes in our classpath and echo a
+    message if we didn't find it (warnings are allright, ugly, but OK).
+  -->
+  <target
+      name="javadoc.check"
+      depends="prepare"
+      description="Warn if we didn't find Tomcat 4.0"
+      unless="avail.tomcat">
+    
+    <!-- Just output a simple warning message -->
+    <echo message="Cannot find Tomcat 4.0. Warnings in JavaDOC are ok"/>
   </target>
 
+  <!--
+    Run JavaDOC over our set of java sources.
+  -->
+  <target
+      name="javadoc"
+      depends="prepare"
+      description="Create Java API documentation">
+
+    <!-- Create the directory where we're going to store the docs -->
+    <mkdir dir="${build.javadoc}"/>
+
+    <!-- Run JavaDoc -->
+    <javadoc
+        sourcepath="${source.java}"
+        destdir="${build.javadoc}"
+        packagenames="org.apache.catalina.connector.warp"
+        author="true"
+        private="false"
+        version="true"
+        doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;"
+        windowtitle="${component.title} (Version ${component.version})"
+        bottom="Copyright (c) 2001-2002 - Apache Software Foundation">
+      <classpath refid="classpath"/>
+    </javadoc>
+  </target>
 
 </project>
+
+
