@@ -147,7 +147,6 @@ static int jk2_map_default_add(jk_env_t *env, jk_map_t *m,
                                const char *name, void *value)
 {
     int rc = JK_FALSE;
-    int i;
     jk_map_private_t *mPriv;
 
     if( name==NULL ) 

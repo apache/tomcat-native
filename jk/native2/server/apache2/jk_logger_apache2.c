@@ -134,9 +134,7 @@ static int JK_METHOD jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
         return JK_FALSE;
     }
     
-#ifdef WIN32
-    rc = _vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
-#elif defined(NETWARE) /* until we get a vsnprintf function */
+#if defined(NETWARE) /* until we get a vsnprintf function */
     /* XXX Can we use a pool ? */
     /* XXX It'll go away with env and per thread data !! */
     buf = (char *) malloc(HUGE_BUFFER_SIZE);

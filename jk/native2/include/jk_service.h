@@ -267,7 +267,7 @@ struct jk_ws_service {
 
     /** printf style output. Formats in the tmp buf, then calls write
      */
-    void (*jkprintf)( struct jk_env *env, struct jk_ws_service *s, char *frm,... );
+    void (JK_METHOD *jkprintf)( struct jk_env *env, struct jk_ws_service *s, char *frm,... );
     
     /*
      * Callbacks into the web server.  For each, the first argument is
@@ -277,12 +277,12 @@ struct jk_ws_service {
 
     /* Initialize the service structure
      */
-    int (*init)( struct jk_env *env, jk_ws_service_t *_this,
+    int (JK_METHOD *init)( struct jk_env *env, jk_ws_service_t *_this,
                  struct jk_worker *w, void *serverObj);
 
     /* Post request cleanup.
      */
-    void (*afterRequest)( struct jk_env *env, jk_ws_service_t *_this );
+    void (JK_METHOD *afterRequest)( struct jk_env *env, jk_ws_service_t *_this );
     
     /*
      * Set the response head in the server structures. This will be called
