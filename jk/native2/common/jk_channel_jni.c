@@ -139,7 +139,6 @@ static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
                       "channel_jni.init() no VM found\n" );
         if( jniW->worker != NULL ) {
             jniW->worker->mbean->disabled=JK_TRUE;
-            jniW->worker->mbean->initialize=60;
         }
         return JK_ERR;
     }
@@ -614,7 +613,7 @@ static int JK_METHOD jk2_channel_jni_status(jk_env_t *env,
 {
 
     jk_channel_jni_private_t *jniCh=_this->_privatePtr;
-    if ( jniCh->status != JNI_TOMCAT_STARTED && worker->mbean->initialize) {
+    if ( jniCh->status != JNI_TOMCAT_STARTED) {
         jniCh->status = jk_jni_status_code;
         if (jniCh->status != JNI_TOMCAT_STARTED)
             return JK_ERR;
@@ -660,7 +659,6 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     wEnv->addChannel( env, wEnv, ch );
 
     result->invoke=jk2_channel_jni_invoke;
-    ch->worker->mbean->initialize = 60;
 
     return JK_OK;
 }

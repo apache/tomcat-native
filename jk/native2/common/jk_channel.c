@@ -84,10 +84,6 @@ int JK_METHOD jk2_channel_setAttribute(jk_env_t *env,
         ch->mbean->disabled=atoi( value );
         if( ch->worker!=NULL)
         ch->worker->mbean->disabled=ch->mbean->disabled;
-    } else if( strcmp( "init", name ) == 0 ) {
-        ch->worker->mbean->initialize=atoi( value );
-        if( ch->worker!=NULL)
-        ch->worker->mbean->disabled=ch->mbean->disabled;
     } else {
 	if( ch->worker!=NULL ) {
             return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );

@@ -85,7 +85,6 @@
 
 typedef struct {
     struct  jk_mutex *cs;
-    int     initializing;
     int     attempts;
     int     recovery;
     int     timeout;
@@ -334,35 +333,12 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         /* Since there is potential worker state change
          * make the find best worker call thread safe 
          */
-        if (!lb_priv->initializing) {
-            if (lb_priv->cs != NULL)
-                lb_priv->cs->lock(env, lb_priv->cs);
-            rec=jk2_get_most_suitable_worker(env, lb, s, attempt);
+        if (lb_priv->cs != NULL)
+            lb_priv->cs->lock(env, lb_priv->cs);
+        rec=jk2_get_most_suitable_worker(env, lb, s, attempt);
 
-            if (lb_priv->cs != NULL)
-                lb_priv->cs->unLock(env, lb_priv->cs);
-            if (!rec && lb_priv->timeout) {
-                time_t now = time(NULL);
-                if ((int)(now - lb_priv->error_time) < lb_priv->timeout) {
-#ifdef HAS_APR
-                    apr_thread_yield();
-#endif
-                    continue;
-                }
-            }
-            else
-                lb_priv->error_time = time(NULL);
-        }
-        else if (!rec){
-            /* If we are initializing the service wait until
-             * the initialization finishes or times out 
-             */
-            if (lb->cs != NULL) {
-                lb->cs->lock(env, lb->cs);
-                lb->cs->unLock(env, lb->cs);
-            }
-            continue;
-        }
+        if (lb_priv->cs != NULL)
+            lb_priv->cs->unLock(env, lb_priv->cs);
         attempt++;
         
         s->is_recoverable_error = JK_FALSE;
@@ -405,50 +381,21 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         s->jvm_route = rec->route;
 
         s->realWorker = rec;
-        if (rec->mbean->initialize && !lb_priv->initializing && lb->cs != NULL) {
-            /* If the worker has not been called yet serialize the call */
-            lb->cs->lock(env, lb->cs);
-            lb_priv->initializing = JK_TRUE;
-            rec->error_time = time(NULL);
-        }
+
         rc = rec->service(env, rec, s);
 
         if(rc==JK_OK) {                        
             rec->in_error_state = JK_FALSE;
             rec->error_time     = 0;
-            /* Set the initialized flag to TRUE if that was the first call */
-            if (rec->mbean->initialize && lb->cs != NULL) {
-                rec->mbean->initialize = 0;
-                lb_priv->initializing = JK_FALSE;
-                lb->cs->unLock(env, lb->cs);
-            }
             return JK_OK;
         }
 
-        if (rec->mbean->initialize && lb->cs != NULL) {
-            time_t now = time(NULL);
-            /* In the case of initialization timeout disable the worker */
-            if ((int)(now - rec->error_time) > rec->mbean->initialize) {
-                rec->mbean->disabled = JK_TRUE;
-                lb_priv->initializing = JK_FALSE;
-                s->is_recoverable_error = JK_FALSE;
-                env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                          "lb_worker.service() worker init timeout for %s\n",
-                          rec->channelName);
-                lb->cs->unLock(env, lb->cs);                
-            }
-            else {
-#ifdef HAS_APR
-                apr_thread_yield();
-#endif
-                continue;
-            }
-        }
         /* If this is a browser connection error dont't check other
          * workers.             
          */
         if (rc == JK_HANDLER_ERROR) {
-
+            rec->in_error_state = JK_FALSE;
+            rec->error_time     = 0;
             return JK_HANDLER_ERROR;
         }
 
