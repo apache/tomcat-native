@@ -13,10 +13,79 @@
 
 <body>
 
-<section name="Work in progress">
-To be finished!
+<section name="Introduction">
+<p>
+A <b>Tomcat worker</b> is a Tomcat instance that is waiting to execute servlets or any other content
+on behalf of some web server. For example, we can have a web server such as
+Apache forwarding servlet requests to a Tomcat process (the worker) running behind it.
+</p>
+<p>
+The scenario described above is a very simple one; 
+in fact one can configure multiple Tomcat workers to serve servlets on 
+behalf of a certain web server. 
+The reasons for such configuration can be:
+</p>
+<ul>
+<li>
+We want different contexts to be served by different Tomcat workers to provide a 
+development environment where all the developers share the same web server but
+own a Tomcat worker of their own.
+</li>
+<li>
+We want different virtual hosts served by different Tomcat processes to provide a 
+clear separation between sites belonging to different companies.
+</li>
+<li>
+We want to provide load balancing, meaning run multiple Tomcat workers each on a 
+machine of its own and distribute the requests between them.
+</li>
+</ul>
 
-</section> 
+<p>
+There are probably more reasons for having multiple workers but I guess that this list is enough...
+Tomcat workers are defined in a properties file dubbed <b>workers.properties</b> and this tutorial 
+explains how to work with it.
+</p>
+</section>
+ 
+<section name="Directives">
+<p>Each workers.properties directive consists of three words separated by dot. The first word is always
+<b>worker</b>. The second word is the worker name that can be any name. The worker name reflects the
+name of the <b>jvmRoute</b> defined in Tomcat's server.xml configuration file.
+</p>
+<p>
+<warn>
+The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z][0-9]</b> and is case insensitive.
+</warn>
+</p>
+
+<subsection name="Mandatory directives">
+<p>Mandatory directives are the one that each worker <b>must</b> contain. Without them the worker will
+be unavailable or will missbehave.
+</p>
+<directives>
+<directive name="type" required="true">
+Type of the worker (can be one of ajp13, jni or lb). The type of the worker
+defines the directives that can be applied to the worker.
+</directive>
+</directives>
+</subsection>
+
+<subsection name="AJP13 worker directives">
+<p>AJP13 worker directives are the preferred worker type that JK uses for communication
+between web server and Tomcat. This type of worker uses sockets as communication
+channel.
+</p>
+<directives>
+<directive name="host" required="true">
+Host name or IP address of the backend Tomcat instance. The remote Tomcat must
+support the ajp13 protocol.
+</directive>
+</directives>
+</subsection>
+
+
+</section>
  
 </body>
 </document>
