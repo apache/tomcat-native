@@ -1,248 +1,554 @@
 <html>
-
-<head>
-
-<title>WARP version 0.9</title>
-
-</head>
-
-
-
-<body bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#0000FF" alink="#FF0000">
-
-<table width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
-
-  <tr> 
-
-    <td width="75" align="left"><img src="logo.png" width="70" height="50"></td>
-
-    <td align="center"> <font size="+3">WARP version 0.9</font> <br>
-
-      <b><font size="+1">Web Application Remote-access Protocol</font></b> </td>
-
-    <td align="right" width="75"><img src="logo.png" width="70" height="50"></td>
-
-  </tr>
-
-</table>
-
-<hr>
-
-<h2> Index: </h2>
-
-<ol>
-
-  <li>Preface</li>
-
-  <li>Packet Structure</li>
-
-</ol>
-
-<hr>
-
-<h2>Preface:</h2>
-
-<font color="#FF0000">[NOTE: write a preface describing the objectives of the 
-
-WARP protocol]</font> 
-
-<p>&nbsp;</p>
-
-<hr>
-
-<h2>Packet Structure:</h2>
-
-<p>Every WARP packet has the same structure, three sixteen bits (two octects) 
-
-  values representing the packet header followed by a variable-length data body:</p>
-
-<p align="center"><img src="packet.jpg" width="600" height="29"></p>
-
-<h4 align="left">The REQ field:</h4>
-
-<p align="left">The first sixteen bits in a packets are called &quot;REQ&quot; 
-
-  and this value represents the request identificator for this packet. The WARP 
-
-  protocol allows different requests to be handled at the same time on a shared 
-
-  IO resource (like a socket). This technique is called multiplexing, and it is 
-
-  used to reduce the resources used by the system when handling a request.</p>
-
-<p align="left"><font color="#FF0000">[NOTE: expand on why multiplexing requests 
-
-  reduces resource utilization]</font></p>
-
-<p align="left">Usually, this field contains the ID of the request, but two values 
-
-  are reserved by the WARP protocol to handle specific cases: The 0x0000 value 
-
-  is used to set up the connection (see below, Connection Handling) and the 0xFFFF 
-
-  value is used to terminate the connection in case of errors (see below, Connection 
-
-  Termination). Thus, the values left for request handling range between 0x0001 
-
-  and 0xFFFE, allowing a total of 65533 requests handled at the same time over 
-
-  a single IO resource (see below, Request Handling).</p>
-
-<h4 align="left">The TYP field:</h4>
-
-<p align="left">The second set of sixteen bits in a packets is called &quot;TYP&quot;. 
-
-  This value represents represents the data contained in the packet. Reference 
-
-  tables for these values are given below for the three possible states of the 
-
-  connection: Connection Handling, Connection Termination and Request Handling.</p>
-
-<h4 align="left">The LEN field:</h4>
-
-<p align="left">The third set of sixteen bits in a packets is called &quot;LED&quot;. 
-
-  This value specifies the number of octets present in the DTA field. This value 
-
-  can range between 0x0000 and 0xFFFF, allowing a length between 0 and 65535 octets 
-
-  for the DTA field.</p>
-
-<h4 align="left">The DTA field:</h4>
-
-<p align="left">The last part of a WARP packet is called &quot;DTA&quot; and contains 
-
-  the actual data transmitted in the packet. The length of this part is determined 
-
-  by the value specified in the &quot;LEN&quot; field of the packet, and can be 
-
-  zero (no DTA present) when LEN is equal to 0x0000.</p>
-
-<p align="left">The format of the data contained in this field depends on the 
-
-  value of the TYP field, tables are provided below.</p>
-
-<p align="left">Three kinds of data are allowed in the DTA field and these are:</p>
-
-<ul>
-
-  <li>VALUE: a value is represented by 16 bits (2 octets) and can range between 
-
-    0x0000 and 0xFFFF. Depending on the value of the TYP field, a value can be 
-
-    interpreted as an unsigned value (between 0 and 65535) or as a signed value 
-
-    (between -32768 and 32767).</li>
-
-</ul>
-
-<ul>
-
-  <li>STRING: a string is an array of characters always encoded following the 
-
-    ISO-8859-1 standard. A string is value is represented by a 16 bits (2 octets) 
-
-    value indicating the encoded string length and the actual octets of the encoded 
-
-    characters.</li>
-
-</ul>
-
-<ul>
-
-  <li>RAW: sometimes it is useful to send raw data within packets (for binary 
-
-    data transmission, or to avoid multiple string encoding and decoding). Raw 
-
-    data is transmitted as-is (octets received from an HTTP client are transmitted 
-
-    to a WARP server, and vice-versa), without any alteration.</li>
-
-</ul>
-
-<hr>
-
-<h2>Connection Handling:</h2>
-
-<p>Once a connection between WARP server and client has been estabilished (in 
-
-  example, a socket is opened), before any request can be handled, the client 
-
-  and server must negotiate their operation parameter. This is done sending packets 
-
-  with the special CON value of 0x0000. Here is a description of what happens 
-
-  between the client and the server:</p>
-
-<img src="connection.jpg" width="250" height="300" align="right"> 
-
-<ol>
-
-  <li>The client opens a connection to the WARP server and waits for a packet.</li>
-
-  <li>The WARP server issues either a AUTHENTICATE or a WELCOME message.</li>
-
-  <li>The client checks the protocol version implemented by the server (interrupting 
-
-    the connection if not compatible with a REQ=0xFFFF packet), and sends a LOGIN 
-
-    message if this is required to initiate the connection.</li>
-
-  <li>If necessary the server checks the LOGIN message issued by the client, and 
-
-    replies with an ACKNOWLEDGE or ERROR message.</li>
-
-  <li>After authentication, the client transmits its configuration to the WARP 
-
-    server, enumerating the virtual hosts it defines with HOST packets, and the 
-
-    web-applications relative to the virtual host with APPLICATION packets.</li>
-
-  <li>For each HOST and APPLICATION packet received, the server transmits an ACKNOWLEDGE 
-
-    packet with a unique ID for each host and application, or replies with an 
-
-    ERROR message in case the configuration specified by the client is not acceptable.</li>
-
-  <li>When the client finishes transmitting all its configuration, the connection 
-
-    is initalized, and requests can be processed. For each HTTP request received, 
-
-    the client sends a REQUEST packet, with the appropriate host and application 
-
-    IDs received during the initialization stage.</li>
-
-  <li>The server replies to a REQUEST packet with either an ACKNOWLEDGE message 
-
-    containing the current request ID (that will be used as REQ for the packets 
-
-    transmitted in the request stage), or with an ERROR message.</li>
-
-  <li>In case the server replies to the REQUEST message with an ERROR, the client 
-
-    can safely keep the connection open, transmitting other REQUEST packets to 
-
-    the server. When an ERROR message is issued as a reply to the client for any 
-
-    other message type, the connection must be terminated and closed.</li>
-
-</ol>
-
-<p>NOTE: At any time the connection can be interrupted issuing a FATAL error message 
-
-  (REQ=0x0FFFF) both by the client and the server.</p>
-
-<hr>
-
-<center>
-
-  <font size="-1">Copyright &copy; 2000-2001, <a href="http://www.apache.org/">The 
-
-  Apache Software Foundation</a>. All Rights Reserved.</font> 
-
-</center>
-
-</body>
-
+ <head>
+  <title>The WARP Protocol Version 1.0</title>
+ </head>
+ <body bgcolor="#ffffff" text="#000000" link="#0000ff" vlink="#0000aa">
+
+  <div align="center">
+   <p><font size="+2"><b>The WARP Protocol Version 1.0</b></font></p>
+  </div>
+
+  <div align="left">
+   <p><font size="+1"><b>Data Packet Structure</b></font></p>
+  </div>
+  
+  <div align="justify">
+   <p>
+    All data sent on the full duplex connection between the client and server
+    MUST follow this structure: 
+   </p>
+
+   <ul>
+    <li>
+     Data is sent in packets formed by a header describing some info about the
+     packet itself followed by a data length and data payload.
+    </li>
+    <li>
+     All packets MUST follow big endian style ("network order").
+    </li>
+    <li>
+     The packet header is always 24 bits long and follow this format:
+     <ul>
+      <li>
+       Octet 0 (8 bits) contains the packet type.
+      </li>
+      <li>
+       Octets 1-2 (16 bits) set the length of the data payload carried by the
+       packet itself in numbers octets and MAY be zero.
+      </li>
+      <li>
+       If the length of the data payload is more than zero, octets from 3 to
+       (length + 3) contain the payload data or content.
+      </li>
+     </ul>
+    </li>
+   </ul>
+
+   <p>
+    <center>
+     <table border="1" cellspacing="0" cellpadding="2" width="80%">
+      <tr>
+       <td align="center" bgcolor="#333333" colspan="15" width="100%">
+        <font color="#ffffff" size="+1"><b>WARP Packet</b></font>
+       </td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#666666" width="10%">Octet</td>
+       <td align="center" bgcolor="#6666ff" colspan="5" width="20%">1</td>
+       <td align="center" bgcolor="#ff6666" colspan="3" width="20%">2</td>
+       <td align="center" bgcolor="#ff6666" colspan="3" width="20%">3</td>
+       <td align="center" bgcolor="#66ff66" colspan="3" width="30%">4 .. (length+3)</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#999999" width="10%">Bits</td>
+       <td align="center" bgcolor="#9999ff" width="3%">0</td>
+       <td align="center" bgcolor="#9999ff" width="3%">1</td>
+       <td align="center" bgcolor="#9999ff" width="8%">..</td>
+       <td align="center" bgcolor="#9999ff" width="3%">6</td>
+       <td align="center" bgcolor="#9999ff" width="3%">7</td>
+       <td align="center" bgcolor="#ff9999" width="3%">0</td>
+       <td align="center" bgcolor="#ff9999" width="3%">1</td>
+       <td align="center" bgcolor="#ff9999" width="28%" colspan="2">..</td>
+       <td align="center" bgcolor="#ff9999" width="3%">14</td>
+       <td align="center" bgcolor="#ff9999" width="3%">15</td>
+       <td align="center" bgcolor="#99ff99" width="3%">0</td>
+       <td align="center" bgcolor="#99ff99" width="3%">1</td>
+       <td align="center" bgcolor="#99ff99" width="24%">..</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#cccccc" width="10%">Description</td>
+       <td align="center" bgcolor="#ccccff" colspan="5" width="20%">Packet Type</td>
+       <td align="center" bgcolor="#ffcccc" colspan="6" width="40%">Payload Length</td>
+       <td align="center" bgcolor="#ccffcc" colspan="3" width="30%">Payload Data (Content)</td>
+      </tr>
+     </table>
+    </center>
+   </p>
+  </div>
+
+  <div align="left">
+   <p><font size="+1"><b>Payload Structure</b></font></p>
+  </div>
+
+  <div align="justify">
+   <p>
+    The payload of a packet can be structured in two ways, depending on its type: the
+    packet can either contain raw data (such as an HTTP request or response body) or
+    a combination of numeric values and strings.
+   </p>
+   <p>
+    By definition a numeric value is a 32 bit signed integer represented in network byte
+    order (the value of 6 decimal would be represented as  000000000000000000000000000000000110
+    binary (110 preceeded by 29 zeroes).
+   </p>
+   <p>
+    A string is defined in the following way: the first two octets represent the string
+    length as an unsigned 16 bits value. This value indicates the number of octets that
+    compose the encoded string. The string is not NULL terminated and is encoded following
+    the UTF-8 standard. For example the string "fooBar" would be represented as:
+   </p>
+
+   <p>
+    <center>
+     <table border="1" cellspacing="0" cellpadding="2" width="80%">
+      <tr>
+       <td align="center" bgcolor="#333333" colspan="13" width="100%">
+        <font color="#ffffff" size="+1"><b>String</b></font>
+       </td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#666666" width="12%">Octet</td>
+       <td align="center" bgcolor="#6666ff" colspan="3" width="11%">1</td>
+       <td align="center" bgcolor="#6666ff" colspan="3" width="11%">2</td>
+       <td align="center" bgcolor="#66ff66" colspan="1" width="11%">3</td>
+       <td align="center" bgcolor="#66ff66" colspan="1" width="11%">4</td>
+       <td align="center" bgcolor="#66ff66" colspan="1" width="11%">5</td>
+       <td align="center" bgcolor="#66ff66" colspan="1" width="11%">6</td>
+       <td align="center" bgcolor="#66ff66" colspan="1" width="11%">7</td>
+       <td align="center" bgcolor="#66ff66" colspan="1" width="11%">8</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#999999" width="12%">Bits</td>
+       <td align="center" bgcolor="#9999ff" width="3%">0</td>
+       <td align="center" bgcolor="#9999ff" width="3%">1</td>
+       <td align="center" bgcolor="#9999ff" width="10%" colspan="2">..</td>
+       <td align="center" bgcolor="#9999ff" width="3%">14</td>
+       <td align="center" bgcolor="#9999ff" width="3%">15</td>
+       <td align="center" bgcolor="#99ff99" colspan="6" width="66%">..</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#cccccc" width="12%">Content</td>
+       <td align="center" bgcolor="#ccccff" colspan="6" width="22%">110 bin = 6 dec</td>
+       <td align="center" bgcolor="#ccffcc" colspan="1" width="11%">f</td>
+       <td align="center" bgcolor="#ccffcc" colspan="1" width="11%">o</td>
+       <td align="center" bgcolor="#ccffcc" colspan="1" width="11%">o</td>
+       <td align="center" bgcolor="#ccffcc" colspan="1" width="11%">B</td>
+       <td align="center" bgcolor="#ccffcc" colspan="1" width="11%">a</td>
+       <td align="center" bgcolor="#ccffcc" colspan="1" width="11%">r</td>
+      </tr>
+     </table>
+    </center>
+   </p>
+  </div>
+
+  <div align="left">
+   <p><font size="+1"><b>Packet Types</b></font></p>
+  </div>
+  
+  <div align="justify">
+   <p>
+    The following is a list of packet types and their relative expected responses:
+   </p>
+
+   <p>
+    <center>
+     <table border="1" cellspacing="0" cellpadding="2" width="80%">
+      <tr>
+       <td align="center" bgcolor="#333333" colspan="5" width="100%">
+        <font color="#ffffff" size="+1"><b>Packet/States Table</b></font>
+       </td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#666666" width="10%">Name</td>
+       <td align="center" bgcolor="#999999" width="10%">Type</td>
+       <td align="center" bgcolor="#666666" width="5%">Originator</td>
+       <td align="center" bgcolor="#999999" width="50%">Description</td>
+       <td align="center" bgcolor="#666666" width="25%">Expects</td>
+      </tr>
+
+      <tr>
+       <td align="center" bgcolor="#ff6666" width="10%">ERROR</td>
+       <td align="center" bgcolor="#ff9999" width="10%">0x00</td>
+       <td align="center" bgcolor="#ff6666" width="5%">Client Server</td>
+       <td align="center" bgcolor="#ff9999" width="50%">One end of the peer notifies the other of a fatal connection error</td>
+       <td align="center" bgcolor="#ff6666" width="25%">N/A</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#ff9999" width="10%">DISCONNECT</td>
+       <td align="center" bgcolor="#ffcccc" width="10%">0x01</td>
+       <td align="center" bgcolor="#ff9999" width="5%">Client Server</td>
+       <td align="center" bgcolor="#ffcccc" width="50%">One end of the peer notifies the oter that the connections is going to be closed</td>
+       <td align="center" bgcolor="#ff9999" width="25%">N/A</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#66ff66" width="10%">AUTHENTICATE</td>
+       <td align="center" bgcolor="#99ff99" width="10%">0x02</td>
+       <td align="center" bgcolor="#66ff66" width="5%">Server</td>
+       <td align="center" bgcolor="#99ff99" width="50%">The server requires the client to authenticate</td>
+       <td align="center" bgcolor="#66ff66" width="25%">LOGIN</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#99ff99" width="10%">LOGIN</td>
+       <td align="center" bgcolor="#ccffcc" width="10%">0x03</td>
+       <td align="center" bgcolor="#99ff99" width="5%">Client</td>
+       <td align="center" bgcolor="#ccffcc" width="50%">The client tries to authenticate itself</td>
+       <td align="center" bgcolor="#99ff99" width="25%">HELLO</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#66ff66" width="10%">HELLO</td>
+       <td align="center" bgcolor="#99ff99" width="10%">0x04</td>
+       <td align="center" bgcolor="#66ff66" width="5%">Server</td>
+       <td align="center" bgcolor="#99ff99" width="50%">Server welcomes the client</td>
+       <td align="center" bgcolor="#66ff66" width="25%">HELLO</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#99ff99" width="10%">HOST</td>
+       <td align="center" bgcolor="#ccffcc" width="10%">0x05</td>
+       <td align="center" bgcolor="#99ff99" width="5%">Client</td>
+       <td align="center" bgcolor="#ccffcc" width="50%">The client transmits the definition of a virtual host</td>
+       <td align="center" bgcolor="#99ff99" width="25%">HOSTID</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#66ff66" width="10%">HOSTID</td>
+       <td align="center" bgcolor="#99ff99" width="10%">0x06</td>
+       <td align="center" bgcolor="#66ff66" width="5%">Server</td>
+       <td align="center" bgcolor="#99ff99" width="50%">The server transmits the HOST ID associated with the virtual host</td>
+       <td align="center" bgcolor="#66ff66" width="25%">APPL</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#99ff99" width="10%">APPL</td>
+       <td align="center" bgcolor="#ccffcc" width="10%">0x07</td>
+       <td align="center" bgcolor="#99ff99" width="5%">Client</td>
+       <td align="center" bgcolor="#ccffcc" width="50%">The client transmits the definition of a web application</td>
+       <td align="center" bgcolor="#99ff99" width="25%">APPLID, APPLREJ</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#66ff66" width="10%">APPLID</td>
+       <td align="center" bgcolor="#99ff99" width="10%">0x08</td>
+       <td align="center" bgcolor="#66ff66" width="5%">Server</td>
+       <td align="center" bgcolor="#99ff99" width="50%">The server transmits the APPLICATION ID associated with a web application</td>
+       <td align="center" bgcolor="#66ff66" width="25%">HOST, APPL, DONE</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#99ff99" width="10%">APPLREJ</td>
+       <td align="center" bgcolor="#ccffcc" width="10%">0x09</td>
+       <td align="center" bgcolor="#99ff99" width="5%">Server</td>
+       <td align="center" bgcolor="#ccffcc" width="50%">The server reports that the web application is not available</td>
+       <td align="center" bgcolor="#99ff99" width="25%">HOST, APPL, DONE</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#66ff66" width="10%">DONE</td>
+       <td align="center" bgcolor="#99ff99" width="10%">0x0A</td>
+       <td align="center" bgcolor="#66ff66" width="5%">Client</td>
+       <td align="center" bgcolor="#99ff99" width="50%">The server notifies the end of its configurations</td>
+       <td align="center" bgcolor="#66ff66" width="25%">&nbsp;</td>
+      </tr>
+
+      <tr>
+       <td align="center" bgcolor="#9999ff" width="10%">REQUEST</td>
+       <td align="center" bgcolor="#ccccff" width="10%">0x20</td>
+       <td align="center" bgcolor="#9999ff" width="5%">Client</td>
+       <td align="center" bgcolor="#ccccff" width="50%">The client starts a new request</td>
+       <td align="center" bgcolor="#9999ff" width="25%">&nbsp;</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#6666ff" width="10%">PARAM</td>
+       <td align="center" bgcolor="#9999ff" width="10%">0x21</td>
+       <td align="center" bgcolor="#6666ff" width="5%">Client</td>
+       <td align="center" bgcolor="#9999ff" width="50%">A request parameter</td>
+       <td align="center" bgcolor="#6666ff" width="25%">&nbsp;</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#9999ff" width="10%">HEADER</td>
+       <td align="center" bgcolor="#ccccff" width="10%">0x22</td>
+       <td align="center" bgcolor="#9999ff" width="5%">Client Server</td>
+       <td align="center" bgcolor="#ccccff" width="50%">A peer notifies the other of a MIME header</td>
+       <td align="center" bgcolor="#9999ff" width="25%">&nbsp;</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#6666ff" width="10%">COMPLETE</td>
+       <td align="center" bgcolor="#9999ff" width="10%">0x23</td>
+       <td align="center" bgcolor="#6666ff" width="5%">Client Server</td>
+       <td align="center" bgcolor="#9999ff" width="50%">The client (or the server) notifies that the request (or the response) has been fully transmitted</td>
+       <td align="center" bgcolor="#6666ff" width="25%">READ, RESPONSE, TRANSLATE</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#9999ff" width="10%">READ</td>
+       <td align="center" bgcolor="#ccccff" width="10%">0x24</td>
+       <td align="center" bgcolor="#9999ff" width="5%">Server</td>
+       <td align="center" bgcolor="#ccccff" width="50%">The server requests to the client a chunk of the HTTP request body</td>
+       <td align="center" bgcolor="#9999ff" width="25%">BODY</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#6666ff" width="10%">BODY</td>
+       <td align="center" bgcolor="#9999ff" width="10%">0x25</td>
+       <td align="center" bgcolor="#6666ff" width="5%">Client Server</td>
+       <td align="center" bgcolor="#9999ff" width="50%">The client (or the server) transmits a chunk of an HTTP request (or response) body</td>
+       <td align="center" bgcolor="#6666ff" width="25%">&nbsp;</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#9999ff" width="10%">RESPONSE</td>
+       <td align="center" bgcolor="#ccccff" width="10%">0x26</td>
+       <td align="center" bgcolor="#9999ff" width="5%">Server</td>
+       <td align="center" bgcolor="#ccccff" width="50%">The server transmits the HTTP status of the response</td>
+       <td align="center" bgcolor="#9999ff" width="25%">&nbsp;</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#6666ff" width="10%">ABORT</td>
+       <td align="center" bgcolor="#9999ff" width="10%">0x27</td>
+       <td align="center" bgcolor="#6666ff" width="5%">Client</td>
+       <td align="center" bgcolor="#9999ff" width="50%">The client notifies that a request needs to be aborted</td>
+       <td align="center" bgcolor="#6666ff" width="25%">COMPLETE</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#9999ff" width="10%">TRANSLATE</td>
+       <td align="center" bgcolor="#ccccff" width="10%">0x28</td>
+       <td align="center" bgcolor="#9999ff" width="5%">Server</td>
+       <td align="center" bgcolor="#ccccff" width="50%">The server requests to the client to translate an URI to a file path</td>
+       <td align="center" bgcolor="#9999ff" width="25%">TRANSLATION</td>
+      </tr>
+      <tr>
+       <td align="center" bgcolor="#6666ff" width="10%">TRANSLATION</td>
+       <td align="center" bgcolor="#9999ff" width="10%">0x29</td>
+       <td align="center" bgcolor="#6666ff" width="5%">Client</td>
+       <td align="center" bgcolor="#9999ff" width="50%">The client returns the translation of the requested URI</td>
+       <td align="center" bgcolor="#6666ff" width="25%">&nbsp;</td>
+      </tr>
+     </table>
+    </center>
+   </p>
+  </div>
+
+  <div align="left">
+   <p><font size="+1"><b>Packet Type Details</b></font></p>
+  </div>
+  
+  <div align="justify">
+   <p><b>ERROR</b> 0x00</p>
+   <p>
+    Specifies an unrecoverable protocol error. After the client or the server issues this
+    packet the socket underlying the WARP connection must be closed.<br>
+    This message can be sent at any time by the client or the server.
+    <ul>
+     <li>STRING: A detail message on why the connection must be closed.</li>
+    </ul>
+   </p>
+
+   <p><b>DISCONNECT</b> 0x01</p>
+   <p>
+    The client or the server is going to close the connection (no fatal protocol error).<br>
+    This message can be sent at any time by the client or the server.
+    <ul>
+     <li>STRING: A detail message on why the connection is going to be closed.</li>
+    </ul>
+   </p>
+
+   <p><b>AUTH</b> 0x02</p>
+   <p>
+    When the connection to the server is opened, and the server requires the peer to
+    authenticate itself, this packet is sent to the client containing a challenge used
+    to perform an MD5 hash.
+    <ul>
+     <li>STRING: The challenge string for password hashing.</li>
+    </ul>
+   </p>
+
+   <p><b>LOGIN</b> 0x03</p>
+   <p>
+    After the client receives an AUTH message, the challenge string is appended to the
+    shared secred and the MD5 hashing algorithm is applied to the result. This value is
+    sent back for authentication.
+    <ul>
+     <li>STRING: The MD5 hashed authentication string.</li>
+    </ul>
+   </p>
+
+   <p><b>HELLO</b> 0x04</p>
+   <p>
+    The server welcomes the client issuing this message after the client performed its
+    authentication or after the socket is opened if the server doesn't require authentication.
+    <ul>
+     <li>VALUE: Major protocol revision (in this case 1).</li>
+     <li>VALUE: Minor protocol revision (in this case 0).</li>
+    </ul>
+   </p>
+
+   <p><b>HOST</b> 0x05</p>
+   <p>
+    The client transmits to the server the definition of a virtual host.
+    <ul>
+     <li>STRING: The virtual host name (ex. www.foo.bar).</li>
+     <li>STRING: The virtual host address (ex. 192.168.2.1).</li>
+     <li>VALUE: The virtual host port (ex. 80).</li>
+    </ul>
+   </p>
+
+   <p><b>HOSTID</b> 0x06</p>
+   <p>
+    The server replies to a HOST message specifying a unique HOST ID that will be used further
+    on to identify the virtual host associated with a request.
+    <ul>
+     <li>VALUE: The virtual host identification number.</li>
+    </ul>
+   </p>
+
+   <p><b>APPL</b> 0x07</p>
+   <p>
+    The client transmits to the server the definition of a web application.
+    <ul>
+     <li>VALUE: The HOST ID returned by the HOSTID message under which the application resides.</li>
+     <li>STRING: The web application name (it's WAR filename without extension or directory name).</li>
+     <li>STRING: The root URI path under which the WEB application is deployed.</li>
+    </ul>
+   </p>
+
+   <p><b>APPLID</b> 0x08</p>
+   <p>
+    The server acknowledges the deployment of a web application returning a unique id into
+    its virtual host, and the web application root path (if available).
+    <ul>
+     <li>VALUE: The application unique id within its virtual host.</li>
+     <li>STRING: The web application root path (if not available this is a zero-length string).</li>
+    </ul>
+   </p>
+
+   <p><b>APPLREJ</b> 0x09</p>
+   <p>
+    The server rejects the deployment of a web application.
+    <ul>
+     <li>STRING: A detail message on why the web application was not deployed.</li>
+    </ul>
+   </p>
+
+   <p><b>DONE</b> 0x0A</p>
+   <p>
+    The client indicates that all configurations (virtual hosts and web applications) have been
+    transmitted. The next packet transmitted by the client will be a REQUEST packet.
+    <ul>
+     <li>NO PARAMETERS</li>
+    </ul>
+   </p>
+
+   <p><b>REQUEST</b> 0x20</p>
+   <p>
+    The client initiates transmitting a request. The next packet transmitted by the client will
+    be either a PARAM packet (if parameters are encoded in the request URI) or HEADER packet.
+    <ul>
+     <li>VALUE: The virtual host ID associated with this request.</li>
+     <li>VALUE: The web application ID associated with this request.</li>
+     <li>STRING: The request method (ex. GET, POST...).</li>
+     <li>STRING: The request URI without any parameter (ex. "/webapp/myfile.jsp").</li>
+     <li>STRING: The request protocol (ex. "HTTP/1.0").</li>
+    </ul>
+   </p>
+
+   <p><b>PARAM</b> 0x21</p>
+   <p>
+    The client transmits a request parameter encoded in the URL requested by the client. (Parameters
+    passed in the body of a request must not be parsed). The next packet transmitted by the client
+    will be another PARAM packet, a HEADER packet or a COMPLETE packet.
+    <ul>
+     <li>STRING: The name of the parameter.</li>
+     <li>STRING: The value of the parameter.</li>
+    </ul>
+   </p>
+
+   <p><b>HEADER</b> 0x22</p>
+   <p>
+    When this packet is sent by the client, the header is one of the MIME headers received with the
+    body of the HTTP request. In this case, the next packet sent by the client will be another HEADER
+    packet or a COMPLETE packet.<br>
+    When this packet is sent by the server, the header is a MIME header that will be included in the
+    response body. The next packet sent by the server will be either another HEADER packet, or one of
+    READ, RESPONSE, TRANSLATE or COMPLETE packet.
+    <ul>
+     <li>STRING: The name of the parameter.</li>
+     <li>STRING: The value of the parameter.</li>
+    </ul>
+   </p>
+
+   <p><b>COMPLETE</b> 0x23</p>
+   <p>
+    When this packet is sent by the client, the client means that all headers and parameters associated
+    with a request have been transmitted to the server, and the request can be executed. The control is then
+    given to the server which will issue one of READ, RESPONSE or TRANSLATE packets.<br>
+    When this packet is sent by the server, the server means that the response to the request has been
+    fully transmitted back to the client. The control is then give back to the client which will issue a
+    REQUEST packet when a new request needs to be processed.
+    <ul>
+     <li>NO PARAMETERS</li>
+    </ul>
+   </p>
+
+   <p><b>READ</b> 0x24</p>
+   <p>
+    The server requests to the client to forward a chunk of the request body. The returned request body chunk
+    can be shorter than the requested size, but not bigger.
+    <ul>
+     <li>VALUE: how many bytes in the request body must be transmitted by the client</li>
+    </ul>
+   </p>
+
+   <p><b>BODY</b> 0x25</p>
+   <p>
+    This packet is sent by the client in response to a READ message. The HTTP request body is read up to the
+    requested length and forwarded back to the server.<br>
+    When this packet is sent by the server, the server means to transmit the HTTP request body to the client.
+    <ul>
+     <li>RAW DATA</li>
+    </ul>
+   </p>
+
+   <p><b>RESPONSE</b> 0x26</p>
+   <p>
+    The server initiates transmitting the response back to the client, specifying an HTTP response state, and
+    a detail message for it.
+    <ul>
+     <li>VALUE: The HTTP response status (ex. 404 or 200)</li>
+     <li>STRING: The message associated with the status (ex. "Not Found" or "Ok")</li>
+    </ul>
+   </p>
+
+   <p><b>ABORT</b> 0x27</p>
+   <p>
+    The client indicates to the server that the request needs to be aborted.
+    <ul>
+     <li>STRING: A message indicating why the request has been aborted (may be of zero length).</li>
+    </ul>
+   </p>
+
+   <p><b>TRANSLATE</b> 0x28</p>
+   <p>
+    The server requests to the client to translate a URI into a file path.
+    <ul>
+     <li>STRING: The URI to translate.</li>
+    </ul>
+   </p>
+
+   <p><b>TRANSLATION</b> 0x29</p>
+   <p>
+    The client returns the translation of the requested URI path.
+    <ul>
+     <li>STRING: The translated path (may be of zero length if translation was unsuccessful).</li>
+    </ul>
+   </p>
+
+
+
+
+
+
+
+ </body>
 </html>
-
+      
