@@ -117,6 +117,10 @@ struct wa_application {
     char *rpth;
     /** The local expanded application path (if any). */
     char *lpth;
+    /** The list of allowed (can be served by the web server) URL-patterns. */
+    wa_chain *allw;
+    /** The list of denied (can't be served by the web server) URL-patterns. */
+    wa_chain *deny;
     /** Wether this web-application has been deployed or not. */
     wa_boolean depl;
 };

@@ -96,6 +96,7 @@ typedef struct wa_virtualhost wa_virtualhost;
 typedef struct wa_connection wa_connection;
 
 typedef struct wa_request wa_request;
+typedef struct wa_ssldata wa_ssldata;
 typedef struct wa_hostdata wa_hostdata;
 typedef struct wa_handler wa_handler;
 

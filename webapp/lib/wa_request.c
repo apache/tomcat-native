@@ -106,6 +106,7 @@ const char *wa_ralloc(wa_request **r, wa_handler *h, void *d) {
     req->schm=NULL;
     req->user=NULL;
     req->auth=NULL;
+    req->ssld=NULL;
     req->clen=0;
     req->ctyp="\0";
     req->rlen=0;

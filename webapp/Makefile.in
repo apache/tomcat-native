@@ -113,6 +113,11 @@ apache-2.0-build:
 apache-2.0-clean:
 	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-2.0" MTGT="clean"
 
+apidocs-c-build:
+apidocs-c-clean:
+apidocs-java-build:
+apidocs-java-clean:
+
 template:
 	@ { \
 	    $(ECHO) "" ; \

@@ -84,5 +84,6 @@ else
     echo "option \"--with-apr=[path to APR sources]\""
 fi
 echo "--- Creating WebApp \"configure\" script"
+echo "Creating configure ..."
 autoconf
 echo "--- All done"

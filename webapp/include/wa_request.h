@@ -76,6 +76,20 @@ struct wa_hostdata {
 };
 
 /**
+ * The SSL data structure.
+ */
+struct wa_ssldata {
+    /** The client certificate. */
+    char *cert;
+    /** The cipher algorithm. */
+    char *ciph;
+    /** The SSL session name. */
+    char *sess;
+    /** Number of bits in the key. */
+    int size;
+};
+
+/**
  * The webserver request handler callback structure.
  */
 struct wa_handler {
@@ -126,6 +140,8 @@ struct wa_request {
     char *ctyp;
     /** The number of bytes read out of this request body. */
     long rlen;
+    /** The SSL data structure. */
+    wa_ssldata *ssld;
     /** The current headers table. */
     apr_table_t *hdrs;
 };
