@@ -299,10 +299,6 @@ size=1048576
 [channel.un:unixsocket]
 file=/home1/jakarta/jakarta-tomcat-4.1/dist/work/jk2.socket
 
-[channel.socket:localhost:8019]
-port=8019
-host=127.0.0.1
-
 # define the worker
 [ajp13:unixsocket]
 channel=channel.un:unixsocket
