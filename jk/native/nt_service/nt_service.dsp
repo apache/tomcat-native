@@ -131,6 +131,10 @@ SOURCE=..\common\jk_context.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_uri_worker_map.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_ajp_common.c
 # End Source File
 # End Group
@@ -149,6 +153,10 @@ SOURCE=..\common\jk_global.h
 # Begin Source File
 
 SOURCE=..\common\jk_logger.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_uri_worker_map.h
 # End Source File
 # Begin Source File
 
