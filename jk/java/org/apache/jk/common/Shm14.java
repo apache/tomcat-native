@@ -59,21 +59,13 @@
 
 package org.apache.jk.common;
 
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 
-import java.net.*;
-import java.util.*;
-
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
-
-import org.apache.tomcat.util.threads.*;
-
-import org.apache.jk.core.*;
-import org.apache.jk.apr.*;
-
+import org.apache.jk.core.Msg;
+import org.apache.jk.core.MsgContext;
 import org.apache.tomcat.util.IntrospectionUtils;
 
 /** Shm implementation using JDK1.4 nio.
