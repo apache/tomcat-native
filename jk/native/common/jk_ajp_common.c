@@ -140,6 +140,8 @@ static int sc_for_req_method(const char    *method,
         *sc = SC_M_CHECKOUT;
     } else if(0 == strcmp(method, "UNCHECKOUT")) {
         *sc = SC_M_UNCHECKOUT;
+    } else if(0 == strcmp(method, "SEARCH")) {
+        *sc = SC_M_SEARCH;
     } else {
         rc = JK_FALSE;
     }

@@ -172,7 +172,8 @@ public class Ajp13 {
         "VERSION-CONTROL",
         "CHECKIN",
         "CHECKOUT",
-        "UNCHECKOUT"
+        "UNCHECKOUT",
+        "SEARCH"
     };
 
     // id's for common request headers

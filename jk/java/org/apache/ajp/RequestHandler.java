@@ -153,7 +153,8 @@ public class RequestHandler extends AjpHandler
         "VERSION-CONTROL",
         "CHECKIN",
         "CHECKOUT",
-        "UNCHECKOUT"
+        "UNCHECKOUT",
+        "SEARCH"
     };
     
     // id's for common request headers

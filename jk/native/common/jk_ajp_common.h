@@ -114,6 +114,7 @@ extern "C" {
  *                        | "CHECKIN"
  *                        | "CHECKOUT"
  *                        | "UNCHECKOUT"
+ *                        | "SEARCH"
  * 
  */
 #define SC_M_OPTIONS            (unsigned char)1
@@ -136,6 +137,7 @@ extern "C" {
 #define SC_M_CHECKIN            (unsigned char)18
 #define SC_M_CHECKOUT           (unsigned char)19
 #define SC_M_UNCHECKOUT         (unsigned char)20
+#define SC_M_SEARCH             (unsigned char)21
 
 
 /*
