@@ -17,7 +17,8 @@ public class TomcatStarter implements Runnable {
     String args[];
     
     public static String mainClasses[]={ "org.apache.tomcat.startup.Main",
-                                         "org.apache.catalina.startup.BootstrapService" };
+                                         "org.apache.catalina.startup.BootstrapService",
+                                         "org.apache.catalina.startup.Bootstrap"};
     
     // If someone has time - we can also guess the classpath and do other
     // fancy guessings.
