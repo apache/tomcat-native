@@ -618,7 +618,7 @@ static int init_ws_service(apache_private_data_t * private_data,
             s->num_headers++;
         }
     }
-
+    s->uw_map = conf->uw_map;
     return JK_TRUE;
 }
 
@@ -1936,13 +1936,15 @@ static int jk_translate(request_rec * r)
                 r->prev && r->prev->handler &&
                 !strcmp(r->prev->handler, JK_HANDLER) && r->uri &&
                 strlen(r->uri) && r->uri[strlen(r->uri) - 1] == '/') {
+                
+                if (worker_env.num_of_workers) {
+                    /* Nothing here to do but assign the first worker since we
+                     * already tried mapping and it didn't work out */
+                    worker = worker_env.worker_list[0];
 
-                /* Nothing here to do but assign the first worker since we
-                 * already tried mapping and it didn't work out */
-                worker = worker_env.first_worker;
-
-                jk_log(l, JK_LOG_DEBUG, "Manual configuration for %s %s",
-                       r->uri, worker_env.first_worker);
+                    jk_log(l, JK_LOG_DEBUG, "Manual configuration for %s %s",
+                           r->uri, worker_env.worker_list[0]);
+                }
             }
 
             if (worker) {

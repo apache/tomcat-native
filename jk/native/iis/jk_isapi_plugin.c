@@ -1028,12 +1028,12 @@ static int init_jk(char *serverName)
     int rc = JK_FALSE;
     jk_map_t *map;
 
-     /* Simulate shared memory */
-     jk_shm_open(NULL);
-
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
     }
+     /* Simulate shared memory */
+     jk_shm_open(NULL, logger);
+
     /* Logging the initialization type: registry or properties file in virtual dir
      */
     if (JK_IS_DEBUG_LEVEL(logger)) {
@@ -1338,7 +1338,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
     s->headers_names = NULL;
     s->headers_values = NULL;
     s->num_headers = 0;
-
+    s->uw_map = uw_map;
     /*
      * Add SSL IIS environment
      */

@@ -670,7 +670,7 @@ static int init_ws_service(apache_private_data_t * private_data,
             s->num_headers++;
         }
     }
-
+    s->uw_map = conf->uw_map;
     return JK_TRUE;
 }
 
@@ -1731,21 +1731,22 @@ static int jk_handler(request_rec * r)
               ( lb is a bit special, it should count as a single worker but
               I'm not sure how ). We also have a manual config directive that
               explicitely give control to us. */
-            worker_name = worker_env.first_worker;
+            worker_name = worker_env.worker_list[0];
             if (JK_IS_DEBUG_LEVEL(xconf->log))
                 jk_log(xconf->log, JK_LOG_DEBUG,
                        "Manual configuration for %s %s %d",
-                       r->uri, worker_env.first_worker,
+                       r->uri, worker_env.worker_list[0],
                        worker_env.num_of_workers);
         }
         else {
             worker_name = map_uri_to_worker(xconf->uw_map, r->uri, xconf->log);
-            if (worker_name == NULL)
-                worker_name = worker_env.first_worker;
-            if (JK_IS_DEBUG_LEVEL(xconf->log))
-                jk_log(xconf->log, JK_LOG_DEBUG,
-                       "Manual configuration for %s %d",
-                       r->uri, worker_env.first_worker);
+            if (worker_name == NULL && worker_env.num_of_workers) {
+                worker_name = worker_env.worker_list[0];
+                if (JK_IS_DEBUG_LEVEL(xconf->log))
+                    jk_log(xconf->log, JK_LOG_DEBUG,
+                           "Manual configuration for %s %d",
+                           r->uri, worker_env.worker_list[0]);
+            }
         }
     }
 
@@ -2238,7 +2239,7 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 
     JK_TRACE_ENTER(conf->log);
 
-    if ((rc = jk_shm_attach(jk_shm_file)) == 0) {
+    if ((rc = jk_shm_attach(jk_shm_file, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
             jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s",
                    jk_shm_name());
@@ -2272,7 +2273,7 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     /*     jk_map_t *init_map = NULL; */
     jk_map_t *init_map = conf->worker_properties;
 
-    if ((rc = jk_shm_open(jk_shm_file)) == 0) {
+    if ((rc = jk_shm_open(jk_shm_file, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
             jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s",
                    jk_shm_name(), rc);
