@@ -344,7 +344,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
     jni_worker_t *p;
     int mem_config = 0;
     int btype = 0;
-    char *str_config = NULL;
+    const char *str_config = NULL;
     JNIEnv *env;
 
     JK_TRACE_ENTER(l);
