@@ -79,6 +79,8 @@
 
 #include "jk_iis.h"
 
+#define ROLES_ATTRIBUTE_NAME  "org.apache.tomcat.jk.roles"
+
 static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
     static char crlf[3] = { (char)13, (char)10, '\0' };
     const char *reason;
@@ -399,7 +401,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
     if ( strlen(s->remote_user) > 0 ){
         char *groups=jk2_service_iis_get_roles(env, s);
         if( groups != NULL){
-            s->attributes->put( env, s->attributes,"ROLES",groups,NULL);
+            s->attributes->put( env, s->attributes,ROLES_ATTRIBUTE_NAME,groups,NULL);
         }
     }
 
