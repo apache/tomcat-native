@@ -1,0 +1,44 @@
+Quick informations on building mod_jk2 :
+
+Starting with 2.0.4, APR is mandatory for jk2 so you should be
+sure to have it installed on your system, probably because you
+allready have an Apache 2.0 installed or have apr and apr-utils
+sources tarball ready, since jk2 will first build APR/APR-UTILS
+for itw own purpose (Apache 1.3 case).
+
+
+If you want to have JNI support, add --with-jni and be sure to
+have JAVA_HOME env var point to your Java Environnement.
+
+* Linux distributions using Apache 2.0
+
+  You should have apxs, so be sure to have the Apache2 devel rpm, 
+  httpd-devel or apache2-devel depending distributions.
+
+./configure --with-apxs2=/your/path/to/apxs --with-jni
+make
+cp ../build/jk2/apache2/mod_jk2.so /your/path/to/apache2modules 
+
+
+* Linux distributions using Apache 1.3
+
+  You should have apxs, so be sure to have the Apache devel rpm, 
+  httpd-devel or apache-devel depending distributions.
+
+./configure --with-apxs=/your/path/to/apxs 	--with-apr=/your/path/to/aprsources \
+            --with-apr-util=/your/patch/to/apr-util --with-jni
+make
+cp ../build/jk2/apache13/mod_jk2.so /your/path/to/apache13modules 
+
+
+
+
+* IIS 
+
+--> Mladen ?
+
+
+* Netware
+
+--> Guenter / Mike ?
+
