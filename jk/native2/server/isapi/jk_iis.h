@@ -100,6 +100,7 @@ extern "C" {
 #define SERVER_SOFTWARE          ("SERVER_SOFTWARE")
 
 #define REGISTRY_LOCATION        ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\2.0")
+#define W3SVC_REGISTRY_KEY       ("SYSTEM\\CurrentControlSet\\Services\\W3SVC\\Parameters")
 
 #define BAD_REQUEST             -1
 #define BAD_PATH                -2
