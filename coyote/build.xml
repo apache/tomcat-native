@@ -82,8 +82,7 @@
   <path id="compile.classpath.tomcat33">
     <pathelement location="${build.home}/classes"/>
     <pathelement location="../util/build/classes"/>
-    <pathelement location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
-    <pathelement location="${tomcat33.home}/lib/container/jtc.jar"/>
+    <pathelement location="${tomcat33.home}/lib/container/container_util.jar"/>
     <pathelement location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
     <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
     <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
