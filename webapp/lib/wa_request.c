@@ -185,7 +185,8 @@ int wa_rerror(wa_request *r, int s, const char *fmt, ...) {
 
 /* Invoke a request in a web application. */
 int wa_rinvoke(wa_request *r, wa_application *a) {
-    return(a->conn->prov->handle(r,a));
+    //return(a->conn->prov->handle(r,a));
+    return(wa_rerror(r,500,"This is being fixed"));
 }
 
 void wa_rlog(wa_request *r, const char *f, const int l, const char *fmt, ...) {
