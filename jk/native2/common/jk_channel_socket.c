@@ -113,9 +113,9 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host,
 static int JK_METHOD jk2_channel_socket_close(jk_env_t *env, jk_channel_t *ch,
                                              jk_endpoint_t *endpoint);
 
-static char *jk2_channel_socket_getAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay",
+static char *jk2_channel_socket_getAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay", "graceful",
                                                     "debug", "disabled", NULL };
-static char *jk2_channel_socket_setAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay",
+static char *jk2_channel_socket_setAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay", "graceful",
                                                     "debug", "disabled", NULL };
 
 static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
@@ -162,6 +162,8 @@ static void * JK_METHOD jk2_channel_socket_getAttribute(jk_env_t *env, jk_bean_t
         return jk2_env_itoa( env, socketInfo->keepalive );
     } else if( strcmp( "timeout", name ) == 0 ) {
         return jk2_env_itoa( env, socketInfo->timeout );
+    } else if( strcmp( "graceful", name ) == 0 ) {
+        return jk2_env_itoa( env, ch->worker->graceful );
     } else if( strcmp( "debug", name ) == 0 ) {
         return jk2_env_itoa( env, ch->mbean->debug );
     } else if( strcmp( "disabled", name ) == 0 ) {
@@ -311,7 +313,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
 
     int sock;
     int ret;
-    
+
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if(sock < 0) {
 #ifdef WIN32
