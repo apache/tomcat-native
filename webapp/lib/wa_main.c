@@ -58,99 +58,113 @@
 /* @version $Id$ */
 #include <wa.h>
 
-/* The webserver specified in init. */
-wa_webserver *WA_WebServer=NULL;
-
 /* The current APR memory pool. */
-static apr_pool_t *WA_Pool=NULL;
+apr_pool_t *wa_pool=NULL;
+/* The list of all deployed applications. */
+wa_chain *wa_configuration=NULL;
 
 /* Initialize the WebApp Library. */
-const char *WA_Init(wa_webserver *w) {
-	/* Check the main APR pool. */
-    if (WA_Pool==NULL) {
+const char *wa_init(void) {
+    /* Check the main APR pool. */
+    if (wa_pool==NULL) {
         if (apr_initialize()!=APR_SUCCESS)
             return("Cannot initialize APR");
-        if (apr_pool_create(&WA_Pool,NULL)!=APR_SUCCESS)
+        if (apr_pool_create(&wa_pool,NULL)!=APR_SUCCESS)
             return("Cannot create WebApp Library memory pool");
-        if (WA_Pool==NULL)
+        if (wa_pool==NULL)
             return("Invalid WebApp Library memory pool created");
     }
 
-	/* Assign the current webserver */
-	if (WA_WebServer==NULL) {
-	    WA_WebServer=w;
-	    if (WA_WebServer==NULL) return("Invalid WebServer member specified");
-	}
-
+    wa_debug(WA_MARK,"WebApp Library initialized (PID=%d)",getpid());
     return(NULL);
 }
 
 /* Clean up the WebApp Library. */
-const char *WA_Destroy(void) {
-    if (WA_Pool==NULL) return("WebApp Library not initialized");
-    apr_pool_destroy(WA_Pool);
-    WA_Pool=NULL;
-    WA_WebServer=NULL;
+const char *wa_destroy(void) {
+    if (wa_pool==NULL) return("WebApp Library not initialized");
+
+    /* Clean up this library and APR */
+    apr_pool_destroy(wa_pool);
+    wa_pool=NULL;
+    wa_configuration=NULL;
     apr_terminate();
+
+    wa_debug(WA_MARK,"WebApp Library destroyed (PID=%d)",getpid());
     return(NULL);
 }
 
-/* Allocate and setup a connection */
-const char *WA_Connect(wa_connection **c, const char *p, const char *a) {
-    wa_connection *conn=NULL;
+/* Deploy a web-application. */
+const char *wa_deploy(wa_application *a, wa_virtualhost *h, wa_connection *c) {
+    wa_chain *elem=NULL;
+    //const char *ret=NULL;
 
     /* Check parameters */
-    if (c==NULL) return("Invalid storage location specified");
+    if (a==NULL) return("Invalid application for deployment");
+    if (h==NULL) return("Invalid virtual host for deployment");
+    if (c==NULL) return("Invalid connection for deployment");
 
-    /* Allocate some memory */
-    conn=(wa_connection *)apr_palloc(WA_Pool,sizeof(wa_connection));
-    if (conn==NULL) return("Cannot allocate memory");
-    conn->pool=WA_Pool;
+    /* Check if another application was deployed under the same URI path in
+       the same virtual host */
+    elem=h->apps;
+    while (elem!=NULL) {
+        wa_application *curr=(wa_application *)elem->curr;
+        if (strcasecmp(curr->rpth,a->rpth)==0)
+            return("Duplicate application specified for the same URL path");
+        elem=elem->next;
+    }
 
-    /* Retrieve the provider and set up the conection */
-    conn->conf=NULL;
-    // if ((conn->prov=wa_provider_get(p))==NULL)
-    //  return("Invalid provider name specified");
-    // if ((msg=conn->prov->configure(conn,a))!=NULL) return(msg);
+    /* Deploy */
+    a->host=h;
+    a->conn=c;
 
-    /* Done! :) */
-    *c=conn;
+    /* Give the opportunity to the provider to be notified of the deployment of
+       this application */
+    //ret=c->prov->deploy(a);
+    //if (ret!=NULL) return(ret);
+
+    /* Append this application to the list of deployed applications in the
+       virtual host */
+    elem=(wa_chain *)apr_palloc(wa_pool,sizeof(wa_chain));
+    elem->curr=a;
+    elem->next=h->apps;
+    h->apps=elem;
+
+    /* Check if this virtual host is already present in the configuration */
+    if (wa_configuration!=NULL) {
+        elem=wa_configuration;
+        while (elem!=NULL) {
+            /* Compare the pointers to structures, we *MIGHT* allow two
+               virtual hosts to have the same name and port. The selection
+               of the host is done at the web server level */
+            if (elem->curr==h) return(NULL);
+            elem=elem->next;
+        }
+    }
+
+    /* We didn't find this host in our list, we need to add it to the conf. */
+    elem=(wa_chain *)apr_palloc(wa_pool,sizeof(wa_chain));
+    elem->curr=h;
+    elem->next=wa_configuration;
+    wa_configuration=elem;
+
+    /* Done */
+    wa_debug(WA_MARK,"Application %s deployed for http://%s:%d%s (Conn: %s)",
+             a->name,h->name,h->port,a->rpth,c->name);
     return(NULL);
 }
 
-/* Allocate, set up and deploy an application. */
-const char *WA_Deploy(wa_application **a, wa_connection *c, const char *n,
-                      const char *p) {
-    wa_application *appl=NULL;
-    char *buf=NULL;
-    int l=0;
+/* Dump some debugging information. */
+void wa_debug(const char *f, const int l, const char *fmt, ...) {
+    apr_time_t at;
+    char st[128];
+    va_list ap;
 
-    /* Check parameters */
-    if (a==NULL) return("Invalid storage location specified");
-    if (c==NULL) return("Invalid connection specified");
-    if (n==NULL) return("Invalid application name");
-    if (p==NULL) return("Invalid application path");
-
-    /* Allocate some memory */
-    appl=(wa_application *)apr_palloc(WA_Pool,sizeof(wa_application));
-    if (appl==NULL) return("Cannot allocate memory");
-    appl->pool=WA_Pool;
-
-    /* Set up application structure */
-    appl->conn=c;
-    appl->name=apr_pstrdup(WA_Pool,n);
-    buf=apr_pstrdup(appl->pool,p);
-    l=strlen(buf)-1;
-    if (buf[l]=='/') buf[l]='\0';
-    if (buf[0]=='/') appl->rpth=apr_pstrcat(WA_Pool,buf,"/");
-    else appl->rpth=apr_pstrcat(WA_Pool,"/",buf,"/");
-    appl->lpth=NULL;
-
-    /* Tell the connector provider we're deploying an application */
-    appl->conf=NULL;
-    // if ((msg=appl->conn->prov->deploy(a))!=NULL) return(msg);
-
-    /* Done! :) */
-    *a=appl;
-    return(NULL);
+    at=apr_time_now();
+    apr_ctime(st, at);
+    fprintf(stderr,"[%s] (%s:%d) ",st,f,l);
+    va_start(ap,fmt);
+    vfprintf(stderr,fmt,ap);
+    va_end(ap);
+    fprintf(stderr,"\n");
+    fflush(stderr);
 }
