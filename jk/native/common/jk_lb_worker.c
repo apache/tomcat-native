@@ -38,7 +38,7 @@
  * Time to wait before retry...
  */
 #define WAIT_BEFORE_RECOVER (60*1)
-#define ADDITINAL_WAIT_LOAD (20)
+#define WORKER_RECOVER_TIME ("recover_time")
 
 /** 
  * Worker record should be inside shared
@@ -72,7 +72,9 @@ struct lb_worker
     int in_local_worker_mode;
     int local_worker_only;
     int sticky_session;
+    int recover_wait_time;
 };
+
 typedef struct lb_worker lb_worker_t;
 
 struct lb_endpoint
@@ -244,7 +246,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                 if (!p->lb_workers[i].in_recovering) {
                     time_t now = time(0);
                     if ((now - p->lb_workers[i].error_time) >
-                        WAIT_BEFORE_RECOVER) {
+                        p->recover_wait_time) {
                         p->lb_workers[i].in_recovering = JK_TRUE;
                         p->lb_workers[i].error_time = now;
                         rc = &(p->lb_workers[i]);
@@ -495,10 +497,19 @@ static int JK_METHOD init(jk_worker_t *pThis,
                           jk_map_t *props,
                           jk_worker_env_t *we, jk_logger_t *log)
 {
+    int i;
 
     lb_worker_t *p = (lb_worker_t *)pThis->worker_private;
     pThis->retries = jk_get_worker_retries(props, p->name,
                                            JK_RETRIES);
+
+    if (jk_get_worker_int_prop(props, p->name,
+                               WORKER_RECOVER_TIME,
+                               &i))
+        p->recover_wait_time = i;
+    if (p->recover_wait_time < WAIT_BEFORE_RECOVER)
+        p->recover_wait_time = WAIT_BEFORE_RECOVER;
+
     return JK_TRUE;
 }
 
@@ -571,7 +582,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->worker.get_endpoint = get_endpoint;
         private_data->worker.destroy = destroy;
         private_data->worker.retries = JK_RETRIES;
-
+        private_data->recover_wait_time = WAIT_BEFORE_RECOVER;
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);
         return JK_TRUE;
