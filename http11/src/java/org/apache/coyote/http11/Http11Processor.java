@@ -119,14 +119,19 @@ public class Http11Processor implements Processor, ActionHook {
      * Default constructor.
      */
     public Http11Processor() {
+        this(Constants.DEFAULT_HTTP_HEADER_BUFFER_SIZE);
+    }
+
+
+    public Http11Processor(int headerBufferSize) {
 
         request = new Request();
-        inputBuffer = new InternalInputBuffer(request);
+        inputBuffer = new InternalInputBuffer(request, headerBufferSize);
         request.setInputBuffer(inputBuffer);
 
         response = new Response();
         response.setHook(this);
-        outputBuffer = new InternalOutputBuffer(response);
+        outputBuffer = new InternalOutputBuffer(response, headerBufferSize);
         response.setOutputBuffer(outputBuffer);
         request.setResponse(response);
 
