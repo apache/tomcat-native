@@ -70,8 +70,7 @@
 #define LENGTH_OF_LINE    (1024)
 
 struct jk_map {
-    jk_pool_t p;
-    jk_pool_atom_t buf[SMALL_POOL_SIZE];
+    jk_pool_t *pool;
 
     const char **names;
     const void **values;
@@ -84,13 +83,27 @@ static void trim_prp_comment(char *prp);
 static int trim(char *s);
 static int map_realloc(jk_map_t *m);
 
-int map_alloc(jk_map_t **m)
+int map_alloc(jk_map_t **m, jk_pool_t *pool )
 {
-    if(m) {
-        return map_open(*m = (jk_map_t *)malloc(sizeof(jk_map_t)));
-    }
+    jk_map_t *_this;
+
+    if( m== NULL )
+        return JK_FALSE;
     
-    return JK_FALSE;
+    _this=(jk_map_t *)pool->alloc(pool, sizeof(jk_map_t));
+    *m=_this;
+
+    if( _this == NULL )
+        return JK_FALSE;
+    
+    _this->pool = pool;
+    
+    _this->capacity = 0;
+    _this->size     = 0;
+    _this->names    = NULL;
+    _this->values   = NULL;
+
+    return JK_TRUE;
 }
 
 int map_free(jk_map_t **m)
@@ -98,39 +111,11 @@ int map_free(jk_map_t **m)
     int rc = JK_FALSE;
 
     if(m && *m) {
-        map_close(*m);  
-        free(*m);
+        (*m)->pool->close((*m)->pool);
+        rc = JK_TRUE;
+        /*  free(*m); */
         *m = NULL;
     }
-    
-    return rc;
-}
-
-int map_open(jk_map_t *m)
-{
-    int rc = JK_FALSE;
-
-    if(m) {
-        jk_open_pool(&m->p, m->buf, sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
-        m->capacity = 0;
-        m->size     = 0;
-        m->names    = NULL;
-        m->values   = NULL;
-        rc = JK_TRUE;
-    }
-    
-    return rc;
-}
-
-int map_close(jk_map_t *m)
-{
-    int rc = JK_FALSE;
-
-    if(m) {
-        m->p.close(&m->p);
-        rc = JK_TRUE;
-    }
-    
     return rc;
 }
 
@@ -204,49 +189,53 @@ char *map_get_string(jk_map_t *m,
 }
 
 char **map_get_string_list(jk_map_t *m,
+                           jk_pool_t *pool,
                            const char *name,
                            unsigned *list_len,
                            const char *def)
 {
-    char *l = map_get_string(m, name, def);
+    char *listStr = map_get_string(m, name, def);
     char **ar = NULL;
+    unsigned capacity = 0;
+    unsigned idex = 0;    
+    char *v;
+    char *l;
 
+    if( pool == NULL )
+        pool=m->pool;
+    
     *list_len = 0;
 
-    if(l) {
-        unsigned capacity = 0;
-        unsigned idex = 0;    
-        char *v = m->p.pstrdup(&m->p, l);
-        
-        if(!v) {
-            return NULL;
-        }
+    if(listStr==NULL)
+        return NULL;
 
-        /*
-         * GS, in addition to VG's patch, we now need to 
-         * strtok also by a "*"
-         */
-
-        for(l = strtok(v, " \t,*") ; 
-            l ; 
-            l = strtok(NULL, " \t,*")) {
-        
-            if(idex == capacity) {
-                ar = m->p.realloc(&m->p, 
-                                     sizeof(char *) * (capacity + 5),
-                                     ar,
-                                     sizeof(char *) * capacity);
-                if(!ar) {
-                    return JK_FALSE;
-                }
-                capacity += 5;
-            }
-            ar[idex] = m->p.pstrdup(&m->p, l);
-            idex ++;
-        }
-        
-        *list_len = idex;
+    v = pool->pstrdup( pool, listStr);
+    
+    if(v==NULL) {
+        return NULL;
     }
+
+    /*
+     * GS, in addition to VG's patch, we now need to 
+     * strtok also by a "*"
+     */
+
+    for(l = strtok(v, " \t,*") ; l ; l = strtok(NULL, " \t,*")) {
+        if(idex == capacity) {
+            ar = pool->realloc(pool, 
+                               sizeof(char *) * (capacity + 5),
+                               ar,
+                               sizeof(char *) * capacity);
+            if(!ar) {
+                return NULL;
+            }
+            capacity += 5;
+        }
+        ar[idex] = pool->pstrdup(pool, l);
+        idex ++;
+    }
+        
+    *list_len = idex;
 
     return ar;
 }
@@ -257,32 +246,33 @@ int map_put(jk_map_t *m,
             void **old)
 {
     int rc = JK_FALSE;
+    int i;
 
-    if(m && name ) {
-        unsigned i;
-        for(i = 0 ; i < m->size ; i++) {
-            if(0 == strcmp(m->names[i], name)) {
-                break;
-            }
+    if(m==NULL ||  name==NULL )
+        return JK_FALSE;
+
+    for(i = 0 ; i < m->size ; i++) {
+        if(0 == strcmp(m->names[i], name)) {
+            break;
         }
-
-        if(i < m->size) {
-            if( old!=NULL )
-                *old = (void *) m->values[i]; /* DIRTY */
-            m->values[i] = value;
-            rc = JK_TRUE;
-        } else {
-            map_realloc(m);
-
-            if(m->size < m->capacity) {
-                m->values[m->size] = value;
-                m->names[m->size] = m->p.pstrdup(&m->p, name);
-                m->size ++;
-                rc = JK_TRUE;
-            }
-        }       
     }
 
+    /* Old value found */
+    if(i < m->size) {
+        if( old!=NULL )
+            *old = (void *) m->values[i]; /* DIRTY */
+        m->values[i] = value;
+        return JK_TRUE;
+    }
+    
+    map_realloc(m);
+    
+    if(m->size < m->capacity) {
+        m->values[m->size] = value;
+        m->names[m->size] = m->pool->pstrdup(m->pool, name);
+        m->size ++;
+        rc = JK_TRUE;
+    }
     return rc;
 }
 
@@ -292,13 +282,13 @@ int map_put(jk_map_t *m,
 int jk_is_some_property(const char *prp_name, const char *suffix)
 {
     if (prp_name && suffix) {
-		size_t prp_name_len = strlen(prp_name);
-		size_t suffix_len = strlen(suffix);
-		if (prp_name_len >= suffix_len) {
-			const char *prp_suffix = prp_name + prp_name_len - suffix_len;
-			if(0 == strcmp(suffix, prp_suffix)) {
-		        return JK_TRUE;
-			}
+        size_t prp_name_len = strlen(prp_name);
+        size_t suffix_len = strlen(suffix);
+        if (prp_name_len >= suffix_len) {
+            const char *prp_suffix = prp_name + prp_name_len - suffix_len;
+            if(0 == strcmp(suffix, prp_suffix)) {
+                return JK_TRUE;
+            }
         }
     }
 
@@ -331,8 +321,8 @@ int map_read_properties(jk_map_t *m,
                             v = map_replace_properties(v, m);
 
                             if(oldv) {
-                                char *tmpv = m->p.alloc(&m->p, 
-                                                        strlen(v) + strlen(oldv) + 3);
+                                char *tmpv = m->pool->alloc(m->pool, 
+                                                            strlen(v) + strlen(oldv) + 3);
                                 if(tmpv) {
                                     char sep = '*';
                                     if(jk_is_some_property(prp, "path")) {
@@ -346,8 +336,9 @@ int map_read_properties(jk_map_t *m,
                                 }                                
                                 v = tmpv;
                             } else {
-                                v = m->p.pstrdup(&m->p, v);
+                                v = m->pool->pstrdup(m->pool, v);
                             }
+                            
                             if(v) {
                                 void *old = NULL;
                                 map_put(m, prp, v, &old);
@@ -431,8 +422,8 @@ static int map_realloc(jk_map_t *m)
         void **values;
         int  capacity = m->capacity + CAPACITY_INC_SIZE;
 
-        names = (char **)m->p.alloc(&m->p, sizeof(char *) * capacity);
-        values = (void **)m->p.alloc(&m->p, sizeof(void *) * capacity);
+        names = (char **)m->pool->alloc(m->pool, sizeof(char *) * capacity);
+        values = (void **)m->pool->alloc(m->pool, sizeof(void *) * capacity);
         
         if(values && names) {
             if (m->capacity && m->names) 
@@ -479,8 +470,8 @@ char *map_replace_properties(const char *value, jk_map_t *m)
 	    }
             if(env_value) {
                 int offset=0;
-                char *new_value = m->p.alloc(&m->p, 
-                                                (sizeof(char) * (strlen(rc) + strlen(env_value))));
+                char *new_value = m->pool->alloc(m->pool, 
+                                                 (sizeof(char) * (strlen(rc) + strlen(env_value))));
                 if(!new_value) {
                     break;
                 }
@@ -566,10 +557,10 @@ double map_getDoubleProp(jk_map_t *m,
 }
 
 char **map_getListProp(jk_map_t *m,
-                    const char *objType,
-                    const char *objName,
-                    const char *pname, 
-                    unsigned *size)
+                       const char *objType,
+                       const char *objName,
+                       const char *pname, 
+                       unsigned *size)
 {
     char buf[1024];
 
@@ -582,6 +573,26 @@ char **map_getListProp(jk_map_t *m,
 
     sprintf(buf, "%s.%s.%s", objType, objName, pname);
 
-    return map_get_string_list(m, buf, size, NULL);
+    return map_get_string_list(m, m->pool, buf, size, NULL);
+}
+
+/** Utility - copy a map . XXX Should move to jk_map, it's generic code.
+ */
+int map_copy(jk_pool_t *pool, jk_map_t * src, jk_map_t * dst )
+{   
+    int sz = map_size(src);
+    int i;
+    for(i = 0 ; i < sz ; i++) {
+        void *old;
+        char *name = map_name_at(src, i);
+        if(map_get(src, name, NULL) == NULL) {
+            if(!map_put(dst, name, 
+                        pool->pstrdup(pool, map_get_string(src, name, NULL)), 
+                        &old)) {
+                return JK_FALSE;
+            }
+        } 
+    }
+    return JK_TRUE;
 }
 

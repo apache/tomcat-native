@@ -72,8 +72,8 @@
 #define HUGE_BUFFER_SIZE (8*1024)
 #define LOG_LINE_SIZE    (1024)
 
-int JK_METHOD jk_logger_file_factory(jk_env_t *env, void **result,
-                                     char *type, char *name);
+int JK_METHOD jk_logger_file_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+                                     const char *type, const char *name);
 
 
 /* 
@@ -260,11 +260,12 @@ static int jk_logger_file_jkLog(jk_logger_t *l,
 
 
 int jk_logger_file_factory(jk_env_t *env,
+                           jk_pool_t *pool, 
                            void **result,
-                           char *type,
-                           char *name)
+                           const char *type,
+                           const char *name)
 {
-    jk_logger_t *l = (jk_logger_t *)malloc(sizeof(jk_logger_t));
+    jk_logger_t *l = (jk_logger_t *)pool->alloc(pool, sizeof(jk_logger_t));
 
     if(l==NULL ) {
         return JK_FALSE;
