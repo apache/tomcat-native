@@ -5,130 +5,118 @@
     The WARP protocol version 0.10
   </description>
 
-  <section title="Data Packet Structure">
+  <section title="Introduction">
     <description>
-     General packet format.
+      An overview of the WARP protocol
     </description>
 
     <p>
-      All data sent on the full duplex connection between the client and
-      server MUST follow this structure:
+      The WARP protocol was inspired and designed by the great effort made
+      by the Apache JServ team in finding a efficent stream-based protocol
+      to transfer pre-parsed HTTP requests. Much of its structure was derived
+      from the AJPv21 protocol, and has been updated to add few features,
+      and remove its reparsing overhead.
     </p>
-<p>
-<ul>
-<li>
-Data is sent in packets formed by a header describing some info about the
-packet itself followed by a data length and data payload.</li>
+    
+    <p>
+      When thinking about forwarding HTTP requests between a web server (Apache
+      HTTPd) and a servlet container (Apache Tomcat), we must realize that much
+      of the pre-parsing of the HTTP data is already performed by the web-server.
+      Therefore, the scope of the WARP protocol is to minimize the overhead
+      of re-transmitting a pre-parsed HTTP request to the servlet container,
+      encoding data in a way that it's accessible in a very fast and efficent
+      way, without adding a subsequent post-parsing stage.
+    </p>
 
-<li>
-All packets MUST follow big endian style ("network order").</li>
+    <p>
+      In addition, the WARP protocol defines a way over which the HTTP server and
+      the servlet container can negotiate their resources (in our case, web
+      applications), maintaining a tight integration between the applications
+      deployed by the servlet container, and their host mapping within the
+      web server.
+    </p>
+  </section>
 
-<li>
-The packet header is always 24 bits long and follow this format:</li>
+  <section title="Packet Structure">
+    <description>
+      The structure of a generic WARP packet.
+    </description>
 
-</ul>
-<ul>
-<li>
-Octet 0 (8 bits) contains the packet type.</li>
+    <p>
+      To minimize parsing overhead on both sides (HTTP server and servlet
+      container) the WARP protocol defines a packet structure, which is
+      used to encapsulate all data passed over a reliable full-duplex
+      connection (the WARP connection).
+    </p>
 
-<li>
-Octets 1-2 (16 bits) set the length of the data payload carried by the
-packet itself in numbers octets and MAY be zero.</li>
+    <p>
+      Each byte (octet) in a WARP packet MUST be transmitted according to the
+      "network order" (or big endian style), and each packet is composed
+      of the following parts:
+    </p>
 
-<li>
-If the length of the data payload is more than zero, octets from 3 to (length
-+ 3) contain the payload data or content.</li>
-</ul>
+    <ul>
+      <li>
+        An 8 bits long <b>packet type</b> describing the content of the
+        following payload (if any), an operation to perform by the peer,
+        or a reply to an operation requested by the peer.
+      </li>
+      <li>
+        A 16 bits long <b>payload length</b> specifying the length of the
+        payload carried by this packet.
+      </li>
+      <li>
+        A zero-or-more bytes long <b>payload</b>. The length (in bytes) of
+        this part must be specified in the previous two bytes (payload length).
+      </li>
+    </ul>
 
-</p>
-<img src="images/packet.gif" alt="The WARP Packet Structure"/>
+    <img src="images/packet.gif" alt="The WARP Packet Structure"/>
 
+  </section>
 
-</section>
+  <section title="Payload">
+    <description>
+      Payload Structure
+    </description>
 
-<section title="Payload">
-  <description>
-  Payload Structure
-  </description>
+    <p>
+      The payload of a packet can be structured in two ways, depending on its 
+      type: the packet can either contain raw data (such as an HTTP request or 
+      response body) or a combination of numeric values and strings.
+    </p>
+  
+    <p>
+      By definition a numeric value is a 32 bit signed integer represented
+      in network byte order (the value of 6 decimal would be represented as
+      000000000000000000000000000000000110 binary (110 preceeded by 29
+      zeroes).
+    </p>
 
-<p>
-The payload of a packet can be structured in two ways, depending on its
-type: the packet can either contain raw data (such as an HTTP request or
-response body) or a combination of numeric values and strings.
-</p>
-<p>By definition a numeric value is a 32 bit signed integer represented
-in network byte order (the value of 6 decimal would be represented as
- 000000000000000000000000000000000110
-binary (110 preceeded by 29 zeroes).
-</p><p>A string is defined in the following way: the first two octets represent
-the string length as an unsigned 16 bits value. This value indicates the
-number of octets that compose the encoded string. The string is not NULL
-terminated and is encoded following the UTF-8 standard. For example the
-string "fooBar" would be represented as:
-</p>
-<p>
-<table>
-<tr>
-<td13>
-String</td13>
-</tr>
-
-<tr>
-<td>Octet</td>
-
-<td3>1</td3>
-
-<td3>2</td3>
-
-<td>3</td>
-
-<td>4</td>
-
-<td>5</td>
-
-<td>6</td>
-
-<td>7</td>
-
-<td>8</td>
-</tr>
-
-<tr>
-<td>Bits</td>
-
-<td>0</td>
-
-<td>1</td>
-
-<td2>..</td2>
-
-<td>14</td>
-
-<td>15</td>
-
-<td6>..</td6>
-</tr>
-
-<tr>
-<td>Content</td>
-
-<td6>110 bin = 6
-dec</td6>
-
-<td>f</td>
-
-<td>o</td>
-
-<td>o</td>
-
-<td>B</td>
-
-<td>a</td>
-
-<td>r</td>
-</tr>
-</table>
-</p>
+    <p>
+      A string is somehow more complex, and it is defined in the following way:
+    </p>
+    
+    <ul>
+      <li>
+        The first two octets represent the string length as an unsigned 16 bits
+        value. The 0x0 and 0x0ffff values (namely the sequence of all zero bits
+        and the sequence of all one bits) have a special meaning.
+      </li>
+      <li>
+        If the string length (first two octets) is not 0x0 or 0x0ffff, a sequence
+        of bytes follow, as long as the number of bytes specified in length.
+        The bytes in this field are the UTF-8 representation of the string.
+      </li>
+      <li>
+        If length is 0x0, the string is assumed to be the empty string.
+      </li>
+      <li>
+        If length is 0x0ffff, the string is assumed to be the null string.
+      </li>
+    </ul>
+  
+    <img src="images/string.gif" alt="The &#34;FooX&#34; string"/>
 
 </section>
 

@@ -224,7 +224,7 @@
         </tr>
       </table>
     </a>
-    <xsl:apply-templates select="p|img|screen|todo"/>
+    <xsl:apply-templates select="p|ul|img|screen|todo"/>
     <br/>
   </xsl:template>
 
@@ -239,7 +239,7 @@
   </xsl:template>
 
   <xsl:template match="p">
-    <p class="section"><xsl:apply-templates select="table|ul|b|a|text()"/></p>
+    <p class="section"><xsl:apply-templates select="table|ul|br|b|a|text()"/></p>
   </xsl:template>
 
   <xsl:template match="b">
@@ -259,15 +259,15 @@
     </p>
   </xsl:template>
 
-  <!-- JFC added -->
   <xsl:template match="ul">
     <ul><xsl:apply-templates select="li"/></ul>
   </xsl:template>
 
   <xsl:template match="li">
-    <li><xsl:apply-templates select="text()"/></li>
+    <li><xsl:apply-templates select="br|b|a|text()"/></li>
   </xsl:template>
 
+  <!-- JFC added -->
   <xsl:template match="table">
     <table border="1"><xsl:apply-templates select="tr"/></table>
   </xsl:template>
