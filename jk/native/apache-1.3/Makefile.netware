@@ -4,14 +4,17 @@
 #
 
 # Edit the path below to point to the base of your Apache 1.3 includes.
-#AP_HOME	= c:/projects/cw/apache-1.3
-AP_HOME	= c:/projects/cw/apache_1.3.29
-
+ifndef AP_HOME
+AP_HOME	= c:/projects/cw/apache_1.3.31
+endif
 # Edit the path below to point to the base of your NetWare Java SDK.
-JDK	= c:/projects/sdks/java-nw
-
+ifndef NW_JDK
+NW_JDK	= c:/projects/sdks/java-nw
+endif
 # Edit the path below to point to the base of your Novell NDK.
-BASE	= c:/novell
+ifndef NDKBASE
+NDKBASE	= c:/novell
+endif
 INSTDIR = s:/apache/modules
 
 # Edit the vars below to change NLM target settings.
@@ -84,7 +87,7 @@ ifeq ($(LIBARCH),LIBC)
 #	CFLAGS += -D__ANSIC__
 else
 #	PRELUDE = $(SDK_CLIB)/imports/clibpre.gcc.o
-	CFLAGS += -include $(BASE)/nlmconv/genlm.h
+	CFLAGS += -include $(NDKBASE)/nlmconv/genlm.h
 endif
 endif
 CFLAGS	+= -include "precomp.h"
@@ -94,20 +97,20 @@ ifeq ($(AP_PRE),YES)
 endif
 
 
-NDK_ROOT = $(BASE)/ndk
+NDK_ROOT = $(NDKBASE)/ndk
 SDK_CLIB = $(NDK_ROOT)/nwsdk
 SDK_LIBC = $(NDK_ROOT)/libc
 JKCOMMON = ../common
 
 INCLUDES = -I$(AP_HOME)/src/include -I$(AP_HOME)/src/os/netware
-INCLUDES += -I$(JKCOMMON) -I$(JDK)/include -I$(JDK)/include/netware 
+INCLUDES += -I$(JKCOMMON) -I$(NW_JDK)/include -I$(NW_JDK)/include/netware 
 
 ifeq ($(LIBARCH),LIBC)
 	INCLUDES += -I$(SDK_LIBC)/include -I$(SDK_LIBC)/include/nks
 	INCLUDES += -I$(SDK_LIBC)/include/winsock
 else
 	INCLUDES += -I$(SDK_CLIB)/include/nlm -I$(SDK_CLIB)/include
-	INCLUDES += -I$(BASE)/ws295sdk/include
+	INCLUDES += -I$(NDKBASE)/ws295sdk/include
 	CFLAGS += -DNETDB_USE_INTERNET
 endif
 CFLAGS	+= $(INCLUDES)
@@ -118,7 +121,7 @@ endif
 
 ifeq ($(OSTYPE),linux)
 DL	= '
--include $(BASE)/nlmconv/ncpfs.inc
+-include $(NDKBASE)/nlmconv/ncpfs.inc
 endif
 
 OBJS	= \
