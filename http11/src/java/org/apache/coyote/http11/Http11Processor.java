@@ -102,6 +102,13 @@ import org.apache.coyote.http11.filters.VoidOutputFilter;
 public class Http11Processor implements Processor, ActionHook {
 
 
+    /**
+     * Logger.
+     */
+    protected static org.apache.commons.logging.Log log 
+        = org.apache.commons.logging.LogFactory.getLog(Http11Processor.class);
+
+
     // ----------------------------------------------------------- Constructors
 
 
@@ -202,13 +209,6 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
-     * Logger.
-     */
-    protected static org.apache.commons.logging.Log log 
-        = org.apache.commons.logging.LogFactory.getLog(Http11Processor.class);
-
-
-    /**
      * Maximum number of Keep-Alive requests to honor.
      */
     protected int maxKeepAliveRequests = -1;
@@ -248,11 +248,12 @@ public class Http11Processor implements Processor, ActionHook {
      * The local Host address.
      */
     protected String localAddr = null; 
-    
+
+
     /**
-     * Maximum timeout on uploads.
+     * Maximum timeout on uploads. 5 minutes as in Apache HTTPD server.
      */
-    protected int timeout = 300000;   // 5 minutes as in Apache HTTPD server
+    protected int timeout = 300000;
 
 
     /**
@@ -288,7 +289,8 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * List of MIMES which could be gzipped
      */
-    protected String[] compressableMimeTypes = { "text/html", "text/xml", "text/plain" };
+    protected String[] compressableMimeTypes = 
+    { "text/html", "text/xml", "text/plain" };
 
 
     /**
@@ -296,7 +298,12 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected char[] hostNameC = new char[0];
 
+
+    /**
+     * Associated thread pool.
+     */
     protected ThreadPool threadPool;
+
 
     // ------------------------------------------------------------- Properties
 
@@ -445,6 +452,7 @@ public class Http11Processor implements Processor, ActionHook {
         sArray = results;
     }
 
+
     /**
      * General use method
      * 
@@ -454,6 +462,24 @@ public class Http11Processor implements Processor, ActionHook {
     private boolean inStringArray(String sArray[], String value) {
         for (int i = 0; i < sArray.length; i++) {
             if (sArray[i].equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * Checks if any entry in the string array starts with the specified value
+     *
+     * @param sArray the StringArray
+     * @param value string
+     */
+    private boolean startsWithStringArray(String sArray[], String value) {
+        if (value == null)
+           return false;
+        for (int i = 0; i < sArray.length; i++) {
+            if (value.startsWith(sArray[i])) {
                 return true;
             }
         }
@@ -1168,12 +1194,12 @@ public class Http11Processor implements Processor, ActionHook {
 
     }
 
-    /*
+
+    /**
      * Check for compression
-     *
      */
-	private boolean isCompressable()
-	{
+    private boolean isCompressable() {
+
         // Compression only since HTTP 1.1
         if (! http11)
             return false;
@@ -1213,13 +1239,16 @@ public class Http11Processor implements Processor, ActionHook {
         if ((contentLength == -1) 
             || (contentLength > compressionMinSize)) {
             // Check for compatible MIME-TYPE
-            if (compressableMimeTypes != null)
-                return (inStringArray(compressableMimeTypes, response.getContentType()));
+            if (compressableMimeTypes != null) {
+                return (startsWithStringArray(compressableMimeTypes, 
+                                              response.getContentType()));
+            }
         }
 
-		return false;
-	}
-	
+        return false;
+    }
+
+
     /**
      * When committing the response, we have to validate the set of headers, as
      * well as setup the response filters.
