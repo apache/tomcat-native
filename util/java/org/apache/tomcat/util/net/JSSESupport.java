@@ -77,8 +77,9 @@ import javax.security.cert.X509Certificate;
    depends on JDK 1.2's certificate support
 
    @author EKR
-
+   @author Craig R. McClanahan
    Parts cribbed from JSSECertCompat       
+   Parts cribbed from CertificatesValve
 */
 
 class JSSESupport implements SSLSupport {
@@ -98,9 +99,13 @@ class JSSESupport implements SSLSupport {
         return session.getCipherSuite();
     }
 
-    public Object[] getPeerCertificateChain()
-    throws IOException
-    {
+    public Object[] getPeerCertificateChain() 
+	throws IOException {
+	return getPeerCertificateChain(false);
+    }
+
+    public Object[] getPeerCertificateChain(boolean force)
+	throws IOException {
         // Look up the current SSLSession
         SSLSession session = ssl.getSession();
         if (session == null)
@@ -113,6 +118,15 @@ class JSSESupport implements SSLSupport {
             jsseCerts = session.getPeerCertificateChain();
             if (jsseCerts == null)
                 jsseCerts = new X509Certificate[0];
+	    if(jsseCerts.length <= 0 && force) {
+		session.invalidate();
+		ssl.setNeedClientAuth(true);
+		ssl.startHandshake();
+		session = ssl.getSession();
+		jsseCerts = session.getPeerCertificateChain();
+		if(jsseCerts == null)
+		    jsseCerts = new X509Certificate[0];
+	    }
             x509Certs =
               new java.security.cert.X509Certificate[jsseCerts.length];
             for (int i = 0; i < x509Certs.length; i++) {
@@ -124,8 +138,10 @@ class JSSESupport implements SSLSupport {
                 x509Certs[i] = (java.security.cert.X509Certificate)
                   cf.generateCertificate(stream);
             }
-        } catch (Throwable t) {
-            return null;
+	} catch (IOException iex) {
+	    throw iex;
+	} catch (Throwable t) {
+	    return null;
         }
 
         if ((x509Certs == null) || (x509Certs.length < 1))

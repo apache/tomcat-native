@@ -119,6 +119,14 @@ public interface SSLSupport {
         throws IOException;
 
     /**
+     * The client certificate chain (if any).
+     * @param force If <code>true</code>, then re-negotiate the 
+     *              connection if necessary.
+     */
+    public Object[] getPeerCertificateChain(boolean force)
+        throws IOException;
+
+    /**
      * Get the keysize.
      *
      * What we're supposed to put here is ill-defined by the

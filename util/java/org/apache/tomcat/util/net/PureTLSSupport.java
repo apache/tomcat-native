@@ -94,9 +94,22 @@ class PureTLSSupport implements SSLSupport {
     }
 
     public Object[] getPeerCertificateChain()
-        throws IOException
-    {
+        throws IOException {
+	return getPeerCertificateChain(false);
+    }
+
+    public Object[] getPeerCertificateChain(boolean force)
+        throws IOException {
         Vector v=ssl.getCertificateChain();
+
+	if(v == null && force) {
+	    SSLPolicyInt policy=new SSLPolicyInt();
+	    policy.requireClientAuth(true);
+	    policy.handshakeOnConnect(false);
+	    policy.waitOnClose(false);
+	    ssl.renegotiate(policy);
+	    v = ssl.getCertificateChain();
+	}
 
         if(v==null)
             return null;
