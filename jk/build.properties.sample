@@ -3,6 +3,9 @@
 # edit to taste...
 #
 
+# Directory where tomcat5 is installed
+tomcat5.home= ../../jakarta-tomcat-5/build
+
 # Directory where catalina is installed. It can 
 # be either 4.0 or 4.1
 tomcat40.home=../../jakarta-tomcat-4.0/build

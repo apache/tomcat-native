@@ -3,6 +3,9 @@
 # to be processed by configure
 #
 
+# Directory where tomcat5 is installed
+tomcat5.home=@TOMCAT5_HOME@ 
+
 # Directory where catalina is installed. It can 
 # be either 4.0 or 4.1
 tomcat40.home=@TOMCAT40_HOME@
