@@ -30,10 +30,13 @@ public class TomcatStarter implements Runnable {
             System.err.println("TomcatStarter: err");
             System.out.println("TomcatStarter: out");
 
+            AprImpl.jniMode();
+            
             // Find the class
             Class c=null;
             for( int i=0; i<mainClasses.length; i++ ) {
                 try {
+                    System.err.println("Try  " + mainClasses[i]);
                     c=Class.forName( mainClasses[i] );
                 } catch( ClassNotFoundException ex  ) {
                     continue;
@@ -44,6 +47,7 @@ public class TomcatStarter implements Runnable {
                     startThread.start();
                 }
             }
+            System.err.println("No class found  ");
 
         } catch (Throwable t ) {
             t.printStackTrace(System.err);
