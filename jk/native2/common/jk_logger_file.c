@@ -73,6 +73,10 @@
 #define HUGE_BUFFER_SIZE (8*1024)
 #define LOG_LINE_SIZE    (1024)
 
+int JK_METHOD jk_logger_file_factory(jk_env_t *env, void **result,
+                                     char *type, char *name);
+
+
 /* 
  * define the log format, we're using by default the one from error.log 
  *
@@ -103,9 +107,16 @@ static int jk_logger_file_log(jk_logger_t *l,
         unsigned sz = strlen(what);
         if(sz) {
             FILE *f = (FILE *)l->logger_private;
-            fwrite(what, 1, sz, f);
-	    /* [V] Flush the dam' thing! */
-	    fflush(f);
+
+            if( f==NULL ) {
+                /* This is usefull to debug what happens before logger is set.
+                   On apache you need -X option ( no detach, single process ) */
+                printf("%s", what );
+            } else { 
+                fwrite(what, 1, sz, f);
+                /* [V] Flush the dam' thing! */
+                fflush(f);
+            }
         }
 
         return JK_TRUE;
@@ -116,6 +127,8 @@ static int jk_logger_file_log(jk_logger_t *l,
 
 static int jk_logger_file_parseLogLevel(const char *level)
 {
+    if( level == NULL ) return JK_LOG_ERROR_LEVEL;
+    
     if(0 == strcasecmp(level, JK_LOG_INFO_VERB)) {
         return JK_LOG_INFO_LEVEL;
     }
@@ -135,17 +148,18 @@ static int jk_logger_file_open(jk_logger_t *_this,
                                jk_map_t *properties )
 {
     char *file=map_getStrProp(properties,"logger","file",
-                              "file","mod_jk.log");
-    int level=map_getIntProp(properties,"logger","file",
-                             "level", 0);
+                              "name","mod_jk.log");
+    int level;
+    char *levelS=map_getIntProp(properties,"logger","file",
+                                "level", "ERROR");
     char *logformat=map_getIntProp(properties,"logger","file",
                                    "timeFormat", JK_TIME_FORMAT);
     FILE *f;
 
+    _this->level = jk_logger_file_parseLogLevel(levelS);
+
     jk_logger_file_logFmt = logformat;
 
-    _this->level = level;
-    
     f = fopen(file, "a+");
     if(!f) {
         return JK_FALSE;
@@ -229,13 +243,8 @@ static int jk_logger_file_jkLog(jk_logger_t *l,
         rc = vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
 #endif
         va_end(args);
-        if( l!=NULL ) {        
-            l->log(l, level, buf);
-        } else {
-            /* This is usefull to debug what happens before logger is set.
-               On apache you need -X option ( no detach, single process ) */
-            printf("%s", buf );
-        }
+
+        l->log(l, level, buf);
 #ifdef NETWARE
         free(buf);
 #endif
@@ -244,17 +253,6 @@ static int jk_logger_file_jkLog(jk_logger_t *l,
     return rc;
 }
 
-
-static int jk_logger_file_fileExists(const char *f)
-{
-    if(f) {
-        struct stat st;
-        if((0 == stat(f, &st)) && (st.st_mode & S_IFREG)) {
-            return JK_TRUE;
-        }
-    }
-    return JK_FALSE;
-}
 
 int jk_logger_file_factory(jk_env_t *env,
                            void **result,
@@ -269,6 +267,8 @@ int jk_logger_file_factory(jk_env_t *env,
 
     l->log = jk_logger_file_log;
     l->logger_private = NULL;
+    l->open = jk_logger_file_open;
+    l->jkLog = jk_logger_file_jkLog;
 
     *result=(void *)l;
 
