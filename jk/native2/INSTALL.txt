@@ -13,11 +13,26 @@
   $ ./configure --with-apxs2=PREFIX/bin/apxs
   $ make
   $ make install
-  $ PREFIX/bin/apachectl start
 
      NOTES: * Replace PREFIX with the filesystem path under which 
               Apache should be installed.  A typical installation
               might use "/usr/local/apache2" for PREFIX (without the
               quotes).
 
+
+  Quick Start - IIS
+  
+  Use the provided install4iss.js script file.
+  Put the isapi_redirector2.dll and install4iis.js to the path
+  <where you installed tomcat>/bin .
+  Copy the workers2.properties file to the path
+  <where you installed tomcat>/conf .
+  Now open the command prompt and cd to the tomcat bin directory.
+  
+  C:\Tomcat\bin> cscript install4iis.js
+  
+  The provided script will install the isapi filter and create the
+  virtual directory named /jakarta with execute permission.
+
+  Restart the WWW service and you are ready to use the isapi_redirector2.
 
