@@ -1,0 +1,43 @@
+<h2>Package org.apache.tomcat.util.prefs</h2>
+
+<p>This package abstract the configuration for tomcat ( or any other
+application using a similar 2-layer configuration model ). </p>
+
+<h3>Data storage</h3>
+
+<p>The first layer deals with storing the data. It is modeled after
+java.util.prefs, JNDI and other similar config mechanisms - with the 
+intention of beeing easily adaptable to any of those. 
+
+<p>It'll use a discovery mechanism ( similar with jaxp, commons loggig )
+and should be able to use JDK1.4 prefs, directory servers, Win32 Registry,
+XML config files, INI-style config files, properties files ( with a 
+naming convention to represent hierarchical information ).
+
+<p>A secondary goal for this package is to allow the config data 
+to be 'exposed' as a standard JDK1.4 prefs implementation, so 
+(web)applications using JDK1.4 prefs can use the same data store
+( but not the same data ! ).
+
+<p>An important consideration is the security and insolation of different
+ applications - the current JDK1.4 doesn't provide the fine-grained
+security needed for a web environment, and we'll have to provide it
+in the implementation. 
+
+<h3>Component configuration</h3>
+
+<p>The second layer supports a Java Bean model for the application
+components, similar with tomcat and many other applications.
+
+<p>In addition, this will be closely integrated with JMX, allowing
+us to support and persist changes made using JMX on all managed 
+components. The only requirement is that changes are made either
+using this API, or that the Notification is supported in the 
+MBeans ( true for ModelMBeans and any other MBean that chooses to).
+
+<h3>Implementation</h3>
+
+
+
+
+
