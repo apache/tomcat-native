@@ -127,11 +127,9 @@ static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
     jk_channel_apr_private_t *socketInfo=
         (jk_channel_apr_private_t *)(ch->_privatePtr);
     int rc;
-    apr_port_t port=socketInfo->port;
 
     if( socketInfo->host==NULL ) {
         char *localName=ch->mbean->localName;
-        jk_config_t *cfg=ch->workerEnv->config;
         
         char *portIdx=strchr( localName, ':' );
 
@@ -364,8 +362,6 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *ch,
     apr_status_t stat;
     apr_size_t length;
     char data[128];
-
-    int  sent=0;
 
     sock=endpoint->channelData;
 

@@ -62,9 +62,6 @@ static int jk2_config_processBeanPropertyString( jk_env_t *env,
                                                  char *propertyString,
                                                  char **objName, char **propertyName )
 {
-    jk_bean_t *w = NULL;
-    char *type=NULL;
-    char *dot=0;
     char *lastDot;
     char *lastDot1;
     
@@ -181,7 +178,7 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
         return JK_OK;
     }
     if( strcmp( name, "disabled" ) == 0 ) {
-        int oldDisabled=mbean->disabled;
+        /* int oldDisabled=mbean->disabled; */
         
         mbean->disabled=atoi( val );
         if(mbean->setAttribute) {
@@ -229,9 +226,6 @@ int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
                                  char *name, char *value)
 {
     jk_bean_t *mbean;
-
-    jk_workerEnv_t *wEnv=cfg->workerEnv;
-    jk_map_t *initData=cfg->map;
     int status;
     char *objName=NULL;
     char *propName=NULL;
@@ -352,7 +346,7 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
 int jk2_config_processConfigData(jk_env_t *env, jk_config_t *cfg,int firstTime )
 {
     int i;
-    int rc;
+    int rc = 0;
 
     /* Set the config
      */

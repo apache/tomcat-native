@@ -91,8 +91,6 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
                             const char *name,  char *value)
 {
     server_rec *s = cmd->server;
-    jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
-        ap_get_module_config(s->module_config, &jk2_module);
     jk_env_t *env=workerEnv->globalEnv;
     int rc;
     
@@ -114,8 +112,6 @@ static const char *jk2_set3(cmd_parms *cmd,void *per_dir,
                             const char *name, char *property, char *value)
 {
     server_rec *s = cmd->server;
-    jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
-        ap_get_module_config(s->module_config, &jk2_module);
     jk_env_t *env=workerEnv->globalEnv;
     int rc;
     jk_bean_t *mbean;
@@ -432,7 +428,6 @@ static void *jk2_merge_config(apr_pool_t *p,
                               void *basev, 
                               void *overridesv)
 {
-    jk_uriEnv_t *base = (jk_uriEnv_t *) basev;
     jk_uriEnv_t *overrides = (jk_uriEnv_t *)overridesv;
     
     ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
@@ -629,10 +624,8 @@ static void jk2_child_init(apr_pool_t *pconf,
  */
 static int jk2_handler(request_rec *r)
 {   
-    jk_logger_t      *l=NULL;
     int              rc;
     jk_worker_t *worker=NULL;
-    jk_endpoint_t *end = NULL;
     jk_uriEnv_t *uriEnv;
     jk_env_t *env;
 

@@ -224,7 +224,6 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
                                             jk_channel_t *ch,
                                             jk_endpoint_t *endpoint)
 {
-    int err;
     jk_channel_un_private_t *socketInfo=
         (jk_channel_un_private_t *)(ch->_privatePtr);
     int unixsock;
