@@ -99,10 +99,9 @@ typedef struct jk_uriMap jk_uriMap_t;
 struct jk_uriMap {
     struct jk_bean *mbean;
 
-    /* map URI->WORKER */
-    struct jk_uriEnv **maps;
-    int size;
-    int capacity;
+    /* All mappings */
+    struct jk_map *maps;
+
     struct jk_workerEnv *workerEnv;
     int debug;
 
@@ -111,11 +110,8 @@ struct jk_uriMap {
      * level.
      */
     struct jk_map *vhosts;
-
-    /** Managed webapps. Key is VHOST/CONTEXT, value is the
-     *  uriEnv that corresponds to the top level of the webapp.
-     */
-    struct jk_map *webapps;
+    struct jk_uriEnv *defaultVhost;
+    
     /* ---------- Methods ---------- */
 
     /** Initialize the map. This should be called after all workers
@@ -124,7 +120,7 @@ struct jk_uriMap {
     int (*init)( struct jk_env *env, jk_uriMap_t *_this);
 
     void (*destroy)( struct jk_env *env, jk_uriMap_t *_this );
-
+    
     int (*addUriEnv)(struct jk_env *env,
                      struct jk_uriMap *uriMap,
                      struct jk_uriEnv *uriEnv);
