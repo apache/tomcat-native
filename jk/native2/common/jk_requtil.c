@@ -700,7 +700,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     if (s->attributes->size( env,  s->attributes) > 0) {
         for (i = 0 ; i < s->attributes->size( env,  s->attributes) ; i++) {
             char *name=s->attributes->nameAt( env,  s->attributes, i);
-            char *val=s->attributes->nameAt( env, s->attributes, i);
+            char *val=s->attributes->valueAt( env, s->attributes, i);
             if ( msg->appendByte(env, msg, SC_A_REQ_ATTRIBUTE) ||
                  msg->appendString(env, msg, name ) ||
                  msg->appendString(env, msg, val)) {
