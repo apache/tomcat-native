@@ -92,6 +92,7 @@ static const char *info_deploy(wa_application *appl) {
              appl->name,appl->host->name,appl->host->port,appl->rpth,
              appl->conn->name);
     appl->conf=NULL;
+    appl->depl=wa_true;
     return(NULL);
 }
 
@@ -116,7 +117,8 @@ static void info_handle_application(wa_request *r, wa_application *a) {
     wa_rprintf(r,"      Root&nbsp;URL&nbsp;Path<br>\n");
     wa_rprintf(r,"      Local&nbsp;Deployment&nbsp;Path<br>\n");
     wa_rprintf(r,"      Configuration&nbsp;Details<br>\n");
-    wa_rprintf(r,"      Connection\n");
+    wa_rprintf(r,"      Connection<br>\n");
+    wa_rprintf(r,"      Deployed\n");
     wa_rprintf(r,"     </font>\n");
     wa_rprintf(r,"    </td>\n");
     wa_rprintf(r,"    <td width=\"90%%\" valign=\"top\" align=\"left\">\n");
@@ -135,6 +137,7 @@ static void info_handle_application(wa_request *r, wa_application *a) {
 
     wa_rprintf(r,"      <b>&quot;%s&quot;</b>",a->conn->name);
     wa_rprintf(r," <i><a href=\"#%s\">(details)</a></i><br>\n",a->conn->name);
+    wa_rprintf(r,"      <b>%s</b><br>\n",a->depl?"TRUE":"FALSE");
     wa_rprintf(r,"     </font>\n");
     wa_rprintf(r,"    </td>\n");
     wa_rprintf(r,"   </tr>\n");
