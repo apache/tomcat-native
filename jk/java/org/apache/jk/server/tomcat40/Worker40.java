@@ -63,7 +63,6 @@ import java.net.*;
 import java.util.*;
 
 import org.apache.jk.*;
-import org.apache.tomcat.modules.server.PoolTcpConnector;
 
 import org.apache.tomcat.util.net.*;
 import org.apache.tomcat.util.buf.*;

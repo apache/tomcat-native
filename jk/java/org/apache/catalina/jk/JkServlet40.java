@@ -77,7 +77,6 @@ import org.apache.jk.server.*;
  */
 import org.apache.jk.server.tomcat40.*;
 
-import org.apache.tomcat.util.net.*;
 import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.http.*;
 
