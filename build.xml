@@ -194,6 +194,10 @@
       <param name="destfile" value="${tomcat33.jar}"/>
     </antcall>
 
+    <antcall target="downloadgz">
+      <param name="sourcefile" value="${regexp.loc}"/>
+      <param name="destfile" value="${regexp.jar}"/>
+    </antcall>
 
   </target>
 
