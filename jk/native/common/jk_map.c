@@ -33,6 +33,41 @@
 #define CAPACITY_INC_SIZE (50)
 #define LENGTH_OF_LINE    (1024)
 
+#ifdef AS400
+#define CASE_MASK 0xbfbfbfbf
+#else
+#define CASE_MASK 0xdfdfdfdf
+#endif
+
+/* Compute the "checksum" for a key, consisting of the first
+ * 4 bytes, normalized for case-insensitivity and packed into
+ * an int...this checksum allows us to do a single integer
+ * comparison as a fast check to determine whether we can
+ * skip a strcasecmp
+ */
+#define COMPUTE_KEY_CHECKSUM(key, checksum)    \
+{                                              \
+    const char *k = (key);                     \
+    unsigned int c = (unsigned int)*k;         \
+    (checksum) = c;                            \
+    (checksum) <<= 8;                          \
+    if (c) {                                   \
+        c = (unsigned int)*++k;                \
+        checksum |= c;                         \
+    }                                          \
+    (checksum) <<= 8;                          \
+    if (c) {                                   \
+        c = (unsigned int)*++k;                \
+        checksum |= c;                         \
+    }                                          \
+    (checksum) <<= 8;                          \
+    if (c) {                                   \
+        c = (unsigned int)*++k;                \
+        checksum |= c;                         \
+    }                                          \
+    checksum &= CASE_MASK;                     \
+}
+
 struct jk_map
 {
     jk_pool_t p;
@@ -40,9 +75,10 @@ struct jk_map
 
     const char **names;
     const void **values;
+    unsigned int *keys;
 
-    unsigned capacity;
-    unsigned size;
+    unsigned int capacity;
+    unsigned int size;
 };
 
 static void trim_prp_comment(char *prp);
@@ -79,6 +115,7 @@ int jk_map_open(jk_map_t *m)
         jk_open_pool(&m->p, m->buf, sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
         m->capacity = 0;
         m->size = 0;
+        m->keys  = NULL;
         m->names = NULL;
         m->values = NULL;
         rc = JK_TRUE;
@@ -104,9 +141,11 @@ void *jk_map_get(jk_map_t *m, const char *name, const void *def)
     const void *rc = (void *)def;
 
     if (m && name) {
-        unsigned i;
+        unsigned int i;
+        unsigned int key;
+        COMPUTE_KEY_CHECKSUM(name, key)
         for (i = 0; i < m->size; i++) {
-            if (0 == strcmp(m->names[i], name)) {
+            if (m->keys[i] == key && strcmp(m->names[i], name) == 0) {
                 rc = m->values[i];
                 break;
             }
@@ -115,6 +154,26 @@ void *jk_map_get(jk_map_t *m, const char *name, const void *def)
 
     return (void *)rc;          /* DIRTY */
 }
+
+char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
+{
+    char *rc = (char *)def;
+
+    if (m && name) {
+        unsigned int i;
+        unsigned int key;
+        COMPUTE_KEY_CHECKSUM(name, key)
+        for (i = 0; i < m->size; i++) {
+            if (m->keys[i] == key && strcmp(m->names[i], name) == 0) {
+                rc = (char *)m->values[i];
+                break;
+            }
+        }
+    }
+
+    return rc;
+}
+
 
 int jk_map_get_int(jk_map_t *m, const char *name, int def)
 {
@@ -176,11 +235,6 @@ int jk_map_get_bool(jk_map_t *m, const char *name, int def)
     return rv;
 }
 
-char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
-{
-    return jk_map_get(m, name, def);
-}
-
 char **jk_map_get_string_list(jk_map_t *m,
                               const char *name,
                               unsigned *list_len, const char *def)
@@ -239,9 +293,11 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
     int rc = JK_FALSE;
 
     if (m && name && old) {
-        unsigned i;
+        unsigned int i;
+        unsigned int key;
+        COMPUTE_KEY_CHECKSUM(name, key)
         for (i = 0; i < m->size; i++) {
-            if (0 == strcmp(m->names[i], name)) {
+            if (m->keys[i] == key && strcmp(m->names[i], name) == 0) {
                 break;
             }
         }
@@ -257,6 +313,7 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
             if (m->size < m->capacity) {
                 m->values[m->size] = value;
                 m->names[m->size] = jk_pool_strdup(&m->p, name);
+                m->keys[m->size] = key;
                 m->size++;
                 rc = JK_TRUE;
             }
@@ -411,10 +468,12 @@ static int map_realloc(jk_map_t *m)
     if (m->size == m->capacity) {
         char **names;
         void **values;
+        unsigned int *keys;
         int capacity = m->capacity + CAPACITY_INC_SIZE;
 
         names = (char **)jk_pool_alloc(&m->p, sizeof(char *) * capacity);
         values = (void **)jk_pool_alloc(&m->p, sizeof(void *) * capacity);
+        keys = (unsigned int *)jk_pool_alloc(&m->p, sizeof(unsigned int) * capacity);
 
         if (values && names) {
             if (m->capacity && m->names)
@@ -423,8 +482,12 @@ static int map_realloc(jk_map_t *m)
             if (m->capacity && m->values)
                 memcpy(values, m->values, sizeof(void *) * m->capacity);
 
+            if (m->capacity && m->keys)
+                memcpy(keys, m->keys, sizeof(unsigned int) * m->capacity);
+
             m->names = (const char **)names;
             m->values = (const void **)values;
+            m->keys = keys;
             m->capacity = capacity;
 
             return JK_TRUE;
