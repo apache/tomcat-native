@@ -66,6 +66,7 @@ import javax.management.MBeanRegistration;
 import javax.management.ObjectName;
 import javax.management.MBeanServer;
 import javax.management.NotificationListener;
+import org.apache.commons.modeler.Registry;
 
 /**
  *
@@ -194,11 +195,26 @@ public class JkHandler implements MBeanRegistration, NotificationListener {
     }
 
     public ObjectName preRegister(MBeanServer server,
-                                  ObjectName name) throws Exception {
-        oname=name;
+                                  ObjectName oname) throws Exception {
+        this.oname=oname;
         mserver=server;
-        domain=name.getDomain();
-        return name;
+        domain=oname.getDomain();
+        name=oname.getKeyProperty("name");
+        
+        // we need to create a workerEnv or set one.
+        if ( wEnv == null ) {
+            ObjectName wEnvName=new ObjectName(domain + ":type=Jk2WorkerEnv");
+            if( ! mserver.isRegistered(wEnvName )) {
+                wEnv=new WorkerEnv();
+                Registry.getRegistry().registerComponent(wEnv, wEnvName, null);
+            }
+            mserver.invoke( wEnvName, "addHandler", 
+                    new Object[] {name, this}, 
+                    new String[] {"java.lang.String", 
+                                  "org.apache.jk.core.JkHandler"});
+        }
+        
+        return oname;
     }
 
     public void postRegister(Boolean registrationDone) {
