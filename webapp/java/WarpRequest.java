@@ -77,6 +77,22 @@ public class WarpRequest extends HttpRequestBase {
         this.setStream(this.localstream);
     }
 
+    /** Process the SSL attributes */
+    public Object getAttribute(String name) {
+        if (name.equals("javax.servlet.request.X509Certificate")) {
+            WarpCertificates cert = null;
+            try {
+                cert = new WarpCertificates(localstream.getX509Certificates());
+            } catch (IOException e) {
+                return null;
+            }
+            // super.setAttribute("javax.servlet.request.X509Certificate",
+            //     cert.getCertificates());
+            return(cert.getCertificates());
+        }
+        return(super.getAttribute(name));
+    }
+
     public void setHost(Host host) {
         this.host=host;
     }
@@ -128,6 +144,7 @@ public class WarpRequest extends HttpRequestBase {
             this.packet=new WarpPacket();
             this.packet.setType(Constants.TYPE_CBK_DATA);
         }
+
         
         public int read()
         throws IOException {
@@ -150,6 +167,22 @@ public class WarpRequest extends HttpRequestBase {
             this.request.getConnection().recv(packet);
             return(this.read());
         }
+        public String getX509Certificates()
+        throws IOException {
+            if (closed) throw new IOException("Stream closed");
+            this.packet.reset();
+            this.packet.setType(Constants.TYPE_ASK_SSL_CLIENT);
+            this.request.getConnection().send(packet);
+            packet.reset();
+
+            this.request.getConnection().recv(packet);
+            if (closed) throw new IOException("Stream closed");
+            if (packet.getType()==Constants.TYPE_REP_SSL_NO) return(null);
+            if (packet.getType()!=Constants.TYPE_REP_SSL_CERT)
+               throw new IOException("Invalid WARP packet type for CC");
+            return(this.packet.readString());
+        }
+
         
         public void close()
         throws IOException {

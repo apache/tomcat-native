@@ -363,4 +363,48 @@ public class Constants {
      * No payload.<br>
      */
     public static final int TYPE_CBK_DONE=0x42;
+
+    /**
+     * ASK_SSL: The WARP server (Tomcat) asks the WARP client to
+     * transfer the basic SSL information (cypher, keysize and session).
+     * <br>
+     * No payload.<br>
+     */
+    public static final int TYPE_ASK_SSL=0x43;
+
+    /**
+     * ASK_SSL_CLIENT: The WARP server (Tomcat) asks the WARP server to
+     * transfer the client certificate.
+     * (just the first element of the chain and the webserver should request
+     * for it to the browser if possible).
+     * <br>
+     * No payload.<br>
+     */
+    public static final int TYPE_ASK_SSL_CLIENT=0x44;
+
+    /**
+     * REP_SSL_CERT: The client certificate (remote peer).
+     * <br>
+     * Payload description:<br>
+     * [string] The client certificate. (PEM format).
+     */
+    public static final int TYPE_REP_SSL_CERT=0x52;
+ 
+    /**
+     * REP_SSL: SSL information between 
+     * <br>
+     * Payload description:<br>
+     * [string] The cipher_suite.
+     * [string] The ssl session. (That is not in the spec's).
+     * [ushort] size of the algorithm (56-128).
+     */
+    public static final int TYPE_REP_SSL=0x53;
+ 
+    /**
+     * REP_SSL_NO: Request SSL information is not available.
+     * <br>
+     * No payload.<br>
+     */
+    public static final int TYPE_REP_SSL_NO=0x5F;
 }
+
