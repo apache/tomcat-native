@@ -82,7 +82,7 @@ public class JkResponse40 extends HttpResponseBase {
     private MimeHeaders headers = new MimeHeaders();
     private StringBuffer cookieValue = new StringBuffer();
     Channel ch;
-    Endpoint ep;
+    MsgContext ep;
     int headersMsgNote;
     int utfC2bNote;
     
@@ -260,7 +260,7 @@ public class JkResponse40 extends HttpResponseBase {
         ch.send( msg, ep );
      }
 
-    void setEndpoint(Channel ch, Endpoint ep) {
+    void setEndpoint(Channel ch, MsgContext ep) {
         this.ch=ch;
         this.ep=ep;
         MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );

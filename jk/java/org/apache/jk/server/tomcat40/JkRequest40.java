@@ -78,6 +78,7 @@ import org.apache.tomcat.util.http.BaseRequest;
 import org.apache.tomcat.util.http.MimeHeaders;
 
 import org.apache.jk.core.*;
+import org.apache.jk.server.*;
 import org.apache.jk.common.*;
 import org.apache.jk.util.*;
 
@@ -89,7 +90,7 @@ public class JkRequest40 extends HttpRequestBase {
 
     private static int id = 1;
     Channel ch;
-    Endpoint ep;
+    MsgContext ep;
     
     public JkRequest40() {
         super();
@@ -102,7 +103,7 @@ public class JkRequest40 extends HttpRequestBase {
         response=res;
     }
     
-    public void setEndpoint( Channel ch, Endpoint ep ) {
+    public void setEndpoint( Channel ch, MsgContext ep ) {
         this.ch=ch;
         this.ep=ep;
     }
@@ -258,50 +259,4 @@ class Ajp13Principal implements java.security.Principal {
         return getName();
     }
 
-}
-
-class JkInputStream extends InputStream {
-
-    JkInputStream() {
-    }
-
-    public int available() throws IOException {
-        return 0;
-    }
-
-    public void close() throws IOException {
-    }
-
-    public void mark(int readLimit) {
-    }
-
-    public boolean markSupported() {
-        return false;
-    }
-
-    public void reset() throws IOException {
-        throw new IOException("reset() not supported");
-    }
-
-    byte singleRead[]=new byte[1];
-    
-    public int read() throws IOException {
-        int rc=read( singleRead, 0, 1 );
-        if( rc== 1 )
-            return singleRead[0];
-        return -1;
-    }
-
-    public int read(byte[] b, int off, int len) throws IOException {
-        return -1;// ajp13.doRead(b, off, len);
-    }
-
-    public long skip(long n) throws IOException {
-        if (n > Integer.MAX_VALUE) {
-            throw new IOException("can't skip than many:  " + n);
-        }
-        // XXX if n is big, split this in multiple reads
-        byte[] b = new byte[(int)n];
-        return read(b, 0, b.length);
-    }
 }

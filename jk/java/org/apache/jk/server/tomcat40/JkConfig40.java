@@ -303,7 +303,7 @@ public class JkConfig40 implements LifecycleListener {
 	return false;
     }
 
-    private static final int dL=10;
+    private static final int dL=0;
     private static void d(String s ) {
         System.err.println( "JkConfig40: " + s );
     }

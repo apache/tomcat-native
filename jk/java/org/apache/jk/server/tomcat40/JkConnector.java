@@ -202,11 +202,11 @@ public final class JkConnector
         ((ContainerBase)ct).addLifecycleListener(config);
         config.loadExisting( ct );
 
-        jkMain.setDefaultWorker( worker );
+        jkMain.getWorkerEnv().addHandler("container", worker );
 
         String catalinaHome=System.getProperty("catalina.home");
         File f=new File( catalinaHome );
-        File jkHomeF=new File( f, "webapps/jk" );
+        File jkHomeF=new File( f, "webapps/jk/WEB-INF" );
         
         d("Setting jkHome " + jkHomeF );
         jkMain.setJkHome( jkHomeF.getAbsolutePath() );

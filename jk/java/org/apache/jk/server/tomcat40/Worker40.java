@@ -75,7 +75,7 @@ import org.apache.catalina.*;
 /** Tomcat 40 worker
  *
  */
-public class Worker40 extends Worker
+public class Worker40 extends JkHandler
 {
     private int reqNote;
     Container container;
@@ -89,21 +89,23 @@ public class Worker40 extends Worker
         this.container=ct40;
     }
 
-    public void init(WorkerEnv we) throws IOException {
-        reqNote=we.getNoteId( WorkerEnv.REQUEST_NOTE, "tomcat40Request" );
+    public void init() throws IOException {
+        reqNote=wEnv.getNoteId( WorkerEnv.REQUEST_NOTE, "tomcat40Request" );
     }
     
-    public void service( BaseRequest req, Channel ch, Endpoint ep )
+    public int invoke( Msg msg, MsgContext ep )
         throws IOException
     {
         d("Incoming request " );
-                
+
+        BaseRequest req=ep.getRequest();
+        Channel ch=ep.getChannel();
         JkRequest40 treq=(JkRequest40)req.getNote( reqNote );
         JkResponse40  tres;
         if( treq==null ) {
             treq=new JkRequest40();
             req.setNote( reqNote, treq );
-            tres=new JkResponse40(we);
+            tres=new JkResponse40(wEnv);
             treq.setResponse( tres );
             tres.setRequest( treq );
         }
@@ -123,147 +125,11 @@ public class Worker40 extends Worker
 
         treq.recycle();
         tres.recycle();
+        return OK;
     }
 
     private static final int dL=0;
     private static void d(String s ) {
         System.err.println( "Worker40: " + s );
     }
-
-    
-    // -------------------- Handler implementation --------------------
-
-//     /** Construct the request object, with probably unnecesary
-// 	sanity tests ( should work without thread pool - but that is
-// 	not supported in PoolTcpConnector, maybe in future )
-//     */
-//     private Ajp14Request initRequest(Object thData[] ) {
-// 	if( ajp14_note < 0 ) throw new RuntimeException( "assert: ajp14_note>0" );
-// 	Ajp14Request req=null;
-// 	if( thData != null ) {
-// 	    req=(Ajp14Request)thData[0];
-// 	}
-// 	if( req != null ) {
-// 	    Response res=req.getResponse();
-// 	    req.recycle();
-// 	    res.recycle();
-// 	    // make the note available to other modules
-// 	    req.setNote( ajp14_note, req.ajp13);
-// 	    return req;
-// 	}
-// 	// either thData==null or broken ( req==null)
-//        	Ajp13 ajp13=new Ajp13(reqHandler);
-//         negHandler.init( ajp13 );
-
-// 	negHandler.setContainerSignature( ContextManager.TOMCAT_NAME +
-//                                           " v" + ContextManager.TOMCAT_VERSION);
-// 	if( password!= null ) {
-//             negHandler.setPassword( password );
-//             ajp13.setBackward(false); 
-//         }
-
-// 	BaseRequest ajpreq=new BaseRequest();
-
-// 	req=new Ajp14Request(ajp13, ajpreq);
-// 	Ajp14Response res=new Ajp14Response(ajp13);
-// 	cm.initRequest(req, res);
-// 	return  req;
-//     }
-    
-//     /** Called whenever a new TCP connection is received. The connection
-// 	is reused.
-//      */
-//     public void processConnection(TcpConnection connection, Object thData[])
-//     {
-//         try {
-// 	    if( debug>0)
-// 		log( "Received ajp14 connection ");
-//             Socket socket = connection.getSocket();
-// 	    // assert: socket!=null, connection!=null ( checked by PoolTcpEndpoint )
-	    
-//             socket.setSoLinger( true, 100);
-
-//             Ajp14Request req=initRequest( thData );
-//             Ajp14Response res= (Ajp14Response)req.getResponse();
-//             Ajp13 ajp13=req.ajp13;
-// 	    BaseRequest ajpReq=req.ajpReq;
-
-//             ajp13.setSocket(socket);
-
-// 	    // first request should be the loginit.
-// 	    int status=ajp13.receiveNextRequest( ajpReq );
-// 	    if( status != 304 )  { // XXX use better codes
-// 		log( "Failure in logInit ");
-// 		return;
-// 	    }
-
-// 	    status=ajp13.receiveNextRequest( ajpReq );
-// 	    if( status != 304 ) { // XXX use better codes
-// 		log( "Failure in login ");
-// 		return;
-// 	    }
-	    
-//             boolean moreRequests = true;
-//             while(moreRequests) {
-// 		status=ajp13.receiveNextRequest( ajpReq );
-
-// 		if( status==-2) {
-// 		    // special case - shutdown
-// 		    // XXX need better communication, refactor it
-// 		    if( !doShutdown(socket.getLocalAddress(),
-// 				    socket.getInetAddress())) {
-// 			moreRequests = false;
-// 			continue;
-// 		    }                        
-// 		}
-		
-// 		if( status  == 200)
-// 		    cm.service(req, res);
-// 		else if (status == 500) {
-// 		    log( "Invalid request received " + req );
-// 		    break;
-// 		}
-		
-// 		req.recycle();
-// 		res.recycle();
-//             }
-//             if( debug > 0 ) log("Closing ajp14 connection");
-//             ajp13.close();
-// 	    socket.close();
-//         } catch (Exception e) {
-// 	    log("Processing connection " + connection, e);
-//         }
-//     }
-
-//     // We don't need to check isSameAddress if we authenticate !!!
-//     protected boolean doShutdown(InetAddress serverAddr,
-//                                  InetAddress clientAddr)
-//     {
-//         try {
-// 	    // close the socket connection before handling any signal
-// 	    // but get the addresses first so they are not corrupted			
-//             if(isSameAddress(serverAddr, clientAddr)) {
-// 		cm.stop();
-// 		// same behavior as in past, because it seems that
-// 		// stopping everything doesn't work - need to figure
-// 		// out what happens with the threads ( XXX )
-
-// 		// XXX It should work now - but will fail if servlets create
-// 		// threads
-// 		System.exit(0);
-// 	    }
-// 	} catch(Exception ignored) {
-// 	    log("Ignored " + ignored);
-// 	}
-// 	log("Shutdown command ignored");
-// 	return false;
-//     }
-
-//     // legacy, should be removed 
-//     public void setServer(Object contextM)
-//     {
-//         this.cm=(ContextManager)contextM;
-//     }
-    
-
 }
