@@ -10,8 +10,8 @@ JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_thre
 JK=../common/
 SRCS=${JK}/jk_ajp12_worker.c ${JK}/jk_connect.c ${JK}/jk_msg_buff.c ${JK}/jk_util.c ${JK}/jk_ajp13.c \
      ${JK}/jk_jni_worker.c ${JK}/jk_pool.c ${JK}/jk_worker.c ${JK}/jk_ajp13_worker.c ${JK}/jk_lb_worker.c \
-     ${JK}/jk_sockbuf.c  ${JK}/jk_map.c ${JK}/jk_uri_worker_map.c          
-
+     ${JK}/jk_sockbuf.c  ${JK}/jk_map.c ${JK}/jk_uri_worker_map.c ${JK}/jk_ajp14.c ${JK}/jk_ajp14_worker.c \
+     ${JK}/jk_md5.c
 
 all: mod_jk.so
 
