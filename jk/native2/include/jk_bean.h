@@ -77,6 +77,10 @@ struct jk_map;
 struct jk_bean;
 typedef struct jk_bean jk_bean_t;
 
+#define JK_STATE_DISABLED 0
+#define JK_STATE_NEW 1
+#define JK_STATE_INIT 2
+    
 /**
  * Factory used to create all jk objects. Factories are registered with 
  * jk2_env_registerFactory. The 'core' components are registered in
@@ -136,10 +140,17 @@ struct jk_bean {
     */
     int debug;
     
+    int state;
+    
     /* Common information - if set the component will not be
      * initialized or used
      */
     int disabled;
+
+    /** Object 'version'. Used to detect changes in config.
+     *  XXX will be set to the timestamp of the last config modification.
+     */
+    long ver;
     
     /** Unprocessed settings that are set on this bean by the config
         apis ( i.e. with $() in it ).
@@ -162,6 +173,13 @@ struct jk_bean {
     struct jk_pool *pool;
     
     /* Temp - will change !*/
+
+    /* Multi-value attributes. Must be declared so config knows how
+       to save them. XXX we'll have to use a special syntax for that,
+       the Preferences API and registry don't seem to support them.
+    */
+    char **multiValueInfo;
+
     /* Attributes supported by getAttribute method */
     char **getAttributeInfo;
     
