@@ -78,6 +78,7 @@ extern char *strdup(const char *str);
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
+#include <fcntl.h>
 #if !defined(_OSD_POSIX) && !defined(AS400) && !defined(CYGWIN)
 #include <sys/socketvar.h>
 #endif
