@@ -72,7 +72,7 @@
    locking abstractions.
 */
 
-#ifdef HAS_APR
+#if APR_HAS_THREADS
 
 #include "apr_thread_mutex.h"
 
