@@ -112,9 +112,9 @@ public class Ajp13Request extends HttpRequestBase {
         setServerName(ajp.serverName().toString());
         setServerPort(ajp.getServerPort());
 
-        String remoteUser = ajp.remoteUser().toString();
-        if ((remoteUser != null) && (!(remoteUser.equals("")))) {
-            setUserPrincipal(new Ajp13Principal(remoteUser));
+        if ((!(((Ajp13Connector) connector).getTomcatAuthentication())) 
+            && (ajp.remoteUser() != null)) {
+            setUserPrincipal(new Ajp13Principal(ajp.remoteUser().toString()));
         } else {
             setUserPrincipal(null);
         }

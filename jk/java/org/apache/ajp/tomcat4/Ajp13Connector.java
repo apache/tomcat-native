@@ -273,6 +273,14 @@ public final class Ajp13Connector
 
     private String secret = null;
 
+
+    /**
+     * Tomcat authentication flag. If true, the authnetication is done by
+     * Tomcat, otherwise, it is done by the native webserver.
+     */
+    private boolean tomcatAuthentication = true;
+
+
     // ------------------------------------------------------------- Properties
 
 
@@ -623,6 +631,7 @@ public final class Ajp13Connector
 
     }
 
+
     /**
      * Returns the <code>Service</code> with which we are associated.
      */
@@ -630,12 +639,30 @@ public final class Ajp13Connector
 	return service;
     }
 
+
     /**
      * Set the <code>Service</code> with which we are associated.
      */
     public void setService(Service service) {
 	this.service = service;
     }
+
+
+    /**
+     * Get the value of the tomcatAuthentication flag.
+     */
+    public boolean getTomcatAuthentication() {
+        return tomcatAuthentication;
+    }
+
+
+    /**
+     * Set the value of the tomcatAuthentication flag.
+     */
+    public void setTomcatAuthentication(boolean tomcatAuthentication) {
+        this.tomcatAuthentication = tomcatAuthentication;
+    }
+
 
     // --------------------------------------------------------- Public Methods
 
