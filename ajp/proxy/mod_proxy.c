@@ -1033,8 +1033,7 @@ static const char *add_member(cmd_parms *cmd, void *dummy, const char *arg)
     proxy_server_conf *conf =
     ap_get_module_config(s->module_config, &proxy_module);
     struct proxy_balancer *balancer, *balancers;
-    proxy_worker *worker, *workers;
-    proxy_runtime_worker *runtime;
+    proxy_worker *worker;
     char *path = NULL;
     char *name = NULL;
     char *args = apr_pstrdup(cmd->pool, arg);
@@ -1062,44 +1061,19 @@ static const char *add_member(cmd_parms *cmd, void *dummy, const char *arg)
         }
     }
     if (!path)
-        return "BalanceMember must define balancer name when outside <Proxy > section";
+        return "BalancerMember must define balancer name when outside <Proxy > section";
     if (!name)
-        return "BalanceMember must define remote proxy server";
+        return "BalancerMember must define remote proxy server";
     
     ap_str_tolower(path);	/* lowercase scheme://hostname */
     ap_str_tolower(name);	/* lowercase scheme://hostname */
 
     /* Try to find existing worker */
-    workers = (proxy_worker *)conf->workers->elts;
-    for (i = 0; i < conf->workers->nelts; i++) {
-        if (!strcmp(name, workers[i].name)) {
-            worker = &workers[i];
-            break;
-        }
-    }
+    worker = ap_proxy_get_worker(cmd->temp_pool, conf, name);
     if (!worker) {
-        char *p, *q;
-        int port;
-        worker = apr_array_push(conf->workers);
-        worker->name = apr_pstrdup(cmd->pool, name);
-        worker->scheme = name;
-        p = strchr(name, ':');
-        if (p == NULL || p[1] != '/' || p[2] != '/' || p[3] == '\0') {
-            return "BalanceMember: Bad syntax for a remote proxy server";
-        }
-        *p = '\0';
-        q = strchr(p + 3, ':');
-        if (q != NULL) {
-            if (sscanf(q + 1, "%u", &port) != 1 || port > 65535) {
-                return "BalanceMember: Bad syntax for a remote proxy server (bad port number)";
-            }
-            *q = '\0';
-        }
-        else
-            port = -1;
-        if (port == -1)
-            port = apr_uri_port_of_scheme(worker->scheme);
-        worker->port = port;
+        const char *err;
+        if ((err = ap_proxy_add_worker(&worker, cmd->pool, conf, name)) != NULL)
+            return apr_pstrcat(cmd->temp_pool, "BalancerMember: ", err, NULL); 
     }
 
     arr = apr_table_elts(params);
@@ -1108,12 +1082,12 @@ static const char *add_member(cmd_parms *cmd, void *dummy, const char *arg)
         if (!strcasecmp(elts[i].key, "loadfactor")) {
             worker->lbfactor = atoi(elts[i].val);
             if (worker->lbfactor < 1 || worker->lbfactor > 100)
-                return "BalanceMember: loadfactor must be number between 1..100";
+                return "BalancerMember: loadfactor must be number between 1..100";
         }
         else if (!strcasecmp(elts[i].key, "retry")) {
             int sec = atoi(elts[i].val);
             if (sec < 0)
-                return "BalanceMember: retry must be positive number";
+                return "BalancerMember: retry must be positive number";
             worker->retry = apr_time_from_sec(sec);
         }
     }
@@ -1140,14 +1114,13 @@ static const char *add_member(cmd_parms *cmd, void *dummy, const char *arg)
         if ((rc = apr_thread_mutex_create(&(balancer->mutex),
             APR_THREAD_MUTEX_DEFAULT, cmd->pool)) != APR_SUCCESS) {
             /* XXX: Do we need to log something here */
-            return "BalanceMember: system error. Can not create thread mutex";
+            return "BalancerMember: system error. Can not create thread mutex";
         }
 #endif
     }
     /* Add the worker to the load balancer */
-    runtime = apr_array_push(balancer->workers);
-    runtime->w = worker;
-    
+    ap_proxy_add_worker_to_balancer(balancer, worker);
+
     return NULL;
 }
 
@@ -1157,8 +1130,7 @@ static const char *
     server_rec *s = cmd->server;
     proxy_server_conf *conf =
     ap_get_module_config(s->module_config, &proxy_module);
-    struct proxy_balancer *balancer, *balancers;
-    int i;
+    struct proxy_balancer *balancer;
     const char *name, *sticky;
 
     if (r != NULL && cmd->path == NULL ) {
@@ -1169,21 +1141,14 @@ static const char *
         sticky = f;
     } else {
         if (r == NULL)
-            return "ProxyStickySession needs a path when not defined in a location";
+            return "BalancerStickySession needs a path when not defined in a location";
         else 
-            return "ProxyStickySession can not have a path when defined in a location";
+            return "BalancerStickySession can not have a path when defined in a location";
     }
     /* Try to find the balancer */
-    balancers = (struct proxy_balancer *)conf->balancers->elts;
-    for (i = 0; i < conf->balancers->nelts; i++) {
-        if (!strcmp(name, balancers[i].name)) {
-            balancer = &balancers[i];
-            break;
-        }
-    }
-
+    balancer = ap_proxy_get_balancer(cmd->temp_pool, conf, name);
     if (!balancer)
-        return apr_pstrcat(cmd->temp_pool, "ProxyStickySession: can not find a load balancer '",
+        return apr_pstrcat(cmd->temp_pool, "BalancerStickySession: can not find a load balancer '",
                            name, "'", NULL);
     if (!strcasecmp(sticky, "nofailover"))
         balancer->sticky_force = 1;   
@@ -1334,7 +1299,7 @@ static const command_rec proxy_cmds[] =
      "How to handle bad header line in response: IsError | Ignore | StartBody"),
     AP_INIT_ITERATE("BalancerMember", add_member, NULL, RSRC_CONF|ACCESS_CONF,
      "A balancer name and scheme with list of params"), 
-    AP_INIT_TAKE12("ProxyStickySession", set_sticky_session, NULL, RSRC_CONF|ACCESS_CONF,
+    AP_INIT_TAKE12("BalancerStickySession", set_sticky_session, NULL, RSRC_CONF|ACCESS_CONF,
      "A balancer and sticky session name"),
     {NULL}
 };
@@ -1362,6 +1327,133 @@ PROXY_DECLARE(int) ap_proxy_ssl_disable(conn_rec *c)
     }
 
     return 0;
+}
+
+PROXY_DECLARE(struct proxy_balancer *) ap_proxy_get_balancer(apr_pool_t *p,
+                                                             proxy_server_conf *conf,
+                                                             const char *url)
+{
+    struct proxy_balancer *balancers;
+    char *c, *uri = apr_pstrdup(p, url);
+    int i;
+    
+    c = strchr(url, ':');   
+    if (c == NULL || c[1] != '/' || c[2] != '/' || c[3] == '\0')
+       return NULL;
+    /* remove path from uri */
+    if ((c = strchr(c + 3, '/')))
+        *c = '\0';
+    balancers = (struct proxy_balancer *)conf->balancers;
+    for (i = 0; i < conf->balancers->nelts; i++) {
+        if (strcasecmp(balancers[i].name, uri) == 0)
+            return &balancers[i];
+    }
+    return NULL;
+}
+
+PROXY_DECLARE(proxy_worker *) ap_proxy_get_worker(apr_pool_t *p,
+                                                  proxy_server_conf *conf,
+                                                  const char *url)
+{
+    proxy_worker *workers;
+    char *c, *uri = apr_pstrdup(p, url);
+    int i;
+    
+    c = strchr(url, ':');   
+    if (c == NULL || c[1] != '/' || c[2] != '/' || c[3] == '\0')
+       return NULL;
+    /* remove path from uri */
+    if ((c = strchr(c + 3, '/')))
+        *c = '\0';
+    workers = (proxy_worker *)conf->workers;
+    for (i = 0; i < conf->workers->nelts; i++) {
+        if (strcasecmp(workers[i].name, uri) == 0)
+            return &workers[i];
+    }
+    return NULL;
+}
+
+PROXY_DECLARE(const char *) ap_proxy_add_worker(proxy_worker **worker,
+                                                apr_pool_t *p,
+                                                proxy_server_conf *conf,
+                                                const char *url)
+{
+    char *c, *q, *uri = apr_pstrdup(p, url);
+    int port;
+    
+    c = strchr(url, ':');   
+    if (c == NULL || c[1] != '/' || c[2] != '/' || c[3] == '\0')
+       return "Bad syntax for a remote proxy server";
+    /* remove path from uri */
+    if ((q = strchr(c + 3, '/')))
+        *q = '\0';
+
+    q = strchr(c + 3, ':');
+    if (q != NULL) {
+        if (sscanf(q + 1, "%u", &port) != 1 || port > 65535) {
+            return "Bad syntax for a remote proxy server (bad port number)";
+        }
+        *q = '\0';
+    }
+    else
+        port = -1;
+    ap_str_tolower(uri);
+    *worker = apr_array_push(conf->workers);
+    (*worker)->name = apr_pstrdup(p, uri);
+    *c = '\0';
+    (*worker)->scheme = uri;
+    if (port == -1)
+        port = apr_uri_port_of_scheme((*worker)->scheme);
+    (*worker)->port = port;
+
+    return NULL;
+}
+
+PROXY_DECLARE(void) 
+ap_proxy_add_worker_to_balancer(struct proxy_balancer *balancer, proxy_worker *worker)
+{
+    int i;
+    double median, ffactor = 0.0;
+    proxy_runtime_worker *runtime, *workers;
+
+    runtime = apr_array_push(balancer->workers);
+    runtime->w = worker;
+
+    /* Recalculate lbfactors */
+    workers = (proxy_runtime_worker *)balancer->workers->elts;
+
+    for (i = 0; i < balancer->workers->nelts; i++) {
+        /* Set to the original configuration */
+        workers[i].lbfactor = workers[i].w->lbfactor;
+        ffactor += workers[i].lbfactor;
+    }
+    if (ffactor < 100.0) {
+        int z = 0;
+        for (i = 0; i < balancer->workers->nelts; i++) {
+            if (workers[i].lbfactor == 0.0) 
+                ++z;
+        }
+        if (z) {
+            median = (100.0 - ffactor) / z;
+            for (i = 0; i < balancer->workers->nelts; i++) {
+                if (workers[i].lbfactor == 0.0) 
+                    workers[i].lbfactor = median;
+            }
+        }
+        else {
+            median = (100.0 - ffactor) / balancer->workers->nelts;
+            for (i = 0; i < balancer->workers->nelts; i++)
+                workers[i].lbfactor += median;
+        }
+    }
+    else if (ffactor > 100.0) {
+        median = (ffactor - 100.0) / balancer->workers->nelts;
+        for (i = 0; i < balancer->workers->nelts; i++) {
+            if (workers[i].lbfactor > median)
+                workers[i].lbfactor -= median;
+        }
+    } 
+
 }
 
 static int proxy_post_config(apr_pool_t *pconf, apr_pool_t *plog,
