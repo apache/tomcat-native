@@ -71,7 +71,9 @@
 
 #include "jk_vm.h"
 #include "jk_registry.h"
-#include "jni.h"
+#include <jni.h>
+
+extern jint jk_jni_aprImpl_registerNatives(JNIEnv *, jclass);
 
 /* default only, will be  configurable  */
 #define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/apr/TomcatStarter")
@@ -87,7 +89,6 @@ struct jni_worker_data {
 };
 
 typedef struct jni_worker_data jni_worker_data_t;
-
 
 /** -------------------- Startup -------------------- */
 
@@ -166,6 +167,7 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
     char *str_config = NULL;
     jk_map_t *props=_this->workerEnv->initData;
     jk_vm_t *vm=_this->workerEnv->vm;
+    jclass aprImplClass;
     jclass jstringClass;
     jarray jargs;
     int i=0;
@@ -228,6 +230,29 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "Loaded %s\n", jniWorker->className);
 
+/* Instead of loading mod_jk2.so from java, use the JNI RegisterGlobals.
+   XXX Need the way to customize JAVA_BRIDGE_CLASS_APRI, but since
+   it's hardcoded in JniHandler.java doesn't matter for now.
+*/
+    aprImplClass =
+        (*jniEnv)->FindClass(jniEnv, JAVA_BRIDGE_CLASS_APRI );
+
+    if( aprImplClass == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Can't find class %s\n", JAVA_BRIDGE_CLASS_APRI );
+        /* [V] the detach here may segfault on 1.1 JVM... */
+        vm->detach(env, vm);
+        return JK_ERR;
+    }
+    rc = jk_jni_aprImpl_registerNatives( jniEnv, aprImplClass);
+    
+   if( rc != 0) {
+     env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Can't register native functions for %s \n", JAVA_BRIDGE_CLASS_APRI ); 
+        vm->detach(env, vm);
+        return JK_ERR;
+    }
+    
     rc=jk2_get_method_ids(env, jniWorker, jniEnv);
     if( rc!=JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
