@@ -533,6 +533,19 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
 }
 
 
+HANDLE jk2_starter_thread = NULL;
+
+DWORD WINAPI jk2_isapi_starter( LPVOID lpParam ) 
+{ 
+    initialize_extension();
+    if (is_inited) {
+        if (init_jk(NULL))
+            is_mapread = JK_TRUE;
+    }
+    return 0; 
+} 
+
+
 BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
                     ULONG ulReason,         // Reason why NT called this DLL
                     LPVOID lpReserved)      // Reserved parameter for future use
@@ -541,24 +554,37 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     char drive[_MAX_DRIVE];
     char dir[_MAX_DIR];
     char fname[_MAX_FNAME];
+    DWORD dwThreadId;
 
     switch (ulReason) {
         case DLL_PROCESS_DETACH:
             __try {
+                if (jk2_starter_thread)
+                    CloseHandle(jk2_starter_thread);
                 TerminateFilter(HSE_TERM_MUST_UNLOAD);
             } __except(1) {
             }
         break;
 
+        case DLL_PROCESS_ATTACH:
+            if (GetModuleFileName( hInst, file_name, sizeof(file_name))) {
+                _splitpath( file_name, drive, dir, fname, NULL );
+                _makepath( ini_file_name, drive, dir, fname, ".properties" );
+
+                jk2_starter_thread = CreateThread( NULL,
+                                        0,
+                                        jk2_isapi_starter,
+                                        NULL,
+                                        0,
+                                        &dwThreadId);
+
+            } else {
+                fReturn = JK_FALSE;
+            }
+        break;
         default:
         break;
     } 
-    if (GetModuleFileName( hInst, file_name, sizeof(file_name))) {
-        _splitpath( file_name, drive, dir, fname, NULL );
-        _makepath( ini_file_name, drive, dir, fname, ".properties" );
-    } else {
-        fReturn = JK_FALSE;
-    }
     return fReturn;
 }
 
@@ -575,7 +601,7 @@ static int init_jk(char *serverName)
     /* Logging the initialization type: registry or properties file in virtual dir
     */
     if(strlen(worker_file)){
-        rc=(JK_OK != workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file ));
+        rc=(JK_OK == workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file ));
     }
     workerEnv->init(env,workerEnv);
     env->l->jkLog(env, env->l, JK_LOG_INFO, "Set serverRoot %s\n", server_root);
