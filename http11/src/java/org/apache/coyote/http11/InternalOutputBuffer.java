@@ -432,7 +432,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         }
 
         // End the response status line
-        write(Constants.CRLF);
+        write(Constants.CRLF_BYTES);
 
     }
 
@@ -448,7 +448,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         write(name);
         write(": ");
         write(value);
-        write(Constants.CRLF);
+        write(Constants.CRLF_BYTES);
 
     }
 
@@ -464,7 +464,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         write(name);
         write(": ");
         write(value);
-        write(Constants.CRLF);
+        write(Constants.CRLF_BYTES);
 
     }
 
@@ -480,7 +480,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         write(name);
         write(": ");
         write(value);
-        write(Constants.CRLF);
+        write(Constants.CRLF_BYTES);
 
     }
 
@@ -583,6 +583,22 @@ public class InternalOutputBuffer implements OutputBuffer {
         System.arraycopy(bc.getBytes(), bc.getStart(), buf, pos,
                          bc.getLength());
         pos = pos + bc.getLength();
+
+    }
+
+
+    /**
+     * This method will write the contents of the specyfied byte 
+     * buffer to the output stream, without filtering. This method is meant to
+     * be used to write the response header.
+     * 
+     * @param b data to be written
+     */
+    protected void write(byte[] b) {
+
+        // Writing the byte chunk to the output buffer
+        System.arraycopy(b, 0, buf, pos, b.length);
+        pos = pos + b.length;
 
     }
 

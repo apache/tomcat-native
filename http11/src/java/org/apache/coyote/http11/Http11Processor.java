@@ -71,6 +71,7 @@ import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.buf.Ascii;
 import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.net.SSLSupport;
 
@@ -646,22 +647,21 @@ public class Http11Processor implements Processor, ActionHook {
         MessageBytes connectionValueMB = 
             request.getMimeHeaders().getValue("connection");
         if (connectionValueMB != null) {
-            String connectionValue = 
-                connectionValueMB.toString().toLowerCase().trim();
-            // FIXME: This can be a comma separated list
-            if (connectionValue.equals("close")) {
+            ByteChunk connectionValueBC = connectionValueMB.getByteChunk();
+            if (findBytes(connectionValueBC, Constants.CLOSE_BYTES) != -1) {
                 keepAlive = false;
-            } else if (connectionValue.equals("keep-alive")) {
+            } else if (findBytes(connectionValueBC, 
+                                 Constants.KEEPALIVE_BYTES) != -1) {
                 keepAlive = true;
             }
         }
 
         // Check user-agent header
-        MessageBytes userAgentValueMB =  
-            request.getMimeHeaders().getValue("user-agent");
-        // Check in the restricted list, and adjust the http11 
-        // and keepAlive flags accordingly
         if ((restrictedUserAgents != null) && ((http11) || (keepAlive))) {
+            MessageBytes userAgentValueMB =  
+                request.getMimeHeaders().getValue("user-agent");
+            // Check in the restricted list, and adjust the http11 
+            // and keepAlive flags accordingly
             String userAgentValue = userAgentValueMB.toString();
             for (int i = 0; i < restrictedUserAgents.length; i++) {
                 if (restrictedUserAgents[i].equals(userAgentValue)) {
@@ -969,6 +969,35 @@ public class Http11Processor implements Processor, ActionHook {
             return false;
         }
         return true;
+    }
+
+
+    /**
+     * Specialized utility method: find a sequence of lower case bytes inside
+     * a ByteChunk.
+     */
+    protected int findBytes(ByteChunk bc, byte[] b) {
+
+        byte first = b[0];
+        byte[] buff = bc.getBuffer();
+        int start = bc.getStart();
+        int end = bc.getEnd();
+
+	// Look for first char 
+	int srcEnd = b.length;
+        
+	for (int i = start; i <= (end - srcEnd); i++) {
+	    if (buff[i] != first) continue;
+	    // found first char, now look for a match
+            int myPos = i+1;
+	    for (int srcPos = 1; srcPos < srcEnd; ) {
+                if (buff[myPos++] != Ascii.toLower(b[srcPos++]))
+		    break;
+                if (srcPos == srcEnd) return i - start; // found it
+	    }
+	}
+	return -1;
+
     }
 
 

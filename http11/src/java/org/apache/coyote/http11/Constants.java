@@ -157,6 +157,30 @@ public final class Constants {
 
 
     /**
+     * CRLF bytes.
+     */
+    public static final byte[] CRLF_BYTES = "\r\n".getBytes();
+
+
+    /**
+     * Colon bytes.
+     */
+    public static final byte[] COLON_BYTES = ": ".getBytes();
+
+
+    /**
+     * Close bytes.
+     */
+    public static final byte[] CLOSE_BYTES = "close".getBytes();
+
+
+    /**
+     * Keep-alive bytes.
+     */
+    public static final byte[] KEEPALIVE_BYTES = "keep-alive".getBytes();
+
+
+    /**
      * Indetity filters (input and output).
      */
     public static final int IDENTITY_FILTER = 0;
@@ -190,7 +214,7 @@ public final class Constants {
      * Ack string when pipelining HTTP requests.
      */
     public static final byte[] ACK =
-        (new String("HTTP/1.1 100 Continue\r\n\r\n")).getBytes();
+        "HTTP/1.1 100 Continue\r\n\r\n".getBytes();
 
 
 }
