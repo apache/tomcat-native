@@ -90,6 +90,7 @@
 	</copy>
 
         <path id="build-main.classpath">
+            <pathelement location="../util/build/classes"/>
             <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
             <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
             <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
@@ -110,7 +111,7 @@
     </target>
 
     <target name="build-main" 
-            depends="prepare,report,jkutil,jkjava,jkant" />
+            depends="prepare,report,jkjava,jkant" />
 
     <!-- ==================== Building ==================== -->
     
