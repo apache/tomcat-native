@@ -8,7 +8,7 @@ APXS_CFLAGS=@APXS_CFLAGS@
 COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
 APR_CFLAGS=@APR_CFLAGS@
 APR_LDFLAGS=@APR_LDFLAGS@
-C_FILES=jk_service_apache13_c mod_jk2_c
+C_FILES=jk_service_apache13.c mod_jk2.c
 JAVA_HOME=@JAVA_HOME@
 APRLIBS=`@APR_DIR@/apr-config --libs`
 
