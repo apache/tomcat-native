@@ -74,88 +74,73 @@
 #include "jk_requtil.h"
 #include "jk_registry.h"
 
-static void jk2_worker_status_displayWorkers(jk_env_t *env, jk_ws_service_t *s,
-                                             jk_workerEnv_t *wenv)
-{
-    jk_map_t *map=wenv->worker_map;
-    int i;
-    int count=map->size( env, map );
-    
-    s->jkprintf(env, s, "<H2>Active workers</H2>\n" );
-    s->jkprintf(env, s, "<table border>\n");
-
-    s->jkprintf(env, s, "<tr><th>Name</th><th>Type</th>"
-              "<th>Channel</th><th>Route</th>"
-              "<th>Error state</th><th>Recovery</th>"
-              "<th>Endpoint cache</th></tr>");
-    
-    for( i=0; i< count ; i++ ) {
-        char *name=map->nameAt( env, map, i );
-        jk_worker_t *worker=(jk_worker_t *)map->valueAt( env, map,i );
-
-        s->jkprintf(env, s, "<tr><td>%s</td>", name );
-        s->jkprintf(env, s, "<td>%s</td>", worker->mbean->type );
-        if( worker->channel != NULL ) {
-            s->jkprintf(env, s, "<td>%s</td>",worker->channel->mbean->name );
-        } else {
-            s->jkprintf(env, s, "<td>&nbsp;</td>" );
-        }
-        if( worker->route != NULL ) {
-            s->jkprintf(env, s, "<td>%s</td>",worker->route );
-        } else {
-            s->jkprintf(env, s, "<td>&nbsp;</td>" );
-        }
-        s->jkprintf(env, s, "<td class='in_error'>%d</td>",
-                  worker->in_error_state );
-        s->jkprintf(env, s, "<td class='in_recovering'>%d</td>",
-                  worker->in_recovering );
-        s->jkprintf(env, s, "<td class='epCount'>%d</td>",
-                  ( worker->endpointCache == NULL ? 0 :
-                    worker->endpointCache->count ));
-
-        /* Endpoint cache ? */
-
-        /* special case for status worker */
-        
-        s->jkprintf(env, s, "</tr>" );
-    }
-    s->jkprintf(env, s, "</table>\n");
-}
-
-static void jk2_worker_status_displayWorkerEnv(jk_env_t *env, jk_ws_service_t *s,
-                                               jk_workerEnv_t *wenv)
+static void jk2_worker_status_displayActiveProperties(jk_env_t *env, jk_ws_service_t *s,
+                                                      jk_workerEnv_t *wenv)
 {
     jk_map_t *map=wenv->initData;
     int i;
 
-    s->jkprintf(env, s, "<H2>Worker Env Info</H2>\n");
+    s->jkprintf(env, s, "<H3>Processed config</H3>\n");
+    s->jkprintf(env, s, "<p>All settings ( automatic and configured ), after substitution</p>\n");
 
-    s->jkprintf(env, s, "<table border>\n");
-    /* Could be modified dynamically */
-    s->jkprintf(env, s, "<tr><th>LogLevel</th>"
-              "<td id='logLevel'>%d</td></tr>\n",
-              env->l->level);
-    
-    s->jkprintf(env, s, "</table>\n");
-
-    s->jkprintf(env, s, "<H3>Active Properties ( after substitution )</H3>\n");
     s->jkprintf(env, s, "<table border>\n");
     s->jkprintf(env, s, "<tr><th>Name</th><th>Value</td></tr>\n");
     for( i=0; i< map->size( env, map ) ; i++ ) {
         char *name=map->nameAt( env, map, i );
         char *value=(char *)map->valueAt( env, map,i );
-        /* Don't display worker properties or uris, those are displayed separately
-           for each worker */
-/*         if( strncmp( name, "worker", 6 ) !=0 && */
-/*             name[0] != '/' ) { */
-            s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td></tr>", name,
-                       value);
-/*         } */
+        s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td></tr>", name,
+                    value);
     }
     s->jkprintf(env, s, "</table>\n");
 
+}
 
+static void jk2_worker_status_displayRuntimeProperties(jk_env_t *env, jk_ws_service_t *s,
+                                                       jk_workerEnv_t *wenv)
+{
+    jk_map_t *map=wenv->initData;
+    int i;
+
+    s->jkprintf(env, s, "<H3>getAttribute() info</H3>\n");
+    s->jkprintf(env, s, "<p>Information extracted at runtime, using getAttribute() </p>\n");
+
+    s->jkprintf(env, s, "<table border>\n");
+    s->jkprintf(env, s, "<tr><th>Name</th><th>Value</td></tr>\n");
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        int j;
+        int propCount;
+
+        /* Don't display aliases */
+        if( strchr(name, ':')==NULL )
+            continue;
+        
+        if( mbean==NULL || mbean->getAttributeInfo==NULL ) 
+            continue;
+
+        if( mbean->getAttribute == NULL )
+            continue;
+
+        for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
+            char *pname=mbean->getAttributeInfo[j];
+            
+            
+            s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td><td>%s</td></tr>",
+                        name, pname,
+                        mbean->getAttribute( env, mbean, pname));
+        }
+    }
+    s->jkprintf( env,s , "</table>\n" );
+}
+
+static void jk2_worker_status_displayConfigProperties(jk_env_t *env, jk_ws_service_t *s,
+                                            jk_workerEnv_t *wenv)
+{
+    int i;
+    
     s->jkprintf(env, s, "<H3>Configured Properties</H3>\n");
+    s->jkprintf(env, s, "<p>Original data set by user</p>\n");
     s->jkprintf(env, s, "<table border>\n");
     s->jkprintf(env, s, "<tr><th>Object name</th><th>Property</th><th>Value</td></tr>\n");
 
@@ -189,58 +174,8 @@ static void jk2_worker_status_displayWorkerEnv(jk_env_t *env, jk_ws_service_t *s
         }
     }
     s->jkprintf( env,s , "</table>\n" );
-
 }
  
-static void jk2_worker_status_displayMappings(jk_env_t *env, jk_ws_service_t *s,
-                                             jk_workerEnv_t *wenv)
-{
-    jk_uriEnv_t **maps=wenv->uriMap->maps;
-    int size=wenv->uriMap->size;
-    int i;
-
-    s->jkprintf(env, s, "<H2>Mappings</H2>\n");
-
-    if( maps==NULL ) {
-        s->jkprintf(env, s, "None\n");
-        return;
-    }
-    
-    s->jkprintf(env, s, "<table class='mappings' border>\n");
-    
-    s->jkprintf(env, s, "<tr><th>Host</th><th>Uri</th>"
-              "<th>Worker</th></tr>");
-    
-    for( i=0; i< size ; i++ ) {
-        jk_uriEnv_t *uriEnv=maps[i];
-
-        s->jkprintf(env, s, "<tr>" );
-        s->jkprintf(env, s, "<td class='host'>%s</td>",
-                   (uriEnv->virtual==NULL) ? "*" : uriEnv->virtual );
-        s->jkprintf(env, s, "<td class='uri'>%s</td>",
-                   uriEnv->uri);
-        s->jkprintf(env, s, "<td class='worker'>%s</td>",
-                   (uriEnv->workerName==NULL) ? "DEFAULT" : uriEnv->workerName );
-        s->jkprintf(env, s, "</tr>" );
-    }
-
-    
-    s->jkprintf(env, s, "</table>\n");
-}
-
-/* Channels and connections, including 'pooled' ones
- */
-static void jk2_worker_status_displayConnections(jk_env_t *env, jk_ws_service_t *s,
-                                                 jk_workerEnv_t *wenv)
-{
-        s->jkprintf(env, s, "<H2>Active connections</H2>\n");
-        s->jkprintf(env, s, "<table border>\n");
-        
-    
-        s->jkprintf(env, s, "</table>\n");
-
-}
-
 static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
                                                jk_worker_t *w, 
                                                jk_ws_service_t *s)
@@ -266,10 +201,9 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     }
     
     /* Body */
-    jk2_worker_status_displayWorkerEnv(env, s, s->workerEnv );
-    jk2_worker_status_displayWorkers(env, s, s->workerEnv );
-    jk2_worker_status_displayMappings(env, s, s->workerEnv );
-    jk2_worker_status_displayConnections(env, s, s->workerEnv );
+    jk2_worker_status_displayConfigProperties(env, s, s->workerEnv );
+    jk2_worker_status_displayActiveProperties(env, s, s->workerEnv );
+    jk2_worker_status_displayRuntimeProperties(env, s, s->workerEnv );
     
     s->afterRequest( env, s);
     fprintf(stderr, "After req %s \n", s);

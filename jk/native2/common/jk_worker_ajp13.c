@@ -85,7 +85,39 @@
 #define AJP14_DEF_PORT  (8011)
 
 /* -------------------- Impl -------------------- */
+static char *myAttInfo[]={ "channelName", "route", "errorState", "recovering",
+                           "epCount", NULL };
 
+static void *jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
+    jk_worker_t *worker=(jk_worker_t *)bean->object;
+    
+    if( strcmp( name, "channelName" )==0 ) {
+        if( worker->channel != NULL )
+            return worker->channel->mbean->name;
+        else
+            return worker->channelName;
+    } else if (strcmp( name, "route" )==0 ) {
+        return worker->route;
+    } else if (strcmp( name, "errorState" )==0 ) {
+        if( worker->in_error_state ) 
+            return "Y";
+        else
+            return NULL;
+    } else if (strcmp( name, "recovering" )==0 ) {
+        if( worker->in_recovering ) 
+            return "Y";
+        else
+            return NULL;
+    } else if (strcmp( name, "epCount" )==0 ) {
+        char *result;
+        if( worker->endpointCache==NULL ) return "0";
+        result=env->tmpPool->calloc( env, env->tmpPool, 6 );
+        sprintf( result, "%d", worker->endpointCache->count );
+        return result;
+    } else {
+        return NULL;
+    }
+}
 
 /*
  * Initialize the worker.
@@ -676,11 +708,14 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     w->service = jk2_worker_ajp14_service;
 
     result->setAttribute= jk2_worker_ajp14_setAttribute;
+    result->getAttribute= jk2_worker_ajp14_getAttribute;
     result->object = w;
     w->mbean=result;
 
     w->workerEnv=env->getByName( env, "workerEnv" );
     w->workerEnv->addWorker( env, w->workerEnv, w );
 
+    result->getAttributeInfo=myAttInfo;
+    
     return JK_TRUE;
 }

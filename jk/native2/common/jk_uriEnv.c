@@ -110,10 +110,14 @@ static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
 static void *jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
                                      char *name )
 {
-    if( strcmp( name, "worker" ) ) {
-
-    } else if( strcmp( name, "reqCount" ) ) {
-
+    jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)bean->object;
+    
+    if( strcmp( name, "host" )==0 ) {
+        return  (uriEnv->virtual==NULL) ? "*" : uriEnv->virtual;
+    } else if( strcmp( name, "uri" ) ) {
+        return uriEnv->uri;
+    } else if( strcmp( name, "worker" ) ) {
+        return uriEnv->workerName;
     }
     return NULL;
 }
@@ -259,6 +263,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     return JK_TRUE;
 }
 
+static char *myAttInfo[]={ "host", "uri", "worker", NULL };
 
 int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                  jk_bean_t *result,
@@ -284,7 +289,8 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     result->getAttribute=&jk2_uriEnv_getAttribute;
     uriEnv->mbean=result;
     result->object=uriEnv;
-
+    result->getAttributeInfo=myAttInfo;
+    
     /* The name is a path */
     if( strchr( name, '/' ) != NULL ) {
         jk2_uriEnv_setProperty( env, result, "uri", (char *)name );
