@@ -60,15 +60,15 @@
 package org.apache.jk.server;
 
 import java.io.*;
-import java.net.*;
 import java.util.*;
 
 import org.apache.jk.core.*;
-import org.apache.jk.common.*;
 
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.IntrospectionUtils;
+import org.apache.commons.modeler.Registry;
+import javax.management.ObjectName;
+import javax.management.MBeanServer;
+import javax.management.MBeanRegistration;
 
 /** Main class used to startup and configure jk. It manages the conf/jk2.properties file
  *  and is the target of JMX proxy.
@@ -102,8 +102,9 @@ import org.apache.tomcat.util.IntrospectionUtils;
  *  to see configs based on registry, LDAP, db, etc. ( XML is not necesarily better )
  * 
  * @author Costin Manolache
+ * @deprecated Will be replaced with JMX operations
  */
-public class JkMain
+public class JkMain implements MBeanRegistration
 {
     WorkerEnv wEnv=new WorkerEnv();
     String propFile;
@@ -113,7 +114,7 @@ public class JkMain
     boolean modified=false;
     boolean started=false;
     boolean saveProperties=false;
-    
+
     public JkMain()
     {
         JkMain.jkMain=this;
@@ -122,6 +123,7 @@ public class JkMain
         modules.put("channelJni", "org.apache.jk.common.ChannelJni");
         modules.put("apr", "org.apache.jk.apr.AprImpl");
         modules.put("mx", "org.apache.jk.common.JkMX");
+        modules.put("modeler", "org.apache.jk.common.JkModeler");
         modules.put("shm", "org.apache.jk.common.Shm");
         modules.put("request","org.apache.jk.common.HandlerRequest");
         modules.put("container","org.apache.jk.common.HandlerRequest");
@@ -150,7 +152,7 @@ public class JkMain
             ex.printStackTrace();
         }
     }
-    
+
     // -------------------- Setting --------------------
     
     /** Load a .properties file into and set the values
@@ -223,7 +225,7 @@ public class JkMain
     public String getJkHome() {
         return wEnv.getJkHome();
     }
-    
+
     String out;
     String err;
     File propsF;
@@ -560,7 +562,15 @@ public class JkMain
             log.error( "Can't create " + fullName, ex );
             return null;
         }
+        if( this.domain != null ) {
+            try {
+                Registry.getRegistry().registerComponent(handler, this.domain, "JkHandler",
+                        "type=JkHandler,name=" + fullName);
+            } catch (Exception e) {
+                log.error( "Error registering " + fullName, e );
+            }
 
+        }
         wEnv.addHandler( fullName, handler );
         return handler;
     }
@@ -612,4 +622,34 @@ public class JkMain
 
     static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( JkMain.class );
+
+    protected String domain;
+    protected ObjectName oname;
+    protected MBeanServer mserver;
+
+    public ObjectName getObjectName() {
+        return oname;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public ObjectName preRegister(MBeanServer server,
+                                  ObjectName name) throws Exception {
+        oname=name;
+        mserver=server;
+        domain=name.getDomain();
+        return name;
+    }
+
+    public void postRegister(Boolean registrationDone) {
+    }
+
+    public void preDeregister() throws Exception {
+    }
+
+    public void postDeregister() {
+    }
+
 }

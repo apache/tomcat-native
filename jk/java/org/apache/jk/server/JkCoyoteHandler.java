@@ -74,8 +74,14 @@ import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.net.SSLSupport;
 
 import org.apache.coyote.*;
+import org.apache.commons.modeler.Registry;
+import javax.management.ObjectName;
+import javax.management.MBeanServer;
 
 /** Plugs Jk2 into Coyote
+ *
+ * @jmx:notification-handler name="org.apache.jk.SEND_PACKET
+ * @jmx:notification-handler name="org.apache.coyote.ACTION_COMMIT
  */
 public class JkCoyoteHandler extends JkHandler implements
     ProtocolHandler,
@@ -302,8 +308,7 @@ public class JkCoyoteHandler extends JkHandler implements
         if( contentLanguage != null ) {
             headers.setValue("Content-Language").setString(contentLanguage);
         }
-
-        int contentLength = res.getContentLength();
+	int contentLength = res.getContentLength();
         if( contentLength >= 0 ) {
             headers.setValue("Content-Length").setInt(contentLength);
         }
@@ -441,5 +446,14 @@ public class JkCoyoteHandler extends JkHandler implements
         logTime.debug("Time pre=" + t1 + "/ service=" + t2 + " " +
                       res.getContentLength() + " " + 
                       uri );
+    }
+
+    public ObjectName preRegister(MBeanServer server,
+                                  ObjectName name) throws Exception
+    {
+        // XXX Can we have multiple JkMain ?
+        Registry.getRegistry().registerComponent(jkMain, name.getDomain(),
+                "JkMain", "name=JkMain");
+        return super.preRegister(server, name);
     }
 }
