@@ -536,15 +536,15 @@ public class InternalOutputBuffer implements OutputBuffer {
     protected void commit()
         throws IOException {
 
+        // The response is now committed
+        committed = true;
+        response.setCommitted(true);
+
         if (pos > 0) {
             // Sending the response header buffer
             outputStream.write(buf, 0, pos);
             outputStream.flush(); // Is it really necessary ?
         }
-
-        // The response is now committed
-        committed = true;
-        response.setCommitted(true);
 
     }
 
