@@ -87,12 +87,12 @@
 
 #define HUGE_BUFFER_SIZE (8*1024)
 
-int JK_METHOD jk_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
                                         void **result,
                                         char *type, char *name);
 
 
-static int jk_logger_apache2_log(jk_env_t *env, jk_logger_t *l,                                 
+static int jk2_logger_apache2_log(jk_env_t *env, jk_logger_t *l,                                 
                                  int level,
                                  const char *what)
 {
@@ -100,18 +100,18 @@ static int jk_logger_apache2_log(jk_env_t *env, jk_logger_t *l,
 }
 
 
-static int jk_logger_apache2_open(jk_env_t *env, jk_logger_t *_this,
+static int jk2_logger_apache2_open(jk_env_t *env, jk_logger_t *_this,
                                   jk_map_t *properties )
 {
     return JK_TRUE;
 }
 
-static int jk_logger_apache2_close(jk_env_t *env, jk_logger_t *_this)
+static int jk2_logger_apache2_close(jk_env_t *env, jk_logger_t *_this)
 {
     return JK_TRUE;
 }
 
-static int jk_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
+static int jk2_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
                                    const char *file,
                                    int line,
                                    int level,
@@ -168,7 +168,7 @@ static int jk_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
 }
 
 
-int jk_logger_apache2_factory(jk_env_t *env,
+int jk2_logger_apache2_factory(jk_env_t *env,
                               jk_pool_t *pool,
                               void **result,
                               char *type,
@@ -181,10 +181,10 @@ int jk_logger_apache2_factory(jk_env_t *env,
         return JK_FALSE;
     }
     
-    l->log = jk_logger_apache2_log;
+    l->log = jk2_logger_apache2_log;
     l->logger_private = NULL;
-    l->open =jk_logger_apache2_open;
-    l->jkLog = jk_logger_apache2_jkLog;
+    l->open =jk2_logger_apache2_open;
+    l->jkLog = jk2_logger_apache2_jkLog;
 
     l->level=JK_LOG_ERROR_LEVEL;
     
