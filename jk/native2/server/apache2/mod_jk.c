@@ -89,7 +89,6 @@
  * Jakarta (jk_) include files
  */
 #include "jk_global.h"
-#include "jk_util.h"
 #include "jk_map.h"
 #include "jk_pool.h"
 #include "jk_env.h"
@@ -246,7 +245,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 
 static int JK_METHOD ws_write(jk_ws_service_t *s,
                               const void *b,
-                              unsigned l)
+                              unsigned len)
 {
     jk_logger_t *l=s->workerEnv->l;
     
@@ -257,7 +256,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             /* BUFF *bf = p->r->connection->client; */
             size_t w = (size_t)l;
             size_t r = 0;
-            long ll=l;
+            long ll=len;
             char *bb=(char *)b;
             
             if(!p->response_started) {
@@ -701,9 +700,9 @@ static const char *jk_worker_property(cmd_parms *cmd,
                                 strlen(value) + strlen(oldv) + 3);
         if(tmpv) {
             char sep = '*';
-            if(jk_is_path_poperty(name)) {
+            if(jk_is_some_property(name, "path")) {
                 sep = PATH_SEPERATOR;
-            } else if(jk_is_cmd_line_poperty(name)) {
+            } else if(jk_is_some_property(name, "cmd_line")) {
                 sep = ' ';
             }
             
@@ -1211,7 +1210,7 @@ static int jk_handler(request_rec *r)
             private_data.read_body_started = JK_FALSE;
             private_data.r = r;
             
-            jk_init_ws_service(&s);
+            jk_requtil_initRequest(&s);
 
             s.ws_private = &private_data;
             s.pool = &private_data.p;            
@@ -1291,7 +1290,9 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
         
     env=jk_env_getEnv( NULL );
 
-    l = env->getInstance( env, "logger", "file");
+    /*     l = env->getInstance( env, "logger", "file"); */
+    jk_logger_apache2_factory( env, &l, "logger", "file");
+    l->logger_private=s;
     
     env->logger=l;
     
@@ -1483,6 +1484,8 @@ static int jk_translate(request_rec *r)
 
             r->handler=apr_pstrdup(r->pool,JK_HANDLER);
             apr_table_setn(r->notes, JK_WORKER_ID, uriEnv->worker->name);
+            l->jkLog(l, JK_LOG_DEBUG, 
+                       "mod_jk: map %s %s\n", r->uri, uriEnv->worker->name);
             return OK;
         }
     }
