@@ -76,18 +76,22 @@
 
     <target name="prepare" depends="detect,cpath" >
         <mkdir dir="${jk.build}"/>
-        <mkdir dir="${jk.build}/WEB-INF"/>
-        <mkdir dir="${jk.build}/WEB-INF/conf"/>
-	<mkdir dir="${jk.build}/WEB-INF/classes"/>
-        <mkdir dir="${jk.build}/WEB-INF/classes/META-INF" />
-	<mkdir dir="${jk.build}/WEB-INF/lib"/>
-        <copy file="conf/web.xml" tofile="${jk.build}/WEB-INF/web.xml" />
+        <mkdir dir="${jk.build}"/>
+        <mkdir dir="${jk.build}/conf"/>
+	<mkdir dir="${jk.build}/classes"/>
+        <mkdir dir="${jk.build}/classes/META-INF" />
+	<mkdir dir="${jk.build}/lib"/>
         <copy file="${commons-logging.jar}" 
-              todir="${jk.build}/WEB-INF/lib" />
-	<copy todir="${jk.build}/WEB-INF" file="interceptors.xml"/>
-	<copy todir="${jk.build}/WEB-INF/conf" >
+              todir="${jk.build}/lib" />
+	<copy todir="${jk.build}/conf" >
 	    <fileset dir="conf" includes="*" />
 	</copy>
+
+        <!-- util and coyote must be build first -->
+        <copy  tofile="${jk.build}/lib/tomcat-coyote.jar"
+              file="../coyote/build/lib/tomcat-coyote.jar" />
+        <copy  tofile="${jk.build}/lib/tomcat-util.jar"
+              file="../util/build/lib/tomcat-util.jar" />
 
         <path id="build-main.classpath">
             <pathelement location="../util/build/classes"/>
@@ -95,7 +99,7 @@
             <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
             <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
             <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
-            <pathelement location="${jk.build}/WEB-INF/lib/tomcat-util.jar" />
+            <pathelement location="${jk.build}/lib/tomcat-util.jar" />
             <pathelement location="${commons-logging.jar}"/>
             <pathelement 
                  location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
@@ -109,10 +113,12 @@
         </path>
 
     </target>
-
+     
+    <!-- build all the stuff -->
     <target name="build-main" 
-            depends="prepare,report,jkutil,jkjava,jkant" />
+            depends="prepare,report,coyote,jkjava,jkant" />
 
+    <!-- Build only jk, assume coyote and utils are built -->
     <target name="build-jk" 
             depends="prepare,report,jkjava" />
 
@@ -122,7 +128,7 @@
             description="Build java side of the connector" >
         <echo message="Logging: ${commons-logging.jar}" />
         <javac srcdir="java"
-               destdir="${jk.build}/WEB-INF/classes"
+               destdir="${jk.build}/classes"
                deprecation="off"
                debug="${debug}"
                optimize="${optimize}"
@@ -139,19 +145,19 @@
 	</javac>
 
 	<!-- Copy static resource files -->
-	<copy todir="${jk.build}/WEB-INF/classes">
+	<copy todir="${jk.build}/classes">
 	    <fileset dir="java">
 	    	<include name="**/*.properties"/>
 	    </fileset>
         </copy>
 
-	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-jk.jar"
-	     basedir="${jk.build}/WEB-INF/classes">
+	<jar jarfile="${jk.build}/lib/tomcat-jk.jar"
+	     basedir="${jk.build}/classes">
             <include name="org/apache/ajp/**" />
         </jar>
 	
-	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-jk2.jar"
-	     basedir="${jk.build}/WEB-INF/classes"
+	<jar jarfile="${jk.build}/lib/tomcat-jk2.jar"
+	     basedir="${jk.build}/classes"
              manifest="conf/jk2.manifest" >
             <include name="org/apache/jk/**" />
             <exclude name="org/apache/jk/ant/**" />
@@ -161,92 +167,35 @@
     
     <target name="jkant" >
 	<javac srcdir="jkant/java" 
-	       destdir="${jk.build}/WEB-INF/classes" 
+	       destdir="${jk.build}/classes" 
 	       debug="${debug}"
 	       optimize="${optimize}"
 	       verbose="off" >
 	</javac>
-	<copy todir="${jk.build}/WEB-INF/classes/META-INF" 
+	<copy todir="${jk.build}/classes/META-INF" 
               file="jkant/ant.tasks"/>
-	<jar jarfile="${jk.build}/WEB-INF/lib/jkant.jar"
-	     basedir="${jk.build}/WEB-INF/classes" >
+	<jar jarfile="${jk.build}/lib/jkant.jar"
+	     basedir="${jk.build}/classes" >
             <include name="org/apache/jk/ant/**" />
             <include name="META-INF/ant.tasks" />
         </jar>
     </target>
     
-    <target name="jkutil" 
+    <target name="coyote" 
             description="Build utils" >
         <ant dir="../util"  />
         <ant dir="../coyote" />
-    
-        <copy  tofile="${jk.build}/WEB-INF/lib/tomcat-coyote.jar"
-              file="../coyote/build/lib/tomcat-coyote.jar" />
-        <copy  tofile="${jk.build}/WEB-INF/lib/tomcat-util.jar"
-              file="../util/build/lib/tomcat-util.jar" />
-
     </target>
 
-    <!-- It's better to call it directly with individual tags -->
-    <target name="native" depends="jkant" >
-	<ant  dir="native" antfile="build.xml"  />
-	<ant  dir="native2" antfile="build.xml"  />
-    </target>
 
     <!-- ================ Install =================== -->
 
     <target name="install" 
-            depends="prepare,build-main,install-t33,install-t40,install-t41,install-a20,install-a13" />
-
-    <target name="install-t33" if="tomcat33.detect" description="Install in 3.3"> 
-        <mkdir dir="${tomcat33.home}/modules/jk" />
-        <copy todir="${tomcat33.home}/modules/jk" >
-            <fileset dir="${jk.build}" >
-                <include name="WEB-INF/lib/**" />
-                <include name="WEB-INF/conf/**" />
-                <include name="WEB-INF/interceptors.xml" />
-            </fileset>
-        </copy>
-    </target>
-
-    <target name="install-t40" if="tomcat40.detect" description="Install in 4.0"> 
-        <copy todir="${tomcat40.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-util.jar"/>
-        <copy todir="${tomcat40.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-jk.jar"/>
-        <copy todir="${tomcat40.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-jk2.jar"/>
-        <mkdir dir="${tomcat40.home}/webapps/jk/WEB-INF/conf"/>
-    </target>
-
-    <target name="install-t41" if="tomcat41.detect" > 
-        <!-- 4.0 style --> 
-        <copy todir="${tomcat41.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-util.jar"/>
-        <copy todir="${tomcat41.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-jk.jar"/>
-        <copy todir="${tomcat41.home}/server/lib" 
-              file="${jk.build}/WEB-INF/lib/tomcat-jk2.jar"/>
-        <mkdir dir="${tomcat41.home}/webapps/jk/WEB-INF/conf"/>
-        <echo message="Don't forget to add the connector to ${tomcat41.home}/conf/server.xml" />
-
-        <!-- 3.3 style -->
-        <mkdir dir="${tomcat41.home}/server/webapps/jk" />
-        <copy todir="${tomcat41.home}/server/webapps/jk" >
-            <fileset dir="${jk.build}" >
-                <include name="WEB-INF/lib/**" />
-                <include name="WEB-INF/conf/**" />
-                <include name="WEB-INF/web.xml" />
-            </fileset>
-        </copy>
-        
-        <copy file="conf/webapp_41.xml" 
-              tofile="${tomcat41.home}/webapps/jk.xml" />
-    </target>
+            depends="prepare,build-main,install-a20,install-a13" />
 
     <target name="install-a20" if="apache2.detect" > 
         <!--
-    <copy file="${jk.build}/WEB-INF/jk/mod_jk.so" 
+    <copy file="${jk.build}/jk/mod_jk.so" 
               tofile="${apache2.home}/modules/mod_jk.so" />
         -->
     </target>
@@ -270,34 +219,19 @@
 	/>
     </target>
 
-    <!-- ==================== Tests ==================== -->
-    <!-- XXX move test to it's own dir -->
-
-    <!-- Should all tests fail if one does? -->
-    <property name="test.failonerror" value="true"/>
-    <!-- The test runner to execute -->
-    <property name="test.runner" value="junit.textui.TestRunner"/>
-    <property name="test.entry" value="org.apache.ajp.test.TestAll"/>
-
-    <path id="test.classpath">
-        <pathelement location="${jk.build}/WEB-INF/classes"/>
-	<pathelement location="${tomcat-util.jar}"/>
-	<pathelement location="${junit.jar}"/>
-    </path>
-
-
-    <target name="test" if="test.entry" depends="build-main"
-            description="Run all unit test cases">
-	<java classname="${test.runner}" fork="yes"
-	      failonerror="${test.failonerror}">
-	      <arg value="${test.entry}"/>
-	      <classpath refid="test.classpath"/>
-	</java>
+    <target name="clean">
+        <delete dir="${jk.build}/classes"/>
+        <delete dir="${jk.build}/lib"/>
+        <delete dir="${jk.build}/javadoc"/>
     </target>
 
+    <!-- It's better to call it directly with individual tags -->
+    <target name="native" depends="jkant,detect,report" >
+	<ant  dir="native" antfile="build.xml"  />
+	<ant  dir="native2" antfile="build.xml"  />
+    </target>
 
-    <target name="clean">
-        <delete dir="${jk.build}"/>
+    <target name="clean-native">
     </target>
 
 </project>
