@@ -2,23 +2,53 @@ package org.apache.jk.apr;
 
 import java.io.*;
 import java.util.*;
+import org.apache.jk.core.*;
 
 /** Implements the interface with the APR library. This is for internal-use
  *  only. The goal is to use 'natural' mappings for user code - for example
  *  java.net.Socket for unix-domain sockets, etc. 
  * 
  */
-public class AprImpl {
-    static AprImpl aprSingleton=new AprImpl();
+public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHandler - lifecycle and config
+    static AprImpl aprSingleton=null;
 
     String baseDir;
     String aprHome;
     String soExt="so";
 
-    public static AprImpl getAprImpl() {
-        return aprSingleton;
+    boolean ok=true;
+    // Handlers for native callbacks
+    Hashtable jkHandlers=new Hashtable();
+
+    public AprImpl() {
+        aprSingleton=this;
     }
     
+    // -------------------- Properties --------------------
+    
+    /** Native libraries are located based on base dir.
+     *  XXX Add platform, version, etc
+     */
+    public void setBaseDir(String s) {
+        baseDir=s;
+    }
+    
+    public void setSoExt(String s ) {
+        soExt=s;
+    }
+    
+    // XXX maybe install the jni lib in apr-home ?
+    public void setAprHome( String s ) {
+        aprHome=s;
+    }
+
+    /** Add a Handler for jni callbacks.
+     */
+    public void addJkHandler(String type, JkHandler cb) {
+        jkHandlers.put( type, cb );
+    }
+    
+    // -------------------- Apr generic utils --------------------
     /** Initialize APR
      */
     public native int initialize();
@@ -29,6 +59,12 @@ public class AprImpl {
 
     public native long poolClear(long pool);
 
+    // -------------------- Unix sockets --------------------
+    // XXX Will be 'apr sockets' as soon as APR supports unix domain sockets.
+    // For the moment there is little benefit of using APR TCP sockets, since
+    // the VM abstraction is decent. However poll and other advanced features
+    // are not available - and will be usefull. For the next release.
+    
     public native long unSocketClose( long pool, long socket, int type );
 
     /** Create a unix socket and start listening. 
@@ -53,22 +89,76 @@ public class AprImpl {
     public native int unWrite( long pool, long unSocket,
                                 byte buf[], int off, int len );
 
-    /** Native libraries are located based on base dir.
-     *  XXX Add platform, version, etc
+    // -------------------- Shared memory methods --------------------
+
+    public native long shmAttach( long pool, String file );
+
+    public native long shmDetach( long pool, long shmP );
+
+    public native long shmDestroy( long pool, long shmP );
+
+    // --------------------  java to C --------------------
+
+    // Temp - interface will evolve
+    
+    /** Send the packet to the C side. On return it contains the response
+     *  or indication there is no response. Asymetrical because we can't
+     *  do things like continuations.
      */
-    public void setBaseDir(String s) {
-        baseDir=s;
-    }
+    public static native int sendPacket(long xEnv, long endpointP,
+                                        byte data[], int len);
+
     
-    public void setSoExt(String s ) {
-        soExt=s;
-    }
+    // -------------------- Called from C --------------------
+    // XXX Check security, add guard or other protection
+    // It's better to do it the other way - on init 'push' AprImpl into
+    // the native library, and have native code call instance methods.
     
-    // XXX maybe install the jni lib in apr-home ?
-    public void setAprHome( String s ) {
-        aprHome=s;
+    public static Object createJavaContext(String type, long cContext) {
+        // XXX will be an instance method, fields accessible directly
+        AprImpl apr=aprSingleton;
+        JkHandler jkH=(JkHandler)apr.jkHandlers.get( type );
+        if( jkH==null ) return null;
+
+        MsgContext ep=jkH.createMsgContext();
+
+        ep.setSource( jkH );
+        
+        ep.setJniContext( cContext );
+        return ep;
     }
-    
+
+    /** Return a buffer associated with the ctx.
+     */
+    public static byte[] getBuffer( Object ctx, int id ) {
+        return ((MsgContext)ctx).getBuffer(  id );
+    }
+
+    public static int jniInvoke( long jContext, Object ctx ) {
+        try {
+            MsgContext ep=(MsgContext)ctx;
+            ep.setJniEnv(  jContext );
+            ep.setType( 0 );
+            return ((MsgContext)ctx).execute();
+        } catch( Throwable ex ) {
+            ex.printStackTrace();
+            return -1;
+        }
+    }
+
+    // -------------------- Initialization -------------------- 
+
+    public void init() throws IOException {
+        try {
+            loadNative();
+            
+            initialize();
+        } catch( Throwable t ) {
+            log.error("Native code not initialized, disabling UnixSocket and JNI channels: " + t.toString());
+            return;
+        }
+    }
+
     /** This method of loading the libs doesn't require setting
      *   LD_LIBRARY_PATH. Assuming a 'right' binary distribution,
      *   or a correct build all files will be in their right place.
@@ -105,8 +195,7 @@ public class AprImpl {
             loadNative( jniConnect.getAbsolutePath() );
         }
     }
-
-    boolean ok=true;
+    
     
     public void loadNative(String libPath) {
         try {
@@ -117,72 +206,7 @@ public class AprImpl {
         }
     }
 
-    // Mostly experimental, the interfaces need to be cleaned up - after everything works
-    
-    Hashtable jniContextFactories=new Hashtable();
-    
-    public void addJniContextFactory(String type, JniContextFactory cb) {
-        jniContextFactories.put( type, cb );
-    }
-
-    public static interface JniContext {
-
-        /** Each context contains a number of byte[] buffers used for communication.
-         *  The C side will contain a char * equivalent - both buffers are long-lived
-         *  and recycled.
-         *
-         *  This will be called at init time. A long-lived global reference to the byte[]
-         *  will be stored in the C context.
-         */
-        public byte[] getBuffer(  int id );
-
-
-        /** Invoke a java hook. The xEnv is the representation of the current execution
-         *  environment ( the jni_env_t * )
-         */
-        public int jniInvoke(  long xEnv );
-    }
-    
-    public static interface JniContextFactory {
-
-        /** Create a Jni context - it is the corespondent of a C context, represented
-         *    by a pointer
-         *
-         *  The 'context' is a long-lived object ( recycled ) that manages state for
-         *  each jk operation.
-         */
-        public JniContext createJniContext( String type, long cContext );
-    }
-
-    
-    // -------------------- Called from C --------------------
-
-    public static Object createJavaContext(String type, long cContext) {
-        JniContextFactory cb=(JniContextFactory)AprImpl.getAprImpl().jniContextFactories.get( type );
-        if( cb==null ) return null;
-
-        return cb.createJniContext( type, cContext );
-    }
-
-    /** Return a buffer associated with the ctx.
-     */
-    public static byte[] getBuffer( Object ctx, int id ) {
-        return ((JniContext)ctx).getBuffer(  id );
-    }
-
-    public static int jniInvoke( long jContext, Object ctx ) {
-        return ((JniContext)ctx).jniInvoke(  jContext );
-   }
-
-    // --------------------  java to C --------------------
-
-    // Temp - interface will evolve
-    
-    /** Send the packet to the C side. On return it contains the response
-     *  or indication there is no response. Asymetrical because we can't
-     *  do things like continuations.
-     */
-    public static native int sendPacket(long xEnv, long endpointP,
-                                        byte data[], int len);
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( AprImpl.class );
 
 }
