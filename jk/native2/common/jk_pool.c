@@ -109,7 +109,7 @@ static void *jk2_pool_strdup2ebcdic(jk_env_t *env, jk_pool_t *p, const char *s);
 
 static void *jk2_pool_realloc(jk_env_t *env, jk_pool_t *p, size_t sz,const void *old,
                               size_t old_sz);
-
+static void *jk2_pool_strcat(jk_env_t *env, jk_pool_t *p, ...);
 
 int jk2_pool_create(jk_env_t *env, jk_pool_t **newPool,
                     jk_pool_t *parent, int size)
@@ -146,7 +146,8 @@ int jk2_pool_create(jk_env_t *env, jk_pool_t **newPool,
     _this->pstrdup2ascii=jk2_pool_strdup2ascii;
     _this->pstrdup2ebcdic=jk2_pool_strdup2ebcdic;
     _this->realloc=jk2_pool_realloc;
-    
+    _this->pstrcat=jk2_pool_strcat;
+
     *newPool = _this;
     
     return JK_OK;
@@ -222,7 +223,7 @@ static void *jk2_pool_alloc(jk_env_t *env, jk_pool_t *p,
     pp=(jk_pool_private_t *)p->_private;
 
     /* Round size to the upper mult of 8 (or 16 on iSeries) */
-	size--;
+    size--;
 #ifdef AS400
         size /= 16;
         size = (size + 1) * 16;
@@ -278,9 +279,9 @@ static void *jk2_pool_a_strdup(jk_env_t *env, jk_pool_t *p, const char *s, int c
         rc[size]='\0';
         
         if (convmode == 1)
-        	jk_xlate_to_ascii(rc, size);
+            jk_xlate_to_ascii(rc, size);
         else if (convmode == 2)
-        	jk_xlate_from_ascii(rc, size);        
+            jk_xlate_from_ascii(rc, size);        
     }
 
     return rc;
@@ -288,17 +289,17 @@ static void *jk2_pool_a_strdup(jk_env_t *env, jk_pool_t *p, const char *s, int c
 
 static void *jk2_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s)
 {
-	return (jk2_pool_a_strdup(env, p, s, 0));
+    return (jk2_pool_a_strdup(env, p, s, 0));
 }
 
 static void *jk2_pool_strdup2ascii(jk_env_t *env, jk_pool_t *p, const char *s)
 {
-	return (jk2_pool_a_strdup(env, p, s, 1));
+    return (jk2_pool_a_strdup(env, p, s, 1));
 }
 
 static void *jk2_pool_strdup2ebcdic(jk_env_t *env, jk_pool_t *p, const char *s)
 {
-	return (jk2_pool_a_strdup(env, p, s, 2));
+    return (jk2_pool_a_strdup(env, p, s, 2));
 }
 
 /*
@@ -350,6 +351,65 @@ static void *jk2_pool_dyn_alloc(jk_env_t *env, jk_pool_t *p, size_t size)
     return rc;
 }
 
+/** this is used to cache lengths in pstrcat */
+#define MAX_SAVED_LENGTHS  6
+ 
+static void *jk2_pool_strcat(jk_env_t *env, jk_pool_t *p, ...)
+{
+
+    char *cp, *argp, *res;
+    apr_size_t saved_lengths[MAX_SAVED_LENGTHS];
+    int nargs = 0;
+
+    /* Pass one --- find length of required string */
+
+    apr_size_t len = 0;
+    va_list adummy;
+
+    va_start(adummy, p);
+
+    while ((cp = va_arg(adummy, char *)) != NULL) {
+        apr_size_t cplen = strlen(cp);
+        if (nargs < MAX_SAVED_LENGTHS) {
+            saved_lengths[nargs++] = cplen;
+        }
+        len += cplen;
+    }
+
+    va_end(adummy);
+
+    /* Allocate the required string */
+
+    res = (char *) jk2_pool_alloc(env, p, len+1);
+    cp = res;
+
+    /* Pass two --- copy the argument strings into the result space */
+
+    va_start(adummy, p);
+
+    nargs = 0;
+    while ((argp = va_arg(adummy, char *)) != NULL) {
+        if (nargs < MAX_SAVED_LENGTHS) {
+            len = saved_lengths[nargs++];
+        }
+        else {
+            len = strlen(argp);
+        }
+ 
+        memcpy(cp, argp, len);
+        cp += len;
+    }
+
+    va_end(adummy);
+
+    /* Return the result string */
+
+    *cp = '\0';
+
+    return res; 
+}
+
+
 
 /* Not used yet */
 int JK_METHOD jk2_pool_factory( jk_env_t *env, void **result,
@@ -361,6 +421,5 @@ int JK_METHOD jk2_pool_factory( jk_env_t *env, void **result,
     
     return JK_OK;
 }
-
 
 

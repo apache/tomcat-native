@@ -170,6 +170,64 @@ static jk_pool_t *jk2_pool_apr_createChild( jk_env_t *env, jk_pool_t *_this,
     return newPool;
 }
 
+/** this is used to cache lengths in pstrcat */
+#define MAX_SAVED_LENGTHS  6
+ 
+static void *jk2_pool_apr_strcat(jk_env_t *env, jk_pool_t *p, ...)
+{
+
+    char *cp, *argp, *res;
+    apr_size_t saved_lengths[MAX_SAVED_LENGTHS];
+    int nargs = 0;
+
+    /* Pass one --- find length of required string */
+
+    apr_size_t len = 0;
+    va_list adummy;
+
+    va_start(adummy, p);
+
+    while ((cp = va_arg(adummy, char *)) != NULL) {
+        apr_size_t cplen = strlen(cp);
+        if (nargs < MAX_SAVED_LENGTHS) {
+            saved_lengths[nargs++] = cplen;
+        }
+        len += cplen;
+    }
+
+    va_end(adummy);
+
+    /* Allocate the required string */
+
+    res = (char *) apr_palloc(p->_private, len+1);
+    cp = res;
+
+    /* Pass two --- copy the argument strings into the result space */
+
+    va_start(adummy, p);
+
+    nargs = 0;
+    while ((argp = va_arg(adummy, char *)) != NULL) {
+        if (nargs < MAX_SAVED_LENGTHS) {
+            len = saved_lengths[nargs++];
+        }
+        else {
+            len = strlen(argp);
+        }
+ 
+        memcpy(cp, argp, len);
+        cp += len;
+    }
+
+    va_end(adummy);
+
+    /* Return the result string */
+
+    *cp = '\0';
+
+    return res; 
+}
+
 
 int JK_METHOD jk2_pool_apr_create( jk_env_t *env, jk_pool_t **newPool, jk_pool_t *parent,
                                    void *aprPoolV)
@@ -195,6 +253,7 @@ static void jk2_pool_apr_initMethods(jk_env_t *env,  jk_pool_t *_this )
     _this->calloc=jk2_pool_apr_calloc;
     _this->pstrdup=jk2_pool_apr_strdup;
     _this->realloc=jk2_pool_apr_realloc;
+    _this->pstrcat=jk2_pool_apr_strcat;
 }
 
 
