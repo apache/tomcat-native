@@ -54,13 +54,7 @@
 
 package org.apache.jk.ant;
 
-import org.apache.tools.ant.types.*;
-import org.apache.tools.ant.util.*;
-import org.apache.tools.ant.taskdefs.*;
-import org.apache.tools.ant.*;
-
-import java.io.*;
-import java.util.*;
+import org.apache.tools.ant.BuildException;
 
 /**
  *  Set preferences for compiling Apache modules.

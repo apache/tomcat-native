@@ -54,14 +54,18 @@
 
 package org.apache.jk.ant.compilers;
 
-import org.apache.tools.ant.types.*;
-import org.apache.tools.ant.util.*;
-import org.apache.tools.ant.taskdefs.*;
-import org.apache.tools.ant.*;
-import org.apache.jk.ant.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Enumeration;
 
-import java.io.*;
-import java.util.*;
+import org.apache.jk.ant.Def;
+import org.apache.jk.ant.SoTask;
+import org.apache.jk.ant.Source;
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.types.Commandline;
+import org.apache.tools.ant.util.GlobPatternMapper;
 
 /**
  *  Compile using Microsoft Visual C++ v6.0

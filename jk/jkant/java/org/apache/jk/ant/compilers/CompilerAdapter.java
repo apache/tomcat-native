@@ -54,15 +54,15 @@
 
 package org.apache.jk.ant.compilers;
 
-import org.apache.tools.ant.types.*;
-import org.apache.tools.ant.util.*;
-import org.apache.tools.ant.BuildException;
-import org.apache.jk.ant.*;
-import org.apache.tools.ant.taskdefs.*;
-import org.apache.tools.ant.*;
+import java.io.File;
+import java.util.Enumeration;
+import java.util.Vector;
 
-import java.util.*;
-import java.io.*;
+import org.apache.jk.ant.Def;
+import org.apache.jk.ant.SoTask;
+import org.apache.jk.ant.Source;
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.types.Commandline;
 
 /* Modeled after javac
  */
