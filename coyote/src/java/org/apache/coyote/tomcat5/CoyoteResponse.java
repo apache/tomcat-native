@@ -1120,7 +1120,7 @@ public class CoyoteResponse
         // Generate a temporary redirect to the specified location
         try {
             String absolute = toAbsolute(location);
-            setStatus(SC_MOVED_TEMPORARILY);
+            setStatus(SC_FOUND);
             setHeader("Location", absolute);
         } catch (IllegalArgumentException e) {
             setStatus(SC_NOT_FOUND);
