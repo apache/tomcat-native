@@ -116,7 +116,12 @@ int jk_resolve(char *host,
 
     /* TODO: Should be updated for IPV6 support. */
     /* for now use the correct type, in_addr_t */    
+    /* except on NetWare since the MetroWerks compiler is so strict */
+#if defined(NETWARE)
+    u_long laddr;
+#else
 	in_addr_t laddr;
+#endif
 
     rc->sin_port   = htons((short)port);
     rc->sin_family = AF_INET;
