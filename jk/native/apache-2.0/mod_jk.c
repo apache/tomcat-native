@@ -2032,7 +2032,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
         (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
         l->logger_private && what) {
         unsigned sz = strlen(what);
-        unsigned wrote = sz;
+        apr_size_t wrote = sz;
         char error[256];
         if(sz) {
             apr_status_t status;
