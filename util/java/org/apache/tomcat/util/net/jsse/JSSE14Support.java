@@ -64,13 +64,15 @@ import java.io.*;
 import java.net.*;
 import java.util.Vector;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.cert.Certificate;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.HandshakeCompletedEvent;
 import java.security.cert.CertificateFactory;
-import javax.security.cert.X509Certificate;
+
 
 /* JSSESupport
 
@@ -112,12 +114,14 @@ class JSSE14Support extends JSSESupport {
         throws IOException {
         InputStream in = socket.getInputStream();
         int oldTimeout = socket.getSoTimeout();
-        socket.setSoTimeout(100);
+        socket.setSoTimeout(1000);
         byte[] b = new byte[0];
         listener.reset();
         socket.startHandshake();
-        int maxTries = 50; // 50 * 100 = example 5 second rehandshake timeout
+        int maxTries = 60; // 60 * 1000 = example 1 minute time out
         for (int i = 0; i < maxTries; i++) {
+	    if(logger.isTraceEnabled())
+		logger.trace("Reading for try #" +i);
             try {
                 int x = in.read(b);
             } catch(SSLException sslex) {
@@ -136,14 +140,39 @@ class JSSE14Support extends JSSESupport {
         }
     }
 
+    protected X509Certificate [] getX509Certificates(SSLSession session) 
+	throws IOException {
+	Certificate [] certs = session.getPeerCertificates();
+	X509Certificate [] x509Certs = new X509Certificate[certs.length];
+	for(int i=0; i < certs.length; i++) {
+	    if( certs[i] instanceof X509Certificate ) {
+		// always currently true with the JSSE 1.1.x
+		x509Certs[i] = (X509Certificate)certs[i];
+	    } else {
+		try {
+		    byte [] buffer = certs[i].getEncoded();
+		    CertificateFactory cf =
+			CertificateFactory.getInstance("X.509");
+		    ByteArrayInputStream stream =
+			new ByteArrayInputStream(buffer);
+		    x509Certs[i] = (X509Certificate)
+			cf.generateCertificate(stream);
+		} catch(Exception ex) { 
+		    logger.info("Error translating cert " + certs[i], ex);
+		    return null;
+		}
+	    }
+	}
+	if(x509Certs.length < 1)
+	    return null;
+	return x509Certs;
+    }
+
+
     private static class Listener implements HandshakeCompletedListener {
         volatile boolean completed = false;
         public void handshakeCompleted(HandshakeCompletedEvent event) {
             completed = true;
-            if(logger.isTraceEnabled()) 
-                logger.trace("SSL handshake done : Socket = " +
-                             event.getSocket() );
-
         }
         void reset() {
             completed = false;
