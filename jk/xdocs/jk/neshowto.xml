@@ -18,7 +18,7 @@ using the Tomcat redirector plugin.
 </p>
 
 <p>
-We recommand you to read also the <a href="jk/workershowto.html">Workers HowTo</a> document
+It is recommanded that you also read the <a href="jk/workershowto.html">Workers HowTo</a> document
 to learn how to setup the working entities between your WebServer and Tomcat Engines.
 </p>
 
