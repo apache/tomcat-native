@@ -1,0 +1,317 @@
+<?xml version="1.0"?>
+<document>
+  <properties>
+    <title>Configuration in the Web Server</title>
+    <author email="cmanolache@yahoo.com">Costin Manolache</author>
+    <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+  </properties>
+
+<section name="Intro">
+<p>
+  This document describes the configuration file used by mod_jk2 on the
+  Web Server site. Its default name is ${serverRoot}/conf/workers2.properties,
+  where ${serverRoot} is something like /opt/apache.
+</p>
+</section>
+
+<section name="Config options">
+<p>
+<table>
+
+  <tr>
+  <th>Property name</th>
+  <th>Default</th>
+  <th>Description</th>
+  </tr>
+
+  <tr>
+  <th colspan="2">logger</th>
+  <td>Log jk messages to a file. Name: 'logger'</td>
+  </tr>
+
+  <tr>
+  <td>level</td>
+  <td>INFO</td>
+  <td>Log level. Supported: ERROR, INFO, DEBUG</td>
+  </tr>
+
+  <tr>
+  <td>file</td>
+  <td>${serverRoot}/logs/jk2.log</td>
+  <td>
+    Log file.  XXX you may be able to change this at runtime,
+               to implement rolling.
+  </td>
+  </tr>
+
+  <tr>
+  <th colspan="2">shm</th>
+  <td>Shared memory descriptor</td>
+  </tr>
+
+  <tr>
+  <td>file</td>
+  <td>No default value</td>
+  <td>Name of the file that will be mmapped to use as shared memory.</td>
+  </tr>
+
+  <tr>
+  <td>size</td>
+  <td>No default value</td>
+  <td>Size of the file.</td>
+  </tr>
+
+  <tr>
+  <th colspan="3">Channels</th>
+  </tr>
+
+  <tr>
+  <td>debug</td>
+  <td>0</td>
+  <td>1 activates the debug of channel.</td>
+  </tr>
+
+  <tr>
+  <th colspan="2">channel.socket</th>
+  <td>
+    A communication transport to a remote Engine
+    <b>Magic:</b> The local part of the name will be the Engine name,
+    to use when defining the uri mappings. For example
+    channel.socket.local_9009 will automatically define an engine named
+    local_9009, and if no other setting is set ajp13 will be used for
+    communication.
+    <b>Magic:</b> If no channel is defined in the config, a default channel
+    will be constructed with port=8009, engine=DEFAULT, worker=ajp13 -
+    named 'channel.socket.DEFAULT'
+  </td>
+  </tr>
+
+  <tr>
+  <td>port</td>
+  <td>8009</td>
+  <td>Port where Tomcat is listening</td>
+  </tr>
+
+  <tr>
+  <td>host</td>
+  <td>localhost</td>
+  <td>Remote host</td>
+  </tr>
+
+  <tr>
+  <td>protocol</td>
+  <td>ajp13</td>
+  <td>
+    The protocol to be used to forward the requests.
+    No other value is supported at this moment.
+  </td>
+  </tr>
+
+  <tr>
+  <td>api</td>
+  <td>ajp13</td>
+  <td>
+    API to be used when forwarding the requests.
+    No other value is supported at this moment, ajp14 will be used to indicate
+    that the Engine supports additional API methods like autoconfig.
+  </td>
+  </tr>
+
+  <tr>
+  <td>secretkey</td>
+  <td>NULL</td>
+  <td>
+    <b>Magic:</b> The secret key will be set automatically on the associated
+    worker.
+  </td>
+  </tr>
+
+  <tr>
+  <td>lbfactor</td>
+  <td>1</td>
+  <td>
+    Load balancing factor to use. At this moment, it'll be set on the worker,
+    but in future it should be possible to use lb on a channel level.
+  </td>
+  </tr>
+
+  <tr>
+  <th colspan="2">channel.un</th>
+  <td>
+    AF_UNIX socket. Only on UNIX like platform. These sockets are faster
+    than "normal" sockets but they are limited to the machine. 
+  </td>
+  </tr>
+
+  <tr>
+  <td>file</td>
+  <td>Name of socket</td>
+  <td>Name of the socket file (It is created by the Tomcat ChannelUn)</td>
+  </tr>
+
+  <tr>
+  <th colspan="3">Workers</th>
+  </tr>
+
+  <tr>
+  <td>channel</td>
+  <td>Name of channel</td>
+  <td>Name of the channel used by the worker</td>
+  </tr>
+
+  <tr>
+  <td>debug</td>
+  <td>0</td>
+  <td>1 activates the debug of worker.</td>
+  </tr>
+
+  <tr>
+  <th colspan="2">ajp13</th>
+  <td>
+    The forwarding worker using the ajp13 RPC protocol.
+    It supports the basic ajp13 API and may support additional functions/APIs
+    in future like ajp14 API.
+  </td>
+  </tr>
+
+  <tr>
+  <td>secretkey</td>
+  <td>NULL</td>
+  <td>
+    XXX deprecated - set it on channel ( socket needs it, jni doesn't,
+    with unix we can use smarter things ).
+    Special attribute to be sent with the first request, used to authenticate.
+    Supported by Tomcat3.3 and Tomcat4.x if the authentication is configured,
+    leave it NULL for Tomcat3.2.
+  </td>
+  </tr>
+
+  <tr>
+  <td>lbfactor</td>
+  <td>1</td>
+  <td>XXX deprecated - set it on channel. Load balancing factor to use.</td>
+  </tr>
+
+  <tr>
+  <th colspan="2">status</th>
+  <td>Status report worker. The status worker does not need a channel.</td>
+  </tr>
+
+  <tr>
+  <th colspan="3">Uri mapping.</th>
+  </tr>
+
+  <tr>
+  <th colspan="2">uri</th>
+  <td>The string to map to the worker define in the uri entry.</td>
+  </tr>
+
+  <tr>
+  <td>worker</td>
+  <td>No default value</td>
+  <td>Name of the worker that process the request corresponding to the uri</td>
+  </tr>
+
+  <tr>
+  <td>debug</td>
+  <td>0</td>
+  <td>1 activates the logic associated with the mapping.</td>
+  </tr>
+
+</table>
+</p>
+</section>
+  
+<section name="Examples">
+<p>
+The examples below are working when the Tomcat is configured according the 
+examples described in the configtc file.
+</p>
+<subsection name="/example using normal socket">
+<p> 
+Map /examples to the Tomcat /examples context using a normal socket. Note the 
+IP instead localhost (The JVM listens on the IPV4 address not no the IPV6).
+</p>
+
+<p>
+<source>
+[shm]
+file=${serverRoot}/logs/shm.file
+size=1048576
+
+# Example socket channel, override port and host.
+[channel.socket:localhost:8019]
+port=8019
+host=127.0.0.1
+
+# define the worker
+[ajp13:localhost:8019]
+channel=channel.socket:localhost:8019
+
+# Uri mapping
+[uri:/examples/*]
+worker=ajp13:localhost:8019
+</source>
+</p>
+</subsection>
+
+<subsection name="/jkstatus">
+<p>
+Map /jkstatus to the status worker.
+</p>
+
+<p>
+<source>
+[shm]
+file=${serverRoot}/logs/shm.file
+size=1048576
+
+# define the worker
+[status:status]
+
+# Uri mapping
+[uri:/jkstatus/*]
+worker=status:status
+</source>
+</p>
+</subsection>
+
+
+<subsection name="/example using AF_UNIX socket">
+<p>
+Map /examples to the Tomcat /examples context using a AF_UNIX socket.
+Socket file is create by the Tomcat becarefull when the Web Server runs in
+a different user than the Tomcat with the permission of the socket file:
+<source>
+apache20@jfcexpert:~/apache> ls -l /home1/jakarta/jakarta-tomcat-4.1/dist/work/jk2.socket
+srw-rw----    1 jakarta  jakarta         0 Jun 20 08:27 /home1/jakarta/jakarta-tomcat-4.1/dist/work/jk2.socket
+</source>
+Here the Tomcat user and the Web Server user must be in the same group.
+</p>
+
+<p>
+<source>
+[shm]
+file=${serverRoot}/logs/shm.file
+size=1048576
+
+# Example unixsocket channel.
+[channel.un:unixsocket]
+file=/home1/jakarta/jakarta-tomcat-4.1/dist/work/jk2.socket
+
+[channel.socket:localhost:8019]
+port=8019
+host=127.0.0.1
+
+# define the worker
+[ajp13:unixsocket]
+channel=channel.un:unixsocket
+
+# Uri mapping
+[uri:/examples/*]
+worker=ajp13:unixsocket
+</source>
+</p>
+</subsection>
+</section>
+</document>
