@@ -647,7 +647,7 @@ public class ThreadPool  {
           try {
             while(true) {
                 try {
-		            /* Wait for work. */
+                    /* Wait for work. */
                     synchronized(this) {
                         if(!shouldRun && !shouldTerminate) {
                             this.wait();
@@ -683,8 +683,9 @@ public class ThreadPool  {
                             }
                         }
                     } catch(Throwable t) {
-			p.log.error("Caught exception executing " + toRun.toString() + ", terminating thread", t);
-                        /*
+			p.log.error(sm.getString("threadpool.thread_error",
+                                                 t, toRun.toString()));
+                       /*
                         * The runnable throw an exception (can be even a ThreadDeath),
                         * signalling that the thread die.
                         *
@@ -698,8 +699,8 @@ public class ThreadPool  {
                         if(shouldRun) {
                             shouldRun = false;
                             /*
-			                * Notify the pool that the thread is now idle.
-                            */
+			     * Notify the pool that the thread is now idle.
+                             */
                             p.returnController(this);
                         }
                     }
