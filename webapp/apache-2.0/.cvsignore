@@ -1,0 +1,5 @@
+.libs
+Makefile
+mod_webapp.la
+mod_webapp.lo
+mod_webapp.slo
