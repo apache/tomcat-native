@@ -250,7 +250,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
                                             jk_channel_t *ch,
                                             jk_endpoint_t *endpoint)
 {
-//    int err;
+/*    int err; */
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(ch->_privatePtr);
 
@@ -588,7 +588,7 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
 
     result->setAttribute= jk2_channel_socket_setAttribute; 
 
-    //result->getAttributeInfo=jk2_channel_socket_getAttributeInfo;
+    /*result->getAttributeInfo=jk2_channel_socket_getAttributeInfo;*/
     result->multiValueInfo=jk2_channel_socket_multiValueInfo;
     result->setAttributeInfo=jk2_channel_socket_setAttributeInfo;
     

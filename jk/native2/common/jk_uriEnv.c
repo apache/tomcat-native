@@ -100,7 +100,7 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     
     /* If it doesn't start with /, it must have a vhost */
     if( *name != '/' ) {
-        // char *portIdx=strchr( n, ':' );
+        /* char *portIdx=strchr( n, ':' ); */
         uriEnv->virtual=uriEnv->pool->calloc( env, uriEnv->pool, slash - name + 2 );
         strncpy( uriEnv->virtual, name, slash-name );
     }
@@ -193,7 +193,7 @@ static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
 
 static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
 {
-//    int err;
+/*    int err; */
     char *asterisk;
     char *uri=uriEnv->pool->pstrdup( env, uriEnv->pool, uriEnv->uri);
 
@@ -247,7 +247,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
 
     asterisk = strchr(uri, '*');
 
-    // set the mapping type
+    /* set the mapping type */
     if (!asterisk) {
         /* Something like:  JkMount /login/j_security_check ajp13 */
         uriEnv->prefix      = uri;

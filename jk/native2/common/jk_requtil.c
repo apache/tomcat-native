@@ -929,9 +929,9 @@ static const char basis_64[] =
 
 int jk_requtil_base64CertLen(int len)
 {
-    int n = ((len + 2) / 3 * 4) + 1; // base64 encoded size
-    n += (n + 63 / 64) * 2; // add CRLF's
-    n += sizeof(begin_cert) + sizeof(end_cert) - 2;  // add enclosing strings.
+    int n = ((len + 2) / 3 * 4) + 1; /* base64 encoded size */
+    n += (n + 63 / 64) * 2; /* add CRLF's */
+    n += sizeof(begin_cert) + sizeof(end_cert) - 2; /* add enclosing strings. */
     return n;
 }
 

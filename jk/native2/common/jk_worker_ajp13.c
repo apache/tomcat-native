@@ -764,7 +764,7 @@ jk2_worker_ajp13_destroy(jk_env_t *env, jk_bean_t *bean)
             e= ajp13->endpointCache->get( env, ajp13->endpointCache );
             
             if( e==NULL ) {
-                // we finished all endpoints in the cache
+                /* we finished all endpoints in the cache */
                 break;
             }
             

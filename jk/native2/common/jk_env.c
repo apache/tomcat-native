@@ -154,7 +154,7 @@ static int JK_METHOD jk2_env_put( jk_env_t *parent, jk_env_t *chld )
 static jk_bean_t *jk2_env_createBean( jk_env_t *env, jk_pool_t *pool, char *objName )
 {
     char *type=NULL;
-//    void *obj;
+/*    void *obj; */
     char *localName;
 
     localName=strchr( objName, ':' );
@@ -406,7 +406,7 @@ static void JK_METHOD jkThrow( jk_env_t *env,
                                const char *fmt, ... )
 {
     va_list args;
-//    char *buf;
+/*    char *buf; */
 
     va_start(args, fmt);
     env->l->jkVLog(env, env->l, file, line, JK_LOG_ERROR_LEVEL, fmt, args );

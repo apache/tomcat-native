@@ -96,7 +96,7 @@ static int jk2_config_saveConfig( jk_env_t *env,
                                   char *workerFile)
 {
     FILE *fp;
-//    char buf[LENGTH_OF_LINE + 1];            
+/*    char buf[LENGTH_OF_LINE + 1];            */
     int i,j;
 
     if( workerFile==NULL )
@@ -168,9 +168,9 @@ static int jk2_config_processBeanPropertyString( jk_env_t *env,
     jk_bean_t *w = NULL;
     char *type=NULL;
     char *dot=0;
-//    int i;
-//    char **comp;
-//    int nrComp;
+/*    int i; */
+/*    char **comp; */
+/*    int nrComp; */
     char *lastDot;
     char *lastDot1;
     

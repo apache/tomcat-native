@@ -173,7 +173,7 @@ static int JK_METHOD jk2_handler_logok(jk_env_t *env, void *target,
 {
     unsigned long nego;
     char *sname;
-//    int rc;
+/*    int rc; */
 
     nego = msg->getLong(env, msg);
     
