@@ -70,8 +70,9 @@ struct jk_shm_slot {
 
     
 struct jk_shm_head {
-    struct jk_shm_slot slot;
     
+    int structSize;
+
     int slotSize;
     
     int slotMaxCount;
@@ -82,6 +83,10 @@ struct jk_shm_head {
 
     /* XXX Need a more generic mechanism */
     int lbVer;
+
+    /* Array of used slots set to nonzero if used */
+    char slots[1];
+
 };
 
 
@@ -132,11 +137,17 @@ struct jk_shm {
     
     int slotMaxCount;
     
-    void *image;
-
     struct jk_shm_head *head;
 
-    /* Private data */
+    /* Memory image (the data after head)*/
+    void *image;
+    
+    /* Is the shmem attached or created */
+    int attached;
+
+    /* Use the main memory instead */
+    int inmem;
+    /* Private data (apr_shm_t) */
     void *privateData;
 };
     
