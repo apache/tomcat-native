@@ -61,8 +61,12 @@ package org.apache.ajp.tomcat4;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -71,6 +75,7 @@ import javax.servlet.http.Cookie;
 import org.apache.catalina.connector.HttpRequestBase;
 import org.apache.catalina.Globals;
 import org.apache.catalina.util.RequestUtil;
+import org.apache.catalina.util.StringParser;
 
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.Cookies;
@@ -137,6 +142,8 @@ public class Ajp13Request extends HttpRequestBase {
             MessageBytes name = mheaders.getName(i);
             MessageBytes value = mheaders.getValue(i);
             addHeader(name.toString(), value.toString());
+            if ("accept-language".equals(name.toString()))
+                parseLocalesHeader(value.toString());	
         }
 
         Iterator itr = ajp.getAttributeNames();
@@ -212,6 +219,114 @@ public class Ajp13Request extends HttpRequestBase {
 
     public ServletInputStream createInputStream() throws IOException {
         return (ServletInputStream)getStream();
+    }
+
+
+    /**
+     * Parse accept-language header value.
+     */
+    protected void parseLocalesHeader(String value) {
+
+        // Store the accumulated languages that have been requested in
+        // a local collection, sorted by the quality value (so we can
+        // add Locales in descending order).  The values will be ArrayLists
+        // containing the corresponding Locales to be added
+        TreeMap locales = new TreeMap();
+
+        // Preprocess the value to remove all whitespace
+        int white = value.indexOf(' ');
+        if (white < 0)
+            white = value.indexOf('\t');
+        if (white >= 0) {
+            StringBuffer sb = new StringBuffer();
+            int len = value.length();
+            for (int i = 0; i < len; i++) {
+                char ch = value.charAt(i);
+                if ((ch != ' ') && (ch != '\t'))
+                    sb.append(ch);
+            }
+            value = sb.toString();
+        }
+
+        // Process each comma-delimited language specification
+	StringParser parser = new StringParser();
+        parser.setString(value);        
+        int length = parser.getLength();
+        while (true) {
+
+            // Extract the next comma-delimited entry
+            int start = parser.getIndex();
+            if (start >= length)
+                break;
+            int end = parser.findChar(',');
+            String entry = parser.extract(start, end).trim();
+            parser.advance();   // For the following entry
+
+            // Extract the quality factor for this entry
+            double quality = 1.0;
+            int semi = entry.indexOf(";q=");
+            if (semi >= 0) {
+                try {
+                    quality = Double.parseDouble(entry.substring(semi + 3));
+                } catch (NumberFormatException e) {
+                    quality = 0.0;
+                }
+                entry = entry.substring(0, semi);
+            }
+
+            // Skip entries we are not going to keep track of
+            if (quality < 0.00005)
+                continue;       // Zero (or effectively zero) quality factors
+            if ("*".equals(entry))
+                continue;       // FIXME - "*" entries are not handled
+
+            // Extract the language and country for this entry
+            String language = null;
+            String country = null;
+            String variant = null;
+            int dash = entry.indexOf('-');
+            if (dash < 0) {
+                language = entry;
+                country = "";
+                variant = "";
+            } else {
+                language = entry.substring(0, dash);
+                country = entry.substring(dash + 1);
+                int vDash = country.indexOf('-');
+                if (vDash > 0) {
+                    String cTemp = country.substring(0, vDash);
+                    variant = country.substring(vDash + 1);
+                    country = cTemp;
+                } else {
+                    variant = "";
+                }
+            }
+
+            // Add a new Locale to the list of Locales for this quality level
+            Locale locale = new Locale(language, country, variant);
+            Double key = new Double(-quality);  // Reverse the order
+            ArrayList values = (ArrayList) locales.get(key);
+            if (values == null) {
+                values = new ArrayList();
+                locales.put(key, values);
+            }
+            values.add(locale);
+
+        }
+
+        // Process the quality values in highest->lowest order (due to
+        // negating the Double value when creating the key)
+        Iterator keys = locales.keySet().iterator();
+        while (keys.hasNext()) {
+            Double key = (Double) keys.next();
+            ArrayList list = (ArrayList) locales.get(key);
+            Iterator values = list.iterator();
+            while (values.hasNext()) {
+                Locale locale = (Locale) values.next();
+                addLocale(locale);
+            }
+        }
+
     }
 }
 
