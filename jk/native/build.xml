@@ -68,6 +68,8 @@
       </depends>
       
       <!-- Platform-specific tags -->
+      <altSoFile value="jni_conn" if="netware" />
+      
       <def name="N_PLAT_NLM" if="netware"
 	   info="Building for NetWare platform" />
       <def name="NETWARE" if="netware"
@@ -272,6 +274,7 @@
 	<include name="${java.home}/../include" />
 
         <!-- Platform specific includes -->
+        
 	<include name="${novellndk.dir}/include/nlm" if="netware" />
 	<include name="${novellndk.dir}/include" if="netware" />
         <include name="${java.home}/../include/netware" if="netware" />
@@ -285,6 +288,8 @@
       </depends>
 
       <!-- Platform-specific tags -->
+      <altSoFile value="nsapi_rd" if="netware" />
+      
       <def name="N_PLAT_NLM" if="netware"
 	   info="Building for NetWare platform" />
       <def name="NETWARE" if="netware"

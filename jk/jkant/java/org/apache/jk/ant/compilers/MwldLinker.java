@@ -81,6 +81,21 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
         so.setExtension(".nlm");
         so.duplicateTo( this );
         project.setProperty("netware", "true");
+
+        Enumeration e=altSoFiles.elements();
+        while (e.hasMoreElements())
+        {
+            JkData data = (JkData) e.nextElement();
+            String altSo = data.getValue();
+            if (altSo == null) 
+                continue;
+            else
+            {
+                so.setTarget(altSo);    // set it on the master copy
+                setTarget(altSo);       // set it on ourself
+                break;
+            }
+        }
     }
 
     public void execute() throws BuildException {

@@ -122,6 +122,7 @@ public class SoTask extends Task {
     protected Vector exports    = new Vector();     // used by the NetWare, win32 linkers
     protected Vector modules    = new Vector();     // used by the NetWare linker
     protected Vector linkOpts   = new Vector();     // used by the NetWare, win32 linkers
+    protected Vector altSoFiles = new Vector();     // used by the NetWare linker
 
     // Computed fields 
     protected Vector compileList; // [Source]
@@ -164,6 +165,7 @@ public class SoTask extends Task {
 	so.compileList=compileList;
 	so.compiler=compiler;
 	so.co_mapper=co_mapper;
+	so.altSoFiles=altSoFiles;
     }
 
     /**  @deprecated use setTarget
@@ -242,6 +244,16 @@ public class SoTask extends Task {
     public void addNLMModule(JkData module) {
 	module.setProject( project );
         modules.add(module);
+    }
+
+    /**
+     * Add an alternate target since some platforms (NetWare) have file name
+     * limitations.
+     * 
+     */
+    public void addAltSoFile(JkData altSo) {
+	altSo.setProject( project );
+        altSoFiles.add(altSo);
     }
 
     /** Set the target for this compilation. Don't include any
