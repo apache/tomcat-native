@@ -286,7 +286,7 @@ public class MsgAjp extends Msg {
         int length = getInt();
         if( length > buf.length ) {
             // XXX Should be if(pos + length > buff.legth)?
-            log.error("Try to get data after the end of the buffer");
+            log.error("getBytes() buffer overflow " + length + " " + buf.length );
         }
 	
         if( (length == 0xFFFF) || (length == -1) ) {

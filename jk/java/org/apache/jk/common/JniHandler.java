@@ -74,7 +74,16 @@ import org.apache.jk.apr.*;
 
 
 /** 
- * Proxy for the Jk native component.
+ * Base class for components using native code ( libjkjni.so ).
+ * It allows to access the jk_env and wrap ( 'box' ? ) a native
+ * jk component, and call it's methods.
+ *
+ * Note that get/setAttribute are expensive ( Strings, etc ), 
+ * invoke() is were all optimizations are done. We do recycle
+ * all memory on both C and java sides ( the only exception is
+ * when we attempt pinning but the VM doesn't support it ). The
+ * low level optimizations from ByteBuffer, etc are used to
+ * reduce the overhead of passing strings.
  *
  * @author Costin Manolache
  */

@@ -249,23 +249,6 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
         }
     } 
 
-    /** Set the user id, to avoid running as root. Should be called after we
-     *  aquire all resources ( i.e. open files and sockets ). 
-     */
-    public native int setUser( String user, String group );
-
-    /** Return the process id of the java process
-     */
-    public native int setPid();
-
-    /** Intercept the given signal. ( whenever this is possible )
-     */
-    public native int signal(int sig);
-
-    /** Send the given singal to a process
-     */
-    public native void sendSignal( int pid, int sig );
-    
     public void loadNative(String libPath) {
         try {
             System.load( libPath );
