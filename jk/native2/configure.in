@@ -184,9 +184,9 @@ AC_SUBST(APR_UTIL_LIB)
 
 dnl Java settings
 
+JK_JNI()
 JK_JDK()
 JK_JDK_OS()
-JK_JNI()
 JK_PCRE()
 
 AC_SUBST(JAVA_HOME)
