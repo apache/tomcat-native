@@ -257,6 +257,11 @@ public final class Constants {
      * Ack string when pipelining HTTP requests.
      */
     public static final byte[] ACK_BYTES = {
+        (byte) 'H',
+        (byte) 'T',
+        (byte) 'T',
+        (byte) 'P',
+        (byte) '/',
         (byte) '1',
         (byte) '.',
         (byte) '1',
