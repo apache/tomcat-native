@@ -273,7 +273,7 @@ final class CoyoteAdapter
 
         // URI decoding
         req.decodedURI().duplicate(req.requestURI());
-        req.getURLDecoder().convert(req.decodedURI(), true);
+        req.getURLDecoder().convert(req.decodedURI(), false);
         req.decodedURI().setEncoding("UTF-8");
 
         // Normalize decoded URI
