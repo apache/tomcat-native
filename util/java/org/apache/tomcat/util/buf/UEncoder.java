@@ -56,10 +56,10 @@ public final class UEncoder {
 
 
     /** URL Encode string, using a specified encoding.
-     *  @param s string to be encoded
-     *  @param enc character encoding, for chars >%80 ( use UTF8 if not set,
-     *         as recommended in RFCs)
-     *  @param reserved extra characters to preserve ( "/" - if s is a URL )
+     *
+     * @param buf The writer
+     * @param s string to be encoded
+     * @throws IOException If an I/O error occurs
      */
     public void urlEncode( Writer buf, String s )
 	throws IOException

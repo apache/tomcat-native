@@ -129,7 +129,7 @@ public class CoyoteResponse
     /**
      * Set the Coyote response.
      * 
-     * @param response The Coyote response
+     * @param coyoteResponse The Coyote response
      */
     public void setCoyoteResponse(Response coyoteResponse) {
         this.coyoteResponse = coyoteResponse;

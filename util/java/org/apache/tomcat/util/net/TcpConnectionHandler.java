@@ -36,9 +36,10 @@ public interface TcpConnectionHandler {
     public void setServer(Object manager);
 
     
-    /** Used to pass config informations to the handler
-     *  @deprecated. This has nothing to do with Tcp,
-     *  was used as a workaround 
+    /** Used to pass config informations to the handler.
+     *
+     *  @deprecated This has nothing to do with Tcp,
+     *    was used as a workaround.
      */
     public void setAttribute(String name, Object value );
     

@@ -114,7 +114,7 @@ public class IISConfig extends BaseJkConfig  {
         then getRegConfig() will resolve it absolutely against
         the getConfigHome() path.
         <p>
-        @param <b>path</b> String path to a file
+        @param path String path to a file
     */
     public void setRegConfig(String path){
 	regConfig= (path==null)?null:new File(path);
@@ -122,7 +122,7 @@ public class IISConfig extends BaseJkConfig  {
 
     /**
         set a path to the uriworkermap.properties file.
-        @param <b>path</b> String path to uriworkermap.properties file
+        @param path String path to uriworkermap.properties file
     */
     public void setUriConfig(String path){
         uriConfig= (path==null?null:new File(path));

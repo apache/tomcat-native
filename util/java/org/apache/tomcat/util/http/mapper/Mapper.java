@@ -72,7 +72,7 @@ public final class Mapper {
     /**
      * Set default host.
      *
-     * @param name Default host name
+     * @param defaultHostName Default host name
      */
     public void setDefaultHostName(String defaultHostName) {
         this.defaultHostName = defaultHostName;
@@ -244,7 +244,7 @@ public final class Mapper {
     /**
      * Return all contexts, in //HOST/PATH form
      *
-     * @return
+     * @return The context names
      */
     public String[] getContextNames() {
         List list=new ArrayList();

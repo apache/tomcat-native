@@ -365,7 +365,7 @@ public final class CoyoteConnector
     /**
      * Set the connection linger for this Connector.
      *
-     * @param count The new connection linge
+     * @param connectionLinger The new connection linger
      */
     public void setConnectionLinger(int connectionLinger) {
 
@@ -387,7 +387,7 @@ public final class CoyoteConnector
     /**
      * Set the connection timeout for this Connector.
      *
-     * @param count The new connection timeout
+     * @param connectionTimeout The new connection timeout
      */
     public void setConnectionTimeout(int connectionTimeout) {
 
@@ -431,7 +431,7 @@ public final class CoyoteConnector
     /**
      * Set the server socket timeout for this Connector.
      *
-     * @param connectionUploadTimeout The new server socket timeout
+     * @param serverSocketTimeout The new server socket timeout
      */
     public void setServerSocketTimeout(int serverSocketTimeout) {
 

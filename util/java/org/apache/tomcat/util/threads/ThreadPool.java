@@ -769,10 +769,11 @@ public class ThreadPool  {
         }
     }
 
-    /** Debug display of the stage of each thread. The return is html style,
-     * for display in the console ( it can be easily parsed too )
+    /** 
+     * Debug display of the stage of each thread. The return is html style,
+     * for display in the console ( it can be easily parsed too ).
      *
-     * @return
+     * @return The thread status display
      */
     public String threadStatusString() {
         StringBuffer sb=new StringBuffer();
@@ -795,7 +796,7 @@ public class ThreadPool  {
      * whatever the thread is doing ( if the application using TP provide
      * this info )
      *
-     * @return
+     * @return The status of all threads
      */
     public String[] getThreadStatus() {
         String status[]=new String[ threads.size()];
@@ -811,7 +812,7 @@ public class ThreadPool  {
     /** Return an array with the current "param" ( XXX better name ? )
      * of each thread. This is typically the last request.
      *
-     * @return
+     * @return The params of all threads
      */
     public String[] getThreadParam() {
         String status[]=new String[ threads.size()];

@@ -439,7 +439,7 @@ public final class IntrospectionUtils {
     /**
      * Replace ${NAME} with the property value
      * 
-     * @deprecated. Use the explicit method
+     * @deprecated Use the explicit method
      */
     public static String replaceProperties(String value, Object getter) {
         if (getter instanceof Hashtable)
@@ -611,14 +611,15 @@ public final class IntrospectionUtils {
     }
 
     /**
-     * add elements from the classpath <i>cp </i> to a Vector <i>jars </i> as
+     * Add elements from the classpath <i>cp </i> to a Vector <i>jars </i> as
      * file URLs (We use Vector for JDK 1.1 compat).
      * <p>
      * 
-     * @param <b>cp
-     *            </b> a String classpath of directory or jar file elements
-     *            separated by path.separator delimiters.
-     * @return a Vector of URLs.
+     * @param jars The jar list
+     * @param cp a String classpath of directory or jar file elements
+     *   separated by path.separator delimiters.
+     * @throws IOException If an I/O error occurs
+     * @throws MalformedURLException Doh ;)
      */
     public static void addJarsFromClassPath(Vector jars, String cp)
             throws IOException, MalformedURLException {

@@ -67,8 +67,8 @@ public final class MessageBytes implements Cloneable, Serializable {
 
     /**
      * Creates a new, uninitialized MessageBytes object.
-     * @deprecated. Use static newInstance() in order to allow
-     * future hooks.
+     * @deprecated Use static newInstance() in order to allow
+     *   future hooks.
      */
     public MessageBytes() {
     }
@@ -369,6 +369,7 @@ public final class MessageBytes implements Cloneable, Serializable {
     /**
      * Returns true if the message bytes starts with the specified string.
      * @param s the string
+     * @param pos The start position
      */
     public boolean startsWithIgnoreCase(String s, int pos) {
 	switch (type) {
@@ -471,7 +472,8 @@ public final class MessageBytes implements Cloneable, Serializable {
     
     /**
      * Returns true if the message bytes starts with the specified string.
-     * @param s the string
+     * @param c the character
+     * @param starting The start position
      */
     public int indexOf(char c, int starting) {
 	switch (type) {

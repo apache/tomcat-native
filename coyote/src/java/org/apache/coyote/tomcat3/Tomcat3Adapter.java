@@ -24,7 +24,8 @@ import org.apache.tomcat.core.ContextManager;
  *  This class handles the task of passing of an individual request to
  *  Tomcat to handle.  Also some of the connection-specific methods are
  *  delegated to here.
- *  @Author Bill Barker
+ *
+ *  @author Bill Barker
  */
 public class Tomcat3Adapter implements Adapter {
     ContextManager cm;

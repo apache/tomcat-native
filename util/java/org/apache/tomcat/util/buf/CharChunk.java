@@ -645,7 +645,7 @@ public final class CharChunk implements Cloneable, Serializable {
     
     /**
      * Returns true if the message bytes starts with the specified string.
-     * @param s the string
+     * @param c the character
      */
     public int indexOf(char c, int starting) {
 	int ret = indexOf( buff, start+starting, end, c );

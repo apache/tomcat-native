@@ -142,8 +142,9 @@ public class JdkCompat {
      *  Return the URI for the given file. Originally created for
      *  o.a.c.loader.WebappClassLoader
      *
-     *  @param File to wrap into URI
-     *  @return A URI as a URL
+     * @param file The file to wrap into URI
+     * @return A URI as a URL
+     * @throws MalformedURLException Doh ;)
      */
     public URL getURI(File file)
         throws MalformedURLException {

@@ -613,6 +613,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     /**
      * Returns true if the message bytes starts with the specified string.
      * @param s the string
+     * @param pos The position
      */
     public boolean startsWithIgnoreCase(String s, int pos) {
 	byte[] b = buff;
@@ -684,7 +685,8 @@ public final class ByteChunk implements Cloneable, Serializable {
 
     /**
      * Returns true if the message bytes starts with the specified string.
-     * @param s the string
+     * @param c the character
+     * @param starting The start position
      */
     public int indexOf(char c, int starting) {
 	int ret = indexOf( buff, start+starting, end, c);
@@ -704,7 +706,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     /** Find a character, no side effects.
-     *  @returns index of char if found, -1 if not
+     *  @return index of char if found, -1 if not
      */
     public static int findChar( byte buf[], int start, int end, char c ) {
 	byte b=(byte)c;
@@ -719,7 +721,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     /** Find a character, no side effects.
-     *  @returns index of char if found, -1 if not
+     *  @return index of char if found, -1 if not
      */
     public static int findChars( byte buf[], int start, int end, byte c[] ) {
 	int clen=c.length;
@@ -735,7 +737,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     /** Find the first character != c 
-     *  @returns index of char if found, -1 if not
+     *  @return index of char if found, -1 if not
      */
     public static int findNotChars( byte buf[], int start, int end, byte c[] )
     {

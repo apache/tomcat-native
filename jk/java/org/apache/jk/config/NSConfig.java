@@ -131,7 +131,7 @@ public class NSConfig  extends BaseJkConfig {
         then getRegConfig() will resolve it absolutely against
         the getConfigHome() path.
         <p>
-        @param <b>path</b> String path to a file
+        @param path String path to a file
     */
     public void setObjConfig(String path) {
 	objConfig= (path==null)?null:new File(path);
@@ -139,7 +139,7 @@ public class NSConfig  extends BaseJkConfig {
 
     /**
         set the path to the nsapi plugin module
-        @param <b>path</b> String path to a file
+        @param path String path to a file
     */
     public void setNsapiJk(String path) {
         nsapiJk=( path==null?null:new File(path));
@@ -148,7 +148,7 @@ public class NSConfig  extends BaseJkConfig {
     /**
         Set the name for the Object that implements the
         jk_service call.
-        @param <b>name</b> Name of the obj.conf Object
+        @param name Name of the obj.conf Object
     */
     public void setObjectName(String name) {
         objectName = name;

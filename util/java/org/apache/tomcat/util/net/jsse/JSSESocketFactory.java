@@ -341,7 +341,7 @@ public abstract class JSSESocketFactory
      * Configure Client authentication for this version of JSSE.  The
      * JSSE included in Java 1.4 supports the 'want' value.  Prior
      * versions of JSSE will treat 'want' as 'false'.
-     * @param ssocket the SSLSocket
+     * @param socket the SSLSocket
      */
     abstract protected void configureClientAuth(SSLSocket socket);
     

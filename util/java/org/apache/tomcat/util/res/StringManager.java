@@ -242,9 +242,8 @@ public class StringManager {
      * a package already exists, it will be reused, else a new
      * StringManager will be created and returned.
      *
-     * @param packageName
+     * @param packageName The package name
      */
-
     public synchronized static StringManager getManager(String packageName) {
       StringManager mgr = (StringManager)managers.get(packageName);
       if (mgr == null) {
@@ -259,7 +258,7 @@ public class StringManager {
      * a package already exists, it will be reused, else a new
      * StringManager will be created and returned.
      *
-     * @param packageName
+     * @param bundle The resource bundle
      */
     public synchronized static StringManager getManager(ResourceBundle bundle) {
       return new StringManager( bundle );
@@ -270,8 +269,8 @@ public class StringManager {
      * a package already exists, it will be reused, else a new
      * StringManager will be created for that Locale and returned.
      *
-     *
-     * @param packageName
+     * @param packageName The package name
+     * @param loc The locale
      */
 
    public synchronized static StringManager getManager(String packageName,Locale loc) {
