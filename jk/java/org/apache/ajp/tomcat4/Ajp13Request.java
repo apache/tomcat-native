@@ -118,6 +118,7 @@ public class Ajp13Request extends HttpRequestBase {
         }
 
         setAuthType(ajp.authType().toString());
+        setAuthorization(ajp.authorization().toString());
         setQueryString(ajp.queryString().toString());
         setScheme(ajp.getScheme());
         setSecure(ajp.getSecure());

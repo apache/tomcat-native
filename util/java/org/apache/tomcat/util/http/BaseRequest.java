@@ -92,6 +92,7 @@ public class BaseRequest {
     MessageBytes remoteUser = new MessageBytes();
     MessageBytes authType = new MessageBytes();
     MessageBytes queryString = new MessageBytes();
+    MessageBytes authorization = new MessageBytes();
     String scheme = SCHEME_HTTP;
     boolean secure = false;
     int contentLength = 0;
@@ -116,6 +117,7 @@ public class BaseRequest {
         remoteUser.recycle();
         authType.recycle();
         queryString.recycle();
+        authorization.recycle();
         scheme = SCHEME_HTTP;
         secure = false;
         contentLength = 0;
@@ -212,6 +214,14 @@ public class BaseRequest {
      */
     public MessageBytes queryString() {
         return queryString;
+    }
+
+    /**
+     * Get the authorization credentials
+     * @return the authorization credentials
+     */
+    public MessageBytes authorization() {
+        return authorization;
     }
 
     /**

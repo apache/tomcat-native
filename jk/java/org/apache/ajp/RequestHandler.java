@@ -299,6 +299,11 @@ public class RequestHandler extends AjpHandler
                     req.contentType().setBytes(bchunk.getBytes(),
                                                bchunk.getOffset(),
                                                bchunk.getLength());
+                } else if (hId == SC_REQ_AUTHORIZATION) {
+                    ByteChunk bchunk = vMB.getByteChunk();
+                    req.authorization().setBytes(bchunk.getBytes(),
+                                               bchunk.getOffset(),
+                                               bchunk.getLength());
                 }
             } else {
                 //
