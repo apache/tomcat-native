@@ -355,14 +355,9 @@ public class ModJkMX extends JkHandler
         List setAttNames;
         HashMap atts=new HashMap();
         ModJkMX jkmx;
-        ObjectName oname;
 
         public MBeanProxy(ModJkMX jkmx) throws Exception {
             this.jkmx=jkmx;
-        }
-
-        public ObjectName getObjectName() {
-            return oname;
         }
 
         void init( String name, List getters, List setters, List methods )
