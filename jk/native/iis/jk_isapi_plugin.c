@@ -95,8 +95,7 @@
     if (get_server_value(private_data->lpEcb,           \
                         (name),                         \
                         huge_buf,                       \
-                        huge_buf_sz,                    \
-                        "")) {                          \
+                        huge_buf_sz)) {                 \
         (place) = jk_pool_strdup(&private_data->p,      \
                                  huge_buf);             \
   } } while(0)
@@ -107,8 +106,7 @@
     if (get_server_value(private_data->lpEcb,               \
                         (name),                             \
                         huge_buf,                           \
-                        huge_buf_sz,                        \
-                        "")) {                              \
+                        huge_buf_sz)) {                     \
         (place) = atoi(huge_buf);                           \
         if (0 == (place)) {                                 \
             (place) = def;                                  \
@@ -182,7 +180,7 @@ static int get_registry_config_parameter(HKEY hkey,
 
 static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
                             char *name,
-                            char *buf, DWORD bufsz, char *def_val);
+                            char *buf, DWORD bufsz);
 
 static int base64_encode_cert_len(int len);
 
@@ -1399,7 +1397,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
 
     huge_buf_sz = sizeof(huge_buf);
     if (get_server_value(private_data->lpEcb,
-                         "ALL_HTTP", huge_buf, huge_buf_sz, "")) {
+                         "ALL_HTTP", huge_buf, huge_buf_sz)) {
         unsigned int cnt = 0;
         char *tmp;
 
@@ -1512,18 +1510,16 @@ static int init_ws_service(isapi_private_data_t * private_data,
 }
 
 static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
-                            char *name, char *buf, DWORD bufsz, char *def_val)
+                            char *name, char *buf, DWORD bufsz)
 {
-    if (!lpEcb->GetServerVariable(lpEcb->ConnID,
-                                  name, buf, (LPDWORD) &bufsz)) {
-        strcpy(buf, def_val);
+    DWORD sz = bufsz;
+    buf[0]   = '\0';
+    if (!lpEcb->GetServerVariable(lpEcb->ConnID, name,
+                                  buf, (LPDWORD) &sz))
         return JK_FALSE;
-    }
 
-    if (bufsz > 0) {
-        buf[bufsz - 1] = '\0';
-    }
-
+    if (sz <= bufsz)
+        buf[sz-1] = '\0';
     return JK_TRUE;
 }
 
