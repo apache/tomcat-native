@@ -369,6 +369,7 @@ Using the strftime() format string it's set by default to <b>"[%a %b %d %H:%M:%S
 
 <p>
 <b>JkRequestLogFormat</b> will configure the format of mod_jk individual request logging. 
+For now this directive is only available on <b>Apache 1.3</b> server.
 Request logging is configured and enabled on a per virtual host basis. 
 To enable request logging for a virtual host just add a JkRequestLogFormat config. 
 The syntax of the format string is similiar to the Apache LogFormat command, 
