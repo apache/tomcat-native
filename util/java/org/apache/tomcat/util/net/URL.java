@@ -699,6 +699,17 @@ public final class URL implements Serializable {
                 if( at >= 0 ) {
                     userInfo = authority.substring(0,at);
                 }
+		int ipv6 = authority.indexOf('[',at+1);
+		if( ipv6 >= 0 ) {
+		    ipv6 = authority.indexOf(']', ipv6);
+		    if( ipv6 < 0 ) {
+			throw new MalformedURLException(
+							"Closing ']' not found in IPV6 address: " + authority);
+		    } else {
+			at = ipv6-1;
+		    }
+		}
+							
                 int colon = authority.indexOf(':', at+1);
                 if (colon >= 0) {
                     try {
