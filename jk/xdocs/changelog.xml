@@ -26,6 +26,13 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Change <b>balanced_workers</b> to <b>balance_workers</b> but keep
+      backward compatibility preserving old directive. (mturk).
+      </update>
+      <fix>
+      Fix ajp initialization for workers with cache_size set to zero. (mturk)
+      </fix>
+      <update>
       <bug>32317</bug>: Making mod_jk replication aware (Clustering Support).
       Patch provided by Rainer Jung. (mturk).
       </update>
