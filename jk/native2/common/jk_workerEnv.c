@@ -695,7 +695,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
                            ARCH, NULL );
 
 
-    wEnv->logger_name     = "logger.file";
+    wEnv->logger_name     = NULL;
     wEnv->was_initialized = JK_FALSE;
     wEnv->options         = JK_OPT_FWDURIDEFAULT;
 
@@ -786,7 +786,6 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     } else {
         env->alias(env, "shm:", "shm");
         wEnv->shm=(jk_shm_t *)jkb->object;
-        wEnv->shm->setWorkerEnv( env, wEnv->shm, wEnv );
     }
     JK_INIT_CS(&(wEnv->cs), csOk);
     

@@ -117,12 +117,12 @@ static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *
         if( worker->in_error_state ) 
             return "Y";
         else
-            return NULL;
+            return "N";
     } else if (strcmp( name, "graceful" )==0 ) {
-        if( worker->mbean->disabled ) 
+        if( worker->mbean->disabled != 0) 
             return "Y";
         else
-            return NULL;
+            return "N";
     } else if (strcmp( name, "epCount" )==0 ) {
         char *result;
         if( worker->endpointCache==NULL ) return "0";
