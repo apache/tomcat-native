@@ -321,13 +321,13 @@ public final class Cookies { // extends MultiMap {
 		continue;
 	    }
 	    if( equals( "$Path", bytes, startName, endName ) ) {
-		sc.getPath().setBytes( bytes, startName, endName-startName );
+		sc.getPath().setBytes( bytes, startValue, endValue-startValue );
 	    }
 	    if( equals( "$Domain", bytes, startName, endName ) ) {
-		sc.getDomain().setBytes( bytes, startName, endName-startName );
+		sc.getDomain().setBytes( bytes, startValue, endValue-startValue );
 	    }
 	    if( equals( "$Port", bytes, startName, endName ) ) {
-		// sc.getPort().setBytes( bytes, startName, endName-startName );
+		// sc.getPort().setBytes( bytes, startValue, endValue-startValue );
 	    }
 	}
     }
