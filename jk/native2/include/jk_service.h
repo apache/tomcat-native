@@ -118,7 +118,7 @@ typedef struct jk_ws_service jk_ws_service_t;
  * seeing the internal vtables of your favorite OO language.  Whatever
  * works for you.
  *
- * See apache1.3/mod_jk.c and iis/jk_isapi_plugin.c for examples.  
+ * See apache1.3/mod_jk2.c and iis/jk_isapi_plugin.c for examples.  
  */
 struct jk_ws_service {
     struct jk_workerEnv *workerEnv;

@@ -224,7 +224,7 @@ static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
         /*
          * JFC: please check...
          * Not sure what to do, but I try to prevent problems.
-         * I have fixed jk_mount_context() in apaches/mod_jk.c so we should
+         * I have fixed jk_mount_context() in apaches/mod_jk2.c so we should
          * not arrive here when using Apache.
          */
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
