@@ -74,7 +74,6 @@ public final class Request {
         parameters.setURLDecoder(urlDecoder);
         parameters.setHeaders(headers);
 
-        schemeMB.setString("http");
         methodMB.setString("GET");
         uriMB.setString("/");
         queryMB.setString("");
