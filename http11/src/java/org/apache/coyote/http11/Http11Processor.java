@@ -257,6 +257,12 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * Minimum contentsize to make compression.
+     */
+    protected int compressionMinSize = 2048;
+
+
+    /**
      * Host name (used to avoid useless B2C conversion on the host name).
      */
     protected char[] hostNameC = new char[0];
@@ -976,17 +982,27 @@ public class Http11Processor implements Processor, ActionHook {
                 request.getMimeHeaders().getValue("accept-encoding");
             if ((acceptEncodingMB != null) 
                 && (acceptEncodingMB.indexOf("gzip") != -1)) {
-                // Check content-type
-                if (compressionLevel == 1) {
-                    int contentLength = response.getContentLength();
-                    // FIXME: Make the value configurable
-                    if ((contentLength == -1) || (contentLength > 2048)) {
-                        useCompression = 
-                            response.getContentType().startsWith("text/");
-                    }
-                } else {
-                    useCompression = true;
+                	
+                // Check in content is not allready gzipped
+                MessageBytes contentEncodingMB =
+					response.getMimeHeaders().getValue("Content-Encoding");
+					
+            	if ((contentEncodingMB == null) 
+                	|| (contentEncodingMB.indexOf("gzip") == -1))
+                {			
+	                // Check content-type
+	                if (compressionLevel == 1) {
+	                    int contentLength = response.getContentLength();
+	                    // FIXME: Make the value configurable
+	                    if ((contentLength == -1) || (contentLength > compressionMinSize)) {
+	                        useCompression = 
+	                            response.getContentType().startsWith("text/");
+	                    }
+	                } else {
+	                    useCompression = true;
+	                }
                 }
+                
                 // Change content-length to -1 to force chunking
                 if (useCompression) {
                     response.setContentLength(-1);
