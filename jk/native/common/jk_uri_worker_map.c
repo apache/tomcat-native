@@ -570,7 +570,8 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     }
     jk_no2slash(uri);
 
-    jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s'\n", uri);
+    jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s' from %d maps\n",
+           uri, uw_map->size);
     for (i = 0; i < uw_map->size; i++) {
         uri_worker_record_t *uwr = uw_map->maps[i];
 
