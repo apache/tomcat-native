@@ -78,6 +78,7 @@ public class JkMX extends JkHandler
 {
     MBeanServer mserver;
     private int port=-1;
+    private String host;
     
     public JkMX()
     {
@@ -89,6 +90,18 @@ public class JkMX extends JkHandler
      */
     public void setPort( int i ) {
         port=i;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setHost(String host ) {
+        this.host=host;
+    }
+
+    public String getHost() {
+        return host;
     }
     
     public void createMBean( Object proxy, String name ) {
@@ -114,7 +127,8 @@ public class JkMX extends JkHandler
         try {
             ObjectName serverName = new ObjectName("Http:name=HttpAdaptor");
             mserver.createMBean("mx4j.adaptor.http.HttpAdaptor", serverName, null);
-            //mserver.setAttribute(serverName, new Attribute("Host", "10.0.0.181"));
+            if( host!=null ) 
+                mserver.setAttribute(serverName, new Attribute("Host", host));
             mserver.setAttribute(serverName, new Attribute("Port", new Integer(port)));
             
             ObjectName processorName = new ObjectName("Http:name=XSLTProcessor");
