@@ -35,18 +35,21 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-    int jk_resolve(char *host, int port, struct sockaddr_in *rc);
+int jk_resolve(char *host, int port, struct sockaddr_in *rc);
 
-    int jk_open_socket(struct sockaddr_in *addr,
-                       int ndelay, int keepalive, jk_logger_t *l);
+int jk_open_socket(struct sockaddr_in *addr, int ndelay,
+                   int keepalive, int timeout, jk_logger_t *l);
 
-    int jk_close_socket(int s);
+int jk_close_socket(int s);
 
-    int jk_tcp_socket_sendfull(int sd, const unsigned char *b, int len);
+int jk_tcp_socket_sendfull(int sd, const unsigned char *b, int len);
 
-    int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len);
+int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len);
 
-    char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf);
+char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf);
+
+int jk_socket_timeout_set(int sd, int timeout, int t);
+
 
 #ifdef __cplusplus
 }
