@@ -91,10 +91,15 @@ typedef struct ajp_msg ajp_msg_t;
 /** A structure that represents ajp message */ 
 struct ajp_msg
 {
+    /** The buffer holding a AJP message */ 
     apr_byte_t  *buf;
+    /** The length of AJP message header (defaults to AJP_HEADER_LEN) */ 
     apr_size_t  header_len;
+    /** The length of AJP message */ 
     apr_size_t  len;
+    /** The current read position */ 
     apr_size_t  pos;
+    /** Flag indicating the origing of the message */ 
     int         server_side;
 };
 
