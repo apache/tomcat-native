@@ -315,9 +315,9 @@ static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t 
                     JK_CHECK_NULL(mbean->localName));
         for( j=0; mbean->getAttributeInfo[j] != NULL; j++ ) {
             char *pname=mbean->getAttributeInfo[j];
+            char *res=mbean->getAttribute( env, mbean, pname);
 
-            s->jkprintf(env, s, "<td>%s</td>",
-                        JK_CHECK_NULL(mbean->getAttribute( env, mbean, pname)));
+            s->jkprintf(env, s, "<td>%s</td>", JK_CHECK_NULL(res));
         }
     }
     if( ! needHeader ) {
@@ -355,8 +355,7 @@ static void jk2_worker_status_resetScoreboard(jk_env_t *env, jk_ws_service_t *s,
 #endif
             }
         }
-    }
-    
+    }    
 }
 
 /** That's the 'bulk' data - everything that was configured, after substitution
@@ -461,18 +460,20 @@ static void jk2_worker_status_lstEndpoints(jk_env_t *env, jk_ws_service_t *s,
                 jk_stat_t *statArray=(jk_stat_t *)data;
                 jk_stat_t *stat=statArray + j;
 
-                s->jkprintf(env, s, "N|endpoint|endpoint:%s%d\n", name, j );
+                s->jkprintf(env, s, "[endpoint:%s%d]\n", name, j );
+                s->jkprintf(env, s, "T=endpoint\n" );
 
-                s->jkprintf(env, s, "G|endpoint:%s%d|id\n", name, j); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|requests\n", name, j); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|errors\n", name, j); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|lastRequest\n", name, j); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|lastConnectionTime\n", name, j); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|totalTime\n", name, j); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|maxTime\n", name, j); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|requestStart\n", name, j); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|jkTime\n", name, j); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|requestEnd\n", name, j);
+                s->jkprintf(env, s, "G=id\n"); 
+                s->jkprintf(env, s, "G=workerId\n"); 
+                s->jkprintf(env, s, "G=requests\n"); 
+                s->jkprintf(env, s, "G=errors\n"); 
+                s->jkprintf(env, s, "G=lastRequest\n"); 
+                s->jkprintf(env, s, "G=lastConnectionTime\n"); 
+                s->jkprintf(env, s, "G=totalTime\n"); 
+                s->jkprintf(env, s, "G=maxTime\n"); 
+                s->jkprintf(env, s, "G=requestStart\n"); 
+                s->jkprintf(env, s, "G=jkTime\n"); 
+                s->jkprintf(env, s, "G=requestEnd\n\n");
             }
         }
     }
@@ -510,32 +511,32 @@ static void jk2_worker_status_dmpEndpoints(jk_env_t *env, jk_ws_service_t *s,
             /* XXX Add info about number of slots */
             for( j=0; j<slot->structCnt ; j++ ) {
                 jk_stat_t *statArray=(jk_stat_t *)data;
-                jk_stat_t *stat=statArray + j;
 				
-                s->jkprintf(env, s, "G|endpoint:%s%d|id|%d\n", name, j,
-                            stat->workerId); 
-                s->jkprintf(env, s, "G|endpoint:%s%d|requests|%d\n", name, j,
-                            stat->reqCnt);
-                s->jkprintf(env, s, "G|endpoint:%s%d|errors|%d\n", name, j,
-                            stat->errCnt);
-                s->jkprintf(env, s, "G|endpoint:%s%d|lastRequest|%s\n", name, j,
-                            JK_CHECK_NULL(stat->active)); 
+                jk_stat_t *stat=statArray + j;
+                s->jkprintf(env, s, "[endpoint:%s%d]\n", name, j);
+            
+                s->jkprintf(env, s, "workerId=%d\n", stat->workerId);
+                s->jkprintf(env, s, "id=%d\n", stat->workerId); 
+                s->jkprintf(env, s, "requests=%d\n", stat->reqCnt);
+                s->jkprintf(env, s, "errors=%d\n", stat->errCnt);
+                s->jkprintf(env, s, "lastRequest=%s\n", JK_CHECK_NULL(stat->active)); 
 #ifdef HAS_APR
                 {
                     char ctimeBuf[APR_CTIME_LEN];
                     apr_ctime( ctimeBuf, stat->connectedTime );
-                    s->jkprintf(env, s, "G|endpoint:%s%d|lastConnectionTime|%s\n", name, j, ctimeBuf);
+                    s->jkprintf(env, s, "lastConnectionTime=%s\n", ctimeBuf);
                     
-                    s->jkprintf(env, s, "G|endpoint:%s%d|totalTime|%ld\n", name, j, (long)stat->totalTime );
-                    s->jkprintf(env, s, "G|endpoint:%s%d|maxTime|%ld\n", name, j, (long)stat->maxTime ); 
+                    s->jkprintf(env, s, "totalTime=%ld\n", (long)stat->totalTime );
+                    s->jkprintf(env, s, "maxTime=%ld\n", (long)stat->maxTime ); 
 
-                    s->jkprintf(env, s, "G|endpoint:%s%d|requestStart|%lu\n", name, j, (long)stat->startTime); 
-                    s->jkprintf(env, s, "G|endpoint:%s%d|jkTime|%ld\n", name, j,
+                    s->jkprintf(env, s, "requestStart=%lu\n", (long)stat->startTime); 
+                    s->jkprintf(env, s, "jkTime=%ld\n", 
                                 (long)(stat->jkStartTime - stat->startTime) );
-                    s->jkprintf(env, s, "G|endpoint:%s%d|requestEnd|%ld\n", name, j,
+                    s->jkprintf(env, s, "requestEnd=%ld\n", 
                                 (long)(stat->endTime - stat->startTime) );
                 }
 #endif
+                s->jkprintf(env, s, "\n"); 
             }
 
         }
@@ -594,18 +595,34 @@ static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
         
         if( mbean==NULL ) 
             continue;
-        s->jkprintf(env, s, "N|%s|%s\n", mbean->type, name);
+        s->jkprintf(env, s, "[%s]\n", name);
+        s->jkprintf(env, s, "T=%s\n", mbean->type);
         
+        s->jkprintf(env, s, "G=ver\n");
+        s->jkprintf(env, s, "G=disabled\n");
+        s->jkprintf(env, s, "G=debug\n");
         while( getAtt != NULL && *getAtt != NULL && **getAtt!='\0' ) {
-            s->jkprintf(env, s, "G|%s|%s\n", name, *getAtt);
+            if( strcmp( *getAtt,"ver" )==0 ||
+                strcmp( *getAtt,"debug" )==0 ||
+                strcmp( *getAtt,"disabled" )==0 ) {
+                getAtt++;
+                continue;
+            }
+            s->jkprintf(env, s, "G=%s\n", *getAtt);
             getAtt++;
         }
         
+        s->jkprintf(env, s, "S=ver\n");
+        s->jkprintf(env, s, "S=disabled\n");
+        s->jkprintf(env, s, "S=debug\n");
         while( setAtt != NULL && *setAtt != NULL && **setAtt!='\0' ) {
-            s->jkprintf(env, s, "S|%s|%s\n", name, *setAtt);
+            s->jkprintf(env, s, "S=%s\n", *setAtt);
             setAtt++;
         }
+        s->jkprintf(env, s, "M=init\n");
+        s->jkprintf(env, s, "M=destroy\n");
 
+        s->jkprintf(env, s, "\n", name);
     }
     jk2_worker_status_lstEndpoints( env, s, s->workerEnv);
     return JK_OK;
@@ -663,14 +680,26 @@ static int JK_METHOD jk2_worker_status_dmp(jk_env_t *env,
         
         if( mbean==NULL ) 
             continue;
-        s->jkprintf(env, s, "P|%s|%s|%lp\n", mbean->type, name, mbean->object );
+        s->jkprintf(env, s, "[%s]\n", name );
+
+        s->jkprintf(env, s, "Id=%lp\n", mbean->object ); 
         
+        s->jkprintf(env, s, "ver=%d\n", mbean->ver);
+        s->jkprintf(env, s, "debug=%d\n", mbean->debug);
+        s->jkprintf(env, s, "disabled=%d\n", mbean->disabled);
         while( getAtt != NULL && *getAtt != NULL && **getAtt!='\0' ) {
             char *attName=*getAtt;
             char *val=mbean->getAttribute(env, mbean, *getAtt );
-            s->jkprintf(env, s, "G|%s|%s|%s\n", name, *getAtt, (val==NULL)? "NULL": val);
+            if( strcmp( attName,"ver" )==0 ||
+                strcmp( attName,"debug" )==0 ||
+                strcmp( attName,"disabled" )==0 ) {
                 getAtt++;
+                continue;
+            }
+            s->jkprintf(env, s, "%s=%s\n", *getAtt, (val==NULL)? "NULL": val);
+            getAtt++;
         }
+        s->jkprintf(env, s, "\n" );
     }
     jk2_worker_status_dmpEndpoints( env, s, s->workerEnv);
     return JK_OK;
@@ -743,10 +772,30 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
         if( strcmp( name, cName ) == 0 &&
             mbean->setAttribute != NULL ) {
 
+            jk_shm_t *shm=w->workerEnv->shm;
+
             /* Found the object */
-            int res=mbean->setAttribute( env, mbean, attName, attVal );
+/*             int res=mbean->setAttribute( env, mbean, attName, attVal ); */
+/*             if( w->mbean->debug > 0 )  */
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG, "status.set() %s %s\n",
+                              cName, attName);
+
+            int res=jk2_config_setProperty(env, w->workerEnv->config,
+                                           mbean, attName, attVal);
+                
             /* Increment the version */
+/*             jk2_config_setProperty(env, w->workerEnv->config, */
             mbean->ver++;
+
+            /* Save */
+            w->workerEnv->config->save( env, w->workerEnv->config, NULL );
+
+        
+            /* Update the scoreboard's version - all other
+               jk2 processes will see this and update
+            */
+            if( shm!=NULL && shm->head!=NULL )
+                shm->head->lbVer++;
             
             s->jkprintf( env, s, "OK|%s|%s|%d", cName, attName, res );
             return JK_OK;
@@ -755,6 +804,50 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
     s->jkprintf( env, s, "ERROR|not found|%s|%s|%s\n", cName, attName, attVal );
     return JK_OK;
 }
+
+static int JK_METHOD jk2_worker_status_invoke(jk_env_t *env,
+                                              jk_worker_t *w, 
+                                              jk_ws_service_t *s)
+{
+    char *cName=s->query_string + 4;
+    char *attName;
+    int i;
+    
+    attName=rindex( cName, '|' );
+    if( attName == NULL ) {
+        s->jkprintf( env, s, "ERROR: attribute name not found\n", cName);
+        return JK_OK;
+    }
+    *attName='\0';
+    attName++;
+
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        int res;
+        
+        if( mbean==NULL ) 
+            continue;
+        
+        if( strcmp( name, cName ) == 0 ) {
+
+            if( strcmp( attName, "init" ) ) {
+                if( mbean->init != NULL )
+                    res=mbean->init( env, mbean );
+            }
+            if( strcmp( attName, "destroy" ) ) {
+                if( mbean->destroy != NULL )
+                    res=mbean->destroy( env, mbean );
+            }
+            
+            s->jkprintf( env, s, "OK|%s|%s|%d", cName, attName, res );
+            return JK_OK;
+        }
+    }
+    s->jkprintf( env, s, "ERROR|not found|%s|%s\n", cName, attName );
+    return JK_OK;
+}
+
 
 static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
                                                jk_worker_t *w, 
@@ -785,12 +878,23 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
         s->jkprintf(env, s, "Scoreboard reset\n"  );
     }
 
-    /* Reset the scoreboard */
-    if( strncmp( s->query_string, "rst=",4 ) == 0 ) {
-        jk2_worker_status_resetScoreboard(env, s, s->workerEnv );
-        s->jkprintf(env, s, "Scoreboard reset\n"  );
-        return JK_OK;
+    /** Updating the config is the first thing we do.
+        All other operations will happen on the update config.
+      */
+    w->workerEnv->config->update( env, w->workerEnv->config, &didUpdate );
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "status.update check %d\n", didUpdate );
+    if( didUpdate ) {
+        jk_shm_t *shm=w->workerEnv->shm;
+        
+        /* Update the scoreboard's version - all other
+           jk2 processes will see this and update
+        */
+        if( shm!=NULL && shm->head!=NULL )
+            shm->head->lbVer++;
+        s->jkprintf(env, s, "Updated config %d", shm->head->lbVer  );
     }
+    
 
     /* Increment the scoreboard version counter, reload */
     if( strncmp( s->query_string, "rld=",4 ) == 0 ) {
@@ -825,18 +929,10 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
         return jk2_worker_status_set(env, w, s);
     }
 
-    w->workerEnv->config->update( env, w->workerEnv->config, &didUpdate );
-    if( didUpdate ) {
-        jk_shm_t *shm=w->workerEnv->shm;
-        
-        /* Update the scoreboard's version - all other
-           jk2 processes will see this and update
-        */
-        if( shm!=NULL && shm->head!=NULL )
-            shm->head->lbVer++;
-        s->jkprintf(env, s, "Updated config %d", shm->head->lbVer  );
+    if( strncmp( s->query_string, "inv=", 4) == 0 ) {
+        return jk2_worker_status_invoke(env, w, s);
     }
-    
+
     s->jkprintf(env, s, "Status information for child %d<br>", s->workerEnv->childId  );
     s->jkprintf(env, s, " <a href='jkstatus?cfgOrig=1'>[Original config]</a>\n");
     s->jkprintf(env, s, " <a href='jkstatus?cfgParsed=1'>[Processed config]</a>\n");
