@@ -97,7 +97,7 @@ static const char *set_worker_param(apr_pool_t *p,
     else if (!strcasecmp(key, "retry")) {
         ival = atoi(val);
         if (ival < 1)
-            return "Retry must be al least one second";
+            return "Retry must be at least one second";
         worker->retry = apr_time_from_sec(ival);
     }
     else if (!strcasecmp(key, "ttl")) {
