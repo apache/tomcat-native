@@ -714,6 +714,7 @@ static int JK_METHOD jk2_worker_status_qry(jk_env_t *env,
     int qryLen=0;
     int exact=1;
     char localName[256];
+    int needQuote=0;
     
     /* Dump all attributes for the beans */
     if( strcmp( cName, "*" )==0 ) {
@@ -763,22 +764,35 @@ static int JK_METHOD jk2_worker_status_qry(jk_env_t *env,
         if( mbean==NULL ) 
             continue;
 
-        localName[0]='\0';
-        for( j=0, k=0; k<255; j++,k++ ) {
-            char c=mbean->localName[j];
-            if( c=='\n' ) {
-                localName[k++]='\\';
-                localName[k]='n';
-            } else if( c=='*' || c=='"' || c=='\\' || c=='?' ) {
-                localName[k++]='\\';
-                localName[k]=c;
+        if( mbean->localName==NULL ) {
+            s->jkprintf(env, s, "Name: modjk:type=%s\n", mbean->type );
+        } else if( mbean->localName[0]=='\0' ) {
+            s->jkprintf(env, s, "Name: modjk:type=%s\n", mbean->type );
+        } else {
+            needQuote=0;
+            localName[0]='\0';
+            for( j=0, k=0; k<255; j++,k++ ) {
+                char c;
+                c=mbean->localName[j];
+                if( c=='\n' ) {
+                    localName[k++]='\\';
+                    localName[k]='n';
+                } else if( c=='*' || c=='"' || c=='\\' || c=='?' ) {
+                    localName[k++]='\\';
+                    localName[k]=c;
+                    needQuote=1;
+                } else {
+                    localName[k]=c;
+                }
+            }
+            localName[k]='\0';
+            if( needQuote ) {
+                s->jkprintf(env, s, "Name: modjk:type=%s,name=\"%s\"\n", mbean->type, localName );
             } else {
-                localName[k]=c;
+                s->jkprintf(env, s, "Name: modjk:type=%s,name=%s\n", mbean->type, localName );
             }
         }
-        localName[k]='\0';
         
-        s->jkprintf(env, s, "Name: modjk:type=%s,name=\"%s\"\n", mbean->type, localName );
 
         /** Will be matched against modeler-mbeans.xml in that dir */
         s->jkprintf(env, s, "modelerType: org.apache.jk.modjk.%s\n", mbean->type );
