@@ -102,6 +102,8 @@ public class PoolTcpEndpoint { // implements Endpoint {
     private static final int BACKLOG = 100;
     private static final int TIMEOUT = 1000;
 
+    private final Object threadSync = new Object();
+
     private boolean isPool = true;
 
     private int backlog = BACKLOG;
@@ -312,10 +314,13 @@ public class PoolTcpEndpoint { // implements Endpoint {
                     s.setSoLinger(true, 0);
 		}
 		s.close();
-		//		System.out.println("Closing socket " + port );
-		serverSocket.close(); // XXX?
 	    } catch(Exception e) {
                 log("Caught exception trying to unlock accept.", e);
+	    }
+	    try {
+		serverSocket.close();
+	    } catch(Exception e) {
+                log("Caught exception trying to close socket.", e);
 	    }
 	    serverSocket = null;
 	}
@@ -325,6 +330,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
 
     Socket acceptSocket() {
         Socket accepted = null;
+
     	try {
     	    if (running) {
 		if(null!= serverSocket) {
@@ -343,48 +349,62 @@ public class PoolTcpEndpoint { // implements Endpoint {
 		    if( factory != null && accepted != null)
 			factory.initSocket( accepted );
     	        }
-    	    }	    
+    	    }
     	}
 	catch(InterruptedIOException iioe) {
     	    // normal part -- should happen regularly so
     	    // that the endpoint can release if the server
     	    // is shutdown.
     	}
-	catch (SocketException e) {
+	catch (IOException e) {
 
-	    // TCP stacks can throw SocketExceptions when the client
-	    // disconnects.  We don't want this to shut down the
-	    // endpoint, so ignore it. Is there a more robust
-	    // solution?  Should we compare the message string to
-	    // "Connection reset by peer"?
+    	    if (running) {
 
-	    // socket exceptions just after closing endpoint (when
-	    // running=false) aren't even logged
-    	    if (running != false) {
 		String msg = sm.getString("endpoint.err.nonfatal",
 					  serverSocket, e);
-		log(msg, e, Log.INFORMATION);
-    	    }
-
-    	} 
-	
-	// Future developers: if you identify any other nonfatal
-	// exceptions, catch them here and log as above
-
-	catch(Throwable e) {
-            // If we are running with a SecurityManager, don't shutdown Socket        
-            // on an AccessControlException.
-	    if( e.getClass().getName().equals("java.security.AccessControlException") ) {
-		String msg = "Socket: "+ serverSocket + " AccessControlException: " + e.toString();
-		log(msg, Log.ERROR);
-	    } else {
-		String msg = sm.getString("endpoint.err.fatal",
-					serverSocket, e);    
 		log(msg, e, Log.ERROR);
-		stopEndpoint();	// safe to call this from inside thread pool?
-	    }
-    	}
 
+                if (accepted != null) {
+                    try {
+                        accepted.close();
+                        accepted = null;
+                    } catch(Exception ex) {
+                        msg = sm.getString("endpoint.err.nonfatal",
+                                           accepted, ex);
+                        log(msg, ex, Log.INFORMATION);
+                    }
+                }
+                // Restart endpoint when getting an IOException during accept
+                synchronized (threadSync) {
+                    try {
+                        serverSocket.close();
+                    } catch(Exception ex) {
+                        msg = sm.getString("endpoint.err.nonfatal",
+                                           serverSocket, ex);
+                        log(msg, ex, Log.INFORMATION);
+                    }
+                    serverSocket = null;
+                    try {
+                        if (inet == null) {
+                            serverSocket = factory.createSocket(port, backlog);
+                        } else {
+                            serverSocket = 
+                                factory.createSocket(port, backlog, inet);
+                        }
+                        if (serverTimeout >= 0)
+                            serverSocket.setSoTimeout(serverTimeout);
+                    } catch (Throwable t) {
+                        msg = sm.getString("endpoint.err.fatal", 
+                                           serverSocket, t);
+                        log(msg, t, Log.ERROR);
+                        stopEndpoint();
+                    }
+                }
+
+            }
+
+    	}
+	
     	return accepted;
     }
 
@@ -483,7 +503,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 		s = endpoint.acceptSocket();
 	    } catch (Throwable t) {
 		endpoint.log("Exception in acceptSocket", t);
-	    }           
+	    }
 	    if(null != s) {
 		// Continue accepting on another thread...
 		endpoint.tp.runIt(this);
