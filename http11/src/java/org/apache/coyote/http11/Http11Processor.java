@@ -249,26 +249,6 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
-     * Get the value of the internationalized URI flag.
-     * 
-     * @return the value of the internationalized URI flag
-     */
-    public boolean isInternationalizedURIAllowed() {
-        return inputBuffer.isInternationalizedURIAllowed();
-    }
-
-
-    /**
-     * Set the value of the internationalized URI flag.
-     * 
-     * @param flag New value of the internationalized URI flag
-     */
-    public void setInternationalizedURIAllowed(boolean flag) {
-        inputBuffer.setInternationalizedURIAllowed(flag);
-    }
-
-
-    /**
      * Process pipelined HTTP requests using the specified input and output
      * streams.
      * 
@@ -294,8 +274,6 @@ public class Http11Processor implements Processor, ActionHook {
 
             try {
                 inputBuffer.parseRequestLine();
-                // Check for HTTP/0.9
-                
                 inputBuffer.parseHeaders();
             } catch (IOException e) {
                 error = true;
@@ -510,18 +488,16 @@ public class Http11Processor implements Processor, ActionHook {
             }
         }
 
-        // URI parsing
-        String unparsedURI = request.unparsedURI().toString();
-        int questionPos = unparsedURI.indexOf('?');
-        if (questionPos >= 0) {
-            request.queryString().setString
-                (unparsedURI.substring(questionPos + 1));
-            request.requestURI().setString
-                (unparsedURI.substring(0, questionPos));
-        } else {
-            request.requestURI().setString(unparsedURI);
+        // URI decoding
+        try {
+            request.decodedURI().duplicate(request.requestURI());
+            request.getURLDecoder().convert(request.decodedURI(), true);
+        } catch (IOException e) {
+            // URL decoding failed
+            e.printStackTrace();
         }
 
+        // Input filter setup
         InputFilter[] inputFilters = inputBuffer.getFilters();
 
         // Parse content-length header

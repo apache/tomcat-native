@@ -133,6 +133,12 @@ public final class Constants {
 
 
     /**
+     * '?'.
+     */
+    public static final byte QUESTION = (byte) '?';
+
+
+    /**
      * Lower case offset.
      */
     public static final byte LC_OFFSET = A - a;

@@ -206,13 +206,6 @@ public class InternalInputBuffer implements InputBuffer {
 
 
     /**
-     * Allow i18n URLs (non-standard URLs conatining non %xx encoded 
-     * bytes >127).
-     */
-    protected boolean internationalizedURIAllowed = false;
-
-
-    /**
      * Underlying input stream.
      */
     protected InputStream inputStream;
@@ -327,28 +320,6 @@ public class InternalInputBuffer implements InputBuffer {
 
         filter.setRequest(request);
 
-    }
-
-
-    /**
-     * Get the value of the internationalized URI flag.
-     * 
-     * @return the value of the internationalized URI flag
-     */
-    public boolean isInternationalizedURIAllowed() {
-        return (internationalizedURIAllowed);
-    }
-
-
-    /**
-     * Set the value of the internationalized URI flag.
-     * 
-     * @param internationalizedURIAllowed New value of the internationalized
-     * URI flag
-     */
-    public void setInternationalizedURIAllowed
-        (boolean internationalizedURIAllowed) {
-        this.internationalizedURIAllowed = internationalizedURIAllowed;
     }
 
 
@@ -494,11 +465,11 @@ public class InternalInputBuffer implements InputBuffer {
 
         // Mark the current buffer position
         start = pos;
+        int end = 0;
+        int questionPos = -1;
 
         //
         // Reading the URI
-        // URI is considered US-ASCII unless the 'internationalizedURIAllowed'
-        // is set to 'true'
         //
 
         space = false;
@@ -512,34 +483,36 @@ public class InternalInputBuffer implements InputBuffer {
                     throw new EOFException(sm.getString("iib.eof.error"));
             }
 
-            ascbuf[pos] = (char) buf[pos];
-
             if (buf[pos] == Constants.SP) {
                 space = true;
-                if (internationalizedURIAllowed) {
-                    request.unparsedURI().setBytes(buf, start, pos - start);
-                } else {
-                    request.unparsedURI().setChars(ascbuf, start, pos - start);
-                }
+                end = pos;
             } else if ((buf[pos] == Constants.CR) 
                        || (buf[pos] == Constants.LF)) {
                 // HTTP/0.9 style request
                 eol = true;
                 space = true;
-                if (internationalizedURIAllowed) {
-                    request.unparsedURI().setBytes(buf, start, pos - start);
-                } else {
-                    request.unparsedURI().setChars(ascbuf, start, pos - start);
-                }
+                end = pos;
+            } else if ((buf[pos] == Constants.QUESTION) 
+                       && (questionPos == -1)) {
+                questionPos = pos;
             }
 
             pos++;
 
         }
 
+        request.unparsedURI().setBytes(buf, start, end - start);
+        if (questionPos >= 0) {
+            request.queryString().setBytes(buf, questionPos + 1, 
+                                           end - questionPos - 1);
+            request.requestURI().setBytes(buf, start, questionPos - start);
+        } else {
+            request.requestURI().setBytes(buf, start, end - start);
+        }
+
         // Mark the current buffer position
         start = pos;
-        int end = 0;
+        end = 0;
 
         //
         // Reading the protocol
