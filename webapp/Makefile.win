@@ -62,13 +62,16 @@
 !IF "$(DEBUG)" == "true"
 DEBUG = true
 APRCFG = apr - Win32 Debug
+APRDIR = LibD
 !ELSE
 !IF "$(DEBUG)" == "TRUE"
 DEBUG = true
 APRCFG = apr - Win32 Debug
+APRDIR = LibD
 !ELSE
 DEBUG = false
 APRCFG = apr - Win32 Release
+APRDIR = LibR
 !ENDIF
 !ENDIF
 
@@ -80,9 +83,13 @@ clean: apr-clean local-clean
 
 apr-all: localmake.bat
     @localmake.bat .\apr /f apr.mak "CFG=$(APRCFG)" all
+    copy .\apr\$(APRDIR)\apr.lib .\apr\apr.lib
+    copy .\apr\$(APRDIR)\apr.idb .\apr\apr.idb
 
 apr-clean: localmake.bat
     @localmake.bat .\apr /f apr.mak "CFG=$(APRCFG)" clean
+    -@erase .\apr\apr.lib
+    -@erase .\apr\apr.idb
 
 local-all: localmake.bat
     @localmake.bat .\lib /f Makefile.win "DEBUG=$(DEBUG)" all
