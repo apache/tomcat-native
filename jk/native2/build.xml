@@ -83,6 +83,7 @@
       <includes>
 	<include name="${native.dir}/common" />
 	<include name="${apache2.include}" />
+	<include name="${apr.include}" />
 	<include name="${native.dir}/include" />
 	<include name="${java.home}/../include" />
       </includes>
@@ -115,6 +116,7 @@
 	<include name="${native.dir}/include" />
 	<include name="${java.home}/../include" />
 	<include name="${build.compiler.base}/include" />
+	<include name="${apr.include}" />
         
         <!-- Platform specific includes -->
 	<include name="${novellndk.dir}/include/nlm" if="netware" />
