@@ -183,6 +183,11 @@ static int jk2_uriMap_addUriEnv( jk_env_t *env, jk_uriMap_t *uriMap, jk_uriEnv_t
     uriMap->maps[uriMap->size] = uriEnv;
     uriMap->size++;
 
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "uriMap.addUriEnv() %s\n", uriEnv->uri);
+
+    
+    
     return JK_TRUE;
 }
 
@@ -266,6 +271,9 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this)
                               "uriMap.init() map to invalid worker %s %s\n",
                               _this->maps[i]->uri, wname);
             }
+        } else {
+            _this->maps[i]->worker= workerEnv->defaultWorker;
+            _this->maps[i]->workerName= workerEnv->defaultWorker->mbean->name;
         }
     }
     
@@ -491,7 +499,7 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *resu
     _this->checkUri=jk2_uriMap_checkUri;
     _this->mapUri=jk2_uriMap_mapUri;
     _this->maps = NULL;
-    _this->debug= 1;
+    _this->debug= 2;
             
     result->object=_this;
     result->setAttribute=jk2_uriMap_setProperty;
