@@ -182,9 +182,11 @@ public class ChannelUn extends JkHandler {
 
     public void destroy() throws IOException {
         try {
-            tp.shutdown();
-
-            apr.unSocketClose(gPool, unixListenSocket,3);
+            if( tp != null )
+                tp.shutdown();
+            
+            if(apr !=null ) 
+                apr.unSocketClose(gPool, unixListenSocket,3);
         } catch(Exception e) {
             e.printStackTrace();
         }
