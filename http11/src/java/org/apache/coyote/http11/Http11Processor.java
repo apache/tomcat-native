@@ -81,6 +81,7 @@ import org.apache.coyote.ActionCode;
 import org.apache.coyote.Adapter;
 import org.apache.coyote.Processor;
 import org.apache.coyote.Request;
+import org.apache.coyote.RequestInfo;
 import org.apache.coyote.Response;
 
 import org.apache.coyote.http11.filters.ChunkedInputFilter;
@@ -567,7 +568,9 @@ public class Http11Processor implements Processor, ActionHook {
         throws IOException {
         ThreadWithAttributes thrA=
                 (ThreadWithAttributes)Thread.currentThread();
+        RequestInfo rp = request.getRequestProcessor();
         thrA.setCurrentStage(threadPool, "parsing http request");
+        rp.setStage(org.apache.coyote.Constants.STAGE_PARSE);
 
         // Set the remote address
         remoteAddr = null;
@@ -613,6 +616,7 @@ public class Http11Processor implements Processor, ActionHook {
 
             // Setting up filters, and parse some request headers
             thrA.setCurrentStage(threadPool, "prepareRequest");
+            rp.setStage(org.apache.coyote.Constants.STAGE_PREPARE);
             prepareRequest();
 
             if (maxKeepAliveRequests > 0 && --keepAliveLeft == 0)
@@ -622,6 +626,7 @@ public class Http11Processor implements Processor, ActionHook {
             if (!error) {
                 try {
                     thrA.setCurrentStage(threadPool, "service");
+                    rp.setStage(org.apache.coyote.Constants.STAGE_SERVICE);
                     adapter.service(request, response);
                 } catch (InterruptedIOException e) {
                     error = true;
@@ -636,6 +641,7 @@ public class Http11Processor implements Processor, ActionHook {
             // Finish the handling of the request
             try {
                 thrA.setCurrentStage(threadPool, "endRequestIB");
+                rp.setStage(org.apache.coyote.Constants.STAGE_ENDINPUT);
                 inputBuffer.endRequest();
             } catch (IOException e) {
                 error = true;
@@ -647,6 +653,7 @@ public class Http11Processor implements Processor, ActionHook {
             }
             try {
                 thrA.setCurrentStage(threadPool, "endRequestOB");
+                rp.setStage(org.apache.coyote.Constants.STAGE_ENDOUTPUT);
                 outputBuffer.endRequest();
             } catch (IOException e) {
                 error = true;
@@ -656,6 +663,7 @@ public class Http11Processor implements Processor, ActionHook {
             }
 
             thrA.setCurrentStage(threadPool, "ended");
+            rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
             // Don't reset the param - we'll see it as ended. Next request
             // will reset it
             // thrA.setParam(null);
