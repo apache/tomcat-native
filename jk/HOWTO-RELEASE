@@ -176,10 +176,12 @@ Make the following directories in the bin directory.
 
 mkdir aix freebsd iseries linus macosx netware solaris6 solaris7 solaris8 win32
 
-scp jakarta-tomcat-connectors/jk/docs to the release doc directory.
+scp jakarta-tomcat-connectors/jk/build/docs to the release doc directory.
 
 scp ~/jakarta-tomcat-connectors-jk-1.2.3-src.tar.gz* to the release src
 directory.
+
+scp -r jakarta-tomcat-connectors/jk/build/docs/* daedalus.apache.org:/www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.3/doc
 
 Make sure the group write bit is set on all files and directories
 in the new release directory.
