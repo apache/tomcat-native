@@ -315,8 +315,6 @@ static int JK_METHOD jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
 
 static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
 {
-    int rc;
-
     return JK_ERR;
 }
 
