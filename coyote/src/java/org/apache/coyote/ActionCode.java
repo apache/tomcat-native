@@ -90,6 +90,10 @@ public final class ActionCode {
 
     public static final ActionCode ACTION_STOP = new ActionCode();
 
+    /** Compute request attribute
+     */
+    public static final ActionCode ACTION_REQ_ATTRIBUTE = new ActionCode();
+
 
     // ----------------------------------------------------------- Constructors
 
