@@ -728,8 +728,8 @@ static  jk_env_t*  jk2_create_workerEnv (void) {
     l = jkb->object;
     
     env->l=l;
-    
     env->soName=env->globalPool->calloc(env, env->globalPool, strlen(file_name)+1);
+    env->l->init(env,env->l);
     
     if( env->soName == NULL ){
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating env->soName\n");
@@ -762,11 +762,13 @@ static jk_env_t * jk2_create_config()
     jk_env_t *env;
     if(  workerEnv==NULL ) {
         env = jk2_create_workerEnv();
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "JK2 Config Created");
     } else {
         env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "JK2 Config Reused");
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_ERROR, "JK2 Config Created");
+    
    
     return env;
 }
