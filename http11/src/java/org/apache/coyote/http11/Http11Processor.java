@@ -336,7 +336,7 @@ public class Http11Processor implements Processor, ActionHook {
      * Set the upload timeout.
      */
     public void setTimeout( int timeouts ) {
-        timeout = timeouts * 1000;
+        timeout = timeouts ;
     }
     /**
      * Get the upload timeout.
