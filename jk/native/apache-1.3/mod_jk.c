@@ -1316,8 +1316,8 @@ for (i = 0; i < map_size(conf->automount); i++)
         }
     }
     
-    aplog_error(APLOG_MARK, APLOG_ERR, NULL,
-                "Error while opening the workers, jk will not work\n");
+    ap_log_error(APLOG_MARK, APLOG_ERR, NULL,
+                 "Error while opening the workers, jk will not work\n");
 }
 
 /*
