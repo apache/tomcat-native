@@ -2092,7 +2092,7 @@ static apr_status_t jklog_cleanup(void *d)
     return APR_SUCCESS;
 }
 
-static void open_jklog(server_rec *s, apr_pool_t *p)
+static int open_jklog(server_rec *s, apr_pool_t *p)
 {
     jk_server_conf_t *conf;
     const char *fname;
@@ -2107,13 +2107,13 @@ static void open_jklog(server_rec *s, apr_pool_t *p)
 
     if (main_log != NULL) {
         conf->log = main_log;
-        return;
+        return 0;
     }
     if (conf->log_file == NULL) {
-        return;
+        return 0;
     }
     if (*(conf->log_file) == '\0') {
-        return;
+        return 0;
     }
 
     if (*conf->log_file == '|') {
@@ -2121,17 +2121,17 @@ static void open_jklog(server_rec *s, apr_pool_t *p)
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                          "mod_jk: could not open reliable pipe "
                          "to jk log %s", conf->log_file+1);
-            exit(1);
+            return -1;
         }
         conf->jklogfp = (void *)ap_piped_log_write_fd(pl);
     }
-    else if (*conf->log_file != '\0') {
+    else {
         fname = ap_server_root_relative(p, conf->log_file);
         if (!fname) {
             ap_log_error(APLOG_MARK, APLOG_ERR, APR_EBADPATH, s,
                          "mod_jk: Invalid JkLog "
                          "path %s", conf->log_file);
-            exit(1);
+            return -1;
         }
         if ((rc = apr_file_open(&conf->jklogfp, fname,
                                 jklog_flags, jklog_mode, p))
@@ -2139,7 +2139,7 @@ static void open_jklog(server_rec *s, apr_pool_t *p)
             ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
                          "mod_jk: could not open JkLog "
                          "file %s", fname);
-            exit(1);
+            return -1;
         }
         apr_file_inherit_set(conf->jklogfp);
     }
@@ -2154,10 +2154,10 @@ static void open_jklog(server_rec *s, apr_pool_t *p)
         if (main_log == NULL)
             main_log = conf->log;
         apr_pool_cleanup_register(p, main_log, jklog_cleanup, jklog_cleanup);
-        return;
+        return 0;
     }
 
-    exit(1);
+    return -1;
 }
 
 
@@ -2248,7 +2248,9 @@ static int jk_post_config(apr_pool_t *pconf,
      * - open each jk logfile
      */    
     for (; s; s = s->next) {
-        open_jklog(s, pconf);
+        if (open_jklog(s, pconf))
+            return HTTP_INTERNAL_SERVER_ERROR;
+
     }
 
     return OK;
