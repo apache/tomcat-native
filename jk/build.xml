@@ -34,7 +34,7 @@
 
     <target name="build-main" depends="build-prepare">
     
-        <javac srcdir="src/java"
+        <javac srcdir="java"
 	       destdir="${jk.build}/classes"
 	       deprecation="on"
 	       debug="on"
@@ -47,7 +47,7 @@
 
 	<!-- Copy static resource files -->
 	<copy todir="${jk.build}/classes">
-	    <fileset dir="src/java">
+	    <fileset dir="java">
 	    	<include name="**/*.properties"/>
 	    </fileset>
         </copy>
@@ -73,7 +73,7 @@
         <delete dir="${jk.build}/javadoc"/>
 	<mkdir dir="${jk.build}/javadoc"/>
 	<javadoc packagenames="org.apache.ajp,org.apache.ajp.tomcat4"
-               sourcepath="src/java"
+               sourcepath="java"
 	       classpath="${tomcat-util.jar}:${catalina.jar}:${servlet.jar}"
                   destdir="${jk.build}/javadoc"
                    author="true"
