@@ -10,13 +10,13 @@
 ###############################################################################
 ## Defaults for look and feel
 
-if ($project == "") { $project = "WebApp Library"; }
-if ($copyright == "") { $copyright = "2001, The Apache Software Foundation"; }
-if ($body_bgcolor == "") { $body_bgcolor = '#ffffff'; }
-if ($body_text    == "") { $body_text    = '#000000'; }
-if ($body_link    == "") { $body_link    = '#0000ff'; }
-if ($body_vlink   == "") { $body_vlink   = '#0000ff'; }
-if ($body_alink   == "") { $body_alink   = '#0000ff'; }
+if ($project eq "") { $project = "WebApp Library"; }
+if ($copyright eq "") { $copyright = "2001, The Apache Software Foundation"; }
+if ($body_bgcolor eq "") { $body_bgcolor = '#ffffff'; }
+if ($body_text    eq "") { $body_text    = '#000000'; }
+if ($body_link    eq "") { $body_link    = '#0000ff'; }
+if ($body_vlink   eq "") { $body_vlink   = '#0000ff'; }
+if ($body_alink   eq "") { $body_alink   = '#0000ff'; }
 
 ###############################################################################
 # Generate the frameset index                                                 #
