@@ -681,11 +681,11 @@ int ajp_is_input_event(ajp_endpoint_t *ae,
 
                          
 /*
- * Handle the PING/PONG initial query
+ * Handle the CPING/CPONG initial query
  */
-int ajp_handle_ping_pong(ajp_endpoint_t *ae,
-						 int 			timeout,
-                         jk_logger_t    *l)
+int ajp_handle_cping_cpong(ajp_endpoint_t *ae,
+					  	   int 			timeout,
+                           jk_logger_t    *l)
 {
 	int	cmd;
 	jk_msg_buf_t * msg;
@@ -693,12 +693,12 @@ int ajp_handle_ping_pong(ajp_endpoint_t *ae,
 	msg = jk_b_new(&ae->pool);
 	jk_b_set_buffer_size(msg, 16);	/* 16 is way too large but I'm lazy :-) */
 	jk_b_reset(msg);
-	jk_b_append_byte(msg, AJP13_PING_REQUEST); 
+	jk_b_append_byte(msg, AJP13_CPING_REQUEST); 
 
-	/* Send Ping query */		
+	/* Send CPing query */		
 	if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
 	{
-		jk_log(l, JK_LOG_ERROR, "Error ajp13:ping: can't send ping query\n");
+		jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: can't send cping query\n");
 		return JK_FALSE;
 	}
 		
@@ -706,7 +706,7 @@ int ajp_handle_ping_pong(ajp_endpoint_t *ae,
 	 */
 	if (ajp_is_input_event(ae, timeout, l) == JK_FALSE)
 	{
-		jk_log(l, JK_LOG_ERROR, "Error ajp13:ping: timeout in reply pong\n");
+		jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: timeout in reply pong\n");
 		return JK_FALSE;
 	}
 		
@@ -714,12 +714,12 @@ int ajp_handle_ping_pong(ajp_endpoint_t *ae,
 	 */
 	if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
 	{
-		jk_log(l, JK_LOG_ERROR, "Error ajp13:ping: awaited reply pong, not received\n");
+		jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: awaited reply cpong, not received\n");
 		return JK_FALSE;
 	}
 	
-	if ((cmd = jk_b_get_byte(msg)) != AJP13_PONG_REPLY) {
-		jk_log(l, JK_LOG_ERROR, "Error ajp13:ping: awaited reply pong, received %d instead\n", cmd);
+	if ((cmd = jk_b_get_byte(msg)) != AJP13_CPONG_REPLY) {
+		jk_log(l, JK_LOG_ERROR, "Error ajp13:cping: awaited reply cpong, received %d instead\n", cmd);
 		return JK_FALSE;
 	}
 
@@ -746,9 +746,9 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
             if (ae->worker->logon != NULL)
                 return (ae->worker->logon(ae, l));
 
-			/* should we send a PING to validate connection ? */
+			/* should we send a CPING to validate connection ? */
 			if (ae->worker->connect_timeout != 0)
-				return (ajp_handle_ping_pong(ae, ae->worker->connect_timeout, l));
+				return (ajp_handle_cping_cpong(ae, ae->worker->connect_timeout, l));
 				
             return JK_TRUE;
         }
@@ -1015,10 +1015,10 @@ static int ajp_send_request(jk_endpoint_t *e,
     {
     	err = 0;
     	
-    	/* handle ping/pong before request if timeout is set */
+    	/* handle cping/cpong before request if timeout is set */
 		if (ae->worker->prepost_timeout != 0)
 		{
-			if (ajp_handle_ping_pong(ae, ae->worker->prepost_timeout, l) == JK_FALSE)
+			if (ajp_handle_cping_cpong(ae, ae->worker->prepost_timeout, l) == JK_FALSE)
 				err++;
 		}	
 
@@ -1037,7 +1037,7 @@ static int ajp_send_request(jk_endpoint_t *e,
      */
     if (ae->sd < 0) {
 
-    	/* no need to handle ping/pong here since it should be at connection time */
+    	/* no need to handle cping/cpong here since it should be at connection time */
 
         if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
             /*

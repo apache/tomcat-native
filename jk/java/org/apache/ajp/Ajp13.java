@@ -307,8 +307,8 @@ public class Ajp13 {
 	case RequestHandler.JK_AJP13_FORWARD_REQUEST:
 	    return reqHandler.decodeRequest(this, hBuf, req);
 	    
-	case RequestHandler.JK_AJP13_PING_REQUEST:
-		return reqHandler.sendPong(this, outBuf);
+	case RequestHandler.JK_AJP13_CPING_REQUEST:
+		return reqHandler.sendCPong(this, outBuf);
 		
 	case RequestHandler.JK_AJP13_SHUTDOWN:
 	    return -2;

@@ -99,13 +99,14 @@ public class RequestHandler extends AjpHandler
 	public static final byte JK_AJP13_FORWARD_REQUEST   = 2;
 	public static final byte JK_AJP13_SHUTDOWN          = 7;
 	public static final byte JK_AJP13_PING_REQUEST      = 8;    
+	public static final byte JK_AJP13_CPING_REQUEST     = 10;    
 
     // Prefix codes for message types from container to server
     public static final byte JK_AJP13_SEND_BODY_CHUNK   = 3;
     public static final byte JK_AJP13_SEND_HEADERS      = 4;
     public static final byte JK_AJP13_END_RESPONSE      = 5;
 	public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
-	public static final byte JK_AJP13_PONG_REPLY        = 9;
+	public static final byte JK_AJP13_CPONG_REPLY       = 9;
 	
     // Integer codes for common response header strings
     public static final int SC_RESP_CONTENT_TYPE        = 0xA001;
@@ -226,24 +227,24 @@ public class RequestHandler extends AjpHandler
 	ajp14.registerMessageType( JK_AJP13_GET_BODY_CHUNK, // 6
 				   "JK_AJP13_GET_BODY_CHUNK",
 				   this, null );
-	ajp14.registerMessageType( JK_AJP13_PING_REQUEST,
+	ajp14.registerMessageType( JK_AJP13_CPING_REQUEST,
 				   "JK_AJP13_PING_REQUEST",
-				   this, null); // 8
-	ajp14.registerMessageType( JK_AJP13_PONG_REPLY,
+				   this, null); // 10
+	ajp14.registerMessageType( JK_AJP13_CPONG_REPLY,
 				   "JK_AJP13_PONG_REPLY",
 				   this, null); // 9
     }
     
     /**
-     * Send a PONG REPLY to web server to its PING request
+     * Send a CPONG REPLY to web server to its CPING request
      * 
      * @param ch the Ajp13 channel
      * @param outBuf the Ajp13Packet output packet to use
      */
-    public int sendPong(Ajp13 ch, Ajp13Packet outBuf)
+    public int sendCPong(Ajp13 ch, Ajp13Packet outBuf)
     {
 		outBuf.reset();
-		outBuf.appendByte(JK_AJP13_PONG_REPLY);
+		outBuf.appendByte(JK_AJP13_CPONG_REPLY);
     	
     	try
     	{

@@ -229,9 +229,9 @@ extern "C" {
 #define AJP_HEADER_SZ_LEN         (2)
 #define CHUNK_BUFFER_PAD          (12)
 #define AJP_DEF_CACHE_TIMEOUT     (15)
-#define AJP_DEF_CONNECT_TIMEOUT   (0)		/* NO CONNECTION TIMEOUT => NO PING/PONG */
-#define AJP_DEF_REPLY_TIMEOUT     (0)		/* NO REPLY TIMEOUT                      */
-#define AJP_DEF_PREPOST_TIMEOUT   (0)		/* NO PREPOST TIMEOUT => NO PING/PONG    */
+#define AJP_DEF_CONNECT_TIMEOUT   (0)		/* NO CONNECTION TIMEOUT => NO CPING/CPONG */
+#define AJP_DEF_REPLY_TIMEOUT     (0)		/* NO REPLY TIMEOUT                        */
+#define AJP_DEF_PREPOST_TIMEOUT   (0)		/* NO PREPOST TIMEOUT => NO CPING/CPONG    */
 
 struct jk_res_data {
     int         status;
@@ -304,9 +304,9 @@ struct ajp_worker {
 	/*
 	* Handle Connection/Reply Timeouts
 	*/
-	unsigned connect_timeout;	/* connect ping/pong delay in ms (0 means disabled) 							*/
+	unsigned connect_timeout;	/* connect cping/cpong delay in ms (0 means disabled) 							*/
 	unsigned reply_timeout;	    /* reply timeout delay in ms (0 means disabled)     							*/
-	unsigned prepost_timeout;	/* before sending a request ping/pong timeout delay in ms (0 means disabled)    */
+	unsigned prepost_timeout;	/* before sending a request cping/cpong timeout delay in ms (0 means disabled)    */
 }; 
  
 
