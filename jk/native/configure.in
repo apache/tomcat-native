@@ -55,6 +55,8 @@ AC_CHECK_FUNC(snprintf, AC_DEFINE(HAVE_SNPRINTF,1,[Have snprintf()]))
 
 AC_CHECK_FUNC(vsnprintf, AC_DEFINE(HAVE_VSNPRINTF,1,[Have vsnprintf()]))
 
+AC_CHECK_FUNC(flock, AC_DEFINE(HAVE_FLOCK,1,[Have flock()]))
+
 APACHE_CONFIG_VARS=`pwd`/scripts/build/config_vars.mk
 WEBSERVER=""
 apache_dir=""
