@@ -1,6 +1,8 @@
 JAKARTA TOMCAT CONNECTORS 2 (JK2) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
+Changes with JK2 2.0.3:
+
 Changes with JK2 2.0.2:
     * Fix the bug 14293. Thanks to Martin Kraemer for his help.
       [Jean-Frederic Clere]
