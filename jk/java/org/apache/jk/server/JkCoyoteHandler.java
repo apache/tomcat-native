@@ -128,6 +128,7 @@ public class JkCoyoteHandler extends JkHandler implements
     int obNote;
     int epNote;
     int inputStreamNote;
+    private boolean paused = false;
     
     Adapter adapter;
     protected JkMain jkMain=null;
@@ -236,11 +237,17 @@ public class JkCoyoteHandler extends JkHandler implements
     }
 
     public void pause() throws Exception {
-        getJkMain().pause();
+        if(!paused) {
+            paused = true;
+            getJkMain().pause();
+        }
     }
 
     public void resume() throws Exception {
-        getJkMain().resume();
+        if(paused) {
+            paused = false;
+            getJkMain().resume();
+        }
     }
 
     public void destroy() {
