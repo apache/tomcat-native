@@ -255,8 +255,6 @@ public class JkMain implements MBeanRegistration
         if(null != out) {
             PrintStream outS=new PrintStream(new FileOutputStream(out));
             System.setOut(outS);
-//             if( stderr==null ) 
-//                 System.setErr(out);
         }
         if(null != err) {
             PrintStream errS=new PrintStream(new FileOutputStream(err));
@@ -282,8 +280,8 @@ public class JkMain implements MBeanRegistration
                 setPropertiesFile( propsF.getAbsolutePath());
             } else {
                 log.debug("Starting Jk2, base dir= " + home );
-                if( log.isWarnEnabled() )
-                    log.warn( "No properties file found " + propsF );
+                if( log.isDebugEnabled() )
+                    log.debug( "No properties file found " + propsF );
             }
         }
         long t2=System.currentTimeMillis();
@@ -329,6 +327,7 @@ public class JkMain implements MBeanRegistration
         // or be chained to create one of the standard handlers 
 
         String handlers[]=defaultHandlers;
+        // backward compat
         String workers=props.getProperty( "handler.list", null );
         if( workers!=null ) {
             handlers= split( workers, ",");
