@@ -78,8 +78,8 @@
  *  static declarations for the factory methods and the registrerFactory() call.
  * 
  * (based on jk_worker_list.h )
- * @author:      Gal Shachor <shachor@il.ibm.com>                           *
- * @author:      Henri Gomez <hgomez@slib.fr>                               *
+ * @author:      Gal Shachor <shachor@il.ibm.com>
+ * @author:      Henri Gomez <hgomez@apache.org>
  * @author:      Costin Manolache
  *  
  */

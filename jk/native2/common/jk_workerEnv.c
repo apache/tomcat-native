@@ -58,8 +58,8 @@
 /***************************************************************************
  * Description: Workers controller                                         *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 #include "jk_env.h"

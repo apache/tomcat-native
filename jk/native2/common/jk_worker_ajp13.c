@@ -58,7 +58,7 @@
 /**
  * Description: AJP13 next generation Bi-directional protocol.
  *              Backward compatible with Ajp13
- * Author:      Henri Gomez <hgomez@slib.fr>
+ * Author:      Henri Gomez <hgomez@apache.org>
  * Author:      Costin <costin@costin.dnt.ro>                              
  * Author:      Gal Shachor <shachor@il.ibm.com>                           
  */

@@ -357,7 +357,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     }
     if( uriEnv->workerName == NULL ) {
         /* The default worker */
-        uriEnv->workerName=uriEnv->uriMap->workerEnv->defaultWorker->mbean->name;;
+        uriEnv->workerName=uriEnv->uriMap->workerEnv->defaultWorker->mbean->name;
         wname=uriEnv->workerName;
         uriEnv->worker=uriEnv->uriMap->workerEnv->defaultWorker;
 

@@ -57,7 +57,7 @@
 
 /**
  * Description: AJP14 Login handler
- * Author:      Henri Gomez <hgomez@slib.fr>
+ * Author:      Henri Gomez <hgomez@apache.org>
  * Version:     $Revision$                                          
  */
 

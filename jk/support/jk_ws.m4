@@ -56,7 +56,7 @@ dnl
 dnl  =========================================================================
 
 dnl --------------------------------------------------------------------------
-dnl Author Henri Gomez <hgomez@slib.fr>
+dnl Author Henri Gomez <hgomez@apache.org>
 dnl
 dnl Inspired by Pier works on webapp m4 macros :)
 dnl 

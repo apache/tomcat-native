@@ -58,8 +58,8 @@
 /***************************************************************************
  * Description: Apache 2 plugin for Jakarta/Tomcat                         *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- *                 Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ *              Henri Gomez <hgomez@apache.org>                            *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 /*

@@ -59,7 +59,7 @@
  * Utils for processing various request components
  *
  * @author: Gal Shachor <shachor@il.ibm.com>                           
- * @author: Henri Gomez <hgomez@slib.fr>
+ * @author: Henri Gomez <hgomez@apache.org>
  * @author: Costin Manolache
  */
 

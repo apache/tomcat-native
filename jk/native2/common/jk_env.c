@@ -125,7 +125,7 @@ static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *parentEnv )
         jk_pool_t *parentPool=parentEnv->globalPool;
         env=(jk_env_t *)parentPool->calloc( parentEnv, parentPool, sizeof( jk_env_t ));
         
-        env->tmpPool=parentPool->create(parentEnv, parentPool, HUGE_POOL_SIZE);;
+        env->tmpPool=parentPool->create(parentEnv, parentPool, HUGE_POOL_SIZE);
         
         env->registerFactory= parentEnv->registerFactory;
         env->getByName= parentEnv->getByName; 
@@ -515,7 +515,7 @@ static void jk2_env_initEnv( jk_env_t *env, char *id ) {
     jk2_map_default_create( env, & env->_registry, env->globalPool );
     jk2_map_default_create( env, & env->_objects, env->globalPool );
 
-    env->tmpPool=env->globalPool->create(env, env->globalPool, HUGE_POOL_SIZE);;
+    env->tmpPool=env->globalPool->create(env, env->globalPool, HUGE_POOL_SIZE);
 
     jk2_registry_init(env);
     

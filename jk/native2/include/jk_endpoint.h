@@ -60,7 +60,7 @@
  *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           
  * Author:      Dan Milstein <danmil@shore.net>                            
- * Author:      Henri Gomez <hgomez@slib.fr>                               
+ * Author:      Henri Gomez <hgomez@apache.org>                               
  * Version:     $Revision$                                          
  ***************************************************************************/
 

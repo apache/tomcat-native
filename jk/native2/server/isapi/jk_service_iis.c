@@ -58,7 +58,7 @@
 /**
  * Description: IIS Jk2 Service 
  * Author:      Gal Shachor <shachor@il.ibm.com>                           
- *              Henri Gomez <hgomez@slib.fr> 
+ *              Henri Gomez <hgomez@apache.org> 
  *              Ignacio J. Ortega <nacho@apache.org>
  */
 

@@ -62,7 +62,7 @@
  *  Will be eventually replaced with XDR or CDR.
  *
  * @author:      Gal Shachor <shachor@il.ibm.com>                           
- * @author:      Henri Gomez <hgomez@slib.fr>                               
+ * @author:      Henri Gomez <hgomez@apache.org>                               
  * @author:      Costin Manolache
  */
 

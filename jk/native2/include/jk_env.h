@@ -81,7 +81,7 @@ extern "C" {
  *
  * ( based on jk_worker.c, jk_worker_list.c )
  * @author Gal Shachor <shachor@il.ibm.com>                           
- * @author Henri Gomez <hgomez@slib.fr>                               
+ * @author Henri Gomez <hgomez@apache.org>                               
  * @author Costin Manolache
  * 
  */

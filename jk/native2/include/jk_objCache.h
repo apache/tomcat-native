@@ -89,7 +89,7 @@ jk_objCache_t *jk2_objCache_create(struct jk_env *env, struct jk_pool *pool );
  * This is very simple - only one object kind, no expiry.
  *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           
- * Author:      Henri Gomez <hgomez@slib.fr>
+ * Author:      Henri Gomez <hgomez@apache.org>
  * Author:      Costin Manolache
 */
 struct jk_objCache {
