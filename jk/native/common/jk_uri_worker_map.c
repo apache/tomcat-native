@@ -293,6 +293,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                                uri, worker);
                 }
             } else {
+                /* Something like : JkMount /servlets/exampl* ajp13 */
                 uwr->uri         = uri;
                 uwr->worker_name = worker;
                 uwr->context     = uri;
@@ -303,8 +304,18 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                         uri, worker);
             }
 
-            uwr->ctxt_len = strlen(uwr->context);
+        } else {
+            /* Something like:  JkMount /login/j_security_check ajp13 */
+            uwr->uri         = uri;
+            uwr->worker_name = worker;
+            uwr->context     = uri;
+            uwr->suffix      = NULL;
+            uwr->match_type  = MATCH_TYPE_EXACT;
+            jk_log(l, JK_LOG_DEBUG,
+                   "Into jk_uri_worker_map_t::uri_worker_map_open, exact rule %s=%s was added\n",
+                    uri, worker);
         }
+        uwr->ctxt_len = strlen(uwr->context);
     } else {
         /*
          * JFC: please check...
