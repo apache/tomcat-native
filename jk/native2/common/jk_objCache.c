@@ -65,7 +65,7 @@
 #include "jk_objCache.h"
 
 static int 
-jk_objCache_put(jk_env_t *env, jk_objCache_t *_this, void *obj)
+jk2_objCache_put(jk_env_t *env, jk_objCache_t *_this, void *obj)
 {
     int rc;
     
@@ -107,7 +107,7 @@ jk_objCache_put(jk_env_t *env, jk_objCache_t *_this, void *obj)
 }
 
 static int
-jk_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
+jk2_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
     int i;
 
     if( cacheSize <= 0 ) {
@@ -136,7 +136,7 @@ jk_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
 }
 
 static int  
-jk_objCache_destroy(jk_env_t *env, jk_objCache_t *_this ) {
+jk2_objCache_destroy(jk_env_t *env, jk_objCache_t *_this ) {
     int i;
 
     JK_DELETE_CS(&(_this->cs), i);
@@ -149,7 +149,7 @@ jk_objCache_destroy(jk_env_t *env, jk_objCache_t *_this ) {
 
 
 static void * 
-jk_objCache_get(jk_env_t *env, jk_objCache_t *_this )
+jk2_objCache_get(jk_env_t *env, jk_objCache_t *_this )
 {
     int rc;
     void *ae=NULL;
@@ -168,7 +168,7 @@ jk_objCache_get(jk_env_t *env, jk_objCache_t *_this )
     return NULL;
 }
 
-jk_objCache_t *jk_objCache_create(jk_env_t *env, jk_pool_t *pool ) {
+jk_objCache_t *jk2_objCache_create(jk_env_t *env, jk_pool_t *pool ) {
     jk_objCache_t *_this=pool->calloc( env, pool, sizeof( jk_objCache_t ));
 
     _this->pool=pool;
@@ -177,10 +177,10 @@ jk_objCache_t *jk_objCache_create(jk_env_t *env, jk_pool_t *pool ) {
     _this->size=0;
     _this->maxSize=-1;
     
-    _this->get=jk_objCache_get;
-    _this->put=jk_objCache_put;
-    _this->init=jk_objCache_init;
-    _this->destroy=jk_objCache_destroy;
+    _this->get=jk2_objCache_get;
+    _this->put=jk2_objCache_put;
+    _this->init=jk2_objCache_init;
+    _this->destroy=jk2_objCache_destroy;
     
     return _this;
 }

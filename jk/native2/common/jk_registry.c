@@ -93,10 +93,10 @@
  * 
  *   For now the static registrartion should work.
  */
-void JK_METHOD jk_registry_init(jk_env_t *env) {
+void JK_METHOD jk2_registry_init(jk_env_t *env) {
   if( env==NULL ) {
     /* XXX do something ! */
-    printf("jk_registry_init: Assertion failed, env==NULL\n" );
+    printf("jk2_registry_init: Assertion failed, env==NULL\n" );
     return;
   }
   /**
@@ -105,34 +105,34 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
    * and because the MetroWerks compiler (used for NetWare) treats this as an
    * error, I'm casting the function pointers to (void *) - mmanders
    */
-  env->registerFactory( env, "logger", "file",   jk_logger_file_factory );
-  env->registerFactory( env, "workerEnv", "default", jk_workerEnv_factory );
-  env->registerFactory( env, "uriMap", "default",    jk_uriMap_factory );
-  env->registerFactory( env, "worker", "ajp13", jk_worker_ajp14_factory );
-  env->registerFactory( env, "worker", "ajp14", jk_worker_ajp14_factory );
-  env->registerFactory( env, "worker", "lb",    jk_worker_lb_factory );
-  env->registerFactory( env, "worker", "status", jk_worker_status_factory );
-  env->registerFactory( env, "worker", "run", jk_worker_run_factory );
+  env->registerFactory( env, "logger", "file",   jk2_logger_file_factory );
+  env->registerFactory( env, "workerEnv", "default", jk2_workerEnv_factory );
+  env->registerFactory( env, "uriMap", "default",    jk2_uriMap_factory );
+  env->registerFactory( env, "worker", "ajp13", jk2_worker_ajp14_factory );
+  env->registerFactory( env, "worker", "ajp14", jk2_worker_ajp14_factory );
+  env->registerFactory( env, "worker", "lb",    jk2_worker_lb_factory );
+  env->registerFactory( env, "worker", "status", jk2_worker_status_factory );
+  env->registerFactory( env, "worker", "run", jk2_worker_run_factory );
 #ifdef HAS_APR
   env->registerFactory( env, "channel", "apr",
-                        jk_channel_apr_socket_factory );
+                        jk2_channel_apr_socket_factory );
 #endif
-  env->registerFactory( env, "channel", "socket", jk_channel_socket_factory );
+  env->registerFactory( env, "channel", "socket", jk2_channel_socket_factory );
   
   env->registerFactory( env, "handler", "response",
-                        jk_handler_response_factory );
-  env->registerFactory( env, "handler", "logon",   jk_handler_logon_factory );
+                        jk2_handler_response_factory );
+  env->registerFactory( env, "handler", "logon",   jk2_handler_logon_factory );
   env->registerFactory( env, "handler", "discovery",
-                        jk_handler_discovery_factory );
+                        jk2_handler_discovery_factory );
 
   /* Optional objects */
 
 #ifdef HAVE_JNI
-  env->registerFactory( env, "worker", "jni",   jk_worker_jni_factory );
-  env->registerFactory( env, "channel","jni",   jk_channel_jni_factory );
+  env->registerFactory( env, "worker", "jni",   jk2_worker_jni_factory );
+  env->registerFactory( env, "channel","jni",   jk2_channel_jni_factory );
 #endif
 #ifdef AJP12
-  env->registerFactory( env, "worker", "ajp12", jk_worker_ajp12_factory );
+  env->registerFactory( env, "worker", "ajp12", jk2_worker_ajp12_factory );
 #endif
 
 
