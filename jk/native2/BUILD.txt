@@ -35,6 +35,10 @@ cp ../build/jk2/apache13/mod_jk2.so /your/path/to/apache13modules
 
 * IIS 
 
+There is a known issue with the latest APR 1.0 and MSVC6.
+If you want to use MSVC6, please use APR 0.9.x for now.
+MSVC7 doesnt have this issue, and could be used with APR 1.0.
+
 --> Mladen ?
 
 
