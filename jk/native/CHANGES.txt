@@ -2,6 +2,9 @@ JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
 Changes with JK 1.2.3:
+    * Add the ability to configure JkLog to pipe its log output to an
+      executable such as Apache rotatelogs or cronolog.  Apache 2.0 only.
+      [glenn]
     * Add JkAutoAlias to Apache 2.0
       [glenn]
     * Apache 2/1.3, if Tomcat returns an error but not content,
