@@ -199,24 +199,25 @@ public class JkHandler implements MBeanRegistration, NotificationListener {
         this.oname=oname;
         mserver=server;
         domain=oname.getDomain();
-        name=oname.getKeyProperty("name");
-        
-        // we need to create a workerEnv or set one.
-        if ( wEnv == null ) {
-            ObjectName wEnvName=new ObjectName(domain + ":type=Jk2WorkerEnv");
-            if( ! mserver.isRegistered(wEnvName )) {
-                wEnv=new WorkerEnv();
-                Registry.getRegistry().registerComponent(wEnv, wEnvName, null);
-            }
-            mserver.invoke( wEnvName, "addHandler", 
-                    new Object[] {name, this}, 
-                    new String[] {"java.lang.String", 
-                                  "org.apache.jk.core.JkHandler"});
+        if( name==null ) {
+            name=oname.getKeyProperty("name");
         }
         
+        // we need to create a workerEnv or set one.
+        ObjectName wEnvName=new ObjectName(domain + ":type=JkWorkerEnv");
+        if ( wEnv == null ) {
+            wEnv=new WorkerEnv();
+        }
+        if( ! mserver.isRegistered(wEnvName )) {
+            Registry.getRegistry().registerComponent(wEnv, wEnvName, null);
+        }
+        mserver.invoke( wEnvName, "addHandler", 
+                new Object[] {name, this}, 
+                new String[] {"java.lang.String", 
+                              "org.apache.jk.core.JkHandler"});
         return oname;
     }
-
+    
     public void postRegister(Boolean registrationDone) {
     }
 
