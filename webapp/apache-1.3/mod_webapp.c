@@ -86,6 +86,13 @@ static server_rec *server=NULL;
 /* MODULE AND LIBRARY INITIALIZATION AND DESTRUCTION                         */
 /* ************************************************************************* */
 
+/* Destroy the module and the WebApp Library */
+static void wam_shutdown(server_rec *s, pool *p) {//void *nil) {
+    if (!wam_initialized) return;
+    wa_shutdown();
+    wam_initialized=wa_false;
+}
+
 /* Startup the module and the WebApp Library */
 static void wam_startup(server_rec *s, pool *p) {
     if (!wam_initialized) return;
@@ -93,20 +100,12 @@ static void wam_startup(server_rec *s, pool *p) {
     wa_startup();
 }
 
-/* Destroy the module and the WebApp Library */
-static void wam_shutdown(void *nil) {
-    if (!wam_initialized) return;
-    wa_shutdown();
-    wam_initialized=wa_false;
-}
-
 /* Initialize the module and the WebApp Library */
 static const char *wam_init(pool *p) {
     const char *ret=NULL;
 
-    if(wam_initialized) return(NULL);
+    if(wam_initialized==wa_true) return(NULL);
     if ((ret=wa_init())!=NULL) return(ret);
-    ap_register_cleanup(p,NULL,wam_shutdown,NULL);
     wam_initialized=wa_true;
     return(NULL);
 }
@@ -514,6 +513,6 @@ module MODULE_VAR_EXPORT webapp_module = {
     NULL,                               /* [10] logger */
     NULL,                               /* [3] header parser */
     wam_startup,                        /* child initializer */
-    NULL,                               /* child exit/cleanup */
+    wam_shutdown,                       /* child exit/cleanup */
     NULL                                /* [1] post read_request handling */
 };

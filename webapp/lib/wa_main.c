@@ -74,8 +74,11 @@ wa_provider *wa_providers[] = {
 const char *wa_init(void) {
     int x=0;
 
+    wa_debug(WA_MARK,"WebApp Library initializing");
+
     /* Check the main APR pool. */
     if (wa_pool==NULL) {
+        wa_debug(WA_MARK,"Initializing APR");
         if (apr_initialize()!=APR_SUCCESS)
             return("Cannot initialize APR");
         if (apr_pool_create(&wa_pool,NULL)!=APR_SUCCESS)
