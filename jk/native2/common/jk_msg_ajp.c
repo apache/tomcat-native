@@ -82,31 +82,17 @@ static void jk2_msg_ajp_dump(jk_env_t *env, struct jk_msg *_this,
 {
     int i=0;
     env->l->jkLog( env, env->l, JK_LOG_INFO,
-                   "%s pos=%d len=%d max=%d ",
+                   "%s pos=%d len=%d max=%d \n",
                 err, _this->pos, _this->len, _this->maxlen );
     
     env->l->jkLog( env, env->l, JK_LOG_INFO,
-                "%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x\n", 
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++]);
-    i-=16;
-    env->l->jkLog( env, env->l, JK_LOG_INFO,
-                "%c  %c  %c  %c: %c  %c  %c  %c: %c  %c  %c  %c: %c  %c  %c  %c\n", 
+                "%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x \n", 
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++]);
     env->l->jkLog( env, env->l, JK_LOG_INFO,
-                "%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x\n", 
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
-                _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++]);
-    i-=16;
-    env->l->jkLog( env, env->l, JK_LOG_INFO,
-                "%c  %c  %c  %c: %c  %c  %c  %c: %c  %c  %c  %c: %c  %c  %c  %c\n", 
+                "%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x:%2x %2x %2x %2x \n", 
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
                 _this->buf[i++],_this->buf[i++],_this->buf[i++],_this->buf[i++],
@@ -139,7 +125,7 @@ static int jk2_msg_ajp_appendLong(jk_env_t *env, jk_msg_t *msg,
     int len=msg->len;
     
     if(len + 4 > msg->maxlen) {
-        return -1;
+        return JK_ERR;
     }
     
     msg->buf[len]       = (unsigned char)((val >> 24) & 0xFF);
@@ -149,7 +135,7 @@ static int jk2_msg_ajp_appendLong(jk_env_t *env, jk_msg_t *msg,
 
     msg->len += 4;
 
-    return 0;
+    return JK_OK;
 }
 
 
@@ -158,7 +144,7 @@ static int jk2_msg_ajp_appendInt(jk_env_t *env, jk_msg_t *msg,
 {
     int len=msg->len;
     if(len + 2 > msg->maxlen) {
-        return -1;
+        return JK_ERR;
     }
 
     msg->buf[len]       = (unsigned char)((val >> 8) & 0xFF);
@@ -166,7 +152,7 @@ static int jk2_msg_ajp_appendInt(jk_env_t *env, jk_msg_t *msg,
 
     msg->len += 2;
 
-    return 0;
+    return JK_OK;
 }
 
 static int jk2_msg_ajp_appendByte(jk_env_t *env, jk_msg_t *msg, 
@@ -174,13 +160,13 @@ static int jk2_msg_ajp_appendByte(jk_env_t *env, jk_msg_t *msg,
 {
     int len=msg->len;
     if(len + 1 > msg->maxlen) {
-	    return -1;
+	    return JK_ERR;
     }
 
     msg->buf[len]= val;
     msg->len += 1;
 
-    return 0;
+    return JK_OK;
 }
 
 static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg, 
@@ -190,12 +176,12 @@ static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg,
 
     if(!param) {
          msg->appendInt( env, msg, 0xFFFF );
-        return 0; 
+        return JK_OK; 
     }
 
     len = strlen(param);
     if(msg->len + len + 2  > msg->maxlen) {
-	    return -1;
+	    return JK_ERR;
     }
 
     /* ignore error - we checked once */
@@ -206,7 +192,7 @@ static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg,
     jk_xlate_to_ascii((char *)msg->buf + msg->len, len+1);  /* convert from EBCDIC if needed */
     msg->len += len + 1;
 
-    return 0;
+    return JK_OK;
 }
 
 
@@ -215,18 +201,18 @@ static int jk2_msg_ajp_appendBytes(jk_env_t *env, jk_msg_t  *msg,
                                    int len)
 {
     if (! len) {
-        return 0;
+        return JK_OK;
     }
 
     if (msg->len + len > msg->maxlen) {
-        return -1;
+        return JK_ERR;
     }
 
     /* We checked for space !!  */
     memcpy((char *)msg->buf + msg->len, param, len); 
     msg->len += len;
 
-    return 0;
+    return JK_OK;
 }
 
 static unsigned long jk2_msg_ajp_getLong(jk_env_t *env, jk_msg_t *msg)
@@ -237,6 +223,7 @@ static unsigned long jk2_msg_ajp_getLong(jk_env_t *env, jk_msg_t *msg)
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
                        "msg_ajp.getLong(): BufferOverflowException %d %d\n",
                        msg->pos, msg->len);
+        msg->dump(env, msg, "BUFFER OVERFLOW");
         return -1;
     }
     i  = ((msg->buf[(msg->pos++)] & 0xFF)<<24);
@@ -253,6 +240,7 @@ static unsigned short jk2_msg_ajp_getInt(jk_env_t *env, jk_msg_t *msg)
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
                        "msg_ajp.geInt(): BufferOverflowException %d %d\n",
                        msg->pos, msg->len);
+        msg->dump(env, msg, "BUFFER OVERFLOW");
         return -1;
     }
     i  = ((msg->buf[(msg->pos++)] & 0xFF)<<8);
@@ -267,6 +255,7 @@ static unsigned short jk2_msg_ajp_peekInt(jk_env_t *env, jk_msg_t *msg)
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
                        "msg_ajp.peekInt(): BufferOverflowException %d %d\n",
                        msg->pos, msg->len);
+        msg->dump(env, msg, "BUFFER OVERFLOW");
         return -1;
     }
     i  = ((msg->buf[(msg->pos)] & 0xFF)<<8);
@@ -281,6 +270,7 @@ static unsigned char jk2_msg_ajp_getByte(jk_env_t *env, jk_msg_t *msg)
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
                        "msg_ajp.getByte(): BufferOverflowException %d %d\n",
                        msg->pos, msg->len);
+        msg->dump(env, msg, "BUFFER OVERFLOW");        
         return -1;
     }
     rc = msg->buf[msg->pos++];
@@ -297,6 +287,7 @@ static unsigned char *jk2_msg_ajp_getString(jk_env_t *env, jk_msg_t *msg)
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
                        "msg_ajp.getString(): BufferOverflowException %d %d\n",
                        msg->pos, msg->len);
+        msg->dump(env, msg, "BUFFER OVERFLOW");
         return (unsigned char *)"ERROR"; /* XXX */
     }
 
@@ -317,6 +308,7 @@ static unsigned char *jk2_msg_ajp_getBytes(jk_env_t *env, jk_msg_t *msg, int *le
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
                        "msg_ajp.getBytes(): BufferOverflowException %d %d\n",
                        msg->pos, msg->len);
+        msg->dump(env, msg, "BUFFER OVERFLOW");
         return (unsigned char *)"ERROR"; /* XXX */
     }
 
