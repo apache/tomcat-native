@@ -12,7 +12,6 @@ then
     echo "Cannot find \"configure.in\" file."
     exit 1
 fi
-
 if [ ! -d ./apr ]
 then
     mkdir apr
