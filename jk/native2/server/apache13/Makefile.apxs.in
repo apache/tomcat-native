@@ -1,28 +1,24 @@
 ## configure should make the Makefile out of this file.
 
-## include all files to be built in common, with or without apr's
-## read the object (.c) from the list file.
-include ../../common/list.mk
-OEXT=.c
-
 APXS=@APXS@
 OS=@OS@
+JK_DIR := ../..
 APXS_LDFLAGS=@APXS_LDFLAGS@
 APXS_CFLAGS=@APXS_CFLAGS@
-JK_OBJECTS=${COMMON_OBJECTS} @COMMON_APR_OBJECTS@
+COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
 APR_CFLAGS=@APR_CFLAGS@
 APR_LDFLAGS=@APR_LDFLAGS@
 
 JK=../../common/
 JKINC=../../include/
 JK_INCL=-DUSE_APACHE_MD5 -I ${JK} -I ${JKINC} -DHAVE_MMAP
-JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
+JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS} @HAVE_JNI@
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 
 all: mod_jk2.so
 
 mod_jk2.so: 
-	$(APXS) -c -o $@ -Wc,"${JK_INCL} ${APR_CFLAGS} ${APR_LDFLAGS}" "${JAVA_INCL}" mod_jk2.c ${JK_OBJECTS} 
+	$(APXS) -c -o $@ -Wc,"${JK_INCL} ${APR_CFLAGS} ${APR_LDFLAGS}" "${JAVA_INCL}" mod_jk2.c ${COMMON_C_FILES} 
 
 clean:
 	rm -f *.o *.so
