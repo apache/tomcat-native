@@ -54,14 +54,34 @@
 
 package org.apache.jk.ant;
 
-import org.apache.tools.ant.types.*;
-import org.apache.tools.ant.util.*;
-import org.apache.tools.ant.taskdefs.*;
-import org.apache.tools.ant.*;
-import org.apache.jk.ant.compilers.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Enumeration;
+import java.util.Vector;
 
-import java.io.*;
-import java.util.*;
+import org.apache.jk.ant.compilers.CcCompiler;
+import org.apache.jk.ant.compilers.CompilerAdapter;
+import org.apache.jk.ant.compilers.GcjCompiler;
+import org.apache.jk.ant.compilers.GcjLinker;
+import org.apache.jk.ant.compilers.LibtoolCompiler;
+import org.apache.jk.ant.compilers.LibtoolLinker;
+import org.apache.jk.ant.compilers.LinkerAdapter;
+import org.apache.jk.ant.compilers.MsvcCompiler;
+import org.apache.jk.ant.compilers.MsvcLinker;
+import org.apache.jk.ant.compilers.MwccCompiler;
+import org.apache.jk.ant.compilers.MwldLinker;
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.DirectoryScanner;
+import org.apache.tools.ant.Task;
+import org.apache.tools.ant.taskdefs.Execute;
+import org.apache.tools.ant.taskdefs.ExecuteStreamHandler;
+import org.apache.tools.ant.taskdefs.PumpStreamHandler;
+import org.apache.tools.ant.types.Commandline;
+import org.apache.tools.ant.types.FileSet;
+import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.types.PatternSet;
 
 /** Global properties
 
@@ -364,7 +384,7 @@ public class SoTask extends Task {
      * (XXX including extension - this should be automatically added )
      */
     public void setModule(String modName) {
-        this.module = module;
+        this.module = modName;	// Should be this ?
     }
 
     // XXX Add specific code for Netware, Windows and platforms where libtool
