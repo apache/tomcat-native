@@ -63,43 +63,50 @@ package org.apache.naming.core;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.Enumeration;
-import javax.naming.NamingException;
-import javax.naming.NamingEnumeration;
-import javax.naming.NameClassPair;
+import javax.naming.*;
 
 /**
  * Naming enumeration implementation.
  *
+ * TODO: implement 'throw exceptions on close' part of the spec.
+ * TODO: implement recycling ( for example on close )
+ *
  * @author Remy Maucherat
- * @version $Revision$ $Date$
+ * @author Costin Manolache
  */
-
 public class NamingContextEnumeration 
     implements NamingEnumeration
 {
-
-
-    // ----------------------------------------------------------- Constructors
-
-
-    public NamingContextEnumeration(Vector entries) {
-        enum = entries.elements();
-    }
-
-
-    public NamingContextEnumeration(Enumeration enum) {
+    /** Constructor.
+     *
+     * @param enum base enumeration. Elements can be Strings, NameClassPair,
+     * Bindings or Entries, we'll provide the wrapping if needed. For String
+     * the Class and value will be lazy-loaded.
+     *
+     * @param ctx. The context where this enum belongs. Used to lazy-eval
+     * the class and value
+     *
+     * @param bindings If true, we'll wrap things as Binding ( true for
+     * listBindings, false for list ).
+     */
+    public NamingContextEnumeration( Enumeration enum, Context ctx,
+                                     boolean bindings )
+    {
+        this.ctx = ctx;
+        this.bindings=bindings;
         this.enum = enum;
     }
 
-
     // -------------------------------------------------------------- Variables
 
-
+    // return bindings instead of NameClassPair
+    protected boolean bindings;
     /**
      * Underlying enumeration.
      */
     protected Enumeration enum;
 
+    protected Context ctx;
 
     // --------------------------------------------------------- Public Methods
 
@@ -108,7 +115,8 @@ public class NamingContextEnumeration
      * Retrieves the next element in the enumeration.
      */
     public Object next()
-        throws NamingException {
+        throws NamingException
+    {
         return nextElement();
     }
 
@@ -117,7 +125,8 @@ public class NamingContextEnumeration
      * Determines whether there are any more elements in the enumeration.
      */
     public boolean hasMore()
-        throws NamingException {
+        throws NamingException
+    {
         return enum.hasMoreElements();
     }
 
@@ -126,7 +135,9 @@ public class NamingContextEnumeration
      * Closes this enumeration.
      */
     public void close()
-        throws NamingException {
+        throws NamingException
+    {
+        // XXX all exceptions should be thrown on close ( AFAIK )
     }
 
 
@@ -134,10 +145,24 @@ public class NamingContextEnumeration
         return enum.hasMoreElements();
     }
 
-
     public Object nextElement() {
-        NamingEntry entry = (NamingEntry) enum.nextElement();
-        return new NameClassPair(entry.name, entry.value.getClass().getName());
+        Object next=enum.nextElement();
+        if( next instanceof NamingEntry ) {
+            NamingEntry entry = (NamingEntry) next;
+            return new ServerBinding(entry.name, ctx, true);
+        } else if( next instanceof NameClassPair ) {
+            NameClassPair ncp=(NameClassPair)next;
+            if( bindings )
+                return new ServerBinding(ncp.getName(), ctx, true);
+            return next;
+        } else if( next instanceof Binding ) {
+            return next;
+        } else if( next instanceof String ) {
+            String name=(String)next;
+            return new ServerBinding( name, ctx, true );
+        }
+        return null;
     }
+
 }
 
