@@ -346,6 +346,8 @@ dnl
 dnl New vars: N/A
 dnl Upd vars: APR_SRCDIR
 dnl --------------------------------------------------------------------------
+LOCAL_HEADER([APR location])
+AC_MSG_CHECKING([for APR sources])
 AC_ARG_WITH(apr,
   [  --with-apr[=DIR]          path of an APR (Apache Portable Runtime) source
                           distribution or CVS snapshot. (DIR defaults to
@@ -360,8 +362,58 @@ AC_ARG_WITH(apr,
       APR_SRCDIR="${withval}"
       ;;
     esac
+    AC_MSG_RESULT([${APR_SRCDIR}])
   ],[
     APR_SRCDIR="${SRCDIR}/apr"
+    AC_MSG_RESULT([${APR_SRCDIR}])
+  ]
+)
+dnl --------------------------------------------------------------------------
+dnl Process the --with-apr-lib=... command line argument
+dnl FHS System does not have apr library installed local_prefix/lib
+dnl but somewhere else.
+dnl --------------------------------------------------------------------------
+AC_MSG_CHECKING([for APR libraries])
+AC_ARG_WITH(apr-lib,
+  [  --with-apr-lib=DIR          path where the APR libraries are installed.],
+  [
+    case "${withval}" in
+    ""|"yes"|"YES"|"true"|"TRUE")
+      AC_MSG_ERROR([--with-apr-lib need a directory])
+      ;;
+    *)
+      APR_LIBDIR="${withval}"
+      ;;
+    esac
+    AC_MSG_RESULT([${APR_LIBDIR}])
+  ],
+  [
+    AC_MSG_RESULT([no])
+  ]
+)
+
+dnl --------------------------------------------------------------------------
+dnl Process the --with-apr-include=... command line argument
+dnl FHS System does not have apr include installed local_prefix/include
+dnl but somewhere else.
+dnl --------------------------------------------------------------------------
+AC_MSG_CHECKING([for APR includes])
+AC_ARG_WITH(apr-include,
+  [  --with-apr-include=DIR          path where the APR includes are
+                                     installed.],
+  [
+    case "${withval}" in
+    ""|"yes"|"YES"|"true"|"TRUE")
+      AC_MSG_ERROR([--with-apr-include need a directory])
+      ;;
+    *)
+      APR_INCDIR="${withval}"
+      ;;
+    esac
+    AC_MSG_RESULT([${APR_INCDIR}])
+  ],
+  [
+    AC_MSG_RESULT([no])
   ]
 )
 
@@ -428,9 +480,29 @@ AC_ARG_WITH(apxs,
       local_prefix="`${APXS} -q PREFIX`"
       LIBTOOL="$local_prefix/build/libtool"
       APR_CFGFLG=""
-      APR_VARFIL="${local_prefix}/lib/APRVARS"
-      APR_LIBDIR="${local_prefix}/lib"
-      APR_INCDIR="${local_prefix}/include"
+
+      dnl check APR_LIBDIR
+      if ${TEST} -z "${APR_LIBDIR}"
+      then
+        APR_VARFIL="${local_prefix}/lib/APRVARS"
+        APR_LIBDIR="${local_prefix}/lib"
+      else
+        APR_VARFIL="${APR_LIBDIR}/APRVARS"
+      fi
+
+      dnl check APR_INCDIR
+      if ${TEST} -z "${APR_INCDIR}"
+      then
+        APR_INCDIR="${local_prefix}/include"
+      fi
+      if ${TEST} ! -d "${APR_LIBDIR}"
+      then
+        AC_MSG_ERROR([\"${APR_LIBDIR}\" not found. Use --with-apr-lib=DIR.])
+      fi
+      if ${TEST} ! -d "${APR_INCDIR}"
+      then
+        AC_MSG_ERROR([\"${APR_INCDIR}\" not found. Use --with-apr-include=DIR.])
+      fi
       unset local_prefix
     else
 
