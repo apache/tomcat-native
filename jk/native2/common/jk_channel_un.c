@@ -123,7 +123,7 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
 {
     jk_channel_un_private_t *socketInfo=
         (jk_channel_un_private_t *)(_this->_privatePtr);
-    int rc;
+    int rc=JK_OK;
 
     if( socketInfo->file==NULL ) {
         char *localName=_this->mbean->localName;
@@ -147,10 +147,10 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
         strcpy(socketInfo->unix_addr.sun_path,  socketInfo->file );
         
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.resolve(): create AF_UNIX  %s\n", socketInfo->file );
+                      "channelUn.init(): create AF_UNIX  %s\n", socketInfo->file );
     } else {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk2_channel_un_init: "
-                      "can't resolve %s errno=%d\n", socketInfo->file, errno );
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "channelUn.init(): "
+                      "can't init %s errno=%d\n", socketInfo->file, errno );
     }
 
     return rc;
@@ -175,8 +175,9 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
             return JK_ERR;
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelApr.open(): create unix socket %s %d\n", socketInfo->file, unixsock );
+    if( _this->mbean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelApr.open(): create unix socket %s %d\n", socketInfo->file, unixsock );
     
     if (connect(unixsock,(struct sockaddr *)&(socketInfo->unix_addr),
                 sizeof(struct sockaddr_un))<0) {
@@ -186,8 +187,9 @@ static int JK_METHOD jk2_channel_un_open(jk_env_t *env,
                       errno, strerror( errno ) );
         return JK_ERR;
     }
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelApr.open(): connect unix socket %d %s\n", unixsock, socketInfo->file );
+    if( _this->mbean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelApr.open(): connect unix socket %d %s\n", unixsock, socketInfo->file );
     /* store the channel information */
 
     endpoint->sd=unixsock;
@@ -234,10 +236,11 @@ static int JK_METHOD jk2_channel_un_send(jk_env_t *env, jk_channel_t *_this,
 /*         this_time = send(unixsock, (char *)b + sent , len - sent,  0); */
         errno=0;
         this_time = write(unixsock, (char *)b + sent , len - sent);
-            
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel.apr:send() write() %d %d %s\n", this_time, errno,
-                      strerror( errno));
+
+        if( _this->mbean->debug > 0 ) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "channel.apr:send() write() %d %d %s\n", this_time, errno,
+                          strerror( errno));
 /*         if( errno != 0 ) { */
 /*             env->l->jkLog(env, env->l, JK_LOG_ERROR, */
 /*                           "channel.apr:send() send() %d %d %s\n", this_time, errno, */
@@ -330,9 +333,10 @@ static int JK_METHOD jk2_channel_un_recv( jk_env_t *env, jk_channel_t *_this,
         return JK_ERR;
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelApr.receive(): Received len=%d type=%d\n",
-                  blen, (int)msg->buf[hlen]);
+    if( _this->mbean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelApr.receive(): Received len=%d type=%d\n",
+                      blen, (int)msg->buf[hlen]);
     return JK_OK;
 
 }
@@ -373,8 +377,9 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
                                      jk_bean_t *result,
                                      const char *type, const char *name)
 {
-    env->l->jkLog( env, env->l, JK_LOG_INFO,
-                   "channelUn.factory(): Error receiving message body %d %d\n",
+    env->l->jkLog( env, env->l, JK_LOG_ERROR,
+                   "channelUn.factory(): Support for unix sockets is disabled, "
+                   "you need to set HAVE_UNIXSOCKETS at compile time\n",
     return JK_FALSE;
 }
 #endif

@@ -587,7 +587,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
 
     wEnv=(jk_workerEnv_t *)pool->calloc( env, pool, sizeof( jk_workerEnv_t ));
 
-    env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Creating workerEnv %p\n", wEnv);
+    /* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Creating workerEnv %p\n", wEnv); */
 
     result->object=wEnv;
     wEnv->mbean=result;

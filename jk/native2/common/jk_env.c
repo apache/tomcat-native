@@ -79,7 +79,7 @@ jk_env_t* JK_METHOD jk2_env_getEnv( char *id, jk_pool_t *pool ) {
       jk_env_globalEnv->globalPool = pool;
       jk2_env_initEnv( (jk_env_t *)jk_env_globalEnv, id );
 
-      fprintf( stderr, "env: top level env %p\n", jk_env_globalEnv);
+      /* fprintf( stderr, "env: top level env %p\n", jk_env_globalEnv); */
   }
   return jk_env_globalEnv;
 }

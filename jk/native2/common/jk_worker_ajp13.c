@@ -612,6 +612,10 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
     if(ajp14->channel != NULL &&
        ajp14->channel->mbean->debug > 0 )
         ajp14->mbean->debug = 1;
+
+    if(ajp14->channel != NULL &&
+       ajp14->channel->mbean->disabled  )
+        ajp14->mbean->disabled = JK_TRUE;
     
     if( ajp14->cache_sz == -1 )
         ajp14->cache_sz=JK_OBJCACHE_DEFAULT_SZ;

@@ -98,6 +98,7 @@
 
 static apr_pool_t *jniAprPool;
 static jk_workerEnv_t *workerEnv;
+static int jniDebug=0;
 
 /* -------------------- Apr initialization and pools -------------------- */
 
@@ -555,8 +556,9 @@ Java_org_apache_jk_apr_AprImpl_releaseJkEnv
     if( jk_env_globalEnv != NULL ) 
         jk_env_globalEnv->releaseEnv( jk_env_globalEnv, env );
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "aprImpl.releaseJkEnv()  %p\n", env);
+    if( jniDebug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "aprImpl.releaseJkEnv()  %p\n", env);
 }
 
 /*

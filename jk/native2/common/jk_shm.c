@@ -406,21 +406,25 @@ static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_m
 
     int code=msg->getByte(env, msg );
     
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "shm.%d() \n", code);
+    if( shm->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "shm.%d() \n", code);
+    
     switch( code ) {
     case SHM_SET_ATTRIBUTE: {
         char *name=msg->getString( env, msg );
         char *value=msg->getString( env, msg );
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "shm.setAttribute() %s %s %p\n", name, value, bean->setAttribute);
+        if( shm->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "shm.setAttribute() %s %s %p\n", name, value, bean->setAttribute);
         if( bean->setAttribute != NULL)
             bean->setAttribute(env, bean, name, value );
         return JK_OK;
     }
     case SHM_ATTACH: {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "shm.init()\n");
+        if( shm->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "shm.init()\n");
         rc=shm->init(env, shm);
         return rc;
     }

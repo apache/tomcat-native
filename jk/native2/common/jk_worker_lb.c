@@ -73,9 +73,8 @@
 
 #define DEFAULT_LB_FACTOR           (1.0)
 
-/* Time to wait before retry... */
-/* XXX make it longer - debugging only */
-#define WAIT_BEFORE_RECOVER (5) 
+/* Time to wait before retry... XXX make it configurable*/
+#define WAIT_BEFORE_RECOVER (60) 
 
 #define MAX_ATTEMPTS 3
 
@@ -189,6 +188,7 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
     if ( rc==NULL ) {
         /* no workers found (rc is null), now try as hard as possible to get a
            worker anyway, pick one with largest error time.. */
+        int error_workers=0;
         
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "lb.getWorker() All workers in error state, use the one with oldest error\n");
@@ -198,6 +198,8 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                 jk_worker_t *w=lb->workerTables[level][i];
 
                 if( w->mbean->disabled == JK_TRUE ) continue;
+
+                error_workers++;
 
                 if( rc==NULL ) {
                     rc= w;
@@ -210,6 +212,13 @@ static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *lb,
                     rc = w;
                 }
             }
+        }
+
+        if( attempt >= error_workers ) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "lb.getWorker() We tried all possible workers %d\n", attempt );
+            return NULL;
+
         }
     }
     
@@ -484,13 +493,6 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
         jk_worker_t *rec;
         int rc;
 
-        /* Prevent loops */
-        if( attempt > MAX_ATTEMPTS ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "lb.service() max attempts exceeded %d\n", attempt);
-            return JK_ERR;
-        }
-        
         rec=jk2_get_most_suitable_worker(env, lb, s, attempt);
         attempt++;
         

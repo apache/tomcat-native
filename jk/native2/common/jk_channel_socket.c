@@ -276,8 +276,10 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
 
     /* Tries to connect to JServ (continues trying while error is EINTR) */
     do {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelSocket.open() connect on %d\n",sock);
+        if( ch->mbean->debug > 0 ) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "channelSocket.open() connect on %d\n",sock);
+        
         ret = connect(sock,(struct sockaddr *)addr,
                       sizeof(struct sockaddr_in));
         
