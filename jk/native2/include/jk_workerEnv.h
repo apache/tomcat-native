@@ -66,6 +66,7 @@
 
 #include "jk_logger.h"
 #include "jk_endpoint.h"
+#include "jk_config.h"
 #include "jk_worker.h"
 #include "jk_map.h"
 #include "jk_uriMap.h"
@@ -81,6 +82,7 @@ extern "C" {
 struct jk_worker;
 struct jk_endpoint;
 struct jk_env;
+struct jk_config;
 struct jk_uriMap;
 struct jk_uriEnv;
 struct jk_map;
@@ -96,12 +98,7 @@ struct jk_ws_service;
  * about web-server, uri to worker map....
  */
 struct jk_workerEnv {
-    /* The URI to WORKER map. Set via JkMount in httpd.conf,
-       uriworker.properties or autoconfiguration.
-
-       It is empty if 'native' mapping is used ( SetHandler )
-    */
-    /*     struct jk_map *uri_to_context; */
+    struct jk_bean *mbean;
 
     /* Use this pool for all global settings
      */
@@ -189,6 +186,8 @@ struct jk_workerEnv {
     int envvars_in_use;
     struct jk_map * envvars;
 
+    struct jk_config *config;
+    
     /* Handlers. This is a dispatch table for messages, for
      * each message id we have an entry containing the jk_handler_t.
      * lastMessageId is the size of the table.
@@ -208,50 +207,15 @@ struct jk_workerEnv {
     void *_private;
     
     /* -------------------- Methods -------------------- */
-    /** Set a jk property. This is similar with the mechanism
-     *  used by java side ( with individual setters for
-     *  various properties ), except we use a single method
-     *  and a big switch
-     *
-     *  As in java beans, setting a property may have side effects
-     *  like changing the log level or reading a secondary
-     *  properties file.
-     *
-     *  Changing a property at runtime will also be supported for
-     *  some properties.
-     *  XXX Document supported properties as part of
-     *  workers.properties doc.
-     *  XXX Implement run-time change in the status/ctl workers.
-     */
-    int (*setProperty)( struct jk_env *env,
-                         struct jk_workerEnv *_this,
-                         const char *name, char *value);
 
-    char *(*getProperty)( struct jk_env *env,
-                          struct jk_workerEnv *_this,
-                          const char *name);
-
-    /** Return a list of supported properties.
-        Not all properties can be set ( some may be runtime
-        status ).
-        @experimental This is not a final API, I would use
-        an external config ( DTD/schema or even MIB-like ?  )
-    */
-    char **(*getPropertyNames)( struct jk_env *env,
-                                struct jk_workerEnv *_this );
+    int (*registerHandler)(struct jk_env *env,
+                           struct jk_workerEnv *_this,
+                           struct jk_handler *h);
 
     
-    /** Get worker by name
-     */
-    struct jk_worker *(*getWorkerForName)(struct jk_env *env,
-                                          struct jk_workerEnv *_this,
-                                          const char *name);
-
-    
-    struct jk_worker *(*createWorker)(struct jk_env *env,
-                                      struct jk_workerEnv *_this,
-                                      const char *name, 
-                                      char *type);
+    int (*addWorker)(struct jk_env *env,
+                     struct jk_workerEnv *_this,
+                     struct jk_worker *w);
 
     /** Call the handler associated with the message type.
      */

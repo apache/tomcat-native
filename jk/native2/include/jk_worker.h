@@ -124,11 +124,10 @@ typedef struct jk_worker jk_worker_t;
  *
  */
 struct jk_worker {
-
+    struct jk_bean *mbean;
+    
     struct jk_workerEnv *workerEnv;
-    char *name;
-    char *type;
-
+    
     /** The id of the tomcat instance we connect to. We may have multiple
         workers connecting to a single tomcat. If no route is defined,
         the worker name will be the route name. The route can be the
@@ -185,12 +184,6 @@ struct jk_worker {
     jk_worker_t **lb_workers;
     struct jk_map *lbWorkerMap;
     int num_of_workers;
-
-    int (JK_METHOD *setProperty)(struct jk_env *env, jk_worker_t *_this,
-                                 char *name, char *value );
-
-    char *(JK_METHOD *getProperty)(struct jk_env *env, jk_worker_t *_this,
-                                   char *name );
     
     /*
      * Do whatever initialization needs to be done to start this worker up.

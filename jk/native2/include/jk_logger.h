@@ -83,22 +83,12 @@ typedef struct jk_logger jk_logger_t;
  *  in the log ).
  */
 struct jk_logger {
+    struct jk_bean *mbean;
+    char *name;
     void *logger_private;
     int  level;
 
-    void (JK_METHOD *setProperty)(struct jk_env *env,
-                                  jk_logger_t *_this,
-                                  const char *name,
-                                  const char *value );
-
-    char *(JK_METHOD *getProperty)(struct jk_env *env,
-                                   jk_logger_t *_this,
-                                   const char *name,
-                                   const char *def );
-
-    int (JK_METHOD *open)( struct jk_env *env,
-                           jk_logger_t *_this,
-                           struct jk_map *properties );
+    int (JK_METHOD *init)( struct jk_env *env, jk_logger_t *_this );
 
     void (JK_METHOD *close)( struct jk_env *env, jk_logger_t *_this );
 

@@ -97,6 +97,8 @@ struct jk_pool;
 typedef struct jk_uriMap jk_uriMap_t;
 
 struct jk_uriMap {
+    struct jk_bean *mbean;
+
     /* map URI->WORKER */
     struct jk_uriEnv **maps;
     int size;
@@ -106,9 +108,6 @@ struct jk_uriMap {
     
     /* ---------- Methods ---------- */
 
-    int (*setProperty)( struct jk_env *env, jk_uriMap_t *_this,
-                        char *name, char *value );
-    
     /** Initialize the map. This should be called after all workers
         were added. It'll check if mappings have valid workers.
     */
@@ -116,17 +115,9 @@ struct jk_uriMap {
 
     void (*destroy)( struct jk_env *env, jk_uriMap_t *_this );
 
-    struct jk_uriEnv *(*createUriEnv)(struct jk_env *env,
-                                      struct jk_uriMap *_this,
-                                      const char *vhost,
-                                      const char *name );
-
-    /** Add a servlet mapping. Can be done before init()
-     */
-    jk_uriEnv_t *(*addMapping)( struct jk_env *env, jk_uriMap_t *_this,
-                                const char *vhost,
-                                const char *uri,
-                                const char *worker);
+    int (*addUriEnv)(struct jk_env *env,
+                     struct jk_uriMap *uriMap,
+                     struct jk_uriEnv *uriEnv);
 
     /** Check the uri for potential security problems
      */

@@ -68,8 +68,14 @@
 #include "jk_env.h"
 #include "jk_logger.h"
 #include "jk_service.h"
+#include "jk_map.h"
 
 struct jk_vm {
+    struct jk_bean *mbean;
+    
+    /* General name/value properties
+     */
+    struct jk_map *properties;
     
     struct jk_pool *pool;
     /** Should be JavaVM *, but we want this to be compilable
@@ -111,9 +117,7 @@ struct jk_vm {
 
     /** Process the properties and set internal structures
      */
-    int (*init)(struct jk_env *env, struct jk_vm *p,
-                struct jk_map *props, char *prefix);
-
+    int (*init)(struct jk_env *env, struct jk_vm *p );
 
     /** Load the java libs, prepare for openning.
      */

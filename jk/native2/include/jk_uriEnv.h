@@ -95,6 +95,8 @@ typedef struct jk_uriEnv jk_uriEnv_t;
 
 
 struct jk_uriEnv {
+    struct jk_bean *mbean;
+    
     struct jk_pool *pool;
     
     struct jk_workerEnv *workerEnv;
@@ -168,18 +170,6 @@ struct jk_uriEnv {
     int contextId;
 
     /* -------------------- Methods -------------------- */
-
-    int (*setProperty)( struct jk_env *env,
-                         struct jk_uriEnv *_this,
-                         const char *name, char *value);
-
-    char *(*getProperty)( struct jk_env *env,
-                          struct jk_uriEnv *_this,
-                          const char *name);
-
-    char **(*getPropertyNames)( struct jk_env *env,
-                                struct jk_uriEnv *_this );
-    
 
     int (*init)( struct jk_env *env, struct jk_uriEnv *_this);
 

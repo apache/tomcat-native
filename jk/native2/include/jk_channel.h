@@ -100,7 +100,7 @@ typedef struct jk_channel jk_channel_t;
  * @author Costin Manolache
  */
 struct jk_channel {
-    char *name;
+    struct jk_bean *mbean;
 
     /* JK_TRUE if the channel is 'stream' based, i.e. it works using
        send() followed by blocking reads().
@@ -163,19 +163,6 @@ struct jk_channel {
                                   struct jk_endpoint *endpoint,
                                   struct jk_ws_service *r );
    
-    
-
-    /** Set a channel property. Properties are used to configure the 
-     * communication channel ( example: port, host, file, shmem_name, etc).
-     */
-    int (JK_METHOD *setProperty)(struct jk_env *env, jk_channel_t *_this, 
-				 char *name, char *value);
-    
-    /** Get a channel property 
-     */
-    char *(JK_METHOD *getProperty)(struct jk_env *env, jk_channel_t *_this,
-                                   char *name);
-    
     void *_privatePtr;
 };
     
