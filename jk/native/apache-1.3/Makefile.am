@@ -16,7 +16,7 @@ JK=../common/
 JK_INCL=-DUSE_APACHE_MD5 -I ${JK}
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
-AM_CFLAGS=@apache_include@ -I../common
+AM_CFLAGS=@apache_include@ @APXSCFLAGS@ @APXSCPPFLAGS@ -I../common
 
 include ../common/list.mk.in
 
