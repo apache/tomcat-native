@@ -73,6 +73,7 @@
 #include "jk_uriEnv.h"
 #include "jk_handler.h"
 #include "jk_service.h"
+#include "jk_shm.h"
 #include "jk_vm.h"
 
 #ifdef __cplusplus
@@ -187,6 +188,7 @@ struct jk_workerEnv {
     struct jk_map * envvars;
 
     struct jk_config *config;
+    struct jk_shm *shm;
     
     /* Handlers. This is a dispatch table for messages, for
      * each message id we have an entry containing the jk_handler_t.
