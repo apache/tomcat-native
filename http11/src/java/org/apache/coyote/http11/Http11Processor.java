@@ -651,12 +651,13 @@ public class Http11Processor implements Processor, ActionHook {
 
     }
 
+
     /**
      * Parse host.
      */
     public static void parseHost(Request req)
-        throws IOException
-    {
+        throws IOException {
+
         MessageBytes valueMB = req.getMimeHeaders().getValue("host");
         // 3.3 version. In 4.0 it is extracted from the host header.
         // XXX I would rather trust the socket...
@@ -682,7 +683,7 @@ public class Http11Processor implements Processor, ActionHook {
                 break;
             }
         }
-        
+
         if (colonPos < 0) {
             req.setServerPort(80);
             req.serverName().setBytes( valueB, valueS, valueL);
@@ -703,8 +704,10 @@ public class Http11Processor implements Processor, ActionHook {
             }
             req.setServerPort(port);
         }
+
     }
-    
+
+
     /**
      * When committing the response, we have to validate the set of headers, as
      * well as setup the response filters.

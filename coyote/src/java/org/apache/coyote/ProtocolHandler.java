@@ -73,23 +73,34 @@ import java.io.OutputStream;
  */
 public interface ProtocolHandler {
 
-    /** Pass config info
-     */
-    public void setAttribute( String name, Object value );
 
-    public Object getAttribute( String name );
-    
-    /** The adapter, used to call the connector 
+    /**
+     * Pass config info.
+     */
+    public void setAttribute(String name, Object value);
+
+
+    public Object getAttribute(String name);
+
+
+    /**
+     * The adapter, used to call the connector.
      */
     public void setAdapter(Adapter adapter);
 
+
     public Adapter getAdapter();
 
-    /** Start the protocol
-     */
-    public void init() throws Exception;
 
-    public void destroy() throws Exception;
+    /**
+     * Start the protocol.
+     */
+    public void init()
+        throws Exception;
+
+
+    public void destroy()
+        throws Exception;
 
 
 }
