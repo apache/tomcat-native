@@ -326,6 +326,11 @@ public final class Response {
     }
 
 
+    public void acknowledge() throws IOException {
+        action(ActionCode.ACTION_ACK, null);
+    }
+
+
     // -------------------- Headers --------------------
     public boolean containsHeader(String name) {
 	return headers.getHeader(name) != null;

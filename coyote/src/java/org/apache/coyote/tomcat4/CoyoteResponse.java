@@ -968,6 +968,27 @@ public class CoyoteResponse
 
 
     /**
+     * Send an acknowledgment of a request.
+     * 
+     * @exception IOException if an input/output error occurs
+     */
+    public void sendAcknowledgement()
+        throws IOException {
+
+        if (isCommitted())
+            throw new IllegalStateException
+                (sm.getString("coyoteResponse.sendAck.ise"));
+
+        // Ignore any call from an included servlet
+        if (included)
+            return; 
+
+        coyoteResponse.acknowledge();
+
+    }
+
+
+    /**
      * Send an error response with the specified status and a
      * default message.
      *
