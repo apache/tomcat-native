@@ -67,7 +67,6 @@ import java.util.Enumeration;
 import java.security.*;
 
 import org.apache.tomcat.util.http.MimeHeaders;
-import org.apache.tomcat.util.http.BaseRequest;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.buf.HexUtils;
@@ -84,7 +83,7 @@ import org.apache.tomcat.util.buf.HexUtils;
 public class MsgContext {
     private Object notes[]=new Object[32];
     private Channel ch;
-    private BaseRequest req;
+    private Object req;
     private WorkerEnv wEnv;
 
     public final Object getNote( int id ) {
@@ -114,11 +113,13 @@ public class MsgContext {
         this.ch=ch;
     }
 
-    public final void setRequest( BaseRequest req ) {
+    /** The high level request object associated with this context
+     */
+    public final void setRequest( Object req ) {
         this.req=req;
     }
 
-    public final  BaseRequest getRequest() {
+    public final  Object getRequest() {
         return req;
     }
     

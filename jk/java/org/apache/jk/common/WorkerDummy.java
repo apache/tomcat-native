@@ -94,7 +94,7 @@ public class WorkerDummy extends JkHandler
     MessageBytes body=new MessageBytes();
     private int headersMsgNote;
     
-    public int invoke( Msg in, MsgContext ep ) // BaseRequest req, Channel ch, Endpoint ep )
+    public int invoke( Msg in, MsgContext ep ) 
         throws IOException
     {
         MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );

@@ -61,7 +61,7 @@ package org.apache.jk.server.tomcat40;
 import java.io.*;
 
 import java.util.List;
-import java.util.Iterator;
+import java.util.Enumeration;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -74,7 +74,6 @@ import org.apache.catalina.util.RequestUtil;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.Cookies;
 import org.apache.tomcat.util.http.ServerCookie;
-import org.apache.tomcat.util.http.BaseRequest;
 import org.apache.tomcat.util.http.MimeHeaders;
 
 import org.apache.jk.core.*;
@@ -108,7 +107,7 @@ public class JkRequest40 extends HttpRequestBase {
         this.ep=ep;
     }
     
-    void setBaseRequest(BaseRequest ajp) throws UnsupportedEncodingException {
+    void setRequest(org.apache.coyote.Request ajp) throws UnsupportedEncodingException {
         // XXX make this guy wrap AjpRequest so
         // we're more efficient (that's the whole point of
         // all of the MessageBytes in AjpRequest)
@@ -120,15 +119,15 @@ public class JkRequest40 extends HttpRequestBase {
         setServerName(ajp.serverName().toString());
         setServerPort(ajp.getServerPort());
 
-        String remoteUser = ajp.remoteUser().toString();
+        String remoteUser = ajp.getRemoteUser().toString();
         if (remoteUser != null) {
             setUserPrincipal(new Ajp13Principal(remoteUser));
         }
 
-        setAuthType(ajp.authType().toString());
+        setAuthType(ajp.getAuthType().toString());
         setQueryString(ajp.queryString().toString());
-        setScheme(ajp.getScheme());
-        setSecure(ajp.getSecure());
+        setScheme(ajp.scheme().toString());
+        setSecure("https".equalsIgnoreCase( ajp.scheme().toString()));
         setContentLength(ajp.getContentLength());
 
         String contentType = ajp.contentType().toString();
@@ -136,7 +135,7 @@ public class JkRequest40 extends HttpRequestBase {
             setContentType(contentType);
         }
 
-        MimeHeaders mheaders = ajp.headers();
+        MimeHeaders mheaders = ajp.getMimeHeaders();
         int nheaders = mheaders.size();
         for (int i = 0; i < nheaders; ++i) {
             MessageBytes name = mheaders.getName(i);
@@ -144,13 +143,13 @@ public class JkRequest40 extends HttpRequestBase {
             addHeader(name.toString(), value.toString());
         }
 
-        Iterator itr = ajp.getAttributeNames();
-        while (itr.hasNext()) {
-            String name = (String)itr.next();
+        Enumeration itr = ajp.getAttributes().keys();
+        while (itr.hasMoreElements()) {
+            String name = (String)itr.nextElement();
             setAttribute(name, ajp.getAttribute(name));
         }
 
-        addCookies(ajp.cookies());
+        addCookies(ajp.getCookies());
     }
 
 //      public Object getAttribute(String name) {

@@ -99,11 +99,11 @@ public class Worker33 extends JkHandler
         this.cm=cm;
     }
     
-    public int invoke( Msg msg, MsgContext ep ) // BaseRequest req, Channel ch, Endpoint ep )
+    public int invoke( Msg msg, MsgContext ep ) 
         throws IOException
     {
         d("Incoming request " );
-        BaseRequest req=ep.getRequest();
+        org.apache.coyote.Request req=(org.apache.coyote.Request)ep.getRequest();
         Channel ch=ep.getChannel();
         JkRequest33 treq=(JkRequest33)req.getNote( reqNote );
         JkResponse33 tres;

@@ -70,6 +70,8 @@ import org.apache.jk.core.*;
 import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.buf.*;
 
+import org.apache.coyote.Request;
+import org.apache.coyote.*;
 
 /**
  * Handle messages related with basic request information.
@@ -391,9 +393,9 @@ public class HandlerRequest extends JkHandler
         throws IOException
     {
         // FORWARD_REQUEST handler
-        BaseRequest req=(BaseRequest)ep.getRequest();
+        Request req=(Request)ep.getRequest();
         if( req==null ) {
-            req=new BaseRequest();
+            req=new Request();
             ep.setRequest( req );
         }
 
@@ -422,18 +424,21 @@ public class HandlerRequest extends JkHandler
         req.setServerPort(msg.getInt());
 
         boolean isSSL = msg.getByte() != 0;
-        if( isSSL ) req.setSecure( true );
+        if( isSSL ) {
+            // XXX req.setSecure( true );
+            req.scheme().setString("https");
+        }
 
         decodeHeaders( ep, msg, req, tmpMB );
 
         decodeAttributes( ep, msg, req, tmpMB );
 
-        if(req.getSecure() ) {
-            req.setScheme(req.SCHEME_HTTPS);
-        }
+//         if(req.getSecure() ) {
+//             req.setScheme(req.SCHEME_HTTPS);
+//         }
 
         // set cookies on request now that we have all headers
-        req.cookies().setHeaders(req.headers());
+        req.getCookies().setHeaders(req.getMimeHeaders());
 
 	// Check to see if there should be a body packet coming along
 	// immediately after
@@ -450,7 +455,7 @@ public class HandlerRequest extends JkHandler
         return OK;
     }
         
-    private int decodeAttributes( MsgContext ep, Msg msg, BaseRequest req,
+    private int decodeAttributes( MsgContext ep, Msg msg, Request req,
                                   MessageBytes tmpMB) {
         boolean moreAttr=true;
 
@@ -494,12 +499,12 @@ public class HandlerRequest extends JkHandler
                     // ignore server
                     msg.getBytes( tmpMB );
                 } else {
-                    msg.getBytes(req.remoteUser());
+                    msg.getBytes(req.getRemoteUser());
                 }
                 break;
 		
 	    case SC_A_AUTH_TYPE    :
-                msg.getBytes(req.authType());
+                msg.getBytes(req.getAuthType());
                 break;
 		
 	    case SC_A_QUERY_STRING :
@@ -507,11 +512,11 @@ public class HandlerRequest extends JkHandler
                 break;
 		
 	    case SC_A_JVM_ROUTE    :
-                msg.getBytes(req.jvmRoute());
+                msg.getBytes(req.getWorkerId());
                 break;
 		
 	    case SC_A_SSL_CERT     :
-		req.setSecure(  true );
+		req.scheme().setString( "https" );
                 // Transform the string into certificate.
                 msg.getBytes(tmpMB);
                 String certString = tmpMB.toString();
@@ -537,14 +542,14 @@ public class HandlerRequest extends JkHandler
                 break;
 		
  	    case SC_A_SSL_CIPHER   :
-		req.setSecure( true );
+		req.scheme().setString( "https" );
                 msg.getBytes(tmpMB);
 		req.setAttribute("javax.servlet.request.cipher_suite",
 				 tmpMB.toString());
                 break;
 		
 	    case SC_A_SSL_SESSION  :
-		req.setSecure( true );
+		req.scheme().setString( "https" );
                 msg.getBytes(tmpMB);
 		req.setAttribute("javax.servlet.request.ssl_session",
 				  tmpMB.toString());
@@ -564,10 +569,10 @@ public class HandlerRequest extends JkHandler
         return 200;
     }
     
-    private void decodeHeaders( MsgContext ep, Msg msg, BaseRequest req,
+    private void decodeHeaders( MsgContext ep, Msg msg, Request req,
                                 MessageBytes tmpMB ) {
         // Decode headers
-        MimeHeaders headers = req.headers();
+        MimeHeaders headers = req.getMimeHeaders();
 
 	int hCount = msg.getInt();
         for(int i = 0 ; i < hCount ; i++) {

@@ -74,16 +74,18 @@ import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.log.*;
 import org.apache.tomcat.util.http.*;
 
-class JkRequest33 extends Request 
+import org.apache.coyote.Request;
+
+class JkRequest33 extends org.apache.tomcat.core.Request 
 {
-    BaseRequest ajpReq;
+    org.apache.coyote.Request ajpReq;
     MsgContext ep;
 
     JkInputStream jkIS;
     
-    public JkRequest33(BaseRequest ajpReq) 
+    public JkRequest33(org.apache.coyote.Request ajpReq) 
     {
-	headers = ajpReq.headers();
+	headers = ajpReq.getMimeHeaders();
 	methodMB=ajpReq.method();
 	protoMB=ajpReq.protocol();
 	uriMB = ajpReq.requestURI();
@@ -125,36 +127,36 @@ class JkRequest33 extends Request
 
     public  void setRemoteUser( String s ) {
 	super.setRemoteUser(s);
-	ajpReq.remoteUser().setString(s);
+	ajpReq.getRemoteUser().setString(s);
     }
 
     public String getRemoteUser() {
-	String s=ajpReq.remoteUser().toString();
+	String s=ajpReq.getRemoteUser().toString();
 	if( s == null )
 	    s=super.getRemoteUser();
 	return s;
     }
 
     public String getAuthType() {
-	return ajpReq.authType().toString();
+	return ajpReq.getAuthType().toString();
     }
     
     public void setAuthType(String s ) {
-	ajpReq.authType().setString(s);
+	ajpReq.getAuthType().setString(s);
     }
 
     public String getJvmRoute() {
-	return ajpReq.jvmRoute().toString();
+	return ajpReq.getWorkerId().toString();
     }
     
     public void setJvmRoute(String s ) {
-	ajpReq.jvmRoute().setString(s);
+	ajpReq.getWorkerId().setString(s);
     }
 
     // XXX scheme
     
     public boolean isSecure() {
-	return ajpReq.getSecure();
+	return "https".equalsIgnoreCase( ajpReq.scheme().toString());
     }
     
     // -------------------- Attributes --------------------

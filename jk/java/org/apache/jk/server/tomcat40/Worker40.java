@@ -98,7 +98,7 @@ public class Worker40 extends JkHandler
     {
         d("Incoming request " );
 
-        BaseRequest req=ep.getRequest();
+        org.apache.coyote.Request req=(org.apache.coyote.Request)ep.getRequest();
         Channel ch=ep.getChannel();
         JkRequest40 treq=(JkRequest40)req.getNote( reqNote );
         JkResponse40  tres;
@@ -111,7 +111,7 @@ public class Worker40 extends JkHandler
         }
         tres=(JkResponse40)treq.getResponse();
         treq.setEndpoint( ch, ep );
-        treq.setBaseRequest( req );
+        treq.setRequest( req );
         tres.setEndpoint( ch, ep );
 
         try {

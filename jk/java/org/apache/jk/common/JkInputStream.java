@@ -70,7 +70,6 @@ import javax.servlet.http.Cookie;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.Cookies;
 import org.apache.tomcat.util.http.ServerCookie;
-import org.apache.tomcat.util.http.BaseRequest;
 import org.apache.tomcat.util.http.MimeHeaders;
 
 import org.apache.jk.core.*;
@@ -230,7 +229,7 @@ public class JkInputStream extends InputStream {
 		log.debug("doRead2: " + pos + " " + len + " " +
                           blen + " " + c);
             if( log.isTraceEnabled() )
-                log.trace("Data: \n" + new String( b, off, len ));
+                log.trace("Data: \n" + new String( b, off, (len<blen-1)?len:blen-1 ));
 
 	    toCopy    -= c;
 
