@@ -28,9 +28,13 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
+#ifdef HAS_AP_PCRE
+#include "httpd.h"
+#else
 #ifdef HAS_PCRE
 #include "pcre.h"
 #include "pcreposix.h"
+#endif
 #endif
 
 /* return non-zero if pattern has any glob chars in it */
@@ -65,7 +69,7 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     int pcre = 0;
 
     if (*name == '$') {
-#ifdef HAS_PCRE
+#if defined(HAS_PCRE) || defined(HAS_AP_PCRE)
         ++name;
         uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, name);
         uriEnv->match_type = MATCH_TYPE_REGEXP;
@@ -73,8 +77,13 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
                     "uriEnv.parseName() parsing %s regexp\n",
                     name);
         {
+#ifdef HAS_AP_PCRE
+            regex_t *preg = ap_pregcomp((apr_pool_t *)uriEnv->pool->_private, uriEnv->uri, REG_EXTENDED);
+            if (!preg) {
+#else
             regex_t *preg = (regex_t *)uriEnv->pool->calloc( env, uriEnv->pool, sizeof(regex_t));
             if (regcomp(preg, uriEnv->uri, REG_EXTENDED)) {
+#endif
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                               "uriEnv.parseName() error compiling regexp %s\n",
                               uri);
@@ -132,14 +141,19 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     if (pcre) {
         ++uri;
         uriEnv->match_type = MATCH_TYPE_REGEXP;
-#ifdef HAS_PCRE
+#if defined(HAS_PCRE) || defined(HAS_AP_PCRE)
         uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, uri);
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                     "uriEnv.parseName() parsing regexp %s\n",
                     uri);
         {
+#ifdef HAS_AP_PCRE
+            regex_t *preg = ap_pregcomp((apr_pool_t *)uriEnv->pool->_private, uriEnv->uri, REG_EXTENDED);
+            if (!preg) {
+#else
             regex_t *preg = (regex_t *)uriEnv->pool->calloc( env, uriEnv->pool, sizeof(regex_t));
             if (regcomp(preg, uriEnv->uri, REG_EXTENDED)) {
+#endif
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                               "uriEnv.parseName() error compiling regexp %s\n",
                               uri);

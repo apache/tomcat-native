@@ -34,9 +34,15 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
+#ifdef HAS_AP_PCRE
+#include "httpd.h"
+#define REGEXEC ap_regexec
+#else
 #ifdef HAS_PCRE
 #include "pcre.h"
 #include "pcreposix.h"
+#define REGEXEC regexec
+#endif
 #endif
 
 static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri);
@@ -304,7 +310,7 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
     return uriMap->vhosts->get(env, uriMap->vhosts, "*");
 }
 
-#ifdef HAS_PCRE
+#if defined(HAS_PCRE) || defined(HAS_AP_PCRE)
 static jk_uriEnv_t *jk2_uriMap_regexpMap(jk_env_t *env, jk_uriMap_t *uriMap,
                                          jk_map_t *mapTable, const char *uri) 
 {
@@ -317,7 +323,7 @@ static jk_uriEnv_t *jk2_uriMap_regexpMap(jk_env_t *env, jk_uriMap_t *uriMap,
         if (uwr->regexp) {
             regex_t *r = (regex_t *)uwr->regexp;
             regmatch_t regm[10];
-            if (!regexec(r, uri, r->re_nsub + 1, regm, 0)) {
+            if (!REGEXEC(r, uri, r->re_nsub + 1, regm, 0)) {
                 return uwr;
             }
         }
