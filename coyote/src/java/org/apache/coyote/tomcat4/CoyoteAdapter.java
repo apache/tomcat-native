@@ -493,9 +493,12 @@ final class CoyoteAdapter
         int index = 0;
 
         // Replace '\' with '/'
+        // Check for null byte
         for (pos = start; pos < end; pos++) {
             if (b[pos] == (byte) '\\')
                 b[pos] = (byte) '/';
+            if (b[pos] == (byte) 0)
+                return false;
         }
 
         // Replace "//" with "/"
