@@ -1877,6 +1877,9 @@ public class CoyoteRequest
         if (!getMethod().equalsIgnoreCase("POST"))
             return;
 
+        if (!("application/x-www-form-urlencoded".equals(getContentType())))
+            return;
+
         int len = getContentLength();
 
         if (len > 0) {
