@@ -37,11 +37,11 @@ INCLUDES= -I${JK_DIR}/include \
           ${APR_INCL} \
           ${JAVA_INCL}
 
-JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 -DHAS_APR @HAVE_JNI@ @HAS_PCRE@
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 -DHAS_APR -DHAS_AP_PCRE @HAVE_JNI@
 ifdef APR_LIBDIR_LA
-JK_LDFLAGS=-L${APACHE2_LIBDIR} -lcrypt @PCRE_LIBS@
+JK_LDFLAGS=-L${APACHE2_LIBDIR} -lcrypt
 else
-JK_LDFLAGS=-L${APACHE2_LIBDIR} -lcrypt -lapr-0 @PCRE_LIBS@
+JK_LDFLAGS=-L${APACHE2_LIBDIR} -lcrypt -lapr-0
 endif
 
 ###### Based on rules.mk ##########################################

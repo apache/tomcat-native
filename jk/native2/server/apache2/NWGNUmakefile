@@ -59,9 +59,8 @@ XDEFINES	+= \
 			-D__NOVELL_LIBC__ \
 			-D_POSIX_SOURCE \
 			-DHAS_APR \
+			-DHAS_AP_PCRE \
 			$(EOLIST)
-
-#			-DHAS_PCRE
 
 #
 # These flags will be added to the link.opt file
