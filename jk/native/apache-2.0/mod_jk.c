@@ -705,21 +705,37 @@ static const char *jk_set_mountcopy(cmd_parms * cmd, void *dummy, int flag)
 static const char *jk_mount_context(cmd_parms * cmd,
                                     void *dummy,
                                     const char *context,
-                                    const char *worker,
-                                    const char *maybe_cookie)
+                                    const char *worker)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
     char *old;
-    if (context[0] != '/')
-        return "Mount xontext should start with /";
+    const char *c, *w;
+
+    if (worker != NULL && cmd->path == NULL ) {
+        c = context;
+        w = worker;
+    }
+    else if (worker == NULL && cmd->path != NULL) {
+        c = cmd->path;
+        w = context;
+    }
+    else {
+        if (worker == NULL)
+            return "JkMount needs a path when not defined in a location";
+        else 
+            return "JkMount can not have a path when defined in a location";
+    }
+
+    if (c[0] != '/')
+        return "JkMount context should start with /";
 
     /*
      * Add the new worker to the alias map.
      */
-    jk_map_put(conf->uri_to_context, context, worker, (void **)&old);
+    jk_map_put(conf->uri_to_context, c, w, (void **)&old);
     return NULL;
 }
 
@@ -732,21 +748,38 @@ static const char *jk_mount_context(cmd_parms * cmd,
 static const char *jk_unmount_context(cmd_parms * cmd,
                                       void *dummy,
                                       const char *context,
-                                      const char *worker,
-                                      const char *maybe_cookie)
+                                      const char *worker)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
     char *old , *uri;
-    if (context[0] != '/')
-        return "Unmount context should start with /";
-    uri = apr_pstrcat(cmd->temp_pool, "!", context, NULL);
+    const char *c, *w;
+
+    if (worker != NULL && cmd->path == NULL ) {
+        c = context;
+        w = worker;
+    }
+    else if (worker == NULL && cmd->path != NULL) {
+        c = cmd->path;
+        w = context;
+    }
+    else {
+        if (worker == NULL)
+            return "JkUnMount needs a path when not defined in a location";
+        else 
+            return "JkUnMount can not have a path when defined in a location";
+    }
+
+    if (c[0] != '/')
+        return "JkUnMount context should start with /";
+
+    uri = apr_pstrcat(cmd->temp_pool, "!", c, NULL);
     /*
      * Add the new worker to the alias map.
      */
-    jk_map_put(conf->uri_to_context, uri, worker, (void **)&old);
+    jk_map_put(conf->uri_to_context, uri, w, (void **)&old);
     return NULL;
 }
 
@@ -1554,14 +1587,14 @@ static const command_rec jk_cmds[] = {
      * JkMount mounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
      */
-    AP_INIT_TAKE23("JkMount", jk_mount_context, NULL, RSRC_CONF,
+    AP_INIT_TAKE12("JkMount", jk_mount_context, NULL, RSRC_CONF|ACCESS_CONF,
                    "A mount point from a context to a Tomcat worker"),
 
     /*
      * JkUnMount unmounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
      */
-    AP_INIT_TAKE23("JkUnMount", jk_unmount_context, NULL, RSRC_CONF,
+    AP_INIT_TAKE12("JkUnMount", jk_unmount_context, NULL, RSRC_CONF|ACCESS_CONF,
                    "A no mount point from a context to a Tomcat worker"),
 
     /*
