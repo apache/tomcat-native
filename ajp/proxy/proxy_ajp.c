@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-/* AJP routines for Apache proxy */
+/* HTTP routines for Apache proxy */
 
 #include "mod_proxy.h"
-#include "ajp.h"
 
 module AP_MODULE_DECLARE_DATA proxy_ajp_module;
 
@@ -34,7 +33,7 @@ typedef struct {
     void           *data;  /* To store ajp data */
 } proxy_ajp_conn_t;
 
-static apr_status_t ap_proxy_ajp_cleanup(request_rec *r,
+static apr_status_t ap_proxy_http_cleanup(request_rec *r,
                                           proxy_ajp_conn_t *p_conn,
                                           proxy_conn_rec *backend);
 
@@ -278,7 +277,7 @@ apr_status_t ap_proxy_http_create_connection(apr_pool_t *p, request_rec *r,
          * For now we do nothing, ie we get DNS round robin.
          * XXX FIXME
          */
-        failed = ap_proxy_connect_to_backend(&p_conn->sock, "AJP",
+        failed = ap_proxy_connect_to_backend(&p_conn->sock, "HTTP",
                                              p_conn->addr, p_conn->name,
                                              conf, r->server, c->pool);
 
@@ -380,9 +379,10 @@ apr_status_t ap_proxy_ajp_request(apr_pool_t *p, request_rec *r,
     }
 
     if (1) { /* XXXX only when something to send ? */
-        ajp_msg_t *msg;
+        void *msg;
         apr_size_t bufsiz;
         char *buff;
+        long len;
         status = ajp_alloc_data_msg(r, &buff, &bufsiz, &msg);
         if (status != APR_SUCCESS) {
             return status;
@@ -412,8 +412,7 @@ apr_status_t ap_proxy_ajp_request(apr_pool_t *p, request_rec *r,
     }
 
     /* read the response */
-    status = ajp_read_header(p_conn->sock, r,
-                             (ajp_msg_t **)&(p_conn->data));
+    status = ajp_read_header(p_conn->sock, r, &(p_conn->data));
     if (status != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, status, r->server,
                      "proxy: request failed to %pI (%s)",
@@ -422,8 +421,8 @@ apr_status_t ap_proxy_ajp_request(apr_pool_t *p, request_rec *r,
     }
 
     /* parse the reponse */
-    result = ajp_parse_type(r, p_conn->data);
-    if (result == CMD_AJP13_SEND_HEADERS) {
+    result = ajp_parse_type(r,p_conn->data);
+    if (result == 4) {
         ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
                      "proxy: got response from %pI (%s)",
                      p_conn->addr, p_conn->name);
@@ -464,16 +463,16 @@ apr_status_t ap_proxy_ajp_process_response(apr_pool_t * p, request_rec *r,
     
     type = ajp_parse_type(r, p_conn->data);
     status = APR_SUCCESS;
-    while (type != CMD_AJP13_END_RESPONSE) {
-        if (type == CMD_AJP13_SEND_HEADERS) {
+    while (type != 5) {
+        if (type == 4) {
             /* AJP13_SEND_HEADERS: process them */
-            status = ajp_parse_headers(r, p_conn->data); 
+            status = ajp_parse_header(r, p_conn->data); 
             if (status != APR_SUCCESS) {
                 break;
             }
-        } else if  (type == CMD_AJP13_SEND_BODY_CHUNK) {
+        } else if  (type == 3) {
             /* AJP13_SEND_BODY_CHUNK: piece of data */
-            apr_uint16_t size;
+            apr_size_t size;
             char *buff;
 
             status = ajp_parse_data(r, p_conn->data, &size, &buff);
@@ -484,8 +483,7 @@ apr_status_t ap_proxy_ajp_process_response(apr_pool_t * p, request_rec *r,
             break;
         }
         /* Read the next message */
-        status = ajp_read_header(p_conn->sock, r,
-                                 (ajp_msg_t **)&(p_conn->data));
+        status = ajp_read_header(p_conn->sock, r, &(p_conn->data));
         if (status != APR_SUCCESS) {
             break;
         }
@@ -513,18 +511,19 @@ apr_status_t ap_proxy_ajp_process_response(apr_pool_t * p, request_rec *r,
 }
 
 static
-apr_status_t ap_proxy_ajp_cleanup(request_rec *r, proxy_ajp_conn_t *p_conn,
+apr_status_t ap_proxy_http_cleanup(request_rec *r, proxy_ajp_conn_t *p_conn,
                                    proxy_conn_rec *backend) {
-    /* If the connection has been signalled
+    /* If there are no KeepAlives, or if the connection has been signalled
      * to close, close the socket and clean up
      */
 
     /* if the connection is < HTTP/1.1, or Connection: close,
      * we close the socket, otherwise we leave it open for KeepAlive support
      */
-    if (p_conn->close) {
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
-                      "ap_proxy_ajp_cleanup closing");
+    if (p_conn->close || (r->proto_num < HTTP_VERSION(1,1))) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                      "ap_proxy_http_cleanup closing %d %d %d %s",
+                       p_conn->sock, p_conn->close, r->proto_num, apr_table_get(r->headers_out, "Connection"));
         if (p_conn->sock) {
             apr_socket_close(p_conn->sock);
             p_conn->sock = NULL;
@@ -640,8 +639,6 @@ int ap_proxy_ajp_handler(request_rec *r, proxy_server_conf *conf,
     status = ap_proxy_ajp_request(p, r, p_conn, origin, conf, uri, url,
                                    server_portstr);
     if ( status != OK ) {
-        p_conn->close++;
-        ap_proxy_ajp_cleanup(r, p_conn, backend);
         return status;
     }
 
@@ -650,13 +647,12 @@ int ap_proxy_ajp_handler(request_rec *r, proxy_server_conf *conf,
                                             server_portstr);
     if ( status != OK ) {
         /* clean up even if there is an error */
-        p_conn->close++;
-        ap_proxy_ajp_cleanup(r, p_conn, backend);
+        ap_proxy_http_cleanup(r, p_conn, backend);
         return status;
     }
 
     /* Step Five: Clean Up */
-    status = ap_proxy_ajp_cleanup(r, p_conn, backend);
+    status = ap_proxy_http_cleanup(r, p_conn, backend);
     if ( status != OK ) {
         return status;
     }
