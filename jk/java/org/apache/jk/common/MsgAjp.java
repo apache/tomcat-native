@@ -209,12 +209,6 @@ public class MsgAjp extends Msg {
      * @param len The number of bytes to copy.  
      */
     public void appendBytes( byte b[], int off, int numBytes ) {
-        if( pos + numBytes >= buf.length ) {
-            log.error( "Buffer overflow buf.len=" + buf.length + " pos=" +
-                       pos + " data=" + numBytes );
-            dump("Overflow");
-            return;
-        }
         appendInt( numBytes );
         cpBytes( b, off, numBytes );
         appendByte(0);
@@ -224,6 +218,7 @@ public class MsgAjp extends Msg {
         if( pos + numBytes >= buf.length ) {
             log.error("Buffer overflow: buffer.len=" + buf.length + " pos=" +
                       pos + " data=" + numBytes );
+            dump("Overflow/coBytes");
             return;
         }
         System.arraycopy( b, off, buf, pos, numBytes);
