@@ -219,7 +219,7 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
     rc=jk2_channel_socket_resolve( env, socketInfo->host, socketInfo->port, &socketInfo->addr );
     if( rc!= JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk2_channel_socket_init: "
-                      "can't resolve %s:%d errno=%d\n", socketInfo->host, socketInfo->port, errno );
+                      "can't resolve %s:%d errno=%d %s\n", socketInfo->host, socketInfo->port, errno, strerror( errno ) );
     }
 
     if( ch->mbean->debug > 0 )
@@ -585,8 +585,8 @@ static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *ch,
 
     if(rc < 0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-               "channelSocket.receive(): Error receiving message body %d %d\n",
-                      rc, errno);
+               "channelSocket.receive(): Error receiving message body %d %d %s\n",
+                      rc, errno, strerror( errno ));
         return JK_ERR;
     }
 
@@ -620,8 +620,8 @@ static int JK_METHOD jk2_channel_socket_recvNew( jk_env_t *env, jk_channel_t *ch
         int newData=jk2_channel_socket_readN2( env, ch, endpoint, msg->buf + inBuf, hlen - inBuf, msg->maxlen - inBuf );
         if(newData < 0) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "channelSocket.receive(): Error receiving message head %d %d\n",
-                          inBuf, errno);
+                          "channelSocket.receive(): Error receiving message head %d %d %s\n",
+                          inBuf, errno, strerror( errno ));
             return JK_ERR;
         }
         inBuf+=newData;
@@ -641,8 +641,8 @@ static int JK_METHOD jk2_channel_socket_recvNew( jk_env_t *env, jk_channel_t *ch
         inBuf+=newData;
         if(newData < 0) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "channelSocket.receive(): Error receiving message body %d %d\n",
-                          newData, errno);
+                          "channelSocket.receive(): Error receiving message body %d %d %s\n",
+                          newData, errno, strerror( errno ));
             return JK_ERR;
         }
     }
