@@ -58,6 +58,9 @@ dnl =========================================================================
 dnl --------------------------------------------------------------------------
 dnl Author Pier Fumagalli <mailto:pier@betaversion.org>
 dnl Version $Id$
+dnl 
+dnl NOTE: close all functions with ]) on the same line otherwise M4 will spit
+dnl       out the last argument of the function with an extra newline.
 dnl --------------------------------------------------------------------------
 
 sinclude(./support/wa_util.m4)
@@ -77,7 +80,16 @@ dnl --------------------------------------------------------------------------
 WA_HELP()
 
 dnl --------------------------------------------------------------------------
-dnl Define and zero the variables we need in Makedefs.in
+dnl Directories locations are defined here
+dnl --------------------------------------------------------------------------
+WA_VARIABLE([APR_DIR])
+WA_VARIABLE([SRC_DIR])
+WA_VARIABLE([TGT_DIR])
+WA_PATH_DIR([SRC_DIR],[${srcdir}],[sources])
+WA_PATH_DIR([TGT_DIR],[.],[build])
+
+dnl --------------------------------------------------------------------------
+dnl Define  the variables we need in Makedefs.in
 dnl --------------------------------------------------------------------------
 WA_VARIABLE([CC])
 WA_VARIABLE([CPP])
@@ -88,20 +100,17 @@ WA_VARIABLE([APXS])
 WA_VARIABLE([CPPFLAGS])
 WA_VARIABLE([CFLAGS])
 WA_VARIABLE([LDFLAGS])
-WA_VARIABLE([LIBS])
 WA_VARIABLE([INCLUDES])
+INCLUDES="-I. -I${SRC_DIR}/include"
 
-WA_VARIABLE([MODULE])
-
-WA_VARIABLE([APR_DIR])
-WA_VARIABLE([SRC_DIR])
-WA_VARIABLE([TGT_DIR])
-
+WA_VARIABLE([EXTRA_CFLAGS])
+WA_VARIABLE([EXTRA_CPPFLAGS])
+WA_VARIABLE([EXTRA_LDFLAGS])
+WA_VARIABLE([EXTRA_INCLUDES])
 WA_VARIABLE([EXTRA_BUILD])
 WA_VARIABLE([EXTRA_CLEAN])
 
-WA_PATH_DIR([SRC_DIR],[${srcdir}],[sources])
-WA_PATH_DIR([TGT_DIR],[.],[build])
+WA_VARIABLE([MODULE])
 
 dnl --------------------------------------------------------------------------
 dnl Figure out if we have APXS, where it's located, and what version it is
@@ -124,16 +133,22 @@ if test "${APXS_VERSION}" = "1.3" ; then
     dnl Check where the APR sources are and issue "configure"
     dnl ----------------------------------------------------------------------
     WA_APR([APR_DIR])
+    tempret="0"
     tempval="--enable-static --disable-shared --disable-threads"
-    tempval="${tempval} --libdir=${TGT_DIR}"
+    tempval="${tempval} --libdir=${TGT_DIR}/objects"
     WA_EXEC(
-        [tempval],
+        [tempret],
         [./configure ${tempval}],
         [apr],
         [${APR_DIR}])
+    AC_MSG_CHECKING([for proper command execution])
+    if test "${tempret}" = "0" ; then
+        AC_MSG_RESULT([ok (${tempret})])
+    else
+        WA_ERROR([command returned with ${tempret}])
+    fi
+    unset tempret
     unset tempval
-    
-    dnl TODO: CHECK FOR RETURN VALUE HERE
 
     dnl ----------------------------------------------------------------------
     dnl Retrieve APR variables
@@ -141,37 +156,53 @@ if test "${APXS_VERSION}" = "1.3" ; then
     WA_APR_GET([CC],[${APR_DIR}],[CC])
     WA_APR_GET([CPP],[${APR_DIR}],[CPP])
     WA_APR_GET([SHELL],[${APR_DIR}],[SHELL])
+
+    WA_APR_GET([CFLAGS],[${APR_DIR}],[EXTRA_CFLAGS])
     WA_APR_GET([CPPFLAGS],[${APR_DIR}],[EXTRA_CPPFLAGS])
     WA_APR_GET([LDFLAGS],[${APR_DIR}],[EXTRA_LDFLAGS])
-    WA_APR_GET([CFLAGS],[${APR_DIR}],[EXTRA_CFLAGS])
-    WA_APR_GET([LIBS],[${APR_DIR}],[EXTRA_LIBS])
-    WA_APR_GET([INCLUDES],[${APR_DIR}],[EXTRA_INCLUDES])
 
-    AC_MSG_CHECKING([for apr INCLUDES variable])
-    INCLUDES="-I${APR_DIR}/include ${INCLUDES}"
-    AC_SUBST([INCLUDES])
+    WA_APR_GET([LDFLAGS],[${APR_DIR}],[EXTRA_LIBS])
+    WA_APR_GET([CPPFLAGS],[${APR_DIR}],[EXTRA_INCLUDES])
+
+    AC_MSG_CHECKING([for apr headers])
+    WA_APPEND([INCLUDES],[-I${APR_DIR}/include])
     AC_MSG_RESULT([-I${APR_DIR}/include])
 
-    AC_MSG_CHECKING([for apr LIBTOOL variable])
+    AC_MSG_CHECKING([for apr libtool])
     LIBTOOL="${SHELL} ${APR_DIR}/libtool --silent"
-    AC_SUBST([LIBTOOL])
     AC_MSG_RESULT([${LIBTOOL}])
 
     dnl ----------------------------------------------------------------------
     dnl Do a check on the C compiler to see if apxs reports the same one
     dnl ----------------------------------------------------------------------
-    AC_MSG_CHECKING([for apr compiler coherency])
-    if test "`${APXS} -q CC`" != "${CC}" ; then
-      WA_ERROR([you have to use the same compiler for both Apache and WebApp])
+    WA_APXS_GET([tempval],[${APXS}],[CC])
+    AC_MSG_CHECKING([for compiler coherency])
+    if test "${tempval}" != "${CC}" ; then
+      AC_MSG_RESULT([error])
+      AC_MSG_RESULT([compiler discovered by apr: ${CC}])
+      AC_MSG_RESULT([compiler used by apache apxs: ${tempval}])
+      AC_MSG_ERROR([the apache apxs and apr compilers must be the same])
+      exit 1
     fi
-    AC_MSG_RESULT([ok])
+    AC_MSG_RESULT([ok (${CC})])
+    unset tempval
 
     dnl ----------------------------------------------------------------------
     dnl Apache 1.3 configuration complete
     dnl ----------------------------------------------------------------------
     MODULE="apache-1.3"
-    EXTRA_BUILD="apr-build"
-    EXTRA_CLEAN="apr-clean"
+    WA_APPEND([EXTRA_BUILD],[apr-build])
+    WA_APPEND([EXTRA_CLEAN],[apr-clean])
+
+    WA_APXS_GET([tempval],[${APXS}],[INCLUDEDIR])
+    WA_PATH_DIR([tempdir],[${tempval}],[apache 1.3 headers])
+    WA_APPEND([INCLUDES],[-I${tempdir}])
+    unset tempval
+    unset tempdir
+    WA_APXS_GET([EXTRA_CFLAGS],[${APXS}],[CFLAGS])
+    WA_APXS_GET([EXTRA_CFLAGS],[${APXS}],[CFLAGS_SHLIB])
+    WA_APXS_GET([EXTRA_LDFLAGS],[${APXS}],[LIBS_SHLIB])
+    WA_APXS_GET([EXTRA_LDFLAGS],[${APXS}],[LDFLAGS_SHLIB])
 
 else
 
@@ -197,13 +228,16 @@ else
     WA_APXS_GET([CFLAGS],[${APXS}],[NOTEST_CFLAGS])
     WA_APXS_GET([CFLAGS],[${APXS}],[EXTRA_CFLAGS])
 
-    WA_APXS_GET([INCLUDES],[${APXS}],[INCLUDEDIR])
-    WA_PATH_DIR([INCLUDES],[${INCLUDES}],[apache 2.0 headers])
-    INCLUDES="-I${INCLUDES}"
-    AC_SUBST([INCLUDES])
+    WA_APXS_GET([tempval],[${APXS}],[INCLUDEDIR])
+    WA_PATH_DIR([tempdir],[${tempval}],[apache 2.0 headers])
+    WA_APPEND([INCLUDES],[-I${tempdir}])
+    unset tempval
+    unset tempdir
 
     MODULE="apache-2.0"
 fi
 
-AC_SUBST([MODULE])
+dnl --------------------------------------------------------------------------
+dnl All done
+dnl --------------------------------------------------------------------------
 AC_OUTPUT([Makedefs Makefile lib/Makefile ${MODULE}/Makefile])
