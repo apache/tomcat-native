@@ -47,7 +47,7 @@ AC_SUBST(CP)
 AC_PATH_PROG(MKDIR,mkdir,$PATH)dnl
 AC_SUBST(MKDIR)
 
-AC_PATH_PROG(LIBTOOL,libtool,$PATH)dnl
+dnl AC_PATH_PROG(LIBTOOL,libtool,$PATH)dnl
 AC_SUBST(LIBTOOL)
 
 dnl check for snprintf and vsnprintf.
