@@ -101,6 +101,11 @@
 #include "apr_general.h"
 #endif
 
+#if defined(WIN32)
+typedef u_long in_addr_t;
+#endif
+
+
 /** resolve the host IP */
  
 int jk_resolve(char *host,
