@@ -435,7 +435,7 @@ final class CoyoteProcessor
 
         // Wrapping the Coyote requests
         request.setCoyoteRequest(req);
-        response.setResponse(res);
+        response.setCoyoteResponse(res);
 
         try {
             // Calling the container
