@@ -110,6 +110,8 @@ class CoyoteResponse extends  Response {
 
     public void endHeaders()  throws IOException {
 	super.endHeaders();
+	coyoteResponse.setStatus(getStatus());
+
 	Enumeration names = getMimeHeaders().names();
 	while( names.hasMoreElements() ) {
 	    String hname = (String)names.nextElement();
@@ -129,5 +131,15 @@ class CoyoteResponse extends  Response {
 	    outputChunk.setBytes(buffer, pos, count);
 	    coyoteResponse.doWrite( outputChunk );
 	}
+    }
+
+    public void reset() throws IllegalStateException {
+	super.reset();
+	if( ! included )
+	    coyoteResponse.reset();
+    }
+    public void finish() throws IOException {
+	super.finish();
+	coyoteResponse.finish();
     }
 }

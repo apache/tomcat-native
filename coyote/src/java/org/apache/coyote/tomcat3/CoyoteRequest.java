@@ -102,13 +102,16 @@ class CoyoteRequest extends Request {
 	coyoteRequest=cReq;
 	// This is really ugly, but fast.
 	// I could still be talked out of it.
-	schemeMB = coyoteRequest.scheme();
-	methodMB = coyoteRequest.method();
-	uriMB    = coyoteRequest.requestURI();
-	queryMB  = coyoteRequest.query();
-	protoMB  = coyoteRequest.protocol();
+	try {
+	    schemeMB.duplicate(coyoteRequest.scheme());
+	    methodMB.duplicate(coyoteRequest.method());
+	    uriMB.duplicate(coyoteRequest.requestURI());
+	    queryMB.duplicate(coyoteRequest.query());
+	    protoMB.duplicate(coyoteRequest.protocol());
+	} catch(IOException iex) { // ignore
+	}
 	headers  = coyoteRequest.getMimeHeaders();
-	params.setQuery(queryMB);
+	scookies.setHeaders(headers);
 	params.setHeaders(headers);
     }
 
@@ -166,6 +169,29 @@ class CoyoteRequest extends Request {
 
     }
 
+    protected void parseHostHeader() {
+	MessageBytes hH=getMimeHeaders().getValue("host");
+	if (hH != null) {
+	    // XXX use MessageBytes
+	    String hostHeader = hH.toString();
+	    int i = hostHeader.indexOf(':');
+	    if (i > -1) {
+		serverNameMB.setString( hostHeader.substring(0,i));
+                hostHeader = hostHeader.substring(i+1);
+                try{
+                    serverPort=Integer.parseInt(hostHeader);
+                }catch(NumberFormatException  nfe){
+                }
+	    }else serverNameMB.setString( hostHeader);
+        return;
+	}
+	if( localHost != null ) {
+	    serverNameMB.setString( localHost );
+	}
+	// default to localhost - and warn
+	//	log("No server name, defaulting to localhost");
+        serverNameMB.setString( getLocalHost() );
+    }
 
     // -------------------- override special methods
 
@@ -180,13 +206,16 @@ class CoyoteRequest extends Request {
     public String getLocalHost() {
 	return coyoteRequest.getLocalHost();
     }
-
     public MessageBytes serverName(){
-        return coyoteRequest.serverName();
+        if(! serverNameMB.isNull()) return serverNameMB;
+        parseHostHeader();
+        return serverNameMB;
     }
 
     public int getServerPort(){
-        return coyoteRequest.getServerPort();
+        if(serverPort!=-1) return serverPort;
+        parseHostHeader();
+        return serverPort;
     }
 
     void setSSLSupport(SSLSupport s){
