@@ -81,6 +81,19 @@
 #include "http_conf_globals.h"
 
 /*
+ * These defines are specific to this file and need to remain here for the
+ * NetWare connector.
+ */
+#ifdef NETWARE
+#define _SYS_TYPES_H_
+#define _NETDB_H_INCLUDED
+#define _IN_
+#define _INET_
+#define _SYS_TIMEVAL_H_
+#define _SYS_SOCKET_H_
+#endif
+
+/*
  * Jakarta (jk_) include files
  */
 #include "jk_global.h"
