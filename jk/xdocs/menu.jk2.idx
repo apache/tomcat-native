@@ -14,3 +14,6 @@
 <section name="Installation">
     <document href="jk2/installhowto.xml"/>
 </section>
+<section name="Howto">
+    <document href="jk2/confighowto.xml"/>
+</section>
