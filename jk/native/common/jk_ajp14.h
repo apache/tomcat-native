@@ -72,9 +72,6 @@ extern "C" {
 
 #define AJP14_PROTO					14
 
-#define AJP14_WS_HEADER             0x1235
-#define AJP14_SW_HEADER             0x1235	/* AJP14 use now the same header in both directions */
-
 #define AJP14_DEF_HOST            	("localhost")
 #define AJP14_DEF_PORT            	(8011)
 #define AJP14_READ_BUF_SIZE         (8*1024)

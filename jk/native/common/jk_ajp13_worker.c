@@ -67,7 +67,6 @@
 #include "jk_util.h"
 #include "jk_msg_buff.h"
 #include "jk_ajp_common.h"
-#include "jk_ajp13.h"
 #include "jk_logger.h"
 
 int JK_METHOD ajp13_worker_factory(jk_worker_t **w,

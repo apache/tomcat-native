@@ -65,8 +65,8 @@
 #include "jk_pool.h"
 #include "jk_util.h"
 #include "jk_msg_buff.h"
-#include "jk_ajp13.h"
-#include "jk_ajp14.h"
+#include "jk_ajp_common.h"
+#include "jk_ajp14.h" 
 #include "jk_logger.h"
 #include "jk_service.h"
 
@@ -212,7 +212,7 @@ static int handle_logon(ajp_endpoint_t *ae,
 
 	if (ajp14_marshal_login_comp_into_msgb(msg, jl, l) != JK_TRUE)
 		return JK_FALSE;
-	
+  	
 	if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE) 
 		return JK_FALSE;
 

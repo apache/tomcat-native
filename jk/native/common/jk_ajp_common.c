@@ -65,9 +65,8 @@
 
 #include "jk_global.h"
 #include "jk_util.h"
-#include "jk_ajp13.h"
-#include "jk_ajp14.h"
 #include "jk_ajp_common.h"
+#include "jk_ajp14.h"
 #include "jk_connect.h"
 #include "jk_channel.h"
 #include "jk_env.h"
@@ -408,6 +407,28 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
     return JK_TRUE;
 }
 
+int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
+                                     jk_pool_t *p,
+                                     jk_logger_t *l)
+{
+    jk_log(l, JK_LOG_DEBUG, "Into ajp13_marshal_shutdown_into_msgb\n");
+    
+    /* To be on the safe side */
+    jk_b_reset(msg);
+
+    /*
+     * Just a single byte with s/d command.
+     */
+    if (jk_b_append_byte(msg, JK_AJP13_SHUTDOWN)) {
+        jk_log(l, JK_LOG_ERROR, "ajp13_marshal_shutdown_into_msgb: "
+               "Error appending shutdown message\n");
+        return JK_FALSE;
+    }
+
+    return JK_TRUE;
+}
+
+
 /*
 AJPV13_RESPONSE/AJPV14_RESPONSE:=
     response_prefix (2)
@@ -616,16 +637,8 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t *ae,
                                     jk_msg_buf_t   *msg,
                                     jk_logger_t    *l)
 {
-    if (ae->proto == AJP13_PROTO) {
-	jk_b_end(msg, AJP13_WS_HEADER);
-	jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp13", msg);
-    } else if (ae->proto == AJP14_PROTO) {
-	jk_b_end(msg, AJP14_WS_HEADER);
-	jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp14", msg);
-    } else {
-	jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::ajp_connection_tcp_send_message, unknown protocol %d, supported are AJP13/AJP14\n", ae->proto);
-	return JK_FALSE;
-    }
+    jk_b_end(msg, AJP13_WS_HEADER);
+    jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp13", msg);
 #ifdef CHANNEL
     {
 	int err;
@@ -682,30 +695,11 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
 
     header = ((unsigned int)head[0] << 8) | head[1];
     
-    if (ae->proto == AJP13_PROTO) {
-	if (header != AJP13_SW_HEADER) {
-	    if (header == AJP14_SW_HEADER) {
-		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
-		       " Error - received AJP14 reply on an AJP13 connection\n");
-	    } else {
-		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
-		       "Error - Wrong message format 0x%04x\n", header);
-	    }
-	    return JK_FALSE;
-    	}
-    } else if (ae->proto == AJP14_PROTO) {
-	if (header != AJP14_SW_HEADER) {
-	    if (header == AJP13_SW_HEADER) {
-		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
-		       " Error - received AJP13 reply on an AJP14 connection\n");
-	    } else {
-		jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
-		       "Error - Wrong message format 0x%04x\n", header);
-	    }
-	    
-	    return JK_FALSE;
-	}
-    }	
+    if (header != AJP13_SW_HEADER) {
+        jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message:"
+               "Error - Wrong message format 0x%04x\n", header);
+        return JK_FALSE;
+    }
 
     msglen  = ((head[2]&0xff)<<8);
     msglen += (head[3] & 0xFF);

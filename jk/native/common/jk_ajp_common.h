@@ -216,6 +216,69 @@ extern "C" {
 #define AJP_HEADER_SZ_LEN         (2)
 #define CHUNK_BUFFER_PAD          (12)
 
+#define AJP13_PROTO					13
+#define AJP13_WS_HEADER				0x1234
+#define AJP13_SW_HEADER				0x4142	/* 'AB' */
+
+#define AJP13_DEF_HOST            	("localhost")
+#define AJP13_DEF_PORT            	(8009)
+#define AJP13_READ_BUF_SIZE         (8*1024)
+#define AJP13_DEF_CACHE_SZ          (1)
+#define JK_INTERNAL_ERROR       	(-2)
+#define JK_FATAL_ERROR              (-3)
+#define JK_CLIENT_ERROR             (-4)
+#define AJP13_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
+
+/*
+ * Message does not have a response (for example, JK_AJP13_END_RESPONSE)
+ */
+#define JK_AJP13_ERROR              -1
+/*
+ * Message does not have a response (for example, JK_AJP13_END_RESPONSE)
+ */
+#define JK_AJP13_NO_RESPONSE        0
+/*
+ * Message have a response.
+ */
+#define JK_AJP13_HAS_RESPONSE       1
+
+/*
+ * Forward a request from the web server to the servlet container.
+ */
+#define JK_AJP13_FORWARD_REQUEST    (unsigned char)2
+
+/*
+ * Write a body chunk from the servlet container to the web server
+ */
+#define JK_AJP13_SEND_BODY_CHUNK    (unsigned char)3
+
+/*
+ * Send response headers from the servlet container to the web server.
+ */
+#define JK_AJP13_SEND_HEADERS       (unsigned char)4
+
+/*
+ * Marks the end of response.
+ */
+#define JK_AJP13_END_RESPONSE       (unsigned char)5
+
+/*
+ * Marks the end of response.
+ */
+#define JK_AJP13_GET_BODY_CHUNK     (unsigned char)6
+
+/*
+ * Asks the container to shutdown
+ */
+#define JK_AJP13_SHUTDOWN           (unsigned char)7
+
+/*
+ * Functions
+ */
+int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
+                                     jk_pool_t *p,
+                                     jk_logger_t *l);
+
 
 struct jk_res_data {
     int         status;
@@ -253,9 +316,12 @@ struct ajp_worker {
     unsigned ep_cache_sz;
     ajp_endpoint_t **ep_cache;
 
-	int proto; /* PROTOCOL USED AJP13/AJP14 */
+    /* PROTOCOL USED AJP13/AJP14
+       XXX "version" - the API version to use
+    */
+    int proto;
 
-	jk_login_service_t *login;
+    jk_login_service_t *login;
 
     jk_worker_t worker; 
 
