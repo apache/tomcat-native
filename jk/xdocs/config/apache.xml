@@ -351,7 +351,7 @@ context, but all .jpg files that belongs to that context are not served.
 </source>
 <p>
 JkUnMount takes precedence over JkMount directives, meaning that the JK
-will first look for unmount and then for unmount directives. The following
+will first look for unmount and then for mount directives. The following
 example will block all .gif files.
 </p>
 <source>
