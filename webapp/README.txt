@@ -26,6 +26,13 @@ script, configure both APR and the WebApp module and compile:
     ./configure --with-apxs
     make
 
+In case your platform needs some flags for APR just put them before the
+configure. For example:
+   ./support/buildconf.sh
+   CC=/usr/bin/cc \
+   CFLAGS=-DXTI_SUPPORT \
+   ./configure --with-apxs=/opt/apache/bin/apxs
+
 This will configure and build APR, and build the WebApp module for
 Apache 1.3. The available options for the configure script are:
 
@@ -54,8 +61,16 @@ Apache 1.3. The available options for the configure script are:
         and will kill performances, but it's a good starting poing when
         something goes wrong.
 
-Once built, the DSO module will be built in the webapp/apache-1.3 directory.
-To install it copy the mod_webapp.so file in your Apache 1.3 libexec
+To build the mod_webapp DSO module set the CLASSPATH to the catalina.jar
+of your TOMCAT4.0 installation. (You need a GNU Make)
+That something like the following:
+CLASSPATH=$HOME/jakarta-tomcat-4.0/build/server/lib/catalina.jar
+export CLASSPATH
+make
+
+Once built, the DSO module will be found in the webapp/apache-1.3 directory.
+
+To install it  copy the mod_webapp.so file in your Apache 1.3 libexec
 directory, and add the following lines to httpd.conf:
 
     LoadModule webapp_module [path to mod_webapp.so]
