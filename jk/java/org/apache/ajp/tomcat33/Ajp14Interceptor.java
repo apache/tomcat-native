@@ -405,14 +405,14 @@ class Ajp14Request extends Request
 	if( available <= 0 )
 	    return -1;
 	available--;
-	return ajp14.doRead();
+	return ajp14.reqHandler.doRead(ajp14);
     }
     
     public int doRead(byte[] b, int off, int len) throws IOException 
     {
 	if( available <= 0 )
 	    return -1;
-	int rd=ajp14.doRead( b,off, len );
+	int rd=ajp14.reqHandler.doRead( ajp14, b,off, len );
 	available -= rd;
 	return rd;
     }
@@ -445,7 +445,9 @@ class Ajp14Response extends Response
             return;
         }
 
-	ajp14.sendHeaders(getStatus(), getMimeHeaders());
+	ajp14.reqHandler.sendHeaders(ajp14, ajp14.outBuf, getStatus(),
+				     HttpMessages.getMessage(status),
+				     getMimeHeaders());
     } 
 
     // XXX Can be implemented using module notification, no need to extend
@@ -454,14 +456,14 @@ class Ajp14Response extends Response
 	if(!finished) {
 	    super.finish();
 		finished = true; // Avoid END_OF_RESPONSE sent 2 times
-	    ajp14.finish();
+	    ajp14.reqHandler.finish(ajp14, ajp14.outBuf);
 	}
     }
 
     // XXX Can be implemented using the buffers, no need to extend
     public void doWrite(  byte b[], int off, int len) throws IOException 
     {
-	ajp14.doWrite(b, off, len );
+	ajp14.reqHandler.doWrite(ajp14, ajp14.outBuf, b, off, len );
     }
     
 }
