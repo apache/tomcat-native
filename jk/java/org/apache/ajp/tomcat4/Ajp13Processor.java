@@ -462,9 +462,23 @@ final class Ajp13Processor
                 }
 
                 if (!bad_request) {
-                    connector.getContainer().invoke(request, response);
+                    try {
+                        connector.getContainer().invoke(request, response);
+                    } catch (IOException ioe) {
+                        // Pass the IOException through
+                        throw ioe;
+                    } catch (Throwable e) {
+                        // A throwable here could be caused by a Valve,
+                        // Filter, or other component in the chain.
+                        // Processing of the request failed, return an
+                        // Internal Server Error
+                        logger.log("process: invoke", e);
+                        response.sendError
+                            (HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    }
                 } else {
-                    response.sendError(400);
+                    response.sendError
+                        (HttpServletResponse.SC_BAD_REQUEST);
                 }
 
                 if (debug > 0) {
@@ -480,13 +494,16 @@ final class Ajp13Processor
 
             } catch (IOException ioe) {
                 // Normally this catches a socket Broken Pipe caused by the
-                // remote client aborting the request. mod_jk will close the
-                // socket on its side and the processor will get a socket EOF
-                // when it next tries to read from mod_jk, then recycle itself
-                // normally. Don't print the stack trace in this case.
+                // remote client aborting the request. Don't print the stack
+                // trace in this case. Then let the Processor recycle.
                 logger.log("process: IOException " + ioe.getMessage());
+                moreRequests = false;
             } catch (Throwable e) {
-                logger.log("process: invoke", e);
+                // Processing the request and sending the response failed.
+                // We don't know what the state of the Ajp Connector socket
+                // is in. Bail out and recycle the Processor.
+                logger.log("process: finish", e);
+                moreRequests = false;
             }
 
             // Recycling the request and the response objects
