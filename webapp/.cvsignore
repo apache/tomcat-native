@@ -1,4 +1,6 @@
 .DS_Store
+.FBCIndex
+.FBCLockFolder
 Makedefs
 Makefile
 apr
