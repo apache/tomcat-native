@@ -131,7 +131,6 @@ int ajp14_marshal_login_init_into_msgb(jk_msg_buf_t       *msg,
 
 int ajp14_unmarshal_login_seed(jk_msg_buf_t *msg,
                                jk_login_service_t *s,
-                               jk_pool_t *p,
                                jk_logger_t *l)
 {
     if (jk_b_get_bytes(msg, s->entropy, AJP14_ENTROPY_SEED_LEN) < 0) {

@@ -71,7 +71,7 @@ extern "C" {
 #define AJP14_PROTO					14
 
 #define AJP14_WS_HEADER             0x1235
-#define AJP14_SW_HEADER             0x4143  /* 'AC' */
+#define AJP14_SW_HEADER             0x1235	/* AJP14 use now the same header in both directions */
 
 #define AJP14_DEF_HOST            	("localhost")
 #define AJP14_DEF_PORT            	(8011)
@@ -299,7 +299,6 @@ int 	ajp14_marshal_login_init_into_msgb(jk_msg_buf_t *msg,
 
 int 	ajp14_unmarshal_login_seed(jk_msg_buf_t *msg, 
 								   jk_login_service_t *s, 
-								   jk_pool_t *p, 
 								   jk_logger_t *l);
 
 int 	ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t *msg, 

@@ -65,12 +65,13 @@
 /* -------------------- Method -------------------- */
 static int JK_METHOD validate(jk_worker_t *pThis,
                               jk_map_t    *props,
+                              jk_worker_env_t *we,
                               jk_logger_t *l)
 {   
 	ajp_worker_t *aw;
 	char * secret_key;
 
-    if (ajp_validate(pThis, props, l, AJP14_PROTO) == JK_FALSE)
+    if (ajp_validate(pThis, props, we, l, AJP14_PROTO) == JK_FALSE)
 		return JK_FALSE;
 
    aw = pThis->worker_private;
@@ -85,20 +86,49 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 	return JK_TRUE;
 }
 
+static int JK_METHOD get_endpoint(jk_worker_t    *pThis,
+                                  jk_endpoint_t **pend,
+                                  jk_logger_t    *l)
+{
+    return (ajp_get_endpoint(pThis, pend, l, AJP14_PROTO));
+}
+
 static int JK_METHOD init(jk_worker_t *pThis,
                           jk_map_t    *props, 
+                          jk_worker_env_t *we,
                           jk_logger_t *l)
 {
-   ajp_worker_t *aw;
-   char         *secret_key;
+	ajp_worker_t   *aw;
+	ajp_endpoint_t *ae;
+	jk_endpoint_t  *je;
+	char           *secret_key;
 
-   if (ajp_init(pThis, props, l, AJP14_PROTO) == JK_FALSE)
+   	if (ajp_init(pThis, props, we, l, AJP14_PROTO) == JK_FALSE)
 		return JK_FALSE;
 
-   aw = pThis->worker_private;
+   	aw = pThis->worker_private;
 
-   aw->login->secret_key = jk_get_worker_secret_key(props, aw->name);
-   return JK_TRUE;
+	/* Set Secret Key (used at logon time) */	
+	aw->login->secret_key = jk_get_worker_secret_key(props, aw->name);
+
+	/* Set WebServerName (used at logon time) */
+	aw->login->web_server_name = we->server_name;
+
+	if (get_endpoint(pThis, &je, l) == JK_FALSE)
+		return JK_FALSE;
+	
+	ae = je->endpoint_private;
+
+	if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
+
+	/* connection stage passed - try to get context info
+	 * this is the long awaited autoconf feature :)
+	 */
+
+		ajp_close_endpoint(ae, l);
+	}
+
+	return JK_TRUE;
 }
     
 
@@ -107,18 +137,95 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
 {
 	ajp_worker_t *aw = (*pThis)->worker_private;
 
-	if (aw->login)
+	if (aw->login) {
 		free(aw->login);
+		aw->login = NULL;
+	}
 
     return (ajp_destroy(pThis, l, AJP14_PROTO));
 }
 
-static int JK_METHOD get_endpoint(jk_worker_t    *pThis,
-                                  jk_endpoint_t **pend,
-                                  jk_logger_t    *l)
+/* 
+ * AJP14 Logon Phase 
+ *
+ * INIT + REPLY / NEGO + REPLY 
+ */
+
+static int handle_logon(ajp_endpoint_t *ae,
+					   jk_msg_buf_t	   *msg,
+					   jk_logger_t     *l)
 {
-    return (ajp_get_endpoint(pThis, pend, l, AJP14_PROTO));
+	jk_login_service_t *jl = ae->worker->login;
+
+	ajp14_marshal_login_init_into_msgb(msg, jl, l);
+
+	jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon - send init\n");
+
+	if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)	
+		return JK_FALSE;
+ 
+	jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon - wait init reply\n");
+
+	jk_b_reset(msg);
+
+	if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
+		return JK_FALSE;
+
+	if (ajp14_unmarshal_login_seed(msg, jl, l) != JK_TRUE)
+		return JK_FALSE;
+				
+	jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon - received entropy %s\n", jl->entropy);
+
+	ajp14_compute_md5(jl, l);
+
+	if (ajp14_marshal_login_comp_into_msgb(msg, jl, l) != JK_TRUE)
+		return JK_FALSE;
+	
+	if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE) 
+		return JK_FALSE;
+
+	jk_b_reset(msg);
+
+	if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
+		return JK_FALSE;
+
+	switch (jk_b_get_byte(msg)) {
+
+	case AJP14_LOGOK_CMD  :	
+		ajp14_unmarshal_log_ok(msg, jl, l);	
+		break;
+		
+	case AJP14_LOGNOK_CMD :
+		ajp14_unmarshal_log_nok(msg, l);
+		return JK_FALSE;
+	}
+
+	return JK_TRUE;
 }
+
+/*
+ * AJP14 - Login Handler - we'll have a more secure 
+ *         login support in AJP14
+ */
+
+static int logon(ajp_endpoint_t *ae,
+                jk_logger_t    *l)
+{
+	jk_pool_t          *p = &ae->pool;
+	jk_msg_buf_t	   *msg;
+	int					rc;
+
+	jk_log(l, JK_LOG_DEBUG, "Into ajp14:logon\n");
+
+	msg = jk_b_new(p);
+	jk_b_set_buffer_size(msg, DEF_BUFFER_SZ);
+	
+	rc = handle_logon(ae, msg, l);
+	jk_reset_pool(p);
+
+	return (rc);
+}
+
 
 int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
                                    const char   *name,
@@ -169,7 +276,8 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
     aw->worker.init            = init;
     aw->worker.get_endpoint    = get_endpoint;
     aw->worker.destroy         = destroy;
-   
+
+	aw->logon				   = logon; /* LogOn Handler for AJP14 */
     *w = &aw->worker;
     return JK_TRUE;
 }
