@@ -213,7 +213,7 @@ public class WarpConnection implements LifecycleListener, Runnable {
         if (Constants.DEBUG) {
             String typ=Integer.toHexString(packet.getType());
             logger.debug(">> TYPE="+typ+" LENGTH="+packet.size);
-            logger.debug(">> "+packet.dump());
+            //logger.debug(">> "+packet.dump());
         }
 
         this.output.write(packet.getType()&0x0ff);
@@ -255,7 +255,7 @@ public class WarpConnection implements LifecycleListener, Runnable {
         if (Constants.DEBUG) {
             String typ=Integer.toHexString(packet.getType());
             logger.debug("<< TYPE="+typ+" LENGTH="+packet.size);
-            logger.debug("<< "+packet.dump());
+            // logger.debug("<< "+packet.dump());
         }
     }
 }

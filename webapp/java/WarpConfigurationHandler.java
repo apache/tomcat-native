@@ -294,7 +294,7 @@ public class WarpConfigurationHandler {
 
             if (!file.exists()) {
                 logger.log("Cannot find \""+file.getPath()+"\" for appl. \""+
-                           applName);
+                           applName+"\" host \""+host.getName()+"\"");
                 return(null);
             }
 
