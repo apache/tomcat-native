@@ -142,6 +142,39 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/* We'll use APR whenever it's possible. However for a transition period and
+   for essential components we can build a minimal mod_jk without APR.
+*/
+   
+#ifdef HAS_APR
+
+#include "apr.h"
+#include "apr_errno.h"
+
+#else
+
+/* No APR - define for forward/backward compatibility
+ */
+
+/* cut&paste from apr_errno.h */
+typedef int apr_status_t;
+#define APR_SUCCESS (0)
+#define APR_OS_START_USEERR 21000
+
+typedef  unsigned char   apr_byte_t;
+typedef  short           apr_int16_t;
+typedef  unsigned short  apr_uint16_t;
+typedef  int             apr_int32_t;
+typedef  unsigned int    apr_uint32_t;
+
+#endif
+    
+#define JK_OK APR_SUCCESS
+#define JK_ERR APR_OS_START_USEERR
+/* Individual jk errors */
+
+#define JK_
+    
 /* Some compileers support 'inline'. How to guess ?
    #define INLINE inline
  */
@@ -156,9 +189,6 @@ extern "C" {
 #define JK_WORKER_FILE_DEF  ("workers.properties")
 #define JK_LOG_LEVEL_DEF    ("emerg")
 
-#define JK_OK (0)
-#define JK_ERR (1)
-    
 #define JK_TRUE  (1)
 #define JK_FALSE (0)
 
@@ -215,7 +245,7 @@ extern "C" {
     #define PATH_SEPARATOR_STR      (":")
     #define FILE_SEPARATOR_STR      ("/")
     #define PATH_ENV_VARIABLE       ("LD_LIBRARY_PATH")
-	#define HAVE_UNIXSOCKETS
+    #define HAVE_UNIXSOCKETS
 #endif
 
 /*
