@@ -1186,6 +1186,10 @@ public class CoyoteRequest
     public void setCharacterEncoding(String enc)
         throws UnsupportedEncodingException {
 
+        if (requestParametersParsed || usingReader || usingInputStream) {
+            return;
+        }
+
         // Ensure that the specified encoding is valid
         byte buffer[] = new byte[1];
         buffer[0] = (byte) 'a';
