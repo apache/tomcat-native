@@ -128,16 +128,7 @@ struct jk_worker {
     
     struct jk_workerEnv *workerEnv;
     
-    /** The id of the tomcat instance we connect to. We may have multiple
-        workers connecting to a single tomcat. If no route is defined,
-        the worker name will be the route name. The route can be the
-        name of another worker. 
-     */
-    char *route;
-
-    /** Pool for worker specific informations.
-        In future we may start/stop/reload workers at runtime, but that's
-        far away
+    /** Pool for worker specific informations. XXX to be removed, is duplicated
     */
     struct jk_pool *pool;
 
@@ -165,6 +156,25 @@ struct jk_worker {
     /* Private key used to connect to the remote side2.*/
     char * secret;
 
+    /* -------------------- Information used for load balancing ajp workers -------------------- */
+
+    /* Worker is in gracefull shutdown
+     */
+    int  disabled;
+    
+    /** The id of the tomcat instance we connect to. We may have multiple
+        workers connecting to a single tomcat. If no route is defined,
+        the worker name will be the route name. The route can be the
+        name of another worker. 
+     */
+    char *route;
+
+    int reqCnt;
+    int errCnt;
+    
+    /** lb groups in which this worker belongs */
+    struct jk_map *groups;
+
     /* Each worker can be part of a load-balancer scheme.
      * The information can be accessed by other components -
      * for example to report status, etc.
@@ -175,17 +185,18 @@ struct jk_worker {
     int     in_recovering;
     int     retry_count;
     time_t  error_time;
-    /** Last exception recorded on this worker, the reason for
-     *  which this worker is in error state and can't perform.
-     */
-    struct jk_exception *lastError;
 
-    /* 'Version' or generation. Used to update the workers dynamically
-       at runtime */
-    int     ver;
+    
+    /* -------------------- Information for reconfiguration -------------------- */
+    
     /* Only one thread can update the config
      */
     JK_CRIT_SEC cs;
+    /* 'Version' or generation. Used to update the workers dynamically
+       at runtime */
+    int     ver;
+
+    /* -------------------- Information specific to the lb worker -------------------- */
 
     /** For load balancing workers
      */
@@ -196,6 +207,7 @@ struct jk_worker {
     int lb_workers_size;
     int num_of_workers;
 
+    /* -------------------- Methods supported by all workers -------------------- */
     /*
      * Do whatever initialization needs to be done to start this worker up.
      * Configuration options are passed in via the props parameter.  

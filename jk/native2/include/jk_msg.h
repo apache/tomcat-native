@@ -146,7 +146,7 @@ struct jk_msg {
                          const char *param);
 
     int (*appendMap)(struct jk_env *env, struct jk_msg *_this, 
-                     struct jk_map map);
+                     struct jk_map *map);
 
     unsigned char (*getByte)(struct jk_env *env, struct jk_msg *_this);
 
@@ -165,18 +165,22 @@ struct jk_msg {
     unsigned char *(*getString)(struct jk_env *env, struct jk_msg *_this);
 
     /** Return a byte[] and it's length.
-        The buffer is internal to the message, you must save
-        or make sure the message lives long enough.
+     *  The buffer is internal to the message, you must save
+     * or make sure the message lives long enough.
      */ 
     unsigned char *(*getBytes)(struct jk_env *env,
                                struct jk_msg *_this,
                                int *len);
 
     /** Read a map structure from the message. The map is encoded
-        as an int count and then the NV pairs
-    */
+     *  as an int count and then the NV pairs.
+     *
+     *  The content will not be copied - but point to the msg's buffer.
+     *  If you want to use the map after the msg becomes invalid, you need
+     *  to copy it.
+     */
     int (*getMap)(struct jk_env *env, struct jk_msg *_this, 
-                  struct jk_map map);
+                  struct jk_map *map);
 
     /** 
      * Special method. Will read data from the server and add them as

@@ -85,6 +85,8 @@ struct jk_logger;
 struct jk_map;
 typedef struct jk_endpoint   jk_endpoint_t;
 
+/* XXX replace worker with channel, endpoints are specific to channels not workers */
+    
 /*
  * The endpoint 'class', which represents one end of a connection to the
  * servlet engine.  Basically, supports nothing other than forwarding the
