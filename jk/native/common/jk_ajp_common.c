@@ -72,6 +72,9 @@
 #ifdef AS400
 #include "util_ebcdic.h"
 #endif
+#if defined(NETWARE) && defined(__NOVELL_LIBC__)
+#include "novsock2.h"
+#endif
 
 
 const char *response_trans_headers[] = {

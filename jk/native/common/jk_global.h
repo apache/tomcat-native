@@ -90,8 +90,13 @@ extern char *strdup (const char *str);
     #include <sys/timeb.h>
 #else
     #include <unistd.h>
+    #if defined(NETWARE) && defined(__NOVELL_LIBC__)
+        #include "novsock2.h"
+        #define __sys_socket_h__
+        #define __netdb_h__
+        #define __netinet_in_h__
+    #endif
     #include <netdb.h>
-
     #include <netinet/in.h>
     #include <sys/socket.h>
     #ifndef NETWARE
