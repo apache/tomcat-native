@@ -1305,48 +1305,22 @@ public class CoyoteResponse
         if (location == null)
             return (location);
 
-        boolean leadingSlash = location.startsWith("/");
-
-        if (leadingSlash 
-            || (!leadingSlash && (location.indexOf("://") == -1))) {
-
-            redirectURLCC.recycle();
-
-            String scheme = request.getScheme();
-            String name = request.getServerName();
-            int port = request.getServerPort();
-
+        // Construct a new absolute URL if possible (cribbed from
+        // the DefaultErrorPage servlet)
+        URL url = null;
+        try {
+            url = new URL(location);
+        } catch (MalformedURLException e1) {
+            HttpServletRequest hreq =
+                (HttpServletRequest) request.getRequest();
+            String requrl = request.getRequestURL().toString();
             try {
-                redirectURLCC.append(scheme, 0, scheme.length());
-                redirectURLCC.append("://", 0, 3);
-                redirectURLCC.append(name, 0, name.length());
-                if ((scheme.equals("http") && port != 80)
-                    || (scheme.equals("https") && port != 443)) {
-                    redirectURLCC.append(':');
-                    String portS = port + "";
-                    redirectURLCC.append(portS, 0, portS.length());
-                }
-                if (!leadingSlash) {
-                    String relativePath = request.getDecodedRequestURI();
-                    int pos = relativePath.lastIndexOf('/');
-                    relativePath = relativePath.substring(0, pos);
-                    String encodedURI = urlEncoder.encodeURL(relativePath);
-                    redirectURLCC.append(encodedURI, 0, encodedURI.length());
-                    redirectURLCC.append('/');
-                }
-                redirectURLCC.append(location, 0, location.length());
-            } catch (IOException e) {
+                url = new URL(new URL(requrl), location);
+            } catch (MalformedURLException e2) {
                 throw new IllegalArgumentException(location);
             }
-
-            return redirectURLCC.toString();
-
-        } else {
-
-            return (location);
-
         }
-
+        return (url.toExternalForm());
     }
 
 
