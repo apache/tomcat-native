@@ -27,6 +27,11 @@ Prerequisites:
 Configuration:
 --------------
 
-Simply issue a "./configure --help" to see all the supported AutoConf parameters.
-APR is required and must be compiled and installed before trying to compile the
-library. APR can be found at http://apr.apache.org/
+If you are building this from CVS, you will need to first execute 
+./buildconf.sh to build the "configure" script. This assumes that you have 
+autoconf 2.13 installed on your machine already.
+
+Simply issue a "./configure --help" to see all the supported AutoConf 
+parameters. Example:
+
+./configure --with-apr=/usr/local --with-apxs
