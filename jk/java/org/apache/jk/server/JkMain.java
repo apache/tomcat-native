@@ -136,7 +136,7 @@ public class JkMain
         String home=wEnv.getJkHome();
         if( home==null ) {
             // XXX use IntrospectionUtil to find myself
-            jkMain.guessHome();
+            this.guessHome();
         }
         if( home != null ) {
             File hF=new File(home);
