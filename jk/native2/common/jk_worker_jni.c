@@ -378,13 +378,18 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
     
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "jni.destroy() calling main()...\n");
-    
+
         (*jniEnv)->CallStaticVoidMethod(jniEnv,
                                     jniWorker->jk_java_bridge_class,
                                     jniWorker->jk_main_method,
                                     jargs,stdout_name,stderr_name);
-        
+#if 0
+        /* XXX  Need to fix the TomcatStarter not calling jkSetAttribute
+         *      and call the destroy JVM on that event.
+         *      Perhaps the DestroyJavaVM is not needed at all.
+         */
         vm->destroy(env, vm);
+#endif
     }
     env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.destroy() done\n");
 
