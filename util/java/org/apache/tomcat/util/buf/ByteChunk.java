@@ -549,6 +549,24 @@ public final class ByteChunk implements Cloneable, Serializable {
 	return true;
     }
 
+    /* Returns true if the message bytes start with the specified byte array */
+    public boolean startsWith(byte[] b2) {
+        byte[] b1 = buff;
+        if (b1 == null && b2 == null) {
+            return true;
+        }
+
+        int len = end - start;
+        if (b2.length > len || b1 == null || b2 == null) {
+            return false;
+        }
+        for (int i = start, j = 0; i < end && j < b2.length; ) {
+            if (b1[i++] != b2[j++]) 
+                return false;
+        }
+        return true;
+    }
+
     /**
      * Returns true if the message bytes starts with the specified string.
      * @param s the string
