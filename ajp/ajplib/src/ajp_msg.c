@@ -241,8 +241,8 @@ apr_status_t ajp_msg_append_uint8(ajp_msg_t *msg, apr_byte_t value)
  * @param convert   When set told to convert String to ASCII
  * @return          APR_SUCCESS or error
  */
-apr_status_t ajp_msg_append_cvt_string(ajp_msg_t *msg, const char *value,
-                                       int convert)
+apr_status_t ajp_msg_append_string_ex(ajp_msg_t *msg, const char *value,
+                                      int convert)
 {
     size_t len;
 
@@ -271,33 +271,6 @@ apr_status_t ajp_msg_append_cvt_string(ajp_msg_t *msg, const char *value,
 
     return APR_SUCCESS;
 }
-
-/**
- *  Add a String in AJP message, and transform 
- *  the String in ASCII if we're on an EBCDIC machine    
- *
- * @param msg       AJP Message to get value from
- * @param value     Pointer to String
- * @return          APR_SUCCESS or error
- */
-apr_status_t ajp_msg_append_string(ajp_msg_t *msg, const char *value)
-{
-    return ajp_msg_append_cvt_string(msg, value, 1);
-}
-
-
-/**
- *  Add a String in AJP message. 
- *
- * @param msg       AJP Message to get value from
- * @param value     Pointer to String
- * @return          APR_SUCCESS or error
- */
-apr_status_t ajp_msg_append_ascii_string(ajp_msg_t *msg, const char *value)
-{
-    return ajp_msg_append_cvt_string(msg, value, 0);
-}
-
 
 /**
  * Add a Byte array to AJP Message
