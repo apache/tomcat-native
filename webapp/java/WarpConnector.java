@@ -87,6 +87,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     private Thread thread=null;
     /** The server socket. */
     private ServerSocket server=null;
+    /** Our <code>WarpLogger</code>. */
+    private WarpLogger logger=null;
 
     /* -------------------------------------------------------------------- */
     /* Bean variables */
@@ -129,7 +131,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      */
     public WarpConnector() {
         super();
-        if (Constants.DEBUG) this.debug(this,"Instance created");
+        this.logger=new WarpLogger(this);
+        if (Constants.DEBUG) logger.debug("Instance created");
     }
 
     /* ==================================================================== */
@@ -152,10 +155,11 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      */
     public void setContainer(Container container) {
         this.container=container;
+        this.logger.setContainer(container);
 
         if (Constants.DEBUG) {
-            if (container==null) this.debug(this,"Setting null container");
-            else this.debug(this,"Setting container "+container.getClass());
+            if (container==null) logger.debug("Setting null container");
+            else logger.debug("Setting container "+container.getClass());
         }
     }
 
@@ -174,8 +178,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     public void setEnableLookups(boolean enableLookups) {
         this.enableLookups=enableLookups;
 
-        if (Constants.DEBUG)
-            this.debug(this,"Setting lookup to "+enableLookups);
+        if (Constants.DEBUG) logger.debug("Setting lookup to "+enableLookups);
     }
 
     /**
@@ -185,7 +188,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     public ServerSocketFactory getFactory() {
         if (this.factory==null) {
             synchronized(this) {
-                if (Constants.DEBUG) this.debug(this,"Creating factory");
+                if (Constants.DEBUG) logger.debug("Creating factory");
                 this.factory=new DefaultServerSocketFactory();
             }
         }
@@ -203,7 +206,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         this.factory=factory;
 
         if (Constants.DEBUG)
-            this.debug(this,"Setting factory "+factory.getClass().getName());
+            logger.debug("Setting factory "+factory.getClass().getName());
     }
 
     /**
@@ -226,7 +229,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         this.redirectPort=redirectPort;
 
         if (Constants.DEBUG)
-            this.debug(this,"Setting redirection port to "+redirectPort);
+            logger.debug("Setting redirection port to "+redirectPort);
     }
 
     /**
@@ -247,7 +250,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         if (scheme==null) throw new NullPointerException();
         this.scheme=scheme;
 
-        if (Constants.DEBUG) this.debug(this,"Setting scheme to "+scheme);
+        if (Constants.DEBUG) logger.debug("Setting scheme to "+scheme);
     }
 
     /**
@@ -267,7 +270,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     public void setSecure(boolean secure) {
         this.secure=secure;
 
-        if (Constants.DEBUG) this.debug(this,"Setting secure to "+secure);
+        if (Constants.DEBUG) logger.debug("Setting secure to "+secure);
     }
 
     /**
@@ -290,7 +293,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         if (info==null) throw new NullPointerException();
         this.info=info;
 
-        if (Constants.DEBUG) this.debug(this,"Setting info to "+info);
+        if (Constants.DEBUG) logger.debug("Setting info to "+info);
     }
 
     /**
@@ -308,7 +311,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     public void setAddress(String address) {
         this.address=address;
 
-        if (Constants.DEBUG) this.debug(this,"Setting address to "+address);
+        if (Constants.DEBUG) logger.debug("Setting address to "+address);
     }
 
     /**
@@ -328,7 +331,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
             throw new IllegalArgumentException("Invalid port "+redirectPort);
         this.port=port;
 
-        if (Constants.DEBUG) this.debug(this,"Setting port to "+port);
+        if (Constants.DEBUG) logger.debug("Setting port to "+port);
     }
 
     /**
@@ -347,7 +350,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     public void setAcceptCount(int count) {
         this.acceptCount = count;
 
-        if (Constants.DEBUG) this.debug(this,"Setting acceptCount to "+count);
+        if (Constants.DEBUG) logger.debug("Setting acceptCount to "+count);
     }
 
 
@@ -402,7 +405,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         if (this.server!=null) try {
             this.server.close();
         } catch (IOException e) {
-            this.log(this,"Cannot close ServerSocket",e);
+            logger.log("Cannot close ServerSocket",e);
         }
     }
 
@@ -450,12 +453,12 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
                 this.server=fact.createSocket(port,accc,addr);
             }
         } catch (IOException e) {
-            this.log(this,"Error creating server socket",e);
+            logger.log("Error creating server socket",e);
         }
 
         // Can't get a hold of a server socket
         if (this.server==null) {
-            this.log(this,"Unable to create server socket");
+            logger.log("Unable to create server socket");
             return;
         }
 
@@ -467,8 +470,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
                 InetAddress laddr=sock.getLocalAddress();
                 int rport=sock.getPort();
                 int lport=sock.getLocalPort();
-                this.log(this,"Connection from "+raddr+":"+rport+" to "+
-                         laddr+":"+lport);
+                logger.log("Connection from "+raddr+":"+rport+" to "+laddr+
+                           ":"+lport);
                 WarpConnection conn=new WarpConnection();
                 conn.setConnector(this);
                 conn.setSocket(sock);
@@ -476,107 +479,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
                 conn.start();
             }
         } catch (IOException e) {
-            this.log(this,"Error accepting requests",e);
+            logger.log("Error accepting requests",e);
         }
     }
-
-    /* ==================================================================== */
-    /* Logging and debugging methods                                        */
-    /* ==================================================================== */
-
-    /** Log to the container logger with the specified level or to stderr */
-    private void log(Object src, String msg, Exception exc, int lev) {
-        Container cont=this.getContainer();
-        if (cont==null) {
-            dump(src,msg,exc);
-            return;
-        }
-
-        Logger logg=cont.getLogger();
-        if (logg==null) {
-            dump(src,msg,exc);
-            return;
-        }
-
-        String cls="["+src.getClass().getName()+"] ";
-        if (msg==null) msg=cls;
-        else msg=cls.concat(msg);
-
-        if (exc==null) logg.log(msg,lev);
-        else logg.log(msg,exc,lev);
-    }
-
-    /** Invoked when we can't get a hold on the logger, dump to stderr */
-    private void dump(Object src, String message, Exception exception) {
-        String cls="["+src.getClass().getName()+"] ";
-
-        if (message!=null) {
-            System.err.print(cls);
-            System.err.println(message);
-        }
-        if (exception!=null) {
-            System.err.print(cls);
-            exception.printStackTrace(System.err);
-        }
-    }
-
-    /**
-     * If Constants.DEBUG was set true at compilation time, dump a debug
-     * message to Standard Error.
-     *
-     * @param message The message to dump.
-     */
-    protected void debug(Object src, String message) {
-        if (Constants.DEBUG) this.log(src,message,null,Logger.DEBUG);
-    }
-
-    /**
-     * If Constants.DEBUG was set true at compilation time, dump an exception
-     * stack trace to Standard Error.
-     *
-     * @param exception The exception to dump.
-     */
-    protected void debug(Object src, Exception exception) {
-        if (Constants.DEBUG) this.log(src,null,exception,Logger.DEBUG);
-    }
-
-    /**
-     * If Constants.DEBUG was set true at compilation time, dump a debug
-     * message and a related exception stack trace to Standard Error.
-     *
-     * @param exception The exception to dump.
-     * @param message The message to dump.
-     */
-    protected void debug(Object src, String message, Exception exception) {
-        if (Constants.DEBUG) this.log(src,message,exception,Logger.DEBUG);
-    }
-
-    /**
-     * Log a message.
-     *
-     * @param message The message to log.
-     */
-    protected void log(Object src, String message) {
-        this.log(src,message,null,Logger.ERROR);
-    }
-
-    /**
-     * Log an exception.
-     *
-     * @param exception The exception to log.
-     */
-    protected void log(Object src, Exception exception) {
-        this.log(src,null,exception,Logger.ERROR);
-    }
-
-    /**
-     * Log an exception and related message.
-     *
-     * @param exception The exception to log.
-     * @param message The message to log.
-     */
-    protected void log(Object src, String message, Exception exception) {
-        this.log(src,message,exception,Logger.ERROR);
-    }
-
 }

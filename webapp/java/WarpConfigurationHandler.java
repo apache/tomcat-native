@@ -64,12 +64,18 @@ import java.net.Socket;
 
 public class WarpConfigurationHandler {
 
+    /* ==================================================================== */
+    /* Constructor                                                          */
+    /* ==================================================================== */
+
     public WarpConfigurationHandler() {
         super();
     }
 
     public boolean handle(WarpConnection connection)
     throws IOException {
+        WarpLogger logger=new WarpLogger(this);
+        logger.setContainer(connection.getConnector().getContainer());
         WarpPacket packet=new WarpPacket();
 
         // Prepare the Welcome packet
@@ -86,11 +92,9 @@ public class WarpConfigurationHandler {
         String path=packet.readString();
         
         if (Constants.DEBUG)
-            connection.getConnector().debug(this,"Deploying application \""+appl+
-                "\" under \"http://"+host+":"+port+path);
+            logger.debug("Deploying application \""+appl+"\" under \"http://"+
+                         host+":"+port+path);
 
         return(true);
-        //while (true) {
-        //    connection.recv(packet);
     }
 }

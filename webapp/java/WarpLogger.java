@@ -56,53 +56,38 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
+import org.apache.catalina.Container;
+import org.apache.catalina.Logger;
 
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleListener;
-
-public class WarpConnection implements LifecycleListener, Runnable {
+public class WarpLogger {
 
     /* ==================================================================== */
-    /* Instance variables                                                   */
+    /* Variables                                                            */
     /* ==================================================================== */
-
-    /* -------------------------------------------------------------------- */
-    /* Local variables */
-
-    /** Our socket input stream. */
-    private InputStream input=null;
-    /** Our socket output stream. */
-    private OutputStream output=null;
-    /** The started flag. */
-    private boolean started=false;
-    /** The local thread. */
-    private Thread thread=null;
-    /** Our logger. */
-    private WarpLogger logger=null;
 
     /* -------------------------------------------------------------------- */
     /* Bean variables */
 
-    /** The socket this connection is working on. */
-    private Socket socket=null;
-    /** The connector instance. */
-    private WarpConnector connector=null;
+    /** The <code>Container</code> instance processing requests. */
+    private Container container=null;
+    /** The source of log messages for this logger. */
+    private Object source=null;
 
     /* ==================================================================== */
     /* Constructor                                                          */
     /* ==================================================================== */
 
-    /**
-     * Construct a new instance of a <code>WarpConnection</code>.
-     */
-    public WarpConnection() {
+    /** Deny empty construction. */
+    private WarpLogger() {
         super();
-        this.logger=new WarpLogger(this);
+    }
+
+    /**
+     * Construct a new instance of a <code>WarpConnector</code>.
+     */
+    public WarpLogger(Object source) {
+        super();
+        this.source=source;
     }
 
     /* ==================================================================== */
@@ -110,143 +95,118 @@ public class WarpConnection implements LifecycleListener, Runnable {
     /* ==================================================================== */
 
     /**
-     * Set the socket this connection is working on.
+     * Return the <code>Container</code> instance which will process all
+     * requests received by this <code>Connector</code>.
      */
-    public void setSocket(Socket socket) {
-        this.socket=socket;
+    public Container getContainer() {
+        return(this.container);
     }
 
     /**
-     * Return the socket this connection is working on.
+     * Set the <code>Container</code> instance which will process all requests
+     * received by this <code>Connector</code>.
+     *
+     * @param container The new Container to use
      */
-    public Socket getSocket() {
-        return(this.socket);
-    }
-
-    /**
-     * Set the <code>WarpConnector</code> associated with this connection.
-     */
-    public void setConnector(WarpConnector connector) {
-        this.connector=connector;
-        this.logger.setContainer(connector.getContainer());
-    }
-
-    /**
-     * Return the <code>WarpConnector</code> associated with this connection.
-     */
-    public WarpConnector getConnector() {
-        return(this.connector);
+    public void setContainer(Container container) {
+        this.container=container;
     }
 
     /* ==================================================================== */
-    /* Lifecycle methods                                                    */
+    /* Logging and debugging methods                                        */
     /* ==================================================================== */
 
-    /**
-     * Get notified of events in the connector.
-     */
-    public void lifecycleEvent(LifecycleEvent event) {
-        if (Lifecycle.STOP_EVENT.equals(event.getType())) this.stop();
+    /** Log to the container logger with the specified level or to stderr */
+    private void log(String msg, Exception exc, int lev) {
+        if (this.container==null) {
+            dump(msg,exc);
+            return;
+        }
+
+        Logger logg=this.container.getLogger();
+        if (logg==null) {
+            dump(msg,exc);
+            return;
+        }
+
+        String cls="["+this.source.getClass().getName()+"] ";
+        if (msg==null) msg=cls;
+        else msg=cls.concat(msg);
+
+        if (exc==null) logg.log(msg,lev);
+        else logg.log(msg,exc,lev);
+    }
+
+    /** Invoked when we can't get a hold on the logger, dump to stderr */
+    private void dump(String message, Exception exception) {
+        String cls="["+this.source.getClass().getName()+"] ";
+
+        if (message!=null) {
+            System.err.print(cls);
+            System.err.println(message);
+        }
+        if (exception!=null) {
+            System.err.print(cls);
+            exception.printStackTrace(System.err);
+        }
     }
 
     /**
-     * Start working on this connection.
+     * If Constants.DEBUG was set true at compilation time, dump a debug
+     * message to Standard Error.
+     *
+     * @param message The message to dump.
      */
-    public void start() {
-        synchronized(this) {
-            this.started=true;
-            this.thread=new Thread(this);
-            this.thread.start();
-        }
+    protected void debug(String message) {
+        if (Constants.DEBUG) this.log(message,null,Logger.DEBUG);
     }
 
     /**
-     * Stop all we're doing on the connection.
+     * If Constants.DEBUG was set true at compilation time, dump an exception
+     * stack trace to Standard Error.
+     *
+     * @param exception The exception to dump.
      */
-    public void stop() {
-        synchronized(this) {
-            try {
-                this.started=false;
-                this.socket.close();
-                this.getConnector().removeLifecycleListener(this);
-            } catch (IOException e) {
-                logger.log("Cannot close socket",e);
-            }
-        }
+    protected void debug(Exception exception) {
+        if (Constants.DEBUG) this.log(null,exception,Logger.DEBUG);
     }
 
     /**
-     * Process data from the socket.
+     * If Constants.DEBUG was set true at compilation time, dump a debug
+     * message and a related exception stack trace to Standard Error.
+     *
+     * @param exception The exception to dump.
+     * @param message The message to dump.
      */
-    public void run() {
-        if (Constants.DEBUG) logger.debug("Connection starting");
-
-        try {
-            this.input=this.socket.getInputStream();
-            this.output=this.socket.getOutputStream();
-            boolean success=new WarpConfigurationHandler().handle(this);
-
-            this.stop();
-        } catch (IOException e) {
-            logger.log("Exception on socket",e);
-        }
-
-        if (Constants.DEBUG) logger.debug("Connection terminated");
-    }
-
-    /* ==================================================================== */
-    /* Public methods                                                       */
-    /* ==================================================================== */
-
-    /**
-     * Send a WARP packet over this connection.
-     */
-    public void send(WarpPacket packet)
-    throws IOException {
-        if (Constants.DEBUG) {
-            logger.debug(">> TYPE="+packet.getType()+" LENGTH="+packet.size);
-            logger.debug(">> "+packet.dump());
-        }
-
-        this.output.write(packet.getType()&0x0ff);
-        this.output.write((packet.size>>8)&0x0ff);
-        this.output.write((packet.size>>0)&0x0ff);
-        this.output.write(packet.buffer,0,packet.size);
-        this.output.flush();
-        packet.reset();
+    protected void debug(String message, Exception exception) {
+        if (Constants.DEBUG) this.log(message,exception,Logger.DEBUG);
     }
 
     /**
-     * Receive a WARP packet over this connection.
+     * Log a message.
+     *
+     * @param message The message to log.
      */
-    public void recv(WarpPacket packet)
-    throws IOException {
-        int t=this.input.read();
-        int l1=this.input.read();
-        int l2=this.input.read();
+    protected void log(String message) {
+        this.log(message,null,Logger.ERROR);
+    }
 
-        if ((t|l1|l2)==-1)
-            throw new IOException("Premature packet header end");
+    /**
+     * Log an exception.
+     *
+     * @param exception The exception to log.
+     */
+    protected void log(Exception exception) {
+        this.log(null,exception,Logger.ERROR);
+    }
 
-        packet.reset();
-        packet.setType(t&0x0ff);
-        packet.size=(( l1 & 0x0ff ) << 8) | ( l2 & 0x0ff );
-
-        if (packet.size>0) {
-            int off=0;
-            int ret=0;
-            while (true) {
-                ret=this.input.read(packet.buffer,off,packet.size-off);
-                if (ret==-1) 
-                    throw new IOException("Premature packet payload end");
-                off+=ret;
-                if(off==packet.size) break;
-            }
-        }
-            
-        if (Constants.DEBUG) {
-            logger.debug("<< TYPE="+packet.getType()+" LENGTH="+packet.size);
-            logger.debug("<< "+packet.dump());
-        }
+    /**
+     * Log an exception and related message.
+     *
+     * @param exception The exception to log.
+     * @param message The message to log.
+     */
+    protected void log(String message, Exception exception) {
+        this.log(message,exception,Logger.ERROR);
     }
 }
