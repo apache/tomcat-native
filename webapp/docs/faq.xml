@@ -26,7 +26,8 @@
         gzip -dc xalan-j_2_3_1-bin.tar.gz | tar xvf -
       </type>
       <note>
-       2.3.1 was the lastest version available when writting the document.
+       Xalan 2.3.1 was the lastest xalan version available when writting the
+       document.
        tar must be a gnu tar. And it probably accept the option z.
       </note>
       <note>
@@ -42,8 +43,44 @@
         java.lang.NoClassDefFoundError: org/w3c/dom/traversal/NodeIterator
       </read>
       <note>
-       No idea for the moment ;-(
+        The xerces files are missing (xerces.jar or xercesImpl.jar and 
+        xmlParserAPIs.jar).
+        xercesImpl.jar and xmlParserAPIs.jar are for xerces-2.x
+        Download the xerces files and copy them in $ant.home/lib.
+        The 
       </note>
+      <type>
+        wget http://xml.apache.org/dist/xerces-j/Xerces-J-bin.2.0.1.tar.gz
+      </type><type>
+        gzip -dc Xerces-J-bin.2.0.1.tar.gz | tar xvf -
+      </type><type>
+        cp ${xerces.home}/xercesImpl.jar ${ant.home}/bin
+      </type><type>
+        cp ${xerces.home}/xmlParserAPIs.jar ${ant.home}/bin
+      </type>
+      <note>
+       Xerces 2.0.1 was the lastest xerces version available when writting the
+       document.
+      </note>
+    </screen>
+
+    <screen>
+      <read>
+        /export/home/apache20/jakarta-tomcat-connectors/webapp/build.xml:197:
+        javax.xml.transform.TransformerException: Unknown error in XPath
+      </read>
+      <note>
+        The ant-optional.jar file is missing.
+        Download a ant-optional.jar corresponding to the ant version you use.
+        For example for ant1.4.1:
+      </note>
+      <type>
+        cd ${ant.home}/lib
+      </type><type>
+        wget wget http://jakarta.apache.org/builds/jakarta-ant/release/v1.4.1/bin/jakarta-ant-1.4.1-optional.jar
+      </type><type>
+        mv jakarta-ant-1.4.1-optional.jar optional.jar
+      </type>
     </screen>
 
   </section>
