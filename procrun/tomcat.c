@@ -93,21 +93,30 @@
 #include "procrun.h"
 
 prcrun_lview_t tac_columns[] = {
-    {   "Status",   140     },
+    {   "Type",     60      },
+    {   "Date",     80      },
+    {   "Time",     60      },
     {   "Class",    172     },
     {   "Message",  300     },
     {   NULL,       0       },
 };
 
-static char *ac_lv_stat = NULL;
-static char ac_lv_clbuf[1024] = {0};
+static char ac_lv_buf[1024] = {0};
 static char *ac_lv_class = NULL;
-static char *ac_lv_clmsg = NULL;
+static char *ac_lv_msg = NULL;
+static char *ac_lv_date = NULL;
+static char *ac_lv_time = NULL;
 static int  ac_lv_iicon = 0;
 
+static char *lv_infos[] = {
+    "Info",
+    "Warning",
+    "Error",
+    "Severe"
+};
 
 
-void tc_parse_list_string(const char *str)
+void tc_parse_list_string(const char *str, int from)
 {
     int row = 0x7FFFFFFF;
     LV_ITEM lvi;
@@ -116,12 +125,16 @@ void tc_parse_list_string(const char *str)
     if (isdigit(*str)) {
         char *p;
                 
-        strncpy(ac_lv_clbuf, str, 1023);
-        ac_lv_stat = p = &ac_lv_clbuf[0];
+        strncpy(ac_lv_buf, str, 1023);
+        ac_lv_date = p = &ac_lv_buf[0];
 
         while (*p && !isspace(*p))
             ++p;
-        ++p;
+        *(p++) = 0;
+        while (*p && isspace(*p))
+            ++p;
+        ac_lv_time = p;
+
         while (*p && !isspace(*p))
             ++p;
         *(p++) = 0;
@@ -132,7 +145,7 @@ void tc_parse_list_string(const char *str)
         while (*p && !isspace(*p))
             ++p;
         *(p++) = 0;
-        ac_lv_clmsg = p;
+        ac_lv_msg = p;
         
     }
     else {
@@ -149,31 +162,38 @@ void tc_parse_list_string(const char *str)
             off = STRN_SIZE("ERROR:") + 1;
         }
         else if (STRN_COMPARE(str, "SEVERE:")) {
-            ac_lv_iicon = 2;
+            ac_lv_iicon = 3;
             off = STRN_SIZE("SEVERE:") + 1;
         }
-        ac_lv_clmsg = (char *)str + off;
+        ac_lv_msg = (char *)str + off;
 
         /* skip leading spaces */
-        while (*ac_lv_clmsg && isspace(*ac_lv_clmsg))
-            ++ac_lv_clmsg;
+        while (*ac_lv_msg && isspace(*ac_lv_msg))
+            ++ac_lv_msg;
     }
+    
+    /* if this is from stderr set the error icon */
+    if (from)
+        ac_lv_iicon = 2;
 
     STR_NOT_NULL(ac_lv_class);
-    STR_NOT_NULL(ac_lv_clmsg);
-    STR_NOT_NULL(ac_lv_stat);
+    STR_NOT_NULL(ac_lv_msg);
+    STR_NOT_NULL(ac_lv_date);
+    STR_NOT_NULL(ac_lv_time);
 
     memset(&lvi, 0, sizeof(LV_ITEM));
     lvi.mask        = LVIF_IMAGE | LVIF_TEXT;
     lvi.iItem       = ac_lview_current;
     lvi.iImage      = ac_lv_iicon;
-    lvi.pszText     = ac_lv_stat;
-    lvi.cchTextMax  = strlen(ac_lv_stat) + 1;
+    lvi.pszText     = lv_infos[ac_lv_iicon];
+    lvi.cchTextMax  = 8;
     row = ListView_InsertItem(ac_list_hwnd, &lvi);
     if (row == -1)
         return;
-    ListView_SetItemText(ac_list_hwnd, row, 1, ac_lv_class); 
-    ListView_SetItemText(ac_list_hwnd, row, 2, ac_lv_clmsg);
+    ListView_SetItemText(ac_list_hwnd, row, 1, ac_lv_date); 
+    ListView_SetItemText(ac_list_hwnd, row, 2, ac_lv_time); 
+    ListView_SetItemText(ac_list_hwnd, row, 3, ac_lv_class); 
+    ListView_SetItemText(ac_list_hwnd, row, 4, ac_lv_msg);
     ListView_EnsureVisible(ac_list_hwnd,
                                ListView_GetItemCount(ac_list_hwnd) - 1,
                                FALSE); 
@@ -184,10 +204,11 @@ void tc_parse_list_string(const char *str)
 
 void acx_init_extended()
 {
-    ac_use_lview = 1;
+    ac_splash_timeout = 20000;
     ac_splash_msg = "INFO: Jk running";
     ac_columns = &tac_columns[0];
     lv_parser = tc_parse_list_string;
+
 }
 
 #endif
