@@ -185,13 +185,8 @@ struct jk_ws_service {
 	 */
 	int		ssl_key_size;
 	
-    /*
-     * Headers, names and values.
-     */
-    char    **headers_names;    /* Names of the request headers  */
-    char    **headers_values;   /* Values of the request headers */
-    unsigned num_headers;       /* Number of request headers     */
-
+    /** Incoming headers */
+    struct jk_map *headers_in;
 
     /*
      * Request attributes. 
@@ -203,9 +198,7 @@ struct jk_ws_service {
      * attributes. Tomcat is required to append org.apache.tomcat. to 
      * these attrinbute names.
      */
-    char    **attributes_names;    /* Names of the request attributes  */
-    char    **attributes_values;   /* Values of the request attributes */
-    unsigned num_attributes;       /* Number of request attributes     */
+    struct jk_map *attributes;
 
     /*
      * The jvm route is in use when the adapter load balance among
@@ -220,9 +213,7 @@ struct jk_ws_service {
      */
     int         status;
     const char *msg;
-    unsigned    out_headers;
-    char      **out_header_names;
-    char      **out_header_values;
+    struct jk_map *headers_out;
 
     /* Count remaining bytes ( original content length minus what was sent */
     int left_bytes_to_send;
@@ -243,14 +234,10 @@ struct jk_ws_service {
     void (*afterRequest)( jk_ws_service_t *_this );
     
     /*
-     * Send the response headers to the browser.
+     * Set the response head in the server structures. This will be called
+     * before the first write.
      */
-    int (JK_METHOD *start_response)(jk_ws_service_t *s,
-                                    int status,
-                                    const char *reason,
-                                    const char * const *header_names,
-                                    const char * const *header_values,
-                                    unsigned num_of_headers);
+    int (JK_METHOD *head)(jk_ws_service_t *s);
 
     /*
      * Read a chunk of the request body into a buffer.  Attempt to read len

@@ -90,8 +90,8 @@ struct jk_map {
                const char *name, void *value,
                void **oldValue);
 
-    /*  int (*add)(struct jk_env *env, struct jk_map *_this, */
-    /*           const char *name, void *value ); */
+    int (*add)(struct jk_env *env, struct jk_map *_this,
+               const char *name, void *value );
 
     /* Similar with apr_table, elts can be accessed by id
      */
