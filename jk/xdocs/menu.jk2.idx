@@ -18,4 +18,5 @@
 <section name="Howto">
     <document href="jk2/confighowto.xml"/>
     <document href="jk2/vhosthowto.xml"/>
+    <document href="jk2/davhowto.xml"/>
 </section>

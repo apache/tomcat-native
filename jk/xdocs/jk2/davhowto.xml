@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<document>
+<properties>
+<title>Apache 2.x/mod-dav - Tomcat/jk2 - HOWTO</title>
+<author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+<date>Wed Mar  3 10:31:06 CET 2004</date>
+</properties>
+<section name="Purpose">
+<p>
+Use mod_dav to modify JSP pages.
+</p>
+</section>
+
+<section name="extract of httpd.conf">
+<p>
+The Alias is NEEDED otherwise mod_jk2 translate hook will be called first...
+That is a Hack it need to be fixed in mod_jk2.c
+<source>
+  Alias /examples/jsp-source /home/jfclere/jakarta-tomcat-4.1.24/webapps/examples/jsp
+  &lt;Location /examples/jsp-source&gt;
+    Dav On
+ 
+    AuthType Basic
+    AuthName DAV
+    AuthUserFile user.passwd
+ 
+    &lt;LimitExcept GET OPTIONS&gt;
+      require user admin
+    &lt;/LimitExcept&gt;
+  &lt;/Location&gt;
+
+  &lt;LocationMatch "/*.jsp"&gt;
+    JkUriSet worker ajp13:localhost:8009
+  &lt;/LocationMatch&gt;
+
+</source>
+The LocationMatch only maps the *.jsp files.
+To have also the images it is possible to the DefaultServlet by mapping /examples.
+<source>
+  &lt;Location /examples&gt;
+    JkUriSet worker ajp13:localhost:8009
+  &lt;/Location&gt;
+</source>
+Or to get the images served by httpd and not by Tomcat.
+<source>
+  Alias /examples/images /home/jfclere/jakarta-tomcat-4.1.24/webapps/examples/images
+</source>
+<source>
+</source>
+</p>
+</section>
+<section name="extract of workers2.properties">
+<p>
+The worker ajp13:localhost:8009 of the JkUriSet Directive has to be defined
+in workers2.properties.
+<source>
+# Example socket channel, override port and host.
+[channel.socket:localhost:8009]
+port=8009
+host=127.0.0.1
+ 
+# define the worker
+[ajp13:localhost:8009]
+channel=channel.socket:localhost:8009
+</source>
+</p>
+</section>
+</document>
