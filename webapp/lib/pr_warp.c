@@ -57,15 +57,6 @@
 /* @version $Id$ */
 #include "pr_warp.h"
 
-/* The list of all configured connections */
-static wa_chain *warp_connections=NULL;
-/* The list of all deployed connections */
-static wa_chain *warp_applications=NULL;
-
-/* ************************************************************************* */
-/* WEBAPP LIBRARY PROVIDER FUNCTIONS                                         */
-/* ************************************************************************* */
-
 /* Initialize this provider. */
 static const char *warp_init(void) {
     wa_debug(WA_MARK,"WARP provider initialized");
@@ -199,6 +190,10 @@ static int warp_handle(wa_request *r, wa_application *a) {
     return(wa_rerror(WA_MARK,r,500,"Not yet implemented"));
 }
 
+/* The list of all configured connections */
+wa_chain *warp_connections=NULL;
+/* The list of all deployed connections */
+wa_chain *warp_applications=NULL;
 /* The warp provider structure */
 wa_provider wa_provider_warp = {
     "warp",
