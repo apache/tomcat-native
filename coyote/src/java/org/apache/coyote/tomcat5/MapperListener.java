@@ -237,7 +237,7 @@ public class MapperListener
             container=server.findServices()[0].getContainer();
         } else {
             String domain="Catalina";
-            ObjectName engineName=new ObjectName(domain + ":type=Engine,name=Tomcat-Standalone");
+            ObjectName engineName=new ObjectName(domain + ":type=Engine");
             container=(Container)mBeanServer.getAttribute(engineName, "managedResource");
         }
         Container[] hosts = null;
