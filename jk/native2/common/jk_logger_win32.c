@@ -80,6 +80,25 @@ static int JK_METHOD jk2_logger_win32_log(jk_env_t *env, jk_logger_t *l,
                                  int level,
                                  const char *what)
 {
+    HANDLE h=RegisterEventSource(NULL,JAKARTA_EVENT_SOURCE);
+    LPCTSTR *Buffer;
+    Buffer=&what;
+    if( h==NULL ) {
+        return JK_ERR;
+    }
+    if(l && l->level <= level && what) {       
+        if( level == JK_LOG_DEBUG_LEVEL ) {
+            ReportEvent(h,EVENTLOG_SUCCESS,0,MSG_DEBUG,NULL,1,0,Buffer,NULL);
+        } else if( level == JK_LOG_INFO_LEVEL ) {
+            ReportEvent(h,EVENTLOG_INFORMATION_TYPE,0,MSG_INFO,NULL,1,0,Buffer,NULL);
+        } else if( level == JK_LOG_ERROR_LEVEL ){
+            ReportEvent(h,EVENTLOG_WARNING_TYPE,0,MSG_ERROR,NULL,1,0,Buffer,NULL);
+        } else if( level == JK_LOG_EMERG_LEVEL ){
+            ReportEvent(h,EVENTLOG_ERROR_TYPE,0,MSG_EMERG,NULL,1,0,Buffer,NULL);
+        }
+    }
+    DeregisterEventSource(h);
+    
     return JK_OK;
 }
 
@@ -119,36 +138,34 @@ static int JK_METHOD jk2_logger_win32_jkVLog(jk_env_t *env, jk_logger_t *l,
                                      va_list args)
 {
     /* XXX map jk level to apache level */
-    HANDLE h=RegisterEventSource(NULL,JAKARTA_EVENT_SOURCE);
-    LPCTSTR *Buffer;
-    LPCTSTR buf2;
     int rc;
-    char buf[HUGE_BUFFER_SIZE];
+    if(l->level <= level) {
+        char buf[HUGE_BUFFER_SIZE];
+        char *f = (char *)(file + strlen(file) - 1);
+        int used = 0;
 
-    if( level < l->level )
-        return JK_OK;
+        while(f != file && '\\' != *f && '/' != *f) {
+            f--;
+        }
+        if(f != file) {
+            f++;
+        }
 
-    if( h==NULL ) {
-        return JK_ERR;
-    }
+        if( level >= JK_LOG_DEBUG_LEVEL ) {
+            used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);
+        }
+        if(used < 0) {
+            return 0; /* [V] not sure what to return... */
+        }
     
-    rc = vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
-    rc = strlen( buf );
-    /* Remove trailing \n. XXX need to change the log() to not include \n */
-    if( buf[rc-1] == '\n' )
-        buf[rc-1]='\0';
-    buf2=buf;
-    Buffer=&buf2;
-    if( level == JK_LOG_DEBUG_LEVEL ) {
-        ReportEvent(h,EVENTLOG_SUCCESS,0,MSG_DEBUG,NULL,1,0,Buffer,NULL);
-    } else if( level == JK_LOG_INFO_LEVEL ) {
-        ReportEvent(h,EVENTLOG_INFORMATION_TYPE,0,MSG_INFO,NULL,1,0,Buffer,NULL);
-    } else if( level == JK_LOG_ERROR_LEVEL ){
-        ReportEvent(h,EVENTLOG_WARNING_TYPE,0,MSG_ERROR,NULL,1,0,Buffer,NULL);
-    } else if( level == JK_LOG_EMERG_LEVEL ){
-        ReportEvent(h,EVENTLOG_ERROR_TYPE,0,MSG_EMERG,NULL,1,0,Buffer,NULL);
+
+        rc = vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
+        rc = strlen( buf );
+        /* Remove trailing \n. XXX need to change the log() to not include \n */
+        if( buf[rc-1] == '\n' )
+            buf[rc-1]='\0';
+        jk2_logger_win32_log(env, l, level, buf);
     }
-    DeregisterEventSource(h);
     return rc ;
 }
 
