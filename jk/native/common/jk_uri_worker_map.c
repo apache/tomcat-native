@@ -39,6 +39,8 @@
 #define MATCH_TYPE_GENERAL_SUFFIX (3)   /* match all URIs of the form *ext */
 /* match all context path URIs with a path component suffix */
 #define MATCH_TYPE_CONTEXT_PATH (4)
+/* match multiple wild characters (*) and (?) */
+#define MATCH_TYPE_WILDCHAR_PATH (5)
 
 struct uri_worker_record
 {
@@ -81,6 +83,52 @@ struct jk_uri_worker_map
     unsigned capacity;
 };
 
+static int worker_compare(const void *elem1, const void *elem2)
+{
+    uri_worker_record_t *e1 = *(uri_worker_record_t **)elem1;
+    uri_worker_record_t *e2 = *(uri_worker_record_t **)elem2;
+    return ((int)e1->ctxt_len - (int)e2->ctxt_len);
+}
+
+static void worker_qsort(jk_uri_worker_map_t *uw_map)
+{
+
+   /* Sort remaining args using Quicksort algorithm: */
+   qsort((void *)uw_map->maps, uw_map->size,
+         sizeof(uri_worker_record_t *), worker_compare );
+
+}
+
+/* Match = 0, NoMatch = 1, Abort = -1
+ * Based loosely on sections of wildmat.c by Rich Salz
+ */
+static int wildchar_match(const char *str, const char *exp, int icase)
+{
+    int x, y;
+
+    for (x = 0, y = 0; exp[y]; ++y, ++x) {
+        if (!str[x] && exp[y] != '*')
+            return -1;
+        if (exp[y] == '*') {
+            while (exp[++y] == '*');
+            if (!exp[y])
+                return 0;
+            while (str[x]) {
+                int ret;
+                if ((ret = wildchar_match(&str[x++], &exp[y], icase)) != 1)
+                    return ret;
+            }
+            return -1;
+        }
+        else if (exp[y] != '?') {
+            if (icase && tolower(str[x]) != tolower(exp[y]))
+                return 1;
+            else if (!icase && str[x] != exp[y])
+                return 1;
+        }
+    }
+    return (str[x] != '\0');
+} 
 
 /*
  * We are now in a security nightmare, it maybe that somebody sent 
@@ -235,8 +283,9 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 
     if ('/' == uri[0]) {
         char *asterisk = strchr(uri, '*');
-
-        if (asterisk) {
+        
+        if (asterisk && strchr(asterisk + 1, '*') ||
+            strchr(uri, '?')) {
             uwr->uri = jk_pool_strdup(&uw_map->p, uri);
 
             if (!uwr->uri) {
@@ -245,7 +294,28 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
+            /* Lets check if we have multiple
+             * asterixes in the uri like:
+             * /context/ * /user/ *
+             */
+            uwr->worker_name = worker;
+            uwr->context = uri;
+            uwr->suffix = NULL;
+            uwr->match_type = MATCH_TYPE_WILDCHAR_PATH;
+            jk_log(l, JK_LOG_DEBUG,
+                    "wild chars path rule %s=%s was added\n",
+                    uri, worker);
 
+        }
+        else if (asterisk) {
+            uwr->uri = jk_pool_strdup(&uw_map->p, uri);
+
+            if (!uwr->uri) {
+                jk_log(l, JK_LOG_ERROR,
+                       "can't alloc uri string\n");
+                JK_TRACE_EXIT(l);
+                return JK_FALSE;
+            }
             /*
              * Now, lets check that the pattern is /context/*.suffix
              * or /context/*
@@ -340,7 +410,8 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 
     uw_map->maps[uw_map->size] = uwr;
     uw_map->size++;
-
+    
+    worker_qsort(uw_map);
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -495,8 +566,24 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         if (uwr->ctxt_len < longest_match) {
             continue;       /* can not be a best match anyway */
         }
+        if (uwr->match_type == MATCH_TYPE_WILDCHAR_PATH) {
+            /* Map is already sorted by ctxt_len */
+            if (wildchar_match(uri, uwr->context,
+#ifdef WIN32
+                               1
+#else
+                               0
+#endif
+                               ) == 0) {
 
-        if (0 == strncmp(uwr->context, uri, uwr->ctxt_len)) {
+                    jk_log(l, JK_LOG_DEBUG,
+                            "Found an wildchar match %s -> %s\n",
+                            uwr->worker_name, uwr->context);
+                    JK_TRACE_EXIT(l);
+                    return uwr->worker_name;
+             }
+        }
+        else if (strncmp(uwr->context, uri, uwr->ctxt_len) == 0) {
             if (uwr->match_type == MATCH_TYPE_EXACT) {
                 if (strlen(uri) == uwr->ctxt_len) {
                     jk_log(l, JK_LOG_DEBUG,
