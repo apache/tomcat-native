@@ -69,11 +69,15 @@ import javax.management.*;
 import org.apache.tomcat.util.mx.*;
 
 /** MX-enable jk.
+ *
+ *  Add "mx.port=PORT" in jk2.properties to enable it.
+ *  If port==-1 the JMX will be enabled but no HTTP adapter will be loaded.
+ *  Port > 0 will load the mx4j adapter, if possible.
  */
 public class JkMX extends JkHandler
 {
     MBeanServer mserver;
-    private boolean mxAdapter=true;
+    private int port=-1;
     
     public JkMX()
     {
@@ -81,38 +85,26 @@ public class JkMX extends JkHandler
 
     /* -------------------- Public methods -------------------- */
 
-    /** Testing - load the jmx adapter
+    /** Enable the MX4J internal adapter
      */
-    public void setLoadAdapter( boolean b ) {
-        mxAdapter=b;
+    public void setPort( int i ) {
+        port=i;
     }
     
-    public DynamicMBean createMBean( Object proxy, String name ) {
+    public void createMBean( Object proxy, String name ) {
         try {
-            // XXX use aliases, suffix only, proxy.getName(), etc
-            if( name==null )
-                name=proxy.getClass().getName();
-            
-            // XXX use jk domain
-            String domain = "jk2";
-            
             DynamicMBeanProxy mbean=new DynamicMBeanProxy();
-
             mbean.setReal( proxy );
-            
-            ObjectName oname=new ObjectName( domain + ": name=" + name );
-            
-            mserver.registerMBean( mbean, oname );
+            if( name!=null ) {
+                mbean.setName( name );
+            }
+
+            mbean.registerMBean( "jk2" );
         } catch( Throwable t ) {
             log.error( "Error creating mbean ", t );
         }
-        return null;
     }
 
-    public void registerName( String name, String className ) {
-        
-    }
-    
     /* ==================== Start/stop ==================== */
 
     /** Initialize the worker. After this call the worker will be
@@ -123,7 +115,7 @@ public class JkMX extends JkHandler
             ObjectName serverName = new ObjectName("Http:name=HttpAdaptor");
             mserver.createMBean("mx4j.adaptor.http.HttpAdaptor", serverName, null);
             //mserver.setAttribute(serverName, new Attribute("Host", "10.0.0.181"));
-            mserver.setAttribute(serverName, new Attribute("Port", new Integer(8012)));
+            mserver.setAttribute(serverName, new Attribute("Port", new Integer(port)));
             
             ObjectName processorName = new ObjectName("Http:name=XSLTProcessor");
             mserver.createMBean("mx4j.adaptor.http.XSLTProcessor", processorName, null);
@@ -159,10 +151,18 @@ public class JkMX extends JkHandler
     }
     public void init() throws IOException {
         try {
-            mserver = MBeanServerFactory.createMBeanServer();
+            mserver = DynamicMBeanProxy.getMBeanServer();
 
-            if( mxAdapter ) {
+            if( port > 0 ) {
                 loadAdapter();
+            }
+
+            try {
+                Class c=Class.forName( "org.apache.log4j.jmx.HierarchyDynamicMBean" );
+                Object o=c.newInstance();
+                mserver.registerMBean(o, new ObjectName("log4j:hierarchy=default"));
+            } catch( Throwable t ) {
+                log.info("Can't enable log4j mx");
             }
 
             for( int i=0; i< wEnv.getHandlerCount(); i++ ) {
