@@ -352,6 +352,25 @@ static int JK_METHOD jk2_shm_setAttribute(jk_env_t *env, jk_bean_t *mbean,
 
 }
 
+static char *jk2_shm_getAttributeInfo[] = {"file", "size", "slots", "useMemory", NULL};
+
+static void * JK_METHOD jk2_shm_getAttribute(jk_env_t *env, jk_bean_t *mbean, char *name )
+{
+    jk_shm_t *shm = (jk_shm_t *)mbean->object;
+
+    if( strcmp( name, "file" )==0 ) {
+        return shm->fname;
+    } else if( strcmp( name, "size" ) == 0 ) {
+        return jk2_env_itoa( env, shm->size );
+    } else if( strcmp( name, "slots" ) == 0 ) {
+        return jk2_env_itoa( env, shm->slotMaxCount );
+    } else if( strcmp( name, "useMemory" ) == 0 ) {
+        return jk2_env_itoa( env, shm->inmem );
+    }
+    return NULL;
+}
+
+
 /** Copy a chunk of data into a named slot
  */
 static int jk2_shm_writeSlot( jk_env_t *env, jk_shm_t *shm,
@@ -444,7 +463,11 @@ int JK_METHOD jk2_shm_factory( jk_env_t *env ,jk_pool_t *pool,
     
     result->setAttribute = jk2_shm_setAttribute;
     result->setAttributeInfo = jk2_shm_setAttributeInfo;
-    /* result->getAttribute=jk2_shm_getAttribute; */
+    /* Add the following to this function - seems someone else */
+    /* thought of it based on the 'comment' previously there */
+    result->getAttributeInfo = jk2_shm_getAttributeInfo;
+    result->getAttribute = jk2_shm_getAttribute;
+    result->multiValueInfo = NULL;
     shm->mbean = result; 
     result->object = shm;
     result->invoke=jk2_shm_invoke;
