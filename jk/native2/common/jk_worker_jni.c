@@ -152,6 +152,10 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
         } else {
             jniWorker->className = value;
         }
+    /* XXX Instead of ARG=start split to something like:
+     * startup=start
+     * shutdown=stop
+     */
     } else if( strcmp( name, "ARG" )==0 ) {
         jniWorker->args[jniWorker->nArgs]=value;
         jniWorker->nArgs++;
@@ -308,7 +312,14 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
     jk_worker_t *_this=bean->object;
     jni_worker_data_t *jniWorker;
     jk_vm_t *vm=_this->workerEnv->vm;
-
+    JNIEnv *jniEnv;
+    jstring cmd_line = NULL;
+    jstring stdout_name = NULL;
+    jstring stderr_name = NULL;
+    jclass jstringClass;
+    jarray jargs;
+    jstring arg=NULL;
+    
     if(!_this  || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "In destroy, assert failed - invalid parameters\n");
@@ -317,28 +328,30 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
 
     jniWorker = _this->worker_private;
 
-    /* A MUCH better solution is to use the standard JDK1.3 mechanism.
-       Or Ajp13 shutdown.
-       I'll implement JDK1.3 after I check if I do need to do anything
-       on the C side ( i.e. call System.exit() explicitely - I have a feeling
-       the smart VM guys have added a hook to at_exit ). 
-    */
+    if((jniEnv = vm->attach(env, vm))) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                       "jni.destroy(), shutting down Tomcat...\n");
+
+        jstringClass=(*jniEnv)->FindClass(jniEnv, "java/lang/String" );
+        jargs=(*jniEnv)->NewObjectArray(jniEnv, 1, jstringClass, NULL);
+
+        /* XXX Need to make that arg customizable 
+        */
+        arg=(*jniEnv)->NewStringUTF(jniEnv, "stop" );
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "jni.destroy() ARG stop\n");
+        (*jniEnv)->SetObjectArrayElement(jniEnv, jargs, 0, arg );        
     
-/*     if(! jniWorker->jk_shutdown_method) { */
-/*         env->l->jkLog(env, env->l, JK_LOG_EMERG, */
-/*                       "In destroy, Tomcat not intantiated\n"); */
-/*         return JK_ERR; */
-/*     } */
-
-/*     if((jniEnv = vm->attach(env, vm))) { */
-/*         env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-/*                       "jni.destroy(), shutting down Tomcat...\n"); */
-/*         (*jniEnv)->CallStaticVoidMethod(jniEnv, */
-/*                                   jniWorker->jk_java_bridge_class, */
-/*                                   jniWorker->jk_shutdown_method); */
-/*         vm->detach(env, vm); */
-/*     } */
-
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.destroy() calling main()...\n");
+    
+        (*jniEnv)->CallStaticVoidMethod(jniEnv,
+                                    jniWorker->jk_java_bridge_class,
+                                    jniWorker->jk_main_method,
+                                    jargs,stdout_name,stderr_name);
+        
+        vm->destroy(env, vm);
+    }
     env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.destroy() done\n");
 
     return JK_OK;
