@@ -278,8 +278,8 @@ public class MapperListener
     private void registerHost(ObjectName objectName)
         throws Exception
     {
-        String name=objectName.getKeyProperty("name");
-        log.info("Register host " + name);
+        String name=objectName.getKeyProperty("host");
+        log.debug("Register host " + name);
         if( name != null ) {        
             mapper.addHost(name, objectName);
         }
@@ -291,7 +291,7 @@ public class MapperListener
      */
     private void unregisterHost(ObjectName objectName)
         throws Exception {
-        String name=objectName.getKeyProperty("name");
+        String name=objectName.getKeyProperty("host");
         mapper.removeHost(name);
     }
 
