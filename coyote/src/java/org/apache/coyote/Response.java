@@ -64,7 +64,6 @@ import java.io.IOException;
 import java.util.Locale;
 
 import org.apache.tomcat.util.buf.ByteChunk;
-import org.apache.tomcat.util.http.ContentType;
 import org.apache.tomcat.util.http.MimeHeaders;
 
 /**
@@ -87,15 +86,18 @@ public final class Response {
     }
 
 
-    // ----------------------------------------------------- Instance Variables
-    
-    
-   /**
+    // ----------------------------------------------------- Class Variables
+
+    /**
      * Default locale as mandated by the spec.
      */
     private static Locale DEFAULT_LOCALE = Locale.getDefault();
-    
-       
+
+    private static final int BEGIN_CHARSET_VALUE = "charset=".length();
+
+
+    // ----------------------------------------------------- Instance Variables
+
     /**
      * Status code.
      */
@@ -471,44 +473,67 @@ public final class Response {
             return;
 
 	characterEncoding = charset;
-
-        String type = this.contentType;
-	if (type != null) {
-	    int start = type.indexOf("charset=");
-	    if ( start != -1 ) {
-		int end = type.indexOf(';', start+8);
-		if (end >= 0) 
-		    type = type.substring(0,start+8)
-			+ charset + type.substring(end-1);
-		else 
-		    type = type.substring(0,start+8) + charset;
-		this.contentType = type;
-	    } else {
-		int end = type.indexOf(';');
-		if (end >= 0) {
-		    type = type.substring(0, end) + ";charset=" + charset;
-		} else {
-		    type = type + ";charset=" + charset;
-		}            
-	    }
-	    setContentType( type );
-        }
     }
 
     public String getCharacterEncoding() {
         return characterEncoding;
     }
 
+    /**
+     * Sets the content type.
+     *
+     * @param contentType the content type
+     */
     public void setContentType(String contentType) {
-        this.contentType = contentType;
-        String encoding = ContentType.getCharsetFromContentType(contentType);
-        if (encoding != null) {
-            characterEncoding = encoding;
+
+        if (contentType == null) {
+            this.contentType = null;
+            return;
         }
+
+        /*
+         * Remove the charset param (if any) from the Content-Type, and use it
+         * to set the response encoding.
+         * The most recent response encoding setting will be appended to the
+         * response Content-Type (as its charset param) by getContentType();
+         */
+        int beginCharsetValue = BEGIN_CHARSET_VALUE;
+        int beginCharsetParam = contentType.indexOf(";charset=");
+        if (beginCharsetParam == -1) {
+            beginCharsetParam = contentType.indexOf("; charset=");
+            beginCharsetValue++;
+        }
+        if (beginCharsetParam == -1) {
+            // no charset
+            this.contentType = contentType;
+            return;
+        }
+
+        this.contentType = contentType.substring(0, beginCharsetParam);
+        String tail = contentType.substring(beginCharsetParam + 1);
+        int nextParam = tail.indexOf(';');
+        String charsetValue = null;
+        if (nextParam != -1) {
+            this.contentType += tail.substring(nextParam);
+            charsetValue = tail.substring(beginCharsetValue, nextParam);
+        } else {
+            charsetValue = tail.substring(beginCharsetValue);
+        }
+        // The charset value may be quoted, but must not contain any quotes.
+        charsetValue = charsetValue.replace('"', ' ');
+        this.characterEncoding = charsetValue.trim();
     }
 
     public String getContentType() {
-        return contentType;
+
+        String ret = contentType;
+
+        if (ret != null && characterEncoding != null) {
+            ret += ";charset=";
+            ret += characterEncoding;
+        }
+
+        return ret;
     }
     
     public void setContentLength(int contentLength) {
