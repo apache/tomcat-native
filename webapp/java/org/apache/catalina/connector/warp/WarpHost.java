@@ -69,7 +69,7 @@ import org.apache.catalina.core.StandardHost;
 public class WarpHost extends StandardHost {
     public Container map(Request request, boolean update) {
         Context context=null;
-        this.log("Mapping request for Host");
+        if (Constants.DEBUG) this.log("Mapping request for Host");
         if (request instanceof WarpRequest)
             context=((WarpRequest)request).getContext();
         else

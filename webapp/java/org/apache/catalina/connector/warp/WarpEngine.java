@@ -67,7 +67,7 @@ import org.apache.catalina.core.StandardEngine;
 
 public class WarpEngine extends StandardEngine {
     public Container map(Request request, boolean update) {
-        this.log("Mapping request");
+        if (Constants.DEBUG) this.log("Mapping request");
         if (request instanceof WarpRequest) {
             WarpRequest wreq = (WarpRequest)request;
             Host host = wreq.getHost();
