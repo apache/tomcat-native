@@ -1473,7 +1473,7 @@ static void jk_child_init(apr_pool_t *pconf,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    // init_jk( pconf, conf, s );  do we need jk_child_init? For ajp14?
+    /* init_jk( pconf, conf, s );  do we need jk_child_init? For ajp14? */
 }
 
 /** Initialize jk, using worker.properties. 
