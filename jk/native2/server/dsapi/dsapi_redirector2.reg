@@ -1,0 +1,7 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Jakarta Dsapi Redirector\2.0]
+"serverRoot"="D:\\Works\\Tomcat\\jakarta-tomcat-4.1.27"
+"workersFile"="conf\\workers.properties"
+"tomcatStart"="bin\\startup.bat"
+"tomcatStop"="bin\\shutdown.bat"
