@@ -166,6 +166,11 @@ public final class ByteChunk implements Cloneable, Serializable {
     public void setEncoding( String enc ) {
 	this.enc=enc;
     }
+    public String getEncoding() {
+        if (enc == null)
+            enc=DEFAULT_CHARACTER_ENCODING;
+        return enc;
+    }
 
     /**
      * Returns the message bytes.
@@ -448,28 +453,37 @@ public final class ByteChunk implements Cloneable, Serializable {
     // -------------------- Conversion and getters --------------------
 
     public String toString() {
-	if (null == buff) {
-	    return null;
-	}
-	String strValue=null;
-	try {
-	    if( enc==null ) enc=DEFAULT_CHARACTER_ENCODING;
-	    return new String( buff, start, end-start, enc );
-	    /*
-	      Does not improve the speed too much on most systems,
-	      it's safer to use the "clasical" new String().
-
-	      Most overhead is in creating char[] and copying,
-	      the internal implementation of new String() is very close to
-	      what we do. The decoder is nice for large buffers and if
-	      we don't go to String ( so we can take advantage of reduced GC)
-
-	      // Method is commented out, in:
-	      return B2CConverter.decodeString( enc );
-	    */
-	} catch (java.io.IOException e) {
-	    return null;  // XXX 
-	}
+        if (null == buff) {
+            return null;
+        } else if (end-start == 0) {
+            return "";
+        }
+        return StringCache.toString(this);
+    }
+    
+    public String toStringInternal() {
+        String strValue=null;
+        try {
+            if( enc==null ) enc=DEFAULT_CHARACTER_ENCODING;
+            strValue = new String( buff, start, end-start, enc );
+            /*
+             Does not improve the speed too much on most systems,
+             it's safer to use the "clasical" new String().
+             
+             Most overhead is in creating char[] and copying,
+             the internal implementation of new String() is very close to
+             what we do. The decoder is nice for large buffers and if
+             we don't go to String ( so we can take advantage of reduced GC)
+             
+             // Method is commented out, in:
+              return B2CConverter.decodeString( enc );
+              */
+        } catch (java.io.IOException e) {
+            // FIXME 
+        }
+        //System.out.println("BC toString: " + strValue);
+        //Thread.dumpStack();
+        return strValue;
     }
 
     public int getInt()
