@@ -56,70 +56,43 @@
  * [Additional notices, if required by prior licensing conditions]
  *
  */
-
 package org.apache.jk.server.tomcat33;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
-
+import org.apache.jk.*;
 import org.apache.jk.core.*;
 import org.apache.jk.common.*;
-import org.apache.jk.server.*;
-
-import org.apache.tomcat.util.net.*;
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
+import org.apache.tomcat.modules.server.PoolTcpConnector;
 
 import org.apache.tomcat.core.*;
 
+import org.apache.tomcat.util.net.*;
+import org.apache.tomcat.util.buf.*;
+import org.apache.tomcat.util.log.*;
+import org.apache.tomcat.util.http.*;
+
+import org.apache.jk.core.*;
+
 /**
- * Tomcat specific adapter
+ *  Keep jk config in sync with 3.3. Used to generate the
+ *  config and ( in a distant future ) support dynamic
+ *  deploy, etc.
+ *
  */
-public class JkServlet33 extends JkServlet
+public class JkConfig33 extends BaseInterceptor
 {
-    ContextManager cm;
-    
-    public JkServlet33()
+    public JkConfig33()
     {
+        super();
     }
 
-    public void initializeContainer(ServletConfig cfg) {
-        try {
-            ServletContext sctx=cfg.getServletContext();
-            Context ctx=(Context)sctx.getAttribute( Context.ATTRIB_REAL_CONTEXT );
-            if( ctx==null ) {
-                d("Untrusted app or error, ctx==null ");
-                return;
-            }
-            cm=ctx.getContextManager();
-            
-            // We now have control over the whole thing !
-            
-            // We could register an interceptor to be notified
-            registerInterceptors();
-            
-            Worker33 worker=new Worker33();
-            worker.setContextManager( cm );
-            
-            d("Initializing tomcat3.3 for jk requests");
-            
-            // start Jk
-            initJkMain(cfg, worker);
-        } catch( Throwable ex ) {
-            ex.printStackTrace();
-        }
-    }
 
-    public void registerInterceptors() {
-    }
-    
     private static final int dL=0;
     private static void d(String s ) {
-        System.err.println( "JkServlet33: " + s );
+        System.err.println( "JkConfig33: " + s );
     }
 
     
