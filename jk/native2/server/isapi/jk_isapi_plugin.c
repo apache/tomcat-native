@@ -521,27 +521,16 @@ BOOL WINAPI TerminateExtension(DWORD dwFlags)
 }
 
 HANDLE jk2_starter_event;
+HANDLE jk2_starter_thread = NULL;
 
 BOOL WINAPI TerminateFilter(DWORD dwFlags) 
 {
     /* detatch the starter thread */
     SetEvent(jk2_starter_event);
-
-    if (is_inited) {
-        is_inited = JK_FALSE;
-        if (workerEnv) {
-            jk_env_t *env = workerEnv->globalEnv;
-            workerEnv->close(env, workerEnv);
-        }
-        apr_pool_destroy(jk_globalPool);
-        workerEnv=NULL;
-        is_mapread = JK_FALSE;
-    }
+    WaitForSingleObject(jk2_starter_thread, 3000);
     return TRUE;
 }
 
-
-HANDLE jk2_starter_thread = NULL;
 
 DWORD WINAPI jk2_isapi_starter( LPVOID lpParam ) 
 { 
@@ -552,7 +541,17 @@ DWORD WINAPI jk2_isapi_starter( LPVOID lpParam )
         if (init_jk(NULL))
             is_mapread = JK_TRUE;
     }
+
     WaitForSingleObject(jk2_starter_event, INFINITE);
+
+    if (is_inited) {
+        is_inited = JK_FALSE;
+        if (workerEnv) {
+            jk_env_t *env = workerEnv->globalEnv;
+            workerEnv->close(env, workerEnv);
+        }
+        is_mapread = JK_FALSE;
+    }
     return 0; 
 } 
 
@@ -566,25 +565,17 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     char dir[_MAX_DIR];
     char fname[_MAX_FNAME];
     DWORD dwThreadId;
-    DWORD dwRes;
-    int tcount = 0;
 
     switch (ulReason) {
         case DLL_PROCESS_DETACH:
-            while (!GetExitCodeThread(jk2_starter_thread, &dwRes)) {
-                if (dwRes == STILL_ACTIVE) {
-                    ++tcount;
-                    if (tcount > 30) {
-                        TerminateThread(jk2_starter_thread, -1);
-                        break;
-                    }
-                    Sleep(100);
-                }
-            }
+            WaitForSingleObject(jk2_starter_thread, INFINITE);
             CloseHandle(jk2_starter_thread);
+            apr_terminate();
         break;
 
         case DLL_PROCESS_ATTACH:
+            apr_initialize();
+            apr_pool_create( &jk_globalPool, NULL );
             if (GetModuleFileName( hInst, file_name, sizeof(file_name))) {
                 _splitpath( file_name, drive, dir, fname, NULL );
                 _makepath( ini_file_name, drive, dir, fname, ".properties" );
@@ -754,9 +745,6 @@ static  jk_env_t*  jk2_create_workerEnv (void) {
     jk_pool_t *globalPool;
     jk_bean_t *jkb;
     jk_env_t *env;
-
-    apr_initialize();
-    apr_pool_create( &jk_globalPool, NULL );
 
     jk2_pool_apr_create( NULL, &globalPool, NULL, jk_globalPool );
 
