@@ -561,6 +561,7 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
     /* detatch the starter thread */
     SetEvent(jk2_starter_event);
     WaitForSingleObject(jk2_starter_thread, 3000);
+    CloseHandle(jk2_starter_thread);
     return TRUE;
 }
 
@@ -577,11 +578,10 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
 
     switch (ulReason) {
         case DLL_PROCESS_DETACH:
-            WaitForSingleObject(jk2_starter_thread, 1200000);
-            CloseHandle(jk2_starter_thread);
             /* Dirty hack to unload the jvm */
-            if (was_inited && jk_jni_status_code)
+            if (was_inited && jk_jni_status_code) {
                 ExitProcess(0);
+            }
       break;
 
         case DLL_PROCESS_ATTACH:
