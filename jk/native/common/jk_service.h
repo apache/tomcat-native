@@ -374,6 +374,13 @@ struct jk_worker
                                 jk_worker_env_t *we, jk_logger_t *l);
 
     /*
+     * Update worker either from jk_status or reloading from workers.properties
+     */
+    int (JK_METHOD * update) (jk_worker_t *w,
+                              jk_map_t *props,
+                              jk_worker_env_t *we, jk_logger_t *l);
+
+    /*
      * Do whatever initialization needs to be done to start this worker up.
      * Configuration options are passed in via the props parameter.  
      */
