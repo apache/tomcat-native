@@ -187,7 +187,9 @@ public final class IntrospectionUtils {
 		try {
                     if( "".equals(home) ) {
                         home=new File("./").getCanonicalPath();
-                    }
+                    } else if( home.endsWith(File.separator) ) {
+			home = home.substring(0,home.length()-1);
+		    }
                     File f=new File( home );
 		    String parentDir = f.getParent();
 		    if(parentDir == null)
