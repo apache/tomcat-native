@@ -66,24 +66,24 @@
  * @param cb The wa_callback structure specified by the web server.
  */
 void wa_init(wa_callback *cb) {
-    wa_connection *curr=wa_connections;
-    const char *ret;
+    wa_connection *c=wa_connections;
 
     // Set our callbacks structure
     if (cb==NULL) return;
     wa_callbacks=cb;
 
     // Set the SERVER_SOFTWARE string.
+    wa_callback_debug(WA_LOG,NULL,"Initializing WebApp library");
     wa_callback_serverinfo(WA_NAME "/" WA_VERSION);
 
     // Iterate thru our connections chain
-    while(curr!=NULL) {
-        ret=(*curr->prov->init)(curr);
-        if (ret!=NULL) wa_callback_log(WA_LOG,NULL,ret);
-        else wa_callback_debug(WA_LOG,NULL,"Connection \"%s\" initialized",
-                                curr->name);
-        curr=curr->next;
+    while(c!=NULL) {
+        wa_callback_debug(WA_LOG,NULL,"Initializing connection \"%s\"",c->name);
+        (*c->prov->init)(c);
+        wa_callback_debug(WA_LOG,NULL,"Connection \"%s\" initialized",c->name);
+        c=c->next;
     }
+    wa_callback_debug(WA_LOG,NULL,"WebApp library initialized");
     return;
 }
 
@@ -91,16 +91,13 @@ void wa_init(wa_callback *cb) {
  * Reset the webapp library and all connections.
  */
 void wa_destroy(void) {
-    wa_connection *curr=wa_connections;
-    const char *ret;
+    wa_connection *c=wa_connections;
 
     // Iterate thru our hosts chain
-    while(curr!=NULL) {
-        ret=(*curr->prov->destroy)(curr);
-        if (ret!=NULL) wa_callback_log(WA_LOG,NULL,ret);
-        else wa_callback_debug(WA_LOG,NULL,"Connection \"%s\" destroyed",
-                                curr->name);
-        curr=curr->next;
+    while(c!=NULL) {
+        (*c->prov->destroy)(c);
+        wa_callback_debug(WA_LOG,NULL,"Connection \"%s\" destroyed",c->name);
+        c=c->next;
     }
 
     wa_callbacks=NULL;

@@ -80,8 +80,8 @@ static const char *wa_info_configure(wa_connection *conn, char *param) {
  *
  * @param conn The connection to initialize.
  */
-static const char *wa_info_init(wa_connection *conn) {
-    return(NULL);
+static void wa_info_init(wa_connection *conn) {
+    wa_callback_debug(WA_LOG,NULL,"Initializing connection %s",conn->name);
 }
 
 /**
@@ -89,8 +89,8 @@ static const char *wa_info_init(wa_connection *conn) {
  *
  * @param conn The connection to destroy.
  */
-static const char *wa_info_destroy(wa_connection *conn) {
-    return(NULL);
+static void wa_info_destroy(wa_connection *conn) {
+    wa_callback_debug(WA_LOG,NULL,"Destroying connection %s",conn->name);
 }
 
 /**
@@ -210,9 +210,9 @@ void wa_info_handle(wa_request *req) {
 
             // Get provider specific description of the application
             if ((*appl->conn->prov->applinfo)(appl,d,1024)>0)
-                wa_callback_printf(req,"    (%s)\n",d);
+                wa_callback_printf(req,"    (%s)<br>\n",d);
             else
-                wa_callback_printf(req,"    [No description available]\n");
+                wa_callback_printf(req,"    [No description available]<br>\n");
 
             wa_callback_printf(req,"   </dd>\n");
             wa_callback_flush(req);

@@ -272,9 +272,14 @@ static wa_warp_packet *wa_warp_recv(wa_warp_conn_config *c, int r) {
  * @param conf The connection configuration member.
  * @return TRUE if we were able to connect to the warp server, FALSE otherwise.
  */
-static boolean wa_warp_connect(wa_warp_conn_config *conf) {
+static boolean wa_warp_open(wa_warp_conn_config *conf) {
     struct sockaddr_in a;
     int r;
+
+    wa_callback_debug(WA_LOG,NULL,"Connecting to %s:%d (%d.%d.%d.%d)",
+                conf->name,conf->port,
+                (int)((conf->addr>>0)&0x0ff),  (int)((conf->addr>>8)&0x0ff),
+                (int)((conf->addr>>16)&0x0ff), (int)((conf->addr>>24)&0x0ff));
 
     // Check if we have a valid host address
     a.sin_addr.s_addr = conf->addr;
@@ -284,24 +289,34 @@ static boolean wa_warp_connect(wa_warp_conn_config *conf) {
     // Open the socket
     if ((conf->sock=socket(AF_INET, SOCK_STREAM, 0))<0) {
         conf->sock=SOCKET_NOT_CREATED;
+        wa_callback_debug(WA_LOG,NULL,"Cannot create socket");
         return(FALSE);
     }
 
     // Tries to connect to the WARP server (continues trying while errno=EINTR)
     do {
+        wa_callback_debug(WA_LOG,NULL,"Attempting to connect");
         r=connect(conf->sock,(struct sockaddr *)&a,sizeof(struct sockaddr_in));
 #ifdef WIN32
         if (r==SOCKET_ERROR) errno=WSAGetLastError()-WSABASEERR;
 #endif
+        wa_callback_debug(WA_LOG,NULL,"Connect returned %d (err=%d eintr=%d)",
+                          r,errno,EINTR);
     } while (r==-1 && errno==EINTR);
 
     // Check if we are finally connected
     if (r==-1) {
+        wa_callback_debug(WA_LOG,NULL,"Unable to connect (err=%d)",errno);
         conf->sock=SOCKET_NOT_CONNECTED;
         return(FALSE);
     }
 
     // Whohoo!
+    wa_callback_debug(WA_LOG,NULL,"Connected to %s:%d (%d.%d.%d.%d)",
+                conf->name,conf->port,
+                (int)((conf->addr>>0)&0x0ff),  (int)((conf->addr>>8)&0x0ff),
+                (int)((conf->addr>>16)&0x0ff), (int)((conf->addr>>24)&0x0ff));
+
     return(TRUE);
 }
 
@@ -343,7 +358,7 @@ static boolean wa_warp_close(wa_warp_conn_config *conf, char *description) {
  * @param param The extra parameter from web server configuration.
  * @return An error message or NULL.
  */
-static const char *wa_warp_conn_configure(wa_connection *conn, char *param) {
+static const char *wa_warp_configure(wa_connection *conn, char *param) {
     wa_warp_conn_config *conf=NULL;
     struct hostent *host=NULL;
     char *temp=NULL;
@@ -404,7 +419,7 @@ static int wa_warp_conninfo(wa_connection *conn, char *buf, int len) {
         conf=(wa_warp_conn_config *)conn->conf;
 
         // Prepare and return description
-        sprintf(temp,"Host: %s (%d.%d.%d.%d) Port: %d",conf->name,
+        snprintf(temp,1024,"Host: %s (%d.%d.%d.%d) Port: %d",conf->name,
                 (int)((conf->addr>>0)&0x0ff),  (int)((conf->addr>>8)&0x0ff),
                 (int)((conf->addr>>16)&0x0ff), (int)((conf->addr>>24)&0x0ff),
                 conf->port);
@@ -468,18 +483,35 @@ static void wa_warp_init(wa_connection *conn) {
     wa_warp_packet *in=NULL;
 
     // Sanity checks
-    if(conn==NULL) return;
-    if(conn->conf==NULL) return;
+    if(conn==NULL) {
+        wa_callback_log(WA_LOG,NULL,"Can't initialize NULL connection");
+        return;
+    }
+    if(conn->conf==NULL) {
+        wa_callback_log(WA_LOG,NULL,"Can't initialize unconfigured connection");
+        return;
+    }
     conf=(wa_warp_conn_config *)conn->conf;
 
+    wa_callback_debug(WA_LOG,NULL,"Configuring connection %s",conn->name);
     // Try to open a connection with the server
-    if (!wa_warp_connect(conf)) return;
+    wa_callback_debug(WA_LOG,NULL,"Attempting to connect");
+    if (!wa_warp_open(conf)) {
+        wa_callback_log(WA_LOG,NULL,"Can't connect [%s] to %s:%d (%d.%d.%d.%d)",
+                conn->name,conf->name,conf->port,
+                (int)((conf->addr>>0)&0x0ff),  (int)((conf->addr>>8)&0x0ff),
+                (int)((conf->addr>>16)&0x0ff), (int)((conf->addr>>24)&0x0ff));
+        return;
+    }
+    wa_callback_debug(WA_LOG,NULL,"Connected");
 
     // Configure our list of hosts
     while(host!=NULL) {
         wa_application *appl=host->apps;
         int hid=0;
 
+        wa_callback_debug(WA_LOG,NULL,"Attempting to configure host %s:%d",
+                         host->name,host->port);
         // Setup the packet
         p->typ=TYP_CONINIT_HST;
         wa_warp_packet_set_string(p,host->name);
@@ -489,6 +521,8 @@ static void wa_warp_init(wa_connection *conn) {
         if (!wa_warp_send(conf,RID_CONNECTION,p)) {
             wa_warp_packet_free(p);
             wa_warp_close(conf, "Cannot send host data");
+            wa_callback_log(WA_LOG,NULL,"Cannot send host %s:%d data",
+                            host->name,host->port);
             return;
         }
         wa_warp_packet_reset(p);
@@ -498,23 +532,31 @@ static void wa_warp_init(wa_connection *conn) {
         if (in==NULL) {
             wa_warp_packet_free(p);
             wa_warp_close(conf, "Cannot retrieve host ID");
+            wa_callback_log(WA_LOG,NULL,"Cannot retrieve host ID for %s:%d",
+                            host->name,host->port);
             return;
         }
         // Check if we got the right packet
         if (in->typ!=TYP_CONINIT_HID) {
             wa_warp_packet_free(p);
             wa_warp_packet_free(in);
-            wa_warp_close(conf, "Cannot retrieve host ID (TYP)");
+            wa_warp_close(conf, "Cannot retrieve host ID");
+            wa_callback_log(WA_LOG,NULL,"Cannot retrieve host ID for %s:%d",
+                            host->name,host->port);
             return;
         }
         hid=wa_warp_packet_get_short(in);
         wa_warp_packet_free(in);
+        wa_callback_debug(WA_LOG,NULL,"Host %s:%d configured with ID %d",
+                        host->name,host->port,hid);
 
         // Iterate thru the list of configured applications
         while(appl!=NULL) {
             int aid=0;
             wa_warp_appl_config *cnf=NULL;
 
+            wa_callback_debug(WA_LOG,NULL,"Attempting to configure app %s %s",
+                             appl->name,appl->path);
             p->typ=TYP_CONINIT_APP;
             wa_warp_packet_set_string(p,appl->name);
             wa_warp_packet_set_string(p,appl->path);
@@ -523,6 +565,8 @@ static void wa_warp_init(wa_connection *conn) {
             if (!wa_warp_send(conf,RID_CONNECTION,p)) {
                 wa_warp_packet_free(p);
                 wa_warp_close(conf, "Cannot send application data");
+                wa_callback_log(WA_LOG,NULL,"Can't configure app %s %s",
+                                 appl->name,appl->path);
                 return;
             }
             wa_warp_packet_reset(p);
@@ -532,6 +576,8 @@ static void wa_warp_init(wa_connection *conn) {
             if (in==NULL) {
                 wa_warp_packet_free(p);
                 wa_warp_close(conf, "Cannot retrieve application ID");
+                wa_callback_log(WA_LOG,NULL,"Can't get app %s %s ID",
+                                 appl->name,appl->path);
                 return;
             }
             // Check if we got the right packet
@@ -539,9 +585,13 @@ static void wa_warp_init(wa_connection *conn) {
                 wa_warp_packet_free(p);
                 wa_warp_packet_free(in);
                 wa_warp_close(conf, "Cannot retrieve application ID (TYP)");
+                wa_callback_log(WA_LOG,NULL,"Can't get app %s %s ID",
+                                 appl->name,appl->path);
                 return;
             }
             aid=wa_warp_packet_get_short(in);
+            wa_callback_debug(WA_LOG,NULL,"Applic. %s %s configured with ID %d",
+                             appl->name,appl->path,aid);
             wa_warp_packet_free(in);
 
             // Setup this application configuration
@@ -559,6 +609,7 @@ static void wa_warp_init(wa_connection *conn) {
     }
 
     // All done (free packet)
+    wa_callback_debug(WA_LOG,NULL,"Connection %s configured",conn->name);
     wa_warp_packet_free(p);
 }
 
@@ -570,15 +621,22 @@ static void wa_warp_init(wa_connection *conn) {
 static void wa_warp_destroy(wa_connection *conn) {
     wa_warp_conn_config *conf;
 
-    if(conn==NULL) return;
-    if(conn->conf==NULL) return;
+    // Sanity checks
+    if(conn==NULL) {
+        wa_callback_log(WA_LOG,NULL,"Can't initialize NULL connection");
+        return;
+    }
+    if(conn->conf==NULL) {
+        wa_callback_log(WA_LOG,NULL,"Can't initialize unconfigured connection");
+        return;
+    }
     conf=(wa_warp_conn_config *)conn->conf;
 
     wa_warp_close(conf,"Normal shutdown");
+    wa_callback_debug(WA_LOG,NULL,"Connection %s destroyed",conn->name);
 }
 
-static void wa_warp_handle_error(wa_request *req, wa_callbacks *cb,
-                                 const char *fmt, ...) {
+static void wa_warp_handle_error(wa_request *req, const char *fmt, ...) {
     char buf[1024];
     va_list ap;
 
@@ -586,19 +644,25 @@ static void wa_warp_handle_error(wa_request *req, wa_callbacks *cb,
     vsprintf(buf,fmt,ap);
     va_end(ap);
 
-    wa_callback_setstatus(cb,req,500);
-    wa_callback_settype(cb,req,"text/html");
-    wa_callback_commit(cb,req);
-    wa_callback_printf(cb,req,"<html>\n");
-    wa_callback_printf(cb,req," <head>\n");
-    wa_callback_printf(cb,req,"  <title>mod_webapp(warp) error</title>\n");
-    wa_callback_printf(cb,req," </head>\n");
-    wa_callback_printf(cb,req," <body>\n");
-    wa_callback_printf(cb,req,"  <h2>mod_webapp(warp) error</h2>\n");
-    wa_callback_printf(cb,req,"  %s\n",buf);
-    wa_callback_printf(cb,req," </body>\n");
-    wa_callback_printf(cb,req,"</html>\n");
-    wa_callback_flush(cb,req);
+    // Dump this error to the web server log file
+    wa_callback_log(WA_LOG,req,"Error handling \"%s://%s:%d%s%s%s\": %s",
+                    req->schm, req->name, req->port, req->ruri, 
+                    req->args==NULL?"":"?",req->args==NULL?"":req->args, buf);
+
+    // Dump this error back to the client
+    wa_callback_setstatus(req,500);
+    wa_callback_settype(req,"text/html");
+    wa_callback_commit(req);
+    wa_callback_printf(req,"<html>\n");
+    wa_callback_printf(req," <head>\n");
+    wa_callback_printf(req,"  <title>mod_webapp(warp) error</title>\n");
+    wa_callback_printf(req," </head>\n");
+    wa_callback_printf(req," <body>\n");
+    wa_callback_printf(req,"  <h2>mod_webapp(warp) error</h2>\n");
+    wa_callback_printf(req,"  %s\n",buf);
+    wa_callback_printf(req," </body>\n");
+    wa_callback_printf(req,"</html>\n");
+    wa_callback_flush(req);
     return;
 }
 
@@ -608,7 +672,7 @@ static void wa_warp_handle_error(wa_request *req, wa_callbacks *cb,
  * @param req The request data.
  * @param cb The web-server callback information.
  */
-static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
+static void wa_warp_handle(wa_request *req) {
     wa_warp_conn_config *cc=NULL;
     wa_warp_appl_config *ac=NULL;
     wa_warp_packet *in=NULL;
@@ -621,7 +685,7 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     // If we're not connected, let's try to connect
     if (cc->sock<0) wa_warp_init(req->appl->conn);
     if (cc->sock<0) {
-        wa_warp_handle_error(req,cb,
+        wa_warp_handle_error(req,
                  "Unable to connect (%d) to Host: %s (%d.%d.%d.%d) Port: %d\n",
                    cc->sock, cc->name,          (int)((cc->addr>>0)&0x0ff),
                    (int)((cc->addr>>8)&0x0ff),  (int)((cc->addr>>16)&0x0ff),
@@ -639,7 +703,7 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     if (!wa_warp_send(cc,RID_CONNECTION,out)) {
         wa_warp_packet_free(out);
         wa_warp_close(cc, "Cannot send RID request");
-        wa_warp_handle_error(req,cb,"Cannot send RID request");
+        wa_warp_handle_error(req,"Cannot send RID request");
         return;
     }
     wa_warp_packet_reset(out);
@@ -649,7 +713,7 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     if (in==NULL) {
         wa_warp_packet_free(out);
         wa_warp_close(cc, "Cannot retrieve request RID");
-        wa_warp_handle_error(req,cb,"Cannot retrieve request RID");
+        wa_warp_handle_error(req,"Cannot retrieve request RID");
         return;
     }
     // Check if we got the right packet
@@ -657,7 +721,7 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
         wa_warp_packet_free(out);
         wa_warp_packet_free(in);
         wa_warp_close(cc, "Cannot retrieve request RID (TYP)");
-        wa_warp_handle_error(req,cb,"Cannot retrieve request RID (TYP)");
+        wa_warp_handle_error(req,"Cannot retrieve request RID (TYP)");
         return;
     }
     rid=wa_warp_packet_get_short(in);
@@ -665,27 +729,58 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
 
     // Send the request method
     wa_warp_packet_reset(out);
-    out->typ=TYP_REQINIT_MET;
-    wa_warp_packet_set_string(out,req->meth);
-    wa_warp_send(cc,rid,out);
+    if (req->meth!=NULL) {
+        wa_callback_debug(WA_LOG,req,"Sending method \"%s\"",req->meth);
+        out->typ=TYP_REQINIT_MET;
+        wa_warp_packet_set_string(out,req->meth);
+        wa_warp_send(cc,rid,out);
+    } else {
+        out->typ=TYP_REQINIT_ERR;
+        wa_warp_send(cc,rid,out);
+        wa_warp_handle_error(req,"Invalid request method (req->meth=NULL)");
+        wa_warp_packet_free(out);
+        return;
+    }
 
     // Send the request URI
     wa_warp_packet_reset(out);
-    out->typ=TYP_REQINIT_URI;
-    wa_warp_packet_set_string(out,req->ruri);
-    wa_warp_send(cc,rid,out);
+    if (req->ruri!=NULL) {
+        wa_callback_debug(WA_LOG,req,"Sending URI \"%s\"",req->ruri);
+        out->typ=TYP_REQINIT_URI;
+        wa_warp_packet_set_string(out,req->ruri);
+        wa_warp_send(cc,rid,out);
+    } else {
+        out->typ=TYP_REQINIT_ERR;
+        wa_warp_send(cc,rid,out);
+        wa_warp_handle_error(req,"Invalid request URI (req->ruri=NULL)");
+        wa_warp_packet_free(out);
+        return;
+    }
 
     // Send the request arguments
-    wa_warp_packet_reset(out);
-    out->typ=TYP_REQINIT_ARG;
-    wa_warp_packet_set_string(out,req->args);
-    wa_warp_send(cc,rid,out);
-
+    if (req->args!=NULL) {
+        wa_warp_packet_reset(out);
+        wa_callback_debug(WA_LOG,req,"Sending query args \"%s\"",req->args);
+        out->typ=TYP_REQINIT_ARG;
+        wa_warp_packet_set_string(out,req->args);
+        wa_warp_send(cc,rid,out);
+    }
+    
     // Send the request protocol
     wa_warp_packet_reset(out);
-    out->typ=TYP_REQINIT_PRO;
-    wa_warp_packet_set_string(out,req->prot);
-    wa_warp_send(cc,rid,out);
+    if (req->prot!=NULL) {
+        wa_callback_debug(WA_LOG,req,"Sending protocol \"%s\"",req->prot);
+        out->typ=TYP_REQINIT_PRO;
+        wa_warp_packet_set_string(out,req->prot);
+        wa_warp_send(cc,rid,out);
+    } else {
+        out->typ=TYP_REQINIT_ERR;
+        wa_warp_send(cc,rid,out);
+        wa_warp_handle_error(req,"Invalid protocol (req->prot=NULL)");
+        wa_warp_packet_free(out);
+        return;
+    }
+    
 
     // Send the request headers
     for (x=0; x<req->hnum; x++) {
@@ -708,52 +803,52 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     if (in==NULL) {
         wa_warp_packet_free(out);
         wa_warp_close(cc, "Cannot switch to passive mode");
-        wa_warp_handle_error(req,cb,"Cannot switch to passive mode");
+        wa_warp_handle_error(req,"Cannot switch to passive mode");
         return;
     }
     // Check if we got an ERR packet
     if (in->typ==TYP_REQINIT_ERR) {
         wa_warp_packet_free(out);
         wa_warp_packet_free(in);
-        wa_warp_handle_error(req,cb,"Request not accepted by the server");
+        wa_warp_handle_error(req,"Request not accepted by the server");
         return;
     }
     // Check if we got the right (ACK) packet
     if (in->typ!=TYP_REQINIT_ACK) {
         wa_warp_packet_free(out);
         wa_warp_packet_free(in);
-        wa_warp_handle_error(req,cb,"Unknown packet received (%d)",in->typ);
+        wa_warp_handle_error(req,"Unknown packet received (%d)",in->typ);
         return;
     }
     wa_warp_packet_free(in);
 
-    wa_callback_setstatus(cb,req,200);
-    wa_callback_settype(cb,req,"text/html");
-    wa_callback_commit(cb,req);
-    wa_callback_printf(cb,req,"<html>\n");
-    wa_callback_printf(cb,req," <head>\n");
-    wa_callback_printf(cb,req,"  <title>mod_webapp(warp) error</title>\n");
-    wa_callback_printf(cb,req," </head>\n");
-    wa_callback_printf(cb,req," <body>\n");
-    wa_callback_printf(cb,req,"  <h2>mod_webapp(warp) request</h2>\n");
-    wa_callback_printf(cb,req,"  Connected (socket=%d) to\n", cc->sock);
-    wa_callback_printf(cb,req,"  Host: %s (%d.%d.%d.%d) Port: %d<br>\n",
+    wa_callback_setstatus(req,200);
+    wa_callback_settype(req,"text/html");
+    wa_callback_commit(req);
+    wa_callback_printf(req,"<html>\n");
+    wa_callback_printf(req," <head>\n");
+    wa_callback_printf(req,"  <title>mod_webapp(warp) error</title>\n");
+    wa_callback_printf(req," </head>\n");
+    wa_callback_printf(req," <body>\n");
+    wa_callback_printf(req,"  <h2>mod_webapp(warp) request</h2>\n");
+    wa_callback_printf(req,"  Connected (socket=%d) to\n", cc->sock);
+    wa_callback_printf(req,"  Host: %s (%d.%d.%d.%d) Port: %d<br>\n",
                cc->name,                   (int)((cc->addr>>0)&0x0ff),
                (int)((cc->addr>>8)&0x0ff), (int)((cc->addr>>16)&0x0ff),
                (int)((cc->addr>>24)&0x0ff), cc->port);
-    wa_callback_printf(cb,req,"  Received Request ID: %d<br>\n",rid);
-    wa_callback_printf(cb,req," </body>\n");
-    wa_callback_printf(cb,req,"</html>\n");
-    wa_callback_flush(cb,req);
+    wa_callback_printf(req,"  Received Request ID: %d<br>\n",rid);
+    wa_callback_printf(req," </body>\n");
+    wa_callback_printf(req,"</html>\n");
+    wa_callback_flush(req);
 }
 
 /** WebAppLib plugin description. */
 wa_provider wa_provider_warp = {
     "warp",
-    wa_warp_conn_configure,
+    wa_warp_configure,
     wa_warp_init,
     wa_warp_destroy,
-    wa_warp_handle,
     wa_warp_conninfo,
     wa_warp_applinfo,
+    wa_warp_handle,
 };

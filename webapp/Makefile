@@ -75,7 +75,9 @@ recompile:
 
 Makedefs:
 	@cp Makedefs.orig Makedefs
+	@echo "$(MAKE): ***"
 	@echo "$(MAKE): *** Please edit the 'Makedefs' file before compiling"
+	@echo "$(MAKE): ***"
 	@exit 1
 
 webapplib/libwebapp.a: Makedefs

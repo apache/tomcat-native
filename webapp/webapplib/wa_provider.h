@@ -85,14 +85,14 @@ struct wa_provider {
      *
      * @param conn The connection to initialize.
      */
-    const char *(*init) (wa_connection *conn);
+    void (*init) (wa_connection *conn);
 
     /**
      * Destroys a connection.
      *
      * @param conn The connection to destroy.
      */
-    const char *(*destroy) (wa_connection *conn);
+    void (*destroy) (wa_connection *conn);
 
     /**
      * Describe the configuration member found in a connection.
@@ -128,7 +128,7 @@ extern wa_provider *wa_providers[];
 
 /* Pointers to the different providers */
 extern wa_provider wa_provider_info;
-//extern wa_provider wa_provider_warp;
+extern wa_provider wa_provider_warp;
 
 /* Function prototype declaration */
 // Retrieve a provider.

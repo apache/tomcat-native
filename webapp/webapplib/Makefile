@@ -61,7 +61,7 @@
 include ../Makedefs
 
 OBJS = wa.o wa_callback.o wa_connection.o wa_host.o wa_request.o \
-       wa_provider.o wa_provider_info.o # wa_provider_warp.o
+       wa_provider.o wa_provider_info.o wa_provider_warp.o
 
 all: libwebapp.a
 
