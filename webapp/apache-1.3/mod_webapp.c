@@ -54,6 +54,10 @@
  * on the Apache Software Foundation, please see <http://www.apache.org/>.   *
  *                                                                           *
  * ========================================================================= */
+
+// CVS $Id$
+// Author: Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
+
 #include <httpd.h>
 #include <http_config.h>
 #include <http_core.h>
@@ -136,18 +140,18 @@ static int webapp_translate(request_rec *r) {
     wa_host *host=NULL;
     wa_application *appl=NULL;
     wa_request *req=NULL;
-    
+
     // Check if this host was recognized
     host=wa_host_get(r->server->server_hostname, r->server->port);
     if (host==NULL) return(DECLINED);
-    
+
     // Check if the uri is contained in one of our web applications root path
     appl=wa_host_findapp(host, r->uri);
     if (appl==NULL) return(DECLINED);
 
     // The uri path is matched by the application, set the handler and return
     r->handler=ap_pstrdup(r->pool,"webapp-handler");
-    
+
     // Create a new request structure
     req=(wa_request *)ap_palloc(r->pool,sizeof(wa_request));
     req->host=host;
@@ -166,7 +170,7 @@ static int webapp_translate(request_rec *r) {
 static int webapp_handler(request_rec *r) {
     const char *message=NULL;
     wa_request *req=NULL;
-    
+
     // Try to get a hold on the webapp request structure
     req=(wa_request *)ap_get_module_config(r->request_config, &webapp_module);
     if (req==NULL) return(DECLINED);
@@ -177,7 +181,7 @@ static int webapp_handler(request_rec *r) {
     req->uri=r->uri;
     req->arguments=r->args;
     req->protocol=r->protocol;
-    
+
     // Copy headers into webapp request structure
     if (!r->headers_in) {
         array_header *arr=ap_table_elts(r->headers_in);
@@ -230,7 +234,7 @@ static void webapp_init(server_rec *s, pool *p) {
     // Under UNIX we clean up when a child exists, since web server children
     // are processes, and not threads.
     ap_register_cleanup(p, NULL, ap_null_cleanup, webapp_destroy);
-#endif    
+#endif
 
     // Initialize connections
     wa_connection_init();
@@ -253,7 +257,7 @@ static void webapp_callback_log(void *data, const char *file, int line,
                                 const char *fmt, ...) {
     request_rec *r=(request_rec *)data;
     va_list ap;
-    
+
     va_start (ap,fmt);
     if (r==NULL) {
         fprintf(stderr,"[%s:%d] ",file,line);

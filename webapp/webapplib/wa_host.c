@@ -1,3 +1,63 @@
+/* ========================================================================= *
+ *                                                                           *
+ *                 The Apache Software License,  Version 1.1                 *
+ *                                                                           *
+ *         Copyright (c) 1999, 2000  The Apache Software Foundation.         *
+ *                           All rights reserved.                            *
+ *                                                                           *
+ * ========================================================================= *
+ *                                                                           *
+ * Redistribution and use in source and binary forms,  with or without modi- *
+ * fication, are permitted provided that the following conditions are met:   *
+ *                                                                           *
+ * 1. Redistributions of source code  must retain the above copyright notice *
+ *    notice, this list of conditions and the following disclaimer.          *
+ *                                                                           *
+ * 2. Redistributions  in binary  form  must  reproduce the  above copyright *
+ *    notice,  this list of conditions  and the following  disclaimer in the *
+ *    documentation and/or other materials provided with the distribution.   *
+ *                                                                           *
+ * 3. The end-user documentation  included with the redistribution,  if any, *
+ *    must include the following acknowlegement:                             *
+ *                                                                           *
+ *       "This product includes  software developed  by the Apache  Software *
+ *        Foundation <http://www.apache.org/>."                              *
+ *                                                                           *
+ *    Alternately, this acknowlegement may appear in the software itself, if *
+ *    and wherever such third-party acknowlegements normally appear.         *
+ *                                                                           *
+ * 4. The names  "The  Jakarta  Project",  "Tomcat",  and  "Apache  Software *
+ *    Foundation"  must not be used  to endorse or promote  products derived *
+ *    from this  software without  prior  written  permission.  For  written *
+ *    permission, please contact <apache@apache.org>.                        *
+ *                                                                           *
+ * 5. Products derived from this software may not be called "Apache" nor may *
+ *    "Apache" appear in their names without prior written permission of the *
+ *    Apache Software Foundation.                                            *
+ *                                                                           *
+ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES *
+ * INCLUDING, BUT NOT LIMITED TO,  THE IMPLIED WARRANTIES OF MERCHANTABILITY *
+ * AND FITNESS FOR  A PARTICULAR PURPOSE  ARE DISCLAIMED.  IN NO EVENT SHALL *
+ * THE APACHE  SOFTWARE  FOUNDATION OR  ITS CONTRIBUTORS  BE LIABLE  FOR ANY *
+ * DIRECT,  INDIRECT,   INCIDENTAL,  SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL *
+ * DAMAGES (INCLUDING,  BUT NOT LIMITED TO,  PROCUREMENT OF SUBSTITUTE GOODS *
+ * OR SERVICES;  LOSS OF USE,  DATA,  OR PROFITS;  OR BUSINESS INTERRUPTION) *
+ * HOWEVER CAUSED AND  ON ANY  THEORY  OF  LIABILITY,  WHETHER IN  CONTRACT, *
+ * STRICT LIABILITY, OR TORT  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN *
+ * ANY  WAY  OUT OF  THE  USE OF  THIS  SOFTWARE,  EVEN  IF  ADVISED  OF THE *
+ * POSSIBILITY OF SUCH DAMAGE.                                               *
+ *                                                                           *
+ * ========================================================================= *
+ *                                                                           *
+ * This software  consists of voluntary  contributions made  by many indivi- *
+ * duals on behalf of the  Apache Software Foundation.  For more information *
+ * on the Apache Software Foundation, please see <http://www.apache.org/>.   *
+ *                                                                           *
+ * ========================================================================= */
+
+// CVS $Id$
+// Author: Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
+
 #include <wa.h>
 
 /* The list of configured hosts */
@@ -30,7 +90,7 @@ const char *wa_host_create(char *name, int port) {
         wa_hosts=host;
         return(NULL);
     }
-    
+
     // We need to check for duplicate hosts
     curr=wa_hosts;
     while(curr!=NULL) {
@@ -67,7 +127,7 @@ wa_host *wa_host_get(char *name, int port) {
             return(curr);
         else curr=curr->next;
     }
-    
+
     // No host found, sorry!
     return(NULL);
 }
@@ -119,7 +179,7 @@ const char *wa_host_setapp(wa_host *host, char *name, char *path,
         strncpy(appl->path,path,pathlen);
         appl->path[pathlen]='/';
         appl->path[pathlen+1]='\0';
-    } 
+    }
     if (slashes==3) {
         appl->path=(char *)malloc((pathlen+3)*sizeof(char));
         appl->path[0]='/';
@@ -169,7 +229,7 @@ const char *wa_host_setapp(wa_host *host, char *name, char *path,
 const char *wa_host_setapp_byname(char *h, int p, char *name, char *path,
                            wa_connection *conn) {
     wa_host *host=wa_host_get(h, p);
-    
+
     if (host==NULL) return("Host not configured");
     return(wa_host_setapp(host, name, path, conn));
 }
@@ -207,7 +267,7 @@ wa_application *wa_host_findapp(wa_host *host, char *uri) {
  */
 wa_application *wa_host_findapp_byname(char *h, int p, char *uri) {
     wa_host *host=wa_host_get(h, p);
-    
+
     if (host==NULL) return(NULL);
     return(wa_host_findapp(host, uri));
 }
