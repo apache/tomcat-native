@@ -1,4 +1,4 @@
-#JAVA_HOME=""
+#!/bin/sh
 echo "libtoolize --force --automake"
 libtoolize --force --automake
 echo "automake -a --foreign -i"

@@ -1,5 +1,5 @@
  
-  Building from the cvs tree: (for develloppers only).
+  Building from the cvs tree: (for developers only).
   -----------------------------------
   When using a cvs tree buildconf.sh must be run before configure.
   The today version of buildconf.sh build the following files:
@@ -20,7 +20,7 @@
  
   To configure jakarta-tomcat-connectors run the following commands.
  
-  ./buildconf  (not required unless you are a developer)
+  ./buildconf.sh  (not required unless you are a developer)
   ./configure [autoconf arguments] [jakarta-tomcat-connectors arguments]
   make
 * make install
