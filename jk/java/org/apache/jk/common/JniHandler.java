@@ -151,6 +151,9 @@ public class JniHandler extends JkHandler {
         try {
             MsgContext msgCtx=new MsgContext();
             MsgAjp msg=new MsgAjp();
+
+            msgCtx.setSource( this );
+            msgCtx.setWorkerEnv( wEnv );
             
             msgCtx.setNext( this );
             
@@ -168,11 +171,60 @@ public class JniHandler extends JkHandler {
         }
     }
 
+    public void setNativeAttribute(String name, String val) throws IOException {
+        if( apr==null ) return;
+
+        if( nativeJkHandlerP == 0 ) {
+            log.error( "Unitialized component " + name+ " " + val );
+            return;
+        }
+
+        long xEnv=apr.getJkEnv();
+
+        apr.jkSetAttribute( xEnv, nativeJkHandlerP, name, val );
+
+        apr.releaseJkEnv( xEnv );
+    }
+
+    public void initJkComponent() throws IOException {
+        if( apr==null ) return;
+
+        if( nativeJkHandlerP == 0 ) {
+            log.error( "Unitialized component " );
+            return;
+        }
+
+        long xEnv=apr.getJkEnv();
+
+        apr.jkInit( xEnv, nativeJkHandlerP );
+
+        apr.releaseJkEnv( xEnv );
+    }
+
+    public void destroyJkComponent() throws IOException {
+        if( apr==null ) return;
+
+        if( nativeJkHandlerP == 0 ) {
+            log.error( "Unitialized component " );
+            return;
+        }
+
+        long xEnv=apr.getJkEnv();
+
+        apr.jkDestroy( xEnv, nativeJkHandlerP );
+
+        apr.releaseJkEnv( xEnv );
+    }
+
+
+
     protected void setNativeEndpoint(MsgContext msgCtx) {
         long xEnv=apr.getJkEnv();
         msgCtx.setJniEnv( xEnv );
 
         long epP=apr.createJkHandler(xEnv, "endpoint");
+        log.debug("create ep " + epP );
+        if( epP == 0 ) return;
         apr.jkInit( xEnv, epP );
         msgCtx.setJniContext( epP );
 
@@ -184,12 +236,19 @@ public class JniHandler extends JkHandler {
     
     /** send and get the response in the same buffer.
      */
-    protected int nativeDispatch( Msg msg, MsgContext ep, int code )
+    protected int nativeDispatch( Msg msg, MsgContext ep, int code, int raw )
         throws IOException
     {
-        if( log.isDebugEnabled() ) log.debug( "Sending packet ");
-        msg.end();
-        if( log.isTraceEnabled() ) msg.dump("OUT:" );
+        if( log.isDebugEnabled() ) log.debug( "Sending packet " + code + " " + raw);
+
+        if( raw == 0 ) {
+            msg.end();
+        
+            if( log.isTraceEnabled() ) msg.dump("OUT:" );
+        }
+        
+        // Create ( or reuse ) the jk_endpoint ( the native pair of
+        // MsgContext )
         long xEnv=ep.getJniEnv();
         long nativeContext=ep.getJniContext();
         if( nativeContext==0 || xEnv==0 ) {
@@ -204,11 +263,13 @@ public class JniHandler extends JkHandler {
         }
 
         // Will process the message in the current thread.
-        // No wait needed to receive the response
+        // No wait needed to receive the response, if any
         int status=apr.jkInvoke( xEnv,
                                  nativeJkHandlerP,
                                  nativeContext,
-                                 code, msg.getBuffer(), msg.getLen()); 
+                                 code, msg.getBuffer(), 0, msg.getLen(), raw ); 
+        if( status != 0 )
+            log.error( "nativeDispatch: error " + status );
         
         if( log.isDebugEnabled() ) log.debug( "Sending packet - done " + status);
         return status;
@@ -227,13 +288,14 @@ public class JniHandler extends JkHandler {
             //            return send( msg, ep );
         }
 
-        int status=nativeDispatch(msg, ep, type );
+        int status=nativeDispatch(msg, ep, type, 0 );
         
         apr.jkRecycle(xEnv, ep.getJniContext());
 
         if(log.isInfoEnabled() ) log.info("Shm invoke status " + status);
-
-        return 0;
+ 
+        apr.releaseJkEnv( xEnv );
+       return 0;
     }    
 
     private static org.apache.commons.logging.Log log=
