@@ -358,18 +358,18 @@ static void *jk2_pool_strcat(jk_env_t *env, jk_pool_t *p, ...)
 {
 
     char *cp, *argp, *res;
-    apr_size_t saved_lengths[MAX_SAVED_LENGTHS];
+    size_t saved_lengths[MAX_SAVED_LENGTHS];
     int nargs = 0;
 
     /* Pass one --- find length of required string */
 
-    apr_size_t len = 0;
+    size_t len = 0;
     va_list adummy;
 
     va_start(adummy, p);
 
     while ((cp = va_arg(adummy, char *)) != NULL) {
-        apr_size_t cplen = strlen(cp);
+        size_t cplen = strlen(cp);
         if (nargs < MAX_SAVED_LENGTHS) {
             saved_lengths[nargs++] = cplen;
         }
