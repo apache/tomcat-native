@@ -57,7 +57,7 @@
  *
  */ 
 
-package org.apache.coyote.http11;
+package org.apache.coyote.http11.filters;
 
 import java.io.IOException;
 
@@ -65,13 +65,66 @@ import org.apache.tomcat.util.buf.ByteChunk;
 
 import org.apache.coyote.InputBuffer;
 import org.apache.coyote.Request;
+import org.apache.coyote.http11.InputFilter;
 
 /**
- * Input filter interface.
+ * Identity input filter.
  * 
  * @author Remy Maucherat
  */
-public interface InputFilter extends InputBuffer {
+public class IdentityInputFilter implements InputBuffer {
+
+
+    // -------------------------------------------------------------- Constants
+
+
+    protected static final String ENCODING_NAME = "identity";
+    protected static final ByteChunk ENCODING = new ByteChunk();
+
+
+    // ----------------------------------------------------- Static Initializer
+
+
+    static {
+        ENCODING.setBytes(ENCODING_NAME.getBytes(), 0, ENCODING_NAME.length());
+    }
+
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    /**
+     * Content length.
+     */
+    protected long contentLength = -1;
+
+
+    /**
+     * Remaining bytes.
+     */
+    protected long remaining = -1;
+
+
+    // ------------------------------------------------------------- Properties
+
+
+    /**
+     * Get content length.
+     */
+    public long getContentLength() {
+        return contentLength;
+    }
+
+
+    /**
+     * Get remaining bytes.
+     */
+    public long getRemaining() {
+        return remaining;
+    }
+
+
+    // ---------------------------------------------------- InputBuffer Methods
 
 
     /**
@@ -84,27 +137,70 @@ public interface InputFilter extends InputBuffer {
      * control, the returned value should be -1.
      */
     public int doRead(ByteChunk chunk)
-        throws IOException;
+        throws IOException {
+
+        int result = chunk.getLength();
+
+        if (result <= 0) {
+            return -1;
+        }
+
+        if (contentLength > 0) {
+            if (remaining > 0) {
+                if (chunk.getLength() > remaining) {
+                    // The chunk is longer than the number of bytes remaining
+                    // in the body; changing the chunk length to the number
+                    // of bytes remaining
+                    chunk.setBytes(chunk.getBytes(), chunk.getStart(), 
+                                   (int) remaining);
+                    result = (int) remaining;
+                    remaining = -1;
+                } else {
+                    remaining = remaining - result;
+                }
+            } else {
+                // No more bytes left to be read : return -1 and clear the 
+                // buffer
+                chunk.recycle();
+                result = -1;
+            }
+        } else {
+            result = -1;
+        }
+
+        return result;
+
+    }
+
+
+    // ---------------------------------------------------- InputFilter Methods
 
 
     /**
-     * Some filters need additional parameters from the request. All the 
-     * necessary reading can occur in that method, as this method is called
-     * after the request header processing is complete.
+     * Read the content length from the request.
      */
-    public void setRequest(Request request);
+    public void setRequest(Request request) {
+        contentLength = request.getContentLength();
+        remaining = contentLength;
+    }
 
 
     /**
      * Make the filter ready to process the next request.
      */
-    public void recycle();
+    public void recycle() {
+        contentLength = -1;
+        remaining = -1;
+    }
 
 
     /**
-     * Get the name of the encoding handled by this filter.
+     * Return the name of the associated encoding; Here, the value is 
+     * "identity".
      */
-    public ByteChunk getEncodingName();
+    public ByteChunk getEncodingName() {
+        return ENCODING;
+    }
 
 
 }

@@ -57,7 +57,7 @@
  *
  */ 
 
-package org.apache.coyote.http11;
+package org.apache.coyote.http11.filters;
 
 import java.io.IOException;
 
@@ -65,13 +65,66 @@ import org.apache.tomcat.util.buf.ByteChunk;
 
 import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Response;
+import org.apache.coyote.http11.OutputFilter;
 
 /**
- * Output filter.
+ * Identity output filter.
  * 
  * @author Remy Maucherat
  */
-public interface OutputFilter extends OutputBuffer {
+public class IdentityOutputFilter implements OutputFilter {
+
+
+    // -------------------------------------------------------------- Constants
+
+
+    protected static final String ENCODING_NAME = "identity";
+    protected static final ByteChunk ENCODING = new ByteChunk();
+
+
+    // ----------------------------------------------------- Static Initializer
+
+
+    static {
+        ENCODING.setBytes(ENCODING_NAME.getBytes(), 0, ENCODING_NAME.length());
+    }
+
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    /**
+     * Content length.
+     */
+    protected long contentLength = -1;
+
+
+    /**
+     * Remaining bytes.
+     */
+    protected long remaining = -1;
+
+
+    // ------------------------------------------------------------- Properties
+
+
+    /**
+     * Get content length.
+     */
+    public long getContentLength() {
+        return contentLength;
+    }
+
+
+    /**
+     * Get remaining bytes.
+     */
+    public long getRemaining() {
+        return remaining;
+    }
+
+
+    // --------------------------------------------------- OutputBuffer Methods
 
 
     /**
@@ -80,7 +133,41 @@ public interface OutputFilter extends OutputBuffer {
      * @return number of bytes written by the filter
      */
     public int doWrite(ByteChunk chunk)
-        throws IOException;
+        throws IOException {
+
+        int result = chunk.getLength();
+
+        if (result <= 0) {
+            return -1;
+        }
+
+        if (contentLength > 0) {
+            if (remaining > 0) {
+                if (chunk.getLength() > remaining) {
+                    // The chunk is longer than the number of bytes remaining
+                    // in the body; changing the chunk length to the number
+                    // of bytes remaining
+                    chunk.setBytes(chunk.getBytes(), chunk.getStart(), 
+                                   (int) remaining);
+                    result = (int) remaining;
+                    remaining = -1;
+                } else {
+                    remaining = remaining - result;
+                }
+            } else {
+                // No more bytes left to be written : return -1 and clear the 
+                // buffer
+                chunk.recycle();
+                result = -1;
+            }
+        }
+
+        return result;
+
+    }
+
+
+    // --------------------------------------------------- OutputFilter Methods
 
 
     /**
@@ -88,33 +175,56 @@ public interface OutputFilter extends OutputBuffer {
      * necessary reading can occur in that method, as this method is called
      * after the response header processing is complete.
      */
-    public void setResponse(Response response);
+    public void setResponse(Response response) {
+        contentLength = response.getContentLength();
+    }
 
 
     /**
-     * Flush the internal buffer of the filter (if any).
+     * Don't do anything in particular when flushing.
      */
     public int flush(ByteChunk chunk)
-        throws IOException;
+        throws IOException {
+        return doWrite(chunk);
+    }
 
 
     /**
-     * Called when ending the request.
+     * Write the remaining bytes, and check that the number of bytes written
+     * is correct.
      */
     public int close(ByteChunk chunk)
-        throws IOException;
+        throws IOException {
+
+        int n = doWrite(chunk);
+
+        if (remaining > 0) {
+            // FIXME: Throw an exception if the number of bytes written is less
+            // than the advertised content length.
+            throw new IOException();
+        }
+
+        return n;
+
+    }
 
 
     /**
      * Make the filter ready to process the next request.
      */
-    public void recycle();
+    public void recycle() {
+        contentLength = -1;
+        remaining = -1;
+    }
 
 
     /**
-     * Get the name of the encoding handled by this filter.
+     * Return the name of the associated encoding; Here, the value is 
+     * "identity".
      */
-    public ByteChunk getEncodingName();
+    public ByteChunk getEncodingName() {
+        return ENCODING;
+    }
 
 
 }
