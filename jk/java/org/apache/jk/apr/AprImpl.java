@@ -1,12 +1,16 @@
 package org.apache.jk.apr;
 
+import java.io.*;
+
 /** Implements the interface with the APR library. This is for internal-use
  *  only. The goal is to use 'natural' mappings for user code - for example
  *  java.net.Socket for unix-domain sockets, etc. 
  * 
  */
 public class AprImpl {
-
+    String baseDir;
+    String aprHome;
+    
     /** Initialize APR
      */
     public native int initialize();
@@ -41,18 +45,51 @@ public class AprImpl {
     public native int unWrite( long pool, long unSocket,
                                 byte buf[], int off, int len );
 
+    /** Native libraries are located based on base dir.
+     *  XXX Add platform, version, etc
+     */
+    public void setBaseDir(String s) {
+        baseDir=s;
+    }
+
+    // XXX maybe install the jni lib in apr-home ?
+    public void setAprHome( String s ) {
+        aprHome=s;
+    }
+    
+    /** This method of loading the libs doesn't require setting
+     *   LD_LIBRARY_PATH. Assuming a 'right' binary distribution,
+     *   or a correct build all files will be in their right place.
+     *
+     *  The burden is on our code to deal with platform specific
+     *  extensions and to keep the paths consistent - not easy, but
+     *  worth it if it avoids one extra step for the user.
+     *
+     *  Of course, this can change to System.load() and putting the
+     *  libs in LD_LIBRARY_PATH.
+     */
+    public void loadNative() {
+        if( aprHome==null )
+            aprHome=baseDir;
+        File dir=new File(aprHome);
+        // XXX platform independent, etc...
+        File apr=new File( dir, "libapr.so");
+
+        loadNative( apr.getAbsolutePath() );
+
+        dir=new File(baseDir);
+        File jniConnect=new File( dir, "jni_connect.so");
+        
+        loadNative( jniConnect.getAbsolutePath() );
+    }
+
+    boolean ok=true;
+    
     public void loadNative(String libPath) {
         try {
-            if( libPath==null )
-                libPath="jni_connect";
-            // XXX use load() for full path
-            if( libPath.indexOf( "/" ) >=0 ||
-                libPath.indexOf( "\\" ) >=0 ) {
-                System.load( libPath );
-            } else {
-                System.loadLibrary( libPath );
-            }
-        } catch( RuntimeException ex ) {
+            System.load( libPath );
+        } catch( Throwable ex ) {
+            ok=false;
             ex.printStackTrace();
         }
     }
