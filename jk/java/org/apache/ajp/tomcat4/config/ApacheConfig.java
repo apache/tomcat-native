@@ -88,14 +88,15 @@ import javax.servlet.*;
     initialized during startup.
     <p>
     This config interceptor is enabled by inserting an ApacheConfig
-    element in the <b>&lt;ContextManager&gt;</b> tag body inside
+    <code>Listener</code> in 
     the server.xml file like so:
     <pre>
-    * < ContextManager ... >
+    * < Server ... >
     *   ...
-    *   <<b>ApacheConfig</b> <i>options</i> />
+    *   <Listener className=<b>org.apache.ajp.tomcat4.config.ApacheConfig</b> 
+    *       <i>options</i> />
     *   ...
-    * < /ContextManager >
+    * < /Server >
     </pre>
     where <i>options</i> can include any of the following attributes:
     <ul>
@@ -292,7 +293,7 @@ public class ApacheConfig  extends BaseJkConfig {
 	    log( "mod_jk location: " + modJk );
 	    log( "Make sure it is installed corectly or " +
 		 " set the config location" );
-	    log( "Using <ApacheConfig modJk=\"PATH_TO_MOD_JK.SO_OR_DLL\" />" );
+	    log( "Using <Listener className=\""+getClass().getName()+"\"  modJk=\"PATH_TO_MOD_JK.SO_OR_DLL\" />" );
 	}
             
 	// Verify the file exists !!
@@ -309,7 +310,7 @@ public class ApacheConfig  extends BaseJkConfig {
 	    log( "Can't find workers.properties at " + workersConfig );
 	    log( "Please install it in the default location or " +
 		 " set the config location" );
-	    log( "Using <ApacheConfig workersConfig=\"FULL_PATH\" />" );
+	    log( "Using <Listener className=\"" + getClass().getName() + "\"  workersConfig=\"FULL_PATH\" />" );
 	    return false;
 	}
             
