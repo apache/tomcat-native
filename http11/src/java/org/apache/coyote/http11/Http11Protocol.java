@@ -76,14 +76,11 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public void setAttribute( String name, Object value ) {
         if( log.isTraceEnabled())
             log.trace(sm.getString("http11protocol.setattribute", name, value));
+
+        System.out.println(getClass().getName() +
+	": setAttribute(" + name + ", " + value + "): here.");
+
         attributes.put(name, value);
-/*
-        if ("maxKeepAliveRequests".equals(name)) {
-            maxKeepAliveRequests = Integer.parseInt((String) value.toString());
-        } else if ("port".equals(name)) {
-            setPort(Integer.parseInt((String) value.toString()));
-        }
-*/
     }
 
     public Object getAttribute( String key ) {
@@ -279,6 +276,15 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public void setMinSpareThreads( int minSpareThreads ) {
         ep.setMinSpareThreads(minSpareThreads);
         setAttribute("minSpareThreads", "" + minSpareThreads);
+    }
+
+    public void setThreadPriority(int threadPriority) {
+      ep.setThreadPriority(threadPriority);
+      setAttribute("threadPriority", "" + threadPriority);
+    }
+
+    public int getThreadPriority() {
+      return ep.getThreadPriority();
     }
 
     // -------------------- Tcp setup --------------------

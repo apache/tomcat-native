@@ -24,7 +24,10 @@ import org.apache.tomcat.util.res.StringManager;
 /**
  * A thread pool that is trying to copy the apache process management.
  *
+ * Should we remove this in favor of Doug Lea's thread package?
+ *
  * @author Gal Shachor
+ * @author Yoav Shapira <yoavs@apache.org>
  */
 public class ThreadPool  {
 
@@ -104,6 +107,11 @@ public class ThreadPool  {
      */
     protected int sequence = 1;
 
+    /**
+     * Thread priority.
+     */
+    protected int threadPriority = Thread.NORM_PRIORITY;
+
 
     /**
      * Constructor.
@@ -120,22 +128,11 @@ public class ThreadPool  {
 
     /** Create a ThreadPool instance.
      *
-     * @param jmx True if you want a pool with JMX support. A regular pool
-     *  will be returned if JMX or the modeler are not available.
-     *
+     * @param jmx UNUSED 
      * @return ThreadPool instance. If JMX support is requested, you need to
      *   call register() in order to set a name.
      */
     public static ThreadPool createThreadPool(boolean jmx) {
-//        if( jmx ) {
-//            try {
-//                Class.forName( "org.apache.commons.modeler.Registry");
-//                Class tpc=Class.forName( "org.apache.tomcat.util.threads.ThreadPoolMX");
-//                ThreadPool res=(ThreadPool)tpc.newInstance();
-//                return res;
-//            } catch( Exception ex ) {
-//            }
-//        }
         return new ThreadPool();
     }
 
@@ -157,6 +154,47 @@ public class ThreadPool  {
     public MonitorRunnable getMonitor() {
         return monitor;
     }
+  
+    /**
+     * Sets the thread priority for current
+     * and future threads in this pool.
+     *
+     * @param threadPriority The new priority
+     * @throws IllegalArgumentException If the specified
+     *  priority is less than Thread.MIN_PRIORITY or
+     *  more than Thread.MAX_PRIORITY 
+     */
+    public synchronized void setThreadPriority(int threadPriority) {
+      System.out.println(getClass().getName() +
+	": setPriority(" + threadPriority + "): here.");
+
+      if (threadPriority < Thread.MIN_PRIORITY) {
+        throw new IllegalArgumentException("new priority < MIN_PRIORITY");
+      } else if (threadPriority > Thread.MAX_PRIORITY) {
+        throw new IllegalArgumentException("new priority > MIN_PRIORITY");
+      }
+
+      // Set for future threads
+      this.threadPriority = threadPriority;
+
+      Enumeration currentThreads = getThreads();
+      Thread t = null;
+      while(currentThreads.hasMoreElements()) {
+        t = (Thread) currentThreads.nextElement();
+        t.setPriority(threadPriority);
+      } 
+    }
+
+    /**
+     * Returns the priority level of current and
+     * future threads in this pool.
+     *
+     * @return The priority
+     */
+    public int getThreadPriority() {
+      return threadPriority;
+    }   
+     
 
     public void setMaxThreads(int maxThreads) {
         this.maxThreads = maxThreads;

@@ -52,6 +52,7 @@ import org.apache.tomcat.util.threads.ThreadPoolRunnable;
  * @author James Todd [gonzo@eng.sun.com]
  * @author Costin@eng.sun.com
  * @author Gal Shachor [shachor@il.ibm.com]
+ * @author Yoav Shapira <yoavs@apache.org>
  */
 public class PoolTcpEndpoint { // implements Endpoint {
 
@@ -84,8 +85,6 @@ public class PoolTcpEndpoint { // implements Endpoint {
     static final int debug=0;
 
     ThreadPool tp;
-    // XXX Do we need it for backward compat ?
-    //protected Log _log=Log.getLog("tc/PoolTcpEndpoint", "PoolTcpEndpoint");
 
     static Log log=LogFactory.getLog(PoolTcpEndpoint.class );
 
@@ -94,7 +93,6 @@ public class PoolTcpEndpoint { // implements Endpoint {
     protected int socketTimeout=-1;
     
     public PoolTcpEndpoint() {
-	//	super("tc_log");	// initialize default logger
 	tp = new ThreadPool();
     }
 
@@ -137,6 +135,14 @@ public class PoolTcpEndpoint { // implements Endpoint {
 
     public int getMinSpareThreads() {
         return tp.getMinSpareThreads();
+    }
+
+    public void setThreadPriority(int threadPriority) {
+      tp.setThreadPriority(threadPriority);
+    }
+
+    public int getThreadPriority() {
+      return tp.getThreadPriority();
     }
 
     public int getPort() {
