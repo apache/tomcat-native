@@ -148,4 +148,12 @@ public class JkHandler {
     public String getProperty( String name ) {
         return properties.getProperty(name) ;
     }
+
+    /** Experimental, will be replaced. This allows handlers to be
+     *  notified when other handlers are added.
+     */
+    public void addHandlerCallback( JkHandler w ) {
+
+    }
+
 }

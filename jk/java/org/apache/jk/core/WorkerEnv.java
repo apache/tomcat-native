@@ -147,6 +147,12 @@ public class WorkerEnv {
         handlersTable[handlerCount]=w;
         w.setId( handlerCount );
         handlerCount++;
+
+        // Notify all other handlers of the new one
+        // XXX Could be a Coyote action ?
+        for( int i=0; i< handlerCount ; i++ ) {
+            handlersTable[i].addHandlerCallback( w );
+        }
     }
 
     public final JkHandler getHandler( String name ) {
