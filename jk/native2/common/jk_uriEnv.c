@@ -347,8 +347,6 @@ static int JK_METHOD jk2_uriEnv_beanInit(jk_env_t *env, jk_bean_t *bean)
 
 static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
 {
-/*    int err; */
-    char *asterisk;
     char *uri=uriEnv->pool->pstrdup( env, uriEnv->pool, uriEnv->uri);
 
     /* Set the worker */
@@ -415,10 +413,8 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         return JK_ERR;
     }
 
-    asterisk = strchr(uri, '*');
-
     /* set the mapping type */
-    if (!asterisk) {
+    if (!jk2_is_wildmatch(uri)) {
         /* Something like:  JkMount /login/j_security_check ajp13 */
         uriEnv->prefix      = uri;
         uriEnv->prefix_len  =strlen( uriEnv->prefix );
@@ -447,83 +443,30 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         return JK_OK;
     }
 
-    /*
-     * We have an * in the uri. Check the type.
-     *  - /context/ASTERISK.suffix
-     *  - /context/PREFIX/ASTERISK
-     *
-     *  Unsupported:
-     *  - context path:       /ASTERISK/prefix
-     *  - general suffix rule /context/prefix/ASTERISKsuffix
-     */
-    asterisk--;
-    if ('/' == asterisk[0]) {
-        if ( 0 == strncmp("/*/",uri,3) ) {
-            /* general context path */
-            asterisk[1] = '\0';
-            uriEnv->suffix  = asterisk + 2;
-            uriEnv->prefix = uri;
-            uriEnv->prefix_len  =strlen( uriEnv->prefix );
-            uriEnv->match_type = MATCH_TYPE_CONTEXT_PATH;
-
-            if( uriEnv->mbean->debug > 0 ) {
-                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "Into jk_uri_worker_map_t::uri_worker_map_open, "
-                              "general context path rule %s * %s -> %s was added\n",
-                              uri, asterisk + 2, uriEnv->workerName);
-            }
-        } else if ('.' == asterisk[2]) {
-            /* suffix rule: /context/ASTERISK.extension */
-            asterisk[1]      = '\0';
-            asterisk[2]      = '\0';
-            uriEnv->prefix      = uri;
-            uriEnv->prefix_len  =strlen( uriEnv->prefix );
-            uriEnv->suffix      = asterisk + 3;
-            uriEnv->suffix_len  = strlen(asterisk + 3);
-            uriEnv->match_type  = MATCH_TYPE_SUFFIX;
-            if( uriEnv->mbean->debug > 0 ) {
-                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "uriEnv.init() suffix mapping %s .%s=%s was added\n",
-                              uriEnv->prefix, uriEnv->suffix, uriEnv->workerName);
-            }
-        } else if ('\0' != asterisk[2]) {
-            /* general suffix rule /context/prefix/ASTERISKextraData */
-            asterisk[1] = '\0';
-            uriEnv->suffix  = asterisk + 2;
-            uriEnv->suffix_len  = strlen(asterisk + 2);
-            uriEnv->prefix  = uri;
-            uriEnv->prefix_len  =strlen( uriEnv->prefix );
-            uriEnv->match_type = MATCH_TYPE_GENERAL_SUFFIX;
-            if( uriEnv->mbean->debug > 0 ) {
-                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "uriEnv.init() general suffix mapping %s.%s=%s\n",
-                              uri, asterisk + 2, uriEnv->workerName);
-            }
-        } else {
-            /* context based /context/prefix/ASTERISK  */
-            asterisk[1]      = '\0';
-
-            uriEnv->suffix      = NULL;
-            uriEnv->prefix      = uri;
-            uriEnv->prefix_len  =strlen( uriEnv->prefix );
-            uriEnv->match_type  = MATCH_TYPE_PREFIX;
-            if( uriEnv->mbean->debug > 0 ) {
-                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "uriEnv.init() prefix mapping %s=%s\n",
-                              uriEnv->prefix, uriEnv->workerName);
-            }
-        }
-    } else {
-        /* Something like : JkMount /servlets/exampl* ajp13 */
-        /* Is this valid ??? */
+    if (uri[strlen(uri) - 1] == '*') {
+        /* context based /context/prefix/ASTERISK  */
+        uriEnv->suffix      = NULL;
         uriEnv->prefix      = uri;
         uriEnv->prefix_len  =strlen( uriEnv->prefix );
-        uriEnv->suffix      = NULL;
         uriEnv->match_type  = MATCH_TYPE_PREFIX;
         if( uriEnv->mbean->debug > 0 ) {
             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "uriEnv.init() prefix mapping2 %s=%s\n",
-                          uri, uriEnv->workerName);
+                "uriEnv.init() prefix mapping %s=%s\n",
+                uriEnv->prefix, uriEnv->workerName);
+        }
+    }
+    else {
+        /*
+         * We have an * or ? in the uri.
+         */
+        uriEnv->suffix      = uri;
+        uriEnv->prefix      = NULL;
+        uriEnv->suffix_len  = strlen(uri);
+        uriEnv->match_type  = MATCH_TYPE_SUFFIX;
+        if( uriEnv->mbean->debug > 0 ) {
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                "uriEnv.init() suffix mapping %s=%s\n",
+                uriEnv->prefix, uriEnv->workerName);
         }
     }
     if( uriEnv->mbean->debug > 0 )

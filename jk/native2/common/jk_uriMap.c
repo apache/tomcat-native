@@ -85,6 +85,12 @@ static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri);
 static int jk2_uriMap_checkUri(jk_env_t *env, jk_uriMap_t *uriMap, 
                                const char *uri);
 
+#ifdef WIN32                        
+static int jk2_uri_icase = 1;
+#else
+static int jk2_uri_icase = 0;
+#endif
+
 /*
  * We are now in a security nightmare, it maybe that somebody sent 
  * us a uri that looks like /top-secret.jsp. and the web server will 
@@ -264,24 +270,8 @@ static jk_uriEnv_t *jk2_uriMap_suffixMap(jk_env_t *env, jk_uriMap_t *uriMap,
     for (i = 0; i < sz; i++) {
         jk_uriEnv_t *uwr = mapTable->valueAt(env, mapTable, i);
 
-        /* for WinXX, fix the JsP != jsp problems */
-#ifdef WIN32                        
-        if (strcasecmp(suffix, uwr->suffix) == 0)  {
-#else
-            if (strcmp(suffix, uwr->suffix) == 0) {
-#endif
-                if (uriMap->mbean->debug > 0) {
-                    env->l->jkLog(env, env->l,JK_LOG_DEBUG,
-                                  "uriMap.mapUri() suffix match %s\n",
-                                  uwr->suffix);
-                }
-                return uwr;
-            /* indentation trick */
-#ifdef WIN32                        
-            }
-#else
-        }
-#endif
+        if (!jk2_strcmp_match(suffix, uwr->suffix, jk2_uri_icase))
+            return uwr;
     }
     return NULL;
 }
@@ -911,7 +901,6 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     int longest_match = 0;
     char *clean_uri = NULL;
     char *url_rewrite = NULL;
-    const char *suffix;
     int uriLen;
     jk_uriEnv_t *hostEnv;
     jk_uriEnv_t *ctxEnv;
@@ -1044,22 +1033,17 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
         return match;
     }
 
-    /* And extension match at the end */
-    /* Only once, no need to compute it for each extension match */
-    suffix = jk2_findExtension(env, uri);
-    if (suffix != NULL) {
-        match = jk2_uriMap_suffixMap(env, uriMap, ctxEnv->suffixMatch,
-                                     suffix, strlen(suffix));
-        if (match != NULL) {
-            /* restore */
-            if (url_rewrite)
-                *url_rewrite = origChar;
-            if (uriMap->mbean->debug > 0)
-                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "uriMap.mapUri() extension match %s %s\n",
-                              uri, match->workerName); 
-            return match;
-        }
+    /* And do a wild char match at the end */
+    match = jk2_uriMap_suffixMap(env, uriMap, ctxEnv->suffixMatch, uri, 0);
+    if (match != NULL) {
+        /* restore */
+        if (url_rewrite)
+            *url_rewrite = origChar;
+        if (uriMap->mbean->debug > 0)
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "uriMap.mapUri() extension match %s %s\n",
+                          uri, match->workerName); 
+        return match;
     }
 
     /* restore */
