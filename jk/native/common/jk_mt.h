@@ -28,6 +28,8 @@
 
 #if defined(WIN32)
 #define jk_gettid()    ((int)GetCurrentThreadId())
+#elif defined(NETWARE) && !defined(__NOVELL_LIBC__)
+#define getpid()       ((int)GetThreadGroupID())
 #endif
 
 
@@ -35,7 +37,7 @@
  * All WIN32 code is MT, UNIX code that uses pthreads is marked by the POSIX 
  * _REENTRANT define.
  */
-#if defined (WIN32) || defined(_REENTRANT) || defined(NETWARE)
+#if defined (WIN32) || defined(_REENTRANT) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 
     /*
      * Marks execution under MT compilation
