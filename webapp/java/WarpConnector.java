@@ -449,6 +449,14 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     }
 
     /**
+     * Get the lifecycle listeners associated with this lifecycle. If this 
+     * Lifecycle has no listeners registered, a zero-length array is returned.
+     */
+    public LifecycleListener[] findLifecycleListeners() {
+        return lifecycle.findLifecycleListeners();
+    }
+
+    /**
      * Remove a <code>LifecycleEvent</code> listener from this
      * <code>Connector</code>.
      *
