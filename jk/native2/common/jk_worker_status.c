@@ -182,8 +182,11 @@ static void jk2_worker_status_displayConfigProperties(jk_env_t *env, jk_ws_servi
         if( propCount==0 ) {
             s->jkprintf(env, s, "<tr><th>%s</th><td></td></tr>", mbean->name );
         } else {
-            s->jkprintf(env, s, "<tr><th rowspan='%d'>%s</th></tr>", propCount, mbean->name );
-            for( j=0; j < propCount ; j++ ) {
+            s->jkprintf(env, s, "<tr><th rowspan='%d'>%s</th><td>%s</td><td>%s</td></tr>",
+                        propCount, mbean->name,
+                        mbean->settings->nameAt( env, mbean->settings, 0),
+                        mbean->settings->valueAt( env, mbean->settings, 0));
+            for( j=1; j < propCount ; j++ ) {
                 char *pname=mbean->settings->nameAt( env, mbean->settings, j);
                 /* Don't save redundant information */
                 if( strcmp( pname, "name" ) != 0 ) {
@@ -202,6 +205,8 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
 {
     char *uri=s->req_uri;
     jk_map_t *queryMap;
+    int status;
+    int didUpdate;
 
     if( w->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO, "status.service() %s %s\n",
@@ -219,6 +224,18 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     if( s->query_string == NULL ) {
         s->query_string="get=*";
     }
+
+    w->workerEnv->config->update( env, w->workerEnv->config, &didUpdate );
+    if( didUpdate ) {
+        jk_shm_t *shm=w->workerEnv->shm;
+        
+        /* Update the scoreboard's version - all other
+           jk2 processes will see this and update
+        */
+        if( shm!=NULL && shm->head!=NULL )
+            shm->head->lbVer++;
+    }
+    
     
     /* Body */
     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "ajp13" );
@@ -245,8 +262,6 @@ int JK_METHOD jk2_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
                       "status_worker.factory() OutOfMemoryException\n");
         return JK_ERR;
     }
-
-    _this->pool           = pool;
 
     _this->service        = jk2_worker_status_service;
 
