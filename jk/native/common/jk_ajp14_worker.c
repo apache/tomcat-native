@@ -39,7 +39,10 @@ static int handle_discovery(ajp_endpoint_t  *ae,
 {
     int                 cmd;
     int                 i,j;
+#if 0
+    /* Not used for now */
     jk_login_service_t  *jl = ae->worker->login;
+#endif
     jk_context_item_t   *ci;
     jk_context_t        *c;  
     char                *buf;
