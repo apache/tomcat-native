@@ -1,10 +1,10 @@
 Index: config.m4
 ===================================================================
-RCS file: /home/cvs/apache/httpd-2.0/modules/proxy/config.m4,v
+RCS file: /home/cvspublic/httpd-2.0/modules/proxy/config.m4,v
 retrieving revision 1.17
 diff -u -r1.17 config.m4
 --- config.m4	25 Apr 2002 03:16:44 -0000	1.17
-+++ config.m4	29 Jul 2004 15:05:15 -0000
++++ config.m4	1 Aug 2004 14:07:06 -0000
 @@ -16,6 +16,7 @@
  proxy_connect_objs="proxy_connect.lo"
  proxy_ftp_objs="proxy_ftp.lo"
@@ -17,6 +17,7 @@ diff -u -r1.17 config.m4
  APACHE_MODULE(proxy_connect, Apache proxy CONNECT module, $proxy_connect_objs, , $proxy_mods_enable)
  APACHE_MODULE(proxy_ftp, Apache proxy FTP module, $proxy_ftp_objs, , $proxy_mods_enable)
  APACHE_MODULE(proxy_http, Apache proxy HTTP module, $proxy_http_objs, , $proxy_mods_enable)
+-
++APR_ADDTO(INCLUDES, [-I./ajp])
 +APACHE_MODULE(proxy_ajp, Apache proxy AJP module, $proxy_ajp_objs, , $proxy_mods_enable)
- 
  APACHE_MODPATH_FINISH
