@@ -472,9 +472,10 @@ static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
                        jk_workerEnv_t *workerEnv, server_rec *s )
 {
 
+    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &workerEnv->maxDaemons);
+
     workerEnv->init(env, workerEnv );
     workerEnv->server_name   = (char *)ap_get_server_version();
-    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &workerEnv->maxDaemons);
 
     /* Should be done in post config instead (cf DAV2) */
     /* ap_add_version_component(pconf, JK_EXPOSED_VERSION); */
@@ -609,33 +610,16 @@ static void jk2_child_init(apr_pool_t *pconf,
             "jk2_init() Found child %d in scoreboard slot %d\n",
             proc.pid, workerEnv->childId);
     }
-    /* If the child slot was found in the scoreboard, increment the
-     * generation status. This will prevent initializing jk2 if something
-     * goes wrong.
-     */
-    if (workerEnv->childId >= 0) {
-        workerEnv->childGeneration = ap_scoreboard_image->parent[workerEnv->childId].generation;
-        ++ap_scoreboard_image->parent[workerEnv->childId].generation;
-    }
 
     if(!workerEnv->was_initialized) {
         workerEnv->was_initialized = JK_TRUE;        
         
         jk2_init( env, pconf, workerEnv, s );
 
-        if (workerEnv->childId <= 0) 
+        if (workerEnv->childId > 0) 
             env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk2 child %d initialized\n",
                           workerEnv->childId);
-    }
-    if (workerEnv->childGeneration)
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "mod_jk2 child workerEnv in error state %d\n",
-                      workerEnv->childGeneration);
-
-    /* Restore the process generation */
-    if (workerEnv->childId >= 0) {
-        ap_scoreboard_image->parent[workerEnv->childId].generation = workerEnv->childGeneration;
-    }
-    
+    }    
 }
 
 
