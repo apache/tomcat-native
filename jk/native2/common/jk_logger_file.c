@@ -68,6 +68,7 @@
 #include <stdio.h>
 
 #include "jk_registry.h"
+#include "apr_strings.h"
 
 #define LOG_FORMAT		    ("log_format")
 
@@ -90,11 +91,15 @@ static const char * jk2_logger_file_logFmt = JK_TIME_FORMAT;
 static void jk2_logger_file_setTimeStr(jk_env_t *env,char * str, int len)
 {
 	time_t		t = time(NULL);
-    	struct tm 	*tms;
+    struct tm 	*tms;
 
-    	tms = gmtime(&t);
-        if( tms==NULL ) return;
-	strftime(str, len, jk2_logger_file_logFmt, tms);
+    tms = gmtime(&t);
+
+    if( tms==NULL ) {
+        return;
+    }
+
+    strftime(str, len, jk2_logger_file_logFmt, tms);
 }
 
 static int JK_METHOD jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,                                 
@@ -243,7 +248,7 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
         
         /* XXX or apr_ctime ? */
         apr_rfc822_date( rfctime, time );
-        fmt1=apr_pvsprintf( aprPool, "[%s] [%s:%d] %s", rfctime, file, line, fmt );
+        fmt1=apr_psprintf( aprPool, "[%s] [%s:%d] %s", rfctime, file, line, fmt );
         buf=apr_pvsprintf( aprPool, fmt, args );
 
         l->log(env, l, level, buf);
@@ -289,8 +294,8 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
         }
 
 #ifdef WIN32
-	jk2_logger_file_setTimeStr(env,buf, HUGE_BUFFER_SIZE);
-	used = strlen(buf);
+	    jk2_logger_file_setTimeStr(env,buf, HUGE_BUFFER_SIZE);
+	    used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
             used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
 #elif defined(NETWARE) /* until we get a snprintf function */
@@ -298,18 +303,18 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
         if (NULL == buf)
            return -1;
 
-	jk2_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
-	used = strlen(buf);
+	    jk2_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
+	    used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
             used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
 #else 
-	jk2_logger_file_setTimeStr(env, buf, HUGE_BUFFER_SIZE);
-	used = strlen(buf);
+	    jk2_logger_file_setTimeStr(env, buf, HUGE_BUFFER_SIZE);
+	    used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
             used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
 #endif
         if(used < 0) {
-            return 0; /* [V] not sure what to return... */
+            return -1; /* [V] not sure what to return... */
         }
     
 #ifdef WIN32
@@ -320,7 +325,7 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
         rc = vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
 #endif
 
-        l->log(env, l, level, buf);
+        l->log(env, l , level, buf);
 #ifdef NETWARE
         free(buf);
 #endif
