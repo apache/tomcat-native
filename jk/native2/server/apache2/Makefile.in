@@ -89,10 +89,10 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache2/%.c
 
 all: prepare ${BUILD_DIR}/mod_jk2.so ${BUILD_DIR}/jkjni.so
 
-${BUILD_DIR}/jkjni.so: ${JNI_LO_FILES}
+${BUILD_DIR}/jkjni.so: ${JNI_LO_FILES} ${COMMON_LO_FILES}
 	$(MOD_LINK) -o $@ $^
 
-${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${A2_LO_FILES}
+${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${JNI_LO_FILES} ${A2_LO_FILES}
 	${MOD_LINK} -o $@ $^ 
 
 ${COMMON_C_FILES} ${A2_C_FILES}: ${H_FILES}

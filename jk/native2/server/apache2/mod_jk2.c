@@ -275,6 +275,7 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
 #ifdef NO_APACHE_LOGGER
     jkb=env->createBean2( env, env->globalPool, "logger.file", "");
     env->alias( env, "logger.file:", "logger");
+    env->alias( env, "logger.file:", "logger:");
     l = jkb->object;
 #else
     env->registerFactory( env, "logger.apache2",  jk2_logger_apache2_factory );

@@ -16,6 +16,8 @@ JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_thre
 OEXT=.c
 include ../../common/list.mk
 APACHE2_OBJECTS=jk_logger_apache2.c jk_map_aprtable.c jk_service_apache2.c
+## Must include the jni stuff 
+
 all: mod_jk2.la
 
 mod_jk2.la: 

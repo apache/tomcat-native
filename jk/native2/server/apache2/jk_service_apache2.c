@@ -75,6 +75,7 @@
 #include "http_protocol.h"
 #include "http_main.h"
 #include "http_log.h"
+#include "scoreboard.h"
 
 #include "util_script.h"
 /*
