@@ -139,6 +139,13 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
 	headers  = coyoteRequest.getMimeHeaders();
 	scookies.setHeaders(headers);
 	params.setHeaders(headers);
+        params.setQuery( queryMB );
+        
+        remoteAddrMB = coyoteRequest.remoteAddr();
+	remoteHostMB = coyoteRequest.remoteHost();
+	serverNameMB = coyoteRequest.serverName();
+
+        
     }
     
     /** Read a single character from the request body.
@@ -249,5 +256,54 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
     public int getServerPort(){
         return coyoteRequest.getServerPort();
     }
+    
+    public void setServerPort(int i ) {
+	coyoteRequest.setServerPort( i );
+    }
+
+
+    public  void setRemoteUser( String s ) {
+	super.setRemoteUser(s);
+	coyoteRequest.getRemoteUser().setString(s);
+    }
+
+    public String getRemoteUser() {
+	String s=coyoteRequest.getRemoteUser().toString();
+	if( s == null )
+	    s=super.getRemoteUser();
+	return s;
+    }
+
+    public String getAuthType() {
+	return coyoteRequest.getAuthType().toString();
+    }
+    
+    public void setAuthType(String s ) {
+	coyoteRequest.getAuthType().setString(s);
+    }
+
+    public String getJvmRoute() {
+	return coyoteRequest.instanceId().toString();
+    }
+    
+    public void setJvmRoute(String s ) {
+	coyoteRequest.instanceId().setString(s);
+    }
+
+    public boolean isSecure() {
+	return "https".equalsIgnoreCase( coyoteRequest.scheme().toString());
+    }
+    
+    public void setAttribute(String name, Object value) {
+	coyoteRequest.setAttribute( name, value );
+    }
+
+    public Object getAttribute(String name) {
+        if (name == null) {
+            return null;
+        }
+        return coyoteRequest.getAttribute( name );
+    }
+
 
 }
