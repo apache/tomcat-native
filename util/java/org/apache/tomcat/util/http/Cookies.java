@@ -225,7 +225,7 @@ public final class Cookies { // extends MultiMap {
 
 	    cc=bytes[pos];
 	    pos++;
-	    if( cc==';' || cc==',' ) {
+	    if( cc==';' || cc==',' || pos>=end ) {
 		if( ! isSpecial && startName!= endName ) {
 		    sc=addCookie();
 		    sc.getName().setBytes( bytes, startName,
