@@ -106,8 +106,8 @@ public final class URL implements Serializable {
             }
 
             // Parse out the new protocol
-            for (i = start; !aRef && (i < limit) &&
-                     ((c = spec.charAt(i)) != '/'); i++) {
+            for (i = start; !aRef && (i < limit) ; i++) { 
+                c = spec.charAt(i);
                 if (c == ':') {
                     String s = spec.substring(start, i).toLowerCase();
                     // Assume all protocols are valid
@@ -116,7 +116,7 @@ public final class URL implements Serializable {
                     break;
                 } else if( c == '#' ) {
                     aRef = true;
-                } else if( c == '?' ) {
+                } else if( !isSchemeChar((char)c) ) {
                     break;
                 }
             }
@@ -719,5 +719,13 @@ public final class URL implements Serializable {
 
     }
 
+    /**
+     * Determine if the character is allowed in the scheme of a URI.
+     * See RFC 2396, Section 3.1
+     */
+    public static boolean isSchemeChar(char c) {
+        return Character.isLetterOrDigit(c) ||
+            c == '+' || c == '-' || c == '.';
+    }
 
 }
