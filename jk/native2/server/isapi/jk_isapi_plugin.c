@@ -463,7 +463,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
            be shared with other server adapters */
         rPool= worker->rPoolCache->get( env, worker->rPoolCache );
         if( rPool == NULL ) {
-            rPool=worker->pool->create( env, worker->pool, HUGE_POOL_SIZE );
+            rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "HttpExtensionProc: new rpool\n");
         }
