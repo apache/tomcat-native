@@ -90,9 +90,13 @@ public final class ActionCode {
 
     public static final ActionCode ACTION_STOP = new ActionCode();
 
-    /** Compute request attribute
+    /** Callback for lazy evaluation - extract the remote host address
      */
-    public static final ActionCode ACTION_REQ_ATTRIBUTE = new ActionCode();
+    public static final ActionCode ACTION_REQ_HOST_ATTRIBUTE = new ActionCode();
+
+    /** Callback for lazy evaluation - extract the SSL-related attributes
+     */
+    public static final ActionCode ACTION_REQ_SSL_ATTRIBUTE = new ActionCode();
 
 
     // ----------------------------------------------------------- Constructors
