@@ -61,6 +61,7 @@ package org.apache.tomcat.util.net.puretls;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 import COM.claymoresystems.ptls.*;
 import COM.claymoresystems.cert.*;
@@ -173,14 +174,72 @@ public class PureTLSSocketFactory
 	    
 	    SSLPolicyInt policy=new SSLPolicyInt();
 	    policy.requireClientAuth(clientAuth);
-	    policy.handshakeOnConnect(false);
-	    policy.waitOnClose(false);
-	    tmpContext.setPolicy(policy);
+            policy.handshakeOnConnect(false);
+            policy.waitOnClose(false);
+            short [] enabledCiphers = getEnabledCiphers(policy.getCipherSuites());
+            if( enabledCiphers != null ) {
+                policy.setCipherSuites(enabledCiphers);
+            }
+            tmpContext.setPolicy(policy);
 	    context=tmpContext;
 	} catch (Exception e){
 	    logger.info("Error initializing SocketFactory",e);
 	    throw new IOException(e.getMessage());
 	}
+    }
+
+    /*
+     * Determines the SSL cipher suites to be enabled.
+     *
+     * @return Array of SSL cipher suites to be enabled, or null if the
+     * cipherSuites property was not specified (meaning that all supported
+     * cipher suites are to be enabled)
+     */
+    private short [] getEnabledCiphers(short [] supportedCiphers) {
+
+        short [] enabledCiphers = null;
+
+        String attrValue = (String)attributes.get("ciphers");
+        if (attrValue != null) {
+            Vector vec = null;
+            int fromIndex = 0;
+            int index = attrValue.indexOf(',', fromIndex);
+            while (index != -1) {
+                String cipher = attrValue.substring(fromIndex, index).trim();
+                int cipherValue = SSLPolicyInt.getCipherSuiteNumber(cipher);                
+                /*
+                 * Check to see if the requested cipher is among the supported
+                 * ciphers, i.e., may be enabled
+                 */
+                if( cipherValue >= 0) {
+                    for (int i=0; supportedCiphers != null
+                             && i<supportedCiphers.length; i++) {
+
+                        if (cipherValue == supportedCiphers[i]) {
+                            if (vec == null) {
+                                vec = new Vector();
+                            }
+                            vec.addElement(new Integer(cipherValue));
+                            break;
+                        }
+                    }
+                }
+                fromIndex = index+1;
+                index = attrValue.indexOf(',', fromIndex);
+            }
+
+            if (vec != null) {
+                int nCipher = vec.size();
+                enabledCiphers = new short[nCipher];
+                for(int i=0; i < nCipher; i++) {
+                    Integer value = (Integer)vec.elementAt(i);
+                    enabledCiphers[i] = value.shortValue();
+                }
+            }
+        }
+
+        return enabledCiphers;
+
     }
 
     public Socket acceptSocket(ServerSocket socket)
