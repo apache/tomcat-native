@@ -242,6 +242,12 @@ public class CoyoteRequest
 
 
     /**
+     * The current dispatcher type.
+     */
+    protected Object dispatcherType = null;
+
+
+    /**
      * The associated input buffer.
      */
     protected InputBuffer inputBuffer = new InputBuffer();
@@ -316,6 +322,12 @@ public class CoyoteRequest
 
 
     /**
+     * The current request dispatcher path.
+     */
+    protected Object requestDispatcherPath = null;
+
+
+    /**
      * Was the requested session ID received in a cookie?
      */
     protected boolean requestedSessionCookie = false;
@@ -374,6 +386,9 @@ public class CoyoteRequest
 
         context = null;
         wrapper = null;
+
+        dispatcherType = null;
+        requestDispatcherPath = null;
 
         authType = null;
         inputBuffer.recycle();
@@ -870,6 +885,13 @@ public class CoyoteRequest
      * @param name Name of the request attribute to return
      */
     public Object getAttribute(String name) {
+
+        if (name.equals(Globals.DISPATCHER_TYPE_ATTR)) {
+            return dispatcherType;
+        } else if (name.equals(Globals.DISPATCHER_REQUEST_PATH_ATTR)) {
+            return requestDispatcherPath.toString();
+        }
+
         Object attr=attributes.get(name);
 
         if(attr!=null)
@@ -1281,6 +1303,14 @@ public class CoyoteRequest
         // Null value is the same as removeAttribute()
         if (value == null) {
             removeAttribute(name);
+            return;
+        }
+
+        if (name.equals(Globals.DISPATCHER_TYPE_ATTR)) {
+            dispatcherType = value;
+            return;
+        } else if (name.equals(Globals.DISPATCHER_REQUEST_PATH_ATTR)) {
+            requestDispatcherPath = value;
             return;
         }
 
