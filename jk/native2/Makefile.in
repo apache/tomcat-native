@@ -5,13 +5,50 @@ build: @APR_BUILD@ jk2-build
 clean: @APR_CLEAN@ jk2-clean 
 
 jk2-build:
-	( cd @WEBSERVER@ && make )
+	list='@WEBSERVERS@'; \
+	for i in $$list; do \
+		echo "Making $$target in $$i"; \
+		if test "$$i" != "."; then \
+		(cd $$i && $(MAKE)) || exit 1; \
+	fi; \
+	done;
+
+jk2-build-apxs:
+	list='@WEBSERVERS@'; \
+	for i in $$list; do \
+		echo "Making $$target in $$i"; \
+		if test "$$i" != "."; then \
+		(cd $$i && $(MAKE) -f Makefile.apxs) || exit 1; \
+	fi; \
+	done;
 
 jk2-clean:
-	( cd @WEBSERVER@ && make clean )
+	list='@WEBSERVERS@'; \
+	for i in $$list; do \
+		echo "Making $$target in $$i"; \
+		if test "$$i" != "."; then \
+		(cd $$i && $(MAKE) clean) || exit 1; \
+	fi; \
+	done;
+
+jk2-clean-apxs:
+	list='@WEBSERVERS@'; \
+	for i in $$list; do \
+		echo "Making $$target in $$i"; \
+		if test "$$i" != "."; then \
+		(cd $$i && $(MAKE) -f Makefile.apxs clean) || exit 1; \
+	fi; \
+	done;
 
 apr-build:
 	( cd @APR_DIR@ && ./configure && make )
 
 apr-clean:
 	( cd @APR_DIR@ && make clean )
+
+apidocs: common/*.h
+	mkdir -p ./docs/api
+	../../scandoc/scandoc.pl -i ../../scandoc/template.pl -p \
+	./docs/api/ -dproject="mod_jk 2 Library" common/*.h common/*.c include/*.h
+
+
