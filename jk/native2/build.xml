@@ -126,13 +126,20 @@
     <property name="build.compiler.ld" location="${mssdk.home}/bin/link" />
     <echo message="MSDEV compiler: ${mssdk.home}" />
     <uptodate property="mc.uptodate"  
-              targetfile="common/jk_logger_win32_message.h"
-              srcfile="common/jk_logger_win32_message.mc"/>
+              targetfile="${build.dir}/jk_logger_win32_message.res">
+      <srcfiles dir="common" includes="*.mc"/>
+    </uptodate>
   </target>
 
   <target name="init.win32.mc" unless="mc.uptodate" if="win32">
     <exec executable="${mssdk.home}/bin/mc" dir="common" >
       <arg value="jk_logger_win32_message.mc" />
+    </exec>
+    <exec executable="${mssdk.home}/bin/rc" dir="common" >
+      <arg value="-r" />
+      <arg value="-fo"/>
+      <arg value="${build.dir}/jk_logger_win32_message.res"/>
+      <arg value="jk_logger_win32_message.rc" />
     </exec>
   </target>
 
@@ -304,6 +311,7 @@
 	<fileset dir="${native.dir}/common" includes="*.h" />
 	<fileset dir="${native.dir}/include" includes="*.h" />
       </depends>
+      <resource fileName="../jk_logger_win32_message.res" if="win32" />
       <import fileName="libhttpd.lib" if="win32" />
       <import fileName="libapr.lib" if="win32" />
       <import fileName="libaprutil.lib" if="win32" />
@@ -358,7 +366,8 @@
 	<fileset dir="${native.dir}/common" includes="*.h" />
 	<fileset dir="${native.dir}/include" includes="*.h" />
       </depends>
-      
+      <resource fileName="../jk_logger_win32_message.res" if="win32"/>
+
       <!-- Platform-specific tags -->
       <linkOpt value="-lcrypt" if="linux" />
       <linkOpt value="-L${apr.lib}" if="linux" />
@@ -458,6 +467,8 @@
 	<fileset dir="${native.dir}/common" includes="*.h" />
       </depends>
 
+      <resource fileName="jk_logger_win32_message.res" if="win32"/>
+
       <def name="EAPI" info="Building with EAPI support " />
       <def name="_REENTRANT" />
       <def name="CHUNK_SIZE" value="4096" />
@@ -536,7 +547,8 @@
       <depends>
         <fileset dir="${native.dir}/common" includes="*.h" />
       </depends>
-        
+      <resource fileName="../jk_logger_win32_message.res"/>
+
       <!-- Platform-specific tags -->
       <def name="WIN32" />
       <def name="_WINDOWS"  />
@@ -548,7 +560,6 @@
       <def name="HAS_APR" />
       <def name="HAVE_JNI" 
 	   info="Jni worker" />
-      <def name="MOD_JK2_EXPORTS" if="win32" />
 
       <import fileName="advapi32.lib" />
       <import fileName="wsock32.lib" />
@@ -580,8 +591,13 @@
 	<include name="**/*.map"/>
 	<include name="**/*.sym"/>
 	<include name="**/*.NCV"/>
+	<include name="**/*.exp"/>
+	<include name="**/*.pdb"/>
+	<include name="**/*.opt"/>
+	<include name="**/*.def"/>
 	<include name="**/*.obj"/>
 	<include name="**/*.dll"/>
+	<include name="**/*.res"/>
       </fileset>
     </delete>
   </target>
