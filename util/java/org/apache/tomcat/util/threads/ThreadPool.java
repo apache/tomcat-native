@@ -63,6 +63,7 @@ package org.apache.tomcat.util.threads;
 import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
 
 /**
  * A thread pool that is trying to copy the apache process management.
@@ -70,7 +71,13 @@ import org.apache.commons.logging.LogFactory;
  * @author Gal Shachor
  */
 public class ThreadPool  {
-    static Log log = LogFactory.getLog(ThreadPool.class);
+
+    private static Log log = LogFactory.getLog(ThreadPool.class);
+
+    private static StringManager sm =
+        StringManager.getManager("org.apache.tomcat.util.threads.res");
+
+    private static boolean logfull=true;
 
     /*
      * Default values ...
@@ -140,17 +147,16 @@ public class ThreadPool  {
      */
     protected int sequence = 1;
 
+
     /**
-     * Helper object for logging
-     **/
-    //Log loghelper = Log.getLog("tc/ThreadPool", "ThreadPool");
-    
+     * Constructor.
+     */    
     public ThreadPool() {
-        maxThreads      = MAX_THREADS;
+        maxThreads = MAX_THREADS;
         maxSpareThreads = MAX_SPARE_THREADS;
         minSpareThreads = MIN_SPARE_THREADS;
-        currentThreadCount  = 0;
-        currentThreadsBusy  = 0;
+        currentThreadCount = 0;
+        currentThreadsBusy = 0;
         stopThePool = false;
     }
 
@@ -361,13 +367,12 @@ public class ThreadPool  {
         return c;
     }
 
-    static boolean logfull=true;
-    public static void logFull(Log loghelper, int currentThreadCount, int maxThreads) {
+    private static void logFull(Log loghelper, int currentThreadCount,
+                                int maxThreads) {
 	if( logfull ) {
-            log.error("All threads are busy, waiting. Please " +
-                    "increase maxThreads or check the servlet" +
-                    " status" + currentThreadCount + " " +
-                    maxThreads  );
+            log.error(sm.getString("threads.busy",
+                                   new Integer(currentThreadCount),
+                                   new Integer(maxThreads)));
             logfull=false;
         } else if( log.isDebugEnabled() ) {
             log.debug("All threads are busy " + currentThreadCount + " " +
