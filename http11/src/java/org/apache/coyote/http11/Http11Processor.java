@@ -59,7 +59,6 @@
 
 package org.apache.coyote.http11;
 
-import java.io.EOFException;
 import java.io.InterruptedIOException;
 import java.io.InputStream;
 import java.io.IOException;
@@ -74,12 +73,12 @@ import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.buf.Ascii;
 import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.net.SSLSupport;
+import org.apache.tomcat.util.threads.ThreadPool;
+import org.apache.tomcat.util.threads.ThreadWithAttributes;
 
 import org.apache.coyote.ActionHook;
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.Adapter;
-import org.apache.coyote.InputBuffer;
-import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Processor;
 import org.apache.coyote.Request;
 import org.apache.coyote.Response;
@@ -279,6 +278,7 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected char[] hostNameC = new char[0];
 
+    protected ThreadPool threadPool;
 
     // ------------------------------------------------------------- Properties
 
@@ -321,6 +321,9 @@ public class Http11Processor implements Processor, ActionHook {
         }
     }
 
+    public void setThreadPool(ThreadPool threadPool) {
+        this.threadPool = threadPool;
+    }
 
     /**
      * Add user-agent for which gzip compression didn't works
@@ -532,17 +535,28 @@ public class Http11Processor implements Processor, ActionHook {
         return timeout;
     }
 
+    /** Get the request associated with this processor.
+     *
+     * @return
+     */
+    public Request getRequest() {
+        return request;
+    }
+
     /**
      * Process pipelined HTTP requests using the specified input and output
      * streams.
      * 
-     * @param inputStream stream from which the HTTP requests will be read
-     * @param outputStream stream which will be used to output the HTTP 
+     * @param input stream from which the HTTP requests will be read
+     * @param output stream which will be used to output the HTTP
      * responses
      * @throws IOException error during an I/O operation
      */
     public void process(InputStream input, OutputStream output)
         throws IOException {
+        ThreadWithAttributes thrA=
+                (ThreadWithAttributes)Thread.currentThread();
+        thrA.setCurrentStage(threadPool, "parsing http request");
 
         // Set the remote address
         remoteAddr = null;
@@ -567,6 +581,7 @@ public class Http11Processor implements Processor, ActionHook {
                     socket.setSoTimeout(soTimeout);
                 }
                 inputBuffer.parseRequestLine();
+                thrA.setParam( threadPool, request.requestURI().toString());
                 keptAlive = true;
                 if (!disableUploadTimeout) {
                     socket.setSoTimeout(timeout);
@@ -583,6 +598,7 @@ public class Http11Processor implements Processor, ActionHook {
             }
 
             // Setting up filters, and parse some request headers
+            thrA.setCurrentStage(threadPool, "prepareRequest");
             prepareRequest();
 
             if (maxKeepAliveRequests > 0 && --keepAliveLeft == 0)
@@ -591,6 +607,7 @@ public class Http11Processor implements Processor, ActionHook {
             // Process the request in the adapter
             if (!error) {
                 try {
+                    thrA.setCurrentStage(threadPool, "service");
                     adapter.service(request, response);
                 } catch (InterruptedIOException e) {
                     error = true;
@@ -604,6 +621,7 @@ public class Http11Processor implements Processor, ActionHook {
 
             // Finish the handling of the request
             try {
+                thrA.setCurrentStage(threadPool, "endRequestIB");
                 inputBuffer.endRequest();
             } catch (IOException e) {
                 error = true;
@@ -614,6 +632,7 @@ public class Http11Processor implements Processor, ActionHook {
                 error = true;
             }
             try {
+                thrA.setCurrentStage(threadPool, "endRequestOB");
                 outputBuffer.endRequest();
             } catch (IOException e) {
                 error = true;
@@ -622,6 +641,10 @@ public class Http11Processor implements Processor, ActionHook {
                 error = true;
             }
 
+            thrA.setCurrentStage(threadPool, "ended");
+            // Don't reset the param - we'll see it as ended. Next request
+            // will reset it
+            // thrA.setParam(null);
             // Next request
             inputBuffer.nextRequest();
             outputBuffer.nextRequest();
@@ -634,7 +657,6 @@ public class Http11Processor implements Processor, ActionHook {
 
         // Recycle ssl info
         sslSupport = null;
-
     }
 
 
@@ -650,7 +672,6 @@ public class Http11Processor implements Processor, ActionHook {
     public void action(ActionCode actionCode, Object param) {
 
         if (actionCode == ActionCode.ACTION_COMMIT) {
-
             // Commit current response
 
             if (response.isCommitted())
@@ -688,7 +709,6 @@ public class Http11Processor implements Processor, ActionHook {
             }
 
         } else if (actionCode == ActionCode.ACTION_CLOSE) {
-
             // Close
 
             // End the processing of the current request, and stop any further

@@ -66,13 +66,13 @@ import org.apache.coyote.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.text.*;
 import org.apache.tomcat.util.res.StringManager;
-import org.apache.tomcat.util.IntrospectionUtils;
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
-import org.apache.tomcat.util.log.*;
+import org.apache.tomcat.util.threads.ThreadPool;
 import org.apache.tomcat.util.net.*;
+import org.apache.commons.modeler.Registry;
+import javax.management.ObjectName;
+import javax.management.MBeanServer;
+import javax.management.MBeanRegistration;
 
 
 /**
@@ -83,8 +83,11 @@ import org.apache.tomcat.util.net.*;
  * @author Remy Maucherat
  * @author Costin Manolache
  */
-public class Http11Protocol implements ProtocolHandler
+public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 {
+
+    public Http11Protocol() {
+    }
 
     /**
      * The string manager for this package.
@@ -98,8 +101,8 @@ public class Http11Protocol implements ProtocolHandler
     /** Pass config info
      */
     public void setAttribute( String name, Object value ) {
-
-        log.debug(sm.getString("http11protocol.setattribute", name, value));
+        if( log.isTraceEnabled())
+            log.trace(sm.getString("http11protocol.setattribute", name, value));
         attributes.put(name, value);
 /*
         if ("maxKeepAliveRequests".equals(name)) {
@@ -132,7 +135,7 @@ public class Http11Protocol implements ProtocolHandler
 	try {
             checkSocketFactory();
         } catch( Exception ex ) {
-            log.error(sm.getString("http11protocol.socketfactory.initerror"), 
+            log.error(sm.getString("http11protocol.socketfactory.initerror"),
                       ex);
             throw ex;
         }
@@ -146,6 +149,7 @@ public class Http11Protocol implements ProtocolHandler
             }
         }
 
+        // XXX get domain from registration
         try {
             ep.initEndpoint();
         } catch (Exception ex) {
@@ -157,6 +161,15 @@ public class Http11Protocol implements ProtocolHandler
     }
 
     public void start() throws Exception {
+        if( this.domain != null ) {
+            try {
+                Registry.getRegistry().registerComponent(tp, domain,"ThreadPool",
+                        "type=ThreadPool,worker=http11,name=http%" + ep.getPort());
+            } catch (Exception e) {
+                log.error("Can't register threadpool" );
+            }
+        }
+
         try {
             ep.startEndpoint();
         } catch (Exception ex) {
@@ -171,7 +184,8 @@ public class Http11Protocol implements ProtocolHandler
     }
     
     // -------------------- Properties--------------------
-    protected PoolTcpEndpoint ep=new PoolTcpEndpoint();
+    protected ThreadPool tp=ThreadPool.createThreadPool(true);
+    protected PoolTcpEndpoint ep=new PoolTcpEndpoint(tp);
     protected boolean secure;
     
     protected ServerSocketFactory socketFactory;
@@ -334,7 +348,8 @@ public class Http11Protocol implements ProtocolHandler
 
     static class Http11ConnectionHandler implements TcpConnectionHandler {
         Http11Protocol proto;
-        
+        static int count=0;
+
         Http11ConnectionHandler( Http11Protocol proto ) {
             this.proto=proto;
         }
@@ -354,6 +369,7 @@ public class Http11Protocol implements ProtocolHandler
 
             Http11Processor  processor = new Http11Processor();
             processor.setAdapter( proto.adapter );
+            processor.setThreadPool( proto.tp );
             processor.setMaxKeepAliveRequests( proto.maxKeepAliveRequests );
             processor.setTimeout( proto.timeout );
             processor.setDisableUploadTimeout( proto.disableUploadTimeout );
@@ -362,6 +378,18 @@ public class Http11Protocol implements ProtocolHandler
             //thData[0]=adapter;
             thData[1]=processor;
             thData[2]=null;
+
+            if( proto.getDomain() != null ) {
+                try {
+                    RequestProcessor rp=new RequestProcessor(processor.getRequest());
+                    Registry.getRegistry().registerComponent( rp,
+                            proto.getDomain(), "RequestProcessor",
+                            "type=RequestProcessor,name=HttpRequest" + count++ );
+                } catch( Exception ex ) {
+                    log.warn("Error registering request");
+                }
+            }
+
             return  thData;
         }
 
@@ -510,4 +538,32 @@ public class Http11Protocol implements ProtocolHandler
     
     */
 
+    protected String domain;
+    protected ObjectName oname;
+    protected MBeanServer mserver;
+
+    public ObjectName getObjectName() {
+        return oname;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public ObjectName preRegister(MBeanServer server,
+                                  ObjectName name) throws Exception {
+        oname=name;
+        mserver=server;
+        domain=name.getDomain();
+        return name;
+    }
+
+    public void postRegister(Boolean registrationDone) {
+    }
+
+    public void preDeregister() throws Exception {
+    }
+
+    public void postDeregister() {
+    }
 }
