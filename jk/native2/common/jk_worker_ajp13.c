@@ -740,19 +740,38 @@ jk2_worker_ajp13_init(jk_env_t *env, jk_bean_t *bean )
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                               "ajp13.init(): Adding %s to %s\n",
                               ajp13->mbean->localName, name);
-            lb= env->getByName2( env, "lb", name );
-            if( lb==NULL ) {
-                /* Create the lb group */
-                if( ajp13->mbean->debug > 0 ) 
-                    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                                  "ajp13.init(): Automatically creating the group %s\n",
-                                  name);
-                env->createBean2( env, ajp13->workerEnv->mbean->pool, "lb", name );
+            if (strncmp(name, "lb:", 3) == 0) {
+                lb= env->getByName( env, name );
+                if( lb==NULL ) {
+                    /* Create the lb group */
+                    if( ajp13->mbean->debug > 0 ) 
+                        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                                      "ajp13.init(): Automatically creating the group %s\n",
+                                      name);
+                    env->createBean( env, ajp13->workerEnv->mbean->pool, name );
+                    lb= env->getByName( env, name );
+                    if( lb==NULL ) {
+                        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                                      "ajp13.init(): Failed to create %s\n", name);
+                        return JK_ERR;
+                    }
+                }
+            }
+            else {
                 lb= env->getByName2( env, "lb", name );
                 if( lb==NULL ) {
-                    env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                                  "ajp13.init(): Failed to create %s\n", name);
-                    return JK_ERR;
+                    /* Create the lb group */
+                    if( ajp13->mbean->debug > 0 ) 
+                        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                                      "ajp13.init(): Automatically creating the group %s\n",
+                                      name);
+                    env->createBean2( env, ajp13->workerEnv->mbean->pool, "lb", name );
+                    lb= env->getByName2( env, "lb", name );
+                    if( lb==NULL ) {
+                        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                                      "ajp13.init(): Failed to create %s\n", name);
+                        return JK_ERR;
+                    }
                 }
             }
             lb->mbean->setAttribute(env, lb->mbean, "worker",
