@@ -92,6 +92,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     private ByteOutputChannel out = null;
 
     private boolean isOutput=false;
+    private boolean optimizedWrite=true;
     
     /**
      * Creates a new, uninitialized ByteChunk object.
@@ -156,6 +157,10 @@ public final class ByteChunk implements Cloneable, Serializable {
 	start = off;
 	end = start+ len;
 	isSet=true;
+    }
+
+    public void setOptimizedWrite(boolean optimizedWrite) {
+        this.optimizedWrite = optimizedWrite;
     }
 
     public void setEncoding( String enc ) {
@@ -285,7 +290,7 @@ public final class ByteChunk implements Cloneable, Serializable {
         // If the buffer is empty and the source is going to fill up all the
         // space in buffer, may as well write it directly to the output,
         // and avoid an extra copy
-        if ( len == limit && end == start) {
+        if ( optimizedWrite && len == limit && end == start) {
             out.realWriteBytes( src, off, len );
             return;
         }

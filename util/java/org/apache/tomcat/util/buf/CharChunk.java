@@ -72,6 +72,8 @@ public final class CharChunk implements Cloneable, Serializable {
     private CharInputChannel in = null;
     private CharOutputChannel out = null;
     
+    private boolean optimizedWrite=true;
+
     /**
      * Creates a new, uninitialized CharChunk object.
      */
@@ -125,6 +127,10 @@ public final class CharChunk implements Cloneable, Serializable {
 	isSet=true;
     }
 
+
+    public void setOptimizedWrite(boolean optimizedWrite) {
+        this.optimizedWrite = optimizedWrite;
+    }
 
     public void setChars( char[] c, int off, int len ) {
 	recycle();
@@ -251,7 +257,7 @@ public final class CharChunk implements Cloneable, Serializable {
         // Optimize on a common case.
         // If the source is going to fill up all the space in buffer, may
         // as well write it directly to the output, and avoid an extra copy
-        if ( len == limit && end == start) {
+        if ( optimizedWrite && len == limit && end == start) {
             out.realWriteChars( src, off, len );
             return;
         }
