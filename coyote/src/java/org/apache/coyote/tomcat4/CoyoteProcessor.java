@@ -282,6 +282,31 @@ final class CoyoteProcessor
     private int status = Constants.PROCESSOR_IDLE;
 
 
+    // -------------------------------------------------------- Adapter Methods
+
+
+    /**
+     * Service method.
+     */
+    public void service(Request req, Response res)
+        throws Exception {
+
+        // Wrapping the Coyote requests
+        request.setCoyoteRequest(req);
+        response.setCoyoteResponse(res);
+
+        try {
+            // Calling the container
+            connector.getContainer().invoke(request, response);
+        } finally {
+            // Recycle the wrapper request and response
+            request.recycle();
+            response.recycle();
+        }
+
+    }
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -360,6 +385,49 @@ final class CoyoteProcessor
 
 
     /**
+     * Process an incoming HTTP request on the Socket that has been assigned
+     * to this Processor.  Any exceptions that occur during processing must be
+     * swallowed and dealt with.
+     *
+     * @param socket The socket on which we are connected to the client
+     */
+    private void process(Socket socket) {
+
+        InputStream input = null;
+        OutputStream output = null;
+
+        // Process requests
+        try {
+            input = socket.getInputStream();
+            output = socket.getOutputStream();
+            processor.process(input, output);
+        } catch (Throwable t) {
+            log(sm.getString("coyoteProcessor.process"), t);
+        }
+
+        // Consuming leftover bytes
+        try {
+            int available = input.available();
+            // skip any unread (bogus) bytes
+            if (available > 0) {
+                input.skip(available);
+            }
+        } catch (IOException e) {
+            ;
+        }
+
+        // Closing the socket
+        try {
+            socket.close();
+        } catch (IOException e) {
+            ;
+        }
+        socket = null;
+
+    }
+
+
+    /**
      * Log a message on the Logger associated with our Container (if any)
      *
      * @param message Message to be logged
@@ -388,67 +456,6 @@ final class CoyoteProcessor
     }
 
 
-    /**
-     * Process an incoming HTTP request on the Socket that has been assigned
-     * to this Processor.  Any exceptions that occur during processing must be
-     * swallowed and dealt with.
-     *
-     * @param socket The socket on which we are connected to the client
-     */
-    private void process(Socket socket) {
-
-        InputStream input = null;
-        OutputStream output = null;
-
-        try {
-            input = socket.getInputStream();
-            output = socket.getOutputStream();
-            processor.process(input, output);
-        } catch (Throwable t) {
-            log(sm.getString("coyoteProcessor.process"), t);
-        }
-
-        try {
-            int available = input.available();
-            // skip any unread (bogus) bytes
-            if (available > 0) {
-                input.skip(available);
-            }
-        } catch (Exception e) {
-            ;
-        }
-        try {
-            socket.close();
-        } catch (IOException e) {
-            ;
-        }
-        socket = null;
-
-    }
-
-
-    /**
-     * Service method.
-     */
-    public void service(Request req, Response res)
-        throws Exception {
-
-        // Wrapping the Coyote requests
-        request.setCoyoteRequest(req);
-        response.setCoyoteResponse(res);
-
-        try {
-            // Calling the container
-            //connector.getContainer().invoke(request, response);
-        } finally {
-            // Recycle the wrapper request and response
-            request.recycle();
-            response.recycle();
-        }
-
-    }
-
-
     // ---------------------------------------------- Background Thread Methods
 
 
@@ -466,8 +473,16 @@ final class CoyoteProcessor
             if (socket == null)
                 continue;
 
+            status = Constants.PROCESSOR_ACTIVE;
+
             // Process the request from this socket
-            process(socket);
+            try {
+                process(socket);
+            } catch (Throwable t) {
+                log(sm.getString("coyoteProcessor.run"), t);
+            } finally {
+                status = Constants.PROCESSOR_IDLE;
+            }
 
             // Finish up this request
             connector.recycle(this);
@@ -577,10 +592,11 @@ final class CoyoteProcessor
         String className = connector.getProcessorClassName();
         try {
             Class clazz = Class.forName(className);
-            processor = (Processor)  clazz.newInstance();
+            processor = (Processor) clazz.newInstance();
         } catch (Exception e) {
             throw new LifecycleException
-                (sm.getString("coyoteProcessor.processorInstantiationFailed", e));
+                (sm.getString
+                 ("coyoteProcessor.processorInstantiationFailed", e));
         }
         processor.setAdapter(this);
 

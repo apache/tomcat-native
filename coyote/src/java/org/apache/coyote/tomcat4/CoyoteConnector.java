@@ -326,12 +326,6 @@ public final class CoyoteConnector
         "org.apache.coyote.http11.Http11Processor";
 
 
-    /**
-     * Coyote Processor class.
-     */
-    private Class processorClass = null;
-
-
     // ------------------------------------------------------------- Properties
 
 
@@ -839,11 +833,9 @@ public final class CoyoteConnector
      */
     public Request createRequest() {
 
-        //        if (debug >= 2)
-        //            log("createRequest: Creating new request");
         CoyoteRequest request = new CoyoteRequest();
         request.setConnector(this);
-        return null;//(request);
+        return (request);
 
     }
 
@@ -854,11 +846,9 @@ public final class CoyoteConnector
      */
     public Response createResponse() {
 
-        //        if (debug >= 2)
-        //            log("createResponse: Creating new response");
         CoyoteResponse response = new CoyoteResponse();
         response.setConnector(this);
-        return null;//(response);
+        return (response);
 
     }
 
@@ -873,8 +863,6 @@ public final class CoyoteConnector
      */
     void recycle(CoyoteProcessor processor) {
 
-        //        if (debug >= 2)
-        //            log("recycle: Recycling processor " + processor);
         processors.push(processor);
 
     }
@@ -893,22 +881,14 @@ public final class CoyoteConnector
 
         synchronized (processors) {
             if (processors.size() > 0) {
-                // if (debug >= 2)
-                // log("createProcessor: Reusing existing processor");
                 return ((CoyoteProcessor) processors.pop());
             }
             if ((maxProcessors > 0) && (curProcessors < maxProcessors)) {
-                // if (debug >= 2)
-                // log("createProcessor: Creating new processor");
                 return (newProcessor());
             } else {
                 if (maxProcessors < 0) {
-                    // if (debug >= 2)
-                    // log("createProcessor: Creating new processor");
                     return (newProcessor());
                 } else {
-                    // if (debug >= 2)
-                    // log("createProcessor: Cannot create new processor");
                     return (null);
                 }
             }
@@ -964,14 +944,12 @@ public final class CoyoteConnector
      */
     private CoyoteProcessor newProcessor() {
 
-        //        if (debug >= 2)
-        //            log("newProcessor: Creating new processor");
         CoyoteProcessor processor = new CoyoteProcessor(this, curProcessors++);
         if (processor instanceof Lifecycle) {
             try {
                 ((Lifecycle) processor).start();
             } catch (LifecycleException e) {
-                log("newProcessor", e);
+                log(sm.getString("coyoteConnector.newProcessor"), e);
                 return (null);
             }
         }
@@ -991,14 +969,15 @@ public final class CoyoteConnector
      *                                       KeyStore from file (SSL only)
      * @exception NoSuchAlgorithmException   KeyStore algorithm unsupported
      *                                       by current provider (SSL only)
-     * @exception CertificateException       general certificate error (SSL only)
+     * @exception CertificateException       general certificate error 
+     *                                       (SSL only)
      * @exception UnrecoverableKeyException  internal KeyStore problem with
      *                                       the certificate (SSL only)
      * @exception KeyManagementException     problem in the key management
      *                                       layer (SSL only)
      */
     private ServerSocket open()
-    throws IOException, KeyStoreException, NoSuchAlgorithmException,
+        throws IOException, KeyStoreException, NoSuchAlgorithmException,
         CertificateException, UnrecoverableKeyException,
         KeyManagementException {
 
@@ -1024,6 +1003,41 @@ public final class CoyoteConnector
     }
 
 
+    /**
+     * Open server socket.
+     */
+    private Exception openServerSocket() {
+
+        Exception result = null;
+
+        // Establish a server socket on the specified port
+        try {
+            serverSocket = open();
+        } catch (IOException e) {
+            log(sm.getString("coyoteConnector.IOProblem"), e);
+            result = e;
+        } catch (KeyStoreException e) {
+            log(sm.getString("coyoteConnector.keystoreProblem"), e);
+            result = e;
+        } catch (NoSuchAlgorithmException e) {
+            log(sm.getString("coyoteConnector.keystoreAlgorithmProblem"), e);
+            result = e;
+        } catch (CertificateException e) {
+            log(sm.getString("coyoteConnector.certificateProblem"), e);
+            result = e;
+        } catch (UnrecoverableKeyException e) {
+            log(sm.getString("coyoteConnector.unrecoverableKey"), e);
+            result = e;
+        } catch (KeyManagementException e) {
+            log(sm.getString("coyoteConnector.keyManagementProblem"), e);
+            result = e;
+        }
+
+        return result;
+
+    }
+
+
     // ---------------------------------------------- Background Thread Methods
 
 
@@ -1039,56 +1053,29 @@ public final class CoyoteConnector
             // Accept the next incoming connection from the server socket
             Socket socket = null;
             try {
-                //                if (debug >= 3)
-                //                    log("run: Waiting on serverSocket.accept()");
                 socket = serverSocket.accept();
-                //                if (debug >= 3)
-                //                    log("run: Returned from serverSocket.accept()");
                 if (connectionTimeout > 0)
                     socket.setSoTimeout(connectionTimeout);
                 socket.setTcpNoDelay(tcpNoDelay);
-            } catch (AccessControlException ace) {
-                log("socket accept security exception", ace);
+            } catch (AccessControlException e) {
+                log(sm.getString("coyoteConnector.securityException"), e);
                 continue;
             } catch (IOException e) {
-                //                if (debug >= 3)
-                //                    log("run: Accept returned IOException", e);
                 try {
                     // If reopening fails, exit
                     synchronized (threadSync) {
                         if (started && !stopped)
                             log("accept: ", e);
                         if (!stopped) {
-                            //                    if (debug >= 3)
-                            //                        log("run: Closing server socket");
                             serverSocket.close();
-                            //                        if (debug >= 3)
-                            //                            log("run: Reopening server socket");
-                            serverSocket = open();
+                            openServerSocket();
                         }
                     }
-                    //                    if (debug >= 3)
-                    //                        log("run: IOException processing completed");
                 } catch (IOException ioe) {
-                    log("socket reopen, io problem: ", ioe);
-                    break;
-                } catch (KeyStoreException kse) {
-                    log("socket reopen, keystore problem: ", kse);
-                    break;
-                } catch (NoSuchAlgorithmException nsae) {
-                    log("socket reopen, keystore algorithm problem: ", nsae);
-                    break;
-                } catch (CertificateException ce) {
-                    log("socket reopen, certificate problem: ", ce);
-                    break;
-                } catch (UnrecoverableKeyException uke) {
-                    log("socket reopen, unrecoverable key: ", uke);
-                    break;
-                } catch (KeyManagementException kme) {
-                    log("socket reopen, key management problem: ", kme);
+                    log(sm.getString("coyoteConnector.serverSocketReopenFail"),
+                        ioe);
                     break;
                 }
-
                 continue;
             }
 
@@ -1103,8 +1090,6 @@ public final class CoyoteConnector
                 }
                 continue;
             }
-            //            if (debug >= 3)
-            //                log("run: Assigning socket to processor " + processor);
             processor.assign(socket);
 
             // The processor will recycle itself when it finishes
@@ -1112,8 +1097,6 @@ public final class CoyoteConnector
         }
 
         // Notify the threadStop() method that we have shut ourselves down
-        //        if (debug >= 3)
-        //            log("run: Notifying threadStop() that we have shut down");
         synchronized (threadSync) {
             threadSync.notifyAll();
         }
@@ -1195,39 +1178,21 @@ public final class CoyoteConnector
      * Initialize this connector (create ServerSocket here!)
      */
     public void initialize()
-    throws LifecycleException {
+        throws LifecycleException {
+
         if (initialized)
-            throw new LifecycleException (
-                sm.getString("coyoteConnector.alreadyInitialized"));
+            throw new LifecycleException 
+                (sm.getString("coyoteConnector.alreadyInitialized"));
 
-        this.initialized=true;
-        Exception eRethrow = null;
+        this.initialized = true;
 
-        // Establish a server socket on the specified port
-        try {
-            serverSocket = open();
-        } catch (IOException ioe) {
-            log("coyoteConnector, io problem: ", ioe);
-            eRethrow = ioe;
-        } catch (KeyStoreException kse) {
-            log("coyoteConnector, keystore problem: ", kse);
-            eRethrow = kse;
-        } catch (NoSuchAlgorithmException nsae) {
-            log("coyoteConnector, keystore algorithm problem: ", nsae);
-            eRethrow = nsae;
-        } catch (CertificateException ce) {
-            log("coyoteConnector, certificate problem: ", ce);
-            eRethrow = ce;
-        } catch (UnrecoverableKeyException uke) {
-            log("coyoteConnector, unrecoverable key: ", uke);
-            eRethrow = uke;
-        } catch (KeyManagementException kme) {
-            log("coyoteConnector, key management problem: ", kme);
-            eRethrow = kme;
+        Exception eRethrow = openServerSocket();
+
+        if (eRethrow != null) {
+            throw new LifecycleException
+                (sm.getString("coyoteConnector.initException", threadName), 
+                 eRethrow);
         }
-
-        if ( eRethrow != null )
-            throw new LifecycleException(threadName + ".open", eRethrow);
 
     }
 
@@ -1282,7 +1247,7 @@ public final class CoyoteConnector
                 try {
                     ((Lifecycle) processor).stop();
                 } catch (LifecycleException e) {
-                    log("coyoteConnector.stop", e);
+                    log(sm.getString("coyoteConnector.stopException"), e);
                 }
             }
         }
