@@ -67,6 +67,8 @@
 #define MOUNT_OF_WORKER             ("mount")
 #define METHOD_OF_WORKER            ("method")
 #define IS_WORKER_DISABLED          ("disabled")
+#define WORKER_RECOVER_TIME         ("recover_time")
+
 
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
@@ -492,6 +494,20 @@ int jk_get_worker_socket_timeout(jk_map_t *m, const char *wname, int def)
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             SOCKET_TIMEOUT_OF_WORKER);
+
+    return jk_map_get_int(m, buf, def);
+}
+
+int jk_get_worker_recover_timeout(jk_map_t *m, const char *wname, int def)
+{
+    char buf[1024];
+
+    if (!m || !wname) {
+        return -1;
+    }
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
+            WORKER_RECOVER_TIME);
 
     return jk_map_get_int(m, buf, def);
 }

@@ -39,9 +39,6 @@
 /* 
  * Time to wait before retry...
  */
-#define WAIT_BEFORE_RECOVER (60*1)
-#define WORKER_RECOVER_TIME ("recover_time")
-
 #define JK_WORKER_IN_ERROR(w) ((w)->in_error_state && !(w)->is_disabled && !(w)->is_busy)
 #define JK_WORKER_USABLE(w)   (!(w)->in_error_state && !(w)->is_disabled && !(w)->is_busy)
 
@@ -783,10 +780,8 @@ static int JK_METHOD init(jk_worker_t *pThis,
     pThis->retries = jk_get_worker_retries(props, p->s->name,
                                            JK_RETRIES);
     p->s->retries = pThis->retries;
-    if (jk_get_worker_int_prop(props, p->s->name,
-                               WORKER_RECOVER_TIME,
-                               &i))
-        p->s->recover_wait_time = i;
+    p->s->recover_wait_time = jk_get_worker_recover_timeout(props, p->s->name,
+                                                            WAIT_BEFORE_RECOVER);
     if (p->s->recover_wait_time < WAIT_BEFORE_RECOVER)
         p->s->recover_wait_time = WAIT_BEFORE_RECOVER;
 

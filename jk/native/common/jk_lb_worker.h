@@ -41,6 +41,7 @@ extern "C"
 #define JK_LB_BYTRAFFIC       (1)
 #define JK_LB_METHOD_REQUESTS ("request")
 #define JK_LB_METHODTRAFFIC   ("traffic")
+#define WAIT_BEFORE_RECOVER   (60)
 
 struct worker_record
 {
