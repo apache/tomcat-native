@@ -136,7 +136,7 @@ static int JK_METHOD jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
     if( level == JK_LOG_DEBUG_LEVEL ) {
         ap_log_error( file, line, APLOG_DEBUG | APLOG_NOERRNO, 0, s, buf);
     } else if( level == JK_LOG_INFO_LEVEL ) {
-        ap_log_error( file, line, APLOG_WARNING | APLOG_NOERRNO, 0, s, buf);
+        ap_log_error( file, line, APLOG_NOTICE | APLOG_NOERRNO, 0, s, buf);
     } else {
         ap_log_error( file, line, APLOG_ERR | APLOG_NOERRNO, 0, s, buf);
     }
