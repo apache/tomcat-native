@@ -863,6 +863,28 @@ Next, you should restart your Apache 2.0 server and enjoy this piece of OpenSour
 </p>
 </section>
 
+<section name="Building mod_jk for Apache on MacOS/X">
+<p>
+Mac OS X (10.2.x) build notes :
+</p>
+<p>
+Assuming that you are root :
+</p>
+<screen>
+<note>For Apache 1.3:</note>
+<type>./configure --with-apxs=/usr/sbin/apxs</type>
+<type>cd apache-1.3</type>
+<type>make -f Makefile.apxs</type>
+<type>cp mod_jk.so /etc/libexec/httpd</type>
+
+<note>For Apache 2.0:</note>
+<type>./configure --with-apxs=/usr/local/apache2/bin/apxs</type>
+<note>(you should point to the directory where you installed Apache 2.0)</note>
+<type>cd apache-2.0</type>
+<type>make -f Makefile.apxs install</type>
+</screen>
+</section>
+
 <section name="Getting mod_jk linked statically with Apache">
 <p>
 mod_jk allows to install mod_jk in the Apache source tree to get a statically
