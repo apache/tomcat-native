@@ -250,7 +250,7 @@ public class ClassLoaderLogManager extends LogManager {
         return result;
     }
     
-
+    
     // ------------------------------------------------------ Protected Methods
 
 
@@ -295,7 +295,8 @@ public class ClassLoaderLogManager extends LogManager {
                 try {
                     info.props.load(is);
                 } catch (IOException e) {
-                    // FIXME: Report this using the main logger ?
+                    // Report error
+                    System.err.println("Configuration error");
                     e.printStackTrace();
                 } finally {
                     try {
@@ -337,7 +338,8 @@ public class ClassLoaderLogManager extends LogManager {
                                 localRootLogger.addHandler(handler);
                             }
                         } catch (Exception e) {
-                            // FIXME: Report this using the main logger ?
+                            // Report error
+                            System.err.println("Handler error");
                             e.printStackTrace();
                         }
                     }
@@ -378,7 +380,7 @@ public class ClassLoaderLogManager extends LogManager {
         });
     }
 
-    
+
     // ---------------------------------------------------- LogNode Inner Class
 
 
@@ -447,6 +449,7 @@ public class ClassLoaderLogManager extends LogManager {
 
     }
 
+
     // -------------------------------------------- ClassLoaderInfo Inner Class
 
 
@@ -461,7 +464,7 @@ public class ClassLoaderLogManager extends LogManager {
         }
 
     }
-    
+
 
     // ------------------------------------------------- RootLogger Inner Class
 
@@ -476,5 +479,5 @@ public class ClassLoaderLogManager extends LogManager {
         }
     }
 
-    
+
 }
