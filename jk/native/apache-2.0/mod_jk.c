@@ -2530,7 +2530,8 @@ static int jk_map_to_storage(request_rec * r)
 
         /* Only if sub-request for a directory, most likely from mod_dir */
         if (r->main && r->main->filename &&
-            !apr_filepath_name_get(r->main->filename)) {
+            (!apr_filepath_name_get(r->main->filename) ||
+             !strlen(apr_filepath_name_get(r->main->filename)))) {
 
             /* The filename from the main request will be set to what should
              * be picked up, aliases included. Tomcat will need to know about
