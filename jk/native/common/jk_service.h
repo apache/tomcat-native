@@ -104,6 +104,7 @@ typedef struct jk_worker_env jk_worker_env_t;
 struct jk_ws_service;
 struct jk_endpoint;
 struct jk_worker;
+struct jk_channel;
 typedef struct jk_ws_service jk_ws_service_t;
 typedef struct jk_endpoint   jk_endpoint_t;
 typedef struct jk_worker     jk_worker_t;
@@ -302,6 +303,10 @@ struct jk_endpoint {
      */
     void *endpoint_private;
 
+    /** Data specific to a channel connection
+     */
+    void *channelData;
+
     /*
      * Forward a request to the servlet engine.  The request is described
      * by the jk_ws_service_t object.  I'm not sure exactly how
@@ -373,6 +378,13 @@ struct jk_worker {
      * (e.g. ajp12 or ajp13 or ajp14).  
      */
     void *worker_private;
+    
+    /* XXX Add name and all other common properties !!! 
+     */
+
+    /** Communication channle used by the worker 
+     */
+    struct jk_channel *channel;
 
     /*
      * For all of the below (except destroy), the first argument is
