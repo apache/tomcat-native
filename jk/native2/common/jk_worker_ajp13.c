@@ -85,9 +85,15 @@
 #define AJP14_DEF_PORT  (8011)
 
 /* -------------------- Impl -------------------- */
-static char *myAttInfo[]={ "lb_factor", "lb_value", "reqCnt", "errCnt",
-                           "route", "errorState", "graceful",
-                           "epCount", "errorTime", NULL };
+static char *jk2_worker_ajp14_getAttributeInfo[]={ "lb_factor", "lb_value", 
+                                                   "route", "errorState", "graceful",
+                                                   "epCount", "errorTime", NULL };
+
+static char *jk2_worker_ajp14_multiValueInfo[]={"group", NULL };
+
+static char *jk2_worker_ajp14_setAttributeInfo[]={"debug", "channel", "route",
+                                                  "lb_factor", "level", NULL };
+
 
 static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
     jk_worker_t *worker=(jk_worker_t *)bean->object;
@@ -106,14 +112,6 @@ static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *
     } else if (strcmp( name, "lb_value" )==0 ) {
         char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
         sprintf( buf, "%d", worker->lb_value );
-        return buf;
-    } else if (strcmp( name, "reqCnt" )==0 ) {
-        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
-        sprintf( buf, "%d", worker->reqCnt );
-        return buf;
-    } else if (strcmp( name, "errCnt" )==0 ) {
-        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
-        sprintf( buf, "%d", worker->errCnt );
         return buf;
     } else if (strcmp( name, "lb_factor" )==0 ) {
         char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
@@ -140,10 +138,6 @@ static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *
     }
 }
 
-static char *jk2_worker_ajp_multiValueInfo[]={"group", NULL };
-
-static char *jk2_worker_ajp_setAttributeInfo[]={"debug", "channel", "tomcatId", "lb_factor", NULL };
-
 
 /*
  * Initialize the worker.
@@ -164,10 +158,14 @@ jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         ajp14->secret = value;
     } else if( strcmp( name, "tomcatId" )==0 ) {
         ajp14->route=value;
+    } else if( strcmp( name, "route" )==0 ) {
+        ajp14->route=value;
     } else if( strcmp( name, "group" )==0 ) {
         ajp14->groups->add( env, ajp14->groups, value, ajp14 );
     } else if( strcmp( name, "lb_factor" )==0 ) {
         ajp14->lb_factor=atoi( value );
+    } else if( strcmp( name, "level" )==0 ) {
+        ajp14->level=atoi( value );
     } else if( strcmp( name, "channel" )==0 ) {
         ajp14->channelName=value;
     } else {
@@ -327,7 +325,10 @@ jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
         /* e->request->dump(env, e->request, "Before sending "); */
         err=e->worker->channel->send( env, e->worker->channel, e,
                                       e->request );
-        e->request->dump( env, e->request, "Sent" );
+
+        if( e->worker->mbean->debug > 10 )
+            e->request->dump( env, e->request, "Sent" );
+        
         if (err==JK_OK ) {
             /* We sent the request, have valid endpoint */
             break;
@@ -390,6 +391,9 @@ jk2_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
 	 * doing a read (not yet) 
 	 */
         err=jk2_serialize_postHead( env, e->post, s, e );
+
+        if( e->worker->mbean->debug > 10 )
+            e->request->dump( env, e->request, "Post head" );
 
         if (err != JK_OK ) {
             /* the browser stop sending data, no need to recover */
@@ -473,7 +477,6 @@ jk2_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
     e->reply->reset( env, e->reply );
     e->post->reset( env, e->post );
     
-    e->uploadfd	 = -1;		/* not yet used, later ;) */
     e->reuse = JK_FALSE;
     s->is_recoverable_error = JK_TRUE;
     /* Up to now, we can recover */
@@ -584,7 +587,7 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
         return JK_OK;
     }
 
-    jkb=env->createBean2( env,ajp14->pool,  "endpoint", NULL );
+    jkb=env->createBean2( env, ajp14->mbean->pool,  "endpoint", NULL );
     if( jkb==NULL )
         return JK_ERR;
     if( ajp14->mbean->debug > 0 )
@@ -618,27 +621,36 @@ jk2_worker_ajp14_service(jk_env_t *env, jk_worker_t *w,
     if( err!=JK_OK ) {
         w->in_error_state=JK_TRUE;
     }
+
+    if( err==JK_OK ) {
+        e->stats->reqCnt++;
+    } else {
+        e->stats->errCnt++;
+    }
+
     jk2_worker_ajp14_done( env, w, e);
     return err;
 }
 
 
 static int JK_METHOD
-jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
+jk2_worker_ajp14_init(jk_env_t *env, jk_bean_t *bean )
 {
+    jk_worker_t *ajp14=bean->object;
     int  rc;
     int size;
     int i;
 
     if(ajp14->channel != NULL &&
-       ajp14->channel->mbean->debug > 0 )
-        ajp14->mbean->debug = 1;
+       ajp14->channel->mbean->debug > 0 ) {
+        ajp14->mbean->debug = ajp14->channel->mbean->debug;
+    }
 
     if(ajp14->channel != NULL &&
        ajp14->channel->mbean->disabled  )
         ajp14->mbean->disabled = JK_TRUE;
     
-    ajp14->endpointCache=jk2_objCache_create( env, ajp14->pool  );
+    ajp14->endpointCache=jk2_objCache_create( env, ajp14->mbean->pool  );
         
     if( ajp14->endpointCache == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -711,8 +723,9 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
 
 
 static int JK_METHOD
-jk2_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *ajp14)
+jk2_worker_ajp14_destroy(jk_env_t *env, jk_bean_t *bean)
 {
+    jk_worker_t *ajp14=bean->object;
     int i;
 
     if( ajp14->mbean->debug > 0 ) 
@@ -741,8 +754,6 @@ jk2_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *ajp14)
                       i);
     }
 
-    ajp14->pool->close( env, ajp14->pool );
-
     return JK_OK;
 }
 
@@ -757,10 +768,7 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
                       "ajp14.factory() NullPointerException\n");
         return JK_ERR;
     }
-    w->pool = pool;
     w->cache_sz=-1;
-    w->reqCnt=0;
-    w->errCnt=0;
 
     jk2_map_default_create(env, &w->groups, pool);
 
@@ -769,13 +777,17 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     w->channel= NULL;
     w->secret= NULL;
    
-    w->init= jk2_worker_ajp14_init;
-    w->destroy=jk2_worker_ajp14_destroy;
     w->service = jk2_worker_ajp14_service;
 
     result->setAttribute= jk2_worker_ajp14_setAttribute;
-    result->getAttributeInfo=myAttInfo;
     result->getAttribute= jk2_worker_ajp14_getAttribute;
+    result->init= jk2_worker_ajp14_init;
+    result->destroy=jk2_worker_ajp14_destroy;
+
+    result->getAttributeInfo=jk2_worker_ajp14_getAttributeInfo;
+    result->multiValueInfo=jk2_worker_ajp14_multiValueInfo;
+    result->setAttributeInfo=jk2_worker_ajp14_setAttributeInfo;
+
     result->object = w;
     w->mbean=result;
 
