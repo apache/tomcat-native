@@ -285,7 +285,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
                     throw new BindException(be.getMessage() + ":" + port);
                 }
 	    }
-	    if( serverTimeout >= 0 )
+            if( serverTimeout >= 0 )
 		serverSocket.setSoTimeout( serverTimeout );
 	} catch( IOException ex ) {
 	    //	    log("couldn't start endpoint", ex, Logger.DEBUG);
@@ -435,8 +435,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
                             log.error(msg, t);
                         } finally {
                             // Current thread is now invalid: kill it
-                            throw new IllegalStateException
-                                ("Terminating thread");
+                            throw new ThreadDeath();
                         }
                     }
                 }
@@ -537,10 +536,13 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 	while(endpoint.isRunning()) {
 	    Socket s = null;
 	    try {
-		s = endpoint.acceptSocket();
+                s = endpoint.acceptSocket();
+	    } catch (ThreadDeath t) {
+		endpoint.log.error("Shutdown thread: " 
+                                   + Thread.currentThread().getName());
+                throw t;
 	    } catch (Throwable t) {
 		endpoint.log.error("Exception in acceptSocket", t);
-                throw new IllegalStateException("Terminating thread");
 	    }
 	    if(null != s) {
 		// Continue accepting on another thread...
