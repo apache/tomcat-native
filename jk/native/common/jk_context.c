@@ -268,7 +268,6 @@ void context_dump_uris(jk_context_t *c, char *cbase, FILE * f)
 jk_context_item_t * context_add_base(jk_context_t *c, char *cbase)
 {
     jk_context_item_t *  ci;
-    int                  i;
 
     if (! c || !cbase)
         return NULL;
