@@ -73,7 +73,7 @@
 #include "jk_objCache.h"
 #include "jk_registry.h"
 
-static char *myAttInfo[]={ "channel", "active", NULL };
+static char *myAttInfo[]={ "channel", "active", "reqCnt", "errCnt", NULL };
 
 /** Will return endpoint specific runtime properties
  *
@@ -92,9 +92,16 @@ static void * JK_METHOD jk2_endpoint_getAttribute(jk_env_t *env, jk_bean_t *bean
     } else if (strcmp( name, "active" )==0 ) {
         if( ep->currentRequest != NULL )
             return ep->currentRequest->req_uri;
-    } else {
-        return NULL;
+    } else if (strcmp( name, "reqCnt" )==0 ) {
+        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
+        sprintf( buf, "%d", ep->stats->reqCnt );
+        return buf;
+    } else if (strcmp( name, "errCnt" )==0 ) {
+        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
+        sprintf( buf, "%d", ep->stats->errCnt );
+        return buf;
     }
+    
     return NULL;
 }
 
@@ -105,8 +112,10 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
 {
     jk_endpoint_t *e = (jk_endpoint_t *)pool->alloc(env, pool,
                                                     sizeof(jk_endpoint_t));
+    jk_workerEnv_t *workerEnv;
+    jk_stat_t *stats;
     jk_pool_t *endpointPool = pool->create( env, pool, HUGE_POOL_SIZE );
-    
+
     if (e==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "endpoint.factory() OutOfMemoryException\n");
@@ -135,5 +144,12 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     result->object = e;
     e->mbean=result;
 
+    workerEnv=env->getByName( env, "workerEnv" );
+    
+    /* XXX alloc it inside the shm */
+    stats = (jk_stat_t *)pool->calloc( env, pool, sizeof( jk_stat_t ) );
+    
+    e->stats=stats;
+    
     return JK_OK;
 }
