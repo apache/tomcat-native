@@ -344,6 +344,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         setAttribute("protocol", k);
     }
 
+    public void setProtocols(String k) {
+        setAttribute("protocols", k);
+    }
+
     public void setAlgorithm( String k ) {
         setAttribute("algorithm", k);
     }
