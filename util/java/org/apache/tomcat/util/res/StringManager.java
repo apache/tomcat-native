@@ -108,12 +108,7 @@ public class StringManager {
      */
 
     private StringManager(String packageName) {
-        String bundleName = packageName + ".LocalStrings";
-        try {
-	    bundle = ResourceBundle.getBundle(bundleName);
-	} catch( MissingResourceException ex ) {
-	    bundle= ResourceBundle.getBundle( bundleName, Locale.US);
-	}
+	this( packageName, Locale.getDefault() );
     }
 
     private StringManager(String packageName,Locale loc) {
@@ -123,6 +118,11 @@ public class StringManager {
         } catch( MissingResourceException ex ) {
             bundle= ResourceBundle.getBundle( bundleName, Locale.US);
         }
+    }
+
+    private StringManager(ResourceBundle bundle )
+    {
+	this.bundle=bundle;
     }
 
     /**
@@ -291,7 +291,19 @@ public class StringManager {
       }
       return mgr;
     }
-     /**
+
+    /**
+     * Get the StringManager for a particular package. If a manager for
+     * a package already exists, it will be reused, else a new
+     * StringManager will be created and returned.
+     *
+     * @param packageName
+     */
+    public synchronized static StringManager getManager(ResourceBundle bundle) {
+      return new StringManager( bundle );
+    }
+
+    /**
      * Get the StringManager for a particular package and Locale. If a manager for
      * a package already exists, it will be reused, else a new
      * StringManager will be created for that Locale and returned.
