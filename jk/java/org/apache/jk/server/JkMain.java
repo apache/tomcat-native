@@ -127,6 +127,7 @@ public class JkMain implements MBeanRegistration
         modules.put("shm", "org.apache.jk.common.Shm");
         modules.put("request","org.apache.jk.common.HandlerRequest");
         modules.put("container","org.apache.jk.common.HandlerRequest");
+        modules.put("modjk","org.apache.jk.common.ModJkMX");
 
         initHTTPSUrls();
     }
