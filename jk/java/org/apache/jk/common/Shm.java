@@ -95,6 +95,7 @@ public class Shm extends JniHandler {
 
     boolean unregister=false;
     boolean reset=false;
+    String dumpFile=null;
     
     // Will be dynamic ( getMethodId() ) after things are stable 
     static final int SHM_SET_ATTRIBUTE=0;
@@ -102,6 +103,8 @@ public class Shm extends JniHandler {
     static final int SHM_ATTACH=3;
     static final int SHM_DETACH=4;
     static final int SHM_RESET=5;
+    static final int SHM_DUMP=6;
+    static final int SHM_DESTROY=7;
     
     public Shm() {
     }
@@ -112,6 +115,13 @@ public class Shm extends JniHandler {
         file=f;
     }
 
+    /** Copy the scoreboard in a file for debugging
+     *  Will also log a lot of information about what's in the scoreboard.
+     */
+    public void setDump( String dumpFile ) {
+        this.dumpFile=dumpFile;
+    }
+    
     /** Size. Used only if the scoreboard is to be created.
      */
     public void setSize( int size ) {
@@ -195,6 +205,20 @@ public class Shm extends JniHandler {
         msg.reset();
 
         msg.appendByte( SHM_RESET );
+        
+        this.invoke( msg, mCtx );
+    }
+
+    public void dumpScoreboard(String fname) throws IOException {
+        if( apr==null ) return;
+        MsgContext mCtx=createMsgContext();
+        Msg msg=(Msg)mCtx.getMsg(0);
+        C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
+        msg.reset();
+
+        msg.appendByte( SHM_DUMP );
+
+        appendString( msg, fname, c2b);
         
         this.invoke( msg, mCtx );
     }
@@ -315,8 +339,11 @@ public class Shm extends JniHandler {
                 return;
             }
             init();
+
             if( reset ) {
                 resetScoreboard();
+            } else if( dumpFile!=null ) {
+                dumpScoreboard(dumpFile);
             } else if( unregister ) {
                 unRegisterTomcat( host, port );
             } else {
