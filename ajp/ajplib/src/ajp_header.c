@@ -301,7 +301,7 @@ static int sc_for_req_header(const char *header_name)
 }
 
 /* Apache method number to SC methods transform table */
-static const unsigned char sc_for_req_header_table[] = {
+static const unsigned char sc_for_req_method_table[] = {
     SC_M_GET,
     SC_M_PUT,
     SC_M_POST,
@@ -331,13 +331,13 @@ static const unsigned char sc_for_req_header_table[] = {
     0                       /* M_INVALID */
 };
 
-static int sc_for_req_header_by_id(int method_id)
+static int sc_for_req_method_by_id(int method_id)
 {
     if (method_id < 0 || method_id > M_INVALID)
         return UNKNOWN_METHOD;
     else
-        return sc_for_req_header_table[method_id] ?
-               sc_for_req_header_table[method_id] : UNKNOWN_METHOD;
+        return sc_for_req_method_table[method_id] ?
+               sc_for_req_method_table[method_id] : UNKNOWN_METHOD;
 }
 
 /*
@@ -384,7 +384,7 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
                          "Into ajp_marshal_into_msgb");
 
-    if ((method = sc_for_req_header_by_id(r->method_number)) == UNKNOWN_METHOD) { 
+    if ((method = sc_for_req_method_by_id(r->method_number)) == UNKNOWN_METHOD) { 
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "Error ajp_marshal_into_msgb - No such method %s",
                r->method);
@@ -571,7 +571,7 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
                "Error appending the message end");
         return APR_EGENERAL;
     }
-    
+
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
            "ajp_marshal_into_msgb - Done");
     return APR_SUCCESS;
