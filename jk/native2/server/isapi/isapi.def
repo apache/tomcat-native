@@ -1,0 +1,9 @@
+LIBRARY	     "isapi_redirector2"
+
+EXPORTS
+	HttpFilterProc
+	GetFilterVersion
+	GetExtensionVersion
+	HttpExtensionProc	
+	TerminateFilter
+	TerminateExtension

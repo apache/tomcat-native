@@ -256,7 +256,7 @@ static int JK_METHOD jk2_service_iis_write(jk_env_t *env, jk_ws_service_t *s,
     return JK_FALSE;
 }
 
-static int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
+int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
                             char *name,
                             char  *buf,
                             DWORD bufsz,
@@ -285,34 +285,32 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
 /* */
 {
     LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)serverObj;
-    char *worker_name;
     char huge_buf[16 * 1024]; /* should be enough for all */
 
     DWORD huge_buf_sz;
 
     s->jvm_route = NULL;
 
-    GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, ( worker_name ));
-    GET_SERVER_VARIABLE_VALUE(HTTP_URI_HEADER_NAME, s->req_uri);     
-    GET_SERVER_VARIABLE_VALUE(HTTP_QUERY_HEADER_NAME, s->query_string);     
+    GET_SERVER_VARIABLE_VALUE(w->pool,HTTP_URI_HEADER_NAME, s->req_uri);     
+    GET_SERVER_VARIABLE_VALUE(w->pool,HTTP_QUERY_HEADER_NAME, s->query_string);     
     
     if (s->req_uri == NULL) {
         s->query_string = lpEcb->lpszQueryString;
         /* *worker_name    = DEFAULT_WORKER_NAME; */
-        GET_SERVER_VARIABLE_VALUE("URL", s->req_uri);       
+        GET_SERVER_VARIABLE_VALUE(w->pool,"URL", s->req_uri);       
         if (jk_requtil_unescapeUrl(s->req_uri) < 0)
             return JK_FALSE;
         jk_requtil_getParents(s->req_uri);
     }
     
-    GET_SERVER_VARIABLE_VALUE("AUTH_TYPE", s->auth_type);
-    GET_SERVER_VARIABLE_VALUE("REMOTE_USER", s->remote_user);
-    GET_SERVER_VARIABLE_VALUE("SERVER_PROTOCOL", s->protocol);
-    GET_SERVER_VARIABLE_VALUE("REMOTE_HOST", s->remote_host);
-    GET_SERVER_VARIABLE_VALUE("REMOTE_ADDR", s->remote_addr);
-    GET_SERVER_VARIABLE_VALUE(SERVER_NAME, s->server_name);
+    GET_SERVER_VARIABLE_VALUE(w->pool,"AUTH_TYPE", s->auth_type);
+    GET_SERVER_VARIABLE_VALUE(w->pool,"REMOTE_USER", s->remote_user);
+    GET_SERVER_VARIABLE_VALUE(w->pool,"SERVER_PROTOCOL", s->protocol);
+    GET_SERVER_VARIABLE_VALUE(w->pool,"REMOTE_HOST", s->remote_host);
+    GET_SERVER_VARIABLE_VALUE(w->pool,"REMOTE_ADDR", s->remote_addr);
+    GET_SERVER_VARIABLE_VALUE(w->pool,SERVER_NAME, s->server_name);
     GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT", s->server_port, 80);
-    GET_SERVER_VARIABLE_VALUE(SERVER_SOFTWARE, s->server_software);
+    GET_SERVER_VARIABLE_VALUE(w->pool,SERVER_SOFTWARE, s->server_software);
     GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT_SECURE", s->is_ssl, 0);
 
     s->method           = lpEcb->lpszMethod;
@@ -358,7 +356,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
         unsigned num_of_vars = 0;
 
         for(i = 0 ; i < 9 ; i++) {
-            GET_SERVER_VARIABLE_VALUE(ssl_env_names[i], ssl_env_values[i]);
+            GET_SERVER_VARIABLE_VALUE(w->pool,ssl_env_names[i], ssl_env_values[i]);
             if (ssl_env_values[i]) {
                 num_of_vars++;
             }

@@ -82,9 +82,10 @@
 #include "jk_iis.h"
 //#include "jk_uri_worker_map.h"
 
-#define EXTENSION_URI_TAG       ("extension_uri")
+#define WORKERS_FILE_TAG       ("worker_file")
 #define SERVER_ROOT_TAG          ("server_root")
 #define URI_SELECT_TAG          ("uri_select")
+#define EXTENSION_URI_TAG       ("extension_uri")
 
 #define URI_SELECT_PARSED_VERB      ("parsed")
 #define URI_SELECT_UNPARSED_VERB    ("unparsed")
@@ -101,11 +102,11 @@ static jk_workerEnv_t *workerEnv;
 
 
 static char extension_uri[INTERNET_MAX_URL_LENGTH] = "/jakarta/isapi_redirector2.dll";
-static char log_file[MAX_PATH * 2];
-static int  log_level = JK_LOG_EMERG_LEVEL;
-//static char worker_file[MAX_PATH * 2];
+static char worker_file[MAX_PATH * 2];
 static char server_root[MAX_PATH * 2];
-//static char worker_mount_file[MAX_PATH * 2];
+
+FILE *fLog;
+
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -126,13 +127,8 @@ static int get_registry_config_parameter(HKEY hkey,
                                          DWORD sz);
 
 
-static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
-                            char *name,
-                            char  *buf,
-                            DWORD bufsz,
-                            char  *def_val);
-
 static jk_env_t* jk2_create_config();
+
 
 
 static void write_error_response(PHTTP_FILTER_CONTEXT pfc,char *status,char * msg)
@@ -160,6 +156,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
 {
     ULONG http_filter_revision = HTTP_FILTER_REVISION;
 
+
     pVer->dwFilterVersion = pVer->dwServerFilterVersion;
                         
     if (pVer->dwFilterVersion > http_filter_revision) {
@@ -175,9 +172,11 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     strcpy(pVer->lpszFilterDesc, VERSION_STRING);
 
     if (!is_inited) {
+        fprintf(fLog,"GetFilterVersion::!is_inited\n");
         return initialize_extension();
     }
 
+    fprintf(fLog,"GetFilterVersion::Return TRUE\n");
     return TRUE;
 }
 
@@ -440,48 +439,54 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
 	}
 
 	if (is_inited) {
-            jk_ws_service_t sOnStack;
-            jk_ws_service_t *s=&sOnStack;
+        jk_ws_service_t sOnStack;
+        jk_ws_service_t *s=&sOnStack;
+        char *worker_name;
+        char huge_buf[16 * 1024]; /* should be enough for all */
+        DWORD huge_buf_sz;
 
-            jk_worker_t *worker=workerEnv->defaultWorker;
-            jk_pool_t *rPool=NULL;
-            int rc1;
-            
-            /* Get a pool for the request XXX move it in workerEnv to
-               be shared with other server adapters */
-            rPool= worker->rPoolCache->get( env, worker->rPoolCache );
-            if( rPool == NULL ) {
-                rPool=worker->pool->create( env, worker->pool, HUGE_POOL_SIZE );
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "mod_jk.handler(): new rpool\n");
-            }
+        
+        jk_worker_t *worker;
+        jk_pool_t *rPool=NULL;
+        int rc1;
 
-            jk2_service_iis_init( env, s );
-            s->pool = rPool;
-            s->is_recoverable_error = JK_FALSE;
-            s->response_started = JK_FALSE;
-            s->content_read = 0;
-            s->ws_private = lpEcb;
+        GET_SERVER_VARIABLE_VALUE(workerEnv->pool,HTTP_WORKER_HEADER_NAME, ( worker_name ));
+        worker=workerEnv->worker_map->get(env,workerEnv->worker_map,worker_name);
+        /* Get a pool for the request XXX move it in workerEnv to
+           be shared with other server adapters */
+        rPool= worker->rPoolCache->get( env, worker->rPoolCache );
+        if( rPool == NULL ) {
+            rPool=worker->pool->create( env, worker->pool, HUGE_POOL_SIZE );
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "mod_jk.handler(): new rpool\n");
+        }
 
-            /* Initialize the ws_service structure */
-            s->init( env, s, worker, lpEcb );
-            
-            /* env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                   "HttpExtensionProc %s a worker for name %s\n", 
-                   worker ? "got" : "could not get",
-                   worker_name);
-            */
-            rc = worker->service(env, worker, s);
-            
-            s->afterRequest(env, s);
-            
-            rPool->reset(env, rPool);
-            
-            rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
-            
-            lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
-            env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                   "HttpExtensionProc service() returned OK\n");
+        jk2_service_iis_init( env, s );
+        s->pool = rPool;
+        s->is_recoverable_error = JK_FALSE;
+        s->response_started = JK_FALSE;
+        s->content_read = 0;
+        s->ws_private = lpEcb;
+
+        /* Initialize the ws_service structure */
+        s->init( env, s, worker, lpEcb );
+        
+        /* env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+               "HttpExtensionProc %s a worker for name %s\n", 
+               worker ? "got" : "could not get",
+               worker_name);
+        */
+        rc = worker->service(env, worker, s);
+        
+        s->afterRequest(env, s);
+        
+        rPool->reset(env, rPool);
+        
+        rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
+        
+        lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
+        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+               "HttpExtensionProc service() returned OK\n");
     } else {
         env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                "HttpExtensionProc error, not initialized\n");
@@ -513,11 +518,14 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
                     ULONG ulReason,         // Reason why NT called this DLL
                     LPVOID lpReserved)      // Reserved parameter for future use
 {
-    BOOL fReturn = TRUE;
+    BOOL fReturn = TRUE; 
     char drive[_MAX_DRIVE];
     char dir[_MAX_DIR];
     char fname[_MAX_FNAME];
     char file_name[_MAX_PATH];
+    
+    fLog=fopen("c:\\isapi.log","a");
+    fprintf(fLog,"DllMain::ulReason=%d\n",ulReason);
 
     switch (ulReason) {
         case DLL_PROCESS_DETACH:
@@ -536,7 +544,8 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     } else {
         fReturn = JK_FALSE;
     }
-
+    fprintf(fLog,"DllMain::fReturn=%d\n",fReturn);
+    fclose(fLog);
     return fReturn;
 }
 
@@ -553,21 +562,22 @@ static int init_jk(char *serverName)
     } else {
         env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using registry.\n");
     }
-    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using log file %s.\n", log_file);
-    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using log level %d.\n", log_level);
+    //env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using log file %s.\n", log_file);
+    //env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using log level %d.\n", log_level);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using extension uri %s.\n", extension_uri);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using server root %s.\n", server_root);
-//    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using worker mount file %s.\n", worker_mount_file);
+    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using uri select %d.\n", uri_select_option);
     return rc;
 }
 
 static int initialize_extension(void)
 {
-
+    fprintf(fLog,"initialize_extension::is_inited=%d\n",is_inited);
     if (read_registry_init_data()) {
         is_inited = JK_TRUE;
     }
+    fprintf(fLog,"initialize_extension::is_inited=%d\n",is_inited);
     return is_inited;
 }
 
@@ -593,11 +603,11 @@ static int read_registry_init_data(void)
     char tmpbuf[INTERNET_MAX_URL_LENGTH];
     HKEY hkey;
     long rc;
-    int  ok = JK_TRUE;
+    int  ok = JK_TRUE; 
+/*  
     char *tmp;
     jk_map_t *map;
 
-/*
     if (map_alloc(&map)) {
         if (map_read_properties(map, ini_file_name)) {
             using_ini_file = JK_TRUE;
@@ -638,7 +648,7 @@ static int read_registry_init_data(void)
             }
         }
     
-    } else */ {
+    } else  */{
         rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
                           REGISTRY_LOCATION,
                           (DWORD)0,
@@ -647,24 +657,6 @@ static int read_registry_init_data(void)
         if(ERROR_SUCCESS != rc) {
             return JK_FALSE;
         } 
-
-        if(get_registry_config_parameter(hkey,
-                                         JK_LOG_FILE_TAG, 
-                                         tmpbuf,
-                                         sizeof(log_file))) {
-            strcpy(log_file, tmpbuf);
-        } else {
-            ok = JK_FALSE;
-        }
-    
-        if(get_registry_config_parameter(hkey,
-                                         JK_LOG_LEVEL_TAG,
-                                         tmpbuf,
-                                         sizeof(tmpbuf))) {
-            log_level = jk2_logger_file_parseLogLevel(tmpbuf);
-        } else {
-            ok = JK_FALSE;
-        }
 
         if(get_registry_config_parameter(hkey,
                                          EXTENSION_URI_TAG,
@@ -683,7 +675,6 @@ static int read_registry_init_data(void)
         } else {
             ok = JK_FALSE;
         }
-/*
         if(get_registry_config_parameter(hkey,
                                          JK_WORKER_FILE_TAG,
                                          tmpbuf,
@@ -693,15 +684,6 @@ static int read_registry_init_data(void)
             ok = JK_FALSE;
         }
 
-        if(get_registry_config_parameter(hkey,
-                                         JK_MOUNT_FILE_TAG,
-                                         tmpbuf,
-                                         sizeof(worker_mount_file))) {
-            strcpy(worker_mount_file, tmpbuf);
-        } else {
-            ok = JK_FALSE;
-        }
-*/
         if(get_registry_config_parameter(hkey,
                                          URI_SELECT_TAG, 
                                          tmpbuf,
@@ -715,7 +697,7 @@ static int read_registry_init_data(void)
         }
 
         RegCloseKey(hkey);
-    }    
+    }
     return ok;
 } 
 

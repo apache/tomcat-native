@@ -106,7 +106,7 @@ extern "C" {
 #define MAX_SERVERNAME                  128
 
 
-#define GET_SERVER_VARIABLE_VALUE(name, place) {    \
+#define GET_SERVER_VARIABLE_VALUE(pool, name, place) {    \
     (place) = NULL;                                 \
     huge_buf_sz = sizeof(huge_buf);                 \
     if (get_server_value(env,                       \
@@ -115,7 +115,7 @@ extern "C" {
                         huge_buf,                   \
                         huge_buf_sz,                \
                         "")) {                      \
-        (place) = w->pool->pstrdup(env,w->pool,huge_buf);   \
+        (place) = (pool)->pstrdup(env,(pool),huge_buf);   \
     }   \
 }\
 
@@ -151,6 +151,12 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
                  struct jk_worker *w, void *serverObj );
 
 int jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s);
+
+int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
+                            char *name,
+                            char  *buf,
+                            DWORD bufsz,
+                            char  *def_val);
 
 #ifdef __cplusplus
 }
