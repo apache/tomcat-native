@@ -72,13 +72,13 @@ AC_DEFUN([JAVA_INIT],[
                           specified its value will be inherited from the
                           JAVA_HOME environment variable).],
     [
-      case "${withval}" in
-      yes|YES|true|TRUE)
-        JAVA_ENABLE="TRUE"
+      case "${enableval}" in
+      ""|"yes"|"YES"|"true"|"TRUE")
+        JAVA_ENABLE="true"
         ;;
       *)
-        JAVA_ENABLE="TRUE"
-        JAVA_HOME="${withval}"
+        JAVA_ENABLE="true"
+        JAVA_HOME="${enableval}"
         ;;
       esac
 
@@ -87,12 +87,10 @@ AC_DEFUN([JAVA_INIT],[
       if ${TEST} ! -z "${JAVA_HOME}"
       then
         LOCAL_RESOLVEDIR(JAVA_HOME,${JAVA_HOME},[java home directory])
-        AC_MSG_RESULT([error])
-        AC_MSG_ERROR([java home not specified and not found in environment])
       fi
 
     ],[
-      JAVA_ENABLE="FALSE"
+      JAVA_ENABLE="false"
       AC_MSG_RESULT([no])
     ]
   )
@@ -107,12 +105,19 @@ dnl   binary name in the JAVAC environment variable. Compilation flags are
 dnl   retrieved from the JAVACFLAGS environment variable and checked.
 dnl --------------------------------------------------------------------------
 AC_DEFUN([JAVA_JAVAC],[
-  if ${TEST} -z "${JAVA_HOME}"
+  if ${TEST} "${JAVA_ENABLE}" = "false"
   then
     JAVAC=""
     JAVACFLAGS=""
   else
-    LOCAL_CHECK_PROG(JAVAC,javac,"${JAVA_HOME}/bin")
+    if ${TEST} -n "${JAVA_HOME}"
+    then
+      local_path="${JAVA_HOME}/bin"
+    else
+      local_path=""
+    fi
+    LOCAL_CHECK_PROG(JAVAC,javac,"${local_path}")
+    unset local_path
 
     AC_CACHE_CHECK([wether the Java compiler (${JAVAC}) works],
       ap_cv_prog_javac_works,[
@@ -127,7 +132,8 @@ AC_DEFUN([JAVA_JAVAC],[
         AC_MSG_RESULT(no)
         AC_MSG_ERROR([${JAVAC} cannot compile])
       fi
-    ])
+    ]
+  )
   fi
   AC_SUBST(JAVAC)
   AC_SUBST(JAVACFLAGS)
@@ -139,11 +145,18 @@ dnl   Checks wether we can find and use a Java Archieve Tool (JAR). Exports
 dnl   the binary name in the JAR environment variable.
 dnl --------------------------------------------------------------------------
 AC_DEFUN([JAVA_JAR],[
-  if ${TEST} -z "${JAVA_HOME}"
+  if ${TEST} "${JAVA_ENABLE}" = "false"
   then
     JAR=""
   else
-    LOCAL_CHECK_PROG(JAR,jar,"${JAVA_HOME}/bin")
+    if ${TEST} -n "${JAVA_HOME}"
+    then
+      local_path="${JAVA_HOME}/bin"
+    else
+      local_path=""
+    fi
+    LOCAL_CHECK_PROG(JAR,jar,"${local_path}")
+    unset local_path
   fi
   AC_SUBST(JAR)
 ])
@@ -154,11 +167,18 @@ dnl   Checks wether we can find and use a Java Documentation Tool (JAVADOC).
 dnl   Exports the binary name in the JAR environment variable.
 dnl --------------------------------------------------------------------------
 AC_DEFUN([JAVA_JAVADOC],[
-  if ${TEST} -z "${JAVA_HOME}"
+  if ${TEST} "${JAVA_ENABLE}" = "false"
   then
     JAVADOC=""
   else
-    LOCAL_CHECK_PROG(JAVADOC,javadoc,"${JAVA_HOME}/bin")
+    if ${TEST} -n "${JAVA_HOME}"
+    then
+      local_path="${JAVA_HOME}/bin"
+    else
+      local_path=""
+    fi
+    LOCAL_CHECK_PROG(JAVADOC,javadoc,"${local_path}")
+    unset local_path
   fi
   AC_SUBST(JAVADOC)
 ])
