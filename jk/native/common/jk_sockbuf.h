@@ -24,28 +24,21 @@
 
 #define SOCKBUF_SIZE (8*1024)
 
-struct jk_sockbuf {
+struct jk_sockbuf
+{
     char buf[SOCKBUF_SIZE];
     unsigned start;
     unsigned end;
-    int  sd;
+    int sd;
 };
 typedef struct jk_sockbuf jk_sockbuf_t;
 
-int jk_sb_open(jk_sockbuf_t *sb,
-               int sd);
+int jk_sb_open(jk_sockbuf_t *sb, int sd);
 
-int jk_sb_write(jk_sockbuf_t *sb,
-                const void *buf, 
-                unsigned sz);
+int jk_sb_write(jk_sockbuf_t *sb, const void *buf, unsigned sz);
 
-int jk_sb_read(jk_sockbuf_t *sb,
-               char **buf, 
-               unsigned sz,
-               unsigned *ac);
+int jk_sb_read(jk_sockbuf_t *sb, char **buf, unsigned sz, unsigned *ac);
 
 int jk_sb_flush(jk_sockbuf_t *sb);
 
-int jk_sb_gets(jk_sockbuf_t *sb,
-               char **ps);
-
+int jk_sb_gets(jk_sockbuf_t *sb, char **ps);

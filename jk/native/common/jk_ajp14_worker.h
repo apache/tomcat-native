@@ -34,17 +34,17 @@
 #include "jk_ajp13_worker.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
 #define JK_AJP14_WORKER_NAME ("ajp14")
 
-int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
-                                   const char *name,
-                                   jk_logger_t *l);
+    int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
+                                       const char *name, jk_logger_t *l);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_AJP14_WORKER_H */
+#endif                          /* JK_AJP14_WORKER_H */

@@ -36,56 +36,56 @@
  * Currently the jk_worker controller is located in jk_worker.c
  */
 #ifdef _PLACE_WORKER_LIST_HERE
-    #ifndef _JK_WORKER_LIST_H
-    #define _JK_WORKER_LIST_H
+#ifndef _JK_WORKER_LIST_H
+#define _JK_WORKER_LIST_H
 
-        #include "jk_ajp12_worker.h"
-        #include "jk_ajp13_worker.h"
-        #include "jk_ajp14_worker.h"
-        #ifdef HAVE_JNI
-            #include "jk_jni_worker.h"
-        #endif
-        #include "jk_lb_worker.h"
+#include "jk_ajp12_worker.h"
+#include "jk_ajp13_worker.h"
+#include "jk_ajp14_worker.h"
+#ifdef HAVE_JNI
+#include "jk_jni_worker.h"
+#endif
+#include "jk_lb_worker.h"
 
-        struct worker_factory_record {
-            const char *name;
-            worker_factory fac;
-        };
-        typedef struct worker_factory_record worker_factory_record_t;
+struct worker_factory_record
+{
+    const char *name;
+    worker_factory fac;
+};
+typedef struct worker_factory_record worker_factory_record_t;
 
-        static jk_map_t *worker_map;
+static jk_map_t *worker_map;
 
-        static worker_factory_record_t worker_factories[] = {
-            /*
-             * AJPv12 worker, this is the stable worker.
-             */
-            { JK_AJP12_WORKER_NAME, ajp12_worker_factory},
-            /*
-             * AJPv13 worker, fast bi-directional worker.
-             */
-            { JK_AJP13_WORKER_NAME, ajp13_worker_factory},
-            /*
-             * AJPv14 worker, next generation fast bi-directional worker.
-             */
-            { JK_AJP14_WORKER_NAME, ajp14_worker_factory},
-            /*
-             * In process JNI based worker. Requires the server to be 
-             * multithreaded and to use native threads.
-             */
-            #ifdef HAVE_JNI
-                { JK_JNI_WORKER_NAME, jni_worker_factory},
-            #endif
-            /*
-             * Load balancing worker. Performs round robin with sticky 
-             * session load balancing.
-             */
-            { JK_LB_WORKER_NAME, lb_worker_factory},
+static worker_factory_record_t worker_factories[] = {
+    /*
+     * AJPv12 worker, this is the stable worker.
+     */
+    {JK_AJP12_WORKER_NAME, ajp12_worker_factory},
+    /*
+     * AJPv13 worker, fast bi-directional worker.
+     */
+    {JK_AJP13_WORKER_NAME, ajp13_worker_factory},
+    /*
+     * AJPv14 worker, next generation fast bi-directional worker.
+     */
+    {JK_AJP14_WORKER_NAME, ajp14_worker_factory},
+    /*
+     * In process JNI based worker. Requires the server to be 
+     * multithreaded and to use native threads.
+     */
+#ifdef HAVE_JNI
+    {JK_JNI_WORKER_NAME, jni_worker_factory},
+#endif
+    /*
+     * Load balancing worker. Performs round robin with sticky 
+     * session load balancing.
+     */
+    {JK_LB_WORKER_NAME, lb_worker_factory},
 
-            /*
-             * Marks the end of the worker factory list.
-             */
-            { NULL, NULL}
-    };
-    #endif /* _JK_WORKER_LIST_H */
+    /*
+     * Marks the end of the worker factory list.
+     */
+    {NULL, NULL}
+};
+#endif /* _JK_WORKER_LIST_H */
 #endif /* _PLACE_WORKER_LIST_HERE */
-

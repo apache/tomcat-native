@@ -27,17 +27,17 @@
 #include "jk_service.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
 #define JK_LB_WORKER_NAME ("lb")
 
-int JK_METHOD lb_worker_factory(jk_worker_t **w,
-                                const char *name,
-                                jk_logger_t *l);
+    int JK_METHOD lb_worker_factory(jk_worker_t **w,
+                                    const char *name, jk_logger_t *l);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_LB_WORKER_H */
+#endif                          /* JK_LB_WORKER_H */

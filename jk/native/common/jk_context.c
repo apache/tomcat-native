@@ -36,7 +36,7 @@ int context_set_virtual(jk_context_t *c, char *virtual)
         if (virtual) {
             c->virtual = jk_pool_strdup(&c->p, virtual);
 
-            if (! c->virtual)
+            if (!c->virtual)
                 return JK_FALSE;
         }
 
@@ -54,7 +54,7 @@ int context_open(jk_context_t *c, char *virtual)
 {
     if (c) {
         jk_open_pool(&c->p, c->buf, sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
-        c->size  	= 0;
+        c->size = 0;
         c->capacity = 0;
         c->contexts = NULL;
 
@@ -83,14 +83,16 @@ int context_close(jk_context_t *c)
  * Allocate and open context
  */
 
-int context_alloc(jk_context_t **c, char * virtual)
+int context_alloc(jk_context_t **c, char *virtual)
 {
-    if (c) 
-        return context_open(*c = (jk_context_t *)malloc(sizeof(jk_context_t)), virtual);
-  
+    if (c)
+        return context_open(*c =
+                            (jk_context_t *)malloc(sizeof(jk_context_t)),
+                            virtual);
+
     return JK_FALSE;
 }
- 
+
 /*
  * Close and destroy context
  */
@@ -98,12 +100,12 @@ int context_alloc(jk_context_t **c, char * virtual)
 int context_free(jk_context_t **c)
 {
     if (c && *c) {
-        context_close(*c);  
+        context_close(*c);
         free(*c);
         *c = NULL;
         return JK_TRUE;
     }
-    
+
     return JK_FALSE;
 }
 
@@ -116,15 +118,19 @@ static int context_realloc(jk_context_t *c)
 {
     if (c->size == c->capacity) {
         jk_context_item_t **contexts;
-        int  capacity = c->capacity + CBASE_INC_SIZE;
-        
-        contexts = (jk_context_item_t **)jk_pool_alloc(&c->p, sizeof(jk_context_item_t *) * capacity);
+        int capacity = c->capacity + CBASE_INC_SIZE;
 
-        if (! contexts)
+        contexts =
+            (jk_context_item_t **)jk_pool_alloc(&c->p,
+                                                sizeof(jk_context_item_t *) *
+                                                capacity);
+
+        if (!contexts)
             return JK_FALSE;
 
         if (c->capacity && c->contexts)
-            memcpy(contexts, c->contexts, sizeof(jk_context_item_t *) * c->capacity);
+            memcpy(contexts, c->contexts,
+                   sizeof(jk_context_item_t *) * c->capacity);
 
         c->contexts = contexts;
         c->capacity = capacity;
@@ -136,48 +142,48 @@ static int context_realloc(jk_context_t *c)
 /*
  * Ensure there will be memory in context info to URIS
  */
- 
+
 static int context_item_realloc(jk_context_t *c, jk_context_item_t *ci)
 {
     if (ci->size == ci->capacity) {
-            char **uris;
-            int capacity = ci->capacity + URI_INC_SIZE;
+        char **uris;
+        int capacity = ci->capacity + URI_INC_SIZE;
 
-            uris = (char **)jk_pool_alloc(&c->p, sizeof(char *) * capacity);
+        uris = (char **)jk_pool_alloc(&c->p, sizeof(char *) * capacity);
 
-        if (! uris)
+        if (!uris)
             return JK_FALSE;
 
         memcpy(uris, ci->uris, sizeof(char *) * ci->capacity);
 
-        ci->uris     = uris;
+        ci->uris = uris;
         ci->capacity = capacity;
     }
-    
+
     return JK_TRUE;
 }
 
-        
+
 /*
  * Locate a context base in context list
  */
 
-jk_context_item_t * context_find_base(jk_context_t *c, char *cbase)
+jk_context_item_t *context_find_base(jk_context_t *c, char *cbase)
 {
-    int                 i;
-    jk_context_item_t * ci;
+    int i;
+    jk_context_item_t *ci;
 
-    if (! c || ! cbase)
+    if (!c || !cbase)
         return NULL;
 
-    for (i = 0 ; i < c->size ; i++) {
-        
+    for (i = 0; i < c->size; i++) {
+
         ci = c->contexts[i];
 
-        if (! ci)
+        if (!ci)
             continue;
 
-        if (! strcmp(ci->cbase, cbase))
+        if (!strcmp(ci->cbase, cbase))
             return ci;
     }
 
@@ -188,15 +194,15 @@ jk_context_item_t * context_find_base(jk_context_t *c, char *cbase)
  * Locate an URI in a context item
  */
 
-char * context_item_find_uri(jk_context_item_t *ci, char *uri)
+char *context_item_find_uri(jk_context_item_t *ci, char *uri)
 {
     int i;
 
-    if (! ci || ! uri)
+    if (!ci || !uri)
         return NULL;
 
-    for (i = 0 ; i < ci->size ; i++) {
-        if (! strcmp(ci->uris[i], uri))
+    for (i = 0; i < ci->size; i++) {
+        if (!strcmp(ci->uris[i], uri))
             return ci->uris[i];
     }
 
@@ -205,18 +211,18 @@ char * context_item_find_uri(jk_context_item_t *ci, char *uri)
 
 void context_dump_uris(jk_context_t *c, char *cbase, FILE * f)
 {
-    jk_context_item_t * ci;
-    int                 i;
+    jk_context_item_t *ci;
+    int i;
 
     ci = context_find_base(c, cbase);
 
-    if (! ci)
+    if (!ci)
         return;
 
     for (i = 0; i < ci->size; i++)
         fprintf(f, "/%s/%s\n", ci->cbase, ci->uris[i]);
 
-    fflush(f); 
+    fflush(f);
 }
 
 
@@ -224,11 +230,11 @@ void context_dump_uris(jk_context_t *c, char *cbase, FILE * f)
  * Add a new context item to context
  */
 
-jk_context_item_t * context_add_base(jk_context_t *c, char *cbase)
+jk_context_item_t *context_add_base(jk_context_t *c, char *cbase)
 {
-    jk_context_item_t *  ci;
+    jk_context_item_t *ci;
 
-    if (! c || !cbase)
+    if (!c || !cbase)
         return NULL;
 
     /* Check if the context base was not allready created */
@@ -242,16 +248,16 @@ jk_context_item_t * context_add_base(jk_context_t *c, char *cbase)
 
     ci = (jk_context_item_t *)jk_pool_alloc(&c->p, sizeof(jk_context_item_t));
 
-    if (! ci)
+    if (!ci)
         return NULL;
 
     c->contexts[c->size] = ci;
     c->size++;
-    ci->cbase       = jk_pool_strdup(&c->p, cbase);
-    ci->status      = 0;
-    ci->size        = 0;
-    ci->capacity    = 0;
-    ci->uris        = NULL;
+    ci->cbase = jk_pool_strdup(&c->p, cbase);
+    ci->status = 0;
+    ci->size = 0;
+    ci->capacity = 0;
+    ci->uris = NULL;
 
     return ci;
 }
@@ -260,17 +266,17 @@ jk_context_item_t * context_add_base(jk_context_t *c, char *cbase)
  * Add a new URI to a context item
  */
 
-int context_add_uri(jk_context_t *c, char *cbase, char * uri)
+int context_add_uri(jk_context_t *c, char *cbase, char *uri)
 {
-    jk_context_item_t *  ci;
+    jk_context_item_t *ci;
 
-    if (! uri)
+    if (!uri)
         return JK_FALSE;
 
     /* Get/Create the context base */
     ci = context_add_base(c, cbase);
-        
-    if (! ci)
+
+    if (!ci)
         return JK_FALSE;
 
     if (context_item_find_uri(ci, uri) != NULL)
@@ -287,4 +293,3 @@ int context_add_uri(jk_context_t *c, char *cbase, char * uri)
     ci->size++;
     return JK_TRUE;
 }
-

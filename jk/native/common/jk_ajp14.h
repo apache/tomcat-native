@@ -26,13 +26,14 @@
 #include "jk_context.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
 #define AJP14_PROTO					14
 
 #define AJP14_WS_HEADER             0x1235
-#define AJP14_SW_HEADER             0x1235	/* AJP14 use now the same header in both directions */
+#define AJP14_SW_HEADER             0x1235      /* AJP14 use now the same header in both directions */
 
 #define AJP14_DEF_HOST            	("localhost")
 #define AJP14_DEF_PORT            	(8011)
@@ -126,62 +127,62 @@ extern "C" {
 /*
  * web-server want context info after login
  */
-#define AJP14_CONTEXT_INFO_NEG      0x80000000 
+#define AJP14_CONTEXT_INFO_NEG      0x80000000
 
 /*
  * web-server want context updates
  */
-#define AJP14_CONTEXT_UPDATE_NEG    0x40000000 
+#define AJP14_CONTEXT_UPDATE_NEG    0x40000000
 
 /*
  * web-server want compressed stream 
  */
-#define AJP14_GZIP_STREAM_NEG       0x20000000 
+#define AJP14_GZIP_STREAM_NEG       0x20000000
 
 /*
  * web-server want crypted DES56 stream with secret key
  */
-#define AJP14_DES56_STREAM_NEG      0x10000000 
+#define AJP14_DES56_STREAM_NEG      0x10000000
 
 /*
  * Extended info on server SSL vars
  */
-#define AJP14_SSL_VSERVER_NEG       0x08000000 
+#define AJP14_SSL_VSERVER_NEG       0x08000000
 
 /*
  *Extended info on client SSL vars
  */
-#define AJP14_SSL_VCLIENT_NEG       0x04000000 
+#define AJP14_SSL_VCLIENT_NEG       0x04000000
 
 /*
  * Extended info on crypto SSL vars
  */
-#define AJP14_SSL_VCRYPTO_NEG       0x02000000 
+#define AJP14_SSL_VCRYPTO_NEG       0x02000000
 
 /*
  * Extended info on misc SSL vars
  */
-#define AJP14_SSL_VMISC_NEG         0x01000000 
+#define AJP14_SSL_VMISC_NEG         0x01000000
 
 /*
  * mask of protocol supported 
  */
-#define AJP14_PROTO_SUPPORT_AJPXX_NEG   0x00FF0000 
+#define AJP14_PROTO_SUPPORT_AJPXX_NEG   0x00FF0000
 
 /* 
  * communication could use AJP14 
  */
-#define AJP14_PROTO_SUPPORT_AJP14_NEG   0x00010000 
+#define AJP14_PROTO_SUPPORT_AJP14_NEG   0x00010000
 
 /*
  * communication could use AJP15 
  */
-#define AJP14_PROTO_SUPPORT_AJP15_NEG   0x00020000 
+#define AJP14_PROTO_SUPPORT_AJP15_NEG   0x00020000
 
 /*
  * communication could use AJP16
  */
-#define AJP14_PROTO_SUPPORT_AJP16_NEG   0x00040000 
+#define AJP14_PROTO_SUPPORT_AJP16_NEG   0x00040000
 
 /*
  * Some failure codes
@@ -201,112 +202,105 @@ extern "C" {
 /* 
  * Misc defines
  */
-#define AJP14_ENTROPY_SEED_LEN		32	/* we're using MD5 => 32 chars */
-#define AJP14_COMPUTED_KEY_LEN		32  /* we're using MD5 also */
+#define AJP14_ENTROPY_SEED_LEN		32      /* we're using MD5 => 32 chars */
+#define AJP14_COMPUTED_KEY_LEN		32      /* we're using MD5 also */
 
 /*
  * The login structure
  */
-typedef struct jk_login_service jk_login_service_t;
+    typedef struct jk_login_service jk_login_service_t;
 
-struct jk_login_service {
+    struct jk_login_service
+    {
 
-    /*
-	 *  Pointer to web-server name
-     */
-    char * web_server_name;
+        /*
+         *  Pointer to web-server name
+         */
+        char *web_server_name;
 
-	/*
-	 * Pointer to servlet-engine name
-	 */
-	char * servlet_engine_name;
+        /*
+         * Pointer to servlet-engine name
+         */
+        char *servlet_engine_name;
 
-	/*
-	 * Pointer to secret key
-	 */
-	char * secret_key;
+        /*
+         * Pointer to secret key
+         */
+        char *secret_key;
 
-	/*
-	 * Received entropy seed
-	 */
-	char entropy[AJP14_ENTROPY_SEED_LEN + 1];
+        /*
+         * Received entropy seed
+         */
+        char entropy[AJP14_ENTROPY_SEED_LEN + 1];
 
-	/*
-	 * Computed key
-	 */
-	char computed_key[AJP14_COMPUTED_KEY_LEN + 1];
+        /*
+         * Computed key
+         */
+        char computed_key[AJP14_COMPUTED_KEY_LEN + 1];
 
-    /*
-     *  What we want to negociate
-     */
-    unsigned long negociation;
+        /*
+         *  What we want to negociate
+         */
+        unsigned long negociation;
 
-	/*
-	 * What we received from servlet engine 
-     */
-	unsigned long negociated;
-};                                
+        /*
+         * What we received from servlet engine 
+         */
+        unsigned long negociated;
+    };
 
 /*
  * functions defined here 
  */
 
-void 	ajp14_compute_md5(jk_login_service_t *s, 
-						  jk_logger_t *l);
+    void ajp14_compute_md5(jk_login_service_t *s, jk_logger_t *l);
 
-int 	ajp14_marshal_login_init_into_msgb(jk_msg_buf_t *msg, 
-										   jk_login_service_t *s, 
-										   jk_logger_t *l);
+    int ajp14_marshal_login_init_into_msgb(jk_msg_buf_t *msg,
+                                           jk_login_service_t *s,
+                                           jk_logger_t *l);
 
-int 	ajp14_unmarshal_login_seed(jk_msg_buf_t *msg, 
-								   jk_login_service_t *s, 
-								   jk_logger_t *l);
+    int ajp14_unmarshal_login_seed(jk_msg_buf_t *msg,
+                                   jk_login_service_t *s, jk_logger_t *l);
 
-int 	ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t *msg, 
-										   jk_login_service_t *s, 
-										   jk_logger_t *l);
+    int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t *msg,
+                                           jk_login_service_t *s,
+                                           jk_logger_t *l);
 
-int 	ajp14_unmarshal_log_ok(jk_msg_buf_t *msg, 
-							   jk_login_service_t *s, 
-							   jk_logger_t *l);
+    int ajp14_unmarshal_log_ok(jk_msg_buf_t *msg,
+                               jk_login_service_t *s, jk_logger_t *l);
 
-int 	ajp14_unmarshal_log_nok(jk_msg_buf_t *msg, 
-								jk_logger_t *l);
+    int ajp14_unmarshal_log_nok(jk_msg_buf_t *msg, jk_logger_t *l);
 
-int 	ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t *msg, 
-										 jk_login_service_t *s, 
-										 jk_logger_t *l);
+    int ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
+                                         jk_login_service_t *s,
+                                         jk_logger_t *l);
 
-int 	ajp14_unmarshal_shutdown_nok(jk_msg_buf_t *msg, 
-									 jk_logger_t *l);
+    int ajp14_unmarshal_shutdown_nok(jk_msg_buf_t *msg, jk_logger_t *l);
 
-int 	ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t *msg, 
-											   jk_msg_buf_t *unk, 
-											   jk_logger_t *l);
+    int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t *msg,
+                                               jk_msg_buf_t *unk,
+                                               jk_logger_t *l);
 
-int 	ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg, 
-											  char *virtual, 
-											  jk_logger_t *l);
+    int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
+                                              char *virtual, jk_logger_t *l);
 
-int 	ajp14_unmarshal_context_info(jk_msg_buf_t *msg, 
-									 jk_context_t *context, 
-									 jk_logger_t *l);
+    int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
+                                     jk_context_t *context, jk_logger_t *l);
 
-int 	ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg, 
-											  jk_context_t *context, 
-                                              char         *cname,
-											  jk_logger_t *l);
+    int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
+                                              jk_context_t *context,
+                                              char *cname, jk_logger_t *l);
 
-int 	ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg, 
-											jk_context_t *context, 
-											jk_logger_t *l);
+    int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
+                                            jk_context_t *context,
+                                            jk_logger_t *l);
 
-int 	ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg, 
-										   jk_context_t *context, 
-										   jk_logger_t *l);
+    int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg,
+                                           jk_context_t *context,
+                                           jk_logger_t *l);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_AJP14_H */
+#endif                          /* JK_AJP14_H */

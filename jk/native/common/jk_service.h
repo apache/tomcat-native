@@ -35,37 +35,39 @@
 #include "jk_msg_buff.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-    
+extern "C"
+{
+#endif                          /* __cplusplus */
+
 /*
  * Env Information to be provided to worker at init time
  * With AJP14 support we need to have access to many informations
  * about web-server, uri to worker map....
  */
 
-struct jk_worker_env {
+    struct jk_worker_env
+    {
 
-    /* The URI to WORKER map, will be feeded by AJP14 autoconf feature */
-    jk_uri_worker_map_t *uri_to_worker;
-    
-    int num_of_workers;
-    char *first_worker;
+        /* The URI to WORKER map, will be feeded by AJP14 autoconf feature */
+        jk_uri_worker_map_t *uri_to_worker;
 
-    /* Web-Server we're running on (Apache/IIS/NES) */
-    char          		*server_name;
-    
-    /* Virtual server handled - "*" is all virtual */
-    char                *virtual;   
-};
-typedef struct jk_worker_env jk_worker_env_t;
+        int num_of_workers;
+        char *first_worker;
 
-struct jk_ws_service;
-struct jk_endpoint;
-struct jk_worker;
-typedef struct jk_ws_service jk_ws_service_t;
-typedef struct jk_endpoint   jk_endpoint_t;
-typedef struct jk_worker     jk_worker_t;
+        /* Web-Server we're running on (Apache/IIS/NES) */
+        char *server_name;
+
+        /* Virtual server handled - "*" is all virtual */
+        char *virtual;
+    };
+    typedef struct jk_worker_env jk_worker_env_t;
+
+    struct jk_ws_service;
+    struct jk_endpoint;
+    struct jk_worker;
+    typedef struct jk_ws_service jk_ws_service_t;
+    typedef struct jk_endpoint jk_endpoint_t;
+    typedef struct jk_worker jk_worker_t;
 
 /*
  * The web server service 'class'.  An instance of this class is created
@@ -95,145 +97,144 @@ typedef struct jk_worker     jk_worker_t;
  *
  * See apache1.3/mod_jk.c and iis/jk_isapi_plugin.c for examples.  
  */
-struct jk_ws_service {
-  
-    /* 
-     * A 'this' pointer which is used by the subclasses of this class to
-     * point to data which is specific to a given web server platform
-     * (e.g. Apache or IIS).  
-     */
-    void *ws_private;
-    
-    /*
-     * Provides memory management.  All data specific to this request is
-     * allocated within this pool, which can then be reclaimed at the end
-     * of the request handling cycle. 
-     *
-     * Alive as long as the request is alive.  
-     */
-    jk_pool_t *pool;
+    struct jk_ws_service
+    {
 
-    /* 
-     * CGI Environment needed by servlets
-     */
-    char    *method;        
-    char    *protocol;      
-    char    *req_uri;       
-    char    *remote_addr;   
-    char    *remote_host;   
-    char    *remote_user;   
-    char    *auth_type;     
-    char    *query_string;  
-    char    *server_name;   
-    unsigned server_port;   
-    char    *server_software;
-    unsigned content_length;    /* integer that represents the content  */
-                                /* length should be 0 if unknown.        */
-    unsigned is_chunked;        /* 1 if content length is unknown (chunked rq) */
-    unsigned no_more_chunks;    /* 1 if last chunk has been read */
-    unsigned content_read;      /* number of bytes read */
+        /* 
+         * A 'this' pointer which is used by the subclasses of this class to
+         * point to data which is specific to a given web server platform
+         * (e.g. Apache or IIS).  
+         */
+        void *ws_private;
 
-    /*
-     * SSL information
-     *
-     * is_ssl       - True if request is in ssl connection
-     * ssl_cert     - If available, base64 ASN.1 encoded client certificates.
-     * ssl_cert_len - Length of ssl_cert, 0 if certificates are not available.
-     * ssl_cipher   - The ssl cipher suite in use.
-     * ssl_session  - The ssl session string
-     *
-     * In some servers it is impossible to extract all this information, in this 
-     * case, we are passing NULL.
-     */
-    int      is_ssl;
-    char     *ssl_cert;
-    unsigned ssl_cert_len;
-    char     *ssl_cipher;
-    char     *ssl_session;
+        /*
+         * Provides memory management.  All data specific to this request is
+         * allocated within this pool, which can then be reclaimed at the end
+         * of the request handling cycle. 
+         *
+         * Alive as long as the request is alive.  
+         */
+        jk_pool_t *pool;
 
-	/*
-	 * SSL extra information for Servlet 2.3 API
-	 * 
-	 * ssl_key_size - ssl key size in use
-	 */
-	int		ssl_key_size;
-	
-    /*
-     * Headers, names and values.
-     */
-    char    **headers_names;    /* Names of the request headers  */
-    char    **headers_values;   /* Values of the request headers */
-    unsigned num_headers;       /* Number of request headers     */
+        /* 
+         * CGI Environment needed by servlets
+         */
+        char *method;
+        char *protocol;
+        char *req_uri;
+        char *remote_addr;
+        char *remote_host;
+        char *remote_user;
+        char *auth_type;
+        char *query_string;
+        char *server_name;
+        unsigned server_port;
+        char *server_software;
+        unsigned content_length;        /* integer that represents the content  */
+        /* length should be 0 if unknown.        */
+        unsigned is_chunked;    /* 1 if content length is unknown (chunked rq) */
+        unsigned no_more_chunks;        /* 1 if last chunk has been read */
+        unsigned content_read;  /* number of bytes read */
+
+        /*
+         * SSL information
+         *
+         * is_ssl       - True if request is in ssl connection
+         * ssl_cert     - If available, base64 ASN.1 encoded client certificates.
+         * ssl_cert_len - Length of ssl_cert, 0 if certificates are not available.
+         * ssl_cipher   - The ssl cipher suite in use.
+         * ssl_session  - The ssl session string
+         *
+         * In some servers it is impossible to extract all this information, in this 
+         * case, we are passing NULL.
+         */
+        int is_ssl;
+        char *ssl_cert;
+        unsigned ssl_cert_len;
+        char *ssl_cipher;
+        char *ssl_session;
+
+        /*
+         * SSL extra information for Servlet 2.3 API
+         * 
+         * ssl_key_size - ssl key size in use
+         */
+        int ssl_key_size;
+
+        /*
+         * Headers, names and values.
+         */
+        char **headers_names;   /* Names of the request headers  */
+        char **headers_values;  /* Values of the request headers */
+        unsigned num_headers;   /* Number of request headers     */
 
 
-    /*
-     * Request attributes. 
-     *
-     * These attributes that were extracted from the web server and are 
-     * sent to Tomcat.
-     *
-     * The developer should be able to read them from the ServletRequest
-     * attributes. Tomcat is required to append org.apache.tomcat. to 
-     * these attrinbute names.
-     */
-    char    **attributes_names;    /* Names of the request attributes  */
-    char    **attributes_values;   /* Values of the request attributes */
-    unsigned num_attributes;       /* Number of request attributes     */
+        /*
+         * Request attributes. 
+         *
+         * These attributes that were extracted from the web server and are 
+         * sent to Tomcat.
+         *
+         * The developer should be able to read them from the ServletRequest
+         * attributes. Tomcat is required to append org.apache.tomcat. to 
+         * these attrinbute names.
+         */
+        char **attributes_names;        /* Names of the request attributes  */
+        char **attributes_values;       /* Values of the request attributes */
+        unsigned num_attributes;        /* Number of request attributes     */
 
-    /*
-     * The jvm route is in use when the adapter load balance among
-     * several JVMs. It is the ID of a specific JVM in the load balance
-     * group. We are using this variable to implement JVM session 
-     * affinity
-     */
-    char    *jvm_route;
+        /*
+         * The jvm route is in use when the adapter load balance among
+         * several JVMs. It is the ID of a specific JVM in the load balance
+         * group. We are using this variable to implement JVM session 
+         * affinity
+         */
+        char *jvm_route;
 
-    /* Temp solution for auth. For native1 it'll be sent on each request,
-       if an option is present. For native2 it'll be sent with the first
-       request. On java side, both cases will work. For tomcat3.2 or
-       a version that doesn't support secret - don't set the secret,
-       and it'll work.
-     */
-    char    *secret;        
-    /*
-     * Callbacks into the web server.  For each, the first argument is
-     * essentially a 'this' pointer.  All return JK_TRUE on success
-     * and JK_FALSE on failure.
-     */
+        /* Temp solution for auth. For native1 it'll be sent on each request,
+           if an option is present. For native2 it'll be sent with the first
+           request. On java side, both cases will work. For tomcat3.2 or
+           a version that doesn't support secret - don't set the secret,
+           and it'll work.
+         */
+        char *secret;
+        /*
+         * Callbacks into the web server.  For each, the first argument is
+         * essentially a 'this' pointer.  All return JK_TRUE on success
+         * and JK_FALSE on failure.
+         */
 
-    /*
-     * Area to get POST data for fail-over recovery in POST
-     */
-    jk_msg_buf_t    *reco_buf; 
-    int		    reco_status;
+        /*
+         * Area to get POST data for fail-over recovery in POST
+         */
+        jk_msg_buf_t *reco_buf;
+        int reco_status;
 
-    /*
-     * Send the response headers to the browser.
-     */
-    int (JK_METHOD *start_response)(jk_ws_service_t *s,
-                                    int status,
-                                    const char *reason,
-                                    const char * const *header_names,
-                                    const char * const *header_values,
-                                    unsigned num_of_headers);
+        /*
+         * Send the response headers to the browser.
+         */
+        int (JK_METHOD * start_response) (jk_ws_service_t *s,
+                                          int status,
+                                          const char *reason,
+                                          const char *const *header_names,
+                                          const char *const *header_values,
+                                          unsigned num_of_headers);
 
-    /*
-     * Read a chunk of the request body into a buffer.  Attempt to read len
-     * bytes into the buffer.  Write the number of bytes actually read into
-     * actually_read.  
-     */
-    int (JK_METHOD *read)(jk_ws_service_t *s,
-                          void *buffer,
-                          unsigned len,
-                          unsigned *actually_read);
+        /*
+         * Read a chunk of the request body into a buffer.  Attempt to read len
+         * bytes into the buffer.  Write the number of bytes actually read into
+         * actually_read.  
+         */
+        int (JK_METHOD * read) (jk_ws_service_t *s,
+                                void *buffer,
+                                unsigned len, unsigned *actually_read);
 
-    /*
-     * Write a chunk of response data back to the browser.
-     */
-    int (JK_METHOD *write)(jk_ws_service_t *s,
-                           const void *buffer,
-                           unsigned len);
-};
+        /*
+         * Write a chunk of response data back to the browser.
+         */
+        int (JK_METHOD * write) (jk_ws_service_t *s,
+                                 const void *buffer, unsigned len);
+    };
 
 /*
  * The endpoint 'class', which represents one end of a connection to the
@@ -265,38 +266,37 @@ struct jk_ws_service {
  *
  * See jk_ajp13_worker.c/jk_ajp14_worker.c and jk_ajp12_worker.c for examples.  
  */
-struct jk_endpoint {
-  
-    /* 
-     * A 'this' pointer which is used by the subclasses of this class to
-     * point to data/functions which are specific to a given protocol 
-     * (e.g. ajp12 or ajp13 or ajp14).  
-     */
-    void *endpoint_private;
+    struct jk_endpoint
+    {
 
-    /*
-     * Forward a request to the servlet engine.  The request is described
-     * by the jk_ws_service_t object.  I'm not sure exactly how
-     * is_recoverable_error is being used.  
-     */
-    int (JK_METHOD *service)(jk_endpoint_t *e, 
-                             jk_ws_service_t *s,
-                             jk_logger_t *l,
-                             int *is_recoverable_error);
+        /* 
+         * A 'this' pointer which is used by the subclasses of this class to
+         * point to data/functions which are specific to a given protocol 
+         * (e.g. ajp12 or ajp13 or ajp14).  
+         */
+        void *endpoint_private;
 
-    /*
-     * Called when this particular endpoint has finished processing a
-     * request.  For some protocols (e.g. ajp12), this frees the memory
-     * associated with the endpoint.  For others (e.g. ajp13/ajp14), this can
-     * return the endpoint to a cache of already opened endpoints.  
-     *
-     * Note that the first argument is *not* a 'this' pointer, but is
-     * rather a pointer to a 'this' pointer.  This is necessary, because
-     * we may need to free this object.
-     */
-    int (JK_METHOD *done)(jk_endpoint_t **p,
-                          jk_logger_t *l);
-};
+        /*
+         * Forward a request to the servlet engine.  The request is described
+         * by the jk_ws_service_t object.  I'm not sure exactly how
+         * is_recoverable_error is being used.  
+         */
+        int (JK_METHOD * service) (jk_endpoint_t *e,
+                                   jk_ws_service_t *s,
+                                   jk_logger_t *l, int *is_recoverable_error);
+
+        /*
+         * Called when this particular endpoint has finished processing a
+         * request.  For some protocols (e.g. ajp12), this frees the memory
+         * associated with the endpoint.  For others (e.g. ajp13/ajp14), this can
+         * return the endpoint to a cache of already opened endpoints.  
+         *
+         * Note that the first argument is *not* a 'this' pointer, but is
+         * rather a pointer to a 'this' pointer.  This is necessary, because
+         * we may need to free this object.
+         */
+        int (JK_METHOD * done) (jk_endpoint_t **p, jk_logger_t *l);
+    };
 
 /*
  * The worker 'class', which represents something to which the web server
@@ -337,58 +337,55 @@ struct jk_endpoint {
  *
  * See jk_ajp14_worker.c, jk_ajp13_worker.c and jk_ajp12_worker.c for examples.  
  */
-struct jk_worker {
+    struct jk_worker
+    {
 
-    /* 
-     * A 'this' pointer which is used by the subclasses of this class to
-     * point to data/functions which are specific to a given protocol 
-     * (e.g. ajp12 or ajp13 or ajp14).  
-     */
-    void *worker_private;
+        /* 
+         * A 'this' pointer which is used by the subclasses of this class to
+         * point to data/functions which are specific to a given protocol 
+         * (e.g. ajp12 or ajp13 or ajp14).  
+         */
+        void *worker_private;
 
-    /*
-     * For all of the below (except destroy), the first argument is
-     * essentially a 'this' pointer.  
-     */
+        /*
+         * For all of the below (except destroy), the first argument is
+         * essentially a 'this' pointer.  
+         */
 
-    /*
-     * Given a worker which is in the process of being created, and a list
-     * of configuration options (or 'properties'), check to see if it the
-     * options are.  This will always be called before the init() method.
-     * The init/validate distinction is a bit hazy to me.
-     * See jk_ajp13_worker.c/jk_ajp14_worker.c and jk_worker.c->wc_create_worker() 
-     */
-    int (JK_METHOD *validate)(jk_worker_t *w,
-                              jk_map_t *props, 
-                              jk_worker_env_t *we,
-                              jk_logger_t *l);
+        /*
+         * Given a worker which is in the process of being created, and a list
+         * of configuration options (or 'properties'), check to see if it the
+         * options are.  This will always be called before the init() method.
+         * The init/validate distinction is a bit hazy to me.
+         * See jk_ajp13_worker.c/jk_ajp14_worker.c and jk_worker.c->wc_create_worker() 
+         */
+        int (JK_METHOD * validate) (jk_worker_t *w,
+                                    jk_map_t *props,
+                                    jk_worker_env_t *we, jk_logger_t *l);
 
-    /*
-     * Do whatever initialization needs to be done to start this worker up.
-     * Configuration options are passed in via the props parameter.  
-     */
-    int (JK_METHOD *init)(jk_worker_t *w,
-                          jk_map_t *props, 
-                          jk_worker_env_t *we,
-                          jk_logger_t *l);
+        /*
+         * Do whatever initialization needs to be done to start this worker up.
+         * Configuration options are passed in via the props parameter.  
+         */
+        int (JK_METHOD * init) (jk_worker_t *w,
+                                jk_map_t *props,
+                                jk_worker_env_t *we, jk_logger_t *l);
 
 
-    /*
-     * Obtain an endpoint to service a particular request.  A pointer to
-     * the endpoint is stored in pend.  
-     */
-    int (JK_METHOD *get_endpoint)(jk_worker_t *w,
-                                  jk_endpoint_t **pend,
-                                  jk_logger_t *l);
+        /*
+         * Obtain an endpoint to service a particular request.  A pointer to
+         * the endpoint is stored in pend.  
+         */
+        int (JK_METHOD * get_endpoint) (jk_worker_t *w,
+                                        jk_endpoint_t **pend, jk_logger_t *l);
 
-    /*
-     * Shutdown this worker.  The first argument is not a 'this' pointer,
-     * but rather a pointer to 'this', so that the object can be free'd (I
-     * think -- though that doesn't seem to be happening.  Hmmm).  
-     */
-    int (JK_METHOD *destroy)(jk_worker_t **w,
-                             jk_logger_t *l);
-};
+        /*
+         * Shutdown this worker.  The first argument is not a 'this' pointer,
+         * but rather a pointer to 'this', so that the object can be free'd (I
+         * think -- though that doesn't seem to be happening.  Hmmm).  
+         */
+        int (JK_METHOD * destroy) (jk_worker_t **w, jk_logger_t *l);
+    };
 
 /*
  * Essentially, an abstract base class (or factory class) with a single
@@ -403,12 +400,12 @@ struct jk_worker {
  * for the various web servers (since the only link is through
  * jk_worker_list.h).  
  */
-typedef int (JK_METHOD *worker_factory)(jk_worker_t **w,
-                                        const char *name,
-                                        jk_logger_t *l);
+    typedef int (JK_METHOD * worker_factory) (jk_worker_t **w,
+                                              const char *name,
+                                              jk_logger_t *l);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_SERVICE_H */
+#endif                          /* JK_SERVICE_H */

@@ -25,35 +25,33 @@
 
 static int fill_buffer(jk_sockbuf_t *sb);
 
-int jk_sb_open(jk_sockbuf_t *sb,
-               int sd)
+int jk_sb_open(jk_sockbuf_t *sb, int sd)
 {
-    if(sb && sd >= 0) {
-        sb->end   = 0;
+    if (sb && sd >= 0) {
+        sb->end = 0;
         sb->start = 0;
-        sb->sd    = sd;
+        sb->sd = sd;
         return JK_TRUE;
     }
 
     return JK_FALSE;
 }
 
-int jk_sb_write(jk_sockbuf_t *sb,
-                const void *buf, 
-                unsigned sz)
+int jk_sb_write(jk_sockbuf_t *sb, const void *buf, unsigned sz)
 {
-    if(sb && buf && sz) {
-        if((SOCKBUF_SIZE - sb->end) >= sz) {
+    if (sb && buf && sz) {
+        if ((SOCKBUF_SIZE - sb->end) >= sz) {
             memcpy(sb->buf + sb->end, buf, sz);
             sb->end += sz;
-        } else {
-            if(!jk_sb_flush(sb)) {
+        }
+        else {
+            if (!jk_sb_flush(sb)) {
                 return JK_FALSE;
             }
-            if(sz > SOCKBUF_SIZE) {
+            if (sz > SOCKBUF_SIZE) {
                 return (send(sb->sd, (char *)buf, sz, 0) == (int)sz);
-            } 
-            
+            }
+
             memcpy(sb->buf + sb->end, buf, sz);
             sb->end += sz;
         }
@@ -66,10 +64,10 @@ int jk_sb_write(jk_sockbuf_t *sb,
 
 int jk_sb_flush(jk_sockbuf_t *sb)
 {
-    if(sb) {
+    if (sb) {
         int save_out = sb->end;
         sb->end = sb->start = 0;
-        if(save_out) {            
+        if (save_out) {
             return send(sb->sd, sb->buf, save_out, 0) == save_out;
         }
         return JK_TRUE;
@@ -79,29 +77,27 @@ int jk_sb_flush(jk_sockbuf_t *sb)
 }
 
 
-int jk_sb_read(jk_sockbuf_t *sb,
-               char **buf, 
-               unsigned sz,
-               unsigned *ac)
+int jk_sb_read(jk_sockbuf_t *sb, char **buf, unsigned sz, unsigned *ac)
 {
-    if(sb && buf && ac) {
+    if (sb && buf && ac) {
         unsigned avail;
 
         *ac = 0;
         *buf = NULL;
 
-        if(sb->end == sb->start) {
+        if (sb->end == sb->start) {
             sb->end = sb->start = 0;
-            if(fill_buffer(sb) < 0) {
+            if (fill_buffer(sb) < 0) {
                 return JK_FALSE;
             }
         }
-        
+
         *buf = sb->buf + sb->start;
         avail = sb->end - sb->start;
-        if(avail > sz) {
+        if (avail > sz) {
             *ac = sz;
-        } else {
+        }
+        else {
             *ac = avail;
         }
         sb->start += *ac;
@@ -112,18 +108,18 @@ int jk_sb_read(jk_sockbuf_t *sb,
     return JK_FALSE;
 }
 
-int jk_sb_gets(jk_sockbuf_t *sb,
-               char **ps)
+int jk_sb_gets(jk_sockbuf_t *sb, char **ps)
 {
     int ret;
-    if(sb) {
-        while(1) {
+    if (sb) {
+        while (1) {
             unsigned i;
-            for(i = sb->start ; i < sb->end ; i++) {
-                if(JK_LF == sb->buf[i]) {
-                    if(i > sb->start && JK_CR == sb->buf[i - 1]) {
+            for (i = sb->start; i < sb->end; i++) {
+                if (JK_LF == sb->buf[i]) {
+                    if (i > sb->start && JK_CR == sb->buf[i - 1]) {
                         sb->buf[i - 1] = '\0';
-                    } else {
+                    }
+                    else {
                         sb->buf[i] = '\0';
                     }
                     *ps = sb->buf + sb->start;
@@ -131,14 +127,16 @@ int jk_sb_gets(jk_sockbuf_t *sb,
                     return JK_TRUE;
                 }
             }
-            if((ret = fill_buffer(sb)) < 0) {
+            if ((ret = fill_buffer(sb)) < 0) {
                 return JK_FALSE;
-            } else if (ret == 0) {
+            }
+            else if (ret == 0) {
                 *ps = sb->buf + sb->start;
-               if ((SOCKBUF_SIZE - sb->end) > 0) {
+                if ((SOCKBUF_SIZE - sb->end) > 0) {
                     sb->buf[sb->end] = '\0';
-                } else {
-                    sb->buf[sb->end-1] = '\0';
+                }
+                else {
+                    sb->buf[sb->end - 1] = '\0';
                 }
                 return JK_TRUE;
             }
@@ -158,40 +156,39 @@ int jk_sb_gets(jk_sockbuf_t *sb,
 static int fill_buffer(jk_sockbuf_t *sb)
 {
     int ret;
-    
+
     /*
      * First move the current data to the beginning of the buffer
      */
-    if(sb->start < sb->end) {
-        if(sb->start > 0) {
+    if (sb->start < sb->end) {
+        if (sb->start > 0) {
             unsigned to_copy = sb->end - sb->start;
             memmove(sb->buf, sb->buf + sb->start, to_copy);
             sb->start = 0;
             sb->end = to_copy;
         }
-    } else {
+    }
+    else {
         sb->start = sb->end = 0;
     }
-    
+
     /*
      * In the unlikely case where the buffer is already full, we won't be
      * reading anything and we'd be calling recv with a 0 count.  
      */
     if ((SOCKBUF_SIZE - sb->end) > 0) {
-	/*
-	 * Now, read more data
-	 */
-	ret = recv(sb->sd, 
-		   sb->buf + sb->end, 
-		   SOCKBUF_SIZE - sb->end, 0);   
-	
-	/* 0 is EOF/SHUTDOWN, -1 is SOCK_ERROR */
-	if (ret <= 0) {
-	    return ret;
-	} 
-	
-	sb->end += ret;
+        /*
+         * Now, read more data
+         */
+        ret = recv(sb->sd, sb->buf + sb->end, SOCKBUF_SIZE - sb->end, 0);
+
+        /* 0 is EOF/SHUTDOWN, -1 is SOCK_ERROR */
+        if (ret <= 0) {
+            return ret;
+        }
+
+        sb->end += ret;
     }
-    
+
     return 1;
 }

@@ -25,17 +25,14 @@
 #define DEFAULT_DYNAMIC 10
 
 
-static void *jk_pool_dyn_alloc(jk_pool_t *p, 
-                               size_t size);
+static void *jk_pool_dyn_alloc(jk_pool_t *p, size_t size);
 
 
-void jk_open_pool(jk_pool_t *p,
-                  jk_pool_atom_t *buf,
-                  size_t size)
+void jk_open_pool(jk_pool_t *p, jk_pool_atom_t *buf, size_t size)
 {
-    p->pos  = 0;
+    p->pos = 0;
     p->size = size;
-    p->buf  = (char *)buf;
+    p->buf = (char *)buf;
 
     p->dyn_pos = 0;
     p->dynamic = NULL;
@@ -54,18 +51,18 @@ void jk_reset_pool(jk_pool_t *p)
 {
     if (p->dyn_pos && p->dynamic) {
         size_t i;
-        for (i = 0 ; i < p->dyn_pos ; i++) {
+        for (i = 0; i < p->dyn_pos; i++) {
             if (p->dynamic[i]) {
                 free(p->dynamic[i]);
             }
         }
     }
 
-    p->dyn_pos  = 0;
-    p->pos      = 0;
+    p->dyn_pos = 0;
+    p->pos = 0;
 }
 
-void *jk_pool_alloc(jk_pool_t *p,  size_t size)
+void *jk_pool_alloc(jk_pool_t *p, size_t size)
 {
     void *rc = NULL;
 
@@ -81,39 +78,35 @@ void *jk_pool_alloc(jk_pool_t *p,  size_t size)
     return rc;
 }
 
-void *jk_pool_realloc(jk_pool_t *p, 
-                      size_t sz,
-                      const void *old,
-                      size_t old_sz)
+void *jk_pool_realloc(jk_pool_t *p, size_t sz, const void *old, size_t old_sz)
 {
     void *rc;
 
-    if(!p || (!old && old_sz)) {
+    if (!p || (!old && old_sz)) {
         return NULL;
     }
 
     rc = jk_pool_alloc(p, sz);
-    if(rc) {
+    if (rc) {
         memcpy(rc, old, old_sz);
     }
 
     return rc;
 }
 
-void *jk_pool_strdup(jk_pool_t *p, 
-                     const char *s)
+void *jk_pool_strdup(jk_pool_t *p, const char *s)
 {
     void *rc = NULL;
-    if(s && p) {
+    if (s && p) {
         size_t size = strlen(s);
-    
-        if(!size)  {
+
+        if (!size) {
             return "";
         }
 
         size++;
         rc = jk_pool_alloc(p, size);
-        if(rc) {
+        if (rc) {
             memcpy(rc, s, size);
         }
     }
@@ -121,13 +114,12 @@ void *jk_pool_strdup(jk_pool_t *p,
     return rc;
 }
 
-void jk_dump_pool(jk_pool_t *p, 
-                  FILE *f)
+void jk_dump_pool(jk_pool_t *p, FILE * f)
 {
     fprintf(f, "Dumping for pool [%p]\n", p);
     fprintf(f, "size             [%d]\n", p->size);
     fprintf(f, "pos              [%d]\n", p->pos);
-    fprintf(f, "buf              [%p]\n", p->buf);  
+    fprintf(f, "buf              [%p]\n", p->buf);
     fprintf(f, "dyn_size         [%d]\n", p->dyn_size);
     fprintf(f, "dyn_pos          [%d]\n", p->dyn_pos);
     fprintf(f, "dynamic          [%p]\n", p->dynamic);
@@ -135,8 +127,7 @@ void jk_dump_pool(jk_pool_t *p,
     fflush(f);
 }
 
-static void *jk_pool_dyn_alloc(jk_pool_t *p, 
-                               size_t size)
+static void *jk_pool_dyn_alloc(jk_pool_t *p, size_t size)
 {
     void *rc;
 
@@ -146,20 +137,18 @@ static void *jk_pool_dyn_alloc(jk_pool_t *p,
         if (new_dynamic) {
             if (p->dynamic) {
                 /* Copy old dynamic slots */
-                memcpy(new_dynamic, 
-                       p->dynamic, 
-                       p->dyn_size * sizeof(void *));
+                memcpy(new_dynamic, p->dynamic, p->dyn_size * sizeof(void *));
 
                 free(p->dynamic);
             }
 
             p->dynamic = new_dynamic;
             p->dyn_size = new_dyn_size;
-        } 
+        }
         else {
             return NULL;
         }
-    } 
+    }
 
     rc = p->dynamic[p->dyn_pos] = malloc(size);
     if (p->dynamic[p->dyn_pos]) {

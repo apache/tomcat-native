@@ -34,46 +34,46 @@
     /*
      * Marks execution under MT compilation
      */
-    #define _MT_CODE
+#define _MT_CODE
 
-    #ifdef WIN32
+#ifdef WIN32
 
-        #include <windows.h>
+#include <windows.h>
 
-        typedef CRITICAL_SECTION JK_CRIT_SEC;
+typedef CRITICAL_SECTION JK_CRIT_SEC;
 
-        #define JK_INIT_CS(x, rc) InitializeCriticalSection(x); rc = JK_TRUE;
-        #define JK_DELETE_CS(x, rc) DeleteCriticalSection(x); rc = JK_TRUE;
-        #define JK_ENTER_CS(x, rc) EnterCriticalSection(x); rc = JK_TRUE;
-        #define JK_LEAVE_CS(x, rc) LeaveCriticalSection(x); rc = JK_TRUE;
+#define JK_INIT_CS(x, rc) InitializeCriticalSection(x); rc = JK_TRUE;
+#define JK_DELETE_CS(x, rc) DeleteCriticalSection(x); rc = JK_TRUE;
+#define JK_ENTER_CS(x, rc) EnterCriticalSection(x); rc = JK_TRUE;
+#define JK_LEAVE_CS(x, rc) LeaveCriticalSection(x); rc = JK_TRUE;
 
-    #else /* Unix pthreads */
+#else /* Unix pthreads */
 
-        #include <pthread.h>
+#include <pthread.h>
 
-        typedef pthread_mutex_t	JK_CRIT_SEC;
+typedef pthread_mutex_t JK_CRIT_SEC;
 
-        #define JK_INIT_CS(x, rc)\
-            if(pthread_mutex_init(x, NULL)) rc = JK_FALSE; else rc = JK_TRUE; 
+#define JK_INIT_CS(x, rc)\
+            if(pthread_mutex_init(x, NULL)) rc = JK_FALSE; else rc = JK_TRUE;
 
-        #define JK_DELETE_CS(x, rc)\
-            if(pthread_mutex_destroy(x)) rc = JK_FALSE; else rc = JK_TRUE; 
+#define JK_DELETE_CS(x, rc)\
+            if(pthread_mutex_destroy(x)) rc = JK_FALSE; else rc = JK_TRUE;
 
-        #define JK_ENTER_CS(x, rc)\
-            if(pthread_mutex_lock(x)) rc = JK_FALSE; else rc = JK_TRUE; 
+#define JK_ENTER_CS(x, rc)\
+            if(pthread_mutex_lock(x)) rc = JK_FALSE; else rc = JK_TRUE;
 
-        #define JK_LEAVE_CS(x, rc)\
-            if(pthread_mutex_unlock(x)) rc = JK_FALSE; else rc = JK_TRUE; 
-    #endif /* Unix pthreads */
+#define JK_LEAVE_CS(x, rc)\
+            if(pthread_mutex_unlock(x)) rc = JK_FALSE; else rc = JK_TRUE;
+#endif /* Unix pthreads */
 
 #else /* Not an MT code */
 
-    typedef void *JK_CRIT_SEC;
+typedef void *JK_CRIT_SEC;
 
-    #define JK_INIT_CS(x, rc) rc = JK_TRUE;
-    #define JK_DELETE_CS(x, rc) rc = JK_TRUE;
-    #define JK_ENTER_CS(x, rc) rc = JK_TRUE;
-    #define JK_LEAVE_CS(x, rc) rc = JK_TRUE;
+#define JK_INIT_CS(x, rc) rc = JK_TRUE;
+#define JK_DELETE_CS(x, rc) rc = JK_TRUE;
+#define JK_ENTER_CS(x, rc) rc = JK_TRUE;
+#define JK_LEAVE_CS(x, rc) rc = JK_TRUE;
 
 #endif /* Not an MT code */
 

@@ -27,37 +27,29 @@
 #include "jk_global.h"
 
 #if !defined(WIN32) && !(defined(NETWARE) && defined(__NOVELL_LIBC__))
-    #define closesocket         close
+#define closesocket         close
 #endif
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
-int jk_resolve(char *host,
-               int port,
-               struct sockaddr_in *rc);
+    int jk_resolve(char *host, int port, struct sockaddr_in *rc);
 
-int jk_open_socket(struct sockaddr_in *addr, 
-                   int ndelay,
-                   int keepalive,
-                   jk_logger_t *l);
+    int jk_open_socket(struct sockaddr_in *addr,
+                       int ndelay, int keepalive, jk_logger_t *l);
 
-int jk_close_socket(int s);
+    int jk_close_socket(int s);
 
-int jk_tcp_socket_sendfull(int sd, 
-                           const unsigned char *b,
-                           int len);
+    int jk_tcp_socket_sendfull(int sd, const unsigned char *b, int len);
 
-int jk_tcp_socket_recvfull(int sd, 
-                           unsigned char *b, 
-                           int len);
+    int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len);
 
-char * jk_dump_hinfo(struct sockaddr_in *saddr, 
-                     char * buf);
+    char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_CONNECT_H */
+#endif                          /* JK_CONNECT_H */

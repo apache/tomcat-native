@@ -29,8 +29,9 @@
 #include "jk_mt.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
 /*
  * Conditional request attributes
@@ -141,7 +142,7 @@ extern "C" {
 #define SC_CONNECTION           (unsigned short)0xA006
 #define SC_CONTENT_TYPE         (unsigned short)0xA007
 #define SC_CONTENT_LENGTH       (unsigned short)0xA008
-#define SC_COOKIE               (unsigned short)0xA009    
+#define SC_COOKIE               (unsigned short)0xA009
 #define SC_COOKIE2              (unsigned short)0xA00A
 #define SC_HOST                 (unsigned short)0xA00B
 #define SC_PRAGMA               (unsigned short)0xA00C
@@ -188,179 +189,169 @@ extern "C" {
 #define AJP_HEADER_SZ_LEN         (2)
 #define CHUNK_BUFFER_PAD          (12)
 #define AJP_DEF_CACHE_TIMEOUT     (15)
-#define AJP_DEF_CONNECT_TIMEOUT   (0)		/* NO CONNECTION TIMEOUT => NO CPING/CPONG */
-#define AJP_DEF_REPLY_TIMEOUT     (0)		/* NO REPLY TIMEOUT                        */
-#define AJP_DEF_PREPOST_TIMEOUT   (0)		/* NO PREPOST TIMEOUT => NO CPING/CPONG    */
-#define AJP_DEF_RECOVERY_OPTS	  (0)		/* NO RECOVERY / NO    */
+#define AJP_DEF_CONNECT_TIMEOUT   (0)   /* NO CONNECTION TIMEOUT => NO CPING/CPONG */
+#define AJP_DEF_REPLY_TIMEOUT     (0)   /* NO REPLY TIMEOUT                        */
+#define AJP_DEF_PREPOST_TIMEOUT   (0)   /* NO PREPOST TIMEOUT => NO CPING/CPONG    */
+#define AJP_DEF_RECOVERY_OPTS	  (0)   /* NO RECOVERY / NO    */
 
-#define RECOVER_ABORT_IF_TCGETREQUEST  	 0x0001	/* DONT RECOVER IF TOMCAT FAIL AFTER RECEIVING REQUEST */
-#define RECOVER_ABORT_IF_TCSENDHEADER    0x0002	/* DONT RECOVER IF TOMCAT FAIL AFTER SENDING HEADERS */
+#define RECOVER_ABORT_IF_TCGETREQUEST  	 0x0001 /* DONT RECOVER IF TOMCAT FAIL AFTER RECEIVING REQUEST */
+#define RECOVER_ABORT_IF_TCSENDHEADER    0x0002 /* DONT RECOVER IF TOMCAT FAIL AFTER SENDING HEADERS */
 
 
 
-struct jk_res_data {
-    int         status;
+    struct jk_res_data
+    {
+        int status;
 #ifdef AS400
-    char *msg;
+        char *msg;
 #else
-    const char *msg;
+        const char *msg;
 #endif
-    unsigned    num_headers;
-    char      **header_names;
-    char      **header_values;
-};
-typedef struct jk_res_data jk_res_data_t;
+        unsigned num_headers;
+        char **header_names;
+        char **header_values;
+    };
+    typedef struct jk_res_data jk_res_data_t;
 
 #include "jk_ajp14.h"
 
-struct ajp_operation;
-typedef struct ajp_operation ajp_operation_t;
+    struct ajp_operation;
+    typedef struct ajp_operation ajp_operation_t;
 
-struct ajp_endpoint;
-typedef struct ajp_endpoint ajp_endpoint_t;
+    struct ajp_endpoint;
+    typedef struct ajp_endpoint ajp_endpoint_t;
 
-struct ajp_worker;
-typedef struct ajp_worker ajp_worker_t;
+    struct ajp_worker;
+    typedef struct ajp_worker ajp_worker_t;
 
-struct ajp_worker {
-    struct sockaddr_in worker_inet_addr; /* Contains host and port */
-    unsigned connect_retry_attempts;
-    char *name;
- 
-    /* 
-     * Open connections cache...
-     *
-     * 1. Critical section object to protect the cache.
-     * 2. Cache size. 
-     * 3. An array of "open" endpoints.
-     */
-    JK_CRIT_SEC cs;
-    unsigned ep_cache_sz;
-    unsigned ep_mincache_sz;
-    unsigned ep_maxcache_sz;
-    ajp_endpoint_t **ep_cache;
+    struct ajp_worker
+    {
+        struct sockaddr_in worker_inet_addr;    /* Contains host and port */
+        unsigned connect_retry_attempts;
+        char *name;
 
-    int proto; /* PROTOCOL USED AJP13/AJP14 */
-    
-    jk_login_service_t *login;
-    
-    /* Weak secret similar with ajp12, used in ajp13 */ 
-    char *secret;
+        /* 
+         * Open connections cache...
+         *
+         * 1. Critical section object to protect the cache.
+         * 2. Cache size. 
+         * 3. An array of "open" endpoints.
+         */
+        JK_CRIT_SEC cs;
+        unsigned ep_cache_sz;
+        unsigned ep_mincache_sz;
+        unsigned ep_maxcache_sz;
+        ajp_endpoint_t **ep_cache;
 
-    jk_worker_t worker; 
+        int proto;              /* PROTOCOL USED AJP13/AJP14 */
 
-    /*
-     * Post physical connect handler.
-     * AJP14 will set here its login handler
-     */ 
-    int (* logon)(ajp_endpoint_t *ae,
-                  jk_logger_t    *l);
+        jk_login_service_t *login;
 
-    /*
-    * Handle Socket Timeouts
-    */
-    unsigned socket_timeout;
-    unsigned keepalive;
-    /*
-    * Handle Cache Timeouts
-    */
-    unsigned cache_timeout;
+        /* Weak secret similar with ajp12, used in ajp13 */
+        char *secret;
 
-	/*
-	* Handle Connection/Reply Timeouts
-	*/
-	unsigned connect_timeout;	/* connect cping/cpong delay in ms (0 means disabled) 							*/
-	unsigned reply_timeout;	    /* reply timeout delay in ms (0 means disabled)     							*/
-	unsigned prepost_timeout;	/* before sending a request cping/cpong timeout delay in ms (0 means disabled)    */
+        jk_worker_t worker;
 
-	/*
-	 * Recovery option
-	 */
-	unsigned recovery_opts;		/* Set the recovery option */
-}; 
- 
+        /*
+         * Post physical connect handler.
+         * AJP14 will set here its login handler
+         */
+        int (*logon) (ajp_endpoint_t * ae, jk_logger_t *l);
+
+        /*
+         * Handle Socket Timeouts
+         */
+        unsigned socket_timeout;
+        unsigned keepalive;
+        /*
+         * Handle Cache Timeouts
+         */
+        unsigned cache_timeout;
+
+        /*
+         * Handle Connection/Reply Timeouts
+         */
+        unsigned connect_timeout;       /* connect cping/cpong delay in ms (0 means disabled)                                                   */
+        unsigned reply_timeout; /* reply timeout delay in ms (0 means disabled)                                                             */
+        unsigned prepost_timeout;       /* before sending a request cping/cpong timeout delay in ms (0 means disabled)    */
+
+        /*
+         * Recovery option
+         */
+        unsigned recovery_opts; /* Set the recovery option */
+    };
+
 
 /*
  * endpoint, the remote connector which does the work
  */
-struct ajp_endpoint {
-    ajp_worker_t *worker;
+    struct ajp_endpoint
+    {
+        ajp_worker_t *worker;
 
-    jk_pool_t pool;
-    jk_pool_atom_t buf[BIG_POOL_SIZE];
+        jk_pool_t pool;
+        jk_pool_atom_t buf[BIG_POOL_SIZE];
 
-    int proto;  /* PROTOCOL USED AJP13/AJP14 */
+        int proto;              /* PROTOCOL USED AJP13/AJP14 */
 
-    int sd;
-    int reuse;
-    jk_endpoint_t endpoint;
-	
-    unsigned left_bytes_to_send;
+        int sd;
+        int reuse;
+        jk_endpoint_t endpoint;
 
-    /* time of the last request
-       handled by this endpoint */
-    time_t last_access;
+        unsigned left_bytes_to_send;
 
-};
+        /* time of the last request
+           handled by this endpoint */
+        time_t last_access;
+
+    };
 
 /*
  * little struct to avoid multiples ptr passing
  * this struct is ready to hold upload file fd
  * to add upload persistant storage
  */
-struct ajp_operation {
-    jk_msg_buf_t    *request;   /* original request storage */
-    jk_msg_buf_t    *reply;     /* reply storage (chuncked by ajp13 */
-    jk_msg_buf_t    *post;      /* small post data storage area */
-    int     uploadfd;           /* future persistant storage id */
-    int     recoverable;        /* if exchange could be conducted on another TC */
-};
+    struct ajp_operation
+    {
+        jk_msg_buf_t *request;  /* original request storage */
+        jk_msg_buf_t *reply;    /* reply storage (chuncked by ajp13 */
+        jk_msg_buf_t *post;     /* small post data storage area */
+        int uploadfd;           /* future persistant storage id */
+        int recoverable;        /* if exchange could be conducted on another TC */
+    };
 
 /*
  * Functions
  */
 
 
-int ajp_validate(jk_worker_t *pThis,
-                 jk_map_t    *props,
-                 jk_worker_env_t *we,
-                 jk_logger_t *l,
-                 int          proto);
+    int ajp_validate(jk_worker_t *pThis,
+                     jk_map_t *props,
+                     jk_worker_env_t *we, jk_logger_t *l, int proto);
 
-int ajp_init(jk_worker_t *pThis,
-             jk_map_t    *props,
-             jk_worker_env_t *we,
-             jk_logger_t *l,
-             int          proto);
+    int ajp_init(jk_worker_t *pThis,
+                 jk_map_t *props,
+                 jk_worker_env_t *we, jk_logger_t *l, int proto);
 
-int ajp_destroy(jk_worker_t **pThis,
-                jk_logger_t *l,
-                int          proto);
+    int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto);
 
-int JK_METHOD ajp_done(jk_endpoint_t **e,
-                       jk_logger_t    *l);
+    int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l);
 
-int ajp_get_endpoint(jk_worker_t    *pThis,
-                     jk_endpoint_t **pend,
-                     jk_logger_t    *l,
-                     int             proto);
+    int ajp_get_endpoint(jk_worker_t *pThis,
+                         jk_endpoint_t **pend, jk_logger_t *l, int proto);
 
-int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
-                            jk_logger_t    *l);
+    int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l);
 
-void ajp_close_endpoint(ajp_endpoint_t *ae,
-                        jk_logger_t    *l);
+    void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l);
 
-int ajp_connection_tcp_send_message(ajp_endpoint_t *ae,
-                                    jk_msg_buf_t   *msg,
-                                    jk_logger_t    *l);
+    int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
+                                        jk_msg_buf_t *msg, jk_logger_t *l);
 
-int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
-                                   jk_msg_buf_t   *msg,
-                                   jk_logger_t    *l);
+    int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
+                                       jk_msg_buf_t *msg, jk_logger_t *l);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_AJP_COMMON_H */
+#endif                          /* JK_AJP_COMMON_H */

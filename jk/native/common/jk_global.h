@@ -51,48 +51,49 @@
 #include "ap_config.h"
 #include "apr_strings.h"
 #include "apr_lib.h"
-extern char *strdup (const char *str);
+extern char *strdup(const char *str);
 #endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #ifdef WIN32
-    #include <windows.h>
-    #include <winsock.h>
-    #include <sys/timeb.h>
+#include <windows.h>
+#include <winsock.h>
+#include <sys/timeb.h>
 #else
-    #include <unistd.h>
-    #if defined(NETWARE) && defined(__NOVELL_LIBC__)
-        #include "novsock2.h"
-        #define __sys_socket_h__
-        #define __netdb_h__
-        #define __netinet_in_h__
-        #define HAVE_VSNPRINTF
-        #define HAVE_SNPRINTF
-    #endif
-    #include <netdb.h>
-    #include <netinet/in.h>
-    #include <sys/socket.h>
-    #ifndef NETWARE
-        #include <netinet/tcp.h>
-        #include <arpa/inet.h>
-        #include <sys/un.h>
-        #if !defined(_OSD_POSIX) && !defined(AS400) && !defined(CYGWIN)
-            #include <sys/socketvar.h>
-        #endif
-        #if !defined(HPUX11) && !defined(AS400)
-            #include <sys/select.h>
-        #endif
-    #endif
-        
-    #include <sys/time.h>
-    #include <sys/ioctl.h>
+#include <unistd.h>
+#if defined(NETWARE) && defined(__NOVELL_LIBC__)
+#include "novsock2.h"
+#define __sys_socket_h__
+#define __netdb_h__
+#define __netinet_in_h__
+#define HAVE_VSNPRINTF
+#define HAVE_SNPRINTF
+#endif
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#ifndef NETWARE
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <sys/un.h>
+#if !defined(_OSD_POSIX) && !defined(AS400) && !defined(CYGWIN)
+#include <sys/socketvar.h>
+#endif
+#if !defined(HPUX11) && !defined(AS400)
+#include <sys/select.h>
+#endif
+#endif
+
+#include <sys/time.h>
+#include <sys/ioctl.h>
 #endif
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
 #define JK_WORKER_FILE_TAG      ("worker_file")
 #define JK_MOUNT_FILE_TAG       ("worker_mount_file")
@@ -113,28 +114,28 @@ extern "C" {
 #define JK_PATH_SESSION_IDENTIFIER ";jsessionid"
 
 #if defined(WIN32) || defined(NETWARE)
-    #define JK_METHOD __stdcall
-    #define C_LEVEL_TRY_START       __try {
-    #define C_LEVEL_TRY_END         }
-    #define C_LEVEL_FINALLY_START   __finally {
-    #define C_LEVEL_FINALLY_END     }
-    #define PATH_SEPERATOR          (';')
-    #define FILE_SEPERATOR          ('\\')
-    #define PATH_ENV_VARIABLE       ("PATH")
+#define JK_METHOD __stdcall
+#define C_LEVEL_TRY_START       __try {
+#define C_LEVEL_TRY_END         }
+#define C_LEVEL_FINALLY_START   __finally {
+#define C_LEVEL_FINALLY_END     }
+#define PATH_SEPERATOR          (';')
+#define FILE_SEPERATOR          ('\\')
+#define PATH_ENV_VARIABLE       ("PATH")
 
     /* incompatible names... */
-    #ifndef strcasecmp 
-        #define strcasecmp stricmp
-    #endif
+#ifndef strcasecmp
+#define strcasecmp stricmp
+#endif
 #else
-    #define JK_METHOD
-    #define C_LEVEL_TRY_START       
-    #define C_LEVEL_TRY_END         
-    #define C_LEVEL_FINALLY_START   
-    #define C_LEVEL_FINALLY_END     
-    #define PATH_SEPERATOR          (':')
-    #define FILE_SEPERATOR          ('/')
-    #define PATH_ENV_VARIABLE       ("LD_LIBRARY_PATH")
+#define JK_METHOD
+#define C_LEVEL_TRY_START
+#define C_LEVEL_TRY_END
+#define C_LEVEL_FINALLY_START
+#define C_LEVEL_FINALLY_END
+#define PATH_SEPERATOR          (':')
+#define FILE_SEPERATOR          ('/')
+#define PATH_ENV_VARIABLE       ("LD_LIBRARY_PATH")
 #endif
 
 /*
@@ -164,7 +165,7 @@ extern "C" {
 /* Check for EBCDIC systems */
 
 /* Check for Apache 2.0 running on an EBCDIC system */
-#if APR_CHARSET_EBCDIC 
+#if APR_CHARSET_EBCDIC
 
 #include <util_ebcdic.h>
 
@@ -172,7 +173,7 @@ extern "C" {
 #define jk_xlate_to_ascii(b, l) ap_xlate_proto_to_ascii(b, l)
 #define jk_xlate_from_ascii(b, l) ap_xlate_proto_from_ascii(b, l)
 
-#else   /* APR_CHARSET_EBCDIC */
+#else                           /* APR_CHARSET_EBCDIC */
 
 /* Check for Apache 1.3 running on an EBCDIC system */
 #ifdef CHARSET_EBCDIC
@@ -181,16 +182,16 @@ extern "C" {
 #define jk_xlate_to_ascii(b, l) ebcdic2ascii(b, b, l)
 #define jk_xlate_from_ascii(b, l) ascii2ebcdic(b, b, l)
 
-#else /* CHARSET_EBCDIC */
+#else                           /* CHARSET_EBCDIC */
 
 /* We're in on an ASCII system */
 
-#define jk_xlate_to_ascii(b, l)             /* NOOP */
-#define jk_xlate_from_ascii(b, l)           /* NOOP */
+#define jk_xlate_to_ascii(b, l) /* NOOP */
+#define jk_xlate_from_ascii(b, l)       /* NOOP */
 
-#endif /* CHARSET_EBCDIC */
+#endif                          /* CHARSET_EBCDIC */
 
-#endif /* APR_CHARSET_EBCDIC */
+#endif                          /* APR_CHARSET_EBCDIC */
 
 #ifdef WIN32
 /* For WIN32, emulate gettimeofday() using _ftime() */
@@ -224,6 +225,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_GLOBAL_H */
+#endif                          /* JK_GLOBAL_H */

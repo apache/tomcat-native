@@ -25,12 +25,13 @@
 #include "jk_ajp_common.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+extern "C"
+{
+#endif                          /* __cplusplus */
 
 #define AJP13_PROTO                 13
 #define AJP13_WS_HEADER             0x1234
-#define AJP13_SW_HEADER             0x4142  /* 'AB' */
+#define AJP13_SW_HEADER             0x4142      /* 'AB' */
 
 #define AJP13_DEF_HOST              ("localhost")
 #define AJP13_DEF_PORT              (8009)
@@ -106,12 +107,11 @@ extern "C" {
  * Functions
  */
 
-int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
-                                     jk_pool_t *p,
-                                     jk_logger_t *l);
+    int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
+                                         jk_pool_t *p, jk_logger_t *l);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif                          /* __cplusplus */
 
-#endif /* JK_AJP13_H */
+#endif                          /* JK_AJP13_H */
