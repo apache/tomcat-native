@@ -1,3 +1,10 @@
+$Log$
+Revision 1.2  2001/06/14 14:36:08  andya
+Better SSL support, better ajp14 support
+
+
+--- pre cvs log ---
+
 20010608 1.0.2 AA
 
 Banished malloc()/free() in favour of jk_pool based memory allocation for configuration data. Added syntax checking and test harness to inifile code.

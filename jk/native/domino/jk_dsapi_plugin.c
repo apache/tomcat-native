@@ -95,10 +95,11 @@
 #endif
 #endif
 
-#define VERSION				"1.0.2"
+#define VERSION				"1.0.3"
 #define VERSION_STRING		"Jakarta/DSAPI/" VERSION
 /* What we call ourselves */
 #define FILTERDESC			"Apache Tomcat Interceptor (" VERSION_STRING ")"
+#define SERVERDFLT			"Lotus Domino"
 /* Registry location of configuration data */
 #define REGISTRY_LOCATION	"Software\\Apache Software Foundation\\Jakarta Dsapi Redirector\\1.0"
 /* Name of INI file relative to whatever the 'current' directory is when the filter is
@@ -125,7 +126,9 @@ static const char *workerMountFile;
 static const char *tomcatStart;
 static const char *tomcatStop;
 
+#if FOR_TOMCAT >= TOMCAT400
 static jk_worker_env_t   worker_env;
+#endif
 
 static char					*crlf		= "\r\n";
 
@@ -255,6 +258,72 @@ static void AddInLogMessageText(char *msg, unsigned short code, ...)
 	printf("\n");
 }
 #endif
+
+/* Get the value of a server (CGI) variable as a string
+ */
+static int GetVariable(private_ws_t *ws, char *hdrName,
+					 char *buf, DWORD bufsz, char **dest, const char *dflt)
+{
+	int errID;
+
+	if (ws->context->GetServerVariable(ws->context, hdrName, buf, bufsz, &errID))
+		*dest = jk_pool_strdup(&ws->p, buf);
+	else
+		*dest = jk_pool_strdup(&ws->p, dflt);
+
+	DEBUG(("%s = %s\n", hdrName, *dest));
+
+	return JK_TRUE;
+}
+
+/* Get the value of a server (CGI) variable as an integer
+ */
+static int GetVariableInt(private_ws_t *ws, char *hdrName,
+						char *buf, DWORD bufsz, int *dest, int dflt)
+{
+	int errID;
+
+	if (ws->context->GetServerVariable(ws->context, hdrName, buf, bufsz, &errID))
+		*dest = atoi(buf);
+	else
+		*dest = dflt;
+
+	DEBUG(("%s = %d\n", hdrName, *dest));
+
+	return JK_TRUE;
+}
+/* Get the value of a server (CGI) variable as an integer
+ */
+static int GetVariableBool(private_ws_t *ws, char *hdrName,
+						char *buf, DWORD bufsz, int *dest, int dflt)
+{
+	int errID;
+
+	if (ws->context->GetServerVariable(ws->context, hdrName, buf, bufsz, &errID))
+	{
+		if (isdigit(buf[0]))
+			*dest = atoi(buf) != 0;
+		else if (NoCaseStrCmp(buf, "yes") == 0 || NoCaseStrCmp(buf, "on") == 0)
+			*dest = 1;
+		else
+			*dest = 0;
+	}
+	else
+	{
+		*dest = dflt;
+	}
+
+	DEBUG(("%s = %d\n", hdrName, *dest));
+
+	return JK_TRUE;
+}
+
+/* A couple of utility macros to supply standard arguments to GetVariable() and
+ * GetVariableInt().
+ */
+#define GETVARIABLE(name, dest, dflt)		GetVariable(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
+#define GETVARIABLEINT(name, dest, dflt)	GetVariableInt(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
+#define GETVARIABLEBOOL(name, dest, dflt)	GetVariableBool(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
 
 /* Return 1 iff the supplied string contains "web-inf" (in any case
  * variation. We don't allow URIs containing web-inf, although
@@ -467,12 +536,12 @@ DLLEXPORT unsigned int TerminateFilter(unsigned int reserved)
 {
 	if (initDone)
 	{
-		initDone = JK_FALSE;
-
 		uri_worker_map_free(&uw_map, logger);
 		wc_close(logger);
 		if (logger)
 			jk_close_file_logger(&logger);
+
+		initDone = JK_FALSE;
 	}
 
 	if (NULL != tomcatStop && '\0' != *tomcatStop)
@@ -491,10 +560,8 @@ DLLEXPORT unsigned int TerminateFilter(unsigned int reserved)
 /* Called when Domino loads the filter. Reads a load of config data from
  * the registry and elsewhere and displays a banner.
  */
-DLLEXPORT unsigned int FilterInit(FilterInitData * filterInitData)
+DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData)
 {
-	int rc = JK_FALSE;
-	jk_map_t *map = NULL;
 
 	jk_open_pool(&cfgPool, NULL, 0);		/* empty pool for config data */
 
@@ -509,36 +576,6 @@ DLLEXPORT unsigned int FilterInit(FilterInitData * filterInitData)
 		AddInLogMessageText("Attempting to start Tomcat: %s", NOERROR, tomcatStart);
 		RunProg(tomcatStart);
 	}
-
-	if (map_alloc(&map))
-	{
-		if (map_read_properties(map, workerMountFile))
-			if (uri_worker_map_alloc(&uw_map, map, logger))
-				rc = JK_TRUE;
-
-		map_free(&map);
-	}
-
-	if (!rc) goto initFailed;
-
-	rc = JK_FALSE;
-	if (map_alloc(&map))
-	{
-		if (map_read_properties(map, workerFile))
-#if 0
-            /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
-            worker_env.uri_to_worker = &uw_map;
-			GETVARIABLE("SERVER_SOFTWARE", &worker_env.server_name, "Lotus Domino");
-#endif
-			if (wc_open(map, &worker_env, logger))
-				rc = JK_TRUE;
-
-		map_free(&map);
-	}
-
-	if (!rc) goto initFailed;
-
-	initDone = JK_TRUE;
 
 	filterInitData->appFilterVersion = kInterfaceVersion;
 	filterInitData->eventFlags = kFilterParsedRequest;
@@ -639,15 +676,12 @@ static const char *GetRegString(HKEY hkey, const char *key)
  */
 DLLEXPORT unsigned int HttpFilterProc(FilterContext *context, unsigned int eventType, void *eventData)
 {
-	if (initDone)
+	switch (eventType)
 	{
-		switch (eventType)
-		{
-		case kFilterParsedRequest:
-			return ParsedRequest(context, (FilterParsedRequest *) eventData);
-		default:
-			break;
-		}
+	case kFilterParsedRequest:
+		return ParsedRequest(context, (FilterParsedRequest *) eventData);
+	default:
+		break;
 	}
 	return kFilterNotHandled;
 }
@@ -681,65 +715,6 @@ static unsigned int RejectBadURI(FilterContext *context)
 
 	SimpleResponse(context, 403, "Forbidden", msg);
 	return kFilterHandledRequest;
-}
-
-/* Get the value of a server (CGI) variable as a string
- */
-static int GetVariable(private_ws_t *ws, char *hdrName,
-					 char *buf, DWORD bufsz, char **dest, const char *dflt)
-{
-	int errID;
-
-	if (ws->context->GetServerVariable(ws->context, hdrName, buf, bufsz, &errID))
-		*dest = jk_pool_strdup(&ws->p, buf);
-	else
-		*dest = jk_pool_strdup(&ws->p, dflt);
-
-	DEBUG(("%s = %s\n", hdrName, *dest));
-
-	return JK_TRUE;
-}
-
-/* Get the value of a server (CGI) variable as an integer
- */
-static int GetVariableInt(private_ws_t *ws, char *hdrName,
-						char *buf, DWORD bufsz, int *dest, int dflt)
-{
-	int errID;
-
-	if (ws->context->GetServerVariable(ws->context, hdrName, buf, bufsz, &errID))
-		*dest = atoi(buf);
-	else
-		*dest = dflt;
-
-	DEBUG(("%s = %d\n", hdrName, *dest));
-
-	return JK_TRUE;
-}
-/* Get the value of a server (CGI) variable as an integer
- */
-static int GetVariableBool(private_ws_t *ws, char *hdrName,
-						char *buf, DWORD bufsz, int *dest, int dflt)
-{
-	int errID;
-
-	if (ws->context->GetServerVariable(ws->context, hdrName, buf, bufsz, &errID))
-	{
-		if (isdigit(buf[0]))
-			*dest = atoi(buf) != 0;
-		else if (NoCaseStrCmp(buf, "yes") == 0 || NoCaseStrCmp(buf, "on") == 0)
-			*dest = 1;
-		else
-			*dest = 0;
-	}
-	else
-	{
-		*dest = dflt;
-	}
-
-	DEBUG(("%s = %d\n", hdrName, *dest));
-
-	return JK_TRUE;
 }
 
 /* Allocate space for a string given a start pointer and an end pointer
@@ -814,13 +789,6 @@ static int ParseHeaders(private_ws_t *ws, const char *hdrs, int hdrsz, jk_ws_ser
 	return hdrCount;
 }
 
-/* A couple of utility macros to supply standard arguments to GetVariable() and
- * GetVariableInt().
- */
-#define GETVARIABLE(name, dest, dflt)		GetVariable(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
-#define GETVARIABLEINT(name, dest, dflt)	GetVariableInt(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
-#define GETVARIABLEBOOL(name, dest, dflt)	GetVariableBool(ws, (name), workBuf, sizeof(workBuf), (dest), (dflt))
-
 /* Set up all the necessary jk_* workspace based on the current HTTP request.
  */
 static int InitService(private_ws_t *ws, jk_ws_service_t *s)
@@ -864,18 +832,13 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 	GETVARIABLE("REMOTE_ADDR", &s->remote_addr, "");
 	GETVARIABLE("SERVER_NAME", &s->server_name, "");
 	GETVARIABLEINT("SERVER_PORT", &s->server_port, 80);
-	GETVARIABLE("SERVER_SOFTWARE", &s->server_software, "Lotus Domino");
+	GETVARIABLE("SERVER_SOFTWARE", &s->server_software, SERVERDFLT);
 	GETVARIABLEINT("CONTENT_LENGTH", &s->content_length, 0);
+
 
 	/* SSL Support
 	 */
 	GETVARIABLEBOOL("HTTPS", &s->is_ssl, 0);
-
-	s->ssl_cert_len	= fr.clientCertLen;
-	s->ssl_cert		= fr.clientCert;
-	s->ssl_cipher	= NULL;		/* required by Servlet 2.3 Api */
-	s->ssl_session	= NULL;
-	s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
 
 	if (ws->reqData->requestMethod < 0 ||
 		ws->reqData->requestMethod >= sizeof(methodName) / sizeof(methodName[0]))
@@ -887,12 +850,19 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 	s->headers_values	= NULL;
 	s->num_headers		= 0;
 
-	/* There's no point in doing this because Domino never seems to
-	 * set any of these CGI variables.
-	 */
-#if 0
+	s->ssl_cert_len	= fr.clientCertLen;
+	s->ssl_cert		= fr.clientCert;
+	s->ssl_cipher	= NULL;		/* required by Servlet 2.3 Api */
+	s->ssl_session	= NULL;
+
+#if FOR_TOMCAT >= TOMCAT400
+	s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
+#endif
+
 	if (s->is_ssl)
 	{
+		int dummy;
+#if 0
 		char *sslNames[] =
 		{
 			"CERT_ISSUER", "CERT_SUBJECT", "CERT_COOKIE", "CERT_FLAGS", "CERT_SERIALNUMBER",
@@ -905,10 +875,24 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 			NULL, NULL, NULL, NULL
 		};
 
+
 		unsigned i, varCount = 0;
+#endif
 
 		DEBUG(("SSL request\n"));
 
+#if FOR_TOMCAT >= TOMCAT400
+		/* Read the variable into a dummy variable: we do this for the side effect of
+		 * reading it into workBuf.
+		 */
+		GETVARIABLEINT("HTTPS_KEYSIZE", &dummy, 0);
+		if (workBuf[0] == '[')
+			s->ssl_key_size = atoi(workBuf+1);
+#else
+		(void) dummy;
+#endif
+
+#if 0
 		for (i = 0; i < sizeof(sslNames)/sizeof(sslNames[0]); i++)
 		{
 			GETVARIABLE(sslNames[i], &sslValues[i], NULL);
@@ -916,13 +900,12 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 		}
 
 		/* Andy, some SSL vars must be mapped directly in  s->ssl_cipher,
-         * ssl-session and s->ssl_key_size
+         * ssl->session and s->ssl_key_size
 		 * ie: 
 		 * Cipher could be "RC4-MD5"
 		 * KeySize 128 (bits)
 	     * SessionID a string containing the UniqID used in SSL dialogue
          */
-
 		if (varCount > 0)
 		{
 			unsigned j;
@@ -942,8 +925,8 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 			}
 			s->num_attributes = varCount;
 		}
-	}
 #endif
+	}
 
 	/* Duplicate all the headers now */
 
@@ -980,6 +963,65 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 	{
 		char *uri = fr.URL;
 		char *workerName, *qp;
+
+		if (!initDone)
+		{
+			/* One time initialisation which is deferred so that we have the name of
+			 * the server software to plug into worker_env
+			 */
+			int ok = JK_FALSE;
+			jk_map_t *map = NULL;
+
+			DEBUG(("Initialising worker map\n"));
+
+			if (map_alloc(&map))
+			{
+				if (map_read_properties(map, workerMountFile))
+					if (uri_worker_map_alloc(&uw_map, map, logger))
+						ok = JK_TRUE;
+				map_free(&map);
+			}
+
+			DEBUG(("Got the URI worker map\n"));
+
+			if (ok)
+			{
+				ok = JK_FALSE;
+				DEBUG(("About to allocate map\n"));
+				if (map_alloc(&map))
+				{
+					DEBUG(("About to read %s\n", workerFile));
+					if (map_read_properties(map, workerFile))
+					{
+#if FOR_TOMCAT >= TOMCAT400
+						char server[256];
+
+						worker_env.uri_to_worker = uw_map;
+						if (context->GetServerVariable(context, "SERVER_SOFTWARE", server, sizeof(server)-1, &errID))
+							worker_env.server_name = jk_pool_strdup(&cfgPool, server);
+						else
+							worker_env.server_name = SERVERDFLT;
+
+						DEBUG(("Server name %s\n", worker_env.server_name));
+
+						if (wc_open(map, &worker_env, logger))
+							ok = JK_TRUE;
+#else
+						if (wc_open(map, logger))
+							ok = JK_TRUE;
+#endif
+						DEBUG(("OK = %d\n", ok));
+					}
+
+					DEBUG(("Read %s, OK = %d\n", workerFile, ok));
+					map_free(&map);
+				}
+			}
+
+			if (!ok) return kFilterError;
+			initDone = JK_TRUE;
+		}
+
 
 		if (qp = strchr(uri, '?'), qp != NULL) *qp = '\0';
 		workerName = map_uri_to_worker(uw_map, uri, logger);

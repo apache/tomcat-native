@@ -62,6 +62,12 @@
 #ifndef __config_h
 #define __config_h
 
+#define TOMCAT320	320
+#define TOMCAT330	330
+#define TOMCAT400	400
+
+#define FOR_TOMCAT TOMCAT400
+
 /* the _memicmp() function is available */
 #if defined(WIN32)
 
@@ -84,6 +90,6 @@
 /* #undef NO_CAPI */
 
 #define DEBUG(args) \
-	do { /*printf args ;*/ } while (0)
+	do { printf args ; } while (0)
 
 #endif /* __config_h */
