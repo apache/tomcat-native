@@ -57,6 +57,7 @@
 #include "jk_service.h"
 #include "jk_worker.h"
 #include "jk_uri_worker_map.h"
+#include "jk_shm.h"
 
 #define JK_WORKER_ID        ("jakarta.worker")
 #define JK_HANDLER          ("jakarta-servlet")
@@ -170,6 +171,7 @@ typedef struct dir_config_struct
 
 static jk_logger_t *main_log = NULL;
 static jk_worker_env_t worker_env;
+static char *jk_shm_file = NULL;
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -819,6 +821,32 @@ static const char *jk_set_log_file(cmd_parms * cmd,
 
     if (conf->log_file == NULL)
         return "JkLogFile file_name invalid";
+
+    return NULL;
+}
+
+/*
+ * JkShmFile Directive Handling
+ *
+ * JkShmFile file
+ */
+
+static const char *jk_set_shm_file(cmd_parms * cmd,
+                                   void *dummy, char *shm_file)
+{
+
+    /* we need an absolut path */
+    jk_shm_file = ap_server_root_relative(cmd->pool, shm_file);
+
+#ifdef CHROOTED_APACHE
+    ap_server_strip_chroot(jk_shm_file, 0);
+#endif
+
+    if (jk_shm_file == shm_file)
+        jk_shm_file = ap_pstrdup(cmd->pool, shm_file);
+
+    if (jk_shm_file == NULL)
+        return "JkShmFile file_name invalid";
 
     return NULL;
 }
@@ -1503,6 +1531,8 @@ static const command_rec jk_cmds[] = {
      */
     {"JkLogFile", jk_set_log_file, NULL, RSRC_CONF, TAKE1,
      "Full path to the Jakarta mod_jk module log file"},
+    {"JkShmFile", jk_set_shm_file, NULL, RSRC_CONF, TAKE1,
+     "Full path to the Jakarta mod_jk module shared memory file"},
     {"JkLogLevel", jk_set_log_level, NULL, RSRC_CONF, TAKE1,
      "The Jakarta mod_jk module log level, can be debug, info, request, error, or emerg"},
     {"JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF, TAKE1,
@@ -1840,6 +1870,7 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
 
 static void jk_init(server_rec * s, ap_pool * p)
 {
+    int rc;
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
@@ -1859,7 +1890,16 @@ static void jk_init(server_rec * s, ap_pool * p)
             main_log = conf->log;
         }
     }
-
+    
+    if ((rc = jk_shm_open(jk_shm_file, conf->log)) == 0) {
+        if (JK_IS_DEBUG_LEVEL(conf->log))
+            jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s",
+                   jk_shm_name(), rc);
+    }
+    else
+        jk_log(conf->log, JK_LOG_ERROR, "Initializing shm:%s errno=%d",
+               jk_shm_name(), rc);
+ 
     /* SREVILAK -- register cleanup handler to clear resources on restart,
      * to make sure log file gets closed in the parent process  */
     ap_register_cleanup(p, s, jk_server_cleanup, ap_null_cleanup);
@@ -1875,7 +1915,7 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
 }
 */
 
-    /* Create mapping from uri's to workers, and start up all the workers */
+     /* Create mapping from uri's to workers, and start up all the workers */
     if (!uri_worker_map_alloc
         (&(conf->uw_map), conf->uri_to_context, conf->log)) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
@@ -2102,6 +2142,7 @@ static void exit_handler(server_rec * s, ap_pool * p)
 static void jk_server_cleanup(void *data)
 {
     jk_generic_cleanup((server_rec *) data);
+    jk_shm_close();
 }
 
 
