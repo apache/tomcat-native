@@ -103,7 +103,7 @@ public final class HexUtils {
      * The string manager for this package.
      */
     private static StringManager sm =
-	StringManager.getManager("org.apache.tomcat.resources");
+	StringManager.getManager("org.apache.tomcat.util.buf.res");
 
 
     /**

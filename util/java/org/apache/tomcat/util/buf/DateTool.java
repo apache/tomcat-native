@@ -128,7 +128,7 @@ public class DateTool {
     }
  
     private static StringManager sm =
-        StringManager.getManager("org.apache.tomcat.resources");
+        StringManager.getManager("org.apache.tomcat.util.buf.res");
 
     // Called from MessageBytes.getTime()
     static long parseDate( MessageBytes value ) {

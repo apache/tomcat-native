@@ -78,7 +78,7 @@ import java.text.*;
 public class HttpMessages {
     // XXX move message resources in this package
     protected static StringManager sm =
-        StringManager.getManager("org.apache.tomcat.util");
+        StringManager.getManager("org.apache.tomcat.util.http.res");
 	
     static String st_200=null;
     static String st_302=null;
