@@ -193,4 +193,12 @@ public class JdkCompat {
     }
 
 
+    /**
+     *  Return the maximum amount of memory the JVM will attempt to use.
+     */
+    public long getMaxMemory() {
+        return (-1L);
+    }
+
+
  }

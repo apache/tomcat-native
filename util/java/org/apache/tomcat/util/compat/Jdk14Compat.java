@@ -114,4 +114,12 @@ public class Jdk14Compat extends JdkCompat {
     }
 
 
+    /**
+     *  Return the maximum amount of memory the JVM will attempt to use.
+     */
+    public long getMaxMemory() {
+        return Runtime.getRuntime().maxMemory();
+    }
+
+
  }
