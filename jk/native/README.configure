@@ -20,7 +20,7 @@
  
   To configure jakarta-tomcat-connectors run the following commands.
  
-  ./autoconf  (not required unless you are a developer)
+  ./buildconf  (not required unless you are a developer)
   ./configure [autoconf arguments] [jakarta-tomcat-connectors arguments]
   make
 * make install
