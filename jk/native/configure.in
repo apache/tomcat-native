@@ -286,6 +286,22 @@ esac
 ])
 AC_SUBST(CFLAGS)
 
+dnl CFLAGS for preforks mode
+dnl it also allows the CFLAGS environment variable.
+CFLAGS="${CFLAGS}"
+AC_ARG_ENABLE(
+prefork,
+[  --enable-prefork   Turn on prefork web server mode],
+[
+case "${enableval}" in
+    y | Y | YES | yes | TRUE | true )
+        CFLAGS="${CFLAGS} -DJK_PREFORK"
+        AC_MSG_RESULT([...Enabling Prefork mode...])
+        ;;
+esac
+])
+AC_SUBST(CFLAGS)
+
 dnl the APXSCFLAGS is given by apxs to the C compiler
 dnl the APXSLDFLAGS is given to the linker (for APRVARS).
 dnl APXSLDFLAGS=""
