@@ -109,7 +109,8 @@
 	taskDebug="0"
 	profile="${so.profile}"	>
       <def name="_REENTRANT" />
-      <def name="CHANNEL" />
+      <def name="CHANNEL" 
+           if="use.channel"/>
       <def name="CHUNK_SIZE" value="4096" 
 	   info="Read/Write buffer size" />
       <def name="REUSE_WORKER" 

@@ -557,12 +557,13 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
     }
 
     if(p) {
-        p->attached = JK_FALSE;
+	p->attached = JK_FALSE;
         p->env = NULL;
         p->worker = pThis->worker_private;
         p->endpoint.endpoint_private = p;
         p->endpoint.service = service;
         p->endpoint.done = done;
+	p->endpoint.channelData = NULL;
         *pend = &p->endpoint;
 	
         return JK_TRUE;
