@@ -41,27 +41,12 @@ so.debug=true
 so.optimize=false
 so.profile=false
 
-# Settings for building NetWare binaries.  Uncomment these and modify for your
-# environment to build NetWare binaries.
-#
-# novellndk.dir=d:/tools/novell/ndk/nwsdk
-# novelllibc.dir=d:/tools/novell/ndk/libc
-# build.compiler.base=d:/tools/mw/6.0
-# build.compiler.cc=${build.compiler.base}/bin/mwccnlm
-# build.compiler.ld=${build.compiler.base}/bin/mwldnlm
-# netscape.home=${iplanet.home}
-# option_no_reuse_worker=true
+# tools for other directories
+# Metrowerks and novel ndk
+#mw.home=d:/tools/mw/6.0
+#novellndk.home=d:/tools/novell/ndk/nwsdk
 
-# Settings for building Windows binaries.  Uncomment these and modify for your
-# environment to build Windows binaries.
-#
-# build.compiler.base=c:/Program Files/Microsoft Visual Studio/VC98
-# build.compiler.cc=${build.compiler.base}/bin/cl
-# build.compiler.ld=${build.compiler.base}/bin/link
+# MSVC
+#mssdk.home=c:/Program Files/Microsoft Visual Studio/VC98
 
-# Microsft SDK
-
-# mssdk.home=c:/Program Files/Microsoft SDK
-# mssdk.include=${mssdk.home}/include
-# mssdk.lib=${mssdk.home}/lib
 
