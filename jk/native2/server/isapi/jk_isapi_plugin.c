@@ -316,20 +316,24 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 
                 rc = jk_requtil_unescapeUrl(uri);
                 if (rc == BAD_REQUEST) {
-                    env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
+                    env->l->jkLog(env, env->l,  JK_LOG_INFO, 
                            "HttpFilterProc [%s] contains one or more invalid escape sequences.\n", 
                            uri);
-                    write_error_response(pfc,"400 Bad Request", HTML_ERROR_400);
+                    // XXX: Let any other filter process the request, 
+                    //      if they take any security measure or not doesnt matter.
+                    //  write_error_response(pfc,"400 Bad Request", HTML_ERROR_400);
                     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                    return SF_STATUS_REQ_FINISHED;
+                    return SF_STATUS_REQ_NEXT_NOTIFICATION;
                 }
                 else if(rc == BAD_PATH) {
-                    env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
+                    env->l->jkLog(env, env->l,  JK_LOG_INFO, 
                            "HttpFilterProc [%s] contains forbidden escape sequences.\n", 
                            uri);
-                    write_error_response(pfc,"403 Forbidden", HTML_ERROR_403);
+                    // XXX: Let any other filter process the request, 
+                    //      if they take any security measure or not doesnt matter.
+                    //  write_error_response(pfc,"403 Forbidden", HTML_ERROR_403);
                     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-                    return SF_STATUS_REQ_FINISHED;
+                    return SF_STATUS_REQ_NEXT_NOTIFICATION;
                 }
                 jk_requtil_getParents(uri);
 
