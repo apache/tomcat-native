@@ -109,9 +109,9 @@ struct wa_provider {
      * Cleans up all resources allocated by the provider.
      * <br>
      * The provider is notified that no further requests will be handled, and
-     * the WebApp library is being destroyed.
+     * the WebApp library is being shut down.
      */
-    void (*destroy)(void);
+    void (*shutdown)(void);
 
     /**
      * Configure a connection with the parameter from the web server
@@ -186,7 +186,7 @@ void wa_startup(void);
  * to any other WebApp Library function after this function has been invoked
  * will result in impredictable results.
  */
-void wa_destroy(void);
+void wa_shutdown(void);
 
 /**
  * Deploy a web-application.
@@ -212,16 +212,6 @@ const char *wa_deploy(wa_application *a,
  * @param others The parameters to the format string.
  */
 void wa_debug(const char *f, const int l, const char *fmt, ...);
-
-/**
- * Log an error message.
- *
- * @param f The file where this function was called.
- * @param l The line number where this function was called.
- * @param fmt The format string of the debug message (printf style).
- * @param others The parameters to the format string.
- */
-void wa_log(const char *f, const int l, const char *fmt, ...);
 
 /**
  * The WebApp library memory pool.
