@@ -88,13 +88,15 @@ typedef struct wa_request wa_request;
 typedef struct wa_hostdata wa_hostdata;
 typedef struct wa_handler wa_handler;
 
-//typedef struct wa_provider wa_provider;
+typedef struct wa_provider wa_provider;
+
+/* All declared providers */
+extern wa_provider wa_provider_info;
 
 /* WebApp Library includes */
 #include <wa_main.h>
 #include <wa_config.h>
 #include <wa_request.h>
-//#include <wa_provider.h>
 
 /* Debugging mark */
 #define WA_MARK __FILE__,__LINE__
