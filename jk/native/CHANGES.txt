@@ -1,6 +1,12 @@
 JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
+Changes with JK 1.2.6
+    * Fix POST Recovery problems in LB mode [hgomez]
+    * Add CPING/CPONG support to avoid problems with hang tomcats [hgomez]
+    * Make POST recovery in LB configurable [hgomez]
+    * Update to Apache License 2.0 [hgomez]
+    
 Changes with JK 1.2.5
     * Fix a thread safe bug when mapping URI's.
       [billbarker]
