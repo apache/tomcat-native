@@ -383,8 +383,8 @@ static apr_status_t jk2_shutdown(void *data)
     if (workerEnv) {
         env=workerEnv->globalEnv;
 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "mod_jk2 Shutting down\n");
+/*         env->l->jkLog(env, env->l, JK_LOG_INFO, */
+/*                       "mod_jk2 Shutting down\n"); */
         workerEnv->close(env, workerEnv);
         workerEnv = NULL;
     }
