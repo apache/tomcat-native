@@ -906,7 +906,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
         jk_log(l, JK_LOG_ERROR,
                "unknown protocol %d, supported are AJP13/AJP14", ae->proto);
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return JK_FATAL_ERROR;
     }
 
     if ((rc = jk_tcp_socket_sendfull(ae->sd, jk_b_get_buff(msg),
@@ -1103,7 +1103,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t * ae,
 
     if ((len = ajp_read_fully_from_server(r, l, read_buf, len)) < 0) {
         jk_log(l, JK_LOG_INFO,
-               "ERROR: receiving data from client failed. "
+               "Error receiving data from client failed. "
                "Connection aborted or network problems");
         JK_TRACE_EXIT(l);
         return JK_CLIENT_ERROR;
@@ -1148,7 +1148,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                             ajp_endpoint_t * ae, ajp_operation_t * op)
 {
     int err = 0;
-    int postlen;
+    int postlen, rc = 0;
 
     JK_TRACE_ENTER(l);
     /* Up to now, we can recover */
@@ -1182,10 +1182,16 @@ static int ajp_send_request(jk_endpoint_t *e,
          * connection and try again.  If we are succesful, break out of this
          * loop. */
         if (err ||
-            (ajp_connection_tcp_send_message(ae, op->request, l) == JK_FALSE)) {
+            ((rc = ajp_connection_tcp_send_message(ae, op->request, l)) != JK_TRUE)) {
             jk_log(l, JK_LOG_INFO,
                    "Error sending request. Will try another pooled connection");
-            ajp_next_connection(ae, l);
+            if (rc != JK_FATAL_ERROR)
+                ajp_next_connection(ae, l);
+            else {
+                op->recoverable = JK_FALSE;
+                JK_TRACE_EXIT(l);
+                return JK_FALSE;
+            }
         }
         else
             break;
@@ -1210,7 +1216,7 @@ static int ajp_send_request(jk_endpoint_t *e,
              * After we are connected, each error that we are going to
              * have is probably unrecoverable
              */
-            if (ajp_connection_tcp_send_message(ae, op->request, l) == JK_FALSE) {
+            if (ajp_connection_tcp_send_message(ae, op->request, l) != JK_TRUE) {
                 jk_log(l, JK_LOG_INFO,
                        "Error sending request on a fresh connection");
                 JK_TRACE_EXIT(l);
@@ -1246,7 +1252,7 @@ static int ajp_send_request(jk_endpoint_t *e,
 
     postlen = jk_b_get_len(op->post);
     if (postlen > AJP_HEADER_LEN) {
-        if (ajp_connection_tcp_send_message(ae, op->post, l) == JK_FALSE) {
+        if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
             jk_log(l, JK_LOG_ERROR, "Error resending request body (%d)",
                    postlen);
             JK_TRACE_EXIT(l);
@@ -1263,7 +1269,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         postlen = jk_b_get_len(s->reco_buf);
 
         if (postlen > AJP_HEADER_LEN) {
-            if (ajp_connection_tcp_send_message(ae, s->reco_buf, l) == JK_FALSE) {
+            if (ajp_connection_tcp_send_message(ae, s->reco_buf, l) != JK_TRUE) {
                 jk_log(l, JK_LOG_ERROR,
                        "Error resending request body (lb mode) (%d)",
                        postlen);
@@ -1300,7 +1306,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                 /* the browser stop sending data, no need to recover */
                 op->recoverable = JK_FALSE;
                 JK_TRACE_EXIT(l);
-                return JK_CLIENT_ERROR;
+                return len;
             }
 
             /* If a RECOVERY buffer is available in LB mode, fill it */
@@ -1310,7 +1316,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             }
 
             s->content_read = len;
-            if (ajp_connection_tcp_send_message(ae, op->post, l) == JK_FALSE) {
+            if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
                 jk_log(l, JK_LOG_ERROR, "Error sending request body");
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -1621,7 +1627,6 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
 
         p->left_bytes_to_send = s->content_length;
         p->reuse = JK_FALSE;
-        *is_error = 0;
 
         s->secret = p->worker->secret;
 
@@ -1629,9 +1634,12 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
          * We get here initial request (in reqmsg)
          */
         if (!ajp_marshal_into_msgb(op->request, s, l, p)) {
-            *is_error = JK_HTTP_SERVER_ERROR;
+            *is_error = JK_HTTP_BAD_REQUEST;
+            jk_log(l, JK_LOG_INFO,
+                    "Creating AJP message failed, "
+                    "without recovery");
             JK_TRACE_EXIT(l);
-            return JK_FALSE;
+            return JK_CLIENT_ERROR;
         }
 
         if (JK_IS_DEBUG_LEVEL(l))
@@ -1663,10 +1671,10 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                 }
 
                 /* Up to there we can recover */
-                *is_error = 0;
 
                 err = ajp_get_reply(e, s, l, p, op);
-                if (err > 0) {
+                if (err == JK_TRUE) {
+                    /* Done with the request */
                     JK_TRACE_EXIT(l);
                     return JK_TRUE;
                 }
@@ -1693,11 +1701,22 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                         jk_sleep_def();
                     }
                 }
+                else {
+                    *is_error = JK_HTTP_BAD_REQUEST;
+                    jk_log(l, JK_LOG_INFO,
+                           "Receiving from tomcat failed, "
+                           "because of client error "
+                           "without recovery in send loop %d", i);
+                    JK_TRACE_EXIT(l);
+                    return JK_CLIENT_ERROR;
+                }
             }
             if (err == JK_CLIENT_ERROR) {
-                *is_error = JK_HTTP_SERVER_ERROR;
-                jk_log(l, JK_LOG_ERROR,
-                       "Client connection aborted or network problems");
+                *is_error = JK_HTTP_BAD_REQUEST;
+                jk_log(l, JK_LOG_INFO,
+                       "Sending request to tomcat failed, "
+                       "because of client error "
+                       "without recovery in send loop %d", i);
                 JK_TRACE_EXIT(l);
                 return JK_CLIENT_ERROR;
             }
