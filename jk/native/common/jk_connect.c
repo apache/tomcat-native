@@ -553,7 +553,13 @@ int jk_is_socket_connected(int sd, int timeout)
     fd_set fd;
     struct timeval tv;
     int rc;
-
+    
+    /* socket_timeout is unused in select implemention
+     * If we change this to non blocking read, then we
+     * will use the timeout parameter.
+     */
+     timeout;
+     
     FD_ZERO(&fd);
     FD_SET(sd, &fd);
 
