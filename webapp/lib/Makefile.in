@@ -61,7 +61,7 @@
 include ../Makedefs
 
 OBJS = wa_main.o wa_config.o wa_request.o
-PROVS = pr_info.o # pr_warp.o pr_jni.o
+PROVS = pr_info.o pr_warp.o # pr_jni.o
 
 LIB = libwebapp.a
 

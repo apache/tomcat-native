@@ -131,7 +131,8 @@ static int wa_rerror_headers(void *d, const char *key, const char *val) {
 }
 
 /* Dump an error response */
-int wa_rerror(wa_request *r, int s, const char *fmt, ...) {
+int wa_rerror(const char *file, const int line, wa_request *r, int s,
+              const char *fmt, ...) {
     va_list ap;
     char buf[1024];
 
@@ -149,11 +150,13 @@ int wa_rerror(wa_request *r, int s, const char *fmt, ...) {
     wa_rprintf(r,"\n\n");
     wa_rprintf(r,"<html>\n");
     wa_rprintf(r," <head>\n");
-    wa_rprintf(r,"  <title>WebApp: %d Error</title>",s);
+    wa_rprintf(r,"  <title>WebApp: %d Error (File: %s Line: %d)</title>",s,
+               file,line);
     wa_rprintf(r," </head>\n");
     wa_rprintf(r," <body>\n");
     wa_rprintf(r,"  <div align=\"center\">");
-    wa_rprintf(r,"    <h1>WebApp: %d Error</h1>",s);
+    wa_rprintf(r,"    <h1>WebApp: %d Error (File: %s Line: %d)</h1>",s,
+               file,line);
     wa_rprintf(r,"  </div>\n");
     wa_rprintf(r,"  <hr>\n");
     wa_rprintf(r,"  %s\n",buf);

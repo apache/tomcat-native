@@ -65,7 +65,7 @@ wa_chain *wa_configuration=NULL;
 /* The list of all compiled in providers */
 wa_provider *wa_providers[] = {
     &wa_provider_info,
-    //&wa_provider_warp,
+    &wa_provider_warp,
     //&wa_provider_jni,
     NULL,
 };
@@ -95,7 +95,7 @@ const char *wa_init(void) {
     }
 
     /* Done */
-    wa_debug(WA_MARK,"WebApp Library initialized (PID=%d)",getpid());
+    wa_debug(WA_MARK,"WebApp Library initialized");
     return(NULL);
 }
 
@@ -105,7 +105,7 @@ void wa_startup(void) {
 
     while(wa_providers[x]!=NULL) wa_providers[x++]->startup();
 
-    wa_debug(WA_MARK,"WebApp Library started (PID=%d)",getpid());
+    wa_debug(WA_MARK,"WebApp Library started");
 }
 
 /* Clean up the WebApp Library. */
@@ -124,7 +124,7 @@ void wa_destroy(void) {
     wa_configuration=NULL;
     apr_terminate();
 
-    wa_debug(WA_MARK,"WebApp Library destroyed (PID=%d)",getpid());
+    wa_debug(WA_MARK,"WebApp Library destroyed");
 }
 
 /* Deploy a web-application. */
@@ -194,10 +194,27 @@ void wa_debug(const char *f, const int l, const char *fmt, ...) {
 
     at=apr_time_now();
     apr_ctime(st, at);
-    fprintf(stderr,"[%s] (%s:%d) ",st,f,l);
     va_start(ap,fmt);
+    fprintf(stderr,"[%s] %d (%s:%d) ",st,getpid(),f,l);
     vfprintf(stderr,fmt,ap);
-    va_end(ap);
     fprintf(stderr,"\n");
     fflush(stderr);
+    va_end(ap);
+}
+
+
+/* Log an error message. */
+void wa_log(const char *f, const int l, const char *fmt, ...) {
+    apr_time_t at;
+    char st[128];
+    va_list ap;
+
+    at=apr_time_now();
+    apr_ctime(st, at);
+    va_start(ap,fmt);
+    fprintf(stderr,"[%s] %d (%s:%d) ",st,getpid(),f,l);
+    vfprintf(stderr,fmt,ap);
+    fprintf(stderr,"\n");
+    fflush(stderr);
+    va_end(ap);
 }
