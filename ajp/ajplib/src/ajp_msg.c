@@ -15,10 +15,10 @@
 
 #include "ajp.h"
 
-int ajp_msg_check_header(ajp_env_t *env, ajp_msg_t * msg)
+apr_status_t ajp_msg_check_header(ajp_env_t *env, ajp_msg_t * msg)
 {
-    char *head = msg->buf;
-    int msglen;
+    apr_byte_t *head = msg->buf;
+    apr_size_t msglen;
 
     if (!((head[0] == 0x41 && head[1] == 0x42) ||
           (head[0] == 0x12 && head[1] == 0x34))) {
@@ -30,7 +30,7 @@ int ajp_msg_check_header(ajp_env_t *env, ajp_msg_t * msg)
         return -1;
     }
 
-    msglen = ((head[2] & 0xff) << 8);
+    msglen  = ((head[2] & 0xff) << 8);
     msglen += (head[3] & 0xFF);
 
     if (msglen > AJP_MSG_BUFFER_SZ) {
@@ -43,7 +43,7 @@ int ajp_msg_check_header(ajp_env_t *env, ajp_msg_t * msg)
     msg->len = msglen + AJP_HEADER_LEN;
     msg->pos = AJP_HEADER_LEN;
 
-    return msglen;
+    return 0;
 }
 
 void ajp_msg_reset(ajp_env_t *env, ajp_msg_t * msg)
@@ -54,7 +54,7 @@ void ajp_msg_reset(ajp_env_t *env, ajp_msg_t * msg)
 
 void ajp_msg_end(ajp_env_t *env, ajp_msg_t * msg)
 {
-    unsigned short len = msg->len - AJP_HEADER_LEN;
+    apr_size_t len = msg->len - AJP_HEADER_LEN;
 
     if (msg->serverSide) {
         msg->buf[0] = 0x41;
@@ -65,50 +65,52 @@ void ajp_msg_end(ajp_env_t *env, ajp_msg_t * msg)
         msg->buf[1] = 0x34;
     }
 
-    msg->buf[2] = (unsigned char)((len >> 8) & 0xFF);
-    msg->buf[3] = (unsigned char)(len & 0xFF);
+    msg->buf[2] = (apr_byte_t)((len >> 8) & 0xFF);
+    msg->buf[3] = (apr_byte_t)(len & 0xFF);
 }
 
-int ajp_msg_append_long(ajp_env_t *env, ajp_msg_t *msg,
-                                  const unsigned long val)
+apr_status_t ajp_msg_append_uint32(ajp_env_t *env, ajp_msg_t *msg,
+                                   const apr_uint32_t val)
 {
-    int len = msg->len;
+    apr_size_t len = msg->len;
 
     if (len + AJP_HEADER_LEN > AJP_MSG_BUFFER_SZ) {
         return -1;
     }
 
-    msg->buf[len] = (unsigned char)((val >> 24) & 0xFF);
-    msg->buf[len + 1] = (unsigned char)((val >> 16) & 0xFF);
-    msg->buf[len + 2] = (unsigned char)((val >> 8) & 0xFF);
-    msg->buf[len + 3] = (unsigned char)(val & 0xFF);
+    msg->buf[len]     = (apr_byte_t)((val >> 24) & 0xFF);
+    msg->buf[len + 1] = (apr_byte_t)((val >> 16) & 0xFF);
+    msg->buf[len + 2] = (apr_byte_t)((val >> 8) & 0xFF);
+    msg->buf[len + 3] = (apr_byte_t)(val & 0xFF);
 
     msg->len += 4;
 
     return 0;
 }
 
-int ajp_msg_append_int(ajp_env_t *env, ajp_msg_t *msg,
-                                 const unsigned short val)
+apr_status_t ajp_msg_append_uint16(ajp_env_t *env, ajp_msg_t *msg,
+                                   const apr_uint16_t val)
 {
-    int len = msg->len;
+    apr_size_t len = msg->len;
+
     if (len + 2 > AJP_MSG_BUFFER_SZ) {
         return -1;
     }
 
-    msg->buf[len] = (unsigned char)((val >> 8) & 0xFF);
-    msg->buf[len + 1] = (unsigned char)(val & 0xFF);
+    msg->buf[len]     = (apr_byte_t)((val >> 8) & 0xFF);
+    msg->buf[len + 1] = (apr_byte_t)(val & 0xFF);
 
     msg->len += 2;
 
     return 0;
 }
 
-int ajp_msg_append_byte(ajp_env_t *env, ajp_msg_t *msg,
-                                  unsigned char val)
+apr_status_t ajp_msg_append_byte(ajp_env_t *env, ajp_msg_t *msg,
+                                 const apr_byte_t val)
 {
-    int len = msg->len;
-    if (len + 1 > AJP_MSG_BUFFER_SZ) {
+    apr_size_t len = msg->len;
+
+    if ((len + 1) > AJP_MSG_BUFFER_SZ) {
         return -1;
     }
 
@@ -118,10 +120,10 @@ int ajp_msg_append_byte(ajp_env_t *env, ajp_msg_t *msg,
     return 0;
 }
 
-int ajp_msg_append_cvt_string(ajp_env_t *env, ajp_msg_t *msg,
-                                     const char *param, int convert)
+apr_status_t ajp_msg_append_cvt_string(ajp_env_t *env, ajp_msg_t *msg,
+                                       const char *param, int convert)
 {
-    int len;
+    apr_size_t len;
 
     if (param == NULL) {
         return(ajp_msg_append_int(env, msg, 0xFFFF));
@@ -146,28 +148,21 @@ int ajp_msg_append_cvt_string(ajp_env_t *env, ajp_msg_t *msg,
     return 0;
 }
 
-int ajp_msg_append_string(ajp_env_t *env, ajp_msg_t *msg,
-                                    const char *param)
+apr_status_t ajp_msg_append_string(ajp_env_t *env, ajp_msg_t *msg,
+                                   const char *param)
 {
     return ajp_msg_append_cvt_string(env, msg, param, 1);
 }
 
 
-static int jk2_msg_ajp_appendAsciiString(ajp_env_t *env, ajp_msg_t *msg,
-                                         const char *param)
-{
-    return ajp_msg_append_cvt_string(env, msg, param, 0);
-}
-
-
-static int jk2_msg_ajp_append_bytes(ajp_env_t *env, ajp_msg_t *msg,
-                                   const unsigned char *param, const int len)
+apr_status_t ajp_msg_append_bytes(ajp_env_t *env, ajp_msg_t *msg,
+                                  const apr_byte_t *param, const apr_size_t len)
 {
     if (!len) {
         return 0;
     }
 
-    if (msg->len + len > AJP_MSG_BUFFER_SZ) {
+    if ((msg->len + len) > AJP_MSG_BUFFER_SZ) {
         return -1;
     }
 
@@ -178,27 +173,28 @@ static int jk2_msg_ajp_append_bytes(ajp_env_t *env, ajp_msg_t *msg,
     return 0;
 }
 
-unsigned long ajp_msg_get_long(ajp_env_t *env, ajp_msg_t *msg)
+apr_uint32_t ajp_msg_get_uint32(ajp_env_t *env, ajp_msg_t *msg)
 {
-    unsigned long i;
+    apr_uint32_t i;
 
-    if (msg->pos + 3 > msg->len) {
+    if ((msg->pos + 3) > msg->len) {
         fprintf(stderr, 
                 "ajp_msg_get_long(): BufferOverflowException %d %d\n",
-                      msg->pos, msg->len);
+                msg->pos, msg->len);
 
         return -1;
     }
-    i = ((msg->buf[(msg->pos++)] & 0xFF) << 24);
+
+    i  = ((msg->buf[(msg->pos++)] & 0xFF) << 24);
     i |= ((msg->buf[(msg->pos++)] & 0xFF) << 16);
     i |= ((msg->buf[(msg->pos++)] & 0xFF) << 8);
     i |= ((msg->buf[(msg->pos++)] & 0xFF));
     return i;
 }
 
-unsigned short ajp_msg_get_int(ajp_env_t *env, ajp_msg_t *msg)
+apr_uint16_t ajp_msg_get_uint16(ajp_env_t *env, ajp_msg_t *msg)
 {
-    int i;
+    apr_uint16_t i;
     
     if (msg->pos + 1 > msg->len) {
         fprintf(stderr, 
@@ -207,14 +203,17 @@ unsigned short ajp_msg_get_int(ajp_env_t *env, ajp_msg_t *msg)
 
         return -1;
     }
-    i = ((msg->buf[(msg->pos++)] & 0xFF) << 8);
+
+    i  = ((msg->buf[(msg->pos++)] & 0xFF) << 8);
     i += ((msg->buf[(msg->pos++)] & 0xFF));
+
     return i;
 }
 
-unsigned short ajp_msg_peek_int(ajp_env_t *env, ajp_msg_t *msg)
+apr_uint16_t ajp_msg_peek_int(ajp_env_t *env, ajp_msg_t *msg)
 {
-    int i;
+    apr_uint16_t i;
+
     if (msg->pos + 1 > msg->len) {
         fprintf(stderr, 
                 "ajp_msg_peek_int(): BufferOverflowException %d %d\n",
@@ -227,9 +226,10 @@ unsigned short ajp_msg_peek_int(ajp_env_t *env, ajp_msg_t *msg)
     return i;
 }
 
-unsigned char ajp_msg_get_byte(ajp_env_t *env, ajp_msg_t *msg)
+apr_byte_t ajp_msg_get_byte(ajp_env_t *env, ajp_msg_t *msg)
 {
-    unsigned char rc;
+    apr_byte_t rc;
+
     if (msg->pos > msg->len) {
         fprintf(stderr, 
                 "ajp_msg_get_byte(): BufferOverflowException %d %d\n",
@@ -244,8 +244,8 @@ unsigned char ajp_msg_get_byte(ajp_env_t *env, ajp_msg_t *msg)
 
 char * ajp_msg_get_string(ajp_env_t *env, ajp_msg_t *msg)
 {
-    int size = ajp_msg_get_int(env, msg);
-    int start = msg->pos;
+    apr_size_t size  = (apr_size_t)ajp_msg_get_uint16(env, msg);
+    apr_size_t start = msg->pos;
 
     if ((size < 0) || (size + start > AJP_MSG_BUFFER_SZ)) {
         fprintf(stderr, 
@@ -261,10 +261,10 @@ char * ajp_msg_get_string(ajp_env_t *env, ajp_msg_t *msg)
     return (unsigned char *)(msg->buf + start);
 }
 
-unsigned char *ajp_msg_get_bytes(ajp_env_t *env, ajp_msg_t *msg, int *lenP)
+apr_byte_t *ajp_msg_get_bytes(ajp_env_t *env, ajp_msg_t *msg, apr_size_t *lenP)
 {
-    int size = ajp_msg_get_int(env, msg);
-    int start = msg->pos;
+    apr_size_t size = (apr_size_t)ajp_msg_get_uint16(env, msg);
+    apr_size_t start = msg->pos;
 
     *lenP = size;
 
@@ -279,7 +279,7 @@ unsigned char *ajp_msg_get_bytes(ajp_env_t *env, ajp_msg_t *msg, int *lenP)
     msg->pos += size;
     msg->pos++;                 /* terminating NULL */
 
-    return (unsigned char *)(msg->buf + start);
+    return (apr_byte_t *)(msg->buf + start);
 }
 
 ajp_msg_t *ajp_msg_create(ajp_env_t *env)
@@ -291,7 +291,7 @@ ajp_msg_t *ajp_msg_create(ajp_env_t *env)
 
     msg->serverSide = 0;
 
-    msg->buf = (char *)apr_palloc(env->pool, AJP_MSG_BUFFER_SZ);
+    msg->buf = (apr_byte_t *)apr_palloc(env->pool, AJP_MSG_BUFFER_SZ);
 
     if (msg->buf == NULL) {
         return NULL;
@@ -303,7 +303,7 @@ ajp_msg_t *ajp_msg_create(ajp_env_t *env)
     return msg;
 }
 
-int ajp_msg_copy(ajp_env_t *env, ajp_msg_t *msg, ajp_msg_t *dmsg)
+apr_status_t ajp_msg_copy(ajp_env_t *env, ajp_msg_t *msg, ajp_msg_t *dmsg)
 {
     if (dmsg == NULL)
         return -1;

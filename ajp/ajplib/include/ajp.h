@@ -82,10 +82,10 @@ typedef struct ajp_env ajp_env_t;
 
 struct ajp_msg
 {
-	char *	buf;
-	int     headerLen;
-	int     len;
-	int     pos;
+	char *		buf;
+	apr_size_t	headerLen;
+	apr_size_t  len;
+	apr_size_t	pos;
 	int     serverSide;
 };
 
