@@ -237,6 +237,13 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected int timeout = 300000;   // 5 minutes as in Apache HTTPD server
 
+
+    /**
+     * Host name (used to avoid useless B2C conversion on the host name).
+     */
+    protected char[] hostNameC = new char[0];
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -787,9 +794,13 @@ public class Http11Processor implements Processor, ActionHook {
         int valueL = valueBC.getLength();
         int valueS = valueBC.getStart();
         int colonPos = -1;
+        if (hostNameC.length < valueL) {
+            hostNameC = new char[valueL];
+        }
 
         for (int i = 0; i < valueL; i++) {
             char b = (char) valueB[i + valueS];
+            hostNameC[i] = b;
             if (b == ':') {
                 colonPos = i;
                 break;
@@ -804,10 +815,10 @@ public class Http11Processor implements Processor, ActionHook {
                 // 443 - Default HTTPS port
                 request.setServerPort(443);
             }
-            request.serverName().setBytes(valueB, valueS, valueL);
+            request.serverName().setChars(hostNameC, 0, valueL);
         } else {
 
-            request.serverName().setBytes(valueB, valueS, colonPos);
+            request.serverName().setChars(hostNameC, 0, colonPos);
 
             int port = 0;
             int mult = 1;
