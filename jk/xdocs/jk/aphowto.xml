@@ -849,7 +849,7 @@ You could start to build all the modules of mod_jk :
 </p>
 <screen5250>
 <note5250>Copy the CL build program source from IFS</note5250>
-<type5250>CPYFRMSTMF FROMSTMF('/home/apache/jk/native/apache-2.0/bldjk.qcsrc') +</type5250>
+<type5250>CPYFRMSTMF FROMSTMF('/home/apache/jk/native/apache-2.0/bldjk.qclsrc') +</type5250>
 <type5250next>TOMBR('/QSYS.LIB/MOD_JK.LIB/QCLSRC.FILE/BLDJK.MBR') MBROPT(*REPLACE)</type5250next>
 <note5250>Build the CL build program</note5250>
 <type5250>CRTCLPGM PGM(MOD_JK/BLDJK) SRCFILE(MOD_JK/QCLSRC) TEXT('Apache mod_jk build program')</type5250>
