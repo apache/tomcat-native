@@ -5,9 +5,10 @@
 LIBTOOL      = libtool
 
 # Compile commands
-
+VPATH=.:../common
 COMPILE      = $(CC) $(CFLAGS)
-LT_COMPILE   = $(LIBTOOL) --mode=compile $(COMPILE) -c $< && touch $@
+LT_COMPILE   = $(LIBTOOL) --mode=compile $(COMPILE) -c $< 
+# && touch $@
 
 # Implicit rules for creating outputs from input files
 
@@ -28,3 +29,4 @@ LT_COMPILE   = $(LIBTOOL) --mode=compile $(COMPILE) -c $< && touch $@
 
 .c.slo:
 	$(SH_COMPILE)
+
