@@ -210,7 +210,7 @@ file you are working on, and run the <b>cvs update</b> command.  For example,
 to produce a unified diff of the index.xml file and call it patch.txt, you 
 would cd into the directory containing the index.xml file and:
 <screen>
-<read>C:\build\jakarta-tomcat-connectors\jk\xdocscvs diff -u index.xml  
+<read>C:\build\jakarta-tomcat-connectors\jk\xdocs\>cvs diff -u index.xml >  
 patch.txt.</read>
 <read> </read>
 </screen>
