@@ -4,7 +4,7 @@ Last modified at [$Date$]
 Changes with JK2 2.0.2:
     * Fix the bug 14293. Thanks to Martin Kraemer for his help.
       [Jean-Frederic Clere]
-    * Don't send initial chunk for chunked encoding
+    * Don't send initial chunk for chunked encoding, fix #14282
       [Costin Manolache]
     * Fix the POST data on JNI
       [Mladen Turk]

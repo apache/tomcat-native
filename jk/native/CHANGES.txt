@@ -2,7 +2,7 @@ JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
 Changes with JK 1.2.1:
-    * Don't send initial chunk for chunked encoding
+    * Don't send initial chunk for chunked encoding, fix #14282
       [costin]
     * Add perl scripts for analyzing mod_jk logs and generating graphs/reports  
       [glenn]
