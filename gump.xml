@@ -15,6 +15,7 @@
       <property name="jmx.home" reference="home" project="jmx"/>
       <property name="jmx.jar" project="jmx" path="jmx/lib/jmxri.jar" />
       <property name="jsse.home" reference="home" project="jsse"/>
+      <depend property="commons-modeler.jar" project="commons-modeler"/>
     </ant>
 
     <depend project="jakarta-ant"/>
@@ -36,6 +37,7 @@
       <property name="jmx.jar" project="jmx" path="jmx/lib/jmxri.jar" />
       <property name="catalina.home" reference="home" 
         project="tomcat-catalina"/> 
+      <depend property="commons-modeler.jar" project="commons-modeler"/>
     </ant>
 
     <depend project="jakarta-ant"/>
@@ -84,6 +86,7 @@
       <property name="jmx.home" reference="home" project="jmx"/>
       <property name="jmx.jar" project="jmx" path="jmx/lib/jmxri.jar" />
       <property name="jsse.home" reference="home" project="jsse"/>
+      <depend property="commons-modeler.jar" project="commons-modeler"/>
     </ant>
 
     <depend project="jakarta-ant"/>
