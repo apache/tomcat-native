@@ -278,6 +278,8 @@ struct jk_ws_service
  */
 struct jk_endpoint
 {
+    size_t rd;
+    size_t wr;
 
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
@@ -361,7 +363,8 @@ struct jk_worker
      * (e.g. ajp12 or ajp13 or ajp14).  
      */
     void *worker_private;
-
+    
+    const char *type;
     /*
      * For all of the below (except destroy), the first argument is
      * essentially a 'this' pointer.  

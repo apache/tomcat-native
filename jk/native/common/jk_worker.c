@@ -169,7 +169,7 @@ int wc_create_worker(const char *name,
                 }
             }
         }
-
+        w->type = type;
         *rc = w;
         JK_TRACE_EXIT(l);
         return JK_TRUE;
