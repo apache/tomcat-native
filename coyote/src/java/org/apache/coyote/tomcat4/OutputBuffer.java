@@ -135,6 +135,8 @@ public class OutputBuffer extends Writer
 
     private Response coyoteResponse;
 
+    private boolean suspended = false;
+
 
     // ----------------------------------------------------------- Constructors
 
@@ -180,6 +182,22 @@ public class OutputBuffer extends Writer
     }
 
 
+    /**
+     * Is the response output suspended ?
+     */
+    public boolean isSuspended() {
+        return this.suspended;
+    }
+
+
+    /**
+     * Set the suspended flag.
+     */
+    public void setSuspended(boolean suspended) {
+        this.suspended = suspended;
+    }
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -198,6 +216,7 @@ public class OutputBuffer extends Writer
         cb.recycle();
         bb.recycle(); 
         closed = false;
+        suspended = false;
 
         if (conv!= null) {
             conv.recycle();
@@ -248,6 +267,8 @@ public class OutputBuffer extends Writer
         if (debug > 2)
             log("realWrite(b, " + off + ", " + cnt + ") " + coyoteResponse);
 
+        if (suspended)
+            return;
         if (closed)
             return;
         if (coyoteResponse == null)
@@ -452,7 +473,7 @@ public class OutputBuffer extends Writer
         conv = (C2BConverter) encoders.get(enc);
         if (conv == null) {
             try {
-                conv = new C2BConverter(bb,enc);
+                conv = new C2BConverter(bb, enc);
                 encoders.put(enc, conv);
             } catch (IOException e) {
                 conv = (C2BConverter) encoders.get(DEFAULT_ENCODING);
@@ -506,7 +527,7 @@ public class OutputBuffer extends Writer
 
     public void setBufferSize(int size) {
         if (size > bb.getLimit()) {// ??????
-	    bb.setLimit( size );
+	    bb.setLimit(size);
 	}
     }
 
@@ -531,7 +552,7 @@ public class OutputBuffer extends Writer
 
 
     protected void log( String s ) {
-	System.out.println("OutputBuffer: " + s );
+	System.out.println("OutputBuffer: " + s);
     }
 
 

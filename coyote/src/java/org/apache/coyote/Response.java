@@ -100,6 +100,12 @@ public final class Response {
 
 
     /**
+     * Status message.
+     */
+    protected String message = null;
+
+
+    /**
      * Response headers.
      */
     protected MimeHeaders headers = new MimeHeaders();
@@ -215,6 +221,22 @@ public final class Response {
     }
 
 
+    /**
+     * Get the status message.
+     */
+    public String getMessage() {
+        return message;
+    }
+
+
+    /**
+     * Set the status message.
+     */
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+
     public boolean isCommitted() {
 	return commited;
     }
@@ -279,7 +301,9 @@ public final class Response {
         locale = Constants.DEFAULT_LOCALE;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         contentLength = -1;
+
         status = 200;
+        message = null;
         headers.clear();
         
 	// Force the PrintWriter to flush its data to the output
@@ -388,7 +412,7 @@ public final class Response {
         contentLanguage = locale.getLanguage();
 
 	// only one header !
-	headers.setValue("Content-Language").setString( contentLanguage);
+	headers.setValue("Content-Language").setString(contentLanguage);
     }
 
     public String getCharacterEncoding() {
@@ -401,7 +425,7 @@ public final class Response {
         if (encoding != null) {
 	    characterEncoding = encoding;
         }
-	headers.setValue("Content-Type").setString( contentType);
+	headers.setValue("Content-Type").setString(contentType);
     }
 
     public String getContentType() {
@@ -437,6 +461,7 @@ public final class Response {
 	characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
 	contentLength = -1;
 	status = 200;
+        message = null;
 	commited = false;
 	errorException = null;
 	errorURI = null;
