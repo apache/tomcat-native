@@ -265,7 +265,7 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
         
         /* XXX or apr_ctime ? */
         apr_rfc822_date( rfctime, time );
-        fmt1=apr_psprintf( aprPool, "[%s] (%5s) [%s:%d]  %s", rfctime, slevel, f, line, fmt );
+        fmt1=apr_psprintf( aprPool, "[%s] (%5s) [%s (%d)]  %s", rfctime, slevel, f, line, fmt );
         buf=apr_pvsprintf( aprPool, fmt1, args );
 
         l->log(env, l, level, buf);
@@ -300,8 +300,26 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
 #else
         char buf[HUGE_BUFFER_SIZE];
 #endif
+        char *slevel;
         char *f = (char *)(file + strlen(file) - 1);
         int used = 0;
+
+        switch (level){
+            case JK_LOG_INFO_LEVEL : 
+                slevel=JK_LOG_INFO_VERB;
+                break;
+            case JK_LOG_ERROR_LEVEL : 
+                slevel=JK_LOG_ERROR_VERB;
+                break;
+            case JK_LOG_EMERG_LEVEL : 
+                slevel=JK_LOG_EMERG_VERB;
+                break;
+            case JK_LOG_DEBUG_LEVEL : 
+            default:
+                slevel=JK_LOG_DEBUG_VERB;
+                break;
+
+        }
 
         while(f != file && '\\' != *f && '/' != *f) {
             f--;
@@ -314,7 +332,7 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
 	    jk2_logger_file_setTimeStr(env,buf, HUGE_BUFFER_SIZE);
 	    used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
-            used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
+            used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " (%5s) [%s (%d)]: ", slevel,  f, line);        
 #elif defined(NETWARE) /* until we get a snprintf function */
         buf = (char *) malloc(HUGE_BUFFER_SIZE);
         if (NULL == buf)
@@ -323,12 +341,12 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
 	    jk2_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
 	    used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
-            used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
+            used += sprintf(&buf[used], " (%5s) [%s (%d)]: ", slevel,  f, line);
 #else 
 	    jk2_logger_file_setTimeStr(env, buf, HUGE_BUFFER_SIZE);
 	    used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
-            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
+            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " (%5s) [%s (%d)]: ", slevel,  f, line);
 #endif
         if(used < 0) {
             return -1; /* [V] not sure what to return... */
