@@ -114,10 +114,6 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     private int port=8008;
     /** The number of concurrent connections we can handle. */
     private int acceptcount=10;
-    /** The root path for web applications. */
-    private String appbase="";
-    /** The current Host ID. */
-    private int hostid=0;
 
     // ------------------------------------------------------------ CONSTRUCTOR
 
@@ -175,22 +171,6 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         return (response);
     }
 
-    /**
-     * Set up a virtual host in our Engine and return the associated host ID.
-     */
-    public int setupHost(String name) {
-        WarpHost host=new WarpHost();
-        int id=this.hostid++;
-
-        host.setName(name);
-        host.setAppBase(this.getAppBase());
-        host.setHostID(id);
-        
-        this.getContainer().addChild(host);
-        
-        return(id);
-    }
-    
     /**
      * Begin processing requests via this Connector.
      */
@@ -385,25 +365,6 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     public void setAcceptCount(int acceptcount) {
         if (DEBUG) this.debug("Setting accept count to "+acceptcount);
         this.acceptcount=acceptcount;
-    }
-
-    /**
-     * Return the application root for this Connector. This can be an absolute
-     * pathname, a relative pathname, or a URL.
-     */
-    public String getAppBase() {
-        return (this.appbase);
-    }
-
-    /**
-     * Set the application root for this Connector. This can be an absolute
-     * pathname, a relative pathname, or a URL.
-     */
-    public void setAppBase(String appbase) {
-        if (appbase==null) return;
-        if (DEBUG) this.debug("Setting application root to "+appbase);
-        String old=this.appbase;
-        this.appbase=appbase;
     }
 
     // ------------------------------------------ LOGGING AND DEBUGGING METHODS
