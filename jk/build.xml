@@ -45,7 +45,7 @@
     <path id="xml-apis.classpath">
         <pathelement path="${jaxp.home}/jaxp.jar"/>
         <pathelement path="${jaxp.home}/crimson.jar"/>
-        <pathelement path="${xerces2.home}/xmlParserAPIs.jar"/>
+        <pathelement path="${xerces2.home}/xml-apis.jar"/>
         <pathelement path="${xml-parser-apis.jar}"/>
     </path>
     
@@ -147,7 +147,7 @@
         <path id="xml-apis.classpath">
           <pathelement path="${jaxp.home}/jaxp.jar"/>
           <pathelement path="${jaxp.home}/crimson.jar"/>
-          <pathelement path="${xerces2.home}/xmlParserAPIs.jar"/>
+          <pathelement path="${xerces2.home}/xml-apis.jar"/>
           <pathelement path="${xml-parser-apis.jar}"/>
         </path>
 
