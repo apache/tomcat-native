@@ -147,7 +147,7 @@ public final class Constants {
     /**
      * Default HTTP header buffer size.
      */
-    public static final int DEFAULT_HTTP_HEADER_BUFFER_SIZE = 32 * 1000;
+    public static final int DEFAULT_HTTP_HEADER_BUFFER_SIZE = 48 * 1024;
 
 
     /**
