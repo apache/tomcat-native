@@ -180,11 +180,6 @@ public class WarpRequest extends HttpRequestBase {
         throws IOException {
             if (closed) throw new IOException("Stream closed");
 
-            if (packet.getType()==Constants.TYPE_CBK_DONE) return(-1);
-
-            if (packet.getType()!=Constants.TYPE_CBK_DATA)
-                throw new IOException("Invalid WARP packet type for body");
-
             if (this.packet.pointer<this.packet.size)
                 return(((int)this.packet.buffer[this.packet.pointer++])&0x0ff);
 
@@ -195,6 +190,12 @@ public class WarpRequest extends HttpRequestBase {
             packet.reset();
 
             this.request.getConnection().recv(packet);
+
+            if (packet.getType()==Constants.TYPE_CBK_DONE) return(-1);
+
+            if (packet.getType()!=Constants.TYPE_CBK_DATA)
+                throw new IOException("Invalid WARP packet type for body");
+
             return(this.read());
         }
 
