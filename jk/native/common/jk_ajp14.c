@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil-*- */
 /* ========================================================================= *
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
@@ -423,7 +424,9 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
     }
 
     /* Check if we get the correct virtual host */
-    if (strcmp(c->virtual, vname)) {
+    if (c->virtual != NULL && 
+	vname != NULL &&
+	strcmp(c->virtual, vname)) {
         /* set the virtual name, better to add to a virtual list ? */
         
         if (context_set_virtual(c, vname) == JK_FALSE) {

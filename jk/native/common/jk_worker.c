@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil-*- */
 /* ========================================================================= *
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
@@ -105,7 +106,9 @@ int wc_open(jk_map_t *init_data,
         return JK_FALSE;
     }
 
-    jk_log(l, JK_LOG_DEBUG, "wc_open, done\n"); 
+    we->num_of_workers=num_of_workers;
+    we->first_worker=worker_list[0];
+    jk_log(l, JK_LOG_DEBUG, "wc_open, done %d\n", num_of_workers); 
     return JK_TRUE;
 }
 

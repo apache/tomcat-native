@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil-*- */
 /* ========================================================================= *
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
@@ -88,6 +89,9 @@ struct jk_worker_env {
 
     /* The URI to WORKER map, will be feeded by AJP14 autoconf feature */
     jk_uri_worker_map_t *uri_to_worker;
+    
+    int num_of_workers;
+    char *first_worker;
 
     /* Web-Server we're running on (Apache/IIS/NES) */
     char          		*server_name;
