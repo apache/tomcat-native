@@ -72,8 +72,6 @@ import org.apache.catalina.util.StringManager;
 
 import org.apache.jk.server.*;
 
-import org.apache.catalina.jk.*;
-
 /**
  * Implementation of an Jk connector.
  *
