@@ -371,6 +371,31 @@
       <param name="sourcefile" value="${source.docs}/style.xsl.in"/>
       <param name="destfile" value="${source.docs}/style.xsl"/>
     </antcall>
+
+    <condition property="jkmenu" value="&amp;JK;">
+      <not>
+        <isset property="nojkdoc"/>
+      </not>
+    </condition>
+   
+    <condition property="jk2menu" value="&amp;JK2;">
+      <not>
+        <isset property="nojk2doc"/>
+      </not>
+    </condition>
+   
+    <condition property="jkmenu.present">
+      <equals arg1="${jkmenu}" arg2="&amp;JK;" />
+    </condition>
+   
+    <condition property="jk2menu.present">
+      <equals arg1="${jk2menu}" arg2="&amp;JK2;" />
+    </condition>
+   
+    <copy file="${source.docs}/menu.idx.in" tofile="${source.docs}/menu.idx"/>
+    <replace file="${source.docs}/menu.idx" token="@JK@"  value="${jkmenu}"/>
+    <replace file="${source.docs}/menu.idx" token="@JK2@"  value="${jk2menu}"/>
+    
   </target>
 
   <target name="docs.color">
@@ -405,16 +430,20 @@
     <style
         basedir="${source.docs}"
         destdir="${build.docs}"
-        style="${source.docs}/style.xsl"
-        includes="*/**.xml"
-        excludes="index.xml">
+        style="${source.docs}/style.xsl" >
+        
+        <include name="*/**.xml" />
+        <exclude name="index.xml" />
+        <exclude name="jk/**"  if="nojkdoc"/>
+        <exclude name="jk2/**" if="nojk2doc"/>
         <param name="styles" expression="../"/>
     </style>
+    
     <style
         basedir="${source.docs}"
         destdir="${build.docs}"
-        style="${source.docs}/style.xsl"
-        includes="index.xml, faq.xml">
+        style="${source.docs}/style.xsl" >
+        <include name="index.xml, faq.xml" />
         <param name="images" expression="images"/>
         <param name="styles" expression="."/>
         <param name="homedoc" expression=""/>
@@ -424,6 +453,8 @@
     <copy
         todir="${build.docs}" >
       <fileset dir="${source.docs}">
+        <exclude name="jk/**"  if="nojkdoc"/>
+        <exclude name="jk2/**" if="nojk2doc"/>
         <exclude name="**/*.xml"/>
         <exclude name="**/*.css.in"/>
         <exclude name="**/*.xsl.in"/>
@@ -433,6 +464,7 @@
         <exclude name="**/images/originals/**"/>
       </fileset>
     </copy>
+
   </target>                                                                     
 
 
