@@ -33,6 +33,9 @@ manual is described in more detail below.</p>
 of Jakarta Tomcat Connectors 1.2.7-beta. The release contains a significant number
 of bug fixes and new features. 
 </p>
+<p>Downlad the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-1.tar.gz">JK 1.2.7 beta sources</a>
+ | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-1.tar.gz.asc">PGP signature</a>
+</p>
 </li>
 <li><a href="news/20041100.html#20041115.1">15 November 2004 - <b>JK2 is officially unsupported!</b></a>
 <p>JK2 has been put in maintainer mode and no further development will take place.

@@ -124,24 +124,23 @@ set the log level between :
 
 <ul>
 <li>
-<b>info</b> log will contains standard mod_jk activity (default).
+<b>info</b> log will contain standard mod_jk activity (default).
 </li>
 <li>
-<li>
-<b>warn</b> log will contains non fatal error reports.
-</li>
-<b>error</b> log will contains also error reports.
+<b>warn</b> log will contain non fatal error reports.
 </li>
 <li>
-<b>debug</b> log will contains all informations on mod_jk activity
+<b>error</b> log will contain also error reports.
 </li>
 <li>
-<b>trace</b> log will contains all tracing informations on mod_jk activity
+<b>debug</b> log will contain all information on mod_jk activity
+</li>
+<li>
+<b>trace</b> log will contain all tracing information on mod_jk activity
 </li>
 </ul>
 
-<source>
-  
+<source>  
   JkLogLevel    info
 </source>
 
@@ -158,7 +157,6 @@ default to <b>"[%a %b %d %H:%M:%S %Y]"</b>
 </p>
 
 <source>
-  
   JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "
 </source>
 
@@ -193,7 +191,6 @@ here is a list of the available request log format options:
 </attributes>
 
 <source>
-
   JkRequestLogFormat     "%w %V %T"
 </source>
 
@@ -216,8 +213,7 @@ JkOptions <b>ForwardKeySize</b>,  you ask mod_jk, when using ajp13, to forward a
 required by Servlet API 2.3.
 This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
 
-<source>
-  
+<source>  
   JkOptions     +ForwardKeySize
 </source>
 
@@ -230,8 +226,7 @@ JkOptions <b>ForwardURICompat</b>, you told mod_jk to send the URI to Tomcat nor
 which is less spec compliant but mod_rewrite compatible, 
 use it for compatibility with Tomcat 3.2.x engines (on by default).
 
-<source>
-  
+<source>  
   JkOptions     +ForwardURICompat
 </source>
 
@@ -243,8 +238,7 @@ use it for compatibility with Tomcat 3.2.x engines (on by default).
 JkOptions <b>ForwardURICompatUnparsed</b>, the forwarded URI 
 is unparsed, it's spec compliant but broke mod_rewrite.
 
-<source>
-  
+<source>  
   JkOptions     +ForwardURICompatUnparsed
 </source>
 
@@ -256,8 +250,7 @@ is unparsed, it's spec compliant but broke mod_rewrite.
 JkOptions <b>ForwardURIEscaped</b>, the forwarded URI is escaped and 
 Tomcat (since 3.3 rc2) will do the decoding part.
 
-<source>
-  
+<source>  
   JkOptions     +ForwardURIEscaped
 </source>
 
@@ -299,8 +292,7 @@ ones visible only to Tomcat (i.e. if Apache can see the file, that's the one
 that's going to get served). This is important if there is more then one type of
 file that Tomcat normally serves - for instance Velocity pages and JSP pages.
 
-<source>
-  
+<source>  
   JkOptions     +ForwardDirectories
 </source>
 <br/>
@@ -310,8 +302,7 @@ file that Tomcat normally serves - for instance Velocity pages and JSP pages.
 <p>
 The directive <b>JkEnvVar</b> allow you to forward an environment vars from Apache server to Tomcat engine.
 
-<source>
-  
+<source>  
   JkEnvVar     SSL_CLIENT_V_START
 </source>
 <br/>
