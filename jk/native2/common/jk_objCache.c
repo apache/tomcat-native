@@ -59,11 +59,7 @@
 
 #include "jk_global.h"
 #include "jk_pool.h"
-#include "jk_channel.h"
-#include "jk_msg_buff.h"
-#include "jk_ajp14.h" 
 #include "jk_logger.h"
-#include "jk_service.h"
 #include "jk_env.h"
 
 #include "jk_objCache.h"
@@ -101,6 +97,43 @@ jk_objCache_put(jk_objCache_t *_this, void *obj)
     return JK_FALSE; 
 }
 
+static int
+jk_objCache_init(jk_objCache_t *_this, int cacheSize ) {
+    int i;
+
+    _this->ep_cache =
+        (void **)_this->pool->calloc(_this->pool, sizeof(void *) * cacheSize);
+
+    if( _this->ep_cache==NULL )
+        return JK_FALSE;
+    
+    JK_INIT_CS(&(_this->cs), i);
+    if (!i) {
+        _this->l->jkLog(_this->l, JK_LOG_ERROR, "objCache.create(): Can't init CS\n");
+        return JK_FALSE;
+    }
+
+    for(i = 0 ; i < cacheSize ; i++) {
+        _this->ep_cache[i] = NULL;
+    }
+    
+    _this->ep_cache_sz=cacheSize;
+    return JK_TRUE;
+}
+
+static int  
+jk_objCache_destroy(jk_objCache_t *_this ) {
+    int i;
+
+    JK_DELETE_CS(&(_this->cs), i);
+
+    _this->ep_cache_sz=0;
+    /* Nothing to free, we use pools */
+
+    return JK_TRUE;
+}
+
+
 static void * 
 jk_objCache_get(jk_objCache_t *_this )
 {
@@ -129,3 +162,16 @@ jk_objCache_get(jk_objCache_t *_this )
     return NULL;
 }
 
+jk_objCache_t *jk_objCache_create(jk_pool_t *pool, jk_logger_t *l ) {
+    jk_objCache_t *_this=pool->calloc( pool, sizeof( jk_objCache_t ));
+
+    _this->l=l;
+    _this->pool=pool;
+    
+    _this->get=jk_objCache_get;
+    _this->put=jk_objCache_put;
+    _this->init=jk_objCache_init;
+    _this->destroy=jk_objCache_destroy;
+    
+    return _this;
+}
