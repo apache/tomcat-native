@@ -1720,7 +1720,7 @@ static int jk_handler(request_rec *r)
 
     if(conf && ! worker_name ) {
         /* Direct mapping ( via setHandler ). Try overrides */
-        char *uri = apr_strdup(r->pool, r->uri);
+        char *uri = apr_pstrdup(r->pool, r->uri);
         worker_name = map_uri_to_worker(conf->uw_map, uri, conf->log);
         if( ! worker_name ) {
             /* Since we are here, an explicit (native) mapping has been used */
@@ -2384,7 +2384,7 @@ static int jk_map_to_storage(request_rec *r)
                        "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
-            uri = apr_strdup(r->pool, r->uri);
+            uri = apr_pstrdup(r->pool, r->uri);
             worker = map_uri_to_worker(conf->uw_map, uri, conf->log);
 
             if(worker) {
