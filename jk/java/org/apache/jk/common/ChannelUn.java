@@ -127,8 +127,13 @@ public class ChannelUn extends JkHandler {
 
     public void init() throws IOException {
         apr=(AprImpl)wEnv.getHandler("apr");
-        if( apr==null ) {
+        if( apr==null || ! apr.isLoaded() ) {
             log.error("Apr is not available, disabling unix channel ");
+            apr=null;
+            return;
+        }
+        if( file==null ) {
+            log.error("No file, disabling unix channel");
             return;
         }
         if( next==null ) {

@@ -84,13 +84,12 @@ public class ChannelJni extends JkHandler {
     public ChannelJni() {
         // we use static for now, it's easier on the C side.
         // Easy to change after we get everything working
-        log.info("Created channel jni ");
     }
 
     public void init() throws IOException {
         // static field init, temp
         apr=(AprImpl)wEnv.getHandler("apr");
-        if( apr==null ) { 
+        if( apr==null || ! apr.isLoaded() ) { 
             log.error("No apr, disabling jni channel ");
             return;
         }

@@ -108,8 +108,9 @@ public class Shm extends JkHandler {
         }
         try {
             apr=(AprImpl)wEnv.getHandler("apr");
-            if( apr==null ) {
+            if( apr==null || ! apr.isLoaded() ) {
                 log.error( "Apr unavailable, disabling shared memory " );
+                apr=null;
                 return;
             }
 
@@ -119,7 +120,7 @@ public class Shm extends JkHandler {
 
             if( aprShmP== 0 ) {
                 // no shared mem. This is normal result, but create should throw
-                log.info("Can't attach, try to create ");
+                log.info("Can't attach, try to create " + file );
             }
             
             //XXX not implemented.
