@@ -92,6 +92,10 @@ public class JkCoyoteHandler extends JkHandler implements
     
     Adapter adapter;
     protected JkMain jkMain=new JkMain();
+
+    public final int JK_STATUS_NEW=0;
+    public final int JK_STATUS_HEAD=1;
+    public final int JK_STATUS_CLOSED=2;
     
     public void setProperty( String name, String value ) {
         if( log.isDebugEnabled())
@@ -175,16 +179,30 @@ public class JkCoyoteHandler extends JkHandler implements
             // set the filters accordingly.
             res.sendHeaders();
         }
-        if( log.isDebugEnabled() ) log.debug("doWrite " );
         MsgContext ep=(MsgContext)res.getNote( epNote );
-        
+
         MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
-        msg.reset();
-        msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
-        msg.appendBytes( chunk.getBytes(), chunk.getOffset(), chunk.getLength() );
-        ep.setType( JkHandler.HANDLE_SEND_PACKET );
-        ep.getSource().invoke( msg, ep );
-        
+
+        int len=chunk.getLength();
+        byte buf[]=msg.getBuffer();
+        // 3 - hardcoded, byte[] marshalling overhead 
+        int chunkSize=buf.length - msg.getHeaderLength() - 3;
+        int off=0;
+        while( len > 0 ) {
+            int thisTime=len;
+            if( thisTime > chunkSize ) {
+                thisTime=chunkSize;
+            }
+            len-=thisTime;
+            
+            msg.reset();
+            msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
+            if( log.isDebugEnabled() ) log.debug("doWrite " + off + " " + thisTime + " " + len );
+            msg.appendBytes( chunk.getBytes(), chunk.getOffset() + off, thisTime );
+            off+=thisTime;
+            ep.setType( JkHandler.HANDLE_SEND_PACKET );
+            ep.getSource().invoke( msg, ep );
+        }
         return 0;
     }
     
@@ -222,12 +240,15 @@ public class JkCoyoteHandler extends JkHandler implements
         }
         
         res.setNote( epNote, ep );
+        ep.setStatus( JK_STATUS_HEAD );
         
         try {
             adapter.service( req, res );
         } catch( Exception ex ) {
             ex.printStackTrace();
         }
+
+        ep.setStatus( JK_STATUS_NEW );
 
         req.recycle();
         res.recycle();
@@ -297,10 +318,15 @@ public class JkCoyoteHandler extends JkHandler implements
                 ep.setType( JkHandler.HANDLE_FLUSH );
                 ep.getSource().invoke( null, ep );
             } else if( actionCode==ActionCode.ACTION_CLOSE ) {
-                if( log.isDebugEnabled() )
+                if( log.isDebugEnabled() ) {
                     log.debug("CLOSE " );
+                }
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
                 MsgContext ep=(MsgContext)res.getNote( epNote );
+                if( ep.getStatus()== JK_STATUS_CLOSED ) {
+                    // Double close - it may happen with forward
+                    return;
+                }
                 
                 MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
                 msg.reset();
@@ -312,6 +338,8 @@ public class JkCoyoteHandler extends JkHandler implements
 
                 ep.setType( JkHandler.HANDLE_FLUSH );
                 ep.getSource().invoke( msg, ep );
+
+                ep.setStatus(JK_STATUS_CLOSED );
             } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
                 
                 

@@ -88,6 +88,7 @@ public class MsgContext {
     private Object req;
     private WorkerEnv wEnv;
     private Msg msgs[]=new Msg[10];
+    private int status=0;
 
     // The context can be used by JNI components as well
     private long jkEndpointP;
@@ -128,6 +129,14 @@ public class MsgContext {
         this.source=ch;
     }
 
+    public final int getStatus() {
+        return status;
+    }
+
+    public final void setStatus( int s ) {
+        status=s;
+    }
+    
     public final JkHandler getNext() {
         return next;
     }

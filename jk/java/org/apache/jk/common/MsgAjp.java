@@ -210,8 +210,9 @@ public class MsgAjp extends Msg {
      */
     public void appendBytes( byte b[], int off, int numBytes ) {
         if( pos + numBytes >= buf.length ) {
-            log.error( "Buffer overflow buf.len" + buf.length + " pos=" +
+            log.error( "Buffer overflow buf.len=" + buf.length + " pos=" +
                        pos + " data=" + numBytes );
+            dump("Overflow");
             return;
         }
         appendInt( numBytes );

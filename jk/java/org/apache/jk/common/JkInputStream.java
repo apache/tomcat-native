@@ -271,7 +271,8 @@ public class JkInputStream extends InputStream {
     }
 
     public int doRead(ByteChunk responseChunk ) throws IOException {
-        log.info( "doRead " + pos + " " + blen + " " + available + " " + end_of_stream);
+        if( log.isDebugEnabled())
+            log.debug( "doRead " + pos + " " + blen + " " + available + " " + end_of_stream);
         if( blen == pos ) {
             refillReadBuffer();
         }
