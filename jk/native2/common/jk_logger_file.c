@@ -148,8 +148,13 @@ static int jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
     FILE *oldF=(FILE *)_this->logger_private;
     FILE *f=NULL;
 
-    if( _this->name==NULL )
-        _this->name="mod_jk.log";
+    if( _this->name==NULL ) {
+        jk_workerEnv_t *workerEnv=env->getByName( env, "workerEnv" );
+        
+        _this->name=jk2_config_replaceProperties( env, workerEnv->initData,
+                                                  _this->mbean->pool,
+                                                  "${serverRoot}/logs/mod_jk.log");
+    }
     
     f = fopen(_this->name, "a+");
     if(f==NULL) {
