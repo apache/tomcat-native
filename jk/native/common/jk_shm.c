@@ -122,6 +122,7 @@ static int do_shm_open(const char *fname, int workers, int dynamic,
 
     /* Use plain memory in case there is no file name */
     if (!fname) {
+        jk_shm_h_rec_t *hdr;
         shm->base = calloc(1, shm->size);
         if (!shm->base)
             return -1;
