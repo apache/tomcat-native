@@ -26,6 +26,7 @@
   <xsl:variable name="sub-banner-fg"     select="'@sub-banner-fg@'"/>
   <xsl:variable name="table-th-bg"   select="'@table-th-bg@'"/>
   <xsl:variable name="table-td-bg"   select="'@table-td-bg@'"/>
+  <xsl:variable name="gen-dev-doc"   select="'@gen-dev-doc@'"/>
 
   <!--
     Match the ROOT of the source document and process its "document" element.
@@ -201,6 +202,7 @@
                   <tr height="6"/>
                 </xsl:for-each>
 
+	            <xsl:if test="$gen-dev-doc = true">
                 <!--
                   The last thing to put down in the index are the API docs,
                   both for C and for Java
@@ -224,6 +226,8 @@
                     </nobr>
                   </td>
                 </tr>
+	            </xsl:if>
+
               </table>
             </td>
 
