@@ -899,7 +899,8 @@ static void jk2_register_hooks(apr_pool_t *p)
     /* Force the mpm to run before us and set the scoreboard image */
     ap_hook_child_init(jk2_child_init, NULL, NULL, APR_HOOK_LAST);
     
-    ap_hook_translate_name(jk2_translate, aszPre, NULL, APR_HOOK_MIDDLE);
+    /* jk2 is in FIRST pos but came after mod_rewrite */
+    ap_hook_translate_name(jk2_translate, aszPre, NULL, APR_HOOK_FIRST);
     ap_hook_map_to_storage(jk2_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
