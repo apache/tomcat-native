@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil-*- */
 /* ========================================================================= *
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
@@ -279,43 +280,43 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             /* BUFF *bf = p->r->connection->client; */
             size_t w = (size_t)l;
             size_t r = 0;
-	    long ll=l;
-	    char *bb=b;
-
+            long ll=l;
+            char *bb=(char *)b;
+            
             if(!p->response_started) {
                 if(!s->start_response(s, 200, NULL, NULL, NULL, 0)) {
                     return JK_FALSE;
                 }
             }
             
-	    /* Debug - try to get around rwrite */
-	    while( ll > 0 ) {
-		long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
-		r = ap_rwrite((const char *)bb, toSend, p->r );
-		/* DEBUG */
+            /* Debug - try to get around rwrite */
+            while( ll > 0 ) {
+                long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
+                r = ap_rwrite((const char *)bb, toSend, p->r );
+                /* DEBUG */
 #ifdef JK_DEBUG
-		ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
-			     NULL, "mod_jk: writing %ld (%ld) out of %ld \n",
-			     toSend, r, ll );
+                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
+                             NULL, "mod_jk: writing %ld (%ld) out of %ld \n",
+                             toSend, r, ll );
 #endif
-		ll-=CHUNK_SIZE;
-		bb+=CHUNK_SIZE;
-		
-		if(toSend != r) { 
-		    return JK_FALSE; 
-		} 
-
-		/*
-		 * To allow server push.
-		 */
-		if(ap_rflush(p->r) != APR_SUCCESS) {
-		    ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
-				 NULL, "mod_jk: Error flushing \n"  );
-		    return JK_FALSE;
-		}
-	    }
+                ll-=CHUNK_SIZE;
+                bb+=CHUNK_SIZE;
+                
+                if(toSend != r) { 
+                    return JK_FALSE; 
+                } 
+                
+                /*
+                 * To allow server push.
+                 */
+                if(ap_rflush(p->r) != APR_SUCCESS) {
+                    ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
+                                 NULL, "mod_jk: Error flushing \n"  );
+                    return JK_FALSE;
+                }
+            }
         }
-
+        
         return JK_TRUE;
     }
     return JK_FALSE;
@@ -431,7 +432,7 @@ static int init_ws_service(apache_private_data_t *private_data,
 	s->server_port  = r->server->port;
 #endif
 
-    s->server_software = ap_get_server_version();
+    s->server_software = (char *)ap_get_server_version();
 
     s->method       = (char *)r->method;
     s->content_length = get_content_length(r);
@@ -912,27 +913,69 @@ apr_status_t jk_cleanup_endpoint( void *data ) {
 static int jk_handler(request_rec *r)
 {   
     const char *worker_name;
+    jk_server_conf_t *xconf;
+    jk_logger_t *xl;
+    jk_server_conf_t *conf;
 
     if(strcmp(r->handler,JK_HANDLER))	/* not for me, try next handler */
-    return DECLINED;
+      return DECLINED;
+    
+    xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
+                                                     &jk_module);
+    worker_name = apr_table_get(r->notes, JK_WORKER_ID);
+    xl = xconf->log ? xconf->log : main_log;
 
-	worker_name = apr_table_get(r->notes, JK_WORKER_ID);
+    if( worker_name == NULL ) {
+      /* we may be here because of a manual directive ( that overrides 
+         translate and
+         sets the handler directly ). We still need to know the worker.
+      */
+      if( worker_env.num_of_workers == 1 ) {
+          /** We have a single worker ( the common case ). 
+              ( lb is a bit special, it should count as a single worker but 
+              I'm not sure how ). We also have a manual config directive that
+              explicitely give control to us. */
+          worker_name=  worker_env.first_worker;
+          jk_log(xl, JK_LOG_DEBUG, 
+                 "Manual configuration for %s %s %d\n",
+                 r->uri, worker_env.first_worker, worker_env.num_of_workers); 
+      } else {
+          worker_name = map_uri_to_worker(xconf->uw_map, r->uri, 
+                                          xconf->log ? xconf->log : main_log);
+          if( worker_name == NULL ) 
+              worker_name=  worker_env.first_worker;
+          jk_log(xl, JK_LOG_DEBUG, 
+                 "Manual configuration for %s %d\n",
+                 r->uri, worker_env.first_worker); 
+      }
+    }
 
-	if (1)
-	{
-	jk_server_conf_t *xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, &jk_module);
-	jk_logger_t *xl = xconf->log ? xconf->log : main_log;
-	jk_log(xl, JK_LOG_DEBUG, "Into handler r->proxyreq=%d r->handler=%s r->notes=%d worker=%s\n", r->proxyreq, r->handler, r->notes, worker_name); 
-	}
+    if (1) {
+        jk_log(xl, JK_LOG_DEBUG, "Into handler r->proxyreq=%d r->handler=%s r->notes=%d worker=%s\n", 
+               r->proxyreq, r->handler, r->notes, worker_name); 
+    }
+
+    conf=(jk_server_conf_t *)ap_get_module_config(r->server->module_config, &jk_module);
 
     /* If this is a proxy request, we'll notify an error */
     if(r->proxyreq) {
         return HTTP_INTERNAL_SERVER_ERROR;
     }
+
+    if(conf && ! worker_name ) {
+        /* Direct mapping ( via setHandler ). Try overrides */
+        worker_name = map_uri_to_worker(conf->uw_map, r->uri, conf->log ? conf->log : main_log);
+        if( ! worker_name ) {
+            /* Since we are here, an explicit ( native ) mapping has been used */
+            /* Use default worker */
+            worker_name="ajp14"; /* XXX add a directive for default */
+        }
+        if(worker_name) {
+            apr_table_setn(r->notes, JK_WORKER_ID, worker_name);
+        }
+    }
       
     if(worker_name) {
-        jk_server_conf_t *conf =
-            (jk_server_conf_t *)ap_get_module_config(r->server->module_config, &jk_module);
         jk_logger_t *l = conf->log ? conf->log : main_log;
 
         jk_worker_t *worker = wc_get_worker_for_name(worker_name, l);
@@ -1145,13 +1188,13 @@ static void jk_child_init(apr_pool_t *pconf,
 
     if(map_alloc(&init_map)) {
         if(map_read_properties(init_map, conf->worker_file)) {
-        /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
-        worker_env.uri_to_worker = conf->uw_map;
-        worker_env.virtual       = "*";     /* for now */
-        worker_env.server_name   = (char *)ap_get_server_version();
-	    if(wc_open(init_map, &worker_env, conf->log)) {
-		return;
-        }            
+            /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+            worker_env.uri_to_worker = conf->uw_map;
+            worker_env.virtual       = "*";     /* for now */
+            worker_env.server_name   = (char *)ap_get_server_version();
+            if(wc_open(init_map, &worker_env, conf->log)) {
+                return;
+            }            
         }
     }
 
@@ -1205,7 +1248,17 @@ static int jk_translate(request_rec *r)
             (jk_server_conf_t *)ap_get_module_config(r->server->module_config, &jk_module);
 
         if(conf) {
-            char *worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log ? conf->log : main_log);
+            char *worker;
+            if( (r->handler != NULL ) && 
+                (! strcmp( r->handler, JK_HANDLER ) )) {
+                /* Somebody already set the handler, probably manual config
+                 * or "native" configuration, no need for extra overhead
+                 */
+                jk_log(conf->log, JK_LOG_DEBUG, "Manually mapped, no need to call uri_to_worker\n");
+                return DECLINED;
+            }
+            worker = map_uri_to_worker(conf->uw_map, r->uri, 
+                                             conf->log ? conf->log : main_log);
 
             if(worker) {
                 r->handler=apr_pstrdup(r->pool,JK_HANDLER);
