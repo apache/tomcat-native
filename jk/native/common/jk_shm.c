@@ -246,11 +246,11 @@ static int do_shm_open(const char *fname, int attached, jk_logger_t *l)
         return rc;
     }
 
-    base = mmap(NULL, jk_shmem.size,
+    base = mmap((caddr_t)0, jk_shmem.size,
                 PROT_READ | PROT_WRITE,
                 MAP_FILE | MAP_SHARED,
                 fd, 0);
-    if (base == (void *)MAP_FAILED || base == NULL) {
+    if (base == (caddr_t)MAP_FAILED || base == (caddr_t)0) {
         rc = errno;
         close(fd);
         jk_shmem.size = 0;
