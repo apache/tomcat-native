@@ -59,7 +59,7 @@
 package org.apache.tomcat.util.http.mapper;
 
 import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
+mport javax.naming.directory.DirContext;
 
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -499,6 +499,9 @@ public final class Mapper {
                 mappingData.host = hosts[pos].object;
                 contexts = hosts[pos].contexts;
             } else {
+                if (defaultHostName == null) {
+                    return;
+                }
                 pos = find(hosts, defaultHostName);
                 if ((pos != -1) && (defaultHostName.equals(hosts[pos].name))) {
                     mappingData.host = hosts[pos].object;
