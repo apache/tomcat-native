@@ -93,6 +93,35 @@ struct jk_env;
 typedef struct jk_ws_service jk_ws_service_t;
 
 /*
+ * Request methods, coded as numbers instead of strings.
+ * The list of methods was taken from Section 5.1.1 of RFC 2616,
+ * RFC 2518, the ACL IETF draft, and the DeltaV IESG Proposed Standard.
+ */
+#define SC_M_OPTIONS            (unsigned char)1
+#define SC_M_GET                (unsigned char)2
+#define SC_M_HEAD               (unsigned char)3
+#define SC_M_POST               (unsigned char)4
+#define SC_M_PUT                (unsigned char)5
+#define SC_M_DELETE             (unsigned char)6
+#define SC_M_TRACE              (unsigned char)7
+#define SC_M_PROPFIND           (unsigned char)8
+#define SC_M_PROPPATCH          (unsigned char)9
+#define SC_M_MKCOL              (unsigned char)10
+#define SC_M_COPY               (unsigned char)11
+#define SC_M_MOVE               (unsigned char)12
+#define SC_M_LOCK               (unsigned char)13
+#define SC_M_UNLOCK             (unsigned char)14
+#define SC_M_ACL		(unsigned char)15
+#define SC_M_REPORT             (unsigned char)16
+#define SC_M_VERSION_CONTROL    (unsigned char)17
+#define SC_M_CHECKIN            (unsigned char)18
+#define SC_M_CHECKOUT           (unsigned char)19
+#define SC_M_UNCHECKOUT         (unsigned char)20
+#define SC_M_SEARCH             (unsigned char)21
+
+
+    
+/*
  * The web server service 'class'.  An instance of this class is created
  * for each request which is forwarded from the web server to the servlet
  * container.  Contains the basic information about the request
@@ -228,7 +257,17 @@ struct jk_ws_service {
     struct jk_map *headers_out;
 
     /* Count remaining bytes ( original content length minus what was sent */
-    int left_bytes_to_send;
+    int left_bytes_to_send;    
+
+    /* Experimental - support for helper workers and buffering
+     */
+    int outPos;
+    int outSize;
+    char *outBuf;
+
+    /** printf style output. Formats in the tmp buf, then calls write
+     */
+    void (*jkprintf)( struct jk_env *env, struct jk_ws_service *s, char *frm,... );
     
     /*
      * Callbacks into the web server.  For each, the first argument is
@@ -271,6 +310,37 @@ struct jk_ws_service {
      * Flush the output buffers.
      */
     int (JK_METHOD *flush)(struct jk_env *env, jk_ws_service_t *s );
+
+    /** Get the method id. SC_M_* fields are the known types.
+     */
+    /* int (JK_METHOD *getMethodId)(struct jk_env *env, jk_ws_service_t *s); */
+
+    /** Get a cookie value by name. 
+     */
+    /*     char *(JK_METHOD *getCookie)(struct jk_env *env, jk_ws_service_t *s, */
+    /*                                  const char *name ); */
+
+    /** Get a path param ( ;foo=bar )
+     */
+    /*     char *(JK_METHOD *getPathParam)(struct jk_env *env, jk_ws_service_t *s, */
+    /*                                      const char *name ); */
+
+    /** Extract the session id. It should use the servlet spec mechanism
+     *  by default and as first choice, but if a separate module is doing
+     *  user tracking we can reuse that.
+     */
+    /*     char *(JK_METHOD *getSessionId)(struct jk_env *env, jk_ws_service_t *s); */
+
+    /** Extract the 'route' id, for sticky lb.
+     */
+    /*     char *(JK_METHOD *getRoute)(struct jk_env *env, struct jk_ws_service *s); */
+
+    /** Serialize the request in a buffer.
+     */
+    /* int (JK_METHOD *serialize)(struct jk_env *env, struct jk_ws_service *s,
+       int protocol, struct jk_msg *msg ); */
+
+    
 };
 
 #ifdef __cplusplus

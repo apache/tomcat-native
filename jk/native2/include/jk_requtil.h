@@ -75,33 +75,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*
- * Request methods, coded as numbers instead of strings.
- * The list of methods was taken from Section 5.1.1 of RFC 2616,
- * RFC 2518, the ACL IETF draft, and the DeltaV IESG Proposed Standard.
- */
-#define SC_M_OPTIONS            (unsigned char)1
-#define SC_M_GET                (unsigned char)2
-#define SC_M_HEAD               (unsigned char)3
-#define SC_M_POST               (unsigned char)4
-#define SC_M_PUT                (unsigned char)5
-#define SC_M_DELETE             (unsigned char)6
-#define SC_M_TRACE              (unsigned char)7
-#define SC_M_PROPFIND           (unsigned char)8
-#define SC_M_PROPPATCH          (unsigned char)9
-#define SC_M_MKCOL              (unsigned char)10
-#define SC_M_COPY               (unsigned char)11
-#define SC_M_MOVE               (unsigned char)12
-#define SC_M_LOCK               (unsigned char)13
-#define SC_M_UNLOCK             (unsigned char)14
-#define SC_M_ACL		(unsigned char)15
-#define SC_M_REPORT             (unsigned char)16
-#define SC_M_VERSION_CONTROL    (unsigned char)17
-#define SC_M_CHECKIN            (unsigned char)18
-#define SC_M_CHECKOUT           (unsigned char)19
-#define SC_M_UNCHECKOUT         (unsigned char)20
-#define SC_M_SEARCH             (unsigned char)21
-
-/*
  * Frequent request headers, these headers are coded as numbers
  * instead of strings.
  */
