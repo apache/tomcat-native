@@ -97,7 +97,8 @@ AC_DEFUN(
 
     {
       $2
-      echo "\njk_exec_retvalue $?"
+      echo
+      echo "jk_exec_retvalue $?"
     } | {
       jk_exec_ret=0
       while true ; do
