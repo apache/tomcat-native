@@ -103,7 +103,7 @@
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
 
-AP_DECLARE_DATA module jk_module;
+AP_MODULE_DECLARE_DATA module jk_module;
 
 struct apache_private_data {
     jk_pool_t p;
@@ -248,6 +248,8 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
                               const void *b,
                               unsigned l)
 {
+    jk_logger_t *l=s->workerEnv->l;
+    
     if(s && s->ws_private && b) {
         apache_private_data_t *p = s->ws_private;
 
@@ -259,7 +261,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             char *bb=(char *)b;
             
             if(!p->response_started) {
-                jk_log(s->workerEnv->l, JK_LOG_DEBUG, 
+                l->jkLog(l, JK_LOG_DEBUG, 
                        "Write without start, starting with defaults\n");
                 if(!s->start_response(s, 200, NULL, NULL, NULL, 0)) {
                     return JK_FALSE;
@@ -270,7 +272,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             while( ll > 0 ) {
                 unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
                 r = ap_rwrite((const char *)bb, toSend, p->r );
-                jk_log(s->workerEnv->l, JK_LOG_DEBUG, 
+                l->jkLog(l, JK_LOG_DEBUG, 
                        "writing %ld (%ld) out of %ld \n",toSend, r, ll );
                 ll-=CHUNK_SIZE;
                 bb+=CHUNK_SIZE;
@@ -346,6 +348,7 @@ static int init_ws_service(apache_private_data_t *private_data,
                            jk_workerEnv_t *workerEnv)
 {
     request_rec *r      = private_data->r;
+    jk_logger_t *l=s->workerEnv->l;
 
     apr_port_t port;
 
@@ -367,8 +370,8 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->remote_host  = NULL_FOR_EMPTY(s->remote_host);
     s->remote_addr  = NULL_FOR_EMPTY(r->connection->remote_ip);
 
-    if( s->workerEnv->l->level <= JK_LOG_DEBUG_LEVEL ) {
-        jk_log(s->workerEnv->l, JK_LOG_DEBUG, 
+    if( l->level <= JK_LOG_DEBUG_LEVEL ) {
+        l->jkLog(l, JK_LOG_DEBUG, 
                "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d \n",
                ap_get_server_port( r ),
                ap_get_server_name( r ),
@@ -635,18 +638,38 @@ static const char *jk_set_worker_file(cmd_parms *cmd,
 {
     server_rec *s = cmd->server;
     struct stat statbuf;
+    jk_logger_t *l;
 
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-
+    l=workerEnv->l;
+    
     /* we need an absolut path (ap_server_root_relative does the ap_pstrdup) */
     workerEnv->worker_file = ap_server_root_relative(cmd->pool,worker_file);
- 
+
     if (workerEnv->worker_file == NULL)
         return "JkWorkersFile file_name invalid";
 
     if (stat(workerEnv->worker_file, &statbuf) == -1)
         return "Can't find the workers file specified";
+
+    /** Read worker files
+     */
+    l->jkLog(l, JK_LOG_DEBUG, "Reading map %s %d\n",
+           workerEnv->worker_file, map_size( workerEnv->init_data ) );
+    
+    if( workerEnv->worker_file != NULL ) {
+        int err=map_read_properties(workerEnv->init_data,
+                                    workerEnv->worker_file);
+        if( err==JK_TRUE ) {
+            l->jkLog(l, JK_LOG_DEBUG, 
+                   "Read map %s %d\n", workerEnv->worker_file,
+                   map_size( workerEnv->init_data ) );
+        } else {
+            l->jkLog(l, JK_LOG_ERROR, "Error reading map %s %d\n",
+                   workerEnv->worker_file, map_size( workerEnv->init_data ) );
+        }
+    }
 
     return NULL;
 }
@@ -667,7 +690,7 @@ static const char *jk_worker_property(cmd_parms *cmd,
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
     
-    jk_map_t *m=workerEnv->worker_properties;
+    jk_map_t *m=workerEnv->init_data;
     
     value = map_replace_properties(value, m );
 
@@ -714,13 +737,16 @@ static const char *jk_set_log_file(cmd_parms *cmd,
     server_rec *s = cmd->server;
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
+    char *logFileA;
 
     /* we need an absolut path */
-    workerEnv->log_file = ap_server_root_relative(cmd->pool,log_file);
- 
-    if (workerEnv->log_file == NULL)
+    logFileA = ap_server_root_relative(cmd->pool,log_file);
+
+    if (logFileA == NULL)
         return "JkLogFile file_name invalid";
 
+    map_put( workerEnv->init_data, "logger.file.name", logFileA, NULL);
+ 
     return NULL;
 }
 
@@ -738,8 +764,7 @@ static const char *jk_set_log_level(cmd_parms *cmd,
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    workerEnv->log_level = jk_parse_log_level(log_level);
-
+    map_put( workerEnv->init_data, "logger.file.level", log_level, NULL);
     return NULL;
 }
 
@@ -748,12 +773,15 @@ static const char *jk_set_log_level(cmd_parms *cmd,
  *
  * JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "
  */
-
 static const char * jk_set_log_fmt(cmd_parms *cmd,
                       void *dummy,
                       const char * log_format)
 {
-    jk_set_log_format(log_format);
+    server_rec *s = cmd->server;
+    jk_workerEnv_t *workerEnv =
+        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
+
+    map_put( workerEnv->init_data, "logger.file.timeFormat", log_format, NULL);
     return NULL;
 }
 
@@ -1103,7 +1131,7 @@ apr_status_t jk_cleanup_endpoint( void *data ) {
 static int jk_handler(request_rec *r)
 {   
     const char       *worker_name;
-    jk_logger_t      *xl;
+    jk_logger_t      *l;
     jk_workerEnv_t *workerEnv;
     int              rc;
     jk_worker_t *worker;
@@ -1114,7 +1142,7 @@ static int jk_handler(request_rec *r)
     workerEnv = (jk_workerEnv_t *)ap_get_module_config(r->server->module_config, 
                                                      &jk_module);
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
-    xl = workerEnv->l;
+    l = workerEnv->l;
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
@@ -1133,7 +1161,7 @@ static int jk_handler(request_rec *r)
               explicitely give control to us. */
           worker =  workerEnv->defaultWorker;
           worker_name=worker->name;
-          jk_log(xl, JK_LOG_DEBUG, 
+          l->jkLog(l, JK_LOG_DEBUG, 
                  "Default worker for %s %s\n", r->uri, worker->name); 
       } else {
           jk_uriMap_t *uriMap=workerEnv->uriMap;
@@ -1148,14 +1176,14 @@ static int jk_handler(request_rec *r)
               worker = uriEnv->worker;
               worker_name= worker->name;
           }
-          jk_log(xl, JK_LOG_DEBUG, 
+          l->jkLog(l, JK_LOG_DEBUG, 
                  "Manual configuration for %s %s\n",
                  r->uri, workerEnv->defaultWorker->name); 
       }
     }
 
     if (1) {
-        jk_log(xl, JK_LOG_DEBUG, "Into handler r->proxyreq=%d "
+        l->jkLog(l, JK_LOG_DEBUG, "Into handler r->proxyreq=%d "
                "r->handler=%s r->notes=%d worker=%s\n", 
                r->proxyreq, r->handler, r->notes, worker_name); 
     }
@@ -1166,9 +1194,10 @@ static int jk_handler(request_rec *r)
     }
 
     if(worker_name!=NULL || worker!=NULL ) {
-        if( worker==NULL )
+        if( worker==NULL ) {
             worker = workerEnv->getWorkerForName(workerEnv,
-                                                       worker_name );
+                                                 worker_name );
+        }
 
         if(worker) {
             int rc = JK_FALSE;
@@ -1176,12 +1205,12 @@ static int jk_handler(request_rec *r)
             jk_ws_service_t s;
             jk_pool_atom_t buf[SMALL_POOL_SIZE];
             jk_open_pool(&private_data.p, buf, sizeof(buf));
-
+            
             s.workerEnv=workerEnv;
             private_data.response_started = JK_FALSE;
             private_data.read_body_started = JK_FALSE;
             private_data.r = r;
-
+            
             jk_init_ws_service(&s);
 
             s.ws_private = &private_data;
@@ -1190,55 +1219,54 @@ static int jk_handler(request_rec *r)
             if(init_ws_service(&private_data, &s, workerEnv)) {
                 jk_endpoint_t *end = NULL;
 
-        /* Use per/thread pool ( or "context" ) to reuse the 
-           endpoint. It's a bit faster, but I don't know 
-           how to deal with load balancing - but it's usefull for JNI
-        */
-
-#ifdef REUSE_WORKER
-        apr_pool_t *rpool=r->pool;
-        apr_pool_t *parent_pool= apr_pool_get_parent( rpool );
-        apr_pool_t *tpool= apr_pool_get_parent( parent_pool );
-        
-        apr_pool_userdata_get( (void *)&end, "jk_thread_endpoint", tpool );
-        jk_log(xl, JK_LOG_DEBUG, "Using per-thread worker %lx\n ", end );
-        if(end==NULL ) {
-            worker->get_endpoint(worker, &end, xl);
-            apr_pool_userdata_set( end , "jk_thread_endpoint", 
-                                   &jk_cleanup_endpoint,  tpool );
-        }
-#else
-        worker->get_endpoint(worker, &end, xl);
-#endif
-        {   
-            int is_recoverable_error = JK_FALSE;
-            rc = end->service(end, &s, xl, &is_recoverable_error);
-
-            if (s.content_read < s.content_length ||
-                (s.is_chunked && ! s.no_more_chunks)) {
-
-                /*
-                * If the servlet engine didn't consume all of the
-                * request data, consume and discard all further
-                * characters left to read from client
+                /* Use per/thread pool ( or "context" ) to reuse the 
+                   endpoint. It's a bit faster, but I don't know 
+                   how to deal with load balancing - but it's usefull for JNI
                 */
-                    char *buff = apr_palloc(r->pool, 2048);
-                    if (buff != NULL) {
-                    int rd;
-                    while ((rd = ap_get_client_block(r, buff, 2048)) > 0) {
-                        s.content_read += rd;
+                
+                if( workerEnv->perThreadWorker ) {
+                    apr_pool_t *rpool=r->pool;
+                    apr_pool_t *parent_pool= apr_pool_get_parent( rpool );
+                    apr_pool_t *tpool= apr_pool_get_parent( parent_pool );
+        
+                    apr_pool_userdata_get( (void *)&end, "jk_thread_endpoint", tpool );
+                    l->jkLog(l, JK_LOG_DEBUG, "Using per-thread worker %lx\n ", end );
+                    if(end==NULL ) {
+                        worker->get_endpoint(worker, &end, l);
+                        apr_pool_userdata_set( end , "jk_thread_endpoint", 
+                                               &jk_cleanup_endpoint,  tpool );
+                    }
+                } else {
+                    worker->get_endpoint(worker, &end, l);
+                }
+                {   
+                    int is_recoverable_error = JK_FALSE;
+                    rc = end->service(end, &s, l, &is_recoverable_error);
+                    
+                    if (s.content_read < s.content_length ||
+                        (s.is_chunked && ! s.no_more_chunks)) {
+                        
+                        /*
+                         * If the servlet engine didn't consume all of the
+                         * request data, consume and discard all further
+                         * characters left to read from client
+                         */
+                        char *buff = apr_palloc(r->pool, 2048);
+                        if (buff != NULL) {
+                            int rd;
+                            while ((rd = ap_get_client_block(r, buff, 2048)) > 0) {
+                                s.content_read += rd;
+                            }
+                        }
                     }
                 }
-            }
-                                                                            
-#ifndef REUSE_WORKER            
-            end->done(&end, xl); 
-#endif
+                if( ! workerEnv->perThreadWorker ) {
+                    end->done(&end, l); 
                 }
             }
 
             jk_close_pool(&private_data.p);
-
+            
             if(rc) {
                 return OK;    /* NOT r->status, even if it has changed. */
             }
@@ -1259,11 +1287,15 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
     jk_env_t *env;
     jk_env_objectFactory_t fac;
     jk_workerEnv_t *workerEnv;
+    jk_logger_t *l;
         
     env=jk_env_getEnv( NULL );
-    printf("XXX Created env \n");
-    jk_log(env->logger, JK_LOG_DEBUG, 
-           "Created env\n" );
+
+    l = env->getInstance( env, "logger", "file");
+    
+    env->logger=l;
+    
+    l->jkLog(l, JK_LOG_DEBUG, "Created env and logger\n" );
 
     workerEnv= env->getInstance( env, "workerEnv", "default");
 
@@ -1378,50 +1410,14 @@ static void jk_child_init(apr_pool_t *pconf,
 */
 static void init_jk( apr_pool_t *pconf, jk_workerEnv_t *workerEnv, server_rec *s ) {
     int err;
-    /* init_map contain the current options specified by apache directives
-     */
-    jk_map_t *init_map = workerEnv->worker_properties;
-
-    /** Read worker files
-     */
-    jk_log(workerEnv->l, JK_LOG_DEBUG, 
-           "Reading map %s %d\n",
-           workerEnv->worker_file, map_size( init_map ) );
+    jk_logger_t *l=workerEnv->l;
     
-    if( workerEnv->worker_file != NULL ) {
-        int err=map_read_properties(init_map, workerEnv->worker_file);
-        if( err==JK_TRUE ) {
-            jk_log(workerEnv->l, JK_LOG_DEBUG, 
-                   "Read map %s %d\n", workerEnv->worker_file,
-                   map_size( init_map ) );
-        } else {
-            jk_log(workerEnv->l, JK_LOG_ERROR, 
-                   "Error reading map %s %d\n",
-                   workerEnv->worker_file, map_size( init_map ) );
-        }
+    l->open( l, workerEnv->init_data );
+
+    if( err != JK_TRUE ) {
+        l->jkLog( l, JK_LOG_ERROR,
+                  "Can't open logger %s \n", workerEnv->log_file );
     }
-
-    if( map_size( init_map ) == 0 ) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, 
-                      pconf, "No worker file and no worker options in httpd.conf \n"
-                      "use JkWorkerFile or JkWorker to set workers");
-        return;
-    }
-        
-
-    /** Switch to the configured file logger ( if any ) */
-    if(workerEnv->log_file && workerEnv->log_level >= 0) {
-        jk_logger_t *origL=workerEnv->l;
-        
-        int err=jk_open_file_logger(&(workerEnv->l), 
-                                    workerEnv->log_file, workerEnv->log_level);
-        if( err != JK_TRUE ) {
-            jk_log( origL, JK_LOG_ERROR,
-                    "Can't open logger %s \n", workerEnv->log_file );
-            workerEnv->l = origL;
-        }
-
-    } 
 
     /* local initialization */
     workerEnv->virtual       = "*";     /* for now */
@@ -1432,7 +1428,7 @@ static void init_jk( apr_pool_t *pconf, jk_workerEnv_t *workerEnv, server_rec *s
 
     err=workerEnv->uriMap->init(workerEnv->uriMap,
                                 workerEnv,
-                                init_map );
+                                workerEnv->init_data );
     
     ap_add_version_component(pconf, JK_EXPOSED_VERSION);
     return;
@@ -1459,11 +1455,16 @@ static int jk_post_config(apr_pool_t *pconf,
  *    tomcat and what worker to use. 
  */
 static int jk_translate(request_rec *r)
-{    
+{
+    jk_logger_t *l;
+    
     if(!r->proxyreq) {        
         jk_workerEnv_t *workerEnv =
             (jk_workerEnv_t *)ap_get_module_config(r->server->module_config,
                                                      &jk_module);
+
+        l=workerEnv->l;
+        
         if(workerEnv) {
             char *workerName;
             jk_uriEnv_t *uriEnv;
@@ -1473,13 +1474,13 @@ static int jk_translate(request_rec *r)
                 /* Somebody already set the handler, probably manual config
                  * or "native" configuration, no need for extra overhead
                  */
-                jk_log(workerEnv->l, JK_LOG_DEBUG, 
+                l->jkLog(l, JK_LOG_DEBUG, 
                        "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
             uriEnv = workerEnv->uriMap->mapUri(workerEnv->uriMap,
-                                                     NULL,
-                                                     r->uri );
+                                               NULL,
+                                               r->uri );
 
             if(uriEnv==NULL ) {
                 return DECLINED;
