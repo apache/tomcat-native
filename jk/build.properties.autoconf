@@ -1,0 +1,63 @@
+#
+# build.properties for jk2/ajp connector.
+# to be processed by configure
+#
+
+# Directory where catalina is installed. It can 
+# be either 4.0 or 4.1
+tomcat40.home=@TOMCAT40_HOME@
+
+# If you want to build/install on  both 4.0 
+# and 4.1, set this to point to 4.0 and 'catalina.home'
+# to point to 4.0
+# ( most people need only the first, but developers should
+# have both )
+tomcat41.home=@TOMCAT41_HOME@
+
+# Directory where tomcat3.3 is installed
+tomcat33.home=@TOMCAT33_HOME@ 
+
+# Location of Apache2, Apache1.3, IIS and Netscape (iPlanet)
+apache2.home=@APACHE2_HOME@
+apache13.home=@APACHE_HOME@
+iis.home=@IIS_HOME@
+iplanet.home=@IPLANET_HOME@
+
+
+# APR location - by default the version included in Apache2 is used.
+# Don't edit unless you install 'standalone' apr.
+apr.home=@APR_HOME@
+
+apr.include=@APR_INCDIR@
+apr-util.include=@APR_UTIL_INCL@
+
+apr.lib=@APR_LIBDIR@
+apr-util.lib=@APR_UTIL_LIB@
+
+
+# Location of Apache2, Apache1.3 apxs build tool
+apxs=@APXS@
+apxs2=@APXS2@
+
+
+# Location of Apache2, Apache1.3, IIS and Netscape (iPlanet) 
+# includes directory
+apache2.include=@APACHE2_INCDIR@
+apache13.include=@APACHE_INCDIR@
+iis.include=@IIS_INCDIR@
+iplanet.include=@IPLANET_INCDIR@
+
+
+# Location of Apache2, Apache1.3, IIS and Netscape (iPlanet) 
+# lib directory
+apache2.lib=@APACHE2_LIBDIR@
+apache13.lib=@APACHE_LIBDIR@
+iis.lib=@IIS_LIBDIR@
+iplanet.lib=@IPLANET_LIBDIR@
+
+
+# Compile-time options for native code
+so.debug=true
+so.optimize=false
+so.profile=false
+
