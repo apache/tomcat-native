@@ -470,7 +470,12 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 	
 	// Create per-thread cache
 	while(endpoint.isRunning()) {
-	    Socket s = endpoint.acceptSocket();
+	    Socket s = null;
+	    try {
+		s = endpoint.acceptSocket();
+	    } catch (Throwable t) {
+		endpoint.log("Exception in acceptSocket", t);
+	    }           
 	    if(null != s) {
 		// Continue accepting on another thread...
 		endpoint.tp.runIt(this);
