@@ -1,5 +1,7 @@
 # Gnu makefile and libtool are required
 # use -D options to overrides defaults
+CC=@CC@
+CP=@CP@
 
 APACHE2_HOME=@APACHE2_HOME@
 OS=@OS@
@@ -10,10 +12,11 @@ APACHE2_LIBDIR=@APACHE2_HOME@/lib
 APR_INCL=@APR_CFLAGS@ @APR_UTIL_INCDIR@ @APR_INCDIR@
 EXTRA_CFLAGS=@APXS2_CFLAGS@
 EXTRA_CPPFLAGS=@APXS2_CPPFLAGS@
-CC=@CC@
 
+ifdef JAVA_HOME
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
+endif
 
 JK_DIR := ../..
 BUILD_DIR = ${JK_DIR}/../build/jk2/apache2

@@ -12,8 +12,11 @@ COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
 JK=${JK_DIR}/common/
 JKINC=${JK_DIR}/include/
 JK_INCL=-DUSE_APACHE_MD5 -I ${JK} -I ${JKINC} -DHAS_APR @HAVE_JNI@ @HAS_PCRE@
+
+ifdef JAVA_HOME
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
+endif
 
 APACHE2_OBJECTS=jk_logger_apache2.c jk_map_aprtable.c jk_service_apache2.c
 

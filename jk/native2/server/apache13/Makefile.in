@@ -1,5 +1,7 @@
 # Gnu makefile and libtool are required
 # use -D options to overrides defaults
+CC=@CC@
+CP=@CP@
 
 APACHE_HOME=@APACHE_HOME@
 OS=@OS@
@@ -7,9 +9,12 @@ APACHE_INCL=@APACHE_INCL@
 EXTRA_CFLAGS=@APXS_CFLAGS@
 EXTRA_CPPFLAGS=@APXS_CPPFLAGS@
 JAVA_HOME=@JAVA_HOME@
+APR_LIBS=`@APR_DIR@/apr-config --libs`
 
+ifdef JAVA_HOME
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS} @HAVE_JNI@
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
+endif
 
 JK_DIR := ../..
 BUILD_DIR = ${JK_DIR}/../build/jk2/apache13
@@ -36,7 +41,7 @@ ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
 COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
 
 SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
-MOD_LINK = $(LIBTOOL) --mode=link $(CC) -avoid-version -module -shared -rpath $(APACHE_LIBEXEC) $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
+MOD_LINK = $(LIBTOOL) --mode=link $(CC) -avoid-version -module -rpath $(APACHE_LIBEXEC) $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
 MOD_INSTALL = $(LIBTOOL) --mode=install $(CP)
 
 #############################################################################
@@ -77,7 +82,7 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache13/%.c
 all: prepare ${BUILD_DIR}/mod_jk2.so 
 
 ${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${A_LO_FILES}
-	${MOD_LINK} -o $@ $^ @APR_LDFLAGS@
+	${MOD_LINK} -o $@ $^ @APR_LDFLAGS@ ${APR_LIBS}
 
 ${COMMON_C_FILES} ${A_C_FILES}: ${H_FILES}
 
