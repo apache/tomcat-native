@@ -189,6 +189,9 @@ public final class Mapper {
 
         Host[] hosts = this.hosts;
         int pos = find(hosts, hostName);
+        if (pos < 0) {
+            return;
+        }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
             Context[] contexts = host.contexts;
@@ -217,6 +220,9 @@ public final class Mapper {
     public void removeContext(String hostName, String path) {
         Host[] hosts = this.hosts;
         int pos = find(hosts, hostName);
+        if (pos < 0) {
+            return;
+        }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
             Context[] contexts = host.contexts;
@@ -242,10 +248,16 @@ public final class Mapper {
         (String hostName, String contextPath, String path, Object wrapper) {
         Host[] hosts = this.hosts;
         int pos = find(hosts, hostName);
+        if (pos < 0) {
+            return;
+        }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
             Context[] contexts = host.contexts;
             int pos2 = find(contexts, contextPath);
+            if (pos2 < 0) {
+                return;
+            }
             Context context = contexts[pos2];
             if (context.name.equals(contextPath)) {
                 synchronized (context) {
@@ -300,10 +312,16 @@ public final class Mapper {
         (String hostName, String contextPath, String path) {
         Host[] hosts = this.hosts;
         int pos = find(hosts, hostName);
+        if (pos < 0) {
+            return;
+        }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
             Context[] contexts = host.contexts;
             int pos2 = find(contexts, contextPath);
+            if (pos2 < 0) {
+                return;
+            }
             Context context = contexts[pos2];
             if (context.name.equals(contextPath)) {
                 synchronized (context) {
