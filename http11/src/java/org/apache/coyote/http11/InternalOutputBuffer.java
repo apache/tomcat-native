@@ -109,6 +109,7 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         filterLibrary = new OutputFilter[0];
         activeFilters = new OutputFilter[0];
+        lastActiveFilter = -1;
 
         committed = false;
 
@@ -343,9 +344,8 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         }
 
-        for (int i = lastActiveFilter; i >= 0; i--) {
-            activeFilters[i].end();
-        }
+        if (lastActiveFilter != -1)
+            activeFilters[lastActiveFilter].end();
 
     }
 
@@ -376,6 +376,8 @@ public class InternalOutputBuffer implements OutputBuffer {
         default:
 	    write(status);
 	}
+
+        write(" ");
 
         // Write message
         write(HttpMessages.getMessage(status));
@@ -466,7 +468,10 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         }
 
-        return activeFilters[lastActiveFilter].doWrite(chunk);
+        if (lastActiveFilter == -1)
+            return outputStreamOutputBuffer.doWrite(chunk);
+        else
+            return activeFilters[lastActiveFilter].doWrite(chunk);
 
     }
 

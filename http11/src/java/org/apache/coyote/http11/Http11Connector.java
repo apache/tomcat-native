@@ -67,6 +67,7 @@ import java.io.OutputStream;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 import org.apache.coyote.ActionHook;
 import org.apache.coyote.ActionCode;
@@ -283,6 +284,7 @@ public class Http11Connector implements Connector, ActionHook {
                 error = true;
             } catch (Throwable t) {
                 // ISE
+                t.printStackTrace();
                 error = true;
             }
 
@@ -293,6 +295,7 @@ public class Http11Connector implements Connector, ActionHook {
                 error = true;
             } catch (Throwable t) {
                 // Problem ...
+                t.printStackTrace();
                 error = true;
             }
 
@@ -326,6 +329,7 @@ public class Http11Connector implements Connector, ActionHook {
                 outputBuffer.commit();
             } catch (IOException e) {
                 // Log the error, and set error flag
+                e.printStackTrace();
                 error = true;
             }
 
@@ -347,6 +351,7 @@ public class Http11Connector implements Connector, ActionHook {
                 outputBuffer.endRequest();
             } catch (IOException e) {
                 // Log the error, and set error flag
+                e.printStackTrace();
                 error = true;
             }
 
@@ -415,13 +420,15 @@ public class Http11Connector implements Connector, ActionHook {
         // Check connection header
         MessageBytes connectionValueMB = 
             request.getMimeHeaders().getValue("connection");
-        String connectionValue = 
-            connectionValueMB.toString().toLowerCase().trim();
-        // FIXME: This can be a comma separated list
-        if (connectionValue.equals("close")) {
-            keepAlive = false;
-        } else if (connectionValue.equals("keep-alive")) {
-            keepAlive = true;
+        if (connectionValueMB != null) {
+            String connectionValue = 
+                connectionValueMB.toString().toLowerCase().trim();
+            // FIXME: This can be a comma separated list
+            if (connectionValue.equals("close")) {
+                keepAlive = false;
+            } else if (connectionValue.equals("keep-alive")) {
+                keepAlive = true;
+            }
         }
 
         // Check user-agent header
@@ -503,7 +510,25 @@ public class Http11Connector implements Connector, ActionHook {
 
         contentDelimitation = false;
 
+        OutputFilter[] outputFilters = outputBuffer.getFilters();
 
+        outputBuffer.addActiveFilter
+            (outputFilters[Constants.IDENTITY_FILTER]);
+
+        int contentLength = request.getContentLength();
+        if (contentLength != -1) {
+            contentDelimitation = true;
+        }
+
+        // Build the response header
+        outputBuffer.sendStatus();
+
+        MimeHeaders headers = response.getMimeHeaders();
+        int size = headers.size();
+        for (int i = 0; i < size; i++) {
+            outputBuffer.sendHeader(headers.getName(i), headers.getValue(i));
+        }
+        outputBuffer.endHeaders();
 
         if (!contentDelimitation) {
             // Mark as close the connection after the request, and add the 

@@ -683,7 +683,10 @@ public class InternalInputBuffer implements InputBuffer {
     public int doRead(ByteChunk chunk) 
         throws IOException {
 
-        return activeFilters[lastActiveFilter].doRead(chunk);
+        if (lastActiveFilter == -1)
+            return inputStreamInputBuffer.doRead(chunk);
+        else
+            return activeFilters[lastActiveFilter].doRead(chunk);
 
     }
 
