@@ -227,7 +227,7 @@ static void *jk2_create_config(ap_pool *p, server_rec *s)
 
     jkb=workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
                                            workerEnv->pool,
-                                           "uri", NULL );
+                                           "uri", "" );
     newUri = jkb->object;
     newUri->workerEnv=workerEnv;
     return newUri;
@@ -414,8 +414,8 @@ static int jk2_translate(request_rec *r)
     }
     
     /* Check JkMount directives, if any */
-    if( workerEnv->uriMap->size == 0 )
-        return DECLINED;
+/*     if( workerEnv->uriMap->size == 0 ) */
+/*         return DECLINED; */
     
     /* get_env() */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );

@@ -220,7 +220,8 @@ static void *jk2_create_dir_config(apr_pool_t *p, char *path)
      * unique. We'll have to generate a unique name
      */
     jk_bean_t *jkb=workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
-                                                      workerEnv->pool, "uri", path );
+                                                      workerEnv->pool, "uri",
+                                                      (path==NULL)? "":path );
     jk_uriEnv_t *newUri = jkb->object;
     newUri->workerEnv=workerEnv;
     newUri->mbean->setAttribute( workerEnv->globalEnv, newUri->mbean, "path", path );
@@ -236,12 +237,12 @@ static void *jk2_merge_dir_config(apr_pool_t *p, void *basev, void *addv)
     
     
     /* XXX */
-    fprintf(stderr, "XXX Merged dir config %p %p %s %s %p %p\n",
-            base, new, base->uri, add->uri, base->webapp, add->webapp);
+    fprintf(stderr, "XXX Merged dir config %p %p %s %s\n",
+            base, new, base->uri, add->uri);
 
-    if( add->webapp == NULL ) {
-        add->webapp=base->webapp;
-    }
+/*     if( add->webapp == NULL ) { */
+/*         add->webapp=base->webapp; */
+/*     } */
     
     return add;
 }
@@ -329,7 +330,7 @@ static void *jk2_create_config(apr_pool_t *p, server_rec *s)
 
     jkb = workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
                                              workerEnv->pool,
-                                             "uri", NULL );
+                                             "uri", "" );
    newUri=jkb->object;
    
    newUri->workerEnv=workerEnv;
@@ -523,8 +524,8 @@ static int jk2_handler(request_rec *r)
     } else {
         worker=uriEnv->worker;
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.handler() per dir worker for %p %p\n",
-                      worker, uriEnv->webapp );
+                      "mod_jk.handler() per dir worker for %p\n",
+                      worker );
         
         if( worker==NULL && uriEnv->workerName != NULL ) {
              worker=env->getByName( env, uriEnv->workerName);
@@ -631,10 +632,10 @@ static int jk2_translate(request_rec *r)
        to support SetHandler, we can add it back easily */
 
     /* Check JkMount directives, if any */
-    if( workerEnv->uriMap->size == 0 ) {
-        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-        return DECLINED;
-    }
+/*     if( workerEnv->uriMap->size == 0 ) { */
+/*         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env ); */
+/*         return DECLINED; */
+/*     } */
     
     /* XXX TODO: Split mapping, similar with tomcat. First step will
        be a quick test ( the context mapper ), with no allocations.
