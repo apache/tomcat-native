@@ -69,7 +69,7 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
-#if HAS_APR
+#ifdef HAS_APR
 #include "apr_uri.h"
 /** Parse the name:
        VHOST/PATH
