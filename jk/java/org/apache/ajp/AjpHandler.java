@@ -70,31 +70,32 @@ import java.security.*;
 import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.buf.*;
 
-
 /**
  * Base class for handlers of Ajp messages. Jk provide a simple bidirectional 
  * communication mechanism between the web server and a servlet container. It is
  * based on messages that are passed between the 2 server, using a single
  * thread on each side.
  *
- * Both sides must be prepared to deal with unknown packages ( by responding with
- * an "message unknown" message ). The container and server may register new
- * message types, implementing special features or specialized implementations
- * for the "base" messages.
+ * The container side must be able to deal with at least the "REQUEST FORWARD",
+ * the server side must be able to deal with at least "HEADERS", "BODY",
+ * "END" messages.
  *
- * The container side must be able to deal with at least the "REQUEST FORWARD", and
- * the server side must be able to deal with at least "HEADERS", "BODY", "END" messages.
- * 
+ * @author Henri Gomez
  * @author Costin Manolache
  */
 public class AjpHandler
 {
     public static final int UNKNOWN=-1;
+    Ajp13 channel;
+    
+    public void init( Ajp13 channel ) {
+        this.channel=channel;
+    }
     
     /** Execute the callback 
      */
     public int handleAjpMessage( int type, Ajp13 channel,
-				 Ajp13Packet ajp, AjpRequest req )
+				 Ajp13Packet ajp, BaseRequest req )
 	throws IOException
     {
 	return UNKNOWN;

@@ -218,7 +218,7 @@ public class RequestHandler extends AjpHandler
     
     // -------------------- Incoming message --------------------
     public int handleAjpMessage( int type, Ajp13 channel,
-				 Ajp13Packet ajp, AjpRequest req )
+				 Ajp13Packet ajp, BaseRequest req )
 	throws IOException
     {
 	switch( type ) {

@@ -98,7 +98,7 @@ import org.apache.catalina.util.StringManager;
 import org.apache.catalina.util.StringParser;
 
 import org.apache.ajp.Ajp13;
-import org.apache.ajp.AjpRequest;
+import org.apache.tomcat.util.http.BaseRequest;
 
 /**
  * @author Kevin Seguin
@@ -140,7 +140,7 @@ final class Ajp13Processor
     // ----------------------------------------------------- Instance Variables
 
     private Ajp13Logger logger = new Ajp13Logger();
-    private AjpRequest ajpRequest = new AjpRequest();
+    private BaseRequest ajpRequest = new BaseRequest();
 
     /**
      * Is there a new socket available?

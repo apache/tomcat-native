@@ -72,10 +72,10 @@ import org.apache.catalina.connector.HttpRequestBase;
 import org.apache.catalina.Globals;
 import org.apache.catalina.util.RequestUtil;
 
-import org.apache.ajp.AjpRequest;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.Cookies;
 import org.apache.tomcat.util.http.ServerCookie;
+import org.apache.tomcat.util.http.BaseRequest;
 import org.apache.tomcat.util.http.MimeHeaders;
 
 public class Ajp13Request extends HttpRequestBase {
@@ -99,7 +99,7 @@ public class Ajp13Request extends HttpRequestBase {
         super.recycle();        
     }
 
-    void setAjpRequest(AjpRequest ajp) throws UnsupportedEncodingException {
+    void setAjpRequest(BaseRequest ajp) throws UnsupportedEncodingException {
         // XXX make this guy wrap AjpRequest so
         // we're more efficient (that's the whole point of
         // all of the MessageBytes in AjpRequest)

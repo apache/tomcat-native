@@ -169,7 +169,7 @@ class Ajp13Server extends Thread {
             Socket socket = server.accept();
             Ajp13 ajp13 = new Ajp13();
             MimeHeaders headers = new MimeHeaders();
-            AjpRequest request = new AjpRequest();
+            BaseRequest request = new BaseRequest();
             ajp13.setSocket(socket);
 
             boolean moreRequests = true;
