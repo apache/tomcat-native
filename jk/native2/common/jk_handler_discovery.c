@@ -62,16 +62,169 @@
  */
 
 #include "jk_global.h"
-#include "jk_context.h"
 #include "jk_pool.h"
-#include "jk_util.h"
 #include "jk_msg_buff.h"
-#include "jk_ajp_common.h"
-#include "jk_ajp14.h" 
 #include "jk_logger.h"
 #include "jk_service.h"
 
+#define CBASE_INC_SIZE   (8)    /* Allocate memory by step of 8 URIs : ie 8 URI by context */
+#define URI_INC_SIZE (8)        /* Allocate memory by step of 8 CONTEXTs : ie 8 contexts by worker */
 
+/** XXX XXX MERGE into jk_uriMap / jk_uriEnv */
+
+typedef struct {
+    char *      cbase;
+    int         status;
+    int         size;
+    int         capacity;
+    char **     uris;
+} jk_context_item_t;
+
+
+typedef struct {
+
+    /*
+     * Memory Pool
+     */
+
+    jk_pool_t       p;
+    jk_pool_atom_t  buf[SMALL_POOL_SIZE];
+
+	/*
+	 * Virtual Server (if use)
+	 */
+
+	char *		            virtual;
+
+    /*
+     * Num of context handled (ie: examples, admin...)
+     */
+
+    int                     size;
+
+    /*
+     * Capacity
+     */
+
+    int                     capacity; 
+
+    /*
+     * Context list, context / URIs
+     */
+
+    jk_context_item_t **    contexts;
+} 
+jk_context_t;
+
+
+/*
+ * functions defined here 
+ */
+
+int context_set_virtual(jk_context_t *c, char *virtual);
+
+int context_open(jk_context_t *c, char *virtual);
+
+int context_free(jk_context_t **c);
+
+jk_context_item_t *context_find_base(jk_context_t *c, char *cbase);
+
+char *context_item_find_uri(jk_context_item_t *ci, char *uri);
+
+void context_dump_uris(jk_context_t *c, char *cbase, FILE *f);
+
+jk_context_item_t *context_add_base(jk_context_t *c, char *cbase);
+
+int context_add_uri(jk_context_t *c, char *cbase, char *uri);
+
+/*
+ * Context Query (web server -> servlet engine), which URI are handled by servlet engine ?
+ */
+#define AJP14_CONTEXT_QRY_CMD	(unsigned char)0x15
+
+/*
+ * Context Info (servlet engine -> web server), URI handled response
+ */
+#define AJP14_CONTEXT_INFO_CMD	(unsigned char)0x16
+
+/* 
+ * Context Update (servlet engine -> web server), status of context changed
+ */
+#define AJP14_CONTEXT_UPDATE_CMD (unsigned char)0x17
+
+/*
+ * Context Status (web server -> servlet engine), what's
+ * the status of the context ?
+ */
+#define AJP14_CONTEXT_STATE_CMD		(unsigned char)0x1C
+
+/*
+ * Context Status Reply (servlet engine -> web server), status of context
+ */
+#define AJP14_CONTEXT_STATE_REP_CMD	(unsigned char)0x1D
+
+static int context_realloc(jk_context_t *c)
+{
+    if (c->size == c->capacity) {
+        jk_context_item_t **contexts;
+        int  capacity = c->capacity + CBASE_INC_SIZE;
+        
+        contexts = (jk_context_item_t **)jk_pool_alloc(&c->p, sizeof(jk_context_item_t *) * capacity);
+
+        if (! contexts)
+            return JK_FALSE;
+
+        if (c->capacity && c->contexts)
+            memcpy(contexts, c->contexts, sizeof(jk_context_item_t *) * c->capacity);
+
+        c->contexts = contexts;
+        c->capacity = capacity;
+    }
+
+    return JK_TRUE;
+}
+
+
+static int context_item_realloc(jk_context_t *c, jk_context_item_t *ci)
+{
+    if (ci->size == ci->capacity) {
+            char **uris;
+            int capacity = ci->capacity + URI_INC_SIZE;
+
+            uris = (char **)jk_pool_alloc(&c->p, sizeof(char *) * capacity);
+
+        if (! uris)
+            return JK_FALSE;
+
+        memcpy(uris, ci->uris, sizeof(char *) * ci->capacity);
+
+        ci->uris     = uris;
+        ci->capacity = capacity;
+    }
+    
+    return JK_TRUE;
+}
+
+/*
+ * Init the context info struct
+ */
+
+int context_open(jk_context_t *c, char *virtual)
+{
+    if (c) {
+        jk_open_pool(&c->p, c->buf, sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
+        c->size  	= 0;
+        c->capacity = 0;
+        c->contexts = NULL;
+
+        if( virtual ) {
+            c->virtual=jk_pool_strdup(&c->p, virtual);
+        }
+        return JK_TRUE;
+    }
+
+    return JK_FALSE;
+}
 
 
 /*
@@ -82,7 +235,7 @@
 
 #define MAX_URI_SIZE    512
 
-static int handle_discovery(ajp_endpoint_t  *ae,
+static int handle_discovery(jk_endpoint_t  *ae,
                             jk_workerEnv_t *we,
                             jk_msg_buf_t    *msg,
                             jk_logger_t     *l)
@@ -116,8 +269,9 @@ static int handle_discovery(ajp_endpoint_t  *ae,
                AJP14_CONTEXT_INFO_CMD, cmd);
         return JK_FALSE;
     }
-    
-    if (context_alloc(&c, we->virtual) != JK_TRUE) {
+
+    c=(jk_context_t *)malloc( sizeof(jk_context_t));
+    if (context_open(c, we->virtual) != JK_TRUE) {
         l->jkLog(l, JK_LOG_ERROR,
                "Error ajp14:discovery - can't allocate context room\n");
         return JK_FALSE;
@@ -158,8 +312,9 @@ static int handle_discovery(ajp_endpoint_t  *ae,
     }
     
     free(buf);
-    context_free(&c);
-    
+    jk_close_pool(&c->p);
+    free(c);
+    c = NULL;
 #else 
     
     uri_worker_map_add(we->uri_to_worker,
@@ -176,7 +331,7 @@ static int handle_discovery(ajp_endpoint_t  *ae,
     return JK_TRUE;
 }
  
-int discovery(ajp_endpoint_t *ae,
+int discovery(jk_endpoint_t *ae,
               jk_workerEnv_t *we,
               jk_logger_t    *l)
 {
@@ -261,7 +416,7 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 
     l->jkLog(l, JK_LOG_DEBUG,
            "ajp14_unmarshal_context_info - get virtual %s for virtual %s\n",
-           vname, c->virtual);
+             vname, c->virtual);
 
     if (! vname) {
         l->jkLog(l, JK_LOG_ERROR,
@@ -275,12 +430,9 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 	vname != NULL &&
 	strcmp(c->virtual, vname)) {
         /* set the virtual name, better to add to a virtual list ? */
-        
-        if (context_set_virtual(c, vname) == JK_FALSE) {
-            l->jkLog(l, JK_LOG_ERROR,
-                   "Error ajp14_unmarshal_context_info "
-                   "- can't malloc virtual hostname\n");
-            return JK_FALSE;
+
+        if( vname != NULL ) {
+            c->virtual=  jk_pool_strdup(&c->p, vname);
         }
     }
     
@@ -519,5 +671,156 @@ int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg,
                                        jk_logger_t  *l)
 {
     return (ajp14_unmarshal_context_state_reply(msg, c, l));
+}
+
+ /*
+ * Set the virtual name of the context 
+ */
+
+int context_set_virtual(jk_context_t *c, char *virtual)
+{
+    if (c) {
+
+        if (virtual) {
+            c->virtual = jk_pool_strdup(&c->p, virtual);
+
+            if (! c->virtual)
+                return JK_FALSE;
+        }
+
+        return JK_TRUE;
+    }
+
+    return JK_FALSE;
+}
+
+/*
+ * Locate a context base in context list
+ */
+
+jk_context_item_t * context_find_base(jk_context_t *c, char *cbase)
+{
+    int                 i;
+    jk_context_item_t * ci;
+
+    if (! c || ! cbase)
+        return NULL;
+
+    for (i = 0 ; i < c->size ; i++) {
+        
+        ci = c->contexts[i];
+
+        if (! ci)
+            continue;
+
+        if (! strcmp(ci->cbase, cbase))
+            return ci;
+    }
+
+    return NULL;
+}
+
+/*
+ * Locate an URI in a context item
+ */
+
+char * context_item_find_uri(jk_context_item_t *ci, char *uri)
+{
+    int i;
+
+    if (! ci || ! uri)
+        return NULL;
+
+    for (i = 0 ; i < ci->size ; i++) {
+        if (! strcmp(ci->uris[i], uri))
+            return ci->uris[i];
+    }
+
+    return NULL;
+}
+
+void context_dump_uris(jk_context_t *c, char *cbase, FILE * f)
+{
+    jk_context_item_t * ci;
+    int                 i;
+
+    ci = context_find_base(c, cbase);
+
+    if (! ci)
+        return;
+
+    for (i = 0; i < ci->size; i++)
+        fprintf(f, "/%s/%s\n", ci->cbase, ci->uris[i]);
+
+    fflush(f); 
+}
+
+
+/*
+ * Add a new context item to context
+ */
+
+jk_context_item_t * context_add_base(jk_context_t *c, char *cbase)
+{
+    jk_context_item_t *  ci;
+
+    if (! c || !cbase)
+        return NULL;
+
+    /* Check if the context base was not allready created */
+    ci = context_find_base(c, cbase);
+
+    if (ci)
+        return ci;
+
+    if (context_realloc(c) != JK_TRUE)
+        return NULL;
+
+    ci = (jk_context_item_t *)jk_pool_alloc(&c->p, sizeof(jk_context_item_t));
+
+    if (! ci)
+        return NULL;
+
+    c->contexts[c->size] = ci;
+    c->size++;
+    ci->cbase       = jk_pool_strdup(&c->p, cbase);
+    ci->status      = 0;
+    ci->size        = 0;
+    ci->capacity    = 0;
+    ci->uris        = NULL;
+
+    return ci;
+}
+
+/*
+ * Add a new URI to a context item
+ */
+
+int context_add_uri(jk_context_t *c, char *cbase, char * uri)
+{
+    jk_context_item_t *  ci;
+
+    if (! uri)
+        return JK_FALSE;
+
+    /* Get/Create the context base */
+    ci = context_add_base(c, cbase);
+        
+    if (! ci)
+        return JK_FALSE;
+
+    if (context_item_find_uri(ci, uri) != NULL)
+        return JK_TRUE;
+
+    if (context_item_realloc(c, ci) == JK_FALSE)
+        return JK_FALSE;
+
+    ci->uris[ci->size] = jk_pool_strdup(&c->p, uri);
+
+    if (ci->uris[ci->size] == NULL)
+        return JK_FALSE;
+
+    ci->size++;
+    return JK_TRUE;
 }
 
