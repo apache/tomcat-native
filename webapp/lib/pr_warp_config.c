@@ -105,6 +105,7 @@ wa_boolean n_configure(wa_connection *conn) {
     apr_pool_t *pool=NULL;
     wa_boolean ret=wa_false;
     warp_packet *pack=NULL;
+    char *temp=NULL;
 
     if (apr_pool_create(&pool,wa_pool)!=APR_SUCCESS) {
         wa_log(WA_MARK,"Cannot create WARP temporary configuration pool");
@@ -133,7 +134,43 @@ wa_boolean n_configure(wa_connection *conn) {
         p_write_string(pack,appl->rpth);
         n_send(conf->sock,pack);
 
+        if (n_recv(conf->sock,pack)!=wa_true) {
+            wa_log(WA_MARK,"Cannot read packet (%s:%d)",WA_MARK);
+            return(wa_false);
+        }
+        if (pack->type==TYPE_ERROR) {
+            wa_log(WA_MARK,"Cannot deploy application %s",appl->name);
+            continue;
+        }
+        if (pack->type!=TYPE_CONF_APPLIC) {
+            wa_log(WA_MARK,"Unknown packet received (%d)",pack->type);
+            p_reset(pack);
+            pack->type=TYPE_FATAL;
+            p_write_string(pack,"Invalid packet received");
+            n_send(conf->sock,pack);
+        }
+        p_read_int(pack,(int *)&appl->conf);
+        p_read_string(pack,&temp);
+        wa_debug(WA_MARK,"TEMP=\"%s\"",temp);
+        appl->lpth=apr_pstrdup(wa_pool,temp);
+        appl->depl=wa_true;
+        wa_debug(WA_MARK,"Application \"%s\" deployed with root=%s id=%d",
+                appl->name,appl->lpth,appl->conf);
+
         elem=elem->next;
+    }
+
+    p_reset(pack);
+    pack->type=TYPE_CONF_DONE;
+    n_send(conf->sock,pack);
+
+    if (n_recv(conf->sock,pack)!=wa_true) {
+        wa_log(WA_MARK,"Cannot read packet (%s:%d)",WA_MARK);
+        return(wa_false);
+    }
+    if (pack->type!=TYPE_CONF_PROCEED) {
+        wa_log(WA_MARK,"Cannot proceed on this connection");
+        return(wa_false);
     }
 
     apr_pool_destroy(pool);
