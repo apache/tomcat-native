@@ -139,7 +139,7 @@ public class WarpRequest extends HttpRequestBase {
                 throw new IOException("Invalid WARP packet type for body");
 
             if (this.packet.pointer<this.packet.size)
-                return((int)this.packet.buffer[this.packet.pointer++]);
+                return(((int)this.packet.buffer[this.packet.pointer++])&0x0ff);
 
             this.packet.reset();
             this.packet.setType(Constants.TYPE_CBK_READ);
