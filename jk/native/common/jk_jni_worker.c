@@ -91,9 +91,12 @@
 
 jint (JNICALL *jni_get_default_java_vm_init_args)(void *) = NULL;
 jint (JNICALL *jni_create_java_vm)(JavaVM **, JNIEnv **, void *) = NULL;
+jint (JNICALL *jni_get_created_java_vms)(JavaVM **, int, int *) = NULL;
 
-#define JAVA_BRIDGE_CLASS_NAME ("org/apache/tomcat/service/JNIEndpoint")
- 
+#define JAVA_BRIDGE_CLASS_NAME ("org/apache/tomcat/modules/server/JNIEndpoint")
+/* #define JAVA_BRIDGE_CLASS_NAME ("org/apache/tomcat/service/JNIEndpoint")
+ */
+
 static jk_worker_t *the_singleton_jni_worker = NULL;
 
 struct jni_worker {
@@ -692,10 +695,16 @@ static int load_jvm_dll(jni_worker_t *p,
         (FARPROC)jni_create_java_vm = 
             GetProcAddress(hInst, "JNI_CreateJavaVM");
 
+        (FARPROC)jni_get_created_java_vms = 
+            GetProcAddress(hInst, "JNI_GetCreatedJavaVMs");
+
         (FARPROC)jni_get_default_java_vm_init_args = 
             GetProcAddress(hInst, "JNI_GetDefaultJavaVMInitArgs");
 
-        if(jni_create_java_vm && jni_get_default_java_vm_init_args) {
+        jk_log(l, JK_LOG_DEBUG, 
+               "Loaded all JNI procs\n");
+
+        if(jni_create_java_vm && jni_get_default_java_vm_init_args && jni_get_created_java_vms) {
             return JK_TRUE;
         }
 
@@ -715,9 +724,10 @@ static int load_jvm_dll(jni_worker_t *p,
     }
     if (0 != javaNlmHandle) {
         jni_create_java_vm = ImportSymbol(GetNLMHandle(), "JNI_CreateJavaVM");
+        jni_get_created_java_vms = ImportSymbol(GetNLMHandle(), "JNI_GetCreatedJavaVMs");
         jni_get_default_java_vm_init_args = ImportSymbol(GetNLMHandle(), "JNI_GetDefaultJavaVMInitArgs");
     }
-    if(jni_create_java_vm && jni_get_default_java_vm_init_args) {
+    if(jni_create_java_vm && jni_get_default_java_vm_init_args && jni_get_created_java_vms) {
         return JK_TRUE;
     }
 #else 
@@ -729,7 +739,7 @@ static int load_jvm_dll(jni_worker_t *p,
 
     if(!handle) {
         jk_log(l, JK_LOG_EMERG, 
-               "Can't log native library %s : %s\n", p->jvm_dll_path,
+               "Can't load native library %s : %s\n", p->jvm_dll_path,
                dlerror());
     } else {
         jni_create_java_vm = dlsym(handle, "JNI_CreateJavaVM");
