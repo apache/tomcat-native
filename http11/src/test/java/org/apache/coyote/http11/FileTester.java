@@ -64,9 +64,11 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.util.Locale;
 
 import org.apache.coyote.Adapter;
+import org.apache.coyote.ActionCode;
 import org.apache.coyote.Processor;
 
 /**
@@ -134,7 +136,9 @@ public class FileTester {
         File outputFile = new File(args[1]);
 
         Adapter testAdapter = new RandomAdapter();
-        Processor http11Processor = new Http11Processor();
+        Http11Processor http11Processor = new Http11Processor();
+        http11Processor.setSocket(new Socket("127.0.0.1", 8080));
+        http11Processor.action(ActionCode.ACTION_START, null);
 
         FileTester tester = new FileTester(testAdapter, http11Processor,
                                            inputFile, outputFile);
