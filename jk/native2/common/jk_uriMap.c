@@ -299,24 +299,23 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
         jk_uriEnv_t *uriEnv = uriMap->maps->valueAt(env, uriMap->maps, i);
         if (uriEnv == NULL) 
             continue;
-        if (uriEnv->match_type == MATCH_TYPE_HOST) {
-            jk2_map_default_create(env, &uriEnv->webapps, uriMap->pool);
-            if (uriEnv->virtual != NULL && strlen(uriEnv->virtual)) {
-                uriMap->vhosts->put(env, uriMap->vhosts,
-                                    uriEnv->virtual, uriEnv, NULL);
-            }
-        }
-        /* Create the missing vhosts */
-        else if (uriEnv->virtual != NULL && strlen(uriEnv->virtual)) {
-            if (!uriMap->vhosts->get(env, uriMap->vhosts,
-                                     uriEnv->virtual)) {
+        if (uriEnv->virtual != NULL && strlen(uriEnv->virtual)) {
+            if (uriEnv->match_type == MATCH_TYPE_HOST) {
                 jk2_map_default_create(env, &uriEnv->webapps, uriMap->pool);
                 uriMap->vhosts->put(env, uriMap->vhosts,
                                     uriEnv->virtual, uriEnv, NULL);
+            } 
+            else { /* Create the missing vhosts */
+                if (!uriMap->vhosts->get(env, uriMap->vhosts,
+                                         uriEnv->virtual)) {
+                    jk2_map_default_create(env, &uriEnv->webapps, uriMap->pool);
+                    uriMap->vhosts->put(env, uriMap->vhosts,
+                                        uriEnv->virtual, uriEnv, NULL);
 
-                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "uriMap.init() Fixing Host %s\n", 
-                              uriEnv->virtual);
+                    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                                  "uriMap.init() Fixing Host %s\n", 
+                                  uriEnv->virtual);
+                }
             }
         }
     }
