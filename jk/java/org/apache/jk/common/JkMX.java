@@ -119,13 +119,14 @@ public class JkMX extends JkHandler
     }
 
     /* ==================== Start/stop ==================== */
-
+    ObjectName serverName=null;
+    
     /** Initialize the worker. After this call the worker will be
      *  ready to accept new requests.
      */
     public void loadAdapter() throws IOException {
         try {
-            ObjectName serverName = new ObjectName("Http:name=HttpAdaptor");
+            serverName = new ObjectName("Http:name=HttpAdaptor");
             mserver.createMBean("mx4j.adaptor.http.HttpAdaptor", serverName, null);
             if( host!=null ) 
                 mserver.setAttribute(serverName, new Attribute("Host", host));
@@ -167,7 +168,7 @@ public class JkMX extends JkHandler
         try {
             Class c=Class.forName( "com.sun.jdmk.comm.HtmlAdaptorServer" );
             Object o=c.newInstance();
-            ObjectName serverName=new ObjectName("Adaptor:name=html,port=" + port);
+            serverName=new ObjectName("Adaptor:name=html,port=" + port);
             log.info("Registering the JMX_RI html adapter " + serverName);
             mserver.registerMBean(o,  serverName);
 
@@ -180,6 +181,19 @@ public class JkMX extends JkHandler
             log.error( "Can't load the JMX_RI http adapter " + t.toString()  );
         }
     }
+
+    public void destroy() {
+        try {
+            log.info("Stoping JMX ");
+
+            if( serverName!=null ) {
+                mserver.invoke(serverName, "stop", null, null);
+            }
+        } catch( Throwable t ) {
+            log.error( "Destroy error", t );
+        }
+    }
+
     public void init() throws IOException {
         try {
             mserver = DynamicMBeanProxy.getMBeanServer();
