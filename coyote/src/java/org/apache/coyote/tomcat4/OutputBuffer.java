@@ -66,11 +66,12 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Hashtable;
 
+import org.apache.catalina.connector.ClientAbortException;
+import org.apache.coyote.ActionCode;
+import org.apache.coyote.Response;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.C2BConverter;
 import org.apache.tomcat.util.buf.CharChunk;
-
-import org.apache.coyote.Response;
 
 
 /**
@@ -320,7 +321,7 @@ public class OutputBuffer extends Writer
             }
         }
 
-        flush();
+        doFlush(false);
         closed = true;
 
         coyoteResponse.finish();
@@ -334,6 +335,17 @@ public class OutputBuffer extends Writer
      * @throws IOException An underlying IOException occurred
      */
     public void flush()
+        throws IOException {
+        doFlush(true);
+    }
+
+
+    /**
+     * Flush bytes or chars contained in the buffer.
+     * 
+     * @throws IOException An underlying IOException occurred
+     */
+    protected void doFlush(boolean realFlush)
         throws IOException {
 
         if (suspended)
@@ -349,6 +361,11 @@ public class OutputBuffer extends Writer
         } else if (state == INITIAL_STATE)
             realWriteBytes(null, 0, 0);       // nothing written yet
         doFlush = false;
+
+        if (realFlush) {
+            coyoteResponse.action(ActionCode.ACTION_CLIENT_FLUSH, 
+                                  coyoteResponse);
+        }
 
     }
 
@@ -381,7 +398,14 @@ public class OutputBuffer extends Writer
         if (cnt > 0) {
             // real write to the adapter
             outputChunk.setBytes(buf, off, cnt);
-            coyoteResponse.doWrite(outputChunk);
+            try {
+                coyoteResponse.doWrite(outputChunk);
+            } catch (IOException e) {
+                // An IOException on a write is almost always due to
+                // the remote client aborting the request.  Wrap this
+                // so that it can be handled better by the error dispatcher.
+                throw new ClientAbortException(e);
+            }
         }
 
     }
