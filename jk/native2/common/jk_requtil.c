@@ -165,19 +165,23 @@ int jk2_requtil_getMethodId(jk_env_t *env, const char *method,
 int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
                             unsigned short *sc) 
 {
+/*     char lowerCased[30]; */
+    
+/*     if( strlen( header_name ) > 30 ) */
+/*         return JK_FALSE; */
+/*     strncpy( lowerCased, header_name,  30 ); */
+    
+    
     switch(header_name[0]) {
     case 'a':
-        if('c' ==header_name[1] &&
-           'c' ==header_name[2] &&
-           'e' ==header_name[3] &&
-           'p' ==header_name[4] &&
-           't' ==header_name[5]) {
+    case 'A':
+        if(strncasecmp( header_name, "accept", 6 ) == 0 ) {
             if ('-' == header_name[6]) {
-                if(!strcmp(header_name + 7, "charset")) {
+                if(!strcasecmp(header_name + 7, "charset")) {
                     *sc = SC_ACCEPT_CHARSET;
-                } else if(!strcmp(header_name + 7, "encoding")) {
+                } else if(!strcasecmp(header_name + 7, "encoding")) {
                     *sc = SC_ACCEPT_ENCODING;
-                } else if(!strcmp(header_name + 7, "language")) {
+                } else if(!strcasecmp(header_name + 7, "language")) {
                     *sc = SC_ACCEPT_LANGUAGE;
                 } else {
                     return JK_FALSE;
@@ -187,7 +191,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
             } else {
                 return JK_FALSE;
             }
-        } else if (!strcmp(header_name, "authorization")) {
+        } else if (!strcasecmp(header_name, "authorization")) {
             *sc = SC_AUTHORIZATION;
         } else {
             return JK_FALSE;
@@ -195,15 +199,15 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'c':
-        if(!strcmp(header_name, "cookie")) {
+        if(!strcasecmp(header_name, "cookie")) {
             *sc = SC_COOKIE;
-        } else if(!strcmp(header_name, "connection")) {
+        } else if(!strcasecmp(header_name, "connection")) {
             *sc = SC_CONNECTION;
-        } else if(!strcmp(header_name, "content-type")) {
+        } else if(!strcasecmp(header_name, "content-type")) {
             *sc = SC_CONTENT_TYPE;
-        } else if(!strcmp(header_name, "content-length")) {
+        } else if(!strcasecmp(header_name, "content-length")) {
             *sc = SC_CONTENT_LENGTH;
-        } else if(!strcmp(header_name, "cookie2")) {
+        } else if(!strcasecmp(header_name, "cookie2")) {
             *sc = SC_COOKIE2;
         } else {
             return JK_FALSE;
@@ -211,7 +215,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'h':
-        if(!strcmp(header_name, "host")) {
+        if(!strcasecmp(header_name, "host")) {
             *sc = SC_HOST;
         } else {
             return JK_FALSE;
@@ -219,7 +223,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'p':
-        if(!strcmp(header_name, "pragma")) {
+        if(!strcasecmp(header_name, "pragma")) {
             *sc = SC_PRAGMA;
         } else {
             return JK_FALSE;
@@ -227,7 +231,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'r':
-        if(!strcmp(header_name, "referer")) {
+        if(!strcasecmp(header_name, "referer")) {
             *sc = SC_REFERER;
         } else {
             return JK_FALSE;
@@ -235,7 +239,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'u':
-        if(!strcmp(header_name, "user-agent")) {
+        if(!strcasecmp(header_name, "user-agent")) {
             *sc = SC_USER_AGENT;
         } else {
             return JK_FALSE;
@@ -243,6 +247,9 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     default:
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                      "requtil.getHeaderId() long header %s\n", header_name);
+
         return JK_FALSE;
     }
     /* Never reached */
