@@ -574,7 +574,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                 }
             }
 	    if (null != s) {
-		
+                endpoint.setSocketOptions( s );
 		try {
  		    if(endpoint.getServerSocketFactory()!=null) {
                         endpoint.getServerSocketFactory().handshake(s);
@@ -601,7 +601,6 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 		    
 		    con.setEndpoint(endpoint);
 		    con.setSocket(s);
-		    endpoint.setSocketOptions( s );
 		    endpoint.getConnectionHandler().processConnection(con, perThrData);
                 } catch (SocketException se) {
                     endpoint.log.error(
