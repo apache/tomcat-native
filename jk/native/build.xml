@@ -307,11 +307,11 @@
   </target>
 
   <target name="netscape" depends="init" if="iplanet.detect">
-    <mkdir dir="netscape/obj" />
+    <mkdir dir="${jk.build}/WEB-INF/jk/netscape" />
     <property name="netscape.home" value="${iplanet.home}/plugins" />
     <available property="unix" file="/etc/passwd" />
     <so sofile="nsapi_redirector" 
-	buildDir="netscape/obj"
+	buildDir="${jk.build}/WEB-INF/jk/netscape"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}">
@@ -392,24 +392,7 @@
   </target>
 
   <target name="clean" >
-    <delete >
-      <fileset dir=".">
-	<include name="**/*.o"/>
-	<include name="**/*.so"/>
-	<include name="**/*.lo"/>
-	<include name="**/*.la"/>
-	<include name="**/.libs"/>
-	<include name="**/*.lib"/>
-	<include name="**/*.nlm"/>
-	<include name="**/*.map"/>
-	<include name="**/*.sym"/>
-	<include name="**/*.NCV"/>
-	<include name="**/*.obj"/>
-	<include name="**/*.dll"/>
-        <include name="**/*.pdb"/>
-        <include name="**/obj/*.exp"/>
-      </fileset>
-    </delete>
+    <delete dir="${jk.build}/WEB-INF/jk"/>
   </target>
 
 </project>
