@@ -73,6 +73,7 @@ import javax.management.NotificationFilter;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
+import javax.management.ObjectName;
 
 
 /* XXX Make the 'message type' pluggable
@@ -368,8 +369,9 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
         // XXX Try to find a thread first - not sure how...
         if( this.domain != null ) {
             try {
-                Registry.getRegistry().registerComponent(tp, domain,"ThreadPool",
-                        "type=ThreadPool,name=jk" + port);
+                tpOName=new ObjectName(domain + ":type=ThreadPool,name=jk" + port);
+
+                Registry.getRegistry().registerComponent(tp, tpOName, null);
             } catch (Exception e) {
                 log.error("Can't register threadpool" );
             }
@@ -381,6 +383,8 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
         tp.runIt( acceptAjp);
     }
 
+    ObjectName tpOName;
+    
     public void start() throws IOException{
         if( sSocket==null )
             init();
@@ -419,6 +423,10 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
             }
             s.close();
             sSocket.close(); // XXX?
+            
+            if( tpOName != null )  {
+                Registry.getRegistry().unregisterComponent(tpOName);
+            }
         } catch(Exception e) {
             log.info("Error shutting down the channel " + port + " " +
                     e.toString());
@@ -565,6 +573,8 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
 
                 if( !running ) break;
                 
+                // Since this is a long-running connection, we don't care
+                // about the small GC
                 SocketConnection ajpConn=
                     new SocketConnection(this, ep);
                 tp.runIt( ajpConn );
