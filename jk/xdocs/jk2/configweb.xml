@@ -38,4 +38,40 @@ known  'type' as prefix.
             </source>
         </p>
     </section>
+
+    <section name="Advanced: reconfiguration">
+        <p>One of the features ok jk2 is support for (partial) reconfiguration at runtime, without a restart. The main 
+use is to add/remove/change workers and uris. This allows smooth updates, without server restarts, where each 
+worker is upgraded while the other workers server content. </p>
+
+<p>The jk2 architecture is modeled after JMX, and in future it'll have a JMX proxy that will make most 
+reconfiguration transparent. This section describes the mechanisms used for reconfiguration.</p>
+
+<p>Each Jk2 component has a name and a number of attributes. The config is abstracted - but for simplicity
+we'll discuss the default ( ini-file ) format. Some of the attributes and components support run time
+changes. The most important is "disabled", that allows a component to be included or excluded from
+the runtime. </p>
+
+<p>The easiest way to reconfigure jk2 is by making modifications to the config file. Jk will 
+process the file again and call the setters for attributes - including disabled, etc. Only 
+components and attributes that include support for reloading will be affected.
+</p>
+
+<p>The reconfig is enabled by using a flag in the scoreboard. The flag can be set programmatically,
+or it'll be set automatically every time the jk_status page is displayed if a change is
+detected in the config file </p>
+
+<p>A more advanced ( and less tested ) reconfiguration mechanism uses the jk_config API, called
+programmatically using messages from server or using jk_status web interfaces. Every time 
+a change is made, the config file will be written ( for persistence and to allow other processes to
+get the same change ). The scoreboard will be changed, and then all other server processes will 
+act just like in the case of a file change.</p>   
+
+<p>A typical user will just edit the config file, add more workers or URIs or change disabled flag
+of existing workers/uris. Then it'll access the jk_status page, which will detect the config
+file changes and reload the config in the current server process, and use the scoreboard to 
+inform other server processes of the change. </p>
+
+ 
+
 </document>
