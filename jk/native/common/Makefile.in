@@ -4,6 +4,9 @@ top_srcdir = @top_srcdir@
 VPATH = @srcdir@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
+APXSLDFLAGS=@APXSLDFLAGS@
+APXSCFLAGS=@APXSCFLAGS@
+APXSCPPFLAGS=@APXSCPPFLAGS@
 
 top_builddir = ..
 
@@ -14,7 +17,7 @@ OEXT=.lo
 include list.mk
 
 JAVA_INCL=-I @JAVA_HOME@/include -I @JAVA_HOME@/include/@OS@
-CFLAGS=@apache_include@ @CFLAGS@ ${JAVA_INCL}
+CFLAGS=@apache_include@ @CFLAGS@ ${APXSCFLAGS} ${APXSCPPFLAGS} ${JAVA_INCL}
 
 include ../scripts/build/rules.mk
 

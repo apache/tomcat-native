@@ -93,8 +93,12 @@ AC_ARG_WITH(apxs,
             APA=`${GREP} STANDARD20 ${APXS}`
             if ${TEST} -z "$APA" ; then
                 WEBSERVER="apache-1.3"
+		APXSCFLAGS=`$APXS -q CFLAGS`
+		APXS_CPPFLAGS=""
             else
                 WEBSERVER="apache-2.0"
+              	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS`"
+              	APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
                 APACHE_CONFIG_VARS=${apache_dir}/build/config_vars.mk
             fi
             AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
@@ -216,16 +220,17 @@ AC_SUBST(CFLAGS)
 
 dnl the APXSCFLAGS is given by apxs to the C compiler
 dnl the APXSLDFLAGS is given to the linker (for APRVARS).
-APXSLDFLAGS=""
-APXSCFLAGS=""
+dnl APXSLDFLAGS=""
+dnl APXSCFLAGS=""
 if ${TEST} -n "${CFLAGS}" ; then
-	APXSCFLAGS="${CFLAGS}"
+	APXSCFLAGS="${APXSCFLAGS} ${CFLAGS}"
 fi
 dnl the APXSLDFLAGS is normaly empty but APXSCFLAGS is not.
 if ${TEST} -n "${LDFLAGS}" ; then
 	APXSLDFLAGS="-Wl,${LDFLAGS}"
 fi
 AC_SUBST(APXSCFLAGS)
+AC_SUBST(APXSCPPFLAGS)
 AC_SUBST(APXSLDFLAGS)
 
 if ${TEST} -n "${JK_JNI_WORKER}" ; then
