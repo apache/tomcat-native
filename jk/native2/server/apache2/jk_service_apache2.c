@@ -92,59 +92,65 @@
 
 #include "jk_apache2.h"
 
+#define USE_APRTABLES
+
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
 
-static int JK_METHOD ws_start_response(jk_ws_service_t *s,
-                                       int status,
-                                       const char *reason,
-                                       const char * const *header_names,
-                                       const char * const *header_values,
-                                       unsigned num_of_headers)
+static int JK_METHOD jk_service_apache2_head(jk_ws_service_t *s )
 {
-    if(s && s->ws_private) {
-        unsigned h;
-        request_rec *r = (request_rec *)s->ws_private;  
+    int h;
+    request_rec *r;
+    jk_map_t *headers;
+    
+    if(s==NULL ||  s->ws_private==NULL )
+        return JK_FALSE;
+    
+    r = (request_rec *)s->ws_private;  
         
-        if(!reason) {
-            reason = "";
-        }
-        r->status = status;
-        r->status_line = apr_psprintf(r->pool, "%d %s", status, reason);
-
-        for(h = 0 ; h < num_of_headers ; h++) {
-            if(!strcasecmp(header_names[h], "Content-type")) {
-                char *tmp = apr_pstrdup(r->pool, header_values[h]);
-                ap_content_type_tolower(tmp);
-                r->content_type = tmp;
-            } else if(!strcasecmp(header_names[h], "Location")) {
-                apr_table_set(r->headers_out, 
-                              header_names[h], header_values[h]);
-            } else if(!strcasecmp(header_names[h], "Content-Length")) {
-                apr_table_set(r->headers_out, 
-                              header_names[h], header_values[h]);
-            } else if(!strcasecmp(header_names[h], "Transfer-Encoding")) {
-                apr_table_set(r->headers_out, 
-                              header_names[h], header_values[h]);
-            } else if(!strcasecmp(header_names[h], "Last-Modified")) {
-                /*
-                 * If the script gave us a Last-Modified header, we can't just
-                 * pass it on blindly because of restrictions on future values.
-                 */
-                ap_update_mtime(r, ap_parseHTTPdate(header_values[h]));
-                ap_set_last_modified(r);
-            } else {                
-                apr_table_add(r->headers_out, 
-                              header_names[h], header_values[h]);
-            }
-        }
-
-        /* this NOP function was removed in apache 2.0 alpha14 */
-        /* ap_send_http_header(r); */
-        s->response_started = JK_TRUE;
-          
-        return JK_TRUE;
+    if(s->msg==NULL) {
+        s->msg = "";
     }
-    return JK_FALSE;
+    r->status = s->status;
+    r->status_line = apr_psprintf(r->pool, "%d %s", s->status, s->msg);
+
+    headers=s->headers_out;
+    /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
+    
+    for(h = 0 ; h < headers->size( NULL, headers ) ; h++) {
+        char *name=headers->nameAt( NULL, headers, h );
+        char *val=headers->valueAt( NULL, headers, h );
+
+        /* the cmp can also be avoided in we do this earlier and use
+           the header id */
+        if(!strcasecmp(name, "Content-type")) {
+            /* XXX should be done in handler ! */
+            char *tmp = apr_pstrdup(r->pool, val);
+            ap_content_type_tolower(tmp); 
+            r->content_type = tmp;
+        } else if(!strcasecmp(name, "Location")) {
+            /* XXX setn */
+            apr_table_set(r->headers_out, name, val);
+        } else if(!strcasecmp(name, "Content-Length")) {
+            apr_table_set(r->headers_out, name, val );
+        } else if(!strcasecmp(name, "Transfer-Encoding")) {
+            apr_table_set(r->headers_out,name, val);
+        } else if(!strcasecmp(name, "Last-Modified")) {
+            /*
+             * If the script gave us a Last-Modified header, we can't just
+             * pass it on blindly because of restrictions on future values.
+             */
+            ap_update_mtime(r, ap_parseHTTPdate(val));
+            ap_set_last_modified(r);
+        } else {                
+            apr_table_add(r->headers_out, name, val);
+        }
+    }
+
+    /* this NOP function was removed in apache 2.0 alpha14 */
+    /* ap_send_http_header(r); */
+    s->response_started = JK_TRUE;
+    
+    return JK_TRUE;
 }
 
 /*
@@ -156,10 +162,9 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
  * the jk_ws_service class.  Think of the *s param as a "this" or "self"
  * pointer.
  */
-static int JK_METHOD ws_read(jk_ws_service_t *s,
-                             void *b,
-                             unsigned len,
-                             unsigned *actually_read)
+static int JK_METHOD jk_service_apache2_read(jk_ws_service_t *s,
+                                             void *b, unsigned len,
+                                             unsigned *actually_read)
 {
     if(s && s->ws_private && b && actually_read) {
         if(!s->read_body_started) {
@@ -197,9 +202,9 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 #define CHUNK_SIZE 4096
 #endif
 
-static int JK_METHOD ws_write(jk_ws_service_t *s,
-                              const void *b,
-                              unsigned len)
+static int JK_METHOD jk_service_apache2_write(jk_ws_service_t *s,
+                                              const void *b,
+                                              unsigned len)
 {
     jk_logger_t *l=s->workerEnv->l;
     
@@ -214,7 +219,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s,
             if(!s->response_started) {
                 l->jkLog(l, JK_LOG_DEBUG, 
                        "Write without start, starting with defaults\n");
-                if(!s->start_response(s, 200, NULL, NULL, NULL, 0)) {
+                if(!s->head(s)) {
                     return JK_FALSE;
                 }
             }
@@ -281,6 +286,7 @@ static int init_ws_service(jk_ws_service_t *s,
     jk_workerEnv_t *workerEnv=e->worker->workerEnv;
     jk_logger_t *l=workerEnv->l;
     request_rec *r=serverObj;
+    int need_content_length_header=JK_FALSE;
 
     /* Common initialization */
     /* XXX Probably not needed, we're duplicating */
@@ -402,84 +408,73 @@ static int init_ws_service(jk_ws_service_t *s,
             }
         }
 
+#ifdef USE_APRTABLES
+        /* We can't do that - the filtering should happen in
+           common to enable that.
+           
+          jk_map_aprtable_factory( workerEnv->env, s->pool,
+          &s->attributes,
+          "map", "aprtable" );
+          s->attributes->init( NULL, s->attributes, 0, XXX);
+        */
+        jk_map_default_create(NULL, &s->attributes, s->pool );
+#else
+        jk_map_default_create(NULL, &s->attributes, s->pool );
+#endif
+        
         if(workerEnv->envvars_in_use) {
-            const apr_array_header_t *t = apr_table_elts(workerEnv->envvars);
-            if(t && t->nelts) {
-                int i;
-                apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
-                s->attributes_names = apr_palloc(r->pool, 
-                                                 sizeof(char *) * t->nelts);
-                s->attributes_values = apr_palloc(r->pool, 
-                                                  sizeof(char *) * t->nelts);
+            int envCnt=workerEnv->envvars->size( NULL, workerEnv->envvars );
+            int i;
 
-                for(i = 0 ; i < t->nelts ; i++) {
-                    s->attributes_names[i] = elts[i].key;
-                    s->attributes_values[i] = 
-                        (char *)apr_table_get(r->subprocess_env, elts[i].key);
-                    if(!s->attributes_values[i]) {
-                        s->attributes_values[i] = elts[i].val;
-                    }
+            for( i=0; i< envCnt ; i++ ) {
+                char *name= workerEnv->envvars->nameAt( NULL, workerEnv->envvars, i );
+                char *val= (char *)apr_table_get(r->subprocess_env, name);
+                if(val==NULL) {
+                    val=workerEnv->envvars->valueAt( NULL, workerEnv->envvars, i );
                 }
-
-                s->num_attributes = t->nelts;
+                s->attributes->put( NULL, s->attributes, name, val, NULL );
             }
         }
     }
 
-    s->headers_names    = NULL;
-    s->headers_values   = NULL;
-    s->num_headers      = 0;
+#ifdef USE_APRTABLES
+    jk_map_aprtable_factory( workerEnv->env, s->pool,
+                             &s->headers_in,
+                             "map", "aprtable" );
+    s->headers_in->init( NULL, s->headers_in, 0, r->headers_in);
+#else
+    jk_map_default_create(NULL, &s->headers_in, s->pool );
+
     if(r->headers_in && apr_table_elts(r->headers_in)) {
-        int need_content_length_header =
-            (!s->is_chunked && s->content_length == 0) ? JK_TRUE : JK_FALSE;
-        
         const apr_array_header_t *t = apr_table_elts(r->headers_in);
         if(t && t->nelts) {
             int i;
+
             apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
-            s->num_headers = t->nelts;
-            /* allocate an extra header slot in case we need to add a
-               content-length header */
-            s->headers_names  =
-                apr_palloc(r->pool, sizeof(char *) * (t->nelts + 1));
-            s->headers_values =
-                apr_palloc(r->pool, sizeof(char *) * (t->nelts + 1));
-            if(!s->headers_names || !s->headers_values)
-                return JK_FALSE;
+
             for(i = 0 ; i < t->nelts ; i++) {
-                char *hname = apr_pstrdup(r->pool, elts[i].key);
-                s->headers_values[i] = apr_pstrdup(r->pool, elts[i].val);
-                s->headers_names[i] = hname;
-                while(*hname) {
-                    *hname = tolower(*hname);
-                    hname++;
-                }
-                if(need_content_length_header &&
-                        !strncmp(s->headers_values[i],"content-length",14)) {
-                    need_content_length_header = JK_FALSE;
-                }
+                s->headers_in->add( NULL, s->headers_in,
+                                    elts[i].key, elts[i].val);
             }
-            /* Add a content-length = 0 header if needed.
-             * Ajp13 assumes an absent content-length header means an unknown,
-             * but non-zero length body.
-             */
-            if(need_content_length_header) {
-                s->headers_names[s->num_headers] = "content-length";
-                s->headers_values[s->num_headers] = "0";
-                s->num_headers++;
-            }
-        }
-        /* Add a content-length = 0 header if needed.*/
-        else if (need_content_length_header) {
-            s->headers_names  = apr_palloc(r->pool, sizeof(char *));
-            s->headers_values = apr_palloc(r->pool, sizeof(char *));
-            if(!s->headers_names || !s->headers_values)
-                return JK_FALSE;
-            s->headers_names[0] = "content-length";
-            s->headers_values[0] = "0";
-            s->num_headers++;
         }
     }
+#endif
+
+    if(!s->is_chunked && s->content_length == 0) {
+        /* XXX if r->contentLength == 0 I assume there's no header
+           or a header with '0'. In the second case, put will override it 
+         */
+        s->headers_in->put( NULL, s->headers_in, "content-length", "0", NULL );
+    }
+
+#ifdef USE_APRTABLES
+    jk_map_aprtable_factory( workerEnv->env, s->pool,
+                             &s->headers_out,
+                             "map", "aprtable" );
+    s->headers_in->init( NULL, s->headers_out, 0, r->headers_out);
+#else
+    jk_map_default_create(NULL, &s->headers_out, s->pool );
+#endif
 
     return JK_TRUE;
 }
@@ -527,10 +522,10 @@ int jk_service_apache2_factory(jk_env_t *env,
         return JK_FALSE;
     }
 
-    s->start_response   = ws_start_response;
-    s->read             = ws_read;
-    s->write            = ws_write;
-    s->init             = init_ws_service;
+    s->head   = jk_service_apache2_head;
+    s->read   = jk_service_apache2_read;
+    s->write  = jk_service_apache2_write;
+    s->init   = init_ws_service;
     s->afterRequest     = jk_service_apache2_afterRequest;
     
     *result=(void *)s;
