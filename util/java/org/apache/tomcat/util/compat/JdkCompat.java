@@ -18,14 +18,12 @@ package org.apache.tomcat.util.compat;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.util.Vector;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Vector;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  *  General-purpose utility to provide backward-compatibility and JDK
@@ -47,10 +45,6 @@ public class JdkCompat {
      */
     static final String JAVA14_SUPPORT =
         "org.apache.tomcat.util.compat.Jdk14Compat";
-    /**
-     *  Commons logger wrapper
-     */
-    static Log logger = LogFactory.getLog(JdkCompat.class);
 
     /** Return java version as a string
      */
