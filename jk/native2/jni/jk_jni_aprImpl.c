@@ -96,8 +96,16 @@
 #include "signal.h"
 #endif
 
-static apr_pool_t *jniAprPool;
+/* jniAprPool is the 'master pool' for standalone use ( i.e. not inprocess )
+   All resources are allocated in this pool
+*/
+static apr_pool_t *jniAprPool=NULL;
+
+/** Access to the jk workerEnv. This field and jk_env_globalEnv are used
+    to interact with the jk components 
+ */
 static jk_workerEnv_t *workerEnv;
+
 static int jniDebug=0;
 
 #define JK_GET_REGION 1
@@ -113,25 +121,28 @@ Java_org_apache_jk_apr_AprImpl_setArrayAccessMode(JNIEnv *jniEnv, jobject _jthis
 }
 
 /* -------------------- Apr initialization and pools -------------------- */
-
+     
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 {
     jk_env_t *env;
-    
-    apr_initialize(); 
-    apr_pool_create( &jniAprPool, NULL );
 
+    /* For in-process the env is initialized already */
     if( jk_env_globalEnv == NULL ) {
         jk_pool_t *globalPool;
 
+        apr_initialize(); 
+        apr_pool_create( &jniAprPool, NULL );
+
         if( jniAprPool==NULL ) {
-            return 0;
+            return JK_ERR;
         }
         jk2_pool_apr_create( NULL, &globalPool, NULL, jniAprPool );
         /* Create the global env */
         env=jk2_env_getEnv( NULL, globalPool );
+        env->setAprPool(env, gPool);
     }
+    
     env=jk_env_globalEnv;
 
     workerEnv=env->getByName( env, "workerEnv" );
@@ -160,14 +171,18 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
         
         workerEnv->init( env, workerEnv );
     }
-    /* fprintf( stderr, "XXX aprImpl: %p %p\n", env, workerEnv); */
-    return 0;
+
+    return JK_OK;
 }
 
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_terminate(JNIEnv *jniEnv, jobject _jthis)
 {
+    if ( jniAprPool!=NULL ) {
+        apr_pool_destroy(jniAprPool);
+        jniAprPool = NULL;
 /*     apr_terminate(); */
+    }
     return 0;
 }
 
@@ -621,6 +636,83 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     /*     env->l->jkLog(env, env->l, JK_LOG_INFO, "jkInvoke() done\n"); */
 
     return rc;
+}
+
+
+static JNINativeMethod org_apache_jk_apr_AprImpl_native_methods[] = {
+    { 
+        "initialize", "()I", 
+        Java_org_apache_jk_apr_AprImpl_initialize 
+    },
+    { 
+        "terminate", "()I",
+        Java_org_apache_jk_apr_AprImpl_terminate
+    },
+    { 
+        "getJkEnv", "()J",
+        Java_org_apache_jk_apr_AprImpl_getJkEnv
+    },
+    {
+        "releaseJkEnv", "(J)V",
+        Java_org_apache_jk_apr_AprImpl_releaseJkEnv
+    },
+    { 
+        "getJkHandler", "(JLjava/lang/String;)J",
+        Java_org_apache_jk_apr_AprImpl_getJkHandler
+    },
+    {
+        "createJkHandler", "(JLjava/lang/String;)J",
+        Java_org_apache_jk_apr_AprImpl_createJkHandler
+    },
+    {
+        "jkSetAttribute", "(JJLjava/lang/String;Ljava/lang/String;)I",
+        Java_org_apache_jk_apr_AprImpl_jkSetAttribute
+    },
+    {
+        "jkGetAttribute", "(JJLjava/lang/String;)Ljava/lang/String;",
+        Java_org_apache_jk_apr_AprImpl_jkGetAttribute
+    },
+    {
+        "jkInit", "(JJ)I",
+        Java_org_apache_jk_apr_AprImpl_jkInit
+    },
+    {
+        "jkDestroy", "(JJ)I",
+        Java_org_apache_jk_apr_AprImpl_jkDestroy
+    },
+    {
+        "jkInvoke", "(JJJI[BIII)I",
+        Java_org_apache_jk_apr_AprImpl_jkInvoke
+    },
+    {
+        "jkRecycle", "(JJ)V",
+        Java_org_apache_jk_apr_AprImpl_jkRecycle
+    },
+    {
+        "setUser", "(Ljava/lang/String;Ljava/lang/String;)I",
+        Java_org_apache_jk_apr_AprImpl_setUser
+    },
+    {
+        "signal", "(I)I",
+        Java_org_apache_jk_apr_AprImpl_signal
+    },
+    {
+        "sendSignal", "(II)V",
+        Java_org_apache_jk_apr_AprImpl_sendSignal
+    }
+};
+
+/*
+  Register Native methods returning the total number of
+  native functions
+*/
+jint jk_jni_aprImpl_registerNatives(JNIEnv *jniEnv, jclass bridgeClass)
+{
+  
+   return (*jniEnv)->RegisterNatives(jniEnv, bridgeClass,
+                        org_apache_jk_apr_AprImpl_native_methods,
+                        sizeof(org_apache_jk_apr_AprImpl_native_methods) / 
+                        sizeof(JNINativeMethod));
 }
 
 
