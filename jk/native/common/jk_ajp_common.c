@@ -455,8 +455,9 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
     }
 
     d->msg = (char *)jk_b_get_string(msg);
-    if (d->msg)
+    if (d->msg) {
         jk_xlate_from_ascii(d->msg, strlen(d->msg));
+    }
 
     jk_log(l, JK_LOG_DEBUG, "ajp_unmarshal_response: status = %d\n", d->status);
 
@@ -756,7 +757,7 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s,
 static int ajp_read_into_msg_buff(ajp_endpoint_t  *ae,
                                   jk_ws_service_t *r,
                                   jk_msg_buf_t    *msg,
-                                  unsigned         len,
+                                  int         len,
                                   jk_logger_t     *l)
 {
     unsigned char *read_buf = jk_b_get_buff(msg);
@@ -875,7 +876,7 @@ static int ajp_send_request(jk_endpoint_t *e,
 		 * doing a read (not yet) 
 	 	 */
 		if (s->is_chunked || ae->left_bytes_to_send > 0) {
-			unsigned len = ae->left_bytes_to_send;
+			int len = ae->left_bytes_to_send;
 			if (len > AJP13_MAX_SEND_BODY_SZ) 
 				len = AJP13_MAX_SEND_BODY_SZ;
             		if ((len = ajp_read_into_msg_buff(ae, s, op->post, len, l)) < 0) {
@@ -937,7 +938,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
 
         case JK_AJP13_GET_BODY_CHUNK:
             {
-		unsigned len = (unsigned)jk_b_get_int(msg);
+		int len = (int)jk_b_get_int(msg);
 
                 if(len > AJP13_MAX_SEND_BODY_SZ) {
                     len = AJP13_MAX_SEND_BODY_SZ;
@@ -963,13 +964,16 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
         case JK_AJP13_END_RESPONSE:
             {
                 ae->reuse = (int)jk_b_get_byte(msg);
-                
-                if((ae->reuse & 0X01) != ae->reuse) {
+
+                if( ! ae->reuse ) {
                     /*
                      * Strange protocol error.
                      */
+                    jk_log(l, JK_LOG_DEBUG, "Reuse: %d\n", ae->reuse );
                     ae->reuse = JK_FALSE;
                 }
+                /* Reuse in all cases */
+                ae->reuse = JK_TRUE;
             }
             return JK_AJP13_END_RESPONSE;
 	    break;
@@ -1304,8 +1308,6 @@ int ajp_destroy(jk_worker_t **pThis,
 int JK_METHOD ajp_done(jk_endpoint_t **e,
                        jk_logger_t    *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done\n");
-
     if (e && *e && (*e)->endpoint_private) {
         ajp_endpoint_t *p = (*e)->endpoint_private;
         int reuse_ep = p->reuse;
@@ -1328,12 +1330,13 @@ int JK_METHOD ajp_done(jk_endpoint_t **e,
                     }
                     JK_LEAVE_CS(&w->cs, rc);
                     if(i < w->ep_cache_sz) {
-                        return JK_TRUE;
+                            jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done, recycling connection\n");
+                            return JK_TRUE;
                     }
                 }
             }
         }
-
+        jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done, closing connection %d\n", reuse_ep);
         ajp_close_endpoint(p, l);
         *e = NULL;
 
