@@ -489,13 +489,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
     }
     
     public void runIt(Object perThrData[]) {
-	TcpConnection con=null;
-	if( ! usePool ) {
-	    // extract the original.
-	    con=(TcpConnection) perThrData[0];
-	    perThrData = (Object []) perThrData[1];
-	}
-	
+
 	// Create per-thread cache
 	while(endpoint.isRunning()) {
 	    Socket s = null;
@@ -521,14 +515,17 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                     continue;
                 }
 
+                TcpConnection con = null;
                 try {
 		    if( usePool ) {
 			con=(TcpConnection)connectionCache.get();
 			if( con == null ) 
 			    con = new TcpConnection();
 		    } else {
-			if( con==null )
-			    continue;
+                        con = (TcpConnection) perThrData[0];
+                        perThrData = (Object []) perThrData[1];
+                        if ( con == null )
+                            continue;
 		    }
 		    
 		    con.setEndpoint(endpoint);
