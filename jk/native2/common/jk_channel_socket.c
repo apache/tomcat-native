@@ -333,7 +333,7 @@ static int JK_METHOD jk2_channel_socket_close(jk_env_t *env,jk_channel_t *ch,
  * @param len length to send.
  * @return    -2: send returned 0 ? what this that ?
  *            -3: send failed.
- *            >0: total size send.
+ *            JK_OK: success
  * @bug       this fails on Unixes if len is too big for the underlying
  *             protocol.
  * @was: jk_tcp_socket_sendfull
@@ -357,8 +357,8 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
 
     
     while(sent < len) {
-        int this_time = send(sd, (char *)b + sent , len - sent,  0);
-	    
+        int this_time = write(sd, (char *)b + sent , len - sent);
+        fprintf(stderr, "WRITE: %d %d %d\n", this_time, len, errno);
 	if(0 == this_time) {
 	    return -2;
 	}
@@ -394,10 +394,9 @@ static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
     if( sd<0 ) return JK_ERR;
     
     while(rdlen < len) {
-	int this_time = recv(sd, 
+	int this_time = read(sd, 
 			     (char *)b + rdlen, 
-			     len - rdlen, 
-			     0);	
+			     len - rdlen);	
 	if(-1 == this_time) {
 #ifdef WIN32
 	    if(SOCKET_ERROR == this_time) { 
@@ -432,10 +431,9 @@ static int JK_METHOD jk2_channel_socket_readN2( jk_env_t *env,
     if( sd<0 ) return JK_ERR;
     
     while(rdlen < minLen ) {
-	int this_time = recv(sd, 
+	int this_time = read(sd, 
 			     (char *)b + rdlen, 
-			     maxLen - rdlen, 
-			     0);
+			     maxLen - rdlen);
 /*         fprintf(stderr, "XXX received %d\n", this_time ); */
 	if(-1 == this_time) {
 #ifdef WIN32

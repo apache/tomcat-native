@@ -215,6 +215,9 @@ static void *jk2_merge_dir_config(apr_pool_t *p, void *childv, void *parentv)
     jk_uriEnv_t *child =(jk_uriEnv_t *)childv;
     jk_uriEnv_t *parent = (jk_uriEnv_t *)parentv; 
 
+    if( child->uri==NULL )
+        return parentv;
+    
     if( child->merged != JK_TRUE ) {
         /* Merge options from parent. 
          */
