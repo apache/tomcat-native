@@ -92,9 +92,11 @@ public final class UDecoder {
 	if( idx<0 && idx2<0 ) {
 	    return;
 	}
-	
-	if( idx2 >= 0 && idx2 < idx ) idx=idx2; 
-	
+
+	// idx will be the smallest positive inxes ( first % or + )
+	if( idx2 >= 0 && idx2 < idx ) idx=idx2;
+	if( idx < 0 ) idx=idx2;
+
 	for( int j=idx; j<end; j++, idx++ ) {
 	    if( buff[ j ] == '+' ) {
 		buff[idx]= (byte)' ' ;
