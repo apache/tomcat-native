@@ -62,8 +62,9 @@ dnl --------------------------------------------------------------------------
 
 dnl --------------------------------------------------------------------------
 dnl WA_VERSION
-dnl   xxxx
-dnl   $1 => xxxx.
+dnl   Retrieve the version of the WebApp module
+dnl   $1 => The variable name where the version number will be stored.
+dnl   $2 => A working C compiler.
 dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_VERSION],
