@@ -179,7 +179,6 @@ public final class Request {
     protected Parameters parameters = new Parameters();
 
     protected MessageBytes remoteUser=new MessageBytes();
-    protected MessageBytes workerId=new MessageBytes();
     protected MessageBytes authType=new MessageBytes();
     protected Hashtable attributes=new Hashtable();
 
@@ -187,7 +186,9 @@ public final class Request {
 
 
     /**
-     * Get the instance id (or JVM route).
+     * Get the instance id (or JVM route). Curently Ajp is sending it with each
+     * request. In future this should be fixed, and sent only once ( or
+     * 'negociated' at config time so both tomcat and apache share the same name.
      * 
      * @return the instance id
      */
@@ -384,10 +385,6 @@ public final class Request {
         return authType;
     }
 
-    public MessageBytes getWorkerId() {
-        return workerId;
-    }
-
     // -------------------- Input Buffer --------------------
 
 
@@ -467,9 +464,9 @@ public final class Request {
         remoteAddrMB.setString("127.0.0.1");
         remoteHostMB.setString("localhost");
 
+        instanceId.recycle();
         remoteUser.recycle();
         authType.recycle();
-        workerId.recycle();
         attributes.clear();
     }
 
