@@ -424,8 +424,7 @@ public class CoyoteRequest
      * @param authorization The new authorization credentials
      */
     public void setAuthorization(String authorization) {
-        System.out.println("SA");
-        //this.authorization = authorization;
+        // Not used
     }
 
 
