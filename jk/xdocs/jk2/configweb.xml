@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <document>
-    <properties>
-        <title>Configuration in the Web Server</title>
-        <author email="cmanolache@yahoo.com">Costin Manolache</author>
-        <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
-    </properties>
+<properties>
+<title>Configuration in the Web Server</title>
+<author email="cmanolache@yahoo.com">Costin Manolache</author>
+<author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+<date>$Date$</date>
+</properties>
     <section name="Intro">
         <p>Jk2 uses a config file ( workers2.properties ) in the style of a .properties or ini
  file. It can be configured to use any other backend that provides similar

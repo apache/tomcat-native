@@ -50,7 +50,13 @@
           <xsl:value-of select="properties/title"/>
         </title>
         <meta name="copyright" content="1999-2002 The Apache Software Foundation"/>
-        <xsl:for-each select="properties/author">
+        <xsl:for-each select="properties/date">
+          <xsl:variable name="date">
+            <xsl:value-of select="."/>
+          </xsl:variable>
+          <meta name="last-changed" content="{$date}"/>
+        </xsl:for-each>
+         <xsl:for-each select="properties/author">
           <xsl:variable name="name">
             <xsl:value-of select="."/>
           </xsl:variable>

@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <document>
-  <properties>
-    <title>Configuration in the Tomcat</title>
-    <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
-  </properties>
+<properties>
+<title>Configuration in the Tomcat</title>
+<author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+<date>$Date$</date>
+</properties>
 
 <section name="Intro">
 <p>

@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <document>
-  <properties>
-    <title>Installation of mod_jk2 in the Web Server</title>
-    <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
-  </properties>
+<properties>
+<title>Installation of mod_jk2 in the Web Server</title>
+<author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+<date>$Date$</date>
+</properties>
   <section name="Installation">
     <p>
       The actual build mechanism creates the dso files in the
