@@ -100,12 +100,12 @@ class AprOutputStream extends OutputStream {
         // based on type select the native write method
         // Or separate classes for each type - but we expect UNIX
         // sockets to be integrated in apr
-        if ( apr.unWrite( pool, fd, buf, 0, 1 ) < 0)
+        if ( apr.unWrite( fd, buf, 0, 1 ) < 0)
             throw new IOException();
     }
 
     public void write(byte b[], int off, int len) throws IOException {
-        if ( apr.unWrite( pool, fd, b, off, len ) < 0)
+        if ( apr.unWrite( fd, b, off, len ) < 0)
             throw new IOException();
     }
 

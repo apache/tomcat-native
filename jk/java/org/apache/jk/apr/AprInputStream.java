@@ -96,7 +96,7 @@ class AprInputStream extends InputStream {
 
     public int read() throws IOException {
         byte buf [] = new byte[1];
-        if ( apr.unRead( pool, fd, buf, 0, 1) < 0)
+        if ( apr.unRead( fd, buf, 0, 1) < 0)
             throw new IOException();
         return 0xff & buf[0];
     }
