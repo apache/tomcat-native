@@ -465,8 +465,6 @@ static int jk2_post_config(apr_pool_t *pconf,
     if(s->is_virtual) 
         return OK;
 
-    ap_add_version_component(pconf, JK_EXPOSED_VERSION);
-
     env=workerEnv->globalEnv;
     
     rc=jk2_apache2_isValidating( plog, &gPool );
