@@ -112,7 +112,7 @@ AC_DEFUN(
             APACHE$1_HOME=`${APXS$1} -q PREFIX`
             APACHE$1_INCL="-I`${APXS$1} -q INCLUDEDIR`"
             APACHE$1_INCDIR="`${APXS$1} -q INCLUDEDIR`"
-            APACHE$1_LIBDIR="`${APXS$1} -q LIBEXECDIR`"
+            APACHE$1_LIBEXEC="`${APXS$1} -q LIBEXECDIR`"
 
             dnl test apache version
             APA=`${GREP} STANDARD20 ${APXS$1}`
