@@ -451,9 +451,11 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
                                     jniWorker->jk_main_method,
                                     jargs);
         if (jniWorker->hook == JK2_WORKER_HOOK_SHUTDOWN) {
+#if APR_HAS_THREADS
             while (jk_jni_status_code != 2) {
                 apr_thread_yield();
             }
+#endif
             vm->detach(env, vm);
         }
     }
