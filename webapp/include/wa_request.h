@@ -156,7 +156,8 @@ const char *wa_rfree(wa_request *r);
  * @param ... The parameters to the format string.
  * @return The HTTP result code of this operation.
  */
-int wa_rerror(wa_request *r, int s, const char *fmt, ...);
+int wa_rerror(const char *file, const int line, wa_request *r, int s,
+              const char *fmt, ...);
 
 /**
  * Invoke a request in a web application.
