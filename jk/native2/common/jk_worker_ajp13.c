@@ -501,31 +501,11 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
         }
     }
 
-    endpointPool = ajp14->pool->create( env, ajp14->pool, HUGE_POOL_SIZE );
-    
-    e = (jk_endpoint_t *)endpointPool->alloc(env, endpointPool,
-                                              sizeof(jk_endpoint_t));
-    if (e==NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp14.get_endpoint OutOfMemoryException\n");
+    e = (jk_env_t *)env->createInstance( env, "endpoint", NULL );
+    if( e==NULL )
         return JK_FALSE;
-    }
-
-    e->pool = endpointPool;
-
-    /* Init message storage areas.
-     */
-    e->request = jk2_msg_ajp_create( env, e->pool, 0);
-    e->reply = jk2_msg_ajp_create( env, e->pool, 0);
-    e->post = jk2_msg_ajp_create( env, e->pool, 0);
-    
-    e->reuse = JK_FALSE;
-
-    e->cPool=endpointPool->create(env, endpointPool, HUGE_POOL_SIZE );
-
     e->worker = ajp14;
-    e->channelData = NULL;
-    
+
     *eP = e;
     return JK_TRUE;
 }
@@ -573,7 +553,8 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
     }
 
     if( ajp14->channelName == NULL ) {
-        /* Use default channel */
+        
+
         ajp14->channelName="channel.default";
     }
 
