@@ -30,7 +30,14 @@ import java.io.IOException;
  *
  * Add "mx.enabled=true" in jk2.properties to enable it.
  * You could also select http and/or jrmp protocol, 
- * with mx.httpPort, mx.httpHost, mxjrmpPort and mx.jrmpPort
+ * with mx.httpPort, mx.httpHost, mxjrmpPort and mx.jrmpPort.
+ * <p />
+ * If you run into an error message like
+ * "SystemId Unknown; Line #12; Column #81; Cannot add attribute name after
+ * child nodes or before an element is produced.  Attribute will be ignored."
+ * after setting mx.enabled to true, you probably need a newer version
+ * of Xalan.  See the RELEASE-NOTES document section on XML Parsers for
+ * more information.
  *
  */
 public class JkMX extends JkHandler
