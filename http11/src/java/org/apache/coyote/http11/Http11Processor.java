@@ -589,6 +589,16 @@ public class Http11Processor implements Processor, ActionHook {
         int keepAliveLeft = maxKeepAliveRequests;
         int soTimeout = socket.getSoTimeout();
 
+        float threadRatio = 
+            (float) threadPool.getCurrentThreadsBusy() 
+            / (float) threadPool.getMaxThreads();
+        if ((threadRatio > 0.33) && (threadRatio <= 0.66)) {
+            soTimeout = soTimeout / 5;
+        } else if (threadRatio > 0.66) {
+            soTimeout = soTimeout / 10;
+            keepAliveLeft = 1;
+        }
+
         boolean keptAlive = false;
 
         while (started && !error && keepAlive) {
