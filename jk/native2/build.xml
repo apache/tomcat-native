@@ -66,7 +66,7 @@
   <target name="apache20" depends="init" if="apache2.detect">
     <property name="apr.include" location="${apache2.home}/include" />
     <mkdir dir="${build.dir}/apache2" />
-    <so sofile="mod_jk" 
+    <so sofile="mod_jk2" 
 	buildDir="${build.dir}/apache2"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
@@ -184,7 +184,7 @@
 	profile="${so.profile}">
 
       <src dir=".">
-	<include name="server/apache13/mod_jk.c" />
+	<include name="server/apache13/mod_jk2.c" />
 	<include name="common/*.c" />
         <exclude name="jk_nwmain.c" 
 		 unless="netware" />
