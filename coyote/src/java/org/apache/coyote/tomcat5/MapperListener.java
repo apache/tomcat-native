@@ -287,8 +287,8 @@ public class MapperListener
             contextName = "";
         }
 
-        log.info(sm.getString
-                 ("mapperListener.registerContext", contextName));
+        log.debug(sm.getString
+                  ("mapperListener.registerContext", contextName));
 
         Object context = 
             mBeanServer.getAttribute(objectName, "mappingObject");
@@ -328,8 +328,8 @@ public class MapperListener
             contextName = "";
         }
 
-        log.info(sm.getString
-                 ("mapperListener.unregisterContext", contextName));
+        log.debug(sm.getString
+                  ("mapperListener.unregisterContext", contextName));
 
         mapper.removeContext(hostName, contextName);
 
@@ -362,8 +362,9 @@ public class MapperListener
             contextName = "";
         }
 
-        log.info(sm.getString
-                 ("mapperListener.registerWrapper", wrapperName, contextName));
+        log.debug(sm.getString
+                  ("mapperListener.registerWrapper", 
+                   wrapperName, contextName));
 
         String[] mappings = (String[])
             mBeanServer.invoke(objectName, "findMappings", null, null);
