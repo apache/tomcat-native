@@ -1,12 +1,16 @@
 # Gnu makefile and libtool are required
 # use -D options to overrides defaults
 
+JK=../../common/
+OEXT=.c
+include ../../common/list.mk
+
 APACHE_HOME=@APACHE_HOME@
 OS=@OS@
 APACHE_INCL=@APACHE_INCL@
-APR_INCL=@APR_INCL@
-EXTRA_CFLAGS=@EXTRA_CFLAGS@
-EXTRA_CPPFLAGS=@EXTRA_CPPFLAGS@
+EXTRA_CFLAGS=@APXS_CFLAGS@
+EXTRA_CPPFLAGS=@APXS_CPPFLAGS@
+JK_OBJECTS=${COMMON_OBJECTS} ${COMMON_APR_OBJECTS}
 
 JK_DIR := ../..
 BUILD_DIR = ${JK_DIR}/../build/jk2/apache13
@@ -15,10 +19,9 @@ BUILD_DIR = ${JK_DIR}/../build/jk2/apache13
 
 # It doesn't hurt if we include all
 INCLUDES= -I${JK_DIR}/include \
-          ${APACHE_INCL} \
-          ${APR_INCL} 
+          ${APACHE_INCL}
 
-JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @HAS_APR@ @APR_INCL@ -DHAVE_MMAP
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @APR_CFLAGS@ -DHAVE_MMAP
 JK_LDFLAGS=-L${APACHE_HOME}/lib -lcrypt @APR_LDFLAGS@
 
 ###### Based on rules.mk ##########################################
@@ -40,7 +43,8 @@ MOD_LINK = $(LIBTOOL) --mode=link $(CC) -module -shared $(LT_LDFLAGS) $(ALL_LDFL
 # Same behavior as ant - 'all files from a dir'. 
 # Excludes are not yet implemented.
 
-COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
+#COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
+COMMON_C_FILES = ${JK_OBJECTS}
 A_C_FILES := $(wildcard ${JK_DIR}/server/apache13/*.c )
 H_FILES := $(wildcard ${JK_DIR}/include/*.h )
 
@@ -72,7 +76,7 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache13/%.c
 all: prepare ${BUILD_DIR}/mod_jk2.so 
 
 ${BUILD_DIR}/mod_jk2.so: ${COMMON_LO_FILES} ${A_LO_FILES}
-	${MOD_LINK} -o $@ $^ @APR_LIB_STATIC@
+	${MOD_LINK} -o $@ $^ @APR_LDFLAGS@
 
 ${COMMON_C_FILES} ${A_C_FILES}: ${H_FILES}
 
