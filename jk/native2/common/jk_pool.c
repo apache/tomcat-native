@@ -61,6 +61,8 @@
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
+#error "jk_pool is deprecated"
+
 #include "jk_pool.h"
 #include "jk_env.h"
 

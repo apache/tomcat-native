@@ -71,6 +71,8 @@
  * @author: Costin Manolache
  */
 
+#error "jk_channel_socket is deprecated"
+
 #include "jk_map.h"
 #include "jk_env.h"
 #include "jk_channel.h"
