@@ -49,6 +49,7 @@ import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.net.PoolTcpEndpoint;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.threads.ThreadPool;
 import org.apache.tomcat.util.threads.ThreadWithAttributes;
@@ -298,6 +299,12 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * Associated endpoint.
+     */
+    protected PoolTcpEndpoint endpoint;
+
+
+    /**
      * Allow a customized the server header for the tin-foil hat folks.
      */
     protected String server = null;
@@ -355,6 +362,12 @@ public class Http11Processor implements Processor, ActionHook {
     public void setThreadPool(ThreadPool threadPool) {
         this.threadPool = threadPool;
     }
+
+    
+    public void setEndpoint(PoolTcpEndpoint endpoint) {
+        this.endpoint = endpoint;
+    }
+
 
     /**
      * Add user-agent for which gzip compression didn't works
@@ -764,15 +777,33 @@ public class Http11Processor implements Processor, ActionHook {
 
         int keepAliveLeft = maxKeepAliveRequests;
         int soTimeout = socket.getSoTimeout();
+        int oldSoTimeout = soTimeout;
 
-        float threadRatio =
-            (float) threadPool.getCurrentThreadsBusy()
-            / (float) threadPool.getMaxThreads();
-        if ((threadRatio > 0.33) && (threadRatio <= 0.66)) {
+        int threadRatio = 0;
+        if (threadPool.getCurrentThreadsBusy() > 0) {
+            threadRatio = (threadPool.getCurrentThreadsBusy() * 100)
+                / threadPool.getMaxThreads();
+        } else {
+            threadRatio = (endpoint.getCurrentThreadsBusy() * 100)
+                / endpoint.getMaxThreads();
+        }
+        if ((threadRatio > 33) && (threadRatio <= 66)) {
             soTimeout = soTimeout / 2;
-        } else if (threadRatio > 0.66) {
+        } else if ((threadRatio > 66) && (threadRatio <= 90)) {
             soTimeout = soTimeout / 3;
             keepAliveLeft = 1;
+        } else if (threadRatio > 90) {
+            soTimeout = soTimeout / 20;
+            keepAliveLeft = 1;
+        }
+        
+        if (soTimeout != oldSoTimeout) {
+            try {
+                socket.setSoTimeout(soTimeout);
+            } catch (Throwable t) {
+                log.debug("Error setting timeout", t);
+                error = true;
+            }
         }
 
         boolean keptAlive = false;

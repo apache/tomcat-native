@@ -626,21 +626,27 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
                     // Ignore
                 }
             }
+
+            // Allocate a new worker thread
+            MasterSlaveWorkerThread workerThread = createWorkerThread();
+            if (workerThread == null) {
+                try {
+                    // Wait a little for load to go down: as a result, 
+                    // no accept will be made until the concurrency is
+                    // lower than the specified maxThreads, and current
+                    // connections will wait for a little bit instead of
+                    // failing right away.
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+                continue;
+            }
             
             // Accept the next incoming connection from the server socket
             Socket socket = acceptSocket();
 
             // Hand this socket off to an appropriate processor
-            MasterSlaveWorkerThread workerThread = createWorkerThread();
-            if (workerThread == null) {
-                try {
-                    log.warn(sm.getString("endpoint.noProcessor"));
-                    socket.close();
-                } catch (IOException e) {
-                    ;
-                }
-                continue;
-            }
             workerThread.assign(socket);
 
             // The processor will recycle itself when it finishes

@@ -684,6 +684,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                 new Http11Processor(proto.maxHttpHeaderSize);
             processor.setAdapter( proto.adapter );
             processor.setThreadPool( proto.tp );
+            processor.setEndpoint( proto.ep );
             processor.setMaxKeepAliveRequests( proto.maxKeepAliveRequests );
             processor.setTimeout( proto.timeout );
             processor.setDisableUploadTimeout( proto.disableUploadTimeout );
