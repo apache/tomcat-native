@@ -244,7 +244,7 @@ public class JkInputStream extends InputStream {
     {
         mc.setType( JkHandler.HANDLE_RECEIVE_PACKET );
         bodyMsg.reset();
-        int err = mc.getSource().invoke(bodyMsg, mc);
+        int err = mc.getSource().receive(bodyMsg, mc);
         if( log.isDebugEnabled() )
             log.info( "Receiving: getting request body chunk " + err + " " + bodyMsg.getLen() );
         
@@ -310,7 +310,7 @@ public class JkInputStream extends InputStream {
             log.debug("refillReadBuffer " + Thread.currentThread());
 
         mc.setType( JkHandler.HANDLE_SEND_PACKET );
-	mc.getSource().invoke(bodyMsg, mc);
+	mc.getSource().send(bodyMsg, mc);
 
         // In JNI mode, response will be in bodyMsg. In TCP mode, response need to be
         // read

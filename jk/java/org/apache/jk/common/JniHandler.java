@@ -25,6 +25,7 @@ import org.apache.jk.apr.AprImpl;
 import org.apache.jk.core.JkHandler;
 import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
+import org.apache.jk.core.JkChannel;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.C2BConverter;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -169,21 +170,21 @@ public class JniHandler extends JkHandler {
             MsgContext msgCtx=new MsgContext();
             MsgAjp msg=new MsgAjp();
 
-            msgCtx.setSource( this );
+            msgCtx.setSource( (JkChannel)this );
             msgCtx.setWorkerEnv( wEnv );
 
             msgCtx.setNext( this );
 
             msgCtx.setMsg( MSG_NOTE, msg); // XXX Use noteId
 
-            C2BConverter c2b=new C2BConverter(  "UTF8" );
+            C2BConverter c2b=new C2BConverter(  "iso-8859-1" );
             msgCtx.setNote( C2B_NOTE, c2b );
 
             MessageBytes tmpMB=new MessageBytes();
             msgCtx.setNote( MB_NOTE, tmpMB );
             return msgCtx;
         } catch( Exception ex ) {
-            ex.printStackTrace();
+            log.error("Can't create endpoint", ex);
             return null;
         }
     }

@@ -22,6 +22,7 @@ import java.io.PrintStream;
 import java.util.Hashtable;
 import org.apache.jk.core.JkHandler;
 import org.apache.jk.core.MsgContext;
+import org.apache.jk.core.JkChannel;
 
 /** Implements the interface with the APR library. This is for internal-use
  *  only. The goal is to use 'natural' mappings for user code - for example
@@ -167,7 +168,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     public static Object createJavaContext(String type, long cContext) {
         // XXX will be an instance method, fields accessible directly
         AprImpl apr=aprSingleton;
-        JkHandler jkH=(JkHandler)apr.jkHandlers.get( type );
+        JkChannel jkH=(JkChannel)apr.jkHandlers.get( type );
         if( jkH==null ) return null;
 
         MsgContext ep=jkH.createMsgContext();

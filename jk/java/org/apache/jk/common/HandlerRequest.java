@@ -33,6 +33,7 @@ import org.apache.jk.core.JkHandler;
 import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
 import org.apache.jk.core.WorkerEnv;
+import org.apache.jk.core.JkChannel;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.HexUtils;
@@ -220,7 +221,6 @@ public class HandlerRequest extends JkHandler
         bodyNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "jkInputStream" );
         tmpBufNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "tmpBuf" );
         secretNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "secret" );
-        JMXRequestNote =wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "requestNote");
 
         if( next==null )
             next=wEnv.getHandler( "container" );
@@ -317,7 +317,6 @@ public class HandlerRequest extends JkHandler
     int bodyNote;
     int tmpBufNote;
     int secretNote;
-    int JMXRequestNote;
 
     boolean decoded=true;
     boolean tomcatAuthentication=true;
@@ -393,13 +392,11 @@ public class HandlerRequest extends JkHandler
             }
 
             // XXX add isSameAddress check
-            JkHandler ch=ep.getSource();
-            if( ch instanceof ChannelSocket ) {
-                if( ! ((ChannelSocket)ch).isSameAddress(ep) ) {
-                    log.error("Shutdown request not from 'same address' ");
-                    return ERROR;
-                }
-            }
+            JkChannel ch=ep.getSource();
+	    if( !ch.isSameAddress(ep) ) {
+		log.error("Shutdown request not from 'same address' ");
+		return ERROR;
+	    }
 
             // forward to the default handler - it'll do the shutdown
             next.invoke( msg, ep );
@@ -414,19 +411,10 @@ public class HandlerRequest extends JkHandler
             msg.reset();
             msg.appendByte(JK_AJP13_CPONG_REPLY);
             ep.setType( JkHandler.HANDLE_SEND_PACKET );
-            ep.getSource().invoke( msg, ep );
-                        
-             return OK;
+            ep.getSource().send( msg, ep );
+	    return OK;
 
         case HANDLE_THREAD_END:
-            if(registerRequests) {
-                Request req = (Request)ep.getRequest();
-                if( req != null ) {
-                    ObjectName roname = (ObjectName)ep.getNote(JMXRequestNote);
-                    Registry.getRegistry().unregisterComponent(roname);
-                    req.getRequestProcessor().setGlobalProcessor(null);
-                }
-            }
             return OK;
 
         default:
@@ -436,8 +424,7 @@ public class HandlerRequest extends JkHandler
         return OK;
     }
 
-    static int count=0;
-    RequestGroupInfo global=null;
+    static int count = 0;
 
     private int decodeRequest( Msg msg, MsgContext ep, MessageBytes tmpMB )
         throws IOException
@@ -449,26 +436,8 @@ public class HandlerRequest extends JkHandler
             Response res=new Response();
             req.setResponse(res);
             ep.setRequest( req );
-            if( registerRequests && this.getDomain() != null ) {
-                try {
-                    if( global==null ) {
-                        global=new RequestGroupInfo();
-                        Registry.getRegistry().registerComponent( global,
-                                getDomain(), "GlobalRequestProcessor",
-                                "type=GlobalRequestProcessor,name=jk");
-                    }
-
-                    RequestInfo rp=req.getRequestProcessor();
-                    rp.setGlobalProcessor(global);
-                    ObjectName roname = new ObjectName(getDomain() + 
-                                       ":type=RequestProcessor,name=JkRequest" +count++);
-                    ep.setNote(JMXRequestNote, roname);
-                        
-                    Registry.getRegistry().registerComponent( rp,
-                                                              roname, null);
-                } catch( Exception ex ) {
-                    log.warn("Error registering request");
-                }
+            if( registerRequests ) {
+		ep.getSource().registerRequest(req, ep, count++);
             }
         }
 

@@ -31,7 +31,7 @@ public class MsgContext {
     private int type;
     private Object notes[]=new Object[32];
     private JkHandler next;
-    private JkHandler source;
+    private JkChannel source;
     private Object req;
     private WorkerEnv wEnv;
     private Msg msgs[]=new Msg[10];
@@ -86,11 +86,11 @@ public class MsgContext {
         this.wEnv=we;
     }
     
-    public final JkHandler getSource() {
+    public final JkChannel getSource() {
         return source;
     }
     
-    public final void setSource(JkHandler ch) {
+    public final void setSource(JkChannel ch) {
         this.source=ch;
     }
 

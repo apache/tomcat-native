@@ -21,13 +21,14 @@ import java.io.IOException;
 import org.apache.jk.core.JkHandler;
 import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
+import org.apache.jk.core.JkChannel;
 
-
+import org.apache.coyote.Request;
 /** Pass messages using jni 
  *
  * @author Costin Manolache
  */
-public class ChannelJni extends JniHandler {
+public class ChannelJni extends JniHandler implements JkChannel {
     int receivedNote=1;
 
     public ChannelJni() {
@@ -92,6 +93,7 @@ public class ChannelJni extends JniHandler {
     public int send( Msg msg, MsgContext ep )
         throws IOException
     {
+        ep.setNote( receivedNote, null );
         if( log.isDebugEnabled() ) log.debug("ChannelJni.send: "  +  msg );
 
         int rc=super.nativeDispatch( msg, ep, JK_HANDLE_JNI_DISPATCH, 0);
@@ -104,6 +106,22 @@ public class ChannelJni extends JniHandler {
         return rc;
     }
 
+    public int flush(Msg msg, MsgContext ep) throws IOException {
+        ep.setNote( receivedNote, null );
+        return OK;
+    }
+
+    public boolean isSameAddress(MsgContext ep) {
+        return true;
+    }
+
+    public void registerRequest(Request req, MsgContext ep, int count) {
+        // Not supported.
+    }
+
+    public String getChannelName() {
+        return getName();
+    }
     /** Receive a packet from the C side. This is called from the C
      *  code using invocation, but only for the first packet - to avoid
      *  recursivity and thread problems.
@@ -136,11 +154,9 @@ public class ChannelJni extends JniHandler {
         case JkHandler.HANDLE_RECEIVE_PACKET:
             return receive( msg, ep );
         case JkHandler.HANDLE_SEND_PACKET:
-            ep.setNote( receivedNote, null );
             return send( msg, ep );
         case JkHandler.HANDLE_FLUSH:
-            ep.setNote( receivedNote, null );
-            return 0;
+            return flush(msg, ep);
         }
 
         // Reset receivedNote. It'll be visible only after a SEND and before a receive.

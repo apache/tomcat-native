@@ -16,13 +16,21 @@
 
 package org.apache.jk.common;
 
+import java.net.URLEncoder;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import javax.management.ObjectName;
 
+import org.apache.commons.modeler.Registry;
 import org.apache.jk.core.JkHandler;
 import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
+import org.apache.jk.core.JkChannel;
+import org.apache.jk.core.WorkerEnv;
+import org.apache.coyote.Request;
+import org.apache.coyote.RequestGroupInfo;
+import org.apache.coyote.RequestInfo;
 import org.apache.tomcat.util.threads.ThreadPool;
 import org.apache.tomcat.util.threads.ThreadPoolRunnable;
 
@@ -31,14 +39,14 @@ import org.apache.tomcat.util.threads.ThreadPoolRunnable;
  *
  * @author Costin Manolache
  */
-public class ChannelUn extends JniHandler {
+public class ChannelUn extends JniHandler implements JkChannel {
     static final int CH_OPEN=4;
     static final int CH_CLOSE=5;
     static final int CH_READ=6;
     static final int CH_WRITE=7;
 
     String file;
-    ThreadPool tp;
+    ThreadPool tp = ThreadPool.createThreadPool(true);
 
     /* ==================== Tcp socket options ==================== */
 
@@ -129,18 +137,41 @@ public class ChannelUn extends JniHandler {
                 next=wEnv.getHandler( "request" );
         }
 
-        tp=new ThreadPool();
-                
         super.initJkComponent();
-        
-        log.info("JK: listening on unix socket: " + file );
-        
+        JMXRequestNote =wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "requestNote");        
         // Run a thread that will accept connections.
+        if( this.domain != null ) {
+            try {
+                tpOName=new ObjectName(domain + ":type=ThreadPool,name=" + 
+				       getChannelName());
+
+                Registry.getRegistry(null, null)
+		    .registerComponent(tp, tpOName, null);
+
+		rgOName = new ObjectName
+		    (domain+":type=GlobalRequestProcessor,name=" + getChannelName());
+		Registry.getRegistry(null, null)
+		    .registerComponent(global, rgOName, null);
+            } catch (Exception e) {
+                log.error("Can't register threadpool" );
+            }
+        }
         tp.start();
         AprAcceptor acceptAjp=new AprAcceptor(  this );
         tp.runIt( acceptAjp);
+        log.info("JK: listening on unix socket: " + file );
+        
     }
-    
+
+    ObjectName tpOName;
+    ObjectName rgOName;
+    RequestGroupInfo global=new RequestGroupInfo();
+    int count = 0;
+    int JMXRequestNote;
+
+    public void start() throws IOException {
+    }
+
     public void destroy() throws IOException {
         if( apr==null ) return;
         try {
@@ -149,11 +180,36 @@ public class ChannelUn extends JniHandler {
             
             //apr.unSocketClose( unixListenSocket,3);
             super.destroyJkComponent();
-            
+
+            if(tpOName != null) {
+		Registry.getRegistry().unregisterComponent(tpOName);
+	    }
+	    if(rgOName != null) {
+		Registry.getRegistry().unregisterComponent(rgOName);
+	    }
         } catch(Exception e) {
-            e.printStackTrace();
+            log.error("Error in destroy",e);
         }
     }
+
+    public void registerRequest(Request req, MsgContext ep, int count) {
+	if(this.domain != null) {
+	    try {
+
+		RequestInfo rp=req.getRequestProcessor();
+		rp.setGlobalProcessor(global);
+		ObjectName roname = new ObjectName
+		    (getDomain() + ":type=RequestProcessor,worker="+
+		     getChannelName()+",name=JkRequest" +count);
+		ep.setNote(JMXRequestNote, roname);
+                        
+		Registry.getRegistry().registerComponent( rp, roname, null);
+	    } catch( Exception ex ) {
+		log.warn("Error registering request");
+	    }
+	}
+    }
+
 
     /** Open a connection - since we're listening that will block in
         accept
@@ -192,7 +248,15 @@ public class ChannelUn extends JniHandler {
 
 	return msg.getLen();
     }
-    
+
+    public int flush( Msg msg, MsgContext ep) throws IOException {
+	return OK;
+    }
+
+    public boolean isSameAddress( MsgContext ep ) {
+	return false; // Not supporting shutdown on this channel.
+    }
+
     boolean running=true;
     
     /** Accept incoming connections, dispatch to the thread pool
@@ -245,12 +309,12 @@ public class ChannelUn extends JniHandler {
             if( log.isDebugEnabled() )
                 log.debug( "Closing un channel");
             try{
-                MsgAjp endM = new MsgAjp();
-                endM.reset();
-                endM.appendByte((byte)HANDLE_THREAD_END);
-                endM.end();
-                endM.processHeader();
-                next.invoke(endM, ep);
+                Request req = (Request)ep.getRequest();
+                if( req != null ) {
+                    ObjectName roname = (ObjectName)ep.getNote(JMXRequestNote);
+                    Registry.getRegistry().unregisterComponent(roname);
+                    req.getRequestProcessor().setGlobalProcessor(null);
+                }
             } catch( Exception ee) {
                 log.error( "Error, releasing connection",ee);
             }
@@ -269,11 +333,23 @@ public class ChannelUn extends JniHandler {
         case JkHandler.HANDLE_SEND_PACKET:
             return send( msg, ep );
         case JkHandler.HANDLE_FLUSH:
-            return OK;
+            return flush( msg, ep );
         }
 
         // return next.invoke( msg, ep );
         return OK;
+    }
+
+    public String getChannelName() {
+        String encodedAddr = "";
+        String address = file;
+        if (address != null) {
+            encodedAddr = "" + address;
+            if (encodedAddr.startsWith("/"))
+                encodedAddr = encodedAddr.substring(1);
+            encodedAddr = URLEncoder.encode(encodedAddr) ;
+        }
+        return ("jk-" + encodedAddr);
     }
 
     private static org.apache.commons.logging.Log log=

@@ -21,6 +21,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URLEncoder;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -38,6 +39,11 @@ import org.apache.commons.modeler.Registry;
 import org.apache.jk.core.JkHandler;
 import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
+import org.apache.jk.core.JkChannel;
+import org.apache.jk.core.WorkerEnv;
+import org.apache.coyote.Request;
+import org.apache.coyote.RequestGroupInfo;
+import org.apache.coyote.RequestInfo;
 import org.apache.tomcat.util.threads.ThreadPool;
 import org.apache.tomcat.util.threads.ThreadPoolRunnable;
 
@@ -70,7 +76,8 @@ import org.apache.tomcat.util.threads.ThreadPoolRunnable;
  * @jmx:notification-handler name="org.apache.jk.JK_RECEIVE_PACKET
  * @jmx:notification-handler name="org.apache.jk.JK_FLUSH
  */
-public class ChannelSocket extends JkHandler implements NotificationBroadcaster {
+public class ChannelSocket extends JkHandler
+    implements NotificationBroadcaster, JkChannel {
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( ChannelSocket.class );
 
@@ -371,29 +378,39 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
             if( next==null )
                 next=wEnv.getHandler( "request" );
         }
-
+        JMXRequestNote =wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "requestNote");
         running = true;
 
         // Run a thread that will accept connections.
         // XXX Try to find a thread first - not sure how...
         if( this.domain != null ) {
             try {
-                tpOName=new ObjectName(domain + ":type=ThreadPool,name=jk" + port);
+                tpOName=new ObjectName(domain + ":type=ThreadPool,name=" + 
+                                       getChannelName());
 
-                Registry.getRegistry().registerComponent(tp, tpOName, null);
+                Registry.getRegistry(null, null)
+                    .registerComponent(tp, tpOName, null);
+
+                rgOName = new ObjectName
+                    (domain+":type=GlobalRequestProcessor,name=" + getChannelName());
+                Registry.getRegistry(null, null)
+                    .registerComponent(global, rgOName, null);
             } catch (Exception e) {
                 log.error("Can't register threadpool" );
             }
         }
 
-        // XXX Move to start, make sure the caller calls start
         tp.start();
         SocketAcceptor acceptAjp=new SocketAcceptor(  this );
         tp.runIt( acceptAjp);
+
     }
 
     ObjectName tpOName;
-    
+    ObjectName rgOName;
+    RequestGroupInfo global=new RequestGroupInfo();
+    int JMXRequestNote;
+
     public void start() throws IOException{
         if( sSocket==null )
             init();
@@ -401,6 +418,23 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
 
     public void stop() throws IOException {
         destroy();
+    }
+
+    public void registerRequest(Request req, MsgContext ep, int count) {
+        if(this.domain != null) {
+            try {
+                RequestInfo rp=req.getRequestProcessor();
+                rp.setGlobalProcessor(global);
+                ObjectName roname = new ObjectName
+                    (getDomain() + ":type=RequestProcessor,worker="+
+                     getChannelName()+",name=JkRequest" +count);
+                ep.setNote(JMXRequestNote, roname);
+                        
+                Registry.getRegistry().registerComponent( rp, roname, null);
+            } catch( Exception ex ) {
+                log.warn("Error registering request");
+            }
+        }
     }
 
     public void open(MsgContext ep) throws IOException {
@@ -443,6 +477,9 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
             
             if( tpOName != null )  {
                 Registry.getRegistry().unregisterComponent(tpOName);
+            }
+            if( rgOName != null ) {
+                Registry.getRegistry().unregisterComponent(rgOName);
             }
         } catch(Exception e) {
             log.info("Error shutting down the channel " + port + " " +
@@ -651,12 +688,12 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
                 log.error( "Error, closing connection", e);
             }
             try{
-		MsgAjp endM = new MsgAjp();
-                endM.reset();
-                endM.appendByte((byte)HANDLE_THREAD_END);
-		endM.end();
-		endM.processHeader();
-                next.invoke(endM, ep);
+                Request req = (Request)ep.getRequest();
+                if( req != null ) {
+                    ObjectName roname = (ObjectName)ep.getNote(JMXRequestNote);
+                    Registry.getRegistry().unregisterComponent(roname);
+                    req.getRequestProcessor().setGlobalProcessor(null);
+                }
             } catch( Exception ee) {
                 log.error( "Error, releasing connection",ee);
             }
@@ -704,6 +741,21 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
         return isSameAddress( s.getLocalAddress(), s.getInetAddress());
     }
     
+    public String getChannelName() {
+        String encodedAddr = "";
+        String address = getAddress();
+        if (address != null) {
+            encodedAddr = address;
+            if (encodedAddr.startsWith("/"))
+                encodedAddr = encodedAddr.substring(1);
+            if("0.0.0.0".equals(encodedAddr)) {
+                encodedAddr = "";
+            } else {
+                encodedAddr = URLEncoder.encode(encodedAddr) + "-";
+            }
+        }
+        return ("jk-" + encodedAddr + port);
+    }
     
     /**
      * Return <code>true</code> if the specified client and server addresses

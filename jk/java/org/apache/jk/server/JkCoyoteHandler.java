@@ -43,6 +43,7 @@ import org.apache.jk.core.JkHandler;
 import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
 import org.apache.jk.core.WorkerEnv;
+import org.apache.jk.core.JkChannel;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.C2BConverter;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -248,7 +249,7 @@ public class JkCoyoteHandler extends JkHandler implements
             msg.appendBytes( chunk.getBytes(), chunk.getOffset() + off, thisTime );
             off+=thisTime;
             ep.setType( JkHandler.HANDLE_SEND_PACKET );
-            ep.getSource().invoke( msg, ep );
+            ep.getSource().send( msg, ep );
         }
         return 0;
     }
@@ -393,7 +394,7 @@ public class JkCoyoteHandler extends JkHandler implements
             msg.appendBytes( hV );
         }
         ep.setType( JkHandler.HANDLE_SEND_PACKET );
-        ep.getSource().invoke( msg, ep );
+        ep.getSource().send( msg, ep );
     }
     
     // -------------------- Coyote Action implementation --------------------
@@ -419,7 +420,7 @@ public class JkCoyoteHandler extends JkHandler implements
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
                 MsgContext ep=(MsgContext)res.getNote( epNote );
                 ep.setType( JkHandler.HANDLE_FLUSH );
-                ep.getSource().invoke( null, ep );
+                ep.getSource().flush( null, ep );
                 
             } else if( actionCode==ActionCode.ACTION_CLOSE ) {
                 if( log.isDebugEnabled() ) log.debug("CLOSE " );
@@ -442,10 +443,10 @@ public class JkCoyoteHandler extends JkHandler implements
 
                 try {                
                     ep.setType( JkHandler.HANDLE_SEND_PACKET );
-                    ep.getSource().invoke( msg, ep );
+                    ep.getSource().send( msg, ep );
 
                     ep.setType( JkHandler.HANDLE_FLUSH );
-                    ep.getSource().invoke( msg, ep );
+                    ep.getSource().flush( msg, ep );
                 } catch(IOException iex) {
                     log.debug("Connection error ending request.",iex);
                 }
