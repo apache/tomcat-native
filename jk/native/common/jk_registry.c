@@ -116,11 +116,11 @@ int JK_METHOD jk_registry_init(jk_env_t *env) {
     printf("jk_registry_init: Assertion failed, env==NULL\n" );
     return;
   }
-  env->registerFactory( env, "worker", "ajp13", &ajp13_worker_factory );
-  env->registerFactory( env, "worker", "ajp14", &ajp14_worker_factory );
-  env->registerFactory( env, "worker", "lb",    &lb_worker_factory );
+  env->registerFactory( env, "worker", "ajp13", (void *)&ajp13_worker_factory );
+  env->registerFactory( env, "worker", "ajp14", (void *)&ajp14_worker_factory );
+  env->registerFactory( env, "worker", "lb",    (void *)&lb_worker_factory );
 #ifdef HAVE_JNI
-  env->registerFactory( env, "worker", "jni",   &jni_worker_factory );
+  env->registerFactory( env, "worker", "jni",   (void *)&jni_worker_factory );
 #endif
 
   /*

@@ -88,8 +88,8 @@ jk_env_t JK_METHOD *jk_env_getEnv( char *id ) {
 static jk_env_initEnv( jk_env_t *env, char *id ) {
   /*   env->logger=NULL; */
   /*   map_alloc( & env->properties ); */
-  env->getFactory= jk_env_getFactory; 
-  env->registerFactory= jk_env_registerFactory; 
+  env->getFactory= (void *)jk_env_getFactory; 
+  env->registerFactory= (void *)jk_env_registerFactory; 
   map_alloc( & env->_registry);
   jk_registry_init(env);
 
