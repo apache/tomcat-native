@@ -7,9 +7,13 @@
   <!--
     Let's start by declaring HOW this stylesheet must behave.
   -->
-  <xsl:output method="html" indent="no"
+  <xsl:output method="html" indent="yes"
     doctype-public="-//W3C//DTD HTML 4.01//EN"
     doctype-system="http://www.w3.org/TR/html4/strict.dtd"/>
+
+  <!-- Define default values for parameters -->
+  <xsl:param name="images" select="'../images'"/>
+  <xsl:param name="homedoc" select="'../'"/>
 
   <!-- Defined variables (non-overrideable) -->
   <xsl:variable name="body-bg"       select="'@body-bg@'"/>
@@ -56,7 +60,7 @@
           <meta name="email" content="{$email}"/>
         </xsl:for-each>
         <link rel="stylesheet" type="text/css" href="style.css"/>
-        <link rel="shortcut icon" href="images/tomcat.ico"/>
+        <link rel="shortcut icon" href="{$images}/tomcat.ico"/>
       </head>
 
       <!--
@@ -72,10 +76,10 @@
           -->
           <tr height="1">
             <td width="150" bgcolor="{$body-bg}" height="1" class="nil">
-              <img src="images/pixel.gif" border="0" width="150" height="1" vspace="0" hspace="0"/>
+              <img src="{$images}/pixel.gif" border="0" width="150" height="1" vspace="0" hspace="0"/>
             </td>
             <td width="*" bgcolor="{$body-bg}" height="1" class="nil">
-              <img src="images/pixel.gif" border="0" width="370" height="1" vspace="0" hspace="0"/>
+              <img src="{$images}/pixel.gif" border="0" width="370" height="1" vspace="0" hspace="0"/>
             </td>
           </tr>
 
@@ -87,10 +91,10 @@
               <table border="0" cellspacing="0" cellpadding="0" width="100%">
                 <tr>
                   <td align="left">
-                    <img src="images/jakarta.gif" border="0" width="270" height="75" align="left"/>
+                    <img src="{$images}/jakarta.gif" border="0" width="270" height="75" align="left"/>
                   </td>
                   <td align="right">
-                    <img src="images/mod_jk.jpeg" border="0" width="400" height="75" align="right"/>
+                    <img src="{$images}/mod_jk.jpeg" border="0" width="400" height="75" align="right"/>
                   </td>
                 </tr>
               </table>
@@ -131,10 +135,10 @@
                 <!-- Empty row, thanks IE -->
                 <tr height="1">
                   <td width="10" bgcolor="#cccccc" height="1" class="nil">
-                    <img src="images/pixel.gif" border="0" width="10" height="1" vspace="0" hspace="0"/>
+                    <img src="{$images}/pixel.gif" border="0" width="10" height="1" vspace="0" hspace="0"/>
                   </td>
                   <td width="140" bgcolor="#cccccc" height="1" class="nil">
-                    <img src="images/pixel.gif" border="0" width="140" height="1" vspace="0" hspace="0"/>
+                    <img src="{$images}/pixel.gif" border="0" width="140" height="1" vspace="0" hspace="0"/>
                   </td>
                 </tr>
 
@@ -231,7 +235,7 @@
       <table border="0" cellspacing="0" cellpadding="0" width="100%">
         <tr>
           <td bgcolor="{$banner-bg}" class="section" valign="top" align="left">
-            <img src="images/corner.gif" valign="top" align="left" hspace="0" vspace="0" border="0"/>
+            <img src="{$images}/corner.gif" valign="top" align="left" hspace="0" vspace="0" border="0"/>
               <xsl:if test="string-length(description/text()) = 0">
                 <xsl:value-of select="@name"/>
               </xsl:if>
@@ -249,7 +253,7 @@
       <table border="0" cellspacing="0" cellpadding="0" width="100%">
         <tr>
           <td bgcolor="{$sub-banner-bg}" class="subsection" valign="top" align="left">
-            <img src="images/corner.gif" valign="top" align="left" hspace="0" vspace="0" border="0"/>
+            <img src="{$images}/corner.gif" valign="top" align="left" hspace="0" vspace="0" border="0"/>
               <xsl:if test="string-length(description/text()) = 0">
                 <xsl:value-of select="@name"/>
               </xsl:if>
@@ -483,6 +487,7 @@
           anchor we gathered before. We call this "target".
         -->
         <xsl:variable name="target">
+          <xsl:value-of select="$homedoc"/>
           <xsl:if test="string-length($file) > 0">
             <xsl:choose>
               <xsl:when test="substring($file,string-length($file)-3) = '.xml'">

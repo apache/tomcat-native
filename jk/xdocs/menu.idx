@@ -2,7 +2,7 @@
 
 <index>
   <document href="index.xml"/>
-  <document href="AJPv13.xml"/>
-  <document href="configtc.xml"/>
-  <document href="configweb.xml"/>
+  <document href="common/AJPv13.xml"/>
+  <document href="jk2/configtc.xml"/>
+  <document href="jk2/configweb.xml"/>
 </index>

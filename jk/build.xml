@@ -394,7 +394,17 @@
         basedir="${source.docs}"
         destdir="${build.docs}"
         style="${source.docs}/style.xsl"
-        includes="**.xml"/>
+        includes="*/**.xml"
+        excludes="index.xml">
+    </style>
+    <style
+        basedir="${source.docs}"
+        destdir="${build.docs}"
+        style="${source.docs}/style.xsl"
+        includes="index.xml">
+        <param name="images" expression="images"/>
+        <param name="homedoc" expression=""/>
+    </style>
  
     <!-- Copy all relevant (non processed) files from the sources -->
     <copy
