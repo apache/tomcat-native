@@ -515,12 +515,19 @@ public class Http11Processor implements Processor, ActionHook {
                     Object sslO = sslSupport.getCipherSuite();
                     if (sslO != null)
                         request.setAttribute
-                            ("javax.servlet.request.cipher_suite", sslO);
+                            (SSLSupport.CIPHER_SUITE_KEY, sslO);
                     sslO = sslSupport.getPeerCertificateChain();
                     if (sslO != null)
                         request.setAttribute
-                            ("javax.servlet.request.X509Certificate", sslO);
-                    //XXX We still need KeySize for 4.x
+                            (SSLSupport.CERTIFICATE_KEY, sslO);
+		    sslO = sslSupport.getKeySize();
+		    if (sslO != null)
+			request.setAttribute
+			    (SSLSupport.KEY_SIZE_KEY, sslO);
+		    sslO = sslSupport.getSessionId();
+		    if (sslO != null)
+			request.setAttribute
+			    (SSLSupport.SESSION_ID_KEY, sslO);
                 }
             } catch (Exception e) {
                 //log("Exception getting SSL attribute " + key,e,Log.WARNING);
