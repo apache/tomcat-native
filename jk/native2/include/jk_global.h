@@ -158,8 +158,14 @@ extern "C" {
 
 /* cut&paste from apr_errno.h */
 typedef int apr_status_t;
+#ifndef APR_SUCCESS
 #define APR_SUCCESS (0)
+#endif
+
+#ifndef APR_OS_START_USEERR
 #define APR_OS_START_USEERR 21000
+#endif
+
 
 typedef  unsigned char   apr_byte_t;
 typedef  short           apr_int16_t;

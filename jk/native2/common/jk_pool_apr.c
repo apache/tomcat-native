@@ -61,13 +61,15 @@
  * @author Costin Manolache
  */
 
-#include "jk_pool.h"
-#include "jk_env.h"
 #include "apr_pools.h"
 #include "apr_strings.h"
 #include "apr_network_io.h"
 #include "apr_errno.h"
 #include "apr_general.h"
+
+#include "jk_global.h"
+#include "jk_pool.h"
+#include "jk_env.h"
 
 /* 
    JK_APR_POOL_DEBUG will enable verbose messages on allocation.

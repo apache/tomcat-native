@@ -68,11 +68,9 @@
 #include "apr_network_io.h"
 #include "apr_errno.h"
 #include "apr_general.h"
-
-#include <stdio.h>
-#include <string.h>
-#include <signal.h>
-#include <sys/un.h>
+#include "apr_strings.h"
+#include "apr_portable.h"
+#include "apr_lib.h"
 
 #include "org_apache_jk_apr_AprImpl.h"
 
@@ -80,9 +78,6 @@
 #include "jk_map.h"
 #include "jk_pool.h"
 
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_lib.h"
 
 #if APR_HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -179,14 +174,14 @@ Java_org_apache_jk_apr_AprImpl_poolClear(JNIEnv *jniEnv, jobject _jthis,
 }
 
 /* -------------------- Signals -------------------- */
-
+#ifdef HAVE_SIGNALS
 static struct sigaction jkAction;
 
 static void jk2_SigAction(int sig) {
     fprintf(stderr, "Signal %d\n", sig );
     signal( sig, jk2_SigAction );
 }
-
+#endif
 
 /* XXX We need to: - preserve the old signal ( or get them ) - either
      implement "waitSignal" or use invocation in jk2_SigAction
@@ -198,9 +193,11 @@ JNIEXPORT jint JNICALL
 Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint bitMask,
                                       jobject func)
 {
+#ifdef HAVE_SIGNALS
     memset(& jkAction, 0, sizeof(jkAction));
     jkAction.sa_handler=jk2_SigAction;
     sigaction((int)bitMask, &jkAction, (void *) NULL);
+#endif
     return 0;
 }
 
@@ -312,7 +309,8 @@ Java_org_apache_jk_apr_AprImpl_unSocketListen(JNIEnv *jniEnv, jobject _jthis,
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     const char *host;
     int status;
-    int unixSocket;
+    int unixSocket=-1L;
+#ifdef HAVE_UNIXSOCKETS
     struct sockaddr_un unixAddr;
     mode_t omask;
 
@@ -349,6 +347,7 @@ Java_org_apache_jk_apr_AprImpl_unSocketListen(JNIEnv *jniEnv, jobject _jthis,
     
     fprintf(stderr, "Listening on %d \n",
             unixSocket);
+#endif
     return (jlong)unixSocket;
 }
 
@@ -359,7 +358,8 @@ Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis,
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     const char *host;
     int status;
-    int unixSocket;
+    int unixSocket=-1L;
+#ifdef HAVE_UNIXSOCKETS
     struct sockaddr_un unixAddr;
 
     memset(& unixAddr, 0, sizeof(struct sockaddr_un));
@@ -388,13 +388,15 @@ Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis,
         return -1;
     }
 
-    return (jlong)(long)(void *)unixSocket;
+#endif
+    return (jlong)unixSocket;
 }
 
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis, 
                                       jlong poolJ, jlong unSocketJ)
 {
+#ifdef HAVE_UNIXSOCKETS
     int listenUnSocket=(int)unSocketJ;
     struct sockaddr_un client;
     int clientlen;
@@ -430,6 +432,7 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
         fprintf(stderr, "unAccept: accepted %d\n", connfd);
         return (jlong)connfd;
     }
+#endif
     return 0L;
 }
 
@@ -438,6 +441,7 @@ Java_org_apache_jk_apr_AprImpl_unRead(JNIEnv *jniEnv, jobject _jthis,
                                       jlong poolJ, jlong unSocketJ,
                                       jbyteArray jbuf, jint from, jint cnt)
 {
+#ifdef HAVE_UNIXSOCKETS
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     jbyte *nbuf;
     int rd;
@@ -473,6 +477,8 @@ Java_org_apache_jk_apr_AprImpl_unRead(JNIEnv *jniEnv, jobject _jthis,
         (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
         return (jint)rd;
     }
+#endif
+    return (jint)0;
 }
 
 JNIEXPORT jint JNICALL 
@@ -482,7 +488,8 @@ Java_org_apache_jk_apr_AprImpl_unWrite(JNIEnv *jniEnv, jobject _jthis,
     apr_status_t status;
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     jbyte *nbuf;
-    int rd;
+    int rd=0;
+#ifdef HAVE_UNIXSOCKETS
     jboolean iscopy;
 
     nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscopy);
@@ -494,6 +501,7 @@ Java_org_apache_jk_apr_AprImpl_unWrite(JNIEnv *jniEnv, jobject _jthis,
     write( (int) unSocketJ, nbuf + from, cnt );
     
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
+#endif
     return (jint)rd;
 }
 
@@ -508,6 +516,7 @@ Java_org_apache_jk_apr_AprImpl_unSetSoLingerNative (
     jint        l_onoff,
     jint        l_linger)
 {
+#ifdef HAVE_UNIXSOCKETS
     struct linger {
         int   l_onoff;    /* linger active */
         int   l_linger;   /* how many seconds to linger for */
@@ -520,6 +529,7 @@ Java_org_apache_jk_apr_AprImpl_unSetSoLingerNative (
     if( rc < 0) {
         return -errno;
     }
+#endif
     return 0;
 }
 
