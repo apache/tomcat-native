@@ -521,8 +521,11 @@ static int proxy_handler(request_rec *r)
 
     url = r->filename + 6;
     p = strchr(url, ':');
-    if (p == NULL)
+    if (p == NULL) {
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+                      "proxy_handler no URL in %s", r->filename);
         return HTTP_BAD_REQUEST;
+    }
 
     /* If the host doesn't have a domain name, add one and redirect. */
     if (conf->domain != NULL) {
