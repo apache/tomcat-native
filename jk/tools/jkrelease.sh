@@ -2,9 +2,9 @@
 
 # You can change JKTAG and JKVER to desired CVS tag.
 JKTAG="HEAD"
-JKVER="-current-src"
+JKEXT="1.2.9"
+JKVER="-${JKEXT}-src"
 export CVSROOT=:pserver:anoncvs@cvs.apache.org:/home/cvspublic
-cvs login
 cvs export -r ${JKTAG} -d jakarta-tomcat-connectors${JKVER} jakarta-tomcat-connectors
 # Remove all files that are not part of jk release
 rm -rf jakarta-tomcat-connectors${JKVER}/ajp
@@ -29,6 +29,7 @@ cd ../native
 cd ../../../
 tar cvf jakarta-tomcat-connectors${JKVER}.tar jakarta-tomcat-connectors${JKVER}
 gzip jakarta-tomcat-connectors${JKVER}.tar
-
+zip -9 -r jakarta-tomcat-connectors${JKVER}.zip jakarta-tomcat-connectors${JKVER}
 # Create detatched signature
 gpg -ba jakarta-tomcat-connectors${JKVER}.tar.gz
+gpg -ba jakarta-tomcat-connectors${JKVER}.zip
