@@ -83,7 +83,6 @@ static int handle_discovery(ajp_endpoint_t  *ae,
     jk_login_service_t  *jl = ae->worker->login;
     jk_context_item_t   *ci;
     jk_context_t        *c;  
-    char                *old;
     char                *buf;
 
 #ifndef TESTME
