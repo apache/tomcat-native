@@ -554,11 +554,7 @@ static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
 {
     int err=JK_OK;
     jk_bean_t *jkb;
-    int csOk;
     
-    if( wEnv->cs != NULL ) 
-        wEnv->cs->lock( env, wEnv->cs );
-
     ch->mbean->id=wEnv->channel_map->size( env, wEnv->channel_map );
     wEnv->channel_map->add(env, wEnv->channel_map, ch->mbean->name, ch);
 
@@ -568,37 +564,24 @@ static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
     if( jkb == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerEnv.addChannel(): Can't find ajp13 worker\n" );
-        if( wEnv->cs != NULL ) 
-            wEnv->cs->unLock( env, wEnv->cs );
         return JK_ERR;
     }
     ch->worker=jkb->object;
     ch->worker->channelName=ch->mbean->name;
     ch->worker->channel=ch;
             
-    /* XXX Set additional parameters - use defaults otherwise */
-    if( wEnv->cs != NULL ) 
-        wEnv->cs->unLock( env, wEnv->cs );
-
     return JK_OK;
 }
 
 static int jk2_workerEnv_addEndpoint(jk_env_t *env, jk_workerEnv_t *wEnv, jk_endpoint_t *ep)
 {
-    int csOk;
+    int pos=wEnv->endpointMap->size( env, wEnv->endpointMap );
     
-    if( wEnv->cs != NULL ) 
-        wEnv->cs->lock( env, wEnv->cs );
-    {
-        int pos=wEnv->endpointMap->size( env, wEnv->endpointMap );
-        
-        wEnv->endpointMap->add( env, wEnv->endpointMap, ep->mbean->localName, ep );
-        ep->mbean->id=pos;
+    wEnv->endpointMap->add( env, wEnv->endpointMap, ep->mbean->localName, ep );
+    ep->mbean->id=pos;
+    
+    ep->mbean->init( env, ep->mbean );
 
-        ep->mbean->init( env, ep->mbean );
-    }
-    if( wEnv->cs != NULL ) 
-        wEnv->cs->unLock( env, wEnv->cs );
     return JK_OK;
 }
 
@@ -610,9 +593,6 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
     jk_worker_t *oldW = NULL;
     int csOk;
     
-    if( wEnv->cs != NULL ) 
-        wEnv->cs->lock( env, wEnv->cs ); 
-
     w->workerEnv=wEnv;
 
     w->mbean->id=wEnv->worker_map->size( env, wEnv->worker_map );
@@ -621,8 +601,6 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
 
     err=w->rPoolCache->init( env, w->rPoolCache,
                              1024 ); /* XXX make it unbound */
-
-    fprintf( stderr, "XXXWE.addWorker 2 %p %p\n", w, w->rPoolCache );
 
     wEnv->worker_map->put(env, wEnv->worker_map, w->mbean->name, w, (void *)&oldW);
             
@@ -634,8 +612,6 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
             oldW->mbean->destroy(env, oldW->mbean);
     }
     
-    if( wEnv->cs != NULL ) 
-        wEnv->cs->unLock( env, wEnv->cs );
     return JK_OK;
 }
 

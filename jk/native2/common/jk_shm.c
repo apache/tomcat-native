@@ -127,13 +127,14 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     if( shm->image!=NULL ) {
         shm->head = (jk_shm_head_t *)shm->image;
 
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.create(): GLOBAL_SHM  %p\n", shm->image );
-        fprintf( stderr, "GLOBAL SHM: %p\n", shm->image );
+        if( shm->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                          "shm.create(): GLOBAL_SHM  %p\n", shm->image );
         return JK_OK;
     } else {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "shm.create(): NO GLOBAL_SHM  %p\n", shm->image );
+        if( shm->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                          "shm.create(): NO GLOBAL_SHM  %p\n", shm->image );
     }
     
 

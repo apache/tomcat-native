@@ -378,6 +378,7 @@
 	   info="Building for NetWare platform" />
       <def name="HAS_APR"
 	   info="JNI is now based on APR" />
+      <def name="_REENTRANT" />
       <def name="HAVE_JNI" />
            
       <import fileName="${novellndk.home}/imports/clib.imp" if="netware" />

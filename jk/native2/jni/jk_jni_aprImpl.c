@@ -525,7 +525,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     int cnt=0;
     jint rc = 0;
     unsigned acc = 0;
-    char *oldBuf;
+    unsigned char *oldBuf;
 
     if( compCtx==NULL || data==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,"jni.jkInvoke() NPE\n");
@@ -555,9 +555,9 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
         }
         
         oldBuf=ep->reply->buf;
-        ep->reply->buf = nbuf;
+        ep->reply->buf = (unsigned char *)nbuf;
     } else if ( arrayAccessMethod == JK_GET_REGION ) {
-        (*jniEnv)->GetByteArrayRegion( jniEnv, data, off, len, ep->reply->buf );
+        (*jniEnv)->GetByteArrayRegion( jniEnv, data, off, len, (jbyte *)ep->reply->buf );
     }
         
     
@@ -605,7 +605,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
             /*   env->l->jkLog(env, env->l, JK_LOG_INFO, */
             /*                "jkInvoke() release %d %d %p\n", */
             /*                ep->reply->pos, ep->reply->len , ep->reply->buf ); */
-            (*jniEnv)->SetByteArrayRegion( jniEnv, data, 0, ep->reply->len + 4 , ep->reply->buf );
+            (*jniEnv)->SetByteArrayRegion( jniEnv, data, 0, ep->reply->len + 4 , (jbyte *)ep->reply->buf );
             rc=JK_OK;
         }
     } 
