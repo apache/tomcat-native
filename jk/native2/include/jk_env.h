@@ -222,12 +222,23 @@ struct jk_env {
      *  XXX Not implemented/not used
      */
     void (JK_METHOD *jkClearException)( jk_env_t *env );
+
+    /** Create an object using the name. Use the : separated prefix as
+     *  type. XXX This should probably replace createInstance.
+     *
+     *  @param parentPool  The pool of the parent. The object is created in its own pool,
+     *                     but if the parent is removed all childs will be removed as well. Use a long
+     *                     lived pool ( env->globalPool, workerEnv->pool ) if you don't want this.
+     *  @param objName. It must follow the documented convention, with the type as prefix, then ':'
+     */
+    struct jk_bean *(*createBean)( struct jk_env *env, struct jk_pool *parentPool, char *objName );
+
     
     /** Create an object instance. It'll first get the factory, then
         call it. This is a very frequent operation.
     */
     void *
-    (JK_METHOD *createInstance)( jk_env_t *env, struct jk_pool *pool,
+    (JK_METHOD *createInstance)( jk_env_t *env, struct jk_pool *parentPool,
                                  const char *type, const char *name );
 
     void *
