@@ -123,7 +123,9 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
     ep->stats->totalTime=0;
 #endif
 
-	return JK_OK;
+    bean->state=JK_STATE_INIT;
+
+    return JK_OK;
 }
 
 static char *getAttInfo[]={ "id", NULL };
