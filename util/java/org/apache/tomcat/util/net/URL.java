@@ -700,7 +700,9 @@ public final class URL implements Serializable {
                     userInfo = authority.substring(0,at);
                 }
                 int ipv6 = authority.indexOf('[',at+1);
+                int hStart = at+1;
                 if( ipv6 >= 0 ) {
+                    hStart = ipv6;
                     ipv6 = authority.indexOf(']', ipv6);
                     if( ipv6 < 0 ) {
                         throw new MalformedURLException(
@@ -718,9 +720,9 @@ public final class URL implements Serializable {
                     } catch (NumberFormatException e) {
                         throw new MalformedURLException(e.toString());
                     }
-                    host = authority.substring(at+1, colon);
+                    host = authority.substring(hStart, colon);
                 } else {
-                    host = authority.substring(at+1);
+                    host = authority.substring(hStart);
                     port = -1;
                 }
             }
