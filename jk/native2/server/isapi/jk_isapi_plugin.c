@@ -178,8 +178,8 @@ VOID jk2_isapi_starter( LPVOID lpParam )
 
 BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
 {
-    ULONG http_filter_revision = HTTP_FILTER_REVISION;
     DWORD dwThreadId;
+    ULONG http_filter_revision = HTTP_FILTER_REVISION;
 
     jk2_inited_event = CreateEvent(NULL, FALSE, FALSE, NULL);
     jk2_starter_event = CreateEvent(NULL, FALSE, FALSE, NULL);
