@@ -212,7 +212,22 @@ public class CoyoteRequestFacade
         }           
     }    
     
-    
+    private final class GetSessionPrivilegedAction implements PrivilegedAction{
+        private boolean create;
+        
+        public GetSessionPrivilegedAction(boolean create){
+            this.create = create;
+        }
+                
+        public Object run() {  
+            HttpSession session =
+                request.getSession(create);
+            if (session == null)
+                return null;
+            else  
+                return (new StandardSessionFacade(session));
+        }           
+    }      
     // ----------------------------------------------------------- Constructors
 
 
@@ -536,14 +551,19 @@ public class CoyoteRequestFacade
 
 
     public HttpSession getSession(boolean create) {
-        HttpSession session =
-            request.getSession(create);
-        if (session == null)
-            return null;
-        else
-            return new StandardSessionFacade(session);
-    }
 
+        if (System.getSecurityManager() != null){
+            return (HttpSession)AccessController.
+                doPrivileged(new GetSessionPrivilegedAction(create));
+        } else {
+            HttpSession session =
+                request.getSession(create);
+            if (session == null)
+                return null;
+            else 
+                return new StandardSessionFacade(session);
+        }
+    }
 
     public HttpSession getSession() {
         return getSession(true);
