@@ -248,6 +248,23 @@ static void detach_from_jvm(jni_worker_t *p,
                             jk_logger_t *l);
 
 
+/*
+   Duplicate string and convert it to ASCII on EBDIC based system
+   Needed for at least AS/400, what about BS2000 ?
+*/
+static void *strdup_ascii(jk_pool_t *p, 
+                          const char *s)
+{
+	char * rc;	
+	rc = jk_pool_strdup(p, s);
+
+#ifdef AS400
+	jk_xlate_to_ascii(rc, strlen(rc));
+#endif
+
+    return rc;
+}
+
 #if defined LINUX && defined APACHE2_SIGHACK
 static void linux_signal_hack() 
 {
@@ -521,14 +538,16 @@ static int JK_METHOD init(jk_worker_t *pThis,
         jstring stderr_name = NULL;
         jint rc = 0;
 
+		/* AS400 need EBCDIC to ASCII conversion for JNI */
+		
         if(p->tomcat_cmd_line) {
-            cmd_line = (*env)->NewStringUTF(env, p->tomcat_cmd_line);
+            cmd_line = (*env)->NewStringUTF(env, strdup_ascii(&p->p, p->tomcat_cmd_line));
         }
         if(p->stdout_name) {
-            stdout_name = (*env)->NewStringUTF(env, p->stdout_name);
+            stdout_name = (*env)->NewStringUTF(env, strdup_ascii(&p->p, p->stdout_name));
         }
         if(p->stdout_name) {
-            stderr_name = (*env)->NewStringUTF(env, p->stderr_name);
+            stderr_name = (*env)->NewStringUTF(env, strdup_ascii(&p->p, p->stderr_name));
         }
 
 	    jk_log(l, JK_LOG_DEBUG, "In init, calling Tomcat to intialize itself...\n");
@@ -844,7 +863,7 @@ static int open_jvm1(jni_worker_t *p,
         char *tmp = jk_pool_alloc(&p->p, len);
         if(tmp) {
             sprintf(tmp, "%s%c%s", 
-                    p->tomcat_classpath, 
+                    strdup_ascii(&p->p, p->tomcat_classpath), 
                     PATH_SEPERATOR,
                     vm_args.classpath);
             p->tomcat_classpath = tmp;
@@ -865,7 +884,7 @@ static int open_jvm1(jni_worker_t *p,
     }
 
     if(p->sysprops) {
-        vm_args.properties = p->sysprops;
+        vm_args.properties = strdup_ascii(&p->p, p->sysprops);
     }
 
     jk_log(l, JK_LOG_DEBUG, "In open_jvm1, about to create JVM...\n");
@@ -965,25 +984,28 @@ static int open_jvm2(jni_worker_t *p,
     vm_args.version = JNI_VERSION_1_2;
     vm_args.options = options;
 
+/* AS/400 need EBCDIC to ASCII conversion to parameters passed to JNI */
+/* No conversion for ASCII based systems (what about BS2000 ?) */
+
     if(p->tomcat_classpath) {
     	jk_log(l, JK_LOG_DEBUG, "In open_jvm2, setting classpath to %s\n", p->tomcat_classpath);
 	    tmp = build_opt_str(&p->p, "-Djava.class.path=", p->tomcat_classpath, l);
 	    null_check(tmp);
-        options[optn++].optionString = tmp;
+        options[optn++].optionString = strdup_ascii(p->&p, tmp);
     }
 
     if(p->tomcat_mx) {
 	    jk_log(l, JK_LOG_DEBUG, "In open_jvm2, setting max heap to %d\n", p->tomcat_mx);
     	tmp = build_opt_int(&p->p, "-Xmx", p->tomcat_mx, l);
 	    null_check(tmp);
-        options[optn++].optionString = tmp;
+        options[optn++].optionString = strdup_ascii(p->&p, tmp);
     }
 
     if(p->tomcat_ms) {
     	jk_log(l, JK_LOG_DEBUG, "In open_jvm2, setting start heap to %d\n", p->tomcat_ms);
         tmp = build_opt_int(&p->p, "-Xms", p->tomcat_ms, l);
 	    null_check(tmp);
-        options[optn++].optionString = tmp;
+        options[optn++].optionString = strdup_ascii(p->&p, tmp);
     }
 
     if(p->sysprops) {
@@ -992,7 +1014,7 @@ static int open_jvm2(jni_worker_t *p,
 	        jk_log(l, JK_LOG_DEBUG, "In open_jvm2, setting %s\n", p->sysprops[i]);
 	        tmp = build_opt_str(&p->p, "-D", p->sysprops[i], l);
 	        null_check(tmp);
-	        options[optn++].optionString = tmp;
+	        options[optn++].optionString = strdup_ascii(p->&p, tmp);
 	        i++;
 	    }
     }
@@ -1003,7 +1025,7 @@ static int open_jvm2(jni_worker_t *p,
 	    while(p->java2opts[i]) {
 	        jk_log(l, JK_LOG_DEBUG, "In open_jvm2, using option: %s\n", p->java2opts[i]);
 	        /* Pass it "as is" */
-	        options[optn++].optionString = p->java2opts[i++];
+	        options[optn++].optionString = strdup_ascii(p->&p, p->java2opts[i++]);
 	    }
     }
 
@@ -1076,13 +1098,9 @@ static int get_bridge_object(jni_worker_t *p,
 	}
 	
 /* OS400 need conversion from EBCDIC to ASCII before passing to JNI */
+/* for others, strdup_ascii is just jk_pool_strdup */
 
-#ifdef AS400
-	char *ctype = jk_pool_strdup(&p->p, btype);
-	jk_xlate_to_ascii(ctype, strlen(ctype));
-#else
-	ctype = btype;
-#endif
+	char *ctype = strdup_ascii(&p->p, btype);
 
     p->jk_java_bridge_class = (*env)->FindClass(env, ctype);
 
