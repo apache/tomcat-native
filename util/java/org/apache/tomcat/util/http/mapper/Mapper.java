@@ -181,14 +181,27 @@ public final class Mapper {
      * @param name Virtual host name
      * @param host Host object
      */
-    public synchronized void addHost(String name, Object host) {
+    public synchronized void addHost(String name, String[] aliases, 
+				     Object host) {
         Host[] newHosts = new Host[hosts.length + 1];
         Host newHost = new Host();
+	ContextList contextList = new ContextList();
         newHost.name = name;
+	newHost.contextList = contextList;
         newHost.object = host;
         if (insertMap(hosts, newHosts, newHost)) {
             hosts = newHosts;
         }
+	for (int i = 0; i < aliases.length; i++) {
+	    newHosts = new Host[hosts.length + 1];
+	    newHost = new Host();
+	    newHost.name = aliases[i];
+	    newHost.contextList = contextList;
+	    newHost.object = host;
+	    if (insertMap(hosts, newHosts, newHost)) {
+		hosts = newHosts;
+	    }
+	}
     }
 
 
@@ -197,17 +210,23 @@ public final class Mapper {
      * 
      * @param name Virtual host name
      */
-    public synchronized void removeHost(String name) {
+    public synchronized void removeHost(String name, String[] aliases) {
         Host[] newHosts = new Host[hosts.length - 1];
         if (removeMap(hosts, newHosts, name)) {
             hosts = newHosts;
         }
+	for (int i = 0; i < aliases.length; i++) {
+	    newHosts = new Host[hosts.length - 1];
+	    if (removeMap(hosts, newHosts, aliases[i])) {
+		hosts = newHosts;
+	    }
+	}
     }
 
     public String[] getHosts() {
-        String hostN[]=new String[ hosts.length];
-        for( int i=0; i<hosts.length; i++ ) {
-            hostN[i]=hosts[i].name;
+        String hostN[] = new String[hosts.length];
+        for( int i = 0; i < hosts.length; i++ ) {
+            hostN[i] = hosts[i].name;
         }
         return hostN;
     }
@@ -243,7 +262,7 @@ public final class Mapper {
         Host[] hosts = this.hosts;
         int pos = find(hosts, hostName);
         if( pos <0 ) {
-            addHost(hostName, "");
+            addHost(hostName, new String[0], "");
             hosts = this.hosts;
             pos = find(hosts, hostName);
         }
@@ -252,7 +271,7 @@ public final class Mapper {
         }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
-            Context[] contexts = host.contexts;
+            Context[] contexts = host.contextList.contexts;
             synchronized (host) {
                 Context[] newContexts = new Context[contexts.length + 1];
                 Context newContext = new Context();
@@ -261,7 +280,7 @@ public final class Mapper {
                 newContext.welcomeResources = welcomeResources;
                 newContext.resources = resources;
                 if (insertMap(contexts, newContexts, newContext)) {
-                    host.contexts = newContexts;
+                    host.contextList.contexts = newContexts;
                 }
             }
         }
@@ -283,14 +302,14 @@ public final class Mapper {
         }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
-            Context[] contexts = host.contexts;
+            Context[] contexts = host.contextList.contexts;
             if( contexts.length == 0 ){
                 return;
             }
             synchronized (host) {
                 Context[] newContexts = new Context[contexts.length - 1];
                 if (removeMap(contexts, newContexts, path)) {
-                    host.contexts = newContexts;
+                    host.contextList.contexts = newContexts;
                 }
             }
         }
@@ -305,8 +324,8 @@ public final class Mapper {
     public String[] getContextNames() {
         List list=new ArrayList();
         for( int i=0; i<hosts.length; i++ ) {
-            for( int j=0; j<hosts[i].contexts.length; j++ ) {
-                String cname=hosts[i].contexts[j].name;
+            for( int j=0; j<hosts[i].contextList.contexts.length; j++ ) {
+                String cname=hosts[i].contextList.contexts[j].name;
                 list.add("//" + hosts[i].name +
                         (cname.startsWith("/") ? cname : "/"));
             }
@@ -333,7 +352,7 @@ public final class Mapper {
         }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
-            Context[] contexts = host.contexts;
+            Context[] contexts = host.contextList.contexts;
             int pos2 = find(contexts, contextPath);
             if( pos2<0 ) {
                 logger.error("Can't find context " + contextPath );
@@ -423,7 +442,7 @@ public final class Mapper {
         }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
-            Context[] contexts = host.contexts;
+            Context[] contexts = host.contextList.contexts;
             int pos2 = find(contexts, contextPath);
             if (pos2 < 0) {
                 return;
@@ -487,11 +506,11 @@ public final class Mapper {
         for( int i=0; i<hosts.length; i++ ) {
             if( ! host.equals( hosts[i].name ))
                 continue;
-            for( int j=0; j<hosts[i].contexts.length; j++ ) {
-                if( ! context.equals( hosts[i].contexts[j].name))
+            for( int j=0; j<hosts[i].contextList.contexts.length; j++ ) {
+                if( ! context.equals( hosts[i].contextList.contexts[j].name))
                     continue;
                 // found the context
-                Context ctx=hosts[i].contexts[j];
+                Context ctx=hosts[i].contextList.contexts[j];
                 list.add( ctx.defaultWrapper.path);
                 for( int k=0; k<ctx.exactWrappers.length; k++ ) {
                     list.add( ctx.exactWrappers[k].path);
@@ -571,7 +590,7 @@ public final class Mapper {
             int pos = find(hosts, host);
             if ((pos != -1) && (host.equals(hosts[pos].name))) {
                 mappingData.host = hosts[pos].object;
-                contexts = hosts[pos].contexts;
+                contexts = hosts[pos].contextList.contexts;
             } else {
                 if (defaultHostName == null) {
                     return;
@@ -579,7 +598,7 @@ public final class Mapper {
                 pos = find(hosts, defaultHostName);
                 if ((pos != -1) && (defaultHostName.equals(hosts[pos].name))) {
                     mappingData.host = hosts[pos].object;
-                    contexts = hosts[pos].contexts;
+                    contexts = hosts[pos].contextList.contexts;
                 } else {
                     return;
                 }
@@ -1072,6 +1091,16 @@ public final class Mapper {
     protected final class Host
         extends MapElement {
 
+        public ContextList contextList = null;
+
+    }
+
+
+    // ------------------------------------------------ ContextList Inner Class
+
+
+    protected final class ContextList {
+
         public Context[] contexts = new Context[0];
 
     }
@@ -1114,22 +1143,22 @@ public final class Mapper {
         Mapper mapper = new Mapper();
         System.out.println("Start");
         
-        mapper.addHost("sjbjdvwsbvhrb", "blah1");
-        mapper.addHost("sjbjdvwsbvhr/", "blah1");
-        mapper.addHost("wekhfewuifweuibf", "blah2");
-        mapper.addHost("ylwrehirkuewh", "blah3");
-        mapper.addHost("iohgeoihro", "blah4");
-        mapper.addHost("fwehoihoihwfeo", "blah5");
-        mapper.addHost("owefojiwefoi", "blah6");
-        mapper.addHost("iowejoiejfoiew", "blah7");
-        mapper.addHost("iowejoiejfoiew", "blah17");
-        mapper.addHost("ohewoihfewoih", "blah8");
-        mapper.addHost("fewohfoweoih", "blah9");
-        mapper.addHost("ttthtiuhwoih", "blah10");
-        mapper.addHost("lkwefjwojweffewoih", "blah11");
-        mapper.addHost("zzzuyopjvewpovewjhfewoih", "blah12");
-        mapper.addHost("xxxxgqwiwoih", "blah13");
-        mapper.addHost("qwigqwiwoih", "blah14");
+        mapper.addHost("sjbjdvwsbvhrb", new String[0], "blah1");
+        mapper.addHost("sjbjdvwsbvhr/", new String[0], "blah1");
+        mapper.addHost("wekhfewuifweuibf", new String[0], "blah2");
+        mapper.addHost("ylwrehirkuewh", new String[0], "blah3");
+        mapper.addHost("iohgeoihro", new String[0], "blah4");
+        mapper.addHost("fwehoihoihwfeo", new String[0], "blah5");
+        mapper.addHost("owefojiwefoi", new String[0], "blah6");
+        mapper.addHost("iowejoiejfoiew", new String[0], "blah7");
+        mapper.addHost("iowejoiejfoiew", new String[0], "blah17");
+        mapper.addHost("ohewoihfewoih", new String[0], "blah8");
+        mapper.addHost("fewohfoweoih", new String[0], "blah9");
+        mapper.addHost("ttthtiuhwoih", new String[0], "blah10");
+        mapper.addHost("lkwefjwojweffewoih", new String[0], "blah11");
+        mapper.addHost("zzzuyopjvewpovewjhfewoih", new String[0], "blah12");
+        mapper.addHost("xxxxgqwiwoih", new String[0], "blah13");
+        mapper.addHost("qwigqwiwoih", new String[0], "blah14");
 
         System.out.println("Map:");
         for (int i = 0; i < mapper.hosts.length; i++) {
