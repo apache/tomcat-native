@@ -28,6 +28,7 @@ public class MappingData {
     public Object host = null;
     public Object context = null;
     public Object wrapper = null;
+    public boolean jspWildCard = false;
 
     public MessageBytes contextPath = MessageBytes.newInstance();
     public MessageBytes requestPath = MessageBytes.newInstance();
@@ -45,6 +46,7 @@ public class MappingData {
         wrapperPath.recycle();
         contextPath.recycle();
         redirectPath.recycle();
+        jspWildCard = false;
     }
 
 }

@@ -267,8 +267,14 @@ public final class Mapper {
      * @param path Wrapper mapping
      * @param wrapper Wrapper object
      */
-    public void addWrapper
-        (String hostName, String contextPath, String path, Object wrapper) {
+    public void addWrapper(String hostName, String contextPath, String path,
+                           Object wrapper) {
+        addWrapper(hostName, contextPath, path, wrapper, false);
+    }
+
+
+    public void addWrapper(String hostName, String contextPath, String path,
+                           Object wrapper, boolean jspWildCard) {
         Host[] hosts = this.hosts;
         int pos = find(hosts, hostName);
         if (pos < 0) {
@@ -284,7 +290,7 @@ public final class Mapper {
             }
             Context context = contexts[pos2];
             if (context.name.equals(contextPath)) {
-                addWrapper(context, path, wrapper);
+                addWrapper(context, path, wrapper, jspWildCard);
             }
         }
     }
@@ -294,6 +300,7 @@ public final class Mapper {
      * Add a wrapper to the context associated with this wrapper.
      *
      * @param path Wrapper mapping
+     * @param wrapper The Wrapper object
      */
     public void addWrapper(String path, Object wrapper) {
         addWrapper(context, path, wrapper);
@@ -301,9 +308,26 @@ public final class Mapper {
 
 
     protected void addWrapper(Context context, String path, Object wrapper) {
+        addWrapper(context, path, wrapper, false);
+    }
+
+
+    /**
+     * Adds a wrapper to the given context.
+     *
+     * @param context The context to which to add the wrapper
+     * @param path Wrapper mapping
+     * @param wrapper The Wrapper object
+     * @param jspWildCard true if the wrapper corresponds to the JspServlet, 
+     * and the mapping path contains a wildcard
+     */
+    protected void addWrapper(Context context, String path, Object wrapper,
+                              boolean jspWildCard) {
+
         synchronized (context) {
             Wrapper newWrapper = new Wrapper();
             newWrapper.object = wrapper;
+            newWrapper.jspWildCard = jspWildCard;
             if (path.endsWith("/*")) {
                 // Wildcard wrapper
                 newWrapper.name = path.substring(0, path.length() - 2);
@@ -625,22 +649,42 @@ public final class Mapper {
         internalMapExactWrapper(exactWrappers, path, mappingData);
 
         // Rule 2 -- Prefix Match
+        boolean checkJspWelcomeFiles = false;
         Wrapper[] wildcardWrappers = context.wildcardWrappers;
         if (mappingData.wrapper == null) {
             internalMapWildcardWrapper(wildcardWrappers, context.nesting, 
                                        path, mappingData);
+            if (mappingData.wrapper != null && mappingData.jspWildCard) {
+                char[] buf = path.getBuffer();
+                if (buf[pathEnd - 1] == '/') {
+                    /*
+                     * Path ending in '/' was mapped to JSP servlet based on
+                     * wildcard match (e.g., as specified in url-pattern of a
+                     * jsp-property-group.
+                     * Force the context's welcome files, which are interpreted
+                     * as JSP files (since they match the url-pattern), to be
+                     * considered. See Bugzilla 27664.
+                     */ 
+                    mappingData.wrapper = null;
+                    checkJspWelcomeFiles = true;
+                }
+            }
         }
 
         // Rule 3 -- Extension Match
         Wrapper[] extensionWrappers = context.extensionWrappers;
-        if (mappingData.wrapper == null) {
+        if (mappingData.wrapper == null && !checkJspWelcomeFiles) {
             internalMapExtensionWrapper(extensionWrappers, path, mappingData);
         }
 
         // Rule 4 -- Welcome resources processing for servlets
         if (mappingData.wrapper == null) {
-            char[] buf = path.getBuffer();
-            if (buf[pathEnd - 1] == '/') {
+            boolean checkWelcomeFiles = checkJspWelcomeFiles;
+            if (!checkWelcomeFiles) {
+                char[] buf = path.getBuffer();
+                checkWelcomeFiles = (buf[pathEnd - 1] == '/');
+            }
+            if (checkWelcomeFiles) {
                 for (int i = 0; (i < context.welcomeResources.length)
                          && (mappingData.wrapper == null); i++) {
                     path.setOffset(pathOffset);
@@ -696,7 +740,7 @@ public final class Mapper {
 
 
         // Rule 7 -- Default servlet
-        if (mappingData.wrapper == null) {
+        if (mappingData.wrapper == null && !checkJspWelcomeFiles) {
             if (context.defaultWrapper != null) {
                 mappingData.wrapper = context.defaultWrapper.object;
                 mappingData.requestPath.setChars
@@ -795,6 +839,7 @@ public final class Mapper {
                 mappingData.requestPath.setChars
                     (path.getBuffer(), path.getOffset(), path.getLength());
                 mappingData.wrapper = wrappers[pos].object;
+                mappingData.jspWildCard = wrappers[pos].jspWildCard;
             }
         }
     }
@@ -1124,7 +1169,7 @@ public final class Mapper {
         extends MapElement {
 
         public String path = null;
-
+        public boolean jspWildCard = false;
     }
 
 
