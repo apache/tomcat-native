@@ -396,13 +396,15 @@
         style="${source.docs}/style.xsl"
         includes="*/**.xml"
         excludes="index.xml">
+        <param name="styles" expression="../"/>
     </style>
     <style
         basedir="${source.docs}"
         destdir="${build.docs}"
         style="${source.docs}/style.xsl"
-        includes="index.xml">
+        includes="index.xml, faq.xml">
         <param name="images" expression="images"/>
+        <param name="styles" expression="."/>
         <param name="homedoc" expression=""/>
     </style>
  
