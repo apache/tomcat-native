@@ -310,7 +310,7 @@
     </table>
   </xsl:template>
 
-  <!-- Process an attributes list with nested attribute elements -->
+  <!-- Process an directives list with nested directive elements -->
   <xsl:template match="directives">
     <table border="1" cellpadding="5">
       <tr>
