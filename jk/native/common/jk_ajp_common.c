@@ -728,7 +728,8 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 
     for (attempt = 0; attempt < ae->worker->connect_retry_attempts; attempt++) {
         ae->sd = jk_open_socket(&ae->worker->worker_inet_addr, JK_TRUE,
-                                ae->worker->keepalive, l);
+                                ae->worker->keepalive,
+                                ae->worker->socket_timeout, l);
         if (ae->sd >= 0) {
             jk_log(l, JK_LOG_DEBUG,
                    "In jk_endpoint_t::ajp_connect_to_endpoint, "
@@ -742,7 +743,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
                 return (ae->worker->logon(ae, l));
 
             /* should we send a CPING to validate connection ? */
-            if (ae->worker->connect_timeout != 0)
+            if (ae->worker->connect_timeout > 0)
                 return (ajp_handle_cping_cpong
                         (ae, ae->worker->connect_timeout, l));
 
@@ -1483,9 +1484,9 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                                "without recovery in send loop %d\n", i);
                         return JK_FALSE;
                     }
-                    jk_log(l, JK_LOG_ERROR,
-                           "ERROR: Receiving from tomcat failed, "
-                           "recoverable operation. err=%d\n", i);
+                    jk_log(l, JK_LOG_INFO,
+                           "Receiving from tomcat failed, "
+                           "recoverable operation attempt=%d\n", i);
                 }
             }
 
@@ -1604,7 +1605,7 @@ int ajp_init(jk_worker_t *pThis,
         ajp_worker_t *p = pThis->worker_private;
         int cache_sz = jk_get_worker_cache_size(props, p->name, cache);
         p->socket_timeout =
-            jk_get_worker_socket_timeout(props, p->name, AJP13_DEF_TIMEOUT);
+            jk_get_worker_socket_timeout(props, p->name, AJP_DEF_SOCKET_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
                "In jk_worker_t::init, setting socket timeout to %d\n",
@@ -1616,6 +1617,13 @@ int ajp_init(jk_worker_t *pThis,
         jk_log(l, JK_LOG_DEBUG,
                "In jk_worker_t::init, setting socket keepalive to %d\n",
                p->keepalive);
+
+        p->recycle_timeout =
+            jk_get_worker_recycle_timeout(props, p->name, AJP13_DEF_TIMEOUT);
+
+        jk_log(l, JK_LOG_DEBUG,
+               "In jk_worker_t::init, setting connection recycle timeout to %d\n",
+               p->recycle_timeout);
 
         p->cache_timeout =
             jk_get_worker_cache_timeout(props, p->name,
@@ -1797,8 +1805,8 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                 if (aw->cache_timeout) {
                     for (; i < aw->ep_cache_sz; i++) {
                         if (aw->ep_cache[i]) {
-                            unsigned elapsed =
-                                (unsigned)(now - ae->last_access);
+                            int elapsed =
+                                (int)(now - ae->last_access);
                             if (elapsed > aw->cache_timeout) {
                                 jk_log(l, JK_LOG_DEBUG,
                                        "In jk_endpoint_t::ajp_get_endpoint,"
@@ -1814,18 +1822,18 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                 if (ae) {
                     if (ae->sd > 0) {
                         /* Handle timeouts for open sockets */
-                        unsigned elapsed = (unsigned)(now - ae->last_access);
+                        int elapsed = (int)(now - ae->last_access);
                         ae->last_access = now;
                         jk_log(l, JK_LOG_DEBUG,
                                "In jk_endpoint_t::ajp_get_endpoint, "
                                "time elapsed since last request = %u seconds\n",
                                elapsed);
-                        if (aw->socket_timeout > 0 &&
-                            elapsed > aw->socket_timeout) {
+                        if (aw->recycle_timeout > 0 &&
+                            elapsed > aw->recycle_timeout) {
                             jk_close_socket(ae->sd);
                             jk_log(l, JK_LOG_DEBUG,
                                    "In jk_endpoint_t::ajp_get_endpoint, "
-                                   "reached socket timeout, closed sd = %d\n",
+                                   "reached connection recycle timeout, closed sd = %d\n",
                                    ae->sd);
                             ae->sd = -1;        /* just to avoid twice close */
                         }
