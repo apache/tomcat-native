@@ -164,6 +164,17 @@ public class WarpEngine extends StandardEngine {
             host.setHostID(this.hostid++);
             host.setAppBase(this.appbase);
             this.addChild(host);
+            try {
+                if (DEBUG) this.debug("Manually starting host");
+                if (super.started) {
+                    if (!host.isStarted()) {
+                        host.start();
+                    }
+                }
+            } catch (LifecycleException e) {
+                this.log(e);
+                return(null);
+            }
         }
         return(host);
     }
@@ -216,7 +227,23 @@ public class WarpEngine extends StandardEngine {
         this.appbase=appbase;
     }
 
-    // ------------------------------------------------------ DEBUGGING METHODS
+    // ------------------------------------------ LOGGING AND DEBUGGING METHODS
+
+    /**
+     * Dump a log message.
+     */
+    public void log(String msg) {
+        // FIXME: Log thru catalina
+        WarpDebug.debug(this,msg);
+    }
+
+    /**
+     * Dump information for an Exception.
+     */
+    public void log(Exception exc) {
+        // FIXME: Log thru catalina
+        WarpDebug.debug(this,exc);
+    }
 
     /**
      * Dump a debug message.

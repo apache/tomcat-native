@@ -102,7 +102,14 @@ public class WarpConnectionHandler extends WarpHandler {
                     String name=reader.readString()+"."+reader.readShort();
                     
                     // Retrieve this host id
-                    int hid=engine.setupChild(name).getHostID();
+                    WarpHost host=engine.setupChild(name);
+                    if (host==null) {
+                        this.log("Cannot retrieve host instance");
+                        this.send(WarpConstants.TYP_CONINIT_ERR,this.packet);
+                        return(false);
+                    }
+
+                    int hid=host.getHostID();
                     if (DEBUG) this.debug("Host "+name+" has ID="+hid);
 
                     // Send the HOST ID back to the WARP client

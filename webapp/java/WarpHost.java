@@ -164,6 +164,13 @@ public class WarpHost extends StandardHost {
         this.id=id;
     }
 
+    /**
+     * Check if the start() method has already been called.
+     */
+    public boolean isStarted() {
+        return(super.started);
+    }
+
     // ------------------------------------------------------ DEBUGGING METHODS
 
     /**
