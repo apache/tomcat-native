@@ -68,7 +68,7 @@
 
 #define DEFAULT_WORKER              ("ajp13")
 
-int JK_METHOD jk_workerEnv_factory( jk_env_t *env, void **result,
+int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **result,
                                     const char *type, const char *name);
 
 static void jk_workerEnv_close(jk_workerEnv_t *_this);
@@ -88,11 +88,12 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
 
     /*     _this->init_data=init_data; */
 
-    worker_list = map_get_string_list(init_data, 
+    worker_list = map_get_string_list(init_data,
+                                      NULL, 
                                       "worker.list", 
                                       &_this->num_of_workers, 
                                       DEFAULT_WORKER );
-    if(worker_list==NULL || _this->num_of_workers<= 0 ) {
+     if(worker_list==NULL || _this->num_of_workers<= 0 ) {
         /* assert() - we pass default worker, we should get something back */
         return JK_FALSE;
     }
@@ -175,6 +176,42 @@ static jk_worker_t *jk_workerEnv_getWorkerForName(jk_workerEnv_t *_this,
     return rc;
 }
 
+
+static jk_webapp_t *jk_workerEnv_createWebapp(jk_workerEnv_t *_this,
+                                              const char *vhost,
+                                              const char *name, 
+                                              jk_map_t *init_data)
+{
+    jk_pool_t *webappPool;
+    jk_webapp_t *webapp;
+
+    webappPool=(jk_pool_t *)_this->pool->create( _this->pool,
+                                                 HUGE_POOL_SIZE);
+
+    webapp=(jk_webapp_t *)webappPool->calloc(webappPool,
+                                             sizeof( jk_webapp_t ));
+
+    webapp->pool=webappPool;
+
+    webapp->context=_this->pool->pstrdup( _this->pool, name);
+    webapp->virtual=_this->pool->pstrdup( _this->pool, vhost);
+
+    if( name==NULL ) {
+        webapp->ctxt_len=0;
+    } else {
+        webapp->ctxt_len = strlen(name);
+    }
+    
+
+    /* XXX Find it if it's already allocated */
+
+    /* Add vhost:name to the map */
+    
+    return webapp;
+    
+}
+
+
 static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
                                               const char *name, 
                                               jk_map_t *init_data)
@@ -184,10 +221,16 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
     jk_env_objectFactory_t fac;
     jk_logger_t *l=_this->l;
     jk_worker_t *w = NULL;
+    jk_pool_t *workerPool;
+
+    workerPool=_this->pool->create(_this->pool, HUGE_POOL_SIZE);
 
     type=map_getStrProp( init_data,"worker",name,"type",NULL );
 
-    w=(jk_worker_t *)_this->env->getInstance(_this->env, "worker", type );
+    /* Each worker has it's own pool */
+    
+
+    w=(jk_worker_t *)_this->env->getInstance(_this->env, workerPool, "worker", type );
     
     if( w == NULL ) {
         l->jkLog(l, JK_LOG_ERROR,
@@ -196,11 +239,10 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
         return NULL;
     }
 
+    w->pool=workerPool;
     w->name=(char *)name;
     w->workerEnv=_this;
 
-    jk_pool_create( & w->pool, NULL, 1024 );
-    
     err=w->validate(w, init_data, _this, l);
     
     if( err!=JK_TRUE ) {
@@ -226,20 +268,23 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
     return w;
 }
 
-int JK_METHOD jk_workerEnv_factory( jk_env_t *env, void **result,
+int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **result,
                                     const char *type, const char *name)
 {
     jk_logger_t *l=env->logger;
     jk_workerEnv_t *_this;
     int err;
+    jk_pool_t *uriMapPool;
 
     l->jkLog(l, JK_LOG_DEBUG, "Creating workerEnv \n");
 
-    _this=(jk_workerEnv_t *)calloc( 1, sizeof( jk_workerEnv_t ));
+    _this=(jk_workerEnv_t *)pool->calloc( pool, sizeof( jk_workerEnv_t ));
+    _this->pool=pool;
     *result=_this;
 
     _this->init_data = NULL;
-    map_alloc(& _this->init_data);
+    map_alloc(& _this->init_data, pool);
+    
 
     _this->worker_file     = NULL;
     _this->log_file        = NULL;
@@ -286,16 +331,19 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, void **result,
     _this->secret_key = NULL; 
 
     _this->envvars_in_use = JK_FALSE;
-    map_alloc(&_this->envvars);
+    map_alloc(&_this->envvars, pool);
 
     _this->l=l;
     _this->env=env;
     
-    if(!map_alloc(&_this->worker_map)) {
+    if(!map_alloc(&_this->worker_map, _this->pool)) {
         return JK_FALSE;
     }
 
+    uriMapPool = _this->pool->create(_this->pool, HUGE_POOL_SIZE);
+    
     _this->uriMap=_this->env->getInstance( _this->env,
+                                           uriMapPool,
                                            "uriMap",
                                            "default");
 
@@ -312,7 +360,9 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, void **result,
     _this->getWorkerForName=&jk_workerEnv_getWorkerForName;
     _this->close=&jk_workerEnv_close;
     _this->createWorker=&jk_workerEnv_createWorker;
+    _this->createWebapp=&jk_workerEnv_createWebapp;
 
+    _this->rootWebapp=_this->createWebapp( _this, NULL, "/", NULL );
     
     return JK_TRUE;
 }
