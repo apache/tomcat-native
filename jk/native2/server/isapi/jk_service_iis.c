@@ -156,6 +156,7 @@ static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
 
         if ((DWORD) s->content_read < lpEcb->cbTotalBytes) {
             DWORD rdlen, toread = len;
+            DWORD cblen = 0;
             LPBYTE buff = (LPBYTE) b;
 
             /* 
@@ -199,19 +200,26 @@ static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
             /*
              * Now try to read from the client ...
              */
-            if (lpEcb->ReadClient(lpEcb->ConnID, buff, &rdlen)) {
-                *actually_read += rdlen;
-                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "jk_ws_service_t::read ReadClient readed %d (actually %d) bytes\n",
-                              rdlen, *actually_read);
+            
+            while (cblen < rdlen) {
+                toread = rdlen - cblen;
+                if (lpEcb->ReadClient(lpEcb->ConnID, buff + cblen, &toread)) {
+                    if (toread == 0)
+                        break;
+                    cblen += toread;
+                    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                                  "jk_ws_service_t::read ReadClient readed %d (actually %d) bytes\n",
+                                  toread, *actually_read + cblen);
 
+                }
+                else {
+                    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                                  "jk_ws_service_t::read, ReadClient failed\n");
+                    /* XXX: We should return here HSE_STATUS_ERROR */
+                    break;
+                }
             }
-            else {
-                env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "jk_ws_service_t::read, ReadClient failed\n");
-                /* XXX: We should return here HSE_STATUS_ERROR */
-                return JK_OK;
-            }
+            *actually_read += cblen;
         }
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "jk_ws_service_t::read actually readed %d from already %d of total %d bytes\n",
