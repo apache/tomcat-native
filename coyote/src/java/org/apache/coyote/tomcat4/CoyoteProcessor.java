@@ -373,6 +373,7 @@ final class CoyoteProcessor
     protected void postParseRequest(Request req)
         throws IOException {
 
+        request.setSocket(socket);
         request.setSecure(connector.getSecure());
         req.scheme().setString(connector.getScheme());
 
