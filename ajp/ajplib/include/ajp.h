@@ -352,12 +352,12 @@ apr_status_t ajp_send_header(apr_socket_t *sock, request_rec  *r);
  * Read the ajp message and return the type of the message.
  * @param sock      backend socket
  * @param r         current request
- * @param data      return data
+ * @param msg       returned AJP message
  * @return          APR_SUCCESS or error
  */
 apr_status_t ajp_read_header(apr_socket_t *sock,
                              request_rec  *r,
-                             void **data);
+                             void **msg);
 
 #endif /* AJP_H */
 
