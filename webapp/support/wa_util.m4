@@ -140,10 +140,10 @@ AC_DEFUN(
   [
     wa_path_prog_tempval="`echo $2`"
     if test -x "${wa_path_prog_tempval}" ; then
-      AC_MSG_CHECKING([for $3])
       wa_path_prog_tempdir=`dirname "${wa_path_prog_tempval}"`
       wa_path_prog_tempfil=`basename "${wa_path_prog_tempval}"`
       WA_PATH_DIR([wa_path_prog_tempdir],[${wa_path_prog_tempdir}],[$3])
+      AC_MSG_CHECKING([for $3])
       $1="${wa_path_prog_tempdir}/${wa_path_prog_tempfil}"
       AC_MSG_RESULT([${$1}])
     else
@@ -162,7 +162,7 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_PATH_PROG_FAIL],
   [
-    WA_PATH_PROG($1,$2,$3)
+    WA_PATH_PROG([$1],[$2],[$3])
     AC_MSG_CHECKING([for $3 availability])
     if test -z "${$1}" ; then
       AC_MSG_ERROR([cannot find $3 "${wa_apxs_tempval}"])

@@ -89,7 +89,7 @@ AC_DEFUN(
         *)
           AC_MSG_RESULT([yes (${withval})])
           wa_perl_enabled="yes"
-          WA_PATH_PROG([wa_perl_tempval],[${withval}],[])
+          WA_PATH_PROG([wa_perl_tempval],[${withval}],[perl])
           if test -z "${wa_perl_tempval}" ; then
             AC_MSG_ERROR([${withval} is invalid])
           fi
@@ -103,7 +103,7 @@ AC_DEFUN(
       wa_perl_tempval=""
     else
       if test -z "${wa_perl_tempval}" ; then
-        WA_PATH_PROG([wa_perl_tempval],[perl],[])
+        WA_PATH_PROG([wa_perl_tempval],[perl],[perl])
       fi
       if test -z "${wa_perl_tempval}" ; then
         if test "${wa_perl_enabled}" = "yes" ; then
