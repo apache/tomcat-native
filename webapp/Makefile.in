@@ -69,7 +69,8 @@ CFGS = config.cache \
 	Makedefs \
 	Makefile \
 	lib/Makefile \
-	apache-1.3/Makefile
+	apache-1.3/Makefile \
+	java/Makefile
 
 all: local
 	@for DIR in $(APRDIR) ; do \
