@@ -443,7 +443,7 @@ public class CoyoteRequest
     /**
      * Associated Catalina connector.
      */
-    protected Connector connector;
+    protected CoyoteConnector connector;
 
     /**
      * Return the Connector through which this Request was received.
@@ -458,7 +458,7 @@ public class CoyoteRequest
      * @param connector The new connector
      */
     public void setConnector(Connector connector) {
-        this.connector = connector;
+        this.connector = (CoyoteConnector) connector;
     }
 
     /**
@@ -1927,11 +1927,19 @@ public class CoyoteRequest
         Parameters parameters = coyoteRequest.getParameters();
 
         String enc = coyoteRequest.getCharacterEncoding();
+        boolean useBodyEncodingForURI = connector.getUseBodyEncodingForURI();
         if (enc != null) {
             parameters.setEncoding(enc);
+            if (useBodyEncodingForURI) {
+                parameters.setQueryStringEncoding(enc);
+            }
         } else {
             parameters.setEncoding
                 (org.apache.coyote.Constants.DEFAULT_CHARACTER_ENCODING);
+            if (useBodyEncodingForURI) {
+                parameters.setQueryStringEncoding
+                    (org.apache.coyote.Constants.DEFAULT_CHARACTER_ENCODING);
+            }
         }
 
         parameters.handleQueryParameters();
