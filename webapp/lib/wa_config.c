@@ -108,7 +108,7 @@ const char *wa_cvirtualhost(wa_virtualhost **h, const char *n, int p) {
     /* Check parameters */
     if (h==NULL) return("Invalid virtual host storage location");
     if (n==NULL) return("Invalid virtual host name");
-    if (p<1) return("Invalid port number (p<1)");
+    if (p<1) return("Invalid port number (p<1) No \"Port\" statement found");
     if (p>65535) return("Invalid port number (p>65535)");
 
     /* Allocate some memory */
