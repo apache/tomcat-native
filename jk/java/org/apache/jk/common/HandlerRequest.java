@@ -331,7 +331,13 @@ public class HandlerRequest extends JkHandler
         
         switch( type ) {
         case JK_AJP13_FORWARD_REQUEST:
-            decodeRequest( msg, ep, tmpMB );
+            try { 
+                decodeRequest( msg, ep, tmpMB );
+            } catch( Exception ex ) {
+                log.error( "Error decoding request ", ex );
+                msg.dump( "Incomming message");
+                return ERROR;
+            }
 
             if( requiredSecret != null ) {
                 String epSecret=(String)ep.getNote( secretNote );
@@ -593,11 +599,13 @@ public class HandlerRequest extends JkHandler
             vMB=headers.addValue( hName );
             msg.getBytes(vMB);
 
-            if (hId == SC_REQ_CONTENT_LENGTH) {
+            if (hId == SC_REQ_CONTENT_LENGTH ||
+                hName.equalsIgnoreCase("Content-Length")) {
                 // just read the content-length header, so set it
                 int contentLength = (vMB == null) ? -1 : vMB.getInt();
                 req.setContentLength(contentLength);
-            } else if (hId == SC_REQ_CONTENT_TYPE) {
+            } else if (hId == SC_REQ_CONTENT_TYPE ||
+                       hName.equalsIgnoreCase("Content-Type")) {
                 // just read the content-type header, so set it
                 ByteChunk bchunk = vMB.getByteChunk();
                 req.contentType().setBytes(bchunk.getBytes(),

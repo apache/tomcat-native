@@ -89,6 +89,8 @@ import org.apache.jk.core.*;
  * @author Costin Manolache
  */
 public class MsgAjp extends Msg {
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( MsgAjp.class );
 
     private byte buf[]=new byte[8300];
     // The current read or write position in the buffer
@@ -181,8 +183,8 @@ public class MsgAjp extends Msg {
     }
 
     public void appendByteChunk(ByteChunk bc) throws IOException {
-        if(bc==null ) {
-            System.out.println("XXX appending BC null" + bc);
+        if(bc==null) {
+            log.error("appendByteChunk() null");
             appendInt( 0);
             appendByte(0);
             return;
@@ -208,8 +210,8 @@ public class MsgAjp extends Msg {
      */
     public void appendBytes( byte b[], int off, int numBytes ) {
         if( pos + numBytes >= buf.length ) {
-            System.out.println("Buffer overflow " + buf.length + " " +
-                               pos + " " + numBytes );
+            log.error( "Buffer overflow buf.len" + buf.length + " pos=" +
+                       pos + " data=" + numBytes );
             return;
         }
         appendInt( numBytes );
@@ -219,8 +221,8 @@ public class MsgAjp extends Msg {
     
     private void cpBytes( byte b[], int off, int numBytes ) {
         if( pos + numBytes >= buf.length ) {
-            System.out.println("Buffer overflow " + buf.length + " " +
-                               pos + " " + numBytes );
+            log.error("Buffer overflow: buffer.len=" + buf.length + " pos=" +
+                      pos + " data=" + numBytes );
             return;
         }
         System.arraycopy( b, off, buf, pos, numBytes);
@@ -284,11 +286,11 @@ public class MsgAjp extends Msg {
         int length = getInt();
         if( length > buf.length ) {
             // XXX Should be if(pos + length > buff.legth)?
-            System.out.println("XXX Assert failed, buff too small ");
+            log.error("Try to get data after the end of the buffer");
         }
 	
         if( (length == 0xFFFF) || (length == -1) ) {
-            System.out.println("null string " + length);
+            log.info("Null string " + length);
             return 0;
         }
 
@@ -326,45 +328,45 @@ public class MsgAjp extends Msg {
 	    
         if( mark != 0x1234 ) {
             // XXX Logging
-            System.out.println("BAD packet " + mark);
+            log.error("BAD packet signature " + mark);
             dump( "In: " );
             return -1;
         }
-    
-	if( dL > 5 )
-            d( "Received " + len + " " + buf[0] );
+
+        if( log.isDebugEnabled() ) 
+            log.debug( "Received " + len + " " + buf[0] );
         return len;
     }
     
     public void dump(String msg) {
-        System.out.println( msg + ": " + buf + " " + pos +"/" + (len + 4));
+        log.debug( msg + ": " + buf + " " + pos +"/" + (len + 4));
         int max=pos;
         if( len + 4 > pos )
             max=len+4;
         for( int j=0; j < max; j+=16 )
-            hexLine( buf, j, len );
+            System.out.println( hexLine( buf, j, len ));
 	
-        System.out.println();
     }
 
     /* -------------------- Utilities -------------------- */
     // XXX Move to util package
 
-    public static void hexLine( byte buf[], int start, int len ) {
+    public static String hexLine( byte buf[], int start, int len ) {
+        StringBuffer sb=new StringBuffer();
         for( int i=start; i< start+16 ; i++ ) {
             if( i < len + 4)
-                System.out.print( hex( buf[i] ) + " ");
+                sb.append( hex( buf[i] ) + " ");
             else 
-                System.out.print( "   " );
+                sb.append( "   " );
         }
-        System.out.print(" | ");
+        sb.append(" | ");
         for( int i=start; i < start+16 && i < len + 4; i++ ) {
-            if( Character.isLetterOrDigit( (char)buf[i] ))
-                System.out.print( new Character((char)buf[i]) );
+            if( ! Character.isISOControl( (char)buf[i] ))
+                sb.append( new Character((char)buf[i]) );
             else
-                System.out.print( "." );
+                sb.append( "." );
         }
-        System.out.println();
+        return sb.toString();
     }
 
     private  static String hex( int x ) {
@@ -374,11 +376,4 @@ public class MsgAjp extends Msg {
         return h.substring( h.length() - 2 );
     }
 
-
-    private static final int dL=0;
-    private static void d(String s ) {
-        System.err.println( "MsgAjp: " + s );
-    }
-
-    
 }

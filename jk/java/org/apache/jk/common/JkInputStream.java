@@ -88,10 +88,14 @@ public class JkInputStream extends InputStream {
     }
 
     public int available() throws IOException {
+        if( log.isDebugEnabled() )
+            log.debug( "available(): "  + blen + " " + pos );
         return blen-pos;
     }
 
     public void close() throws IOException {
+        if( log.isDebugEnabled() )
+            log.debug( "cloae() " );
         this.closed=true;
     }
 
@@ -119,7 +123,14 @@ public class JkInputStream extends InputStream {
 
         return doRead1();
     }
-
+    
+    public int read(byte[] b) throws IOException {
+        int rd=read( b, 0, b.length);
+        if( log.isDebugEnabled() )
+            log.debug("read(" + b + ")=" + rd + " / " + b.length);
+        return rd;
+    }
+    
     public int read(byte[] b, int off, int len) throws IOException {
       	int rd=-1;
 	if( contentLength == -1 ) {
@@ -177,18 +188,18 @@ public class JkInputStream extends InputStream {
     boolean end_of_stream; // true if we've received an empty packet
     
     private int doRead1() throws IOException {
-        if( log.isDebugEnabled() ) log.debug("doRead1 " );
         if(pos >= blen) {
             if( ! refillReadBuffer()) {
 		return -1;
 	    }
         }
-        return bodyBuff[pos++] & 0xFF;  // prevent sign extension of byte value
+        int i=bodyBuff[pos++] & 0xFF;
+        if( log.isDebugEnabled() ) log.debug("doRead1 " + (char)i );
+        return i;  // prevent sign extension of byte value
     }
 
     public int doRead1(byte[] b, int off, int len) throws IOException 
     {
-        if( log.isDebugEnabled() ) log.debug("doRead1 " );
 	if(pos >= blen) {
 	    if( ! refillReadBuffer()) {
 		return -1;
@@ -199,8 +210,9 @@ public class JkInputStream extends InputStream {
 	    // Sanity check b.length > off + len?
 	    System.arraycopy(bodyBuff, pos, b, off, len);
 	    if( log.isDebugEnabled() )
-		log.debug("doRead1: " + pos + " " + len + " " + blen + " " +
-		  new String( b, off, len ) + " " + Thread.currentThread());
+		log.debug("doRead1: " + pos + " " + len + " " + blen);
+            if( log.isTraceEnabled() )
+                log.trace("Data: \n" + new String( b, off, len ));
 	    pos += len;
 	    return len;
 	}
@@ -215,9 +227,10 @@ public class JkInputStream extends InputStream {
 
 	    System.arraycopy(bodyBuff, pos, b, off, c);
 	    if( log.isDebugEnabled() )
-                log.debug("doRead2: " + pos + " " + len + " " + blen + " " +
-                          c + " " + new String( b, off, c ) + " " +
-                          new String( bodyBuff, pos, c ));
+		log.debug("doRead2: " + pos + " " + len + " " +
+                          blen + " " + c);
+            if( log.isTraceEnabled() )
+                log.trace("Data: \n" + new String( b, off, len ));
 
 	    toCopy    -= c;
 
@@ -281,8 +294,9 @@ public class JkInputStream extends InputStream {
     	int cpl=bodyMsg.getBytes(bodyBuff);
 	if( log.isDebugEnabled() )
             log.debug( "Copy into body buffer2 " + bodyBuff + " " +
-               cpl + " " + blen + " "  +
-               new String( bodyBuff, 0, cpl ));
+               cpl + " " + blen );
+        if( log.isTraceEnabled() )
+            log.trace( "Data:\n" + new String( bodyBuff, 0, cpl ));
 
 	return (blen > 0);
     }

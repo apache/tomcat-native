@@ -235,7 +235,7 @@ public class ChannelSocket extends Channel {
         throws IOException
     {
         if (log.isDebugEnabled()) {
-            log.debug("receive()");
+            log.debug("receive() ");
         }
 
         byte buf[]=msg.getBuffer();
@@ -278,8 +278,6 @@ public class ChannelSocket extends Channel {
             return -2;
         }
         
-        if (log.isDebugEnabled())
-             log.debug("receive:  total read = " + total_read);
 	return total_read;
     }
     
@@ -309,15 +307,12 @@ public class ChannelSocket extends Channel {
         int pos = 0;
         int got;
 
-        if (log.isTraceEnabled()) {
-            log.trace("reading  # " + b + " " + (b==null ? 0: b.length) + " " +
-              offset + " " + len);
-        }
         while(pos < len) {
             got = is.read(b, pos + offset, len - pos);
 
             if (log.isTraceEnabled()) {
-                log.trace("read got # " + got);
+                log.trace("read() " + b + " " + (b==null ? 0: b.length) + " " +
+                          offset + " " + len + " = " + got );
             }
 
             // connection just closed by remote. 
@@ -325,7 +320,7 @@ public class ChannelSocket extends Channel {
                 // This happens periodically, as apache restarts
                 // periodically.
                 // It should be more gracefull ! - another feature for Ajp14
-                log.warn( "Returning " );
+                log.warn( "Read result -1, connection close by server" );
                 return -3;
             }
 
@@ -364,13 +359,9 @@ public class ChannelSocket extends Channel {
     /** Process a single ajp connection.
      */
     void processConnection(MsgContext ep) {
-        if( log.isDebugEnabled() )
-            log.debug( "New ajp connection ");
         try {
             MsgAjp recv=new MsgAjp();
             while( running ) {
-                if( log.isDebugEnabled() )
-                    log.debug("Receiving " );
                 int status= this.receive( recv, ep );
                 if( status <= 0 ) {
                     log.warn("Invalid packet, closing connection" );
