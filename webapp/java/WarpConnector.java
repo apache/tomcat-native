@@ -60,9 +60,12 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Random;
+import java.util.Vector;
 
 import org.apache.catalina.Connector;
 import org.apache.catalina.Container;
+import org.apache.catalina.Context;
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleException;
@@ -89,6 +92,10 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     private ServerSocket server=null;
     /** Our <code>WarpLogger</code>. */
     private WarpLogger logger=null;
+    /** Our list of deployed web applications. */
+    private Vector applications=new Vector();
+    /** The unique ID of this connector instance. */
+    protected int uniqueId=-1;
 
     /* -------------------------------------------------------------------- */
     /* Bean variables */
@@ -113,6 +120,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     private int port=8008;
     /** The server socket backlog length. */
     private int acceptCount=10;
+    /** The server appBase for hosts created via WARP. */
+    private String appBase="webapps";
 
     /* -------------------------------------------------------------------- */
     /* Lifecycle variables */
@@ -132,7 +141,9 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     public WarpConnector() {
         super();
         this.logger=new WarpLogger(this);
-        if (Constants.DEBUG) logger.debug("Instance created");
+        this.uniqueId=new Random().nextInt();
+        if (Constants.DEBUG)
+            logger.debug("Instance created (ID="+this.uniqueId+")");
     }
 
     /* ==================================================================== */
@@ -353,6 +364,24 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
         if (Constants.DEBUG) logger.debug("Setting acceptCount to "+count);
     }
 
+    /**
+     * Get the applications base directory for hosts created via WARP.
+     */
+    public String getAppBase() {
+        return (this.appBase);
+    }
+
+
+    /**
+     * Set the applications base directory for hosts created via WARP.
+     *
+     * @param appBase The appbase property.
+     */
+    public void setAppBase(String appbase) {
+        this.appBase = appBase;
+
+        if (Constants.DEBUG) logger.debug("Setting appBase to "+appBase);
+    }
 
     /* ==================================================================== */
     /* Lifecycle methods                                                    */
@@ -419,6 +448,18 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     /* ==================================================================== */
     /* Public methods                                                       */
     /* ==================================================================== */
+
+    /**
+     * Return the application ID for a given <code>Context</code>.
+     */
+    protected int applicationId(Context context) {
+        int id=this.applications.indexOf(context);
+        if (id==-1) {
+            this.applications.add(context);
+            id=this.applications.indexOf(context);
+        }
+        return(id);
+    }
 
     /**
      * Create (or allocate) and return a Request object suitable for
