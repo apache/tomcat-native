@@ -110,6 +110,7 @@ import org.apache.catalina.util.StringManager;
 import org.apache.catalina.util.StringParser;
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.Request;
+import org.apache.tomcat.util.buf.B2CConverter;
 import org.apache.tomcat.util.http.Parameters;
 
 /**
@@ -577,6 +578,28 @@ public class CoyoteRequest
      */
     public void setStream(InputStream stream) {
         // Ignore
+    }
+
+
+    /**
+     * URI byte to char converter (not recycled).
+     */
+    protected B2CConverter URIConverter = null;
+
+    /**
+     * Return the URI converter.
+     */
+    protected B2CConverter getURIConverter() {
+        return URIConverter;
+    }
+
+    /**
+     * Set the URI converter.
+     * 
+     * @param URIConverter the new URI connverter
+     */
+    protected void setURIConverter(B2CConverter URIConverter) {
+        this.URIConverter = URIConverter;
     }
 
 

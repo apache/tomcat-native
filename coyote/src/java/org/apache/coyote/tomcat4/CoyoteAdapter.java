@@ -68,6 +68,7 @@ import java.io.IOException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.tomcat.util.buf.B2CConverter;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -220,7 +221,7 @@ final class CoyoteAdapter
      */
     protected void postParseRequest(Request req, CoyoteRequest request,
                                     Response res, CoyoteResponse response)
-        throws IOException {
+        throws Exception {
         // XXX the processor needs to set a correct scheme and port prior to this point, 
         // in ajp13 protocols dont make sense to get the port from the connector..
         // XXX the processor may have set a correct scheme and port prior to this point, 
@@ -268,7 +269,6 @@ final class CoyoteAdapter
             res.setMessage("Invalid URI");
             throw ioe;
         }
-        req.decodedURI().setEncoding("UTF-8");
 
         // Normalize decoded URI
         if (!normalize(req.decodedURI())) {
@@ -276,6 +276,9 @@ final class CoyoteAdapter
             res.setMessage("Invalid URI");
             throw new IOException("Invalid URI");
         }
+
+        // URI character decoding
+        convertURI(req.decodedURI(), request);
 
         // Parse session Id
         parseSessionId(req, request);
@@ -293,6 +296,7 @@ final class CoyoteAdapter
                 // Redoing the URI decoding
                 req.decodedURI().duplicate(req.requestURI());
                 req.getURLDecoder().convert(req.decodedURI(), true);
+                convertURI(req.decodedURI(), request);
             }
         }
 
@@ -512,6 +516,58 @@ final class CoyoteAdapter
 
         // Return the normalized path that we have completed
         return (normalized);
+
+    }
+
+
+    /**
+     * Character conversion of the URI.
+     */
+    protected void convertURI(MessageBytes uri, CoyoteRequest request) 
+        throws Exception {
+
+        ByteChunk bc = uri.getByteChunk();
+        CharChunk cc = uri.getCharChunk();
+        cc.allocate(bc.getLength(), -1);
+
+        String enc = connector.getURIEncoding();
+        if (enc != null) {
+            B2CConverter conv = request.getURIConverter();
+            try {
+                if (conv == null) {
+                    conv = new B2CConverter(enc);
+                    request.setURIConverter(conv);
+                } else {
+                    conv.recycle();
+                }
+            } catch (IOException e) {
+                // Ignore
+                log("Invalid URI encoding; using HTTP default", e);
+                connector.setURIEncoding(null);
+            }
+            if (conv != null) {
+                try {
+                    conv.convert(bc, cc);
+                    uri.setChars(cc.getBuffer(), cc.getStart(), 
+                                 cc.getLength());
+                    return;
+                } catch (IOException e) {
+                    if (debug >= 1) {
+                        log("Invalid URI character encoding; trying ascii", e);
+                    }
+                    cc.recycle();
+                }
+            }
+        }
+
+        // Default encoding: fast conversion
+        byte[] bbuf = bc.getBuffer();
+        char[] cbuf = cc.getBuffer();
+        int start = bc.getStart();
+        for (int i = 0; i < bc.getLength(); i++) {
+            cbuf[i] = (char) (bbuf[i + start] & 0xff);
+        }
+        uri.setChars(cbuf, 0, bc.getLength());
 
     }
 
