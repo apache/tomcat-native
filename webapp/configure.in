@@ -509,6 +509,9 @@ then
   APR_LIBDIR="${TGTDIR}/lib"
   TARGET="${TARGET} apr"
   LIBTOOL="${APR_SRCDIR}/libtool"
+  eval `${GREP} "^CC=" ${APR_VARFIL} | ${SED} "s/^CC=/APR_CC=/"`
+else
+  APR_CC="${CC}"  
 fi
 
 dnl --------------------------------------------------------------------------
@@ -524,6 +527,27 @@ then
   AC_MSG_RESULT([error])
   AC_MSG_ERROR([Cannot find required APRVARS file])
 fi
+
+dnl Check that we are not mixing native and gnu compilers
+dnl on the platfroms that do not support it.
+
+eval `${GREP} "^NM=" ${LIBTOOL}`
+gnu_cc=`${APR_CC} --help | ${GREP} gnu`
+if ${TEST} ! -z "${gnu_cc}"
+then
+  APACHE_DIR=`${APXS} -q SBINDIR`
+  is_apache_gcc="Yes"
+  case $host in
+    sparc-sun-solaris2.8)
+      is_apache_gcc=`${NM} ${APACHE_DIR}/httpd | ${GREP} __lshrdi3`
+      ;;
+  esac
+  if ${TEST} -z "${is_apache_gcc}"
+  then
+    AC_MSG_ERROR([Cannot mix gcc and native cc])
+  fi
+fi
+
 AC_MSG_RESULT([ok])
 eval `${CAT} ${APR_VARFIL} | ${GREP} "EXTRA_" | ${SED} "s/EXTRA_/APR_/g"`
 AC_SUBST(APR_CFLAGS)
