@@ -424,27 +424,33 @@ static char* jk2_vm_guessJvmDll(jk_env_t *env, jk_map_t *props,
             /* Check if the LD_LIBRARY_PATH points to the discovered jvm.
              * XXX only tested on Linux.
              */
-            ldlib = getenv("LD_LIBRARY_PATH");
+#if defined(LINUX)
+            ldlib = getenv(PATH_ENV_VARIABLE);
             if (ldlib && strlen(ldlib)) {
                 char *token;
                 
-                token = strtok(ldlib, ":");
+                token = strtok(ldlib, PATH_SEPARATOR_STR);
                 while (token != NULL) {
                     if (strncmp(token, jvm, strlen(token)) == 0) {
                         env->l->jkLog(env, env->l, JK_LOG_INFO,
                                       "jni.guessJvmDll() found %s in %s.\n", jvm, token);
                         return jvm;
                     } 
-                    token = strtok(NULL, ":");                   
+                    token = strtok(NULL, PATH_SEPARATOR_STR);                   
                 }
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "jni.guessJvmDll() could not find %s in the LD_LIBRARY_PATH\n",
+                              "jni.guessJvmDll() could not find %s in the " \ 
+                              "LD_LIBRARY_PATH\n",
                               jvm);
                 return NULL;                                    
             }
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "jni.guessJvmDll() LD_LIBRARY_PATH environment var is not set\n");
+                          "jni.guessJvmDll() LD_LIBRARY_PATH " \
+                          "environment var is not set\n");
             return NULL;                                
+#else
+            return jvm;
+#endif
         }
 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -535,7 +541,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
         strcpy(classpath, "-Djava.class.path=");
         strcat(classpath, jkvm->classpath[0]);        
         for (i = 1; i < classn; i++) {
-            strcat(classpath, ";");
+            strcat(classpath, PATH_SEPARATOR_STR);
             strcat(classpath, jkvm->classpath[i]);
         }
     }
