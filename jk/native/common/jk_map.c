@@ -244,6 +244,7 @@ char **jk_map_get_string_list(jk_map_t *m,
 {
     const char *l = jk_map_get_string(m, name, def);
     char **ar = NULL;
+
 #if defined(AS400) || defined(_REENTRANT)
     char *lasts;
 #endif
@@ -253,6 +254,7 @@ char **jk_map_get_string_list(jk_map_t *m,
     if (l) {
         unsigned capacity = 0;
         unsigned idex = 0;
+        char *p;
         char *v = jk_pool_strdup(&m->p, l);
 
         if (!v) {
@@ -264,10 +266,10 @@ char **jk_map_get_string_list(jk_map_t *m,
          * strtok also by a "*"
          */
 #if defined(AS400) || defined(_REENTRANT)
-        for (l = strtok_r(v, " \t,*", &lasts);
-             l; l = strtok_r(NULL, " \t,*", &lasts))
+        for (p = strtok_r(v, " \t,", &lasts);
+             p; p = strtok_r(NULL, " \t,", &lasts))
 #else
-        for (l = strtok(v, " \t,*"); l; l = strtok(NULL, " \t,*"))
+        for (p = strtok(v, " \t,"); p; p = strtok(NULL, " \t,"))
 #endif
 
         {
@@ -281,7 +283,7 @@ char **jk_map_get_string_list(jk_map_t *m,
                 }
                 capacity += 5;
             }
-            ar[idex] = jk_pool_strdup(&m->p, l);
+            ar[idex] = jk_pool_strdup(&m->p, p);
             idex++;
         }
 
