@@ -69,17 +69,29 @@ import java.util.*;
  * 
  * @author Costin Manolache
  */
-public class GcjLinker extends SoTask implements LinkerAdapter {
+public class GcjLinker extends LinkerAdapter {
     SoTask so;
-    protected static GlobPatternMapper lo_mapper=new GlobPatternMapper();
+    protected static GlobPatternMapper co_mapper=new GlobPatternMapper();
     static {
-	lo_mapper.setFrom("*.java");
-	lo_mapper.setTo("*.o");
+	co_mapper.setFrom("*.java");
+	co_mapper.setTo("*.o");
     }
     public GcjLinker() {
 	so=this;
-    };
+    }
 
+    public String[] getTargetFiles( Source src ) {
+        File srcFile = src.getFile();
+        String name=srcFile.getName();
+        if( name.endsWith( ".java" ) )
+            return co_mapper.mapFileName( name );
+        else
+            return new String[]
+            { name + ".o" };
+    }
+
+
+    
     public void setSoTask(SoTask so ) {
 	this.so=so;
 	so.duplicateTo( this );
@@ -93,19 +105,29 @@ public class GcjLinker extends SoTask implements LinkerAdapter {
     /** Link using libtool.
      */
     public boolean link(Vector srcList) throws BuildException {
+//         link( srcList, false );
+        link( srcList, true );
+	return true;
+    }
+    public boolean link(Vector srcList, boolean shared) throws BuildException {
 	Commandline cmd = new Commandline();
 
 	cmd.setExecutable( "gcj" );
 
-	cmd.createArgument().setValue( "--shared" );
+        if( shared )
+            cmd.createArgument().setValue( "--shared" );
 	cmd.createArgument().setValue( "-o" );
-	cmd.createArgument().setValue( soFile + ".so" );
+        if( shared )
+            cmd.createArgument().setValue( soFile + ".so" );
+        else
+            cmd.createArgument().setValue( soFile + ".a" );
 
 	project.log( "Linking " + buildDir + "/" + soFile + ".so");
 
 	for( int i=0; i<srcList.size(); i++ ) {
 	    Source source=(Source)srcList.elementAt(i);
-	    File srcF=new File(buildDir, source.getTargetFile(co_mapper));
+	    File f1=new File(buildDir, source.getPackage());
+	    File srcF=new File(f1, getTargetFiles(source)[0]);
 	    cmd.createArgument().setValue( srcF.toString() );
 	}
 	

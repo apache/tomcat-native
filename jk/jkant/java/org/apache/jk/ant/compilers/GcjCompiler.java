@@ -69,20 +69,25 @@ import java.util.*;
  * @author Costin Manolache
  */
 public class GcjCompiler extends CcCompiler {
-    static GlobPatternMapper co_mapperS=new GlobPatternMapper();
-    static {
-	co_mapperS.setFrom("*.java");
-	co_mapperS.setTo("*.o");
-    }
     
     public GcjCompiler() {
 	super();
+	co_mapper.setFrom("*.java");
+	co_mapper.setTo("*.o");
     }
 
-    public GlobPatternMapper getOMapper() {
-	return co_mapperS;
+    public String[] getTargetFiles( Source src ) {
+        File srcFile = src.getFile();
+        String name=srcFile.getName();
+        if( name.endsWith( ".java" ) ) {
+            return co_mapper.mapFileName( name );
+        } else {
+            return new String[]
+            { name + ".o" };
+        }
     }
 
+    
     /** Compile using libtool.
      */
     public void compileSingleFile(Source sourceObj) throws BuildException {
@@ -95,26 +100,39 @@ public class GcjCompiler extends CcCompiler {
 	cmd.createArgument().setValue("-c" );
 	
 	if( optG ) {
-	    cmd.createArgument().setValue("-g" );
+            //	    cmd.createArgument().setValue("-g" );
+            cmd.createArgument().setValue("-ggdb3" );
+            //            cmd.createArgument().setValue("-save-temps" );
 	    //  cmd.createArgument().setValue("-Wall");
 	}
 	addOptimize( cmd );
 	addExtraFlags( cmd );
 	cmd.createArgument().setValue("-fPIC" );
 	addIncludes( cmd );
-
-	cmd.createArgument().setValue( "-o" );
-	File ff=new File( buildDir, sourceObj.getTargetFile(co_mapperS));
-	cmd.createArgument().setValue( ff.toString() );
+        String targetDir=sourceObj.getPackage();
 	try {
-	    String targetDir=sourceObj.getPackage();
 	    File f1=new File( buildDir, targetDir );
 	    f1.mkdirs();
+            cmd.createArgument().setValue( "-o" );
+            String targetO[]=getTargetFiles( sourceObj );
+            if( targetO==null ) {
+                log("no target for " + sourceObj.getFile() );
+                return;
+            }
+            File ff=new File( f1, targetO[0]);
+            cmd.createArgument().setValue( ff.toString() );
 	} catch( Exception ex ) {
 	    ex.printStackTrace();
 	}
 	
-	cmd.createArgument().setValue( source );
+        if( ! source.endsWith(".java") ) {
+            cmd.createArgument().setValue("-R" );
+            cmd.createArgument().setValue( targetDir + "/" + f.getName() );
+            //System.out.println("XXX resource " + targetDir + "/" + f.getName() );
+        } else {
+            //            cmd.createArgument().setValue("-fno-bounds-check" );
+        }
+        cmd.createArgument().setValue( source );
 	project.log( "Compiling " + source);
 
 	if( debug > 0 )
