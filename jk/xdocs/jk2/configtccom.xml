@@ -1,0 +1,299 @@
+<?xml version="1.0"?>
+<document>
+	<properties>
+		<title>Coyote/JK2 Handlers</title>
+		<author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+		<date>$Date$</date>
+	</properties>
+	<section name="apr">
+		<p>
+APR descriptor
+</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+				<tr>
+					<td>NativeSo</td>
+					<td>jkjni</td>
+					<td>
+    Location of the jkjni dynamic library.
+    It is searched in java.library.path but a absolute path can be specified.
+  </td>
+				</tr>
+				<tr>
+					<td>jniModeSo</td>
+					<td>inprocess</td>
+					<td>
+    If set to "inprocess" the jk2 will regiter native library functions by itself.
+	If not then it has to be the absolute path of the jkjni dynamic library.
+  </td>
+				</tr>
+				<tr>
+					<td>baseDir</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>aprHome</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>soExt</td>
+					<td></td>
+					<td></td>
+				</tr>
+			</table>
+		</p>
+	</section>
+	<section name="channelSocket">
+		<p>
+					A communication transport from a remote Web Server.
+</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+				<tr>
+					<td>port</td>
+					<td>8009</td>
+					<td>First port where Tomcat is listening</td>
+				</tr>
+				<tr>
+					<td>address</td>
+					<td>127.0.0.1</td>
+					<td>Local address where Tomcat is listening.</td>
+				</tr>
+				<tr>
+					<td>maxPort</td>
+					<td>port+10</td>
+					<td>Max port used to listen.</td>
+				</tr>
+				<tr>
+					<td>maxThreads</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>backLog</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>tcpNoDelay</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>soTimeout</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>soLinger</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>serverTimeout</td>
+					<td></td>
+					<td></td>
+				</tr>
+			</table>
+		</p>
+	</section>
+	<section name="channelUnix">
+		<p>	A AF_UNIX socket communication transport from a local Web Server.</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+				<tr>
+					<td>file</td>
+					<td>No default value</td>
+					<td>
+    Name of the "file" associate with the socket.
+    That must be absolut path name.
+  </td>
+				</tr>
+			</table>
+		</p>
+	</section>
+	<section name="channelJni">
+		<p>A in Web Server process communication.</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</table>
+		</p>
+	</section>
+	<section name="mx">
+		<p>mx4j adapter.</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+				<tr>
+					<td>port</td>
+					<td>-1 (Disabled)</td>
+					<td>Port Number.</td>
+				</tr>
+			</table>
+		</p>
+	</section>
+	<section name="shm">
+		<p>				shared memory objects handler.</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+				<tr>
+					<td>file</td>
+					<td>/tmp/shm.file</td>
+					<td>Shared memory file.</td>
+				</tr>
+				<tr>
+					<td>host</td>
+					<td>localhost</td>
+					<td>Host name.</td>
+				</tr>
+				<tr>
+					<td>port</td>
+					<td>8009</td>
+					<td>Port number.</td>
+				</tr>
+				<tr>
+					<td>unixSocket</td>
+					<td>No default value</td>
+					<td>Unix socket where tomcat is listening.</td>
+				</tr>
+			</table>
+		</p>
+	</section>
+	<section name="request">
+		<p>Request handler</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+				<tr>
+					<td>tomcatAuthentication</td>
+					<td>true</td>
+					<td>the request handler will get the authenticated user from the HTTP server, honoring any auth done there.</td>
+				</tr>
+				<tr>
+					<td>ajpidDir</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>decodedUri</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>secret</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>useSecret</td>
+					<td></td>
+					<td></td>
+				</tr>
+			</table>
+		</p>
+	</section>
+	<section name="modeler">
+		<p>????</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+				<tr/>
+			</table>
+		</p>
+	</section>
+	<section name="container">
+		<p>????</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+				<tr/>
+			</table>
+		</p>
+	</section>
+	<section name="modjk">
+		<p>????</p>
+		<p>
+			<table>
+				<tr>
+					<th>Property name</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+				<tr>
+					<td>pass</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>statusPath</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>updateInterval</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>user</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>webServerHost</td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>webServerPort</td>
+					<td></td>
+					<td></td>
+				</tr>
+			</table>
+		</p>
+	</section>
+</document>
+
