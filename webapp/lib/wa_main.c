@@ -58,43 +58,54 @@
 /* @version $Id$ */
 #include <wa.h>
 
+/* The webserver specified in init. */
+wa_webserver *WA_WebServer=NULL;
+
 /* The current APR memory pool. */
-static apr_pool_t *pool=NULL;
+static apr_pool_t *WA_Pool=NULL;
 
 /* Initialize the WebApp Library. */
-const char *wa_init(void) {
-    if (pool==NULL) {
+const char *WA_Init(wa_webserver *w) {
+	/* Check the main APR pool. */
+    if (WA_Pool==NULL) {
         if (apr_initialize()!=APR_SUCCESS)
             return("Cannot initialize APR");
-        if (apr_pool_create(&pool,NULL)!=APR_SUCCESS)
+        if (apr_pool_create(&WA_Pool,NULL)!=APR_SUCCESS)
             return("Cannot create WebApp Library memory pool");
-        if (pool==NULL)
+        if (WA_Pool==NULL)
             return("Invalid WebApp Library memory pool created");
     }
+
+	/* Assign the current webserver */
+	if (WA_WebServer==NULL) {
+	    WA_WebServer=w;
+	    if (WA_WebServer==NULL) return("Invalid WebServer member specified");
+	}
+
     return(NULL);
 }
 
 /* Clean up the WebApp Library. */
-const char *wa_destroy(void) {
-    if (pool==NULL) return("WebApp Library not initialized");
-    apr_pool_destroy(pool);
-    pool=NULL;
+const char *WA_Destroy(void) {
+    if (WA_Pool==NULL) return("WebApp Library not initialized");
+    apr_pool_destroy(WA_Pool);
+    WA_Pool=NULL;
+    WA_WebServer=NULL;
     apr_terminate();
     return(NULL);
 }
 
 /* Allocate and setup a connection */
-const char *wa_connect(wa_connection **c, const char *p, const char *a) {
+const char *WA_Connect(wa_connection **c, const char *p, const char *a) {
     wa_connection *conn=NULL;
-    const char *msg=NULL;
 
     /* Check parameters */
     if (c==NULL) return("Invalid storage location specified");
 
     /* Allocate some memory */
-    conn=(wa_connection *)apr_palloc(pool,sizeof(wa_connection));
+    conn=(wa_connection *)apr_palloc(WA_Pool,sizeof(wa_connection));
     if (conn==NULL) return("Cannot allocate memory");
-    conn->pool=pool;
+    conn->pool=WA_Pool;
 
     /* Retrieve the provider and set up the conection */
     conn->conf=NULL;
@@ -108,10 +119,9 @@ const char *wa_connect(wa_connection **c, const char *p, const char *a) {
 }
 
 /* Allocate, set up and deploy an application. */
-const char *wa_deploy(wa_application **a, wa_connection *c, const char *n,
+const char *WA_Deploy(wa_application **a, wa_connection *c, const char *n,
                       const char *p) {
     wa_application *appl=NULL;
-    const char *msg=NULL;
     char *buf=NULL;
     int l=0;
 
@@ -122,18 +132,18 @@ const char *wa_deploy(wa_application **a, wa_connection *c, const char *n,
     if (p==NULL) return("Invalid application path");
 
     /* Allocate some memory */
-    appl=(wa_application *)apr_palloc(pool,sizeof(wa_application));
+    appl=(wa_application *)apr_palloc(WA_Pool,sizeof(wa_application));
     if (appl==NULL) return("Cannot allocate memory");
-    appl->pool=pool;
+    appl->pool=WA_Pool;
 
     /* Set up application structure */
     appl->conn=c;
-    appl->name=apr_pstrdup(pool,n);
+    appl->name=apr_pstrdup(WA_Pool,n);
     buf=apr_pstrdup(appl->pool,p);
     l=strlen(buf)-1;
     if (buf[l]=='/') buf[l]='\0';
-    if (buf[0]=='/') appl->rpth=apr_pstrcat(pool,buf,"/");
-    else appl->rpth=apr_pstrcat(pool,"/",buf,"/");
+    if (buf[0]=='/') appl->rpth=apr_pstrcat(WA_Pool,buf,"/");
+    else appl->rpth=apr_pstrcat(WA_Pool,"/",buf,"/");
     appl->lpth=NULL;
 
     /* Tell the connector provider we're deploying an application */

@@ -58,24 +58,54 @@
 /* @version $Id$ */
 #include <wa.h>
 
-/* Attempt to match an URL against a web application. */
-boolean wa_match(const char *u, wa_application *a) {
-    if (u==NULL) return(FALSE);
-    if (a==NULL) return(FALSE);
+/* Allocate a new request structure. */
+const char *WA_AllocRequest(wa_request **r, void *d) {
+	apr_pool_t *pool=NULL;
+	wa_request *req=NULL;
+	
+	if(apr_pool_create(&pool,WA_Pool)!=APR_SUCCESS)
+		return("Cannot create request memory pool");
+	if((req=apr_palloc(pool,sizeof(wa_request)))==NULL) {
+		apr_pool_destroy(pool);
+		return("Cannot allocate memory for the request structure");
+	}
 
-    if (strncmp(u,a->rpth,strlen(a->rpth))==0) return(TRUE);
-    else return(FALSE);
-}
+	/* Set up the server host data record */
+	if((req->serv=apr_palloc(pool,sizeof(wa_hostdata)))==NULL) {
+		apr_pool_destroy(pool);
+		return("Cannot allocate memory for server host data structure");
+	} else {
+		req->serv->host=NULL;
+		req->serv->addr=NULL;
+		req->serv->port=-1;
+	}
 
-/* Invoke a request in a web application. */
-int wa_invoke(wa_request *r, wa_application *a) {
-    return(404);
-}
+	/* Set up the server host data record */
+	if((req->clnt=apr_palloc(pool,sizeof(wa_hostdata)))==NULL) {
+		apr_pool_destroy(pool);
+		return("Cannot allocate memory for client host data structure");
+	} else {
+		req->clnt->host=NULL;
+		req->clnt->addr=NULL;
+		req->clnt->port=-1;
+	}
 
-/* Display an informative status page. */
-int wa_status(wa_request *r, wa_application **appl, wa_connection **conn,
-              int anum, int cnum) {
-    int x;
+	/* Set up the headers table */
+//	req->hdrs=NULL;
 
-    return(404);
+	/* Set up all other request members */
+	req->pool=pool;
+	req->data=d;
+	req->meth=NULL;
+	req->ruri=NULL;
+	req->args=NULL;
+	req->prot=NULL;
+	req->schm=NULL;
+	req->user=NULL;
+	req->auth=NULL;
+	req->clen=0;
+	req->rlen=0;
+	
+	/* All done */
+	return(NULL);
 }
