@@ -582,7 +582,7 @@ public class Http11Processor implements Processor, ActionHook {
                     socket.setSoTimeout(soTimeout);
                 }
                 inputBuffer.parseRequestLine();
-                thrA.setParam( threadPool, request.requestURI().toString());
+                thrA.setParam( threadPool, request.requestURI() );
                 keptAlive = true;
                 if (!disableUploadTimeout) {
                     socket.setSoTimeout(timeout);
