@@ -280,6 +280,7 @@ CRTSRVPGM SRVPGM(MOD_JK/MOD_JK)                              +
           SRCFILE(MOD_JK/QSRVSRC)                            +
           SRCMBR(MOD_JK)                                     +
           DETAIL(*BASIC)                                     +
+          STGMDL(*TERASPACE)                                 +
           BNDSRVPGM(QHTTPSVR/QZSRAPR QHTTPSVR/QZSRCORE       +
                     QHTTPSVR/QZSRXMLP QHTTPSVR/QZSRSDBM)     +
           TEXT('Apache mod_jk tomcat connector module')
