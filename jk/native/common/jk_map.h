@@ -124,23 +124,7 @@ void *map_value_at(jk_map_t *m,
  */
 char *map_replace_properties(const char *value, jk_map_t *m);
 
-/** Get a string property, using the worker's style
-    for properties.
-    Example worker.ajp13.host=localhost.
-*/
-char *map_getStrProp(jk_map_t *m,
-                     char *objType,
-                     char *objName,
-                     char *pname,
-                     char *def);
 
-int map_getIntProp(jk_map_t *m,
-                   char *objType,
-                   char *objName,
-                   char *pname,
-                   int def);
-
-    
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

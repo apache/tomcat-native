@@ -69,6 +69,7 @@
 #include <jni.h>
 
 #include "jk_pool.h"
+#include "jk_jni_worker.h"
 #include "jk_util.h"
 
 #if defined LINUX && defined APACHE2_SIGHACK
@@ -81,14 +82,6 @@
 #include <nwthread.h>
 #include <nwadv.h>
 #endif
-#include "jk_logger.h"
-#include "jk_service.h"
-
-int JK_METHOD jni_worker_factory(jk_worker_t **w,
-                                 const char *name,
-                                 jk_logger_t *l);
-
-
 
 #ifndef JNI_VERSION_1_1
 #define JNI_VERSION_1_1 0x00010001
@@ -557,13 +550,12 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
     }
 
     if(p) {
-	p->attached = JK_FALSE;
+        p->attached = JK_FALSE;
         p->env = NULL;
         p->worker = pThis->worker_private;
         p->endpoint.endpoint_private = p;
         p->endpoint.service = service;
         p->endpoint.done = done;
-	p->endpoint.channelData = NULL;
         *pend = &p->endpoint;
 	
         return JK_TRUE;

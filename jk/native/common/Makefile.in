@@ -1,7 +1,6 @@
 #### XXXX DO we need this Makefile ????
 OEXT=.lo
 include list.mk
-include @APACHE_CONFIG_VARS@
 
 JAVA_INCL=-I @JAVA_HOME@/include -I @JAVA_HOME@/include/@OS@
 CFLAGS=@apache_include@ @CFLAGS@ ${JAVA_INCL}

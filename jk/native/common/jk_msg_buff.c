@@ -64,7 +64,9 @@
  ***************************************************************************/
 
 #include "jk_pool.h"
+#include "jk_connect.h"
 #include "jk_util.h"
+#include "jk_sockbuf.h"
 #include "jk_msg_buff.h"
 #include "jk_logger.h"
 

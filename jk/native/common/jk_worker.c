@@ -63,19 +63,14 @@
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
-/* #define _PLACE_WORKER_LIST_HERE */
-/* #include "jk_worker_list.h" */
-#include "jk_env.h"
+#define _PLACE_WORKER_LIST_HERE
+#include "jk_worker_list.h"
 #include "jk_worker.h"
 #include "jk_util.h"
 
-/* from jk_worker_list */
-static jk_map_t *worker_map;
-
-
 static void close_workers(jk_logger_t *l);
 
-/* static worker_factory get_factory_for(char *type); */
+static worker_factory get_factory_for(char *type);
 
 static int build_worker_map(jk_map_t *init_data, 
                             char **worker_list, 
@@ -113,7 +108,7 @@ int wc_open(jk_map_t *init_data,
 
     we->num_of_workers=num_of_workers;
     we->first_worker=worker_list[0];
-    jk_log(l, JK_LOG_DEBUG, "wc_open, done %d %s\n", num_of_workers, worker_list[0]); 
+    jk_log(l, JK_LOG_DEBUG, "wc_open, done %d\n", num_of_workers); 
     return JK_TRUE;
 }
 
@@ -154,9 +149,7 @@ int wc_create_worker(const char *name,
 
     if(rc) {
         char *type = jk_get_worker_type(init_data, name);
-        jk_env_t *env=jk_env_getEnv( NULL );
-        /*         worker_factory fac = get_factory_for(type); */
-        worker_factory fac = (worker_factory)env->getFactory(env, "worker", type );
+        worker_factory fac = get_factory_for(type);
         jk_worker_t *w = NULL;
 
         *rc = NULL;
@@ -191,7 +184,7 @@ int wc_create_worker(const char *name,
         }
 
         *rc = w;
-           jk_log(l, JK_LOG_DEBUG, "wc_create_worker, done\n"); 
+        jk_log(l, JK_LOG_DEBUG, "wc_create_worker, done\n"); 
         return JK_TRUE;
     }
 
@@ -256,4 +249,18 @@ static int build_worker_map(jk_map_t *init_data,
 
     jk_log(l, JK_LOG_DEBUG, "build_worker_map, done\n"); 
     return JK_TRUE;
+}
+
+static worker_factory get_factory_for(char *type)
+{
+    worker_factory_record_t *factory = &worker_factories[0];
+    while(factory->name) {
+        if(0 == strcmp(factory->name, type)) {
+            return factory->fac;
+        }
+
+        factory ++;
+    }
+
+    return NULL;
 }

@@ -103,13 +103,6 @@
     #include <sys/ioctl.h>
 #endif
 
-#ifdef WIN32
-/* define snprint to match windows version */
-#define snprintf _snprintf
-#endif
-
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

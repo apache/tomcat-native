@@ -77,7 +77,6 @@
 #define MATCH_TYPE_EXACT    (0)
 #define MATCH_TYPE_CONTEXT  (1)
 #define MATCH_TYPE_SUFFIX   (2)
-#define MATCH_TYPE_GENERAL_SUFFIX (3) /* match all URIs of the form *ext */
 
 struct uri_worker_record {
     /* Original uri for logging */
@@ -117,12 +116,6 @@ struct jk_uri_worker_map {
     /* Map Capacity */
     unsigned            capacity;
 };
-
-int uri_worker_map_size(jk_uri_worker_map_t *uw_map ) {
-    if( uw_map == NULL ) 
-	return 0;
-    return uw_map->size;
-} 
 
 
 /*
@@ -290,31 +283,18 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                     uwr->suffix      = asterisk + 3;
                     uwr->match_type  = MATCH_TYPE_SUFFIX;
                     jk_log(l, JK_LOG_DEBUG,
-                           "Into jk_uri_worker_map_t::uri_worker_map_open, "
-			   "suffix rule %s.%s=%s was added\n",
-                            uri, asterisk + 3, worker); 
-		} else if ('\0' != asterisk[2]) {
-		    /* general suffix rule */
-		    asterisk[1] = '\0';
-		    uwr->worker_name = worker;
-		    uwr->context = uri;
-		    uwr->suffix  = asterisk + 2;
-		    uwr->match_type = MATCH_TYPE_GENERAL_SUFFIX;
-		    jk_log(l, JK_LOG_DEBUG,
-			   "Into jk_uri_worker_map_t::uri_worker_map_open, "
-			   "general suffix rule %s*%s=%s was added\n",
-			   uri, asterisk + 2, worker);
-		} else {
-		    /* context based */
-		    asterisk[1]      = '\0';
-		    uwr->worker_name = worker;
-		    uwr->context     = uri;
-		    uwr->suffix      = NULL;
-		    uwr->match_type  = MATCH_TYPE_CONTEXT;
-		    jk_log(l, JK_LOG_DEBUG,
-			   "Into jk_uri_worker_map_t::uri_worker_map_open, "
-			   "match rule %s=%s was added\n",
-			   uri, worker);
+                           "Into jk_uri_worker_map_t::uri_worker_map_open, suffix rule %s.%s=%s was added\n",
+                            uri, asterisk + 3, worker);
+                } else {
+                        /* context based */
+                        asterisk[1]      = '\0';
+                        uwr->worker_name = worker;
+                        uwr->context     = uri;
+                        uwr->suffix      = NULL;
+                        uwr->match_type  = MATCH_TYPE_CONTEXT;
+                        jk_log(l, JK_LOG_DEBUG,
+                              "Into jk_uri_worker_map_t::uri_worker_map_open, match rule %s=%s was added\n",
+                               uri, worker);
                 }
             } else {
                 /* Something like : JkMount /servlets/exampl* ajp13 */
@@ -416,18 +396,6 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
     return rc;
 }
 
-/* returns the index of the last occurrence of the 'ch' character
-   if ch=='\0' returns the length of the string str  */
-int last_index_of(const char *str,char ch)
-{
-    const char *str_minus_one=str-1;
-    const char *s=str+strlen(str);
-    while(s!=str_minus_one && ch!=*s) {
-	--s;
-    }
-    return (s-str);
-}
-
 int uri_worker_map_close(jk_uri_worker_map_t *uw_map,
                          jk_logger_t *l)
 {
@@ -450,9 +418,6 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                         const char *uri,
                         jk_logger_t *l)
 {
-    if( uri_worker_map_size( uw_map ) <= 0 )
-	return NULL;
-
     jk_log(l, JK_LOG_DEBUG, 
            "Into jk_uri_worker_map_t::map_uri_to_worker\n");    
 
@@ -485,8 +450,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     if(strlen(uri) == uwr->ctxt_len) {
 			jk_log(l,
 			       JK_LOG_DEBUG,
-			       "jk_uri_worker_map_t::map_uri_to_worker, "
-			       "Found an exact match %s -> %s\n",
+			       "jk_uri_worker_map_t::map_uri_to_worker, Found an exact match %s -> %s\n",
 			       uwr->worker_name,
 			       uwr->context );
                         jk_reset_pool(&uw_map->tp);
@@ -496,26 +460,11 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     if(uwr->ctxt_len > longest_match) {
 			jk_log(l,
 			       JK_LOG_DEBUG,
-			       "jk_uri_worker_map_t::map_uri_to_worker, "
-			       "Found a context match %s -> %s\n",
+			       "jk_uri_worker_map_t::map_uri_to_worker, Found a context match %s -> %s\n",
 			       uwr->worker_name,
 			       uwr->context );
                         longest_match = uwr->ctxt_len;
                         best_match = i;
-                    }
-		} else if(MATCH_TYPE_GENERAL_SUFFIX == uwr->match_type) {
-                    int suffix_start=last_index_of(uri,uwr->suffix[0]);
-                    if (suffix_start>=0 && 0==strcmp(uri+suffix_start,uwr->suffix)) {
-			if(uwr->ctxt_len >= longest_match) {
-			    jk_log(l,
-				   JK_LOG_DEBUG,
-				   "jk_uri_worker_map_t::map_uri_to_worker, "
-				   "Found a general suffix match %s -> *%s\n",
-				   uwr->worker_name,
-				   uwr->suffix );
-			    longest_match = uwr->ctxt_len;
-			    best_match = i;
-			}
                     }
                 } else /* suffix match */ {
                     int suffix_start;

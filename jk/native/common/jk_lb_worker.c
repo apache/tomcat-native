@@ -67,13 +67,7 @@
 #include "jk_service.h"
 #include "jk_util.h"
 #include "jk_worker.h"
-#include "jk_logger.h"
-#include "jk_service.h"
-
-int JK_METHOD lb_worker_factory(jk_worker_t **w,
-                                const char *name,
-                                jk_logger_t *l);
-
+#include "jk_lb_worker.h"
 
 /*
  * The load balancing code in this 
@@ -496,7 +490,6 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
             p->endpoint.endpoint_private = p;
             p->endpoint.service = service;
             p->endpoint.done = done;
-	    p->endpoint.channelData = NULL;
             *pend = &p->endpoint;
 
             return JK_TRUE;
