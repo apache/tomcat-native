@@ -304,7 +304,7 @@ public class Ajp13Packet {
      */
     public void appendBytes( byte b[], int off, int numBytes ) {
         appendInt( numBytes );
-        if( pos + numBytes > buff.length ) {
+        if( pos + numBytes >= buff.length ) {
             System.out.println("Buffer overflow " + buff.length + " " + pos + " " + numBytes );
             // XXX Log
         }
