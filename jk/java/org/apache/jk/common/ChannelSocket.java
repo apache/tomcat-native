@@ -109,6 +109,8 @@ public class ChannelSocket extends JkHandler {
     int linger=100;
     int socketTimeout;
 
+    long requestCount=0;
+    
     /* Turning this to true will reduce the latency with about 20%.
        But it requires changes in tomcat to make sure client-requested
        flush() is honored ( on my test, I got 367->433 RPS and
@@ -130,6 +132,10 @@ public class ChannelSocket extends JkHandler {
         return tp;
     }
 
+    public long getRequestCount() {
+        return requestCount;
+    }
+    
     /** Set the port for the ajp13 channel.
      *  To support seemless load balancing and jni, we treat this
      *  as the 'base' port - we'll try up until we find one that is not
@@ -181,23 +187,47 @@ public class ChannelSocket extends JkHandler {
     public void setServerTimeout(int timeout) {
 	this.serverTimeout = timeout;
     }
+    public int getServerTimeout() {
+        return serverTimeout;
+    }
 
     public void setTcpNoDelay( boolean b ) {
 	tcpNoDelay=b;
     }
 
+    public boolean getTcpNoDelay() {
+        return tcpNoDelay;
+    }
+    
     public void setSoLinger( int i ) {
 	linger=i;
     }
 
+    public int getSoLinger() {
+        return linger;
+    }
+    
     public void setSoTimeout( int i ) {
 	socketTimeout=i;
+    }
+
+    public int getSoTimeout() {
+	return socketTimeout;
     }
 
     public void setMaxPort( int i ) {
         maxPort=i;
     }
 
+    public int getMaxPort() {
+        return maxPort;
+    }
+
+    /** At startup we'll look for the first free port in the range.
+        The difference between this port and the beggining of the range
+        is the 'id'.
+        This is usefull for lb cases ( less config ).
+    */
     public int getInstanceId() {
         return port-startPort;
     }
@@ -230,6 +260,8 @@ public class ChannelSocket extends JkHandler {
         if( socketTimeout > 0 ) 
             s.setSoTimeout( socketTimeout );
 
+        requestCount++;
+
         InputStream is=new BufferedInputStream(s.getInputStream());
         OutputStream os;
         if( BUFFER_WRITE )
@@ -240,6 +272,18 @@ public class ChannelSocket extends JkHandler {
         ep.setNote( osNote, os );
     }
 
+    public void resetCounters() {
+        requestCount=0;
+    }
+
+    /** Called after you change some fields at runtime using jmx.
+        Experimental for now.
+    */
+    public void reinit() throws IOException {
+        destroy();
+        init();
+    }
+    
     /**
      * @jmx:managed-operation
      */
@@ -262,7 +306,7 @@ public class ChannelSocket extends JkHandler {
             log.error("Can't find free port " + startPort + " " + maxPort );
             return;
         }
-        log.info("JK: listening on tcp port " + port );
+        log.info("JK2: ajp13 listening on tcp port " + port );
         
         // If this is not the base port and we are the 'main' channleSocket and
         // SHM didn't already set the localId - we'll set the instance id
@@ -558,8 +602,6 @@ public class ChannelSocket extends JkHandler {
 	}
 	return (true);
     }
-
-    
 }
 
 class SocketAcceptor implements ThreadPoolRunnable {
