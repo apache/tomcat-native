@@ -165,8 +165,12 @@ public final class MessageBytes implements Cloneable, Serializable {
 	byte[] or after the encoding is changed
     */
     public void resetStringValue() {
-	hasStrValue=false;
-	strValue=null;
+	if( type != T_STR ) {
+	    // If this was cread as a byte[] or char[], we remove
+	    // the old string value
+	    hasStrValue=false;
+	    strValue=null;
+	}
     }
 
     public void setString( String s ) {
