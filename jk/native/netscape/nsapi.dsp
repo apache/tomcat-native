@@ -242,7 +242,7 @@ SOURCE=..\common\jk_util.h
 
 SOURCE=..\common\jk_worker.h
 # End Source File
-# Begin Source File
+# End Group
 
 # Begin Group "Resource Files"
 
