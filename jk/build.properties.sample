@@ -5,6 +5,22 @@
 # $Id$
 #
 
+#
+# tomcat 4 internals
+#
 catalina.jar = ../../jakarta-tomcat-4.0/build/server/lib/catalina.jar
+
+#
+# servlet api 2.3
+#
 servlet.jar = ../../jakarta-servletapi-4/dist/lib/servlet.jar
+
+#
+# utils.
+#
 tomcat-util.jar = ../util/build/lib/tomcat-util.jar
+
+#
+# junit jar
+#
+junit.jar=f:/dev/junit/junit.jar

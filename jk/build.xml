@@ -6,6 +6,26 @@
 
     <property name="jk.build" value="${basedir}/build"/>
 
+    <!-- Should all tests fail if one does? -->
+    <property name="test.failonerror" value="true"/>
+
+    <!-- The test runner to execute -->
+    <property name="test.runner" value="junit.textui.TestRunner"/>
+    <property name="test.entry" value="org.apache.ajp.test.TestAll"/>
+
+    <path id="test.classpath">
+        <pathelement location="${jk.build}/classes"/>
+	<pathelement location="${tomcat-util.jar}"/>
+	<pathelement location="${junit.jar}"/>
+    </path>
+
+    <path id="build-main.classpath">
+	<pathelement location="${tomcat-util.jar}"/>
+        <pathelement location="${catalina.jar}"/>
+        <pathelement location="${servlet.jar}"/>
+	<pathelement location="${junit.jar}"/>
+    </path>
+
     <target name="build-prepare">
         <mkdir dir="${jk.build}"/>
 	<mkdir dir="${jk.build}/classes"/>
@@ -16,13 +36,13 @@
     
         <javac srcdir="src/java"
 	       destdir="${jk.build}/classes"
-	       classpath="${tomcat-util.jar}:${catalina.jar}:${servlet.jar}"
 	       deprecation="on"
 	       debug="on"
 	       optimize="off"
 	       verbose="off"
 	       excludes="**/CVS/**">
 	    <exclude name="org/apache/ajp/tomcat4/**" if="tomcat4.skip"/>
+	    <classpath refid="build-main.classpath"/>
 	</javac>
 
 	<!-- Copy static resource files -->
@@ -36,6 +56,25 @@
 	     basedir="${jk.build}/classes"
 	     />
     </target>
+
+    <target name="test" if="test.entry" depends="build-main"
+            description="Run all unit test cases">
+        <!--
+	<junit printsummary="yes" fork="on" haltonfailure="yes">
+	    <formatter type="plain" usefile="false"/>
+      	    <test name="${test.entry}"/>
+            <classpath refid="test.classpath"/>
+	</junit>
+	-->
+
+	<java classname="${test.runner}" fork="yes"
+	      failonerror="${test.failonerror}">
+	      <!--<jvmarg value="${java.protocol.handler.pkgs}"/>-->
+	      <arg value="${test.entry}"/>
+	      <classpath refid="test.classpath"/>
+	</java>
+    </target>
+
 
     <!-- ================ BUILD: Create Jk Javadocs =================== -->
     <target name="javadoc">
