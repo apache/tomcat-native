@@ -92,18 +92,18 @@ static int JK_METHOD jk2_logger_apache2_log(jk_env_t *env, jk_logger_t *l,
                                  int level,
                                  const char *what)
 {
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
 static int JK_METHOD jk2_logger_apache2_init(jk_env_t *env, jk_logger_t *_this)
 {
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD jk2_logger_apache2_close(jk_env_t *env, jk_logger_t *_this)
 {
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
@@ -128,10 +128,10 @@ static int JK_METHOD jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
 #endif
 
     if( level < l->level )
-        return JK_TRUE;
+        return JK_OK;
 
     if( s==NULL ) {
-        return JK_FALSE;
+        return JK_ERR;
     }
     
 #if defined(NETWARE) /* until we get a vsnprintf function */
@@ -204,7 +204,7 @@ jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
                                                  sizeof(jk_logger_t));
 
     if(l==NULL ) {
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     l->log = jk2_logger_apache2_log;
@@ -219,6 +219,6 @@ jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
     l->mbean=result;
     result->setAttribute = jk2_logger_file_setProperty;
 
-    return JK_TRUE;
+    return JK_OK;
 }
 

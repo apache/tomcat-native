@@ -95,17 +95,17 @@ static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
     if (s->status< 100 || s->status > 1000) {
         env->l->jkLog(env,env->l, JK_LOG_ERROR, 
                "jk_ws_service_t::jk2_service_iis_head, invalid status %d\n", s->status);
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     if (!s->response_started) {
-        return JK_TRUE;
+        return JK_OK;
     }
 
     if( lpEcb == NULL ) {
         env->l->jkLog(env,env->l, JK_LOG_ERROR, 
                       "jk_ws_service_t::start_response, no lpEcp\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     s->response_started = JK_TRUE;
@@ -158,10 +158,10 @@ static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
                                       (LPDWORD)headers_str)) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "jk_ws_service_t::start_response, ServerSupportFunction failed\n");
-        return JK_FALSE;
+        return JK_ERR;
     }       
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
@@ -203,16 +203,16 @@ static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
                 } else {
                     env->l->jkLog(env,env->l, JK_LOG_ERROR, 
                            "jk_ws_service_t::read, ReadClient failed\n");
-                    return JK_FALSE;
+                    return JK_ERR;
                 }                   
             }
         }
-        return JK_TRUE;
+        return JK_OK;
     }
     
     env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                   "jk_ws_service_t::read, NULL parameters\n");
-    return JK_FALSE;
+    return JK_ERR;
 }
 
 static int JK_METHOD jk2_service_iis_write(jk_env_t *env, jk_ws_service_t *s,
@@ -240,20 +240,20 @@ static int JK_METHOD jk2_service_iis_write(jk_env_t *env, jk_ws_service_t *s,
                                         0)) {
                     env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                            "jk_ws_service_t::write, WriteClient failed\n");
-                    return JK_FALSE;
+                    return JK_ERR;
                 }
                 written += try_to_write;
             }
         }
         
-        return JK_TRUE;
+        return JK_OK;
         
     }
     
     env->l->jkLog(env, env->l, JK_LOG_ERROR, 
            "jk_ws_service_t::write, NULL parameters\n");
     
-    return JK_FALSE;
+    return JK_ERR;
 }
 
 int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
@@ -267,7 +267,7 @@ int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
                                  buf,
                                  (LPDWORD)&bufsz)) {
         strcpy(buf, def_val);
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     if (bufsz > 0) {
@@ -276,7 +276,7 @@ int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
     env->l->jkLog(env,env->l, JK_LOG_ERROR, 
            "jk_ws_service_t::write, NULL parameters\n");
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -299,7 +299,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
         /* *worker_name    = DEFAULT_WORKER_NAME; */
         GET_SERVER_VARIABLE_VALUE(w->pool,"URL", s->req_uri);       
         if (jk_requtil_unescapeUrl(s->req_uri) < 0)
-            return JK_FALSE;
+            return JK_ERR;
         jk_requtil_getParents(s->req_uri);
     }
     
@@ -491,13 +491,13 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
             }
         } else {
             /* We must have our two headers */
-            return JK_FALSE;
+            return JK_ERR;
         }
     } else {
-        return JK_FALSE;
+        return JK_ERR;
     }
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static void JK_METHOD jk2_service_iis_afterRequest(jk_env_t *env, jk_ws_service_t *s )
@@ -523,7 +523,7 @@ static void JK_METHOD jk2_service_iis_afterRequest(jk_env_t *env, jk_ws_service_
 int jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s)
 {
     if(s==NULL ) {
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     s->head   = jk2_service_iis_head;
@@ -532,6 +532,6 @@ int jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s)
     s->init   = jk2_service_iis_initService;
     s->afterRequest = jk2_service_iis_afterRequest;
     
-    return JK_TRUE;
+    return JK_OK;
 }
 

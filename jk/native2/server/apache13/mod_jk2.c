@@ -123,7 +123,7 @@ static const char *jk2_set2(cmd_parms *cmd, void *per_dir,
     int rc;
     
     rc=workerEnv->config->setPropertyString( env, workerEnv->config, name, value );
-    if( rc!=JK_TRUE ) {
+    if( rc!=JK_OK ) {
         fprintf( stderr, "mod_jk2: Unrecognized option %s %s\n", name, value);
     }
 
@@ -158,19 +158,26 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
        to a file. Check the logger for default settings.
     */
     jkb=env->createBean2( env, env->globalPool, "logger.file", "");
-    l = jkb->object;
+    if( jkb==NULL ) {
+        fprintf(stderr, "Error creating logger ");
+        return JK_ERR;
+    }
     env->l=l;
     env->alias( env, "logger.file:", "logger");
     
     /* Create the workerEnv
      */
     jkb=env->createBean2( env, env->globalPool,"workerEnv", "");
+    if( jkb==NULL ) {
+        fprintf(stderr, "Error creating workerEnv ");
+        return JK_ERR;
+    }
     workerEnv= jkb->object;
     env->alias( env, "workerEnv:", "workerEnv");
 
     if( workerEnv==NULL || l== NULL  ) {
         fprintf( stderr, "Error initializing jk, NULL objects \n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     /* Local initialization.
@@ -181,7 +188,7 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
      */
     workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
                               ap_server_root_relative(p,""));
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -257,7 +264,7 @@ static void jk2_init(server_rec *s, ap_pool *pconf)
 
     ap_pool *gPool=NULL;
     void *data=NULL;
-    int rc=JK_TRUE;
+    int rc=JK_OK;
 
     env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init\n" );
     
@@ -376,14 +383,14 @@ static int jk2_handler(request_rec *r)
         rPool->reset(env, rPool);
         
         rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
-        if( rc1 == JK_TRUE ) {
+        if( rc1 == JK_OK ) {
             rPool=NULL;
         } else {
             rPool->close(env, rPool);
         }
     }
 
-    if(rc==JK_TRUE) {
+    if(rc==JK_OK) {
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return OK;    /* NOT r->status, even if it has changed. */
     }

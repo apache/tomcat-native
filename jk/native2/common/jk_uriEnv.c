@@ -80,7 +80,7 @@ static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
     if( slash==NULL ) {
         env->l->jkLog( env, env->l, JK_LOG_ERROR,
                        "uriEnv.parseUri(): At least a '/' must be included %s\n", name);
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     /* Cut the "uri." prefix, if any */
@@ -104,7 +104,7 @@ static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
     jk2_uriEnv_init(env, uriEnv);
     /*     env->l->jkLog( env, env->l, JK_LOG_INFO, */
     /*                    "uriEnv.parseUri() Setting path %s for %s\n", n, name); */
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
@@ -157,7 +157,7 @@ static int JK_METHOD jk2_uriEnv_setProperty(jk_env_t *env,
             uriEnv->virtual=uriEnv->pool->pstrdup(env, uriEnv->pool, val);
     }
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -168,7 +168,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     char *uri=uriEnv->pool->pstrdup( env, uriEnv->pool, uriEnv->uri);
 
     if( uri==NULL ) 
-        return JK_FALSE;
+        return JK_ERR;
     
     if ('/' != uri[0]) {
         /*
@@ -180,7 +180,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "uriMap.addMapping() context must start with '/' in %s\n",
                       uri);
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     asterisk = strchr(uri, '*');
@@ -197,7 +197,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
                           "uriMap.addMapping() exact mapping %s=%s was added\n",
                           uri, uriEnv->workerName);
         }
-        return JK_TRUE;
+        return JK_OK;
     }
 
     /*
@@ -260,7 +260,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         }
     }
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static char *myAttInfo[]={ "host", "uri", "worker", NULL };
@@ -299,6 +299,6 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     uriEnv->workerEnv=env->getByName( env, "workerEnv" );
     uriEnv->workerEnv->uriMap->addUriEnv( env, uriEnv->workerEnv->uriMap,
                                           uriEnv );
-    return JK_TRUE;
+    return JK_OK;
 }
 

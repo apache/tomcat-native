@@ -92,7 +92,7 @@ static int JK_METHOD jk2_service_apache13_head(jk_env_t *env, jk_ws_service_t *s
     jk_map_t *headers;
     
     if(s==NULL ||  s->ws_private==NULL )
-        return JK_FALSE;
+        return JK_ERR;
     
     r = (request_rec *)s->ws_private;  
         
@@ -149,7 +149,7 @@ static int JK_METHOD jk2_service_apache13_head(jk_env_t *env, jk_ws_service_t *s
     /* ap_send_http_header(r); */
     s->response_started = JK_TRUE;
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /*
@@ -179,10 +179,10 @@ static int JK_METHOD jk2_service_apache13_read(jk_env_t *env, jk_ws_service_t *s
             } else {
                 *actually_read = (unsigned) rv;
             }
-            return JK_TRUE;
+            return JK_OK;
         }
     }
-    return JK_FALSE;
+    return JK_ERR;
 }
 
 /*
@@ -217,7 +217,7 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
                 env->l->jkLog(env, env->l, JK_LOG_INFO, 
                               "service.write() default head\n");
                 if(!s->head(env, s)) {
-                    return JK_FALSE;
+                    return JK_ERR;
                 }
                 {
                     array_header *t = ap_table_elts(rr->headers_out);
@@ -244,7 +244,7 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
                 bb+=CHUNK_SIZE;
                 
                 if(toSend != r) { 
-                    return JK_FALSE; 
+                    return JK_ERR; 
                 } 
                 
             }
@@ -254,9 +254,9 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
              */
             ap_bflush(s->ws_private);
         }
-        return JK_TRUE;
+        return JK_OK;
     }
-    return JK_FALSE;
+    return JK_ERR;
 }
 
 /* ========================================================================= */
@@ -364,7 +364,7 @@ static int jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
         break;
 
         default :
-            return JK_FALSE;
+            return JK_ERR;
     }
 
     s->is_ssl       = JK_FALSE;
@@ -450,7 +450,7 @@ static int jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
 
     jk2_map_default_create(env, &s->headers_out, s->pool );
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /*
@@ -484,7 +484,7 @@ static void jk2_service_apache13_afterRequest(jk_env_t *env, jk_ws_service_t *s 
 int jk2_service_apache13_init(jk_env_t *env, jk_ws_service_t *s)
 {
     if(s==NULL ) {
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     s->head   = jk2_service_apache13_head;
@@ -493,5 +493,5 @@ int jk2_service_apache13_init(jk_env_t *env, jk_ws_service_t *s)
     s->init   = jk2_init_ws_service;
     s->afterRequest     = jk2_service_apache13_afterRequest;
     
-    return JK_TRUE;
+    return JK_OK;
 }

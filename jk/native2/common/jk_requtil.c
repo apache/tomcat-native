@@ -143,7 +143,7 @@ const char *jk2_requtil_getHeaderById(jk_env_t *env, int sc)
 int jk2_requtil_getMethodId(jk_env_t *env, const char *method,
                            unsigned char *sc) 
 {
-    int rc = JK_TRUE;
+    int rc = JK_OK;
     if(0 == strcmp(method, "GET")) {
         *sc = SC_M_GET;
     } else if(0 == strcmp(method, "POST")) {
@@ -187,7 +187,7 @@ int jk2_requtil_getMethodId(jk_env_t *env, const char *method,
     } else if(0 == strcmp(method, "SEARCH")) {
         *sc = SC_M_SEARCH;
     } else {
-        rc = JK_FALSE;
+        rc = JK_ERR;
     }
 
     return rc;
@@ -220,17 +220,17 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
                 } else if(!strcasecmp(header_name + 7, "language")) {
                     *sc = SC_ACCEPT_LANGUAGE;
                 } else {
-                    return JK_FALSE;
+                    return JK_ERR;
                 }
             } else if ('\0' == header_name[6]) {
                 *sc = SC_ACCEPT;
             } else {
-                return JK_FALSE;
+                return JK_ERR;
             }
         } else if (!strcasecmp(header_name, "authorization")) {
             *sc = SC_AUTHORIZATION;
         } else {
-            return JK_FALSE;
+            return JK_ERR;
         }
         break;
         
@@ -247,7 +247,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         } else if(!strcasecmp(header_name, "cookie2")) {
             *sc = SC_COOKIE2;
         } else {
-            return JK_FALSE;
+            return JK_ERR;
         }
         break;
         
@@ -256,7 +256,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         if(!strcasecmp(header_name, "host")) {
             *sc = SC_HOST;
         } else {
-            return JK_FALSE;
+            return JK_ERR;
         }
         break;
         
@@ -265,7 +265,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         if(!strcasecmp(header_name, "pragma")) {
             *sc = SC_PRAGMA;
         } else {
-            return JK_FALSE;
+            return JK_ERR;
         }
         break;
         
@@ -274,7 +274,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         if(!strcasecmp(header_name, "referer")) {
             *sc = SC_REFERER;
         } else {
-            return JK_FALSE;
+            return JK_ERR;
         }
         break;
         
@@ -283,7 +283,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         if(!strcasecmp(header_name, "user-agent")) {
             *sc = SC_USER_AGENT;
         } else {
-            return JK_FALSE;
+            return JK_ERR;
         }
         break;
         
@@ -291,10 +291,10 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "requtil.getHeaderId() long header %s\n", header_name);
 
-        return JK_FALSE;
+        return JK_ERR;
     }
     /* Never reached */
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /** Retrieve the cookie with the given name
@@ -465,7 +465,7 @@ static int jk2_requtil_createBuffer(jk_env_t *env,
     s->outSize=bsize;
     s->outBuf=(char *)s->pool->alloc( env, s->pool, bsize );
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static void jk2_requtil_printf(jk_env_t *env, jk_ws_service_t *s, char *fmt, ...)
@@ -528,12 +528,14 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     unsigned char method;
     int i;
     int headerCount;
+    int rc;
 
-    if (!jk2_requtil_getMethodId(env, s->method, &method)) { 
+    rc=jk2_requtil_getMethodId(env, s->method, &method);
+    if (rc!=JK_OK) { 
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Error ajp_marshal_into_msgb - No such method %s\n",
                       s->method);
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     headerCount=s->headers_in->size(env, s->headers_in);
@@ -551,7 +553,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
 
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "handle.request()  Error serializing the message head\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     for (i = 0 ; i < headerCount ; i++) {
@@ -559,13 +561,13 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
 
         char *name=s->headers_in->nameAt(env, s->headers_in, i);
 
-        if (jk2_requtil_getHeaderId(env, name, &sc)) {
+        if (jk2_requtil_getHeaderId(env, name, &sc) != JK_OK) {
             /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
             /*                "serialize.request() Add headerId %s %d\n", name, sc); */
             if (msg->appendInt(env, msg, sc)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "serialize.request() Error serializing header id\n");
-                return JK_FALSE;
+                return JK_ERR;
             }
         } else {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -573,7 +575,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
             if (msg->appendString(env, msg, name)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "serialize.request() Error serializing header name\n");
-                return JK_FALSE;
+                return JK_ERR;
             }
         }
         
@@ -581,10 +583,10 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
         /*                "serialize.request() Add headerValue %s\n", */
         /*                 s->headers_in->valueAt( env, s->headers_in, i)); */
         if (msg->appendString(env, msg,
-                              s->headers_in->valueAt( env, s->headers_in, i))) {
+                               s->headers_in->valueAt( env, s->headers_in, i))) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "serialize.request() Error serializing header value\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
 
@@ -593,7 +595,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
             msg->appendString(env, msg, s->remote_user)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "serialize.request() Error serializing user name\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
     if (s->auth_type) {
@@ -601,7 +603,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
             msg->appendString(env, msg, s->auth_type)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing auth type\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
     if (s->query_string) {
@@ -609,43 +611,43 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
             msg->appendString(env, msg, s->query_string)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing query string\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
     /* XXX This can be sent only on startup ( ajp14 ) */
      
     if (s->jvm_route) {
-        if (msg->appendByte(env, msg, SC_A_JVM_ROUTE) ||
-            msg->appendString(env, msg, s->jvm_route)) {
+        if ( msg->appendByte(env, msg, SC_A_JVM_ROUTE) ||
+             msg->appendString(env, msg, s->jvm_route)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing worker id\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
     
     if (s->ssl_cert_len) {
-        if (msg->appendByte(env, msg, SC_A_SSL_CERT) ||
-            msg->appendString(env, msg, s->ssl_cert)) {
+        if ( msg->appendByte(env, msg, SC_A_SSL_CERT) ||
+             msg->appendString(env, msg, s->ssl_cert)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing SSL cert\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
 
     if (s->ssl_cipher) {
-        if (msg->appendByte(env, msg, SC_A_SSL_CIPHER) ||
-            msg->appendString(env, msg, s->ssl_cipher)) {
+        if ( msg->appendByte(env, msg, SC_A_SSL_CIPHER) ||
+             msg->appendString(env, msg, s->ssl_cipher)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing SSL cipher\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
     if (s->ssl_session) {
-        if (msg->appendByte(env, msg, SC_A_SSL_SESSION) ||
-            msg->appendString(env, msg, s->ssl_session)) {
+        if ( msg->appendByte(env, msg, SC_A_SSL_SESSION) ||
+             msg->appendString(env, msg, s->ssl_session)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing SSL session\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
 
@@ -655,20 +657,20 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
      * JFC removed: ae->proto == AJP14_PROTO
      */
     if (s->ssl_key_size != -1) {
-        if (msg->appendByte(env, msg, SC_A_SSL_KEY_SIZE) ||
-            msg->appendInt(env, msg, (unsigned short) s->ssl_key_size)) {
+        if ( msg->appendByte(env, msg, SC_A_SSL_KEY_SIZE) ||
+             msg->appendInt(env, msg, (unsigned short) s->ssl_key_size)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing SSL key size\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
 
     if (ae->worker->secret ) {
-        if (msg->appendByte(env, msg, SC_A_SECRET) ||
-            msg->appendString(env, msg, ae->worker->secret )) {
+        if ( msg->appendByte(env, msg, SC_A_SECRET) ||
+             msg->appendString(env, msg, ae->worker->secret )) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "handle.request() Error serializing secret\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
 
@@ -677,28 +679,28 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
         for (i = 0 ; i < s->attributes->size( env,  s->attributes) ; i++) {
             char *name=s->attributes->nameAt( env,  s->attributes, i);
             char *val=s->attributes->nameAt( env, s->attributes, i);
-            if (msg->appendByte(env, msg, SC_A_REQ_ATTRIBUTE) ||
-                msg->appendString(env, msg, name ) ||
-                msg->appendString(env, msg, val)) {
+            if ( msg->appendByte(env, msg, SC_A_REQ_ATTRIBUTE) ||
+                 msg->appendString(env, msg, name ) ||
+                 msg->appendString(env, msg, val)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                          "handle.request() Error serializing attribute %s=%s\n",
                          name, val);
-                return JK_FALSE;
+                return JK_ERR;
             }
         }
     }
 
-    if (msg->appendByte(env, msg, SC_A_ARE_DONE)) {
+    if ( msg->appendByte(env, msg, SC_A_ARE_DONE)) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                  "handle.request() Error serializing end marker\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "serialize.request() serialized %s\n", s->req_uri);
 
     /*  msg->dump( env, msg, "Dump: " ); */
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -715,19 +717,19 @@ int jk2_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
     }
     if(len <= 0) {
         len = 0;
-        return JK_TRUE;
+        return JK_OK;
     }
 
     len=msg->appendFromServer( env, msg, r, ae, len );
     /* the right place to add file storage for upload */
     if (len >= 0) {
         r->content_read += len;
-        return JK_TRUE;
+        return JK_OK;
     }                  
             
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
              "handler.marshapPostHead() - error len=%d\n", len);
-    return JK_FALSE;	    
+    return JK_ERR;	    
 }
 
 /* -------------------- Request encoding -------------------- */
@@ -774,18 +776,18 @@ int jk_requtil_escapeUrl(const char *path, char *dest, int destsize)
     while ((c = *s)) {
 	if (TEST_CHAR(c, T_OS_ESCAPE_PATH)) {
             if (d >= ee )
-                return JK_FALSE;
+                return JK_ERR;
 	    d = c2x(c, d);
 	}
 	else {
             if (d >= e )
-                return JK_FALSE;
+                return JK_ERR;
 	    *d++ = c;
 	}
 	++s;
     }
     *d = '\0';
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /* XXX Make it a default checking in uri worker map
@@ -845,7 +847,7 @@ int jk_requtil_unescapeUrl(char *url)
     else if (badpath)
         return -2;
     else
-        return 0;
+        return JK_OK;
 }
 
 void jk_requtil_getParents(char *name)

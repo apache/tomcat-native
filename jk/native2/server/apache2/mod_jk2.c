@@ -151,8 +151,8 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
     jk_env_t *env=workerEnv->globalEnv;
     int rc;
     
-    rc=workerEnv->config->setPropertyString( env, workerEnv->config, name, value );
-    if( rc!=JK_TRUE ) {
+    rc=workerEnv->config->setPropertyString( env, workerEnv->config, (char *)name, value );
+    if( rc!=JK_OK ) {
         fprintf( stderr, "mod_jk2: Unrecognized option %s %s\n", name, value);
     }
 
@@ -188,7 +188,7 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
 {
     jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)per_dir;
 
-    uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, name, val );
+    uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, (char *)name, (void *)val );
     
     fprintf(stderr, "JkUriSet  %s %s dir=%s args=%s\n",
             uriEnv->workerName, cmd->path,
@@ -276,7 +276,7 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     env->alias( env, "logger.file:", "logger");
     l = jkb->object;
 #else
-    env->registerFactory( env, "logger.apache2",    jk2_logger_apache2_factory );
+    env->registerFactory( env, "logger.apache2",  jk2_logger_apache2_factory );
     jkb=env->createBean2( env, env->globalPool, "logger.apache2", "");
     env->alias( env, "logger.apache2:", "logger");
     l = jkb->object;
@@ -397,7 +397,7 @@ static int jk2_apache2_isValidating(apr_pool_t *gPool, apr_pool_t **mainPool) {
     if( tmpPool != NULL ) {
         /* We can't detect the root pool */
         /* fprintf(stderr, "XXX Can't find root pool\n" ); */
-        return JK_FALSE;
+        return JK_ERR;
     }
     if(mainPool != NULL )
         *mainPool=gPool;
@@ -405,9 +405,9 @@ static int jk2_apache2_isValidating(apr_pool_t *gPool, apr_pool_t **mainPool) {
     /* We have a global pool ! */
     apr_pool_userdata_get( &data, "mod_jk_init", gPool );
     if( data==NULL ) {
-        return JK_TRUE;
+        return JK_OK;
     } else {
-        return JK_FALSE;
+        return JK_ERR;
     }
 }
 
@@ -428,7 +428,7 @@ static int jk2_post_config(apr_pool_t *pconf,
     
     rc=jk2_apache2_isValidating( plog, &gPool );
 
-    if( rc == JK_TRUE && gPool != NULL ) {
+    if( rc == JK_OK && gPool != NULL ) {
         /* This is the first step */
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "mod_jk.post_config() first invocation\n");
@@ -441,7 +441,7 @@ static int jk2_post_config(apr_pool_t *pconf,
 
 
 /*     if(!workerEnv->was_initialized) { */
-/*         workerEnv->was_initialized = JK_TRUE;         */
+/*         workerEnv->was_initialized = JK_OK;         */
         
 /*         jk2_init( env, pconf, workerEnv, s ); */
 /*     } */
@@ -574,7 +574,7 @@ static int jk2_handler(request_rec *r)
         rPool->reset(env, rPool);
         
         rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
-        if( rc1 == JK_TRUE ) {
+        if( rc1 == JK_OK ) {
             rPool=NULL;
         }
         if( rPool!=NULL ) {
@@ -582,7 +582,7 @@ static int jk2_handler(request_rec *r)
         }
     }
 
-    if(rc==JK_TRUE) {
+    if(rc==JK_OK) {
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return OK;    /* NOT r->status, even if it has changed. */
     }

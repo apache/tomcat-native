@@ -207,7 +207,7 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     
     s->afterRequest( env, s);
     fprintf(stderr, "After req %s \n", s);
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -222,7 +222,7 @@ int JK_METHOD jk2_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
     if(_this==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "status_worker.factory() OutOfMemoryException\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     _this->pool           = pool;
@@ -235,6 +235,6 @@ int JK_METHOD jk2_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
     _this->workerEnv=env->getByName( env, "workerEnv" );
     _this->workerEnv->addWorker( env, _this->workerEnv, _this );
 
-    return JK_TRUE;
+    return JK_OK;
 }
 

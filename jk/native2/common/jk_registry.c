@@ -119,9 +119,8 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
   env->registerFactory( env, "uri", jk2_uriEnv_factory );
   env->registerFactory( env, "config", jk2_config_factory );
   
-  env->registerFactory( env, "ajp13", jk2_worker_ajp14_factory );
   env->registerFactory( env, "worker.ajp13", jk2_worker_ajp14_factory );
-  env->registerFactory( env, "ajp14", jk2_worker_ajp14_factory );
+  env->registerFactory( env, "ajp13", jk2_worker_ajp14_factory );
   env->registerFactory( env, "lb",    jk2_worker_lb_factory );
   env->registerFactory( env, "worker.lb",    jk2_worker_lb_factory );
   env->registerFactory( env, "status", jk2_worker_status_factory );

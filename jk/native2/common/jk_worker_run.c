@@ -88,7 +88,7 @@ static int JK_METHOD jk2_worker_run_service(jk_env_t *env, jk_worker_t *_this,
     s->head(env, s );
 
     s->afterRequest( env, s);
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD jk2_worker_run_destroy(jk_env_t *env, jk_worker_t *w)
@@ -98,12 +98,12 @@ static int JK_METHOD jk2_worker_run_destroy(jk_env_t *env, jk_worker_t *w)
     if(w==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "run_worker.destroy() NullPointerException\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     w->pool->close(env, w->pool);    
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -116,7 +116,7 @@ int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
     if(NULL == name ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "run_worker.factory() NullPointerException\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     _this = (jk_worker_t *)pool->calloc(env, pool, sizeof(jk_worker_t));
@@ -124,7 +124,7 @@ int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
     if(_this==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "run_worker.factory() OutOfMemoryException\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     _this->pool=pool;
@@ -137,6 +137,6 @@ int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
     _this->workerEnv=env->getByName( env, "workerEnv" );
     _this->workerEnv->addWorker( env, _this->workerEnv, _this );
 
-    return JK_TRUE;
+    return JK_OK;
 }
 

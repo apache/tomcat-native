@@ -128,14 +128,14 @@ static int jk2_uriMap_checkUri(jk_env_t *env, jk_uriMap_t *_this,
                          * Security violation !!!
                          * this is a fraud.
                          */
-                        return JK_FALSE;
+                        return JK_ERR;
                     }
                 }
             }
         }
     }
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -155,7 +155,7 @@ static int jk2_uriMap_realloc(jk_env_t *env,jk_uriMap_t *_this)
                                sizeof(jk_uriEnv_t *) * capacity);
         
         if (! uwr)
-            return JK_FALSE;
+            return JK_ERR;
 
         if (_this->capacity && _this->maps)
             memcpy(uwr, _this->maps,
@@ -165,7 +165,7 @@ static int jk2_uriMap_realloc(jk_env_t *env,jk_uriMap_t *_this)
         _this->capacity = capacity;
     }
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int jk2_uriMap_addUriEnv( jk_env_t *env, jk_uriMap_t *uriMap, jk_uriEnv_t *uriEnv )
@@ -175,10 +175,10 @@ static int jk2_uriMap_addUriEnv( jk_env_t *env, jk_uriMap_t *uriMap, jk_uriEnv_t
     /* Register it */
     /* make sure we have space */
     rc=jk2_uriMap_realloc(env, uriMap);
-    if (rc != JK_TRUE ) {
+    if (rc != JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "uriMap.addMappint() OutOfMemoryException\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
     uriMap->maps[uriMap->size] = uriEnv;
     uriMap->size++;
@@ -188,7 +188,7 @@ static int jk2_uriMap_addUriEnv( jk_env_t *env, jk_uriMap_t *uriMap, jk_uriEnv_t
 
     
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static jk_uriEnv_t *jk2_uriEnv_createUriEnv(jk_env_t *env,
@@ -233,12 +233,12 @@ static int JK_METHOD jk2_uriMap_setProperty(jk_env_t *env, jk_bean_t *mbean,
 {
     jk_uriMap_t *_this=mbean->object;
     char *value=valueP;
-    int rc=JK_TRUE;
+    int rc=JK_OK;
     
     if( strcmp( name, "debug" )==0 ) {
         _this->debug=atoi( value );
     } else {
-        return JK_FALSE;
+        return JK_ERR;
     }
     return rc;
 }
@@ -246,7 +246,7 @@ static int JK_METHOD jk2_uriMap_setProperty(jk_env_t *env, jk_bean_t *mbean,
 
 static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this)
 {
-    int rc=JK_TRUE;
+    int rc=JK_OK;
     int sz;
     int err;
     int i;
@@ -259,12 +259,12 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this)
         char *wname=_this->maps[i]->workerName;
         if( wname!=NULL ) {
             /* Backward compat. ajp13 is used as shortcut for worker.ajp13 */
-            if( strncmp( wname, "worker.", 7 ) != 0 ) {
-                wname=_this->pool->calloc( env, _this->pool, 10 + strlen( wname ) );
-                strcpy( wname, "worker." );
-                strcat( wname, _this->maps[i]->workerName );
-                _this->maps[i]->workerName=wname;
-            }
+/*             if( strncmp( wname, "worker.", 7 ) != 0 ) { */
+/*                 wname=_this->pool->calloc( env, _this->pool, 10 + strlen( wname ) ); */
+/*                 strcpy( wname, "worker." ); */
+/*                 strcat( wname, _this->maps[i]->workerName ); */
+/*                 _this->maps[i]->workerName=wname; */
+/*             } */
             _this->maps[i]->worker= env->getByName( env, wname );
             if( _this->maps[i]->worker==NULL ) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -392,6 +392,10 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
     for(i = 0 ; i < _this->size ; i++) {
         jk_uriEnv_t *uwr = _this->maps[i];
         
+/*         if( _this->debug > 1 ) */
+/*             env->l->jkLog(env, env->l, JK_LOG_INFO, */
+/*                           "uriMap.mapUri() try match %s %s \n", */
+/*                           uri, uwr->prefix ); */
         if(uwr->prefix_len < longest_match) {
             /* This will also eliminate extension matches if
                a prefix match was already found */
@@ -489,7 +493,7 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *resu
     if(  ! _this) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "uriMap.factory() OutOfMemoryError\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     _this->size     = 0;
@@ -504,12 +508,12 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *resu
     _this->checkUri=jk2_uriMap_checkUri;
     _this->mapUri=jk2_uriMap_mapUri;
     _this->maps = NULL;
-    _this->debug= 2;
+    _this->debug= 0;
             
     result->object=_this;
     result->setAttribute=jk2_uriMap_setProperty;
     _this->mbean=result;
     
-    return JK_TRUE;
+    return JK_OK;
 }
 

@@ -92,7 +92,7 @@ static int jk2_map_aprtable_put( struct jk_env *env, struct jk_map *_this,
     
     apr_table_setn( aprMap, name, (char *)value );
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int jk2_map_aprtable_add( struct jk_env *env, struct jk_map *_this,
@@ -102,7 +102,7 @@ static int jk2_map_aprtable_add( struct jk_env *env, struct jk_map *_this,
     
     apr_table_addn( aprMap, name, (char *)value );
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int jk2_map_aprtable_size( struct jk_env *env, struct jk_map *_this )
@@ -165,7 +165,7 @@ int  jk2_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
     _this->init=jk2_map_aprtable_init;
     _this->clear=jk2_map_aprtable_clear;
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 

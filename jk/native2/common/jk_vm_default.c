@@ -105,7 +105,7 @@ int jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
                    jk_bean_t *result,
                    char *type, char *name)
 {
-    return JK_FALSE;
+    return JK_ERR;
 }
 
 #else
@@ -196,12 +196,12 @@ static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
         if(jni_create_java_vm &&
            jni_get_default_java_vm_init_args &&
            jni_get_created_java_vms) {
-            return JK_TRUE;
+            return JK_OK;
         }
 
         FreeLibrary(hInst);
     }
-    return JK_TRUE;
+    return JK_OK;
 #elif defined(NETWARE)
     int javaNlmHandle = FindNLMHandle("JVM");
     if (0 == javaNlmHandle) {
@@ -224,9 +224,9 @@ static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
     if(jni_create_java_vm &&
        jni_get_default_java_vm_init_args &&
        jni_get_created_java_vms) {
-        return JK_TRUE;
+        return JK_OK;
     }
-    return JK_TRUE;
+    return JK_OK;
 #else 
     void *handle;
     handle = dlopen(jkvm->jvm_dll_path, RTLD_NOW | RTLD_GLOBAL);
@@ -235,7 +235,7 @@ static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
         env->l->jkLog(env, env->l, JK_LOG_EMERG, 
                       "Can't load native library %s : %s\n", jkvm->jvm_dll_path,
                       dlerror());
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     jni_create_java_vm = dlsym(handle, "JNI_CreateJavaVM");
@@ -251,13 +251,13 @@ static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
                       "jni.loadJvm() Can't resolve symbols %s\n",
                       jkvm->jvm_dll_path );
         dlclose(handle);
-        return JK_FALSE;
+        return JK_ERR;
     }
     /* env->l->jkLog(env, env->l, JK_LOG_INFO,  */
     /*                   "jni.loadJvm() %s symbols resolved\n",
                          jkvm->jvm_dll_path); */
     
-    return JK_TRUE;
+    return JK_OK;
 #endif
 }
 
@@ -354,7 +354,7 @@ static char* jk2_vm_guessJvmDll(jk_env_t *env, jk_map_t *props,
         }
 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "jni.guessJvmDll() failed %s\n", *current);
+                      "jni.guessJvmDll() failed %s\n", jvm);
         current++;
     }
     
@@ -383,22 +383,24 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
         jkvm->jvm_dll_path=jk2_vm_guessJvmDll( env, props, jkvm  );
     }
     
-    if(!jkvm->jvm_dll_path ) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "vm.init(): Fail-> no jvm_dll_path\n");
-        return JK_FALSE;
+    if( jkvm->jvm_dll_path==NULL ) {
+        jkvm->jvm_dll_path=
+            jk2_config_replaceProperties(env, props, props->pool,"libjvm.${so}");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "vm.init(): no jvm_dll_path, will use LD_LIBRARY_PATH %s\n",
+                      jkvm->jvm_dll_path);
+    } else {
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "vm.init(): Jni lib: %s\n",
+                      jkvm->jvm_dll_path );
     }
-    
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "vm.init(): Jni lib: %s\n",
-                  jkvm->jvm_dll_path );
 
     err=jk2_vm_loadJvm(env, jkvm );
 
-    if( err!=JK_TRUE ) {
+    if( err!=JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "jni.loadJvm() Error - can't load jvm dll\n");
         /* [V] no detach needed here */
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     
@@ -420,7 +422,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
     if(0 != jni_get_default_java_vm_init_args(&vm_args11)) {
     	env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "vm.detect() Fail-> can't get default vm init args\n"); 
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     jvm_version= vm_args11.version;
@@ -428,7 +430,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
     if(jvm_version != JNI_VERSION_1_2 ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "vm.detect() found: %X expecting 1.2\n", vm_args.version);
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     vm_args.version = JNI_VERSION_1_2;
@@ -459,15 +461,15 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
         if (NULL == jvm) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "vm.open1() error attaching %d\n", err);
-            return JK_FALSE;
+            return JK_ERR;
         }
 
         jkvm->jvm=jvm;
-        return JK_TRUE;
+        return JK_OK;
     } else if( err!=0 ) {
     	env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "Fail-> could not create JVM, code: %d \n", err); 
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     jkvm->jvm=jvm;
@@ -475,7 +477,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "vm.open2() done\n");
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD
@@ -490,10 +492,10 @@ jk2_jk_vm_setProperty(jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP 
     } else if( strcmp( name, "JVM" )==0 ) {
         jkvm->jvm_dll_path=value;
     } else {
-        return JK_FALSE;
+        return JK_ERR;
     }
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -525,7 +527,7 @@ int jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
 
     workerEnv->vm=jkvm;
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 #endif /* Java2 */

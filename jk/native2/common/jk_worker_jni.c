@@ -98,17 +98,17 @@ static int jk2_get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEn
     
     if(!p->jk_main_method) {
 	env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find main()\n"); 
-	return JK_FALSE;
+	return JK_ERR;
     }
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD jk2_jni_worker_service(jk_env_t *env,
                                             jk_worker_t *w,
                                             jk_ws_service_t *s)
 {
-    return JK_FALSE;
+    return JK_ERR;
 }
 
 
@@ -125,7 +125,7 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
     if(! pThis || ! pThis->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "In validate, assert failed - invalid parameters\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     jniWorker = pThis->worker_private;
@@ -145,10 +145,10 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
         jniWorker->args[jniWorker->nArgs]=value;
         jniWorker->nArgs++;
     } else {
-        return JK_FALSE;
+        return JK_ERR;
     }
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
@@ -170,13 +170,13 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
     if(! _this || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "In init, assert failed - invalid parameters\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     if( vm == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerJni.init() No VM found\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     jniWorker = _this->worker_private;
@@ -193,7 +193,7 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
     if( jniEnv==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerJni.init() Can't attach to VM\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     jniWorker->jk_java_bridge_class =
@@ -219,19 +219,19 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
                       "Can't find class %s\n", jniWorker->className );
         /* [V] the detach here may segfault on 1.1 JVM... */
         vm->detach(env, vm);
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "Loaded %s\n", jniWorker->className);
 
     rc=jk2_get_method_ids(env, jniWorker, jniEnv);
-    if( !rc ) {
+    if( rc!=JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "Fail-> can't get method ids\n");
+                      "jniWorker: Fail-> can't get method ids\n");
         /* [V] the detach here may segfault on 1.1 JVM... */
         vm->detach(env, vm);
-        return JK_FALSE;
+        return rc;
     }
 
     jstringClass=(*jniEnv)->FindClass(jniEnv, "java/lang/String" );
@@ -257,7 +257,7 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
                                     jargs);
     
     vm->detach(env, vm);
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
@@ -269,7 +269,7 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
     if(!_this  || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "In destroy, assert failed - invalid parameters\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     jniWorker = _this->worker_private;
@@ -284,7 +284,7 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
 /*     if(! jniWorker->jk_shutdown_method) { */
 /*         env->l->jkLog(env, env->l, JK_LOG_EMERG, */
 /*                       "In destroy, Tomcat not intantiated\n"); */
-/*         return JK_FALSE; */
+/*         return JK_ERR; */
 /*     } */
 
 /*     if((jniEnv = vm->attach(env, vm))) { */
@@ -300,7 +300,7 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
 
     env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.destroy() done\n");
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
@@ -314,7 +314,7 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     if(name==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG, 
                       "jni.factory() NullPointerException name==null\n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     /* No singleton - you can have multiple jni workers,
@@ -327,7 +327,7 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     if(_this==NULL || jniData==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "jni.factory() OutOfMemoryException \n");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     _this->worker_private=jniData;
@@ -351,6 +351,6 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     _this->workerEnv=env->getByName( env, "workerEnv" );
     _this->workerEnv->addWorker( env, _this->workerEnv, _this );
     
-    return JK_TRUE;
+    return JK_OK;
 }
 

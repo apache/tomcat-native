@@ -179,7 +179,7 @@ int jk2_pool_apr_create( jk_env_t *env, jk_pool_t **newPool, jk_pool_t *parent,
 
     _this->_private=aprPool;
     jk2_pool_apr_initMethods( env, _this );
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static void jk2_pool_apr_initMethods(jk_env_t *env,  jk_pool_t *_this )
@@ -204,7 +204,7 @@ int  jk2_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,
 
     result->object=_this;
     
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
