@@ -1,0 +1,159 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (Windows NT 5.0; U) [Netscape]">
+   <title>Tomcat Domino HowTo</title>
+</head>
+<body>
+
+<h1>
+Tomcat Domino HowTo</h1>
+By Andy Armstrong <a href="mailto:andy@tagish.com">andy@tagish.com</a>
+<p>Recent version of the Lotus Domino web server have had the ability to
+host Java servlets, but at the time of writing the Domino servlet
+<br>container uses JDK 1.2.2 and it is not (apparently) possible to replace
+this with JDK 1.3. That means if you want to use JAAS or any other
+<br>API that is JDK 1.3 only in your servlets you're stuck.
+<h2>
+Supported Configuration</h2>
+The Domino Tomcat redirector was developed and tested on:
+<ol>
+<li>
+WinNT4.0-i386 SP6a (it should be able to work on other versions of the
+NT service pack.) and Windows 2000 Professional</li>
+
+<li>
+Lotus Domino 5.0.6a</li>
+
+<li>
+Tomcat3.2</li>
+</ol>
+The redirector uses <b>ajp12</b> to send requests to the Tomcat containers.
+<h2>
+<a NAME="Building"></a>Building</h2>
+If you have the redirector source you'll need to build it before you can
+use it with a Domino server. If not you can skip directly to <a href="#Installing">Installing</a>.
+To compile it you'll need th Tomcat source and Microsoft Visual C++ 6.0.
+You will probably also want the <a href="http://www.lotus.com/rw/dlcapi.nsf">Lotus
+Notes C API</a> version 5.0.7 or later. You can build the DLL without the
+C API, in which case you'll need to define the macro NO_CAPI in config.h.
+If you do this Domino logging from the DLL will be disabled.
+<p>Firstly move the directory called "domino" into your Tomcat source tree
+as (e.g.)
+<p>&nbsp;&nbsp;&nbsp; D:\Works\Tomcat\jakarta-tomcat\src\native\domino
+<p>In other words place domino in the same directory as the other native
+code elements such as "iis" and "netscape". Now open the project file "dsapi.dsw"
+in Visual C++. As distributed the project refers to a number of file paths
+on the system that was used during development which will likely be different
+on the system you're using. Unless these are set correctly the project
+will not build. To check these go to the project settings page (Alt-F7).
+Select "All Configurations" in the <b>Settings For:</b> picker and go to
+the "C/C++" tab. Select "Preprocessor" from the
+<b>Category:</b> picker.
+<p>Have a look in the <b>Additional include directories:</b> field. It
+contains a number of file paths separated by commas. You need to replace
+these file paths with the appropriate ones for your system. Specifically
+you need to replace "C:\JBuilder4\jdk1.3" with the path to your JDK1.3
+directory and "C:\notesapi" with the path to your Lotus Notes C API installation.
+<p>When you've fixed those paths visit the "Link" tab. Under <b>Category:</b>
+"Input" check the <b>Additional library path:</b> field. Again this refers
+to the Lotes Notes C API installation and may need to be updated to reflect
+where you have it installed.
+<p>Once these paths are correctly set you should be able compile the project
+by hitting F7 or selecting the appropriate option from the <b><u>B</u>uild</b>
+menu. Assuming all goes well a new directory called Release will appear
+below the project directory and, when the build is complete, the file <b>tomcat_redirector.dll</b>
+will appear in this directory.
+<h2>
+<a NAME="Installing"></a>Installing</h2>
+Let's assume you've already got a working Tomcat installation and that
+the NT system variables JAVA_HOME, TOMCAT_HOME and CLASSPATH are properly
+set. You can verify that this is the case by typing
+<p>&nbsp;&nbsp;&nbsp; C:\> <b><i>full path to tomcat</i>\bin\tomcat run</b>
+<p>If everything is set up correctly Tomcat should start and it should
+be possible to connect to your server on port 8080 using a browser. Try
+something like
+<p>&nbsp;&nbsp;&nbsp; <b>http://<i>name of server</i>:8080/</b>
+<p>which, assuming Tomcat is still in its default state will produce the
+examples page. You need to make sure that you have a working Tomcat installation
+before continuing with these instructions.
+<p>Once you've got a working Tomcat, copy the file <b>tomcat_redirector.dll</b>
+to the Domino program directory (this is the directory, which may be called
+something like C:\Lotus\Domino, that contains a file called <b>nlnotes.exe</b>).
+Shortly we will tell Domino where to find this file, but before we do that
+we need to make some registry entries. The simplest way is to edit the
+supplied file <b>tomcat_redirector.reg</b>, which initially will look like
+this
+<pre>&nbsp;&nbsp;&nbsp; REGEDIT4
+
+&nbsp;&nbsp;&nbsp; [HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Jakarta Dsapi Redirector\1.0]
+&nbsp;&nbsp;&nbsp; "log_file"="D:\\tomcat\\logs\\domino.log"
+&nbsp;&nbsp;&nbsp; "log_level"="debug"
+&nbsp;&nbsp;&nbsp; "worker_file"="D:\\tomcat\\conf\\workers.properties"
+&nbsp;&nbsp;&nbsp; "worker_mount_file"="D:\\tomcat\\conf\\uriworkermap.properties"
+&nbsp;&nbsp;&nbsp; "tomcat_start"="D:\\tomcat\\bin\\tomcat.bat start"
+&nbsp;&nbsp;&nbsp; "tomcat_stop"="D:\\tomcat\\bin\\tomcat.bat stop"</pre>
+Edit this file to reflect the location where Tomcat has been installed,
+i.e. replace the instances of D:\\tomcat with the appropriate path remembering
+to retain the double backslashes. Once you've made the necessary changes
+save this file and double click on it to enter it into the registry.
+<p>Note that the files referred to by the <b>worker_file</b> and <b>worker_mount_file</b>
+keys need to exist and contain sane values. Default Tomcat installations
+will have these files. Note also that recent versions of Tomcat write a
+file called <b>uriworkermap.properties-auto</b> when they start up that
+can be renamed <b>uriworkermap.properties</b> to obtain default behaviour.
+<h3>
+Automatically Starting Tomcat</h3>
+The last two registry entries above provide commands that the redirector
+DLL will use to start and stop Tomcat when the Domino http server starts
+and stops respectively. If you don't require this behaviour these two lines
+can be omitted (or deleted if you've already placed them in the registry).
+<h3>
+Configuring Domino</h3>
+Finally we need to configure Domino to use the DSAPI extension DLL. For
+those who are unfamiliar with Domino server configuration most of a server's
+configurable behavior is dictated by a document called the "server document"
+in a database called the "Name and Address Book" or "NAB" for short. Each
+Domino server will have a NAB (called names.nsf) and each NAB will have
+a number of server documents including one for the current server. If you
+have not previously configured a Domino server you may need to refer to
+the supplied documentation, or you may need to pass this document to your
+tame Domino administrator.
+<p>Assuming you know your way around a Domino server document what we're
+going to do is actually quite simple. Open the server document for this
+server, place it in Edit mode, then locate the <b>DSAPI</b> field on the
+<b>Internet
+Protocols</b> tab, <b>HTTP</b> sub-tab. Add "tomcat_redirector.dll" to
+the DSAPI field, then save and close the document.
+<h3>
+Restart Domino</h3>
+In order to get these settings to take effect and make sure that you haven't
+disrupted anything else you should now restart the Domino server. If the
+server is running as a service and you have changed any relevant system
+variables (JAVA_HOME, TOMCAT_HOME, CLASSPATH) since the last time you restarted
+the computer you should do a complete restart now because updates to system
+variables are not seen by services until after a reboot. If all goes well
+you should see something like this on the server console when the web server
+starts up.
+<pre>&nbsp;&nbsp;&nbsp; 29/05/2001 18:54:13&nbsp;&nbsp; JVM: Java Virtual Machine initialized.
+&nbsp;&nbsp;&nbsp; 29/05/2001 18:54:14&nbsp;&nbsp; Attempting to start Tomcat: C:\tomcat\bin\tomcat.bat start
+&nbsp;&nbsp;&nbsp; Including all jars in C:\Tomcat\lib in your CLASSPATH.
+
+&nbsp;&nbsp;&nbsp; Using CLASSPATH: C:\Tomcat\classes;C:\Tomcat\lib\ant.jar;C:\Tomcat\lib\servlet.jar
+
+&nbsp;&nbsp;&nbsp; Starting Tomcat in new window
+&nbsp;&nbsp;&nbsp; 29/05/2001 18:54:15&nbsp;&nbsp; Apache Tomcat Interceptor (Jakarta/DSAPI/1.0) loaded
+&nbsp;&nbsp;&nbsp; 29/05/2001 18:54:16&nbsp;&nbsp; HTTP Web Server started</pre>
+At about the same time Tomcat should open in a new window (assuming you
+enabled the autostart option in the registry settings). You should now
+be able to visit a URL that is handled by Tomcat. Something like
+<p>&nbsp;&nbsp;&nbsp; <b>http://<i>name of server</i>/servlet/SnoopServlet</b>
+<p>may be available, depending on how Tomcat is configured.
+<h2>
+Feedback</h2>
+Please send feedback, bug reports or any additional information to Andy
+Armstrong,
+<a href="mailto:andy@tagish.com">andy@tagish.com</a>
+</body>
+</html>
