@@ -85,7 +85,8 @@ public class JkServlet extends HttpServlet
     /* Parameters for the ajp channel */
     String port;
     String host; /* If it starts with '/' we'll use ud */
-    ServletContext sctx;
+    protected ServletContext sctx;
+    protected ServletConfig sconf;
     
     public JkServlet()
     {
@@ -93,6 +94,10 @@ public class JkServlet extends HttpServlet
 
     protected Properties servletConfig2properties(ServletConfig conf ) {
         Properties props=new Properties();
+        if( conf==null ) {
+            d("No config ");
+            return props;
+        }
         Enumeration paramNE=conf.getInitParameterNames();
         while( paramNE.hasMoreElements() ){
             String s=(String)paramNE.nextElement();
@@ -105,9 +110,14 @@ public class JkServlet extends HttpServlet
     
     
     public void init(ServletConfig conf) throws ServletException {
-        super.init(conf);
-        sctx=conf.getServletContext();
-        getServletAdapter();
+        try {
+            super.init(conf);
+            sconf=conf;
+            sctx=conf.getServletContext();
+            getServletAdapter();
+        } catch( Throwable t ) {
+            t.printStackTrace();
+        }
     }
 
     /* Ok, this is a bit hacky - there is ( or I couldn't find ) any clean
@@ -119,7 +129,7 @@ public class JkServlet extends HttpServlet
        the internals.
     */
     private void getServletAdapter() {
-        try40();
+        //        try40();
         try33();
     }
             
@@ -132,8 +142,8 @@ public class JkServlet extends HttpServlet
                 return;
             }
             t33.initializeContainer( getServletConfig());
-        } catch( Exception ex ) {
-            ex.printStackTrace();
+        } catch( Throwable ex ) {
+            d("3.3 intialization failed " + ex.toString());
         }
     }
 
@@ -159,6 +169,24 @@ public class JkServlet extends HttpServlet
                 ex.printStackTrace();
                 // ignore it - what would you expect, we pass dummy objects
             }
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
+    }
+
+    protected JkMain jkMain;
+    
+    protected void initJkMain(ServletConfig cfg, Worker defaultWorker) {
+        jkMain=new JkMain();
+        jkMain.setProperties( servletConfig2properties( cfg ));
+        jkMain.setDefaultWorker( defaultWorker );
+
+        String jkHome=cfg.getServletContext().getRealPath("/");
+        d("Setting jkHome " + jkHome );
+        jkMain.setJkHome( jkHome );
+                        
+        try {
+            jkMain.start();
         } catch( Exception ex ) {
             ex.printStackTrace();
         }

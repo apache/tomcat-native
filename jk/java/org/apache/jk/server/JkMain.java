@@ -82,7 +82,8 @@ public class JkMain
     Properties props;
 
     Worker defaultWorker;
-    
+    String jkHome;
+
     public JkMain()
     {
     }
@@ -104,10 +105,18 @@ public class JkMain
     public void setDefaultWorker( Worker w ) {
         defaultWorker=w;
     }
+
+    public void setJkHome( String s ) {
+        jkHome=s;
+    }
     
     public void start() throws IOException {
         ChannelUn csocket=new ChannelUn();
-        csocket.setFile( "/tmp/tomcatApr" );
+//         if( jkHome==null )
+            csocket.setFile(  "/tmp/tomcatUnixSocket" );
+//         else
+//             csocket.setFile( jkHome + "/WEB-INF/tomcatUnixSocket" );
+        csocket.setJkHome( jkHome );
         /* ChannelSocket csocket=new ChannelSocket();
         csocket.setPort( 8009 );
         */
