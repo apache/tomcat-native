@@ -48,7 +48,7 @@
 #include <bits/signum.h>
 #endif
 
-#ifdef NETWARE
+#if defined NETWARE && !defined __NOVELL_LIBC__
 #include <nwthread.h>
 #include <nwadv.h>
 #endif
