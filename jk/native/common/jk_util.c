@@ -69,6 +69,8 @@
 #define SYSPROPS_OF_WORKER          ("sysprops")
 #define STDERR_OF_WORKER            ("stderr")
 #define STDOUT_OF_WORKER            ("stdout")
+#define SECRET_OF_WORKER            ("secret")
+#define CONF_OF_WORKER              ("conf")
 #define MX_OF_WORKER                ("mx")
 #define MS_OF_WORKER                ("ms")
 #define CP_OF_WORKER                ("class_path")
@@ -282,6 +284,24 @@ char *jk_get_worker_type(jk_map_t *m,
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, TYPE_OF_WORKER);
 
     return map_get_string(m, buf, DEFAULT_WORKER_TYPE);
+}
+
+char *jk_get_worker_secret(jk_map_t *m,
+                         const char *wname)
+{
+    char buf[1024];
+    char *secret;
+    char *secret_file;
+
+    if(!m || !wname) {
+        return NULL;
+    }
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, SECRET_OF_WORKER);
+
+    secret=map_get_string(m, buf, NULL);
+
+    return secret;
 }
 
 /* [V] I suggest that the following general purpose functions be used.       */

@@ -272,7 +272,7 @@ AJPV13_REQUEST/AJPV14_REQUEST=
 static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
                                  jk_ws_service_t *s,
                                  jk_logger_t     *l,
-					        	 ajp_endpoint_t  *ae)
+                                 ajp_endpoint_t  *ae)
 {
     unsigned char method;
     unsigned i;
@@ -320,6 +320,15 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
         }
     }
 
+    if (s->secret) {
+        if (jk_b_append_byte(msg, SC_A_SECRET) ||
+            jk_b_append_string(msg, s->secret)) {
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - Error appending secret\n");
+            return JK_FALSE;
+        }
+    }
+        
     if (s->remote_user) {
         if (jk_b_append_byte(msg, SC_A_REMOTE_USER) ||
             jk_b_append_string(msg, s->remote_user)) {
@@ -383,7 +392,6 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
             return JK_FALSE;
         }
     }
-
 
     if (s->num_attributes > 0) {
         for (i = 0 ; i < s->num_attributes ; i++) {
@@ -1087,6 +1095,7 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
 		p->reuse = JK_FALSE;
 		*is_recoverable_error = JK_TRUE;
 
+                s->secret = p->worker->secret;
 		/* 
 		 * We get here initial request (in reqmsg)
 		 */
@@ -1240,6 +1249,7 @@ int ajp_init(jk_worker_t *pThis,
                 }
             }
         }
+        p->secret = jk_get_worker_secret(props, p->name );
     } else {
         jk_log(l, JK_LOG_ERROR, "In jk_worker_t::init, NULL parameters\n");
     }

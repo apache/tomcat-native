@@ -229,6 +229,13 @@ struct jk_ws_service {
      */
     char    *jvm_route;
 
+    /* Temp solution for auth. For native1 it'll be sent on each request,
+       if an option is present. For native2 it'll be sent with the first
+       request. On java side, both cases will work. For tomcat3.2 or
+       a version that doesn't support secret - don't set the secret,
+       and it'll work.
+     */
+    char    *secret;        
     /*
      * Callbacks into the web server.  For each, the first argument is
      * essentially a 'this' pointer.  All return JK_TRUE on success

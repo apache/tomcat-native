@@ -88,6 +88,7 @@ extern "C" {
 #define SC_A_SSL_SESSION        (unsigned char)9
 #define SC_A_REQ_ATTRIBUTE      (unsigned char)10
 #define SC_A_SSL_KEY_SIZE       (unsigned char)11		/* only in if JkOptions +ForwardKeySize */
+#define SC_A_SECRET             (unsigned char)12
 #define SC_A_ARE_DONE           (unsigned char)0xFF
 
 /*
@@ -253,9 +254,12 @@ struct ajp_worker {
     unsigned ep_cache_sz;
     ajp_endpoint_t **ep_cache;
 
-	int proto; /* PROTOCOL USED AJP13/AJP14 */
-
-	jk_login_service_t *login;
+    int proto; /* PROTOCOL USED AJP13/AJP14 */
+    
+    jk_login_service_t *login;
+    
+    /* Weak secret similar with ajp12, used in ajp13 */ 
+    char *secret;
 
     jk_worker_t worker; 
 
