@@ -235,6 +235,8 @@ public class ChannelSocket extends JkHandler {
                 next=wEnv.getHandler( "request" );
         }
 
+        running = true;
+
         // Run a thread that will accept connections.
         tp.start();
         SocketAcceptor acceptAjp=new SocketAcceptor(  this );
@@ -251,6 +253,7 @@ public class ChannelSocket extends JkHandler {
     }
 
     public void destroy() throws IOException {
+        running = false;
         try {
             tp.shutdown();
 
@@ -384,7 +387,7 @@ public class ChannelSocket extends JkHandler {
         return pos;
     }
     
-    boolean running=true;
+    protected boolean running=true;
     
     /** Accept incoming connections, dispatch to the thread pool
      */
@@ -401,7 +404,8 @@ public class ChannelSocket extends JkHandler {
                     new SocketConnection(this, ep);
                 tp.runIt( ajpConn );
             } catch( Exception ex ) {
-                ex.printStackTrace();
+                if (running)
+                    ex.printStackTrace();
             }
         }
     }
