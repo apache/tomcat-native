@@ -76,7 +76,10 @@ import java.util.*;
     build.native.libtool=
     # Platform-specific flags for compilation.
     build.native.extra_cflags=
-
+*/
+/* XXX add a optional "compiler" attribute 
+    to not guess the compiler based on the executable name 
+    present in a global property.
 
 */
 
@@ -369,6 +372,11 @@ public class SoTask extends Task {
 	        compilerAdapter.setSoTask( this );
 	        return compilerAdapter;
 	    }
+	    if( cc.indexOf("cl") != -1 ) {
+	        compilerAdapter=new MsvcCompiler();
+	        compilerAdapter.setSoTask( this );
+	        return compilerAdapter;
+	    }
 	}
 	
 	compilerAdapter=new LibtoolCompiler(); 
@@ -382,6 +390,11 @@ public class SoTask extends Task {
 	if( ld!=null ) {
 	    if( ld.indexOf("mwldnlm") != -1 ) {
 	        linkerAdapter=new MwldLinker();
+	        linkerAdapter.setSoTask( this );
+	        return linkerAdapter;
+	    }
+	    if( ld.indexOf("link") != -1 ) {
+	        linkerAdapter=new MsvcLinker();
 	        linkerAdapter.setSoTask( this );
 	        return linkerAdapter;
 	    }
@@ -429,7 +442,7 @@ public class SoTask extends Task {
         for (int i = 0; i < srcList.size(); i++) {
 	    Source source=(Source)srcList.elementAt(i);
 	    File srcFile=source.getFile();
-	
+	   
             if (!srcFile.exists()) {
                 throw new BuildException("Source \"" + srcFile.getPath() +
                                          "\" does not exist!", location);
