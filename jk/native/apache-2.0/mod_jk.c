@@ -38,6 +38,7 @@
 #include "http_main.h"
 #include "http_log.h"
 #include "util_script.h"
+#include "ap_mpm.h"
 
 #ifdef AS400
 #include "ap_charset.h"
@@ -1851,9 +1852,9 @@ static int jk_handler(request_rec * r)
                     JK_TRACE_EXIT(xconf->log);
                     return r->status;
                 }
-                jk_log(xconf->log, JK_LOG_INFO, "Service returned error=%d"
+                jk_log(xconf->log, JK_LOG_DEBUG, "Service finished"
                        " with status=%d for worker=%s\n",
-                       rc, r->status, worker_name);
+                       r->status, worker_name);
                 JK_TRACE_EXIT(xconf->log);
                 return OK;      /* NOT r->status, even if it has changed. */
             }
@@ -2179,9 +2180,18 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
 static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 {
     jk_server_conf_t *conf;
+    int mpm_threads = 1;
+
     conf = ap_get_module_config(s->module_config, &jk_module);
+
     JK_TRACE_ENTER(conf->log);
 
+    /* Set default connection cache size for worker mpm */
+#if APR_HAS_THREADS
+    ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads);
+#endif
+    if (mpm_threads > 0)
+        jk_set_worker_def_cache_size(mpm_threads);
     jk_log(conf->log, JK_LOG_DEBUG, "Initialized %s\n", JK_EXPOSED_VERSION);
     JK_TRACE_EXIT(conf->log);
 }
@@ -2224,9 +2234,7 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     worker_env.server_name = (char *)ap_get_server_version();
     if (wc_open(init_map, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
-        return;
     }
-    return;
 }
 
 static int jk_post_config(apr_pool_t * pconf,
