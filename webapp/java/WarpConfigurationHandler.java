@@ -90,9 +90,9 @@ public class WarpConfigurationHandler {
         connection.send(packet);
 
         // Loop for configuration packets
-        while (true) {        
+        while (true) {
             connection.recv(packet);
-            
+
             switch (packet.getType()) {
 
                 case Constants.TYPE_CONF_DEPLOY: {
@@ -103,7 +103,7 @@ public class WarpConfigurationHandler {
                     Context context=null;
                     packet.reset();
 
-                    if (Constants.DEBUG) 
+                    if (Constants.DEBUG)
                         logger.log("Deploying web application \""+appl+"\" "+
                                    "under <http://"+host+":"+port+path+">");
                     try {
@@ -151,9 +151,9 @@ public class WarpConfigurationHandler {
                     return(false);
                 }
             }
-        }        
+        }
     }
-    
+
     /** Deploy a web application */
     private Context deploy(WarpConnection connection, WarpLogger logger,
                            String applName, String hostName, String applPath)
@@ -178,7 +178,7 @@ public class WarpConfigurationHandler {
         }
 
         // TODO: Set up mapping mechanism for performance
-        
+
         if (applPath.endsWith("/"))
             applPath=applPath.substring(0,applPath.length()-1);
 

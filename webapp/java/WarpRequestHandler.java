@@ -93,9 +93,9 @@ public class WarpRequestHandler {
         connection.send(packet);
 
         // Loop for configuration packets
-        while (true) {        
+        while (true) {
             connection.recv(packet);
-            
+
             switch (packet.getType()) {
                 case Constants.TYPE_REQ_INIT: {
                     int id=packet.readInteger();
@@ -136,7 +136,7 @@ public class WarpRequestHandler {
                     if (clen>0) request.setContentLength(clen);
                     break;
                 }
-                    
+
                 case Constants.TYPE_REQ_SCHEME: {
                     String schm=packet.readString();
                     if (Constants.DEBUG)
@@ -178,7 +178,7 @@ public class WarpRequestHandler {
                         logger.debug("Request has been processed");
                     break;
                 }
-                
+
                 default: {
                     String msg="Invalid packet "+packet.getType();
                     logger.log(msg);

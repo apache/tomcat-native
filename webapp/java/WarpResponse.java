@@ -90,7 +90,7 @@ public class WarpResponse extends HttpResponseBase {
     private WarpPacket packet;
     /** The connection to which we are associated */
     private WarpConnection connection;
-    
+
     /**
      * Create a new instance of a <code>WarpResponse</code>.
      */
@@ -119,7 +119,7 @@ public class WarpResponse extends HttpResponseBase {
     public void setPacket(WarpPacket packet) {
         this.packet=packet;
     }
-    
+
     /**
      * Return the <code>WarpPacket</code> instance used to process headers.
      */
@@ -156,12 +156,12 @@ public class WarpResponse extends HttpResponseBase {
      * Send the HTTP response headers, if this has not already occurred.
      */
     protected void sendHeaders() throws IOException {
-    	if (isCommitted()) return;
+        if (isCommitted()) return;
         if ("HTTP/0.9".equals(request.getRequest().getProtocol())) {
             committed = true;
             return;
         }
-    
+
         this.packet.reset();
         this.packet.setType(Constants.TYPE_RES_STATUS);
         this.packet.writeString(request.getRequest().getProtocol());
@@ -169,83 +169,83 @@ public class WarpResponse extends HttpResponseBase {
         this.packet.writeString(message);
         this.connection.send(this.packet);
 
-    	if (getContentType() != null) {
-    	    this.packet.reset();
+        if (getContentType() != null) {
+            this.packet.reset();
             this.packet.setType(Constants.TYPE_RES_HEADER);
             this.packet.writeString("Content-Type");
             this.packet.writeString(getContentType());
             this.connection.send(this.packet);
-    	}
-    	if (getContentLength() >= 0) {
-    	    this.packet.reset();
+        }
+        if (getContentLength() >= 0) {
+            this.packet.reset();
             this.packet.setType(Constants.TYPE_RES_HEADER);
             this.packet.writeString("Content-Length");
             this.packet.writeString(Integer.toString(getContentLength()));
             this.connection.send(this.packet);
-    	}
-    
-    	synchronized (headers) {
-        	Iterator names = headers.keySet().iterator();
-    	    while (names.hasNext()) {
-    	        String name = (String) names.next();
-    	        ArrayList values = (ArrayList) headers.get(name);
-    	        Iterator items = values.iterator();
-    	        while (items.hasNext()) {
-    		        String value = (String) items.next();
-            	    this.packet.reset();
+        }
+
+        synchronized (headers) {
+                Iterator names = headers.keySet().iterator();
+            while (names.hasNext()) {
+                String name = (String) names.next();
+                ArrayList values = (ArrayList) headers.get(name);
+                Iterator items = values.iterator();
+                while (items.hasNext()) {
+                        String value = (String) items.next();
+                    this.packet.reset();
                     this.packet.setType(Constants.TYPE_RES_HEADER);
                     this.packet.writeString(name);
                     this.packet.writeString(value);
                     this.connection.send(this.packet);
-      		    }
-    	    }
-    	}
-    
-    	// Add the session ID cookie if necessary
-    	HttpServletRequest hreq = (HttpServletRequest) request.getRequest();
-    	HttpSession session = hreq.getSession(false);
-    
-    	if ((session != null) && session.isNew() && (getContext() != null) 
+                    }
+            }
+        }
+
+        // Add the session ID cookie if necessary
+        HttpServletRequest hreq = (HttpServletRequest) request.getRequest();
+        HttpSession session = hreq.getSession(false);
+
+        if ((session != null) && session.isNew() && (getContext() != null)
                 && getContext().getCookies()) {
-    	    Cookie cookie = new Cookie(Globals.SESSION_COOKIE_NAME,
-    				       session.getId());
-    	    cookie.setMaxAge(-1);
-    	    String contextPath = null;
+            Cookie cookie = new Cookie(Globals.SESSION_COOKIE_NAME,
+                                       session.getId());
+            cookie.setMaxAge(-1);
+            String contextPath = null;
                 if (context != null)
                     contextPath = context.getPath();
-    	    if ((contextPath != null) && (contextPath.length() > 0))
-    		cookie.setPath(contextPath);
-    	    else
-    	        cookie.setPath("/");
-    	    if (hreq.isSecure())
-    		cookie.setSecure(true);
-    	    addCookie(cookie);
-    	}
-    
-    	// Send all specified cookies (if any)
-    	synchronized (cookies) {
-    	    Iterator items = cookies.iterator();
+            if ((contextPath != null) && (contextPath.length() > 0))
+                cookie.setPath(contextPath);
+            else
+                cookie.setPath("/");
+            if (hreq.isSecure())
+                cookie.setSecure(true);
+            addCookie(cookie);
+        }
+
+        // Send all specified cookies (if any)
+        synchronized (cookies) {
+            Iterator items = cookies.iterator();
             while (items.hasNext()) {
-    	    	Cookie cookie = (Cookie) items.next();
-    	    	String name=CookieTools.getCookieHeaderName(cookie);
-    	    	StringBuffer value=new StringBuffer();
-    	    	CookieTools.getCookieHeaderValue(cookie,value);
-        	    this.packet.reset();
+                Cookie cookie = (Cookie) items.next();
+                String name=CookieTools.getCookieHeaderName(cookie);
+                StringBuffer value=new StringBuffer();
+                CookieTools.getCookieHeaderValue(cookie,value);
+                    this.packet.reset();
                 this.packet.setType(Constants.TYPE_RES_HEADER);
                 this.packet.writeString(name);
                 this.packet.writeString(value.toString());
                 this.connection.send(this.packet);
-    	    }
-    	}
+            }
+        }
 
-	    this.packet.reset();
+            this.packet.reset();
         this.packet.setType(Constants.TYPE_RES_COMMIT);
         this.connection.send(this.packet);
 
         committed = true;
     }
-        
-    /** 
+
+    /**
      * The <code>OutputStream</code> that will handle all response body
      * transmission.
      */
@@ -266,14 +266,14 @@ public class WarpResponse extends HttpResponseBase {
             this.response=response;
             this.packet=new WarpPacket();
         }
-        
+
         /**
          * Write one byte of data to the <code>WarpPacket</code> nested
          * within this <code>WarpResponse.Stream</code>. All data is buffered
          * until the <code>flush()</code> or <code>close()</code> method is
          * not called.
          */
-        public void write(int b) 
+        public void write(int b)
         throws IOException {
             if (closed) throw new IOException("Stream closed");
             packet.buffer[packet.size++]=(byte)b;
@@ -301,7 +301,7 @@ public class WarpResponse extends HttpResponseBase {
             response.getConnection().send(packet);
             packet.reset();
         }
-        
+
         /**
          * Flush this <code>WarpResponse.Stream</code> and close it.
          */

@@ -223,7 +223,7 @@ public class WarpPacket {
             throw new RuntimeException("Unsupported encoding UTF-8");
         }
     }
-    
+
     public String dump() {
         StringBuffer buf=new StringBuffer("DATA=");
         for (int x=0; x<this.size; x++) {

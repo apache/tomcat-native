@@ -244,13 +244,13 @@ public class WarpConnection implements LifecycleListener, Runnable {
             int ret=0;
             while (true) {
                 ret=this.input.read(packet.buffer,off,packet.size-off);
-                if (ret==-1) 
+                if (ret==-1)
                     throw new IOException("Premature packet payload end");
                 off+=ret;
                 if(off==packet.size) break;
             }
         }
-            
+
         if (Constants.DEBUG) {
             String typ=Integer.toHexString(packet.getType());
             logger.debug("<< TYPE="+typ+" LENGTH="+packet.size);

@@ -62,15 +62,15 @@ import org.apache.catalina.connector.HttpRequestBase;
 
 public class WarpRequest extends HttpRequestBase {
     private Host host=null;
-    
+
     public WarpRequest() {
         super();
     }
-    
+
     public void setHost(Host host) {
         this.host=host;
     }
-    
+
     public Host getHost() {
         return(this.host);
     }
