@@ -116,6 +116,12 @@ extern "C" {
  *                        | "CHECKOUT"
  *                        | "UNCHECKOUT"
  *                        | "SEARCH"
+ *                        | "MKWORKSPACE"
+ *                        | "UPDATE"
+ *                        | "LABEL"
+ *                        | "MERGE"
+ *                        | "BASELINE-CONTROL"
+ *                        | "MKACTIVITY"
  * 
  */
 #define SC_M_OPTIONS            (unsigned char)1
@@ -132,13 +138,19 @@ extern "C" {
 #define SC_M_MOVE               (unsigned char)12
 #define SC_M_LOCK               (unsigned char)13
 #define SC_M_UNLOCK             (unsigned char)14
-#define SC_M_ACL        (unsigned char)15
+#define SC_M_ACL                (unsigned char)15
 #define SC_M_REPORT             (unsigned char)16
 #define SC_M_VERSION_CONTROL    (unsigned char)17
 #define SC_M_CHECKIN            (unsigned char)18
 #define SC_M_CHECKOUT           (unsigned char)19
 #define SC_M_UNCHECKOUT         (unsigned char)20
 #define SC_M_SEARCH             (unsigned char)21
+#define SC_M_MKWORKSPACE        (unsigned char)22
+#define SC_M_UPDATE             (unsigned char)23
+#define SC_M_LABEL              (unsigned char)24
+#define SC_M_MERGE              (unsigned char)25
+#define SC_M_BASELINE_CONTROL   (unsigned char)26
+#define SC_M_MKACTIVITY         (unsigned char)27
 
 
 /*

@@ -154,7 +154,13 @@ public class RequestHandler extends AjpHandler
         "CHECKIN",
         "CHECKOUT",
         "UNCHECKOUT",
-        "SEARCH"
+        "SEARCH",
+        "MKWORKSPACE",
+        "UPDATE",
+        "LABEL",
+        "MERGE",
+        "BASELINE-CONTROL",
+        "MKACTIVITY"
     };
     
     // id's for common request headers

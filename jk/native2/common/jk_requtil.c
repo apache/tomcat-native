@@ -186,6 +186,18 @@ int jk2_requtil_getMethodId(jk_env_t *env, const char *method,
         *sc = SC_M_UNCHECKOUT;
     } else if(0 == strcmp(method, "SEARCH")) {
         *sc = SC_M_SEARCH;
+    } else if(0 == strcmp(method, "MKWORKSPACE")) {
+        *sc = SC_M_MKWORKSPACE;
+    } else if(0 == strcmp(method, "UPDATE")) {
+        *sc = SC_M_UPDATE;
+    } else if(0 == strcmp(method, "LABEL")) {
+        *sc = SC_M_LABEL;
+    } else if(0 == strcmp(method, "MERGE")) {
+        *sc = SC_M_MERGE;
+    } else if(0 == strcmp(method, "BASELINE-CONTROL")) {
+        *sc = SC_M_BASELINE_CONTROL;
+    } else if(0 == strcmp(method, "MKACTIVITY")) {
+        *sc = SC_M_MKACTIVITY;
     } else {
         rc = JK_ERR;
     }
