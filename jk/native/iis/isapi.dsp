@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
@@ -92,7 +92,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\isapi.def
+SOURCE=..\common\jk_ajp12_worker.c
 # End Source File
 # Begin Source File
 
@@ -116,19 +116,11 @@ SOURCE=..\common\jk_ajp_common.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\jk_channel_socket.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\common\jk_connect.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\common\jk_context.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_env.c
 # End Source File
 # Begin Source File
 
@@ -164,7 +156,7 @@ SOURCE=..\common\jk_pool.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\jk_registry.c
+SOURCE=..\common\jk_sockbuf.c
 # End Source File
 # Begin Source File
 
@@ -278,6 +270,10 @@ SOURCE=..\common\jk_worker.h
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+# Begin Source File
+
+SOURCE=.\isapi.def
+# End Source File
 # End Group
 # End Target
 # End Project
