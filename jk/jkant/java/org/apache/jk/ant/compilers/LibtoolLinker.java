@@ -82,7 +82,6 @@ public class LibtoolLinker extends SoTask implements LinkerAdapter {
 
     public void setSoTask(SoTask so ) {
 	this.so=so;
-	so.duplicateTo( this );
     }
 
     public void execute() throws BuildException {
@@ -92,7 +91,8 @@ public class LibtoolLinker extends SoTask implements LinkerAdapter {
 
     /** Link using libtool.
      */
-    public boolean link(String srcList[]) throws BuildException {
+    public boolean link(Vector srcList) throws BuildException {
+	so.duplicateTo( this );
 	Commandline cmd = new Commandline();
 
 	String libtool=project.getProperty("build.native.libtool");
@@ -121,12 +121,11 @@ public class LibtoolLinker extends SoTask implements LinkerAdapter {
 	// All .o files must be included
 	project.log( "Linking " + buildDir + "/" + soFile + ".so");
 
-	for( int i=0; i<srcList.length; i++ ) {
-	    File srcF = (File)project.resolveFile(srcList[i]);
-	    String name=srcF.getName();
-	    String targetNA[]=lo_mapper.mapFileName( name );
-	    if( targetNA!=null )
-		cmd.createArgument().setValue( targetNA[0] );
+	for( int i=0; i<srcList.size(); i++ ) {
+	    Source sourceObj=(Source)srcList.elementAt(i);
+	    
+	    File ff=new File( buildDir, sourceObj.getTargetFile(lo_mapper));
+	    cmd.createArgument().setValue( ff.toString() );
 	}
 	
 	int result=execute( cmd );

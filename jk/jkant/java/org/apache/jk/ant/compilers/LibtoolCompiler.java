@@ -73,7 +73,7 @@ import java.util.*;
  *
  * @author Costin Manolache
  */
-public class LibtoolCompiler extends BaseCompiler {
+public class LibtoolCompiler extends CompilerAdapter {
 
     public LibtoolCompiler() {
 	super();
@@ -81,7 +81,9 @@ public class LibtoolCompiler extends BaseCompiler {
 
     /** Compile using libtool.
      */
-    public void compileSingleFile(String source) throws BuildException {
+    public void compileSingleFile(Source sourceObj) throws BuildException {
+	File f=sourceObj.getFile();
+	String source=f.toString();
 	Commandline cmd = new Commandline();
 
 	String libtool=project.getProperty("build.native.libtool");
@@ -97,6 +99,19 @@ public class LibtoolCompiler extends BaseCompiler {
 	cmd.createArgument().setValue( cc );
 
 	cmd.createArgument().setValue( "-c" );
+	
+	cmd.createArgument().setValue( "-o" );
+	
+	File ff=new File( buildDir, sourceObj.getTargetFile(co_mapper));
+	cmd.createArgument().setValue( ff.toString() );
+	try {
+	    String targetDir=sourceObj.getPackage();
+	    File f1=new File( buildDir, targetDir );
+	    f1.mkdirs();
+	    // System.out.println("mkdir " + f1 );
+	} catch( Exception ex ) {
+	    ex.printStackTrace();
+	}
 
 	addIncludes(cmd);
 	addExtraFlags( cmd );
