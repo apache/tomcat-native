@@ -192,7 +192,6 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     jniCh->jniBridge =
         (*jniEnv)->FindClass(jniEnv, jniCh->className );
 
-    jniCh->jniBridge=(*jniEnv)->NewGlobalRef( jniEnv, jniCh->jniBridge);
     
     if( jniCh->jniBridge == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -200,6 +199,13 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
         return JK_ERR;
     }
 
+    jniCh->jniBridge=(*jniEnv)->NewGlobalRef( jniEnv, jniCh->jniBridge);
+
+    if( jniCh->jniBridge == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel_jni.open() Unable to allocate globalref for %s\n",jniCh->className ); 
+        return JK_ERR;
+    }
 
     /* Interface to the callback mechansim. The idea is simple ( is it ? ) - we
        use a similar pattern with java, trying to do as little as possible
@@ -291,12 +297,27 @@ static int JK_METHOD jk2_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
                                            jk_endpoint_t *endpoint)
 {
     jk_ch_jni_ep_private_t *epData;
-
+    JNIEnv *jniEnv;
+    jk_channel_jni_private_t *jniCh=_this->_privatePtr;
     epData=(jk_ch_jni_ep_private_t *)endpoint->channelData;
-    
-    /* (*jniEnv)->DeleteGlobalRef( jniEnv, epData->msgJ ); */
-    /*     (*jniEnv)->DeleteGlobalRef( jniEnv, epData->jniJavaContext ); */
-    
+    jniEnv = (JNIEnv *)jniCh->vm->attach( env, jniCh->vm );
+
+    if( jniEnv == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel_jni.close() can't attach\n" ); 
+        return JK_ERR;
+    }
+    if( epData->jarray != NULL ){
+        (*jniEnv)->DeleteGlobalRef( jniEnv, epData->jarray );
+    }
+    if( epData->jniJavaContext != NULL){
+        (*jniEnv)->DeleteGlobalRef( jniEnv, epData->jniJavaContext );
+    }
+    endpoint->mbean->pool->realloc(env,endpoint->mbean->pool,0,
+        epData->carray,epData->arrayLen);
+    endpoint->mbean->pool->realloc(env,endpoint->mbean->pool,0,
+        epData,sizeof( jk_ch_jni_ep_private_t ));
+    endpoint->channelData=NULL;
     return JK_OK;
 
 }
@@ -327,7 +348,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     JNIEnv *jniEnv;
     jk_channel_jni_private_t *jniCh=_this->_privatePtr;
     jk_ch_jni_ep_private_t *epData=
-        (jk_ch_jni_ep_private_t *)endpoint->channelData;;
+        (jk_ch_jni_ep_private_t *)endpoint->channelData;
 
     if( _this->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() %p\n", epData ); 
@@ -336,9 +357,13 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
         jk2_channel_jni_open( env, _this, endpoint );
         epData=(jk_ch_jni_ep_private_t *)endpoint->channelData;
     }
-    if( epData == NULL || epData->jniJavaContext == NULL ) {
+    if( epData == NULL ){
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,"channel_jni.send() error opening channel\n" ); 
+        return JK_ERR;
+    }
+    if( epData->jniJavaContext == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,"channel_jni.send() no java context\n" ); 
-        
+        jk2_channel_jni_close( env, _this, endpoint );
         return JK_ERR;
     }
 
