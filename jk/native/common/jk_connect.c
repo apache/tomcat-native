@@ -263,11 +263,11 @@ int jk_tcp_socket_sendfull(int sd,
     return sent;
 }
 
-/** receive len bytes.
+/** receive len bytes. Used in ajp_common.
  * @param sd  opened socket.
  * @param b   buffer to store the data.
  * @param len length to receive.
- * @return    -1: receive failed or connection closed.
+ * @return    <0: receive failed or connection closed.
  *            >0: length of the received data.
  */
 int jk_tcp_socket_recvfull(int sd, 
@@ -283,6 +283,7 @@ int jk_tcp_socket_recvfull(int sd,
                              0);    
         if(-1 == this_time) {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+            /* I assume SOCKET_ERROR == -1 */
             if(SOCKET_ERROR == this_time) { 
                 errno = WSAGetLastError() - WSABASEERR;
             }
@@ -290,8 +291,9 @@ int jk_tcp_socket_recvfull(int sd,
 
             if(EAGAIN == errno) {
                 continue;
-            } 
-            return -1;
+            }
+            /** Pass the errno to the caller */
+            return (errno>0) ? -errno : errno;
         }
         if(0 == this_time) {
             return -1; 
