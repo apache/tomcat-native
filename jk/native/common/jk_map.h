@@ -43,6 +43,8 @@ int jk_map_close(jk_map_t *m);
 
 void *jk_map_get(jk_map_t *m, const char *name, const void *def);
 
+int jk_map_get_id(jk_map_t *m, const char *name);
+
 int jk_map_get_int(jk_map_t *m, const char *name, int def);
 
 double jk_map_get_double(jk_map_t *m, const char *name, double def);

@@ -156,6 +156,24 @@ void *jk_map_get(jk_map_t *m, const char *name, const void *def)
     return (void *)rc;          /* DIRTY */
 }
 
+int jk_map_get_id(jk_map_t *m, const char *name)
+{
+    int rc = -1;
+    if (m && name) {
+        unsigned int i;
+        unsigned int key;
+        COMPUTE_KEY_CHECKSUM(name, key)
+        for (i = 0; i < m->size; i++) {
+            if (m->keys[i] == key && strcasecmp(m->names[i], name) == 0) {
+                rc = i;
+                break;
+            }
+        }
+    }
+
+    return rc;
+}
+
 const char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
 {
     const char *rc = def;
