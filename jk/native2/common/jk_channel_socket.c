@@ -91,7 +91,7 @@ struct jk_channel_socket_private {
     int ndelay;
     struct sockaddr_in addr;    
     char *host;
-    short port;
+    short port; /* Should be unsigned - big ports will fail */
     int keepalive;
     int timeout;
 };
@@ -209,10 +209,13 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
         }
         
     }
-    
-    if( socketInfo->port<=0 )
-        socketInfo->port=8009;
 
+    /* error if port= 40009 ( for example */
+    /*
+      if( socketInfo->port<=0 )
+        socketInfo->port=8009;
+    */
+    
     if( socketInfo->host==NULL )
         socketInfo->host=DEFAULT_HOST;
     
