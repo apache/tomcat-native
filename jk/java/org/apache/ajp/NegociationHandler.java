@@ -408,6 +408,29 @@ public class NegociationHandler extends AjpHandler
 	throws IOException
     {
 	log("in handleContextQuery :");
+    String virtualHost = msg.getString();
+    log("in handleContextQuery for virtual" + virtualHost); 
+
+    outBuf.reset();
+    outBuf.appendByte(JK_AJP14_CONTEXT_INFO_CMD);
+    outBuf.appendString( virtualHost );
+
+    log("in handleContextQuery for virtual " + virtualHost + "examples URI/MIMES");
+    outBuf.appendString("examples");    // first context - examples
+    outBuf.appendString("servlet/*");   // examples/servlet/*
+    outBuf.appendString("*.jsp");       // examples/*.jsp
+    outBuf.appendString("");            // no more URI/MIMES
+
+    log("in handleContextQuery for virtual " + virtualHost + "send admin URI/MIMES"); 
+    outBuf.appendString("admin");       // second context - admin
+    outBuf.appendString("servlet/*");   // /admin//servlet/*
+    outBuf.appendString("*.jsp");       // /admin/*.jsp
+    outBuf.appendString("");            // no more URI/MIMES
+
+    outBuf.appendString("");            // no more contexts
+    outBuf.end();
+    ch.send(outBuf);
+    
 	return (304);
     }
     
