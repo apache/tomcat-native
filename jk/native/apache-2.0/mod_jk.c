@@ -91,9 +91,11 @@
 #include "util_date.h"
 #endif
 
-/* changed with apr 1.0 */
+/* deprecated with apr 0.9.3 */
 #include "apr_version.h"
-#if (APR_MAJOR_VERSION < 1) 
+#if (APR_MAJOR_VERSION == 0) && \
+    (APR_MINOR_VERSION <= 9) && \
+    (APR_PATCH_VERSION < 3) 
 #define apr_filepath_name_get apr_filename_of_pathname
 #endif
 
@@ -2412,7 +2414,7 @@ static int jk_map_to_storage(request_rec *r)
 
         /* Only if sub-request for a directory, most likely from mod_dir */
         if (r->main && r->main->filename &&
-            !*apr_filepath_name_get(r->main->filename)){
+            !apr_filepath_name_get(r->main->filename)){
     
             /* The filename from the main request will be set to what should
              * be picked up, aliases included. Tomcat will need to know about
