@@ -121,14 +121,18 @@ public final class MessageBytes implements Cloneable, Serializable {
     /**
      * Sets the content to the specified subarray of bytes.
      *
-     * @param b the ascii bytes
+     * @param b the bytes
      * @param off the start offset of the bytes
      * @param len the length of the bytes
      */
     public void setBytes(byte[] b, int off, int len) {
-	recycle(); // a new value is set, cached values must reset
-	byteC.setBytes( b, off, len );
-	type=T_BYTES;
+        byteC.setBytes( b, off, len );
+        type=T_BYTES;
+        hasStrValue=false;
+        hasHashCode=false;
+        hasIntValue=false;
+        hasLongValue=false;
+        hasDateValue=false; 
     }
 
     /** Set the encoding. If the object was constructed from bytes[]. any
@@ -144,12 +148,21 @@ public final class MessageBytes implements Cloneable, Serializable {
 	byteC.setEncoding(enc);
     }
 
-    /** Sets the content to be a char[]
+    /** 
+     * Sets the content to be a char[]
+     *
+     * @param c the bytes
+     * @param off the start offset of the bytes
+     * @param len the length of the bytes
      */
     public void setChars( char[] c, int off, int len ) {
-	recycle();
-	charC.setChars( c, off, len );
-	type=T_CHARS;
+        charC.setChars( c, off, len );
+        type=T_CHARS;
+        hasStrValue=false;
+        hasHashCode=false;
+        hasIntValue=false;
+        hasLongValue=false;
+        hasDateValue=false; 
     }
 
     /** Remove the cached string value. Use it after a conversion on the
@@ -165,15 +178,19 @@ public final class MessageBytes implements Cloneable, Serializable {
 	}
     }
 
-    /** Set the content to be a string
+    /** 
+     * Set the content to be a string
      */
     public void setString( String s ) {
-	recycle();
         if (s == null)
             return;
-	strValue=s;
-	hasStrValue=true;
-	type=T_STR;
+        strValue=s;
+        hasStrValue=true;
+        hasHashCode=false;
+        hasIntValue=false;
+        hasLongValue=false;
+        hasDateValue=false; 
+        type=T_STR;
     }
 
     // -------------------- Conversion and getters --------------------
@@ -553,7 +570,6 @@ public final class MessageBytes implements Cloneable, Serializable {
     /** Set the buffer to the representation of an int
      */
     public void setInt(int i) {
-	recycle();
         byteC.allocate(16, 32);
         int current = i;
         byte[] buf = byteC.getBuffer();
@@ -571,6 +587,7 @@ public final class MessageBytes implements Cloneable, Serializable {
             current = current / 10;
             buf[end++] = HexUtils.HEX[digit];
         }
+        byteC.setOffset(0);
         byteC.setEnd(end);
         // Inverting buffer
         end--;
@@ -585,7 +602,11 @@ public final class MessageBytes implements Cloneable, Serializable {
             end--;
         }
         intValue=i;
+        hasStrValue=false;
+        hasHashCode=false;
         hasIntValue=true;
+        hasLongValue=false;
+        hasDateValue=false; 
         type=T_BYTES;
     }
 

@@ -16,6 +16,8 @@
 
 package org.apache.coyote.http11;
 
+import org.apache.tomcat.util.buf.ByteChunk;
+
 
 /**
  * Constants.
@@ -49,7 +51,8 @@ public final class Constants {
     /**
      * Server string.
      */
-    public static final byte[] SERVER_BYTES = convertToBytes("Server: Apache-Coyote/1.1" + CRLF);
+    public static final byte[] SERVER_BYTES = 
+        ByteChunk.convertToBytes("Server: Apache-Coyote/1.1" + CRLF);
 
     
     /**
@@ -119,16 +122,25 @@ public final class Constants {
 
 
     /* Various constant "strings" */
-    public static final byte[] CRLF_BYTES = convertToBytes(CRLF);
-    public static final byte[] COLON_BYTES = convertToBytes(": ");
+    public static final byte[] CRLF_BYTES = ByteChunk.convertToBytes(CRLF);
+    public static final byte[] COLON_BYTES = ByteChunk.convertToBytes(": ");
     public static final String CONNECTION = "Connection";
     public static final String CLOSE = "close";
-    public static final byte[] CLOSE_BYTES = convertToBytes("close");
+    public static final byte[] CLOSE_BYTES = 
+        ByteChunk.convertToBytes(CLOSE);
     public static final String KEEPALIVE = "keep-alive";
-    public static final byte[] KEEPALIVE_BYTES = convertToBytes("keep-alive");
+    public static final byte[] KEEPALIVE_BYTES = 
+        ByteChunk.convertToBytes(KEEPALIVE);
     public static final String CHUNKED = "chunked";
-    public static final byte[] ACK_BYTES = convertToBytes("HTTP/1.1 100 Continue" + CRLF + CRLF);
+    public static final byte[] ACK_BYTES = 
+        ByteChunk.convertToBytes("HTTP/1.1 100 Continue" + CRLF + CRLF);
     public static final String TRANSFERENCODING = "Transfer-Encoding";
+    public static final byte[] _200_BYTES = 
+        ByteChunk.convertToBytes("200");
+    public static final byte[] _400_BYTES = 
+        ByteChunk.convertToBytes("400");
+    public static final byte[] _404_BYTES = 
+        ByteChunk.convertToBytes("404");
     
 
     /**
@@ -171,6 +183,8 @@ public final class Constants {
      * HTTP/1.1.
      */
     public static final String HTTP_11 = "HTTP/1.1";
+    public static final byte[] HTTP_11_BYTES = 
+        ByteChunk.convertToBytes(HTTP_11);
 
 
     /**
@@ -191,18 +205,4 @@ public final class Constants {
     public static final String POST = "POST";
 
 
-    /**
-     * Utility method.
-     * 
-     * @param value to convert to byte array
-     * @return the byte array value
-     */
-    public static final byte[] convertToBytes(String value) {
-        byte[] result = new byte[value.length()];
-        for (int i = 0; i < value.length(); i++) {
-            result[i] = (byte) value.charAt(i);
-        }
-        return result;
-    }
-    
 }

@@ -153,10 +153,10 @@ public final class ByteChunk implements Cloneable, Serializable {
      * @param len the length of the bytes
      */
     public void setBytes(byte[] b, int off, int len) {
-	buff = b;
-	start = off;
-	end = start+ len;
-	isSet=true;
+        buff = b;
+        start = off;
+        end = start+ len;
+        isSet=true;
     }
 
     public void setOptimizedWrite(boolean optimizedWrite) {
@@ -195,7 +195,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     public int getOffset() {
-	return getStart();
+	return start;
     }
 
     public void setOffset(int off) {
@@ -776,5 +776,19 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
 
+    /**
+     * Convert specified String to a byte array.
+     * 
+     * @param value to convert to byte array
+     * @return the byte array value
+     */
+    public static final byte[] convertToBytes(String value) {
+        byte[] result = new byte[value.length()];
+        for (int i = 0; i < value.length(); i++) {
+            result[i] = (byte) value.charAt(i);
+        }
+        return result;
+    }
+    
     
 }

@@ -426,25 +426,26 @@ public class InternalOutputBuffer
     public void sendStatus() {
 
         // Write protocol name
-        write("HTTP/1.1 ");
+        write(Constants.HTTP_11_BYTES);
+        buf[pos++] = Constants.SP;
 
         // Write status code
         int status = response.getStatus();
-	switch (status) {
-	case 200:
-            write("200");
-	    break;
-	case 400:
-            write("400");
-	    break;
-	case 404:
-            write("404");
-	    break;
+        switch (status) {
+        case 200:
+            write(Constants._200_BYTES);
+            break;
+        case 400:
+            write(Constants._400_BYTES);
+            break;
+        case 404:
+            write(Constants._404_BYTES);
+            break;
         default:
-	    write(status);
-	}
+            write(status);
+        }
 
-        write(" ");
+        buf[pos++] = Constants.SP;
 
         // Write message
         String message = response.getMessage();
@@ -459,13 +460,15 @@ public class InternalOutputBuffer
            AccessController.doPrivileged(
                 new PrivilegedAction(){
                     public Object run(){
-                        write(Constants.CRLF_BYTES);
+                        buf[pos++] = Constants.CR;
+                        buf[pos++] = Constants.LF;
                         return null;
                     }
                 }
            );
         } else {
-            write(Constants.CRLF_BYTES);
+            buf[pos++] = Constants.CR;
+            buf[pos++] = Constants.LF;
         }
 
     }
@@ -493,9 +496,11 @@ public class InternalOutputBuffer
     public void sendHeader(MessageBytes name, MessageBytes value) {
 
         write(name);
-        write(": ");
+        buf[pos++] = Constants.COLON;
+        buf[pos++] = Constants.SP;
         write(value);
-        write(Constants.CRLF_BYTES);
+        buf[pos++] = Constants.CR;
+        buf[pos++] = Constants.LF;
 
     }
 
@@ -509,9 +514,11 @@ public class InternalOutputBuffer
     public void sendHeader(ByteChunk name, ByteChunk value) {
 
         write(name);
-        write(": ");
+        buf[pos++] = Constants.COLON;
+        buf[pos++] = Constants.SP;
         write(value);
-        write(Constants.CRLF_BYTES);
+        buf[pos++] = Constants.CR;
+        buf[pos++] = Constants.LF;
 
     }
 
@@ -525,9 +532,11 @@ public class InternalOutputBuffer
     public void sendHeader(String name, String value) {
 
         write(name);
-        write(": ");
+        buf[pos++] = Constants.COLON;
+        buf[pos++] = Constants.SP;
         write(value);
-        write(Constants.CRLF_BYTES);
+        buf[pos++] = Constants.CR;
+        buf[pos++] = Constants.LF;
 
     }
 
@@ -537,7 +546,8 @@ public class InternalOutputBuffer
      */
     public void endHeaders() {
 
-        write(Constants.CRLF_BYTES);
+        buf[pos++] = Constants.CR;
+        buf[pos++] = Constants.LF;
 
     }
 
@@ -656,18 +666,10 @@ public class InternalOutputBuffer
             // but is the only consistent approach within the current
             // servlet framework.  It must suffice until servlet output
             // streams properly encode their output.
-            if ((c & 0xff00) != 0) {
-                // High order byte must be zero
-                //log("Header character is not iso8859_1, " +
-                //"not supported yet: " + c, Log.ERROR ) ;
-            }
-            if (c != 9) {
-                if ((c >= 0) && (c <= 31)) {
-                    c = ' ';
-                }
-                if (c == 127) {
-                    c = ' ';
-                }
+            if ((c <= 31) && (c != 9)) {
+                c = ' ';
+            } else if (c == 127) {
+                c = ' ';
             }
             buf[pos++] = (byte) c;
         }
@@ -711,18 +713,10 @@ public class InternalOutputBuffer
             // but is the only consistent approach within the current
             // servlet framework.  It must suffice until servlet output
             // streams properly encode their output.
-            if ((c & 0xff00) != 0) {
-                // High order byte must be zero
-                //log("Header character is not iso8859_1, " +
-                //"not supported yet: " + c, Log.ERROR ) ;
-            }
-            if (c != 9) {
-                if ((c >= 0) && (c <= 31)) {
-                    c = ' ';
-                }
-                if (c == 127) {
-                    c = ' ';
-                }
+            if ((c <= 31) && (c != 9)) {
+                c = ' ';
+            } else if (c == 127) {
+                c = ' ';
             }
             buf[pos++] = (byte) c;
         }

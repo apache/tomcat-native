@@ -133,12 +133,10 @@ public final class CharChunk implements Cloneable, Serializable {
     }
 
     public void setChars( char[] c, int off, int len ) {
-	recycle();
-	isSet=true;
-	buff=c;
-	start=off;
-	end=start + len;
-	limit=end;
+        buff=c;
+        start=off;
+        end=start + len;
+        isSet=true;
     }
 
     /** Maximum amount of data in this buffer.
@@ -192,7 +190,7 @@ public final class CharChunk implements Cloneable, Serializable {
     }
     
     public int getOffset() {
-	return getStart();
+	return start;
     }
 
     /**
