@@ -114,6 +114,7 @@ static int JK_METHOD jk2_channel_socket_close(jk_env_t *env, jk_channel_t *ch,
                                              jk_endpoint_t *endpoint);
 
 static char *jk2_channel_socket_multiValueInfo[]={"group", NULL };
+static char *jk2_channel_socket_getAttributeInfo[]={"name", NULL };
 static char *jk2_channel_socket_setAttributeInfo[]={"host", "port", "route", "lb_factor",
                                                     "level", NULL };
 
@@ -124,10 +125,10 @@ static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
     jk_channel_t *ch=(jk_channel_t *)mbean->object;
     char *value=(char *)valueP;
     jk_channel_socket_private_t *socketInfo=
-    (jk_channel_socket_private_t *)(ch->_privatePtr);
+        (jk_channel_socket_private_t *)(ch->_privatePtr);
 
     if( strcmp( "host", name ) == 0 ) {
-    socketInfo->host=value;
+        socketInfo->host=value;
     } else if( strcmp( "port", name ) == 0 ) {
         socketInfo->port=atoi( value );
     } else if( strcmp( "keepalive", name ) == 0 ) {
@@ -140,6 +141,19 @@ static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
         return jk2_channel_setAttribute( env, mbean, name, valueP );
     }
     return JK_OK;
+}
+
+static void * JK_METHOD jk2_channel_socket_getAttribute(jk_env_t *env, jk_bean_t *bean,
+                                                        char *name )
+{
+    jk_channel_t *ch=(jk_channel_t *)bean->object;
+    jk_channel_socket_private_t *socketInfo=
+        (jk_channel_socket_private_t *)(ch->_privatePtr);
+    
+    if( strcmp( name, "name" )==0 ) {
+        return  bean->name;
+    }
+    return NULL;
 }
 
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
@@ -652,9 +666,10 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
     ch->is_stream=JK_TRUE;
 
     result->setAttribute= jk2_channel_socket_setAttribute; 
+    result->getAttribute= jk2_channel_socket_getAttribute; 
     result->init= jk2_channel_socket_init; 
 
-    /*result->getAttributeInfo=jk2_channel_socket_getAttributeInfo;*/
+    result->getAttributeInfo=jk2_channel_socket_getAttributeInfo;
     result->multiValueInfo=jk2_channel_socket_multiValueInfo;
     result->setAttributeInfo=jk2_channel_socket_setAttributeInfo;
     

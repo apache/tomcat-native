@@ -381,6 +381,24 @@ static int JK_METHOD jk2_config_file_setAttribute( struct jk_env *env, struct jk
     return JK_OK;
 }
 
+/** Get a property for this config object
+ */
+static void * JK_METHOD jk2_config_file_getAttribute( struct jk_env *env, struct jk_bean *mbean,
+                                                      char *name)
+{
+    jk_config_t *cfg=mbean->object;
+    
+    if( strcmp( name, "file" )==0 ) {
+        return cfg->file;
+    } else if( strcmp( name, "ver" )==0 ) {
+        return 0;
+    } else {
+        return "";
+    }
+}
+
+static char *myGetAttInfo[]={ "ver", "file", NULL };
+static char *mySetAttInfo[]={ "ver", "file", "save", NULL };
 
 int JK_METHOD jk2_config_file_factory( jk_env_t *env, jk_pool_t *pool,
                         jk_bean_t *result,
@@ -393,6 +411,8 @@ int JK_METHOD jk2_config_file_factory( jk_env_t *env, jk_pool_t *pool,
         return JK_ERR;
 
     _this->pool = pool;
+    result->getAttributeInfo = myGetAttInfo;
+    result->setAttributeInfo = mySetAttInfo;
     _this->ver=0;
 
     _this->setPropertyString=jk2_config_setPropertyString;
@@ -406,6 +426,7 @@ int JK_METHOD jk2_config_file_factory( jk_env_t *env, jk_pool_t *pool,
 
     result->object=_this;
     result->setAttribute=jk2_config_file_setAttribute;
+    result->getAttribute=jk2_config_file_getAttribute;
     _this->mbean=result;
 
     return JK_OK;
