@@ -76,7 +76,7 @@
       <def name="USE_APACHE_MD5" 
 	   info="Use the MD5 implementation that is part of apache2" />
       <src dir=".">
-	<include name="server/apache2/mod_jk.c" />
+	<include name="server/apache2/*.c" />
 	<include name="common/*.c" />
 	<include name="apr/*.c" />
       </src>
@@ -376,11 +376,12 @@
 
   <target name="clean" >
     <delete >
-      <fileset dir=".">
+      <fileset dir="${build.dir}">
 	<include name="**/*.o"/>
 	<include name="**/*.so"/>
 	<include name="**/*.lo"/>
 	<include name="**/*.la"/>
+	<include name="**/*.a"/>
 	<include name="**/.libs"/>
 	<include name="**/*.lib"/>
 	<include name="**/*.nlm"/>
