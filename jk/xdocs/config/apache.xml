@@ -349,6 +349,18 @@ context, but all .jpg files that belongs to that context are not served.
   # do not send requests ending with .gif to worker1
   JkUnMount /servlet/*.gif worker1
 </source>
+<p>
+JkUnMount takes precedence over JkMount directives, meaning that the JK
+will first look for unmount and then for unmount directives. The following
+example will block all .gif files.
+</p>
+<source>
+  # send all requests ending with /servlet to worker1
+  JkUnMount /*.gif worker1
+  # The .gif files will not be mouted cause JkUnMount takes
+  # precedance over JkMount directive
+  JkMount /servlet/*.gif worker1
+</source>
 
 <p>
 <b>JkAutoAlias</b> directive automatically <b>Alias</b> webapp context directories into
