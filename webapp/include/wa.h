@@ -100,7 +100,7 @@ typedef struct wa_provider wa_provider;
 /* All declared providers */
 extern wa_provider wa_provider_info;
 extern wa_provider wa_provider_warp;
-//extern wa_provider wa_provider_jni;
+/*extern wa_provider wa_provider_jni;*/
 
 /* WebApp Library includes */
 #include <wa_main.h>

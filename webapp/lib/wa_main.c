@@ -66,7 +66,7 @@ wa_chain *wa_configuration=NULL;
 wa_provider *wa_providers[] = {
     &wa_provider_info,
     &wa_provider_warp,
-    //&wa_provider_jni,
+    /*&wa_provider_jni,*/
     NULL,
 };
 

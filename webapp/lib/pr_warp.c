@@ -154,11 +154,11 @@ static wa_boolean p_wstring(warp_packet *p, char *s) {
 
     if (s==NULL) return(p_wshort(p,0));
 
-    // Evaluate string length
+    /* Evaluate string length */
     l=strlen(s);
-    // Store string length
+    /* Store string length */
     if (!p_wshort(p,strlen(s))) return(FALSE);
-    // Check if we have room in the buffer and copy the string
+    /* Check if we have room in the buffer and copy the string */
     if ((p->bpos+l)>MAXPAYLOAD) return(FALSE);
     for(x=0; x<l; x++) p->buff[p->bpos++]=s[x];
     return(TRUE);
@@ -168,7 +168,7 @@ static int p_rshort(warp_packet *p) {
     int k=0;
     int x=0;
 
-    // Store the two bytes
+    /* Store the two bytes */
     x=p->bpos;
     k=((p->buff[p->bpos++]<<8)&0x0ff00);
     k=((k|(p->buff[p->bpos++]&0x0ff))&0x0ffff);
