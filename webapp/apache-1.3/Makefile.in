@@ -88,7 +88,8 @@ mod_webapp.so: mod_webapp.lo @SRCDIR@/lib/libwebapp.la @APRDIR@/libapr.la
 	@echo Linking Apache 1.3 WebApp Module
 	@$(SHELL) $(LIBTOOL) $(LTFLAGS) --mode=link \
 		$(APXS_LD_SHLIB) $(APXS_LDFLAGS_SHLIB) \
-		mod_webapp.lo ../lib/libwebapp.la  $(LIBTOOL_LIBS) -o mod_webapp.so
+		mod_webapp.lo ../lib/libwebapp.la  $(LIBTOOL_LIBS) $(EXTRA_LIBS) \
+		-o mod_webapp.so
 
 clean:
 	@echo Removing *.o *.lo $(MODULE) .libs
