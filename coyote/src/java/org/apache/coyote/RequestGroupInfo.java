@@ -9,15 +9,15 @@ import java.util.ArrayList;
 public class RequestGroupInfo {
     ArrayList processors=new ArrayList();
 
-    public void addRequestProcessor( RequestInfo rp ) {
+    public synchronized void addRequestProcessor( RequestInfo rp ) {
         processors.add( rp );
     }
 
-    public void removeRequestProcessor( RequestInfo rp ) {
+    public synchronized void removeRequestProcessor( RequestInfo rp ) {
         processors.remove( rp );
     }
 
-    public long getMaxTime() {
+    public synchronized long getMaxTime() {
         long maxTime=0;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
@@ -27,14 +27,14 @@ public class RequestGroupInfo {
     }
 
     // Used to reset the times
-    public void setMaxTime(long maxTime) {
+    public synchronized void setMaxTime(long maxTime) {
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setMaxTime(maxTime);
         }
     }
 
-    public long getProcessingTime() {
+    public synchronized long getProcessingTime() {
         long time=0;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
@@ -43,14 +43,14 @@ public class RequestGroupInfo {
         return time;
     }
 
-    public void setProcessingTime(long totalTime) {
+    public synchronized void setProcessingTime(long totalTime) {
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setProcessingTime( totalTime );
         }
     }
 
-    public int getRequestCount() {
+    public synchronized int getRequestCount() {
         int requestCount=0;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
@@ -59,14 +59,14 @@ public class RequestGroupInfo {
         return requestCount;
     }
 
-    public void setRequestCount(int requestCount) {
+    public synchronized void setRequestCount(int requestCount) {
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setRequestCount( requestCount );
         }
     }
 
-    public int getErrorCount() {
+    public synchronized int getErrorCount() {
         int requestCount=0;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
@@ -75,14 +75,14 @@ public class RequestGroupInfo {
         return requestCount;
     }
 
-    public void setErrorCount(int errorCount) {
+    public synchronized void setErrorCount(int errorCount) {
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setErrorCount( errorCount);
         }
     }
 
-    public long getBytesReceived() {
+    public synchronized long getBytesReceived() {
         long bytes=0;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
@@ -91,14 +91,14 @@ public class RequestGroupInfo {
         return bytes;
     }
 
-    public void setBytesReceived(long bytesReceived) {
+    public synchronized void setBytesReceived(long bytesReceived) {
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setBytesReceived( bytesReceived );
         }
     }
 
-    public long getBytesSent() {
+    public synchronized long getBytesSent() {
         long bytes=0;
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
@@ -107,7 +107,7 @@ public class RequestGroupInfo {
         return bytes;
     }
 
-    public void setBytesSent(long bytesSent) {
+    public synchronized void setBytesSent(long bytesSent) {
         for( int i=0; i<processors.size(); i++ ) {
             RequestInfo rp=(RequestInfo)processors.get( i );
             rp.setBytesSent( bytesSent );
