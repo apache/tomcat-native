@@ -622,7 +622,7 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             /* Skip non lb workers */
             continue;
         }
-        jk_printf(s, "  <jk:balancer id=\"%d\" name=\"%s\" type=\"%s\" sticky=\"$s\" stickyforce=\"%s\" retries=\"%d\" recover=\"%d\" >\n", 
+        jk_printf(s, "  <jk:balancer id=\"%d\" name=\"%s\" type=\"%s\" sticky=\"%s\" stickyforce=\"%s\" retries=\"%d\" recover=\"%d\" >\n", 
              i,
              lb->s->name,
              status_worker_type(w->type), 
