@@ -1324,13 +1324,27 @@ static int jk_translate(request_rec *r)
     return DECLINED;
 }
 
+#if (MODULE_MAGIC_NUMBER_MAJOR > 20010808)
+/* bypass the directory_walk and file_walk for non-file requests */
+static int jk_map_to_storage(request_rec *r)
+{
+    if (apr_table_get(r->notes, JK_WORKER_ID)) {
+        r->filename = apr_filename_of_pathname(r->uri);
+        return OK;
+    }
+    return DECLINED;
+}
+#endif
+
 static void jk_register_hooks(apr_pool_t *p)
 {
     ap_hook_handler(jk_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(jk_post_config,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_child_init(jk_child_init,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_translate_name(jk_translate,NULL,NULL,APR_HOOK_FIRST);
-
+#if (MODULE_MAGIC_NUMBER_MAJOR > 20010808)
+    ap_hook_map_to_storage(jk_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
+#endif
 }
 
 module AP_MODULE_DECLARE_DATA jk_module =
