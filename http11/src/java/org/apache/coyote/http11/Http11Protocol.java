@@ -349,6 +349,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     static class Http11ConnectionHandler implements TcpConnectionHandler {
         Http11Protocol proto;
         static int count=0;
+        RequestGroupInfo global=null;
 
         Http11ConnectionHandler( Http11Protocol proto ) {
             this.proto=proto;
@@ -381,7 +382,14 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 
             if( proto.getDomain() != null ) {
                 try {
-                    RequestProcessor rp=new RequestProcessor(processor.getRequest());
+                    if( global==null ) {
+                        global=new RequestGroupInfo();
+                        Registry.getRegistry().registerComponent( global,
+                                proto.getDomain(), "GlobalRequestProcessor",
+                                "type=GlobalRequestProcessor,name=http");
+                    }
+                    RequestInfo rp=processor.getRequest().getRequestProcessor();
+                    rp.setGlobalProcessor(global);
                     Registry.getRegistry().registerComponent( rp,
                             proto.getDomain(), "RequestProcessor",
                             "type=RequestProcessor,name=HttpRequest" + count++ );

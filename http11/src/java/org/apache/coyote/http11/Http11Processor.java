@@ -577,6 +577,7 @@ public class Http11Processor implements Processor, ActionHook {
 
         while (started && !error && keepAlive) {
             try {
+                request.setStartTime(System.currentTimeMillis());
                 if( !disableUploadTimeout && keptAlive && soTimeout > 0 ) {
                     socket.setSoTimeout(soTimeout);
                 }
