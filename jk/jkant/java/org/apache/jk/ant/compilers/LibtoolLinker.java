@@ -71,7 +71,11 @@ import java.util.*;
  */
 public class LibtoolLinker extends SoTask implements LinkerAdapter {
     SoTask so;
-    
+    protected static GlobPatternMapper lo_mapper=new GlobPatternMapper();
+    static {
+	lo_mapper.setFrom("*.c");
+	lo_mapper.setTo("*.lo");
+    }
     public LibtoolLinker() {
 	so=this;
     };

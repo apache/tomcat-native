@@ -409,8 +409,10 @@ public class SoTask extends Task {
 	findSourceFiles();
 	compileList=new Vector();
 
+	File baseDir=src.getDir( project );
+	
         for (int i = 0; i < srcList.length; i++) {
-	    File srcFile = (File)project.resolveFile(srcList[i]);
+	    File srcFile = new File( baseDir, srcList[i]);
             if (!srcFile.exists()) {
                 throw new BuildException("Source \"" + srcFile.getPath() +
                                          "\" does not exist!", location);
@@ -516,7 +518,6 @@ public class SoTask extends Task {
     {
 	createStreamHandler();
         Execute exe = new Execute(streamhandler, null);
-
         exe.setAntRun(project);
 
         exe.setWorkingDirectory(buildDir);

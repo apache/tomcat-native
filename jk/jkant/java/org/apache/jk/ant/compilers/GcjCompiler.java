@@ -89,16 +89,33 @@ public class GcjCompiler extends BaseCompiler {
 
 	cmd.setExecutable( "gcj" );
 	cmd.createArgument().setValue("-c");
-	cmd.createArgument().setValue("-O2");
 
+	addDebug(cmd);
+	addOptimize( cmd );
+
+	addIncludes( cmd );
+	
 	cmd.createArgument().setValue( source );
 	project.log( "Compiling " + source);
-	
+
+	if( debug > 0 )
+	    project.log( "Command: " + cmd ); 
 	int result=execute( cmd );
 	if( result!=0 ) {
 	    displayError( result, source, cmd );
 	}
 	closeStreamHandler();
     }
+
+    protected void addIncludes(Commandline cmd) {
+	String [] includeList = ( includes==null ) ?
+	    new String[] {} : includes.getIncludePatterns(project); 
+	for( int i=0; i<includeList.length; i++ ) {
+	    cmd.createArgument().setValue("-I");
+	    cmd.createArgument().setValue(includeList[i] );
+	}
+    }
+
+
 }
 
