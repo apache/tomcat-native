@@ -276,6 +276,10 @@ public class JkInputStream extends InputStream {
         if( log.isDebugEnabled())
             log.debug( "doRead " + pos + " " + blen + " " + available + " " + end_of_stream+
                        " " + responseChunk.getOffset()+ " " + responseChunk.getLength());
+        if( contentLength == pos ) {
+            end_of_stream=true;
+            return -1;
+        }
         if( blen == pos ) {
             refillReadBuffer();
         }
