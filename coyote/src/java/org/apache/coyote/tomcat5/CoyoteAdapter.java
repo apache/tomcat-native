@@ -67,7 +67,9 @@ import java.io.IOException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.tomcat.util.buf.B2CConverter;
 import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.Cookies;
 import org.apache.tomcat.util.http.ServerCookie;
@@ -237,7 +239,6 @@ final class CoyoteAdapter
         // URI decoding
         req.decodedURI().duplicate(req.requestURI());
         req.getURLDecoder().convert(req.decodedURI(), false);
-        req.decodedURI().setEncoding("UTF-8");
 
         // Normalize decoded URI
         if (!normalize(req.decodedURI())) {
@@ -267,6 +268,9 @@ final class CoyoteAdapter
         if (principal != null) {
             request.setUserPrincipal(new CoyotePrincipal(principal));
         }
+
+        // URI character decoding
+        convertURI(req.decodedURI(), request);
 
         // Request mapping
         connector.getMapper().map(req.serverName(), req.decodedURI(), 
@@ -359,6 +363,56 @@ final class CoyoteAdapter
         }
 
         request.setCookies(cookies);
+
+    }
+
+
+    /**
+     * Character conversion of the URI.
+     */
+    protected void convertURI(MessageBytes uri, CoyoteRequest request) 
+        throws Exception {
+
+        ByteChunk bc = uri.getByteChunk();
+        CharChunk cc = uri.getCharChunk();
+        cc.allocate(bc.getLength(), -1);
+
+        String enc = connector.getURIEncoding();
+        if (enc != null) {
+            B2CConverter conv = request.getURIConverter();
+            try {
+                if (conv == null) {
+                    conv = new B2CConverter(enc);
+                    request.setURIConverter(conv);
+                } else {
+                    conv.recycle();
+                }
+            } catch (IOException e) {
+                // Ignore
+                log("Invalid URI encoding; using HTTP default");
+                connector.setURIEncoding(null);
+            }
+            if (conv != null) {
+                try {
+                    conv.convert(bc, cc);
+                    uri.setChars(cc.getBuffer(), cc.getStart(), 
+                                 cc.getLength());
+                    return;
+                } catch (IOException e) {
+                    log("Invalid URI character encoding; trying ascii");
+                    cc.recycle();
+                }
+            }
+        }
+
+        // Default encoding: fast conversion
+        byte[] bbuf = bc.getBuffer();
+        char[] cbuf = cc.getBuffer();
+        int start = bc.getStart();
+        for (int i = 0; i < bc.getLength(); i++) {
+            cbuf[i] = (char) (bbuf[i + start] & 0xff);
+        }
+        uri.setChars(cbuf, 0, bc.getLength());
 
     }
 
