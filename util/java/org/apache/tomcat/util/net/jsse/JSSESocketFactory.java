@@ -106,7 +106,7 @@ public abstract class JSSESocketFactory
         org.apache.commons.logging.LogFactory.getLog(JSSESocketFactory.class);
 
     protected boolean initialized;
-    protected boolean clientAuth = false;
+    protected String clientAuth = "false";
     protected SSLServerSocketFactory sslProxy = null;
     protected String[] enabledCiphers;
    
@@ -149,7 +149,7 @@ public abstract class JSSESocketFactory
         SSLSocket asock = null;
         try {
              asock = (SSLSocket)socket.accept();
-             asock.setNeedClientAuth(clientAuth);
+             configureClientAuth(asock);
         } catch (SSLException e){
           throw new SocketException("SSL handshake error" + e.toString());
         }
@@ -363,6 +363,22 @@ public abstract class JSSESocketFactory
                                             String [] protocols);
 
     /**
+     * Configure Client authentication for this version of JSSE.  The
+     * JSSE included in Java 1.4 supports the 'want' value.  Prior
+     * versions of JSSE will treat 'want' as 'false'.
+     * @param socket the SSLServerSocket
+     */
+    abstract protected void configureClientAuth(SSLServerSocket socket);
+
+    /**
+     * Configure Client authentication for this version of JSSE.  The
+     * JSSE included in Java 1.4 supports the 'want' value.  Prior
+     * versions of JSSE will treat 'want' as 'false'.
+     * @param ssocket the SSLSocket
+     */
+    abstract protected void configureClientAuth(SSLSocket socket);
+    
+    /**
      * Configures the given SSL server socket with the requested cipher suites,
      * protocol versions, and need for client authentication
      */
@@ -380,7 +396,7 @@ public abstract class JSSESocketFactory
 
         // we don't know if client auth is needed -
         // after parsing the request we may re-handshake
-        socket.setNeedClientAuth(clientAuth);
+        configureClientAuth(socket);
     }
 
 }

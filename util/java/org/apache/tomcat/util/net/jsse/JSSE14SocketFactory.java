@@ -68,6 +68,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
@@ -97,6 +98,16 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
     private static StringManager sm =
         StringManager.getManager("org.apache.tomcat.util.net.jsse.res");
 
+    /**
+     * Flag to state that we require client authentication.
+     */
+    protected boolean requireClientAuth = false;
+
+    /**
+     * Flag to state that we would like client authentication.
+     */
+    protected boolean wantClientAuth    = false;
+
     public JSSE14SocketFactory () {
         super();
     }
@@ -108,8 +119,11 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
         try {
 
             String clientAuthStr = (String) attributes.get("clientauth");
-            if (clientAuthStr != null){
-                clientAuth = Boolean.valueOf(clientAuthStr).booleanValue();
+            if("true".equalsIgnoreCase(clientAuthStr) ||
+               "yes".equalsIgnoreCase(clientAuthStr)) {
+                requireClientAuth = true;
+            } else if("want".equalsIgnoreCase(clientAuthStr)) {
+                wantClientAuth = true;
             }
 
             // SSL protocol variant (e.g., TLS, SSL v3, etc.)
@@ -281,4 +295,18 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
 
         return enabledProtocols;
     }
+
+    protected void configureClientAuth(SSLServerSocket socket){
+        if (wantClientAuth){
+            socket.setWantClientAuth(wantClientAuth);
+        } else {
+            socket.setNeedClientAuth(requireClientAuth);
+        }
+    }
+
+    protected void configureClientAuth(SSLSocket socket){
+        // Per JavaDocs: SSLSockets returned from 
+        // SSLServerSocket.accept() inherit this setting.
+    }
+    
 }

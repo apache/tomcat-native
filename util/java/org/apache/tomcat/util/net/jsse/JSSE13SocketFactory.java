@@ -64,6 +64,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 
 /*
   1. Make the JSSE's jars available, either as an installed
@@ -85,6 +86,11 @@ import javax.net.ssl.SSLServerSocket;
  */
 public class JSSE13SocketFactory extends JSSESocketFactory
 {
+    /**
+     * Flag for client authentication
+     */
+    protected boolean clientAuth = false;
+
     public JSSE13SocketFactory () {
         super();
     }
@@ -106,8 +112,10 @@ public class JSSE13SocketFactory extends JSSESocketFactory
             Security.addProvider (new com.sun.net.ssl.internal.ssl.Provider());
 
             String clientAuthStr = (String)attributes.get("clientauth");
-            if (clientAuthStr != null){
-                clientAuth = Boolean.valueOf(clientAuthStr).booleanValue();
+            if("true".equalsIgnoreCase(clientAuthStr) || 
+               "yes".equalsIgnoreCase(clientAuthStr)  ||
+               "want".equalsIgnoreCase(clientAuthStr)) {
+                clientAuth = true;
             }
             
             // SSL protocol variant (e.g., TLS, SSL v3, etc.)
@@ -171,6 +179,17 @@ public class JSSE13SocketFactory extends JSSESocketFactory
     }
     protected void setEnabledProtocols(SSLServerSocket socket, 
                                              String [] protocols){
+    }
+
+    protected void configureClientAuth(SSLServerSocket socket){
+        socket.setNeedClientAuth(clientAuth);
+    }
+
+    protected void configureClientAuth(SSLSocket socket){
+        // In JSSE 1.0.2 docs it does not explicitly
+        // state whether SSLSockets returned from 
+        // SSLServerSocket.accept() inherit this setting.
+        socket.setNeedClientAuth(clientAuth);
     }
 
 }
