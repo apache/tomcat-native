@@ -91,7 +91,7 @@
  * Initialize the worker.
  */
 static int JK_METHOD
-jk_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
+jk2_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
                          jk_map_t    *props,
                          jk_workerEnv_t *we)
 {
@@ -104,11 +104,11 @@ jk_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
     char *channelType;
     
     aw = _this;
-    _this->secret = jk_map_getStrProp( env, props,
+    _this->secret = jk2_map_getStrProp( env, props,
                                        "worker", aw->name, "secretkey", NULL );
     _this->secret= _this->pool->pstrdup(env, _this->pool, _this->secret);
     
-    channelType = jk_map_getStrProp( env, props,
+    channelType = jk2_map_getStrProp( env, props,
                                      "worker", aw->name, "channel", "socket" );
 
     if( _this->channel == NULL ) {
@@ -140,7 +140,7 @@ jk_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
 /*
  * Close the endpoint (clean buf and close socket)
  */
-static void jk_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
+static void jk2_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
 {
     env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.close() %s\n",
                   ae->worker->name);
@@ -155,7 +155,7 @@ static void jk_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
 
 /** Connect a channel, implementing the logging protocol if ajp14
  */
-static int jk_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
+static int jk2_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
     jk_channel_t *channel=ae->worker->channel;
     jk_msg_t *msg;
     
@@ -179,7 +179,7 @@ static int jk_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
     is a reconnect */
     msg=ae->reply;
 
-    jk_serialize_ping( env, msg, ae );
+    jk2_serialize_ping( env, msg, ae );
     
     err = ae->worker->channel->send( env, ae->worker->channel, ae, msg );
 
@@ -190,7 +190,7 @@ static int jk_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
     /* Anything but OK - the login failed
      */
     if( err != JK_TRUE ) {
-        jk_close_endpoint( env, ae );
+        jk2_close_endpoint( env, ae );
     }
     return err;
 }
@@ -204,7 +204,7 @@ static int jk_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
     fails, try to reconnect.
 */
 static int JK_METHOD
-jk_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
+jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
                               jk_ws_service_t *s,
                               jk_endpoint_t   *e )
 {
@@ -243,7 +243,7 @@ jk_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
 
         channel->close( env, channel, e );
 
-        err=jk_worker_ajp14_connect(env, e); 
+        err=jk2_worker_ajp14_connect(env, e); 
 
         if( err != JK_TRUE ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -263,13 +263,13 @@ jk_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
 
 
 static int JK_METHOD
-jk_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
+jk2_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
                               jk_ws_service_t *s,
                               jk_endpoint_t   *e )
 {
     int err;
 
-    err=jk_worker_ajp14_sendAndReconnect( env, worker, s, e );
+    err=jk2_worker_ajp14_sendAndReconnect( env, worker, s, e );
     if( err!=JK_TRUE )
         return err;
     
@@ -287,7 +287,7 @@ jk_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
 	 * for resend if the remote Tomcat is down, a fact we will learn only
 	 * doing a read (not yet) 
 	 */
-        err=jk_serialize_postHead( env, e->post, s, e );
+        err=jk2_serialize_postHead( env, e->post, s, e );
 
         if (err != JK_TRUE ) {
             /* the browser stop sending data, no need to recover */
@@ -325,7 +325,7 @@ jk_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
 }
 
 static int JK_METHOD
-jk_worker_ajp14_forwardSingleThread(jk_env_t *env, jk_worker_t *worker,
+jk2_worker_ajp14_forwardSingleThread(jk_env_t *env, jk_worker_t *worker,
                                     jk_ws_service_t *s,
                                     jk_endpoint_t   *e )
 {
@@ -343,7 +343,7 @@ jk_worker_ajp14_forwardSingleThread(jk_env_t *env, jk_worker_t *worker,
 }
      
 static int JK_METHOD
-jk_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
+jk2_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
                         jk_ws_service_t *s,
                         jk_endpoint_t   *e )
 {
@@ -374,7 +374,7 @@ jk_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
     /* 
      * We get here initial request (in reqmsg)
      */
-    err=jk_serialize_request13(env, e->request, s, e);
+    err=jk2_serialize_request13(env, e->request, s, e);
     if (err!=JK_TRUE) {
 	s->is_recoverable_error = JK_FALSE;                
 	env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -391,9 +391,9 @@ jk_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
     
     /* First message for this request */
     if( w->channel->is_stream == JK_TRUE ) {
-        err=jk_worker_ajp14_forwardStream( env, w, s, e );
+        err=jk2_worker_ajp14_forwardStream( env, w, s, e );
     } else {
-        err=jk_worker_ajp14_forwardSingleThread( env, w, s, e );
+        err=jk2_worker_ajp14_forwardSingleThread( env, w, s, e );
     }
 
     if( w->channel->afterRequest != NULL ) {
@@ -409,7 +409,7 @@ jk_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
 
 
 static int JK_METHOD
-jk_worker_ajp14_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
+jk2_worker_ajp14_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
 {
     jk_worker_t *w;
     
@@ -430,7 +430,7 @@ jk_worker_ajp14_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
 
     /* No reuse or put() failed */
 
-    jk_close_endpoint(env, e);
+    jk2_close_endpoint(env, e);
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "ajp14.done() close endpoint %s\n",
                   w->name );
@@ -439,7 +439,7 @@ jk_worker_ajp14_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
 }
 
 static int JK_METHOD
-jk_worker_ajp14_getEndpoint(jk_env_t *env,
+jk2_worker_ajp14_getEndpoint(jk_env_t *env,
                             jk_worker_t *_this,
                             jk_endpoint_t **eP)
 {
@@ -475,9 +475,9 @@ jk_worker_ajp14_getEndpoint(jk_env_t *env,
 
     /* Init message storage areas.
      */
-    e->request = jk_msg_ajp_create( env, e->pool, 0);
-    e->reply = jk_msg_ajp_create( env, e->pool, 0);
-    e->post = jk_msg_ajp_create( env, e->pool, 0);
+    e->request = jk2_msg_ajp_create( env, e->pool, 0);
+    e->reply = jk2_msg_ajp_create( env, e->pool, 0);
+    e->post = jk2_msg_ajp_create( env, e->pool, 0);
     
     e->reuse = JK_FALSE;
 
@@ -494,24 +494,24 @@ jk_worker_ajp14_getEndpoint(jk_env_t *env,
  * Serve the request, using AJP13/AJP14
  */
 static int JK_METHOD
-jk_worker_ajp14_service(jk_env_t *env, jk_worker_t *w,
+jk2_worker_ajp14_service(jk_env_t *env, jk_worker_t *w,
                         jk_ws_service_t *s)
 {
     int err;
     jk_endpoint_t   *e;
 
     /* Get endpoint from the pool */
-    jk_worker_ajp14_getEndpoint( env, w, &e );
+    jk2_worker_ajp14_getEndpoint( env, w, &e );
 
-    err=jk_worker_ajp14_service1( env, w, s, e );
+    err=jk2_worker_ajp14_service1( env, w, s, e );
 
-    jk_worker_ajp14_done( env, w, e);
+    jk2_worker_ajp14_done( env, w, e);
     return err;
 }
 
 
 static int JK_METHOD
-jk_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
+jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
                      jk_map_t    *props, 
                      jk_workerEnv_t *we)
 {
@@ -520,12 +520,12 @@ jk_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
     int cache_sz;
 
     /* start the connection cache */
-    cache_sz=jk_map_getIntProp(env, props,
+    cache_sz=jk2_map_getIntProp(env, props,
                                "worker", _this->name, "cachesize",
                                JK_OBJCACHE_DEFAULT_SZ );
     if (cache_sz > 0) {
         int err;
-        _this->endpointCache=jk_objCache_create( env, _this->pool  );
+        _this->endpointCache=jk2_objCache_create( env, _this->pool  );
 
         if( _this->endpointCache != NULL ) {
             err=_this->endpointCache->init( env, _this->endpointCache,
@@ -556,10 +556,10 @@ jk_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
      *  update.
      */
     
-    if (jk_worker_ajp14_getEndpoint(env, _this, &e) == JK_FALSE) 
+    if (jk2_worker_ajp14_getEndpoint(env, _this, &e) == JK_FALSE) 
         return JK_FALSE; 
     
-    rc=jk_worker_ajp14_connect(env, e);
+    rc=jk2_worker_ajp14_connect(env, e);
 
     
     if ( rc == JK_TRUE) {
@@ -576,7 +576,7 @@ jk_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
 
 
 static int JK_METHOD
-jk_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *_this)
+jk2_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *_this)
 {
     int i;
     
@@ -595,7 +595,7 @@ jk_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *_this)
                 break;
             }
             
-            jk_close_endpoint(env, e);
+            jk2_close_endpoint(env, e);
         }
         _this->endpointCache->destroy( env, _this->endpointCache );
 
@@ -609,7 +609,7 @@ jk_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *_this)
     return JK_TRUE;
 }
 
-int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
                                        void **result,
                                        const char *type, const char *name)
 {
@@ -628,10 +628,10 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     w->channel= NULL;
     w->secret= NULL;
    
-    w->validate= jk_worker_ajp14_validate;
-    w->init= jk_worker_ajp14_init;
-    w->destroy=jk_worker_ajp14_destroy;
-    w->service = jk_worker_ajp14_service;
+    w->validate= jk2_worker_ajp14_validate;
+    w->init= jk2_worker_ajp14_init;
+    w->destroy=jk2_worker_ajp14_destroy;
+    w->service = jk2_worker_ajp14_service;
 
     *result = w;
 

@@ -99,16 +99,16 @@ typedef struct {
 } jk_ch_jni_ep_private_t;
 
 
-int JK_METHOD jk_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
-                                        void **result,
-					const char *type, const char *name);
+int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
+                                      void **result,
+					                  const char *type, const char *name);
 
 
-static int JK_METHOD jk_channel_jni_init(jk_env_t *env,
-                                         jk_channel_t *_this, 
-                                         jk_map_t *props,
-                                         char *worker_name, 
-                                         jk_worker_t *worker )
+static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
+                                          jk_channel_t *_this, 
+                                          jk_map_t *props,
+                                          char *worker_name, 
+                                          jk_worker_t *worker )
 {
     int err;
     char *tmp;
@@ -132,9 +132,9 @@ static int JK_METHOD jk_channel_jni_init(jk_env_t *env,
 /** Assume the jni-worker or someone else started
  *  tomcat and initialized what is needed.
  */
-static int JK_METHOD jk_channel_jni_open(jk_env_t *env,
-                                         jk_channel_t *_this,
-                                         jk_endpoint_t *endpoint)
+static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
+                                          jk_channel_t *_this,
+                                          jk_endpoint_t *endpoint)
 {
     jk_workerEnv_t *we=endpoint->worker->workerEnv;
     JNIEnv *jniEnv;
@@ -257,8 +257,8 @@ static int JK_METHOD jk_channel_jni_open(jk_env_t *env,
 
 /** 
  */
-static int JK_METHOD jk_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
-                                             jk_endpoint_t *endpoint)
+static int JK_METHOD jk2_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
+                                           jk_endpoint_t *endpoint)
 {
     jk_ch_jni_ep_private_t *epData;
 
@@ -282,9 +282,9 @@ static int JK_METHOD jk_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
  *             protocol.
  * @was: jk_tcp_socket_sendfull
  */
-static int JK_METHOD jk_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
-                                         jk_endpoint_t *endpoint,
-                                         jk_msg_t *msg) 
+static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
+                                          jk_endpoint_t *endpoint,
+                                          jk_msg_t *msg) 
 {
     int sd;
     int  sent=0;
@@ -302,7 +302,7 @@ static int JK_METHOD jk_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send()\n" ); 
 
     if( epData == NULL ) {
-        jk_channel_jni_open( env, _this, endpoint );
+        jk2_channel_jni_open( env, _this, endpoint );
         epData=(jk_ch_jni_ep_private_t *)endpoint->channelData;
     }
 
@@ -375,9 +375,9 @@ static int JK_METHOD jk_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
  * java side will send messages by calling a native method, which will
  * receive and dispatch.
  */
-static int JK_METHOD jk_channel_jni_recv( jk_env_t *env, jk_channel_t *_this,
-                                          jk_endpoint_t *endpoint,
-                                          jk_msg_t *msg ) 
+static int JK_METHOD jk2_channel_jni_recv(jk_env_t *env, jk_channel_t *_this,
+                                         jk_endpoint_t *endpoint,
+                                         jk_msg_t *msg) 
 {
     jbyte *nbuf;
     jbyteArray jbuf;
@@ -412,7 +412,7 @@ static int JK_METHOD jk_channel_jni_recv( jk_env_t *env, jk_channel_t *_this,
 /* Process a message from java. We return in all cases,
    with the response message if any. 
 */
-static int jk_channel_jni_processMsg( jk_env_t *env, jk_endpoint_t *e,
+static int jk2_channel_jni_processMsg(jk_env_t *env, jk_endpoint_t *e,
                                       jk_ws_service_t *r)
 {
     int code;
@@ -472,9 +472,9 @@ static int jk_channel_jni_processMsg( jk_env_t *env, jk_endpoint_t *e,
 /*
   
  */
-int jk_channel_jni_javaSendPacket(JNIEnv *jniEnv, jobject o,
-                                  jlong envJ, jlong eP, jlong s,
-                                  jbyteArray data, jint dataLen)
+int jk2_channel_jni_javaSendPacket(JNIEnv *jniEnv, jobject o,
+                                   jlong envJ, jlong eP, jlong s,
+                                   jbyteArray data, jint dataLen)
 {
     /* [V] Convert indirectly from jlong -> int -> pointer to shut up gcc */
     /*     I hope it's okay on other compilers and/or machines...         */
@@ -527,7 +527,7 @@ int jk_channel_jni_javaSendPacket(JNIEnv *jniEnv, jobject o,
     /* XXX check if the len in header matches our len */
 
     /* Now execute it */
-    jk_channel_jni_processMsg( env, e, ps );
+    jk2_channel_jni_processMsg( env, e, ps );
     
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, 0);
 
@@ -543,11 +543,11 @@ int jk_channel_jni_javaSendPacket(JNIEnv *jniEnv, jobject o,
 /** Called before request processing, to initialize resources.
     All following calls will be in the same thread.
 */
-int JK_METHOD jk_channel_jni_beforeRequest(struct jk_env *env,
-                                           jk_channel_t *_this,
-                                           struct jk_worker *worker,
-                                           struct jk_endpoint *endpoint,
-                                           struct jk_ws_service *r )
+int JK_METHOD jk2_channel_jni_beforeRequest(struct jk_env *env,
+                                            jk_channel_t *_this,
+                                            struct jk_worker *worker,
+                                            struct jk_endpoint *endpoint,
+                                            struct jk_ws_service *r )
 {
     JNIEnv *jniEnv;
     jint rc;
@@ -578,7 +578,7 @@ int JK_METHOD jk_channel_jni_beforeRequest(struct jk_env *env,
 
 /** Called after request processing. Used to be worker.done()
  */
-int JK_METHOD jk_channel_jni_afterRequest(struct jk_env *env,
+int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
                                           jk_channel_t *_this,
                                           struct jk_worker *worker,
                                           struct jk_endpoint *endpoint,
@@ -597,7 +597,7 @@ int JK_METHOD jk_channel_jni_afterRequest(struct jk_env *env,
 
 
 
-int JK_METHOD jk_channel_jni_factory(jk_env_t *env,
+int JK_METHOD jk2_channel_jni_factory(jk_env_t *env,
                                      jk_pool_t *pool, 
                                      void **result,
                                      const char *type, const char *name)
@@ -611,14 +611,14 @@ int JK_METHOD jk_channel_jni_factory(jk_env_t *env,
     }
     _this=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
-    _this->recv= jk_channel_jni_recv; 
-    _this->send= jk_channel_jni_send; 
-    _this->init= jk_channel_jni_init; 
-    _this->open= jk_channel_jni_open; 
-    _this->close= jk_channel_jni_close; 
+    _this->recv= jk2_channel_jni_recv; 
+    _this->send= jk2_channel_jni_send; 
+    _this->init= jk2_channel_jni_init; 
+    _this->open= jk2_channel_jni_open; 
+    _this->close= jk2_channel_jni_close; 
 
-    _this->beforeRequest= jk_channel_jni_beforeRequest;
-    _this->afterRequest= jk_channel_jni_afterRequest;
+    _this->beforeRequest= jk2_channel_jni_beforeRequest;
+    _this->afterRequest= jk2_channel_jni_afterRequest;
     
     _this->name="jni";
 
