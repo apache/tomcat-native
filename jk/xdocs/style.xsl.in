@@ -95,7 +95,7 @@
                     <img src="{$images}/jakarta.gif" border="0" width="270" height="75" align="left"/>
                   </td>
                   <td align="right">
-                    <img src="{$images}/mod_jk.jpeg" border="0" width="400" height="75" align="right"/>
+                    <img src="{$images}/mod_jk.jpeg" border="0" align="right"/>
                   </td>
                 </tr>
               </table>
@@ -249,7 +249,7 @@
         </tr>
       </table>
     </a>
-    <xsl:apply-templates select="subsection|p|ul|img|screen|screendos|screen5250|todo"/>
+    <xsl:apply-templates select="subsection|p|ul|ol|img|screen|screendos|screen5250|todo"/>
     <br/>
   </xsl:template>
 
@@ -267,7 +267,7 @@
         </tr>
       </table>
     </a>
-    <xsl:apply-templates select="subsection|p|ul|img|screen|screendos|screen5250|todo"/>
+    <xsl:apply-templates select="subsection|p|ul|ol|img|screen|screendos|screen5250|todo"/>
     <br/>
   </xsl:template>
 
@@ -282,7 +282,7 @@
   </xsl:template>
 
   <xsl:template match="p">
-    <p class="section"><xsl:apply-templates select="author|code|source|screen|screendos|screen5250|table|ul|br|b|a|text()"/></p>
+    <p class="section"><xsl:apply-templates select="author|code|source|screen|screendos|screen5250|table|ul|ol|br|b|a|text()"/></p>
   </xsl:template>
 
   <xsl:template match="b">
@@ -303,11 +303,15 @@
   </xsl:template>
 
   <xsl:template match="ul">
-    <ul><xsl:apply-templates select="li"/></ul>
+    <ul><xsl:apply-templates select="li|ul|ol"/></ul>
+  </xsl:template>
+
+  <xsl:template match="ol">
+    <ol><xsl:apply-templates select="li|ul|ol"/></ol>
   </xsl:template>
 
   <xsl:template match="li">
-    <li><xsl:apply-templates select="br|b|a|text()"/></li>
+    <li><xsl:apply-templates select="br|b|a|ul|ol|text()"/></li>
   </xsl:template>
 
   <!-- JFC added -->
@@ -438,7 +442,7 @@
   </xsl:template>
 
   <xsl:template match="read">
-    <code>
+    <code class="screen">
       <nobr>
         <xsl:apply-templates select="text()|enter"/>
       </nobr>
@@ -463,7 +467,7 @@
   </xsl:template>
 
   <xsl:template match="readdos">
-    <code>
+    <code class="screendos">
       <nobr>
         <xsl:apply-templates select="text()|enterdos"/>
       </nobr>
@@ -521,7 +525,7 @@
   </xsl:template>
 
   <xsl:template match="read5250">
-    <code>
+    <code class="screen5250">
       <nobr>
         <xsl:apply-templates select="text()|enter5250"/>
       </nobr>

@@ -3,20 +3,42 @@
 <properties>
 <title>Overview</title>
 <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+<author email="hgomez@apache.org">Henri Gomez</author>
 </properties>
-<section name="What's mod_jk ?">
+
+<section name="What's jk ?">
 <p>
-<b>mod_jk</b> is a replacement to the elderly mod_jserv. 
+<b>jk</b> is a replacement to the elderly mod_jserv. 
 It was a completely new Tomcat-Apache plug-in that handles the communication between Tomcat and Apache.
 </p>
 <p>
-The newest <b>mod_jk2</b> is a rewrite of <b>mod_jk</b>.
+The newest <b>jk2</b> is a rewrite of <b>mod_jk</b>.
 The native part has been completly
 restructured and the configuration has been simplified a lot.
 </p>
+
+<p>
+jk is more than just an apache module, since it could be used with majors WebServer :
+</p>
+
+<ul>
+<li>
+<a href="jk/aphowto.html">mod_jk</a> is an Apache module to be used with <b>Apache 1.3 and 2.0 Webservers</b>.
+</li>
+<li>
+<a href="jk/iishowto.html">isapi</a> is a redirector to be used with <b>IIS Webservers</b>.
+</li>
+<li>
+<a href="jk/neshowto.html">nsapi</a> is a redirector to be used with <b>Netscape/iPlanet WebServers</b>.
+</li>
+<li>
+<a href="jk/domhowto.html">dsapi</a> was also ported to <b>Domino</b> but there is no more active support on it.
+</li>
+</ul>
+
 </section>
 
-<section name="Why should I use the mod_jk's Modules ?">
+<section name="Why should I use the jk ?">
 <p>
 Several reasons:
 <ul>

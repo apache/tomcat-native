@@ -147,6 +147,15 @@ p.screen {
   text-align: left;
 }
 
+code.screen {
+  background-color: #cccccc;
+  border-style: none;
+  color: #000000;
+  margin-left: 10px;
+  margin-right: 0px;
+  text-align: left;
+}
+
 p.screendos {
   background-color: #000000;
   border-style: none;
@@ -156,7 +165,25 @@ p.screendos {
   text-align: left;
 }
 
+code.screendos {
+  background-color: #000000;
+  border-style: none;
+  color: #c0c0c0;
+  margin-left: 10px;
+  margin-right: 0px;
+  text-align: left;
+}
+
 p.screen5250 {
+  background-color: #000000;
+  border-style: none;
+  color: #00ff00;
+  margin-left: 10px;
+  margin-right: 0px;
+  text-align: left;
+}
+
+code.screen5250 {
   background-color: #000000;
   border-style: none;
   color: #00ff00;
