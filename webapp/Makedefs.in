@@ -101,6 +101,16 @@ APR_LIBDIR = @APR_LIBDIR@
 APR_INCDIR = @APR_INCDIR@
 # Location of APRVARS
 APR_VARFIL = @APR_VARFIL@
+# Extra APR C compilation flags
+APR_CFLAGS = @APR_CFLAGS@
+# Extra APR C macro pre-processor flags
+APR_CPPFLAGS = @APR_CPPFLAGS@
+# Extra APR inclusion flags
+APR_INCLUDES = @APR_INCLUDES@
+# Extra APR linker flags
+APR_LDFLAGS = @APR_LDFLAGS@
+# Extra APR libraries required for linking
+APR_LIBS = @APR_LIBS@
 
 # -------------------------------------------------------------------------
 # C Compiler settings
@@ -142,7 +152,7 @@ CLASSPATH = @CLASSPATH@
 .c.o:
 	@$(ECHO) "Compiling \"$<\""
 	@$(CC) $(CFLAGS) $(CPPFLAGS) \
-		$(APR_CFLAGS) $(APR_CPPFLAGS) \
+		$(APR_CFLAGS) $(APR_CPPFLAGS) $(APR_INCLUDES) \
 		-I$(APR_INCDIR) -I$(SRCDIR)/include \
 		-c "$<" -o "$@"
 
