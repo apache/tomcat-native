@@ -63,6 +63,8 @@ dnl --------------------------------------------------------------------------
 
 dnl --------------------------------------------------------------------------
 dnl Initialize
+dnl New vars: TEST TRUE ECHO GREP CAT SED RM SYSTEM
+dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 sinclude(./support/aplocal.m4)
 sinclude(./support/apjava.m4)
@@ -70,19 +72,19 @@ AC_INIT([Makefile.in])
 AC_CONFIG_AUX_DIR([support])
 LOCAL_INIT()
 AC_CANONICAL_HOST()
+SYSTEM="${host_os}-${host_cpu}"
+AC_SUBST(SYSTEM)
 
 dnl --------------------------------------------------------------------------
 dnl Setup initial variable value
 dnl
-dnl New vars: MODULE TARGET_BUILD TARGET_CLEAN HOST_CPU HOST_SYS
+dnl New vars: MODULE TARGET_BUILD TARGET_CLEAN
 dnl           APR_CFGFLG APR_SRCDIR APR_LIBDIR APR_INCDIR APR_VARFIL
 dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 MODULE=""
 TARGET_BUILD="lib-build"
 TARGET_CLEAN="lib-clean"
-HOST_CPU="${host_cpu}"
-HOST_SYS="${host_os}"
 APR_CFGFLG=""
 APR_SRCDIR=""
 APR_LIBDIR=""
@@ -92,8 +94,6 @@ APR_VARFIL=""
 AC_SUBST(MODULE)
 AC_SUBST(TARGET_BUILD)
 AC_SUBST(TARGET_CLEAN)
-AC_SUBST(HOST_CPU)
-AC_SUBST(HOST_SYS)
 AC_SUBST(APR_CFGFLG)
 AC_SUBST(APR_SRCDIR)
 AC_SUBST(APR_LIBDIR)
@@ -117,7 +117,7 @@ dnl   We need to check local compilation in case the user got an APR
 dnl   distribution from a binary tarball (such as in Apache 2.0) and the
 dnl   compiler is not available.
 dnl
-dnl New vars: AR RANLIB CC CFLAGS CPP
+dnl New vars: AR RANLIB CC CFLAGS CPP CPPFLAGS
 dnl Upd vars: N/A
 dnl -------------------------------------------------------------------------
 LOCAL_HEADER([C-Language compilation tools])
@@ -128,14 +128,36 @@ AC_SUBST(RANLIB)
 AC_PROG_CC()
 AC_PROG_CC_C_O()
 AC_PROG_CPP()
+AC_SUBST(CPPFLAGS)
+
+dnl -------------------------------------------------------------------------
+dnl Optional compilation flags
+dnl
+dnl New vars: DEBUG
+dnl Upd vars: CPPFLAGS
+dnl -------------------------------------------------------------------------
+LOCAL_HELP([External libraries and compilation flags])
+AC_MSG_CHECKING([for debug build])
+AC_ARG_ENABLE(debug,
+  [  --enable-debug          enable compilation of  debug information messages
+                          within both C and Java code (this will slow down
+                          execution and create huge log files).],
+  [
+    AC_MSG_RESULT([yes])
+    DEBUG="true"
+    CPPFLAGS="${CPPFLAGS} -DDEBUG"
+  ],[
+    AC_MSG_RESULT([no])
+    DEBUG="false"
+  ])
+AC_SUBST(DEBUG)
 
 dnl -------------------------------------------------------------------------
 dnl Check JAVA environment
 dnl
-dnl New vars: JAVA_HOME JAVAC JAR JAVADOC
+dnl New vars: JAVA_HOME JAVAC JAVACFLAGS JAR JAVADOC
 dnl Upd vars: N/A
 dnl -------------------------------------------------------------------------
-LOCAL_HELP([External libraries and compilation flags])
 LOCAL_HEADER([JAVA-Language compilation tools])
 JAVA_INIT()
 JAVA_JAVAC()
@@ -147,7 +169,7 @@ dnl Process the --with-tomcat=... command line argument
 dnl
 dnl   This is always processed, and sets the CLASSPATH variable.
 dnl
-dnl New vars: TOMCAT_DIR
+dnl New vars: TC4DIR
 dnl Upd vars: N/A
 dnl -------------------------------------------------------------------------
 AC_ARG_WITH(tomcat,
@@ -157,48 +179,50 @@ AC_ARG_WITH(tomcat,
   [
     case "${withval}" in
     yes|YES|true|TRUE)
-      TOMCAT_DIR="/usr/local/tomcat"
+      TC4DIR="/usr/local/tomcat"
       ;;
     *)
-      TOMCAT_DIR="${withval}"
+      TC4DIR="${withval}"
       ;;
     esac
   ],[
-    TOMCAT_DIR="/usr/local/tomcat"
+    TC4DIR="/usr/local/tomcat"
   ]
 )
+AC_SUBST(TC4DIR)
 
 dnl --------------------------------------------------------------------------
 dnl Check that we can build all classes depending on Tomcat if Java is enabled
 dnl
 dnl New vars: CLASSPATH
-dnl Upd vars: TOMCAT_DIR TARGET_BUILD TARGET_CLEAN
+dnl Upd vars: TC4DIR TARGET_BUILD TARGET_CLEAN
 dnl --------------------------------------------------------------------------
 if ${TEST} "$JAVA_ENABLE" = "TRUE"
 then
-  LOCAL_RESOLVEDIR(TOMCAT_DIR,"${TOMCAT_DIR}",[tomcat distribution directory])
+  LOCAL_RESOLVEDIR(TC4DIR,"${TC4DIR}",[tomcat distribution directory])
   
-  if ${TEST} ! -f "${TOMCAT_DIR}/common/lib/servlet.jar"
+  if ${TEST} ! -f "${TC4DIR}/common/lib/servlet.jar"
   then
-    AC_MSG_ERROR([Cannot find Servlet 2.3 jar in \"${TOMCAT_DIR}\"])
+    AC_MSG_ERROR([Cannot find Servlet 2.3 jar in \"${TC4DIR}\"])
   fi
 
-  if ${TEST} ! -f "${TOMCAT_DIR}/server/lib/catalina.jar"
+  if ${TEST} ! -f "${TC4DIR}/server/lib/catalina.jar"
   then
-    AC_MSG_ERROR([Cannot find Catalina jar in \"${TOMCAT_DIR}\"])
+    AC_MSG_ERROR([Cannot find Catalina jar in \"${TC4DIR}\"])
   fi
 
   if ${TEST} -z "${CLASSPATH}"
   then
-    CLASSPATH="${TOMCAT_DIR}/common/lib/servlet.jar"
+    CLASSPATH="${TC4DIR}/common/lib/servlet.jar"
   else
-    CLASSPATH="${CLASSPATH}:${TOMCAT_DIR}/common/lib/servlet.jar"
+    CLASSPATH="${CLASSPATH}:${TC4DIR}/common/lib/servlet.jar"
   fi
-  CLASSPATH="${CLASSPATH}:${TOMCAT_DIR}/server/lib/catalina.jar"
+  CLASSPATH="${CLASSPATH}:${TC4DIR}/server/lib/catalina.jar"
 
   TARGET_BUILD="${TARGET_BUILD} java-build"
   TARGET_CLEAN="${TARGET_CLEAN} java-clean"
 fi
+AC_SUBST(CLASSPATH)
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apr=... command line argument
