@@ -1,7 +1,7 @@
 <project name="jk" default="build-main" basedir=".">
   
     <!-- We'll build jk for 3.3 or 4.0 ( depending on what you have installed ).
-    You need to set catalina.home and/or tomcat33.home in build.properties
+    You need to set tomcat40.home and/or tomcat33.home in build.properties
     ( either the path to 'official' distribution or the development dirs )
     -->
   
@@ -19,14 +19,14 @@
     <!-- default locations -->
     <property name="tomcat33.home" 
 	      location="../../jakarta-tomcat/build/tomcat" />
-    <property name="catalina.home" 
+    <property name="tomcat40.home" 
 	      location="../../jakarta-tomcat-4.0/build" />
     <property name="tomcat41.home" 
 	      location="../../jakarta-tomcat-4.1/build" />
 
     <path id="build-main.classpath">
-        <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
-        <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
+        <pathelement location="${tomcat40.home}/server/lib/catalina.jar"/>
+        <pathelement location="${tomcat40.home}/common/lib/servlet.jar"/>
         <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
         <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
         <pathelement 
@@ -50,7 +50,7 @@
 
     <target name="report"  >
         <echo message="Tomcat33: ${tomcat33.detect} ${tomcat33.home}" />
-        <echo message="Tomcat4:  ${tomcat4.detect} ${catalina.home}" />
+        <echo message="Tomcat40:  ${tomcat40.detect} ${tomcat40.home}" />
         <echo message="Tomcat41: ${tomcat41.detect} ${tomcat41.home}" />
         <echo message="Apache13: ${apache13.detect} ${apache13.home}" />
         <echo message="Apache2: ${apache2.detect} ${apache2.home}" />
@@ -58,7 +58,7 @@
         <echo message="IIS:      ${iis.detect} ${iis.home}" />
     </target>
 
-    <target name="build-prepare">
+    <target name="prepare">
         <mkdir dir="${jk.build}"/>
         <mkdir dir="${jk.build}/WEB-INF"/>
         <mkdir dir="${jk.build}/WEB-INF/conf"/>
@@ -73,8 +73,8 @@
 
         <available property="tomcat33.detect" 
                    file="${tomcat33.home}/lib/common/tomcat_core.jar" />
-        <available property="tomcat4.detect" 
-                   file="${catalina.home}/server/lib/catalina.jar" />
+        <available property="tomcat40.detect" 
+                   file="${tomcat40.home}/server/lib/catalina.jar" />
         <available property="tomcat41.detect" 
                    file="${tomcat41.home}/server/webapps" />
         <available property="tomcat41.detect" 
@@ -90,7 +90,7 @@
     </target>
 
     <target name="build-main" 
-            depends="build-prepare,report,jkutil,jkjava,jkant" />
+            depends="prepare,report,jkutil,jkjava,jkant" />
 
     <!-- ==================== Building ==================== -->
 
@@ -102,8 +102,11 @@
 	       debug="${debug}"
 	       optimize="${optimize}"
 	       verbose="off" >
-	    <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat4.detect"/>
+	    <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat40.detect"/>
             <exclude name="org/apache/ajp/tomcat33/**" unless="tomcat33.detect"/>
+            <exclude name="org/apache/jk/server/tomcat33/**" unless="tomcat33.detect"/>
+            <exclude name="org/apache/jk/server/tomcat40/**" unless="tomcat40.detect"/>
+            <exclude name="org/apache/jk/**" unless="tomcat33.detect"/>
 	    <classpath refid="build-main.classpath"/>
 	</javac>
 
@@ -158,18 +161,31 @@
     <!-- ================ Install =================== -->
 
     <target name="install" 
-            depends="install-t33,install-t40,install-t41,install-a20,install-a13" />
+            depends="prepare,build-main,install-t33,install-t40,install-t41,install-a20,install-a13" />
 
     <target name="install-t33" if="tomcat33.detect" > 
+        <mkdir dir="${tomcat33.home}/modules/jk" />
+        <copy todir="${tomcat33.home}/modules/jk" >
+            <fileset dir="${jk.build}" >
+                <include name="WEB-INF/lib/**" />
+                <include name="WEB-INF/conf/**" />
+                <include name="WEB-INF/*.xml" />
+            </fileset>
+        </copy>
     </target>
 
     <target name="install-t40" if="tomcat40.detect" > 
+        <copy todir="${tomcat40.home}/server/lib" 
+              file="${jk.build}/WEB-INF/lib/tomcat-util.jar"/>
+        <copy todir="${tomcat40.home}/server/lib" 
+              file="${jk.build}/WEB-INF/lib/ajp.jar"/>
+        <echo message="Don't forget to add the connector to ${tomcat40.home}/conf/server.xml" />
     </target>
 
     <target name="install-t41" if="tomcat41.detect" > 
     </target>
 
-    <target name="install-a20" if="apache20.detect" > 
+    <target name="install-a20" if="apache2.detect" > 
     </target>
 
     <target name="install-a13" if="apache13.detect" > 
@@ -181,7 +197,7 @@
 	<mkdir dir="${jk.build}/javadoc"/>
 	<javadoc packagenames="org.apache.ajp,org.apache.ajp.tomcat4"
                  sourcepath="java"
-                 classpath="${tomcat-util.jar}:${catalina.home}/server/lib/catalina.jar:${catalina.home}/common/lib/servlet.jar"
+                 classpath="${tomcat-util.jar}:${tomcat40.home}/server/lib/catalina.jar:${tomcat40.home}/common/lib/servlet.jar"
                  destdir="${jk.build}/javadoc"
                  author="true"
                  version="true"

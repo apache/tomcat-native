@@ -5,7 +5,7 @@
 
 # Directory where catalina is installed. It can 
 # be either 4.0 or 4.1
-catalina.home=../../jakarta-tomcat-4.0/build
+tomcat40.home=../../jakarta-tomcat-4.0/build
 
 # If you want to build/install on  both 4.0 
 # and 4.1, set this to point to 4.0 and 'catalina.home'
