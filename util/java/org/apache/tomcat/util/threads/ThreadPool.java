@@ -349,7 +349,7 @@ public class ThreadPool  {
                 monitor.terminate();
                 monitor = null;
             }
-            for(int i = 0 ; i < (currentThreadCount - currentThreadsBusy - 1) ; i++) {
+            for(int i = 0; i < currentThreadCount - currentThreadsBusy; i++) {
                 try {
                     pool[i].terminate();
                 } catch(Throwable t) {
