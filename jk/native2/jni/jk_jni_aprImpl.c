@@ -411,10 +411,10 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
 
         fprintf(stderr, "unAccept %d\n", listenUnSocket );
 
-        signal( SIGCHLD, SIG_IGN );
-        signal( SIGPIPE, SIG_IGN );
-        signal( SIGIO, jk2_SigAction );
-        
+#ifdef HAVE_SIGNALS
+/*         signal( SIGCHLD, SIG_IGN ); */
+/*         signal( SIGIO, jk2_SigAction ); */
+#endif        
         clientlen=sizeof( client );
         
         connfd=accept( listenUnSocket, (struct sockaddr *)&client, &clientlen );
