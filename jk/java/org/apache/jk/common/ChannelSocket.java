@@ -606,12 +606,6 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
         if( log.isDebugEnabled() )
             log.debug("Accepting ajp connections on " + port);
         while( running ) {
-            try {
-                synchronized(this) {
-                    while(paused) {
-                        wait();
-                    }
-                }
                 MsgContext ep=new MsgContext();
                 ep.setSource(this);
                 ep.setWorkerEnv( wEnv );
