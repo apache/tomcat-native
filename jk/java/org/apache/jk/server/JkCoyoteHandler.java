@@ -153,6 +153,9 @@ public class JkCoyoteHandler extends JkHandler implements
         }
     }
 
+    public void start() {
+    }
+
     public void destroy() {
         if( !started ) return;
 

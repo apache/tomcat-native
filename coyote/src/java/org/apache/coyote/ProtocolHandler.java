@@ -93,9 +93,16 @@ public interface ProtocolHandler {
 
 
     /**
-     * Start the protocol.
+     * Init the protocol.
      */
     public void init()
+        throws Exception;
+
+
+    /**
+     * Start the protocol.
+     */
+    public void start()
         throws Exception;
 
 

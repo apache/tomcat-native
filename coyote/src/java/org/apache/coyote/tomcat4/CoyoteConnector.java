@@ -995,6 +995,14 @@ public final class CoyoteConnector
                                            "" + false);
         }
 
+        try {
+            protocolHandler.init();
+        } catch (Exception e) {
+            throw new LifecycleException
+                (sm.getString
+                 ("coyoteConnector.protocolHandlerInitializationFailed", e));
+        }
+
     }
 
 
@@ -1013,11 +1021,11 @@ public final class CoyoteConnector
         started = true;
 
         try {
-            protocolHandler.init();
+            protocolHandler.start();
         } catch (Exception e) {
             throw new LifecycleException
                 (sm.getString
-                 ("coyoteConnector.protocolHandlerInitializationFailed", e));
+                 ("coyoteConnector.protocolHandlerStartFailed", e));
         }
 
     }

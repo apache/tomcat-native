@@ -137,15 +137,25 @@ public class Http11Protocol implements ProtocolHandler
                 socketFactory.setAttribute( key, v );
             }
         }
+
         try {
-            ep.startEndpoint();
+            ep.initEndpoint();
         } catch (Exception ex) {
             log.error("Error initializing endpoint", ex);
             throw ex;
         }
-        log.info( "Starting on " + ep.getPort() );
+        log.info( "Init on " + ep.getPort() );
 
-        
+    }
+
+    public void start() throws Exception {
+        try {
+            ep.startEndpoint();
+        } catch (Exception ex) {
+            log.error("Error starting endpoint", ex);
+            throw ex;
+        }
+        log.info( "Starting on " + ep.getPort() );
     }
 
     public void destroy() throws Exception {

@@ -117,6 +117,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
 
     ThreadPoolRunnable listener;
     private boolean running = false;
+    private boolean initialized = false;
     static final int debug=0;
 
     ThreadPool tp;
@@ -252,7 +253,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
 
     // -------------------- Public methods --------------------
 
-    public void startEndpoint() throws IOException, InstantiationException {
+    public void initEndpoint() throws IOException, InstantiationException {
 	try {
 	    if(factory==null)
 		factory=ServerSocketFactory.getDefault();
@@ -276,6 +277,13 @@ public class PoolTcpEndpoint { // implements Endpoint {
 	    //	    log("couldn't start endpoint", ex1, Logger.DEBUG);
             throw ex1;
 	}
+        initialized = true;
+    }
+
+    public void startEndpoint() throws IOException, InstantiationException {
+        if (!initialized) {
+            initEndpoint();
+        }
 	if(isPool) {
 	    tp.start();
 	}
