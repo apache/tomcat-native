@@ -83,6 +83,7 @@ struct jk_env;
 struct jk_uriMap;
 struct jk_webapp;
 struct jk_map;
+struct jk_logger;
 struct jk_handler;
 struct jk_ws_service;
 
@@ -144,7 +145,7 @@ struct jk_workerEnv {
 
     /** Global logger for jk messages. Set at init.
      */
-    jk_logger_t *l;
+    struct jk_logger *l;
 
     /*
      * Worker stuff
@@ -189,7 +190,7 @@ struct jk_workerEnv {
      * Environment variables support
      */
     int envvars_in_use;
-    jk_map_t * envvars;
+    struct jk_map * envvars;
 
     /* Handlers. This is a dispatch table for messages, for
      * each message id we have an entry containing the jk_handler_t.

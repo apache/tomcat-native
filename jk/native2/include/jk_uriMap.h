@@ -79,15 +79,16 @@
 #define JK_URIMAP_H
 
 #include "jk_global.h"
-#include "jk_map.h"
 #include "jk_logger.h"
 #include "jk_uriEnv.h"
+#include "jk_map.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 struct jk_uriMap;
+struct jk_map;
 typedef struct jk_uriMap jk_uriMap_t;
 
 struct jk_uriMap {
@@ -105,7 +106,7 @@ struct jk_uriMap {
     */
     int (*init)( jk_uriMap_t *_this,
                  struct jk_workerEnv *workerEnv,
-                 jk_map_t *init_data );
+                 struct jk_map *init_data );
 
     void (*destroy)( jk_uriMap_t *_this );
 

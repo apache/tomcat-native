@@ -80,6 +80,8 @@ extern "C" {
     
 struct jk_endpoint;
 struct jk_ws_service;
+struct jk_logger;
+struct jk_map;
 typedef struct jk_endpoint   jk_endpoint_t;
 
 /*
@@ -177,7 +179,7 @@ struct jk_endpoint {
      */
     int (JK_METHOD *service)(jk_endpoint_t *e, 
                              struct jk_ws_service *s,
-                             jk_logger_t *l,
+                             struct jk_logger *l,
                              int *is_recoverable_error);
 
     /*
@@ -194,7 +196,7 @@ struct jk_endpoint {
      * worker.
      */
     int (JK_METHOD *done)(jk_endpoint_t **p,
-                          jk_logger_t *l);
+                          struct jk_logger *l);
 };
     
 #ifdef __cplusplus

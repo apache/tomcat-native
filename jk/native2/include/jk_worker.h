@@ -82,6 +82,7 @@ struct jk_endpoint;
 struct jk_env;
 struct jk_objCache;
 struct jk_msg;
+struct jk_map;
 typedef struct jk_worker jk_worker_t;
 
 /*
@@ -205,18 +206,18 @@ struct jk_worker {
      * You can skip this by setting it to NULL.
      */
     int (JK_METHOD *validate)(jk_worker_t *_this,
-                              jk_map_t *props,
+                              struct jk_map *props,
                               struct jk_workerEnv *we,
-                               jk_logger_t *l);
+                              struct jk_logger *l);
 
     /*
      * Do whatever initialization needs to be done to start this worker up.
      * Configuration options are passed in via the props parameter.  
      */
     int (JK_METHOD *init)(jk_worker_t *_this,
-                          jk_map_t *props,
+                          struct jk_map *props,
                           struct jk_workerEnv *we,
-                          jk_logger_t *l );
+                          struct jk_logger *l );
 
     /*
      * Obtain an endpoint to service a particular request.  A pointer to
@@ -225,7 +226,7 @@ struct jk_worker {
      */
     int (JK_METHOD *get_endpoint)(jk_worker_t *_this,
                                   struct jk_endpoint **pend,
-                                  jk_logger_t *l );
+                                  struct jk_logger *l );
 
     /*
      * Called when this particular endpoint has finished processing a
@@ -241,7 +242,7 @@ struct jk_worker {
     /*
      * Shutdown this worker. 
      */
-    int (JK_METHOD *destroy)(jk_worker_t **_thisP, jk_logger_t *l );
+    int (JK_METHOD *destroy)(jk_worker_t **_thisP, struct jk_logger *l );
 };
 
 #ifdef __cplusplus

@@ -82,6 +82,8 @@ extern "C" {
  */
 struct jk_pool;
 struct jk_env;
+struct jk_logger;
+struct jk_map;
 typedef struct jk_env jk_env_t;
 
 /**
@@ -121,7 +123,7 @@ jk_env_t* JK_METHOD jk_env_getEnv( char *id, struct jk_pool *pool );
  *  the other methods parameters.  
  */
 struct jk_env {
-    jk_logger_t *logger;
+    struct jk_logger *logger;
     jk_pool_t   *globalPool; 
     
     /** Global properties ( similar with System properties in java)
@@ -158,7 +160,7 @@ struct jk_env {
                                                char *factorySymbol);
     
     /* private */
-    jk_map_t *_registry;
+    struct jk_map *_registry;
     
 };
 

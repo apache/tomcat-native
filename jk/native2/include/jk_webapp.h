@@ -81,6 +81,7 @@ struct jk_endpoint;
 struct jk_env;
 struct jk_uri_worker_map;
 struct jk_map;
+struct jk_logger;
 
 struct jk_webapp;
 typedef struct jk_webapp jk_webapp_t;
@@ -137,7 +138,7 @@ struct jk_webapp {
 
     /** Different apps can have different loggers.
      */
-    jk_logger_t *l;
+    struct jk_logger *l;
 
     /* SSL Support - you can fine tune this per application.
      * ( most likely you only do it per virtual host or globally )
@@ -157,7 +158,7 @@ struct jk_webapp {
     /* Environment variables support
      */
     int envvars_in_use;
-    jk_map_t * envvars;
+    struct jk_map *envvars;
 
     /* -------------------- Methods -------------------- */
 
