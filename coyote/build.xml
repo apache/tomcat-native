@@ -214,6 +214,7 @@
 
 
   <target name="compile.tomcat5" if="tomcat5.detect"
+   depends="static,compile.shared"
    description="Compile Tomcat 5.x Adapter">
     <javac  srcdir="${source.home}"
            destdir="${build.home}/classes"
@@ -225,7 +226,7 @@
     </javac>
   </target>
 
-  <target name="jar.tomcat5" depends="static,compile.shared,compile.tomcat5" >
+  <target name="jar.tomcat5" depends="compile.tomcat5" >
     <jar  jarfile="${tomcat-coyote.jar}"
          index="true"
          basedir="${build.home}/classes"
