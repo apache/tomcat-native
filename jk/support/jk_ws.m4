@@ -40,9 +40,10 @@ AC_DEFUN(
       [
         case "${withval}" in
           ""|"yes"|"YES"|"true"|"TRUE")
+          AC_MSG_ERROR(valid $1 source dir location required)
           ;;
           "no"|"NO"|"false"|"FALSE")
-          AC_MSG_ERROR(valid $1 source dir location required)
+          AC_MSG_ERROR(Don't use with/without $1 if you don't have $1)
           ;;
           *)
           tempval="${withval}"
