@@ -1956,7 +1956,6 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
 
     c->s = s;
 
-    apr_pool_cleanup_register(p, s, jk_apr_pool_cleanup, jk_apr_pool_cleanup);
     return c;
 }
 
@@ -2234,6 +2233,8 @@ static int jk_post_config(apr_pool_t *pconf,
     for (; s; s = s->next) {
         open_jklog(s, pconf);
     }
+
+    apr_pool_cleanup_register(pconf, s, jk_apr_pool_cleanup, jk_apr_pool_cleanup);
     return OK;
 }
 
