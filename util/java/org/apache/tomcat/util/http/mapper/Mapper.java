@@ -699,21 +699,26 @@ public final class Mapper {
                     if (mappingData.wrapper == null
                             && context.resources != null) {
                         Object file = null;
+                        String pathStr = path.toString();
                         try {
-                            file = context.resources.lookup(path.toString());
+                            file = context.resources.lookup(pathStr);
                         } catch(NamingException nex) {
                             // Swallow not found, since this is normal
                         }
                         if (file != null && !(file instanceof DirContext) ) {
                             internalMapExtensionWrapper(extensionWrappers,
                                                         path, mappingData);
-                            if(mappingData.wrapper == null) {
+                            if (mappingData.wrapper == null) {
                                 mappingData.wrapper =
                                     context.defaultWrapper.object;
-                                mappingData.requestPath.setChars(
-                                    path.getBuffer(), path.getStart(), path.getLength());
+                                mappingData.requestPath.setChars
+                                    (path.getBuffer(), path.getStart(), 
+                                     path.getLength());
                                 mappingData.wrapperPath.setChars
-                                    (path.getBuffer(), path.getStart(), path.getLength());
+                                    (path.getBuffer(), path.getStart(), 
+                                     path.getLength());
+                                mappingData.requestPath.setString(pathStr);
+                                mappingData.wrapperPath.setString(pathStr);
                             }
                         }
                     }
@@ -736,8 +741,9 @@ public final class Mapper {
             char[] buf = path.getBuffer();
             if (context.resources != null && buf[pathEnd -1 ] != '/') {
                 Object file = null;
+                String pathStr = path.toString();
                 try {
-                    file = context.resources.lookup(path.toString());
+                    file = context.resources.lookup(pathStr);
                 } catch(NamingException nex) {
                     // Swallow, since someone else handles the 404
                 }
@@ -749,6 +755,9 @@ public final class Mapper {
                     path.append('/');
                     mappingData.redirectPath.setChars
                         (path.getBuffer(), path.getStart(), path.getLength());
+                } else {
+                    mappingData.requestPath.setString(pathStr);
+                    mappingData.wrapperPath.setString(pathStr);
                 }
             }
         }
