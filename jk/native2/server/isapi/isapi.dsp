@@ -192,10 +192,6 @@ SOURCE=..\..\common\jk_objCache.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\common\jk_pool.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\common\jk_pool_apr.c
 # End Source File
 # Begin Source File
