@@ -328,7 +328,7 @@
     </so>
   </target>
   
-  <target name="jni" depends="init">
+  <target name="jni" depends="init" if="use.jni">
     <mkdir dir="${build.dir}/jni${arch.prefix}" />
     <!-- can be overriden -->
     <property name="apr.home" location="${apache2.home}" />
@@ -467,7 +467,7 @@
 	<fileset dir="${native.dir}/common" includes="*.h" />
       </depends>
 
-      <resource fileName="jk_logger_win32_message.res" if="win32"/>
+      <resource fileName="../jk_logger_win32_message.res" if="win32"/>
 
       <def name="EAPI" info="Building with EAPI support " />
       <def name="_REENTRANT" />
