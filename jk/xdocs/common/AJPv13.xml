@@ -292,10 +292,9 @@ server:
     yet.</td>
   </tr>
   <tr>
-    <td>8</td>
+    <td>9</td>
     <td>Pong Reply</td>
-    <td>The reply to a PING request.
-    yet.</td>
+    <td>The reply to a PING request</td>
   </tr>
 </table>
 </p>
