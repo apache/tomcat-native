@@ -3,9 +3,12 @@ CRTCMOD MODULE(MOD_JK/MOD_JK)                                 +
         SRCSTMF('/home/apache/jk/native/apache-2.0/mod_jk.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('mod_jk.c')                            +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -13,10 +16,13 @@ CRTCMOD MODULE(MOD_JK/JK_AJP_COM)                                +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp_common.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5')  +
         TEXT('jk_ajp_common.c')                      +
+        OPTIMIZE(40)								 +
         SYSIFCOPT(*IFSIO)                   	     +
         LANGLVL(*ANSI)                               +
         TGTCCSID(*JOB)                               +
         OPTION(*LOGMSG )                             +
+        TERASPACE(*YES) 							 +
+        STGMDL(*TERASPACE)							 +
         INCDIR('/home/apache/jk/native/common'       +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -24,10 +30,13 @@ CRTCMOD MODULE(MOD_JK/JK_AJP12_W)                                  +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp12_worker.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5')    +
         TEXT('jk_ajp12_worker.c')                      +
+        OPTIMIZE(40)								   +
         SYSIFCOPT(*IFSIO)                              +
         LANGLVL(*ANSI)                                 +
         TGTCCSID(*JOB)                                 +
         OPTION(*LOGMSG )                               +
+        TERASPACE(*YES) 							   +
+        STGMDL(*TERASPACE)							   +
         INCDIR('/home/apache/jk/native/common'         +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -35,10 +44,13 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13)                                 +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp13.c')     +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_ajp13.c')                          +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -46,10 +58,13 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13_W)                                  +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp13_worker.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5')    +
         TEXT('jk_ajp13_worker.c')                      +
+        OPTIMIZE(40)								   +
         SYSIFCOPT(*IFSIO)                              +
         LANGLVL(*ANSI)                                 +
         TGTCCSID(*JOB)                                 +
         OPTION(*LOGMSG )                               +
+        TERASPACE(*YES) 							   +
+        STGMDL(*TERASPACE)							   +
         INCDIR('/home/apache/jk/native/common'         +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -57,10 +72,13 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14)                     +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp14.c')     +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_ajp14.c')                          +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -68,10 +86,13 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14_W)                                  +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp14_worker.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5')    +
         TEXT('jk_ajp14_worker.c')                      +
+        OPTIMIZE(40)								   +
         SYSIFCOPT(*IFSIO)                              +
         LANGLVL(*ANSI)                                 +
         TGTCCSID(*JOB)                                 +
         OPTION(*LOGMSG )                               +
+        TERASPACE(*YES) 							   +
+        STGMDL(*TERASPACE)							   +
         INCDIR('/home/apache/jk/native/common'         +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -79,10 +100,13 @@ CRTCMOD MODULE(MOD_JK/JK_CONNECT)                               +
         SRCSTMF('/home/apache/jk/native/common/jk_connect.c')   +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_connect.c')                        +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -90,10 +114,13 @@ CRTCMOD MODULE(MOD_JK/JK_CONTEXT)                               +
         SRCSTMF('/home/apache/jk/native/common/jk_context.c')   +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_context.c')                        +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -101,10 +128,13 @@ CRTCMOD MODULE(MOD_JK/JK_JNI_WOR)                                  +
         SRCSTMF('/home/apache/jk/native/common/jk_jni_worker.c')   +
         DEFINE('AS400' 'HAVE_JNI' 'OS400_JVM_12' 'USE_APACHE_MD5') +
         TEXT('jk_jni_worker.c')                     +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
                
@@ -112,10 +142,13 @@ CRTCMOD MODULE(MOD_JK/JK_LB_WORK)                               +
         SRCSTMF('/home/apache/jk/native/common/jk_lb_worker.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_lb_worker.c')                      +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -123,10 +156,13 @@ CRTCMOD MODULE(MOD_JK/JK_MAP)                       +
         SRCSTMF('/home/apache/jk/native/common/jk_map.c')       +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_map.c')                            +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -134,10 +170,13 @@ CRTCMOD MODULE(MOD_JK/JK_MD5)                             +
         SRCSTMF('/home/apache/jk/native/common/jk_md5.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_md5.c')                            +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -145,10 +184,13 @@ CRTCMOD MODULE(MOD_JK/JK_MSG_BUF)                              +
         SRCSTMF('/home/apache/jk/native/common/jk_msg_buff.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_msg_buff.c')                      +
+        OPTIMIZE(40)							   +
         SYSIFCOPT(*IFSIO)                          +
         LANGLVL(*ANSI)                             +
         TGTCCSID(*JOB)                             +
         OPTION(*LOGMSG )                           +
+        TERASPACE(*YES) 						   +
+        STGMDL(*TERASPACE)						   +
         INCDIR('/home/apache/jk/native/common'     +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -156,10 +198,13 @@ CRTCMOD MODULE(MOD_JK/JK_POOL)                             +
         SRCSTMF('/home/apache/jk/native/common/jk_pool.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_pool.c')                           +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -167,10 +212,13 @@ CRTCMOD MODULE(MOD_JK/JK_SOCKBUF)                             +
         SRCSTMF('/home/apache/jk/native/common/jk_sockbuf.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_sockbuf.c')                        +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -178,10 +226,13 @@ CRTCMOD MODULE(MOD_JK/JK_URI_W_M)                                    +
         SRCSTMF('/home/apache/jk/native/common/jk_uri_worker_map.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5')      +
         TEXT('jk_uri_worker_map.c')                      +
+        OPTIMIZE(40)								     +
         SYSIFCOPT(*IFSIO)                                +
         LANGLVL(*ANSI)                                   +
         TGTCCSID(*JOB)                                   +
         OPTION(*LOGMSG )                                 +
+        TERASPACE(*YES) 							     +
+        STGMDL(*TERASPACE)							     +
         INCDIR('/home/apache/jk/native/common'           +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -189,10 +240,13 @@ CRTCMOD MODULE(MOD_JK/JK_UTIL)                             +
         SRCSTMF('/home/apache/jk/native/common/jk_util.c') +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_util.c')                           +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
@@ -200,10 +254,13 @@ CRTCMOD MODULE(MOD_JK/JK_WORKER)                    +
         SRCSTMF('/home/apache/jk/native/common/jk_worker.c')    +
         DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
         TEXT('jk_worker.c')                         +
+        OPTIMIZE(40)								+
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
+        TERASPACE(*YES) 							+
+        STGMDL(*TERASPACE)							+
         INCDIR('/home/apache/jk/native/common'      +
                '/QIBM/ProdData/HTTPA/Include')
 
