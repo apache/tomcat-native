@@ -71,7 +71,7 @@ public class Constants {
     /**
      * The WARP protocol minor version.
      */
-    public static final int VERS_MINOR=9;
+    public static final int VERS_MINOR=10;
 
     /**
      * INVALID: The packet type hasn't been set yet.
@@ -113,6 +113,36 @@ public class Constants {
     public static final int TYPE_CONF_WELCOME=0x01;
 
     /**
+     * CONF_ENUM: The client requests to the server to enumerate all
+     * web-applications available for a specified virtual host. In response
+     * to this request, the server replies with a set of CONF_ENUM messages
+     * terminated by a CONF_ENUM_DONE message.
+     * <br>
+     * Payload description:<br>
+     * [string] The virtual host name.<br>
+     * [ushort] The virtual host port.<br>
+     */
+    public static final int TYPE_CONF_ENUM=0x02;
+
+    /**
+     * CONF_ENUM_APPL: The server specifies the name of a web-application
+     * available for deployment in response to a CONF_ENUMERATE message.
+     * <br>
+     * Payload description:<br>
+     * [string] The web-application name.<br>
+     */
+    public static final int TYPE_CONF_ENUM_APPL=0x03;
+
+    /**
+     * CONF_ENUM_DONE: The server specifies all web-application names
+     * available for deployment for the host specified in the CONF_ENUM
+     * message have been transfered.
+     * <br>
+     * No payload:<br>
+     */
+    public static final int TYPE_CONF_ENUM_APPL=0x04;
+
+    /**
      * CONF_DEPLOY: The client attempts deploy a web application.
      * <br>
      * Payload description:<br>
@@ -121,7 +151,7 @@ public class Constants {
      * [ushort] The virtual host port.<br>
      * [string] The web-application URL path.<br>
      */
-    public static final int TYPE_CONF_DEPLOY=0x02;
+    public static final int TYPE_CONF_DEPLOY=0x05;
 
     /**
      * CONF_APPLIC: The server replies to a CONF_DEPLOY message with the web
@@ -131,7 +161,47 @@ public class Constants {
      * [integer] The web application unique id for this server.<br>
      * [string] The web application real path (where it's expanded).<br>
      */
-    public static final int TYPE_CONF_APPLIC=0x03;
+    public static final int TYPE_CONF_APPLIC=0x06;
+
+    /**
+     * CONF_MAP: The client requests to the server to enumerate all mappings
+     * for a specified web-application. The server replies to this message
+     * with a serie of MAP_ALLOW and MAP_DENY packets, terminated by a
+     * MAP_DONE packet.
+     * <br>
+     * Payload description:<br>
+     * [integer] The web application unique id for this server.<br>
+     */
+    public static final int TYPE_CONF_MAP=0x07;
+
+    /**
+     * CONF_MAP_ALLOW: The server replies to a CONF_MAP message with this
+     * packet to indicate a mapping to a static page, or a resource that
+     * can be served autonomously by the remote end (the web server).
+     * <br>
+     * Payload description:<br>
+     * [string] An url-pattern as defined by the Servlet specification.
+     */
+    public static final int TYPE_CONF_MAP_ALLOW=0x08;
+
+    /**
+     * CONF_MAP_DENY: The server replies to a CONF_MAP message with this
+     * packet to indicate a mapping to a resource that must be served by
+     * the server (servlet container).
+     * <br>
+     * Payload description:<br>
+     * [string] An url-pattern as defined by the Servlet specification.
+     */
+    public static final int TYPE_CONF_MAP_DENY=0x09;
+
+    /**
+     * CONF_MAP_DONE: The server replies to a CONF_MAP message with this
+     * packet to indicate that all servlet mappings have been successfully
+     * transfered to the other end
+     * <br>
+     * No payload:<br>
+     */
+    public static final int TYPE_CONF_MAP_DONE=0x0a;
 
     /**
      * CONF_DONE: Client issues this message when all configurations have been
