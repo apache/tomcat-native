@@ -162,6 +162,36 @@ static void jk2_workerEnv_checkSpace(jk_env_t *env, jk_pool_t *pool,
     *sizeP=newSize;
 }
 
+static int jk2_workerEnv_initWorker(jk_env_t *env,
+                                    jk_workerEnv_t *wEnv, jk_worker_t *w )
+{
+
+    int rc;
+    
+    if( (w == NULL) || (w->mbean == NULL) ) return JK_ERR;
+    
+    if( w->mbean->disabled ) return JK_OK;
+        
+    w->workerEnv=wEnv;
+
+    if( w->mbean->state >= JK_STATE_INIT ) return JK_OK;
+
+    if( w->init == NULL )
+        return JK_OK;
+
+    rc=w->init(env, w);
+        
+    if( rc == JK_OK ) {
+        w->mbean->state=JK_STATE_INIT;
+    } else {
+        w->mbean->state=JK_STATE_DISABLED;
+        w->mbean->disabled=JK_TRUE;
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "workerEnv.initWorkers() init failed for %s\n", 
+                      w->mbean->name); 
+    } 
+    return JK_OK;
+}
 
 static int jk2_workerEnv_initWorkers(jk_env_t *env,
                                      jk_workerEnv_t *wEnv)
@@ -170,27 +200,15 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
     jk_worker_t *lb=wEnv->defaultWorker;
 
     for( i=0; i< wEnv->worker_map->size( env, wEnv->worker_map ); i++ ) {
-
         char *name= wEnv->worker_map->nameAt( env, wEnv->worker_map, i );
         jk_worker_t *w= wEnv->worker_map->valueAt( env, wEnv->worker_map, i );
-        int err;
 
-        if( w->mbean->disabled ) continue;
-        
-        w->workerEnv=wEnv;
-
-        if( w->init != NULL ) {
-            err=w->init(env, w);
-    
-            if(err!=JK_OK) {
-                env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "workerEnv.initWorkers() init failed for %s\n", 
-                              name); 
-            } 
-        }
+        jk2_workerEnv_initWorker( env, wEnv, w );
     }
     return JK_OK;
 }
+
+
 
 static int jk2_workerEnv_initChannel(jk_env_t *env,
                                      jk_workerEnv_t *wEnv, jk_channel_t *ch)
@@ -211,6 +229,7 @@ static int jk2_workerEnv_initChannel(jk_env_t *env,
             ch->worker->channel=NULL;
             ch->worker->channelName=NULL;
         }
+        jk2_workerEnv_initWorker( env, wEnv, ch->worker );
     }
     
     return rc;
@@ -288,11 +307,11 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     env->l->init( env, env->l );
 
     configFile=wEnv->config->file;
-    env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() %s\n", configFile );
     if(  configFile == NULL ) {
         wEnv->config->setPropertyString( env, wEnv->config,
                                          "config.file",
                                          "${serverRoot}/conf/workers2.properties" );
+        configFile=wEnv->config->file;
     }
 
     /* Set default worker. It'll be used for all uris that have no worker
@@ -324,6 +343,7 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     
     wEnv->uriMap->init(env, wEnv->uriMap );
 
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "workerEnv.init() ok %s\n", configFile );
     return JK_OK;
 }
 
@@ -348,10 +368,11 @@ static int jk2_workerEnv_dispatch(jk_env_t *env, jk_workerEnv_t *wEnv,
         e->reply->dump(env, e->reply, "Message: ");
         return JK_ERR;
     }
-        
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "workerEnv.dispatch() Calling %d %s\n", handler->messageId,
-                  handler->name);
+
+    if( e->worker->mbean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "workerEnv.dispatch() Calling %d %s\n", handler->messageId,
+                      handler->name);
     
     /* Call the message handler */
     rc=handler->callback( env, target, e, msg );
@@ -391,9 +412,11 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
         rc=-1;
         handler=NULL;
 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                        "ajp14.processCallbacks() Waiting reply %s\n",
-                      ep->worker->channel->mbean->name);
+        if( ep->worker->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "ajp14.processCallbacks() Waiting reply %s\n",
+                          ep->worker->channel->mbean->name);
+        
         msg->reset(env, msg);
         
         rc= ep->worker->channel->recv( env, ep->worker->channel,  ep,
