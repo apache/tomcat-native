@@ -65,8 +65,10 @@ include @TGT_DIR@/Makedefs
 SOURCE = mod_webapp.c
 OBJECT = mod_webapp.lo
 TARGET = libwebapp.la
+INSDIR = .inst
+LIBDIR = .libs
 
-.PHONY: build clean
+.PHONY: build clean dist
 
 build: $(TARGET)
 
@@ -78,7 +80,19 @@ clean:
 	  rm -f $(SOURCE) ; \
 	fi
 	rm -f *.o *.slo
-	rm -rf .libs
+	rm -rf $(INSDIR) $(LIBDIR)
+
+dist: build $(INSDIR)
+	$(LIBTOOL) --mode=install \
+	  $(INSTALL) \
+	    $(LOCAL_TGT_DIR)/$(TARGET) \
+	    $(LOCAL_TGT_DIR)/$(INSDIR)
+	$(INSTALL) \
+	  $(LOCAL_TGT_DIR)/$(INSDIR)/libwebapp.so \
+	  $(DST_DIR)/mod_webapp.so
+
+$(INSDIR):
+	mkdir $(INSDIR)
 
 $(SOURCE): $(LOCAL_SRC_DIR)/$(SOURCE)
 	ln -s "$<" "$@"

@@ -66,7 +66,7 @@ SOURCE = mod_webapp.c
 OBJECT = mod_webapp.o
 TARGET = libwebapp.so
 
-.PHONY: build clean
+.PHONY: build clean dist
 
 build: $(TARGET)
 
@@ -77,6 +77,11 @@ clean:
 	  echo rm -f $(SOURCE) ; \
 	  rm -f $(SOURCE) ; \
 	fi
+
+dist:
+	$(INSTALL) \
+	  $(LOCAL_TGT_DIR)/libwebapp.so \
+	  $(DST_DIR)/mod_webapp.so
 
 $(SOURCE): $(LOCAL_SRC_DIR)/$(SOURCE)
 	ln -s $< $@
