@@ -1235,6 +1235,14 @@ int ajp_init(jk_worker_t *pThis,
     if (pThis && pThis->worker_private) {
         ajp_worker_t *p = pThis->worker_private;
         int cache_sz = jk_get_worker_cache_size(props, p->name, cache);
+        
+        /* 
+         *  Need to initialize secret here since we could return from inside
+         *  of the following loop
+         */
+           
+        p->secret = jk_get_worker_secret(props, p->name );
+
         if (cache_sz > 0) {
             p->ep_cache = (ajp_endpoint_t **)malloc(sizeof(ajp_endpoint_t *) * cache_sz);
             if(p->ep_cache) {
@@ -1249,7 +1257,6 @@ int ajp_init(jk_worker_t *pThis,
                 }
             }
         }
-        p->secret = jk_get_worker_secret(props, p->name );
     } else {
         jk_log(l, JK_LOG_ERROR, "In jk_worker_t::init, NULL parameters\n");
     }
