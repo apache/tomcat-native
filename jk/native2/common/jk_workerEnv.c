@@ -551,6 +551,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     jkb=env->createBean2(env, wEnv->pool,"config", "");
     env->alias(env, "config:", "config");
     wEnv->config=jkb->object;
+    wEnv->config->file = NULL;
     wEnv->config->workerEnv = wEnv;
     wEnv->config->map = wEnv->initData;
     

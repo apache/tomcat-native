@@ -55,16 +55,10 @@
  *                                                                           *
  * ========================================================================= */
 
-/***************************************************************************
- * Description: JNI callbacks implementation for the JNI in process adapter*
- * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Version:     $Revision$                                           *
- ***************************************************************************/
-
-#include "jk_jnicb.h"
 #include "jk_service.h"
 #include "jk_pool.h"
 #include "jk_env.h"
+#include "jni.h"
 
 
 int jk2_channel_jni_javaSendPacket
@@ -73,7 +67,7 @@ int jk2_channel_jni_javaSendPacket
 
 
 /*
-  
+  Wrapper for the real JNI channel method
  */
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_common_ChannelJni_sendPacket

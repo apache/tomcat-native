@@ -139,7 +139,7 @@ JNIEXPORT jint JNICALL
 Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint signo,
                                           jlong target)
 {
-
+    
     return 0;
 }
 

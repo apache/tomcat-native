@@ -141,7 +141,6 @@ static int jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
     /* XXX It'll go away with env and per thread data !! */
     buf = (char *) malloc(HUGE_BUFFER_SIZE);
     rc = vsprintf(buf, fmt, args);
-    free(buf);
 #else 
     rc = vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
 #endif
@@ -157,6 +156,10 @@ static int jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
     } else {
         ap_log_error( file, line, APLOG_ERR | APLOG_NOERRNO, 0, s, buf);
     }
+
+#ifdef NETWARE
+    free(buf);
+#endif
     return rc ;
 }
 
