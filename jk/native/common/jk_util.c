@@ -269,17 +269,17 @@ int jk_log(jk_logger_t *l,
         set_time_str(buf, HUGE_BUFFER_SIZE);
         used = strlen(buf);
 
+        if (l->level == JK_LOG_TRACE_LEVEL) {
 #ifdef USE_SPRINTF              /* until we get a snprintf function */        
-        if (line)
             used += sprintf(&buf[used], "[%d:%d] ", getpid(),
                             jk_gettid());
 #else
-        if (line)
             used += snprintf(&buf[used], HUGE_BUFFER_SIZE, "[%d:%d] ",
                              getpid(), jk_gettid());
 #endif
-        if (used < 0) {
-            return 0;           /* [V] not sure what to return... */
+            if (used < 0) {
+                return 0;
+            }
         }
         if (line) {
             strcat(buf, jk_level_werbs[level]);
