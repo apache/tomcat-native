@@ -150,6 +150,8 @@ public class CoyoteInterceptor2 extends BaseInterceptor
         } catch( Exception ex ) {
             ex.printStackTrace();
         }
+        
+        this.setAttribute("jkHome", cm.getHome());
 
         proto.setAdapter( adapter );
         try {

@@ -945,6 +945,7 @@ public final class CoyoteConnector
         }
         protocolHandler.setAdapter(adapter);
 
+        IntrospectionUtils.setProperty(protocolHandler, "jkHome", System.getProperty("catalina.base"));
         // Set attributes
         IntrospectionUtils.setProperty(protocolHandler, "port", "" + port);
         IntrospectionUtils.setProperty(protocolHandler, "maxThreads", 
