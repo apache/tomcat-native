@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<document title="Introduction">
+<document>
   <properties>
     <title>The mod_jk Module for the Apache Web Server</title>
     <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
