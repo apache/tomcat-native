@@ -145,28 +145,28 @@ struct jk_shm {
     /** Initialize the shared memory area. It'll map the shared memory 
      *  segment if it exists, or create and init it if not.
      */
-    int (*init)(struct jk_env *env, struct jk_shm *shm);
+    int (JK_METHOD *init)(struct jk_env *env, struct jk_shm *shm);
 
     /** Detach from the shared memory segment
      */
-    int (*destroy)(struct jk_env *env, struct jk_shm *shm);
+    int (JK_METHOD *destroy)(struct jk_env *env, struct jk_shm *shm);
 
     /** 
      */
-    int (*setWorkerEnv)( struct jk_env *env, struct jk_shm *shm,
+    int (JK_METHOD *setWorkerEnv)( struct jk_env *env, struct jk_shm *shm,
                          struct jk_workerEnv *wEnv );
 
     /** Get a shm slot. Each slot has different rules for synchronization, based on type. 
      */
-    struct jk_shm_slot *(*getSlot)(struct jk_env *env, struct jk_shm *shm, int pos);
+    struct jk_shm_slot *(JK_METHOD *getSlot)(struct jk_env *env, struct jk_shm *shm, int pos);
 
     /** Create a slot. This typically involves inter-process synchronization.
      */
-    struct jk_shm_slot *(*createSlot)(struct jk_env *env, struct jk_shm *shm, char *name, int size);
+    struct jk_shm_slot *(JK_METHOD *createSlot)(struct jk_env *env, struct jk_shm *shm, char *name, int size);
 
     /** Get an ID that is unique across processes.
      */
-    int (*getId)(struct jk_env *env, struct jk_shm *shm);
+    int (JK_METHOD *getId)(struct jk_env *env, struct jk_shm *shm);
 
     int size;
 

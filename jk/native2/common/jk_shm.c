@@ -111,7 +111,7 @@ static int jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
     return apr_shm_destroy(aprShm);
 }
 
-static int jk2_shm_detach(jk_env_t *env, jk_shm_t *shm)
+static int JK_METHOD jk2_shm_detach(jk_env_t *env, jk_shm_t *shm)
 {
     apr_shm_t *aprShm=(apr_shm_t *)shm->privateData;
 
@@ -186,7 +186,7 @@ static int jk2_shm_dump(jk_env_t *env, jk_shm_t *shm, char *name)
 /* Create or reinit an existing scoreboard. The MPM can control whether
  * the scoreboard is shared across multiple processes or not
  */
-static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
+static int JK_METHOD jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
     apr_status_t rv=APR_SUCCESS;
     jk_shm_head_t *head;
     
@@ -300,16 +300,16 @@ static int  jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
 
 /* pos starts with 1 ( 0 is the head )
  */
-jk_shm_slot_t *jk2_shm_getSlot(struct jk_env *env, struct jk_shm *shm, int pos)
+jk_shm_slot_t * JK_METHOD jk2_shm_getSlot(struct jk_env *env, struct jk_shm *shm, int pos)
 {
     if( pos==0 ) return NULL;
     if( shm->image==NULL ) return NULL;
     if( pos > shm->slotMaxCount ) return NULL;
     /* Pointer aritmethic, I hope it's right */
-    return shm->image + pos * shm->slotSize;
+    return (jk_shm_slot_t *)((long)shm->image + (pos * shm->slotSize));
 }
 
-jk_shm_slot_t *jk2_shm_createSlot(struct jk_env *env, struct jk_shm *shm, 
+jk_shm_slot_t * JK_METHOD jk2_shm_createSlot(struct jk_env *env, struct jk_shm *shm, 
                                   char *name, int size)
 {
     /* For now all slots are equal size
@@ -338,7 +338,7 @@ jk_shm_slot_t *jk2_shm_createSlot(struct jk_env *env, struct jk_shm *shm,
 
 /** Get an ID that is unique across processes.
  */
-int jk2_shm_getId(struct jk_env *env, struct jk_shm *shm)
+int JK_METHOD jk2_shm_getId(struct jk_env *env, struct jk_shm *shm)
 {
 
     return 0;
@@ -346,7 +346,7 @@ int jk2_shm_getId(struct jk_env *env, struct jk_shm *shm)
 
 
 
-static int jk2_shm_setAttribute( jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP ) {
+static int JK_METHOD jk2_shm_setAttribute( jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP ) {
     jk_shm_t *shm=(jk_shm_t *)mbean->object;
     char *value=(char *)valueP;
     
@@ -398,7 +398,7 @@ static int jk2_shm_writeSlot( jk_env_t *env, jk_shm_t *shm,
     
 /** Called by java. Will call the right shm method.
  */
-static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
+static int JK_METHOD jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
 {
     jk_bean_t *bean=(jk_bean_t *)target;
     jk_shm_t *shm=(jk_shm_t *)bean->object;
@@ -454,7 +454,7 @@ static int jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_m
     return JK_ERR;
 }
 
-static int jk2_shm_setWorkerEnv( jk_env_t *env, jk_shm_t *shm, jk_workerEnv_t *wEnv ) {
+static int JK_METHOD jk2_shm_setWorkerEnv( jk_env_t *env, jk_shm_t *shm, jk_workerEnv_t *wEnv ) {
     wEnv->registerHandler( env, wEnv, "shm",
                            "shmDispatch", JK_HANDLE_SHM_DISPATCH,
                            jk2_shm_dispatch, NULL );
