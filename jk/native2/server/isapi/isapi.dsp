@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
-CFG=isapi - Win32 Debug Static
+CFG=isapi - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,14 +13,12 @@ CFG=isapi - Win32 Debug Static
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "isapi.mak" CFG="isapi - Win32 Debug Static"
+!MESSAGE NMAKE /f "isapi.mak" CFG="isapi - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "isapi - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "isapi - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "isapi - Win32 Debug Static" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "isapi - Win32 Release Static" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "isapi - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -31,60 +29,7 @@ CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "isapi - Win32 Release"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "Release"
-# PROP BASE Intermediate_Dir "Release"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Release"
-# PROP Intermediate_Dir "Release"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\os\win32" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /D "HAS_APR" /D "HAS_PCRE" /FR /YX /FD /c
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD BASE RSC /l 0xc0a /d "NDEBUG"
-# ADD RSC /l 0x409 /d "NDEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib /nologo /dll /machine:I386 /out:"Release/isapi_redirector2.dll" /libpath:"$(APACHE2_HOME)\lib"
-
-!ELSEIF  "$(CFG)" == "isapi - Win32 Debug"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "Debug"
-# PROP BASE Intermediate_Dir "Debug"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 1
-# PROP Output_Dir "Debug"
-# PROP Intermediate_Dir "Debug"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\os\win32" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /D "HAS_APR" /D "HAS_PCRE" /FR /YX /FD /GZ /c
-# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
-# ADD BASE RSC /l 0xc0a /d "_DEBUG"
-# ADD RSC /l 0x409 /d "_DEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib /nologo /dll /debug /machine:I386 /out:"Debug/isapi_redirector2.dll" /pdbtype:sept /libpath:"$(APACHE2_HOME)\lib"
-# SUBTRACT LINK32 /nodefaultlib
-
-!ELSEIF  "$(CFG)" == "isapi - Win32 Debug Static"
+!IF  "$(CFG)" == "isapi - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -94,12 +39,12 @@ LINK32=link.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "DebugS"
-# PROP Intermediate_Dir "DebugS"
+# PROP Output_Dir "Debug"
+# PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\os\win32" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /D "HAS_APR" /FR /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\os\win32" /D "_DEBUG" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /D "HAS_APR" /D "HAS_PCRE" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "..\..\srclib\apr\include" /I "..\..\srclib\apr-util\include" /I "..\..\srclib\apr-iconv\include" /I "..\..\srclib\pcre" /D "_DEBUG" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /D "API_DECLARE_STATIC" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /D "HAS_APR" /D "HAS_PCRE" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -110,25 +55,25 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib /nologo /dll /debug /machine:I386 /out:"Debug/isapi_redirector2.dll" /pdbtype:sept /libpath:"$(APACHE2_HOME)\lib"
 # SUBTRACT BASE LINK32 /nodefaultlib
-# ADD LINK32 apr.lib aprutil.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib /nologo /dll /debug /machine:I386 /out:"DebugS/isapi_redirector2.dll" /pdbtype:sept /libpath:"$(APACHE2_HOME)\lib"
+# ADD LINK32 apr.lib aprutil.lib apriconv.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib /nologo /dll /debug /machine:I386 /out:"Debug/isapi_redirector2.dll" /pdbtype:sept /libpath:"..\..\srclib\apr\libD" /libpath:"..\..\srclib\apr-util\libD" /libpath:"..\..\srclib\apr-iconv\libD" /libpath:"..\..\srclib\pcre\libD"
 # SUBTRACT LINK32 /nodefaultlib
 
-!ELSEIF  "$(CFG)" == "isapi - Win32 Release Static"
+!ELSEIF  "$(CFG)" == "isapi - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "ReleaseS"
-# PROP BASE Intermediate_Dir "ReleaseS"
+# PROP BASE Output_Dir "Release"
+# PROP BASE Intermediate_Dir "Release"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "ReleaseS"
-# PROP Intermediate_Dir "ReleaseS"
+# PROP Output_Dir "Release"
+# PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\os\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /D "HAS_APR" /FR /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\os\win32" /D "NDEBUG" /D "_WIN32" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /D "HAS_APR" /D "HAS_PCRE" /FR /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "..\..\srclib\apr\include" /I "..\..\srclib\apr-util\include" /I "..\..\srclib\apr-iconv\include" /I "..\..\srclib\pcre" /D "NDEBUG" /D "_WIN32" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /D "API_DECLARE_STATIC" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /D "HAVE_JNI" /D "HAS_APR" /D "HAS_PCRE" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -138,16 +83,14 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib /nologo /dll /machine:I386 /out:"Release/isapi_redirector2.dll" /libpath:"$(APACHE2_HOME)\lib"
-# ADD LINK32 apr.lib aprutil.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib /nologo /dll /machine:I386 /out:"ReleaseS/isapi_redirector2.dll" /libpath:"$(APACHE2_HOME)\lib"
+# ADD LINK32 apr.lib aprutil.lib apriconv.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib /nologo /dll /machine:I386 /out:"Release/isapi_redirector2.dll" /libpath:"..\..\srclib\apr\libR" /libpath:"..\..\srclib\apr-util\libR" /libpath:"..\..\srclib\apr-iconv\libR" /libpath:"..\..\srclib\pcre\libD"
 
 !ENDIF 
 
 # Begin Target
 
-# Name "isapi - Win32 Release"
 # Name "isapi - Win32 Debug"
-# Name "isapi - Win32 Debug Static"
-# Name "isapi - Win32 Release Static"
+# Name "isapi - Win32 Release"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
@@ -431,35 +374,12 @@ SOURCE=..\..\jni\org_apache_jk_apr_AprImpl.h
 
 SOURCE=..\..\common\jk_logger_win32_message.mc
 
-!IF  "$(CFG)" == "isapi - Win32 Release"
-
-# Begin Custom Build - Creating resources from $(InputPath)
-InputDir=\WORK\apache\jakarta-tomcat-connectors\jk\native2\common
-InputPath=..\..\common\jk_logger_win32_message.mc
-
-"..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	mc -h $(InputDir) -r $(InputDir) $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "isapi - Win32 Debug"
-
-# PROP Ignore_Default_Tool 1
-# Begin Custom Build - Creating resources from $(InputPath)
-InputDir=\WORK\apache\jakarta-tomcat-connectors\jk\native2\common
-InputPath=..\..\common\jk_logger_win32_message.mc
-
-"..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	mc -h $(InputDir) -r $(InputDir) $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "isapi - Win32 Debug Static"
+!IF  "$(CFG)" == "isapi - Win32 Debug"
 
 # PROP BASE Ignore_Default_Tool 1
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build - Creating resources from $(InputPath)
-InputDir=\WORK\apache\jakarta-tomcat-connectors\jk\native2\common
+InputDir=\WORK\PROJECTS\apache\jk2\common
 InputPath=..\..\common\jk_logger_win32_message.mc
 
 "..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -467,10 +387,10 @@ InputPath=..\..\common\jk_logger_win32_message.mc
 
 # End Custom Build
 
-!ELSEIF  "$(CFG)" == "isapi - Win32 Release Static"
+!ELSEIF  "$(CFG)" == "isapi - Win32 Release"
 
 # Begin Custom Build - Creating resources from $(InputPath)
-InputDir=\WORK\apache\jakarta-tomcat-connectors\jk\native2\common
+InputDir=\WORK\PROJECTS\apache\jk2\common
 InputPath=..\..\common\jk_logger_win32_message.mc
 
 "..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
