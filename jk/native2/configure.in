@@ -8,10 +8,8 @@ AC_INIT(common/jk_config.c)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
 
 dnl package and version. (synchronization with common/jk_version.h ?)
-PACKAGE=mod_jk
-VERSION=1.2.0
-
-AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
+PACKAGE=mod_jk2
+VERSION=2.0.0
 
 dnl Not sure what it does, but the libtool manual seems to require this
 dnl It should use the native platform dlopen ( if available )
@@ -52,8 +50,19 @@ HAS_APR=""
 
 APACHE_CONFIG_VARS=`pwd`/scripts/build/config_vars.mk
 WEBSERVER=""
-apache_dir=""
-apache_include=""
+APACHE_DIR=""
+APACHE_HOME=""
+APACHE_INCL=""
+APR_DIR=""
+APR_INCL=""
+APR_LDFLAGS=""
+APR_INCDIR=""
+APR_LIBDIR=""
+APR_BUILD=""
+APR_CLEAN=""
+APR_LIB_STATIC=""
+EXTRA_CFLAGS=""
+EXTRA_CPPFLAGS=""
 APXS="apxs"
 AC_ARG_WITH(apxs,
 [  --with-apxs[=FILE]      Build shared Apache module. FILE is the optional
@@ -90,14 +99,15 @@ AC_ARG_WITH(apxs,
             fi
 
             dnl apache_dir and apache_include are also needed.
-            apache_dir=`$APXS -q PREFIX`
-            apache_include="-I`$APXS -q INCLUDEDIR`"
+            APACHE_HOME=`$APXS -q PREFIX`
+            APACHE_INCL="-I`$APXS -q INCLUDEDIR`"
 
             dnl test apache version
             APA=`${GREP} STANDARD20 ${APXS}`
             if ${TEST} -z "$APA" ; then
                 WEBSERVER="server/apache13"
                 RWEBSERVER="apache-1.3"
+				EXTRA_CFLAGS="`$APXS -q CFLAGS`"
             else
                 WEBSERVER="server/apache2"
                 RWEBSERVER="apache-2.0"
@@ -105,6 +115,9 @@ AC_ARG_WITH(apxs,
                 JK_CHANNEL_APR_SOCKET="\${JK}jk_channel_apr_socket\${OEXT}"
                 JK_POOL_APR="\${JK}jk_pool_apr\${OEXT}"
                 HAS_APR="-DHAS_APR"
+				EXTRA_CFLAGS="`$APXS -q EXTRA_CFLAGS`"
+				EXTRA_CPPFLAGS="`$APXS -q EXTRA_CPPFLAGS`"
+				APR_LDFLAGS="-lapr"
             fi
             AC_MSG_RESULT([building connector for \"$RWEBSERVER\"])
     
@@ -158,11 +171,14 @@ AC_ARG_WITH(apache,
                if ${TEST} -z "${osdir}" ; then
                    osdir=os/unix
                fi
-               apache_include="-I${withval}/src/include \
-                   -I${withval}/src/${osdir}"
-               WEBSERVER="server/apache13"
-               RWEBSERVER="apache-1.3"
-               AC_MSG_RESULT([${apache_include}, version 1.3])
+                APACHE_DIR=${withval}
+                APACHE_HOME=${withval}
+                APACHE_INCL="-I${withval}/src/include -I${withval}/src/${osdir}"
+                EXTRA_CFLAGS=""
+                EXTRA_CPPFLAGS=""
+                WEBSERVER="server/apache13"
+                RWEBSERVER="apache-1.3"
+               AC_MSG_RESULT([${APACHE_INCL}, version 1.3])
            else
                AC_MSG_ERROR([Sorry Apache 1.2.x is no longer supported.])
            fi
@@ -171,9 +187,10 @@ AC_ARG_WITH(apache,
               # osdir for Apache20.
               WEBSERVER="server/apache2"
               RWEBSERVER="apache-2.0"
-              apache_dir=${withval}
+              APACHE_DIR=${withval}
+              APACHE_HOME=${withval}
               apache_dir_is_src="true"
-              apache_include="-I${withval}/include -I${withval}/srclib/apr/include -I${withval}/os/${OS_APACHE_DIR} -I${withval}/srclib/apr-util/include"
+              APACHE_INCL="-I${withval}/include -I${withval}/srclib/apr/include -I${withval}/os/${OS_APACHE_DIR} -I${withval}/srclib/apr-util/include"
               AC_MSG_RESULT(${apache_dir})
               JK_CHANNEL_APR_SOCKET="\${JK}jk_channel_apr_socket\${OEXT}"
               JK_POOL_APR="\${JK}jk_pool_apr\${OEXT}"
@@ -195,11 +212,13 @@ AC_ARG_WITH(apache,
     AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
 ],
 [
-	AC_MSG_RESULT(no apache given)
+	AC_MSG_RESULT(no apache dir given)
 ])
-AC_SUBST(apache_include)
-APACHE_DIR=${apache_dir}
+AC_SUBST(APACHE_HOME)
 AC_SUBST(APACHE_DIR)
+AC_SUBST(APACHE_INCL)
+AC_SUBST(EXTRA_CFLAGS)
+AC_SUBST(EXTRA_CPPFLAGS)
 
 dnl Check for enable-jni
 JK_JNI_WORKER=""
@@ -244,8 +263,6 @@ AC_SUBST(APXSLDFLAGS)
 
 if ${TEST} -n "${JK_JNI_WORKER}" ; then
                        
-WEBSERVER="jni ${WEBSERVER}"
- 
 dnl Find the JDK
 dnl Results go in JAVA_HOME
 dnl Also sets JAVA_PLATFORM to 1 for 1.1 and to 2 for 1.2
@@ -420,14 +437,79 @@ fi
 AC_SUBST(JAVA_HOME)
 AC_SUBST(OS)
 
+AC_ARG_WITH(apr,
+[  --with-apr=DIR     Where is your APR source dir.],
+[
+
+    # This stuff works if the command line parameter --with-apr was
+    # specified, so it takes priority rightfully.
+
+    APR_DIR=${withval}
+
+    if ${TEST} ! -d "${APR_DIR}" ; then
+        AC_MSG_ERROR(Not a directory: ${APR_DIR})
+    fi
+
+    HAS_APR="-DHAS_APR"
+    APR_BUILD="apr-build"
+	APR_INCL="-I ${APR_DIR}/include"
+    APR_CLEAN="apr-clean"
+	APR_LIB_STATIC="${APR_DIR}/.libs/libapr.a"
+    AC_MSG_RESULT(${APR_DIR})
+])
+
+AC_ARG_WITH(apr-include,
+[  --with-apr-include=DIR     Where is your APR include dir.],
+[   
+    
+    # This stuff works if the command line parameter --with-apr-include was
+    # specified, so it takes priority rightfully.
+    
+    APR_INCDIR=${withval}
+
+    if ${TEST} ! -d "${APR_INCDIR}" ; then
+        AC_MSG_ERROR(Not a directory: ${APR_INCDIR})
+    fi
+
+    HAS_APR="-DHAS_APR"
+    APR_INCL="-I ${APR_INCDIR}"
+	APR_LDFLAGS="-lapr"
+    AC_MSG_RESULT(${APR_INCDIR})
+])
+
+AC_ARG_WITH(apr-lib,
+[  --with-apr-lib=DIR     Where is your APR library dir.],
+[   
+    
+    # This stuff works if the command line parameter --with-apr-lib was
+    # specified, so it takes priority rightfully.
+    
+    APR_LIBDIR=${withval}
+
+    if ${TEST} ! -d "${APR_LIBDIR}" ; then
+        AC_MSG_ERROR(Not a directory: ${APR_LIBDIR})
+    fi
+
+    HAS_APR="-DHAS_APR"
+    APR_LIBS="-L ${APR_LIBDIR}"
+	APR_LDFLAGS="-lapr -L${APR_LIBDIR}"
+    AC_MSG_RESULT(${APR_LIBDIR})
+])
+
+AC_SUBST(APR_DIR)
+AC_SUBST(APR_INCDIR)
+AC_SUBST(APR_INCL)
+AC_SUBST(APR_LDFLAGS)
+AC_SUBST(APR_LIBDIR)
+AC_SUBST(APR_LIBS)
+AC_SUBST(APR_BUILD)
+AC_SUBST(APR_CLEAN)
+AC_SUBST(APR_LIB_STATIC)
 
 dnl Check that  a WEBSERVER has been given
 if ${TEST} -z "$WEBSERVER" ; then
 	AC_MSG_ERROR(Cannot find the WebServer)
 fi
-
-dnl Add common to subdir list
-WEBSERVER="common ${WEBSERVER}"
 
 AC_SUBST(WEBSERVER)
 
@@ -450,16 +532,15 @@ AC_SUBST(INSTALL_TYPE)
 AC_SUBST(JK_CHANNEL_APR_SOCKET)
 AC_SUBST(JK_POOL_APR)
 AC_SUBST(HAS_APR)
+AC_SUBST(APR_BUILD)
 
 dnl automake needs the path it does not work with $WEBSERVER
 dnl that why useless Makefiles are build.
 AC_OUTPUT([
-	Makefile
+    Makefile
 	server/apache13/Makefile
 	server/apache13/Makefile.apxs
 	server/apache2/Makefile
 	server/apache2/Makefile.apxs
-	common/Makefile
 	common/list.mk
-	jni/Makefile
 	])
