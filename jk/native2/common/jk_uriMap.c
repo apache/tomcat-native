@@ -801,7 +801,7 @@ static jk_uriEnv_t *jk2_uriMap_getHostCache(jk_env_t *env, jk_uriMap_t *uriMap,
     if (!vhost)
         vhost = "*";
     sprintf(key, "%s:%d", vhost, port);
-    return uriMap->vhcache->get(env, uriMap->vhosts, key);
+    return uriMap->vhcache->get(env, uriMap->vhcache, key);
 }
 
 static void jk2_uriMap_addHostCache(jk_env_t *env, jk_uriMap_t *uriMap,
@@ -815,7 +815,7 @@ static void jk2_uriMap_addHostCache(jk_env_t *env, jk_uriMap_t *uriMap,
     key = uriMap->pool->calloc(env, uriMap->pool, strlen(vhost) + 8); 
 
     sprintf(key, "%s:%d", vhost, port);
-    uriMap->vhcache->add(env, uriMap->vhosts, key, hostEnv);
+    uriMap->vhcache->add(env, uriMap->vhcache, key, hostEnv);
 }
 
 static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
