@@ -31,7 +31,7 @@
   <property name="tomcat33-coyote.jar" 
           value="../coyote/build/lib/tomcat33-coyote.jar"/>
   <property name="junit.jar"        value="${junit.home}/junit.jar"/>
-
+  <property name="commons-logging.jar" value="../lib/commons-logging.jar" />
 
 <!-- ========== Component Declarations ==================================== -->
 
