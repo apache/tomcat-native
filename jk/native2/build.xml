@@ -123,12 +123,12 @@
       <import fileName="libhttpd.lib" if="win32" />
       <import fileName="libapr.lib" if="win32" />
       <import fileName="libaprutil.lib" if="win32" />
-      <import fileName="wsock32.lib" if="win32" />
+      <!-- import fileName="wsock32.lib" if="win32" />
       <import fileName="kernel32.lib" if="win32" />
       <import fileName="user32.lib" if="win32" />
       <import fileName="gdi32.lib" if="win32" />
       <import fileName="winspool.lib" if="win32" />
-      <import fileName="comdlg32.lib" if="win32" />
+      <import fileName="comdlg32.lib" if="win32" /-->
       <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apr.lib}&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apr-util.lib}&quot;" if="win32" />
@@ -334,7 +334,7 @@
 
   <target name="iis" depends="init" if="iis.detect">
     <mkdir dir="${build.dir}/isapi" />
-    <so sofile="isapi_redirector" 
+    <so sofile="isapi_redirector2" 
         buildDir="${build.dir}/isapi"
         optimize="${so.optimize}"
         debug="${so.debug}"
