@@ -417,7 +417,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
                 /* This takes care of 'shorter' matches */
                 if( _this->debug > 0 )
                     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                             "uriMap.mapUri() tentative prefix match %s",
+                             "uriMap.mapUri() tentative prefix match %s\n",
                                   uwr->prefix );
                 longest_match = uwr->prefix_len;
                 best_match = i;

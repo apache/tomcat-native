@@ -308,7 +308,7 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
 /* Utility functions                                                         */
 /* ========================================================================= */
 
-static unsigned jk2_get_content_length(jk_env_t *env, request_rec *r)
+static long jk2_get_content_length(jk_env_t *env, request_rec *r)
 {
     if(r->clength > 0) {
         return r->clength;
@@ -316,7 +316,7 @@ static unsigned jk2_get_content_length(jk_env_t *env, request_rec *r)
         char *lenp = (char *)apr_table_get(r->headers_in, "Content-Length");
 
         if(lenp) {
-            int rc = atoi(lenp);
+            long rc = atol(lenp);
             if(rc > 0) {
                 return rc;
             }
@@ -326,7 +326,7 @@ static unsigned jk2_get_content_length(jk_env_t *env, request_rec *r)
     return 0;
 }
 
-static int jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
+static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
                                jk_worker_t *worker, void *serverObj)
 {
     apr_port_t port;
@@ -534,7 +534,7 @@ static int jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
  *  jk shouldn't do it instead, and the user should get the
  *  error message !
  */
-static void jk2_service_apache2_afterRequest(jk_env_t *env, jk_ws_service_t *s )
+static void JK_METHOD jk2_service_apache2_afterRequest(jk_env_t *env, jk_ws_service_t *s )
 {
     
     if (s->content_read < s->content_length ||
