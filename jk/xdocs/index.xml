@@ -126,23 +126,17 @@ mechansim, and supporting both in-process and out-of process modes.
 
 <section name="Are there alternative ways to connect Apache and Tomcat&#63;">
 <p>
-The alternative ways are better described in <b>mod_webapp</b>
-documentation.
+<b>Tomcat's internal HTTP stack and mod_proxy</b> which is not that bad, but slow,
+well, of course Tomcat didn't have 10/11 years of C routine optimization like
+the Apache Web Server, but it's quite good. The only disadvantage is that it
+looks pretty ridiculous to parse an HTTP request to generate it again
+(exactly the same), and to parse again the response to send it back unchanged...
 </p>
 <p>
-Check <b>webapp</b> site for it and then decide if you want to go on reading. 
-</p>
-<p>
-The big advantage of <b>mod_webapp</b> is that is very easy to configure,
-has a well defined protocol named <b>WARP</b>, does not care about the old
-crappy protocols used in Tomcat-3.x and so.
-But it would be possible to implement the <b>WARP</b> protocol in
+<a href="http://jakarta.apache.org/~jfclere/webapp_docs/">mod_webapp</a> which is very easy to configure, has a well defined protocol named
+<a href="http://jakarta.apache.org/~jfclere/webapp_docs/warp.html">WARP</a> but it is no longer developped.
+BTW: It would be possible to implement the <b>WARP</b> protocol in
 <b>JK2</b> ;-))
-</p>
-<p>
-The disadvantage is that it requires the <b>Apache Portable Runtime</b>
-which is still only easily available via Apache 2.0 and that it didn't support
-webservers like IIS, NES/iPlanet or Domino.
 </p>
 </section>
 
