@@ -428,10 +428,29 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                 }
                 break;
             }
+            case TYPE_ASK_SSL: {
+                wa_log(WA_MARK,"TYPE_ASK_SSL");
+                /* Request for client certificate */
+                if (r->ssld==NULL) {
+                    pack->type=TYPE_REP_SSL_NO;
+                    pack->size=0;
+                } else {
+                    pack->type=TYPE_REP_SSL;
+                    p_write_string(pack,r->ssld->ciph);
+                    p_write_string(pack,r->ssld->sess);
+                    p_write_int(pack,r->ssld->size);
+                }
+                wa_debug(WA_MARK,"CC bytes: (Sent=%d)",pack->size);
+                if (n_send(conf->sock,pack)!=wa_true) {
+                    n_disconnect(conn);
+                    return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+                }
+                break;
+            }
             case TYPE_ASK_SSL_CLIENT: {
                 wa_log(WA_MARK,"TYPE_ASK_SSL_CLIENT");
                 /* Request for client certificate */
-                if (r->ssld->cert==NULL) {
+                if (r->ssld==NULL || r->ssld->cert==NULL) {
                     pack->type=TYPE_REP_SSL_NO;
                     pack->size=0;
                 } else {

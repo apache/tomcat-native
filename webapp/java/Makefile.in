@@ -70,7 +70,8 @@ SRCS =  WarpConfigurationHandler.java \
 	WarpRequest.java \
 	WarpRequestHandler.java \
 	WarpResponse.java \
-	WarpCertificates.java
+	WarpCertificates.java \
+	WarpSSLData.java
 
 ARCHIVE = warp.jar
 

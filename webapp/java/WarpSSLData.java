@@ -57,40 +57,21 @@
 
 package org.apache.catalina.connector.warp;
  
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateFactory;
- 
-import java.io.ByteArrayInputStream;
- 
 /*
- * Certificates handling.
+ * SSL message handling.
  */
  
-public class WarpCertificates {
-    X509Certificate jsseCerts[] = null;
+public class WarpSSLData {
     /**
-     * Create the certificate using the String.
+     * Cipher use by the SSL.
      */
-    public WarpCertificates(String certString) {
-        if (certString == null) return;
-
-        byte[] certData = certString.getBytes();
-        ByteArrayInputStream bais = new ByteArrayInputStream(certData);
- 
-        // Fill the first element.
-        try {
-            CertificateFactory cf =
-                    CertificateFactory.getInstance("X.509");
-            X509Certificate cert = (X509Certificate)
-                    cf.generateCertificate(bais);
-            jsseCerts =  new X509Certificate[1];
-            jsseCerts[0] = cert;
-        } catch(java.security.cert.CertificateException e) {
-            // Certificate convertion failed.
-            return;
-        }
-    }
-    public X509Certificate [] getCertificates() {
-        return jsseCerts;
-    }
+    String ciph;
+    /**
+     * SSL session.
+     */
+    String sess;
+    /**
+     * Size of the algorithm. (56-128)
+     */
+    int size;
 }

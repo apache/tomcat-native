@@ -159,6 +159,8 @@ public class WarpRequestHandler {
                     if (Constants.DEBUG)
                         logger.debug("Request scheme="+schm);
                     request.setScheme(schm);
+                    if (schm.equals("https"))
+                       request.setSecure(true);
                     break;
                 }
 

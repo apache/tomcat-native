@@ -422,6 +422,7 @@ static int wam_invoke(request_rec *r) {
     const char *msg=NULL;
     char *stmp=NULL;
     char *ctmp=NULL;
+    char *ssl_temp;
     int ret=0;
 
     /* Paranoid check */
@@ -462,9 +463,26 @@ static int wam_invoke(request_rec *r) {
     req->clen=0;
     req->ctyp="\0";
     req->rlen=0;
-    req->ssld=(wa_ssldata *) apr_palloc(req->pool,sizeof(wa_ssldata));
-    req->ssld->cert = (char *)ap_table_get(
-        r->subprocess_env,"SSL_CLIENT_CERT");
+
+    /* SSL logic */
+    ssl_temp = (char *)ap_table_get(r->subprocess_env,"HTTPS");
+    if ( ssl_temp && !strcasecmp(ssl_temp, "on")) {
+        req->ssld=(wa_ssldata *) apr_palloc(req->pool,sizeof(wa_ssldata));
+
+        req->ssld->ciph = (char *)ap_table_get(
+            r->subprocess_env,"SSL_CIPHER");
+        req->ssld->sess = (char *)ap_table_get(
+            r->subprocess_env,"SSL_SESSION_ID");
+
+        ssl_temp = (char *)ap_table_get(
+            r->subprocess_env,"SSL_CIPHER_USEKEYSIZE");
+        req->ssld->size = atoi(ssl_temp);
+
+        req->ssld->cert = (char *)ap_table_get(
+            r->subprocess_env,"SSL_CLIENT_CERT");
+    } else {
+        req->ssld=NULL;
+    }
 
     /* Copy headers into webapp request structure */
     if (r->headers_in!=NULL) {
