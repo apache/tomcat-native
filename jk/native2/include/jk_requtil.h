@@ -174,6 +174,21 @@ int jk2_requtil_readFully(struct jk_env *env, jk_ws_service_t *s,
                          unsigned char   *buf,
                          unsigned         len);
 
+int jk_requtil_escapeUrl(const char *path, char *dest, int destsize);
+
+int jk_requtil_unescapeUrl(char *url);
+
+int jk_requtil_uriIsWebInf(char *uri);
+
+void jk_requtil_getParents(char *name);
+
+/** return the size of the encoding of a certificate */
+int jk_requtil_base64CertLen(int len);
+
+/** Do a base-64 encoding of the certificate */
+int jk_requtil_base64EncodeCert(char *encoded,
+                                const unsigned char *string, int len);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
