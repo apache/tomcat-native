@@ -1,6 +1,6 @@
 Extension-Name: @name@
 Specification-Vendor: Apache Software Foundation
-Specification-Version: 1.0
+Specification-Version: 1.1
 Implementation-Vendor: Apache Software Foundation
 Implementation-Version: @version@
 
