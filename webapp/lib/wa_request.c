@@ -194,8 +194,16 @@ int wa_rerror(const char *file, const int line, wa_request *r, int s,
 
 /* Invoke a request in a web application. */
 int wa_rinvoke(wa_request *r, wa_application *a) {
-    if (a->depl!=wa_true)
-        return(wa_rerror(WA_MARK,r,404,"Web-application not yet deployed"));
+    /*
+     * If the application is not yet deployed that could be because
+     * Apache was started before Tomcat.
+     */
+    if (a->depl!=wa_true) {
+        wa_log(WA_MARK, "Re-Trying to deploy connections");
+        wa_startup();
+        if (a->depl!=wa_true)
+            return(wa_rerror(WA_MARK,r,404,"Web-application not yet deployed"));
+    }
     return(a->conn->prov->handle(r,a));
 }
 
