@@ -356,7 +356,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_puts(s, "<table border=\"0\"><tr>"
                     "<th>Name</th><th>Type</th><th>Host</th><th>Addr</th>"
                     "<th>Stat</th><th>F</th><th>V</th><th>Acc</th><th>Err</th>"
-                    "<th>Wr</th><th>Rd</th><th>RR</th><th>Cd</th></tr>\n");
+                    "<th>Wr</th><th>Rd</th><th>Busy</th><th>RR</th><th>Cd</th></tr>\n");
             for (j = 0; j < lb->num_of_workers; j++) {
                 worker_record_t *wr = &(lb->lb_workers[j]);
                 ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
@@ -384,6 +384,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                         "</td>", NULL);
                 jk_putv(s, "<td>", status_strfsize(wr->s->readed, buf),
                         "</td><td>", NULL);
+                jk_printf(s, "<td>%u</td>", wr->s->busy);
                 jk_puts(s, wr->s->redirect);
                 jk_puts(s, "</td><td>\n");
                 jk_puts(s, wr->s->domain);
