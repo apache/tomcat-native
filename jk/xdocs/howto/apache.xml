@@ -250,9 +250,9 @@ This file is created by enabling the Apache auto-configuration as follows, in yo
 </p>
 <source>
   ...
-  <Engine ...>
-    <Listener className="org.apache.jk.config.ApacheConfig" modJk="/path/to/mod_jk.so" />
-  </Engine>
+  &lt;Engine ...&gt;
+    &lt;Listener className="org.apache.jk.config.ApacheConfig" modJk="/path/to/mod_jk.so" /&gt;
+  &lt;/Engine&gt;
   ...
 </source>
 
