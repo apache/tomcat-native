@@ -188,7 +188,7 @@ public class ChannelUnixSocket extends Channel {
 
         // Run a thread that will accept connections.
         tp.start();
-        SocketAcceptor acceptAjp=new SocketAcceptor(  this );
+        USocketAcceptor acceptAjp=new USocketAcceptor(  this );
         tp.runIt( acceptAjp);
     }
 
@@ -295,8 +295,8 @@ public class ChannelUnixSocket extends Channel {
             try {
                 Endpoint ep=this.createEndpoint();
                 this.accept(ep);
-                SocketConnection ajpConn=
-                    new SocketConnection(this, ep);
+                USocketConnection ajpConn=
+                    new USocketConnection(this, ep);
                 tp.runIt( ajpConn );
             } catch( Exception ex ) {
                 ex.printStackTrace();
@@ -328,10 +328,10 @@ public class ChannelUnixSocket extends Channel {
 
 }
 
-class SocketAcceptor implements ThreadPoolRunnable {
+class USocketAcceptor implements ThreadPoolRunnable {
     ChannelUnixSocket wajp;
     
-    SocketAcceptor(ChannelUnixSocket wajp ) {
+    USocketAcceptor(ChannelUnixSocket wajp ) {
         this.wajp=wajp;
     }
 
@@ -344,11 +344,11 @@ class SocketAcceptor implements ThreadPoolRunnable {
     }
 }
 
-class SocketConnection implements ThreadPoolRunnable {
+class USocketConnection implements ThreadPoolRunnable {
     ChannelUnixSocket wajp;
     Endpoint ep;
 
-    SocketConnection(ChannelUnixSocket wajp, Endpoint ep) {
+    USocketConnection(ChannelUnixSocket wajp, Endpoint ep) {
         this.wajp=wajp;
         this.ep=ep;
     }
