@@ -72,7 +72,7 @@
 #include <jni.h>
 
 /* default only, is configurable now */
-#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/common/ChannelJni")
+#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/apr/AprImpl")
 
 
 /** Information specific for the socket channel
@@ -94,8 +94,8 @@ typedef struct {
     char *carray;
     int arrayLen;
     
-    jobject epJ;
-    jobject msgJ;
+    jobject jniJavaContext;
+/*     jobject msgJ; */
 } jk_ch_jni_ep_private_t;
 
 
@@ -126,6 +126,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     jk_ch_jni_ep_private_t *epData;
     jmethodID jmethod;
     jobject jobj;
+    jstring jstr;
 
     jk_channel_jni_private_t *jniCh=_this->_privatePtr;
 
@@ -176,44 +177,56 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
         return JK_FALSE;
     }
 
-    jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
-                 "createEndpointStatic", "(JJ)Lorg/apache/jk/core/MsgContext;");
-    if( jmethod == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel_jni.open() can't find createEndpointStatic\n"); 
-        return JK_FALSE;
-    }
-    jobj=(*jniEnv)->CallStaticObjectMethod( jniEnv, jniCh->jniBridge,
-                                                   jmethod,
-                                                   (jlong)(long)(void *)env,
-                                               (jlong)(long)(void *)endpoint );
-    epData->epJ=(*jniEnv)->NewGlobalRef( jniEnv, jobj );
+
+    /* Interface to the callback mechansim. The idea is simple ( is it ? ) - we
+       use a similar pattern with java, trying to do as little as possible
+       in C and pass minimal information to allow this.
+
+       The pattern used for callback works for our message forwarding but also for
+       other things - like singnals, etc
+    */
 
     jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
-                                         "createMessage",
-                                         "()Lorg/apache/jk/common/MsgAjp;");
+                 "createJavaContext", "(Ljava/lang/String;J)Ljava/lang/Object;");
     if( jmethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel_jni.open() can't find createMessage\n"); 
+                      "channel_jni.open() can't find createJavaContext\n"); 
         return JK_FALSE;
     }
+    
+    jstr=(*jniEnv)->NewStringUTF(jniEnv, "channelJni" );
+    
     jobj=(*jniEnv)->CallStaticObjectMethod( jniEnv, jniCh->jniBridge,
-                                            jmethod );
-    epData->msgJ=(*jniEnv)->NewGlobalRef( jniEnv, jobj );
+                                            jmethod,
+                                            jstr, 
+                                            (jlong)(long)(void *)endpoint );
+
+    if( jobj  == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "channel_jni.open() Can't create java context\n" ); 
+        epData->jniJavaContext=NULL;
+        return JK_FALSE;
+    }
+    epData->jniJavaContext=(*jniEnv)->NewGlobalRef( jniEnv, jobj );
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "channel_jni.open() Got ep %p %p\n", jobj, epData->jniJavaContext ); 
 
     /* XXX Destroy them in close */
     
     jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
                                          "getBuffer",
-                                         "(Lorg/apache/jk/common/MsgAjp;)[B");
+                                         "(Ljava/lang/Object;I)[B");
     if( jmethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.open() can't find getBuffer\n"); 
         return JK_FALSE;
     }
+
     epData->jarray=(*jniEnv)->CallStaticObjectMethod( jniEnv, jniCh->jniBridge,
-                                                   jmethod, epData->msgJ );
-    /*epData->jarray=(*jniEnv)->NewByteArray(jniEnv, 10000 ); */
+                                                      jmethod,
+                                                      epData->jniJavaContext, 0);
+
     epData->jarray=(*jniEnv)->NewGlobalRef( jniEnv, epData->jarray );
 
     epData->arrayLen = (*jniEnv)->GetArrayLength( jniEnv, epData->jarray );
@@ -225,13 +238,12 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
 
     jniCh->writeMethod =
         (*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
-                                     "receiveRequest",
-                                     "(JJLorg/apache/jk/core/MsgContext;"
-                                     "Lorg/apache/jk/common/MsgAjp;)I");
+                                     "jniInvoke",
+                                     "(JLjava/lang/Object;)I");
     
     if( jniCh->writeMethod == NULL ) {
 	env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "channel_jni.open() can't find write method\n"); 
+                      "channel_jni.open() can't find jniInvoke\n"); 
         return JK_FALSE;
     }
 
@@ -257,7 +269,7 @@ static int JK_METHOD jk2_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
     epData=(jk_ch_jni_ep_private_t *)endpoint->channelData;
     
     /* (*jniEnv)->DeleteGlobalRef( jniEnv, epData->msgJ ); */
-    /*     (*jniEnv)->DeleteGlobalRef( jniEnv, epData->epJ ); */
+    /*     (*jniEnv)->DeleteGlobalRef( jniEnv, epData->jniJavaContext ); */
     
     return JK_TRUE;
 
@@ -291,16 +303,24 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     jk_ch_jni_ep_private_t *epData=
         (jk_ch_jni_ep_private_t *)endpoint->channelData;;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send()\n" ); 
+    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() %p\n", epData ); 
 
     if( epData == NULL ) {
         jk2_channel_jni_open( env, _this, endpoint );
         epData=(jk_ch_jni_ep_private_t *)endpoint->channelData;
     }
 
+    if( epData->jniJavaContext == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,"channel_jni.send() no java context\n" ); 
+        
+        return JK_FALSE;
+    }
+
     msg->end( env, msg );
     len=msg->len;
     b=msg->buf;
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() (1) %p\n", epData ); 
 
     jniEnv=NULL; /* epData->jniEnv; */
     jbuf=epData->jarray;
@@ -345,17 +365,14 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_jni.send() before send %p %p\n",
-                  (void *)(long)epData->epJ, 
-                  (void *)(long)epData->msgJ ); 
-
+                  "channel_jni.send() before send %p\n",
+                  (void *)(long)epData->jniJavaContext); 
+    
     sent=(*jniEnv)->CallStaticIntMethod( jniEnv,
                                          jniCh->jniBridge, 
                                          jniCh->writeMethod,
                                          (jlong)(long)(void *)env,
-                             (jlong)(long)(void *)endpoint->currentRequest,
-                                         epData->epJ,
-                                         epData->msgJ);
+                                         epData->jniJavaContext );
     env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() result %d\n",
                   sent); 
     return JK_TRUE;
@@ -462,17 +479,19 @@ static int jk2_channel_jni_processMsg(jk_env_t *env, jk_endpoint_t *e,
 
 
 /*
-  
+  Called from Java - the 2 pointers are exactly what we passed when we constructed
+  the endpoint and for the request.
  */
 int jk2_channel_jni_javaSendPacket(JNIEnv *jniEnv, jobject o,
-                                   jlong envJ, jlong eP, jlong s,
+                                   jlong envJ, jlong eP,
                                    jbyteArray data, jint dataLen)
 {
     /* [V] Convert indirectly from jlong -> int -> pointer to shut up gcc */
     /*     I hope it's okay on other compilers and/or machines...         */
-    jk_ws_service_t *ps = (jk_ws_service_t *)(int)s;
     jk_env_t *env = (jk_env_t *)(long)envJ;
     jk_endpoint_t *e = (jk_endpoint_t *)(long)eP;
+    jk_ws_service_t *ps = e->currentRequest;
+
     int cnt=0;
     jint rc = -1;
     jboolean iscommit;
