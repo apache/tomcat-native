@@ -87,16 +87,19 @@ MODULE = @MODULE@
 APR_DIR = @APR_DIR@
 SRC_DIR = @SRC_DIR@
 TGT_DIR = @TGT_DIR@
-BLD_DIR = @TGT_DIR@/build
+BLD_DIR = $(TGT_DIR)/build
 OBJ_DIR = $(BLD_DIR)/objs
 LIB_DIR = $(BLD_DIR)/libs
-DST_DIR = @TGT_DIR@/dist
+API_DIR = $(BLD_DIR)/api-c
+
+# Distribution file names
 TARBALL = webapp-module-$(WEBAPP_VERSION)
 MODFILE = mod_webapp.so
 
-# Ant stuff
-ANT     = @ANT@
-ANT_TGT = @ENABLE_JAVA@ @ENABLE_DOCS@ @ENABLE_APIJ@
+# Related tools used in the build process
+PERL        = @PERL@
+ANT         = @ANT@
+ANT_TARGETS = @ANT_TARGETS@
 
 # Versions
 APACHE_VERSION = @APACHE_VERSION@
