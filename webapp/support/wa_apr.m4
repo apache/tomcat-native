@@ -68,7 +68,7 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_APR],
   [
-    tempval="apr"
+    wa_apr_tempval="apr"
     AC_MSG_CHECKING([for apr sources])
     AC_ARG_WITH(
       [apr],
@@ -81,19 +81,14 @@ AC_DEFUN(
           WA_ERROR([apr library sources required for compilation])
           ;;
         *)
-          tempval="${withval}"
+          wa_apr_tempval="${withval}"
           ;;
         esac
       ])
-    AC_MSG_RESULT([${tempval}])
-    WA_PATH_DIR($1,[${tempval}],[apr sources])
+    AC_MSG_RESULT([${wa_apr_tempval}])
+    WA_PATH_DIR($1,[${wa_apr_tempval}],[apr sources])
     
-    if test -z "$1" ; then
-      AC_MSG_ERROR([cannot find apr directory "${tempval}"])
-      exit 1
-    fi
-    unset tempval
-    AC_SUBST($1)
+    unset wa_apr_tempval
   ])
 
 dnl --------------------------------------------------------------------------
@@ -110,11 +105,17 @@ AC_DEFUN(
     if test ! -f "$2/APRVARS" ; then
       WA_ERROR([cannot find APRVARS file in $2])
     fi
-    $1=`cat $2/APRVARS | grep $3= 2> /dev/null`
-    if test -z "$1" ; then
+    wa_apr_get_tempval=`cat $2/APRVARS | grep "^$3=" 2> /dev/null`
+    if test -z "${wa_apr_get_tempval}" ; then
       WA_ERROR([value for $3 not specified in $2/APRVARS])
     fi
-    $1=`echo [$]$1 | sed 's/^$3="//g' | sed 's/"$//g'`
-    AC_MSG_RESULT([[$]$1])
-    AC_SUBST([$1])
+    wa_apr_get_tempval=`echo ${wa_apr_get_tempval} | sed 's/^$3="//g'`
+    wa_apr_get_tempval=`echo ${wa_apr_get_tempval} | sed 's/"$//g'`
+    if test -z "${$1}" ; then
+      $1="${wa_apr_get_tempval}"
+    else
+      $1="${$1} ${wa_apr_get_tempval}"
+    fi
+    AC_MSG_RESULT([${wa_apr_get_tempval}])
+    unset wa_apr_get_tempval
   ])
