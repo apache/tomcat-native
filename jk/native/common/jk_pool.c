@@ -149,7 +149,7 @@ static void *jk_pool_dyn_alloc(jk_pool_t *p, size_t size)
         }
         else {
 #if defined (DEBUG) || defined(_DEBUG)
-            jk_dump_pool(p, stderr)
+            jk_dump_pool(p, stderr);
 #endif            
             return NULL;
         }
