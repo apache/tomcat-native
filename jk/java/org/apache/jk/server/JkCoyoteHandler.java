@@ -97,6 +97,8 @@ public class JkCoyoteHandler extends JkHandler implements
      */
     public void setAttribute( String name, Object value ) {
         log.info("setAttribute " + name + " " + value );
+        if( value instanceof String )
+            jkMain.setProperty( name, (String)value );
     }
     
     public Object getAttribute( String name ) {
@@ -260,13 +262,11 @@ public class JkCoyoteHandler extends JkHandler implements
                     msg.appendBytes( hV );
                 }
                 ep.getChannel().send( msg, ep );
-            }
-            if( actionCode==ActionCode.ACTION_RESET ) {
+            } else if( actionCode==ActionCode.ACTION_RESET ) {
                 if( log.isInfoEnabled() )
                     log.info("RESET " );
                 
-            }
-            if( actionCode==ActionCode.ACTION_CLOSE ) {
+            } else if( actionCode==ActionCode.ACTION_CLOSE ) {
                 if( log.isInfoEnabled() )
                     log.info("CLOSE " );
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
@@ -278,11 +278,16 @@ public class JkCoyoteHandler extends JkHandler implements
                 msg.appendInt( 1 );
                 
                 ep.getChannel().send(msg, ep );
-            }
-            if( actionCode==ActionCode.ACTION_ACK ) {
+            } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
+                
+                
+            } else if( actionCode==ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
+
+                
+            } else if( actionCode==ActionCode.ACTION_ACK ) {
                 if( log.isInfoEnabled() )
                     log.info("ACK " );
-                
+                // What should we do here ? Who calls it ? 
             }
         } catch( Exception ex ) {
             log.error( "Error in action code ", ex );

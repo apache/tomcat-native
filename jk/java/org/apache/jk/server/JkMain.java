@@ -70,10 +70,9 @@ import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.IntrospectionUtils;
 
-/** Main class used for testing jk core and common code and tunning.
+/** Main class used to startup jk. 
  *
- *  It'll just start/init jk and use a dummy endpoint ( i.e. no servlet
- *  container ).
+ * It is also useable standalone for testing or as a minimal socket server.
  */
 public class JkMain
 {
@@ -137,6 +136,7 @@ public class JkMain
         String home=wEnv.getJkHome();
         if( home==null ) {
             // XXX use IntrospectionUtil to find myself
+            jkMain.guessHome();
         }
         if( home != null ) {
             File hF=new File(home);
@@ -252,8 +252,6 @@ public class JkMain
             IntrospectionUtils.processArgs( jkMain, args, new String[] {},
                                             null, new Hashtable());
 
-            jkMain.guessHome();
-            
             jkMain.init();
             jkMain.start();
         } catch( Exception ex ) {
