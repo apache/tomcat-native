@@ -396,6 +396,8 @@ public class HandlerRequest extends JkHandler
         Request req=(Request)ep.getRequest();
         if( req==null ) {
             req=new Request();
+            Response res=new Response();
+            req.setResponse(res);
             ep.setRequest( req );
         }
 
