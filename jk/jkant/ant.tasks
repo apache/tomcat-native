@@ -1,1 +1,2 @@
-apxs=org.apache.jk.ApxsTask
+apxs=org.apache.jk.ant.ApxsTask
+so=org.apache.jk.ant.SoTask

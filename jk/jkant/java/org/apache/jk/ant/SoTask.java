@@ -60,6 +60,25 @@ import org.apache.tools.ant.taskdefs.*;
 import org.apache.tools.ant.*;
 
 import java.io.*;
+import java.util.*;
+
+/** Global properties
+
+    Same idea as in javac, some user .properties will set the local preferences,
+    including machine-specific. If one is not specified we'll guess it. The
+    build file will be clean.
+
+    TODO: can we get configure to generate such a file ? 
+
+    build.native.cc=gcc
+    # Path to libtool ( used as a backup )
+    build.native.libtool=
+    # Platform-specific flags for compilation.
+    build.native.extra_cflags=
+
+
+*/
+
 
 /**
  * Task to generate a .so file, similar with ( or using ) libtool.
@@ -78,18 +97,40 @@ import java.io.*;
  */
 public class SoTask extends Task {
     String apxs;
-    Path src;
-    Path include;
+    // or FileSet ?
+    FileSet src;
+    Path includes;
     Path libs;
     String module;
-    
+    String soFile;
+    String cflags;
+    File buildDir;
+        
     public SoTask() {};
 
-    /**
-     *  Path to Apxs executable. Defaults to "apxs" using the current PATH.
+    public void setSoFile(String s ) {
+	soFile=s;
+    }
+    
+    public void setTarget(String s ) {
+	soFile=s;
+    }
+
+    /** Directory where intermediary objects will be
+     *  generated
      */
-    public void setPath( String path ) {
-	this.apxs=path;
+    public void setBuildDir( File s ) {
+	buildDir=s;
+    }
+
+    public void setCflags(String s ) {
+	cflags=s;
+    }
+    
+    /** Directory where the .so file will be generated
+     */
+    public void setSoDir( String s ) {
+	
     }
     
     /**
@@ -97,33 +138,25 @@ public class SoTask extends Task {
      *
      * @return a nexted src element.
      */
-    public Path createSrc() {
-        if (src == null) {
-            src = new Path(project);
-        }
-        return src.createPath();
+    public void addSrc(FileSet fl) {
+	src=fl;
     }
 
     /**
      * Include files
      */
-    public Path createInclude() {
-        if (include == null) {
-            include = new Path(project);
-        }
-        return include.createPath();
+    public Path createIncludes() {
+	includes=new Path(project);
+	return includes;
     }
 
     /**
-     * Libraries ( .so or .dll ) files to link to.
+     * Libraries ( .a, .so or .dll ) files to link to.
      */
-    public Path createLib() {
-        if (libs == null) {
-            libs = new Path(project);
-        }
-        return libs.createPath();
+    public Path createLibs() {
+        libs=new Path(project);
+	return libs;
     }
-
     
     
     /**
@@ -134,10 +167,173 @@ public class SoTask extends Task {
         this.module = module;
     }
 
+    // XXX Add specific code for Netware, Windows and platforms where libtool
+    // is problematic
+
+    // XXX Add specific code for Linux and platforms where things are
+    // clean, libtool should be just a fallback.
+    
     public void execute() throws BuildException {
+	if( soFile==null )
+	    throw new BuildException("No target ( .so file )");
+	if (src == null) 
+            throw new BuildException("No source files");
+
+	DirectoryScanner ds=src.getDirectoryScanner( project );
+        String [] list = ds.getIncludedFiles(); 
+	if (list.length == 0) 
+            throw new BuildException("No source files");
+
+	Vector compileList=new Vector();
+
+        for (int i = 0; i < list.length; i++) {
+	    File srcFile = (File)project.resolveFile(list[i]);
+            if (!srcFile.exists()) {
+                throw new BuildException("Source \"" + srcFile.getPath() +
+                                         "\" does not exist!", location);
+            }
+
+	    // Check the dependency
+
+	    compileList.addElement( srcFile );
+	}
+
+        String [] includeList = ( includes==null ) ?
+	    new String[] {} : includes.list(); 
+
+	// XXX makedepend-type dependencies - how ??
+	// We could generate a dummy Makefile and parse the content...
+	Enumeration en=compileList.elements();
+	while( en.hasMoreElements() ) {
+	    File f=(File)en.nextElement();
+	    executeLibtoolCompile(f.toString(), includeList );
+	}
 	
+
     }
 
+    /** Generate the .so file using 'standard' gcc flags. This assume
+     *  a 'current' gcc on a 'normal' platform. 
+     */
+    public void executeGcc() throws BuildException {
+    }
 
+    /** Generate the .so file using libtool.
+     *  XXX check version, etc.
+     */
+    public void executeLibtoolCompile(String source, String includeList[]) throws BuildException {
+	Commandline cmd = new Commandline();
+
+	String libtool=project.getProperty("build.native.libtool");
+	if(libtool==null) libtool="libtool";
+	String cc=project.getProperty("build.native.cc");
+	if(cc==null) cc="gcc";
+	String extra_cflags=project.getProperty("build.native.extra_cflags");
+	String localCflags=cflags;
+	if( localCflags==null ) {
+	    localCflags=extra_cflags;
+	} else {
+	    if( extra_cflags!=null ) {
+		localCflags+=" " + extra_cflags;
+	    }
+ 	}
+
+	cmd.setExecutable( libtool );
+	
+	cmd.createArgument().setValue("--mode=compile");
+
+	cmd.createArgument().setValue( cc );
+
+	for( int i=0; i<includeList.length; i++ ) {
+	    cmd.createArgument().setValue("-I");
+	    cmd.createArgument().setValue(includeList[i] );
+	}
+
+
+	cmd.createArgument().setValue( "-c" );
+
+	if( localCflags != null )
+	    cmd.createArgument().setLine( localCflags );
+	
+	project.log( "Compiling " + source);
+
+	cmd.createArgument().setValue( source );
+
+	execute( cmd );
+    }
+
+    
+    // ==================== Execution utils ==================== 
+
+    
+    String output;
+    String error;
+    ExecuteStreamHandler streamhandler = null;
+    OutputStream outputstream = null;
+    OutputStream errorstream = null;
+
+    public void execute( Commandline cmd ) throws BuildException
+    {
+	createStreamHandler();
+        Execute exe = new Execute(streamhandler, null);
+
+        exe.setAntRun(project);
+
+        if (buildDir == null) buildDir = project.getBaseDir();
+        exe.setWorkingDirectory(buildDir);
+
+        exe.setCommandline(cmd.getCommandline());
+        try {
+            exe.execute();
+        } catch (IOException e) {
+            throw new BuildException(e, location);
+        } finally {
+	    closeStreamHandler();
+        }
+    }
+
+    public void createStreamHandler()  {
+            if (error == null && output == null) {
+            streamhandler = new LogStreamHandler(this, Project.MSG_INFO,
+                                                 Project.MSG_WARN);
+        } else {
+            if (output != null) {
+                try {
+                    outputstream =
+			new PrintStream(new BufferedOutputStream(new FileOutputStream(output)));
+                } catch (IOException e) {
+                    throw new BuildException(e,location);
+                }
+            }
+            else {
+                outputstream = new LogOutputStream(this,Project.MSG_INFO);
+            }
+            if (error != null) {
+                try {
+                    errorstream =
+			new PrintStream(new BufferedOutputStream(new FileOutputStream(error)));
+                }  catch (IOException e) {
+                    throw new BuildException(e,location);
+                }
+            }
+            else {
+                errorstream = new LogOutputStream(this, Project.MSG_WARN);
+            }
+            streamhandler = new PumpStreamHandler(outputstream, errorstream);
+        }
+    }
+
+    public void closeStreamHandler() {
+	if (output != null) {
+	    try {
+		outputstream.close();
+	    } catch (IOException e) {}
+	}
+	if (error != null) {
+	    try {
+		errorstream.close();
+	    } catch (IOException e) {}
+	}
+    }
 }
 

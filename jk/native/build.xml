@@ -1,0 +1,30 @@
+<project name="jk_native" default="main" basedir=".">
+
+  <!-- Experimental -->
+
+  <path id="jkant" >
+    <pathelement location="../jkant/build/classes"/>
+    <pathelement location="../jkant/build/jkant.jar"/>
+  </path>
+  
+  <taskdef resource="META-INF/ant.tasks" 
+	   classpathref="jkant" />
+
+  <target name="main" >
+    <so sofile="jni_connect" >
+      <src dir=".">
+	<include name="jni/jk_jnicb.c" />
+	<include name="common/jk_map.c" />
+	<include name="common/jk_util.c" />
+	<include name="common/jk_pool.c" />
+      </src>
+      <includes>
+	<pathelement path="${java.home}/include" />
+	<pathelement path="${java.home}/include/${os.name}" />
+	<pathelement location="../common" />
+      </includes>
+    </so>
+    
+  </target>
+
+</project>
