@@ -14,7 +14,6 @@
 
   <property name="arch.prefix" value="" />
 
-
   <!-- ========== Local paths, overriden in build.properties ========== -->
 
   <property name="netscape.home" location="${iplanet.home}/plugins" />
@@ -22,25 +21,10 @@
   <!-- That's the default RedHat package -->
   <property name="apache13.home" location="/usr" />
   
-  <property name="apache2.include" location="${apache2.home}/include" />
-  <!-- No!!! otherwise apache13 will think we have APR for it...
-  <property name="apr.include" location="${apache2.home}/include" />
-   -->
-  <property name="apache13.include" location="${apache13.home}/include" />
-
   <!-- Uncomment if you want to use APR in apache1.3 
   <property name="APACHE13_APR" value="true" />
     -->
  
-  <!-- Override it in build.properties if using windows and a 
-       different location. I think that's the defaul location for msdev -->
-  <property name="mssdk.home" 
-            location="c:/Program Files/Microsoft Visual Studio/VC98"/>
-
-  <property name="mw.home" location="d:/tools/mw/6.0" />
-  <property name="novellndk.home" location="d:/tools/novell/ndk/nwsdk" />
-
-
   <!-- ========== Build options ========== -->
 
   <!-- Use the jni worker and libs whenever possible -->    
@@ -82,27 +66,8 @@
 
   </target>
 
-  <target name="guess.env" >
+  <target name="guess.os" >
     <echo message="build.properties ${os.arch}.${os.name}" />
-    <!-- What servers do we have ? -->
-    <available property="apache2.detect" 
-               file="${apache2.home}" />
-    <condition property="apache13.detect" >
-       <or>
-        <available file="${apache13.home}/bin/htpasswd" />
-        <available file="${apache13.home}/bin/htpasswd.exe" />
-       </or>
-    </condition>
-    <available property="iis.detect" 
-               file="${mssdk.home}" />
-    <available property="iplanet.detect" 
-               file="${iplanet.home}" />
-    <echo message="Apache2 ${apache2.home} ${apache2.detect}" />
-    <echo message="Apache13 ${apache13.home} ${apache13.detect}" />
-    <echo message="IIS ${iis.home} ${iis.detect}" />
-    <echo message="Iplanet ${iplanet.home} ${iplanet.detect}" />
-    <echo message="" />
-
     <!-- What OS ( it'll determine the includes ) -->
     <condition property="linux">
        <equals arg1="${os.name}" arg2="Linux"/>
@@ -123,20 +88,60 @@
     </condition>
 
     <echo message="Linux:${linux} Win32:${win32} Netware:${netware} Solaris:${solaris} HPUX:${hpux}" />
-
   </target>
 
-  <target name="init.win32" if="win32" >
+
+  <target name="guess.server" >
+    <!-- What servers do we have ? -->
+    <available property="apache2.detect" 
+               file="${apache2.home}" />
+    <condition property="apache13.detect" >
+       <or>
+        <available file="${apache13.home}/bin/htpasswd" />
+        <available file="${apache13.home}/bin/htpasswd.exe" />
+       </or>
+    </condition>
+    <available property="iis.detect" 
+               file="${mssdk.home}" />
+    <available property="iplanet.detect" 
+               file="${iplanet.home}" />
+    <echo message="Apache2 ${apache2.home} ${apache2.detect}" />
+    <echo message="Apache13 ${apache13.home} ${apache13.detect}" />
+    <echo message="IIS ${iis.home} ${iis.detect}" />
+    <echo message="Iplanet ${iplanet.home} ${iplanet.detect}" />
+    <echo message="" />
+  </target>
+
+  <!-- Platform-specific intialization -->
+  <target name="init.os" depends="init.win32,init.netware" />
+
+  <target name="init.win32.properties" if="win32" >
+    <!-- Override it in build.properties if using windows and a 
+    different location. I think that's the defaul location for msdev -->
+    <property name="mssdk.home" 
+              location="c:/Program Files/Microsoft Visual Studio/VC98"/>
+
     <property name="build.compiler.base" location="${mssdk.home}" />
     <property name="build.compiler.cc" location="${mssdk.home}/bin/cl" />
     <property name="build.compiler.ld" location="${mssdk.home}/bin/link" />
     <echo message="MSDEV compiler: ${mssdk.home}" />
+    <uptodate property="mc.uptodate"  
+              targetfile="common/jk_logger_win32_message.h"
+              srcfile="common/jk_logger_win32_message.mc"/>
+  </target>
+
+  <target name="init.win32.mc" unless="mc.uptodate" if="win32">
     <exec executable="${mssdk.home}/bin/mc" dir="common" >
       <arg value="jk_logger_win32_message.mc" />
     </exec>
   </target>
 
+  <target name="init.win32" depends="init.win32.properties,init.win32.mc" if="win32" />
+
   <target name="init.netware" if="netware" >
+    <property name="mw.home" location="d:/tools/mw/6.0" />
+    <property name="novellndk.home" location="d:/tools/novell/ndk/nwsdk" />
+
     <property name="build.compiler.base" location="${mw.home}" />
     <property name="build.compiler.cc" location="${build.compiler.base}/bin/mwccnlm" />
     <property name="build.compiler.ld" location="${build.compiler.base}/bin/mwldnlm" />
@@ -145,7 +150,8 @@
     <echo message="NDK: ${novellndk.home}" />
   </target>
 
-  <target name="init" depends="init.taskdef,guess.env,init.win32,init.netware" >
+
+  <target name="init" depends="init.taskdef,guess.os,init.os,guess.server" >
     <mkdir dir="${build.dir}" />
     <!-- set this to "" if you don't want the prefix. This will use the 
           prefix in the target name, to allow multiple platforms to build in 
@@ -208,7 +214,7 @@
         <includepath location="${native.dir}/common" />
         <includepath location="${native.dir}/include" />
 
-        <sysincludepath location="${apache2.include}" />
+        <sysincludepath location="${apache2.home}/include" />
 	<sysincludepath location="${apr.include}" />
 	<sysincludepath location="${apr-util.include}" />
 
@@ -283,7 +289,7 @@
       </src>
       <includes>
 	<include name="${native.dir}/common" />
-	<include name="${apache2.include}" />
+	<include name="${apache2.home}/include" />
 	<include name="${apr.include}" />
 	<include name="${apr-util.include}" />
 	<include name="${native.dir}/include" />
@@ -303,11 +309,8 @@
       <import fileName="libaprutil.lib" if="win32" />
       <import fileName="advapi32.lib" if="win32" />
       <import fileName="wsock32.lib" if="win32" />
-      <!-- <import fileName="kernel32.lib" if="win32" />
-      <import fileName="user32.lib" if="win32" />
-      <import fileName="gdi32.lib" if="win32" />
-      <import fileName="winspool.lib" if="win32" />
-      <import fileName="comdlg32.lib" if="win32" /-->
+      <import fileName="shell32.lib" if="win32" />
+      <import fileName="kernel32.lib" if="win32" />
 
       <linkOpt value="/libpath:&quot;${apr.lib}&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apr-util.lib}&quot;" if="win32" />
@@ -426,7 +429,7 @@
 	<include name="${native.dir}/include" />
 	<include name="${native.dir}/common" />
 	<include name="${build.compiler.base}/include" />
-	<include name="${apache13.include}" />
+	<include name="${apache13.home}/include" />
         <!-- Redhat package -->
 	<include name="${apache13.home}/include/apache" />
 	<include name="${native.dir}/include" />
@@ -491,6 +494,7 @@
       <export symbol="jk2_module" if="win32" />
       <import fileName="ApacheCore.lib" if="win32" />
       <import fileName="wsock32.lib" if="win32" />
+      <import fileName="advapi32.lib" if="win32" />
       <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" 
 	       if="win32" />
       <linkOpt value="/libpath:&quot;${apache13.home}/libexec&quot;" 
