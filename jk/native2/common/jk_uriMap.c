@@ -136,6 +136,37 @@ static int jk2_uriMap_checkUri(jk_env_t *env, jk_uriMap_t *uriMap,
     return JK_OK;
 }
 
+/* Match = 0, NoMatch = 1, Abort = -1
+ * Based loosely on sections of wildmat.c by Rich Salz
+ */
+int jk2_strcmp_match(const char *str, const char *exp, int icase)
+{
+    int x, y;
+
+    for (x = 0, y = 0; exp[y]; ++y, ++x) {
+        if (!str[x] && exp[y] != '*')
+            return -1;
+        if (exp[y] == '*') {
+            while (exp[++y] == '*');
+            if (!exp[y])
+                return 0;
+            while (str[x]) {
+                int ret;
+                if ((ret = jk2_strcmp_match(&str[x++], &exp[y], icase)) != 1)
+                    return ret;
+            }
+            return -1;
+        }
+        else if (exp[y] != '?') {
+            if (icase && tolower(str[x]) != tolower(exp[y]))
+                return 1;
+            else if (!icase && str[x] != exp[y])
+                return 1;
+        }
+    }
+    return (str[x] != '\0');
+}
+
 
 /** Add a uri mapping. Called during uri: initialization. Will just copy the
     uri in the table ( XXX use a map keyed on name ). In init() we process this
