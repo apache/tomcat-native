@@ -66,20 +66,24 @@ dnl Initialize
 dnl --------------------------------------------------------------------------
 sinclude(./support/aplocal.m4)
 sinclude(./support/apjava.m4)
-AC_INIT(Makefile.in)
+AC_INIT([Makefile.in])
+AC_CONFIG_AUX_DIR([support])
 LOCAL_INIT()
-LOCAL_HELP([External libraries and compilation flags])
+AC_CANONICAL_HOST()
 
 dnl --------------------------------------------------------------------------
 dnl Setup initial variable value
 dnl
-dnl New vars: MODULE TARGET_BUILD TARGET_CLEAN 
-dnl           APR_SRCDIR APR_LIBDIR APR_INCDIR APR_VARFIL
+dnl New vars: MODULE TARGET_BUILD TARGET_CLEAN HOST_CPU HOST_SYS
+dnl           APR_CFGFLG APR_SRCDIR APR_LIBDIR APR_INCDIR APR_VARFIL
 dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 MODULE=""
 TARGET_BUILD="lib-build"
 TARGET_CLEAN="lib-clean"
+HOST_CPU="${host_cpu}"
+HOST_SYS="${host_os}"
+APR_CFGFLG=""
 APR_SRCDIR=""
 APR_LIBDIR=""
 APR_INCDIR=""
@@ -88,6 +92,9 @@ APR_VARFIL=""
 AC_SUBST(MODULE)
 AC_SUBST(TARGET_BUILD)
 AC_SUBST(TARGET_CLEAN)
+AC_SUBST(HOST_CPU)
+AC_SUBST(HOST_SYS)
+AC_SUBST(APR_CFGFLG)
 AC_SUBST(APR_SRCDIR)
 AC_SUBST(APR_LIBDIR)
 AC_SUBST(APR_INCDIR)
@@ -100,6 +107,7 @@ dnl New vars: SRCDIR
 dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 LOCAL_RESOLVEDIR(SRCDIR,[${srcdir}],[sources directory])
+LOCAL_RESOLVEDIR(TGTDIR,[.],[targets directory])
 AC_SUBST(SRCDIR)
 
 dnl -------------------------------------------------------------------------
@@ -127,6 +135,7 @@ dnl
 dnl New vars: JAVA_HOME JAVAC JAR JAVADOC
 dnl Upd vars: N/A
 dnl -------------------------------------------------------------------------
+LOCAL_HELP([External libraries and compilation flags])
 LOCAL_HEADER([JAVA-Language compilation tools])
 JAVA_INIT()
 JAVA_JAVAC()
@@ -273,30 +282,33 @@ AC_ARG_WITH(apxs,
     if  ${TEST} -n "${local_apache}"
     then
 
-      dnl -----------------------------------------------
+      dnl -----------------------------------------------------
       dnl APXS 2.0
       dnl   Note: APXS for 2.0 is broken, so we need to
       dnl   "discover" some of the values manually hoping
       dnl   to get the right layout.
       dnl
       dnl New vars: N/A
-      dnl Upd vars: APR_VARFIL APR_LIBDIR APR_INCDIR
-      dnl -----------------------------------------------
+      dnl Upd vars: APR_CFGFLG APR_VARFIL APR_LIBDIR APR_INCDIR
+      dnl -----------------------------------------------------
       MODULE="apache-2.0"
       local_prefix="`apxs -q PREFIX`"
+      APR_CFGFLG=""
       APR_VARFIL="${local_prefix}/lib/APRVARS"
       APR_LIBDIR="${local_prefix}/lib"
       APR_INCDIR="${local_prefix}/include"
       unset local_prefix
     else
 
-      dnl ------------------------------------------
+      dnl Upd vars: APR_CFGFLG APR_VARFIL APR_LIBDIR APR_INCDIR
+      dnl -----------------------------------------------------
       dnl APXS 1.3
       dnl
       dnl New vars: N/A
-      dnl Upd vars: APR_VARFIL APR_LIBDIR APR_INCDIR
-      dnl ------------------------------------------
+      dnl Upd vars: APR_CFGFLG APR_VARFIL APR_LIBDIR APR_INCDIR
+      dnl -----------------------------------------------------
       MODULE="apache-1.3"
+      APR_CFGFLG="--enable-static --disable-shared --disable-threads"
       APR_VARFIL=""
       APR_LIBDIR=""
       APR_INCDIR=""
@@ -357,7 +369,7 @@ then
   dnl ----------------------------
   LOCAL_HEADER([Configuring APR])
   LOCAL_FILTEREXEC(local_return,
-    [./configure --enable-static --disable-shared --disable-threads],
+    [./configure ${APR_CFGFLG}],
     ["APR configure"],
     [${APR_SRCDIR}])
 
