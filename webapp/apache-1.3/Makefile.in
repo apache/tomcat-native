@@ -73,7 +73,7 @@ build: $(MOD)
 clean:
 	$(RM) -f $(OBJS) $(MOD)
 
-$(MOD): $(SRCS)
+$(MOD): $(SRCS) $(TGTDIR)/lib/libwebapp.a
 	@$(APXS) -c \
 	    -Wc,"$(CFLAGS) $(APR_CFLAGS) $(CPPFLAGS) $(APR_CPPFLAGS)" \
 	    -Wl,"$(APR_LDFLAGS)" $(APR_LIBS) \
