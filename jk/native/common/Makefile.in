@@ -8,6 +8,7 @@ exec_prefix = @exec_prefix@
 top_builddir = ..
 
 LIBTOOL = @LIBTOOL@
+CC = @CC@
 
 OEXT=.lo
 include list.mk
