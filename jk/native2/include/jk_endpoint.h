@@ -187,11 +187,6 @@ struct jk_endpoint {
      * request.  For some protocols (e.g. ajp12), this frees the memory
      * associated with the endpoint.  For others (e.g. ajp13/ajp14), this can
       * return the endpoint to a cache of already opened endpoints.  
-     *
-     * Note that the first argument is *not* a 'this' pointer, but is
-     * rather a pointer to a 'this' pointer.  This is necessary, because
-     * we may need to free this object.
-     *
      * XXX This is the 'pair' of worker.getEndpoint - it should be part of
      * worker.
      */

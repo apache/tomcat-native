@@ -130,8 +130,11 @@ int jk_map_default_create(struct jk_env *env, jk_map_t **m,
  *  on any map.
  */
 
-char *jk_map_getString(struct jk_env *env, jk_map_t *m,
+char *jk_map_getString(struct jk_env *env, struct jk_map *m,
                        const char *name, char *def);
+
+int jk_map_getBool(struct jk_env *env, struct jk_map *m,
+                   const char *prop, const char *def);
 
 /** Get a string property, using the worker's style
     for properties.
@@ -188,10 +191,31 @@ char *jk_map_replaceProperties(struct jk_env *env, jk_map_t *m,
                                const char *value);
 
 
-
-/* XXX Very strange hack to deal with special properties
+/** For multi-value properties, return the concatenation
+ *  of all values.
+ *
+ * @param sep Separators used to separate multi-values and
+ *       when concatenating the values, NULL for none. The first
+ *       char will be used on the result, the other will be
+ *       used to split. ( i.e. the map may either have multiple
+ *       values or values separated by one of the sep's chars )
+ *    
  */
-int jk_is_some_property(struct jk_env *env, const char *prp_name, const char *suffix);
+char *jk_map_getValuesString(struct jk_env *env, struct jk_map *m,
+                             struct jk_pool *resultPool,
+                             char *name, char *sep );
+
+
+/** For multi-value properties, return the array containing
+ * all values.
+ *
+ * @param sep Optional separator, it'll be used to split existing values.
+ *            Curently only single-char separators are supported. 
+ */
+char **jk_map_getValues(struct jk_env *env, struct jk_map *m,
+                        struct jk_pool *resultPool,
+                        char *name, char *sep, int *count);
+
     
 #ifdef __cplusplus
 }
