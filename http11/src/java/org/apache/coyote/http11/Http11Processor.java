@@ -249,6 +249,26 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * Get the value of the internationalized URI flag.
+     * 
+     * @return the value of the internationalized URI flag
+     */
+    public boolean isInternationalizedURIAllowed() {
+        return inputBuffer.isInternationalizedURIAllowed();
+    }
+
+
+    /**
+     * Set the value of the internationalized URI flag.
+     * 
+     * @param flag New value of the internationalized URI flag
+     */
+    public void setInternationalizedURIAllowed(boolean flag) {
+        inputBuffer.setInternationalizedURIAllowed(flag);
+    }
+
+
+    /**
      * Process pipelined HTTP requests using the specified input and output
      * streams.
      * 

@@ -112,6 +112,9 @@ public class InternalInputBuffer implements InputBuffer {
         bodyBuffer = new byte[headerBufferSize];
         buf = headerBuffer1;
 
+        headerBuffer = new char[headerBufferSize];
+        ascbuf = headerBuffer;
+
         inputStreamInputBuffer = new InputStreamInputBuffer();
 
         filterLibrary = new InputFilter[0];
@@ -161,6 +164,12 @@ public class InternalInputBuffer implements InputBuffer {
 
 
     /**
+     * Pointer to the US-ASCII header buffer.
+     */
+    protected char[] ascbuf;
+
+
+    /**
      * Last valid byte.
      */
     protected int lastValid;
@@ -188,6 +197,19 @@ public class InternalInputBuffer implements InputBuffer {
      * HTTP body buffer.
      */
     protected byte[] bodyBuffer;
+
+
+    /**
+     * US-ASCII header buffer.
+     */
+    protected char[] headerBuffer;
+
+
+    /**
+     * Allow i18n URLs (non-standard URLs conatining non %xx encoded 
+     * bytes >127).
+     */
+    protected boolean internationalizedURIAllowed = false;
 
 
     /**
@@ -308,6 +330,28 @@ public class InternalInputBuffer implements InputBuffer {
     }
 
 
+    /**
+     * Get the value of the internationalized URI flag.
+     * 
+     * @return the value of the internationalized URI flag
+     */
+    public boolean isInternationalizedURIAllowed() {
+        return (internationalizedURIAllowed);
+    }
+
+
+    /**
+     * Set the value of the internationalized URI flag.
+     * 
+     * @param internationalizedURIAllowed New value of the internationalized
+     * URI flag
+     */
+    public void setInternationalizedURIAllowed
+        (boolean internationalizedURIAllowed) {
+        this.internationalizedURIAllowed = internationalizedURIAllowed;
+    }
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -424,6 +468,7 @@ public class InternalInputBuffer implements InputBuffer {
 
         //
         // Reading the method name
+        // Method name is always US-ASCII
         //
 
         boolean space = false;
@@ -436,9 +481,11 @@ public class InternalInputBuffer implements InputBuffer {
                     throw new EOFException(sm.getString("iib.eof.error"));
             }
 
+            ascbuf[pos] = (char) buf[pos];
+
             if (buf[pos] == Constants.SP) {
                 space = true;
-                request.method().setBytes(buf, start, pos - start);
+                request.method().setChars(ascbuf, start, pos - start);
             }
 
             pos++;
@@ -450,6 +497,8 @@ public class InternalInputBuffer implements InputBuffer {
 
         //
         // Reading the URI
+        // URI is considered US-ASCII unless the 'internationalizedURIAllowed'
+        // is set to 'true'
         //
 
         space = false;
@@ -465,13 +514,21 @@ public class InternalInputBuffer implements InputBuffer {
 
             if (buf[pos] == Constants.SP) {
                 space = true;
-                request.unparsedURI().setBytes(buf, start, pos - start);
+                if (internationalizedURIAllowed) {
+                    request.unparsedURI().setBytes(buf, start, pos - start);
+                } else {
+                    request.unparsedURI().setChars(ascbuf, start, pos - start);
+                }
             } else if ((buf[pos] == Constants.CR) 
                        || (buf[pos] == Constants.LF)) {
                 // HTTP/0.9 style request
                 eol = true;
                 space = true;
-                request.unparsedURI().setBytes(buf, start, pos - start);
+                if (internationalizedURIAllowed) {
+                    request.unparsedURI().setBytes(buf, start, pos - start);
+                } else {
+                    request.unparsedURI().setChars(ascbuf, start, pos - start);
+                }
             }
 
             pos++;
@@ -484,6 +541,7 @@ public class InternalInputBuffer implements InputBuffer {
 
         //
         // Reading the protocol
+        // Protocol is always US-ASCII
         //
 
         while (!eol) {
@@ -493,6 +551,8 @@ public class InternalInputBuffer implements InputBuffer {
                 if (!fill())
                     throw new EOFException(sm.getString("iib.eof.error"));
             }
+
+            ascbuf[pos] = (char) buf[pos];
 
             if (buf[pos] == Constants.CR) {
                 end = pos;
@@ -507,7 +567,7 @@ public class InternalInputBuffer implements InputBuffer {
         }
 
         if ((end - start) > 0) {
-            request.protocol().setBytes(buf, start, end - start);
+            request.protocol().setChars(ascbuf, start, end - start);
         } else {
             request.protocol().setString("");
         }
@@ -571,6 +631,7 @@ public class InternalInputBuffer implements InputBuffer {
 
         //
         // Reading the header name
+        // Header name is always US-ASCII
         //
 
         boolean colon = false;
@@ -586,12 +647,14 @@ public class InternalInputBuffer implements InputBuffer {
 
             if (buf[pos] == Constants.COLON) {
                 colon = true;
-                headerValue = headers.addValue(buf, start, pos - start);
+                headerValue = headers.addValue(ascbuf, start, pos - start);
             }
             chr = buf[pos];
             if ((chr >= Constants.A) && (chr <= Constants.Z)) {
                 buf[pos] = (byte) (chr - Constants.LC_OFFSET);
             }
+
+            ascbuf[pos] = (char) buf[pos];
 
             pos++;
 
