@@ -626,6 +626,13 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     jk_workerEnv_t *wEnv;
     jk_channel_jni_private_t *jniPrivate;
 
+
+    wEnv = env->getByName( env, "workerEnv" );
+    if (wEnv->childId != 0) {
+        result->disabled = 1;		      
+        return JK_OK;
+    }
+
     ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
     ch->recv= jk2_channel_jni_recv;
@@ -649,7 +656,6 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     result->object= ch;
     result->init= jk2_channel_jni_init; 
 
-    wEnv=env->getByName( env, "workerEnv" );
     ch->workerEnv=wEnv;
     wEnv->addChannel( env, wEnv, ch );
 

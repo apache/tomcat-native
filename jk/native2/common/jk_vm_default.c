@@ -657,7 +657,10 @@ int JK_METHOD jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
     
     workerEnv=env->getByName( env, "workerEnv" );
     
-    if (workerEnv->childGeneration > 0) {
+    /* TODO: use timeframe for child generation
+     * 
+    */
+    if (workerEnv->childGeneration > 10) {
         result->disabled = 1;
         return JK_OK;
     }

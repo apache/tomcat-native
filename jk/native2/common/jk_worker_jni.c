@@ -233,17 +233,6 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
                       "workerJni.init() No VM found\n");
         return JK_ERR;
     }
-    /* XXX Allow only the first child to execute the worker 
-     * The WM will be shared between processes.
-    */
-    if (_this->workerEnv->childId != 0) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "workerJni.init() Skipping initialization for process %d %d\n",
-                      _this->workerEnv->childId, _this->workerEnv->childProcessId);
-		      
-	    _this->lb_disabled = JK_TRUE;        
-        return JK_OK;
-    }
     
     props=_this->workerEnv->initData;
     jniWorker = _this->worker_private;
@@ -414,17 +403,6 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
         return JK_ERR;
     }
     
-    /* XXX Allow only the first child to execute the worker 
-     * The WM will be shared between processes.
-    */
-    if (_this->workerEnv->childId != 0) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "workerJni.init() Skipping destroying for process %d %d\n",
-                      _this->workerEnv->childId, _this->workerEnv->childProcessId);
-		      
-        return JK_OK;
-    }
-
     jniWorker = _this->worker_private;
     
     if (jniWorker->hook < JK2_WORKER_HOOK_CLOSE) {
@@ -475,12 +453,24 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
 {
     jk_worker_t *_this;
     jni_worker_data_t *jniData;
-    
+    jk_workerEnv_t *wEnv;
+
     if(name==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG, 
                       "jni.factory() NullPointerException name==null\n");
         return JK_ERR;
     }
+
+    wEnv = env->getByName( env, "workerEnv" );
+    /* Allow only the first child to execute the worker */
+    if (wEnv->childId != 0) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "workerJni.factory() Skipping initialization for the %d %d\n",
+                      wEnv->childId, wEnv->childProcessId);
+        result->disabled = 1;		      
+        return JK_OK;
+    }
+
 
     /* No singleton - you can have multiple jni workers,
      running different bridges or starting different programs inprocess*/
@@ -513,7 +503,7 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     result->setAttribute = jk2_jni_worker_setProperty;
     _this->mbean=result;
 
-    _this->workerEnv=env->getByName( env, "workerEnv" );
+    _this->workerEnv = wEnv;
     _this->workerEnv->addWorker( env, _this->workerEnv, _this );
 
     return JK_OK;
