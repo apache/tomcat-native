@@ -390,7 +390,7 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
 
     _this->workerEnv=env->getByName( env, "workerEnv" );
     _this->workerEnv->addWorker( env, _this->workerEnv, _this );
-    
+
     return JK_OK;
 }
 #else
