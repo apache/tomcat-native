@@ -134,8 +134,10 @@ struct ajp_msg
 #define CMD_AJP13_SEND_HEADERS      (unsigned char)4
 /** Marks the end of response. */
 #define CMD_AJP13_END_RESPONSE      (unsigned char)5
-/** XXX: Have no idea */
+/** Get further data from the web server if it hasn't all been transferred yet. */
 #define CMD_AJP13_GET_BODY_CHUNK    (unsigned char)6
+/** The web server asks the container to shut itself down. */
+#define CMD_AJP13_SHUTDOWN          (unsigned char)7
 /** Webserver ask container to take control (logon phase) */
 #define CMD_AJP13_PING              (unsigned char)8
 /** Container response to cping request */
