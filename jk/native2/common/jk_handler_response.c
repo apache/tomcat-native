@@ -57,112 +57,36 @@
 
 #include "jk_global.h"
 #include "jk_service.h"
-#include "jk_msg_buff.h"
+#include "jk_msg.h"
 #include "jk_env.h"
 #include "jk_requtil.h"
 #include "jk_env.h"
 #include "jk_handler.h"
 #include "jk_endpoint.h"
 
-static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
-                                  jk_ws_service_t  *s,
-                                  jk_endpoint_t *ae,
-                                  jk_logger_t    *l);
-
-int ajp_handle_sendChunk(jk_msg_buf_t   *msg,
-                         jk_ws_service_t  *r,
-                         jk_endpoint_t *ae,
-                         jk_logger_t    *l);
-
-
-int ajp_handle_startResponse(jk_msg_buf_t   *msg,
-                             jk_ws_service_t  *r,
-                             jk_endpoint_t *ae,
-                             jk_logger_t    *l);
-
-int ajp_handle_getChunk(jk_msg_buf_t   *msg,
-                         jk_ws_service_t  *r,
-                         jk_endpoint_t *ae,
-                         jk_logger_t    *l);
-
-/** SEND_HEADERS handler
+/*
+ * Write a body chunk from the servlet container to the web server
  */
-int ajp_handle_startResponse(jk_msg_buf_t   *msg,
-                             jk_ws_service_t  *r,
-                             jk_endpoint_t *ae,
-                             jk_logger_t    *l)
-{
-    int err;
-    
-    err=ajp_unmarshal_response(msg, r, ae, l);
-    if( err!=JK_TRUE ) {
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - ajp_unmarshal_response failed\n");
-        return JK_AJP13_ERROR;
-    }
-    err=r->start_response(r, r->status, r->msg, 
-                          (const char * const *)r->out_header_names,
-                          (const char * const *)r->out_header_values,
-                          r->out_headers);
-    if( err!=JK_TRUE ) {
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - start_response failed\n");
-        return JK_CLIENT_ERROR;
-    }
-    return JK_TRUE;
-}
-
-/** SEND_BODY_CHUNK handler
- */
-int ajp_handle_sendChunk(jk_msg_buf_t   *msg,
-                         jk_ws_service_t  *r,
-                         jk_endpoint_t *ae,
-                         jk_logger_t    *l)
-{
-    int err;
-    unsigned len = (unsigned)jk_b_get_int(msg);
-
-    err=r->write(r, jk_b_get_buff(msg) + jk_b_get_pos(msg), len);
-    if( err!= JK_TRUE ) {
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - write failed\n");
-        return JK_CLIENT_ERROR;
-    }
-
-    return JK_TRUE;
-}
-
-/** SEND_BODY_CHUNK handler
- */
-int ajp_handle_getChunk(jk_msg_buf_t   *msg,
-                        jk_ws_service_t  *r,
-                        jk_endpoint_t *ae,
-                        jk_logger_t    *l)
-{
-    int len = jk_b_get_int(msg);
-    
-    if(len > AJP13_MAX_SEND_BODY_SZ) {
-        len = AJP13_MAX_SEND_BODY_SZ;
-    }
-    if(len > ae->left_bytes_to_send) {
-        len = ae->left_bytes_to_send;
-    }
-    if(len < 0) {
-        len = 0;
-    }
-            
-    /* the right place to add file storage for upload */
-    if ((len = ajp_read_into_msg_buff(ae, r, msg, len, l)) >= 0) {
-        r->content_read += len;
-        return JK_AJP13_HAS_RESPONSE;
-    }                  
-            
-    l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - ajp_read_into_msg_buff failed\n");
-    return JK_INTERNAL_ERROR;	    
-}
-
-
-
+#define JK_AJP13_SEND_BODY_CHUNK    (unsigned char)3
 
 /*
-AJPV13_RESPONSE/AJPV14_RESPONSE:=
+ * Send response headers from the servlet container to the web server.
+ */
+#define JK_AJP13_SEND_HEADERS       (unsigned char)4
+
+/*
+ * Marks the end of response.
+ */
+#define JK_AJP13_GET_BODY_CHUNK     (unsigned char)6
+
+/*
+ * Marks the end of response.
+ */
+#define JK_AJP13_END_RESPONSE       (unsigned char)5
+
+
+/** SEND_HEADERS handler
+   AJPV13_RESPONSE/AJPV14_RESPONSE:=
     response_prefix (2)
     status          (short)
     status_msg      (short)
@@ -185,78 +109,197 @@ body_chunk :=
     body    length*(var binary)
 
  */
-static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
-                                  jk_ws_service_t  *s,
-                                  jk_endpoint_t *ae,
-                                  jk_logger_t    *l)
+static int jk_handler_startResponse(jk_msg_t   *msg,
+                                   jk_ws_service_t  *s,
+                                   jk_endpoint_t *ae,
+                                   jk_logger_t    *l)
 {
-    jk_pool_t * p = ae->pool;
+    int err;
+    unsigned i;
+    jk_pool_t * p = s->pool;
 
-    s->status = jk_b_get_int(msg);
-
-    if (!s->status) {
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp_unmarshal_response - Null status\n");
-        return JK_FALSE;
-    }
-
-    s->msg = (char *)jk_b_get_string(msg);
+    s->status = msg->getInt(msg);
+    s->msg = (char *)msg->getString(msg);
     if (s->msg) {
         jk_xlate_from_ascii(s->msg, strlen(s->msg));
     }
+    s->out_headers = msg->getInt(msg);
+    s->out_header_names = NULL;
+    s->out_header_values = NULL;
 
-    l->jkLog(l, JK_LOG_DEBUG, "ajp_unmarshal_response: status = %d\n", s->status);
-
-    s->out_headers = jk_b_get_int(msg);
-    s->out_header_names = s->out_header_values = NULL;
-
-    l->jkLog(l, JK_LOG_DEBUG, "ajp_unmarshal_response: Number of headers is = %d\n", s->out_headers);
-
-    if (s->out_headers) {
+    if (s->out_headers > 0 ) {
         s->out_header_names = p->alloc(p, sizeof(char *) * s->out_headers);
         s->out_header_values = p->alloc(p, sizeof(char *) * s->out_headers);
+        
+        if (s->out_header_names==NULL ||
+            s->out_header_values==NULL) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "handler.startResponse() OutOfMemoryError %d headers\n",
+                     s->out_headers);
+            return JK_HANDLER_FATAL;
+        }
+        for(i = 0 ; i < s->out_headers ; i++) {
+            unsigned short name = msg->peekInt(msg) ;
 
-        if (s->out_header_names && s->out_header_values) {
-            unsigned i;
-            for(i = 0 ; i < s->out_headers ; i++) {
-                unsigned short name = jk_b_pget_int(msg, jk_b_get_pos(msg)) ;
-                
-                if ((name & 0XFF00) == 0XA000) {
-                    jk_b_get_int(msg);
-                    name = name & 0X00FF;
-                    if (name <= SC_RES_HEADERS_NUM) {
-                        s->out_header_names[i] = (char *)jk_requtil_getHeaderById(name);
-                    } else {
-                        l->jkLog(l, JK_LOG_ERROR, "Error ajp_unmarshal_response - No such sc (%d)\n", name);
-                        return JK_FALSE;
-                    }
+            if ((name & 0XFF00) == 0XA000) {
+                msg->getInt(msg);
+                name = name & 0X00FF;
+                if (name <= SC_RES_HEADERS_NUM) {
+                    s->out_header_names[i] =
+                        (char *)jk_requtil_getHeaderById(name);
                 } else {
-                    s->out_header_names[i] = (char *)jk_b_get_string(msg);
-                    if (!s->out_header_names[i]) {
-                        l->jkLog(l, JK_LOG_ERROR, "Error ajp_unmarshal_response - Null header name\n");
-                        return JK_FALSE;
-                    }
-                    jk_xlate_from_ascii(s->out_header_names[i],
-                                 strlen(s->out_header_names[i]));
-
+                    l->jkLog(l, JK_LOG_ERROR,
+                             "handler.response() Invalid header id (%d)\n",
+                             name);
+                    return JK_HANDLER_FATAL;
                 }
-
-                s->out_header_values[i] = (char *)jk_b_get_string(msg);
-                if (!s->out_header_values[i]) {
-                    l->jkLog(l, JK_LOG_ERROR, "Error ajp_unmarshal_response - Null header value\n");
-                    return JK_FALSE;
+            } else {
+                s->out_header_names[i] = (char *)msg->getString(msg);
+                if (!s->out_header_names[i]) {
+                    l->jkLog(l, JK_LOG_ERROR,
+                             "handler.response() Null header name \n");
+                    return JK_HANDLER_FATAL;
                 }
-
-                jk_xlate_from_ascii(s->out_header_values[i],
-                             strlen(s->out_header_values[i]));
-
-                l->jkLog(l, JK_LOG_DEBUG, "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
-                       i,
-                       s->out_header_names[i],
-                       s->out_header_values[i]);
+                jk_xlate_from_ascii(s->out_header_names[i],
+                                    strlen(s->out_header_names[i]));
             }
+            s->out_header_values[i] = (char *)msg->getString(msg);
+            if (!s->out_header_values[i]) {
+                l->jkLog(l, JK_LOG_ERROR,
+                         "Error ajp_unmarshal_response - Null header value\n");
+                return JK_HANDLER_FATAL;
+            }
+
+            jk_xlate_from_ascii(s->out_header_values[i],
+                                strlen(s->out_header_values[i]));
+            
+            l->jkLog(l, JK_LOG_DEBUG,
+                     "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
+                     i,
+                     s->out_header_names[i],
+                     s->out_header_values[i]);
         }
     }
+    
+    l->jkLog(l, JK_LOG_INFO,
+             "handler.response(): status=%d headers=%d\n",
+             s->status, s->out_headers);
+
+    err=s->start_response(s, s->status, s->msg, 
+                          (const char * const *)s->out_header_names,
+                          (const char * const *)s->out_header_values,
+                          s->out_headers);
+    if( err!=JK_TRUE ) {
+        l->jkLog(l, JK_LOG_ERROR,
+                 "handler.response() Error sending response");
+        return JK_HANDLER_ERROR;
+    }
+    
+    return JK_HANDLER_OK;
+}
+
+/** SEND_BODY_CHUNK handler
+ */
+static int jk_handler_sendChunk(jk_msg_t   *msg,
+                               jk_ws_service_t  *r,
+                               jk_endpoint_t *ae,
+                               jk_logger_t    *l)
+{
+    int err;
+    int len;
+    char *buf;
+
+    buf=msg->getBytes( msg, &len );
+
+    err=r->write(r, buf, len);
+    if( err!= JK_TRUE ) {
+        l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - write failed\n");
+        return JK_HANDLER_ERROR;
+    }
+
+    return JK_HANDLER_OK;
+}
+
+static int jk_handler_endResponse(jk_msg_t   *msg,
+                                 jk_ws_service_t  *r,
+                                 jk_endpoint_t *ae,
+                                 jk_logger_t    *l)
+{
+    ae->reuse = (int)msg->getByte(msg);
+            
+    if((ae->reuse & 0X01) != ae->reuse) {
+        /*
+         * Strange protocol error.
+         */
+        ae->reuse = JK_FALSE;
+    }
+    return JK_HANDLER_LAST;
+}
+
+/** SEND_BODY_CHUNK handler
+ */
+static int jk_handler_getChunk(jk_msg_t   *msg,
+                              jk_ws_service_t  *r,
+                              jk_endpoint_t *ae,
+                              jk_logger_t    *l)
+{
+    int len = msg->getInt(msg);
+    
+    if(len > AJP13_MAX_SEND_BODY_SZ) {
+        len = AJP13_MAX_SEND_BODY_SZ;
+    }
+    if(len > r->left_bytes_to_send) {
+        len = r->left_bytes_to_send;
+    }
+    if(len < 0) {
+        len = 0;
+    }
+
+    len=msg->appendFromServer( msg, r, ae, len );
+    /* the right place to add file storage for upload */
+    if (len >= 0) {
+        r->content_read += len;
+        return JK_HANDLER_RESPONSE;
+    }                  
+            
+    l->jkLog(l, JK_LOG_ERROR,
+             "handler_request.getChunk() - ajp_read_into_msg_buff failed\n");
+    return JK_HANDLER_FATAL;	    
+}
+
+int JK_METHOD jk_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
+                                           void **result,
+                                           const char *type, const char *name)
+{
+    jk_map_t *map;
+    jk_handler_t *h;
+    
+    map_alloc( &map, pool );
+    *result=map;
+    
+    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h->name="sendHeaders";
+    h->messageId=JK_AJP13_SEND_HEADERS;
+    h->callback=jk_handler_startResponse;
+    map_put( map, h->name, h, NULL );
+
+    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h->name="sendChunk";
+    h->messageId=JK_AJP13_SEND_BODY_CHUNK;
+    h->callback=jk_handler_sendChunk;
+    map_put( map, h->name, h, NULL );
+    
+    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h->name="endResponse";
+    h->messageId=JK_AJP13_END_RESPONSE;
+    h->callback=jk_handler_endResponse;
+    map_put( map, h->name, h, NULL );
+
+    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h->name="getChunk";
+    h->messageId=JK_AJP13_GET_BODY_CHUNK;
+    h->callback=jk_handler_getChunk;
+    map_put( map, h->name, h, NULL );
 
     return JK_TRUE;
 }
-

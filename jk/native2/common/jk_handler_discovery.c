@@ -64,34 +64,16 @@
 #include "jk_global.h"
 #include "jk_pool.h"
 #include "jk_env.h"
-#include "jk_msg_buff.h"
+#include "jk_msg.h"
 #include "jk_logger.h"
 #include "jk_service.h"
 #include "jk_handler.h"
 #include "jk_webapp.h"
 #include "jk_workerEnv.h"
 
-int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
+                                            void **result,
                                             const char *type, const char *name);
-
-int jk_handler_discovery_sendDiscovery(jk_endpoint_t *ae,
-                                       jk_workerEnv_t *we,
-                                       jk_logger_t    *l);
-
-int jk_handler_discovery_handleContextList(jk_endpoint_t  *ae,
-                                           jk_workerEnv_t *we,
-                                           jk_msg_buf_t    *msg,
-                                           jk_logger_t     *l);
-
-int jk_handler_discovery_sendGetContextaState(jk_msg_buf_t *msg,
-                                              jk_workerEnv_t *c,
-                                              char *vhost,
-                                              char *cname,
-                                              jk_logger_t  *l);
-
-int jk_handler_discovery_handleContextState(jk_msg_buf_t *msg,
-                                            jk_workerEnv_t *c,
-                                            jk_logger_t  *l);
 
 /*
  * Context Query (web server -> servlet engine), which URI are handled by servlet engine ?
@@ -121,76 +103,7 @@ int jk_handler_discovery_handleContextState(jk_msg_buf_t *msg,
 
 #define MAX_URI_SIZE    512
 
-static int jk_handler_discovery_init( jk_worker_t *w );
-
-/* ==================== Constructor and impl. ==================== */
-
-int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
-                                            void **result,
-                                            const char *type, const char *name)
-{
-    jk_handler_t *h=(jk_handler_t *)pool->alloc( pool, sizeof( jk_handler_t));
-
-    h->init=jk_handler_discovery_init;
-    *result=h;
-    return JK_TRUE;
-}
-
-
-static int jk_handler_discovery_init( jk_worker_t *w ) {
-    return JK_TRUE;
-}
-
-
-/** Send a 'discovery' message. This is a request for tomcat to
- *  report all configured webapps and mappings.
- *
- * Build the Context Query Cmd (autoconf)
- *
- * +--------------------------+-
- * | CONTEXT QRY CMD (1 byte) | 
- * +--------------------------+-
- *
- */
-int jk_handler_discovery_sendDiscovery(jk_endpoint_t *ae,
-                                       jk_workerEnv_t *we,
-                                       jk_logger_t    *l)
-{
-    jk_pool_t     *p = ae->pool;
-    jk_msg_buf_t  *msg;
-    int           rc=JK_FALSE;
-    int                 cmd;
-    int                 i,j;
-    jk_login_service_t  *jl = ae->worker->login;
-    jk_webapp_t   *ci;
-    jk_webapp_t         *webapp;  
-    char                *buf;
-
-
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:discovery\n");
-    
-    msg = jk_b_new(p);
-    jk_b_set_buffer_size(msg, DEF_BUFFER_SZ);
-    jk_b_reset(msg);
-    
-    /*
-     * CONTEXT QUERY CMD
-     */
-    if (jk_b_append_byte(msg, AJP14_CONTEXT_QRY_CMD))
-        return JK_FALSE;
-    
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:discovery - send query\n");
-
-    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
-        return JK_FALSE;
-    
-    jk_b_reset(msg);
-    
-    return rc;
-}
-
 /* -------------------- private utils/marshaling -------------------- */
-
 /*
  * Decode the ContextList Cmd (Autoconf)
  *
@@ -205,33 +118,35 @@ int jk_handler_discovery_sendDiscovery(jk_endpoint_t *ae,
  *CONTEXT NAME (CString (*)) | URL1 [\n] URL2 [\n] URL3 [\n] | NEXT CTX. |
  *-------------------+-------------------------------+-----------+
  */
-int jk_handler_discovery_handleContextList(jk_endpoint_t  *ae,
-                                           jk_workerEnv_t *we,
-                                           jk_msg_buf_t    *msg,
-                                           jk_logger_t     *l)
+static int jk_handler_contextList(jk_msg_t       *msg,
+                                  jk_ws_service_t *s,
+                                  jk_endpoint_t *ae,
+                                  jk_logger_t *l)
 {
     char *vname;
     char *cname;
     char *uri;
     int                 cmd;
     int                 i,j;
-    jk_login_service_t  *jl = ae->worker->login;
-    jk_webapp_t   *ci;
+    jk_webapp_t         *ci;
     jk_webapp_t         *webapp;  
     char                *buf;
-
+    jk_workerEnv_t *we=ae->worker->workerEnv;
+    
     /*     if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE) */
     /*         return JK_FALSE; */
-    
-    if ((cmd = jk_b_get_byte(msg)) != AJP14_CONTEXT_INFO_CMD) {
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp14:discovery - wrong cmd %d:%d\n",
+
+    cmd=msg->getByte( msg );
+    if (cmd != AJP14_CONTEXT_INFO_CMD) {
+        l->jkLog(l, JK_LOG_ERROR,
+                 "handler.discovery() - wrong cmd %d:%d\n",
                  AJP14_CONTEXT_INFO_CMD, cmd);
         return JK_FALSE;
     }
 
     for (;;) {
-        vname  = (char *)jk_b_get_string(msg);
-        cname  = (char *)jk_b_get_string(msg); 
+        vname  = (char *)msg->getString(msg);
+        cname  = (char *)msg->getString(msg); 
 
         if (cname==NULL || strlen( cname ) == 0 ) {
             l->jkLog(l, JK_LOG_DEBUG, "End of contest list\n");
@@ -249,7 +164,7 @@ int jk_handler_discovery_handleContextList(jk_endpoint_t  *ae,
         }
          
         for (;;) {
-            uri  = (char *)jk_b_get_string(msg);
+            uri  = (char *)msg->getString(msg);
             
             if (uri==NULL || strlen( uri ) == 0 ) {
                 l->jkLog(l, JK_LOG_DEBUG, "No more URI for context %s", cname);
@@ -272,62 +187,6 @@ int jk_handler_discovery_handleContextList(jk_endpoint_t  *ae,
 
 
 /*
- * Build the Context State Query Cmd
- *
- * We send the list of contexts where we want to know state,
- * empty string end context list*
- * If cname is set, only ask about THIS context
- *
- * +----------------------------+----------------------------------+----------
- * | CONTEXT STATE CMD (1 byte) |  VIRTUAL HOST NAME  | CONTEXT NAME
- *                              |   (CString (*))     |  (CString (*)) 
- * +----------------------------+----------------------------------+----------
- *
- */
-int jk_handler_discovery_sendGetContextaState(jk_msg_buf_t *msg,
-                                              jk_workerEnv_t *we,
-                                              char *vhost, 
-                                              char  *cname,
-                                              jk_logger_t  *l)
-{
-    jk_webapp_t *ci;
-    int                i;
-    
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_context_state_into_msgb\n");
-    
-    /* To be on the safe side */
-    jk_b_reset(msg);
-    
-    /*
-     * CONTEXT STATE CMD
-     */
-    if (jk_b_append_byte(msg, AJP14_CONTEXT_STATE_CMD))
-        return JK_FALSE;
-    
-    /*
-     * VIRTUAL HOST CSTRING
-     */
-     if (jk_b_append_string(msg, vhost)) {
-        l->jkLog(l, JK_LOG_ERROR, "Error ajp14_marshal_context_state_into_msgb"
-               "- Error appending the virtual host string\n");
-        return JK_FALSE;
-     }
-     
-     /*
-      * CONTEXT CSTRING
-      */
-     if (jk_b_append_string(msg, cname )) {
-         l->jkLog(l, JK_LOG_ERROR,
-                  "Error ajp14_marshal_context_state_into_msgb"
-                  "- Error appending the context string %s\n", cname);
-         return JK_FALSE;
-     }
-     
-     return JK_TRUE;
-}
-
-
-/*
  * Decode the Context State Reply Cmd
  *
  * We get update of contexts list, empty string end context list*
@@ -340,19 +199,20 @@ int jk_handler_discovery_sendGetContextaState(jk_msg_buf_t *msg,
  *CONTEXT NAME (CString (*)) | UP/DOWN (1 byte) | .. |
  * ------------------------+------------------+----+
  */
-int jk_handler_discovery_handleContextState(jk_msg_buf_t *msg,
-                                            jk_workerEnv_t *c,
-                                            jk_logger_t  *l)
+static int jk_handler_contextState(jk_msg_t       *msg,
+                                  jk_ws_service_t *s,
+                                  jk_endpoint_t *ae,
+                                  jk_logger_t *l)
 {
     char                *vname;
     char                *cname;
     jk_webapp_t   *ci = NULL;
 
     /* get virtual name */
-    vname  = (char *)jk_b_get_string(msg);
+    vname  = (char *)msg->getString(msg);
     
     /* get context name */
-    cname  = (char *)jk_b_get_string(msg);
+    cname  = (char *)msg->getString(msg);
         
     if (! cname || ! strlen(cname)) {
         return JK_TRUE;
@@ -368,7 +228,7 @@ int jk_handler_discovery_handleContextState(jk_msg_buf_t *msg,
         return JK_FALSE;
     }
         
-    ci->status = jk_b_get_int(msg);
+    ci->status = msg->getInt(msg);
         
     l->jkLog(l, JK_LOG_DEBUG, "ajp14_unmarshal_context_state_reply "
              "- updated context %s to state %d\n", cname, ci->status);
@@ -376,8 +236,29 @@ int jk_handler_discovery_handleContextState(jk_msg_buf_t *msg,
 }
 
 
+int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
+                                            void **result,
+                                            const char *type, const char *name)
+{
+    jk_map_t *map;
+    jk_handler_t *h;
+    
+    map_alloc( &map, pool );
+    *result=map;
+    
+    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h->name="contextInfo";
+    h->messageId=AJP14_CONTEXT_INFO_CMD;
+    h->callback=jk_handler_contextList;
+    map_put( map, h->name, h, NULL );
 
+    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h->name="contextState";
+    h->messageId=AJP14_CONTEXT_STATE_REP_CMD;
+    h->callback=jk_handler_contextState;
+    map_put( map, h->name, h, NULL );
 
-
+    return JK_TRUE;
+}
 
 

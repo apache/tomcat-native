@@ -63,7 +63,7 @@
 
 #include "jk_global.h"
 #include "jk_pool.h"
-#include "jk_msg_buff.h"
+#include "jk_msg.h"
 #include "jk_md5.h"
 #include "jk_logger.h"
 #include "jk_service.h"
@@ -71,11 +71,6 @@
 #include "jk_handler.h"
 
 /* Private definitions */
-
-/*
- * Initial Login Phase (web server -> servlet engine)
- */
-#define AJP14_LOGINIT_CMD	(unsigned char)0x10
 
 /*
  * Second Login Phase (servlet engine -> web server), md5 seed is received
@@ -97,316 +92,140 @@
  */
 #define AJP14_LOGNOK_CMD	(unsigned char)0x14
 
-int JK_METHOD jk_handler_logon_factory( jk_env_t *env, void **result,
+/* web-server want context info after login */
+#define AJP14_CONTEXT_INFO_NEG      0x80000000 
+
+/* web-server want context updates */
+#define AJP14_CONTEXT_UPDATE_NEG    0x40000000 
+
+/* communication could use AJP14 */
+#define AJP14_PROTO_SUPPORT_AJP14_NEG   0x00010000 
+
+int JK_METHOD jk_handler_logon_factory( jk_env_t *env,
+                                        jk_pool_t *pool,
+                                        void **result,
                                         char *type, char *name);
 
-
-/* Private functions */
-
-static void ajp14_compute_md5(jk_login_service_t *s, 
-                              jk_logger_t *l);
-
-static int ajp14_marshal_login_init_into_msgb(jk_msg_buf_t *msg, 
-                                              jk_login_service_t *s, 
-                                              jk_logger_t *l);
-
-static int ajp14_unmarshal_login_seed(jk_msg_buf_t *msg, 
-                                      jk_login_service_t *s, 
-                                      jk_logger_t *l);
-
-static  int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t *msg, 
-                                               jk_login_service_t *s, 
-                                               jk_logger_t *l);
-
-static int ajp14_unmarshal_log_ok(jk_msg_buf_t *msg, 
-                                  jk_login_service_t *s, 
-                                  jk_logger_t *l);
-
-static int ajp14_unmarshal_log_nok(jk_msg_buf_t *msg, 
-                                   jk_logger_t *l);
-
-
-static int jk_handler_logon_logon(jk_endpoint_t *ae, jk_logger_t    *l);
-static int jk_handler_logon_init( jk_worker_t *w );
-
-/* ==================== Impl =================== */
-
-int JK_METHOD jk_handler_logon_factory( jk_env_t *env, void **result,
-                                       char *type, char *name)
-{
-    jk_handler_t *h=(jk_handler_t *)malloc( sizeof( jk_handler_t));
-
-    h->init=jk_handler_logon_init;
-    *result=h;
-    return JK_TRUE;
-}
-
-
-static int jk_handler_logon_init( jk_worker_t *w ) {
-    w->logon= jk_handler_logon_logon; 
-    return JK_TRUE;
-}
-
-
-/* 
- * AJP14 Logon Phase 
- *
- * INIT + REPLY / NEGO + REPLY 
- */
-static int handle_logon(jk_endpoint_t *ae,
-                        jk_msg_buf_t	   *msg,
-                        jk_logger_t     *l)
-{
-    int	cmd;
-    
-    jk_login_service_t *jl = ae->worker->login;
-    
-    ajp14_marshal_login_init_into_msgb(msg, jl, l);
-    
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:logon - send init\n");
-    
-    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)	
-        return JK_FALSE;
-    
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:logon - wait init reply\n");
-    
-    jk_b_reset(msg);
-    
-    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
-        return JK_FALSE;
-    
-    if ((cmd = jk_b_get_byte(msg)) != AJP14_LOGSEED_CMD) {
-        l->jkLog(l, JK_LOG_ERROR,
-               "Error ajp14:logon: awaited command %d, received %d\n",
-               AJP14_LOGSEED_CMD, cmd);
-        return JK_FALSE;
-    }
-    
-    if (ajp14_unmarshal_login_seed(msg, jl, l) != JK_TRUE)
-        return JK_FALSE;
-    
-    l->jkLog(l, JK_LOG_DEBUG,
-           "Into ajp14:logon - received entropy %s\n", jl->entropy);
-    
-    ajp14_compute_md5(jl, l);
-    
-    if (ajp14_marshal_login_comp_into_msgb(msg, jl, l) != JK_TRUE)
-        return JK_FALSE;
-    
-    if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE) 
-        return JK_FALSE;
-    
-    jk_b_reset(msg);
-    
-    if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
-        return JK_FALSE;
-    
-    switch (jk_b_get_byte(msg)) {
-        
-    case AJP14_LOGOK_CMD  :	
-        if (ajp14_unmarshal_log_ok(msg, jl, l) == JK_TRUE) {
-            l->jkLog(l, JK_LOG_DEBUG,
-                   "Successfully connected to servlet-engine %s\n",
-                   jl->servlet_engine_name);
-            return JK_TRUE;
-        }
-        break;
-        
-    case AJP14_LOGNOK_CMD :
-        ajp14_unmarshal_log_nok(msg, l);
-        break;
-    }
-    
-    return JK_FALSE;
-}
-
-
-static int jk_handler_logon_logon(jk_endpoint_t *ae,
-                           jk_logger_t    *l)
-{
-    jk_pool_t     *p = ae->pool;
-    jk_msg_buf_t  *msg;
-    int 	  rc;
-    
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14:logon\n");
-
-    msg = jk_b_new(p);
-    jk_b_set_buffer_size(msg, DEF_BUFFER_SZ);
-    
-    if ((rc = handle_logon(ae, msg, l)) == JK_FALSE) 
-        ajp_close_endpoint(ae, l);
-    
-    return rc;
-}
-
-
-/* -------------------- private utils/marshaling -------------------- */
+#define AJP14_ENTROPY_SEED_LEN		32  /* we're using MD5 => 32 chars */
+#define AJP14_COMPUTED_KEY_LEN		32  /* we're using MD5 also */
 
 /*
- * Compute the MD5 with ENTROPY / SECRET KEY
- */
-static void ajp14_compute_md5(jk_login_service_t *s, 
-                              jk_logger_t        *l)
-{
-    jk_md5((const unsigned char *)s->entropy,
-           (const unsigned char *)s->secret_key, s->computed_key);
-
-    l->jkLog(l, JK_LOG_DEBUG,
-           "Into ajp14_compute_md5 (%s/%s) -> (%s)\n",
-           s->entropy, s->secret_key, s->computed_key);
-}
-
-/*
- * Build the Login Init Command
- *
- * +-------------------------+---------------------------+-------------------
- * | LOGIN INIT CMD (1 byte) | NEGOCIATION DATA (32bits) | WEB SERVER INFO
- * |                         |                           |    (CString) 
- * +-------------------------+---------------------------+-------------------
- *
- */
-static int ajp14_marshal_login_init_into_msgb(jk_msg_buf_t       *msg,
-                                              jk_login_service_t *s,
-                                              jk_logger_t        *l)
-{
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_login_init_into_msgb\n");
-    
-    /* To be on the safe side */
-    jk_b_reset(msg);
-    
-    /*
-     * LOGIN
-     */
-    if (jk_b_append_byte(msg, AJP14_LOGINIT_CMD)) 
-        return JK_FALSE;
-    
-    /*
-     * NEGOCIATION FLAGS
-     */
-    if (jk_b_append_long(msg, s->negociation))
-        return JK_FALSE;
-    
-    /*
-     * WEB-SERVER NAME
-     */
-    if (jk_b_append_string(msg, s->web_server_name)) {
-        l->jkLog(l, JK_LOG_ERROR,
-               "Error ajp14_marshal_login_init_into_msgb "
-               "- Error appending the web_server_name string\n");
-        return JK_FALSE;
-    }
-    
-    return JK_TRUE;
-}
-
-
-/*
- * Decode the Login Seed Command
+ * Decode the Login Command
  *
  * +-------------------------+---------------------------+
- * | LOGIN SEED CMD (1 byte) | MD5 of entropy (32 chars) |
+ * | LOGIN SEED CMD (1 byte) | MD5 of entropy (String) |
  * +-------------------------+---------------------------+
  *
+ * Build the reply: 
+ *   byte    LOGCOMP
+ *   String  MD5 of random + Secret key
+ *   long    negotiation
+ *   String  serverName
+ *
  */
-static int ajp14_unmarshal_login_seed(jk_msg_buf_t       *msg,
-                                      jk_login_service_t *s,
-                                      jk_logger_t        *l)
+static int jk_handler_login(jk_msg_t       *msg,
+                            jk_ws_service_t *s,
+                            jk_endpoint_t *ae,
+                            jk_logger_t *l)
 {
-    if (jk_b_get_bytes(msg, (unsigned char *)s->entropy,
-                       AJP14_ENTROPY_SEED_LEN) < 0) {
+    int rc;
+    char *entropy;
+    char computedKey[AJP14_COMPUTED_KEY_LEN];
+    char *secret=ae->worker->secret;
+
+    entropy= msg->getString( msg );
+    if( entropy==NULL ) {
         l->jkLog(l, JK_LOG_ERROR,
-               "Error ajp14_unmarshal_login_seed - can't get seed\n");
-        return JK_FALSE;
+                 "Error ajp14_unmarshal_login_seed - can't get seed\n");
+        return JK_HANDLER_FATAL;
     }
 
-    s->entropy[AJP14_ENTROPY_SEED_LEN] = 0;	/* Just to have a CString */
-    return JK_TRUE;
-}
+    l->jkLog(l, JK_LOG_INFO,
+           "handle.logseed() received entropy %s\n", entropy);
+    
+    jk_md5((const unsigned char *)entropy,
+           (const unsigned char *)secret, computedKey);
 
-/*
- * Build the Login Computed Command
- *
- * +-------------------------+---------------------------------------+
- * | LOGIN COMP CMD (1 byte) | MD5 of RANDOM + SECRET KEY (32 chars) |
- * +-------------------------+---------------------------------------+
- *
- */
-static int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t       *msg,
-                                              jk_login_service_t *s,
-                                              jk_logger_t        *l)
-{
+    l->jkLog(l, JK_LOG_DEBUG,
+             "Into ajp14_compute_md5 (%s/%s) -> (%s)\n",
+             entropy, secret, computedKey);
+
+    msg->reset( msg );
+
     l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_login_comp_into_msgb\n");
-    
-    /* To be on the safe side */
-    jk_b_reset(msg);
 
-    /*
-     * LOGIN
-     */
-    if (jk_b_append_byte(msg, AJP14_LOGCOMP_CMD)) 
-        return JK_FALSE;
+    rc=msg->appendByte( msg, AJP14_LOGCOMP_CMD);
+    if (rc!=JK_TRUE )
+        return JK_HANDLER_FATAL;
 
-    /*
-     * COMPUTED-SEED
-     */
-     if (jk_b_append_bytes(msg, (const unsigned char *)s->computed_key,
-                           AJP14_COMPUTED_KEY_LEN)) {
-         l->jkLog(l, JK_LOG_ERROR,
-                "Error ajp14_marshal_login_comp_into_msgb "
-                " - Error appending the COMPUTED MD5 bytes\n");
-        return JK_FALSE;
+    /* COMPUTED-SEED */
+    rc= msg->appendString( msg, (const unsigned char *)computedKey);
+    if( rc!=JK_TRUE ) {
+        l->jkLog(l, JK_LOG_ERROR,
+                 "handler.loginSecret() error serializing computed secret\n");
+        return JK_HANDLER_FATAL;
     }
+    ae->negociation=
+        (AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
+    msg->appendLong(msg, ae->negociation);
+    
+    rc=msg->appendString(msg, ae->worker->workerEnv->server_name);
 
-    return JK_TRUE;
+    if ( rc != JK_TRUE)
+        return JK_HANDLER_FATAL;
+    
+    return JK_HANDLER_RESPONSE;
 }
 
 
 /*
- * Decode the LogOk Command
+ * Decode the LogOk Command. After that we're done, the connection is
+ * perfect and ready.
  *
  * +--------------------+------------------------+---------------------------
  * | LOGOK CMD (1 byte) | NEGOCIED DATA (32bits) | SERVLET ENGINE INFO(CString)
  * +--------------------+------------------------+---------------------------
  *
  */
-static int ajp14_unmarshal_log_ok(jk_msg_buf_t       *msg,
-                                  jk_login_service_t *s,
-                                  jk_logger_t        *l)
+static int jk_handler_logok(jk_msg_t       *msg,
+                            jk_ws_service_t *s,
+                            jk_endpoint_t *ae,
+                            jk_logger_t *l)
 {
-    unsigned long 	nego;
-    char *			sname;
-    
-    nego = jk_b_get_long(msg);
+    unsigned long nego;
+    char *sname;
+    int rc;
+
+    nego = msg->getLong(msg);
     
     if (nego == 0xFFFFFFFF) {
         l->jkLog(l, JK_LOG_ERROR,
-               "Error ajp14_unmarshal_log_ok - can't get negociated data\n");
-        return JK_FALSE;
+                 "Error ajp14_unmarshal_log_ok - can't get negociated data\n");
+        return JK_HANDLER_FATAL;
     }
     
-    sname = (char *)jk_b_get_string(msg);
+    sname = (char *)msg->getString(msg);
     
     if (! sname) {
         l->jkLog(l, JK_LOG_ERROR,
-               "Error ajp14_unmarshal_log_ok - "
-               "can't get servlet engine name\n");
-        return JK_FALSE;
+                 "Error ajp14_unmarshal_log_ok - "
+                 "can't get servlet engine name\n");
+        return JK_HANDLER_FATAL;
     }
-
+    
     /* take care of removing previously allocated data */
-    if (s->servlet_engine_name)			
-        free(s->servlet_engine_name);
-    
-    s->servlet_engine_name = strdup(sname);
-    
-    if (! s->servlet_engine_name) {
-        l->jkLog(l, JK_LOG_ERROR,
-               "Error ajp14_unmarshal_log_ok - "
-               " can't malloc servlet engine name\n");
-        return JK_FALSE;
+    /* XXXXXXXXX NEED A SUB POOL !!!! */
+    if (ae->servletContainerName == NULL || 
+        strcmp( sname, ae->servletContainerName) != 0 )  {
+        ae->servletContainerName=(char *)ae->pool->pstrdup( ae->pool,
+                                                            sname );
     }
     
-    return JK_TRUE;
+    l->jkLog(l, JK_LOG_DEBUG,
+             "Successfully connected to servlet-engine %s\n",
+             ae->servletContainerName);
+
+    return JK_HANDLER_LAST;
 }
 
 
@@ -418,24 +237,52 @@ static int ajp14_unmarshal_log_ok(jk_msg_buf_t       *msg,
  * +---------------------+-----------------------+
  *
  */
-
-static int ajp14_unmarshal_log_nok(jk_msg_buf_t *msg,
-                                   jk_logger_t  *l)
+static int jk_handler_lognok(jk_msg_t       *msg,
+                             jk_ws_service_t *s,
+                             jk_endpoint_t *ae,
+                             jk_logger_t *l)
 {
     unsigned long   status;
     
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_unmarshal_log_nok\n");
-    
-    status = jk_b_get_long(msg);
-    
-    if (status == 0xFFFFFFFF) {
-        l->jkLog(l, JK_LOG_ERROR,
-               "Error ajp14_unmarshal_log_nok - can't get failure code\n");
-        return JK_FALSE;
-    }
+    status = msg->getLong(msg);
     
     l->jkLog(l, JK_LOG_INFO,
-           "Can't Log with servlet engine - code %08lx", status);
-    return JK_TRUE;
+             "handler.logonFailure() code %08lx", status);
+    
+    return JK_HANDLER_FATAL;
 }
 
+
+
+/** Register handlers
+ */
+int JK_METHOD jk_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
+                                        void **result,
+                                        char *type, char *name)
+{
+    jk_map_t *map;
+    jk_handler_t *h;
+        
+    map_alloc( &map, pool );
+    *result=map;
+    
+    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h->name="login";
+    h->messageId=AJP14_LOGSEED_CMD;
+    h->callback=jk_handler_login;
+    map_put( map, h->name, h, NULL );
+
+    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h->name="logOk";
+    h->messageId=AJP14_LOGOK_CMD;
+    h->callback=jk_handler_logok;
+    map_put( map, h->name, h, NULL );
+
+    h=(jk_handler_t *)pool->calloc( pool, sizeof( jk_handler_t));
+    h->name="logNok";
+    h->messageId=AJP14_LOGNOK_CMD;
+    h->callback=jk_handler_lognok;
+    map_put( map, h->name, h, NULL );
+
+    return JK_TRUE;
+}
