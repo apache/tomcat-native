@@ -490,6 +490,9 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->read             = ws_read;
     s->write            = ws_write;
 
+    /* Clear RECO status */
+    s->reco_status  = RECO_NONE;
+
     s->auth_type    = NULL_FOR_EMPTY(r->ap_auth_type);
     s->remote_user  = NULL_FOR_EMPTY(r->user);
 
