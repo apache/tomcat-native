@@ -209,7 +209,7 @@ public class ChannelSocket extends JkHandler {
         tp.setDaemon( b );
     }
 
-    public void getDaemon() {
+    public boolean getDaemon() {
         return tp.getDaemon();
     }
     
