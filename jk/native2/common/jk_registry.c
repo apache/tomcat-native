@@ -85,33 +85,33 @@
  */
 
 int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
-                                       char *type, char *name);
+                                       const char *type, const char *name);
 
                                    
 int JK_METHOD jk_worker_lb_factory(jk_env_t *env, void **result,
-                                   char *type, char *name);
+                                   const char *type, const char *name);
 
 
 int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
-                                    char *type, char *name);
+                                    const char *type, const char *name);
 
 int JK_METHOD jk_worker_ajp12_factory(jk_env_t *env, void **result,
-                                    char *type, char *name);
+                                      const char *type, const char *name);
 
 /* Factories for 'new' types. We use the new factory interface,
  *  workers will be updated later 
  */
 int JK_METHOD jk_channel_socket_factory(jk_env_t *env, void **result,
-					char *type, char *name);
+					const char *type, const char *name);
 
 int JK_METHOD jk_workerEnv_factory(jk_env_t *env, void **result,
-                                   char *type, char *name);
+                                   const char *type, const char *name);
 
 int JK_METHOD jk_uriMap_factory(jk_env_t *env, void **result,
-                                   char *type, char *name);
+                                const char *type, const char *name);
 
 int JK_METHOD jk_logger_file_factory(jk_env_t *env, void **result,
-                                     char *type, char *name);
+                                     const char *type, const char *name);
 
 
 /**
@@ -134,21 +134,21 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
    * and because the MetroWerks compiler (used for NetWare) treats this as an
    * error, I'm casting the function pointers to (void *) - mmanders
    */
-  env->registerFactory( env, "logger", "file",   &jk_logger_file_factory );
-  env->registerFactory( env, "workerEnv", "default", &jk_workerEnv_factory );
-  env->registerFactory( env, "uriMap", "default",    &jk_uriMap_factory );
-  env->registerFactory( env, "worker", "ajp13", &jk_worker_ajp14_factory );
-  env->registerFactory( env, "worker", "ajp14", &jk_worker_ajp14_factory );
-  env->registerFactory( env, "worker", "lb",    &jk_worker_lb_factory );
-  env->registerFactory( env, "channel", "socket", &jk_channel_socket_factory );
+  env->registerFactory( env, "logger", "file",   jk_logger_file_factory );
+  env->registerFactory( env, "workerEnv", "default", jk_workerEnv_factory );
+  env->registerFactory( env, "uriMap", "default",    jk_uriMap_factory );
+  env->registerFactory( env, "worker", "ajp13", jk_worker_ajp14_factory );
+  env->registerFactory( env, "worker", "ajp14", jk_worker_ajp14_factory );
+  env->registerFactory( env, "worker", "lb",    jk_worker_lb_factory );
+  env->registerFactory( env, "channel", "socket", jk_channel_socket_factory );
 
   /* Optional objects */
 
 #ifdef HAVE_JNI
-  env->registerFactory( env, "worker", "jni",   &jk_worker_jni_factory );
+  env->registerFactory( env, "worker", "jni",   jk_worker_jni_factory );
 #endif
 #ifdef AJP12
-  env->registerFactory( env, "worker", "ajp12", &jk_worker_ajp12_factory );
+  env->registerFactory( env, "worker", "ajp12", jk_worker_ajp12_factory );
 #endif
 
 

@@ -63,9 +63,11 @@
 
 #include "jk_global.h"
 #include "jk_pool.h"
+#include "jk_env.h"
 #include "jk_msg_buff.h"
 #include "jk_logger.h"
 #include "jk_service.h"
+#include "jk_handler.h"
 
 #define CBASE_INC_SIZE   (8)    /* Allocate memory by step of 8 URIs : ie 8 URI by context */
 #define URI_INC_SIZE (8)        /* Allocate memory by step of 8 CONTEXTs : ie 8 contexts by worker */
@@ -137,6 +139,35 @@ jk_context_item_t *context_add_base(jk_context_t *c, char *cbase);
 
 int context_add_uri(jk_context_t *c, char *cbase, char *uri);
 
+static int jk_handler_discovery_init( jk_worker_t *w );
+
+static int jk_handler_discovery_discovery(jk_endpoint_t *ae,jk_workerEnv_t *we,
+                                          jk_logger_t *l);
+
+static int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
+                                                 char         *virtual,
+                                                 jk_logger_t  *l);
+
+static int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
+                                        jk_context_t *c,
+                                        jk_logger_t  *l);
+
+static int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
+                                                 jk_context_t *c,
+                                                 char         *cname,
+                                                 jk_logger_t  *l);
+
+static int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
+                                               jk_context_t *c,
+                                               jk_logger_t  *l);
+
+static int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg,
+                                              jk_context_t *c,
+                                              jk_logger_t  *l);
+
+int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, void **result,
+                                            char *type, char *name);
+
 /*
  * Context Query (web server -> servlet engine), which URI are handled by servlet engine ?
  */
@@ -162,6 +193,24 @@ int context_add_uri(jk_context_t *c, char *cbase, char *uri);
  * Context Status Reply (servlet engine -> web server), status of context
  */
 #define AJP14_CONTEXT_STATE_REP_CMD	(unsigned char)0x1D
+
+/* ==================== Constructor and impl. ==================== */
+
+int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, void **result,
+                                            char *type, char *name)
+{
+    jk_handler_t *h=(jk_handler_t *)malloc( sizeof( jk_handler_t));
+
+    h->init=jk_handler_discovery_init;
+    *result=h;
+    return JK_TRUE;
+}
+
+
+static int jk_handler_discovery_init( jk_worker_t *w ) {
+    return JK_TRUE;
+}
+
 
 static int context_realloc(jk_context_t *c)
 {
@@ -331,7 +380,7 @@ static int handle_discovery(jk_endpoint_t  *ae,
     return JK_TRUE;
 }
  
-int discovery(jk_endpoint_t *ae,
+static int jk_handler_discovery_discovery(jk_endpoint_t *ae,
               jk_workerEnv_t *we,
               jk_logger_t    *l)
 {
@@ -360,9 +409,9 @@ int discovery(jk_endpoint_t *ae,
  * +--------------------------+---------------------------------+
  *
  */
-int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
-                                          char         *virtual,
-                                          jk_logger_t  *l)
+static int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
+                                                 char         *virtual,
+                                                 jk_logger_t  *l)
 {
     l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_context_query_into_msgb\n");
     
@@ -404,9 +453,9 @@ int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
  *-------------------+-------------------------------+-----------+
  */
 
-int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
-                                 jk_context_t *c,
-                                 jk_logger_t  *l)
+static int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
+                                        jk_context_t *c,
+                                        jk_logger_t  *l)
 {
     char *vname;
     char *cname;
@@ -505,10 +554,10 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
  * +----------------------------+----------------------------------+----------
  *
  */
-int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
-                                          jk_context_t *c,
-                                          char         *cname,
-                                          jk_logger_t  *l)
+static int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
+                                                 jk_context_t *c,
+                                                 char         *cname,
+                                                 jk_logger_t  *l)
 {
     jk_context_item_t *ci;
     int                i;
@@ -594,9 +643,9 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
  *CONTEXT NAME (CString (*)) | UP/DOWN (1 byte) | .. |
  * ------------------------+------------------+----+
  */
-int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
-                                        jk_context_t *c,
-                                        jk_logger_t  *l)
+static int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
+                                               jk_context_t *c,
+                                               jk_logger_t  *l)
 {
     char                *vname;
     char                *cname;
@@ -666,9 +715,9 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
  * ----------------------+------------------+
  * 
  */
-int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg,
-                                       jk_context_t *c,
-                                       jk_logger_t  *l)
+static int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg,
+                                              jk_context_t *c,
+                                              jk_logger_t  *l)
 {
     return (ajp14_unmarshal_context_state_reply(msg, c, l));
 }

@@ -62,7 +62,7 @@ jk_env_t *jk_env_singleton;
 
 /* Private methods 
 */
-static jk_env_initEnv( jk_env_t *env, char *id );
+static void jk_env_initEnv( jk_env_t *env, char *id );
 
 /* XXX We should have one env per thread to avoid sync problems. 
    The env will provide access to pools, etc 
@@ -144,7 +144,7 @@ static void JK_METHOD jk_env_registerFactory(jk_env_t *env,
   map_put( env->_registry, typeName, fact, &old );
 }
 
-static jk_env_initEnv( jk_env_t *env, char *id ) {
+static void jk_env_initEnv( jk_env_t *env, char *id ) {
   /*   env->logger=NULL; */
   /*   map_alloc( & env->properties ); */
   env->getFactory= jk_env_getFactory; 

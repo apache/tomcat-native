@@ -193,6 +193,8 @@ struct jni_endpoint {
 };
 typedef struct jni_endpoint jni_endpoint_t;
 
+int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
+                                    char *type, char *name);
 
 static int load_jvm_dll(jni_worker_t *p,
                         jk_logger_t *l);
@@ -228,6 +230,14 @@ static JNIEnv *attach_to_jvm(jni_worker_t *p,
 static void detach_from_jvm(jni_worker_t *p, 
                             jk_logger_t *l);
 
+static char **jk_parse_sysprops(jk_pool_t *p, 
+                                const char *sysprops);
+
+static int jk_file_exists(const char *f);
+
+static void jk_append_libpath(jk_pool_t *p, 
+                              const char *libpath);
+
 
 #if defined LINUX && defined APACHE2_SIGHACK
 static void linux_signal_hack() 
@@ -255,8 +265,7 @@ static void print_signals( sigset_t *sset) {
 }
 #endif
 
-
-char **jk_parse_sysprops(jk_pool_t *p, 
+static char **jk_parse_sysprops(jk_pool_t *p, 
                          const char *sysprops)
 {
     char **rc = NULL;
@@ -290,8 +299,7 @@ char **jk_parse_sysprops(jk_pool_t *p,
     return rc;
 }
 
-
-int jk_file_exists(const char *f)
+static int jk_file_exists(const char *f)
 {
     if(f) {
         struct stat st;
@@ -303,8 +311,8 @@ int jk_file_exists(const char *f)
 }
 
 
-void jk_append_libpath(jk_pool_t *p, 
-                       const char *libpath)
+static void jk_append_libpath(jk_pool_t *p, 
+                              const char *libpath)
 {
     char *env = NULL;
     char *current = getenv(PATH_ENV_VARIABLE);
@@ -703,22 +711,21 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
                                     char *type, char *name)
 {
     jk_logger_t *l=env->logger;
-    jk_worker_t **w=result;
     jni_worker_t *private_data;
 
     l->jkLog(l, JK_LOG_DEBUG, "Into jni_worker_factory\n");
 
-    if(!name || !w) {
+    if(!name) {
 	    l->jkLog(l, JK_LOG_EMERG, 
                "In jni_worker_factory, assert failed - invalid parameters\n");
 	    return JK_FALSE;
     }
 
     if(the_singleton_jni_worker) {
-	    l->jkLog(l, JK_LOG_DEBUG, 
-               "In jni_worker_factory, instance already created\n");
-        *w = the_singleton_jni_worker;
-	    return JK_TRUE;
+        l->jkLog(l, JK_LOG_DEBUG, 
+                 "In jni_worker_factory, instance already created\n");
+        *result = the_singleton_jni_worker;
+        return JK_TRUE;
     }
 
     private_data = (jni_worker_t *)malloc(sizeof(jni_worker_t ));
@@ -730,15 +737,15 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
     }
 
     jk_open_pool(&private_data->p,
-	             private_data->buf,
+                 private_data->buf,
                  sizeof(jk_pool_atom_t) * TINY_POOL_SIZE);
 
     private_data->name = private_data->p.pstrdup(&private_data->p, name);
 
     if(!private_data->name) {
         l->jkLog(l, JK_LOG_ERROR, 
-               "In jni_worker_factory, memory allocation error\n");
-	    private_data->p.close(&private_data->p);
+                 "In jni_worker_factory, memory allocation error\n");
+        private_data->p.close(&private_data->p);
         free(private_data);
         return JK_FALSE;
     }
@@ -771,7 +778,7 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
     private_data->worker.get_endpoint   = get_endpoint;
     private_data->worker.destroy        = destroy;
 
-    *w = &private_data->worker;
+    *result = &private_data->worker;
     the_singleton_jni_worker = &private_data->worker;
 
     l->jkLog(l, JK_LOG_DEBUG, "Done jni_worker_factory\n");

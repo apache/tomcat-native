@@ -68,25 +68,10 @@
 
 #define DEFAULT_WORKER              ("ajp13")
 
-int jk_get_worker_list(jk_map_t *m,
-                       char ***list,
-                       unsigned *num_of_wokers)
-{
-    if(m && list && num_of_wokers) {
-        char **ar = map_get_string_list(m, 
-                                        "worker.list", 
-                                        num_of_wokers, 
-                                        DEFAULT_WORKER );
-        if(ar)  {
-            *list = ar;     
-            return JK_TRUE;
-        }
-        *list = NULL;   
-        *num_of_wokers = 0;
-    }
+int JK_METHOD jk_workerEnv_factory( jk_env_t *env, void **result,
+                                    const char *type, const char *name);
 
-    return JK_FALSE;
-}
+static void jk_workerEnv_close(jk_workerEnv_t *_this);
 
 /**
  *  Init the workers, prepare the we.
@@ -98,14 +83,17 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
     jk_map_t *init_data=_this->init_data;
     char **worker_list  = NULL;
     jk_logger_t *l=_this->l;
-    unsigned i;
+    int i;
     int err;
 
     /*     _this->init_data=init_data; */
-    
-    if(!jk_get_worker_list(init_data, 
-                           &worker_list, 
-                           &_this->num_of_workers)) {
+
+    worker_list = map_get_string_list(init_data, 
+                                      "worker.list", 
+                                      &_this->num_of_workers, 
+                                      DEFAULT_WORKER );
+    if(worker_list==NULL || _this->num_of_workers<= 0 ) {
+        /* assert() - we pass default worker, we should get something back */
         return JK_FALSE;
     }
 
@@ -143,9 +131,9 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
 }
 
 
-void jk_workerEnv_close(jk_workerEnv_t *_this)
+static void jk_workerEnv_close(jk_workerEnv_t *_this)
 {
-    jk_logger_t *l;
+    jk_logger_t *l=_this->l;
     int sz;
     int i;
     
@@ -210,6 +198,8 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
 
     w->name=(char *)name;
     w->workerEnv=_this;
+
+    jk_pool_create( & w->pool, NULL, 1024 );
     
     err=w->validate(w, init_data, _this, l);
     
@@ -237,7 +227,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
 }
 
 int JK_METHOD jk_workerEnv_factory( jk_env_t *env, void **result,
-                                    char *type, char *name)
+                                    const char *type, const char *name)
 {
     jk_logger_t *l=env->logger;
     jk_workerEnv_t *_this;
@@ -311,7 +301,7 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, void **result,
 
     if( _this->uriMap==NULL ) {
         l->jkLog(l, JK_LOG_ERROR, "Error getting uriMap implementation\n");
-        return;
+        return JK_FALSE;
     }
 
     _this->uriMap->workerEnv = _this;

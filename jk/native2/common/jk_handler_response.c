@@ -60,6 +60,105 @@
 #include "jk_msg_buff.h"
 #include "jk_env.h"
 #include "jk_requtil.h"
+#include "jk_env.h"
+#include "jk_handler.h"
+#include "jk_endpoint.h"
+
+static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
+                                  jk_ws_service_t  *s,
+                                  jk_endpoint_t *ae,
+                                  jk_logger_t    *l);
+
+int ajp_handle_sendChunk(jk_msg_buf_t   *msg,
+                         jk_ws_service_t  *r,
+                         jk_endpoint_t *ae,
+                         jk_logger_t    *l);
+
+
+int ajp_handle_startResponse(jk_msg_buf_t   *msg,
+                             jk_ws_service_t  *r,
+                             jk_endpoint_t *ae,
+                             jk_logger_t    *l);
+
+int ajp_handle_getChunk(jk_msg_buf_t   *msg,
+                         jk_ws_service_t  *r,
+                         jk_endpoint_t *ae,
+                         jk_logger_t    *l);
+
+/** SEND_HEADERS handler
+ */
+int ajp_handle_startResponse(jk_msg_buf_t   *msg,
+                             jk_ws_service_t  *r,
+                             jk_endpoint_t *ae,
+                             jk_logger_t    *l)
+{
+    int err;
+    
+    err=ajp_unmarshal_response(msg, r, ae, l);
+    if( err!=JK_TRUE ) {
+        l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - ajp_unmarshal_response failed\n");
+        return JK_AJP13_ERROR;
+    }
+    err=r->start_response(r, r->status, r->msg, 
+                          (const char * const *)r->out_header_names,
+                          (const char * const *)r->out_header_values,
+                          r->out_headers);
+    if( err!=JK_TRUE ) {
+        l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - start_response failed\n");
+        return JK_CLIENT_ERROR;
+    }
+    return JK_TRUE;
+}
+
+/** SEND_BODY_CHUNK handler
+ */
+int ajp_handle_sendChunk(jk_msg_buf_t   *msg,
+                         jk_ws_service_t  *r,
+                         jk_endpoint_t *ae,
+                         jk_logger_t    *l)
+{
+    int err;
+    unsigned len = (unsigned)jk_b_get_int(msg);
+
+    err=r->write(r, jk_b_get_buff(msg) + jk_b_get_pos(msg), len);
+    if( err!= JK_TRUE ) {
+        l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - write failed\n");
+        return JK_CLIENT_ERROR;
+    }
+
+    return JK_TRUE;
+}
+
+/** SEND_BODY_CHUNK handler
+ */
+int ajp_handle_getChunk(jk_msg_buf_t   *msg,
+                        jk_ws_service_t  *r,
+                        jk_endpoint_t *ae,
+                        jk_logger_t    *l)
+{
+    int len = jk_b_get_int(msg);
+    
+    if(len > AJP13_MAX_SEND_BODY_SZ) {
+        len = AJP13_MAX_SEND_BODY_SZ;
+    }
+    if(len > ae->left_bytes_to_send) {
+        len = ae->left_bytes_to_send;
+    }
+    if(len < 0) {
+        len = 0;
+    }
+            
+    /* the right place to add file storage for upload */
+    if ((len = ajp_read_into_msg_buff(ae, r, msg, len, l)) >= 0) {
+        r->content_read += len;
+        return JK_AJP13_HAS_RESPONSE;
+    }                  
+            
+    l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - ajp_read_into_msg_buff failed\n");
+    return JK_INTERNAL_ERROR;	    
+}
+
+
 
 
 /*
@@ -86,10 +185,10 @@ body_chunk :=
     body    length*(var binary)
 
  */
-int ajp_unmarshal_response(jk_msg_buf_t   *msg,
-                           jk_ws_service_t  *s,
-                           jk_endpoint_t *ae,
-                           jk_logger_t    *l)
+static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
+                                  jk_ws_service_t  *s,
+                                  jk_endpoint_t *ae,
+                                  jk_logger_t    *l)
 {
     jk_pool_t * p = &ae->pool;
 

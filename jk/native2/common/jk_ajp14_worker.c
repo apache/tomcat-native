@@ -72,29 +72,84 @@
 #include "jk_service.h"
 #include "jk_env.h"
 
-/* Ajp14 methods - XXX move to handler abstraction */
-int logon(jk_endpoint_t *ae,
-          jk_logger_t    *l);
+int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
+                                       char *type, char *name);
 
-int discovery(jk_endpoint_t *ae,
-              jk_workerEnv_t *we,
-              jk_logger_t    *l);
+static int JK_METHOD
+jk_worker_ajp14_service(jk_endpoint_t   *e, jk_ws_service_t *s,
+                        jk_logger_t     *l, int *is_recoverable_error);
 
-/*
- * Functions
- */
-static int validate(jk_worker_t *pThis,
-             jk_map_t    *props,
-             jk_workerEnv_t *we,
-             jk_logger_t *l );
+static int JK_METHOD
+jk_worker_ajp14_validate(jk_worker_t *pThis, jk_map_t    *props,
+                         jk_workerEnv_t *we, jk_logger_t *l );
 
-int JK_METHOD ajp_done(jk_endpoint_t **e,
-                       jk_logger_t    *l);
+static int JK_METHOD
+jk_worker_ajp14_done(jk_endpoint_t **e, jk_logger_t    *l);
+
+static int JK_METHOD
+jk_worker_ajp14_getEndpoint(jk_worker_t *_this, jk_endpoint_t **e,
+                            jk_logger_t    *l);
+
+static int JK_METHOD
+jk_worker_ajp14_init(jk_worker_t *_this, jk_map_t    *props, 
+                     jk_workerEnv_t *we, jk_logger_t *l);
+
+static int JK_METHOD
+jk_worker_ajp14_destroy(jk_worker_t **pThis, jk_logger_t *l);
 
 
-
-/* -------------------- Method -------------------- */
 #define	JK_RETRIES 3
+
+/* -------------------- Impl -------------------- */
+
+int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
+                                       char *type, char *name)
+{
+    jk_logger_t *l=env->logger;
+    jk_worker_t *w=(jk_worker_t *)malloc(sizeof(jk_worker_t));
+   
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_worker_factory\n");
+
+    if (name == NULL || w == NULL) {
+        l->jkLog(l, JK_LOG_ERROR, "In ajp14_worker_factory, NULL parameters\n");
+        return JK_FALSE;
+    }
+
+    w->name = strdup(name);
+    
+    w->proto= AJP14_PROTO;
+
+    w->login= (jk_login_service_t *)malloc(sizeof(jk_login_service_t));
+
+    if (w->login == NULL) {
+        l->jkLog(l, JK_LOG_ERROR,
+               "In ajp14_worker_factory, malloc failed for login area\n");
+        return JK_FALSE;
+    }
+	
+    memset(w->login, 0, sizeof(jk_login_service_t));
+    
+    w->login->negociation=
+        (AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
+    w->login->web_server_name=NULL; /* must be set in init */
+    
+    w->ep_cache_sz= 0;
+    w->ep_cache= NULL;
+    w->connect_retry_attempts= AJP_DEF_RETRY_ATTEMPTS;
+
+    w->channel= NULL;
+   
+    w->validate= jk_worker_ajp14_validate;
+    w->init= jk_worker_ajp14_init;
+    w->get_endpoint= jk_worker_ajp14_getEndpoint;
+    w->destroy=jk_worker_ajp14_destroy;
+
+    w->logon= NULL; 
+
+    *result = w;
+
+    return JK_TRUE;
+}
 
 /*
  * service is now splitted in ajp_send_request and ajp_get_reply
@@ -103,10 +158,11 @@ int JK_METHOD ajp_done(jk_endpoint_t **e,
  * We serve here the request, using AJP13/AJP14 (e->proto)
  *
  */
-int JK_METHOD ajp_service(jk_endpoint_t   *e, 
-                          jk_ws_service_t *s,
-                          jk_logger_t     *l,
-                          int             *is_recoverable_error)
+static int JK_METHOD
+jk_worker_ajp14_service(jk_endpoint_t   *e, 
+                        jk_ws_service_t *s,
+                        jk_logger_t     *l,
+                        int  *is_recoverable_error)
 {
     int i;
     int err;
@@ -215,10 +271,11 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
 /*
  * Validate the worker (ajp13/ajp14)
  */
-static int validate(jk_worker_t *pThis,
-                    jk_map_t    *props,
-                    jk_workerEnv_t *we,
-                    jk_logger_t *l)
+static int JK_METHOD
+jk_worker_ajp14_validate(jk_worker_t *pThis,
+                         jk_map_t    *props,
+                         jk_workerEnv_t *we,
+                         jk_logger_t *l)
 {
     int    port;
     char * host;
@@ -278,14 +335,8 @@ static int validate(jk_worker_t *pThis,
 }
 
 
-int ajp_destroy(jk_worker_t **pThis,
-                jk_logger_t *l,
-                int          proto)
-{
-}
-
-int JK_METHOD ajp_done(jk_endpoint_t **e,
-                       jk_logger_t    *l)
+static int JK_METHOD
+jk_worker_ajp14_done(jk_endpoint_t **e,jk_logger_t    *l)
 {
     l->jkLog(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done\n");
 
@@ -301,7 +352,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e,
                 int rc;
                 JK_ENTER_CS(&w->cs, rc);
                 if(rc) {
-                    unsigned i;
+                    int i;
 
                     for(i = 0 ; i < w->ep_cache_sz ; i++) {
                         if(!w->ep_cache[i]) {
@@ -328,9 +379,10 @@ int JK_METHOD ajp_done(jk_endpoint_t **e,
     return JK_FALSE;
 }
 
-static int JK_METHOD get_endpoint(jk_worker_t *_this,
-                                  jk_endpoint_t **e,
-                                  jk_logger_t    *l)
+static int JK_METHOD
+jk_worker_ajp14_getEndpoint(jk_worker_t *_this,
+                            jk_endpoint_t **e,
+                            jk_logger_t    *l)
 {
     jk_endpoint_t *ae = NULL;
 
@@ -343,7 +395,7 @@ static int JK_METHOD get_endpoint(jk_worker_t *_this,
         int rc;
         JK_ENTER_CS(&_this->cs, rc);
         if (rc) {
-            unsigned i;
+            int i;
             
             for (i = 0 ; i < _this->ep_cache_sz ; i++) {
                 if (_this->ep_cache[i]) {
@@ -372,16 +424,17 @@ static int JK_METHOD get_endpoint(jk_worker_t *_this,
     ae->worker = _this;
     ae->proto = _this->proto;
     ae->channelData = NULL;
-    ae->service = ajp_service;
-    ae->done = ajp_done;
+    ae->service = jk_worker_ajp14_service;
+    ae->done = jk_worker_ajp14_done;
     *e = ae;
     return JK_TRUE;
 }
 
-static int JK_METHOD init(jk_worker_t *_this,
-                          jk_map_t    *props, 
-                          jk_workerEnv_t *we,
-                          jk_logger_t *l)
+static int JK_METHOD
+jk_worker_ajp14_init(jk_worker_t *_this,
+                     jk_map_t    *props, 
+                     jk_workerEnv_t *we,
+                     jk_logger_t *l)
 {
     jk_endpoint_t *ae;
     int             rc;
@@ -437,25 +490,28 @@ static int JK_METHOD init(jk_worker_t *_this,
         return JK_FALSE;
     }
     
-    if (get_endpoint(_this, &ae, l) == JK_FALSE)
-        return JK_FALSE;
-    
-    if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
+/*     if (get_endpoint(_this, &ae, l) == JK_FALSE) */
+/*         return JK_FALSE; */
+
+    /* Temporary commented out. Will be added back after fixing
+       few more things ( like what happens if apache is started before tomcat).
+     */
+/*     if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) { */
         
-	/* connection stage passed - try to get context info
-	 * this is the long awaited autoconf feature :)
-	 */
-        rc = discovery(ae, we, l);
-        ajp_close_endpoint(ae, l);
-        return rc;
-    }
+ 	/* connection stage passed - try to get context info 
+ 	 * this is the long awaited autoconf feature :) 
+ 	 */ 
+/*         rc = discovery(ae, we, l); */
+/*         ajp_close_endpoint(ae, l); */
+/*         return rc; */
+/*     } */
     
     return JK_TRUE;
 }
 
 
-static int JK_METHOD destroy(jk_worker_t **pThis,
-                             jk_logger_t *l)
+static int JK_METHOD
+jk_worker_ajp14_destroy(jk_worker_t **pThis, jk_logger_t *l)
 {
     jk_worker_t *aw = *pThis;
     
@@ -485,7 +541,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
              aw->ep_cache_sz);
 
     if(aw->ep_cache_sz > 0 ) {
-        unsigned i;
+        int i;
         for(i = 0 ; i < aw->ep_cache_sz ; i++) {
             if(aw->ep_cache[i]) {
                 ajp_close_endpoint(aw->ep_cache[i], l);
@@ -501,54 +557,5 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
     }
 
     free(aw);
-    return JK_TRUE;
-}
-
-int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
-                                       char *type, char *name)
-{
-    jk_logger_t *l=env->logger;
-    jk_worker_t *w=(jk_worker_t *)malloc(sizeof(jk_worker_t));
-   
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_worker_factory\n");
-
-    if (name == NULL || w == NULL) {
-        l->jkLog(l, JK_LOG_ERROR, "In ajp14_worker_factory, NULL parameters\n");
-        return JK_FALSE;
-    }
-
-    w->name = strdup(name);
-    
-    w->proto= AJP14_PROTO;
-
-    w->login= (jk_login_service_t *)malloc(sizeof(jk_login_service_t));
-
-    if (w->login == NULL) {
-        l->jkLog(l, JK_LOG_ERROR,
-               "In ajp14_worker_factory, malloc failed for login area\n");
-        return JK_FALSE;
-    }
-	
-    memset(w->login, 0, sizeof(jk_login_service_t));
-    
-    w->login->negociation=
-        (AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
-    w->login->web_server_name=NULL; /* must be set in init */
-    
-    w->ep_cache_sz= 0;
-    w->ep_cache= NULL;
-    w->connect_retry_attempts= AJP_DEF_RETRY_ATTEMPTS;
-
-    w->channel= NULL;
-   
-    w->validate= validate;
-    w->init= init;
-    w->get_endpoint= get_endpoint;
-    w->destroy=destroy;
-
-    w->logon= logon; 
-
-    *result = w;
-
     return JK_TRUE;
 }

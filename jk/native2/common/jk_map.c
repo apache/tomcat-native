@@ -512,7 +512,7 @@ char *map_getStrProp(jk_map_t *m,
                      const char *objType,
                      const char *objName,
                      const char *pname,
-                     const char *def)
+                     char *def)
 {
     char buf[1024];
 
@@ -544,5 +544,44 @@ int map_getIntProp(jk_map_t *m,
 
     sprintf(buf, "%s.%s.%s", objType, objName, pname);
     return map_get_int(m, buf, def);
+}
+
+double map_getDoubleProp(jk_map_t *m,
+                         const char *objType,
+                         const char *objName,
+                         const char *pname,
+                         const double def)
+{
+    char buf[1024];
+
+    if( m==NULL ||
+        objType==NULL ||
+        objName==NULL ||
+        pname==NULL ) {
+        return def;
+    }
+
+    sprintf(buf, "%s.%s.%s", objType, objName, pname);
+    return map_get_double(m, buf, def);
+}
+
+char **map_getListProp(jk_map_t *m,
+                    const char *objType,
+                    const char *objName,
+                    const char *pname, 
+                    unsigned *size)
+{
+    char buf[1024];
+
+    if( m==NULL ||
+        objType==NULL ||
+        objName==NULL ||
+        pname==NULL ) {
+        return NULL;
+    }
+
+    sprintf(buf, "%s.%s.%s", objType, objName, pname);
+
+    return map_get_string_list(m, buf, size, NULL);
 }
 

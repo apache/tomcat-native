@@ -67,6 +67,8 @@
 #include "jk_md5.h"
 #include "jk_logger.h"
 #include "jk_service.h"
+#include "jk_env.h"
+#include "jk_handler.h"
 
 /* Private definitions */
 
@@ -95,6 +97,9 @@
  */
 #define AJP14_LOGNOK_CMD	(unsigned char)0x14
 
+int JK_METHOD jk_handler_logon_factory( jk_env_t *env, void **result,
+                                        char *type, char *name);
+
 
 /* Private functions */
 
@@ -119,6 +124,28 @@ static int ajp14_unmarshal_log_ok(jk_msg_buf_t *msg,
 
 static int ajp14_unmarshal_log_nok(jk_msg_buf_t *msg, 
                                    jk_logger_t *l);
+
+
+static int jk_handler_logon_logon(jk_endpoint_t *ae, jk_logger_t    *l);
+static int jk_handler_logon_init( jk_worker_t *w );
+
+/* ==================== Impl =================== */
+
+int JK_METHOD jk_handler_logon_factory( jk_env_t *env, void **result,
+                                       char *type, char *name)
+{
+    jk_handler_t *h=(jk_handler_t *)malloc( sizeof( jk_handler_t));
+
+    h->init=jk_handler_logon_init;
+    *result=h;
+    return JK_TRUE;
+}
+
+
+static int jk_handler_logon_init( jk_worker_t *w ) {
+    w->logon= jk_handler_logon_logon; 
+    return JK_TRUE;
+}
 
 
 /* 
@@ -193,8 +220,9 @@ static int handle_logon(jk_endpoint_t *ae,
     return JK_FALSE;
 }
 
-int logon(jk_endpoint_t *ae,
-          jk_logger_t    *l)
+
+static int jk_handler_logon_logon(jk_endpoint_t *ae,
+                           jk_logger_t    *l)
 {
     jk_pool_t     *p = &ae->pool;
     jk_msg_buf_t  *msg;
@@ -210,6 +238,7 @@ int logon(jk_endpoint_t *ae,
     
     return rc;
 }
+
 
 /* -------------------- private utils/marshaling -------------------- */
 

@@ -55,24 +55,45 @@
  *                                                                           *
  * ========================================================================= */
 
-/***************************************************************************
- * Description: URI to worker map object.                                  *
- * Maps can be                                                             *
- *                                                                         *
- * Exact Context -> /exact/uri=worker e.g. /examples/do*=ajp12             *
- * Context Based -> /context/*=worker e.g. /examples/*=ajp12               *
- * Context and suffix ->/context/*.suffix=worker e.g. /examples/ *.jsp=ajp12*
- *                                                                         *
- * This lets us either partition the work among the web server and the     *
- * servlet container.                                                      *
- *                                                                         *
- * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Version:     $Revision$                                           *
- ***************************************************************************/
+/**
+ * Description: URI to worker map object.                          
+ * Maps can be                                                     
+ *                                                                 
+ * Exact Context -> /exact/uri=worker e.g. /examples/do[STAR]=ajp12
+ * Context Based -> /context/[STAR]=worker e.g. /examples/[STAR]=ajp12
+ * Context and suffix ->/context/[STAR].suffix=worker e.g. /examples/[STAR].jsp=ajp12
+ *                                                                         
+ * This lets us either partition the work among the web server and the     
+ * servlet container.                                                      
+ *                                                                         
+ * Author:      Gal Shachor <shachor@il.ibm.com>                           
+ * Version:     $Revision$                                           
+ */
 
 #include "jk_pool.h"
 #include "jk_env.h"
 #include "jk_uriMap.h"
+
+int JK_METHOD jk_uriMap_factory( jk_env_t *env, void **result,
+                                 const char *type, const char *name);
+
+static int jk_uriMap_init(jk_uriMap_t *_this,
+                          jk_workerEnv_t *workerEnv,
+                          jk_map_t *init_data );
+
+static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
+                                         const char *vhost,
+                                         const char *puri, 
+                                         const char *pworker );
+
+static INLINE const char *findExtension( const char *uri );
+
+static jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
+                                     const char *vhost,
+                                     const char *uri );
+
+static int jk_uriMap_checkUri(jk_uriMap_t *_this, 
+                              const char *uri );
 
 /*
  * We are now in a security nightmare, it maybe that somebody sent 
@@ -88,7 +109,7 @@
 static int jk_uriMap_checkUri(jk_uriMap_t *_this, 
                               const char *uri )
 {
-    unsigned i;    
+    int i;    
 
     for(i = 0 ; i < _this->size ; i++) {
         if(MATCH_TYPE_SUFFIX == _this->maps[i]->match_type) {
@@ -163,9 +184,9 @@ static jk_uriEnv_t *jk_uriMap_createUriEnv(jk_uriMap_t *_this ) {
 }
 
 static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
-                                         char *vhost,
-                                         char *puri, 
-                                         char *pworker )
+                                         const char *vhost,
+                                         const char *puri, 
+                                         const char *pworker )
 {
     jk_logger_t *l=_this->workerEnv->l;
     jk_uriEnv_t *uwr;
@@ -235,8 +256,8 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
     }
 
     /*
-     * Now, lets check that the pattern is /context/*.suffix
-     * or /context/*
+     * Now, lets check that the pattern is /context/STAR.suffix
+     * or /context/STAR
      * we need to have a '/' then a '*' and the a '.' or a
      * '/' then a '*'
      */
@@ -287,9 +308,9 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
     return uwr;
 }
 
-int jk_uriMap_init(jk_uriMap_t *_this,
-                   jk_workerEnv_t *workerEnv,
-                   jk_map_t *init_data )
+static int jk_uriMap_init(jk_uriMap_t *_this,
+                          jk_workerEnv_t *workerEnv,
+                          jk_map_t *init_data )
 {
     int rc=JK_TRUE;
     int sz;
@@ -365,7 +386,7 @@ static INLINE int last_index_of(const char *str,char ch)
    we check only the last component, as required by
    servlet spec
 */
-INLINE const char *findExtension( const char *uri ) {
+static INLINE const char *findExtension( const char *uri ) {
     int suffix_start;
     const char *suffix;
     
@@ -386,13 +407,13 @@ INLINE const char *findExtension( const char *uri ) {
     return suffix;
 }
 
-jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
-                              const char *vhost,
-                              const char *uri )
+static jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
+                                     const char *vhost,
+                                     const char *uri )
 {
-    unsigned i;
-    unsigned best_match = -1;
-    unsigned longest_match = 0;
+    int i;
+    int best_match = -1;
+    int longest_match = 0;
     char * clean_uri = NULL;
     char *url_rewrite;
     const char *suffix;
@@ -507,7 +528,7 @@ jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
 }
 
 int JK_METHOD jk_uriMap_factory( jk_env_t *env, void **result,
-                                 char *type, char *name)
+                                 const char *type, const char *name)
 {
     jk_uriMap_t *_this;
     jk_map_t *init_data;

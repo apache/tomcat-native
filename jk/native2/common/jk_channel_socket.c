@@ -107,8 +107,12 @@ typedef struct jk_channel_socket_private jk_channel_socket_private_t;
 
 int JK_METHOD jk_channel_socket_factory(jk_env_t *env, void **result,
 					char *type, char *name);
+
 static int JK_METHOD jk_channel_socket_resolve(char *host, short port,
 				     struct sockaddr_in *rc);
+
+static int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
+                                      jk_endpoint_t *endpoint);
 
 static int JK_METHOD jk_channel_socket_getProperty(jk_channel_t *_this, 
 					 char *name, char **value)
@@ -290,8 +294,8 @@ static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
 
 /** close the socket  ( was: jk_close_socket )
 */
-int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
-                                      jk_endpoint_t *endpoint)
+static int JK_METHOD jk_channel_socket_close(jk_channel_t *_this,
+                                             jk_endpoint_t *endpoint)
 {
     int sd;
     jk_channel_socket_data_t *chD=endpoint->channelData;

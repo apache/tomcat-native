@@ -68,6 +68,18 @@
 #include "jk_env.h"
 #include "jk_requtil.h"
 
+/* Private methods */
+
+static int ajp_read_fully_from_server(jk_ws_service_t *s,
+                                      unsigned char   *buf,
+                                      unsigned         len);
+
+static int ajp_process_callback(jk_msg_buf_t *msg, 
+                                jk_msg_buf_t *pmsg,
+                                jk_endpoint_t *ae,
+                                jk_ws_service_t *r, 
+                                jk_logger_t *l);
+
 /*
  * Reset the endpoint (clean buf)
  */
@@ -80,7 +92,6 @@ void ajp_reset_endpoint(jk_endpoint_t *ae)
 /*
  * Close the endpoint (clean buf and close socket)
  */
-
 void ajp_close_endpoint(jk_endpoint_t *ae,
                         jk_logger_t    *l)
 {
@@ -98,7 +109,7 @@ void ajp_close_endpoint(jk_endpoint_t *ae,
 int ajp_connect_to_endpoint(jk_endpoint_t *ae,
                             jk_logger_t    *l)
 {
-    unsigned attempt;
+    int attempt;
 
     for(attempt = 0 ; attempt < ae->worker->connect_retry_attempts ; attempt++) {
 	jk_channel_t *channel=ae->worker->channel;
@@ -120,7 +131,6 @@ int ajp_connect_to_endpoint(jk_endpoint_t *ae,
 /*
  * Send a message to endpoint, using corresponding PROTO HEADER
  */
-
 int ajp_connection_tcp_send_message(jk_endpoint_t *ae,
                                     jk_msg_buf_t   *msg,
                                     jk_logger_t    *l)
@@ -216,9 +226,9 @@ int ajp_connection_tcp_get_message(jk_endpoint_t *ae,
  * read, so we must loop up to all awaited data are received 
  */
 
-int ajp_read_fully_from_server(jk_ws_service_t *s,
-                               unsigned char   *buf,
-                               unsigned         len)
+static int ajp_read_fully_from_server(jk_ws_service_t *s,
+                                      unsigned char   *buf,
+                                      unsigned         len)
 {
     unsigned rdlen = 0;
     unsigned padded_len = len;
@@ -384,7 +394,7 @@ int ajp_send_request(jk_endpoint_t *e,
 	 * doing a read (not yet) 
 	 */
 	if (s->is_chunked || e->left_bytes_to_send > 0) {
-	    unsigned len = e->left_bytes_to_send;
+	    int len = e->left_bytes_to_send;
 	    if (len > AJP13_MAX_SEND_BODY_SZ) 
 		len = AJP13_MAX_SEND_BODY_SZ;
             len = ajp_read_into_msg_buff(e, s, e->post, len, l);
@@ -408,46 +418,29 @@ int ajp_send_request(jk_endpoint_t *e,
  * What to do with incoming data (dispatcher)
  */
 
-int ajp_process_callback(jk_msg_buf_t *msg, 
-                         jk_msg_buf_t *pmsg,
-                         jk_endpoint_t *ae,
-                         jk_ws_service_t *r, 
-                         jk_logger_t *l) 
+static int ajp_process_callback(jk_msg_buf_t *msg, 
+                                jk_msg_buf_t *pmsg,
+                                jk_endpoint_t *ae,
+                                jk_ws_service_t *r, 
+                                jk_logger_t *l) 
 {
     int code = (int)jk_b_get_byte(msg);
+    int err;
 
     switch(code) {
     case JK_AJP13_SEND_HEADERS:
-        {
-            if (!ajp_unmarshal_response(msg, r, ae, l)) {
-                l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - ajp_unmarshal_response failed\n");
-                return JK_AJP13_ERROR;
-            }
-            if (!r->start_response(r, 
-                                   r->status, 
-                                   r->msg, 
-                                   (const char * const *)r->out_header_names,
-                                   (const char * const *)r->out_header_values,
-                                   r->out_headers)) {
-                l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - start_response failed\n");
-                return JK_CLIENT_ERROR;
-            }
-        }
+        err=ajp_handle_response( msg, r, ae, l );
+        return err;
         break;
         
     case JK_AJP13_SEND_BODY_CHUNK:
-        {
-            unsigned len = (unsigned)jk_b_get_int(msg);
-            if(!r->write(r, jk_b_get_buff(msg) + jk_b_get_pos(msg), len)) {
-                l->jkLog(l, JK_LOG_ERROR, "Error ajp_process_callback - write failed\n");
-                return JK_CLIENT_ERROR;
-            }
-        }
+        return ajp_handle_sendChunk( msg, r, ae, l);
         break;
         
     case JK_AJP13_GET_BODY_CHUNK:
         {
-            unsigned len = (unsigned)jk_b_get_int(msg);
+            /* XXX Is it signed or not ? */
+            int len = jk_b_get_int(msg);
             
             if(len > AJP13_MAX_SEND_BODY_SZ) {
                 len = AJP13_MAX_SEND_BODY_SZ;

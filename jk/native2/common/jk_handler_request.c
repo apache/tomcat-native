@@ -87,6 +87,11 @@
 #define SC_A_SSL_KEY_SIZE       (unsigned char)11		/* only in if JkOptions +ForwardKeySize */
 #define SC_A_ARE_DONE           (unsigned char)0xFF
 
+int jk_handler_request_marshal(jk_msg_buf_t    *msg,
+                               jk_ws_service_t *s,
+                               jk_logger_t     *l,
+                               jk_endpoint_t  *ae);
+
 /**
   Message structure
  
