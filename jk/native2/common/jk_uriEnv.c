@@ -90,13 +90,30 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     int pcre = 0;
 
     if (*name == '$') {
+#ifdef HAS_PCRE
         ++name;
         uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, name);
         uriEnv->match_type = MATCH_TYPE_REGEXP;
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                     "uriEnv.parseName() parsing %s regexp\n",
                     name);
+        {
+            regex_t *preg = (regex_t *)uriEnv->pool->calloc( env, uriEnv->pool, sizeof(regex_t));
+            if (regcomp(preg, uriEnv->uri, REG_EXTENDED)) {
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "uriEnv.parseName() error compiling regexp %s\n",
+                              uri);
+                return JK_ERR;
+            }
+            uriEnv->regexp = preg;
+        }
         return JK_OK;
+#else
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                    "uriEnv.parseName() parsing regexp %s not supported\n",
+                    uri);
+        return JK_ERR;
+#endif
     }
 
     strcpy(host, name);
