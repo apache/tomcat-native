@@ -77,7 +77,7 @@
       <type>
         cd ${ant.home}/lib
       </type><type>
-        wget wget http://jakarta.apache.org/builds/jakarta-ant/release/v1.4.1/bin/jakarta-ant-1.4.1-optional.jar
+        wget http://jakarta.apache.org/builds/jakarta-ant/release/v1.4.1/bin/jakarta-ant-1.4.1-optional.jar
       </type><type>
         mv jakarta-ant-1.4.1-optional.jar optional.jar
       </type>
