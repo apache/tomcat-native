@@ -163,22 +163,30 @@ static void jk2_worker_status_displayWorkerEnv(jk_env_t *env, jk_ws_service_t *s
         char *name=env->_objects->nameAt( env, env->_objects, i );
         jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
         int j;
+        int propCount;
+
+        /* Don't display aliases */
+        if( strchr(name, ':')==NULL )
+            continue;
         
         if( mbean==NULL || mbean->settings==NULL ) 
             continue;
         
-        s->jkprintf(env, s, "<tr><td>%s</td>", mbean->name );
-        
-        for( j=0; j < mbean->settings->size( env, mbean->settings ); j++ ) {
-            char *pname=mbean->settings->nameAt( env, mbean->settings, j);
-            /* Don't save redundant information */
-            if( strcmp( pname, "name" ) != NULL ) {
-                s->jkprintf( env, s, "<td>%s</td><td>%s</td>\n",
-                             pname,
-                             mbean->settings->valueAt( env, mbean->settings, j));
+        propCount=mbean->settings->size( env, mbean->settings );
+
+        if( propCount==0 ) {
+            s->jkprintf(env, s, "<tr><td>%s</td></tr>", mbean->name );
+        } else {
+            for( j=0; j < propCount ; j++ ) {
+                char *pname=mbean->settings->nameAt( env, mbean->settings, j);
+                /* Don't save redundant information */
+                if( strcmp( pname, "name" ) != 0 ) {
+                    s->jkprintf(env, s, "<tr><td>%s</td><td>%s</td><td>%s</td></tr>",
+                                name, pname,
+                                mbean->settings->valueAt( env, mbean->settings, j));
+                }
             }
         }
-        s->jkprintf( env,s , "</tr>\n" );
     }
     s->jkprintf( env,s , "</table>\n" );
 
