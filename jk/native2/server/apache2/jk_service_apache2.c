@@ -96,7 +96,7 @@
 
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
 
-static int JK_METHOD jk_service_apache2_head(jk_env_t *env, jk_ws_service_t *s )
+static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s )
 {
     int h;
     request_rec *r;
@@ -167,9 +167,9 @@ static int JK_METHOD jk_service_apache2_head(jk_env_t *env, jk_ws_service_t *s )
  * the jk_ws_service class.  Think of the *s param as a "this" or "self"
  * pointer.
  */
-static int JK_METHOD jk_service_apache2_read(jk_env_t *env, jk_ws_service_t *s,
-                                             void *b, unsigned len,
-                                             unsigned *actually_read)
+static int JK_METHOD jk2_service_apache2_read(jk_env_t *env, jk_ws_service_t *s,
+                                              void *b, unsigned len,
+                                              unsigned *actually_read)
 {
     if(s && s->ws_private && b && actually_read) {
         if(!s->read_body_started) {
@@ -207,8 +207,8 @@ static int JK_METHOD jk_service_apache2_read(jk_env_t *env, jk_ws_service_t *s,
 #define CHUNK_SIZE 4096
 #endif
 
-static int JK_METHOD jk_service_apache2_write(jk_env_t *env, jk_ws_service_t *s,
-                                              const void *b, int len)
+static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s,
+                                               const void *b, int len)
 {
     if(s && s->ws_private && b) {
         if(len) {
@@ -277,7 +277,7 @@ static int JK_METHOD jk_service_apache2_write(jk_env_t *env, jk_ws_service_t *s,
 /* Utility functions                                                         */
 /* ========================================================================= */
 
-static int get_content_length(jk_env_t *env, request_rec *r)
+static int jk2_get_content_length(jk_env_t *env, request_rec *r)
 {
     if(r->clength > 0) {
         return r->clength;
@@ -295,8 +295,8 @@ static int get_content_length(jk_env_t *env, request_rec *r)
     return 0;
 }
 
-static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
-                           jk_worker_t *worker, void *serverObj)
+static int jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
+                               jk_worker_t *worker, void *serverObj)
 {
     apr_port_t port;
     char *ssl_temp      = NULL;
@@ -306,7 +306,7 @@ static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
 
     /* Common initialization */
     /* XXX Probably not needed, we're duplicating */
-    jk_requtil_initRequest(env, s);
+    jk2_requtil_initRequest(env, s);
     
     s->ws_private = r;
     s->response_started = JK_FALSE;
@@ -336,7 +336,7 @@ static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     s->server_software = (char *)ap_get_server_version();
 
     s->method         = (char *)r->method;
-    s->content_length = get_content_length(env, r);
+    s->content_length = jk2_get_content_length(env, r);
     s->is_chunked     = r->read_chunked;
     s->no_more_chunks = 0;
     s->query_string   = r->args;
@@ -427,14 +427,14 @@ static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
         /* We can't do that - the filtering should happen in
            common to enable that.
            
-          jk_map_aprtable_factory( workerEnv->env, s->pool,
+          jk2_map_aprtable_factory( workerEnv->env, s->pool,
           &s->attributes,
           "map", "aprtable" );
           s->attributes->init( NULL, s->attributes, 0, XXX);
         */
-        jk_map_default_create(env, &s->attributes, s->pool );
+        jk2_map_default_create(env, &s->attributes, s->pool );
 #else
-        jk_map_default_create(env, &s->attributes, s->pool );
+        jk2_map_default_create(env, &s->attributes, s->pool );
 #endif
         
         if(workerEnv->envvars_in_use) {
@@ -453,12 +453,12 @@ static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     }
 
 #ifdef USE_APRTABLES
-    jk_map_aprtable_factory( env, s->pool,
+    jk2_map_aprtable_factory( env, s->pool,
                              (void *)&s->headers_in,
                              "map", "aprtable" );
     s->headers_in->init( env, s->headers_in, 0, r->headers_in);
 #else
-    jk_map_default_create(env, &s->headers_in, s->pool );
+    jk2_map_default_create(env, &s->headers_in, s->pool );
 
     if(r->headers_in && apr_table_elts(r->headers_in)) {
         const apr_array_header_t *t = apr_table_elts(r->headers_in);
@@ -483,11 +483,11 @@ static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     }
 
 #ifdef USE_APRTABLES
-    jk_map_aprtable_factory( env, s->pool, (void *)&s->headers_out,
+    jk2_map_aprtable_factory( env, s->pool, (void *)&s->headers_out,
                              "map", "aprtable" );
     s->headers_in->init( env, s->headers_out, 0, r->headers_out);
 #else
-    jk_map_default_create(env, &s->headers_out, s->pool );
+    jk2_map_default_create(env, &s->headers_out, s->pool );
 #endif
 
     return JK_TRUE;
@@ -503,7 +503,7 @@ static int init_ws_service(jk_env_t *env, jk_ws_service_t *s,
  *  jk shouldn't do it instead, and the user should get the
  *  error message !
  */
-static void jk_service_apache2_afterRequest(jk_env_t *env, jk_ws_service_t *s )
+static void jk2_service_apache2_afterRequest(jk_env_t *env, jk_ws_service_t *s )
 {
     
     if (s->content_read < s->content_length ||
@@ -521,7 +521,7 @@ static void jk_service_apache2_afterRequest(jk_env_t *env, jk_ws_service_t *s )
     }
 }
 
-int jk_service_apache2_factory(jk_env_t *env,
+int jk2_service_apache2_factory(jk_env_t *env,
                                jk_pool_t *pool,
                                void **result,
                                char *type,
@@ -536,11 +536,11 @@ int jk_service_apache2_factory(jk_env_t *env,
         return JK_FALSE;
     }
 
-    s->head   = jk_service_apache2_head;
-    s->read   = jk_service_apache2_read;
-    s->write  = jk_service_apache2_write;
-    s->init   = init_ws_service;
-    s->afterRequest     = jk_service_apache2_afterRequest;
+    s->head   = jk2_service_apache2_head;
+    s->read   = jk2_service_apache2_read;
+    s->write  = jk2_service_apache2_write;
+    s->init   = jk2_init_ws_service;
+    s->afterRequest     = jk2_service_apache2_afterRequest;
     
     *result=(void *)s;
 
