@@ -176,11 +176,13 @@ public class ChannelUn extends JkHandler {
 
     
     public void close(MsgContext ep) throws IOException {
+        if( apr==null ) return;
         Long s=(Long)ep.getNote( socketNote );
         apr.unSocketClose(gPool, s.longValue(),3);
     }
 
     public void destroy() throws IOException {
+        if( apr==null ) return;
         try {
             if( tp != null )
                 tp.shutdown();
@@ -315,6 +317,7 @@ public class ChannelUn extends JkHandler {
     void acceptConnections() {
         if( log.isDebugEnabled() )
             log.debug("Accepting ajp connections on " + file);
+        if( apr==null ) return;
         while( running ) {
             try {
                 MsgContext ep=new MsgContext();

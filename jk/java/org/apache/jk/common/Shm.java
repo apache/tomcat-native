@@ -102,6 +102,7 @@ public class Shm extends JniHandler {
 
     public void init() throws IOException {
         super.initNative( "shm" );
+        if( apr==null ) return;
         if( file==null ) {
             log.error("No shm file, disabling shared memory");
             apr=null;
@@ -116,6 +117,7 @@ public class Shm extends JniHandler {
     }
 
     public void attach() throws IOException {
+        if( apr==null ) return;
         MsgContext mCtx=createMsgContext();
         Msg msg=(Msg)mCtx.getMsg(0);
         msg.reset();
@@ -126,6 +128,7 @@ public class Shm extends JniHandler {
     }
 
     public void setNativeAttribute(String name, String val) throws IOException {
+        if( apr==null ) return;
         MsgContext mCtx=createMsgContext();
         Msg msg=(Msg)mCtx.getMsg(0);
         C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
@@ -143,6 +146,7 @@ public class Shm extends JniHandler {
     public void registerTomcat(String host, int port)
         throws IOException
     {
+        if( apr==null ) return;
         MsgContext mCtx=createMsgContext();
         Msg msg=(Msg)mCtx.getMsg(0);
         msg.reset();
@@ -172,6 +176,7 @@ public class Shm extends JniHandler {
     public  int invoke(Msg msg, MsgContext ep )
         throws IOException
     {
+        if( apr==null ) return;
         System.err.println("ChannelShm.invoke: "  + ep );
         super.nativeDispatch( msg, ep, JK_HANDLE_SHM_DISPATCH );
         return 0;
