@@ -281,11 +281,8 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
         }
     }
 
-    if (candidate) {
+    if (candidate)
         candidate->s->lb_value -= total_factor;
-        candidate->r = &(candidate->s->name[0]);
-    }
-
     return candidate;
 }
 
@@ -320,25 +317,7 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
             }
         }
     }    
-    if (candidate)
-        candidate->r = &(candidate->s->name[0]);
     return candidate;
-}
-
-static worker_record_t *find_best_worker(lb_worker_t * p,
-                                         jk_logger_t *l)
-{
-    worker_record_t *rc = NULL;
-
-    if (p->lbmethod == JK_LB_BYREQUESTS)
-        rc = find_best_byrequests(p, l);
-    else if (p->lbmethod == JK_LB_BYTRAFFIC)
-        rc = find_best_bytraffic(p, l);
-    /* By default use worker name as session route */
-    if (rc)
-        rc->r = &(rc->s->name[0]);
-
-    return rc;
 }
 
 static worker_record_t *find_bysession_route(lb_worker_t *p, 
@@ -393,6 +372,41 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
         candidate->s->lb_value -= total_factor;
     }
     return candidate;
+}
+
+static worker_record_t *find_failover_worker(lb_worker_t * p,
+                                             jk_logger_t *l)
+{
+    worker_record_t *rc = NULL;
+    unsigned int i;
+    const char *redirect = NULL;    
+
+    for (i = 0; i < p->num_of_workers; i++) {
+        if (strlen(p->lb_workers[i].s->redirect)) {
+            redirect = &(p->lb_workers[i].s->redirect[0]);
+            break;
+        }
+    }
+    if (redirect)
+        rc = find_bysession_route(p, redirect, l);
+    return rc;
+}
+
+static worker_record_t *find_best_worker(lb_worker_t * p,
+                                         jk_logger_t *l)
+{
+    worker_record_t *rc = NULL;
+
+    if (p->lbmethod == JK_LB_BYREQUESTS)
+        rc = find_best_byrequests(p, l);
+    else if (p->lbmethod == JK_LB_BYTRAFFIC)
+        rc = find_best_bytraffic(p, l);
+    /* By default use worker name as session route */
+    if (rc)
+        rc->r = &(rc->s->name[0]);
+    else
+        rc = find_failover_worker(p, l);
+    return rc;
 }
 
 static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
