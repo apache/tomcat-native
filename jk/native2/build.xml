@@ -363,6 +363,10 @@
       <linkOpt value="-lcrypt" if="linux" />
       <linkOpt value="-L${apr.lib}" if="linux" />
       <linkOpt value="-lapr" if="linux" />
+      <linkOpt value="-L${apr.lib}" if="solaris" />
+      <linkOpt value="-lapr" if="solaris" />
+      <linkOpt value="-L${apr.lib}" if="hpux" />
+      <linkOpt value="-lapr" if="hpux" />
 
       <altSoFile value="jni_conn" if="netware" />
       
