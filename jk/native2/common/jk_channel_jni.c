@@ -259,7 +259,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
                                      "(JLjava/lang/Object;)I");
     
     if( jniCh->writeMethod == NULL ) {
-	env->l->jkLog(env, env->l, JK_LOG_EMERG,
+    env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "channel_jni.open() can't find jniInvoke\n"); 
         return JK_ERR;
     }
@@ -519,12 +519,36 @@ static int JK_METHOD jk2_channel_jni_dispatch(jk_env_t *env, void *target, jk_en
                                             ep->currentRequest, ep, code, ep->reply );
 }
 
+static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
+                                                    jk_bean_t *mbean, 
+                                                    char *name, void *valueP)
+{
+    jk_channel_t *ch=(jk_channel_t *)mbean->object;
+    char *value=valueP;
+    jk_channel_jni_private_t *jniInfo=
+        (jk_channel_jni_private_t *)(ch->_privatePtr);
+
+    if( strcmp( "class", name ) == 0 ) {
+        jniInfo->className=value;
+    }
+    /* TODO: apache protocol hooks
+    else if( strcmp( "xxxx", name ) == 0 ) {
+        jniInfo->xxxx=value;
+    } 
+    */
+    else {
+        return jk2_channel_setAttribute( env, mbean, name, valueP );
+    }
+    return JK_OK;
+}
+
 int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool, 
                                       jk_bean_t *result,
                                       const char *type, const char *name)
 {
     jk_channel_t *ch=result->object;
     jk_workerEnv_t *wEnv;
+    jk_channel_jni_private_t *jniPrivate;
     
     ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
@@ -536,12 +560,14 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     ch->beforeRequest= jk2_channel_jni_beforeRequest;
     ch->afterRequest= jk2_channel_jni_afterRequest;
     
-    ch->_privatePtr=(jk_channel_jni_private_t *)pool->calloc(env, pool,
-                    sizeof(jk_channel_jni_private_t));
+    ch->_privatePtr=jniPrivate=(jk_channel_jni_private_t *)pool->calloc(env, pool,
+                                sizeof(jk_channel_jni_private_t));
+
+    jniPrivate->className = JAVA_BRIDGE_CLASS_NAME;
     ch->is_stream=JK_FALSE;
 
     /* No special attribute */
-    result->setAttribute= jk2_channel_setAttribute;
+    result->setAttribute= jk2_channel_jni_setProperty;
     ch->mbean=result;
     result->object= ch;
     result->init= jk2_channel_jni_init; 
