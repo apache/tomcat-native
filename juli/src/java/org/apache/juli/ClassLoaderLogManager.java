@@ -150,9 +150,9 @@ public final class ClassLoaderLogManager extends LogManager {
         final String handlers = getProperty(loggerName + ".handlers");
         if (handlers != null) {
             logger.setUseParentHandlers(false);
-            StringTokenizer tok = new StringTokenizer(handlers);
+            StringTokenizer tok = new StringTokenizer(handlers, ",");
             while (tok.hasMoreTokens()) {
-                String handlerName = (tok.nextToken());
+                String handlerName = (tok.nextToken().trim());
                 Handler handler = (Handler) info.handlers.get(handlerName);
                 if (handler != null) {
                     logger.addHandler(handler);
@@ -283,9 +283,9 @@ public final class ClassLoaderLogManager extends LogManager {
                 String rootHandlers = info.props.getProperty(".handlers");
                 String handlers = info.props.getProperty("handlers");
                 if (handlers != null) {
-                    StringTokenizer tok = new StringTokenizer(handlers);
+                    StringTokenizer tok = new StringTokenizer(handlers, ",");
                     while (tok.hasMoreTokens()) {
-                        String handlerName = (tok.nextToken());
+                        String handlerName = (tok.nextToken().trim());
                         String handlerClassName = handlerName;
                         String prefix = "";
                         if (handlerClassName.length() <= 0) {

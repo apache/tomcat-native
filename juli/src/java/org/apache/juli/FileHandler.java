@@ -297,8 +297,10 @@ public class FileHandler
         String value = LogManager.getLogManager().getProperty(name);
         if (value == null) {
             value = defaultValue;
+        } else {
+            value = value.trim();
         }
-        return value.trim();
+        return value;
     }
     
     
