@@ -1014,3 +1014,14 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->jvm_route = NULL;
     s->retries = JK_RETRIES;
 }
+
+#ifdef _MT_CODE_PTHREAD
+
+int jk_gettid()
+{
+    pthread_t t = pthread_self();
+
+    return (int)(t & 0xFFFF);
+}
+
+#endif

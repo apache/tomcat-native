@@ -60,6 +60,7 @@ typedef CRITICAL_SECTION JK_CRIT_SEC;
 
 #else /* Unix pthreads */
 
+#define _MT_CODE_PTHREAD
 #include <pthread.h>
 
 typedef pthread_mutex_t JK_CRIT_SEC;
@@ -76,7 +77,7 @@ typedef pthread_mutex_t JK_CRIT_SEC;
 #define JK_LEAVE_CS(x, rc)\
             if(pthread_mutex_unlock(x)) rc = JK_FALSE; else rc = JK_TRUE;
 
-#define jk_gettid() ((int)pthread_self())
+int jk_gettid();
 #endif /* Unix pthreads */
 
 #else /* Not an MT code */
