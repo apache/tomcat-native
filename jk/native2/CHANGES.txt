@@ -1,0 +1,45 @@
+JAKARTA TOMCAT CONNECTORS 2 (JK2) CHANGELOG:			-*-text-*-
+Last modified at [$Date$]
+
+Changes with JK2 2.0.1:
+
+    * Tentative fix for 12346.
+      If an unrecoverable error happens ( for example when the client hits  stop
+      the server can't send more data   since the connection is lost )  we  need
+      to forcefully break the ajp13 connection, since tomcat can't know this and
+      will continue to send data.
+
+      This behavior is a result of the optimizations made for the 'normal' case,
+      i.e.  the fact  that tomcat  doesn't wait  for confirmation  when  sending
+      chunks of data.  Adding the roundtrip  will have big  negative performance
+      hit - and it's better to deal with the error cases.
+
+      Note that  the alternative  ( and  what seems  to happen  for apache  ) is
+      to ignore  the server  errors and  continue to  receive chunks  and ignore
+      them.  That  can save  the  ajp  connection -   with the  price  of having
+      tomcat  send useless data. For a  large file that  may be a  bad solution,
+      and  tomcat will not  be notified that the client had problems ( which may
+      be a usefull info ).
+
+      If  this  doesn't  fix  the  problem  -  please  send  me  logs  with  ajp
+      debug enabled. I can't reproduce it ( or run IIS ), but this is clearly  a
+      bug. [Costin Manolache] 
+
+    * Fix the logger_file      
+      Change the default logger to the jk2.log (was mod_jk.log)
+      Fix the ${serverRoot} replaceProperties.
+      Do not close log file if it is stderr.
+      [Mladen Turk]
+      
+    * Fix the  apr_socket default timeout  value, and the  send/recv that caused
+      wrong header readings. [Mladen Turk]
+      
+    * Fix and rewrite the hostMap. It was  a real mess. There was also a bug  in    
+      the  code  that  caused  host  mapping to  be  sensitive  to the  order of
+      directives in the config. [Mladen Turk]
+      
+    * Introduce the  timeout option for  the load balancer.  The timeout if  set    
+      will force the lb to cycle  through workers if all are in  the error_state
+      for the specified amount of  seconds. This  is useful for  situations when
+      the  TC is  overloaded and   refuses new  connections. The  lb  will  wait
+      and  after timeout will report 500 to the client. [Mladen Turk]
