@@ -65,6 +65,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Enumeration;
+import javax.security.cert.X509Certificate;
 
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -402,8 +403,23 @@ public class Ajp13 {
 		
 	    case SC_A_SSL_CERT     :
 		isSSL = true;
-		req.setAttribute("javax.servlet.request.X509Certificate",
-				 msg.getString());
+                // Transform the string into certificate.
+                String certString = msg.getString();
+                byte[] certData = certString.getBytes();
+ 
+                // Fill the first element.
+                X509Certificate jsseCerts[] = null;
+                try {
+                    X509Certificate cert =
+                        X509Certificate.getInstance(certData);
+                    jsseCerts =  new X509Certificate[1];
+                    jsseCerts[0] = cert;
+                } catch(javax.security.cert.CertificateException e) {
+                    logger.log("Certificate convertion failed" + e );
+                }
+ 
+                req.setAttribute("javax.servlet.request.X509Certificate",
+                                 jsseCerts);
                 break;
 		
 	    case SC_A_SSL_CIPHER   :
