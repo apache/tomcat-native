@@ -169,12 +169,13 @@ public final class Expirer  implements ThreadPoolRunnable
 	}
 	for( int i=0; i< checkedCount; i++ ) {
 	    TimeStamp ts=checkedObjs[i];
+	    checkedObjs[i] = null;
 	    
 	    if (ts==null || !ts.isValid())
 		continue;
 	    
 	    long maxInactiveInterval = ts.getMaxInactiveInterval();
-	    if( dL > 3 ) debug( "TS: " + maxInactiveInterval + " " +
+1	    if( dL > 3 ) debug( "TS: " + maxInactiveInterval + " " +
 				ts.getLastAccessedTime());
 	    if (maxInactiveInterval < 0)
 		continue;
