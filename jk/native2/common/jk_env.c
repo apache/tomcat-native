@@ -56,9 +56,9 @@
  * ========================================================================= */
  
 #include "jk_env.h"
+#include "jk_objCache.h"
 
-/* Singleton for now */
-jk_env_t *jk_env_singleton;
+jk_env_t *jk_env_globalEnv;
 
 /* Private methods 
 */
@@ -69,16 +69,26 @@ static void jk_env_initEnv( jk_env_t *env, char *id );
 */
 
 jk_env_t* JK_METHOD jk_env_getEnv( char *id, jk_pool_t *pool ) {
-  if( jk_env_singleton == NULL ) {
-      jk_env_singleton=(jk_env_t *)pool->calloc( NULL, pool, sizeof( jk_env_t ));
-      jk_env_singleton->globalPool = pool;
-      jk_env_initEnv( (jk_env_t *)jk_env_singleton, id );
+  if( jk_env_globalEnv == NULL ) {
+      jk_env_globalEnv=(jk_env_t *)pool->calloc( NULL, pool, sizeof( jk_env_t ));
+      jk_env_globalEnv->globalPool = pool;
+      jk_env_initEnv( (jk_env_t *)jk_env_globalEnv, id );
   }
-  return jk_env_singleton;
+  return jk_env_globalEnv;
 }
 
 /* ==================== Implementation ==================== */
 
+static jk_env_t * JK_METHOD jk_env_get( jk_env_t *env )
+{
+    return NULL;
+}
+
+static int JK_METHOD jk_env_put( jk_env_t *parent, jk_env_t *chld )
+{
+
+    return JK_TRUE;
+}
 
 static jk_env_objectFactory_t JK_METHOD jk_env_getFactory(jk_env_t *env, 
                                                           const char *type,
@@ -107,7 +117,8 @@ static jk_env_objectFactory_t JK_METHOD jk_env_getFactory(jk_env_t *env,
   return result;
 }
 
-static void *jk_env_getInstance( jk_env_t *_this, jk_pool_t *pool, const char *type, const char *name )
+static void *jk_env_getInstance( jk_env_t *_this, jk_pool_t *pool,
+                                 const char *type, const char *name )
 {
     jk_env_objectFactory_t fac;
     void *result;

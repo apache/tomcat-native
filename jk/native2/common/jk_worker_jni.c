@@ -198,7 +198,8 @@ static int JK_METHOD jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
 
     if( jniWorker->jk_java_bridge_class == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "Can't find class %s\n", str_config);
+                      "Can't find class %s in %s\n", str_config,
+                      jniWorker->vm->tomcat_classpath );
         /* [V] the detach here may segfault on 1.1 JVM... */
         jniWorker->vm->detach(env,  jniWorker->vm);
         return JK_FALSE;
