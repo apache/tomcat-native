@@ -129,14 +129,20 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
     printf("jk_registry_init: Assertion failed, env==NULL\n" );
     return;
   }
+  /**
+   * Because the functions being referenced here (apjp14_work_factory, and
+   * lb_worker_factory) don't match the prototype declared for registerFactory,
+   * and because the MetroWerks compiler (used for NetWare) treats this as an
+   * error, I'm casting the function pointers to (void *) - mmanders
+   */
 #ifdef AJP12
-  env->registerFactory( env, "worker", "ajp12", &ajp12_worker_factory );
+  env->registerFactory( env, "worker", "ajp12", (void *) &ajp12_worker_factory );
 #endif
-  env->registerFactory( env, "worker", "ajp13", &ajp14_worker_factory );
-  env->registerFactory( env, "worker", "ajp14", &ajp14_worker_factory );
-  env->registerFactory( env, "worker", "lb",    &lb_worker_factory );
+  env->registerFactory( env, "worker", "ajp13", (void *) &ajp14_worker_factory );
+  env->registerFactory( env, "worker", "ajp14", (void *) &ajp14_worker_factory );
+  env->registerFactory( env, "worker", "lb",    (void *) &lb_worker_factory );
 #ifdef HAVE_JNI
-  env->registerFactory( env, "worker", "jni",   &jni_worker_factory );
+  env->registerFactory( env, "worker", "jni",   (void *) &jni_worker_factory );
 #endif
 
   env->registerFactory( env, "channel", "socket", &jk_channel_socket_factory );
