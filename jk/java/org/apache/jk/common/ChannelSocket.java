@@ -242,6 +242,20 @@ public class ChannelSocket extends JkHandler {
     public boolean getDaemon() {
         return tp.getDaemon();
     }
+
+
+    public void setMaxThreads( int i ) {
+        if( log.isDebugEnabled()) log.debug("Setting maxThreads " + i);
+        tp.setMaxThreads(i);
+    }
+    
+    public int getMaxThreads() {
+        return tp.getMaxThreads();   
+    }
+    
+    public void setBacklog(int i) {
+    }
+    
     
     /* ==================== ==================== */
     ServerSocket sSocket;
