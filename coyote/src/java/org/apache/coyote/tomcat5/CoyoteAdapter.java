@@ -84,6 +84,8 @@ import org.apache.catalina.Globals;
 import org.apache.catalina.Logger;
 import org.apache.catalina.Wrapper;
 import org.apache.catalina.util.StringManager;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 
 /**
@@ -96,8 +98,9 @@ import org.apache.catalina.util.StringManager;
  */
 
 final class CoyoteAdapter
-    implements Adapter {
-
+    implements Adapter 
+ {
+    private static Log log = LogFactory.getLog(CoyoteAdapter.class);
 
     // -------------------------------------------------------------- Constants
 
@@ -200,7 +203,7 @@ final class CoyoteAdapter
         } catch (IOException e) {
             ;
         } catch (Throwable t) {
-            log(sm.getString("coyoteAdapter.service"), t);
+            log.error(sm.getString("coyoteAdapter.service"), t);
         } finally {
             // Recycle the wrapper request and response
             request.recycle();
@@ -374,8 +377,8 @@ final class CoyoteAdapter
                         (scookie.getValue().toString());
                     request.setRequestedSessionCookie(true);
                     request.setRequestedSessionURL(false);
-                    if (debug >= 1)
-                        log(" Requested cookie session id is " +
+                    if (log.isDebugEnabled())
+                        log.debug(" Requested cookie session id is " +
                             ((HttpServletRequest) request.getRequest())
                             .getRequestedSessionId());
                 }
@@ -391,7 +394,7 @@ final class CoyoteAdapter
                 }
                 cookies[idx++] = cookie;
             } catch(Exception ex) {
-                log("Bad Cookie Name: " + scookie.getName() + 
+                log.error("Bad Cookie Name: " + scookie.getName() + 
                     " /Value: " + scookie.getValue(),ex);
             }
         }
@@ -428,7 +431,7 @@ final class CoyoteAdapter
                 }
             } catch (IOException e) {
                 // Ignore
-                log("Invalid URI encoding; using HTTP default");
+                log.error("Invalid URI encoding; using HTTP default");
                 connector.setURIEncoding(null);
             }
             if (conv != null) {
@@ -438,7 +441,7 @@ final class CoyoteAdapter
                                  cc.getLength());
                     return;
                 } catch (IOException e) {
-                    log("Invalid URI character encoding; trying ascii");
+                    log.error("Invalid URI character encoding; trying ascii");
                     cc.recycle();
                 }
             }
@@ -574,11 +577,7 @@ final class CoyoteAdapter
      * @param message Message to be logged
      */
     protected void log(String message) {
-
-        Logger logger = connector.getContainer().getLogger();
-        if (logger != null)
-            logger.log("CoyoteAdapter " + message);
-
+        log.info( message );
     }
 
 
@@ -589,11 +588,7 @@ final class CoyoteAdapter
      * @param throwable Associated exception
      */
     protected void log(String message, Throwable throwable) {
-
-        Logger logger = connector.getContainer().getLogger();
-        if (logger != null)
-            logger.log("CoyoteAdapter " + message, throwable);
-
+        log.error( message, throwable);
     }
 
 
