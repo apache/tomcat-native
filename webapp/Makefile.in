@@ -60,6 +60,9 @@
 
 include @TGT_DIR@/Makedefs
 
+# ========================================================================= #
+# Generic/global compilation targets                                        #
+# ========================================================================= #
 all: build
 
 distclean: extra-clean
@@ -77,48 +80,51 @@ extra-clean: @EXTRA_CLEAN@ clean
 clean: lib-clean $(MODULE)-clean
 	rm -rf $(OBJ_DIR)
 
-dist: $(DST_DIR) build
-	$(INSTALL) $(SRC_DIR)/LICENSE.txt $(DST_DIR)
-	$(INSTALL) $(SRC_DIR)/INSTALL.txt $(DST_DIR)
-	$(INSTALL) $(TGT_DIR)/DETAILS.txt $(DST_DIR)
-	$(INSTALL) $(TGT_DIR)/$(MODULE)/$(MODFILE) $(DST_DIR)
-
-tarball: dist
-	cd $(TGT_DIR)
-	rm -rf $(TARBALL)
-	mkdir $(TARBALL)
-	cp -R $(DST_DIR)/. $(TARBALL)
-	tar -cf $(TARBALL).tar $(TARBALL)
-	gzip -9f $(TARBALL).tar
-	rm -rf $(TARBALL)
-
-$(LIB_DIR): $(BLD_DIR)
-	mkdir $(LIB_DIR)
-
-$(OBJ_DIR): $(BLD_DIR)
-	mkdir $(OBJ_DIR)
-
-$(BLD_DIR):
-	mkdir $(BLD_DIR)
-
-$(DST_DIR):
-	mkdir $(DST_DIR)
-
-$(MODULE)-build:
+# ========================================================================= #
+# Build the MODULE module, and copy the resulting file in the build dir.    #
+# ========================================================================= #
+$(MODULE)-build: $(BLD_DIR)
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/$(MODULE)" SUBT="build" subdir
+	@$(INSTALL) $(TGT_DIR)/$(MODULE)/$(MODFILE) $(BLD_DIR)
 
 $(MODULE)-clean:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/$(MODULE)" SUBT="clean" subdir
+	@rm -f $(BLD_DIR)/$(MODFILE)
 
+# ========================================================================= #
+# Build all WebApp library files                                            #
+# ========================================================================= #
 lib-build:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/lib" SUBT="build" subdir
 
 lib-clean:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/lib" SUBT="clean" subdir
 
+# ========================================================================= #
+# Run ANT to generate all stuff it generates (jar,docs,javadocs)            #
+# ========================================================================= #
 ant-build:
-	@$(ANT) -buildfile "$(SRC_DIR)/build.xml" init $(ANT_TGT)
+	$(ANT) -buildfile "$(SRC_DIR)/build.xml" init $(ANT_TARGETS)
 
+ant-clean:
+	$(ANT) -buildfile "$(SRC_DIR)/build.xml" clean
+
+# ========================================================================= #
+# Run PERL to generate our C-API documentation with scandoc                 #
+# ========================================================================= #
+capi-build: $(API_DIR)
+	$(PERL) "$(SRC_DIR)/support/scandoc.pl" \
+	  -i "$(SRC_DIR)/support/template.pl" \
+	  -p "$(API_DIR)/" \
+	  $(SRC_DIR)/include/*.h
+
+capi-clean:
+	@echo "Cleaning up generated C-API documentation"
+	@rm -rf "$(API_DIR)/*"
+
+# ========================================================================= #
+# Call APR and generate the library when we are building for Apache 1.3     #
+# ========================================================================= #
 apr-build: $(LIB_DIR)
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="all" subdir
 	$(LIBTOOL) --mode=install \
@@ -128,8 +134,29 @@ apr-build: $(LIB_DIR)
 apr-clean:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="clean" subdir
 
+# ========================================================================= #
+# Invoke MAKE into a subdir (nicely notified by some messages)              #
+# ========================================================================= #
 subdir:
 	@echo ""
 	@echo "$(MAKE)[$(MAKELEVEL)]: Entering directory \"$(SUBD)\""
 	@$(MAKE) -C "$(SUBD)" $(SUBF) "$(SUBT)"
 	@echo "$(MAKE)[$(MAKELEVEL)]: Exiting directory \"$(SUBD)\""
+
+# ========================================================================= #
+# Targets to build the directory structure (non-PHONY)                      #
+# ========================================================================= #
+$(LIB_DIR): $(BLD_DIR)
+	@if test ! -d "$(LIB_DIR)" ; then mkdir $(LIB_DIR) ; fi
+
+$(OBJ_DIR): $(BLD_DIR)
+	@if test ! -d "$(OBJ_DIR)" ; then mkdir $(OBJ_DIR) ; fi
+
+$(API_DIR): $(BLD_DIR)
+	@if test ! -d "$(API_DIR)" ; then mkdir $(API_DIR) ; fi
+
+$(BLD_DIR):
+	@if test ! -d "$(BLD_DIR)" ; then mkdir $(BLD_DIR) ; fi
+
+$(DST_DIR):
+	@if test ! -d "$(DST_DIR)" ; then mkdir $(DST_DIR) ; fi
