@@ -59,9 +59,6 @@
 package org.apache.jk.common;
 
 import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URLConnection;
@@ -70,6 +67,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import javax.management.MBeanServer;
 import javax.management.AttributeNotFoundException;
 import javax.management.MBeanException;
@@ -78,7 +76,6 @@ import javax.management.Attribute;
 import javax.management.ObjectName;
 
 import org.apache.jk.core.JkHandler;
-import org.apache.jk.server.JkMain;
 import org.apache.commons.modeler.Registry;
 import org.apache.commons.modeler.BaseModelMBean;
 import org.apache.commons.modeler.ManagedBean;
@@ -87,8 +84,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * A small mbean that will act as a proxy for mod_jk2
+ * A small mbean that will act as a proxy for mod_jk2.
  *
+ * For efficiency, it'll get bulk results and cache them - you
+ * can force an update by calling the refreshAttributes and refreshMetadata
+ * operations on this mbean.
+ *
+ * TODO: implement the user/pass auth ( right now you must use IP based security )
+ * TODO: eventually support https
+ * TODO: support for metadata ( mbean-descriptors ) for description and type conversions
+ * TODO: filter out trivial components ( mutexes, etc )
+ *
+ * @author Costin Manolache
  */
 public class ModJkMX extends JkHandler
 {
@@ -128,6 +135,14 @@ public class ModJkMX extends JkHandler
         this.webServerPort = webServerPort;
     }
 
+    public long getUpdateInterval() {
+        return updateInterval;
+    }
+
+    public void setUpdateInterval(long updateInterval) {
+        this.updateInterval = updateInterval;
+    }
+
     public String getUser() {
         return user;
     }
@@ -157,6 +172,12 @@ public class ModJkMX extends JkHandler
         try {
             // We should keep track of loaded beans and call stop.
             // Modeler should do it...
+            Iterator mbeansIt=mbeans.values().iterator();
+            while( mbeansIt.hasNext()) {
+                MBeanProxy proxy=(MBeanProxy)mbeansIt.next();
+                ObjectName oname=proxy.getObjectName();
+                Registry.getRegistry().getMBeanServer().unregisterMBean(oname);
+            }
         } catch( Throwable t ) {
             log.error( "Destroy error", t );
         }
@@ -164,10 +185,11 @@ public class ModJkMX extends JkHandler
 
     public void init() throws IOException {
         try {
+            //if( log.isDebugEnabled() )
             log.info("init " + webServerHost + " " + webServerPort);
             reg=Registry.getRegistry();
-            getMetadata();
-            refresh();
+            refreshMetadata();
+            refreshAttributes();
         } catch( Throwable t ) {
             log.error( "Init error", t );
         }
@@ -178,25 +200,31 @@ public class ModJkMX extends JkHandler
             init();
     }
 
-    /** Refresh the proxies
+    /** Refresh the proxies, if updateInterval passed
      *
-     * @throws Exception
      */
     public void refresh()  {
+        long time=System.currentTimeMillis();
+        if( time - lastRefresh < updateInterval ) {
+            return;
+        }
+        lastRefresh=time;
+        refreshMetadata();
+        refreshAttributes();
+    }
+
+    public void refreshAttributes()  {
         try {
-            long time=System.currentTimeMillis();
-            if( time - lastRefresh < updateInterval ) {
-                return;
-            }
-            log.debug( "Refreshing attributes");
-            lastRefresh=time;
+            int cnt=0;
             // connect to apache, get a list of mbeans
             BufferedReader is=getStream( "dmp=*");
+            if( is==null ) return;
             while(true) {
                 String line=is.readLine();
                 if( line==null ) break;
                 // for each mbean, create a proxy
-                log.info("Read " + line);
+                if(log.isDebugEnabled())
+                    log.debug("Read " + line);
                 StringTokenizer st=new StringTokenizer(line,"|");
                 if( st.countTokens() < 4 ) continue;
                 String key=st.nextToken();
@@ -204,16 +232,18 @@ public class ModJkMX extends JkHandler
                 String name=st.nextToken();
                 String att=st.nextToken();
                 String val=st.nextToken("").substring(1);
-                log.info("Token: " + key + " name: " + name + " att=" + att +
+                if( log.isDebugEnabled())
+                    log.debug("Token: " + key + " name: " + name + " att=" + att +
                         " val=" + val);
                 MBeanProxy proxy=(MBeanProxy)mbeans.get(name);
                 if( proxy==null ) {
                     log.info( "Unknown object " + name);
                 } else {
                     proxy.update(att, val);
+                    cnt++;
                 }
-
             }
+            log.info( "Refreshing attributes " + cnt);
         } catch( Exception ex ) {
             log.info("Error ", ex);
         }
@@ -222,42 +252,61 @@ public class ModJkMX extends JkHandler
     /** connect to apache, get a list of mbeans
       */
     BufferedReader getStream(String qry) throws Exception {
-        String path=statusPath + "?" + qry;
-        URL url=new URL( "http", webServerHost, webServerPort, path);
-        URLConnection urlc=url.openConnection();
-        BufferedReader is=new BufferedReader(new InputStreamReader(urlc.getInputStream()));
-        return is;
+        try {
+            String path=statusPath + "?" + qry;
+            URL url=new URL( "http", webServerHost, webServerPort, path);
+            URLConnection urlc=url.openConnection();
+            BufferedReader is=new BufferedReader(new InputStreamReader(urlc.getInputStream()));
+            return is;
+        } catch (IOException e) {
+            log.info( "Can't connect to jkstatus " + webServerHost + ":" + webServerPort
+            + " " + e.toString());
+            return null;
+        }
     }
 
-    public void getMetadata() throws Exception {
+    public void refreshMetadata() {
         try {
+            int cnt=0;
+            int newCnt=0;
             BufferedReader is=getStream("lst=*");
+            if( is==null ) return;
             String current=null;
             ArrayList getters=new ArrayList();
             ArrayList setters=new ArrayList();
+            StringTokenizer st=null;
+            String key=null;
             while(true) {
                 String line=is.readLine();
-                log.info("Read " + line);
-                if( line==null ) break;
+                if( log.isDebugEnabled())
+                    log.debug("Read " + line);
                 // for each mbean, create a proxy
-                StringTokenizer st=new StringTokenizer(line,"|");
-                if( st.countTokens() < 3 ) continue;
-                String key=st.nextToken();
-                if( "N".equals( key )) {
+                if( line!= null ) {
+                    st=new StringTokenizer(line,"|");
+                    if( st.countTokens() < 3 ) continue;
+                    key=st.nextToken();
+                }
+                if( line==null ||  "N".equals( key )) {
                     if( current!=null ) {
-                        // switched to a different object
-                        //XXX
-                        MBeanProxy mproxy=new MBeanProxy(this);
-                        mproxy.init( current, getters, setters);
-                        mbeans.put( current, mproxy );
+                        // switched to a different object or end
+                        cnt++;
+                        if( mbeans.get( current ) ==null ) {
+                            // New component
+                            newCnt++;
+                            MBeanProxy mproxy=new MBeanProxy(this);
+                            mproxy.init( current, getters, setters);
+                            mbeans.put( current, mproxy );
+                        }
 
                         getters.clear();
                         setters.clear();
                     }
+                    if( line==null ) break;
                     String type=st.nextToken();
                     String name=st.nextToken();
                     current=name;
-                    log.info("Token: " + key + " name: " + name + " type=" + type);
+                    if( log.isDebugEnabled())
+                        log.debug("Token: " + key + " name: " + name + " type=" + type);
                 }
                 if( "G".equals( key )) {
                     String name=st.nextToken();
@@ -280,6 +329,7 @@ public class ModJkMX extends JkHandler
 
 
             }
+            log.info( "Refreshing metadata " + cnt + " " +  newCnt);
         } catch( Exception ex ) {
             log.info("Error ", ex);
         }
@@ -291,34 +341,47 @@ public class ModJkMX extends JkHandler
     static class MBeanProxy extends BaseModelMBean {
         private static Log log = LogFactory.getLog(MBeanProxy.class);
 
-        public String jkName;
-        public List getAttNames;
-        public List setAttNames;
+        String jkName;
+        List getAttNames;
+        List setAttNames;
         HashMap atts=new HashMap();
         ModJkMX jkmx;
+        ObjectName oname;
 
         public MBeanProxy(ModJkMX jkmx) throws Exception {
             this.jkmx=jkmx;
         }
 
+        public ObjectName getObjectName() {
+            return oname;
+        }
+
         void init( String name, List getters, List setters )
             throws Exception
         {
-            log.info("Register " + name );
+            if(log.isDebugEnabled())
+                log.debug("Register " + name );
             int col=name.indexOf( ':' );
             this.jkName=name;
             String type=name.substring(0, col );
             String id=name.substring(col+1);
+            id=id.replace('*','%');
             id=id.replace(':', '%');
             if( id.length() == 0 ) {
                 id="default";
             }
             ManagedBean mbean= new ManagedBean();
 
+            AttributeInfo ai=new AttributeInfo();
+            ai.setName( "jkName" );
+            ai.setType( "java.lang.String");
+            ai.setWriteable(false);
+            mbean.addAttribute(ai);
+
             for( int i=0; i<getters.size(); i++ ) {
                 String att=(String)getters.get(i);
                 // Register metadata
-                AttributeInfo ai=new AttributeInfo();
+                ai=new AttributeInfo();
                 ai.setName( att );
                 ai.setType( "java.lang.String");
                 if( ! setters.contains(att))
@@ -330,7 +393,7 @@ public class ModJkMX extends JkHandler
                 if( getters.contains(att))
                     continue;
                 // Register metadata
-                AttributeInfo ai=new AttributeInfo();
+                ai=new AttributeInfo();
                 ai.setName( att );
                 ai.setType( "java.lang.String");
                 ai.setReadable(false);
@@ -340,8 +403,8 @@ public class ModJkMX extends JkHandler
             this.setModelMBeanInfo(mbean.createMBeanInfo());
 
             MBeanServer mserver=Registry.getRegistry().getMBeanServer();
-            mserver.registerMBean(this, new ObjectName("apache:type=" + type +
-                    ",id=" + id));
+            oname=new ObjectName("apache:type=" + type + ",id=" + id);
+            mserver.registerMBean(this, oname);
         }
 
         private void update( String name, String val ) {
@@ -352,6 +415,9 @@ public class ModJkMX extends JkHandler
         public Object getAttribute(String name)
             throws AttributeNotFoundException, MBeanException,
                 ReflectionException {
+            if( "jkName".equals( name )) {
+                return jkName;
+            }
             jkmx.refresh();
             return atts.get(name);
         }
@@ -366,7 +432,11 @@ public class ModJkMX extends JkHandler
                 String name=attribute.getName();
                 BufferedReader is=jkmx.getStream("set=" + jkName + "|" +
                         name + "|" + val);
-                log.info( "Setting " + jkName + " " + name + " result " + is.readLine());
+                if( is==null ) return;
+                if( log.isDebugEnabled())
+                    log.debug( "Setting " + jkName + " " + name + " result " + is.readLine());
+                jkmx.refreshMetadata();
+                jkmx.refreshAttributes();
             } catch( Exception ex ) {
                 throw new MBeanException(ex);
             }
