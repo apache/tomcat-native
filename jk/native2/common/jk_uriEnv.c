@@ -184,18 +184,30 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     return JK_OK;
 }
 
-static char *getAttInfo[]={ "host", "uri", "group", "context", "inheritGlobals", "match_type", "prefix", "suffix",
+static char *getAttInfo[]={ "host", "uri", "group", "context", "inheritGlobals", 
+                            "match_type",
                             "servlet", "timing", "aliases", "path", NULL };
 static char *setAttInfo[]={ "host", "uri", "group", "context", "inheritGlobals",
                             "servlet", "timing", "alias", "path", NULL };
     
+static char *matchTypes[] = { 
+    "exact",
+    "prefix",
+    "suffix",
+    "gensuffix",
+    "contextpath",
+    "host",
+    "context",
+    "regexp"
+};
+ 
 static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
                                      char *name )
 {
     jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)bean->object;
     
     if( strcmp( name, "host" )==0 ) {
-        return  (uriEnv->virtual==NULL) ? "*" : uriEnv->virtual;
+        return  uriEnv->virtual;
     } else if( strcmp( name, "uri" )==0 ) {
         return uriEnv->uri;
     } else if( strcmp( name, "group" )==0 ) {
@@ -209,10 +221,10 @@ static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
     } else if( strcmp( name, "suffix" )==0 ) {
         return uriEnv->suffix;
     } else if( strcmp( name, "match_type" )==0 ) {
-        return jk2_env_itoa(env, uriEnv->match_type);
+        return matchTypes[uriEnv->match_type];
     } else if (strcmp("timing", name) == 0) {
         return jk2_env_itoa(env, uriEnv->timing);
-    } else if (strcmp("aliases", name) == 0) {
+    } else if (strcmp("aliases", name) == 0 && uriEnv->aliases) {
         return jk2_map_concatKeys( env, uriEnv->aliases, ":" );
     } else if (strcmp("path", name) == 0) {
         return uriEnv->uri;
@@ -533,7 +545,7 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     uriEnv->mbean = result;
     result->object = uriEnv;
     result->getAttributeInfo = getAttInfo;
-    result->getAttributeInfo = setAttInfo;
+    result->setAttributeInfo = setAttInfo;
 
     uriEnv->name = result->localName;
     if (jk2_uriEnv_parseName(env, uriEnv, result->localName) != JK_OK) {
