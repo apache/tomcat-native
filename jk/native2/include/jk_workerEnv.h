@@ -69,7 +69,7 @@
 #include "jk_worker.h"
 #include "jk_map.h"
 #include "jk_uriMap.h"
-#include "jk_webapp.h"
+#include "jk_uriEnv.h"
 #include "jk_handler.h"
 #include "jk_service.h"
 #include "jk_vm.h"
@@ -82,7 +82,7 @@ struct jk_worker;
 struct jk_endpoint;
 struct jk_env;
 struct jk_uriMap;
-struct jk_webapp;
+struct jk_uriEnv;
 struct jk_map;
 struct jk_logger;
 struct jk_handler;
@@ -129,7 +129,10 @@ struct jk_workerEnv {
 
     /** Initialization properties, set via native options or workers.properties.
      */
-    struct jk_map *init_data;
+    /* XXX renamed from init_data to force all code to use setProperty
+       This is private property !
+    */
+    struct jk_map *initData;
 
     /** Root env, used to register object types, etc
      */
@@ -141,18 +144,12 @@ struct jk_workerEnv {
     char *log_file;
     int  log_level;
 
-    /*
-     * Worker stuff
-     */
-    char     *worker_file;
-
     char     *secret_key;
     /*     jk_map_t *automount; */
 
     struct jk_uriMap *uriMap;
 
-    struct jk_webapp *rootWebapp;
-    struct jk_map *webapps;
+    struct jk_uriEnv *rootWebapp;
 
     /** If 'global' server mappings will be visible in virtual hosts
         as well. XXX Not sure this is needed
@@ -205,6 +202,38 @@ struct jk_workerEnv {
     void *_private;
     
     /* -------------------- Methods -------------------- */
+    /** Set a jk property. This is similar with the mechanism
+     *  used by java side ( with individual setters for
+     *  various properties ), except we use a single method
+     *  and a big switch
+     *
+     *  As in java beans, setting a property may have side effects
+     *  like changing the log level or reading a secondary
+     *  properties file.
+     *
+     *  Changing a property at runtime will also be supported for
+     *  some properties.
+     *  XXX Document supported properties as part of
+     *  workers.properties doc.
+     *  XXX Implement run-time change in the status/ctl workers.
+     */
+    int (*setProperty)( struct jk_env *env,
+                         struct jk_workerEnv *_this,
+                         const char *name, char *value);
+
+    char *(*getProperty)( struct jk_env *env,
+                          struct jk_workerEnv *_this,
+                          const char *name);
+
+    /** Return a list of supported properties.
+        Not all properties can be set ( some may be runtime
+        status ).
+        @experimental This is not a final API, I would use
+        an external config ( DTD/schema or even MIB-like ?  )
+    */
+    char **(*getPropertyNames)( struct jk_env *env,
+                                struct jk_workerEnv *_this );
+
     
     /** Get worker by name
      */
@@ -215,12 +244,6 @@ struct jk_workerEnv {
     
     struct jk_worker *(*createWorker)(struct jk_env *env,
                                       struct jk_workerEnv *_this,
-                                      const char *name, 
-                                      struct jk_map *init_data);
-
-    struct jk_webapp *(*createWebapp)(struct jk_env *env,
-                                      struct jk_workerEnv *_this,
-                                      const char *vhost,
                                       const char *name, 
                                       struct jk_map *init_data);
 
@@ -242,7 +265,8 @@ struct jk_workerEnv {
                             struct jk_ws_service *r );
 
     /**
-     *  Init the workers, prepare the worker environment.
+     *  Init the workers, prepare the worker environment. Will read
+     *  all properties and set the jk acordignly.
      * 
      *  Replaces wc_open
      */

@@ -115,6 +115,11 @@ struct jk_uriMap {
 
     void (*destroy)( struct jk_env *env, jk_uriMap_t *_this );
 
+    struct jk_uriEnv *(*createUriEnv)(struct jk_env *env,
+                                      struct jk_uriMap *_this,
+                                      const char *vhost,
+                                      const char *name );
+
     /** Add a servlet mapping. Can be done before init()
      */
     jk_uriEnv_t *(*addMapping)( struct jk_env *env, jk_uriMap_t *_this,
