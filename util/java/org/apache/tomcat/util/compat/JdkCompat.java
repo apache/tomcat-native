@@ -210,7 +210,13 @@ public class JdkCompat {
     public String getPartialServletStackTrace(Throwable t) {
         StringWriter stackTrace = new StringWriter();
         t.printStackTrace(new PrintWriter(stackTrace));
-        return stackTrace.toString();
+        String st = stackTrace.toString();
+        int i = st.lastIndexOf("javax.servlet.");
+        if (i > -1) {
+            return st.substring(0, i);
+        } else {
+            return st;
+        }
     }
 
 
