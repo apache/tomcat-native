@@ -84,6 +84,13 @@ extern int jk_jni_status_code;
 #define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/apr/TomcatStarter")
 #define JAVA_BRIDGE_CLASS_APRI ("org/apache/jk/apr/AprImpl")
 
+/* The class will be executed when the connector is started */
+#define JK2_WORKER_HOOK_STARTUP     0
+#define JK2_WORKER_HOOK_INIT        1
+#define JK2_WORKER_HOOK_CLOSE       2
+/* The class will be executed when the connector is about to be destroyed */
+#define JK2_WORKER_HOOK_SHUTDOWN    3
+
 struct jni_worker_data {
     jclass      jk_java_bridge_class;
     jclass      jk_java_bridge_apri_class;
@@ -97,6 +104,7 @@ struct jni_worker_data {
     char **classNameOptions;
     char **args;
     int nArgs;
+    int hook;
 };
 
 typedef struct jni_worker_data jni_worker_data_t;
@@ -112,29 +120,31 @@ static int jk2_get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEn
                                      "main", 
                                      "([Ljava/lang/String;)V");
     if(!p->jk_main_method) {
-	    env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find main(String [])\n"); 
-	    return JK_ERR;
+        env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find main(String [])\n"); 
+        return JK_ERR;
     }
-
-    p->jk_setout_method =
+    /* Only the startup hook can redirect the stdout/stderr */
+    if (p->hook == JK2_WORKER_HOOK_STARTUP) {
+        p->jk_setout_method =
         (*jniEnv)->GetStaticMethodID(jniEnv, p->jk_java_bridge_apri_class,
                                      "setOut", 
                                      "(Ljava/lang/String;)V");
-    if(!p->jk_setout_method) {
-	    env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find AprImpl.setOut(String)"); 
-	    return JK_ERR;
-    }
+        if(!p->jk_setout_method) {
+            env->l->jkLog(env, env->l, JK_LOG_EMERG, 
+                          "Can't find AprImpl.setOut(String)"); 
+            return JK_ERR;
+        }
 
-    p->jk_seterr_method =
+        p->jk_seterr_method =
         (*jniEnv)->GetStaticMethodID(jniEnv, p->jk_java_bridge_apri_class,
                                      "setErr", 
                                      "(Ljava/lang/String;)V");
-    if(!p->jk_seterr_method) {
-	    env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find AprImpl.setErr(String)\n"); 
-	    return JK_ERR;
+        if(!p->jk_seterr_method) {
+            env->l->jkLog(env, env->l, JK_LOG_EMERG, 
+                          "Can't find AprImpl.setErr(String)\n"); 
+            return JK_ERR;
+        }
     }
-
-    
 
     return JK_OK;
 }
@@ -154,7 +164,7 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
     char *value=valueP;
     jni_worker_data_t *jniWorker;
     int mem_config = 0;
-
+    
     if(! _this || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "In validate, assert failed - invalid parameters\n");
@@ -162,6 +172,16 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
     }
 
     jniWorker = _this->worker_private;
+    if (strcmp(mbean->name, "worker.jni:onStartup") == 0)
+        jniWorker->hook = JK2_WORKER_HOOK_STARTUP;
+    else if (strncmp(mbean->name, "worker.jni:onInit",
+        sizeof("worker.jni:onInit") -1)== 0)
+        jniWorker->hook = JK2_WORKER_HOOK_INIT;
+    else if (strncmp(mbean->name, "worker.jni:onClose",
+        sizeof("worker.jni:onClose") -1)== 0)
+        jniWorker->hook = JK2_WORKER_HOOK_CLOSE;
+    else if (strcmp(mbean->name, "worker.jni:onShutdown") == 0)
+        jniWorker->hook = JK2_WORKER_HOOK_SHUTDOWN;
 
     if( strcmp( name, "stdout" )==0 ) {
         jniWorker->stdout_name = value;
@@ -178,10 +198,6 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
         } else {
             jniWorker->className = value;
         }
-    /* XXX Instead of ARG=start split to something like:
-     * startup=start
-     * shutdown=stop
-     */
     } else if( strcmp( name, "ARG" )==0 ) {
         jniWorker->args[jniWorker->nArgs]=value;
         jniWorker->nArgs++;
@@ -273,9 +289,9 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
                   "Loaded %s\n", jniWorker->className);
 
 /* Instead of loading mod_jk2.so from java, use the JNI RegisterGlobals.
-   XXX Need the way to customize JAVA_BRIDGE_CLASS_APRI, but since
-   it's hardcoded in JniHandler.java doesn't matter for now.
-*/
+ * XXX Need the way to customize JAVA_BRIDGE_CLASS_APRI, but since
+ * it's hardcoded in JniHandler.java doesn't matter for now.
+ */
     jniWorker->jk_java_bridge_apri_class =
         (*jniEnv)->FindClass(jniEnv, JAVA_BRIDGE_CLASS_APRI );
 
@@ -286,14 +302,17 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
         vm->detach(env, vm);
         return JK_ERR;
     }
-    rc = jk_jni_aprImpl_registerNatives( jniEnv, jniWorker->jk_java_bridge_apri_class);
-    if( rc != 0) {
-     env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "Can't register native functions for %s \n", JAVA_BRIDGE_CLASS_APRI ); 
-        vm->detach(env, vm);
-        return JK_ERR;
+
+    if (jniWorker->hook == JK2_WORKER_HOOK_STARTUP) {
+        rc = jk_jni_aprImpl_registerNatives( jniEnv, jniWorker->jk_java_bridge_apri_class);
+        if( rc != 0) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "Can't register native functions for %s \n", JAVA_BRIDGE_CLASS_APRI ); 
+            vm->detach(env, vm);
+            return JK_ERR;
+        }
     }
-    
+
     rc=jk2_get_method_ids(env, jniWorker, jniEnv);
     if( rc!=JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
@@ -302,21 +321,6 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
         vm->detach(env, vm);
         return rc;
     }
-
-    jstringClass=(*jniEnv)->FindClass(jniEnv, "java/lang/String" );
-
-    jargs=(*jniEnv)->NewObjectArray(jniEnv, jniWorker->nArgs, jstringClass, NULL);
-
-    for( i=0; i<jniWorker->nArgs; i++ ) {
-        jstring arg=NULL;
-        if( jniWorker->args[i] != NULL ) {
-            arg=(*jniEnv)->NewStringUTF(jniEnv, jniWorker->args[i] );
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "jni.init() ARG %s\n", jniWorker->args[i]);
-        }
-        (*jniEnv)->SetObjectArrayElement(jniEnv, jargs, i, arg );        
-    }
-    
     /* Set out and err stadard files */ 
     if (jniWorker->stdout_name && jniWorker->jk_setout_method) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -335,16 +339,38 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
                                         jniWorker->jk_seterr_method,
                                         stderr_name);
     }
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "jni.init() calling main()...\n");
-    (*jniEnv)->CallStaticVoidMethod(jniEnv,
-                                    jniWorker->jk_java_bridge_class,
-                                    jniWorker->jk_main_method,
-                                    jargs);
+    
+    if (jniWorker->hook < JK2_WORKER_HOOK_CLOSE) {
+        jstringClass=(*jniEnv)->FindClass(jniEnv, "java/lang/String" );
+
+        jargs=(*jniEnv)->NewObjectArray(jniEnv, jniWorker->nArgs, jstringClass, NULL);
+
+        for( i=0; i<jniWorker->nArgs; i++ ) {
+            jstring arg=NULL;
+            if( jniWorker->args[i] != NULL ) {
+                arg=(*jniEnv)->NewStringUTF(jniEnv, jniWorker->args[i] );
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "jni.init() ARG %s\n", jniWorker->args[i]);
+            }
+            (*jniEnv)->SetObjectArrayElement(jniEnv, jargs, i, arg );        
+        }
+    
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.init() calling main()...\n");
+        (*jniEnv)->CallStaticVoidMethod(jniEnv,
+                                        jniWorker->jk_java_bridge_class,
+                                        jniWorker->jk_main_method,
+                                        jargs);
+    }
+    else {
+        /* XXX Is it right thing to disable all non init hooks 
+         * or make that customizable.
+         */
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.init() disabling the non init hook worker\n");
+        _this->mbean->disabled = 1;
+    }
 #if 0
-    /* Do not detach the main thread.
-     * It will be detached on destroy
-     */
     vm->detach(env, vm);
 #endif
     /* XXX create a jni channel */
@@ -363,7 +389,7 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
     jclass jstringClass;
     jarray jargs;
     jstring arg=NULL;
-    
+
     if(!_this  || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "In destroy, assert failed - invalid parameters\n");
@@ -371,21 +397,29 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
     }
 
     jniWorker = _this->worker_private;
-
+    
+    if (jniWorker->hook < JK2_WORKER_HOOK_CLOSE) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                       "jni.destroy(), done...worker is not hooked for close\n");
+        return JK_OK;
+    }
     if((jniEnv = vm->attach(env, vm))) {
+        int i;
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                        "jni.destroy(), shutting down Tomcat...\n");
 
         jstringClass=(*jniEnv)->FindClass(jniEnv, "java/lang/String" );
-        jargs=(*jniEnv)->NewObjectArray(jniEnv, 1, jstringClass, NULL);
+        jargs=(*jniEnv)->NewObjectArray(jniEnv, jniWorker->nArgs, jstringClass, NULL);
+        for( i=0; i<jniWorker->nArgs; i++ ) {
+            jstring arg=NULL;
+            if( jniWorker->args[i] != NULL ) {
+                arg=(*jniEnv)->NewStringUTF(jniEnv, jniWorker->args[i] );
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                                "jni.init() ARG %s\n", jniWorker->args[i]);
+            }
+            (*jniEnv)->SetObjectArrayElement(jniEnv, jargs, i, arg );        
+        }
 
-        /* XXX Need to make that arg customizable 
-        */
-        arg=(*jniEnv)->NewStringUTF(jniEnv, "stop" );
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "jni.destroy() ARG stop\n");
-        (*jniEnv)->SetObjectArrayElement(jniEnv, jargs, 0, arg );        
-    
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "jni.destroy() calling main()...\n");
 
@@ -393,15 +427,16 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
         (*jniEnv)->CallStaticVoidMethod(jniEnv,
                                     jniWorker->jk_java_bridge_class,
                                     jniWorker->jk_main_method,
-                                    jargs,stdout_name,stderr_name);
+                                    jargs);
+        if (jniWorker->hook == JK2_WORKER_HOOK_SHUTDOWN) {
 #ifdef HAS_APR
-        while (jk_jni_status_code != 2) {
-            apr_thread_yield();
-        }
+            while (jk_jni_status_code != 2) {
+                apr_thread_yield();
+            }
 #endif
-        (*jniEnv)->UnregisterNatives(jniEnv, jniWorker->jk_java_bridge_apri_class);
-
-        vm->destroy(env, vm);
+            (*jniEnv)->UnregisterNatives(jniEnv, jniWorker->jk_java_bridge_apri_class);
+            vm->destroy(env, vm);
+        }
     }
     env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.destroy() done\n");
 
