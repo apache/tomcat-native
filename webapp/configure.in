@@ -64,59 +64,50 @@ dnl ----------------------------------------------------------------------------
 dnl -----------------------------------------------------------------------------
 dnl Initialize GNU AutoConf
 dnl -----------------------------------------------------------------------------
-sinclude(../common/build/apache.m4)dnl
 AC_INIT(Makefile.in)
 
 dnl -----------------------------------------------------------------------------
-dnl Check out CC and RANLIB programs
+dnl Define the local functions we're going to use
 dnl -----------------------------------------------------------------------------
-AC_PROG_CC
+AC_DEFUN(LOCAL_HEADER,[
+    printf "\n\033\13301;31m%s\033\13300m\n" "$1" 1>&2
+    AC_PROVIDE([$0])
+])
+
+AC_DEFUN(LOCAL_FILTEREXEC,[{
+    $1
+    echo RETVAL $?
+}|{
+    RET=0
+    while ${TRUE}
+    do
+        read FIRST LINE
+        if ${TEST} ! "$?" -eq "0"
+        then
+            break
+        else
+            if ${TEST} "$FIRST" = "RETVAL"
+            then
+                RET="$LINE"
+            else
+                printf "\033\13301m%s\033\13300m: %s\n" "$2" "$FIRST $LINE" 1>&2
+            fi
+        fi
+    done
+    unset FIRST
+    unset LINE
+}])
+
+dnl -----------------------------------------------------------------------------
+dnl Check out ranlib and ar
+dnl -----------------------------------------------------------------------------
 AC_PROG_RANLIB
-
-AC_PATH_PROG(AR,ar,$PATH)dnl
-AC_PATH_PROG(TEST,test,$PATH)dnl
-
+AC_PATH_PROG(AR,ar,${PATH})
+AC_PATH_PROG(TEST,test,$PATH)
+AC_PATH_PROG(TRUE,true,$PATH)
 AC_SUBST(AR)
 AC_SUBST(TEST)
-
-dnl -----------------------------------------------------------------------------
-dnl Process the --with-apr=... command line argument (required)
-dnl -----------------------------------------------------------------------------
-AC_MSG_CHECKING([APR directory])
-AC_ARG_WITH(apr,
-	[  --with-apr=DIR          where the APR installation can be found [required]],
-	APRDIR=$withval,
-	APRDIR="")
-if ${TEST} -z "$APRDIR" ; then
-	AC_MSG_ERROR([Required command line argument \"--with-apr=...\" not specified])
-fi
-if ${TEST} ! -d "$APRDIR" ; then
-	AC_MSG_ERROR([Invalid APR directory \"$APRDIR\" specified])
-fi
-if ${TEST} ! -f "$APRDIR/include/apr.h" ; then
-	AC_MSG_ERROR([No APR headers in \"$APRDIR\"])
-fi
-for i in "$APRDIR/lib/libapr*"
-do
-    if ${TEST} -f "$i" ; then
-        has_apr_lib = true
-        break
-    fi
-done
-if ${TEST} ${has_apr_lib} ; then
-	AC_MSG_ERROR([No APR libraries in \"$APRDIR\"])
-fi
-
-CURDIR=`pwd`
-cd $APRDIR
-APRDIR=`pwd`
-cd $CURDIR
-AC_MSG_RESULT($APRDIR)
-AC_SUBST(APRDIR)
-
-TGTDIRS="lib"
-AC_MSG_RESULT([setting target directories to \"$TGTDIRS\"])
-AC_SUBST(TGTDIRS)
+AC_SUBST(TRUE)
 
 dnl -----------------------------------------------------------------------------
 dnl Process the --with-apxs[=FILE]... command line argument
@@ -189,8 +180,50 @@ AC_MSG_RESULT($TGTDIR)
 AC_SUBST(TGTDIR)
 
 dnl -----------------------------------------------------------------------------
-dnl LDFLAGS and CFLAGS to APXS command
+dnl Process the --with-apr=... command line argument (required)
 dnl -----------------------------------------------------------------------------
-JTC_SET_APXS_FLAGS()
+AC_MSG_CHECKING([APR directory])
+AC_ARG_WITH(apr,
+  [  --with-apr=DIR          where the APR sources can be found],
+  APRDIR=${withval},
+  APRDIR="${srcdir}/apr"
+)
+
+if ${TEST} ! -d "${APRDIR}" ; then
+  AC_MSG_ERROR([Cannot find APR sources directory \"${APRDIR}\"])
+fi
+
+if ${TEST} ! -x "${APRDIR}/buildconf" ; then
+  AC_MSG_ERROR([Cannot find APR buildconf program in \"${APRDIR}\"])
+fi
+
+CURDIR=`pwd`
+cd ${APRDIR}
+APRDIR=`pwd`
+AC_MSG_RESULT([${APRDIR}])
+cd ${CURDIR}
+AC_SUBST(APRDIR)
+
+dnl -----------------------------------------------------------------------------
+dnl Build the configure script for APR and run it
+dnl -----------------------------------------------------------------------------
+cd ${APRDIR}
+
+LOCAL_HEADER([Building APR configure script])
+LOCAL_FILTEREXEC(./buildconf,[  APR buildconf])
+if ${TEST} "${RET}" -ne "0"
+then
+  AC_MSG_ERROR([APR buildconf terminated with error code ${RET}])
+fi
+
+LOCAL_HEADER([Configuring APR])
+LOCAL_FILTEREXEC(./configure,[  APR configure])
+if ${TEST} "${RET}" -ne "0"
+then
+  AC_MSG_ERROR([APR configure script terminated with error code ${RET}])
+fi
+
+LOCAL_HEADER([Done with APR configuration])
+cd ${CURDIR}
 
 AC_OUTPUT(Makedefs Makefile lib/Makefile apache-1.3/Makefile)
