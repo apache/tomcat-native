@@ -1282,58 +1282,58 @@ static int ajp_get_reply(jk_endpoint_t *e,
 		}
 		
         if(!ajp_connection_tcp_get_message(p, op->reply, l)) {
-        /* we just can't recover, unset recover flag */
-	    if(headeratclient == JK_FALSE) {
-            jk_log(l, JK_LOG_ERROR,
-                   "Tomcat is down or network problems. "
-                   "No response has been sent to the client (yet)\n");
-         /*
-          * communication with tomcat has been interrupted BEFORE 
- 		  * headers have been sent to the client.
- 		  * DISCUSSION: As we suppose that tomcat has already started
-		  * to process the query we think it's unrecoverable (and we
-		  * should not retry or switch to another tomcat in the 
-		  * cluster). 
-		  */
-		  
-		  /*
-		   * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCGETREQUEST 
-		   */
-            if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
-	        	op->recoverable = JK_FALSE;
-		  /* 
-		   * we want to display the webservers error page, therefore
-		   * we return JK_FALSE 
-		   */
-		   return JK_FALSE;
-		   
-	    } else {
-                jk_log(l, JK_LOG_ERROR,
-                   "Error reading reply from tomcat. "
-                   "Tomcat is down or network problems. "
-		           "Part of the response has already been sent to the client\n");
-      	        
-      	        /* communication with tomcat has been interrupted AFTER 
-        		 * headers have been sent to the client.
-	             * headers (and maybe parts of the body) have already been
-  		         * sent, therefore the response is "complete" in a sense
-		         * that nobody should append any data, especially no 500 error 
-        		 * page of the webserver! 
-        		 *
-      		     * BUT if you retrun JK_TRUE you have a 200 (OK) code in your
-		         * in your apache access.log instead of a 500 (Error). 
-			     * Therefore return FALSE/FALSE
-                 * return JK_TRUE; 
-                 */
-            
-   		        /*
-		         * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCSENDHEADER 
-		        */
-                if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCSENDHEADER)
-		            op->recoverable = JK_FALSE;
-		        
-			return JK_FALSE;
-	    }
+	        /* we just can't recover, unset recover flag */
+		    if(headeratclient == JK_FALSE) {
+	            jk_log(l, JK_LOG_ERROR,
+	                   "Tomcat is down or network problems. "
+	                   "No response has been sent to the client (yet)\n");
+	         /*
+	          * communication with tomcat has been interrupted BEFORE 
+	 		  * headers have been sent to the client.
+	 		  * DISCUSSION: As we suppose that tomcat has already started
+			  * to process the query we think it's unrecoverable (and we
+			  * should not retry or switch to another tomcat in the 
+			  * cluster). 
+			  */
+			  
+			  /*
+			   * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCGETREQUEST 
+			   */
+	            if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
+		        	op->recoverable = JK_FALSE;
+			  /* 
+			   * we want to display the webservers error page, therefore
+			   * we return JK_FALSE 
+			   */
+			   return JK_FALSE;
+		    } else {
+	                jk_log(l, JK_LOG_ERROR,
+	                   "Error reading reply from tomcat. "
+	                   "Tomcat is down or network problems. "
+			           "Part of the response has already been sent to the client\n");
+	      	        
+	      	        /* communication with tomcat has been interrupted AFTER 
+	        		 * headers have been sent to the client.
+		             * headers (and maybe parts of the body) have already been
+	  		         * sent, therefore the response is "complete" in a sense
+			         * that nobody should append any data, especially no 500 error 
+	        		 * page of the webserver! 
+	        		 *
+	      		     * BUT if you retrun JK_TRUE you have a 200 (OK) code in your
+			         * in your apache access.log instead of a 500 (Error). 
+				     * Therefore return FALSE/FALSE
+	                 * return JK_TRUE; 
+	                 */
+	            
+	   		        /*
+			         * We mark it unrecoverable if recovery_opts set to RECOVER_ABORT_IF_TCSENDHEADER 
+			        */
+	                if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCSENDHEADER)
+			            op->recoverable = JK_FALSE;
+			        
+				return JK_FALSE;
+	    	}
+		}
 		
         rc = ajp_process_callback(op->reply, op->post, p, s, l);
 
