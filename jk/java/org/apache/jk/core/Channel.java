@@ -63,7 +63,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.Enumeration;
+import java.util.*;
 import java.security.*;
 
 import org.apache.tomcat.util.http.MimeHeaders;
@@ -81,23 +81,40 @@ import org.apache.tomcat.util.buf.HexUtils;
  * @author Kevin Seguin
  * @author Costin Manolache
  */
-public interface Channel {
+public abstract class Channel {
+    protected WorkerEnv we;
+    protected Worker worker;
 
-    public void setWorkerEnv( WorkerEnv we );
+    public void setWorkerEnv( WorkerEnv we ) {
+        this.we=we;
+    }
     
-    public void init() throws IOException;
+    public void setWorker(Worker worker) {
+        this.worker=worker;
+    }
+
+    public void init() throws IOException {
+    }
+            
+    /** This method is used to receive messages. It shouldn't
+     *  be exposed, as most processing is driven by sending
+     *   messages and dispatching on incoming messages. The
+     *   only current use is the aberant post packet after
+     *   the first request, which doesn't fit anything.
+     */
+    public abstract int receive( Msg msg, Endpoint ep )
+        throws IOException;
+
+    /**
+     * Send a packet to the web server.  Works for any type of message.
+     *
+     * @param msg A packet with accumulated data to send to the server --
+     * this method will write out the length in the header.  
+     */
+    public abstract int send( Msg msg, Endpoint ep )
+        throws IOException;
+
+
     
-    public void write( Endpoint ep, byte[] b, int offset, int len)
-                throws IOException;
 
-    public int read( Endpoint ep, byte[] b, int offset, int len)
-               throws IOException;
-
-    public void setJkHome(String home);
-
-    public void setWorker(Worker wo);
-
-    public void setFile(String file);
-
-    public void setPort(int port);
 }
