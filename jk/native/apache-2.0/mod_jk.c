@@ -2280,16 +2280,18 @@ static int jk_translate(request_rec *r)
 
                 return OK;
             } else if(conf->alias_dir != NULL) {
+                char *clean_uri = ap_pstrdup(r->pool, r->uri);
+                ap_no2slash(clean_uri);
                 /* Automatically map uri to a context static file */
                 jk_log(conf->log, JK_LOG_DEBUG,
                     "mod_jk::jk_translate, check alias_dir: %s\n",
                     conf->alias_dir);
-                if (strlen(r->uri) > 1) {
+                if (strlen(clean_uri) > 1) {
                     /* Get the context directory name */
                     char *context_dir = NULL;
                     char *context_path = NULL;
                     char *child_dir = NULL;
-                    char *index = r->uri;
+                    char *index = clean_uri;
                     char *suffix = strchr(index+1,'/');
                     if( suffix != NULL ) {
                         int size = suffix - index;
@@ -2327,7 +2329,7 @@ static int jk_translate(request_rec *r)
                         finfo.filetype = APR_NOFILE;
                         apr_stat(&finfo,context_path,APR_FINFO_TYPE,r->pool);
                         if( finfo.filetype == APR_DIR ) {
-                            char *escurl = ap_os_escape_path(r->pool, r->uri, 1);
+                            char *escurl = ap_os_escape_path(r->pool, clean_uri, 1);
                             char *ret = ap_pstrcat(r->pool,conf->alias_dir,escurl,NULL);
                             /* Add code to verify real path ap_os_canonical_name */
                             if( ret != NULL ) {
