@@ -146,7 +146,7 @@ int jk_open_socket(struct sockaddr_in *addr,
 /* Need more infos for BSD 4.4 and Unix 98 defines, for now only 
    iSeries when Unix98 is required at compil time */
 #if (_XOPEN_SOURCE >= 520) && defined(AS400)
-	       ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in));
+	       ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in);
 #endif 
             ret = connect(sock,
                           (struct sockaddr *)addr,
