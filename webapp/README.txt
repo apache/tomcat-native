@@ -54,8 +54,10 @@ Apache 1.3. The available options for the configure script are:
         is not set in your environment, you'll have to specify the root
         path of your JDK installation on this command line. To compile
         the Java classes, you will need to set your CLASSPATH variable to
-        include the "catalina.jar" distributed with Tomcat 4.0. Example:
+        include the "catalina.jar" and "servlet.jar" distributed with
+        Tomcat 4.0. For example:
           # CLASSPATH=$CATALINA_HOME/server/lib/catalina.jar
+          # CLASSPATH=$CLASSPATH:$CATALINA_HOME/common/lib/server.jar
           # export CLASSPATH
 
     --enable-debug
