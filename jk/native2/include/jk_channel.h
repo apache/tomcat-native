@@ -61,7 +61,7 @@
 #include "jk_global.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
-#include "jk_msg_buff.h"
+#include "jk_msg.h"
 
 #ifdef __cplusplus
 extern "C" {

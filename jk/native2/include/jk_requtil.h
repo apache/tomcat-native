@@ -67,7 +67,6 @@
 #define JK_REQUTIL_H
 
 #include "jk_global.h"
-#include "jk_ajp14.h"
 #include "jk_channel.h"
 #include "jk_env.h"
 
@@ -196,6 +195,11 @@ char *jk_requtil_getSessionRoute(jk_ws_service_t *s);
  * jk_init_ws_service
  */ 
 void jk_requtil_initRequest(jk_ws_service_t *s);
+
+
+int jk_requtil_readFully(jk_ws_service_t *s,
+                         unsigned char   *buf,
+                         unsigned         len);
 
 #ifdef __cplusplus
 }

@@ -224,7 +224,8 @@ struct jk_ws_service {
     char      **out_header_names;
     char      **out_header_values;
 
-    
+    /* Count remaining bytes ( original content length minus what was sent */
+    int left_bytes_to_send;
     
     /*
      * Callbacks into the web server.  For each, the first argument is

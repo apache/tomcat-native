@@ -55,13 +55,13 @@
  *                                                                           *
  * ========================================================================= */
 
-#ifndef JK_REQ_H
-#define JK_REQ_H
+#ifndef JK_OBJCACHE_H
+#define JK_OBJCACHE_H
 
 #include "jk_global.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
-#include "jk_msg_buff.h"
+#include "jk_msg.h"
 #include "jk_mt.h"
 
 #ifdef __cplusplus
