@@ -347,7 +347,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                             "In HttpFilterProc Virtual Host redirection of %s : %d\n", 
                             Host, Port);
-                uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host, 0, uri );
+                uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host, Port, uri );
 
                 if( uriEnv!=NULL ) {
                     char *forwardURI;
