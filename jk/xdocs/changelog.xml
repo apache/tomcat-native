@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      <bug>33562</bug>: Fix Reply_timeout when recovery_options
+      is larger than 1. Patch provided by Takashi Satou. (mturk)
+      </fix>
+      <fix>
       <bug>33308</bug>: Fix segfaults when ForwardDirectories is enabled
         with Apache 1.3
       </fix>

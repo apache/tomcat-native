@@ -1420,8 +1420,16 @@ static int ajp_get_reply(jk_endpoint_t *e,
             if (ajp_is_input_event(p, p->worker->reply_timeout, l) ==
                 JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR,
-                       "Timeout will waiting reply from tomcat. "
+                       "Timeout with waiting reply from tomcat. "
                        "Tomcat is down, stopped or network problems.");
+                if (headeratclient == JK_FALSE) {
+                    if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
+                        op->recoverable = JK_FALSE;
+                }
+                else {
+                    if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCSENDHEADER)
+                        op->recoverable = JK_FALSE;
+                }
 
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
