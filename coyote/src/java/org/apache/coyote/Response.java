@@ -482,6 +482,10 @@ public final class Response {
     /**
      * Sets the content type.
      *
+     * This method must preserve any response charset that may already have 
+     * been set via a call to response.setContentType(), response.setLocale(),
+     * or response.setCharacterEncoding().
+     *
      * @param contentType the content type
      */
     public void setContentType(String contentType) {
@@ -497,12 +501,7 @@ public final class Response {
          * The most recent response encoding setting will be appended to the
          * response Content-Type (as its charset param) by getContentType();
          */
-        int beginCharsetValue = BEGIN_CHARSET_VALUE;
-        int beginCharsetParam = contentType.indexOf(";charset=");
-        if (beginCharsetParam == -1) {
-            beginCharsetParam = contentType.indexOf("; charset=");
-            beginCharsetValue++;
-        }
+        int beginCharsetParam = contentType.indexOf("charset=");
         if (beginCharsetParam == -1) {
             // no charset
             this.contentType = contentType;
@@ -510,14 +509,19 @@ public final class Response {
         }
 
         this.contentType = contentType.substring(0, beginCharsetParam);
-        String tail = contentType.substring(beginCharsetParam + 1);
+        // Trim the semicolon preceding the charset
+        int charsetSemi = this.contentType.lastIndexOf(';');
+        if (charsetSemi != -1) {
+            this.contentType = this.contentType.substring(0, charsetSemi);
+        }
+        String tail = contentType.substring(beginCharsetParam);
         int nextParam = tail.indexOf(';');
         String charsetValue = null;
         if (nextParam != -1) {
             this.contentType += tail.substring(nextParam);
-            charsetValue = tail.substring(beginCharsetValue, nextParam);
+            charsetValue = tail.substring(BEGIN_CHARSET_VALUE, nextParam);
         } else {
-            charsetValue = tail.substring(beginCharsetValue);
+            charsetValue = tail.substring(BEGIN_CHARSET_VALUE);
         }
         // The charset value may be quoted, but must not contain any quotes.
         charsetValue = charsetValue.replace('"', ' ');
