@@ -93,6 +93,8 @@ static jk_workerEnv_t *workerEnv;
 
 static int jniDebug=0;
 
+int jk_jni_status_code=0;
+
 #define JK_GET_REGION 1
 #define JK_GET_BYTE_ARRAY_ELEMENTS 2
 #define JK_DIRECT_BUFFER_NIO 3
@@ -503,6 +505,14 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     return rc;
 }
 
+/*
+*/
+JNIEXPORT void JNICALL 
+Java_org_apache_jk_apr_AprImpl_jkStatus
+  (JNIEnv *jniEnv, jobject o, jint statusCode )
+{
+    jk_jni_status_code = statusCode;
+}
 
 static JNINativeMethod org_apache_jk_apr_AprImpl_native_methods[] = {
     { 
@@ -552,6 +562,10 @@ static JNINativeMethod org_apache_jk_apr_AprImpl_native_methods[] = {
     {
         "jkRecycle", "(JJ)V",
         Java_org_apache_jk_apr_AprImpl_jkRecycle
+    },
+    {
+        "jkStatus", "(I)V",
+        Java_org_apache_jk_apr_AprImpl_jkStatus
     },
 };
 

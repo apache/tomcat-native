@@ -119,6 +119,8 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
      */
     public native void jkRecycle(long xEnv, long endpointP);
 
+    /* Send a TC status code to the server */
+    public static native void jkStatus(int code);
     
     // -------------------- Called from C --------------------
     // XXX Check security, add guard or other protection
@@ -181,6 +183,13 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
         jniMode=true;
     }
 
+    public static void jniStatus(int code) throws IOException {
+        try {
+            jkStatus( code);
+        } catch( Throwable t) {   
+            throw new IOException( t.getMessage() );            
+        }        
+    }
     
     /** This method of loading the libs doesn't require setting
      *   LD_LIBRARY_PATH. Assuming a 'right' binary distribution,
