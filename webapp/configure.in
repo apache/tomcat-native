@@ -132,14 +132,15 @@ AC_SUBST(SRCDIR)
 dnl --------------------------------------------------------------------------
 dnl Process the --enable-debug[=FILE] command line argument
 dnl --------------------------------------------------------------------------
+AC_MSG_CHECKING([debugging flags])
 AC_ARG_ENABLE(debug,
   [  --enable-debug          Build with full debugging output.],
   [
-    AC_MSG_RESULT([enabling debug output])
+    AC_MSG_RESULT([enabled])
     CFLAGS="$CFLAGS -DDEBUG"
     DEBUG="true"
   ],[
-    AC_MSG_RESULT([disabling debug output])
+    AC_MSG_RESULT([disabled])
     DEBUG="false"
   ]
 )
@@ -149,8 +150,12 @@ dnl -------------------------------------------------------------------------
 dnl Check JAVA environment
 dnl -------------------------------------------------------------------------
 AP_JAVA()
-AP_PROG_JAVAC()
-AP_PROG_JAR()
+if test "${JAVA_ENABLE}" = "true"
+then
+  AP_PROG_JAVAC()
+  AP_PROG_JAR()
+  TGTDIRS="${SRCDIR}/java ${TGTDIRS}"
+fi
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apxs[=FILE] command line argument
@@ -299,7 +304,7 @@ AC_SUBST(CFLAGS)
 CPPFLAGS="-I${SRCDIR}/include -I${APRDIR}/include ${CPPFLAGS}"
 AC_SUBST(CPPFLAGS)
 
-TGTDIRS="${SRCDIR}/java ${SRCDIR}/lib"
+TGTDIRS="${TGTDIRS} ${SRCDIR}/lib"
 AC_SUBST(TGTDIRS)
 
 CONFIGFILES="./Makedefs ./Makefile ./lib/Makefile ./java/Makefile"

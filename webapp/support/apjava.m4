@@ -91,22 +91,31 @@ AC_DEFUN([AP_PROG_JAR],[
 ])
 
 AC_DEFUN([AP_JAVA],[
-  AC_ARG_WITH(jdk,
-  [  --with-jdk=DIR         Specify the location of your JDK installation],
+  AC_MSG_CHECKING([Java support])
+  AC_ARG_WITH(java,
+  [  --with-java[=JAVA_HOME] Build Java sources. If JAVA_HOME is not specified
+                          its value will be inherited from the JAVA_HOME
+                          environment variable ],
   [
-    AC_MSG_CHECKING([JAVA_HOME])
-    if test -d "$withval"
+    case "${withval}" in
+    yes|YES|true|TRUE)
+        AC_MSG_RESULT([${JAVA_HOME}])
+        ;;
+    *)
+        JAVA_HOME="${withval}"
+        AC_MSG_RESULT([${JAVA_HOME}])
+        ;;
+    esac
+    if ! test -d "${JAVA_HOME}"
     then
-      JAVA_HOME="$withval"
-      AC_MSG_RESULT([$JAVA_HOME])
-    else
-      AC_MSG_RESULT([failed])
-      AC_MSG_ERROR([$withval is not a directory])
+      AC_MSG_ERROR([${JAVA_HOME} is not a directory])
     fi
+    JAVA_ENABLE="true"
     AC_SUBST(JAVA_HOME)
+    AC_SUBST(JAVA_ENABLE)
+  ],[
+    AC_MSG_RESULT([disabled])
+    JAVA_ENABLE="false"
+    AC_SUBST(JAVA_ENABLE)
   ])
-  if test x"$JAVA_HOME" = x
-  then
-    AC_MSG_ERROR([Java Home not defined. Rerun with --with-jdk=[...] parameter])
-  fi
 ])
