@@ -485,7 +485,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         rPool->reset(env, rPool);
         
         rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
-        
+        rc=HSE_STATUS_SUCCESS;
         lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
         env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                "HttpExtensionProc service() returned OK\n");
@@ -567,6 +567,7 @@ static int init_jk(char *serverName)
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using server root %s.\n", server_root);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using uri select %d.\n", uri_select_option);
+    workerEnv->init(env,workerEnv);
     return rc;
 }
 
@@ -787,13 +788,6 @@ static jk_env_t * jk2_create_config()
     }
 
     env->l->jkLog(env, env->l, JK_LOG_ERROR, "JK2 Config Created");
-
-    jkb = workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
-                                             workerEnv->pool,
-                                             "uri", NULL );
-    newUri=jkb->object;
    
-    newUri->workerEnv=workerEnv;
-    
     return env;
 }

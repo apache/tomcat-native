@@ -98,10 +98,6 @@ static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
         return JK_ERR;
     }
     
-    if (!s->response_started) {
-        return JK_OK;
-    }
-
     if( lpEcb == NULL ) {
         env->l->jkLog(env,env->l, JK_LOG_ERROR, 
                       "jk_ws_service_t::start_response, no lpEcp\n");
@@ -320,6 +316,8 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
     s->ssl_session  = NULL;
     s->ssl_key_size = -1;
 
+    jk2_map_default_create(env, &s->headers_out, s->pool );
+    jk2_map_default_create(env, &s->attributes, s->pool );
     jk2_map_default_create(env, &s->headers_in, s->pool );
 //    s->headers_values   = NULL;
 //  s->num_headers      = 0;
@@ -420,7 +418,6 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
             
             cnt -= 2; /* For our two special headers */
             /* allocate an extra header slot in case we need to add a content-length header */
-            jk2_map_default_create(env, &s->headers_in, s->pool );
             for(i = 0, tmp = headers_buf ; *tmp && i < cnt ; ) {
                 int real_header = JK_TRUE;
                 char *headerName;
