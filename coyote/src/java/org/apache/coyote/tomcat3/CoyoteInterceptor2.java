@@ -254,11 +254,10 @@ public class CoyoteInterceptor2 extends BaseInterceptor
      * Check if a string is a reserved SSL attribute key.
      */
     public static boolean isSSLAttribute(String key) {
-        if(key == null)
-            return false;
-        return key.equals("javax.servlet.request.cipher_suite") ||
-            key.equals("javax.servlet.request.X509Certificate") ||
-            key.equals("javax.servlet.request.key_size");
+	return SSLSupport.CIPHER_SUITE_KEY.equals(key) ||
+	    SSLSupport.KEY_SIZE_KEY.equals(key)        ||
+	    SSLSupport.CERTIFICATE_KEY.equals(key)     ||
+	    SSLSupport.SESSION_ID_KEY.equals(key);
     }
 }
 
