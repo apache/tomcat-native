@@ -564,7 +564,7 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
     apr_uint16_t  num_headers;
     int i;
 
-    rc = ajp_msg_get_uint16(msg,&status);
+    rc = ajp_msg_get_uint16(msg, &status);
 
     if (rc != APR_SUCCESS) {
          ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
@@ -573,9 +573,9 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
     }
     r->status = status;
 
-    rc = ajp_msg_get_string(msg,&ptr);
+    rc = ajp_msg_get_string(msg, &ptr);
     if (rc == APR_SUCCESS) {
-        r->status_line = apr_pstrdup(r->connection->pool,ptr);
+        r->status_line = apr_pstrdup(r->connection->pool, ptr);
 #if defined(AS400) || defined(_OSD_POSIX)
         ap_xlate_proto_from_ascii(r->status_line, strlen(r->status_line));
 #endif
@@ -586,9 +586,9 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
            "ajp_unmarshal_response: status = %d", status);
 
-    rc = ajp_msg_get_uint16(msg,&num_headers);
+    rc = ajp_msg_get_uint16(msg, &num_headers);
     if (rc == APR_SUCCESS) {
-        r->headers_out = apr_table_make(r->pool,num_headers);
+        r->headers_out = apr_table_make(r->pool, num_headers);
     } else {
         r->headers_out = NULL;
         num_headers = 0;
@@ -620,7 +620,7 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
                 return APR_EGENERAL;
             }
         } else {
-            rc = ajp_msg_get_string(msg,&stringname);
+            rc = ajp_msg_get_string(msg, &stringname);
             if (rc != APR_SUCCESS) {
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                        "Error ajp_unmarshal_response - "
@@ -632,7 +632,7 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
 #endif
         }
 
-        rc = ajp_msg_get_string(msg,&value);
+        rc = ajp_msg_get_string(msg, &value);
         if (rc != APR_SUCCESS) {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                    "Error ajp_unmarshal_response - "
@@ -641,7 +641,7 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
         }
 
 #if defined(AS400) || defined(_OSD_POSIX)
-        ap_xlate_proto_from_ascii(value,strlen(value));
+        ap_xlate_proto_from_ascii(value, strlen(value));
 #endif
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
@@ -661,27 +661,26 @@ apr_status_t ajp_send_header(apr_socket_t *sock,
     ajp_msg_t *msg;
     apr_status_t rc;
 
-    rc = ajp_msg_create(r->pool,&msg);
+    rc = ajp_msg_create(r->pool, &msg);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_send_header: ajp_msg_create failed");
         return rc;
     }
 
-    rc = ajp_marshal_into_msgb(msg,r);    
+    rc = ajp_marshal_into_msgb(msg, r);    
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_send_header: ajp_marshal_into_msgb failed");
         return rc;
     }
 
-    rc = ajp_ilink_send(sock,msg);
+    rc = ajp_ilink_send(sock, msg);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_send_header: ajp_ilink_send failed");
         return rc;
     }
 
-    rc = ajp_ilink_send(sock,msg);
     return APR_SUCCESS;
 }
