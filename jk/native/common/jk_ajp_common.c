@@ -808,7 +808,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t  *ae,
     }
 
     if (!r->is_chunked) {
-    ae->left_bytes_to_send -= len;
+	ae->left_bytes_to_send -= len;
     }
 
     if (len > 0) {
@@ -905,7 +905,14 @@ static int ajp_send_request(jk_endpoint_t *e,
          * for resend if the remote Tomcat is down, a fact we will learn only
          * doing a read (not yet) 
          */
-        if (s->is_chunked || ae->left_bytes_to_send > 0) {
+	/* || s->is_chunked - this can't be done here. The original protocol sends the first
+	   chunk of post data ( based on Content-Length ), and that's what the java side expects.
+	   Sending this data for chunked would break other ajp13 serers.
+
+	   Note that chunking will continue to work - using the normal read.
+	*/
+
+        if (ae->left_bytes_to_send > 0) {
             int len = ae->left_bytes_to_send;
             if (len > AJP13_MAX_SEND_BODY_SZ) 
                 len = AJP13_MAX_SEND_BODY_SZ;
