@@ -409,7 +409,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
      * Add SSL IIS environment
      */
 
-    if ( send_groups && (strlen(s->remote_user) > 0 )){
+    if ( send_groups && *s->remote_user ){
         char *groups=jk2_service_iis_get_roles(env, s);
         if( groups != NULL){
             s->attributes->put( env, s->attributes,ROLES_ATTRIBUTE_NAME,groups,NULL);
