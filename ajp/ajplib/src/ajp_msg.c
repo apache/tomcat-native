@@ -411,6 +411,30 @@ apr_status_t ajp_msg_peek_uint16(ajp_msg_t *msg, apr_uint16_t *rvalue)
 }
 
 /**
+ * Peek a 8bits unsigned value from AJP Message, position in message
+ * is not updated
+ *
+ * @param msg       AJP Message to get value from
+ * @param rvalue    Pointer where value will be returned
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_msg_peek_byte(ajp_msg_t *msg, apr_byte_t *rvalue)
+{
+    apr_uint16_t value;
+
+    if (msg->pos > msg->len) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
+                      "ajp_msg_peek_byte(): BufferOverflowException %d %d",
+                      msg->pos, msg->len);
+
+        return AJP_EOVERFLOW;
+    }
+    
+    *rvalue = msg->buf[msg->pos];
+    return APR_SUCCESS;
+}
+
+/**
  * Get a 8bits unsigned value from AJP Message
  *
  * @param msg       AJP Message to get value from
