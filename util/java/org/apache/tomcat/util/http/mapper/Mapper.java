@@ -307,6 +307,11 @@ public final class Mapper {
     }
 
 
+    public void addWrapper(String path, Object wrapper, boolean jspWildCard) {
+        addWrapper(context, path, wrapper, jspWildCard);
+    }
+
+
     protected void addWrapper(Context context, String path, Object wrapper) {
         addWrapper(context, path, wrapper, false);
     }
@@ -318,8 +323,8 @@ public final class Mapper {
      * @param context The context to which to add the wrapper
      * @param path Wrapper mapping
      * @param wrapper The Wrapper object
-     * @param jspWildCard true if the wrapper corresponds to the JspServlet, 
-     * and the mapping path contains a wildcard
+     * @param jspWildCard true if the wrapper corresponds to the JspServlet
+     * and the mapping path contains a wildcard; false otherwise
      */
     protected void addWrapper(Context context, String path, Object wrapper,
                               boolean jspWildCard) {
