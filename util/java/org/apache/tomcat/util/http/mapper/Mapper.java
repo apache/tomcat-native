@@ -21,6 +21,7 @@ import javax.naming.directory.DirContext;
 
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.buf.Ascii;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -551,8 +552,8 @@ public final class Mapper {
         // Virtual host mapping
         if (mappingData.host == null) {
             Host[] hosts = this.hosts;
-            int pos = find(hosts, host);
-            if ((pos != -1) && (host.equals(hosts[pos].name))) {
+            int pos = findIgnoreCase(hosts, host);
+            if ((pos != -1) && (host.equalsIgnoreCase(hosts[pos].name))) {
                 mappingData.host = hosts[pos].object;
                 contexts = hosts[pos].contextList.contexts;
                 nesting = hosts[pos].contextList.nesting;
@@ -961,6 +962,61 @@ public final class Mapper {
 
     }
 
+    /**
+     * Find a map elemnt given its name in a sorted array of map elements.
+     * This will return the index for the closest inferior or equal item in the
+     * given array.
+     */
+    private static final int findIgnoreCase(MapElement[] map, CharChunk name) {
+        return findIgnoreCase(map, name, name.getStart(), name.getEnd());
+    }
+
+
+    /**
+     * Find a map elemnt given its name in a sorted array of map elements.
+     * This will return the index for the closest inferior or equal item in the
+     * given array.
+     */
+    private static final int findIgnoreCase(MapElement[] map, CharChunk name,
+                                  int start, int end) {
+
+        int a = 0;
+        int b = map.length - 1;
+
+        // Special cases: -1 and 0
+        if (b == -1) {
+            return -1;
+        }
+        if (compareIgnoreCase(name, start, end, map[0].name) < 0 ) {
+            return -1;
+        }         
+        if (b == 0) {
+            return 0;
+        }
+
+        int i = 0;
+        while (true) {
+            i = (b + a) / 2;
+            int result = compareIgnoreCase(name, start, end, map[i].name);
+            if (result == 1) {
+                a = i;
+            } else if (result == 0) {
+                return i;
+            } else {
+                b = i;
+            }
+            if ((b - a) == 1) {
+                int result2 = compareIgnoreCase(name, start, end, map[b].name);
+                if (result2 < 0) {
+                    return a;
+                } else {
+                    return b;
+                }
+            }
+        }
+
+    }
+
 
     /**
      * Find a map elemnt given its name in a sorted array of map elements.
@@ -1024,6 +1080,36 @@ public final class Mapper {
             if (c[i + start] > compareTo.charAt(i)) {
                 result = 1;
             } else if (c[i + start] < compareTo.charAt(i)) {
+                result = -1;
+            }
+        }
+        if (result == 0) {
+            if (compareTo.length() > (end - start)) {
+                result = -1;
+            } else if (compareTo.length() < (end - start)) {
+                result = 1;
+            }
+        }
+        return result;
+    }
+
+
+    /**
+     * Compare given char chunk with String ignoring case.
+     * Return -1, 0 or +1 if inferior, equal, or superior to the String.
+     */
+    private static final int compareIgnoreCase(CharChunk name, int start, int end,
+                                     String compareTo) {
+        int result = 0;
+        char[] c = name.getBuffer();
+        int len = compareTo.length();
+        if ((end - start) < len) {
+            len = end - start;
+        }
+        for (int i = 0; (i < len) && (result == 0); i++) {
+            if (Ascii.toLower(c[i + start]) > Ascii.toLower(compareTo.charAt(i))) {
+                result = 1;
+            } else if (Ascii.toLower(c[i + start]) < Ascii.toLower(compareTo.charAt(i))) {
                 result = -1;
             }
         }
