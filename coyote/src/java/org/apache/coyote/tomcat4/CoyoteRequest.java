@@ -784,14 +784,23 @@ public class CoyoteRequest
      * @param name Name of the request attribute to return
      */
     public Object getAttribute(String name) {
-	Object attr=attributes.get(name);
+        Object attr=attributes.get(name);
 
-	if(attr!=null)
-	    return(attr);
+        if(attr!=null)
+            return(attr);
 
-	return coyoteRequest.getAttribute(name);
+        attr =  coyoteRequest.getAttribute(name);
+        if(attr != null)
+            return attr;
+        // XXX Should move to Globals
+        if(Constants.SSL_CERTIFICATE_ATTR.equals(name)) {
+            coyoteRequest.action(ActionCode.ACTION_REQ_SSL_CERTIFICATE, null);
+            attr = getAttribute(Globals.CERTIFICATES_ATTR);
+            if(attr != null)
+                attributes.put(name, attr);
+        }
+        return attr;
     }
-
 
     /**
      * Return the names of all request attributes for this Request, or an
