@@ -171,6 +171,12 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * Is there an expectation ?
+     */
+    protected boolean expectation = false;
+
+
+    /**
      * List of restricted user agents.
      */
     protected RE[] restrictedUserAgents = null;
@@ -898,19 +904,15 @@ public class Http11Processor implements Processor, ActionHook {
             // Send a 100 status back if it makes sense (response not committed
             // yet, and client specified an expectation for 100-continue)
 
-            if ((response.isCommitted()) || (!http11))
+            if ((response.isCommitted()) || !expectation)
                 return;
 
-            MessageBytes expectMB = 
-                request.getMimeHeaders().getValue("expect");
-            if ((expectMB != null)
-                && (expectMB.indexOfIgnoreCase("100-continue", 0) != -1)) {
-                try {
-                    outputBuffer.sendAck();
-                } catch (IOException e) {
-                    // Set error flag
-                    error = true;
-                }
+            inputBuffer.setSwallowInput(true);
+            try {
+                outputBuffer.sendAck();
+            } catch (IOException e) {
+                // Set error flag
+                error = true;
             }
 
         } else if (actionCode == ActionCode.ACTION_CLIENT_FLUSH) {
@@ -1092,6 +1094,7 @@ public class Http11Processor implements Processor, ActionHook {
         http11 = true;
         http09 = false;
         contentDelimitation = false;
+        expectation = false;
         if (sslSupport != null) {
             request.scheme().setString("https");
         }
@@ -1134,6 +1137,15 @@ public class Http11Processor implements Processor, ActionHook {
                                  Constants.KEEPALIVE_BYTES) != -1) {
                 keepAlive = true;
             }
+        }
+
+        MessageBytes expectMB = null;
+        if (http11)
+            expectMB = request.getMimeHeaders().getValue("expect");
+        if ((expectMB != null)
+            && (expectMB.indexOfIgnoreCase("100-continue", 0) != -1)) {
+            inputBuffer.setSwallowInput(false);
+            expectation = true;
         }
 
         // Check user-agent header

@@ -75,6 +75,7 @@ public class InternalInputBuffer implements InputBuffer {
         lastActiveFilter = -1;
 
         parsingHeader = true;
+        swallowInput = true;
 
     }
 
@@ -108,6 +109,12 @@ public class InternalInputBuffer implements InputBuffer {
      * State.
      */
     protected boolean parsingHeader;
+
+
+    /**
+     * Swallow input ? (in the case of an expectation)
+     */
+    protected boolean swallowInput;
 
 
     /**
@@ -277,6 +284,14 @@ public class InternalInputBuffer implements InputBuffer {
     }
 
 
+    /**
+     * Set the swallow input flag.
+     */
+    public void setSwallowInput(boolean swallowInput) {
+        this.swallowInput = swallowInput;
+    }
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -295,6 +310,7 @@ public class InternalInputBuffer implements InputBuffer {
         pos = 0;
         lastActiveFilter = -1;
         parsingHeader = true;
+        swallowInput = true;
 
     }
 
@@ -335,6 +351,7 @@ public class InternalInputBuffer implements InputBuffer {
         pos = 0;
         lastActiveFilter = -1;
         parsingHeader = true;
+        swallowInput = true;
 
     }
 
@@ -347,7 +364,7 @@ public class InternalInputBuffer implements InputBuffer {
     public void endRequest()
         throws IOException {
 
-        if (lastActiveFilter != -1) {
+        if (swallowInput && (lastActiveFilter != -1)) {
             int extraBytes = (int) activeFilters[lastActiveFilter].end();
             pos = pos - extraBytes;
         }
