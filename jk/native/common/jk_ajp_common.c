@@ -623,7 +623,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
         }
     }
 
-    jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::ajp_connect_to_endpoint, failed errno = %d\n", errno);
+    jk_log(l, JK_LOG_ERROR, "ERROR connecting to tomcat. Tomcat is probably not started. Failed errno = %d\n", errno);
     return JK_FALSE;
 }
 
@@ -676,7 +676,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN);
 
     if(rc < 0) {
-        jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - jk_tcp_socket_recvfull failed\n");
+        jk_log(l, JK_LOG_ERROR, "ERROR: can't receive the response message from tomcat, network problems or tomcat is down.\n");
         return JK_FALSE;
     }
 
@@ -719,7 +719,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
 
     rc = jk_tcp_socket_recvfull(ae->sd, jk_b_get_buff(msg), msglen);
     if(rc < 0) {
-        jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - jk_tcp_socket_recvfull failed\n");
+        jk_log(l, JK_LOG_ERROR, "ERROR: can't receive the response message from tomcat, network problems or tomcat is down\n");
         return JK_FALSE;
     }
 
@@ -801,7 +801,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t  *ae,
     }
 
     if ((len = ajp_read_fully_from_server(r, read_buf, len)) < 0) {
-        jk_log(l, JK_LOG_ERROR, "ajp_read_into_msg_buff: Error - ajp_read_fully_from_server failed\n");
+        jk_log(l, JK_LOG_ERROR, "ERROR: receiving data from server failed, the client aborted the connection or network errors.\n");
         return -1;
     }
 
@@ -849,7 +849,7 @@ static int ajp_send_request(jk_endpoint_t *e,
      * First try to reuse open connections...
     */
     while ((ae->sd > 0) && ! ajp_connection_tcp_send_message(ae, op->request, l)) {
-        jk_log(l, JK_LOG_ERROR, "Error sending request try another pooled connection\n");
+        jk_log(l, JK_LOG_INFO, "Error sending request try another pooled connection\n");
         jk_close_socket(ae->sd);
         ae->sd = -1;
         ajp_reuse_connection(ae, l);
@@ -865,7 +865,7 @@ static int ajp_send_request(jk_endpoint_t *e,
          * have is probably unrecoverable
          */
         if (!ajp_connection_tcp_send_message(ae, op->request, l)) {
-            jk_log(l, JK_LOG_ERROR, "Error sending request on a fresh connection\n");
+            jk_log(l, JK_LOG_INFO, "Error sending request on a fresh connection\n");
             return JK_FALSE;
         }
         } else {
@@ -958,7 +958,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             {
                 unsigned len = (unsigned)jk_b_get_int(msg);
                 if(!r->write(r, jk_b_get_buff(msg) + jk_b_get_pos(msg), len)) {
-                    jk_log(l, JK_LOG_ERROR, "Error ajp_process_callback - write failed\n");
+                    jk_log(l, JK_LOG_ERROR, "ERROR sending data to client. Connection aborted or network problems\n");
                     return JK_CLIENT_ERROR;
                 }
             }
@@ -984,7 +984,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             return JK_AJP13_HAS_RESPONSE;
         }                  
 
-        jk_log(l, JK_LOG_ERROR, "Error ajp_process_callback - ajp_read_into_msg_buff failed\n");
+        jk_log(l, JK_LOG_ERROR, "ERROR reading POST data from client. Connection aborted or network problems\n");
         return JK_INTERNAL_ERROR;       
             }
         break;
@@ -1038,7 +1038,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
         int rc = 0;
 
         if(!ajp_connection_tcp_get_message(p, op->reply, l)) {
-            jk_log(l, JK_LOG_ERROR, "Error reading reply\n");
+            jk_log(l, JK_LOG_ERROR, "Error reading reply from tomcat. Tomcat is down or network problems.\n");
             /* we just can't recover, unset recover flag */
             return JK_FALSE;
         }
@@ -1061,7 +1061,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
             op->recoverable = JK_FALSE; 
             rc = ajp_connection_tcp_send_message(p, op->post, l);
                 if (rc < 0) {
-                jk_log(l, JK_LOG_ERROR, "Error sending request data %d\n", rc);
+                jk_log(l, JK_LOG_ERROR, "Error sending request data %d. Tomcat is down or network problems.\n", rc);
                         return JK_FALSE;
             }
         } else if(JK_FATAL_ERROR == rc) {
@@ -1154,7 +1154,7 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
                  */
                 if (! op->recoverable) {
                     *is_recoverable_error = JK_FALSE;
-                    jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, ajp_send_request failed without recovery in send loop %d\n", i);
+                    jk_log(l, JK_LOG_ERROR, "ERROR: sending request to tomcat failed without recovery in send loop %d\n", i);
                     return JK_FALSE;
                 }
 
@@ -1171,14 +1171,14 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
                  */
                 if (! op->recoverable) {
                     *is_recoverable_error = JK_FALSE;
-                    jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, ajp_get_reply failed without recovery in send loop %d\n", i);
+                    jk_log(l, JK_LOG_ERROR, "ERROR: receiving reply from tomcat failed without recovery in send loop %d\n", i);
                     return JK_FALSE;
                 }
                 
-                jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, ajp_get_reply failed in send loop %d\n", i);
+                jk_log(l, JK_LOG_ERROR, "ERRORO: Receiving from tomcat failed, recoverable operation. err=%d\n", i);
             }
             else
-                jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, ajp_send_request failed in send loop %d\n", i);
+                jk_log(l, JK_LOG_ERROR, "ERROR: sending request to tomcat failed in send loop. err=%d\n", i);
         
             jk_close_socket(p->sd);
             p->sd = -1;
@@ -1229,9 +1229,9 @@ int ajp_validate(jk_worker_t *pThis,
             if(jk_resolve(host, (short)port, &p->worker_inet_addr)) {
                 return JK_TRUE;
             }
-            jk_log(l, JK_LOG_ERROR, "In jk_worker_t::validate, resolve failed\n");
+            jk_log(l, JK_LOG_ERROR, "ERROR: can't resolve tomcat address %s\n", host);
         }
-        jk_log(l, JK_LOG_ERROR, "In jk_worker_t::validate, Error %s %d\n", host, port);
+        jk_log(l, JK_LOG_ERROR, "ERROR: invalid host and port %s %d\n", (( host==NULL ) ? "NULL" : host ), port);
     } else {
         jk_log(l, JK_LOG_ERROR, "In jk_worker_t::validate, NULL parameters\n");
     }

@@ -358,7 +358,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      * Error is not recoverable - break with an error.
                      */
                     jk_log(l, JK_LOG_ERROR, 
-                           "In jk_endpoint_t::service, none recoverable error...\n");
+                           "lb: unrecoverable error, request failed. Tomcat failed in the middle of request, we can't recover to another instance.\n");
                     break;
                 }
 
@@ -371,7 +371,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             } else {
                 /* NULL record, no more workers left ... */
                  jk_log(l, JK_LOG_ERROR, 
-                        "In jk_endpoint_t::service, No more workers left, can not submit the request\n");
+                        "lb: All tomcat instances failed, no more workers left.\n");
                 break;
             }
         }
