@@ -281,6 +281,9 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     
     env->l=l;
     
+    /* We should make it relative to JK_HOME or absolute path.
+       ap_server_root_relative(cmd->pool,opt); */
+    
     /* Create the workerEnv */
     workerEnv= env->createInstance( env, env->globalPool,"workerEnv", "workerEnv");
 

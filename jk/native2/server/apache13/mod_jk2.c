@@ -326,8 +326,8 @@ static int jk2_handler(request_rec *r)
         if( worker==NULL && uriEnv->workerName != NULL ) {
             worker=env->getByName( env,uriEnv->workerName);
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                          "mod_jk.handler() finding worker for %p %p\n",
-                          worker, uriEnv );
+                          "mod_jk.handler() finding worker for %s %p %p\n",
+                          uriEnv->workerName, worker, uriEnv );
             uriEnv->worker=worker;
         }
     }

@@ -87,7 +87,7 @@ static int jk2_map_aprtable_put( struct jk_env *env, struct jk_map *_this,
 {
     apr_table_t *aprMap=_this->_private;
     if( oldValue != NULL ) {
-        *oldValue=apr_table_get( aprMap, (char *)name );
+        *oldValue=(void *)apr_table_get( aprMap, (char *)name );
     }
     
     apr_table_setn( aprMap, name, (char *)value );

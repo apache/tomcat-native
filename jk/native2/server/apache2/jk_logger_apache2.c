@@ -162,6 +162,23 @@ static int jk2_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
     return rc ;
 }
 
+static int JK_METHOD
+jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean, 
+                            char *name,  void *valueP )
+{
+    jk_logger_t *_this=mbean->object;
+    char *value=valueP;
+
+    if( strcmp( name, "level" )==0 ) {
+        _this->level = jk2_logger_file_parseLogLevel(env, value);
+        if( _this->level == 0 ) {
+            _this->jkLog( env, _this, JK_LOG_ERROR,
+                          "Level %s %d \n", value, _this->level );
+        }
+    }
+}
+
+
 
 int jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
                               char *type, char *name)
@@ -182,6 +199,7 @@ int jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result
     
     result->object=(void *)l;
     l->mbean=result;
+    result->setAttribute = jk2_logger_file_setProperty;
 
     return JK_TRUE;
 }
