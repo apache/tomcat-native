@@ -85,6 +85,13 @@ import org.apache.tomcat.util.net.*;
  */
 public class Http11Protocol implements ProtocolHandler
 {
+
+    /**
+     * The string manager for this package.
+     */
+    protected static StringManager sm =
+        StringManager.getManager(Constants.Package);
+
     Adapter adapter;
     Http11ConnectionHandler cHandler=new Http11ConnectionHandler( this );
 
@@ -92,7 +99,7 @@ public class Http11Protocol implements ProtocolHandler
      */
     public void setAttribute( String name, Object value ) {
 
-        log.info("setAttribute " + name + " " + value );
+        log.info(sm.getString("http11protocol.setattribute", name, value));
         attributes.put(name, value);
 /*
         if ("maxKeepAliveRequests".equals(name)) {
@@ -125,7 +132,8 @@ public class Http11Protocol implements ProtocolHandler
 	try {
             checkSocketFactory();
         } catch( Exception ex ) {
-            log.error( "Error initializing socket factory", ex );
+            log.error(sm.getString("http11protocol.socketfactory.initerror"), 
+                      ex);
             throw ex;
         }
 
@@ -141,10 +149,10 @@ public class Http11Protocol implements ProtocolHandler
         try {
             ep.initEndpoint();
         } catch (Exception ex) {
-            log.error("Error initializing endpoint", ex);
+            log.error(sm.getString("http11protocol.endpoint.initerror"), ex);
             throw ex;
         }
-        log.info( "Init on " + ep.getPort() );
+        log.info(sm.getString("http11protocol.init", "" + ep.getPort()));
 
     }
 
@@ -152,10 +160,10 @@ public class Http11Protocol implements ProtocolHandler
         try {
             ep.startEndpoint();
         } catch (Exception ex) {
-            log.error("Error starting endpoint", ex);
+            log.error(sm.getString("http11protocol.endpoint.starterror"), ex);
             throw ex;
         }
-        log.info( "Starting on " + ep.getPort() );
+        log.info(sm.getString("http11protocol.start", "" + ep.getPort()));
     }
 
     public void destroy() throws Exception {
@@ -382,12 +390,18 @@ public class Http11Protocol implements ProtocolHandler
                 TcpConnection.shutdownInput( socket );
             } catch(java.net.SocketException e) {
                 // SocketExceptions are normal
-                proto.log.info( "SocketException reading request, ignored");
-                proto.log.debug( "SocketException reading request:", e);
+                proto.log.info(sm.getString
+                               ("http11protocol.proto.socketexception.info"));
+                proto.log.debug
+                    (sm.getString
+                     ("http11protocol.proto.socketexception.debug"), e);
             } catch (java.io.IOException e) {
                 // IOExceptions are normal 
-                proto.log.info( "IOException reading request, ignored");
-                proto.log.debug( "IOException reading request:", e);
+                proto.log.info(sm.getString
+                               ("http11protocol.proto.ioexception.info"));
+                proto.log.debug
+                    (sm.getString
+                     ("http11protocol.proto.ioexception.debug"), e);
             }
             // Future developers: if you discover any other
             // rare-but-nonfatal exceptions, catch them here, and log as
@@ -396,7 +410,7 @@ public class Http11Protocol implements ProtocolHandler
                 // any other exception or error is odd. Here we log it
                 // with "ERROR" level, so it will show up even on
                 // less-than-verbose logs.
-                proto.log.error( "Error reading request, ignored", e);
+                proto.log.error(sm.getString("http11protocol.proto.error"), e);
             } finally {
                 //       if(proto.adapter != null) proto.adapter.recycle();
                 //                processor.recycle();
