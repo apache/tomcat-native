@@ -58,6 +58,9 @@
  */ 
 package org.apache.tomcat.util.http.mapper;
 
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
+
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 
@@ -70,6 +73,8 @@ import org.apache.tomcat.util.buf.MessageBytes;
 public final class Mapper {
 
 
+    private static org.apache.commons.logging.Log logger = 
+        org.apache.commons.logging.LogFactory.getLog(Mapper.class);
     // ----------------------------------------------------- Instance Variables
 
 
@@ -468,42 +473,11 @@ public final class Mapper {
         }
 
         // Rule 3 -- Extension Match
+        Wrapper[] extensionWrappers = context.extensionWrappers;
         if (mappingData.wrapper == null) {
-            Wrapper[] extensionWrappers = context.extensionWrappers;
-            char[] buf = path.getBuffer();
-            int slash = -1;
-            for (int i = pathEnd - 1; i >= servletPath; i--) {
-                if (buf[i] == '/') {
-                    slash = i;
-                    break;
-                }
-            }
-            if (slash >= 0) {
-                int period = -1;
-                for (int i = pathEnd - 1; i > slash; i--) {
-                    if (buf[i] == '.') {
-                        period = i;
-                        break;
-                    }
-                }
-                if (period >= 0) {
-                    path.setOffset(period + 1);
-                    path.setEnd(pathEnd);
-                    int pos = find(extensionWrappers, path);
-                    if ((pos != -1) 
-                        && (path.equals(extensionWrappers[pos].name))) {
-                        mappingData.wrapperPath.setChars
-                            (buf, servletPath, pathEnd - servletPath);
-                        mappingData.requestPath.setChars
-                            (buf, servletPath, pathEnd - servletPath);
-                        mappingData.wrapper = extensionWrappers[pos].object;
-                    }
-                    path.setOffset(servletPath);
-                    path.setEnd(pathEnd);
-                }
-            }
+            internalMapExtensionWrapper(extensionWrappers, path, mappingData);
         }
-
+        
         // Rule 4 -- Welcome resources processing for servlets
         if (mappingData.wrapper == null) {
             char[] buf = path.getBuffer();
@@ -532,8 +506,37 @@ public final class Mapper {
         }
 
         // Rule 6 -- Welcome resources processing for physical folder
-        if (processWelcomeResources) {
-            
+        if (processWelcomeResources && mappingData.wrapper == null) {
+            char[] buf = path.getBuffer();
+            if( context.resources != null  && buf[pathEnd - 1] == '/') {
+                for (int i = 0; (i < context.welcomeResources.length)
+                         && (mappingData.wrapper == null); i++) {
+                    path.setOffset(pathOffset);
+                    path.setEnd(pathEnd);
+                    path.append(context.welcomeResources[i], 0, 
+                                context.welcomeResources[i].length());
+                    path.setOffset(servletPath);
+                    Object file = null;
+                    try {
+                        file = context.resources.lookup(path.toString());
+                    } catch(NamingException nex) {
+                        // Swallow not found, since this is normal
+                    }
+                    if(file != null && !(file instanceof DirContext) ) {
+                        if(logger.isTraceEnabled())
+                            logger.trace("Found welcome-file: " + path);
+                        internalMapExtensionWrapper(extensionWrappers,
+                                                    path, mappingData);
+                        if(mappingData.wrapper == null) {
+                            mappingData.wrapper = context.defaultWrapper.object;
+                            mappingData.requestPath.setChars
+                                (path.getBuffer(), path.getStart(), path.getLength());
+                            mappingData.wrapperPath.setChars
+                                (path.getBuffer(), path.getStart(), path.getLength());
+                        }
+                    }
+                }       
+            }
         }
 
         // Rule 7 -- Default servlet
@@ -598,6 +601,47 @@ public final class Mapper {
                 mappingData.requestPath.setChars
                     (path.getBuffer(), path.getOffset(), path.getLength());
                 mappingData.wrapper = wrappers[pos].object;
+            }
+        }
+    }
+
+    /**
+     * Extension mappings.
+     */
+    private final void internalMapExtensionWrapper
+        (Wrapper[] wrappers, CharChunk path, MappingData mappingData) {
+        char[] buf = path.getBuffer();
+        int pathEnd = path.getEnd();
+        int servletPath = path.getOffset();
+        int slash = -1;
+        for (int i = pathEnd - 1; i >= servletPath; i--) {
+            if (buf[i] == '/') {
+                slash = i;
+                break;
+            }
+        }
+        if (slash >= 0) {
+            int period = -1;
+            for (int i = pathEnd - 1; i > slash; i--) {
+                if (buf[i] == '.') {
+                    period = i;
+                    break;
+                }
+            }
+            if (period >= 0) {
+                path.setOffset(period + 1);
+                path.setEnd(pathEnd);
+                int pos = find(wrappers, path);
+                if ((pos != -1) 
+                    && (path.equals(wrappers[pos].name))) {
+                    mappingData.wrapperPath.setChars
+                        (buf, servletPath, pathEnd - servletPath);
+                    mappingData.requestPath.setChars
+                        (buf, servletPath, pathEnd - servletPath);
+                    mappingData.wrapper = wrappers[pos].object;
+                }
+                path.setOffset(servletPath);
+                path.setEnd(pathEnd);
             }
         }
     }
