@@ -71,6 +71,9 @@ features but the current list seems to be a 'minimun vital'
 
 * Extended env vars passed from web-server to servlet engine.
 
+* Add extra SSL informations needed by Servlet 2.3 API (like SSL_KEY_SIZE)
+
+
 Advanced login
 --------------
 
@@ -96,7 +99,7 @@ run-time (up/down), level of SSL env vars, AJP protocol
 supported (AJP14/AJP15/AJP16...)
 
 The Web server info will contain web server info and
-connector name (ie Apache 1.3.19 + mod_ssl 2.8.2 + mod_jk 3.3 + mod_perl 1.25).
+connector name (ie Apache 1.3.20 + mod_ssl 2.8.4 + mod_jk 1.2a1 + mod_perl 1.25).
 
 The servlet engine will mask the negociation mask with it's own
 mask (what it can do) and return it when loggin is accepted.
@@ -116,25 +119,30 @@ informations on client SSL data (certs), server SSL datas
 
 - Messages Stream - 
 
-+-------------------------+---------------------------+---------------------------+
-| LOGIN INIT CMD (1 byte) | NEGOCIATION DATA (32bits) | WEB SERVER INFO (CString) |
-+-------------------------+---------------------------+---------------------------+
++----------------+------------------+-----------------+
+| LOGIN INIT CMD | NEGOCIATION DATA | WEB SERVER INFO |
++----------------+------------------+-----------------+
 
-+-------------------------+---------------------------+
-| LOGIN SEED CMD (1 byte) | MD5 of entropy (32 chars) |
-+-------------------------+---------------------------+
++----------------+----------------+
+| LOGIN SEED CMD | MD5 of entropy |
++----------------+----------------+
 
-+-------------------------+---------------------------------------+
-| LOGIN COMP CMD (1 byte) | MD5 of RANDOM + SECRET KEY (32 chars) |
-+-------------------------+---------------------------------------+
++----------------+----------------------------+
+| LOGIN COMP CMD | MD5 of RANDOM + SECRET KEY |
++----------------+----------------------------+
 
-+--------------------+------------------------+-------------------------------+
-| LOGOK CMD (1 byte) | NEGOCIED DATA (32bits) | SERVLET ENGINE INFO (CString) |
-+--------------------+------------------------+-------------------------------+
++-----------+---------------+---------------------+
+| LOGOK CMD | NEGOCIED DATA | SERVLET ENGINE INFO |
++-----------+---------------+---------------------+
 
-+---------------------+-----------------------+
-| LOGNOK CMD (1 byte) | FAILURE CODE (32bits) |
-+---------------------+-----------------------+
++------------+--------------+
+| LOGNOK CMD | FAILURE CODE |
++------------+--------------+
+
+- LOGIN INIT CMD, LOGIN SEED CMD, LOGIN COMP CMD, LOGOK CMD, LOGNOK CMD are 1 byte long.
+- MD5, MD5 of RANDOM + SECRET KEY are 32 chars long.
+- NEGOCIATION DATA, NEGOCIED DATA, FAILURE CODE are 32 bits long.
+- WEB SERVER INFO, SERVLET ENGINE INFO are CString.
 
 The secret key will be set by a new propertie in
 workers.properties : secretkey
@@ -151,18 +159,21 @@ Shutdown feature
 AJP13 miss a functionnality of AJP12, which is shutdown command.
 A logout will tell servlet engine to shutdown itself.
 
-+-----------------------+---------------------------------------+
-| SHUTDOWN CMD (1 byte) | MD5 of RANDOM + SECRET KEY (32 chars) |
-+-----------------------+---------------------------------------+
++--------------+----------------------------+
+| SHUTDOWN CMD | MD5 of RANDOM + SECRET KEY |
++--------------+----------------------------+
 
-+---------------------+
-| SHUTOK CMD (1 byte) |
-+---------------------+
++------------+
+| SHUTOK CMD |
++------------+
 
-+----------------------+-----------------------+
-| SHUTNOK CMD (1 byte) | FAILURE CODE (32bits) |
-+----------------------+-----------------------+
++-------------+--------------+
+| SHUTNOK CMD | FAILURE CODE |
++-------------+--------------+
 
+- SHUTDOWN CMD, SHUTOK CMD, SHUTNOK CMD are 1 byte long.
+- MD5 of RANDOM + SECRET KEY are 32 chars long.
+- FAILURE CODE is 32 bits long.
 
 Extended Env Vars feature
 -------------------------
@@ -215,9 +226,9 @@ AJP13_FORWARD_REQUEST :=
 Using short 'web server attribute name' will reduce the 
 network traffic.
  
-+----------------------------+-------------------------------------+-----------------------------------------+
-| EXTENDED VARS CMD (1 byte) | WEB SERVER ATTRIBUTE NAME (CString) | SERVLET ENGINE ATTRIBUTE NAME (CString) |...
-+----------------------------+-------------------------------------+-----------------------------------------+
++-------------------+---------------------------+-------------------------------+----+
+| EXTENDED VARS CMD | WEB SERVER ATTRIBUTE NAME | SERVLET ENGINE ATTRIBUTE NAME | ES |
++-------------------+---------------------------+-------------------------------+----+
 
 ie :
 
@@ -244,29 +255,36 @@ any 'personnal' web-server vars like custom authentification
 vars could be reused in the servlet engine.
 The cost will be only some more bytes in the AJP traffic.
 
+- EXTENDED VARS CMD is 1 byte long.
+- WEB SERVER ATTRIBUTE NAME, SERVLET ENGINE ATTRIBUTE NAME are CString.
+- ES is an empty CString.
+
 
 Context informations forwarding for Servlet engine to Web Server
 ----------------------------------------------------------------
 
-Just after the LOGON PHASE, the web server will receive (if AJP14_CONTEXT_INFO_NEG is set)
-the list of contexts and URLs handled by the servlet engine. It will ease installation
-in many sites, reduce questions about configuration on tomcat-user list, and be ready
-for servlet API 2.3.
+Just after the LOGON PHASE, the web server will ask for the list of contexts
+and URLs/URIs handled by the servlet engine.
+It will ease installation in many sites, reduce questions about configuration 
+on tomcat-user list, and be ready for servlet API 2.3.
 
 This mode will be activated by a new directive JkAutoMount 
 
-ie: JkAutoMount myworker1
+ie: JkAutoMount examples myworker1 /examples/
+
+If we want to get ALL the contexts handled by the servlet engine, willcard
+could be used :
+
+ie: JkAutoMount * myworker1 *
 
 A servlet engine could have many contexts, /examples, /admin, /test.
 We may want to use only some contexts for a given worker. It was
 done previously, in apache HTTP server for example, by setting by 
 hand the JkMount accordingly in each <virtual> area of Apache.
 
-The new JkAutoMount is adapted for that purpose. We add a third parameter 
-in JkAutoMount to meet these requirement
-
-ie: JkAutoMount myworker1 www.myvirtualserver.com
-
+If you web-server support virtual hosting, we'll forward also that
+information to servlet engine which will only return contexts for
+that virtual host. 
 In that case the servlet engine will only return the URL/URI matching
 these particular virtual server (defined in server.xml). 
 This feature will help ISP and big sites which mutualize large farm
@@ -274,20 +292,25 @@ of Tomcat in load-balancing configuration.
 
 - Messages Stream - 
 
-+--------------------------+---------------------------------+
-| CONTEXT QRY CMD (1 byte) | VIRTUAL HOST NAME (CString (*)) |
-+--------------------------+---------------------------------+
++-----------------+-------------------+----------+----------+----+
+| CONTEXT QRY CMD | VIRTUAL HOST NAME | CONTEXTA | CONTEXTB | ES |
++-----------------+-------------------+----------+----------+----+
 
-+---------------------------+---------------------------------+-------------------------------+
-| CONTEXT INFO CMD (1 byte) | VIRTUAL HOST NAME (CString (*)) | URL1 [\n] URL2 [\n] URL3 [\n] |
-+---------------------------+---------------------------------+-------------------------------+
++------------------+-------------------+----------+-------------------+----------+---------------+----+
+| CONTEXT INFO CMD | VIRTUAL HOST NAME | CONTEXTA | URL1 URL2 URL3 ES | CONTEXTB | URL1 URL2 ... | ES |
++------------------+-------------------+----------+-------------------+----------+---------------+----+
 
-*) The CString is a C string, ie an array of chars terminated by a null byte (/0).
-   En empty string is just a null byte (/0).
-   
-*) When VirtualMode is not to be used, the VIRTUAL HOST NAME is an empty string, 
-   the servlet engine will then send the whole context present.
+We'll discover via context-query, the list of URL/MIMES handled by the remove servlet engine
+for a list of contextes.
+In wildcard mode, CONTEXTA will contains just '*'.
 
+- CONTEXT QRY CMD and CONTEXT INFO CMD are 1 byte long.
+- VIRTUAL HOST NAME is a CString, ie an array of chars terminated by a null byte (/0).
+- An empty string is just a null byte (/0).
+- ES is an empty CString. Indicate end of URI/URLs or end of CONTEXTs.
+
+*) When VirtualMode is not to be used, the VIRTUAL HOST NAME is '*'.
+   In that case the servlet engine will send all contexts handled.
 
 Context informations updates from Servlet engine to Web Server
 ---------------------------------------------------------------
@@ -298,31 +321,35 @@ This directive will set the AJP14_CONTEXT_UPDATE_NEG flag.
 
 ie: JkUpdateMount myworker1
 
-Also in this mode we may have a third parameter to handle the virtual
-server to be used.
++--------------------+-------------------+----------+--------+----------+--------+----+
+| CONTEXT UPDATE CMD | VIRTUAL HOST NAME | CONTEXTA | STATUS | CONTEXTB | STATUS | ES |
++--------------------+-------------------+----------+--------+----------+--------+----+
 
-ie: JkUpdateMount myworker1 www.myvirtualserver.com
+- CONTEXT UPDATE CMD, STATUS are 1 byte long.
+- VIRTUAL HOST NAME, CONTEXTS are CString.
+- ES is an empty CString. Indicate end of CONTEXTs.
 
-+-----------------------------+---------------------------------+-------------------------+
-| CONTEXT UPDATE CMD (1 byte) | VIRTUAL HOST NAME (CString (*)) | STATUS UP/DOWN (1 byte) |
-+-----------------------------+---------------------------------+-------------------------+
-
-*) When VirtualMode is not in use, the VIRTUAL HOST NAME is an empty string. 
+*) When VirtualMode is not in use, the VIRTUAL HOST NAME is '*'.
+*) STATUS is one byte indicating if context is UP/DOWN/INVALID
 
 
 Context status query to Servlet engine
 --------------------------------------
 
 This query will be used by the web-server to determine if a given
-context is UP or DOWN.
+contexts are UP, DOWN or INVALID (and should be removed).
 
-+----------------------------+----------------------------------+----------------------------+
-| CONTEXT STATE CMD (1 byte) |  VIRTUAL HOST NAME (CString (*)) | CONTEXT NAME (CString (*)) |
-+----------------------------+----------------------------------+----------------------------+
++-------------------+--------------------+----------+----------+----+
+| CONTEXT STATE CMD |  VIRTUAL HOST NAME | CONTEXTA | CONTEXTB | ES |
++-------------------+--------------------+----------+----------+----+
 
-+----------------------------------+---------------------------------+----------------------------+------------------+
-| CONTEXT STATE REPLY CMD (1 byte) | VIRTUAL HOST NAME (CString (*)) | CONTEXT NAME (CString (*)) | UP/DOWN (1 byte) |
-+----------------------------------+---------------------------------+----------------------------+------------------+
++-------------------------+-------------------+----------+--------+----------+--------+----+
+| CONTEXT STATE REPLY CMD | VIRTUAL HOST NAME | CONTEXTA | STATUS | CONTEXTB | STATUS | ES |
++-------------------------+-------------------+----------+-------------------+--------+----+
+
+- CONTEXT STATE CMD, CONTEXT STATE REPLY CMD, STATUS are 1 byte long.
+- VIRTUAL HOST NAME, CONTEXTs are CString
+- ES is an empty CString
 
 *) When VirtualMode is not in use, the VIRTUAL HOST NAME is an empty string. 
 
@@ -335,18 +362,25 @@ where one end (web server or servlet engine), will receive a message it
 couldn't understand. In that case the receiver will send an 
 'UNKNOW PACKET CMD' with attached the unhandled message.
 
-+-----------------------------+---------------------------------+------------------------------+
-| UNKNOWN PACKET CMD (1 byte) | UNHANDLED MESSAGE SIZE (16bits) | UNHANDLED MESSAGE (bytes...) |
-+-----------------------------+---------------------------------+------------------------------+
++--------------------+------------------------+-------------------+
+| UNKNOWN PACKET CMD | UNHANDLED MESSAGE SIZE | UNHANDLED MESSAGE |
++--------------------+------------------------+-------------------+
 
 Depending on the message, the sender will report an error and if 
 possible will try to forward the message to another endpoint.
 
+- UNKNOWN PACKET CMD is 1 byte long.
+- UNHANDLED MESSAGE SIZE is 16bits long.
+- UNHANDLED MESSAGE is an array of byte (length is contained in UNHANDLED MESSAGE SIZE)
 * added UNHANDLED MESSAGE SIZE (developpment)
 
 
 Verification of connection before sending request
 -------------------------------------------------
+
+NOTA: This fonctionality may never be used, since it may slow up the normal process
+since requiring on the web-server side an extra IO (read) before forwarding
+the request.....
 
 One of the beauty of socket APIs, is that you could write on a half closed socket.
 When servlet engine close the socket, the web server will discover it only at the
@@ -385,10 +419,11 @@ it will search for another servlet engine to handle the request.
 And that feature will help ISP and big sites with farm of tomcat, 
 to updates their servlet engine without any service interruption.
 
-+---------------------+----------------------+
-| STATUS CMD (1 byte) | STATUS DATA (1 byte) |
-+---------------------+----------------------+
++------------+-------------+
+| STATUS CMD | STATUS DATA |
++------------+-------------+
 
+- STATUS CMD and STATUS DATA are one byte long.
 
 Conclusion
 ----------
