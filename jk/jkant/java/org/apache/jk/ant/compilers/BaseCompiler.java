@@ -64,117 +64,139 @@ import java.io.*;
 import java.util.*;
 
 /**
- *  Compile using MetroWerks.
+ *  Compile using libtool.
  * 
  *  It extends SoTask so we can debug it or use it independently of <so>.
  *  For normal use you should use the generic task, and system-specific
  *  properties to choose the right compiler plugin ( like we select
  *  jikes ).
  *
- * @author Mike Anderson
+ * @author Costin Manolache
  */
-public class MwccCompiler extends BaseCompiler {
-    
-    public MwccCompiler() {
-        super();
+public class BaseCompiler extends SoTask implements CompilerAdapter {
+    SoTask so;
+
+    public BaseCompiler() {
+	so=this;
     };
 
     public void setSoTask(SoTask so ) {
-        this.so=so;
-        so.setExtension(".nlm");
-        so.duplicateTo( this );
-        project.setProperty("netware", "true");
+	this.so=so;
+	so.duplicateTo( this );
     }
 
-    /** Compile  using mwccnlm.
+    public GlobPatternMapper getOMapper() {
+	GlobPatternMapper co_mapper=new GlobPatternMapper();
+	co_mapper.setFrom("*.c");
+	co_mapper.setTo("*.o");
+
+	return co_mapper;
+    }
+
+    public void execute() throws BuildException {
+	super.findCompileList();
+	compile( compileList );
+    }
+
+    public void compile(Vector compileList ) throws BuildException {
+	Enumeration en=compileList.elements();
+	while( en.hasMoreElements() ) {
+	    File f=(File)en.nextElement();
+	    compileSingleFile(f.toString() );
+	}
+    }
+    
+    /** Compile single file
      */
     public void compileSingleFile(String source) throws BuildException {
-        String [] includeList = ( includes==null ) ?
-            new String[] {} : includes.getIncludePatterns(project);
-
-        Commandline cmd = new Commandline();
-
-        String cc=project.getProperty("build.compiler.cc");
-        if(cc==null) cc="mwccnlm";
-        
-        cmd.setExecutable( cc );
-        addCCArgs( cmd, source, includeList );
-
-        int result=execute( cmd );
-        if( result!=0 ) {
-            log("Compile failed " + result + " " +  source );
-            log("Output:" );
-            if( outputstream!=null ) 
-                log( outputstream.toString());
-            log("StdErr:" );
-            if( errorstream!=null ) 
-                log( errorstream.toString());
-            
-            throw new BuildException("Compile failed " + source);
-        }
-        File ccOpt = new File(buildDir, "cc.opt");
-        ccOpt.delete();
-        closeStreamHandler();
-
     }
 
-    /** common compiler args
+
+    protected void displayError( int result, String source, Commandline cmd )
+	throws BuildException
+    {
+	log("Compile failed " + result + " " +  source );
+	log("Command:" + cmd.toString());
+	log("Output:" );
+	if( outputstream!=null ) 
+	    log( outputstream.toString());
+	log("StdErr:" );
+	if( errorstream!=null ) 
+	    log( errorstream.toString());
+	
+	throw new BuildException("Compile failed " + source);
+    }
+
+    protected void addIncludes(Commandline cmd) {
+	String [] includeList = ( includes==null ) ?
+	    new String[] {} : includes.getIncludePatterns(project); 
+	for( int i=0; i<includeList.length; i++ ) {
+	    cmd.createArgument().setValue("-I");
+	    cmd.createArgument().setValue(includeList[i] );
+	}
+    }
+
+    /** Common cc parameters
      */
-    private void addCCArgs(Commandline cmd, String source, String includeList[]) {
-        String extra_cflags=project.getProperty("build.native.extra_cflags");
-        String localCflags=cflags;
-        File ccOpt = new File(buildDir, "cc.opt");
-        if( localCflags==null ) {
-            localCflags=new String("-nosyspath -c -align 1 -w nocmdline -bool on");
-            if( extra_cflags!=null ) {
-                localCflags+=" " + extra_cflags;
+    protected void addExtraFlags(Commandline cmd )  {
+	String extra_cflags=project.getProperty("build.native.extra_cflags");
+	String localCflags=cflags;
+	if( localCflags==null ) {
+	    localCflags=extra_cflags;
+	} else {
+	    if( extra_cflags!=null ) {
+		localCflags+=" " + extra_cflags;
+	    }
+ 	}
+	if( localCflags != null )
+	    cmd.createArgument().setLine( localCflags );
+    }
+
+    protected void addDefines( Commandline cmd ) {
+	if( defines.size() > 0 ) {
+	    Enumeration defs=defines.elements();
+	    while( defs.hasMoreElements() ) {
+		Def d=(Def)defs.nextElement();
+		String name=d.getName();
+		String val=d.getValue();
+		if( name==null ) continue;
+		String arg="-D" + name;
+		if( val!=null )
+		    arg+= "=" + val;
+		cmd.createArgument().setValue( arg );
+		if( debug > 0 ) project.log(arg);
             }
         }
+    }
 
-        if (optG)
-            localCflags += " -g";
+    protected void addDebug(Commandline cmd) {
+	if( optG ) {
+	    cmd.createArgument().setValue("-g" );
+	    cmd.createArgument().setValue("-W");
+	    cmd.createArgument().setValue("-Wall");
+	    
+	    cmd.createArgument().setValue("-Wtraditional");
+	    cmd.createArgument().setValue("-Wredundant-decls");
+	    cmd.createArgument().setValue("-Wmissing-declarations");
+	    cmd.createArgument().setValue("-Wmissing-prototypes");
+	    cmd.createArgument().setValue("-Wconversions");
+	    cmd.createArgument().setValue("-Wcast-align");
 
-        // create a cc.opt file 
-        PrintWriter ccpw = null;
-        try
-        {
-            ccpw = new PrintWriter(new FileWriter(ccOpt));
-            // write the compilation flags out
-            ccpw.println(localCflags);
-            for( int i=0; i<includeList.length; i++ ) {
-                ccpw.print("-I");
-                ccpw.println(includeList[i] );
-            }
+	    cmd.createArgument().setValue("-pedantic" );
+	}
+    }
 
-            if( defines.size() > 0 ) {
-                Enumeration defs=defines.elements();
-                while( defs.hasMoreElements() ) {
-                    Def d=(Def)defs.nextElement();
-                    String name=d.getName();
-                    String val=d.getValue();
-                    if( name==null ) continue;
-                    String arg="-D" + name;
-                    if( val!=null )
-                        arg+= "=" + val;
-                    ccpw.println(arg);
-                }
-            }
-        }
-        catch (IOException ioe)
-        {
-            System.out.println("Caught IOException");
-        }
-        finally
-        {
-            if (ccpw != null)
-            {
-                ccpw.close();
-            }
-        }
+    protected void addOptimize( Commandline cmd ) {
+	if( optimize )
+	    cmd.createArgument().setValue("-O3" );
+    }
 
-        project.log( "Compiling " + source);
-        cmd.createArgument().setValue( source );
-        cmd.createArgument().setValue( "@cc.opt" );
+    protected void addProfile( Commandline cmd ) {
+	if( profile ) {
+	    cmd.createArgument().setValue("-pg" );
+	    // bb.in 
+	    // cmd.createArgument().setValue("-ax" );
+	}
     }
 }
 

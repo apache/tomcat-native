@@ -122,6 +122,8 @@ public class SoTask extends Task {
     // Computed fields 
     protected Vector compileList;
     protected String srcList[];
+    protected CompilerAdapter compiler;
+    protected GlobPatternMapper co_mapper;
     
     public SoTask() {};
 
@@ -155,6 +157,7 @@ public class SoTask extends Task {
 	so.modules=modules;
 	so.srcList=srcList;
 	so.compileList=compileList;
+	so.compiler=compiler;
     }
 
     /**  @deprecated use setTarget
@@ -320,7 +323,8 @@ public class SoTask extends Task {
     // XXX Add specific code for Linux and platforms where things are
     // clean, libtool should be just a fallback.
     public void execute() throws BuildException {
-	CompilerAdapter compiler=findCompilerAdapter();
+	compiler=findCompilerAdapter();
+	co_mapper=compiler.getOMapper();
 	LinkerAdapter linker=findLinkerAdapter();
 
 	if( soFile==null )
@@ -345,10 +349,16 @@ public class SoTask extends Task {
 
     public CompilerAdapter findCompilerAdapter() {
 	CompilerAdapter compilerAdapter;
-	String cc=project.getProperty("build.compiler.cc");
+	String cc;
+	cc=project.getProperty("build.compiler.cc");
 	if( cc!=null ) {
 	    if( "cc".equals( cc ) ) {
 		compilerAdapter=new CcCompiler();
+		compilerAdapter.setSoTask( this );
+		return compilerAdapter;
+	    }
+	    if( "gcj".equals( cc ) ) {
+		compilerAdapter=new GcjCompiler();
 		compilerAdapter.setSoTask( this );
 		return compilerAdapter;
 	    }
@@ -368,16 +378,16 @@ public class SoTask extends Task {
 	LinkerAdapter linkerAdapter;
 	String ld=project.getProperty("build.compiler.ld");
 	if( ld!=null ) {
-	    // 	    if( "ld".equals( cc ) ) {
-	    // 		linkerAdapter=new LdLinker();
-	    // 		linkerAdapter.setSoTask( this );
-	    // 		return cc;
-	    // 	    }
 	    if( ld.indexOf("mwldnlm") != -1 ) {
 	        linkerAdapter=new MwldLinker();
 	        linkerAdapter.setSoTask( this );
 	        return linkerAdapter;
 	    }
+	    // 	    if( "ld".equals( cc ) ) {
+	    // 		linkerAdapter=new LdLinker();
+	    // 		linkerAdapter.setSoTask( this );
+	    // 		return cc;
+	    // 	    }
 	}
 	
 	linkerAdapter=new LibtoolLinker(); 
@@ -422,17 +432,6 @@ public class SoTask extends Task {
 	}
     }
     
-    protected static GlobPatternMapper co_mapper=new GlobPatternMapper();
-    protected static GlobPatternMapper lo_mapper=new GlobPatternMapper();
-    static {
-	co_mapper.setFrom("*.c");
-	co_mapper.setTo("*.o");
-    }
-    static {
-	lo_mapper.setFrom("*.c");
-	lo_mapper.setTo("*.lo");
-    }
-
     long oldestO=System.currentTimeMillis();
     File oldestOFile=null;
     

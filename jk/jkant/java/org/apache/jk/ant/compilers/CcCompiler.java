@@ -69,35 +69,17 @@ import java.util.*;
  *
  * @author Costin Manolache
  */
-public class CcCompiler extends LibtoolCompiler implements CompilerAdapter {
-    SoTask so;
+public class CcCompiler extends BaseCompiler {
     
     public CcCompiler() {
-	so=this;
+	super();
     };
-
-    public void setSoTask(SoTask so ) {
-	super.setSoTask( so );
-    }
-
-    public void execute() throws BuildException {
-    }
-
-    public void compile(Vector compileList ) throws BuildException {
-	Enumeration en=compileList.elements();
-	while( en.hasMoreElements() ) {
-	    File f=(File)en.nextElement();
-	    executeCc(f.toString() );
-	}
-    }
 
     /** Compile  using 'standard' gcc flags. This assume a 'current' gcc on
      *  a 'normal' platform - no need for libtool
      */
-    public void executeCc(String source) throws BuildException {
-	String [] includeList = ( includes==null ) ?
-	    new String[] {} : includes.getIncludePatterns(project); 
 
+    public void compileSingleFile(String source) throws BuildException {
 	Commandline cmd = new Commandline();
 
 	String cc=project.getProperty("build.native.cc");
@@ -105,20 +87,22 @@ public class CcCompiler extends LibtoolCompiler implements CompilerAdapter {
 	
 	cmd.setExecutable( cc );
 
-	// Common cc arguments
-	addCCArgs( cmd, source, includeList );
+	cmd.createArgument().setValue( "-c" );
+
+	addIncludes(cmd);
+	addExtraFlags( cmd );
+	addDefines(cmd);
+	addDefines( cmd );
+	addOptimize( cmd );
+	addProfile( cmd );
+
+	cmd.createArgument().setValue( source );
+
+	project.log( "Compiling " + source);
 
 	int result=execute( cmd );
 	if( result!=0 ) {
-	    log("Compile failed " + result + " " +  source );
-	    log("Output:" );
-	    if( outputstream!=null ) 
-		log( outputstream.toString());
-	    log("StdErr:" );
-	    if( errorstream!=null ) 
-		log( errorstream.toString());
-	    
-	    throw new BuildException("Compile failed " + source);
+	    displayError( result, source, cmd );
 	}
 	closeStreamHandler();
     }

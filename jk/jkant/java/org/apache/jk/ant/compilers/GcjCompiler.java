@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
+ * Copyright (c) 1999 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,44 +56,49 @@ package org.apache.jk.ant.compilers;
 
 import org.apache.tools.ant.types.*;
 import org.apache.tools.ant.util.*;
-import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.taskdefs.*;
+import org.apache.tools.ant.*;
 import org.apache.jk.ant.*;
 
+import java.io.*;
 import java.util.*;
 
-/* Modeled after javac
- */
-
 /**
- * s/javac/C compiler/
- *
- * The interface that all compiler adapters must adher to.  
- *
- * <p>A compiler adapter is an adapter that interprets the javac's
- * parameters in preperation to be passed off to the compier this
- * adapter represents.  As all the necessary values are stored in the
- * Javac task itself, the only thing all adapters need is the javac
- * task, the execute command and a parameterless constructor (for
- * reflection).</p>
- *
- * @author Jay Dickon Glanville <a href="mailto:jayglanville@home.com">jayglanville@home.com</a>
+ *  Compile using Gcj. This is ( even more ) experimental.
+ * 
+ * @author Costin Manolache
  */
-public interface CompilerAdapter {
+public class GcjCompiler extends BaseCompiler {
+    
+    public GcjCompiler() {
+	super();
+    }
 
-    /**
-     * Sets the compiler attributes, which are stored in the Javac task.
-     */
-    void setSoTask( SoTask attributes );
+    public GlobPatternMapper getOMapper() {
+	GlobPatternMapper co_mapper=new GlobPatternMapper();
+	co_mapper.setFrom("*.java");
+	co_mapper.setTo("*.o");
 
-    /**
-     * Compile a set of files. The caller is supposed to
-     * detect dependencies.
-     *
-     * @return has the compilation been successful
-     */
-    public void compile(Vector files ) throws BuildException;
+	return co_mapper;
+    }
 
-    /** Return the extension ( including . ) for object files
+    /** Compile using libtool.
      */
-    public GlobPatternMapper getOMapper();
+    public void compileSingleFile(String source) throws BuildException {
+	Commandline cmd = new Commandline();
+
+	cmd.setExecutable( "gcj" );
+	cmd.createArgument().setValue("-c");
+	cmd.createArgument().setValue("-O2");
+
+	cmd.createArgument().setValue( source );
+	project.log( "Compiling " + source);
+	
+	int result=execute( cmd );
+	if( result!=0 ) {
+	    displayError( result, source, cmd );
+	}
+	closeStreamHandler();
+    }
 }
+

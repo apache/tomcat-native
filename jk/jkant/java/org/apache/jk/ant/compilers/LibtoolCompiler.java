@@ -73,37 +73,15 @@ import java.util.*;
  *
  * @author Costin Manolache
  */
-public class LibtoolCompiler extends SoTask implements CompilerAdapter {
-    SoTask so;
-    
+public class LibtoolCompiler extends BaseCompiler {
+
     public LibtoolCompiler() {
-	so=this;
+	super();
     };
 
-    public void setSoTask(SoTask so ) {
-	this.so=so;
-	so.duplicateTo( this );
-    }
-
-    public void execute() throws BuildException {
-	super.findCompileList();
-	compile( compileList );
-    }
-
-    public void compile(Vector compileList ) throws BuildException {
-	Enumeration en=compileList.elements();
-	while( en.hasMoreElements() ) {
-	    File f=(File)en.nextElement();
-	    executeLibtoolCompile(f.toString() );
-	}
-    }
-    
     /** Compile using libtool.
      */
-    public void executeLibtoolCompile(String source) throws BuildException {
-	String [] includeList = ( includes==null ) ?
-	    new String[] {} : includes.getIncludePatterns(project); 
-
+    public void compileSingleFile(String source) throws BuildException {
 	Commandline cmd = new Commandline();
 
 	String libtool=project.getProperty("build.native.libtool");
@@ -118,90 +96,23 @@ public class LibtoolCompiler extends SoTask implements CompilerAdapter {
 
 	cmd.createArgument().setValue( cc );
 
-	addCCArgs(cmd, source, includeList);
-
-	int result=execute( cmd );
-	if( result!=0 ) {
-	    log("Compile failed " + result + " " +  source );
-	    log("Command:" + cmd.toString());
-	    log("Output:" );
-	    if( outputstream!=null ) 
-		log( outputstream.toString());
-	    log("StdErr:" );
-	    if( errorstream!=null ) 
-		log( errorstream.toString());
-	    
-	    throw new BuildException("Compile failed " + source);
-	}
-	closeStreamHandler();
-    }
-
-    /** Common cc parameters
-     */
-    protected void addCCArgs(Commandline cmd, String source, String includeList[]) {
-	String extra_cflags=project.getProperty("build.native.extra_cflags");
-	String localCflags=cflags;
-	if( localCflags==null ) {
-	    localCflags=extra_cflags;
-	} else {
-	    if( extra_cflags!=null ) {
-		localCflags+=" " + extra_cflags;
-	    }
- 	}
-
-	for( int i=0; i<includeList.length; i++ ) {
-	    cmd.createArgument().setValue("-I");
-	    cmd.createArgument().setValue(includeList[i] );
-	}
-
-	if( defines.size() > 0 ) {
-	    Enumeration defs=defines.elements();
-	    while( defs.hasMoreElements() ) {
-		Def d=(Def)defs.nextElement();
-		String name=d.getName();
-		String val=d.getValue();
-		if( name==null ) continue;
-		String arg="-D" + name;
-		if( val!=null )
-		    arg+= "=" + val;
-		cmd.createArgument().setValue( arg );
-		if( debug > 0 ) project.log(arg);
-            }
-        }
-
 	cmd.createArgument().setValue( "-c" );
 
-	if( optG ) {
-	    cmd.createArgument().setValue("-g" );
-	    cmd.createArgument().setValue("-W");
-	    cmd.createArgument().setValue("-Wall");
-	    
-	    cmd.createArgument().setValue("-Wtraditional");
-	    cmd.createArgument().setValue("-Wredundant-decls");
-	    cmd.createArgument().setValue("-Wmissing-declarations");
-	    cmd.createArgument().setValue("-Wmissing-prototypes");
-	    cmd.createArgument().setValue("-Wconversions");
-	    cmd.createArgument().setValue("-Wcast-align");
-
-	    cmd.createArgument().setValue("-pedantic" );
-	}
-	
-	
-	if( optimize )
-	    cmd.createArgument().setValue("-O3" );
-	
-	if( profile ) {
-	    cmd.createArgument().setValue("-pg" );
-	    // bb.in 
-	    // cmd.createArgument().setValue("-ax" );
-	}
-
-	if( localCflags != null )
-	    cmd.createArgument().setLine( localCflags );
+	addIncludes(cmd);
+	addExtraFlags( cmd );
+	addDefines(cmd);
+	addDefines( cmd );
+	addOptimize( cmd );
+	addProfile( cmd );
 
 	project.log( "Compiling " + source);
 	cmd.createArgument().setValue( source );
-    }
 
+	int result=execute( cmd );
+	if( result!=0 ) {
+	    displayError( result, source, cmd );
+	}
+	closeStreamHandler();
+    }
 }
 
