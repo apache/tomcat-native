@@ -74,6 +74,7 @@ import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.http.HttpMessages;
+import org.apache.tomcat.util.http.BaseRequest;
 
 /**
  * Represents a single, persistent connection between the web server and
@@ -93,6 +94,8 @@ import org.apache.tomcat.util.http.HttpMessages;
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Kevin Seguin [seguin@apache.org]
+ * @author Henri Gomez [hgomez@slib.fr]
+ * @author Costin Manolache
  */
 public class Ajp13 {
 
@@ -134,11 +137,23 @@ public class Ajp13 {
     boolean end_of_stream;  // true if we've received an empty packet
     
     // Required handler - essential request processing
-    public RequestHandler reqHandler=new RequestHandler();
+    public RequestHandler reqHandler;
+    // AJP14 - detect protocol,set communication parameters, login
+    // If no password is set, use only Ajp13 messaging
+    boolean backwardCompat=true;
+    boolean logged=false;
     
     public Ajp13() {
 	super();
 	initBuf();
+        reqHandler=new RequestHandler();
+	reqHandler.init( this );
+    }
+
+    public Ajp13(RequestHandler reqHandler ) {
+	super();
+	initBuf();
+        this.reqHandler=reqHandler;
 	reqHandler.init( this );
     }
 
@@ -159,6 +174,7 @@ public class Ajp13 {
         blen = 0; 
         pos = 0;
         end_of_stream = false;
+        logged=false;
     }
     
     /**
@@ -173,6 +189,22 @@ public class Ajp13 {
 	out = socket.getOutputStream();
 	in  = socket.getInputStream();
 	pos = 0;
+    }
+
+    /**
+     * Backward compat mode, no login  needed
+     */
+    public void setBackward(boolean b) 
+    {
+        backwardCompat=b;
+    }
+
+    public boolean isLogged() {
+	return logged;
+    }
+
+    void setLogged( boolean b ) {
+        logged=b;
     }
 
     // -------------------- Handlers registry --------------------
@@ -217,7 +249,7 @@ public class Ajp13 {
      * if there were errors in the reading of the request, and -2 if the
      * server is asking the container to shut itself down.  
      */
-    public int receiveNextRequest(AjpRequest req) throws IOException {
+    public int receiveNextRequest(BaseRequest req) throws IOException {
         if (debug > 0) {
             logger.log("receiveNextRequest()");
         }
@@ -248,18 +280,49 @@ public class Ajp13 {
 
     /** Override for ajp14, temporary
      */
-    public int handleMessage( int type, Ajp13Packet hBuf, AjpRequest req )
+    public int handleMessage( int type, Ajp13Packet hBuf, BaseRequest req )
         throws IOException
     {
+        if( type > handlers.length ) {
+	    logger.log( "Invalid handler " + type );
+	    return 500;
+	}
+
+        if( debug > 0 )
+            logger.log( "Received " + type + " " + handlerName[type]);
+        
+        // Ajp14, unlogged
+	if( ! backwardCompat && ! isLogged() ) {
+	    if( type != NegociationHandler.JK_AJP14_LOGINIT_CMD &&
+		type != NegociationHandler.JK_AJP14_LOGCOMP_CMD ) {
+
+                logger.log( "Ajp14 error: not logged " +
+                            type + " " + handlerName[type]);
+
+		return 300;
+	    }
+	    // else continue
+	}
+
+        // Ajp13 messages
 	switch(type) {
-	    
 	case RequestHandler.JK_AJP13_FORWARD_REQUEST:
 	    return reqHandler.decodeRequest(this, hBuf, req);
 	    
 	case JK_AJP13_SHUTDOWN:
 	    return -2;
 	}
-	return 200; // XXX This is actually an error condition 
+
+	// logged || loging message
+	AjpHandler handler=handlers[type];
+	if( handler==null ) {
+	    logger.log( "Unknown message " + type + handlerName[type] );
+	    return 200;
+	}
+
+        if( debug > 0 )
+            logger.log( "Ajp14 handler " + handler );
+	return handler.handleAjpMessage( type, this, hBuf, req );
     }
 
     // ==================== Servlet Input Support =================
@@ -469,6 +532,7 @@ public class Ajp13 {
 	if(null !=in) {
 	    in.close();
 	}
+        setLogged( false );	// no more logged now 
     }
 
     // -------------------- Debug --------------------
