@@ -33,6 +33,8 @@
 
 #include "httpd_wrap.h"
 
+int AP_DECLARE_DATA ap_default_loglevel = DEFAULT_LOGLEVEL;
+
 static const char *levels[] = {
     "emerg",
     "alert",
@@ -52,7 +54,10 @@ static void log_error_core(const char *file, int line, int level,
     FILE *stream;
     char timstr[32];
     char errstr[MAX_STRING_LEN];
-
+    
+    /* Skip the loging for lower levels */
+    if (level < 0 || level > ap_default_loglevel)
+        return;
     if (level < APLOG_WARNING)
         stream = stderr;
     else

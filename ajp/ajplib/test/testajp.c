@@ -44,6 +44,12 @@ int main(int argc, const char * const * argv, const char * const *env)
     int rv = 0;
 
     apr_app_initialize(&argc, &argv, &env);
+
+    /* This is done in httpd.conf using LogLevel debug directive.
+     * We are setting this directly.
+     */
+    ap_default_loglevel = APLOG_DEBUG;
+
     ap_log_error(APLOG_MARK, APLOG_INFO, 0, NULL, "Testing ajp...");
 
 
