@@ -119,7 +119,7 @@ static int sc_for_req_method(const char *method, size_t len)
             return (method[1] == 'E'
                     && method[2] == 'A'
                     && method[3] == 'D'
-                    ? SC_M_GET : UNKNOWN_METHOD);
+                    ? SC_M_HEAD : UNKNOWN_METHOD);
         case 'P':
             return (method[1] == 'O'
                     && method[2] == 'S'
