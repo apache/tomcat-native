@@ -173,6 +173,7 @@ typedef struct dir_config_struct
 static jk_logger_t *main_log = NULL;
 static jk_worker_env_t worker_env;
 static char *jk_shm_file = NULL;
+static size_t jk_shm_size = JK_SHM_DEF_SIZE;
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -849,6 +850,26 @@ static const char *jk_set_shm_file(cmd_parms * cmd,
     if (jk_shm_file == NULL)
         return "JkShmFile file_name invalid";
 
+    return NULL;
+}
+
+/*
+ * JkShmSize Directive Handling
+ *
+ * JkShmSize size in kilobytes
+ */
+
+static const char *jk_set_shm_size(cmd_parms * cmd,
+                                   void *dummy, const char *shm_size)
+{
+    int sz = 0;
+    /* we need an absolute path */
+    sz = atoi(shm_size) * 1024;
+    if (sz < JK_SHM_DEF_SIZE)
+        sz = JK_SHM_DEF_SIZE;
+    else
+        sz = JK_SHM_ALIGN(sz);
+    jk_shm_size = (size_t)sz;
     return NULL;
 }
 
@@ -1534,6 +1555,8 @@ static const command_rec jk_cmds[] = {
      "Full path to the Jakarta mod_jk module log file"},
     {"JkShmFile", jk_set_shm_file, NULL, RSRC_CONF, TAKE1,
      "Full path to the Jakarta mod_jk module shared memory file"},
+    {"JkShmSize", jk_set_shm_size, NULL, RSRC_CONF, TAKE1,
+     "Size of the shared memory file in KBytes"},
     {"JkLogLevel", jk_set_log_level, NULL, RSRC_CONF, TAKE1,
      "The Jakarta mod_jk module log level, can be debug, info, request, error, or emerg"},
     {"JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF, TAKE1,
@@ -1909,7 +1932,7 @@ static void jk_init(server_rec * s, ap_pool * p)
         }
     }
     
-    if ((rc = jk_shm_open(jk_shm_file, conf->log)) == 0) {
+    if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
             jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s",
                    jk_shm_name(), rc);

@@ -47,8 +47,8 @@ extern "C"
 
 /* Really huge numbers, but 512 workers should be enough */
 #define JK_SHM_MAX_WORKERS  512
-#define JK_SHM_SIZE         (1024 * 1024)
-#define JK_SHM_ALIGN(x)  JK_ALIGN(x, 1024)
+#define JK_SHM_DEF_SIZE     (1024 * 1024)
+#define JK_SHM_ALIGN(x)     JK_ALIGN(x, 1024)
 
 /** jk shm worker record structure */
 struct jk_shm_worker
@@ -107,7 +107,7 @@ const char *jk_shm_name();
 
 /* Open the shared memory creating file if needed
  */
-int jk_shm_open(const char *fname, jk_logger_t *l);
+int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l);
 
 /* Close the shared memory
  */
@@ -116,7 +116,7 @@ void jk_shm_close();
 /* Attach the shared memory in child process.
  * File has to be opened in parent.
  */
-int jk_shm_attach(const char *fname, jk_logger_t *l);
+int jk_shm_attach(const char *fname, size_t sz, jk_logger_t *l);
 
 /* allocate shm memory
  * If there is no shm present the pool will be used instead

@@ -1032,8 +1032,10 @@ static int init_jk(char *serverName)
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
     }
-     /* Simulate shared memory */
-     jk_shm_open(NULL, logger);
+     /* Simulate shared memory 
+      * For now use fixed size.
+      */
+     jk_shm_open(NULL, JK_SHM_DEF_SIZE, logger);
 
     /* Logging the initialization type: registry or properties file in virtual dir
      */

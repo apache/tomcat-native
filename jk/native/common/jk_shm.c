@@ -62,7 +62,7 @@ static time_t jk_workers_modified_time = 0;
 #if defined (WIN32) || defined(NETWARE)
 
 /* Use plain memory */
-int jk_shm_open(const char *fname, jk_logger_t *l)
+int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
 {
     int rc;
     JK_TRACE_ENTER(l);
@@ -73,7 +73,7 @@ int jk_shm_open(const char *fname, jk_logger_t *l)
         return 0;
     }
 
-    jk_shmem.size =  JK_SHM_ALIGN(sizeof(jk_shm_header_t) + JK_SHM_SIZE);
+    jk_shmem.size =  JK_SHM_ALIGN(sizeof(jk_shm_header_t) + sz);
 
     jk_shmem.hdr = (jk_shm_header_t *)calloc(1, jk_shmem.size);
     if (!jk_shmem.hdr) {
@@ -84,7 +84,7 @@ int jk_shm_open(const char *fname, jk_logger_t *l)
     jk_shmem.fd       = 0;
     jk_shmem.attached = 0;
     memcpy(jk_shmem.hdr->magic, shm_signature, 8);
-    jk_shmem.hdr->size = JK_SHM_SIZE;
+    jk_shmem.hdr->size = sz;
     JK_INIT_CS(&(jk_shmem.cs), rc);
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
@@ -94,10 +94,10 @@ int jk_shm_open(const char *fname, jk_logger_t *l)
     return 0;
 }
 
-int jk_shm_attach(const char *fname, jk_logger_t *l)
+int jk_shm_attach(const char *fname, size_t sz, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
-    if (!jk_shm_open(fname, l)) {
+    if (!jk_shm_open(fname, sz, l)) {
         jk_shmem.attached = 1;
         jk_shmem.hdr->childs++;
         if (JK_IS_DEBUG_LEVEL(l))
@@ -184,7 +184,8 @@ static int do_shm_open_lock(const char *fname, int attached, jk_logger_t *l)
     return 0;
 }
 
-static int do_shm_open(const char *fname, int attached, jk_logger_t *l)
+static int do_shm_open(const char *fname, int attached,
+                       size_t sz, jk_logger_t *l)
 {
     int rc;
     int fd;
@@ -202,7 +203,7 @@ static int do_shm_open(const char *fname, int attached, jk_logger_t *l)
     jk_shmem.filename = fname;
     jk_shmem.attached = attached;
 
-    jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_header_t) + JK_SHM_SIZE);
+    jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_header_t) + sz);
 
     /* Use plain memory in case there is no file name */
     if (!fname) {
@@ -265,7 +266,7 @@ static int do_shm_open(const char *fname, int attached, jk_logger_t *l)
     if (!attached) {
         memset(jk_shmem.hdr, 0, jk_shmem.size);
         memcpy(jk_shmem.hdr->magic, shm_signature, 8);
-        jk_shmem.hdr->size = JK_SHM_SIZE;
+        jk_shmem.hdr->size = sz;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Initialized shared memory size=%u free=%u addr=%#lx",
@@ -294,14 +295,14 @@ static int do_shm_open(const char *fname, int attached, jk_logger_t *l)
     return 0;
 }
 
-int jk_shm_open(const char *fname, jk_logger_t *l)
+int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
 {
-    return do_shm_open(fname, 0, l);
+    return do_shm_open(fname, 0, sz, l);
 }
 
-int jk_shm_attach(const char *fname, jk_logger_t *l)
+int jk_shm_attach(const char *fname, size_t sz, jk_logger_t *l)
 {
-    return do_shm_open(fname, 1, l);
+    return do_shm_open(fname, 1, sz, l);
 }
 
 void jk_shm_close()
