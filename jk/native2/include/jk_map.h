@@ -121,7 +121,7 @@ struct jk_map {
        The default impl will set them to the content
     */
     char **keys;
-    char **values;
+    void **values;
 };
 
 int jk2_map_default_create(struct jk_env *env, jk_map_t **m, 
