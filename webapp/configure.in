@@ -85,7 +85,7 @@ dnl Process the --with-apr=... command line argument (required)
 dnl -----------------------------------------------------------------------------
 AC_MSG_CHECKING([APR directory])
 AC_ARG_WITH(apr,
-	[  --with-apr=DIR          where the compiled APR sources can be found [../apr]],
+	[  --with-apr=DIR          where the compiled APR sources can be found [required]],
 	APRDIR=$withval,
 	APRDIR="")
 if test -z "$APRDIR" ; then
@@ -103,6 +103,41 @@ APRDIR=`pwd`
 cd $CURDIR
 AC_MSG_RESULT($APRDIR)
 AC_SUBST(APRDIR)
+
+TGTDIRS="lib"
+AC_MSG_RESULT([setting target directories to \"$TGTDIRS\"])
+AC_SUBST(TGTDIRS)
+
+dnl -----------------------------------------------------------------------------
+dnl Process the --with-apache=... command line argument
+dnl -----------------------------------------------------------------------------
+AC_MSG_CHECKING([Apache HTTPd 1.3.x])
+AC_ARG_WITH(apache,
+	[  --with-apache=DIR       where the Apache 1.3.x APXS utility can be found],
+	TMPDIR=$withval,
+	TMPDIR="")
+if ! test -z "$TMPDIR" ; then
+	if ! test -d "$TMPDIR" ; then
+		AC_MSG_ERROR([Invalid Apache 1.3.x directory \"$TMPDIR\" specified])
+	fi
+	if ! test -f "$TMPDIR/apxs" ; then
+		AC_MSG_ERROR([Cannot locate \"apxs\" in \"$TMPDIR\"])
+	fi
+
+	CURDIR=`pwd`
+	cd $TMPDIR
+	TMPDIR=`pwd`
+	cd $CURDIR
+	APXS=$TMPDIR/apxs
+	AC_MSG_RESULT($APXS)
+	AC_SUBST(APXS)
+
+	TGTDIRS="$TGTDIRS apache-1.3"
+	AC_MSG_RESULT([setting target directories to \"$TGTDIRS\"])
+	AC_SUBST(TGTDIRS)
+else
+	AC_MSG_RESULT(no)
+fi
 
 dnl -----------------------------------------------------------------------------
 dnl Check where sources are

@@ -60,7 +60,7 @@
 
 include Makedefs
 
-DIRS = lib
+DIRS = @TGTDIRS@
 
 CFGS = config.cache \
 	config.log \
@@ -86,14 +86,7 @@ docs: include/*.h
 	./scandoc/scandoc.pl -i ./scandoc/template.pl -p ./docs/ include/*.h
 	@touch docs
 
-docsclean:
-	@echo Removing generated documentation files...
-	@if test -d docs ; then \
-		rm -f docs/* ; \
-		rmdir docs ; \
-	fi
-
-allclean: clean docsclean
+allclean: clean
 
 distclean: allclean
 	@echo Removing configure generated files...
