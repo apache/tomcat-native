@@ -91,8 +91,8 @@ AC_DEFUN([AP_PROG_JAR],[
 ])
 
 AC_DEFUN([AP_JAVA],[
-  AC_ARG_WITH(java,
-  [  --with-java=DIR         Specify the location of your JDK installation],
+  AC_ARG_WITH(jdk,
+  [  --with-jdk=DIR         Specify the location of your JDK installation],
   [
     AC_MSG_CHECKING([JAVA_HOME])
     if test -d "$withval"
@@ -107,6 +107,6 @@ AC_DEFUN([AP_JAVA],[
   ])
   if test x"$JAVA_HOME" = x
   then
-    AC_MSG_ERROR([Java Home not defined. Rerun with --with-java=[...] parameter])
+    AC_MSG_ERROR([Java Home not defined. Rerun with --with-jdk=[...] parameter])
   fi
 ])
