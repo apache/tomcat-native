@@ -196,6 +196,13 @@ public final class Ajp13Connector
 
 
     /**
+     * Linger value to be used on socket close.
+     * Note : a value of -1 means no linger used on close.
+     */
+    private int connectionLinger = -1;
+
+
+    /**
      * The port number on which we listen for ajp13 requests.
      */
     private int port = 8009;
@@ -309,11 +316,32 @@ public final class Ajp13Connector
     /**
      * Set the connection timeout for this Connector.
      *
-     * @param count The new connection timeout
+     * @param connectionTimeout The new connection timeout
      */
     public void setConnectionTimeout(int connectionTimeout) {
 
 	this.connectionTimeout = connectionTimeout;
+
+    }
+
+    /**
+     * Return the connection linger settings for this Connector.
+     */
+    public int getConnectionLinger() {
+
+	return (connectionLinger);
+
+    }
+
+
+    /**
+     * Set the connection linger for this Connector.
+     *
+     * @param connectionLinger The new connection linger
+     */
+    public void setConnectionLinger(int connectionLinger) {
+
+	this.connectionLinger = connectionLinger;
 
     }
 
@@ -844,9 +872,39 @@ public final class Ajp13Connector
                     logger.log("accepted socket, assigning to processor.");
                 }
                 
-                socket.setSoLinger(true, 100);
+                /* Warning :
+                 * 
+                 * To be able to close more quickly a connection, it's recommanded
+                 * to set linger to a small value.
+                 * 
+                 * AJP13 connection SHOULD be closed under webserver responsability and 
+                 * in such case it's safe to close socket on Tomcat side without delay,
+                 * which may be also the case for HTTP connectors.
+                 * 
+                 * I (henri) recommand to set Linger to 0, making socket closed immediatly
+                 * so the OS will free faster the underlying io descriptor and resources.
+                 * It's very important under heavy load !
+                 */
+                
+                if (connectionLinger < 0)
+                	socket.setSoLinger(false, 0);
+                else	
+                	socket.setSoLinger(true, connectionLinger);
+                	
                 socket.setKeepAlive(true);
                 
+                /* Warning :
+                 * 
+                 * AJP13 shouldn't use socket timeout on tomcat site since
+                 * when Tomcat close a connection after a timeout is reached
+                 * the socket stay in half-closed state until the webserver
+                 * try to send a request to tomcat and detect the socket close
+                 * when it will try to read the reply.
+                 * 
+                 * On many Unix platforms the write() call didn't told
+                 * webserver that the socket is closed.
+                 */
+                 
                 if (connectionTimeout >= 0) {
                     socket.setSoTimeout(connectionTimeout);
                 }
