@@ -67,13 +67,13 @@ import java.util.Enumeration;
 import java.security.*;
 
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.http.BaseRequest;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.buf.HexUtils;
 
 
 /**
- * The endpoint represents a connection instance, used to send/receive messages.
  *
  * @author Henri Gomez [hgomez@slib.fr]
  * @author Dan Milstein [danmil@shore.net]
@@ -81,8 +81,11 @@ import org.apache.tomcat.util.buf.HexUtils;
  * @author Kevin Seguin
  * @author Costin Manolache
  */
-public class Endpoint {
-    private Object notes[]=new Object[16];
+public class MsgContext {
+    private Object notes[]=new Object[32];
+    private Channel ch;
+    private BaseRequest req;
+    private WorkerEnv wEnv;
 
     public final Object getNote( int id ) {
         return notes[id];
@@ -90,6 +93,33 @@ public class Endpoint {
 
     public final void setNote( int id, Object o ) {
         notes[id]=o;
+    }
+
+
+    // Common attributes ( XXX should be notes for flexibility ? )
+
+    public final WorkerEnv getWorkerEnv() {
+        return wEnv;
+    }
+
+    public final void setWorkerEnv( WorkerEnv we ) {
+        this.wEnv=we;
+    }
+    
+    public final Channel getChannel() {
+        return ch;
+    }
+    
+    public final void setChannel(Channel ch) {
+        this.ch=ch;
+    }
+
+    public final void setRequest( BaseRequest req ) {
+        this.req=req;
+    }
+
+    public final  BaseRequest getRequest() {
+        return req;
     }
     
 }
