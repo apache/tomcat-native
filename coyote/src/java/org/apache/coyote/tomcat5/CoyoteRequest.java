@@ -91,6 +91,10 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
+import javax.servlet.ServletRequestEvent;
+import javax.servlet.ServletRequestListener;
+import javax.servlet.ServletRequestAttributeEvent;
+import javax.servlet.ServletRequestAttributeListener;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -105,6 +109,7 @@ import org.apache.catalina.Connector;
 import org.apache.catalina.Context;
 import org.apache.catalina.Globals;
 import org.apache.catalina.HttpRequest;
+import org.apache.catalina.Logger;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Realm;
 import org.apache.catalina.Session;
@@ -211,6 +216,12 @@ public class CoyoteRequest
      * The attributes associated with this Request, keyed by attribute name.
      */
     protected HashMap attributes = new HashMap();
+
+
+    /**
+     * List of read only attributes for this Request.
+     */
+    private HashMap readOnlyAttributes = new HashMap();
 
 
     /**
@@ -1136,7 +1147,42 @@ public class CoyoteRequest
      * @param name Name of the request attribute to remove
      */
     public void removeAttribute(String name) {
-        attributes.remove(name);
+        Object value = null;
+        boolean found = false;
+
+        // Remove the specified attribute
+        synchronized (attributes) {
+            // Check for read only attribute
+           if (readOnlyAttributes.containsKey(name))
+                return;
+            found = attributes.containsKey(name);
+            if (found) {
+                value = attributes.get(name);
+                attributes.remove(name);
+            } else {
+                return;
+            }
+        }
+
+        // Notify interested application event listeners
+        Object listeners[] = context.getApplicationListeners();
+        if ((listeners == null) || (listeners.length == 0))
+            return;
+        ServletRequestAttributeEvent event =
+          new ServletRequestAttributeEvent(context.getServletContext(),
+                                           getRequest(), name, value);
+        for (int i = 0; i < listeners.length; i++) {
+            if (!(listeners[i] instanceof ServletRequestAttributeListener))
+                continue;
+            ServletRequestAttributeListener listener =
+                (ServletRequestAttributeListener) listeners[i];
+            try {
+                listener.attributeRemoved(event);
+            } catch (Throwable t) {
+                // FIXME - should we do anything besides log these?
+                log(sm.getString("coyoteRequest.attributeEvent"), t);
+            }
+        }
     }
 
 
@@ -1159,8 +1205,50 @@ public class CoyoteRequest
             return;
         }
 
-        attributes.put(name, value);
+        Object oldValue = null;
+        boolean replaced = false;
 
+        // Add or replace the specified attribute
+        synchronized (attributes) {
+            // Check for read only attribute
+            if (readOnlyAttributes.containsKey(name))
+                return;
+            oldValue = attributes.get(name);
+            if (oldValue != null)
+                replaced = true;
+            attributes.put(name, value);
+        }
+
+        // Notify interested application event listeners
+        Object listeners[] = context.getApplicationListeners();
+        if ((listeners == null) || (listeners.length == 0))
+            return;
+        ServletRequestAttributeEvent event = null;
+        if (replaced)
+            event =
+                new ServletRequestAttributeEvent(context.getServletContext(),
+                                                 getRequest(), name, oldValue);
+        else
+            event =
+                new ServletRequestAttributeEvent(context.getServletContext(),
+                                                 getRequest(), name, value);
+
+        for (int i = 0; i < listeners.length; i++) {
+            if (!(listeners[i] instanceof ServletRequestAttributeListener))
+                continue;
+            ServletRequestAttributeListener listener =
+                (ServletRequestAttributeListener) listeners[i];
+            try {
+                if (replaced) {
+                    listener.attributeReplaced(event);
+                } else {
+                    listener.attributeAdded(event);
+                }
+            } catch (Throwable t) {
+                // FIXME - should we do anything besides log these?
+                log(sm.getString("coyoteRequest.attributeEvent"), t);
+            }
+        }
     }
 
 
@@ -2101,5 +2189,41 @@ public class CoyoteRequest
 
     }
 
+
+    /**
+     * Log a message on the Logger associated with our Container (if any).
+     *
+     * @param message Message to be logged
+     */
+    private void log(String message) {
+
+        Logger logger = connector.getContainer().getLogger();
+        String localName = "CoyoteRequest";
+        if (logger != null)
+            logger.log(localName + " " + message);
+        else
+            System.out.println(localName + " " + message);
+
+    }
+
+
+    /**
+     * Log a message on the Logger associated with our Container (if any).
+     *
+     * @param message Message to be logged
+     * @param throwable Associated exception
+     */
+    private void log(String message, Throwable throwable) {
+
+        Logger logger = connector.getContainer().getLogger();
+        String localName = "CoyoteRequest";
+        if (logger != null)
+            logger.log(localName + " " + message, throwable);
+        else {
+            System.out.println(localName + " " + message);
+            throwable.printStackTrace(System.out);
+        }
+
+    }
 
 }
