@@ -27,11 +27,6 @@
  
   <!-- ========== Build options ========== -->
 
-  <!-- Use the jni worker and libs whenever possible -->    
-  <property name="use.jni" value="true" />
-  <!-- Use apr whenever possible -->    
-  <property name="use.apr" value="true" />
-  
   <property name="so.debug" value="true" />
   <property name="so.optimize" value="false" />
   <property name="so.profile" value="false" />
@@ -86,7 +81,6 @@
     <condition property="netware">
       <available file="novellndk.home" />
     </condition>
-
     <echo message="Linux:${linux} Win32:${win32} Netware:${netware} Solaris:${solaris} HPUX:${hpux}" />
   </target>
 
@@ -105,10 +99,17 @@
                file="${mssdk.home}" />
     <available property="iplanet.detect" 
                file="${iplanet.home}" />
+    <condition property="build.jni" >
+       <or>
+        <isset property="iis.detect"  />
+        <isset property="apache2.detect"  />
+       </or>
+    </condition>
     <echo message="Apache2 ${apache2.home} ${apache2.detect}" />
     <echo message="Apache13 ${apache13.home} ${apache13.detect}" />
     <echo message="IIS ${iis.home} ${iis.detect}" />
     <echo message="Iplanet ${iplanet.home} ${iplanet.detect}" />
+    <echo message="JNI ${build.jni}" />
     <echo message="" />
   </target>
 
@@ -328,7 +329,7 @@
     </so>
   </target>
   
-  <target name="jni" depends="init" if="use.jni">
+  <target name="jni" depends="init" if="build.jni">
     <mkdir dir="${build.dir}/jni${arch.prefix}" />
     <!-- can be overriden -->
     <property name="apr.home" location="${apache2.home}" />
