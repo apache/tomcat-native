@@ -6,8 +6,9 @@ README.txt file coming with the sources, installing the module is pretty
 easy.
 
 First of all, copy the resulting mod_webapp.so file you will find in this
-directory into your Apache 1.3 "libexec" directory (that directory where
-all DSO modules for Apache reside).
+directory (or in the apache-1.3 directory if you're building from sources)
+into your Apache 1.3 "libexec" directory (that directory where all DSO modules
+for Apache reside).
 
 Once you have done that, edit your "httpd.conf" configuration file and
 add a few lines to load that module at startup:
