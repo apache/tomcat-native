@@ -79,27 +79,12 @@
 #include "jk_pool.h"
 #include "jk_logger.h"
 
-#ifndef WIN32
-#include <unistd.h>
-#include <pwd.h>
-#endif
-
 #if APR_HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 
-#if APR_HAS_SHARED_MEMORY
-#include "apr_shm.h"
-#endif
-
-#ifdef HAVE_SIGNAL
-#include "signal.h"
-#endif
-
-/* jniAprPool is the 'master pool' for standalone use ( i.e. not inprocess )
-   All resources are allocated in this pool
-*/
-static apr_pool_t *jniAprPool=NULL;
+#define P2J(jk_pointer) ((jlong)(long)(void *)jk_pointer)
+#define J2P(p, jktype) ((jktype)(void *)(long)p)
 
 /** Access to the jk workerEnv. This field and jk_env_globalEnv are used
     to interact with the jk components 
@@ -122,7 +107,13 @@ Java_org_apache_jk_apr_AprImpl_setArrayAccessMode(JNIEnv *jniEnv, jobject _jthis
 }
 
 /* -------------------- Apr initialization and pools -------------------- */
-     
+
+/** Initialize APR and jk, for standalone use. If we use in-process mode,
+    i.e. an application using jk to launch an in-process JVM - this function
+    will not do anything, since the setup is already done.
+
+    The code is identical with what mod_jk is doing.
+*/
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 {
@@ -130,6 +121,7 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 
     /* For in-process the env is initialized already */
     if( jk_env_globalEnv == NULL ) {
+        apr_pool_t *jniAprPool=NULL;
         jk_pool_t *globalPool;
 
         apr_initialize(); 
@@ -182,150 +174,14 @@ Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_terminate(JNIEnv *jniEnv, jobject _jthis)
 {
+    apr_pool_t *jniAprPool=jk_env_globalEnv->getAprPool(jk_env_globalEnv);
+
     if ( jniAprPool!=NULL ) {
         apr_pool_destroy(jniAprPool);
         jniAprPool = NULL;
 /*     apr_terminate(); */
     }
     return 0;
-}
-
-/* -------------------- Signals -------------------- */
-/* XXX Move it to jk_signal.c */
-
-#ifdef HAVE_SIGNALS
-static struct sigaction jkAction;
-
-/* We use a jni channel to send the notification to java
- */
-static jk_channel_t *jniChannel;
-
-/* XXX we should sync or use multiple endpoints if multiple signals
-   can be concurent
-*/
-static jk_endpoint_t *signalEndpoint;
-
-static void jk2_SigAction(int sig) {
-    jk_env_t *env;
-    
-    /* Make a callback using the jni channel */
-    fprintf(stderr, "Signal %d\n", sig );
-
-    if( jk_env_globalEnv == NULL ) {
-        return;
-    }
-
-    env=jk_env_globalEnv->getEnv( jk_env_globalEnv );
-
-    if( jniChannel==NULL ) {
-        jniChannel=env->getByName( env, "channel.jni:jni" );
-        fprintf(stderr, "Got jniChannel %#lx\n", jniChannel );
-    }
-    if( jniChannel==NULL ) {
-        return;
-    }
-    if( signalEndpoint == NULL ) {
-        jk_bean_t *component=env->createBean2( env, NULL, "endpoint", NULL );
-        if( component == NULL ) {
-            fprintf(stderr, "Can't create endpoint\n" );
-            return;
-        }
-        component->init( env, component );
-        fprintf(stderr, "Create endpoint %#lx\n", component->object );
-        signalEndpoint=component->object;
-    }
-
-    /* Channel:jni should be initialized by the caller */
-
-    /* XXX make the callback */
-    
-    jk_env_globalEnv->releaseEnv( jk_env_globalEnv, env );
-
-}
-
-
-/* XXX We need to: - preserve the old signal ( or get them ) - either
-     implement "waitSignal" or use invocation in jk2_SigAction
-
-     Probably waitSignal() is better ( we can have a thread that waits )
- */
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint signalNr )
-{
-    memset(& jkAction, 0, sizeof(jkAction));
-    jkAction.sa_handler=jk2_SigAction;
-    sigaction((int)signalNr, &jkAction, (void *) NULL);
-    return 0;
-}
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint target ,
-                                          jint signo)
-{
-    return kill( (pid_t)target, (int)signo );
-}
-
-#else /* ! HAVE_SIGNALS */
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint signalNr )
-{
-    return 0;
-}
-
-JNIEXPORT void JNICALL 
-Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint signo,
-                                          jint target)
-{
-
-}
-
-#endif
-
-
-/* -------------------- User related functions -------------------- */
-/* XXX move it to jk_user.c */
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_getPid(JNIEnv *jniEnv, jobject _jthis)
-{
-  return (jint) getpid();
-}
-
-
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_setUser(JNIEnv *jniEnv, jobject _jthis,
-                                       jstring userJ, jstring groupJ)
-{
-    int rc=0;
-#ifndef WIN32
-    const char *user;
-    char *group;
-    struct passwd *passwd;
-    int uid;
-    int gid;
-
-    user = (*jniEnv)->GetStringUTFChars(jniEnv, userJ, 0);
-    
-    passwd = getpwnam(user);
-
-    (*jniEnv)->ReleaseStringUTFChars(jniEnv, userJ, user);
-
-    if (passwd == NULL ) {
-        return -1;
-    }
-    uid = passwd->pw_uid;
-    gid = passwd->pw_gid;
-
-    if (uid < 0 || gid < 0 ) 
-        return -2;
-
-    rc = setuid(uid);
-
-#endif
-
-    return (jint)rc;
 }
 
 /* -------------------- Access jk components -------------------- */
@@ -345,12 +201,8 @@ Java_org_apache_jk_apr_AprImpl_getJkEnv
     if( jk_env_globalEnv == NULL )
         return 0;
 
-    /* fprintf(stderr, "Get env %#lx\n", jk_env_globalEnv); */
     env=jk_env_globalEnv->getEnv( jk_env_globalEnv );
-    /*     if( env!=NULL) */
-    /*         env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-    /*                       "aprImpl.getJkEnv()  %#lx\n", env); */
-    return (jlong)(long)(void *)env;
+    return P2J(env);
 }
 
 
@@ -361,7 +213,7 @@ JNIEXPORT void JNICALL
 Java_org_apache_jk_apr_AprImpl_releaseJkEnv
   (JNIEnv *jniEnv, jobject o, jlong xEnv )
 {
-    jk_env_t *env=(jk_env_t *)(void *)(long)xEnv;
+    jk_env_t *env=J2P( xEnv, jk_env_t *);
 
     if( jk_env_globalEnv != NULL ) 
         jk_env_globalEnv->releaseEnv( jk_env_globalEnv, env );
@@ -372,14 +224,16 @@ Java_org_apache_jk_apr_AprImpl_releaseJkEnv
 }
 
 /*
-  Recycle the jk endpoint
-*/
+ *  Recycle the jk endpoint. Will reset the tmp pool and clean error
+ *  state.
+ */
 JNIEXPORT void JNICALL 
 Java_org_apache_jk_apr_AprImpl_jkRecycle
   (JNIEnv *jniEnv, jobject o, jlong xEnv, jlong endpointP )
 {
-    jk_env_t *env=(jk_env_t *)(void *)(long)xEnv;
-    jk_bean_t *compCtx=(jk_bean_t *)(void *)(long)endpointP;
+    jk_env_t *env= J2P( xEnv, jk_env_t *);
+    jk_bean_t *compCtx= J2P( endpointP, jk_bean_t *);
+    
     jk_endpoint_t *ep = (compCtx==NULL ) ? NULL : compCtx->object;
 
     if( env == NULL )
@@ -390,32 +244,26 @@ Java_org_apache_jk_apr_AprImpl_jkRecycle
     }
 
     env->recycleEnv( env );
-
-    /*     env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-    /*                   "aprImpl.releaseJkEnv()  %#lx\n", env); */
 }
 
 
-
 /*
-  Find a jk component. 
-*/
+ *  Find a jk component. 
+ */
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_getJkHandler
   (JNIEnv *jniEnv, jobject o, jlong xEnv, jstring compNameJ)
 {
-    jk_env_t *env=(jk_env_t *)(void *)(long)xEnv;
+    jk_env_t *env= J2P(xEnv, jk_env_t *);
+    
     jk_bean_t *component;
     char *cname=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, compNameJ, 0);
 
     component=env->getBean( env, cname );
     
-    /*     env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-    /*                   "aprImpl.getJkHandler()  %#lx %s\n", component, cname ); */
-    
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, compNameJ, cname);
 
-    return (jlong)(long)(void *)component;
+    return P2J(component);
 }
 
 /*
@@ -425,15 +273,17 @@ JNIEXPORT jlong JNICALL
 Java_org_apache_jk_apr_AprImpl_createJkHandler
   (JNIEnv *jniEnv, jobject o, jlong xEnv, jstring compNameJ)
 {
-    jk_env_t *env=(jk_env_t *)(void *)(long)xEnv;
+    jk_env_t *env= J2P(xEnv, jk_env_t *);
+
     jk_bean_t *component;
+
     char *cname=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, compNameJ, 0);
 
     component=env->createBean( env, NULL, cname );
     
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, compNameJ, cname);
 
-    return (jlong)(long)(void *)component;
+    return P2J(component);
 }
 
 /*
@@ -444,6 +294,7 @@ Java_org_apache_jk_apr_AprImpl_jkSetAttribute
 {
     jk_env_t *env=(jk_env_t *)(void *)(long)xEnv;
     jk_bean_t *component=(jk_bean_t *)(void *)(long)componentP;
+    
     char *name=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, nameJ, 0);
     char *value=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, valueJ, 0);
     int rc=JK_OK;
@@ -702,18 +553,6 @@ static JNINativeMethod org_apache_jk_apr_AprImpl_native_methods[] = {
         "jkRecycle", "(JJ)V",
         Java_org_apache_jk_apr_AprImpl_jkRecycle
     },
-    {
-        "setUser", "(Ljava/lang/String;Ljava/lang/String;)I",
-        Java_org_apache_jk_apr_AprImpl_setUser
-    },
-    {
-        "signal", "(I)I",
-        Java_org_apache_jk_apr_AprImpl_signal
-    },
-    {
-        "sendSignal", "(II)V",
-        Java_org_apache_jk_apr_AprImpl_sendSignal
-    }
 };
 
 /*
