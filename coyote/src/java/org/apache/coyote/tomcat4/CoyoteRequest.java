@@ -1,9 +1,13 @@
 /*
+ * $Header$
+ * $Revision$
+ * $Date$
+ *
  * ====================================================================
  *
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 1999 The Apache Software Foundation.  All rights 
+ * Copyright (c) 1999 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -11,7 +15,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -19,15 +23,15 @@
  *    distribution.
  *
  * 3. The end-user documentation included with the redistribution, if
- *    any, must include the following acknowlegement:  
- *       "This product includes software developed by the 
+ *    any, must include the following acknowlegement:
+ *       "This product includes software developed by the
  *        Apache Software Foundation (http://www.apache.org/)."
  *    Alternately, this acknowlegement may appear in the software itself,
  *    if and wherever such third-party acknowlegements normally appear.
  *
  * 4. The names "The Jakarta Project", "Tomcat", and "Apache Software
  *    Foundation" must not be used to endorse or promote products derived
- *    from this software without prior written permission. For written 
+ *    from this software without prior written permission. For written
  *    permission, please contact apache@apache.org.
  *
  * 5. Products derived from this software may not be called "Apache"
@@ -55,26 +59,84 @@
  *
  * [Additional notices, if required by prior licensing conditions]
  *
- */ 
+ */
+
+
 package org.apache.coyote.tomcat4;
 
-import java.util.Locale;
+
+import java.io.InputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.Iterator;
+import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletRequest;
+
+import org.apache.coyote.Request;
+
+import org.apache.catalina.Connector;
+
 
 /**
- * Constants.
+ * Wrapper object for the Coyote request.
  *
  * @author Remy Maucherat
+ * @version $Revision$ $Date$
  */
-public final class Constants {
+
+public class CoyoteRequest {
 
 
-    // -------------------------------------------------------------- Constants
+    // ------------------------------------------------------------- Properties
 
 
-    public static final String Package = "org.apache.coyote.tomcat4";
-    public static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
+    /**
+     * Associated Catalina connector.
+     */
+    protected Connector connector;
 
-    public static final int PROCESSOR_IDLE = 0;
-    public static final int PROCESSOR_ACTIVE = 1;
+    /**
+     * Return the Connector through which this Request was received.
+     */
+    public Connector getConnector() {
+        return (this.connector);
+    }
+
+    /**
+     * Set the Connector through which this Request was received.
+     *
+     * @param connector The new connector
+     */
+    public void setConnector(Connector connector) {
+        this.connector = connector;
+    }
+
+
+    /**
+     * Coyote request.
+     */
+    protected Request request;
+
+    /**
+     * Set the Coyote request.
+     * 
+     * @param request The Coyote request
+     */
+    public void setRequest(Request request) {
+        this.request = request;
+    }
+
+
+    // --------------------------------------------------------- Public Methods
+
+
+    /**
+     * Release all object references, and initialize instance variables, in
+     * preparation for reuse of this object.
+     */
+    public void recycle() {
+    }
+
 
 }
