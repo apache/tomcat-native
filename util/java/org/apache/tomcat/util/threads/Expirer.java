@@ -99,6 +99,7 @@ public final class Expirer  implements ThreadPoolRunnable
     // -------------------- Managed objects --------------------
     static final int INITIAL_SIZE=8;
     TimeStamp managedObjs[]=new TimeStamp[INITIAL_SIZE];
+    TimeStamp checkedObjs[]=new TimeStamp[INITIAL_SIZE];
     int managedLen=managedObjs.length;
     int managedCount=0;
     
@@ -159,8 +160,15 @@ public final class Expirer  implements ThreadPoolRunnable
     public void runIt( Object td[] ) {
 	long timeNow = System.currentTimeMillis();
 	if( dL > 2 ) debug( "Checking " + timeNow );
-	for( int i=0; i< managedCount; i++ ) {
-	    TimeStamp ts=managedObjs[i];
+	int checkedCount;
+	synchronized( managedObjs ) {
+	    checkedCount=managedCount;
+	    if(checkedObjs.length < checkedCount)
+		checkedObjs = new TimeStamp[managedLen];
+	    System.arraycopy( managedObjs, 0, checkedObjs, 0, checkedCount);
+	}
+	for( int i=0; i< checkedCount; i++ ) {
+	    TimeStamp ts=checkedObjs[i];
 	    
 	    if (ts==null || !ts.isValid())
 		continue;
