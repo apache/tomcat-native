@@ -389,12 +389,12 @@ public class PoolTcpEndpoint { // implements Endpoint {
             if (accepted != null) {
                 try {
                     accepted.close();
-                    accepted = null;
                 } catch(Exception ex) {
                     msg = sm.getString("endpoint.err.nonfatal",
                                        accepted, ex);
                     log.warn(msg, ex);
                 }
+                accepted = null;
             }
 
             if( ! running ) return null;
