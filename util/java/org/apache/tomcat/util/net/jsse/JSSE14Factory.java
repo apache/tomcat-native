@@ -59,63 +59,28 @@
 
 package org.apache.tomcat.util.net.jsse;
 
-import org.apache.tomcat.util.compat.JdkCompat;
-import org.apache.tomcat.util.net.SSLImplementation;
+import java.net.Socket;
+import javax.net.ssl.SSLSocket;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.ServerSocketFactory;
-import java.io.*;
-import java.net.*;
 
-/* JSSEImplementation:
+/**
+ * Implementation class for JSSEFactory for JSSE 1.1.x (that ships with the
+ * 1.4 JVM).
+ *
+ * @author Bill Barker
+ */
 
-   Concrete implementation class for JSSE
+class JSSE14Factory implements JSSEFactory {
 
-   @author EKR
-*/
-        
-public class JSSEImplementation extends SSLImplementation
-{
-    static final String JSSE14Factory = 
-        "org.apache.tomcat.util.net.jsse.JSSE14Factory";
-    static final String JSSE13Factory = 
-        "org.apache.tomcat.util.net.jsse.JSSE13Support";
-    static final String SSLSocketClass = "javax.net.ssl.SSLSocket";
-
-    static org.apache.commons.logging.Log logger = 
-        org.apache.commons.logging.LogFactory.getLog(JSSEImplementation.class);
-
-    private JSSEFactory factory;
-
-    public JSSEImplementation() throws ClassNotFoundException {
-        // Check to see if JSSE is floating around somewhere
-        Class.forName(SSLSocketClass);
-	if( JdkCompat.isJava14() ) {
-	    try {
-		Class factcl = Class.forName(JSSE14Factory);
-		factory = (JSSEFactory)factcl.newInstance();
-	    } catch(Exception ex) {
-		factory = new JSSE13Factory();
-		if(logger.isDebugEnabled()) {
-		    logger.debug("Error getting factory: " + JSSE14Factory, ex);
-		}
-	    }
-	} else {
-	    factory = new JSSE13Factory();
-	}
+    JSSE14Factory() {
     }
 
-
-    public String getImplementationName(){
-      return "JSSE";
+    public ServerSocketFactory getSocketFactory() {
+	return new JSSE14SocketFactory();
     }
-      
-    public ServerSocketFactory getServerSocketFactory()  {
-        ServerSocketFactory ssf = factory.getSocketFactory();
-        return ssf;
-    } 
 
-    public SSLSupport getSSLSupport(Socket s) {
-        SSLSupport ssls = factory.getSSLSupport(s);
-        return ssls;
+    public SSLSupport getSSLSupport(Socket socket) {
+	return new JSSE14Support((SSLSocket)socket);
     }
 }
