@@ -535,29 +535,17 @@ class TcpWorkerThread implements ThreadPoolRunnable {
        We also want to use per/thread data and avoid sync wherever possible.
     */
     PoolTcpEndpoint endpoint;
-    SimplePool connectionCache;
-    static final boolean usePool=false;
     
     public TcpWorkerThread(PoolTcpEndpoint endpoint) {
 	this.endpoint = endpoint;
-	if( usePool ) {
-	    connectionCache = new SimplePool(endpoint.getMaxThreads());
-	    for(int i = 0 ; i < endpoint.getMaxThreads()/2 ; i++) {
-		connectionCache.put(new TcpConnection());
-	    }
-	}
     }
 
     public Object[] getInitData() {
-	if( usePool ) {
-	    return endpoint.getConnectionHandler().init();
-	} else {
-	    // no synchronization overhead, but 2 array access 
-	    Object obj[]=new Object[2];
-	    obj[1]= endpoint.getConnectionHandler().init();
-	    obj[0]=new TcpConnection();
-	    return obj;
-	}
+        // no synchronization overhead, but 2 array access 
+        Object obj[]=new Object[2];
+        obj[1]= endpoint.getConnectionHandler().init();
+        obj[0]=new TcpConnection();
+        return obj;
     }
     
     public void runIt(Object perThrData[]) {
@@ -590,19 +578,11 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 
                     // 3: Process the connection
                     step = 3;
-		    if( usePool ) {
-			con=(TcpConnection)connectionCache.get();
-			if( con == null ) 
-			    con = new TcpConnection();
-		    } else {
-                        con = (TcpConnection) perThrData[0];
-                        perThrData = (Object []) perThrData[1];
-		    }
-
+                    con = (TcpConnection) perThrData[0];
 		    con.setEndpoint(endpoint);
 		    con.setSocket(s);
 		    endpoint.getConnectionHandler()
-                        .processConnection(con, perThrData);
+                        .processConnection(con, (Object []) perThrData[1]);
 
                 } catch (SocketException se) {
                     endpoint.log.error
@@ -625,9 +605,6 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                 } finally {
                     if (con != null) {
                         con.recycle();
-                        if (usePool) {
-                            connectionCache.put(con);
-                        }
                     }
                 }
 	    }
