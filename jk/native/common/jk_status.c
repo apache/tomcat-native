@@ -471,9 +471,6 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     jk_puts(s, " checked");
                 jk_puts(s, "></td></tr>\n");
                 jk_puts(s, "</td></tr>\n</table>\n");
-
-                display_maps(s, sw, s->uw_map, wr->s->name, l);
-
                 jk_puts(s, "<br /><input type=submit value=\"Update Worker\">\n</form>\n");
 
             }
