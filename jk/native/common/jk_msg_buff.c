@@ -398,10 +398,13 @@ void jk_dump_buff(jk_logger_t *l,
     int j;
     int len = msg->len;
 
-    if (l->level == JK_LOG_DEBUG_LEVEL) {
+    if (level == JK_LOG_DEBUG_LEVEL) {
         len = 0;
+        if (l->level == JK_LOG_TRACE_LEVEL)
+            len = msg->len;
     }
-    else if (len > 1024)
+    
+    if (len > 1024)
         len = 1024;
 
     jk_log(l, file, line, funcname, level,
