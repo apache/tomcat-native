@@ -936,6 +936,7 @@ public final class CoyoteConnector2
             Class clazz = Class.forName(protocolHandlerClassName);
             protocolHandler = (ProtocolHandler) clazz.newInstance();
         } catch (Exception e) {
+            e.printStackTrace();
             throw new LifecycleException
                 (sm.getString
                  ("coyoteProcessor.processorInstantiationFailed", e));
@@ -943,7 +944,7 @@ public final class CoyoteConnector2
         protocolHandler.setAdapter(adapter);
 
         // Set attributes
-        
+        protocolHandler.setAttribute("port", "" + port);
 
         try {
             protocolHandler.init();

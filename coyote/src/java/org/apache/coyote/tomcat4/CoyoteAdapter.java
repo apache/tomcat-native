@@ -129,7 +129,7 @@ final class CoyoteAdapter
     // -------------------------------------------------------------- Constants
 
 
-    public static final int ADAPTER_NOTES = 0;
+    public static final int ADAPTER_NOTES = 1;
 
 
     // ----------------------------------------------------------- Constructors
