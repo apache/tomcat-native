@@ -503,22 +503,6 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
     return JK_OK;
 }
 
-/** Called by java. Will take the rest of the message and dispatch again to the real target.
- */
-static int JK_METHOD jk2_channel_jni_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
-{
-    jk_bean_t *jniChB=(jk_bean_t *)target;
-    jk_channel_t *jniCh=(jk_channel_t *)jniChB->object;
-    int code;
-    
-    if( jniCh->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,"channelJni.java2cInvoke() ok\n");
-
-    code = (int)msg->getByte(env, msg);
-    return ep->worker->workerEnv->dispatch( env, ep->worker->workerEnv,
-                                            ep->currentRequest, ep, code, ep->reply );
-}
-
 static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
                                                     jk_bean_t *mbean, 
                                                     char *name, void *valueP)
@@ -541,6 +525,29 @@ static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
     }
     return JK_OK;
 }
+
+/** Called by java. Will take the msg and dispatch it to workerEnv, as if it would
+ *  be if received via socket
+ */
+int JK_METHOD jk2_channel_jni_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep, int code,
+                                     jk_msg_t *msg, int raw)
+{
+    jk_channel_t *ch=(jk_channel_t *)bean->object;
+    int rc=JK_OK;
+
+    if( ch->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "ch.%d() \n", code);
+    
+    code = (int)msg->getByte(env, msg);
+
+    if( ch->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,"channelJni.java2cInvoke() %d\n", code);
+
+    return ep->worker->workerEnv->dispatch( env, ep->worker->workerEnv,
+                                            ep->currentRequest, ep, code, ep->reply );
+}
+
 
 int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool, 
                                       jk_bean_t *result,
@@ -576,10 +583,7 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     ch->workerEnv=wEnv;
     wEnv->addChannel( env, wEnv, ch );
 
-    wEnv->registerHandler( env, wEnv, type,
-                           "sendResponse", JK_HANDLE_JNI_DISPATCH,
-                           jk2_channel_jni_dispatch, NULL );
-
+    result->invoke=jk2_channel_jni_invoke;
     
     return JK_OK;
 }
