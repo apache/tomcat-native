@@ -146,7 +146,7 @@ AC_ARG_WITH(apxs,
             else
                 WEBSERVER="apache-2.0"
               	APRINCLUDEDIR=""
-              	INCTEMP="-I`$APXS -q APR_INCLUDEDIR`"
+              	INCTEMP="`$APXS -q APR_INCLUDEDIR`"
               	for INC in ${INCTEMP}; do
               	    APRINCLUDEDIR="${APRINCLUDEDIR} -I${INC}"
               	done              	
