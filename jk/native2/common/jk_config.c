@@ -98,6 +98,8 @@ static int jk2_config_setConfigFile( jk_env_t *env,
                       "config.setConfig(): Can't find config file %s", workerFile );
         return JK_FALSE;
     }
+
+    cfg->file=workerFile;
     
     /** Read worker files
      */
@@ -270,7 +272,10 @@ static int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
 
     /*     env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s / %s / %s=%s\n", */
     /*                    mbean->name, name, pname, val); */
- 
+    if( strcmp( name, "name" ) == 0 ) {
+        return JK_TRUE;
+    }
+    
     if(mbean->setAttribute)
         return mbean->setAttribute( env, mbean, name, val );
     return JK_FALSE;
@@ -296,7 +301,7 @@ static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
         return status;
     }
     
-    mbean=env->getMBean( env, objName );
+    mbean=env->getBean( env, objName );
     if( mbean==NULL ) {
         mbean=env->createBean( env, cfg->pool, objName );
     }

@@ -204,15 +204,16 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
 }
 
 
-static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
-                                 const char *file,
-                                 int line,
-                                 int level,
-                                 const char *fmt, ...)
+static int jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
+                                  const char *file,
+                                  int line,
+                                  int level,
+                                  char *fmt,
+                                  va_list args)
 {
     int rc = 0;
     
-    if( !file || !fmt) {
+    if( !file || !args) {
         return -1;
     }
 
@@ -226,7 +227,6 @@ static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
         char buf[HUGE_BUFFER_SIZE];
 #endif
         char *f = (char *)(file + strlen(file) - 1);
-        va_list args;
         int used = 0;
 
         while(f != file && '\\' != *f && '/' != *f) {
@@ -260,7 +260,6 @@ static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
             return 0; /* [V] not sure what to return... */
         }
     
-        va_start(args, fmt);
 #ifdef WIN32
         rc = _vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
 #elif defined(NETWARE) /* until we get a vsnprintf function */
@@ -268,7 +267,6 @@ static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
 #else 
         rc = vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
 #endif
-        va_end(args);
 
         l->log(env, l, level, buf);
 #ifdef NETWARE
@@ -279,6 +277,23 @@ static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
     return rc;
 }
 
+
+
+static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
+                                 const char *file,
+                                 int line,
+                                 int level,
+                                 const char *fmt, ...)
+{
+    va_list args;
+    int rc;
+    
+    va_start(args, fmt);
+    rc=jk2_logger_file_jkVLog( env, l, file, line, level, fmt, args );
+    va_end(args);
+
+    return rc;
+}
 
 int jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool, 
                             jk_bean_t *result,
@@ -294,6 +309,7 @@ int jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool,
     l->logger_private = NULL;
     l->init =jk2_logger_file_init;
     l->jkLog = jk2_logger_file_jkLog;
+    l->jkVLog = jk2_logger_file_jkVLog;
     l->level=JK_LOG_ERROR_LEVEL;
     jk2_logger_file_logFmt = JK_TIME_FORMAT;
     
