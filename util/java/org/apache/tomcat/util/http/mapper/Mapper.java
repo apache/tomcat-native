@@ -539,11 +539,8 @@ public final class Mapper {
                         }
                     }
                 }
-                if (mappingData.wrapper == null) {
-                    // Restore the path if no welcome files was found
-                    path.setOffset(servletPath);
-                    path.setEnd(pathEnd);
-                }
+                path.setOffset(servletPath);
+                path.setEnd(pathEnd);
             }
         }
 
