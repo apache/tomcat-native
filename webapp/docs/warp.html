@@ -1,0 +1,248 @@
+<html>
+
+<head>
+
+<title>WARP version 0.9</title>
+
+</head>
+
+
+
+<body bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#0000FF" alink="#FF0000">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
+
+  <tr> 
+
+    <td width="75" align="left"><img src="logo.png" width="70" height="50"></td>
+
+    <td align="center"> <font size="+3">WARP version 0.9</font> <br>
+
+      <b><font size="+1">Web Application Remote-access Protocol</font></b> </td>
+
+    <td align="right" width="75"><img src="logo.png" width="70" height="50"></td>
+
+  </tr>
+
+</table>
+
+<hr>
+
+<h2> Index: </h2>
+
+<ol>
+
+  <li>Preface</li>
+
+  <li>Packet Structure</li>
+
+</ol>
+
+<hr>
+
+<h2>Preface:</h2>
+
+<font color="#FF0000">[NOTE: write a preface describing the objectives of the 
+
+WARP protocol]</font> 
+
+<p>&nbsp;</p>
+
+<hr>
+
+<h2>Packet Structure:</h2>
+
+<p>Every WARP packet has the same structure, three sixteen bits (two octects) 
+
+  values representing the packet header followed by a variable-length data body:</p>
+
+<p align="center"><img src="packet.jpg" width="600" height="29"></p>
+
+<h4 align="left">The REQ field:</h4>
+
+<p align="left">The first sixteen bits in a packets are called &quot;REQ&quot; 
+
+  and this value represents the request identificator for this packet. The WARP 
+
+  protocol allows different requests to be handled at the same time on a shared 
+
+  IO resource (like a socket). This technique is called multiplexing, and it is 
+
+  used to reduce the resources used by the system when handling a request.</p>
+
+<p align="left"><font color="#FF0000">[NOTE: expand on why multiplexing requests 
+
+  reduces resource utilization]</font></p>
+
+<p align="left">Usually, this field contains the ID of the request, but two values 
+
+  are reserved by the WARP protocol to handle specific cases: The 0x0000 value 
+
+  is used to set up the connection (see below, Connection Handling) and the 0xFFFF 
+
+  value is used to terminate the connection in case of errors (see below, Connection 
+
+  Termination). Thus, the values left for request handling range between 0x0001 
+
+  and 0xFFFE, allowing a total of 65533 requests handled at the same time over 
+
+  a single IO resource (see below, Request Handling).</p>
+
+<h4 align="left">The TYP field:</h4>
+
+<p align="left">The second set of sixteen bits in a packets is called &quot;TYP&quot;. 
+
+  This value represents represents the data contained in the packet. Reference 
+
+  tables for these values are given below for the three possible states of the 
+
+  connection: Connection Handling, Connection Termination and Request Handling.</p>
+
+<h4 align="left">The LEN field:</h4>
+
+<p align="left">The third set of sixteen bits in a packets is called &quot;LED&quot;. 
+
+  This value specifies the number of octets present in the DTA field. This value 
+
+  can range between 0x0000 and 0xFFFF, allowing a length between 0 and 65535 octets 
+
+  for the DTA field.</p>
+
+<h4 align="left">The DTA field:</h4>
+
+<p align="left">The last part of a WARP packet is called &quot;DTA&quot; and contains 
+
+  the actual data transmitted in the packet. The length of this part is determined 
+
+  by the value specified in the &quot;LEN&quot; field of the packet, and can be 
+
+  zero (no DTA present) when LEN is equal to 0x0000.</p>
+
+<p align="left">The format of the data contained in this field depends on the 
+
+  value of the TYP field, tables are provided below.</p>
+
+<p align="left">Three kinds of data are allowed in the DTA field and these are:</p>
+
+<ul>
+
+  <li>VALUE: a value is represented by 16 bits (2 octets) and can range between 
+
+    0x0000 and 0xFFFF. Depending on the value of the TYP field, a value can be 
+
+    interpreted as an unsigned value (between 0 and 65535) or as a signed value 
+
+    (between -32768 and 32767).</li>
+
+</ul>
+
+<ul>
+
+  <li>STRING: a string is an array of characters always encoded following the 
+
+    ISO-8859-1 standard. A string is value is represented by a 16 bits (2 octets) 
+
+    value indicating the encoded string length and the actual octets of the encoded 
+
+    characters.</li>
+
+</ul>
+
+<ul>
+
+  <li>RAW: sometimes it is useful to send raw data within packets (for binary 
+
+    data transmission, or to avoid multiple string encoding and decoding). Raw 
+
+    data is transmitted as-is (octets received from an HTTP client are transmitted 
+
+    to a WARP server, and vice-versa), without any alteration.</li>
+
+</ul>
+
+<hr>
+
+<h2>Connection Handling:</h2>
+
+<p>Once a connection between WARP server and client has been estabilished (in 
+
+  example, a socket is opened), before any request can be handled, the client 
+
+  and server must negotiate their operation parameter. This is done sending packets 
+
+  with the special CON value of 0x0000. Here is a description of what happens 
+
+  between the client and the server:</p>
+
+<img src="connection.jpg" width="250" height="300" align="right"> 
+
+<ol>
+
+  <li>The client opens a connection to the WARP server and waits for a packet.</li>
+
+  <li>The WARP server issues either a AUTHENTICATE or a WELCOME message.</li>
+
+  <li>The client checks the protocol version implemented by the server (interrupting 
+
+    the connection if not compatible with a REQ=0xFFFF packet), and sends a LOGIN 
+
+    message if this is required to initiate the connection.</li>
+
+  <li>If necessary the server checks the LOGIN message issued by the client, and 
+
+    replies with an ACKNOWLEDGE or ERROR message.</li>
+
+  <li>After authentication, the client transmits its configuration to the WARP 
+
+    server, enumerating the virtual hosts it defines with HOST packets, and the 
+
+    web-applications relative to the virtual host with APPLICATION packets.</li>
+
+  <li>For each HOST and APPLICATION packet received, the server transmits an ACKNOWLEDGE 
+
+    packet with a unique ID for each host and application, or replies with an 
+
+    ERROR message in case the configuration specified by the client is not acceptable.</li>
+
+  <li>When the client finishes transmitting all its configuration, the connection 
+
+    is initalized, and requests can be processed. For each HTTP request received, 
+
+    the client sends a REQUEST packet, with the appropriate host and application 
+
+    IDs received during the initialization stage.</li>
+
+  <li>The server replies to a REQUEST packet with either an ACKNOWLEDGE message 
+
+    containing the current request ID (that will be used as REQ for the packets 
+
+    transmitted in the request stage), or with an ERROR message.</li>
+
+  <li>In case the server replies to the REQUEST message with an ERROR, the client 
+
+    can safely keep the connection open, transmitting other REQUEST packets to 
+
+    the server. When an ERROR message is issued as a reply to the client for any 
+
+    other message type, the connection must be terminated and closed.</li>
+
+</ol>
+
+<p>NOTE: At any time the connection can be interrupted issuing a FATAL error message 
+
+  (REQ=0x0FFFF) both by the client and the server.</p>
+
+<hr>
+
+<center>
+
+  <font size="-1">Copyright &copy; 2000-2001, <a href="http://www.apache.org/">The 
+
+  Apache Software Foundation</a>. All Rights Reserved.</font> 
+
+</center>
+
+</body>
+
+</html>
+
