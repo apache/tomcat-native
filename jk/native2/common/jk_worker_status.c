@@ -705,6 +705,113 @@ static int JK_METHOD jk2_worker_status_dmp(jk_env_t *env,
     return JK_OK;
 }
 
+static int JK_METHOD jk2_worker_status_qry(jk_env_t *env,
+                                           jk_worker_t *w, 
+                                           jk_ws_service_t *s)
+{
+    char *cName=s->query_string + 4;
+    int i;
+    int qryLen=0;
+    int exact=1;
+    char localName[256];
+    
+    /* Dump all attributes for the beans */
+    if( strcmp( cName, "*" )==0 ) {
+        *cName='\0';
+        qryLen=0;
+    } else {
+        qryLen=strlen( cName );
+    }
+    if( qryLen >0 ) {
+        if( cName[strlen(cName)-1] == '*' ) {
+            cName[strlen(cName)-1]='\0';
+            exact=0;
+            qryLen--;
+        }
+    }
+    /* Create a top section - not used currently */
+    s->jkprintf(env, s, "MXAgent: mod_jk\n" );
+    s->jkprintf(env, s, "\n" );
+    
+    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
+        char *name=env->_objects->nameAt( env, env->_objects, i );
+        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
+        char **getAtt=mbean->getAttributeInfo;
+        char **setAtt=mbean->setAttributeInfo;
+        int j,k;
+        
+        /* That's a bad name, created for backward compat. It should be deprecated.. */
+        if( strchr( name, ':' )==NULL )
+            continue;
+        
+        /* Endpoints are treated specially ( scoreboard to get the ep from other
+            processes */
+        if( strncmp( "endpoint", mbean->type, 8 ) == 0 )
+            continue;
+
+        if( strncmp( "threadMutex", mbean->type, 11 ) == 0 )
+            continue;
+
+        /* Prefix */
+        if( ! exact  && qryLen != 0 && strncmp( name, cName, qryLen )!= 0 )
+            continue;
+        
+        /* Exact */
+        if( exact && qryLen != 0 && strcmp( name, cName )!= 0 )
+            continue;
+        
+        if( mbean==NULL ) 
+            continue;
+
+        localName[0]='\0';
+        for( j=0, k=0; k<255; j++,k++ ) {
+            char c=mbean->localName[j];
+            if( c=='\n' ) {
+                localName[k++]='\\';
+                localName[k]='n';
+            } else if( c=='*' || c=='"' || c=='\\' || c=='?' ) {
+                localName[k++]='\\';
+                localName[k]=c;
+            } else {
+                localName[k]=c;
+            }
+        }
+        localName[k]='\0';
+        
+        s->jkprintf(env, s, "Name: modjk:type=%s,name=\"%s\"\n", mbean->type, localName );
+
+        /** Will be matched against modeler-mbeans.xml in that dir */
+        s->jkprintf(env, s, "modelerType: org.apache.jk.modjk.%s\n", mbean->type );
+        
+        s->jkprintf(env, s, "Id: %lp\n", mbean->object ); 
+        s->jkprintf(env, s, "ver: %d\n", mbean->ver);
+        s->jkprintf(env, s, "debug: %d\n", mbean->debug);
+        s->jkprintf(env, s, "disabled: %d\n", mbean->disabled);
+
+        while( getAtt != NULL && *getAtt != NULL && **getAtt!='\0' ) {
+            char *attName=*getAtt;
+            char *val=mbean->getAttribute(env, mbean, *getAtt );
+            if( strcmp( attName,"ver" )==0 ||
+                strcmp( attName,"debug" )==0 ||
+                strcmp( attName,"disabled" )==0 ) {
+                getAtt++;
+                continue;
+            }
+
+            if( val!=NULL && strchr( val, '\n' ) != NULL ) {
+                /* XXX escape ? */
+                continue;
+            }
+            s->jkprintf(env, s, "%s: %s\n", *getAtt, (val==NULL)? "NULL": val);
+            getAtt++;
+        }
+        s->jkprintf(env, s, "\n" );
+    }
+    jk2_worker_status_dmpEndpoints( env, s, s->workerEnv);
+    return JK_OK;
+}
+
+
 static int JK_METHOD jk2_worker_status_get(jk_env_t *env,
                                            jk_worker_t *w, 
                                            jk_ws_service_t *s)
@@ -918,6 +1025,11 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     /** Dump multiple attributes  */
     if( strncmp( s->query_string, "dmp=", 4) == 0 ) {
         return jk2_worker_status_dmp(env, w, s);
+    }
+
+    /** Commons-modeler  */
+    if( strncmp( s->query_string, "qry=", 4) == 0 ) {
+        return jk2_worker_status_qry(env, w, s);
     }
 
     /** Get a single attribute. This also works for attributes that are not listed in getAtt **/
