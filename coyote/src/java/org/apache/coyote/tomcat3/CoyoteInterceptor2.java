@@ -103,6 +103,21 @@ import org.apache.tomcat.util.net.SSLSupport;
  *  <ul>
  *  <li>reportedname - name of server sent back to browser (security purposes)</li>
  *  </ul>
+ *  <ul>
+ *  <li>compression - use gzip compression in HTTP 1.1 (on/off) - def off</li>
+ *  </ul>
+ *  <ul>
+ *  <li>compressionMinSize - minimum size content to use gzip compression in HTTP 1.1 - def 2048</li>
+ *  </ul>
+ *  <ul>
+ *  <li>noCompressionUserAgents - comma separated list of userAgents who didn't support gzip</li>
+ *  </ul>
+ *  <ul>
+ *  <li>restrictedUserAgents - comma separated list of userAgents who didn't support HTTP 1.1 (use HTTP 1.0)</li>
+ *  </ul>
+ *  <ul>
+ *  <li>compressableMimeTypes - comma separated list of mime types supported for compression - def text/html,text/xml,text/plain</li>
+ *  </ul>
  */
 public class CoyoteInterceptor2 extends BaseInterceptor
 {
@@ -114,7 +129,7 @@ public class CoyoteInterceptor2 extends BaseInterceptor
 	super();
 	// defaults:
         this.setAttribute( "port", "8080" );
-        this.setAttribute( "soLinger", "100" );
+        this.setAttribute( "soLinger", "-1" );
     }
 
     // -------------------- PoolTcpConnector --------------------
