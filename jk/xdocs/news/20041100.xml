@@ -14,12 +14,35 @@
 <body>
 
 <section name="News &amp; Status">
+<br />
 <!--
 <a name="2004****.1">
 <h3></h3>
 </a>
 <hr size="1" noshade="noshade" />
 -->
+<a name="20041130.1"> 
+<h3>30 November - JK-1.2.7-beta released</h3>
+<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
+of Jakarta Tomcat Connectors 1.2.7-beta. The release contains a significant number
+of bug fixes and new features. 
+</p>
+<p>
+We expect it to be ratified as a Stable release when the vote takes place
+in the next two weeks.
+</p>
+<p>
+ Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<warn>
+Since release 1.2.7 the <b>socket_timeout</b> property has been renamed to
+<b>recycle_timeout</b>.
+The socket_timeout now sets the real timeout for socket operations.
+</warn>
+</a> 
+
+<hr size="1" noshade="noshade" />
+
 <a name="20041115.1"> 
 <h3>15 November - JK2 is officially unsupported</h3>
 <p>JK2 has been put in maintainer mode and no further development will take place.
@@ -40,6 +63,7 @@ planned for the end of November. Lots of code from JK2 has been ported to JK
 </p>
 </a> 
 <hr size="1" noshade="noshade" />
+
 </section>
 </body>
 </document>  
