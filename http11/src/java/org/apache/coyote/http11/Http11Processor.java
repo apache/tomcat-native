@@ -492,6 +492,7 @@ public class Http11Processor implements Processor, ActionHook {
         try {
             request.decodedURI().duplicate(request.requestURI());
             request.getURLDecoder().convert(request.decodedURI(), true);
+            request.decodedURI().setEncoding("UTF-8");
         } catch (IOException e) {
             // URL decoding failed
             e.printStackTrace();
