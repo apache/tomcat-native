@@ -133,6 +133,11 @@ public class WorkerEnv {
     }
 
     public void addHandler( String name, JkHandler w ) {
+        JkHandler oldH = getHandler(name);
+        if(oldH == w) {
+            // Already added
+            return;
+        }
         w.setWorkerEnv( this );
         w.setName( name );
         handlersMap.put( name, w );
@@ -141,9 +146,14 @@ public class WorkerEnv {
             System.arraycopy( handlersTable, 0, newT, 0, handlersTable.length );
             handlersTable=newT;
         }
-        handlersTable[handlerCount]=w;
-        w.setId( handlerCount );
-        handlerCount++;
+        if(oldH == null) {
+            handlersTable[handlerCount]=w;
+            w.setId( handlerCount );
+            handlerCount++;
+        } else {
+            handlersTable[oldH.getId()]=w;
+            w.setId(oldH.getId());
+        }
 
         // Notify all other handlers of the new one
         // XXX Could be a Coyote action ?
