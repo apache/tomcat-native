@@ -292,30 +292,18 @@ public final class Parameters extends MultiMap {
 	if( queryMB==null || queryMB.isNull() )
 	    return;
 	
-	try {
-            decodedQuery.duplicate( queryMB );
-            if (queryStringEncoding == null) {
-                ByteChunk bc = decodedQuery.getByteChunk();
-                CharChunk cc = decodedQuery.getCharChunk();
-                cc.allocate(bc.getLength(), -1);
-                // Default encoding: fast conversion
-                byte[] bbuf = bc.getBuffer();
-                char[] cbuf = cc.getBuffer();
-                int start = bc.getStart();
-                for (int i = 0; i < bc.getLength(); i++) {
-                    cbuf[i] = (char) (bbuf[i + start] & 0xff);
-                }
-                decodedQuery.setChars(cbuf, 0, bc.getLength());
-            } else {
-                decodedQuery.setEncoding(queryStringEncoding);
-                decodedQuery.toChars();
-            }
-	} catch( IOException ex ) {
-	}
 	if( debug > 0  )
 	    log( "Decoding query " + decodedQuery + " " + queryStringEncoding);
 
-	processParameters( decodedQuery );
+        try {
+            decodedQuery.duplicate( queryMB );
+        } catch (IOException e) {
+            // Can't happen, as decodedQuery can't overflow
+            e.printStackTrace();
+        }
+        ByteChunk bc = decodedQuery.getByteChunk();
+        processParameters( bc.getBytes(), bc.getOffset(),
+                           bc.getLength(), queryStringEncoding );
     }
 
     // --------------------
@@ -393,6 +381,11 @@ public final class Parameters extends MultiMap {
     CharChunk tmpValueC=new CharChunk(1024);
     
     public void processParameters( byte bytes[], int start, int len ) {
+        processParameters(bytes, start, len, encoding);
+    }
+
+    public void processParameters( byte bytes[], int start, int len, 
+                                   String enc ) {
 	int end=start+len;
 	int pos=start;
 	
@@ -434,31 +427,44 @@ public final class Parameters extends MultiMap {
 	    }
 	    tmpName.setBytes( bytes, nameStart, nameEnd-nameStart );
 	    tmpValue.setBytes( bytes, valStart, valEnd-valStart );
-	    tmpName.setEncoding( encoding );
-	    tmpValue.setEncoding( encoding );
-	    
-	    try {
-		if( debug > 0 )
-		    log( "Found " + tmpName + "= " + tmpValue);
 
-		if( urlDec==null ) {
-		    urlDec=new UDecoder();   
-		}
-		urlDec.convert( tmpName );
-		urlDec.convert( tmpValue );
-
-		if( debug > 0 )
-		    log( "After url decoding " + tmpName + "= " + tmpValue);
-		
-		addParam( tmpName.toString(), tmpValue.toString() );
-	    } catch( IOException ex ) {
-		ex.printStackTrace();
-	    }
+            try {
+                addParam( urlDecode(tmpName, enc), urlDecode(tmpValue, enc) );
+            } catch (IOException e) {
+                // Exception during character decoding: skip parameter
+            }
 
 	    tmpName.recycle();
 	    tmpValue.recycle();
 
 	} while( pos<end );
+    }
+
+    private String urlDecode(ByteChunk bc, String enc)
+        throws IOException {
+        if( urlDec==null ) {
+            urlDec=new UDecoder();   
+        }
+        urlDec.convert(bc);
+        String result = null;
+        if (enc != null) {
+            bc.setEncoding(enc);
+            result = bc.toString();
+        } else {
+            CharChunk cc = tmpNameC;
+            cc.allocate(bc.getLength(), -1);
+            // Default encoding: fast conversion
+            byte[] bbuf = bc.getBuffer();
+            char[] cbuf = cc.getBuffer();
+            int start = bc.getStart();
+            for (int i = 0; i < bc.getLength(); i++) {
+                cbuf[i] = (char) (bbuf[i + start] & 0xff);
+            }
+            cc.setChars(cbuf, 0, bc.getLength());
+            result = cc.toString();
+            cc.recycle();
+        }
+        return result;
     }
 
     public void processParameters( char chars[], int start, int len ) {
