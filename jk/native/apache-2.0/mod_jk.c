@@ -470,27 +470,31 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->remote_host = NULL_FOR_EMPTY(s->remote_host);
     s->remote_addr = NULL_FOR_EMPTY(r->connection->remote_ip);
 
+    /* Dump all connection param so we can trace what's going to
+     * the remote tomcat
+     */
     jk_log(conf->log, JK_LOG_DEBUG,
-           "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d \n",
+           "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d claport=%d\n",
            ap_get_server_port(r),
            ap_get_server_name(r) != NULL ? ap_get_server_name(r) : "",
            r->hostname != NULL ? r->hostname : "",
            r->server->server_hostname !=
            NULL ? r->server->server_hostname : "",
-           r->connection->base_server->port, r->server->port);
+           r->connection->base_server->port, r->server->port,
+           r->connection->local_addr->port);
 
     /* get server name */
-    /* s->server_name= (char *)(r->hostname ? r->hostname : r->server->server_hostname); */
-    /* XXX : à la jk2 */
     s->server_name = (char *)ap_get_server_name(r);
 
     /* get the real port (otherwise redirect failed) */
-    s->server_port = r->connection->local_addr->port;
-    /* XXX : à la jk2 ??? */
-    /* s->server_port  = ap_get_server_port(r); */
+    /* XXX: use apache API for getting server port
+     *
+     * Pre 1.2.7 versions used:
+     * s->server_port = r->connection->local_addr->port;
+     */
+    s->server_port  = ap_get_server_port(r);
 
     s->server_software = (char *)ap_get_server_version();
-
     s->method = (char *)r->method;
     s->content_length = get_content_length(r);
     s->is_chunked = r->read_chunked;
@@ -835,56 +839,6 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
 
     return NULL;
 }
-
-/*
- * JkWorker name value
- * This is an experimental and undocumented extension made in j-t-c/jk.
- */
-static const char *jk_worker_property(cmd_parms * cmd,
-                                      void *dummy,
-                                      const char *name, const char *value)
-{
-    server_rec *s = cmd->server;
-    char *oldv;
-
-    jk_server_conf_t *conf =
-        (jk_server_conf_t *) ap_get_module_config(s->module_config,
-                                                  &jk_module);
-
-    jk_map_t *m = conf->worker_properties;
-
-    value = jk_map_replace_properties(value, m);
-
-    oldv = jk_map_get_string(m, name, NULL);
-
-    if (oldv) {
-        char *tmpv = apr_palloc(cmd->pool,
-                                strlen(value) + strlen(oldv) + 3);
-        if (tmpv) {
-            char sep = '*';
-            if (jk_is_path_poperty(name)) {
-                sep = PATH_SEPERATOR;
-            }
-            else if (jk_is_cmd_line_poperty(name)) {
-                sep = ' ';
-            }
-
-            sprintf(tmpv, "%s%c%s", oldv, sep, value);
-        }
-        value = tmpv;
-    }
-    else {
-        value = apr_pstrdup(cmd->pool, value);
-    }
-
-    if (value) {
-        void *old = NULL;
-        jk_map_put(m, name, value, &old);
-        /*printf("Setting %s %s\n", name, value); */
-    }
-    return NULL;
-}
-
 
 /*
  * JkLogFile Directive Handling
@@ -1569,14 +1523,6 @@ static const command_rec jk_cmds[] = {
                   "the name of a worker file for the Jakarta servlet containers"),
 
     /*
-     * JkWorker allows you to specify worker properties in server.xml.
-     * They are added before any property in JkWorkersFile ( if any ), 
-     * as a more convenient way to configure
-     */
-    AP_INIT_TAKE2("JkWorker", jk_worker_property, NULL, RSRC_CONF,
-                  "worker property"),
-
-    /*
      * JkAutoMount specifies that the list of handled URLs must be
      * asked to the servlet engine (autoconf feature)
      */
@@ -1677,7 +1623,7 @@ static const command_rec jk_cmds[] = {
 
     AP_INIT_RAW_ARGS("JkWorkerProperty", jk_set_worker_property,
                      NULL, RSRC_CONF,
-                     "Set worker.properties directive"),
+                     "Set workers.properties formated directive"),
 
     {NULL}
 };
