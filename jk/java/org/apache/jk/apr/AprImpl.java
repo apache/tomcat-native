@@ -123,16 +123,37 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
 
     public native long mutexDestroy( long pool, long mutexP );
     
-    // --------------------  java to C --------------------
+    // --------------------  Interface to jk components --------------------
+    // 
 
-    // Temp - interface will evolve
-    
+    /* Return a jk_env_t, used to keep the execution context ( temp pool, etc )
+     */
+    public native long getJkEnv();
+
+    /** Clean the temp pool, put back the env in the pool
+     */
+    public native void releaseJkEnv(long xEnv);
+
+    public native void jkRecycle(long xEnv, long endpointP);
+
+    /** Get a native component
+     *  @return 0 if the component is not found.
+     */
+    public native long getJkHandler(long xEnv, String compName );
+
+    public native long createJkHandler(long xEnv, String compName );
+
+    /** Get the id of a method.
+     *  @return -1 if the method is not found.
+     */
+    public native int jkGetId(long xEnv, String ns, String name );
+
     /** Send the packet to the C side. On return it contains the response
      *  or indication there is no response. Asymetrical because we can't
      *  do things like continuations.
      */
-    public static native int sendPacket(long xEnv, long endpointP,
-                                        byte data[], int len);
+    public static native int jkInvoke(long xEnv, long componentP, long endpointP,
+                                      int code, byte data[], int len);
 
     
     // -------------------- Called from C --------------------
@@ -177,7 +198,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     public void init() throws IOException {
         try {
             loadNative();
-            
+
             initialize();
         } catch( Throwable t ) {
             throw new IOException( t.getMessage() );
