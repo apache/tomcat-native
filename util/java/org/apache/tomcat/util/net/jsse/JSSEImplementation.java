@@ -77,7 +77,7 @@ import javax.net.ssl.SSLSocket;
 public class JSSEImplementation extends SSLImplementation
 {
     static final String JSSE14SocketFactory = 
-        "org.apache.tomcat.net.jsse.JSSE11SocketFactory";
+        "org.apache.tomcat.net.jsse.JSSE14SocketFactory";
     public JSSEImplementation() throws ClassNotFoundException {
         // Check to see if JSSE is floating around somewhere
         Class.forName("javax.net.ssl.SSLServerSocketFactory");
