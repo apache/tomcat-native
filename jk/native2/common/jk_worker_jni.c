@@ -257,6 +257,8 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
                                     jargs);
     
     vm->detach(env, vm);
+
+    /* XXX create a jni channel */
     return JK_OK;
 }
 
