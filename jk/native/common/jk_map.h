@@ -61,7 +61,7 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old);
 
 int jk_map_read_property(jk_map_t *m, const char *str);
 
-int jk_map_read_properties(jk_map_t *m, const char *f);
+int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified);
 
 int jk_map_size(jk_map_t *m);
 

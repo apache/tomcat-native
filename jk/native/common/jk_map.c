@@ -400,7 +400,7 @@ int jk_map_read_property(jk_map_t *m, const char *str)
 }
 
 
-int jk_map_read_properties(jk_map_t *m, const char *f)
+int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified)
 {
     int rc = JK_FALSE;
 
@@ -427,8 +427,8 @@ int jk_map_read_properties(jk_map_t *m, const char *f)
                     break;
             }
             fclose(fp);
-            /* Update shared memory */
-            jk_shm_set_workers_time(statbuf.st_mtime);
+            if (modified)
+                *modified = statbuf.st_mtime;
         }
     }
 
