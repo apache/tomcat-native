@@ -262,9 +262,11 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     } else {
         cfg->map->put( env, cfg->map, pname, val, NULL );
     }
-
-    /*     env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s / %s / %s=%s\n", */
-    /*                    mbean->name, name, pname, val); */
+    
+    if( cfg->mbean->debug > 0 )
+        env->l->jkLog( env, env->l, JK_LOG_INFO, "config: set %s / %s / %p / %s = %s\n",
+                       mbean->name, name, mbean, pname, val);
+    
     if( strcmp( name, "name" ) == 0 ) {
         return JK_OK;
     }
@@ -274,10 +276,16 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     }
     if( strcmp( name, "debug" ) == 0 ) {
         mbean->debug=atoi( val );
+        if(mbean->setAttribute) {
+            mbean->setAttribute( env, mbean, name, val );
+        }
         return JK_OK;
     }
     if( strcmp( name, "disabled" ) == 0 ) {
         mbean->disabled=atoi( val );
+        if(mbean->setAttribute) {
+            mbean->setAttribute( env, mbean, name, val );
+        }
         return JK_OK;
     }
     if( strcmp( name, "info" ) == 0 ) {
@@ -460,6 +468,10 @@ static int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, i
     int ver;
     char *verString;
 
+    if( cfg->mbean->debug > 5 ) 
+    env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                  "config.setConfig():  process %s\n", name );
+    
     bean=env->getBean( env, name );
     if( bean==NULL ) {
         if( cfg->mbean->debug > 0 ) {
@@ -530,8 +542,13 @@ static int jk2_config_readFile(jk_env_t *env,
         return JK_ERR;
     }
     
-    if( !firstTime && statbuf.st_mtime < cfg->mtime )
+    if( !firstTime && statbuf.st_mtime < cfg->mtime ) {
+        if( cfg->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "config.update(): No reload needed %s %ld %ld\n", cfg->file,
+                          cfg->mtime, statbuf.st_mtime );
         return JK_OK;
+    }
      
     JK_ENTER_CS(&cfg->cs, csOk);
     
@@ -589,9 +606,9 @@ static int jk2_config_readFile(jk_env_t *env,
 
 
 static int jk2_config_update(jk_env_t *env,
-                                       jk_config_t *cfg, int *didReload)
+                             jk_config_t *cfg, int *didReload)
 {
-	return jk2_config_readFile( env, cfg, didReload, JK_FALSE );
+    return jk2_config_readFile( env, cfg, didReload, JK_FALSE );
 }
 
 /** Set a property for this config object
