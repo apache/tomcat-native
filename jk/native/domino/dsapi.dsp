@@ -300,7 +300,7 @@ SOURCE=..\jk\jk_md5.h
 # End Group
 # Begin Source File
 
-SOURCE=.\ReadMe.txt
+SOURCE=.\HISTORY
 # End Source File
 # End Target
 # End Project
