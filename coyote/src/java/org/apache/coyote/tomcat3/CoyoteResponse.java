@@ -74,7 +74,10 @@ import org.apache.tomcat.util.log.*;
 import org.apache.tomcat.util.compat.*;
 
 
-
+/** The Response to connect with Coyote.
+ *  This class mostly handles the I/O between Tomcat and Coyte.
+ *  @Author Bill Barker
+ */
 
 class CoyoteResponse extends  Response {
     String reportedname=null;
@@ -85,6 +88,8 @@ class CoyoteResponse extends  Response {
         super();
     }
 
+    /** Attach a Coyote Request to this request.
+     */
     public void setCoyoteResponse(org.apache.coyote.Response cRes) {
 	coyoteResponse = cRes;
 	headers = coyoteResponse.getMimeHeaders();

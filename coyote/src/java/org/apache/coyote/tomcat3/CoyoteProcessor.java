@@ -75,6 +75,13 @@ import org.apache.tomcat.util.compat.*;
 import org.apache.coyote.Adapter;
 import org.apache.coyote.Processor;
 
+/** Per-Thread Adapter between Coyote and Tomcat.
+ *  This class handles the task of passing of an individual request to
+ *  Tomcat to handle.  Also some of the connection-specific methods are
+ *  delegated to here.
+ *  @Author Bill Barker
+ */
+
 class CoyoteProcessor implements Adapter {
     private CoyoteRequest reqA;
     private CoyoteResponse resA;
@@ -90,18 +97,31 @@ class CoyoteProcessor implements Adapter {
 	cm.initRequest( reqA, resA );
     }
 
+    /** Release resources.
+     */
     public void recycle() {
 	secure = false;
 	sslImplementation=null;
 	sslSupport=null;
     }
 
+    /** Set the configured SSLImplementation.
+     *  @param ssl The SSL Implementation instance.
+     */
     public void setSSLImplementation(SSLImplementation ssl) {
 	sslImplementation = ssl;
     }
+
+    /** Set the SSL flag.
+     *  @param isSecure Is this a secure connection.
+     */
     public void setSecure(boolean isSecure) {
 	secure = isSecure;
     }
+
+    /** Set the per-socket properties.
+     *  @param socket The socket that this Thread is using.
+     */
     public void setSocket(Socket socket) {
 	reqA.setSocket(socket);
 	if( secure ) {
@@ -110,6 +130,9 @@ class CoyoteProcessor implements Adapter {
 		sslSupport = sslImplementation.getSSLSupport(socket);
 	}
     }
+    
+    /** Pass off an individual request to Tomcat.
+     */
     public void service(org.apache.coyote.Request request, 
 			org.apache.coyote.Response response) 
 	    throws Exception{

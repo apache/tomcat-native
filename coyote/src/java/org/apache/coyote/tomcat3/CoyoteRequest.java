@@ -75,6 +75,11 @@ import org.apache.tomcat.util.compat.*;
 import org.apache.coyote.Adapter;
 import org.apache.coyote.Processor;
 
+/** The Request to connect with Coyote.
+ *  This class handles the I/O requirements and transferring the request
+ *  line and Mime headers between Coyote and Tomcat.
+ *  @Author Bill Barker
+ */
 class CoyoteRequest extends Request {
 
     org.apache.coyote.Request coyoteRequest=null;
@@ -104,6 +109,10 @@ class CoyoteRequest extends Request {
 	end=-1;
     }
 
+    /** Attach the Coyote Request to this Request.
+     *  This is currently set pre-request to allow copying the request
+     *  attributes to the Tomcat attributes.
+     */
     public void setCoyoteRequest(org.apache.coyote.Request cReq) {
 	coyoteRequest=cReq;
 	// This is really ugly, but fast.
@@ -125,11 +134,14 @@ class CoyoteRequest extends Request {
 	scookies.setHeaders(headers);
 	params.setHeaders(headers);
     }
-
+    /** Set the socket for this request.
+     */
     public void setSocket(Socket socket) {
 	this.socket = socket;
     }
 
+    /** Read a single character from the request body.
+     */
     public int doRead() throws IOException {
 	if( available == 0 ) 
 	    return -1;
@@ -144,6 +156,8 @@ class CoyoteRequest extends Request {
 	return readBuffer[pos++] & 0xFF;
     }
 
+    /** Read a chunk from the request body.
+     */
     public int doRead(byte[] b, int off, int len) throws IOException {
 	if( available == 0 )
 	    return -1;
@@ -183,6 +197,9 @@ class CoyoteRequest extends Request {
 
     }
 
+    /** Determine the local virual host and port from the <code>host</code>
+     *  header.
+     */
     protected void parseHostHeader() {
 	MessageBytes hH=getMimeHeaders().getValue("host");
         serverPort = socket.getLocalPort();
@@ -243,6 +260,8 @@ class CoyoteRequest extends Request {
         return serverPort;
     }
 
+    /** Define the SSL Support support instance for this socket.
+     */
     void setSSLSupport(SSLSupport s){
         sslSupport=s;
     }
