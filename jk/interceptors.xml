@@ -5,8 +5,12 @@
 
       <module name="Ajp14" 
 	      javaClass="org.apache.ajp.tomcat33.Ajp14Interceptor" />
+      <module name="Jk2" 
+	      javaClass="org.apache.jk.server.tomcat33.Ajp14Interceptor" />
 
       <Ajp14 debug="10" port="8010" password="secret"/>
+
+      <Jk2 debug="10" port="8011" password="secret"/>
 
     </ContextManager>
 
