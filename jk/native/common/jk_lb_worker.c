@@ -70,13 +70,11 @@ struct lb_worker
     jk_pool_t p;
     jk_pool_atom_t buf[TINY_POOL_SIZE];
 
-    const char *name;
     jk_worker_t worker;
-    int in_local_worker_mode;
-    int local_worker_only;
-    int sticky_session;
-    int recover_wait_time;
     JK_CRIT_SEC cs; 
+
+    /* Shared memory worker data */
+    jk_shm_w_rec_t  *s;
 };
 
 typedef struct lb_worker lb_worker_t;
@@ -257,7 +255,7 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
     if (!i) {
         jk_log(l, JK_LOG_ERROR,
                "could not lock load balancer = %s",
-               p->name);
+               p->s->name);
         return NULL;
     }
     if (JK_IS_DEBUG_LEVEL(l))
@@ -285,11 +283,11 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
 
                     time_t now = time(0);
                     int elapsed = now - p->lb_workers[i].s->error_time;
-                    if (elapsed <= p->recover_wait_time) {
+                    if (elapsed <= p->s->recover_wait_time) {
                         if (JK_IS_DEBUG_LEVEL(l))
                             jk_log(l, JK_LOG_DEBUG,
                                    "worker candidate %s (%d) is in error state - will not yet recover (%d < %d)",
-                                   p->lb_workers[i].s->name, i, elapsed, p->recover_wait_time);
+                                   p->lb_workers[i].s->name, i, elapsed, p->s->recover_wait_time);
                         continue;
                     }
                 }
@@ -354,7 +352,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     int domain_id = -1;
 
     JK_TRACE_ENTER(l);
-    if (p->sticky_session) {
+    if (p->s->sticky_session) {
         sessionid = get_sessionid(s);
     }
 
@@ -414,7 +412,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             return rc;
         }
 
-        if (p->local_worker_only) {
+        if (p->s->local_worker_only) {
             JK_TRACE_EXIT(l);
             return NULL;
         }
@@ -454,7 +452,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "service sticky_session=%d",
-                   p->worker->sticky_session);
+                   p->worker->s->sticky_session);
 
         while (1) {
             worker_record_t *rec =
@@ -561,13 +559,13 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         unsigned int num_of_workers;
         unsigned int num_of_local_workers;
 
-        p->in_local_worker_mode = JK_FALSE;
-        p->local_worker_only = jk_get_local_worker_only_flag(props, p->name);
-        p->sticky_session = jk_get_is_sticky_session(props, p->name);
+        p->s->in_local_worker_mode = JK_FALSE;
+        p->s->local_worker_only = jk_get_local_worker_only_flag(props, p->s->name);
+        p->s->sticky_session = jk_get_is_sticky_session(props, p->s->name);
         p->num_of_local_workers = 0;
 
         if (jk_get_lb_worker_list(props,
-                                  p->name,
+                                  p->s->name,
                                   &worker_names,
                                   &num_of_workers) && num_of_workers) {
             unsigned int i = 0;
@@ -603,7 +601,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].s->is_local_worker =
                     jk_get_is_local_worker(props, worker_names[i]);
                 if (p->lb_workers[i].s->is_local_worker)
-                    p->in_local_worker_mode = JK_TRUE;
+                    p->s->in_local_worker_mode = JK_TRUE;
                 /* 
                  * Allow using lb in fault-tolerant mode.
                  * A value of 0 means the worker will be used for all requests without
@@ -633,8 +631,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             }
             num_of_local_workers = j;
 
-            if (!p->in_local_worker_mode) {
-                p->local_worker_only = JK_FALSE;
+            if (!p->s->in_local_worker_mode) {
+                p->s->local_worker_only = JK_FALSE;
             }
 
             if (i != num_of_workers) {
@@ -670,10 +668,10 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 if (JK_IS_DEBUG_LEVEL(l)) {
                     jk_log(l, JK_LOG_DEBUG,
                            "in_local_worker_mode: %s",
-                           (p->in_local_worker_mode ? "true" : "false"));
+                           (p->s->in_local_worker_mode ? "true" : "false"));
                     jk_log(l, JK_LOG_DEBUG,
                            "local_worker_only: %s",
-                           (p->local_worker_only ? "true" : "false"));
+                           (p->s->local_worker_only ? "true" : "false"));
                 }
                 p->num_of_workers = num_of_workers;
                 p->num_of_local_workers = num_of_local_workers;
@@ -697,15 +695,15 @@ static int JK_METHOD init(jk_worker_t *pThis,
     lb_worker_t *p = (lb_worker_t *)pThis->worker_private;
     JK_TRACE_ENTER(log);
 
-    pThis->retries = jk_get_worker_retries(props, p->name,
+    pThis->retries = jk_get_worker_retries(props, p->s->name,
                                            JK_RETRIES);
 
-    if (jk_get_worker_int_prop(props, p->name,
+    if (jk_get_worker_int_prop(props, p->s->name,
                                WORKER_RECOVER_TIME,
                                &i))
-        p->recover_wait_time = i;
-    if (p->recover_wait_time < WAIT_BEFORE_RECOVER)
-        p->recover_wait_time = WAIT_BEFORE_RECOVER;
+        p->s->recover_wait_time = i;
+    if (p->s->recover_wait_time < WAIT_BEFORE_RECOVER)
+        p->s->recover_wait_time = WAIT_BEFORE_RECOVER;
 
     JK_INIT_CS(&(p->cs), i);
     if (i == JK_FALSE) {
@@ -773,12 +771,18 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         lb_worker_t *private_data =
             (lb_worker_t *) calloc(1, sizeof(lb_worker_t));
 
+
         jk_open_pool(&private_data->p,
                         private_data->buf,
                         sizeof(jk_pool_atom_t) * TINY_POOL_SIZE);
 
-        private_data->name = jk_pool_strdup(&private_data->p, name);
-
+        private_data->s = jk_shm_worker_alloc();
+        if (!private_data->s) {
+            free(private_data);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
+        strncpy(private_data->s->name, name, JK_SHM_STR_SIZ);
         private_data->lb_workers = NULL;
         private_data->num_of_workers = 0;
         private_data->num_of_local_workers = 0;
@@ -788,7 +792,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->worker.get_endpoint = get_endpoint;
         private_data->worker.destroy = destroy;
         private_data->worker.retries = JK_RETRIES;
-        private_data->recover_wait_time = WAIT_BEFORE_RECOVER;
+        private_data->s->recover_wait_time = WAIT_BEFORE_RECOVER;
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);
         return JK_TRUE;
