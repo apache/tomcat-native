@@ -88,7 +88,7 @@ import org.apache.tomcat.util.http.HttpMessages;
  *
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
- * @author Kevin Seguin [seguin@motive.com]
+ * @author Kevin Seguin [seguin@apache.org]
  */
 public class Ajp13 {
 
