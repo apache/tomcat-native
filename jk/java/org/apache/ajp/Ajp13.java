@@ -131,6 +131,7 @@ public class Ajp13 {
     public static final byte SC_A_SSL_CERT      = 7;
     public static final byte SC_A_SSL_CIPHER    = 8;
     public static final byte SC_A_SSL_SESSION   = 9;
+    public static final byte SC_A_SSL_KEYSIZE   = 11;
 
     // Used for attributes which are not in the list above
     public static final byte SC_A_REQ_ATTRIBUTE = 10; 
@@ -403,8 +404,6 @@ public class Ajp13 {
 		isSSL = true;
 		req.setAttribute("javax.servlet.request.X509Certificate",
 				 msg.getString());
-                req.setAttribute("javax.servlet.request.key_size",
-                                 new Integer (msg.getLen()));
                 break;
 		
 	    case SC_A_SSL_CIPHER   :
@@ -424,6 +423,10 @@ public class Ajp13 {
 				 msg.getString());
                 break;
 
+	    case SC_A_SSL_KEYSIZE :
+                req.setAttribute("javax.servlet.request.key_size",
+                                 new Integer (msg.getInt()));
+                break;
 	    default:
 		if (decodeMoreHeaders(req, attributeCode, msg) != 500)
 		    break;

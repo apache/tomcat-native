@@ -364,8 +364,9 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
     /*
      * ssl_key_size is required by Servlet 2.3 API
      * added support only in ajp14 mode
+     * JFC removed: ae->proto == AJP14_PROTO
      */
-    if ((ae->proto == AJP14_PROTO) && (s->ssl_key_size != -1)) {
+    if (s->ssl_key_size != -1) {
         if (jk_b_append_byte(msg, SC_A_SSL_KEY_SIZE) ||
             jk_b_append_int(msg, (unsigned short) s->ssl_key_size)) {
             jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL key size\n");
