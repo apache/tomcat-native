@@ -105,33 +105,36 @@ static int JK_METHOD jk2_service_apache13_head(jk_env_t *env, jk_ws_service_t *s
     headers=s->headers_out;
     numheaders = headers->size(env, headers);
     /* XXX As soon as we switch to jk_map_apache13, this will not be needed ! */
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "service.head() %d %d\n", s->status,
-                  numheaders);
+    if( s->uriEnv->mbean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "service.head() %d %d\n", s->status,
+                      numheaders);
     
     for(h = 0 ; h < numheaders; h++) {
         char *name=headers->nameAt( env, headers, h );
         char *val=headers->valueAt( env, headers, h );
 
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "service.head() %s: %s %d %d\n", name, val, h, headers->size( env, headers ));
+        if( s->uriEnv->mbean->debug > 0 ) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "service.head() %s: %s %d %d\n",
+                          name, val, h, headers->size( env, headers ));
 
         /* the cmp can also be avoided in we do this earlier and use
            the header id */
-        if(!strcasecmp(name, "Content-type")) {
+        if( strcasecmp(name, "Content-type") == 0 ) {
             /* XXX should be done in handler ! */
             char *tmp = ap_pstrdup(r->pool, val);
             ap_content_type_tolower(tmp); 
             r->content_type = tmp;
             ap_table_set(r->headers_out, name, val);
-        } else if(!strcasecmp(name, "Location")) {
+        } else if(strcasecmp(name, "Location") == 0 ) {
             /* XXX setn */
             ap_table_set(r->headers_out, name, val);
-        } else if(!strcasecmp(name, "Content-Length")) {
+        } else if(strcasecmp(name, "Content-Length") == 0) {
             ap_table_set(r->headers_out, name, val );
-        } else if(!strcasecmp(name, "Transfer-Encoding")) {
+        } else if(strcasecmp(name, "Transfer-Encoding") == 0 ) {
             ap_table_set(r->headers_out,name, val);
-        } else if(!strcasecmp(name, "Last-Modified")) {
+        } else if(strcasecmp(name, "Last-Modified") == 0 ) {
             /*
              * If the script gave us a Last-Modified header, we can't just
              * pass it on blindly because of restrictions on future values.
@@ -140,13 +143,12 @@ static int JK_METHOD jk2_service_apache13_head(jk_env_t *env, jk_ws_service_t *s
             ap_set_last_modified(r);
             ap_table_set(r->headers_out, name, val);
         } else {                
-            /* ap_table_add(r->headers_out, name, val); */
-               ap_table_set(r->headers_out, name, val);
+            ap_table_add(r->headers_out, name, val);
+            /* ap_table_set(r->headers_out, name, val); */
         }
     }
 
-    /* this NOP function was removed in apache 2.0 alpha14 */
-    /* ap_send_http_header(r); */
+    ap_send_http_header(r);
     s->response_started = JK_TRUE;
     
     return JK_OK;
@@ -165,25 +167,26 @@ static int JK_METHOD jk2_service_apache13_read(jk_env_t *env, jk_ws_service_t *s
                                               void *b, unsigned len,
                                               unsigned *actually_read)
 {
-    if(s && s->ws_private && b && actually_read) {
-        if(!s->read_body_started) {
-           if(ap_should_client_block(s->ws_private)) {
-                s->read_body_started = JK_TRUE;
-            }
-        }
+    long rv;
 
-        if(s->read_body_started) {
-            long rv;
-            if ((rv = ap_get_client_block(s->ws_private, b, len)) < 0) {
-                *actually_read = 0;
-            } else {
-                *actually_read = (unsigned) rv;
-            }
-            return JK_OK;
+    if(s==NULL  || s->ws_private==NULL  || b==NULL || actually_read==NULL ) {
+        return JK_ERR;
+    }
+
+    if(!s->read_body_started) {
+        if(ap_should_client_block(s->ws_private)) {
+            s->read_body_started = JK_TRUE;
         }
     }
-    return JK_ERR;
-}
+    rv = ap_get_client_block(s->ws_private, b, len);
+    
+    if( rv < 0) {
+        *actually_read = 0;
+    } else {
+        *actually_read = (unsigned) rv;
+    }
+    return JK_OK;
+} 
 
 /*
  * Write a chunk of response data back to the browser.  If the headers
@@ -196,67 +199,61 @@ static int JK_METHOD jk2_service_apache13_read(jk_env_t *env, jk_ws_service_t *s
  * the jk_ws_service class.  Think of the *s param as a "this" or "self"
  * pointer.
  */
+
 /* Works with 4096, fails with 8192 */
 #ifndef CHUNK_SIZE
 #define CHUNK_SIZE 4096
 #endif
 
 static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *s,
-                                               const void *b, int len)
+                                                const void *b, int len)
 {
-    if(s && s->ws_private && b) {
-        if(len) {
-            /* BUFF *bf = p->r->connection->client; */
-            /* size_t w = (size_t)l; */
-            size_t r = 0;
-            long ll=len;
-            char *bb=(char *)b;
-            request_rec *rr=s->ws_private;
+    int rc;
+    
+    if(s==NULL || s->ws_private == NULL || b==NULL )
+        return JK_ERR;
+    
+    {
+        /* BUFF *bf = p->r->connection->client; */
+        /* size_t w = (size_t)l; */
+        size_t rd = 0;
+        long ll=len;
+        char *bb=(char *)b;
+        request_rec *rr=s->ws_private;
             
-            if(!s->response_started) {
+        if(!s->response_started) {
+            if( s->uriEnv->mbean->debug > 0 ) 
                 env->l->jkLog(env, env->l, JK_LOG_INFO, 
                               "service.write() default head\n");
-                if(!s->head(env, s)) {
-                    return JK_ERR;
-                }
-                {
-                    array_header *t = ap_table_elts(rr->headers_out);
-                    if(t && t->nelts) {
-                        int i;
-                        
-                        table_entry *elts = (table_entry *)t->elts;
-                        
-                        for(i = 0 ; i < t->nelts ; i++) {
-                            env->l->jkLog(env, env->l, JK_LOG_INFO, "OutHeaders %s: %s\n",
-                                          elts[i].key, elts[i].val);
-                        }
-                    }
-                }
-            }
-            
-            /* Debug - try to get around rwrite */
-            while( ll > 0 ) {
-                unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
-                r = ap_rwrite((const char *)bb, toSend, s->ws_private );
-                env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                              "service.write()  %ld (%ld) out of %ld \n",toSend, r, ll );
-                ll-=CHUNK_SIZE;
-                bb+=CHUNK_SIZE;
-                
-                if(toSend != r) { 
-                    return JK_ERR; 
-                } 
-                
-            }
 
-            /*
-             * To allow server push. After writing full buffers
-             */
-            ap_bflush(s->ws_private);
+            rc=s->head(env, s);
+            if( rc != JK_OK ) {
+                return rc;
+            }
         }
-        return JK_OK;
+        
+        /* Debug - try to get around rwrite */
+        while( ll > 0 ) {
+            unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
+            rd = ap_rwrite((const char *)bb, toSend, s->ws_private );
+            if( s->uriEnv->mbean->debug > 0 ) 
+                env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                              "service.write()  %ld (%ld) out of %ld \n",toSend, rd, ll );
+            ll-=CHUNK_SIZE;
+            bb+=CHUNK_SIZE;
+            
+            if(toSend != rd) { 
+                return JK_ERR; 
+            } 
+                
+        }
+
+        /*
+         * To allow server push. After writing full buffers
+         */
+        ap_bflush(s->ws_private);
     }
-    return JK_ERR;
+    return JK_OK;
 }
 
 /* ========================================================================= */
@@ -298,6 +295,8 @@ static int jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     s->response_started = JK_FALSE;
     s->read_body_started = JK_FALSE;
     s->workerEnv=workerEnv;
+
+    workerEnv->childId = r->connection->child_num;
 
     s->jvm_route        = NULL;    /* Used for sticky session routing */
 

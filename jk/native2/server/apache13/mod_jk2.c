@@ -122,7 +122,7 @@ static const char *jk2_set2(cmd_parms *cmd, void *per_dir,
     jk_env_t *env=workerEnv->globalEnv;
     int rc;
     
-    rc=workerEnv->config->setPropertyString( env, workerEnv->config, name, value );
+    rc=workerEnv->config->setPropertyString( env, workerEnv->config, (char *)name, value );
     if( rc!=JK_OK ) {
         fprintf( stderr, "mod_jk2: Unrecognized option %s %s\n", name, value);
     }
@@ -136,10 +136,9 @@ static const char *jk2_set2(cmd_parms *cmd, void *per_dir,
 static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
 {
     jk_env_t *env;
-    jk_logger_t *l;
     jk_pool_t *globalPool;
     jk_bean_t *jkb;
-    
+
     /** First create a pool. We use the default ( jk ) pool impl,
      *  other choices are apr or native.
      */
@@ -162,7 +161,7 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
         fprintf(stderr, "Error creating logger ");
         return JK_ERR;
     }
-    env->l=l;
+    env->l=jkb->object;
     env->alias( env, "logger.file:", "logger");
     
     /* Create the workerEnv
@@ -175,7 +174,7 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
     workerEnv= jkb->object;
     env->alias( env, "workerEnv:", "workerEnv");
 
-    if( workerEnv==NULL || l== NULL  ) {
+    if( workerEnv==NULL || env->l == NULL  ) {
         fprintf( stderr, "Error initializing jk, NULL objects \n");
         return JK_ERR;
     }
@@ -255,7 +254,7 @@ static void *jk2_merge_config(ap_pool *p,
 /** Standard apache callback, initialize jk. This is called after all
     the settings took place.
  */
-static void jk2_init(server_rec *s, ap_pool *pconf)
+static int jk2_init(server_rec *s, ap_pool *pconf)
 {
     jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
         ap_get_module_config(s->module_config, &jk2_module);
@@ -276,6 +275,8 @@ static void jk2_init(server_rec *s, ap_pool *pconf)
 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "mod_jk.post_config() init worker env\n");
+
+        workerEnv->parentInit(env, workerEnv );
 
         workerEnv->init(env, workerEnv );
         
@@ -362,19 +363,20 @@ static int jk2_handler(request_rec *r)
         rPool= worker->rPoolCache->get( env, worker->rPoolCache );
 
         if( rPool == NULL ) {
-            rPool=worker->pool->create( env, worker->pool, HUGE_POOL_SIZE );
+            rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "mod_jk.handler(): new rpool\n");
         }
 
         jk2_service_apache13_init(env, s);
         s->pool = rPool;
-        s->uriEnv = uriEnv;
-        s->is_recoverable_error = JK_FALSE;
         s->init( env, s, worker, r );
         
+        s->is_recoverable_error = JK_FALSE;
+        s->uriEnv = uriEnv;
+
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "modjk.handler() Calling %s\n", worker->mbean->name); 
+                      "modjk.handler() Calling %s %p\n", worker->mbean->name, uriEnv); 
 
         rc = worker->service(env, worker, s);
         
