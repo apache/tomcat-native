@@ -1170,7 +1170,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                 err++;
             }
         }
-        else if (ae->worker->prepost_timeout != 0 && !err) {
+        if (ae->worker->prepost_timeout != 0 && !err) {
             /* handle cping/cpong if prepost_timeout is set
              * If the socket is disconnected no need to handle
              * the cping/cpong
