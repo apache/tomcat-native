@@ -10,8 +10,20 @@ directory (or in the apache-1.3 directory if you're building from sources)
 into your Apache 1.3 "libexec" directory (that directory where all DSO modules
 for Apache reside).
 
+If you're using Apache 1.3 for Windows, your modules directory will be called
+"modules" (there's a "libexec directory, but it contains other stuff). Please
+take care when loading the module. For Windows your "LoadModule" directive
+looks like:
+
+    LoadModule webapp_module modules/mod_webapp.so
+
+Another note for Windows: copy also the "libapr.dll" file with the module, or
+your Apache 1.3 web server will refuse to start reporting that the WebApp
+module cannot be loaded.
+
 Once you have done that, edit your "httpd.conf" configuration file and
-add a few lines to load that module at startup:
+add a few lines to load that module at startup (Windows users, read above,
+you have to "replace" libexec with "modules" - I'm paranoid, sorry):
 
     LoadModule webapp_module libexec/mod_webapp.so
 and

@@ -69,17 +69,23 @@ APRCFG = libapr - Win32 Release
 # Makefile rules
 all: apr-all local-all
 
+dist: all
+    -mkdir dist
+!IF "$(DEBUG)" == "true"
+    copy .\apr\Debug\libapr.dll .\dist\libapr.dll
+!ELSE
+    copy .\apr\Release\libapr.dll .\dist\libapr.dll
+!ENDIF
+    copy .\apache-1.3\mod_webapp.dll .\dist\mod_webapp.so
+    copy INSTALL.txt .\dist\INSTALL.txt
+    copy LICENSE.txt .\dist\LICENSE.txt
+
 clean: apr-clean local-clean
     -@erase localmake.bat
 
 apr-all: localmake.bat
     @localmake.bat .\apr /f libapr.mak "CFG=$(APRCFG)" all
     @echo DEBUG IS -$(DEBUG)-
-!IF "$(DEBUG)" == "true"
-    copy .\apr\Debug\libapr.dll .\apr\libapr.dll
-!ELSE
-    copy .\apr\Release\libapr.dll .\apr\libapr.dll
-!ENDIF
 
 apr-clean: localmake.bat
     @localmake.bat .\apr /f libapr.mak "CFG=$(APRCFG)" clean
