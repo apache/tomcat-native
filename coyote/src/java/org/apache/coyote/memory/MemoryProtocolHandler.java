@@ -70,16 +70,6 @@ public class MemoryProtocolHandler
     }
 
 
-    /**
-     * Hook to easily retrieve the protocol handler.
-     */
-    protected static MemoryProtocolHandler protocolHandler = null;
-
-    public static MemoryProtocolHandler getProtocolHandler() {
-        return protocolHandler;
-    }
-
-
     // ------------------------------------------------ ProtocolHandler Methods
 
 
@@ -88,7 +78,6 @@ public class MemoryProtocolHandler
      */
     public void init()
         throws Exception {
-        protocolHandler = this;
     }
 
 
@@ -110,7 +99,6 @@ public class MemoryProtocolHandler
 
     public void destroy()
         throws Exception {
-        protocolHandler = null;
     }
 
 
