@@ -417,7 +417,19 @@ static int jk2_shm_dump(jk_env_t *env, jk_shm_t *shm, char *name)
     
     if( name==NULL ) return JK_ERR;
     
-    f=fopen(name, "a+");
+/* 
+ * XXX
+ * To be checked later, AS400 may need no ccsid 
+ * conversions applied if pure binary, for now 
+ * I assume stream is EBCDIC and need to be converted 
+ * in standard ASCII using codepage 819
+ */
+#ifdef AS400
+    f = fopen(name, "a+, o_ccsid=819");
+#else
+    f = fopen(name, "a+");
+#endif        
+
     fwrite( shm->head, 1, shm->size, f ); 
     fclose( f );
 
