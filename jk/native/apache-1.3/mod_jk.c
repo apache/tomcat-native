@@ -1589,7 +1589,7 @@ static int jk_handler(request_rec * r)
     }
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
-    if (rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
+    if ((rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK))) {
         return rc;
     }
 
@@ -1655,7 +1655,6 @@ static int jk_handler(request_rec * r)
 #ifndef NO_GETTIMEOFDAY
                 if (conf->format != NULL) {
                     char *duration = NULL;
-                    char *status = NULL;
                     long micro, seconds;
                     gettimeofday(&tv_end, NULL);
                     if (tv_end.tv_usec < tv_begin.tv_usec) {
@@ -1665,7 +1664,7 @@ static int jk_handler(request_rec * r)
                     micro = tv_end.tv_usec - tv_begin.tv_usec;
                     seconds = tv_end.tv_sec - tv_begin.tv_sec;
                     duration =
-                        ap_psprintf(r->pool, "%.1d.%.6d", seconds, micro);
+                        ap_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
                     ap_table_setn(r->notes, JK_DURATION, duration);
                     request_log_transaction(r, conf);
                 }
