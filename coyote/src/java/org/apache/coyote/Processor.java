@@ -64,11 +64,11 @@ import java.io.OutputStream;
 
 
 /**
- * Connector.
+ * Processor.
  *
  * @author Remy Maucherat
  */
-public interface Connector {
+public interface Processor {
 
 
     public void setAdapter(Adapter adapter);

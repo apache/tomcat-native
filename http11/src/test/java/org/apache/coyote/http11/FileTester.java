@@ -67,13 +67,13 @@ import java.io.OutputStream;
 import java.util.Locale;
 
 import org.apache.coyote.Adapter;
-import org.apache.coyote.Connector;
+import org.apache.coyote.Processor;
 
 /**
  * File tester.
  * <p>
  * This tester is initialized with an adapter (it will use the HTTP/1.1 
- * connector), and will then accept an input file (which will contain the 
+ * processor), and will then accept an input file (which will contain the 
  * input data), and an output file, to which the result of the request(s)
  * will be written.
  *
@@ -93,17 +93,17 @@ public class FileTester {
      * of the output file will be overwritten when the test is run.
      * 
      * @param adapter Coyote adapter to use for this test
-     * @param connector Coyote connector to use for this test
+     * @param processor Coyote processor to use for this test
      * @param inputFile File containing the HTTP requests in plain text
      * @param outputFile File containing the HTTP responses
      */
-    public FileTester(Adapter adapter, Connector connector,
+    public FileTester(Adapter adapter, Processor processor,
                       File inputFile, File outputFile) {
 
-        connector.setAdapter(adapter);
+        processor.setAdapter(adapter);
 
         this.adapter = adapter;
-        this.connector = connector;
+        this.processor = processor;
         this.inputFile = inputFile;
         this.outputFile = outputFile;
 
@@ -114,7 +114,7 @@ public class FileTester {
 
 
     /**
-     * Utility main method, which will use the HTTP/1.1 connector with the 
+     * Utility main method, which will use the HTTP/1.1 processor with the 
      * test adapter.
      *
      * @param args Command line arguments to be processed
@@ -134,9 +134,9 @@ public class FileTester {
         File outputFile = new File(args[1]);
 
         Adapter testAdapter = new RandomAdapter();
-        Connector http11Connector = new Http11Connector();
+        Processor http11Processor = new Http11Processor();
 
-        FileTester tester = new FileTester(testAdapter, http11Connector,
+        FileTester tester = new FileTester(testAdapter, http11Processor,
                                            inputFile, outputFile);
         tester.test();
 
@@ -165,9 +165,9 @@ public class FileTester {
 
 
     /**
-     * Coyote connector to use.
+     * Coyote processor to use.
      */
-    protected Connector connector;
+    protected Processor processor;
 
 
     // --------------------------------------------------------- Public Methods
@@ -182,7 +182,7 @@ public class FileTester {
         InputStream is = new FileInputStream(inputFile);
         OutputStream os = new FileOutputStream(outputFile);
 
-        connector.process(is, os);
+        processor.process(is, os);
 
     }
 

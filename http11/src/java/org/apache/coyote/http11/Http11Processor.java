@@ -73,9 +73,9 @@ import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.coyote.ActionHook;
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.Adapter;
-import org.apache.coyote.Connector;
 import org.apache.coyote.InputBuffer;
 import org.apache.coyote.OutputBuffer;
+import org.apache.coyote.Processor;
 import org.apache.coyote.Request;
 import org.apache.coyote.Response;
 
@@ -92,7 +92,7 @@ import org.apache.coyote.http11.filters.VoidOutputFilter;
  * 
  * @author Remy Maucherat
  */
-public class Http11Connector implements Connector, ActionHook {
+public class Http11Processor implements Processor, ActionHook {
 
 
     // ----------------------------------------------------------- Constructors
@@ -101,7 +101,7 @@ public class Http11Connector implements Connector, ActionHook {
     /**
      * Default constructor.
      */
-    public Http11Connector() {
+    public Http11Processor() {
 
         request = new Request();
         inputBuffer = new InternalInputBuffer(request);
