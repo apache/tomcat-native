@@ -232,7 +232,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
     jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
                  strdup_ascii(env, "createJavaContext"), 
-                 strdup_ascii(env, "(Ljava/lang/String;J)Ljava/lang/Object;");
+                 strdup_ascii(env, "(Ljava/lang/String;J)Ljava/lang/Object;"));
 
     if( jmethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -298,7 +298,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     jniCh->writeMethod =
         (*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
                                      strdup_ascii(env, "jniInvoke"),
-                                     strdup_ascii(env, "(JLjava/lang/Object;)I"))s;
+                                     strdup_ascii(env, "(JLjava/lang/Object;)I"));
     
     if( jniCh->writeMethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
