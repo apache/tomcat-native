@@ -66,26 +66,6 @@
 
 #include "jk_registry.h"
 
-/*
- * Write a body chunk from the servlet container to the web server
- */
-#define JK_AJP13_SEND_BODY_CHUNK    (unsigned char)3
-
-/*
- * Send response headers from the servlet container to the web server.
- */
-#define JK_AJP13_SEND_HEADERS       (unsigned char)4
-
-/*
- * Marks the end of response.
- */
-#define JK_AJP13_GET_BODY_CHUNK     (unsigned char)6
-
-/*
- * Marks the end of response.
- */
-#define JK_AJP13_END_RESPONSE       (unsigned char)5
-
 
 /** SEND_HEADERS handler
    AJPV13_RESPONSE/AJPV14_RESPONSE:=
@@ -111,10 +91,11 @@ body_chunk :=
     body    length*(var binary)
 
  */
-static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
-                                    jk_ws_service_t  *s, jk_endpoint_t *ae )
+static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, void *target, 
+                                               jk_endpoint_t *ae, jk_msg_t   *msg )
 {
-    int err=JK_FALSE;
+    jk_ws_service_t  *s=target;
+    int err=JK_ERR;
     int i;
     jk_pool_t * pool = s->pool;
     int headerCount;
@@ -186,7 +167,7 @@ static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
                   s->status, headerCount);
 
     err=s->head(env, s);
-    if( err!=JK_TRUE ) {
+    if( err!=JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "handler.response() Error sending response");
         return JK_HANDLER_ERROR;
@@ -197,9 +178,10 @@ static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
 
 /** SEND_BODY_CHUNK handler
  */
-static int JK_METHOD jk2_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
-                                jk_ws_service_t  *r, jk_endpoint_t *ae)
+static int JK_METHOD jk2_handler_sendChunk(jk_env_t *env, void *target, 
+                                           jk_endpoint_t *ae, jk_msg_t   *msg )
 {
+    jk_ws_service_t  *r=target;
     int err;
     int len;
     char *buf;
@@ -207,7 +189,7 @@ static int JK_METHOD jk2_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
     buf=msg->getBytes( env, msg, &len );
 
     err=r->write(env, r, buf, len);
-    if( err!= JK_TRUE ) {
+    if( err!= JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error ajp_process_callback - write failed\n");
         return JK_HANDLER_ERROR;
     }
@@ -215,8 +197,8 @@ static int JK_METHOD jk2_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
     return JK_HANDLER_OK;
 }
 
-static int JK_METHOD jk2_handler_endResponse(jk_env_t *env, jk_msg_t   *msg,
-                                  jk_ws_service_t  *r,jk_endpoint_t *ae)
+static int JK_METHOD jk2_handler_endResponse(jk_env_t *env, void *target, 
+                                           jk_endpoint_t *ae, jk_msg_t   *msg )
 {
     ae->reuse = (int)msg->getByte(env, msg);
             
@@ -229,11 +211,12 @@ static int JK_METHOD jk2_handler_endResponse(jk_env_t *env, jk_msg_t   *msg,
     return JK_HANDLER_LAST;
 }
 
-/** SEND_BODY_CHUNK handler
+/** GET_BODY_CHUNK handler
  */
-static int JK_METHOD jk2_handler_getChunk(jk_env_t *env, jk_msg_t   *msg,
-                               jk_ws_service_t  *r, jk_endpoint_t *ae)
+static int JK_METHOD jk2_handler_getChunk(jk_env_t *env, void *target, 
+                                          jk_endpoint_t *ae, jk_msg_t   *msg )
 {
+    jk_ws_service_t  *r=target;
     int len = msg->getInt(env, msg);
     
     if(len > AJP13_MAX_SEND_BODY_SZ) {
@@ -261,45 +244,29 @@ static int JK_METHOD jk2_handler_getChunk(jk_env_t *env, jk_msg_t   *msg,
 int JK_METHOD jk2_handler_response_init( jk_env_t *env, jk_handler_t *_this,
                                          jk_workerEnv_t *wEnv) 
 {
-    jk_pool_t *pool=wEnv->pool;
-    jk_handler_t *h;
+    wEnv->registerHandler( env, wEnv, "handler.response",
+                           "sendHeaders", JK_HANDLE_AJP13_SEND_HEADERS,
+                           jk2_handler_startResponse, NULL );
     
-    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
-    h->name="sendHeaders";
-    h->messageId=JK_AJP13_SEND_HEADERS;
-    h->callback=jk2_handler_startResponse;
-    h->workerEnv=wEnv;
-    wEnv->registerHandler( env, wEnv, h );
-
-    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
-    h->name="sendChunk";
-    h->messageId=JK_AJP13_SEND_BODY_CHUNK;
-    h->callback=jk2_handler_sendChunk;
-    h->workerEnv=wEnv;
-    wEnv->registerHandler( env, wEnv, h );
+    wEnv->registerHandler( env, wEnv, "handler.response",
+                           "sendChunk", JK_HANDLE_AJP13_SEND_BODY_CHUNK,
+                           jk2_handler_sendChunk, NULL );
     
-    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
-    h->name="endResponse";
-    h->messageId=JK_AJP13_END_RESPONSE;
-    h->callback=jk2_handler_endResponse;
-    h->workerEnv=wEnv;
-    wEnv->registerHandler( env, wEnv, h );
+    wEnv->registerHandler( env, wEnv, "handler.response",
+                           "endResponse", JK_HANDLE_AJP13_END_RESPONSE,
+                           jk2_handler_endResponse, NULL );
+    
+    wEnv->registerHandler( env, wEnv, "handler.response",
+                           "getChunk", JK_HANDLE_AJP13_GET_BODY_CHUNK,
+                           jk2_handler_getChunk, NULL );
 
-    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
-    h->name="getChunk";
-    h->messageId=JK_AJP13_GET_BODY_CHUNK;
-    h->callback=jk2_handler_getChunk;
-    h->workerEnv=wEnv;
-    wEnv->registerHandler( env, wEnv, h );
-
-    return JK_TRUE;
+    return JK_OK;
 }
 
 int JK_METHOD jk2_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
                                             jk_bean_t *result,
                                             const char *type, const char *name)
 {
-//    jk_map_t *map;
     jk_handler_t *h;
     
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
@@ -308,6 +275,6 @@ int JK_METHOD jk2_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
 
     result->object=h;
     
-    return JK_TRUE;
+    return JK_OK;
 }
 

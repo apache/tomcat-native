@@ -74,24 +74,9 @@
 /* Private definitions */
 
 /*
- * Second Login Phase (servlet engine -> web server), md5 seed is received
- */
-#define AJP14_LOGSEED_CMD	(unsigned char)0x11
-
-/*
  * Third Login Phase (web server -> servlet engine), md5 of seed + secret is sent
  */
 #define AJP14_LOGCOMP_CMD	(unsigned char)0x12
-
-/*
- * Login Accepted (servlet engine -> web server)
- */
-#define AJP14_LOGOK_CMD		(unsigned char)0x13
-
-/*
- * Login Rejected (servlet engine -> web server), will be logged
- */
-#define AJP14_LOGNOK_CMD	(unsigned char)0x14
 
 /* web-server want context info after login */
 #define AJP14_CONTEXT_INFO_NEG      0x80000000 
@@ -119,8 +104,8 @@
  *   String  serverName
  *
  */
-static int JK_METHOD jk2_handler_login(jk_env_t *env, jk_msg_t *msg,
-                            jk_ws_service_t *s, jk_endpoint_t *ae)
+static int JK_METHOD jk2_handler_login(jk_env_t *env, void *target, 
+                                       jk_endpoint_t *ae, jk_msg_t   *msg )
 {
     int rc;
     char *entropy;
@@ -150,12 +135,12 @@ static int JK_METHOD jk2_handler_login(jk_env_t *env, jk_msg_t *msg,
                   "Into ajp14_marshal_login_comp_into_msgb\n");
 
     rc=msg->appendByte( env, msg, AJP14_LOGCOMP_CMD);
-    if (rc!=JK_TRUE )
+    if (rc!=JK_OK )
         return JK_HANDLER_FATAL;
 
     /* COMPUTED-SEED */
     rc= msg->appendString( env, msg, (const unsigned char *)computedKey);
-    if( rc!=JK_TRUE ) {
+    if( rc!=JK_OK ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                  "handler.loginSecret() error serializing computed secret\n");
         return JK_HANDLER_FATAL;
@@ -166,7 +151,7 @@ static int JK_METHOD jk2_handler_login(jk_env_t *env, jk_msg_t *msg,
     
     rc=msg->appendString(env, msg, ae->worker->workerEnv->server_name);
 
-    if ( rc != JK_TRUE)
+    if ( rc != JK_OK)
         return JK_HANDLER_FATAL;
     
     return JK_HANDLER_RESPONSE;
@@ -182,8 +167,8 @@ static int JK_METHOD jk2_handler_login(jk_env_t *env, jk_msg_t *msg,
  * +--------------------+------------------------+---------------------------
  *
  */
-static int JK_METHOD jk2_handler_logok(jk_env_t *env, jk_msg_t *msg,
-                            jk_ws_service_t *s, jk_endpoint_t *ae )
+static int JK_METHOD jk2_handler_logok(jk_env_t *env, void *target, 
+                                       jk_endpoint_t *ae, jk_msg_t   *msg )
 {
     unsigned long nego;
     char *sname;
@@ -229,8 +214,8 @@ static int JK_METHOD jk2_handler_logok(jk_env_t *env, jk_msg_t *msg,
  * +---------------------+-----------------------+
  *
  */
-static int JK_METHOD jk2_handler_lognok(jk_env_t *env, jk_msg_t *msg,
-                             jk_ws_service_t *s, jk_endpoint_t *ae )
+static int JK_METHOD jk2_handler_lognok(jk_env_t *env, void *target, 
+                                        jk_endpoint_t *ae, jk_msg_t   *msg )
 {
     unsigned long   status;
     
@@ -245,31 +230,18 @@ static int JK_METHOD jk2_handler_lognok(jk_env_t *env, jk_msg_t *msg,
 int JK_METHOD jk2_handler_logon_init( jk_env_t *env, jk_handler_t *_this,
                                       jk_workerEnv_t *wEnv) 
 {
-    jk_pool_t *pool=wEnv->pool;
-    jk_handler_t *h;
+    wEnv->registerHandler( env, wEnv, "handler.logon",
+                           "login", JK_HANDLE_LOGON_SEED,
+                           jk2_handler_login, NULL );
     
-    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
-    h->name="login";
-    h->messageId=AJP14_LOGSEED_CMD;
-    h->callback=jk2_handler_login;
-    h->workerEnv=wEnv;
-    wEnv->registerHandler( env, wEnv, h );
-
-    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
-    h->name="logOk";
-    h->messageId=AJP14_LOGOK_CMD;
-    h->callback=jk2_handler_logok;
-    h->workerEnv=wEnv;
-    wEnv->registerHandler( env, wEnv, h );
-
-    h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));
-    h->name="logNok";
-    h->messageId=AJP14_LOGNOK_CMD;
-    h->callback=jk2_handler_lognok;
-    h->workerEnv=wEnv;
-    wEnv->registerHandler( env, wEnv, h );
+    wEnv->registerHandler( env, wEnv, "handler.logon",
+                           "logOk", JK_HANDLE_LOGON_OK, 
+                           jk2_handler_logok, NULL );
     
-    return JK_TRUE;
+    wEnv->registerHandler( env, wEnv, "handler.logon",
+                           "logNok", JK_HANDLE_LOGON_ERR,
+                           jk2_handler_lognok, NULL );
+    return JK_OK;
 }
 
 
@@ -287,5 +259,5 @@ int JK_METHOD jk2_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
 
     result->object=h;
     
-    return JK_TRUE;
+    return JK_OK;
 }
