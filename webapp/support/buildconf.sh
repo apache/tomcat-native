@@ -125,6 +125,7 @@ fi
 echo ""
 echo "--- Creating WebApp \"configure\" script"
 echo "Creating configure ..."
+rm -rf autom4te.cache
 autoconf
 
 # ------------------------------------------------------------------------- #
