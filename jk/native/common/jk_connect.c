@@ -143,6 +143,11 @@ int jk_open_socket(struct sockaddr_in *addr,
             jk_log(l, JK_LOG_DEBUG, "jk_open_socket, try to connect socket = %d to %s\n", 
                    sock, jk_dump_hinfo(addr, buf));
                    
+/* Need more infos for BSD 4.4 and Unix 98 defines, for now only 
+   iSeries when Unix98 is required at compil time */
+#if (_XOPEN_SOURCE >= 520)
+	       ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in));
+#endif 
             ret = connect(sock,
                           (struct sockaddr *)addr,
                           sizeof(struct sockaddr_in));
