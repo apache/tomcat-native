@@ -1,0 +1,9 @@
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Jakarta Isapi Redirector\2.0]
+"log_file"="D:\\tomcat\\logs\\domino.log"
+"log_level"="debug"
+"worker_file"="D:\\tomcat\\conf\\workers.properties"
+"worker_mount_file"="D:\\tomcat\\conf\\uriworkermap.properties"
+"tomcat_start"="D:\\tomcat\\bin\\tomcat.bat start"
+"tomcat_stop"="D:\\tomcat\\bin\\tomcat.bat stop"
