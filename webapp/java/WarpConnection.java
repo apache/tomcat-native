@@ -179,16 +179,20 @@ public class WarpConnection implements LifecycleListener, Runnable {
      * Process data from the socket.
      */
     public void run() {
+        WarpPacket packet=new WarpPacket();
+
         if (Constants.DEBUG) logger.debug("Connection starting");
 
         try {
             this.input=this.socket.getInputStream();
             this.output=this.socket.getOutputStream();
-            boolean success=new WarpConfigurationHandler().handle(this);
-            if (!success) {
+            if (!new WarpConfigurationHandler().handle(this,packet)) {
                 logger.log("Configuration handler returned false");
                 this.stop();
             }
+            WarpRequestHandler requestHandler=new WarpRequestHandler();
+            while (requestHandler.handle(this,packet));
+            this.stop();
         } catch (IOException e) {
             logger.log("Exception on socket",e);
         }
