@@ -9,14 +9,10 @@ MKDIR=@MKDIR@
 DESTDIR=@APACHE_DIR@
 libdir=/libexec
 
-VPATH=.:../common
+#VPATH=.:../common
 APACHE_FILES = Makefile.tmpl Makefile.libdir libjk.module
 
-if MAKE_DYNAMIC_APACHE
-JK=
-else
-JK=../common
-endif
+JK=../common/
 JK_INCL=-DUSE_APACHE_MD5 -I ${JK}
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
@@ -63,6 +59,3 @@ install-data-local:
 	@echo "make"
 	@echo ""
 endif
-
-clean:
-	-rm *.o *.so *.a

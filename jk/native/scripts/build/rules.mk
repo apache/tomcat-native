@@ -2,7 +2,7 @@
 #
 
 # Compile commands
-VPATH=.:../common
+#VPATH=.:../common
 COMPILE      = $(CC) $(CFLAGS)
 LT_COMPILE   = $(LIBTOOL) --mode=compile $(COMPILE) -c $< 
 # && touch $@

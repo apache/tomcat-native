@@ -46,6 +46,7 @@ AC_SUBST(CP)
 AC_PATH_PROG(MKDIR,mkdir,$PATH)dnl
 AC_SUBST(MKDIR)
 
+APACHE_CONFIG_VARS=`pwd`/scripts/build/config_vars.mk
 WEBSERVER=""
 apache_dir=""
 apache_include=""
@@ -84,26 +85,28 @@ AC_ARG_WITH(apxs,
                 AC_MSG_ERROR(You must specify a valid --with-apxs path)
             fi
 
+            dnl apache_dir and apache_include are also needed.
+            apache_dir=`$APXS -q PREFIX`
+            apache_include="-I`$APXS -q INCLUDEDIR`"
+
             dnl test apache version
             APA=`${GREP} STANDARD20 ${APXS}`
             if ${TEST} -z "$APA" ; then
                 WEBSERVER="apache-1.3"
             else
                 WEBSERVER="apache-2.0"
+                APACHE_CONFIG_VARS=${apache_dir}/build/config_vars.mk
             fi
             AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
     
             AC_SUBST(APXS)
-
-            dnl apache_dir and apache_include are also needed.
-	    apache_dir=`$APXS -q PREFIX`
-	    apache_include="-I`$APXS -q INCLUDEDIR`"
         fi
     fi
 ],
 [
 	AC_MSG_RESULT(no apxs given)
 ])
+AC_SUBST(APACHE_CONFIG_VARS)
 
 dnl Apache-2.0 needs the os subdirectory to include os.h
 dnl this include is copy from os/config.m4
@@ -410,7 +413,7 @@ if ${TEST} -z "$WEBSERVER" ; then
 fi
 
 dnl Add common to subdir list
-WEBSERVER="${WEBSERVER}"
+WEBSERVER="common ${WEBSERVER}"
 
 AC_SUBST(WEBSERVER)
 
