@@ -288,17 +288,17 @@ static void *jk2_pool_a_strdup(jk_env_t *env, jk_pool_t *p, const char *s, int c
 
 static void *jk2_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s)
 {
-	return (jk2_pool_a_strdup(env, p, s, 0);
+	return (jk2_pool_a_strdup(env, p, s, 0));
 }
 
 static void *jk2_pool_strdup2ascii(jk_env_t *env, jk_pool_t *p, const char *s)
 {
-	return (jk2_pool_a_strdup(env, p, s, 1);
+	return (jk2_pool_a_strdup(env, p, s, 1));
 }
 
 static void *jk2_pool_strdup2ebcdic(jk_env_t *env, jk_pool_t *p, const char *s)
 {
-	return (jk2_pool_a_strdup(env, p, s, 2);
+	return (jk2_pool_a_strdup(env, p, s, 2));
 }
 
 /*
