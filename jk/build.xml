@@ -30,6 +30,7 @@
     <property name="coyote.home" 
 	      location="../coyote/build" />
     <property name="commons-logging.jar" location="../lib/commons-logging.jar" />
+    <property name="tomcat-util.jar" location="../util/build/lib/tomcat-util.jar" />
 
     <property name="jmx.jar" location="../lib/mx4j.jar" />
 
@@ -106,16 +107,15 @@
         <!-- util and coyote must be build first -->
         <copy  tofile="${jk.build}/lib/tomcat-coyote.jar"
               file="../coyote/build/lib/tomcat-coyote.jar" />
-        <copy  tofile="${jk.build}/lib/tomcat-util.jar"
-              file="../util/build/lib/tomcat-util.jar" />
 
         <path id="build-main.classpath">
+            <fileset dir="../lib" includes="*.jar" />
             <pathelement location="../util/build/classes"/>
             <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
             <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
             <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
             <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
-            <pathelement location="${jk.build}/lib/tomcat-util.jar" />
+            <pathelement location="${tomcat-util.jar}" />
             <pathelement location="${commons-logging.jar}"/>
             <pathelement location="${jmx.jar}"/>
             <pathelement 
