@@ -1181,7 +1181,8 @@ static int jk_handler(request_rec *r)
     jk_server_conf_t *conf;
     int              rc;
 
-    if(strcmp(r->handler,JK_HANDLER))    /* not for me, try next handler */
+    /* not for me, try next handler */
+    if(strcmp(r->handler,JK_HANDLER) && strcmp(r->handler,DIR_MAGIC_TYPE))
       return DECLINED;
     
     xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
