@@ -211,6 +211,8 @@ public class Ajp13 {
     int blen;  // Length of current chunk of body data in buffer
     int pos;   // Current read position within that buffer
 
+    boolean end_of_stream;  // true if we've received an empty packet
+
     public Ajp13() {
 	super();
 	initBuf();
@@ -232,6 +234,7 @@ public class Ajp13 {
         // This is a touch cargo-cultish, but I think wise.
         blen = 0; 
         pos = 0;
+        end_of_stream = false;
     }
     
     /**
@@ -437,7 +440,7 @@ public class Ajp13 {
 
 	// Check to see if there should be a body packet coming along
 	// immediately after
-    	if(req.getContentLength() > 0) {
+    	if(req.getContentLength() != 0) {
 
 	    /* Read present data */
 	    int err = receive(inBuf);
@@ -522,7 +525,7 @@ public class Ajp13 {
 	    return len;
 	}
 
-	// Not enough data (blen < pos + len)
+	// Not enough data (blen < pos + len) or chunked encoded
 	int toCopy = len;
 	while(toCopy > 0) {
 	    int bytesRemaining = blen - pos;
@@ -560,6 +563,9 @@ public class Ajp13 {
 
 	// If the server returns an empty packet, assume that that end of
 	// the stream has been reached (yuck -- fix protocol??).
+        if (end_of_stream) {
+            return false;
+        }
 
 	// Why not use outBuf??
 	inBuf.reset();
@@ -572,6 +578,14 @@ public class Ajp13 {
 	    throw new IOException();
 	}
 	
+        // No data received.
+        if( inBuf.getLen() == 0 ) {
+            pos=0;
+            blen=0;
+            end_of_stream = true;
+            return false;
+        }
+
     	blen = inBuf.peekInt();
     	pos = 0;
     	inBuf.getBytes(bodyBuff);

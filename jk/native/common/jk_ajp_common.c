@@ -688,6 +688,10 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s,
 {
     unsigned rdlen = 0;
 
+    if (s->is_chunked && s->no_more_chunks) {
+	return 0;
+    }
+
     while(rdlen < len) {
         unsigned this_time = 0;
         if(!s->read(s, buf + rdlen, len - rdlen, &this_time)) {
@@ -695,6 +699,9 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s,
         }
 
         if(0 == this_time) {
+	    if (s->is_chunked) {
+		s->no_more_chunks = 1; /* read no more */
+	    }
             break;
         }
         rdlen += this_time;
@@ -705,13 +712,14 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s,
 
 
 /*
- * Read data from AJP13/AJP14 protocol 
+ * Read data from AJP13/AJP14 protocol
+ * Returns -1 on error, else number of bytes read
  */
 
 static int ajp_read_into_msg_buff(ajp_endpoint_t  *ae,
                                   jk_ws_service_t *r,
                                   jk_msg_buf_t    *msg,
-								  unsigned 		   len,
+                                  unsigned         len,
                                   jk_logger_t     *l)
 {
     unsigned char *read_buf = jk_b_get_buff(msg);
@@ -721,21 +729,33 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t  *ae,
     read_buf += AJP_HEADER_LEN;    /* leave some space for the buffer headers */
     read_buf += AJP_HEADER_SZ_LEN; /* leave some space for the read length */
 
-    if (ajp_read_fully_from_server(r, read_buf, len) < 0) {
-        jk_log(l, JK_LOG_ERROR, "ajp_read_into_msg_buff: Error - ajp_read_fully_from_server failed\n");
-        return JK_FALSE;
+    /* Pick the max size since we don't know the content_length */
+    if (r->is_chunked && len == 0) {
+	len = AJP13_MAX_SEND_BODY_SZ;
     }
 
-    ae->left_bytes_to_send -= len;
+    if ((len = ajp_read_fully_from_server(r, read_buf, len)) < 0) {
+        jk_log(l, JK_LOG_ERROR, "ajp_read_into_msg_buff: Error - ajp_read_fully_from_server failed\n");
+        return -1;
+    }
 
-    if(0 != jk_b_append_int(msg, (unsigned short)len)) {
-        jk_log(l, JK_LOG_ERROR, "ajp_read_into_msg_buff: Error - jk_b_append_int failed\n");
-        return JK_FALSE;
+    if (!r->is_chunked) {
+	ae->left_bytes_to_send -= len;
+    }
+
+    if (len > 0) {
+	/* Recipient recognizes empty packet as end of stream, not
+	   an empty body packet */
+        if(0 != jk_b_append_int(msg, (unsigned short)len)) {
+            jk_log(l, JK_LOG_ERROR, 
+                   "read_into_msg_buff: Error - jk_b_append_int failed\n");
+            return -1;
+	}
     }
 
     jk_b_set_len(msg, jk_b_get_len(msg) + len);
 
-    return JK_TRUE;
+    return len;
 }
 
 
@@ -817,11 +837,11 @@ static int ajp_send_request(jk_endpoint_t *e,
 		 * for resend if the remote Tomcat is down, a fact we will learn only
 		 * doing a read (not yet) 
 	 	 */
-		if (ae->left_bytes_to_send > 0) {
+		if (s->is_chunked || ae->left_bytes_to_send > 0) {
 			unsigned len = ae->left_bytes_to_send;
 			if (len > AJP13_MAX_SEND_BODY_SZ) 
 				len = AJP13_MAX_SEND_BODY_SZ;
-            		if (! ajp_read_into_msg_buff(ae, s, op->post, len, l)) {
+            		if ((len = ajp_read_into_msg_buff(ae, s, op->post, len, l)) < 0) {
 				/* the browser stop sending data, no need to recover */
 				op->recoverable = JK_FALSE;
 				return JK_FALSE;
@@ -893,7 +913,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
 		}
 
 		/* the right place to add file storage for upload */
-		if (ajp_read_into_msg_buff(ae, r, msg, len, l)) {
+		if ((len = ajp_read_into_msg_buff(ae, r, msg, len, l)) >= 0) {
 		    r->content_read += len;
 		    return JK_AJP13_HAS_RESPONSE;
 		}                  

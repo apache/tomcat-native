@@ -275,15 +275,18 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
     if(s && s->ws_private && b && actually_read) {
         apache_private_data_t *p = s->ws_private;
         if(!p->read_body_started) {
-            if(!ap_setup_client_block(p->r, REQUEST_CHUNKED_DECHUNK)) {
-                if(ap_should_client_block(p->r)) { 
-                    p->read_body_started = JK_TRUE; 
-                }
+           if(ap_should_client_block(p->r)) { 
+                p->read_body_started = JK_TRUE; 
             }
         }
 
         if(p->read_body_started) {
-            *actually_read = ap_get_client_block(p->r, b, len);
+            long rv;
+            if ((rv = ap_get_client_block(p->r, b, len)) < 0) {
+                *actually_read = 0;
+            } else {
+                *actually_read = (unsigned) rv;
+            }
             return JK_TRUE;
         }
     }
@@ -458,6 +461,8 @@ static int init_ws_service(apache_private_data_t *private_data,
 
     s->method       = (char *)r->method;
     s->content_length = get_content_length(r);
+    s->is_chunked   = r->read_chunked;
+    s->no_more_chunks = 0;
     s->query_string = r->args;
 
 	/*
@@ -945,9 +950,16 @@ static int jk_handler(request_rec *r)
 {   
     /* Retrieve the worker name stored by jk_translate() */
     const char *worker_name = ap_table_get(r->notes, JK_WORKER_ID);
+    int rc;
 
     if(r->proxyreq) {
         return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    
+    /* Set up r->read_chunked flags for chunked encoding, if present */
+    if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
+	return rc;
     }
       
     if(worker_name) {
@@ -978,7 +990,8 @@ static int jk_handler(request_rec *r)
                     int is_recoverable_error = JK_FALSE;
                     rc = end->service(end, &s, l, &is_recoverable_error);
                 
-                    if (s.content_read < s.content_length) {
+                    if (s.content_read < s.content_length ||
+                        (s.is_chunked && ! s.no_more_chunks)) {
                         /*
                          * If the servlet engine didn't consume all of the
                          * request data, consume and discard all further
