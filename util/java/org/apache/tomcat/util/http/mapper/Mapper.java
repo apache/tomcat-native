@@ -59,7 +59,7 @@
 package org.apache.tomcat.util.http.mapper;
 
 import javax.naming.NamingException;
-mport javax.naming.directory.DirContext;
+import javax.naming.directory.DirContext;
 
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
