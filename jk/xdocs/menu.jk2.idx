@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <section name="JK2">
-<document href="jk2/configtc.xml"/>
-<document href="jk2/configweb.xml"/>
+</section>
+<section name="Configuration in the Tomcat">
+    <document href="jk2/configtc.xml"/>
+    <document href="jk2/configtcex.xml"/>
+</section>
+<section name="Configuration in the Web Server">
+    <document href="jk2/configweb.xml"/>
+    <document href="jk2/configwebcom.xml"/>
+    <document href="jk2/configwebex.xml"/>
+</section>
+<section name="Installation">
+    <document href="jk2/installhowto.xml"/>
 </section>
