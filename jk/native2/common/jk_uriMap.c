@@ -292,17 +292,16 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
             if (strcasecmp(name, vhost) == 0)
                 return uriEnv;
         }
-    }
-    /* Then for each vhost, check the aliases */
-    for (i = 0 ; i < n ; i++) {
-        jk_uriEnv_t *uriEnv = uriMap->vhosts->valueAt(env, uriMap->vhosts, i);
-        name = uriMap->vhosts->nameAt(env, uriMap->vhosts, i);
-        if (uriEnv->aliases && vhost) {
-            int m = uriEnv->aliases->size(env, uriEnv->aliases);
-            for (j = 0; j < m; j++) {
-                name = uriEnv->aliases->nameAt(env, uriEnv->aliases, j);
-                if (strcasecmp(name, hostname) == 0)
-                    return uriEnv;
+        /* Then for each vhost, check the aliases */
+        for (i = 0 ; i < n ; i++) {
+            jk_uriEnv_t *uriEnv = uriMap->vhosts->valueAt(env, uriMap->vhosts, i);
+            if (uriEnv->aliases) {
+                int m = uriEnv->aliases->size(env, uriEnv->aliases);
+                for (j = 0; j < m; j++) {
+                    name = uriEnv->aliases->nameAt(env, uriEnv->aliases, j);
+                    if (strcasecmp(name, hostname) == 0)
+                        return uriEnv;
+                }
             }
         }
     }
@@ -451,7 +450,7 @@ static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
 
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "uriMap: creating context %s\n", ctxname);
-            mbean = env->getBean2(env, "uri", context);
+            mbean = env->getBean2(env, "uri", ctxname);
             if (mbean == NULL)
                 mbean = env->createBean2(env, uriMap->pool,"uri", ctxname);
             if (mbean == NULL || mbean->object == NULL) {
@@ -463,6 +462,8 @@ static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
             ctxEnv->match_type = MATCH_TYPE_CONTEXT;
             ctxEnv->prefix = context;
             ctxEnv->prefix_len = strlen(context);
+            ctxEnv->contextPath = context;
+            ctxEnv->ctxt_len = strlen(context);
             hostEnv->webapps->put(env, hostEnv->webapps, context, ctxEnv, NULL);
             jk2_map_default_create(env, &ctxEnv->exactMatch, uriMap->pool);
             jk2_map_default_create(env, &ctxEnv->prefixMatch, uriMap->pool);
@@ -472,35 +473,15 @@ static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
 
 }
 
-static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
+static int jk2_uriMap_createMappings(jk_env_t *env, jk_uriMap_t *uriMap)
 {
-    int rc = JK_OK;
     int i;
-    jk_workerEnv_t *workerEnv = uriMap->workerEnv;
-    jk_bean_t *mbean = env->getBean2(env, "uri", "*");
-
-    /* create the default server */
-    if (mbean == NULL) {
-        mbean = env->createBean2(env, workerEnv->pool,"uri", "*");
-        if (mbean == NULL || mbean->object == NULL) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "uriMap.factory() Fail to create default host\n");
-            return JK_ERR;
-        }
-    }
-
-    /* Create virtual hosts and initialize them */
-    jk2_uriMap_createHosts(env, uriMap);
-
-    /* Create webapps and initialize them */
-    jk2_uriMap_createWebapps(env, uriMap);
 
     if (uriMap->mbean->debug > 5) 
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "uriMap.init() processing mappings\n");
-
-    /* All other mappings are added in the right context leaf.
-       XXX We should also sort prefix mappings and maybe use binary search - but
+    
+    /* XXX We should also sort prefix mappings and maybe use binary search - but
        it won't have too bigger benefits, the number of mappings per ctx is typically 
        small
      */
@@ -560,6 +541,202 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
                 break;
         }
     }
+    return JK_OK;
+}
+
+static jk_uriEnv_t* jk2_uriMap_duplicateUri(jk_env_t *env, jk_uriMap_t *uriMap,
+                                            jk_uriEnv_t *uriEnv, jk_uriEnv_t *mapEnv)
+{
+    char *uriname;
+    jk_uriEnv_t *newEnv;
+    jk_bean_t *mbean;
+
+    uriname = uriEnv->pool->calloc(env, uriEnv->pool, strlen(uriEnv->name) + 
+                                   strlen(mapEnv->uri) + 1 );
+
+    strcpy(uriname, uriEnv->name);
+    strcat(uriname, mapEnv->uri);
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+        "uriMap: creating duplicate of  uri %s\n", uriname);
+    mbean = env->getBean2(env, "uri", uriname);
+    if (mbean == NULL)
+        mbean = env->createBean2(env, uriMap->pool,"uri", uriname);
+    if (mbean == NULL || mbean->object == NULL) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+            "uriMap: can't create uri object %s\n", uriname);
+        return NULL;
+    }
+    newEnv = mbean->object;
+    newEnv->match_type = mapEnv->match_type;
+    newEnv->prefix = mapEnv->prefix;
+    newEnv->prefix_len = mapEnv->prefix_len;
+    newEnv->contextPath = mapEnv->contextPath;
+    newEnv->ctxt_len = mapEnv->ctxt_len;
+    newEnv->worker = mapEnv->worker;
+    newEnv->workerName = mapEnv->workerName;
+    newEnv->workerEnv = mapEnv->workerEnv;
+    
+    return newEnv;
+}
+
+static jk_uriEnv_t* jk2_uriMap_duplicateContext(jk_env_t *env, jk_uriMap_t *uriMap,
+                                            jk_uriEnv_t *uriEnv, jk_uriEnv_t *mapEnv)
+{
+    char *uriname;
+    jk_uriEnv_t *newEnv;
+    jk_bean_t *mbean;
+
+    uriname = uriEnv->pool->calloc(env, uriEnv->pool, strlen(uriEnv->name) + 
+                                   strlen(mapEnv->contextPath) + 1 );
+
+    strcpy(uriname, uriEnv->name);
+    strcat(uriname, mapEnv->contextPath);
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+        "uriMap: creating duplicate of context %s\n", uriname);
+    mbean = env->getBean2(env, "uri", uriname);
+    if (mbean == NULL)
+        mbean = env->createBean2(env, uriMap->pool,"uri", uriname);
+    if (mbean == NULL || mbean->object == NULL) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+            "uriMap: can't create uri object %s\n", uriname);
+        return NULL;
+    }
+    newEnv = mbean->object;
+    newEnv->match_type = mapEnv->match_type;
+    newEnv->prefix = mapEnv->prefix;
+    newEnv->prefix_len = mapEnv->prefix_len;
+    newEnv->contextPath = mapEnv->contextPath;
+    newEnv->ctxt_len = mapEnv->ctxt_len;
+    newEnv->worker = mapEnv->worker;
+    newEnv->workerName = mapEnv->workerName;
+    newEnv->workerEnv = mapEnv->workerEnv;
+
+    jk2_map_default_create(env, &newEnv->exactMatch, uriMap->pool);
+    jk2_map_default_create(env, &newEnv->prefixMatch, uriMap->pool);
+    jk2_map_default_create(env, &newEnv->suffixMatch, uriMap->pool);
+
+    return newEnv;
+}
+
+static int jk2_uriMap_createGlobals(jk_env_t *env, jk_uriMap_t *uriMap)
+{
+    int i, n;
+    jk_uriEnv_t *globalEnv;
+
+    if (uriMap->mbean->debug > 5) 
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "uriMap.init() creating global mappings\n");
+    globalEnv = uriMap->vhosts->get(env, uriMap->vhosts, "*");
+
+    n = uriMap->vhosts->size(env, uriMap->vhosts);
+    for (i = 0 ; i < n ; i++) {
+        jk_uriEnv_t *uriEnv = uriMap->vhosts->valueAt(env, uriMap->vhosts, i);
+        /* Duplicate globals for each vhost that has inheritGlobals set */
+        if (uriEnv != globalEnv && uriEnv->inherit_globals) {
+            int j, m;
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                         "uriMap.init() global for %s\n",
+                          uriEnv->name);
+            m = globalEnv->webapps->size(env, globalEnv->webapps);
+            for (j = 0; j < m; j++) {
+                jk_uriEnv_t *ctxEnv;
+                jk_uriEnv_t *appEnv;
+                int k, l;
+
+                ctxEnv = globalEnv->webapps->valueAt(env, globalEnv->webapps, j);
+                appEnv = uriEnv->webapps->get(env, uriEnv->webapps, ctxEnv->contextPath);
+
+                /* Create the webapp if it doesn't exists on the selected vhost */
+                if (!appEnv) {
+
+                    appEnv = jk2_uriMap_duplicateContext(env, uriMap, uriEnv, ctxEnv);
+                    uriEnv->webapps->put(env, uriEnv->webapps, appEnv->contextPath, appEnv, NULL);
+                    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                                  "uriMap.init() creating global webapp %s for %s\n",
+                                  appEnv->contextPath, uriEnv->name);
+                }
+                /* Fix the exact matches */
+                l = ctxEnv->exactMatch->size(env, ctxEnv->exactMatch);
+                for (k = 0; k < l; k++) {
+                    jk_uriEnv_t *mapEnv;
+                    jk_uriEnv_t *newEnv;
+                    
+                    mapEnv = ctxEnv->exactMatch->valueAt(env, ctxEnv->exactMatch, k);
+                    newEnv = appEnv->exactMatch->get(env, appEnv->exactMatch, mapEnv->uri);
+                    /* Create the new exact match uri */
+                    if (!newEnv) {
+                        newEnv = jk2_uriMap_duplicateUri(env, uriMap, uriEnv, mapEnv);
+                        appEnv->exactMatch->put(env, appEnv->exactMatch, newEnv->name, newEnv, NULL);
+                        
+                    }
+                }
+                /* Fix the prefix matches */
+                l = ctxEnv->prefixMatch->size(env, ctxEnv->prefixMatch);
+                for (k = 0; k < l; k++) {
+                    jk_uriEnv_t *mapEnv;
+                    jk_uriEnv_t *newEnv;
+                    
+                    mapEnv = ctxEnv->prefixMatch->valueAt(env, ctxEnv->prefixMatch, k);
+                    newEnv = appEnv->prefixMatch->get(env, appEnv->prefixMatch, mapEnv->uri);
+                    /* Create the new prefix match uri */
+                    if (!newEnv) {
+                        newEnv = jk2_uriMap_duplicateUri(env, uriMap, uriEnv, mapEnv);
+                        appEnv->prefixMatch->put(env, appEnv->prefixMatch, newEnv->name, newEnv, NULL);                        
+                    }
+                }
+                /* Fix the suffix matches */
+                l = ctxEnv->suffixMatch->size(env, ctxEnv->suffixMatch);
+                for (k = 0; k < l; k++) {
+                    jk_uriEnv_t *mapEnv;
+                    jk_uriEnv_t *newEnv;
+                    
+                    mapEnv = ctxEnv->suffixMatch->valueAt(env, ctxEnv->suffixMatch, k);
+                    newEnv = appEnv->suffixMatch->get(env, appEnv->suffixMatch, mapEnv->uri);
+                    /* Create the new suffix match uri */
+                    if (!newEnv) {
+                        newEnv = jk2_uriMap_duplicateUri(env, uriMap, uriEnv, mapEnv);
+                        appEnv->suffixMatch->put(env, appEnv->prefixMatch, newEnv->name, newEnv, NULL);                        
+                    }
+                }
+                uriEnv->webapps->put(env, uriEnv->webapps, 
+                                     appEnv->contextPath, appEnv, NULL);
+            }
+        }
+    }
+    return JK_OK;
+}
+
+static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
+{
+    int rc = JK_OK;
+    jk_workerEnv_t *workerEnv = uriMap->workerEnv;
+    jk_bean_t *mbean = env->getBean2(env, "uri", "*");
+
+    /* create the default server */
+    if (mbean == NULL) {
+        mbean = env->createBean2(env, workerEnv->pool,"uri", "*");
+        if (mbean == NULL || mbean->object == NULL) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "uriMap.factory() Fail to create default host\n");
+            return JK_ERR;
+        }
+    }
+
+    /* Create virtual hosts and initialize them */
+    jk2_uriMap_createHosts(env, uriMap);
+
+    /* Create webapps and initialize them */
+    jk2_uriMap_createWebapps(env, uriMap);
+
+    /* All other mappings are added in the right context leaf. */
+    if ((rc = jk2_uriMap_createMappings(env, uriMap)) != JK_OK)
+        return rc;
+
+    /* Fix the global mappings for virtual hosts */
+    rc = jk2_uriMap_createGlobals(env, uriMap);
+
     return rc;
 }
 
