@@ -1507,9 +1507,9 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
     /*     if(map_alloc(&init_map)) { */
     if( ! map_read_properties(init_map, conf->worker_file)) {
         if( map_size( init_map ) == 0 ) {
-            jk_error_exit(APLOG_MARK, APLOG_EMERG, s, 
-                          pconf, "No worker file and no worker options in httpd.conf \n"
-                          "use JkWorkerFile or JkWorker to set workers");
+            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, APLOG_EMERG, 
+                         NULL, "No worker file and no worker options in httpd.conf \n"
+                          "use JkWorkerFile to set workers\n");
             return;
         }
     }
