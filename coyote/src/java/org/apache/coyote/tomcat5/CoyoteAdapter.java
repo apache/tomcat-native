@@ -359,6 +359,9 @@ final class CoyoteAdapter
             }
             Cookie cookie = new Cookie(scookie.getName().toString(),
                                        scookie.getValue().toString());
+            cookie.setPath(scookie.getPath().toString());
+            cookie.setVersion(scookie.getVersion());
+            cookie.setDomain(scookie.getDomain().toString());
             cookies[i] = cookie;
         }
 
