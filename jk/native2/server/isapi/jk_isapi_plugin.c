@@ -270,7 +270,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 
                 rc = jk_requtil_unescapeUrl(uri);
                 jk_requtil_getParents(uri);
-
+                Host[0] = '\0';
                 if (pfc->GetServerVariable(pfc, SERVER_NAME, (LPVOID)Host, (LPDWORD)&szHost)){
                     if (szHost > 0) {
                         Host[szHost-1] = '\0';
@@ -283,6 +283,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     }
                 }
                 nPort = atoi(Port);
+                if (strlen(Host) > 1012 || nPort < 0 || nPort > 65535) {
+                    env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
+                        "HttpFilterProc [%s] contains invalid host or port value.\n", 
+                        uri);
+                    write_error_response(pfc,"400 Bad Request", HTML_ERROR_400);
+                    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+                    return SF_STATUS_REQ_FINISHED;
+                }
                 env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                             "In HttpFilterProc Virtual Host redirection of %s : %s\n", 
                             Host, Port);
@@ -578,6 +586,7 @@ static int init_jk(char *serverName)
         rc=(JK_OK == workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file ));
     }
     workerEnv->init(env,workerEnv);
+ 
     env->l->jkLog(env, env->l, JK_LOG_INFO, "Set serverRoot %s\n", server_root);
     if (using_ini_file) {
         env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using ini file %s.\n", ini_file_name);
