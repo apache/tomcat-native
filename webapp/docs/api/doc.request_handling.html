@@ -1,0 +1,946 @@
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
+    <title>WebApp Library - Packages List</title>
+  </head>
+  <body link="#0000ff" vlink="#0000ff" alink="#0000ff"
+        bgcolor="#ffffff" text="#000000">
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff">
+          <table border="0" width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td bgcolor="ccccff" align="left">
+                <font size="+1" face="arial,helvetica,sans serif">
+                  <b>WebApp Library</b>
+                </font>
+              </td>
+              <td bgcolor="ccccff" align="right">
+                <font size="+1" face="arial,helvetica,sans serif">
+                  <b>Request Handling package</b>
+                </font>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Classes</b>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <dl>
+            <dt>
+              <font face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_handler">struct wa_handler</a></nobr>
+              </font>
+            </dt>
+
+          </dl>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <dl>
+            <dt>
+              <font face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_hostdata">struct wa_hostdata</a></nobr>
+              </font>
+            </dt>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_hostdata-addr">    char *addr</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_hostdata-host">    char *host</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_hostdata-port">    int port</a></nobr>
+              </font>
+            </dd>
+
+          </dl>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <dl>
+            <dt>
+              <font face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request">struct wa_request</a></nobr>
+              </font>
+            </dt>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-args">    char *args</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-auth">    char *auth</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-clen">    long clen</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-clnt">    wa_hostdata *clnt</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-data">    void *data</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-hand">    wa_handler *hand</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-hdrs">    apr_table_t *hdrs</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-meth">    char *meth</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-pool">    apr_pool_t *pool</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-prot">    char *prot</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-rlen">    long rlen</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-ruri">    char *ruri</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-schm">    char *schm</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-serv">    wa_hostdata *serv</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.request_handling.html#wa_request-user">    char *user</a></nobr>
+              </font>
+            </dd>
+
+          </dl>
+        </td>
+      </tr>
+
+    </table>
+    <br>
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Global Functions</b>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.request_handling.html#wa_ralloc">const char *wa_ralloc(wa_request **r, wa_handler *h, void *d)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.request_handling.html#wa_rerror">int wa_rerror(wa_request *r, int s, const char *fmt, ...)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.request_handling.html#wa_rfree">const char *wa_rfree(wa_request *r)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.request_handling.html#wa_rinvoke">int wa_rinvoke(wa_request *r, wa_application *a)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+    </table>
+    <br>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <a name="wa_handler">
+              <b>Class &quot;wa_handler&quot; Detail:</b>
+            </a>
+          </font>
+        </td>
+      </tr>
+    </table>
+      <font size="+1" face="arial,helvetica,sans serif">
+        <b>wa_handler</b>
+      </font>
+    <dl>
+      <dt><code>struct wa_handler {</code></dt>
+
+      <dt><code>};</code></dt>
+    </dl>
+    <p>
+      <font face="arial,helvetica,sans serif">
+        The webserver request handler callback structure.
+      </font>
+    </p>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <a name="wa_hostdata">
+              <b>Class &quot;wa_hostdata&quot; Detail:</b>
+            </a>
+          </font>
+        </td>
+      </tr>
+    </table>
+      <font size="+1" face="arial,helvetica,sans serif">
+        <b>wa_hostdata</b>
+      </font>
+    <dl>
+      <dt><code>struct wa_hostdata {</code></dt>
+
+      <dd><code>    char *addr;</code></dd>
+
+      <dd><code>    char *host;</code></dd>
+
+      <dd><code>    int port;</code></dd>
+
+      <dt><code>};</code></dt>
+    </dl>
+    <p>
+      <font face="arial,helvetica,sans serif">
+        The host description structure.
+      </font>
+    </p>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Class &quot;wa_hostdata&quot; Variables:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_hostdata-addr">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>addr</b>
+    </font>
+    <dl>
+      <dt><code>    char *addr;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The host address (as a string - no worries about IPv6)
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_hostdata-host">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>host</b>
+    </font>
+    <dl>
+      <dt><code>    char *host;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The host name.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_hostdata-port">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>port</b>
+    </font>
+    <dl>
+      <dt><code>    int port;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The port number.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <a name="wa_request">
+              <b>Class &quot;wa_request&quot; Detail:</b>
+            </a>
+          </font>
+        </td>
+      </tr>
+    </table>
+      <font size="+1" face="arial,helvetica,sans serif">
+        <b>wa_request</b>
+      </font>
+    <dl>
+      <dt><code>struct wa_request {</code></dt>
+
+      <dd><code>    char *args;</code></dd>
+
+      <dd><code>    char *auth;</code></dd>
+
+      <dd><code>    long clen;</code></dd>
+
+      <dd><code>    wa_hostdata *clnt;</code></dd>
+
+      <dd><code>    void *data;</code></dd>
+
+      <dd><code>    wa_handler *hand;</code></dd>
+
+      <dd><code>    apr_table_t *hdrs;</code></dd>
+
+      <dd><code>    char *meth;</code></dd>
+
+      <dd><code>    apr_pool_t *pool;</code></dd>
+
+      <dd><code>    char *prot;</code></dd>
+
+      <dd><code>    long rlen;</code></dd>
+
+      <dd><code>    char *ruri;</code></dd>
+
+      <dd><code>    char *schm;</code></dd>
+
+      <dd><code>    wa_hostdata *serv;</code></dd>
+
+      <dd><code>    char *user;</code></dd>
+
+      <dt><code>};</code></dt>
+    </dl>
+    <p>
+      <font face="arial,helvetica,sans serif">
+        The WebApp Library HTTP request structure.
+<br>
+This structure encapsulates an HTTP request to be handled within the scope
+of one of the configured applications.
+      </font>
+    </p>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Class &quot;wa_request&quot; Variables:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_request-args">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>args</b>
+    </font>
+    <dl>
+      <dt><code>    char *args;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The URL-encoded list of HTTP query arguments from the request.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-auth">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>auth</b>
+    </font>
+    <dl>
+      <dt><code>    char *auth;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The authentication method or <b>NULL</b>.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-clen">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>clen</b>
+    </font>
+    <dl>
+      <dt><code>    long clen;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The content length of this request.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-clnt">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>clnt</b>
+    </font>
+    <dl>
+      <dt><code>    wa_hostdata *clnt;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The client host data.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-data">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>data</b>
+    </font>
+    <dl>
+      <dt><code>    void *data;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The web-server specific callback data.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-hand">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>hand</b>
+    </font>
+    <dl>
+      <dt><code>    wa_handler *hand;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The request handler structure associated with this request.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-hdrs">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>hdrs</b>
+    </font>
+    <dl>
+      <dt><code>    apr_table_t *hdrs;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The current headers table.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-meth">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>meth</b>
+    </font>
+    <dl>
+      <dt><code>    char *meth;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The HTTP method (ex. GET, POST...).
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-pool">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>pool</b>
+    </font>
+    <dl>
+      <dt><code>    apr_pool_t *pool;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The APR memory pool where this request is allocated.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-prot">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>prot</b>
+    </font>
+    <dl>
+      <dt><code>    char *prot;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The HTTP protocol name and version (ex. HTTP/1.0, HTTP/1.1...).
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-rlen">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>rlen</b>
+    </font>
+    <dl>
+      <dt><code>    long rlen;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The number of bytes read out of this request body.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-ruri">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>ruri</b>
+    </font>
+    <dl>
+      <dt><code>    char *ruri;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The HTTP request URI (ex. /webapp/index.html).
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-schm">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>schm</b>
+    </font>
+    <dl>
+      <dt><code>    char *schm;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The HTTP request URL scheme (the part before ://, ex http, https).
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-serv">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>serv</b>
+    </font>
+    <dl>
+      <dt><code>    wa_hostdata *serv;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The server host data.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_request-user">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>user</b>
+    </font>
+    <dl>
+      <dt><code>    char *user;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The remote user name or <b>NULL</b>.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <b>Global Functions Detail:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_ralloc">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_ralloc</b>
+    </font>
+    <dl>
+      <dt><code>const char *wa_ralloc(wa_request **r, wa_handler *h, void *d);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Allocate a new request structure.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Parameters</b>
+            </font>
+          </dt>
+
+          <dd>
+            <code>r</code> -
+            <font face="arial,helvetica,sans serif">
+              A pointer to where the newly allocated <code>wa_request</code>
+         structure must be allocated.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>h</code> -
+            <font face="arial,helvetica,sans serif">
+              The web-server specific handler for this request.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>d</code> -
+            <font face="arial,helvetica,sans serif">
+              The web-server specific data for this request.
+            </font>
+          </dd>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              An error message on faliure or <b>NULL</b>.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_rerror">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_rerror</b>
+    </font>
+    <dl>
+      <dt><code>int wa_rerror(wa_request *r, int s, const char *fmt, ...);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Report an HTTP error to the client.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Parameters</b>
+            </font>
+          </dt>
+
+          <dd>
+            <code>r</code> -
+            <font face="arial,helvetica,sans serif">
+              The WebApp Library request structure.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>s</code> -
+            <font face="arial,helvetica,sans serif">
+              The HTTP response status number.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>fmt</code> -
+            <font face="arial,helvetica,sans serif">
+              The message format string (printf style).
+... The parameters to the format string.
+            </font>
+          </dd>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              The HTTP result code of this operation.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_rfree">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_rfree</b>
+    </font>
+    <dl>
+      <dt><code>const char *wa_rfree(wa_request *r);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Clean up and free the memory used by a request structure.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Parameters</b>
+            </font>
+          </dt>
+
+          <dd>
+            <code>r</code> -
+            <font face="arial,helvetica,sans serif">
+              The request structure to destroy.
+            </font>
+          </dd>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              An error message on faliure or <b>NULL</b>.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_rinvoke">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_rinvoke</b>
+    </font>
+    <dl>
+      <dt><code>int wa_rinvoke(wa_request *r, wa_application *a);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Invoke a request in a web application.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Parameters</b>
+            </font>
+          </dt>
+
+          <dd>
+            <code>r</code> -
+            <font face="arial,helvetica,sans serif">
+              The WebApp Library request structure.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>a</code> -
+            <font face="arial,helvetica,sans serif">
+              The application to which this request needs to be forwarded.
+            </font>
+          </dd>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              The HTTP result code of this operation.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <font size="-2" face="arial,helvetica,sans serif">
+      <div align="center">
+        Copyright &copy; 2001, The Apache Software Foundation.<br>
+        All Rights Reserved.<br>
+        Generated with <a href="http://scandoc.sourceforge.net/">ScanDoc
+        0.12</a> on Thu May 10  7:37:11 2001
+
+      </div>
+    </font>
+  </body>
+</html>
