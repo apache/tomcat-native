@@ -678,7 +678,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN);
 
     if(rc < 0) {
-        jk_log(l, JK_LOG_ERROR, "ERROR: can't receive the response message from tomcat, network problems or tomcat is down.\n");
+        jk_log(l, JK_LOG_ERROR, "ERROR: can't receive the response message from tomcat, network problems or tomcat is down. err=%d\n", rc);
         return JK_FALSE;
     }
 
@@ -721,7 +721,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
 
     rc = jk_tcp_socket_recvfull(ae->sd, jk_b_get_buff(msg), msglen);
     if(rc < 0) {
-        jk_log(l, JK_LOG_ERROR, "ERROR: can't receive the response message from tomcat, network problems or tomcat is down\n");
+        jk_log(l, JK_LOG_ERROR, "ERROR: can't receive the response message from tomcat, network problems or tomcat is down %d\n", rc);
         return JK_FALSE;
     }
 
@@ -975,26 +975,27 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
 
         case JK_AJP13_GET_BODY_CHUNK:
             {
-        int len = (int)jk_b_get_int(msg);
+                int len = (int)jk_b_get_int(msg);
 
+                if(len < 0) {
+                    len = 0;
+                }
                 if(len > AJP13_MAX_SEND_BODY_SZ) {
                     len = AJP13_MAX_SEND_BODY_SZ;
                 }
-                if(len > ae->left_bytes_to_send) {
+                if((unsigned int)len > ae->left_bytes_to_send) {
                     len = ae->left_bytes_to_send;
                 }
-        if(len < 0) {
-            len = 0;
-        }
 
-        /* the right place to add file storage for upload */
-        if ((len = ajp_read_into_msg_buff(ae, r, pmsg, len, l)) >= 0) {
-            r->content_read += len;
-            return JK_AJP13_HAS_RESPONSE;
-        }                  
+                /* the right place to add file storage for upload */
+                if ((len = ajp_read_into_msg_buff(ae, r, pmsg, len, l)) >= 0) {
+                    r->content_read += len;
+                    return JK_AJP13_HAS_RESPONSE;
+                }                  
 
-        jk_log(l, JK_LOG_ERROR, "ERROR reading POST data from client. Connection aborted or network problems\n");
-        return JK_INTERNAL_ERROR;       
+                jk_log(l, JK_LOG_ERROR, "ERROR reading POST data from client. "
+                                        "Connection aborted or network problems\n");
+                return JK_INTERNAL_ERROR;       
             }
         break;
 
