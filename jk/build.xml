@@ -1,6 +1,6 @@
 <project name="jk" default="build-main" basedir=".">
 
-    <!-- ===================== Initialize Property Values =================== -->
+    <!-- ===================== Initialize Property Values ================ -->
     <property file="build.properties"/>
     <property file="${user.home}/build.properties"/>
 
@@ -42,6 +42,7 @@
 	       verbose="off"
 	       excludes="**/CVS/**">
 	    <exclude name="org/apache/ajp/tomcat4/**" if="tomcat4.skip"/>
+	    <exclude name="org/apache/ajp/tomcat33/**" />
 	    <classpath refid="build-main.classpath"/>
 	</javac>
 

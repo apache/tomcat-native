@@ -57,7 +57,7 @@
  *
  */
 
-package org.apache.ajp;
+package org.apache.ajp.tomcat33;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -66,9 +66,10 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Enumeration;
 
-import org.apache.tomcat.util.buf.MessageBytes;
-import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.core.*;
+import org.apache.tomcat.util.*;
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.HttpMessages;
 
 /**
@@ -79,7 +80,7 @@ import org.apache.tomcat.util.http.HttpMessages;
  * at a time.<P>
  *
  * This class contains knowledge about how an individual packet is laid out
- * (via the <CODE>Ajp13Packet</CODE> class), and also about the
+ * (via the internal <CODE>Ajp13Packet</CODE> class), and also about the
  * stages of communicaton between the server and the servlet container.  It
  * translates from Tomcat's internal servlet support methods
  * (e.g. doWrite) to the correct packets to send to the web server.
@@ -88,10 +89,9 @@ import org.apache.tomcat.util.http.HttpMessages;
  *
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
- * @author Kevin Seguin [seguin@apache.org]
  */
-public class Ajp13 {
-
+public class Ajp13
+{
     public static final int MAX_PACKET_SIZE=8192;
     public static final int H_SIZE=4;  // Size of basic packet header
 
@@ -156,24 +156,8 @@ public class Ajp13 {
         "UNLOCK",
         "ACL"
     };
-
-    // id's for common request headers
-    public static final int SC_REQ_ACCEPT          = 1;
-    public static final int SC_REQ_ACCEPT_CHARSET  = 2;
-    public static final int SC_REQ_ACCEPT_ENCODING = 3;
-    public static final int SC_REQ_ACCEPT_LANGUAGE = 4;
-    public static final int SC_REQ_AUTHORIZATION   = 5;
-    public static final int SC_REQ_CONNECTION      = 6;
-    public static final int SC_REQ_CONTENT_TYPE    = 7;
-    public static final int SC_REQ_CONTENT_LENGTH  = 8;
-    public static final int SC_REQ_COOKIE          = 9;
-    public static final int SC_REQ_COOKIE2         = 10;
-    public static final int SC_REQ_HOST            = 11;
-    public static final int SC_REQ_PRAGMA          = 12;
-    public static final int SC_REQ_REFERER         = 13;
-    public static final int SC_REQ_USER_AGENT      = 14;
     
-    // Translates integer codes to request header names    
+    // Translates integer codes to request header names
     public static final String []headerTransArray = {
         "accept",
         "accept-charset",
@@ -198,10 +182,11 @@ public class Ajp13 {
     InputStream in;
 
     // Buffer used of output body and headers
-    Ajp13Packet outBuf = new Ajp13Packet( MAX_PACKET_SIZE );
+    OutputBuffer headersWriter=new OutputBuffer(MAX_PACKET_SIZE);
+    Ajp13Packet outBuf = new Ajp13Packet( headersWriter );
     // Buffer used for input body
     Ajp13Packet inBuf  = new Ajp13Packet( MAX_PACKET_SIZE );
-    // Buffer used for request head ( and headers )
+    // Boffer used for request head ( and headers )
     Ajp13Packet hBuf=new Ajp13Packet( MAX_PACKET_SIZE );
     
     // Holds incoming reads of request body data (*not* header data)
@@ -210,44 +195,23 @@ public class Ajp13 {
     int blen;  // Length of current chunk of body data in buffer
     int pos;   // Current read position within that buffer
 
-    private int debug = 10;
-
-    /**
-     * XXX place holder...
-     */
-    Logger logger = new Logger();
-    class Logger {
-        void log(String msg) {
-            System.out.println("[Ajp13] " + msg);
-        }
-        
-        void log(String msg, Throwable t) {
-            System.out.println("[Ajp13] " + msg);
-            t.printStackTrace(System.out);
-        }
+    public Ajp13() 
+    {
+        super();
     }
 
-    public Ajp13() {
-    }
-    
-    public void recycle() {
-        if (debug > 0) {
-            logger.log("recycle()");
-        }
-
-        // This is a touch cargo-cultish, but I think wise.
-        blen = 0; 
-        pos = 0;
+    public void recycle() 
+    {
+      // This is a touch cargo-cultish, but I think wise.
+      blen = 0; 
+      pos = 0;
+      headersWriter.recycle();
     }
     
     /**
      * Associate an open socket with this instance.
      */
     public void setSocket( Socket socket ) throws IOException {
-        if (debug > 0) {
-            logger.log("setSocket()");
-        }
-        
 	socket.setSoLinger( true, 100);
 	out = socket.getOutputStream();
 	in  = socket.getInputStream();
@@ -256,7 +220,7 @@ public class Ajp13 {
 
     /**
      * Read a new packet from the web server and decode it.  If it's a
-     * forwarded request, store its properties in the passed-in AjpRequest
+     * forwarded request, store its properties in the passed-in Request
      * object.
      *
      * @param req An empty (newly-recycled) request object.
@@ -265,11 +229,8 @@ public class Ajp13 {
      * if there were errors in the reading of the request, and -2 if the
      * server is asking the container to shut itself down.  
      */
-    public int receiveNextRequest(AjpRequest req) throws IOException {
-        if (debug > 0) {
-            logger.log("receiveNextRequest()");
-        }
-        
+    public int receiveNextRequest(Request req) throws IOException 
+    {
 	// XXX The return values are awful.
 
 	int err = receive(hBuf);
@@ -300,33 +261,28 @@ public class Ajp13 {
      *
      * @return 200 in case of a successful decoduing, 500 in case of error.  
      */
-    private int decodeRequest(AjpRequest req, Ajp13Packet msg)
-        throws IOException {
-        
-        if (debug > 0) {
-            logger.log("decodeRequest()");
-        }
-
+    private int decodeRequest( Request req, Ajp13Packet msg ) throws IOException
+    {
 	// XXX Awful return values
 
         boolean isSSL = false;
 
         // Translate the HTTP method code to a String.
         byte methodCode = msg.getByte();
-        req.method.setString( methodTransArray[(int)methodCode - 1] );
+        req.method().setString( methodTransArray[(int)methodCode - 1] );
 
-        msg.getMessageBytes(req.protocol); 
-        msg.getMessageBytes(req.requestURI);
+        msg.getMessageBytes( req.protocol()); 
+        msg.getMessageBytes( req.requestURI());
 
-        msg.getMessageBytes(req.remoteAddr);
-        msg.getMessageBytes(req.remoteHost);
-        msg.getMessageBytes(req.serverName);
-        req.serverPort = msg.getInt();
+        msg.getMessageBytes( req.remoteAddr());
+        msg.getMessageBytes( req.remoteHost());
+        msg.getMessageBytes( req.serverName());
+        req.setServerPort( msg.getInt());
 
 	isSSL = msg.getBool();
 
 	// Decode headers
-	MimeHeaders headers = req.headers;
+	MimeHeaders headers = req.getMimeHeaders();
 	int hCount = msg.getInt();
         for(int i = 0 ; i < hCount ; i++) {
             String hName = null;
@@ -349,17 +305,7 @@ public class Ajp13 {
 		if( vMB==null) return 500; // wrong packet
             }
 
-            msg.getMessageBytes(vMB);
-
-            // set content length, if this is it...
-            if (hId == SC_REQ_CONTENT_LENGTH) {
-                req.contentLength = (vMB == null) ? -1 : vMB.getInt();
-            } else if (hId == SC_REQ_CONTENT_TYPE) {
-                ByteChunk bchunk = vMB.getByteChunk();
-                req.contentType.setBytes(bchunk.getBytes(),
-                                         bchunk.getOffset(),
-                                         bchunk.getLength());
-            }
+            msg.getMessageBytes( vMB ); 
         }
 
 	byte attributeCode;
@@ -368,25 +314,27 @@ public class Ajp13 {
             attributeCode = msg.getByte()) {
             switch(attributeCode) {
 	    case SC_A_CONTEXT      :
+		//		contextPath = msg.getString();
                 break;
 		
 	    case SC_A_SERVLET_PATH :
+		//log("SC_A_SERVLET_PATH not in use " + msg.getString());
                 break;
 		
 	    case SC_A_REMOTE_USER  :
-                msg.getMessageBytes(req.remoteUser);
+		req.setRemoteUser( msg.getString());
                 break;
 		
 	    case SC_A_AUTH_TYPE    :
-                msg.getMessageBytes(req.authType);
+		req.setAuthType( msg.getString());
                 break;
 		
 	    case SC_A_QUERY_STRING :
-		msg.getMessageBytes(req.queryString);
+		msg.getMessageBytes( req.queryString());
                 break;
 		
 	    case SC_A_JVM_ROUTE    :
-                msg.getMessageBytes(req.jvmRoute);
+		req.setJvmRoute(msg.getString());
                 break;
 		
 	    case SC_A_SSL_CERT     :
@@ -418,17 +366,15 @@ public class Ajp13 {
         }
 
         if(isSSL) {
-            req.scheme = req.SCHEME_HTTPS;
-            req.secure = true;
+            req.scheme().setString("https");
         }
-
-        // set cookies on request now that we have all headers
-        req.cookies.setHeaders(req.headers);
 
 	// Check to see if there should be a body packet coming along
 	// immediately after
-    	if(req.contentLength > 0) {
-
+	MessageBytes clB=headers.getValue("content-length");
+        int contentLength = (clB==null) ? -1 : clB.getInt();
+    	if(contentLength > 0) {
+	    req.setContentLength( contentLength );
 	    /* Read present data */
 	    int err = receive(inBuf);
             if(err < 0) {
@@ -440,39 +386,18 @@ public class Ajp13 {
 	    inBuf.getBytes(bodyBuff);
     	}
     
-        if (debug > 5) {
-            logger.log(req.toString());
-        }
-
         return 200; // Success
     }
 
     // ==================== Servlet Input Support =================
-
-    public int available() throws IOException {
-        if (debug > 0) {
-            logger.log("available()");
-        }
-
-        if (pos >= blen) {
-            if( ! refillReadBuffer()) {
-		return 0;
-	    }
-        }
-        return blen - pos;
-    }
-
+    
     /**
      * Return the next byte of request body data (to a servlet).
      *
-     * @see Request#doRead
+     * @see Ajp13Request#doRead
      */
     public int doRead() throws IOException 
     {
-        if (debug > 0) {
-            logger.log("doRead()");
-        }
-
         if(pos >= blen) {
             if( ! refillReadBuffer()) {
 		return -1;
@@ -491,14 +416,10 @@ public class Ajp13 {
      * @return The number of bytes actually copied into the buffer, or -1
      * if the end of the stream has been reached.
      *
-     * @see Request#doRead
+     * @see Ajp13Request#doRead
      */
     public int doRead(byte[] b, int off, int len) throws IOException 
     {
-        if (debug > 0) {
-            logger.log("doRead(byte[], int, int)");
-        }
-
 	if(pos >= blen) {
 	    if( ! refillReadBuffer()) {
 		return -1;
@@ -544,10 +465,6 @@ public class Ajp13 {
      */
     private boolean refillReadBuffer() throws IOException 
     {
-        if (debug > 0) {
-            logger.log("refillReadBuffer()");
-        }
-
 	// If the server returns an empty packet, assume that that end of
 	// the stream has been reached (yuck -- fix protocol??).
 
@@ -572,75 +489,20 @@ public class Ajp13 {
     // ==================== Servlet Output Support =================
     
     /**
-     */
-    public void beginSendHeaders(int status,
-                                 String statusMessage,
-                                 int numHeaders) throws IOException {
-
-        if (debug > 0) {
-            logger.log("sendHeaders()");
-        }
-
-	// XXX if more headers that MAX_SIZE, send 2 packets!
-
-	outBuf.reset();
-        outBuf.appendByte(JK_AJP13_SEND_HEADERS);
-
-        if (debug > 0) {
-            logger.log("status is:  " + status +
-                       "(" + statusMessage + ")");
-        }
-
-        // set status code and message
-        outBuf.appendInt(status);
-        outBuf.appendString(statusMessage);
-
-        // write the number of headers...
-        outBuf.appendInt(numHeaders);
-    }
-
-    public void sendHeader(String name, String value) throws IOException {
-        int sc = headerNameToSc(name);
-        if(-1 != sc) {
-            outBuf.appendInt(sc);
-        } else {
-            outBuf.appendString(name);
-        }
-        outBuf.appendString(value);
-    }
-
-    public void endSendHeaders() throws IOException {
-        outBuf.end();
-        send(outBuf);
-    }
-
-    /**
      * Send the HTTP headers back to the web server and on to the browser.
      *
      * @param status The HTTP status code to send.
      * @param headers The set of all headers.
      */
-    public void sendHeaders(int status, MimeHeaders headers)
-        throws IOException {
-        sendHeaders(status, HttpMessages.getMessage(status), headers);
-    }
-
-    /**
-     * Send the HTTP headers back to the web server and on to the browser.
-     *
-     * @param status The HTTP status code to send.
-     * @param statusMessage the HTTP status message to send.
-     * @param headers The set of all headers.
-     */
-    public void sendHeaders(int status, String statusMessage, MimeHeaders headers)
-        throws IOException {
+    public void sendHeaders(int status, MimeHeaders headers) throws IOException 
+    {
 	// XXX if more headers that MAX_SIZE, send 2 packets!
 
 	outBuf.reset();
         outBuf.appendByte(JK_AJP13_SEND_HEADERS);
         outBuf.appendInt(status);
 	
-	outBuf.appendString(statusMessage);
+	outBuf.appendString(HttpMessages.getMessage( status ));
         
 	int numHeaders = headers.size();
         outBuf.appendInt(numHeaders);
@@ -685,7 +547,7 @@ public class Ajp13 {
 	case 'd':
 	case 'D':
 	    if(name.equalsIgnoreCase("Date")) {
-                return SC_RESP_DATE;
+                    return SC_RESP_DATE;
 	    }
             break;
             
@@ -722,11 +584,8 @@ public class Ajp13 {
      * Signal the web server that the servlet has finished handling this
      * request, and that the connection can be reused.
      */
-    public void finish() throws IOException {
-        if (debug > 0) {
-            logger.log("finish()");
-        }
-
+    public void finish() throws IOException 
+    {
 	outBuf.reset();
         outBuf.appendByte(JK_AJP13_END_RESPONSE);
         outBuf.appendBool(true); // Reuse this connection
@@ -742,11 +601,8 @@ public class Ajp13 {
      * @param off The offset into the buffer from which to start sending.
      * @param len The number of bytes to send.
      */    
-    public void doWrite(byte b[], int off, int len) throws IOException {
-        if (debug > 0) {
-            logger.log("doWrite(byte[], " + off + ", " + len + ")");
-        }
-
+    public void doWrite(  byte b[], int off, int len) throws IOException 
+    {
 	int sent = 0;
 	while(sent < len) {
 	    int to_send = len - sent;
@@ -774,10 +630,6 @@ public class Ajp13 {
      * was an error.
      **/
     private int receive(Ajp13Packet msg) throws IOException {
-        if (debug > 0) {
-            logger.log("receive()");
-        }
-
 	// XXX If the length in the packet header doesn't agree with the
 	// actual number of bytes read, it should probably return an error
 	// value.  Also, callers of this method never use the length
@@ -786,12 +638,10 @@ public class Ajp13 {
 	
 	int rd = in.read( b, 0, H_SIZE );
 	if(rd <= 0) {
-            logger.log("bad read: " + rd);
 	    return rd;
 	}
 	
 	int len = msg.checkIn();
-        logger.log("receive:  len = " + len);
 	
 	// XXX check if enough space - it's assert()-ed !!!
 
@@ -806,8 +656,6 @@ public class Ajp13 {
 	    }
      	    total_read += rd;
 	}
-
-        logger.log("receive:  total read = " + total_read);
 	return total_read;
     }
 
@@ -818,18 +666,9 @@ public class Ajp13 {
      * this method will write out the length in the header.  
      */
     private void send( Ajp13Packet msg ) throws IOException {
-        if (debug > 0) {
-            logger.log("send()");
-        }
-
 	msg.end(); // Write the packet header
 	byte b[] = msg.getBuff();
 	int len  = msg.getLen();
-
-        if (debug > 0) {
-            logger.log("sending msg, len = " + len);
-        }
-
 	out.write( b, 0, len );
     }
 	
@@ -841,15 +680,338 @@ public class Ajp13 {
      * @see Ajp13Interceptor#processConnection
      */
     public void close() throws IOException {
-        if (debug > 0) {
-            logger.log("close()");
-        }
-
 	if(null != out) {        
 	    out.close();
 	}
 	if(null !=in) {
 	    in.close();
+	}
+    }
+
+    /**
+     * A single packet for communication between the web server and the
+     * container.  Designed to be reused many times with no creation of
+     * garbage.  Understands the format of data types for these packets.
+     * Can be used (somewhat confusingly) for both incoming and outgoing
+     * packets.  
+     */
+    public static class Ajp13Packet {
+	byte buff[]; // Holds the bytes of the packet
+	int pos;     // The current read or write position in the buffer
+	OutputBuffer ob;
+
+	int len; 
+	// This actually means different things depending on whether the
+	// packet is read or write.  For read, it's the length of the
+	// payload (excluding the header).  For write, it's the length of
+	// the packet as a whole (counting the header).  Oh, well.
+
+	/**
+	 * Create a new packet with an internal buffer of given size.
+	 */
+	public Ajp13Packet( int size ) {
+	    buff = new byte[size];
+	}
+
+	public Ajp13Packet( byte b[] ) {
+	    buff = b;
+	}
+
+	public Ajp13Packet( OutputBuffer ob ) {
+	    this.ob=ob;
+	    buff=ob.getBuffer();
+	}
+	
+	public byte[] getBuff() {
+	    return buff;
+	}
+	
+	public int getLen() {
+	    return len;
+	}
+	
+	public int getByteOff() {
+	    return pos;
+	}
+
+	public void setByteOff(int c) {
+	    pos=c;
+	}
+
+	/** 
+	 * Parse the packet header for a packet sent from the web server to
+	 * the container.  Set the read position to immediately after
+	 * the header.
+	 *
+	 * @return The length of the packet payload, as encoded in the
+	 * header, or -1 if the packet doesn't have a valid header.  
+	 */
+	public int checkIn() {
+	    pos = 0;
+	    int mark = getInt();
+	    len      = getInt();
+	    
+	    if( mark != 0x1234 ) {
+		// XXX Logging
+		System.out.println("BAD packet " + mark);
+		dump( "In: " );
+		return -1;
+	    }
+	    return len;
+	}
+	
+	/**
+	 * Prepare this packet for accumulating a message from the container to
+	 * the web server.  Set the write position to just after the header
+	 * (but leave the length unwritten, because it is as yet unknown).  
+	 */
+	public void reset() {
+	    len = 4;
+	    pos = 4;
+	    buff[0] = (byte)'A';
+	    buff[1] = (byte)'B';
+	}
+	
+	/**
+	 * For a packet to be sent to the web server, finish the process of
+	 * accumulating data and write the length of the data payload into
+	 * the header.  
+	 */
+	public void end() {
+	    len = pos;
+	    setInt( 2, len-4 );
+	}
+	
+	// ============ Data Writing Methods ===================
+
+	/**
+	 * Write an integer at an arbitrary position in the packet, but don't
+	 * change the write position.
+	 *
+	 * @param bpos The 0-indexed position within the buffer at which to
+	 * write the integer (where 0 is the beginning of the header).
+	 * @param val The integer to write.
+	 */
+	private void setInt( int bPos, int val ) {
+	    buff[bPos]   = (byte) ((val >>>  8) & 0xFF);
+	    buff[bPos+1] = (byte) (val & 0xFF);
+	}
+
+	public void appendInt( int val ) {
+	    setInt( pos, val );
+	    pos += 2;
+	}
+	
+	public void appendByte( byte val ) {
+	    buff[pos++] = val;
+	}
+	
+	public void appendBool( boolean val) {
+	    buff[pos++] = (byte) (val ? 1 : 0);
+	}
+
+	/**
+	 * Write a String out at the current write position.  Strings are
+	 * encoded with the length in two bytes first, then the string, and
+	 * then a terminating \0 (which is <B>not</B> included in the
+	 * encoded length).  The terminator is for the convenience of the C
+	 * code, where it saves a round of copying.  A null string is
+	 * encoded as a string with length 0.  
+	 */
+	public void appendString( String str ) {
+	    // Dual use of the buffer - as Ajp13Packet and as OutputBuffer
+	    // The idea is simple - fewer buffers, smaller footprint and less
+	    // memcpy. The code is a bit tricky, but only local to this
+	    // function.
+	    if(str == null) {
+		setInt( pos, 0);
+		buff[pos + 2] = 0;
+		pos += 3;
+		return;
+	    }
+
+	    int strStart=pos;
+
+	    // This replaces the old ( buggy and slow ) str.length()
+	    // and str.getBytes(). str.length() is chars, may be != bytes
+	    // and getBytes is _very_ slow.
+	    // XXX setEncoding !!!
+	    ob.setByteOff( pos+2 ); 
+	    try {
+		ob.write( str );
+		ob.flushChars();
+	    } catch( IOException ex ) {
+		ex.printStackTrace();
+	    }
+	    int strEnd=ob.getByteOff();
+		
+	    buff[strEnd]=0; // The \0 terminator
+	    int strLen=strEnd-strStart;
+	    setInt( pos, strEnd - strStart );
+	    pos += strLen + 3; 
+	}
+
+	/** 
+	 * Copy a chunk of bytes into the packet, starting at the current
+	 * write position.  The chunk of bytes is encoded with the length
+	 * in two bytes first, then the data itself, and finally a
+	 * terminating \0 (which is <B>not</B> included in the encoded
+	 * length).
+	 *
+	 * @param b The array from which to copy bytes.
+	 * @param off The offset into the array at which to start copying
+	 * @param len The number of bytes to copy.  
+	 */
+	public void appendBytes( byte b[], int off, int numBytes ) {
+	    appendInt( numBytes );
+	    if( pos + numBytes > buff.length ) {
+		System.out.println("Buffer overflow " + buff.length + " " + pos + " " + numBytes );
+		// XXX Log
+	    }
+	    System.arraycopy( b, off, buff, pos, numBytes);
+	    buff[pos + numBytes] = 0; // Terminating \0
+	    pos += numBytes + 1;
+	}
+
+	
+	// ============ Data Reading Methods ===================
+
+	/**
+	 * Read an integer from packet, and advance the read position past
+	 * it.  Integers are encoded as two unsigned bytes with the
+	 * high-order byte first, and, as far as I can tell, in
+	 * little-endian order within each byte.  
+	 */
+	public int getInt() {
+	    int result = peekInt();
+	    pos += 2;
+	    return result;
+	}
+
+	/**
+	 * Read an integer from the packet, but don't advance the read
+	 * position past it.  
+	 */
+	public int peekInt() {
+	    int b1 = buff[pos] & 0xFF;  // No swap, Java order
+	    int b2 = buff[pos + 1] & 0xFF;
+
+	    return  (b1<<8) + b2;
+	}
+
+	public byte getByte() {
+	    byte res = buff[pos];
+	    pos++;
+	    return res;
+	}
+
+	public byte peekByte() {
+	    return buff[pos];
+	}
+
+	public boolean getBool() {
+	    return (getByte() == (byte) 1);
+	}
+
+	public static final String DEFAULT_CHAR_ENCODING = "8859_1";
+
+	public void getMessageBytes( MessageBytes mb ) {
+	    int length = getInt();
+	    if( (length == 0xFFFF) || (length == -1) ) {
+		mb.setString( null );
+		return;
+	    }
+	    mb.setBytes( buff, pos, length );
+	    pos += length;
+	    pos++; // Skip the terminating \0
+	}
+
+	public MessageBytes addHeader( MimeHeaders headers ) {
+	    int length = getInt();
+	    if( (length == 0xFFFF) || (length == -1) ) {
+		return null;
+	    }
+	    MessageBytes vMB=headers.addValue( buff, pos, length );
+	    pos += length;
+	    pos++; // Skip the terminating \0
+	    
+	    return vMB;
+	}
+	
+	/**
+	 * Read a String from the packet, and advance the read position
+	 * past it.  See appendString for details on string encoding.
+	 **/
+	public String getString() throws java.io.UnsupportedEncodingException {
+	    int length = getInt();
+	    if( (length == 0xFFFF) || (length == -1) ) {
+		//	    System.out.println("null string " + length);
+		return null;
+	    }
+	    String s = new String( buff, pos, length, DEFAULT_CHAR_ENCODING );
+
+	    pos += length;
+	    pos++; // Skip the terminating \0
+	    return s;
+	}
+
+	/**
+	 * Copy a chunk of bytes from the packet into an array and advance
+	 * the read position past the chunk.  See appendBytes() for details
+	 * on the encoding.
+	 *
+	 * @return The number of bytes copied.
+	 */
+	public int getBytes(byte dest[]) {
+	    int length = getInt();
+	    if( length > buff.length ) {
+		// XXX Should be if(pos + length > buff.legth)?
+		System.out.println("XXX Assert failed, buff too small ");
+	    }
+	
+	    if( (length == 0xFFFF) || (length == -1) ) {
+		System.out.println("null string " + length);
+		return 0;
+	    }
+
+	    System.arraycopy( buff, pos,  dest, 0, length );
+	    pos += length;
+	    pos++; // Skip terminating \0  XXX I believe this is wrong but harmless
+	    return length;
+	}
+
+	// ============== Debugging code =========================
+	private String hex( int x ) {
+	    //	    if( x < 0) x=256 + x;
+	    String h=Integer.toHexString( x );
+	    if( h.length() == 1 ) h = "0" + h;
+	    return h.substring( h.length() - 2 );
+	}
+
+	private void hexLine( int start ) {
+	    for( int i=start; i< start+16 ; i++ ) {
+	      if( i < len + 4)
+		System.out.print( hex( buff[i] ) + " ");
+	      else 
+		System.out.print( "   " );
+	    }
+	    System.out.print(" | ");
+	    for( int i=start; i < start+16 && i < len + 4; i++ ) {
+		if( Character.isLetterOrDigit( (char)buff[i] ))
+		    System.out.print( new Character((char)buff[i]) );
+		else
+		    System.out.print( "." );
+	    }
+	    System.out.println();
+	}
+    
+	public void dump(String msg) {
+	    System.out.println( msg + ": " + buff + " " + pos +"/" + (len + 4));
+
+	    for( int j=0; j < len + 4; j+=16 )
+		hexLine( j );
+	
+	    System.out.println();
 	}
     }
 }
