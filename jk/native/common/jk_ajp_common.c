@@ -1317,8 +1317,8 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
         /* Log the error only once per failed request. */
         jk_log(l, JK_LOG_ERROR,
                "Error connecting to tomcat. Tomcat is probably not started "
-               "or is listening on the wrong port. Failed errno = %d\n",
-               errno);
+               "or is listening on the wrong port. worker=%s failed errno = %d\n",
+               p->worker->name, errno);
 
     } else {
         jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, NULL parameters\n");
