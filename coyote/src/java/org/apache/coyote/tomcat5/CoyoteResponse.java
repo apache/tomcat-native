@@ -629,6 +629,7 @@ public class CoyoteResponse
                 (sm.getString("coyoteResponse.getWriter.ise"));
 
         usingWriter = true;
+        outputBuffer.checkConverter();
         return writer;
 
     }

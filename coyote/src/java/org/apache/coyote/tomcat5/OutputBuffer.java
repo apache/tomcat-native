@@ -581,7 +581,17 @@ public class OutputBuffer extends Writer
     }
 
 
-    protected void setConverter() {
+    public void checkConverter() 
+        throws IOException {
+
+        if (!gotEnc)
+            setConverter();
+
+    }
+
+
+    protected void setConverter() 
+        throws IOException {
 
         if (coyoteResponse != null)
             enc = coyoteResponse.getCharacterEncoding();
@@ -594,6 +604,9 @@ public class OutputBuffer extends Writer
             enc = DEFAULT_ENCODING;
         conv = (C2BConverter) encoders.get(enc);
         if (conv == null) {
+            conv = new C2BConverter(bb, enc);
+            encoders.put(enc, conv);
+            /*
             try {
                 conv = new C2BConverter(bb, enc);
                 encoders.put(enc, conv);
@@ -608,6 +621,7 @@ public class OutputBuffer extends Writer
                     }
                 }
             }
+            */
         }
     }
 
