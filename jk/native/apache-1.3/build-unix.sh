@@ -37,7 +37,7 @@ fi
 # Figure out INCLUDE directories
 
 # use "find" to pick the right include directories for current machine
-JAVA_INCLUDE="`find ${JAVA_HOME}/include -type d -printf \"-I %p \"`" ||  echo "find failed, edit build-unix.sh source to fix"
+JAVA_INCLUDE="`find ${JAVA_HOME}/include -type d | sed 's/^/-I /g'`" ||  echo "find failed, edit build-unix.sh source to fix"
 
 # if "find" fails, use (uncomment) the following instead, substituting your
 # platform for "linux"
