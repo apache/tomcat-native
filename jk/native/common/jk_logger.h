@@ -78,8 +78,12 @@ struct file_logger_t
  */
 #if defined (DEBUG) || (_DEBUG)
 #define JK_TRACE	1
+#define JK_TRACE_ENTER(l) jk_log((l), JK_LOG_TRACE, "enter " __FUNCTION__ "\n")
+#define JK_TRACE_EXIT(l)  jk_log((l), JK_LOG_TRACE, "exit " __FUNCTION__ "\n")
 #else
 #define JK_TRACE	0
+#define JK_TRACE_ENTER(l)
+#define JK_TRACE_EXIT(l)
 #endif
 
 
