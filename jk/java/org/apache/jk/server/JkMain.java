@@ -112,6 +112,7 @@ public class JkMain
     Properties modules=new Properties();
     boolean modified=false;
     boolean started=false;
+    boolean saveProperties=false;
     
     public JkMain()
     {
@@ -166,6 +167,10 @@ public class JkMain
 
     public String getPropertiesFile() {
         return propFile;
+    }
+
+    public void setSaveProperties( boolean b ) {
+        saveProperties=b;
     }
 
     /** Set a name/value as a jk2 property
@@ -442,6 +447,8 @@ public class JkMain
     // -------------------- Private methods --------------------
 
     public  void saveProperties() {
+        if( !saveProperties) return;
+        
         // Temp - to check if it works
         String outFile=propFile + ".save";
         log.debug("Saving properties " + outFile );
