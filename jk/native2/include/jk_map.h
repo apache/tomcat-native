@@ -116,6 +116,12 @@ struct jk_map {
 
     struct jk_pool *pool;
     void *_private;
+
+    /* For debuging purpose. NULL if not supported.
+       The default impl will set them to the content
+    */
+    char **keys;
+    char **values;
 };
 
 int jk2_map_default_create(struct jk_env *env, jk_map_t **m, 

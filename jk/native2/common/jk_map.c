@@ -103,12 +103,12 @@ static int jk2_map_default_put(jk_env_t *env, jk_map_t *m,
                                const char *name, void *value,
                                void **old)
 {
-    int rc = JK_FALSE;
+    int rc = JK_ERR;
     int i;
     jk_map_private_t *mPriv;
 
     if( name==NULL ) 
-        return JK_FALSE;
+        return JK_ERR;
 
     mPriv=(jk_map_private_t *)m->_private;
     
@@ -123,7 +123,7 @@ static int jk2_map_default_put(jk_env_t *env, jk_map_t *m,
         if( old!=NULL )
             *old = (void *) mPriv->values[i]; /* DIRTY */
         mPriv->values[i] = value;
-        return JK_TRUE;
+        return JK_OK;
     }
     
     jk2_map_default_realloc(env, m);
@@ -138,7 +138,7 @@ static int jk2_map_default_put(jk_env_t *env, jk_map_t *m,
         */
         mPriv->names[mPriv->size] = m->pool->pstrdup(env,m->pool, name);
         mPriv->size ++;
-        rc = JK_TRUE;
+        rc = JK_OK;
     }
     return rc;
 }
@@ -146,11 +146,11 @@ static int jk2_map_default_put(jk_env_t *env, jk_map_t *m,
 static int jk2_map_default_add(jk_env_t *env, jk_map_t *m,
                                const char *name, void *value)
 {
-    int rc = JK_FALSE;
+    int rc = JK_ERR;
     jk_map_private_t *mPriv;
 
     if( name==NULL ) 
-        return JK_FALSE;
+        return JK_ERR;
 
     mPriv=(jk_map_private_t *)m->_private;
     
@@ -165,7 +165,7 @@ static int jk2_map_default_add(jk_env_t *env, jk_map_t *m,
         /*     mPriv->names[mPriv->size] = m->pool->pstrdup(m->pool, name); */
         mPriv->names[mPriv->size] =  (char *)name; 
         mPriv->size ++;
-        rc = JK_TRUE;
+        rc = JK_OK;
     }
     return rc;
 }
@@ -232,11 +232,11 @@ static int jk2_map_append(jk_env_t *env, jk_map_t * dst, jk_map_t * src )
 
         if( dst->get(env, dst, name ) == NULL) {
             int rc= dst->put(env, dst, name, value, NULL );
-            if( rc != JK_TRUE )
+            if( rc != JK_OK )
                 return rc;
         }
     }
-    return JK_TRUE;
+    return JK_OK;
 }
                                
 /* ==================== */
@@ -249,14 +249,14 @@ int jk2_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
     jk_map_private_t *mPriv;
 
     if( m== NULL )
-        return JK_FALSE;
+        return JK_ERR;
     
-    _this=(jk_map_t *)pool->alloc(env, pool, sizeof(jk_map_t));
-    mPriv=(jk_map_private_t *)pool->alloc(env, pool, sizeof(jk_map_private_t));
+    _this=(jk_map_t *)pool->calloc(env, pool, sizeof(jk_map_t));
+    mPriv=(jk_map_private_t *)pool->calloc(env, pool, sizeof(jk_map_private_t));
     *m=_this;
 
     if( _this == NULL || mPriv==NULL )
-        return JK_FALSE;
+        return JK_ERR;
     
     _this->pool = pool;
     _this->_private=mPriv;
@@ -276,16 +276,16 @@ int jk2_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
     _this->clear=jk2_map_default_clear;
     
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /* int map_free(jk_map_t **m) */
 /* { */
-/*     int rc = JK_FALSE; */
+/*     int rc = JK_ERR; */
 
 /*     if(m && *m) { */
 /*         (*m)->pool->close((*m)->pool); */
-/*         rc = JK_TRUE; */
+/*         rc = JK_OK; */
 /*         *m = NULL; */
 /*     } */
 /*     return rc; */
@@ -301,11 +301,13 @@ static int jk2_map_default_realloc(jk_env_t *env, jk_map_t *m)
         void **values;
         int  capacity = mPriv->capacity + CAPACITY_INC_SIZE;
 
-        names = (char **)m->pool->alloc(env, m->pool,
+        names = (char **)m->pool->calloc(env, m->pool,
                                         sizeof(char *) * capacity);
-        values = (void **)m->pool->alloc(env, m->pool,
+        values = (void **)m->pool->calloc(env, m->pool,
                                          sizeof(void *) * capacity);
-        
+
+        m->keys=names;
+        m->values=values;
         if(values && names) {
             if (mPriv->capacity && mPriv->names) 
                 memcpy(names, mPriv->names, sizeof(char *) * mPriv->capacity);
@@ -317,9 +319,9 @@ static int jk2_map_default_realloc(jk_env_t *env, jk_map_t *m)
             mPriv->values = ( void **)values;
             mPriv->capacity = capacity;
 
-            return JK_TRUE;
+            return JK_OK;
         }
     }
 
-    return JK_FALSE;
+    return JK_ERR;
 }
