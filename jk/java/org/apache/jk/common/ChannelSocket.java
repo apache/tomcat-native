@@ -25,6 +25,7 @@ import java.net.URLEncoder;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanNotificationInfo;
@@ -148,14 +149,14 @@ public class ChannelSocket extends JkHandler
         try {
             this.inet= InetAddress.getByName( inet );
         } catch( Exception ex ) {
-            ex.printStackTrace();
+            log.error("Error parsing "+inet,ex);
         }
     }
 
     public String getAddress() {
         if( inet!=null)
             return inet.toString();
-        return null;
+        return "/0.0.0.0";
     }
 
     /**
@@ -340,11 +341,13 @@ public class ChannelSocket extends JkHandler
         }
         if (maxPort < startPort)
             maxPort = startPort;
-        if (getAddress() == null)
-            setAddress("0.0.0.0");
         for( int i=startPort; i<=maxPort; i++ ) {
             try {
-                sSocket=new ServerSocket( i, 0, inet );
+                if( inet == null ) {
+                    sSocket = new ServerSocket( i, 0 );
+                } else {
+                    sSocket=new ServerSocket( i, 0, inet );
+                }
                 port=i;
                 break;
             } catch( IOException ex ) {
@@ -447,17 +450,18 @@ public class ChannelSocket extends JkHandler
     }
 
     private void unLockSocket() throws IOException {
-	// Need to create a connection to unlock the accept();
-	Socket s;
+        // Need to create a connection to unlock the accept();
+        Socket s;
+        InetAddress ladr = inet;
 
-	if (inet == null || "0.0.0.0".equals(inet.getHostAddress())) {
-	    s=new Socket("127.0.0.1", port );
-	}else{
-	    s=new Socket(inet, port );
-	    // setting soLinger to a small value will help shutdown the
-	    // connection quicker
-	    s.setSoLinger(true, 0);
-	}
+        if (ladr == null || "0.0.0.0".equals(ladr.getHostAddress())) {
+            ladr = InetAddress.getLocalHost();
+        }
+        s=new Socket(ladr, port );
+        // setting soLinger to a small value will help shutdown the
+        // connection quicker
+        s.setSoLinger(true, 0);
+
 	s.close();
     }
 
@@ -590,8 +594,16 @@ public class ChannelSocket extends JkHandler
         int got;
 
         while(pos < len) {
-            got = is.read(b, pos + offset, len - pos);
-
+            try {
+                got = is.read(b, pos + offset, len - pos);
+            } catch(SocketException sex) {
+                if(pos > 0) {
+                    log.info("Error reading data after "+pos+"bytes",sex);
+                } else {
+                    log.debug("Error reading data", sex);
+                }
+                got = -1;
+            }
             if (log.isTraceEnabled()) {
                 log.trace("read() " + b + " " + (b==null ? 0: b.length) + " " +
                           offset + " " + len + " = " + got );
@@ -743,16 +755,11 @@ public class ChannelSocket extends JkHandler
     
     public String getChannelName() {
         String encodedAddr = "";
-        String address = getAddress();
-        if (address != null) {
-            encodedAddr = address;
+        if (inet != null && !"0.0.0.0".equals(inet.getHostAddress())) {
+            encodedAddr = getAddress();
             if (encodedAddr.startsWith("/"))
                 encodedAddr = encodedAddr.substring(1);
-            if("0.0.0.0".equals(encodedAddr)) {
-                encodedAddr = "";
-            } else {
-                encodedAddr = URLEncoder.encode(encodedAddr) + "-";
-            }
+	    encodedAddr = URLEncoder.encode(encodedAddr) + "-";
         }
         return ("jk-" + encodedAddr + port);
     }
