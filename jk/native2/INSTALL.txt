@@ -46,6 +46,14 @@
   wget http://www.apache.org/dist/apr/apr-0.9.4.tar.gz
   wget http://www.apache.org/dist/apr/apr-util-0.9.4.tar.gz
 
+  NOTE: * Use a mirror to find the best location of apr see
+          http://www.apache.org/dyn/closer.cgi/apr/
+          (For me it gives http://www.apache.de/dist/apr/apr-0.9.4.tar.gz and
+           So I have done:
+           wget http://www.apache.de/dist/apr/apr-0.9.4.tar.gz
+           wget http://www.apache.de/dist/apr/apr-util-0.9.4.tar.gz
+          )
+
   Extract the apr and apr-util sources:
   gtar xvf apr-0.9.4.tar.gz
   gtar xvf apr-util-0.9.4.tar.gz
