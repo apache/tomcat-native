@@ -155,12 +155,13 @@ public class WarpEngine extends StandardEngine {
      * Create a new WarpHost with the specified host name, setup the appropriate
      * values and add it to the list of children.
      */
-    public synchronized WarpHost setupChild(String name) {
+    public synchronized WarpHost setupChild(String name, int port) {
         WarpHost host=(WarpHost)this.findChild(name);
         if (host==null) {
             this.debug("Creating new host "+name);
             host=new WarpHost();
             host.setName(name);
+            host.setPort(port);
             host.setHostID(this.hostid++);
             host.setAppBase(this.appbase);
             this.addChild(host);
