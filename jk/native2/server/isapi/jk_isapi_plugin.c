@@ -520,8 +520,13 @@ BOOL WINAPI TerminateExtension(DWORD dwFlags)
     return TerminateFilter(dwFlags);
 }
 
+HANDLE jk2_starter_event;
+
 BOOL WINAPI TerminateFilter(DWORD dwFlags) 
 {
+    /* detatch the starter thread */
+    SetEvent(jk2_starter_event);
+
     if (is_inited) {
         is_inited = JK_FALSE;
         if (workerEnv) {
@@ -540,11 +545,14 @@ HANDLE jk2_starter_thread = NULL;
 
 DWORD WINAPI jk2_isapi_starter( LPVOID lpParam ) 
 { 
+    Sleep(1000);
+    
     initialize_extension();
     if (is_inited) {
         if (init_jk(NULL))
             is_mapread = JK_TRUE;
     }
+    WaitForSingleObject(jk2_starter_event, INFINITE);
     return 0; 
 } 
 
@@ -558,21 +566,33 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     char dir[_MAX_DIR];
     char fname[_MAX_FNAME];
     DWORD dwThreadId;
+    DWORD dwRes;
+    int tcount = 0;
 
     switch (ulReason) {
         case DLL_PROCESS_DETACH:
-            __try {
-                if (jk2_starter_thread)
-                    CloseHandle(jk2_starter_thread);
-                TerminateFilter(HSE_TERM_MUST_UNLOAD);
-            } __except(1) {
+            while (!GetExitCodeThread(jk2_starter_thread, &dwRes)) {
+                if (dwRes == STILL_ACTIVE) {
+                    ++tcount;
+                    if (tcount > 30) {
+                        TerminateThread(jk2_starter_thread, -1);
+                        break;
+                    }
+                    Sleep(100);
+                }
             }
+            CloseHandle(jk2_starter_thread);
         break;
 
         case DLL_PROCESS_ATTACH:
             if (GetModuleFileName( hInst, file_name, sizeof(file_name))) {
                 _splitpath( file_name, drive, dir, fname, NULL );
                 _makepath( ini_file_name, drive, dir, fname, ".properties" );
+                
+                jk2_starter_event = CreateEvent(NULL,
+                                                FALSE,
+                                                FALSE,
+                                                NULL);
 
                 jk2_starter_thread = CreateThread( NULL,
                                         0,
