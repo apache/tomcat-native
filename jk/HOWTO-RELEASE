@@ -125,10 +125,13 @@ distribution directory.
 
 cp -pr jakarta-tomcat-connectors/jk/tools jakarta-tomcat-connectors-jk-1.2.5-src/jk
 
-Copy the directory jakarta-tomcat-connectors/conf to the source
-distribution directory.
+Make the jk conf directory in the source distribution.
 
-cp -pr jakarta-tomcat-connectors/jk/conf jakarta-tomcat-connectors-jk-1.2.5-src/jk
+mkdir jakarta-tomcat-connectors-jk-1.2.5-src/jk/conf
+
+Copy the worker.properties file to the jk/conf directory.
+
+cp -p jakarta-tomcat-connectors/jk/conf/worker.properties jakarta-tomcat-connectors-jk-1.2.5-src/jk/conf
 
 Copy the directory jakarta-tomcat-connectors/support to the source
 distribution directory.
