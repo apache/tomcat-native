@@ -64,11 +64,8 @@
 #ifndef __config_h
 #define __config_h
 
-#define TOMCAT320	320
-#define TOMCAT330	330
-#define TOMCAT400	400
-
-#define FOR_TOMCAT TOMCAT400
+#define MAKEVERSION(a, b, c, d) \
+	(((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
 
 /* the _memicmp() function is available */
 #if defined(WIN32)

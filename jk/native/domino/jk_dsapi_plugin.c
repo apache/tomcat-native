@@ -128,7 +128,7 @@ static const char *workerMountFile;
 static const char *tomcatStart;
 static const char *tomcatStop;
 
-#if FOR_TOMCAT >= TOMCAT400
+#if defined(JK_VERSION) && JK_VERSION >= MAKEVERSION(1, 2, 0, 1)
 static jk_worker_env_t   worker_env;
 #endif
 
@@ -857,7 +857,7 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 	s->ssl_cipher	= NULL;		/* required by Servlet 2.3 Api */
 	s->ssl_session	= NULL;
 
-#if FOR_TOMCAT >= TOMCAT400
+#if defined(JK_VERSION) && JK_VERSION >= MAKEVERSION(1, 2, 0, 1)
 	s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
 #endif
 
@@ -883,7 +883,7 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 
 		DEBUG(("SSL request\n"));
 
-#if FOR_TOMCAT >= TOMCAT400
+#if defined(JK_VERSION) && JK_VERSION >= MAKEVERSION(1, 2, 0, 1)
 		/* Read the variable into a dummy variable: we do this for the side effect of
 		 * reading it into workBuf.
 		 */
@@ -995,7 +995,7 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 					DEBUG(("About to read %s\n", workerFile));
 					if (map_read_properties(map, workerFile))
 					{
-#if FOR_TOMCAT >= TOMCAT400
+#if defined(JK_VERSION) && JK_VERSION >= MAKEVERSION(1, 2, 0, 1)
 						char server[256];
 
 						worker_env.uri_to_worker = uw_map;
