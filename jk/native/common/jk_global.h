@@ -81,6 +81,7 @@
 #ifdef WIN32
     #include <windows.h>
     #include <winsock.h>
+    #include <sys/timeb.h>
 #else
     #include <unistd.h>
     #include <netdb.h>
@@ -192,6 +193,11 @@ extern "C" {
 #endif /* CHARSET_EBCDIC */
 
 #endif /* APR_CHARSET_EBCDIC */
+
+#ifdef WIN32
+/* For WIN32, emulate gettimeofday() using _ftime() */
+#define gettimeofday(tv,tz) { struct _timeb tb; _ftime(&tb); (tv)->tv_sec = tb.time; (tv)->tv_usec = tb.millitm * 1000; }
+#endif
 
 #ifdef __cplusplus
 }
