@@ -495,7 +495,7 @@ static int init_ws_service(apache_private_data_t *private_data,
     /* get server name */
     /* s->server_name= (char *)(r->hostname ? r->hostname : r->server->server_hostname); */
     /* XXX : à la jk2 */
-	s->server_name  = ap_get_server_name(r);
+	s->server_name  = (char *)ap_get_server_name(r);
 
     /* get the real port (otherwise redirect failed) */
     /* apr_sockaddr_port_get(&port,r->connection->local_addr); */
