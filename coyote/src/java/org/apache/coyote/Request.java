@@ -463,8 +463,8 @@ public final class Request {
 	queryMB.recycle();
 	methodMB.recycle();
 	protoMB.recycle();
-	remoteAddrMB.recycle();
-	remoteHostMB.recycle();
+	//remoteAddrMB.recycle();
+	//remoteHostMB.recycle();
 
 	// XXX Do we need such defaults ?
         schemeMB.setString("http");
@@ -472,8 +472,8 @@ public final class Request {
         uriMB.setString("/");
         queryMB.setString("");
         protoMB.setString("HTTP/1.0");
-        remoteAddrMB.setString("127.0.0.1");
-        remoteHostMB.setString("localhost");
+        //remoteAddrMB.setString("127.0.0.1");
+        //remoteHostMB.setString("localhost");
 
         instanceId.recycle();
         remoteUser.recycle();
