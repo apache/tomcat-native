@@ -120,9 +120,9 @@ static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
     
     if( strcmp( name, "host" )==0 ) {
         return  (uriEnv->virtual==NULL) ? "*" : uriEnv->virtual;
-    } else if( strcmp( name, "uri" ) ) {
+    } else if( strcmp( name, "uri" )==0 ) {
         return uriEnv->uri;
-    } else if( strcmp( name, "group" ) ) {
+    } else if( strcmp( name, "group" )==0 ) {
         return uriEnv->workerName;
     }
     return NULL;
