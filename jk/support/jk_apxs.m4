@@ -139,6 +139,7 @@ AC_DEFUN(
               HAS_APR="-DHAS_APR"
               APXS$1_CFLAGS="`${APXS$1} -q CFLAGS` `${APXS$1} -q EXTRA_CFLAGS`"
               APXS$1_CPPFLAGS="`${APXS$1} -q EXTRA_CPPFLAGS`"
+              APR_INCDIR="`${APXS$1} -q APR_INCLUDE`"
               LIBTOOL=`${APXS$1} -q LIBTOOL`
             fi
             
