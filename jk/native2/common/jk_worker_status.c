@@ -771,6 +771,7 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
         
         if( strcmp( name, cName ) == 0 &&
             mbean->setAttribute != NULL ) {
+            int res;
 
             jk_shm_t *shm=w->workerEnv->shm;
 
@@ -780,7 +781,7 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG, "status.set() %s %s\n",
                               cName, attName);
 
-            int res=jk2_config_setProperty(env, w->workerEnv->config,
+            res=jk2_config_setProperty(env, w->workerEnv->config,
                                            mbean, attName, attVal);
                 
             /* Increment the version */
