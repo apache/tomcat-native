@@ -189,7 +189,7 @@ AC_DEFUN(
               APR_CLEAN=""
               APR_DIR=""
               APR_LIBDIR=${tempval}
-              APR_LDFLAGS="-lapr-0 -L${tempval}"
+              APR_LDFLAGS="`apr-config --link-ld` -L${tempval}"
               COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
 			  use_apr=true
             fi
