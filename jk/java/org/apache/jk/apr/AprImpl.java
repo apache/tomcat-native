@@ -22,7 +22,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     Hashtable jkHandlers=new Hashtable();
 
     // Name of the so used in inprocess mode 
-    String jniModeSo;
+    String jniModeSo="inprocess";
     // name of the so used by java. If not set we'll loadLibrary("jkjni" ),
     // if set we load( nativeSo )
     String nativeSo;
@@ -58,7 +58,6 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     /** Name of the so used in inprocess mode
      */
     public void setJniModeSo(String jniModeSo ) {
-        System.out.println("XXX native so " + jniModeSo);
         this.jniModeSo=jniModeSo;
     }
 
@@ -204,6 +203,10 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
                This seems the cleanest solution that works with multiple
                VMs.
             */
+            if (jniModeSo.equals("inprocess")) {
+                ok=true;
+                return;                                
+            }
             try {
                 System.out.println("Loading " + jniModeSo);
                 if( jniModeSo!= null ) System.load( jniModeSo );
