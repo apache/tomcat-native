@@ -308,14 +308,16 @@ public class ThreadPool  {
     private ControlRunnable findControlRunnable() {
         ControlRunnable c=null;
 
-        if(0 == currentThreadCount || stopThePool) {
+        if (0 == currentThreadCount || stopThePool) {
             throw new IllegalStateException();
         }
+
         // Obtain a free thread from the pool.
         synchronized(this) {
-            if(currentThreadsBusy == currentThreadCount) {
+
+            if (currentThreadsBusy == currentThreadCount) {
                  // All threads are busy
-                if(currentThreadCount < maxThreads) {
+                if (currentThreadCount < maxThreads) {
                     // Not all threads were open,
                     // Open new threads up to the max number of idel threads
                     int toOpen = currentThreadCount + minSpareThreads;
@@ -345,8 +347,11 @@ public class ThreadPool  {
             }
 
             // If we are here it means that there is a free thread. Take it.
-            c = pool[currentThreadCount - currentThreadsBusy - 1];
+            int pos = currentThreadCount - currentThreadsBusy - 1;
+            c = pool[pos];
+            pool[pos] = null;
             currentThreadsBusy++;
+
         }
         return c;
     }
@@ -395,6 +400,7 @@ public class ThreadPool  {
         if(stopThePool) {
             return;
         }
+
         if((currentThreadCount - currentThreadsBusy) > maxSpareThreads) {
             int toFree = currentThreadCount -
                          currentThreadsBusy -
@@ -406,7 +412,9 @@ public class ThreadPool  {
                 pool[currentThreadCount - currentThreadsBusy - 1] = null;
                 currentThreadCount --;
             }
+
         }
+
     }
 
     /**
@@ -527,6 +535,7 @@ public class ThreadPool  {
         public void run() {
             while(true) {
                 try {
+
                     // Sleep for a while.
                     synchronized(this) {
                         this.wait(WORK_WAIT_TIMEOUT);
