@@ -39,6 +39,10 @@ Since release 1.2.7 the <b>socket_timeout</b> property has been renamed to
 <b>recycle_timeout</b>.
 The socket_timeout now sets the real timeout for socket operations.
 </warn>
+<p>If you find any bugs during testing this release, please fill in the
+<a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
+Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
 </a> 
 
 <hr size="1" noshade="noshade" />
