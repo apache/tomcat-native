@@ -119,13 +119,13 @@ public class WarpLogger {
     /** Log to the container logger with the specified level or to stderr */
     private void log(String msg, Exception exc, int lev) {
         if (this.container==null) {
-            dump(msg,exc);
+            if (Constants.DEBUG) dump(msg,exc);
             return;
         }
 
         Logger logg=this.container.getLogger();
         if (logg==null) {
-            dump(msg,exc);
+            if (Constants.DEBUG) dump(msg,exc);
             return;
         }
 
