@@ -85,6 +85,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 		return JK_FALSE;
 	}
 
+	/* jk_log(l, JK_LOG_DEBUG, "Into ajp14:validate - secret_key=%s\n", secret_key); */
 	return JK_TRUE;
 }
 
@@ -117,12 +118,12 @@ static int JK_METHOD init(jk_worker_t *pThis,
 		jk_log(l, JK_LOG_ERROR, "can't malloc secret_key\n");
 		return JK_FALSE;
 	}
-	
+
 	/* Set WebServerName (used at logon time) */
 	aw->login->web_server_name = strdup(we->server_name);
 
 	if (aw->login->web_server_name == NULL) {
-		jk_log(l, JK_LOG_ERROR, "can't malloc web_server\n");
+		jk_log(l, JK_LOG_ERROR, "can't malloc web_server_name\n");
 		return JK_FALSE;
 	}
 
@@ -193,13 +194,13 @@ static int handle_logon(ajp_endpoint_t *ae,
 
 	jk_b_reset(msg);
 
-	if ((cmd = jk_b_get_byte(msg)) != AJP14_LOGSEED_CMD) {
-		jk_log(l, JK_LOG_ERROR, "Into ajp14:logon - awaited command %d, received command %d\n", AJP14_LOGSEED_CMD, cmd);
-		return JK_FALSE;
-	}
-
 	if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
 		return JK_FALSE;
+
+	if ((cmd = jk_b_get_byte(msg)) != AJP14_LOGSEED_CMD) {
+		jk_log(l, JK_LOG_ERROR, "Error ajp14:logon: awaited command %d, received %d\n", AJP14_LOGSEED_CMD, cmd);
+		return JK_FALSE;
+	}
 
 	if (ajp14_unmarshal_login_seed(msg, jl, l) != JK_TRUE)
 		return JK_FALSE;
@@ -222,15 +223,18 @@ static int handle_logon(ajp_endpoint_t *ae,
 	switch (jk_b_get_byte(msg)) {
 
 	case AJP14_LOGOK_CMD  :	
-		ajp14_unmarshal_log_ok(msg, jl, l);	
+		if (ajp14_unmarshal_log_ok(msg, jl, l) == JK_TRUE) {
+			jk_log(l, JK_LOG_DEBUG, "Successfully connected to servlet-engine %s\n", jl->servlet_engine_name);
+			return JK_TRUE;
+		}
 		break;
 		
 	case AJP14_LOGNOK_CMD :
 		ajp14_unmarshal_log_nok(msg, l);
-		return JK_FALSE;
+		break;
 	}
 
-	return JK_TRUE;
+	return JK_FALSE;
 }
 
 /*
@@ -250,10 +254,10 @@ static int logon(ajp_endpoint_t *ae,
 	msg = jk_b_new(p);
 	jk_b_set_buffer_size(msg, DEF_BUFFER_SZ);
 	
-	rc = handle_logon(ae, msg, l);
-	jk_reset_pool(p);
+	if ((rc = handle_logon(ae, msg, l)) == JK_FALSE) 
+		ajp_close_endpoint(ae, l);
 
-	return (rc);
+	return rc;
 }
 
 

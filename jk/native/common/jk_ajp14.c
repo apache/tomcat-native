@@ -73,11 +73,12 @@
  * Compute the MD5 with ENTROPY / SECRET KEY
  */
 
-void ajp14_compute_md5(jk_login_service_t *s, jk_logger_t *l)
+void ajp14_compute_md5(jk_login_service_t *s, 
+                       jk_logger_t        *l)
 {
 	jk_md5((const unsigned char *)s->entropy, (const unsigned char *)s->secret_key, s->computed_key);
 
-	jk_log(l, JK_LOG_DEBUG, "Into ajp14_compute_md5 (%s)\n", s->computed_key);
+	jk_log(l, JK_LOG_DEBUG, "Into ajp14_compute_md5 (%s/%s) -> (%s)\n", s->entropy, s->secret_key, s->computed_key);
 }
 
 
@@ -132,9 +133,9 @@ int ajp14_marshal_login_init_into_msgb(jk_msg_buf_t       *msg,
  *
  */
 
-int ajp14_unmarshal_login_seed(jk_msg_buf_t *msg,
+int ajp14_unmarshal_login_seed(jk_msg_buf_t       *msg,
                                jk_login_service_t *s,
-                               jk_logger_t *l)
+                               jk_logger_t        *l)
 {
     if (jk_b_get_bytes(msg, (unsigned char *)s->entropy, AJP14_ENTROPY_SEED_LEN) < 0) {
         jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_login_seed - can't get seed\n");
@@ -169,8 +170,6 @@ int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t       *msg,
     if (jk_b_append_byte(msg, AJP14_LOGCOMP_CMD)) 
         return JK_FALSE;
 
-	ajp14_compute_md5(s, l);
-
 	/*
 	 * COMPUTED-SEED
   	 */
@@ -192,9 +191,9 @@ int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t       *msg,
  *
  */
 
-int ajp14_unmarshal_log_ok(jk_msg_buf_t *msg,
+int ajp14_unmarshal_log_ok(jk_msg_buf_t       *msg,
                            jk_login_service_t *s,
-                           jk_logger_t *l)
+                           jk_logger_t        *l)
 {
 	unsigned long 	nego;
 	char *			sname;
@@ -237,7 +236,7 @@ int ajp14_unmarshal_log_ok(jk_msg_buf_t *msg,
  */
 
 int ajp14_unmarshal_log_nok(jk_msg_buf_t *msg,
-                            jk_logger_t *l)
+                            jk_logger_t  *l)
 {
 	unsigned long   status;
 
@@ -299,7 +298,7 @@ int ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t       *msg,
  *
  */
 int ajp14_unmarshal_shutdown_nok(jk_msg_buf_t *msg,
-                                 jk_logger_t *l)
+                                 jk_logger_t  *l)
 {
     unsigned long   status;
 
@@ -367,9 +366,9 @@ int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t		*msg,
  *
  */
 
-int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t     *msg,
-										  char             *virtual,
-										  jk_logger_t      *l)
+int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg,
+										  char         *virtual,
+										  jk_logger_t  *l)
 {
 	jk_log(l, JK_LOG_DEBUG, "Into ajp14_marshal_context_query_into_msgb\n");
 
@@ -408,7 +407,7 @@ int ajp14_marshal_context_query_into_msgb(jk_msg_buf_t     *msg,
 
 int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
 								 jk_context_t *context,
-                                 jk_logger_t *l)
+                                 jk_logger_t  *l)
 {
     char *sname;
 	/* char *old; unused */
@@ -479,9 +478,9 @@ int ajp14_unmarshal_context_info(jk_msg_buf_t *msg,
  *
  */
 
-int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t     	*msg,
-                                          jk_context_t		*context,
-                                          jk_logger_t      	*l)
+int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg,
+                                          jk_context_t *context,
+                                          jk_logger_t  *l)
 {
     jk_log(l, JK_LOG_DEBUG, "Into ajp14_marshal_context_state_into_msgb\n");
 
@@ -525,7 +524,7 @@ int ajp14_marshal_context_state_into_msgb(jk_msg_buf_t     	*msg,
 
 int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
 										jk_context_t *context,
-                           				jk_logger_t *l)
+                           				jk_logger_t  *l)
 {
     char *sname;
 
@@ -579,7 +578,7 @@ int ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg,
 
 int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg,
                                        jk_context_t *context,
-                                       jk_logger_t *l)
+                                       jk_logger_t  *l)
 {
 	return (ajp14_unmarshal_context_state_reply(msg, context, l));
 }

@@ -67,7 +67,7 @@
 #include "jk_worker.h"
 #include "jk_util.h"
 
-static void close_workers(void);
+static void close_workers(jk_logger_t *l);
 
 static worker_factory get_factory_for(char *type);
 
@@ -101,7 +101,7 @@ int wc_open(jk_map_t *init_data,
                          num_of_workers,
                          we,
                          l)) {
-        close_workers();
+        close_workers(l);
         return JK_FALSE;
     }
 
@@ -113,7 +113,7 @@ int wc_open(jk_map_t *init_data,
 void wc_close(jk_logger_t *l)
 {
     jk_log(l, JK_LOG_DEBUG, "Into wc_close\n"); 
-    close_workers();
+    close_workers(l);
     jk_log(l, JK_LOG_DEBUG, "wc_close, done\n"); 
 }
 
@@ -189,15 +189,19 @@ int wc_create_worker(const char *name,
     return JK_FALSE;
 }
 
-static void close_workers(void)
+static void close_workers(jk_logger_t *l)
 {
     int sz = map_size(worker_map);
+
+	jk_log(l, JK_LOG_DEBUG, "close_workers got %d workers to destroy\n", sz);
+
     if(sz > 0) {
         int i;
         for(i = 0 ; i < sz ; i++) {
             jk_worker_t *w = map_value_at(worker_map, i);
             if(w) {
-                w->destroy(&w, NULL);
+				jk_log(l, JK_LOG_DEBUG, "close_workers will destroy worker %s\n", map_name_at(worker_map, i));
+                w->destroy(&w, l);
             }
         }
     }

@@ -770,8 +770,7 @@ static int ajp_send_request(jk_endpoint_t *e,
 	 * If we failed to reuse a connection, try to reconnect.
 	 */
 	if (ae->sd < 0) {
-		ajp_connect_to_endpoint(ae, l);
-		if (ae->sd >= 0) {
+		if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
 		/*
 		 * After we are connected, each error that we are going to
 		 * have is probably unrecoverable
@@ -1107,8 +1106,8 @@ int ajp_validate(jk_worker_t *pThis,
 
     if (pThis && pThis->worker_private) {
         ajp_worker_t *p = pThis->worker_private;
-        int port = jk_get_worker_port(props, p->name, port);
-        char *host = jk_get_worker_host(props, p->name, host);
+        port = jk_get_worker_port(props, p->name, port);
+        host = jk_get_worker_host(props, p->name, host);
 
         jk_log(l, JK_LOG_DEBUG, "In jk_worker_t::validate for worker %s contact is %s:%d\n", p->name, host, port);
 
@@ -1184,7 +1183,9 @@ int ajp_destroy(jk_worker_t **pThis,
     if (pThis && *pThis && (*pThis)->worker_private) {
         ajp_worker_t *aw = (*pThis)->worker_private;
 
-        free(aw->name);
+       	free(aw->name);
+
+		jk_log(l, JK_LOG_DEBUG, "Into jk_worker_t::destroy up to %d endpoint to close\n", aw->ep_cache_sz);
 
         if(aw->ep_cache_sz) {
             unsigned i;
@@ -1197,8 +1198,10 @@ int ajp_destroy(jk_worker_t **pThis,
             JK_DELETE_CS(&(aw->cs), i);
         }
 
-		if (aw->login)
+		if (aw->login) {
 			free(aw->login);
+			aw->login = NULL;
+		}
 
         free(aw);
         return JK_TRUE;
