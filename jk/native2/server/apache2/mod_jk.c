@@ -100,148 +100,130 @@
 
 module AP_MODULE_DECLARE_DATA jk_module;
 
+static jk_workerEnv_t *workerEnv;
+
+
 /* ==================== Options setters ==================== */
 
 /*
- * The JK module command processors
+ * The JK2 module command processors. The options can be specified
+ * in a properties file or in httpd.conf, depending on user's taste.
  *
- * The below are all installed so that Apache calls them while it is
- * processing its config files.  This allows configuration info to be
- * copied into a jk_server_conf_t object, which is then used for request
- * filtering/processing.
+ * There is absolutely no difference from the point of view of jk,
+ * but apache config tools might prefer httpd.conf and the extra
+ * information included in the command descriptor. It also have
+ * a 'natural' feel, and is consistent with all other apache
+ * settings and modules. 
  *
- * See jk_cmds definition below for explanations of these options.
+ * Properties file are easier to parse/generate from java, and
+ * allow identical configuration for all servers. We should have
+ * code to generate the properties file or use the wire protocol,
+ * and make all those properties part of server.xml or jk's
+ * java-side configuration. This will give a 'natural' feel for
+ * those comfortable with the java side.
+ *
+ * The only exception is webapp definition, where in the near
+ * future you can expect a scalability difference between the
+ * 2 choices. If you have a large number of apps/vhosts you
+ * _should_ use the apache style, that makes use of the
+ * internal apache mapper ( known to scale to very large number
+ * of hosts ). The internal jk mapper uses linear search, ( will
+ * eventually use hash tables, when we add support for apr_hash ),
+ * and is nowhere near the apache mapper.
  */
 
-
-/*
- * JkMountCopy directive handling
+/**
+ * In order to define a webapp you must add "JkWebapp" directive
+ * in a Location. 
  *
- * JkMountCopy On/Off
- */
-static const char *jk_set_mountcopy(cmd_parms *cmd, 
-                                    void *dummy, 
-                                    int flag) 
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-    
-    /* Set up our value */
-    workerEnv->mountcopy = flag ? JK_TRUE : JK_FALSE;
-
-    return NULL;
-}
-
-/*
- * JkMount directive handling
+ * Example:
+ *   <VirtualHost foo.com>
+ *      <Location /examples>
+ *         JkWebapp worker ajp13
+ *      </Location>
+ *   </VirtualHost>
  *
- * JkMount URI(context) worker
+ * This is the best way to define a webapplication in apache. It is
+ * scalable ( using apache native optimizations, you can have hundreds
+ * of hosts and thousands of webapplications ), 'natural' to any
+ * apache user.
  */
-static const char *jk_mount_context(cmd_parms *cmd, void *dummy, 
-                                    const char *context,
-                                    const char *worker,
-                                    const char *maybe_cookie)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-    
-    if (context[0]!='/') return "Context must start with /";
-
-    workerEnv->init_data->put( NULL, workerEnv->init_data,
-                               ap_pstrdup(cmd->pool,context),
-                               ap_pstrdup(cmd->pool,worker),
-                               NULL );
-
-    return NULL;
-}
-
-/** XXX This should be JkWebapp, it 'defines' the app 
- */
-static const char *jk_set_worker(cmd_parms *cmd, void *per_dir, 
-                                 const char *workerName)
+static const char *jk_setWebapp(cmd_parms *cmd, void *per_dir, 
+                                const char *name, const char *val)
 {
     jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)per_dir;
-    jk_webapp_t *webapp;
 
-    server_rec *s = cmd->server;
-    
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
+    if( uriEnv->webapp == NULL ) {
+        /* Do we know the url ? */
+        uriEnv->webapp=workerEnv->createWebapp( workerEnv->globalEnv, workerEnv,
+                                                NULL, cmd->path, NULL );
 
-    /* Do we know the url ? */
-    webapp=workerEnv->createWebapp( workerEnv->globalEnv, workerEnv,
-                                    NULL, NULL, NULL );
-    uriEnv->webapp=webapp;
-    webapp->workerName=ap_pstrdup(cmd->pool, workerName);
-    
-    uriEnv->workerEnv=workerEnv;
+        fprintf(stderr, "New webapp %p %p\n",uriEnv, uriEnv->webapp);
+    } else {
+        fprintf(stderr, "Existing webapp %p\n",uriEnv->webapp);
+    }
+
+    if( strcmp( name, "worker") == 0 ) {
+        uriEnv->webapp->workerName=ap_pstrdup(cmd->pool, val);
+    } else {
+        /* Generic properties */
+        uriEnv->webapp->properties->add( workerEnv->globalEnv,
+                                         uriEnv->webapp->properties,
+                                         ap_pstrdup(cmd->pool, name),
+                                         ap_pstrdup(cmd->pool, val));
+    }
     
     fprintf(stderr, "XXX Set worker %p %s %s dir=%s args=%s\n",
-            uriEnv, workerName, cmd->path, cmd->directive->directive,
+            uriEnv, uriEnv->webapp->workerName, cmd->path,
+            cmd->directive->directive,
             cmd->directive->args);
 
     return NULL;
 }
 
-
-/*
- * JkWorkersFile Directive Handling
+/**
+ * Associate a servlet to a <Location>. 
  *
- * JkWorkersFile file
+ * Example:
+ *   <VirtualHost foo.com>
+ *      <Location /examples/servlet>
+ *         JkServlet name servlet
+ *      </Location>
+ *   </VirtualHost>
  */
-static const char *jk_set_worker_file(cmd_parms *cmd, void *dummy, 
-                                      const char *worker_file)
+static const char *jk_setServlet(cmd_parms *cmd, void *per_dir, 
+                                const char *name, const char *val)
 {
-    server_rec *s = cmd->server;
-    struct stat statbuf;
-    jk_env_t *env;
+    jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)per_dir;
 
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-    
-    /* we need an absolut path (ap_server_root_relative does the ap_pstrdup) */
-    workerEnv->worker_file = ap_server_root_relative(cmd->pool,worker_file);
-
-    env=workerEnv->globalEnv;
-    
-    if (workerEnv->worker_file == NULL)
-        return "JkWorkersFile file_name invalid";
-
-    if (stat(workerEnv->worker_file, &statbuf) == -1)
-        return "Can't find the workers file specified";
-
-    /** Read worker files
-     */
-    env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Reading map %s %d\n",
-                  workerEnv->worker_file,
-                  workerEnv->init_data->size(env, workerEnv->init_data) );
-    
-    if( workerEnv->worker_file != NULL ) {
-        int err=jk_map_readFileProperties(env, workerEnv->init_data,
-                                          workerEnv->worker_file);
-        if( err==JK_TRUE ) {
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
-                          "Read map %s %d\n", workerEnv->worker_file,
-                          workerEnv->init_data->size( env, workerEnv->init_data ) );
-        } else {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error reading map %s %d\n",
-                          workerEnv->worker_file,
-                          workerEnv->init_data->size( env, workerEnv->init_data ) );
-        }
+    if( strcmp( name, "name") == 0 ) {
+        uriEnv->servlet=ap_pstrdup(cmd->pool, val);
+    } else {
+        /* Generic properties */
+        uriEnv->properties->add( workerEnv->globalEnv, uriEnv->properties,
+                                 ap_pstrdup(cmd->pool, name),
+                                 ap_pstrdup(cmd->pool, val));
     }
+    
+    fprintf(stderr, "XXX SetServlet %p %p %s %s dir=%s args=%s\n",
+            uriEnv, uriEnv->webapp, name, val,
+            cmd->directive->directive,
+            cmd->directive->args);
 
     return NULL;
 }
 
-/*
- * JkSet name value
+/** 
+ * Set jk options.
+ *
+ * "JkFoo value" is equivalent with a "foo=value" setting in
+ * workers.properties. ( XXX rename workers.properties to jk.properties)
+ *
+ * We are using a small trick to avoid duplicating the code ( the 'dummy'
+ * parm ). The values are validated and initalized in jk_init.
  */
-static const char *jk_worker_property(cmd_parms *cmd,
-                                      void *dummy,
-                                      const char *name,
-                                      const char *value)
+static const char *jk_set1(cmd_parms *cmd, void *per_dir,
+                           const char *value)
 {
     server_rec *s = cmd->server;
     struct stat statbuf;
@@ -249,8 +231,54 @@ static const char *jk_worker_property(cmd_parms *cmd,
     int rc;
     jk_env_t *env;
 
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
+    jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
+        ap_get_module_config(s->module_config, &jk_module);
+    jk_workerEnv_t *workerEnv = serverEnv->workerEnv;
+    
+    jk_map_t *m=workerEnv->init_data;
+    
+    env=workerEnv->globalEnv;
+
+    value = jk_map_replaceProperties(env, m, m->pool, value);
+
+    if( cmd->info != NULL ) {
+        /* Multi-option config. */
+        m->add(env, m, (char *)cmd->info, (char *)value );
+
+    } else {
+        /* ??? Maybe this is a single-option */
+        m->add(env, m, value, "On" );
+    }
+
+    return NULL;
+}
+
+
+/*
+ * JkSet name value
+ * JkEnv envvar envvalue
+ * JkMount /context worker
+ *
+ * Special options. First is equivalent with "name=value" in workers.properties.
+ * ( you should use the specialized directive, as it provides more info ).
+ * The other 2 are defining special maps.
+ *
+ * We use a small trick ( dummy param ) to avoid duplicated code and keep it
+ * simple.
+ */
+static const char *jk_set2(cmd_parms *cmd,void *per_dir,
+                           const char *name, const char *value)
+{
+    server_rec *s = cmd->server;
+    struct stat statbuf;
+    char *oldv;
+    int rc;
+    jk_env_t *env;
+    char *type=(char *)cmd->info;
+
+    jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
+        ap_get_module_config(s->module_config, &jk_module);
+    jk_workerEnv_t *workerEnv = serverEnv->workerEnv;
     
     jk_map_t *m=workerEnv->init_data;
     
@@ -258,446 +286,155 @@ static const char *jk_worker_property(cmd_parms *cmd,
     
     value = jk_map_replaceProperties(env, m, m->pool, value);
 
-    oldv = jk_map_getString(env, m, name, NULL);
+    if(value==NULL)
+        return NULL;
 
-    if(oldv) {
-        char *tmpv = apr_palloc( cmd->pool,
-                                strlen(value) + strlen(oldv) + 3);
-        if(tmpv) {
-            char sep = '*';
-            if(jk_is_some_property(env, name, "path")) {
-                sep = PATH_SEPERATOR;
-            } else if(jk_is_some_property(env, name, "cmd_line")) {
-                sep = ' ';
-            }
-            
-            sprintf(tmpv, "%s%c%s", 
-                    oldv, sep, value);
-        }                                
-        value = tmpv;
+    if( type==NULL || type[0]=='\0') {
+        /* Generic JkSet foo bar */
+        m->add(env, m, ap_pstrdup( cmd->pool, name),
+               ap_pstrdup( cmd->pool, value));
+        fprintf( stderr, "set2.init_data: %s %s\n", name, value );
+    } else if( strcmp(type, "env")==0) {
+        workerEnv->envvars_in_use = JK_TRUE;
+        workerEnv->envvars->put(env, workerEnv->envvars,
+                                ap_pstrdup(cmd->pool,name),
+                                ap_pstrdup(cmd->pool,value),
+                                NULL);
+        fprintf( stderr, "set2.env %s %s\n", name, value );
+    } else if( strcmp(type, "mount")==0) {
+        if (name[0] !='/') return "Context must start with /";
+        workerEnv->init_data->put(  env, workerEnv->init_data,
+                                    ap_pstrdup(cmd->pool,name),
+                                    ap_pstrdup(cmd->pool,value),
+                                    NULL );
+        fprintf( stderr, "set2.mount %s %s\n", name, value );
     } else {
-        value = ap_pstrdup( cmd->pool, value);
+        fprintf( stderr, "set2 error %s %s %s ", type, name, value );
     }
-    
-    if(value) {
-        m->put(env, m,
-               ap_pstrdup( cmd->pool, name),
-               ap_pstrdup( cmd->pool, value),
-               NULL);
-        /*printf("Setting %s %s\n", name, value);*/
-    } 
-    return NULL;
-}
 
-
-/*
- * JkLogFile Directive Handling
- *
- * JkLogFile file
- */
-static const char *jk_set_log_file(cmd_parms *cmd, 
-                                   void *dummy, 
-                                   const char *log_file)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-    char *logFileA;
-
-    /* we need an absolut path */
-    logFileA = ap_server_root_relative(cmd->pool,log_file);
-
-    if (logFileA == NULL)
-        return "JkLogFile file_name invalid";
-
-    workerEnv->init_data->put( NULL, workerEnv->init_data, "logger.file.name", logFileA, NULL);
- 
     return NULL;
 }
 
 /*
- * JkLogLevel Directive Handling
+ * JkWorker workerName workerProperty value
  *
- * JkLogLevel debug/info/error/emerg
+ * Equivalent with "worker.workerName.workerProperty=value" in
+ * workers.properties.
  */
-
-static const char *jk_set_log_level(cmd_parms *cmd, 
-                                    void *dummy, 
-                                    const char *log_level)
+static const char *jk_setWorker(cmd_parms *cmd,void *per_dir,
+                                const char *wname, const char *wparam, const char *value)
 {
     server_rec *s = cmd->server;
+    struct stat statbuf;
+    char *oldv;
+    int rc;
     jk_env_t *env;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
+    char *type=(char *)cmd->info;
 
+    jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
+        ap_get_module_config(s->module_config, &jk_module);
+    jk_workerEnv_t *workerEnv = serverEnv->workerEnv;
+    
+    jk_map_t *m=workerEnv->init_data;
+    
     env=workerEnv->globalEnv;
     
-    workerEnv->init_data->put( env, workerEnv->init_data, "logger.file.level",
-                               ap_pstrdup(cmd->pool, log_level), NULL);
+    value = jk_map_replaceProperties(env, m, m->pool, value);
 
-    if(0 == strcasecmp(log_level, JK_LOG_INFO_VERB)) {
-        env->l->level=JK_LOG_INFO_LEVEL;
-    }
-    if(0 == strcasecmp(log_level, JK_LOG_DEBUG_VERB)) {
-        env->l->level=JK_LOG_DEBUG_LEVEL;
-    }
-    
+    if(value==NULL)
+        return NULL;
+
+/*     workerEnv->init_data->add(  env, workerEnv->init_data, */
+/*                                 ap_pstrdup(cmd->pool,name), */
+/*                                 ap_pstrdup(cmd->pool,value)); */
     return NULL;
 }
 
-/*
- * JkLogStampFormat Directive Handling
- *
- * JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "
+/* Command table.
  */
-static const char * jk_set_log_fmt(cmd_parms *cmd,
-                      void *dummy,
-                      const char * log_format)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    workerEnv->init_data->put( NULL, workerEnv->init_data, "logger.file.timeFormat",
-                               ap_pstrdup(cmd->pool,log_format), NULL);
-    return NULL;
-}
-
-/*
- * JkExtractSSL Directive Handling
- *
- * JkExtractSSL On/Off
- */
-
-static const char *jk_set_enable_ssl(cmd_parms *cmd,
-                                     void *dummy,
-                                     int flag)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-   
-    /* Set up our value */
-    workerEnv->ssl_enable = flag ? JK_TRUE : JK_FALSE;
-
-    return NULL;
-}
-
-/*
- * JkHTTPSIndicator Directive Handling
- *
- * JkHTTPSIndicator HTTPS
- */
-
-static const char *jk_set_https_indicator(cmd_parms *cmd,
-                                          void *dummy,
-                                          const char *indicator)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    workerEnv->https_indicator = ap_pstrdup(cmd->pool,indicator);
-
-    return NULL;
-}
-
-/*
- * JkCERTSIndicator Directive Handling
- *
- * JkCERTSIndicator SSL_CLIENT_CERT
- */
-
-static const char *jk_set_certs_indicator(cmd_parms *cmd,
-                                          void *dummy,
-                                          const char *indicator)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    workerEnv->certs_indicator = ap_pstrdup(cmd->pool,indicator);
-
-    return NULL;
-}
-
-/*
- * JkCIPHERIndicator Directive Handling
- *
- * JkCIPHERIndicator SSL_CIPHER
- */
-
-static const char *jk_set_cipher_indicator(cmd_parms *cmd,
-                                           void *dummy,
-                                           const char *indicator)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    workerEnv->cipher_indicator = ap_pstrdup(cmd->pool,indicator);
-
-    return NULL;
-}
-
-/*
- * JkSESSIONIndicator Directive Handling
- *
- * JkSESSIONIndicator SSL_SESSION_ID
- */
-
-static const char *jk_set_session_indicator(cmd_parms *cmd,
-                                           void *dummy,
-                                           const char *indicator)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    workerEnv->session_indicator = ap_pstrdup(cmd->pool,indicator);
-
-    return NULL;
-}
-
-/*
- * JkKEYSIZEIndicator Directive Handling
- *
- * JkKEYSIZEIndicator SSL_CIPHER_USEKEYSIZE
- */
-
-static const char *jk_set_key_size_indicator(cmd_parms *cmd,
-                                           void *dummy,
-                                           const char *indicator)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    workerEnv->key_size_indicator = ap_pstrdup(cmd->pool,indicator);
-
-    return NULL;
-}
-
-/*
- * JkOptions Directive Handling
- *
- *
- * +ForwardSSLKeySize        => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
- * -ForwardSSLKeySize        => Don't Forward SSL Key Size, will make mod_jk works with all TC release
- *  ForwardURICompat         => Forward URI normally, less spec compliant but mod_rewrite compatible (old TC)
- *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)
- *  ForwardURIEscaped       => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
- */
-static const char *jk_set_options(cmd_parms *cmd,
-                                  void *dummy,
-                                  const char *line)
-{
-    int  opt = 0;
-    int  mask = 0;
-    char action;
-    char *w;
-
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    while (line[0] != 0) {
-        w = ap_getword_conf(cmd->pool, &line);
-        action = 0;
-
-        if (*w == '+' || *w == '-') {
-            action = *(w++);
-        }
-
-        mask = 0;
-
-        if (!strcasecmp(w, "ForwardKeySize")) {
-            opt = JK_OPT_FWDKEYSIZE;
-        }
-        else if (!strcasecmp(w, "ForwardURICompat")) {
-            opt = JK_OPT_FWDURICOMPAT;
-            mask = JK_OPT_FWDURIMASK;
-        }
-        else if (!strcasecmp(w, "ForwardURICompatUnparsed")) {
-            opt = JK_OPT_FWDURICOMPATUNPARSED;
-            mask = JK_OPT_FWDURIMASK;
-        }
-        else if (!strcasecmp(w, "ForwardURIEscaped")) {
-            opt = JK_OPT_FWDURIESCAPED;
-            mask = JK_OPT_FWDURIMASK;
-        }
-        else
-            return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w, "'", NULL);
-
-        workerEnv->options &= ~mask;
-
-        if (action == '-') {
-            workerEnv->options &= ~opt;
-        }
-        else if (action == '+') {
-            workerEnv->options |=  opt;
-        }
-        else {
-            /* for now +Opt == Opt */
-            workerEnv->options |=  opt;
-        }
-    }
-    return NULL;
-}
-
-/*
- * JkEnvVar Directive Handling
- *
- * JkEnvVar MYOWNDIR
- */
-static const char *jk_add_env_var(cmd_parms *cmd,
-                                  void *dummy,
-                                  const char *env_name,
-                                  const char *default_value)
-{
-    server_rec *s = cmd->server;
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    workerEnv->envvars_in_use = JK_TRUE;
-
-    workerEnv->envvars->put(NULL, workerEnv->envvars, env_name,
-                            ap_pstrdup(cmd->pool,default_value) , NULL);
-
-    return NULL;
-}
-    
 static const command_rec jk_cmds[] =
     {
-    /*
-     * JkWorkersFile specifies a full path to the location of the jk
-     * properties file.
-     */
     AP_INIT_TAKE1(
-        "JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF,
+        "JkWorkersFile", jk_set1, "workerFile", RSRC_CONF,
         "the name of a worker file for the Jakarta servlet containers"),
     AP_INIT_TAKE1(
-        "JkProperties", jk_set_worker_file, NULL, RSRC_CONF,
-        "the name of a worker file for the Jakarta servlet containers"),
-
-    /*
-     * JkWorker allows you to specify worker properties in server.xml.
-     * They are added before any property in JkWorkersFile ( if any ), 
-     * as a more convenient way to configure
-     */
+        "JkProperties", jk_set1,  "workerFile", RSRC_CONF,
+        "Properties file containing additional settings ( replaces JkWoprkerFile )"),
     AP_INIT_TAKE2(
-        "JkSet", jk_worker_property, NULL, RSRC_CONF,
+        "JkSet", jk_set2, NULL, RSRC_CONF,
         "Set a jk property, same syntax and rules as in JkWorkersFile"),
-
-    /*
-     * JkMount mounts a url prefix to a worker (the worker need to be
-     * defined in the worker properties file.
-     */
-    AP_INIT_TAKE23(
-        "JkMount", jk_mount_context, NULL, RSRC_CONF,
+    AP_INIT_TAKE2(
+        "JkMount", jk_set2, "mount", RSRC_CONF,
         "A mount point from a context to a Tomcat worker"),
-
-    /*
-     * JkWorker sets the worker associated with a <Location> directive.
-     */
+    AP_INIT_TAKE2(
+        "JkWorker", jk_setWorker, NULL, RSRC_CONF,
+        "Defines workers and worker properties "),
+    AP_INIT_TAKE2(
+        "JkWebapp", jk_setWebapp, NULL, ACCESS_CONF,
+        "Defines a webapp in a Location directive and it's properties"),
+    AP_INIT_TAKE2(
+        "JkServlet", jk_setServlet, NULL, ACCESS_CONF,
+        "Defines a servlet in a Location directive"),
     AP_INIT_TAKE1(
-        "JkWorker", jk_set_worker, NULL, ACCESS_CONF,
-        "Worker to be used for a webapp declared as Location"),
-
-    /*
-     * JkMountCopy specifies if mod_jk should copy the mount points
-     * from the main server to the virtual servers.
-     */
-    AP_INIT_FLAG(
-        "JkMountCopy", jk_set_mountcopy, NULL, RSRC_CONF,
-        "Should the base server mounts be copied to the virtual server"),
-
-    /* -------------------- Should be part of workers.properties ------------ */
-    /*
-     * JkLogFile & JkLogLevel specifies to where should the plugin log
-     * its information and how much.
-     * JkLogStampFormat specify the time-stamp to be used on log
-     * XXX We should use error.log !
-     */
+        "JkMountCopy", jk_set1, "root_apps_are_global", RSRC_CONF,
+        "Should the base server mounts be copied from main server to the virtual server"),
     AP_INIT_TAKE1(
-        "JkLogFile", jk_set_log_file, NULL, RSRC_CONF,
+        "JkLogFile", jk_set1, "logFile", RSRC_CONF,
         "Full path to the Jakarta Tomcat module log file"),
     AP_INIT_TAKE1(
-        "JkLogLevel", jk_set_log_level, NULL, RSRC_CONF,
+        "JkLogLevel", jk_set1, "logLevel", RSRC_CONF,
         "The Jakarta Tomcat module log level, can be debug, "
         "info, error or emerg"),
     AP_INIT_TAKE1(
-        "JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF,
+        "JkLogStampFormat", jk_set1, "logStampFormat", RSRC_CONF,
         "The Jakarta Tomcat module log format, follow strftime synthax"),
-
-    /*
-     * Apache has multiple SSL modules (for example apache_ssl, stronghold
-     * IHS ...). Each of these can have a different SSL environment names
-     * The following properties let the administrator specify the envoiroment
-     * variables names.
-     *
-     * HTTPS - indication for SSL
-     * CERTS - Base64-Der-encoded client certificates.
-     * CIPHER - A string specifing the ciphers suite in use.
-     * KEYSIZE - Size of Key used in dialogue (#bits are secure)
-     * SESSION - A string specifing the current SSL session.
-     */
     AP_INIT_TAKE1(
-        "JkHTTPSIndicator", jk_set_https_indicator, NULL, RSRC_CONF,
+        "JkHTTPSIndicator", jk_set1, "HttpsIndicator", RSRC_CONF,
         "Name of the Apache environment that contains SSL indication"),
     AP_INIT_TAKE1(
-        "JkCERTSIndicator", jk_set_certs_indicator, NULL, RSRC_CONF,
+        "JkCERTSIndicator", jk_set1, "CertsIndicator", RSRC_CONF,
         "Name of the Apache environment that contains SSL client certificates"),
     AP_INIT_TAKE1(
-         "JkCIPHERIndicator", jk_set_cipher_indicator, NULL, RSRC_CONF,
+         "JkCIPHERIndicator", jk_set1, "CipherIndicator", RSRC_CONF,
         "Name of the Apache environment that contains SSL client cipher"),
     AP_INIT_TAKE1(
-        "JkSESSIONIndicator", jk_set_session_indicator, NULL, RSRC_CONF,
+        "JkSESSIONIndicator", jk_set1, "SessionIndicator", RSRC_CONF,
         "Name of the Apache environment that contains SSL session"),
     AP_INIT_TAKE1(
-        "JkKEYSIZEIndicator", jk_set_key_size_indicator, NULL, RSRC_CONF,
+        "JkKEYSIZEIndicator", jk_set1, "KeySizeIndicator", RSRC_CONF,
         "Name of the Apache environment that contains SSL key size in use"),
-    AP_INIT_FLAG(
-        "JkExtractSSL", jk_set_enable_ssl, NULL, RSRC_CONF,
+    AP_INIT_TAKE1(
+        "JkExtractSSL", jk_set1, "extractSsl", RSRC_CONF,
         "Turns on SSL processing and information gathering by mod_jk"),
-
-    /*
-     * Options to tune mod_jk configuration
-     * for now we understand :
-     * +ForwardSSLKeySize        => Forward SSL Key Size, to follow 2.3
-                                    specs but may broke old TC 3.2
-     * -ForwardSSLKeySize        => Don't Forward SSL Key Size, will make
-                                    mod_jk works with all TC release
-     *  ForwardURICompat         => Forward URI normally, less spec compliant
-                                    but mod_rewrite compatible (old TC)
-     *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant
-                                    but broke mod_rewrite (old TC)
-     *  ForwardURIEscaped        => Forward URI escaped and Tomcat (3.3 rc2)
-                                    stuff will do the decoding part
-     */
-    AP_INIT_RAW_ARGS(
-        "JkOptions", jk_set_options, NULL, RSRC_CONF, 
-        "Set one of more options to configure the mod_jk module"),
-
-    /*
-     * JkEnvVar let user defines envs var passed from WebServer to
-     * Servlet Engine
-     */
+    AP_INIT_TAKE1(
+        "JkForwardSSLKeySize", jk_set1, "forwardSslKeySize", RSRC_CONF,
+        "Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2,"
+        "off is backward compatible"),
+    AP_INIT_TAKE1(
+        "ForwardURICompat",  jk_set1, "forwardUriCompat", RSRC_CONF,
+        "Forward URI normally, less spec compliant but mod_rewrite compatible (old TC)"),
+    AP_INIT_TAKE1(
+        "JkForwardURICompatUnparsed", jk_set1, "forwardUriCompatUnparsed", RSRC_CONF,
+        "Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)"),
+    AP_INIT_TAKE1(
+        "JkForwardURIEscaped", jk_set1, "forwardUriEscaped", RSRC_CONF,
+        "Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part"),
     AP_INIT_TAKE2(
-        "JkEnvVar", jk_add_env_var, NULL, RSRC_CONF,
-        "Adds a name of environment variable that should be sent "
+        "JkEnvVar", jk_set2, "env", RSRC_CONF,
+        "Adds a name of environment variable that should be sent from web server "
         "to servlet-engine"),
-
-    {NULL}
+    NULL
 };
 
-static void *create_jk_dir_config(apr_pool_t *p, char *dummy)
+static void *create_jk_dir_config(apr_pool_t *p, char *path)
 {
     jk_uriEnv_t *new =
         (jk_uriEnv_t *)apr_pcalloc(p, sizeof(jk_uriEnv_t));
 
-    printf("XXX Create dir config %s %p\n", dummy, new);
-    new->uri = dummy;
+    fprintf(stderr, "XXX Create dir config %s %p\n", path, new);
+    new->uri = path;
+    new->workerEnv=workerEnv;
+    
     return new;
 }
 
@@ -710,24 +447,23 @@ static void *merge_jk_dir_config(apr_pool_t *p, void *basev, void *addv)
     
     
     /* XXX */
-    printf("XXX Merged dir config %p %p\n", base, new);
+    fprintf(stderr, "XXX Merged dir config %p %p %s %s %p %p\n",
+            base, new,
+            base->uri, add->uri,
+            base->webapp, add->webapp);
+
+    if( add->webapp == NULL ) {
+        add->webapp=base->webapp;
+    }
+    
     return add;
 }
 
-/** Create default jk_config. XXX This is mostly server-independent,
-    all servers are using something similar - should go to common.
-
-    This is the first thing called ( or should be )
- */
-static void *create_jk_config(apr_pool_t *p, server_rec *s)
-{
-    /* XXX Do we need both env and workerEnv ? */
+static void create_workerEnv(apr_pool_t *p, server_rec *s) {
     jk_env_t *env;
-    jk_workerEnv_t *workerEnv;
     jk_logger_t *l;
     jk_pool_t *globalPool;
-    jk_pool_t *workerEnvPool;
-
+    
     /** First create a pool
      */
 #ifdef NO_APACHE_POOL
@@ -743,39 +479,60 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
 
     /* Optional. Register more factories ( or replace existing ones ) */
 
-
     /* Init the environment. */
     
     /* Create the logger */
 #ifdef NO_APACHE_LOGGER
     l = env->getInstance( env, env->globalPool, "logger", "file");
 #else
-    jk_logger_apache2_factory( env, env->globalPool, &l, "logger", "file");
+    jk_logger_apache2_factory( env, env->globalPool, (void *)&l, "logger", "file");
     l->logger_private=s;
 #endif
     
     env->l=l;
-    l->level=JK_LOG_ERROR_LEVEL;
     
     /* Create the workerEnv */
-    workerEnvPool=
-        env->globalPool->create( env, env->globalPool, HUGE_POOL_SIZE );    
-    workerEnv= env->getInstance( env,
-                                 workerEnvPool,
-                                 "workerEnv", "default");
+    workerEnv= env->getInstance( env, env->globalPool,"workerEnv", "default");
 
-    workerEnv->globalEnv=env;
     if( workerEnv==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating workerEnv\n");
-        return NULL;
+        return;
     }
 
     /* Local initialization */
     workerEnv->_private = s;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk.create_jk_config()\n" ); 
-    return workerEnv;
+    fprintf( stderr, "Create worker env %p\n", workerEnv );
 }
+
+/** Create default jk_config. XXX This is mostly server-independent,
+    all servers are using something similar - should go to common.
+
+    This is the first thing called ( or should be )
+ */
+static void *create_jk_config(apr_pool_t *p, server_rec *s)
+{
+    jk_uriEnv_t *newUri;
+
+    if(  workerEnv==NULL ) {
+        create_workerEnv(p, s );
+    }
+    if( s->is_virtual == 1 ) {
+        /* Virtual host */
+        
+        
+    } else {
+        /* Default host */
+        
+    }
+
+    newUri=(jk_uriEnv_t *)apr_pcalloc(p, sizeof(jk_uriEnv_t));
+
+    newUri->workerEnv=workerEnv;
+    
+    return newUri;
+}
+
+
 
 /** Standard apache callback, merge jk options specified in 
     <Host> context. Used to set per virtual host configs
@@ -784,59 +541,26 @@ static void *merge_jk_config(apr_pool_t *p,
                              void *basev, 
                              void *overridesv)
 {
-    jk_workerEnv_t *base = (jk_workerEnv_t *) basev;
-    jk_workerEnv_t *overrides = (jk_workerEnv_t *)overridesv;
+    jk_uriEnv_t *base = (jk_uriEnv_t *) basev;
+    jk_uriEnv_t *overrides = (jk_uriEnv_t *)overridesv;
     
-
-    /* XXX Commented out for now. It'll be reimplemented after we
-       add per/dir config and merge. 
-    if(base->ssl_enable) {
-        overrides->ssl_enable        = base->ssl_enable;
-        overrides->https_indicator   = base->https_indicator;
-        overrides->certs_indicator   = base->certs_indicator;
-        overrides->cipher_indicator  = base->cipher_indicator;
-        overrides->session_indicator = base->session_indicator;
-    }
-
-    overrides->options = base->options;
-
-    if(overrides->workerEnvmountcopy) {
-        copy_jk_map(p, overrides->s, base->uri_to_context, 
-                    overrides->uri_to_context);
-        copy_jk_map(p, overrides->s, base->automount, overrides->automount);
-    }
-
-    if(base->envvars_in_use) {
-        overrides->envvars_in_use = JK_TRUE;
-        overrides->envvars = apr_table_overlay(p, overrides->envvars, 
-                                               base->envvars);
-    }
-
-    if(overrides->log_file && overrides->log_level >= 0) {
-        if(!jk_open_file_logger(&(overrides->log), overrides->log_file, 
-                                overrides->log_level)) {
-            overrides->log = NULL;
-        }
-    }
-    if(!uri_worker_map_alloc(&(overrides->uw_map), 
-                             overrides->uri_to_context, 
-                             overrides->log)) {
-    }
+    fprintf(stderr,  "Merging workerEnv \n" );
     
-    if (base->secret_key)
-        overrides->secret_key = base->secret_key;
-    */
-
+    /* The 'mountcopy' option should be implemented in common.
+     */
     return overrides;
 }
+
 
 /** Standard apache callback, initialize jk.
  */
 static void jk_child_init(apr_pool_t *pconf, 
                           server_rec *s)
 {
-    jk_workerEnv_t *workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
+    jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
+        ap_get_module_config(s->module_config, &jk_module);
+    jk_workerEnv_t *workerEnv = serverEnv->workerEnv;
+
     jk_env_t *env=workerEnv->globalEnv;
 
     env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init\n" );
@@ -854,28 +578,13 @@ static void jk_child_init(apr_pool_t *pconf,
     SetHandler and normal apache directives ( but minimal jk-specific
     stuff )
 */
-static void init_jk( jk_env_t *env, apr_pool_t *pconf,
+static char * init_jk( jk_env_t *env, apr_pool_t *pconf,
                      jk_workerEnv_t *workerEnv, server_rec *s )
 {
-    int err;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk.init_jk()\n" ); 
-
-    env->l->open( env, env->l, workerEnv->init_data );
-
-    /* local initialization */
-    workerEnv->virtual       = "*";     /* for now */
+    workerEnv->init(env, workerEnv );
     workerEnv->server_name   = (char *)ap_get_server_version();
-
-    /* Init() - post-config initialization ( now all options are set ) */
-    workerEnv->init( env, workerEnv ); 
-
-    err=workerEnv->uriMap->init(env, workerEnv->uriMap,
-                                workerEnv,
-                                workerEnv->init_data );
-    
     ap_add_version_component(pconf, JK_EXPOSED_VERSION);
-    return;
+    return NULL;
 }
 
 /* Apache will first validate the config then restart.
@@ -917,21 +626,18 @@ static int jk_post_config(apr_pool_t *pconf,
                            apr_pool_t *ptemp, 
                            server_rec *s)
 {
-    jk_workerEnv_t *workerEnv;
     apr_pool_t *gPool=NULL;
     void *data=NULL;
     int rc;
     jk_env_t *env;
-
+    
     if(s->is_virtual) 
         return OK;
-
-    workerEnv =
-        (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
 
     env=workerEnv->globalEnv;
     
     rc=jk_apache2_isValidating( plog, &gPool );
+
     if( rc == JK_TRUE ) {
         /* This is the first step */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -953,16 +659,6 @@ static int jk_post_config(apr_pool_t *pconf,
 /* ========================================================================= */
 /* The JK module handlers                                                    */
 /* ========================================================================= */
-
-/** Util - cleanup endpoint. Used with per/thread endpoints.
- */
-static apr_status_t jk_cleanup_endpoint( void *data ) {
-    jk_endpoint_t *end = (jk_endpoint_t *)data;    
-    printf("XXX jk_cleanup1 %p\n", data);
-    /* XXX get env */
-    end->done(NULL, end);  
-    return 0;
-}
 
 /** Main service method, called to forward a request to tomcat
  */
@@ -989,8 +685,8 @@ static int jk_handler(request_rec *r)
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    workerEnv=(jk_workerEnv_t *)ap_get_module_config(r->server->module_config, 
-                                                     &jk_module);
+    workerEnv = uriEnv->workerEnv;
+
     /* XXX Get an env instance */
     env = workerEnv->globalEnv;
 
@@ -1029,7 +725,7 @@ static int jk_handler(request_rec *r)
         jk_ws_service_t *s=&sOnStack;
         int is_recoverable_error = JK_FALSE;
 
-        jk_service_apache2_factory( env, end->cPool, &s,
+        jk_service_apache2_factory( env, end->cPool, (void *)&s,
                                     "service", "apache2");
         
         s->init( env, s, end, r );
@@ -1064,8 +760,8 @@ static int jk_translate(request_rec *r)
     }
     
     uriEnv=ap_get_module_config( r->per_dir_config, &jk_module );
-    workerEnv=(jk_workerEnv_t *)ap_get_module_config(r->server->module_config,
-                                                     &jk_module);
+    workerEnv=uriEnv->workerEnv;
+    
     /* XXX get_env() */
     env=workerEnv->globalEnv;
         
@@ -1163,7 +859,7 @@ module AP_MODULE_DECLARE_DATA jk_module =
 {
     STANDARD20_MODULE_STUFF,
     create_jk_dir_config,/*  dir config creater */
-    NULL,  /* merge_jk_dir_config dir merger --- default is to override */
+    merge_jk_dir_config, /* dir merger --- default is to override */
     create_jk_config,    /* server config */
     merge_jk_config,     /* merge server config */
     jk_cmds,             /* command ap_table_t */
