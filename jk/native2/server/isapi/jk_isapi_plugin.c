@@ -82,6 +82,14 @@
 #include "jk_iis.h"
 //#include "jk_uri_worker_map.h"
 
+#define EXTENSION_URI_TAG       ("extension_uri")
+#define SERVER_ROOT_TAG          ("server_root")
+#define URI_SELECT_TAG          ("uri_select")
+
+#define URI_SELECT_PARSED_VERB      ("parsed")
+#define URI_SELECT_UNPARSED_VERB    ("unparsed")
+#define URI_SELECT_ESCAPED_VERB     ("escaped")
+
 
 static char  ini_file_name[MAX_PATH];
 static int   using_ini_file = JK_FALSE;
@@ -95,8 +103,9 @@ static jk_workerEnv_t *workerEnv;
 static char extension_uri[INTERNET_MAX_URL_LENGTH] = "/jakarta/isapi_redirector2.dll";
 static char log_file[MAX_PATH * 2];
 static int  log_level = JK_LOG_EMERG_LEVEL;
-static char worker_file[MAX_PATH * 2];
-static char worker_mount_file[MAX_PATH * 2];
+//static char worker_file[MAX_PATH * 2];
+static char server_root[MAX_PATH * 2];
+//static char worker_mount_file[MAX_PATH * 2];
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -105,7 +114,7 @@ static char worker_mount_file[MAX_PATH * 2];
 static int uri_select_option = URI_SELECT_OPT_PARSED;
 
 
-static int init_jk(jk_env_t *env,char *serverName);
+static int init_jk(char *serverName);
 
 static int initialize_extension(void);
 
@@ -122,6 +131,9 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
                             char  *buf,
                             DWORD bufsz,
                             char  *def_val);
+
+static jk_env_t* jk2_create_config();
+
 
 static void write_error_response(PHTTP_FILTER_CONTEXT pfc,char *status,char * msg)
 {
@@ -173,7 +185,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                             DWORD dwNotificationType, 
                             LPVOID pvNotification)
 {
-    jk_env_t *env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+    jk_env_t *env; 
+    jk_uriEnv_t *uriEnv;
 
     /* Initialise jk */
     if (is_inited && !is_mapread) {
@@ -182,14 +195,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 
         if (pfc->GetServerVariable(pfc, SERVER_NAME, serverName, &dwLen)){
             if (dwLen > 0) serverName[dwLen-1] = '\0';
-            if (init_jk(env,serverName))
+            if (init_jk(serverName))
                 is_mapread = JK_TRUE;
         }
         /* If we can't read the map we become dormant */
         if (!is_mapread)
             is_inited = JK_FALSE;
     }
-
+    env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
     if (is_inited && (iis5 < 0) ) {
         char serverSoftware[256];
         DWORD dwLen = sizeof(serverSoftware);
@@ -203,7 +216,6 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 			}
         }
     }
-
     if (is_inited &&
          (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) ||
 		  ((SF_NOTIFY_AUTH_COMPLETE   == dwNotificationType) &&  iis5)
@@ -251,6 +263,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         if (!GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz)) {
             env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                    "HttpFilterProc error while getting the url\n");
+            workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
             return SF_STATUS_REQ_ERROR;
         }
 
@@ -269,6 +282,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                        uri);
                 write_error_response(pfc,"400 Bad Request",
                         "<HTML><BODY><H1>Request contains invalid encoding</H1></BODY></HTML>");
+                workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                 return SF_STATUS_REQ_FINISHED;
             }
             else if(rc == BAD_PATH) {
@@ -277,26 +291,27 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                        uri);
                 write_error_response(pfc,"403 Forbidden",
                         "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                 return SF_STATUS_REQ_FINISHED;
             }
             jk_requtil_getParents(uri);
 
+
             if(GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
-                strcat(snuri,Host);
-                strcat(snuri,uri);
                 env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                        "In HttpFilterProc Virtual Host redirection of %s\n", 
-                       snuri);
-//                worker = map_uri_to_worker(uw_map, snuri, logger);                
+                       Host);
+                uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host,uri );
             }
-            if (!worker) {
+
+            if (uriEnv==NULL) {
                 env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                        "In HttpFilterProc test Default redirection of %s\n", 
                        uri);
-//                worker = map_uri_to_worker(uw_map, uri, logger);
+                uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,uri );
             }
 
-            if (worker) {
+            if (uriEnv!=NULL) {
                 char *forwardURI;
 
                 /* This is a servlet, should redirect ... */
@@ -321,6 +336,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                                uri);
                         write_error_response(pfc,"400 Bad Request",
                                 "<HTML><BODY><H1>Request contains too many characters that need to be encoded.</H1></BODY></HTML>");
+                        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                         return SF_STATUS_REQ_FINISHED;
                     }
                     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
@@ -333,10 +349,11 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 if(!AddHeader(pfc, URI_HEADER_NAME, forwardURI) || 
                    ( (query != NULL && strlen(query) > 0)
                            ? !AddHeader(pfc, QUERY_HEADER_NAME, query) : FALSE ) || 
-                   !AddHeader(pfc, WORKER_HEADER_NAME, worker) ||
+                   !AddHeader(pfc, WORKER_HEADER_NAME, uriEnv->workerName) ||
                    !SetHeader(pfc, "url", extension_uri)) {
                     env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                            "HttpFilterProc error while adding request headers\n");
+                    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                     return SF_STATUS_REQ_ERROR;
                 }
 				
@@ -349,6 +366,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     if (!AddHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, Translate)) {
                         env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                           "HttpFilterProc error while adding Tomcat-Translate headers\n");
+                        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                         return SF_STATUS_REQ_ERROR;
                     }
                 SetHeader(pfc, "Translate:", NULL);
@@ -374,10 +392,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 
                 write_error_response(pfc,"403 Forbidden",
                         "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
                 return SF_STATUS_REQ_FINISHED;
             }
         }
     }
+    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     return SF_STATUS_REQ_NEXT_NOTIFICATION;
 }
 
@@ -412,7 +432,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
 		DWORD dwLen = sizeof(serverName);
 		if (lpEcb->GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName, &dwLen)){
 			if (dwLen > 0) serverName[dwLen-1] = '\0';
-			if (init_jk(env,serverName))
+			if (init_jk(serverName))
 				is_mapread = JK_TRUE;
 		}
 		if (!is_mapread)
@@ -481,15 +501,7 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
     if (is_inited) {
         is_inited = JK_FALSE;
 
-/*
-		if (is_mapread) {
-			uri_worker_map_free(&uw_map, logger);
-			is_mapread = JK_FALSE;
-		}
-        wc_close(logger);
-        if (logger) {
-            jk_close_file_logger(&logger);
-        }
+/* XXX Here goes a graceful shutdown of jk2, Free resources and pools
 */
     }
     
@@ -528,13 +540,11 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     return fReturn;
 }
 
-static int init_jk(jk_env_t *env,char *serverName)
+static int init_jk(char *serverName)
 {
     int rc = JK_FALSE;  
-    jk_map_t *map;
-    ;
-    
-    /* XXX Copy jk init code from apache2 */
+       
+    jk_env_t *env=jk2_create_config();
     
     /* Logging the initialization type: registry or properties file in virtual dir
     */
@@ -546,63 +556,9 @@ static int init_jk(jk_env_t *env,char *serverName)
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using log file %s.\n", log_file);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using log level %d.\n", log_level);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using extension uri %s.\n", extension_uri);
-    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
-    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using worker mount file %s.\n", worker_mount_file);
+    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using server root %s.\n", server_root);
+//    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using worker mount file %s.\n", worker_mount_file);
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, "Using uri select %d.\n", uri_select_option);
-/*
-    if (map_alloc(&map)) {
-        if (map_read_properties(map, worker_mount_file)) {
-            jk_map_t *map2;
-            if (map_alloc(&map2)) {
-                int sz,i;
-                void* old;
-
-                sz = map_size(map);
-                for(i = 0; i < sz ; i++) {
-                    char *name = map_name_at(map, i);
-                    if ('/' == *name) {
-                        map_put(map2, name, map_value_at(map, i), &old);
-                    } else {
-                        env->l->jkLog(env, env->l,  JK_LOG_DEBUG,
-                               "Ignoring worker mount file entry %s=%s.\n",
-                               name, map_value_at(map, i));
-                    }
-                }
-
-                if (uri_worker_map_alloc(&uw_map, map2, logger)) {
-                    rc = JK_TRUE;
-                }
-
-                map_free(&map2);
-            }
-        } else {
-            env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
-                    "Unable to read worker mount file %s.\n", 
-                    worker_mount_file);
-        }
-        map_free(&map);
-    }
-    if (rc) {
-        rc = JK_FALSE;
-        if (map_alloc(&map)) {
-            if (map_read_properties(map, worker_file)) {
-
-                worker_env.uri_to_worker = uw_map;
-                worker_env.server_name = serverName;
-
-                if (wc_open(map, &worker_env, logger)) {
-                    rc = JK_TRUE;
-                }
-            } else {
-                env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
-                        "Unable to read worker file %s.\n", 
-                        worker_file);
-            }
-            map_free(&map);
-        }
-    }
-*/
-
     return rc;
 }
 
@@ -641,6 +597,7 @@ static int read_registry_init_data(void)
     char *tmp;
     jk_map_t *map;
 
+/*
     if (map_alloc(&map)) {
         if (map_read_properties(map, ini_file_name)) {
             using_ini_file = JK_TRUE;
@@ -655,7 +612,7 @@ static int read_registry_init_data(void)
         }
         tmp = map_get_string(map, JK_LOG_LEVEL_TAG, NULL);
         if (tmp) {
-            log_level = jk_parse_log_level(tmp);
+            log_level = jk2_logger_file_parseLogLevel(tmp);
         } else {
             ok = JK_FALSE;
         }
@@ -665,15 +622,9 @@ static int read_registry_init_data(void)
         } else {
             ok = JK_FALSE;
         }
-        tmp = map_get_string(map, JK_WORKER_FILE_TAG, NULL);
+        tmp = map_get_string(map, SERVER_ROOT_TAG, NULL);
         if (tmp) {
-            strcpy(worker_file, tmp);
-        } else {
-            ok = JK_FALSE;
-        }
-        tmp = map_get_string(map, JK_MOUNT_FILE_TAG, NULL);
-        if (tmp) {
-            strcpy(worker_mount_file, tmp);
+            strcpy(server_root, tmp);
         } else {
             ok = JK_FALSE;
         }
@@ -687,7 +638,7 @@ static int read_registry_init_data(void)
             }
         }
     
-    } else {
+    } else */ {
         rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
                           REGISTRY_LOCATION,
                           (DWORD)0,
@@ -710,7 +661,7 @@ static int read_registry_init_data(void)
                                          JK_LOG_LEVEL_TAG,
                                          tmpbuf,
                                          sizeof(tmpbuf))) {
-            log_level = jk_parse_log_level(tmpbuf);
+            log_level = jk2_logger_file_parseLogLevel(tmpbuf);
         } else {
             ok = JK_FALSE;
         }
@@ -724,6 +675,15 @@ static int read_registry_init_data(void)
             ok = JK_FALSE;
         }
 
+        if(get_registry_config_parameter(hkey,
+                                         SERVER_ROOT_TAG,
+                                         tmpbuf,
+                                         sizeof(server_root))) {
+            strcpy(server_root, tmpbuf);
+        } else {
+            ok = JK_FALSE;
+        }
+/*
         if(get_registry_config_parameter(hkey,
                                          JK_WORKER_FILE_TAG,
                                          tmpbuf,
@@ -741,7 +701,7 @@ static int read_registry_init_data(void)
         } else {
             ok = JK_FALSE;
         }
-
+*/
         if(get_registry_config_parameter(hkey,
                                          URI_SELECT_TAG, 
                                          tmpbuf,
@@ -788,12 +748,12 @@ static int get_registry_config_parameter(HKEY hkey,
  */
 
 
-static  void  jk2_create_workerEnv (LPEXTENSION_CONTROL_BLOCK *s) {
-    jk_env_t *env;
+static  jk_env_t*  jk2_create_workerEnv (void) {
+
     jk_logger_t *l;
     jk_pool_t *globalPool;
     jk_bean_t *jkb;
-    
+    jk_env_t *env;
     /** First create a pool. Compile time option
      */
     jk2_pool_create( NULL, &globalPool, NULL, 2048 );
@@ -823,46 +783,38 @@ static  void  jk2_create_workerEnv (LPEXTENSION_CONTROL_BLOCK *s) {
     
     if( workerEnv==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating workerEnv\n");
-        return;
+        return env;
     }
 
 /* XXX 
 	
 	Detect install dir, be means of service configs, */
 
-/* 
-workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
-                              workerEnv->pool->pstrdup( env, workerEnv->pool, ap_server_root));
-    env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", ap_server_root);
-
-*/
     
-    /* Local initialization */
-    workerEnv->_private = s;
+    workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
+                              workerEnv->pool->pstrdup( env, workerEnv->pool, server_root));
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", server_root);
+
+    return env;
 }
 
-static void *jk2_create_config(LPEXTENSION_CONTROL_BLOCK *s)
+static jk_env_t * jk2_create_config()
 {
     jk_uriEnv_t *newUri;
     jk_bean_t *jkb;
-
+    jk_env_t *env;
     if(  workerEnv==NULL ) {
-        jk2_create_workerEnv( s );
+        env=jk2_create_workerEnv();
     }
-/*    if( s->is_virtual == 1 ) {
-        /* Virtual host */
-//        fprintf( stderr, "Create config for virtual host\n");
-//    } else  {
-        /* Default host */
-        fprintf( stderr, "Create config for main host\n");        
-//    }
+
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, "JK2 Config Created");
 
     jkb = workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
                                              workerEnv->pool,
                                              "uri", NULL );
-   newUri=jkb->object;
+    newUri=jkb->object;
    
-   newUri->workerEnv=workerEnv;
+    newUri->workerEnv=workerEnv;
     
-   return newUri;
+    return env;
 }

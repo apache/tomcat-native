@@ -508,7 +508,7 @@ static void JK_METHOD jk2_service_iis_afterRequest(jk_env_t *env, jk_ws_service_
     if (s->content_read < s->content_length ||
         (s->is_chunked && ! s->no_more_chunks)) {
 
-                LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
+        LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
 
         char *buff = s->pool->calloc(env,s->pool, 2048);
         if (buff != NULL) {
