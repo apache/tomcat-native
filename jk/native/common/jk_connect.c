@@ -66,8 +66,34 @@
  */
 
 
+#if defined(NETWARE) && defined(__NOVELL_LIBC__)
+/* Since we want to use WinSock functionality here, don't allow the 
+ * non-winsock headers 
+ */
+#define __sys_types_h__
+#define __sys_socket_h__
+#define __netdb_h__
+#define __netinet_in_h__
+#define __arpa_inet_h__
+#define __sys_timeval_h__
+#endif
+
 #include "jk_connect.h"
 #include "jk_util.h"
+
+#if defined(NETWARE) && defined(__NOVELL_LIBC__)
+/* Now remove the defines so that including the WinSock headers won't cause 
+ * complaining
+ */
+#undef __sys_types_h__
+#undef __sys_socket_h__
+#undef __netdb_h__
+#undef __netinet_in_h__
+#undef __arpa_inet_h__
+#undef __sys_timeval_h__
+
+#include <novsock2.h>
+#endif
 
 /** resolve the host IP */
  
@@ -140,7 +166,7 @@ int jk_open_socket(struct sockaddr_in *addr,
             ret = connect(sock,
                           (struct sockaddr *)addr,
                           sizeof(struct sockaddr_in));
-#ifdef WIN32
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
             if(SOCKET_ERROR == ret) { 
                 errno = WSAGetLastError() - WSABASEERR;
             }
@@ -177,7 +203,7 @@ int jk_open_socket(struct sockaddr_in *addr,
         jk_log(l, JK_LOG_INFO, "jk_open_socket, connect() failed errno = %d\n", errno);
         jk_close_socket(sock);
     } else {
-#ifdef WIN32
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
         errno = WSAGetLastError() - WSABASEERR;
 #endif /* WIN32 */
         jk_log(l, JK_LOG_ERROR, "jk_open_socket, socket() failed errno = %d\n", errno);
@@ -190,7 +216,7 @@ int jk_open_socket(struct sockaddr_in *addr,
 
 int jk_close_socket(int s)
 {
-#ifdef WIN32
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
     if(INVALID_SOCKET  != s) {
         return closesocket(s) ? -1 : 0; 
     }
@@ -256,7 +282,7 @@ int jk_tcp_socket_recvfull(int sd,
                              len - rdlen, 
                              0);    
         if(-1 == this_time) {
-#ifdef WIN32
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
             if(SOCKET_ERROR == this_time) { 
                 errno = WSAGetLastError() - WSABASEERR;
             }
