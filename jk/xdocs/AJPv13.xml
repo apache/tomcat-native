@@ -1,8 +1,9 @@
 <?xml version="1.0"?> 
-<document title="Apache JServ Protocol version 1.3">
+<document>
   <properties>
     <title>Apache JServ Protocol version 1.3</title>
     <author email="danmil@shore.net">danmil@shore.net</author>
+    <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
   </properties>
 
 <section name="Intro">
@@ -160,16 +161,17 @@ strings.
 </dl>
 </p>
 
+<subsection name="Packet Size">
 <p>
-<b>Packet Size</b> <br/> According to much of the code, the max packet
+According to much of the code, the max packet
 size is 8 * 1024 bytes (8K).  The actual length of the packet is encoded in the
 header.
 </p>
+</subsection>
 
+<subsection name="Packet Headers">
 <p>
-<b>Packet Headers</b>
-
-<br/> Packets sent from the server to the container begin with
+Packets sent from the server to the container begin with
 <code>0x1234</code>.  Packets sent from the container to the server begin
 with <code>AB</code> (that's the ASCII code for A followed by the ASCII
 code for B).  After those first two bytes, there is an integer (encoded as
@@ -180,11 +182,11 @@ maximum to be 8K.
 
 <table>
   <tr>
-    <td6><b>Packet Format (Server->Container)</b></td6>
+    <th colspan="6">Packet Format (Server->Container)</th>
   </tr>
 
   <tr>
-    <td>Byte</td>
+    <th>Byte</th>
     <td>0</td>
     <td>1</td>
     <td>2</td>
@@ -193,21 +195,21 @@ maximum to be 8K.
   </tr>
 
   <tr>
-    <td>Contents</td>
+    <th>Contents</th>
     <td>0x12</td>
     <td>0x34</td>
-    <td2>Data Length (n)</td2>
+    <td colspan="2">Data Length (n)</td>
     <td>Data</td>
   </tr>
 </table>
 
 <table>
   <tr>
-    <td6><b>Packet Format (Container->Server)</b></td6>
+    <th colspan="6"><b>Packet Format (Container->Server)</b></th>
   </tr>
 
   <tr>
-    <td>Byte</td>
+    <th>Byte</th>
     <td>0</td>
     <td>1</td>
     <td>2</td>
@@ -216,10 +218,10 @@ maximum to be 8K.
   </tr>
 
   <tr>
-    <td>Contents</td>
+    <th>Contents</th>
     <td>A</td>
     <td>B</td>
-    <td2>Data Length (n)</td2>
+    <td colspan="2">Data Length (n)</td>
     <td>Data</td>
   </tr>
 </table>
@@ -235,9 +237,9 @@ The web server can send the following messages to the servlet container:
 
 <table>
   <tr>
-    <td>Code</td>
-    <td>Type of Packet</td>
-    <td>Meaning</td>
+    <th>Code</th>
+    <th>Type of Packet</th>
+    <th>Meaning</th>
   </tr>
   <tr>
     <td>2</td>
@@ -256,9 +258,9 @@ The web server can send the following messages to the servlet container:
 server:
 <table>
   <tr>
-    <td>Code</td>
-    <td>Type of Packet</td>
-    <td>Meaning</td>
+    <th>Code</th>
+    <th>Type of Packet</th>
+    <th>Meaning</th>
   </tr>
   <tr>
     <td>3</td>
@@ -288,6 +290,7 @@ server:
 <p>
 Each of the above messages has a different internal structure, detailed below.
 </p>
+</subsection>
 </section>
 
 <section name="Request Packet Structure">
@@ -337,13 +340,17 @@ Not that the all-important header is "content-length', because it
 determines whether or not the container looks for another packet
 immediately.
 </p><p>
-Details of above
-</p><p>
-<b>request_prefix</b><br/>
+Detailed description of the elements of Forward Request.
+</p>
+<subsection name="request_prefix">
+<p>
 For all requests, this will be 2.
 See above for details on other <A HREF="#prefix-codes">prefix codes</A>.
-</p><p>
-<b>method</b><br/>
+</p>
+</subsection>
+
+<subsection name="method">
+<p>
 The HTTP method, encoded as a single byte:
 
 <source>
@@ -369,14 +376,18 @@ CHECKOUT    19
 UNCHECKOUT  20
 SEARCH      21
 </source>
+</p>
+</subsection>
 
-</p><p>
-<b>protocol, req_uri, remote_addr, remote_host, server_name, server_port, is_ssl</b><br/>
+<subsection  name="protocol, req_uri, remote_addr, remote_host, server_name, server_port, is_ssl">
+<p>
   These are all fairly self-explanatory.  Each of these is required, and
   will be sent for every request.
-</p><p>
+</p>
+</subsection>
 
-<b>Headers</b><br/>
+<subsection name="Headers">
+<p>
   The structure of <code>request_headers</code> is the following:
   First, the number of headers <code>num_headers</code> is encoded.
   Then, a series of header name <code>req_header_name</code> / value
@@ -388,8 +399,8 @@ SEARCH      21
   is as follows (all are case-sensitive):
 </p><p>
 <table>
-  <tr><td>
-    Name</td><td>Code value</td><td>Code name</td>
+  <tr><th>
+    Name</th><th>Code value</th><th>Code name</th>
   </tr><tr><td>
     accept</td><td>0xA001</td><td>SC_REQ_ACCEPT</td>
   </tr><tr><td>
@@ -440,9 +451,10 @@ SEARCH      21
   the request has a body (a POST request, for example), and immediately
   reads a separate packet off the input stream to get that body.
 </p>
+</subsection>
 
+<subsection name="Optional Information">
 <p>
-<b>Optional Information</b><br/>
 
   The list of attributes prefixed with a <code>?</code>
   (e.g. <code>?context</code>) are all optional.  For each, there is a
@@ -505,6 +517,7 @@ The server can also send a <code>shutdown</code> packet.  To ensure some
 basic security, the container will only actually do the shutdown if the
 request comes from the same machine on which it's hosted.
 </p>
+</subsection>
 
 </section>
 
@@ -547,13 +560,16 @@ AJP13_GET_BODY_CHUNK :=
 </p>
 <p>
 Details:
+</p>
 
-</p><p>
-<b>Send Body Chunk</b><br/>
+<subsection name="Send Body Chunk">
+<p>
   The chunk is basically binary data, and is sent directly back to the browser.
-</p><p>
+</p>
+</subsection>
 
-<b>Send Headers</b><br/>
+<subsection name="Send Headers">
+<p>
   The status code and message are the usual HTTP things (e.g. "200" and "OK").
   The response header names are encoded the same way the request header names are.
   See <A HREF="#header_encoding">above</A> for details about how the the
@@ -575,16 +591,20 @@ WWW-Authenticate     0xA00B
 </p><p> 
   After the code or the string header name, the header value is immediately
   encoded.
-</p><p>
+</p>
+</subsection>
 
-<b>End Response</b><br/>
+<subsection name="End Response">
+<p>
   Signals the end of this request-handling cycle.  If the
   <code>reuse</code> flag is true (==1), this TCP connection can now be used to
   handle new incoming requests.  If <code>reuse</code> is false (anything
   other than 1 in the actual C code), the connection should be closed.
-</p><p>
+</p>
+</subsection>
 
-<b>Get Body Chunk</b><br/>
+<subsection name="Get Body Chunk">
+<p>
   The container asks for more data from the request (if the body was
   too large to fit in the first packet sent over).  The server will send a
   body packet back with an amount of data which is the minimum of the
@@ -595,6 +615,7 @@ WWW-Authenticate     0xA00B
   trying to read past the end of the body), the server will send back an
   "empty" packet, whch is a body packet with a payload length of 0.
 </p>
+</subsection>
 </section>
 
 <section name="Questions I Have">

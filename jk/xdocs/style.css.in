@@ -4,7 +4,7 @@ body {
 }
 
 td.logo {
-  background-color: #666666;
+  background-color: @body-bg@;
   border-style: none;
 }
 
@@ -86,11 +86,11 @@ td.body {
 }
 
 td.section {
-  background-color: #666666;
+  background-color: @banner-bg@;
   border-style: none;
   font-weight: bold;
   font-size: bigger;
-  color: #ffffff;
+  color: @banner-fg@;
   padding: 0px;
   text-align: left;
 }
@@ -102,6 +102,16 @@ p.section {
   margin-left: 20px;
   margin-right: 10px;
   text-align: justify;
+}
+
+td.section {
+  background-color: @sub-banner-bg@;
+  border-style: none;
+  font-weight: bold;
+  font-size: bigger;
+  color: @sub-banner-fg@;
+  padding: 0px;
+  text-align: left;
 }
 
 p.todo {
@@ -144,5 +154,5 @@ b.screen {
 b.code {
   font-weight: normal;
   font-style: normal;
-  color: #808000;
+  color: @source-color@;
 }

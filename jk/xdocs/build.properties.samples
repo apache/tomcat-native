@@ -1,0 +1,13 @@
+#
+# Define the color of html pages.
+#
+body-bg="#ffffff"
+body-fg="#000000"
+body-link="#525D76"
+banner-bg="#525D76"
+banner-fg="#ffffff"
+sub-banner-bg="#828DA6"
+sub-banner-fg="#ffffff"
+table-th-bg="#039acc"
+table-td-bg="#a0ddf0"
+source-color="#023264"

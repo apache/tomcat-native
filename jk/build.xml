@@ -265,6 +265,9 @@
         <delete dir="${jk.build}/classes"/>
         <delete dir="${jk.build}/lib"/>
         <delete dir="${jk.build}/javadoc"/>
+        <delete dir="${build.docs}"/>
+        <delete file="${source.docs}/style.css"/>
+        <delete file="${source.docs}/style.xsl"/>
     </target>
 
     <!-- It's better to call it directly with individual tags -->
@@ -289,14 +292,56 @@
  
     <!-- Just jump out -->
     <fail message="Cannot find the Apache Xalan XSLT processor"/>
-  </target>                                                                     
+  </target>
+
+  <!-- builds the css and xls file from the css.in and xls.in -->
+  <target name="docs.init">
+    <property file="${source.docs}/build.properties"/>
+
+    <property name="body-bg"       value="#ffffff"/>
+    <property name="body-fg"       value="#000000"/>
+    <property name="body-link"     value="#525D76"/>
+    <property name="banner-bg"     value="#525D76"/>
+    <property name="banner-fg"     value="#ffffff"/>
+    <property name="sub-banner-bg" value="#828DA6"/>
+    <property name="sub-banner-fg" value="#ffffff"/>
+    <property name="table-th-bg"   value="#039acc"/>
+    <property name="table-td-bg"   value="#a0ddf0"/>
+    <property name="source-color"  value="#023264"/>
+
+    <antcall target="docs.color">
+      <param name="sourcefile" value="${source.docs}/style.css.in"/>
+      <param name="destfile" value="${source.docs}/style.css"/>
+    </antcall>
+    <antcall target="docs.color">
+      <param name="sourcefile" value="${source.docs}/style.xsl.in"/>
+      <param name="destfile" value="${source.docs}/style.xsl"/>
+    </antcall>
+  </target>
+
+  <target name="docs.color">
+    <copy file="${sourcefile}" tofile="${destfile}"/>
+    <replace file="${destfile}" token="@body-bg@"       value="${body-bg}"/>
+    <replace file="${destfile}" token="@body-fg@"       value="${body-fg}"/>
+    <replace file="${destfile}" token="@body-link@"     value="${body-link}"/>
+    <replace file="${destfile}" token="@banner-bg@"     value="${banner-bg}"/>
+    <replace file="${destfile}" token="@banner-fg@"     value="${banner-fg}"/>
+    <replace file="${destfile}" token="@sub-banner-bg@"
+             value="${sub-banner-bg}"/>
+    <replace file="${destfile}" token="@sub-banner-fg@"
+             value="${sub-banner-fg}"/>
+    <replace file="${destfile}" token="@table-th-bg@"   value="${table-th-bg}"/>
+    <replace file="${destfile}" token="@table-td-bg@"   value="${table-td-bg}"/>
+    <replace file="${destfile}" token="@source-color@"
+             value="${source-color}"/>
+  </target>
 
   <!--
     Generate documentation from the XML sources.
   -->
   <target
       name="docs"
-      depends="docs.check"
+      depends="docs.check,docs.init"
       description="Create Documentation">
  
     <!-- Create the directory where we're going to store the docs -->
