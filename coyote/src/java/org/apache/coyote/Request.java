@@ -190,8 +190,10 @@ public final class Request {
     private ActionHook hook;
 
     private int bytesRead=0;
+    // Time of the request - usefull to avoid repeated calls to System.currentTime
+    private long startTime;
 
-    private RequestProcessor reqProcessorMX=new RequestProcessor(this);
+    private RequestInfo reqProcessorMX=new RequestInfo(this);
     // ------------------------------------------------------------- Properties
 
 
@@ -447,11 +449,17 @@ public final class Request {
 
     // -------------------- debug --------------------
 
-
     public String toString() {
 	return "R( " + requestURI().toString() + ")";
     }
 
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
 
     // -------------------- Per-Request "notes" --------------------
 
@@ -509,7 +517,7 @@ public final class Request {
     }
 
     // -------------------- Info  --------------------
-    public RequestProcessor getRequestProcessor() {
+    public RequestInfo getRequestProcessor() {
         return reqProcessorMX;
     }
 
