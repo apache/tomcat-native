@@ -59,7 +59,7 @@
  * Description: Utility functions (mainly configuration)                   *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  * Author:      Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 
@@ -824,7 +824,7 @@ char **jk_parse_sysprops(jk_pool_t *p,
                          const char *sysprops)
 {
     char **rc = NULL;
-#ifdef AS400
+#if defined(AS400) || defined(_REENTRANT)
     char *lasts;
 #endif
 
@@ -842,7 +842,7 @@ char **jk_parse_sysprops(jk_pool_t *p,
             rc = jk_pool_alloc(p, (num_of_prps + 1) * sizeof(char *));
             if(rc) {
                 unsigned i = 0;
-#ifdef AS400
+#if defined(AS400) || defined(_REENTRANT)
                 char *tmp = strtok_r(prps, "*", &lasts);
 #else
                 char *tmp = strtok(prps, "*");
@@ -850,7 +850,7 @@ char **jk_parse_sysprops(jk_pool_t *p,
 
                 while(tmp && i < num_of_prps) {
                     rc[i] = tmp;
-#ifdef AS400
+#if defined(AS400) || defined(_REENTRANT)
                     tmp = strtok_r(NULL, "*", &lasts);
 #else
                     tmp = strtok(NULL, "*");

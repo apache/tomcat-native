@@ -58,7 +58,7 @@
 /***************************************************************************
  * Description: General purpose map object                                 *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Version:     $Revision$                                           *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 #ifdef AS400
 #include "apr_xlate.h"    
@@ -214,7 +214,7 @@ char **map_get_string_list(jk_map_t *m,
 {
     char *l = map_get_string(m, name, def);
     char **ar = NULL;
-#ifdef AS400
+#if defined(AS400) || defined(_REENTRANT)
     char *lasts;
 #endif
 
@@ -233,7 +233,7 @@ char **map_get_string_list(jk_map_t *m,
          * GS, in addition to VG's patch, we now need to 
          * strtok also by a "*"
          */
-#ifdef AS400
+#if defined(AS400) || defined(_REENTRANT)
         for(l = strtok_r(v, " \t,*", &lasts) ;
             l ;
 	    l = strtok_r(NULL, " \t,*",&lasts)) 

@@ -59,8 +59,8 @@
 /***************************************************************************
  * Description: Apache 2 plugin for Jakarta/Tomcat                         *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- *                 Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ *              Henri Gomez <hgomez@slib.fr>                               *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 /*
@@ -2355,6 +2355,37 @@ static int jk_translate(request_rec *r)
 /* bypass the directory_walk and file_walk for non-file requests */
 static int jk_map_to_storage(request_rec *r)
 {
+
+    if(!r->proxyreq && !apr_table_get(r->notes, JK_WORKER_ID)) {
+        jk_server_conf_t *conf =
+            (jk_server_conf_t *)ap_get_module_config(r->server->module_config,
+                                                     &jk_module);
+
+        if(conf) {
+            char *worker;
+            if( (r->handler != NULL ) &&
+                (! strcmp( r->handler, JK_HANDLER ) )) {
+                /* Somebody already set the handler, probably manual config
+                 * or "native" configuration, no need for extra overhead
+                 */
+                jk_log(conf->log, JK_LOG_DEBUG,
+                       "Manually mapped, no need to call uri_to_worker\n");
+                return DECLINED;
+            }
+            worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
+
+            if(worker) {
+                r->handler=apr_pstrdup(r->pool,JK_HANDLER);
+                apr_table_setn(r->notes, JK_WORKER_ID, worker);
+
+                /* This could be a sub-request, possibly from mod_dir */
+                if(r->main)
+                    apr_table_setn(r->main->notes, JK_WORKER_ID, worker);
+
+            }
+        }
+    }
+
     if (apr_table_get(r->notes, JK_WORKER_ID)) {
 
         /* First find just the name of the file, no directory */
@@ -2391,20 +2422,12 @@ static int jk_map_to_storage(request_rec *r)
 
 static void jk_register_hooks(apr_pool_t *p)
 {
-    /* Make sure mod_alias runs before mod_jk to make sure that
-       Alias's are mapped before mod_jk tries to process the request */
-    static const char * const aszPre[] = { "mod_alias.c", NULL };
-
-    /* Make sure mod_dir runs after mod_jk so that a
-       DirectoryIndex index.jsp works */
-    static const char * const aszPost[] = { "mod_dir.c", NULL };
-
-    ap_hook_handler(jk_handler,aszPre,aszPost,APR_HOOK_MIDDLE);
+    ap_hook_handler(jk_handler,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_post_config(jk_post_config,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_child_init(jk_child_init,NULL,NULL,APR_HOOK_MIDDLE);
-    ap_hook_translate_name(jk_translate,aszPre,aszPost,APR_HOOK_MIDDLE);
+    ap_hook_translate_name(jk_translate,NULL,NULL,APR_HOOK_MIDDLE);
 #if (MODULE_MAGIC_NUMBER_MAJOR > 20010808)
-    ap_hook_map_to_storage(jk_map_to_storage,aszPre,aszPost,APR_HOOK_MIDDLE);
+    ap_hook_map_to_storage(jk_map_to_storage,NULL,NULL,APR_HOOK_MIDDLE);
 #endif
 }
 
@@ -2414,8 +2437,8 @@ module AP_MODULE_DECLARE_DATA jk_module =
     NULL,                /* dir config creater */
     NULL,                /* dir merger --- default is to override */
     create_jk_config,    /* server config */
-    merge_jk_config,    /* merge server config */
-    jk_cmds,            /* command ap_table_t */
+    merge_jk_config,     /* merge server config */
+    jk_cmds,             /* command ap_table_t */
     jk_register_hooks    /* register hooks */
 };
 
