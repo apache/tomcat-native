@@ -78,7 +78,7 @@
 #include "jk_service.h"
 #include "jk_worker.h"
 
-#include "iis.h"
+#include "jk_iis.h"
 //#include "jk_uri_worker_map.h"
 
 #define jk_log(a,b,c)
