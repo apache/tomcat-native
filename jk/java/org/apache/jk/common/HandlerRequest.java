@@ -529,16 +529,17 @@ public class HandlerRequest extends JkHandler
                 msg.getBytes(req.instanceId());
                 break;
 		
-	    case SC_A_SSL_CERT     :
-		req.scheme().setString( "https" );
+            case SC_A_SSL_CERT     :
+                req.scheme().setString( "https" );
                 // Transform the string into certificate.
+                tmpMB = new MessageBytes();
                 msg.getBytes(tmpMB);
                 String certString = tmpMB.toString();
-				// SSL certificate extraction is costy, moved to JkCoyoteHandler
-                req.setAttribute(SSLSupport.CERTIFICATE_KEY, certString);
+                // SSL certificate extraction is costy, moved to JkCoyoteHandler
+                req.setNote(WorkerEnv.SSL_CERT_NOTE, tmpMB);
                 break;
-		
- 	    case SC_A_SSL_CIPHER   :
+                
+            case SC_A_SSL_CIPHER   :
 		req.scheme().setString( "https" );
                 msg.getBytes(tmpMB);
 		req.setAttribute(SSLSupport.CIPHER_SUITE_KEY,

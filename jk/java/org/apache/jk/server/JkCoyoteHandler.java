@@ -381,27 +381,29 @@ public class JkCoyoteHandler extends JkHandler implements
             } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
                 org.apache.coyote.Request req=(org.apache.coyote.Request)param;
 
-				// Extract SSL certificate information (if requested)
-                String certString = (String)req.getAttribute(SSLSupport.CERTIFICATE_KEY);
-                byte[] certData = certString.getBytes();
-                ByteArrayInputStream bais = new ByteArrayInputStream(certData);
+                // Extract SSL certificate information (if requested)
+                MessageBytes certString = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
+                if( certString != null ) {
+                    byte[] certData = certString.getByteChunk().getBytes();
+                    ByteArrayInputStream bais = new ByteArrayInputStream(certData);
  
-                // Fill the first element.
-                X509Certificate jsseCerts[] = null;
-                try {
-                    CertificateFactory cf =
-                        CertificateFactory.getInstance("X.509");
-                    X509Certificate cert = (X509Certificate)
-                        cf.generateCertificate(bais);
-                    jsseCerts =  new X509Certificate[1];
-                    jsseCerts[0] = cert;
-                } catch(java.security.cert.CertificateException e) {
-                    log.error("Certificate convertion failed" + e );
-                    e.printStackTrace();
+                    // Fill the first element.
+                    X509Certificate jsseCerts[] = null;
+                    try {
+                        CertificateFactory cf =
+                            CertificateFactory.getInstance("X.509");
+                        X509Certificate cert = (X509Certificate)
+                            cf.generateCertificate(bais);
+                        jsseCerts =  new X509Certificate[1];
+                        jsseCerts[0] = cert;
+                    } catch(java.security.cert.CertificateException e) {
+                        log.error("Certificate convertion failed" , e );
+                        return;
+                    }
+ 
+                    req.setAttribute(SSLSupport.CERTIFICATE_KEY, 
+                                     jsseCerts);
                 }
- 
-                req.setAttribute(SSLSupport.CERTIFICATE_KEY, 
-                                 jsseCerts);
                 
             } else if( actionCode==ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
                 org.apache.coyote.Request req=(org.apache.coyote.Request)param;

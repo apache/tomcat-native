@@ -82,6 +82,7 @@ public class WorkerEnv {
 
     public static final int ENDPOINT_NOTE=0;
     public static final int REQUEST_NOTE=1;
+    public static final int SSL_CERT_NOTE=16;
     int noteId[]=new int[4];
     String noteName[][]=new String[4][];
     private Object notes[]=new Object[32];
