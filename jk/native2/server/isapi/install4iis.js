@@ -255,9 +255,8 @@ function createISAPIFilter(webServer, appParams)
     try {
         filters = findADSIObject(webServer, _IIS_FILTERS, "Filters");
         if (filters == null) {
-            TRACE("Unable to find the " + _IIS_FILTERS + " for " +
-                  webServer.ServerComment);
-            return null;
+            //may have to create the website-level filters container
+            filters = webserver.create(_IIS_FILTERS, "Filters");
         }
         newFilter = findADSIObject(filters, _IIS_FILTER, appParams.FilterName);
         if (newFilter == null) {
@@ -488,7 +487,7 @@ function Main(args)
         ERROR(args, "Unable to create virual directory /" + params.WebName);        
     }
 
-    if (!createISAPIFilter(IIsWebService, params)) {
+    if (!createISAPIFilter(IIsWebServer, params)) {
         /* TODO: roll-back virtual dir */
         ERROR(args, "Unable to create the '" + params.FilterName + "' filter.");        
     }
