@@ -97,6 +97,7 @@
 	<include name="server/apache2/*.c" />
 	<include name="common/*.c" />
 	<include name="common/apr/*.c" />
+	<include name="jni/*.c" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
@@ -155,20 +156,15 @@
   
   <target name="jni" depends="init">
     <mkdir dir="${build.dir}/jni" />
-    <so sofile="jni_connect" 
+    <so sofile="libjkjni" 
 	buildDir="${build.dir}/jni" 
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}" >
       <src dir="${native.dir}">
 	<include name="jni/*.c" />
-	<include name="common/jk_map.c" />
-	<include name="common/jk_util.c" />
-	<include name="common/jk_pool.c" />
-	<include name="common/jk_logger.c" />
-        <include name="common/jk_nwmain.c" if="netware" />
-        <include name="apr/*.c" if="HAVE_APR" />
-        <exclude name="jni/jk_jni_aprImpl.c" unless="HAVE_APR" />
+	<include name="common/*.c" />
+        <exclude name="common/jk_nwmain.c" unless="netware" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
@@ -329,6 +325,7 @@
         <exclude name="jk_nwmain.c" 
                  unless="netware" />
         <include name="common/apr/*.c" unless="HAVE_APR" />
+	<include name="jni/*.c" />
       </src>
       <includes>
         <include name="${java.home}/../include" />
@@ -378,6 +375,7 @@
         <exclude name="jk_nwmain.c" 
 		 unless="netware" />
         <include name="common/apr/*.c" unless="HAVE_APR" />
+	<include name="jni/*.c" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
