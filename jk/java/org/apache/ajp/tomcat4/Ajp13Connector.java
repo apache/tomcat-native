@@ -797,6 +797,7 @@ public final class Ajp13Connector
 	        ((Lifecycle) processor).start();
 	    } catch (LifecycleException e) {
 	        logger.log("newProcessor", e);
+                curProcessors--;
 	        return (null);
 	    }
 	}
