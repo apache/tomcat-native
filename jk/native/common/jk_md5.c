@@ -306,7 +306,7 @@ void JK_METHOD jk_MD5Final(unsigned char digest[16], JK_MD5_CTX *context)
     /* Since everything is converted to ascii within jk_MD5Update(), 
      * the initial 0x80 (PADDING[0]) must be stored as 0x20 
      */
-    PADDING[0] = os_toebcdic[0x80];
+    ascii2ebcdic(PADDING,PADDING,1);
 #endif /*CHARSET_EBCDIC*/
 
     /* Pad out to 56 mod 64. */

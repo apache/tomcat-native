@@ -91,7 +91,9 @@
         #include <netinet/tcp.h>
         #include <arpa/inet.h>
         #include <sys/un.h>
-        #include <sys/socketvar.h>
+        #ifndef _OSD_POSIX
+            #include <sys/socketvar.h>
+        #endif
         #ifndef HPUX11
             #include <sys/select.h>
         #endif

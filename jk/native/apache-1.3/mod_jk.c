@@ -68,7 +68,7 @@
  * mod_jk: keeps all servlet/jakarta related ramblings together.
  */
 
-#include "ap_config.h"
+/* #include "ap_config.h" */
 #include "httpd.h"
 #include "http_config.h"
 #include "http_request.h"
@@ -79,7 +79,7 @@
 #include "util_script.h"
 #include "util_date.h"
 #include "http_conf_globals.h"
- 
+
 /*
  * Jakarta (jk_) include files
  */
