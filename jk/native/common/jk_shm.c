@@ -56,7 +56,7 @@ struct jk_shm
 typedef struct jk_shm jk_shm_t;
 
 static const char shm_signature[] = { JK_SHM_MAGIC };
-static jk_shm_t jk_shmem = { 0, NULL, -1, -1, 0, NULL, 0};
+static jk_shm_t jk_shmem = { 0, NULL, -1, -1, 0, NULL};
 static time_t jk_workers_modified_time = 0;
 
 #if defined (WIN32) || defined(NETWARE)
@@ -315,8 +315,9 @@ void jk_shm_close()
         }
         jk_shmem.fd_lock = -1;
     }
-    if (jk_shmem.size)
+    if (jk_shmem.size) {
         JK_DELETE_CS(&(jk_shmem.cs), rc);
+    }
     jk_shmem.size = 0;
     jk_shmem.hdr  = NULL;
     jk_shmem.fd   = -1;
