@@ -64,6 +64,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.buf.UDecoder;
 
@@ -327,11 +328,11 @@ public final class Request {
 
 
     /**
-     * Read data from the input buffer and put it into a byte array.
+     * Read data from the input buffer and put it into a byte chunk.
      */
-    public int doRead(byte b[], int off, int len) 
+    public int doRead(ByteChunk chunk/*byte b[], int off, int len*/) 
         throws IOException {
-        int n = inputBuffer.doRead(b, off, len);
+        int n = inputBuffer.doRead(chunk);
         if (n > 0)
             available -= n;
         return n;

@@ -63,6 +63,8 @@ package org.apache.coyote;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.apache.tomcat.util.buf.ByteChunk;
+
 import org.apache.tomcat.util.res.StringManager;
 
 import org.apache.tomcat.util.http.MimeHeaders;
@@ -414,9 +416,9 @@ public final class Response {
     /** 
      * Write a chunk of bytes.
      */
-    public void doWrite(byte buffer[], int pos, int count)
+    public void doWrite(ByteChunk chunk/*byte buffer[], int pos, int count*/)
         throws IOException {
-        outputBuffer.doWrite(buffer, pos, count);
+        outputBuffer.doWrite(chunk);
     }
 
 

@@ -61,6 +61,8 @@ package org.apache.coyote;
 
 import java.io.IOException;
 
+import org.apache.tomcat.util.buf.ByteChunk;
+
 /**
  * Output buffer.
  * 
@@ -69,7 +71,7 @@ import java.io.IOException;
 public interface OutputBuffer {
 
 
-    public int doWrite(byte b[], int off, int len) 
+    public int doWrite(ByteChunk chunk) 
         throws IOException;
 
 

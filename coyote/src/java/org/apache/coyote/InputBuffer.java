@@ -61,6 +61,8 @@ package org.apache.coyote;
 
 import java.io.IOException;
 
+import org.apache.tomcat.util.buf.ByteChunk;
+
 /**
  * Input buffer.
  * 
@@ -69,7 +71,7 @@ import java.io.IOException;
 public interface InputBuffer {
 
 
-    public int doRead(byte b[], int off, int len) 
+    public int doRead(ByteChunk chunk) 
         throws IOException;
 
 
