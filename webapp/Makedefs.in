@@ -60,10 +60,13 @@
 
 CC = @CC@
 AR = @AR@
+APXS = @APXS@
+APXSFLAGS = -I@SRCDIR@/include -I@APRDIR@/include \
+	-L@SRCDIR@/lib -lwebapp \
+	-L@APRDIR@/lib -lapr
 RANLIB = @RANLIB@
 CFLAGS = -Wall @CFLAGS@
 CPPFLAGS = -I@SRCDIR@/include -I@APRDIR@/include @CPPFLAGS@
-LDFLAGS = @TGTDIR@/webapp/libwebapp.la @APRDIR@/libapr.la @LDFLAGS@
 SRCDIR = @SRCDIR@
 TGTDIR = @TGTDIR@
 

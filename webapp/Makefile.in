@@ -67,26 +67,36 @@ CFGS = config.cache \
 	config.status \
 	Makedefs \
 	Makefile \
-	lib/Makefile
+	lib/Makefile \
+	apache-1.3/Makefile
 
 all:
 	@for DIR in $(DIRS) ; do \
 		echo "Compiling sources in $$DIR..." ; \
 		$(MAKE) -C $$DIR all ; \
+		RET=$$? ; \
+		if ( test "$$RET" != "0" ) ; then \
+			exit $$RET ; \
+		fi ; \
 	done
 
 clean:
 	@for DIR in $(DIRS) ; do \
 		echo "Cleaning up $$DIR..." ; \
 		$(MAKE) -C $$DIR clean ; \
+		RET=$$? ; \
+		if ( test "$$RET" != "0" ) ; then \
+			exit $$RET ; \
+		fi ; \
 	done
 
 apidocs: include/*.h
+	@echo "Generating API documentation..."
 	@if ! test -d docs/api ; then mkdir docs/api ; fi
 	@./scandoc/scandoc.pl -i ./scandoc/template.pl -p ./docs/api/ include/*.h
 
-allclean: clean
+dist: all apidocs
 
-distclean: allclean
+distclean: clean
 	@echo Removing configure generated files...
 	@rm -f $(CFGS)
