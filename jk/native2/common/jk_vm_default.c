@@ -351,10 +351,22 @@ static void *jk2_vm_attach(jk_env_t *env, jk_vm_t *jkvm)
 #endif
 
     err= (*jvm)->GetEnv( jvm, (void **)&rc, JNI_VERSION_1_2 );
-    if( ( err != 0 ) &&
-        ( err != JNI_EDETACHED) ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+    /* If the current thread is allready attached to the VM return the
+       appropriate interface. There is no need to call the AttachCurrentThread.
+    */
+    if( err == 0) {
+        if( jkvm->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO, "vm.attach() allready attached\n");
+        return rc;        
+    }
+    /* The error code is either JNI_OK (allready attached) or JNI_EDETACHED.
+       Othere possibility is that specified version is not supported,
+       and the returned err in that case is JNI_EVERSION.
+    */
+    if( err != JNI_EDETACHED) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "vm.attach() GetEnv failed %d\n", err);
+        return NULL;
     }
     
     err = (*jvm)->AttachCurrentThread(jvm,
@@ -406,6 +418,56 @@ static int jk2_file_exists(jk_env_t *env, const char *f)
 /* Some guessing - to spare the user ( who might know less
    than we do ).
 */
+#ifdef WIN32
+/* On WIN32 use the Registry couse Java itself relies on that.
+*/
+#define JAVASOFT_REGKEY "SOFTWARE\\JavaSoft\\Java Runtime Environment\\"
+
+static char* jk2_vm_guessJvmDll(jk_env_t *env, jk_map_t *props,
+                         jk_vm_t *jkvm)
+{
+    HKEY hkjs;
+    static char jvm[MAX_PATH+1];
+    char reg[MAX_PATH+1];
+    char *cver;
+    jk_pool_t *p=props->pool;
+    unsigned int err, klen = MAX_PATH;
+    
+   strcpy(reg, JAVASOFT_REGKEY);
+   cver = &reg[sizeof(JAVASOFT_REGKEY)-1];
+    if( (err=RegOpenKeyEx(HKEY_LOCAL_MACHINE, reg,
+                       0, KEY_READ, &hkjs) ) != ERROR_SUCCESS) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.guessJvmDll() failed to open Registry key\n");
+       return NULL;
+   }
+    if( (err=RegQueryValueEx(hkjs, "CurrentVersion", NULL, NULL, 
+                           (unsigned char *)cver, &klen) ) != ERROR_SUCCESS) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.guessJvmDll() failed obtaining Current Version\n");
+       RegCloseKey(hkjs);
+       return NULL;
+   }
+    RegCloseKey(hkjs);
+    if( (err=RegOpenKeyEx(HKEY_LOCAL_MACHINE, reg,
+                       0, KEY_READ, &hkjs) ) != ERROR_SUCCESS) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.guessJvmDll() failed to open Registry key\n");
+       return NULL;
+   }
+   klen = MAX_PATH;
+    if( (err=RegQueryValueEx(hkjs, "RuntimeLib", NULL, NULL, 
+                           (unsigned char *)jvm, &klen) ) != ERROR_SUCCESS) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.guessJvmDll() failed obtaining Runtime Library\n");
+       RegCloseKey(hkjs);
+       return NULL;
+   }
+    RegCloseKey(hkjs);
+
+    return jvm;
+}
+#else
 static char* jk2_vm_guessJvmDll(jk_env_t *env, jk_map_t *props,
                          jk_vm_t *jkvm)
 {
@@ -435,7 +497,7 @@ static char* jk2_vm_guessJvmDll(jk_env_t *env, jk_map_t *props,
         
     return NULL;
 }
-
+#endif
 
 static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
 {
