@@ -42,7 +42,7 @@ Apache 1.3. The available options for the configure script are:
         want to use them instead of checking them out from CVS, you can
         specify where these can be found.
 
-    --with-java=DIR
+    --with-jdk=DIR
         If the JAVA_HOME environment variable has not been set, you will
         need to specify this option on the command line for the configure
         script in order to compile the Java portion of WebApp.

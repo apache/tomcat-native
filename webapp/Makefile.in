@@ -63,14 +63,10 @@ include @SRCDIR@/Makedefs
 LOCALDIRS = @TGTDIRS@ @TARGET@
 APRDIR = @APRDIR@
 
-CFGS = config.cache \
+CFGS = @CONFIGFILES@ \
+	config.cache \
 	config.log \
-	config.status \
-	Makedefs \
-	Makefile \
-	lib/Makefile \
-	apache-1.3/Makefile \
-	java/Makefile
+	config.status
 
 all: apr_all local_all
 

@@ -137,10 +137,13 @@ AC_ARG_ENABLE(debug,
   [
     AC_MSG_RESULT([enabling debug output])
     CFLAGS="$CFLAGS -DDEBUG"
+    DEBUG="true"
   ],[
     AC_MSG_RESULT([disabling debug output])
+    DEBUG="false"
   ]
 )
+AC_SUBST(DEBUG)
 
 dnl -------------------------------------------------------------------------
 dnl Check JAVA environment
@@ -291,10 +294,17 @@ dnl --------------------------------------------------------------------------
 dnl Defining variables used by Make
 dnl --------------------------------------------------------------------------
 CFLAGS="-Wall ${CFLAGS}"
-CPPFLAGS="-I${SRCDIR}/include -I${APRDIR}/include ${CPPFLAGS}"
-TGTDIRS="${SRCDIR}/java ${SRCDIR}/lib"
 AC_SUBST(CFLAGS)
+
+CPPFLAGS="-I${SRCDIR}/include -I${APRDIR}/include ${CPPFLAGS}"
 AC_SUBST(CPPFLAGS)
+
+TGTDIRS="${SRCDIR}/java ${SRCDIR}/lib"
 AC_SUBST(TGTDIRS)
 
-AC_OUTPUT(./Makedefs ./Makefile ./lib/Makefile ./java/Makefile ${makefile})
+CONFIGFILES="./Makedefs ./Makefile ./lib/Makefile ./java/Makefile"
+CONFIGFILES="$CONFIGFILES ./java/Constants.java ${makefile}"
+AC_SUBST(CONFIGFILES)
+
+AC_OUTPUT(${CONFIGFILES})
+
