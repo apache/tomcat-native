@@ -78,6 +78,7 @@
   <path id="compile.classpath">
     <pathelement location="${build.home}/classes"/>
     <pathelement location="../util/build/classes"/>
+    <pathelement location="${jmx.jar}"/>
     <pathelement location="${tomcat-util.jar}"/>
     <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
     <pathelement location="${servlet.jar}"/>
@@ -211,6 +212,16 @@
     <copy    todir="${build.home}/classes" filtering="on">
       <fileset dir="${source.home}" excludes="**/*.java"/>
     </copy>
+  </target>
+
+  <target name="jar.tomcat5" depends="compile.shared,compile.tomcat5" >
+    <jar  jarfile="${tomcat-coyote.jar}"
+         basedir="${build.home}/classes"
+         manifest="${conf.home}/MANIFEST.MF"
+         excludes="**/tomcat3/*" >
+      <include name="org/apache/coyote/*.class" />
+      <include name="org/apache/coyote/tomcat5/**" />
+    </jar>
   </target>
 
   <target name="compile.tomcat4" if="tomcat4.detect"
