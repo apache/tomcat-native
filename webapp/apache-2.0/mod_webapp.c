@@ -413,9 +413,7 @@ static int wam_match(request_rec *r) {
 
     /* The uri path is matched: set the handler and return */
     r->handler=apr_pstrdup(r->pool,"webapp-handler");
-#if (MODULE_MAGIC_NUMBER_MAJOR > 20010808)
     apr_table_setn(r->notes,"webapp-handler", "webapp-handler");
-#endif
 
     /* Set the webapp request structure into Apache's request structure */
     ap_set_module_config(r->request_config, &webapp_module, appl);
@@ -510,7 +508,6 @@ static int wam_invoke(request_rec *r) {
     return(OK);
 }
 
-#if (MODULE_MAGIC_NUMBER_MAJOR > 20010808)
 /* bypass the directory_walk and file_walk for non-file requests */
 static int wam_map_to_storage(request_rec *r)
 {
@@ -520,16 +517,13 @@ static int wam_map_to_storage(request_rec *r)
     }
     return DECLINED;
 }
-#endif
 
 static void register_hooks(apr_pool_t *p)
 {
     ap_hook_handler(wam_invoke, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_translate_name(wam_match, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_child_init(wam_startup, NULL, NULL, APR_HOOK_MIDDLE);
-#if (MODULE_MAGIC_NUMBER_MAJOR > 20010808)
     ap_hook_map_to_storage(wam_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
-#endif
 }
 
 /* Apache module declaration */
