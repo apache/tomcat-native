@@ -1,0 +1,29 @@
+<html>
+<body>
+
+The goal of this package is to provide class loading functionality,
+similar in behavior with Jboss and MLET loaders. There 
+is no policy, just a mechanism - how it is used depends on the higher level. 
+
+This package only deals with class loading, so it has to minimize the dependencies.
+Currently there is no dependency except bare JDK1.3. Debug logging is minimal and done
+using System.err.
+
+There is no JMX depenency - the modules and loaders can be registered with JMX 
+by a module using the ModuleListener, after jmx class loader is created. 
+TODO: conditional loading of jmx.jar, parser based on jdk version. 
+
+Configuration uses a simple properties file describing the classpaths and the 
+classes to launch - i.e. all a class loader needs to know, and 
+similar with the old catalina.properties. 
+
+To implement a good module system on top of this we need lifecycle ( already present
+in tomcat ) and discipline in making sure there are no stale references to 
+objects in a module after its death. An OSGI-like system may seem to 
+deal with the second problem - but it doesn't solve anything, it just makes 
+the references more visible and requires major changes in how you code, as 
+well as rewriting of most apis and implementations - and in the end it still 
+doesn't solve the problem. 
+
+</body>
+</html>
