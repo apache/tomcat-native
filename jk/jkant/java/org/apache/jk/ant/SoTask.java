@@ -115,9 +115,9 @@ public class SoTask extends Task {
     protected boolean optimize=false;
     protected boolean profile=false;
     protected Vector defines = new Vector();
-    protected Vector imports = new Vector();
-    protected Vector exports = new Vector();
-    protected Vector modules = new Vector();
+    protected Vector imports = new Vector();    // used by the NetWare linker
+    protected Vector exports = new Vector();    // used by the NetWare linker
+    protected Vector modules = new Vector();    // used by the NetWare linker
 
     // Computed fields 
     protected Vector compileList;
@@ -200,7 +200,8 @@ public class SoTask extends Task {
      *
      * 
      */
-    public void addImport(NLMData imp) {
+    public void addImport(JkData imp) {
+	imp.setProject( project );
         imports.add(imp);
     }
 
@@ -209,7 +210,8 @@ public class SoTask extends Task {
      *
      * 
      */
-    public void addExport(NLMData exp) {
+    public void addExport(JkData exp) {
+	exp.setProject( project );
         exports.add(exp);
     }
 
@@ -218,7 +220,8 @@ public class SoTask extends Task {
      *
      * 
      */
-    public void addNLMModule(NLMData module) {
+    public void addNLMModule(JkData module) {
+	module.setProject( project );
         modules.add(module);
     }
 
@@ -317,6 +320,9 @@ public class SoTask extends Task {
     // XXX Add specific code for Linux and platforms where things are
     // clean, libtool should be just a fallback.
     public void execute() throws BuildException {
+	CompilerAdapter compiler=findCompilerAdapter();
+	LinkerAdapter linker=findLinkerAdapter();
+
 	if( soFile==null )
 	    throw new BuildException("No target ( " + soExt + " file )");
 	if (src == null) 
@@ -326,7 +332,6 @@ public class SoTask extends Task {
 	// We could generate a dummy Makefile and parse the content...
 	findCompileList();
 
-	CompilerAdapter compiler=findCompilerAdapter();
 	compiler.compile( compileList );
 	
 	File soTarget=new File( buildDir, soFile + soExt );
@@ -335,7 +340,6 @@ public class SoTask extends Task {
 	    return;
 	}
 
-	LinkerAdapter linker=findLinkerAdapter();
 	linker.link(srcList);
     }
 
