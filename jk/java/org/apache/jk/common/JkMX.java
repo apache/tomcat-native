@@ -145,7 +145,8 @@ public class JkMX extends JkHandler
             // starts the server
             mserver.invoke(serverName, "start", null, null);
 
-            return;
+            log.info( "Started MX4J console on " + port);
+            //return;
         } catch( Throwable t ) {
             log.error( "Can't load the MX4J http adapter " + t.toString()  );
         }
@@ -230,7 +231,7 @@ public class JkMX extends JkHandler
                 log.info("Registering the JMX hierarchy for Log4J ");
                 mserver.registerMBean(o, new ObjectName("log4j:hierarchy=default"));
             } catch( Throwable t ) {
-                log.info("Can't enable log4j mx");
+                log.info("Can't enable log4j mx: " +  t.toString());
             }
 
             /*
