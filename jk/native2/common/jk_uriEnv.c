@@ -69,41 +69,51 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
-static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv);
+/** Parse the name:
+       VHOST/PATH
 
-static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
-                                char *name)
+    If VHOST is empty, we map to the default host.
+
+    The PATH will be further split in CONTEXT/LOCALPATH during init ( after
+    we have all uris, including the context paths ).
+*/
+static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
+                                 char *name)
 {
     char *n=name;
-    char *slash=strchr( n, '/' );
+    char *slash=strchr( name, '/' );
 
+    fprintf( stderr, "XXX parseURI %s\n", name );
+    
     if( slash==NULL ) {
-        env->l->jkLog( env, env->l, JK_LOG_ERROR,
-                       "uriEnv.parseUri(): At least a '/' must be included %s\n", name);
-        return JK_ERR;
+        /* That's a virtual host definition ( no actual mapping, just global
+         * settings like aliases, etc
+         */
+        uriEnv->match_type= MATCH_TYPE_HOST;
+        if( name[0]=='\0' ) {
+            uriEnv->virtual=NULL; /* "" for the default host */
+        } else {
+            uriEnv->virtual=name;
+        }
+        return JK_OK;
     }
     
-    /* Cut the "uri." prefix, if any */
-    if( (strncmp( name, "uri.", 4 ) == 0 )||
-        (strncmp( name, "uri:", 4 ) == 0 )) {
-        n=name+4;
-    }
-    /* Cut the " */
-    if( *n == '"' ) n++;
-    /* If it doesn't start with /, it must be a vhost */
-    if( *n != '/' ) {
-        char *portIdx=strchr( n, ':' );
-        char *vhost=NULL;
-
-        /* XXX Extract and set the vhost */
+    /* If it doesn't start with /, it must have a vhost */
+    if( *name != '/' ) {
+        jk_uriEnv_t *vhost;
+        // char *portIdx=strchr( n, ':' );
+        uriEnv->virtual=uriEnv->pool->calloc( env, uriEnv->pool, slash - name + 2 );
+        strncpy( uriEnv->virtual, name, slash-name );
     }
     
     n=slash;
     
     uriEnv->uri=uriEnv->pool->pstrdup(env, uriEnv->pool, n);
-    jk2_uriEnv_init(env, uriEnv);
-    /*     env->l->jkLog( env, env->l, JK_LOG_INFO, */
-    /*                    "uriEnv.parseUri() Setting path %s for %s\n", n, name); */
+
+    /* No further init - will be called by uriMap.init() */
+    env->l->jkLog( env, env->l, JK_LOG_INFO,
+                   "uriEnv.parseUri() Parsing %s to host=%s  uri=%s\n", name,
+                   uriEnv->virtual, uriEnv->uri );
     return JK_OK;
 }
 
@@ -122,7 +132,7 @@ static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
     return NULL;
 }
 
-static int JK_METHOD jk2_uriEnv_setProperty(jk_env_t *env,
+static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
                                   jk_bean_t *mbean,
                                   char *nameParam,
                                   void *valueP)
@@ -135,20 +145,50 @@ static int JK_METHOD jk2_uriEnv_setProperty(jk_env_t *env,
 
     uriEnv->properties->add( env ,uriEnv->properties,
                              name, val );
+
+    if( strcmp("group", name) == 0 ) {
+        uriEnv->workerName=val;
+        return JK_OK;
+    } else if( strcmp("context", name) == 0 ) {
+        jk_bean_t *ctxMB;
+        jk_uriEnv_t *ctxEnv;
+        char *cname;
+        
+        uriEnv->contextPath=val;
+        uriEnv->ctxt_len=strlen( val );
+
+        if( strcmp( val, uriEnv->uri ) == 0 ) {
+            uriEnv->match_type= MATCH_TYPE_CONTEXT;
+        }
+        return JK_OK;
+    } else if( strcmp("servlet", name) == 0 ) {
+        uriEnv->servlet=val;
+    } else if( strcmp("alias", name) == 0 ) {
+        if( uriEnv->match_type == MATCH_TYPE_HOST ) {
+            if( uriEnv->aliases==NULL ) {
+                jk2_map_default_create( env, &uriEnv->aliases, mbean->pool );
+            }
+            uriEnv->aliases->put( env, uriEnv->aliases, val, uriEnv, NULL );
+        }
+    } else if( strcmp("debug", name) == 0 ) {
+        uriEnv->debug=atoi( val );
+        return JK_OK;
+    } 
+
+    /* OLD - DEPRECATED */
     if( strcmp("worker", name) == 0 ) {
         uriEnv->workerName=val;
-    }
-    if( strcmp("debug", name) == 0 ) {
-        uriEnv->debug=atoi( val );
-    }
-    if( strcmp("path", name) == 0 ) {
+    } else if( strcmp("path", name) == 0 ) {
         if( val==NULL )
             uriEnv->uri=NULL;
         else
             uriEnv->uri=uriEnv->pool->pstrdup(env, uriEnv->pool, val);
     }
     if( strcmp("uri", name) == 0 ) {
-        jk2_uriEnv_parseUri( env, uriEnv, val);
+        jk2_uriEnv_parseName( env, uriEnv, val);
+    }
+    if( strcmp("name", name) == 0 ) {
+        jk2_uriEnv_parseName( env, uriEnv, val);
     }
     if( strcmp("vhost", name) == 0 ) {
         if( val==NULL )
@@ -156,7 +196,6 @@ static int JK_METHOD jk2_uriEnv_setProperty(jk_env_t *env,
         else
             uriEnv->virtual=uriEnv->pool->pstrdup(env, uriEnv->pool, val);
     }
-
     return JK_OK;
 }
 
@@ -167,6 +206,29 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     char *asterisk;
     char *uri=uriEnv->pool->pstrdup( env, uriEnv->pool, uriEnv->uri);
 
+    /* Set the worker */
+    char *wname=uriEnv->workerName;
+
+    if( uriEnv->workerName == NULL ) {
+        /* The default worker */
+        uriEnv->workerName=uriEnv->uriMap->workerEnv->defaultWorker->mbean->name;;
+        uriEnv->worker=uriEnv->uriMap->workerEnv->defaultWorker;
+
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "uriMap.init() map %s %s\n",
+                      uriEnv->uri, uriEnv->uriMap->workerEnv->defaultWorker->mbean->name);
+    }
+
+    if( uriEnv->workerName != NULL && uriEnv->worker==NULL ) {
+        uriEnv->worker= env->getByName( env, wname );
+        if( uriEnv->worker==NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "uriMap.init() map to invalid worker %s %s\n",
+                          uriEnv->uri, uriEnv->workerName);
+            /* XXX that's allways a 'lb' worker, create it */
+        }
+    } 
+    
     if( uri==NULL ) 
         return JK_ERR;
     
@@ -191,21 +253,38 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         uriEnv->prefix      = uri;
         uriEnv->prefix_len  =strlen( uriEnv->prefix );
         uriEnv->suffix      = NULL;
-        uriEnv->match_type  = MATCH_TYPE_EXACT;
+        if( uriEnv->match_type != MATCH_TYPE_CONTEXT &&
+            uriEnv->match_type != MATCH_TYPE_HOST ) {
+            /* Context and host maps do not have ASTERISK */
+            uriEnv->match_type  = MATCH_TYPE_EXACT;
+        }
         if( uriEnv->debug > 0 ) {
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "uriMap.addMapping() exact mapping %s=%s was added\n",
-                          uri, uriEnv->workerName);
+            if( uriEnv->match_type == MATCH_TYPE_CONTEXT ) {
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "uriMap.addMapping() context mapping %s=%s \n",
+                              uriEnv->prefix, uriEnv->workerName);
+                
+            } else if( uriEnv->match_type == MATCH_TYPE_HOST ) {
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "uriMap.addMapping() host mapping %s=%s \n",
+                              uriEnv->virtual, uriEnv->workerName);
+            } else {
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "uriMap.addMapping() exact mapping %s=%s \n",
+                              uriEnv->prefix, uriEnv->workerName);
+            }
         }
         return JK_OK;
     }
 
     /*
      * We have an * in the uri. Check the type.
-     *  - /ASTERISK/PREFIX
-     * 
      *  - /context/ASTERISK.suffix
      *  - /context/PREFIX/ASTERISK
+     *
+     *  Unsupported:
+     *  - context path:       /ASTERISK/prefix
+     *  - general suffix rule /context/prefix/ASTERISKsuffix
      */
     asterisk--;
     if ('/' == asterisk[0]) {
@@ -222,9 +301,9 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
                               "Into jk_uri_worker_map_t::uri_worker_map_open, "
                               "general context path rule %s * %s -> %s was added\n",
                               uri, asterisk + 2, uriEnv->workerName);
-
+            }
         } else if ('.' == asterisk[2]) {
-            /* suffix rule: /foo/bar/ASTERISK.extension */
+            /* suffix rule: /context/ASTERISK.extension */
             asterisk[1]      = '\0';
             asterisk[2]      = '\0';
             uriEnv->prefix      = uri;
@@ -233,11 +312,11 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             uriEnv->match_type  = MATCH_TYPE_SUFFIX;
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "uriMap.addMapping() suffix mapping %s.%s=%s was added\n",
-                              uri, asterisk + 3, uriEnv->workerName);
+                              "uriMap.addMapping() suffix mapping %s .%s=%s was added\n",
+                              uriEnv->prefix, uriEnv->suffix, uriEnv->workerName);
             }
         } else if ('\0' != asterisk[2]) {
-            /* general suffix rule /foo/bar/ASTERISKextraData */
+            /* general suffix rule /context/prefix/ASTERISKextraData */
             asterisk[1] = '\0';
             uriEnv->suffix  = asterisk + 2;
             uriEnv->prefix  = uri;
@@ -245,11 +324,11 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             uriEnv->match_type = MATCH_TYPE_GENERAL_SUFFIX;
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
-                         "uriMap.addMapping() general suffix mapping %s.%s=%s\n",
+                              "uriMap.addMapping() general suffix mapping %s.%s=%s\n",
                               uri, asterisk + 2, uriEnv->workerName);
             }
         } else {
-            /* context based /foo/bar/ASTERISK  */
+                /* context based /context/prefix/ASTERISK  */
             asterisk[1]      = '\0';
             uriEnv->suffix      = NULL;
             uriEnv->prefix      = uri;
@@ -258,7 +337,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
             if( uriEnv->debug > 0 ) {
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                               "uriMap.addMapping() prefix mapping %s=%s\n",
-                              uri, uriEnv->workerName);
+                              uriEnv->prefix, uriEnv->workerName);
             }
         }
     } else {
@@ -270,22 +349,20 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         uriEnv->match_type  = MATCH_TYPE_PREFIX;
         if( uriEnv->debug > 0 ) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                     "uriMap.addMapping() prefix mapping2 %s=%s\n",
+                          "uriMap.addMapping() prefix mapping2 %s=%s\n",
                           uri, uriEnv->workerName);
         }
     }
-
     return JK_OK;
 }
 
 static char *myAttInfo[]={ "host", "uri", "worker", NULL };
-
+    
 int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                  jk_bean_t *result,
                                  const char *type, const char *name)
 {
     jk_pool_t *uriPool;
-//    int err;
     jk_uriEnv_t *uriEnv;
 
     uriPool=(jk_pool_t *)pool->create( env, pool,
@@ -298,22 +375,23 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     
     jk2_map_default_create( env, &uriEnv->properties, uriPool );
 
+    uriEnv->debug=10;
     uriEnv->init=jk2_uriEnv_init;
 
-    result->setAttribute=jk2_uriEnv_setProperty;
+    result->setAttribute=jk2_uriEnv_setAttribute;
     result->getAttribute=jk2_uriEnv_getAttribute;
     uriEnv->mbean=result;
     result->object=uriEnv;
     result->getAttributeInfo=myAttInfo;
-    
-    /* The name is a path */
-    if( strchr( name, '/' ) != NULL ) {
-        jk2_uriEnv_setProperty( env, result, "uri", (char *)name );
-    }
+
+    uriEnv->name=result->localName;
+    jk2_uriEnv_parseName( env, uriEnv, result->localName);
 
     uriEnv->workerEnv=env->getByName( env, "workerEnv" );
     uriEnv->workerEnv->uriMap->addUriEnv( env, uriEnv->workerEnv->uriMap,
                                           uriEnv );
+    uriEnv->uriMap=uriEnv->workerEnv->uriMap;
+
     return JK_OK;
 }
 
