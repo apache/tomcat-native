@@ -80,7 +80,7 @@
 #include "jk_registry.h"
 
 #ifndef WIN32
-	#define closesocket			close
+    #define closesocket         close
 #endif
 
 #define DEFAULT_HOST "127.0.0.1"
@@ -92,6 +92,8 @@ struct jk_channel_socket_private {
     struct sockaddr_in addr;    
     char *host;
     short port;
+    int keepalive;
+    int timeout;
 };
 
 typedef struct jk_channel_socket_private jk_channel_socket_private_t;
@@ -122,12 +124,18 @@ static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
     jk_channel_t *ch=(jk_channel_t *)mbean->object;
     char *value=(char *)valueP;
     jk_channel_socket_private_t *socketInfo=
-	(jk_channel_socket_private_t *)(ch->_privatePtr);
+    (jk_channel_socket_private_t *)(ch->_privatePtr);
 
     if( strcmp( "host", name ) == 0 ) {
-	socketInfo->host=value;
+    socketInfo->host=value;
     } else if( strcmp( "port", name ) == 0 ) {
         socketInfo->port=atoi( value );
+    } else if( strcmp( "keepalive", name ) == 0 ) {
+        socketInfo->keepalive=atoi( value );
+    } else if( strcmp( "timeout", name ) == 0 ) {
+        socketInfo->timeout=atoi( value );
+    } else if( strcmp( "nodelay", name ) == 0 ) {
+        socketInfo->ndelay=atoi( value );
     } else {
         return jk2_channel_setAttribute( env, mbean, name, valueP );
     }
@@ -141,7 +149,7 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
 {
     jk_channel_t *ch=chB->object;
     jk_channel_socket_private_t *socketInfo=
-	(jk_channel_socket_private_t *)(ch->_privatePtr);
+    (jk_channel_socket_private_t *)(ch->_privatePtr);
     int rc;
     char *host=socketInfo->host;
 
@@ -180,7 +188,7 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
     
     rc=jk2_channel_socket_resolve( env, socketInfo->host, socketInfo->port, &socketInfo->addr );
     if( rc!= JK_OK ) {
-	env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk2_channel_socket_init: "
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "jk2_channel_socket_init: "
                       "can't resolve %s:%d errno=%d\n", socketInfo->host, socketInfo->port, errno );
     }
 
@@ -250,14 +258,16 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
 {
 /*    int err; */
     jk_channel_socket_private_t *socketInfo=
-	(jk_channel_socket_private_t *)(ch->_privatePtr);
+    (jk_channel_socket_private_t *)(ch->_privatePtr);
 
     struct sockaddr_in *addr=&socketInfo->addr;
     int ndelay=socketInfo->ndelay;
+    int keepalive=socketInfo->keepalive;
+    int ntimeout=socketInfo->timeout;
 
     int sock;
     int ret;
-
+    
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if(sock < 0) {
 #ifdef WIN32
@@ -269,6 +279,24 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
                  "channelSocket.open(): can't create socket %d %s\n",
                  errno, strerror( errno ) );
         return JK_ERR;
+    }
+
+    if (ntimeout >= 0) {
+        /* convert from seconds to ms */
+        int set = ntimeout * 1000;
+        u_long zero = 0;
+        if (ioctlsocket(sock, FIONBIO, &zero) == SOCKET_ERROR) {
+#ifdef WIN32
+            errno = WSAGetLastError() - WSABASEERR;
+#endif /* WIN32 */            
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "channelSocket.open() ioctlcocket failed %s:%d %d %s \n",
+                           socketInfo->host, socketInfo->port, errno, strerror( errno ) );
+            return JK_ERR;
+        }
+        
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &set, sizeof(set));
+        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *) &set, sizeof(set));
     }
 
     /* Tries to connect to JServ (continues trying while error is EINTR) */
@@ -292,11 +320,18 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
     if(ret != 0 ) {
         jk2_close_socket(env, sock);
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelSocket.connect() connect failed %s:%d %d %s \n",
+                      "channelSocket.open() connect failed %s:%d %d %s \n",
                       socketInfo->host, socketInfo->port, errno, strerror( errno ) );
         return JK_ERR;
     }
 
+    /* Enable the use of keep-alive packets on TCP connection */
+    if(keepalive) {
+        int set = 1;
+        setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,(char *)&set,sizeof(set));
+    }   
+
+    /* Disable the Nagle algorithm if ndelay is set */
     if(ndelay) {
         int set = 1;
         setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,(char *)&set,sizeof(set));
@@ -362,13 +397,13 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
 #else
         int this_time = write(sd, (char *)b + sent , len - sent);
 #endif
-	if(0 == this_time) {
-	    return -2;
-	}
-	if(this_time < 0) {
-	    return this_time;
-	}
-	sent += this_time;
+    if(0 == this_time) {
+        return -2;
+    }
+    if(this_time < 0) {
+        return this_time;
+    }
+    sent += this_time;
     }
     /*     return sent; */
     return JK_OK; /* 0 */
@@ -398,31 +433,31 @@ static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
     
     while(rdlen < len) {
 #ifdef WIN32
-	/* WIN32 read cannot operate on sockets */
-	int this_time = recv(sd, 
-			     (char *)b + rdlen, 
-			     len - rdlen, 0);	
+    /* WIN32 read cannot operate on sockets */
+    int this_time = recv(sd, 
+                 (char *)b + rdlen, 
+                 len - rdlen, 0);   
 #else
-	int this_time = read(sd, 
-			     (char *)b + rdlen, 
-			     len - rdlen);	
+    int this_time = read(sd, 
+                 (char *)b + rdlen, 
+                 len - rdlen);  
 #endif
-	if(-1 == this_time) {
+    if(-1 == this_time) {
 #ifdef WIN32
-	    if(SOCKET_ERROR == this_time) { 
-		errno = WSAGetLastError() - WSABASEERR;
-	    }
+        if(SOCKET_ERROR == this_time) { 
+            errno = WSAGetLastError() - WSABASEERR;
+        }
 #endif /* WIN32 */
-	    
-	    if(EAGAIN == errno) {
-		continue;
-	    } 
-	    return -1;
-	}
-	if(0 == this_time) {
-	    return -1; 
-	}
-	rdlen += this_time;
+        
+        if(EAGAIN == errno) {
+            continue;
+        } 
+        return -1;
+    }
+    if(0 == this_time) {
+        return -1; 
+    }
+    rdlen += this_time;
     }
     return rdlen; 
 }
@@ -442,32 +477,32 @@ static int JK_METHOD jk2_channel_socket_readN2( jk_env_t *env,
     
     while(rdlen < minLen ) {
 #ifdef WIN32
-	/* WIN32 read cannot operate on sockets */
-	int this_time = recv(sd, 
-			     (char *)b + rdlen, 
-			     maxLen - rdlen, 0);	
+    /* WIN32 read cannot operate on sockets */
+    int this_time = recv(sd, 
+                 (char *)b + rdlen, 
+                 maxLen - rdlen, 0);    
 #else
-	int this_time = read(sd, 
-			     (char *)b + rdlen, 
-			     maxLen - rdlen);	
+    int this_time = read(sd, 
+                 (char *)b + rdlen, 
+                 maxLen - rdlen);   
 #endif
 /*         fprintf(stderr, "XXX received %d\n", this_time ); */
-	if(-1 == this_time) {
+    if(-1 == this_time) {
 #ifdef WIN32
-	    if(SOCKET_ERROR == this_time) { 
-		errno = WSAGetLastError() - WSABASEERR;
-	    }
+        if(SOCKET_ERROR == this_time) { 
+            errno = WSAGetLastError() - WSABASEERR;
+        }
 #endif /* WIN32 */
-	    
-	    if(EAGAIN == errno) {
-		continue;
-	    } 
-	    return -1;
-	}
-	if(0 == this_time) {
-	    return -1; 
-	}
-	rdlen += this_time;
+        
+        if(EAGAIN == errno) {
+            continue;
+        } 
+        return -1;
+    }
+    if(0 == this_time) {
+        return -1; 
+    }
+    rdlen += this_time;
     }
     return rdlen; 
 }
@@ -589,7 +624,7 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
     ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
     ch->_privatePtr= (jk_channel_socket_private_t *)
-	pool->calloc( env, pool, sizeof( jk_channel_socket_private_t));
+    pool->calloc( env, pool, sizeof( jk_channel_socket_private_t));
 
     ch->recv= jk2_channel_socket_recv; 
     ch->send= jk2_channel_socket_send; 
