@@ -436,17 +436,22 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_unRead(JNIEnv *jniEnv, jobject _jthis, 
                                       jlong poolJ, jlong unSocketJ,
-                                      jbyteArray bufJ, jint from, jint cnt)
+                                      jbyteArray jbuf, jint from, jint cnt)
 {
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     jbyte *nbuf;
     int rd;
-    jboolean iscommit;
+    jboolean iscopy;
 
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, bufJ, &iscommit);
+    /* We can't use Critical with blocking ops. 
+     */
+    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscopy);
     if( ! nbuf ) {
         return -1;
     }
+
+    if( iscopy==JNI_TRUE )
+        fprintf( stderr, "aprImpl.unRead() get java bytes iscopy %d\n", iscopy);
 
     while( 1 ) {
         /* Read */
@@ -458,29 +463,29 @@ Java_org_apache_jk_apr_AprImpl_unRead(JNIEnv *jniEnv, jobject _jthis,
             } else {
                 fprintf(stderr, "Error reading %d %d %s\n",
                         (int)unSocketJ, errno, strerror(errno));
-                (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
+                (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
                 return -1;
             }
         }
 /*         fprintf(stderr, "Read %d from %d\n", */
 /*                 rd, unSocketJ); */
     
-        (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
+        (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
         return (jint)rd;
     }
 }
 
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_unWrite(JNIEnv *jniEnv, jobject _jthis, 
-                                     jlong poolJ, jlong unSocketJ, jbyteArray bufJ, jint from, jint cnt)
+                                     jlong poolJ, jlong unSocketJ, jbyteArray jbuf, jint from, jint cnt)
 {
     apr_status_t status;
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     jbyte *nbuf;
     int rd;
-    jboolean iscommit;
+    jboolean iscopy;
 
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, bufJ, &iscommit);
+    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscopy);
     if( ! nbuf ) {
         return -1;
     }
@@ -488,7 +493,7 @@ Java_org_apache_jk_apr_AprImpl_unWrite(JNIEnv *jniEnv, jobject _jthis,
     /* write */
     write( (int) unSocketJ, nbuf + from, cnt );
     
-    (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
+    (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
     return (jint)rd;
 }
 
@@ -707,7 +712,7 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     jk_endpoint_t *ep = compCtx->object;
 
     jbyte *nbuf;
-    jboolean iscommit;
+    jboolean iscopy;
 
     int cnt=0;
     jint rc = -1;
@@ -715,7 +720,11 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
 
     /*env->l->jkLog(env, env->l, JK_LOG_INFO,"jkInvoke()\n"); */
         
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, data, &iscommit);
+    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, data, &iscopy);
+
+    if( iscopy )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "aprImpl.jkInvoke() get java bytes iscopy %d\n", iscopy);
 
     if(nbuf==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
