@@ -16,9 +16,22 @@
 <section name="Building ISAPI redirector">
 <p>
 The redirector was developed using Visual C++ Ver.6.0, so having this environment is a prereq if you want 
-to perform a custom build. You should also have IIS developer SDK
-
-The steps that you need to take are:
+to perform a custom build. You should also have Platform SDK from January 2003 or later or
+at least IIS developer SDK.
+</p>
+<p>
+The easiest way to build the isapi redirector is to use Microsoft Visual Studio
+and open the <b>jk/native/iis/isapi.dsp</b> file.
+</p>
+<p>It is recommended that you use <b>Visual Studio 2003</b>
+or later for building isapi redirector, to be able to use the TRACE logging
+features.
+</p>
+<p>If using Visual Studio 6.0 then it is recommended that you download
+Visual Studio Service Pack 5 or any later version.
+</p>
+<p>
+The steps that you need to take are if wish to build from command line:
 <ul>
 <li>
 Change directory to the isapi plugins source directory.
@@ -29,7 +42,7 @@ Make the source with MSDEV
 </ul>
 <screen>
 <note>Change directory to the isapi plugins source directory</note>
-<typedos>cd c:\home\apache\jk\isapi</typedos>
+<typedos>cd c:\jakarta-tomcat-connectors\jk\native\iis</typedos>
 <note>Build the sources using MSDEV</note>
 <typedos>MSDEV isapi.dsp /MAKE ALL</typedos>
 </screen>
