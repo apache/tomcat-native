@@ -139,7 +139,6 @@ struct jk_workerEnv {
     /*
      * Worker stuff
      */
-    jk_map_t *worker_properties;
     char     *worker_file;
 
     char     *secret_key;
@@ -169,6 +168,10 @@ struct jk_workerEnv {
      */
     int options;
 
+    /** Old REUSE_WORKER define. Instead of using an object pool, use
+        thread data to recycle the connection. */
+    int perThreadWorker;
+    
     /*
      * Environment variables support
      */

@@ -77,6 +77,7 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
 {
     jk_map_t *init_data=_this->init_data;
     char **worker_list  = NULL;
+    jk_logger_t *l=_this->l;
     unsigned i;
     int err;
 
@@ -91,10 +92,12 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
     for(i = 0 ; i < _this->num_of_workers ; i++) {
         jk_worker_t *w = NULL;
         jk_worker_t *oldw = NULL;
+        const char *name=(const char*)worker_list[i];
 
-        w=_this->createWorker(_this, worker_list[i], init_data);
+        w=_this->createWorker(_this, name, init_data);
+        w->channel=NULL;
         if( w==NULL ) {
-            jk_log(_this->l, JK_LOG_ERROR,
+            l->jkLog(_this->l, JK_LOG_ERROR,
                    "init failed to create worker %s\n", 
                    worker_list[i]);
             /* Ignore it, other workers may be ok.
@@ -103,7 +106,7 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
             map_put(_this->worker_map, worker_list[i], w, (void *)&oldw);
         
             if(oldw!=NULL) {
-                jk_log(_this->l, JK_LOG_DEBUG, 
+                l->jkLog(_this->l, JK_LOG_DEBUG, 
                        "build_worker_map, removing old %s worker \n",
                        worker_list[i]);
                 oldw->destroy(&oldw, _this->l);
@@ -113,9 +116,9 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
         }
     }
 
-    jk_log(_this->l, JK_LOG_DEBUG, "build_worker_map, done\n"); 
+    l->jkLog(_this->l, JK_LOG_DEBUG, "build_worker_map, done\n"); 
 
-    jk_log(_this->l, JK_LOG_DEBUG,
+    l->jkLog(_this->l, JK_LOG_DEBUG,
            "workerEnv.init() done: %d %s\n", _this->num_of_workers, worker_list[0]); 
     return JK_TRUE;
 }
@@ -136,13 +139,13 @@ void jk_workerEnv_close(jk_workerEnv_t *_this)
     for(i = 0 ; i < sz ; i++) {
         jk_worker_t *w = map_value_at(_this->worker_map, i);
         if(w) {
-            jk_log(l, JK_LOG_DEBUG,
+            l->jkLog(l, JK_LOG_DEBUG,
                    "destroy worker %s\n",
                    map_name_at(_this->worker_map, i));
             w->destroy(&w, l);
         }
     }
-    jk_log(_this->l, JK_LOG_DEBUG, "workerEnv.close() done %d\n", sz); 
+    l->jkLog(_this->l, JK_LOG_DEBUG, "workerEnv.close() done %d\n", sz); 
     map_free(&_this->worker_map);
 }
 
@@ -150,16 +153,17 @@ static jk_worker_t *jk_workerEnv_getWorkerForName(jk_workerEnv_t *_this,
                                                   const char *name )
 {
     jk_worker_t * rc;
-
+    jk_logger_t *l=_this->l;
+    
     if(!name) {
-        jk_log(_this->l, JK_LOG_ERROR, "wc_get_worker_for_name NULL name\n");
+        l->jkLog(l, JK_LOG_ERROR, "wc_get_worker_for_name NULL name\n");
         return NULL;
     }
 
     rc = map_get(_this->worker_map, name, NULL);
 
     if( rc==NULL ) {
-        jk_log(_this->l, JK_LOG_ERROR, "getWorkerForName: no worker found for %s \n", name);
+        l->jkLog(l, JK_LOG_ERROR, "getWorkerForName: no worker found for %s \n", name);
     } 
     return rc;
 }
@@ -171,6 +175,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
     int err;
     char *type;
     jk_env_objectFactory_t fac;
+    jk_logger_t *l=_this->l;
     jk_worker_t *w = NULL;
 
     type=map_getStrProp( init_data,"worker",name,"type",NULL );
@@ -178,7 +183,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
     w=(jk_worker_t *)_this->env->getInstance(_this->env, "worker", type );
     
     if( w == NULL ) {
-        jk_log(_this->l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "workerEnv.createWorker(): factory can't create worker %s:%s\n",
                type, name); 
         return JK_FALSE;
@@ -187,24 +192,24 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
     w->name=(char *)name;
     w->workerEnv=_this;
     
-    err=w->validate(w, init_data, _this, _this->l);
+    err=w->validate(w, init_data, _this, l);
     
     if( err!=JK_TRUE ) {
-        jk_log(_this->l, JK_LOG_ERROR,
+        l->jkLog(l, JK_LOG_ERROR,
                "workerEnv.createWorker(): validate failed for %s:%s\n", 
                type, name); 
-        w->destroy(&w, _this->l);
+        w->destroy(&w, l);
         return NULL;
     }
     
-    jk_log(_this->l, JK_LOG_DEBUG,
+    l->jkLog(l, JK_LOG_DEBUG,
            "workerEnv.createWorker(): validated %s:%s\n",
            type, name);
     
-    err=w->init(w, init_data, _this, _this->l);
+    err=w->init(w, init_data, _this, l);
     if(err!=JK_TRUE) {
-        w->destroy(&w, _this->l);
-        jk_log(_this->l, JK_LOG_ERROR, "workerEnv.createWorker() init failed for %s\n", 
+        w->destroy(&w, l);
+        l->jkLog(l, JK_LOG_ERROR, "workerEnv.createWorker() init failed for %s\n", 
                name); 
         return NULL;
     }
@@ -219,13 +224,13 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, void **result,
     jk_workerEnv_t *_this;
     int err;
 
-    jk_log(l, JK_LOG_DEBUG, "Creating workerEnv \n");
+    l->jkLog(l, JK_LOG_DEBUG, "Creating workerEnv \n");
 
     _this=(jk_workerEnv_t *)calloc( 1, sizeof( jk_workerEnv_t ));
     *result=_this;
 
-    _this->worker_properties = NULL;
-    map_alloc(& _this->worker_properties);
+    _this->init_data = NULL;
+    map_alloc(& _this->init_data);
 
     _this->worker_file     = NULL;
     _this->log_file        = NULL;
@@ -286,16 +291,18 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, void **result,
                                            "default");
 
     if( _this->uriMap==NULL ) {
-        jk_log(l, JK_LOG_ERROR, "Error getting uriMap implementation\n");
+        l->jkLog(l, JK_LOG_ERROR, "Error getting uriMap implementation\n");
         return;
     }
 
     _this->uriMap->workerEnv = _this;
+    _this->perThreadWorker=0;
     
     /* methods */
     _this->init=&jk_workerEnv_init;
     _this->getWorkerForName=&jk_workerEnv_getWorkerForName;
     _this->close=&jk_workerEnv_close;
+    _this->createWorker=&jk_workerEnv_createWorker;
 
     
     return JK_TRUE;
