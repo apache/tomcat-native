@@ -583,9 +583,9 @@ directive when jk and alias/userdir URLs matches.
 
 <screen>
 <note># All URL goes to tomcat except the one containing /home</note>
-<read>&lt;VirtualHost *:80&gt;
-<read> ServerName testxxx.mysys
-<read> DocumentRoot /www/testxxx/htdocs
+<read>&lt;VirtualHost *:80&gt;</read>
+<read> ServerName testxxx.mysys</read>
+<read> DocumentRoot /www/testxxx/htdocs</read>
 <read />
 <note># Use SetEnvIf to st no-jk when /home/ is encountered</note>
 <read>SetEnvIf Request_URI "/home/*" no-jk</read>
