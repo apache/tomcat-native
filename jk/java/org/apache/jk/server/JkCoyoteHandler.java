@@ -53,7 +53,7 @@ import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.net.SSLSupport;
 
-/** Plugs Jk2 into Coyote. Must be named "type=JkHandler,name=container"
+/** Plugs Jk into Coyote. Must be named "type=JkHandler,name=container"
  *
  * @jmx:notification-handler name="org.apache.jk.SEND_PACKET
  * @jmx:notification-handler name="org.apache.coyote.ACTION_COMMIT

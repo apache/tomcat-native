@@ -43,7 +43,7 @@ public class ChannelJni extends JniHandler implements JkChannel {
         
         // We'll be called from C. This deals with that.
         apr.addJkHandler( "channelJni", this );        
-        log.info("JK2: listening on channel.jni:jni" );
+        log.info("JK: listening on channel.jni:jni" );
         
         if( next==null ) {
             if( nextName!=null ) 

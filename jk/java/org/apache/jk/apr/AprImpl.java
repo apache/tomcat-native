@@ -207,7 +207,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
             initialize();
             jkSetAttribute(0, 0, "channel:jni", "starting");
             
-            log.info("JK2: Initialized apr" );
+            log.info("JK: Initialized apr" );
             
         } catch( Throwable t ) {
             throw new IOException( t.toString() );

@@ -59,7 +59,7 @@ import org.apache.tomcat.util.threads.ThreadPoolRunnable;
 */
 
 /**
- *  Jk2 can use multiple protocols/transports.
+ *  Jk can use multiple protocols/transports.
  *  Various container adapters should load this object ( as a bean ),
  *  set configurations and use it. Note that the connector will handle
  *  all incoming protocols - it's not specific to ajp1x. The protocol
@@ -70,7 +70,7 @@ import org.apache.tomcat.util.threads.ThreadPoolRunnable;
 /** Accept ( and send ) TCP messages.
  *
  * @author Costin Manolache
- * @jmx:mbean name="jk2:service=ChannelSocket"
+ * @jmx:mbean name="jk:service=ChannelSocket"
  *            description="Accept socket connections"
  * @jmx:notification name="org.apache.coyote.INVOKE
  * @jmx:notification-handler name="org.apache.jk.JK_SEND_PACKET
@@ -336,7 +336,7 @@ public class ChannelSocket extends JkHandler
         if (startPort == 0) {
             port = 0;
             if(log.isInfoEnabled())
-                log.info("JK2: ajp13 disabling channelSocket");
+                log.info("JK: ajp13 disabling channelSocket");
             running = true;
             return;
         }
@@ -363,7 +363,7 @@ public class ChannelSocket extends JkHandler
             return;
         }
         if(log.isInfoEnabled())
-            log.info("JK2: ajp13 listening on " + getAddress() + ":" + port );
+            log.info("JK: ajp13 listening on " + getAddress() + ":" + port );
 
         // If this is not the base port and we are the 'main' channleSocket and
         // SHM didn't already set the localId - we'll set the instance id
