@@ -40,10 +40,11 @@
 #endif
 
 #define TEST_POST_DATA "This document is a proposal of evolution of the current " \
-                       "Apache JServ Protocol version 1.3, also known as ajp13. " \
-                       "I'll not cover here the full protocol but only the add-on from ajp13. " \
-                       "This nth pass include comments from the tomcat-dev list and " \
-                       "misses discovered during developpment."
+                       "Apache JServ Protocol version 1.3, also known as ajp13. "
+
+//"I'll not cover here the full protocol but only the add-on from ajp13. " \
+//                       "This nth pass include comments from the tomcat-dev list and " \
+//                       "misses discovered during developpment."
 
 #define TEST_CASE_URL "http://localhost/servlets-examples/HelloWorldExample"
 
@@ -163,6 +164,8 @@ int main(int argc, const char * const * argv, const char * const *env)
     request_rec *r;
     apr_socket_t *sock;
     ajp_msg_t *msg;
+    char *buf;
+    apr_size_t len;
 
     apr_app_initialize(&argc, &argv, &env);
 
@@ -192,9 +195,11 @@ int main(int argc, const char * const * argv, const char * const *env)
     
     /* 0. Fill in the request data          */
     if (ap_wrap_make_request(r, TEST_CASE_URL,
-                             "POST", NULL, NULL,
-                             0,
-                             NULL) != APR_SUCCESS) {
+                             "POST",
+                             "application/x-www-form-urlencoded",
+                             NULL,
+                             sizeof(TEST_POST_DATA) - 1,
+                             TEST_POST_DATA) != APR_SUCCESS) {
         goto finished;
     }
     /*
@@ -218,6 +223,20 @@ int main(int argc, const char * const * argv, const char * const *env)
         goto finished;
     }
     /* 3. Send AJP message                  */
+    ajp_alloc_data_msg(r, &buf, &len, &msg);
+
+    /* Send the initial POST BODY */
+    if (ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+                   "Error ajp_marshal_into_msgb - "
+                   "Can't setting client block");    
+    }
+    if (ap_should_client_block(r)) {
+        len = ap_get_client_block(r, buf, len);
+    }
+
+    ajp_send_data_msg(sock, r, msg, len);
+
 
     /* 4. Read AJP response                 */
     if ((rc = ajp_read_header(sock, r, &msg)) != APR_SUCCESS) {
