@@ -169,7 +169,7 @@ int JK_METHOD jk2_channel_invoke(struct jk_env *env, struct jk_bean *bean, struc
                                  struct jk_msg *msg, int raw);
 
 
-int JK_METHOD jk2_channel_setAttribute(struct jk_env *env, struct jk_bean *mbean, char *name, void *valueP)
+int JK_METHOD jk2_channel_setAttribute(struct jk_env *env, struct jk_bean *mbean, char *name, void *valueP);
 
 #ifdef __cplusplus
 }
