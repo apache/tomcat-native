@@ -677,13 +677,19 @@ static int jk2_translate(request_rec *r)
        If positive, we'll fill a ws_service_t and do the rewrite and
        the real mapping. 
     */
-    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri );
+    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri, 0 );
 
     if( uriEnv== NULL || uriEnv->workerName == NULL) {
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return DECLINED;
     }
-
+    else {
+        jk_uriEnv_t *rriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri, 1 );
+        if (rriEnv != NULL && rriEnv->workerName != NULL) {
+            workerEnv->globalEnv->releaseEnv(workerEnv->globalEnv, env );
+            return DECLINED;
+        }
+    }
     ap_set_module_config( r->request_config, &jk2_module, uriEnv );
     r->handler=JK_HANDLER;
 
