@@ -1542,7 +1542,7 @@ public class Http11Processor implements Processor, ActionHook {
         keepAlive = keepAlive && !statusDropsConnection(statusCode);
         if (!keepAlive) {
             headers.addValue(Constants.CONNECTION).setString(Constants.CLOSE);
-        } else if (!http11 && !error) {
+        } else if (!http11) {
             headers.addValue(Constants.CONNECTION).setString(Constants.KEEPALIVE);
         }
 
