@@ -80,7 +80,8 @@
 	<include name="${novellndk.dir}/include/nlm" if="netware" />
 	<include name="${novellndk.dir}/include" if="netware" />
         <include name="${java.home}/../include/netware" if="netware" />
-        
+        <include name="${java.home}/../include/hp-ux" if="hpux" />        
+        <include name="${java.home}/../include/linux" if="linux" />
         <include name="${java.home}/../include/win32" if="win32" />
       </includes>
       <depends>
@@ -109,6 +110,8 @@
       <linkOpt value="-threadname &quot;JK_JNI Thread&quot;" if="netware" />
       <linkOpt value="-stacksize 64000" if="netware" />
       
+      <def name="HPUX11" if="hpux" />
+
       <def name="WIN32" if="win32" />
       <def name="DEBUG" if="win32.debug"  />
       <def name="NDEBUG" if="win32.release"  />
@@ -140,6 +143,7 @@
 	   info="Reuse the worker endpoint, using per thread data" />
       <def name="USE_APACHE_MD5" 
 	   info="Use the MD5 implementation that is part of apache2" />
+      <def name="HPUX11" if="hpux" />
       <apacheConfig apxs="${apxs20}" />
       <jniConfig />
       <src dir=".">
@@ -153,6 +157,7 @@
 	<include name="${apache2.include}" />
 	<include name="${java.home}/../include" />
 	<include name="${java.home}/../include/win32" if="win32" />
+        <include name="${java.home}/../include/hp-ux" if="hpux" />        
       </includes>
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
@@ -207,6 +212,7 @@
                  
 	<include name="${apache13.home}/os/win32" if="win32" />
         <include name="${java.home}/../include/win32" if="win32" />
+        <include name="${java.home}/../include/hp-ux" if="hpux" />
         <include name="${native.dir}/common" if="win32" />
       </includes>
       <depends>
@@ -223,6 +229,8 @@
       <def name="USE_SPRINTF" if="netware"
 	   info="Use the sprintf function to build strings" />
            
+      <def name="HPUX11" if="hpux" />
+
       <def name="WIN32" if="win32" />
       <def name="DEBUG" if="win32.debug"  />
       <def name="NDEBUG" if="win32.release"  />

@@ -246,7 +246,7 @@ static double get_max_lb(lb_worker_t *p)
 }
 
 static worker_record_t *get_most_suitable_worker(lb_worker_t *p, 
-                                                 jk_ws_service_t *s)
+                                                 jk_ws_service_t *s, int attempt)
 {
     worker_record_t *rc = NULL;
     double lb_min = 0.0;    
@@ -256,7 +256,11 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t *p,
     if(session_route) {
         for(i = 0 ; i < p->num_of_workers ; i++) {
             if(0 == strcmp(session_route, p->lb_workers[i].name)) {
-                if(p->lb_workers[i].in_error_state) {
+                /* First attempt will allways be to the
+                   correct host. If this is indeed down and no
+                   hope of recovery, we'll go to fail-over
+                */
+                if(attempt>0 && p->lb_workers[i].in_error_state) {
                    break;
                 } else {
                     return &(p->lb_workers[i]);
@@ -305,13 +309,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
     if(e && e->endpoint_private && s && is_recoverable_error) {
         lb_endpoint_t *p = e->endpoint_private;
         jk_endpoint_t *end = NULL;
+        int attempt=0;
 
         /* you can not recover on another load balancer */
         *is_recoverable_error = JK_FALSE;
 
-
+        
         while(1) {
-            worker_record_t *rec = get_most_suitable_worker(p->worker, s);
+            worker_record_t *rec = get_most_suitable_worker(p->worker, s, attempt++);
             int rc;
 
             if(rec) {
