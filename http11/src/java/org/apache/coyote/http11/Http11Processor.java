@@ -520,9 +520,6 @@ public class Http11Processor implements Processor, ActionHook {
         ByteChunk uriBC = request.requestURI().getByteChunk();
         if (uriBC.startsWithIgnoreCase("http", 0)) {
 
-            // If the first character of the URI is 'h', the URI is either
-            // invalid, or is a full URI
-
             int pos = uriBC.indexOf("://", 0, 3, 4);
             int uriBCStart = uriBC.getStart();
             int slashPos = -1;
@@ -587,7 +584,7 @@ public class Http11Processor implements Processor, ActionHook {
                 if (!addInputFilter(inputFilters, encodingName)) {
                     // Unsupported transfer encoding
                     error = true;
-                    // Send 501; Unimplemented
+                    // 501 - Unimplemented
                     response.setStatus(501);
                 }
                 startPos = commaPos + 1;
@@ -598,7 +595,7 @@ public class Http11Processor implements Processor, ActionHook {
             if (!addInputFilter(inputFilters, encodingName)) {
                 // Unsupported transfer encoding
                 error = true;
-                // Send 501; Unimplemented
+                // 501 - Unimplemented
                 response.setStatus(501);
             }
         }
