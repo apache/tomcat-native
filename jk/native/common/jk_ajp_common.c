@@ -846,7 +846,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
             /* set last_access only if needed */
             if (ae->worker->cache_timeout > 0 || ae->worker->recycle_timeout > 0)
                 ae->last_access = time(NULL);
-            if (ae->worker->socket_timeout) {
+            if (ae->worker->socket_timeout > 0) {
                 int rc = 0;
                 if ((rc = jk_is_socket_connected(ae->sd, ae->worker->socket_timeout)) != 1) {
                         jk_log(l, JK_LOG_INFO,
