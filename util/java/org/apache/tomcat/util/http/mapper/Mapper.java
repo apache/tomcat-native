@@ -182,26 +182,26 @@ public final class Mapper {
      * @param host Host object
      */
     public synchronized void addHost(String name, String[] aliases, 
-				     Object host) {
+                                     Object host) {
         Host[] newHosts = new Host[hosts.length + 1];
         Host newHost = new Host();
-	ContextList contextList = new ContextList();
+        ContextList contextList = new ContextList();
         newHost.name = name;
-	newHost.contextList = contextList;
+        newHost.contextList = contextList;
         newHost.object = host;
         if (insertMap(hosts, newHosts, newHost)) {
             hosts = newHosts;
         }
-	for (int i = 0; i < aliases.length; i++) {
-	    newHosts = new Host[hosts.length + 1];
-	    newHost = new Host();
-	    newHost.name = aliases[i];
-	    newHost.contextList = contextList;
-	    newHost.object = host;
-	    if (insertMap(hosts, newHosts, newHost)) {
-		hosts = newHosts;
-	    }
-	}
+        for (int i = 0; i < aliases.length; i++) {
+            newHosts = new Host[hosts.length + 1];
+            newHost = new Host();
+            newHost.name = aliases[i];
+            newHost.contextList = contextList;
+            newHost.object = host;
+            if (insertMap(hosts, newHosts, newHost)) {
+                hosts = newHosts;
+            }
+        }
     }
 
 
@@ -215,12 +215,12 @@ public final class Mapper {
         if (removeMap(hosts, newHosts, name)) {
             hosts = newHosts;
         }
-	for (int i = 0; i < aliases.length; i++) {
-	    newHosts = new Host[hosts.length - 1];
-	    if (removeMap(hosts, newHosts, aliases[i])) {
-		hosts = newHosts;
-	    }
-	}
+        for (int i = 0; i < aliases.length; i++) {
+            newHosts = new Host[hosts.length - 1];
+            if (removeMap(hosts, newHosts, aliases[i])) {
+                hosts = newHosts;
+            }
+        }
     }
 
     public String[] getHosts() {
