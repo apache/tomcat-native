@@ -91,8 +91,8 @@ jk_worker_t *wc_get_worker_for_name(const char *name,
 
     rc = map_get(worker_map, name, NULL);
 
-    jk_log(l, JK_LOG_DEBUG, "wc_get_worker_for_name, done %s found a worker\n", 
-        rc ? "" : "did not"); 
+    jk_log(l, JK_LOG_DEBUG, "wc_get_worker_for_name, done %s a worker\n", 
+        rc ? "found" : "did not find"); 
     return rc;
 }
 
