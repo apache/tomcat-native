@@ -250,7 +250,27 @@ static int warp_handle(wa_request *r, wa_application *appl) {
     p_write_string(pack,r->prot);
     if (n_send(conf->sock,pack)!=wa_true) {
         n_disconnect(conn);
-        return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+        if (n_connect(conn)==wa_true) {
+            wa_debug(WA_MARK,"Connection \"%s\" reopened",conn->name);
+            if (c_configure(conn)==wa_true) {
+                wa_debug(WA_MARK,"Connection \"%s\" reconfigured",conn->name);
+            } else {
+                wa_log(WA_MARK,"Cannot reconfigure connection %s",conn->name);
+                return(wa_rerror(WA_MARK,r,500,
+                                 "Cannot reconfigure connection \"%s\"",
+                                 conn->name));
+            }
+            if (n_send(conf->sock,pack)!=wa_true) {
+              return(wa_rerror(WA_MARK,r,500,
+                     "Communitcation broken while reconnecting"));
+            } else {
+                wa_debug(WA_MARK,"Re-Req. %s %s %s",r->meth,r->ruri,r->prot);
+            }
+        } else {
+            wa_log(WA_MARK,"Cannot open connection %s",conn->name);
+            return(wa_rerror(WA_MARK,r,500,"Cannot open connection %s",
+                             conn->name));
+        }
     } else {
         wa_debug(WA_MARK,"Req. %s %s %s",r->meth,r->ruri,r->prot);
     }
