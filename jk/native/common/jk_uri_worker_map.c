@@ -136,7 +136,7 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
 {
     JK_TRACE_ENTER(l);
 
-    if (init_data && uw_map) {
+    if (uw_map) {
         int rc;
         *uw_map = (jk_uri_worker_map_t *)calloc(1, sizeof(jk_uri_worker_map_t));
 
@@ -148,8 +148,8 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-
-        rc = uri_worker_map_open(*uw_map, init_data, l);
+        if (init_data)
+            rc = uri_worker_map_open(*uw_map, init_data, l);
         JK_TRACE_EXIT(l);
         return rc;
     }
@@ -234,7 +234,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     char *uri;
     unsigned int match_type = 0;
     unsigned int i;
-    int allocated = 0;
 
     JK_TRACE_ENTER(l);
 

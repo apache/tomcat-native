@@ -382,6 +382,7 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
     return buf;
 }
 
+#if 0
 static int soblock(int sd)
 {
 /* BeOS uses setsockopt at present for non blocking... */
@@ -439,7 +440,8 @@ static int sononblock(int sd)
     return 0;
 }
 
-#if 1
+#endif
+
 int jk_is_socket_connected(int sd, int timeout)
 {
     fd_set fd;
@@ -462,37 +464,3 @@ int jk_is_socket_connected(int sd, int timeout)
         return 0;
     }
 }
-
-#else
-
-#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-#define EWOULDBLOCK (WSAEWOULDBLOCK - WSABASEERR)
-#endif
-
-int jk_is_socket_connected(int sd, int timeout)
-{
-    unsigned char test_buffer[1];
-    int  rc;
-    /* Set socket to nonblocking */
-    if ((rc = sononblock(sd)) != 0)
-        return (errno > 0) ? -errno : errno;
-
-    rc = jk_tcp_socket_recvfull(sd, test_buffer, 1) * (-1);
-    soblock(sd);
-#ifdef WIN32
-    /* Reset socket timeouts if the new timeout differs from the old timeout */
-    if (timeout > 0) {
-        /* Timeouts are in msec, represented as int */
-        setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,
-                    (char *) &timeout, sizeof(int));
-        setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO,
-                    (char *) &timeout, sizeof(int));
-    }
-#endif
-    if (rc == EWOULDBLOCK || rc == -1)
-        return 1;
-    else
-        return rc;
-}
-
-#endif
