@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /I ".." /I "..\..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "..\..\..\..\..\..\apr\include" /I "..\..\..\..\..\..\apr-util\include" /I "..\..\..\..\..\..\pcre\include" /I "$(NOTESAPI)\include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_USRDLL" /D "HAVE_JNI" /D "HAS_APR" /D "HAS_PCRE" /D "NT" /D "TESTING" /U "NOUSER" /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "$(NOTESAPI)\include" /I ".." /I "..\..\..\include" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "..\..\..\..\..\..\apr\include" /I "..\..\..\..\..\..\apr-util\include" /I "..\..\..\..\..\..\pcre\include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_USRDLL" /D "HAVE_JNI" /D "HAS_APR" /D "HAS_PCRE" /D "NT" /D "TESTING" /U "NOUSER" /FD /c
 # SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
 # ADD RSC /l 0x809 /d "NDEBUG"
@@ -51,7 +51,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib wsock32.lib pcre.lib pcreposix.lib notes.lib libapr.lib libaprutil.lib /nologo /subsystem:console /machine:I386 /libpath:"..\..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\..\apr-util\Release" /libpath:"$(NOTESAPI)\lib\mswin32"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib wsock32.lib pcre.lib pcreposix.lib libapr.lib libaprutil.lib /nologo /subsystem:console /machine:I386 /libpath:"..\..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\..\apr-util\Release"
 
 !ELSEIF  "$(CFG)" == "test - Win32 Debug"
 
@@ -76,7 +76,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib wsock32.lib pcre.lib pcreposix.lib notes.lib libapr.lib libaprutil.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept /libpath:"..\..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\..\apr-util\Release" /libpath:"$(NOTESAPI)\lib\mswin32"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib wsock32.lib pcre.lib pcreposix.lib libapr.lib libaprutil.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept /libpath:"..\..\..\..\..\..\pcre\lib" /libpath:"..\..\..\..\..\..\apr\Release" /libpath:"..\..\..\..\..\..\apr-util\Release"
 
 !ENDIF 
 

@@ -37,7 +37,7 @@ void TestMain(void);
 
 #define SERVER		"localhost"
 #define PORT		"80"
-#define URI			"/examples/jsp/num/numguess.jsp"
+#define URI			"/examples/jsp/snp/snoop.jsp"
 #define HTTPVERSION	"1.1"
 
 typedef struct _ServerContext {
@@ -134,6 +134,10 @@ static int fprGetAllHeaders(FilterContext *context, char **headers, unsigned int
 static int fprGetHeader(FilterContext *context, char *name, char *buffer,
 						unsigned int bufferSize, unsigned int *errID) {
 	printf("fpr.GetHeader(%p, \"%s\", %p, %u, %p)\n", context, name, buffer, bufferSize, errID);
+	if (stricmp(name, "host") == 0) {
+		strcpy(buffer, SERVER ":" PORT);
+		return strlen(buffer) + 1;
+	}
 	return 0;
 }
 

@@ -51,11 +51,13 @@
 #include "apr_general.h"
 
 /* Domino DSAPI filter definitions */
+#if !defined(TESTING)
 #include <global.h>
 #include <addin.h>
-#include <dsapi.h>
 #include <osmem.h>
 #include <lookup.h>
+#endif
+#include <dsapi.h>
 
 int JK_METHOD jk2_logger_domino_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result, const char *type, const char *name);
 
@@ -65,6 +67,9 @@ int JK_METHOD jk2_logger_printf_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_
 #else
 #define LOGGER              "logger.domino"
 #endif
+
+#define NULLSTR(s) \
+	(NULL == (s) || '\0' == (s)[0])
 
 #ifdef WIN32
 static char  libFileName[MAX_PATH];
@@ -661,6 +666,7 @@ static unsigned int rejectWithError(FilterContext *context, const char *diagnost
     return kFilterHandledRequest;
 }
 
+#if !defined(TESTING)
 /* Get the info from the lookup buffer
  */
 static int getLookupInfo(FilterContext *context, char *pMatch, WORD itemNumber, char **pInfo) {
@@ -704,10 +710,15 @@ static int getLookupInfo(FilterContext *context, char *pMatch, WORD itemNumber, 
 
     return -1;
 }
+#endif
 
 /* Lookup the user and return the user's full name
  */
 static int getUserName(FilterContext *context, char *userName, char **pUserName) {
+#if defined(TESTING)
+	*pUserName = userName;
+	return NOERROR;
+#else
     STATUS error = NOERROR;
     HANDLE hLookup = NULLHANDLE;
     unsigned short nMatches = 0;
@@ -759,6 +770,7 @@ done:
         OSMemFree(hLookup);
     }
     return rc;
+#endif
 }
 
 /* Given all the HTTP headers as a single string parse them into individual
@@ -862,7 +874,7 @@ static int processRequest(struct jk_env *env, jk_ws_service_t *s,
     GETVARIABLE("REMOTE_USER", &s->remote_user, "");
 
     /* If the REMOTE_USER CGI variable doesn't work try asking Domino */
-    if (s->remote_user[0] == '\0' && fr->userName[0] != '\0') {
+    if (NULLSTR(s->remote_user) && !NULLSTR(fr->userName)) {
         getUserName(ws->context, fr->userName, &s->remote_user);
     }
 
@@ -1180,7 +1192,7 @@ DLLEXPORT unsigned int TerminateFilter(unsigned int reserved) {
         isInited = JK_FALSE;
     }
 
-#ifndef TESTING
+#if !defined(TESTING)
     if (NONBLANK(tomcatStop)) {
         AddInLogMessageText("Attempting to stop Tomcat: %s", NOERROR, tomcatStop);
         runProg(tomcatStop);
@@ -1230,7 +1242,7 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
 
     /* Create the logger
      */
-#ifdef TESTING
+#if defined(TESTING)
     env->registerFactory(env, "logger.printf", jk2_logger_printf_factory);
 #else
     env->registerFactory(env, "logger.domino", jk2_logger_domino_factory );
@@ -1265,7 +1277,7 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
 
     workerEnv->init(env, workerEnv);
 
-#ifndef TESTING
+#if !defined(TESTING)
     /* Attempt to launch Tomcat
      */
     if (NONBLANK(tomcatStart)) {
@@ -1317,7 +1329,7 @@ BOOL WINAPI DllMain(HINSTANCE hInst, ULONG ulReason, LPVOID lpReserved) {
 }
 #endif
 
-#ifdef TESTING
+#if defined(TESTING)
 /* Handle initialisation in the test harness environment.
  */
 void TestMain(void) {
