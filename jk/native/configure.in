@@ -9,7 +9,7 @@ AC_CONFIG_AUX_DIR(scripts/build/unix)
 
 dnl package and version. (synchronization with common/jk_version.h ?)
 PACKAGE=mod_jk
-VERSION=1.2.0
+VERSION=1.2.1
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
 

@@ -141,7 +141,7 @@ run-time (up/down), level of SSL env vars, AJP protocol
 level supported (level1/level2/level3...)
 
 The Web server info will contain web server info and
-connector name (ie Apache 1.3.26 + mod_ssl 2.8.8 + mod_jk 1.2.0 + mod_perl 1.25).
+connector name (ie Apache 1.3.26 + mod_ssl 2.8.8 + mod_jk 1.2.1 + mod_perl 1.25).
 
 The servlet engine will mask the negociation mask with it's own
 mask (what it can do) and return it when loggin is accepted.

@@ -72,7 +72,7 @@
 	</ul>
 </p>
 <p>
-	You'll find prebuilt binaries <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/">here</a>
+	You'll find prebuilt binaries <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.1/bin/">here</a>
 </p>
 <p>
     Here is the minimum which should be set in <b>httpd.conf</b> directly or 
