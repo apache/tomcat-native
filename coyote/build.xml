@@ -186,6 +186,7 @@
       <fileset dir="${source.home}" excludes="**/*.java"/>
     </copy>
   </target>
+
   <target name="compile.tomcat33" if="tomcat33.detect"
    description="Compile Tomcat 3.3.x Adapter">
     <javac  srcdir="${source.home}"
@@ -199,6 +200,11 @@
     <copy    todir="${build.home}/classes" filtering="on">
       <fileset dir="${source.home}" excludes="**/*.java"/>
     </copy>
+    <jar    jarfile="${build.home}/lib/tomcat33-${component.name}.jar"
+            basedir="${build.home}/classes"
+           manifest="${build.home}/conf/MANIFEST.MF"
+           includes="org/apache/coyote/**" 
+	   excludes="**/tomcat4/*" />
   </target>
 
   <target name="compile" 
@@ -209,11 +215,6 @@
            manifest="${build.home}/conf/MANIFEST.MF"
            includes="org/apache/coyote/**" 
 	   excludes="**/tomcat3/*" />
-    <jar    jarfile="${build.home}/lib/tomcat33-${component.name}.jar"
-            basedir="${build.home}/classes"
-           manifest="${build.home}/conf/MANIFEST.MF"
-           includes="org/apache/coyote/**" 
-	   excludes="**/tomcat4/*" />
   </target>
 
   <target name="compile.tests" depends="compile"

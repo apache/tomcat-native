@@ -90,7 +90,7 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
     // info from the protocol handler.
     //    SSLSupport sslSupport=null;
 
-    ByteChunk  readChunk = new ByteChunk();
+    ByteChunk  readChunk = new ByteChunk(8096);
     int  pos=-1;
     int  end=-1;
     byte [] readBuffer = null;
@@ -170,7 +170,7 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
 	    return -1;
 	// if available == -1: unknown length, we'll read until end of stream.
 	if(pos >= end) {
-	    if(readBytes() < 0) 
+	    if(readBytes() <= 0) 
 		return -1;
 	}
 	int rd = -1;
@@ -199,6 +199,8 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
             readBuffer = readChunk.getBytes();
             end = readChunk.getEnd();
             pos = readChunk.getStart();
+        } else if( result < 0 ) {
+            throw new IOException( "Read bytes failed " + result );
         }
         return result;
 
