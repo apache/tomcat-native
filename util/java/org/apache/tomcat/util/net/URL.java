@@ -695,7 +695,11 @@ public final class URL implements Serializable {
                 start = limit;
             }
             if (authority.length() > 0) {
-                int colon = authority.indexOf(':');
+                int at = authority.indexOf('@');
+                if( at >= 0 ) {
+                    userInfo = authority.substring(0,at);
+                }
+                int colon = authority.indexOf(':', at+1);
                 if (colon >= 0) {
                     try {
                         port =
@@ -703,9 +707,9 @@ public final class URL implements Serializable {
                     } catch (NumberFormatException e) {
                         throw new MalformedURLException(e.toString());
                     }
-                    host = authority.substring(0, colon);
+                    host = authority.substring(at+1, colon);
                 } else {
-                    host = authority;
+                    host = authority.substring(at+1);
                     port = -1;
                 }
             }
