@@ -36,7 +36,7 @@ To create the configure script just type :
 </p>
 
 <p>
-You could set CFLAGS and LDFLAGS to add some platform specifics:
+You could set <b>CFLAGS</b> and <b>LDFLAGS</b> to add some platform specifics:
 </p>
 
 <screen>
@@ -156,23 +156,47 @@ The steps that you need to take are:
 Change directory to the apache 1.3 or apache 2.0 source directory depending on your version of Apache.
 </li>
 <li>
-Set an APACHE1_HOME environment variable which points to where your Apache is installed.
+If you want to build mod_jk for Apache 1.3, set an <b>APACHE1_HOME</b> environment variable which points 
+to where your Apache 1.3 is installed.
+A mod_jk module for Apache 2.0 build will require <b>APACHE2_HOME</b> environment variable to be set. 
 </li>
-<li>
-Execute the following command:
-</li>
-</ul>
-<screendos>
-<typedos>MSDEV mod_jk.dsp /MAKE ALL</typedos>
-</screendos>
-
-If msdev is not in your path, enter the full path to msdev.exe. Also, ApacheCore.lib is expected to exist in the APACHE1_HOME\src\CoreD and APACHE1_HOME\src\CoreR directories before linking will succeed. You will need to build enough of the Apache source to create these libraries.
-<ul>
 <li>
 Copy mod_jk.dll to Apache's modules directory.
 </li>
 </ul>
 <p>
+An example on how to build mod_jk for Apache 1.3:
+</p>
+<screendos>
+<notedos>Set location for Apache 1.3 sources</notedos>
+<typedos>set APACHE1_HOME=c:\apache13</typedos>
+<notedos>Change directory to the mod_jk module for Apache 1.3</notedos>
+<typedos>cd c:\home\apache\jk\native\apache-1.3</typedos>
+<notedos>Build the sources using MSDEV</notedos>
+<typedos>MSDEV mod_jk.dsp /MAKE ALL</typedos>
+<notedos>Copy the dll to your apache modules directory</notedos>
+<typedos>cp release\mod_jk.dll c:\apache13\modules\</typedos>
+</screendos>
+
+<p>
+An example on how to build mod_jk for Apache 2.0:
+</p>
+<screendos>
+<notedos>Set location for Apache 2.0 sources</notedos>
+<typedos>set APACHE2_HOME=c:\apache20</typedos>
+<notedos>Change directory to the mod_jk module for Apache 2.0</notedos>
+<typedos>cd c:\home\apache\jk\native\apache-2.0</typedos>
+<notedos>Build the sources using MSDEV</notedos>
+<typedos>MSDEV mod_jk.dsp /MAKE ALL</typedos>
+<notedos>Copy the dll to your apache modules directory</notedos>
+<typedos>cp release\mod_jk.dll c:\apache20\modules\</typedos>
+</screendos>
+
+<p>
+If msdev is not in your path, enter the full path to msdev.exe. 
+Also, ApacheCore.lib is expected to exist in the <b>${APACHEX_HOME}\src\CoreD</b> and 
+<b>${APACHEX_HOME}\src\CoreR</b> directories before linking will succeed.
+You will need to build enough of the Apache source to create these libraries.
 This will build both release and debug versions of the redirector plug-in (mod_jk).
 An alternative will be to open mod_jk.dsp in msdev and build it using the build menu.
 </p>
@@ -211,15 +235,19 @@ Then go to iSeries command line :
 <note5250>Create the CL build program source file</note5250>
 <type5250>CRTSRCPF FILE(MOD_JK/QCLSRC) TEXT(‘Build program source file’)</type5250>
 <note5250>Edit the service program source file</note5250>
-<type5250>STRSEU MOD_JK/QSRVSRC MOD_GZIP</type5250>
+<type5250>STRSEU MOD_JK/QSRVSRC MOD_JK</type5250>
 </screen5250>
 <p>
-In the edited file, add :
-<source>
-STRPGMEXP PGMLVL(*CURRENT)
-EXPORT SYMBOL("jk_module")
-ENDPGMEXP
-</source>
+In the edited file, specify that only jk_module should be exported :
+<screen5250>
+<type5250next> Columns   . . :    1  71     Edit                               MOD_JK/QSRVSRC </type5250next>
+<type5250next> SEU==>                                                                  MOD_JK </type5250next>
+<type5250next>        *************** Beginning of data ************************************* </type5250next>
+<type5250next>0001.00 STRPGMEXP PGMLVL(*CURRENT)                                              </type5250next>
+<type5250next>0002.00 EXPORT SYMBOL("jk_module")                                              </type5250next>
+<type5250next>0003.00 ENDPGMEXP                                                               </type5250next>
+<type5250next>        ****************** End of data **************************************** </type5250next>        
+</screen5250>
 </p>
 <p>
 You could start to build all the modules of mod_jk :
@@ -229,20 +257,43 @@ You could start to build all the modules of mod_jk :
 <type5250>CPYFRMSTMF FROMSTMF('/home/apache/jk/native/apache-2.0/bldjk.qcsrc') +</type5250>
 <type5250next>TOMBR('/QSYS.LIB/MOD_JK.LIB/QCLSRC.FILE/BLDJK.MBR') MBROPT(*REPLACE)</type5250next>
 <note5250>Build the CL build program</note5250>
-<type5250>CRTCLPGM PGM(MOD_JK/BLDJK) SRCFILE(MOD_JK/QCLSRC) TEXT('Apache mod_jk build program')</type5250><br/>
+<type5250>CRTCLPGM PGM(MOD_JK/BLDJK) SRCFILE(MOD_JK/QCLSRC) TEXT('Apache mod_jk build program')</type5250>
 <note5250>Launch the build</note5250>
 <type5250>CALL MOD_JK/BLDJK</type5250><br/>
 <note5250>If the build if successfull, copy the new mod_jk module</note5250>
-<type5250>CPY OBJ(MOD_JK/MOD_JK) TODIR(QHTTPSVR) TOOBJ(QZTCJK)</type5250><br/>
+<type5250>CRTDUPOBJ OBJ(MOD_JK) FROMLIB(MOD_JK) OBJTYPE(*SRVPGM) TOLIB(QHTTPSVR) NEWOBJ(QZTCJK)</type5250>
 </screen5250>
 <p>
 Next, you should restart your Apache 2.0 server and enjoy this piece of OpenSource on iSeries.
 </p>
 </section>
 
-<section name="NES/iPlanet">
+<section name="Build ISAPI redirector">
 <p>
-Informations and FAQ about mod_jk and NES/iPlanet Web Servers. 
+The redirector was developed using Visual C++ Ver.6.0, so having this environment is a prereq if you want 
+to perform a custom build. You should also have IIS developer SDK
+
+The steps that you need to take are:
+<ul>
+<li>
+Change directory to the isapi plugins source directory.
+</li>
+<li>
+Make the source with MSDEV
+</li>
+</ul>
+<screendos>
+<notedos>Change directory to the isapi plugins source directory</notedos>
+<typedos>cd c:\home\apache\jk\isapi</typedos>
+<notedos>Build the sources using MSDEV</notedos>
+<typedos>MSDEV isapi.dsp /MAKE ALL</typedos>
+</screendos>
+</p>
+<p>
+If msdev is not in your path, enter the full path to msdev.exe. 
+This will build both release and debug versions of the redirector plugin.
+An alternative will be to open the isapi workspace file (isapi.dsw) in msdev and 
+build it using the build menu.
 </p>
 </section>
 

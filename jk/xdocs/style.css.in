@@ -150,7 +150,7 @@ p.screen {
 p.screendos {
   background-color: #000000;
   border-style: none;
-  color: #ffffff;
+  color: #c0c0c0;
   margin-left: 10px;
   margin-right: 0px;
   text-align: left;
@@ -174,7 +174,7 @@ div.screen {
 div.screendos {
   margin: 10px 0px 10px 20px;
   font-size: smaller;
-  color: #ff66ff;
+  color: #ffffff;
 }
 
 div.screen5250 {
@@ -192,7 +192,7 @@ em.screen {
 em.screendos {
   font-weight: normal;
   font-style: normal;
-  color: #ffffff;
+  color: #c0c0c0;
 }
 
 em.screen5250 {
@@ -210,7 +210,7 @@ b.screen {
 b.screendos {
   font-weight: normal;
   font-style: normal;
-  color: #ffffff;
+  color: #c0c0c0;
 }
 
 b.screen5250 {
