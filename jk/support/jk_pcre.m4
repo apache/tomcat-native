@@ -71,7 +71,7 @@ AC_DEFUN(
 	      esac
 
 		if ${TEST} ${use_pcre} ; then
-		  HAVE_PCRE="-DHAVE_PCRE"
+		  HAS_PCRE="-DHAS_PCRE"
 		  PCRE_LIBS="-lpcre -lpcreposix"
 		fi
       ])
