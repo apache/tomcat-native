@@ -99,6 +99,7 @@
 static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s )
 {
     int h;
+    int numheaders;
     request_rec *r;
     jk_map_t *headers;
     
@@ -114,17 +115,19 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
     r->status_line = apr_psprintf(r->pool, "%d %s", s->status, s->msg);
 
     headers=s->headers_out;
+    numheaders = headers->size(env, headers);
     /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "service.head() %d %d\n", s->status,
-                  headers->size(env, headers ));
+                  numheaders);
     
-    for(h = 0 ; h < headers->size( env, headers ) ; h++) {
+    for(h = 0 ; h < numheaders; h++) {
         char *name=headers->nameAt( env, headers, h );
         char *val=headers->valueAt( env, headers, h );
 
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "service.head() %s: %s\n", name, val);
+                      "service.head() %s: %s %d %d\n", name, val, h, headers->size( env, headers ));
+
         /* the cmp can also be avoided in we do this earlier and use
            the header id */
         if(!strcasecmp(name, "Content-type")) {
@@ -132,6 +135,7 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
             char *tmp = apr_pstrdup(r->pool, val);
             ap_content_type_tolower(tmp); 
             r->content_type = tmp;
+            apr_table_set(r->headers_out, name, val);
         } else if(!strcasecmp(name, "Location")) {
             /* XXX setn */
             apr_table_set(r->headers_out, name, val);
@@ -146,8 +150,10 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
              */
             ap_update_mtime(r, ap_parseHTTPdate(val));
             ap_set_last_modified(r);
+            apr_table_set(r->headers_out, name, val);
         } else {                
-            apr_table_add(r->headers_out, name, val);
+            /* apr_table_add(r->headers_out, name, val); */
+               apr_table_set(r->headers_out, name, val);
         }
     }
 
