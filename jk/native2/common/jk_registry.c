@@ -147,6 +147,8 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
 
 #ifdef HAVE_JNI
   env->registerFactory( env, "channel.jni",   jk2_channel_jni_factory );
+  env->registerFactory( env, "worker.jni",   jk2_worker_jni_factory );
+  env->registerFactory( env, "vm",   jk2_vm_factory );
 #endif
 #ifdef AJP12
   env->registerFactory( env, "ajp12", jk2_worker_ajp12_factory );
