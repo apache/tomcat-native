@@ -111,7 +111,7 @@ public final class Mapper {
     /**
      * Context associated with this wrapper, used for wrapper mapping.
      */
-    protected Context context = null;
+    protected Context context = new Context();
 
 
     // --------------------------------------------------------- Public Methods
@@ -223,7 +223,6 @@ public final class Mapper {
      */
     public void setContext(String path, String[] welcomeResources, 
                            javax.naming.Context resources) {
-        context = new Context();
         context.name = path;
         //context.object = context; // Likely useless
         context.welcomeResources = welcomeResources;
@@ -353,6 +352,8 @@ public final class Mapper {
 
     /**
      * Add a wrapper to the context associated with this wrapper.
+     * 
+     * @param path Wrapper mapping
      */
     public void addWrapper(String path, Object wrapper) {
         addWrapper(context, path, wrapper);
@@ -400,6 +401,16 @@ public final class Mapper {
 
 
     /**
+     * Remove a wrapper from the context associated with this wrapper.
+     * 
+     * @param path Wrapper mapping
+     */
+    public void removeWrapper(String path) {
+        removeWrapper(context, path);
+    }
+
+
+    /**
      * Remove a wrapper from an existing context.
      * 
      * @param hostName Virtual host name this wrapper belongs to
@@ -422,38 +433,42 @@ public final class Mapper {
             }
             Context context = contexts[pos2];
             if (context.name.equals(contextPath)) {
-                synchronized (context) {
-                    if (path.endsWith("/*")) {
-                        // Wildcard wrapper
-                        String name = path.substring(0, path.length() - 2);
-                        Wrapper[] oldWrappers = context.wildcardWrappers;
-                        Wrapper[] newWrappers = 
-                            new Wrapper[oldWrappers.length - 1];
-                        if (removeMap(oldWrappers, newWrappers, name)) {
-                            context.wildcardWrappers = newWrappers;
-                        }
-                    } else if (path.startsWith("*.")) {
-                        // Extension wrapper
-                        String name = path.substring(2);
-                        Wrapper[] oldWrappers = context.extensionWrappers;
-                        Wrapper[] newWrappers = 
-                            new Wrapper[oldWrappers.length - 1];
-                        if (removeMap(oldWrappers, newWrappers, name)) {
-                            context.extensionWrappers = newWrappers;
-                        }
-                    } else if (path.equals("/")) {
-                        // Default wrapper
-                        context.defaultWrapper = null;
-                    } else {
-                        // Exact wrapper
-                        String name = path;
-                        Wrapper[] oldWrappers = context.exactWrappers;
-                        Wrapper[] newWrappers = 
-                            new Wrapper[oldWrappers.length - 1];
-                        if (removeMap(oldWrappers, newWrappers, name)) {
-                            context.exactWrappers = newWrappers;
-                        }
-                    }
+                removeWrapper(context, path);
+            }
+        }
+    }
+
+    protected void removeWrapper(Context context, String path) {
+        synchronized (context) {
+            if (path.endsWith("/*")) {
+                // Wildcard wrapper
+                String name = path.substring(0, path.length() - 2);
+                Wrapper[] oldWrappers = context.wildcardWrappers;
+                Wrapper[] newWrappers = 
+                    new Wrapper[oldWrappers.length - 1];
+                if (removeMap(oldWrappers, newWrappers, name)) {
+                    context.wildcardWrappers = newWrappers;
+                }
+            } else if (path.startsWith("*.")) {
+                // Extension wrapper
+                String name = path.substring(2);
+                Wrapper[] oldWrappers = context.extensionWrappers;
+                Wrapper[] newWrappers = 
+                    new Wrapper[oldWrappers.length - 1];
+                if (removeMap(oldWrappers, newWrappers, name)) {
+                    context.extensionWrappers = newWrappers;
+                }
+            } else if (path.equals("/")) {
+                // Default wrapper
+                context.defaultWrapper = null;
+            } else {
+                // Exact wrapper
+                String name = path;
+                Wrapper[] oldWrappers = context.exactWrappers;
+                Wrapper[] newWrappers = 
+                    new Wrapper[oldWrappers.length - 1];
+                if (removeMap(oldWrappers, newWrappers, name)) {
+                    context.exactWrappers = newWrappers;
                 }
             }
         }
