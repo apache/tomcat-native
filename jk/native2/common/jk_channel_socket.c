@@ -283,8 +283,6 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host, short
 
         /* May be we could avoid to delete it each time ? */
         apr_pool_destroy(context);
-
-       }
        
 #else /* HAS_APR */
 
