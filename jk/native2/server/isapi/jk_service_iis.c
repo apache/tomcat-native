@@ -90,7 +90,7 @@ static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
     int headerCount;
     
     env->l->jkLog(env,env->l, JK_LOG_DEBUG, 
-                  "Into jk_ws_service_t::start_response\n");
+                  "Into jk_ws_service_t::head\n");
 
     if (s->status< 100 || s->status > 1000) {
         env->l->jkLog(env,env->l, JK_LOG_ERROR, 
@@ -100,7 +100,7 @@ static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
     
     if( lpEcb == NULL ) {
         env->l->jkLog(env,env->l, JK_LOG_ERROR, 
-                      "jk_ws_service_t::start_response, no lpEcp\n");
+                      "jk_ws_service_t::head, no lpEcp\n");
         return JK_ERR;
     }
     
@@ -109,7 +109,7 @@ static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
     /*
      * Create the status line
      */
-    if (!s->msg) {
+    if (s->msg==NULL) {
         reason = "";
     } else {
         reason = s->msg;
@@ -154,7 +154,7 @@ static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
                                       (LPDWORD)&len_of_status,
                                       (LPDWORD)headers_str)) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "jk_ws_service_t::start_response, ServerSupportFunction failed\n");
+                      "jk_ws_service_t::head, ServerSupportFunction failed\n");
         return JK_ERR;
     }       
     
@@ -317,9 +317,23 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
     s->ssl_session  = NULL;
     s->ssl_key_size = -1;
 
-    jk2_map_default_create(env, &s->headers_out, s->pool );
-    jk2_map_default_create(env, &s->attributes, s->pool );
-    jk2_map_default_create(env, &s->headers_in, s->pool );
+    if (JK_OK!=jk2_map_default_create(env, &s->headers_out, s->pool )){
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+               "jk_ws_service_t::init, Failed to create headers_out map \n");
+        return JK_ERR;
+
+    }
+    if (JK_OK!=jk2_map_default_create(env, &s->attributes, s->pool )){
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+               "jk_ws_service_t::init, Failed to create attributes map \n");
+        return JK_ERR;
+
+    }
+    if (JK_OK!=jk2_map_default_create(env, &s->headers_in, s->pool )){
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+               "jk_ws_service_t::init, Failed to create headers_in map \n");
+        return JK_ERR;
+    }
 //    s->headers_values   = NULL;
 //  s->num_headers      = 0;
     
