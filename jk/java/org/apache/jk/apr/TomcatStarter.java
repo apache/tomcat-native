@@ -15,13 +15,12 @@ import org.apache.jk.core.*;
 public class TomcatStarter implements Runnable {
     Class c;
     String args[];
+    AprImpl apr = new AprImpl();
     
     public static String mainClasses[]={ "org.apache.tomcat.startup.Main",
                                          "org.apache.catalina.startup.BootstrapService",
                                          "org.apache.catalina.startup.Bootstrap"};
 
-    public static final int TC_STARTING=1;    
-    public static final int TC_STARTED=2;    
     // If someone has time - we can also guess the classpath and do other
     // fancy guessings.
     
@@ -71,12 +70,12 @@ public class TomcatStarter implements Runnable {
     public void run() {
         System.err.println("Starting " + c.getName());
         try {
-            AprImpl.jniStatus(TC_STARTING);
             Class argClass=args.getClass();
             Method m=c.getMethod( "main", new Class[] {argClass} );
             m.invoke( c, new Object[] { args } );
-            AprImpl.jniStatus(TC_STARTED);
             System.out.println("TomcatStarter: Done");
+            if (apr.isLoaded())
+                apr.jkSetAttribute(0, 0, "channel:jni", "done");
         } catch( Throwable t ) {
             t.printStackTrace(System.err);
         }

@@ -98,6 +98,8 @@ int jk_jni_status_code=0;
 #define JK_GET_REGION 1
 #define JK_GET_BYTE_ARRAY_ELEMENTS 2
 #define JK_DIRECT_BUFFER_NIO 3
+#define JNI_TOMCAT_STARTING 1
+#define JNI_TOMCAT_STARTED 2
 
 static int arrayAccessMethod=JK_GET_REGION;
 void JK_METHOD jk2_env_setAprPool( jk_env_t *env, void *aprPool );
@@ -301,6 +303,19 @@ Java_org_apache_jk_apr_AprImpl_jkSetAttribute
     char *value=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, valueJ, 0);
     int rc=JK_OK;
     
+    /* XXX need to find a way how to set this to channel:jni component
+     * instead of global variable.
+     */
+    if(env == NULL || component == NULL) {
+        if (strcmp(name, "channel:jni") == 0) {
+            if (strcmp(value, "starting") == 0)
+                jk_jni_status_code = JNI_TOMCAT_STARTING;
+            else if (strcmp(value, "done") == 0)
+               jk_jni_status_code = JNI_TOMCAT_STARTED;
+        }
+        return JK_OK;
+    }
+
     if( component->setAttribute ==NULL )
         return JK_OK;
 
@@ -505,15 +520,6 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
     return rc;
 }
 
-/*
-*/
-JNIEXPORT void JNICALL 
-Java_org_apache_jk_apr_AprImpl_jkStatus
-  (JNIEnv *jniEnv, jobject o, jint statusCode )
-{
-    jk_jni_status_code = statusCode;
-}
-
 static JNINativeMethod org_apache_jk_apr_AprImpl_native_methods[] = {
     { 
         "initialize", "()I", 
@@ -562,10 +568,6 @@ static JNINativeMethod org_apache_jk_apr_AprImpl_native_methods[] = {
     {
         "jkRecycle", "(JJ)V",
         Java_org_apache_jk_apr_AprImpl_jkRecycle
-    },
-    {
-        "jkStatus", "(I)V",
-        Java_org_apache_jk_apr_AprImpl_jkStatus
     },
 };
 
