@@ -306,7 +306,7 @@ These workers should not appear in the worker.list property.
 
 <screen>
 <note> The worker balance1 while use "real" workers worker1 and worker2</note>
-<read>worker.balance1.balanced_workers= worker1, worker2</read>
+<read>worker.balance1.balanced_workers=worker1, worker2</read>
 </screen>
 
 </subsection>
@@ -432,6 +432,92 @@ so you'll have to update it BEFORE launching the webserver...
 
 </subsection>
 
+<subsection name="Property file macros">
+<p>
+You can define "macros" in the property files. 
+These macros let you define properties and later on use them while 
+constructing other properties and it's very usefull when you want to
+change your Java Home, Tomcat Home or OS path separator
+</p>
+
+<screen>
+<note>property example, don't hardcode path separator</note>
+ps=\
+<read>workers.tomcat_home=d:\tomcat</read>
+<read>workers.java_home=d:\sdk\jdk1.2.2</read>
+<note>Using macros we'll have : worker.inprocess.class_path=d:\tomcat\classes</note>
+<read>worker.inprocess.class_path=$(workers.tomcat_home)$(ps)classes</read>
+<note>Using macros we'll have : worker.inprocess.class_path=d:\sdk\jdk1.2.2\lib\tools.jar</note>
+<read>worker.inprocess.class_path=$(workers.java_home)$(ps)lib$(ps)tools.jar</read>
+</screen>
+
+</subsection>
+
+</section>
+
+<section name="A sample worker.properties">
+<p>
+Since coping with worker.properties on your own is not an easy thing to do, 
+a sample worker.properties file is bundled along jk. 
+</p>
+
+<p>
+You could also find here a sample workers.properties defining :
+</p>
+
+<ul>
+<li>
+An ajp12 worker that used the host localhost and the port 8007
+</li>
+<li>
+An ajp13 worker that used the host localhost and the port 8008
+</li>
+<li>
+A jni worker
+</li>
+<li>
+A lb worker that load balance the ajp12 and ajp13 workers
+</li>
+</ul>
+
+<screen>
+<note># Define some properties</note>
+<read>workers.apache_log=/var/log/httpd/</read>
+<read>workers.tomcat_home=/var/tomcat3</read>
+<read>workers.java_home=/opt/IBMJava2-131/</read>
+<read>ps=/</read>
+<note># Define 4 workers, 3 real workers using ajp12, ajp13, jni, the last one being a loadbalancing worker</note> 
+<read>worker.list=worker1, worker2, worker3, worker4</read>
+<note># Set properties for worker1 (ajp12)</note>
+<read>worker.worker1.type=ajp12</read>
+<read>worker.worker1.host=locahost</read>
+<read>worker.worker1.port=8007</read>
+<read>worker.worker1.lbfactor=5</read>
+<note># Set properties for worker2 (ajp13)</note>
+<read>worker.worker2.type=ajp13</read>
+<read>worker.worker2.host=locahost</read>
+<read>worker.worker2.port=8009</read>
+<read>worker.worker2.lbfactor=50</read>
+<read>worker.worker2.cachesize=10</read>
+<read>worker.worker2.cache_timeout=600</read>
+<read>worker.worker2.socket_keepalive=1</read>
+<read>worker.worker2.socket_timeout=300</read>
+<note># Set properties for worker3 (jni)</note>
+<read>worker.worker3.type=jni</read>
+<note># Set worker3 classpath</note>
+<read>worker.worker3.class_path=$(workers.tomcat_home)$(ps)classes</read>
+<read>worker.worker3.class_path=$(workers.tomcat_home)$(ps)lib$(ps)tomcat.jar</read>
+<note># Set worker3 tomcat command line</note>
+<read>worker.worker3.cmd_line=-home</read>
+<read>worker.worker3.cmd_line=$(workers.tomcat_home)</read>
+<note># Set worker3 Tomcat/JVM settings</note>
+<read>worker.worker3.jvm_lib=$(workers.java_home)$(ps)jre$(ps)bin$(ps)classic$(ps)libjvm.so</read>
+<read>worker.worker3.stdout=$(workers.apache_log)$(ps)inprocess.stdout</read>
+<read>worker.worker3.stderr=$(workers.apache_log)$(ps)inprocess.stderr</read>
+<read>worker.worker3.sysprops=tomcat.home=$(workers.tomcat_home)</read>
+<note># Set properties for worker4 (lb) which use worker1 and worker2</note>
+<read>worker.worker4.balanced_workers=worker1,worker2</read>
+</screen>
 
 </section>
 
