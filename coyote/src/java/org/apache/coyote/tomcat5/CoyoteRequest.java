@@ -72,9 +72,7 @@ import java.io.BufferedReader;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.security.AccessController;
 import java.security.Principal;
-import java.security.PrivilegedAction;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -133,26 +131,6 @@ import org.apache.tomcat.util.net.SSLSupport;
 
 public class CoyoteRequest
     implements HttpRequest, HttpServletRequest {
-
-
-    // --------------------------------------- PrivilegedGetSession Inner Class
-
-
-    protected class PrivilegedGetSession
-        implements PrivilegedAction {
-
-        private boolean create;
-
-        PrivilegedGetSession(boolean create) {
-            this.create = create;
-        }
-
-        public Object run() {
-            return doGetSession(create);
-        }
-
-    }
-
 
     // ------------------------------------------------------------- Properties
 
@@ -1810,11 +1788,7 @@ public class CoyoteRequest
      * @param create Create a new session if one does not exist
      */
     public HttpSession getSession(boolean create) {
-
-        if (System.getSecurityManager() != null) {
-            PrivilegedGetSession dp = new PrivilegedGetSession(create);
-            return (HttpSession) AccessController.doPrivileged(dp);
-        }
+        
         return doGetSession(create);
 
     }
