@@ -17,7 +17,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     String aprHome;
     String soExt="so";
 
-    boolean ok=true;
+    static boolean ok=true;
     // Handlers for native callbacks
     Hashtable jkHandlers=new Hashtable();
 
@@ -209,6 +209,12 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     public boolean isLoaded() {
         return ok;
     }
+
+    static boolean jniMode=false;
+    
+    public static void jniMode() {
+        jniMode=true;
+    }
     
     /** This method of loading the libs doesn't require setting
      *   LD_LIBRARY_PATH. Assuming a 'right' binary distribution,
@@ -224,29 +230,49 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     public void loadNative() throws Throwable {
         if( aprHome==null )
             aprHome=baseDir;
-        if( aprHome==null ) {
-            // Use load()
+
+        // XXX Update for windows
+        if( jniMode ) {
+            /* In JNI mode we use mod_jk for the native functions.
+               This seems the cleanest solution that works with multiple
+               VMs.
+            */
             try {
-                System.loadLibrary( "apr" );
-                System.loadLibrary( "jkjni" );
+                System.out.println("Loading mod_jk.so");
+                System.load( "/opt/apache2/modules/mod_jk2.so" );
             } catch( Throwable ex ) {
-                ok=false;
-                throw ex;
+                // ignore
+                ex.printStackTrace();
+                return;
             }
-        } else {
-            File dir=new File(aprHome);
-            // XXX platform independent, etc...
-            File apr=new File( dir, "libapr." + soExt );
-            
-            loadNative( apr.getAbsolutePath() );
-            
-            dir=new File(baseDir);
-            File jniConnect=new File( dir, "jni_connect." + soExt );
-            
-            loadNative( jniConnect.getAbsolutePath() );
+            ok=true;
+            return;
         }
-    }
-    
+        
+            /*
+              jkjni _must_ be linked with apr and crypt -
+              this seem the only ( decent ) way to support JDK1.4 and
+              JDK1.3 at the same time
+              try {
+                  System.loadLibrary( "crypt" );
+              } catch( Throwable ex ) {
+                  // ignore
+                  ex.printStackTrace();
+              }
+              try {
+                  System.loadLibrary( "apr" );
+              } catch( Throwable ex ) {
+                  System.out.println("can't load apr, that's fine");
+                  ex.printStackTrace();
+              }
+            */
+        try {
+            System.loadLibrary( "jkjni" );
+        } catch( Throwable ex ) {
+            ok=false;
+            throw ex;
+        }
+    } 
     
     public void loadNative(String libPath) {
         try {
