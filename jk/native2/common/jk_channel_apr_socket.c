@@ -226,9 +226,16 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
         if ((ret = apr_socket_create(&sock, remote_sa->family, SOCK_STREAM,
                                      (apr_pool_t *)env->globalPool->_private))
                                     != APR_SUCCESS) {
-            env->l->jkLog(env, env->l, remote_sa->next ? JK_LOG_DEBUG : JK_LOG_ERROR,
-                         "channelApr.open(): error %d creating socket %d %s\n",
-                          ret, socketInfo->host);
+            if (remote_sa->next) {
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "channelApr.open(): error %d creating socket %d %s\n",
+                              ret, socketInfo->host);
+            }
+            else {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "channelApr.open(): error %d creating socket %d %s\n",
+                              ret, socketInfo->host);
+            }
             remote_sa = remote_sa->next;
             continue;
         }
@@ -255,11 +262,20 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
         /* if an error occurred, loop round and try again */
         if (ret != APR_SUCCESS) {
             apr_socket_close(sock);
-            env->l->jkLog(env, env->l, remote_sa->next ? JK_LOG_DEBUG : JK_LOG_ERROR,
-                         "channelApr.open() attempt to connect to %pI (%s) failed %d\n",
-                         remote_sa,
-                         socketInfo->host,
-                         ret);
+            if (remote_sa->next) {
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "channelApr.open() attempt to connect to %pI (%s) failed %d\n",
+                              remote_sa,
+                              socketInfo->host,
+                              ret);
+            }
+            else {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "channelApr.open() attempt to connect to %pI (%s) failed %d\n",
+                              remote_sa,
+                              socketInfo->host,
+                              ret);
+            }
             remote_sa = remote_sa->next;
             continue;
         }
