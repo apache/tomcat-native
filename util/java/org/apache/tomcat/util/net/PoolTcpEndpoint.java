@@ -188,11 +188,11 @@ public class PoolTcpEndpoint { // implements Endpoint {
     }
 
     public int getPort() {
-	    return port;
+        return port;
     }
 
     public void setPort(int port ) {
-	    this.port=port;
+        this.port=port;
     }
 
     public InetAddress getAddress() {
@@ -253,17 +253,33 @@ public class PoolTcpEndpoint { // implements Endpoint {
 	this.serverTimeout = timeout;
     }
 
+    public boolean getTcpNoDelay() {
+        return tcpNoDelay;
+    }
+    
     public void setTcpNoDelay( boolean b ) {
 	tcpNoDelay=b;
     }
 
+    public int getSoLinger() {
+        return linger;
+    }
+    
     public void setSoLinger( int i ) {
 	linger=i;
     }
 
+    public int getSoTimeout() {
+        return socketTimeout;
+    }
+    
     public void setSoTimeout( int i ) {
 	socketTimeout=i;
     }
+    
+    public int getServerSoTimeout() {
+        return serverTimeout;
+    }  
     
     public void setServerSoTimeout( int i ) {
 	serverTimeout=i;

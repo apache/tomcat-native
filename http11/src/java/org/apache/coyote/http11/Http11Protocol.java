@@ -264,19 +264,35 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     
     // -------------------- Pool setup --------------------
 
+    public boolean getPools(){
+        return ep.isPoolOn();
+    }
+    
     public void setPools( boolean t ) {
         ep.setPoolOn(t);
         setAttribute("pools", "" + t);
     }
 
+    public int getMaxThreads() {
+        return ep.getMaxThreads();
+    }
+    
     public void setMaxThreads( int maxThreads ) {
         ep.setMaxThreads(maxThreads);
         setAttribute("maxThreads", "" + maxThreads);
     }
 
+    public int getMaxSpareThreads() {
+        return ep.getMaxSpareThreads();
+    }
+    
     public void setMaxSpareThreads( int maxThreads ) {
         ep.setMaxSpareThreads(maxThreads);
         setAttribute("maxSpareThreads", "" + maxThreads);
+    }
+    
+    public int getMinSpareThreads() {
+        return ep.getMinSpareThreads();
     }
 
     public void setMinSpareThreads( int minSpareThreads ) {
@@ -286,9 +302,17 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 
     // -------------------- Tcp setup --------------------
 
+    public int getBacklog() {
+        return ep.getBacklog();
+    }
+    
     public void setBacklog( int i ) {
         ep.setBacklog(i);
         setAttribute("backlog", "" + i);
+    }
+    
+    public int getPort() {
+        return ep.getPort();
     }
     
     public void setPort( int port ) {
@@ -301,20 +325,33 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         ep.setAddress( ia );
         setAttribute("address", "" + ia);
     }
-
-    public void setHostName( String name ) {
+    
+    // commenting out for now since it's not doing anything
+    //public void setHostName( String name ) {
     // ??? Doesn't seem to be used in existing or prev code
     // vhost=name;
-    }
+    //}
 
+    public String getSocketFactory() {
+        return socketFactoryName;
+    }
+    
     public void setSocketFactory( String valueS ) {
         socketFactoryName = valueS;
         setAttribute("socketFactory", valueS);
     }
-
+    
+    public String getSSLImplementation() {
+        return sslImplementationName;
+    }
+    
     public void setSSLImplementation( String valueS) {
         sslImplementationName = valueS;
         setAttribute("sslImplementation", valueS);
+    }
+    
+    public boolean getTcpNoDelay() {
+        return ep.getTcpNoDelay();
     }
     
     public void setTcpNoDelay( boolean b ) {
@@ -322,53 +359,96 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         setAttribute("tcpNoDelay", "" + b);
     }
 
+    public boolean getDisableUploadTimeout() {
+        return disableUploadTimeout;
+    }
+    
     public void setDisableUploadTimeout(boolean isDisabled) {
         disableUploadTimeout = isDisabled;
     }
 
+    public int getSocketBuffer() {
+        return socketBuffer;
+    }
+    
     public void setSocketBuffer(int valueI) {
         socketBuffer = valueI;
     }
 
+    public String getCompression() {
+        return compression;
+    }
+    
     public void setCompression(String valueS) {
         compression = valueS;
         setAttribute("compression", valueS);
     }
 
+    public int getMaxPostSize() {
+        return maxPostSize;
+    }
+    
     public void setMaxPostSize(int valueI) {
         maxPostSize = valueI;
         setAttribute("maxPostSize", "" + valueI);
     }
 
+    public String getRestrictedUserAgents() {
+        return restrictedUserAgents;
+    }
+    
     public void setRestrictedUserAgents(String valueS) {
         restrictedUserAgents = valueS;
         setAttribute("restrictedUserAgents", valueS);
     }
 
+    public String getNoCompressionUserAgents() {
+        return noCompressionUserAgents;
+    }
+    
     public void setNoCompressionUserAgents(String valueS) {
         noCompressionUserAgents = valueS;
         setAttribute("noCompressionUserAgents", valueS);
     }
 
+    public String getCompressableMimeType() {
+        return compressableMimeTypes;
+    }
+    
     public void setCompressableMimeType(String valueS) {
         compressableMimeTypes = valueS;
         setAttribute("compressableMimeTypes", valueS);
     }
 
+    public int getCompressionMinSize() {
+        return compressionMinSize;
+    }
+    
     public void setCompressionMinSize(int valueI) {
         compressionMinSize = valueI;
         setAttribute("compressionMinSize", "" + valueI);
     }
 
+    public int getSoLinger() {
+        return ep.getSoLinger();
+    }
     
     public void setSoLinger( int i ) {
         ep.setSoLinger( i );
         setAttribute("soLinger", "" + i);
     }
 
+    public int getSoTimeout() {
+        return ep.getSoTimeout();
+    }
+    
     public void setSoTimeout( int i ) {
         ep.setSoTimeout(i);
         setAttribute("soTimeout", "" + i);
+    }
+    
+    public int getServerSoTimeout() {
+        return ep.getServerSoTimeout();
     }
     
     public void setServerSoTimeout( int i ) {
@@ -376,48 +456,92 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         setAttribute("serverSoTimeout", "" + i);
     }
     
+    public String getKeystore() {
+        return getProperty("keystore");
+    }
+    
     public void setKeystore( String k ) {
         setAttribute("keystore", k);
     }
 
+    public String getKeypass() {
+        return getProperty("keypass");
+    }
+    
     public void setKeypass( String k ) {
         attributes.put("keypass", k);
         //setAttribute("keypass", k);
     }
-
+    
+    public String getKeytype() {
+        return getProperty("keystoreType");
+    }
+    
     public void setKeytype( String k ) {
         setAttribute("keystoreType", k);
     }
 
+    public String getClientauth() {
+        return getProperty("clientauth");
+    }
+    
     public void setClientauth( String k ) {
         setAttribute("clientauth", k);
     }
 
+    public String getProtocol() {
+        return getProperty("protocol");
+    }
+    
     public void setProtocol( String k ) {
         setAttribute("protocol", k);
     }
 
+    public String getProtocols() {
+        return getProperty("protocols");
+    }
+    
     public void setProtocols(String k) {
         setAttribute("protocols", k);
     }
 
+    public String getAlgorithm() {
+        return getProperty("algorithm");
+    }
+    
     public void setAlgorithm( String k ) {
         setAttribute("algorithm", k);
     }
 
+    public boolean getSecure() {
+        return secure;
+    }
+    
     public void setSecure( boolean b ) {
         secure=b;
         setAttribute("secure", "" + b);
     }
 
+    public String getCiphers() {
+        return getProperty("ciphers");
+    }
+    
     public void setCiphers(String ciphers) {
         setAttribute("ciphers", ciphers);
     }
 
+    public String getKeyAlias() {
+        return getProperty("keyAlias");
+    }
+    
     public void setKeyAlias(String keyAlias) {
         setAttribute("keyAlias", keyAlias);
     }
 
+    public int getMaxKeepAliveRequests() {
+        return maxKeepAliveRequests;
+    }
+    
     /** Set the maximum number of Keep-Alive requests that we will honor.
      */
     public void setMaxKeepAliveRequests(int mkar) {
@@ -425,6 +549,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         setAttribute("maxKeepAliveRequests", "" + mkar);
     }
 
+    public int getSocketCloseDelay() {
+        return socketCloseDelay;
+    }
+    
     public void setSocketCloseDelay( int d ) {
         socketCloseDelay=d;
         setAttribute("socketCloseDelay", "" + d);
@@ -438,11 +566,19 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         return (ServerSocketFactory)chC.newInstance();
     }
 
+    public int getTimeout() {
+        return timeout;
+    }
+    
     public void setTimeout( int timeouts ) {
         timeout = timeouts * 1000;
         setAttribute("timeout", "" + timeouts);
     }
 
+    public String getReportedname() {
+        return reportedname;
+    }
+    
     public void setReportedname( String reportedName) {
         reportedname = reportedName;
     }
@@ -638,13 +774,9 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     }
     }
 
-    /*
-      public int getPort() {
-        return ep.getPort();
-    }
 
     public InetAddress getAddress() {
-    return ep.getAddress();
+        return ep.getAddress();
     }
 
     public boolean isKeystoreSet() {
@@ -666,13 +798,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public boolean isSecure() {
         return secure;
     }
-
    
     public PoolTcpEndpoint getEndpoint() {
-    return ep;
+        return ep;
     }
-    
-    */
 
     protected String domain;
     protected ObjectName oname;
