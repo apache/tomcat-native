@@ -1,0 +1,23 @@
+  APACHE INSTALLATION OVERVIEW
+
+  For complete documentation, see
+  http://jakarta.apache.org/tomcat/tomcat-4.1-doc/jk2/index.html
+  
+  Quick Start - Apache 2
+
+  In the following example Apache2 is installed in 
+  /usr/local/apache2 and the commands are executed in the
+  jakarta-tomcat-connectors/native2 directory. 
+
+  $ ./buildconf
+  $ ./configure --with-apxs2=PREFIX/bin/apxs
+  $ make
+  $ make install
+  $ PREFIX/bin/apachectl start
+
+     NOTES: * Replace PREFIX with the filesystem path under which 
+              Apache should be installed.  A typical installation
+              might use "/usr/local/apache2" for PREFIX (without the
+              quotes).
+
+
