@@ -1,0 +1,237 @@
+<?xml version="1.0" ?>
+<!-- EXPERIMENTAL - JUST AN EXAMPLE ON HOW TO USE GCJ TASK -->
+<!-- MAY REQUIRE SMALL/TRIVIAL MODIFICATION IN SOURCES -->
+<!-- REQUIRES GCJ FROM CVS - 3.0.1 DOESN'T WORK -->
+<project name="tomcat_gcj" default="main" basedir=".">
+
+  <description>Native build for tomcat</description>
+  
+  <property file="${user.home}/.ant.properties" />
+  <property file="${user.home}/build.properties" />
+  <property file="build.properties" />
+
+  <property name="LIB" value="/opt/java" />
+  <property name="tomcat.src" value="/ws/33" />
+  <property name="ant.src" value="/ws/jakarta/jakarta-ant" />
+  <property name="crimson.src" value="/ws/jakarta/xml-crimson" />
+  <property name="xmlcommons.src" value="/ws/jakarta/xml-commons" />
+  <property name="servletapi.src" value="/ws/jakarta/jakarta-servletapi" />
+  <path id="jkant" >
+    <pathelement location="build/jkant.jar"/>
+  </path>
+
+  <property name="native.dir" location="." />
+
+  <property name="so.debug" value="true" />
+  <property name="so.optimize" value="true" />
+  <property name="so.profile" value="false" />
+  
+  <!-- ==================== Targets ==================== -->
+
+  <target name="main" depends="all">
+  </target>
+  
+  <target name="init" >
+    <taskdef resource="META-INF/ant.tasks" 
+	     classpathref="jkant" />
+    <mkdir dir="build"/>
+    <mkdir dir="build/obj"/>
+  </target>
+
+  <target name="all" depends="init,org-apache-crimson,javax-servlet,javax-xml,org-apache-tomcat,examples,link" />  
+
+  <target name="link" >
+    <exec dir="build/obj" executable="gcj">
+      <arg value="--main=org.apache.tomcat.startup.EmbededTomcat"/>
+      <arg value="-Dtomcat.home=."/>
+      <arg value="-Djavax.xml.parsers.SAXParserFactory=org.apache.crimson.jaxp.SAXParserFactoryImpl" />
+      <arg value="-g"/>
+      <arg value="-o"/>
+      <arg value="tomcat"/>
+      <arg value="lib-org-apache-tomcat.so"/>
+      <arg value="lib-javax-servlet.so"/>
+      <arg value="lib-org-apache-crimson.so"/>
+      <arg value="lib-javax-xml.so"/>
+      <arg value="lib-examples.so"/>
+    </exec>
+  </target>
+
+  <target name="org-apache-tomcat" depends="init">
+    <property name="build.compiler.cc" value="gcj" />
+    <so sofile="lib-org-apache-tomcat" 
+	buildDir="build/obj" 
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	profile="${so.profile}"
+	taskDebug="0"
+	>
+      <src dir="${tomcat.src}/src/share">
+	<include name="**/*.java" />
+	<include name="**/*.properties" />
+	<include name="**/*.dtd" />
+	<exclude name="org/apache/tomcat/util/compat/JSSECertCompat.java" />
+	<exclude name="org/apache/tomcat/util/net/SSLSocketFactory.java" />
+	<exclude name="org/apache/tomcat/util/test/**/*.java" />
+	<exclude name="org/apache/tomcat/modules/server/JNI*.java" />
+	<exclude name="org/apache/jasper/**/*.java" /> 
+	<exclude name="org/apache/jasper/compiler/CommandLineCompiler.java" />
+	<exclude name="org/apache/jasper/compiler/SunJavaCompiler.java" />
+      </src>
+      <src dir="${tomcat.src}/src/facade22">
+	<include name="**/*.java" />
+	<exclude name="org/apache/tomcat/facade/JspInterceptor.java" />
+	<exclude name="org/apache/tomcat/facade/TagPoolManagerInterceptor.java" />
+      </src>
+      <includes>
+        <include name="${LIB}/crimson-1.1.3/crimson.jar" />
+        <include name="${tomcat.src}/src/share" />
+        <include name="${tomcat.src}/src/facade22" />
+        <include name="${LIB}/jakarta-servletapi-22/lib/servlet.jar" />
+      </includes>
+    </so>
+  </target>
+
+  <target name="ant" depends="init">
+    <property name="build.compiler.cc" value="gcj" />
+    <so sofile="lib-org-apache-tools-ant" 
+	buildDir="build/obj" 
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	profile="${so.profile}"
+	taskDebug="0"
+	>
+      <src dir="${ant.src}/src/main">
+	<include name="**/*.java" />
+	<include name="**/*.properties" />
+	<include name="**/*.txt" />
+	<include name="**/*.dtd" />
+	<exclude name="org/apache/tools/ant/taskdefs/optional/**" />
+	<exclude name="org/apache/tools/ant/types/optional/**" />
+	<exclude name="org/apache/tools/ant/util/depend/**" />
+	<exclude name="org/apache/tools/ant/util/regexp/JakartaOroMatcher.java" />
+	<exclude name="org/apache/tools/ant/util/regexp/JakartaRegexpMatcher.java" />
+	<exclude name="org/apache/tools/ant/util/regexp/Jdk14RegexpMatcher.java" />
+	<exclude name="org/apache/tools/ant/util/regexp/Jdk14RegexpRegexp.java" />
+	<exclude name="org/apache/tools/ant/util/regexp/JakartaOroRegexp.java" />
+	<exclude name="org/apache/tools/ant/util/regexp/JakartaRegexpRegexp.java" />
+	<exclude name="org/apache/tools/ant/listener/Log4jListener.java" />
+      </src>
+      <includes>
+        <include name="${LIB}/crimson-1.1.3/crimson.jar" />
+        <include name="${ant.src}/src/main" />
+      </includes>
+    </so>
+    <exec dir="build/obj" executable="gcj">
+      <arg value="--main=org.apache.tools.ant.Main"/>
+      <arg value="-Dant.home=."/>
+      <arg value="-Djavax.xml.parsers.SAXParserFactory=org.apache.crimson.jaxp.SAXParserFactoryImpl" />
+      <arg value="-g"/>
+      <arg value="-o"/>
+      <arg value="ant"/>
+      <arg value="lib-org-apache-tools-ant.so"/>
+      <arg value="lib-org-apache-crimson.so"/>
+      <arg value="lib-javax-xml.so"/>
+    </exec>
+  </target>
+
+  <target name="examples" depends="init">
+    <property name="build.compiler.cc" value="gcj" />
+    <so sofile="lib-examples" 
+	buildDir="build/obj" 
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	profile="${so.profile}"
+	taskDebug="0"
+	>
+      <src dir="${tomcat.src}/build/tomcat/webapps/examples/WEB-INF/classes">
+	<include name="**/*.java" />
+      </src>
+      <includes>
+        <include name="${LIB}/crimson-1.1.3/crimson.jar" />
+        <include name="${tomcat.src}/src/share" />
+        <include name="${tomcat.src}/src/facade22" />
+        <include name="${tomcat.src}/build/tomcat/webapps/examples/WEB-INF/classes" />
+        <include name="${LIB}/jakarta-servletapi-22/lib/servlet.jar" />
+      </includes>
+    </so>
+  </target>
+
+  <target name="javax-servlet" depends="init">
+    <property name="build.compiler.cc" value="gcj" />
+    <so sofile="lib-javax-servlet" 
+	buildDir="build/obj" 
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	profile="${so.profile}"
+	taskDebug="0"
+	>
+      <src dir="${servletapi.src}/src/share">
+	<include name="**/*.java" />
+	<include name="**/*.properties" />
+      </src>
+      <includes>
+        <include name="${servletapi.src}/src/share" />
+      </includes>
+    </so>
+  </target>
+
+  <target name="org-apache-crimson" depends="init">
+    <property name="build.compiler.cc" value="gcj" />
+    <so sofile="lib-org-apache-crimson" 
+	buildDir="build/obj" 
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	profile="${so.profile}"
+	taskDebug="0"
+	>
+      <src dir="${crimson.src}/src">
+	<include name="**/*.java" />
+	<include name="**/*.properties" />
+	<include name="META-INF/**" />
+	<exclude name="org/w3c/**" />
+	<exclude name="org/xml/**" />
+      </src>
+      <includes>
+        <include name="${crimson.src}/src" />
+        <include name="${xmlcommons.src}/java/external/src" />
+      </includes>
+    </so>
+  </target>
+
+  <target name="javax-xml" depends="init">
+    <property name="build.compiler.cc" value="gcj" />
+    <so sofile="lib-javax-xml" 
+	buildDir="build/obj" 
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	profile="${so.profile}"
+	taskDebug="0"
+	>
+      <src dir="${xmlcommons.src}/java/external/src">
+	<include name="javax/xml/**/*.java" />
+	<include name="**/*.properties" />
+	<exclude name="org/**" />
+      </src>
+      <includes>
+        <include name="${crimson.src}/src" />
+        <include name="${xmlcommons.src}/java/external/src" />
+      </includes>
+    </so>
+  </target>
+
+  <target name="clean" >
+    <delete >
+      <fileset dir=".">
+	<include name="**/*.o"/>
+	<include name="**/*.so"/>
+	<include name="**/*.lo"/>
+	<include name="**/*.la"/>
+	<include name="**/.libs"/>
+	<include name="**/*.nlm"/>
+	<include name="**/*.map"/>
+	<include name="**/*.sym"/>
+      </fileset>
+    </delete>
+  </target>
+
+</project>
