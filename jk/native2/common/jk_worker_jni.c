@@ -56,7 +56,10 @@
  * ========================================================================= */
 
 /**
- * In process JNI worker                                      
+ * In process JNI worker. It'll call an arbitrary java class's main method
+ * with given parameters and set a pointer to the java vm in the workerEnv.
+ * ( XXX and an optional set method to pass env, workerEnv pointers )
+ * 
  * @author:  Gal Shachor <shachor@il.ibm.com>
  * @author: Costin Manolache
  */
@@ -65,17 +68,15 @@
 #include "jk_registry.h"
 #include "jni.h"
 
-/* default only, is configurable now */
-#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/common/ChannelJni")
+/* default only, will be  configurable  */
+#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/server/JniMain")
 
 struct jni_worker_data {
 
     jk_vm_t *vm;
     
     jclass      jk_java_bridge_class;
-
     jmethodID   jk_startup_method;
-    jmethodID   jk_service_method;
     jmethodID   jk_shutdown_method;
 
     char *className;
@@ -102,15 +103,6 @@ static int get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEnv )
 	return JK_FALSE;
     }
 
-    p->jk_service_method = (*jniEnv)->GetStaticMethodID(jniEnv,
-                                                  p->jk_java_bridge_class, 
-                                                  "service", 
-                                               "(JJ)I");   
-    if(!p->jk_service_method) {
-	env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find service()\n"); 
-        return JK_FALSE;
-    }
-    
     p->jk_shutdown_method = (*jniEnv)->GetStaticMethodID(jniEnv,
                                                    p->jk_java_bridge_class, 
                                                    "shutdown", 
@@ -123,96 +115,11 @@ static int get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEnv )
     return JK_TRUE;
 }
 
-static int JK_METHOD jni_worker_service(jk_env_t *env, jk_endpoint_t *e,
-                                        jk_ws_service_t *s,
-                                        int *is_recoverable_error)
+static int JK_METHOD jni_worker_service(jk_env_t *env,
+                                        jk_worker_t *w,
+                                        jk_ws_service_t *s)
 {
-    JNIEnv *jniEnv;
-    jint rc;
-    jni_worker_data_t *jniWorker;
-    
-    if(!e || !s) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "jni.service() NullPointerException\n");
-        return JK_FALSE;
-    }
-
-    if(!is_recoverable_error) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "service() unrecoverable error status\n");
-        return JK_FALSE;
-    }
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "service() attaching to vm\n");
-
-    jniWorker=(jni_worker_data_t *)e->worker->worker_private;
-    
-    jniEnv=(JNIEnv *)e->endpoint_private;
-    if(jniEnv==NULL) { /*! attached */
-        /* Try to attach */
-        jniEnv = jniWorker->vm->attach(env, jniWorker->vm);
-            
-        if(jniEnv == NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, "Attach failed\n");  
-            /*   Is it recoverable ?? */
-            *is_recoverable_error = JK_TRUE;
-            return JK_FALSE;
-        } 
-        e->endpoint_private = jniEnv;
-    }
-
-    /* we are attached now */
-
-    /* 
-     * When we call the JVM we cannot know what happens
-     * So we can not recover !!!
-     */
-    *is_recoverable_error = JK_FALSE;
-	    
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "jni.service() calling Tomcat...\n");
-
-    /* [V] For some reason gcc likes this pointer -> int -> jlong
-       conversion, but not the direct pointer -> jlong conversion.
-       I hope it's okay.  */
-    rc = (*jniEnv)->CallStaticIntMethod( jniEnv,
-                                         jniWorker->jk_java_bridge_class, 
-                                         jniWorker->jk_service_method,
-                                         (jlong)(int)s,
-                                         (jlong)(int)env);
-
-    /* [V] Righ now JNIEndpoint::service() only returns 1 or 0 */
-    if(rc) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "service()  Tomcat returned OK, done\n");
-        return JK_TRUE;
-    } else {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "service() Tomcat FAILED!\n");
-        return JK_FALSE;
-    }
-}
-
-static int JK_METHOD jni_worker_done(jk_env_t *env, jk_endpoint_t *e)
-{
-    jni_worker_data_t *jniWorker;
-    
-    if(e==NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "jni.done() NullPointerException\n");
-        return JK_FALSE;
-    }
-
-    jniWorker=(jni_worker_data_t *)e->worker->worker_private;
-    
-    /* XXX Don't detach if worker is reused per thread */
-    e->endpoint_private=NULL;
-    jniWorker->vm->detach( env, jniWorker->vm ); 
-    
-    e->pool->close( env, e->pool );
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "jni.done() ok\n");
-    return JK_TRUE;
+    return JK_FALSE;
 }
 
 
@@ -315,7 +222,7 @@ static int JK_METHOD jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
     return JK_TRUE;
 }
 
-static int JK_METHOD jni_worker_init(jk_env_t *env, jk_worker_t *pThis,
+static int JK_METHOD jni_worker_init(jk_env_t *env, jk_worker_t *_this,
                           jk_map_t *props, jk_workerEnv_t *we)
 {
     jni_worker_data_t *jniWorker;
@@ -326,22 +233,21 @@ static int JK_METHOD jni_worker_init(jk_env_t *env, jk_worker_t *pThis,
     jint rc = 0;
     
 
-    if(! pThis || ! pThis->worker_private) {
+    if(! _this || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "In init, assert failed - invalid parameters\n");
         return JK_FALSE;
     }
 
-    jniWorker = pThis->worker_private;
+    jniWorker = _this->worker_private;
 
-    if(pThis->workerEnv->vm != NULL ) {
+    if(_this->workerEnv->vm != NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "jni.init(), done (been here!)\n");
         return JK_TRUE;
     }
 
     if(!jniWorker->vm ||
-       !jniWorker->jk_service_method     ||
        !jniWorker->jk_startup_method     ||
        !jniWorker->jk_shutdown_method) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
@@ -380,8 +286,16 @@ static int JK_METHOD jni_worker_init(jk_env_t *env, jk_worker_t *pThis,
     
     jniWorker->vm->detach(env, jniWorker->vm); 
 
-    pThis->workerEnv->vm= jniWorker->vm;
+    _this->workerEnv->vm= jniWorker->vm;
         
+    _this->channel=env->getInstance(env, _this->pool,"channel",
+                                    "jni" );
+    
+    if( _this->channel == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Error creating jni channel\n");
+        return JK_FALSE;
+    }
     if(rc) {
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "jni.init() Tomcat initialized OK, done\n");
@@ -391,44 +305,6 @@ static int JK_METHOD jni_worker_init(jk_env_t *env, jk_worker_t *pThis,
                       "Fail-> could not initialize Tomcat\n");
         return JK_FALSE;
     }
-}
-
-static int JK_METHOD jni_worker_getEndpoint(jk_env_t *env, jk_worker_t *pThis,
-                                            jk_endpoint_t **pend)
-{
-    /* [V] This slow, needs replacement */
-    jk_pool_t *endpointPool;
-    jk_endpoint_t *e;
-    
-    endpointPool=pThis->pool->create( env, pThis->pool, HUGE_POOL_SIZE );
-    
-    e = (jk_endpoint_t *)endpointPool->calloc(env, endpointPool,
-                                              sizeof(jk_endpoint_t));
-
-    if(!pThis || ! pThis->worker_private || !pend) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG, 
-                      "jniWorker.getEndpoint() NullPointerException\n");
-        return JK_FALSE;
-    }
-    
-    if(e==NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "jniWorker.getEndpoint() OutOfMemoryException\n");
-        return JK_FALSE;
-    }
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.get_endpoint()\n");
-    /** XXX Fix the spaghetti */
-
-    e->worker = pThis;
-    e->endpoint_private = NULL;
-    e->service = jni_worker_service;
-    e->done = jni_worker_done;
-    e->channelData = NULL;
-    e->pool=endpointPool;
-    *pend = e;
-    
-    return JK_TRUE;
 }
 
 static int JK_METHOD jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
@@ -508,7 +384,6 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     
     jniData->jk_java_bridge_class  = NULL;
     jniData->jk_startup_method     = NULL;
-    jniData->jk_service_method     = NULL;
     jniData->jk_shutdown_method    = NULL;
 
     jniData->tomcat_cmd_line       = NULL;
@@ -517,8 +392,8 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
 
     _this->validate       = jni_worker_validate;
     _this->init           = jni_worker_init;
-    _this->get_endpoint   = jni_worker_getEndpoint;
     _this->destroy        = jni_worker_destroy;
+    _this->service = jni_worker_service;
 
     *result = _this;
 
