@@ -1,8 +1,4 @@
 /*
- * $Header$
- * $Revision$
- * $Date$
- *
  * ====================================================================
  *
  * The Apache Software License, Version 1.1
@@ -65,36 +61,16 @@
 package org.apache.coyote.tomcat5;
 
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.security.AccessControlException;
-import java.util.Stack;
 import java.util.Vector;
-import java.util.Enumeration;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.UnrecoverableKeyException;
-import java.security.KeyManagementException;
 
 import org.apache.tomcat.util.IntrospectionUtils;
 
-import org.apache.coyote.ActionCode;
-import org.apache.coyote.ActionHook;
 import org.apache.coyote.Adapter;
-import org.apache.coyote.InputBuffer;
-import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.ProtocolHandler;
 
 import org.apache.catalina.Connector;
 import org.apache.catalina.Container;
-import org.apache.catalina.HttpRequest;
-import org.apache.catalina.HttpResponse;
 import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Logger;
@@ -105,6 +81,12 @@ import org.apache.catalina.net.DefaultServerSocketFactory;
 import org.apache.catalina.net.ServerSocketFactory;
 import org.apache.catalina.util.LifecycleSupport;
 import org.apache.catalina.util.StringManager;
+import org.apache.commons.modeler.Registry;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import javax.management.ObjectName;
+import javax.management.MBeanServer;
+import javax.management.MBeanRegistration;
 
 
 /**
@@ -117,7 +99,9 @@ import org.apache.catalina.util.StringManager;
 
 
 public final class CoyoteConnector
-    implements Connector, Lifecycle {
+    implements Connector, Lifecycle, MBeanRegistration
+ {
+    private static Log log = LogFactory.getLog(CoyoteConnector.class);
 
 
     // ----------------------------------------------------- Instance Variables
@@ -321,7 +305,7 @@ public final class CoyoteConnector
      * Coyote Protocol handler class name.
      * Defaults to the Coyote HTTP/1.1 protocolHandler.
      */
-    private String protocolHandlerClassName = 
+    private String protocolHandlerClassName =
         "org.apache.coyote.http11.Http11Protocol";
 
 
@@ -374,7 +358,7 @@ public final class CoyoteConnector
 
     /**
      * Set the value of compression.
-     * 
+     *
      * @param compression The new compression value, which can be "on", "off"
      * or "force"
      */
@@ -675,9 +659,9 @@ public final class CoyoteConnector
 
 
     /**
-     * Set the class name of the Coyote protocol handler which will be used 
+     * Set the class name of the Coyote protocol handler which will be used
      * by the connector.
-     * 
+     *
      * @param protocolHandlerClassName The new class name
      */
     public void setProtocolHandlerClassName(String protocolHandlerClassName) {
@@ -778,8 +762,8 @@ public final class CoyoteConnector
     /**
      * Set the flag to specify upload time-out behavior.
      *
-     * @param isDisabled If <code>true</code>, then the <code>timeout</code> 
-     * parameter is ignored.  If <code>false</code>, then the 
+     * @param isDisabled If <code>true</code>, then the <code>timeout</code>
+     * parameter is ignored.  If <code>false</code>, then the
      * <code>timeout</code> parameter is used to control uploads.
      */
     public void setDisableUploadTimeout( boolean isDisabled ) {
@@ -957,7 +941,7 @@ public final class CoyoteConnector
 
 
     /**
-     * Get the lifecycle listeners associated with this lifecycle. If this 
+     * Get the lifecycle listeners associated with this lifecycle. If this
      * Lifecycle has no listeners registered, a zero-length array is returned.
      */
     public LifecycleListener[] findLifecycleListeners() {
@@ -986,7 +970,7 @@ public final class CoyoteConnector
         throws LifecycleException {
 
         if (initialized)
-            throw new LifecycleException 
+            throw new LifecycleException
                 (sm.getString("coyoteConnector.alreadyInitialized"));
 
         this.initialized = true;
@@ -1006,62 +990,62 @@ public final class CoyoteConnector
         }
         protocolHandler.setAdapter(adapter);
 
-        IntrospectionUtils.setProperty(protocolHandler, "jkHome", 
+        IntrospectionUtils.setProperty(protocolHandler, "jkHome",
                                        System.getProperty("catalina.base"));
 
         // Set attributes
         IntrospectionUtils.setProperty(protocolHandler, "port", "" + port);
-        IntrospectionUtils.setProperty(protocolHandler, "maxThreads", 
+        IntrospectionUtils.setProperty(protocolHandler, "maxThreads",
                                        "" + maxProcessors);
-        IntrospectionUtils.setProperty(protocolHandler, "backlog", 
+        IntrospectionUtils.setProperty(protocolHandler, "backlog",
                                        "" + acceptCount);
-        IntrospectionUtils.setProperty(protocolHandler, "tcpNoDelay", 
+        IntrospectionUtils.setProperty(protocolHandler, "tcpNoDelay",
                                        "" + tcpNoDelay);
-        IntrospectionUtils.setProperty(protocolHandler, "soTimeout", 
+        IntrospectionUtils.setProperty(protocolHandler, "soTimeout",
                                        "" + connectionTimeout);
-        IntrospectionUtils.setProperty(protocolHandler, "timeout", 
+        IntrospectionUtils.setProperty(protocolHandler, "timeout",
                                        "" + connectionTimeout);
-        IntrospectionUtils.setProperty(protocolHandler, "disableUploadTimeout", 
+        IntrospectionUtils.setProperty(protocolHandler, "disableUploadTimeout",
                                        "" + disableUploadTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "maxKeepAliveRequests",
                                        "" + maxKeepAliveRequests);
-        IntrospectionUtils.setProperty(protocolHandler, "compression", 
+        IntrospectionUtils.setProperty(protocolHandler, "compression",
                                        compression);
         if (address != null) {
-            IntrospectionUtils.setProperty(protocolHandler, "address", 
+            IntrospectionUtils.setProperty(protocolHandler, "address",
                                            address);
         }
 
         // Configure secure socket factory
         if (factory instanceof CoyoteServerSocketFactory) {
-            IntrospectionUtils.setProperty(protocolHandler, "secure", 
+            IntrospectionUtils.setProperty(protocolHandler, "secure",
                                            "" + true);
-            CoyoteServerSocketFactory ssf = 
+            CoyoteServerSocketFactory ssf =
                 (CoyoteServerSocketFactory) factory;
-            IntrospectionUtils.setProperty(protocolHandler, "algorithm", 
+            IntrospectionUtils.setProperty(protocolHandler, "algorithm",
                                            ssf.getAlgorithm());
             if (ssf.getClientAuth()) {
-                IntrospectionUtils.setProperty(protocolHandler, "clientauth", 
+                IntrospectionUtils.setProperty(protocolHandler, "clientauth",
                                                "" + ssf.getClientAuth());
             }
-            IntrospectionUtils.setProperty(protocolHandler, "keystore", 
+            IntrospectionUtils.setProperty(protocolHandler, "keystore",
                                            ssf.getKeystoreFile());
-            IntrospectionUtils.setProperty(protocolHandler, "randomfile", 
+            IntrospectionUtils.setProperty(protocolHandler, "randomfile",
                                            ssf.getRandomFile());
-            IntrospectionUtils.setProperty(protocolHandler, "rootfile", 
+            IntrospectionUtils.setProperty(protocolHandler, "rootfile",
                                            ssf.getRootFile());
-			
-            IntrospectionUtils.setProperty(protocolHandler, "keypass", 
+
+            IntrospectionUtils.setProperty(protocolHandler, "keypass",
                                            ssf.getKeystorePass());
-            IntrospectionUtils.setProperty(protocolHandler, "keytype", 
+            IntrospectionUtils.setProperty(protocolHandler, "keytype",
                                            ssf.getKeystoreType());
-            IntrospectionUtils.setProperty(protocolHandler, "protocol", 
+            IntrospectionUtils.setProperty(protocolHandler, "protocol",
                                            ssf.getProtocol());
-            IntrospectionUtils.setProperty(protocolHandler, 
-                                           "sSLImplementation", 
+            IntrospectionUtils.setProperty(protocolHandler,
+                                           "sSLImplementation",
                                            ssf.getSSLImplementation());
         } else {
-            IntrospectionUtils.setProperty(protocolHandler, "secure", 
+            IntrospectionUtils.setProperty(protocolHandler, "secure",
                                            "" + false);
         }
 
@@ -1088,6 +1072,21 @@ public final class CoyoteConnector
                 (sm.getString("coyoteConnector.alreadyStarted"));
         lifecycle.fireLifecycleEvent(START_EVENT, null);
         started = true;
+
+        // We can't register earlier - the JMX registration of this happens
+        // in Server.start callback
+        if( this.oname != null ) {
+            // We are registred - register the adapter as well.
+            try {
+                Registry.getRegistry().registerComponent(protocolHandler,
+                        this.domain, "protocolHandler",
+                        "type=protocolHandler,className=" + protocolHandlerClassName);
+            } catch( Exception ex ) {
+                ex.printStackTrace();
+            }
+        } else {
+            log.info( "Coyote can't register jmx for protocol");
+        }
 
         try {
             protocolHandler.start();
@@ -1124,5 +1123,69 @@ public final class CoyoteConnector
 
     }
 
+    // -------------------- Management methods --------------------
+
+    public boolean getClientAuth() {
+        ServerSocketFactory factory= this.getFactory();
+        if( ! (factory instanceof CoyoteServerSocketFactory) )
+            return false;
+        CoyoteServerSocketFactory coyoteFactory=(CoyoteServerSocketFactory)factory;
+        return coyoteFactory.getClientAuth();
+    }
+
+    public void setClientAuth(boolean clientAuth) {
+        ServerSocketFactory factory= this.getFactory();
+        if( ! (factory instanceof CoyoteServerSocketFactory) )
+            return;
+        CoyoteServerSocketFactory coyoteFactory=(CoyoteServerSocketFactory)factory;
+        coyoteFactory.setClientAuth(clientAuth);
+    }
+
+
+    public String getKeystoreFile() {
+        ServerSocketFactory factory= this.getFactory();
+        if( ! (factory instanceof CoyoteServerSocketFactory) )
+            return null;
+        CoyoteServerSocketFactory coyoteFactory=(CoyoteServerSocketFactory)factory;
+        return coyoteFactory.getKeystoreFile();
+    }
+
+    public void setKeystoreFile(String keystoreFile) {
+        ServerSocketFactory factory= this.getFactory();
+        if( ! (factory instanceof CoyoteServerSocketFactory) )
+            return;
+        CoyoteServerSocketFactory coyoteFactory=(CoyoteServerSocketFactory)factory;
+        coyoteFactory.setKeystoreFile(keystoreFile);
+    }
+
+    // -------------------- JMX registration  --------------------
+    protected String domain;
+    protected ObjectName oname;
+    protected MBeanServer mserver;
+
+    public ObjectName getObjectName() {
+        return oname;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public ObjectName preRegister(MBeanServer server,
+                                  ObjectName name) throws Exception {
+        oname=name;
+        mserver=server;
+        domain=name.getDomain();
+        return name;
+    }
+
+    public void postRegister(Boolean registrationDone) {
+    }
+
+    public void preDeregister() throws Exception {
+    }
+
+    public void postDeregister() {
+    }
 
 }
