@@ -171,10 +171,9 @@ public class JkCoyoteHandler extends JkHandler implements
             // Send the connector a request for commit. The connector should
             // then validate the headers, send them (using sendHeader) and 
             // set the filters accordingly.
-            res.action(ActionCode.ACTION_COMMIT, null);
+            res.sendHeaders();
         }
-        if( log.isInfoEnabled() )
-            log.info("doWrite " );
+        if( log.isInfoEnabled() ) log.info("doWrite " );
         MsgContext ep=(MsgContext)res.getNote( epNote );
         
         MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
@@ -232,6 +231,47 @@ public class JkCoyoteHandler extends JkHandler implements
         return OK;
     }
 
+    private void appendHead(org.apache.coyote.Response res)
+        throws IOException
+    {
+        if( log.isInfoEnabled() )
+            log.info("COMMIT sending headers " + res + " " + res.getMimeHeaders() );
+        
+        C2BConverter c2b=(C2BConverter)res.getNote( utfC2bNote );
+        if( c2b==null ) {
+            c2b=new C2BConverter(  "UTF8" );
+            res.setNote( utfC2bNote, c2b );
+        }
+        
+        MsgContext ep=(MsgContext)res.getNote( epNote );
+        MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
+        msg.reset();
+        msg.appendByte(HandlerRequest.JK_AJP13_SEND_HEADERS);
+        msg.appendInt( res.getStatus() );
+        
+        // s->b conversion, message
+        msg.appendBytes( null );
+        
+        // XXX add headers
+        
+        MimeHeaders headers=res.getMimeHeaders();
+        int numHeaders = headers.size();
+        msg.appendInt(numHeaders);
+        for( int i=0; i<numHeaders; i++ ) {
+            MessageBytes hN=headers.getName(i);
+            // no header to sc conversion - there's little benefit
+            // on this direction
+            c2b.convert ( hN );
+            msg.appendBytes( hN );
+                        
+            MessageBytes hV=headers.getValue(i);
+            c2b.convert( hV );
+            msg.appendBytes( hV );
+        }
+        ep.setType( JkHandler.HANDLE_SEND_PACKET );
+        ep.getSource().invoke( msg, ep );
+    }
+    
     // -------------------- Coyote Action implementation --------------------
     
     public void action(ActionCode actionCode, Object param) {
@@ -243,42 +283,7 @@ public class JkCoyoteHandler extends JkHandler implements
                     if( log.isInfoEnabled() )
                         log.info("Response already commited " );
                 } else {
-                    if( log.isInfoEnabled() )
-                        log.info("COMMIT sending headers " + res + " " + res.getMimeHeaders() );
-                                        
-                    C2BConverter c2b=(C2BConverter)res.getNote( utfC2bNote );
-                    if( c2b==null ) {
-                        c2b=new C2BConverter(  "UTF8" );
-                        res.setNote( utfC2bNote, c2b );
-                    }
-                
-                    MsgContext ep=(MsgContext)res.getNote( epNote );
-                    MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
-                    msg.reset();
-                    msg.appendByte(HandlerRequest.JK_AJP13_SEND_HEADERS);
-                    msg.appendInt( res.getStatus() );
-                    
-                    // s->b conversion, message
-                    msg.appendBytes( null );
-                    
-                    // XXX add headers
-                    
-                    MimeHeaders headers=res.getMimeHeaders();
-                    int numHeaders = headers.size();
-                    msg.appendInt(numHeaders);
-                    for( int i=0; i<numHeaders; i++ ) {
-                        MessageBytes hN=headers.getName(i);
-                        // no header to sc conversion - there's little benefit
-                        // on this direction
-                        c2b.convert ( hN );
-                        msg.appendBytes( hN );
-                        
-                        MessageBytes hV=headers.getValue(i);
-                        c2b.convert( hV );
-                        msg.appendBytes( hV );
-                    }
-                    ep.setType( JkHandler.HANDLE_SEND_PACKET );
-                    ep.getSource().invoke( msg, ep );
+                    appendHead( res );
                 }
             } else if( actionCode==ActionCode.ACTION_RESET ) {
                 if( log.isInfoEnabled() )
