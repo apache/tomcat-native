@@ -245,6 +245,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 
     private int maxKeepAliveRequests=100; // as in Apache HTTPD server
     private int timeout = 300000;   // 5 minutes as in Apache HTTPD server
+    private int maxPostSize = 2 * 1024 * 1024;
     private String reportedname;
     private int socketCloseDelay=-1;
     private boolean disableUploadTimeout = true;
@@ -332,6 +333,11 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public void setCompression(String valueS) {
         compression = valueS;
         setAttribute("compression", valueS);
+    }
+
+    public void setMaxPostSize(int valueI) {
+        maxPostSize = valueI;
+        setAttribute("maxPostSize", "" + valueI);
     }
 
     public void setRestrictedUserAgents(String valueS) {
@@ -496,11 +502,12 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             processor.setTimeout( proto.timeout );
             processor.setDisableUploadTimeout( proto.disableUploadTimeout );
             processor.setCompression( proto.compression );
-            processor.setCompressionMinSize( proto.compressionMinSize);         
+            processor.setCompressionMinSize( proto.compressionMinSize);
             processor.setNoCompressionUserAgents( proto.noCompressionUserAgents);
             processor.setCompressableMimeTypes( proto.compressableMimeTypes);
             processor.setRestrictedUserAgents( proto.restrictedUserAgents);
             processor.setSocketBuffer( proto.socketBuffer );
+            processor.setMaxPostSize( proto.maxPostSize );
 
             thData[Http11Protocol.THREAD_DATA_PROCESSOR]=processor;
             

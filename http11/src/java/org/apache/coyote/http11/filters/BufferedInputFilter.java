@@ -79,7 +79,7 @@ public class BufferedInputFilter implements InputFilter {
 
     // ----------------------------------------------------- Instance Variables
 
-    private ByteChunk buffered = new ByteChunk(1024);
+    private ByteChunk buffered = null;
     private ByteChunk tempRead = new ByteChunk(1024);
     private InputBuffer buffer;
     private boolean hasRead = false;
@@ -92,7 +92,23 @@ public class BufferedInputFilter implements InputFilter {
     }
 
 
+    // --------------------------------------------------------- Public Methods
+
+
+    /**
+     * Set the buffering limit. This should be reset every time the buffer is
+     * used.
+     */
+    public void setLimit(int limit) {
+        if (buffered == null) {
+            buffered = new ByteChunk(4048);
+            buffered.setLimit(limit);
+        }
+    }
+
+
     // ---------------------------------------------------- InputBuffer Methods
+
 
     /**
      * Reads the request body and buffers it.
@@ -128,7 +144,11 @@ public class BufferedInputFilter implements InputFilter {
     }
 
     public void recycle() {
-        buffered.recycle();
+        if (buffered.getBuffer().length > 65536) {
+            buffered = null;
+        } else {
+            buffered.recycle();
+        }
         tempRead.recycle();
         hasRead = false;
         buffer = null;

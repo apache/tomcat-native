@@ -284,9 +284,15 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * Max post size.
+     */
+    protected int maxPostSize = 2 * 1024 * 1024;
+
+
+    /**
      * List of user agents to not use gzip with
      */
-    protected RE       noCompressionUserAgents[]     = null;
+    protected RE noCompressionUserAgents[] = null;
     
     /**
      * List of MIMES which could be gzipped
@@ -619,6 +625,22 @@ public class Http11Processor implements Processor, ActionHook {
      */
     public int getMaxKeepAliveRequests() {
         return maxKeepAliveRequests;
+    }
+
+
+    /**
+     * Set the maximum size of a POST which will be buffered in SSL mode.
+     */
+    public void setMaxPostSize(int mps) {
+        maxPostSize = mps;
+    }
+
+
+    /**
+     * Return the maximum size of a POST which will be buffered in SSL mode.
+     */
+    public int getMaxPostSize() {
+        return maxPostSize;
     }
 
 
@@ -1006,6 +1028,8 @@ public class Http11Processor implements Processor, ActionHook {
                  * interfere with the client's handshake messages
                  */
                 InputFilter[] inputFilters = inputBuffer.getFilters();
+                ((BufferedInputFilter) inputFilters[Constants.BUFFERED_FILTER])
+                    .setLimit(maxPostSize);
                 inputBuffer.addActiveFilter
                     (inputFilters[Constants.BUFFERED_FILTER]);
                 try {
