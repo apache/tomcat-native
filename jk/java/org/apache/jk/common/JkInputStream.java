@@ -75,7 +75,6 @@ import org.apache.tomcat.util.http.MimeHeaders;
 
 import org.apache.jk.core.*;
 import org.apache.jk.common.*;
-import org.apache.jk.util.*;
 
 
 /** Generic input stream impl on top of ajp
