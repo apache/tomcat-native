@@ -136,7 +136,7 @@ public final class Response {
 
 
     /**
-     * HTTP specific fields (remove them ?)
+     * HTTP specific fields.
      */
     protected String contentType = Constants.DEFAULT_CONTENT_TYPE;
     protected String contentLanguage = null;
@@ -145,13 +145,15 @@ public final class Response {
     private Locale locale = Constants.DEFAULT_LOCALE;
 
     /**
-     * FIXME: Remove.
+     * Holds request error exception.
      */
-    // holds request error exception
-    // set this just once during request processing
-    Exception errorException = null;
-    // holds request error URI
-    String errorURI = null;
+    protected Exception errorException = null;
+
+
+    /**
+     * Request error URI.
+     */
+    protected String errorURI = null;
 
 
     // ------------------------------------------------------------- Properties
