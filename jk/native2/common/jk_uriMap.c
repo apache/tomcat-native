@@ -272,8 +272,13 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this)
                               _this->maps[i]->uri, wname);
             }
         } else {
-            _this->maps[i]->worker= workerEnv->defaultWorker;
-            _this->maps[i]->workerName= workerEnv->defaultWorker->mbean->name;
+            if( _this->maps[i]->uri!= NULL ) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "uriMap.init() map to default worker %s %s\n",
+                              _this->maps[i]->uri, workerEnv->defaultWorker->mbean->name);
+                _this->maps[i]->worker= workerEnv->defaultWorker;
+                _this->maps[i]->workerName= workerEnv->defaultWorker->mbean->name;
+            }
         }
     }
     
