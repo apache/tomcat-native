@@ -369,10 +369,9 @@ static int jk2_workerEnv_dispatch(jk_env_t *env, jk_workerEnv_t *wEnv,
         return JK_ERR;
     }
 
-    if( e->worker->mbean->debug > 0 ) 
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "workerEnv.dispatch() Calling %d %s\n", handler->messageId,
-                      handler->name);
+/*     env->l->jkLog(env, env->l, JK_LOG_INFO, */
+/*                   "workerEnv.dispatch() Calling %d %s\n", handler->messageId, */
+/*                   handler->name); */
     
     /* Call the message handler */
     rc=handler->callback( env, target, e, msg );
