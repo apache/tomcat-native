@@ -206,7 +206,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
             */
             try {
                 System.out.println("Loading " + jniModeSo);
-                System.load( jniModeSo );
+                if( jniModeSo!= null ) System.load( jniModeSo );
             } catch( Throwable ex ) {
                 // ignore
                 ex.printStackTrace();

@@ -388,7 +388,8 @@ public class HandlerRequest extends JkHandler
             
 	    return OK;
         default:
-            /*DEBUG*/ try {throw new Exception(); } catch(Exception ex) {ex.printStackTrace();}
+            System.err.println("Unknown message " + type );
+            msg.dump("Unknown message" );
 	}
 
         return OK;

@@ -268,8 +268,9 @@ public class JniHandler extends JkHandler {
                                  nativeJkHandlerP,
                                  nativeContext,
                                  code, msg.getBuffer(), 0, msg.getLen(), raw ); 
-        if( status != 0 )
+        if( status != 0 && status != 2 ) {
             log.error( "nativeDispatch: error " + status );
+        }
         
         if( log.isDebugEnabled() ) log.debug( "Sending packet - done " + status);
         return status;
@@ -292,10 +293,10 @@ public class JniHandler extends JkHandler {
         
         apr.jkRecycle(xEnv, ep.getJniContext());
 
-        if(log.isInfoEnabled() ) log.info("Shm invoke status " + status);
+        if(log.isInfoEnabled() ) log.info("Jni invoke status " + status);
  
         apr.releaseJkEnv( xEnv );
-       return 0;
+        return 0;
     }    
 
     private static org.apache.commons.logging.Log log=

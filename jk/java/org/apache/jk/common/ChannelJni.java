@@ -160,6 +160,8 @@ public class ChannelJni extends JniHandler {
             return receive( msg, ep );
         case JkHandler.HANDLE_SEND_PACKET:
             return send( msg, ep );
+        case JkHandler.HANDLE_FLUSH:
+            return 0;
         }
         // Default is FORWARD - called from C 
         try {
