@@ -1126,8 +1126,8 @@ public final class CoyoteConnector
             // We are registred - register the adapter as well.
             try {
                 Registry.getRegistry().registerComponent(protocolHandler,
-                        this.domain, "protocolHandler",
-                        "type=protocolHandler,className=" + protocolHandlerClassName);
+                        this.domain + 
+                        ":type=protocolHandler,className=" + protocolHandlerClassName, null);
             } catch( Exception ex ) {
                 ex.printStackTrace();
             }
