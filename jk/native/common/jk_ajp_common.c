@@ -942,7 +942,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
 		}
 
 		/* the right place to add file storage for upload */
-		if ((len = ajp_read_into_msg_buff(ae, r, msg, len, l)) >= 0) {
+		if ((len = ajp_read_into_msg_buff(ae, r, pmsg, len, l)) >= 0) {
 		    r->content_read += len;
 		    return JK_AJP13_HAS_RESPONSE;
 		}                  
