@@ -73,13 +73,117 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
 
 static void jk_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this);
 static void jk_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this);
+static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this);
+
+static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *workerEnv)
+{
+    int err;
+    char *opt;
+    int options;
+
+    opt=jk_map_getString( env, workerEnv->init_data, "workerFile", NULL );
+    if( opt != NULL ) {
+        struct stat statbuf;
+        
+        /* we need an absolut path (ap_server_root_relative does the ap_pstrdup) */
+        workerEnv->worker_file = opt;
+        /* We should make it relative to JK_HOME or absolute path.
+           ap_server_root_relative(cmd->pool,opt); */
+
+        if (workerEnv->worker_file == NULL) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "JkWorkersFile file_name invalid %s", workerEnv->worker_file);
+            return JK_FALSE;
+        }
+        
+        if (stat(workerEnv->worker_file, &statbuf) == -1) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "Can't find the workers file specified");
+            return JK_FALSE;
+        }
+        /** Read worker files
+         */
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Reading map %s %d\n",
+                      workerEnv->worker_file,
+                      workerEnv->init_data->size(env, workerEnv->init_data) );
+        
+        err=jk_map_readFileProperties(env, workerEnv->init_data,
+                                          workerEnv->worker_file);
+        if( err==JK_TRUE ) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "mod_jk.initJk() Reading worker properties %s %d\n", workerEnv->worker_file,
+                          workerEnv->init_data->size( env, workerEnv->init_data ) );
+        } else {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "mod_jk.initJk() Error reading worker properties %s %d\n",
+                          workerEnv->worker_file,
+                          workerEnv->init_data->size( env, workerEnv->init_data ) );
+        }
+    }
+        
+    opt=jk_map_getString( env, workerEnv->init_data, "logLevel", "Error" );
+
+    if(0 == strcasecmp(opt, JK_LOG_INFO_VERB)) {
+        env->l->level=JK_LOG_INFO_LEVEL;
+    }
+    if(0 == strcasecmp(opt, JK_LOG_DEBUG_VERB)) {
+        env->l->level=JK_LOG_DEBUG_LEVEL;
+    }
+    opt=jk_map_getString( env, workerEnv->init_data, "logFile", NULL );
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk.init_jk()\n" ); 
+    env->l->open( env, env->l, workerEnv->init_data );
+
+    opt=jk_map_getString( env, workerEnv->init_data, "sslEnable", NULL );
+    workerEnv->ssl_enable = JK_TRUE;
+    opt=jk_map_getString( env, workerEnv->init_data, "httpsIndicator", NULL );
+    workerEnv->https_indicator = opt;
+    opt=jk_map_getString( env, workerEnv->init_data, "certsIndicator", NULL );
+    workerEnv->certs_indicator = opt;
+    opt=jk_map_getString( env, workerEnv->init_data, "cipherIndicator", NULL );
+    workerEnv->cipher_indicator = opt;
+    opt=jk_map_getString( env, workerEnv->init_data, "sessionIndicator", NULL );
+    workerEnv->session_indicator = opt;
+    opt=jk_map_getString( env, workerEnv->init_data, "keySizeIndicator", NULL );
+    workerEnv->key_size_indicator = opt;
+
+    /* Small change in how we treat options: we have a default,
+       and assume that any option declared by user has the intention
+       of overriding the default ( "-Option == no option, leave the
+       default
+    */
+    if ( jk_map_getBool(env, workerEnv->init_data,
+                        "ForwardKeySize", NULL)) {
+        workerEnv->options |= JK_OPT_FWDKEYSIZE;
+    } else if(jk_map_getBool(env, workerEnv->init_data,
+                             "ForwardURICompat", NULL)) {
+        workerEnv->options &= ~JK_OPT_FWDURIMASK;
+        workerEnv->options |=JK_OPT_FWDURICOMPAT;
+    } else if(jk_map_getBool(env, workerEnv->init_data,
+                             "ForwardURICompatUnparsed", NULL)) {
+        workerEnv->options &= ~JK_OPT_FWDURIMASK;
+        workerEnv->options |=JK_OPT_FWDURICOMPATUNPARSED;
+    } else if (jk_map_getBool(env, workerEnv->init_data,
+                              "ForwardURIEscaped", NULL)) {
+        workerEnv->options &= ~JK_OPT_FWDURIMASK;
+        workerEnv->options |= JK_OPT_FWDURIESCAPED;
+    }
+
+    /* Init() - post-config initialization ( now all options are set ) */
+    jk_workerEnv_init1( env, workerEnv );
+
+    err=workerEnv->uriMap->init(env, workerEnv->uriMap,
+                                workerEnv,
+                                workerEnv->init_data );
+    return JK_TRUE;
+}
 
 /**
  *  Init the workers, prepare the we.
  * 
  *  Replaces wc_open
  */
-static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *_this)
+static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this)
 {
     jk_map_t *init_data=_this->init_data;
     char **worker_list  = NULL;
@@ -90,7 +194,7 @@ static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *_this)
     /*     _this->init_data=init_data; */
 
     tmp = jk_map_getString(env, init_data, "worker.list",
-                                   DEFAULT_WORKER );
+                           DEFAULT_WORKER );
     worker_list=jk_map_split( env, init_data, init_data->pool,
                               tmp, &_this->num_of_workers );
 
@@ -397,6 +501,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
     type=jk_map_getStrProp( env, init_data,"worker",name,"type",NULL );
 
     /* Each worker has it's own pool */
+    if( type == NULL ) type="ajp13";
     
 
     w=(jk_worker_t *)env->getInstance(env, workerPool, "worker",
@@ -536,6 +641,8 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
     _this->processCallbacks=&jk_workerEnv_processCallbacks;
 
     _this->rootWebapp=_this->createWebapp( env, _this, NULL, "/", NULL );
+
+    _this->globalEnv=env;
     
     return JK_TRUE;
 }
