@@ -45,9 +45,12 @@ APR (Apache Portable Runtime) sources. To do this simply:
     cd ./jakarta-tomcat-connectors/webapp
     cvs -d :pserver:anoncvs@cvs.apache.org:/home/cvspublic \
         checkout apr
+An other way is to use a release version of APR:
+    - You can download it from http://www.apache.org/dist/apr/.
+    - Extract it in jakarta-tomcat-connectors/webapp (Remember use a Gnu tar). 
 
 When the APR sources are in place, we need to create the configure
-script, configure both APR and the WebApp module and compile:
+scripts. It is done by running the command:
 
     ./support/buildconf.sh
 
@@ -112,6 +115,10 @@ Apache 1.3. The available options for the configure script are:
         information. This will create a lot of output in your log files,
         and will kill performances, but it's a good starting poing when
         something goes wrong.
+    --enable-java=DIR
+        Enable the build of java part of mod_webapp: tomcat-warp.jar.
+        DIR is the directory containing the Tomcat distribution.
+        It works for Tomcat 4.x.
 
 Once built, the DSO module will be found in the webapp/apache-1.3 directory.
 
