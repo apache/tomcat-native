@@ -61,9 +61,6 @@ dnl Version $Id$
 dnl --------------------------------------------------------------------------
 
 AC_DEFUN(LOCAL_INIT,[
-  AC_MSG_RESULT([])
-  AC_MSG_RESULT([Initializing])
-  ac_t="    "
   AC_PATH_PROG(TEST,test,${PATH})
   AC_PATH_PROG(TRUE,true,${PATH})
   AC_PATH_PROG(ECHO,echo,${PATH})
@@ -82,21 +79,21 @@ AC_DEFUN(LOCAL_INIT,[
 
 AC_DEFUN(LOCAL_HEADER,[
   ${ECHO} ""
-  ${ECHO} "${1}" 1>&2
+  ${ECHO} "$1" 1>&2
 ])
 
 AC_DEFUN(LOCAL_FILTEREXEC,[
-  ${ECHO} "  Invoking: ${1}"
+  ${ECHO} "  Invoking: $1"
   ${ECHO} "-1" > retvalue.tmp
   {
-    ${1}
-    ${ECHO} retvalue ${?}
+    $1
+    ${ECHO} retvalue $?
   }|{
     ret=0
     while ${TRUE}
     do
       read first line
-      if ${TEST} ! "${?}" -eq "0"
+      if ${TEST} ! "$?" -eq "0"
       then
         break
       else
@@ -104,7 +101,7 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
         then
           ret="${line}"
         else
-          ${ECHO} "    ${2}: ${first} ${line}"
+          ${ECHO} "    $2: ${first} ${line}"
         fi
       fi
     done
@@ -114,6 +111,6 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
   }
   ret=`${CAT} retvalue.tmp`
   ${RM} retvalue.tmp
-  ${ECHO} "  Execution of ${1} returned ${ret}"
+  ${ECHO} "  Execution of $1 returned ${ret}"
 ])
 

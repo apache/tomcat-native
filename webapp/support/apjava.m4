@@ -65,7 +65,7 @@ AC_DEFUN([AP_PROG_JAVAC_WORKS],[
     ap_cv_prog_javac_works,[
     echo "public class Test {}" > Test.java
     ${JAVAC} ${JAVACFLAGS} Test.java > /dev/null 2>&1
-    if ${TEST} ${?} -eq 0
+    if ${TEST} $? -eq 0
     then
       rm -f Test.java Test.class
       ap_cv_prog_javac_works=yes
@@ -83,7 +83,7 @@ AC_DEFUN([AP_PROG_JAVAC],[
     ${JAVA_HOME}/bin:${PATH}
   )
   AP_PROG_JAVAC_WORKS()
-  AC_PROVIDE([${0}])
+  AC_PROVIDE([$0])
   AC_SUBST(JAVAC)
   AC_SUBST(JAVACFLAGS)
 ])
@@ -92,7 +92,7 @@ AC_DEFUN([AP_PROG_JAR],[
   AC_PATH_PROG(JAR,jar,
     AC_MSG_ERROR([jar not found]),
     ${JAVA_HOME}/bin:${PATH})
-  AC_PROVIDE([${0}])
+  AC_PROVIDE([$0])
   AC_SUBST(JAR)
 ])
 
