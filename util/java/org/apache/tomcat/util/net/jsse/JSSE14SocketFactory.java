@@ -60,10 +60,8 @@ package org.apache.tomcat.util.net.jsse;
 
 import java.io.*;
 import java.net.*;
-
 import java.security.KeyStore;
-
-import java.security.Security;
+import java.security.SecureRandom;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
@@ -99,82 +97,53 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
         super();
     }
 
-    // -------------------- Internal methods
-    /** Read the keystore, init the SSL socket factory
+    /**
+     * Reads the keystore and initializes the SSL socket factory.
      */
-    void initProxy() throws IOException {
+    void init() throws IOException {
         try {
 
-            // Please don't change the name of the attribute - other
-            // software may depend on it ( j2ee for sure )
-            String keystoreFile=(String)attributes.get("keystore");
-            if( keystoreFile==null) keystoreFile=defaultKeystoreFile;
+	    String clientAuthStr = (String)attributes.get("clientauth");
+	    if (clientAuthStr != null){
+		clientAuth = Boolean.valueOf(clientAuthStr).booleanValue();
+	    }
 
-            keystoreType=(String)attributes.get("keystoreType");
-            if( keystoreType==null) keystoreType=defaultKeystoreType;
-
-            //determine whether we want client authentication
-            // the presence of the attribute enables client auth
-            String clientAuthStr=(String)attributes.get("clientauth");
-            if(clientAuthStr != null){
-                if(clientAuthStr.equals("true")){
-                    clientAuth=true;
-                } else if(clientAuthStr.equals("false")) {
-                    clientAuth=false;
-                } else {
-                    throw new IOException("Invalid value '" +
-                                          clientAuthStr + 
-                                          "' for 'clientauth' parameter:");
-                }
-            }
-
-            String keyPass=(String)attributes.get("keypass");
-            if( keyPass==null) keyPass=defaultKeyPass;
-
-            String keystorePass=(String)attributes.get("keystorePass");
-            if( keystorePass==null) keystorePass=keyPass;
-
-            //protocol for the SSL ie - TLS, SSL v3 etc.
+	    // SSL protocol variant (e.g., TLS, SSL v3, etc.)
             String protocol = (String)attributes.get("protocol");
-            if(protocol == null) protocol = defaultProtocol;
-            
-            //Algorithm used to encode the certificate ie - SunX509
+            if (protocol == null) protocol = defaultProtocol;
+
+	    // Certificate encoding algorithm (e.g., SunX509)
             String algorithm = (String)attributes.get("algorithm");
-            if(algorithm == null) algorithm = defaultAlgorithm;
-            
-            // You can't use ssl without a server certificate.
-            // Create a KeyStore ( to get server certs )
-            KeyStore kstore = initKeyStore( keystoreFile, keystorePass );
-            
-            SSLContext context = SSLContext.getInstance(protocol); //SSL
+            if (algorithm == null) algorithm = defaultAlgorithm;
 
-            // Key manager will extract the server key
+            // Set up KeyManager, which will extract server key
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
-            kmf.init( kstore, keyPass.toCharArray());
+	    String keystoreType = (String)attributes.get("keystoreType");
+	    if (keystoreType == null)
+		keystoreType = defaultKeystoreType;
+	    String keystorePass = getKeystorePassword();
+            kmf.init(getKeystore(keystoreType, keystorePass),
+		     keystorePass.toCharArray());
 
-            //  set up TrustManager
+            // Set up TrustManager
             TrustManager[] tm = null;
-            String trustStoreFile = System.getProperty("javax.net.ssl.trustStore");
-            String trustStorePassword =
-                System.getProperty("javax.net.ssl.trustStorePassword");
-            if ( trustStoreFile != null && trustStorePassword != null ){
-                KeyStore trustStore = 
-                    initKeyStore( trustStoreFile, trustStorePassword);
-            
+	    KeyStore trustStore = getTrustStore(keystoreType);
+            if (trustStore != null) {
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-
                 tmf.init(trustStore);
                 tm = tmf.getTrustManagers();
             }
 
-            // init context with the key managers
-            context.init(kmf.getKeyManagers(), tm, 
-                         new java.security.SecureRandom());
+	    // Create and init SSLContext
+            SSLContext context = SSLContext.getInstance(protocol); 
+            context.init(kmf.getKeyManagers(), tm, new SecureRandom());
 
             // create proxy
             sslProxy = context.getServerSocketFactory();
 
-            return;
+	    // Determine which cipher suites to enable
+	    enabledCiphers = getEnabledCiphers(sslProxy.getSupportedCipherSuites());
+
         } catch(Exception e) {
             if( e instanceof IOException )
                 throw (IOException)e;

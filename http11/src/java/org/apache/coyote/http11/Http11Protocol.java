@@ -352,6 +352,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         setAttribute("secure", "" + b);
     }
 
+    public void setCiphers(String ciphers) {
+        setAttribute("ciphers", ciphers);
+    }
+
     /** Set the maximum number of Keep-Alive requests that we will honor.
      */
     public void setMaxKeepAliveRequests(int mkar) {
