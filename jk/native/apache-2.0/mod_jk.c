@@ -1329,7 +1329,7 @@ static int jk_translate(request_rec *r)
 static int jk_map_to_storage(request_rec *r)
 {
     if (apr_table_get(r->notes, JK_WORKER_ID)) {
-        r->filename = apr_filename_of_pathname(r->uri);
+        r->filename = (char *)apr_filename_of_pathname(r->uri);
         return OK;
     }
     return DECLINED;
