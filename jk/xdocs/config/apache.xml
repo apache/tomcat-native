@@ -56,19 +56,19 @@ Automatically Alias webapp context directories into the Apache
 document space. 
 </p></attribute>
 <attribute name="JkHTTPSIndicator" required="false"><p>
-Name of the Apache environment that contains SSL indication
+Name of the Apache environment variable that contains SSL indication
 </p></attribute>
 <attribute name="JkCERTSIndicator" required="false"><p>
-Name of the Apache environment that contains SSL client certificates
+Name of the Apache environment variable that contains SSL client certificates
 </p></attribute>
 <attribute name="JkCIPHERIndicator" required="false"><p>
-Name of the Apache environment that contains SSL client cipher
+Name of the Apache environment variable that contains SSL client cipher
 </p></attribute>
 <attribute name="JkSESSIONIndicator" required="false"><p>
-Name of the Apache environment that contains SSL session
+Name of the Apache environment variable that contains SSL session
 </p></attribute>
 <attribute name="JkKEYSIZEIndicator" required="false"><p>
-Name of the Apache environment that contains SSL key size in use
+Name of the Apache environment variable that contains SSL key size in use
 </p></attribute>
 <attribute name="JkExtractSSL" required="false"><p>
 Turns on SSL processing and information gathering by mod_jk
@@ -350,6 +350,39 @@ context, but all .jpg files that belongs to that context are not served.
   JkUnMount /servlet/*.gif worker1
 </source>
 
+<p>
+<b>JkAutoAlias</b> directive automatically <b>Alias</b> webapp context directories into
+the Apache document space. It enables Apache to serve a static context while Tomcat
+serving dynamic context. This directive is used for convenience so that you don't
+have to put an apache Alias directive for each application directory inside Tomcat's
+webapp directory.
+</p>
+
+<source>
+  # enter the full path to the tomcat webapps directory
+  JkAutoAlias /opt/tomtact/webapps
+</source>
+<p>The following example shows how to serve a dynamic context by
+Tomcat and static using Apache. The webapps directory has to
+be accessible by apache.</p>
+
+<source>
+  # enter the full path to the tomcat webapps directory
+  JkAutoAlias /opt/tomtact/webapps
+
+  # Mount 'servlets-examples' directory. It's physical location
+  # is assumed to be in the /opt/tomtact/webapps/servlets-examples
+  # ajp13w is a worker defined in the workers.properties
+  JkMount /servlets-examples/* ajp13w
+
+  # Unmount desired static content from servlets-examples webapp.
+  # This content will be served by the httpd directly.
+  JkUnMount /servlets-examples/*.gif ajp13w
+  JkUnMount /servlets-examples/*.jpg ajp13w
+</source>
+<p>Note that you can have a single JkAutoAlias directive per virtual
+host inside your httpd.conf
+</p>
 </subsection>
  </section>
 </body>
