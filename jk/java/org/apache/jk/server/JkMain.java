@@ -228,13 +228,18 @@ public class JkMain
         }
     }
     
-    static String defaultHandlers[]= { "apr",
+    static String defaultHandlers[]= { "request",
+                                       "container",
+                                       "channelSocket"};
+    /*
+     static String defaultHandlers[]= { "apr",
                                        "shm",
                                        "request",
                                        "container",
                                        "channelSocket",
                                        "channelJni",
                                        "channelUnix"};
+    */
     
     public void stop() 
     {
@@ -435,7 +440,7 @@ public class JkMain
         JkHandler handler;
         String classN=modules.getProperty(type);
         if( classN == null ) {
-            System.err.println("No class name for " + fullName + " " + type );
+            log.error("No class name for " + fullName + " " + type );
             return null;
         }
         try {
@@ -463,7 +468,7 @@ public class JkMain
             String name= k.substring( plen );
             String propValue=props.getProperty( k );
 
-            System.out.println("Register " + name + " " + propValue );
+            if( log.isDebugEnabled()) log.debug("Register " + name + " " + propValue );
             modules.put( name, propValue );
         }
     }
