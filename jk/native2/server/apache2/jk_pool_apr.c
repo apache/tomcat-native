@@ -68,7 +68,11 @@
 
 #include "jk_apache2.h"
 
-#define POOL_DEBUG
+/* 
+   JK_APR_POOL_DEBUG will enable verbose messages on allocation.
+
+   What's important is to see 'reset' after each request.
+*/
 
 
 int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent,
@@ -83,7 +87,7 @@ int JK_METHOD jk_pool_apr_factory(jk_env_t *env,
  */
 static void jk_pool_apr_close(jk_pool_t *p)
 {
-#ifdef POOL_DEBUG
+#ifdef JK_APR_POOL_DEBUG
     fprintf(stderr, "apr_close %p\n", p);
 #endif
 }
@@ -94,7 +98,7 @@ static void jk_pool_apr_close(jk_pool_t *p)
 */
 static void jk_pool_apr_reset(jk_pool_t *p)
 {
-#ifdef POOL_DEBUG
+#ifdef JK_APR_POOL_DEBUG
     fprintf(stderr, "apr_reset %p\n", p);
 #endif
     apr_pool_clear(p->_private);
@@ -103,7 +107,7 @@ static void jk_pool_apr_reset(jk_pool_t *p)
 static void *jk_pool_apr_calloc(jk_pool_t *p, 
                                 size_t size)
 {
-#ifdef POOL_DEBUG
+#ifdef JK_APR_POOL_DEBUG
     fprintf(stderr, "apr_calloc %p %d\n", p, size);
 #endif
     /* assert( p->_private != NULL ) */
@@ -113,7 +117,7 @@ static void *jk_pool_apr_calloc(jk_pool_t *p,
 static void *jk_pool_apr_alloc(jk_pool_t *p, 
                                size_t size)
 {
-#ifdef POOL_DEBUG
+#ifdef JK_APR_POOL_DEBUG
     fprintf(stderr, "apr_alloc %p %d\n", p, size);
 #endif
 
@@ -127,7 +131,7 @@ static void *jk_pool_apr_realloc(jk_pool_t *p,
 {
     void *rc;
 
-#ifdef POOL_DEBUG
+#ifdef JK_APR_POOL_DEBUG
     fprintf(stderr, "apr_realloc %p %d\n", p, sz);
 #endif
     if(!p || (!old && old_sz)) {
@@ -145,7 +149,7 @@ static void *jk_pool_apr_realloc(jk_pool_t *p,
 static void *jk_pool_apr_strdup(jk_pool_t *p, 
                                 const char *s)
 {
-#ifdef POOL_DEBUG
+#ifdef JK_APR_POOL_DEBUG
     fprintf(stderr, "apr_strdup %p %d\n", p, ((s==NULL)?-1: (int)strlen(s)));
 #endif
     return apr_pstrdup( (apr_pool_t *)p->_private, s);
