@@ -22,7 +22,7 @@
  ***************************************************************************/
 
 /*
- * mod_jk: keeps all servlet/jakarta related ramblings together.
+ * mod_jk2: keeps all servlet/jakarta related ramblings together.
  */
 
 
@@ -697,7 +697,7 @@ static int jk2_handler(request_rec *r)
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "mod_jk.handle() No worker for %s\n", r->uri); 
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-        return 500;
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     if( uriEnv->mbean->debug > 0 )
@@ -752,9 +752,16 @@ static int jk2_handler(request_rec *r)
     }
 
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                  "mod_jk.handler() Error connecting to tomcat %d\n", rc);
+                  "mod_jk.handler() Error connecting to tomcat %d, status %d\n", rc, s->status);
+                  
     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
-    return 500;
+
+    /* In case of error, if service() set a status code, send it back */
+    /* Else fallback to HTTP_INTERNAL_SERVER_ERROR (500). */
+    if (s->status != 0)
+        return s->status;
+    else
+        return HTTP_INTERNAL_SERVER_ERROR;  
 }
 
 /** Use the internal mod_jk mappings to find if this is a request for

@@ -326,7 +326,7 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
     }
 
     /* Initialize here the recovery POST buffer */
-	s->reco_buf = jk2_msg_ajp_create( env, s->pool, 0);
+    s->reco_buf = jk2_msg_ajp_create( env, s->pool, 0);
     s->reco_status = RECO_INITED;
     
     while(1) {
@@ -356,17 +356,21 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
                 s->status=lb->noWorkerCode; /* SERVICE_UNAVAILABLE is the default */
             }
 
-            if( s->status == 302 ) {
-                s->headers_out->put(env, s->headers_out,
-                                    "Location", lb->noWorkerMsg, NULL);
-                s->head(env, s );
-            } else {
-                s->headers_out->put(env, s->headers_out,
-                                    "Content-Type", "text/html", NULL);
-                s->head(env, s );
-                s->jkprintf(env, s, lb->noWorkerMsg );
-            }
-            
+            /* Don't touch headers if noErrorHeader set to TRUE, ie ErrorDocument in Apache via mod_alias */
+            if (! lb->noErrorHeader) {
+                /* XXX: I didn't understand the 302, since s->status is lb->hwBalanceErr or lb->noWorkerCode */
+                /* Both could be set in workers2.properties so ..... */ 
+                if( s->status == 302 ) {
+                    s->headers_out->put(env, s->headers_out,
+                                        "Location", lb->noWorkerMsg, NULL);
+                    s->head(env, s );
+                } else {
+                    s->headers_out->put(env, s->headers_out,
+                                        "Content-Type", "text/html", NULL);
+                    s->head(env, s );
+                    s->jkprintf(env, s, lb->noWorkerMsg );
+                }
+            }            
             s->afterRequest( env, s);
             lb_priv->error_time = time(NULL);
             return JK_ERR;
@@ -473,10 +477,10 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
 
 static char *jk2_worker_lb_multiValueInfo[]={"worker", NULL };
 static char *jk2_worker_lb_setAttributeInfo[]={"attempts", "stickySession", "recovery", "timeout",
-                                               "hwBalanceErr", "noWorkerMsg", "noWorkerCode", "worker", NULL };
+                                               "hwBalanceErr", "noErrorHeader", "noWorkerMsg", "noWorkerCode", "worker", NULL };
 
 static char *jk2_worker_lb_getAttributeInfo[]={"attempts", "stickySession", "recovery", "timeout",
-                                               "hwBalanceErr", "noWorkerMsg", "noWorkerCode", "workers", NULL };
+                                               "hwBalanceErr", "noErrorHeader", "noWorkerMsg", "noWorkerCode", "workers", NULL };
 
 
 static void * JK_METHOD jk2_lb_getAttribute(jk_env_t *env, jk_bean_t *mbean, 
@@ -494,6 +498,8 @@ static void * JK_METHOD jk2_lb_getAttribute(jk_env_t *env, jk_bean_t *mbean,
         return jk2_env_itoa( env, lb->noWorkerCode);
     } else if( strcmp( name, "hwBalanceErr") == 0 ) {
         return jk2_env_itoa( env, lb->hwBalanceErr);
+    } else if( strcmp( name, "noErrorHeader") == 0 ) {
+        return jk2_env_itoa( env, lb->noErrorHeader);
     } else if( strcmp( name, "timeout") == 0 ) {
         return jk2_env_itoa( env, lb_priv->timeout);
     } else if( strcmp( name, "recovery") == 0 ) {
@@ -534,6 +540,8 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         lb->noWorkerCode=atoi( value );
     } else if( strcmp( name, "hwBalanceErr") == 0 ) {
         lb->hwBalanceErr=atoi( value );
+    } else if( strcmp( name, "noErrorHeader") == 0 ) {
+        lb->noErrorHeader=atoi( value );
     } else if( strcmp( name, "timeout") == 0 ) {
         lb_priv->timeout=atoi( value );
     } else if( strcmp( name, "recovery") == 0 ) {
@@ -637,10 +645,10 @@ int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
     w->hwBalanceErr=0;
     w->noWorkerCode=503;
     w->noWorkerMsg=NO_WORKER_MSG;
-
+    /* Let Apache handle the error via ErrorDocument and mod_alias */
+    w->noErrorHeader=1;
     w->workerEnv=env->getByName( env, "workerEnv" );
     w->workerEnv->addWorker( env, w->workerEnv, w );
 
     return JK_OK;
 }
-
