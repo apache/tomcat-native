@@ -751,7 +751,7 @@ some informations about your Java Environment</td>
 
 <screen>
 <note>Apache 2.0 build with JNI support</note>
-<type>./configure --with-apxs=/opt/apache2/bin/apxs \</type>
+<type>./configure --with-apxs2=/opt/apache2/bin/apxs \</type>
 <typenext>--with-java-home=${JAVA_HOME} --with-java-platform=2 \</typenext>
 <typenext>--enable-jni</typenext><br/>
 </screen>
