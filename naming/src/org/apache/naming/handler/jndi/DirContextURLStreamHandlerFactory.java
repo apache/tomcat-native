@@ -61,9 +61,6 @@ package org.apache.naming.handler.jndi;
 
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
-import java.io.IOException;
-import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
 
 /**
  * Factory for Stream handlers to a JNDI directory context.

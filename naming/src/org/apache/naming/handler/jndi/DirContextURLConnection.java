@@ -59,19 +59,22 @@
 
 package org.apache.naming.handler.jndi;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.io.*;
 import java.security.Permission;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.Vector;
-import javax.naming.NamingException;
-import javax.naming.NamingEnumeration;
+
 import javax.naming.NameClassPair;
-import javax.naming.directory.DirContext;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
 
 import org.apache.naming.core.JndiPermission;
 import org.apache.naming.util.AttributeHelper;

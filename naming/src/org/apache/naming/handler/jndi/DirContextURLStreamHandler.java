@@ -59,12 +59,12 @@
 
 package org.apache.naming.handler.jndi;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.io.IOException;
 import java.util.Hashtable;
-import javax.naming.NamingException;
+
 import javax.naming.directory.DirContext;
 
 /**
