@@ -408,6 +408,27 @@ then
 fi
 
 dnl --------------------------------------------------------------------------
+dnl Parse APRVARS and discover what values we need
+dnl
+dnl New vars: APR_CFLAGS APR_CPPFLAGS APR_LDFLAGS APR_LIBS APR_INCLUDES
+dnl Upd vars: N/A
+dnl --------------------------------------------------------------------------
+LOCAL_HEADER([Finishing up])
+AC_MSG_CHECKING([for APR compilation flags])
+if ${TEST} ! -f "${APR_VARFIL}"
+then
+  AC_MSG_RESULT([error])
+  AC_MSG_ERROR([Cannot find required APRVARS file])
+fi
+AC_MSG_RESULT([ok])
+eval `${CAT} ${APR_VARFIL} | ${GREP} "EXTRA_" | ${SED} "s/EXTRA_/APR_/g"`
+AC_SUBST(APR_CFLAGS)
+AC_SUBST(APR_CPPFLAGS)
+AC_SUBST(APR_INCLUDES)
+AC_SUBST(APR_LDFLAGS)
+AC_SUBST(APR_LIBS)
+
+dnl --------------------------------------------------------------------------
 dnl Finish up
 dnl --------------------------------------------------------------------------
 AC_OUTPUT(Makefile Makedefs)
