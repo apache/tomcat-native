@@ -158,6 +158,7 @@ public class WarpPacket {
      */
     public void writeString(String string) {
         try {
+            if (string==null) string="";
             byte temp[]=string.getBytes("UTF-8");
             if ((this.size+temp.length+2)>MAX_LENGTH)
                 throw new ArrayIndexOutOfBoundsException("Too much data");
