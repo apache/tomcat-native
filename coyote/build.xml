@@ -189,6 +189,7 @@
 
   <target name="compile.shared"
    description="Compile shareable components">
+    <mkdir dir="${build.home}/classes"/>
     <javac  srcdir="${source.home}"
            destdir="${build.home}/classes"
              debug="${compile.debug}"
