@@ -100,7 +100,7 @@ static int	 is_mapread	= JK_FALSE;
 static int   iis5 = -1;
 
 static jk_workerEnv_t *workerEnv;
-
+static apr_pool_t *jk_globalPool;
 
 static char extension_uri[INTERNET_MAX_URL_LENGTH] = "/jakarta/isapi_redirector2.dll";
 static char worker_file[MAX_PATH * 2] = "";
@@ -570,7 +570,10 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
 static int init_jk(char *serverName)
 {
     int rc = JK_TRUE;  
-       
+    /* XXX this need review, works well because the initializations are done at the first request 
+       but in case inits should be splited another time using directly globalEnv here could lead 
+       to subtle problems.. 
+    */   
     jk_env_t *env = workerEnv->globalEnv;
     workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
                               workerEnv->pool->pstrdup( env, workerEnv->pool, server_root));
@@ -698,8 +701,6 @@ static int get_registry_config_parameter(HKEY hkey,
     return JK_TRUE;     
 }
 
-apr_pool_t *jk_globalPool;
-
 
 /** Basic initialization for jk2.
  */
@@ -728,13 +729,12 @@ static  jk_env_t*  jk2_create_workerEnv (void) {
     l = jkb->object;
     
     env->l=l;
-    env->soName=env->globalPool->calloc(env, env->globalPool, strlen(file_name)+1);
+    env->soName=env->globalPool->pstrdup(env, env->globalPool, file_name );
     
     if( env->soName == NULL ){
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating env->soName\n");
         return env;
     }
-    strcpy(env->soName,file_name);
     env->l->init(env,env->l);
 
     /* We should make it relative to JK_HOME or absolute path.

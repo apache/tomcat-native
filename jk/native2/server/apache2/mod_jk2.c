@@ -286,13 +286,12 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     env->l=l;
     
 #ifdef WIN32
-    env->soName=env->globalPool->calloc(env, env->globalPool, strlen(file_name)+1);
+    env->soName=env->globalPool->pstrdup(env, env->globalPool, file_name);
     
     if( env->soName == NULL ){
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating env->soName\n");
         return;
     }
-    strcpy(env->soName,file_name);
 #else 
     env->soName=NULL;
 #endif
