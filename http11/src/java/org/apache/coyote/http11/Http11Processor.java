@@ -169,6 +169,12 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * HTTP/0.9 flag.
+     */
+    protected boolean http09 = false;
+
+
+    /**
      * Content delimitator for the request (if false, the connection will
      * be closed at the end of the request).
      */
@@ -431,6 +437,7 @@ public class Http11Processor implements Processor, ActionHook {
     protected void prepareRequest() {
 
         http11 = true;
+        http09 = false;
         contentDelimitation = false;
 
         MessageBytes protocolMB = request.protocol();
@@ -441,6 +448,7 @@ public class Http11Processor implements Processor, ActionHook {
             keepAlive = false;
         } else if (protocolMB.equals("")) {
             // HTTP/0.9
+            http09 = true;
             http11 = false;
             keepAlive = false;
         } else {
@@ -498,14 +506,9 @@ public class Http11Processor implements Processor, ActionHook {
 
         // Parse content-length header
         int contentLength = request.getContentLength();
-        if (contentLength > 0) {
+        if (contentLength >= 0) {
             inputBuffer.addActiveFilter
                 (inputFilters[Constants.IDENTITY_FILTER]);
-            contentDelimitation = true;
-        } else if (contentLength == 0) {
-            // No content to read
-            inputBuffer.addActiveFilter
-                (inputFilters[Constants.VOID_FILTER]);
             contentDelimitation = true;
         }
 
@@ -550,12 +553,6 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         if (!contentDelimitation) {
-            /*
-            // If method is GET or HEAD, prevent from reading any content
-              if ((methodMB.equals("GET"))
-              || (methodMB.equals("HEAD"))
-              || (methodMB.equals("TRACE"))) {
-            */
             // If there's no content length and we're using HTTP/1.1, assume
             // the client is not broken and didn't send a body
             if (http11) {
@@ -577,18 +574,12 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected void prepareResponse() {
 
-        boolean http09 = false;
         boolean entityBody = true;
         contentDelimitation = false;
 
         OutputFilter[] outputFilters = outputBuffer.getFilters();
 
-        MessageBytes protocolMB = request.protocol();
-        if (protocolMB.equals(Constants.HTTP_11)) {
-            http11 = true;
-        } else if (protocolMB.equals(Constants.HTTP_10)) {
-            http11 = false;
-        } else if (protocolMB.equals("")) {
+        if (http09 == true) {
             // HTTP/0.9
             outputBuffer.addActiveFilter
                 (outputFilters[Constants.IDENTITY_FILTER]);

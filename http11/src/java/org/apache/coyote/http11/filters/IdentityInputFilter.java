@@ -151,9 +151,9 @@ public class IdentityInputFilter implements InputFilter {
     public int doRead(ByteChunk chunk)
         throws IOException {
 
-        int result = 0;
+        int result = -1;
 
-        if (contentLength > 0) {
+        if (contentLength >= 0) {
             if (remaining > 0) {
                 int nRead = buffer.doRead(chunk);
                 if (nRead > remaining) {
@@ -173,8 +173,6 @@ public class IdentityInputFilter implements InputFilter {
                 chunk.recycle();
                 result = -1;
             }
-        } else {
-            result = buffer.doRead(chunk);
         }
 
         return result;

@@ -141,9 +141,9 @@ public class IdentityOutputFilter implements OutputFilter {
     public int doWrite(ByteChunk chunk)
         throws IOException {
 
-        int result = 0;
+        int result = -1;
 
-        if (contentLength > 0) {
+        if (contentLength >= 0) {
             if (remaining > 0) {
                 result = chunk.getLength();
                 if (result > remaining) {
@@ -164,6 +164,10 @@ public class IdentityOutputFilter implements OutputFilter {
                 chunk.recycle();
                 result = -1;
             }
+        } else {
+            // If no content length was set, just write the bytes
+            buffer.doWrite(chunk);
+            result = chunk.getLength();
         }
 
         return result;

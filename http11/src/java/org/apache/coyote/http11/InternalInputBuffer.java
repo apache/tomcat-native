@@ -506,7 +506,11 @@ public class InternalInputBuffer implements InputBuffer {
 
         }
 
-        request.protocol().setBytes(buf, start, end - start);
+        if ((end - start) > 0) {
+            request.protocol().setBytes(buf, start, end - start);
+        } else {
+            request.protocol().setString("");
+        }
 
     }
 
