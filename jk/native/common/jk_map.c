@@ -173,7 +173,7 @@ int jk_map_get_bool(jk_map_t *m, const char *name, int def)
             rv = 1;
         }
     }
-    return rc;
+    return rv;
 }
 
 char *jk_map_get_string(jk_map_t *m, const char *name, const char *def)
