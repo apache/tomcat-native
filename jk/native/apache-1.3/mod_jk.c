@@ -224,6 +224,10 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 static int JK_METHOD ws_write(jk_ws_service_t *s,
                               const void *b,
                               unsigned l);
+/* srevilak - new function prototypes */
+static void jk_server_cleanup(void *data);
+static void jk_generic_cleanup(server_rec *s);
+
 
 
 /* ====================================================================== */
@@ -1765,6 +1769,10 @@ static void jk_init(server_rec *s, ap_pool *p)
             main_log = conf->log;
         }
     }
+
+    /* SREVILAK -- register cleanup handler to clear resources on restart,
+     * to make sure log file gets closed in the parent process  */
+    ap_register_cleanup(p, s, jk_server_cleanup, ap_null_cleanup);
     
 /*
 { int i;
@@ -1970,7 +1978,25 @@ static int jk_fixups(request_rec *r)
 
 static void exit_handler (server_rec *s, ap_pool *p)
 {
-	server_rec *tmp = s;
+    /* srevilak - refactor cleanup body to jk_generic_cleanup() */
+    jk_generic_cleanup(s);
+}
+ 
+
+/** srevilak -- registered as a cleanup handler in jk_init */
+static void jk_server_cleanup(void *data) 
+{
+    jk_generic_cleanup((server_rec *) data);
+}
+
+
+/** BEGIN SREVILAK 
+ * body taken from exit_handler()
+ */
+static void jk_generic_cleanup(server_rec *s) 
+{
+
+    server_rec *tmp = s;
 
 	/* loop through all available servers to clean up all configuration
 	 * records we've created
@@ -1993,6 +2019,8 @@ static void exit_handler (server_rec *s, ap_pool *p)
         tmp = tmp->next;
     }
 }
+/** END SREVILAK **/
+
 
 static const handler_rec jk_handlers[] =
 {
