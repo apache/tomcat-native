@@ -268,26 +268,25 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
     }
     
 	public void setMinSpareThreads( int i ) {
-		if( log.isDebugEnabled()) log.debug("Setting minSpareThreads " + i);
-			tp.setMinSpareThreads(i);
+        if( log.isDebugEnabled()) log.debug("Setting minSpareThreads " + i);
+            tp.setMinSpareThreads(i);
 	}
 
 	public void setMaxSpareThreads( int i ) {
-		if( log.isDebugEnabled()) log.debug("Setting maxSpareThreads " + i);
-			tp.setMaxSpareThreads(i);
+        if( log.isDebugEnabled()) log.debug("Setting maxSpareThreads " + i);
+            tp.setMaxSpareThreads(i);
 	}
-
 
     public int getMaxThreads() {
         return tp.getMaxThreads();   
     }
     
 	public int getMinSpareThreads() {
-		return tp.getMinSpareThreads();   
+        return tp.getMinSpareThreads();   
 	}
 
 	public int getMaxSpareThreads() {
-		return tp.getMaxSpareThreads();   
+        return tp.getMaxSpareThreads();   
 	}
 
     public void setBacklog(int i) {

@@ -502,8 +502,8 @@ public class JkMain implements MBeanRegistration
     static {
         replacements.put("port","channelSocket.port");
         replacements.put("maxThreads", "channelSocket.maxThreads");   
-		replacements.put("minSpareThreads", "channelSocket.minSpareThreads");   
-		replacements.put("maxSpareThreads", "channelSocket.maxSpareThreads");   
+        replacements.put("minSpareThreads", "channelSocket.minSpareThreads");   
+        replacements.put("maxSpareThreads", "channelSocket.maxSpareThreads");   
         replacements.put("backlog", "channelSocket.backlog");   
         replacements.put("tcpNoDelay", "channelSocket.tcpNoDelay");
         replacements.put("soTimeout", "channelSocket.soTimeout");
