@@ -165,8 +165,9 @@ public class ThreadPool  {
      *  more than Thread.MAX_PRIORITY 
      */
     public synchronized void setThreadPriority(int threadPriority) {
-      System.out.println(getClass().getName() +
-	": setPriority(" + threadPriority + "): here.");
+        if(log.isDebugEnabled())
+            log.debug(getClass().getName() +
+                      ": setPriority(" + threadPriority + "): here.");
 
       if (threadPriority < Thread.MIN_PRIORITY) {
         throw new IllegalArgumentException("new priority < MIN_PRIORITY");
