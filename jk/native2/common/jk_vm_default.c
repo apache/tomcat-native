@@ -184,6 +184,24 @@ static void jk2_print_signals( sigset_t *sset) {
 }
 #endif
 
+/* JVM hooks */
+static int jk2_jni_error_signaled = JK_FALSE;
+static int jk2_jni_error_code = 0;
+static int jk2_jni_abort_signaled = JK_FALSE;
+
+static void jk2_jni_error_hook(int code)
+{
+    jk2_jni_error_signaled = JK_TRUE;
+    jk2_jni_error_code = code;
+    
+    fprintf(stderr, "JVM error hook called %d\n", code);
+}
+
+static void jk2_jni_abort_hook()
+{
+    jk2_jni_abort_signaled = JK_TRUE;    
+    fprintf(stderr, "JVM abort hook\n");
+} 
 
 /** Load the VM. Must be called after init.
  */
@@ -400,9 +418,33 @@ static char* jk2_vm_guessJvmDll(jk_env_t *env, jk_map_t *props,
                                            (char *)p->pstrdup( env, p, *current ) );
 
         if( jvm!=NULL && jk2_file_exists(env, jvm)) {
+            char *ldlib;
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "jni.guessJvmDll() %s\n", jvm);
-            return jvm;
+                         "jni.guessJvmDll() trying %s\n", jvm);
+            /* Check if the LD_LIBRARY_PATH points to the discovered jvm.
+             * XXX only tested on Linux.
+             */
+            ldlib = getenv("LD_LIBRARY_PATH");
+            if (ldlib && strlen(ldlib)) {
+                char *token;
+                
+                token = strtok(ldlib, ":");
+                while (token != NULL) {
+                    if (strncmp(token, jvm, strlen(token)) == 0) {
+                        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                                      "jni.guessJvmDll() found %s in %s.\n", jvm, token);
+                        return jvm;
+                    } 
+                    token = strtok(NULL, ":");                   
+                }
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "jni.guessJvmDll() could not find %s in the LD_LIBRARY_PATH\n",
+                              jvm);
+                return NULL;                                    
+            }
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "jni.guessJvmDll() LD_LIBRARY_PATH environment var is not set\n");
+            return NULL;                                
         }
 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -485,8 +527,6 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
         return JK_ERR;
     }
 
-    vm_args.version = JNI_VERSION_1_2;
-    vm_args.options = options;
     for (classn = 0; classn < jkvm->nClasspath; classn++)
         classl += strlen(jkvm->classpath[classn]);
     if (classl) {
@@ -513,9 +553,16 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
                           "vm.openJvm2() Classpath: %s\n", classpath);
         options[optn++].optionString = classpath;
     }
-
-    vm_args.nOptions = optn;
     
+    /* Set the abort and exit hooks */
+    options[optn].optionString = "exit";
+    options[optn++].extraInfo = jk2_jni_error_hook;
+    options[optn].optionString = "abort";
+    options[optn++].extraInfo = jk2_jni_abort_hook;
+    
+    vm_args.version = JNI_VERSION_1_2;
+    vm_args.options = options;
+    vm_args.nOptions = optn;    
     vm_args.ignoreUnrecognized = JNI_TRUE;
 
     err=jni_create_java_vm(&jvm, &penv, &vm_args);
