@@ -26,14 +26,9 @@ public class TomcatStarter implements Runnable {
         System.err.println("TomcatStarter: main()");
         
         try {
-            // Destroy out, it is lost since the server is detached
-            // err goes to error.log
-            String out="/tmp/out";
-            String err="/tmp/err";
-            PrintStream outS=new PrintStream(new FileOutputStream(out));
-            System.setOut(outS);
-            PrintStream errS=new PrintStream(new FileOutputStream(err));
-            System.setErr(errS);
+            System.setOut( System.err );
+            System.err.println("TomcatStarter: err");
+            System.out.println("TomcatStarter: out");
 
             // Find the class
             Class c=null;
