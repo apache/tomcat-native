@@ -140,6 +140,10 @@ public class WarpConfigurationHandler {
                     return(true);
                 }
 
+                case Constants.TYPE_DISCONNECT: {
+                    return(false);
+                }
+
                 default: {
                     logger.log("Invalid packet with type "+packet.getType());
                     return(false);
