@@ -450,7 +450,10 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
              */
             jk_worker_t *first=lb->lb_workers[0];
             lb->lb_workers[0]=w;
-            lb->lb_workers[currentWorker]=first;
+            /* Only do the exchange if the worker is not the first */
+            if( currentWorker > 0 ) {
+                lb->lb_workers[currentWorker]=first;
+            }
         }
         
 
