@@ -592,26 +592,29 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
                                       jk_bean_t *result,
                                       const char *type, const char *name)
 {
-    jk_channel_t *_this=result->object;
+    jk_channel_t *ch=result->object;
     
-    _this=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
+    ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
-    _this->recv= jk2_channel_jni_recv;
-    _this->send= jk2_channel_jni_send; 
-    _this->init= jk2_channel_jni_init; 
-    _this->open= jk2_channel_jni_open; 
-    _this->close= jk2_channel_jni_close; 
+    ch->recv= jk2_channel_jni_recv;
+    ch->send= jk2_channel_jni_send; 
+    ch->init= jk2_channel_jni_init; 
+    ch->open= jk2_channel_jni_open; 
+    ch->close= jk2_channel_jni_close; 
 
-    _this->beforeRequest= jk2_channel_jni_beforeRequest;
-    _this->afterRequest= jk2_channel_jni_afterRequest;
+    ch->beforeRequest= jk2_channel_jni_beforeRequest;
+    ch->afterRequest= jk2_channel_jni_afterRequest;
     
-    _this->_privatePtr=(jk_channel_jni_private_t *)pool->calloc(env, pool,
+    ch->_privatePtr=(jk_channel_jni_private_t *)pool->calloc(env, pool,
                     sizeof(jk_channel_jni_private_t));
-    _this->is_stream=JK_FALSE;
+    ch->is_stream=JK_FALSE;
     
     result->setAttribute= jk2_channel_jni_setProperty;
-    _this->mbean=result;
-    result->object= _this;
-    
+    ch->mbean=result;
+    result->object= ch;
+
+    ch->workerEnv=env->getByName( env, "workerEnv" );
+    ch->workerEnv->addChannel( env, ch->workerEnv, ch );
+
     return JK_TRUE;
 }

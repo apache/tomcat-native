@@ -162,7 +162,7 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
                 socketInfo->port=atoi( portIdx );
             }
             if( socketInfo->host==NULL ) {
-                socketInfo->host=ch->pool->calloc( env, ch->pool, strlen( localName ) + 1 );
+                socketInfo->host=ch->mbean->pool->calloc( env, ch->mbean->pool, strlen( localName ) + 1 );
                 if( portIdx==NULL ) {
                     strcpy( socketInfo->host, localName );
                 } else {
@@ -185,26 +185,8 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
                       "can't resolve %s:%d errno=%d\n", socketInfo->host, socketInfo->port, errno );
     }
 
-    if( ch->worker == NULL ) {
-        jk_bean_t *jkb;
-        
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel_socket.init(): create default worker for %s\n", ch->mbean->name );
-        
-        jkb=env->createBean2(env, ch->pool, "worker.ajp13", ch->mbean->localName );
-        ch->worker=jkb->object;
-        ch->worker->channelName=ch->mbean->name;
-        ch->worker->channel=ch;
-
-        /* XXX Set additional parameters - use defaults otherwise */
-
-        ch->worker->init( env, ch->worker);
-    }
-    
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_socket.init(): %s:%d for %s\n", socketInfo->host,
-                  socketInfo->port, ch->worker->mbean->name );
-
+                  "channel_socket.init(): %s:%d \n", socketInfo->host, socketInfo->port );
     
     return rc;
 }
@@ -502,7 +484,6 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
     ch->_privatePtr= (jk_channel_socket_private_t *)
 	pool->calloc( env, pool, sizeof( jk_channel_socket_private_t));
 
-    ch->pool=pool;
     ch->recv= jk2_channel_socket_recv; 
     ch->send= jk2_channel_socket_send; 
     ch->init= jk2_channel_socket_init; 
@@ -511,10 +492,12 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
 
     ch->is_stream=JK_TRUE;
 
-
     result->setAttribute= jk2_channel_socket_setAttribute; 
     result->object= ch;
     ch->mbean=result;
-    
+
+    ch->workerEnv=env->getByName( env, "workerEnv" );
+    ch->workerEnv->addChannel( env, ch->workerEnv, ch );
+
     return JK_TRUE;
 }
