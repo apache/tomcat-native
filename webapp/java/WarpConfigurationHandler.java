@@ -65,6 +65,7 @@ import org.apache.catalina.Context;
 import org.apache.catalina.Deployer;
 import org.apache.catalina.Host;
 import org.apache.catalina.core.StandardHost;
+import org.apache.catalina.core.StandardContext;
 
 public class WarpConfigurationHandler {
 
@@ -76,11 +77,10 @@ public class WarpConfigurationHandler {
         super();
     }
 
-    public boolean handle(WarpConnection connection)
+    public boolean handle(WarpConnection connection, WarpPacket packet)
     throws IOException {
         WarpLogger logger=new WarpLogger(this);
         logger.setContainer(connection.getConnector().getContainer());
-        WarpPacket packet=new WarpPacket();
 
         // Prepare the Welcome packet
         packet.setType(Constants.TYPE_CONF_WELCOME);
@@ -134,9 +134,6 @@ public class WarpConfigurationHandler {
                 }
 
                 case Constants.TYPE_CONF_DONE: {
-                    packet.reset();
-                    packet.setType(Constants.TYPE_CONF_PROCEED);
-                    connection.send(packet);
                     return(true);
                 }
 
@@ -145,7 +142,12 @@ public class WarpConfigurationHandler {
                 }
 
                 default: {
-                    logger.log("Invalid packet with type "+packet.getType());
+                    String msg="Invalid packet with type "+packet.getType();
+                    logger.log(msg);
+                    packet.reset();
+                    packet.setType(Constants.TYPE_FATAL);
+                    packet.writeString(msg);
+                    connection.send(packet);
                     return(false);
                 }
             }
@@ -162,11 +164,13 @@ public class WarpConfigurationHandler {
 
         Host host=(Host)container.findChild(hostName);
         if (host==null) {
-            host=new StandardHost();
-            host.setName(hostName);
-            host.setParent(container);
-            host.setAppBase(connection.getConnector().getAppBase());
-            container.addChild(host);
+            WarpHost whost=new WarpHost();
+            whost.setName(hostName);
+            whost.setParent(container);
+            whost.setAppBase(connection.getConnector().getAppBase());
+            whost.setDebug(connection.getConnector().getDebug());
+            container.addChild(whost);
+            host=whost;
             if (Constants.DEBUG)
                 logger.debug("Created new host "+host.getName());
         } else if (Constants.DEBUG) {
@@ -207,8 +211,10 @@ public class WarpConfigurationHandler {
                 logger.debug("Application URL \""+url.toString()+"\"");
 
             deployer.install(applPath, url);
-            return(deployer.findDeployedApp(applPath));
-
+            StandardContext context=null;
+            context=(StandardContext)deployer.findDeployedApp(applPath);
+            context.setDebug(connection.getConnector().getDebug());
+            return(context);
         } else {
             if (Constants.DEBUG)
                 logger.debug("Found application for \""+appl.getName()+"\"");
