@@ -27,6 +27,7 @@
 #include "jk_pool.h"
 #include "jk_service.h"
 #include "jk_worker.h"
+#include "jk_shm.h"
 
 #include "nsapi.h"
 
@@ -212,6 +213,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
     char *worker_prp_file = pblock_findval(JK_WORKER_FILE_TAG, pb);
     char *log_level_str = pblock_findval(JK_LOG_LEVEL_TAG, pb);
     char *log_file = pblock_findval(JK_LOG_FILE_TAG, pb);
+    char *shm_file = pblock_findval(JK_SHM_FILE_TAG, pb);
 
     int rc = REQ_ABORTED;
     jk_map_t *init_map;
@@ -231,7 +233,8 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
                              jk_parse_log_level(log_level_str))) {
         logger = NULL;
     }
-
+    
+    jk_shm_open(shm_file);
     if (jk_map_alloc(&init_map)) {
         if (jk_map_read_properties(init_map, worker_prp_file)) {
             int sleep_cnt;
