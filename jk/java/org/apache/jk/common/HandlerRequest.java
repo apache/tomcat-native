@@ -369,7 +369,7 @@ public class HandlerRequest extends JkHandler
             }
 
             // XXX add isSameAddress check
-            Channel ch=ep.getChannel();
+            JkHandler ch=ep.getSource();
             if( ch instanceof ChannelSocket ) {
                 if( ! ((ChannelSocket)ch).isSameAddress(ep) ) {
                     log.error("Shutdown request not from 'same address' ");

@@ -126,7 +126,7 @@ public class HandlerDispatch extends JkHandler
         throws IOException
     {
         int type=msg.peekByte();
-        msg.setTag( type );
+        ep.setType( type );
         
         if( type > handlers.length ||
             handlers[type]==null ) {

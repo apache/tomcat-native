@@ -109,8 +109,9 @@ public class WorkerDummy extends JkHandler
         msg.appendBytes(null);
 
         msg.appendInt(0);
-        
-        ep.getChannel().send( msg, ep );
+
+        ep.setType( JkHandler.HANDLE_SEND_PACKET );
+        ep.getSource().invoke( msg, ep );
         //         msg.dump("out:" );
 
         msg.reset();
@@ -119,13 +120,13 @@ public class WorkerDummy extends JkHandler
         msg.appendBytes( body );
 
         
-        ep.getChannel().send(msg, ep);
+        ep.getSource().invoke(msg, ep);
 
         msg.reset();
         msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
         msg.appendInt( 1 );
         
-        ep.getChannel().send(msg, ep );
+        ep.getSource().invoke(msg, ep );
         return OK;
     }
     

@@ -273,7 +273,7 @@ public class JkInputStream extends InputStream {
     public int doRead(ByteChunk responseChunk ) throws IOException {
         log.info( "JkInputStream: " + pos + " " + blen + " " + available );
         if( blen == pos ) {
-            receive();
+            refillReadBuffer();
         }
         responseChunk.setBytes( bodyBuff, pos, blen-pos );
         return blen - pos;
@@ -285,7 +285,8 @@ public class JkInputStream extends InputStream {
      */
     public boolean receive() throws IOException
     {
-        int err = mc.getChannel().receive(bodyMsg, mc);
+        mc.setType( JkHandler.HANDLE_RECEIVE_PACKET );
+        int err = mc.getSource().invoke(bodyMsg, mc);
         if(err < 0) {
 	    throw new IOException();
 	}
@@ -332,7 +333,8 @@ public class JkInputStream extends InputStream {
 	if( log.isDebugEnabled() )
             log.debug("refillReadBuffer " + Thread.currentThread());
 
-	mc.getChannel().send(bodyMsg, mc);
+        mc.setType( JkHandler.HANDLE_SEND_PACKET );
+	mc.getSource().invoke(bodyMsg, mc);
 	
         return receive();
     }
