@@ -100,7 +100,11 @@ public class JkMain
     /** Set a name/value as a jk2 property
      */
     public void setProperty( String n, String v ) {
-        props.put( n, v );
+        if( "jkHome".equals( n ) ) {
+            setJkHome( v );
+        } else {
+            props.put( n, v );
+        }
     }
 
     /**
@@ -138,6 +142,7 @@ public class JkMain
             // XXX use IntrospectionUtil to find myself
             this.guessHome();
         }
+        log.info("Jk2 home " + home );
         if( home != null ) {
             File hF=new File(home);
             File conf=new File( home, "conf" );
@@ -147,6 +152,7 @@ public class JkMain
             File propsF=new File( conf, "jk2.properties" );
             
             if( propsF.exists() ) {
+                log.info("Jk2 conf " + propsF );
                 setPropertiesFile( propsF.getAbsolutePath());
             } else {
                 if( log.isWarnEnabled() )

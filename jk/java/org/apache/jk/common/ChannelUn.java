@@ -82,6 +82,7 @@ public class ChannelUn extends Channel {
     String file;
     ThreadPool tp=new ThreadPool();
     String jkHome;
+    String aprHome;
 
     /* ==================== Tcp socket options ==================== */
 
@@ -98,6 +99,12 @@ public class ChannelUn extends Channel {
      */
     public void setJkHome( String s ) {
         jkHome=s;
+    }
+
+    /** Directory where APR and jni_connect are installed.
+     */
+    public void setAprHome( String s ) {
+        aprHome=s;
     }
 
     /* ==================== ==================== */
@@ -120,14 +127,22 @@ public class ChannelUn extends Channel {
 
     public void init() throws IOException {
         apr=new AprImpl();
-        File f=new File( jkHome );
-        File aprBase=new File( jkHome, "/WEB-INF/jk2/jni" );
-        apr.setBaseDir( aprBase.getAbsolutePath() );
-        apr.loadNative();
+        if( aprHome==null && jkHome != null ) {
+            File f=new File( jkHome );
+            File aprBase=new File( jkHome, "jk2/jni" );
+            if( aprBase.exists() ) {
+                aprHome=aprBase.getAbsolutePath();
+            }
+        }
+        if( aprHome != null ) {
+            apr.setBaseDir( aprHome );
+        }
 
+        apr.loadNative();
+            
         apr.initialize();
+        if( log.isDebugEnabled() ) log.debug( "Creating pool " + gPool );
         gPool=apr.poolCreate( 0 );
-        if( log.isDebugEnabled() ) log.debug( "Create pool " + gPool );
 
         File socketFile=new File( file );
         if( socketFile.exists() ) {

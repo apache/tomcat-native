@@ -10,6 +10,7 @@ import java.io.*;
 public class AprImpl {
     String baseDir;
     String aprHome;
+    String soExt="so";
     
     /** Initialize APR
      */
@@ -51,7 +52,11 @@ public class AprImpl {
     public void setBaseDir(String s) {
         baseDir=s;
     }
-
+    
+    public void setSoExt(String s ) {
+        soExt=s;
+    }
+    
     // XXX maybe install the jni lib in apr-home ?
     public void setAprHome( String s ) {
         aprHome=s;
@@ -71,16 +76,27 @@ public class AprImpl {
     public void loadNative() {
         if( aprHome==null )
             aprHome=baseDir;
-        File dir=new File(aprHome);
-        // XXX platform independent, etc...
-        File apr=new File( dir, "libapr.so");
-
-        loadNative( apr.getAbsolutePath() );
-
-        dir=new File(baseDir);
-        File jniConnect=new File( dir, "jni_connect.so");
-        
-        loadNative( jniConnect.getAbsolutePath() );
+        if( aprHome==null ) {
+            // Use load()
+            try {
+                System.loadLibrary( "apr" );
+                System.loadLibrary( "jni_connect" );
+            } catch( Throwable ex ) {
+                ok=false;
+                ex.printStackTrace();
+            }
+        } else {
+            File dir=new File(aprHome);
+            // XXX platform independent, etc...
+            File apr=new File( dir, "libapr." + soExt );
+            
+            loadNative( apr.getAbsolutePath() );
+            
+            dir=new File(baseDir);
+            File jniConnect=new File( dir, "jni_connect." + soExt );
+            
+            loadNative( jniConnect.getAbsolutePath() );
+        }
     }
 
     boolean ok=true;

@@ -73,7 +73,7 @@ public abstract class JkHandler {
     public static final int LAST=1;
     public static final int ERROR=2;
 
-    private Properties properties=new Properties();
+    protected Properties properties=new Properties();
     protected WorkerEnv wEnv;
     protected JkHandler next;
     protected String nextName=null;

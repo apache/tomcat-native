@@ -93,12 +93,21 @@ public class JkCoyoteHandler extends JkHandler implements
     Adapter adapter;
     protected JkMain jkMain=new JkMain();
     
+    public void setProperty( String name, String value ) {
+        log.info("setProperty " + name + " " + value );
+        jkMain.setProperty( name, value );
+        properties.put( name, value );
+    }
+
+    public String getProperty( String name ) {
+        return properties.getProperty(name) ;
+    }
+
     /** Pass config info
      */
     public void setAttribute( String name, Object value ) {
-        log.info("setAttribute " + name + " " + value );
         if( value instanceof String )
-            jkMain.setProperty( name, (String)value );
+            this.setProperty( name, (String)value );
     }
     
     public Object getAttribute( String name ) {
