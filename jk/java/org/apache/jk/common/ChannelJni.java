@@ -111,6 +111,25 @@ public class ChannelJni extends JniHandler {
         throws IOException
     {
         Msg sentResponse=(Msg)ep.getNote( receivedNote );
+        ep.setNote( receivedNote, null );
+
+        if( sentResponse == null ) {
+            if( log.isDebugEnabled() )
+                log.debug("No send() prior to receive(), no data buffer");
+            // No sent() was done prior to receive.
+            msg.reset();
+            return 0;
+        }
+        
+        sentResponse.processHeader();
+
+        if( log.isTraceEnabled() )
+            sentResponse.dump("received response ");
+
+        if( msg != sentResponse ) {
+            log.error( "Error, in JNI mode the msg used for receive() must be identical with the one used for send()");
+        }
+        
         return 0;
     }
 
@@ -121,8 +140,15 @@ public class ChannelJni extends JniHandler {
     public int send( Msg msg, MsgContext ep )
         throws IOException
     {
+        if( log.isDebugEnabled() ) log.debug("ChannelJni.send: "  +  msg );
+
         int rc=super.nativeDispatch( msg, ep, JK_HANDLE_JNI_DISPATCH, 0);
+
+        // nativeDispatch will put the response in the same buffer.
+        // Next receive() will just get it from there. Very tricky to do
+        // things in one thread instead of 2.
         ep.setNote( receivedNote, msg );
+        
         return rc;
     }
 
@@ -146,23 +172,28 @@ public class ChannelJni extends JniHandler {
      *  if anyone asks for it - same lazy behavior as in 3.3 ).
      */
     public  int invoke(Msg msg, MsgContext ep )  throws IOException {
-        if( log.isDebugEnabled() ) log.debug("ChannelJni.invoke: "  + ep );
-
         if( apr==null ) return -1;
         
         long xEnv=ep.getJniEnv();
         long cEndpointP=ep.getJniContext();
 
         int type=ep.getType();
+        if( log.isDebugEnabled() ) log.debug("ChannelJni.invoke: "  + ep + " " + type);
 
         switch( type ) {
         case JkHandler.HANDLE_RECEIVE_PACKET:
             return receive( msg, ep );
         case JkHandler.HANDLE_SEND_PACKET:
+            ep.setNote( receivedNote, null );
             return send( msg, ep );
         case JkHandler.HANDLE_FLUSH:
+            ep.setNote( receivedNote, null );
             return 0;
         }
+
+        // Reset receivedNote. It'll be visible only after a SEND and before a receive.
+        ep.setNote( receivedNote, null );
+
         // Default is FORWARD - called from C 
         try {
             // first, we need to get an endpoint. It should be
@@ -171,7 +202,8 @@ public class ChannelJni extends JniHandler {
             
             // The endpoint will store the message pt.
             msg.processHeader();
-            //            if( log.isInfoEnabled() ) msg.dump("Incoming msg ");
+
+            if( log.isTraceEnabled() ) msg.dump("Incoming msg ");
 
             int status= next.invoke(  msg, ep );
             
