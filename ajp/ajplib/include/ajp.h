@@ -264,7 +264,7 @@ apr_status_t ajp_msg_get_bytes(ajp_msg_t *msg, apr_byte_t **rvalue,
  * @param rmsg      Pointer to newly created AJP message
  * @return          APR_SUCCESS or error
  */
-apr_status_t ajp_msg_create(apr_pool_t *pool, ajp_msg_t *rmsg);
+apr_status_t ajp_msg_create(apr_pool_t *pool, ajp_msg_t **rmsg);
 
 /**
  * Recopy an AJP Message to another

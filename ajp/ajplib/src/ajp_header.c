@@ -661,7 +661,7 @@ apr_status_t ajp_send_header(apr_socket_t *sock,
     ajp_msg_t *msg;
     apr_status_t rc;
 
-    rc = ajp_msg_create(r->pool,msg);
+    rc = ajp_msg_create(r->pool,&msg);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_send_header: ajp_msg_create failed");
