@@ -737,7 +737,7 @@ static void jk_post_config(apr_pool_t *pconf,
 
             if(map_alloc(&init_map)) {
                 if(map_read_properties(init_map, conf->worker_file)) {
-			ap_add_version_component(pconf, "mod_jk");
+			ap_add_version_component(pconf, JK_EXPOSED_VERSION);
                         if(wc_open(init_map, conf->log)) {
                             return;
                         }            
