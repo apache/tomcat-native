@@ -101,7 +101,7 @@ public class CoyoteInterceptor2 extends BaseInterceptor
     Hashtable attributes=new Hashtable();
     
     public void setAttribute( String prop, Object value) {
-	attributes.put( prop, value );
+	attributes.put( translateAttributeName(prop), value );
     }
 
 
@@ -253,5 +253,27 @@ public class CoyoteInterceptor2 extends BaseInterceptor
 	    SSLSupport.CERTIFICATE_KEY.equals(key)     ||
 	    SSLSupport.SESSION_ID_KEY.equals(key);
     }
+
+    private String translateAttributeName(String name) {
+         if ("clientAuth".equals(name)) {
+             return "clientauth";
+         } else if ("keystoreFile".equals(name)) {
+             return "keystore";
+         } else if ("randomFile".equals(name)) {
+             return "randomfile";
+         } else if ("rootFile".equals(name)) {
+             return "rootfile";
+         } else if ("keystorePass".equals(name)) {
+             return "keypass";
+         } else if ("keystoreType".equals(name)) {
+             return "keytype";
+         } else if ("sslProtocol".equals(name)) {
+             return "protocol";
+         } else if ("sslProtocols".equals(name)) {
+             return "protocols";
+         }
+         return name;
+    }
+ 
 }
 
