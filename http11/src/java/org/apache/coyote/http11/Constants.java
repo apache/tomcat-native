@@ -239,7 +239,7 @@ public final class Constants {
     /**
      * Ack string when pipelining HTTP requests.
      */
-    public static final byte[] ACK =
+    public static final byte[] ACK_BYTES =
         "HTTP/1.1 100 Continue\r\n\r\n".getBytes();
 
 

@@ -246,6 +246,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     private String reportedname;
     private int socketCloseDelay=-1;
     private boolean disableUploadTimeout = true;
+    private int socketBuffer = 1500;
     private Adapter adapter;
     private Http11ConnectionHandler cHandler;
 
@@ -316,6 +317,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 
     public void setDisableUploadTimeout(boolean isDisabled) {
         disableUploadTimeout = isDisabled;
+    }
+
+    public void setSocketBuffer(int valueI) {
+        socketBuffer = valueI;
     }
 
     public void setCompression(String valueS) {
@@ -463,6 +468,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             processor.setTimeout( proto.timeout );
             processor.setDisableUploadTimeout( proto.disableUploadTimeout );
             processor.setCompression( proto.compression );
+            processor.setSocketBuffer( proto.socketBuffer );
 
             thData[Http11Protocol.THREAD_DATA_PROCESSOR]=processor;
             

@@ -77,7 +77,8 @@ import org.apache.coyote.Response;
  * 
  * @author <a href="mailto:remm@apache.org">Remy Maucherat</a>
  */
-public class InternalOutputBuffer implements OutputBuffer {
+public class InternalOutputBuffer 
+    implements OutputBuffer, ByteChunk.ByteOutputChannel {
 
 
     // -------------------------------------------------------------- Constants
@@ -110,6 +111,9 @@ public class InternalOutputBuffer implements OutputBuffer {
         filterLibrary = new OutputFilter[0];
         activeFilters = new OutputFilter[0];
         lastActiveFilter = -1;
+
+        socketBuffer = new ByteChunk();
+        socketBuffer.setByteOutputChannel(this);
 
         committed = false;
         finished = false;
@@ -203,6 +207,18 @@ public class InternalOutputBuffer implements OutputBuffer {
     protected int lastActiveFilter;
 
 
+    /**
+     * Socket buffer.
+     */
+    protected ByteChunk socketBuffer;
+
+
+    /**
+     * Socket buffer (extra buffering to reduce number of packets sent).
+     */
+    protected boolean useSocketBuffer = false;
+
+
     // ------------------------------------------------------------- Properties
 
 
@@ -224,6 +240,21 @@ public class InternalOutputBuffer implements OutputBuffer {
     public OutputStream getOutputStream() {
 
         return outputStream;
+
+    }
+
+
+    /**
+     * Set the socket buffer size.
+     */
+    public void setSocketBuffer(int socketBufferSize) {
+
+        if (socketBufferSize > 500) {
+            useSocketBuffer = true;
+            socketBuffer.allocate(socketBufferSize, socketBufferSize);
+        } else {
+            useSocketBuffer = false;
+        }
 
     }
 
@@ -293,6 +324,31 @@ public class InternalOutputBuffer implements OutputBuffer {
 
 
     /**
+     * Flush the response.
+     * 
+     * @throws IOException an undelying I/O error occured
+     */
+    public void flush()
+        throws IOException {
+
+        if (!committed) {
+
+            // Send the connector a request for commit. The connector should
+            // then validate the headers, send them (using sendHeader) and 
+            // set the filters accordingly.
+            response.action(ActionCode.ACTION_COMMIT, null);
+
+        }
+
+        // Flush the current buffer
+        if (useSocketBuffer) {
+            socketBuffer.flushBuffer();
+        }
+
+    }
+
+
+    /**
      * Reset current response.
      * 
      * @throws IllegalStateException if the response has already been committed
@@ -316,6 +372,7 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         // Recycle Request object
         response.recycle();
+        socketBuffer.recycle();
 
         outputStream = null;
         buf = headerBuffer;
@@ -337,6 +394,7 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         // Recycle Request object
         response.recycle();
+        socketBuffer.recycle();
 
         // Determine the header buffer used for next request
         buf = headerBuffer;
@@ -378,6 +436,10 @@ public class InternalOutputBuffer implements OutputBuffer {
         if (lastActiveFilter != -1)
             activeFilters[lastActiveFilter].end();
 
+        if (useSocketBuffer) {
+            socketBuffer.flushBuffer();
+        }
+
         finished = true;
 
     }
@@ -393,7 +455,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         throws IOException {
 
         if (!committed)
-            outputStream.write(Constants.ACK);
+            outputStream.write(Constants.ACK_BYTES);
 
     }
 
@@ -543,8 +605,11 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         if (pos > 0) {
             // Sending the response header buffer
-            outputStream.write(buf, 0, pos);
-            outputStream.flush(); // Is it really necessary ?
+            if (useSocketBuffer) {
+                socketBuffer.append(buf, 0, pos);
+            } else {
+                outputStream.write(buf, 0, pos);
+            }
         }
 
     }
@@ -657,6 +722,17 @@ public class InternalOutputBuffer implements OutputBuffer {
     }
 
 
+    /**
+     * Callback to write data from the buffer.
+     */
+    public void realWriteBytes(byte cbuf[], int off, int len)
+        throws IOException {
+        if (len > 0) {
+            outputStream.write(cbuf, off, len);
+        }
+    }
+
+
     // ----------------------------------- OutputStreamOutputBuffer Inner Class
 
 
@@ -674,8 +750,13 @@ public class InternalOutputBuffer implements OutputBuffer {
         public int doWrite(ByteChunk chunk, Response res) 
             throws IOException {
 
-            outputStream.write(chunk.getBuffer(), chunk.getStart(), 
-                               chunk.getLength());
+            if (useSocketBuffer) {
+                socketBuffer.append(chunk.getBuffer(), chunk.getStart(), 
+                                   chunk.getLength());
+            } else {
+                outputStream.write(chunk.getBuffer(), chunk.getStart(), 
+                                   chunk.getLength());
+            }
             return chunk.getLength();
 
         }

@@ -274,6 +274,12 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * Socket buffering.
+     */
+    protected int socketBuffer = -1;
+
+
+    /**
      * List of user agents to not use gzip with
      */
     protected String[] noCompressionUserAgents = null;
@@ -534,6 +540,21 @@ public class Http11Processor implements Processor, ActionHook {
     }
 
     /**
+     * Set the socket buffer flag.
+     */
+    public void setSocketBuffer(int socketBuffer) {
+        this.socketBuffer = socketBuffer;
+        outputBuffer.setSocketBuffer(socketBuffer);
+    }
+
+    /**
+     * Get the socket buffer flag.
+     */
+    public int getSocketBuffer() {
+        return socketBuffer;
+    }
+
+    /**
      * Set the upload timeout.
      */
     public void setTimeout( int timeouts ) {
@@ -767,6 +788,15 @@ public class Http11Processor implements Processor, ActionHook {
                     // Set error flag
                     error = true;
                 }
+            }
+
+        } else if (actionCode == ActionCode.ACTION_CLIENT_FLUSH) {
+
+            try {
+                outputBuffer.flush();
+            } catch (IOException e) {
+                // Set error flag
+                error = true;
             }
 
         } else if (actionCode == ActionCode.ACTION_CLOSE) {
