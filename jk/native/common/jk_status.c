@@ -185,7 +185,7 @@ char *status_strfsize(size_t size, char *buf)
 
 static const char *status_worker_type(int t)
 {
-    if (t < 0 || t < 6)
+    if (t < 0 || t > 6)
         t = 0;        
     return worker_type[t];
 }
