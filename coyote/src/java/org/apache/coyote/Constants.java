@@ -93,7 +93,8 @@ public final class Constants {
     public static final int STAGE_SERVICE = 3;
     public static final int STAGE_ENDINPUT = 4;
     public static final int STAGE_ENDOUTPUT = 5;
-    public static final int STAGE_ENDED = 6;
+    public static final int STAGE_KEEPALIVE = 6;
+    public static final int STAGE_ENDED = 7;
 
 
 }

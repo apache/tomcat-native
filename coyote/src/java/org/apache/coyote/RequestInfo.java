@@ -101,6 +101,10 @@ public class RequestInfo  {
     // -------------------- Information about the current request  -----------
     // This is usefull for long-running requests only
 
+    public String getMethod() {
+        return req.method().toString();
+    }
+
     public String getCurrentUri() {
         return req.requestURI().toString();
     }
@@ -127,6 +131,18 @@ public class RequestInfo  {
 
     public int getContentLength() {
         return req.getContentLength();
+    }
+
+    public long getRequestBytesReceived() {
+        return req.getBytesRead();
+    }
+
+    public long getRequestBytesSent() {
+        return req.getResponse().getBytesWritten();
+    }
+
+    public long getRequestProcessingTime() {
+        return (System.currentTimeMillis() - req.getStartTime());
     }
 
     // -------------------- Statistical data  --------------------
