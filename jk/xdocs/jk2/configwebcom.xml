@@ -31,8 +31,17 @@
                     <tr>
                         <td>debug</td>
                         <td>0 (false)</td>
-                        <td>"debug" state for the component, 1=true 0=false</td>
+                        <td>Debug level for the component, 0=disabled, 1..10 enabled. Higher levels
+                            generate more debug.</td>
                     </tr>
+                    <tr>
+                        <td>version</td>
+                        <td>0</td>
+                        <td>'Generation' of the component config. Important for runtime reconfiguration.
+                            If you edit the config file or set the shmem properties, you need to also
+                            upgrade the version of the modified component. The config layer will detect
+                            the change and call the setter method.</td>
+                     </tr>
                 </table>
             </p>
         </section>
