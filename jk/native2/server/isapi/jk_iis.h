@@ -95,9 +95,9 @@ extern "C" {
 #define HTTP_QUERY_HEADER_NAME   ("HTTP_TOMCATQUERY")
 #define HTTP_WORKER_HEADER_NAME  ("HTTP_TOMCATWORKER")
 
-#define SERVER_NAME				 ("SERVER_NAME" ) 
+#define SERVER_NAME                              ("SERVER_NAME" ) 
 
-#define SERVER_SOFTWARE			 ("SERVER_SOFTWARE")
+#define SERVER_SOFTWARE                  ("SERVER_SOFTWARE")
 
 #define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\2.0")
 #define EXTENSION_URI_TAG       ("extension_uri")
@@ -108,16 +108,16 @@ extern "C" {
 #define URI_SELECT_UNPARSED_VERB    ("unparsed")
 #define URI_SELECT_ESCAPED_VERB     ("escaped")
 
-#define BAD_REQUEST		-1
-#define BAD_PATH		-2
-#define MAX_SERVERNAME			128
+#define BAD_REQUEST             -1
+#define BAD_PATH                -2
+#define MAX_SERVERNAME                  128
 
 
 #define GET_SERVER_VARIABLE_VALUE(name, place) {    \
     (place) = NULL;                                   \
     huge_buf_sz = sizeof(huge_buf);                 \
     if (get_server_value(env, \
-						lpEcb,        \
+                                                lpEcb,        \
                         (name),                     \
                         huge_buf,                   \
                         huge_buf_sz,                \
@@ -129,7 +129,7 @@ extern "C" {
 #define GET_SERVER_VARIABLE_VALUE_INT(name, place, def) {   \
     huge_buf_sz = sizeof(huge_buf);                 \
     if (get_server_value(env,\
-						lpEcb,        \
+                                                lpEcb,        \
                         (name),                     \
                         huge_buf,                   \
                         huge_buf_sz,                \
@@ -143,11 +143,20 @@ extern "C" {
     }           \
 }\
 
-void JK_METHOD getparents(char *name);
 
-int JK_METHOD escape_url(const char *path, char *dest, int destsize);
+static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s );
 
-int JK_METHOD unescape_url(char *url);
+static int JK_METHOD jk2_service_iis_read(jk_env_t *env, jk_ws_service_t *s,
+                          void *b, unsigned len,
+                          unsigned *actually_read);
+
+static int JK_METHOD jk2_service_iis_write(jk_env_t *env,jk_ws_service_t *s,
+                           const void *b,
+                           unsigned l);
+
+static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_service_t *_this,
+                 struct jk_worker *w, void *serverObj );
+
 
 #ifdef __cplusplus
 }

@@ -71,17 +71,16 @@
 #include <wininet.h>
 
 #include "jk_global.h"
-//#include "jk_util.h"
+#include "jk_requtil.h"
 #include "jk_map.h"
 #include "jk_pool.h"
+#include "jk_logger.h"
 #include "jk_env.h"
 #include "jk_service.h"
 #include "jk_worker.h"
 
 #include "jk_iis.h"
 //#include "jk_uri_worker_map.h"
-
-#define jk_log(a,b,c)
 
 
 static char  ini_file_name[MAX_PATH];
@@ -106,12 +105,7 @@ static char worker_mount_file[MAX_PATH * 2];
 static int uri_select_option = URI_SELECT_OPT_PARSED;
 
 
-static int init_ws_service(jk_env_t *env,isapi_private_data_t *private_data,
-                           jk_ws_service_t *s,
-                           char **worker_name);
-
-
-static int init_jk(char *serverName);
+static int init_jk(jk_env_t *env,char *serverName);
 
 static int initialize_extension(void);
 
@@ -129,29 +123,24 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
                             DWORD bufsz,
                             char  *def_val);
 
-static int base64_encode_cert_len(int len);
-
-static int base64_encode_cert(char *encoded,
-                              const unsigned char *string,
-                              int len);
-
-
-
-static int uri_is_web_inf(char *uri)
+static void write_error_response(PHTTP_FILTER_CONTEXT pfc,char *status,char * msg)
 {
-    char *c = uri;
-    while(*c) {
-        *c = tolower(*c);
-        c++;
-    }                    
-    if(strstr(uri, "web-inf")) {
-        return JK_TRUE;
-    }
-    if(strstr(uri, "meta-inf")) {
-        return JK_TRUE;
-    }
+    char crlf[3] = { (char)13, (char)10, '\0' };
+    char ctype[30];
+    DWORD len = strlen(msg);
 
-    return JK_FALSE;
+    sprintf(ctype, 
+            "Content-Type:text/html%s%s", 
+            crlf, 
+            crlf);
+
+    /* reject !!! */
+    pfc->ServerSupportFunction(pfc, 
+                               SF_REQ_SEND_RESPONSE_HEADER,
+                               status,
+                               (DWORD)crlf,
+                               (DWORD)ctype);
+    pfc->WriteClient(pfc, msg, &len, 0);
 }
 
 
@@ -193,7 +182,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 
         if (pfc->GetServerVariable(pfc, SERVER_NAME, serverName, &dwLen)){
             if (dwLen > 0) serverName[dwLen-1] = '\0';
-            if (init_jk(serverName))
+            if (init_jk(env,serverName))
                 is_mapread = JK_TRUE;
         }
         /* If we can't read the map we become dormant */
@@ -273,7 +262,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 *query++ = '\0';
             }
 
-            rc = unescape_url(uri);
+            rc = jk_requtil_unescapeUrl(uri);
             if (rc == BAD_REQUEST) {
                 env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                        "HttpFilterProc [%s] contains one or more invalid escape sequences.\n", 
@@ -290,7 +279,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
                 return SF_STATUS_REQ_FINISHED;
             }
-            getparents(uri);
+            jk_requtil_getParents(uri);
 
             if(GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
                 strcat(snuri,Host);
@@ -326,7 +315,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                            "HttpFilterProc fowarding original URI [%s]\n",uri);
                     forwardURI = uri;
                 } else if (uri_select_option == URI_SELECT_OPT_ESCAPED) {
-                    if (!escape_url(uri,snuri,INTERNET_MAX_URL_LENGTH)) {
+                    if (!jk_requtil_escapeUrl(uri,snuri,INTERNET_MAX_URL_LENGTH)) {
                         env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
                                "HttpFilterProc [%s] re-encoding request exceeds maximum buffer size.\n", 
                                uri);
@@ -371,14 +360,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             }
 
             /*
-             * Check if somebody is feading us with his own TOMCAT data headers.
+             * Check if somebody is feeding us with his own TOMCAT data headers.
              * We reject such postings !
              */
             env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                    "HttpFilterProc check if [%s] is points to the web-inf directory\n", 
                    uri);
 
-            if(uri_is_web_inf(uri)) {
+            if(jk_requtil_uriIsWebInf(uri)) {
                 env->l->jkLog(env, env->l,  JK_LOG_EMERG, 
                        "HttpFilterProc [%s] points to the web-inf or meta-inf directory.\nSomebody try to hack into the site!!!\n", 
                        uri);
@@ -411,8 +400,8 @@ BOOL WINAPI GetExtensionVersion(HSE_VERSION_INFO  *pVer)
 DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
 {   
     DWORD rc = HSE_STATUS_ERROR;
-    lpEcb->dwHttpStatusCode = HTTP_STATUS_SERVER_ERROR;
     jk_env_t *env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+    lpEcb->dwHttpStatusCode = HTTP_STATUS_SERVER_ERROR;
 
     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
            "HttpExtensionProc started\n");
@@ -423,7 +412,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
 		DWORD dwLen = sizeof(serverName);
 		if (lpEcb->GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName, &dwLen)){
 			if (dwLen > 0) serverName[dwLen-1] = '\0';
-			if (init_jk(serverName))
+			if (init_jk(env,serverName))
 				is_mapread = JK_TRUE;
 		}
 		if (!is_mapread)
@@ -455,13 +444,13 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
             s->ws_private = lpEcb;
 
             /* Initialize the ws_service structure */
-            s->init( env, s, worker, r );
+            s->init( env, s, worker, lpEcb );
             
-            env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+            /* env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                    "HttpExtensionProc %s a worker for name %s\n", 
                    worker ? "got" : "could not get",
                    worker_name);
-            
+            */
             rc = worker->service(env, worker, s);
             
             s->afterRequest(env, s);
@@ -539,11 +528,11 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     return fReturn;
 }
 
-static int init_jk(char *serverName)
+static int init_jk(jk_env_t *env,char *serverName)
 {
     int rc = JK_FALSE;  
     jk_map_t *map;
-    jk_env_t *env;
+    ;
     
     /* XXX Copy jk init code from apache2 */
     
@@ -799,7 +788,7 @@ static int get_registry_config_parameter(HKEY hkey,
  */
 
 
-static void jk2_create_workerEnv(apr_pool_t *p /*, server_rec *s*/) {
+static  void  jk2_create_workerEnv (LPEXTENSION_CONTROL_BLOCK *s) {
     jk_env_t *env;
     jk_logger_t *l;
     jk_pool_t *globalPool;
@@ -807,11 +796,7 @@ static void jk2_create_workerEnv(apr_pool_t *p /*, server_rec *s*/) {
     
     /** First create a pool. Compile time option
      */
-#ifdef NO_APACHE_POOL
     jk2_pool_create( NULL, &globalPool, NULL, 2048 );
-#else
-    jk2_pool_apr_create( NULL, &globalPool, NULL, p );
-#endif
 
     /** Create the global environment. This will register the default
         factories
@@ -822,17 +807,9 @@ static void jk2_create_workerEnv(apr_pool_t *p /*, server_rec *s*/) {
     /* Init the environment. */
     
     /* Create the logger */
-#ifdef NO_APACHE_LOGGER
     jkb=env->createBean2( env, env->globalPool, "logger.file", "");
     env->alias( env, "logger.file:", "logger");
     l = jkb->object;
-#else
-    env->registerFactory( env, "logger.apache2",    jk2_logger_apache2_factory );
-    jkb=env->createBean2( env, env->globalPool, "logger.apache2", "");
-    env->alias( env, "logger.apache2:", "logger");
-    l = jkb->object;
-    l->logger_private=s;
-#endif
     
     env->l=l;
     
@@ -849,29 +826,36 @@ static void jk2_create_workerEnv(apr_pool_t *p /*, server_rec *s*/) {
         return;
     }
 
-    workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
+/* XXX 
+	
+	Detect install dir, be means of service configs, */
+
+/* 
+workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
                               workerEnv->pool->pstrdup( env, workerEnv->pool, ap_server_root));
     env->l->jkLog(env, env->l, JK_LOG_ERROR, "Set serverRoot %s\n", ap_server_root);
+
+*/
     
     /* Local initialization */
     workerEnv->_private = s;
 }
 
-static void *jk2_create_config(apr_pool_t *p /*, server_rec *s*/)
+static void *jk2_create_config(LPEXTENSION_CONTROL_BLOCK *s)
 {
     jk_uriEnv_t *newUri;
     jk_bean_t *jkb;
 
     if(  workerEnv==NULL ) {
-        jk2_create_workerEnv(p, s );
+        jk2_create_workerEnv( s );
     }
-    if( s->is_virtual == 1 ) {
+/*    if( s->is_virtual == 1 ) {
         /* Virtual host */
-        fprintf( stderr, "Create config for virtual host\n");
-    } else {
+//        fprintf( stderr, "Create config for virtual host\n");
+//    } else  {
         /* Default host */
         fprintf( stderr, "Create config for main host\n");        
-    }
+//    }
 
     jkb = workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
                                              workerEnv->pool,

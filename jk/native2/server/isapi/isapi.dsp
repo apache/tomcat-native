@@ -140,10 +140,6 @@ SOURCE=..\..\common\jk_msg_ajp.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\common\jk_nwmain.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\common\jk_objCache.c
 # End Source File
 # Begin Source File
@@ -216,10 +212,6 @@ SOURCE=..\..\common\jk_workerEnv.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=.\iis.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\include\jk_channel.h
 # End Source File
 # Begin Source File
@@ -241,6 +233,10 @@ SOURCE=..\..\include\jk_global.h
 # Begin Source File
 
 SOURCE=..\..\include\jk_handler.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\jk_iis.h
 # End Source File
 # Begin Source File
 
