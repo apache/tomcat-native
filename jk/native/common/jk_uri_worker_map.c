@@ -87,7 +87,7 @@ static int worker_compare(const void *elem1, const void *elem2)
 {
     uri_worker_record_t *e1 = *(uri_worker_record_t **)elem1;
     uri_worker_record_t *e2 = *(uri_worker_record_t **)elem2;
-    return ((int)e1->ctxt_len - (int)e2->ctxt_len);
+    return ((int)e2->ctxt_len - (int)e1->ctxt_len);
 }
 
 static void worker_qsort(jk_uri_worker_map_t *uw_map)
