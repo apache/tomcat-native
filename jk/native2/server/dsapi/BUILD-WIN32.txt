@@ -68,7 +68,7 @@ I can post to it. I wouldn't expect more than a few posts per month. For
 this reason if you'd like to keep track of new redirector versions
 please subscribe to this list. From now on this list will be the main
 place to find out about new versions.
-<
+
 Please let me know if you have any problems.
 
 Andy Armstrong, <andy@tagish.com>
