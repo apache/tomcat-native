@@ -154,6 +154,19 @@ static const char *warp_init(void) {
 
 /* Notify this provider of its imminent startup. */
 static void warp_startup(void) {
+    wa_chain *elem=warp_connections;
+    wa_boolean ret=FALSE;
+
+    /* Open all connections having deployed applications */
+    while (elem!=NULL) {
+        wa_connection *curr=(wa_connection *)elem->curr;
+        wa_debug(WA_MARK,"Opening connection \"%s\"",curr->name);
+        if (n_connect(curr)==TRUE) {
+            wa_debug(WA_MARK,"Connection \"%s\" opened",curr->name);
+        } else wa_log(WA_MARK,"Cannot open connection \"%s\"",curr->name);
+        elem=elem->next;
+    }
+
     wa_debug(WA_MARK,"WARP provider started");
 }
 
@@ -189,6 +202,7 @@ static const char *warp_connect(wa_connection *conn, const char *param) {
 
     /* Done */
     conf->sock=NULL;
+    conf->disc=TRUE;
     conn->conf=conf;
     return(NULL);
 }
