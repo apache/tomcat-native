@@ -185,6 +185,7 @@ class CoyoteRequest extends Request {
 
     protected void parseHostHeader() {
 	MessageBytes hH=getMimeHeaders().getValue("host");
+        serverPort = socket.getLocalPort();
 	if (hH != null) {
 	    // XXX use MessageBytes
 	    String hostHeader = hH.toString();
