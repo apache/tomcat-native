@@ -397,7 +397,7 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
 {
     env->l->jkLog( env, env->l, JK_LOG_ERROR,
                    "channelUn.factory(): Support for unix sockets is disabled, "
-                   "you need to set HAVE_UNIXSOCKETS at compile time\n",
+                   "you need to set HAVE_UNIXSOCKETS at compile time\n");
     return JK_FALSE;
 }
 #endif
