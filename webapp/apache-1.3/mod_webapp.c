@@ -415,7 +415,7 @@ static boolean webapp_callback_settype(wa_request *req, char *type) {
     char *t="";
 
     if (r==NULL) return(FALSE);
-    if (t!=NULL) t=ap_pstrdup(r->pool,type);
+    if (type!=NULL) t=ap_pstrdup(r->pool,type);
 
     r->content_type=t;
     ap_table_add(r->headers_out, "Content-Type", t);
@@ -438,8 +438,8 @@ static boolean webapp_callback_setheader(wa_request *req, char *name,
 
     if (r==NULL) return(FALSE);
     
-    if (n!=NULL) n=ap_pstrdup(r->pool,name);
-    if (v!=NULL) v=ap_pstrdup(r->pool,value);
+    if (name!=NULL) n=ap_pstrdup(r->pool,name);
+    if (value!=NULL) v=ap_pstrdup(r->pool,value);
     
     ap_table_add(r->headers_out,n,v);
     return(TRUE);
