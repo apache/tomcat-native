@@ -1,0 +1,15 @@
+JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
+Last modified at [$Date$]
+
+Changes with JK 1.2.1:
+    * Make JK honor the CanonicalHost directive.
+      [hgomez]
+    * Log cleanup
+      [costin]
+    * Fix typos in jk xdocs/docs
+      [hgomez]
+    * Add JkRequestLogFormat to Apache 2.0
+      [hgomez]
+    * Final patches to make JK iSeries compliant
+      [hgomez]
+      
