@@ -287,6 +287,7 @@ char *jk_map_getStrProp(jk_env_t *env, jk_map_t *m,
                         char *def)
 {
     char buf[1024];
+    char *res;
 
     if( m==NULL || objName==NULL || pname==NULL ) {
         return def;
@@ -295,7 +296,10 @@ char *jk_map_getStrProp(jk_env_t *env, jk_map_t *m,
         sprintf(buf, "%s.%s", objName, pname);
     else
         sprintf(buf, "%s.%s.%s", objType, objName, pname);
-    return m->get(env, m, buf );
+    res = m->get(env, m, buf );
+    if (res==NULL)
+        return(def);
+    return res;
 }
 
 int jk_map_getIntProp(jk_env_t *env, jk_map_t *m,
