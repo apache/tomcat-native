@@ -71,6 +71,9 @@
  * @author: Costin Manolache
  */
 
+/* affects include files on Solaris (for FIONBIO on Solaris 8) */
+#define BSD_COMP
+
 #include "jk_map.h"
 #include "jk_env.h"
 #include "jk_channel.h"
@@ -82,9 +85,6 @@
 #ifndef WIN32
     #define closesocket         close
 #endif
-
-/* affects include files on Solaris (for FIONBIO on Solaris 8) */
-#define BSD_COMP
 
 #define DEFAULT_HOST "127.0.0.1"
 
