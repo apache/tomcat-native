@@ -61,31 +61,39 @@
 .SUFFIXES: .c .o .lo
 
 # Building tools
-CC       = @CC@
-CPP      = @CPP@
-SHELL    = @SHELL@
-LIBTOOL  = @LIBTOOL@
-APXS     = @APXS@
+CC      = @CC@
+CPP     = @CPP@
+SHELL   = @SHELL@
+LIBTOOL = @LIBTOOL@
+APXS    = @APXS@
 
 # Build flags
 CPPFLAGS = @CPPFLAGS@
 CFLAGS   = @CFLAGS@
 LDFLAGS  = @LDFLAGS@
-LIBS     = @LIBS@
 INCLUDES = @INCLUDES@
 
+# Extra build flags
+EXTRA_CPPFLAGS = @EXTRA_CPPFLAGS@
+EXTRA_CFLAGS   = @EXTRA_CFLAGS@
+EXTRA_LDFLAGS  = @EXTRA_LDFLAGS@
+EXTRA_INCLUDES = @EXTRA_INCLUDES@
+
 # Module to build
-MODULE   = @MODULE@
+MODULE = @MODULE@
 
 # Directories location
-APR_DIR  = @APR_DIR@
-SRC_DIR  = @SRC_DIR@
-TGT_DIR  = @TGT_DIR@
+APR_DIR = @APR_DIR@
+SRC_DIR = @SRC_DIR@
+TGT_DIR = @TGT_DIR@
+OBJ_DIR = @TGT_DIR@/objects
 
 # Compilation template
-%.lo: $(LOCAL_SRC_DIR)/%.c
+%.lo: $(LOCAL_SRC_DIR)/%.c 
 	$(LIBTOOL) --mode=compile \
 	  $(CC) -c $< -o $@ \
 	    $(INCLUDES) \
-	    $(LOCAL_INCLUDES) \
-	    $(CPPFLAGS) $(CFLAGS)
+	    $(CPPFLAGS) \
+	    $(CFLAGS) 
+	$(LIBTOOL) --mode=install \
+	  cp $@ $(OBJ_DIR)
