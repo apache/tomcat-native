@@ -595,11 +595,13 @@ static const char *jk_mount_context(cmd_parms *cmd,
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+    char *old;
+    if (context[0]!='/')
+        return "Context should start with /";
 
     /*
      * Add the new worker to the alias map.
      */
-    char *old;
     map_put(conf->uri_to_context, context, worker, (void **)&old);
     return NULL;
 }
