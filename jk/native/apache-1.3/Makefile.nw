@@ -52,7 +52,8 @@ JK_OBJS=\
 	jk_nwmain.obj \
 	jk_ajp14.obj \
 	jk_ajp14_worker.obj \
-	jk_md5.obj
+	jk_md5.obj \
+	jk_context.obj
 	
 all: $(NLM_NAME).nlm
 
