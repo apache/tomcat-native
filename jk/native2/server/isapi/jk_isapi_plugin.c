@@ -258,6 +258,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             char snuri[INTERNET_MAX_URL_LENGTH]="/";
             char Host[INTERNET_MAX_URL_LENGTH];
             char Translate[INTERNET_MAX_URL_LENGTH];
+            char Port[INTERNET_MAX_URL_LENGTH];
             BOOL (WINAPI * GetHeader) 
                 (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName, LPVOID lpvBuffer, LPDWORD lpdwSize );
             BOOL (WINAPI * SetHeader) 
@@ -268,7 +269,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             DWORD sz = sizeof(uri);
             DWORD szHost = sizeof(Host);
             DWORD szTranslate = sizeof(Translate);
-
+            DWORD szPort = sizeof(Port);
 #ifdef SF_NOTIFY_AUTH_COMPLETE
             if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
                 GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
@@ -329,20 +330,24 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 }
                 jk_requtil_getParents(uri);
 
-
-                if(GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
-                    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                           "In HttpFilterProc Virtual Host redirection of %s\n", 
-                           Host);
-                    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host, 0, uri );
+                if (pfc->GetServerVariable(pfc, SERVER_NAME, (LPVOID)Host, (LPDWORD)&szHost)){
+                    if (szHost > 0) {
+                        Host[szHost-1] = '\0';
+                    }
                 }
-
-                if (uriEnv==NULL) {
-                    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                           "In HttpFilterProc test Default redirection of %s\n", 
-                           uri);
-                    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL, 0, uri );
+                Port[0] = '\0';
+                if (pfc->GetServerVariable(pfc, "SERVER_PORT", (LPVOID)Port, (LPDWORD)&szPort)){
+                    if (szPort > 0) {
+                        Port[szPort-1] = '\0';
+                    }
                 }
+                szPort = atoi(Port);
+                if (szPort == 80)
+                    szPort = 0;
+                env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                            "In HttpFilterProc Virtual Host redirection of %s : %d\n", 
+                            Host, Port);
+                uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host, 0, uri );
 
                 if( uriEnv!=NULL ) {
                     char *forwardURI;
