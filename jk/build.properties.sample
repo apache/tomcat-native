@@ -24,6 +24,7 @@ tomcat33.home= ../../jakarta-tomcat/build/tomcat
 apache2.home=/opt/apache2
 apache13.home=/opt/apache13
 iplanet.home=/opt/iplanet6
+aolserver.home=/opt/aolserver-4.0
 # iplanet.home=d:/tools/sdk/netscape
 # iis.home=e:/
 

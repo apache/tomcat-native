@@ -52,7 +52,7 @@
 
   <!-- ==================== Targets ==================== -->
 
-  <target name="main" depends="init,apache20,apache13,jni,iis">
+  <target name="main" depends="init,apache20,apache13,jni,iis,aolserver">
   </target>
 
   <target name="all" depends="jkant,main">
@@ -102,6 +102,8 @@
                file="${mssdk.home}" />
     <available property="iplanet.detect" 
                file="${iplanet.home}" />
+    <available property="aolserver.detect" 
+               file="${aolserver.home}" />
     <condition property="build.jni" >
        <or>
         <isset property="iis.detect"  />
@@ -112,6 +114,7 @@
     <echo message="Apache13 ${apache13.home} ${apache13.detect}" />
     <echo message="IIS ${iis.home} ${iis.detect}" />
     <echo message="Iplanet ${iplanet.home} ${iplanet.detect}" />
+    <echo message="AOLserver ${aolserver.home} ${aolserver.detect}" />
     <echo message="JNI ${build.jni}" />
     <echo message="" />
   </target>
@@ -329,6 +332,79 @@
       <linkOpt value="/libpath:&quot;${apache2.home}/lib&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${mssdk.home}/lib&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${mssdk.home}/../Common/MSDev98/bin&quot;" if="win32" />
+    </so>
+  </target>
+  
+  <target name="aolserver" description="Build nsjk2 module for AOLserver" depends="init" if="aolserver.detect">
+    <property name="apr.include" location="${apache2.home}/include" />
+    <mkdir dir="${build.dir}/aolserver${arch.prefix}" />
+
+    <so sofile="nsjk2"
+	buildDir="${build.dir}/aolserver${arch.prefix}"
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	taskDebug="0"
+	profile="${so.profile}"	>
+      <def name="_REENTRANT" />
+      <def name="CHUNK_SIZE" value="4096" 
+	   info="Read/Write buffer size" />
+
+	<!-- Use MD5 from APU
+      <def name="USE_APACHE_MD5" 
+	   info="Use the MD5 implementation that is part of apache2" />
+	-->
+
+      <def name="HAS_APR"
+	   info="Allow APR specific extensions" />
+      <def name="HAVE_JNI" 
+	   info="Jni worker" />
+      <def name="HPUX11" if="hpux" />
+      <def name="WIN32" if="win32" />
+      <def name="_WINDOWS" if="win32" />
+      <def name="_MBCS" if="win32" />
+      <def name="_USRDLL" if="win32" />
+      <def name="MOD_JK2_EXPORTS" if="win32" />
+      <src dir=".">
+	<include name="server/aolserver/*.c" />
+	<include name="common/*.c" />
+	<include name="jni/*.c" />
+      </src>
+      <includes>
+	<include name="${native.dir}/common" />
+	<include name="${aolserver.home}/include" />
+	<include name="${aolserver.home}" />
+	<include name="${apr.include}" />
+	<include name="${apr-util.include}" />
+	<include name="${native.dir}/include" />
+	<include name="${java.home}/../include" />
+        <include name="${java.home}/../include/linux" if="linux" />
+        <include name="${java.home}/../include/hp-ux" if="hpux" />        
+        <include name="${java.home}/../include/win32" if="win32" />        
+        <include name="${java.home}/../include/solaris" if="solaris" />        
+        <include name="&quot;${mssdk.home}/include&quot;" if="win32"/>
+      </includes>
+      <depends>
+	<fileset dir="${native.dir}/common" includes="*.h" />
+	<fileset dir="${native.dir}/include" includes="*.h" />
+      </depends>
+      <resource fileName="../jk_logger_win32_message.res" if="win32" />
+      <import fileName="libhttpd.lib" if="win32" />
+      <import fileName="libapr.lib" if="win32" />
+      <import fileName="libaprutil.lib" if="win32" />
+      <import fileName="advapi32.lib" if="win32" />
+      <import fileName="wsock32.lib" if="win32" />
+      <import fileName="shell32.lib" if="win32" />
+      <import fileName="kernel32.lib" if="win32" />
+
+      <linkOpt value="/libpath:&quot;${apr.lib}&quot;" if="win32" />
+      <linkOpt value="/libpath:&quot;${apr-util.lib}&quot;" if="win32" />
+      <linkOpt value="/libpath:&quot;${apache2.home}/lib&quot;" if="win32" />
+      <linkOpt value="/libpath:&quot;${mssdk.home}/lib&quot;" if="win32" />
+      <linkOpt value="/libpath:&quot;${mssdk.home}/../Common/MSDev98/bin&quot;" if="win32" />
+      <linkOpt value="-L${apr.lib}" />
+      <linkOpt value="-lapr-0" />
+      <linkOpt value="-laprutil-0" />
+      <linkOpt value="-lexpat" />
     </so>
   </target>
   

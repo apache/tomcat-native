@@ -80,6 +80,7 @@
         <echo message="Apache2: ${apache2.detect} ${apache2.home}" />
         <echo message="iPlanet:  ${iplanet.detect} ${iplanet.home}" />
         <echo message="IIS:      ${iis.detect} ${iis.home}" />
+        <echo message="AOLserver: ${aolserver.detect} ${aolserver.home}" />
         <echo message="jmx:      ${jmx.jar} ${jmx.detect} ${commons-modeler.jar} ${modeler.detect}" />
     </target>
 
@@ -107,6 +108,8 @@
                    file="${iis.home}" />
         <available property="iplanet.detect" 
                    file="${iplanet.home}" />
+        <available property="aolserver.detect" 
+                   file="${aolserver.home}" />
         <available property="jmx.detect" 
                    file="${jmx.jar}" />
         <available property="jdk14.detect" 
