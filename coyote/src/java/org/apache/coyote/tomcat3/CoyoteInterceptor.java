@@ -185,6 +185,7 @@ public class CoyoteInterceptor extends PoolTcpConnector
 	    OutputStream out = socket.getOutputStream();
 	    adaptor.setSocket(socket);
 	    processor.process(in, out);
+
             // If unread input arrives after the shutdownInput() call
             // below and before or during the socket.close(), an error
             // may be reported to the client.  To help troubleshoot this
@@ -219,6 +220,7 @@ public class CoyoteInterceptor extends PoolTcpConnector
 	    e.printStackTrace();
 	    log( "Error reading request, ignored", e, Log.ERROR);
 	} finally {
+	    if(adaptor != null) adaptor.recycle();
 	    // recycle kernel sockets ASAP
 	    try { if (socket != null) socket.close (); }
 	    catch (IOException e) { /* ignore */ }
