@@ -492,18 +492,54 @@ int JK_METHOD jk2_shm_getId(struct jk_env *env, struct jk_shm *shm)
     return 0;
 }
 
+static void jk2_shm_resetEndpointStats(jk_env_t *env, struct jk_shm *shm)
+{
+    int i, j;
+    
+    if( shm==NULL || shm->head==NULL) {
+        return;
+    }
+    
+    for( i=1; i < shm->head->lastSlot; i++ ) {
+        jk_shm_slot_t *slot= shm->getSlot( env, shm, i );
+        
+        if( slot==NULL ) continue;
+        
+        if( strncmp( slot->name, "epStat", 6 ) == 0 ) {
+            /* This is an endpoint slot */
+            void *data=slot->data;
 
+            for( j=0; j<slot->structCnt ; j++ ) {
+                jk_stat_t *statArray=(jk_stat_t *)data;
+                jk_stat_t *stat=statArray + j;
+
+                stat->reqCnt=0;
+                stat->errCnt=0;
+#ifdef HAS_APR
+                stat->totalTime=0;
+                stat->maxTime=0;
+#endif
+            }
+        }
+    }    
+}
+
+
+static char *jk2_shm_setAttributeInfo[]={"resetEndpointStats", "file", "size", NULL };
 
 static int JK_METHOD jk2_shm_setAttribute( jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP ) {
     jk_shm_t *shm=(jk_shm_t *)mbean->object;
     char *value=(char *)valueP;
     
     if( strcmp( "file", name ) == 0 ) {
-    shm->fname=value;
+        shm->fname=value;
     } else if( strcmp( "size", name ) == 0 ) {
-    shm->size=atoi(value);
+        shm->size=atoi(value);
+    } else if( strcmp( "resetEndpointStats", name ) == 0 ) {
+        if( strcmp( value, "1" )==0 )
+            jk2_shm_resetEndpointStats( env, shm );
     } else {
-    return JK_ERR;
+        return JK_ERR;
     }
     return JK_OK;   
 
@@ -596,6 +632,7 @@ int JK_METHOD jk2_shm_factory( jk_env_t *env ,jk_pool_t *pool,
     shm->slotMaxCount=DEFAULT_SLOT_COUNT;
     
     result->setAttribute=jk2_shm_setAttribute;
+    result->setAttributeInfo=jk2_shm_setAttributeInfo;
     /* result->getAttribute=jk2_shm_getAttribute; */
     shm->mbean=result; 
     result->object=shm;
