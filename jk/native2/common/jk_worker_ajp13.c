@@ -173,9 +173,6 @@ jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         return JK_ERR;
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.setProperty() %s %s %s\n", mbean->name, name, value );
-    
     return JK_OK;
 }
 

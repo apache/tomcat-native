@@ -26,6 +26,7 @@ INCLUDES= -I${JK_DIR}/include \
           -I${JAVA_HOME}/include\hp-ux 
 
 JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 -DHAS_APR -DHAVE_JNI
+JK_LDFLAGS=-L${APACHE2_HOME}/lib -lapr -lcrypt
 
 ###### Based on rules.mk ##########################################
 ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)
@@ -38,7 +39,7 @@ ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
 COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
 
 SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
-MOD_LINK = $(LIBTOOL) --mode=link $(CC) -module -shared $(LT_LDFLAGS) $(ALL_LDFLAGS) 
+MOD_LINK = $(LIBTOOL) --mode=link $(CC) -module -shared $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
 
 #############################################################################
 

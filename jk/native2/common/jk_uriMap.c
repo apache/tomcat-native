@@ -145,8 +145,9 @@ static int jk2_uriMap_addUriEnv( jk_env_t *env, jk_uriMap_t *uriMap, jk_uriEnv_t
     int rc;
 
     uriMap->maps->put( env, uriMap->maps, uriEnv->name, uriEnv, NULL );
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "uriMap.addUriEnv() %s %s %s\n", uriEnv->name, uriEnv->virtual, uriEnv->uri);
+    if( uriMap->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "uriMap.addUriEnv() %s %s %s\n", uriEnv->name, uriEnv->virtual, uriEnv->uri);
     return JK_OK;
 }
 

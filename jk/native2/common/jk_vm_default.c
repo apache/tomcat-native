@@ -141,6 +141,7 @@ jint (JNICALL *jni_get_created_java_vms)(JavaVM **, int, int *) = NULL;
 static const char *defaultVM_PATH[]={
     "${JAVA_HOME}${fs}jre${fs}bin${fs}classic${fs}libjvm.${so}",
     "${JAVA_HOME}${fs}jre${fs}lib${fs}${arch}${fs}classic${fs}libjvm.${so}",
+    "${JAVA_HOME}${fs}jre${fs}lib${fs}${arch}${fs}client${fs}libjvm.${so}",
     "${JAVA_HOME}${fs}jre${fs}bin${fs}classic${fs}jvm.${so}",
     NULL
 };

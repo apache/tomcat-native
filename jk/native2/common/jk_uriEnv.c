@@ -110,10 +110,6 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     
     uriEnv->uri=uriEnv->pool->pstrdup(env, uriEnv->pool, n);
 
-    /* No further init - will be called by uriMap.init() */
-    env->l->jkLog( env, env->l, JK_LOG_INFO,
-                   "uriEnv.parseUri() Parsing %s to host=%s  uri=%s\n", name,
-                   uriEnv->virtual, uriEnv->uri );
     return JK_OK;
 }
 
@@ -219,6 +215,8 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
                           "uriEnv.init() map %s %s\n",
                           uriEnv->uri, uriEnv->uriMap->workerEnv->defaultWorker->mbean->name);
     }
+
+    /* No further init - will be called by uriMap.init() */
 
     if( uriEnv->workerName != NULL && uriEnv->worker==NULL ) {
         uriEnv->worker= env->getByName( env, wname );
@@ -358,6 +356,12 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
                           uri, uriEnv->workerName);
         }
     }
+    if( uriEnv->debug > 0 )
+        env->l->jkLog( env, env->l, JK_LOG_INFO,
+                       "uriEnv.init()  %s  host=%s  uri=%s type=%d ctx=%s prefix=%s suffix=%s\n",
+                       uriEnv->mbean->name, uriEnv->virtual, uriEnv->uri,
+                       uriEnv->match_type, uriEnv->contextPath, uriEnv->prefix, uriEnv->suffix );
+    
     return JK_OK;
 }
 

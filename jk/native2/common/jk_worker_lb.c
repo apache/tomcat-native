@@ -266,6 +266,7 @@ static int JK_METHOD jk2_lb_updateWorkers(jk_env_t *env,
             int chCnt;
 
             msg=jk2_msg_ajp_create2( env, env->tmpPool, slot->data, slot->size);
+            
             chCnt=msg->getInt(env, msg );
 
             env->l->jkLog(env, env->l, JK_LOG_INFO,

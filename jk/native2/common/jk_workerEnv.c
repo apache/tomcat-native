@@ -299,7 +299,8 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
         if( w==NULL ) {
             jk_bean_t *jkb=env->createBean2(env, wEnv->pool, "worker.lb", "lb" );
             w=jkb->object;
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create default worker %s\n",  jkb->name );
+            if( wEnv->debug > 0 )
+                env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create default worker %s\n",  jkb->name );
         }
         wEnv->defaultWorker= w;
     }

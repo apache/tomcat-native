@@ -245,6 +245,8 @@ struct jk_workerEnv {
      *  server_rec * in apache
      */
     void *_private;
+
+    int debug;
     
     /* -------------------- Methods -------------------- */
 

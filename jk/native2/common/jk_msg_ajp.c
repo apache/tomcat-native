@@ -496,12 +496,14 @@ jk_msg_t *jk2_msg_ajp_create2(jk_env_t *env, jk_pool_t *pool, char *buf, int buf
     msg->pool = pool;
 
     msg->buf= buf;
-    
+
     if(msg->buf==NULL) {
         return NULL;
     }
 
     jk2_msg_ajp_init( env, msg, buffSize );
+
+    msg->len=buffSize;
 
     return msg;
 }
