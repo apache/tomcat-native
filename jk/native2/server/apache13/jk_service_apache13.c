@@ -215,8 +215,6 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
         return JK_ERR;
     
     {
-        /* BUFF *bf = p->r->connection->client; */
-        /* size_t w = (size_t)l; */
         size_t rd = 0;
         long ll=len;
         char *bb=(char *)b;
@@ -232,11 +230,15 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
                 return rc;
             }
         }
+        if (rr->header_only) {
+            ap_bflush(rr);
+            return JK_OK;
+        }
         
         /* Debug - try to get around rwrite */
         while( ll > 0 ) {
             unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
-            rd = ap_rwrite((const char *)bb, toSend, s->ws_private );
+            rd = ap_rwrite((const char *)bb, toSend, rr );
             if( s->uriEnv->mbean->debug > 0 ) 
                 env->l->jkLog(env, env->l, JK_LOG_INFO, 
                               "service.write()  %ld (%ld) out of %ld \n",toSend, rd, ll );
@@ -252,7 +254,7 @@ static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *
         /*
          * To allow server push. After writing full buffers
          */
-        ap_bflush(s->ws_private);
+        ap_bflush(rr);
     }
     return JK_OK;
 }

@@ -282,11 +282,16 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
             }
         }
     }
+
+    if (rr->header_only) {
+        ap_rflush(rr);
+        return JK_OK;
+    }
     
     /* Debug - try to get around rwrite */
     while( ll > 0 ) {
         unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
-        r = ap_rwrite((const char *)bb, toSend, s->ws_private );
+        r = ap_rwrite((const char *)bb, toSend, rr );
         /*  env->l->jkLog(env, env->l, JK_LOG_INFO,  */
         /*     "service.write()  %ld (%ld) out of %ld \n",toSend, r, ll ); */
         ll-=CHUNK_SIZE;
@@ -301,7 +306,7 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
     /*
      * To allow server push. After writing full buffers
      */
-    if(ap_rflush(s->ws_private) != APR_SUCCESS) {
+    if(ap_rflush(rr) != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
                      NULL, "mod_jk: Error flushing \n"  );
         return JK_ERR;
