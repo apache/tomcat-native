@@ -71,6 +71,12 @@
  */
 
 #include <stdio.h>
+
+/* Apache 2/APR uses NOVELL_LIBC which has a different way of handling
+ * "library" nlms.  If we aren't on LIBC, use the old method
+ */
+
+#ifndef __NOVELL_LIBC__
 #include <nwthread.h>
 #include <netdb.h>
 
@@ -91,4 +97,53 @@ void main ()
 {
    ExitThread (TSR_THREAD, 0);
 }
+#else /* __NOVELL_LIBC__ */
+
+/* Since we are on LibC, we need to handle our own startup and shutdown */
+
+#include <netware.h>
+#include "novsock2.h"
+
+int _NonAppStart
+(
+    void        *NLMHandle,
+    void        *errorScreen,
+    const char  *cmdLine,
+    const char  *loadDirPath,
+    size_t      uninitializedDataLength,
+    void        *NLMFileHandle,
+    int         (*readRoutineP)( int conn, void *fileHandle, size_t offset,
+                    size_t nbytes, size_t *bytesRead, void *buffer ),
+    size_t      customDataOffset,
+    size_t      customDataSize,
+    int         messageCount,
+    const char  **messages
+)
+{
+#pragma unused(cmdLine)
+#pragma unused(loadDirPath)
+#pragma unused(uninitializedDataLength)
+#pragma unused(NLMFileHandle)
+#pragma unused(readRoutineP)
+#pragma unused(customDataOffset)
+#pragma unused(customDataSize)
+#pragma unused(messageCount)
+#pragma unused(messages)
+
+    WSADATA wsaData;
+    
+    return WSAStartup((WORD) MAKEWORD(2, 0), &wsaData);
+}
+
+void _NonAppStop( void )
+{
+    WSACleanup();
+}
+
+int  _NonAppCheckUnload( void )
+{
+	return 0;
+}
+#endif /* __NOVELL_LIBC__ */
+
 #endif
