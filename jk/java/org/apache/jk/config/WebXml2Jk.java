@@ -118,13 +118,6 @@ public class WebXml2Jk {
     String file;
     String worker="lb"; 
 
-    static final int CONFIG_JK2_URIMAP=1;
-    
-    static final int CONFIG_JK_MOUNT=2;
-    static final int CONFIG_JK_URIWORKER=3;
-    static final int CONFIG_JK_NSCONFIG=4;
-    int type;
-
     // -------------------- Settings -------------------- 
 
     // XXX We can also generate location-independent mappings.
@@ -173,144 +166,153 @@ public class WebXml2Jk {
         worker=route;
     }
 
-    // -------------------- Implementation --------------------
-    void generateJk2Map(Node webN, PrintWriter out) {
+    // -------------------- Generators --------------------
+    public static interface MappingGenerator {
+        void setWebXmlReader(WebXml2Jk wxml );
 
-        System.out.println("Generating mappings for servlets " );
-        for( Node mapN=getChild( webN, "servlet-mapping" );
-             mapN != null; mapN = getNext( mapN ) ) {
-            
-            Node servN=getChild( mapN, "servlet-name");
-            if( servN==null )
-                servN=getChild( mapN, "jsp-file");
-            Node url=getChild( mapN, "url-pattern");
-            
-            out.println( "[url:" + vhost + cpath + getContent(url) + "]");
-            out.println( "group=" + worker );
-            out.println( "#servlet=" +  getContent( servN ));
-            out.println( "#cpath=" +  cpath );
-            out.println( "#vhost=" +  vhost );
-            out.println();
-        }
+        /** Start section( vhost declarations, etc )
+         */
+        void generateStart(PrintWriter out );
 
-        Node lcN=getChild( webN, "login-config" );
-        if( lcN!=null ) {
-            System.out.println("Generating mapping for login-config " );
-            
-            Node authMethN=getChild( lcN, "auth-method");
-            String authMeth=getContent( authMethN );
-            if( authMeth == null ) authMeth="FORM";
+        void generateEnd(PrintWriter out );
+        
+        void generateServletMapping( PrintWriter out,
+                                     String servlet, String url );
+        void generateFilterMapping( PrintWriter out, String servlet, String url );
 
-            Node n1=getChild( lcN, "form-login-config");
-            String loginPage=getContent( getChild( n1, "form-login-page"));
-            String errPage=getContent( getChild( n1, "form-error-page"));
+        void generateLoginConfig( PrintWriter out, String loginPage,
+                                  String errPage, String authM );
 
-            out.println("[url:" + vhost + cpath + loginPage  + "]" );
-            out.println( "group=" + worker );
-            out.println();
-            out.println("[url:" + vhost + cpath + errPage  + "]" );
-            out.println( "group=" + worker );
-            out.println();
-        }
-
-        System.out.println("Generating mappings for security constraints " );
-        for( Node mapN=getChild( webN, "security-constraint" );
-             mapN != null; mapN = getNext( mapN )) {
-            Node wrcN=getChild( mapN, "web-resource-collection");
-
-            Vector methods=new Vector();
-            for( Node uN=getChild(wrcN, "http-method");
-                 uN!=null; uN=getNext( uN )) {
-                methods.addElement( getContent( uN ));
-            }
-
-            Vector urls=new Vector();
-            for( Node uN=getChild(wrcN, "url-pattern");
-                 uN!=null; uN=getNext( uN )) {
-                urls.addElement( getContent( uN ));
-            }
-
-            // Not used at the moment
-            Node acN=getChild( mapN, "auth-constraint");
-            Vector roles=new Vector();
-            for( Node rN=getChild(acN, "role-name");
-                 rN!=null; rN=getNext( rN )) {
-                roles.addElement(getContent( rN ));
-            }
-            generateConstraints( urls, methods, roles );
-        }
-    }
-
-    // To be included in a <VirtualHost> section
-    void generateJk1Mount(Node webN, PrintWriter out) {
-
-        System.out.println("Generating JkMount for servlets " );
-        for( Node mapN=getChild( webN, "servlet-mapping" );
-             mapN != null; mapN = getNext( mapN ) ) {
-            
-            Node servN=getChild( mapN, "servlet-name");
-            if( servN==null )
-                servN=getChild( mapN, "jsp-file");
-            Node url=getChild( mapN, "url-pattern");
-            
-            out.println( "JkMount " + cpath + getContent(url) + " " + worker);
-        }
-
-        Node lcN=getChild( webN, "login-config" );
-        if( lcN!=null ) {
-            System.out.println("Generating mapping for login-config " );
-            
-            Node authMethN=getChild( lcN, "auth-method");
-            String authMeth=getContent( authMethN );
-            if( authMeth == null ) authMeth="FORM";
-
-            Node n1=getChild( lcN, "form-login-config");
-            String loginPage=getContent( getChild( n1, "form-login-page"));
-            String errPage=getContent( getChild( n1, "form-error-page"));
-
-            out.println("JkMount " + cpath + loginPage  + " " + worker );
-            out.println("JkMount " + cpath + errPage  + " " + worker );
-            out.println();
-        }
-
-        System.out.println("Generating mappings for security constraints " );
-        for( Node mapN=getChild( webN, "security-constraint" );
-             mapN != null; mapN = getNext( mapN )) {
-            Node wrcN=getChild( mapN, "web-resource-collection");
-
-            Vector methods=new Vector();
-            for( Node uN=getChild(wrcN, "http-method");
-                 uN!=null; uN=getNext( uN )) {
-                methods.addElement( getContent( uN ));
-            }
-
-            Vector urls=new Vector();
-            for( Node uN=getChild(wrcN, "url-pattern");
-                 uN!=null; uN=getNext( uN )) {
-                urls.addElement( getContent( uN ));
-            }
-
-            // Not used at the moment
-            Node acN=getChild( mapN, "auth-constraint");
-            Vector roles=new Vector();
-            for( Node rN=getChild(acN, "role-name");
-                 rN!=null; rN=getNext( rN )) {
-                roles.addElement(getContent( rN ));
-            }
-            generateConstraints( urls, methods, roles );
-        }
-    }
-
-
-    public void generateConstraints( Vector urls, Vector methods, Vector roles ) {
-
-    }
+        void generateErrorPage( PrintWriter out, int err, String location );
+        
+        void generateMimeMapping( PrintWriter out, String ext, String type );
     
+        void generateWelcomeFiles( PrintWriter out, Vector wf );
+
+        void generateConstraints( PrintWriter out, Vector urls, Vector methods, Vector roles, boolean isSSL );
+    }    
+    
+    // -------------------- Implementation --------------------
+    void generate(PrintWriter out, MappingGenerator gen, Node webN ) {
+
+        log.info("Generating mappings for servlets " );
+        for( Node mapN=getChild( webN, "servlet-mapping" );
+             mapN != null; mapN = getNext( mapN ) ) {
+            
+            String serv=getChildContent( mapN, "servlet-name");
+            String url=getChildContent( mapN, "url-pattern");
+            
+            gen.generateServletMapping(  out, serv, url );
+        }
+
+        log.info("Generating mappings for filters " );
+        for( Node mapN=getChild( webN, "filter-mapping" );
+             mapN != null; mapN = getNext( mapN ) ) {
+            
+            String filter=getChildContent( mapN, "filter-name");
+            String url=getChildContent( mapN, "url-pattern");
+
+            gen.generateFilterMapping(  out, filter, url );
+        }
+
+
+        for( Node mapN=getChild( webN, "error-page" );
+             mapN != null; mapN = getNext( mapN ) ) {
+            String errorCode= getChildContent( mapN, "error-code" );
+            String location= getChildContent( mapN, "location" );
+
+            if( errorCode!=null && ! "".equals( errorCode ) ) {
+                try {
+                    int err=new Integer( errorCode ).intValue();
+                    gen.generateErrorPage( out, err, location );
+                } catch( Exception ex ) {
+                    log.error( "Format error " + location, ex);
+                }
+            }
+        }
+
+        
+        Node n0=getChild( webN, "welcome-file-list" );
+        if( n0!=null ) {
+            Vector wF=new Vector();
+            for( Node mapN=getChild( webN, "welcome-file" );
+                 mapN != null; mapN = getNext( mapN ) ) {
+                wF.addElement( getContent(mapN));
+            }
+            gen.generateWelcomeFiles( out, wF );
+        }
+
+        for( Node mapN=getChild( webN, "mime-mapping" );
+             mapN != null; mapN = getNext( mapN ) ) {
+            String ext=getChildContent( mapN, "extension" );
+            String type=getChildContent( mapN, "mime-type" );
+
+            gen.generateMimeMapping( out, ext, type );
+        }
+        
+        Node lcN=getChild( webN, "login-config" );
+        if( lcN!=null ) {
+            log.info("Generating mapping for login-config " );
+            
+            String authMeth=getContent( getChild( lcN, "auth-method"));
+            String realm=getContent( getChild( lcN, "realm-name"));
+            if( authMeth == null ) authMeth="BASIC";
+
+            Node n1=getChild( lcN, "form-login-config");
+            String loginPage= getChildContent( n1, "form-login-page");
+            String errPage= getChildContent( n1, "form-error-page");
+
+            gen.generateLoginConfig( out, loginPage, errPage, authMeth );
+        }
+
+        log.info("Generating mappings for security constraints " );
+        for( Node mapN=getChild( webN, "security-constraint" );
+             mapN != null; mapN = getNext( mapN )) {
+
+            Vector methods=new Vector();
+            Vector urls=new Vector();
+            Vector roles=new Vector();
+            boolean isSSL=false;
+            
+            Node wrcN=getChild( mapN, "web-resource-collection");
+            for( Node uN=getChild(wrcN, "http-method");
+                 uN!=null; uN=getNext( uN )) {
+                methods.addElement( getContent( uN ));
+            }
+            for( Node uN=getChild(wrcN, "url-pattern");
+                 uN!=null; uN=getNext( uN )) {
+                urls.addElement( getContent( uN ));
+            }
+
+            // Not used at the moment
+            Node acN=getChild( mapN, "auth-constraint");
+            for( Node rN=getChild(acN, "role-name");
+                 rN!=null; rN=getNext( rN )) {
+                roles.addElement(getContent( rN ));
+            }
+
+            Node ucN=getChild( mapN, "user-data-constraint");
+            String transp=getContent(getChild( ucN, "transport-guarantee"));
+            if( transp!=null ) {
+                if( "INTEGRAL".equalsIgnoreCase( transp ) ||
+                    "CONFIDENTIAL".equalsIgnoreCase( transp ) ) {
+                    isSSL=true;
+                }
+            }
+            for( Node rN=getChild(acN, "role-name");
+                 rN!=null; rN=getNext( rN )) {
+                roles.addElement(getContent( rN ));
+            }
+
+            gen.generateConstraints( out, urls, methods, roles, isSSL );
+        }
+    }
+
     // -------------------- DOM utils --------------------
 
-        /** Get the content of a node
-         */
-    public String getContent(Node n ) {
+    /** Get the content of a node
+     */
+    public static String getContent(Node n ) {
         if( n==null ) return null;
         Node n1=n.getFirstChild();
         // XXX Check if it's a text node
@@ -321,7 +323,7 @@ public class WebXml2Jk {
     
     /** Get the first child
      */
-    Node getChild( Node parent, String name ) {
+    public static Node getChild( Node parent, String name ) {
         Node first=parent.getFirstChild();
         if( first==null ) return null;
         for (Node node = first; node != null;
@@ -334,9 +336,24 @@ public class WebXml2Jk {
         return null;
     }
 
+    /** Get the first child's content ( i.e. it's included TEXT node )
+     */
+    public static String getChildContent( Node parent, String name ) {
+        Node first=parent.getFirstChild();
+        if( first==null ) return null;
+        for (Node node = first; node != null;
+             node = node.getNextSibling()) {
+            //System.out.println("getNode: " + name + " " + node.getNodeName());
+            if( name.equals( node.getNodeName() ) ) {
+                return getContent( node );
+            }
+        }
+        return null;
+    }
+
     /** Get the node in the list of siblings
      */
-    Node getNext( Node current ) {
+    public static Node getNext( Node current ) {
         Node first=current.getNextSibling();
         String name=current.getNodeName();
         if( first==null ) return null;
@@ -350,7 +367,7 @@ public class WebXml2Jk {
         return null;
     }
 
-    static class NullResolver implements EntityResolver {
+    public static class NullResolver implements EntityResolver {
         public InputSource resolveEntity (String publicId,
                                                    String systemId)
             throws SAXException, IOException
@@ -360,11 +377,11 @@ public class WebXml2Jk {
         }
     }
     
-    Document readXml(File xmlF)
+    public static Document readXml(File xmlF)
         throws SAXException, IOException, ParserConfigurationException
     {
         if( ! xmlF.exists() ) {
-            System.out.println("No xml file " + xmlF );
+            log.error("No xml file " + xmlF );
             return null;
         }
         DocumentBuilderFactory dbf =
@@ -410,14 +427,16 @@ public class WebXml2Jk {
                 return;
             }
 
-            generateJk2Map( webN, out );
+            MappingGenerator generator=new GeneratorJk2();
+            
+            generator.setWebXmlReader( this );
+            generate( out, generator, webN );
             
 
         } catch( Exception ex ) {
             ex.printStackTrace();
         }
     }
-
 
 
     public static void main(String args[] ) {
@@ -446,5 +465,7 @@ public class WebXml2Jk {
         }
 
     }
-    
+
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( WebXml2Jk.class );
 }
