@@ -183,11 +183,11 @@ public class Ajp13
 
     // Buffer used of output body and headers
     OutputBuffer headersWriter=new OutputBuffer(MAX_PACKET_SIZE);
-    Ajp13Packet outBuf = new Ajp13Packet( headersWriter );
+    AjpPacket outBuf;
     // Buffer used for input body
-    Ajp13Packet inBuf  = new Ajp13Packet( MAX_PACKET_SIZE );
+    AjpPacket inBuf;
     // Boffer used for request head ( and headers )
-    Ajp13Packet hBuf=new Ajp13Packet( MAX_PACKET_SIZE );
+    AjpPacket hBuf;
     
     // Holds incoming reads of request body data (*not* header data)
     byte []bodyBuff = new byte[MAX_READ_SIZE];
@@ -198,6 +198,14 @@ public class Ajp13
     public Ajp13() 
     {
         super();
+		initBuf();
+    }
+
+    public void initBuf()
+    {   
+        outBuf = new Ajp13Packet( headersWriter );
+        inBuf  = new Ajp13Packet( MAX_PACKET_SIZE );
+        hBuf   = new Ajp13Packet( MAX_PACKET_SIZE );
     }
 
     public void recycle() 
@@ -250,6 +258,15 @@ public class Ajp13
 	return 200; // XXX This is actually an error condition 
     }
 
+	/**
+	 * Try to decode Headers - AJP13 will do nothing but descendant will	
+	 * override this method to handle new headers (ie SSL_KEY_SIZE in AJP14)
+	 */
+	int decodeMoreHeaders(Request req, byte attribute, AjpPacket msg)
+	{
+		return 500;
+	}
+
     /**
      * Parse a FORWARD_REQUEST packet from the web server and store its
      * properties in the passed-in request object.
@@ -261,7 +278,7 @@ public class Ajp13
      *
      * @return 200 in case of a successful decoduing, 500 in case of error.  
      */
-    private int decodeRequest( Request req, Ajp13Packet msg ) throws IOException
+    protected int decodeRequest( Request req, AjpPacket msg ) throws IOException
     {
 	// XXX Awful return values
 
@@ -361,7 +378,10 @@ public class Ajp13
                 break;
 
 	    default:
-		return 500; // Error
+			if (decodeMoreHeaders(req, attributeCode, msg) != 500)
+				break;
+
+			return 500;
             }
         }
 
@@ -629,7 +649,7 @@ public class Ajp13
      * @return The number of bytes read on a successful read or -1 if there 
      * was an error.
      **/
-    private int receive(Ajp13Packet msg) throws IOException {
+    protected int receive(AjpPacket msg) throws IOException {
 	// XXX If the length in the packet header doesn't agree with the
 	// actual number of bytes read, it should probably return an error
 	// value.  Also, callers of this method never use the length
@@ -665,7 +685,7 @@ public class Ajp13
      * @param msg A packet with accumulated data to send to the server --
      * this method will write out the length in the header.  
      */
-    private void send( Ajp13Packet msg ) throws IOException {
+    protected void send( AjpPacket msg ) throws IOException {
 	msg.end(); // Write the packet header
 	byte b[] = msg.getBuff();
 	int len  = msg.getLen();
@@ -685,333 +705,6 @@ public class Ajp13
 	}
 	if(null !=in) {
 	    in.close();
-	}
-    }
-
-    /**
-     * A single packet for communication between the web server and the
-     * container.  Designed to be reused many times with no creation of
-     * garbage.  Understands the format of data types for these packets.
-     * Can be used (somewhat confusingly) for both incoming and outgoing
-     * packets.  
-     */
-    public static class Ajp13Packet {
-	byte buff[]; // Holds the bytes of the packet
-	int pos;     // The current read or write position in the buffer
-	OutputBuffer ob;
-
-	int len; 
-	// This actually means different things depending on whether the
-	// packet is read or write.  For read, it's the length of the
-	// payload (excluding the header).  For write, it's the length of
-	// the packet as a whole (counting the header).  Oh, well.
-
-	/**
-	 * Create a new packet with an internal buffer of given size.
-	 */
-	public Ajp13Packet( int size ) {
-	    buff = new byte[size];
-	}
-
-	public Ajp13Packet( byte b[] ) {
-	    buff = b;
-	}
-
-	public Ajp13Packet( OutputBuffer ob ) {
-	    this.ob=ob;
-	    buff=ob.getBuffer();
-	}
-	
-	public byte[] getBuff() {
-	    return buff;
-	}
-	
-	public int getLen() {
-	    return len;
-	}
-	
-	public int getByteOff() {
-	    return pos;
-	}
-
-	public void setByteOff(int c) {
-	    pos=c;
-	}
-
-	/** 
-	 * Parse the packet header for a packet sent from the web server to
-	 * the container.  Set the read position to immediately after
-	 * the header.
-	 *
-	 * @return The length of the packet payload, as encoded in the
-	 * header, or -1 if the packet doesn't have a valid header.  
-	 */
-	public int checkIn() {
-	    pos = 0;
-	    int mark = getInt();
-	    len      = getInt();
-	    
-	    if( mark != 0x1234 ) {
-		// XXX Logging
-		System.out.println("BAD packet " + mark);
-		dump( "In: " );
-		return -1;
-	    }
-	    return len;
-	}
-	
-	/**
-	 * Prepare this packet for accumulating a message from the container to
-	 * the web server.  Set the write position to just after the header
-	 * (but leave the length unwritten, because it is as yet unknown).  
-	 */
-	public void reset() {
-	    len = 4;
-	    pos = 4;
-	    buff[0] = (byte)'A';
-	    buff[1] = (byte)'B';
-	}
-	
-	/**
-	 * For a packet to be sent to the web server, finish the process of
-	 * accumulating data and write the length of the data payload into
-	 * the header.  
-	 */
-	public void end() {
-	    len = pos;
-	    setInt( 2, len-4 );
-	}
-	
-	// ============ Data Writing Methods ===================
-
-	/**
-	 * Write an integer at an arbitrary position in the packet, but don't
-	 * change the write position.
-	 *
-	 * @param bpos The 0-indexed position within the buffer at which to
-	 * write the integer (where 0 is the beginning of the header).
-	 * @param val The integer to write.
-	 */
-	private void setInt( int bPos, int val ) {
-	    buff[bPos]   = (byte) ((val >>>  8) & 0xFF);
-	    buff[bPos+1] = (byte) (val & 0xFF);
-	}
-
-	public void appendInt( int val ) {
-	    setInt( pos, val );
-	    pos += 2;
-	}
-	
-	public void appendByte( byte val ) {
-	    buff[pos++] = val;
-	}
-	
-	public void appendBool( boolean val) {
-	    buff[pos++] = (byte) (val ? 1 : 0);
-	}
-
-	/**
-	 * Write a String out at the current write position.  Strings are
-	 * encoded with the length in two bytes first, then the string, and
-	 * then a terminating \0 (which is <B>not</B> included in the
-	 * encoded length).  The terminator is for the convenience of the C
-	 * code, where it saves a round of copying.  A null string is
-	 * encoded as a string with length 0.  
-	 */
-	public void appendString( String str ) {
-	    // Dual use of the buffer - as Ajp13Packet and as OutputBuffer
-	    // The idea is simple - fewer buffers, smaller footprint and less
-	    // memcpy. The code is a bit tricky, but only local to this
-	    // function.
-	    if(str == null) {
-		setInt( pos, 0);
-		buff[pos + 2] = 0;
-		pos += 3;
-		return;
-	    }
-
-	    int strStart=pos;
-
-	    // This replaces the old ( buggy and slow ) str.length()
-	    // and str.getBytes(). str.length() is chars, may be != bytes
-	    // and getBytes is _very_ slow.
-	    // XXX setEncoding !!!
-	    ob.setByteOff( pos+2 ); 
-	    try {
-		ob.write( str );
-		ob.flushChars();
-	    } catch( IOException ex ) {
-		ex.printStackTrace();
-	    }
-	    int strEnd=ob.getByteOff();
-		
-	    buff[strEnd]=0; // The \0 terminator
-	    int strLen=strEnd-strStart;
-	    setInt( pos, strEnd - strStart );
-	    pos += strLen + 3; 
-	}
-
-	/** 
-	 * Copy a chunk of bytes into the packet, starting at the current
-	 * write position.  The chunk of bytes is encoded with the length
-	 * in two bytes first, then the data itself, and finally a
-	 * terminating \0 (which is <B>not</B> included in the encoded
-	 * length).
-	 *
-	 * @param b The array from which to copy bytes.
-	 * @param off The offset into the array at which to start copying
-	 * @param len The number of bytes to copy.  
-	 */
-	public void appendBytes( byte b[], int off, int numBytes ) {
-	    appendInt( numBytes );
-	    if( pos + numBytes > buff.length ) {
-		System.out.println("Buffer overflow " + buff.length + " " + pos + " " + numBytes );
-		// XXX Log
-	    }
-	    System.arraycopy( b, off, buff, pos, numBytes);
-	    buff[pos + numBytes] = 0; // Terminating \0
-	    pos += numBytes + 1;
-	}
-
-	
-	// ============ Data Reading Methods ===================
-
-	/**
-	 * Read an integer from packet, and advance the read position past
-	 * it.  Integers are encoded as two unsigned bytes with the
-	 * high-order byte first, and, as far as I can tell, in
-	 * little-endian order within each byte.  
-	 */
-	public int getInt() {
-	    int result = peekInt();
-	    pos += 2;
-	    return result;
-	}
-
-	/**
-	 * Read an integer from the packet, but don't advance the read
-	 * position past it.  
-	 */
-	public int peekInt() {
-	    int b1 = buff[pos] & 0xFF;  // No swap, Java order
-	    int b2 = buff[pos + 1] & 0xFF;
-
-	    return  (b1<<8) + b2;
-	}
-
-	public byte getByte() {
-	    byte res = buff[pos];
-	    pos++;
-	    return res;
-	}
-
-	public byte peekByte() {
-	    return buff[pos];
-	}
-
-	public boolean getBool() {
-	    return (getByte() == (byte) 1);
-	}
-
-	public static final String DEFAULT_CHAR_ENCODING = "8859_1";
-
-	public void getMessageBytes( MessageBytes mb ) {
-	    int length = getInt();
-	    if( (length == 0xFFFF) || (length == -1) ) {
-		mb.setString( null );
-		return;
-	    }
-	    mb.setBytes( buff, pos, length );
-	    pos += length;
-	    pos++; // Skip the terminating \0
-	}
-
-	public MessageBytes addHeader( MimeHeaders headers ) {
-	    int length = getInt();
-	    if( (length == 0xFFFF) || (length == -1) ) {
-		return null;
-	    }
-	    MessageBytes vMB=headers.addValue( buff, pos, length );
-	    pos += length;
-	    pos++; // Skip the terminating \0
-	    
-	    return vMB;
-	}
-	
-	/**
-	 * Read a String from the packet, and advance the read position
-	 * past it.  See appendString for details on string encoding.
-	 **/
-	public String getString() throws java.io.UnsupportedEncodingException {
-	    int length = getInt();
-	    if( (length == 0xFFFF) || (length == -1) ) {
-		//	    System.out.println("null string " + length);
-		return null;
-	    }
-	    String s = new String( buff, pos, length, DEFAULT_CHAR_ENCODING );
-
-	    pos += length;
-	    pos++; // Skip the terminating \0
-	    return s;
-	}
-
-	/**
-	 * Copy a chunk of bytes from the packet into an array and advance
-	 * the read position past the chunk.  See appendBytes() for details
-	 * on the encoding.
-	 *
-	 * @return The number of bytes copied.
-	 */
-	public int getBytes(byte dest[]) {
-	    int length = getInt();
-	    if( length > buff.length ) {
-		// XXX Should be if(pos + length > buff.legth)?
-		System.out.println("XXX Assert failed, buff too small ");
-	    }
-	
-	    if( (length == 0xFFFF) || (length == -1) ) {
-		System.out.println("null string " + length);
-		return 0;
-	    }
-
-	    System.arraycopy( buff, pos,  dest, 0, length );
-	    pos += length;
-	    pos++; // Skip terminating \0  XXX I believe this is wrong but harmless
-	    return length;
-	}
-
-	// ============== Debugging code =========================
-	private String hex( int x ) {
-	    //	    if( x < 0) x=256 + x;
-	    String h=Integer.toHexString( x );
-	    if( h.length() == 1 ) h = "0" + h;
-	    return h.substring( h.length() - 2 );
-	}
-
-	private void hexLine( int start ) {
-	    for( int i=start; i< start+16 ; i++ ) {
-	      if( i < len + 4)
-		System.out.print( hex( buff[i] ) + " ");
-	      else 
-		System.out.print( "   " );
-	    }
-	    System.out.print(" | ");
-	    for( int i=start; i < start+16 && i < len + 4; i++ ) {
-		if( Character.isLetterOrDigit( (char)buff[i] ))
-		    System.out.print( new Character((char)buff[i]) );
-		else
-		    System.out.print( "." );
-	    }
-	    System.out.println();
-	}
-    
-	public void dump(String msg) {
-	    System.out.println( msg + ": " + buff + " " + pos +"/" + (len + 4));
-
-	    for( int j=0; j < len + 4; j+=16 )
-		hexLine( j );
-	
-	    System.out.println();
 	}
     }
 }

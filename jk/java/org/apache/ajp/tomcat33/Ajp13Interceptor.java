@@ -196,41 +196,6 @@ public class Ajp13Interceptor extends PoolTcpConnector
 	log("Shutdown command ignored");
 	return false;
     }
-
-    /**
-     * Return <code>true</code> if the specified client and server addresses
-     * are the same.  This method works around a bug in the IBM 1.1.8 JVM on
-     * Linux, where the address bytes are returned reversed in some
-     * circumstances.
-     *
-     * @param server The server's InetAddress
-     * @param client The client's InetAddress
-     */
-    public static boolean isSameAddress(InetAddress server, InetAddress client) {
-	// Compare the byte array versions of the two addresses
-	byte serverAddr[] = server.getAddress();
-	byte clientAddr[] = client.getAddress();
-	if (serverAddr.length != clientAddr.length)
-	    return (false);
-	boolean match = true;
-	for (int i = 0; i < serverAddr.length; i++) {
-	    if (serverAddr[i] != clientAddr[i]) {
-		match = false;
-		break;
-	    }
-	}
-	if (match)
-	    return (true);
-
-	// Compare the reversed form of the two addresses
-	for (int i = 0; i < serverAddr.length; i++) {
-	    if (serverAddr[i] != clientAddr[(serverAddr.length-1)-i])
-		return (false);
-	}
-	return (true);
-    }
-
-
     
 }
 
