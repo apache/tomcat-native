@@ -37,8 +37,9 @@
   </target>
 
   <target name="jni" depends="init">
+    <mkdir dir="jni/obj" />
     <so sofile="jni_connect" 
-	buildDir="jni" 
+	buildDir="jni/obj" 
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}"
@@ -100,11 +101,15 @@
   </target>
 
   <target name="apache20" depends="init">
+    <mkdir dir="apache-2.0/obj" />
     <so sofile="mod_jk" 
-	buildDir="apache-2.0"
+	buildDir="apache-2.0/obj"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
+	taskDebug="0"
 	profile="${so.profile}"	>
+      <def name="_REENTRANT" />
+      <def name="CHANNEL" />
       <def name="CHUNK_SIZE" value="4096" 
 	   info="Read/Write buffer size" />
       <def name="REUSE_WORKER" 
@@ -131,8 +136,9 @@
   
 
   <target name="apache13" depends="init">
+    <mkdir dir="apache-1.3/obj" />
     <so sofile="mod_jk" 
-	buildDir="apache-1.3"
+	buildDir="apache-1.3/obj"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}">
