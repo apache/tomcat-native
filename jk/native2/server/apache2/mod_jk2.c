@@ -402,19 +402,21 @@ static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
 */
 static int jk2_apache2_isValidating(apr_pool_t *gPool, apr_pool_t **mainPool) {
     apr_pool_t *tmpPool=NULL;
-    void *data=NULL;
+    char *data=NULL;
     int i;
     
     for( i=0; i<10; i++ ) {
         tmpPool=apr_pool_get_parent( gPool );
         if( tmpPool == NULL ) {
+            /* fprintf(stderr, "XXX Found Root pool %p\n", gPool ); */
             break;
         }
         gPool=tmpPool;
     }
 
-    if( tmpPool == NULL ) {
+    if( tmpPool != NULL ) {
         /* We can't detect the root pool */
+        /* fprintf(stderr, "XXX Can't find root pool\n" ); */
         return JK_FALSE;
     }
     if(mainPool != NULL )
@@ -446,19 +448,20 @@ static int jk2_post_config(apr_pool_t *pconf,
     
     rc=jk2_apache2_isValidating( plog, &gPool );
 
-    if( rc == JK_TRUE ) {
+    if( rc == JK_TRUE && gPool != NULL ) {
         /* This is the first step */
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "mod_jk.post_config() first invocation\n");
         apr_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool );
         return OK;
     }
         
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
                   "mod_jk.post_config() second invocation\n" ); 
     
     if(!workerEnv->was_initialized) {
         workerEnv->was_initialized = JK_TRUE;        
+        
         jk2_init( env, pconf, workerEnv, s );
     }
     return OK;
