@@ -94,8 +94,6 @@
 #include "apr_general.h"
 #endif
 
-#define DEFAULT_HOST "127.0.0.1"
-
 /** Information specific for the socket channel
  */
 struct jk_channel_socket_private {
@@ -199,12 +197,12 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
         char *localName=ch->mbean->localName;
         if( *localName=='\0' ) {
             /* Empty local part */
-            socketInfo->port=8009;
-            if( socketInfo->host==NULL) socketInfo->host=DEFAULT_HOST;
+            socketInfo->port=AJP13_DEF_PORT;
+            if( socketInfo->host==NULL) socketInfo->host=AJP13_DEF_HOST;
         } else {
             char *portIdx=strchr( localName, ':' );
             if( portIdx==NULL || portIdx[1]=='\0' ) {
-                socketInfo->port=8009;
+                socketInfo->port=AJP13_DEF_PORT;
             } else {
                 portIdx++;
                 socketInfo->port=atoi( portIdx );
@@ -224,11 +222,11 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
     /* error if port= 40009 ( for example */
     /*
       if( socketInfo->port<=0 )
-        socketInfo->port=8009;
+        socketInfo->port=AJP13_DEF_PORT;
     */
     
     if( socketInfo->host==NULL )
-        socketInfo->host=DEFAULT_HOST;
+        socketInfo->host=AJP13_DEF_HOST;
     
     rc=jk2_channel_socket_resolve( env, socketInfo->host, socketInfo->port, &socketInfo->addr );
     if( rc!= JK_OK ) {

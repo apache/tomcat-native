@@ -75,12 +75,6 @@
 #include "jk_requtil.h"
 #include "jk_registry.h"
 
-#define AJP_DEF_RETRY_ATTEMPTS    (2)
-#define AJP13_PROTO 13
-
-#define AJP13_DEF_HOST  ("localhost")
-#define AJP13_DEF_PORT  (8009)
-
 /* -------------------- Impl -------------------- */
 static char *jk2_worker_ajp13_getAttributeInfo[]={ "lb_factor", "lb_value", "debug", "channel", "level",
                                                    "route", "routeRedirect", "errorState", "graceful", "groups", "disabled", 

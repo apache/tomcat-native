@@ -70,8 +70,6 @@
 #include "jk_global.h"
 #include "jk_registry.h"
 
-#define DEFAULT_HOST "127.0.0.1"
-
 /** Information specific for the socket channel
  */
 struct jk_channel_apr_private {
@@ -179,7 +177,7 @@ static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
         char *portIdx=strchr( localName, ':' );
 
         if( portIdx==NULL || portIdx[1]=='\0' ) {
-            socketInfo->port=8009;
+            socketInfo->port=AJP13_DEF_PORT;
         } else {
             portIdx++;
             socketInfo->port=atoi( portIdx );
@@ -196,10 +194,10 @@ static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
     }
     
     if( socketInfo->port<=0 )
-        socketInfo->port=8009;
+        socketInfo->port=AJP13_DEF_PORT;
 
     if( socketInfo->host==NULL )
-        socketInfo->host=DEFAULT_HOST;
+        socketInfo->host=AJP13_DEF_HOST;
 
     rc=jk2_channel_apr_resolve( env, socketInfo->host, socketInfo->port, socketInfo );
     if( rc!= JK_OK ) {

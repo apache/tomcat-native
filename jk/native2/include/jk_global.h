@@ -128,6 +128,16 @@ extern char *strdup (const char *str);
 #define JK_VERSION JK_MAKEVERSION(JK_VERMAJOR, JK_VERMINOR, JK_VERFIX, JK_VERBETA)
 
 
+#define AJP_DEF_RETRY_ATTEMPTS    (2)
+#define AJP13_PROTO 13
+
+#define AJP13_DEF_HOST "127.0.0.1"
+#ifdef NETWARE
+    #define AJP13_DEF_PORT 9009    /* default to 9009 since 8009 is used by OS */
+#else
+    #define AJP13_DEF_PORT 8009
+#endif
+
 #ifdef WIN32
     #include <windows.h>
     #include <winsock.h>
