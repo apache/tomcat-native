@@ -30,23 +30,23 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-    typedef struct jk_logger jk_logger_t;
-    struct jk_logger
-    {
-        void *logger_private;
-        int level;
+typedef struct jk_logger jk_logger_t;
+struct jk_logger
+{
+    void *logger_private;
+    int level;
 
-        int (JK_METHOD * log) (jk_logger_t *l, int level, const char *what);
+    int (JK_METHOD * log) (jk_logger_t *l, int level, const char *what);
 
-    };
+};
 
-    struct file_logger
-    {
-        FILE *logfile;
-        /* For Apache 2 APR piped logging */
-        void *jklogfp;
-    };
-    typedef struct file_logger file_logger_t;
+struct file_logger
+{
+    FILE *logfile;
+    /* For Apache 2 APR piped logging */
+    void *jklogfp;
+};
+typedef struct file_logger file_logger_t;
 
 #define JK_LOG_DEBUG_LEVEL   0
 #define JK_LOG_INFO_LEVEL    1

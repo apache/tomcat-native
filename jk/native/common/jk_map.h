@@ -30,44 +30,46 @@ extern "C"
 #endif                          /* __cplusplus */
 
 
-    struct jk_map;
-    typedef struct jk_map jk_map_t;
+struct jk_map;
+typedef struct jk_map jk_map_t;
 
-    int map_alloc(jk_map_t **m);
+int map_alloc(jk_map_t **m);
 
-    int jk_map_free(jk_map_t **m);
+int map_free(jk_map_t **m);
 
-    int map_open(jk_map_t *m);
+int map_open(jk_map_t *m);
 
-    int map_close(jk_map_t *m);
+int map_close(jk_map_t *m);
 
-    void *map_get(jk_map_t *m, const char *name, const void *def);
+void *map_get(jk_map_t *m, const char *name, const void *def);
 
-    int map_get_int(jk_map_t *m, const char *name, int def);
+int map_get_int(jk_map_t *m, const char *name, int def);
 
-    double map_get_double(jk_map_t *m, const char *name, double def);
+double map_get_double(jk_map_t *m, const char *name, double def);
 
-    char *map_get_string(jk_map_t *m, const char *name, const char *def);
+char *map_get_string(jk_map_t *m, const char *name, const char *def);
 
-    char **map_get_string_list(jk_map_t *m,
-                               const char *name,
-                               unsigned *list_len, const char *def);
+char **map_get_string_list(jk_map_t *m,
+                           const char *name,
+                           unsigned *list_len, const char *def);
 
-    int map_put(jk_map_t *m, const char *name, const void *value, void **old);
+int map_put(jk_map_t *m, const char *name, const void *value, void **old);
 
-    int map_read_properties(jk_map_t *m, const char *f);
+int map_read_property(jk_map_t *m, const char *str);
 
-    int map_size(jk_map_t *m);
+int map_read_properties(jk_map_t *m, const char *f);
 
-    char *map_name_at(jk_map_t *m, int idex);
+int map_size(jk_map_t *m);
 
-    void *map_value_at(jk_map_t *m, int idex);
+char *map_name_at(jk_map_t *m, int idex);
+
+void *map_value_at(jk_map_t *m, int idex);
 
 /**
  *  Replace $(property) in value.
  * 
  */
-    char *map_replace_properties(const char *value, jk_map_t *m);
+char *map_replace_properties(const char *value, jk_map_t *m);
 
 
 #ifdef __cplusplus

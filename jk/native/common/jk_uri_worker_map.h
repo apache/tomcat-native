@@ -33,29 +33,28 @@ extern "C"
 #include "jk_map.h"
 #include "jk_logger.h"
 
-    struct jk_uri_worker_map;
-    typedef struct jk_uri_worker_map jk_uri_worker_map_t;
+struct jk_uri_worker_map;
+typedef struct jk_uri_worker_map jk_uri_worker_map_t;
 
-    int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
-                             jk_map_t *init_data, jk_logger_t *l);
+int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
+                         jk_map_t *init_data, jk_logger_t *l);
 
-    int uri_worker_map_free(jk_uri_worker_map_t **uw_map, jk_logger_t *l);
+int uri_worker_map_free(jk_uri_worker_map_t **uw_map, jk_logger_t *l);
 
-    int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
-                            jk_map_t *init_data, jk_logger_t *l);
+int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
+                        jk_map_t *init_data, jk_logger_t *l);
 
-    int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
-                           char *puri, char *pworker, jk_logger_t *l);
+int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
+                       char *puri, char *pworker, jk_logger_t *l);
 
-    int uri_worker_map_close(jk_uri_worker_map_t *uw_map, jk_logger_t *l);
+int uri_worker_map_close(jk_uri_worker_map_t *uw_map, jk_logger_t *l);
 
-    void jk_no2slash(char *name);
+void jk_no2slash(char *name);
 
-    char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                            char *uri, jk_logger_t *l);
+char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
+                        char *uri, jk_logger_t *l);
 
 #ifdef __cplusplus
 }
-#endif                          /* __cplusplus */
-
-#endif                          /* JK_URI_WORKER_MAP_H */
+#endif    /* __cplusplus */
+#endif    /* JK_URI_WORKER_MAP_H */

@@ -33,8 +33,8 @@ extern "C"
 
 #define JK_AJP12_WORKER_NAME ("ajp12")
 
-    int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
-                                       const char *name, jk_logger_t *l);
+int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
+                                   const char *name, jk_logger_t *l);
 
 #ifdef __cplusplus
 }

@@ -95,31 +95,30 @@ extern "C"
 
     typedef struct jk_pool_t jk_pool_t;
 /** jk pool structure */
-    struct jk_pool_t
-    {
-        size_t size;
-        size_t pos;
-        char *buf;
-        size_t dyn_size;
-        size_t dyn_pos;
-        void **dynamic;
-    };
+struct jk_pool_t
+{
+    size_t size;
+    size_t pos;
+    char *buf;
+    size_t dyn_size;
+    size_t dyn_pos;
+    void **dynamic;
+};
 
-    void jk_open_pool(jk_pool_t *p, jk_pool_atom_t *buf, size_t size);
+void jk_open_pool(jk_pool_t *p, jk_pool_atom_t *buf, size_t size);
 
-    void jk_close_pool(jk_pool_t *p);
+void jk_close_pool(jk_pool_t *p);
 
-    void jk_reset_pool(jk_pool_t *p);
+void jk_reset_pool(jk_pool_t *p);
 
-    void *jk_pool_alloc(jk_pool_t *p, size_t sz);
+void *jk_pool_alloc(jk_pool_t *p, size_t sz);
 
-    void *jk_pool_realloc(jk_pool_t *p,
-                          size_t sz, const void *old, size_t old_sz);
+void *jk_pool_realloc(jk_pool_t *p,
+                      size_t sz, const void *old, size_t old_sz);
 
-    void *jk_pool_strdup(jk_pool_t *p, const char *s);
+void *jk_pool_strdup(jk_pool_t *p, const char *s);
 
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
-
 #endif                          /* _JK_POOL_H */

@@ -67,13 +67,15 @@ int jk_get_worker_reply_timeout(jk_map_t *m, const char *wname, int def);
 
 int jk_get_worker_prepost_timeout(jk_map_t *m, const char *wname, int def);
 
+int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def);
+
 char *jk_get_worker_secret_key(jk_map_t *m, const char *wname);
 
 void jk_set_log_format(const char *logformat);
 
 int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_wokers);
 
-double jk_get_lb_factor(jk_map_t *m, const char *wname);
+int jk_get_lb_factor(jk_map_t *m, const char *wname);
 
 int jk_get_is_sticky_session(jk_map_t *m, const char *wname);
 
@@ -140,5 +142,4 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
-
 #endif                          /* _JK_UTIL_H */

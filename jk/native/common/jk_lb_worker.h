@@ -33,8 +33,8 @@ extern "C"
 
 #define JK_LB_WORKER_NAME ("lb")
 
-    int JK_METHOD lb_worker_factory(jk_worker_t **w,
-                                    const char *name, jk_logger_t *l);
+int JK_METHOD lb_worker_factory(jk_worker_t **w,
+                                const char *name, jk_logger_t *l);
 
 #ifdef __cplusplus
 }

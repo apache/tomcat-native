@@ -107,8 +107,8 @@ extern "C"
  * Functions
  */
 
-    int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
-                                         jk_pool_t *p, jk_logger_t *l);
+int ajp13_marshal_shutdown_into_msgb(jk_msg_buf_t *msg,
+                                     jk_pool_t *p, jk_logger_t *l);
 
 #ifdef __cplusplus
 }
