@@ -112,12 +112,15 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
   env->registerFactory( env, "worker", "ajp14", jk_worker_ajp14_factory );
   env->registerFactory( env, "worker", "lb",    jk_worker_lb_factory );
   env->registerFactory( env, "worker", "status", jk_worker_status_factory );
+  env->registerFactory( env, "worker", "run", jk_worker_run_factory );
 #ifdef HAS_APR
-  env->registerFactory( env, "channel", "socket", jk_channel_apr_socket_factory );
-#else
-  env->registerFactory( env, "channel", "socket", jk_channel_socket_factory );
+  env->registerFactory( env, "channel", "apr",
+                        jk_channel_apr_socket_factory );
 #endif
-  env->registerFactory( env, "handler", "response", jk_handler_response_factory );
+  env->registerFactory( env, "channel", "socket", jk_channel_socket_factory );
+  
+  env->registerFactory( env, "handler", "response",
+                        jk_handler_response_factory );
   env->registerFactory( env, "handler", "logon",   jk_handler_logon_factory );
   env->registerFactory( env, "handler", "discovery",
                         jk_handler_discovery_factory );
@@ -126,6 +129,7 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
 
 #ifdef HAVE_JNI
   env->registerFactory( env, "worker", "jni",   jk_worker_jni_factory );
+  env->registerFactory( env, "channel","jni",   jk_channel_jni_factory );
 #endif
 #ifdef AJP12
   env->registerFactory( env, "worker", "ajp12", jk_worker_ajp12_factory );
