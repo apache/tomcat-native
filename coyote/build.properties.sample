@@ -21,6 +21,9 @@
 # EXTERNAL DEPENDENCIES 
 # -------------------------------------------------------------------
 
+# catalina.home -- Tomcat 4.x distribution directory
+catalina.home=../../jakarta-tomcat-4.0/build
+
 # tomcat-util.jar -- Tomcat util package
 tomcat-util.jar=../util/build/lib/tomcat-util.jar
 
