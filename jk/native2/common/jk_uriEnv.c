@@ -69,11 +69,49 @@
 #include "jk_uriMap.h"
 #include "jk_registry.h"
 
-static int jk2_uriEnv_setProperty(jk_env_t *env,
-                                  jk_uriEnv_t *uriEnv,
-                                  const char *nameParam,
-                                  char *valueParam)
+static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
+                                char *name)
 {
+    char *n=name;
+    char *slash=strchr( n, '/' );
+
+    if( slash==NULL ) {
+        env->l->jkLog( env, env->l, JK_LOG_ERROR,
+                       "At least a '/' must be included %s\n", name);
+        return JK_FALSE;
+    }
+    
+    /* Cut the "uri." prefix, if any */
+    if( strncmp( name, "uri.", 4 ) == 0 ) {
+        n=name+4;
+    }
+    /* Cut the " */
+    if( *n == '"' ) n++;
+    /* If it doesn't start with /, it must be a vhost */
+    if( *n != '/' ) {
+        char *portIdx=strchr( n, ':' );
+        char *vhost=NULL;
+
+        /* XXX Extract and set the vhost */
+    }
+    
+    n=slash;
+    
+    uriEnv->uri=uriEnv->pool->pstrdup(env, uriEnv->pool, n);
+    jk2_uriEnv_init(env, uriEnv);
+    env->l->jkLog( env, env->l, JK_LOG_INFO,
+                   "Setting path %s for %s\n", n, name);
+    return JK_TRUE;
+}
+
+static int jk2_uriEnv_setProperty(jk_env_t *env,
+                                  jk_bean_t *mbean,
+                                  char *nameParam,
+                                  void *valueP)
+{
+    jk_uriEnv_t *uriEnv=mbean->object;
+    char *valueParam=valueP;
+    
     char *name=uriEnv->pool->pstrdup(env,uriEnv->pool, nameParam);
     char *val=uriEnv->pool->pstrdup(env,uriEnv->pool, valueParam);
 
@@ -85,11 +123,14 @@ static int jk2_uriEnv_setProperty(jk_env_t *env,
     if( strcmp("debug", name) == 0 ) {
         uriEnv->debug=atoi( val );
     }
-    if( strcmp("uri", name) == 0 ) {
+    if( strcmp("path", name) == 0 ) {
         if( val==NULL )
             uriEnv->uri=NULL;
         else
             uriEnv->uri=uriEnv->pool->pstrdup(env, uriEnv->pool, val);
+    }
+    if( strcmp("uri", name) == 0 ) {
+        jk2_uriEnv_parseUri( env, uriEnv, val);
     }
     if( strcmp("vhost", name) == 0 ) {
         if( val==NULL )
@@ -106,7 +147,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
 {
     int err;
     char *asterisk;
-    char *uri=uriEnv->uri;
+    char *uri=uriEnv->pool->pstrdup( env, uriEnv->pool, uriEnv->uri);
 
     if( uri==NULL ) 
         return JK_FALSE;
@@ -205,12 +246,15 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
 }
 
 
-int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
+                                 jk_bean_t *result,
                                  const char *type, const char *name)
 {
     jk_pool_t *uriPool;
     int err;
     jk_uriEnv_t *uriEnv;
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "uriEnv: Create URI %s %s \n", type, name );
 
     uriPool=(jk_pool_t *)pool->create( env, pool,
                                        HUGE_POOL_SIZE);
@@ -222,10 +266,20 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool, void **result,
     
     jk2_map_default_create( env, &uriEnv->properties, uriPool );
 
-    uriEnv->setProperty=&jk2_uriEnv_setProperty;
-    uriEnv->init=&jk2_uriEnv_init;
-    *result=uriEnv;
+    uriEnv->init=jk2_uriEnv_init;
 
+    result->setAttribute=&jk2_uriEnv_setProperty;
+    uriEnv->mbean=result;
+    result->object=uriEnv;
+
+    /* The name is a path */
+    if( strchr( name, '/' ) != NULL ) {
+        jk2_uriEnv_setProperty( env, result, "uri", name );
+    }
+
+    uriEnv->workerEnv=env->getByName( env, "workerEnv" );
+    uriEnv->workerEnv->uriMap->addUriEnv( env, uriEnv->workerEnv->uriMap,
+                                          uriEnv );
     return JK_TRUE;
 }
 
