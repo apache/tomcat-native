@@ -72,7 +72,7 @@
 #include "jk_logger.h"
 #include "jk_pool.h"
 #include "jk_uriMap.h"
-#include "jk_msg_buff.h"
+#include "jk_msg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,18 +141,33 @@ struct jk_endpoint {
 
     int sd;
     int reuse;
-    int left_bytes_to_send;
 
     /* Buffers for req/res */
     /* Used to be ajp_operation */
-    struct jk_msg_buf    *request;   /* original request storage */
-    struct jk_msg_buf    *reply;     /* reply storage (chuncked by ajp13 */
-    struct jk_msg_buf    *post;      /* small post data storage area */
+
+    /* Incoming messages ( from tomcat ). Will be overriten after each
+       message, you must safe any data you want to keep.
+     */
+    struct jk_msg *reply;
+
+    /* Outgoing messages ( from server ). If the handler will return
+       JK_HANDLER_RESPONSE this message will be sent to tomcat
+    */
+    struct jk_msg *post;
+    
+    struct jk_msg *request;   /* original request storage */
     int     uploadfd;           /* future persistant storage id */
     int     recoverable;        /* if exchange could be conducted on another TC */
 
     /* For redirecting endpoints like lb */
     jk_endpoint_t *realEndpoint;
+
+    /* Ajp14-specific field, negotiate protocol features.
+       XXX Replace it with a name/value set */
+    unsigned long negociation;
+    unsigned long negociated;
+
+    char *servletContainerName;
     
     /*     int (JK_METHOD *sendRequest)(jk_endpoint_t *e,  */
     /*                                  struct jk_ws_service *s, */
@@ -177,6 +192,9 @@ struct jk_endpoint {
      * Note that the first argument is *not* a 'this' pointer, but is
      * rather a pointer to a 'this' pointer.  This is necessary, because
      * we may need to free this object.
+     *
+     * XXX This is the 'pair' of worker.getEndpoint - it should be part of
+     * worker.
      */
     int (JK_METHOD *done)(jk_endpoint_t **p,
                           jk_logger_t *l);
@@ -193,15 +211,6 @@ int ajp_connect_to_endpoint(jk_endpoint_t *ae,
 void ajp_close_endpoint(jk_endpoint_t *ae,
                         jk_logger_t    *l);
 
-int ajp_connection_tcp_send_message(jk_endpoint_t *ae,
-                                    jk_msg_buf_t   *msg,
-                                    jk_logger_t    *l);
-
-int ajp_connection_tcp_get_message(jk_endpoint_t *ae,
-                                   jk_msg_buf_t   *msg,
-                                   jk_logger_t    *l);
-
-
 int ajp_send_request(jk_endpoint_t *e,
                      struct jk_ws_service *s,
                      jk_logger_t *l);
@@ -211,12 +220,6 @@ int ajp_get_reply(jk_endpoint_t *e,
                   jk_logger_t *l);
 
 void ajp_reset_endpoint(jk_endpoint_t *ae);
-
-int ajp_read_into_msg_buff(jk_endpoint_t  *ae,
-                           struct jk_ws_service *r,
-                           jk_msg_buf_t    *msg,
-                           int            len,
-                           jk_logger_t     *l);
 
 
     
