@@ -88,7 +88,7 @@
 #define HUGE_BUFFER_SIZE (8*1024)
 
 
-static int jk2_logger_apache2_log(jk_env_t *env, jk_logger_t *l,                                 
+static int JK_METHOD jk2_logger_apache2_log(jk_env_t *env, jk_logger_t *l,                                 
                                  int level,
                                  const char *what)
 {
@@ -96,21 +96,21 @@ static int jk2_logger_apache2_log(jk_env_t *env, jk_logger_t *l,
 }
 
 
-static int jk2_logger_apache2_init(jk_env_t *env, jk_logger_t *_this)
+static int JK_METHOD jk2_logger_apache2_init(jk_env_t *env, jk_logger_t *_this)
 {
     return JK_TRUE;
 }
 
-static int jk2_logger_apache2_close(jk_env_t *env, jk_logger_t *_this)
+static int JK_METHOD jk2_logger_apache2_close(jk_env_t *env, jk_logger_t *_this)
 {
     return JK_TRUE;
 }
 
-static int jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
+static int JK_METHOD jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
                                      const char *file,
                                      int line,
                                      int level,
-                                     char *fmt,
+                                     const char *fmt,
                                      va_list args)
 {
     /* XXX map jk level to apache level */
@@ -198,7 +198,8 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
 
 
 
-int jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
+int JK_METHOD 
+jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
                               char *type, char *name)
 {
     jk_logger_t *l = (jk_logger_t *)pool->calloc(env, pool,

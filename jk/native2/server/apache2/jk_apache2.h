@@ -75,7 +75,7 @@
 
 int jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s);
 
-int jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
                               jk_bean_t *result, char *type, char *name);
 
 int  jk2_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,

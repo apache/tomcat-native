@@ -308,7 +308,7 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
 /* Utility functions                                                         */
 /* ========================================================================= */
 
-static int jk2_get_content_length(jk_env_t *env, request_rec *r)
+static unsigned jk2_get_content_length(jk_env_t *env, request_rec *r)
 {
     if(r->clength > 0) {
         return r->clength;
