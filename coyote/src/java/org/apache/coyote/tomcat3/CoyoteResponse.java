@@ -143,6 +143,8 @@ class CoyoteResponse extends  Response {
     public void sendAcknowledgement()
         throws IOException {
 
+	if( status >= 300 ) // Don't ACK on errors.
+	    acknowledged = true;
 	// Don't ACK twice on the same request. (e.g. on a forward)
 	if(acknowledged)
 	    return;
@@ -153,7 +155,7 @@ class CoyoteResponse extends  Response {
             throw new IllegalStateException
                 (sm.getString("hsrf.error.ise"));
 
-        coyoteResponse.acknowledge();
+	coyoteResponse.acknowledge();
 	acknowledged=true;
     }
 }
