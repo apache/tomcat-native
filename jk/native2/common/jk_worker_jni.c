@@ -67,6 +67,10 @@
 #include "jk_env.h"
 #include "jk_bean.h"
 
+#ifdef HAS_APR
+#include "apr_thread_proc.h"
+#endif
+
 #ifdef HAVE_JNI
 
 #include "jk_vm.h"
@@ -74,6 +78,7 @@
 #include <jni.h>
 
 extern jint jk_jni_aprImpl_registerNatives(JNIEnv *, jclass);
+extern int jk_jni_status_code;
 
 /* default only, will be  configurable  */
 #define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/apr/TomcatStarter")
@@ -334,9 +339,12 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
                                     jniWorker->jk_java_bridge_class,
                                     jniWorker->jk_main_method,
                                     jargs);
-    
+#if 0
+    /* Do not detach the main thread.
+     * It will be detached on destroy
+     */
     vm->detach(env, vm);
-
+#endif
     /* XXX create a jni channel */
     return JK_OK;
 }
@@ -379,17 +387,19 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "jni.destroy() calling main()...\n");
 
+        jk_jni_status_code =0;
         (*jniEnv)->CallStaticVoidMethod(jniEnv,
                                     jniWorker->jk_java_bridge_class,
                                     jniWorker->jk_main_method,
                                     jargs,stdout_name,stderr_name);
-#if 0
-        /* XXX  Need to fix the TomcatStarter not calling jkSetAttribute
-         *      and call the destroy JVM on that event.
-         *      Perhaps the DestroyJavaVM is not needed at all.
-         */
-        vm->destroy(env, vm);
+#ifdef HAS_APR
+        while (jk_jni_status_code != 2) {
+            apr_thread_yield();
+        }
 #endif
+        (*jniEnv)->UnregisterNatives(jniEnv, jniWorker->jk_java_bridge_apri_class);
+
+        vm->destroy(env, vm);
     }
     env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.destroy() done\n");
 
