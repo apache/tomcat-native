@@ -95,6 +95,7 @@ import java.util.*;
  * <p>
  *
  * @author Costin Manolache
+ * @author Mike Anderson
  */
 public class SoTask extends Task {
     protected String apxs;
@@ -105,6 +106,7 @@ public class SoTask extends Task {
     protected Path libs;
     protected String module;
     protected String soFile;
+    protected String soExt = ".so";
     protected String cflags;
     protected File buildDir;
     protected int debug;
@@ -113,6 +115,9 @@ public class SoTask extends Task {
     protected boolean optimize=false;
     protected boolean profile=false;
     protected Vector defines = new Vector();
+    protected Vector imports = new Vector();
+    protected Vector exports = new Vector();
+    protected Vector modules = new Vector();
 
     // Computed fields 
     protected Vector compileList;
@@ -137,6 +142,7 @@ public class SoTask extends Task {
 	so.libs=libs;
 	so.module=module;
 	so.soFile=soFile;
+	so.soExt=soExt;
 	so.cflags=cflags;
 	so.buildDir=buildDir;
 	so.debug=debug;
@@ -144,6 +150,9 @@ public class SoTask extends Task {
 	so.optimize=optimize;
 	so.profile=profile;
 	so.defines=defines;
+	so.imports=imports;
+	so.exports=exports;
+	so.modules=modules;
 	so.srcList=srcList;
 	so.compileList=compileList;
     }
@@ -186,12 +195,46 @@ public class SoTask extends Task {
 	defines.addElement(var);
     }
 
+    /**
+     * Add an import file/symbol for NetWare platform
+     *
+     * 
+     */
+    public void addImport(NLMData imp) {
+        imports.add(imp);
+    }
+
+    /**
+     * Add an export file/symbol for NetWare platform
+     *
+     * 
+     */
+    public void addExport(NLMData exp) {
+        exports.add(exp);
+    }
+
+    /**
+     * Add an NLMModule dependancy
+     *
+     * 
+     */
+    public void addNLMModule(NLMData module) {
+        modules.add(module);
+    }
+
     /** Set the target for this compilation. Don't include any
      *  directory or suffix ( not sure about prefix - we may want
      *  to add lib automatically for unix, and nothing on win/etc ?  ).
      */
     public void setTarget(String s ) {
 	soFile=s;
+    }
+
+    /** Set the extension for the target.  This will depend on the platform
+     *  we are compiling for.
+     */
+    public void setExtension(String s ) {
+	soExt=s;
     }
 
     /** Directory where intermediary objects will be
@@ -223,7 +266,7 @@ public class SoTask extends Task {
     /**
      * Source files ( .c )
      *
-     * @return a nexted src element.
+     * @return a nested src element.
      */
     public void addSrc(FileSet fl) {
 	src=fl;
@@ -275,7 +318,7 @@ public class SoTask extends Task {
     // clean, libtool should be just a fallback.
     public void execute() throws BuildException {
 	if( soFile==null )
-	    throw new BuildException("No target ( .so file )");
+	    throw new BuildException("No target ( " + soExt + " file )");
 	if (src == null) 
             throw new BuildException("No source files");
 
@@ -286,7 +329,7 @@ public class SoTask extends Task {
 	CompilerAdapter compiler=findCompilerAdapter();
 	compiler.compile( compileList );
 	
-	File soTarget=new File( buildDir, soFile + ".so" );
+	File soTarget=new File( buildDir, soFile + soExt );
 	if( compileList.size() == 0 && soTarget.exists()) {
 	    // No dependency, no need to relink
 	    return;
@@ -305,6 +348,11 @@ public class SoTask extends Task {
 		compilerAdapter.setSoTask( this );
 		return compilerAdapter;
 	    }
+	    if( cc.indexOf("mwccnlm") != 1-1 ) {
+	        compilerAdapter=new MwccCompiler();
+	        compilerAdapter.setSoTask( this );
+	        return compilerAdapter;
+	    }
 	}
 	
 	compilerAdapter=new LibtoolCompiler(); 
@@ -321,6 +369,11 @@ public class SoTask extends Task {
 	    // 		linkerAdapter.setSoTask( this );
 	    // 		return cc;
 	    // 	    }
+	    if( ld.indexOf("mwldnlm") != 1-1 ) {
+	        linkerAdapter=new MwldLinker();
+	        linkerAdapter.setSoTask( this );
+	        return linkerAdapter;
+	    }
 	}
 	
 	linkerAdapter=new LibtoolLinker(); 

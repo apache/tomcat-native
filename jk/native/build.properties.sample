@@ -10,3 +10,12 @@ apache13.home=/usr
 so.debug=true
 so.optimize=false
 so.profile=false
+
+# Settings for building NetWare binaries.  Uncomment these and modify for your
+# environment to build NetWare binaries.
+#
+# novellndk.dir=d:/tools/nwsdk
+# build.compiler.base=d:/tools/mw/6.0
+# build.compiler.cc=${build.compiler.base}/bin/mwccnlm
+# build.compiler.ld=${build.compiler.base}/bin/mwldnlm
+

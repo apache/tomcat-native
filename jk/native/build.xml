@@ -111,6 +111,51 @@
     </so>
   </target>
 
+  <target name="apache13_nw" depends="init">
+    <so target="mod_jk" 
+        extension=".nlm"
+	buildDir="apache-1.3"
+	optimize="${so.optimize}"
+	debug="${so.debug}"
+	profile="${so.profile}">
+      <def name="N_PLAT_NLM"
+	   info="Building for NetWare platform" />
+      <def name="NETWARE"
+	   info="Building for NetWare platform" />
+      <def name="XP_NETWARE"
+	   info="Building for NetWare platform" />
+      <def name="USE_SPRINTF"
+	   info="Use the sprintf function to build strings" />
+      <src dir=".">
+	<include name="apache-1.3/mod_jk.c" />
+	<include name="common/*.c" />
+        <exclude name="common/jk_jni_worker.c" />
+      </src>
+      <includes>
+	<pathelement location="${native.dir}/common" />
+	<pathelement location="${novellndk.dir}/include/nlm" />
+	<pathelement location="${novellndk.dir}/include" />
+	<pathelement location="${build.compiler.base}/include" />
+	<pathelement location="${apache13.home}/include/apache" />
+	<pathelement location="${apache13.home}/include" />
+	<pathelement location="${apache13.home}/os/netware" />
+	<pathelement location="${novellndk.dir}/include/winsock" />
+      </includes>
+      <depends>
+	<fileset dir="${native.dir}/common" includes="*.h" />
+      </depends>
+      <nlmmodule value="apache" />
+      <import fileName="${novellndk.dir}/imports/clib.imp" />
+      <import fileName="${novellndk.dir}/imports/lib0.imp" />
+      <import fileName="${novellndk.dir}/imports/nlmlib.imp" />
+      <import fileName="${novellndk.dir}/imports/threads.imp" />
+      <import fileName="${novellndk.dir}/imports/socklib.imp" />
+      <import fileName="${novellndk.dir}/imports/ws2nlm.imp" />
+      <import fileName="${apache13.home}/os/netware/ApacheCore.imp" />
+      <export symbol="jk_module" />
+    </so>
+  </target>
+
   <target name="clean" >
     <delete >
       <fileset dir=".">
@@ -119,6 +164,9 @@
 	<include name="**/*.lo"/>
 	<include name="**/*.la"/>
 	<include name="**/.libs"/>
+	<include name="**/*.nlm"/>
+	<include name="**/*.map"/>
+	<include name="**/*.sym"/>
       </fileset>
     </delete>
   </target>
