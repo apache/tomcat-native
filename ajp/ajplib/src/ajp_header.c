@@ -210,6 +210,7 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
     apr_uint32_t i, num_headers = 0;
     apr_byte_t is_ssl;
     char *remote_host;
+    char *uri;
     
 
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
@@ -229,14 +230,24 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
         const apr_array_header_t *t = apr_table_elts(r->headers_in);
         num_headers = t->nelts;
     }
+
     remote_host = (char *)ap_get_remote_host(r->connection, r->per_dir_config, REMOTE_HOST, NULL);
+
+    uri = apr_pstrdup(r->pool, r->uri);
+    if (uri != NULL) {
+        char *query_str = strchr(uri, '?');
+        if (query_str != NULL) {
+            *query_str = 0;
+        }
+    }
+    
 
     ajp_msg_reset(msg);
 
     if (ajp_msg_append_uint8(msg, CMD_AJP13_FORWARD_REQUEST)     ||
         ajp_msg_append_uint8(msg, method)                        ||
         ajp_msg_append_string(msg, r->protocol)                  ||
-        ajp_msg_append_string(msg, r->uri)                       ||
+        ajp_msg_append_string(msg, uri)                          ||
         ajp_msg_append_string(msg, r->connection->remote_ip)     ||
         ajp_msg_append_string(msg, remote_host)                  ||
         ajp_msg_append_string(msg, ap_get_server_name(r))        ||
