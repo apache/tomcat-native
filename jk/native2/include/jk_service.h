@@ -311,7 +311,7 @@ struct jk_ws_service {
      * Write a chunk of response data back to the browser.
      */
     int (JK_METHOD *write)(struct jk_env *env, jk_ws_service_t *s,
-                           const void *buffer, int len);
+                           const void *buffer, unsigned len);
 
     /*
      * Flush the output buffers.

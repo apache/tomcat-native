@@ -245,7 +245,6 @@ static int jk2_config_file_readFile(jk_env_t *env,
                                     int *didReload, int firstTime)
 {
     int rc;
-    int csOk;
     struct stat statbuf;
 
     if( didReload!=NULL )
@@ -370,8 +369,6 @@ int JK_METHOD jk2_config_file_factory( jk_env_t *env, jk_pool_t *pool,
                         const char *type, const char *name)
 {
     jk_config_t *_this;
-    jk_bean_t *jkb;
-    int i;
 
     _this=(jk_config_t *)pool->alloc(env, pool, sizeof(jk_config_t));
     if( _this == NULL )

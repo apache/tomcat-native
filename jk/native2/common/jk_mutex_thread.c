@@ -235,7 +235,6 @@ int JK_METHOD jk2_mutex_thread_factory( jk_env_t *env ,jk_pool_t *pool,
                                         const char *type, const char *name)
 {
     jk_mutex_t *mutex;
-    jk_workerEnv_t *wEnv;
 
     mutex=(jk_mutex_t *)pool->calloc(env, pool, sizeof(jk_mutex_t));
 

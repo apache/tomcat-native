@@ -129,6 +129,8 @@ struct jk_logger {
 #define JK_LOG_ERROR __FILE__,__LINE__,JK_LOG_ERROR_LEVEL
 #define JK_LOG_EMERG __FILE__,__LINE__,JK_LOG_EMERG_LEVEL
 
+int jk2_logger_file_parseLogLevel(struct jk_env *env, const char *level);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

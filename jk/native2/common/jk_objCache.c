@@ -102,7 +102,6 @@ jk2_objCache_put(jk_env_t *env, jk_objCache_t *_this, void *obj)
 
 static int
 jk2_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
-    int i;
     jk_bean_t *jkb;
     
     if( cacheSize <= 0 ) {
@@ -131,7 +130,6 @@ jk2_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
 
 static int  
 jk2_objCache_destroy(jk_env_t *env, jk_objCache_t *_this ) {
-    int i;
 
     if( _this->cs != NULL ) 
         _this->cs->mbean->destroy( env, _this->cs->mbean );
@@ -146,7 +144,6 @@ jk2_objCache_destroy(jk_env_t *env, jk_objCache_t *_this ) {
 static void * 
 jk2_objCache_get(jk_env_t *env, jk_objCache_t *_this )
 {
-    int rc;
     void *ae=NULL;
 
     if( _this->cs != NULL )
