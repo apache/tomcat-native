@@ -278,8 +278,14 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
         return JK_OK;
     }
     
-    if(mbean->setAttribute)
-        return mbean->setAttribute( env, mbean, name, val );
+    if(mbean->setAttribute) {
+        int rc= mbean->setAttribute( env, mbean, name, val );
+        if( rc != JK_OK ) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "config.setAttribute() Error setting %s %s %s\n", mbean->name, name, val );
+        }
+        return rc;
+    }
     return JK_ERR;
 }
 
@@ -302,7 +308,14 @@ int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
         cfg->setProperty( env, cfg, cfg->mbean, name, value );
         return status;
     }
+
+    if( strncmp( objName, "disabled:", 9) == 0 ) {
+        return JK_OK;
+    }
     
+    /** Replace properties in the object name */
+    objName = jk2_config_replaceProperties(env, cfg->map, cfg->map->pool, objName);
+
     mbean=env->getBean( env, objName );
     if( mbean==NULL ) {
         mbean=env->createBean( env, cfg->pool, objName );
@@ -779,6 +792,8 @@ static int JK_METHOD jk2_config_setAttribute( struct jk_env *env, struct jk_bean
     
     if( strcmp( name, "file" )==0 ) {
         return jk2_config_setConfigFile(env, cfg, cfg->workerEnv, value);
+    } else if( strcmp( name, "debugEnv" )==0 ) {
+        env->debug=atoi( value );
     } else if( strcmp( name, "save" )==0 ) {
         /* Experimental. Setting save='foo' will save the current config in
            foo
