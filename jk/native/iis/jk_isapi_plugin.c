@@ -58,8 +58,13 @@
 /***************************************************************************
  * Description: ISAPI plugin for IIS/PWS                                   *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
+ * Author:      Larry Isaacs <larryi@apache.org>                           *
+ * Author:      Ignacio J. Ortega <nacho@apache.org>                       *
  * Version:     $Revision$                                           *
  ***************************************************************************/
+
+// This define is needed to include wincrypt,h, needed to get client certificates
+#define _WIN32_WINNT 0x0400
 
 #include <httpext.h>
 #include <httpfilt.h>
@@ -86,6 +91,7 @@
  */
 #define URI_HEADER_NAME         ("TOMCATURI:")
 #define WORKER_HEADER_NAME      ("TOMCATWORKER:")
+#define CONTENT_LENGTH          ("CONTENT_LENGTH:")
 
 #define HTTP_URI_HEADER_NAME     ("HTTP_TOMCATURI")
 #define HTTP_WORKER_HEADER_NAME  ("HTTP_TOMCATWORKER")
@@ -93,6 +99,8 @@
 #define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\1.0")
 #define EXTENSION_URI_TAG       ("extension_uri")
 
+#define BAD_REQUEST		-1
+#define BAD_PATH		-2
 #define MAX_SERVERNAME			128
 
 #define GET_SERVER_VARIABLE_VALUE(name, place) {    \
@@ -123,12 +131,14 @@
     }           \
 }\
 
+static char  ini_file_name[MAX_PATH];
+static int   using_ini_file = JK_FALSE;
+static int   is_inited = JK_FALSE;
+static int	 is_mapread	= JK_FALSE;
+static jk_uri_worker_map_t *uw_map = NULL; 
+static jk_logger_t *logger = NULL; 
 static char *SERVER_NAME = "SERVER_NAME";
 
-static int					is_inited	= JK_FALSE;
-static int					is_mapread	= JK_FALSE;
-static jk_uri_worker_map_t	*uw_map		= NULL; 
-static jk_logger_t			*logger		= NULL; 
 
 static char extension_uri[INTERNET_MAX_URL_LENGTH] = "/jakarta/isapi_redirect.dll";
 static char log_file[MAX_PATH * 2];
@@ -186,6 +196,115 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
                             DWORD bufsz,
                             char  *def_val);
 
+static int base64_encode_cert_len(int len);
+
+static int base64_encode_cert(char *encoded,
+                              const unsigned char *string,
+                              int len);
+
+
+static char x2c(const char *what)
+{
+    register char digit;
+
+    digit = ((what[0] >= 'A') ? ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
+    digit *= 16;
+    digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
+    return (digit);
+}
+
+static int unescape_url(char *url)
+{
+    register int x, y, badesc, badpath;
+
+    badesc = 0;
+    badpath = 0;
+    for (x = 0, y = 0; url[y]; ++x, ++y) {
+        if (url[y] != '%')
+            url[x] = url[y];
+        else {
+            if (!isxdigit(url[y + 1]) || !isxdigit(url[y + 2])) {
+                badesc = 1;
+                url[x] = '%';
+            }
+            else {
+                url[x] = x2c(&url[y + 1]);
+                y += 2;
+                if (url[x] == '/' || url[x] == '\0')
+                    badpath = 1;
+            }
+        }
+    }
+    url[x] = '\0';
+    if (badesc)
+            return BAD_REQUEST;
+    else if (badpath)
+            return BAD_PATH;
+    else
+            return 0;
+}
+
+static void getparents(char *name)
+{
+    int l, w;
+
+    /* Four paseses, as per RFC 1808 */
+    /* a) remove ./ path segments */
+
+    for (l = 0, w = 0; name[l] != '\0';) {
+        if (name[l] == '.' && name[l + 1] == '/' && (l == 0 || name[l - 1] == '/'))
+            l += 2;
+        else
+            name[w++] = name[l++];
+    }
+
+    /* b) remove trailing . path, segment */
+    if (w == 1 && name[0] == '.')
+        w--;
+    else if (w > 1 && name[w - 1] == '.' && name[w - 2] == '/')
+        w--;
+    name[w] = '\0';
+
+    /* c) remove all xx/../ segments. (including leading ../ and /../) */
+    l = 0;
+
+    while (name[l] != '\0') {
+        if (name[l] == '.' && name[l + 1] == '.' && name[l + 2] == '/' &&
+            (l == 0 || name[l - 1] == '/')) {
+            register int m = l + 3, n;
+
+            l = l - 2;
+            if (l >= 0) {
+                while (l >= 0 && name[l] != '/')
+                    l--;
+                l++;
+            }
+            else
+                l = 0;
+            n = l;
+            while ((name[n] = name[m]))
+                (++n, ++m);
+        }
+        else
+            ++l;
+    }
+
+    /* d) remove trailing xx/.. segment. */
+    if (l == 2 && name[0] == '.' && name[1] == '.')
+        name[0] = '\0';
+    else if (l > 2 && name[l - 1] == '.' && name[l - 2] == '.' && name[l - 3] == '/') {
+        l = l - 4;
+        if (l >= 0) {
+            while (l >= 0 && name[l] != '/')
+                l--;
+            l++;
+        }
+        else
+            l = 0;
+        name[l] = '\0';
+    }
+}
+
 static int uri_is_web_inf(char *uri)
 {
     char *c = uri;
@@ -193,12 +312,36 @@ static int uri_is_web_inf(char *uri)
         *c = tolower(*c);
         c++;
     }                    
-    if (strstr(uri, "web-inf")) {
+    if(strstr(uri, "web-inf")) {
+        return JK_TRUE;
+    }
+    if(strstr(uri, "meta-inf")) {
         return JK_TRUE;
     }
 
     return JK_FALSE;
 }
+
+static void write_error_response(PHTTP_FILTER_CONTEXT pfc,char *status,char * msg)
+{
+    char crlf[3] = { (char)13, (char)10, '\0' };
+    char ctype[30];
+    DWORD len = strlen(msg);
+
+    sprintf(ctype, 
+            "Content-Type:text/html%s%s", 
+            crlf, 
+            crlf);
+
+    /* reject !!! */
+    pfc->ServerSupportFunction(pfc, 
+                               SF_REQ_SEND_RESPONSE_HEADER,
+                               status,
+                               (DWORD)crlf,
+                               (DWORD)ctype);
+    pfc->WriteClient(pfc, msg, &len, 0);
+}
+
 
 static int JK_METHOD start_response(jk_ws_service_t *s,
                                     int status,
@@ -429,8 +572,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
        (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType)) { 
         PHTTP_FILTER_PREPROC_HEADERS p = (PHTTP_FILTER_PREPROC_HEADERS)pvNotification;
         char uri[INTERNET_MAX_URL_LENGTH]; 
+		char snuri[INTERNET_MAX_URL_LENGTH]="/";
+		char Host[INTERNET_MAX_URL_LENGTH];
+
         char *query;
         DWORD sz = sizeof(uri);
+        DWORD szHost = sizeof(Host);
 
         jk_log(logger, JK_LOG_DEBUG, 
                "HttpFilterProc started\n");
@@ -449,15 +596,46 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         }
 
         if (strlen(uri)) {
-            char *worker;
+            int rc;
+            char *worker=0;
             query = strchr(uri, '?');
             if (query) {
                 *query = '\0';
             }
-            jk_log(logger, JK_LOG_DEBUG, 
-                   "In HttpFilterProc test redirection of %s\n", 
-                   uri);
-            worker = map_uri_to_worker(uw_map, uri, logger);                
+
+            rc = unescape_url(uri);
+            if (rc == BAD_REQUEST) {
+                jk_log(logger, JK_LOG_ERROR, 
+                       "HttpFilterProc [%s] contains on or more invalid escape sequences.\n", 
+                       uri);
+                write_error_response(pfc,"400 Bad Request",
+                        "<HTML><BODY><H1>Request contains invalid encoding</H1></BODY></HTML>");
+                return SF_STATUS_REQ_FINISHED;
+            }
+            else if(rc == BAD_PATH) {
+                jk_log(logger, JK_LOG_EMERG, 
+                       "HttpFilterProc [%s] contains forbidden escape sequences.\n", 
+                       uri);
+                write_error_response(pfc,"403 Forbidden",
+                        "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
+                return SF_STATUS_REQ_FINISHED;
+            }
+            getparents(uri);
+
+			if(p->GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
+				strcat(snuri,Host);
+				strcat(snuri,uri);
+				jk_log(logger, JK_LOG_DEBUG, 
+					   "In HttpFilterProc Virtual Host redirection of %s\n", 
+					   snuri);
+				worker = map_uri_to_worker(uw_map, snuri, logger);                
+			}
+			if (!worker) {
+				jk_log(logger, JK_LOG_DEBUG, 
+					   "In HttpFilterProc test Default redirection of %s\n", 
+					   uri);
+				worker = map_uri_to_worker(uw_map, uri, logger);
+			}
             if (query) {
                 *query = '?';
             }
@@ -490,29 +668,13 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                    "HttpFilterProc check if [%s] is points to the web-inf directory\n", 
                    uri);
 
-            if (uri_is_web_inf(uri)) {
-                char crlf[3] = { (char)13, (char)10, '\0' };
-                char ctype[30];
-                char *msg = "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>";
-                DWORD len = strlen(msg);
-
+            if(uri_is_web_inf(uri)) {
                 jk_log(logger, JK_LOG_EMERG, 
-                       "HttpFilterProc [%s] points to the web-inf directory.\nSomebody try to hack into the site!!!\n", 
+                       "HttpFilterProc [%s] points to the web-inf or meta-inf directory.\nSomebody try to hack into the site!!!\n", 
                        uri);
 
-                sprintf(ctype, 
-                        "Content-Type:text/html%s%s", 
-                        crlf, 
-                        crlf);
-
-                /* reject !!! */
-                pfc->ServerSupportFunction(pfc, 
-                                           SF_REQ_SEND_RESPONSE_HEADER,
-                                           "403 Forbidden",
-                                           (DWORD)crlf,
-                                           (DWORD)ctype);
-                pfc->WriteClient(pfc, msg, &len, 0);
-
+                write_error_response(pfc,"403 Forbidden",
+                        "<HTML><BODY><H1>Access is Forbidden</H1></BODY></HTML>");
                 return SF_STATUS_REQ_FINISHED;
             }
         }
@@ -564,7 +726,6 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         jk_ws_service_t s;
         jk_pool_atom_t buf[SMALL_POOL_SIZE];
         char *worker_name;
-
 
         jk_init_ws_service(&s);
         jk_open_pool(&private_data.p, buf, sizeof(buf));
@@ -645,6 +806,10 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
                     LPVOID lpReserved)      // Reserved parameter for future use
 {
     BOOL fReturn = TRUE;
+    char drive[_MAX_DRIVE];
+    char dir[_MAX_DIR];
+    char fname[_MAX_FNAME];
+    char file_name[_MAX_PATH];
 
     switch (ulReason) {
         case DLL_PROCESS_DETACH:
@@ -657,6 +822,12 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
         default:
         break;
     } 
+    if (GetModuleFileName( hInst, file_name, sizeof(file_name))) {
+        _splitpath( file_name, drive, dir, fname, NULL );
+        _makepath( ini_file_name, drive, dir, fname, ".properties" );
+    } else {
+        fReturn = JK_FALSE;
+    }
 
     return fReturn;
 }
@@ -669,7 +840,19 @@ static int init_jk(char *serverName)
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
     }
-    
+    		/* Logging the initialization type: registry or properties file in virtual dir
+		*/
+	if (using_ini_file) {
+			 jk_log(logger, JK_LOG_DEBUG, "Using ini file %s.\n", ini_file_name);
+	} else {
+			 jk_log(logger, JK_LOG_DEBUG, "Using registry.\n");
+	}
+	jk_log(logger, JK_LOG_DEBUG, "Using log file %s.\n", log_file);
+	jk_log(logger, JK_LOG_DEBUG, "Using log level %d.\n", log_level);
+	jk_log(logger, JK_LOG_DEBUG, "Using extension uri %s.\n", extension_uri);
+	jk_log(logger, JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
+	jk_log(logger, JK_LOG_DEBUG, "Using worker mount file %s.\n", worker_mount_file);
+
     if (map_alloc(&map)) {
         if (map_read_properties(map, worker_mount_file)) {
             if (uri_worker_map_alloc(&uw_map, map, logger)) {
@@ -714,64 +897,105 @@ static int read_registry_init_data(void)
     HKEY hkey;
     long rc;
     int  ok = JK_TRUE;
-    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-                      REGISTRY_LOCATION,
-                      (DWORD)0,         
-                      KEY_READ,         
-                      &hkey);            
-    if (ERROR_SUCCESS != rc) {
-        return JK_FALSE;
-    } 
+    char *tmp;
+    jk_map_t *map;
 
-    if (get_registry_config_parameter(hkey,
-                                     JK_LOG_FILE_TAG, 
-                                     tmpbuf,
-                                     sizeof(log_file))) {
-        strcpy(log_file, tmpbuf);
-    } else {
-        ok = JK_FALSE;
+    if (map_alloc(&map)) {
+        if (map_read_properties(map, ini_file_name)) {
+            using_ini_file = JK_TRUE;
+		}
     }
+    if (using_ini_file) {
+        tmp = map_get_string(map, JK_LOG_FILE_TAG, NULL);
+        if (tmp) {
+            strcpy(log_file, tmp);
+        } else {
+            ok = JK_FALSE;
+        }
+        tmp = map_get_string(map, JK_LOG_LEVEL_TAG, NULL);
+        if (tmp) {
+            log_level = jk_parse_log_level(tmp);
+        } else {
+            ok = JK_FALSE;
+        }
+        tmp = map_get_string(map, EXTENSION_URI_TAG, NULL);
+        if (tmp) {
+            strcpy(extension_uri, tmp);
+        } else {
+            ok = JK_FALSE;
+        }
+        tmp = map_get_string(map, JK_WORKER_FILE_TAG, NULL);
+        if (tmp) {
+            strcpy(worker_file, tmp);
+        } else {
+            ok = JK_FALSE;
+        }
+        tmp = map_get_string(map, JK_MOUNT_FILE_TAG, NULL);
+        if (tmp) {
+            strcpy(worker_mount_file, tmp);
+        } else {
+            ok = JK_FALSE;
+        }
     
-    if (get_registry_config_parameter(hkey,
-                                     JK_LOG_LEVEL_TAG, 
-                                     tmpbuf,
-                                     sizeof(tmpbuf))) {
-        log_level = jk_parse_log_level(tmpbuf);
     } else {
-        ok = JK_FALSE;
-    }
+		rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+						  REGISTRY_LOCATION,
+						  (DWORD)0,         
+						  KEY_READ,         
+						  &hkey);            
+		if(ERROR_SUCCESS != rc) {
+			return JK_FALSE;
+		} 
 
-    if (get_registry_config_parameter(hkey,
-                                     EXTENSION_URI_TAG, 
-                                     tmpbuf,
-                                     sizeof(extension_uri))) {
-        strcpy(extension_uri, tmpbuf);
-    } else {
-        ok = JK_FALSE;
-    }
+		if(get_registry_config_parameter(hkey,
+										 JK_LOG_FILE_TAG, 
+										 tmpbuf,
+										 sizeof(log_file))) {
+			strcpy(log_file, tmpbuf);
+		} else {
+			ok = JK_FALSE;
+		}
+    
+		if(get_registry_config_parameter(hkey,
+										 JK_LOG_LEVEL_TAG, 
+										 tmpbuf,
+										 sizeof(tmpbuf))) {
+			log_level = jk_parse_log_level(tmpbuf);
+		} else {
+			ok = JK_FALSE;
+		}
 
-    if (get_registry_config_parameter(hkey,
-                                     JK_WORKER_FILE_TAG, 
-                                     tmpbuf,
-                                     sizeof(worker_file))) {
-        strcpy(worker_file, tmpbuf);
-    } else {
-        ok = JK_FALSE;
-    }
+		if(get_registry_config_parameter(hkey,
+										 EXTENSION_URI_TAG, 
+										 tmpbuf,
+										 sizeof(extension_uri))) {
+			strcpy(extension_uri, tmpbuf);
+		} else {
+			ok = JK_FALSE;
+		}
 
-    if (get_registry_config_parameter(hkey,
-                                     JK_MOUNT_FILE_TAG, 
-                                     tmpbuf,
-                                     sizeof(worker_mount_file))) {
-        strcpy(worker_mount_file, tmpbuf);
-    } else {
-        ok = JK_FALSE;
-    }
+		if(get_registry_config_parameter(hkey,
+										 JK_WORKER_FILE_TAG, 
+										 tmpbuf,
+										 sizeof(worker_file))) {
+			strcpy(worker_file, tmpbuf);
+		} else {
+			ok = JK_FALSE;
+		}
 
-    RegCloseKey(hkey);
+		if(get_registry_config_parameter(hkey,
+										 JK_MOUNT_FILE_TAG, 
+										 tmpbuf,
+										 sizeof(worker_mount_file))) {
+			strcpy(worker_mount_file, tmpbuf);
+		} else {
+			ok = JK_FALSE;
+		}
 
+		RegCloseKey(hkey);
+    }    
     return ok;
-}
+} 
 
 static int get_registry_config_parameter(HKEY hkey,
                                          const char *tag, 
@@ -827,6 +1051,9 @@ static int init_ws_service(isapi_private_data_t *private_data,
         s->query_string = private_data->lpEcb->lpszQueryString;
         *worker_name    = JK_AJP12_WORKER_NAME;
         GET_SERVER_VARIABLE_VALUE("URL", s->req_uri);       
+        if (unescape_url(s->req_uri) < 0)
+            return JK_FALSE;
+        getparents(s->req_uri);
     }
     
     GET_SERVER_VARIABLE_VALUE("AUTH_TYPE", s->auth_type);
@@ -904,6 +1131,28 @@ static int init_ws_service(isapi_private_data_t *private_data,
                 }
             }
             s->num_attributes = num_of_vars;
+ 			if (ssl_env_values[4] && ssl_env_values[4][0] == '1') {
+				CERT_CONTEXT_EX cc;
+				DWORD cc_sz = sizeof(cc);
+				cc.cbAllocated = sizeof(huge_buf);
+				cc.CertContext.pbCertEncoded = (BYTE*) huge_buf;
+				cc.CertContext.cbCertEncoded = 0;
+
+				if (private_data->lpEcb->ServerSupportFunction(private_data->lpEcb->ConnID,
+											 (DWORD)HSE_REQ_GET_CERT_INFO_EX,                               
+											 (LPVOID)&cc,NULL,NULL) != FALSE)
+				{
+					jk_log(logger, JK_LOG_DEBUG,"Client Certificate encoding:%d sz:%d flags:%ld\n",
+								cc.CertContext.dwCertEncodingType & X509_ASN_ENCODING ,
+								cc.CertContext.cbCertEncoded,
+								cc.dwCertificateFlags);
+                    s->ssl_cert=jk_pool_alloc(&private_data->p,
+                                base64_encode_cert_len(cc.CertContext.cbCertEncoded));
+
+                    s->ssl_cert_len = base64_encode_cert(s->ssl_cert,
+                                huge_buf,cc.CertContext.cbCertEncoded) - 1;
+				}
+			}
         }
     }
 
@@ -926,10 +1175,12 @@ static int init_ws_service(isapi_private_data_t *private_data,
             char *headers_buf = jk_pool_strdup(&private_data->p, huge_buf);
             unsigned i;
             unsigned len_of_http_prefix = strlen("HTTP_");
+            BOOL need_content_length_header = (s->content_length == 0);
             
             cnt -= 2; /* For our two special headers */
-            s->headers_names  = jk_pool_alloc(&private_data->p, cnt * sizeof(char *));
-            s->headers_values = jk_pool_alloc(&private_data->p, cnt * sizeof(char *));
+            /* allocate an extra header slot in case we need to add a content-length header */
+            s->headers_names  = jk_pool_alloc(&private_data->p, (cnt + 1) * sizeof(char *));
+            s->headers_values = jk_pool_alloc(&private_data->p, (cnt + 1) * sizeof(char *));
 
             if (!s->headers_names || !s->headers_values || !headers_buf) {
                 return JK_FALSE;
@@ -944,6 +1195,10 @@ static int init_ws_service(isapi_private_data_t *private_data,
                 if (!strnicmp(tmp, URI_HEADER_NAME, strlen(URI_HEADER_NAME)) ||
                    !strnicmp(tmp, WORKER_HEADER_NAME, strlen(WORKER_HEADER_NAME))) {
                     real_header = JK_FALSE;
+                } else if(need_content_length_header &&
+                   !strnicmp(tmp, CONTENT_LENGTH, strlen(CONTENT_LENGTH))) {
+                    need_content_length_header = FALSE;
+                    s->headers_names[i]  = tmp;
                 } else {
                     s->headers_names[i]  = tmp;
                 }
@@ -983,6 +1238,15 @@ static int init_ws_service(isapi_private_data_t *private_data,
                     i++;
                 }
             }
+            /* Add a content-length = 0 header if needed.
+             * Ajp13 assumes an absent content-length header means an unknown,
+             * but non-zero length body.
+             */
+            if(need_content_length_header) {
+                s->headers_names[cnt] = "content-length";
+                s->headers_values[cnt] = "0";
+                cnt++;
+            }
             s->num_headers = cnt;
         } else {
             /* We must have our two headers */
@@ -1015,3 +1279,76 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
 
     return JK_TRUE;
 }
+
+static const char begin_cert [] = 
+	"-----BEGIN CERTIFICATE-----\r\n";
+
+static const char end_cert [] = 
+	"-----END CERTIFICATE-----\r\n";
+
+static const char basis_64[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static int base64_encode_cert_len(int len)
+{
+	int n = ((len + 2) / 3 * 4) + 1; // base64 encoded size
+	n += (n + 63 / 64) * 2; // add CRLF's
+	n += sizeof(begin_cert) + sizeof(end_cert) - 2;  // add enclosing strings.
+    return n;
+}
+
+static int base64_encode_cert(char *encoded,
+                              const unsigned char *string, int len)
+{
+    int i,c;
+    char *p;
+	const char *t;
+
+    p = encoded;
+
+	t = begin_cert;
+	while (*t != '\0')
+		*p++ = *t++;
+
+    c = 0;
+    for (i = 0; i < len - 2; i += 3) {
+        *p++ = basis_64[(string[i] >> 2) & 0x3F];
+        *p++ = basis_64[((string[i] & 0x3) << 4) |
+                        ((int) (string[i + 1] & 0xF0) >> 4)];
+        *p++ = basis_64[((string[i + 1] & 0xF) << 2) |
+                        ((int) (string[i + 2] & 0xC0) >> 6)];
+        *p++ = basis_64[string[i + 2] & 0x3F];
+        c += 4;
+        if ( c >= 64 ) {
+            *p++ = '\r';
+            *p++ = '\n';
+            c = 0;
+		}
+    }
+    if (i < len) {
+        *p++ = basis_64[(string[i] >> 2) & 0x3F];
+        if (i == (len - 1)) {
+            *p++ = basis_64[((string[i] & 0x3) << 4)];
+            *p++ = '=';
+        }
+        else {
+            *p++ = basis_64[((string[i] & 0x3) << 4) |
+                            ((int) (string[i + 1] & 0xF0) >> 4)];
+            *p++ = basis_64[((string[i + 1] & 0xF) << 2)];
+        }
+        *p++ = '=';
+        c++;
+    }
+    if ( c != 0 ) {
+        *p++ = '\r';
+        *p++ = '\n';
+    }
+
+	t = end_cert;
+	while (*t != '\0')
+		*p++ = *t++;
+
+    *p++ = '\0';
+    return p - encoded;
+}
+
