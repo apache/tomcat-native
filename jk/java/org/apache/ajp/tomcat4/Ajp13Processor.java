@@ -320,6 +320,7 @@ final class Ajp13Processor
     private void process(Socket socket) {
 
         Ajp13 ajp13 = new Ajp13();
+        ajp13.setDebug(debug);
         Ajp13InputStream input = new Ajp13InputStream(ajp13);
         Ajp13OutputStream output = new Ajp13OutputStream(ajp13);
         response.setAjp13(ajp13);

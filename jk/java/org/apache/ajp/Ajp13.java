@@ -112,6 +112,14 @@ public class Ajp13 {
     public static final byte JK_AJP13_END_RESPONSE      = 5;
     public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
     
+    // Error code for Ajp13
+    public static final int  JK_AJP13_BAD_HEADER        = -100;
+    public static final int  JK_AJP13_NO_HEADER         = -101;
+    public static final int  JK_AJP13_COMM_CLOSED       = -102;
+    public static final int  JK_AJP13_COMM_BROKEN       = -103;
+    public static final int  JK_AJP13_BAD_BODY          = -104;
+    public static final int  JK_AJP13_INCOMPLETE_BODY   = -105;
+
     // Integer codes for common response header strings
     public static final int SC_RESP_CONTENT_TYPE        = 0xA001;
     public static final int SC_RESP_CONTENT_LANGUAGE    = 0xA002;
@@ -815,6 +823,49 @@ public class Ajp13 {
     // ========= Internal Packet-Handling Methods =================
 
     /**
+     * Read N bytes from the InputStream, and ensure we got them all
+     * Under heavy load we could experience many fragmented packets
+     * just read Unix Network Programming to recall that a call to
+     * read didn't ensure you got all the data you want
+     *
+     * from read() Linux manual
+     *
+     * On success, the number of bytes read is returned (zero indicates end of file),
+     * and the file position is advanced by this number.
+     * It is not an error if this number is smaller than the number of bytes requested;
+     * this may happen for example because fewer bytes
+     * are actually available right now (maybe because we were close to end-of-file,
+     * or because we are reading from a pipe, or  from  a
+     * terminal),  or  because  read()  was interrupted by a signal.
+     * On error, -1 is returned, and errno is set appropriately. In this
+     * case it is left unspecified whether the file position (if any) changes.
+     *
+     **/
+    private int readN(InputStream in, byte[] b, int offset, int len) throws IOException {
+        int pos = 0;
+        int got;
+
+        while(pos < len) {
+            got = in.read(b, pos + offset, len - pos);
+
+            if (debug > 10) {
+                logger.log("read got # " + got);
+            }
+
+            // connection just closed by remote
+            if (got == 0)
+                return JK_AJP13_COMM_CLOSED;
+
+            // connection dropped by remote
+            if (got < 0)
+                return JK_AJP13_COMM_BROKEN;
+
+            pos += got;
+        }
+        return pos;
+     }
+
+    /**
      * Read in a packet from the web server and store it in the passed-in
      * <CODE>Ajp13Packet</CODE> object.
      *
@@ -835,29 +886,38 @@ public class Ajp13 {
 	// returned -- should probably return true/false instead.
 	byte b[] = msg.getBuff();
 	
-	int rd = in.read( b, 0, H_SIZE );
-	if(rd <= 0) {
-            logger.log("bad read: " + rd);
-	    return rd;
-	}
-	
+    int rd = readN(in, b, 0, H_SIZE );
+
+    // XXX - connection closed (JK_AJP13_COMM_CLOSED)
+    //     - connection broken (JK_AJP13_COMM_BROKEN)
+    //
+    if(rd < 0) {
+        logger.log("bad read: " + rd);
+         return rd;
+    }
+
 	int len = msg.checkIn();
+    if (debug > 0) {
         logger.log("receive:  len = " + len);
-	
+	}
+
 	// XXX check if enough space - it's assert()-ed !!!
 
  	int total_read = 0;
-  	while (total_read < len) {
-	    rd = in.read( b, 4 + total_read, len - total_read);
-            if (rd == -1) {
- 		System.out.println( "Incomplete read, deal with it " + len + " " + rd);
-                break;
-		// XXX log
-		// XXX Return an error code?
-	    }
-     	    total_read += rd;
-	}
 
+    total_read = readN(in, b, H_SIZE, len);
+
+    if (total_read < 0) {
+        logger.log("can't read body, waited #" + len);
+        return JK_AJP13_BAD_BODY;
+    }
+
+    if (total_read != len) {
+        logger.log( "incomplete read, waited #" + len + " got only " + total_read);
+        return JK_AJP13_INCOMPLETE_BODY;
+    }
+
+    if (debug > 0)
         logger.log("receive:  total read = " + total_read);
 	return total_read;
     }
@@ -905,7 +965,11 @@ public class Ajp13 {
     }
 
     // -------------------- Debug --------------------
-    private int debug = 10;
+    private int debug = 0;
+
+    public void setDebug(int debug) {
+        this.debug = debug;
+    }
 
     /**
      * XXX place holder...
