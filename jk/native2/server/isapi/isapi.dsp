@@ -55,7 +55,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib /nologo /dll /debug /machine:I386 /out:"Debug/isapi_redirector2.dll" /pdbtype:sept /libpath:"$(APACHE2_HOME)\lib"
 # SUBTRACT BASE LINK32 /nodefaultlib
-# ADD LINK32 apr.lib aprutil.lib apriconv.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib /nologo /dll /debug /machine:I386 /out:"Debug/isapi_redirector2.dll" /pdbtype:sept /libpath:"..\..\srclib\apr\libD" /libpath:"..\..\srclib\apr-util\libD" /libpath:"..\..\srclib\apr-iconv\libD" /libpath:"..\..\srclib\pcre\libD"
+# ADD LINK32 ws2_32.lib wsock32.lib advapi32.lib /nologo /dll /debug /machine:I386 /out:"Debug/isapi_redirector2.dll" /pdbtype:sept /libpath:"..\..\srclib\apr\libD" /libpath:"..\..\srclib\apr-util\libD" /libpath:"..\..\srclib\apr-iconv\libD" /libpath:"..\..\srclib\pcre\libD"
 # SUBTRACT LINK32 /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "isapi - Win32 Release"
@@ -83,7 +83,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 libapr.lib libaprutil.lib wsock32.lib advapi32.lib /nologo /dll /machine:I386 /out:"Release/isapi_redirector2.dll" /libpath:"$(APACHE2_HOME)\lib"
-# ADD LINK32 apr.lib aprutil.lib apriconv.lib ws2_32.lib wsock32.lib advapi32.lib pcre.lib pcreposix.lib /nologo /dll /machine:I386 /out:"Release/isapi_redirector2.dll" /libpath:"..\..\srclib\apr\libR" /libpath:"..\..\srclib\apr-util\libR" /libpath:"..\..\srclib\apr-iconv\libR" /libpath:"..\..\srclib\pcre\libD"
+# ADD LINK32 ws2_32.lib wsock32.lib advapi32.lib /nologo /dll /machine:I386 /out:"Release/isapi_redirector2.dll" /libpath:"..\..\srclib\apr\libR" /libpath:"..\..\srclib\apr-util\libR" /libpath:"..\..\srclib\apr-iconv\libR" /libpath:"..\..\srclib\pcre\libD"
 
 !ENDIF 
 
@@ -371,7 +371,7 @@ SOURCE=..\..\common\jk_logger_win32_message.mc
 # PROP BASE Ignore_Default_Tool 1
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build - Creating resources from $(InputPath)
-InputDir=\WORK\PROJECTS\apache\jk2\common
+InputDir=\WRKPLACE\PROJECTS\jtc\jk\native2\common
 InputPath=..\..\common\jk_logger_win32_message.mc
 
 "..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -382,7 +382,7 @@ InputPath=..\..\common\jk_logger_win32_message.mc
 !ELSEIF  "$(CFG)" == "isapi - Win32 Release"
 
 # Begin Custom Build - Creating resources from $(InputPath)
-InputDir=\WORK\PROJECTS\apache\jk2\common
+InputDir=\WRKPLACE\PROJECTS\jtc\jk\native2\common
 InputPath=..\..\common\jk_logger_win32_message.mc
 
 "..\..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
