@@ -209,7 +209,7 @@
              index="true"
 	     basedir="${jk.build}/classes" 
              manifest="conf/jkconfig.manifest">
-            <include name="org/apache/ajp/config/**" />
+            <include name="org/apache/jk/config/**" />
         </jar>
 	
 	<jar jarfile="${tomcat-jkshm.jar}"

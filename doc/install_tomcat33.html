@@ -1,0 +1,24 @@
+<html>
+<head>
+<title>Installing tomcat-connector in tomcat3.3</title>
+</head>
+<body>
+<h2>Installing tomcat-connector in tomcat3.3</h2>
+<ul>
+<li> copy mx4j-jmx.jar ( or jmxri.jar ) to lib/common</li>
+<li> copy tomcat-coyote.jar, tomcat33-coyote.jar, tomcat-jk2.jar,
+tomcat-http11.jar to lib/container</li>
+<li> replace lib/common/connector-util.jar with tomcat-util.jar</li>
+<li> copy commons-logging-api.jar and tomcat33-resources.jar to lib/common</li>
+<li> edit conf/modules.xml and insert:<br />
+&nbsp; &lt;module name="CoyoteConnector"
+&nbsp; javaClass="org.apache.coyote.tomcat3.CoyoteInterceptor2"/&gt; </li>
+<li>edit conf/server.xml and replace Http10Connector and Ajp13Connector  with: <br />
+&nbsp; &lt;CoyoteConnector port="8080" /&gt;
+&nbsp; <br /> and<br />
+&nbsp; &lt;CoyoteConnector port="8009"
+&nbsp; processorClassName="org.apache.jk.server.JkCoyoteHandler"/&gt;
+</li>
+</ul>
+</body>
+</html>

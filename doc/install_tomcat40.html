@@ -1,0 +1,28 @@
+<html>
+<head>
+<title>Installing tomcat-connector in tomcat4.0</title>
+</head>
+<body>
+<h2>Installing tomcat-connector in tomcat4.0</h2>
+</body>
+<ul>
+<li>replace tomcat-coyote.jar, tomcat-http11.jar, tomcat-jk2.jar
+and tomcat-util.jar in server/lib</li>
+<li>add tomcat4-coyote.jar to server/lib</li>
+<li>copy mx4j-jmx.jar ( or jmxri.jar ) to common/lib. </li>
+<li>edit server.xml, comment out the original connector (
+org.apache.catalina.connector.http.HttpConnector ) and uncomment the
+coyote connector ( in &lt;Connector className="org.apache.coyote.tomcat4.CoyoteConnector" /&gt; )
+</li>
+<li>also in server.xml, comment out the ajp connector (
+org.apache.ajp.tomcat4.Ajp13Connector ) and add a jk2 connector:
+<br />&nbsp; &lt;Connector className="org.apache.coyote.tomcat4.CoyoteConnector"
+&nbsp; port="8009" minProcessors="5" maxProcessors="75"
+&nbsp; enableLookups="true" redirectPort="8443"
+&nbsp; acceptCount="10" debug="0" connectionTimeout="0"
+&nbsp; useURIValidationHack="false"
+&nbsp; protocolHandlerClassName="org.apache.jk.server.JkCoyoteHandler"/&gt;
+</li>
+</ul>
+</body>
+</html>

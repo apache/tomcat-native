@@ -1,0 +1,20 @@
+<html>
+<head>
+<title>Installing tomcat-connector in tomcat4.1</title>
+</head>
+<body>
+<h2>Installing tomcat-connector in tomcat4.1</h2>
+<ul>
+<li>get the new connector ( I'll post the URL soon )</li>
+<li>move mx4j-jmx.jar from server/lib to common/lib. This is not required, but allows you to use JMX. If you run
+ tomcat in a sandbox - you can replace mx4j-jmx with jmxri-1.2, which has policy-based security.</li>
+<li>in server/lib, replace tomcat-util.jar, tomcat-jk2.jar, tomcat-coyote.jar and tomcat-http11.jar with the new
+ versions.</li>
+<li>copy tomcat4-coyote.jar to server/lib. This is a new file containing the coyote adapter for tomcat4, used to
+ be in tomcat-coyote.jar</li>
+<li>remove bin/tomcat-jni.jar ( it is an odd file that causes several
+problems - if you use in-process tomcat we'll provide a different
+mechanism )</li>
+</ul>
+</body>
+</html>

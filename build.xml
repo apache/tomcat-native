@@ -11,9 +11,19 @@
   <property name="lib.dir" location="${dist.dir}/lib" />
   <property name="build.dir" location="build" />
 
-
-
   <target name="dist" 
+          description="Compile jtc distribution" depends="build,javadoc">
+    <copy file="LICENSE" todir="${dist.dir}" />
+    <copy file="README.txt" todir="${dist.dir}" />
+    <copy file="RELEASE-NOTES.txt" todir="${dist.dir}" />
+
+    <copy todir="${dist.dir}/doc">
+     <fileset dir="doc" includes="**" />
+    </copy>
+  </target>
+
+
+  <target name="build" 
           description="Compile jtc">
     <mkdir dir="${build.dir}/classes" />
     <mkdir dir="${lib.dir}" />
@@ -53,15 +63,22 @@
       <property name="jmx.detect" value="true"/>
       <property name="tomcat-coyote.jar" value="${lib.dir}/tomcat-coyote.jar" />
       <property name="jk.build" value="${build.dir}"/>
-      <!-- exclude ajp -->
-      <property name="tomcat5.detect" value="true"/>
-      <property name="tomcat-jk.jar" value="${lib.dir}/tomcat-jk.jar" />
-      <property name="tomcat-jkconfig.jar" value="${lib.dir}/jkconfig.jar" />
-      <property name="tomcat-jkshm.jar" value="${lib.dir}/jkshm.jar" />
+
       <property name="tomcat-jk2.jar" value="${lib.dir}/tomcat-jk2.jar" />
-      <property name="tomcat-jni.jar" value="${lib.dir}/tomcat-jni.jar" />
+      <property name="tomcat-jkconfig.jar" value="${lib.dir}/jkconfig.jar" />
+
+      <!-- don't include in dist -->
+      <property name="tomcat5.detect" value="true"/>
+      <property name="tomcat-jk.jar" value="${build.dir}/lib/tomcat-jk.jar" /> 
+      <property name="tomcat-jkshm.jar" value="${build.dir}/lib/jkshm.jar" />
+      <property name="tomcat-jni.jar" value="${build.dir}/lib/tomcat-jni.jar" />
     </ant>
 
+    <jar file="${dist.dir}/lib/tomcat33-resources.jar" >
+      <fileset dir="${build.dir}/classes" >
+        <include name="**/*.properties" />
+      </fileset>
+    </jar>
   </target>
 
   <target name="javadoc" 
