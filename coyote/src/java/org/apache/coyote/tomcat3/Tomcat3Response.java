@@ -92,14 +92,6 @@ class Tomcat3Response extends  Response {
         super();
     }
 
-    /** Set the Content lenth
-     */
-    public void setContentLength(int contentLength) {
-	if(! isIncluded() ){
-	    super.setContentLength(contentLength);
-	    coyoteResponse.setContentLength(contentLength);
-	}
-    }
     /** Attach a Coyote Request to this request.
      */
     public void setCoyoteResponse(org.apache.coyote.Response cRes) {
@@ -126,6 +118,11 @@ class Tomcat3Response extends  Response {
     public void endHeaders()  throws IOException {
 	super.endHeaders();
 	coyoteResponse.setStatus(getStatus());
+	// Check that the content-length has been set.
+	int cLen = getContentLength();
+	if( cLen >= 0 ) {
+	    coyoteResponse.setContentLength(cLen);
+	}
         // Calls a sendHeaders callback to the protocol
 	coyoteResponse.sendHeaders();
     }
