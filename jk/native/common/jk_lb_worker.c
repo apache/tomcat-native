@@ -173,13 +173,13 @@ static void retry_worker(worker_record_t *w,
     if (elapsed <= recover_wait_time) {
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                    "worker %s is in error state - will not yet recover (%d < %d)",
-                    w->s->name, elapsed, recover_wait_time);
+                    "worker %s will recover in %d seconds",
+                    w->s->name, recover_wait_time - elapsed);
     }
     else {
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                    "worker %s is in error state - will recover",
+                    "worker %s is marked for recover",
                     w->s->name);
         w->s->in_recovering  = JK_TRUE;
         w->s->in_error_state = JK_FALSE;
@@ -247,6 +247,7 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
     if (candidate) {
         if (p->lbmethod == JK_LB_BYREQUESTS)
             candidate->s->lb_value -= total_factor;
+        candidate->r = &(candidate->s->domain[0]);
     }
 
     return candidate;
@@ -286,6 +287,7 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
 
     if (candidate) {
         candidate->s->lb_value -= total_factor;
+        candidate->r = &(candidate->s->name[0]);
     }
 
     return candidate;
@@ -337,6 +339,9 @@ static worker_record_t *find_best_worker(lb_worker_t * p,
         rc = find_best_byrequests(p, l);
     else if (p->lbmethod == JK_LB_BYTRAFFIC)
         rc = find_best_bytraffic(p, l);
+    /* By default use worker name as session route */
+    if (rc)
+        rc->r = &(rc->s->name[0]);
 
     return rc;
 }
@@ -485,7 +490,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         lb_endpoint_t *p = e->endpoint_private;
         int attempt = 0;
         int num_of_workers = p->worker->num_of_workers;
-        /* you can not recover on another load balancer */
+        /* Set returned error to OK */
         *is_error = JK_HTTP_OK;
 
         /* set the recovery post, for LB mode */
@@ -505,10 +510,15 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
             if (rec) {
                 int is_service_error = JK_HTTP_OK;
+                int service_ok = JK_FALSE;
                 jk_endpoint_t *end = NULL;
-
-                s->jvm_route = jk_pool_strdup(s->pool, rec->s->name);
-
+                
+                /* XXX: No need to strdup here ? */
+#if 0
+                s->jvm_route = jk_pool_strdup(s->pool, rec->r);
+#else
+                s->jvm_route = rec->r;
+#endif
                 rc = rec->w->get_endpoint(rec->w, &end, l);
 
                 if (JK_IS_DEBUG_LEVEL(l))
@@ -517,17 +527,16 @@ static int JK_METHOD service(jk_endpoint_t *e,
                            rec->s->name, s->jvm_route, rc);
                 rec->s->elected++;
                 if (rc && end) {
-                    int src;
                     /* Reset endpoint read and write sizes for
                      * this request.
                      */
                     end->rd = end->wr = 0;                    
-                    src = end->service(end, s, l, &is_service_error);
+                    service_ok = end->service(end, s, l, &is_service_error);
                     /* Update partial reads and writes if any */
                     rec->s->readed += end->rd;
                     rec->s->transferred += end->wr;
                     end->done(&end, l);
-                    if (src) {
+                    if (service_ok) {
                         rec->s->in_error_state = JK_FALSE;
                         rec->s->in_recovering = JK_FALSE;
                         rec->s->error_time = 0;
@@ -535,7 +544,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         return JK_TRUE;
                     }
                 }
-                if (end) {
+                if (!service_ok) {
                     /*
                     * Service failed !!!
                     *
@@ -560,6 +569,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         JK_TRACE_EXIT(l);
                         return JK_FALSE;
                     }
+                    jk_log(l, JK_LOG_INFO,
+                           "service failed, worker %s is in error state",
+                           rec->s->name);
                 }
                 else {
                     /* If we can not get the endpoint from the worker
@@ -588,8 +600,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             }
         }
         jk_log(l, JK_LOG_INFO,
-               "All tomcat instances are busy, no more endpoints left. "
-               "Rise cache_size to match the load");
+               "All tomcat instances are busy or in error state");
         JK_TRACE_EXIT(l);
         /* Set error to Server busy */
         *is_error = JK_HTTP_SERVER_BUSY;
@@ -675,14 +686,11 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                     strncpy(p->lb_workers[i].s->domain, s, JK_SHM_STR_SIZ);
                 if ((s = jk_get_worker_redirect(props, worker_names[i], NULL)))
                     strncpy(p->lb_workers[i].s->redirect, s, JK_SHM_STR_SIZ);
-                /* 
-                 * Allow using lb in fault-tolerant mode.
-                 * A value of 0 means the worker will be used for all requests without
-                 * sessions
-                 */
+
                 p->lb_workers[i].s->lb_value = p->lb_workers[i].s->lb_factor;
                 p->lb_workers[i].s->in_error_state = JK_FALSE;
                 p->lb_workers[i].s->in_recovering = JK_FALSE;
+                p->lb_workers[i].s->error_time = 0;
                 /* Worker can be initaly disabled as hot standby */
                 p->lb_workers[i].s->is_disabled = jk_get_is_worker_disabled(props, worker_names[i]);
                 if (!wc_create_worker(p->lb_workers[i].s->name,
