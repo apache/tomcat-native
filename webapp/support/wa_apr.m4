@@ -68,7 +68,11 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_APR],
   [
-    wa_apr_tempval="apr"
+    if test -z "${srcdir}" ; then
+      wa_apr_tempval="apr"
+    else
+      wa_apr_tempval="${srcdir}/apr"
+    fi
     AC_MSG_CHECKING([for apr sources])
     AC_ARG_WITH(
       [apr],
