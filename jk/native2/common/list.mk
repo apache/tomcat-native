@@ -4,6 +4,7 @@ ${JK}jk_channel_jni${OEXT}\
 ${JK}jk_channel_socket${OEXT}\
 ${JK}jk_channel_un${OEXT}\
 ${JK}jk_config${OEXT}\
+${JK}jk_config_file${OEXT}\
 ${JK}jk_endpoint${OEXT}\
 ${JK}jk_env${OEXT}\
 ${JK}jk_handler_logon${OEXT}\
@@ -13,6 +14,8 @@ ${JK}jk_map${OEXT}\
 ${JK}jk_md5${OEXT}\
 ${JK}jk_msg_ajp${OEXT}\
 ${JK}jk_mutex${OEXT}\
+${JK}jk_mutex_proc${OEXT}\
+${JK}jk_mutex_thread${OEXT}\
 ${JK}jk_nwmain${OEXT}\
 ${JK}jk_objCache${OEXT}\
 ${JK}jk_pool${OEXT}\

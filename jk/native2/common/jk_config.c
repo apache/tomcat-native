@@ -55,99 +55,37 @@
  *                                                                           *
  * ========================================================================= */
 
-/***************************************************************************
- * Description: General purpose config object                                 *
- * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Version:     $Revision$                                           *
- ***************************************************************************/
-
+/**
+ * Common methods for processing config data. Independent of the config
+ * storage ( this is a sort of base class ).
+ *
+ * Config is read from the storage as a map, with 'bean names' as keys
+ * and a map of attributes as values.
+ *
+ * We'll process the map creating new objects and calling the setters, similar
+ * with what we do on the java side ( see ant or tomcat  ).
+ *
+ * There is also support for update, based on a version number. New objects
+ * or existing objects having a 'ver' attribute will have the setter methods
+ * called with the new values. XXX a reconfig method may be needed to notify.
+ * Backends that support notifications may update directly the changed attributes,
+ * but all components must support the simpler store ( where some attributes
+ * may be set multiple times, since we can't detect individual att changes ).
+ *
+ * Note: The current code assumes a backend that is capable of storing
+ * multi-valued attributes. This makes things hard to port to registry and
+ * some other repositories. 
+ *
+ * @author: Gal Shachor <shachor@il.ibm.com>                           
+ * @author: Costin Manolache
+ */
+ 
 #include "jk_global.h"
 #include "jk_map.h"
 #include "jk_pool.h"
 #include "jk_config.h"
 
-#define CAPACITY_INC_SIZE (50)
 #define LENGTH_OF_LINE    (1024)
-
-static int jk2_config_readFile(jk_env_t *env,
-                                         jk_config_t *cfg,
-                                         int *didReload, int firstTime);
-
-/* ==================== ==================== */
-
-/* Set the config file, read it. The property will also be
-   used for storing modified properties.
- */
-static int jk2_config_setConfigFile( jk_env_t *env,
-                                     jk_config_t *cfg,
-                                     jk_workerEnv_t *wEnv,
-                                     char *workerFile)
-{   
-    cfg->file=workerFile;
-
-    return jk2_config_readFile( env, cfg, NULL, JK_TRUE );
-}
-
-/* Experimental. Dangerous. The file param will go away, for security
-   reasons - it can save only in the original file.
- */
-static int jk2_config_saveConfig( jk_env_t *env,
-                                  jk_config_t *cfg,
-                                  char *workerFile)
-{
-    FILE *fp;
-/*    char buf[LENGTH_OF_LINE + 1];            */
-    int i,j;
-
-    if( workerFile==NULL )
-        workerFile=cfg->file;
-
-    if( workerFile== NULL )
-        return JK_ERR;
-    
-    fp= fopen(workerFile, "w");
-        
-    if(fp==NULL)
-        return JK_ERR;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "config.save(): Saving %s\n", workerFile );
-    
-    /* We'll save only the objects/properties that were set
-       via config, and to the original 'string'. That keeps the config
-       small ( withou redundant ) and close to the original. Comments
-       will be saved/loaded later.
-    */
-    for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
-        char *name=env->_objects->nameAt( env, env->_objects, i );
-        jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
-
-        if( mbean==NULL || mbean->settings==NULL ) 
-            continue;
-
-        if( strcmp( name, mbean->name ) != 0 ) {
-            /* It's an alias. */
-            continue;
-        }
-        fprintf( fp, "[%s]\n", mbean->name );
-
-        for( j=0; j < mbean->settings->size( env, mbean->settings ); j++ ) {
-            char *pname=mbean->settings->nameAt( env, mbean->settings, j);
-            /* Don't save redundant information */
-            if( strcmp( pname, "name" ) != 0 ) {
-                fprintf( fp, "%s=%s\n",
-                         pname,
-                         mbean->settings->valueAt( env, mbean->settings, j));
-            }
-        }
-        fprintf( fp, "\n" );
-    }
-    
-    fclose(fp);
-
-    return JK_OK;
-}
-
 
 /** Interpret the 'name' as [OBJECT].[PROPERTY].
     If the [OBJECT] is not found, construct it using
@@ -168,9 +106,6 @@ static int jk2_config_processBeanPropertyString( jk_env_t *env,
     jk_bean_t *w = NULL;
     char *type=NULL;
     char *dot=0;
-/*    int i; */
-/*    char **comp; */
-/*    int nrComp; */
     char *lastDot;
     char *lastDot1;
     
@@ -362,9 +297,6 @@ int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
 
 
 
-
-
-
 /**
  *  Replace $(property) in value.
  * 
@@ -447,7 +379,7 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
  *  and any removal may have disastrous consequences. Using critical
  *  sections would drastically affect the performance.
  */
-static int jk2_config_processConfigData(jk_env_t *env, jk_config_t *cfg,int firstTime )
+int jk2_config_processConfigData(jk_env_t *env, jk_config_t *cfg,int firstTime )
 {
     int i;
     int rc;
@@ -459,7 +391,7 @@ static int jk2_config_processConfigData(jk_env_t *env, jk_config_t *cfg,int firs
     return rc;
 }
 
-static int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firstTime )
+int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firstTime )
 {
     int j;   
     
@@ -515,156 +447,5 @@ static int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, i
         cfg->setProperty( env, cfg, bean, pname, pvalue );
     }
 
-    return JK_OK;
-}
-
-static int jk2_config_readFile(jk_env_t *env,
-                               jk_config_t *cfg,
-                               int *didReload, int firstTime)
-{
-    int rc;
-    int csOk;
-    struct stat statbuf;
-
-    if( didReload!=NULL )
-        *didReload=JK_FALSE;
-
-    if( cfg->file==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.update(): No config file\n" );
-        return JK_ERR;
-    }
-
-    rc=stat(cfg->file, &statbuf);
-    if (rc == -1) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.update(): Can't find config file %s\n", cfg->file );
-        return JK_ERR;
-    }
-    
-    if( !firstTime && statbuf.st_mtime < cfg->mtime ) {
-        if( cfg->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "config.update(): No reload needed %s %ld %ld\n", cfg->file,
-                          cfg->mtime, statbuf.st_mtime );
-        return JK_OK;
-    }
-     
-    JK_ENTER_CS(&cfg->cs, csOk);
-    
-    if(csOk !=JK_TRUE) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "cfg.update() Can't enter critical section\n");
-        return JK_ERR;
-    }
-
-    /* Check if another thread has updated the config */
-
-    rc=stat(cfg->file, &statbuf);
-    if (rc == -1) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.update(): Can't find config file %s", cfg->file );
-        JK_LEAVE_CS(&cfg->cs, csOk);
-        return JK_ERR;
-    }
-    
-    if( ! firstTime && statbuf.st_mtime <= cfg->mtime ) {
-        JK_LEAVE_CS(&cfg->cs, csOk);
-        return JK_OK;
-    }
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "cfg.update() Updating config %s %d %d\n",
-                  cfg->file, cfg->mtime, statbuf.st_mtime);
-    
-    jk2_map_default_create(env, &cfg->cfgData, env->tmpPool);
-
-    rc=jk2_map_read(env, cfg->cfgData , cfg->file );
-    
-    if( rc==JK_OK ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "config.setConfig():  Reading properties %s %d\n",
-                      cfg->file, cfg->cfgData->size( env, cfg->cfgData ) );
-    } else {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.setConfig(): Error reading properties %s\n",
-                      cfg->file );
-        JK_LEAVE_CS(&cfg->cs, csOk);
-        return JK_ERR;
-    }
-    
-    rc=jk2_config_processConfigData( env, cfg, firstTime );
-
-    if( didReload!=NULL )
-        *didReload=JK_TRUE;
-    
-    cfg->mtime= statbuf.st_mtime;
-
-    JK_LEAVE_CS(&cfg->cs, csOk);
-    return rc;
-}
-
-
-static int jk2_config_update(jk_env_t *env,
-                             jk_config_t *cfg, int *didReload)
-{
-    return jk2_config_readFile( env, cfg, didReload, JK_FALSE );
-}
-
-/** Set a property for this config object
- */
-static int JK_METHOD jk2_config_setAttribute( struct jk_env *env, struct jk_bean *mbean,
-                                              char *name, void *valueP)
-{
-    jk_config_t *cfg=mbean->object;
-    char *value=valueP;
-    
-    if( strcmp( name, "file" )==0 ) {
-        return jk2_config_setConfigFile(env, cfg, cfg->workerEnv, value);
-    } else if( strcmp( name, "debugEnv" )==0 ) {
-        env->debug=atoi( value );
-    } else if( strcmp( name, "save" )==0 ) {
-        /* Experimental. Setting save='foo' will save the current config in
-           foo
-        */
-        return jk2_config_saveConfig(env, cfg, value);
-    } else {
-        return JK_ERR;
-    }
-    return JK_OK;
-}
-
-
-int JK_METHOD jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
-                        jk_bean_t *result,
-                        const char *type, const char *name)
-{
-    jk_config_t *_this;
-    int i;
-
-    _this=(jk_config_t *)pool->alloc(env, pool, sizeof(jk_config_t));
-    if( _this == NULL )
-        return JK_ERR;
-    _this->pool = pool;
-
-    _this->setPropertyString=jk2_config_setPropertyString;
-    _this->update=jk2_config_update;
-    _this->setProperty=jk2_config_setProperty;
-    _this->save=jk2_config_saveConfig;
-    _this->mbean=result;
-    _this->processNode=jk2_config_processNode;
-    _this->ver=0;
-
-    result->object=_this;
-    result->setAttribute=jk2_config_setAttribute;
-
-    JK_INIT_CS(&(_this->cs), i);
-    if (!i) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.factory(): Can't init CS\n");
-        return JK_ERR;
-    }
-
-    
     return JK_OK;
 }
