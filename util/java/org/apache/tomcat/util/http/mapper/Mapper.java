@@ -219,9 +219,9 @@ public final class Mapper {
      * @param welcomeResources Welcome files defined for this context
      * @param resources Static resources of the context
      */
-    public void setContext(String[] welcomeResources, 
+    public void setContext(String path, String[] welcomeResources, 
                            javax.naming.Context resources) {
-        context.name = "";
+        context.name = path;
         context.welcomeResources = welcomeResources;
         context.resources = resources;
     }
