@@ -392,7 +392,6 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_puts(s, "</table><br />\n");
             if (selected >= 0) {
                 worker_record_t *wr = &(lb->lb_workers[selected]);
-                ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
                 jk_putv(s, "<hr /><h3>Edit worker settings for ",
                         wr->s->name, "</h3>\n", NULL);
                 jk_putv(s, "<form method=\"GET\" action=\"",
@@ -635,9 +634,6 @@ static int JK_METHOD validate(jk_worker_t *pThis,
     JK_TRACE_ENTER(l);
 
     if (pThis && pThis->worker_private) {
-        status_worker_t *p = pThis->worker_private;
-
-
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }

@@ -406,7 +406,6 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
 {
     worker_record_t *rc = NULL;
     char *sessionid = NULL;
-    int domain_id = -1;
     int r;
 
     JK_TRACE_ENTER(l);
@@ -672,7 +671,6 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                   &worker_names,
                                   &num_of_workers) && num_of_workers) {
             unsigned int i = 0;
-            unsigned int j = 0;
 
             p->lb_workers = jk_pool_alloc(&p->p,
                                           num_of_workers *
