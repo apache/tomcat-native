@@ -218,7 +218,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
 
     apr_socket_t *sock=endpoint->channelData;
     apr_status_t ret;
-    apr_int32_t timeout = socketInfo->timeout * APR_USEC_PER_SEC;
+    apr_int32_t timeout = (apr_int32_t)(socketInfo->timeout * APR_USEC_PER_SEC);
     char msg[128];
 
     if (apr_socket_create(&sock, remote_sa->family, SOCK_STREAM,

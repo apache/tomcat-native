@@ -162,7 +162,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
 
     if( finfo.size < shm->size ) {
         char bytes[1024];
-        apr_size_t toWrite=shm->size-finfo.size;
+        apr_size_t toWrite = (apr_size_t)(shm->size-finfo.size);
         apr_off_t off=0;
         
         memset( bytes, 0, 1024 );        
@@ -190,7 +190,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     /* Now mmap it
      */
     rc=apr_mmap_create( &aprMmap,  file, (apr_off_t)0,
-                        finfo.size, APR_MMAP_READ | APR_MMAP_WRITE,
+                        (apr_size_t)finfo.size, APR_MMAP_READ | APR_MMAP_WRITE,
                         globalShmPool );
     if( rc!=JK_OK ) {
         char error[256];

@@ -114,9 +114,9 @@ static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
         s->jkprintf(env, s, "<td>%ld</td>\n",
                     (long)(stat->endTime - stat->startTime) );
         
-        totalTime += stat->totalTime;
+        totalTime += (long)stat->totalTime;
         if( maxTime < stat->maxTime )
-            maxTime=stat->maxTime;
+            maxTime = (long)stat->maxTime;
     }
 #endif
     s->jkprintf(env, s, "</tr>\n");
