@@ -149,6 +149,15 @@ DWORD WINAPI thread_worker(void *p)
     while (GetQueuedCompletionStatus(global_thread_pool.worker_port,
             &n1, &n2, &pOverLapped, INFINITE)) {    
         if  (pOverLapped == THREAD_POOL_SHUTDOWN) {
+            jk_ws_service_t *s = &thread->service;
+            if (s->workerEnv && s->realWorker) {
+                struct jk_worker *w = s->realWorker;
+                jk_env_t *env = s->workerEnv->globalEnv->getEnv( s->workerEnv->globalEnv );
+                if (w != NULL && w->channel != NULL 
+                    && w->channel->afterRequest != NULL) {
+                    w->channel->afterRequest( env, w->channel, w, NULL, s );
+                }
+            }
             break;
         }
         else if (pOverLapped == THREAD_POOL_RECYCLE) {
