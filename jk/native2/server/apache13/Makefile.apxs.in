@@ -3,28 +3,28 @@
 APXS=@APXS@
 OS=@OS@
 JK_DIR := ../..
-APXS_LDFLAGS=@APXS_LDFLAGS@
-APXS_CFLAGS=@APXS_CFLAGS@
 COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
 APR_CFLAGS=@APR_CFLAGS@
-APR_LDFLAGS=@APR_LDFLAGS@
 C_FILES=jk_service_apache13.c mod_jk2.c
 JAVA_HOME=@JAVA_HOME@
-APRLIBS=`@APR_DIR@/apr-config --libs`
-
-JK=../../common/
-JKINC=../../include/
-JK_INCL=-DUSE_APACHE_MD5 -I ${JK} -I ${JKINC} -DHAVE_MMAP
+APR_LIBS=`@APR_DIR@/bin/apr-config --link-ld`
+APR_UTIL_LIBS=`@APR_UTIL_DIR@/bin/apu-config --link-ld`
 
 ifneq ($(strip $(JAVA_HOME)),)
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS} @HAVE_JNI@
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 endif
 
+JK_CFLAGS=-I ${JK_DIR}/include -DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 ${APR_CFLAGS} -DHAVE_MMAP
+
 all: mod_jk2.so
 
 mod_jk2.so: 
-	$(APXS) -c -o $@ -Wc,"${JK_INCL} ${APR_CFLAGS} ${APR_LDFLAGS}" "${JAVA_INCL}" ${C_FILES} ${COMMON_C_FILES} ${APR_LIBS}
+	$(APXS) -c -o $@ ${JK_CFLAGS} ${JAVA_INCL} ${C_FILES} ${COMMON_C_FILES} \
+		${APR_LIBS} ${APR_UTIL_LIBS} ${JAVA_LIB}
+
+install: mod_jk2.so
+	$(APXS) -i mod_jk2.so
 
 clean:
 	rm -f *.o *.so

@@ -129,7 +129,7 @@ AC_DEFUN(
             tempret="0"
             JK_EXEC(
               [tempret],
-              [${SHELL} ./configure --enable-static --disable-shared ${APR_CONFIGURE_ARGS}],
+              [${SHELL} ./configure --prefix=${APR_DIR} --with-installbuilddir=${APR_DIR}/instbuild --disable-shared ${APR_CONFIGURE_ARGS}],
               [apr],
               [${APR_DIR}])
             if ${TEST} "${tempret}" = "0"; then
@@ -138,7 +138,7 @@ AC_DEFUN(
               AC_MSG_ERROR(apr configure failed with ${tempret})
             fi
             JK_APR_LIBNAME(apr_libname,${APR_DIR})
-            APR_LDFLAGS="${APR_DIR}/${apr_libname}"
+            APR_LDFLAGS="${APR_DIR}/lib/${apr_libname}"
             APR_LIBDIR=""
 			use_apr=true
             COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
@@ -195,7 +195,7 @@ AC_DEFUN(
             tempret="0"
             JK_EXEC(
               [tempret],
-              [${SHELL} ./configure --with-apr=${APR_DIR}],
+              [${SHELL} ./configure --prefix=${APR_UTIL_DIR} --with-apr=${APR_DIR}],
               [apr-util],
               [${APR_UTIL_DIR}])
             if ${TEST} "${tempret}" = "0"; then
@@ -204,7 +204,7 @@ AC_DEFUN(
               AC_MSG_ERROR(apr-util configure failed with ${tempret})
             fi
             JK_APR_UTIL_LIBNAME(apr_util_libname,${APR_UTIL_DIR})
-            APR_LDFLAGS="${APR_LDFLAGS} ${APR_UTIL_DIR}/${apr_util_libname}"
+            APR_LDFLAGS="${APR_LDFLAGS} ${APR_UTIL_DIR}/lib/${apr_util_libname}"
             APR_UTIL_LIBDIR=""
 			use_apr=true
             COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
