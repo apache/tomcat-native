@@ -83,6 +83,9 @@
     #define closesocket         close
 #endif
 
+/* affects include files on Solaris (for FIONBIO on Solaris 8) */
+#define BSD_COMP
+
 #define DEFAULT_HOST "127.0.0.1"
 
 /** Information specific for the socket channel
