@@ -60,7 +60,7 @@ dnl Author Pier Fumagalli <pier.fumagalli@sun.com>
 dnl Version $Id$
 dnl --------------------------------------------------------------------------
 
-AC_DEFUN([AP_PROG_JAVAC_WORKS],[
+AC_DEFUN([JAVA_JAVAC_WORKS],[
   AC_CACHE_CHECK([wether the Java compiler (${JAVAC}) works],
     ap_cv_prog_javac_works,[
     echo "public class Test {}" > Test.java
@@ -77,18 +77,18 @@ AC_DEFUN([AP_PROG_JAVAC_WORKS],[
   ])
 ])
 
-AC_DEFUN([AP_PROG_JAVAC],[
+AC_DEFUN([JAVA_JAVAC],[
   AC_PATH_PROG(JAVAC,javac,
     AC_MSG_ERROR([javac not found]),
     ${JAVA_HOME}/bin:${PATH}
   )
-  AP_PROG_JAVAC_WORKS()
+  JAVA_JAVAC_WORKS()
   AC_PROVIDE([$0])
   AC_SUBST(JAVAC)
   AC_SUBST(JAVACFLAGS)
 ])
 
-AC_DEFUN([AP_PROG_JAR],[
+AC_DEFUN([JAVA_JAR],[
   AC_PATH_PROG(JAR,jar,
     AC_MSG_ERROR([jar not found]),
     ${JAVA_HOME}/bin:${PATH})
@@ -96,12 +96,13 @@ AC_DEFUN([AP_PROG_JAR],[
   AC_SUBST(JAR)
 ])
 
-AC_DEFUN([AP_JAVA],[
+AC_DEFUN([JAVA_CHECK],[
   AC_MSG_CHECKING([Java support])
-  AC_ARG_WITH(java,
-  [  --with-java[=JAVA_HOME] Build Java sources. If JAVA_HOME is not specified
-                          its value will be inherited from the JAVA_HOME
-                          environment variable ],
+  AC_ARG_ENABLE(java,
+  [  --enable-java[=JAVA_HOME]
+                          enable Java compilation (if JAVA_HOME is not
+                          specified its value will be inherited from the
+                          JAVA_HOME environment variable).],
   [
     case "${withval}" in
     yes|YES|true|TRUE)
