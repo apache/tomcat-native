@@ -349,6 +349,9 @@ public final class IntrospectionUtils {
 		setPropertyMethod.invoke( o, params );
 	    }
 
+	} catch( IllegalArgumentException ex2 ) {
+            System.err.println("IAE " + o + " " + name + " " + value);
+            ex2.printStackTrace();
 	} catch( SecurityException ex1 ) {
 	    if( dbg > 0 )
 		d("SecurityException for " + o.getClass() + " " +
@@ -623,6 +626,7 @@ public final class IntrospectionUtils {
 				"getOptions1", new Class[] {} )) {
 	    args0=(String[])callMethod0( proxy, "getOptions1");
 	}
+
 	if( args0==null ) {
 	    //args0=findVoidSetters(proxy.getClass());
 	    args0=findBooleanSetters(proxy.getClass());
@@ -706,10 +710,10 @@ public final class IntrospectionUtils {
 	for( int i=0; i<m.length; i++ ) {
 	    if( m[i].getName().startsWith("set") &&
 	    	m[i].getParameterTypes().length == 1 &&
-	    	"boolean".equals( m[i].getParameterTypes()[0].getName()) ) {
+	    	"boolean".equalsIgnoreCase( m[i].getParameterTypes()[0].getName()) ) {
 	    	String arg=m[i].getName().substring( 3 );
 	    	v.addElement( unCapitalize( arg ));
-	    }
+	    } 
 	}
 	String s[]=new String[v.size()];
 	for( int i=0; i<s.length; i++ ) {
