@@ -90,10 +90,7 @@
 #endif
 
 
-#define SHM_SET_ATTRIBUTE 0
 #define SHM_WRITE_SLOT 2
-#define SHM_ATTACH 3
-#define SHM_DETACH 4
 #define SHM_RESET 5
 #define SHM_DUMP 6
 
@@ -514,40 +511,17 @@ static int jk2_shm_writeSlot( jk_env_t *env, jk_shm_t *shm,
     
 /** Called by java. Will call the right shm method.
  */
-static int JK_METHOD jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
+static int JK_METHOD jk2_shm_invoke(jk_env_t *env, jk_bean_t *bean, jk_endpoint_t *ep, int code,
+                                    jk_msg_t *msg, int raw)
 {
-    jk_bean_t *bean=(jk_bean_t *)target;
     jk_shm_t *shm=(jk_shm_t *)bean->object;
     int rc;
 
-    int code=msg->getByte(env, msg );
-    
     if( shm->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "shm.%d() \n", code);
     
     switch( code ) {
-    case SHM_SET_ATTRIBUTE: {
-        char *name=msg->getString( env, msg );
-        char *value=msg->getString( env, msg );
-        if( shm->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                          "shm.setAttribute() %s %s %p\n", name, value, bean->setAttribute);
-        if( bean->setAttribute != NULL)
-            bean->setAttribute(env, bean, name, value );
-        return JK_OK;
-    }
-    case SHM_ATTACH: {
-        if( shm->mbean->debug > 0 )
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                          "shm.init()\n");
-        rc=shm->init(env, shm);
-        return rc;
-    }
-    case SHM_DETACH: {
-
-        return JK_OK;
-    }
     case SHM_WRITE_SLOT: {
         char *instanceName=msg->getString( env, msg );
         char *buf=msg->buf;
@@ -571,9 +545,6 @@ static int JK_METHOD jk2_shm_dispatch(jk_env_t *env, void *target, jk_endpoint_t
 }
 
 static int JK_METHOD jk2_shm_setWorkerEnv( jk_env_t *env, jk_shm_t *shm, jk_workerEnv_t *wEnv ) {
-    wEnv->registerHandler( env, wEnv, "shm",
-                           "shmDispatch", JK_HANDLE_SHM_DISPATCH,
-                           jk2_shm_dispatch, NULL );
     return JK_OK;
 }
 
@@ -598,6 +569,7 @@ int JK_METHOD jk2_shm_factory( jk_env_t *env ,jk_pool_t *pool,
     /* result->getAttribute=jk2_shm_getAttribute; */
     shm->mbean=result; 
     result->object=shm;
+    result->invoke=jk2_shm_invoke;
     
     shm->getSlot=jk2_shm_getSlot;
     shm->createSlot=jk2_shm_createSlot;
