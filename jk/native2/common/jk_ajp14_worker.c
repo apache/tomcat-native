@@ -66,11 +66,13 @@
 #include "jk_global.h"
 #include "jk_pool.h"
 #include "jk_channel.h"
-#include "jk_msg_buff.h"
-#include "jk_ajp14.h" 
+#include "jk_msg.h"
 #include "jk_logger.h"
+#include "jk_handler.h"
 #include "jk_service.h"
 #include "jk_env.h"
+#include "jk_objCache.h"
+#include "jk_ajp14.h"
 
 int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool, void **result,
                                        const char *type, const char *name);
@@ -98,43 +100,34 @@ static int JK_METHOD
 jk_worker_ajp14_destroy(jk_worker_t **pThis, jk_logger_t *l);
 
 
-#define	JK_RETRIES 3
+#define AJP_DEF_RETRY_ATTEMPTS    (2)
+#define AJP14_PROTO 14
+#define AJP13_PROTO 13
+
+#define AJP13_DEF_HOST            	("localhost")
+#define AJP13_DEF_PORT            	(8009)
+#define AJP14_DEF_HOST         	("localhost")
+#define AJP14_DEF_PORT         	(8011)
 
 /* -------------------- Impl -------------------- */
 
-int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
+                                       void **result,
                                        const char *type, const char *name)
 {
     jk_logger_t *l=env->logger;
     jk_worker_t *w=(jk_worker_t *)pool->calloc(pool, sizeof(jk_worker_t));
 
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_worker_factory\n");
-
     if (name == NULL || w == NULL) {
-        l->jkLog(l, JK_LOG_ERROR, "In ajp14_worker_factory, NULL parameters\n");
+        l->jkLog(l, JK_LOG_ERROR, "ajp14.factory() NullPointerException\n");
         return JK_FALSE;
     }
     w->pool = pool;
-    w->name = strdup(name);
+    w->name = (char *)pool->pstrdup(pool, name);
     
     w->proto= AJP14_PROTO;
 
-    w->login= (jk_login_service_t *)malloc(sizeof(jk_login_service_t));
-
-    if (w->login == NULL) {
-        l->jkLog(l, JK_LOG_ERROR,
-               "In ajp14_worker_factory, malloc failed for login area\n");
-        return JK_FALSE;
-    }
-	
-    memset(w->login, 0, sizeof(jk_login_service_t));
-    
-    w->login->negociation=
-        (AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
-    w->login->web_server_name=NULL; /* must be set in init */
-    
-    w->ep_cache_sz= 0;
-    w->ep_cache= NULL;
+    w->endpointCache= NULL;
     w->connect_retry_attempts= AJP_DEF_RETRY_ATTEMPTS;
 
     w->channel= NULL;
@@ -148,131 +141,17 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool, void **re
 
     *result = w;
 
+    l->jkLog(l, JK_LOG_INFO, "ajp14.factory() Created %s %s\n",
+             w->name, name);
+
     return JK_TRUE;
 }
 
 /*
- * service is now splitted in ajp_send_request and ajp_get_reply
- * much more easier to do errors recovery
- *
- * We serve here the request, using AJP13/AJP14 (e->proto)
- *
+ * Initialize the worker.
  */
 static int JK_METHOD
-jk_worker_ajp14_service(jk_endpoint_t   *e, 
-                        jk_ws_service_t *s,
-                        jk_logger_t     *l,
-                        int  *is_recoverable_error)
-{
-    int i;
-    int err;
-    
-    l->jkLog(l, JK_LOG_DEBUG, "Into jk_endpoint_t::service\n");
-
-    if( ( e== NULL ) 
-	|| ( s == NULL )
-        || ! is_recoverable_error ) {
-	l->jkLog(l, JK_LOG_ERROR, "jk_endpoint_t::service: NULL parameters\n");
-	return JK_FALSE;
-    }
-	
-    e->request = jk_b_new(e->pool);
-    jk_b_set_buffer_size(e->request, DEF_BUFFER_SZ); 
-    jk_b_reset(e->request);
-    
-    e->reply = jk_b_new(e->pool);
-    jk_b_set_buffer_size(e->reply, DEF_BUFFER_SZ);
-    jk_b_reset(e->reply); 
-	
-    e->post = jk_b_new(e->pool);
-    jk_b_set_buffer_size(e->post, DEF_BUFFER_SZ);
-    jk_b_reset(e->post); 
-    
-    e->recoverable = JK_TRUE;
-    e->uploadfd	 = -1;		/* not yet used, later ;) */
-    
-    e->left_bytes_to_send = s->content_length;
-    e->reuse = JK_FALSE;
-    *is_recoverable_error = JK_TRUE;
-    
-    /* 
-     * We get here initial request (in reqmsg)
-     */
-    if (!jk_handler_request_marshal(e->request, s, l, e)) {
-	*is_recoverable_error = JK_FALSE;                
-	l->jkLog(l, JK_LOG_ERROR, "jk_endpoint_t::service: error marshaling\n");
-	return JK_FALSE;
-    }
-    
-    /* 
-     * JK_RETRIES could be replaced by the number of workers in
-     * a load-balancing configuration 
-     */
-    for (i = 0; i < JK_RETRIES; i++) {
-	/*
-	 * We're using reqmsg which hold initial request
-	 * if Tomcat is stopped or restarted, we will pass reqmsg
-	 * to next valid tomcat. 
-	 */
-	err=ajp_send_request(e, s, l);
-	if (err!=JK_TRUE ) {
-	    l->jkLog(l, JK_LOG_ERROR, 
-		   "In jk_endpoint_t::service, ajp_send_request"
-		   "failed in send loop %d\n", i);
-	} else {
-	    /* If we have the no recoverable error, it's probably because the sender (browser)
-	     * stop sending data before the end (certainly in a big post)
-	     */
-	    if (! e->recoverable) {
-		*is_recoverable_error = JK_FALSE;
-		l->jkLog(l, JK_LOG_ERROR, "In jk_endpoint_t::service,"
-		       "ajp_send_request failed without recovery in send loop %d\n", i);
-		return JK_FALSE;
-	    }
-	    
-	    /* Up to there we can recover */
-	    *is_recoverable_error = JK_TRUE;
-	    e->recoverable = JK_TRUE;
-	    
-	    if (ajp_get_reply(e, s, l))
-		return (JK_TRUE);
-	    
-	    /* if we can't get reply, check if no recover flag was set 
-	     * if is_recoverable_error is cleared, we have started received 
-	     * upload data and we must consider that operation is no more recoverable
-	     */
-	    if (! e->recoverable) {
-		*is_recoverable_error = JK_FALSE;
-		l->jkLog(l, JK_LOG_ERROR, "In jk_endpoint_t::service,"
-		       "ajp_get_reply failed without recovery in send loop %d\n", i);
-		return JK_FALSE;
-	    }
-	    
-	    l->jkLog(l, JK_LOG_ERROR, "In jk_endpoint_t::service,"
-		   "ajp_get_reply failed in send loop %d\n", i);
-	}
-	/* Try again to connect */
-	{
-	    jk_channel_t *channel=e->worker->channel;
-	    
-	    l->jkLog(l, JK_LOG_ERROR, "Error sending request, reconnect\n");
-	    err=channel->close( channel, e );
-	    err=channel->open( channel, e );
-	    if( err != JK_TRUE ) {
-		l->jkLog(l, JK_LOG_ERROR, "Reconnect failed\n");
-		return err;
-	    }
-	}
-    }
-    
-    return JK_FALSE;
-}
-
-/*
- * Validate the worker (ajp13/ajp14)
- */
-static int JK_METHOD
-jk_worker_ajp14_validate(jk_worker_t *pThis,
+jk_worker_ajp14_validate(jk_worker_t *_this,
                          jk_map_t    *props,
                          jk_workerEnv_t *we,
                          jk_logger_t *l)
@@ -280,17 +159,17 @@ jk_worker_ajp14_validate(jk_worker_t *pThis,
     int    port;
     char * host;
     int err;
-    jk_worker_t *p = pThis;
+    jk_worker_t *p = _this;
     jk_worker_t *aw;
     char * secret_key;
     int proto=AJP14_PROTO;
 
-    aw = pThis;
+    aw = _this;
     secret_key = map_getStrProp( props, "worker", aw->name, "secretkey", NULL );
     
     if ((!secret_key) || (!strlen(secret_key))) {
-        l->jkLog(l, JK_LOG_ERROR,
-               "No secretkey, defaulting to unauthenticated AJP13\n");
+        l->jkLog(l, JK_LOG_INFO,
+               "ajp14.validate() No secretkey, use AJP13\n");
         proto=AJP13_PROTO;
         aw->proto= AJP13_PROTO;
         aw->logon= NULL; 
@@ -307,73 +186,266 @@ jk_worker_ajp14_validate(jk_worker_t *pThis,
                  "ajp14.validate() unknown protocol %d\n",proto);
 	return JK_FALSE;
     } 
-    if( pThis->channel == NULL ) {
+    if( _this->channel == NULL ) {
 	/* Create a default channel */
 	jk_env_t *env= we->env;
 
-	pThis->channel=env->getInstance(env, pThis->pool,"channel", "socket" );
+	_this->channel=env->getInstance(env, _this->pool,"channel", "socket" );
 
-	if( pThis->channel == NULL ) {
+	if( _this->channel == NULL ) {
 	    l->jkLog(l, JK_LOG_ERROR, "Error creating socket channel\n");
 	    return JK_FALSE;
 	}
-	l->jkLog(l, JK_LOG_ERROR, "Got channel %lx %lx\n", pThis, pThis->channel);
     }
     
-    pThis->channel->setProperty( pThis->channel, "defaultPort", "8007" );
+    _this->channel->setProperty( _this->channel, "defaultPort", "8007" );
 
-    err=pThis->channel->init( pThis->channel, props, p->name, pThis, l );
+    err=_this->channel->init( _this->channel, props, p->name, _this, l );
+
     if( err != JK_TRUE ) {
 	l->jkLog(l, JK_LOG_ERROR, "ajp14.validate(): resolve failed\n");
 	return err;
     }
+
+    l->jkLog(l, JK_LOG_INFO, "ajp14.validate() %s\n", _this->name);
     
     return JK_TRUE;
 }
 
-
-static int JK_METHOD
-jk_worker_ajp14_done(jk_endpoint_t **e,jk_logger_t    *l)
+/*
+ * Close the endpoint (clean buf and close socket)
+ */
+static void jk_close_endpoint(jk_endpoint_t *ae,
+                              jk_logger_t    *l)
 {
-    l->jkLog(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done\n");
+    l->jkLog(l, JK_LOG_INFO, "endpoint.close() %s\n", ae->worker->name);
 
-    if (e && *e ) {
-        jk_endpoint_t *p = *e;
-        int reuse_ep = p->reuse;
+    ae->reuse = JK_FALSE;
+    ae->pool->reset( ae->pool );
+    ae->pool->close( ae->pool );
+    ae->cPool->reset( ae->cPool );
+    ae->cPool->close( ae->cPool );
+    ae->worker->channel->close( ae->worker->channel, ae );
+}
 
-        ajp_reset_endpoint(p);
+/** Connect a channel, implementing the logging protocol if ajp14
+ */
+static int jk_worker_ajp14_connect(jk_endpoint_t *ae, jk_logger_t *l) {
+    jk_channel_t *channel=ae->worker->channel;
+    jk_msg_t *msg;
+    
+    int err=channel->open( channel, ae );
 
-        if(reuse_ep) {
-            jk_worker_t *w = p->worker;
-            if(w->ep_cache_sz) {
-                int rc;
-                JK_ENTER_CS(&w->cs, rc);
-                if(rc) {
-                    int i;
-
-                    for(i = 0 ; i < w->ep_cache_sz ; i++) {
-                        if(!w->ep_cache[i]) {
-                            w->ep_cache[i] = p;
-                            break;
-                        }
-                    }
-                    JK_LEAVE_CS(&w->cs, rc);
-                    if(i < w->ep_cache_sz) {
-			l->jkLog(l, JK_LOG_DEBUG, "Return endpoint to pool\n");
-                        return JK_TRUE;
-                    }
-                }
-            }
-        }
-
-        ajp_close_endpoint(p, l);
-        *e = NULL;
-
-        return JK_TRUE;
+    if( err != JK_TRUE ) {
+        l->jkLog(l, JK_LOG_ERROR,
+                 "ajp14.connect() failed %s\n", ae->worker->name );
+        return JK_FALSE;
     }
 
-    l->jkLog(l, JK_LOG_ERROR, "In jk_endpoint_t::done, NULL parameters\n");
-    return JK_FALSE;
+    /* Check if we must execute a logon after the physical connect */
+    if (ae->worker->logon == NULL)
+        return JK_TRUE;
+
+    /* Do the logon process */
+    l->jkLog(l, JK_LOG_INFO, "ajp14.connect() logging in\n" );
+
+    /* use the reply buffer - it's a new channel, it is cetainly not
+     in use. The request and post buffers are probably in use if this
+    is a reconnect */
+    msg=ae->reply;
+
+    jk_serialize_ping( msg, ae );
+    
+    err = msg->send( msg, ae );
+
+    /* Move to 'slave' mode, listening to messages */
+    err=ae->worker->workerEnv->processCallbacks( ae->worker->workerEnv,
+                                                 ae, NULL);
+
+    /* Anything but OK - the login failed
+     */
+    if( err != JK_TRUE ) {
+        jk_close_endpoint( ae, l );
+    }
+    return err;
+}
+
+
+/*
+ * Serve the request, using AJP13/AJP14
+ */
+static int JK_METHOD
+jk_worker_ajp14_service(jk_endpoint_t   *e, 
+                        jk_ws_service_t *s,
+                        jk_logger_t     *l,
+                        int  *is_recoverable_error)
+{
+    int err;
+    int attempt;
+
+    if( ( e== NULL ) 
+	|| ( s == NULL )
+        || ! is_recoverable_error ) {
+	l->jkLog(l, JK_LOG_ERROR, "ajp14.service() NullPointerException\n");
+	return JK_FALSE;
+    }
+
+    /* Prepare the messages we'll use.*/ 
+    e->request->reset( e->request );
+    e->reply->reset( e->reply );
+    e->post->reset( e->post );
+    
+    e->recoverable = JK_TRUE;
+    e->uploadfd	 = -1;		/* not yet used, later ;) */
+    e->reuse = JK_FALSE;
+    *is_recoverable_error = JK_TRUE;
+    /* Up to now, we can recover */
+    e->recoverable = JK_TRUE;
+
+    s->left_bytes_to_send = s->content_length;
+    s->content_read=0;
+
+    /* 
+     * We get here initial request (in reqmsg)
+     */
+    err=jk_serialize_request13(e->request, s);
+    if (err!=JK_TRUE) {
+	*is_recoverable_error = JK_FALSE;                
+	l->jkLog(l, JK_LOG_ERROR, "ajp14.service(): error marshaling\n");
+	return JK_FALSE;
+    }
+
+    /* Prepare to send some post data ( ajp13 proto ) */
+    if (s->is_chunked || s->left_bytes_to_send > 0) {
+        /* We never sent any POST data and we check it we have to send at
+	 * least of block of data (max 8k). These data will be kept in reply
+	 * for resend if the remote Tomcat is down, a fact we will learn only
+	 * doing a read (not yet) 
+	 */
+        err=jk_serialize_postHead( e->post, s, e );
+
+        if (err != JK_TRUE ) {
+            /* the browser stop sending data, no need to recover */
+            e->recoverable = JK_FALSE;
+            l->jkLog(l, JK_LOG_ERROR,
+                     "ajp14.service() Error receiving initial post data\n");
+            return JK_FALSE;
+        }
+    }
+        
+    l->jkLog(l, JK_LOG_DEBUG, "ajp14.service() %s\n", e->worker->name);
+
+    /*
+     * Try to send the request on a valid endpoint. If one endpoint
+     * fails, close the channel and try again ( maybe tomcat was restarted )
+     * 
+     * XXX JK_RETRIES could be replaced by the number of workers in
+     * a load-balancing configuration 
+     */
+    for(attempt = 0 ; attempt < e->worker->connect_retry_attempts ; attempt++) {
+        jk_channel_t *channel=e->worker->channel;
+
+        err=e->request->send( e->request, e);
+
+	if (err==JK_TRUE ) {
+            /* We sent the request, have valid endpoint */
+            break;
+        }
+
+        if( e->recoverable != JK_TRUE ) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "ajp14.service() error sending request %s, giving up\n",
+                     e->worker->name);
+            return JK_FALSE;
+        }
+        
+        l->jkLog(l, JK_LOG_ERROR,
+                 "ajp14.service() error sending, retry on a new endpoint %s\n",
+                 e->worker->name);
+
+        channel->close( channel, e );
+
+        err=jk_worker_ajp14_connect(e, l); 
+
+        if( err != JK_TRUE ) {
+            l->jkLog(l, JK_LOG_ERROR,
+                     "ajp14.service() failed to reconnect endpoint errno=%d\n",
+                     errno);
+            return JK_FALSE;
+        }
+
+        /*
+         * After we are connected, each error that we are going to
+         * have is probably unrecoverable
+         */
+        e->recoverable = JK_FALSE;
+    }
+    
+    /* We should have a channel now, send the post data */
+    *is_recoverable_error = JK_TRUE;
+    e->recoverable = JK_TRUE;
+    
+    err= e->post->send( e->post, e );
+
+    err = e->worker->workerEnv->processCallbacks(e->worker->workerEnv,
+                                                e, s);
+    
+    /* if we can't get reply, check if no recover flag was set 
+     * if is_recoverable_error is cleared, we have started received 
+     * upload data and we must consider that operation is no more recoverable
+     */
+    if (! e->recoverable) {
+        *is_recoverable_error = JK_FALSE;
+        l->jkLog(l, JK_LOG_ERROR,
+                 "ajp14.service() ajpGetReply unrecoverable error %d\n",
+                 err);
+        return JK_FALSE;
+    }
+    
+    l->jkLog(l, JK_LOG_ERROR,
+             "ajp14.service() ajpGetReply recoverable error %d\n", err);
+
+    return err;
+}
+
+
+static int JK_METHOD
+jk_worker_ajp14_done(jk_endpoint_t **eP,jk_logger_t    *l)
+{
+    jk_endpoint_t *e;
+    jk_worker_t *w;
+    
+    if (eP==NULL || *eP==NULL ) {
+        l->jkLog(l, JK_LOG_ERROR, "ajp14.done() NullPointerException\n");
+        return JK_FALSE;
+    }
+
+    e = *eP;
+
+    w= e->worker;
+
+    if( e->cPool != NULL ) 
+        e->cPool->reset(e->cPool);
+
+    if (w->endpointCache != NULL ) {
+        int err=0;
+        
+        err=w->endpointCache->put( w->endpointCache, e );
+        if( err==JK_TRUE ) {
+            l->jkLog(l, JK_LOG_INFO, "ajp14.done() return to pool %s\n",
+                     w->name );
+            return JK_TRUE;
+        }
+    }
+
+    /* No reuse or put() failed */
+
+    jk_close_endpoint(e, l);
+    *eP = NULL;
+    l->jkLog(l, JK_LOG_INFO, "ajp14.done() close endpoint %s\n",
+             w->name );
+    
+    return JK_TRUE;
 }
 
 static int JK_METHOD
@@ -384,30 +456,17 @@ jk_worker_ajp14_getEndpoint(jk_worker_t *_this,
     jk_endpoint_t *ae = NULL;
     jk_pool_t *endpointPool;
     
-    if( _this->login->secret_key ==NULL ) {
+    if( _this->secret ==NULL ) {
     }
 
-    l->jkLog(l, JK_LOG_DEBUG, "ajp14.get_endpoint() %lx %lx\n", _this, _this->channel );
+    if (_this->endpointCache != NULL ) {
 
-    if (_this->ep_cache_sz) {
-        int rc;
-        JK_ENTER_CS(&_this->cs, rc);
-        if (rc) {
-            int i;
-            
-            for (i = 0 ; i < _this->ep_cache_sz ; i++) {
-                if (_this->ep_cache[i]) {
-                    ae = _this->ep_cache[i];
-                    _this->ep_cache[i] = NULL;
-                    break;
-                }
-            }
-            JK_LEAVE_CS(&_this->cs, rc);
-            if (ae) {
-                l->jkLog(l, JK_LOG_DEBUG, "Reusing endpoint\n");
-                *e = ae;
-                return JK_TRUE;
-            }
+        ae=_this->endpointCache->get( _this->endpointCache );
+
+        if (ae!=NULL) {
+            l->jkLog(l, JK_LOG_INFO, "ajp14.getEndpoint(): Reusing endpoint\n");
+            *e = ae;
+            return JK_TRUE;
         }
     }
 
@@ -419,16 +478,25 @@ jk_worker_ajp14_getEndpoint(jk_worker_t *_this,
         l->jkLog(l, JK_LOG_ERROR, "ajp14.get_endpoint OutOfMemoryException\n");
         return JK_FALSE;
     }
+
+    ae->pool = endpointPool;
+
+    /* Init message storage areas.
+     */
+    ae->request = jk_msg_ajp_create( ae->pool, l, 0);
+    ae->reply = jk_msg_ajp_create( ae->pool, l, 0);
+    ae->post = jk_msg_ajp_create( ae->pool, l, 0);
     
     ae->reuse = JK_FALSE;
 
-    ae->pool = endpointPool;
+    ae->cPool=endpointPool->create( endpointPool, HUGE_POOL_SIZE );
 
     ae->worker = _this;
     ae->proto = _this->proto;
     ae->channelData = NULL;
     ae->service = jk_worker_ajp14_service;
     ae->done = jk_worker_ajp14_done;
+    
     *e = ae;
     return JK_TRUE;
 }
@@ -445,7 +513,8 @@ jk_worker_ajp14_init(jk_worker_t *_this,
     int proto=AJP14_PROTO;
     int cache_sz;
 
-    secret_key = map_getStrProp( props, "worker", _this->name, "secretkey", NULL );
+    secret_key = map_getStrProp( props, "worker", _this->name,
+                                 "secretkey", NULL );
     
     if( secret_key==NULL ) {
         proto=AJP13_PROTO;
@@ -453,62 +522,61 @@ jk_worker_ajp14_init(jk_worker_t *_this,
         _this->logon= NULL; 
     } else {
         /* Set Secret Key (used at logon time) */	
-        _this->login->secret_key = strdup(secret_key);
+        _this->secret = strdup(secret_key);
     }
 
-    l->jkLog(l, JK_LOG_DEBUG, "ajp14.init()\n");
 
     /* start the connection cache */
     cache_sz = map_getIntProp( props, "worker", _this->name, "cachesize",
-                               AJP13_DEF_CACHE_SZ );
+                               JK_OBJCACHE_DEFAULT_SZ );
+
     if (cache_sz > 0) {
-        _this->ep_cache =
-            (jk_endpoint_t **)malloc(sizeof(jk_endpoint_t *) * cache_sz);
-        
-        if(_this->ep_cache) {
-            int i;
-            _this->ep_cache_sz = cache_sz;
-            for(i = 0 ; i < cache_sz ; i++) {
-                _this->ep_cache[i] = NULL;
-            }
-            JK_INIT_CS(&(_this->cs), i);
-            if (!i) {
-                return JK_FALSE;
+        int err;
+        _this->endpointCache=jk_objCache_create( _this->pool, l );
+
+        if( _this->endpointCache != NULL ) {
+            err=_this->endpointCache->init( _this->endpointCache, cache_sz );
+            if( err!= JK_TRUE ) {
+                _this->endpointCache=NULL;
             }
         }
+    } else {
+        _this->endpointCache=NULL;
     }
-    
-    if (_this->login->secret_key == NULL) {
+
+    /* Set WebServerName (used at logon time) */
+    if( we->server_name == NULL )
+        we->server_name = _this->pool->pstrdup(we->pool,we->server_name);
+
+    if (_this->secret == NULL) {
         /* No extra initialization for AJP13 */
+        l->jkLog(l, JK_LOG_INFO, "ajp14.init() ajp13 mode %s\n",_this->name);
         return JK_TRUE;
     }
 
     /* -------------------- Ajp14 discovery -------------------- */
-    
-    /* Set WebServerName (used at logon time) */
-    _this->login->web_server_name = strdup(we->server_name);
-    
-    if (_this->login->web_server_name == NULL) {
-        l->jkLog(l, JK_LOG_ERROR, "can't malloc web_server_name\n");
-        return JK_FALSE;
-    }
-    
-/*     if (get_endpoint(_this, &ae, l) == JK_FALSE) */
-/*         return JK_FALSE; */
 
-    /* Temporary commented out. Will be added back after fixing
-       few more things ( like what happens if apache is started before tomcat).
+    /* (try to) connect with the worker and get any information
+     *  If the worker is down, we'll use the cached data and update
+     *  at the first connection
+     *
+     *  Tomcat can triger a 'ping' at startup to force us to
+     *  update.
      */
-/*     if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) { */
-        
- 	/* connection stage passed - try to get context info 
- 	 * this is the long awaited autoconf feature :) 
- 	 */ 
-/*         rc = discovery(ae, we, l); */
-/*         ajp_close_endpoint(ae, l); */
-/*         return rc; */
-/*     } */
     
+    if (jk_worker_ajp14_getEndpoint(_this, &ae, l) == JK_FALSE) 
+        return JK_FALSE; 
+    
+    rc=jk_worker_ajp14_connect(ae, l);
+
+    
+    if ( rc == JK_TRUE) {
+        l->jkLog( l, JK_LOG_INFO, "ajp14.init() %s connected ok\n",
+                  _this->name );
+    } else {
+        l->jkLog(l, JK_LOG_INFO, "ajp14.init() delayed connection %s\n",
+                 _this->name);
+    }
     return JK_TRUE;
 }
 
@@ -517,48 +585,29 @@ static int JK_METHOD
 jk_worker_ajp14_destroy(jk_worker_t **pThis, jk_logger_t *l)
 {
     jk_worker_t *aw = *pThis;
+    int i;
     
-    if (aw->login != NULL &&
-        aw->login->secret_key != NULL ) {
-        /* Ajp14-specific initialization */
-        if (aw->login->web_server_name) {
-            free(aw->login->web_server_name);
-            aw->login->web_server_name = NULL;
-        }
-        
-        if (aw->login->secret_key) {
-            free(aw->login->secret_key);
-            aw->login->secret_key = NULL;
-        }
-        
-        free(aw->login);
-        aw->login = NULL;
-    }
-
-
     l->jkLog(l, JK_LOG_DEBUG, "ajp14.destroy()\n");
 
-    free(aw->name);
+    if( aw->endpointCache != NULL ) {
         
-    l->jkLog(l, JK_LOG_DEBUG, "ajp14.destroy() %d endpoints to close\n",
-             aw->ep_cache_sz);
-
-    if(aw->ep_cache_sz > 0 ) {
-        int i;
-        for(i = 0 ; i < aw->ep_cache_sz ; i++) {
-            if(aw->ep_cache[i]) {
-                ajp_close_endpoint(aw->ep_cache[i], l);
+        for( i=0; i< aw->endpointCache->ep_cache_sz; i++ ) {
+            jk_endpoint_t *e;
+            
+            e= aw->endpointCache->get( aw->endpointCache );
+            
+            if( e==NULL ) {
+                // we finished all endpoints in the cache
+                break;
             }
+            
+            jk_close_endpoint(e, l);
         }
-        free(aw->ep_cache);
-        JK_DELETE_CS(&(aw->cs), i);
+        aw->endpointCache->destroy( aw->endpointCache );
+
+        l->jkLog(l, JK_LOG_DEBUG, "ajp14.destroy() closed %d cached endpoints\n",
+                 i);
     }
 
-    if (aw->login) {
-        free(aw->login);
-        aw->login = NULL;
-    }
-
-    free(aw);
     return JK_TRUE;
 }
