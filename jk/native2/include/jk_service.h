@@ -233,6 +233,15 @@ struct jk_ws_service {
      * and JK_FALSE on failure.
      */
 
+    /* Initialize the service structure
+     */
+    int (*init)( jk_ws_service_t *_this,
+                 struct jk_endpoint *e, void *serverObj);
+
+    /* Post request cleanup.
+     */
+    void (*afterRequest)( jk_ws_service_t *_this );
+    
     /*
      * Send the response headers to the browser.
      */

@@ -157,7 +157,8 @@ struct jk_endpoint {
     
     struct jk_msg *request;   /* original request storage */
     int     uploadfd;           /* future persistant storage id */
-    int     recoverable;        /* if exchange could be conducted on another TC */
+    int     recoverable;        /* if exchange could be conducted on
+                                   another TC ??? */
 
     /* For redirecting endpoints like lb */
     jk_endpoint_t *realEndpoint;
@@ -168,10 +169,6 @@ struct jk_endpoint {
     unsigned long negociated;
 
     char *servletContainerName;
-    
-    /*     int (JK_METHOD *sendRequest)(jk_endpoint_t *e,  */
-    /*                                  struct jk_ws_service *s, */
-    /*                                  jk_logger_t *l );     */
     
     /*
      * Forward a request to the servlet engine.  The request is described
@@ -199,29 +196,6 @@ struct jk_endpoint {
     int (JK_METHOD *done)(jk_endpoint_t **p,
                           jk_logger_t *l);
 };
-
-int ajp_get_endpoint(struct jk_worker    *pThis,
-                     jk_endpoint_t **pend,
-                     jk_logger_t    *l,
-                     int             proto);
-
-int ajp_connect_to_endpoint(jk_endpoint_t *ae,
-                            jk_logger_t    *l);
-
-void ajp_close_endpoint(jk_endpoint_t *ae,
-                        jk_logger_t    *l);
-
-int ajp_send_request(jk_endpoint_t *e,
-                     struct jk_ws_service *s,
-                     jk_logger_t *l);
-
-int ajp_get_reply(jk_endpoint_t *e,
-                  struct jk_ws_service *s,
-                  jk_logger_t *l);
-
-void ajp_reset_endpoint(jk_endpoint_t *ae);
-
-
     
 #ifdef __cplusplus
 }

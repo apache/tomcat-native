@@ -196,39 +196,52 @@ struct jk_worker {
      * Given a worker which is in the process of being created, and a list
      * of configuration options (or 'properties'), check to see if it the
      * options are.  This will always be called before the init() method.
-     * The init/validate distinction is a bit hazy to me.
-     * See jk_ajp13_worker.c/jk_ajp14_worker.c and jk_worker.c->wc_create_worker() 
+     *
+     * This is different from init - see the apache config process.
+     * Validate should only do static checks on data ( if it has all
+     * the info it needs and if it's valid ). Init() can do any
+     * 'active' opertions.
+     *
+     * You can skip this by setting it to NULL.
      */
     int (JK_METHOD *validate)(jk_worker_t *_this,
-                              jk_map_t *props, 
+                              jk_map_t *props,
                               struct jk_workerEnv *we,
-                              jk_logger_t *l);
+                               jk_logger_t *l);
 
     /*
      * Do whatever initialization needs to be done to start this worker up.
      * Configuration options are passed in via the props parameter.  
      */
-    int (JK_METHOD *init)(jk_worker_t *w,
-                          jk_map_t *props, 
+    int (JK_METHOD *init)(jk_worker_t *_this,
+                          jk_map_t *props,
                           struct jk_workerEnv *we,
-                          jk_logger_t *l);
-
+                          jk_logger_t *l );
 
     /*
      * Obtain an endpoint to service a particular request.  A pointer to
-     * the endpoint is stored in pend.  
+     * the endpoint is stored in pend. The done() method in the
+     * endpoint will be called when the endpoint is no longer needed.
      */
-    int (JK_METHOD *get_endpoint)(jk_worker_t *w,
+    int (JK_METHOD *get_endpoint)(jk_worker_t *_this,
                                   struct jk_endpoint **pend,
-                                  jk_logger_t *l);
+                                  jk_logger_t *l );
 
     /*
-     * Shutdown this worker.  The first argument is not a 'this' pointer,
-     * but rather a pointer to 'this', so that the object can be free'd (I
-     * think -- though that doesn't seem to be happening.  Hmmm).  
+     * Called when this particular endpoint has finished processing a
+     * request.  For some protocols (e.g. ajp12), this frees the memory
+     * associated with the endpoint.  For others (e.g. ajp13/ajp14), this can
+     * return the endpoint to a cache of already opened endpoints.  
      */
-    int (JK_METHOD *destroy)(jk_worker_t **w,
-                             jk_logger_t *l);
+/*     int (JK_METHOD *done)(jk_env_t *env, */
+/*                           jk_worker_t *_this, */
+/*                           struct jk_endpoint *p ); */
+
+    
+    /*
+     * Shutdown this worker. 
+     */
+    int (JK_METHOD *destroy)(jk_worker_t **_thisP, jk_logger_t *l );
 };
 
 #ifdef __cplusplus
