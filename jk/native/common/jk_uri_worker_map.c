@@ -16,17 +16,10 @@
 
 /***************************************************************************
  * Description: URI to worker map object.                                  *
- * Maps can be                                                             *
- *                                                                         *
- * Exact Context -> /exact/uri=worker e.g. /examples/do*=ajp12             *
- * Context Based -> /context/*=worker e.g. /examples/*=ajp12               *
- * Context and suffix ->/context/*.suffix=worker e.g. /examples/*.jsp=ajp12*
- *                                                                         *
- * This lets us either partition the work among the web server and the     *
- * servlet container.                                                      *
  *                                                                         *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Version:     $Revision$                                           *
+ * Author:      Mladen Turk <mturk@apache.org>                             *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 #include "jk_pool.h"
