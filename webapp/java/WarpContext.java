@@ -95,7 +95,8 @@ public class WarpContext extends StandardContext {
 
     public void invoke(Request req, Response res)
     throws ServletException, IOException {
-        if (DEBUG) this.debug("Invoked (available="+this.getAvailable()+")");
+        if (DEBUG) this.debug("Invoking (available="+this.getAvailable()+")");
+        if (req.getContext()==null) req.setContext(this);
         super.invoke(req,res);
     }
 
