@@ -2026,7 +2026,7 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->envvars = apr_table_make(p, 0);
 
     c->s = s;
-
+    jk_map_put(c->worker_properties, "ServerRoot", ap_server_root, NULL);
     apr_pool_cleanup_register(p, s, jk_apr_pool_cleanup, jk_apr_pool_cleanup);
     return c;
 }

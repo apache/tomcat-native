@@ -1817,6 +1817,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->envvars = ap_make_table(p, 0);
 
     c->s = s;
+    jk_map_put(c->worker_properties, "ServerRoot", ap_server_root, NULL);
 
     return c;
 }
@@ -1927,7 +1928,7 @@ jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s", conf->secret_key);
 for (i = 0; i < jk_map_size(conf->automount); i++)
 {
             char *name = jk_map_name_at(conf->automount, i);
-            jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
+			jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
 }
 }
 */
