@@ -85,21 +85,26 @@
 #include "jk_config.h"
 
 
-#if !defined(WIN32) && !defined(NETWARE)
-#include <dlfcn.h>
-#endif
 #if defined LINUX && defined APACHE2_SIGHACK
 #include <pthread.h>
 #include <signal.h>
 #include <bits/signum.h>
 #endif
 
+#if !defined(WIN32) && !defined(NETWARE)
+#include <dlfcn.h>
+#endif
 #ifdef NETWARE
 #include <nwthread.h>
 #include <nwadv.h>
 #endif
 
 #include <jni.h>
+
+#ifdef APR_HAS_DSO
+#include "apr_dso.h"
+#endif
+
 
 #ifndef JNI_VERSION_1_2
 
@@ -184,72 +189,41 @@ static void jk2_print_signals( sigset_t *sset) {
 static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
 {
 
+#if defined(HAS_APR) && defined(APR_HAS_DSO)
+    apr_dso_handle_t *dsoHandle;
+    apr_status_t rc;
+    apr_pool_t *aprPool;
+
+    aprPool= (apr_pool_t *)env->getAprPool( env );
+
+    if( aprPool==NULL )
+        return JK_FALSE;
+
+    /* XXX How do I specify RTLD_NOW and RTLD_GLOBAL ? */
+    rc=apr_dso_load( &dsoHandle, jkvm->jvm_dll_path, aprPool );
     
-#ifdef WIN32
-    HINSTANCE hInst = LoadLibrary(jkvm->jvm_dll_path);
-    if(hInst) {
-        (FARPROC)jni_create_java_vm = 
-            GetProcAddress(hInst, "JNI_CreateJavaVM");
-
-        (FARPROC)jni_get_created_java_vms = 
-            GetProcAddress(hInst, "JNI_GetCreatedJavaVMs");
-
-        (FARPROC)jni_get_default_java_vm_init_args = 
-            GetProcAddress(hInst, "JNI_GetDefaultJavaVMInitArgs");
-
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "jni.loadJvmDll()\n");
-
-        if(jni_create_java_vm &&
-           jni_get_default_java_vm_init_args &&
-           jni_get_created_java_vms) {
-            return JK_OK;
-        }
-
-        FreeLibrary(hInst);
+    if(rc == APR_SUCCESS ) {
+        rc= apr_dso_sym( (apr_dso_handle_sym_t *)&jni_create_java_vm, dsoHandle, "JNI_CreateJavaVM");
     }
-    return JK_OK;
-#elif defined(NETWARE)
-    int javaNlmHandle = FindNLMHandle("JVM");
-    if (0 == javaNlmHandle) {
-        /* if we didn't get a handle, try to load java and retry getting the */
-        /* handle */
-        spawnlp(P_NOWAIT, "JVM.NLM", NULL);
-        ThreadSwitchWithDelay();
-        javaNlmHandle = FindNLMHandle("JVM");
-        if (0 == javaNlmHandle)
-            printf("Error loading Java.");
 
+    if( rc == APR_SUCCESS ) {
+        rc=apr_dso_sym( (apr_dso_handle_sym_t *)&jni_get_default_java_vm_init_args, dsoHandle,
+                        "JNI_GetDefaultJavaVMInitArgs");
     }
-    if (0 != javaNlmHandle) {
-        jni_create_java_vm = ImportSymbol(GetNLMHandle(), "JNI_CreateJavaVM");
-        jni_get_created_java_vms = ImportSymbol(GetNLMHandle(),
-                                                "JNI_GetCreatedJavaVMs");
-        jni_get_default_java_vm_init_args =
-            ImportSymbol(GetNLMHandle(), "JNI_GetDefaultJavaVMInitArgs");
+    
+    if( rc == APR_SUCCESS ) {
+        rc=apr_dso_sym( (apr_dso_handle_sym_t *)&jni_get_created_java_vms,
+                        dsoHandle, "JNI_GetCreatedJavaVMs");
     }
-    if(jni_create_java_vm &&
-       jni_get_default_java_vm_init_args &&
-       jni_get_created_java_vms) {
-        return JK_OK;
-    }
-    return JK_OK;
-#else 
-    void *handle;
-    handle = dlopen(jkvm->jvm_dll_path, RTLD_NOW | RTLD_GLOBAL);
-
-    if(handle == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG, 
+        
+    if( rc!= APR_SUCCESS ) {
+        char buf[256];
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "Can't load native library %s : %s\n", jkvm->jvm_dll_path,
-                      dlerror());
+                      apr_dso_error(dsoHandle, buf, 256));
         return JK_ERR;
     }
-
-    jni_create_java_vm = dlsym(handle, "JNI_CreateJavaVM");
-    jni_get_default_java_vm_init_args =
-        dlsym(handle, "JNI_GetDefaultJavaVMInitArgs");
-    jni_get_created_java_vms =  dlsym(handle, "JNI_GetCreatedJavaVMs");
-        
+    
     if(jni_create_java_vm == NULL ||
        jni_get_default_java_vm_init_args == NULL  ||
        jni_get_created_java_vms == NULL )
@@ -257,15 +231,105 @@ static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
         env->l->jkLog(env, env->l, JK_LOG_EMERG, 
                       "jni.loadJvm() Can't resolve symbols %s\n",
                       jkvm->jvm_dll_path );
-        dlclose(handle);
+        apr_dso_unload( dsoHandle);
         return JK_ERR;
     }
+
+    if( jkvm->mbean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,  
+                      "jni.loadJvm() %s symbols resolved\n",
+                      jkvm->jvm_dll_path); 
+    
+    return JK_OK;
+#else
+    env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                  "Can't load jvm, no apr support %s\n");
+
+    return JK_ERR;
+#endif
+    
+/* #ifdef WIN32 */
+/*     HINSTANCE hInst = LoadLibrary(jkvm->jvm_dll_path); */
+/*     if(hInst) { */
+/*         (FARPROC)jni_create_java_vm =  */
+/*             GetProcAddress(hInst, "JNI_CreateJavaVM"); */
+
+/*         (FARPROC)jni_get_created_java_vms =  */
+/*             GetProcAddress(hInst, "JNI_GetCreatedJavaVMs"); */
+
+/*         (FARPROC)jni_get_default_java_vm_init_args =  */
+/*             GetProcAddress(hInst, "JNI_GetDefaultJavaVMInitArgs"); */
+
+/*         env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+/*                       "jni.loadJvmDll()\n"); */
+
+/*         if(jni_create_java_vm && */
+/*            jni_get_default_java_vm_init_args && */
+/*            jni_get_created_java_vms) { */
+/*             return JK_OK; */
+/*         } */
+
+/*         FreeLibrary(hInst); */
+/*     } */
+/*     return JK_OK; */
+/* #elif defined(NETWARE) */
+/*     int javaNlmHandle = FindNLMHandle("JVM"); */
+/*     if (0 == javaNlmHandle) { */
+        /* if we didn't get a handle, try to load java and retry getting the */
+        /* handle */
+/*         spawnlp(P_NOWAIT, "JVM.NLM", NULL); */
+/*         ThreadSwitchWithDelay(); */
+/*         javaNlmHandle = FindNLMHandle("JVM"); */
+/*         if (0 == javaNlmHandle) */
+/*             printf("Error loading Java."); */
+
+/*     } */
+/*     if (0 != javaNlmHandle) { */
+/*         jni_create_java_vm = ImportSymbol(GetNLMHandle(), "JNI_CreateJavaVM"); */
+/*         jni_get_created_java_vms = ImportSymbol(GetNLMHandle(), */
+/*                                                 "JNI_GetCreatedJavaVMs"); */
+/*         jni_get_default_java_vm_init_args = */
+/*             ImportSymbol(GetNLMHandle(), "JNI_GetDefaultJavaVMInitArgs"); */
+/*     } */
+/*     if(jni_create_java_vm && */
+/*        jni_get_default_java_vm_init_args && */
+/*        jni_get_created_java_vms) { */
+/*         return JK_OK; */
+/*     } */
+/*     return JK_OK; */
+/* #else  */
+/*     void *handle; */
+/*     handle = dlopen(jkvm->jvm_dll_path, RTLD_NOW | RTLD_GLOBAL); */
+
+/*     if(handle == NULL ) { */
+/*         env->l->jkLog(env, env->l, JK_LOG_EMERG,  */
+/*                       "Can't load native library %s : %s\n", jkvm->jvm_dll_path, */
+/*                       dlerror()); */
+/*         return JK_ERR; */
+/*     } */
+
+/*     jni_create_java_vm = dlsym(handle, "JNI_CreateJavaVM"); */
+/*     jni_get_default_java_vm_init_args = */
+/*         dlsym(handle, "JNI_GetDefaultJavaVMInitArgs"); */
+/*     jni_get_created_java_vms =  dlsym(handle, "JNI_GetCreatedJavaVMs"); */
+        
+/*     if(jni_create_java_vm == NULL || */
+/*        jni_get_default_java_vm_init_args == NULL  || */
+/*        jni_get_created_java_vms == NULL ) */
+/*     { */
+/*         env->l->jkLog(env, env->l, JK_LOG_EMERG,  */
+/*                       "jni.loadJvm() Can't resolve symbols %s\n", */
+/*                       jkvm->jvm_dll_path ); */
+/*         dlclose(handle); */
+/*         return JK_ERR; */
+/*     } */
     /* env->l->jkLog(env, env->l, JK_LOG_INFO,  */
     /*                   "jni.loadJvm() %s symbols resolved\n",
                          jkvm->jvm_dll_path); */
     
-    return JK_OK;
-#endif
+/*     return JK_OK; */
+/* #endif */
+
 }
 
 
