@@ -178,7 +178,8 @@ public class JkCoyoteHandler extends JkHandler implements
         msg.reset();
         msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
         msg.appendBytes( chunk.getBytes(), chunk.getOffset(), chunk.getLength() );
-        ep.getChannel().send( msg, ep );
+        ep.setType( JkHandler.HANDLE_SEND_PACKET );
+        ep.getSource().invoke( msg, ep );
         
         return 0;
     }
@@ -270,7 +271,8 @@ public class JkCoyoteHandler extends JkHandler implements
                     c2b.convert( hV );
                     msg.appendBytes( hV );
                 }
-                ep.getChannel().send( msg, ep );
+                ep.setType( JkHandler.HANDLE_SEND_PACKET );
+                ep.getSource().invoke( msg, ep );
             } else if( actionCode==ActionCode.ACTION_RESET ) {
                 if( log.isInfoEnabled() )
                     log.info("RESET " );
@@ -286,7 +288,8 @@ public class JkCoyoteHandler extends JkHandler implements
                 msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
                 msg.appendInt( 1 );
                 
-                ep.getChannel().send(msg, ep );
+                ep.setType( JkHandler.HANDLE_SEND_PACKET );
+                ep.getSource().invoke( msg, ep );
             } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
                 
                 
