@@ -479,10 +479,9 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
                 InetAddress addr=InetAddress.getByName(this.getAddress());
                 this.server=fact.createSocket(port,accc,addr);
             }
-        } catch (IOException e) {
-            throw new LifecycleException("Error creating server socket",e);
-        } catch (java.security.GeneralSecurityException e) {
-            throw new LifecycleException("Error creating SSL server socket",e);
+        } catch (Exception e) {
+            throw new LifecycleException("Error creating server socket ("+
+                e.getClass().getName()+")",e);
         }
     }
 
