@@ -23,16 +23,16 @@ jk is more than just an apache module, since it could be used with majors WebSer
 
 <ul>
 <li>
-<a href="jk/aphowto.html">mod_jk</a> is an Apache module to be used with <b>Apache 1.3 and 2.0 Webservers</b>.
+<a href="jk/aphowto.html">mod_jk</a> is an Apache module to be used with <b>Apache 1.3</b> and <b>2.0</b> Webservers.
 </li>
 <li>
-<a href="jk/iishowto.html">isapi</a> is a redirector to be used with <b>IIS Webservers</b>.
+<a href="jk/iishowto.html">isapi</a> is a redirector to be used with <b>IIS</b>.
 </li>
 <li>
-<a href="jk/neshowto.html">nsapi</a> is a redirector to be used with <b>Netscape/iPlanet WebServers</b>.
+<a href="jk/neshowto.html">nsapi</a> is a redirector to be used with <b>Netscape/iPlanet</b>.
 </li>
 <li>
-<a href="jk/domhowto.html">dsapi</a> was also ported to <b>Domino</b> but there is no more active support on it.
+<a href="jk/domhowto.html">dsapi</a> is a redirector to to be used with <b>Domino</b> but there is less active support on it.
 </li>
 </ul>
 
@@ -40,61 +40,76 @@ jk is more than just an apache module, since it could be used with majors WebSer
 
 <section name="Why should I use the jk ?">
 <p>
-Several reasons:
-<ul>
-<li>
-mod_jserv was too complex. Because it was ported from Apache/JServ, it brought with it lots of JServ specific bits that aren't needed by Apache.
-</li>
-<li>
-mod_jserv supported only Apache. Tomcat supports many web servers through a compatibility layer named the jk library. 
-Supporting two different modes of work became problematic in terms of support, documentation and bug fixes. 
-mod_jk should fix that.
-The layered approach provided by the jk library makes it easier to support both Apache1.3.x and Apache2.xx.
-</li>
-<li>
-Better support for SSL. mod_jserv couldn't reliably identify whether a request was made via HTTP or HTTPS. mod_jk can, using the newer Ajpv13 protocol.
-</li>
-<li>
-mod_jk offers a lot of different and flexible communications between a Web Server 
-and the Tomcat Servlet Engine and could be used today by all of the ASF Tomcat Engine, 
-3.2.x, 3.3.x, 4.0.x, 4.1.x and 5.x
-</li>
-</ul>
+jk was develop to overcome many limitations of its ancestor, <b>mod_jserv</b>.
 </p>
+
+<p>
+<b>mod_jserv</b> was too complex and because it was ported from Apache/JServ, 
+it brought with it lots of JServ specific bits that aren't needed by Apache.
+</p>
+
+<p>
+Where <b>mod_jserv</b> supported only Apache webservers on Unix OS, 
+<b>jk</b> supports much more web servers and operating systems through 
+via a compatibility layer named the <b>jk library</b>. 
+The layered approach provided by the jk library makes it easier to 
+support many different webservers and OS.
+</p>
+
+<p>
+jk offer better support for SSL, that's was a problem with mod_jserv which couldn't 
+reliably identify whether a request was made via HTTP or HTTPS. 
+</p>
+<p>
+jk can, using the newer Ajpv13 protocol which relay many SSL informations required by servlet 2.2 and 2.3 specs.
+</p>
+
+<p>
+jk offers a lot of different and flexible communications between a Web Server 
+and the Tomcat Servlet Engine and could be used today with all of the ASF Tomcat Engines, 
+<b>3.2.x</b>, <b>3.3.x</b>, <b>4.0.x</b>, <b>4.1.x</b> and <b>5.x</b>
+</p>
+
 </section>
 
-<section name="What's the difference between mod_jk and mod_jk2 modules ?">
+<section name="What's the difference between jk and jk2 ?">
 <p>
-mod_jk2 is a full rewrite of mod_jk and is much more powerfull
-
-<ul>
-<li>
-Even if it works with Apache 1.3, mod_jk2 has been developed with Apache 2.0 in mind,
-and sus is better suited for multi-threaded servers.
-</li>
-<li>
-mod_jk2 has a better separation between protocol and physical layer.
-As such mod_jk2 add support to the fast unix-socket, and could be extended to support others communications
-channels. More it's better suited for JNI and JDK 1.4 fast IO APIs</li>
-<li>
-mod_jk2 could be monitored via special URLs
-</li>
-</ul>
+jk2 is a full rewrite of jk and is much more powerfull.
 </p>
-<br/>
+<p>
+Even if it works with Apache 1.3, jk2 has been developed with Apache 2.0 in mind,
+and sus is better suited for multi-threaded servers like IIS, NES/iPlanet.
+</p>
+<p>
+jk2 has a better separation between protocol and physical layer.
+As such jk2 support fast unix-socket, and could be extended to support others communications
+channels. Better it's suited for JNI and JDK 1.4 fast IO APIs
+</p>
+<p>
+jk2 could be monitored via special URLs (like mod_status)
+</p>
 </section>
 
 
 <section name="Are there alternative ways to connect Apache and Tomcat?">
 <p>
-      The alternative ways are better described in <b>mod_webapp</b>
-      documentation.
-      Check there for it and then decide if you want to go on reading. 
-      The big advantage of <b>mod_webapp</b> is that is very easy to configure,
-      has a well defined protocol named <b>WARP</b>, does not care about the old
-      crappy protocols used in Tomcat-3.x and so.
-      But it would be possible to implement the <b>WARP</b> protocol in
-      <b>mod_jk2</b> ;-))
-    </p>
+The alternative ways are better described in <b>mod_webapp</b>
+documentation.
+</p>
+<p>
+Check <b>webapp</b> site for it and then decide if you want to go on reading. 
+</p>
+<p>
+The big advantage of <b>mod_webapp</b> is that is very easy to configure,
+has a well defined protocol named <b>WARP</b>, does not care about the old
+crappy protocols used in Tomcat-3.x and so.
+But it would be possible to implement the <b>WARP</b> protocol in
+<b>jk2</b> ;-))
+</p>
+<p>
+The disadvantage is that it requires the <b>Apache Portable Library</b>
+which is still only easily available via Apache 2.0 and that it didn't support
+WebServers like IIS, NES/iPlanet or Domino.
+</p>
 </section>
 </document>
