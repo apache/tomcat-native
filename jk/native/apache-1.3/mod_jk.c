@@ -57,6 +57,7 @@
 #include "jk_service.h"
 #include "jk_worker.h"
 #include "jk_uri_worker_map.h"
+#include "jk_ajp13.h"
 #include "jk_shm.h"
 
 #define JK_WORKER_ID        ("jakarta.worker")
@@ -1708,7 +1709,7 @@ static int jk_handler(request_rec * r)
             }
             jk_close_pool(&private_data.p);
 
-            if (rc) {
+            if (rc > 0) {
                 /* If tomcat returned no body and the status is not OK,
                    let apache handle the error code */
                 if (!r->sent_bodyct && r->status >= HTTP_BAD_REQUEST) {
@@ -1718,11 +1719,27 @@ static int jk_handler(request_rec * r)
                     JK_TRACE_EXIT(l);
                     return r->status;
                 }
-                jk_log(l, JK_LOG_INFO, "Service returned error=%d"
-                       " with status=%d for worker=%s",
-                       rc, r->status, worker_name);
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG, "Service finished"
+                           " with status=%d for worker=%s",
+                           r->status, worker_name); 
                 JK_TRACE_EXIT(l);
                 return OK;      /* NOT r->status, even if it has changed. */
+            }
+            else if (rc == JK_CLIENT_ERROR) {
+                r->connection->aborted = 1;
+                jk_log(l, JK_LOG_INFO, "Aborting connection"
+                       " for worker=%s",
+                       worker_name);
+                JK_TRACE_EXIT(l);
+                return OK;
+            }
+            else {
+                jk_log(l, JK_LOG_INFO, "Service error=%d"
+                       " for worker=%s",
+                       rc, worker_name);
+                JK_TRACE_EXIT(l);
+                return HTTP_INTERNAL_SERVER_ERROR;
             }
         }
         else {
@@ -1910,7 +1927,7 @@ jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s", conf->secret_key);
 for (i = 0; i < jk_map_size(conf->automount); i++)
 {
             char *name = jk_map_name_at(conf->automount, i);
-			jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
+            jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
 }
 }
 */
