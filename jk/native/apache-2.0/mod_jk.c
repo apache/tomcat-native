@@ -1844,11 +1844,11 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
                up between APR implementations. */
             wc_close(NULL);
             if (conf->worker_properties)
-                map_free(&conf->worker_properties);
+                jk_map_free(&conf->worker_properties);
             if (conf->uri_to_context)
-                map_free(&conf->uri_to_context);
+                jk_map_free(&conf->uri_to_context);
             if (conf->automount)
-                map_free(&conf->automount);
+                jk_map_free(&conf->automount);
             if (conf->uw_map)
                 uri_worker_map_free(&conf->uw_map, NULL);
         }

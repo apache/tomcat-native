@@ -1034,7 +1034,7 @@ static int exec_cmd(const char *name, HANDLE *hTomcat, char *cmdLine)
                     }                    
                 }
             }
-            map_free(&init_map);
+            jk_map_free(&init_map);
         }
         RegCloseKey(hk);
     } 

@@ -1031,7 +1031,7 @@ static int init_jk(char *serverName)
                     rc = JK_TRUE;
                 }
 
-                map_free(&map2);
+                jk_map_free(&map2);
             }
         }
         else {
@@ -1039,7 +1039,7 @@ static int init_jk(char *serverName)
                    "Unable to read worker mount file %s.\n",
                    worker_mount_file);
         }
-        map_free(&map);
+        jk_map_free(&map);
     }
 
     if (rc) {
@@ -1059,7 +1059,7 @@ static int init_jk(char *serverName)
                 jk_log(logger, JK_LOG_EMERG,
                        "Unable to read worker file %s.\n", worker_file);
             }
-            map_free(&map);
+            jk_map_free(&map);
         }
     }
 

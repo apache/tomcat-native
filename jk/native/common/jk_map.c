@@ -57,7 +57,7 @@ int map_alloc(jk_map_t **m)
     return JK_FALSE;
 }
 
-int map_free(jk_map_t **m)
+int jk_map_free(jk_map_t **m)
 {
     int rc = JK_FALSE;
 

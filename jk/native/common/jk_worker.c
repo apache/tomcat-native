@@ -160,7 +160,7 @@ static void close_workers(jk_logger_t *l)
             }
         }
     }
-    map_free(&worker_map);
+    jk_map_free(&worker_map);
 }
 
 static int build_worker_map(jk_map_t *init_data,

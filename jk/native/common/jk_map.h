@@ -35,7 +35,7 @@ extern "C"
 
     int map_alloc(jk_map_t **m);
 
-    int map_free(jk_map_t **m);
+    int jk_map_free(jk_map_t **m);
 
     int map_open(jk_map_t *m);
 

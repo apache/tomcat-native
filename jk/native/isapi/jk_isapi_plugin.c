@@ -977,7 +977,7 @@ static unsigned int ParsedRequest(PHTTP_FILTER_CONTEXT * context,
                 if (map_read_properties(map, workerMountFile))
                     if (uri_worker_map_alloc(&uw_map, map, logger))
                         ok = JK_TRUE;
-                map_free(&map);
+                jk_map_free(&map);
             }
 
             DEBUG(("Got the URI worker map\n"));
@@ -1013,7 +1013,7 @@ static unsigned int ParsedRequest(PHTTP_FILTER_CONTEXT * context,
                     }
 
                     DEBUG(("Read %s, OK = %d\n", workerFile, ok));
-                    map_free(&map);
+                    jk_map_free(&map);
                 }
             }
 

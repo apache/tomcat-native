@@ -259,7 +259,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
 */
         }
 
-        map_free(&init_map);
+        jk_map_free(&init_map);
     }
 
 #ifdef NETWARE
