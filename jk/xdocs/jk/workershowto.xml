@@ -537,7 +537,7 @@ The jni worker will use this path to load the JVM dynamically.
 
 <screen>
 <note>Told JVM to use french language</note>
-<read>worker.wrkjni.sysprops=-Dlang=fr</read>
+<read>worker.wrkjni.sysprops=-Duser.region=FR</read>
 </screen>
 
 <p>
