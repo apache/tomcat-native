@@ -87,7 +87,7 @@ extern "C" {
 #define SC_A_SSL_CIPHER         (unsigned char)8
 #define SC_A_SSL_SESSION        (unsigned char)9
 #define SC_A_REQ_ATTRIBUTE      (unsigned char)10
-#define SC_A_SSL_KEY_SIZE       (unsigned char)11		/* only in if JkOptions +ForwardKeySize */
+#define SC_A_SSL_KEY_SIZE       (unsigned char)11       /* only in if JkOptions +ForwardKeySize */
 #define SC_A_SECRET             (unsigned char)12
 #define SC_A_ARE_DONE           (unsigned char)0xFF
 
@@ -132,7 +132,7 @@ extern "C" {
 #define SC_M_MOVE               (unsigned char)12
 #define SC_M_LOCK               (unsigned char)13
 #define SC_M_UNLOCK             (unsigned char)14
-#define SC_M_ACL		(unsigned char)15
+#define SC_M_ACL        (unsigned char)15
 #define SC_M_REPORT             (unsigned char)16
 #define SC_M_VERSION_CONTROL    (unsigned char)17
 #define SC_M_CHECKIN            (unsigned char)18
@@ -216,6 +216,7 @@ extern "C" {
 #define AJP_HEADER_LEN            (4)
 #define AJP_HEADER_SZ_LEN         (2)
 #define CHUNK_BUFFER_PAD          (12)
+#define AJP_DEF_CACHE_TIMEOUT     (15)
 
 
 struct jk_res_data {
@@ -252,6 +253,8 @@ struct ajp_worker {
      */
     JK_CRIT_SEC cs;
     unsigned ep_cache_sz;
+    unsigned ep_mincache_sz;
+    unsigned ep_maxcache_sz;
     ajp_endpoint_t **ep_cache;
 
     int proto; /* PROTOCOL USED AJP13/AJP14 */
@@ -269,6 +272,16 @@ struct ajp_worker {
      */ 
     int (* logon)(ajp_endpoint_t *ae,
                   jk_logger_t    *l);
+
+    /*
+    * Handle Socket Timeouts
+    */
+    unsigned socket_timeout;
+    unsigned keepalive;
+    /*
+    * Handle Cache Timeouts
+    */
+    unsigned cache_timeout;
 }; 
  
 
@@ -281,13 +294,18 @@ struct ajp_endpoint {
     jk_pool_t pool;
     jk_pool_atom_t buf[BIG_POOL_SIZE];
 
-	int proto;	/* PROTOCOL USED AJP13/AJP14 */
+    int proto;  /* PROTOCOL USED AJP13/AJP14 */
 
     int sd;
     int reuse;
     jk_endpoint_t endpoint;
 
     unsigned left_bytes_to_send;
+
+    /* time of the last request
+       handled by this endpoint */
+    time_t last_access;
+
 };
 
 /*

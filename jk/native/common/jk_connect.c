@@ -60,7 +60,7 @@
  * Based on:    Various Jserv files
  */
 /**
- * @package	jk_connect
+ * @package jk_connect
  * @author      Gal Shachor <shachor@il.ibm.com>
  * @version     $Revision$
  */
@@ -109,6 +109,7 @@ int jk_resolve(char *host,
 
 int jk_open_socket(struct sockaddr_in *addr, 
                    int ndelay,
+                   int keepalive,
                    jk_logger_t *l)
 {
     int sock;
@@ -134,6 +135,7 @@ int jk_open_socket(struct sockaddr_in *addr,
 
         /* Check if we connected */
         if(0 == ret) {
+                                                int keep = 1;
             if(ndelay) {
                 int set = 1;
 
@@ -144,6 +146,15 @@ int jk_open_socket(struct sockaddr_in *addr,
                            (char *)&set, 
                            sizeof(set));
             }   
+
+            if (keepalive) {
+                jk_log(l, JK_LOG_DEBUG, "jk_open_socket, set SO_KEEPALIVE to on\n");
+                setsockopt(sock,
+                           SOL_SOCKET,
+                           SO_KEEPALIVE,
+                           (char *)&keep,
+                           sizeof(keep));
+            }
 
             jk_log(l, JK_LOG_DEBUG, "jk_open_socket, return, sd = %d\n", sock);
             return sock;
@@ -198,14 +209,14 @@ int jk_tcp_socket_sendfull(int sd,
                              (char *)b + sent , 
                              len - sent, 
                              0);
-	    
-	    if(0 == this_time) {
-	        return -2;
-	    }
-	    if(this_time < 0) {
-	        return -3;
-	    }
-	    sent += this_time;
+        
+        if(0 == this_time) {
+            return -2;
+        }
+        if(this_time < 0) {
+            return -3;
+        }
+        sent += this_time;
     }
 
     return sent;
@@ -225,26 +236,26 @@ int jk_tcp_socket_recvfull(int sd,
     int rdlen = 0;
 
     while(rdlen < len) {
-	    int this_time = recv(sd, 
+        int this_time = recv(sd, 
                              (char *)b + rdlen, 
                              len - rdlen, 
-                             0);	
-	    if(-1 == this_time) {
+                             0);    
+        if(-1 == this_time) {
 #ifdef WIN32
             if(SOCKET_ERROR == this_time) { 
                 errno = WSAGetLastError() - WSABASEERR;
             }
 #endif /* WIN32 */
 
-    	    if(EAGAIN == errno) {
+            if(EAGAIN == errno) {
                 continue;
-	        } 
-		    return -1;
-	    }
+            } 
+            return -1;
+        }
         if(0 == this_time) {
             return -1; 
         }
-	    rdlen += this_time;
+        rdlen += this_time;
     }
 
     return rdlen;

@@ -68,7 +68,7 @@
 #include "jk_global.h"
 
 #ifndef WIN32
-	#define closesocket			close
+    #define closesocket         close
 #endif
 
 #ifdef __cplusplus
@@ -81,6 +81,7 @@ int jk_resolve(char *host,
 
 int jk_open_socket(struct sockaddr_in *addr, 
                    int ndelay,
+                   int keepalive,
                    jk_logger_t *l);
 
 int jk_close_socket(int s);

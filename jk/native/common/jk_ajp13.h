@@ -69,18 +69,19 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define AJP13_PROTO					13
-#define AJP13_WS_HEADER				0x1234
-#define AJP13_SW_HEADER				0x4142	/* 'AB' */
+#define AJP13_PROTO                 13
+#define AJP13_WS_HEADER             0x1234
+#define AJP13_SW_HEADER             0x4142  /* 'AB' */
 
-#define AJP13_DEF_HOST            	("localhost")
-#define AJP13_DEF_PORT            	(8009)
+#define AJP13_DEF_HOST              ("localhost")
+#define AJP13_DEF_PORT              (8009)
 #define AJP13_READ_BUF_SIZE         (8*1024)
 #define AJP13_DEF_CACHE_SZ          (1)
-#define JK_INTERNAL_ERROR       	(-2)
+#define JK_INTERNAL_ERROR           (-2)
 #define JK_FATAL_ERROR              (-3)
 #define JK_CLIENT_ERROR             (-4)
 #define AJP13_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
+#define AJP13_DEF_TIMEOUT           (0) /* Idle timout for pooled connections */
 
 /*
  * Message does not have a response (for example, JK_AJP13_END_RESPONSE)

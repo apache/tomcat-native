@@ -83,6 +83,9 @@
 #define PORT_OF_WORKER              ("port")
 #define TYPE_OF_WORKER              ("type")
 #define CACHE_OF_WORKER             ("cachesize")
+#define CACHE_TIMEOUT_OF_WORKER     ("cache_timeout")
+#define SOCKET_TIMEOUT_OF_WORKER    ("socket_timeout")
+#define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
 #define BALANCED_WORKERS            ("balanced_workers")
 #define LOCAL_WORKER_ONLY_FLAG      ("local_worker_only")
@@ -94,7 +97,7 @@
 #define DEFAULT_WORKER              JK_AJP12_WORKER_NAME
 #define WORKER_LIST_PROPERTY_NAME   ("worker.list")
 #define DEFAULT_LB_FACTOR           (1.0)
-#define LOG_FORMAT		    ("log_format")
+#define LOG_FORMAT          ("log_format")
 
 #define HUGE_BUFFER_SIZE (8*1024)
 #define LOG_LINE_SIZE    (1024)
@@ -118,11 +121,11 @@ const char * jk_log_fmt = JK_TIME_FORMAT;
 
 static void set_time_str(char * str, int len)
 {
-	time_t		t = time(NULL);
-    	struct tm 	*tms;
+    time_t      t = time(NULL);
+    struct tm   *tms;
 
-    	tms = localtime(&t);
-	strftime(str, len, jk_log_fmt, tms);
+    tms = localtime(&t);
+    strftime(str, len, jk_log_fmt, tms);
 }
 
 static int JK_METHOD log_to_file(jk_logger_t *l,                                 
@@ -136,8 +139,8 @@ static int JK_METHOD log_to_file(jk_logger_t *l,
         if(sz) {
             file_logger_t *p = l->logger_private;
             fwrite(what, 1, sz, p->logfile);
-	    /* [V] Flush the dam' thing! */
-	    fflush(p->logfile);
+            /* [V] Flush the dam' thing! */
+            fflush(p->logfile);
         }
 
         return JK_TRUE;
@@ -243,13 +246,13 @@ int jk_log(jk_logger_t *l,
         if (NULL == buf)
            return -1;
 #endif
-	set_time_str(buf, HUGE_BUFFER_SIZE);
-	used = strlen(buf);
+    set_time_str(buf, HUGE_BUFFER_SIZE);
+    used = strlen(buf);
         if(line)
             used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
 #else 
-	set_time_str(buf, HUGE_BUFFER_SIZE);
-	used = strlen(buf);
+    set_time_str(buf, HUGE_BUFFER_SIZE);
+    used = strlen(buf);
         if(line)
             used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
 #endif
@@ -288,7 +291,7 @@ char *jk_get_worker_type(jk_map_t *m,
 }
 
 char *jk_get_worker_secret(jk_map_t *m,
-                         const char *wname)
+                           const char *wname)
 {
     char buf[1024];
     char *secret;
@@ -310,9 +313,9 @@ char *jk_get_worker_secret(jk_map_t *m,
 /*     Functions that can be simulated with these should be "deprecated".    */
 
 int jk_get_worker_str_prop(jk_map_t *m,
-			   const char *wname,
-			   const char *pname,
-			   char **prop)
+                           const char *wname,
+                           const char *pname,
+                           char **prop)
 {
     char buf[1024];
 
@@ -327,9 +330,9 @@ int jk_get_worker_str_prop(jk_map_t *m,
 }
 
 int jk_get_worker_int_prop(jk_map_t *m,
-			   const char *wname,
-			   const char *pname,
-			   int *prop)
+                           const char *wname,
+                           const char *pname,
+                           int *prop)
 {
     char buf[1024];
 
@@ -390,6 +393,51 @@ int jk_get_worker_cache_size(jk_map_t *m,
     return map_get_int(m, buf, def);
 }
 
+int jk_get_worker_socket_timeout(jk_map_t *m,
+                                 const char *wname,
+                                 int def)
+{
+    char buf[1024];
+
+    if(!m || !wname) {
+        return -1;
+    }
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, SOCKET_TIMEOUT_OF_WORKER);
+
+    return map_get_int(m, buf, def);
+}
+
+int jk_get_worker_socket_keepalive(jk_map_t *m,
+                                   const char *wname,
+                                   int def)
+{
+    char buf[1024];
+
+    if(!m || !wname) {
+        return -1;
+    }
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, SOCKET_KEEPALIVE_OF_WORKER);
+
+    return map_get_int(m, buf, def);
+}
+
+int jk_get_worker_cache_timeout(jk_map_t *m,
+                                const char *wname,
+                                int def)
+{
+    char buf[1024];
+
+    if(!m || !wname) {
+        return -1;
+    }
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, CACHE_TIMEOUT_OF_WORKER);
+
+    return map_get_int(m, buf, def);
+}
+
 char * jk_get_worker_secret_key(jk_map_t *m,
                                 const char *wname)
 {
@@ -400,7 +448,7 @@ char * jk_get_worker_secret_key(jk_map_t *m,
     }
 
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, SECRET_KEY_OF_WORKER);
-	return map_get_string(m, buf, NULL);
+    return map_get_string(m, buf, NULL);
 }
 
 int jk_get_worker_list(jk_map_t *m,
@@ -425,7 +473,7 @@ int jk_get_worker_list(jk_map_t *m,
 
 void jk_set_log_format(const char * logformat)
 {
-	jk_log_fmt = (logformat) ? logformat : JK_TIME_FORMAT;
+    jk_log_fmt = (logformat) ? logformat : JK_TIME_FORMAT;
 }
 
 double jk_get_lb_factor(jk_map_t *m, 
@@ -456,7 +504,8 @@ int jk_get_is_local_worker(jk_map_t *m,
 }
 
 int jk_get_local_worker_only_flag(jk_map_t *m,
-                        const char *lb_wname) {
+                                  const char *lb_wname) 
+{
     int rc = JK_FALSE;
     char buf[1024];
     if (m && lb_wname) {
@@ -619,13 +668,13 @@ int jk_file_exists(const char *f)
 static int jk_is_some_property(const char *prp_name, const char *suffix)
 {
     if (prp_name && suffix) {
-		size_t prp_name_len = strlen(prp_name);
-		size_t suffix_len = strlen(suffix);
-		if (prp_name_len >= suffix_len) {
-			const char *prp_suffix = prp_name + prp_name_len - suffix_len;
-			if(0 == strcmp(suffix, prp_suffix)) {
-		        return JK_TRUE;
-			}
+        size_t prp_name_len = strlen(prp_name);
+        size_t suffix_len = strlen(suffix);
+        if (prp_name_len >= suffix_len) {
+            const char *prp_suffix = prp_name + prp_name_len - suffix_len;
+            if(0 == strcmp(suffix, prp_suffix)) {
+                return JK_TRUE;
+            }
         }
     }
 
@@ -634,12 +683,12 @@ static int jk_is_some_property(const char *prp_name, const char *suffix)
 
 int jk_is_path_poperty(const char *prp_name)
 {
-	return jk_is_some_property(prp_name, "path");
+    return jk_is_some_property(prp_name, "path");
 }
 
 int jk_is_cmd_line_poperty(const char *prp_name)
 {
-	return jk_is_some_property(prp_name, CMD_LINE_OF_WORKER);
+    return jk_is_some_property(prp_name, CMD_LINE_OF_WORKER);
 }
 
 int jk_get_worker_stdout(jk_map_t *m, 

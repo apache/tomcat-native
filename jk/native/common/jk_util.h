@@ -86,14 +86,14 @@ int jk_log(jk_logger_t *l,
 
 /* [V] Two general purpose functions. Should ease the function bloat. */
 int jk_get_worker_str_prop(jk_map_t *m,
-			   const char *wname,
-			   const char *pname,
-			   char **prop);
+                           const char *wname,
+                           const char *pname,
+                           char **prop);
 
 int jk_get_worker_int_prop(jk_map_t *m,
-			   const char *wname,
-			   const char *pname,
-			   int *prop);
+                           const char *wname,
+                           const char *pname,
+                           int *prop);
 
 char *jk_get_worker_host(jk_map_t *m,
                          const char *wname,
@@ -110,6 +110,18 @@ int jk_get_worker_cache_size(jk_map_t *m,
                              const char *wname,
                              int def);
 
+int jk_get_worker_socket_timeout(jk_map_t *m,
+                             const char *wname,
+                             int def);
+
+int jk_get_worker_socket_keepalive(jk_map_t *m,
+                             const char *wname,
+                             int def);
+
+int jk_get_worker_cache_timeout(jk_map_t *m,
+                             const char *wname,
+                             int def);
+
 char * jk_get_worker_secret_key(jk_map_t *m,
                                 const char *wname);
 
@@ -123,10 +135,10 @@ double jk_get_lb_factor(jk_map_t *m,
                         const char *wname);
 
 int jk_get_is_local_worker(jk_map_t *m,
-                        const char *wname);
+                           const char *wname);
 
 int jk_get_is_local_worker_only_flag(jk_map_t *m,
-                       const char *lb_wname);
+                                     const char *lb_wname);
 
 int jk_get_lb_worker_list(jk_map_t *m, 
                           const char *lb_wname,

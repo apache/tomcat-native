@@ -131,6 +131,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         for(attempt = 0 ; attempt < p->worker->connect_retry_attempts ; attempt++) {
             p->sd = jk_open_socket(&p->worker->worker_inet_addr, 
                                    JK_TRUE, 
+                                   JK_FALSE,
                                    l);
 
             jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::service, sd = %d\n", p->sd);
@@ -404,8 +405,8 @@ static int ajpv12_handle_request(ajp12_endpoint_t *p,
     
         for(i = 0 ; i < s->num_attributes ; i++) {
             ret = (ajpv12_mark(p, 5)                            &&
-	    	       ajpv12_sendstring(p, s->attributes_names[i]) &&
-		           ajpv12_sendstring(p, s->attributes_values[i]));
+                   ajpv12_sendstring(p, s->attributes_names[i]) &&
+                   ajpv12_sendstring(p, s->attributes_values[i]));
             if(!ret) {
                 jk_log(l, JK_LOG_ERROR, 
                        "In ajpv12_handle_request, failed to send environment\n");
