@@ -656,7 +656,7 @@ jk2_worker_ajp13_service(jk_env_t *env, jk_worker_t *w,
     if  (err!=JK_OK)
       return err;
 
-    if (w->channel->status) {
+    if ((w!=NULL) && (w->channel!=NULL) && (w->channel->status!=NULL)) {
         err = w->channel->status(env, w, w->channel); 
         if  (err!=JK_OK) {
             jk2_worker_ajp13_done( env, w, e);
