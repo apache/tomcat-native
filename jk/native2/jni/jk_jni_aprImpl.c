@@ -603,8 +603,10 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
                       "jkInvoke() invoke %#lx \n", bean->invoke );
         rc=bean->invoke( env, bean, ep, code, ep->reply, raw );
     } else {
-        /* Backward compat for AJP13 messages, where the code is used to
+        /* NOT USED. Backward compat for AJP13 messages, where the code is used to
          locate a handler. Deprecated, use the invoke() method  ! */
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jkInvoke() component dispatch2 %d %d %#lx\n", rc, code, bean->invoke);
         rc=workerEnv->dispatch( env, workerEnv, target, ep, code, ep->reply ); 
     }
 
@@ -612,6 +614,10 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
 
     if( arrayAccessMethod == JK_GET_BYTE_ARRAY_ELEMENTS ) {
         if( rc == JK_INVOKE_WITH_RESPONSE ) {
+            /* env->l->jkLog(env, env->l, JK_LOG_INFO, */
+            /*               "jkInvoke() release byte array elements %d %d %#lx\n", */
+            /*                ep->reply->pos, ep->reply->len , ep->reply->buf ); */
+            ep->reply->end( env, ep->reply );
             (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, JNI_ABORT );
             rc=JK_OK;
         } else {
@@ -620,9 +626,12 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
         ep->reply->buf=oldBuf;
     } else if ( arrayAccessMethod == JK_GET_REGION ) {
         if( rc == JK_INVOKE_WITH_RESPONSE ) {
-            /*   env->l->jkLog(env, env->l, JK_LOG_INFO, */
-            /*                "jkInvoke() release %d %d %#lx\n", */
-            /*                ep->reply->pos, ep->reply->len , ep->reply->buf ); */
+
+            /*env->l->jkLog(env, env->l, JK_LOG_INFO, */
+            /*              "jkInvoke() release %d %d %#lx\n", */
+            /*              ep->reply->pos, ep->reply->len , ep->reply->buf ); */
+            ep->reply->end( env, ep->reply );
+
             (*jniEnv)->SetByteArrayRegion( jniEnv, data, 0, ep->reply->len + 4 , (jbyte *)ep->reply->buf );
             rc=JK_OK;
         }
@@ -636,8 +645,6 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
             (*jniEnv)->ExceptionClear( jniEnv ) */
     }
     
-    /*     env->l->jkLog(env, env->l, JK_LOG_INFO, "jkInvoke() done\n"); */
-
     return rc;
 }
 
