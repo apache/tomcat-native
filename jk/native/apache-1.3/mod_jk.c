@@ -77,7 +77,7 @@
 #include "util_script.h"
 #include "util_date.h"
 #include "http_conf_globals.h"
-
+ 
 /*
  * Jakarta (jk_) include files
  */
@@ -136,13 +136,13 @@ typedef struct {
     char *https_indicator;
     char *certs_indicator;
     char *cipher_indicator;
-    char *sesion_indicator;
+    char *session_indicator;
 
     /*
      * Environment variables support
      */
     int envvars_in_use;
-    table *envvars;       
+    table *envvars; 
 
     server_rec *s;
 } jk_server_conf_t;
@@ -424,17 +424,12 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->remote_user  = NULL_FOR_EMPTY(r->connection->user);
 
     s->protocol     = r->protocol;
-    s->remote_host  = (char *)ap_get_remote_host(r->connection,
-                                                 r->per_dir_config,
-                                                 REMOTE_HOST);
-
+    s->remote_host  = (char *)ap_get_remote_host(r->connection, r->per_dir_config, REMOTE_HOST);
     s->remote_host  = NULL_FOR_EMPTY(s->remote_host);
 
     s->remote_addr  = NULL_FOR_EMPTY(r->connection->remote_ip);
     /* Wrong:    s->server_name  = (char *)ap_get_server_name( r ); */
-    s->server_name= (char *)(r->hostname ? r->hostname : 
-                 r->server->server_hostname);
-    
+    s->server_name= (char *)(r->hostname ? r->hostname : r->server->server_hostname);
     
     s->server_port= htons( r->connection->local_addr.sin_port );
     /* Wrong: s->server_port  = r->server->port; */
@@ -460,7 +455,19 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->method       = (char *)r->method;
     s->content_length = get_content_length(r);
     s->query_string = r->args;
-    s->req_uri      = r->uri;
+
+	/*
+     * The 2.2 servlet spec errata says the uri from
+     * HttpServletRequest.getRequestURI() should remain encoded.
+     * [http://java.sun.com/products/servlet/errata_042700.html]
+	 */
+	s->req_uri      = r->unparsed_uri;
+	if (s->req_uri != NULL) {
+		char *query_str = strchr(s->req_uri, '?');
+		if (query_str != NULL) {
+			*query_str = 0;
+		}
+	}
 
     s->is_ssl       = JK_FALSE;
     s->ssl_cert     = NULL;
@@ -472,19 +479,15 @@ static int init_ws_service(apache_private_data_t *private_data,
         ap_add_common_vars(r);
 
         if(conf->ssl_enable) {
-            ssl_temp = (char *)ap_table_get(r->subprocess_env, 
-                                            conf->https_indicator);
+            ssl_temp = (char *)ap_table_get(r->subprocess_env, conf->https_indicator);
             if(ssl_temp && !strcasecmp(ssl_temp, "on")) {
                 s->is_ssl       = JK_TRUE;
-                s->ssl_cert     = (char *)ap_table_get(r->subprocess_env, 
-                                                       conf->certs_indicator);
+                s->ssl_cert     = (char *)ap_table_get(r->subprocess_env, conf->certs_indicator);
                 if(s->ssl_cert) {
                     s->ssl_cert_len = strlen(s->ssl_cert);
                 }
-                s->ssl_cipher   = (char *)ap_table_get(r->subprocess_env, 
-                                                       conf->cipher_indicator);
-                s->ssl_session  = (char *)ap_table_get(r->subprocess_env, 
-                                                       conf->sesion_indicator);
+                s->ssl_cipher   = (char *)ap_table_get(r->subprocess_env, conf->cipher_indicator);
+                s->ssl_session  = (char *)ap_table_get(r->subprocess_env, conf->session_indicator);
             }
         }
 
@@ -498,8 +501,7 @@ static int init_ws_service(apache_private_data_t *private_data,
 
                 for(i = 0 ; i < t->nelts ; i++) {
                     s->attributes_names[i] = elts[i].key;
-                    s->attributes_values[i] = (char *)ap_table_get(r->subprocess_env, 
-                                                                   elts[i].key);
+                    s->attributes_values[i] = (char *)ap_table_get(r->subprocess_env, elts[i].key);
                     if(!s->attributes_values[i]) {
                         s->attributes_values[i] = elts[i].val;
                     }
@@ -545,6 +547,12 @@ static int init_ws_service(apache_private_data_t *private_data,
  * filtering/processing.  
  *
  * See jk_cmds definition below for explanations of these options.
+ */
+
+/*
+ * JkMountCopy directive handling
+ *
+ * JkMountCopy On/Off
  */
 
 static const char *jk_set_mountcopy(cmd_parms *cmd, 
@@ -626,6 +634,12 @@ static const char *jk_automount_context(cmd_parms *cmd,
 	return NULL;
 }
 	
+/*
+ * JkWorkersFile Directive Handling
+ *
+ * JkWorkersFile file
+ */
+
 static const char *jk_set_worker_file(cmd_parms *cmd, 
                                       void *dummy, 
                                       char *worker_file)
@@ -644,6 +658,12 @@ static const char *jk_set_worker_file(cmd_parms *cmd,
     return NULL;
 }
 
+/*
+ * JkLogFile Directive Handling
+ *
+ * JkLogFile file
+ */
+
 static const char *jk_set_log_file(cmd_parms *cmd, 
                                    void *dummy, 
                                    char *log_file)
@@ -656,6 +676,45 @@ static const char *jk_set_log_file(cmd_parms *cmd,
 
     return NULL;
 }
+
+/*
+ * JkLogLevel Directive Handling
+ *
+ * JkLogLevel debug/info/error/emerg
+ */
+
+static const char *jk_set_log_level(cmd_parms *cmd,
+                                    void *dummy,
+                                    char *log_level)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+    
+    conf->log_level = jk_parse_log_level(log_level);
+
+    return NULL;
+}
+
+/*
+ * JkLogStampFormat Directive Handling
+ *
+ * JkLogStampFormat "[%a %b %d %H:%M:%S %Y] " 
+ */
+
+static const char * jk_set_log_fmt(cmd_parms *cmd,
+                   void *dummy,
+                   char * log_format)
+{
+    jk_set_log_format(log_format);
+    return NULL;
+}
+
+/*
+ * JkExtractSSL Directive Handling
+ *
+ * JkExtractSSL On/Off
+ */
 
 static const char *jk_set_enable_ssl(cmd_parms *cmd, 
                                      void *dummy, 
@@ -671,6 +730,12 @@ static const char *jk_set_enable_ssl(cmd_parms *cmd,
     return NULL;
 }
 
+/*
+ * JkHTTPSIndicator Directive Handling
+ *
+ * JkHTTPSIndicator HTTPS
+ */
+
 static const char *jk_set_https_indicator(cmd_parms *cmd, 
                                           void *dummy, 
                                           char *indicator)
@@ -683,6 +748,12 @@ static const char *jk_set_https_indicator(cmd_parms *cmd,
 
     return NULL;
 }
+
+/*
+ * JkCERTSIndicator Directive Handling
+ *
+ * JkCERTSIndicator SSL_CLIENT_CERT
+ */
 
 static const char *jk_set_certs_indicator(cmd_parms *cmd, 
                                           void *dummy, 
@@ -697,6 +768,12 @@ static const char *jk_set_certs_indicator(cmd_parms *cmd,
     return NULL;
 }
 
+/*
+ * JkCIPHERIndicator Directive Handling
+ *
+ * JkCIPHERIndicator SSL_CIPHER
+ */
+
 static const char *jk_set_cipher_indicator(cmd_parms *cmd, 
                                            void *dummy, 
                                            char *indicator)
@@ -710,7 +787,13 @@ static const char *jk_set_cipher_indicator(cmd_parms *cmd,
     return NULL;
 }
 
-static const char *jk_set_sesion_indicator(cmd_parms *cmd, 
+/*
+ * JkSESSIONIndicator Directive Handling
+ *
+ * JkSESSIONIndicator SSL_SESSION_ID
+ */
+
+static const char *jk_set_session_indicator(cmd_parms *cmd, 
                                            void *dummy, 
                                            char *indicator)
 {
@@ -718,25 +801,16 @@ static const char *jk_set_sesion_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->sesion_indicator = indicator;
+    conf->session_indicator = indicator;
 
     return NULL;
 }
 
-
-static const char *jk_set_log_level(cmd_parms *cmd, 
-                                    void *dummy, 
-                                    char *log_level)
-{
-    server_rec *s = cmd->server;
-    jk_server_conf_t *conf =
-        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    conf->log_level = jk_parse_log_level(log_level);
-
-    return NULL;
-}
-
+/*
+ * JkEnvVar Directive Handling
+ *
+ * JkEnvVar MYOWNDIR
+ */
 
 static const char *jk_add_env_var(cmd_parms *cmd, 
                                   void *dummy, 
@@ -754,15 +828,6 @@ static const char *jk_add_env_var(cmd_parms *cmd,
     return NULL;
 }
 
-
-static const char * jk_set_log_fmt(cmd_parms *cmd,
-				   void *dummy,
-				   char * log_format)
-{
-	jk_set_log_format(log_format);
-	return NULL;
-}
-
 static const command_rec jk_cmds[] =
 {
     /*
@@ -774,34 +839,39 @@ static const command_rec jk_cmds[] =
      */
     {"JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF, TAKE1,
      "the name of a worker file for the Jakarta servlet containers"},
+
 	/*
 	 * JkSecretKey specifies the default (common) secret key to works with
      * workers in AJP14 protocol
 	 */
 	{"JkSecretKey", jk_secret_key, NULL, RSRC_CONF, TAKE1,
      "the default secret key to works with workers"},
-    /*
+
 	/*
 	 * JkAutoMount specifies that the list of handled URLs must be 	
 	 * asked to the servlet engine (autoconf feature)
 	 */
 	{"JkAutoMount", jk_automount_context, NULL, RSRC_CONF, TAKE12,
      "automatic mount points to a Tomcat worker"},
+
     /*
      * JkMount mounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
      */
     {"JkMount", jk_mount_context, NULL, RSRC_CONF, TAKE23,
      "A mount point from a context to a Tomcat worker"},
+
     /*
      * JkMountCopy specifies if mod_jk should copy the mount points
      * from the main server to the virtual servers.
      */
     {"JkMountCopy", jk_set_mountcopy, NULL, RSRC_CONF, FLAG,
      "Should the base server mounts be copied to the virtual server"},
+
     /*
      * JkLogFile & JkLogLevel specifies to where should the plugin log
      * its information and how much.
+	 * JkLogStampFormat specify the time-stamp to be used on log
      */
     {"JkLogFile", jk_set_log_file, NULL, RSRC_CONF, TAKE1,
      "Full path to the Jakarta Tomcat module log file"},
@@ -809,6 +879,7 @@ static const command_rec jk_cmds[] =
      "The Jakarta Tomcat module log level, can be debug, info, error or emerg"},
     {"JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF, TAKE1,
      "The Jakarta Tomcat module log format, follow strftime synthax"},
+
     /*
      * Apache has multiple SSL modules (for example apache_ssl, stronghold
      * IHS ...). Each of these can have a different SSL environment names
@@ -826,14 +897,18 @@ static const command_rec jk_cmds[] =
      "Name of the Apache environment that contains SSL client certificates"},
     {"JkCIPHERIndicator", jk_set_cipher_indicator, NULL, RSRC_CONF, TAKE1,
      "Name of the Apache environment that contains SSL client cipher"},
-    {"JkSESSIONIndicator", jk_set_sesion_indicator, NULL, RSRC_CONF, TAKE1,
+    {"JkSESSIONIndicator", jk_set_session_indicator, NULL, RSRC_CONF, TAKE1,
      "Name of the Apache environment that contains SSL session"},
     {"JkExtractSSL", jk_set_enable_ssl, NULL, RSRC_CONF, FLAG,
      "Turns on SSL processing and information gathering by mod_jk"},     
 
-
+	/*
+	 * JkEnvVar let user defines envs var passed from WebServer to 
+	 * Servlet Engine
+	 */
     {"JkEnvVar", jk_add_env_var, NULL, RSRC_CONF, TAKE2,
-     "Adds a name of environment variable that should be sent to Tomcat"},     
+     "Adds a name of environment variable that should be sent to servlet-engine"},     
+
     {NULL}
 };
 
@@ -879,10 +954,7 @@ static int jk_handler(request_rec *r)
                 jk_endpoint_t *end = NULL;
                 if(worker->get_endpoint(worker, &end, l)) {
                     int is_recoverable_error = JK_FALSE;
-                    rc = end->service(end, 
-                                      &s, 
-                                      l, 
-                                      &is_recoverable_error);
+                    rc = end->service(end, &s, l, &is_recoverable_error);
                 
                     if (s.content_read < s.content_length) {
                         /*
@@ -943,7 +1015,7 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
      * configuration directives to set them.
      *
     c->cipher_indicator = "HTTPS_CIPHER";
-    c->sesion_indicator = NULL;
+    c->session_indicator = NULL;
      */
 
     /*
@@ -951,7 +1023,7 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
      * are using another module (say apache_ssl) comment them out.
      */
     c->cipher_indicator = "SSL_CIPHER";
-    c->sesion_indicator = "SSL_SESSION_ID";
+    c->session_indicator = "SSL_SESSION_ID";
 
     if(!map_alloc(&(c->uri_to_context))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
@@ -960,7 +1032,7 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
     c->uw_map = NULL;
-
+	c->secret_key = NULL;
 
     c->envvars_in_use = JK_FALSE;
     c->envvars = ap_make_table(p, 0);
@@ -970,6 +1042,21 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
     return c;
 }
 
+
+static void copy_jk_map(ap_pool *p, server_rec * s, jk_map_t * src, jk_map_t * dst)
+{
+	int sz = map_size(src);
+        int i;
+        for(i = 0 ; i < sz ; i++) {
+            void *old;
+            char *name = map_name_at(src, i);
+            if(map_get(src, name, NULL) == NULL) {
+                if(!map_put(dst, name, ap_pstrdup(p, map_get_string(src, name, NULL)), &old)) {
+                    jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
+                }
+            }
+        }
+}
 
 static void *merge_jk_config(ap_pool *p, 
                              void *basev, 
@@ -983,57 +1070,31 @@ static void *merge_jk_config(ap_pool *p,
         overrides->https_indicator  = base->https_indicator;
         overrides->certs_indicator  = base->certs_indicator;
         overrides->cipher_indicator = base->cipher_indicator;
-        overrides->sesion_indicator = base->sesion_indicator;
+        overrides->session_indicator = base->session_indicator;
     }
     
     if(overrides->mountcopy) {
-        int sz = map_size(base->uri_to_context);
-        int i;
-        for(i = 0 ; i < sz ; i++) {
-            void *old;
-            char *name = map_name_at(base->uri_to_context, i);
-            if(NULL == map_get(overrides->uri_to_context, name, NULL)) {
-                if(!map_put(overrides->uri_to_context, 
-                            name,
-                            ap_pstrdup(p, map_get_string(base->uri_to_context, name, NULL)),
-                            &old)) {
-                    jk_error_exit(APLOG_MARK, 
-                                  APLOG_EMERG, 
-                                  overrides->s, 
-                                  p, 
-                                  "Memory error");
-                }
-            }
-        }
+		copy_jk_map(p, overrides->s, base->uri_to_context, overrides->uri_to_context);
+		copy_jk_map(p, overrides->s, base->automount, overrides->automount);
     }
 
     if(base->envvars_in_use) {
         overrides->envvars_in_use = JK_TRUE;
-        
-        overrides->envvars = 
-                ap_overlay_tables(p, 
-                                  overrides->envvars, 
-                                  base->envvars);
-
+        overrides->envvars = ap_overlay_tables(p, overrides->envvars, base->envvars);
     }
 
     if(overrides->log_file && overrides->log_level >= 0) {
-        if(!jk_open_file_logger(&(overrides->log), 
-                                overrides->log_file, 
-                                overrides->log_level)) {
+        if(!jk_open_file_logger(&(overrides->log), overrides->log_file, overrides->log_level)) {
             overrides->log = NULL;
         }
     }
-    if(!uri_worker_map_alloc(&(overrides->uw_map), 
-                             overrides->uri_to_context, 
-                             overrides->log)) {
-        jk_error_exit(APLOG_MARK, 
-                      APLOG_EMERG, 
-                      overrides->s,  
-                      p, 
-                      "Memory error");
+    if(!uri_worker_map_alloc(&(overrides->uw_map), overrides->uri_to_context, overrides->log)) {
+        jk_error_exit(APLOG_MARK, APLOG_EMERG, overrides->s, p, "Memory error");
     }
-    
+
+	if (base->secret_key)
+		overrides->secret_key = base->secret_key;
+   
     return overrides;
 }
 
@@ -1045,22 +1106,25 @@ static void jk_init(server_rec *s, ap_pool *p)
 
     /* Open up log file */
     if(conf->log_file && conf->log_level >= 0) {
-        if(!jk_open_file_logger(&(conf->log), 
-                                conf->log_file, 
-                                conf->log_level)) {
+        if(!jk_open_file_logger(&(conf->log), conf->log_file, conf->log_level)) {
             conf->log = NULL;
         } else {
             main_log = conf->log;
         }
     }
     
+{ int i;
+jk_log(conf->log, JK_LOG_DEBUG, "secret = %s\n", conf->secret_key);
+for (i = 0; i < map_size(conf->automount); i++)
+{
+            char *name = map_name_at(conf->automount, i);
+			jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and key = %s\n", name, map_get_string(conf->automount, name, NULL));
+}
+}
+
     /* Create mapping from uri's to workers, and start up all the workers */
     if(!uri_worker_map_alloc(&(conf->uw_map), conf->uri_to_context, conf->log)) {
-        jk_error_exit(APLOG_MARK, 
-                      APLOG_EMERG, 
-                      s, 
-                      p, 
-                      "Memory error");
+        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
 
     if(map_alloc(&init_map)) {
@@ -1079,11 +1143,7 @@ static void jk_init(server_rec *s, ap_pool *p)
         }
     }
     
-    jk_error_exit(APLOG_MARK, 
-                  APLOG_EMERG, 
-                  s, 
-                  p, 
-                  "Error while opening the workers");
+    jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Error while opening the workers");
 }
 
 /*
@@ -1098,9 +1158,7 @@ static int jk_translate(request_rec *r)
             (jk_server_conf_t *)ap_get_module_config(r->server->module_config, &jk_module);
 
         if(conf) {
-            char *worker = map_uri_to_worker(conf->uw_map, 
-                                             r->uri, 
-                                             conf->log ? conf->log : main_log);
+            char *worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log ? conf->log : main_log);
 
             if(worker) {
                 r->handler = ap_pstrdup(r->pool, JK_HANDLER);
