@@ -3,7 +3,9 @@ Last modified at [$Date$]
 
 Release:
 
-    2.0.2   : in progress
+    2.0.4   : in progress
+    2.0.3   : not released
+    2.0.2   : released Bivenber 27, 2002
     2.0.1   : released October 6, 2002 
     2.0.0   : released September 30, 2002 
     
