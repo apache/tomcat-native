@@ -56,22 +56,9 @@
  * ========================================================================= */
 
 /**
- * Description: Logger implementation using apache's native logging.
- *
- * This is the result of lazyness - a single log file to watch ( error.log )
- * instead of 2, no need to explain/document/decide where to place mod_jk
- * logging, etc.
- *
- * Normal apache logging rules apply.
- *
- * XXX Jk will use per/compoment logging level. All logs will be WARN level
- * in apache, and the filtering will happen on each component level.
- *
- * XXX Add file/line
- *
- * XXX Use env, use the current request structure ( so we can split the log
- * based on vhost configs ).
- *
+ * Description: Logger implementation using win32's native logger,
+ * 
+ * 
  * @author Costin Manolache
  * @author Ignacio J. Ortega
  */ 
@@ -85,7 +72,7 @@
 
 
 #define HUGE_BUFFER_SIZE (8*1024)
-#define JAKARTA_EVENT_SOURCE "Apache isapi_redirector2"
+#define JAKARTA_EVENT_SOURCE "Apache Jakarta Connector2"
 
 #ifdef WIN32
 
