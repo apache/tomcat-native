@@ -73,7 +73,7 @@
 
 void ajp14_compute_md5(jk_login_service_t *s, jk_logger_t *l)
 {
-	jk_md5(s->entropy, s->secret_key, s->computed_key);
+	jk_md5((const unsigned char *)s->entropy, (const unsigned char *)s->secret_key, s->computed_key);
 
 	jk_log(l, JK_LOG_DEBUG, "Into ajp14_compute_md5 (%s)\n", s->computed_key);
 }
@@ -134,7 +134,7 @@ int ajp14_unmarshal_login_seed(jk_msg_buf_t *msg,
                                jk_login_service_t *s,
                                jk_logger_t *l)
 {
-    if (jk_b_get_bytes(msg, s->entropy, AJP14_ENTROPY_SEED_LEN) < 0) {
+    if (jk_b_get_bytes(msg, (unsigned char *)s->entropy, AJP14_ENTROPY_SEED_LEN) < 0) {
         jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_login_seed - can't get seed\n");
         return JK_FALSE;
     }
@@ -172,7 +172,7 @@ int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t       *msg,
 	/*
 	 * COMPUTED-SEED
   	 */
-     if (jk_b_append_bytes(msg, s->computed_key, AJP14_COMPUTED_KEY_LEN)) {
+     if (jk_b_append_bytes(msg, (const unsigned char *)s->computed_key, AJP14_COMPUTED_KEY_LEN)) {
         jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_login_comp_into_msgb - Error appending the COMPUTED MD5 bytes\n");
         return JK_FALSE;
     }
@@ -280,7 +280,7 @@ int ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t       *msg,
     /*
      * COMPUTED-SEED
      */
-     if (jk_b_append_bytes(msg, s->computed_key, AJP14_COMPUTED_KEY_LEN)) {
+     if (jk_b_append_bytes(msg, (const unsigned char *)s->computed_key, AJP14_COMPUTED_KEY_LEN)) {
         jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_shutdown_into_msgb - Error appending the COMPUTED MD5 bytes\n");
         return JK_FALSE;
     }

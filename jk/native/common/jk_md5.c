@@ -463,13 +463,13 @@ char * JK_METHOD jk_md5(const unsigned char *org, const unsigned char *org2, cha
 	char		buf[JK_MD5_DIGESTSIZE + 1];
 
     jk_MD5Init(&ctx);
-    jk_MD5Update(&ctx, org, strlen(org));
+    jk_MD5Update(&ctx, org, strlen((const char *)org));
 
 	if (org2 != NULL)
-		jk_MD5Update(&ctx, org2, strlen(org2));
+		jk_MD5Update(&ctx, org2, strlen((const char *)org2));
 
-    jk_MD5Final(buf, &ctx);
-	return (jk_hextocstr(buf, dst, JK_MD5_DIGESTSIZE));
+    jk_MD5Final((unsigned char *)buf, &ctx);
+	return (jk_hextocstr((unsigned char *)buf, dst, JK_MD5_DIGESTSIZE));
 }
 
 #else /* USE_APACHE_MD5 */
