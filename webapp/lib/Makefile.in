@@ -58,9 +58,8 @@
 # @author  Pier Fumagalli <mailto:pier@betaversion.org>
 # @version $Id$
 
-LOCAL_INCLUDES = -I$(SRC_DIR)/include -I$(SRC_DIR)/lib -I.
-LOCAL_TGT_DIR = $(TGT_DIR)/lib
-LOCAL_SRC_DIR = $(SRC_DIR)/lib
+LOCAL_TGT_DIR = @TGT_DIR@/lib
+LOCAL_SRC_DIR = @SRC_DIR@/lib
 include @TGT_DIR@/Makedefs
 
 OBJS =	wa_main.lo \
@@ -72,12 +71,11 @@ OBJS =	wa_main.lo \
 	pr_warp_network.lo \
 	pr_warp_config.lo \
 	pr_warp_socketpool.lo
-LIB =	libwebapp.la
 DEFH =	pr_warp_defs.h
 
 .PHONY: build clean
 
-build: $(DEFH) $(LIB)
+build: $(DEFH) $(OBJS)
 
 clean:
 	@for FILE in $(OBJS) ; do \
@@ -88,15 +86,7 @@ clean:
 	  rm -f $$FILE.o ; \
 	done
 	rm -f $(DEFH)
-	rm -f libwebapp.la
-	rm -f libwebapp.a
 	rm -rf .libs
-
-$(LIB): $(WARPH) $(OBJS) $(PROVS)
-	$(LIBTOOL) --mode=link \
-	  $(CC) -static -o $@ \
-	    -rpath $(TGT_DIR) \
-	    $(OBJS)
 
 $(DEFH): $(SRC_DIR)/java/org/apache/catalina/connector/warp/Constants.java
 	cat "$<" | \
