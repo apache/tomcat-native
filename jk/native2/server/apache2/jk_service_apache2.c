@@ -585,6 +585,13 @@ static void JK_METHOD jk2_service_apache2_afterRequest(jk_env_t *env, jk_ws_serv
             }
         }
     }
+    if (s->realWorker) {
+        struct jk_worker *w = s->realWorker;
+        if (w != NULL && w->channel != NULL 
+            && w->channel->afterRequest != NULL) {
+            w->channel->afterRequest( env, w->channel, w, NULL, s );
+        }
+    }
 }
 
 int JK_METHOD jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s)
