@@ -353,31 +353,6 @@ SOURCE=.\org_apache_jk_apr_AprImpl.h
 # Begin Source File
 
 SOURCE=..\common\jk_logger_win32_message.mc
-
-!IF  "$(CFG)" == "Jni - Win32 Release"
-
-# Begin Custom Build - Creating resources from $(InputPath)
-InputDir=\tomcat\jakarta-tomcat-connectors\jk\native2\common
-InputPath=..\common\jk_logger_win32_message.mc
-
-"..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	mc -h $(InputDir) -r $(InputDir) $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Jni - Win32 Debug"
-
-# Begin Custom Build - Creating resources from $(InputPath)
-InputDir=\tomcat\jakarta-tomcat-connectors\jk\native2\common
-InputPath=..\common\jk_logger_win32_message.mc
-
-"..\common\jk_logger_win32_message.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	mc -h $(InputDir) -r $(InputDir) $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
