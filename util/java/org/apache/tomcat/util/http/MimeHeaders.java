@@ -288,6 +288,15 @@ public class MimeHeaders {
 	return mhf.getValue();
     }
 
+    /** Create a new named header using translated char[].
+     */
+    public MessageBytes addValue(char c[], int startN, int endN)
+    {
+	MimeHeaderField mhf=createHeader();
+	mhf.getName().setChars(c, startN, endN);
+	return mhf.getValue();
+    }
+
     /** Allow "set" operations - 
         return a MessageBytes container for the
 	header value ( existing header or new
