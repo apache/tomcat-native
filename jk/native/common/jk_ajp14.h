@@ -61,16 +61,20 @@
 #ifndef JK_AJP14_H
 #define JK_AJP14_H
 
-
-#include "jk_service.h"
-#include "jk_msg_buff.h"
+#include "jk_ajp_common.h"
+#include "jk_context.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
+#define AJP14_PROTO					14
+
+#define AJP14_WS_HEADER             0x1235
+#define AJP14_SW_HEADER             0x4143  /* 'AC' */
+
 #define AJP14_DEF_HOST            	("localhost")
-#define AJP14_DEF_PORT            	(8010)
+#define AJP14_DEF_PORT            	(8011)
 #define AJP14_READ_BUF_SIZE         (8*1024)
 #define AJP14_DEF_RETRY_ATTEMPTS    (1)
 #define AJP14_DEF_CACHE_SZ      	(1)
@@ -286,18 +290,59 @@ struct jk_login_service {
  * functions defined here 
  */
 
-int ajp14_marshal_login_init_into_msgb(jk_msg_buf_t       *msg,
-                                       jk_login_service_t *s,
-                                       jk_logger_t        *l);
+void 	ajp14_compute_md5(jk_login_service_t *s, 
+						  jk_logger_t *l);
 
-int ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t       *msg,
-                                       jk_login_service_t *s,
-                                       jk_logger_t        *l);
+int 	ajp14_marshal_login_init_into_msgb(jk_msg_buf_t *msg, 
+										   jk_login_service_t *s, 
+										   jk_logger_t *l);
 
-int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t     *msg,
-                                           jk_msg_buf_t     *unk,
-                                           jk_logger_t      *l);
+int 	ajp14_unmarshal_login_seed(jk_msg_buf_t *msg, 
+								   jk_login_service_t *s, 
+								   jk_pool_t *p, 
+								   jk_logger_t *l);
 
+int 	ajp14_marshal_login_comp_into_msgb(jk_msg_buf_t *msg, 
+										   jk_login_service_t *s, 
+										   jk_logger_t *l);
+
+int 	ajp14_unmarshal_log_ok(jk_msg_buf_t *msg, 
+							   jk_login_service_t *s, 
+							   jk_logger_t *l);
+
+int 	ajp14_unmarshal_log_nok(jk_msg_buf_t *msg, 
+								jk_logger_t *l);
+
+int 	ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t *msg, 
+										 jk_login_service_t *s, 
+										 jk_logger_t *l);
+
+int 	ajp14_unmarshal_shutdown_nok(jk_msg_buf_t *msg, 
+									 jk_logger_t *l);
+
+int 	ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t *msg, 
+											   jk_msg_buf_t *unk, 
+											   jk_logger_t *l);
+
+int 	ajp14_marshal_context_query_into_msgb(jk_msg_buf_t *msg, 
+											  char *virtual, 
+											  jk_logger_t *l);
+
+int 	ajp14_unmarshal_context_info(jk_msg_buf_t *msg, 
+									 jk_context_t *context, 
+									 jk_logger_t *l);
+
+int 	ajp14_marshal_context_state_into_msgb(jk_msg_buf_t *msg, 
+											  jk_context_t *context, 
+											  jk_logger_t *l);
+
+int 	ajp14_unmarshal_context_state_reply(jk_msg_buf_t *msg, 
+											jk_context_t *context, 
+											jk_logger_t *l);
+
+int 	ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg, 
+										   jk_context_t *context, 
+										   jk_logger_t *l);
 
 #ifdef __cplusplus
 }

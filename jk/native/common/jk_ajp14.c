@@ -63,7 +63,7 @@
 #include "jk_global.h"
 #include "jk_util.h"
 #include "jk_map.h"
-#include "jk_context.h"
+#include "jk_ajp_common.h"
 #include "jk_ajp14.h"
 
 /*
@@ -581,3 +581,4 @@ int ajp14_unmarshal_context_update_cmd(jk_msg_buf_t *msg,
 {
 	return (ajp14_unmarshal_context_state_reply(msg, context, l));
 }
+
