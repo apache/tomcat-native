@@ -246,7 +246,7 @@ int map_put(jk_map_t *m,
             void **old)
 {
     int rc = JK_FALSE;
-    int i;
+    unsigned int i;
 
     if(m==NULL ||  name==NULL )
         return JK_FALSE;

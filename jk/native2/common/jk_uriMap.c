@@ -197,11 +197,12 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
     char *worker;
     int err;
     char *asterisk;
-    
+
+    printf("XXX addMapping1 %s", puri); 
     /* make sure we have space */
     err=uriMap_realloc(_this);
     if (err != JK_TRUE ) {
-        l->jkLog(l, JK_LOG_ERROR,"Allocation error\n");
+        l->jkLog(l, JK_LOG_ERROR,"uriMa.addMappint() OutOfMemoryException\n");
         return NULL;
     }
 
@@ -213,10 +214,8 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
     worker = _this->pool->pstrdup(_this->pool, pworker);
     uwr->webapp->workerName = worker;
 
-    if (uri==NULL ||
-        worker==NULL ||
-        uwr==NULL ) {
-        l->jkLog(l, JK_LOG_ERROR,"Allocation error\n");
+    if (uri==NULL || worker==NULL || uwr==NULL ) {
+        l->jkLog(l, JK_LOG_ERROR,"uriMap.addMapping() NullPointerException\n");
         return NULL;
     }
 
@@ -236,8 +235,6 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
     _this->maps[_this->size] = uwr;
     _this->size++;
 
-    l->jkLog(l, JK_LOG_DEBUG,"uriMap.addMapping(%s)\n", uri );
-
     asterisk = strchr(uri, '*');
 
     // set the mapping type
@@ -247,15 +244,10 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
         uwr->prefix_len  =strlen( uwr->prefix );
         uwr->suffix      = NULL;
         uwr->match_type  = MATCH_TYPE_EXACT;
-        l->jkLog(l, JK_LOG_DEBUG,
+        l->jkLog(l, JK_LOG_INFO,
                "uriMap.addMapping() exact mapping %s=%s was added\n",
                uri, worker);
         return uwr;
-    }
-
-    if (!uwr->uri) {
-        l->jkLog(l, JK_LOG_ERROR,"Allocation error\n");
-        return NULL;
     }
 
     /*
@@ -274,7 +266,7 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
             uwr->prefix_len  =strlen( uwr->prefix );
             uwr->suffix      = asterisk + 3;
             uwr->match_type  = MATCH_TYPE_SUFFIX;
-            l->jkLog(l, JK_LOG_DEBUG,
+            l->jkLog(l, JK_LOG_INFO,
                    "uriMap.addMapping() suffix mapping %s.%s=%s was added\n",
                    uri, asterisk + 3, worker); 
         } else if ('\0' != asterisk[2]) {
@@ -284,7 +276,7 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
             uwr->prefix  = uri;
             uwr->prefix_len  =strlen( uwr->prefix );
             uwr->match_type = MATCH_TYPE_GENERAL_SUFFIX;
-            l->jkLog(l, JK_LOG_DEBUG,
+            l->jkLog(l, JK_LOG_INFO,
                    "uriMap.addMapping() general suffix mapping %s.%s=%s\n",
                    uri, asterisk + 2, worker);
         } else {
@@ -294,8 +286,8 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
             uwr->prefix      = uri;
             uwr->prefix_len  =strlen( uwr->prefix );
             uwr->match_type  = MATCH_TYPE_CONTEXT;
-            l->jkLog(l, JK_LOG_DEBUG,
-                   "uriMap.addMapping() context mapping %s=%s\n",
+            l->jkLog(l, JK_LOG_INFO,
+                   "uriMap.addMapping() prefix mapping %s=%s\n",
                    uri, worker);
         }
     } else {
@@ -305,8 +297,8 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
         uwr->prefix_len  =strlen( uwr->prefix );
         uwr->suffix      = NULL;
         uwr->match_type  = MATCH_TYPE_EXACT;
-        l->jkLog(l, JK_LOG_DEBUG,
-                   "uriMap.addMapping() XXX prefix mapping %s=%s\n",
+        l->jkLog(l, JK_LOG_INFO,
+                   "uriMap.addMapping() prefix mapping2 %s=%s\n",
                uri, worker);
     }
 
@@ -330,20 +322,20 @@ static int jk_uriMap_init(jk_uriMap_t *_this,
     for(i = 0; i < sz ; i++) {
         char *name=map_name_at(init_data, i);
         if( name==NULL || name[0]!='/' ) {
-            l->jkLog(l, JK_LOG_DEBUG, "uriMap.init(): Ignoring %s\n",
-                     name);
+/*             l->jkLog(l, JK_LOG_DEBUG, "uriMap.init(): Ignoring %s\n", */
+/*                      name); */
         } else {
             jk_uriEnv_t *uriEnv=_this->addMapping(_this,NULL,name,
                                                   map_value_at(init_data, i));
             if ( uriEnv==NULL) {
-                l->jkLog(l, JK_LOG_ERROR, "Parsing error %s\n",
+                l->jkLog(l, JK_LOG_ERROR, "uriMap.init() error adding %s\n",
                          map_name_at(init_data, i));
                 rc=JK_FALSE;
             }
         }
     }
     
-    l->jkLog(l, JK_LOG_DEBUG, "uriMap.init(): %d rules out of %d\n",
+    l->jkLog(l, JK_LOG_INFO, "uriMap.init(): added %d rules out of %d\n",
              _this->size, sz );
 
     /* Set uriEnv->worker ( can't be done earlier since we might not have
@@ -353,7 +345,7 @@ static int jk_uriMap_init(jk_uriMap_t *_this,
         /* assert( wname != NULL ); */
         _this->maps[i]->webapp->worker= workerEnv->getWorkerForName( workerEnv, wname );
         if( _this->maps[i]->webapp->worker==NULL ) {
-            l->jkLog(l, JK_LOG_ERROR, "Map to invalid worker %s %s\n",
+            l->jkLog(l, JK_LOG_ERROR, "uriMap.init() map to invalid worker %s %s\n",
                      _this->maps[i]->uri, wname);
         }
     }
@@ -481,18 +473,20 @@ static jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
         
         if(MATCH_TYPE_EXACT == uwr->match_type &&
            uriLen == uwr->prefix_len) {
-            l->jkLog(l, JK_LOG_DEBUG,
-                     "uriMap.mapUri() exact match %s:%s \n",
-                     uwr->webapp->worker->name, uwr->prefix );
+            if( _this->debug > 0 )
+                l->jkLog(l, JK_LOG_INFO,
+                         "uriMap.mapUri() exact match %s:%s \n",
+                         uwr->webapp->worker->name, uwr->prefix );
             /* restore */
             if( url_rewrite ) *url_rewrite=origChar;
             return uwr;
         } else if(MATCH_TYPE_CONTEXT == uwr->match_type) {
             if(uwr->prefix_len > longest_match) {
                 /* This takes care of 'shorter' matches */
-                l->jkLog(l, JK_LOG_DEBUG,
-                       "uriMap.mapUri() tentative prefix match %s",
-                       uwr->prefix );
+                if( _this->debug > 0 )
+                    l->jkLog(l, JK_LOG_INFO,
+                             "uriMap.mapUri() tentative prefix match %s",
+                             uwr->prefix );
                 longest_match = uwr->prefix_len;
                 best_match = i;
             }
@@ -500,9 +494,10 @@ static jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
             if(uwr->prefix_len >= longest_match) {
                 int suffix_start=last_index_of(uri,uwr->suffix[0]);
                 if (suffix_start>=0 && 0==strcmp(uri+suffix_start,uwr->suffix)) {
-                    l->jkLog(l, JK_LOG_DEBUG,
-                             "uriMap.mapUri() general suffix match %s\n",
-                             uwr->suffix );
+                    if( _this->debug > 0 )
+                        l->jkLog(l, JK_LOG_INFO,
+                                 "uriMap.mapUri() general suffix match %s\n",
+                                 uwr->suffix );
                     longest_match = uwr->prefix_len;
                     best_match = i;
                 }
@@ -516,9 +511,10 @@ static jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
                     if(0 == strcmp(suffix, uwr->suffix)) {
 #endif
                         if(uwr->prefix_len >= longest_match) {
-                            l->jkLog(l,JK_LOG_DEBUG,
-                                   "uriMap.mapUri() suffix match %s\n",
-                                   uwr->suffix );
+                            if( _this->debug > 0 )
+                                l->jkLog(l,JK_LOG_INFO,
+                                         "uriMap.mapUri() suffix match %s\n",
+                                         uwr->suffix );
                             longest_match = uwr->prefix_len;
                             best_match = i;
                         }
@@ -538,7 +534,7 @@ static jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
     
     if(-1 != best_match) {
         if( _this->debug > 0 )
-            l->jkLog(l, JK_LOG_DEBUG, "uriMap.mapUri() matched %s %s\n",
+            l->jkLog(l, JK_LOG_INFO, "uriMap.mapUri() matched %s %s\n",
                      uri, _this->maps[best_match]->webapp->worker->name ); 
         return _this->maps[best_match];
     }
@@ -557,15 +553,16 @@ int JK_METHOD jk_uriMap_factory( jk_env_t *env, jk_pool_t *pool, void **result,
     jk_logger_t *l=env->logger;
 
     _this = (jk_uriMap_t *)calloc(1,sizeof(jk_uriMap_t));
+    if(  ! _this) {
+        l->jkLog(l, JK_LOG_ERROR, "uriMap.factory() OutOfMemoryError\n");
+        return JK_FALSE;
+    }
+
     _this->size     = 0;
     _this->capacity = 0;
 
     _this->pool=pool;
 
-    if(  ! _this) {
-        l->jkLog(l, JK_LOG_ERROR, "Allocation error\n");
-        return JK_FALSE;
-    }
     *result=_this;
 
     _this->init=jk_uriMap_init;
@@ -576,7 +573,7 @@ int JK_METHOD jk_uriMap_factory( jk_env_t *env, jk_pool_t *pool, void **result,
     _this->maps = NULL;
     _this->debug= 1;
             
-    l->jkLog(l, JK_LOG_DEBUG, "uriMap.new()\n");
+    /*     l->jkLog(l, JK_LOG_DEBUG, "uriMap.new()\n"); */
     return JK_TRUE;
 }
 
