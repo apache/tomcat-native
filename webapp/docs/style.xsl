@@ -239,7 +239,7 @@
   </xsl:template>
 
   <xsl:template match="p">
-    <p class="section"><xsl:apply-templates select="b|a|text()"/></p>
+    <p class="section"><xsl:apply-templates select="table|ul|b|a|text()"/></p>
   </xsl:template>
 
   <xsl:template match="b">
@@ -249,6 +249,46 @@
   <xsl:template match="br">
     <br/>
   </xsl:template>
+
+  <!-- JFC added -->
+  <xsl:template match="ul">
+    <ul><xsl:apply-templates select="li"/></ul>
+  </xsl:template>
+
+  <xsl:template match="li">
+    <li><xsl:apply-templates select="text()"/></li>
+  </xsl:template>
+
+  <xsl:template match="table">
+    <table border="1"><xsl:apply-templates select="tr"/></table>
+  </xsl:template>
+
+  <xsl:template match="tr">
+    <tr><xsl:apply-templates select="td|td15|td13|td6|td5|td3|td2"/></tr>
+  </xsl:template>
+
+  <xsl:template match="td">
+    <td><xsl:apply-templates select="b|a|text()"/></td>
+  </xsl:template>
+  <xsl:template match="td15">
+    <td colspan="15"><xsl:apply-templates select="b|a|text()"/></td>
+  </xsl:template>
+  <xsl:template match="td13">
+    <td colspan="13"><xsl:apply-templates select="b|a|text()"/></td>
+  </xsl:template>
+  <xsl:template match="td6">
+    <td colspan="6"><xsl:apply-templates select="b|a|text()"/></td>
+  </xsl:template>
+  <xsl:template match="td5">
+    <td colspan="5"><xsl:apply-templates select="b|a|text()"/></td>
+  </xsl:template>
+  <xsl:template match="td3">
+    <td colspan="3"><xsl:apply-templates select="b|a|text()"/></td>
+  </xsl:template>
+  <xsl:template match="td2">
+    <td colspan="2"><xsl:apply-templates select="b|a|text()"/></td>
+  </xsl:template>
+  <!-- end JFC -->
 
   <xsl:template match="screen">
     <p class="screen">
