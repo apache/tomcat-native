@@ -264,6 +264,7 @@ public class MapperListener
         throws Exception
     {
         ObjectName engineName=new ObjectName(domain + ":type=Engine");
+        if( ! mBeanServer.isRegistered(engineName)) return;
         //if (container instanceof Engine) {
         String defaultHost = (String)mBeanServer.getAttribute(engineName, "defaultHost");
         // This should probablt be called later 
