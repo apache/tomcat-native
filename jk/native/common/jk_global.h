@@ -24,7 +24,12 @@
 #ifndef JK_GLOBAL_H
 #define JK_GLOBAL_H
 
+#ifndef WIN32
 #include "portable.h"
+#else
+#define HAVE_VSNPRINTF
+#define HAVE_SNPRINTF
+#endif
 
 #include "jk_version.h"
 
