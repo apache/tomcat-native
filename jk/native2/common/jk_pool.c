@@ -65,7 +65,7 @@
 #include "jk_env.h"
 
 #define DEFAULT_DYNAMIC 10
-#define JK_DEBUG_POOL 1
+/* #define JK_DEBUG_POOL 1 */
 
 /* Private data for jk pools
  */
