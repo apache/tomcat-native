@@ -844,6 +844,20 @@ public final class CoyoteConnector
         maxKeepAliveRequests = mkar;
     }
 
+     /**
+      * Set the flag to see if we do internal redirects to welcome-files.
+      */
+     public void setProcessWelcomeResources(boolean pwr) {
+         mapper.setProcessWelcomeResources(pwr);
+     }
+
+     /**
+      * Return the flag to see if we do internal redirects to welcome-files.
+      */
+     public boolean getProcessWelcomeResources() {
+         return mapper.getProcessWelcomeResources();
+     }
+
     /**
      * Return the scheme that will be assigned to requests received
      * through this connector.  Default value is "http".
