@@ -61,7 +61,7 @@
 package org.apache.coyote;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -189,7 +189,7 @@ public final class Request {
 
     private MessageBytes remoteUser=new MessageBytes();
     private MessageBytes authType=new MessageBytes();
-    private Hashtable attributes=new Hashtable();
+    private HashMap attributes=new HashMap();
 
     private Response response;
     private ActionHook hook;
@@ -432,7 +432,7 @@ public final class Request {
         attributes.put( name, o );
     }
 
-    public Hashtable getAttributes() {
+    public HashMap getAttributes() {
         return attributes;
     }
 
