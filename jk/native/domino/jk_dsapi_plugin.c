@@ -101,6 +101,7 @@
 #define VERSION_STRING		"Jakarta/DSAPI/" VERSION
 /* What we call ourselves */
 #define FILTERDESC			"Apache Tomcat Interceptor (" VERSION_STRING ")"
+
 #define SERVERDFLT			"Lotus Domino"
 /* Registry location of configuration data */
 #define REGISTRY_LOCATION	"Software\\Apache Software Foundation\\Jakarta Dsapi Redirector\\1.0"
@@ -122,11 +123,14 @@ static jk_logger_t			*logger		= NULL;
 static int					logLevel	= JK_LOG_EMERG_LEVEL;
 static jk_pool_t			cfgPool;
 
+
+
 static const char *logFile;
 static const char *workerFile;
 static const char *workerMountFile;
 static const char *tomcatStart;
 static const char *tomcatStop;
+
 
 #if defined(JK_VERSION) && JK_VERSION >= MAKEVERSION(1, 2, 0, 1)
 static jk_worker_env_t   worker_env;
@@ -261,8 +265,11 @@ static void AddInLogMessageText(char *msg, unsigned short code, ...)
 }
 #endif
 
+
 /* Get the value of a server (CGI) variable as a string
+
  */
+
 static int GetVariable(private_ws_t *ws, char *hdrName,
 					 char *buf, DWORD bufsz, char **dest, const char *dflt)
 {
@@ -439,7 +446,6 @@ static int JK_METHOD StartResponse(jk_ws_service_t *s, int status, const char *r
 	jk_log(logger, JK_LOG_ERROR, "jk_ws_service_t::StartResponse, NULL parameters\n");
 
 	return JK_FALSE;
-
 }
 
 static int JK_METHOD Read(jk_ws_service_t * s, void *bytes, unsigned len, unsigned *countp)
@@ -543,7 +549,9 @@ DLLEXPORT unsigned int TerminateFilter(unsigned int reserved)
 		if (logger)
 			jk_close_file_logger(&logger);
 
+
 		initDone = JK_FALSE;
+
 	}
 
 	if (NULL != tomcatStop && '\0' != *tomcatStop)
@@ -558,6 +566,7 @@ DLLEXPORT unsigned int TerminateFilter(unsigned int reserved)
 
 	return kFilterHandledEvent;
 }
+
 
 /* Called when Domino loads the filter. Reads a load of config data from
  * the registry and elsewhere and displays a banner.
@@ -837,25 +846,35 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 	GETVARIABLE("SERVER_SOFTWARE", &s->server_software, SERVERDFLT);
 	GETVARIABLEINT("CONTENT_LENGTH", &s->content_length, 0);
 
-
 	/* SSL Support
 	 */
 	GETVARIABLEBOOL("HTTPS", &s->is_ssl, 0);
 
+
 	if (ws->reqData->requestMethod < 0 ||
+
 		ws->reqData->requestMethod >= sizeof(methodName) / sizeof(methodName[0]))
+
 		return JK_FALSE;
+
+
 
 	s->method = methodName[ws->reqData->requestMethod];
 
+
+
 	s->headers_names	= NULL;
+
 	s->headers_values	= NULL;
+
 	s->num_headers		= 0;
+
 
 	s->ssl_cert_len	= fr.clientCertLen;
 	s->ssl_cert		= fr.clientCert;
 	s->ssl_cipher	= NULL;		/* required by Servlet 2.3 Api */
 	s->ssl_session	= NULL;
+
 
 #if defined(JK_VERSION) && JK_VERSION >= MAKEVERSION(1, 2, 0, 1)
 	s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
@@ -864,7 +883,9 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 	if (s->is_ssl)
 	{
 		int dummy;
+
 #if 0
+
 		char *sslNames[] =
 		{
 			"CERT_ISSUER", "CERT_SUBJECT", "CERT_COOKIE", "CERT_FLAGS", "CERT_SERIALNUMBER",
@@ -876,7 +897,6 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 			NULL, NULL, NULL, NULL, NULL,
 			NULL, NULL, NULL, NULL
 		};
-
 
 		unsigned i, varCount = 0;
 #endif
@@ -903,7 +923,7 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 
 		/* Andy, some SSL vars must be mapped directly in  s->ssl_cipher,
          * ssl->session and s->ssl_key_size
-		 * ie: 
+		 * ie:
 		 * Cipher could be "RC4-MD5"
 		 * KeySize 128 (bits)
 	     * SessionID a string containing the UniqID used in SSL dialogue
@@ -928,6 +948,7 @@ static int InitService(private_ws_t *ws, jk_ws_service_t *s)
 			s->num_attributes = varCount;
 		}
 #endif
+
 	}
 
 	/* Duplicate all the headers now */
@@ -1023,7 +1044,6 @@ static unsigned int ParsedRequest(FilterContext *context, FilterParsedRequest *r
 			if (!ok) return kFilterError;
 			initDone = JK_TRUE;
 		}
-
 
 		if (qp = strchr(uri, '?'), qp != NULL) *qp = '\0';
 		workerName = map_uri_to_worker(uw_map, uri, logger);
