@@ -58,37 +58,47 @@
 # @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 # @version $Id$
 
-CC =      @CC@
-CPP =     @CPP@
-JAVAC =   @JAVAC@
-JAR =     @JAR@
-SHELL =   @SHELL@
-LIBTOOL = @LIBTOOL@
+.SUFFIXES: .c .lo
 
-CFLAGS =         @CFLAGS@
+# Values imported from @APRDIR@/APRVARS
+CC =             @CC@
+CPP =            @CPP@
+SHELL =          @SHELL@
+LIBTOOL =        @LIBTOOL@
 EXTRA_CFLAGS =   @EXTRA_CFLAGS@
-CPPFLAGS =       @CPPFLAGS@
 EXTRA_CPPFLAGS = @EXTRA_CPPFLAGS@
-
 EXTRA_LDFLAGS =  @EXTRA_LDFLAGS@
 EXTRA_LIBS =     @EXTRA_LIBS@
 EXTRA_INCLUDES = @EXTRA_INCLUDES@
-LIBTOOL_LIBS =   @LIBTOOL_LIBS@ @APRDIR@/libapr.la
+LIBTOOL_LIBS =   @LIBTOOL_LIBS@
 
-LTFLAGS =        --silent
+# Default programs discovered by configure
+CAT =            @CAT@
+ECHO =           @ECHO@
+GREP =           @GREP@
+RM =             @RM@
+SED =            @SED@
+TEST =           @TEST@
+TRUE =           @TRUE@
 
-SRCDIR =  @SRCDIR@
+# Java values discovered by configure
+JAVA_HOME =      @JAVA_HOME@
+JAR =            @JAR@
+JAVAC =          @JAVAC@
+JAVACFLAGS =     @JAVACFLAGS@
+JAVACPATH = 	 @TOMCATDIR@/common/lib/servlet.jar:@TOMCATDIR@/server/lib/catalina.jar
 
-.SUFFIXES: .c .lo .o
+# Compilation flags set by configure
+CFLAGS =         @CFLAGS@
+CPPFLAGS =       @CPPFLAGS@
+LTFLAGS =        @LTFLAGS@
+DEBUG = 	 @DEBUG@
 
-.c.o:
+# Compile a C source using APR's libtool
+.c.lo: @SRCDIR@/Makedefs
 	@echo Compiling $<
-	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(CPPFLAGS) $(EXTRA_CPPFLAGS) \
+	@$(SHELL) $(LIBTOOL) $(LTFLAGS) --mode=compile \
+		$(CC) \
+		$(CFLAGS) $(EXTRA_CFLAGS) \
+		$(CPPFLAGS) $(EXTRA_CPPFLAGS) \
 		-c $< -o $@
-
-.c.lo:
-	@echo Compiling $<
-	@$(SHELL) $(LIBTOOL) --silent --mode=compile \
-		$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(CPPFLAGS) $(EXTRA_CPPFLAGS) \
-		-c $< -o $@
-

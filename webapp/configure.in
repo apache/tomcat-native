@@ -1,59 +1,59 @@
-dnl  =========================================================================
+dnl =========================================================================
 dnl
-dnl                  The Apache Software License,  Version 1.1
+dnl                 The Apache Software License,  Version 1.1
 dnl
-dnl           Copyright (c) 1999-2001 The Apache Software Foundation.
-dnl                            All rights reserved.
+dnl          Copyright (c) 1999-2001 The Apache Software Foundation.
+dnl                           All rights reserved.
 dnl
-dnl  =========================================================================
+dnl =========================================================================
 dnl
-dnl  Redistribution and use in source and binary forms,  with or without modi-
-dnl  fication, are permitted provided that the following conditions are met:
+dnl Redistribution and use in source and binary forms,  with or without modi-
+dnl fication, are permitted provided that the following conditions are met:
 dnl
-dnl  1. Redistributions of source code  must retain the above copyright notice
-dnl     notice, this list of conditions and the following disclaimer.
+dnl 1. Redistributions of source code  must retain the above copyright notice
+dnl    notice, this list of conditions and the following disclaimer.
 dnl
-dnl  2. Redistributions  in binary  form  must  reproduce the  above copyright
-dnl     notice,  this list of conditions  and the following  disclaimer in the
-dnl     documentation and/or other materials provided with the distribution.
+dnl 2. Redistributions  in binary  form  must  reproduce the  above copyright
+dnl    notice,  this list of conditions  and the following  disclaimer in the
+dnl    documentation and/or other materials provided with the distribution.
 dnl
-dnl  3. The end-user documentation  included with the redistribution,  if any,
-dnl     must include the following acknowlegement:
+dnl 3. The end-user documentation  included with the redistribution,  if any,
+dnl    must include the following acknowlegement:
 dnl
-dnl        "This product includes  software developed  by the Apache  Software
-dnl         Foundation <http://www.apache.org/>."
+dnl       "This product includes  software developed  by the Apache  Software
+dnl        Foundation <http://www.apache.org/>."
 dnl
-dnl     Alternately, this acknowlegement may appear in the software itself, if
-dnl     and wherever such third-party acknowlegements normally appear.
+dnl    Alternately, this acknowlegement may appear in the software itself, if
+dnl    and wherever such third-party acknowlegements normally appear.
 dnl
-dnl  4. The names "The Jakarta Project",  "Apache WebApp Module",  and "Apache
-dnl     Software Foundation"  must not be used to endorse or promote  products
-dnl     derived  from this  software  without  prior  written  permission. For
-dnl     written permission, please contact <apache@apache.org>.
+dnl 4. The names "The Jakarta Project",  "Apache WebApp Module",  and "Apache
+dnl    Software Foundation"  must not be used to endorse or promote  products
+dnl    derived  from this  software  without  prior  written  permission. For
+dnl    written permission, please contact <apache@apache.org>.
 dnl
-dnl  5. Products derived from this software may not be called "Apache" nor may
-dnl     "Apache" appear in their names without prior written permission of the
-dnl     Apache Software Foundation.
+dnl 5. Products derived from this software may not be called "Apache" nor may
+dnl    "Apache" appear in their names without prior written permission of the
+dnl    Apache Software Foundation.
 dnl
-dnl  THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES
-dnl  INCLUDING, BUT NOT LIMITED TO,  THE IMPLIED WARRANTIES OF MERCHANTABILITY
-dnl  AND FITNESS FOR  A PARTICULAR PURPOSE  ARE DISCLAIMED.  IN NO EVENT SHALL
-dnl  THE APACHE  SOFTWARE  FOUNDATION OR  ITS CONTRIBUTORS  BE LIABLE  FOR ANY
-dnl  DIRECT,  INDIRECT,   INCIDENTAL,  SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL
-dnl  DAMAGES (INCLUDING,  BUT NOT LIMITED TO,  PROCUREMENT OF SUBSTITUTE GOODS
-dnl  OR SERVICES;  LOSS OF USE,  DATA,  OR PROFITS;  OR BUSINESS INTERRUPTION)
-dnl  HOWEVER CAUSED AND  ON ANY  THEORY  OF  LIABILITY,  WHETHER IN  CONTRACT,
-dnl  STRICT LIABILITY, OR TORT  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-dnl  ANY  WAY  OUT OF  THE  USE OF  THIS  SOFTWARE,  EVEN  IF  ADVISED  OF THE
-dnl  POSSIBILITY OF SUCH DAMAGE.
+dnl THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES
+dnl INCLUDING, BUT NOT LIMITED TO,  THE IMPLIED WARRANTIES OF MERCHANTABILITY
+dnl AND FITNESS FOR  A PARTICULAR PURPOSE  ARE DISCLAIMED.  IN NO EVENT SHALL
+dnl THE APACHE  SOFTWARE  FOUNDATION OR  ITS CONTRIBUTORS  BE LIABLE  FOR ANY
+dnl DIRECT,  INDIRECT,   INCIDENTAL,  SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL
+dnl DAMAGES (INCLUDING,  BUT NOT LIMITED TO,  PROCUREMENT OF SUBSTITUTE GOODS
+dnl OR SERVICES;  LOSS OF USE,  DATA,  OR PROFITS;  OR BUSINESS INTERRUPTION)
+dnl HOWEVER CAUSED AND  ON ANY  THEORY  OF  LIABILITY,  WHETHER IN  CONTRACT,
+dnl STRICT LIABILITY, OR TORT  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+dnl ANY  WAY  OUT OF  THE  USE OF  THIS  SOFTWARE,  EVEN  IF  ADVISED  OF THE
+dnl POSSIBILITY OF SUCH DAMAGE.
 dnl
-dnl  =========================================================================
+dnl =========================================================================
 dnl
-dnl  This software  consists of voluntary  contributions made  by many indivi-
-dnl  duals on behalf of the  Apache Software Foundation.  For more information
-dnl  on the Apache Software Foundation, please see <http://www.apache.org/>.
+dnl This software  consists of voluntary  contributions made  by many indivi-
+dnl duals on behalf of the  Apache Software Foundation.  For more information
+dnl on the Apache Software Foundation, please see <http://www.apache.org/>.
 dnl
-dnl  =========================================================================
+dnl =========================================================================
 
 dnl --------------------------------------------------------------------------
 dnl Author Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
@@ -62,58 +62,9 @@ dnl Version $Id$
 dnl --------------------------------------------------------------------------
 
 dnl --------------------------------------------------------------------------
-dnl Define the local functions we're going to use
-dnl --------------------------------------------------------------------------
-AC_DEFUN(LOCAL_INIT,[
-  AC_PATH_PROG(test,test,${PATH})
-  AC_PATH_PROG(true,true,${PATH})
-  AC_PATH_PROG(echo,echo,${PATH})
-  AC_PATH_PROG(grep,grep,${PATH})
-  AC_PATH_PROG(cat,cat,${PATH})
-  AC_PATH_PROG(sed,sed,${PATH})
-  AC_PATH_PROG(rm,rm,${PATH})
-])
-
-AC_DEFUN(LOCAL_HEADER,[
-  ${echo} ""
-  ${echo} "$1" 1>&2
-])
-
-AC_DEFUN(LOCAL_FILTEREXEC,[
-  ${echo} "  Invoking: $1"
-  ${echo} "-1" > retvalue.tmp
-  {
-    $1
-    echo retvalue $?
-  }|{
-    ret=0
-    while ${true}
-    do
-      read first line
-      if ${test} ! "$?" -eq "0"
-      then
-        break
-      else
-        if ${test} "${first}" = "retvalue"
-        then
-          ret="${line}"
-        else
-          ${echo} "    $2: ${first} ${line}"
-        fi
-      fi
-    done
-    unset first
-    unset line
-    echo "${ret}" > retvalue.tmp
-  }
-  ret=`cat retvalue.tmp`
-  ${rm} retvalue.tmp
-  ${echo} "  Execution of $1 returned $ret"
-])
-
-dnl --------------------------------------------------------------------------
 dnl Initialize
 dnl --------------------------------------------------------------------------
+sinclude(./support/aplocal.m4)
 sinclude(./support/apjava.m4)
 AC_INIT(Makefile.in)
 LOCAL_INIT()
@@ -140,20 +91,25 @@ AC_ARG_ENABLE(debug,
   [  --enable-debug          Build with full debugging output.],
   [
     AC_MSG_RESULT([enabled])
-    CFLAGS="$CFLAGS -DDEBUG"
+    CFLAGS="${CFLAGS} -DDEBUG"
+    LTFLAGS=""
+    CFLAGS="-Wall ${CFLAGS}"
     DEBUG="true"
   ],[
     AC_MSG_RESULT([disabled])
+    LTFLAGS="--silent"
     DEBUG="false"
   ]
 )
+AC_SUBST(LTFLAGS)
 AC_SUBST(DEBUG)
+AC_SUBST(CFLAGS)
 
 dnl -------------------------------------------------------------------------
 dnl Check JAVA environment
 dnl -------------------------------------------------------------------------
 AP_JAVA()
-if test "${JAVA_ENABLE}" = "true"
+if ${TEST} "${JAVA_ENABLE}" = "true"
 then
   AP_PROG_JAVAC()
   AP_PROG_JAR()
@@ -161,27 +117,62 @@ then
 fi
 
 dnl --------------------------------------------------------------------------
+dnl Process the --with-tomcat=... command line argument
+dnl --------------------------------------------------------------------------
+AC_MSG_CHECKING([Tomcat 4.0 directory])
+AC_ARG_WITH(tomcat,
+  [  --with-tomcat=DIR          path of a Tomcat 4.0 distribution.],
+  TOMCATDIR="${withval}",
+  TOMCATDIR="/usr/local/tomcat"
+)
+
+if ${TEST} "${JAVA_ENABLE}" = "true"
+then
+  if ${TEST} ! -d "${TOMCATDIR}" ; then
+    AC_MSG_ERROR([Cannot find Tomcat directory \"${TOMCATDIR}\"])
+  fi
+
+  if ${TEST} ! -f "${TOMCATDIR}/common/lib/servlet.jar" ; then
+    AC_MSG_ERROR([Cannot find Servlet 2.3 jar in \"${TOMCATDIR}\"])
+  fi
+
+  if ${TEST} ! -f "${TOMCATDIR}/server/lib/catalina.jar" ; then
+    AC_MSG_ERROR([Cannot find Catalina jar in \"${TOMCATDIR}\"])
+  fi
+
+  curdir=`pwd`
+  cd ${TOMCATDIR}
+  TOMCATDIR=`pwd`
+  AC_MSG_RESULT([${TOMCATDIR}])
+  cd ${curdir}
+else
+  TOMCATDIR=""
+  AC_MSG_RESULT([not required])
+fi
+AC_SUBST(TOMCATDIR)
+
+dnl --------------------------------------------------------------------------
 dnl Process the --with-apxs[=FILE] command line argument
 dnl --------------------------------------------------------------------------
 AC_ARG_WITH(apxs,
   [  --with-apxs[=FILE]      build a shared Apache 1.3.x module.],
   [
-    if ${test} -n "${TARGET}"
+    if ${TEST} -n "${TARGET}"
     then
       AC_MSG_ERROR([target already defined as ${TARGET}])
     fi
 
     APXS="${withval}"
 
-    if ${test} -z "${APXS}" ; then APXS="yes" ; fi
-    if ${test} "${APXS}" = "yes"
+    if ${TEST} -z "${APXS}" ; then APXS="yes" ; fi
+    if ${TEST} "${APXS}" = "yes"
     then
       AC_PATH_PROG(APXS,apxs,${PATH})
     fi
 
     AC_MSG_CHECKING([if apxs is working])
     ${APXS} -q CC 2>&1 1>/dev/null
-    if ${test} ! "$?" -eq "0"
+    if ${TEST} ! "$?" -eq "0"
     then
       AC_MSG_RESULT([no])
       AC_MSG_ERROR([apxs is unworkable])
@@ -216,7 +207,7 @@ AC_ARG_WITH(apxs,
     AC_SUBST(APXS_PREFIX)
 
     TARGET="${SRCDIR}/apache-1.3"
-    makefile="./apache-1.3/Makefile"
+    makefile="apache-1.3/Makefile"
     AC_MSG_RESULT([setting target module to... ${TARGET}])
   ]
 )
@@ -229,14 +220,14 @@ AC_MSG_CHECKING([APR directory])
 AC_ARG_WITH(apr,
   [  --with-apr=DIR          where the APR sources can be found.],
   APRDIR="${withval}",
-  APRDIR="${srcdir}/apr"
+  APRDIR="${SRCDIR}/apr"
 )
 
-if ${test} ! -d "${APRDIR}" ; then
+if ${TEST} ! -d "${APRDIR}" ; then
   AC_MSG_ERROR([Cannot find APR sources directory \"${APRDIR}\"])
 fi
 
-if ${test} ! -x "${APRDIR}/buildconf" ; then
+if ${TEST} ! -x "${APRDIR}/buildconf" ; then
   AC_MSG_ERROR([Cannot find APR buildconf program in \"${APRDIR}\"])
 fi
 
@@ -254,33 +245,37 @@ curdir=`pwd`
 cd ${APRDIR}
 
 LOCAL_HEADER([Building APR configure script])
-LOCAL_FILTEREXEC([./buildconf],[APR buildconf])
-if ${test} "${ret}" -ne "0"
+dnl LOCAL_FILTEREXEC([./buildconf],[APR buildconf])
+if ${TEST} "${ret}" -ne "0"
 then
   AC_MSG_ERROR([APR buildconf terminated with error code ${ret}])
 fi
 
 LOCAL_HEADER([Configuring APR])
-LOCAL_FILTEREXEC([./configure --enable-static --disable-shared --disable-threads],
-                 [APR configure])
-if ${test} "${ret}" -ne "0"
+dnl LOCAL_FILTEREXEC(
+dnl   [./configure --enable-static --disable-shared --disable-threads],
+dnl   [APR configure]
+dnl )
+if ${TEST} "${ret}" -ne "0"
 then
   AC_MSG_ERROR([APR configure script terminated with error code ${ret}])
 fi
-
-LOCAL_HEADER([Done with APR configuration])
 cd ${curdir}
 
 dnl --------------------------------------------------------------------------
 dnl Retrieving APR default values
 dnl --------------------------------------------------------------------------
-if ${test} ! -f ${APRDIR}/APRVARS
+AC_MSG_CHECKING([APR configuration])
+
+if ${TEST} ! -f ${APRDIR}/APRVARS
 then
+  AC_MSG_RESULT([error])
   AC_MSG_ERROR([Cannot find APR defaults in ${APRDIR}/APRVARS])
 fi
 
-if ${test} ! -x ${APRDIR}/libtool
+if ${TEST} ! -x ${APRDIR}/libtool
 then
+  AC_MSG_RESULT([error])
   AC_MSG_ERROR([Cannot find APR libtool binary])
 else
   LIBTOOL="${APRDIR}/libtool"
@@ -297,13 +292,11 @@ AC_SUBST(EXTRA_LDFLAGS)
 AC_SUBST(EXTRA_LIBS)
 AC_SUBST(EXTRA_INCLUDES)
 AC_SUBST(LIBTOOL_LIBS)
+AC_MSG_RESULT([ok])
 
 dnl --------------------------------------------------------------------------
 dnl Defining variables used by Make
 dnl --------------------------------------------------------------------------
-CFLAGS="-Wall ${CFLAGS}"
-AC_SUBST(CFLAGS)
-
 CPPFLAGS="-I${SRCDIR}/include -I${APRDIR}/include ${CPPFLAGS}"
 AC_SUBST(CPPFLAGS)
 
@@ -313,16 +306,15 @@ AC_SUBST(TGTDIRS)
 dnl --------------------------------------------------------------------------
 dnl Output files
 dnl --------------------------------------------------------------------------
-CONFIGFILES="./Makedefs ./Makefile ./lib/Makefile ./java/Makefile"
-CONFIGFILES="$CONFIGFILES ./java/Constants.java ${makefile}"
+CONFIGFILES=""
+CONFIGFILES="${CONFIGFILES} Makedefs"
+CONFIGFILES="${CONFIGFILES} Makefile"
+CONFIGFILES="${CONFIGFILES} lib/Makefile"
+CONFIGFILES="${CONFIGFILES} java/Makefile"
+CONFIGFILES="${CONFIGFILES} java/Constants.java"
+CONFIGFILES="${CONFIGFILES} ${makefile}"
 AC_SUBST(CONFIGFILES)
 
-AC_MSG_RESULT([creating ./lib/pr_warp_defs.h])
-${cat} ./java/Constants.java.in | \
-  ${grep} "TYPE_" | \
-  ${sed} s/public\ static\ final\ int/\#define/g | \
-  ${sed} s/\=/\ /g | \
-  ${sed} s/\;/\ /g > ./lib/pr_warp_defs.h
-
 AC_OUTPUT(${CONFIGFILES})
+LOCAL_HEADER([All done. Now you can issue \"make\". Good luck.])
 
