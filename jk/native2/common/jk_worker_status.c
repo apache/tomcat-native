@@ -73,6 +73,51 @@
 #include "jk_env.h"
 #include "jk_requtil.h"
 #include "jk_registry.h"
+#include "jk_endpoint.h"
+
+static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service_t *s,
+                                                    jk_workerEnv_t *wenv)
+{
+    jk_map_t *map=wenv->initData;
+    int i;
+    int j;
+    int needHeader=JK_TRUE;
+    
+    if( wenv->shm==NULL || wenv->shm->head==NULL)
+        return;
+
+    s->jkprintf(env, s, "<h2>Scoreboard info</h2>\n");
+
+    s->jkprintf(env, s, "<table border>\n");
+
+    s->jkprintf(env, s, "<tr><td>Version</td><td>%d</td></tr>\n", wenv->shm->head->lbVer );
+    s->jkprintf(env, s, "<tr><td>Slots</td><td>%d</td></tr>\n", wenv->shm->head->lastSlot );
+
+    for( i=1; i < wenv->shm->head->lastSlot; i++ ) {
+        jk_shm_slot_t *slot= wenv->shm->getSlot( env, wenv->shm, i );
+
+        if( slot==NULL ) continue;
+        
+        if( strncmp( slot->name, "epStat", 6 ) == 0 ) {
+            /* This is an endpoint slot */
+            void *data=slot->data;
+
+            s->jkprintf(env, s, "<tr><th colspan='2'>%s</th></tr>\n", slot->name );
+            s->jkprintf(env, s, "<tr><td>StructCnt</td><td>%d</td>\n", slot->structCnt );
+            s->jkprintf(env, s, "<tr><td>StructSize</td><td>%d</td>\n", slot->structSize );
+            s->jkprintf(env, s, "<tr><th>Requests</th><th>Errors</th>\n" );
+            
+            /* XXX Add info about number of slots */
+            for( j=0; j<slot->structCnt ; j++ ) {
+                jk_stat_t *stat=(jk_stat_t *) ( data + j * sizeof( jk_stat_t ));
+
+                s->jkprintf(env, s, "<tr><td>%d</td><td>%d</td></tr>\n", stat->reqCnt, stat->errCnt );
+            }
+
+        }
+    }
+    s->jkprintf(env, s, "</table>\n");
+}
 
 /** Use 'introspection' data to find what getters an type support,
  *  and display the information in a table
@@ -236,11 +281,13 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
             shm->head->lbVer++;
     }
     
+    s->jkprintf(env, s, "Status information for child %d", s->workerEnv->childId  );
     
     /* Body */
     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "ajp13" );
     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "endpoint" );
     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "uri" );
+    jk2_worker_status_displayScoreboardInfo(env, s, s->workerEnv );
     jk2_worker_status_displayConfigProperties(env, s, s->workerEnv );
     jk2_worker_status_displayActiveProperties(env, s, s->workerEnv );
     
