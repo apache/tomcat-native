@@ -99,7 +99,11 @@ static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, void *target,
     int i;
     jk_pool_t * pool = s->pool;
     int headerCount;
+    int debug=1;
 
+    if( s->uriEnv != NULL )
+        debug=s->uriEnv->debug;
+    
     s->status = msg->getInt(env, msg);
     s->msg = (char *)msg->getString(env, msg);
     if (s->msg) {
@@ -147,9 +151,10 @@ static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, void *target,
         
         jk_xlate_from_ascii(valueS, strlen(valueS));
         
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "handler.response() Header[%d] [%s] = [%s]\n", 
-                      i, nameS, valueS);
+        if(debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "handler.response() Header[%d] [%s] = [%s]\n", 
+                          i, nameS, valueS);
 
         /* Do we want this ? Preserve the headers, maybe someone will
          need them. Alternative is to use a different buffer every time,
@@ -161,10 +166,12 @@ static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, void *target,
         
         s->headers_out->add( env, s->headers_out, nameS, valueS );
     }
+
     
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "handler.response(): status=%d headers=%d\n",
-                  s->status, headerCount);
+    if(debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "handler.response(): status=%d headers=%d\n",
+                      s->status, headerCount);
 
     err=s->head(env, s);
     if( err!=JK_OK ) {

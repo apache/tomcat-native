@@ -247,6 +247,8 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
     result->type= workerPool->pstrdup( env, workerPool, type);
     result->name= workerPool->pstrdup( env, workerPool, name);
     result->localName=workerPool->pstrdup( env, workerPool, localName);
+    result->debug=0;
+    result->disabled=JK_FALSE;
     result->settings=NULL;
     result->getAttributeInfo=NULL;
     result->setAttributeInfo=NULL;
