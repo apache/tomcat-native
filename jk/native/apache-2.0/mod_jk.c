@@ -2271,8 +2271,12 @@ static int jk_translate(request_rec *r)
                 apr_table_setn(r->notes, JK_WORKER_ID, worker);
         
                 /* This could be a sub-request, possibly from mod_dir */
-                if(r->main)
+                /* Also set the HANDLER and uri for subrequest */ 
+                if(r->main) {
+                    r->main->handler=apr_pstrdup(r->pool,JK_HANDLER);
+                    r->main->uri=apr_pstrdup(r->pool,r->uri);
                     apr_table_setn(r->main->notes, JK_WORKER_ID, worker);
+                }
 
                 return OK;
             } else if(conf->alias_dir != NULL) {
