@@ -433,7 +433,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     JK_ENTER_CS(&(p->cs), r);
     if (!r) {
        jk_log(l, JK_LOG_ERROR,
-              "getting thread lock errno=%d",
+              "locking thread with errno=%d",
               errno);
         JK_TRACE_EXIT(l);
         return NULL;
@@ -766,6 +766,9 @@ static int JK_METHOD init(jk_worker_t *pThis,
 
     JK_INIT_CS(&(p->cs), i);
     if (i == JK_FALSE) {
+        jk_log(log, JK_LOG_ERROR,
+               "creating thread lock errno=%d",
+               errno);
         JK_TRACE_EXIT(log);
         return JK_FALSE;
     }
