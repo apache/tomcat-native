@@ -107,14 +107,14 @@ public final class ActionCode {
     public static final ActionCode ACTION_POST_REQUEST = new ActionCode(10);
 
     /**
-     * Callback for lazy evaluation - extract the remote host name.
+     * Callback for lazy evaluation - extract the remote host address.
      */
     public static final ActionCode ACTION_REQ_HOST_ATTRIBUTE = 
         new ActionCode(11);
 
 
     /**
-     * Callback for lazy evaluation - extract the SSL-related attributes.
+     * Callback for lazy evaluation - extract the remote host infos (address, name, port) and local address.
      */
     public static final ActionCode ACTION_REQ_HOST_ADDR_ATTRIBUTE = new ActionCode(12);
 
