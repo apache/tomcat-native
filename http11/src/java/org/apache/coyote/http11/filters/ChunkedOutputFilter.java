@@ -51,9 +51,9 @@ public class ChunkedOutputFilter implements OutputFilter {
 
     static {
         ENCODING.setBytes(ENCODING_NAME.getBytes(), 0, ENCODING_NAME.length());
-        String endChunkValue = "0\r\n\r\n";
-        END_CHUNK.setBytes(endChunkValue.getBytes(), 
-                           0, endChunkValue.length());
+        byte[] END_CHUNK_BYTES = {(byte) '0', (byte) '\r', (byte) '\n', 
+                                  (byte) '\r', (byte) '\n'};
+        END_CHUNK.setBytes(END_CHUNK_BYTES, 0, END_CHUNK_BYTES.length);
     }
 
 
