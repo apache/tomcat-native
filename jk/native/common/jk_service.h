@@ -54,7 +54,7 @@ struct jk_worker_env
     jk_uri_worker_map_t *uri_to_worker;
 
     int num_of_workers;
-    char *first_worker;
+    char **worker_list;
 
     /* Web-Server we're running on (Apache/IIS/NES) */
     char *server_name;
@@ -215,6 +215,11 @@ struct jk_ws_service
     /* Number of retries. Defaults to JK_RETRIES
      */
     int retries;
+    
+    /* Uri worker map. Added for virtual host support
+     */
+    jk_uri_worker_map_t *uw_map;
+
     /*
      * Send the response headers to the browser.
      */
