@@ -56,7 +56,7 @@
  * [Additional notices, if required by prior licensing conditions]
  *
  */ 
-package org.apache.jk.common;
+package org.apache.jk.util;
 
 import org.apache.tomcat.util.buf.*;
 
