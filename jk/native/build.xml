@@ -54,10 +54,12 @@
 	<include name="common/jk_map.c" />
 	<include name="common/jk_util.c" />
 	<include name="common/jk_pool.c" />
+	<include name="common/jk_logger.c" />
         <include name="common/jk_nwmain.c" if="netware" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
+	<include name="${native.dir}/jni" />
 	<include name="${java.home}/../include" />
 	<include name="${build.compiler.base}/include" />
         
@@ -87,7 +89,7 @@
       <import fileName="${novellndk.dir}/imports/nlmlib.imp" if="netware" />
       <import fileName="${novellndk.dir}/imports/threads.imp" if="netware" />
       <import fileName="${novellndk.dir}/imports/socklib.imp" if="netware" />
-      <export fileName="jk_jnicb.exp" if="netware" />
+      <export fileName="${native.dir}/jni/jk_jnicb.exp" if="netware" />
       <linkOpt value="-desc &quot;JNI Natives for Tomcat&quot;" if="netware" />
       <linkOpt value="-screenname &quot;System Console&quot;" if="netware" />
       <linkOpt value="-nlmversion 1,20,2" if="netware" />
@@ -267,8 +269,9 @@
   </target>
 
   <target name="netscape" depends="init">
+    <mkdir dir="netscape/obj" />
     <so sofile="nsapi_redirector" 
-	buildDir="netscape"
+	buildDir="netscape/obj"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}">
@@ -318,7 +321,8 @@
       <def name="_USRDLL" if="win32" />
       <def name="XP_WIN32" if="win32" />
       <def name="NSAPI_EXPORTS" if="win32" />
-      <def name="XP_UNIX" unless="win32"
+      
+      <def name="XP_UNIX" if="unix"
 	   info="Unix platform - needed for nsapi.h" />
       
       <nlmmodule value="nshttpd" if="netware" />
@@ -356,9 +360,11 @@
 	<include name="**/*.lo"/>
 	<include name="**/*.la"/>
 	<include name="**/.libs"/>
+	<include name="**/*.lib"/>
 	<include name="**/*.nlm"/>
 	<include name="**/*.map"/>
 	<include name="**/*.sym"/>
+	<include name="**/*.NCV"/>
 	<include name="**/*.obj"/>
 	<include name="**/*.dll"/>
       </fileset>
