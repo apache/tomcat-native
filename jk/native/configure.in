@@ -222,7 +222,9 @@ AC_SUBST(APXSCFLAGS)
 AC_SUBST(APXSLDFLAGS)
 
 if ${TEST} -n "${JK_JNI_WORKER}" ; then
-                        
+                       
+WEBSERVER="jni ${WEBSERVER}"
+ 
 dnl Find the JDK
 dnl Results go in JAVA_HOME
 dnl Also sets JAVA_PLATFORM to 1 for 1.1 and to 2 for 1.2
@@ -411,6 +413,7 @@ AC_SUBST(WEBSERVER)
 AM_CONDITIONAL(MAKE_DYNAMIC_APACHE, ${TEST} "${apache_dir_is_src}" = "false")
 
 if ${TEST} "${apache_dir_is_src}" = "false" ; then
+dnl ???? 
 	APACHE20_OEXT=.c
 	LIB_JK_TYPE=mod_jk.so
 	INSTALL_TYPE=install_dynamic
@@ -433,4 +436,5 @@ AC_OUTPUT([
 	apache-2.0/Makefile.apxs
 	common/Makefile
 	common/list.mk
+	jni/Makefile
 	])
