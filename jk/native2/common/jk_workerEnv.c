@@ -341,6 +341,15 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
         wEnv->shm->init( env, wEnv->shm );
     }
     
+    if( wEnv->shm != NULL && wEnv->childId >= 0 ) {
+        char shmName[128];
+        snprintf( shmName, 128, "epStat.%d", wEnv->childId );
+        
+        wEnv->epStat=wEnv->shm->createSlot( env, wEnv->shm, shmName, 8096 );
+        wEnv->epStat->structCnt=0;
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create slot %s\n",  shmName );
+    }
+    
     wEnv->uriMap->init(env, wEnv->uriMap );
 
     env->l->jkLog(env, env->l, JK_LOG_INFO, "workerEnv.init() ok %s\n", configFile );
@@ -701,7 +710,8 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     wEnv->config->map = wEnv->initData;
 
     wEnv->childId=-1;
-    
+
+    wEnv->epStat=NULL;
     jkb=env->createBean2(env, wEnv->pool,"shm", "");
     if( jkb==NULL ) {
         wEnv->shm=NULL;
