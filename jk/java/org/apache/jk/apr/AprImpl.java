@@ -80,7 +80,7 @@ public class AprImpl {
      *  Of course, this can change to System.load() and putting the
      *  libs in LD_LIBRARY_PATH.
      */
-    public void loadNative() {
+    public void loadNative() throws Throwable {
         if( aprHome==null )
             aprHome=baseDir;
         if( aprHome==null ) {
@@ -90,7 +90,7 @@ public class AprImpl {
                 System.loadLibrary( "jkjni" );
             } catch( Throwable ex ) {
                 ok=false;
-                ex.printStackTrace();
+                throw ex;
             }
         } else {
             File dir=new File(aprHome);

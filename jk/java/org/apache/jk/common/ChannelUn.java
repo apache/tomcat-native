@@ -137,10 +137,14 @@ public class ChannelUn extends Channel {
         if( aprHome != null ) {
             apr.setBaseDir( aprHome );
         }
-
-        apr.loadNative();
+        try {
+            apr.loadNative();
             
-        apr.initialize();
+            apr.initialize();
+        } catch( Throwable t ) {
+            log.error("Native code not initialized, disabling UnixSocket and JNI channels: " + t.toString());
+            return;
+        }
         
         if( log.isDebugEnabled() ) log.debug( "Creating pool " + gPool );
         gPool=apr.poolCreate( 0 );
