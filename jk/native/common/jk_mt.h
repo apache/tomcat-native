@@ -63,9 +63,6 @@ typedef CRITICAL_SECTION JK_CRIT_SEC;
 #include <pthread.h>
 #include <unistd.h>
 #include <fcntl.h>
-#if HAVE_SYS_FILE_H
-#include <sys/file.h>
-#endif
 
 typedef pthread_mutex_t JK_CRIT_SEC;
 
@@ -84,6 +81,7 @@ typedef pthread_mutex_t JK_CRIT_SEC;
 int jk_gettid();
 
 #if HAVE_FLOCK
+#include <sys/file.h>
 
 #define JK_ENTER_LOCK(x, rc)        \
     do {                            \
