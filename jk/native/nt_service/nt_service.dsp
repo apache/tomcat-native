@@ -127,6 +127,14 @@ SOURCE=..\common\jk_md5.c
 # End Source File
 # End Group
 
+SOURCE=..\common\jk_context.c
+# End Source File
+# End Group
+
+SOURCE=..\common\jk_ajp_common.c
+# End Source File
+# End Group
+
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
@@ -173,6 +181,14 @@ SOURCE=..\common\jk_ajp14_worker.h
 # End Group
 
 SOURCE=..\common\jk_md5.h
+# End Source File
+# End Group
+
+SOURCE=..\common\jk_context.h
+# End Source File
+# End Group
+
+SOURCE=..\common\jk_ajp_common.h
 # End Source File
 # End Group
 
