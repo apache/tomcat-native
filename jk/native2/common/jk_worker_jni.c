@@ -169,6 +169,7 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
     jint rc = 0;
     char *str_config = NULL;
     jk_map_t *props=_this->workerEnv->initData;
+    jk_bean_t *chB;
     
     if(! _this || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
@@ -291,20 +292,21 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
                                         stdout_name,
                                         stderr_name);
     
-    jniWorker->vm->detach(env, jniWorker->vm); 
+    jniWorker->vm->detach(env, jniWorker->vm);
+    
 
     _this->workerEnv->vm= jniWorker->vm;
 
     /* We can have a single jni channel per instance, the name is
        hardcoded */
-    _this->channel=env->createInstance(env, _this->pool,"channel.jni",
-                                       "channel.jni");
+    chB=env->createBean2(env, _this->pool,"channel.jni", "");
     
-    if( _this->channel == NULL ) {
+    if( chB == NULL || chB->object==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Error creating jni channel\n");
         return JK_FALSE;
     }
+    _this->channel=chB->object;
     if(rc) {
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "jni.init() Tomcat initialized OK, done\n");
@@ -363,7 +365,8 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
 {
     jk_worker_t *_this;
     jni_worker_data_t *jniData;
-
+    jk_bean_t *jkb;
+    
     if(name==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG, 
                       "jni.factory() NullPointerException name==null\n");
@@ -388,7 +391,9 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     _this->pool=pool;
 
     /* XXX split it in VM11 and VM12 util */
-    jniData->vm=env->createInstance( env, pool, "vm", "vm" );
+    jkb=env->createBean2( env, pool, "vm", "" );
+    if( jkb==NULL ) return JK_FALSE;
+    jniData->vm=jkb->object;
     
     jniData->jk_java_bridge_class  = NULL;
     jniData->jk_startup_method     = NULL;

@@ -480,6 +480,7 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
 {
     jk_endpoint_t *e = NULL;
     jk_pool_t *endpointPool;
+    jk_bean_t *jkb;
     
     if( ajp14->secret ==NULL ) {
     }
@@ -496,9 +497,10 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
         }
     }
 
-    e = (jk_endpoint_t *)env->createInstance( env,ajp14->pool,  "endpoint", NULL );
-    if( e==NULL )
+    jkb=env->createBean2( env,ajp14->pool,  "endpoint", NULL );
+    if( jkb==NULL )
         return JK_FALSE;
+    e = (jk_endpoint_t *)jkb->object;
     e->worker = ajp14;
 
     *eP = e;
@@ -581,7 +583,9 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
         }
     }
 
-    ajp14->channel= env->getByName( env, ajp14->channelName );
+    if( ajp14->channel == NULL ) {
+        ajp14->channel= env->getByName( env, ajp14->channelName );
+    }
     
     if( ajp14->channel == NULL ) {
         jk_bean_t * chB=env->createBean( env, ajp14->workerEnv->pool, ajp14->channelName);
@@ -677,6 +681,6 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
 
     w->workerEnv=env->getByName( env, "workerEnv" );
     w->workerEnv->addWorker( env, w->workerEnv, w );
-    
+
     return JK_TRUE;
 }
