@@ -68,9 +68,11 @@ import org.apache.jk.core.*;
 import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.net.SSLSupport;
+import org.apache.tomcat.util.threads.ThreadWithAttributes;
 
 import org.apache.coyote.Request;
 import org.apache.coyote.*;
+import org.apache.commons.modeler.Registry;
 
 /**
  * Handle messages related with basic request information.
@@ -328,6 +330,8 @@ public class HandlerRequest extends JkHandler
         throws IOException
     {
         int type=msg.getByte();
+        ThreadWithAttributes twa=(ThreadWithAttributes)Thread.currentThread();
+        Object control=ep.getControl();
 
         MessageBytes tmpMB=(MessageBytes)ep.getNote( tmpBufNote );
         if( tmpMB==null ) {
@@ -339,8 +343,12 @@ public class HandlerRequest extends JkHandler
         
         switch( type ) {
         case JK_AJP13_FORWARD_REQUEST:
-            try { 
+            try {
+                twa.setCurrentStage(control, "JkDecode");
                 decodeRequest( msg, ep, tmpMB );
+                twa.setCurrentStage(control, "JkService");
+                twa.setParam(control,
+                        ((Request)ep.getRequest()).unparsedURI().toString());
             } catch( Exception ex ) {
                 log.error( "Error decoding request ", ex );
                 msg.dump( "Incomming message");
@@ -356,8 +364,10 @@ public class HandlerRequest extends JkHandler
             if(log.isDebugEnabled() )
                 log.debug("Calling next " + next.getName() + " " +
                   next.getClass().getName());
-            
+
             int err= next.invoke( msg, ep );
+            twa.setCurrentStage(control, "JkDone");
+
             if( log.isDebugEnabled() )
                 log.debug( "Invoke returned " + err );
             return err;
@@ -400,6 +410,8 @@ public class HandlerRequest extends JkHandler
         return OK;
     }
 
+    static int count=0;
+
     private int decodeRequest( Msg msg, MsgContext ep, MessageBytes tmpMB )
         throws IOException
     {
@@ -410,6 +422,15 @@ public class HandlerRequest extends JkHandler
             Response res=new Response();
             req.setResponse(res);
             ep.setRequest( req );
+            RequestProcessor rp=new RequestProcessor(req);
+            if( this.getDomain() != null ) {
+                try {
+                    Registry.getRegistry().registerComponent( rp,
+                            getDomain(), "RequestProcessor", "name=Request" + count++ );
+                } catch( Exception ex ) {
+                    log.warn("Error registering request");
+                }
+            }
         }
 
         JkInputStream jkBody=(JkInputStream)ep.getNote( bodyNote );

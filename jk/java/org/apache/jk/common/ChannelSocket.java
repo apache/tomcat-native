@@ -70,6 +70,8 @@ import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.threads.*;
 
 import org.apache.jk.core.*;
+import org.apache.jk.server.JkMain;
+import org.apache.commons.modeler.Registry;
 
 
 /* XXX Make the 'message type' pluggable
@@ -95,6 +97,10 @@ import org.apache.jk.core.*;
  * @author Costin Manolache
  * @jmx:mbean name="jk2:service=ChannelSocket"
  *            description="Accept socket connections"
+ * @jmx:notification name="org.apache.coyote.INVOKE
+ * @jmx:notification-handler name="org.apache.jk.JK_SEND_PACKET
+ * @jmx:notification-handler name="org.apache.jk.JK_RECEIVE_PACKET
+ * @jmx:notification-handler name="org.apache.jk.JK_FLUSH
  */
 public class ChannelSocket extends JkHandler {
     private static org.apache.commons.logging.Log log=
@@ -118,7 +124,7 @@ public class ChannelSocket extends JkHandler {
     */
     static final boolean BUFFER_WRITE=false;
     
-    ThreadPool tp=new ThreadPool();
+    ThreadPool tp=ThreadPool.createThreadPool(true);
 
     /* ==================== Tcp socket options ==================== */
 
@@ -126,6 +132,7 @@ public class ChannelSocket extends JkHandler {
      * @jmx:managed-constructor description="default constructor"
      */
     public ChannelSocket() {
+        // This should be integrated with the  domain setup
     }
     
     public ThreadPool getThreadPool() {
@@ -286,6 +293,7 @@ public class ChannelSocket extends JkHandler {
             os = s.getOutputStream();
         ep.setNote( isNote, is );
         ep.setNote( osNote, os );
+        ep.setControl( tp );
     }
 
     public void resetCounters() {
@@ -309,9 +317,9 @@ public class ChannelSocket extends JkHandler {
             port = 0;
             log.info("JK2: ajp13 disabling channelSocket");
             running = true;
-            return;                    
+            return;
         }
-        if (maxPort < startPort) 
+        if (maxPort < startPort)
             maxPort = startPort;
         if (getAddress() == null)
             setAddress("0.0.0.0");
@@ -325,13 +333,13 @@ public class ChannelSocket extends JkHandler {
                 continue;
             }
         }
-        
+
         if( sSocket==null ) {
             log.error("Can't find free port " + startPort + " " + maxPort );
             return;
         }
         log.info("JK2: ajp13 listening on " + getAddress() + ":" + port );
-                
+
         // If this is not the base port and we are the 'main' channleSocket and
         // SHM didn't already set the localId - we'll set the instance id
         if( "channelSocket".equals( name ) &&
@@ -343,7 +351,7 @@ public class ChannelSocket extends JkHandler {
             sSocket.setSoTimeout( serverTimeout );
 
         if( next==null ) {
-            if( nextName!=null ) 
+            if( nextName!=null )
                 setNext( wEnv.getHandler( nextName ) );
             if( next==null )
                 next=wEnv.getHandler( "dispatch" );
@@ -354,6 +362,16 @@ public class ChannelSocket extends JkHandler {
         running = true;
 
         // Run a thread that will accept connections.
+        // XXX Try to find a thread first - not sure how...
+        if( this.domain != null ) {
+            try {
+                Registry.getRegistry().registerComponent(tp, domain,"ThreadPool",
+                        "type=ThreadPool,worker=jk,name=" + getAddress() + "%" + port);
+            } catch (Exception e) {
+                log.error("Can't register threadpool" );
+            }
+        }
+
         tp.start();
         SocketAcceptor acceptAjp=new SocketAcceptor(  this );
         tp.runIt( acceptAjp);
