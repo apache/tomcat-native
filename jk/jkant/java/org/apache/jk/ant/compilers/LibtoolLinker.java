@@ -110,6 +110,15 @@ public class LibtoolLinker extends LinkerAdapter {
 	// All .o files must be included
 	project.log( "Linking " + buildDir + "/" + soFile + ".so");
 
+        if( libs!=null ) {
+            String libsA[]=libs.list(); 
+            for( int i=0; i< libsA.length; i++ ) {
+                cmd.createArgument().setValue( "-l" + libsA[i] );
+                //XXX debug
+                project.log("XXX -l" + libsA[i] );
+            }
+        }
+	
 	for( int i=0; i<srcList.size(); i++ ) {
 	    Source sourceObj=(Source)srcList.elementAt(i);
 	    

@@ -250,6 +250,16 @@ public abstract class CompilerAdapter extends SoTask {
     protected void displayError( int result, String source, Commandline cmd )
 	throws BuildException
     {
+        if( result == 0 ) {
+            String err=errorstream.toString();
+            if(err==null ) return;
+            if( err.indexOf( "warning" ) <= 0 )
+                return;
+            log("Warnings: ");
+            log( err );
+            return;
+        }
+        
 	log("Compile failed " + result + " " +  source );
 	log("Command:" + cmd.toString());
 	log("Output:" );
@@ -298,7 +308,6 @@ public abstract class CompilerAdapter extends SoTask {
 		if( val!=null )
 		    arg+= "=" + val;
 		cmd.createArgument().setValue( arg );
-		if( debug > 0 ) project.log(arg);
             }
         }
     }

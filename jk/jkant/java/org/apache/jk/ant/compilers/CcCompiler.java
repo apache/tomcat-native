@@ -103,7 +103,7 @@ public class CcCompiler extends CompilerAdapter {
 
 	addIncludes(cmd);
 	addExtraFlags( cmd );
-	addDefines(cmd);
+	addDebug(cmd);
 	addDefines( cmd );
 	addOptimize( cmd );
 	addProfile( cmd );
@@ -113,25 +113,34 @@ public class CcCompiler extends CompilerAdapter {
 	project.log( "Compiling " + source);
 
 	int result=execute( cmd );
-	if( result!=0 ) {
-	    displayError( result, source, cmd );
-	}
+        displayError( result, source, cmd );
 	closeStreamHandler();
     }
     protected void addDebug(Commandline cmd) {
 	if( optG ) {
 	    cmd.createArgument().setValue("-g" );
+        }
+
+        if( optWgcc ) {
 	    cmd.createArgument().setValue("-W");
-	    cmd.createArgument().setValue("-Wall");
-	    
-	    cmd.createArgument().setValue("-Wtraditional");
-	    cmd.createArgument().setValue("-Wredundant-decls");
+            
+            //cmd.createArgument().setValue("-Wall");
+            cmd.createArgument().setValue("-Wimplicit");
+            cmd.createArgument().setValue("-Wreturn-type");
+            cmd.createArgument().setValue("-Wcomment");
+            cmd.createArgument().setValue("-Wformat");
+            cmd.createArgument().setValue("-Wchar-subscripts");
+            cmd.createArgument().setValue("-O");
+            cmd.createArgument().setValue("-Wuninitialized");
+
+            // Non -Wall
+            // 	    cmd.createArgument().setValue("-Wtraditional");
+            // 	    cmd.createArgument().setValue("-Wredundant-decls");
 	    cmd.createArgument().setValue("-Wmissing-declarations");
 	    cmd.createArgument().setValue("-Wmissing-prototypes");
-	    cmd.createArgument().setValue("-Wconversions");
+            //	    cmd.createArgument().setValue("-Wconversions");
 	    cmd.createArgument().setValue("-Wcast-align");
-
-	    cmd.createArgument().setValue("-pedantic" );
+            // 	    cmd.createArgument().setValue("-pedantic" );
 	}
     }
     protected void addOptimize( Commandline cmd ) {

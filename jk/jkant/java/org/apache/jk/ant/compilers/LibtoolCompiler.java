@@ -79,6 +79,18 @@ public class LibtoolCompiler extends CcCompiler {
 	super();
     };
 
+    public void compile(Vector sourceFiles ) throws BuildException {
+        compileList=findCompileList(sourceFiles);
+        
+        log("Compiling " + compileList.size() + " out of " + sourceFiles.size());
+	Enumeration en=compileList.elements();
+	while( en.hasMoreElements() ) {
+	    Source source=(Source)en.nextElement();
+	    compileSingleFile(source);
+	}
+    }
+    
+
     /** Compile using libtool.
      */
     public void compileSingleFile(Source sourceObj) throws BuildException {
@@ -115,7 +127,7 @@ public class LibtoolCompiler extends CcCompiler {
 
 	addIncludes(cmd);
 	addExtraFlags( cmd );
-	addDefines(cmd);
+	addDebug(cmd);
 	addDefines( cmd );
 	addOptimize( cmd );
 	addProfile( cmd );
@@ -123,10 +135,9 @@ public class LibtoolCompiler extends CcCompiler {
 	project.log( "Compiling " + source);
 	cmd.createArgument().setValue( source );
 
+        if( debug > 0 ) project.log(cmd.toString());
 	int result=execute( cmd );
-	if( result!=0 ) {
-	    displayError( result, source, cmd );
-	}
+        displayError( result, source, cmd );
 	closeStreamHandler();
     }
 }

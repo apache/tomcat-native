@@ -115,6 +115,7 @@ public class SoTask extends Task {
     protected int debug;
 
     protected boolean optG=true;
+    protected boolean optWgcc=true;
     protected boolean optimize=false;
     protected boolean profile=false;
     protected Vector defines    = new Vector();
@@ -154,6 +155,7 @@ public class SoTask extends Task {
 	so.buildDir=buildDir;
 	so.debug=debug;
 	so.optG=optG;
+        so.optWgcc=optWgcc;
 	so.optimize=optimize;
 	so.profile=profile;
 	so.defines=defines;
@@ -190,6 +192,12 @@ public class SoTask extends Task {
      */
     public void setProfile(boolean b) {
 	profile=b;
+    }
+
+    /** Gcc warnings
+     */
+    public void setGccWarn(boolean b) {
+	optWgcc=b;
     }
 
     /** Debug the <so> task
