@@ -99,12 +99,20 @@ public final class Mapper {
      */
     protected boolean processWelcomeResources = true;
 
+
     /**
      * Flag indicating that we should redirect to a directory when the URL
      * doesn't end in a '/'.  It overrided the Authenticator, so the redirect 
      * done before authentication.
      */
     protected boolean redirectDirectories = false;
+
+
+    /**
+     * Context associated with this wrapper, used for wrapper mapping.
+     */
+    protected Context context = null;
+
 
     // --------------------------------------------------------- Public Methods
 
@@ -206,6 +214,24 @@ public final class Mapper {
 
 
     /**
+     * Set context, used for wrapper mapping (request dispatcher).
+     * 
+     * @param path Context path
+     * @param context Context object
+     * @param welcomeResources Welcome files defined for this context
+     * @param resources Static resources of the context
+     */
+    public void setContext(String path, String[] welcomeResources, 
+                           javax.naming.Context resources) {
+        context = new Context();
+        context.name = path;
+        //context.object = context; // Likely useless
+        context.welcomeResources = welcomeResources;
+        context.resources = resources;
+    }
+
+
+    /**
      * Add a new Context to an existing Host.
      * 
      * @param hostName Virtual host name this context belongs to
@@ -274,7 +300,9 @@ public final class Mapper {
         }
     }
 
-    /** Return all contexts, in //HOST/PATH form
+
+    /** 
+     * Return all contexts, in //HOST/PATH form
      *
      * @return
      */
@@ -287,10 +315,9 @@ public final class Mapper {
                         (cname.startsWith("/") ? cname : "/"));
             }
         }
-        String res[]=new String[list.size()];
+        String res[] = new String[list.size()];
         return (String[])list.toArray(res);
     }
-
 
 
     /**
@@ -318,41 +345,54 @@ public final class Mapper {
             }
             Context context = contexts[pos2];
             if (context.name.equals(contextPath)) {
-                synchronized (context) {
-                    Wrapper newWrapper = new Wrapper();
-                    newWrapper.object = wrapper;
-                    if (path.endsWith("/*")) {
-                        // Wildcard wrapper
-                        newWrapper.name = path.substring(0, path.length() - 2);
-                        Wrapper[] oldWrappers = context.wildcardWrappers;
-                        Wrapper[] newWrappers = 
-                            new Wrapper[oldWrappers.length + 1];
-                        if (insertMap(oldWrappers, newWrappers, newWrapper)) {
-                            context.wildcardWrappers = newWrappers;
-                        }
-                    } else if (path.startsWith("*.")) {
-                        // Extension wrapper
-                        newWrapper.name = path.substring(2);
-                        Wrapper[] oldWrappers = context.extensionWrappers;
-                        Wrapper[] newWrappers = 
-                            new Wrapper[oldWrappers.length + 1];
-                        if (insertMap(oldWrappers, newWrappers, newWrapper)) {
-                            context.extensionWrappers = newWrappers;
-                        }
-                    } else if (path.equals("/")) {
-                        // Default wrapper
-                        newWrapper.name = "";
-                        context.defaultWrapper = newWrapper;
-                    } else {
-                        // Exact wrapper
-                        newWrapper.name = path;
-                        Wrapper[] oldWrappers = context.exactWrappers;
-                        Wrapper[] newWrappers = 
-                            new Wrapper[oldWrappers.length + 1];
-                        if (insertMap(oldWrappers, newWrappers, newWrapper)) {
-                            context.exactWrappers = newWrappers;
-                        }
-                    }
+                addWrapper(context, path, wrapper);
+            }
+        }
+    }
+
+
+    /**
+     * Add a wrapper to the context associated with this wrapper.
+     */
+    public void addWrapper(String path, Object wrapper) {
+        addWrapper(context, path, wrapper);
+    }
+
+
+    protected void addWrapper(Context context, String path, Object wrapper) {
+        synchronized (context) {
+            Wrapper newWrapper = new Wrapper();
+            newWrapper.object = wrapper;
+            if (path.endsWith("/*")) {
+                // Wildcard wrapper
+                newWrapper.name = path.substring(0, path.length() - 2);
+                Wrapper[] oldWrappers = context.wildcardWrappers;
+                Wrapper[] newWrappers = 
+                    new Wrapper[oldWrappers.length + 1];
+                if (insertMap(oldWrappers, newWrappers, newWrapper)) {
+                    context.wildcardWrappers = newWrappers;
+                }
+            } else if (path.startsWith("*.")) {
+                // Extension wrapper
+                newWrapper.name = path.substring(2);
+                Wrapper[] oldWrappers = context.extensionWrappers;
+                Wrapper[] newWrappers = 
+                    new Wrapper[oldWrappers.length + 1];
+                if (insertMap(oldWrappers, newWrappers, newWrapper)) {
+                    context.extensionWrappers = newWrappers;
+                }
+            } else if (path.equals("/")) {
+                // Default wrapper
+                newWrapper.name = "";
+                context.defaultWrapper = newWrapper;
+            } else {
+                // Exact wrapper
+                newWrapper.name = path;
+                Wrapper[] oldWrappers = context.exactWrappers;
+                Wrapper[] newWrappers = 
+                    new Wrapper[oldWrappers.length + 1];
+                if (insertMap(oldWrappers, newWrappers, newWrapper)) {
+                    context.exactWrappers = newWrappers;
                 }
             }
         }
@@ -475,6 +515,26 @@ public final class Mapper {
         }
         uri.toChars();
         internalMap(host.getCharChunk(), uri.getCharChunk(), mappingData);
+
+    }
+
+
+    /**
+     * Map the specified URI relative to the context, 
+     * mutating the given mapping data.
+     * 
+     * @param uri URI
+     * @param mappingData This structure will contain the result of the mapping
+     *                    operation
+     */
+    public void map(MessageBytes uri, MappingData mappingData)
+        throws Exception {
+
+        uri.toChars();
+        CharChunk uricc = uri.getCharChunk();
+        uricc.setLimit(-1);
+        mappingData.contextPath.setString(context.path);
+        internalMapWrapper(context, uricc, mappingData);
 
     }
 
