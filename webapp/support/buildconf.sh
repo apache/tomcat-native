@@ -67,9 +67,22 @@ then
     echo "Cannot find \"configure.in\" file."
     exit 1
 fi
-if [ ! -d ./apr ]
+if [ -f "./apr/buildconf" ]
 then
-    mkdir apr
-    echo "Don't a forget to put a copy of the APR sources in `pwd`/apr/"
+    echo "--- Running the \"buildconf\" script for APR"
+    cd ./apr
+    sh ./buildconf
+    cd ..
+else
+    echo "--- Cannot run APR \"buildconf\" script"
+    echo "Don't a forget to download a copy of the APR sources, and to run"
+    echo "the buildconf script for it:"
+    echo "  # cd [path to APR sources]"
+    echo "  # ./buildconf"
+    echo "  # cd [path to WebApp sources]"
+    echo "Then remember to run ./configure script including the command line"
+    echo "option \"--with-apr=[path to APR sources]\""
 fi
+echo "--- Creating WebApp \"configure\" script"
 autoconf
+echo "--- All done"
