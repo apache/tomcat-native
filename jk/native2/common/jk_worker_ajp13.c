@@ -213,6 +213,9 @@ static int jk2_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
                       "ajp14.connect() no channel %s\n", ae->worker->mbean->name );
         return JK_FALSE;
     }
+
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "ajp14.connect() %s %s\n", ae->worker->channelName, channel->mbean->name );
     
     err=channel->open( env, channel, ae );
 
@@ -293,8 +296,8 @@ jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
         }
         
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                "ajp14.service() error sending, retry on a new endpoint %s\n",
-                      e->worker->mbean->name);
+                "ajp14.service() error sending, reconnect %s %s\n",
+                      e->worker->mbean->name, e->worker->channelName);
 
         channel->close( env, channel, e );
 
@@ -628,23 +631,22 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
             return JK_FALSE;
         }
         ajp14->channel = chB->object;
+
+        if( ajp14->channel == NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "ajp14.init(): no channel found %s\n",
+                          ajp14->channelName);
+            return JK_FALSE;
+        }
+        rc=ajp14->workerEnv->initChannel( env, ajp14->workerEnv, ajp14->channel );
+        if( rc != JK_TRUE ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "ajp14.init(): channel init failed\n");
+        }
     }
 
-    if( ajp14->channel == NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp14.init(): no channel found %s\n",
-                      ajp14->channelName);
-        return JK_FALSE;
-    }
-    
     ajp14->channel->worker=ajp14;
 
-    rc=ajp14->channel->init( env, ajp14->channel );
-    if( rc != JK_TRUE ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp14.init(): channel init failed\n");
-        return rc;
-    }
 
     return JK_TRUE;
 }
