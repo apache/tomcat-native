@@ -77,22 +77,20 @@ import org.apache.jk.apr.*;
  *
  * @author Costin Manolache
  */
-public class ChannelJni extends JkHandler {
+public class ChannelJni extends JniHandler {
     int receivedNote=1;
-    AprImpl apr;
-    
+
     public ChannelJni() {
         // we use static for now, it's easier on the C side.
         // Easy to change after we get everything working
     }
 
     public void init() throws IOException {
-        // static field init, temp
-        apr=(AprImpl)wEnv.getHandler("apr");
-        if( apr==null || ! apr.isLoaded() ) { 
-            log.error("No apr, disabling jni channel ");
-            return;
-        }
+        super.initNative("channel.jni:jni");
+
+        if( apr==null ) return;
+        
+        // We'll be called from C. This deals with that.
         apr.addJkHandler( "channelJni", this );
         if( next==null ) {
             if( nextName!=null ) 
@@ -123,32 +121,13 @@ public class ChannelJni extends JkHandler {
     public int send( Msg msg, MsgContext ep )
         throws IOException
     {
-        byte buf[]=msg.getBuffer();
-
-        // send and get the response
-        if( log.isInfoEnabled() ) log.info( "Sending packet ");
-        msg.end();
-
-        // Assert: apr initialized
-        // Will process the message in the current thread.
-        // No wait needed to receive the response
-        // 
-        int status=apr.sendPacket( ep.getJniEnv(), ep.getJniContext(),
-                                   buf, msg.getLen() );
-
+        int rc=super.nativeDispatch( msg, ep, JK_HANDLE_JNI_DISPATCH);
         ep.setNote( receivedNote, msg );
-        
-        if( log.isInfoEnabled() ) log.info( "Sending packet - done ");
-        return 0;
+        return rc;
+                
+
     }
 
-    public MsgContext createMsgContext() {
-        MsgContext mc=new MsgContext();
-        mc.setMsg( 0, new MsgAjp());
-        mc.setNext( this );
-        return mc;
-    }
-    
     /** Receive a packet from the C side. This is called from the C
      *  code using invocation, but only for the first packet - to avoid
      *  recursivity and thread problems.
@@ -169,7 +148,10 @@ public class ChannelJni extends JkHandler {
      *  if anyone asks for it - same lazy behavior as in 3.3 ).
      */
     public  int invoke(Msg msg, MsgContext ep )  throws IOException {
-        System.err.println("ChannelJni.invoke: "  + ep );
+        if( log.isDebugEnabled() ) log.debug("ChannelJni.invoke: "  + ep );
+
+        if( apr==null ) return -1;
+        
         long xEnv=ep.getJniEnv();
         long cEndpointP=ep.getJniContext();
 
