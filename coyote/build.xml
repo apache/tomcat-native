@@ -95,6 +95,9 @@
   <path id="compile.classpath.tomcat33">
     <pathelement location="${build.home}/classes"/>
     <pathelement location="${util.home}/build/classes"/>
+    <pathelement location="${commons-logging.jar}"/>
+    <pathelement location="${commons-modeler.jar}"/>
+    <pathelement location="${jmx.jar}"/>
     <pathelement location="${tomcat33.home}/lib/container/container_util.jar"/>
     <pathelement location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
     <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
@@ -232,7 +235,8 @@
          excludes="**/tomcat3/*" >
       <include name="org/apache/coyote/*.class" />
       <include name="org/apache/coyote/memory/*.class" />
-      <include name="org/apache/coyote/tomcat5/**" />
+      <!-- included with catalina.jar -->
+      <exclude name="org/apache/coyote/tomcat5/**" />
     </jar>
   </target>
 
