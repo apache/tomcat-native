@@ -262,7 +262,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
         int toWrite=shm->size - filestat.st_size;
         
         memset( bytes, 0, 1024 );        
-	    lseek(fd, 0, SEEK_END);
+        lseek(fd, 0, SEEK_END);
 
         while( toWrite > 0 ) {
             int written;
@@ -282,7 +282,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
                           "shm.create(): Can't stat2 %s %d %s\n",
                           shm->fname, errno, strerror( errno ));
             return JK_ERR;
-	}
+    }
     }
 
     shm->privateData = mmap(NULL, filestat.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -293,7 +293,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
                           "shm.create(): Can't mmap %s %d %s\n",
                           shm->fname, errno, strerror( errno ));
 
-	close(fd);
+    close(fd);
         return JK_ERR;
     }
 
@@ -330,7 +330,7 @@ static int JK_METHOD jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
     shm->privateData=NULL;
 
     if( shm->fname==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, "shm.init(): No file\n");
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.init(): shm file not specified\n");
         return JK_ERR;
     }
 
@@ -471,6 +471,8 @@ jk_shm_slot_t * JK_METHOD jk2_shm_createSlot(struct jk_env *env, struct jk_shm *
         /* XXX interprocess sync */
         slotId=shm->head->lastSlot++;
     }
+    else
+        return NULL;
     slot=shm->getSlot( env, shm, slotId );
 
     if( slot==NULL ) return NULL;
@@ -497,11 +499,11 @@ static int JK_METHOD jk2_shm_setAttribute( jk_env_t *env, jk_bean_t *mbean, char
     char *value=(char *)valueP;
     
     if( strcmp( "file", name ) == 0 ) {
-	shm->fname=value;
+    shm->fname=value;
     } else if( strcmp( "size", name ) == 0 ) {
-	shm->size=atoi(value);
+    shm->size=atoi(value);
     } else {
-	return JK_ERR;
+    return JK_ERR;
     }
     return JK_OK;   
 
