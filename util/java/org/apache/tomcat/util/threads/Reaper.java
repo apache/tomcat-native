@@ -69,14 +69,17 @@ import org.apache.tomcat.util.*;
  * @author Costin Manolache
  */
 public class Reaper extends Thread {
+    private boolean daemon=false;
 
     public Reaper() {
-	this.setDaemon(true);
+	if( daemon )
+            this.setDaemon(true);
 	this.setName("TomcatReaper");
     }
 
     public Reaper(String name) {
-	this.setDaemon(true);
+        if( daemon )
+            this.setDaemon(true);
 	this.setName(name);
     }
 

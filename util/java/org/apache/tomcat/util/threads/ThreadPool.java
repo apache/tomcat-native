@@ -395,6 +395,7 @@ public class ThreadPool  {
             shouldTerminate = false;
             this.p = p;
             t = new Thread(this);
+            t.setDaemon(true);
 	    t.setName( "MonitorRunnable" );
             t.start();
         }
@@ -480,6 +481,7 @@ public class ThreadPool  {
             shouldRun = false;
             this.p = p;
             t = new Thread(this);
+            t.setDaemon(true);
             t.start();
 	    noThData=true;
 	    thData=null;
