@@ -99,7 +99,9 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache2/%.c
 
 # ---------- Targets -------------------- 
 
-all: prepare ${BUILD_DIR}/mod_jk2.so ${BUILD_DIR}/libjkjni.so
+all: prepare ${BUILD_DIR}/mod_jk2.so @JNI_BUILD@
+
+jni-build: ${BUILD_DIR}/libjkjni.so
 
 ${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
 	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}

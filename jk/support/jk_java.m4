@@ -43,6 +43,7 @@ AC_DEFUN(
 
 		if ${TEST} ${use_jni} ; then
 		  HAVE_JNI="-DHAVE_JNI"
+		  JNI_BUILD="jni-build"
 		fi
       ])
   ])
