@@ -339,8 +339,6 @@ static void jk2_worker_status_resetScoreboard(jk_env_t *env, jk_ws_service_t *s,
                 stat->totalTime=0;
                 stat->maxTime=0;
 #endif
-                env->l->jkLog(env, env->l, JK_LOG_INFO, "reset() %s %p %p %p %d %d %d %d\n",
-                              JK_CHECK_NULL(slot->name), data, statArray, stat, i, j, stat->reqCnt, stat->errCnt );
             }
         }
     }

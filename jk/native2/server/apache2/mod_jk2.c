@@ -233,19 +233,45 @@ static void *jk2_create_dir_config(apr_pool_t *p, char *path)
 }
 
 
-static void *jk2_merge_dir_config(apr_pool_t *p, void *basev, void *addv)
+static void *jk2_merge_dir_config(apr_pool_t *p, void *childv, void *parentv)
 {
-    jk_uriEnv_t *base =(jk_uriEnv_t *)basev;
-    jk_uriEnv_t *add = (jk_uriEnv_t *)addv; 
-    jk_uriEnv_t *new = (jk_uriEnv_t *)apr_pcalloc(p,sizeof(jk_uriEnv_t));
+    jk_uriEnv_t *child =(jk_uriEnv_t *)childv;
+    jk_uriEnv_t *parent = (jk_uriEnv_t *)parentv; 
+
+    if( child->merged != JK_TRUE ) {
+        /* Merge options from parent. 
+         */
+        if( parent->mbean->debug > 0 ) /* Inherit debugging */
+            child->mbean->debug = parent->mbean->debug;
+
+        if( child->workerName==NULL ) {
+            child->workerName=parent->workerName;
+            child->worker=parent->worker;
+        }
+        if( child->virtual==NULL ) {
+            child->virtual=parent->virtual;
+            child->aliases=parent->aliases;
+        }
+        if( child->contextPath==NULL ) {
+            child->contextPath=parent->contextPath;
+            child->ctxt_len=parent->ctxt_len;
+        }
+        /* XXX Shuld we merge env vars ?
+         */
+        
+        /* When we merged to top - mark and stop duplicating the work
+         */
+        if( parent->uri == NULL ) 
+            child->merged=JK_TRUE;
     
-    
-    if( base->mbean->debug > 0 ) {
-        fprintf(stderr, "mod_jk2:mergeDirConfig() Merged dir config %p %p %s %s\n",
-                base, new, base->uri, add->uri);
+        
+        if( child->mbean->debug > -1 ) {
+            fprintf(stderr, "mod_jk2:mergeDirConfig() Merged dir config %p %s %s %s %s\n",
+                    child, child->uri, parent->uri, child->workerName, parent->workerName);
+        }
     }
 
-    return add;
+    return childv;
 }
 
 /** Basic initialization for jk2.
@@ -571,8 +597,6 @@ static int jk2_handler(request_rec *r)
                       "mod_jk.handler() serving %s with %p %p %s\n",
                       uriEnv->mbean->localName, worker, worker->mbean, worker->mbean->localName );
 
-    fprintf( stderr, "XXX 1 %p %p\n", worker, worker->rPoolCache );
-
     /* Get a pool for the request XXX move it in workerEnv to
        be shared with other server adapters */
     rPool= worker->rPoolCache->get( env, worker->rPoolCache );
@@ -583,17 +607,11 @@ static int jk2_handler(request_rec *r)
                           "mod_jk.handler(): new rpool %p\n", rPool );
     }
     
-    fprintf( stderr, "XXX 2 %p\n", worker );
-    
     s=(jk_ws_service_t *)rPool->calloc( env, rPool, sizeof( jk_ws_service_t ));
     
-    fprintf( stderr, "XXX 2 %p\n", s );
-
     /* XXX we should reuse the request itself !!! */
     jk2_service_apache2_init( env, s );
     
-    fprintf( stderr, "XXX 3 %p %p\n", s, worker );
-
     s->pool = rPool;
     s->init( env, s, worker, r );
     

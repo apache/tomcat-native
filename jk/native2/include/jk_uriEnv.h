@@ -207,6 +207,7 @@ struct jk_uriEnv {
     int envvars_in_use;
     struct jk_map *envvars;
 
+    int merged;
     /** XXX .
      */
 /*     int status; */
