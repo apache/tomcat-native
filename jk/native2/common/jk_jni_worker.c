@@ -262,7 +262,7 @@ char **jk_parse_sysprops(jk_pool_t *p,
     char **rc = NULL;
 
     if(p && sysprops) {
-        char *prps = jk_pool_strdup(p, sysprops);
+        char *prps = p->pstrdup(p, sysprops);
         if(prps && strlen(prps)) {
             unsigned num_of_prps;
 
@@ -272,7 +272,7 @@ char **jk_parse_sysprops(jk_pool_t *p,
                 }
             }            
 
-            rc = jk_pool_alloc(p, (num_of_prps + 1) * sizeof(char *));
+            rc = p->alloc(p, (num_of_prps + 1) * sizeof(char *));
             if(rc) {
                 unsigned i = 0;
                 char *tmp = strtok(prps, "*");
@@ -310,7 +310,7 @@ void jk_append_libpath(jk_pool_t *p,
     char *current = getenv(PATH_ENV_VARIABLE);
 
     if(current) {
-        env = jk_pool_alloc(p, strlen(PATH_ENV_VARIABLE) + 
+        env = p->alloc(p, strlen(PATH_ENV_VARIABLE) + 
                                strlen(current) + 
                                strlen(libpath) + 5);
         if(env) {
@@ -321,7 +321,7 @@ void jk_append_libpath(jk_pool_t *p,
                     current);
         }
     } else {
-        env = jk_pool_alloc(p, strlen(PATH_ENV_VARIABLE) +                               
+        env = p->alloc(p, strlen(PATH_ENV_VARIABLE) +                               
                                strlen(libpath) + 5);
         if(env) {
             sprintf(env, "%s=%s", PATH_ENV_VARIABLE, libpath);
@@ -455,7 +455,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     str_config= map_getStrProp( props, "worker", p->name, "class_path", NULL );
     if(str_config != NULL ) {
-        p->tomcat_classpath = jk_pool_strdup(&p->p, str_config);
+        p->tomcat_classpath = p->p.pstrdup(&p->p, str_config);
     }
 
     if(!p->tomcat_classpath) {
@@ -465,7 +465,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     str_config= map_getStrProp( props, "worker", p->name, "jvm_lib", NULL );
     if(str_config != NULL ) {
-        p->jvm_dll_path  = jk_pool_strdup(&p->p, str_config);
+        p->jvm_dll_path  = p->p.pstrdup(&p->p, str_config);
     }
 
     if(!p->jvm_dll_path || !jk_file_exists(p->jvm_dll_path)) {
@@ -475,17 +475,17 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     str_config= map_getStrProp( props, "worker", p->name, "cmd_line", NULL ); 
     if(str_config != NULL ) {
-        p->tomcat_cmd_line  = jk_pool_strdup(&p->p, str_config);
+        p->tomcat_cmd_line  = p->p.pstrdup(&p->p, str_config);
     }
 
     str_config=  map_getStrProp( props, "worker", p->name, "stdout", NULL ); 
     if(str_config!= NULL ) {
-        p->stdout_name  = jk_pool_strdup(&p->p, str_config);
+        p->stdout_name  = p->p.pstrdup(&p->p, str_config);
     }
 
     str_config=  map_getStrProp( props, "worker", p->name, "stderr", NULL ); 
     if(str_config!= NULL ) {
-        p->stderr_name  = jk_pool_strdup(&p->p, str_config);
+        p->stderr_name  = p->p.pstrdup(&p->p, str_config);
     }
 
     str_config=  map_getStrProp( props, "worker", p->name, "sysprops", NULL ); 
@@ -691,7 +691,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
         detach_from_jvm(p, l);
     }
 
-    jk_close_pool(&p->p);
+    p->p.close(&p->p);
     free(p);
 
     l->jkLog(l, JK_LOG_DEBUG, "Done destroy\n");
@@ -733,12 +733,12 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
 	             private_data->buf,
                  sizeof(jk_pool_atom_t) * TINY_POOL_SIZE);
 
-    private_data->name = jk_pool_strdup(&private_data->p, name);
+    private_data->name = private_data->p.pstrdup(&private_data->p, name);
 
     if(!private_data->name) {
         l->jkLog(l, JK_LOG_ERROR, 
                "In jni_worker_factory, memory allocation error\n");
-	    jk_close_pool(&private_data->p);
+	    private_data->p.close(&private_data->p);
         free(private_data);
         return JK_FALSE;
     }
@@ -836,7 +836,7 @@ static int load_jvm_dll(jni_worker_t *p,
     } else {
         jni_create_java_vm = dlsym(handle, "JNI_CreateJavaVM");
         jni_get_default_java_vm_init_args = dlsym(handle, "JNI_GetDefaultJavaVMInitArgs");
-        jni_get_created_java_vms =  dlsym(hInst, "JNI_GetCreatedJavaVMs");
+        jni_get_created_java_vms =  dlsym(handle, "JNI_GetCreatedJavaVMs");
         
         if(jni_create_java_vm && jni_get_default_java_vm_init_args
            && jni_get_created_java_vms) {
@@ -901,7 +901,7 @@ static int open_jvm1(jni_worker_t *p,
         unsigned len = strlen(vm_args.classpath) + 
                        strlen(p->tomcat_classpath) + 
                        3;
-        char *tmp = jk_pool_alloc(&p->p, len);
+        char *tmp = p->p.alloc(&p->p, len);
         if(tmp) {
             sprintf(tmp, "%s%c%s", 
                     p->tomcat_classpath, 
@@ -933,7 +933,7 @@ static int open_jvm1(jni_worker_t *p,
 
     if (JNI_EEXIST == err) {
         int vmCount;
-       jk_log(l, JK_LOG_DEBUG, "JVM alread instantiated."
+       l->jkLog(l, JK_LOG_DEBUG, "JVM alread instantiated."
               "Trying to attach instead.\n");
 
         jni_get_created_java_vms(&(p->jvm), 1, &vmCount);
@@ -988,7 +988,7 @@ static char* build_opt_str(jk_pool_t *p,
     unsigned len = strlen(opt_name) + strlen(opt_value) + 2;
 
     /* [V] IMHO, these should not be deallocated as long as the JVM runs */
-    char *tmp = jk_pool_alloc(p, len);
+    char *tmp = p->alloc(p, len);
 
     if(tmp) {
 	    sprintf(tmp, "%s%s", opt_name, opt_value);
@@ -1008,7 +1008,7 @@ static char* build_opt_int(jk_pool_t *p,
     /* [V] this should suffice even for 64-bit int */
     unsigned len = strlen(opt_name) + 20 + 2;
     /* [V] IMHO, these should not be deallocated as long as the JVM runs */
-    char *tmp = jk_pool_alloc(p, len);
+    char *tmp = p->alloc(p, len);
 
     if(tmp) {
 	    sprintf(tmp, "%s%d", opt_name, opt_value);
