@@ -1,0 +1,61 @@
+<project name="tomcat-util" default="build-main" basedir=".">
+
+    <!-- ===================== Initialize Property Values =================== -->
+    <property name="tomcat-util.build" value="${basedir}/build"/>
+
+    <target name="build-prepare">
+        <mkdir dir="${tomcat-util.build}"/>
+	<mkdir dir="${tomcat-util.build}/classes"/>
+	<mkdir dir="${tomcat-util.build}/lib"/>
+    </target>
+
+    <target name="build-main" depends="build-prepare">
+    
+        <javac srcdir="src/java"
+	       destdir="${tomcat-util.build}/classes"
+	       deprecation="on"
+	       debug="on"
+	       optimize="off"
+	       verbose="off"
+	       excludes="**/CVS/**">
+	</javac>
+
+	<!-- Copy static resource files -->
+	<copy todir="${tomcat-util.build}/classes">
+	    <fileset dir="src/java">
+	    	<include name="**/*.properties"/>
+	    </fileset>
+        </copy>
+
+	<!-- Copy static resource files -->
+	<copy todir="${tomcat-util.build}/classes">
+	    <fileset dir="src/java">
+	    	<include name="**/*.properties"/>
+	    </fileset>
+        </copy>
+
+	<jar jarfile="${tomcat-util.build}/lib/tomcat-util.jar"
+	     basedir="${tomcat-util.build}/classes"
+	     />
+    </target>
+
+    <!-- ================ BUILD: Create Tomcat-Util Javadocs =================== -->
+    <target name="javadoc">
+        <delete dir="${tomcat-util.build}/javadoc"/>
+	<mkdir dir="${tomcat-util.build}/javadoc"/>
+	<javadoc packagenames="org.apache.tomcat.util.*"
+               sourcepath="src/java"
+                  destdir="${tomcat-util.build}/javadoc"
+                   author="true"
+                  version="true"
+              windowtitle="Tomcat Utilities Documentation"
+                 doctitle="Tomcat Utilities"
+                   bottom="Copyright &#169; 2001 Apache Software Foundation.  All Rights Reserved."
+	/>
+    </target>
+
+
+    <target name="clean">
+        <delete dir="${tomcat-util.build}"/>
+    </target>
+</project>
