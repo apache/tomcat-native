@@ -1376,7 +1376,8 @@ static int jk_handler(request_rec *r)
 
             if(rc) {
                 return OK;    /* NOT r->status, even if it has changed. */
-            }
+            } else
+                return HTTP_INTERNAL_SERVER_ERROR;
         }
 	else
 		return HTTP_INTERNAL_SERVER_ERROR;
