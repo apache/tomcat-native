@@ -77,12 +77,16 @@ final class CoyoteReader
 
 
     private static final char[] LINE_SEP = { '\r', '\n' };
+    private static final int MAX_LINE_LENGTH = 4096;
 
 
     // ----------------------------------------------------- Instance Variables
 
 
     protected InputBuffer ib;
+
+
+    protected final char[] lineBuffer = new char[MAX_LINE_LENGTH];
 
 
     // ----------------------------------------------------------- Constructors
@@ -152,8 +156,68 @@ final class CoyoteReader
 
     public String readLine()
         throws IOException {
-        // FIXME
-        return "";
+
+        String result = null;
+
+        int pos = 0;
+        int end = -1;
+        int skip = -1;
+        StringBuffer aggregator = null;
+        while (end < 0) {
+            mark(MAX_LINE_LENGTH);
+            while ((pos < MAX_LINE_LENGTH) && (end < 0)) {
+                int nRead = read(lineBuffer, pos, MAX_LINE_LENGTH - pos);
+                if (nRead < 0) {
+                    if (pos == 0) {
+                        return null;
+                    }
+                    end = pos;
+                    skip = pos;
+                }
+                for (int i = pos; (i < (pos + nRead)) && (end < 0); i++) {
+                    if (lineBuffer[i] == LINE_SEP[0]) {
+                        end = i;
+                        skip = i + 1;
+                        char nextchar;
+                        if (i == (pos + nRead - 1)) {
+                            nextchar = (char) read();
+                        } else {
+                            nextchar = lineBuffer[i+1];
+                        }
+                        if (nextchar == LINE_SEP[1]) {
+                            skip++;
+                        }
+                    } else if (lineBuffer[i] == LINE_SEP[1]) {
+                        end = i;
+                        skip = i + 1;
+                    }
+                }
+                if (nRead > 0) {
+                    pos += nRead;
+                }
+            }
+            if (end < 0) {
+                if (aggregator == null) {
+                    aggregator = new StringBuffer();
+                }
+                aggregator.append(lineBuffer);
+                reset();
+                skip(MAX_LINE_LENGTH);
+            } else {
+                reset();
+                skip(skip);
+            }
+        }
+
+        if (aggregator == null) {
+            result = new String(lineBuffer, 0, end);
+        } else {
+            aggregator.append(lineBuffer, 0, end);
+            result = aggregator.toString();
+        }
+
+        return result;
+
     }
 
 
