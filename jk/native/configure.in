@@ -6,7 +6,7 @@ AC_REVISION($Id$)dnl
 AC_PREREQ(2.13)
 AC_INIT(common/jk_ajp13.h)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
-AM_CONFIG_HEADER(common/version.h)
+AM_CONFIG_HEADER(common/jk_version.h)
 
 dnl package and version.
 PACKAGE=mod_jk
