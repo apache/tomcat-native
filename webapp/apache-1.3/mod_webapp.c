@@ -441,6 +441,7 @@ static int wam_invoke(request_rec *r) {
 
     /* Set up the WebApp Library request structure client and server host
        data (from the connection */
+    ap_add_common_vars(r);
     stmp=(char *)r->hostname;
     ctmp=(char *)ap_get_remote_host(con,r->per_dir_config, REMOTE_HOST);
     if (stmp==NULL) req->serv->host="";
@@ -457,7 +458,6 @@ static int wam_invoke(request_rec *r) {
     req->ruri=apr_pstrdup(req->pool,r->uri);
     req->args=apr_pstrdup(req->pool,r->args);
     req->prot=apr_pstrdup(req->pool,r->protocol);
-    req->schm=apr_pstrdup(req->pool,ap_http_method(r));
     req->user=apr_pstrdup(req->pool,con->user);
     req->auth=apr_pstrdup(req->pool,con->ap_auth_type);
     req->clen=0;
@@ -467,6 +467,8 @@ static int wam_invoke(request_rec *r) {
     /* SSL logic */
     ssl_temp = (char *)ap_table_get(r->subprocess_env,"HTTPS");
     if ( ssl_temp && !strcasecmp(ssl_temp, "on")) {
+        req->schm=apr_pstrdup(req->pool,"https");
+
         req->ssld=(wa_ssldata *) apr_palloc(req->pool,sizeof(wa_ssldata));
 
         req->ssld->ciph = (char *)ap_table_get(
@@ -484,6 +486,7 @@ static int wam_invoke(request_rec *r) {
         req->ssld->cert = (char *)ap_table_get(
             r->subprocess_env,"SSL_CLIENT_CERT");
     } else {
+        req->schm=apr_pstrdup(req->pool,"http");
         req->ssld=NULL;
     }
 
