@@ -96,7 +96,7 @@ AC_DEFUN(
           ;;
         esac
       ],[
-        AC_MSG_RESULT([if found])
+        AC_MSG_RESULT([guessing])
       ])
 
     if test "${wa_perl_enabled}" = "no" ; then
@@ -114,7 +114,7 @@ AC_DEFUN(
     fi
 
     if test -n "${wa_perl_tempval}" ; then
-      AC_MSG_CHECKING([if perl (${wa_perl_tempval}) is working])
+      AC_MSG_CHECKING([if ${wa_perl_tempval} is working])
 
       wa_perl_enabled=`echo 'printf "%vd\n", $^V;' | ${wa_perl_tempval}`
       if test -z "${wa_perl_enabled}" ; then

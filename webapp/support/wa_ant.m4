@@ -96,7 +96,7 @@ AC_DEFUN(
           ;;
         esac
       ],[
-        AC_MSG_RESULT([if found])
+        AC_MSG_RESULT([guessing])
       ])
 
     if test "${wa_ant_enabled}" = "no" ; then
@@ -117,7 +117,7 @@ AC_DEFUN(
     fi
 
     if test -n "${wa_ant_tempval}" ; then
-      AC_MSG_CHECKING([if ant (${wa_ant_tempval}) is working])
+      AC_MSG_CHECKING([if ${wa_ant_tempval} is working])
 
       wa_ant_enabled=`${wa_ant_tempval} -version`
       wa_ant_enabled=`echo ${wa_ant_enabled} | sed 's/^Apache Ant/Ant/g'`
