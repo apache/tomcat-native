@@ -239,8 +239,8 @@ static int jk2_config_processBeanPropertyString( jk_env_t *env,
     @param name the property to be set ( can't have '.' or ':' in it )
     @param val the value, $(property) will be replaced.
  */
-static int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
-                                  jk_bean_t *mbean, char *name, void *val)
+int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
+                           jk_bean_t *mbean, char *name, void *val)
 {
     char *pname;
     if( mbean == cfg->mbean ) {
@@ -283,7 +283,7 @@ static int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     return JK_FALSE;
 }
 
-static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
+int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
                                         char *name, char *value)
 {
     jk_bean_t *mbean;
@@ -299,7 +299,7 @@ static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
     status=jk2_config_processBeanPropertyString(env, cfg, name, &objName, &propName );
     if( status!=JK_TRUE ) {
         /* Unknown properties ends up in our config, as 'unclaimed' or global */
-        jk2_config_setProperty( env, cfg, cfg->mbean, name, value );
+        cfg->setProperty( env, cfg, cfg->mbean, name, value );
         return status;
     }
     
@@ -310,18 +310,18 @@ static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
 
     if( mbean == NULL ) {
         /* Can't create it, save the value in our map */
-        jk2_config_setProperty( env, cfg, cfg->mbean, name, value );
+        cfg->setProperty( env, cfg, cfg->mbean, name, value );
         return JK_FALSE;
     }
 
     if( mbean->settings == NULL )
         jk2_map_default_create(env, &mbean->settings, cfg->pool);
     
-    return jk2_config_setProperty( env, cfg, mbean, propName, value );
+    return cfg->setProperty( env, cfg, mbean, propName, value );
 }
 
 
-static char *jk2_config_getString(jk_env_t *env, jk_config_t *conf,
+char *jk2_config_getString(jk_env_t *env, jk_config_t *conf,
                                   const char *name, char *def)
 {
     char *val= conf->map->get( env, conf->map, name );
@@ -330,7 +330,7 @@ static char *jk2_config_getString(jk_env_t *env, jk_config_t *conf,
     return val;
 }
 
-static int jk2_config_getBool(jk_env_t *env, jk_config_t *conf,
+int jk2_config_getBool(jk_env_t *env, jk_config_t *conf,
                               const char *prop, const char *def)
 {
     char *val=jk2_config_getString( env, conf, prop, (char *)def );
@@ -739,7 +739,7 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
 
             if(env_value != NULL ) {
                 int offset=0;
-                char *new_value = resultPool->alloc(env, resultPool, 
+                char *new_value = resultPool->calloc(env, resultPool, 
                                                     (strlen(rc) + strlen(env_value)));
                 if(!new_value) {
                     break;
@@ -749,6 +749,8 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
                 } else {
                     strncpy(new_value, rc, env_start-rc);
                 }
+                /* fprintf(stderr, "XXX %s %s %s\n", new_value, env_value, env_end + 1 ); */
+
                 strcat(new_value, env_value);
                 strcat(new_value, env_end + 1);
 		offset= env_start - rc + strlen( env_value );
