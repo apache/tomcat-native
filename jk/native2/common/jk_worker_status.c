@@ -76,21 +76,167 @@
 
 #define JK_BUF_SIZE 4096
 
-typedef struct  {
+typedef struct jk_buff {
     int pos;
     int size;
     
     char *buf;
+
+    jk_ws_service_t *s;
+
+    void (*jkprintf)( jk_env_t *env, struct jk_buff *buf, char *frm,... );
+    void (*flush)( jk_env_t *env );
 } jk_buff_t;
 
+static void jk_printf( jk_env_t *env, jk_buff_t *buf, char *fmt,... )
+{
+    va_list vargs;
+    int ret=0;
+
+    va_start(vargs,fmt);
+    buf->pos=0; /* Temp - we don't buffer */
+    ret=apr_vsnprintf(buf->buf + buf->pos, buf->size - buf->pos, fmt, vargs);
+    va_end(vargs);
+
+    buf->s->write( env, buf->s, buf->buf, strlen(buf->buf) );
+    fprintf(stderr, "Writing %d %s \n", ret, buf->buf);
+}
+
+static void jk_worker_status_displayWorkers( jk_env_t *env, jk_buff_t *buf,
+                                             jk_workerEnv_t *wenv )
+{
+    jk_map_t *map=wenv->worker_map;
+    int i;
+    
+    jk_printf(env, buf, "<H2>Workers</H2>\n" );
+    jk_printf(env, buf, "<table border>\n");
+
+    jk_printf(env, buf, "<tr><th>Name</th><th>Retries</th>"
+              "<th>Err</th><th>Recovery</th></tr>");
+    
+    for( i=0; i< map->size( env, map ) ; i++ ) {
+        char *name=map->nameAt( env, map, i );
+        jk_worker_t *worker=(jk_worker_t *)map->valueAt( env, map,i );
+
+        jk_printf(env, buf, "<tr id='worker.%s'>", name );
+        jk_printf(env, buf, "<td class='name'>%s</td>", name );
+        jk_printf(env, buf, "<td class='connect_retry'>%d</td>",
+                  worker->connect_retry_attempts );
+        jk_printf(env, buf, "<td class='in_error'>%d</td>",
+                  worker->in_error_state );
+        jk_printf(env, buf, "<td class='in_error'>%d</td>",
+                  worker->in_recovering );
+
+        /* Endpoint cache ? */
+
+        /* special case for status worker */
+        
+        jk_printf(env, buf, "</tr>" );
+    }
+    jk_printf(env, buf, "</table>\n");
+}
+
+static void jk_worker_status_displayWorkerEnv( jk_env_t *env, jk_buff_t *buf,
+                                               jk_workerEnv_t *wenv )
+{
+    jk_map_t *map=wenv->init_data;
+    int i;
+
+    jk_printf(env, buf, "<H2>Worker Env Info</H2>\n");
+
+    jk_printf(env, buf, "<table border>\n");
+    jk_printf(env, buf, "<tr><th>num_workers</th>"
+              "<td id='workersCount'>%d</td></tr>\n",
+              wenv->num_of_workers);        
+    /* Could be modified dynamically */
+    jk_printf(env, buf, "<tr><th>LogLevel</th>"
+              "<td id='logLevel'>%d</td></tr>\n",
+              wenv->log_level);
+    
+    jk_printf(env, buf, "</table>\n");
+
+    jk_printf(env, buf, "<H3>Properties</H3>\n");
+    jk_printf(env, buf, "<table border>\n");
+    jk_printf(env, buf, "<tr><th>Name</th><th>Value</td></tr>\n");
+    for( i=0; i< map->size( env, map ) ; i++ ) {
+        char *name=map->nameAt( env, map, i );
+        char *value=(char *)map->valueAt( env, map,i );
+
+        jk_printf(env, buf, "<tr><td>%s</td><td>%s</td></tr>", name,
+                  value);
+    }
+    jk_printf(env, buf, "</table>\n");
+
+}
+
+static void jk_worker_status_displayWebapps( jk_env_t *env, jk_buff_t *buf,
+                                             jk_workerEnv_t *wenv )
+{
+    jk_map_t *map=wenv->webapps;
+    int i;
+
+    jk_printf(env, buf, "<H2>Webapps</H2>\n");
+
+    if( map==NULL ) {
+        jk_printf(env, buf, "None\n");
+        return;
+    }
+    
+    jk_printf(env, buf, "<table border>\n");
+    
+    jk_printf(env, buf, "<tr><th>Name</th><th>DocBase</th>"
+              "<th>Mappings</th></tr>");
+    
+    for( i=0; i< map->size( env, map ) ; i++ ) {
+        char *name=map->nameAt( env, map, i );
+        jk_webapp_t *webapp=(jk_webapp_t *)map->valueAt( env, map,i );
+
+        jk_printf(env, buf, "<tr id='webapp.%s'>", name );
+        jk_printf(env, buf, "<td class='name'>%s</td>", name );
+        jk_printf(env, buf, "</tr>" );
+    }
+
+    
+    jk_printf(env, buf, "</table>\n");
+}
+
+/* Channels and connections, including 'pooled' ones
+ */
+static void jk_worker_status_displayConnections( jk_env_t *env, jk_buff_t *buf,
+                                                 jk_workerEnv_t *wenv )
+{
+        jk_printf(env, buf, "<H2>Active connections</H2>\n");
+        jk_printf(env, buf, "<table border>\n");
+        
+    
+        jk_printf(env, buf, "</table>\n");
+
+}
+
+static jk_buff_t *jk_worker_status_createBuffer(jk_env_t *env, jk_endpoint_t *e,
+                                                jk_ws_service_t *s)
+{
+    jk_buff_t *buff;
+    int bsize=JK_BUF_SIZE;
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "create buffer()\n");
+    buff=(jk_buff_t *)s->pool->alloc( env, s->pool, sizeof( jk_buff_t) );
+    buff->s=s;
+    buff->size=bsize;
+    buff->buf=(char *)s->pool->alloc( env, s->pool, bsize );
+    buff->jkprintf=jk_printf;
+
+    return buff;
+}
 
 static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e, 
                              jk_ws_service_t *s,
                              int *is_recoverable_error)
 {
-    char *buff;
-    int bsize=JK_BUF_SIZE;
+    jk_buff_t *buff=jk_worker_status_createBuffer(env, e, s );
     
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "status.service() %p\n", e);
+
     /* Generate the header */
     s->status=200;
     s->msg="OK";
@@ -99,16 +245,17 @@ static int JK_METHOD service(jk_env_t *env, jk_endpoint_t *e,
 
     fprintf(stderr, "Writing head \n");
     s->head(env, s );
-    /* Body */
-    buff=(char *)s->pool->alloc( env, s->pool, bsize );
-    strcpy(buff, "Hello\n");
 
-    fprintf(stderr, "Writing %s \n", buff);
-    s->write( env, s, buff, strlen( buff ));
+    /* Body */
+    jk_worker_status_displayWorkerEnv(env, buff, s->workerEnv );
+    jk_worker_status_displayWorkers(env, buff, s->workerEnv );
+    jk_worker_status_displayWebapps(env, buff, s->workerEnv );
+    jk_worker_status_displayConnections(env, buff, s->workerEnv );
     
     s->afterRequest( env, s);
     fprintf(stderr, "After req %s \n", buff);
     return JK_TRUE;
+
 }
 
 static int JK_METHOD done(jk_env_t *env, jk_endpoint_t *e)
@@ -135,12 +282,10 @@ static int JK_METHOD get_endpoint(jk_env_t *env, jk_worker_t *_this,
     jk_pool_t *endpointPool;
     
     if (_this->endpointCache != NULL ) {
-
         e=_this->endpointCache->get( env, _this->endpointCache );
-        
         if (e!=NULL) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                     "lb.getEndpoint(): Reusing endpoint\n");
+                     "status.getEndpoint(): Reusing endpoint\n");
             *pend = e;
             return JK_TRUE;
         }
@@ -152,21 +297,19 @@ static int JK_METHOD get_endpoint(jk_env_t *env, jk_worker_t *_this,
                                               sizeof(jk_endpoint_t));
     if(e==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "lb_worker.getEndpoint() OutOfMemoryException\n");
+                      "status_worker.getEndpoint() OutOfMemoryException\n");
         return JK_FALSE;
     }
 
     e->pool = endpointPool;
-
     e->cPool=endpointPool->create( env,endpointPool, HUGE_POOL_SIZE );
-    
     e->worker = _this;
     e->service = service;
     e->done = done;
     e->channelData = NULL;
     *pend = e;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "lb_worker.getEndpoint()\n");
+    env->l->jkLog(env, env->l, JK_LOG_INFO, "status_worker.getEndpoint() %p\n", e);
     return JK_TRUE;
 }
 
@@ -177,21 +320,15 @@ static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
 
     if(w==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "lb_worker.destroy() NullPointerException\n");
+                      "status_worker.destroy() NullPointerException\n");
         return JK_FALSE;
     }
 
-    for(i = 0 ; i < w->num_of_workers ; i++) {
-        w->lb_workers[i]->destroy( env, w->lb_workers[i]);
-    }
-
     if( w->endpointCache != NULL ) {
-        
         for( i=0; i< w->endpointCache->ep_cache_sz; i++ ) {
             jk_endpoint_t *e;
             
             e= w->endpointCache->get( env, w->endpointCache );
-            
             if( e==NULL ) {
                 // we finished all endpoints in the cache
                 break;
@@ -204,7 +341,7 @@ static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
         w->endpointCache->destroy( env, w->endpointCache );
 
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                      "lb.destroy() closed %d cached endpoints\n",i);
+                      "status.destroy() closed %d cached endpoints\n",i);
     }
 
     w->pool->close(env, w->pool);    
@@ -221,7 +358,7 @@ int JK_METHOD jk_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
     
     if(NULL == name ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "lb_worker.factory() NullPointerException\n");
+                      "status_worker.factory() NullPointerException\n");
         return JK_FALSE;
     }
     
@@ -229,7 +366,7 @@ int JK_METHOD jk_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
 
     if(_this==NULL) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "lb_worker.factory() OutOfMemoryException\n");
+                      "status_worker.factory() OutOfMemoryException\n");
         return JK_FALSE;
     }
 
@@ -246,11 +383,6 @@ int JK_METHOD jk_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
     
     *result=_this;
 
-    /*     env->l->jkLog(env, env->l, JK_LOG_INFO, */
-    /*                   "lb_worker.factory() New lb worker\n"); */
-    
-    /* name, pool will be set by workerEnv ( our factory ) */
-    
     return JK_TRUE;
 }
 
