@@ -231,8 +231,12 @@ public class FileDirContext extends BaseDirContext {
         super.release();
     }
 
+    public void setAttribute( String name, Object v ) {
+        new Throwable().printStackTrace();
+        System.out.println(name + " " + v );
+    }
 
-    // -------------------- BaseDirContext implementation -------------------- 
+    // -------------------- BaseDirContext implementation --------------------
 
     /**
      * Retrieves the named object. The result is a File relative to the docBase
@@ -350,9 +354,10 @@ public class FileDirContext extends BaseDirContext {
      * this context. Each element of the enumeration is of type NameClassPair.
      * @exception NamingException if a naming exception is encountered
      */
-    public NamingEnumeration list(String name)
+    public NamingEnumeration list(Name nameN)
         throws NamingException
     {
+        String name=nameN.toString();
         if( log.isDebugEnabled() ) log.debug( "list " + name );
         File file = file(name);
 
@@ -380,9 +385,10 @@ public class FileDirContext extends BaseDirContext {
      * Each element of the enumeration is of type Binding.
      * @exception NamingException if a naming exception is encountered
      */
-    public NamingEnumeration listBindings(String name)
+    public NamingEnumeration listBindings(Name nameN)
         throws NamingException
     {
+        String name=nameN.toString();
         if( log.isDebugEnabled() ) log.debug( "listBindings " + name );
 
         File file = file(name);
@@ -423,7 +429,7 @@ public class FileDirContext extends BaseDirContext {
      * @exception NotContextException if the name is bound but does not name 
      * a context, or does not name a context of the appropriate type
      */
-    public void destroySubcontext(String name)
+    public void destroySubcontext(Name name)
         throws NamingException
     {
         unbind(name);
@@ -468,9 +474,10 @@ public class FileDirContext extends BaseDirContext {
      * indicates that none should be retrieved
      * @exception NamingException if a naming exception is encountered
      */
-    public Attributes getAttributes(String name, String[] attrIds)
+    public Attributes getAttributes(Name nameN, String[] attrIds)
         throws NamingException
     {
+        String name=nameN.toString();
         if( log.isDebugEnabled() ) log.debug( "getAttributes " + name );
 
         // Building attribute list
@@ -499,9 +506,10 @@ public class FileDirContext extends BaseDirContext {
      * of the binding are not supplied
      * @exception NamingException if a naming exception is encountered
      */
-    public void bind(String name, Object obj, Attributes attrs)
+    public void bind(Name nameN, Object obj, Attributes attrs)
         throws NamingException {
-        
+
+        String name=nameN.toString();
         // Note: No custom attributes allowed
         
         File file = new File(base, name);
@@ -531,14 +539,15 @@ public class FileDirContext extends BaseDirContext {
      * of the binding are not supplied
      * @exception NamingException if a naming exception is encountered
      */
-    public void rebind(String name, Object obj, Attributes attrs)
+    public void rebind(Name nameN, Object obj, Attributes attrs)
         throws NamingException {
-        
+        String name=nameN.toString();
+
         // Note: No custom attributes allowed
         // Check obj type
-        
+
         File file = new File(base, name);
-        
+
         InputStream is = null;
 //         if (obj instanceof Resource) {
 //             try {
@@ -563,9 +572,9 @@ public class FileDirContext extends BaseDirContext {
         if (is == null)
             throw new NamingException
                 (sm.getString("resources.bindFailed", name));
-        
+
         // Open os
-        
+
         try {
             FileOutputStream os = null;
             byte buffer[] = new byte[BUFFER_SIZE];

@@ -62,13 +62,7 @@ package org.apache.naming.core;
 
 import java.util.*;
 import javax.naming.*;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
-
-import org.apache.tomcat.util.res.StringManager;
 
 // Based on a merge of various catalina naming contexts
 // Name is used - it provide better oportunities for reuse and optimizations
@@ -110,7 +104,7 @@ public class BaseContext extends BaseNaming implements Context {
      *
      * @param name the name of the object to look up
      * @return the object bound to name
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Object lookup(Name name)
             throws NamingException {
@@ -122,7 +116,7 @@ public class BaseContext extends BaseNaming implements Context {
      *
      * @param name the name of the object to look up
      * @return the object bound to name
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Object lookup(String name)
             throws NamingException {
@@ -137,10 +131,8 @@ public class BaseContext extends BaseNaming implements Context {
      *
      * @param name the name to bind; may not be empty
      * @param obj the object to bind; possibly null
-     * @exception NameAlreadyBoundException if name is already bound
-     * @exception InvalidAttributesException if object did not supply all
-     * mandatory attributes
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NameAlreadyBoundException if name is already bound
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void bind(Name name, Object obj)
             throws NamingException {
@@ -153,10 +145,8 @@ public class BaseContext extends BaseNaming implements Context {
      *
      * @param name the name to bind; may not be empty
      * @param obj the object to bind; possibly null
-     * @exception NameAlreadyBoundException if name is already bound
-     * @exception InvalidAttributesException if object did not supply all
-     * mandatory attributes
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NameAlreadyBoundException if name is already bound
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void bind(String name, Object obj)
             throws NamingException {
@@ -175,9 +165,7 @@ public class BaseContext extends BaseNaming implements Context {
      *
      * @param name the name to bind; may not be empty
      * @param obj the object to bind; possibly null
-     * @exception InvalidAttributesException if object did not supply all
-     * mandatory attributes
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void rebind(Name name, Object obj)
             throws NamingException {
@@ -190,9 +178,7 @@ public class BaseContext extends BaseNaming implements Context {
      *
      * @param name the name to bind; may not be empty
      * @param obj the object to bind; possibly null
-     * @exception InvalidAttributesException if object did not supply all
-     * mandatory attributes
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void rebind(String name, Object obj)
             throws NamingException {
@@ -210,9 +196,9 @@ public class BaseContext extends BaseNaming implements Context {
      * NameNotFoundException if any of the intermediate contexts do not exist.
      *
      * @param name the name to bind; may not be empty
-     * @exception NameNotFoundException if an intermediate context does not
+     * @exception javax.naming.NameNotFoundException if an intermediate context does not
      * exist
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void unbind(Name name)
             throws NamingException {
@@ -233,8 +219,8 @@ public class BaseContext extends BaseNaming implements Context {
      *
      * @param oldName the name of the existing binding; may not be empty
      * @param newName the name of the new binding; may not be empty
-     * @exception NameAlreadyBoundException if newName is already bound
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NameAlreadyBoundException if newName is already bound
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void rename(String oldName, String newName)
             throws NamingException {
@@ -253,7 +239,7 @@ public class BaseContext extends BaseNaming implements Context {
      * @param name the name of the context to list
      * @return an enumeration of the names and class names of the bindings in
      * this context. Each element of the enumeration is of type NameClassPair.
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration list(String name)
             throws NamingException {
@@ -262,7 +248,7 @@ public class BaseContext extends BaseNaming implements Context {
 
     public NamingEnumeration list(Name name)
             throws NamingException {
-        return new NamingContextEnumeration(super.getChildren(), this, false);
+        return new NamingContextEnumeration(getChildren(), this, false);
     }
 
 
@@ -277,11 +263,11 @@ public class BaseContext extends BaseNaming implements Context {
      * @param name the name of the context to list
      * @return an enumeration of the bindings in this context.
      * Each element of the enumeration is of type Binding.
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration listBindings(Name name)
             throws NamingException {
-        return new NamingContextEnumeration(super.getChildren(), this, true);
+        return new NamingContextEnumeration(getChildren(), this, true);
     }
 
     public NamingEnumeration listBindings(String name)
@@ -310,9 +296,9 @@ public class BaseContext extends BaseNaming implements Context {
      * the foreign context's "native" naming system.
      *
      * @param name the name of the context to be destroyed; may not be empty
-     * @exception NameNotFoundException if an intermediate context does not
+     * @exception javax.naming.NameNotFoundException if an intermediate context does not
      * exist
-     * @exception NotContextException if the name is bound but does not name
+     * @exception javax.naming.NotContextException if the name is bound but does not name
      * a context, or does not name a context of the appropriate type
      */
     public void destroySubcontext(Name name)
@@ -325,9 +311,9 @@ public class BaseContext extends BaseNaming implements Context {
      * Destroys the named context and removes it from the namespace.
      *
      * @param name the name of the context to be destroyed; may not be empty
-     * @exception NameNotFoundException if an intermediate context does not
+     * @exception javax.naming.NameNotFoundException if an intermediate context does not
      * exist
-     * @exception NotContextException if the name is bound but does not name
+     * @exception javax.naming.NotContextException if the name is bound but does not name
      * a context, or does not name a context of the appropriate type
      */
     public void destroySubcontext(String name)
@@ -344,10 +330,8 @@ public class BaseContext extends BaseNaming implements Context {
      *
      * @param name the name of the context to create; may not be empty
      * @return the newly created context
-     * @exception NameAlreadyBoundException if name is already bound
-     * @exception InvalidAttributesException if creation of the subcontext
-     * requires specification of mandatory attributes
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NameAlreadyBoundException if name is already bound
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Context createSubcontext(Name name)
             throws NamingException {
@@ -359,6 +343,15 @@ public class BaseContext extends BaseNaming implements Context {
         return createSubcontext(string2Name(name), null);
     }
 
+    public void rename(Name oldName, Name newName)
+            throws NamingException
+        {
+            // Override if needed
+            Object value = lookup(oldName, false);
+            bind(newName, value, null, false);
+            unbind(oldName, true);
+
+        }
 
     /**
      * Retrieves the named object, following links except for the terminal
@@ -368,7 +361,7 @@ public class BaseContext extends BaseNaming implements Context {
      * @param name the name of the object to look up
      * @return the object bound to name, not following the terminal link
      * (if any).
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Object lookupLink(Name name)
             throws NamingException {
@@ -383,7 +376,7 @@ public class BaseContext extends BaseNaming implements Context {
      * @param name the name of the object to look up
      * @return the object bound to name, not following the terminal link
      * (if any).
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Object lookupLink(String name)
             throws NamingException {
@@ -403,7 +396,7 @@ public class BaseContext extends BaseNaming implements Context {
      * @param name the name of the context from which to get the parser
      * @return a name parser that can parse compound names into their atomic
      * components
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NameParser getNameParser(Name name)
             throws NamingException {
@@ -433,7 +426,7 @@ public class BaseContext extends BaseNaming implements Context {
      * @param name the name of the context from which to get the parser
      * @return a name parser that can parse compound names into their atomic
      * components
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NameParser getNameParser(String name)
             throws NamingException {
@@ -453,7 +446,7 @@ public class BaseContext extends BaseNaming implements Context {
      * @param name a name relative to this context
      * @param prefix the name of this context relative to one of its ancestors
      * @return the composition of prefix and name
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Name composeName(Name name, Name prefix)
             throws NamingException {
@@ -468,7 +461,7 @@ public class BaseContext extends BaseNaming implements Context {
      * @param name a name relative to this context
      * @param prefix the name of this context relative to one of its ancestors
      * @return the composition of prefix and name
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public String composeName(String name, String prefix)
             throws NamingException {
@@ -483,7 +476,7 @@ public class BaseContext extends BaseNaming implements Context {
      * @param propName the name of the environment property to add; may not
      * be null
      * @param propVal the value of the property to add; may not be null
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Object addToEnvironment(String propName, Object propVal)
             throws NamingException {
@@ -496,7 +489,7 @@ public class BaseContext extends BaseNaming implements Context {
      *
      * @param propName the name of the environment property to remove;
      * may not be null
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Object removeFromEnvironment(String propName)
             throws NamingException {
@@ -512,7 +505,7 @@ public class BaseContext extends BaseNaming implements Context {
      * may be changed using addToEnvironment() and removeFromEnvironment().
      *
      * @return the environment of this context; never null
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Hashtable getEnvironment()
             throws NamingException {
@@ -528,7 +521,7 @@ public class BaseContext extends BaseNaming implements Context {
      * been closed has no effect. Invoking any other method on a closed
      * context is not allowed, and results in undefined behaviour.
      *
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void close()
             throws NamingException {
@@ -550,9 +543,9 @@ public class BaseContext extends BaseNaming implements Context {
      * OperationNotSupportedException is thrown.
      *
      * @return this context's name in its own namespace; never null
-     * @exception OperationNotSupportedException if the naming system does
+     * @exception javax.naming.OperationNotSupportedException if the naming system does
      * not have the notion of a full name
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public String getNameInNamespace()
             throws NamingException {
@@ -572,11 +565,7 @@ public class BaseContext extends BaseNaming implements Context {
      * (new SearchControls())).
      * @return an enumeration of SearchResults of the objects that satisfy
      * the filter; never null
-     * @exception InvalidSearchFilterException if the search filter specified
-     * is not supported or understood by the underlying directory
-     * @exception InvalidSearchControlsException if the search controls
-     * contain invalid settings
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search
             (Name name, String filter, SearchControls cons)
@@ -598,11 +587,7 @@ public class BaseContext extends BaseNaming implements Context {
      * (new SearchControls())).
      * @return an enumeration of SearchResults of the objects that satisfy
      * the filter; never null
-     * @exception InvalidSearchFilterException if the search filter
-     * specified is not supported or understood by the underlying directory
-     * @exception InvalidSearchControlsException if the search controls
-     * contain invalid settings
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(String name, String filter,
                                     SearchControls cons)
@@ -627,13 +612,9 @@ public class BaseContext extends BaseNaming implements Context {
      * default search controls are used (equivalent to (new SearchControls())).
      * @return an enumeration of SearchResults of the objects that satisy the
      * filter; never null
-     * @exception ArrayIndexOutOfBoundsException if filterExpr contains {i}
+     * @exception java.lang.ArrayIndexOutOfBoundsException if filterExpr contains {i}
      * expressions where i is outside the bounds of the array filterArgs
-     * @exception InvalidSearchControlsException if cons contains invalid
-     * settings
-     * @exception InvalidSearchFilterException if filterExpr with filterArgs
-     * represents an invalid search filter
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(Name name, String filterExpr,
                                     Object[] filterArgs, SearchControls cons)
@@ -658,13 +639,9 @@ public class BaseContext extends BaseNaming implements Context {
      * default search controls are used (equivalent to (new SearchControls())).
      * @return an enumeration of SearchResults of the objects that satisy the
      * filter; never null
-     * @exception ArrayIndexOutOfBoundsException if filterExpr contains {i}
+     * @exception java.lang.ArrayIndexOutOfBoundsException if filterExpr contains {i}
      * expressions where i is outside the bounds of the array filterArgs
-     * @exception InvalidSearchControlsException if cons contains invalid
-     * settings
-     * @exception InvalidSearchFilterException if filterExpr with filterArgs
-     * represents an invalid search filter
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(String name, String filterExpr,
                                     Object[] filterArgs,

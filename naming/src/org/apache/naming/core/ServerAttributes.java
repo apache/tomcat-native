@@ -60,7 +60,6 @@
 
 package org.apache.naming.core;
 
-import javax.naming.*;
 import javax.naming.directory.*;
 
 /**
@@ -78,5 +77,5 @@ import javax.naming.directory.*;
 public class ServerAttributes extends BasicAttributes
 {
     
-    
+    // no extra methods yet.     
 }

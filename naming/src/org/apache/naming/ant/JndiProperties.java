@@ -70,11 +70,12 @@ import javax.naming.*;
  *
  * @author Costin Manolache
  */
-public class JndiProperties extends Task implements PropertyInterceptor {
+public class JndiProperties extends Task {
     public static String PREFIX="jndi:";
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( JndiProperties.class );
-    
+    private JndiHelper helper=new JndiHelper();
+
     public JndiProperties() {
         initNaming();
     }
@@ -87,32 +88,51 @@ public class JndiProperties extends Task implements PropertyInterceptor {
 //         System.setProperty( "java.naming.factory.initial", "org.apache.naming.memory.MemoryInitialContextFactory" );
     }
     
-    public boolean setProperty( Object p, String ns, String name, Object value ) {
-        return false;
+    class JndiHelper extends PropertyHelper {
+        public boolean setPropertyHook( String ns, String name, Object v, boolean inh,
+                                        boolean user, boolean isNew)
+        {
+            if( ! name.startsWith(PREFIX) ) {
+                // pass to next
+                return super.setPropertyHook(ns, name, v, inh, user, isNew);
+            }
+            name=name.substring( PREFIX.length() );
+
+            // XXX later
+
+            return true;
+        }
+
+        public Object getPropertyHook( String ns, String name , boolean user) {
+            if( ! name.startsWith(PREFIX) ) {
+                // pass to next
+                return super.getPropertyHook(ns, name, user);
+            }
+
+            Object o=null;
+            name=name.substring( PREFIX.length() );
+            try {
+                InitialContext ic=new InitialContext();
+                // XXX lookup attribute in DirContext ?
+                o=ic.lookup( name );
+                if( log.isDebugEnabled() ) log.debug( "getProperty jndi: " + name +  " " + o);
+            } catch( Exception ex ) {
+                log.error("getProperty " + name , ex);
+                o=null;
+            }
+            return o;
+        }
+
     }
 
-    public Object getProperty( Object p, String ns, String name ) {
-        if( ! name.startsWith( PREFIX ) )
-            return null;
-        
-        Object o=null;
-        name=name.substring( PREFIX.length() );
-        try {
-            InitialContext ic=new InitialContext();
-            // XXX lookup attribute in DirContext ? 
-            o=ic.lookup( name );
-            if( log.isDebugEnabled() ) log.debug( "getProperty jndi: " + name +  " " + o);
-        } catch( Exception ex ) {
-            log.error("getProperty " + name , ex);
-            o=null;
-        }
-        return o;
-    }
-    
-    
+
     public void execute() {
         PropertyHelper phelper=PropertyHelper.getPropertyHelper( project );
-        phelper.addPropertyInterceptor( this );
+        helper.setProject( project );
+        helper.setNext( phelper.getNext() );
+        phelper.setNext( helper );
+
+        project.addReference( "jndiProperties", this );
     }
     
 }

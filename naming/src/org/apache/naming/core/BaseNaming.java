@@ -64,10 +64,7 @@ import java.util.*;
 import javax.naming.*;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.Attributes;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.ModificationItem;
-import javax.naming.directory.SearchControls;
-import org.apache.tomcat.util.res.StringManager;
+
 import org.apache.tomcat.util.IntrospectionUtils;
 
 // Based on a merge of various catalina naming contexts
@@ -145,16 +142,6 @@ public class BaseNaming {
      */
     protected final NameParser nameParser = new NameParserImpl();
 
-    /**
-     * Cached.
-     * deprecated ? Should be implemented via notes or other mechanism.
-     * Or via config.
-     */
-    protected boolean cached = true;
-    protected int cacheTTL = 5000; // 5s
-    protected int cacheObjectMaxSize = 32768; // 32 KB
-
-    
     /** Prefix used for URL-based namming lookup. It must be removed
      *  from all names.
      *  Deprecated ? Do we need it ?
@@ -169,86 +156,44 @@ public class BaseNaming {
     public void setURLPrefix( String s ) {
         urlPrefix=s;
     }
-    
-    /**
-     * Set cached attribute. If false, this context will be skipped from caching
-     */
+
+    private boolean cached;
+    private int cacheTTL;
+    private int cacheObjectMaxSize;
+
+    public boolean isCached() {
+        return cached;
+    }
+
     public void setCached(boolean cached) {
         this.cached = cached;
     }
 
-    /**
-     * Is cached ?
-     */
-    public boolean isCached() {
-        return cached;
-    }
-    public boolean getCached() {
-        return cached;
-    }
-
-
-    /**
-     * Set cache TTL.
-     */
-    public void setCacheTTL(int cacheTTL) {
-        this.cacheTTL = cacheTTL;
-    }
-
-
-    /**
-     * Get cache TTL.
-     */
     public int getCacheTTL() {
         return cacheTTL;
     }
 
-
-    /**
-     * Set cacheObjectMaxSize.
-     */
-    public void setCacheObjectMaxSize(int cacheObjectMaxSize) {
-        this.cacheObjectMaxSize = cacheObjectMaxSize;
+    public void setCacheTTL(int cacheTTL) {
+        this.cacheTTL = cacheTTL;
     }
 
-
-    /**
-     * Get cacheObjectMaxSize.
-     */
     public int getCacheObjectMaxSize() {
         return cacheObjectMaxSize;
     }
 
-    // -------------------- Lifecycle methods ? -------------------- 
-
-    /**
-     * Allocate resources for this directory context.
-     */
-    public void allocate() {
-        ; // No action taken by the default implementation
+    public void setCacheObjectMaxSize(int cacheObjectMaxSize) {
+        this.cacheObjectMaxSize = cacheObjectMaxSize;
     }
 
-
-    /**
-     * Release any resources allocated for this directory context.
-     */
-    public void release() {
-        ; // No action taken by the default implementation
-    }
-
-    public void recycle() {
-        // nothing yet.
-    }
-    
-    // -------------------- Not so Abstract methods -------------------- 
+    // -------------------- Not so Abstract methods --------------------
     // This is what a subclass should implement.
 
     // XXX Base resolveLinks() method ?? And then use lookup without resolveLinks flag
     
     /** The lookup method. This is the main method you should implement.
      *
-     * @param Name
-     * @param resolveLinks. If false, this is a lookupLink call. 
+     * @param name
+     * @param resolveLinks If false, this is a lookupLink call.
      */
     public Object lookup(Name name, boolean resolveLinks)
         throws NamingException
@@ -305,16 +250,6 @@ public class BaseNaming {
         throw new OperationNotSupportedException();
     }
 
-    public void rename(Name oldName, Name newName)
-        throws NamingException
-    {
-        // Override if needed
-        Object value = lookup(oldName, false);
-        bind(newName, value, null, false);
-        unbind(oldName, true);
-        
-    }
-
     /** Implement for directories
      *
      */
@@ -338,20 +273,21 @@ public class BaseNaming {
 
 
     // -------------------- Utils --------------------
-    
+    // XXX Implement this
 
     /**
      * Returns true if writing is allowed on this context.
      */
     protected boolean isWritable(Name name) {
-        return ContextAccessController.isWritable(name);
+        return true;
+        //return ContextAccessController.isWritable(name);
     }
 
 
     /**
      * Throws a naming exception is Context is not writable.
      */
-    protected void checkWritable(Name n) 
+    protected void checkWritable(Name n)
         throws NamingException
     {
         if (!isWritable(n))
@@ -368,10 +304,28 @@ public class BaseNaming {
 //         }
     }
     
+    // -------------------- Lifecycle methods ? --------------------
+
+    /**
+     * Allocate resources for this directory context.
+     */
+    public void allocate() {
+        ; // No action taken by the default implementation
+    }
 
 
+    /**
+     * Release any resources allocated for this directory context.
+     */
+    public void release() {
+        ; // No action taken by the default implementation
+    }
 
-    //-------------------- Helpers -------------------- 
+    public void recycle() {
+        // nothing yet.
+    }
+
+    //-------------------- Helpers --------------------
 
     /** Just a hack so that all DirContexts can be used as tasks.
      * They'll do nothing - the setters will be called ( just like
@@ -388,6 +342,5 @@ public class BaseNaming {
      */
     public void execute() {
     }
-    
 }
 

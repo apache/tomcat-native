@@ -60,7 +60,6 @@
 
 package org.apache.naming.core;
 
-import javax.naming.*;
 import javax.naming.directory.*;
 
 /**
@@ -81,5 +80,6 @@ public class ServerAttribute extends BasicAttribute
         super(id);
     }
     
-    
+    public void recycle() {
+    }
 }

@@ -51,36 +51,45 @@
     </target>
 
   <target name="test"  >
-    <systemPath pathRef="build-main.classpath" />
+    <classloader classpathRef="build-main.classpath" />
+
     <taskdef name="jndiSet" classname="org.apache.naming.ant.JndiSet"/>
     <taskdef name="jndiProperties" classname="org.apache.naming.ant.JndiProperties"/>
     <taskdef name="jndiFileCtx" classname="org.apache.naming.modules.fs.FileDirContext"/>
 
+    <!-- Enable ${jndi:...} dynamic properties -->
     <jndiProperties/>
+
+    <!-- memory context -->
     <jndiSet context="/foo" value="bar" />
-
-    <jndiFileCtx docBase="/tmp" id="docBaseId" />
-
-    <jndiSet context="/test" refId="docBaseId" />
-
     <echo message="Value: ${jndi:/foo}"/>
-    <echo message="Value: ${jndi:/test/test}"/>
-    <echo message="Value: ${jndi:fs:/tmp/test}"/>
+
+
+    <property name="dirname" location="." />
+
+    <!-- Create a JNDI context for the current dir -->
+    <jndiFileCtx docBase="${dirname}" id="docBaseId" />
+    
+    <!-- Bind the file context to /currentDir -->
+    <jndiSet context="/currentDir" refId="docBaseId" />
+
+    <echo message="Value: ${jndi:/currentDir/build.xml}"/>
+    <echo message="Value: ${jndi:fs:/tmp}"/>
   </target>
 
 
   <target name="browser">
     <java classpathref="build-main.classpath" 
           classname="examples.browser.Browser" fork="true">
-      <sysproperty key="java.naming.dns.url" value="dns://129.150.254.2/wyn.org"/>
+      <sysproperty key="java.naming.dns.url" value="dns://10.0.0.1/covalent.net"/>
       
       <!-- LABEL|java.naming.factory.initial|java.naming.provider.url|root|auth( none, simple, etc ) |princ|pass -->
       <arg value="LDAP|com.sun.jndi.ldap.LdapCtxFactory|ldap://localhost:389|dc=wyn,dc=org|simple|cn=Manager,dc=wyn,dc=org|secret" />
       <!-- arg value="File|com.sun.jndi.fscontext.RefFSContextFactory|file:/" /-->
       <arg value="DSML|com.sun.jndi.dsml.DsmlCtxFactory|file:/tmp/test.dsml.xml" />
       <arg value="DNS|com.sun.jndi.dns.DnsContextFactory|dns://127.0.0.1/localhost" />
-      <arg value="FS|org.apache.naming.fs.fsURLContextFactory|fs:/" />
-      <arg value="Mem|org.apache.naming.memory.memoryURLContextFactory|memory:/" />
+      <arg value="FS|org.apache.naming.modules.fs.fsURLContextFactory|fs:/" />
+      <arg value="Mem|org.apache.naming.modules.memory.memoryURLContextFactory|memory:/" />
     </java>
   </target>
 

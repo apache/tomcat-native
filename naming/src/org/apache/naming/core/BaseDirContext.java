@@ -68,9 +68,8 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 
-import org.apache.tomcat.util.res.StringManager;
 
-//import org.apache.naming.NameParserImpl;
+//import org.apache.naming.core.NameParserImpl;
 
 // Based on a merge of various catalina naming contexts
 // Name is used - it provide better oportunities for reuse and optimizations
@@ -123,7 +122,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * @return the set of attributes associated with name.
      * Returns an empty attribute set if name has no attributes; never null.
      * @param name the name of the object from which to retrieve attributes
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Attributes getAttributes(Name name)
             throws NamingException
@@ -137,7 +136,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      *
      * @return the set of attributes associated with name
      * @param name the name of the object from which to retrieve attributes
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Attributes getAttributes(String name)
             throws NamingException
@@ -155,7 +154,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * @param attrIds the identifiers of the attributes to retrieve. null
      * indicates that all attributes should be retrieved; an empty array
      * indicates that none should be retrieved
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public Attributes getAttributes(String name, String[] attrIds)
             throws NamingException
@@ -192,7 +191,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * be null
      * @exception AttributeModificationException if the modification cannot be
      * completed successfully
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void modifyAttributes(Name name, int mod_op, Attributes attrs)
             throws NamingException
@@ -232,7 +231,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * not be null
      * @exception AttributeModificationException if the modification cannot be
      * completed successfully
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void modifyAttributes(Name name, ModificationItem[] mods)
             throws NamingException
@@ -266,10 +265,10 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * @param name the name to bind; may not be empty
      * @param obj the object to bind; possibly null
      * @param attrs the attributes to associate with the binding
-     * @exception NameAlreadyBoundException if name is already bound
+     * @exception javax.naming.NameAlreadyBoundException if name is already bound
      * @exception InvalidAttributesException if some "mandatory" attributes
      * of the binding are not supplied
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void bind(Name name, Object obj, Attributes attrs)
             throws NamingException
@@ -317,7 +316,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * @param attrs the attributes to associate with the binding
      * @exception InvalidAttributesException if some "mandatory" attributes
      * of the binding are not supplied
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public void rebind(Name name, Object obj, Attributes attrs)
             throws NamingException
@@ -344,10 +343,10 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * @param name the name of the context to create; may not be empty
      * @param attrs the attributes to associate with the newly created context
      * @return the newly created context
-     * @exception NameAlreadyBoundException if the name is already bound
+     * @exception javax.naming.NameAlreadyBoundException if the name is already bound
      * @exception InvalidAttributesException if attrs does not contain all
      * the mandatory attributes required for creation
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public DirContext createSubcontext(String name, Attributes attrs)
             throws NamingException
@@ -366,8 +365,8 @@ public class BaseDirContext extends BaseContext implements DirContext {
      *
      * @param name the name of the object whose schema is to be retrieved
      * @return the schema associated with the context; never null
-     * @exception OperationNotSupportedException if schema not supported
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.OperationNotSupportedException if schema not supported
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public DirContext getSchema(Name name)
             throws NamingException
@@ -381,8 +380,8 @@ public class BaseDirContext extends BaseContext implements DirContext {
      *
      * @param name the name of the object whose schema is to be retrieved
      * @return the schema associated with the context; never null
-     * @exception OperationNotSupportedException if schema not supported
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.OperationNotSupportedException if schema not supported
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public DirContext getSchema(String name)
             throws NamingException
@@ -399,8 +398,8 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * be retrieved
      * @return the DirContext containing the named object's class
      * definitions; never null
-     * @exception OperationNotSupportedException if schema not supported
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.OperationNotSupportedException if schema not supported
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public DirContext getSchemaClassDefinition(Name name)
             throws NamingException
@@ -417,8 +416,8 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * be retrieved
      * @return the DirContext containing the named object's class
      * definitions; never null
-     * @exception OperationNotSupportedException if schema not supported
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.OperationNotSupportedException if schema not supported
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public DirContext getSchemaClassDefinition(String name)
             throws NamingException
@@ -442,7 +441,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * SearchResult contains the attributes identified by attributesToReturn
      * and the name of the corresponding object, named relative to the
      * context named by name.
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(Name name, Attributes matchingAttributes,
                                     String[] attributesToReturn)
@@ -466,7 +465,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * SearchResult contains the attributes identified by attributesToReturn
      * and the name of the corresponding object, named relative to the
      * context named by name.
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(String name, Attributes matchingAttributes,
                                     String[] attributesToReturn)
@@ -489,7 +488,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * SearchResult contains the attributes identified by attributesToReturn
      * and the name of the corresponding object, named relative to the
      * context named by name.
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(Name name, Attributes matchingAttributes)
             throws NamingException
@@ -509,7 +508,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * SearchResult contains the attributes identified by attributesToReturn
      * and the name of the corresponding object, named relative to the
      * context named by name.
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(String name, Attributes matchingAttributes)
             throws NamingException
@@ -534,7 +533,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * is not supported or understood by the underlying directory
      * @exception InvalidSearchControlsException if the search controls
      * contain invalid settings
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(Name name, String filter,
                                     SearchControls cons)
@@ -561,7 +560,7 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * specified is not supported or understood by the underlying directory
      * @exception InvalidSearchControlsException if the search controls
      * contain invalid settings
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(String name, String filter,
                                     SearchControls cons)
@@ -587,13 +586,13 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * default search controls are used (equivalent to (new SearchControls())).
      * @return an enumeration of SearchResults of the objects that satisy the
      * filter; never null
-     * @exception ArrayIndexOutOfBoundsException if filterExpr contains {i}
+     * @exception java.lang.ArrayIndexOutOfBoundsException if filterExpr contains {i}
      * expressions where i is outside the bounds of the array filterArgs
      * @exception InvalidSearchControlsException if cons contains invalid
      * settings
      * @exception InvalidSearchFilterException if filterExpr with filterArgs
      * represents an invalid search filter
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(Name name, String filterExpr,
                                     Object[] filterArgs, SearchControls cons)
@@ -619,13 +618,13 @@ public class BaseDirContext extends BaseContext implements DirContext {
      * default search controls are used (equivalent to (new SearchControls())).
      * @return an enumeration of SearchResults of the objects that satisy the
      * filter; never null
-     * @exception ArrayIndexOutOfBoundsException if filterExpr contains {i}
+     * @exception java.lang.ArrayIndexOutOfBoundsException if filterExpr contains {i}
      * expressions where i is outside the bounds of the array filterArgs
      * @exception InvalidSearchControlsException if cons contains invalid
      * settings
      * @exception InvalidSearchFilterException if filterExpr with filterArgs
      * represents an invalid search filter
-     * @exception NamingException if a naming exception is encountered
+     * @exception javax.naming.NamingException if a naming exception is encountered
      */
     public NamingEnumeration search(String name, String filterExpr,
                                     Object[] filterArgs,

@@ -60,8 +60,7 @@
 
 package org.apache.naming.core;
 
-import java.util.Hashtable;
-import java.util.Vector;
+
 import java.util.Enumeration;
 import javax.naming.*;
 
@@ -83,7 +82,7 @@ public class NamingContextEnumeration
      * Bindings or Entries, we'll provide the wrapping if needed. For String
      * the Class and value will be lazy-loaded.
      *
-     * @param ctx. The context where this enum belongs. Used to lazy-eval
+     * @param ctx The context where this enum belongs. Used to lazy-eval
      * the class and value
      *
      * @param bindings If true, we'll wrap things as Binding ( true for
