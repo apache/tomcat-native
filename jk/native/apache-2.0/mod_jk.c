@@ -453,7 +453,7 @@ static void jk_error_exit(const char *file,
 static int get_content_length(request_rec *r)
 {
     if(r->clength > 0) {
-        return r->clength;
+        return (int)r->clength;
     } else if(r->main == NULL || r->main == r) {
         char *lenp = (char *)apr_table_get(r->headers_in, "Content-Length");
 
@@ -806,9 +806,7 @@ static const char *jk_worker_property(cmd_parms *cmd,
                                       const char *value)
 {
     server_rec *s = cmd->server;
-    struct stat statbuf;
     char *oldv;
-    int rc;
 
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
@@ -950,8 +948,8 @@ static const char *process_item(request_rec *r,
     return cp ? cp : "-";
 }
 
-static int request_log_transaction(request_rec *r,
-                                  jk_server_conf_t *conf)
+static void request_log_transaction(request_rec *r,
+                                    jk_server_conf_t *conf)
 {
     request_log_format_item *items;
     char *str, *s;
@@ -978,6 +976,7 @@ static int request_log_transaction(request_rec *r,
     *s = 0;
     
     jk_log(conf->log, JK_LOG_REQUEST, "%s", str);
+    
 }
 
 /*****************************************************************
@@ -1218,7 +1217,6 @@ static char *parse_request_log_item(apr_pool_t *p,
                                     const char **sa)
 {
     const char *s = *sa;
-    int i;
     struct log_item_list *l;
 
     if (*s != '%') {
@@ -1956,6 +1954,7 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
 
     c->s = s;
 
+    apr_pool_cleanup_register(p, s, jk_apr_pool_cleanup, jk_apr_pool_cleanup);
     return c;
 }
 
@@ -2077,6 +2076,13 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
 ** +-------------------------------------------------------+
 */
 
+static apr_status_t jklog_cleanup(void *d)
+{
+    /* set the main_log to NULL */
+    main_log = NULL;
+    return APR_SUCCESS;
+}
+
 static void open_jklog(server_rec *s, apr_pool_t *p)
 {
     jk_server_conf_t *conf;
@@ -2137,6 +2143,7 @@ static void open_jklog(server_rec *s, apr_pool_t *p)
         conf->log = jkl;
         if (main_log == NULL)
             main_log = conf->log;
+        apr_pool_cleanup_register(p, main_log, jklog_cleanup, jklog_cleanup);
         return;
     }
 
@@ -2234,7 +2241,6 @@ static int jk_post_config(apr_pool_t *pconf,
         open_jklog(s, pconf);
     }
 
-    apr_pool_cleanup_register(pconf, s, jk_apr_pool_cleanup, jk_apr_pool_cleanup);
     return OK;
 }
 
