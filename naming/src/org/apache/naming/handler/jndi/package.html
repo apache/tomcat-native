@@ -1,0 +1,20 @@
+<h3>Handler</h3>
+
+Objects stored in the directory may have content - and act as a VFS. 
+
+This package deals with accessing files in the directory using URLs.
+
+There are 2 cases:
+
+1. Generic access via InitialContext. We will use a naming structure 
+under the InitialContext to locate the file.
+  
+   jndi:/my/path
+
+will be translated to a lookup for '/my/path'. 
+
+2. The old behavior: the thread is specifically bound to a 
+ProxyContext, then this is used to locate files in the particular
+webapp. We'll emulate this by treating jndi: as a reference
+to a particular branch in the java: webpp resource.
+
