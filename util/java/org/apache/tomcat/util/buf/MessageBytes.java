@@ -161,6 +161,14 @@ public final class MessageBytes implements Cloneable, Serializable {
 	type=T_CHARS;
     }
 
+    /** Remove the cached string value. Use it after a conversion on the
+	byte[] or after the encoding is changed
+    */
+    public void resetStringValue() {
+	hasStrValue=false;
+	strValue=null;
+    }
+
     public void setString( String s ) {
 	recycle();
         if (s == null)
