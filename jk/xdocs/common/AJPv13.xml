@@ -241,8 +241,8 @@ maximum to be 8K.
     <td>Data</td>
   </tr>
 </table>
-
-
+</p>
+<p>
 <A NAME="prefix-codes"></A> For most packets, the first byte of the
 payload encodes the type of message.  The exception is for request body
 packets sent from the server to the container -- they are sent with a
@@ -277,9 +277,22 @@ The web server can send the following messages to the servlet container:
     <td>CPing</td>
     <td>The web server asks the container to respond quickly with a CPong.</td>
   </tr>
+  <tr>
+    <td>none</td>
+    <td>Data</td>
+    <td>Size (2 bytes) and corresponding body data.</td>
+  </tr>
 </table>
-
 </p>
+<p>
+To ensure some
+basic security, the container will only actually do the <code>Shutdown</code> if the
+request comes from the same machine on which it's hosted.
+</p>
+<p>
+The first <code>Data</code> packet is send immediatly after the <code>Forward Request</code> by the web server.
+</p>
+
 <p>The servlet container can send the following types of messages to the web
 server:
 <table>
@@ -361,7 +374,7 @@ req_header_value := (string)
 The <code>attributes</code> are optional and have the following structure:
 </p><p>
 <source>
-attribute_name := (string)
+attribute_name := sc_a_name | (sc_a_req_attribute string)
 
 attribute_value := (string)
 
@@ -482,10 +495,10 @@ additional methods, even if they are not in this list.
 </p>
 </subsection>
 
-<subsection name="Optional Information">
+<subsection name="Attributes">
 <p>
 
-  The list of attributes prefixed with a <code>?</code>
+  The attributes prefixed with a <code>?</code>
   (e.g. <code>?context</code>) are all optional.  For each, there is a
   single byte code to indicate the type of attribute, and then a string to
   give its value.  They can be sent in any order (thogh the C code always
@@ -496,17 +509,18 @@ additional methods, even if they are not in this list.
 
 <table>
   <tr><th>Information</th><th>Code Value</th><th>Note</th></tr>
-  <tr><td>context</td><td>0x01</td><td>Not currently implemented</td></tr>
-  <tr><td>servlet_path</td><td>0x02</td><td>Not currently implemented</td></tr>
-  <tr><td>remote_user</td><td>0x03</td><td></td></tr>
-  <tr><td>auth_type</td><td>0x04</td><td></td></tr>
-  <tr><td>query_string</td><td>0x05</td><td></td></tr>
-  <tr><td>jvm_route</td><td>0x06</td><td></td></tr>
-  <tr><td>ssl_cert</td><td>0x07</td><td></td></tr>
-  <tr><td>ssl_cipher</td><td>0x08</td><td></td></tr>
-  <tr><td>ssl_session</td><td>0x09</td><td></td></tr>
-  <tr><td>req_attribute</td><td>0x0A</td><td></td></tr>
-  <tr><td>terminator</td><td>0xFF</td><td></td></tr>
+  <tr><td>?context</td><td>0x01</td><td>Not currently implemented</td></tr>
+  <tr><td>?servlet_path</td><td>0x02</td><td>Not currently implemented</td></tr>
+  <tr><td>?remote_user</td><td>0x03</td><td></td></tr>
+  <tr><td>?auth_type</td><td>0x04</td><td></td></tr>
+  <tr><td>?query_string</td><td>0x05</td><td></td></tr>
+  <tr><td>?jvm_route</td><td>0x06</td><td></td></tr>
+  <tr><td>?ssl_cert</td><td>0x07</td><td></td></tr>
+  <tr><td>?ssl_cipher</td><td>0x08</td><td></td></tr>
+  <tr><td>?ssl_session</td><td>0x09</td><td></td></tr>
+  <tr><td>?req_attribute</td><td>0x0A</td><td>Name (the name of the attribut follows)</td></tr>
+  <tr><td>?ssl_key_size</td><td>0x0B</td><td></td></tr>
+  <tr><td>are_done</td><td>0xFF</td><td>request_terminator</td></tr>
 </table>
 
 </p><p>
@@ -539,13 +553,8 @@ additional methods, even if they are not in this list.
   instance of that code.  Environment values are passed in via this method.
 </p><p>
   Finally, after all the attributes have been sent, the attribute terminator,
-  0xFF, is sent.  This signals both the end of the list of attributes, and
-  also then end of the Request Packets as a whole.
-</p><p>
-
-The server can also send a <code>shutdown</code> packet.  To ensure some
-basic security, the container will only actually do the shutdown if the
-request comes from the same machine on which it's hosted.
+  0xFF, is sent.  This signals both the end of the list of attributes and
+  also then end of the Request Packet.
 </p>
 </subsection>
 
