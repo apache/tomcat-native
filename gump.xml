@@ -12,11 +12,14 @@
   <project name="jakarta-tomcat-util">
     <package>org.apache.tomcat.util</package>
     <ant basedir="util">
+      <property name="jmx.home" reference="home" project="jmx"/>
+      <property name="jmx.jar" value="${jmx.home}/lib/jmxri.jar" />
       <property name="jsse.home" reference="home" project="jsse"/>
     </ant>
 
     <depend project="jakarta-ant"/>
     <depend project="xml-xerces"/>
+    <depend project="jmx"/>
     <depend project="commons-logging"/>
     <depend project="jsse"/>
 
