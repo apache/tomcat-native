@@ -126,7 +126,7 @@ public class ChannelUn extends Channel {
     }
 
     public void init() throws IOException {
-        apr=new AprImpl();
+        apr=AprImpl.getAprImpl();
         if( aprHome==null && jkHome != null ) {
             File f=new File( jkHome );
             File aprBase=new File( jkHome, "jk2/jni" );
@@ -141,6 +141,7 @@ public class ChannelUn extends Channel {
         apr.loadNative();
             
         apr.initialize();
+        
         if( log.isDebugEnabled() ) log.debug( "Creating pool " + gPool );
         gPool=apr.poolCreate( 0 );
 
