@@ -94,6 +94,9 @@
 #include "apr_shm.h"
 #endif
 
+#include "apr_proc_mutex.h"
+
+
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 {
@@ -189,7 +192,7 @@ Java_org_apache_jk_apr_AprImpl_sendPacket
 
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_shmAttach(JNIEnv *jniEnv, jobject _jthis, jlong poolJ,
-                                       jlong size, jstring fileJ)
+                                         jstring fileJ)
 {
     char *fname=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, fileJ, 0);
     apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
@@ -289,6 +292,25 @@ Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *jniEnv, jobject _jthis, jlong 
 }
 
 #endif 
+
+/* -------------------- interprocess mutexes -------------------- */
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_mutexCreate(JNIEnv *jniEnv, jobject _jthis, jlong pool,
+                                           jstring fileJ,
+                                           jint mechJ )
+{
+    apr_proc_mutex_t *mutex;
+    char *fname;
+    apr_lockmech_e mech;
+    apr_pool_t *pool;
+    apr_status_t  st;
+    
+    st=apr_proc_mutex_create( &mutex, fname, mech, pool );
+    
+    return (jlong)(long)(void *)mutex;
+}
+
 
 /* ==================== Unix sockets ==================== */
 /* It seems apr doesn't support them yet, so this code will use the
