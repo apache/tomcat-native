@@ -218,7 +218,8 @@ int jk_close_file_logger(jk_logger_t **l)
 }
 
 int jk_log(jk_logger_t *l,
-           const char *file, int line, int level, const char *fmt, ...)
+           const char *file, int line, const char *funcname, int level,
+           const char *fmt, ...)
 {
     int rc = 0;
     if (!l || !file || !fmt) {

@@ -66,27 +66,35 @@ struct file_logger_t
 #define JK_LOG_ERROR_VERB   "error"
 #define JK_LOG_EMERG_VERB   "emerg"
 
-#define JK_LOG_TRACE   __FILE__,__LINE__,JK_LOG_TRACE_LEVEL
-#define JK_LOG_DEBUG   __FILE__,__LINE__,JK_LOG_DEBUG_LEVEL
-#define JK_LOG_INFO    __FILE__,__LINE__,JK_LOG_INFO_LEVEL
-#define JK_LOG_WARNING __FILE__,__LINE__,JK_LOG_WARNING_LEVEL
-#define JK_LOG_ERROR   __FILE__,__LINE__,JK_LOG_ERROR_LEVEL
-#define JK_LOG_EMERG   __FILE__,__LINE__,JK_LOG_EMERG_LEVEL
-#define JK_LOG_REQUEST __FILE__,0,JK_LOG_REQUEST_LEVEL
+#if defined(__GCC__) || defined(_MSC_VER)
+#define JK_LOG_TRACE   __FILE__,__LINE__,__FUNCTION__,JK_LOG_TRACE_LEVEL
+#define JK_LOG_DEBUG   __FILE__,__LINE__,__FUNCTION__,JK_LOG_DEBUG_LEVEL
+#define JK_LOG_ERROR   __FILE__,__LINE__,__FUNCTION__,JK_LOG_ERROR_LEVEL
+#define JK_LOG_EMERG   __FILE__,__LINE__,__FUNCTION__,JK_LOG_EMERG_LEVEL
+#else
+#define JK_LOG_TRACE   __FILE__,__LINE__,NULL,JK_LOG_TRACE_LEVEL
+#define JK_LOG_DEBUG   __FILE__,__LINE__,NULL,JK_LOG_DEBUG_LEVEL
+#define JK_LOG_ERROR   __FILE__,__LINE__,NULL,JK_LOG_ERROR_LEVEL
+#define JK_LOG_EMERG   __FILE__,__LINE__,NULL,JK_LOG_EMERG_LEVEL
+#endif
+
+#define JK_LOG_INFO    __FILE__,__LINE__,NULL,JK_LOG_INFO_LEVEL
+#define JK_LOG_WARNING __FILE__,__LINE__,NULL,JK_LOG_WARNING_LEVEL
+#define JK_LOG_REQUEST __FILE__,0,NULL,JK_LOG_REQUEST_LEVEL
 
 /* Debug level is compile time only 
  */
 #if defined (DEBUG) || (_DEBUG)
 #define JK_TRACE    1
-#define JK_TRACE_ENTER(l) jk_log((l), JK_LOG_TRACE, "enter " __FUNCTION__ "\n")
-#define JK_TRACE_EXIT(l)  jk_log((l), JK_LOG_TRACE, "exit " __FUNCTION__ "\n")
+#define JK_TRACE_ENTER(l) jk_log((l), JK_LOG_TRACE, "enter\n")
+#define JK_TRACE_EXIT(l)  jk_log((l), JK_LOG_TRACE, "exit\n")
 #else
 #define JK_TRACE    0
 #define JK_TRACE_ENTER(l)
 #define JK_TRACE_EXIT(l)
 #endif
 
-#define JK_LOG_NULL_PARAMS(l) jk_log((l), JK_LOG_ERROR, __FUNCTION__ " NULL parameters\n")
+#define JK_LOG_NULL_PARAMS(l) jk_log((l), JK_LOG_ERROR, "NULL parameters\n")
 
 
 
