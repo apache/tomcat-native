@@ -62,6 +62,6 @@ so.profile=false
 # Microsft SDK
 
 # mssdk.home=c:/Program Files/Microsoft SDK
-# mssdk.include=$(mssdk.home)/include
-# mssdk.lib=$(mssdk.home)/lib
+# mssdk.include=${mssdk.home}/include
+# mssdk.lib=${mssdk.home}/lib
 
