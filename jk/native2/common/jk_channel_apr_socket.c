@@ -89,12 +89,6 @@ struct jk_channel_apr_private {
     short port;
 };
 
-/** Informations for each connection
- */
-typedef struct jk_channel_apr_data {
-    apr_socket_t *sock;
-} jk_channel_apr_data_t;
-
 typedef struct jk_channel_apr_private jk_channel_apr_private_t;
 
 /*
@@ -214,9 +208,8 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
 
     apr_sockaddr_t *remote_sa=socketInfo->addr;
     int ndelay=socketInfo->ndelay;
-    jk_channel_apr_data_t *sd=endpoint->channelData;
 
-    apr_socket_t *sock;
+    apr_socket_t *sock=endpoint->channelData;
     apr_status_t ret;
     apr_interval_time_t timeout = 2 * APR_USEC_PER_SEC;
     char msg[128];
@@ -270,13 +263,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     */
 
     /* store the channel information */
-    if( sd==NULL ) {
-        sd=(jk_channel_apr_data_t *)
-            endpoint->pool->calloc( env, endpoint->pool,
-                                    sizeof( jk_channel_apr_data_t ));
-        endpoint->channelData=sd;
-    }
-    sd->sock = sock;
+    endpoint->channelData=sock;
 
     return JK_OK;
 }
@@ -290,12 +277,13 @@ static int JK_METHOD jk2_channel_apr_close(jk_env_t *env,jk_channel_t *ch,
     apr_socket_t *sd;
     apr_status_t rc;
     
-    jk_channel_apr_data_t *chD=endpoint->channelData;
-    if( chD==NULL ) 
+    sd=endpoint->channelData;
+    if( sd==NULL ) 
         return JK_ERR;
 
-    sd=chD->sock;
-    chD->sock=NULL; /* XXX check it. */
+    endpoint->channelData=NULL; /* XXX check it. */
+    endpoint->sd=-1;
+    
     /* nothing else to clean, the socket_data was allocated ouf of
      *  endpoint's pool
      */
@@ -330,16 +318,14 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *ch,
     int this_time;
     int unixsock;
 
-    jk_channel_apr_data_t *chD=endpoint->channelData;
+    sock=endpoint->channelData;
 
-    if( chD==NULL ) 
+    if( sock==NULL ) 
         return JK_ERR;
 
     msg->end( env, msg );
     len=msg->len;
     b=msg->buf;
-
-    sock=chD->sock;
 
     length = (apr_size_t) len;
     stat = apr_send(sock, b, &length);
@@ -366,8 +352,6 @@ static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
                                             jk_endpoint_t *endpoint,
                                             char *b, int len ) 
 {
-    jk_channel_apr_data_t *chD=endpoint->channelData;
-
     apr_socket_t *sock;
     apr_size_t length;
     apr_status_t stat;
@@ -375,9 +359,11 @@ static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
     int sd;
     int rdlen;
 
-    if( chD==NULL ) 
+    sock=endpoint->channelData;
+
+    if( sock==NULL ) 
         return JK_ERR;
-    sock=chD->sock;
+
     rdlen = 0;
 
     length = (apr_size_t) len;

@@ -176,8 +176,8 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
        solution
     */
     epData=(jk_ch_jni_ep_private_t *)
-        endpoint->pool->calloc( env,endpoint->pool,
-                                sizeof( jk_ch_jni_ep_private_t ));
+        endpoint->mbean->pool->calloc( env,endpoint->mbean->pool,
+                                       sizeof( jk_ch_jni_ep_private_t ));
     
     endpoint->channelData=epData;
     /** XXX make it customizable */
@@ -250,8 +250,8 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     
     /* XXX > ajp buffer size. Don't know how to fragment or reallocate
        yet */
-    epData->carray=(char *)endpoint->pool->calloc( env, endpoint->pool,
-                                                   epData->arrayLen);
+    epData->carray=(char *)endpoint->mbean->pool->calloc( env, endpoint->mbean->pool,
+                                                          epData->arrayLen);
 
     jniCh->writeMethod =
         (*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
@@ -469,24 +469,6 @@ int JK_METHOD jk2_channel_jni_beforeRequest(struct jk_env *env,
     if( worker->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, "service() attaching to vm\n");
 
-
-    jniEnv=(JNIEnv *)endpoint->endpoint_private;
-    if(jniEnv==NULL) { /*! attached */
-        /* Try to attach */
-        if( we->vm == NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, "No VM to use\n");
-            return JK_ERR;
-        }
-        jniEnv = we->vm->attach(env, we->vm);
-            
-        if(jniEnv == NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, "Attach failed\n");  
-            /*   Is it recoverable ?? - yes, don't change the previous value*/
-            /*   r->is_recoverable_error = JK_OK; */
-            return JK_ERR;
-        } 
-        endpoint->endpoint_private = jniEnv;
-    }
     return JK_OK;
 }
 
@@ -501,7 +483,6 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
     jk_workerEnv_t *we=worker->workerEnv;
 
     /* XXX Don't detach if worker is reused per thread */
-    endpoint->endpoint_private=NULL;
     if( we==NULL || we->vm==NULL ) {
         return JK_OK;
     }
