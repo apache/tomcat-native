@@ -25,6 +25,7 @@ import java.security.PrivilegedExceptionAction;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedAction;
+import java.util.Iterator;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -109,6 +110,10 @@ public class JkCoyoteHandler extends JkHandler implements
 
     public String getProperty( String name ) {
         return properties.getProperty(name) ;
+    }
+
+    public Iterator getAttributeNames() {
+       return properties.keySet().iterator();
     }
 
     /** Pass config info

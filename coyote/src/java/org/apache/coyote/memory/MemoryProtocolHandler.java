@@ -17,7 +17,7 @@
 package org.apache.coyote.memory;
 
 import java.io.IOException;
-
+import java.util.Iterator;
 import org.apache.tomcat.util.buf.ByteChunk;
 
 import org.apache.coyote.Adapter;
@@ -52,7 +52,7 @@ public class MemoryProtocolHandler
         return null;
     }
 
-
+    public Iterator getAttributeNames() { return null ; }
     /**
      * Associated adapter.
      */

@@ -16,6 +16,8 @@
 
 package org.apache.coyote;
 
+import java.util.Iterator;
+
 
 /**
  * Abstract the protocol implementation, including threading, etc.
@@ -35,7 +37,7 @@ public interface ProtocolHandler {
 
 
     public Object getAttribute(String name);
-
+    public Iterator getAttributeNames();
 
     /**
      * The adapter, used to call the connector.

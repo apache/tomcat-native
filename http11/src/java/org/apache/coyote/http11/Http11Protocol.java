@@ -24,6 +24,7 @@ import java.net.Socket;
 import java.net.URLEncoder;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import javax.management.MBeanRegistration;
 import javax.management.MBeanServer;
@@ -84,6 +85,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         if( log.isTraceEnabled())
             log.trace(sm.getString("http11protocol.getattribute", key));
         return attributes.get(key);
+    }
+
+    public Iterator getAttributeNames() {
+        return attributes.keySet().iterator();
     }
 
     /**
