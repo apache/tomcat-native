@@ -61,9 +61,8 @@ To get Ant see (http://jakarta.apache.org/ant/index.html).
 
 To build the tomcat-webapp.jar you have to do the following:
 
-* Copy build.properties.sample to build.properties
-
-* Edit build.properties to taste.
+* Edit build.properties to taste. This file is created by ./configure when
+  the WebApp module is configured, see below.
 
 * Run "ant". It'll build the tomcat-webapp.jar
 
