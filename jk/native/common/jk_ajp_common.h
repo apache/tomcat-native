@@ -303,7 +303,7 @@ struct ajp_endpoint
 
     jk_endpoint_t endpoint;
 
-    unsigned left_bytes_to_send;
+    unsigned int left_bytes_to_send;
 
     /* time of the last request
        handled by this endpoint */
