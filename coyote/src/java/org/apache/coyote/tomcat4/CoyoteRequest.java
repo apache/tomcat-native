@@ -1047,7 +1047,7 @@ public class CoyoteRequest
      */
     public String getRemoteHost() {
         if (remoteHost == null) {
-            if (connector.getEnableLookups()) {
+            if (!connector.getEnableLookups()) {
                 remoteHost = getRemoteAddr();
             } else if (socket != null) {
                 InetAddress inet = socket.getInetAddress();
