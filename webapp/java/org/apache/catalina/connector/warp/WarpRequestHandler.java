@@ -101,6 +101,7 @@ public class WarpRequestHandler {
         response.setConnection(connection);
         response.setPacket(packet);
         request.setConnection(connection);
+        request.setConnector(connector);
 
         // Prepare the Proceed packet
         packet.reset();
