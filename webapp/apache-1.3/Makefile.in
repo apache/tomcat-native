@@ -74,15 +74,26 @@ clean:
 	$(RM) -f $(OBJS) $(MOD)
 
 $(MOD): $(SRCS) $(TGTDIR)/lib/libapr.a $(TGTDIR)/lib/libwebapp.a
-	{ \
-	    APXS_LDFLAGS_SHLIB="`$(APXS) -q LDFLAGS_SHLIB` $(APR_LDFLAGS)" ; \
-	    APXS_CFLAGS="`$(APXS) -q CFLAGS` $(CFLAGS) $(APR_CFLAGS) $(CPPFLAGS) $(APR_CPPFLAGS)" ; \
-            $(APXS) -c \
-	        -S LDFLAGS_SHLIB="$${APXS_LDFLAGS_SHLIB}" \
+	{ APXS_LDFLAGS_SHLIB="`$(APXS) -q LDFLAGS_SHLIB` \
+	        $(APR_LDFLAGS) \
+	        $(APR_LIBS)" ; \
+	    APXS_LDFLAGS_SHLIB=`$(ECHO) $${APXS_LDFLAGS_SHLIB}` ; \
+	    APXS_CFLAGS="`$(APXS) -q CFLAGS` \
+	        $(CFLAGS) \
+	        $(APR_CFLAGS) \
+	        $(CPPFLAGS) \
+	        $(APR_CPPFLAGS) \
+	        -I$(APR_INCDIR) \
+	        -I$(SRCDIR)/include \
+	        $(APR_INCLUDES)" ; \
+	    APXS_CFLAGS=`$(ECHO) $${APXS_CFLAGS}` ; \
+	    $(APXS) \
 	        -S CFLAGS="$${APXS_CFLAGS}" \
-	        -I$(APR_INCDIR) -I$(SRCDIR)/include $(APR_INCLUDES) $(APR_LIBS) \
-	        $(TGTDIR)/lib/libapr.a $(TGTDIR)/lib/libwebapp.a \
-	        -o "$@" $< ; \
+	        -S LDFLAGS_SHLIB="$${APXS_LDFLAGS_SHLIB}" \
+	        -o "$@" \
+	        -c "mod_webapp.c" \
+	        "$(TGTDIR)/lib/libwebapp.a" \
+	        "$(TGTDIR)/lib/libapr.a" ; \
 	}
 
 $(SRCS):
