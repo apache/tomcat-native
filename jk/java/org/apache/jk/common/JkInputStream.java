@@ -58,23 +58,12 @@
  */
 package org.apache.jk.common;
 
-import java.io.*;
-
-import java.util.List;
-import java.util.Iterator;
-
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.Cookie;
-
-import org.apache.tomcat.util.buf.MessageBytes;
+import java.io.IOException;
+import java.io.InputStream;
+import org.apache.jk.core.JkHandler;
+import org.apache.jk.core.Msg;
+import org.apache.jk.core.MsgContext;
 import org.apache.tomcat.util.buf.ByteChunk;
-import org.apache.tomcat.util.http.Cookies;
-import org.apache.tomcat.util.http.ServerCookie;
-import org.apache.tomcat.util.http.MimeHeaders;
-
-import org.apache.jk.core.*;
-import org.apache.jk.common.*;
 
 
 /** Generic input stream impl on top of ajp
