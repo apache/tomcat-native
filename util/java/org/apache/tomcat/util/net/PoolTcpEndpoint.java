@@ -332,10 +332,12 @@ public class PoolTcpEndpoint { // implements Endpoint {
             }
             s.close();
         } catch(Exception e) {
-            log.error("Caught exception trying to unlock accept.", e);
+            log.error("Caught exception trying to unlock accept on " + port
+                    + " " + e.toString());
         }
         try {
-            serverSocket.close();
+            if( serverSocket!=null)
+                serverSocket.close();
         } catch(Exception e) {
             log.error("Caught exception trying to close socket.", e);
         }
