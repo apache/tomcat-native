@@ -123,6 +123,7 @@
 	<include name="common/jk_logger.c" />
         <include name="common/jk_nwmain.c" if="netware" />
         <include name="apr/*.c" if="HAVE_APR" />
+        <exclude name="jni/jk_jni_aprImpl.c" unless="HAVE_APR" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
@@ -195,6 +196,7 @@
 		 unless="netware" />
         <include name="common/apr/*.c" if="HAVE_APR" />
         <exclude name="common/jk_channel_apr_socket.c" />
+        <exclude name="common/jk_pool_apr.c" unless="HAVE_APR" />
       </src>
       <includes>
 	<include name="${native.dir}/include" />
