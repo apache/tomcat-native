@@ -88,9 +88,9 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
 {
 
     public Http11Protocol() {
-	setSoLinger(Constants.DEFAULT_CONNECTION_LINGER);
-	setSoTimeout(Constants.DEFAULT_CONNECTION_TIMEOUT);
-	setServerSoTimeout(Constants.DEFAULT_SERVER_SOCKET_TIMEOUT);
+        setSoLinger(Constants.DEFAULT_CONNECTION_LINGER);
+        setSoTimeout(Constants.DEFAULT_CONNECTION_TIMEOUT);
+        setServerSoTimeout(Constants.DEFAULT_SERVER_SOCKET_TIMEOUT);
     }
 
     /**
