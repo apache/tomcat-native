@@ -258,7 +258,8 @@ public final class Parameters extends MultiMap {
     public void handleQueryParameters() {
 	if( didQueryParameters ) return;
 
-	queryMB.setEncoding( encoding );
+        if( queryMB != null)
+            queryMB.setEncoding( encoding );
 	didQueryParameters=true;
 	if( debug > 0  )
 	    log( "Decoding query " + queryMB + " " + encoding);
