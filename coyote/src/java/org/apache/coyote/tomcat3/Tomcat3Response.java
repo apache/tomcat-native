@@ -175,4 +175,28 @@ class Tomcat3Response extends  Response {
 	coyoteResponse.acknowledge();
 	acknowledged=true;
     }
+
+    public void setLocale(Locale locale) {
+        if (locale == null || included) {
+            return;  // throw an exception?
+        }
+        this.locale = locale;
+        coyoteResponse.setLocale(locale);
+        contentLanguage = coyoteResponse.getContentLanguage();
+        // maintain Tomcat 3.3 behavior by setting the header too
+        // and by not trying to guess the characterEncoding
+        headers.setValue("Content-Language").setString(contentLanguage);
+    }
+
+    public void setContentType(String contentType) {
+        if (included) {
+            return;
+        }
+        coyoteResponse.setContentType(contentType);
+        this.contentType = coyoteResponse.getContentType();
+        this.characterEncoding = coyoteResponse.getCharacterEncoding();
+        // maintain Tomcat 3.3 behavior by setting the header too
+        headers.setValue("Content-Type").setString(contentType);
+    }
+
 }
