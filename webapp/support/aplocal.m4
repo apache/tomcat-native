@@ -127,11 +127,11 @@ AC_DEFUN(LOCAL_HEADER,[
 ])
 
 AC_DEFUN(LOCAL_HELP,[
-  AC_DIVERT_PUSH(AC_DIVERSION_NOTICE)
-  ac_help="${ac_help}
-
-[$1]"
-  AC_DIVERT_POP()
+dnl   AC_DIVERT_PUSH(AC_DIVERSION_NOTICE)
+dnl   ac_help="${ac_help}
+dnl 
+dnl [$1]"
+dnl   AC_DIVERT_POP()
 ])
 
 dnl --------------------------------------------------------------------------
