@@ -51,17 +51,22 @@ planned for the end of November. Lots of code from JK2 has been ported to JK
 <br />
 <ul>
 <li><a href="config/workers.html"><b>Workers.properties Documentation</b></a>
-<p>To be done! This section contains detail description of all workers.properties
+<p>A Tomcat worker is a Tomcat instance that is waiting to execute servlets
+on behalf of some web server. For example, we can have a web server such as Apache
+forwarding servlet requests to a Tomcat process (the worker) running behind it. 
+</p>
+<p>This section contains detail description of all workers.properties
 directives.
 </p>
 </li>
 
-<li><a href="config/apache1.html"><b>Apache Documentation</b></a>
-<p>To be done! This section contains detail description of all Aapache directives.
+<li><a href="config/apache.html"><b>Apache Documentation</b></a>
+<p>This section contains detail description of all directives related to
+Aapache web server. 
 </p>
 </li>
-<li><a href="config/apache1.html"><b>IIS Documentation</b></a>
-<p>To be done! This section contains detail description of all IIS directives.
+<li><a href="config/iis.html"><b>IIS Documentation</b></a>
+<p>This section contains detail description of all IIS directives.
 </p>
 </li>
 
@@ -72,18 +77,20 @@ directives.
 <br />
 <ul>
 <li><a href="install/apache1.html"><b>Apache 1.3.x installation documentation</b></a>
-<p>To be done! This section contains detail description of how to build and
-install mod_jk for Apache 1.3.x web server.
+<p>This section contains detail description of how to build and
+install mod_jk for Apache 1.3.x web server. Browse to this section if you need to
+build mod_jk for Apache 1.3.x web server from sources.
 </p>
 </li>
 <li><a href="install/apache2.html"><b>Apache 2.0.x installation documentation</b></a>
-<p>To be done! This section contains detail description of how to build and
-install mod_jk for Apache 2.0.x web server.
+<p>This section contains detail description of how to build and
+install mod_jk for Apache 2.0.x web server. Browse to this section if you need to
+build mod_jk for Apache 2.0.x web server from sources.
 </p>
 </li>
 
 <li><a href="install/iis.html"><b>IIS installation documentation</b></a>
-<p>To be done! This section contains detail description of how to build and
+<p>This section contains detail description of how to build and
 install isapi_redirector for IIS web server.
 </p>
 </li>
@@ -92,13 +99,26 @@ install isapi_redirector for IIS web server.
 </section>
 
 
-<section name="Documentation">
+<section name="Miscellaneous documentation">
 <br />
 <ul>
-<li><a href="howto/index.html"><b>HowTo Documentation</b></a>
-<p>This section contains various howto documents
+<li><a href="common/ajpv13a.html"><b>AJPv13 Protocol Documentation</b></a>
+<p>This section describes the Apache JServ Protocol version 1.3 (hereafter
+<b>ajp13</b>). There is, apparently, no current documentation of how the
+protocol works. This document is an attempt to remedy that, in order to
+make life easier for maintainers of JK, and for anyone who wants to
+port the protocol to some other container. 
 </p>
 </li>
+<li><a href="howto/index.html"><b>HowTo Documentation</b></a>
+<p>This section contains various howto documents General Informations and FAQ about JK 
+</p>
+</li>
+<li><a href="faq.html"><b>General Informations and FAQ about JK</b></a>
+<p>
+</p>
+</li>
+
 </ul>
 
 </section>
