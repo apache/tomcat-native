@@ -168,4 +168,12 @@ public class JSSE13SocketFactory extends JSSESocketFactory
             throw new IOException(e.getMessage());
         }
     }
+    protected String[] getEnabledProtocols(SSLServerSocket socket,
+					   String requestedProtocols){
+	return null;
+    }
+    protected void setEnabledProtocols(SSLServerSocket socket, 
+					     String [] protocols){
+    }
+
 }

@@ -61,8 +61,10 @@ package org.apache.tomcat.util.net.jsse;
 
 import java.io.*;
 import java.net.*;
+import java.util.Vector;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.X509KeyManager;
@@ -188,5 +190,50 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
         }
 
         return tms;
+    }
+    protected void setEnabledProtocols(SSLServerSocket socket, String []protocols){
+	if (protocols != null) {
+            socket.setEnabledProtocols(protocols);
+        }
+    }
+
+    protected String[] getEnabledProtocols(SSLServerSocket socket,
+					   String requestedProtocols){
+	String[] supportedProtocols = socket.getSupportedProtocols();
+
+        String[] enabledProtocols = null;
+
+        if (requestedProtocols != null) {
+            Vector vec = null;
+            int fromIndex = 0;
+            int index = requestedProtocols.indexOf(',', fromIndex);
+            while (index != -1) {
+                String protocol
+                    = requestedProtocols.substring(fromIndex, index).trim();
+                /*
+                 * Check to see if the requested protocol is among the
+                 * supported protocols, i.e., may be enabled
+                 */
+                for (int i=0; supportedProtocols != null
+                             && i<supportedProtocols.length; i++) {
+                    if (supportedProtocols[i].equals(protocol)) {
+                        if (vec == null) {
+                            vec = new Vector();
+                        }
+                        vec.addElement(protocol);
+                        break;
+                    }
+                }
+                fromIndex = index+1;
+                index = requestedProtocols.indexOf(',', fromIndex);
+            }
+
+            if (vec != null) {
+                enabledProtocols = new String[vec.size()];
+                vec.copyInto(enabledProtocols);
+            }
+        }
+
+        return enabledProtocols;
     }
 }

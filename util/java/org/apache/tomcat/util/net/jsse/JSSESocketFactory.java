@@ -294,51 +294,23 @@ public abstract class JSSESocketFactory
     /*
      * Determines the SSL protocol variants to be enabled.
      *
+     * @param socket The socket to get supported list from.
      * @param requestedProtocols Comma-separated list of requested SSL
      * protocol variants
-     * @param supportedProtocols Array of supported SSL protocol variants
      *
      * @return Array of SSL protocol variants to be enabled, or null if none of
      * the requested protocol variants are supported
      */
-    private String[] getEnabledProtocols(String requestedProtocols,
-                                         String[] supportedProtocols) {
+    abstract protected String[] getEnabledProtocols(SSLServerSocket socket,
+						    String requestedProtocols);
 
-        String[] enabledProtocols = null;
-
-        if (requestedProtocols != null) {
-            Vector vec = null;
-            int fromIndex = 0;
-            int index = requestedProtocols.indexOf(',', fromIndex);
-            while (index != -1) {
-                String protocol
-                    = requestedProtocols.substring(fromIndex, index).trim();
-                /*
-                 * Check to see if the requested protocol is among the
-                 * supported protocols, i.e., may be enabled
-                 */
-                for (int i=0; supportedProtocols != null
-                             && i<supportedProtocols.length; i++) {
-                    if (supportedProtocols[i].equals(protocol)) {
-                        if (vec == null) {
-                            vec = new Vector();
-                        }
-                        vec.addElement(protocol);
-                        break;
-                    }
-                }
-                fromIndex = index+1;
-                index = requestedProtocols.indexOf(',', fromIndex);
-            }
-
-            if (vec != null) {
-                enabledProtocols = new String[vec.size()];
-                vec.copyInto(enabledProtocols);
-            }
-        }
-
-        return enabledProtocols;
-    }
+    /**
+     * Set the SSL protocol variants to be enabled.
+     * @param socket the SSLServerSocket.
+     * @param protocols the protocols to use.
+     */
+    abstract protected void setEnabledProtocols(SSLServerSocket socket, 
+					    String [] protocols);
 
     /**
      * Configures the given SSL server socket with the requested cipher suites,
@@ -353,11 +325,8 @@ public abstract class JSSESocketFactory
         }
 
         String requestedProtocols = (String) attributes.get("protocols");
-        if (requestedProtocols != null) {
-            socket.setEnabledProtocols(getEnabledProtocols(
-                                        requestedProtocols,
-                                        socket.getSupportedProtocols()));
-        }
+	setEnabledProtocols(socket, getEnabledProtocols(socket, 
+							 requestedProtocols));
 
         // we don't know if client auth is needed -
         // after parsing the request we may re-handshake
