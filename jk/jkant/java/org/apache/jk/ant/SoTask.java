@@ -100,6 +100,7 @@ public class SoTask extends Task {
     // or FileSet ?
     FileSet src;
     Path includes;
+    Path depends;
     Path libs;
     String module;
     String soFile;
@@ -165,6 +166,20 @@ public class SoTask extends Task {
     }
 
     /**
+     * General dependencies. If any of the files is modified
+     * ( i.e. is newer than the oldest .o ) we'll recompile everything.
+     *
+     * This can be used for headers ( until we add support for makedepend)
+     * or any important file that could invalidate the build.
+     * Another example is checking httpd or apxs ( if a new version
+     * was installed, maybe some flags or symbols changed )
+     */
+    public Path createDepends() {
+	depends=new Path(project);
+	return depends;
+    }
+
+    /**
      * Libraries ( .a, .so or .dll ) files to link to.
      */
     public Path createLibs() {
@@ -215,6 +230,15 @@ public class SoTask extends Task {
 		compileList.addElement( srcFile );
 	}
 
+	if( checkDepend() ) {
+	    log("Dependency expired, full build ");
+	    compileList=new Vector();
+	    for(int i=0; i<srcList.length; i++ ) {
+		File srcFile = (File)project.resolveFile(srcList[i]);
+		compileList.addElement( srcFile );
+	    }
+	}
+
         String [] includeList = ( includes==null ) ?
 	    new String[] {} : includes.list(); 
 
@@ -246,6 +270,9 @@ public class SoTask extends Task {
 	lo_mapper.setFrom("*.c");
 	lo_mapper.setTo("*.lo");
     }
+
+    long oldestO=System.currentTimeMillis();
+    File oldestOFile=null;
     
     /** Verify if a .c file needs compilation.
      *	As with javac, we assume a fixed build structure, where all .o
@@ -268,6 +295,10 @@ public class SoTask extends Task {
 	// 	   + target.exists());
 	if( ! target.exists() )
 	    return true;
+	if( oldestO > target.lastModified() ) {
+	    oldestO=target.lastModified();
+	    oldestOFile=target;
+	}
 	if( srcF.lastModified() > target.lastModified() )
 	    return true;
 
@@ -275,6 +306,24 @@ public class SoTask extends Task {
 	    log("No need to compile " + srcF + " target " + target ); 
 	return false;
 	
+    }
+
+    public boolean checkDepend() {
+	if( depends==null )
+	    return false;
+	String dependsA[]=depends.list(); 
+	for( int i=0; i< dependsA.length; i++ ) {
+	    File f=new File( dependsA[i] );
+	    if( ! f.exists() ) {
+		log("Depend not found " + f );
+		return true;
+	    }
+	    if( f.lastModified() > oldestO ) {
+		log( "Depend " + f + " newer than " + oldestOFile );
+		return true;
+	    }
+	}
+	return false;
     }
     
     /** Compile  using 'standard' gcc flags. This assume a 'current' gcc on
@@ -398,7 +447,7 @@ public class SoTask extends Task {
 	cmd.createArgument().setValue( soFile + ".la" );
 
 	// All .o files must be included
-	project.log( "Linking " + soFile + ".la");
+	project.log( "Linking " + buildDir + "/" + soFile + ".so");
 
 	for( int i=0; i<srcList.length; i++ ) {
 	    File srcF = (File)project.resolveFile(srcList[i]);

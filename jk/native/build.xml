@@ -1,3 +1,5 @@
+<?xml version="1.0" ?>
+
 <project name="jk_native" default="main" basedir=".">
 
   <!-- Experimental -->
@@ -14,9 +16,15 @@
   <property name="apache2.home" location="/opt/apache2" />
   <property name="apache13.home" location="/usr" />
 
-  <target name="main" >
+  <target name="main" depends="init,apache13,apache20,jni">
+  </target>
+
+  <target name="init" >
     <taskdef resource="META-INF/ant.tasks" 
 	     classpathref="jkant" />
+  </target>
+
+  <target name="jni" >
     <so sofile="jni_connect" buildDir="jni" >
       <jniConfig />
       <src dir="${native.dir}">
@@ -29,8 +37,13 @@
 	<pathelement location="${native.dir}/common" />
 	<pathelement location="${java.home}/../include" />
       </includes>
+      <depends>
+	<fileset dir="${native.dir}/common" includes="*.h" />
+      </depends>
     </so>
+  </target>
 
+  <target name="apache20" >
     <so sofile="mod_jk" buildDir="apache-2.0">
       <apacheConfig apxs="${apxs20}" />
       <jniConfig />
@@ -43,8 +56,13 @@
 	<pathelement location="${apache2.home}/include" />
 	<pathelement location="${java.home}/../include" />
       </includes>
+      <depends>
+	<fileset dir="${native.dir}/common" includes="*.h" />
+      </depends>
     </so>
-    
+  </target>
+
+  <target name="apache13">
     <so sofile="mod_jk" buildDir="apache-1.3">
       <apacheConfig apxs="${apxs13}" />
       <src dir=".">
@@ -57,6 +75,9 @@
 	<pathelement location="${apache13.home}/include/apache" />
 	<pathelement location="${apache13.home}/include" />
       </includes>
+      <depends>
+	<fileset dir="${native.dir}/common" includes="*.h" />
+      </depends>
     </so>
   </target>
 
