@@ -128,10 +128,15 @@ struct jk_uriEnv {
     /** Full name */
     char *name;
     
-    /* Virtual server handled - NULL means 'global' ( visible in all
+    /* Virtual server handled - '*' means 'global' ( visible in all
      * virtual servers ). Part of the uri name.
      */
     char *virtual;
+
+    /* Virtual server port - '0' means 'all' ( visible in all
+     * ports on the virtual servers ). Part of the uri name.
+     */
+    int port;
 
     /* Original uri ( unparsed ). Part of the uri name.
      */
@@ -193,6 +198,7 @@ struct jk_uriEnv {
         If NULL - no config was attached.
         ( this will be used in future for run-time deployment )
      */
+
     struct jk_config *config;
 
     /* -------------------- Other properties -------------------- */
@@ -209,10 +215,6 @@ struct jk_uriEnv {
 
     int merged;
     
-    /* Reverse mappings
-     */
-    int reverse;
-
     /** XXX .
      */
 /*     int status; */
