@@ -28,8 +28,6 @@ APR_DECLARE_OPTIONAL_FN(int, ssl_proxy_enable, (conn_rec *));
 APR_DECLARE_OPTIONAL_FN(int, ssl_engine_disable, (conn_rec *));
 #endif
 
-module AP_MODULE_DECLARE_DATA proxy_module;
-
 #ifndef MAX
 #define MAX(x,y) ((x) >= (y) ? (x) : (y))
 #endif
