@@ -58,15 +58,22 @@
  */ 
 package org.apache.coyote;
 
+
 /**
- * Note interface.
+ * Action hook.
  *
  * @author Remy Maucherat
  */
-public interface Note {
+public interface ActionHook {
 
 
-    public void recycle();
+    /**
+     * Send an action to the connector.
+     * 
+     * @param actionCode Type of the action
+     * @param param Action parameter
+     */
+    public void action(ActionCode actionCode, Object param);
 
 
 }

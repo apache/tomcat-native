@@ -64,13 +64,22 @@ package org.apache.coyote;
  *
  * @author Remy Maucherat
  */
-public final class AdapterEventCode {
+public final class ActionCode {
 
 
     // -------------------------------------------------------------- Constants
 
 
-    public static final AdapterEventCode EVENT_CUSTOM = new AdapterEventCode();
+    public static final ActionCode ACTION_CUSTOM = new ActionCode();
+
+
+    public static final ActionCode ACTION_CLOSE = new ActionCode();
+
+
+    public static final ActionCode ACTION_RESET = new ActionCode();
+
+
+    public static final ActionCode ACTION_ACK = new ActionCode();
 
 
     // ----------------------------------------------------------- Constructors
@@ -79,7 +88,7 @@ public final class AdapterEventCode {
     /**
      * Private constructor.
      */
-    private AdapterEventCode() {
+    private ActionCode() {
     }
 
 

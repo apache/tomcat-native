@@ -153,7 +153,7 @@ public final class Request {
     /**
      * Notes.
      */
-    protected Note notes[] = new Note[Constants.MAX_NOTES];
+    protected Object notes[] = new Object[Constants.MAX_NOTES];
 
 
     /**
@@ -349,12 +349,12 @@ public final class Request {
     // -------------------- Per-Request "notes" --------------------
 
 
-    public final void setNote(int pos, Note value) {
+    public final void setNote(int pos, Object value) {
 	notes[pos] = value;
     }
 
 
-    public final Note getNote(int pos) {
+    public final Object getNote(int pos) {
 	return notes[pos];
     }
 
@@ -378,11 +378,6 @@ public final class Request {
         serverPort=-1;
 	
 	scookies.recycle();
-
-        for (int i=0; i < Constants.MAX_NOTES; i++) {
-            if (notes[i] != null)
-                notes[i].recycle();
-        }
 
         unparsedURIMB.recycle();
         uriMB.recycle();

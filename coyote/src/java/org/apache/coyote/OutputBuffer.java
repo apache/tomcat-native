@@ -73,10 +73,4 @@ public interface OutputBuffer {
         throws IOException;
 
 
-    public void reset();
-
-
-    public void close();
-
-
 }

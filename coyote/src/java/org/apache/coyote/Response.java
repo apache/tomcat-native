@@ -111,7 +111,7 @@ public final class Response {
     /**
      * Notes.
      */
-    protected Note notes[] = new Note[Constants.MAX_NOTES];
+    protected Object notes[] = new Object[Constants.MAX_NOTES];
 
 
     /**
@@ -136,9 +136,9 @@ public final class Response {
 
 
     /**
-     * Adapter listener.
+     * Action hook.
      */
-    public AdapterListener listener;
+    public ActionHook hook;
 
 
     // ------------------------------------------------------------- Properties
@@ -159,35 +159,35 @@ public final class Response {
     }
 
 
-    public AdapterListener getListener() {
-        return listener;
+    public ActionHook getHook() {
+        return hook;
     }
 
 
-    public void setAdapterListener(AdapterListener listener) {
-        this.listener = listener;
+    public void setHook(ActionHook hook) {
+        this.hook = hook;
     }
 
 
     // -------------------- Per-Response "notes" --------------------
 
 
-    public final void setNote(int pos, Note value) {
+    public final void setNote(int pos, Object value) {
 	notes[pos] = value;
     }
 
 
-    public final Note getNote(int pos) {
+    public final Object getNote(int pos) {
 	return notes[pos];
     }
 
 
-    // -------------------- Events --------------------
+    // -------------------- Actions --------------------
 
 
-    public void sendEvent(AdapterEventCode eventCode, Object param) {
-        if (listener != null) {
-            listener.event(eventCode, param);
+    public void action(ActionCode actionCode, Object param) {
+        if (hook != null) {
+            hook.action(actionCode, param);
         }
     }
 
@@ -263,7 +263,9 @@ public final class Response {
     // -------------------- Methods --------------------
     
     
-    public void reset() throws IllegalStateException {
+    public void reset() 
+        throws IllegalStateException {
+        
         // Reset the headers only if this is the main request,
         // not for included
         contentType = Constants.DEFAULT_CONTENT_TYPE;
@@ -277,16 +279,17 @@ public final class Response {
 	// stream before resetting the output stream
 	//
 	// Reset the stream
-	if( commited ) {
+	if (commited) {
 	    //String msg = sm.getString("servletOutputStreamImpl.reset.ise"); 
-	    throw new IllegalStateException(/*msg*/);
+	    throw new IllegalStateException();
 	}
-	outputBuffer.reset();
+        
+        action(ActionCode.ACTION_RESET, null);
     }
 
 
     public void finish() throws IOException {
-	outputBuffer.close();
+        action(ActionCode.ACTION_CLOSE, null);
     }
 
 
@@ -431,11 +434,6 @@ public final class Response {
 	errorException = null;
 	errorURI = null;
 	headers.clear();
-
-        for (int i=0; i < Constants.MAX_NOTES; i++) {
-            if (notes[i] != null)
-                notes[i].recycle();
-        }
 
     }
 
