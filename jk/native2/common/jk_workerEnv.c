@@ -69,21 +69,21 @@
 
 #define DEFAULT_WORKER              ("ajp13")
 
-int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                     void **result,
                                     const char *type, const char *name);
 
-static void jk_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this);
-static void jk_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this);
-static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this);
+static void jk2_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this);
+static void jk2_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this);
+static int  jk2_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this);
 
-static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *workerEnv)
+static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *workerEnv)
 {
     int err;
     char *opt;
     int options;
 
-    opt=jk_map_getString( env, workerEnv->init_data, "workerFile", NULL );
+    opt=jk2_map_getString( env, workerEnv->init_data, "workerFile", NULL );
     if( opt != NULL ) {
         struct stat statbuf;
         
@@ -109,7 +109,7 @@ static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *workerEnv)
                       workerEnv->worker_file,
                       workerEnv->init_data->size(env, workerEnv->init_data) );
         
-        err=jk_map_readFileProperties(env, workerEnv->init_data,
+        err=jk2_map_readFileProperties(env, workerEnv->init_data,
                                           workerEnv->worker_file);
         if( err==JK_TRUE ) {
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
@@ -123,7 +123,7 @@ static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *workerEnv)
         }
     }
         
-    opt=jk_map_getString( env, workerEnv->init_data, "logLevel", "Error" );
+    opt=jk2_map_getString( env, workerEnv->init_data, "logLevel", "Error" );
 
     if(0 == strcasecmp(opt, JK_LOG_INFO_VERB)) {
         env->l->level=JK_LOG_INFO_LEVEL;
@@ -131,22 +131,22 @@ static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *workerEnv)
     if(0 == strcasecmp(opt, JK_LOG_DEBUG_VERB)) {
         env->l->level=JK_LOG_DEBUG_LEVEL;
     }
-    opt=jk_map_getString( env, workerEnv->init_data, "logFile", NULL );
+    opt=jk2_map_getString( env, workerEnv->init_data, "logFile", NULL );
 
     env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk.init_jk()\n" ); 
     env->l->open( env, env->l, workerEnv->init_data );
 
-    opt=jk_map_getString( env, workerEnv->init_data, "sslEnable", NULL );
+    opt=jk2_map_getString( env, workerEnv->init_data, "sslEnable", NULL );
     workerEnv->ssl_enable = JK_TRUE;
-    opt=jk_map_getString( env, workerEnv->init_data, "httpsIndicator", NULL );
+    opt=jk2_map_getString( env, workerEnv->init_data, "httpsIndicator", NULL );
     workerEnv->https_indicator = opt;
-    opt=jk_map_getString( env, workerEnv->init_data, "certsIndicator", NULL );
+    opt=jk2_map_getString( env, workerEnv->init_data, "certsIndicator", NULL );
     workerEnv->certs_indicator = opt;
-    opt=jk_map_getString( env, workerEnv->init_data, "cipherIndicator", NULL );
+    opt=jk2_map_getString( env, workerEnv->init_data, "cipherIndicator", NULL );
     workerEnv->cipher_indicator = opt;
-    opt=jk_map_getString( env, workerEnv->init_data, "sessionIndicator", NULL );
+    opt=jk2_map_getString( env, workerEnv->init_data, "sessionIndicator", NULL );
     workerEnv->session_indicator = opt;
-    opt=jk_map_getString( env, workerEnv->init_data, "keySizeIndicator", NULL );
+    opt=jk2_map_getString( env, workerEnv->init_data, "keySizeIndicator", NULL );
     workerEnv->key_size_indicator = opt;
 
     /* Small change in how we treat options: we have a default,
@@ -154,25 +154,25 @@ static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *workerEnv)
        of overriding the default ( "-Option == no option, leave the
        default
     */
-    if ( jk_map_getBool(env, workerEnv->init_data,
+    if ( jk2_map_getBool(env, workerEnv->init_data,
                         "ForwardKeySize", NULL)) {
         workerEnv->options |= JK_OPT_FWDKEYSIZE;
-    } else if(jk_map_getBool(env, workerEnv->init_data,
+    } else if(jk2_map_getBool(env, workerEnv->init_data,
                              "ForwardURICompat", NULL)) {
         workerEnv->options &= ~JK_OPT_FWDURIMASK;
         workerEnv->options |=JK_OPT_FWDURICOMPAT;
-    } else if(jk_map_getBool(env, workerEnv->init_data,
+    } else if(jk2_map_getBool(env, workerEnv->init_data,
                              "ForwardURICompatUnparsed", NULL)) {
         workerEnv->options &= ~JK_OPT_FWDURIMASK;
         workerEnv->options |=JK_OPT_FWDURICOMPATUNPARSED;
-    } else if (jk_map_getBool(env, workerEnv->init_data,
+    } else if (jk2_map_getBool(env, workerEnv->init_data,
                               "ForwardURIEscaped", NULL)) {
         workerEnv->options &= ~JK_OPT_FWDURIMASK;
         workerEnv->options |= JK_OPT_FWDURIESCAPED;
     }
 
     /* Init() - post-config initialization ( now all options are set ) */
-    jk_workerEnv_init1( env, workerEnv );
+    jk2_workerEnv_init1( env, workerEnv );
 
     err=workerEnv->uriMap->init(env, workerEnv->uriMap,
                                 workerEnv,
@@ -185,7 +185,7 @@ static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *workerEnv)
  * 
  *  Replaces wc_open
  */
-static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this)
+static int jk2_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this)
 {
     jk_map_t *init_data=_this->init_data;
     char **worker_list  = NULL;
@@ -196,9 +196,9 @@ static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this)
 
     /*     _this->init_data=init_data; */
 
-    tmp = jk_map_getString(env, init_data, "worker.list",
+    tmp = jk2_map_getString(env, init_data, "worker.list",
                            DEFAULT_WORKER );
-    worker_list=jk_map_split( env, init_data, init_data->pool,
+    worker_list=jk2_map_split( env, init_data, init_data->pool,
                               tmp, NULL, & declared_workers );
 
     if(worker_list==NULL || declared_workers <= 0 ) {
@@ -224,7 +224,7 @@ static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this)
         }
     }
 
-    jk_workerEnv_initHandlers( env, _this );
+    jk2_workerEnv_initHandlers( env, _this );
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "workerEnv.init() %d workers, default %s\n",
@@ -233,7 +233,7 @@ static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this)
 }
 
 
-static void jk_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this)
+static void jk2_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this)
 {
     int sz;
     int i;
@@ -255,9 +255,9 @@ static void jk_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this)
     _this->worker_map->clear(env, _this->worker_map);
 }
 
-static jk_worker_t *jk_workerEnv_getWorkerForName(jk_env_t *env,
-                                                  jk_workerEnv_t *_this,
-                                                  const char *name )
+static jk_worker_t *jk2_workerEnv_getWorkerForName(jk_env_t *env,
+                                                   jk_workerEnv_t *_this,
+                                                   const char *name )
 {
     jk_worker_t * rc;
     
@@ -277,11 +277,11 @@ static jk_worker_t *jk_workerEnv_getWorkerForName(jk_env_t *env,
 }
 
 
-static jk_webapp_t *jk_workerEnv_createWebapp(jk_env_t *env,
-                                              jk_workerEnv_t *_this,
-                                              const char *vhost,
-                                              const char *name, 
-                                              jk_map_t *init_data)
+static jk_webapp_t *jk2_workerEnv_createWebapp(jk_env_t *env,
+                                               jk_workerEnv_t *_this,
+                                               const char *vhost,
+                                               const char *name, 
+                                               jk_map_t *init_data)
 {
     jk_pool_t *webappPool;
     jk_webapp_t *webapp;
@@ -312,8 +312,8 @@ static jk_webapp_t *jk_workerEnv_createWebapp(jk_env_t *env,
     
 }
 
-static void jk_workerEnv_checkSpace( jk_env_t *env, jk_pool_t *pool,
-                                     void ***tableP, int *sizeP, int id )
+static void jk2_workerEnv_checkSpace(jk_env_t *env, jk_pool_t *pool,
+                                     void ***tableP, int *sizeP, int id)
 {
     void **newTable;
     int i;
@@ -329,7 +329,7 @@ static void jk_workerEnv_checkSpace( jk_env_t *env, jk_pool_t *pool,
     *sizeP=newSize;
 }
 
-static void jk_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this)
+static void jk2_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this)
 {
     /* Find the max message id */
     /* XXX accessing private data... env most provide some method to get this */
@@ -351,7 +351,7 @@ static void jk_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this)
             
             for( j=0; j< localHandlers->size( env, localHandlers ); j++ ) {
                 handler=(jk_handler_t *)localHandlers->valueAt( env, localHandlers, j );
-                jk_workerEnv_checkSpace( env, _this->pool,
+                jk2_workerEnv_checkSpace( env, _this->pool,
                                          (void ***)&_this->handlerTable,
                                          &_this->lastMessageId,
                                          handler->messageId );
@@ -363,8 +363,8 @@ static void jk_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this)
     }
 }
 
-static int jk_workerEnv_dispatch(jk_env_t *env, jk_workerEnv_t *_this,
-                                 jk_endpoint_t *e, jk_ws_service_t *r )
+static int jk2_workerEnv_dispatch(jk_env_t *env, jk_workerEnv_t *_this,
+                                  jk_endpoint_t *e, jk_ws_service_t *r)
 {
     int code;
     jk_handler_t *handler;
@@ -411,8 +411,8 @@ static int jk_workerEnv_dispatch(jk_env_t *env, jk_workerEnv_t *_this,
  * In fact if tomcat link is broken during upload (browser ->apache ->tomcat)
  * we'll loose data and we'll have to abort the whole request.
  */
-static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
-                                         jk_endpoint_t *e, jk_ws_service_t *r )
+static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
+                                          jk_endpoint_t *e, jk_ws_service_t *r )
 {
     int code;
     jk_handler_t *handler;
@@ -441,7 +441,7 @@ static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
 
         /* e->reply->dump(env, e->reply, "Received ");  */
 
-        rc=jk_workerEnv_dispatch( env, _this, e, r );
+        rc=jk2_workerEnv_dispatch( env, _this, e, r );
 
         /* Process the status code returned by handler */
         switch( rc ) {
@@ -493,19 +493,19 @@ static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
     return JK_FALSE;
 }
 
-static jk_worker_t *jk_workerEnv_releasePool(jk_env_t *env,
-                                             jk_workerEnv_t *_this,
-                                             const char *name, 
-                                             jk_map_t *init_data)
+static jk_worker_t *jk2_workerEnv_releasePool(jk_env_t *env,
+                                              jk_workerEnv_t *_this,
+                                              const char *name, 
+                                              jk_map_t *init_data)
 {
     
 }
 
 
-static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
-                                              jk_workerEnv_t *_this,
-                                              const char *name, 
-                                              jk_map_t *init_data)
+static jk_worker_t *jk2_workerEnv_createWorker(jk_env_t *env,
+                                               jk_workerEnv_t *_this,
+                                               const char *name, 
+                                               jk_map_t *init_data)
 {
     int err=JK_TRUE;
     char *type;
@@ -525,7 +525,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
 
     workerPool=_this->pool->create(env, _this->pool, HUGE_POOL_SIZE);
 
-    type=jk_map_getStrProp( env, init_data,"worker",name,"type",NULL );
+    type=jk2_map_getStrProp( env, init_data,"worker",name,"type",NULL );
 
     /* Each worker has it's own pool */
     if( type == NULL ) type="ajp13";
@@ -546,7 +546,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
     w->pool=workerPool;
     w->workerEnv=_this;
 
-    w->rPoolCache= jk_objCache_create( env, workerPool  );
+    w->rPoolCache= jk2_objCache_create( env, workerPool  );
     err=w->rPoolCache->init( env, w->rPoolCache,
                                     1024 ); /* XXX make it unbound */
 
@@ -591,7 +591,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
     return w;
 }
 
-int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                     void **result,
                                     const char *type, const char *name)
 {
@@ -606,7 +606,7 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool,
     *result=_this;
 
     _this->init_data = NULL;
-    jk_map_default_create(env, & _this->init_data, pool);
+    jk2_map_default_create(env, & _this->init_data, pool);
     
     /* Add 'compile time' settings. Those are defined in jk_global,
        with the other platform-specific settings. No need to ask
@@ -666,9 +666,9 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool,
     _this->secret_key = NULL; 
 
     _this->envvars_in_use = JK_FALSE;
-    jk_map_default_create(env, &_this->envvars, pool);
+    jk2_map_default_create(env, &_this->envvars, pool);
 
-    jk_map_default_create(env,&_this->worker_map, _this->pool);
+    jk2_map_default_create(env,&_this->worker_map, _this->pool);
 
     uriMapPool = _this->pool->create(env, _this->pool, HUGE_POOL_SIZE);
     
@@ -684,13 +684,13 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool,
     _this->perThreadWorker=0;
     
     /* methods */
-    _this->init=&jk_workerEnv_init;
-    _this->getWorkerForName=&jk_workerEnv_getWorkerForName;
-    _this->close=&jk_workerEnv_close;
-    _this->createWorker=&jk_workerEnv_createWorker;
-    _this->createWebapp=&jk_workerEnv_createWebapp;
-    _this->processCallbacks=&jk_workerEnv_processCallbacks;
-    _this->dispatch=&jk_workerEnv_dispatch;
+    _this->init=&jk2_workerEnv_init;
+    _this->getWorkerForName=&jk2_workerEnv_getWorkerForName;
+    _this->close=&jk2_workerEnv_close;
+    _this->createWorker=&jk2_workerEnv_createWorker;
+    _this->createWebapp=&jk2_workerEnv_createWebapp;
+    _this->processCallbacks=&jk2_workerEnv_processCallbacks;
+    _this->dispatch=&jk2_workerEnv_dispatch;
 
     _this->rootWebapp=_this->createWebapp( env, _this, NULL, "/", NULL );
 

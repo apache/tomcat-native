@@ -90,7 +90,7 @@ typedef struct jni_worker_data jni_worker_data_t;
 
 /** Static methods - much easier...
  */
-static int get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEnv )
+static int jk2_get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEnv )
 {
 
     p->jk_startup_method =
@@ -115,16 +115,16 @@ static int get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEnv )
     return JK_TRUE;
 }
 
-static int JK_METHOD jni_worker_service(jk_env_t *env,
-                                        jk_worker_t *w,
-                                        jk_ws_service_t *s)
+static int JK_METHOD jk2_jni_worker_service(jk_env_t *env,
+                                            jk_worker_t *w,
+                                            jk_ws_service_t *s)
 {
     return JK_FALSE;
 }
 
 
-static int JK_METHOD jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
-                                         jk_map_t *props, jk_workerEnv_t *we)
+static int JK_METHOD jk2_jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
+                                             jk_map_t *props, jk_workerEnv_t *we)
 {
     jni_worker_data_t *jniWorker;
     int mem_config = 0;
@@ -154,17 +154,17 @@ static int JK_METHOD jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
         return JK_FALSE;
     }
     
-    jniWorker->className = jk_map_getStrProp( env, props, "worker",
+    jniWorker->className = jk2_map_getStrProp( env, props, "worker",
                                               pThis->name,
                                               "class", JAVA_BRIDGE_CLASS_NAME);
 
-    jniWorker->tomcat_cmd_line = jk_map_getStrProp( env, props, "worker",
+    jniWorker->tomcat_cmd_line = jk2_map_getStrProp( env, props, "worker",
                                                     pThis->name,
                                                     "cmd_line", NULL ); 
 
-    jniWorker->stdout_name= jk_map_getStrProp( env, props, "worker",
+    jniWorker->stdout_name= jk2_map_getStrProp( env, props, "worker",
                                                pThis->name, "stdout", NULL ); 
-    jniWorker->stderr_name= jk_map_getStrProp( env, props, "worker",
+    jniWorker->stderr_name= jk2_map_getStrProp( env, props, "worker",
                                                pThis->name, "stderr", NULL );
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -208,7 +208,7 @@ static int JK_METHOD jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
     env->l->jkLog(env, env->l, JK_LOG_EMERG,
                   "Loaded %s\n", jniWorker->className);
 
-    rc=get_method_ids(env, jniWorker, jniEnv);
+    rc=jk2_get_method_ids(env, jniWorker, jniEnv);
     if( !rc ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "Fail-> can't get method ids\n");
@@ -223,8 +223,8 @@ static int JK_METHOD jni_worker_validate(jk_env_t *env, jk_worker_t *pThis,
     return JK_TRUE;
 }
 
-static int JK_METHOD jni_worker_init(jk_env_t *env, jk_worker_t *_this,
-                          jk_map_t *props, jk_workerEnv_t *we)
+static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this,
+                                         jk_map_t *props, jk_workerEnv_t *we)
 {
     jni_worker_data_t *jniWorker;
     JNIEnv *jniEnv;
@@ -308,7 +308,7 @@ static int JK_METHOD jni_worker_init(jk_env_t *env, jk_worker_t *_this,
     }
 }
 
-static int JK_METHOD jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
+static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
 {
     jni_worker_data_t *jniWorker;
     JNIEnv *jniEnv;
@@ -349,9 +349,9 @@ static int JK_METHOD jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
     return JK_TRUE;
 }
 
-int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
-                                    void **result,
-                                    const char *type, const char *name)
+int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
+                                     void **result,
+                                     const char *type, const char *name)
 {
     jk_worker_t *_this;
     jni_worker_data_t *jniData;
@@ -381,7 +381,7 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     _this->name = _this->pool->pstrdup(env, _this->pool, name);
 
     /* XXX split it in VM11 and VM12 util */
-    jk_vm_factory( env, pool, &jniData->vm, "vm", "default" );
+    jk2_jk_vm_factory( env, pool, &jniData->vm, "vm", "default" );
     
     jniData->jk_java_bridge_class  = NULL;
     jniData->jk_startup_method     = NULL;
@@ -391,10 +391,10 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     jniData->stdout_name           = NULL;
     jniData->stderr_name           = NULL;
 
-    _this->validate       = jni_worker_validate;
-    _this->init           = jni_worker_init;
-    _this->destroy        = jni_worker_destroy;
-    _this->service = jni_worker_service;
+    _this->validate       = jk2_jni_worker_validate;
+    _this->init           = jk2_jni_worker_init;
+    _this->destroy        = jk2_jni_worker_destroy;
+    _this->service = jk2_jni_worker_service;
 
     *result = _this;
 

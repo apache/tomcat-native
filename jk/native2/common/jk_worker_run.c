@@ -72,8 +72,8 @@
 #include "jk_requtil.h"
 #include "jk_registry.h"
 
-static int JK_METHOD service(jk_env_t *env, jk_worker_t *_this,
-                             jk_ws_service_t *s )
+static int JK_METHOD jk2_worker_run_service(jk_env_t *env, jk_worker_t *_this,
+                                            jk_ws_service_t *s)
 {
     /* I should display a status page for the monitored processes
      */
@@ -91,7 +91,7 @@ static int JK_METHOD service(jk_env_t *env, jk_worker_t *_this,
     return JK_TRUE;
 }
 
-static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
+static int JK_METHOD jk2_worker_run_destroy(jk_env_t *env, jk_worker_t *w)
 {
     int i = 0;
 
@@ -107,9 +107,9 @@ static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
 }
 
 
-int JK_METHOD jk_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
-                                       void **result,
-                                       const char *type, const char *name)
+int JK_METHOD jk2_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
+                                     void **result,
+                                     const char *type, const char *name)
 {
     jk_worker_t *_this;
     
@@ -130,13 +130,13 @@ int JK_METHOD jk_worker_run_factory(jk_env_t *env, jk_pool_t *pool,
     _this->name=(char *)name;
     _this->pool=pool;
 
-    _this->lb_workers = NULL;
+    _this->lb_workers     = NULL;
     _this->num_of_workers = 0;
     _this->worker_private = NULL;
     _this->validate       = NULL;
     _this->init           = NULL;
     _this->destroy        = NULL;
-    _this->service = service;
+    _this->service        = jk2_worker_run_service;
     
     *result=_this;
 
