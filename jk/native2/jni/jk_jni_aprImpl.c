@@ -313,15 +313,11 @@ Java_org_apache_jk_apr_AprImpl_jkSetAttribute
             else if (strcmp(value, "done") == 0)
                jk_jni_status_code = JNI_TOMCAT_STARTED;
         }
-        return JK_OK;
-    }
-
-    if( component->setAttribute ==NULL )
-        return JK_OK;
-
-    if( component->setAttribute!=NULL ) {
-        rc=component->setAttribute( env, component, name,
-                                    component->pool->pstrdup( env, component->pool, value ) );
+    } else {
+        if( component->setAttribute!=NULL ) {
+            rc=component->setAttribute( env, component, name,
+                                        component->pool->pstrdup( env, component->pool, value ) );
+        }
     }
 
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, nameJ, name);
@@ -379,12 +375,12 @@ Java_org_apache_jk_apr_AprImpl_jkGetAttribute
     char *value;
     jstring valueJ=NULL;
     
-    if( component->setAttribute ==NULL )
-        return JK_OK;
-    
-    value=component->getAttribute( env, component, name );
-    if( value!=NULL )
-        valueJ=(*jniEnv)->NewStringUTF(jniEnv, value);
+    if( component->getAttribute !=NULL ){   
+        value=component->getAttribute( env, component, name );
+        if( value!=NULL ) {
+            valueJ=(*jniEnv)->NewStringUTF(jniEnv, value);
+        }
+    }
     
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, nameJ, name);
     
