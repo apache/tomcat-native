@@ -729,13 +729,14 @@ static  jk_env_t*  jk2_create_workerEnv (void) {
     
     env->l=l;
     env->soName=env->globalPool->calloc(env, env->globalPool, strlen(file_name)+1);
-    env->l->init(env,env->l);
     
     if( env->soName == NULL ){
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating env->soName\n");
         return env;
     }
     strcpy(env->soName,file_name);
+    env->l->init(env,env->l);
+
     /* We should make it relative to JK_HOME or absolute path.
        ap_server_root_relative(cmd->pool,opt); */
     
