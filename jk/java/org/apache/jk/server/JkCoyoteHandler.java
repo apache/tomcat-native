@@ -86,7 +86,8 @@ public class JkCoyoteHandler extends JkHandler implements
     int utfC2bNote;
     int obNote;
     int epNote;
-
+    int inputStreamNote;
+    
     Adapter adapter;
     protected JkMain jkMain=new JkMain();
     
@@ -121,6 +122,8 @@ public class JkCoyoteHandler extends JkHandler implements
         jkMain.getWorkerEnv().addHandler("container", this );
 
         try {
+            // jkMain.setJkHome() XXX;
+            
             jkMain.init();
             jkMain.start();
 
@@ -130,6 +133,8 @@ public class JkCoyoteHandler extends JkHandler implements
             utfC2bNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "utfC2B" );
             epNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "ep" );
             obNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "coyoteBuffer" );
+            inputStreamNote= wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE,
+                                             "jkInputStream");
 
         } catch( Exception ex ) {
             ex.printStackTrace();
@@ -146,6 +151,7 @@ public class JkCoyoteHandler extends JkHandler implements
     {
         int epNote;
         int headersMsgNote;
+        int inputStreamNote;
         org.apache.coyote.Response res;
         
         void setResponse( org.apache.coyote.Response res ) {
@@ -155,6 +161,12 @@ public class JkCoyoteHandler extends JkHandler implements
         public int doWrite(ByteChunk chunk) 
             throws IOException
         {
+            if (!res.isCommitted()) {
+                // Send the connector a request for commit. The connector should
+                // then validate the headers, send them (using sendHeader) and 
+                // set the filters accordingly.
+                res.action(ActionCode.ACTION_COMMIT, null);
+            }
             if( log.isInfoEnabled() )
                 log.info("doWrite " );
             MsgContext ep=(MsgContext)res.getNote( epNote );
@@ -172,8 +184,12 @@ public class JkCoyoteHandler extends JkHandler implements
             throws IOException
         {
             if( log.isInfoEnabled() )
-                log.info("doRead " );
-            return 0;
+                log.info("doRead " + chunk.getBytes() + " " +  chunk.getOffset() + " " + chunk.getLength());
+            MsgContext ep=(MsgContext)res.getNote( epNote );
+
+            JkInputStream jkIS=(JkInputStream)ep.getNote( inputStreamNote );
+            // return jkIS.read( chunk.getBytes(), chunk.getOffset(), chunk.getLength());
+            return jkIS.doRead( chunk );
         }
     }
 
@@ -186,13 +202,16 @@ public class JkCoyoteHandler extends JkHandler implements
         org.apache.coyote.Response res=req.getResponse();
         res.setHook( this );
 
+        log.info( "Invoke " + req + " " + res + " " + req.requestURI().toString());
         JkCoyoteBuffers ob=(JkCoyoteBuffers)res.getNote( obNote );
         if( ob == null ) {
             // Buffers not initialized yet
             // Workaround - IB, OB require state.
             ob=new JkCoyoteBuffers();
+            // Pass the required state.
             ob.epNote=epNote;
             ob.headersMsgNote=headersMsgNote;
+            ob.inputStreamNote=inputStreamNote;
             ob.setResponse(res);
             res.setOutputBuffer( ob );
             req.setInputBuffer( ob );
@@ -209,6 +228,9 @@ public class JkCoyoteHandler extends JkHandler implements
         } catch( Exception ex ) {
             ex.printStackTrace();
         }
+
+        req.recycle();
+        res.recycle();
         return OK;
     }
 
@@ -217,10 +239,11 @@ public class JkCoyoteHandler extends JkHandler implements
     public void action(ActionCode actionCode, Object param) {
         try {
             if( actionCode==ActionCode.ACTION_COMMIT ) {
-                if( log.isInfoEnabled() )
-                    log.info("COMMIT sending headers " );
-                
                 org.apache.coyote.Response res=(org.apache.coyote.Response)param;
+
+                if( log.isInfoEnabled() )
+                    log.info("COMMIT sending headers " + res + " " + res.getMimeHeaders() );
+                
                 
                 C2B c2b=(C2B)res.getNote( utfC2bNote );
                 if( c2b==null ) {
