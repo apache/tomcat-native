@@ -49,25 +49,16 @@
 #include "jk_worker.h"
 #include "apr_general.h"
 
-#ifndef NO_CAPI
-/* Domino stuff */
-#include <global.h>
-#include <addin.h>
-#else
-#include <stdarg.h>
-#define NOERROR 0
-#endif
-
 /* Domino DSAPI filter definitions */
 #include "dsapifilter.h"
+
+int JK_METHOD jk2_logger_domino_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result, const char *type, const char *name);
 
 #if defined(TESTING)
 #define LOGGER              "logger.printf"
 int JK_METHOD jk2_logger_printf_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result, const char *type, const char *name);
-#elif defined(WIN32)
-#define LOGGER              "logger.win32"
 #else
-#define LOGGER              "logger.file"
+#define LOGGER              "logger.domino"
 #endif
 
 #ifdef WIN32
@@ -183,22 +174,6 @@ static int scanPath(const char *str, int slen, const char *ptn, int plen) {
     }
     return 0;
 }
-
-#ifdef NO_CAPI
-/* Alternative to the Domino function */
-static void AddInLogMessageText(char *msg, unsigned short code, ...) {
-    va_list ap;
-
-    if (code != NOERROR) {
-        printf("Error %d: ", code);
-    }
-
-    va_start(ap, code);
-    vprintf(msg, ap);
-    va_end(ap);
-    printf("\n");
-}
-#endif
 
 #ifdef _DEBUG
 static void _printf(const char *msg, ...) {
@@ -1118,6 +1093,8 @@ DLLEXPORT unsigned int FilterInit(FilterInitData *filterInitData) {
      */
 #ifdef TESTING
     env->registerFactory(env, "logger.printf", jk2_logger_printf_factory);
+#else
+    env->registerFactory(env, "logger.domino", jk2_logger_domino_factory );
 #endif
 
     jkb = env->createBean2(env, env->globalPool, LOGGER, "");

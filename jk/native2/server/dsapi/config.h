@@ -37,15 +37,8 @@
 #undef HAVE_MEMICMP
 #define PATHSEP '/'
 #define MAX_PATH 512
-#define NO_CAPI
 
 #endif
-
-/* define if you don't have the Notes C API which is available from
- *
- *    http://www.lotus.com/rw/dlcapi.nsf
- */
-/* #undef NO_CAPI */
 
 #ifdef _DEBUG
 #define DEBUG(args) \

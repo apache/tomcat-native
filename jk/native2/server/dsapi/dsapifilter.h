@@ -1,329 +1,207 @@
-/*--------------------------------------------------------------------
+/*
+ * Copyright 1999-2001,2004 The Apache Software Foundation.
  *
- *      File:      dsapifilter.h
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      Copyright (c)1999 Iris Associates
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *-------------------------------------------------------------------*/
-
-#if !defined(DSAPIFILTER_H)
-#define DSAPIFILTER_H
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-/*---
- *      Types and Defines
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
+/***************************************************************************
+ * Description: DSAPI plugin for Lotus Domino                              *
+ * Author:      Andy Armstrong <andy@tagish.com>                           *
+ * Version:     $Revision$                                           *
+ ***************************************************************************/
+
+#ifndef __dsapifilter_h
+#define __dsapifilter_h
 
 #define kInterfaceVersion   2
-#define kMaxFilterDesc   255
+#define kMaxFilterDesc      255
 
-	typedef unsigned char LMBCS;
+typedef enum {
+    kFilterNotHandled       = 0,
+    kFilterHandledRequest   = 1,
+    kFilterHandledEvent     = 2,
+    kFilterError            = 3
+} FilterReturnCode;
 
-	typedef enum
-	{
-		kFilterNotHandled = 0,
-		kFilterHandledRequest = 1,
-		kFilterHandledEvent = 2,
-		kFilterError = 3
-	}
-	FilterReturnCode;
+typedef enum {
+    kFilterRawRequest       = 0x01,
+    kFilterParsedRequest    = 0x02,
+    kFilterAuthUser         = 0x04,
+    kFilterUserNameList     = 0x08,
+    kFilterMapURL           = 0x10,
+    kFilterResponse         = 0x20,
+    kFilterRawWrite         = 0x40,
+    kFilterEndRequest       = 0x80,
+    kFilterAny              = 0xFF
+} EventFlags;
 
-/*--
- *      Filter interface
- */
+typedef struct {
+    unsigned int    serverFilterVersion;
+    unsigned int    appFilterVersion;
+    unsigned int    eventFlags;
+    unsigned int    initFlags;
+    char            filterDesc[kMaxFilterDesc + 1];
+} FilterInitData;
 
-/*---
-*      events to register for
-*/
-	typedef enum
-	{
-		kFilterRawRequest = 0x01,
-		kFilterParsedRequest = 0x02,
-		kFilterAuthUser = 0x04,
-		kFilterUserNameList = 0x08,
-		kFilterMapURL = 0x10,
-		kFilterResponse = 0x20,
-		kFilterRawWrite = 0x40,
-		kFilterEndRequest = 0x80,
-		kFilterAny = 0xFF
-	}
-	EventFlags;
+typedef struct {
+    unsigned int    method;
+    char            *URL;
+    char            *version;
+    char            *userName;
+    char            *password;
+    unsigned char   *clientCert;
+    unsigned int    clientCertLen;
+    char            *contentRead;
+    unsigned int    contentReadLen;
+} FilterRequest;
 
-/*---
- *      filter initialization data
- */
-	typedef struct
-	{
-		unsigned int serverFilterVersion;
-		unsigned int appFilterVersion;
-		unsigned int eventFlags;
-		unsigned int initFlags;
-		char filterDesc[kMaxFilterDesc + 1];
-	}
-	FilterInitData;
+typedef struct _FilterContext FilterContext;
 
-/*---
- *      request line structure
- */
-	typedef struct
-	{
-		unsigned int method;
-		char *URL;
-		char *version;
-		char *userName;
-		char *password;
-		unsigned char *clientCert;
-		unsigned int clientCertLen;
-		char *contentRead;
-		unsigned int contentReadLen;
-	}
-	FilterRequest;
+struct _FilterContext {
+    unsigned int    contextSize;
+    unsigned int    revision;
+    void            *serverContext;
+    unsigned int    serverReserved;
+    unsigned int    securePort;
+    void            *privateContext;
 
-/*---
- *      filter context data included in every call to filter
- */
-	typedef struct _FilterContext
-	{
-		unsigned int contextSize;
-		unsigned int revision;
-		void *serverContext;
-		unsigned int serverReserved;
-		unsigned int securePort;
-		void *privateContext;
+    int (*GetRequest)(FilterContext *context, FilterRequest * request,  unsigned int *errID);
+    int (*GetRequestContents)(FilterContext *context, char **contents, unsigned int *errID);
+    int (*GetServerVariable)(FilterContext *context, char *name, void *buffer, unsigned int bufferSize, unsigned int *errID);
+    int (*WriteClient)(FilterContext *context, char *buffer, unsigned int bufferLen, unsigned int reserved, unsigned int *errID);
+    void *(*AllocMem)(FilterContext *context, unsigned int size, unsigned int reserved, unsigned int *errID);
+    int (*ServerSupport)(FilterContext *context, unsigned int funcType, void *data1, void *data2, unsigned int other, unsigned int *errID);
+};
 
-		int (*GetRequest) (struct _FilterContext *context, FilterRequest * request,
-						   unsigned int *errID);
+typedef enum {
+    kRequestNone    = 0,
+    kRequestHEAD    = 1,
+    kRequestGET     = 2,
+    kRequestPOST    = 3,
+    kRequestPUT     = 4,
+    kRequestDELETE  = 5
+} RequestMethod;
 
-		int (*GetRequestContents) (struct _FilterContext *context, char **contents,
-								   unsigned int *errID);
+typedef enum {
+    kWriteResponseHeaders = 1
+} ServerSupportTypes;
 
-		int (*GetServerVariable) (struct _FilterContext * context, char *name, void *buffer,
-								  unsigned int bufferSize, unsigned int *errID);
+typedef struct {
+    unsigned int    responseCode;
+    char            *reasonText;
+    char            *headerText;
+} FilterResponseHeaders;
 
-		int (*WriteClient) (struct _FilterContext * context, char *buffer, unsigned int bufferLen,
-							unsigned int reserved, unsigned int *errID);
+typedef struct {
+    unsigned int    requestMethod;
 
-		void *(*AllocMem) (struct _FilterContext * context, unsigned int size,
-						   unsigned int reserved, unsigned int *errID);
+    int (*GetAllHeaders)(FilterContext *context, char **headers, unsigned int *errID);
+    int (*GetHeader)(FilterContext *context, char *name, char *buffer, unsigned int bufferSize, unsigned int *errID);
+    int (*SetHeader)(FilterContext *context, char *name, char *value, unsigned int *errID);
+    int (*AddHeader)(FilterContext *context, char *header, unsigned int *errID);
 
-		int (*ServerSupport) (struct _FilterContext * context, unsigned int funcType, void *data1,
-							  void *data2, unsigned int other, unsigned int *errID);
-	}
-	FilterContext;
+    unsigned int    reserved;
+} FilterRawRequest;
 
-	typedef unsigned int (*FilterInitFuncType) (FilterInitData * initData);
-	typedef unsigned int (*FilterEventFuncType) (FilterContext * context, unsigned int eventType,
-												 void *eventData, unsigned int *errID);
-	typedef unsigned int (*FilterTermFuncType) (unsigned int);
+typedef struct {
+    unsigned int    requestMethod;
 
-/*---
- *      request methods
- */
-	typedef enum
-	{
-		kRequestNone = 0,
-		kRequestHEAD = 1,
-		kRequestGET = 2,
-		kRequestPOST = 3,
-		kRequestPUT = 4,
-		kRequestDELETE = 5
-	}
-	RequestMethod;
+    int (*GetAllHeaders)(FilterContext *context, char **headers, unsigned int *errID);
+    int (*GetHeader)(FilterContext *context, char *name, char *buffer, unsigned int bufferSize, unsigned int *errID);
 
-/*---
- *      server support function types
- */
-	typedef enum
-	{
-		kWriteResponseHeaders = 1
-	}
-	ServerSupportTypes;
+    unsigned int    reserved;
+} FilterParsedRequest;
 
-/*---
- *      'data1' for server support function 'kWriteResponseHeaders'
- */
-	typedef struct
-	{
-		unsigned int responseCode;
-		char *reasonText;
-		char *headerText;
-	}
-	FilterResponseHeaders;
+typedef struct {
+    const char      *url;
+    char            *pathBuffer;
+    unsigned int    bufferSize;
+    unsigned int    mapType;
+} FilterMapURL;
 
-/*---
- *      raw request (headers not processed yet)
- */
-	typedef struct
-	{
-		unsigned int requestMethod;
+typedef enum {
+    kURLMapUnknown  = 0,
+    kURLMapPass     = 1,
+    kURLMapExec     = 2,
+    kURLMapRedirect = 3,
+    kURLMapService  = 4,
+    kURLMapDomino   = 5
+} FilterULMapTypes;
 
-		int (*GetAllHeaders) (FilterContext * context, char **headers, unsigned int *errID);
+typedef struct {
+    unsigned char   *userName;
+    unsigned char   *password;
+    unsigned char   *clientCert;
+    unsigned int    clientCertLen;
+    unsigned int    authFlags;
+    unsigned int    preAuthenticated;
+    unsigned int    foundInCache;
+    unsigned int    authNameSize;
+    unsigned char   *authName;
+    unsigned int    authType;
 
-		int (*GetHeader) (FilterContext * context, char *name, char *buffer,
-						  unsigned int bufferSize, unsigned int *errID);
+    int (*GetUserNameList)(FilterContext *context, unsigned char * buffer, unsigned int bufferSize, unsigned int *numNames, unsigned int reserved, unsigned int *errID);
+    int (*GetHeader)(FilterContext *context, char *name, char *buffer, unsigned int bufferSize, unsigned int *errID);
+} FilterAuthenticate;
 
-		int (*SetHeader) (FilterContext * context, char *name, char *value, unsigned int *errID);
+typedef enum {
+    kNotAuthentic           = 0,
+    kAuthenticBasic         = 1,
+    kAuthenticClientCert    = 2
+} FilterAuthenticationTypes;
 
-		int (*AddHeader) (FilterContext * context, char *header, unsigned int *errID);
+typedef enum {
+    kAuthAllowBasic         = 0x01,
+    kAuthAllowAnonymous     = 0x02,
+    kAuthAllowSSLCert       = 0x04,
+    kAuthAllowSSLBasic      = 0x08,
+    kAuthAllowSSLAnonymous  = 0x10,
+    kAuthRedirectToSSL      = 0x20
+} FilterAuthConfigFlags;
 
-		unsigned int reserved;
-	}
-	FilterRawRequest;
+typedef struct {
+    const unsigned char     *userName;
 
-/*---
- *      parsed request
- */
-	typedef struct
-	{
-		unsigned int requestMethod;
+    int (*GetUserNameList)(FilterContext *context, unsigned char * buffer, unsigned int bufferSize, unsigned int *numNames, unsigned int reserved, unsigned int *errID);
+    int (*PopulateUserNameList)(FilterContext *context, unsigned char * buffer, unsigned int bufferSize, unsigned int *numNames, unsigned int reserved, unsigned int *errID);
+    int (*AddGroupsToList)(FilterContext *context, unsigned char * groupNames, unsigned int numGroupNames, unsigned int reserved, unsigned int *errID);
+    int (*RemoveGroupsFromList)(FilterContext *context, unsigned int reserved, unsigned int *errID);
 
-		int (*GetAllHeaders) (FilterContext * context, char **headers, unsigned int *errID);
+    unsigned int            reserved;
+} FilterUserNameList;
 
-		int (*GetHeader) (FilterContext * context, char *name, char *buffer,
-						  unsigned int bufferSize, unsigned int *errID);
+typedef struct {
+    unsigned int            responseCode;
+    char                    *reasonText;
 
-		unsigned int reserved;
-	}
-	FilterParsedRequest;
+    int (*GetAllHeaders)(FilterContext *context, char **headers, unsigned int *errID);
+    int (*GetHeader)(FilterContext *context, char *name, char *buffer, unsigned int bufferSize, unsigned int *errID);
+    int (*SetHeader)(FilterContext *context, char *name, char *value, unsigned int *errID);
+    int (*AddHeader)(FilterContext *context, char *header, unsigned int *errID);
 
-/*---
- *      URL map
- */
-	typedef struct
-	{
-		const char *url;
-		char *pathBuffer;
-		unsigned int bufferSize;
-		unsigned int mapType;
-	}
-	FilterMapURL;
+    unsigned int            reserved;
+} FilterResponse;
 
-/*---
- *      URL map types
- */
-	typedef enum
-	{
-		kURLMapUnknown = 0,
-		kURLMapPass = 1,
-		kURLMapExec = 2,
-		kURLMapRedirect = 3,
-		kURLMapService = 4,
-		kURLMapDomino = 5
-	}
-	FilterULMapTypes;
+typedef struct {
+    char            *content;
+    unsigned int    contentLen;
+    unsigned int    reserved;
+} FilterRawWrite;
 
-/*---
- *      user authentication
- */
-	typedef struct
-	{
-		LMBCS *userName;
-		LMBCS *password;
-		unsigned char *clientCert;
-		unsigned int clientCertLen;
-		unsigned int authFlags;
-		unsigned int preAuthenticated;
-		unsigned int foundInCache;
-		unsigned int authNameSize;
-		LMBCS *authName;
-		unsigned int authType;
+/* Non DSAPI stuff here for convenience */
 
-		int (*GetUserNameList) (FilterContext * context, LMBCS * buffer, unsigned int bufferSize,
-								unsigned int *numNames, unsigned int reserved, unsigned int *errID);
+#define NOERROR 0
 
-		int (*GetHeader) (FilterContext * context, char *name, char *buffer,
-						  unsigned int bufferSize, unsigned int *errID);
-	}
-	FilterAuthenticate;
+void AddInLogMessageText(char *string, unsigned short err, ...);
 
-/*---
- *      user authentication types
- */
-	typedef enum
-	{
-		kNotAuthentic = 0,
-		kAuthenticBasic = 1,
-		kAuthenticClientCert = 2
-	}
-	FilterAuthenticationTypes;
-
-/*---
- *      authentication configuration flags
- */
-	typedef enum
-	{
-		kAuthAllowBasic = 1,
-		kAuthAllowAnonymous = 2,
-		kAuthAllowSSLCert = 4,
-		kAuthAllowSSLBasic = 8,
-		kAuthAllowSSLAnonymous = 16,
-		kAuthRedirectToSSL = 32
-	}
-	FilterAuthConfigFlags;
-
-/*---
- *      user name list
- */
-	typedef struct
-	{
-		const LMBCS *userName;
-
-		int (*GetUserNameList) (FilterContext * context, LMBCS * buffer, unsigned int bufferSize,
-								unsigned int *numNames, unsigned int reserved, unsigned int *errID);
-
-		int (*PopulateUserNameList) (FilterContext * context, LMBCS * buffer,
-									 unsigned int bufferSize, unsigned int *numNames,
-									 unsigned int reserved, unsigned int *errID);
-
-		int (*AddGroupsToList) (FilterContext * context, LMBCS * groupNames,
-								unsigned int numGroupNames, unsigned int reserved,
-								unsigned int *errID);
-
-		int (*RemoveGroupsFromList) (FilterContext * context, unsigned int reserved,
-									 unsigned int *errID);
-
-		unsigned int reserved;
-	}
-	FilterUserNameList;
-
-/*---
- *      request response
- */
-	typedef struct
-	{
-		unsigned int responseCode;
-		char *reasonText;
-
-		int (*GetAllHeaders) (FilterContext * context, char **headers, unsigned int *errID);
-
-		int (*GetHeader) (FilterContext * context, char *name, char *buffer,
-						  unsigned int bufferSize, unsigned int *errID);
-
-		int (*SetHeader) (FilterContext * context, char *name, char *value, unsigned int *errID);
-
-		int (*AddHeader) (FilterContext * context, char *header, unsigned int *errID);
-
-		unsigned int reserved;
-	}
-	FilterResponse;
-
-/*---
- *      write content
- */
-	typedef struct
-	{
-		char *content;
-		unsigned int contentLen;
-		unsigned int reserved;
-	}
-	FilterRawWrite;
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif	/* DSAPIFILTER_H */
+#endif  /* __dsapi_filter_h */
