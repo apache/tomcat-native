@@ -92,6 +92,9 @@ public class RequestInfo  {
         if( global != null) {
             this.global=global;
             global.addRequestProcessor( this );
+        } else {
+            this.global.removeRequestProcessor( this );
+            this.global = null;
         }
     }
 

@@ -13,6 +13,10 @@ public class RequestGroupInfo {
         processors.add( rp );
     }
 
+    public void removeRequestProcessor( RequestInfo rp ) {
+        processors.remove( rp );
+    }
+
     public long getMaxTime() {
         long maxTime=0;
         for( int i=0; i<processors.size(); i++ ) {

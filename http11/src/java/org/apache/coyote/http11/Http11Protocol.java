@@ -614,6 +614,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             ObjectName oname=(ObjectName)tpData[Http11Protocol.THREAD_DATA_OBJECT_NAME];
             if( oname==null ) return;
             Registry.getRegistry().unregisterComponent(oname);
+            Http11Processor processor = 
+                (Http11Processor) tpData[Http11Protocol.THREAD_DATA_PROCESSOR];
+            RequestInfo rp=processor.getRequest().getRequestProcessor();
+            rp.setGlobalProcessor(null);
         }
     }
 
