@@ -188,7 +188,7 @@ public final class CoyoteConnector
      * Descriptive information about this Connector implementation.
      */
     private static final String info =
-        "org.apache.coyote.tomcat5.CoyoteConnector2/1.0";
+        "org.apache.coyote.tomcat5.CoyoteConnector/2.0";
 
 
     /**
@@ -266,6 +266,7 @@ public final class CoyoteConnector
     private StringManager sm =
         StringManager.getManager(Constants.Package);
 
+
     /**
      * Flag to disable setting a seperate time-out for uploads.
      * If <code>true</code>, then the <code>timeout</code> parameter is
@@ -273,6 +274,7 @@ public final class CoyoteConnector
      * parameter is used to control uploads.
      */
     private boolean disableUploadTimeout = false;
+
 
     /**
      * Has this component been initialized yet?
