@@ -13,6 +13,7 @@
     <property name="jk.build" location="${basedir}/build"/>
     <property name="build.docs" location="${basedir}/build/docs"/>
     <property name="source.docs" location="./xdocs"/>
+    <property name="gen.dev.doc" value="false"/>
 
     <!-- Compile options -->
     <property name="optimize" value="off" />
@@ -397,14 +398,12 @@
     <replace file="${destfile}" token="@body-link@"     value="${body-link}"/>
     <replace file="${destfile}" token="@banner-bg@"     value="${banner-bg}"/>
     <replace file="${destfile}" token="@banner-fg@"     value="${banner-fg}"/>
-    <replace file="${destfile}" token="@sub-banner-bg@"
-             value="${sub-banner-bg}"/>
-    <replace file="${destfile}" token="@sub-banner-fg@"
-             value="${sub-banner-fg}"/>
+    <replace file="${destfile}" token="@sub-banner-bg@" value="${sub-banner-bg}"/>
+    <replace file="${destfile}" token="@sub-banner-fg@" value="${sub-banner-fg}"/>
     <replace file="${destfile}" token="@table-th-bg@"   value="${table-th-bg}"/>
     <replace file="${destfile}" token="@table-td-bg@"   value="${table-td-bg}"/>
-    <replace file="${destfile}" token="@source-color@"
-             value="${source-color}"/>
+    <replace file="${destfile}" token="@source-color@"  value="${source-color}"/>
+    <replace file="${destfile}" token="@gen-dev-doc@"   value="${gen.dev.doc}"/>
   </target>
 
   <!--
