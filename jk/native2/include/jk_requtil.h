@@ -154,50 +154,50 @@ extern "C" {
 
 /** Get header value using a lookup table. 
  */
-const char *jk_requtil_getHeaderById(struct jk_env *env, int sc);
+const char *jk2_requtil_getHeaderById(struct jk_env *env, int sc);
 
 /**
  * Get method id. 
  */
-int jk_requtil_getMethodId(struct jk_env *env, const char    *method,
+int jk2_requtil_getMethodId(struct jk_env *env, const char    *method,
                            unsigned char *sc);
 
 /**
  * Get header id.
  */
-int  jk_requtil_getHeaderId(struct jk_env *env, const char *header_name,
+int  jk2_requtil_getHeaderId(struct jk_env *env, const char *header_name,
                             unsigned short *sc);
 
 /** Retrieve session id from the cookie or the parameter                      
  * (parameter first)
  */
-char *jk_requtil_getSessionId(struct jk_env *env, jk_ws_service_t *s);
+char *jk2_requtil_getSessionId(struct jk_env *env, jk_ws_service_t *s);
 
 /** Retrieve the cookie with the given name
  */
-char *jk_requtil_getCookieByName(struct jk_env *env, jk_ws_service_t *s,
+char *jk2_requtil_getCookieByName(struct jk_env *env, jk_ws_service_t *s,
                                  const char *name);
 
 /* Retrieve the parameter with the given name
  */
-char *jk_requtil_getPathParam(struct jk_env *env, jk_ws_service_t *s, const char *name);
+char *jk2_requtil_getPathParam(struct jk_env *env, jk_ws_service_t *s, const char *name);
 
 
 /** Extract the 'route' from the session id. The route is
  *  the id of the worker that generated the session and where all
  *  further requests in that session will be sent.
 */
-char *jk_requtil_getSessionRoute(struct jk_env *env, jk_ws_service_t *s);
+char *jk2_requtil_getSessionRoute(struct jk_env *env, jk_ws_service_t *s);
 
 
 /** Initialize the request 
  * 
  * jk_init_ws_service
  */ 
-void jk_requtil_initRequest(struct jk_env *env, jk_ws_service_t *s);
+void jk2_requtil_initRequest(struct jk_env *env, jk_ws_service_t *s);
 
 
-int jk_requtil_readFully(struct jk_env *env, jk_ws_service_t *s,
+int jk2_requtil_readFully(struct jk_env *env, jk_ws_service_t *s,
                          unsigned char   *buf,
                          unsigned         len);
 

@@ -78,7 +78,7 @@ typedef struct jk_objCache jk_objCache_t;
 #define JK_OBJCACHE_DEFAULT_SZ          (128)
 
     
-jk_objCache_t *jk_objCache_create(struct jk_env *env, struct jk_pool *pool );
+jk_objCache_t *jk2_objCache_create(struct jk_env *env, struct jk_pool *pool );
     
 /**
  * Simple object cache ( or pool for java people - don't confuse with the

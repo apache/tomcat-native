@@ -171,7 +171,7 @@ struct jk_msg {
 
     /** 
      * Special method. Will read data from the server and add them as
-     * bytes. It is equivalent with jk_requtil_readFully() in a buffer
+     * bytes. It is equivalent with jk2_requtil_readFully() in a buffer
      * and then jk_msg_appendBytes(), except that we use directly the
      * internal buffer.
      *
@@ -196,7 +196,7 @@ struct jk_msg {
 };
 
 /* Temp */
-jk_msg_t *jk_msg_ajp_create(struct jk_env *env, struct jk_pool *p,
+jk_msg_t *jk2_msg_ajp_create(struct jk_env *env, struct jk_pool *p,
                             int buffSize);
     
 #ifdef __cplusplus

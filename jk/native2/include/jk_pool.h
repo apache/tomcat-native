@@ -159,7 +159,7 @@ struct jk_pool {
 
     XXX move this to the factory
  */
-int jk_pool_create( struct jk_env *env, jk_pool_t **newPool, jk_pool_t *parent, int size );
+int jk2_pool_create( struct jk_env *env, jk_pool_t **newPool, jk_pool_t *parent, int size );
 
 
 #ifdef __cplusplus
