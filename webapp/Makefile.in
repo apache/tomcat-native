@@ -104,7 +104,7 @@ install:
 apidocs: include/*.h
 	@echo "Generating API documentation..."
 	@if ! test -d docs/api ; then mkdir docs/api ; fi
-	@./scandoc/scandoc.pl -i ./scandoc/template.pl -p ./docs/api/ include/*.h
+	@../scandoc/scandoc.pl -i ../scandoc/template.pl -p ./docs/api/ include/*.h
 
 dist: all apidocs
 
