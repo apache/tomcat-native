@@ -34,7 +34,7 @@
 
 
 /*
- * All WIN32 code is MT, UNIX code that uses pthreads is marked by the POSIX 
+ * All WIN32 code is MT, UNIX code that uses pthreads is marked by the POSIX
  * _REENTRANT define.
  */
 #if defined (WIN32) || defined(_REENTRANT) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -54,11 +54,18 @@ typedef CRITICAL_SECTION JK_CRIT_SEC;
 #define JK_DELETE_CS(x, rc) DeleteCriticalSection(x); rc = JK_TRUE;
 #define JK_ENTER_CS(x, rc) EnterCriticalSection(x); rc = JK_TRUE;
 #define JK_LEAVE_CS(x, rc) LeaveCriticalSection(x); rc = JK_TRUE;
+#define JK_ENTER_LOCK(x, rc) rc = JK_TRUE;
+#define JK_LEAVE_LOCK(x, rc) rc = JK_TRUE;
 
 #else /* Unix pthreads */
 
 #define _MT_CODE_PTHREAD
 #include <pthread.h>
+#include <unistd.h>
+#include <fcntl.h>
+#if HAVE_SYS_FILE_H
+#include <sys/file.h>
+#endif
 
 typedef pthread_mutex_t JK_CRIT_SEC;
 
@@ -75,6 +82,42 @@ typedef pthread_mutex_t JK_CRIT_SEC;
             if(pthread_mutex_unlock(x)) rc = JK_FALSE; else rc = JK_TRUE;
 
 int jk_gettid();
+
+#if HAVE_FLOCK
+
+#define JK_ENTER_LOCK(x, rc)        \
+    do {                            \
+      rc = flock((x), LOCK_EX) == -1 ? JK_FALSE : JK_TRUE; \
+    } while (0)
+
+#define JK_LEAVE_LOCK(x, rc)        \
+    do {                            \
+      rc = flock((x), LOCK_UN) == -1 ? JK_FALSE : JK_TRUE; \
+    } while (0)
+
+#else
+
+#define JK_ENTER_LOCK(x, rc)        \
+    do {                            \
+      struct flock _fl;             \
+      _fl.l_type   = F_WRLCK;       \
+      _fl.l_whence = SEEK_SET;      \
+      _fl.l_start  = 0;             \
+      _fl.l_len    = 1L;            \
+      rc = fcntl((x), F_SETLKW, &_fl) == -1 ? JK_FALSE : JK_TRUE; \
+    } while (0)
+
+#define JK_LEAVE_LOCK(x, rc)        \
+    do {                            \
+      struct flock _fl;             \
+      _fl.l_type   = F_UNLCK;       \
+      _fl.l_whence = SEEK_SET;      \
+      _fl.l_start  = 0;             \
+      _fl.l_len    = 1L;            \
+      rc = fcntl((x), F_SETLK, &_fl) == -1 ? JK_FALSE : JK_TRUE; \
+    } while (0)
+#endif /* HAVE_FLOCK */
+
 #endif /* Unix pthreads */
 
 #else /* Not an MT code */
