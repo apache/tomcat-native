@@ -781,7 +781,7 @@ public class InternalInputBuffer implements InputBuffer {
 
         }
 
-        return (nRead >= 0);
+        return (nRead > 0);
 
     }
 
