@@ -153,19 +153,26 @@ and  provides access to all other objects</p>
                         <th>Description</th>
                     </tr>
                     <tr>
-                        <td>worker</td>
+                        <td>group</td>
                         <td>lb:0 (The default loadbalancer)</td>
-                        <td>Name of the worker that process the request corresponding to the uri</td>
+                        <td>Name of the tomcat group or worker that will process the request corresponding to the uri. This used
+                            to be called 'worker'</td>
                     </tr>
                     <tr>
                         <td>context</td>
                         <td/>
-                        <td>the context that will be served by this uri component (webapp style)</td>
+                        <td>the context path for this uri component (webapp style).</td>
+                    </tr>
+                    <tr>
+                        <td>servlet</td>
+                        <td/>
+                        <td>Servlet path for this mapping</td>
                     </tr>
                     <tr>
                         <td>alias</td>
                         <td/>
-                        <td>server name alias</td>
+                        <td>server name alias. This setting should only be used for 
+                            host uris like [uri:myHost:myPort] ( i.e. no /) </td>
                     </tr>
                 </table>
             </p>
