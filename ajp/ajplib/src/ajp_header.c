@@ -210,17 +210,17 @@ static int sc_for_req_method(const char *method)
 } 
 
 
-static apr_status_t sc_for_req_header(const char *header_name)
+static int sc_for_req_header(const char *header_name)
 {
-    char header[24];
+    char header[16];
     apr_size_t len = strlen(header_name);
     const char *p = header_name;
     int i = 0;
 
-    /* ACCEPT-CONTENT_LENGTH is the longest headeer
+    /* ACCEPT-LANGUAGE is the longest headeer
      * that is of interest.
      */
-    if (len < 4 || len > 21)
+    if (len < 4 || len > 15)
         return UNKNOWN_METHOD;
     
     while (*p)
