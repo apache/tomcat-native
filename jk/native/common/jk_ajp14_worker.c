@@ -376,7 +376,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
     if (name == NULL || w == NULL) {
         JK_LOG_NULL_PARAMS(l);
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return 0;
     }
 
     aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
@@ -384,7 +384,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
         jk_log(l, JK_LOG_ERROR,
                "malloc of private data failed");
        JK_TRACE_EXIT(l);
-       return JK_FALSE;
+       return 0;
     }
 
     aw->name = strdup(name);
@@ -394,7 +394,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
         jk_log(l, JK_LOG_ERROR,
                "malloc failed for name");
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return 0;
     }
 
     aw->proto = AJP14_PROTO;
@@ -405,7 +405,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
         jk_log(l, JK_LOG_ERROR,
                "malloc failed for login area");
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return 0;
     }
 
     memset(aw->login, 0, sizeof(jk_login_service_t));
@@ -429,5 +429,5 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
     *w = &aw->worker;
 
     JK_TRACE_EXIT(l);
-    return JK_TRUE;
+    return JK_AJP14_WORKER_TYPE;
 }

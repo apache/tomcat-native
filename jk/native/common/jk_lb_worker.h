@@ -34,6 +34,7 @@ extern "C"
 #endif                          /* __cplusplus */
 
 #define JK_LB_WORKER_NAME     ("lb")
+#define JK_LB_WORKER_TYPE     (5)
 #define JK_LB_DEF_DOMAIN_NAME ("unknown")
 
 struct worker_record

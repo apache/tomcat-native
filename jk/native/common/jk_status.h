@@ -32,7 +32,7 @@ extern "C"
 #endif                          /* __cplusplus */
 
 #define JK_STATUS_WORKER_NAME     ("status")
-#define JK_STATUS_DEF_DOMAIN_NAME ("unknown")
+#define JK_STATUS_WORKER_TYPE     (6)
 
 int JK_METHOD status_worker_factory(jk_worker_t **w,
                                     const char *name, jk_logger_t *l);

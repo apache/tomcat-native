@@ -29,6 +29,8 @@
 #include "jk_shm.h"
 #include "jk_ajp_common.h"
 #include "jk_lb_worker.h"
+#include "jk_ajp13_worker.h"
+#include "jk_ajp14_worker.h"
 #include "jk_connect.h"
 
 #define HUGE_BUFFER_SIZE (8*1024)
@@ -59,6 +61,17 @@ struct status_worker
     jk_worker_t       worker;
     status_endpoint_t ep;
     jk_worker_env_t   *we;
+};
+
+static const char *worker_type[] = {
+    "unknown",
+    "ajp12",
+    "ajp13",
+    "ajp14",
+    "jni",
+    "lb",
+    "status",
+    NULL
 };
 
 static const char *headers_names[] = {
@@ -170,6 +183,14 @@ char *status_strfsize(size_t size, char *buf)
     } while (1);
 }
 
+static const char *status_worker_type(int t)
+{
+    if (t > 0 && t < 7)
+        t = 0;        
+    return worker_type[t];
+}
+
+
 static const char *status_val_bool(int v)
 {
     if (v == 0)
@@ -240,13 +261,11 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
         lb_worker_t *lb = NULL;
         if (w == NULL)
             continue;
-        if (!strcasecmp(w->type, "lb")) {
+        if (w->type == JK_LB_WORKER_TYPE) {
             lb = (lb_worker_t *)w->worker_private;
         }
-        else if (!strcasecmp(w->type, "ajp13")) {
-            aw = (ajp_worker_t *)w->worker_private;
-        }
-        else if (!strcasecmp(w->type, "ajp14")) {
+        else if (w->type == JK_AJP13_WORKER_TYPE ||
+                 w->type == JK_AJP14_WORKER_TYPE) {
             aw = (ajp_worker_t *)w->worker_private;
         }
         else {
@@ -265,7 +284,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     "<th>Local worker only</th>"
                     "<th>Retries</th>"
                     "</tr>\n<tr>");        
-            jk_putv(s, "<td>", w->type, "</td>", NULL);
+            jk_putv(s, "<td>", status_worker_type(w->type), "</td>", NULL);
             jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session),
                     "</td>", NULL);
             jk_putv(s, "<td>", status_val_bool(lb->s->local_worker_only),
@@ -285,7 +304,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                         wr->s->name, "</td>", NULL);
                 if (dworker && strcmp(dworker, wr->s->name) == 0)
                     selected = j;
-                jk_putv(s, "<td>", wr->w->type, "</td>", NULL);
+                jk_putv(s, "<td>", status_worker_type(wr->w->type), "</td>", NULL);
                 jk_printf(s, "<td>%s:%d</td>", a->host, a->port);
                 jk_putv(s, "<td>", jk_dump_hinfo(&a->worker_inet_addr, buf),
                         "</td>", NULL);
@@ -344,7 +363,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_puts(s, "\n\n<table border=\"0\"><tr>"
                     "<th>Type</th><th>Host</th><th>Addr</th>"
                     "</tr>\n<tr>");        
-            jk_putv(s, "<td>", w->type, "</td>", NULL);
+            jk_putv(s, "<td>", status_worker_type(w->type), "</td>", NULL);
             jk_puts(s, "</tr>\n</table>\n");
             jk_printf(s, "<td>%s:%d</td>", aw->host, aw->port);
             jk_putv(s, "<td>", jk_dump_hinfo(&aw->worker_inet_addr, buf),
@@ -575,12 +594,12 @@ int JK_METHOD status_worker_factory(jk_worker_t **w,
         private_data->ep.s_worker = private_data;
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);
-        return JK_TRUE;
+        return JK_STATUS_WORKER_TYPE;
     }
     else {
         JK_LOG_NULL_PARAMS(l);
     }
 
     JK_TRACE_EXIT(l);
-    return JK_FALSE;
+    return 0;
 }

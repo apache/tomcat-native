@@ -364,7 +364,7 @@ struct jk_worker
      */
     void *worker_private;
     
-    const char *type;
+    int   type;
     /*
      * For all of the below (except destroy), the first argument is
      * essentially a 'this' pointer.  

@@ -110,6 +110,7 @@ int wc_create_worker(const char *name,
         jk_worker_t *w = NULL;
         unsigned int i, num_of_maps;
         char **map_names;
+        int wtype;
 
         *rc = NULL;
 
@@ -125,7 +126,7 @@ int wc_create_worker(const char *name,
                    "about to create instance %s of %s", name,
                    type);
 
-        if (!fac(&w, name, l) || !w) {
+        if (((wtype = fac(&w, name, l)) == 0) || !w) {
             jk_log(l, JK_LOG_ERROR,
                    "factory for %s failed for %s", type,
                    name);
@@ -169,7 +170,7 @@ int wc_create_worker(const char *name,
                 }
             }
         }
-        w->type = type;
+        w->type = wtype;
         *rc = w;
         JK_TRACE_EXIT(l);
         return JK_TRUE;

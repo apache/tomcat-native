@@ -84,7 +84,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
     if (name == NULL || w == NULL) {
         JK_LOG_NULL_PARAMS(l);
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return 0;
     }
     
     aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
@@ -92,7 +92,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
         jk_log(l, JK_LOG_ERROR,
                "malloc of private_data failed");
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return 0;
     }
 
     aw->name = name;
@@ -114,5 +114,5 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
 
     *w = &aw->worker;
     JK_TRACE_EXIT(l);
-    return JK_TRUE;
+    return JK_AJP13_WORKER_TYPE;
 }

@@ -31,7 +31,8 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-#define JK_JNI_WORKER_NAME ("jni")
+#define JK_JNI_WORKER_NAME  ("jni")
+#define JK_JNI_WORKER_TYPE  (4)
 
 int JK_METHOD jni_worker_factory(jk_worker_t **w,
                                  const char *name, jk_logger_t *l);

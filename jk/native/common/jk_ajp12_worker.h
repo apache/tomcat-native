@@ -32,6 +32,7 @@ extern "C"
 #endif                          /* __cplusplus */
 
 #define JK_AJP12_WORKER_NAME ("ajp12")
+#define JK_AJP12_WORKER_TYPE (1)
 
 int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
                                    const char *name, jk_logger_t *l);

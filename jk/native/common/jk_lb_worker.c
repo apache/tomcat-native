@@ -785,7 +785,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         if (!private_data->s) {
             free(private_data);
             JK_TRACE_EXIT(l);
-            return JK_FALSE;
+            return 0;
         }
         strncpy(private_data->s->name, name, JK_SHM_STR_SIZ);
         private_data->lb_workers = NULL;
@@ -800,12 +800,12 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->s->recover_wait_time = WAIT_BEFORE_RECOVER;
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);
-        return JK_TRUE;
+        return JK_LB_WORKER_TYPE;
     }
     else {
         JK_LOG_NULL_PARAMS(l);
     }
 
     JK_TRACE_EXIT(l);
-    return JK_FALSE;
+    return 0;
 }

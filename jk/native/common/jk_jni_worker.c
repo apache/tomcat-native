@@ -639,7 +639,7 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
     if (!name || !w) {
         JK_LOG_NULL_PARAMS(l);
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return 0;
     }
 
     if (the_singleton_jni_worker) {
@@ -647,7 +647,7 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
                "instance already created");
         *w = the_singleton_jni_worker;
         JK_TRACE_EXIT(l);
-        return JK_TRUE;
+        return JK_JNI_WORKER_TYPE;
     }
 
     private_data = (jni_worker_t *) malloc(sizeof(jni_worker_t));
@@ -656,7 +656,7 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
         jk_log(l, JK_LOG_ERROR,
                "memory allocation error");
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return 0;
     }
 
     jk_open_pool(&private_data->p,
@@ -670,7 +670,7 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
         jk_close_pool(&private_data->p);
         free(private_data);
         JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        return 0;
     }
 
     private_data->was_verified = JK_FALSE;
@@ -707,7 +707,7 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
     the_singleton_jni_worker = &private_data->worker;
 
     JK_TRACE_EXIT(l);
-    return JK_TRUE;
+    return JK_JNI_WORKER_TYPE;
 }
 
 static int load_jvm_dll(jni_worker_t * p, jk_logger_t *l)

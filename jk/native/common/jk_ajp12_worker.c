@@ -260,7 +260,7 @@ int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
                 private_data->worker.retries = JK_RETRIES;
 
                 *w = &private_data->worker;
-                return JK_TRUE;
+                return JK_AJP12_WORKER_TYPE;
             }
 
             free(private_data);
@@ -271,7 +271,7 @@ int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
         jk_log(l, JK_LOG_ERROR, "In ajp12_worker_factory, NULL parameters");
     }
 
-    return JK_FALSE;
+    return 0;
 }
 
 static int ajpv12_sendnbytes(ajp12_endpoint_t * p,
