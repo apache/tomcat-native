@@ -351,7 +351,14 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
            request was sent ( we're receiving data from client, can be slow, no
            need to delay - we can do that in paralel. ( not very sure this is
            very usefull, and it brakes the protocol ) ! */
-        if (has_post_body || s->is_chunked || s->left_bytes_to_send > 0) {
+
+	/* || s->is_chunked - this can't be done here. The original protocol sends the first
+	   chunk of post data ( based on Content-Length ), and that's what the java side expects.
+	   Sending this data for chunked would break other ajp13 serers.
+
+	   Note that chunking will continue to work - using the normal read.
+	*/
+        if (has_post_body  || s->left_bytes_to_send > 0) {
             /* We never sent any POST data and we check it we have to send at
              * least of block of data (max 8k). These data will be kept in reply
              * for resend if the remote Tomcat is down, a fact we will learn only
