@@ -121,7 +121,7 @@ AC_DEFUN(
     $1="`cat retvalue.tmp`"
     rm -f retvalue.tmp
     echo "  execution of \"$2\""
-    echo "  returned with value \"$1\""
+    echo "  returned with value \"${$1}\""
 
     cd "${wa_exec_curdir}"
     unset wa_exec_curdir
