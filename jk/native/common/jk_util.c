@@ -26,6 +26,7 @@
 #include "jk_ajp12_worker.h"
 #include "jk_ajp13_worker.h"
 #include "jk_ajp14_worker.h"
+#include "jk_lb_worker.h"
 #include "jk_mt.h"
 
 #define SYSPROPS_OF_WORKER          ("sysprops")
@@ -59,10 +60,11 @@
 #define BALANCED_WORKERS            ("balanced_workers")
 #define BALANCE_WORKERS             ("balance_workers")
 #define STICKY_SESSION              ("sticky_session")
-#define LOCAL_WORKER_ONLY_FLAG      ("local_worker_only")
-#define LOCAL_WORKER_FLAG           ("local_worker")
+#define STICKY_SESSION_FORCE        ("sticky_session_force")
 #define DOMAIN_OF_WORKER            ("domain")
+#define REDIRECT_OF_WORKER          ("redirect")
 #define MOUNT_OF_WORKER             ("mount")
+#define METHOD_OF_WORKER            ("method")
 
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
@@ -363,6 +365,16 @@ const char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def
     return jk_map_get_string(m, buf, def);
 }
 
+const char *jk_get_worker_redirect(jk_map_t *m, const char *wname, const char *def)
+{
+    char buf[1024];
+    if (!m || !wname) {
+        return NULL;
+    }
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, REDIRECT_OF_WORKER);
+    return jk_map_get_string(m, buf, def);
+}
+
 const char *jk_get_worker_secret(jk_map_t *m, const char *wname)
 {
     char buf[1024];
@@ -441,7 +453,7 @@ int jk_get_worker_port(jk_map_t *m, const char *wname, int def)
 static int def_cache_size = -1;
 int jk_get_worker_def_cache_size(int protocol)
 {
-    if (def_cache_size < 0) {
+    if (def_cache_size < 1) {
         if (protocol == AJP14_PROTO)
             def_cache_size = AJP14_DEF_CACHE_SZ;
         else 
@@ -660,13 +672,13 @@ int jk_get_is_sticky_session(jk_map_t *m, const char *wname)
     return rc;
 }
 
-int jk_get_is_local_worker(jk_map_t *m, const char *wname)
+int jk_get_is_sticky_session_force(jk_map_t *m, const char *wname)
 {
     int rc = JK_FALSE;
     char buf[1024];
     if (m && wname) {
         int value;
-        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, LOCAL_WORKER_FLAG);
+        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, STICKY_SESSION_FORCE);
         value = jk_map_get_bool(m, buf, 0);
         if (value)
             rc = JK_TRUE;
@@ -674,19 +686,15 @@ int jk_get_is_local_worker(jk_map_t *m, const char *wname)
     return rc;
 }
 
-int jk_get_local_worker_only_flag(jk_map_t *m, const char *lb_wname)
+int jk_get_lb_method(jk_map_t *m, const char *wname)
 {
-    int rc = JK_FALSE;
     char buf[1024];
-    if (m && lb_wname) {
-        int value;
-        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, lb_wname,
-                LOCAL_WORKER_ONLY_FLAG);
-        value = jk_map_get_bool(m, buf, 0);
-        if (value)
-            rc = JK_TRUE;
+    if (!m || !wname) {
+        return DEFAULT_LB_FACTOR;
     }
-    return rc;
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, METHOD_OF_WORKER);
+    return jk_map_get_int(m, buf, JK_LB_BYREQUESTS);
 }
 
 int jk_get_lb_worker_list(jk_map_t *m,

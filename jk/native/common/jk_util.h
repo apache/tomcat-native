@@ -72,6 +72,8 @@ int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def);
 
 const char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def);
 
+const char *jk_get_worker_redirect(jk_map_t *m, const char *wname, const char *def);
+
 const char *jk_get_worker_secret_key(jk_map_t *m, const char *wname);
 
 int jk_get_worker_retries(jk_map_t *m, const char *wname, int def);
@@ -84,9 +86,9 @@ int jk_get_lb_factor(jk_map_t *m, const char *wname);
 
 int jk_get_is_sticky_session(jk_map_t *m, const char *wname);
 
-int jk_get_is_local_worker(jk_map_t *m, const char *wname);
+int jk_get_is_sticky_session_force(jk_map_t *m, const char *wname);
 
-int jk_get_local_worker_only_flag(jk_map_t *m, const char *lb_wname);
+int jk_get_lb_method(jk_map_t *m, const char *wname);
 
 int jk_get_lb_worker_list(jk_map_t *m,
                           const char *lb_wname,
