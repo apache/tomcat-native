@@ -84,11 +84,18 @@ AC_MSG_RESULT(${SRCDIR})
 AC_SUBST(SRCDIR)
 
 dnl --------------------------------------------------------------------------
+dnl Help message introducing --enable functions
+dnl --------------------------------------------------------------------------
+LOCAL_HELP([])
+LOCAL_HELP([Available compilation options:])
+
+dnl --------------------------------------------------------------------------
 dnl Process the --enable-debug[=FILE] command line argument
 dnl --------------------------------------------------------------------------
 AC_MSG_CHECKING([debugging flags])
 AC_ARG_ENABLE(debug,
-  [  --enable-debug          Build with full debugging output.],
+  [  --enable-debug          build with debugging information (not advisable
+                          for generic/production operation).],
   [
     AC_MSG_RESULT([enabled])
     CFLAGS="${CFLAGS} -DDEBUG"
@@ -108,20 +115,27 @@ AC_SUBST(CFLAGS)
 dnl -------------------------------------------------------------------------
 dnl Check JAVA environment
 dnl -------------------------------------------------------------------------
-AP_JAVA()
+JAVA_CHECK()
 if ${TEST} "${JAVA_ENABLE}" = "true"
 then
-  AP_PROG_JAVAC()
-  AP_PROG_JAR()
+  JAVA_JAVAC()
+  JAVA_PROG_JAR()
   TGTDIRS="${SRCDIR}/java ${TGTDIRS}"
 fi
+
+dnl --------------------------------------------------------------------------
+dnl Help message introducing --with functions for external libraries
+dnl --------------------------------------------------------------------------
+LOCAL_HELP([External libraries used:])
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-tomcat=... command line argument
 dnl --------------------------------------------------------------------------
 AC_MSG_CHECKING([Tomcat 4.0 directory])
 AC_ARG_WITH(tomcat,
-  [  --with-tomcat=DIR          path of a Tomcat 4.0 distribution.],
+  [  --with-tomcat[=DIR]     path of a Tomcat 4.0 binary distribution (DIR
+                          defaults to \"/usr/local/tomcat\"). Required only in
+                          case the --enable-java option was specified too.],
   TOMCATDIR="${withval}",
   TOMCATDIR="/usr/local/tomcat"
 )
@@ -150,6 +164,72 @@ else
   AC_MSG_RESULT([not required])
 fi
 AC_SUBST(TOMCATDIR)
+
+dnl --------------------------------------------------------------------------
+dnl Process the --with-apr=... command line argument
+dnl --------------------------------------------------------------------------
+AC_MSG_CHECKING([APR directory])
+AC_ARG_WITH(apr,
+  [  --with-apr[=DIR]        path of an APR (Apache Portable Runtime) source
+                          distribution or CVS snapshot. (DIR defaults to
+                          \"./apr\"). Not required and ignored when the
+                          --with-apxs2 option is specified.],
+  APRDIR="${withval}",
+  APRDIR="${SRCDIR}/apr"
+)
+
+if ${TEST} -z "${APA}" -a -z "${APRDIR}" ; then
+  APRDIR="${SRCDIR}/apr"
+else
+  APRDIR="${APXS_PREFIX}"
+fi
+
+if ${TEST} -z "${APA}" ; then
+  if ${TEST} ! -d "${APRDIR}" ; then
+    AC_MSG_ERROR([Cannot find APR sources directory \"${APRDIR}\"])
+  fi
+
+  if ${TEST} ! -x "${APRDIR}/buildconf" ; then
+    AC_MSG_ERROR([Cannot find APR buildconf program in \"${APRDIR}\"])
+  fi
+
+  curdir=`pwd`
+  cd ${APRDIR}
+  APRDIR=`pwd`
+  AC_MSG_RESULT([${APRDIR}])
+  cd ${curdir}
+  AC_SUBST(APRDIR)
+
+  dnl Build the configure script for APR and run it
+
+  curdir=`pwd`
+  cd ${APRDIR}
+
+  LOCAL_HEADER([Building APR configure script])
+  LOCAL_FILTEREXEC([./buildconf],[APR buildconf])
+  if ${TEST} "${ret}" -ne "0"
+  then
+    AC_MSG_ERROR([APR buildconf terminated with error code ${ret}])
+  fi
+
+  dnl the --disable-shared prevent building shared libraries.
+  LOCAL_HEADER([Configuring APR])
+  LOCAL_FILTEREXEC(
+    [./configure --enable-static --disable-shared --disable-threads],
+    ["APR configure"])
+  if ${TEST} "${ret}" -ne "0"
+  then
+    AC_MSG_ERROR([APR configure script terminated with error code ${ret}])
+  fi
+  cd ${curdir}
+else
+  AC_MSG_RESULT(Using APR from Apache build)
+fi
+
+dnl --------------------------------------------------------------------------
+dnl Help message introducing --with functions for external libraries
+dnl --------------------------------------------------------------------------
+LOCAL_HELP([Target web-server:])
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apxs[=FILE] command line argument
@@ -228,64 +308,6 @@ AC_ARG_WITH(apxs,
 AC_SUBST(TARGET)
 AC_SUBST(APR_BUILD)
 AC_SUBST(APR_CLEAN)
-
-dnl --------------------------------------------------------------------------
-dnl Process the --with-apr=... command line argument
-dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([APR directory])
-AC_ARG_WITH(apr,
-  [  --with-apr=DIR          where the APR sources can be found.],
-  APRDIR="${withval}"
-)
-
-if ${TEST} -z "${APA}" -a -z "${APRDIR}" ; then
-  APRDIR="${SRCDIR}/apr"
-else
-  APRDIR="${APXS_PREFIX}"
-fi
-
-if ${TEST} -z "${APA}" ; then
-  if ${TEST} ! -d "${APRDIR}" ; then
-    AC_MSG_ERROR([Cannot find APR sources directory \"${APRDIR}\"])
-  fi
-
-  if ${TEST} ! -x "${APRDIR}/buildconf" ; then
-    AC_MSG_ERROR([Cannot find APR buildconf program in \"${APRDIR}\"])
-  fi
-
-  curdir=`pwd`
-  cd ${APRDIR}
-  APRDIR=`pwd`
-  AC_MSG_RESULT([${APRDIR}])
-  cd ${curdir}
-  AC_SUBST(APRDIR)
-
-  dnl --------------------------------------------------------------------------
-  dnl Build the configure script for APR and run it
-  dnl --------------------------------------------------------------------------
-  curdir=`pwd`
-  cd ${APRDIR}
-
-  LOCAL_HEADER([Building APR configure script])
-  LOCAL_FILTEREXEC([./buildconf],[APR buildconf])
-  if ${TEST} "${ret}" -ne "0"
-  then
-    AC_MSG_ERROR([APR buildconf terminated with error code ${ret}])
-  fi
-
-  dnl the --disable-shared prevent building shared libraries.
-  LOCAL_HEADER([Configuring APR])
-  LOCAL_FILTEREXEC(
-    [./configure --enable-static --disable-shared --disable-threads],
-    ["APR configure"])
-  if ${TEST} "${ret}" -ne "0"
-  then
-    AC_MSG_ERROR([APR configure script terminated with error code ${ret}])
-  fi
-  cd ${curdir}
-else
-  AC_MSG_RESULT(Using APR from Apache build)
-fi
 
 dnl --------------------------------------------------------------------------
 dnl Retrieving APR default values
