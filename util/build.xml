@@ -25,6 +25,7 @@
     <path id="compile.classpath">
         <pathelement location="${jmx.jar}" />
         <pathelement location="${jsse.jar}" />
+        <pathelement location="${java.home}/lib/jsse.jar" />
         <pathelement location="${jnet.jar}" />
         <pathelement location="${jcert.jar}" />
         <pathelement location="${puretls.jar}" />
