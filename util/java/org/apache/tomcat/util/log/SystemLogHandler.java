@@ -75,17 +75,19 @@ public class SystemLogHandler extends PrintStream {
      */
     public static void startCapture() {
         CaptureLog log = null;
-        if (!reuse.isEmpty()) {
-            log = (CaptureLog)reuse.pop();
-        } else {
-            log = new CaptureLog();
+
+        // Synchronized for Bugzilla 31018
+        synchronized(reuse) {
+            log = reuse.isEmpty() ? new CaptureLog() : (CaptureLog)reuse.pop();
         }
+
         Thread thread = Thread.currentThread();
         Stack stack = (Stack)logs.get(thread);
         if (stack == null) {
             stack = new Stack();
             logs.put(thread, stack);
         }
+
         stack.push(log);
     }
 
