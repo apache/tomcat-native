@@ -138,12 +138,4 @@ struct wa_provider {
     void (*handle) (wa_request *req);
 };
 
-/**
- * Retrieve a provider by its name.
- *
- * @param n The provider name.
- * @return A pointer to a <code>wa_provider</code> structure or <b>NULL</b>.
- */
-wa_provider *wa_getprovider(const char *n);
-
 #endif /* ifndef _WA_PROVIDER_H_ */
