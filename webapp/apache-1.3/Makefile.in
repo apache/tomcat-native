@@ -74,12 +74,16 @@ clean:
 	$(RM) -f $(OBJS) $(MOD)
 
 $(MOD): $(SRCS) $(TGTDIR)/lib/libapr.a $(TGTDIR)/lib/libwebapp.a
-	$(APXS) -c \
-	    "-Wc,$(CFLAGS) $(APR_CFLAGS) $(CPPFLAGS) $(APR_CPPFLAGS)" \
-	    "-Wl,$(APR_LDFLAGS)" $(APR_LIBS) \
-	    -I$(APR_INCDIR) -I$(SRCDIR)/include $(APR_INCLUDES) \
-	    $(TGTDIR)/lib/libapr.a $(TGTDIR)/lib/libwebapp.a \
-	    -o "$@" $<
+	{ \
+	    APXS_LDFLAGS_SHLIB="`$(APXS) -q LDFLAGS_SHLIB` $(APR_LDFLAGS)" ; \
+	    APXS_CFLAGS="`$(APXS) -q CFLAGS` $(CFLAGS) $(APR_CFLAGS) $(CPPFLAGS) $(APR_CPPFLAGS)" ; \
+            $(APXS) -c \
+	        -S LDFLAGS_SHLIB="$${APXS_LDFLAGS_SHLIB}" \
+	        -S CFLAGS="$${APXS_CFLAGS}" \
+	        -I$(APR_INCDIR) -I$(SRCDIR)/include $(APR_INCLUDES) \
+	        $(TGTDIR)/lib/libapr.a $(TGTDIR)/lib/libwebapp.a \
+	        -o "$@" $< ; \
+	}
 
 $(SRCS):
 	$(LN) -s $(SRCDIR)/apache-1.3/$@ ./$@
