@@ -383,6 +383,24 @@ be accessible by apache.</p>
 <p>Note that you can have a single JkAutoAlias directive per virtual
 host inside your httpd.conf
 </p>
+<p>
+<b>JkWorkerProperty</b> is a new directive available from JK 1.2.7
+version. It is a convinient method for seting directives that are
+usualy set insice <b>workers.propeties</b>file. The parameter for
+that directive is raw line from workers.properties file.
+</p>
+<source>
+  # Just like workers.properties but exach line is prefixed
+  # with JkWorkerProperty
+
+  # Minimal jk configuration
+  JkWorkerProperty worker.list=ajp13worker
+  JkWorkerProperty worker.ajp13w.type=ajp13
+  JkWorkerProperty worker.ajp13w.host=localhost
+  JkWorkerProperty worker.ajp13w.port=8009   
+</source>
+
+
 </subsection>
  </section>
 </body>
