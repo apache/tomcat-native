@@ -174,7 +174,7 @@
     <jar    jarfile="${tomcat-http11.jar}"
              index="true"
             basedir="${build.home}/classes"
-             manifest="${conf.home}/MANIFEST.MF">
+             manifest="${build.home}/conf/MANIFEST.MF">
       <include name="org/apache/coyote/http11/**"/>
     </jar>
   </target>

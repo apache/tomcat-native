@@ -232,7 +232,7 @@
     <jar  jarfile="${tomcat-coyote.jar}"
          index="true"
          basedir="${build.home}/classes"
-         manifest="${conf.home}/MANIFEST.MF"
+         manifest="${build.home}/conf/MANIFEST.MF"
          excludes="**/tomcat3/*" >
       <include name="org/apache/coyote/*.class" />
       <include name="org/apache/coyote/memory/*.class" />
