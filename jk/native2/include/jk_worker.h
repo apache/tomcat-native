@@ -70,6 +70,7 @@
 #include "jk_map.h"
 #include "jk_mt.h"
 #include "jk_uriMap.h"
+#include "jk_objCache.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,6 +79,7 @@ extern "C" {
 struct jk_worker;
 struct jk_endpoint;
 struct jk_env;
+struct jk_objCache;
 typedef struct jk_worker jk_worker_t;
 
     
@@ -194,7 +196,11 @@ struct jk_worker {
        sort out after */
     struct sockaddr_in worker_inet_addr; /* Contains host and port */
     int connect_retry_attempts;
- 
+
+    /** Reuse the endpoint and it's connection
+     */
+    struct jk_objCache *endpointCache;
+    
     /* 
      * Open connections cache...
      *
@@ -202,9 +208,9 @@ struct jk_worker {
      * 2. Cache size. 
      * 3. An array of "open" endpoints.
      */
-    JK_CRIT_SEC cs;
-    int ep_cache_sz;
-    struct jk_endpoint **ep_cache;
+    /*     JK_CRIT_SEC cs; */
+    /*     int ep_cache_sz; */
+    /*     struct jk_endpoint **ep_cache; */
 
     int proto;
     struct jk_login_service *login;

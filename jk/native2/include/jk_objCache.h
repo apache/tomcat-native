@@ -69,7 +69,14 @@ extern "C" {
 #endif /* __cplusplus */
 
 struct jk_objCache;
+struct jk_logger;
+struct jk_pool;
 typedef struct jk_objCache jk_objCache_t;
+
+#define JK_OBJCACHE_DEFAULT_SZ          (128)
+
+    
+jk_objCache_t *jk_objCache_create(struct jk_pool *pool, struct jk_logger *l );
     
 /**
  * Simple object cache ( or pool for java people - don't confuse with the
@@ -92,10 +99,16 @@ struct jk_objCache {
 
     void *(*get)(jk_objCache_t *_this);
 
+    int (*init)(jk_objCache_t *_this, int cacheSize);
+
+    int (*destroy)(jk_objCache_t *_this);
+
     /* private, move to impl ( if any other impl is available) */
     int ep_cache_sz;
     JK_CRIT_SEC cs;
     void **ep_cache;
+    struct jk_logger *l;
+    struct jk_pool *pool;
 };
     
 #ifdef __cplusplus

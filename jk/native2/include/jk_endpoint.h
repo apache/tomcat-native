@@ -127,9 +127,15 @@ struct jk_endpoint {
 
     struct jk_worker *worker;
 
-    /** Each thread has it's own endpoint instance and is recycled.
-        This pool can be unsynchronized */ 
+    /** 'main' pool for this endpoint. Used to store properties of the
+        endpoint. Will be alive until the endpoint is destroyed.
+    */
     jk_pool_t *pool;
+
+    /** Connection pool. Used to store temporary data. It'll be
+        recycled after each transaction.
+    */
+    jk_pool_t *cPool;
     
     int proto;	/* PROTOCOL USED AJP13/AJP14 */
 
