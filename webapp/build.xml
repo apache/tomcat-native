@@ -30,6 +30,7 @@
   <path id="classpath">
     <pathelement location="${build.classes.dir}"/>
     <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
+    <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
     <pathelement location="${catalina.home}/common/lib/servlet-api.jar"/>
   </path>
 
