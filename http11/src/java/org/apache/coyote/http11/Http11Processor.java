@@ -725,17 +725,17 @@ public class Http11Processor implements Processor, ActionHook {
 
         MessageBytes valueMB = req.getMimeHeaders().getValue("host");
 
-        // Default is what the socket tells us. Overriden if a host is found/parsed
-        req.setServerPort( socket.getLocalPort() );
-        InetAddress localAddress = socket.getLocalAddress();
-        
         ByteChunk valueBC = null;
         if (valueMB == null) {
-            // That was in the 3.3 connector. 4.0 let it unset.
+            // HTTP/1.0
+            // Default is what the socket tells us. Overriden if a host is 
+            // found/parsed
+            req.setServerPort(socket.getLocalPort());
+            InetAddress localAddress = socket.getLocalAddress();
             // Setting the socket-related fields. The adapter doesn't know about
             // socket.
-            req.setLocalHost( localAddress.getHostName() );
-            req.serverName().setString( localAddress.getHostName() );
+            req.setLocalHost(localAddress.getHostName());
+            req.serverName().setString(localAddress.getHostName());
             return;
         }
         valueBC = valueMB.getByteChunk();
@@ -753,8 +753,7 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         if (colonPos < 0) {
-            //The info from socket is usually acurate
-            // req.setServerPort(80);
+            req.setServerPort(80);
             req.serverName().setBytes( valueB, valueS, valueL);
         } else {
             req.serverName().setBytes( valueB, valueS, colonPos);
