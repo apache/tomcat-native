@@ -251,27 +251,18 @@ public class CoyoteServerSocketFactory
     // --------------------------------------------------------- Public Methods
 
 
-    public ServerSocket createSocket(int port)
-        throws IOException, KeyStoreException, NoSuchAlgorithmException,
-        CertificateException, UnrecoverableKeyException,
-        KeyManagementException {
+    public ServerSocket createSocket(int port) {
         return (null);
     }
 
 
-    public ServerSocket createSocket(int port, int backlog)
-        throws IOException, KeyStoreException, NoSuchAlgorithmException,
-        CertificateException, UnrecoverableKeyException,
-        KeyManagementException {
+    public ServerSocket createSocket(int port, int backlog) {
         return (null);
     }
 
 
     public ServerSocket createSocket(int port, int backlog,
-                                     InetAddress ifAddress)
-        throws IOException, KeyStoreException, NoSuchAlgorithmException,
-        CertificateException, UnrecoverableKeyException,
-        KeyManagementException {
+                                     InetAddress ifAddress) {
         return (null);
     }
 
