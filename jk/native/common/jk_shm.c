@@ -31,20 +31,27 @@ const char shm_signature[] = { JK_SHM_MAGIC };
 static jk_shm_t *jk_global_shm = NULL;
 
 /* Use plain memory */
-jk_shm_t *jk_shm_open(const char *fname, int workers, int dynamic, jk_pool_t *p)
+int jk_shm_open(const char *fname, int workers, int dynamic, jk_shm_t *shm)
 {
-    jk_shm_t *shm;
     jk_shm_h_rec_t *hdr;
 
-    if (jk_global_shm)
-        return jk_global_shm;
-    shm = jk_pool_alloc(p, sizeof(jk_shm_t));
+    if (jk_global_shm) {
+        shm->attached = jk_global_shm->attached;
+        shm->size = jk_global_shm->size;
+        shm->base = jk_global_shm->base;
+        shm->filename = jk_global_shm->filename;
+        return 0;
+    }
+    if (workers < 1 || workers > JK_SHM_MAX_WORKERS)
+        workers = JK_SHM_MAX_WORKERS;
+    if (dynamic < 1 || dynamic > JK_SHM_MAX_WORKERS)
+        dynamic = JK_SHM_MAX_WORKERS;
 
     shm->size = sizeof(jk_shm_h_rec_t) + (workers + dynamic) * sizeof(jk_shm_w_rec_t);
 
     shm->base = calloc(1, shm->size);
     if (!shm->base)
-        return NULL;
+        return -1;
     shm->filename = fname;
     shm->fd = -1;
     shm->attached = 0;
@@ -56,17 +63,17 @@ jk_shm_t *jk_shm_open(const char *fname, int workers, int dynamic, jk_pool_t *p)
     hdr->dynamic = dynamic;
 
     jk_global_shm = shm;
-    return shm;
+    return 0;
 }
 
-jk_shm_t *jk_shm_attach(const char *fname, int workers, int dynamic, jk_pool_t *p)
+int jk_shm_attach(const char *fname, int workers, int dynamic, jk_shm_t *shm)
 {
-    jk_shm_t *shm = jk_shm_open(fname, workers, dynamic, p);
-
-    if (shm) {
+    if (!jk_shm_open(fname, workers, dynamic, shm)) {
         shm->attached = 1;
+        return 0;
     }
-    return shm;
+    else
+        return -1;
 }
 
 void jk_shm_close(jk_shm_t *shm)
@@ -97,10 +104,9 @@ void jk_shm_close(jk_shm_t *shm)
 #define MAP_FILE    (0)
 #endif
 
-static jk_shm_t *do_shm_open(const char *fname, int workers, int dynamic,
-                             jk_pool_t *p, int attached)
+static int do_shm_open(const char *fname, int workers, int dynamic,
+                       jk_shm_t *shm, int attached)
 {
-    jk_shm_t *shm;
     int fd;
     int flags = O_RDWR;
 
@@ -108,8 +114,13 @@ static jk_shm_t *do_shm_open(const char *fname, int workers, int dynamic,
         flags |= (O_CREAT|O_TRUNC);
     fd = open(fname, flags, 0666);
     if (fd == -1)
-        return NULL;
-    shm = jk_pool_alloc(p, sizeof(jk_shm_t));
+        return -1;
+
+    if (workers < 1 || workers > JK_SHM_MAX_WORKERS)
+        workers = JK_SHM_MAX_WORKERS;
+    if (dynamic < 1 || dynamic > JK_SHM_MAX_WORKERS)
+        dynamic = JK_SHM_MAX_WORKERS;
+
     shm->size = sizeof(jk_shm_h_rec_t) + (workers + dynamic) * sizeof(jk_shm_w_rec_t);
 
     if (!attached) {
@@ -118,13 +129,13 @@ static jk_shm_t *do_shm_open(const char *fname, int workers, int dynamic,
             size = shm->size;
             if (ftruncate(fd, shm->size)) {
                 close(fd);
-                return NULL;
+                return -1;
             }
         }
     }
     if (lseek(fd, 0, SEEK_SET) != 0) {
         close(fd);
-        return NULL;
+        return -1;
     }
 
     shm->base = mmap(NULL, shm->size,
@@ -136,7 +147,7 @@ static jk_shm_t *do_shm_open(const char *fname, int workers, int dynamic,
     }
     if (!shm->base) {
         close(fd);
-        return NULL;
+        return -1;
     }
     shm->filename = fname;
     shm->fd = fd;
@@ -157,17 +168,17 @@ static jk_shm_t *do_shm_open(const char *fname, int workers, int dynamic,
         /* TODO: check header magic */
     }
 
-    return shm;
+    return 0;
 }
 
-jk_shm_t *jk_shm_open(const char *fname, int workers, int dynamic, jk_pool_t *p)
+int jk_shm_open(const char *fname, int workers, int dynamic, jk_shm_t *shm)
 {
-    return do_shm_open(fname, workers, dynamic, p, 0);
+    return do_shm_open(fname, workers, dynamic, shm, 0);
 }
 
-jk_shm_t *jk_shm_attach(const char *fname, int workers, int dynamic, jk_pool_t *p)
+int jk_shm_attach(const char *fname, int workers, int dynamic, jk_shm_t *shm)
 {
-    return do_shm_open(fname, workers, dynamic, p, 1);
+    return do_shm_open(fname, workers, dynamic, shm, 1);
 }
 
 void jk_shm_close(jk_shm_t *shm)

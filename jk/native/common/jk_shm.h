@@ -42,6 +42,10 @@ extern "C"
 #define JK_SHM_DYNAMIC  16
 #define JK_SHM_MAGIC    '!', 'J', 'K', 'S', 'H', 'M', JK_SHM_MAJOR, JK_SHM_MINOR
 
+/* Really huge numbers, but 1024 workers should be enough */
+#define JK_SHM_MAX_WORKERS  768
+#define JK_SHM_MAX_DYNAMIC  256
+
 /** jk shm structure */
 struct jk_shm
 {
@@ -128,7 +132,7 @@ typedef struct jk_shm_w_rec jk_shm_w_rec_t;
 
 /* Open the shared memory creating file if needed
  */
-jk_shm_t *jk_shm_open(const char *fname, int workers, int dynamic, jk_pool_t *p);
+int jk_shm_open(const char *fname, int workers, int dynamic, jk_shm_t *shm);
 
 /* Close the shared memory
  */
@@ -137,7 +141,7 @@ void jk_shm_close(jk_shm_t *shm);
 /* Attach the shared memory in child process.
  * File has to be opened in parent.
  */
-jk_shm_t *jk_shm_attach(const char *fname, int workers, int dynamic, jk_pool_t *p);
+int jk_shm_attach(const char *fname, int workers, int dynamic, jk_shm_t *shm);
 
 
 /* Return shm header record
