@@ -1294,11 +1294,11 @@ public class Http11Processor implements Processor, ActionHook {
 
         if (colonPos < 0) {
             if (sslSupport == null) {
-                // 80 - Default HTTTP port
-                request.setServerPort(80);
+                // Default HTTTP port
+                request.setServerPort(socket.getLocalPort());
             } else {
-                // 443 - Default HTTPS port
-                request.setServerPort(443);
+                // Default HTTPS port
+                request.setServerPort(socket.getLocalPort());
             }
             request.serverName().setChars(hostNameC, 0, valueL);
         } else {
