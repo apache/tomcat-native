@@ -34,8 +34,8 @@ DSO build instructions for Unix-like systems:
 
       cd jakarta-tomcat-connectors/jk/native2
       ./configure --with-apxs=/your/path/to/apxs \
-                  --with-apr=/your/path/to/apr-source \
-                  --with-apr-util=/your/path/to/apr-util-source
+                  --with-apr=/absolute/path/to/apr-source \
+                  --with-apr-util=/absolute/path/to/apr-util-source
       make
       cd ../build/jk2/apache13
       apxs -n jk2 -i mod_jk2.so
@@ -61,9 +61,9 @@ DSO build instructions for Unix-like systems:
     If you want to have PCRE (Perl Compatible Regular
     Expressions) support for jk2 uri directives, add --with-pcre
     while configuring.
-    
-    Quick informations on building mod_jk2 :
 
+
+Quick information on building mod_jk2 :
 
 * IIS 
 

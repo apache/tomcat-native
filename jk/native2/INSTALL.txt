@@ -7,11 +7,12 @@
 
   In the following example Apache2 is installed in 
   /usr/local/apache2 and the commands are executed in the
-  jakarta-tomcat-connectors/native2 directory. 
+  jakarta-tomcat-connectors/jk/native2 directory. 
 
   $ ./configure --with-apxs2=PREFIX/bin/apxs
   $ make
-  $ make install
+  $ cd ../build/jk2/apache2
+  $ PREFIX/bin/apxs -n jk2 -i mod_jk2.so
 
      NOTES: * Replace PREFIX with the filesystem path under which 
               Apache should be installed.  A typical installation
@@ -59,9 +60,12 @@
   gtar xvf apr-util-0.9.4.tar.gz
 
   Build and install mod_jk2:
-  $ ./configure --with-apxs=PREFIX/bin/apxs --with-apr=./apr-0.9.4 --with-apr-util=./apr-util-0.9.4
+  $ ./configure --with-apxs=PREFIX/bin/apxs \
+                --with-apr=/absolute/path/to/apr-0.9.4 \
+                --with-apr-util=/absolute/path/to/apr-util-0.9.4
   $ make
-  $ make install
+  $ cd ../build/jk2/apache13
+  $ PREFIX/bin/apxs -n jk2 -i mod_jk2.so
 
   Add the following to httpd.conf:
   LoadModule jk2_module libexec/mod_jk2.so
