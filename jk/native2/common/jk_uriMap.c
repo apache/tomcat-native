@@ -427,7 +427,8 @@ static void jk2_uriMap_createWebapps(jk_env_t *env, jk_uriMap_t *uriMap)
         jk_uriEnv_t *ctxEnv;
         
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                              "uriMap: fix uri %s context %s\n", uriEnv->uri, uriEnv->contextPath );
+                              "uriMap: fix uri %s context %s host %s\n", uriEnv->uri, 
+                              uriEnv->contextPath, hostEnv->virtual);
         if (context == NULL) {
             if (  uriMap->mbean->debug > 5) 
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
@@ -790,6 +791,32 @@ static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri) {
 
 #define SAFE_URI_SIZE 8192
 
+static jk_uriEnv_t *jk2_uriMap_getHostCache(jk_env_t *env, jk_uriMap_t *uriMap,
+                                            const char *vhost, int port)
+{
+    char key[1024];
+    
+    if (!vhost && !port)
+        return uriMap->vhosts->get(env, uriMap->vhosts, "*");
+    if (!vhost)
+        vhost = "*";
+    return uriMap->vhcache->get(env, uriMap->vhosts, key);
+}
+
+static void jk2_uriMap_addHostCache(jk_env_t *env, jk_uriMap_t *uriMap,
+                                    const char *vhost, int port,
+                                    jk_uriEnv_t *hostEnv)
+{
+    char *key;
+    
+    if (!vhost)
+        vhost = "*";    
+    key = uriMap->pool->calloc(env, uriMap->pool, strlen(vhost) + 8); 
+
+    sprintf(key, "%s:%d", vhost, port);
+    uriMap->vhcache->add(env, uriMap->vhosts, key, hostEnv);
+}
+
 static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                                       const char *vhost, int port,
                                       const char *uri)
@@ -826,15 +853,23 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
                       "uriMap.mapUri() uri must start with /\n");
         return NULL;
     }
-    hostEnv = jk2_uriMap_hostMap(env, uriMap, vhost, port);
+
+    hostEnv = jk2_uriMap_getHostCache(env, uriMap, vhost, port);
     if (!hostEnv) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "uriMap.mapUri() cannot find host %s/\n", vhost);
-        return NULL;
+        hostEnv = jk2_uriMap_hostMap(env, uriMap, vhost, port);
+        if (!hostEnv) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "uriMap.mapUri() cannot find host %s/\n", vhost);
+            return NULL;
+        }
+        if (uriMap->mbean->debug > 1)
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "uriMap.mapUri() caching host %s\n", hostEnv->virtual);    
+        jk2_uriMap_addHostCache(env, uriMap, vhost, port, hostEnv);
     }
-    if (uriMap->mbean->debug > 1)
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                      "uriMap.mapUri() found host %s\n", hostEnv->virtual);    
+    else if (uriMap->mbean->debug > 1)
+             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                           "uriMap.mapUri() found host %s\n", hostEnv->virtual);    
 
     url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
         
@@ -953,6 +988,7 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *resu
 
     jk2_map_default_create(env, &uriMap->maps, pool);
     jk2_map_default_create(env, &uriMap->vhosts, pool);
+    jk2_map_default_create(env, &uriMap->vhcache, pool);
 
     uriMap->init = jk2_uriMap_init;
     uriMap->destroy = jk2_uriMap_destroy;
