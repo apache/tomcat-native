@@ -524,7 +524,8 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
             if( ep->worker->mbean->debug > 10 )
                 msg->dump( env, msg, "Apache->tomcat" );
 
-            rc = ep->worker->channel->send(env, ep->worker->channel, ep, msg );
+            rc = ep->worker->channel->send(env, ep->worker->channel, ep,
+                                           ep->post );
             if (rc < 0) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "ajp14.processCallbacks() error sending response data\n");

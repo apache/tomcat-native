@@ -227,6 +227,7 @@ static int JK_METHOD jk2_handler_getChunk(jk_env_t *env, void *target,
                                           jk_endpoint_t *ae, jk_msg_t   *msg )
 {
     jk_ws_service_t  *r=target;
+    jk_msg_t *post = ae->post;
     int len = msg->getInt(env, msg);
     
     if(len > AJP13_MAX_SEND_BODY_SZ) {
@@ -242,7 +243,7 @@ static int JK_METHOD jk2_handler_getChunk(jk_env_t *env, void *target,
 /*     env->l->jkLog(env, env->l, JK_LOG_INFO, */
 /*                   "handler_request.getChunk() - read len=%d\n",len); */
 
-    len=msg->appendFromServer( env, msg, r, ae, len );
+    len=post->appendFromServer( env, post, r, ae, len );
     /* the right place to add file storage for upload */
     if (len >= 0) {
         r->content_read += len;
