@@ -85,7 +85,8 @@
 #define AJP14_DEF_PORT  (8011)
 
 /* -------------------- Impl -------------------- */
-static char *myAttInfo[]={ "channelName", "route", "errorState", "recovering",
+static char *myAttInfo[]={ "lb_factor", "lb_value", "reqCnt", "errCnt",
+                           "route", "errorState", "recovering",
                            "epCount", NULL };
 
 static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
@@ -98,6 +99,22 @@ static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *
             return worker->channelName;
     } else if (strcmp( name, "route" )==0 ) {
         return worker->route;
+    } else if (strcmp( name, "lb_value" )==0 ) {
+        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
+        sprintf( buf, "%f", worker->lb_value );
+        return buf;
+    } else if (strcmp( name, "reqCnt" )==0 ) {
+        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
+        sprintf( buf, "%d", worker->reqCnt );
+        return buf;
+    } else if (strcmp( name, "errCnt" )==0 ) {
+        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
+        sprintf( buf, "%d", worker->errCnt );
+        return buf;
+    } else if (strcmp( name, "lb_factor" )==0 ) {
+        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
+        sprintf( buf, "%f", worker->lb_factor );
+        return buf;
     } else if (strcmp( name, "errorState" )==0 ) {
         if( worker->in_error_state ) 
             return "Y";
@@ -136,6 +153,10 @@ jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean,
            
     if( strcmp( name, "secretkey" )==0 ) {
         ajp14->secret = value;
+    } else if( strcmp( name, "tomcatId" )==0 ) {
+        ajp14->route=value;
+    } else if( strcmp( name, "group" )==0 ) {
+        ajp14->groups->add( env, ajp14->groups, value, ajp14 );
     } else if( strcmp( name, "cachesize" )==0 ) {
         ajp14->cache_sz=atoi( value );
     } else if( strcmp( name, "lb_factor" )==0 ) {
@@ -567,6 +588,8 @@ static int JK_METHOD
 jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
 {
     int  rc;
+    int size;
+    int i;
 
     if( ajp14->cache_sz == -1 )
         ajp14->cache_sz=JK_OBJCACHE_DEFAULT_SZ;
@@ -585,70 +608,55 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
         ajp14->endpointCache=NULL;
     }
 
-    if( ajp14->channelName == NULL ) {
-        /* No "channel" was specified. Default to a channel, using
-           the local part of the worker name to construct it. The type
-           of the channel will be unix socket if a / is found, jni if
-           the name is jni, and socket otherwise.
-           
-           If the channle is not found, create one.
-        */
-        char *localName=strchr( ajp14->mbean->name, ':' );
-        if( localName==NULL || localName[1]=='\0' ) {
-            /* No local part, use the defaults */
-            ajp14->channelName="channel.socket";
-        } else {
-            char *prefix;
-            localName++;
-            if( strcmp( localName, "jni" ) == 0 ) {
-                /* Easy one */
-                ajp14->channelName="channel.jni";
-            }  else {
-                if( strchr( localName, '/' )) {
-                    prefix="channel.apr:";
-                } else {
-                    /* We could do more - if other channels are defined and
-                       we can guess it */
-                    prefix="channel.socket:";
-                }
-                ajp14->channelName=ajp14->pool->calloc( env, ajp14->pool, strlen( localName )+
-                                                        strlen( prefix ) + 2 );
-                strcpy( ajp14->channelName, prefix );
-                strcat( ajp14->channelName, localName );
-            }
-        }
+    if( ajp14->channel == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp14.init(): No channel %s\n", ajp14->mbean->localName);
+        return JK_ERR;
     }
 
-    if( ajp14->channel == NULL ) {
-        ajp14->channel= env->getByName( env, ajp14->channelName );
+    
+    /* Find the groups we are member on and add ourself in
+     */
+    size=ajp14->groups->size( env, ajp14->groups );
+    if( size==0 ) {
+        /* No explicit groups, it'll go to default lb */
+        jk_worker_t *lb=ajp14->workerEnv->defaultWorker;
+        
+        lb->mbean->setAttribute(env, lb->mbean, "balanced_workers",
+                                ajp14->mbean->name);
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "ajp14.init(): Adding %s to default lb\n", ajp14->mbean->localName);
+    } else {
+        for( i=0; i<size; i++ ) {
+            char *name= ajp14->groups->nameAt( env, ajp14->groups, i );
+            jk_worker_t *lb;
+
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "ajp14.init(): Adding %s to %s\n",
+                          ajp14->mbean->localName, name);
+            lb= env->getByName2( env, "worker.lb", name );
+            if( lb==NULL ) {
+                /* Create the lb group */
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "ajp14.init(): Automatically creating the group %s\n",
+                              name);
+                env->createBean2( env, ajp14->workerEnv->mbean->pool, "worker.lb", name );
+                lb= env->getByName2( env, "worker.lb", name );
+                if( lb==NULL ) {
+                    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                                  "ajp14.init(): Failed to create %s\n", name);
+                    return JK_ERR;
+                }
+            }
+            lb->mbean->setAttribute(env, lb->mbean, "balanced_workers",
+                                    ajp14->mbean->name);
+        }
+
     }
     
-    if( ajp14->channel == NULL ) {
-        jk_bean_t * chB=env->createBean( env, ajp14->workerEnv->pool, ajp14->channelName);
-        if( chB==NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp14.init(): can't create channel %s\n",
-                          ajp14->channelName);
-            return JK_ERR;
-        }
-        ajp14->channel = chB->object;
-
-        if( ajp14->channel == NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp14.init(): no channel found %s\n",
-                          ajp14->channelName);
-            return JK_ERR;
-        }
-        rc=ajp14->workerEnv->initChannel( env, ajp14->workerEnv, ajp14->channel );
-        if( rc != JK_OK ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp14.init(): channel init failed\n");
-        }
-    }
-
-    ajp14->channel->worker=ajp14;
-
-
+    /* XXX Find any 'group' property - find or create an lb for that
+       and register it
+    */
     return JK_OK;
 }
 
@@ -701,7 +709,12 @@ int JK_METHOD jk2_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     }
     w->pool = pool;
     w->cache_sz=-1;
-    
+    w->disabled=JK_FALSE;
+    w->reqCnt=0;
+    w->errCnt=0;
+
+    jk2_map_default_create(env, &w->groups, pool);
+
     w->endpointCache= NULL;
 
     w->channel= NULL;
