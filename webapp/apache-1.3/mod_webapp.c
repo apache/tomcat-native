@@ -455,6 +455,10 @@ static int wam_invoke(request_rec *r) {
         }
     }
 
+    /* Check if we can read something from the request */
+    ret=ap_setup_client_block(r,REQUEST_CHUNKED_DECHUNK);
+    if (ret!=OK) return(ret);
+
     /* Invoke the request */
     ret=wa_rinvoke(req,appl);
 
