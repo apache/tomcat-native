@@ -456,7 +456,7 @@ public class JkCoyoteHandler extends JkHandler implements
     {
         // XXX Can we have multiple JkMain ?
         Registry.getRegistry().registerComponent(jkMain, name.getDomain(),
-                "JkMain", "name=JkMain");
+                "JkMain", "type=JkHandler,name=JkMain");
         return super.preRegister(server, name);
     }
 }

@@ -411,22 +411,33 @@ public class HandlerRequest extends JkHandler
     }
 
     static int count=0;
+    RequestGroupInfo global=null;
 
     private int decodeRequest( Msg msg, MsgContext ep, MessageBytes tmpMB )
         throws IOException
     {
         // FORWARD_REQUEST handler
         Request req=(Request)ep.getRequest();
+        req.setStartTime(System.currentTimeMillis());
         if( req==null ) {
             req=new Request();
             Response res=new Response();
             req.setResponse(res);
             ep.setRequest( req );
-            RequestProcessor rp=new RequestProcessor(req);
             if( this.getDomain() != null ) {
                 try {
+                    if( global==null ) {
+                        global=new RequestGroupInfo();
+                        Registry.getRegistry().registerComponent( global,
+                                getDomain(), "GlobalRequestProcessor",
+                                "type=GlobalRequestProcessor,name=jk");
+                    }
+
+                    RequestInfo rp=req.getRequestProcessor();
+                    rp.setGlobalProcessor(global);
                     Registry.getRegistry().registerComponent( rp,
-                            getDomain(), "RequestProcessor", "name=Request" + count++ );
+                            getDomain(), "RequestProcessor",
+                            "type=RequestProcessor,name=JkRequest" + count++ );
                 } catch( Exception ex ) {
                     log.warn("Error registering request");
                 }

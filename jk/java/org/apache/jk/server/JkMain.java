@@ -513,6 +513,9 @@ public class JkMain implements MBeanRegistration
         String fullName=name;
         String localName="";
         String propName="";
+        // ignore
+        if( name.startsWith("key.")) return;
+
         int dot=name.indexOf(".");
         int lastDot=name.lastIndexOf(".");
         if( dot > 0 ) {
@@ -564,7 +567,7 @@ public class JkMain implements MBeanRegistration
         }
         if( this.domain != null ) {
             try {
-                Registry.getRegistry().registerComponent(handler, this.domain, "JkHandler",
+                Registry.getRegistry().registerComponent(handler, this.domain, classN,
                         "type=JkHandler,name=" + fullName);
             } catch (Exception e) {
                 log.error( "Error registering " + fullName, e );
