@@ -1926,8 +1926,7 @@ static int jk_translate(request_rec * r)
 
         if (conf) {
             jk_logger_t *l = conf->log ? conf->log : main_log;
-            char *uri = ap_pstrdup(r->pool, r->uri);
-            char *worker = map_uri_to_worker(conf->uw_map, uri, l);
+            char *worker = map_uri_to_worker(conf->uw_map, r->uri, l);
 
             /* Don't know the worker, ForwardDirectories is set, there is a
              * previous request for which the handler is JK_HANDLER (as set by
@@ -1950,7 +1949,7 @@ static int jk_translate(request_rec * r)
                 ap_table_setn(r->notes, JK_WORKER_ID, worker);
             }
             else if (conf->alias_dir != NULL) {
-                char *clean_uri = uri;
+                char *clean_uri = ap_pstrdup(r->pool, r->uri);
                 ap_no2slash(clean_uri);
                 /* Automatically map uri to a context static file */
                 jk_log(l, JK_LOG_DEBUG,
