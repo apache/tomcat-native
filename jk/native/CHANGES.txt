@@ -6,7 +6,13 @@ Changes with JK 1.2.6
     * Add CPING/CPONG support to avoid problems with hang tomcats [hgomez]
     * Make POST recovery in LB configurable [hgomez]
     * Update to Apache License 2.0 [hgomez]
-    
+    * For Apache 2.0, when the env var no-jk is present, mod_jk didn't handle request (declined)
+      and as such dont forward requests to tomcats even if URL match.
+      To be used with SetEnvIf or BrowserMatch directives for example to exclude some URL/URI or
+      Browser [hgomez].
+    * Add a fix for iSeries (AS/400) which use XOPEN/Unix98 APIs and need sa_len to be set when
+      calling connect(), it will resolve the error EINVAL in jk_connect [hgomez].
+      
 Changes with JK 1.2.5
     * Fix a thread safe bug when mapping URI's.
       [billbarker]
