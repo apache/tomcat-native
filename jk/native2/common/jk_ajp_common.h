@@ -323,8 +323,8 @@ struct ajp_worker {
 
     jk_login_service_t *login;
 
-    jk_worker_t worker; 
-
+    jk_worker_t *worker; 
+ 
     /*
      * Post physical connect handler.
      * AJP14 will set here its login handler

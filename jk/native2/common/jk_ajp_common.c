@@ -67,7 +67,6 @@
 #include "jk_util.h"
 #include "jk_ajp_common.h"
 #include "jk_ajp14.h"
-#include "jk_connect.h"
 #include "jk_channel.h"
 #include "jk_env.h"
 
@@ -553,7 +552,7 @@ void ajp_close_endpoint(ajp_endpoint_t *ae,
     jk_close_pool(&(ae->pool));
 
     {
-	jk_channel_t *channel=ae->worker->worker.channel;
+	jk_channel_t *channel=ae->worker->worker->channel;
 	int err=channel->close( channel, &ae->endpoint );
     }
     free(ae);
@@ -565,7 +564,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
     unsigned attempt;
 
     for(attempt = 0 ; attempt < ae->worker->connect_retry_attempts ; attempt++) {
-	jk_channel_t *channel=ae->worker->worker.channel;
+	jk_channel_t *channel=ae->worker->worker->channel;
         int err=channel->open( channel, &ae->endpoint );
 	l->jkLog(l, JK_LOG_DEBUG, "ajp_connect_to_endpoint: connected %lx\n", &ae->endpoint );
 	if( err == JK_TRUE ) {
@@ -593,7 +592,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t *ae,
     jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp13", msg);
     {
 	int err;
-	jk_channel_t *channel=ae->worker->worker.channel;
+	jk_channel_t *channel=ae->worker->worker->channel;
     
 	err=channel->send( channel, &ae->endpoint, 
 			   jk_b_get_buff(msg), jk_b_get_len(msg) );
@@ -624,7 +623,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
 	return JK_FALSE;
     }
     {
-	jk_channel_t *channel=ae->worker->worker.channel;
+	jk_channel_t *channel=ae->worker->worker->channel;
     
 	rc=channel->recv( channel, &ae->endpoint, 
 			     head, AJP_HEADER_LEN );
@@ -655,7 +654,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     jk_b_set_pos(msg, 0);
 
     {
-	jk_channel_t *channel=ae->worker->worker.channel;
+	jk_channel_t *channel=ae->worker->worker->channel;
     
 	rc=channel->recv( channel, &ae->endpoint, 
 			     jk_b_get_buff(msg), msglen);
@@ -793,7 +792,7 @@ static int ajp_send_request(jk_endpoint_t *e,
      * First try to reuse open connections...
      */
     {
-      jk_channel_t *channel=ae->worker->worker.channel;
+      jk_channel_t *channel=ae->worker->worker->channel;
       err=ajp_connection_tcp_send_message(ae, op->request, l);
       if( err != JK_TRUE ) {
           l->jkLog(l, JK_LOG_ERROR, "Error sending request, close endpoint\n");
@@ -1138,7 +1137,7 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
 	}
 	/* Try again to connect */
 	{
-	    jk_channel_t *channel=p->worker->worker.channel;
+	    jk_channel_t *channel=p->worker->worker->channel;
 	    
 	    l->jkLog(l, JK_LOG_ERROR, "Error sending request, reconnect\n");
 	    err=channel->close( channel, &p->endpoint );

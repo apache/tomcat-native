@@ -84,7 +84,7 @@ int ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t       *msg,
                                      jk_login_service_t *s,
                                      jk_logger_t        *l)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14_marshal_shutdown_into_msgb\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_shutdown_into_msgb\n");
 
     /* To be on the safe side */
     jk_b_reset(msg);
@@ -99,7 +99,7 @@ int ajp14_marshal_shutdown_into_msgb(jk_msg_buf_t       *msg,
      * COMPUTED-SEED
      */
      if (jk_b_append_bytes(msg, (const unsigned char *)s->computed_key, AJP14_COMPUTED_KEY_LEN)) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_shutdown_into_msgb - Error appending the COMPUTED MD5 bytes\n");
+        l->jkLog(l, JK_LOG_ERROR, "Error ajp14_marshal_shutdown_into_msgb - Error appending the COMPUTED MD5 bytes\n");
         return JK_FALSE;
     }
 
@@ -119,16 +119,16 @@ int ajp14_unmarshal_shutdown_nok(jk_msg_buf_t *msg,
 {
     unsigned long   status;
 
-    jk_log(l, JK_LOG_DEBUG, "Into ajp14_unmarshal_shutdown_nok\n");
+    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_unmarshal_shutdown_nok\n");
 
     status = jk_b_get_long(msg);
 
     if (status == 0xFFFFFFFF) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14_unmarshal_shutdown_nok - can't get failure code\n");
+        l->jkLog(l, JK_LOG_ERROR, "Error ajp14_unmarshal_shutdown_nok - can't get failure code\n");
         return JK_FALSE;
     }
 
-    jk_log(l, JK_LOG_INFO, "Can't shutdown servlet engine - code %08lx", status);
+    l->jkLog(l, JK_LOG_INFO, "Can't shutdown servlet engine - code %08lx", status);
     return JK_TRUE;
 }
 
@@ -145,7 +145,7 @@ int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t		*msg,
                                            jk_msg_buf_t		*unk,
                                            jk_logger_t  	*l)
 {
-	jk_log(l, JK_LOG_DEBUG, "Into ajp14_marshal_unknown_packet_into_msgb\n");
+	l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_unknown_packet_into_msgb\n");
 
 	/* To be on the safe side */
 	jk_b_reset(msg);
@@ -167,7 +167,7 @@ int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t		*msg,
 	 *					 (           ie: only 1k max								    )
 	 */
 	if (jk_b_append_bytes(msg, jk_b_get_buff(unk), jk_b_get_len(unk))) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp14_marshal_unknown_packet_into_msgb - Error appending the UNHANDLED MESSAGE\n");
+        l->jkLog(l, JK_LOG_ERROR, "Error ajp14_marshal_unknown_packet_into_msgb - Error appending the UNHANDLED MESSAGE\n");
         return JK_FALSE;
     }
 
