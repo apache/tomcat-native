@@ -200,6 +200,11 @@ public class Http11Processor implements Processor, ActionHook {
         = org.apache.commons.logging.LogFactory.getLog(Http11Processor.class);
 
 
+    /**
+     * Maximum number of Keep-Alive requests to honor.
+     */
+    protected int maxKeepAliveRequests=-1;
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -262,6 +267,22 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * Set the maximum number of Keep-Alive requests to honor.
+     * This is to safeguard from DoS attacks.  Setting to a negative
+     * value disables the check.
+     */
+    public void setMaxKeepAliveRequests(int mkar) {
+        maxKeepAliveRequests = mkar;
+    }
+
+    /**
+     * Return the number of Keep-Alive requests that we will honor.
+     */
+    public int getMaxKeepAliveRequests() {
+        return maxKeepAliveRequests;
+    }
+
+    /**
      * Process pipelined HTTP requests using the specified input and output
      * streams.
      * 
@@ -281,6 +302,8 @@ public class Http11Processor implements Processor, ActionHook {
         error = false;
         keepAlive = true;
 
+        int keepAliveLeft=maxKeepAliveRequests;
+
         while (started && !error && keepAlive) {
 
             try {
@@ -298,6 +321,9 @@ public class Http11Processor implements Processor, ActionHook {
 
             // Setting up filters, and parse some request headers
             prepareRequest();
+
+            if(maxKeepAliveRequests > 0 && --keepAliveLeft == 0)
+                keepAlive=false;
 
             // Process the request in the adapter
             if (!error) {
