@@ -323,7 +323,7 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
 {
     unsigned int i;
 
-    jk_puts(s, "<br />Uri Mappings:\n");
+    jk_puts(s, "<br/>Uri Mappings:\n");
     jk_puts(s, "<table>\n<tr><th>Match Type</th><th>Uri</th>"
                "<th>Context</th><th>Suffix</th></tr>\n");
     for (i = 0; i < uwmap->size; i++) {
@@ -336,7 +336,11 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
                 "</td><td>", NULL);
         jk_puts(s, uwr->uri);
         jk_putv(s, "</td><td>", uwr->context, NULL);
-        jk_putv(s, "</td><td>", uwr->suffix, NULL);
+        if (uwr->suffix)
+            jk_putv(s, "</td><td>", uwr->suffix, NULL);
+        else
+            jk_putv(s, "</td><td>", "&nbsp;", NULL);
+
         jk_puts(s, "</td></tr>\n");
     }
     jk_puts(s, "</table>\n");
@@ -380,7 +384,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             /* Skip status, jni and ajp12 worker */
             continue;
         }
-        jk_puts(s, "<hr />\n<h3>Worker Status for ");
+        jk_puts(s, "<hr/>\n<h3>Worker Status for ");
         if (dworker && strcmp(dworker, sw->we->worker_list[i]) == 0) {
             /* Next click will colapse the editor */
             jk_putv(s, "<a href=\"", s->req_uri, "?cmd=show\">", NULL);
@@ -392,7 +396,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
         if (lb != NULL) {
             unsigned int j;
             int selected = -1;
-            jk_puts(s, "<table border=\"0\"><tr>"
+            jk_puts(s, "<table><tr>"
                     "<th>Type</th><th>Sticky session</th>"
                     "<th>Force Sticky session</th>"
                     "<th>Retries</th>"
@@ -403,8 +407,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session_force),
                     "</td>", NULL);
             jk_printf(s, "<td>%d</td>", lb->s->retries);
-            jk_puts(s, "</tr>\n</table>\n");
-            jk_puts(s, "<table border=\"0\"><tr>"
+            jk_puts(s, "</tr>\n</table>\n<br/>\n");
+            jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>Host</th><th>Addr</th>"
                     "<th>Stat</th><th>F</th><th>V</th><th>Acc</th><th>Err</th>"
                     "<th>Wr</th><th>Rd</th><th>Busy</th><th>RR</th><th>Cd</th></tr>\n");
@@ -414,7 +418,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_putv(s, "<tr>\n<td><a href=\"", s->req_uri,
                         "?cmd=show&w=",
                         wr->s->name, "\">",
-                        wr->s->name, "</td>", NULL);
+                        wr->s->name, "</a></td>", NULL);
                 if (dworker && strcmp(dworker, wr->s->name) == 0)
                     selected = j;
                 jk_putv(s, "<td>", status_worker_type(wr->w->type), "</td>", NULL);
@@ -437,76 +441,82 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_putv(s, "<td>", status_strfsize(wr->s->readed, buf),
                         "</td>", NULL);
                 jk_printf(s, "<td>%u</td><td>", wr->s->busy);
-                jk_puts(s, wr->s->redirect);
+                if (wr->s->redirect && *wr->s->redirect)
+                    jk_puts(s, wr->s->redirect);
+                else
+                    jk_puts(s,"&nbsp;");
                 jk_puts(s, "</td><td>\n");
-                jk_puts(s, wr->s->domain);
+                if (wr->s->domain && *wr->s->domain)
+                    jk_puts(s, wr->s->domain);
+                else
+                    jk_puts(s,"&nbsp;");
                 jk_puts(s, "</td>\n</tr>\n");
             }
-            jk_puts(s, "</table><br />\n");
+            jk_puts(s, "</table><br/>\n");
             if (selected >= 0) {
                 worker_record_t *wr = &(lb->lb_workers[selected]);
-                jk_putv(s, "<hr /><h3>Edit worker settings for ",
+                jk_putv(s, "<hr/><h3>Edit worker settings for ",
                         wr->s->name, "</h3>\n", NULL);
                 jk_putv(s, "<form method=\"GET\" action=\"",
                         s->req_uri, "\">\n", NULL);
-                jk_puts(s, "<table>\n<input type=hidden name=\"cmd\" ");
+                jk_puts(s, "<table>\n<input type=\"hidden\" name=\"cmd\" ");
                 jk_puts(s, "value=\"update\">\n");
-                jk_puts(s, "<input type=hidden name=\"w\" ");
+                jk_puts(s, "<input type=\"hidden\" name=\"w\" ");
                 jk_putv(s, "value=\"", wr->s->name, "\">\n", NULL);
-                jk_puts(s, "<input type=hidden name=\"id\" ");
+                jk_puts(s, "<input type=\"hidden\" name=\"id\" ");
                 jk_printf(s, "value=\"%u\">\n</table>\n", selected);
-                jk_puts(s, "<input type=hidden name=\"lb\" ");
+                jk_puts(s, "<input type=\"hidden\" name=\"lb\" ");
                 jk_printf(s, "value=\"%u\">\n</table>\n", i);
 
-                jk_puts(s, "<table>\n<tr><td>Load factor:</td><td><input name=\"wf\" type=text ");
-                jk_printf(s, "value=\"%d\"></td><tr>\n", wr->s->lb_factor);
-                jk_puts(s, "<tr><td>Route Redirect:</td><td><input name=\"wr\" type=text ");
+                jk_puts(s, "<table>\n<tr><td>Load factor:</td><td><input name=\"wf\" type=\"text\" ");
+                jk_printf(s, "value=\"%d\"/></td><tr>\n", wr->s->lb_factor);
+                jk_puts(s, "<tr><td>Route Redirect:</td><td><input name=\"wr\" type=\"text\" ");
                 jk_putv(s, "value=\"", wr->s->redirect, NULL);
-                jk_puts(s, "\"></td></tr>\n");
-                jk_puts(s, "<tr><td>Cluster Domain:</td><td><input name=\"wc\" type=text ");
+                jk_puts(s, "\"/></td></tr>\n");
+                jk_puts(s, "<tr><td>Cluster Domain:</td><td><input name=\"wc\" type=\"text\" ");
                 jk_putv(s, "value=\"", wr->s->domain, NULL);
-                jk_puts(s, "\"></td></tr>\n");
-                jk_puts(s, "<tr><td>Disabled:</td><td><input name=\"wd\" type=checkbox");
+                jk_puts(s, "\"/></td></tr>\n");
+                jk_puts(s, "<tr><td>Disabled:</td><td><input name=\"wd\" type=\"checkbox\"");
                 if (wr->s->is_disabled)
-                    jk_puts(s, " checked");
-                jk_puts(s, "></td></tr>\n");
+                    jk_puts(s, " value=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
                 jk_puts(s, "</td></tr>\n</table>\n");
-                jk_puts(s, "<br /><input type=submit value=\"Update Worker\">\n</form>\n");
+                jk_puts(s, "<br/><input type=\"submit\" value=\"Update Worker\"/>\n</form>\n");
 
             }
             else if (dworker && strcmp(dworker, sw->we->worker_list[i]) == 0) {
                 /* Edit Load balancer settings */
-                jk_putv(s, "<hr /><h3>Edit Load balancer settings for ",
+                jk_putv(s, "<hr/><h3>Edit Load balancer settings for ",
                         dworker, "</h3>\n", NULL);
                 jk_putv(s, "<form method=\"GET\" action=\"",
                         s->req_uri, "\">\n", NULL);
-                jk_puts(s, "<table>\n<input type=hidden name=\"cmd\" ");
-                jk_puts(s, "value=\"update\">\n");
-                jk_puts(s, "<input type=hidden name=\"w\" ");
-                jk_putv(s, "value=\"", dworker, "\">\n", NULL);
-                jk_puts(s, "<input type=hidden name=\"id\" ");
-                jk_printf(s, "value=\"%u\">\n</table>\n", i);
+                jk_puts(s, "<table>\n<input type=\"hidden\" name=\"cmd\" ");
+                jk_puts(s, "value=\"update\"/>\n");
+                jk_puts(s, "<input type=\"hidden\" name=\"w\" ");
+                jk_putv(s, "value=\"", dworker, "\"/>\n", NULL);
+                jk_puts(s, "<input type=\"hidden\" name=\"id\" ");
+                jk_printf(s, "value=\"%u\"/>\n</table>\n", i);
 
-                jk_puts(s, "<table>\n<tr><td>Retries :</td><td><input name=\"lr\" type=text ");
-                jk_printf(s, "value=\"%d\"></td><tr>\n", lb->s->retries);
-                jk_puts(s, "<tr><td>Recover time :</td><td><input name=\"lt\" type=text ");
-                jk_printf(s, "value=\"%d\"></td><tr>\n", lb->s->recover_wait_time);
-                jk_puts(s, "<tr><td>Sticky session:</td><td><input name=\"ls\" type=checkbox");
+                jk_puts(s, "<table>\n<tr><td>Retries:</td><td><input name=\"lr\" type=\"text\" ");
+                jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->s->retries);
+                jk_puts(s, "<tr><td>Recover time:</td><td><input name=\"lt\" type=\"text\" ");
+                jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->s->recover_wait_time);
+                jk_puts(s, "<tr><td>Sticky session:</td><td><input name=\"ls\" type=\"checkbox\"");
                 if (lb->s->sticky_session)
-                    jk_puts(s, " checked");
-                jk_puts(s, "></td></tr>\n");
-                jk_puts(s, "<tr><td>Force Sticky session:</td><td><input name=\"lf\" type=checkbox");
+                    jk_puts(s, " value=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "<tr><td>Force Sticky session:</td><td><input name=\"lf\" type=\"checkbox\"");
                 if (lb->s->sticky_session_force)
-                    jk_puts(s, " checked");
-                jk_puts(s, "></td></tr>\n");
-                jk_puts(s, "</td></tr>\n</table>\n");
+                    jk_puts(s, " value=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "</table>\n");
 
                 display_maps(s, sw, s->uw_map, dworker, l);
-                jk_puts(s, "<br /><input type=submit value=\"Update Balancer\"></form>\n");
+                jk_puts(s, "<br/><input type=\"submit\" value=\"Update Balancer\"/></form>\n");
             }
         }
         else {
-            jk_puts(s, "\n\n<table border=\"0\"><tr>"
+            jk_puts(s, "\n\n<table><tr>"
                     "<th>Type</th><th>Host</th><th>Addr</th>"
                     "</tr>\n<tr>");
             jk_putv(s, "<td>", status_worker_type(w->type), "</td>", NULL);
@@ -519,7 +529,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
         }
     }
     /* Display legend */
-    jk_puts(s, "<hr /><table>\n"
+    jk_puts(s, "<hr/><table>\n"
             "<tr><th>Name</th><td>Worker route name</td></tr>\n"
             "<tr><th>Type</th><td>Worker type</td></tr>\n"
             "<tr><th>Addr</th><td>Backend Address info</td></tr>\n"
