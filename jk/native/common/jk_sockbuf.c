@@ -92,7 +92,7 @@ int jk_sb_write(jk_sockbuf_t *sb,
                 return JK_FALSE;
             }
             if(sz > SOCKBUF_SIZE) {
-                return (send(sb->sd, buf, sz, 0) == (int)sz);
+                return (send(sb->sd, (char *)buf, sz, 0) == (int)sz);
             } 
             
             memcpy(sb->buf + sb->end, buf, sz);
