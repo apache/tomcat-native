@@ -165,8 +165,8 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                    "socket SO_KEEPALIVE set to On");
     }
 
-    if (sock_buf) {
-        set =  DEF_BUFFER_SZ;
+    if (sock_buf > 0) {
+        set = sock_buf;
         /* Set socket send buffer size */
         if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char *)&set,
                         sizeof(set))) {
@@ -177,7 +177,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
             JK_TRACE_EXIT(l);
             return -1;
         }
-        set =  DEF_BUFFER_SZ;
+        set = sock_buf;
         /* Set socket receive buffer size */
         if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (const char *)&set,
                                 sizeof(set))) {
@@ -188,6 +188,10 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
             JK_TRACE_EXIT(l);
             return -1;
         }
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "socket SO_SNDBUF and  SO_RCVBUF set to d",
+                   sock_buf);
     }
 
 #ifdef WIN32
