@@ -587,6 +587,14 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 		    con.setSocket(s);
 		    endpoint.setSocketOptions( s );
 		    endpoint.getConnectionHandler().processConnection(con, perThrData);
+                } catch (SocketException se) {
+                    endpoint.log.error(
+                       "Remote Host " + s.getInetAddress() +
+                       " SocketException: " + se.getMessage());
+                    // Try to close the socket
+                    try {
+                        s.close();
+                    } catch (IOException e) {}
                 } catch (Throwable t) {
                     endpoint.log.error("Unexpected error", t);
                     // Try to close the socket
