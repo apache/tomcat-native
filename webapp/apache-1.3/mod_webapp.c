@@ -443,7 +443,7 @@ static int wam_invoke(request_rec *r) {
        data (from the connection */
     ap_add_common_vars(r);
     stmp=(char *)r->hostname;
-    ctmp=(char *)ap_get_remote_host(con,r->per_dir_config, REMOTE_HOST);
+    ctmp=(char *)ap_get_remote_host(con,r->per_dir_config, REMOTE_NAME);
     if (stmp==NULL) req->serv->host="";
     else req->serv->host=apr_pstrdup(req->pool,stmp);
     if (ctmp==NULL) req->clnt->host="";
