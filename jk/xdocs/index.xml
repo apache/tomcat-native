@@ -4,10 +4,11 @@
 <title>Overview</title>
 <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
 <author email="hgomez@apache.org">Henri Gomez</author>
+<author email="yoavs@apache.org">Yoav Shapira</author>
 <date>$Date$</date>
 </properties>
 
-<section name="What's JK ?">
+<section name="What's JK&#63;">
 <p>
 <b>JK</b> is a replacement to the elderly mod_jserv. 
 It was a completely new Tomcat-Apache plug-in that handles the communication between Tomcat and Apache.
@@ -39,7 +40,7 @@ JK is more than just an apache module, since it could be used with majors WebSer
 
 </section>
 
-<section name="Why should I use the JK ?">
+<section name="Why should I use the JK&#63;">
 <p>
 JK was develop to overcome many limitations of its ancestor, <b>mod_jserv</b>.
 </p>
@@ -73,7 +74,7 @@ and the Tomcat Servlet Engine and could be used today with all of the ASF Tomcat
 
 </section>
 
-<section name="What's the difference between JK and JK2 ?">
+<section name="What's the difference between JK and JK2&#63;">
 <p>
 JK2 is a refactoring of JK and is much more powerfull.
 </p>
@@ -108,7 +109,7 @@ mechansim, and supporting both in-process and out-of process modes.
 </section>
 
 
-<section name="Are there alternative ways to connect Apache and Tomcat?">
+<section name="Are there alternative ways to connect Apache and Tomcat&#63;">
 <p>
 The alternative ways are better described in <b>mod_webapp</b>
 documentation.
