@@ -342,12 +342,13 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
         if (running) {
             if (lf) {
                 tp.shutdown();
-            } else {
-                threadStop();
             }
             running = false;
             if (serverSocket != null) {
                 closeServerSocket();
+            }
+            if (!lf) {
+                threadStop();
             }
         }
     }
@@ -668,11 +669,6 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
      * Stop the background processing thread.
      */
     private void threadStop() {
-        try {
-            threadSync.wait(5000);
-        } catch (InterruptedException e) {
-            ;
-        }
         thread = null;
     }
 
