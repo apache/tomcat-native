@@ -75,6 +75,8 @@ import org.apache.tomcat.util.compat.*;
 import org.apache.tomcat.modules.server.PoolTcpConnector;
 import org.apache.coyote.Adapter;
 import org.apache.coyote.Processor;
+import org.apache.coyote.ActionHook;
+import org.apache.coyote.ActionCode;
 
 /** Standalone http.
  *
@@ -160,6 +162,7 @@ public class CoyoteInterceptor extends PoolTcpConnector
 	    Class processorClass = 
 		getClass().getClassLoader().loadClass(processorClassName);
 	    processor = (Processor)processorClass.newInstance();
+	    processor.setAdapter(adaptor);
 	} catch(Exception ex) {
 	    log("Can't load Processor", ex);
 	}
@@ -177,7 +180,10 @@ public class CoyoteInterceptor extends PoolTcpConnector
 	try {
 	    adaptor=(CoyoteProcessor)thData[0];
 	    processor=(Processor)thData[1];
-	    processor.setAdapter(adaptor);
+
+	    if (processor instanceof ActionHook) {
+		((ActionHook) processor).action(ActionCode.ACTION_START, null);
+	    }
 	    socket=connection.getSocket();
  	    socket.setSoTimeout(timeout);
 
@@ -221,6 +227,9 @@ public class CoyoteInterceptor extends PoolTcpConnector
 	    log( "Error reading request, ignored", e, Log.ERROR);
 	} finally {
 	    if(adaptor != null) adaptor.recycle();
+	    if (processor instanceof ActionHook) {
+		((ActionHook) processor).action(ActionCode.ACTION_STOP, null);
+	    }
 	    // recycle kernel sockets ASAP
 	    try { if (socket != null) socket.close (); }
 	    catch (IOException e) { /* ignore */ }
