@@ -150,7 +150,7 @@ public  class LogHandler {
     // -------------------- Default sink
     
     protected static PrintWriter defaultSink =
-	new PrintWriter( new OutputStreamWriter(System.err));
+	new PrintWriter( new OutputStreamWriter(System.err), true);
 
     /**
      * Set the default output stream that is used by all logging

@@ -142,7 +142,7 @@ public class DateTool {
     /** 
      */
     public static String format1123( Date d ) {
-        long dt = d.getTime() % 1000;
+        long dt = d.getTime() / 1000;
         if ((rfc1123DS != null) && (dt == rfc1123Sec))
             return rfc1123DS;
         rfc1123DS  = rfc1123Format.format( d );
@@ -151,7 +151,7 @@ public class DateTool {
     } 
 
     public static String format1123( Date d,DateFormat df ) {
-        long dt = d.getTime() % 1000;
+        long dt = d.getTime() / 1000;
         if ((rfc1123DS != null) && (dt == rfc1123Sec))
             return rfc1123DS;
         rfc1123DS  = df.format( d );

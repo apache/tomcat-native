@@ -189,7 +189,10 @@ public final class IntrospectionUtils {
                         home=new File("./").getCanonicalPath();
                     }
                     File f=new File( home );
-		    File f1=new File ( f, "..");
+		    String parentDir = f.getParent();
+		    if(parentDir == null)
+			parentDir = home;  // unix style
+		    File f1=new File ( parentDir );
 		    install = f1.getCanonicalPath();
 		    if( installSysProp != null )
 			System.getProperties().put( installSysProp, install );
@@ -204,7 +207,10 @@ public final class IntrospectionUtils {
 		if( new File( fname ).exists()) {
 		    try {
 			File f=new File( path );
-			File f1=new File ( f, "..");
+			String parentDir = f.getParent();
+			if( parentDir == null )
+			    parentDir = path; // unix style
+			File f1=new File ( parentDir );
 			install = f1.getCanonicalPath();
 			if( installSysProp != null )
 			    System.getProperties().put( installSysProp,
@@ -475,9 +481,24 @@ public final class IntrospectionUtils {
     public static void addToolsJar( Vector v )
     {
 	try {
-	    v.addElement( new URL( "file", "" ,
-				   System.getProperty( "java.home" ) +
-				   "/../lib/tools.jar"));
+            // Add tools.jar in any case
+            File f=new File( System.getProperty( "java.home" ) +
+                             "/../lib/tools.jar");
+
+            if( ! f.exists() ) {
+                // On some systems java.home gets set to the root of jdk.
+                // That's a bug, but we can work around and be nice.
+                f=new File( System.getProperty( "java.home" ) +
+                                 "/lib/tools.jar");
+                if( f.exists() ) {
+                    System.out.println("Detected strange java.home value " +
+                                       System.getProperty( "java.home" ) +
+                                       ", it should point to jre");
+                }
+            }
+            URL url=new URL( "file", "" , f.getAbsolutePath() );
+
+	    v.addElement( url );
 	} catch ( MalformedURLException ex ) {
 	    ex.printStackTrace();
 	}
@@ -571,11 +592,11 @@ public final class IntrospectionUtils {
     {
 	Vector jarsV = new Vector();
 	if( dir!=null ) {
-	    addToClassPath( jarsV, dir );
-	    // Add dir/classes, if it exists
+	    // Add dir/classes first, if it exists
 	    URL url=getURL( dir, "classes");
 	    if( url!=null )
 		jarsV.addElement(url);
+	    addToClassPath( jarsV, dir );
 	}
 	
 	if( cpath != null )
