@@ -77,7 +77,8 @@ import org.apache.tomcat.util.IntrospectionUtils;
  */
 public class DynamicMBeanProxy implements DynamicMBean {
     Object real;
-
+    String name;
+    
     Method methods[];
 
     Hashtable attMap=new Hashtable();
@@ -91,6 +92,10 @@ public class DynamicMBeanProxy implements DynamicMBean {
     // key: operation val: invoke method
     Hashtable invokeAttMap=new Hashtable();
 
+    static MBeanServer mserver=null;
+
+    static Hashtable instances=new Hashtable();
+    
     /** Create a Dynamic proxy, using introspection to manage a
      *  real tomcat component.
      */
@@ -98,6 +103,60 @@ public class DynamicMBeanProxy implements DynamicMBean {
         
     }
 
+    public void setName(String name ) {
+        this.name=name;
+    }
+
+    public String getName() {
+        if( name!=null ) return name;
+
+        if( real==null ) return null;
+
+        name=real.getClass().getName();
+        name=name.substring( name.lastIndexOf( ".") + 1 );
+        Integer iInt=(Integer)instances.get(name );
+        if( iInt!= null ) {
+            int i=iInt.intValue();
+            i++;
+            instances.put( name, new Integer( i ));
+            name=name + "_" + i;
+        } else {
+            instances.put( name, new Integer( 0 ));
+        }
+        return name;
+    }
+    
+    public void registerMBean( String domain ) {
+        try {
+            // XXX use aliases, suffix only, proxy.getName(), etc
+            ObjectName oname=new ObjectName( domain + ": name=" +  getName());
+            
+            getMBeanServer().registerMBean( this, oname );
+        } catch( Throwable t ) {
+            log.error( "Error creating mbean ", t );
+        }
+    }
+
+    public static MBeanServer getMBeanServer() {
+        if( mserver==null ) {
+            if( MBeanServerFactory.findMBeanServer(null).size() > 0 ) {
+                mserver=(MBeanServer)MBeanServerFactory.findMBeanServer(null).get(0);
+            } else {
+                mserver=MBeanServerFactory.createMBeanServer();
+            }
+        }
+        
+        return mserver;
+    }
+
+    private boolean supportedType( Class ret ) {
+        return ret == String.class ||
+            ret == Integer.class ||
+            ret == Integer.TYPE ||
+            ret == java.io.File.class ||
+            ret == Boolean.class;
+    }
+    
     /** Set the managed object.
      *
      * @todo Read an XML ( or .properties ) file containing descriptions,
@@ -119,9 +178,7 @@ public class DynamicMBeanProxy implements DynamicMBean {
                 if( ! Modifier.isPublic( methods[j].getModifiers() ) )
                     continue;
                 Class ret=methods[j].getReturnType();
-                if( ret != String.class &&
-                    ret != Integer.class &&
-                    ret != Boolean.class ) {
+                if( ! supportedType( ret ) ) {
                     continue;
                 }
                 name=unCapitalize( name.substring(3));
@@ -140,9 +197,7 @@ public class DynamicMBeanProxy implements DynamicMBean {
                 if( ! Modifier.isPublic( methods[j].getModifiers() ) )
                     continue;
                 Class ret=params[0];
-                if( ret != String.class &&
-                    ret != Integer.class &&
-                    ret != Boolean.class ) {
+                if( ! supportedType( ret ) ) {
                     continue;
                 }
                 name=unCapitalize( name.substring(3));
@@ -197,9 +252,11 @@ public class DynamicMBeanProxy implements DynamicMBean {
                 }
             }
             
-            log.info(real.getClass().getName() +  "getMBeanInfo ");
-            return new MBeanInfo( this.getClass().getName(),
-                                  "Management bean for " + real.getClass().getName(),
+            if( log.isDebugEnabled() )
+                log.debug(real.getClass().getName() +  " getMBeanInfo()");
+            
+            return new MBeanInfo( real.getClass().getName(), /* ??? */
+                                  "MBean for " + getName(),
                                   attributes,
                                   new MBeanConstructorInfo[0],
                                   operations,
@@ -219,7 +276,8 @@ public class DynamicMBeanProxy implements DynamicMBean {
         if( m==null ) throw new AttributeNotFoundException(attribute);
 
         try {
-            log.info(real.getClass().getName() +  "getAttribute " + attribute);
+            if( log.isDebugEnabled() )
+                log.debug(real.getClass().getName() +  " getAttribute " + attribute);
             return m.invoke(real, NO_ARGS_PARAM );
         } catch( IllegalAccessException ex ) {
             ex.printStackTrace();
