@@ -33,12 +33,46 @@
 	      location="../../jakarta-tomcat-catalina/build" />
     <property name="coyote.home" 
 	      location="../coyote/build" />
+    <property name="tomcat-coyote.jar" location="${coyote.home}/lib/tomcat-coyote.jar" />
     <property name="commons-logging.jar" location="../lib/commons-logging.jar" />
     <property name="tomcat-util.jar" location="../util/build/lib/tomcat-util.jar" />
 
-    <property name="jmx.jar" location="../lib/mx4j.jar" />
+    <property name="commons-modeler.jar" location="../../jakarta-commons/modeler/dist/commons-modeler.jar" />
 
-    <!-- ==================== Detection and reports ==================== -->
+    <property name="jmx.jar" location="../lib/mx4j.jar" />
+    
+    <!-- Fix build via ECLIPSE which didn't export ant's jars -->
+    <path id="xml-apis.classpath">
+        <pathelement path="${jaxp.home}/jaxp.jar"/>
+        <pathelement path="${jaxp.home}/crimson.jar"/>
+        <pathelement path="${xerces2.home}/xmlParserAPIs.jar"/>
+        <pathelement path="${xml-parser-apis.jar}"/>
+    </path>
+    
+    <path id="build-main.classpath">
+        <fileset dir="../lib" includes="*.jar" />
+        <pathelement location="../util/build/classes"/>
+        <pathelement location="${tomcat5.home}/server/lib/catalina.jar"/>
+        <pathelement location="${tomcat5.home}/common/lib/servlet-api.jar"/>
+        <pathelement location="${tomcat41.home}/server/lib/catalina.jar"/>
+        <pathelement location="${tomcat40.home}/server/lib/catalina.jar"/>
+        <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
+        <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
+        <pathelement location="${tomcat-util.jar}" />
+        <pathelement location="${commons-logging.jar}"/>
+        <pathelement location="${commons-modeler.jar}"/>
+        <pathelement location="${jmx.jar}"/>
+        <pathelement location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
+        <!-- this is needed - otherwise tomcat33 connector will not compile.
+        Just change tomcat33.home in build.properties to point
+        to nowhere, and tomcat_util will no longer be visible, nor
+        3.3 classes. -->
+        <pathelement 
+                     location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+        <pathelement location="${tomcat-coyote.jar}"/>
+    </path>
+    
+  <!-- ==================== Detection and reports ==================== -->
 
     <target name="report"  >
         <echo message="Tomcat33: ${tomcat33.detect} ${tomcat33.home}" />
@@ -49,6 +83,7 @@
         <echo message="Apache2: ${apache2.detect} ${apache2.home}" />
         <echo message="iPlanet:  ${iplanet.detect} ${iplanet.home}" />
         <echo message="IIS:      ${iis.detect} ${iis.home}" />
+        <echo message="jmx:      ${jmx.jar} ${jmx.detect} ${commons-modeler.jar} ${modeler.detect}" />
     </target>
 
     <target name="detect" >
@@ -79,6 +114,8 @@
                    file="${jmx.jar}" />
         <available property="jdk14.detect" 
                    classname="java.nio.MappedByteBuffer" />
+        <available property="modeler.detect" 
+                   file="${commons-modeler.jar}" />
         <!-- Check if we can find the XSLTProcessor class in the classpath -->
         <available
                    property="avail.xalan"
@@ -102,42 +139,14 @@
 
         <!-- util and coyote must be build first -->
         <copy  tofile="${jk.build}/lib/tomcat-coyote.jar"
-              file="../coyote/build/lib/tomcat-coyote.jar" />
+              file="${tomcat-coyote.jar}" />
 
-		<!-- Fix build via ECLIPSE which didn't export ant's jars -->
+        <!-- Fix build via ECLIPSE which didn't export ant's jars -->
         <path id="xml-apis.classpath">
           <pathelement path="${jaxp.home}/jaxp.jar"/>
           <pathelement path="${jaxp.home}/crimson.jar"/>
           <pathelement path="${xerces2.home}/xmlParserAPIs.jar"/>
           <pathelement path="${xml-parser-apis.jar}"/>
-        </path>
-
-        <path id="build-main.classpath">
-            <fileset dir="../lib" includes="*.jar" />
-            <pathelement location="../util/build/classes"/>
-            <pathelement location="${tomcat5.home}/server/lib/catalina.jar"/>
-            <pathelement location="${tomcat5.home}/common/lib/servlet-api.jar"/>
-            <pathelement location="${tomcat41.home}/server/lib/catalina.jar"/>
-            <pathelement location="${tomcat41.home}/common/lib/servlet.jar"/>
-            <pathelement location="${tomcat40.home}/server/lib/catalina.jar"/>
-            <pathelement location="${tomcat40.home}/common/lib/servlet.jar"/>
-            <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
-            <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
-            <pathelement location="${tomcat-util.jar}" />
-            <pathelement location="${commons-logging.jar}"/>
-            <pathelement location="${commons-modeler.jar}"/>
-            <pathelement location="${jmx.jar}"/>
-            <pathelement 
-                 location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
-            <!-- this is needed - otherwise tomcat33 connector will not compile.
-                 Just change tomcat33.home in build.properties to point
-                 to nowhere, and tomcat_util will no longer be visible, nor
-                 3.3 classes. -->
-            <pathelement 
-               location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
-	        <pathelement
-	           location="${tomcat33.home}/lib/common/servlet.jar"/>
-            <pathelement location="${coyote.home}/lib/tomcat-coyote.jar"/>
         </path>
 
     </target>
@@ -163,7 +172,7 @@
                debug="${debug}"
                optimize="${optimize}"
                verbose="off" >
-            <exclude name="org/apache/ajp/tomcat5/**" unless="tomcat5.detect"/>
+            <exclude name="org/apache/ajp/**" if="tomcat5.detect"/>
             <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat40.detect"/>
             <exclude name="org/apache/ajp/tomcat33/**" 
                      unless="tomcat33.detect"/>
