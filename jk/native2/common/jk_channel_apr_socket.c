@@ -365,7 +365,7 @@ static int JK_METHOD jk2_channel_apr_close(jk_env_t *env,jk_channel_t *_this,
                                              jk_endpoint_t *endpoint)
 {
     apr_socket_t *sd;
-    apr_status_t *rc;
+    apr_status_t rc;
     
     jk_channel_apr_data_t *chD=endpoint->channelData;
     if( chD==NULL ) 

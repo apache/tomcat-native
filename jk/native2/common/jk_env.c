@@ -167,10 +167,15 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
                                        char *type, char *localName )
 {
     jk_env_objectFactory_t fac;
-    jk_bean_t *result;
+    jk_bean_t *result=NULL;
     jk_pool_t *workerPool;
     char *name;
 
+    if( localName!=NULL ) 
+        result=env->getBean2( env, type, localName );
+    if( result!=NULL )
+        return result;
+    
     if( pool==NULL ) {
         pool=env->globalPool;
     }
@@ -307,7 +312,7 @@ static jk_bean_t* JK_METHOD jk2_env_getBean(jk_env_t *env, const char *name)
 {
     if( name==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                        "env.getByName(): NullPointerException\n");
+                        "env.getBean(): NullPointerException\n");
         return NULL;
     }
 
@@ -319,7 +324,7 @@ static jk_bean_t* JK_METHOD jk2_env_getBean2(jk_env_t *env, const char *type, co
     char *name;
     if( type==NULL || localName==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                        "env.getByName(): NullPointerException\n");
+                        "env.getBean2(): NullPointerException\n");
         return NULL;
     }
 
