@@ -1045,7 +1045,7 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
         jk2_worker_status_displayScoreboardInfo(env, s, s->workerEnv );
         return JK_OK;
     }
-    if( strncmp( s->query_string, "endpoints=", 11) == 0 ) {
+    if( strncmp( s->query_string, "endpoints=", 10) == 0 ) {
         jk2_worker_status_displayEndpointInfo( env, s, s->workerEnv );
         return JK_OK;
     }
