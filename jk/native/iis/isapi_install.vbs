@@ -47,7 +47,7 @@ end if
 serverName = args(0)
 filterDir = args(1)
 filterName = "jakarta"
-filterLib = "\isapi_redirector.dll"
+filterLib = "\isapi_redirect.dll"
 workerFile = args(2)
 mountFile = args(3)
 logFile = args(4)
@@ -161,7 +161,7 @@ end if
 
 on error goto 0
 info "Updating Registry"
-shell.RegWrite regRoot + "extension_uri", "/jakarta/isapi_redirector.dll"
+shell.RegWrite regRoot + "extension_uri", "/jakarta/isapi_redirect.dll"
 shell.RegWrite regRoot + "log_file", logFile
 shell.RegWrite regRoot + "log_level", logLevel
 shell.RegWrite regRoot + "worker_file", workerFile
