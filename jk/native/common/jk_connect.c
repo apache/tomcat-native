@@ -47,8 +47,6 @@ int jk_resolve(char *host,
 {
     int x;
 
-    memset(rc, 0, sizeof(struct sockaddr_in));
-
     /* TODO: Should be updated for IPV6 support. */
     /* for now use the correct type, in_addr_t */    
     /* except on NetWare since the MetroWerks compiler is so strict */
@@ -57,6 +55,8 @@ int jk_resolve(char *host,
 #else
 	in_addr_t laddr;
 #endif
+
+    memset(rc, 0, sizeof(struct sockaddr_in));
 
     rc->sin_port   = htons((short)port);
     rc->sin_family = AF_INET;
