@@ -161,6 +161,10 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
     jk_pool_t *workerPool;
     char *name;
 
+    if( pool==NULL ) {
+        pool=env->globalPool;
+    }
+
     if( type==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "env.createBean2(): NullPointerException\n");
@@ -235,7 +239,7 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
          */
         jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, result->type, result, NULL );
     }
-    
+
     return result;
 }
 
