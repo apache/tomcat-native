@@ -113,6 +113,7 @@
 #define BAD_PATH		-2
 #define MAX_SERVERNAME			128
 
+
 #define GET_SERVER_VARIABLE_VALUE(name, place) {    \
     (place) = NULL;                                   \
     huge_buf_sz = sizeof(huge_buf);                 \
@@ -145,9 +146,12 @@ static char  ini_file_name[MAX_PATH];
 static int   using_ini_file = JK_FALSE;
 static int   is_inited = JK_FALSE;
 static int	 is_mapread	= JK_FALSE;
+static int   iis5 = -1;
+
 static jk_uri_worker_map_t *uw_map = NULL; 
 static jk_logger_t *logger = NULL; 
 static char *SERVER_NAME = "SERVER_NAME";
+static char *SERVER_SOFTWARE = "SERVER_SOFTWARE";
 
 
 static char extension_uri[INTERNET_MAX_URL_LENGTH] = "/jakarta/isapi_redirect.dll";
@@ -610,7 +614,8 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     pVer->dwFlags = SF_NOTIFY_ORDER_HIGH        | 
                     SF_NOTIFY_SECURE_PORT       | 
                     SF_NOTIFY_NONSECURE_PORT    |
-                    SF_NOTIFY_PREPROC_HEADERS;
+                    SF_NOTIFY_PREPROC_HEADERS   |
+                    SF_NOTIFY_AUTH_COMPLETE;
                     
     strcpy(pVer->lpszFilterDesc, VERSION_STRING);
 
@@ -630,8 +635,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         char serverName[MAX_SERVERNAME];
         DWORD dwLen = sizeof(serverName);
 
-        if (pfc->GetServerVariable(pfc, SERVER_NAME, serverName, &dwLen))
-        {
+        if (pfc->GetServerVariable(pfc, SERVER_NAME, serverName, &dwLen)){
             if (dwLen > 0) serverName[dwLen-1] = '\0';
             if (init_jk(serverName))
                 is_mapread = JK_TRUE;
@@ -641,18 +645,65 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             is_inited = JK_FALSE;
     }
 
+    if (is_inited && (iis5 < 0) ) {
+        char serverSoftware[256];
+        DWORD dwLen = sizeof(serverSoftware);
+		iis5=0;
+        if (pfc->GetServerVariable(pfc,SERVER_SOFTWARE, serverSoftware, &dwLen)){
+			iis5=(atof(serverSoftware + 14) >= 5.0);
+			if (iis5) {
+				jk_log(logger, JK_LOG_INFO,"Detected IIS >= 5.0\n");
+			} else {
+				jk_log(logger, JK_LOG_INFO,"Detected IIS < 5.0\n");
+			}
+        }
+    }
+
     if (is_inited &&
-       (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType)) { 
-        PHTTP_FILTER_PREPROC_HEADERS p = (PHTTP_FILTER_PREPROC_HEADERS)pvNotification;
+         (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) ||
+		  ((SF_NOTIFY_AUTH_COMPLETE   == dwNotificationType) &&  iis5)
+		  )
+		)
+	{ 
         char uri[INTERNET_MAX_URL_LENGTH]; 
         char snuri[INTERNET_MAX_URL_LENGTH]="/";
         char Host[INTERNET_MAX_URL_LENGTH];
         char Translate[INTERNET_MAX_URL_LENGTH];
 
+		BOOL (WINAPI * GetHeader) (
+			struct _HTTP_FILTER_CONTEXT * pfc,
+			LPSTR                         lpszName,
+			LPVOID                        lpvBuffer,
+			LPDWORD                       lpdwSize
+			);
+
+		BOOL (WINAPI * SetHeader) (
+			struct _HTTP_FILTER_CONTEXT * pfc,
+			LPSTR                         lpszName,
+			LPSTR                         lpszValue
+			);
+
+		BOOL (WINAPI * AddHeader) (
+			struct _HTTP_FILTER_CONTEXT * pfc,
+			LPSTR                         lpszName,
+			LPSTR                         lpszValue
+			);
+
         char *query;
         DWORD sz = sizeof(uri);
         DWORD szHost = sizeof(Host);
         DWORD szTranslate = sizeof(Translate);
+
+		if (iis5) {
+			GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
+			SetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->SetHeader;
+			AddHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->AddHeader;
+		} else {
+			GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
+			SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
+			AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
+		}
+
 
         jk_log(logger, JK_LOG_DEBUG, 
                "HttpFilterProc started\n");
@@ -661,12 +712,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         /*
          * Just in case somebody set these headers in the request!
          */
-        p->SetHeader(pfc, URI_HEADER_NAME, NULL);
-        p->SetHeader(pfc, QUERY_HEADER_NAME, NULL);
-        p->SetHeader(pfc, WORKER_HEADER_NAME, NULL);
-        p->SetHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, NULL);
+        SetHeader(pfc, URI_HEADER_NAME, NULL);
+        SetHeader(pfc, QUERY_HEADER_NAME, NULL);
+        SetHeader(pfc, WORKER_HEADER_NAME, NULL);
+        SetHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, NULL);
         
-        if (!p->GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz)) {
+        if (!GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz)) {
             jk_log(logger, JK_LOG_ERROR, 
                    "HttpFilterProc error while getting the url\n");
             return SF_STATUS_REQ_ERROR;
@@ -699,7 +750,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             }
             getparents(uri);
 
-            if(p->GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
+            if(GetHeader(pfc, "Host:", (LPVOID)Host, (LPDWORD)&szHost)) {
                 strcat(snuri,Host);
                 strcat(snuri,uri);
                 jk_log(logger, JK_LOG_DEBUG, 
@@ -725,7 +776,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 /* get URI we should forward */
                 if (uri_select_option == URI_SELECT_OPT_UNPARSED) {
                     /* get original unparsed URI */
-                    p->GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz);
+                    GetHeader(pfc, "url", (LPVOID)uri, (LPDWORD)&sz);
                     /* restore terminator for uri portion */
                     if (query)
                         *(query - 1) = '\0';
@@ -748,11 +799,11 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     forwardURI = uri;
                 }
 
-                if(!p->AddHeader(pfc, URI_HEADER_NAME, forwardURI) || 
+                if(!AddHeader(pfc, URI_HEADER_NAME, forwardURI) || 
                    ( (query != NULL && strlen(query) > 0)
-                           ? !p->AddHeader(pfc, QUERY_HEADER_NAME, query) : FALSE ) || 
-                   !p->AddHeader(pfc, WORKER_HEADER_NAME, worker) ||
-                   !p->SetHeader(pfc, "url", extension_uri)) {
+                           ? !AddHeader(pfc, QUERY_HEADER_NAME, query) : FALSE ) || 
+                   !AddHeader(pfc, WORKER_HEADER_NAME, worker) ||
+                   !SetHeader(pfc, "url", extension_uri)) {
                     jk_log(logger, JK_LOG_ERROR, 
                            "HttpFilterProc error while adding request headers\n");
                     return SF_STATUS_REQ_ERROR;
@@ -762,14 +813,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                  * that the extension proc will be called.
                  * This allows the servlet to handle 'Translate: f'.
                  */
-                if(p->GetHeader(pfc, "Translate:", (LPVOID)Translate, (LPDWORD)&szTranslate) &&
+                if(GetHeader(pfc, "Translate:", (LPVOID)Translate, (LPDWORD)&szTranslate) &&
                     Translate != NULL && szTranslate > 0) {
-                    if (!p->AddHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, Translate)) {
+                    if (!AddHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, Translate)) {
                         jk_log(logger, JK_LOG_ERROR, 
                           "HttpFilterProc error while adding Tomcat-Translate headers\n");
                         return SF_STATUS_REQ_ERROR;
                     }
-                p->SetHeader(pfc, "Translate:", NULL);
+                SetHeader(pfc, "Translate:", NULL);
                 }
             } else {
                 jk_log(logger, JK_LOG_DEBUG, 
@@ -828,8 +879,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
 	if (is_inited && !is_mapread) {
 		char serverName[MAX_SERVERNAME];
 		DWORD dwLen = sizeof(serverName);
-		if (lpEcb->GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName, &dwLen))
-		{
+		if (lpEcb->GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName, &dwLen)){
 			if (dwLen > 0) serverName[dwLen-1] = '\0';
 			if (init_jk(serverName))
 				is_mapread = JK_TRUE;
@@ -1239,7 +1289,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
     GET_SERVER_VARIABLE_VALUE("REMOTE_ADDR", s->remote_addr);
     GET_SERVER_VARIABLE_VALUE(SERVER_NAME, s->server_name);
     GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT", s->server_port, 80)
-    GET_SERVER_VARIABLE_VALUE("SERVER_SOFTWARE", s->server_software);
+    GET_SERVER_VARIABLE_VALUE(SERVER_SOFTWARE, s->server_software);
     GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT_SECURE", s->is_ssl, 0);
 
     s->method           = private_data->lpEcb->lpszMethod;
