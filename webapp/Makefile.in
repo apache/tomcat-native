@@ -68,10 +68,17 @@ distclean: extra-clean
 	rm -f Makedefs
 	rm -f Makefile
 
-extra-build: @EXTRA_BUILD@ build
-extra-clean: @EXTRA_BUILD@ clean
-build: lib-build $(MODULE)-build
+extra-build: $(OBJ_DIR) @EXTRA_BUILD@ build
+
+extra-clean: @EXTRA_CLEAN@ clean
+
+build: $(OBJ_DIR) lib-build $(MODULE)-build
+
 clean: lib-clean $(MODULE)-clean
+	rm -rf $(OBJ_DIR)/*
+
+$(OBJ_DIR):
+	mkdir $(OBJ_DIR)
 
 $(MODULE)-build:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/$(MODULE)" SUBT="build" subdir
@@ -81,27 +88,18 @@ $(MODULE)-clean:
 
 lib-build:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/lib" SUBT="build" subdir
-	@echo "$(MAKE): Installing library libwebapp.la"
-	$(LIBTOOL) --mode=install cp \
-	  $(TGT_DIR)/lib/libwebapp.la \
-	  $(TGT_DIR)/libwebapp.la > /dev/null
 
 lib-clean:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/lib" SUBT="clean" subdir
-	rm -f libwebapp.la
-	rm -f libwebapp.a
 
 apr-build:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="all" subdir
-	@echo "$(MAKE): Installing library libapr.la"
-	$(LIBTOOL) --mode=install cp \
-	  $(APR_DIR)/libapr.la \
-	  $(TGT_DIR)/libapr.la > /dev/null
+	$(LIBTOOL) --mode=install \
+	  cp $(APR_DIR)/libapr.la $(OBJ_DIR)/libapr.la
+	$(LIBTOOL) --mode=finish $(OBJ_DIR)
 
 apr-clean:
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="clean" subdir
-	rm -f libapr.la
-	rm -f libapr.a
 
 subdir:
 	@echo ""
