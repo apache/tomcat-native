@@ -532,7 +532,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
     int debug=0;
 
     if( s->uriEnv != NULL ) {
-        debug=s->uriEnv->debug;
+        debug=s->uriEnv->mbean->debug;
     }
     
     rc=jk2_requtil_getMethodId(env, s->method, &method);

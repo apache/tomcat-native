@@ -102,7 +102,7 @@ static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, void *target,
     int debug=1;
 
     if( s->uriEnv != NULL )
-        debug=s->uriEnv->debug;
+        debug=s->uriEnv->mbean->debug;
     
     s->status = msg->getInt(env, msg);
     s->msg = (char *)msg->getString(env, msg);

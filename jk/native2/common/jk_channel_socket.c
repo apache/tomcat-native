@@ -466,9 +466,10 @@ static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *ch,
         return JK_ERR;
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelSocket.receive(): Received len=%d type=%d\n",
-                  blen, (int)msg->buf[hlen]);
+    if( ch->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelSocket.receive(): Received len=%d type=%d\n",
+                      blen, (int)msg->buf[hlen]);
     return JK_OK;
 
 }

@@ -145,7 +145,7 @@ static int jk2_uriMap_addUriEnv( jk_env_t *env, jk_uriMap_t *uriMap, jk_uriEnv_t
     int rc;
 
     uriMap->maps->put( env, uriMap->maps, uriEnv->name, uriEnv, NULL );
-    if( uriMap->debug > 0 ) 
+    if( uriMap->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "uriMap.addUriEnv() %s %s %s\n", uriEnv->name, uriEnv->virtual, uriEnv->uri);
     return JK_OK;
@@ -157,10 +157,6 @@ static int JK_METHOD jk2_uriMap_setProperty(jk_env_t *env, jk_bean_t *mbean,
     jk_uriMap_t *uriMap=mbean->object;
     char *value=valueP;
     
-    if( strcmp( name, "debug" )==0 ) {
-        uriMap->debug=atoi( value );
-        return JK_OK;
-    } 
     return JK_OK;
 }
 
@@ -216,7 +212,7 @@ static jk_uriEnv_t *jk2_uriMap_suffixMap(jk_env_t *env, jk_uriMap_t *uriMap,
 #else
             if(0 == strcmp(suffix, uwr->suffix)) {
 #endif
-                if( uriMap->debug > 0 ) {
+                if( uriMap->mbean->debug > 0 ) {
                     env->l->jkLog(env, env->l,JK_LOG_INFO,
                                   "uriMap.mapUri() suffix match %s\n",
                                   uwr->suffix );
@@ -344,7 +340,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
     }
     uriMap->defaultVhost=mbean->object;
     
-    if( uriMap->debug > 5 ) 
+    if( uriMap->mbean->debug > 5 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO, "uriMap.init() set default host\n"); 
 
     /* Initialize the vhosts table */
@@ -358,7 +354,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
                 uriMap->vhosts->put( env, uriMap->vhosts,
                                      uriEnv->virtual, uriEnv, NULL );
             }
-            if( uriMap->debug > 5 ) 
+            if( uriMap->mbean->debug > 5 ) 
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                               "uriMap.init() loaded host %s\n",uriEnv->virtual); 
         }
@@ -398,8 +394,9 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
         if( rootCtx==NULL ) {
             env->createBean2( env, uriMap->mbean->pool, "uri", uriPath );
             rootCtx=env->getByName2( env, "uri", uriPath );
-            env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "uriMap.init() Create default context %s\n", uriPath );
+            if( uriMap->mbean->debug > 0 ) 
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "uriMap.init() Create default context %s\n", uriPath );
             rootCtx->mbean->setAttribute( env, rootCtx->mbean, "context", "/" );
         }
     }
@@ -408,8 +405,9 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
     if( uriEnv==NULL ) {
         env->createBean2( env, uriMap->mbean->pool, "uri", "/" );
         uriEnv=env->getByName2( env, "uri", "/" );
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "uriMap.init() Create default context / ( for default host )\n" );
+        if( uriMap->mbean->debug > 0 ) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "uriMap.init() Create default context / ( for default host )\n" );
         uriEnv->mbean->setAttribute( env, uriEnv->mbean, "context", "/" );
     }
     
@@ -430,7 +428,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
             char *vhost= uriEnv->virtual;
             jk_uriEnv_t *hostEnv=jk2_uriMap_hostMap( env, uriMap, vhost );
 
-            if( uriMap->debug > 5 ) 
+            if( uriMap->mbean->debug > 5 ) 
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                               "uriMap.init() loaded context %s %s %p %p %p\n",
                               uriEnv->virtual, context, hostEnv, hostEnv->webapps,
@@ -448,7 +446,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
         }
     }
 
-    if( uriMap->debug > 5 ) 
+    if( uriMap->mbean->debug > 5 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "uriMap.init() processing mappings\n");
 
@@ -493,7 +491,7 @@ static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *uriMap)
 static void jk2_uriMap_destroy(jk_env_t *env, jk_uriMap_t *uriMap)
 {
 
-    if( uriMap->debug > 0 ) 
+    if( uriMap->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO, "uriMap.destroy()\n"); 
 
     /* this can't be null ( or a NPE would have been generated */
@@ -569,7 +567,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     if( uriMap == NULL || uri==NULL ) 
 	return NULL;
     
-    if( uriMap->debug > 1 )
+    if( uriMap->mbean->debug > 1 )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "uriMap.mapUri() %s %s\n", vhost, uri);    
 
@@ -581,7 +579,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
 
     hostEnv=jk2_uriMap_hostMap( env, uriMap, vhost );
 
-    if( uriMap->debug > 1 )
+    if( uriMap->mbean->debug > 1 )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "uriMap.mapUri() found host %s\n", hostEnv->virtual);    
 
@@ -590,7 +588,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     if(url_rewrite) {
         origChar=*url_rewrite;
         *url_rewrite = '\0';
-        if( uriMap->debug > 0 )
+        if( uriMap->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "uriMap.mapUri() rewrote uri %s \n",uri );
     }
@@ -606,7 +604,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
         return NULL;
     }
     
-    if( uriMap->debug > 1 )
+    if( uriMap->mbean->debug > 1 )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "uriMap.mapUri() found ctx %s\n", ctxEnv->uri);    
 
@@ -615,7 +613,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     if( match != NULL ) {
         /* restore */
         if( url_rewrite ) *url_rewrite=origChar;
-        if( uriMap->debug > 0 )
+        if( uriMap->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "uriMap.mapUri() exact match %s %s\n",
                           uri, match->workerName ); 
@@ -627,7 +625,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     if( match != NULL ) {
         /* restore */
         if( url_rewrite ) *url_rewrite=origChar;
-        if( uriMap->debug > 0 )
+        if( uriMap->mbean->debug > 0 )
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "uriMap.mapUri() prefix match %s %s\n",
                           uri, match->workerName ); 
@@ -643,7 +641,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
         if( match != NULL ) {
             /* restore */
             if( url_rewrite ) *url_rewrite=origChar;
-            if( uriMap->debug > 0 )
+            if( uriMap->mbean->debug > 0 )
                 env->l->jkLog(env, env->l, JK_LOG_INFO,
                               "uriMap.mapUri() extension match %s %s\n",
                               uri, match->workerName ); 
@@ -658,7 +656,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
 /*             if(uwr->prefix_len >= longest_match) { */
 /*                 int suffix_start=jk2_last_index_of(uri,uwr->suffix[0]); */
 /*                 if (suffix_start>=0 && 0==strcmp(uri+suffix_start,uwr->suffix)) { */
-/*                     if( uriMap->debug > 0 ) */
+/*                     if( uriMap->mbean->debug > 0 ) */
 /*                         env->l->jkLog(env, env->l, JK_LOG_INFO, */
 /*                                     "uriMap.mapUri() general suffix match %s\n", */
 /*                                       uwr->suffix ); */
@@ -687,7 +685,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     if( url_rewrite )
         *url_rewrite=origChar;
         
-    if( uriMap->debug > 1 )
+    if( uriMap->mbean->debug > 1 )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "uriMap.mapUri() no match found\n"); 
 
@@ -718,7 +716,6 @@ int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *resu
     uriMap->addUriEnv=jk2_uriMap_addUriEnv;
     uriMap->checkUri=jk2_uriMap_checkUri;
     uriMap->mapUri=jk2_uriMap_mapUri;
-    uriMap->debug= 0;
             
     result->object=uriMap;
     result->setAttribute=jk2_uriMap_setProperty;
