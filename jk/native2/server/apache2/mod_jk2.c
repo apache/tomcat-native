@@ -141,7 +141,7 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
     rc=workerEnv->config->setPropertyString( env, workerEnv->config, (char *)name, value );
     if (rc!=JK_OK) {
         ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
-                      "mod_jk2: Unrecognized option %s %s\n", name, value);
+                      "mod_jk2: Unrecognized option %s %s", name, value);
     }
 
     return NULL;
@@ -164,14 +164,14 @@ static const char *jk2_set3(cmd_parms *cmd,void *per_dir,
 
     if( name == NULL || property==NULL || value==NULL ) {
         ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
-                      "mod_jk2: Null option in JkSet2\n");
+                      "mod_jk2: Null option in JkSet2");
         return NULL;
     }
     
     mbean=env->getBean( env, name );
     if( mbean==NULL ) {
         ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
-                      "mod_jk2: Creating object %s\n", name );
+                      "mod_jk2: Creating object %s", name );
         mbean=env->createBean( env, workerEnv->config->pool, (char *)name );
     }
 
@@ -188,7 +188,7 @@ static const char *jk2_set3(cmd_parms *cmd,void *per_dir,
 
     if (rc!=JK_OK) {
         ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
-                      "mod_jk2: Unrecognized option %s %s %s\n", name, property, value);
+                      "mod_jk2: Unrecognized option %s %s %s", name, property, value);
     }
 
     return NULL;
@@ -266,7 +266,7 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
     /* now lets actually add the parameter set in the <Location> block */
     uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, (char *)name, (void *)val );
 
-/*     fprintf(stderr, "JkUriSet  %s %s dir=%s args=%s\n", */
+/*     fprintf(stderr, "JkUriSet  %s %s dir=%s args=%s", */
 /*             uriEnv->workerName, cmd->path, */
 /*             cmd->directive->directive, */
 /*             cmd->directive->args); */
@@ -452,11 +452,11 @@ static void *jk2_create_config(apr_pool_t *p, server_rec *s)
     if( s->is_virtual ) {
         /* Virtual host */
         ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
-                      "mod_jk Create config for virtual host %s\n",
+                      "mod_jk Create config for virtual host %s",
                       s->server_hostname );
     } else {
         ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
-                      "mod_jk Create config for default server %s\n",
+                      "mod_jk Create config for default server %s",
                       s->server_hostname );
     }
 
@@ -483,7 +483,7 @@ static void *jk2_merge_config(apr_pool_t *p,
     jk_uriEnv_t *overrides = (jk_uriEnv_t *)overridesv;
     
     ap_log_perror(APLOG_MARK, APLOG_DEBUG, 0, p,
-                  "mod_jk Merging workerEnv\n");
+                  "mod_jk Merging workerEnv");
 
     
     /* The 'mountcopy' option should be implemented in common.

@@ -311,7 +311,7 @@ static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s
      */
     if(ap_rflush(rr) != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
-                     NULL, "mod_jk: Error flushing \n"  );
+                     NULL, "mod_jk: Error flushing"  );
         return JK_ERR;
     }
     
