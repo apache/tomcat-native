@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2001 The Apache Software Foundation.  All rights
+ * Copyright (c) 1999 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,41 +54,73 @@
 
 package org.apache.jk.ant.compilers;
 
-import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.types.*;
+import org.apache.tools.ant.util.*;
+import org.apache.tools.ant.taskdefs.*;
+import org.apache.tools.ant.*;
+
 import org.apache.jk.ant.*;
 
+import java.io.*;
 import java.util.*;
 
-/* Modeled after javac
- */
-
 /**
- * s/javac/C compiler/
+ *  Compile using Gcc.
  *
- * The interface that all compiler adapters must adher to.  
- *
- * <p>A compiler adapter is an adapter that interprets the javac's
- * parameters in preperation to be passed off to the compier this
- * adapter represents.  As all the necessary values are stored in the
- * Javac task itself, the only thing all adapters need is the javac
- * task, the execute command and a parameterless constructor (for
- * reflection).</p>
- *
- * @author Jay Dickon Glanville <a href="mailto:jayglanville@home.com">jayglanville@home.com</a>
+ * @author Costin Manolache
  */
-public interface CompilerAdapter {
+public class CcCompiler extends LibtoolCompiler implements CompilerAdapter {
+    SoTask so;
+    
+    public CcCompiler() {
+	so=this;
+    };
 
-    /**
-     * Sets the compiler attributes, which are stored in the Javac task.
+    public void setSoTask(SoTask so ) {
+	super.setSoTask( so );
+    }
+
+    public void execute() throws BuildException {
+    }
+
+    public void compile(Vector compileList ) throws BuildException {
+	Enumeration en=compileList.elements();
+	while( en.hasMoreElements() ) {
+	    File f=(File)en.nextElement();
+	    executeCc(f.toString() );
+	}
+    }
+
+    /** Compile  using 'standard' gcc flags. This assume a 'current' gcc on
+     *  a 'normal' platform - no need for libtool
      */
-    void setSoTask( SoTask attributes );
+    public void executeCc(String source) throws BuildException {
+	String [] includeList = ( includes==null ) ?
+	    new String[] {} : includes.list(); 
 
-    /**
-     * Compile a set of files. The caller is supposed to
-     * detect dependencies.
-     *
-     * @return has the compilation been successful
-     */
-    public void compile(Vector files ) throws BuildException;
+	Commandline cmd = new Commandline();
 
+	String cc=project.getProperty("build.native.cc");
+	if(cc==null) cc="gcc";
+	
+	cmd.setExecutable( cc );
+
+	// Common cc arguments
+	addCCArgs( cmd, source, includeList );
+
+	int result=execute( cmd );
+	if( result!=0 ) {
+	    log("Compile failed " + result + " " +  source );
+	    log("Output:" );
+	    if( outputstream!=null ) 
+		log( outputstream.toString());
+	    log("StdErr:" );
+	    if( errorstream!=null ) 
+		log( errorstream.toString());
+	    
+	    throw new BuildException("Compile failed " + source);
+	}
+	closeStreamHandler();
+    }
 }
+

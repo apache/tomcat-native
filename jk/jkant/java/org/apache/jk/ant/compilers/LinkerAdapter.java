@@ -86,5 +86,5 @@ public interface LinkerAdapter {
      *
      * @return has the compilation been successful
      */
-    boolean execute() throws BuildException;
+    boolean link(String files[]) throws BuildException;
 }
