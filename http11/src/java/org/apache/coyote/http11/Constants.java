@@ -211,6 +211,24 @@ public final class Constants {
 
 
     /**
+     * GET.
+     */
+    public static final String GET = "GET";
+
+
+    /**
+     * HEAD.
+     */
+    public static final String HEAD = "HEAD";
+
+
+    /**
+     * POST.
+     */
+    public static final String POST = "POST";
+
+
+    /**
      * Ack string when pipelining HTTP requests.
      */
     public static final byte[] ACK =

@@ -639,9 +639,11 @@ public class Http11Processor implements Processor, ActionHook {
         MessageBytes protocolMB = request.protocol();
         if (protocolMB.equals(Constants.HTTP_11)) {
             http11 = true;
+            protocolMB.setString(Constants.HTTP_11);
         } else if (protocolMB.equals(Constants.HTTP_10)) {
             http11 = false;
             keepAlive = false;
+            protocolMB.setString(Constants.HTTP_10);
         } else if (protocolMB.equals("")) {
             // HTTP/0.9
             http09 = true;
@@ -656,6 +658,11 @@ public class Http11Processor implements Processor, ActionHook {
         }
 
         MessageBytes methodMB = request.method();
+        if (methodMB.equals(Constants.GET)) {
+            methodMB.setString(Constants.GET);
+        } else if (methodMB.equals(Constants.POST)) {
+            methodMB.setString(Constants.POST);
+        }
 
         // Check connection header
         MessageBytes connectionValueMB = 
