@@ -496,10 +496,10 @@ static int init_ws_service(apache_private_data_t *private_data,
 
     jk_log(conf->log, JK_LOG_DEBUG, 
            "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d \n",
-           ap_get_server_port( r ),
-           ap_get_server_name( r ),
-           r->hostname,
-           r->server->server_hostname,
+           ap_get_server_port(r),
+           ap_get_server_name(r) != NULL ? ap_get_server_name(r) : "",
+           r->hostname != NULL ? r->hostname : "",
+           r->server->server_hostname != NULL ? r->server->server_hostname : "",
            r->connection->base_server->port,
            r->server->port
            );
