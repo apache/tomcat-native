@@ -15,7 +15,7 @@ JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 AM_CFLAGS=@apache_include@ -I../common
 
-include list.mk
+include ../common/list.mk.in
 
 if MAKE_DYNAMIC_APACHE
 

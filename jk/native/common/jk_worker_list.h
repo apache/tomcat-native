@@ -80,7 +80,7 @@
         #include "jk_ajp12_worker.h"
         #include "jk_ajp13_worker.h"
         #include "jk_ajp14_worker.h"
-        #ifndef HPUX11GCC
+        #ifdef HAVE_JNI
             #include "jk_jni_worker.h"
         #endif
         #include "jk_lb_worker.h"
@@ -110,7 +110,7 @@
              * In process JNI based worker. Requires the server to be 
              * multithreaded and to use native threads.
              */
-            #ifndef HPUX11GCC
+            #ifdef HAVE_JNI
                 { JK_JNI_WORKER_NAME, jni_worker_factory},
             #endif
             /*
