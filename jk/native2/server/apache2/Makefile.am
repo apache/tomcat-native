@@ -34,7 +34,7 @@ mod_jk2.la: mod_jk2.lo jk_logger_apache2.lo jk_map_aprtable.lo jk_service_apache
 	$(LIBTOOL) --mode=link ${COMPILE} -o $@ -module -rpath ${libexecdir} -avoid-version mod_jk2.lo \
     jk_logger_apache2.lo jk_map_aprtable.lo jk_service_apache2.lo $(APACHE_OBJECTS)
 
-mod_jk2.so: mod_jk2.la jk_logger_apache2.la jk_map_aprtable.la jk_service_apache2.la
+mod_jk2.so: mod_jk2.la 
 	$(LIBTOOL) --mode=install cp $< `pwd`/$@
 
 
