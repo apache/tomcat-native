@@ -121,6 +121,11 @@ foreach $p (packages()) {
             <td width="10">&nbsp;</td>
             <td>&nbsp;</td>
           </tr>
+    <<
+
+    # Generate a list of classes included in this package
+    if ($p->classes()) {
+        >>
           <tr>
             <td colspan="2">
               <font face="arial,helvetica,sans serif">
@@ -128,19 +133,28 @@ foreach $p (packages()) {
               </font>
             </td>
           </tr>
-    <<
-
-    # Generate a list of classes included in this package
-    foreach $e ($p->classes()) {
-        $_ = $e->url;
-        s/\s/_/g;
-        y/[A-Z]/[a-z]/;
+        <<
+        foreach $e ($p->classes()) {
+            $_ = $e->url;
+            s/\s/_/g;
+            y/[A-Z]/[a-z]/;
+            >>
+                  <tr>
+                    <td width="10">&nbsp;</td>
+                    <td>
+                      <font face="arial,helvetica,sans serif">
+                        <nobr><a href="doc.$_" target="doc">$(e.fullname)</a></nobr>
+                      </font>
+                    </td>
+                  </tr>
+            <<
+        }
+    } else {
         >>
               <tr>
-                <td width="10">&nbsp;</td>
-                <td>
+                <td colspan="2">
                   <font face="arial,helvetica,sans serif">
-                    <nobr><a href="doc.$_" target="doc">$(e.fullname)</a></nobr>
+                    <nobr><i>No Classes defined.</i></nobr>
                   </font>
                 </td>
               </tr>
@@ -148,6 +162,9 @@ foreach $p (packages()) {
     }
 
     # Generate a list of all global functions included in this package
+    >>
+      <tr><td colspan="2">&nbsp;</td></tr>
+    <<
     if ($p->globalfuncs()) {
         >>
               <tr>
@@ -186,6 +203,9 @@ foreach $p (packages()) {
     }
 
     # Generate a list of all global variables included in this package
+    >>
+      <tr><td colspan="2">&nbsp;</td></tr>
+    <<
     if ($p->globalvars()) {
         >>
               <tr>
@@ -276,49 +296,53 @@ foreach $p (packages()) {
         </table>
         <br>
         <table width="100%" cellspacing="0" cellpadding="2" border="1">
-          <tr>
-            <td bgcolor="eeeeff" align="left">
-              <font face="arial,helvetica,sans serif">
-                <b>Classes</b>
-              </font>
-            </td>
-          </tr>
     <<
 
     # Generate a TOC of all classes at the top of the page
-    foreach $e ($p->classes()) {
-        $_ = $e->url;
-        s/\s/_/g;
-        y/[A-Z]/[a-z]/;
+    if ($p-> classes()) {
         >>
               <tr>
-                <td>
-                  <dl>
-                    <dt>
-                      <font face="arial,helvetica,sans serif">
-                        <nobr><a href="doc.$_">$(e.fullname)</a></nobr>
-                      </font>
-                    </dt>
-        <<
-        if ($e->members()) {
-            foreach $m ($e->members()) {
-                $_ = $m->url;
-                s/\s/_/g;
-                y/[A-Z]/[a-z]/;
-                >>
-                            <dd>
-                              <font size="-1" face="arial,helvetica,sans serif">
-                                <nobr><a href="doc.$_">$(m.fullname)</a></nobr>
-                              </font>
-                            </dd>
-                <<
-            }
-        }
-        >>
-                  </dl>
+                <td bgcolor="eeeeff" align="left">
+                  <font face="arial,helvetica,sans serif">
+                    <b>Classes</b>
+                  </font>
                 </td>
               </tr>
         <<
+        foreach $e ($p->classes()) {
+            $_ = $e->url;
+            s/\s/_/g;
+            y/[A-Z]/[a-z]/;
+            >>
+                  <tr>
+                    <td>
+                      <dl>
+                        <dt>
+                          <font face="arial,helvetica,sans serif">
+                            <nobr><a href="doc.$_">$(e.fullname)</a></nobr>
+                          </font>
+                        </dt>
+            <<
+            if ($e->members()) {
+                foreach $m ($e->members()) {
+                    $_ = $m->url;
+                    s/\s/_/g;
+                    y/[A-Z]/[a-z]/;
+                    >>
+                                <dd>
+                                  <font size="-1" face="arial,helvetica,sans serif">
+                                    <nobr><a href="doc.$_">$(m.fullname)</a></nobr>
+                                  </font>
+                                </dd>
+                    <<
+                }
+            }
+            >>
+                      </dl>
+                    </td>
+                  </tr>
+            <<
+        }
     }
 
     # Continue with the global functions TOC
