@@ -1,6 +1,7 @@
 package org.apache.jk.apr;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.util.*;
 import org.apache.jk.core.*;
 
@@ -206,6 +207,75 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
         }
     }
 
+    // Hack for Catalina who hungs the calling thread.
+    public static void main( String args[] ) {
+        System.err.println("Main");
+        try {
+            // Find the class
+            Class c=null;
+            int i=0;
+
+            for( i=0; i<args.length; i++ ) {
+                String classN=args[i];
+                if( "-".equals( classN ) ) {
+                    // end of options.
+                    break;
+                }
+                if( c!=null ) continue;
+                try {
+                    System.err.println("Try " + classN);
+                    c=Class.forName( classN );
+                } catch( ClassNotFoundException ex  ) {
+                    continue;
+                }
+            }
+
+            i++;
+            if( c==null ) {
+                System.err.println("No class found ");
+                return;
+            }
+            
+            if( args.length >= i ) {
+                String newArgs[]=new String[ args.length - i  ];
+                System.out.println("Replacing args: " + i + " " + args.length);
+                for( int j=0; j<newArgs.length; j++ ) {
+                    newArgs[j]=args[i+j];
+                    System.out.println("ARG: " + newArgs[j]);
+                }
+                args=newArgs;
+            } else {
+                System.out.println("No extra args: " + i + " " + args.length);
+                args=new String[0];
+            }
+                
+                System.err.println("Starting");
+                Thread startThread=new Thread( new TomcatStartThread(c, args));
+                startThread.start();
+        } catch (Throwable t ) {
+            t.printStackTrace(System.err);
+        }
+    }
+
+    static class TomcatStartThread implements Runnable {
+        Class c;
+        String args[];
+        TomcatStartThread( Class c, String args[] ) {
+            this.c=c;
+            this.args=args;
+        }
+        
+        public void run() {
+            try {
+                Class argClass=args.getClass();
+                Method m=c.getMethod( "main", new Class[] {argClass} );
+                m.invoke( c, new Object[] { args } );
+            } catch( Throwable t ) {
+                t.printStackTrace(System.err);
+            }
+        }
+    }
+    
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( AprImpl.class );
 
