@@ -468,7 +468,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
     int rc;
     jk_handler_t **handlerTable=wEnv->handlerTable;
     int maxHandler=wEnv->lastMessageId;
-
+	int headeratclient=JK_FALSE;
     ep->currentRequest=req;
     
     /* Process reply - this is the main loop */
@@ -484,15 +484,27 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
                           ep->worker->channel->mbean->name);
         
         msg->reset(env, msg);
-        
+
+		/* Check for reply in timeout */
+		if ( ep->worker->reply_timeout != 0) {
+		    if (ep->worker->channel->hasinput(env, ep->worker->channel, ep, ep->worker->reply_timeout) != JK_TRUE) {
+	        	env->l->jkLog(env, env->l, JK_LOG_ERROR,
+	                      "workerEnv.processCallbacks() no reply after %d ms waiting\n", timeout);
+	
+	        	return JK_ERR;
+	    	}
+	    }
+
         rc= ep->worker->channel->recv( env, ep->worker->channel,  ep,
                                        msg);
         if( rc!=JK_OK ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "workerEnv.processCallbacks() Error reading reply\n");
-            /* It may be the first receive, let the caller decide if it's ok to retry
-             */
-            /* ep->recoverable=JK_FALSE; */
+
+            /* Error is unrecoverable if tomcat failed (Tomcat allready got request) */
+            if (ep->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
+                ep->recoverable=JK_FALSE;
+                
             return rc;
         }
 
@@ -537,16 +549,21 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
                                            msg );
             if (rc < 0) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                              "ajp14.processCallbacks() error sending response data\n");
+                              "workerEnv.processCallbacks() error sending response data\n");
                 ep->recoverable = JK_FALSE;
                 return rc;
             }
             break;
         case JK_HANDLER_ERROR:
             /* Normal error ( for example writing to the client failed ).
-             * The ajp connection is still in a stable state.
+             * The ajp connection is still in a stable state but if by configuration
+             * recoveryOpts is to 1 or 3, we should mark it at unrecoverable.
              */
-            ep->recoverable = JK_TRUE;
+            if (ep->worker->recovery_opts & RECOVER_ABORT_IF_TCSENDHEADER)
+            	ep->recoverable = JK_FALSE;
+            else
+            	ep->recoverable = JK_TRUE;
+            
             return rc;
         case JK_HANDLER_FATAL:
             /*
@@ -557,7 +574,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
         default:
             /* Unknown status */
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp14.processCallbacks() unknonwn status %d\n", rc);
+                          "workerEnv.processCallbacks() unknown status %d\n", rc);
             ep->recoverable = JK_FALSE; 
             return rc;
         }

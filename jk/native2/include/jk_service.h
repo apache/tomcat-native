@@ -140,6 +140,18 @@ typedef struct jk_ws_service jk_ws_service_t;
 #define RECO_INITED	0x01
 #define RECO_FILLED	0x02
 
+/*
+ * RECOVERY STRATEGY
+ *
+ * The recovery strategy determine how web-server will handle tomcat crash after POST error.
+ * By default, we use the current strategy, which is to resend request to next tomcat.
+ * To abort if tomcat failed after receiving request, recovers_opts should be 1 or 3
+ * To abort if tomcat failed after sending headers to client, recovers_opts should be 2 or 3
+ */
+
+#define RECOVER_ABORT_IF_TCGETREQUEST  	 0x0001	/* DONT RECOVER IF TOMCAT FAIL AFTER RECEIVING REQUEST */
+#define RECOVER_ABORT_IF_TCSENDHEADER    0x0002	/* DONT RECOVER IF TOMCAT FAIL AFTER SENDING HEADERS */
+
     
 /*
  * The web server service 'class'.  An instance of this class is created
