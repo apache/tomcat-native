@@ -103,8 +103,10 @@ static int JK_METHOD jk2_channel_un_close(jk_env_t *env, jk_channel_t *ch,
                                           jk_endpoint_t *endpoint);
 
 static char *jk2_channel_un_multiValueInfo[]={"group",  NULL };
-static char *jk2_channel_un_setAttributeInfo[]={"file", "route", "lb_factor",
+static char *jk2_channel_un_setAttributeInfo[]={"file", "soLinger", "listen", 
                                                 "level", NULL };
+static char *jk2_channel_un_getAttributeInfo[]={"file", "soLinger", 
+                                                "listen", NULL };
 
 static int JK_METHOD jk2_channel_un_setAttribute(jk_env_t *env,
                                                 jk_bean_t *mbean, 
@@ -128,6 +130,24 @@ static int JK_METHOD jk2_channel_un_setAttribute(jk_env_t *env,
     return JK_OK;
 }
 
+static void * JK_METHOD jk2_channel_un_getAttribute(jk_env_t *env,
+                                                 jk_bean_t *mbean, 
+                                                 char *name)
+{
+    jk_channel_t *ch=(jk_channel_t *)mbean->object;
+    jk_channel_un_private_t *socketInfo=
+        (jk_channel_un_private_t *)(ch->_privatePtr);
+
+    if( strcmp( "file", name ) == 0 ) {
+        return socketInfo->file;
+    } else if( strcmp( "soLinger", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->l_linger );
+    } else if( strcmp( "listen", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->backlog );
+    } 
+    return NULL;
+}
+
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
 static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
@@ -139,6 +159,8 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
     int rc=JK_OK;
     int omask;
 
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "channelUn.init(): init \n" );
     if( socketInfo->file==NULL ) {
         char *localName=ch->mbean->localName;
         jk_config_t *cfg=ch->workerEnv->config;
@@ -153,6 +175,8 @@ static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
         if (localName[0]=='/') {
             ch->mbean->setAttribute( env, ch->mbean, "file", localName );
         } 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelUn.init(): extracted file from name %s\n", socketInfo->file  );
     }
     
     if (socketInfo->file!=NULL && socketInfo->file[0]=='/') {
@@ -470,8 +494,10 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
     ch->serverSide=JK_FALSE;
     
     result->setAttribute= jk2_channel_un_setAttribute; 
+    result->getAttribute= jk2_channel_un_getAttribute; 
     result->multiValueInfo=jk2_channel_un_multiValueInfo;
     result->setAttributeInfo=jk2_channel_un_setAttributeInfo;
+    result->getAttributeInfo=jk2_channel_un_getAttributeInfo;
     result->invoke=jk2_channel_invoke;
 
     ch->mbean=result;
