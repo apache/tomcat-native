@@ -495,7 +495,9 @@ public class CoyoteResponse
         // Writing leftover bytes
         try {
             outputBuffer.close();
-        } catch( Throwable t ) {
+        } catch(IOException e) {
+	    ;
+        } catch(Throwable t) {
 	    t.printStackTrace();
         }
         coyoteResponse.finish();
