@@ -75,6 +75,8 @@
  */
 
 #include "jk_vm.h"
+#include "jk_config.h"
+
 
 #if !defined(WIN32) && !defined(NETWARE)
 #include <dlfcn.h>
@@ -325,27 +327,18 @@ static int jk2_file_exists(jk_env_t *env, const char *f)
    than we do ).
 */
 char* jk2_vm_guessJvmDll(jk_env_t *env, jk_map_t *props,
-                         jk_vm_t *jniw, char *prefix)
+                         jk_vm_t *jniw)
 {
     char *jvm;
     jk_pool_t *p=props->pool;
     const char **current=defaultVM_PATH;
     char *libp;
     
-    /* Maybe he knows more */
-    jvm =jk2_map_getStrProp( env, props, NULL, prefix,
-                            "jvm_lib", NULL );
-    if( jvm!=NULL && jk2_file_exists(env, jvm)) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "jni.guessJvmDll() - user specified %s\n", jvm);
-        return jvm;
-    }
-
     /* We need at least JAVA_HOME ( either env or in settings )
      */
     while( *current != NULL ) {
-        jvm = jk2_map_replaceProperties(env, props, p,
-                                   (char *)p->pstrdup( env, p, *current ) );
+        jvm = jk2_config_replaceProperties(env, props, p,
+                                           (char *)p->pstrdup( env, p, *current ) );
 
         if( jvm!=NULL && jk2_file_exists(env, jvm)) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -683,7 +676,7 @@ static char *jk2_guessClassPath(jk_env_t *env, jk_map_t *props)
     jk2_guessTomcatHome( env, props );
     
     while( *current != NULL ) {
-        jkJar = jk2_map_replaceProperties(env, props, p,
+        jkJar = jk2_config_replaceProperties(env, props, p,
                                        (char *)p->pstrdup( env, p, *current ));
         
         if( jkJar!=NULL && jk2_file_exists(env, jkJar)) {
@@ -703,21 +696,49 @@ static char *jk2_guessClassPath(jk_env_t *env, jk_map_t *props)
     return NULL;
 }
 
+static int 
+jk2_jk_vm_setProperty(jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP )
+{
+    jk_vm_t *_this=mbean->object;
+    char *value=valueP;
+    
+    if( strcmp( name, "mx" )==0 ) {
+        /* atoi + K, M */
+        _this->tomcat_mx = jk2_config_str2int(env, value);
+    } else if( strcmp( name, "ms" )==0 ) {
+        _this->tomcat_ms = jk2_config_str2int(env, value);
+    } else if( strcmp( name, "class_path" )==0 ) {
+        _this->tomcat_classpath=value;
+    } else if( strcmp( name, "jvm_lib" )==0 ) {
+        _this->jvm_dll_path=value;
+    } else if( strcmp( name, "sysprops" )==0 ) {
+        _this->sysprops  = jk2_config_split( env, _this->pool,
+                                          value, "*", NULL);
+#ifdef JNI_VERSION_1_2
+    } else if( strcmp( name, "java2opts" )==0 ) {
+    	env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "jni.validate() java2opts %s\n", value); 
+        _this->java2opts = jk2_config_split( env, _this->pool,
+                                             value, "*", NULL);
+    } else if( strcmp( name, "java2lax" )==0 ) {
+        int int_config=atoi( value );
+        _this->java2lax = int_config ? JK_TRUE : JK_FALSE;
+#endif
+    } else {
+        return JK_FALSE;
+    }
+
+    return JK_TRUE;
+}
 
 /** Initialize the vm properties
  */
-int jk2_jk_vm_init(jk_env_t *env, jk_vm_t *_this,
-                   jk_map_t *props, char *prefix)
+int jk2_jk_vm_init(jk_env_t *env, jk_vm_t *_this)
 {
     char *str_config;
     int int_config;
+    jk_map_t *props=_this->properties;
     
-    _this->tomcat_mx= jk2_map_getIntProp( env, props, NULL, prefix, "mx", 0 );
-    _this->tomcat_ms= jk2_map_getIntProp( env, props, NULL, prefix, "ms", 0 );
-
-    _this->tomcat_classpath= jk2_map_getStrProp( env, props, NULL, prefix,
-                                                "class_path", NULL );
-
     if(_this->tomcat_classpath == NULL ) {
         _this->tomcat_classpath = jk2_guessClassPath( env, props );
     }
@@ -734,7 +755,10 @@ int jk2_jk_vm_init(jk_env_t *env, jk_vm_t *_this,
         return JK_FALSE;
     }
 
-    _this->jvm_dll_path=jk2_vm_guessJvmDll( env, props, _this, prefix  );
+    if( _this->jvm_dll_path ==NULL ||
+        ! jk2_file_exists(env, _this->jvm_dll_path )) {
+        _this->jvm_dll_path=jk2_vm_guessJvmDll( env, props, _this  );
+    }
 
     if(!_this->jvm_dll_path ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
@@ -744,32 +768,12 @@ int jk2_jk_vm_init(jk_env_t *env, jk_vm_t *_this,
     env->l->jkLog(env, env->l, JK_LOG_INFO, "Jni lib: %s\n",
                   _this->jvm_dll_path);
 
-    str_config=  jk2_map_getStrProp( env, props, NULL, prefix,
-                                    "sysprops", NULL ); 
-    if(str_config!= NULL ) {
-        _this->sysprops  = jk2_map_split( env, NULL, _this->pool,
-                                         str_config, "*", NULL);
-    }
-
-#ifdef JNI_VERSION_1_2
-    str_config= jk2_map_getStrProp(env, props, NULL,prefix ,"java2opts",NULL );
-    if( str_config != NULL ) {
-    	env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "jni.validate() java2opts %s\n", str_config); 
-        _this->java2opts = jk2_map_split( env, NULL, _this->pool,
-                                     str_config, "*", NULL);
-    }
-    int_config= jk2_map_getIntProp( env, props, NULL, prefix, "java2lax", -1 );
-    if(int_config != -1 ) {
-        _this->java2lax = int_config ? JK_TRUE : JK_FALSE;
-    }
-#endif
     return JK_TRUE;
 }
      
 int jk2_jk_vm_factory(jk_env_t *env, jk_pool_t *pool,
-                   void **result,
-                   char *type, char *name)
+                      jk_bean_t *result,
+                      char *type, char *name)
 {
     jk_vm_t *_this;
 
@@ -793,7 +797,10 @@ int jk2_jk_vm_factory(jk_env_t *env, jk_pool_t *pool,
     _this->attach=jk2_vm_attach;
     _this->detach=jk2_vm_detach;
     
-    *result=_this;
+    result->object=_this;
+    result->setAttribute=jk2_jk_vm_setProperty;
+    _this->mbean=result;
+    
     return JK_TRUE;
 }
 
@@ -857,15 +864,15 @@ static void jk2_vm_appendLibpath(jk_env_t *env, jk_pool_t *pool,
 
 
 static void jk2_addDefaultLibPaths(jk_env_t *env, jk_map_t *props,
-                                   jk_vm_t *jniw, char *prefix)
+                                   jk_vm_t *jniw)
 {
     jk_pool_t *p=props->pool;
     const char **current=defaultLIB_PATH;
     char *libp;
 
     while( *current != NULL ) {
-        libp = jk2_map_replaceProperties(env, props, p,
-                                        p->pstrdup( env, p, *current ));
+        libp = jk2_config_replaceProperties(env, props, p,
+                                            p->pstrdup( env, p, *current ));
         if( libp!=NULL && jk2_jk_dir_exists(env, libp)) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "jni.jk2_addDefaultLibPaths() %s\n", libp);

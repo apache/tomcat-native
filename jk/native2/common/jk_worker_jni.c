@@ -123,14 +123,15 @@ static int JK_METHOD jk2_jni_worker_service(jk_env_t *env,
 }
 
 
-static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_worker_t *pThis,
-                                                char *name, char *value)
+static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
+                                                char *name, void *valueP)
 {
+    jk_worker_t *pThis=mbean->object;
+    char *value=valueP;
     jni_worker_data_t *jniWorker;
     int mem_config = 0;
     int rc;
     JNIEnv *jniEnv;
-    char *prefix;
 
     if(! pThis || ! pThis->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -140,6 +141,20 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_worker_t *pThi
 
     jniWorker = pThis->worker_private;
 
+    if( strcmp( name, "class" )==0 ) {
+        jniWorker->className = value;
+    } else if( strcmp( name, "cmd_line" )==0 ) {
+        jniWorker->tomcat_cmd_line = value;
+    } else if( strcmp( name, "stdout" )==0 ) {
+        jniWorker->stdout_name=value;
+    } else if( strcmp( name, "lb_factor" )==0 ) {
+        pThis->lb_factor=atof( value );
+    } else if( strcmp( name, "stderr" )==0 ) {
+        jniWorker->stderr_name=value;
+    } else {
+        return rc=jniWorker->vm->mbean->setAttribute(env, jniWorker->vm->mbean,
+                                                     name, value );
+    }
 
     return JK_TRUE;
 }
@@ -163,13 +178,9 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
 
     jniWorker = _this->worker_private;
     {
-        char *prefix=(char *)_this->pool->alloc( env, _this->pool,
-                                                 strlen( _this->name ) + 10 );
-        strcpy( prefix, "worker." );
-        strcat( prefix, _this->name );
-        fprintf(stderr, "Prefix= %s\n", prefix );
+        jniWorker->vm->properties=_this->workerEnv->initData;
         
-        rc=jniWorker->vm->init(env, jniWorker->vm, _this->workerEnv->initData, prefix );
+        rc=jniWorker->vm->init(env, jniWorker->vm );
         
         if( rc!=JK_TRUE ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -177,19 +188,9 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
             return JK_FALSE;
         }
     }
-    
-    jniWorker->className = jk2_map_getStrProp( env, props, "worker",
-                                               _this->name,
-                                               "class", JAVA_BRIDGE_CLASS_NAME);
-    
-    jniWorker->tomcat_cmd_line = jk2_map_getStrProp( env, props, "worker",
-                                                    _this->name,
-                                                    "cmd_line", NULL ); 
-
-    jniWorker->stdout_name= jk2_map_getStrProp( env, props, "worker",
-                                               _this->name, "stdout", NULL ); 
-    jniWorker->stderr_name= jk2_map_getStrProp( env, props, "worker",
-                                               _this->name, "stderr", NULL );
+        
+    if( jniWorker->className==NULL )
+        jniWorker->className=JAVA_BRIDGE_CLASS_NAME;
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "jni.validate() cmd: %s %s %s %s\n",
@@ -293,9 +294,11 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
     jniWorker->vm->detach(env, jniWorker->vm); 
 
     _this->workerEnv->vm= jniWorker->vm;
-        
-    _this->channel=env->getInstance(env, _this->pool,"channel",
-                                    "jni" );
+
+    /* We can have a single jni channel per instance, the name is
+       hardcoded */
+    _this->channel=env->createInstance(env, _this->pool,"channel.jni",
+                                       "channel.jni");
     
     if( _this->channel == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -355,7 +358,7 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
 }
 
 int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
-                                     void **result,
+                                     jk_bean_t *result,
                                      const char *type, const char *name)
 {
     jk_worker_t *_this;
@@ -383,10 +386,9 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     _this->worker_private=jniData;
 
     _this->pool=pool;
-    _this->name = _this->pool->pstrdup(env, _this->pool, name);
 
     /* XXX split it in VM11 and VM12 util */
-    jk2_jk_vm_factory( env, pool, &jniData->vm, "vm", "default" );
+    jniData->vm=env->createInstance( env, pool, "vm", "vm" );
     
     jniData->jk_java_bridge_class  = NULL;
     jniData->jk_startup_method     = NULL;
@@ -396,13 +398,17 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     jniData->stdout_name           = NULL;
     jniData->stderr_name           = NULL;
 
-    _this->setProperty       = jk2_jni_worker_setProperty;
     _this->init           = jk2_jni_worker_init;
     _this->destroy        = jk2_jni_worker_destroy;
     _this->service = jk2_jni_worker_service;
 
-    *result = _this;
+    result->object = _this;
+    result->setAttribute = jk2_jni_worker_setProperty;
+    _this->mbean=result;
 
+    _this->workerEnv=env->getByName( env, "workerEnv" );
+    _this->workerEnv->addWorker( env, _this->workerEnv, _this );
+    
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "jni.worker_factory() done\n");
 
