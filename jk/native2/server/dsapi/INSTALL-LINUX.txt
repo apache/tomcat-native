@@ -1,0 +1,93 @@
+$Id$
+
+Installing the Domino Redirector on Linux
+-----------------------------------------
+
+If necessary build libtomcat2.so as per the instructions in BUILD.txt.
+Copy libtomcat2.so into the Domino program directory (this is the
+directory, which may be called something like
+/opt/lotus/notes/50120/linux, that contains a file called libnotes.so).
+Next edit libtomcat2.properies to reflect the location of your Tomcat
+installation and place the edited file in the domino data directory
+(typically something like /opt/lotus/notesdata). libtomcat2.properties
+looks like this:
+
+  serverRoot=/usr/local/apache/tomcat
+  workersFile=conf/workers2.properties
+  tomcatStart=bin/startup.sh
+  tomcatStop=bin/shutdown.sh
+  tomcatTimeout=30000
+
+Automatically Starting Tomcat
+-----------------------------
+
+The last three lines in libtomcat2.properties provide commands that the
+redirector will use to start and stop Tomcat when the Domino http server
+starts and stops respectively. If you don't require this behaviour these
+three lines can be removed. Bear in mind that if you /do/ start Tomcat
+from the redirector it will run with the same UID as Domino.
+
+The Workers File
+----------------
+
+If necessary take the sample workers2.properties file from jakarta-
+tomcat- connectors\jk\conf and place it in the location specified in
+libtomcat2.properties (typically the conf directory of your Tomcat
+installation). Edit the file to suit your Tomcat setup.
+
+Configuring Domino
+------------------
+
+Finally we need to configure Domino to use the DSAPI extension. For those
+who are unfamiliar with Domino server configuration most of a server's
+configurable behavior is dictated by a document called the "server
+document" in a database called the "Public Name and Address Book" or
+"NAB" for short (N.B. Lotus have renamed the NAB to "Domino Directory"
+from Domino 5 onwards). Each Domino server will have a NAB (called
+names.nsf) and each NAB will have a number of server documents including
+one for the current server. If you have not previously configured a
+Domino server you may need to refer to the supplied documentation, or you
+may need to pass this document to your tame Domino administrator.
+
+Assuming you know your way around a Domino server document what we're
+going to do is actually quite simple. Open the server document for this
+server, place it in Edit mode, then locate the DSAPI section and the
+'DSAPI filter file names' field on the Internet Protocols tab, HTTP sub-
+tab. Add "tomcat2" to the DSAPI field, then save and close the document.
+Not that Domino translates "tomcat2" into "libtomcat2.so".
+
+Restart Domino
+--------------
+
+Restart the Domino HTTP server and you should see the redirector load.
+
+Mailing Lists
+-------------
+
+There are two mailing lists dedicated to the Domino Tomcat redirector:
+
+domino-tomcat-l:
+ http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-l
+
+domino-tomcat-l is a general discussion list for issues with the
+redirector and also wider Tomcat/Domino integration issues such as
+calling the Domino Java API from a Tomcat servlet. I expect it to be
+fairly low volume so please subscribe if you're actively using the
+redirector. If you have an issue with the redirector please post it to
+the list where it will be seen not only by me but by other users who may
+be able to help with any problems.
+
+domino-tomcat-announce-l:
+ http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-announce-l:
+
+domino-tomcat-announce-l is for announcements about the Domino Tomcat
+redirector. Mainly this list will be used for new releases but serious
+bugs will also be posted to it. This list will be very low volume; only
+I can post to it. I wouldn't expect more than a few posts per month. For
+this reason if you'd like to keep track of new redirector versions
+please subscribe to this list. From now on this list will be the main
+place to find out about new versions.
+
+Please let me know if you have any problems.
+
+Andy Armstrong, <andy@tagish.com>

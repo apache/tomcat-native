@@ -1,7 +1,7 @@
 $Id$
 
-Installing the Domino Redirector
---------------------------------
+Installing the Domino Redirector on Win32
+-----------------------------------------
 
 If necessary build dsapi_redirector2.dll as per the instructions in
 BUILD.txt. Copy the DLL into the Domino program directory (this is the
