@@ -365,6 +365,9 @@ static int init_ws_service(apache_private_data_t *private_data,
 						   jk_server_conf_t *conf)
 {
     request_rec *r      = private_data->r;
+
+    apr_port_t port;
+
 	char *ssl_temp      = NULL;
     s->jvm_route        = NULL;	/* Used for sticky session routing */
 
@@ -391,13 +394,15 @@ static int init_ws_service(apache_private_data_t *private_data,
 				r->server->port
 				);
 
-#ifdef NOTNEEDEDFORNOW
+#if 1
     /* Wrong:    s->server_name  = (char *)ap_get_server_name( r ); */
     s->server_name= (char *)(r->hostname ? r->hostname :
                  r->server->server_hostname);
 
 
-    s->server_port= htons( r->connection->local_addr.sin_port );
+    apr_sockaddr_port_get(&port,r->connection->local_addr);
+    s->server_port = port;
+
     /* Wrong: s->server_port  = r->server->port; */
 
    
