@@ -132,8 +132,8 @@ public class WarpRequestHandler {
                     if (Constants.DEBUG)
                         logger.debug("Request content type="+ctyp+" length="+
                                      clen);
-                    request.setContentType(ctyp);
-                    request.setContentLength(clen);
+                    if (ctyp.length()>0) request.setContentType(ctyp);
+                    if (clen>0) request.setContentLength(clen);
                     break;
                 }
                     
@@ -172,7 +172,8 @@ public class WarpRequestHandler {
                     } catch (Exception e) {
                         logger.log(e);
                     }
-                    response.getStream().close();
+                    request.finishRequest();
+                    response.finishResponse();
                     if (Constants.DEBUG)
                         logger.debug("Request has been processed");
                     break;
