@@ -80,6 +80,7 @@ import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.ServerFactory;
 import org.apache.catalina.Wrapper;
+import org.apache.catalina.Server;
 import org.apache.catalina.util.StringManager;
 
 
@@ -226,11 +227,19 @@ public class MapperListener
      * Register host (FIXME).
      */
     private void registerHost(ObjectName objectName)
-        throws Exception {
+        throws Exception
+    {
+        Container container =null;
 
-        Container container = 
-            ServerFactory.getServer().findServices()[0].getContainer();
-
+        Server server=ServerFactory.getServer();
+        if( server!= null ) {
+            // a Server is not required
+            container=server.findServices()[0].getContainer();
+        } else {
+            String domain="Catalina";
+            ObjectName engineName=new ObjectName(domain + ":type=Engine,name=Tomcat-Standalone");
+            container=(Container)mBeanServer.getAttribute(engineName, "managedResource");
+        }
         Container[] hosts = null;
         String defaultHost = null;
 
