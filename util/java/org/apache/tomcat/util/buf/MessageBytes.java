@@ -643,8 +643,6 @@ public final class MessageBytes implements Cloneable, Serializable {
 
     // Used for headers conversion
     /** Convert the buffer to an int, cache the value
-     *  @deprecated The buffer are general purpose, caching for headers should
-     *  be done in headers
      */ 
     public int getInt() 
     {
