@@ -295,6 +295,9 @@ public class JkCoyoteHandler extends JkHandler implements
         } catch( Exception ex ) {
             ex.printStackTrace();
         }
+        if(ep.getStatus() != JK_STATUS_CLOSED) {
+            res.finish();
+        }
 
         ep.setStatus( JK_STATUS_NEW );
 
