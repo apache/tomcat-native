@@ -29,7 +29,7 @@ import org.apache.tomcat.util.buf.MessageBytes;
  * Can be used (somewhat confusingly) for both incoming and outgoing
  * packets.  
  *
- * @see Ajp14/Ajp13Packet 
+ * See Ajp14/Ajp13Packet.java.
  *
  * @author Henri Gomez [hgomez@apache.org]
  * @author Dan Milstein [danmil@shore.net]
@@ -156,7 +156,7 @@ public class MsgAjp extends Msg {
      *
      * @param b The array from which to copy bytes.
      * @param off The offset into the array at which to start copying
-     * @param len The number of bytes to copy.  
+     * @param numBytes The number of bytes to copy.  
      */
     public void appendBytes( byte b[], int off, int numBytes ) {
         appendInt( numBytes );

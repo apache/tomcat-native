@@ -37,13 +37,15 @@ import org.xml.sax.Attributes;
  * using <code>org.apache.commons.beanutils.ConvertUtils</code>.
  * </p>
  *
- * <p>This rule now uses {@see org.apache.commons.beanutils.MethodUtils#invokeMethod} 
- * by default.
+ * <p>This rule now uses
+ * <a href="http://jakarta.apache.org/commons/beanutils/apidocs/org/apache/commons/beanutils/MethodUtils.html">
+ * org.apache.commons.beanutils.MethodUtils#invokeMethod
+ * </a> by default.
  * This increases the kinds of methods successfully and allows primitives
  * to be matched by passing in wrapper classes.
- * There are rare cases when {@see org.apache.commons.beanutils.MethodUtils#invokeExactMethod} 
- * (the old defualt) is required.
- * This method is much stricter in it's reflection.
+ * There are rare cases when org.apache.commons.beanutils.MethodUtils#invokeExactMethod 
+ * (the old default) is required.
+ * This method is much stricter in its reflection.
  * Setting the <code>UseExactMatch</code> to true reverts to the use of this 
  * method.</p>
  *

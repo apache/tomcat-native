@@ -399,7 +399,7 @@ public class Http11Processor implements Processor, ActionHook {
      * The mime-type String will be exactly matched
      * in the response mime-type header .
      * 
-     * @param userAgent user-agent string
+     * @param mimeType mime-type string
      */
     public void addCompressableMimeType(String mimeType) {
         compressableMimeTypes = 
@@ -698,7 +698,7 @@ public class Http11Processor implements Processor, ActionHook {
 
     /** Get the request associated with this processor.
      *
-     * @return
+     * @return The request
      */
     public Request getRequest() {
         return request;

@@ -625,8 +625,6 @@ public class RequestHandler extends AjpHandler
 
     /**
      * Return the next byte of request body data (to a servlet).
-     *
-     * @see Request#doRead
      */
     public int doRead(Ajp13 ch) throws IOException 
     {
@@ -651,8 +649,6 @@ public class RequestHandler extends AjpHandler
      *
      * @return The number of bytes actually copied into the buffer, or -1
      * if the end of the stream has been reached.
-     *
-     * @see Request#doRead
      */
     public int doRead(Ajp13 ch, byte[] b, int off, int len) throws IOException 
     {

@@ -74,7 +74,7 @@ public abstract class Msg {
      *
      * @param b The array from which to copy bytes.
      * @param off The offset into the array at which to start copying
-     * @param len The number of bytes to copy.  
+     * @param numBytes The number of bytes to copy.  
      */
     public abstract void appendBytes( byte b[], int off, int numBytes );
 

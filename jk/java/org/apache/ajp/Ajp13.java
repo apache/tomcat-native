@@ -38,8 +38,6 @@ import org.apache.tomcat.util.http.MimeHeaders;
  * translates from Tomcat's internal servlet support methods
  * (e.g. doWrite) to the correct packets to send to the web server.
  *
- * @see Ajp13Interceptor 
- *
  * @author Dan Milstein [danmil@shore.net]
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Kevin Seguin [seguin@apache.org]
@@ -479,8 +477,6 @@ public class Ajp13 {
      * Close the socket connection to the web server.  In general, sockets
      * are maintained across many requests, so this will not be called
      * after finish().  
-     *
-     * @see Ajp13Interceptor#processConnection
      */
     public void close() throws IOException {
         if (debug > 0) {

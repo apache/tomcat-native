@@ -162,7 +162,7 @@ public class ApacheConfig  extends BaseJkConfig {
         then it will be resolved absolutely against
         the getConfigHome() path.
         <p>
-        @param <b>path</b> String path to a file
+        @param path String path to a file
     */
     public void setJkConfig(String path){
 	jkConfig= (path==null)?null:new File(path);
@@ -170,7 +170,7 @@ public class ApacheConfig  extends BaseJkConfig {
 
     /**
         set the path to the mod_jk Apache Module
-        @param <b>path</b> String path to a file
+        @param path String path to a file
     */
     public void setModJk(String path){
         modJk=( path==null?null:new File(path));

@@ -643,7 +643,7 @@ public class InternalOutputBuffer
      * buffer to the output stream, without filtering. This method is meant to
      * be used to write the response header.
      * 
-     * @param bc data to be written
+     * @param cc data to be written
      */
     protected void write(CharChunk cc) {
 

@@ -211,8 +211,8 @@ public class BaseJkConfig  implements LifecycleListener {
         executes the ApacheConfig interceptor. This method generates apache
         configuration files for use with  mod_jk.
         <p>
-        @param <b>context</b> a Context object.
-	@param <b>mod_jk</b> Writer for output.
+        @param context a Context object.
+	@param mod_jk Writer for output.
     */
     public void executeContext(Context context, PrintWriter mod_jk){
 
@@ -288,7 +288,7 @@ public class BaseJkConfig  implements LifecycleListener {
         <p>
         If not set, execute() will set this to TOMCAT_HOME.
         <p>
-        @param <b>dir</b> - path to a directory
+        @param dir - path to a directory
     */
     public void setConfigHome(String dir){
         if( dir==null ) return;
@@ -303,7 +303,7 @@ public class BaseJkConfig  implements LifecycleListener {
 
     /**
         set a path to the workers.properties file.
-        @param <b>path</b> String path to workers.properties file
+        @param path String path to workers.properties file
     */
     public void setWorkersConfig(String path){
         workersConfig= (path==null?null:new File(path));
@@ -311,7 +311,7 @@ public class BaseJkConfig  implements LifecycleListener {
 
     /**
         set the path to the log file
-        @param <b>path</b> String path to a file
+        @param path String path to a file
     */
     public void setJkLog(String path){
         jkLog= ( path==null?null:new File(path));
@@ -325,8 +325,8 @@ public class BaseJkConfig  implements LifecycleListener {
     }
 
     /**
-        set the Ajp protocal
-        @param <b>protocal</b> String protocol, "ajp12" or "ajp13"
+        Set the AJP worker.
+        @param worker The worker name
      */
     public void setJkWorker(String worker){
         jkWorker = worker;

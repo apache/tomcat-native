@@ -373,7 +373,7 @@ public class NodeCreateRule extends Rule {
 
     /**
      * Implemented to replace the content handler currently in use by a 
-     * {@link #NodeBuilder NodeCreateRule.NodeBuilder}.
+     * NodeBuilder.
      * 
      * @param namespaceURI the namespace URI of the matching element, or an 
      *   empty string if the parser is not namespace aware or the element has
