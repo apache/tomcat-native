@@ -555,7 +555,74 @@ AP_DECLARE(apr_status_t) ap_wrap_make_request(request_rec *r, const char *url,
     apr_table_addn(r->headers_in, "Accept-Charset", "iso-8859-2");
     apr_table_addn(r->headers_in, "Accept-Language", "hr");
 
-    /* TODO: create bucket brigade for post data */
-
+    /* Create a simple bucket brigade for post data inside connection */
+    if (content) {
+        apr_bucket *e;
+        if (!r->connection->bucket_alloc)
+            r->connection->bucket_alloc = apr_bucket_alloc_create(r->connection->pool);
+        r->connection->bb = apr_brigade_create(r->connection->pool,
+                                               r->connection->bucket_alloc);
+        e = apr_bucket_transient_create(content, content_length, r->connection->bucket_alloc);
+        APR_BRIGADE_INSERT_TAIL(r->connection->bb, e);
+ 
+    }
     return APR_SUCCESS;
 }
+
+AP_DECLARE(int) ap_setup_client_block(request_rec *r, int read_policy)
+{
+    const char *lenp = apr_table_get(r->headers_in, "Content-Length");
+    
+    r->remaining = 0;
+    r->read_length = 0;
+    if (lenp)
+        r->remaining = atoi(lenp);
+    return OK;
+}
+
+AP_DECLARE(int) ap_should_client_block(request_rec *r)
+{
+    /* First check if we have already read the request body */
+
+    if (r->read_length || r->remaining <= 0)
+        return 0;
+    else
+        return 1;
+}
+
+AP_DECLARE(long) ap_get_client_block(request_rec *r, char *buffer,
+                                     apr_size_t bufsiz)
+{
+    apr_status_t rv;
+ 
+    if (r->remaining < 0 || r->remaining == 0)
+        return 0;
+    
+    rv = apr_brigade_flatten(r->connection->bb, buffer, &bufsiz); 
+
+    if (rv != APR_SUCCESS) {
+        return -1;
+    }
+
+    r->read_length += bufsiz;
+    r->remaining   -= bufsiz;
+
+    /* Remove the readed part */
+    if (bufsiz) {
+        apr_bucket *e;
+        e = APR_BRIGADE_FIRST(r->connection->bb);
+        apr_bucket_split(e, bufsiz);
+        e = APR_BRIGADE_FIRST(r->connection->bb);
+        APR_BUCKET_REMOVE(e);
+    }
+
+    return (long)bufsiz; 
+
+}
+
+/* No op */
+AP_DECLARE(int) ap_discard_request_body(request_rec *r)
+{
+    return OK;
+}
+

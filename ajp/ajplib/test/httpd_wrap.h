@@ -337,6 +337,11 @@ struct request_rec {
     /** The handler string that we use to call a handler function */
     const char *handler;    /* What we *really* dispatch on */
 
+    /** Remaining bytes left to read from the request body */
+    apr_off_t remaining;
+    /** Number of bytes that have been read  from the request body */
+    apr_off_t read_length;
+
     /** How to encode the data */
     const char *content_encoding;
     /** Array of strings representing the content languages */
@@ -366,7 +371,7 @@ struct request_rec {
     void *per_dir_config;
     /** Notes on *this* request */
     void *request_config;
- 
+         
 };
 
 /** Structure to store things which are per connection */
@@ -402,6 +407,8 @@ struct conn_rec {
     void *sbh; 
     /** The bucket allocator to use for all bucket/brigade creations */
     struct apr_bucket_alloc_t *bucket_alloc;
+    /** This doesn't exists in the original, but it is here to simulate the network */
+    apr_bucket_brigade *bb;    
 };
 
 /** A structure to be used for Per-vhost config */
@@ -621,6 +628,57 @@ AP_DECLARE(const char *) ap_get_server_name(request_rec *r);
  */
 AP_DECLARE(const char *) ap_get_remote_host(conn_rec *conn, void *dir_config, int type, int *str_is_ip);
 
+/* Reading a block of data from the client connection (e.g., POST arg) */
+
+/**
+ * Setup the client to allow Apache to read the request body.
+ * @param r The current request
+ * @param read_policy How the server should interpret a chunked 
+ *                    transfer-encoding.  One of: <pre>
+ *    REQUEST_NO_BODY          Send 413 error if message has any body
+ *    REQUEST_CHUNKED_ERROR    Send 411 error if body without Content-Length
+ *    REQUEST_CHUNKED_DECHUNK  If chunked, remove the chunks for me.
+ * </pre>
+ * @return either OK or an error code
+ * @deffunc int ap_setup_client_block(request_rec *r, int read_policy)
+ */
+AP_DECLARE(int) ap_setup_client_block(request_rec *r, int read_policy);
+
+/**
+ * Determine if the client has sent any data.  This also sends a 
+ * 100 Continue response to HTTP/1.1 clients, so modules should not be called
+ * until the module is ready to read content.
+ * @warning Never call this function more than once.
+ * @param r The current request
+ * @return 0 if there is no message to read, 1 otherwise
+ * @deffunc int ap_should_client_block(request_rec *r)
+ */
+AP_DECLARE(int) ap_should_client_block(request_rec *r);
+
+/**
+ * Call this in a loop.  It will put data into a buffer and return the length
+ * of the input block
+ * @param r The current request
+ * @param buffer The buffer in which to store the data
+ * @param bufsiz The size of the buffer
+ * @return Number of bytes inserted into the buffer.  When done reading, 0
+ *         if EOF, or -1 if there was an error
+ * @deffunc long ap_get_client_block(request_rec *r, char *buffer, apr_size_t bufsiz)
+ */
+AP_DECLARE(long) ap_get_client_block(request_rec *r, char *buffer, apr_size_t bufsiz);
+
+/**
+ * In HTTP/1.1, any method can have a body.  However, most GET handlers
+ * wouldn't know what to do with a request body if they received one.
+ * This helper routine tests for and reads any message body in the request,
+ * simply discarding whatever it receives.  We need to do this because
+ * failing to read the request body would cause it to be interpreted
+ * as the next request on a persistent connection.
+ * @param r The current request
+ * @return error status if request is malformed, OK otherwise 
+ * @deffunc int ap_discard_request_body(request_rec *r)
+ */
+AP_DECLARE(int) ap_discard_request_body(request_rec *r);
 
 /**
  * create the request_rec structure from fake client connection 
