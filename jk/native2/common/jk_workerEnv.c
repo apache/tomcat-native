@@ -293,7 +293,7 @@ static int jk2_workerEnv_parentInit(jk_env_t *env, jk_workerEnv_t *wEnv)
     if (configFile == NULL) {
         wEnv->config->setPropertyString(env, wEnv->config,
                                         "config.file",
-                                        "${serverRoot}/conf/workers2.properties");
+                                        JK_WORKER_FILE_DEF);
         configFile = wEnv->config->file;
     }
 
@@ -334,7 +334,7 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     if (configFile == NULL) {
         wEnv->config->setPropertyString(env, wEnv->config,
                                         "config.file",
-                                        "${serverRoot}/conf/workers2.properties");
+                                        JK_WORKER_FILE_DEF);
         configFile = wEnv->config->file;
     }
 
